@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/time"
+
+import(
+  "Milky2018/mgstudio/app"
+)
+
+// Values
+pub fn host_time_now() -> Float
+
+pub fn time_delta_seconds() -> Float
+
+pub fn time_elapsed_seconds() -> Float
+
+pub fn time_plugin(@app.App) -> @app.App
+
+pub fn time_system() -> Unit
+
+pub fn time_update() -> Unit
+
+// Errors
+
+// Types and methods
+pub struct Time {
+  mut delta_seconds : Float
+  mut elapsed_seconds : Float
+  mut last_ticks : Float
+}
+
+// Type aliases
+
+// Traits
+

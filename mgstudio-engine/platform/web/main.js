@@ -60,6 +60,30 @@ function createStatusOverlay() {
   };
 }
 
+function setupMenu({ onRun, onReload }) {
+  const menu = document.getElementById("mgstudio-menu");
+  if (!menu) {
+    return null;
+  }
+  const buttons = Array.from(menu.querySelectorAll("button"));
+  buttons.forEach((button) => {
+    const runTarget = button.dataset.run;
+    const action = button.dataset.action;
+    if (runTarget) {
+      button.addEventListener("click", () => onRun(runTarget, button));
+    } else if (action === "reload") {
+      button.addEventListener("click", () => onReload(button));
+    }
+  });
+  return {
+    setEnabled(enabled) {
+      buttons.forEach((button) => {
+        button.disabled = !enabled;
+      });
+    },
+  };
+}
+
 async function main() {
   const canvas = document.getElementById("mgstudio-canvas");
   const setStatus = createStatusOverlay();
@@ -85,18 +109,36 @@ async function main() {
   const instance = await loadWasm(imports);
   const exportNames = Object.keys(instance.exports || {});
   console.log("WASM exports:", exportNames);
-  setStatus(`WASM loaded. Exports: ${exportNames.join(", ")}`);
-  if (instance.exports.run_sprite) {
-    instance.exports.run_sprite();
-    setStatus("Running: sprite");
-  } else if (instance.exports.main) {
-    instance.exports.main();
-    setStatus("Running: main");
-  } else if (instance.exports._start) {
-    instance.exports._start();
-    setStatus("Running: _start");
-  } else {
-    throw new Error("No entrypoint exported from WASM module.");
+  setStatus("WASM loaded. Choose an example.");
+
+  let running = false;
+  const menu = setupMenu({
+    onRun: (name, button) => {
+      if (running) {
+        return;
+      }
+      const entry = instance.exports[name];
+      if (typeof entry !== "function") {
+        setStatus(`Missing export: ${name}`);
+        return;
+      }
+      running = true;
+      if (menu) {
+        menu.setEnabled(false);
+      }
+      entry();
+      if (button) {
+        button.disabled = true;
+      }
+      setStatus(`Running: ${name.replace("run_", "")}`);
+    },
+    onReload: () => {
+      window.location.reload();
+    },
+  });
+
+  if (!menu) {
+    setStatus(`WASM loaded. Exports: ${exportNames.join(", ")}`);
   }
 }
 

@@ -79,3 +79,56 @@ pub fn Camera2dBundle::new(
 ) -> Camera2dBundle {
   Camera2dBundle::{ camera, transform }
 }
+
+///|
+priv struct RenderState {
+  mut draw_enabled : Bool
+  mut sprite_transform : @math.Transform
+}
+
+///|
+let render_state : Ref[RenderState] = @ref.new(RenderState::{
+  draw_enabled: false,
+  sprite_transform: @math.Transform::identity(),
+})
+
+///|
+pub fn render_extract_system() -> Unit {
+  render_state.val.draw_enabled = true
+}
+
+///|
+pub fn render_prepare_system() -> Unit {
+
+}
+
+///|
+pub fn render_queue_system() -> Unit {
+
+}
+
+///|
+pub fn render_execute_system() -> Unit {
+  let transform = render_state.val.sprite_transform
+  @window.host_gpu_set_sprite_transform(
+    transform.translation.x,
+    transform.translation.y,
+    transform.rotation,
+  )
+  @window.host_gpu_set_draw_enabled(render_state.val.draw_enabled)
+  render_state.val.draw_enabled = false
+}
+
+///|
+pub fn render2d_set_sprite_transform(transform : @math.Transform) -> Unit {
+  render_state.val.sprite_transform = transform
+}
+
+///|
+pub fn render2d_plugin(app : @app.App) -> @app.App {
+  app
+  .add_system(render_extract_system)
+  .add_post_update_system(render_prepare_system)
+  .add_post_update_system(render_queue_system)
+  .add_post_update_system(render_execute_system)
+}

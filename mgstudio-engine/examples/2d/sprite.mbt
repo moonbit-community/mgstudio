@@ -16,7 +16,10 @@
 
 ///|
 pub fn sprite_run() -> Unit {
-  let plugins : Array[@app.Plugin] = [@window.window_plugin]
+  let plugins : Array[@app.Plugin] = [
+    @window.window_plugin, @time.time_plugin, @asset.asset_plugin, @render2d.render2d_plugin,
+    @input.input_plugin,
+  ]
   @app.App::new().add_plugins(plugins).add_startup_system(sprite_setup).run()
 }
 
@@ -32,6 +35,7 @@ fn sprite_setup() -> Unit {
     camera,
     @math.Transform::identity(),
   )
+  @render2d.render2d_set_sprite_transform(transform)
   sprite_bundle |> ignore
   camera_bundle |> ignore
 }

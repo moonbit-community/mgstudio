@@ -14,13 +14,26 @@
 
 ///|
 pub fn rotation_run() -> Unit {
-  let plugins : Array[@app.Plugin] = [@window.window_plugin]
+  let plugins : Array[@app.Plugin] = [
+    @window.window_plugin, @time.time_plugin, @asset.asset_plugin, @render2d.render2d_plugin,
+    @input.input_plugin,
+  ]
   @app.App::new()
   .add_plugins(plugins)
   .add_startup_system(rotation_setup)
   .add_system(rotation_update)
   .run()
 }
+
+///|
+priv struct RotationState {
+  mut transform : @math.Transform
+}
+
+///|
+let rotation_state : Ref[RotationState] = @ref.new(RotationState::{
+  transform: @math.Transform::identity(),
+})
 
 ///|
 fn rotation_setup() -> Unit {
@@ -34,14 +47,16 @@ fn rotation_setup() -> Unit {
     camera,
     @math.Transform::identity(),
   )
+  rotation_state.val.transform = transform
+  @render2d.render2d_set_sprite_transform(transform)
   sprite_bundle |> ignore
   camera_bundle |> ignore
 }
 
 ///|
 fn rotation_update() -> Unit {
-  let transform = @math.Transform::identity()
-  let delta_secs = 0.0F
+  let transform = rotation_state.val.transform
+  let delta_secs = @time.time_delta_seconds()
   let speed = 1.0F
   let next_rotation = transform.rotation + speed * delta_secs
   let next_transform = @math.Transform::new(
@@ -49,5 +64,6 @@ fn rotation_update() -> Unit {
     next_rotation,
     transform.scale,
   )
-  next_transform |> ignore
+  rotation_state.val.transform = next_transform
+  @render2d.render2d_set_sprite_transform(next_transform)
 }

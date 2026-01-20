@@ -8,7 +8,7 @@ package "Milky2018/mgstudio/app"
 // Types and methods
 pub struct App {
   schedule : Schedule
-  runner_builder : (App) -> () -> Unit
+  runner : (() -> Unit)?
 }
 pub fn App::add_plugins(Self, Array[(Self) -> Self]) -> Self
 pub fn App::add_post_update_system(Self, () -> Unit) -> Self

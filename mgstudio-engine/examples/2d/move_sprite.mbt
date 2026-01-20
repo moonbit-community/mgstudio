@@ -14,7 +14,10 @@
 
 ///|
 pub fn move_sprite_run() -> Unit {
-  let plugins : Array[@app.Plugin] = [@window.window_plugin]
+  let plugins : Array[@app.Plugin] = [
+    @window.window_plugin, @time.time_plugin, @asset.asset_plugin, @render2d.render2d_plugin,
+    @input.input_plugin,
+  ]
   @app.App::new()
   .add_plugins(plugins)
   .add_startup_system(move_sprite_setup)
@@ -29,26 +32,43 @@ pub(all) enum Direction {
 }
 
 ///|
+priv struct MoveSpriteState {
+  mut direction : Direction
+  mut transform : @math.Transform
+}
+
+///|
+let move_state : Ref[MoveSpriteState] = @ref.new(MoveSpriteState::{
+  direction: Direction::Right,
+  transform: @math.Transform::identity(),
+})
+
+///|
 fn move_sprite_setup() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let transform = @math.Transform::identity()
-  let direction = Direction::Right
-  texture |> ignore
-  sprite |> ignore
-  transform |> ignore
-  direction |> ignore
+  let sprite_bundle = @render2d.SpriteBundle::new(sprite, transform, texture)
+  let camera = @render2d.Camera2d::new(@render2d.Color::white())
+  let camera_bundle = @render2d.Camera2dBundle::new(
+    camera,
+    @math.Transform::identity(),
+  )
+  move_state.val.direction = Direction::Right
+  move_state.val.transform = transform
+  @render2d.render2d_set_sprite_transform(transform)
+  sprite_bundle |> ignore
+  camera_bundle |> ignore
 }
 
 ///|
 fn move_sprite_movement() -> Unit {
-  let direction = Direction::Right
-  let transform = @math.Transform::identity()
-  let delta_secs = 0.0F
+  let transform = move_state.val.transform
+  let delta_secs = @time.time_delta_seconds()
   let speed = 150.0F
   let delta = speed * delta_secs
-  let move_x = if direction is Right { delta } else { -delta }
+  let move_x = if move_state.val.direction is Right { delta } else { -delta }
   let translation = @math.Vec2::new(
     transform.translation.x + move_x,
     transform.translation.y,
@@ -58,5 +78,11 @@ fn move_sprite_movement() -> Unit {
     transform.rotation,
     transform.scale,
   )
-  next_transform |> ignore
+  move_state.val.transform = next_transform
+  @render2d.render2d_set_sprite_transform(next_transform)
+  if translation.x > 200.0F {
+    move_state.val.direction = Direction::Left
+  } else if translation.x < -200.0F {
+    move_state.val.direction = Direction::Right
+  }
 }

@@ -16,12 +16,36 @@ export async function createHost({ canvas }) {
   const state = {
     window: null,
     shouldClose: false,
+    assets: {
+      pendingTexturePath: null,
+    },
+    input: {
+      pressed: new Set(),
+      justPressed: new Set(),
+      justReleased: new Set(),
+      initialized: false,
+    },
     gpu: {
       device: null,
       queue: null,
       context: null,
       format: null,
     },
+  };
+
+  const resolveAssetUrl = (path) => {
+    if (path == null) {
+      return null;
+    }
+    const text = typeof path === "string" ? path : String(path);
+    if (!text || text.length === 0) {
+      return null;
+    }
+    if (/^(https?:)?\/\//.test(text) || text.startsWith("data:")) {
+      return text;
+    }
+    const normalized = text.replace(/^\/+/, "");
+    return `./assets/${normalized}`;
   };
 
   const ensureCanvas = (width, height) => {
@@ -32,6 +56,35 @@ export async function createHost({ canvas }) {
       document.body.appendChild(target);
     }
     return target;
+  };
+
+  const initInput = () => {
+    if (state.input.initialized) {
+      return;
+    }
+    state.input.initialized = true;
+    const { pressed, justPressed, justReleased } = state.input;
+    window.addEventListener("keydown", (event) => {
+      if (event.repeat) {
+        return;
+      }
+      const code = event.code;
+      if (!pressed.has(code)) {
+        pressed.add(code);
+        justPressed.add(code);
+      }
+    });
+    window.addEventListener("keyup", (event) => {
+      const code = event.code;
+      if (pressed.delete(code)) {
+        justReleased.add(code);
+      }
+    });
+    window.addEventListener("blur", () => {
+      pressed.clear();
+      justPressed.clear();
+      justReleased.clear();
+    });
   };
 
   const initWebGpu = async (target) => {
@@ -52,9 +105,35 @@ export async function createHost({ canvas }) {
     state.gpu.pipeline = null;
     state.gpu.vertexBuffer = null;
     state.gpu.vertexCount = 0;
+    state.gpu.bindGroup = null;
+    state.gpu.sampler = null;
+    state.gpu.textureView = null;
+    state.gpu.uniformBuffer = null;
+    state.gpu.spriteTransform = { x: 0, y: 0, rotation: 0 };
+    state.gpu.drawEnabled = false;
+    if (state.assets.pendingTexturePath) {
+      const pendingPath = state.assets.pendingTexturePath;
+      state.assets.pendingTexturePath = null;
+      loadTextureFromPath(pendingPath);
+    }
   };
 
-  const ensureTriangleResources = () => {
+  const ensureBindGroup = () => {
+    const { pipeline, sampler, textureView, uniformBuffer } = state.gpu;
+    if (!pipeline || !sampler || !textureView || !uniformBuffer) {
+      return;
+    }
+    state.gpu.bindGroup = state.gpu.device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: sampler },
+        { binding: 1, resource: textureView },
+        { binding: 2, resource: { buffer: uniformBuffer } },
+      ],
+    });
+  };
+
+  const ensureTextureResources = () => {
     const { device, format } = state.gpu;
     if (!device || state.gpu.pipeline) {
       return;
@@ -63,23 +142,34 @@ export async function createHost({ canvas }) {
       code: `
 struct VertexOut {
   @builtin(position) position : vec4<f32>,
-  @location(0) color : vec4<f32>,
+  @location(0) uv : vec2<f32>,
 };
+
+@group(0) @binding(0) var samp : sampler;
+@group(0) @binding(1) var tex : texture_2d<f32>;
+@group(0) @binding(2) var<uniform> u_transform : vec4<f32>;
 
 @vertex
 fn vs_main(
   @location(0) position : vec2<f32>,
-  @location(1) color : vec4<f32>
+  @location(1) uv : vec2<f32>
 ) -> VertexOut {
   var out : VertexOut;
-  out.position = vec4<f32>(position, 0.0, 1.0);
-  out.color = color;
+  let cosv = u_transform.z;
+  let sinv = u_transform.w;
+  let rotated = vec2<f32>(
+    position.x * cosv - position.y * sinv,
+    position.x * sinv + position.y * cosv
+  );
+  let translated = rotated + u_transform.xy;
+  out.position = vec4<f32>(translated, 0.0, 1.0);
+  out.uv = uv;
   return out;
 }
 
 @fragment
-fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
-  return color;
+fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+  return textureSample(tex, samp, uv);
 }
 `,
     });
@@ -90,10 +180,10 @@ fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
         entryPoint: "vs_main",
         buffers: [
           {
-            arrayStride: 24,
+            arrayStride: 16,
             attributes: [
               { shaderLocation: 0, offset: 0, format: "float32x2" },
-              { shaderLocation: 1, offset: 8, format: "float32x4" },
+              { shaderLocation: 1, offset: 8, format: "float32x2" },
             ],
           },
         ],
@@ -108,18 +198,97 @@ fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
       },
     });
     const vertices = new Float32Array([
-      0.0, 0.6, 1.0, 0.2, 0.2, 1.0,
-      -0.6, -0.6, 0.2, 1.0, 0.2, 1.0,
-      0.6, -0.6, 0.2, 0.2, 1.0, 1.0,
+      -0.6, 0.6, 0.0, 0.0,
+      -0.6, -0.6, 0.0, 1.0,
+      0.6, -0.6, 1.0, 1.0,
+      -0.6, 0.6, 0.0, 0.0,
+      0.6, -0.6, 1.0, 1.0,
+      0.6, 0.6, 1.0, 0.0,
     ]);
     const vertexBuffer = device.createBuffer({
       size: vertices.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
     device.queue.writeBuffer(vertexBuffer, 0, vertices);
+    if (!state.gpu.sampler) {
+      state.gpu.sampler = device.createSampler({
+        magFilter: "nearest",
+        minFilter: "nearest",
+      });
+    }
+    if (!state.gpu.uniformBuffer) {
+      state.gpu.uniformBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
+    }
+    if (!state.gpu.textureView) {
+      const textureSize = 64;
+      const texture = device.createTexture({
+        size: [textureSize, textureSize, 1],
+        format: "rgba8unorm",
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      });
+      const pixelData = new Uint8Array(textureSize * textureSize * 4);
+      for (let y = 0; y < textureSize; y += 1) {
+        for (let x = 0; x < textureSize; x += 1) {
+          const offset = (y * textureSize + x) * 4;
+          const checker = ((x >> 3) ^ (y >> 3)) & 1;
+          const base = checker ? 220 : 40;
+          pixelData[offset] = base;
+          pixelData[offset + 1] = 120;
+          pixelData[offset + 2] = 255 - base;
+          pixelData[offset + 3] = 255;
+        }
+      }
+      device.queue.writeTexture(
+        { texture },
+        pixelData,
+        { bytesPerRow: textureSize * 4 },
+        [textureSize, textureSize, 1],
+      );
+      state.gpu.textureView = texture.createView();
+    }
     state.gpu.pipeline = pipeline;
     state.gpu.vertexBuffer = vertexBuffer;
-    state.gpu.vertexCount = 3;
+    state.gpu.vertexCount = 6;
+    ensureBindGroup();
+  };
+
+  const loadTextureFromPath = async (path) => {
+    const { device, queue } = state.gpu;
+    if (!device || !queue) {
+      state.assets.pendingTexturePath = path;
+      return;
+    }
+    const url = resolveAssetUrl(path);
+    if (!url) {
+      return;
+    }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn(`Failed to load texture: ${url}`);
+        return;
+      }
+      const blob = await response.blob();
+      const image = await createImageBitmap(blob);
+      ensureTextureResources();
+      const texture = device.createTexture({
+        size: [image.width, image.height, 1],
+        format: "rgba8unorm",
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      });
+      queue.copyExternalImageToTexture(
+        { source: image },
+        { texture },
+        [image.width, image.height],
+      );
+      state.gpu.textureView = texture.createView();
+      ensureBindGroup();
+    } catch (err) {
+      console.error("Texture load error:", err);
+    }
   };
 
   return {
@@ -161,6 +330,25 @@ fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
         };
         requestAnimationFrame(tick);
       },
+      time_now() {
+        return performance.now();
+      },
+      input_is_key_down(code) {
+        const text = typeof code === "string" ? code : String(code);
+        return state.input.pressed.has(text);
+      },
+      input_is_key_just_pressed(code) {
+        const text = typeof code === "string" ? code : String(code);
+        return state.input.justPressed.has(text);
+      },
+      input_is_key_just_released(code) {
+        const text = typeof code === "string" ? code : String(code);
+        return state.input.justReleased.has(text);
+      },
+      input_finish_frame() {
+        state.input.justPressed.clear();
+        state.input.justReleased.clear();
+      },
       gpu_request_device() {
         if (!state.gpu.device) {
           throw new Error("WebGPU device not initialized. Call createHost() first.");
@@ -196,6 +384,19 @@ fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
           size: [width, height],
         });
       },
+      gpu_set_draw_enabled(enabled) {
+        state.gpu.drawEnabled = !!enabled;
+      },
+      gpu_set_sprite_transform(x, y, rotation) {
+        state.gpu.spriteTransform = {
+          x: Number(x) || 0,
+          y: Number(y) || 0,
+          rotation: Number(rotation) || 0,
+        };
+      },
+      asset_load_texture(path) {
+        loadTextureFromPath(path);
+      },
       gpu_begin_frame(_surface) {
         const { context } = state.gpu;
         if (!context) {
@@ -209,8 +410,20 @@ fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
         if (!device || !queue || !currentTexture) {
           return;
         }
-        ensureTriangleResources();
-        const { pipeline, vertexBuffer, vertexCount } = state.gpu;
+        ensureTextureResources();
+        const { pipeline, vertexBuffer, vertexCount, bindGroup } = state.gpu;
+        if (state.gpu.uniformBuffer && state.window) {
+          const { width, height } = state.window;
+          const scaleX = width > 0 ? 2 / width : 0;
+          const scaleY = height > 0 ? 2 / height : 0;
+          const tx = state.gpu.spriteTransform.x * scaleX;
+          const ty = state.gpu.spriteTransform.y * scaleY;
+          const rotation = state.gpu.spriteTransform.rotation;
+          const cos = Math.cos(rotation);
+          const sin = Math.sin(rotation);
+          const uniformData = new Float32Array([tx, ty, cos, sin]);
+          queue.writeBuffer(state.gpu.uniformBuffer, 0, uniformData);
+        }
         const encoder = device.createCommandEncoder();
         const pass = encoder.beginRenderPass({
           colorAttachments: [
@@ -222,8 +435,11 @@ fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
             },
           ],
         });
-        if (pipeline && vertexBuffer && vertexCount > 0) {
+        if (state.gpu.drawEnabled && pipeline && vertexBuffer && vertexCount > 0) {
           pass.setPipeline(pipeline);
+          if (bindGroup) {
+            pass.setBindGroup(0, bindGroup);
+          }
           pass.setVertexBuffer(0, vertexBuffer);
           pass.draw(vertexCount);
         }
@@ -234,6 +450,7 @@ fn fs_main(@location(0) color : vec4<f32>) -> @location(0) vec4<f32> {
     init: async () => {
       const target = canvas ?? document.querySelector("canvas") ?? ensureCanvas(800, 600);
       await initWebGpu(target);
+      initInput();
     },
   };
 }

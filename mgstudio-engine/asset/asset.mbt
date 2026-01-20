@@ -38,17 +38,32 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
 ///|
 pub struct AssetServer {
   mut next_id : Int
+  paths : Array[String]
 }
 
 ///|
 pub fn AssetServer::new() -> AssetServer {
-  AssetServer::{ next_id: 0 }
+  AssetServer::{ next_id: 0, paths: [] }
 }
 
 ///|
+pub fn host_asset_load_texture(path : String) -> Unit = "mgstudio_host" "asset_load_texture"
+
+///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
-  path |> ignore
   let id = self.next_id
   self.next_id = self.next_id + 1
+  self.paths.push(path)
+  host_asset_load_texture(path)
   Handle::new(id)
+}
+
+///|
+pub fn asset_system() -> Unit {
+
+}
+
+///|
+pub fn asset_plugin(app : @app.App) -> @app.App {
+  app.add_system(asset_system)
 }

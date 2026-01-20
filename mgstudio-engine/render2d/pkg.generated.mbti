@@ -2,11 +2,23 @@
 package "Milky2018/mgstudio/render2d"
 
 import(
+  "Milky2018/mgstudio/app"
   "Milky2018/mgstudio/asset"
   "Milky2018/mgstudio/math"
 )
 
 // Values
+pub fn render2d_plugin(@app.App) -> @app.App
+
+pub fn render2d_set_sprite_transform(@math.Transform) -> Unit
+
+pub fn render_execute_system() -> Unit
+
+pub fn render_extract_system() -> Unit
+
+pub fn render_prepare_system() -> Unit
+
+pub fn render_queue_system() -> Unit
 
 // Errors
 

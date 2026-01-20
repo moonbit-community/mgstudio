@@ -28,3 +28,10 @@ fi
 
 cp "$WASM_PATH" "$SCRIPT_DIR/runner.wasm"
 echo "Copied runner.wasm to $SCRIPT_DIR/runner.wasm"
+
+ASSETS_DIR="$ROOT_DIR/assets"
+if [[ -d "$ASSETS_DIR" ]]; then
+  rm -rf "$SCRIPT_DIR/assets"
+  cp -R "$ASSETS_DIR" "$SCRIPT_DIR/"
+  echo "Copied assets to $SCRIPT_DIR/assets"
+fi
