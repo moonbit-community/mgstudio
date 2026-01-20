@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/2d"
+
+// Values
+pub fn move_sprite_run() -> Unit
+
+pub fn rotation_run() -> Unit
+
+pub fn sprite_run() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum Direction {
+  Left
+  Right
+}
+
+// Type aliases
+
+// Traits
+

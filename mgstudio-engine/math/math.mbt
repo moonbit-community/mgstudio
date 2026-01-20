@@ -13,22 +13,37 @@
 // limitations under the License.
 
 ///|
-test "fib" {
-  let array = [1, 2, 3, 4, 5].map(fib)
-
-  // `inspect` is used to check the output of the function
-  // Just write `inspect(value)` and execute `moon test --update`
-  // to update the expected output, and verify them afterwards
-  inspect(array, content="[1, 2, 3, 5, 8]")
+pub struct Vec2 {
+  x : Float
+  y : Float
 }
 
 ///|
-test "sum" {
-  let array = [1, 2, 3, 4, 5]
-  inspect(sum(data=array), content="15")
-  inspect(sum(data=array, start=1), content="14")
-  inspect(sum(data=array, length=3), content="6")
-  let length = None
-  // Use `?` for punning
-  inspect(sum(data=array, length?), content="15")
+pub fn Vec2::new(x : Float, y : Float) -> Vec2 {
+  Vec2::{ x, y }
+}
+
+///|
+pub struct Transform {
+  translation : Vec2
+  rotation : Float
+  scale : Vec2
+}
+
+///|
+pub fn Transform::new(
+  translation : Vec2,
+  rotation : Float,
+  scale : Vec2,
+) -> Transform {
+  Transform::{ translation, rotation, scale }
+}
+
+///|
+pub fn Transform::identity() -> Transform {
+  Transform::{
+    translation: Vec2::new(0.0F, 0.0F),
+    rotation: 0.0F,
+    scale: Vec2::new(1.0F, 1.0F),
+  }
 }

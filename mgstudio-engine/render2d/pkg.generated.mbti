@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render2d"
+
+import(
+  "Milky2018/mgstudio/asset"
+  "Milky2018/mgstudio/math"
+)
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Camera2d {
+  clear_color : Color
+}
+pub fn Camera2d::new(Color) -> Self
+
+pub struct Camera2dBundle {
+  camera : Camera2d
+  transform : @math.Transform
+}
+pub fn Camera2dBundle::new(Camera2d, @math.Transform) -> Self
+
+pub struct Color {
+  r : Float
+  g : Float
+  b : Float
+  a : Float
+}
+pub fn Color::new(Float, Float, Float, Float) -> Self
+pub fn Color::white() -> Self
+
+pub struct Sprite {
+  color : Color
+}
+pub fn Sprite::new(Color) -> Self
+
+pub struct SpriteBundle {
+  sprite : Sprite
+  transform : @math.Transform
+  texture : @asset.Handle[@asset.Image]
+}
+pub fn SpriteBundle::new(Sprite, @math.Transform, @asset.Handle[@asset.Image]) -> Self
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/math"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Transform {
+  translation : Vec2
+  rotation : Float
+  scale : Vec2
+}
+pub fn Transform::identity() -> Self
+pub fn Transform::new(Vec2, Float, Vec2) -> Self
+
+pub struct Vec2 {
+  x : Float
+  y : Float
+}
+pub fn Vec2::new(Float, Float) -> Self
+
+// Type aliases
+
+// Traits
+

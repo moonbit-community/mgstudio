@@ -14,5 +14,20 @@
 
 ///|
 fn main {
-  println(@lib.fib(10))
+  run_sprite()
+}
+
+///|
+pub fn run_sprite() -> Unit {
+  @examples2d.sprite_run()
+}
+
+///|
+pub fn run_move_sprite() -> Unit {
+  @examples2d.move_sprite_run()
+}
+
+///|
+pub fn run_rotation() -> Unit {
+  @examples2d.rotation_run()
 }

@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Commands {
+  world : World
+}
+pub fn Commands::new(World) -> Self
+pub fn Commands::spawn(Self) -> Entity
+
+pub struct Entity {
+  id : Int
+}
+
+pub struct Query[T] {
+  items : Array[T]
+}
+pub fn[T] Query::new(Array[T]) -> Self[T]
+
+pub struct Res[T] {
+  value : T
+}
+pub fn[T] Res::new(T) -> Self[T]
+
+pub struct World {
+  mut next_id : Int
+}
+pub fn World::new() -> Self
+pub fn World::spawn(Self) -> Entity
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,27 @@
+{
+  "is-main": true,
+  "import": [
+    {
+      "path": "Milky2018/mgstudio/examples/2d",
+      "alias": "examples2d"
+    }
+  ],
+  "link": {
+    "wasm": {
+      "exports": [
+        "main",
+        "run_sprite",
+        "run_move_sprite",
+        "run_rotation"
+      ]
+    },
+    "wasm-gc": {
+      "exports": [
+        "main",
+        "run_sprite",
+        "run_move_sprite",
+        "run_rotation"
+      ]
+    }
+  }
+}

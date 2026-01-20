@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/asset"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct AssetServer {
+  mut next_id : Int
+}
+pub fn AssetServer::load(Self, String) -> Handle[Image]
+pub fn AssetServer::new() -> Self
+
+pub struct Handle[T] {
+  id : Int
+  phantom : T?
+}
+pub fn[T] Handle::new(Int) -> Self[T]
+
+pub struct Image {
+  width : Int
+  height : Int
+  pixels : Bytes
+}
+pub fn Image::new(Int, Int, Bytes) -> Self
+
+// Type aliases
+
+// Traits
+

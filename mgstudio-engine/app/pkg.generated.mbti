@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/app"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct App {
+  schedule : Schedule
+  runner_builder : (App) -> () -> Unit
+}
+pub fn App::add_plugins(Self, Array[(Self) -> Self]) -> Self
+pub fn App::add_post_update_system(Self, () -> Unit) -> Self
+pub fn App::add_startup_system(Self, () -> Unit) -> Self
+pub fn App::add_system(Self, () -> Unit) -> Self
+pub fn App::new() -> Self
+pub fn App::run(Self) -> Unit
+pub fn App::run_once(Self) -> Self
+pub fn App::run_startup(Self) -> Self
+pub fn App::set_runner(Self, (Self) -> () -> Unit) -> Self
+
+pub struct Schedule {
+  startup : Array[() -> Unit]
+  update : Array[() -> Unit]
+  post_update : Array[() -> Unit]
+}
+
+// Type aliases
+pub type Plugin = (App) -> App
+
+pub type RunnerBuilder = (App) -> () -> Unit
+
+pub type RunnerFn = () -> Unit
+
+pub type SystemFn = () -> Unit
+
+// Traits
+

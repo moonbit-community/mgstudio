@@ -1,0 +1,112 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/window"
+
+import(
+  "Milky2018/mgstudio/app"
+)
+
+// Values
+pub fn host_gpu_begin_frame(HostGpuSurface) -> HostGpuFrame
+
+pub fn host_gpu_configure_surface(HostGpuDevice, HostGpuSurface, Int, Int) -> Unit
+
+pub fn host_gpu_create_surface(HostWindow) -> HostGpuSurface
+
+pub fn host_gpu_end_frame(HostGpuFrame) -> Unit
+
+pub fn host_gpu_get_queue(HostGpuDevice) -> HostGpuQueue
+
+pub fn host_gpu_request_device() -> HostGpuDevice
+
+pub fn host_window_create(Int, Int, String) -> HostWindow
+
+pub fn host_window_get_height(HostWindow) -> Int
+
+pub fn host_window_get_width(HostWindow) -> Int
+
+pub fn host_window_poll_events(HostWindow) -> Unit
+
+pub fn host_window_request_close(HostWindow) -> Unit
+
+pub fn host_window_run_loop(() -> Unit) -> Unit
+
+pub fn host_window_should_close(HostWindow) -> Bool
+
+pub fn window_plugin(@app.App) -> @app.App
+
+pub fn window_runner_builder(@app.App) -> () -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum HostEvent {
+  KeyDown(KeyCode)
+  KeyUp(KeyCode)
+  MouseMove(Int, Int)
+  MouseDown(MouseButton)
+  MouseUp(MouseButton)
+  MouseWheel(Int, Int)
+  WindowResized(Int, Int)
+  WindowCloseRequested
+}
+
+#external
+pub type HostGpuDevice
+
+#external
+pub type HostGpuFrame
+
+#external
+pub type HostGpuQueue
+
+#external
+pub type HostGpuSurface
+
+#external
+pub type HostWindow
+
+pub(all) enum KeyCode {
+  KeyA
+  KeyB
+  KeyC
+  KeyD
+  KeyE
+  KeyF
+  KeyG
+  KeyH
+  KeyI
+  KeyJ
+  KeyK
+  KeyL
+  KeyM
+  KeyN
+  KeyO
+  KeyP
+  KeyQ
+  KeyR
+  KeyS
+  KeyT
+  KeyU
+  KeyV
+  KeyW
+  KeyX
+  KeyY
+  KeyZ
+  ArrowUp
+  ArrowDown
+  ArrowLeft
+  ArrowRight
+  Space
+  Escape
+}
+
+pub(all) enum MouseButton {
+  Left
+  Right
+  Middle
+}
+
+// Type aliases
+
+// Traits
+
