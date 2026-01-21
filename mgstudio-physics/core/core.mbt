@@ -168,6 +168,19 @@ pub fn Rot2::rotate_vec2(self : Rot2, v : Vec2) -> Vec2 {
 }
 
 ///|
+pub fn Rot2::mul(self : Rot2, other : Rot2) -> Rot2 {
+  Rot2::{
+    sin: self.sin * other.cos + self.cos * other.sin,
+    cos: self.cos * other.cos - self.sin * other.sin,
+  }
+}
+
+///|
+pub fn Rot2::inverse(self : Rot2) -> Rot2 {
+  Rot2::{ sin: -self.sin, cos: self.cos }
+}
+
+///|
 pub fn rotation_from_angle(angle : Real) -> Rot2 {
   Rot2::from_angle(angle)
 }
@@ -186,6 +199,25 @@ pub fn Isometry2::identity() -> Isometry2 {
 ///|
 pub fn Isometry2::new(translation : Vec2, rotation : Rot2) -> Isometry2 {
   Isometry2::{ translation, rotation }
+}
+
+///|
+pub fn Isometry2::from_translation(translation : Vec2) -> Isometry2 {
+  Isometry2::new(translation, Rot2::identity())
+}
+
+///|
+pub fn Isometry2::mul(self : Isometry2, other : Isometry2) -> Isometry2 {
+  let rotated = self.rotation.rotate_vec2(other.translation)
+  Isometry2::new(self.translation.add(rotated), self.rotation.mul(other.rotation))
+}
+
+///|
+pub fn Isometry2::inverse(self : Isometry2) -> Isometry2 {
+  let inv_rot = self.rotation.inverse()
+  let neg_translation = Vec2::new(-self.translation.x, -self.translation.y)
+  let inv_translation = inv_rot.rotate_vec2(neg_translation)
+  Isometry2::new(inv_translation, inv_rot)
 }
 
 ///|

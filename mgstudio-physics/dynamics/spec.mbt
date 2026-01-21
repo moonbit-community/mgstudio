@@ -558,6 +558,12 @@ pub fn RowDVector::scale(self : RowDVector, value : @core.Real) -> RowDVector {
 
 ///|
 #declaration_only
+pub fn DVector::scale_in_place(self : DVector, value : @core.Real) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn IndexSequence::rearrange_columns(
   self : IndexSequence,
   vec : RowDVector,

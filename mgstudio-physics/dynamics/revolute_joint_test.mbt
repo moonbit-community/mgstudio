@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/dynamics/joint/revolute_joint.rs (test_revolute_joint_angle).
-#skip
 test "revolute joint angle" {
   let revolute = RevoluteJointBuilder::new().build()
   let rot1 = @core.rotation_from_angle(1.0F)
@@ -30,6 +29,13 @@ test "revolute joint angle" {
     let rot2 = @core.rotation_from_angle(1.0F + delta)
     let angle = revolute.angle(rot1, rot2)
     let diff = @core.abs(angle - delta)
-    inspect(diff < 1.0e-2F, content="true")
+    let pi_value = @core.pi()
+    let near_pi = @core.abs(@core.abs(delta) - pi_value) < 1.0e-3F
+    let diff_alt = @core.abs(angle + delta)
+    if near_pi {
+      inspect(diff < 1.0e-2F || diff_alt < 1.0e-2F, content="true")
+    } else {
+      inspect(diff < 1.0e-2F, content="true")
+    }
   }
 }

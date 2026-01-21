@@ -14,9 +14,8 @@
 
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_append).
-#skip
 test "multibody append" {
-  let spatial_dim : Int = 2
+  let spatial_dim : Int = 3
   let bodies : RigidBodySet = RigidBodySet::new()
   let joints : MultibodyJointSet = MultibodyJointSet::new()
 
@@ -41,9 +40,8 @@ test "multibody append" {
 
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_insert).
-#skip
 test "multibody insert" {
-  let spatial_dim : Int = 2
+  let spatial_dim : Int = 3
   let bodies : RigidBodySet = RigidBodySet::new()
   let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
 
@@ -71,7 +69,6 @@ test "multibody insert" {
 
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_remove).
-#skip
 test "multibody remove" {
   let bodies : RigidBodySet = RigidBodySet::new()
   let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
@@ -99,7 +96,6 @@ test "multibody remove" {
 
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_columns).
-#skip
 test "index sequence rearrange columns" {
   let seq : IndexSequence = IndexSequence::new()
   seq.remove(2)
@@ -119,7 +115,6 @@ test "index sequence rearrange columns" {
 
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_rows).
-#skip
 test "index sequence rearrange rows" {
   let seq : IndexSequence = IndexSequence::new()
   seq.remove(2)
@@ -143,7 +138,6 @@ test "index sequence rearrange rows" {
 
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_with_rearranged_rows_mut).
-#skip
 test "index sequence with rearranged rows mut" {
   let seq : IndexSequence = IndexSequence::new()
   seq.remove(2)
@@ -161,6 +155,7 @@ test "index sequence with rearranged rows mut" {
     rearranged_len = v.len()
     let expected = DVector::from_array([0.0F, 1.0F, 5.0F, 6.0F, 8.0F])
     rearranged_equals = v.equals(expected)
+    v.scale_in_place(10.0F)
   })
   inspect(rearranged_len == 5, content="true")
   inspect(rearranged_equals, content="true")

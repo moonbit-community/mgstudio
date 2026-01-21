@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/dynamics/rigid_body_components.rs (test_interpolate_velocity).
-#skip
 test "interpolate velocity" {
   let multipliers = [-2.0F, -1.0F, 0.0F, 1.0F, 2.0F]
   let dt = 0.016F

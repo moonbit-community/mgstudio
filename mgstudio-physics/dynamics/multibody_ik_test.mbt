@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody_ik.rs (one_link_fwd_kinematics).
-#skip
 test "one link fwd kinematics" {
   let bodies = RigidBodySet::new()
   let multibodies = MultibodyJointSet::new()
@@ -62,8 +61,17 @@ test "one link fwd kinematics" {
       inspect(link_pose1.translation.y == link_pose2.translation.y, content="true")
     }
 
-    let displacement_part = [ -0.1F ]
-    let displacement_total = [ -0.1F ]
+    let niter = 100
+    let niter_real = Float::from_double(niter.to_double())
+    let displacement_part : Array[@core.Real] = []
+    for i in 0..<multibody.ndofs() {
+      let value = Float::from_double(i.to_double()) * -0.1F / niter_real
+      displacement_part.push(value)
+    }
+    let displacement_total : Array[@core.Real] = []
+    for value in displacement_part {
+      displacement_total.push(value * niter_real)
+    }
     multibody.forward_kinematics_single_link(
       bodies,
       last_id,
@@ -71,7 +79,7 @@ test "one link fwd kinematics" {
       Some(jacobian2),
     ) |> ignore
 
-    for _ in 0..<100 {
+    for _ in 0..<niter {
       multibody.apply_displacements(displacement_part)
       multibody.forward_kinematics(bodies, false)
     }
