@@ -19,8 +19,20 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
 ENGINE_DIR="$REPO_DIR/mgstudio-engine"
 TARGET=${TARGET:-wasm-gc}
+RUNTIME_DIR="$SCRIPT_DIR/mbt"
+RUNTIME_BUNDLE="$RUNTIME_DIR/_build/js/release/build/mgstudio-runtime-web.js"
+WEB_BUNDLE="$SCRIPT_DIR/mgstudio-runtime-web.js"
 
 moon build --release --target "$TARGET" -C "$ENGINE_DIR" "$ENGINE_DIR/examples/runner"
+moon build --release --target js -C "$RUNTIME_DIR"
+
+if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
+  echo "Runtime JS bundle not found at $RUNTIME_BUNDLE" >&2
+  exit 1
+fi
+
+cp "$RUNTIME_BUNDLE" "$WEB_BUNDLE"
+echo "Copied runtime JS bundle to $WEB_BUNDLE"
 
 WASM_PATH="$ENGINE_DIR/_build/$TARGET/release/build/examples/runner/runner.wasm"
 if [[ ! -f "$WASM_PATH" ]]; then

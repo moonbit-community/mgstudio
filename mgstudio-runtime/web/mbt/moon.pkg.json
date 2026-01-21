@@ -1,0 +1,11 @@
+{
+  "is-main": true,
+  "import": [
+    "mizchi/js",
+    "mizchi/js/builtins/arraybuffer",
+    "mizchi/js/browser/dom",
+    "mizchi/js/web/http",
+    "mizchi/js/web/webassembly",
+    "Milky2018/mgstudio-runtime-web/webgpu"
+  ]
+}
