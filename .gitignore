@@ -1,4 +1,5 @@
 bevy
+rapier
 .DS_Store
 AGENTS.md
 .private/
