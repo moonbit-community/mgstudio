@@ -7,18 +7,6 @@
     }
   ],
   "link": {
-    "wasm": {
-      "exports": [
-        "main",
-        "run_sprite",
-        "run_move_sprite",
-        "run_rotation",
-        "run_rotate_to_cursor",
-        "run_2d_viewport_to_world",
-        "run_sprite_scale",
-        "run_sprite_flipping"
-      ]
-    },
     "wasm-gc": {
       "use-js-builtin-string": true,
       "imported-string-constants": "_",

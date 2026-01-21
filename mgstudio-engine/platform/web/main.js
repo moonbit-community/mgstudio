@@ -62,26 +62,47 @@ function createStatusOverlay() {
   };
 }
 
+function getRunTargetFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const target = params.get("run");
+  return target ? target.trim() : "";
+}
+
+function reloadWithRunTarget(target) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("run", target);
+  window.location.href = url.toString();
+}
+
 function setupMenu({ onRun, onReload }) {
   const menu = document.getElementById("mgstudio-menu");
   if (!menu) {
     return null;
   }
   const buttons = Array.from(menu.querySelectorAll("button"));
+  const runButtons = [];
+  let reloadButton = null;
   buttons.forEach((button) => {
     const runTarget = button.dataset.run;
     const action = button.dataset.action;
     if (runTarget) {
+      runButtons.push(button);
       button.addEventListener("click", () => onRun(runTarget, button));
     } else if (action === "reload") {
+      reloadButton = button;
       button.addEventListener("click", () => onReload(button));
     }
   });
   return {
-    setEnabled(enabled) {
-      buttons.forEach((button) => {
+    setRunEnabled(enabled) {
+      runButtons.forEach((button) => {
         button.disabled = !enabled;
       });
+    },
+    setReloadEnabled(enabled) {
+      if (reloadButton) {
+        reloadButton.disabled = !enabled;
+      }
     },
   };
 }
@@ -121,30 +142,34 @@ async function main() {
   setStatus("WASM loaded. Choose an example.");
 
   let running = false;
+  const startExample = (name) => {
+    const entry = instance.exports[name];
+    if (typeof entry !== "function") {
+      setStatus(`Missing export: ${name}`);
+      return false;
+    }
+    running = true;
+    entry();
+    setStatus(`Running: ${name.replace("run_", "")}`);
+    return true;
+  };
   const menu = setupMenu({
     onRun: (name, button) => {
       if (running) {
+        reloadWithRunTarget(name);
         return;
       }
-      const entry = instance.exports[name];
-      if (typeof entry !== "function") {
-        setStatus(`Missing export: ${name}`);
-        return;
-      }
-      running = true;
-      if (menu) {
-        menu.setEnabled(false);
-      }
-      entry();
-      if (button) {
-        button.disabled = true;
-      }
-      setStatus(`Running: ${name.replace("run_", "")}`);
+      startExample(name);
     },
     onReload: () => {
       window.location.reload();
     },
   });
+
+  const autoRun = getRunTargetFromUrl();
+  if (autoRun) {
+    startExample(autoRun);
+  }
 
   if (!menu) {
     setStatus(`WASM loaded. Exports: ${exportNames.join(", ")}`);
