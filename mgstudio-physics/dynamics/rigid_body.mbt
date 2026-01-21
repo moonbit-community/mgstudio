@@ -338,9 +338,9 @@ pub fn RigidBodySet::remove(
   }
   islands |> ignore
   colliders |> ignore
-  impulse_joints |> ignore
-  multibody_joints |> ignore
   wake_up |> ignore
+  impulse_joints.remove_joints_attached_to_rigid_body(handle)
+  multibody_joints.remove_joints_attached_to_rigid_body(handle)
 }
 
 ///|

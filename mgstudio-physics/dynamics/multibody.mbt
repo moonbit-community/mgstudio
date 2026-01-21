@@ -552,3 +552,14 @@ pub fn MultibodyJointSet::get_mut(
 ) -> (Multibody, LinkId)? {
   self.get(handle)
 }
+
+fn MultibodyJointSet::remove_joints_attached_to_rigid_body(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Unit {
+  if handle.id < 0 {
+    return
+  }
+  self.ensure_body_capacity(handle.id)
+  self.body_links[handle.id] = None
+}
