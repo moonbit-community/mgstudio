@@ -825,7 +825,7 @@ fn fs_main() -> @location(0) vec4<f32> {
         return id;
       },
       gpu_create_render_target(width, height, nearest) {
-        const { device } = state.gpu;
+        const { device, format } = state.gpu;
         if (!device) {
           throw new Error("GPU device not ready");
         }
@@ -834,9 +834,10 @@ fn fs_main() -> @location(0) vec4<f32> {
         state.gpu.nextTextureId += 1;
         const safeWidth = Math.max(1, Number(width));
         const safeHeight = Math.max(1, Number(height));
+        const targetFormat = format || "bgra8unorm";
         const texture = device.createTexture({
           size: [safeWidth, safeHeight, 1],
-          format: "rgba8unorm",
+          format: targetFormat,
           usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
         });
         const entry = {
