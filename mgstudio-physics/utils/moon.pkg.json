@@ -1,0 +1,8 @@
+{
+  "import": [
+    "Milky2018/mgstudio_physics/core"
+  ],
+  "test-import": [
+    "Milky2018/mgstudio_physics/core"
+  ]
+}
