@@ -50,9 +50,7 @@ fn move_sprite_setup() -> Unit {
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let transform = @math.Transform::identity()
   @render2d.SpriteBundle::new(sprite, transform, texture).spawn() |> ignore
-  let camera = @render2d.Camera2d::new(
-    @render2d.Color::new(0.5F, 0.5F, 0.5F, 1.0F),
-  )
+  let camera = @render2d.Camera2d::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
   |> ignore
   move_state.val.direction = Direction::Right

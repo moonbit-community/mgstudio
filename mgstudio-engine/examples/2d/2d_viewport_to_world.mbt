@@ -45,9 +45,7 @@ fn viewport_to_world_setup() -> Unit {
   let sprite_transform = @math.Transform::identity()
   @render2d.SpriteBundle::new(sprite, sprite_transform, texture).spawn()
   |> ignore
-  let camera = @render2d.Camera2d::new(
-    @render2d.Color::new(0.5F, 0.5F, 0.5F, 1.0F),
-  )
+  let camera = @render2d.Camera2d::default()
   let camera_transform = @math.Transform::identity()
   @render2d.Camera2dBundle::new(camera, camera_transform).spawn() |> ignore
   viewport_state.val.sprite_transform = sprite_transform

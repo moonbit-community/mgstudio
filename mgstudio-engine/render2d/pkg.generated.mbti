@@ -50,6 +50,7 @@ pub struct Camera2d {
   order : Int
   scale : Float
 }
+pub fn Camera2d::default() -> Self
 pub fn Camera2d::new(Color) -> Self
 pub fn Camera2d::with_order(Self, Int) -> Self
 pub fn Camera2d::with_scale(Self, Float) -> Self

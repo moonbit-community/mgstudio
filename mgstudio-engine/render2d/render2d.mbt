@@ -79,6 +79,11 @@ pub fn Camera2d::new(clear_color : Color) -> Camera2d {
 }
 
 ///|
+pub fn Camera2d::default() -> Camera2d {
+  Camera2d::new(Color::new(0.5F, 0.5F, 0.5F, 1.0F))
+}
+
+///|
 pub fn Camera2d::with_order(self : Camera2d, order : Int) -> Camera2d {
   Camera2d::{ ..self, order, }
 }

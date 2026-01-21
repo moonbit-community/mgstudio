@@ -33,9 +33,7 @@ fn mesh2d_setup() -> Unit {
     @math.Vec2::new(128.0F, 128.0F),
   )
   @render2d.Mesh2dBundle::new(mesh, material, transform).spawn() |> ignore
-  let camera = @render2d.Camera2d::new(
-    @render2d.Color::new(0.5F, 0.5F, 0.5F, 1.0F),
-  )
+  let camera = @render2d.Camera2d::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
   |> ignore
 }
