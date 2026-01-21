@@ -336,7 +336,7 @@ pub fn RigidBodySet::remove(
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
   }
-  islands |> ignore
+  islands.remove_body(handle)
   colliders |> ignore
   wake_up |> ignore
   impulse_joints.remove_joints_attached_to_rigid_body(handle)

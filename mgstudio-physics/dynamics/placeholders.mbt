@@ -14,8 +14,31 @@
 
 struct Island {
   bodies : Array[RigidBodyHandle]
-  id_in_awake_list : Int?
+  mut id_in_awake_list : Int?
   sleeping : Bool
+}
+
+fn Island::new(handle : RigidBodyHandle, sleeping : Bool) -> Island {
+  { bodies: [handle], id_in_awake_list: None, sleeping }
+}
+
+fn Island::remove_body(self : Island, handle : RigidBodyHandle) -> Bool {
+  let mut index = -1
+  for i in 0..<self.bodies.length() {
+    if handle_equals(self.bodies[i], handle) {
+      index = i
+      break
+    }
+  }
+  if index < 0 {
+    return false
+  }
+  let last_index = self.bodies.length() - 1
+  if index != last_index {
+    self.bodies[index] = self.bodies[last_index]
+  }
+  self.bodies.pop() |> ignore
+  true
 }
 
 struct SleepCandidate {
@@ -39,6 +62,72 @@ pub fn IslandManager::new() -> IslandManager {
     free_islands: [],
     traversal_candidates: [],
     traversal_timestamp: 0,
+  }
+}
+
+fn IslandManager::insert_island(self : IslandManager, island : Island) -> Int {
+  if self.free_islands.pop() is Some(index) {
+    self.islands[index] = Some(island)
+    index
+  } else {
+    let index = self.islands.length()
+    self.islands.push(Some(island))
+    index
+  }
+}
+
+fn IslandManager::remove_from_awake_list(self : IslandManager, island_id : Int) -> Unit {
+  let island = self.islands[island_id]
+  if island is Some(value) {
+    if value.id_in_awake_list is Some(awake_index) {
+      let island_value = value
+      let last_index = self.awake_islands.length() - 1
+      if awake_index != last_index {
+        let moved_id = self.awake_islands[last_index]
+        self.awake_islands[awake_index] = moved_id
+        if self.islands[moved_id] is Some(moved_island) {
+          let updated_island = moved_island
+          updated_island.id_in_awake_list = Some(awake_index)
+          self.islands[moved_id] = Some(updated_island)
+        }
+      }
+      self.awake_islands.pop() |> ignore
+      island_value.id_in_awake_list = None
+      self.islands[island_id] = Some(island_value)
+    }
+  }
+}
+
+fn IslandManager::insert_body(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+  sleeping : Bool,
+) -> Unit {
+  let island = Island::new(handle, sleeping)
+  if !sleeping {
+    let index = self.awake_islands.length()
+    island.id_in_awake_list = Some(index)
+    let island_id = self.insert_island(island)
+    self.awake_islands.push(island_id)
+  } else {
+    self.insert_island(island) |> ignore
+  }
+}
+
+fn IslandManager::remove_body(self : IslandManager, handle : RigidBodyHandle) -> Unit {
+  for i in 0..<self.islands.length() {
+    if self.islands[i] is Some(island) {
+      if island.remove_body(handle) {
+        if island.bodies.length() == 0 {
+          self.remove_from_awake_list(i)
+          self.islands[i] = None
+          self.free_islands.push(i)
+        } else {
+          self.islands[i] = Some(island)
+        }
+        return
+      }
+    }
   }
 }
 
