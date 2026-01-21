@@ -1,0 +1,4 @@
+runner.wasm
+assets/
+node_modules/
+*.tsbuildinfo

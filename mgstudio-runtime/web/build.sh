@@ -16,12 +16,13 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
+REPO_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
+ENGINE_DIR="$REPO_DIR/mgstudio-engine"
 TARGET=${TARGET:-wasm-gc}
 
-moon build --release --target "$TARGET" -C "$ROOT_DIR" "$ROOT_DIR/examples/runner"
+moon build --release --target "$TARGET" -C "$ENGINE_DIR" "$ENGINE_DIR/examples/runner"
 
-WASM_PATH="$ROOT_DIR/_build/$TARGET/release/build/examples/runner/runner.wasm"
+WASM_PATH="$ENGINE_DIR/_build/$TARGET/release/build/examples/runner/runner.wasm"
 if [[ ! -f "$WASM_PATH" ]]; then
   echo "runner.wasm not found at $WASM_PATH" >&2
   exit 1
@@ -30,7 +31,7 @@ fi
 cp "$WASM_PATH" "$SCRIPT_DIR/runner.wasm"
 echo "Copied runner.wasm to $SCRIPT_DIR/runner.wasm"
 
-ASSETS_DIR="$ROOT_DIR/assets"
+ASSETS_DIR="$ENGINE_DIR/assets"
 if [[ -d "$ASSETS_DIR" ]]; then
   rm -rf "$SCRIPT_DIR/assets"
   cp -R "$ASSETS_DIR" "$SCRIPT_DIR/"
