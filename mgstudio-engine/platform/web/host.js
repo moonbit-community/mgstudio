@@ -19,6 +19,7 @@ export async function createHost({ canvas }) {
     assets: {
       pendingTextures: [],
       lastError: null,
+      fallbackReported: new Set(),
     },
     input: {
       pressed: new Set(),
@@ -609,11 +610,24 @@ fn fs_main() -> @location(0) vec4<f32> {
     ]);
   };
 
+  const reportFallbackUsage = (id, reason) => {
+    if (state.assets.fallbackReported.has(id)) {
+      return;
+    }
+    state.assets.fallbackReported.add(id);
+    const message = `Fallback texture used for id ${id}: ${reason}`;
+    state.assets.lastError = message;
+    console.error(message);
+    window.dispatchEvent(new CustomEvent("mgstudio-asset-error", { detail: message }));
+  };
+
   const getTextureEntry = (id) => {
     const entry = state.gpu.textures.get(id);
     if (entry && entry.view && entry.sampler) {
       return entry;
     }
+    const reason = entry ? "texture not ready" : "texture id not found";
+    reportFallbackUsage(id, reason);
     return state.gpu.textures.get(state.gpu.fallbackTextureId);
   };
 
