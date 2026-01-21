@@ -14,7 +14,7 @@
 
 ///|
 fn main {
-  run_sprite()
+  ()
 }
 
 ///|
