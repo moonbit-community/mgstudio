@@ -17,10 +17,11 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
+TARGET=${TARGET:-wasm-gc}
 
-moon build --release --target wasm-gc -C "$ROOT_DIR" examples/runner
+moon build --release --target "$TARGET" -C "$ROOT_DIR" "$ROOT_DIR/examples/runner"
 
-WASM_PATH="$ROOT_DIR/_build/wasm-gc/release/build/examples/runner/runner.wasm"
+WASM_PATH="$ROOT_DIR/_build/$TARGET/release/build/examples/runner/runner.wasm"
 if [[ ! -f "$WASM_PATH" ]]; then
   echo "runner.wasm not found at $WASM_PATH" >&2
   exit 1

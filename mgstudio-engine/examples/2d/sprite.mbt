@@ -36,6 +36,7 @@ fn sprite_setup() -> Unit {
     @math.Transform::identity(),
   )
   @render2d.render2d_set_sprite_transform(transform)
+  @render2d.render2d_set_camera_transform(@math.Transform::identity())
   sprite_bundle |> ignore
   camera_bundle |> ignore
 }

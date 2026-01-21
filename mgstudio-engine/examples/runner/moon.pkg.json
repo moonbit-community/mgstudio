@@ -4,7 +4,8 @@
     {
       "path": "Milky2018/mgstudio/examples/2d",
       "alias": "examples2d"
-    }
+    },
+    "Milky2018/mgstudio/window"
   ],
   "link": {
     "wasm": {
@@ -12,15 +13,19 @@
         "main",
         "run_sprite",
         "run_move_sprite",
-        "run_rotation"
+        "run_rotation",
+        "run_string_smoke"
       ]
     },
     "wasm-gc": {
+      "use-js-builtin-string": true,
+      "imported-string-constants": "_",
       "exports": [
         "main",
         "run_sprite",
         "run_move_sprite",
-        "run_rotation"
+        "run_rotation",
+        "run_string_smoke"
       ]
     }
   }

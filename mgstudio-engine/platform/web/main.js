@@ -28,16 +28,18 @@ function makePrintChar() {
 }
 
 async function loadWasm(imports) {
+  const wasmOptions = { importedStringConstants: "_" };
   const response = await fetch("./runner.wasm");
   if (!response.ok) {
     throw new Error(`Failed to fetch runner.wasm: ${response.status}`);
   }
+  const fallbackResponse = response.clone();
   try {
-    const { instance } = await WebAssembly.instantiateStreaming(response, imports);
+    const { instance } = await WebAssembly.instantiateStreaming(response, imports, wasmOptions);
     return instance;
   } catch (err) {
-    const buffer = await response.arrayBuffer();
-    const { instance } = await WebAssembly.instantiate(buffer, imports);
+    const buffer = await fallbackResponse.arrayBuffer();
+    const { instance } = await WebAssembly.instantiate(buffer, imports, wasmOptions);
     return instance;
   }
 }
@@ -91,12 +93,19 @@ async function main() {
     setStatus("WebGPU is not available in this browser.");
     return;
   }
+  window.addEventListener("mgstudio-asset-error", (event) => {
+    const message = event?.detail ?? "Unknown asset error";
+    setStatus(`Asset error: ${message}`);
+  });
   const host = await createHost({ canvas });
   await host.init();
   setStatus("WebGPU initialized.");
 
   const imports = {
     ...host,
+    "wasm:js-string": {
+      concat: (a, b) => `${a}${b}`,
+    },
     spectest: {
       print_char: makePrintChar(),
     },

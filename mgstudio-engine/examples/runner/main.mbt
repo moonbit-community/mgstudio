@@ -31,3 +31,8 @@ pub fn run_move_sprite() -> Unit {
 pub fn run_rotation() -> Unit {
   @examples2d.rotation_run()
 }
+
+///|
+pub fn run_string_smoke() -> Unit {
+  @window.host_debug_string("branding/icon.png")
+}

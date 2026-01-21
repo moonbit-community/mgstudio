@@ -18,6 +18,7 @@ export async function createHost({ canvas }) {
     shouldClose: false,
     assets: {
       pendingTexturePath: null,
+      lastError: null,
     },
     input: {
       pressed: new Set(),
@@ -33,13 +34,51 @@ export async function createHost({ canvas }) {
     },
   };
 
-  const resolveAssetUrl = (path) => {
+  const coerceAssetPath = (path) => {
     if (path == null) {
-      return null;
+      throw new Error("Asset path is required");
     }
-    const text = typeof path === "string" ? path : String(path);
+    let current = path;
+    for (let i = 0; i < 4; i += 1) {
+      if (typeof current === "string") {
+        return current;
+      }
+      if (typeof current === "number" || typeof current === "bigint" || typeof current === "boolean") {
+        return `${current}`;
+      }
+      if (typeof current === "object") {
+        if (typeof current.value === "string") {
+          return current.value;
+        }
+        if (typeof current.string === "string") {
+          return current.string;
+        }
+        if (typeof current.toString === "function") {
+          try {
+            current = current.toString();
+            continue;
+          } catch {
+            // Ignore and try other fallbacks.
+          }
+        }
+        if (typeof current.valueOf === "function") {
+          try {
+            current = current.valueOf();
+            continue;
+          } catch {
+            // Ignore and try other fallbacks.
+          }
+        }
+      }
+      break;
+    }
+    throw new Error(`Unsupported asset path type: ${typeof path}`);
+  };
+
+  const resolveAssetUrl = (path) => {
+    const text = coerceAssetPath(path);
     if (!text || text.length === 0) {
-      return null;
+      throw new Error("Asset path is empty");
     }
     if (/^(https?:)?\/\//.test(text) || text.startsWith("data:")) {
       return text;
@@ -56,6 +95,37 @@ export async function createHost({ canvas }) {
       document.body.appendChild(target);
     }
     return target;
+  };
+
+  const getCanvasPixelSize = (target) => {
+    const dpr = window.devicePixelRatio || 1;
+    const width = Math.max(1, Math.floor(target.clientWidth * dpr));
+    const height = Math.max(1, Math.floor(target.clientHeight * dpr));
+    return { width, height };
+  };
+
+  const updateWindowSize = () => {
+    if (!state.window) {
+      return;
+    }
+    const target = state.window.canvas;
+    const { width, height } = getCanvasPixelSize(target);
+    if (width === state.window.width && height === state.window.height) {
+      return;
+    }
+    state.window.width = width;
+    state.window.height = height;
+    target.width = width;
+    target.height = height;
+    if (state.gpu.context && state.gpu.device) {
+      state.gpu.context.configure({
+        device: state.gpu.device,
+        format: state.gpu.format,
+        alphaMode: "premultiplied",
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        size: [width, height],
+      });
+    }
   };
 
   const initInput = () => {
@@ -110,6 +180,7 @@ export async function createHost({ canvas }) {
     state.gpu.textureView = null;
     state.gpu.uniformBuffer = null;
     state.gpu.spriteTransform = { x: 0, y: 0, rotation: 0 };
+    state.gpu.cameraTransform = { x: 0, y: 0, rotation: 0 };
     state.gpu.drawEnabled = false;
     if (state.assets.pendingTexturePath) {
       const pendingPath = state.assets.pendingTexturePath;
@@ -145,9 +216,15 @@ struct VertexOut {
   @location(0) uv : vec2<f32>,
 };
 
+struct TransformData {
+  model : vec4<f32>,
+  view : vec4<f32>,
+  scale : vec4<f32>,
+};
+
 @group(0) @binding(0) var samp : sampler;
 @group(0) @binding(1) var tex : texture_2d<f32>;
-@group(0) @binding(2) var<uniform> u_transform : vec4<f32>;
+@group(0) @binding(2) var<uniform> u_transform : TransformData;
 
 @vertex
 fn vs_main(
@@ -155,14 +232,25 @@ fn vs_main(
   @location(1) uv : vec2<f32>
 ) -> VertexOut {
   var out : VertexOut;
-  let cosv = u_transform.z;
-  let sinv = u_transform.w;
+  let cosv = u_transform.model.z;
+  let sinv = u_transform.model.w;
   let rotated = vec2<f32>(
     position.x * cosv - position.y * sinv,
     position.x * sinv + position.y * cosv
   );
-  let translated = rotated + u_transform.xy;
-  out.position = vec4<f32>(translated, 0.0, 1.0);
+  let translated = rotated + u_transform.model.xy;
+  let cam_cos = u_transform.view.z;
+  let cam_sin = u_transform.view.w;
+  let rel = translated - u_transform.view.xy;
+  let view_pos = vec2<f32>(
+    rel.x * cam_cos - rel.y * cam_sin,
+    rel.x * cam_sin + rel.y * cam_cos
+  );
+  let ndc = vec2<f32>(
+    view_pos.x * u_transform.scale.x,
+    view_pos.y * u_transform.scale.y
+  );
+  out.position = vec4<f32>(ndc, 0.0, 1.0);
   out.uv = uv;
   return out;
 }
@@ -191,19 +279,36 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       fragment: {
         module: shaderModule,
         entryPoint: "fs_main",
-        targets: [{ format }],
+        targets: [
+          {
+            format,
+            blend: {
+              color: {
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+              alpha: {
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+            },
+          },
+        ],
       },
       primitive: {
         topology: "triangle-list",
       },
     });
+    const halfSize = 64;
     const vertices = new Float32Array([
-      -0.6, 0.6, 0.0, 0.0,
-      -0.6, -0.6, 0.0, 1.0,
-      0.6, -0.6, 1.0, 1.0,
-      -0.6, 0.6, 0.0, 0.0,
-      0.6, -0.6, 1.0, 1.0,
-      0.6, 0.6, 1.0, 0.0,
+      -halfSize, halfSize, 0.0, 0.0,
+      -halfSize, -halfSize, 0.0, 1.0,
+      halfSize, -halfSize, 1.0, 1.0,
+      -halfSize, halfSize, 0.0, 0.0,
+      halfSize, -halfSize, 1.0, 1.0,
+      halfSize, halfSize, 1.0, 0.0,
     ]);
     const vertexBuffer = device.createBuffer({
       size: vertices.byteLength,
@@ -218,7 +323,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     }
     if (!state.gpu.uniformBuffer) {
       state.gpu.uniformBuffer = device.createBuffer({
-        size: 16,
+        size: 48,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
     }
@@ -227,7 +332,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       const texture = device.createTexture({
         size: [textureSize, textureSize, 1],
         format: "rgba8unorm",
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
       });
       const pixelData = new Uint8Array(textureSize * textureSize * 4);
       for (let y = 0; y < textureSize; y += 1) {
@@ -261,23 +366,22 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       state.assets.pendingTexturePath = path;
       return;
     }
-    const url = resolveAssetUrl(path);
-    if (!url) {
-      return;
-    }
     try {
+      const url = resolveAssetUrl(path);
       const response = await fetch(url);
       if (!response.ok) {
-        console.warn(`Failed to load texture: ${url}`);
-        return;
+        throw new Error(`Failed to load texture: ${url} (${response.status})`);
       }
       const blob = await response.blob();
-      const image = await createImageBitmap(blob);
+      const image = await createImageBitmap(blob, {
+        premultiplyAlpha: "none",
+        colorSpaceConversion: "none",
+      });
       ensureTextureResources();
       const texture = device.createTexture({
         size: [image.width, image.height, 1],
         format: "rgba8unorm",
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
       });
       queue.copyExternalImageToTexture(
         { source: image },
@@ -287,7 +391,20 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       state.gpu.textureView = texture.createView();
       ensureBindGroup();
     } catch (err) {
-      console.error("Texture load error:", err);
+      const detail = {
+        type: typeof path,
+        tag: Object.prototype.toString.call(path),
+        ctor: path?.constructor?.name,
+        keys: path && typeof path === "object" ? Object.keys(path) : [],
+        props: path && typeof path === "object" ? Object.getOwnPropertyNames(path) : [],
+      };
+      const message = err?.message ?? String(err);
+      state.assets.lastError = message;
+      console.error("Texture load error:", message, detail);
+      window.dispatchEvent(new CustomEvent("mgstudio-asset-error", {
+        detail: `${message} (${detail.type}, ${detail.tag})`,
+      }));
+      throw err;
     }
   };
 
@@ -298,7 +415,10 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
         if (typeof title === "string") {
           document.title = title;
         }
-        state.window = { canvas: target, width, height };
+        const size = getCanvasPixelSize(target);
+        state.window = { canvas: target, width: size.width, height: size.height };
+        target.width = size.width;
+        target.height = size.height;
         return 1;
       },
       window_poll_events(_window) {
@@ -306,10 +426,12 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       },
       window_get_width(windowId) {
         windowId;
+        updateWindowSize();
         return state.window ? state.window.width : 0;
       },
       window_get_height(windowId) {
         windowId;
+        updateWindowSize();
         return state.window ? state.window.height : 0;
       },
       window_should_close(windowId) {
@@ -348,6 +470,28 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       input_finish_frame() {
         state.input.justPressed.clear();
         state.input.justReleased.clear();
+      },
+      debug_string(value) {
+        const detail = {
+          type: typeof value,
+          tag: Object.prototype.toString.call(value),
+          ctor: value?.constructor?.name,
+          keys: value && typeof value === "object" ? Object.keys(value) : [],
+          props: value && typeof value === "object" ? Object.getOwnPropertyNames(value) : [],
+        };
+        console.log("debug_string value:", value, detail);
+        if (value && typeof value === "object") {
+          try {
+            console.log("debug_string toString:", value.toString());
+          } catch (err) {
+            console.log("debug_string toString error:", err);
+          }
+          try {
+            console.log("debug_string valueOf:", value.valueOf());
+          } catch (err) {
+            console.log("debug_string valueOf error:", err);
+          }
+        }
       },
       gpu_request_device() {
         if (!state.gpu.device) {
@@ -394,6 +538,13 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
           rotation: Number(rotation) || 0,
         };
       },
+      gpu_set_camera_transform(x, y, rotation) {
+        state.gpu.cameraTransform = {
+          x: Number(x) || 0,
+          y: Number(y) || 0,
+          rotation: Number(rotation) || 0,
+        };
+      },
       asset_load_texture(path) {
         loadTextureFromPath(path);
       },
@@ -416,12 +567,21 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
           const { width, height } = state.window;
           const scaleX = width > 0 ? 2 / width : 0;
           const scaleY = height > 0 ? 2 / height : 0;
-          const tx = state.gpu.spriteTransform.x * scaleX;
-          const ty = state.gpu.spriteTransform.y * scaleY;
+          const tx = state.gpu.spriteTransform.x;
+          const ty = state.gpu.spriteTransform.y;
           const rotation = state.gpu.spriteTransform.rotation;
           const cos = Math.cos(rotation);
           const sin = Math.sin(rotation);
-          const uniformData = new Float32Array([tx, ty, cos, sin]);
+          const camRotation = state.gpu.cameraTransform.rotation;
+          const camCos = Math.cos(-camRotation);
+          const camSin = Math.sin(-camRotation);
+          const camX = state.gpu.cameraTransform.x;
+          const camY = state.gpu.cameraTransform.y;
+          const uniformData = new Float32Array([
+            tx, ty, cos, sin,
+            camX, camY, camCos, camSin,
+            scaleX, scaleY, 0.0, 0.0,
+          ]);
           queue.writeBuffer(state.gpu.uniformBuffer, 0, uniformData);
         }
         const encoder = device.createCommandEncoder();
@@ -429,7 +589,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
           colorAttachments: [
             {
               view: currentTexture.createView(),
-              clearValue: { r: 0.1, g: 0.6, b: 0.9, a: 1.0 },
+              clearValue: { r: 0.2, g: 0.2, b: 0.2, a: 1.0 },
               loadOp: "clear",
               storeOp: "store",
             },

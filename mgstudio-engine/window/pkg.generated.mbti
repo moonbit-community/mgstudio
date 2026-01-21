@@ -6,6 +6,8 @@ import(
 )
 
 // Values
+pub fn host_debug_string(String) -> Unit
+
 pub fn host_gpu_begin_frame(HostGpuSurface) -> HostGpuFrame
 
 pub fn host_gpu_configure_surface(HostGpuDevice, HostGpuSurface, Int, Int) -> Unit
@@ -17,6 +19,8 @@ pub fn host_gpu_end_frame(HostGpuFrame) -> Unit
 pub fn host_gpu_get_queue(HostGpuDevice) -> HostGpuQueue
 
 pub fn host_gpu_request_device() -> HostGpuDevice
+
+pub fn host_gpu_set_camera_transform(Float, Float, Float) -> Unit
 
 pub fn host_gpu_set_draw_enabled(Bool) -> Unit
 

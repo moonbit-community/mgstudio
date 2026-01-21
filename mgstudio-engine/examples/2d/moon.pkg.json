@@ -7,5 +7,11 @@
     "Milky2018/mgstudio/render2d",
     "Milky2018/mgstudio/time",
     "Milky2018/mgstudio/window"
-  ]
+  ],
+  "link": {
+    "wasm-gc": {
+      "use-js-builtin-string": true,
+      "imported-string-constants": "_"
+    }
+  }
 }

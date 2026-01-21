@@ -146,6 +146,16 @@ pub fn host_gpu_set_sprite_transform(
 ) -> Unit = "mgstudio_host" "gpu_set_sprite_transform"
 
 ///|
+pub fn host_gpu_set_camera_transform(
+  x : Float,
+  y : Float,
+  rotation : Float,
+) -> Unit = "mgstudio_host" "gpu_set_camera_transform"
+
+///|
+pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string"
+
+///|
 pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
   fn() {
     let mut app = app.run_startup()

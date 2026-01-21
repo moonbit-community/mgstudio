@@ -84,12 +84,14 @@ pub fn Camera2dBundle::new(
 priv struct RenderState {
   mut draw_enabled : Bool
   mut sprite_transform : @math.Transform
+  mut camera_transform : @math.Transform
 }
 
 ///|
 let render_state : Ref[RenderState] = @ref.new(RenderState::{
   draw_enabled: false,
   sprite_transform: @math.Transform::identity(),
+  camera_transform: @math.Transform::identity(),
 })
 
 ///|
@@ -115,6 +117,12 @@ pub fn render_execute_system() -> Unit {
     transform.translation.y,
     transform.rotation,
   )
+  let camera = render_state.val.camera_transform
+  @window.host_gpu_set_camera_transform(
+    camera.translation.x,
+    camera.translation.y,
+    camera.rotation,
+  )
   @window.host_gpu_set_draw_enabled(render_state.val.draw_enabled)
   render_state.val.draw_enabled = false
 }
@@ -122,6 +130,11 @@ pub fn render_execute_system() -> Unit {
 ///|
 pub fn render2d_set_sprite_transform(transform : @math.Transform) -> Unit {
   render_state.val.sprite_transform = transform
+}
+
+///|
+pub fn render2d_set_camera_transform(transform : @math.Transform) -> Unit {
+  render_state.val.camera_transform = transform
 }
 
 ///|

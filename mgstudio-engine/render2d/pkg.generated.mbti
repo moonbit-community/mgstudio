@@ -10,6 +10,8 @@ import(
 // Values
 pub fn render2d_plugin(@app.App) -> @app.App
 
+pub fn render2d_set_camera_transform(@math.Transform) -> Unit
+
 pub fn render2d_set_sprite_transform(@math.Transform) -> Unit
 
 pub fn render_execute_system() -> Unit
