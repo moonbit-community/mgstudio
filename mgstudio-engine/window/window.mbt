@@ -167,23 +167,39 @@ pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> HostGpuFrame = "mgstudi
 pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit = "mgstudio_host" "gpu_end_frame"
 
 ///|
-pub fn host_gpu_set_draw_enabled(enabled : Bool) -> Unit = "mgstudio_host" "gpu_set_draw_enabled"
+pub fn host_gpu_begin_pass(
+  target_id : Int,
+  width : Int,
+  height : Int,
+  clear_r : Float,
+  clear_g : Float,
+  clear_b : Float,
+  clear_a : Float,
+  camera_x : Float,
+  camera_y : Float,
+  camera_rotation : Float,
+  camera_scale : Float,
+) -> Unit = "mgstudio_host" "gpu_begin_pass"
 
 ///|
-pub fn host_gpu_set_sprite_transform(
+pub fn host_gpu_draw_sprite(
+  texture_id : Int,
   x : Float,
   y : Float,
   rotation : Float,
   scale_x : Float,
   scale_y : Float,
-) -> Unit = "mgstudio_host" "gpu_set_sprite_transform"
+) -> Unit = "mgstudio_host" "gpu_draw_sprite"
 
 ///|
-pub fn host_gpu_set_camera_transform(
-  x : Float,
-  y : Float,
-  rotation : Float,
-) -> Unit = "mgstudio_host" "gpu_set_camera_transform"
+pub fn host_gpu_end_pass() -> Unit = "mgstudio_host" "gpu_end_pass"
+
+///|
+pub fn host_gpu_create_render_target(
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> Int = "mgstudio_host" "gpu_create_render_target"
 
 ///|
 pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string"
@@ -201,8 +217,8 @@ pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
     host_gpu_configure_surface(device, surface, width, height)
     host_window_run_loop(fn() {
       host_window_poll_events(window)
-      app = app.run_once()
       let frame = host_gpu_begin_frame(surface)
+      app = app.run_once()
       host_gpu_end_frame(frame)
       if host_window_should_close(window) {
         host_window_request_close(window)

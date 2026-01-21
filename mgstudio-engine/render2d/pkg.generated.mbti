@@ -8,11 +8,25 @@ import(
 )
 
 // Values
+pub fn render2d_create_render_target(Int, Int, Bool) -> @asset.Handle[@asset.Image]
+
 pub fn render2d_plugin(@app.App) -> @app.App
+
+pub fn render2d_set_camera_scale(Float) -> Unit
+
+pub fn render2d_set_camera_scale_handle(CameraHandle, Float) -> Unit
 
 pub fn render2d_set_camera_transform(@math.Transform) -> Unit
 
+pub fn render2d_set_camera_transform_handle(CameraHandle, @math.Transform) -> Unit
+
 pub fn render2d_set_sprite_transform(@math.Transform) -> Unit
+
+pub fn render2d_set_sprite_transform_handle(SpriteHandle, @math.Transform) -> Unit
+
+pub fn render2d_spawn_camera(Camera2dBundle) -> CameraHandle
+
+pub fn render2d_spawn_sprite(SpriteBundle) -> SpriteHandle
 
 pub fn render2d_viewport_to_world_2d(@math.Vec2) -> @math.Vec2?
 
@@ -29,14 +43,28 @@ pub fn render_queue_system() -> Unit
 // Types and methods
 pub struct Camera2d {
   clear_color : Color
+  order : Int
+  scale : Float
 }
 pub fn Camera2d::new(Color) -> Self
+pub fn Camera2d::with_order(Self, Int) -> Self
+pub fn Camera2d::with_scale(Self, Float) -> Self
 
 pub struct Camera2dBundle {
   camera : Camera2d
   transform : @math.Transform
+  target : RenderTarget
+  layers : RenderLayers
 }
 pub fn Camera2dBundle::new(Camera2d, @math.Transform) -> Self
+pub fn Camera2dBundle::new_with_layers(Camera2d, @math.Transform, RenderTarget, RenderLayers) -> Self
+pub fn Camera2dBundle::new_with_target(Camera2d, @math.Transform, RenderTarget) -> Self
+pub fn Camera2dBundle::spawn(Self) -> CameraHandle
+
+pub struct CameraHandle {
+  id : Int
+}
+pub fn CameraHandle::new(Int) -> Self
 
 pub struct Color {
   r : Float
@@ -47,6 +75,18 @@ pub struct Color {
 pub fn Color::new(Float, Float, Float, Float) -> Self
 pub fn Color::white() -> Self
 
+pub struct RenderLayers {
+  mask : Int
+}
+pub fn RenderLayers::default() -> Self
+pub fn RenderLayers::layer(Int) -> Self
+pub fn RenderLayers::matches(Self, Self) -> Bool
+
+pub(all) enum RenderTarget {
+  Screen
+  Image(@asset.Handle[@asset.Image])
+}
+
 pub struct Sprite {
   color : Color
 }
@@ -56,8 +96,16 @@ pub struct SpriteBundle {
   sprite : Sprite
   transform : @math.Transform
   texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
 }
 pub fn SpriteBundle::new(Sprite, @math.Transform, @asset.Handle[@asset.Image]) -> Self
+pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, @asset.Handle[@asset.Image], RenderLayers) -> Self
+pub fn SpriteBundle::spawn(Self) -> SpriteHandle
+
+pub struct SpriteHandle {
+  id : Int
+}
+pub fn SpriteHandle::new(Int) -> Self
 
 // Type aliases
 

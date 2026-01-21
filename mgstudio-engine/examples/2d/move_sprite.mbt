@@ -49,18 +49,14 @@ fn move_sprite_setup() -> Unit {
   let texture = asset_server.load("branding/icon.png")
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let transform = @math.Transform::identity()
-  let sprite_bundle = @render2d.SpriteBundle::new(sprite, transform, texture)
+  @render2d.SpriteBundle::new(sprite, transform, texture).spawn() |> ignore
   let camera = @render2d.Camera2d::new(@render2d.Color::white())
-  let camera_bundle = @render2d.Camera2dBundle::new(
-    camera,
-    @math.Transform::identity(),
-  )
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  |> ignore
   move_state.val.direction = Direction::Right
   move_state.val.transform = transform
   @render2d.render2d_set_sprite_transform(transform)
   @render2d.render2d_set_camera_transform(@math.Transform::identity())
-  sprite_bundle |> ignore
-  camera_bundle |> ignore
 }
 
 ///|

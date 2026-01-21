@@ -24,6 +24,11 @@ pub fn[T] Handle::new(id : Int) -> Handle[T] {
 }
 
 ///|
+pub fn[T] Handle::id(self : Handle[T]) -> Int {
+  self.id
+}
+
+///|
 pub struct Image {
   width : Int
   height : Int
@@ -37,24 +42,39 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
 
 ///|
 pub struct AssetServer {
-  mut next_id : Int
   paths : Array[String]
 }
 
 ///|
 pub fn AssetServer::new() -> AssetServer {
-  AssetServer::{ next_id: 0, paths: [] }
+  AssetServer::{ paths: [] }
 }
 
 ///|
-pub fn host_asset_load_texture(path : String) -> Unit = "mgstudio_host" "asset_load_texture"
+let asset_default_nearest : Ref[Bool] = @ref.new(false)
+
+///|
+pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {
+  asset_default_nearest.val = enabled
+}
+
+///|
+pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int = "mgstudio_host" "asset_load_texture"
 
 ///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
-  let id = self.next_id
-  self.next_id = self.next_id + 1
+  let id = host_asset_load_texture(path, asset_default_nearest.val)
   self.paths.push(path)
-  host_asset_load_texture(path)
+  Handle::new(id)
+}
+
+///|
+pub fn AssetServer::load_nearest(
+  self : AssetServer,
+  path : String,
+) -> Handle[Image] {
+  let id = host_asset_load_texture(path, true)
+  self.paths.push(path)
   Handle::new(id)
 }
 
@@ -65,5 +85,11 @@ pub fn asset_system() -> Unit {
 
 ///|
 pub fn asset_plugin(app : @app.App) -> @app.App {
+  app.add_system(asset_system)
+}
+
+///|
+pub fn asset_plugin_nearest(app : @app.App) -> @app.App {
+  asset_set_default_sampler_nearest(true)
   app.add_system(asset_system)
 }

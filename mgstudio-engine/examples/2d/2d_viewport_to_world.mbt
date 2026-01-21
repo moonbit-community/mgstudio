@@ -43,18 +43,15 @@ fn viewport_to_world_setup() -> Unit {
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let sprite_transform = @math.Transform::identity()
-  let sprite_bundle = @render2d.SpriteBundle::new(
-    sprite, sprite_transform, texture,
-  )
+  @render2d.SpriteBundle::new(sprite, sprite_transform, texture).spawn()
+  |> ignore
   let camera = @render2d.Camera2d::new(@render2d.Color::white())
   let camera_transform = @math.Transform::identity()
-  let camera_bundle = @render2d.Camera2dBundle::new(camera, camera_transform)
+  @render2d.Camera2dBundle::new(camera, camera_transform).spawn() |> ignore
   viewport_state.val.sprite_transform = sprite_transform
   viewport_state.val.camera_transform = camera_transform
   @render2d.render2d_set_sprite_transform(sprite_transform)
   @render2d.render2d_set_camera_transform(camera_transform)
-  sprite_bundle |> ignore
-  camera_bundle |> ignore
 }
 
 ///|

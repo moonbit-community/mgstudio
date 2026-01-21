@@ -6,6 +6,8 @@ pub fn run_2d_viewport_to_world() -> Unit
 
 pub fn run_move_sprite() -> Unit
 
+pub fn run_pixel_grid_snap() -> Unit
+
 pub fn run_rotate_to_cursor() -> Unit
 
 pub fn run_rotation() -> Unit

@@ -17,7 +17,7 @@ export async function createHost({ canvas }) {
     window: null,
     shouldClose: false,
     assets: {
-      pendingTexturePath: null,
+      pendingTextures: [],
       lastError: null,
     },
     input: {
@@ -38,6 +38,17 @@ export async function createHost({ canvas }) {
       queue: null,
       context: null,
       format: null,
+      pipeline: null,
+      vertexBuffer: null,
+      vertexCount: 0,
+      uniformBuffer: null,
+      encoder: null,
+      currentTexture: null,
+      currentPass: null,
+      currentPassInfo: null,
+      textures: new Map(),
+      nextTextureId: 1,
+      fallbackTextureId: 0,
     },
   };
 
@@ -236,36 +247,36 @@ export async function createHost({ canvas }) {
     state.gpu.pipeline = null;
     state.gpu.vertexBuffer = null;
     state.gpu.vertexCount = 0;
-    state.gpu.bindGroup = null;
-    state.gpu.sampler = null;
-    state.gpu.textureView = null;
     state.gpu.uniformBuffer = null;
-    state.gpu.spriteTransform = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
-    state.gpu.cameraTransform = { x: 0, y: 0, rotation: 0 };
-    state.gpu.drawEnabled = false;
-    if (state.assets.pendingTexturePath) {
-      const pendingPath = state.assets.pendingTexturePath;
-      state.assets.pendingTexturePath = null;
-      loadTextureFromPath(pendingPath);
+    state.gpu.encoder = null;
+    state.gpu.currentTexture = null;
+    state.gpu.currentPass = null;
+    state.gpu.currentPassInfo = null;
+    state.gpu.textures = new Map();
+    state.gpu.nextTextureId = 1;
+    state.gpu.fallbackTextureId = 0;
+    if (state.assets.pendingTextures.length > 0) {
+      const pending = [...state.assets.pendingTextures];
+      state.assets.pendingTextures = [];
+      pending.forEach(({ id, path, nearest }) => {
+        loadTextureFromPath(id, path, nearest);
+      });
     }
   };
 
-  const ensureBindGroup = () => {
-    const { pipeline, sampler, textureView, uniformBuffer } = state.gpu;
-    if (!pipeline || !sampler || !textureView || !uniformBuffer) {
-      return;
+  const createSampler = (nearest) => {
+    const { device } = state.gpu;
+    if (!device) {
+      return null;
     }
-    state.gpu.bindGroup = state.gpu.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: sampler },
-        { binding: 1, resource: textureView },
-        { binding: 2, resource: { buffer: uniformBuffer } },
-      ],
+    const filter = nearest ? "nearest" : "linear";
+    return device.createSampler({
+      magFilter: filter,
+      minFilter: filter,
     });
   };
 
-  const ensureTextureResources = () => {
+  const ensurePipelineResources = () => {
     const { device, format } = state.gpu;
     if (!device || state.gpu.pipeline) {
       return;
@@ -380,55 +391,79 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
     device.queue.writeBuffer(vertexBuffer, 0, vertices);
-    if (!state.gpu.sampler) {
-      state.gpu.sampler = device.createSampler({
-        magFilter: "nearest",
-        minFilter: "nearest",
-      });
-    }
-    if (!state.gpu.uniformBuffer) {
-      state.gpu.uniformBuffer = device.createBuffer({
-        size: 48,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-      });
-    }
-    if (!state.gpu.textureView) {
-      const textureSize = 64;
-      const texture = device.createTexture({
-        size: [textureSize, textureSize, 1],
-        format: "rgba8unorm",
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-      });
-      const pixelData = new Uint8Array(textureSize * textureSize * 4);
-      for (let y = 0; y < textureSize; y += 1) {
-        for (let x = 0; x < textureSize; x += 1) {
-          const offset = (y * textureSize + x) * 4;
-          const checker = ((x >> 3) ^ (y >> 3)) & 1;
-          const base = checker ? 220 : 40;
-          pixelData[offset] = base;
-          pixelData[offset + 1] = 120;
-          pixelData[offset + 2] = 255 - base;
-          pixelData[offset + 3] = 255;
-        }
+    state.gpu.uniformBuffer = device.createBuffer({
+      size: 48,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    const textureSize = 64;
+    const texture = device.createTexture({
+      size: [textureSize, textureSize, 1],
+      format: "rgba8unorm",
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    const pixelData = new Uint8Array(textureSize * textureSize * 4);
+    for (let y = 0; y < textureSize; y += 1) {
+      for (let x = 0; x < textureSize; x += 1) {
+        const offset = (y * textureSize + x) * 4;
+        const checker = ((x >> 3) ^ (y >> 3)) & 1;
+        const base = checker ? 220 : 40;
+        pixelData[offset] = base;
+        pixelData[offset + 1] = 120;
+        pixelData[offset + 2] = 255 - base;
+        pixelData[offset + 3] = 255;
       }
-      device.queue.writeTexture(
-        { texture },
-        pixelData,
-        { bytesPerRow: textureSize * 4 },
-        [textureSize, textureSize, 1],
-      );
-      state.gpu.textureView = texture.createView();
     }
+    device.queue.writeTexture(
+      { texture },
+      pixelData,
+      { bytesPerRow: textureSize * 4 },
+      [textureSize, textureSize, 1],
+    );
+    const sampler = createSampler(true);
+    state.gpu.textures.set(state.gpu.fallbackTextureId, {
+      id: state.gpu.fallbackTextureId,
+      texture,
+      view: texture.createView(),
+      sampler,
+      bindGroup: null,
+      width: textureSize,
+      height: textureSize,
+    });
     state.gpu.pipeline = pipeline;
     state.gpu.vertexBuffer = vertexBuffer;
     state.gpu.vertexCount = 6;
-    ensureBindGroup();
   };
 
-  const loadTextureFromPath = async (path) => {
+  const ensureBindGroupForTexture = (entry) => {
+    const { pipeline, uniformBuffer, device } = state.gpu;
+    if (!pipeline || !uniformBuffer || !device || !entry || entry.bindGroup) {
+      return;
+    }
+    if (!entry.sampler || !entry.view) {
+      return;
+    }
+    entry.bindGroup = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: entry.sampler },
+        { binding: 1, resource: entry.view },
+        { binding: 2, resource: { buffer: uniformBuffer } },
+      ],
+    });
+  };
+
+  const getTextureEntry = (id) => {
+    const entry = state.gpu.textures.get(id);
+    if (entry && entry.view && entry.sampler) {
+      return entry;
+    }
+    return state.gpu.textures.get(state.gpu.fallbackTextureId);
+  };
+
+  const loadTextureFromPath = async (id, path, nearest) => {
     const { device, queue } = state.gpu;
     if (!device || !queue) {
-      state.assets.pendingTexturePath = path;
+      state.assets.pendingTextures.push({ id, path, nearest });
       return;
     }
     try {
@@ -442,7 +477,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
         premultiplyAlpha: "none",
         colorSpaceConversion: "none",
       });
-      ensureTextureResources();
+      ensurePipelineResources();
       const texture = device.createTexture({
         size: [image.width, image.height, 1],
         format: "rgba8unorm",
@@ -453,8 +488,17 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
         { texture },
         [image.width, image.height],
       );
-      state.gpu.textureView = texture.createView();
-      ensureBindGroup();
+      const entry = {
+        id,
+        texture,
+        view: texture.createView(),
+        sampler: createSampler(nearest),
+        bindGroup: null,
+        width: image.width,
+        height: image.height,
+      };
+      state.gpu.textures.set(id, entry);
+      ensureBindGroupForTexture(entry);
     } catch (err) {
       const detail = {
         type: typeof path,
@@ -617,85 +661,175 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
           size: [width, height],
         });
       },
-      gpu_set_draw_enabled(enabled) {
-        state.gpu.drawEnabled = !!enabled;
+      asset_load_texture(path, nearest) {
+        const id = state.gpu.nextTextureId;
+        state.gpu.nextTextureId += 1;
+        loadTextureFromPath(id, path, !!nearest);
+        return id;
       },
-      gpu_set_sprite_transform(x, y, rotation, scaleX, scaleY) {
-        state.gpu.spriteTransform = {
-          x: Number(x) || 0,
-          y: Number(y) || 0,
-          rotation: Number(rotation) || 0,
-          scaleX: Number(scaleX) || 1,
-          scaleY: Number(scaleY) || 1,
+      gpu_create_render_target(width, height, nearest) {
+        const { device } = state.gpu;
+        if (!device) {
+          throw new Error("GPU device not ready");
+        }
+        ensurePipelineResources();
+        const id = state.gpu.nextTextureId;
+        state.gpu.nextTextureId += 1;
+        const safeWidth = Math.max(1, Number(width));
+        const safeHeight = Math.max(1, Number(height));
+        const texture = device.createTexture({
+          size: [safeWidth, safeHeight, 1],
+          format: "rgba8unorm",
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
+        });
+        const entry = {
+          id,
+          texture,
+          view: texture.createView(),
+          sampler: createSampler(!!nearest),
+          bindGroup: null,
+          width: safeWidth,
+          height: safeHeight,
         };
-      },
-      gpu_set_camera_transform(x, y, rotation) {
-        state.gpu.cameraTransform = {
-          x: Number(x) || 0,
-          y: Number(y) || 0,
-          rotation: Number(rotation) || 0,
-        };
-      },
-      asset_load_texture(path) {
-        loadTextureFromPath(path);
+        state.gpu.textures.set(id, entry);
+        ensureBindGroupForTexture(entry);
+        return id;
       },
       gpu_begin_frame(_surface) {
-        const { context } = state.gpu;
-        if (!context) {
+        const { context, device } = state.gpu;
+        if (!context || !device) {
           return 0;
         }
+        updateWindowSize();
+        ensurePipelineResources();
+        state.gpu.encoder = device.createCommandEncoder();
         state.gpu.currentTexture = context.getCurrentTexture();
         return 1;
       },
-      gpu_end_frame(_frame) {
-        const { device, queue, currentTexture } = state.gpu;
-        if (!device || !queue || !currentTexture) {
+      gpu_begin_pass(
+        targetId,
+        width,
+        height,
+        clearR,
+        clearG,
+        clearB,
+        clearA,
+        camX,
+        camY,
+        camRotation,
+        camScale,
+      ) {
+        const { encoder, currentTexture } = state.gpu;
+        if (!encoder) {
           return;
         }
-        ensureTextureResources();
-        const { pipeline, vertexBuffer, vertexCount, bindGroup } = state.gpu;
-        if (state.gpu.uniformBuffer && state.window) {
-          const { width, height } = state.window;
-          const scaleX = width > 0 ? 2 / width : 0;
-          const scaleY = height > 0 ? 2 / height : 0;
-          const tx = state.gpu.spriteTransform.x;
-          const ty = state.gpu.spriteTransform.y;
-          const rotation = state.gpu.spriteTransform.rotation;
-          const cos = Math.cos(rotation);
-          const sin = Math.sin(rotation);
-          const camRotation = state.gpu.cameraTransform.rotation;
-          const camCos = Math.cos(-camRotation);
-          const camSin = Math.sin(-camRotation);
-          const camX = state.gpu.cameraTransform.x;
-          const camY = state.gpu.cameraTransform.y;
-          const uniformData = new Float32Array([
-            tx, ty, cos, sin,
-            camX, camY, camCos, camSin,
-            scaleX, scaleY, state.gpu.spriteTransform.scaleX, state.gpu.spriteTransform.scaleY,
-          ]);
-          queue.writeBuffer(state.gpu.uniformBuffer, 0, uniformData);
+        let view = null;
+        const resolvedTarget = Number(targetId);
+        if (resolvedTarget < 0) {
+          if (!currentTexture) {
+            return;
+          }
+          view = currentTexture.createView();
+        } else {
+          const target = state.gpu.textures.get(resolvedTarget);
+          if (!target || !target.view) {
+            return;
+          }
+          view = target.view;
         }
-        const encoder = device.createCommandEncoder();
         const pass = encoder.beginRenderPass({
           colorAttachments: [
             {
-              view: currentTexture.createView(),
-              clearValue: { r: 0.2, g: 0.2, b: 0.2, a: 1.0 },
+              view,
+              clearValue: {
+                r: Number(clearR) || 0,
+                g: Number(clearG) || 0,
+                b: Number(clearB) || 0,
+                a: Number(clearA) || 1,
+              },
               loadOp: "clear",
               storeOp: "store",
             },
           ],
         });
-        if (state.gpu.drawEnabled && pipeline && vertexBuffer && vertexCount > 0) {
-          pass.setPipeline(pipeline);
-          if (bindGroup) {
-            pass.setBindGroup(0, bindGroup);
-          }
-          pass.setVertexBuffer(0, vertexBuffer);
-          pass.draw(vertexCount);
+        state.gpu.currentPass = pass;
+        state.gpu.currentPassInfo = {
+          width: Math.max(1, Number(width)),
+          height: Math.max(1, Number(height)),
+          camX: Number(camX) || 0,
+          camY: Number(camY) || 0,
+          camRotation: Number(camRotation) || 0,
+          camScale: Number(camScale) || 1,
+        };
+      },
+      gpu_draw_sprite(textureId, x, y, rotation, scaleX, scaleY) {
+        const { currentPass, currentPassInfo, pipeline, vertexBuffer, vertexCount, uniformBuffer } = state.gpu;
+        if (!currentPass || !currentPassInfo || !pipeline || !vertexBuffer || !uniformBuffer) {
+          return;
         }
-        pass.end();
+        const entry = getTextureEntry(Number(textureId));
+        if (!entry) {
+          return;
+        }
+        ensureBindGroupForTexture(entry);
+        if (!entry.bindGroup) {
+          return;
+        }
+        const baseSize = 128;
+        const texScaleX = entry.width > 0 ? entry.width / baseSize : 1;
+        const texScaleY = entry.height > 0 ? entry.height / baseSize : 1;
+        const spriteScaleX = (Number(scaleX) || 1) * texScaleX;
+        const spriteScaleY = (Number(scaleY) || 1) * texScaleY;
+        const width = currentPassInfo.width;
+        const height = currentPassInfo.height;
+        const scaleXBase = width > 0 ? (2 / width) * currentPassInfo.camScale : 0;
+        const scaleYBase = height > 0 ? (2 / height) * currentPassInfo.camScale : 0;
+        const angle = Number(rotation) || 0;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const camRotation = currentPassInfo.camRotation;
+        const camCos = Math.cos(-camRotation);
+        const camSin = Math.sin(-camRotation);
+        const uniformData = new Float32Array([
+          Number(x) || 0,
+          Number(y) || 0,
+          cos,
+          sin,
+          currentPassInfo.camX,
+          currentPassInfo.camY,
+          camCos,
+          camSin,
+          scaleXBase,
+          scaleYBase,
+          spriteScaleX,
+          spriteScaleY,
+        ]);
+        state.gpu.queue.writeBuffer(uniformBuffer, 0, uniformData);
+        currentPass.setPipeline(pipeline);
+        currentPass.setBindGroup(0, entry.bindGroup);
+        currentPass.setVertexBuffer(0, vertexBuffer);
+        currentPass.draw(vertexCount);
+      },
+      gpu_end_pass() {
+        if (state.gpu.currentPass) {
+          state.gpu.currentPass.end();
+        }
+        state.gpu.currentPass = null;
+        state.gpu.currentPassInfo = null;
+      },
+      gpu_end_frame(_frame) {
+        const { device, queue, encoder } = state.gpu;
+        if (!device || !queue || !encoder) {
+          return;
+        }
+        if (state.gpu.currentPass) {
+          state.gpu.currentPass.end();
+          state.gpu.currentPass = null;
+          state.gpu.currentPassInfo = null;
+        }
         queue.submit([encoder.finish()]);
+        state.gpu.encoder = null;
+        state.gpu.currentTexture = null;
       },
     },
     init: async () => {

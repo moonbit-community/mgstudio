@@ -33,14 +33,10 @@ fn sprite_flipping_setup() -> Unit {
     0.0F,
     @math.Vec2::new(-1.0F, 1.0F),
   )
-  let sprite_bundle = @render2d.SpriteBundle::new(sprite, transform, texture)
+  @render2d.SpriteBundle::new(sprite, transform, texture).spawn() |> ignore
   let camera = @render2d.Camera2d::new(@render2d.Color::white())
-  let camera_bundle = @render2d.Camera2dBundle::new(
-    camera,
-    @math.Transform::identity(),
-  )
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  |> ignore
   @render2d.render2d_set_sprite_transform(transform)
   @render2d.render2d_set_camera_transform(@math.Transform::identity())
-  sprite_bundle |> ignore
-  camera_bundle |> ignore
 }

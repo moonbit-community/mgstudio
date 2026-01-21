@@ -8,24 +8,29 @@ import(
 // Values
 pub fn asset_plugin(@app.App) -> @app.App
 
+pub fn asset_plugin_nearest(@app.App) -> @app.App
+
+pub fn asset_set_default_sampler_nearest(Bool) -> Unit
+
 pub fn asset_system() -> Unit
 
-pub fn host_asset_load_texture(String) -> Unit
+pub fn host_asset_load_texture(String, Bool) -> Int
 
 // Errors
 
 // Types and methods
 pub struct AssetServer {
-  mut next_id : Int
   paths : Array[String]
 }
 pub fn AssetServer::load(Self, String) -> Handle[Image]
+pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
 pub fn AssetServer::new() -> Self
 
 pub struct Handle[T] {
   id : Int
   phantom : T?
 }
+pub fn[T] Handle::id(Self[T]) -> Int
 pub fn[T] Handle::new(Int) -> Self[T]
 
 pub struct Image {

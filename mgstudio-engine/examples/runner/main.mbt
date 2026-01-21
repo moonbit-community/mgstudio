@@ -43,6 +43,11 @@ pub fn run_2d_viewport_to_world() -> Unit {
 }
 
 ///|
+pub fn run_pixel_grid_snap() -> Unit {
+  @examples2d.pixel_grid_snap_run()
+}
+
+///|
 pub fn run_sprite_scale() -> Unit {
   @examples2d.sprite_scale_run()
 }
