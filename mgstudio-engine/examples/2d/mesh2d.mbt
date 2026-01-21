@@ -25,7 +25,7 @@ pub fn mesh2d_run() -> Unit {
 fn mesh2d_setup() -> Unit {
   let mesh = @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::default())
   let material = @render2d.ColorMaterial::new(
-    @render2d.Color::new(0.62F, 0.33F, 0.83F, 1.0F),
+    @render2d.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
   )
   let transform = @math.Transform::new(
     @math.Vec2::new(0.0F, 0.0F),
