@@ -12,6 +12,8 @@ pub fn render2d_create_render_target(Int, Int, Bool) -> @asset.Handle[@asset.Ima
 
 pub fn render2d_plugin(@app.App) -> @app.App
 
+pub fn render2d_reset() -> Unit
+
 pub fn render2d_set_camera_scale(Float) -> Unit
 
 pub fn render2d_set_camera_scale_handle(CameraHandle, Float) -> Unit

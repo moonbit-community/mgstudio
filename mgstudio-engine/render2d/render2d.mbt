@@ -659,6 +659,20 @@ pub fn render_execute_system() -> Unit {
 }
 
 ///|
+pub fn render2d_reset() -> Unit {
+  render_state.val.draw_enabled = false
+  render_state.val.next_sprite_id = 0
+  render_state.val.next_camera_id = 0
+  render_state.val.next_mesh_id = 0
+  render_state.val.primary_sprite = -1
+  render_state.val.primary_camera = -1
+  render_state.val.sprites.clear()
+  render_state.val.cameras.clear()
+  render_state.val.meshes.clear()
+  render_state.val.render_targets.clear()
+}
+
+///|
 pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
   let id = render_state.val.primary_camera
   if id < 0 {
@@ -698,6 +712,7 @@ pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
 
 ///|
 pub fn render2d_plugin(app : @app.App) -> @app.App {
+  render2d_reset()
   app
   .add_system(render_extract_system)
   .add_post_update_system(render_prepare_system)
