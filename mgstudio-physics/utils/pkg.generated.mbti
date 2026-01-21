@@ -9,7 +9,9 @@ pub fn serialize_to_vec_tuple(HashMap) -> String
 // Errors
 
 // Types and methods
-pub type HashMap
+pub struct HashMap {
+  entries : Array[(Int, String)]
+}
 pub fn HashMap::equals(Self, Self) -> Bool
 pub fn HashMap::from_array(Array[(Int, String)]) -> Self
 

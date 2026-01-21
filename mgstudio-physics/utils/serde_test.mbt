@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/utils/mod.rs (serde_json_hashmap).
-#skip
 test "serde json hashmap" {
   let map = HashMap::from_array([(42, "Forty-Two")])
   let serialized = serialize_to_vec_tuple(map)
