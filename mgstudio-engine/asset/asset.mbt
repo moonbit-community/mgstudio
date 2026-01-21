@@ -41,6 +41,16 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
 }
 
 ///|
+pub struct Shader {
+  source : String
+}
+
+///|
+pub fn Shader::new(source : String) -> Shader {
+  Shader::{ source, }
+}
+
+///|
 pub struct AssetServer {
   paths : Array[String]
 }
@@ -62,6 +72,9 @@ pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {
 pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int = "mgstudio_host" "asset_load_texture"
 
 ///|
+pub fn host_asset_load_wgsl(path : String) -> Int = "mgstudio_host" "asset_load_wgsl"
+
+///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
   let id = host_asset_load_texture(path, asset_default_nearest.val)
   self.paths.push(path)
@@ -74,6 +87,16 @@ pub fn AssetServer::load_nearest(
   path : String,
 ) -> Handle[Image] {
   let id = host_asset_load_texture(path, true)
+  self.paths.push(path)
+  Handle::new(id)
+}
+
+///|
+pub fn AssetServer::load_wgsl(
+  self : AssetServer,
+  path : String,
+) -> Handle[Shader] {
+  let id = host_asset_load_wgsl(path)
   self.paths.push(path)
   Handle::new(id)
 }

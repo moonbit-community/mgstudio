@@ -314,113 +314,8 @@ extern "js" fn response_blob(response : @js.Any) -> @js.Promise[@js.Any] =
   #| (response) => response.blob()
 
 ///|
-extern "js" fn sprite_shader_code() -> String =
-  #| () => `
-  #| struct VertexOut {
-  #|   @builtin(position) position : vec4<f32>,
-  #|   @location(0) uv : vec2<f32>,
-  #| };
-  #| 
-  #| struct TransformData {
-  #|   model : vec4<f32>,
-  #|   view : vec4<f32>,
-  #|   scale : vec4<f32>,
-  #|   color : vec4<f32>,
-  #| };
-  #| 
-  #| @group(0) @binding(0) var samp : sampler;
-  #| @group(0) @binding(1) var tex : texture_2d<f32>;
-  #| @group(0) @binding(2) var<uniform> u_transform : TransformData;
-  #| 
-  #| @vertex
-  #| fn vs_main(
-  #|   @location(0) position : vec2<f32>,
-  #|   @location(1) uv : vec2<f32>
-  #| ) -> VertexOut {
-  #|   var out : VertexOut;
-  #|   let cosv = u_transform.model.z;
-  #|   let sinv = u_transform.model.w;
-  #|   let scaled = vec2<f32>(
-  #|     position.x * u_transform.scale.z,
-  #|     position.y * u_transform.scale.w
-  #|   );
-  #|   let rotated = vec2<f32>(
-  #|     scaled.x * cosv - scaled.y * sinv,
-  #|     scaled.x * sinv + scaled.y * cosv
-  #|   );
-  #|   let translated = rotated + u_transform.model.xy;
-  #|   let cam_cos = u_transform.view.z;
-  #|   let cam_sin = u_transform.view.w;
-  #|   let rel = translated - u_transform.view.xy;
-  #|   let view_pos = vec2<f32>(
-  #|     rel.x * cam_cos - rel.y * cam_sin,
-  #|     rel.x * cam_sin + rel.y * cam_cos
-  #|   );
-  #|   let ndc = vec2<f32>(
-  #|     view_pos.x * u_transform.scale.x,
-  #|     view_pos.y * u_transform.scale.y
-  #|   );
-  #|   out.position = vec4<f32>(ndc, 0.0, 1.0);
-  #|   out.uv = uv;
-  #|   return out;
-  #| }
-  #| 
-  #| @fragment
-  #| fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
-  #|   return textureSample(tex, samp, uv) * u_transform.color;
-  #| }
-  #| `
-
-///|
-extern "js" fn mesh_shader_code() -> String =
-  #| () => `
-  #| struct VertexOut {
-  #|   @builtin(position) position : vec4<f32>,
-  #| };
-  #| 
-  #| struct TransformData {
-  #|   model : vec4<f32>,
-  #|   view : vec4<f32>,
-  #|   scale : vec4<f32>,
-  #|   color : vec4<f32>,
-  #| };
-  #| 
-  #| @group(0) @binding(0) var<uniform> u_transform : TransformData;
-  #| 
-  #| @vertex
-  #| fn vs_main(@location(0) position : vec2<f32>) -> VertexOut {
-  #|   var out : VertexOut;
-  #|   let cosv = u_transform.model.z;
-  #|   let sinv = u_transform.model.w;
-  #|   let scaled = vec2<f32>(
-  #|     position.x * u_transform.scale.z,
-  #|     position.y * u_transform.scale.w
-  #|   );
-  #|   let rotated = vec2<f32>(
-  #|     scaled.x * cosv - scaled.y * sinv,
-  #|     scaled.x * sinv + scaled.y * cosv
-  #|   );
-  #|   let translated = rotated + u_transform.model.xy;
-  #|   let cam_cos = u_transform.view.z;
-  #|   let cam_sin = u_transform.view.w;
-  #|   let rel = translated - u_transform.view.xy;
-  #|   let view_pos = vec2<f32>(
-  #|     rel.x * cam_cos - rel.y * cam_sin,
-  #|     rel.x * cam_sin + rel.y * cam_cos
-  #|   );
-  #|   let ndc = vec2<f32>(
-  #|     view_pos.x * u_transform.scale.x,
-  #|     view_pos.y * u_transform.scale.y
-  #|   );
-  #|   out.position = vec4<f32>(ndc, 0.0, 1.0);
-  #|   return out;
-  #| }
-  #| 
-  #| @fragment
-  #| fn fs_main() -> @location(0) vec4<f32> {
-  #|   return u_transform.color;
-  #| }
-  #| `
+extern "js" fn response_text(response : @js.Any) -> @js.Promise[String] =
+  #| (response) => response.text()
 
 ///|
 struct PendingTexture {
@@ -452,6 +347,10 @@ struct AssetsState {
   fallback_reported : @js.Any
   loading_textures : @js.Any
   texture_paths : @js.Any
+  shader_sources : @js.Any
+  shader_paths : @js.Any
+  loading_shaders : @js.Any
+  mut next_shader_id : Int
 }
 
 ///|
@@ -474,7 +373,7 @@ struct GpuState {
   mut device : @webgpu.GPUDevice?
   mut queue : @webgpu.GPUQueue?
   mut context : @webgpu.GPUCanvasContext?
-  mut format : String?
+  mut format : @webgpu.TextureFormat?
   mut pipeline : @webgpu.GPURenderPipeline?
   mut vertex_buffer : @webgpu.GPUBuffer?
   mut vertex_count : Int
@@ -490,6 +389,8 @@ struct GpuState {
   mut textures : @js.Any
   mut next_texture_id : Int
   mut fallback_texture_id : Int
+  mut sprite_shader_id : Int
+  mut mesh_shader_id : Int
 }
 
 ///|
@@ -511,6 +412,10 @@ fn new_state() -> State {
       fallback_reported: new_set(),
       loading_textures: new_set(),
       texture_paths: new_map(),
+      shader_sources: new_map(),
+      shader_paths: new_map(),
+      loading_shaders: new_set(),
+      next_shader_id: 1,
     },
     input: InputState::{
       pressed: new_set(),
@@ -545,6 +450,8 @@ fn new_state() -> State {
       textures: new_map(),
       next_texture_id: 1,
       fallback_texture_id: 0,
+      sprite_shader_id: 0,
+      mesh_shader_id: 0,
     },
   }
 }
@@ -552,6 +459,13 @@ fn new_state() -> State {
 ///|
 fn to_int(value : Double) -> Int {
   value.to_int()
+}
+
+///|
+fn next_shader_id(state : State) -> Int {
+  let id = state.assets.next_shader_id
+  state.assets.next_shader_id = id + 1
+  id
 }
 
 ///|
@@ -598,14 +512,14 @@ fn update_window_size(state : State) -> Unit {
     target._set("height", @js.any(height)) |> ignore
     if state.gpu.context is Some(context) && state.gpu.device is Some(device) {
       let usage = @webgpu.texture_usage_render_attachment()
-      let descriptor = @js.from_entries([
-        ("device", device.as_any()),
-        ("format", @js.any(state.gpu.format.unwrap_or("bgra8unorm"))),
-        ("alphaMode", @js.any("premultiplied")),
-        ("usage", @js.any(usage)),
-        ("size", @js.any([width, height])),
-      ])
-      context.configure(descriptor)
+      let config = @webgpu.surface_configuration(
+        device,
+        state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm),
+        @webgpu.AlphaMode::Premultiplied,
+        usage,
+        @webgpu.surface_size(width, height),
+      )
+      context.configure(config.to_js())
     }
   }
 }
@@ -754,7 +668,9 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   }
   let device : @webgpu.GPUDevice = device_any.cast()
   let context = @webgpu.get_canvas_context(target)
-  let format = @webgpu.preferred_canvas_format()
+  let format = @webgpu.texture_format_from_string(
+    @webgpu.preferred_canvas_format(),
+  )
   state.gpu.device = Some(device)
   state.gpu.queue = Some(device.queue())
   state.gpu.context = Some(context)
@@ -774,6 +690,50 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.textures = new_map()
   state.gpu.next_texture_id = 1
   state.gpu.fallback_texture_id = 0
+  state.gpu.sprite_shader_id = 0
+  state.gpu.mesh_shader_id = 0
+  let sprite_id = next_shader_id(state)
+  let mesh_id = next_shader_id(state)
+  state.gpu.sprite_shader_id = sprite_id
+  state.gpu.mesh_shader_id = mesh_id
+  set_add(state.assets.loading_shaders, @js.any(sprite_id))
+  set_add(state.assets.loading_shaders, @js.any(mesh_id))
+  map_set(
+    state.assets.shader_paths,
+    @js.any(sprite_id),
+    @js.any("shaders/sprite.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(mesh_id),
+    @js.any("shaders/mesh.wgsl"),
+  )
+  let sprite_source = load_wgsl_from_path(
+    state, sprite_id, "shaders/sprite.wgsl",
+  ) catch {
+    err => {
+      let message = "Shader load error: " + err.to_string()
+      console_error(@js.any(message))
+      dispatch_asset_error(message)
+      ""
+    }
+  }
+  set_delete(state.assets.loading_shaders, @js.any(sprite_id)) |> ignore
+  if sprite_source == "" {
+    state.gpu.sprite_shader_id = 0
+  }
+  let mesh_source = load_wgsl_from_path(state, mesh_id, "shaders/mesh.wgsl") catch {
+    err => {
+      let message = "Shader load error: " + err.to_string()
+      console_error(@js.any(message))
+      dispatch_asset_error(message)
+      ""
+    }
+  }
+  set_delete(state.assets.loading_shaders, @js.any(mesh_id)) |> ignore
+  if mesh_source == "" {
+    state.gpu.mesh_shader_id = 0
+  }
   if state.assets.pending_textures.length() > 0 {
     let pending : Array[PendingTexture] = []
     for item in state.assets.pending_textures {
@@ -808,12 +768,13 @@ fn create_sampler(state : State, nearest : Bool) -> @webgpu.GPUSampler? {
     return None
   }
   if state.gpu.device is Some(device) {
-    let filter = if nearest { "nearest" } else { "linear" }
-    let descriptor = @js.from_entries([
-      ("magFilter", @js.any(filter)),
-      ("minFilter", @js.any(filter)),
-    ])
-    Some(device.create_sampler(descriptor))
+    let filter = if nearest {
+      @webgpu.FilterMode::Nearest
+    } else {
+      @webgpu.FilterMode::Linear
+    }
+    let descriptor = @webgpu.sampler_descriptor(filter, filter)
+    Some(device.create_sampler(descriptor.to_js()))
   } else {
     None
   }
@@ -828,142 +789,89 @@ fn ensure_pipeline_resources(state : State) -> Unit {
     return
   }
   if state.gpu.device is Some(device) {
-    let format = state.gpu.format.unwrap_or("bgra8unorm")
-    let shader_module = device.create_shader_module(
-      @js.from_entries([("code", @js.any(sprite_shader_code()))]),
+    if state.gpu.sprite_shader_id <= 0 {
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.sprite_shader_id)
+    if shader_source is None {
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let position_attr = @webgpu.vertex_attribute(
+      0,
+      0,
+      @webgpu.VertexFormat::Float32x2,
     )
-    let pipeline = device.create_render_pipeline(
-      @js.from_entries([
-        ("layout", @js.any("auto")),
-        (
-          "vertex",
-          @js.from_entries([
-            ("module", shader_module.as_any()),
-            ("entryPoint", @js.any("vs_main")),
-            (
-              "buffers",
-              @js.any([
-                @js.from_entries([
-                  ("arrayStride", @js.any(16)),
-                  (
-                    "attributes",
-                    @js.any([
-                      @js.from_entries([
-                        ("shaderLocation", @js.any(0)),
-                        ("offset", @js.any(0)),
-                        ("format", @js.any("float32x2")),
-                      ]),
-                      @js.from_entries([
-                        ("shaderLocation", @js.any(1)),
-                        ("offset", @js.any(8)),
-                        ("format", @js.any("float32x2")),
-                      ]),
-                    ]),
-                  ),
-                ]),
-              ]),
-            ),
-          ]),
-        ),
-        (
-          "fragment",
-          @js.from_entries([
-            ("module", shader_module.as_any()),
-            ("entryPoint", @js.any("fs_main")),
-            (
-              "targets",
-              @js.any([
-                @js.from_entries([
-                  ("format", @js.any(format)),
-                  (
-                    "blend",
-                    @js.from_entries([
-                      (
-                        "color",
-                        @js.from_entries([
-                          ("srcFactor", @js.any("src-alpha")),
-                          ("dstFactor", @js.any("one-minus-src-alpha")),
-                          ("operation", @js.any("add")),
-                        ]),
-                      ),
-                      (
-                        "alpha",
-                        @js.from_entries([
-                          ("srcFactor", @js.any("src-alpha")),
-                          ("dstFactor", @js.any("one-minus-src-alpha")),
-                          ("operation", @js.any("add")),
-                        ]),
-                      ),
-                    ]),
-                  ),
-                ]),
-              ]),
-            ),
-          ]),
-        ),
-        (
-          "primitive",
-          @js.from_entries([("topology", @js.any("triangle-list"))]),
-        ),
-      ]),
+    let uv_attr = @webgpu.vertex_attribute(
+      1,
+      8,
+      @webgpu.VertexFormat::Float32x2,
     )
+    let vertex_layout = @webgpu.vertex_buffer_layout(16, [
+      position_attr, uv_attr,
+    ])
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
+      vertex_layout,
+    ])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @webgpu.render_pipeline_descriptor(
+      @webgpu.PipelineLayout::Auto,
+      vertex_state,
+      fragment_state,
+      primitive_state,
+    )
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
     let vertices = create_sprite_vertices()
-    let vertex_buffer = device.create_buffer(
-      @js.from_entries([
-        ("size", vertices._get("byteLength")),
-        (
-          "usage",
-          @js.any(
-            @webgpu.combine_flags(
-              @webgpu.buffer_usage_vertex(),
-              @webgpu.buffer_usage_copy_dst(),
-            ),
-          ),
-        ),
-      ]),
+    let vertex_size : Int = vertices._get("byteLength").cast()
+    let vertex_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_vertex(),
+      @webgpu.buffer_usage_copy_dst(),
     )
+    let vertex_desc = @webgpu.buffer_descriptor(vertex_size, vertex_usage)
+    let vertex_buffer = device.create_buffer(vertex_desc.to_js())
     device.queue().write_buffer(vertex_buffer, 0, vertices)
-    let uniform_buffer = device.create_buffer(
-      @js.from_entries([
-        ("size", @js.any(64)),
-        (
-          "usage",
-          @js.any(
-            @webgpu.combine_flags(
-              @webgpu.buffer_usage_uniform(),
-              @webgpu.buffer_usage_copy_dst(),
-            ),
-          ),
-        ),
-      ]),
+    let uniform_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_uniform(),
+      @webgpu.buffer_usage_copy_dst(),
     )
-    let texture_size = 64
-    let texture = device.create_texture(
-      @js.from_entries([
-        ("size", @js.any([texture_size, texture_size, 1])),
-        ("format", @js.any("rgba8unorm")),
-        (
-          "usage",
-          @js.any(
-            @webgpu.combine_flags(
-              @webgpu.combine_flags(
-                @webgpu.texture_usage_texture_binding(),
-                @webgpu.texture_usage_copy_dst(),
-              ),
-              @webgpu.texture_usage_render_attachment(),
-            ),
-          ),
-        ),
-      ]),
+    let uniform_desc = @webgpu.buffer_descriptor(64, uniform_usage)
+    let uniform_buffer = device.create_buffer(uniform_desc.to_js())
+    let fallback_size = 64
+    let texture_usage = @webgpu.combine_flags(
+      @webgpu.combine_flags(
+        @webgpu.texture_usage_texture_binding(),
+        @webgpu.texture_usage_copy_dst(),
+      ),
+      @webgpu.texture_usage_render_attachment(),
     )
-    let pixel_data = create_checkerboard_data(texture_size)
+    let texture_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size(fallback_size, fallback_size),
+      @webgpu.TextureFormat::Rgba8Unorm,
+      texture_usage,
+    )
+    let texture = device.create_texture(texture_desc.to_js())
+    let pixel_data = create_checkerboard_data(fallback_size)
     write_texture(
       device.queue().as_any(),
       texture.as_any(),
       pixel_data,
-      texture_size * 4,
-      texture_size,
-      texture_size,
+      fallback_size * 4,
+      fallback_size,
+      fallback_size,
     )
     let sampler = create_sampler(state, true)
     if sampler is Some(sampler_value) {
@@ -973,8 +881,8 @@ fn ensure_pipeline_resources(state : State) -> Unit {
         ("view", texture.create_view().as_any()),
         ("sampler", sampler_value.as_any()),
         ("bindGroup", js_null()),
-        ("width", @js.any(texture_size)),
-        ("height", @js.any(texture_size)),
+        ("width", @js.any(fallback_size)),
+        ("height", @js.any(fallback_size)),
       ])
       map_set(state.gpu.textures, @js.any(state.gpu.fallback_texture_id), entry)
     }
@@ -1003,26 +911,15 @@ fn ensure_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
   if state.gpu.device is Some(device) && state.gpu.pipeline is Some(pipeline) {
     if state.gpu.uniform_buffer is Some(uniform_buffer) {
       let layout = pipeline.get_bind_group_layout(0)
-      let entries : Array[@js.Any] = [
-        @js.from_entries([
-          ("binding", @js.any(0)),
-          ("resource", entry._get("sampler")),
-        ]),
-        @js.from_entries([
-          ("binding", @js.any(1)),
-          ("resource", entry._get("view")),
-        ]),
-        @js.from_entries([
-          ("binding", @js.any(2)),
-          ("resource", @js.from_entries([("buffer", uniform_buffer.as_any())])),
-        ]),
+      let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
+      let view : @webgpu.GPUTextureView = entry._get("view").cast()
+      let entries = [
+        @webgpu.bind_group_entry_sampler(0, sampler),
+        @webgpu.bind_group_entry_texture(1, view),
+        @webgpu.bind_group_entry_buffer(2, uniform_buffer),
       ]
-      let bind_group = device.create_bind_group(
-        @js.from_entries([
-          ("layout", layout.as_any()),
-          ("entries", @js.any(entries)),
-        ]),
-      )
+      let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+      let bind_group = device.create_bind_group(bind_group_desc.to_js())
       entry._set("bindGroup", bind_group.as_any()) |> ignore
     }
   }
@@ -1041,100 +938,51 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
     return
   }
   if state.gpu.device is Some(device) {
-    let format = state.gpu.format.unwrap_or("bgra8unorm")
-    let shader_module = device.create_shader_module(
-      @js.from_entries([("code", @js.any(mesh_shader_code()))]),
+    if state.gpu.mesh_shader_id <= 0 {
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.mesh_shader_id)
+    if shader_source is None {
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let position_attr = @webgpu.vertex_attribute(
+      0,
+      0,
+      @webgpu.VertexFormat::Float32x2,
     )
-    let pipeline = device.create_render_pipeline(
-      @js.from_entries([
-        ("layout", @js.any("auto")),
-        (
-          "vertex",
-          @js.from_entries([
-            ("module", shader_module.as_any()),
-            ("entryPoint", @js.any("vs_main")),
-            (
-              "buffers",
-              @js.any([
-                @js.from_entries([
-                  ("arrayStride", @js.any(8)),
-                  (
-                    "attributes",
-                    @js.any([
-                      @js.from_entries([
-                        ("shaderLocation", @js.any(0)),
-                        ("offset", @js.any(0)),
-                        ("format", @js.any("float32x2")),
-                      ]),
-                    ]),
-                  ),
-                ]),
-              ]),
-            ),
-          ]),
-        ),
-        (
-          "fragment",
-          @js.from_entries([
-            ("module", shader_module.as_any()),
-            ("entryPoint", @js.any("fs_main")),
-            (
-              "targets",
-              @js.any([
-                @js.from_entries([
-                  ("format", @js.any(format)),
-                  (
-                    "blend",
-                    @js.from_entries([
-                      (
-                        "color",
-                        @js.from_entries([
-                          ("srcFactor", @js.any("src-alpha")),
-                          ("dstFactor", @js.any("one-minus-src-alpha")),
-                          ("operation", @js.any("add")),
-                        ]),
-                      ),
-                      (
-                        "alpha",
-                        @js.from_entries([
-                          ("srcFactor", @js.any("src-alpha")),
-                          ("dstFactor", @js.any("one-minus-src-alpha")),
-                          ("operation", @js.any("add")),
-                        ]),
-                      ),
-                    ]),
-                  ),
-                ]),
-              ]),
-            ),
-          ]),
-        ),
-        (
-          "primitive",
-          @js.from_entries([("topology", @js.any("triangle-list"))]),
-        ),
-      ]),
+    let vertex_layout = @webgpu.vertex_buffer_layout(8, [position_attr])
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
+      vertex_layout,
+    ])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
     )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @webgpu.render_pipeline_descriptor(
+      @webgpu.PipelineLayout::Auto,
+      vertex_state,
+      fragment_state,
+      primitive_state,
+    )
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
     state.gpu.mesh_pipeline = Some(pipeline)
     if state.gpu.uniform_buffer is Some(uniform_buffer) {
       let layout = pipeline.get_bind_group_layout(0)
-      let bind_group = device.create_bind_group(
-        @js.from_entries([
-          ("layout", layout.as_any()),
-          (
-            "entries",
-            @js.any([
-              @js.from_entries([
-                ("binding", @js.any(0)),
-                (
-                  "resource",
-                  @js.from_entries([("buffer", uniform_buffer.as_any())]),
-                ),
-              ]),
-            ]),
-          ),
-        ]),
-      )
+      let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
+      let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+      let bind_group = device.create_bind_group(bind_group_desc.to_js())
       state.gpu.mesh_bind_group = Some(bind_group)
     }
   }
@@ -1162,6 +1010,16 @@ fn report_fallback_usage(state : State, id : Int, reason : String) -> Unit {
     suffix
   console_error(@js.any(message))
   dispatch_asset_error(message)
+}
+
+///|
+fn get_shader_source(state : State, id : Int) -> String? {
+  let entry = map_get(state.assets.shader_sources, @js.any(id))
+  if host_is_nullish(entry) {
+    None
+  } else {
+    Some(entry.cast())
+  }
 }
 
 ///|
@@ -1219,24 +1077,19 @@ async fn load_texture_from_path(
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
     let width : Int = image._get("width").cast()
     let height : Int = image._get("height").cast()
-    let texture = device.create_texture(
-      @js.from_entries([
-        ("size", @js.any([width, height, 1])),
-        ("format", @js.any("rgba8unorm")),
-        (
-          "usage",
-          @js.any(
-            @webgpu.combine_flags(
-              @webgpu.combine_flags(
-                @webgpu.texture_usage_texture_binding(),
-                @webgpu.texture_usage_copy_dst(),
-              ),
-              @webgpu.texture_usage_render_attachment(),
-            ),
-          ),
-        ),
-      ]),
+    let texture_usage = @webgpu.combine_flags(
+      @webgpu.combine_flags(
+        @webgpu.texture_usage_texture_binding(),
+        @webgpu.texture_usage_copy_dst(),
+      ),
+      @webgpu.texture_usage_render_attachment(),
     )
+    let texture_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size(width, height),
+      @webgpu.TextureFormat::Rgba8Unorm,
+      texture_usage,
+    )
+    let texture = device.create_texture(texture_desc.to_js())
     copy_external_image_to_texture(
       queue.as_any(),
       image,
@@ -1260,6 +1113,20 @@ async fn load_texture_from_path(
     }
   }
   set_delete(state.assets.loading_textures, @js.any(id)) |> ignore
+}
+
+///|
+async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
+  let url = resolve_asset_url(@js.any(path))
+  let response = @http.fetch(url, method_="GET")
+  if !response.ok {
+    fail(
+      "Failed to load shader: " + url + " (" + response.status.to_string() + ")",
+    )
+  }
+  let source = response_text(response.as_any()).wait()
+  map_set(state.assets.shader_sources, @js.any(id), @js.any(source))
+  source
 }
 
 ///|
@@ -1356,29 +1223,10 @@ fn begin_pass(
       return
     }
     if view is Some(view_value) {
-      let pass = encoder.begin_render_pass(
-        @js.from_entries([
-          (
-            "colorAttachments",
-            @js.any([
-              @js.from_entries([
-                ("view", view_value.as_any()),
-                (
-                  "clearValue",
-                  @js.from_entries([
-                    ("r", @js.any(clear_r)),
-                    ("g", @js.any(clear_g)),
-                    ("b", @js.any(clear_b)),
-                    ("a", @js.any(clear_a)),
-                  ]),
-                ),
-                ("loadOp", @js.any("clear")),
-                ("storeOp", @js.any("store")),
-              ]),
-            ]),
-          ),
-        ]),
-      )
+      let clear_color = @webgpu.color(clear_r, clear_g, clear_b, clear_a)
+      let attachment = @webgpu.color_attachment_clear(view_value, clear_color)
+      let descriptor = @webgpu.render_pass_descriptor([attachment])
+      let pass = encoder.begin_render_pass(descriptor.to_js())
       state.gpu.current_pass = Some(pass)
       state.gpu.current_pass_info = Some(PassInfo::{
         width: if width > 0 {
@@ -1682,14 +1530,14 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
         if state.gpu.context is Some(context) &&
           state.gpu.device is Some(device) {
           let usage = @webgpu.texture_usage_render_attachment()
-          let descriptor = @js.from_entries([
-            ("device", device.as_any()),
-            ("format", @js.any(state.gpu.format.unwrap_or("bgra8unorm"))),
-            ("alphaMode", @js.any("premultiplied")),
-            ("usage", @js.any(usage)),
-            ("size", @js.any([width_int, height_int])),
-          ])
-          context.configure(descriptor)
+          let config = @webgpu.surface_configuration(
+            device,
+            state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm),
+            @webgpu.AlphaMode::Premultiplied,
+            usage,
+            @webgpu.surface_size(width_int, height_int),
+          )
+          context.configure(config.to_js())
         }
       }
     }),
@@ -1716,6 +1564,27 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     })
     id
   })
+  let asset_load_wgsl = @js.from_fn1(fn(path) {
+    let id = next_shader_id(state)
+    set_add(state.assets.loading_shaders, @js.any(id))
+    let path_text = coerce_asset_path(path)
+    if path_text != "" {
+      map_set(state.assets.shader_paths, @js.any(id), @js.any(path_text))
+    }
+    @js.run_async(async fn() noraise {
+      let result = load_wgsl_from_path(state, id, path_text) catch {
+        err => {
+          let message = "Shader load error: " + err.to_string()
+          console_error(@js.any(message))
+          dispatch_asset_error(message)
+          ""
+        }
+      }
+      set_delete(state.assets.loading_shaders, @js.any(id)) |> ignore
+      result |> ignore
+    })
+    id
+  })
   let gpu_create_render_target = @js.from_fn3(fn(width, height, nearest) {
     if state.gpu.device is None {
       throw_error("GPU device not ready")
@@ -1730,25 +1599,20 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     let safe_width = if width_value > 0 { to_int(width_value) } else { 1 }
     let safe_height = if height_value > 0 { to_int(height_value) } else { 1 }
     if state.gpu.device is Some(device) {
-      let format = state.gpu.format.unwrap_or("bgra8unorm")
-      let texture = device.create_texture(
-        @js.from_entries([
-          ("size", @js.any([safe_width, safe_height, 1])),
-          ("format", @js.any(format)),
-          (
-            "usage",
-            @js.any(
-              @webgpu.combine_flags(
-                @webgpu.combine_flags(
-                  @webgpu.texture_usage_texture_binding(),
-                  @webgpu.texture_usage_render_attachment(),
-                ),
-                @webgpu.texture_usage_copy_dst(),
-              ),
-            ),
-          ),
-        ]),
+      let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+      let texture_usage = @webgpu.combine_flags(
+        @webgpu.combine_flags(
+          @webgpu.texture_usage_texture_binding(),
+          @webgpu.texture_usage_render_attachment(),
+        ),
+        @webgpu.texture_usage_copy_dst(),
       )
+      let texture_desc = @webgpu.texture_descriptor(
+        @webgpu.texture_size(safe_width, safe_height),
+        format,
+        texture_usage,
+      )
+      let texture = device.create_texture(texture_desc.to_js())
       let sampler = create_sampler(state, number_or(nearest, 0) != 0)
       if sampler is Some(sampler_value) {
         let entry = @js.from_entries([
@@ -1780,20 +1644,13 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       to_int(number_or(segments, 16)),
     )
     if state.gpu.device is Some(device) {
-      let vertex_buffer = device.create_buffer(
-        @js.from_entries([
-          ("size", vertices._get("byteLength")),
-          (
-            "usage",
-            @js.any(
-              @webgpu.combine_flags(
-                @webgpu.buffer_usage_vertex(),
-                @webgpu.buffer_usage_copy_dst(),
-              ),
-            ),
-          ),
-        ]),
+      let vertex_size : Int = vertices._get("byteLength").cast()
+      let vertex_usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_vertex(),
+        @webgpu.buffer_usage_copy_dst(),
       )
+      let vertex_desc = @webgpu.buffer_descriptor(vertex_size, vertex_usage)
+      let vertex_buffer = device.create_buffer(vertex_desc.to_js())
       device.queue().write_buffer(vertex_buffer, 0, vertices)
       let vertex_len : Double = vertices._get("length").cast()
       let vertex_count = to_int(vertex_len / 2)
@@ -1819,20 +1676,13 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       number_or(height, 1),
     )
     if state.gpu.device is Some(device) {
-      let vertex_buffer = device.create_buffer(
-        @js.from_entries([
-          ("size", vertices._get("byteLength")),
-          (
-            "usage",
-            @js.any(
-              @webgpu.combine_flags(
-                @webgpu.buffer_usage_vertex(),
-                @webgpu.buffer_usage_copy_dst(),
-              ),
-            ),
-          ),
-        ]),
+      let vertex_size : Int = vertices._get("byteLength").cast()
+      let vertex_usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_vertex(),
+        @webgpu.buffer_usage_copy_dst(),
       )
+      let vertex_desc = @webgpu.buffer_descriptor(vertex_size, vertex_usage)
+      let vertex_buffer = device.create_buffer(vertex_desc.to_js())
       device.queue().write_buffer(vertex_buffer, 0, vertices)
       let vertex_len : Double = vertices._get("length").cast()
       let vertex_count = to_int(vertex_len / 2)
@@ -1947,6 +1797,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("gpu_create_surface", gpu_create_surface),
     ("gpu_configure_surface", gpu_configure_surface),
     ("asset_load_texture", asset_load_texture),
+    ("asset_load_wgsl", asset_load_wgsl),
     ("gpu_create_render_target", gpu_create_render_target),
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),

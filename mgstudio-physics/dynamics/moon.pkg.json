@@ -1,6 +1,7 @@
 {
   "import": [
-    "Milky2018/mgstudio_physics/core"
+    "Milky2018/mgstudio_physics/core",
+    "moonbitlang/core/strconv"
   ],
   "test-import": [
     "Milky2018/mgstudio_physics/core",

@@ -491,29 +491,29 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
   let bodies : Array[RigidBody?] = []
   for part in data.split(";"[:]) {
     let value = part.to_string()
-    if value.starts_with("len="[:]) {
-      let raw = value.substring(start=4)
+    if value.strip_prefix("len="[:]) is Some(raw_view) {
+      let raw = raw_view.to_string()
       len = parse_int_value(raw)
-    } else if value.starts_with("gens="[:]) {
-      let raw = value.substring(start=5)
+    } else if value.strip_prefix("gens="[:]) is Some(raw_view) {
+      let raw = raw_view.to_string()
       let items = split_values(raw, ",")
       for item in items {
         generations.push(parse_int_value(item))
       }
-    } else if value.starts_with("free="[:]) {
-      let raw = value.substring(start=5)
+    } else if value.strip_prefix("free="[:]) is Some(raw_view) {
+      let raw = raw_view.to_string()
       let items = split_values(raw, ",")
       for item in items {
         free_list.push(parse_int_value(item))
       }
-    } else if value.starts_with("bodies="[:]) {
-      let raw = value.substring(start=7)
+    } else if value.strip_prefix("bodies="[:]) is Some(raw_view) {
+      let raw = raw_view.to_string()
       let entries = split_values(raw, "|")
       for entry in entries {
         if entry == "N" {
           bodies.push(None)
-        } else if entry.starts_with("B,"[:]) {
-          let fields = split_values(entry.substring(start=2), ",")
+        } else if entry.strip_prefix("B,"[:]) is Some(entry_view) {
+          let fields = split_values(entry_view.to_string(), ",")
           let body_type = body_type_from_int(
             if fields.length() > 0 {
               parse_int_value(fields[0])

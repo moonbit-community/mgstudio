@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/asset"
 
-import(
-  "Milky2018/mgstudio/app"
-)
+import {
+  "Milky2018/mgstudio/app",
+}
 
 // Values
 pub fn asset_plugin(@app.App) -> @app.App
@@ -16,6 +16,8 @@ pub fn asset_system() -> Unit
 
 pub fn host_asset_load_texture(String, Bool) -> Int
 
+pub fn host_asset_load_wgsl(String) -> Int
+
 // Errors
 
 // Types and methods
@@ -24,6 +26,7 @@ pub struct AssetServer {
 }
 pub fn AssetServer::load(Self, String) -> Handle[Image]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
+pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
 pub fn AssetServer::new() -> Self
 
 pub struct Handle[T] {
@@ -39,6 +42,11 @@ pub struct Image {
   pixels : Bytes
 }
 pub fn Image::new(Int, Int, Bytes) -> Self
+
+pub struct Shader {
+  source : String
+}
+pub fn Shader::new(String) -> Self
 
 // Type aliases
 

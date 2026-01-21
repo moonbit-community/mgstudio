@@ -1,0 +1,377 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio-runtime-web/webgpu"
+
+import {
+  "mizchi/js/core",
+}
+
+// Values
+pub fn bind_group_descriptor(GPUBindGroupLayout, Array[BindGroupEntry]) -> BindGroupDescriptor
+
+pub fn bind_group_entry_buffer(Int, GPUBuffer) -> BindGroupEntry
+
+pub fn bind_group_entry_sampler(Int, GPUSampler) -> BindGroupEntry
+
+pub fn bind_group_entry_texture(Int, GPUTextureView) -> BindGroupEntry
+
+pub fn blend_component(BlendFactor, BlendFactor, BlendOperation) -> BlendComponent
+
+pub fn blend_state(BlendComponent, BlendComponent) -> BlendState
+
+pub fn buffer_descriptor(Int, Int) -> BufferDescriptor
+
+pub fn buffer_usage_copy_dst() -> Int
+
+pub fn buffer_usage_uniform() -> Int
+
+pub fn buffer_usage_vertex() -> Int
+
+pub fn color(Double, Double, Double, Double) -> Color
+
+pub fn color_attachment_clear(GPUTextureView, Color) -> ColorAttachment
+
+pub fn color_target_state(TextureFormat, BlendState) -> ColorTargetState
+
+pub fn combine_flags(Int, Int) -> Int
+
+pub fn fragment_state(GPUShaderModule, String, Array[ColorTargetState]) -> FragmentState
+
+pub fn get_canvas_context(@core.Any) -> GPUCanvasContext
+
+pub fn gpu() -> GPU
+
+pub fn preferred_canvas_format() -> String
+
+pub fn primitive_state(PrimitiveTopology) -> PrimitiveState
+
+pub fn render_pass_descriptor(Array[ColorAttachment]) -> RenderPassDescriptor
+
+pub fn render_pipeline_descriptor(PipelineLayout, VertexState, FragmentState, PrimitiveState) -> RenderPipelineDescriptor
+
+pub async fn request_adapter(power_preference? : String, force_fallback_adapter? : Bool) -> GPUAdapter
+
+pub async fn request_device(GPUAdapter, descriptor? : @core.Any) -> GPUDevice
+
+pub fn sampler_descriptor(FilterMode, FilterMode) -> SamplerDescriptor
+
+pub fn shader_module_descriptor(String) -> ShaderModuleDescriptor
+
+pub fn shader_stage_fragment() -> Int
+
+pub fn shader_stage_vertex() -> Int
+
+pub fn surface_configuration(GPUDevice, TextureFormat, AlphaMode, Int, SurfaceSize) -> SurfaceConfiguration
+
+pub fn surface_size(Int, Int) -> SurfaceSize
+
+pub fn texture_descriptor(TextureSize, TextureFormat, Int) -> TextureDescriptor
+
+pub fn texture_format_from_string(String) -> TextureFormat
+
+pub fn texture_size(Int, Int) -> TextureSize
+
+pub fn texture_usage_copy_dst() -> Int
+
+pub fn texture_usage_render_attachment() -> Int
+
+pub fn texture_usage_texture_binding() -> Int
+
+pub fn vertex_attribute(Int, Int, VertexFormat) -> VertexAttribute
+
+pub fn vertex_buffer_layout(Int, Array[VertexAttribute]) -> VertexBufferLayout
+
+pub fn vertex_state(GPUShaderModule, String, Array[VertexBufferLayout]) -> VertexState
+
+// Errors
+
+// Types and methods
+pub(all) enum AlphaMode {
+  Premultiplied
+}
+pub fn AlphaMode::to_js_string(Self) -> String
+
+pub struct BindGroupDescriptor {
+  layout : GPUBindGroupLayout
+  entries : Array[BindGroupEntry]
+}
+pub fn BindGroupDescriptor::to_js(Self) -> @core.Any
+
+pub struct BindGroupEntry {
+  binding : Int
+  resource : BindGroupResource
+}
+pub fn BindGroupEntry::to_js(Self) -> @core.Any
+
+pub(all) enum BindGroupResource {
+  Sampler(GPUSampler)
+  TextureView(GPUTextureView)
+  Buffer(GPUBuffer)
+}
+pub fn BindGroupResource::to_js(Self) -> @core.Any
+
+pub struct BlendComponent {
+  src_factor : BlendFactor
+  dst_factor : BlendFactor
+  operation : BlendOperation
+}
+pub fn BlendComponent::to_js(Self) -> @core.Any
+
+pub(all) enum BlendFactor {
+  SrcAlpha
+  OneMinusSrcAlpha
+}
+pub fn BlendFactor::to_js_string(Self) -> String
+
+pub(all) enum BlendOperation {
+  Add
+}
+pub fn BlendOperation::to_js_string(Self) -> String
+
+pub struct BlendState {
+  color : BlendComponent
+  alpha : BlendComponent
+}
+pub fn BlendState::to_js(Self) -> @core.Any
+
+pub struct BufferDescriptor {
+  size : Int
+  usage : Int
+}
+pub fn BufferDescriptor::to_js(Self) -> @core.Any
+
+pub struct Color {
+  r : Double
+  g : Double
+  b : Double
+  a : Double
+}
+pub fn Color::to_js(Self) -> @core.Any
+
+pub struct ColorAttachment {
+  view : GPUTextureView
+  clear : Color
+  load_op : LoadOp
+  store_op : StoreOp
+}
+pub fn ColorAttachment::to_js(Self) -> @core.Any
+
+pub struct ColorTargetState {
+  format : TextureFormat
+  blend : BlendState
+}
+pub fn ColorTargetState::to_js(Self) -> @core.Any
+
+pub(all) enum FilterMode {
+  Linear
+  Nearest
+}
+pub fn FilterMode::to_js_string(Self) -> String
+
+pub struct FragmentState {
+  shader_module : GPUShaderModule
+  entry_point : String
+  targets : Array[ColorTargetState]
+}
+pub fn FragmentState::to_js(Self) -> @core.Any
+
+#external
+pub type GPU
+pub fn GPU::as_any(Self) -> @core.Any
+
+#external
+pub type GPUAdapter
+pub fn GPUAdapter::as_any(Self) -> @core.Any
+
+#external
+pub type GPUBindGroup
+pub fn GPUBindGroup::as_any(Self) -> @core.Any
+
+#external
+pub type GPUBindGroupLayout
+pub fn GPUBindGroupLayout::as_any(Self) -> @core.Any
+
+#external
+pub type GPUBuffer
+pub fn GPUBuffer::as_any(Self) -> @core.Any
+
+#external
+pub type GPUCanvasContext
+pub fn GPUCanvasContext::as_any(Self) -> @core.Any
+pub fn GPUCanvasContext::configure(Self, @core.Any) -> Unit
+pub fn GPUCanvasContext::get_current_texture(Self) -> GPUTexture
+
+#external
+pub type GPUCommandEncoder
+pub fn GPUCommandEncoder::as_any(Self) -> @core.Any
+pub fn GPUCommandEncoder::begin_render_pass(Self, @core.Any) -> GPURenderPassEncoder
+pub fn GPUCommandEncoder::finish(Self) -> @core.Any
+
+#external
+pub type GPUDevice
+pub fn GPUDevice::as_any(Self) -> @core.Any
+pub fn GPUDevice::create_bind_group(Self, @core.Any) -> GPUBindGroup
+pub fn GPUDevice::create_bind_group_layout(Self, @core.Any) -> GPUBindGroupLayout
+pub fn GPUDevice::create_buffer(Self, @core.Any) -> GPUBuffer
+pub fn GPUDevice::create_command_encoder(Self, descriptor? : @core.Any) -> GPUCommandEncoder
+pub fn GPUDevice::create_pipeline_layout(Self, @core.Any) -> GPUPipelineLayout
+pub fn GPUDevice::create_render_pipeline(Self, @core.Any) -> GPURenderPipeline
+pub fn GPUDevice::create_sampler(Self, @core.Any) -> GPUSampler
+pub fn GPUDevice::create_shader_module(Self, @core.Any) -> GPUShaderModule
+pub fn GPUDevice::create_texture(Self, @core.Any) -> GPUTexture
+pub fn GPUDevice::queue(Self) -> GPUQueue
+
+#external
+pub type GPUPipelineLayout
+pub fn GPUPipelineLayout::as_any(Self) -> @core.Any
+
+#external
+pub type GPUQueue
+pub fn GPUQueue::as_any(Self) -> @core.Any
+pub fn GPUQueue::submit(Self, Array[@core.Any]) -> Unit
+pub fn GPUQueue::write_buffer(Self, GPUBuffer, Int, @core.Any) -> Unit
+
+#external
+pub type GPURenderPassEncoder
+pub fn GPURenderPassEncoder::as_any(Self) -> @core.Any
+pub fn GPURenderPassEncoder::draw(Self, Int, Int, Int, Int) -> Unit
+pub fn GPURenderPassEncoder::end(Self) -> Unit
+pub fn GPURenderPassEncoder::set_bind_group(Self, Int, GPUBindGroup) -> Unit
+pub fn GPURenderPassEncoder::set_pipeline(Self, GPURenderPipeline) -> Unit
+pub fn GPURenderPassEncoder::set_vertex_buffer(Self, Int, GPUBuffer) -> Unit
+
+#external
+pub type GPURenderPipeline
+pub fn GPURenderPipeline::as_any(Self) -> @core.Any
+pub fn GPURenderPipeline::get_bind_group_layout(Self, Int) -> GPUBindGroupLayout
+
+#external
+pub type GPUSampler
+pub fn GPUSampler::as_any(Self) -> @core.Any
+
+#external
+pub type GPUShaderModule
+pub fn GPUShaderModule::as_any(Self) -> @core.Any
+
+#external
+pub type GPUTexture
+pub fn GPUTexture::as_any(Self) -> @core.Any
+pub fn GPUTexture::create_view(Self, descriptor? : @core.Any) -> GPUTextureView
+
+#external
+pub type GPUTextureView
+pub fn GPUTextureView::as_any(Self) -> @core.Any
+
+pub(all) enum LoadOp {
+  Clear
+}
+pub fn LoadOp::to_js_string(Self) -> String
+
+pub(all) enum PipelineLayout {
+  Auto
+}
+pub fn PipelineLayout::to_js(Self) -> @core.Any
+
+pub struct PrimitiveState {
+  topology : PrimitiveTopology
+}
+pub fn PrimitiveState::to_js(Self) -> @core.Any
+
+pub(all) enum PrimitiveTopology {
+  TriangleList
+}
+pub fn PrimitiveTopology::to_js_string(Self) -> String
+
+pub struct RenderPassDescriptor {
+  color_attachments : Array[ColorAttachment]
+}
+pub fn RenderPassDescriptor::to_js(Self) -> @core.Any
+
+pub struct RenderPipelineDescriptor {
+  layout : PipelineLayout
+  vertex : VertexState
+  fragment : FragmentState
+  primitive : PrimitiveState
+}
+pub fn RenderPipelineDescriptor::to_js(Self) -> @core.Any
+
+pub struct SamplerDescriptor {
+  mag_filter : FilterMode
+  min_filter : FilterMode
+}
+pub fn SamplerDescriptor::to_js(Self) -> @core.Any
+
+pub struct ShaderModuleDescriptor {
+  code : String
+}
+pub fn ShaderModuleDescriptor::to_js(Self) -> @core.Any
+
+pub(all) enum StoreOp {
+  Store
+}
+pub fn StoreOp::to_js_string(Self) -> String
+
+pub struct SurfaceConfiguration {
+  device : GPUDevice
+  format : TextureFormat
+  alpha_mode : AlphaMode
+  usage : Int
+  size : SurfaceSize
+}
+pub fn SurfaceConfiguration::to_js(Self) -> @core.Any
+
+pub struct SurfaceSize {
+  width : Int
+  height : Int
+}
+pub fn SurfaceSize::to_js(Self) -> @core.Any
+
+pub struct TextureDescriptor {
+  size : TextureSize
+  format : TextureFormat
+  usage : Int
+}
+pub fn TextureDescriptor::to_js(Self) -> @core.Any
+
+pub(all) enum TextureFormat {
+  Rgba8Unorm
+  Bgra8Unorm
+  Other(String)
+}
+pub fn TextureFormat::to_js_string(Self) -> String
+
+pub struct TextureSize {
+  width : Int
+  height : Int
+  depth_or_array_layers : Int
+}
+pub fn TextureSize::to_js(Self) -> @core.Any
+
+pub struct VertexAttribute {
+  shader_location : Int
+  offset : Int
+  format : VertexFormat
+}
+pub fn VertexAttribute::to_js(Self) -> @core.Any
+
+pub struct VertexBufferLayout {
+  array_stride : Int
+  attributes : Array[VertexAttribute]
+}
+pub fn VertexBufferLayout::to_js(Self) -> @core.Any
+
+pub(all) enum VertexFormat {
+  Float32x2
+}
+pub fn VertexFormat::to_js_string(Self) -> String
+
+pub struct VertexState {
+  shader_module : GPUShaderModule
+  entry_point : String
+  buffers : Array[VertexBufferLayout]
+}
+pub fn VertexState::to_js(Self) -> @core.Any
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio-runtime-web"
+
+import {
+  "mizchi/js/browser/dom",
+  "mizchi/js/core",
+}
+
+// Values
+pub fn create_host(@dom.Element?) -> @core.Any
+
+// Errors
+
+// Types and methods
+type AssetsState
+
+type GpuState
+
+type InputState
+
+type PassInfo
+
+type PendingTexture
+
+type State
+
+type WindowState
+
+// Type aliases
+
+// Traits
+
