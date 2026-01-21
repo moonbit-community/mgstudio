@@ -1,0 +1,188 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_physics/dynamics"
+
+import {
+  "Milky2018/mgstudio_physics/core",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct CCDSolver {
+}
+pub fn CCDSolver::new() -> Self
+
+type DVector
+pub fn DVector::equals(Self, Self) -> Bool
+pub fn DVector::from_array(Array[Float]) -> Self
+pub fn DVector::from_fn(Int, (Int) -> Float) -> Self
+pub fn DVector::len(Self) -> Int
+pub fn DVector::scale_in_place(Self, Float) -> Unit
+
+pub struct ImpulseJoint {
+  parent : RigidBodyHandle
+  child : RigidBodyHandle
+  joint : RevoluteJoint
+}
+
+pub struct ImpulseJointSet {
+  joints : Array[ImpulseJoint?]
+  generations : Array[Int]
+  free_list : Array[Int]
+  adjacency : Array[Array[Int]]
+  to_wake_up : Array[RigidBodyHandle]
+  to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
+}
+pub fn ImpulseJointSet::attached_joints(Self, RigidBodyHandle) -> Array[ImpulseJoint]
+pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> Unit
+pub fn ImpulseJointSet::is_empty(Self) -> Bool
+pub fn ImpulseJointSet::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[ImpulseJoint]
+pub fn ImpulseJointSet::len(Self) -> Int
+pub fn ImpulseJointSet::new() -> Self
+
+type IndexSequence
+pub fn IndexSequence::inv_rearrange_rows(Self, DVector) -> Unit
+pub fn IndexSequence::keep(Self, Int) -> Unit
+pub fn IndexSequence::new() -> Self
+pub fn IndexSequence::rearrange_columns(Self, RowDVector, Bool) -> Unit
+pub fn IndexSequence::rearrange_rows(Self, DVector, Bool) -> Unit
+pub fn IndexSequence::remove(Self, Int) -> Unit
+pub fn IndexSequence::with_rearranged_rows_mut(Self, DVector, (DVector) -> Unit) -> Unit
+
+type Island
+
+pub struct IslandManager {
+  islands : Array[Island?]
+  awake_islands : Array[Int]
+  free_islands : Array[Int]
+  traversal_candidates : Array[SleepCandidate]
+  traversal_timestamp : Int
+}
+pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
+pub fn IslandManager::interaction_started_or_stopped(Self, RigidBodySet, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
+pub fn IslandManager::new() -> Self
+pub fn IslandManager::rigid_body_updated(Self, RigidBodyHandle, RigidBodySet) -> Unit
+pub fn IslandManager::wake_up(Self, RigidBodyHandle) -> Unit
+
+type Jacobian
+pub fn Jacobian::equals(Self, Self) -> Bool
+pub fn Jacobian::zeros(Int) -> Self
+
+pub struct LinkId {
+  value : Int
+}
+
+type Multibody
+pub fn Multibody::apply_displacements(Self, Array[Float]) -> Unit
+pub fn Multibody::body_jacobian(Self, LinkId) -> Jacobian
+pub fn Multibody::forward_kinematics(Self, RigidBodySet, Bool) -> Unit
+pub fn Multibody::forward_kinematics_single_link(Self, RigidBodySet, LinkId, Array[Float]?, Jacobian?) -> @core.Isometry2
+pub fn Multibody::link(Self, LinkId) -> MultibodyLink?
+pub fn Multibody::ndofs(Self) -> Int
+
+type MultibodyJointHandle
+pub fn MultibodyJointHandle::invalid() -> Self
+
+type MultibodyJointSet
+pub fn MultibodyJointSet::get(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
+pub fn MultibodyJointSet::get_mut(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
+pub fn MultibodyJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet::new() -> Self
+
+type MultibodyLink
+pub fn MultibodyLink::local_to_world(Self) -> @core.Isometry2
+
+type RevoluteJoint
+pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
+
+type RevoluteJointBuilder
+pub fn RevoluteJointBuilder::build(Self) -> RevoluteJoint
+pub fn RevoluteJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
+pub fn RevoluteJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn RevoluteJointBuilder::new() -> Self
+
+pub struct RigidBody {
+  position : RigidBodyPosition
+  mut body_type : RigidBodyType
+  mut enabled : Bool
+  can_sleep : Bool
+  mut sleeping : Bool
+  additional_mass : Float
+}
+pub fn RigidBody::is_sleeping(Self) -> Bool
+pub fn RigidBody::position(Self) -> @core.Isometry2
+pub fn RigidBody::rotation(Self) -> @core.Rot2
+pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
+pub fn RigidBody::set_enabled(Self, Bool) -> Self
+pub fn RigidBody::set_next_kinematic_translation(Self, @core.Vec2) -> Self
+pub fn RigidBody::set_rotation(Self, @core.Rot2, Bool) -> Self
+pub fn RigidBody::set_translation(Self, @core.Vec2, Bool) -> Self
+pub fn RigidBody::translation(Self) -> @core.Vec2
+
+pub struct RigidBodyBuilder {
+  mut position : @core.Isometry2
+  body_type : RigidBodyType
+  mut additional_mass : Float
+  mut can_sleep : Bool
+}
+pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
+pub fn RigidBodyBuilder::build(Self) -> RigidBody
+pub fn RigidBodyBuilder::can_sleep(Self, Bool) -> Self
+pub fn RigidBodyBuilder::dynamic() -> Self
+pub fn RigidBodyBuilder::fixed() -> Self
+pub fn RigidBodyBuilder::kinematic_position_based() -> Self
+pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
+
+pub struct RigidBodyHandle {
+  id : Int
+  generation : Int
+}
+pub fn RigidBodyHandle::equals(Self, Self) -> Bool
+
+pub struct RigidBodyPosition {
+  mut position : @core.Isometry2
+  mut next_position : @core.Isometry2
+}
+pub fn RigidBodyPosition::interpolate_velocity(Self, Float, @core.Vec2) -> RigidBodyVelocity
+pub fn RigidBodyPosition::new(@core.Isometry2, @core.Isometry2) -> Self
+
+pub struct RigidBodySet {
+  bodies : Array[RigidBody?]
+  generations : Array[Int]
+  free_list : Array[Int]
+}
+pub fn RigidBodySet::deserialize(String) -> Self
+pub fn RigidBodySet::get(Self, RigidBodyHandle) -> RigidBody?
+pub fn RigidBodySet::get_mut(Self, RigidBodyHandle) -> RigidBody?
+pub fn RigidBodySet::insert(Self, RigidBody) -> RigidBodyHandle
+pub fn RigidBodySet::new() -> Self
+pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> Unit
+pub fn RigidBodySet::serialize(Self) -> String
+
+pub(all) enum RigidBodyType {
+  Dynamic
+  Fixed
+  KinematicPositionBased
+}
+
+pub struct RigidBodyVelocity {
+  linvel : @core.Vec2
+  angvel : Float
+}
+pub fn RigidBodyVelocity::integrate(Self, Float, @core.Isometry2, @core.Vec2) -> @core.Isometry2
+
+type RowDVector
+pub fn RowDVector::equals(Self, Self) -> Bool
+pub fn RowDVector::from_array(Array[Float]) -> Self
+pub fn RowDVector::from_fn(Int, (Int) -> Float) -> Self
+pub fn RowDVector::len(Self) -> Int
+pub fn RowDVector::scale(Self, Float) -> Self
+
+type SleepCandidate
+
+// Type aliases
+
+// Traits
+

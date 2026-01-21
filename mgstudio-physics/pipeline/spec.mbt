@@ -34,7 +34,9 @@ pub fn IntegrationParameters::with_dt(
 
 ///|
 #declaration_only
-pub fn IntegrationParameters::prediction_distance(self : IntegrationParameters) -> @core.Real {
+pub fn IntegrationParameters::prediction_distance(
+  self : IntegrationParameters,
+) -> @core.Real {
   ...
 }
 

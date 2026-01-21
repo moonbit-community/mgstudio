@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_physics/control"
+
+import {
+  "Milky2018/mgstudio_physics/collision",
+  "Milky2018/mgstudio_physics/core",
+  "Milky2018/mgstudio_physics/query",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub type CharacterCollision
+
+pub(all) enum CharacterLength {
+  Relative(Float)
+  Absolute(Float)
+}
+pub fn CharacterLength::relative(Float) -> Self
+
+pub type EffectiveMovement
+pub fn EffectiveMovement::is_grounded(Self) -> Bool
+pub fn EffectiveMovement::translation(Self) -> @core.Vec2
+
+pub type KinematicCharacterController
+pub fn KinematicCharacterController::move_shape(Self, Float, @query.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
+pub fn KinematicCharacterController::new() -> Self
+pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self
+pub fn KinematicCharacterController::with_snap_to_ground(Self, CharacterLength?) -> Self
+
+// Type aliases
+
+// Traits
+

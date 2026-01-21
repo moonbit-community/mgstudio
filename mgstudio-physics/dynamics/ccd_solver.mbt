@@ -13,9 +13,9 @@
 // limitations under the License.
 
 ///|
-struct ColliderSet {}
+pub struct CCDSolver {}
 
 ///|
-pub fn ColliderSet::new() -> ColliderSet {
-  ColliderSet::{  }
+pub fn CCDSolver::new() -> CCDSolver {
+  CCDSolver::{  }
 }

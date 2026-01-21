@@ -24,9 +24,7 @@ test "character controller climb" {
   let narrow_phase = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager::new()
   let bodies = @dynamics.RigidBodySet::new()
-
   let gravity = @core.Vec2::new(0.0F, -9.81F)
-
   let ground_size = 100.0F
   let ground_height = 0.1F
   let rigid_body = @dynamics.RigidBodyBuilder::fixed()
@@ -35,7 +33,6 @@ test "character controller climb" {
   let floor_handle = bodies.insert(rigid_body)
   let collider = @collision.ColliderBuilder::cuboid(ground_size, ground_height).build()
   colliders.insert_with_parent(collider, floor_handle, bodies) |> ignore
-
   let slope_angle = 0.2F
   let slope_size = 2.0F
   let collider = @collision.ColliderBuilder::cuboid(slope_size, ground_height)
@@ -43,39 +40,41 @@ test "character controller climb" {
     .rotation(slope_angle)
     .build()
   colliders.insert(collider) |> ignore
-
   let impossible_slope_angle = 0.6F
   let impossible_slope_size = 2.0F
   let collider = @collision.ColliderBuilder::cuboid(slope_size, ground_height)
-    .translation(@core.Vec2::new(
-      0.1F + slope_size * 2.0F + impossible_slope_size - 0.9F,
-      -ground_height + 1.7F,
-    ))
+    .translation(
+      @core.Vec2::new(
+        0.1F + slope_size * 2.0F + impossible_slope_size - 0.9F,
+        -ground_height + 1.7F,
+      ),
+    )
     .rotation(impossible_slope_angle)
     .build()
   colliders.insert(collider) |> ignore
-
   let integration_parameters = @pipeline.IntegrationParameters::default()
-
   let character_body_can_climb = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
-  character_body_can_climb.set_translation(@core.Vec2::new(0.6F, 0.5F), false) |> ignore
+  character_body_can_climb.set_translation(@core.Vec2::new(0.6F, 0.5F), false)
+  |> ignore
   let character_handle_can_climb = bodies.insert(character_body_can_climb)
-
   let collider = @collision.ColliderBuilder::ball(0.5F).build()
-  colliders.insert_with_parent(collider, character_handle_can_climb, bodies) |> ignore
-
+  colliders.insert_with_parent(collider, character_handle_can_climb, bodies)
+  |> ignore
   let character_body_cannot_climb = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
-  character_body_cannot_climb.set_translation(@core.Vec2::new(-0.6F, 0.5F), false) |> ignore
+  character_body_cannot_climb.set_translation(
+    @core.Vec2::new(-0.6F, 0.5F),
+    false,
+  )
+  |> ignore
   let character_handle_cannot_climb = bodies.insert(character_body_cannot_climb)
-
   let collider = @collision.ColliderBuilder::ball(0.5F).build()
   let character_shape = collider.shape()
-  colliders.insert_with_parent(collider, character_handle_cannot_climb, bodies) |> ignore
-
+  colliders.insert_with_parent(collider, character_handle_cannot_climb, bodies)
+  |> ignore
   for _ in 0..<200 {
     pipeline.step(
       gravity,
@@ -91,7 +90,6 @@ test "character controller climb" {
       (),
       (),
     )
-
     let update_character_controller = fn(
       controller : KinematicCharacterController,
       handle : @dynamics.RigidBodyHandle,
@@ -110,25 +108,28 @@ test "character controller climb" {
           character_shape,
           character_body.position(),
           @core.Vec2::new(0.1F, -0.1F),
-          fn(_collision) {},
+          fn(_collision) {  },
         )
         let is_grounded = effective_movement.is_grounded()
         let translation = character_body.translation()
         character_body.set_next_kinematic_translation(
           translation.add(effective_movement.translation()),
-        ) |> ignore
+        )
+        |> ignore
         return is_grounded
       }
       return false
     }
-
-    let controller_cannot = KinematicCharacterController::new()
-      .with_max_slope_climb_angle(impossible_slope_angle - 0.001F)
-    let controller_can = KinematicCharacterController::new()
-      .with_max_slope_climb_angle(impossible_slope_angle + 0.001F)
-
+    let controller_cannot = KinematicCharacterController::new().with_max_slope_climb_angle(
+      impossible_slope_angle - 0.001F,
+    )
+    let controller_can = KinematicCharacterController::new().with_max_slope_climb_angle(
+      impossible_slope_angle + 0.001F,
+    )
     inspect(
-      update_character_controller(controller_cannot, character_handle_cannot_climb),
+      update_character_controller(
+        controller_cannot, character_handle_cannot_climb,
+      ),
       content="true",
     )
     inspect(
@@ -150,9 +151,7 @@ test "character controller ground detection" {
   let narrow_phase = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager::new()
   let bodies = @dynamics.RigidBodySet::new()
-
   let gravity = @core.Vec2::new(0.0F, -9.81F)
-
   let ground_size = 100.0F
   let ground_height = 1.0F
   let rigid_body = @dynamics.RigidBodyBuilder::fixed()
@@ -161,32 +160,32 @@ test "character controller ground detection" {
   let floor_handle = bodies.insert(rigid_body)
   let collider = @collision.ColliderBuilder::cuboid(ground_size, ground_height).build()
   colliders.insert_with_parent(collider, floor_handle, bodies) |> ignore
-
   let integration_parameters = @pipeline.IntegrationParameters::default()
-
-  let character_controller_snap = KinematicCharacterController::new()
-    .with_snap_to_ground(Some(CharacterLength::relative(0.2F)))
+  let character_controller_snap = KinematicCharacterController::new().with_snap_to_ground(
+    Some(CharacterLength::relative(0.2F)),
+  )
   let character_body_snap = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
-  character_body_snap.set_translation(@core.Vec2::new(0.6F, 0.5F), false) |> ignore
+  character_body_snap.set_translation(@core.Vec2::new(0.6F, 0.5F), false)
+  |> ignore
   let character_handle_snap = bodies.insert(character_body_snap)
-
   let collider = @collision.ColliderBuilder::ball(0.5F).build()
-  colliders.insert_with_parent(collider, character_handle_snap, bodies) |> ignore
-
-  let character_controller_no_snap = KinematicCharacterController::new()
-    .with_snap_to_ground(None)
+  colliders.insert_with_parent(collider, character_handle_snap, bodies)
+  |> ignore
+  let character_controller_no_snap = KinematicCharacterController::new().with_snap_to_ground(
+    None,
+  )
   let character_body_no_snap = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
-  character_body_no_snap.set_translation(@core.Vec2::new(-0.6F, 0.5F), false) |> ignore
+  character_body_no_snap.set_translation(@core.Vec2::new(-0.6F, 0.5F), false)
+  |> ignore
   let character_handle_no_snap = bodies.insert(character_body_no_snap)
-
   let collider = @collision.ColliderBuilder::ball(0.5F).build()
   let character_shape = collider.shape()
-  colliders.insert_with_parent(collider, character_handle_no_snap, bodies) |> ignore
-
+  colliders.insert_with_parent(collider, character_handle_no_snap, bodies)
+  |> ignore
   for _ in 0..<500 {
     pipeline.step(
       gravity,
@@ -202,7 +201,6 @@ test "character controller ground detection" {
       (),
       (),
     )
-
     let update_character_controller = fn(
       controller : KinematicCharacterController,
       handle : @dynamics.RigidBodyHandle,
@@ -221,24 +219,28 @@ test "character controller ground detection" {
           character_shape,
           character_body.position(),
           @core.Vec2::new(0.1F, -0.1F),
-          fn(_collision) {},
+          fn(_collision) {  },
         )
         let is_grounded = effective_movement.is_grounded()
         let translation = character_body.translation()
         character_body.set_next_kinematic_translation(
           translation.add(effective_movement.translation()),
-        ) |> ignore
+        )
+        |> ignore
         return is_grounded
       }
       return false
     }
-
     inspect(
-      update_character_controller(character_controller_no_snap, character_handle_no_snap),
+      update_character_controller(
+        character_controller_no_snap, character_handle_no_snap,
+      ),
       content="true",
     )
     inspect(
-      update_character_controller(character_controller_snap, character_handle_snap),
+      update_character_controller(
+        character_controller_snap, character_handle_snap,
+      ),
       content="true",
     )
   }

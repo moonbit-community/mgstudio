@@ -87,7 +87,10 @@ pub fn ColliderBuilder::active_collision_types(
 
 ///|
 #declaration_only
-pub fn ColliderBuilder::sensor(self : ColliderBuilder, enabled : Bool) -> ColliderBuilder {
+pub fn ColliderBuilder::sensor(
+  self : ColliderBuilder,
+  enabled : Bool,
+) -> ColliderBuilder {
   ...
 }
 
@@ -139,7 +142,10 @@ pub fn ColliderSet::new() -> ColliderSet {
 
 ///|
 #declaration_only
-pub fn ColliderSet::insert(self : ColliderSet, collider : Collider) -> ColliderHandle {
+pub fn ColliderSet::insert(
+  self : ColliderSet,
+  collider : Collider,
+) -> ColliderHandle {
   ...
 }
 
@@ -156,7 +162,10 @@ pub fn ColliderSet::insert_with_parent(
 
 ///|
 #declaration_only
-pub fn ColliderSet::get(self : ColliderSet, handle : ColliderHandle) -> Collider? {
+pub fn ColliderSet::get(
+  self : ColliderSet,
+  handle : ColliderHandle,
+) -> Collider? {
   ...
 }
 
@@ -241,7 +250,9 @@ pub fn NarrowPhase::intersection_pair(
 
 ///|
 #declaration_only
-pub fn NarrowPhase::query_dispatcher(self : NarrowPhase) -> @query.QueryDispatcher {
+pub fn NarrowPhase::query_dispatcher(
+  self : NarrowPhase,
+) -> @query.QueryDispatcher {
   ...
 }
 

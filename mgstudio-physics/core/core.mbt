@@ -125,7 +125,6 @@ pub fn Vec2::normalize(self : Vec2) -> Vec2 {
   }
 }
 
-
 ///|
 pub fn pi() -> Real {
   pi_value()
@@ -138,7 +137,11 @@ pub fn two_pi() -> Real {
 
 ///|
 pub fn abs(value : Real) -> Real {
-  if value < 0.0F { -value } else { value }
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
 }
 
 ///|
@@ -209,7 +212,10 @@ pub fn Isometry2::from_translation(translation : Vec2) -> Isometry2 {
 ///|
 pub fn Isometry2::mul(self : Isometry2, other : Isometry2) -> Isometry2 {
   let rotated = self.rotation.rotate_vec2(other.translation)
-  Isometry2::new(self.translation.add(rotated), self.rotation.mul(other.rotation))
+  Isometry2::new(
+    self.translation.add(rotated),
+    self.rotation.mul(other.rotation),
+  )
 }
 
 ///|

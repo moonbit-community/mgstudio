@@ -13,9 +13,30 @@
 // limitations under the License.
 
 ///|
-struct ColliderSet {}
+const DEFAULT_DT : @core.Real = 0.016666667F
 
 ///|
-pub fn ColliderSet::new() -> ColliderSet {
-  ColliderSet::{  }
+const DEFAULT_PREDICTION_DISTANCE : @core.Real = 0.002F
+
+///|
+pub fn IntegrationParameters::default() -> IntegrationParameters {
+  { dt: DEFAULT_DT }
+}
+
+///|
+pub fn IntegrationParameters::with_dt(
+  self : IntegrationParameters,
+  dt : @core.Real,
+) -> IntegrationParameters {
+  self |> ignore
+  let safe_dt = if dt < 0.0F { 0.0F } else { dt }
+  { dt: safe_dt }
+}
+
+///|
+pub fn IntegrationParameters::prediction_distance(
+  self : IntegrationParameters,
+) -> @core.Real {
+  self |> ignore
+  DEFAULT_PREDICTION_DISTANCE
 }

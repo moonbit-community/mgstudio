@@ -24,17 +24,14 @@ test "kinematic and fixed contact crash" {
   let narrow_phase = @collision.NarrowPhase::new()
   let bodies = @dynamics.RigidBodySet::new()
   let islands = @dynamics.IslandManager::new()
-
   let rb_fixed = @dynamics.RigidBodyBuilder::fixed().build()
   let h1 = bodies.insert(rb_fixed)
   let co = @collision.ColliderBuilder::ball(10.0F).build()
   colliders.insert_with_parent(co, h1, bodies) |> ignore
-
   let rb_kinematic = @dynamics.RigidBodyBuilder::kinematic_position_based().build()
   let h2 = bodies.insert(rb_kinematic)
   let co2 = @collision.ColliderBuilder::ball(10.0F).build()
   colliders.insert_with_parent(co2, h2, bodies) |> ignore
-
   pipeline.step(
     @core.Vec2::zero(),
     IntegrationParameters::default(),
@@ -63,17 +60,16 @@ test "rigid body removal before step" {
   let narrow_phase = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager::new()
   let bodies = @dynamics.RigidBodySet::new()
-
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
-  let h3 = bodies.insert(@dynamics.RigidBodyBuilder::kinematic_position_based().build())
+  let h3 = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_position_based().build(),
+  )
   let h4 = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
-
   let to_delete = [h1, h2, h3, h4]
   for h in to_delete {
     bodies.remove(h, islands, (), impulse_joints, multibody_joints, true)
   }
-
   pipeline.step(
     @core.Vec2::zero(),
     IntegrationParameters::default(),
@@ -105,14 +101,12 @@ test "collider removal before step" {
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
   let islands = @dynamics.IslandManager::new()
-
   let body = @dynamics.RigidBodyBuilder::dynamic().build()
   let b_handle = bodies.insert(body)
   let collider = @collision.ColliderBuilder::ball(1.0F).build()
   let c_handle = colliders.insert_with_parent(collider, b_handle, bodies)
   colliders.remove(c_handle, islands, bodies, true)
   bodies.remove(b_handle, islands, (), impulse_joints, multibody_joints, true)
-
   for _ in 0..<10 {
     pipeline.step(
       gravity,
@@ -143,12 +137,10 @@ test "rigid body type changed dynamic is in active set" {
   let narrow_phase = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager::new()
   let bodies = @dynamics.RigidBodySet::new()
-
   let rb = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
   let h = bodies.insert(rb)
-
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   pipeline.step(
     gravity,
@@ -164,11 +156,9 @@ test "rigid body type changed dynamic is in active set" {
     (),
     (),
   )
-
   if bodies.get_mut(h) is Some(body) {
     body.set_body_type(@dynamics.RigidBodyType::Dynamic, true) |> ignore
   }
-
   pipeline.step(
     gravity,
     IntegrationParameters::default(),
@@ -183,7 +173,6 @@ test "rigid body type changed dynamic is in active set" {
     (),
     (),
   )
-
   if bodies.get(h) is Some(body_after) {
     let position = body_after.translation()
     inspect(position.y < 0.0F, content="true")
@@ -203,18 +192,19 @@ test "joint step delta time 0" {
   let narrow_phase = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager::new()
   let bodies = @dynamics.RigidBodySet::new()
-
-  let rb_fixed = @dynamics.RigidBodyBuilder::fixed().additional_mass(1.0F).build()
+  let rb_fixed = @dynamics.RigidBodyBuilder::fixed()
+    .additional_mass(1.0F)
+    .build()
   let h_fixed = bodies.insert(rb_fixed)
-  let rb_dynamic = @dynamics.RigidBodyBuilder::dynamic().additional_mass(1.0F).build()
+  let rb_dynamic = @dynamics.RigidBodyBuilder::dynamic()
+    .additional_mass(1.0F)
+    .build()
   let h_dynamic = bodies.insert(rb_dynamic)
-
   let joint = @dynamics.RevoluteJointBuilder::new()
     .local_anchor1(@core.Vec2::new(0.0F, 1.0F))
     .local_anchor2(@core.Vec2::new(0.0F, -3.0F))
     .build()
   impulse_joints.insert(h_fixed, h_dynamic, joint, true)
-
   let parameters = IntegrationParameters::default().with_dt(0.0F)
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   pipeline.step(
@@ -231,7 +221,6 @@ test "joint step delta time 0" {
     (),
     (),
   )
-
   if bodies.get(h_dynamic) is Some(body) {
     let translation = body.translation()
     let rotation = body.rotation()
@@ -248,17 +237,17 @@ test "joint step delta time 0" {
 test "multi sap disable body" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
-
   let ground = @collision.ColliderBuilder::cuboid(100.0F, 0.1F).build()
   collider_set.insert(ground) |> ignore
-
   let rigid_body = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::new(0.0F, 10.0F))
     .build()
-  let collider = @collision.ColliderBuilder::ball(0.5F).restitution(0.7F).build()
+  let collider = @collision.ColliderBuilder::ball(0.5F)
+    .restitution(0.7F)
+    .build()
   let ball_body_handle = rigid_body_set.insert(rigid_body)
-  collider_set.insert_with_parent(collider, ball_body_handle, rigid_body_set) |> ignore
-
+  collider_set.insert_with_parent(collider, ball_body_handle, rigid_body_set)
+  |> ignore
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let integration_parameters = IntegrationParameters::default()
   let physics_pipeline = PhysicsPipeline::new()
@@ -268,7 +257,6 @@ test "multi sap disable body" {
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
   let ccd_solver = @dynamics.CCDSolver::new()
-
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -283,13 +271,11 @@ test "multi sap disable body" {
     (),
     (),
   )
-
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
     ball_body.set_translation(@core.Vec2::new(1.0F, 1.0F), true) |> ignore
     ball_body.set_rotation(@core.Rot2::from_angle(1.0F), true) |> ignore
     ball_body.set_enabled(false) |> ignore
   }
-
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -304,13 +290,11 @@ test "multi sap disable body" {
     (),
     (),
   )
-
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
     ball_body.set_translation(@core.Vec2::new(0.0F, 0.0F), true) |> ignore
     ball_body.set_rotation(@core.Rot2::from_angle(0.0F), true) |> ignore
     ball_body.set_enabled(true) |> ignore
   }
-
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -336,27 +320,21 @@ test "rigid body removal snapshot handle determinism" {
   let multibody_joints = @dynamics.MultibodyJointSet::new()
   let islands = @dynamics.IslandManager::new()
   let bodies = @dynamics.RigidBodySet::new()
-
   let rb = @dynamics.RigidBodyBuilder::dynamic().build()
   let h1 = bodies.insert(rb)
   let h2 = bodies.insert(rb)
   let h3 = bodies.insert(rb)
-
   bodies.remove(h1, islands, (), impulse_joints, multibody_joints, true)
   bodies.remove(h3, islands, (), impulse_joints, multibody_joints, true)
   bodies.remove(h2, islands, (), impulse_joints, multibody_joints, true)
-
   let snapshot = bodies.serialize()
   let bodies2 = @dynamics.RigidBodySet::deserialize(snapshot)
-
   let h1a = bodies.insert(rb)
   let h2a = bodies.insert(rb)
   let h3a = bodies.insert(rb)
-
   let h1b = bodies2.insert(rb)
   let h2b = bodies2.insert(rb)
   let h3b = bodies2.insert(rb)
-
   inspect(@dynamics.RigidBodyHandle::equals(h1a, h1b), content="true")
   inspect(@dynamics.RigidBodyHandle::equals(h2a, h2b), content="true")
   inspect(@dynamics.RigidBodyHandle::equals(h3a, h3b), content="true")

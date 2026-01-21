@@ -18,7 +18,10 @@ pub type RigidBodyHandle
 
 ///|
 #declaration_only
-pub fn RigidBodyHandle::equals(self : RigidBodyHandle, other : RigidBodyHandle) -> Bool {
+pub fn RigidBodyHandle::equals(
+  self : RigidBodyHandle,
+  other : RigidBodyHandle,
+) -> Bool {
   ...
 }
 
@@ -91,19 +94,28 @@ pub fn RigidBodySet::new() -> RigidBodySet {
 
 ///|
 #declaration_only
-pub fn RigidBodySet::insert(self : RigidBodySet, body : RigidBody) -> RigidBodyHandle {
+pub fn RigidBodySet::insert(
+  self : RigidBodySet,
+  body : RigidBody,
+) -> RigidBodyHandle {
   ...
 }
 
 ///|
 #declaration_only
-pub fn RigidBodySet::get(self : RigidBodySet, handle : RigidBodyHandle) -> RigidBody? {
+pub fn RigidBodySet::get(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
   ...
 }
 
 ///|
 #declaration_only
-pub fn RigidBodySet::get_mut(self : RigidBodySet, handle : RigidBodyHandle) -> RigidBody? {
+pub fn RigidBodySet::get_mut(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
   ...
 }
 
@@ -225,6 +237,46 @@ pub fn IslandManager::new() -> IslandManager {
 
 ///|
 #declaration_only
+pub fn IslandManager::active_bodies(
+  self : IslandManager,
+) -> Array[RigidBodyHandle] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IslandManager::wake_up(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IslandManager::interaction_started_or_stopped(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  handle1 : RigidBodyHandle?,
+  handle2 : RigidBodyHandle?,
+  started : Bool,
+  wake_up : Bool,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IslandManager::rigid_body_updated(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+  bodies : RigidBodySet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub type CCDSolver
 
 ///|
@@ -236,6 +288,10 @@ pub fn CCDSolver::new() -> CCDSolver {
 ///|
 #declaration_only
 pub type ImpulseJointSet
+
+///|
+#declaration_only
+pub type ImpulseJoint
 
 ///|
 #declaration_only
@@ -252,6 +308,37 @@ pub fn ImpulseJointSet::insert(
   joint : RevoluteJoint,
   wake_up : Bool,
 ) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::is_empty(self : ImpulseJointSet) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::attached_joints(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+) -> Array[ImpulseJoint] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::joints_between(
+  self : ImpulseJointSet,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> Array[ImpulseJoint] {
   ...
 }
 
@@ -295,7 +382,9 @@ pub fn RevoluteJointBuilder::local_anchor2(
 
 ///|
 #declaration_only
-pub fn RevoluteJointBuilder::build(self : RevoluteJointBuilder) -> RevoluteJoint {
+pub fn RevoluteJointBuilder::build(
+  self : RevoluteJointBuilder,
+) -> RevoluteJoint {
   ...
 }
 
@@ -504,7 +593,10 @@ pub type DVector
 
 ///|
 #declaration_only
-pub fn RowDVector::from_fn(size : Int, init : (Int) -> @core.Real) -> RowDVector {
+pub fn RowDVector::from_fn(
+  size : Int,
+  init : (Int) -> @core.Real,
+) -> RowDVector {
   ...
 }
 
@@ -584,7 +676,10 @@ pub fn IndexSequence::rearrange_rows(
 
 ///|
 #declaration_only
-pub fn IndexSequence::inv_rearrange_rows(self : IndexSequence, vec : DVector) -> Unit {
+pub fn IndexSequence::inv_rearrange_rows(
+  self : IndexSequence,
+  vec : DVector,
+) -> Unit {
   ...
 }
 

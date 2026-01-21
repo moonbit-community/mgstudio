@@ -23,10 +23,7 @@ struct RevoluteJointBuilder {
 
 ///|
 pub fn RevoluteJointBuilder::new() -> RevoluteJointBuilder {
-  {
-    local_anchor1: @core.Vec2::zero(),
-    local_anchor2: @core.Vec2::zero(),
-  }
+  { local_anchor1: @core.Vec2::zero(), local_anchor2: @core.Vec2::zero() }
 }
 
 ///|
@@ -48,7 +45,9 @@ pub fn RevoluteJointBuilder::local_anchor2(
 }
 
 ///|
-pub fn RevoluteJointBuilder::build(self : RevoluteJointBuilder) -> RevoluteJoint {
+pub fn RevoluteJointBuilder::build(
+  self : RevoluteJointBuilder,
+) -> RevoluteJoint {
   { local_anchor1: self.local_anchor1, local_anchor2: self.local_anchor2 }
 }
 
@@ -88,13 +87,19 @@ pub fn RevoluteJoint::angle(
 }
 
 ///|
-fn revolute_body_to_parent(joint : RevoluteJoint, angle : @core.Real) -> @core.Isometry2 {
+fn revolute_body_to_parent(
+  joint : RevoluteJoint,
+  angle : @core.Real,
+) -> @core.Isometry2 {
   let t1 = @core.Isometry2::from_translation(joint.local_anchor1)
   let rot = @core.Isometry2::new(
     @core.Vec2::zero(),
     @core.Rot2::from_angle(angle),
   )
-  let neg_anchor2 = @core.Vec2::new(-joint.local_anchor2.x, -joint.local_anchor2.y)
+  let neg_anchor2 = @core.Vec2::new(
+    -joint.local_anchor2.x,
+    -joint.local_anchor2.y,
+  )
   let t2 = @core.Isometry2::from_translation(neg_anchor2)
   t1.mul(rot).mul(t2)
 }
@@ -106,7 +111,7 @@ pub struct LinkId {
 
 ///|
 fn LinkId::new(value : Int) -> LinkId {
-  LinkId::{ value }
+  LinkId::{ value, }
 }
 
 ///|
@@ -216,18 +221,20 @@ fn Multibody::recompute_ndofs(self : Multibody) -> Unit {
 }
 
 ///|
-fn Multibody::update_ndofs_with_root(self : Multibody, bodies : RigidBodySet) -> Unit {
+fn Multibody::update_ndofs_with_root(
+  self : Multibody,
+  bodies : RigidBodySet,
+) -> Unit {
   if self.links.length() <= 0 {
     self.ndofs = 0
     return
   }
   let root = self.links[0]
-  let is_dynamic =
-    if bodies.get(root.rigid_body) is Some(body) {
-      !(body.body_type is RigidBodyType::Fixed)
-    } else {
-      true
-    }
+  let is_dynamic = if bodies.get(root.rigid_body) is Some(body) {
+    !(body.body_type is RigidBodyType::Fixed)
+  } else {
+    true
+  }
   let root_dofs = if is_dynamic { SPATIAL_DIM } else { 0 }
   self.root_is_dynamic = is_dynamic
   self.ndofs = root_dofs + (self.links.length() - 1)
@@ -253,7 +260,6 @@ pub fn Multibody::forward_kinematics(
   root_link.local_to_parent = root_pose
   root_link.local_to_world = root_pose
   self.links[0] = root_link
-
   for i in 1..<self.links.length() {
     let link = self.links[i]
     let parent = self.links[link.parent_internal_id]
@@ -315,14 +321,12 @@ fn Multibody::compute_link_pose(
   let mut current_pose = root_pose
   let joint_positions : Array[@core.Vec2] = []
   let joint_cols : Array[Int] = []
-
   for i in 1..<branch.length() {
     let link_id = branch[i]
     let link = self.links[link_id]
     let joint_pos = current_pose.transform_point(link.joint.local_anchor1)
     joint_positions.push(joint_pos)
     joint_cols.push(link.assembly_id)
-
     let mut angle = link.joint_angle
     if displacements is Some(disp) && link.assembly_id < disp.length() {
       angle = angle + disp[link.assembly_id]
@@ -330,7 +334,6 @@ fn Multibody::compute_link_pose(
     let local_to_parent = revolute_body_to_parent(link.joint, angle)
     current_pose = current_pose.mul(local_to_parent)
   }
-
   if out_jacobian is Some(jacobian) {
     jacobian.ensure_cols(self.ndofs)
     let link_pos = current_pose.translation
@@ -360,7 +363,6 @@ fn Multibody::compute_link_pose(
       }
     }
   }
-
   current_pose
 }
 
@@ -418,7 +420,7 @@ struct MultibodyJointHandle {
 
 ///|
 fn MultibodyJointHandle::new(id : Int) -> MultibodyJointHandle {
-  MultibodyJointHandle::{ id }
+  MultibodyJointHandle::{ id, }
 }
 
 ///|
@@ -444,7 +446,10 @@ pub fn MultibodyJointSet::new() -> MultibodyJointSet {
 }
 
 ///|
-fn MultibodyJointSet::ensure_body_capacity(self : MultibodyJointSet, id : Int) -> Unit {
+fn MultibodyJointSet::ensure_body_capacity(
+  self : MultibodyJointSet,
+  id : Int,
+) -> Unit {
   while self.body_links.length() <= id {
     self.body_links.push(None)
   }
@@ -494,11 +499,9 @@ pub fn MultibodyJointSet::insert(
   if child_info.link_id.value != 0 {
     return None
   }
-
   let parent_mb = self.multibodies[parent_info.mb_index]
   let child_mb = self.multibodies[child_info.mb_index]
   let offset = parent_mb.links.length()
-
   for i in 0..<child_mb.links.length() {
     let link = child_mb.links[i]
     if i == 0 {
@@ -512,15 +515,14 @@ pub fn MultibodyJointSet::insert(
   }
   parent_mb.recompute_ndofs()
   self.multibodies[parent_info.mb_index] = parent_mb
-
   for i in 0..<child_mb.links.length() {
     let link = child_mb.links[i]
     self.ensure_body_capacity(link.rigid_body.id)
-    self.body_links[link.rigid_body.id] = Some(
-      LinkInfo::{ mb_index: parent_info.mb_index, link_id: LinkId::new(offset + i) },
-    )
+    self.body_links[link.rigid_body.id] = Some(LinkInfo::{
+      mb_index: parent_info.mb_index,
+      link_id: LinkId::new(offset + i),
+    })
   }
-
   Some(MultibodyJointHandle::new(child.id))
 }
 
@@ -553,6 +555,7 @@ pub fn MultibodyJointSet::get_mut(
   self.get(handle)
 }
 
+///|
 fn MultibodyJointSet::remove_joints_attached_to_rigid_body(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,

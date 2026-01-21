@@ -24,7 +24,6 @@ test "revolute joint angle" {
     @core.pi() / 2.0F,
     @core.pi(),
   ]
-
   for delta in deltas {
     let rot2 = @core.rotation_from_angle(1.0F + delta)
     let angle = revolute.angle(rot1, rot2)

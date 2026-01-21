@@ -18,18 +18,14 @@ test "multibody append" {
   let spatial_dim : Int = 3
   let bodies : RigidBodySet = RigidBodySet::new()
   let joints : MultibodyJointSet = MultibodyJointSet::new()
-
   let a : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let b : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let c : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let d : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
-
   let joint = RevoluteJointBuilder::new().build()
-
   let mb_handle = joints.insert(a, b, joint, true)
   joints.insert(c, d, joint, true) |> ignore
   joints.insert(b, c, joint, true) |> ignore
-
   if mb_handle is Some(handle) {
     if joints.get(handle) is Some(pair) {
       let (multibody, _) = pair
@@ -44,23 +40,24 @@ test "multibody insert" {
   let spatial_dim : Int = 3
   let bodies : RigidBodySet = RigidBodySet::new()
   let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
-
   let num_links = 10
   let handles : Array[RigidBodyHandle] = []
   for _ in 0..<num_links {
     handles.push(bodies.insert(RigidBodyBuilder::dynamic().build()))
   }
-
   let joint = RevoluteJointBuilder::new().build()
-
   let mut mb_handle : MultibodyJointHandle = MultibodyJointHandle::invalid()
   for i in 0..<(num_links - 1) {
-    let inserted = multibody_joints.insert(handles[i], handles[i + 1], joint, true)
+    let inserted = multibody_joints.insert(
+      handles[i],
+      handles[i + 1],
+      joint,
+      true,
+    )
     if inserted is Some(handle) {
       mb_handle = handle
     }
   }
-
   if multibody_joints.get(mb_handle) is Some(pair) {
     let (multibody, _) = pair
     inspect(multibody.ndofs() == spatial_dim + num_links - 1, content="true")
@@ -75,22 +72,18 @@ test "multibody remove" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = ImpulseJointSet::new()
   let islands = IslandManager::new()
-
   let num_links = 10
   let handles : Array[RigidBodyHandle] = []
   for _ in 0..<num_links {
     handles.push(bodies.insert(RigidBodyBuilder::dynamic().build()))
   }
-
   let joint = RevoluteJointBuilder::new().build()
   for i in 0..<(num_links - 1) {
     multibody_joints.insert(handles[i], handles[i + 1], joint, true) |> ignore
   }
-
   for handle in handles {
     bodies.remove(handle, islands, (), impulse_joints, multibody_joints, true)
   }
-
   colliders |> ignore
 }
 
@@ -105,11 +98,13 @@ test "index sequence rearrange columns" {
   seq.keep(6)
   seq.remove(7)
   seq.keep(8)
-
-  let vec = RowDVector::from_array([0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F])
+  let vec = RowDVector::from_array([
+    0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F,
+  ])
   seq.rearrange_columns(vec, true)
-
-  let expected = RowDVector::from_array([0.0F, 1.0F, 5.0F, 6.0F, 8.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F])
+  let expected = RowDVector::from_array([
+    0.0F, 1.0F, 5.0F, 6.0F, 8.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+  ])
   inspect(vec.equals(expected), content="true")
 }
 
@@ -124,15 +119,18 @@ test "index sequence rearrange rows" {
   seq.keep(6)
   seq.remove(7)
   seq.keep(8)
-
-  let vec = DVector::from_array([0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F])
+  let vec = DVector::from_array([
+    0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F,
+  ])
   seq.rearrange_rows(vec, true)
-
-  let expected = DVector::from_array([0.0F, 1.0F, 5.0F, 6.0F, 8.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F])
+  let expected = DVector::from_array([
+    0.0F, 1.0F, 5.0F, 6.0F, 8.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+  ])
   inspect(vec.equals(expected), content="true")
-
   seq.inv_rearrange_rows(vec)
-  let expected2 = DVector::from_array([0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 5.0F, 6.0F, 0.0F, 8.0F, 0.0F])
+  let expected2 = DVector::from_array([
+    0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 5.0F, 6.0F, 0.0F, 8.0F, 0.0F,
+  ])
   inspect(vec.equals(expected2), content="true")
 }
 
@@ -147,8 +145,9 @@ test "index sequence with rearranged rows mut" {
   seq.keep(6)
   seq.remove(7)
   seq.keep(8)
-
-  let vec = DVector::from_array([0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F])
+  let vec = DVector::from_array([
+    0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F,
+  ])
   let mut rearranged_len = 0
   let mut rearranged_equals = false
   seq.with_rearranged_rows_mut(vec, fn(v) {
@@ -159,7 +158,8 @@ test "index sequence with rearranged rows mut" {
   })
   inspect(rearranged_len == 5, content="true")
   inspect(rearranged_equals, content="true")
-
-  let expected = DVector::from_array([0.0F, 10.0F, 0.0F, 0.0F, 0.0F, 50.0F, 60.0F, 0.0F, 80.0F, 0.0F])
+  let expected = DVector::from_array([
+    0.0F, 10.0F, 0.0F, 0.0F, 0.0F, 50.0F, 60.0F, 0.0F, 80.0F, 0.0F,
+  ])
   inspect(vec.equals(expected), content="true")
 }

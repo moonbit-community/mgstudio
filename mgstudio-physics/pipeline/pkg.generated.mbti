@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_physics/pipeline"
+
+import {
+  "Milky2018/mgstudio_physics/collision",
+  "Milky2018/mgstudio_physics/core",
+  "Milky2018/mgstudio_physics/dynamics",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub type CollisionPipeline
+pub fn CollisionPipeline::new() -> Self
+pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, Unit, Unit) -> Unit
+
+pub struct IntegrationParameters {
+  dt : Float
+}
+pub fn IntegrationParameters::default() -> Self
+pub fn IntegrationParameters::prediction_distance(Self) -> Float
+pub fn IntegrationParameters::with_dt(Self, Float) -> Self
+
+pub type PhysicsPipeline
+pub fn PhysicsPipeline::new() -> Self
+pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, Unit, Unit) -> Unit
+
+// Type aliases
+
+// Traits
+

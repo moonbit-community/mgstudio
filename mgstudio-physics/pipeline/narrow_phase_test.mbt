@@ -18,14 +18,11 @@
 test "collider set parent depenetration" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
-
   let collider = @collision.ColliderBuilder::ball(0.5F)
-
   let rigid_body_1 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build()
   let body_1_handle = rigid_body_set.insert(rigid_body_1)
-
   let collider_1_handle = collider_set.insert_with_parent(
     collider.build(),
     body_1_handle,
@@ -36,12 +33,10 @@ test "collider set parent depenetration" {
     body_1_handle,
     rigid_body_set,
   )
-
   let rigid_body_2 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build()
   let body_2_handle = rigid_body_set.insert(rigid_body_2)
-
   let gravity = @core.Vec2::zero()
   let integration_parameters = IntegrationParameters::default()
   let physics_pipeline = PhysicsPipeline::new()
@@ -51,7 +46,6 @@ test "collider set parent depenetration" {
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
   let ccd_solver = @dynamics.CCDSolver::new()
-
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -66,24 +60,27 @@ test "collider set parent depenetration" {
     (),
     (),
   )
-
   if collider_set.get(collider_1_handle) is Some(c1) {
     if collider_set.get(collider_2_handle) is Some(c2) {
       let dist = c1.translation().sub(c2.translation()).length()
       inspect(dist < 0.5F, content="true")
     }
   }
-
-  let contact_pair = narrow_phase.contact_pair(collider_1_handle, collider_2_handle)
+  let contact_pair = narrow_phase.contact_pair(
+    collider_1_handle, collider_2_handle,
+  )
   if contact_pair is Some(pair) {
     inspect(pair.manifold_count() == 0, content="true")
   }
-
-  let intersection_pair = narrow_phase.intersection_pair(collider_1_handle, collider_2_handle)
+  let intersection_pair = narrow_phase.intersection_pair(
+    collider_1_handle, collider_2_handle,
+  )
   inspect(intersection_pair is None, content="true")
-
-  collider_set.set_parent(collider_2_handle, Some(body_2_handle), rigid_body_set)
-
+  collider_set.set_parent(
+    collider_2_handle,
+    Some(body_2_handle),
+    rigid_body_set,
+  )
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -98,12 +95,12 @@ test "collider set parent depenetration" {
     (),
     (),
   )
-
-  let contact_pair2 = narrow_phase.contact_pair(collider_1_handle, collider_2_handle)
+  let contact_pair2 = narrow_phase.contact_pair(
+    collider_1_handle, collider_2_handle,
+  )
   if contact_pair2 is Some(pair) {
     inspect(pair.manifold_count() == 1, content="true")
   }
-
   for _ in 0..<200 {
     physics_pipeline.step(
       gravity,
@@ -120,7 +117,6 @@ test "collider set parent depenetration" {
       (),
     )
   }
-
   if collider_set.get(collider_1_handle) is Some(c1) {
     if collider_set.get(collider_2_handle) is Some(c2) {
       let dist = c1.translation().sub(c2.translation()).length()
@@ -135,31 +131,25 @@ test "collider set parent depenetration" {
 test "collider set parent no self intersection" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
-
   let collider = @collision.ColliderBuilder::ball(0.5F)
-
   let rigid_body_1 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build()
   let body_1_handle = rigid_body_set.insert(rigid_body_1)
-
   let collider_1_handle = collider_set.insert_with_parent(
     collider.build(),
     body_1_handle,
     rigid_body_set,
   )
-
   let rigid_body_2 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build()
   let body_2_handle = rigid_body_set.insert(rigid_body_2)
-
   let collider_2_handle = collider_set.insert_with_parent(
     collider.build(),
     body_2_handle,
     rigid_body_set,
   )
-
   let gravity = @core.Vec2::zero()
   let integration_parameters = IntegrationParameters::default()
   let physics_pipeline = PhysicsPipeline::new()
@@ -169,7 +159,6 @@ test "collider set parent no self intersection" {
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
   let ccd_solver = @dynamics.CCDSolver::new()
-
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -184,13 +173,17 @@ test "collider set parent no self intersection" {
     (),
     (),
   )
-
-  let contact_pair = narrow_phase.contact_pair(collider_1_handle, collider_2_handle)
+  let contact_pair = narrow_phase.contact_pair(
+    collider_1_handle, collider_2_handle,
+  )
   if contact_pair is Some(pair) {
     inspect(pair.manifold_count() == 1, content="true")
   }
-
-  collider_set.set_parent(collider_2_handle, Some(body_1_handle), rigid_body_set)
+  collider_set.set_parent(
+    collider_2_handle,
+    Some(body_1_handle),
+    rigid_body_set,
+  )
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -205,13 +198,17 @@ test "collider set parent no self intersection" {
     (),
     (),
   )
-
-  let contact_pair2 = narrow_phase.contact_pair(collider_1_handle, collider_2_handle)
+  let contact_pair2 = narrow_phase.contact_pair(
+    collider_1_handle, collider_2_handle,
+  )
   if contact_pair2 is Some(pair) {
     inspect(pair.manifold_count() == 0, content="true")
   }
-
-  collider_set.set_parent(collider_2_handle, Some(body_2_handle), rigid_body_set)
+  collider_set.set_parent(
+    collider_2_handle,
+    Some(body_2_handle),
+    rigid_body_set,
+  )
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -226,8 +223,9 @@ test "collider set parent no self intersection" {
     (),
     (),
   )
-
-  let contact_pair3 = narrow_phase.contact_pair(collider_1_handle, collider_2_handle)
+  let contact_pair3 = narrow_phase.contact_pair(
+    collider_1_handle, collider_2_handle,
+  )
   if contact_pair3 is Some(pair) {
     inspect(pair.manifold_count() == 1, content="true")
   }

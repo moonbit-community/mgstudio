@@ -24,7 +24,10 @@ fn RigidBodyHandle::new(id : Int, generation : Int) -> RigidBodyHandle {
 }
 
 ///|
-pub fn RigidBodyHandle::equals(self : RigidBodyHandle, other : RigidBodyHandle) -> Bool {
+pub fn RigidBodyHandle::equals(
+  self : RigidBodyHandle,
+  other : RigidBodyHandle,
+) -> Bool {
   self.id == other.id && self.generation == other.generation
 }
 
@@ -50,7 +53,11 @@ pub fn RigidBodyPosition::interpolate_velocity(
 ) -> RigidBodyVelocity {
   let com = self.position.transform_point(local_com)
   let shift = @core.Isometry2::from_translation(com)
-  let dpos = shift.inverse().mul(self.next_position).mul(self.position.inverse()).mul(shift)
+  let dpos = shift
+    .inverse()
+    .mul(self.next_position)
+    .mul(self.position.inverse())
+    .mul(shift)
   let angular = dpos.rotation.angle()
   let linear = dpos.translation
   RigidBodyVelocity::{
@@ -73,9 +80,7 @@ pub fn RigidBodyVelocity::integrate(
   local_com : @core.Vec2,
 ) -> @core.Isometry2 {
   let com = curr_pos.transform_point(local_com)
-  let shift = @core.Isometry2::from_translation(
-    @core.Vec2::new(-com.x, -com.y),
-  )
+  let shift = @core.Isometry2::from_translation(@core.Vec2::new(-com.x, -com.y))
   let rot = @core.Isometry2::new(
     @core.Vec2::zero(),
     @core.Rot2::from_angle(self.angvel * dt),
@@ -276,7 +281,10 @@ pub fn RigidBodySet::new() -> RigidBodySet {
 }
 
 ///|
-pub fn RigidBodySet::insert(self : RigidBodySet, body : RigidBody) -> RigidBodyHandle {
+pub fn RigidBodySet::insert(
+  self : RigidBodySet,
+  body : RigidBody,
+) -> RigidBodyHandle {
   if self.free_list.pop() is Some(index) {
     self.bodies[index] = Some(body)
     let generation = self.generations[index]
@@ -290,7 +298,10 @@ pub fn RigidBodySet::insert(self : RigidBodySet, body : RigidBody) -> RigidBodyH
 }
 
 ///|
-pub fn RigidBodySet::get(self : RigidBodySet, handle : RigidBodyHandle) -> RigidBody? {
+pub fn RigidBodySet::get(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
   if handle.id < 0 || handle.id >= self.bodies.length() {
     return None
   }
@@ -301,7 +312,10 @@ pub fn RigidBodySet::get(self : RigidBodySet, handle : RigidBodyHandle) -> Rigid
 }
 
 ///|
-pub fn RigidBodySet::get_mut(self : RigidBodySet, handle : RigidBodyHandle) -> RigidBody? {
+pub fn RigidBodySet::get_mut(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
   self.get(handle)
 }
 
@@ -377,7 +391,10 @@ fn split_values(text : String, sep : String) -> Array[String] {
 
 ///|
 fn parse_int_value(text : String) -> Int {
-  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(text[:], base=10)
+  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
+    text[:],
+    base=10,
+  )
   if result is Ok(value) {
     value
   } else {
@@ -387,7 +404,9 @@ fn parse_int_value(text : String) -> Int {
 
 ///|
 fn parse_real_value(text : String) -> @core.Real {
-  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(text[:])
+  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
+    text[:],
+  )
   if result is Ok(value) {
     Float::from_double(value)
   } else {
@@ -470,7 +489,6 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
   let generations : Array[Int] = []
   let free_list : Array[Int] = []
   let bodies : Array[RigidBody?] = []
-
   for part in data.split(";"[:]) {
     let value = part.to_string()
     if value.starts_with("len="[:]) {
@@ -497,17 +515,57 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
         } else if entry.starts_with("B,"[:]) {
           let fields = split_values(entry.substring(start=2), ",")
           let body_type = body_type_from_int(
-            if fields.length() > 0 { parse_int_value(fields[0]) } else { 0 },
+            if fields.length() > 0 {
+              parse_int_value(fields[0])
+            } else {
+              0
+            },
           )
-          let tx = if fields.length() > 1 { parse_real_value(fields[1]) } else { 0.0F }
-          let ty = if fields.length() > 2 { parse_real_value(fields[2]) } else { 0.0F }
-          let rot = if fields.length() > 3 { parse_real_value(fields[3]) } else { 0.0F }
-          let ntx = if fields.length() > 4 { parse_real_value(fields[4]) } else { tx }
-          let nty = if fields.length() > 5 { parse_real_value(fields[5]) } else { ty }
-          let nrot = if fields.length() > 6 { parse_real_value(fields[6]) } else { rot }
-          let enabled = if fields.length() > 7 { parse_bool_value(fields[7]) } else { true }
-          let can_sleep = if fields.length() > 8 { parse_bool_value(fields[8]) } else { true }
-          let sleeping = if fields.length() > 9 { parse_bool_value(fields[9]) } else { false }
+          let tx = if fields.length() > 1 {
+            parse_real_value(fields[1])
+          } else {
+            0.0F
+          }
+          let ty = if fields.length() > 2 {
+            parse_real_value(fields[2])
+          } else {
+            0.0F
+          }
+          let rot = if fields.length() > 3 {
+            parse_real_value(fields[3])
+          } else {
+            0.0F
+          }
+          let ntx = if fields.length() > 4 {
+            parse_real_value(fields[4])
+          } else {
+            tx
+          }
+          let nty = if fields.length() > 5 {
+            parse_real_value(fields[5])
+          } else {
+            ty
+          }
+          let nrot = if fields.length() > 6 {
+            parse_real_value(fields[6])
+          } else {
+            rot
+          }
+          let enabled = if fields.length() > 7 {
+            parse_bool_value(fields[7])
+          } else {
+            true
+          }
+          let can_sleep = if fields.length() > 8 {
+            parse_bool_value(fields[8])
+          } else {
+            true
+          }
+          let sleeping = if fields.length() > 9 {
+            parse_bool_value(fields[9])
+          } else {
+            false
+          }
           let additional_mass = if fields.length() > 10 {
             parse_real_value(fields[10])
           } else {
@@ -537,13 +595,11 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
       }
     }
   }
-
   while generations.length() < len {
     generations.push(0)
   }
   while bodies.length() < len {
     bodies.push(None)
   }
-
   { bodies, generations, free_list }
 }

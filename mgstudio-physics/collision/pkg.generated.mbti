@@ -1,0 +1,72 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_physics/collision"
+
+import {
+  "Milky2018/mgstudio_physics/core",
+  "Milky2018/mgstudio_physics/dynamics",
+  "Milky2018/mgstudio_physics/query",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub type ActiveCollisionTypes
+pub fn ActiveCollisionTypes::all() -> Self
+
+pub(all) enum ActiveEvents {
+  CollisionEvents
+}
+
+pub type BroadPhaseBvh
+pub fn BroadPhaseBvh::as_query_pipeline(Self, @query.QueryDispatcher, @dynamics.RigidBodySet, ColliderSet, @query.QueryFilter) -> @query.QueryPipeline
+pub fn BroadPhaseBvh::new() -> Self
+
+pub type Collider
+pub fn Collider::shape(Self) -> Shape
+pub fn Collider::translation(Self) -> @core.Vec2
+
+pub type ColliderBuilder
+pub fn ColliderBuilder::active_collision_types(Self, ActiveCollisionTypes) -> Self
+pub fn ColliderBuilder::active_events(Self, ActiveEvents) -> Self
+pub fn ColliderBuilder::ball(Float) -> Self
+pub fn ColliderBuilder::build(Self) -> Collider
+pub fn ColliderBuilder::cuboid(Float, Float) -> Self
+pub fn ColliderBuilder::restitution(Self, Float) -> Self
+pub fn ColliderBuilder::rotation(Self, Float) -> Self
+pub fn ColliderBuilder::sensor(Self, Bool) -> Self
+pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
+
+pub type ColliderHandle
+
+type ColliderSet
+pub fn ColliderSet::get(Self, ColliderHandle) -> Collider?
+pub fn ColliderSet::insert(Self, Collider) -> ColliderHandle
+pub fn ColliderSet::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet) -> ColliderHandle
+pub fn ColliderSet::new() -> Self
+pub fn ColliderSet::remove(Self, ColliderHandle, @dynamics.IslandManager, @dynamics.RigidBodySet, Bool) -> Unit
+pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet) -> Unit
+
+pub type ContactPair
+pub fn ContactPair::manifold_count(Self) -> Int
+
+pub struct IntersectionPair {
+  collider1 : ColliderHandle
+  collider2 : ColliderHandle
+  intersecting : Bool
+}
+
+pub type NarrowPhase
+pub fn NarrowPhase::contact_pair(Self, ColliderHandle, ColliderHandle) -> ContactPair?
+pub fn NarrowPhase::intersection_pair(Self, ColliderHandle, ColliderHandle) -> IntersectionPair?
+pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[IntersectionPair]
+pub fn NarrowPhase::new() -> Self
+pub fn NarrowPhase::query_dispatcher(Self) -> @query.QueryDispatcher
+
+pub type Shape
+
+// Type aliases
+
+// Traits
+

@@ -27,12 +27,20 @@ struct DVector {
 }
 
 ///|
-fn RowDVector::new_view(data : Array[@core.Real], start : Int, len : Int) -> RowDVector {
+fn RowDVector::new_view(
+  data : Array[@core.Real],
+  start : Int,
+  len : Int,
+) -> RowDVector {
   { data, start, len }
 }
 
 ///|
-fn DVector::new_view(data : Array[@core.Real], start : Int, len : Int) -> DVector {
+fn DVector::new_view(
+  data : Array[@core.Real],
+  start : Int,
+  len : Int,
+) -> DVector {
   { data, start, len }
 }
 
@@ -42,7 +50,11 @@ fn RowDVector::value_at(self : RowDVector, index : Int) -> @core.Real {
 }
 
 ///|
-fn RowDVector::set_value(self : RowDVector, index : Int, value : @core.Real) -> Unit {
+fn RowDVector::set_value(
+  self : RowDVector,
+  index : Int,
+  value : @core.Real,
+) -> Unit {
   self.data[self.start + index] = value
 }
 
@@ -57,7 +69,10 @@ fn DVector::set_value(self : DVector, index : Int, value : @core.Real) -> Unit {
 }
 
 ///|
-pub fn RowDVector::from_fn(size : Int, init : (Int) -> @core.Real) -> RowDVector {
+pub fn RowDVector::from_fn(
+  size : Int,
+  init : (Int) -> @core.Real,
+) -> RowDVector {
   let values : Array[@core.Real] = []
   for i in 0..<size {
     values.push(init(i))
@@ -158,6 +173,7 @@ pub fn Jacobian::zeros(size : Int) -> Jacobian {
   { data, cols: size }
 }
 
+///|
 fn Jacobian::ensure_cols(self : Jacobian, cols : Int) -> Unit {
   if self.cols == cols {
     for i in 0..<self.data.length() {
@@ -173,7 +189,13 @@ fn Jacobian::ensure_cols(self : Jacobian, cols : Int) -> Unit {
   }
 }
 
-fn Jacobian::set_value(self : Jacobian, row : Int, col : Int, value : @core.Real) -> Unit {
+///|
+fn Jacobian::set_value(
+  self : Jacobian,
+  row : Int,
+  col : Int,
+  value : @core.Real,
+) -> Unit {
   self.data[row * self.cols + col] = value
 }
 
@@ -220,7 +242,10 @@ pub fn IndexSequence::keep(self : IndexSequence, index : Int) -> Unit {
 }
 
 ///|
-fn IndexSequence::dim_after_removal(self : IndexSequence, original_dim : Int) -> Int {
+fn IndexSequence::dim_after_removal(
+  self : IndexSequence,
+  original_dim : Int,
+) -> Int {
   if self.first_to_remove < 0 {
     original_dim
   } else {
@@ -279,7 +304,10 @@ pub fn IndexSequence::rearrange_rows(
 }
 
 ///|
-pub fn IndexSequence::inv_rearrange_rows(self : IndexSequence, vec : DVector) -> Unit {
+pub fn IndexSequence::inv_rearrange_rows(
+  self : IndexSequence,
+  vec : DVector,
+) -> Unit {
   if self.first_to_remove < 0 {
     return
   }
