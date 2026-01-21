@@ -286,6 +286,11 @@ export async function createHost({ canvas }) {
     });
   };
 
+  const toNumberOr = (value, fallback) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+  };
+
   const ensurePipelineResources = () => {
     const { device, format } = state.gpu;
     if (!device || state.gpu.pipeline) {
@@ -965,10 +970,10 @@ fn fs_main() -> @location(0) vec4<f32> {
             {
               view,
               clearValue: {
-                r: Number(clearR) || 0,
-                g: Number(clearG) || 0,
-                b: Number(clearB) || 0,
-                a: Number(clearA) || 1,
+                r: toNumberOr(clearR, 0),
+                g: toNumberOr(clearG, 0),
+                b: toNumberOr(clearB, 0),
+                a: toNumberOr(clearA, 1),
               },
               loadOp: "clear",
               storeOp: "store",
@@ -977,12 +982,12 @@ fn fs_main() -> @location(0) vec4<f32> {
         });
         state.gpu.currentPass = pass;
         state.gpu.currentPassInfo = {
-          width: Math.max(1, Number(width)),
-          height: Math.max(1, Number(height)),
-          camX: Number(camX) || 0,
-          camY: Number(camY) || 0,
-          camRotation: Number(camRotation) || 0,
-          camScale: Number(camScale) || 1,
+          width: Math.max(1, toNumberOr(width, 1)),
+          height: Math.max(1, toNumberOr(height, 1)),
+          camX: toNumberOr(camX, 0),
+          camY: toNumberOr(camY, 0),
+          camRotation: toNumberOr(camRotation, 0),
+          camScale: toNumberOr(camScale, 1),
         };
       },
       gpu_draw_sprite(textureId, x, y, rotation, scaleX, scaleY, r, g, b, a) {
@@ -1001,21 +1006,23 @@ fn fs_main() -> @location(0) vec4<f32> {
         const baseSize = 128;
         const texScaleX = entry.width > 0 ? entry.width / baseSize : 1;
         const texScaleY = entry.height > 0 ? entry.height / baseSize : 1;
-        const spriteScaleX = (Number(scaleX) || 1) * texScaleX;
-        const spriteScaleY = (Number(scaleY) || 1) * texScaleY;
+        const scaleXValue = toNumberOr(scaleX, 1);
+        const scaleYValue = toNumberOr(scaleY, 1);
+        const spriteScaleX = scaleXValue * texScaleX;
+        const spriteScaleY = scaleYValue * texScaleY;
         const width = currentPassInfo.width;
         const height = currentPassInfo.height;
         const scaleXBase = width > 0 ? (2 / width) * currentPassInfo.camScale : 0;
         const scaleYBase = height > 0 ? (2 / height) * currentPassInfo.camScale : 0;
-        const angle = Number(rotation) || 0;
+        const angle = toNumberOr(rotation, 0);
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
         const camRotation = currentPassInfo.camRotation;
         const camCos = Math.cos(-camRotation);
         const camSin = Math.sin(-camRotation);
         const uniformData = new Float32Array([
-          Number(x) || 0,
-          Number(y) || 0,
+          toNumberOr(x, 0),
+          toNumberOr(y, 0),
           cos,
           sin,
           currentPassInfo.camX,
@@ -1026,10 +1033,10 @@ fn fs_main() -> @location(0) vec4<f32> {
           scaleYBase,
           spriteScaleX,
           spriteScaleY,
-          Number(r) || 1,
-          Number(g) || 1,
-          Number(b) || 1,
-          Number(a) || 1,
+          toNumberOr(r, 1),
+          toNumberOr(g, 1),
+          toNumberOr(b, 1),
+          toNumberOr(a, 1),
         ]);
         state.gpu.queue.writeBuffer(uniformBuffer, 0, uniformData);
         currentPass.setPipeline(pipeline);
@@ -1054,15 +1061,15 @@ fn fs_main() -> @location(0) vec4<f32> {
         const height = currentPassInfo.height;
         const scaleXBase = width > 0 ? (2 / width) * currentPassInfo.camScale : 0;
         const scaleYBase = height > 0 ? (2 / height) * currentPassInfo.camScale : 0;
-        const angle = Number(rotation) || 0;
+        const angle = toNumberOr(rotation, 0);
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
         const camRotation = currentPassInfo.camRotation;
         const camCos = Math.cos(-camRotation);
         const camSin = Math.sin(-camRotation);
         const uniformData = new Float32Array([
-          Number(x) || 0,
-          Number(y) || 0,
+          toNumberOr(x, 0),
+          toNumberOr(y, 0),
           cos,
           sin,
           currentPassInfo.camX,
@@ -1071,12 +1078,12 @@ fn fs_main() -> @location(0) vec4<f32> {
           camSin,
           scaleXBase,
           scaleYBase,
-          Number(scaleX) || 1,
-          Number(scaleY) || 1,
-          Number(r) || 1,
-          Number(g) || 1,
-          Number(b) || 1,
-          Number(a) || 1,
+          toNumberOr(scaleX, 1),
+          toNumberOr(scaleY, 1),
+          toNumberOr(r, 1),
+          toNumberOr(g, 1),
+          toNumberOr(b, 1),
+          toNumberOr(a, 1),
         ]);
         state.gpu.queue.writeBuffer(uniformBuffer, 0, uniformData);
         currentPass.setPipeline(meshPipeline);
