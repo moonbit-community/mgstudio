@@ -38,6 +38,11 @@ pub fn run_rotate_to_cursor() -> Unit {
 }
 
 ///|
+pub fn run_2d_viewport_to_world() -> Unit {
+  @examples2d.viewport_to_world_2d_run()
+}
+
+///|
 pub fn run_sprite_scale() -> Unit {
   @examples2d.sprite_scale_run()
 }
