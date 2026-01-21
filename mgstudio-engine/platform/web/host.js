@@ -20,6 +20,7 @@ export async function createHost({ canvas }) {
       pendingTextures: [],
       lastError: null,
       fallbackReported: new Set(),
+      texturePaths: new Map(),
     },
     input: {
       pressed: new Set(),
@@ -615,7 +616,9 @@ fn fs_main() -> @location(0) vec4<f32> {
       return;
     }
     state.assets.fallbackReported.add(id);
-    const message = `Fallback texture used for id ${id}: ${reason}`;
+    const pathHint = state.assets.texturePaths.get(id);
+    const suffix = pathHint ? ` (path: ${pathHint})` : "";
+    const message = `Fallback texture used for id ${id}: ${reason}${suffix}`;
     state.assets.lastError = message;
     console.error(message);
     window.dispatchEvent(new CustomEvent("mgstudio-asset-error", { detail: message }));
@@ -835,6 +838,11 @@ fn fs_main() -> @location(0) vec4<f32> {
       asset_load_texture(path, nearest) {
         const id = state.gpu.nextTextureId;
         state.gpu.nextTextureId += 1;
+        try {
+          state.assets.texturePaths.set(id, coerceAssetPath(path));
+        } catch (err) {
+          state.assets.texturePaths.set(id, `<invalid path: ${err?.message ?? err}>`);
+        }
         loadTextureFromPath(id, path, !!nearest);
         return id;
       },
@@ -846,6 +854,7 @@ fn fs_main() -> @location(0) vec4<f32> {
         ensurePipelineResources();
         const id = state.gpu.nextTextureId;
         state.gpu.nextTextureId += 1;
+        state.assets.texturePaths.set(id, "<render-target>");
         const safeWidth = Math.max(1, Number(width));
         const safeHeight = Math.max(1, Number(height));
         const targetFormat = format || "bgra8unorm";
