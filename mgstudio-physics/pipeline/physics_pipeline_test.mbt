@@ -204,7 +204,7 @@ test "joint step delta time 0" {
     .local_anchor1(@core.Vec2::new(0.0F, 1.0F))
     .local_anchor2(@core.Vec2::new(0.0F, -3.0F))
     .build()
-  impulse_joints.insert(h_fixed, h_dynamic, joint, true)
+  impulse_joints.insert(h_fixed, h_dynamic, joint, true) |> ignore
   let parameters = IntegrationParameters::default().with_dt(0.0F)
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   pipeline.step(

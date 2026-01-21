@@ -295,6 +295,33 @@ pub type ImpulseJoint
 
 ///|
 #declaration_only
+pub type ImpulseJointHandle
+
+///|
+#declaration_only
+pub fn ImpulseJointHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> ImpulseJointHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointHandle::into_raw_parts(
+  self : ImpulseJointHandle,
+) -> (Int, Int) {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointHandle::invalid() -> ImpulseJointHandle {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ImpulseJointSet::new() -> ImpulseJointSet {
   ...
 }
@@ -307,7 +334,7 @@ pub fn ImpulseJointSet::insert(
   child : RigidBodyHandle,
   joint : RevoluteJoint,
   wake_up : Bool,
-) -> Unit {
+) -> ImpulseJointHandle {
   ...
 }
 
@@ -320,6 +347,43 @@ pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int {
 ///|
 #declaration_only
 pub fn ImpulseJointSet::is_empty(self : ImpulseJointSet) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::contains(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::get(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+) -> ImpulseJoint? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::remove(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  wake_up : Bool,
+) -> ImpulseJoint? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+) -> Array[ImpulseJointHandle] {
   ...
 }
 

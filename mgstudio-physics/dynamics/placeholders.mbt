@@ -66,6 +66,9 @@ pub struct IslandManager {
   free_islands : Array[Int]
   traversal_candidates : Array[SleepCandidate]
   traversal_timestamp : Int
+  body_island_ids : Array[Int]
+  body_island_generations : Array[Int]
+  body_island_indices : Array[Int]
 }
 
 ///|
@@ -76,6 +79,23 @@ pub fn IslandManager::new() -> IslandManager {
     free_islands: [],
     traversal_candidates: [],
     traversal_timestamp: 0,
+    body_island_ids: [],
+    body_island_generations: [],
+    body_island_indices: [],
+  }
+}
+
+///|
+fn IslandManager::ensure_body_capacity(self : IslandManager, id : Int) -> Unit {
+  if id < 0 {
+    return
+  }
+  let mut i = self.body_island_ids.length()
+  while i <= id {
+    self.body_island_ids.push(-1)
+    self.body_island_generations.push(0)
+    self.body_island_indices.push(-1)
+    i = i + 1
   }
 }
 
@@ -127,11 +147,15 @@ fn IslandManager::insert_body(
   if !sleeping {
     let index = self.awake_islands.length()
     island.id_in_awake_list = Some(index)
-    let island_id = self.insert_island(island)
-    self.awake_islands.push(island_id)
-  } else {
-    self.insert_island(island) |> ignore
   }
+  let island_id = self.insert_island(island)
+  if !sleeping {
+    self.awake_islands.push(island_id)
+  }
+  self.ensure_body_capacity(handle.id)
+  self.body_island_ids[handle.id] = island_id
+  self.body_island_generations[handle.id] = handle.generation
+  self.body_island_indices[handle.id] = 0
 }
 
 ///|
@@ -139,17 +163,45 @@ fn IslandManager::remove_body(
   self : IslandManager,
   handle : RigidBodyHandle,
 ) -> Unit {
-  for i in 0..<self.islands.length() {
-    if self.islands[i] is Some(island) {
-      if island.remove_body(handle) {
-        if island.bodies.length() == 0 {
-          self.remove_from_awake_list(i)
-          self.islands[i] = None
-          self.free_islands.push(i)
-        } else {
-          self.islands[i] = Some(island)
+  if self.island_id_for(handle) is Some(island_id) {
+    if self.islands[island_id] is Some(island) {
+      self.ensure_body_capacity(handle.id)
+      let mut body_index = self.body_island_indices[handle.id]
+      if body_index < 0 ||
+        body_index >= island.bodies.length() ||
+        !handle_equals(island.bodies[body_index], handle) {
+        body_index = -1
+        for i in 0..<island.bodies.length() {
+          if handle_equals(island.bodies[i], handle) {
+            body_index = i
+            break
+          }
         }
+      }
+      if body_index < 0 {
         return
+      }
+      let last_index = island.bodies.length() - 1
+      if body_index != last_index {
+        let moved_handle = island.bodies[last_index]
+        island.bodies[body_index] = moved_handle
+        if moved_handle.id >= 0 &&
+          moved_handle.id < self.body_island_indices.length() {
+          self.body_island_indices[moved_handle.id] = body_index
+        }
+      }
+      island.bodies.pop() |> ignore
+      if handle.id >= 0 && handle.id < self.body_island_ids.length() {
+        self.body_island_ids[handle.id] = -1
+        self.body_island_indices[handle.id] = -1
+        self.body_island_generations[handle.id] = handle.generation
+      }
+      if island.bodies.length() == 0 {
+        self.remove_from_awake_list(island_id)
+        self.islands[island_id] = None
+        self.free_islands.push(island_id)
+      } else {
+        self.islands[island_id] = Some(island)
       }
     }
   }
@@ -160,12 +212,21 @@ fn IslandManager::island_id_for(
   self : IslandManager,
   handle : RigidBodyHandle,
 ) -> Int? {
-  for i in 0..<self.islands.length() {
-    if self.islands[i] is Some(island) && island.contains(handle) {
-      return Some(i)
-    }
+  if handle.id < 0 || handle.id >= self.body_island_ids.length() {
+    return None
   }
-  None
+  if self.body_island_generations[handle.id] != handle.generation {
+    return None
+  }
+  let island_id = self.body_island_ids[handle.id]
+  if island_id < 0 || island_id >= self.islands.length() {
+    return None
+  }
+  if self.islands[island_id] is Some(_) {
+    Some(island_id)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -225,8 +286,14 @@ fn IslandManager::merge_islands(
   }
   if self.islands[target_id] is Some(target) &&
     self.islands[source_id] is Some(source) {
+    let offset = target.bodies.length()
     for i in 0..<source.bodies.length() {
-      target.bodies.push(source.bodies[i])
+      let handle = source.bodies[i]
+      target.bodies.push(handle)
+      self.ensure_body_capacity(handle.id)
+      self.body_island_ids[handle.id] = target_id
+      self.body_island_generations[handle.id] = handle.generation
+      self.body_island_indices[handle.id] = offset + i
     }
     let merged_sleeping = target.sleeping && source.sleeping
     target.sleeping = merged_sleeping
@@ -314,10 +381,11 @@ pub struct ImpulseJoint {
   parent : RigidBodyHandle
   child : RigidBodyHandle
   joint : RevoluteJoint
+  handle : ImpulseJointHandle
 }
 
 ///|
-priv struct ImpulseJointHandle {
+pub struct ImpulseJointHandle {
   id : Int
   generation : Int
 }
@@ -325,6 +393,26 @@ priv struct ImpulseJointHandle {
 ///|
 fn ImpulseJointHandle::new(id : Int, generation : Int) -> ImpulseJointHandle {
   { id, generation }
+}
+
+///|
+pub fn ImpulseJointHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> ImpulseJointHandle {
+  ImpulseJointHandle::new(id, generation)
+}
+
+///|
+pub fn ImpulseJointHandle::into_raw_parts(
+  self : ImpulseJointHandle,
+) -> (Int, Int) {
+  (self.id, self.generation)
+}
+
+///|
+pub fn ImpulseJointHandle::invalid() -> ImpulseJointHandle {
+  ImpulseJointHandle::new(-1, -1)
 }
 
 ///|
@@ -388,98 +476,55 @@ fn canonical_pair(
 }
 
 ///|
-fn filter_out_joint(values : Array[Int], target : Int) -> Array[Int] {
-  let filtered : Array[Int] = []
+priv struct JointGraphEdge {
+  mut node1 : Int
+  mut node2 : Int
+  joint : ImpulseJoint
+}
+
+///|
+fn remove_edge_index(values : Array[Int], target : Int) -> Unit {
+  let mut index = -1
   for i in 0..<values.length() {
-    let value = values[i]
-    if value != target {
-      filtered.push(value)
+    if values[i] == target {
+      index = i
+      break
     }
   }
-  filtered
-}
-
-///|
-fn ensure_body_capacity(values : Array[Array[Int]], id : Int) -> Unit {
-  if id < 0 {
+  if index < 0 {
     return
   }
-  let mut i = values.length()
-  while i <= id {
-    values.push([])
-    i = i + 1
+  let last_index = values.length() - 1
+  if index != last_index {
+    values[index] = values[last_index]
   }
+  values.pop() |> ignore
 }
 
 ///|
-fn ImpulseJointSet::allocate_joint_handle(
-  self : ImpulseJointSet,
-) -> ImpulseJointHandle {
-  if self.free_list.pop() is Some(index) {
-    let generation = self.generations[index]
-    ImpulseJointHandle::new(index, generation)
-  } else {
-    let index = self.joints.length()
-    self.joints.push(None)
-    self.generations.push(0)
-    ImpulseJointHandle::new(index, 0)
-  }
-}
-
-///|
-fn ImpulseJointSet::remove_joint(
-  self : ImpulseJointSet,
-  joint_id : Int,
+fn replace_edge_index(
+  values : Array[Int],
+  old_index : Int,
+  new_index : Int,
 ) -> Unit {
-  if joint_id < 0 || joint_id >= self.joints.length() {
-    return
-  }
-  if self.joints[joint_id] is Some(joint) {
-    let parent_id = joint.parent.id
-    let child_id = joint.child.id
-    if parent_id >= 0 && parent_id < self.adjacency.length() {
-      self.adjacency[parent_id] = filter_out_joint(
-        self.adjacency[parent_id],
-        joint_id,
-      )
+  for i in 0..<values.length() {
+    if values[i] == old_index {
+      values[i] = new_index
+      return
     }
-    if child_id >= 0 && child_id < self.adjacency.length() {
-      self.adjacency[child_id] = filter_out_joint(
-        self.adjacency[child_id],
-        joint_id,
-      )
-    }
-    self.joints[joint_id] = None
-    self.generations[joint_id] = self.generations[joint_id] + 1
-    self.free_list.push(joint_id)
   }
 }
 
 ///|
-fn ImpulseJointSet::remove_joints_attached_to_rigid_body(
-  self : ImpulseJointSet,
-  handle : RigidBodyHandle,
-) -> Unit {
-  if handle.id < 0 || handle.id >= self.adjacency.length() {
-    return
-  }
-  let to_remove : Array[Int] = []
-  let adjacency = self.adjacency[handle.id]
-  for i in 0..<adjacency.length() {
-    to_remove.push(adjacency[i])
-  }
-  for i in 0..<to_remove.length() {
-    self.remove_joint(to_remove[i])
-  }
-  self.adjacency[handle.id] = []
-}
-
-///|
-pub struct ImpulseJointSet {
-  joints : Array[ImpulseJoint?]
-  generations : Array[Int]
-  free_list : Array[Int]
+struct ImpulseJointSet {
+  rb_graph_ids : Array[Int]
+  rb_graph_generations : Array[Int]
+  graph_nodes : Array[RigidBodyHandle]
+  graph_edges : Array[JointGraphEdge]
   adjacency : Array[Array[Int]]
+  joint_generations : Array[Int]
+  joint_edge_ids : Array[Int]
+  free_handles : Array[Int]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
@@ -487,13 +532,169 @@ pub struct ImpulseJointSet {
 ///|
 pub fn ImpulseJointSet::new() -> ImpulseJointSet {
   {
-    joints: [],
-    generations: [],
-    free_list: [],
+    rb_graph_ids: [],
+    rb_graph_generations: [],
+    graph_nodes: [],
+    graph_edges: [],
     adjacency: [],
+    joint_generations: [],
+    joint_edge_ids: [],
+    free_handles: [],
     to_wake_up: [],
     to_join: [],
   }
+}
+
+///|
+fn ImpulseJointSet::ensure_body_mapping_capacity(
+  self : ImpulseJointSet,
+  id : Int,
+) -> Unit {
+  if id < 0 {
+    return
+  }
+  let mut i = self.rb_graph_ids.length()
+  while i <= id {
+    self.rb_graph_ids.push(-1)
+    self.rb_graph_generations.push(0)
+    i = i + 1
+  }
+}
+
+///|
+fn ImpulseJointSet::graph_node_for(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+) -> Int? {
+  if handle.id < 0 || handle.id >= self.rb_graph_ids.length() {
+    return None
+  }
+  let node_id = self.rb_graph_ids[handle.id]
+  if node_id < 0 || node_id >= self.graph_nodes.length() {
+    return None
+  }
+  if self.rb_graph_generations[handle.id] != handle.generation {
+    return None
+  }
+  if !handle_equals(self.graph_nodes[node_id], handle) {
+    return None
+  }
+  Some(node_id)
+}
+
+///|
+fn ImpulseJointSet::ensure_graph_node(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+) -> Int {
+  self.ensure_body_mapping_capacity(handle.id)
+  if self.graph_node_for(handle) is Some(node_id) {
+    node_id
+  } else {
+    let node_id = self.graph_nodes.length()
+    self.graph_nodes.push(handle)
+    self.adjacency.push([])
+    self.rb_graph_ids[handle.id] = node_id
+    self.rb_graph_generations[handle.id] = handle.generation
+    node_id
+  }
+}
+
+///|
+fn ImpulseJointSet::allocate_joint_handle(
+  self : ImpulseJointSet,
+) -> ImpulseJointHandle {
+  if self.free_handles.pop() is Some(index) {
+    let generation = self.joint_generations[index]
+    ImpulseJointHandle::new(index, generation)
+  } else {
+    let index = self.joint_generations.length()
+    self.joint_generations.push(0)
+    self.joint_edge_ids.push(-1)
+    ImpulseJointHandle::new(index, 0)
+  }
+}
+
+///|
+fn ImpulseJointSet::is_handle_valid(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+) -> Bool {
+  if handle.id < 0 || handle.id >= self.joint_generations.length() {
+    return false
+  }
+  if self.joint_generations[handle.id] != handle.generation {
+    return false
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  edge_id >= 0 && edge_id < self.graph_edges.length()
+}
+
+///|
+fn ImpulseJointSet::remove_edge(
+  self : ImpulseJointSet,
+  edge_id : Int,
+) -> ImpulseJoint? {
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  let removed_edge = self.graph_edges[edge_id]
+  remove_edge_index(self.adjacency[removed_edge.node1], edge_id)
+  if removed_edge.node2 != removed_edge.node1 {
+    remove_edge_index(self.adjacency[removed_edge.node2], edge_id)
+  }
+  let last_index = self.graph_edges.length() - 1
+  if edge_id != last_index {
+    let moved_edge = self.graph_edges[last_index]
+    self.graph_edges[edge_id] = moved_edge
+    replace_edge_index(self.adjacency[moved_edge.node1], last_index, edge_id)
+    if moved_edge.node2 != moved_edge.node1 {
+      replace_edge_index(self.adjacency[moved_edge.node2], last_index, edge_id)
+    }
+    let handle_id = moved_edge.joint.handle.id
+    if handle_id >= 0 && handle_id < self.joint_edge_ids.length() {
+      self.joint_edge_ids[handle_id] = edge_id
+    }
+  }
+  self.graph_edges.pop() |> ignore
+  Some(removed_edge.joint)
+}
+
+///|
+fn ImpulseJointSet::remove_node(self : ImpulseJointSet, node_id : Int) -> Unit {
+  if node_id < 0 || node_id >= self.graph_nodes.length() {
+    return
+  }
+  let removed_handle = self.graph_nodes[node_id]
+  if removed_handle.id >= 0 && removed_handle.id < self.rb_graph_ids.length() {
+    self.rb_graph_ids[removed_handle.id] = -1
+  }
+  let last_index = self.graph_nodes.length() - 1
+  if node_id != last_index {
+    let moved_handle = self.graph_nodes[last_index]
+    self.graph_nodes[node_id] = moved_handle
+    self.adjacency[node_id] = self.adjacency[last_index]
+    if moved_handle.id >= 0 && moved_handle.id < self.rb_graph_ids.length() {
+      self.rb_graph_ids[moved_handle.id] = node_id
+      self.rb_graph_generations[moved_handle.id] = moved_handle.generation
+    }
+    let edges = self.adjacency[node_id]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let edge = self.graph_edges[edge_id]
+        if edge.node1 == last_index {
+          edge.node1 = node_id
+        }
+        if edge.node2 == last_index {
+          edge.node2 = node_id
+        }
+        self.graph_edges[edge_id] = edge
+      }
+    }
+  }
+  self.graph_nodes.pop() |> ignore
+  self.adjacency.pop() |> ignore
 }
 
 ///|
@@ -503,38 +704,118 @@ pub fn ImpulseJointSet::insert(
   child : RigidBodyHandle,
   joint : RevoluteJoint,
   wake_up : Bool,
-) -> Unit {
-  if parent.id < 0 || child.id < 0 {
-    return
-  }
+) -> ImpulseJointHandle {
   let handle = self.allocate_joint_handle()
-  self.joints[handle.id] = Some(ImpulseJoint::{ parent, child, joint })
-  ensure_body_capacity(self.adjacency, parent.id)
-  ensure_body_capacity(self.adjacency, child.id)
-  self.adjacency[parent.id].push(handle.id)
-  self.adjacency[child.id].push(handle.id)
+  if parent.id < 0 || child.id < 0 {
+    return handle
+  }
+  let node1 = self.ensure_graph_node(parent)
+  let node2 = self.ensure_graph_node(child)
+  let impulse_joint = ImpulseJoint::{ parent, child, joint, handle }
+  let edge_id = self.graph_edges.length()
+  self.graph_edges.push(JointGraphEdge::{ node1, node2, joint: impulse_joint })
+  self.adjacency[node1].push(edge_id)
+  if node2 != node1 {
+    self.adjacency[node2].push(edge_id)
+  }
+  self.joint_edge_ids[handle.id] = edge_id
   if wake_up {
     push_unique_handle(self.to_wake_up, parent)
     push_unique_handle(self.to_wake_up, child)
-    let pair = canonical_pair(parent, child)
-    push_unique_pair(self.to_join, pair)
   }
+  let pair = canonical_pair(parent, child)
+  push_unique_pair(self.to_join, pair)
+  handle
 }
 
 ///|
 pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int {
-  let mut count = 0
-  for i in 0..<self.joints.length() {
-    if self.joints[i] is Some(_) {
-      count = count + 1
-    }
-  }
-  count
+  self.graph_edges.length()
 }
 
 ///|
 pub fn ImpulseJointSet::is_empty(self : ImpulseJointSet) -> Bool {
-  self.len() == 0
+  self.graph_edges.length() == 0
+}
+
+///|
+pub fn ImpulseJointSet::contains(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+) -> Bool {
+  self.is_handle_valid(handle)
+}
+
+///|
+pub fn ImpulseJointSet::get(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+) -> ImpulseJoint? {
+  if !self.is_handle_valid(handle) {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  Some(self.graph_edges[edge_id].joint)
+}
+
+///|
+pub fn ImpulseJointSet::remove(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  wake_up : Bool,
+) -> ImpulseJoint? {
+  if !self.is_handle_valid(handle) {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  let removed = self.remove_edge(edge_id)
+  if removed is Some(joint) {
+    self.joint_edge_ids[handle.id] = -1
+    self.joint_generations[handle.id] = self.joint_generations[handle.id] + 1
+    self.free_handles.push(handle.id)
+    if wake_up {
+      push_unique_handle(self.to_wake_up, joint.parent)
+      push_unique_handle(self.to_wake_up, joint.child)
+    }
+    Some(joint)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+) -> Array[ImpulseJointHandle] {
+  if self.graph_node_for(handle) is Some(node_index) {
+    let to_remove : Array[ImpulseJointHandle] = []
+    let edges = self.adjacency[node_index]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        to_remove.push(self.graph_edges[edge_id].joint.handle)
+      }
+    }
+    let removed : Array[ImpulseJointHandle] = []
+    for i in 0..<to_remove.length() {
+      let handle_to_remove = to_remove[i]
+      if self.remove(handle_to_remove, true) is Some(_) {
+        removed.push(handle_to_remove)
+      }
+    }
+    if self.graph_node_for(handle) is Some(updated_node) {
+      if self.adjacency[updated_node].length() == 0 {
+        self.remove_node(updated_node)
+      }
+    }
+    removed
+  } else {
+    []
+  }
 }
 
 ///|
@@ -542,20 +823,19 @@ pub fn ImpulseJointSet::attached_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
 ) -> Array[ImpulseJoint] {
-  if handle.id < 0 || handle.id >= self.adjacency.length() {
-    return []
-  }
-  let result : Array[ImpulseJoint] = []
-  let adjacency = self.adjacency[handle.id]
-  for i in 0..<adjacency.length() {
-    let joint_id = adjacency[i]
-    if joint_id >= 0 && joint_id < self.joints.length() {
-      if self.joints[joint_id] is Some(joint) {
-        result.push(joint)
+  if self.graph_node_for(handle) is Some(node_index) {
+    let result : Array[ImpulseJoint] = []
+    let edges = self.adjacency[node_index]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        result.push(self.graph_edges[edge_id].joint)
       }
     }
+    result
+  } else {
+    []
   }
-  result
 }
 
 ///|
@@ -564,25 +844,21 @@ pub fn ImpulseJointSet::joints_between(
   body1 : RigidBodyHandle,
   body2 : RigidBodyHandle,
 ) -> Array[ImpulseJoint] {
-  if body1.id < 0 || body2.id < 0 {
-    return []
-  }
-  if body1.id >= self.adjacency.length() || body2.id >= self.adjacency.length() {
-    return []
-  }
-  let result : Array[ImpulseJoint] = []
-  let adjacency = self.adjacency[body1.id]
-  for i in 0..<adjacency.length() {
-    let joint_id = adjacency[i]
-    if joint_id >= 0 && joint_id < self.joints.length() {
-      if self.joints[joint_id] is Some(joint) {
-        let matches = handle_equals(joint.parent, body2) ||
-          handle_equals(joint.child, body2)
-        if matches {
-          result.push(joint)
+  if self.graph_node_for(body1) is Some(node1_index) &&
+    self.graph_node_for(body2) is Some(node2_index) {
+    let result : Array[ImpulseJoint] = []
+    let edges = self.adjacency[node1_index]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let edge = self.graph_edges[edge_id]
+        if edge.node1 == node2_index || edge.node2 == node2_index {
+          result.push(edge.joint)
         }
       }
     }
+    result
+  } else {
+    []
   }
-  result
 }

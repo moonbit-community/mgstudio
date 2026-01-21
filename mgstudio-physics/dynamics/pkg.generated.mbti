@@ -25,22 +25,28 @@ pub struct ImpulseJoint {
   parent : RigidBodyHandle
   child : RigidBodyHandle
   joint : RevoluteJoint
+  handle : ImpulseJointHandle
 }
 
-pub struct ImpulseJointSet {
-  joints : Array[ImpulseJoint?]
-  generations : Array[Int]
-  free_list : Array[Int]
-  adjacency : Array[Array[Int]]
-  to_wake_up : Array[RigidBodyHandle]
-  to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
+pub struct ImpulseJointHandle {
+  id : Int
+  generation : Int
 }
+pub fn ImpulseJointHandle::from_raw_parts(Int, Int) -> Self
+pub fn ImpulseJointHandle::into_raw_parts(Self) -> (Int, Int)
+pub fn ImpulseJointHandle::invalid() -> Self
+
+type ImpulseJointSet
 pub fn ImpulseJointSet::attached_joints(Self, RigidBodyHandle) -> Array[ImpulseJoint]
-pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> Unit
+pub fn ImpulseJointSet::contains(Self, ImpulseJointHandle) -> Bool
+pub fn ImpulseJointSet::get(Self, ImpulseJointHandle) -> ImpulseJoint?
+pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> ImpulseJointHandle
 pub fn ImpulseJointSet::is_empty(Self) -> Bool
 pub fn ImpulseJointSet::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[ImpulseJoint]
 pub fn ImpulseJointSet::len(Self) -> Int
 pub fn ImpulseJointSet::new() -> Self
+pub fn ImpulseJointSet::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
+pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
 
 type IndexSequence
 pub fn IndexSequence::inv_rearrange_rows(Self, DVector) -> Unit
@@ -59,6 +65,9 @@ pub struct IslandManager {
   free_islands : Array[Int]
   traversal_candidates : Array[SleepCandidate]
   traversal_timestamp : Int
+  body_island_ids : Array[Int]
+  body_island_generations : Array[Int]
+  body_island_indices : Array[Int]
 }
 pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager::interaction_started_or_stopped(Self, RigidBodySet, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
