@@ -4,6 +4,8 @@ package "Milky2018/mgstudio/examples/runner"
 // Values
 pub fn run_2d_viewport_to_world() -> Unit
 
+pub fn run_mesh2d() -> Unit
+
 pub fn run_move_sprite() -> Unit
 
 pub fn run_pixel_grid_snap() -> Unit

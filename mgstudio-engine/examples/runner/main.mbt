@@ -48,6 +48,11 @@ pub fn run_pixel_grid_snap() -> Unit {
 }
 
 ///|
+pub fn run_mesh2d() -> Unit {
+  @examples2d.mesh2d_run()
+}
+
+///|
 pub fn run_sprite_scale() -> Unit {
   @examples2d.sprite_scale_run()
 }

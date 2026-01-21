@@ -20,11 +20,15 @@ pub fn render2d_set_camera_transform(@math.Transform) -> Unit
 
 pub fn render2d_set_camera_transform_handle(CameraHandle, @math.Transform) -> Unit
 
+pub fn render2d_set_mesh_transform_handle(MeshHandle, @math.Transform) -> Unit
+
 pub fn render2d_set_sprite_transform(@math.Transform) -> Unit
 
 pub fn render2d_set_sprite_transform_handle(SpriteHandle, @math.Transform) -> Unit
 
 pub fn render2d_spawn_camera(Camera2dBundle) -> CameraHandle
+
+pub fn render2d_spawn_mesh(Mesh2dBundle) -> MeshHandle
 
 pub fn render2d_spawn_sprite(SpriteBundle) -> SpriteHandle
 
@@ -66,14 +70,61 @@ pub struct CameraHandle {
 }
 pub fn CameraHandle::new(Int) -> Self
 
+pub struct Capsule2d {
+  radius : Float
+  half_length : Float
+  segments : Int
+}
+pub fn Capsule2d::default() -> Self
+pub fn Capsule2d::new(Float, Float, Int) -> Self
+
 pub struct Color {
   r : Float
   g : Float
   b : Float
   a : Float
 }
+pub fn Color::black() -> Self
 pub fn Color::new(Float, Float, Float, Float) -> Self
 pub fn Color::white() -> Self
+
+pub struct ColorMaterial {
+  color : Color
+}
+pub fn ColorMaterial::new(Color) -> Self
+
+pub struct Mesh2d {
+  kind : Mesh2dKind
+}
+pub fn Mesh2d::from_capsule(Capsule2d) -> Self
+pub fn Mesh2d::from_rectangle(Rectangle) -> Self
+
+pub struct Mesh2dBundle {
+  mesh : Mesh2d
+  material : ColorMaterial
+  transform : @math.Transform
+  layers : RenderLayers
+}
+pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
+pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
+pub fn Mesh2dBundle::spawn(Self) -> MeshHandle
+
+pub(all) enum Mesh2dKind {
+  Capsule(Capsule2d)
+  Rectangle(Rectangle)
+}
+
+pub struct MeshHandle {
+  id : Int
+}
+pub fn MeshHandle::new(Int) -> Self
+
+pub struct Rectangle {
+  half_size : @math.Vec2
+}
+pub fn Rectangle::default() -> Self
+pub fn Rectangle::from_size(@math.Vec2) -> Self
+pub fn Rectangle::new(Float, Float) -> Self
 
 pub struct RenderLayers {
   mask : Int

@@ -31,6 +31,11 @@ pub fn Color::white() -> Color {
 }
 
 ///|
+pub fn Color::black() -> Color {
+  Color::new(0.0F, 0.0F, 0.0F, 1.0F)
+}
+
+///|
 pub struct RenderLayers {
   mask : Int
 }
@@ -87,6 +92,78 @@ pub fn Camera2d::with_scale(self : Camera2d, scale : Float) -> Camera2d {
 pub(all) enum RenderTarget {
   Screen
   Image(@asset.Handle[@asset.Image])
+}
+
+///|
+pub struct ColorMaterial {
+  color : Color
+}
+
+///|
+pub fn ColorMaterial::new(color : Color) -> ColorMaterial {
+  ColorMaterial::{ color, }
+}
+
+///|
+pub struct Capsule2d {
+  radius : Float
+  half_length : Float
+  segments : Int
+}
+
+///|
+pub fn Capsule2d::new(
+  radius : Float,
+  half_length : Float,
+  segments : Int,
+) -> Capsule2d {
+  Capsule2d::{ radius, half_length, segments }
+}
+
+///|
+pub fn Capsule2d::default() -> Capsule2d {
+  Capsule2d::new(0.5F, 0.5F, 16)
+}
+
+///|
+pub struct Rectangle {
+  half_size : @math.Vec2
+}
+
+///|
+pub fn Rectangle::new(width : Float, height : Float) -> Rectangle {
+  Rectangle::{ half_size: @math.Vec2::new(width / 2.0F, height / 2.0F) }
+}
+
+///|
+pub fn Rectangle::from_size(size : @math.Vec2) -> Rectangle {
+  Rectangle::{ half_size: @math.Vec2::new(size.x / 2.0F, size.y / 2.0F) }
+}
+
+///|
+pub fn Rectangle::default() -> Rectangle {
+  Rectangle::{ half_size: @math.Vec2::new(0.5F, 0.5F) }
+}
+
+///|
+pub(all) enum Mesh2dKind {
+  Capsule(Capsule2d)
+  Rectangle(Rectangle)
+}
+
+///|
+pub struct Mesh2d {
+  kind : Mesh2dKind
+}
+
+///|
+pub fn Mesh2d::from_capsule(capsule : Capsule2d) -> Mesh2d {
+  Mesh2d::{ kind: Capsule(capsule) }
+}
+
+///|
+pub fn Mesh2d::from_rectangle(rectangle : Rectangle) -> Mesh2d {
+  Mesh2d::{ kind: Rectangle(rectangle) }
 }
 
 ///|
@@ -157,12 +234,44 @@ pub fn Camera2dBundle::new_with_layers(
 }
 
 ///|
+pub struct Mesh2dBundle {
+  mesh : Mesh2d
+  material : ColorMaterial
+  transform : @math.Transform
+  layers : RenderLayers
+}
+
+///|
+pub fn Mesh2dBundle::new(
+  mesh : Mesh2d,
+  material : ColorMaterial,
+  transform : @math.Transform,
+) -> Mesh2dBundle {
+  Mesh2dBundle::{ mesh, material, transform, layers: RenderLayers::default() }
+}
+
+///|
+pub fn Mesh2dBundle::new_with_layers(
+  mesh : Mesh2d,
+  material : ColorMaterial,
+  transform : @math.Transform,
+  layers : RenderLayers,
+) -> Mesh2dBundle {
+  Mesh2dBundle::{ mesh, material, transform, layers }
+}
+
+///|
 pub struct SpriteHandle {
   id : Int
 }
 
 ///|
 pub struct CameraHandle {
+  id : Int
+}
+
+///|
+pub struct MeshHandle {
   id : Int
 }
 
@@ -177,9 +286,15 @@ pub fn CameraHandle::new(id : Int) -> CameraHandle {
 }
 
 ///|
+pub fn MeshHandle::new(id : Int) -> MeshHandle {
+  MeshHandle::{ id, }
+}
+
+///|
 priv struct SpriteInstance {
   id : Int
   mut transform : @math.Transform
+  color : Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
 }
@@ -190,6 +305,15 @@ priv struct CameraInstance {
   mut camera : Camera2d
   mut transform : @math.Transform
   target : RenderTarget
+  layers : RenderLayers
+}
+
+///|
+priv struct MeshInstance {
+  id : Int
+  mesh_id : Int
+  mut transform : @math.Transform
+  color : Color
   layers : RenderLayers
 }
 
@@ -205,10 +329,12 @@ priv struct RenderState {
   mut draw_enabled : Bool
   mut next_sprite_id : Int
   mut next_camera_id : Int
+  mut next_mesh_id : Int
   mut primary_sprite : Int
   mut primary_camera : Int
   sprites : Array[SpriteInstance]
   cameras : Array[CameraInstance]
+  meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
 }
 
@@ -217,10 +343,12 @@ let render_state : Ref[RenderState] = @ref.new(RenderState::{
   draw_enabled: false,
   next_sprite_id: 0,
   next_camera_id: 0,
+  next_mesh_id: 0,
   primary_sprite: -1,
   primary_camera: -1,
   sprites: [],
   cameras: [],
+  meshes: [],
   render_targets: [],
 })
 
@@ -246,12 +374,18 @@ pub fn Camera2dBundle::spawn(self : Camera2dBundle) -> CameraHandle {
 }
 
 ///|
+pub fn Mesh2dBundle::spawn(self : Mesh2dBundle) -> MeshHandle {
+  render2d_spawn_mesh(self)
+}
+
+///|
 pub fn render2d_spawn_sprite(bundle : SpriteBundle) -> SpriteHandle {
   let id = render_state.val.next_sprite_id
   render_state.val.next_sprite_id = id + 1
   render_state.val.sprites.push(SpriteInstance::{
     id,
     transform: bundle.transform,
+    color: bundle.sprite.color,
     texture: bundle.texture,
     layers: bundle.layers,
   })
@@ -272,6 +406,33 @@ pub fn render2d_spawn_camera(bundle : Camera2dBundle) -> CameraHandle {
   })
   render_state.val.primary_camera = id
   CameraHandle::{ id, }
+}
+
+///|
+pub fn render2d_spawn_mesh(bundle : Mesh2dBundle) -> MeshHandle {
+  let id = render_state.val.next_mesh_id
+  render_state.val.next_mesh_id = id + 1
+  let mesh_id = match bundle.mesh.kind {
+    Capsule(capsule) =>
+      @window.host_gpu_create_mesh_capsule(
+        capsule.radius,
+        capsule.half_length,
+        capsule.segments,
+      )
+    Rectangle(rectangle) => {
+      let width = rectangle.half_size.x * 2.0F
+      let height = rectangle.half_size.y * 2.0F
+      @window.host_gpu_create_mesh_rectangle(width, height)
+    }
+  }
+  render_state.val.meshes.push(MeshInstance::{
+    id,
+    mesh_id,
+    transform: bundle.transform,
+    color: bundle.material.color,
+    layers: bundle.layers,
+  })
+  MeshHandle::{ id, }
 }
 
 ///|
@@ -297,6 +458,20 @@ pub fn render2d_set_camera_transform_handle(
   for i in 0..<count {
     if render_state.val.cameras[i].id == handle.id {
       render_state.val.cameras[i].transform = transform
+      return
+    }
+  }
+}
+
+///|
+pub fn render2d_set_mesh_transform_handle(
+  handle : MeshHandle,
+  transform : @math.Transform,
+) -> Unit {
+  let count = render_state.val.meshes.length()
+  for i in 0..<count {
+    if render_state.val.meshes[i].id == handle.id {
+      render_state.val.meshes[i].transform = transform
       return
     }
   }
@@ -410,6 +585,7 @@ pub fn render_execute_system() -> Unit {
     return
   }
   let sprites = render_state.val.sprites
+  let meshes = render_state.val.meshes
   for index in render2d_sorted_camera_indices() {
     let camera = cameras[index]
     let mut target_id = -1
@@ -449,6 +625,27 @@ pub fn render_execute_system() -> Unit {
           transform.rotation,
           transform.scale.x,
           transform.scale.y,
+          sprite.color.r,
+          sprite.color.g,
+          sprite.color.b,
+          sprite.color.a,
+        )
+      }
+    }
+    for mesh in meshes {
+      if mesh.layers.matches(camera.layers) {
+        let transform = mesh.transform
+        @window.host_gpu_draw_mesh(
+          mesh.mesh_id,
+          transform.translation.x,
+          transform.translation.y,
+          transform.rotation,
+          transform.scale.x,
+          transform.scale.y,
+          mesh.color.r,
+          mesh.color.g,
+          mesh.color.b,
+          mesh.color.a,
         )
       }
     }

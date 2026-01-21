@@ -35,6 +35,7 @@ pub fn pixel_grid_snap_run() -> Unit {
 priv struct PixelGridState {
   mut pixel_sprite : @render2d.SpriteHandle
   mut high_sprite : @render2d.SpriteHandle
+  mut pixel_mesh : @render2d.MeshHandle
   mut outer_camera : @render2d.CameraHandle
   mut rotation : Float
 }
@@ -43,6 +44,7 @@ priv struct PixelGridState {
 let pixel_state : Ref[PixelGridState] = @ref.new(PixelGridState::{
   pixel_sprite: @render2d.SpriteHandle::new(-1),
   high_sprite: @render2d.SpriteHandle::new(-1),
+  pixel_mesh: @render2d.MeshHandle::new(-1),
   outer_camera: @render2d.CameraHandle::new(-1),
   rotation: 0.0F,
 })
@@ -86,6 +88,19 @@ fn pixel_grid_snap_setup() -> Unit {
     pixel_light,
     high_layers,
   ).spawn()
+  let capsule = @render2d.Capsule2d::default()
+  let mesh = @render2d.Mesh2d::from_capsule(capsule)
+  let material = @render2d.ColorMaterial::new(@render2d.Color::black())
+  let mesh_handle = @render2d.Mesh2dBundle::new_with_layers(
+    mesh,
+    material,
+    @math.Transform::new(
+      @math.Vec2::new(25.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(32.0F, 32.0F),
+    ),
+    pixel_layers,
+  ).spawn()
   let in_game_camera = @render2d.Camera2d::new(
     @render2d.Color::new(0.5F, 0.5F, 0.5F, 1.0F),
   ).with_order(-1)
@@ -105,6 +120,7 @@ fn pixel_grid_snap_setup() -> Unit {
   ).spawn()
   pixel_state.val.pixel_sprite = pixel_sprite
   pixel_state.val.high_sprite = high_sprite
+  pixel_state.val.pixel_mesh = mesh_handle
   pixel_state.val.outer_camera = outer_handle
   pixel_state.val.rotation = 0.0F
 }
@@ -124,6 +140,11 @@ fn pixel_grid_snap_update() -> Unit {
     next_rotation,
     @math.Vec2::new(1.0F, 1.0F),
   )
+  let mesh_transform = @math.Transform::new(
+    @math.Vec2::new(25.0F, 0.0F),
+    next_rotation,
+    @math.Vec2::new(32.0F, 32.0F),
+  )
   @render2d.render2d_set_sprite_transform_handle(
     pixel_state.val.pixel_sprite,
     pixel_transform,
@@ -131,6 +152,10 @@ fn pixel_grid_snap_update() -> Unit {
   @render2d.render2d_set_sprite_transform_handle(
     pixel_state.val.high_sprite,
     high_transform,
+  )
+  @render2d.render2d_set_mesh_transform_handle(
+    pixel_state.val.pixel_mesh,
+    mesh_transform,
   )
   let width = @window.window_width()
   let height = @window.window_height()

@@ -189,7 +189,25 @@ pub fn host_gpu_draw_sprite(
   rotation : Float,
   scale_x : Float,
   scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_sprite"
+
+///|
+pub fn host_gpu_draw_mesh(
+  mesh_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+) -> Unit = "mgstudio_host" "gpu_draw_mesh"
 
 ///|
 pub fn host_gpu_end_pass() -> Unit = "mgstudio_host" "gpu_end_pass"
@@ -200,6 +218,16 @@ pub fn host_gpu_create_render_target(
   height : Int,
   nearest : Bool,
 ) -> Int = "mgstudio_host" "gpu_create_render_target"
+
+///|
+pub fn host_gpu_create_mesh_capsule(
+  radius : Float,
+  half_length : Float,
+  segments : Int,
+) -> Int = "mgstudio_host" "gpu_create_mesh_capsule"
+
+///|
+pub fn host_gpu_create_mesh_rectangle(width : Float, height : Float) -> Int = "mgstudio_host" "gpu_create_mesh_rectangle"
 
 ///|
 pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string"

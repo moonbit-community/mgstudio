@@ -14,11 +14,17 @@ pub fn host_gpu_begin_pass(Int, Int, Int, Float, Float, Float, Float, Float, Flo
 
 pub fn host_gpu_configure_surface(HostGpuDevice, HostGpuSurface, Int, Int) -> Unit
 
+pub fn host_gpu_create_mesh_capsule(Float, Float, Int) -> Int
+
+pub fn host_gpu_create_mesh_rectangle(Float, Float) -> Int
+
 pub fn host_gpu_create_render_target(Int, Int, Bool) -> Int
 
 pub fn host_gpu_create_surface(HostWindow) -> HostGpuSurface
 
-pub fn host_gpu_draw_sprite(Int, Float, Float, Float, Float, Float) -> Unit
+pub fn host_gpu_draw_mesh(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+
+pub fn host_gpu_draw_sprite(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 
 pub fn host_gpu_end_frame(HostGpuFrame) -> Unit
 

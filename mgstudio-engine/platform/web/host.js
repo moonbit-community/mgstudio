@@ -41,6 +41,10 @@ export async function createHost({ canvas }) {
       pipeline: null,
       vertexBuffer: null,
       vertexCount: 0,
+      meshPipeline: null,
+      meshBindGroup: null,
+      meshes: new Map(),
+      nextMeshId: 1,
       uniformBuffer: null,
       encoder: null,
       currentTexture: null,
@@ -247,6 +251,10 @@ export async function createHost({ canvas }) {
     state.gpu.pipeline = null;
     state.gpu.vertexBuffer = null;
     state.gpu.vertexCount = 0;
+    state.gpu.meshPipeline = null;
+    state.gpu.meshBindGroup = null;
+    state.gpu.meshes = new Map();
+    state.gpu.nextMeshId = 1;
     state.gpu.uniformBuffer = null;
     state.gpu.encoder = null;
     state.gpu.currentTexture = null;
@@ -292,6 +300,7 @@ struct TransformData {
   model : vec4<f32>,
   view : vec4<f32>,
   scale : vec4<f32>,
+  color : vec4<f32>,
 };
 
 @group(0) @binding(0) var samp : sampler;
@@ -333,7 +342,7 @@ fn vs_main(
 
 @fragment
 fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
-  return textureSample(tex, samp, uv);
+  return textureSample(tex, samp, uv) * u_transform.color;
 }
 `,
     });
@@ -392,7 +401,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     });
     device.queue.writeBuffer(vertexBuffer, 0, vertices);
     state.gpu.uniformBuffer = device.createBuffer({
-      size: 48,
+      size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     const textureSize = 64;
@@ -450,6 +459,154 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
         { binding: 2, resource: { buffer: uniformBuffer } },
       ],
     });
+  };
+
+  const ensureMeshPipeline = () => {
+    const { device, format } = state.gpu;
+    if (!device || state.gpu.meshPipeline) {
+      return;
+    }
+    ensurePipelineResources();
+    const uniformBuffer = state.gpu.uniformBuffer;
+    if (!uniformBuffer) {
+      return;
+    }
+    const shaderModule = device.createShaderModule({
+      code: `
+struct VertexOut {
+  @builtin(position) position : vec4<f32>,
+};
+
+struct TransformData {
+  model : vec4<f32>,
+  view : vec4<f32>,
+  scale : vec4<f32>,
+  color : vec4<f32>,
+};
+
+@group(0) @binding(0) var<uniform> u_transform : TransformData;
+
+@vertex
+fn vs_main(@location(0) position : vec2<f32>) -> VertexOut {
+  var out : VertexOut;
+  let cosv = u_transform.model.z;
+  let sinv = u_transform.model.w;
+  let scaled = vec2<f32>(
+    position.x * u_transform.scale.z,
+    position.y * u_transform.scale.w
+  );
+  let rotated = vec2<f32>(
+    scaled.x * cosv - scaled.y * sinv,
+    scaled.x * sinv + scaled.y * cosv
+  );
+  let translated = rotated + u_transform.model.xy;
+  let cam_cos = u_transform.view.z;
+  let cam_sin = u_transform.view.w;
+  let rel = translated - u_transform.view.xy;
+  let view_pos = vec2<f32>(
+    rel.x * cam_cos - rel.y * cam_sin,
+    rel.x * cam_sin + rel.y * cam_cos
+  );
+  let ndc = vec2<f32>(
+    view_pos.x * u_transform.scale.x,
+    view_pos.y * u_transform.scale.y
+  );
+  out.position = vec4<f32>(ndc, 0.0, 1.0);
+  return out;
+}
+
+@fragment
+fn fs_main() -> @location(0) vec4<f32> {
+  return u_transform.color;
+}
+`,
+    });
+    const pipeline = device.createRenderPipeline({
+      layout: "auto",
+      vertex: {
+        module: shaderModule,
+        entryPoint: "vs_main",
+        buffers: [
+          {
+            arrayStride: 8,
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: "float32x2" },
+            ],
+          },
+        ],
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: "fs_main",
+        targets: [
+          {
+            format,
+            blend: {
+              color: {
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+              alpha: {
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+            },
+          },
+        ],
+      },
+      primitive: {
+        topology: "triangle-list",
+      },
+    });
+    state.gpu.meshPipeline = pipeline;
+    state.gpu.meshBindGroup = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: uniformBuffer } },
+      ],
+    });
+  };
+
+  const createCapsuleMeshData = (radius, halfLength, segments) => {
+    const r = Number(radius) || 0.5;
+    const half = Number(halfLength) || 0.5;
+    const seg = Math.max(6, Math.floor(Number(segments) || 16));
+    const points = [];
+    for (let i = 0; i <= seg; i += 1) {
+      const angle = Math.PI - (i / seg) * Math.PI;
+      points.push([Math.cos(angle) * r, half + Math.sin(angle) * r]);
+    }
+    for (let i = 0; i <= seg; i += 1) {
+      const angle = -(i / seg) * Math.PI;
+      points.push([Math.cos(angle) * r, -half + Math.sin(angle) * r]);
+    }
+    const vertexData = [];
+    const cx = 0;
+    const cy = 0;
+    const count = points.length;
+    for (let i = 0; i < count; i += 1) {
+      const p0 = points[i];
+      const p1 = points[(i + 1) % count];
+      vertexData.push(cx, cy, p0[0], p0[1], p1[0], p1[1]);
+    }
+    return new Float32Array(vertexData);
+  };
+
+  const createRectangleMeshData = (width, height) => {
+    const w = Number(width) || 1;
+    const h = Number(height) || 1;
+    const halfW = w / 2;
+    const halfH = h / 2;
+    return new Float32Array([
+      -halfW, -halfH,
+      halfW, -halfH,
+      halfW, halfH,
+      -halfW, -halfH,
+      halfW, halfH,
+      -halfW, halfH,
+    ]);
   };
 
   const getTextureEntry = (id) => {
@@ -695,6 +852,48 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
         ensureBindGroupForTexture(entry);
         return id;
       },
+      gpu_create_mesh_capsule(radius, halfLength, segments) {
+        const { device } = state.gpu;
+        if (!device) {
+          throw new Error("GPU device not ready");
+        }
+        ensureMeshPipeline();
+        const id = state.gpu.nextMeshId;
+        state.gpu.nextMeshId += 1;
+        const vertices = createCapsuleMeshData(radius, halfLength, segments);
+        const vertexBuffer = device.createBuffer({
+          size: vertices.byteLength,
+          usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(vertexBuffer, 0, vertices);
+        state.gpu.meshes.set(id, {
+          id,
+          vertexBuffer,
+          vertexCount: vertices.length / 2,
+        });
+        return id;
+      },
+      gpu_create_mesh_rectangle(width, height) {
+        const { device } = state.gpu;
+        if (!device) {
+          throw new Error("GPU device not ready");
+        }
+        ensureMeshPipeline();
+        const id = state.gpu.nextMeshId;
+        state.gpu.nextMeshId += 1;
+        const vertices = createRectangleMeshData(width, height);
+        const vertexBuffer = device.createBuffer({
+          size: vertices.byteLength,
+          usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(vertexBuffer, 0, vertices);
+        state.gpu.meshes.set(id, {
+          id,
+          vertexBuffer,
+          vertexCount: vertices.length / 2,
+        });
+        return id;
+      },
       gpu_begin_frame(_surface) {
         const { context, device } = state.gpu;
         if (!context || !device) {
@@ -762,7 +961,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
           camScale: Number(camScale) || 1,
         };
       },
-      gpu_draw_sprite(textureId, x, y, rotation, scaleX, scaleY) {
+      gpu_draw_sprite(textureId, x, y, rotation, scaleX, scaleY, r, g, b, a) {
         const { currentPass, currentPassInfo, pipeline, vertexBuffer, vertexCount, uniformBuffer } = state.gpu;
         if (!currentPass || !currentPassInfo || !pipeline || !vertexBuffer || !uniformBuffer) {
           return;
@@ -803,12 +1002,63 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
           scaleYBase,
           spriteScaleX,
           spriteScaleY,
+          Number(r) || 1,
+          Number(g) || 1,
+          Number(b) || 1,
+          Number(a) || 1,
         ]);
         state.gpu.queue.writeBuffer(uniformBuffer, 0, uniformData);
         currentPass.setPipeline(pipeline);
         currentPass.setBindGroup(0, entry.bindGroup);
         currentPass.setVertexBuffer(0, vertexBuffer);
         currentPass.draw(vertexCount);
+      },
+      gpu_draw_mesh(meshId, x, y, rotation, scaleX, scaleY, r, g, b, a) {
+        const { currentPass, currentPassInfo, meshPipeline, meshBindGroup, uniformBuffer } = state.gpu;
+        if (!currentPass || !currentPassInfo || !uniformBuffer) {
+          return;
+        }
+        ensureMeshPipeline();
+        if (!meshPipeline || !meshBindGroup) {
+          return;
+        }
+        const mesh = state.gpu.meshes.get(Number(meshId));
+        if (!mesh) {
+          return;
+        }
+        const width = currentPassInfo.width;
+        const height = currentPassInfo.height;
+        const scaleXBase = width > 0 ? (2 / width) * currentPassInfo.camScale : 0;
+        const scaleYBase = height > 0 ? (2 / height) * currentPassInfo.camScale : 0;
+        const angle = Number(rotation) || 0;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const camRotation = currentPassInfo.camRotation;
+        const camCos = Math.cos(-camRotation);
+        const camSin = Math.sin(-camRotation);
+        const uniformData = new Float32Array([
+          Number(x) || 0,
+          Number(y) || 0,
+          cos,
+          sin,
+          currentPassInfo.camX,
+          currentPassInfo.camY,
+          camCos,
+          camSin,
+          scaleXBase,
+          scaleYBase,
+          Number(scaleX) || 1,
+          Number(scaleY) || 1,
+          Number(r) || 1,
+          Number(g) || 1,
+          Number(b) || 1,
+          Number(a) || 1,
+        ]);
+        state.gpu.queue.writeBuffer(uniformBuffer, 0, uniformData);
+        currentPass.setPipeline(meshPipeline);
+        currentPass.setBindGroup(0, meshBindGroup);
+        currentPass.setVertexBuffer(0, mesh.vertexBuffer);
+        currentPass.draw(mesh.vertexCount);
       },
       gpu_end_pass() {
         if (state.gpu.currentPass) {
