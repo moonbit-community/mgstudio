@@ -24,6 +24,13 @@ export async function createHost({ canvas }) {
       pressed: new Set(),
       justPressed: new Set(),
       justReleased: new Set(),
+      mouseButtons: new Set(),
+      mouseJustPressed: new Set(),
+      mouseJustReleased: new Set(),
+      mouseX: 0,
+      mouseY: 0,
+      hasCursor: false,
+      pointerBound: false,
       initialized: false,
     },
     gpu: {
@@ -157,6 +164,60 @@ export async function createHost({ canvas }) {
     });
   };
 
+  const mouseButtonName = (button) => {
+    if (button === 0) {
+      return "Left";
+    }
+    if (button === 1) {
+      return "Middle";
+    }
+    if (button === 2) {
+      return "Right";
+    }
+    return null;
+  };
+
+  const bindPointerEvents = (target) => {
+    if (!target || state.input.pointerBound) {
+      return;
+    }
+    state.input.pointerBound = true;
+    const updateMousePosition = (event) => {
+      const rect = target.getBoundingClientRect();
+      const scaleX = rect.width > 0 ? target.width / rect.width : 1;
+      const scaleY = rect.height > 0 ? target.height / rect.height : 1;
+      state.input.mouseX = (event.clientX - rect.left) * scaleX;
+      state.input.mouseY = (event.clientY - rect.top) * scaleY;
+      state.input.hasCursor = true;
+    };
+    target.addEventListener("pointermove", (event) => {
+      updateMousePosition(event);
+    });
+    target.addEventListener("pointerdown", (event) => {
+      const name = mouseButtonName(event.button);
+      if (name) {
+        if (!state.input.mouseButtons.has(name)) {
+          state.input.mouseButtons.add(name);
+          state.input.mouseJustPressed.add(name);
+        }
+      }
+      updateMousePosition(event);
+    });
+    target.addEventListener("pointerup", (event) => {
+      const name = mouseButtonName(event.button);
+      if (name && state.input.mouseButtons.delete(name)) {
+        state.input.mouseJustReleased.add(name);
+      }
+      updateMousePosition(event);
+    });
+    target.addEventListener("pointerleave", () => {
+      state.input.hasCursor = false;
+    });
+    target.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
+  };
+
   const initWebGpu = async (target) => {
     if (!navigator.gpu) {
       throw new Error("WebGPU not supported in this browser");
@@ -179,7 +240,7 @@ export async function createHost({ canvas }) {
     state.gpu.sampler = null;
     state.gpu.textureView = null;
     state.gpu.uniformBuffer = null;
-    state.gpu.spriteTransform = { x: 0, y: 0, rotation: 0 };
+    state.gpu.spriteTransform = { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
     state.gpu.cameraTransform = { x: 0, y: 0, rotation: 0 };
     state.gpu.drawEnabled = false;
     if (state.assets.pendingTexturePath) {
@@ -234,9 +295,13 @@ fn vs_main(
   var out : VertexOut;
   let cosv = u_transform.model.z;
   let sinv = u_transform.model.w;
+  let scaled = vec2<f32>(
+    position.x * u_transform.scale.z,
+    position.y * u_transform.scale.w
+  );
   let rotated = vec2<f32>(
-    position.x * cosv - position.y * sinv,
-    position.x * sinv + position.y * cosv
+    scaled.x * cosv - scaled.y * sinv,
+    scaled.x * sinv + scaled.y * cosv
   );
   let translated = rotated + u_transform.model.xy;
   let cam_cos = u_transform.view.z;
@@ -419,6 +484,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
         state.window = { canvas: target, width: size.width, height: size.height };
         target.width = size.width;
         target.height = size.height;
+        bindPointerEvents(target);
         return 1;
       },
       window_poll_events(_window) {
@@ -470,6 +536,29 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       input_finish_frame() {
         state.input.justPressed.clear();
         state.input.justReleased.clear();
+        state.input.mouseJustPressed.clear();
+        state.input.mouseJustReleased.clear();
+      },
+      input_is_mouse_button_down(name) {
+        const text = typeof name === "string" ? name : String(name);
+        return state.input.mouseButtons.has(text);
+      },
+      input_is_mouse_button_just_pressed(name) {
+        const text = typeof name === "string" ? name : String(name);
+        return state.input.mouseJustPressed.has(text);
+      },
+      input_is_mouse_button_just_released(name) {
+        const text = typeof name === "string" ? name : String(name);
+        return state.input.mouseJustReleased.has(text);
+      },
+      input_mouse_x() {
+        return state.input.mouseX;
+      },
+      input_mouse_y() {
+        return state.input.mouseY;
+      },
+      input_has_cursor() {
+        return state.input.hasCursor;
       },
       debug_string(value) {
         const detail = {
@@ -531,11 +620,13 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       gpu_set_draw_enabled(enabled) {
         state.gpu.drawEnabled = !!enabled;
       },
-      gpu_set_sprite_transform(x, y, rotation) {
+      gpu_set_sprite_transform(x, y, rotation, scaleX, scaleY) {
         state.gpu.spriteTransform = {
           x: Number(x) || 0,
           y: Number(y) || 0,
           rotation: Number(rotation) || 0,
+          scaleX: Number(scaleX) || 1,
+          scaleY: Number(scaleY) || 1,
         };
       },
       gpu_set_camera_transform(x, y, rotation) {
@@ -580,7 +671,7 @@ fn fs_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
           const uniformData = new Float32Array([
             tx, ty, cos, sin,
             camX, camY, camCos, camSin,
-            scaleX, scaleY, 0.0, 0.0,
+            scaleX, scaleY, state.gpu.spriteTransform.scaleX, state.gpu.spriteTransform.scaleY,
           ]);
           queue.writeBuffer(state.gpu.uniformBuffer, 0, uniformData);
         }

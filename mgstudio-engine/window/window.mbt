@@ -17,6 +17,14 @@
 pub type HostWindow
 
 ///|
+priv struct WindowState {
+  mut window : HostWindow?
+}
+
+///|
+let window_state : Ref[WindowState] = @ref.new(WindowState::{ window: None })
+
+///|
 pub(all) enum KeyCode {
   KeyA
   KeyB
@@ -97,6 +105,29 @@ pub fn host_window_request_close(window : HostWindow) -> Unit = "mgstudio_host" 
 pub fn host_window_run_loop(step : () -> Unit) -> Unit = "mgstudio_host" "window_run_loop"
 
 ///|
+pub fn window_set_handle(window : HostWindow) -> Unit {
+  window_state.val.window = Some(window)
+}
+
+///|
+pub fn window_width() -> Int {
+  if window_state.val.window is Some(window) {
+    host_window_get_width(window)
+  } else {
+    0
+  }
+}
+
+///|
+pub fn window_height() -> Int {
+  if window_state.val.window is Some(window) {
+    host_window_get_height(window)
+  } else {
+    0
+  }
+}
+
+///|
 #external
 pub type HostGpuDevice
 
@@ -143,6 +174,8 @@ pub fn host_gpu_set_sprite_transform(
   x : Float,
   y : Float,
   rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
 ) -> Unit = "mgstudio_host" "gpu_set_sprite_transform"
 
 ///|
@@ -160,6 +193,7 @@ pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
   fn() {
     let mut app = app.run_startup()
     let window = host_window_create(800, 600, "Moon Game Studio")
+    window_set_handle(window)
     let device = host_gpu_request_device()
     let surface = host_gpu_create_surface(window)
     let width = host_window_get_width(window)

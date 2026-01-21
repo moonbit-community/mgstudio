@@ -116,6 +116,8 @@ pub fn render_execute_system() -> Unit {
     transform.translation.x,
     transform.translation.y,
     transform.rotation,
+    transform.scale.x,
+    transform.scale.y,
   )
   let camera = render_state.val.camera_transform
   @window.host_gpu_set_camera_transform(
@@ -135,6 +137,25 @@ pub fn render2d_set_sprite_transform(transform : @math.Transform) -> Unit {
 ///|
 pub fn render2d_set_camera_transform(transform : @math.Transform) -> Unit {
   render_state.val.camera_transform = transform
+}
+
+///|
+pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
+  let width = @window.window_width()
+  let height = @window.window_height()
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  let half_width = Float::from_double(width.to_double()) / 2.0F
+  let half_height = Float::from_double(height.to_double()) / 2.0F
+  let view_x = screen.x - half_width
+  let view_y = half_height - screen.y
+  let camera = render_state.val.camera_transform
+  let cosv = @math.cos(camera.rotation)
+  let sinv = @math.sin(camera.rotation)
+  let world_x = camera.translation.x + view_x * cosv + view_y * sinv
+  let world_y = camera.translation.y - view_x * sinv + view_y * cosv
+  Some(@math.Vec2::new(world_x, world_y))
 }
 
 ///|

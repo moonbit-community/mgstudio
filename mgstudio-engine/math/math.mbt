@@ -24,6 +24,36 @@ pub fn Vec2::new(x : Float, y : Float) -> Vec2 {
 }
 
 ///|
+pub fn Vec2::sub(self : Vec2, other : Vec2) -> Vec2 {
+  Vec2::new(self.x - other.x, self.y - other.y)
+}
+
+///|
+pub fn Vec2::to_angle(self : Vec2) -> Float {
+  atan2(self.y, self.x)
+}
+
+///|
+pub fn atan2(y : Float, x : Float) -> Float {
+  Float::from_double(@math.atan2(y.to_double(), x.to_double()))
+}
+
+///|
+pub fn cos(value : Float) -> Float {
+  Float::from_double(@math.cos(value.to_double()))
+}
+
+///|
+pub fn sin(value : Float) -> Float {
+  Float::from_double(@math.sin(value.to_double()))
+}
+
+///|
+pub fn pi_half() -> Float {
+  Float::from_double(@math.PI / 2.0)
+}
+
+///|
 pub struct Transform {
   translation : Vec2
   rotation : Float

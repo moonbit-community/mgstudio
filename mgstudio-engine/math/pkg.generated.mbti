@@ -2,6 +2,13 @@
 package "Milky2018/mgstudio/math"
 
 // Values
+pub fn atan2(Float, Float) -> Float
+
+pub fn cos(Float) -> Float
+
+pub fn pi_half() -> Float
+
+pub fn sin(Float) -> Float
 
 // Errors
 
@@ -19,6 +26,8 @@ pub struct Vec2 {
   y : Float
 }
 pub fn Vec2::new(Float, Float) -> Self
+pub fn Vec2::sub(Self, Self) -> Self
+pub fn Vec2::to_angle(Self) -> Float
 
 // Type aliases
 

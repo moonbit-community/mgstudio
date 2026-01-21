@@ -24,7 +24,7 @@ pub fn host_gpu_set_camera_transform(Float, Float, Float) -> Unit
 
 pub fn host_gpu_set_draw_enabled(Bool) -> Unit
 
-pub fn host_gpu_set_sprite_transform(Float, Float, Float) -> Unit
+pub fn host_gpu_set_sprite_transform(Float, Float, Float, Float, Float) -> Unit
 
 pub fn host_window_create(Int, Int, String) -> HostWindow
 
@@ -40,9 +40,15 @@ pub fn host_window_run_loop(() -> Unit) -> Unit
 
 pub fn host_window_should_close(HostWindow) -> Bool
 
+pub fn window_height() -> Int
+
 pub fn window_plugin(@app.App) -> @app.App
 
 pub fn window_runner_builder(@app.App) -> () -> Unit
+
+pub fn window_set_handle(HostWindow) -> Unit
+
+pub fn window_width() -> Int
 
 // Errors
 

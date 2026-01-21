@@ -4,9 +4,15 @@ package "Milky2018/mgstudio/examples/2d"
 // Values
 pub fn move_sprite_run() -> Unit
 
+pub fn rotate_to_cursor_run() -> Unit
+
 pub fn rotation_run() -> Unit
 
+pub fn sprite_flipping_run() -> Unit
+
 pub fn sprite_run() -> Unit
+
+pub fn sprite_scale_run() -> Unit
 
 // Errors
 

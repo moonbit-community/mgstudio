@@ -14,6 +14,8 @@ pub fn render2d_set_camera_transform(@math.Transform) -> Unit
 
 pub fn render2d_set_sprite_transform(@math.Transform) -> Unit
 
+pub fn render2d_viewport_to_world_2d(@math.Vec2) -> @math.Vec2?
+
 pub fn render_execute_system() -> Unit
 
 pub fn render_extract_system() -> Unit

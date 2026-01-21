@@ -33,6 +33,16 @@ pub fn run_rotation() -> Unit {
 }
 
 ///|
-pub fn run_string_smoke() -> Unit {
-  @window.host_debug_string("branding/icon.png")
+pub fn run_rotate_to_cursor() -> Unit {
+  @examples2d.rotate_to_cursor_run()
+}
+
+///|
+pub fn run_sprite_scale() -> Unit {
+  @examples2d.sprite_scale_run()
+}
+
+///|
+pub fn run_sprite_flipping() -> Unit {
+  @examples2d.sprite_flipping_run()
 }

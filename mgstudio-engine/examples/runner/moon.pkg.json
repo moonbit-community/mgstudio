@@ -4,8 +4,7 @@
     {
       "path": "Milky2018/mgstudio/examples/2d",
       "alias": "examples2d"
-    },
-    "Milky2018/mgstudio/window"
+    }
   ],
   "link": {
     "wasm": {
@@ -14,7 +13,9 @@
         "run_sprite",
         "run_move_sprite",
         "run_rotation",
-        "run_string_smoke"
+        "run_rotate_to_cursor",
+        "run_sprite_scale",
+        "run_sprite_flipping"
       ]
     },
     "wasm-gc": {
@@ -25,7 +26,9 @@
         "run_sprite",
         "run_move_sprite",
         "run_rotation",
-        "run_string_smoke"
+        "run_rotate_to_cursor",
+        "run_sprite_scale",
+        "run_sprite_flipping"
       ]
     }
   }

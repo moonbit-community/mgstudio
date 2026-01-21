@@ -63,6 +63,24 @@ pub fn host_input_is_key_just_released(code : String) -> Bool = "mgstudio_host" 
 pub fn host_input_finish_frame() -> Unit = "mgstudio_host" "input_finish_frame"
 
 ///|
+pub fn host_input_is_mouse_button_down(button : String) -> Bool = "mgstudio_host" "input_is_mouse_button_down"
+
+///|
+pub fn host_input_is_mouse_button_just_pressed(button : String) -> Bool = "mgstudio_host" "input_is_mouse_button_just_pressed"
+
+///|
+pub fn host_input_is_mouse_button_just_released(button : String) -> Bool = "mgstudio_host" "input_is_mouse_button_just_released"
+
+///|
+pub fn host_input_mouse_x() -> Float = "mgstudio_host" "input_mouse_x"
+
+///|
+pub fn host_input_mouse_y() -> Float = "mgstudio_host" "input_mouse_y"
+
+///|
+pub fn host_input_has_cursor() -> Bool = "mgstudio_host" "input_has_cursor"
+
+///|
 pub fn key_pressed(code : @window.KeyCode) -> Bool {
   host_input_is_key_down(keycode_to_string(code))
 }
@@ -75,6 +93,39 @@ pub fn key_just_pressed(code : @window.KeyCode) -> Bool {
 ///|
 pub fn key_just_released(code : @window.KeyCode) -> Bool {
   host_input_is_key_just_released(keycode_to_string(code))
+}
+
+///|
+fn mouse_button_to_string(button : @window.MouseButton) -> String {
+  match button {
+    Left => "Left"
+    Right => "Right"
+    Middle => "Middle"
+  }
+}
+
+///|
+pub fn mouse_button_pressed(button : @window.MouseButton) -> Bool {
+  host_input_is_mouse_button_down(mouse_button_to_string(button))
+}
+
+///|
+pub fn mouse_button_just_pressed(button : @window.MouseButton) -> Bool {
+  host_input_is_mouse_button_just_pressed(mouse_button_to_string(button))
+}
+
+///|
+pub fn mouse_button_just_released(button : @window.MouseButton) -> Bool {
+  host_input_is_mouse_button_just_released(mouse_button_to_string(button))
+}
+
+///|
+pub fn mouse_position() -> @math.Vec2? {
+  if host_input_has_cursor() {
+    Some(@math.Vec2::new(host_input_mouse_x(), host_input_mouse_y()))
+  } else {
+    None
+  }
 }
 
 ///|
