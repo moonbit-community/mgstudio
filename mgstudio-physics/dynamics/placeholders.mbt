@@ -475,17 +475,11 @@ fn IslandManager::push_linked_bodies(
     }
   }
   if handle.id >= 0 && handle.id < multibody_joints.body_links.length() {
-    if multibody_joints.body_links[handle.id] is Some(info) {
-      if info.mb_index >= 0 &&
-        info.mb_index < multibody_joints.multibodies.length() {
-        let multibody = multibody_joints.multibodies[info.mb_index]
-        for i in 0..<multibody.links.length() {
-          let link = multibody.links[i]
-          if !handle_equals(link.rigid_body, handle) &&
-            is_dynamic_or_kinematic_body(bodies, link.rigid_body) {
-            self.stack.push(link.rigid_body)
-          }
-        }
+    let attached = multibody_joints.bodies_attached_with_enabled_joint(handle)
+    for i in 0..<attached.length() {
+      let other = attached[i]
+      if is_dynamic_or_kinematic_body(bodies, other) {
+        self.stack.push(other)
       }
     }
   }

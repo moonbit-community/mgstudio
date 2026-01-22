@@ -1698,6 +1698,24 @@ pub fn MultibodyJointSet::get_mut(
 
 ///|
 #declaration_only
+pub fn MultibodyJointSet::attached_bodies(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Array[RigidBodyHandle] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::bodies_attached_with_enabled_joint(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Array[RigidBodyHandle] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Multibody::forward_kinematics(
   self : Multibody,
   bodies : RigidBodySet,

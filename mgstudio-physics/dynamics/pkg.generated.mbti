@@ -181,6 +181,8 @@ type MultibodyJointHandle
 pub fn MultibodyJointHandle::invalid() -> Self
 
 type MultibodyJointSet
+pub fn MultibodyJointSet::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
+pub fn MultibodyJointSet::bodies_attached_with_enabled_joint(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
 pub fn MultibodyJointSet::get(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
 pub fn MultibodyJointSet::get_mut(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
 pub fn MultibodyJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?

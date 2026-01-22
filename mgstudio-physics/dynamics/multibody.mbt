@@ -617,6 +617,40 @@ pub fn MultibodyJointSet::get_mut(
 }
 
 ///|
+pub fn MultibodyJointSet::attached_bodies(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Array[RigidBodyHandle] {
+  if handle.id < 0 || handle.id >= self.body_links.length() {
+    return []
+  }
+  if self.body_links[handle.id] is Some(info) {
+    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
+      return []
+    }
+    let multibody = self.multibodies[info.mb_index]
+    let result : Array[RigidBodyHandle] = []
+    for i in 0..<multibody.links.length() {
+      let link = multibody.links[i]
+      if !RigidBodyHandle::equals(link.rigid_body, handle) {
+        result.push(link.rigid_body)
+      }
+    }
+    result
+  } else {
+    []
+  }
+}
+
+///|
+pub fn MultibodyJointSet::bodies_attached_with_enabled_joint(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Array[RigidBodyHandle] {
+  self.attached_bodies(handle)
+}
+
+///|
 fn MultibodyJointSet::remove_joints_attached_to_rigid_body(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
