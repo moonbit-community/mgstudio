@@ -172,3 +172,24 @@ test "rigid body additional mass" {
   let body = body.set_additional_mass(2.0F, false)
   inspect(body.additional_mass() == 2.0F, content="true")
 }
+
+///|
+/// Ported from rapier rigid_body impulse application.
+test "rigid body impulse application" {
+  let body = RigidBodyBuilder::dynamic().build()
+  let mprops = body.mass_props
+    .set_effective_inv_mass(@core.Vec2::new(0.5F, 0.5F))
+    .set_effective_world_inv_inertia(2.0F)
+  body.mass_props = mprops
+  let body = body.apply_impulse(@core.Vec2::new(2.0F, -1.0F), true)
+  inspect(body.linvel().x == 1.0F, content="true")
+  inspect(body.linvel().y == -0.5F, content="true")
+  let body = body.apply_torque_impulse(0.5F, true)
+  inspect(body.angvel() == 1.0F, content="true")
+  let body = body.apply_impulse_at_point(
+    @core.Vec2::new(1.0F, 0.0F),
+    @core.Vec2::new(0.0F, 1.0F),
+    true,
+  )
+  inspect(body.angvel() == -1.0F, content="true")
+}

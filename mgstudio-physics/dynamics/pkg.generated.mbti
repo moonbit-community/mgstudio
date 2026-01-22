@@ -258,6 +258,9 @@ pub fn RigidBody::additional_mass(Self) -> Float
 pub fn RigidBody::additional_solver_iterations(Self) -> Int
 pub fn RigidBody::angular_damping(Self) -> Float
 pub fn RigidBody::angvel(Self) -> Float
+pub fn RigidBody::apply_impulse(Self, @core.Vec2, Bool) -> Self
+pub fn RigidBody::apply_impulse_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
+pub fn RigidBody::apply_torque_impulse(Self, Float, Bool) -> Self
 pub fn RigidBody::body_type(Self) -> RigidBodyType
 pub fn RigidBody::ccd(Self) -> RigidBodyCcd
 pub fn RigidBody::clear_changes(Self) -> Self
@@ -406,11 +409,13 @@ type RigidBodyIds
 
 pub struct RigidBodyMassProps {
   mut world_com : @core.Vec2
-  effective_inv_mass : @core.Vec2
-  effective_world_inv_inertia : Float
+  mut effective_inv_mass : @core.Vec2
+  mut effective_world_inv_inertia : Float
   local_mprops : @core.MassProperties
 }
 pub fn RigidBodyMassProps::default() -> Self
+pub fn RigidBodyMassProps::set_effective_inv_mass(Self, @core.Vec2) -> Self
+pub fn RigidBodyMassProps::set_effective_world_inv_inertia(Self, Float) -> Self
 
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2

@@ -792,6 +792,37 @@ pub fn RigidBody::set_angvel(
 
 ///|
 #declaration_only
+pub fn RigidBody::apply_impulse(
+  self : RigidBody,
+  impulse : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::apply_torque_impulse(
+  self : RigidBody,
+  torque_impulse : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::apply_impulse_at_point(
+  self : RigidBody,
+  impulse : @core.Vec2,
+  point : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::forces(self : RigidBody) -> RigidBodyForces {
   ...
 }
@@ -1153,6 +1184,24 @@ pub type RigidBodyMassProps
 ///|
 #declaration_only
 pub fn RigidBodyMassProps::default() -> RigidBodyMassProps {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyMassProps::set_effective_inv_mass(
+  self : RigidBodyMassProps,
+  inv_mass : @core.Vec2,
+) -> RigidBodyMassProps {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyMassProps::set_effective_world_inv_inertia(
+  self : RigidBodyMassProps,
+  inv_inertia : @core.Real,
+) -> RigidBodyMassProps {
   ...
 }
 

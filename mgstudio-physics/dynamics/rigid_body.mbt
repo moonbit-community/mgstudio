@@ -532,8 +532,8 @@ pub fn RigidBodyCcd::is_moving_fast(
 ///|
 pub struct RigidBodyMassProps {
   mut world_com : @core.Vec2
-  effective_inv_mass : @core.Vec2
-  effective_world_inv_inertia : @core.Real
+  mut effective_inv_mass : @core.Vec2
+  mut effective_world_inv_inertia : @core.Real
   local_mprops : @core.MassProperties
 }
 
@@ -545,6 +545,24 @@ pub fn RigidBodyMassProps::default() -> RigidBodyMassProps {
     effective_world_inv_inertia: 0.0F,
     local_mprops: @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero()),
   }
+}
+
+///|
+pub fn RigidBodyMassProps::set_effective_inv_mass(
+  self : RigidBodyMassProps,
+  inv_mass : @core.Vec2,
+) -> RigidBodyMassProps {
+  self.effective_inv_mass = inv_mass
+  self
+}
+
+///|
+pub fn RigidBodyMassProps::set_effective_world_inv_inertia(
+  self : RigidBodyMassProps,
+  inv_inertia : @core.Real,
+) -> RigidBodyMassProps {
+  self.effective_world_inv_inertia = inv_inertia
+  self
 }
 
 ///|
@@ -752,6 +770,59 @@ pub fn RigidBody::set_angvel(
         self.wake_up(true) |> ignore
       }
     }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::apply_impulse(
+  self : RigidBody,
+  impulse : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.body_type is RigidBodyType::Dynamic {
+    let inv_mass = self.mass_props.effective_inv_mass
+    self.vels.linvel = self.vels.linvel.add(
+      @core.Vec2::new(impulse.x * inv_mass.x, impulse.y * inv_mass.y),
+    )
+    if wake_up {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::apply_torque_impulse(
+  self : RigidBody,
+  torque_impulse : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.body_type is RigidBodyType::Dynamic {
+    self.vels.angvel = self.vels.angvel +
+      torque_impulse * self.mass_props.effective_world_inv_inertia
+    if wake_up {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::apply_impulse_at_point(
+  self : RigidBody,
+  impulse : @core.Vec2,
+  point : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.body_type is RigidBodyType::Dynamic {
+    let delta = @core.Vec2::new(
+      point.x - self.mass_props.world_com.x,
+      point.y - self.mass_props.world_com.y,
+    )
+    let torque_impulse = delta.cross(impulse)
+    self.apply_impulse(impulse, wake_up) |> ignore
+    self.apply_torque_impulse(torque_impulse, wake_up) |> ignore
   }
   self
 }
