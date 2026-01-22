@@ -187,6 +187,8 @@ fn IslandManager::remove_body(
         island.bodies[body_index] = moved_handle
         if moved_handle.id >= 0 &&
           moved_handle.id < self.body_island_indices.length() {
+          self.body_island_ids[moved_handle.id] = island_id
+          self.body_island_generations[moved_handle.id] = moved_handle.generation
           self.body_island_indices[moved_handle.id] = body_index
         }
       }
@@ -421,15 +423,6 @@ fn handle_equals(left : RigidBodyHandle, right : RigidBodyHandle) -> Bool {
 }
 
 ///|
-fn handle_less(left : RigidBodyHandle, right : RigidBodyHandle) -> Bool {
-  if left.id != right.id {
-    left.id < right.id
-  } else {
-    left.generation < right.generation
-  }
-}
-
-///|
 fn push_unique_handle(
   values : Array[RigidBodyHandle],
   handle : RigidBodyHandle,
@@ -461,18 +454,6 @@ fn push_unique_pair(
     }
   }
   values.push(pair)
-}
-
-///|
-fn canonical_pair(
-  left : RigidBodyHandle,
-  right : RigidBodyHandle,
-) -> (RigidBodyHandle, RigidBodyHandle) {
-  if handle_less(right, left) {
-    (right, left)
-  } else {
-    (left, right)
-  }
 }
 
 ///|
@@ -723,8 +704,7 @@ pub fn ImpulseJointSet::insert(
     push_unique_handle(self.to_wake_up, parent)
     push_unique_handle(self.to_wake_up, child)
   }
-  let pair = canonical_pair(parent, child)
-  push_unique_pair(self.to_join, pair)
+  push_unique_pair(self.to_join, (parent, child))
   handle
 }
 
@@ -793,9 +773,9 @@ pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(
 ) -> Array[ImpulseJointHandle] {
   if self.graph_node_for(handle) is Some(node_index) {
     let to_remove : Array[ImpulseJointHandle] = []
-    let edges = self.adjacency[node_index]
-    for i in 0..<edges.length() {
-      let edge_id = edges[i]
+    let edges_snapshot = self.adjacency[node_index]
+    for i in 0..<edges_snapshot.length() {
+      let edge_id = edges_snapshot[i]
       if edge_id >= 0 && edge_id < self.graph_edges.length() {
         to_remove.push(self.graph_edges[edge_id].joint.handle)
       }
@@ -807,10 +787,10 @@ pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(
         removed.push(handle_to_remove)
       }
     }
-    if self.graph_node_for(handle) is Some(updated_node) {
-      if self.adjacency[updated_node].length() == 0 {
-        self.remove_node(updated_node)
-      }
+    if node_index >= 0 &&
+      node_index < self.adjacency.length() &&
+      self.adjacency[node_index].length() == 0 {
+      self.remove_node(node_index)
     }
     removed
   } else {
