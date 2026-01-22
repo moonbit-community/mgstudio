@@ -4,3 +4,8 @@ rapier
 AGENTS.md
 .private/
 .codex
+.DS_Store
+cosmic-text/
+swash/
+mgstudio-text/target/
+mgstudio-swash/target/
