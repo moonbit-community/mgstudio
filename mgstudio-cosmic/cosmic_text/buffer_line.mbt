@@ -19,18 +19,6 @@
 /// - It focuses on cache invalidation and text/span mutations (append/split_off),
 ///   keeping API naming/semantics aligned with upstream.
 
-pub(all) enum Shaping {
-  Basic
-  Advanced
-}
-
-///|
-/// Placeholder for upstream `ShapeLine`.
-pub struct ShapeLine {}
-
-///|
-pub fn ShapeLine::empty() -> ShapeLine { ShapeLine::{  } }
-
 fn string_concat(a : String, b : String) -> String {
   let sb = StringBuilder::new(size_hint=(a.length() + b.length()) * 2)
   sb.write_string(a)
@@ -102,6 +90,24 @@ pub fn BufferLine::reset_shaping(self : BufferLine) -> BufferLine {
 pub fn BufferLine::reset_layout(self : BufferLine) -> BufferLine {
   let layout_opt = self.layout_opt.set_unused()
   BufferLine::{ ..self, layout_opt }
+}
+
+///|
+pub fn BufferLine::shape_opt(self : BufferLine) -> ShapeLine? {
+  self.shape_opt.get()
+}
+
+///|
+pub fn BufferLine::shape(self : BufferLine, tab_width : Int) -> BufferLine {
+  if self.shape_opt.is_unused() {
+    let (shape_opt, reused_opt) = self.shape_opt.take_unused()
+    let reused = if reused_opt is Some(v) { v } else { ShapeLine::empty() }
+    let built = reused.build(self.text, self.attrs_list, self.shaping, tab_width)
+    let shape_opt = shape_opt.set_used(built)
+    BufferLine::{ ..self, shape_opt }.reset_layout()
+  } else {
+    self
+  }
 }
 
 ///|

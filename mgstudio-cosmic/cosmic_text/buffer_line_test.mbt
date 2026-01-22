@@ -47,3 +47,17 @@ test "BufferLine.append concatenates text and shifts spans" {
   // "B" comes from other defaults (metadata=9), and shifted span overrides at pos 1.
   inspect(out.attrs_list().get_span(1).metadata(), content="2")
 }
+
+test "BufferLine.shape builds 1 glyph per code unit (tab uses tab_width cells)" {
+  let attrs = AttrsList::new(Attrs::new())
+  let line0 = BufferLine::new("a\tb", Lf, attrs, Advanced)
+  let line1 = line0.shape(4)
+  if line1.shape_opt() is Some(shape) {
+    inspect(shape.glyphs.length(), content="3")
+    inspect(shape.glyphs[0].x_advance, content="1")
+    inspect(shape.glyphs[1].x_advance, content="4")
+    inspect(shape.glyphs[2].x_advance, content="1")
+  } else {
+    fail("expected Some(shape)")
+  }
+}

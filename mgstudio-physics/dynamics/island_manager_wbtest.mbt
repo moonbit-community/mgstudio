@@ -17,10 +17,11 @@
 test "island manager merge islands" {
   let bodies = RigidBodySet::new()
   let islands = IslandManager::new()
+  islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  islands.wake_up(bodies, handle1, true)
-  islands.wake_up(bodies, handle2, true)
+  islands.rigid_body_updated(handle1, bodies)
+  islands.rigid_body_updated(handle2, bodies)
   inspect(islands.awake_islands.length() == 2, content="true")
   if islands.island_id_for(handle1) is Some(id1) &&
     islands.island_id_for(handle2) is Some(id2) {
@@ -66,8 +67,8 @@ test "island manager extract sleeping island" {
   let multibody_joints = MultibodyJointSet::new()
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  islands.wake_up(bodies, handle1, true)
-  islands.wake_up(bodies, handle2, true)
+  islands.rigid_body_updated(handle1, bodies)
+  islands.rigid_body_updated(handle2, bodies)
   if islands.island_id_for(handle1) is Some(id1) &&
     islands.island_id_for(handle2) is Some(id2) {
     if id1 != id2 {
@@ -104,15 +105,16 @@ test "island manager extract sleeping island" {
 test "island manager incremental merge small islands" {
   let bodies = RigidBodySet::new()
   let islands = IslandManager::new()
-  islands.set_island_size_limits(3, 8)
+  islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle3 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle4 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  islands.wake_up(bodies, handle1, true)
-  islands.wake_up(bodies, handle2, true)
-  islands.wake_up(bodies, handle3, true)
-  islands.wake_up(bodies, handle4, true)
+  islands.rigid_body_updated(handle1, bodies)
+  islands.rigid_body_updated(handle2, bodies)
+  islands.rigid_body_updated(handle3, bodies)
+  islands.rigid_body_updated(handle4, bodies)
+  islands.set_island_size_limits(3, 8)
   merge_handles(islands, bodies, handle1, handle2)
   merge_handles(islands, bodies, handle3, handle4)
   inspect(islands.awake_islands.length() == 2, content="true")
@@ -131,7 +133,7 @@ test "island manager incremental merge small islands" {
 test "island manager incremental merge incompatible solver iterations" {
   let bodies = RigidBodySet::new()
   let islands = IslandManager::new()
-  islands.set_island_size_limits(3, 8)
+  islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(
     RigidBodyBuilder::dynamic().additional_solver_iterations(0).build(),
   )
@@ -144,10 +146,11 @@ test "island manager incremental merge incompatible solver iterations" {
   let handle4 = bodies.insert(
     RigidBodyBuilder::dynamic().additional_solver_iterations(2).build(),
   )
-  islands.wake_up(bodies, handle1, true)
-  islands.wake_up(bodies, handle2, true)
-  islands.wake_up(bodies, handle3, true)
-  islands.wake_up(bodies, handle4, true)
+  islands.rigid_body_updated(handle1, bodies)
+  islands.rigid_body_updated(handle2, bodies)
+  islands.rigid_body_updated(handle3, bodies)
+  islands.rigid_body_updated(handle4, bodies)
+  islands.set_island_size_limits(3, 8)
   merge_handles(islands, bodies, handle1, handle2)
   merge_handles(islands, bodies, handle3, handle4)
   inspect(islands.awake_islands.length() == 2, content="true")
@@ -169,13 +172,14 @@ test "island manager incremental split over max" {
   let contacts = ContactGraph::new()
   let impulse_joints = ImpulseJointSet::new()
   let multibody_joints = MultibodyJointSet::new()
-  islands.set_island_size_limits(2, 5)
+  islands.set_island_size_limits(1, 5)
   let handles : Array[RigidBodyHandle] = []
   for _ in 0..<6 {
     let handle = bodies.insert(RigidBodyBuilder::dynamic().build())
     handles.push(handle)
-    islands.wake_up(bodies, handle, true)
+    islands.rigid_body_updated(handle, bodies)
   }
+  islands.set_island_size_limits(2, 5)
   for i in 1..<handles.length() {
     merge_handles(islands, bodies, handles[0], handles[i])
   }
@@ -198,10 +202,11 @@ test "island manager incremental split over max" {
 test "island manager cross island contact merge" {
   let bodies = RigidBodySet::new()
   let islands = IslandManager::new()
+  islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  islands.wake_up(bodies, handle1, true)
-  islands.wake_up(bodies, handle2, true)
+  islands.rigid_body_updated(handle1, bodies)
+  islands.rigid_body_updated(handle2, bodies)
   inspect(islands.awake_islands.length() == 2, content="true")
   islands.interaction_started_or_stopped(
     bodies,

@@ -532,15 +532,14 @@ pub fn IslandManager::wake_up(
   handle : RigidBodyHandle,
   strong : Bool,
 ) -> Unit {
-  if !is_dynamic_or_kinematic_body(bodies, handle) {
-    return
-  }
-  if self.island_id_for(handle) is Some(island_id) {
+  if bodies.get_mut(handle) is Some(body) {
+    if !body.is_dynamic_or_kinematic() {
+      return
+    }
+    body.activation = body.activation.wake_up(strong)
+    let island_id = body.ids.active_island_id
     self.wake_up_island(bodies, island_id)
-  } else {
-    self.insert_body(bodies, handle, false)
   }
-  self.wake_up_body(bodies, handle, strong)
 }
 
 ///|

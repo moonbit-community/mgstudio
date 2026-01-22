@@ -1,0 +1,22 @@
+// Copyright 2025 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+test "word_indices_whitespace basic" {
+  let ranges = word_indices_whitespace("  hello\tworld\nmoon  ")
+  inspect(ranges.length(), content="3")
+  inspect(ranges[0], content="(2, 7)")
+  inspect(ranges[1], content="(8, 13)")
+  inspect(ranges[2], content="(14, 18)")
+}
+
