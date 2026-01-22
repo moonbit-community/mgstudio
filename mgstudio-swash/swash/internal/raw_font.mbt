@@ -15,12 +15,24 @@
 ///|
 /// Low level OpenType parsing helpers for table directory access.
 ///
-/// Ported from `swash/src/internal/mod.rs` (table accessors).
+/// Ported from `swash/src/internal/mod.rs` (trait `RawFont` + table accessors).
 ///
 /// swash is dual-licensed Apache-2.0 OR MIT.
 
 ///|
-pub fn table_range(data : Bytes, base : Int, tag : RawTag) -> (UInt, UInt)? {
+/// Trait for types that can supply font tables.
+///
+/// Note: this is declared as `pub(open)` so other packages in this module
+/// (e.g. `swash/font.mbt`) can implement it, matching upstream swash.
+pub(open) trait RawFont {
+  data(Self) -> Bytes
+  offset(Self) -> Int
+}
+
+///|
+pub fn[T : RawFont] table_range(font : T, tag : RawTag) -> (UInt, UInt)? {
+  let base = font.offset()
+  let data = font.data()
   let b = BeBytes::new(data)
 
   // numTables is at offset + 4
@@ -71,16 +83,17 @@ pub fn table_range(data : Bytes, base : Int, tag : RawTag) -> (UInt, UInt)? {
 }
 
 ///|
-pub fn table_offset(data : Bytes, base : Int, tag : RawTag) -> UInt {
-  match table_range(data, base, tag) {
+pub fn[T : RawFont] table_offset(font : T, tag : RawTag) -> UInt {
+  match table_range(font, tag) {
     None => 0
     Some((start, _)) => start
   }
 }
 
 ///|
-pub fn table_data(data : Bytes, base : Int, tag : RawTag) -> BytesView? {
-  let (start_u, end_u) = match table_range(data, base, tag) {
+pub fn[T : RawFont] table_data(font : T, tag : RawTag) -> BytesView? {
+  let data = font.data()
+  let (start_u, end_u) = match table_range(font, tag) {
     None => return None
     Some(r) => r
   }

@@ -13,6 +13,22 @@
 // limitations under the License.
 
 ///|
+struct TestFont {
+  data : Bytes
+  offset : Int
+}
+
+///|
+pub impl RawFont for TestFont with data(self) {
+  self.data
+}
+
+///|
+pub impl RawFont for TestFont with offset(self) {
+  self.offset
+}
+
+///|
 fn mk_min_font() -> Bytes {
   // Minimal font with a single table record:
   // sfntVersion = 0x00010000
@@ -71,9 +87,10 @@ fn mk_min_font() -> Bytes {
 ///|
 test "RawFont.table_range/table_data reads the table directory" {
   let data = mk_min_font()
+  let font = TestFont::{ data, offset: 0 }
   let head_tag : RawTag = 0x68656164 // "head"
-  inspect(table_range(data, 0, head_tag), content="Some((32, 36))")
-  let view_opt = table_data(data, 0, head_tag)
+  inspect(table_range(font, head_tag), content="Some((32, 36))")
+  let view_opt = table_data(font, head_tag)
   if view_opt is Some(view) {
     inspect(view.length(), content="4")
     inspect(view[0], content="b'\\xDE'")

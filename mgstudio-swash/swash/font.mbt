@@ -113,8 +113,18 @@ pub fn FontRef::from_offset(data : Bytes, offset : Int) -> FontRef? {
 }
 
 ///|
+pub impl @internal.RawFont for FontRef with data(self) {
+  self.data
+}
+
+///|
+pub impl @internal.RawFont for FontRef with offset(self) {
+  self.offset
+}
+
+///|
 pub fn FontRef::table_data(self : FontRef, tag : Tag) -> BytesView? {
-  @internal.table_data(self.data, self.offset, tag)
+  @internal.table_data(self, tag)
 }
 
 ///|
