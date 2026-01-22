@@ -230,6 +230,9 @@ fn resolve_contact(
 fn handle_user_changes_to_bodies(
   islands : @dynamics.IslandManager,
   bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
   modified_bodies : Array[@dynamics.RigidBodyHandle],
 ) -> Unit {
   for i in 0..<modified_bodies.length() {
@@ -240,6 +243,19 @@ fn handle_user_changes_to_bodies(
       } else {
         islands.rigid_body_removed_or_disabled(handle, bodies)
       }
+      colliders.set_parent_enabled(handle, body.is_enabled())
+      impulse_joints.map_attached_joints_mut(handle, (
+        parent,
+        child,
+        joint_handle,
+        joint,
+      ) => {
+        parent |> ignore
+        child |> ignore
+        joint_handle |> ignore
+        joint.set_enabled_by_attached_body(body.is_enabled()) |> ignore
+      })
+      multibody_joints |> ignore
     }
   }
 }
@@ -255,6 +271,14 @@ fn clear_modified_bodies(
       body.clear_changes() |> ignore
     }
   }
+}
+
+///|
+fn clear_modified_colliders(
+  colliders : @collision.ColliderSet,
+  modified_colliders : Array[@collision.ColliderHandle],
+) -> Unit {
+  colliders.clear_changes_for(modified_colliders)
 }
 
 ///|
@@ -285,8 +309,14 @@ pub fn PhysicsPipeline::step(
   for i in 0..<wake_from_multibody.length() {
     islands.wake_up(bodies, wake_from_multibody[i], true)
   }
-  let modified_before_step = bodies.take_modified()
-  handle_user_changes_to_bodies(islands, bodies, modified_before_step)
+  let modified_colliders_before_step = colliders.take_modified()
+  @collision.handle_user_changes_to_colliders(
+    bodies, colliders, modified_colliders_before_step,
+  )
+  let modified_bodies_before_step = bodies.take_modified()
+  handle_user_changes_to_bodies(
+    islands, bodies, colliders, impulse_joints, multibody_joints, modified_bodies_before_step,
+  )
   let join_from_impulse = impulse_joints.take_to_join()
   for i in 0..<join_from_impulse.length() {
     let pair = join_from_impulse[i]
@@ -359,7 +389,10 @@ pub fn PhysicsPipeline::step(
   islands.update_islands(
     dt, 1.0F, bodies, contacts, impulse_joints, multibody_joints,
   )
-  let modified_after_step = bodies.take_modified()
-  clear_modified_bodies(bodies, modified_before_step)
-  clear_modified_bodies(bodies, modified_after_step)
+  let modified_colliders_after_step = colliders.take_modified()
+  let modified_bodies_after_step = bodies.take_modified()
+  clear_modified_colliders(colliders, modified_colliders_before_step)
+  clear_modified_colliders(colliders, modified_colliders_after_step)
+  clear_modified_bodies(bodies, modified_bodies_before_step)
+  clear_modified_bodies(bodies, modified_bodies_after_step)
 }

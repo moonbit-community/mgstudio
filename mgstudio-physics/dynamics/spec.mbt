@@ -889,6 +889,14 @@ pub fn RigidBody::clear_changes(self : RigidBody) -> RigidBody {
 
 ///|
 #declaration_only
+pub fn RigidBody::mark_local_mass_properties_changed(
+  self : RigidBody,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
 pub type RigidBodyActivation
 
 ///|
@@ -1281,6 +1289,15 @@ pub fn ImpulseJoint::is_enabled(self : ImpulseJoint) -> Bool {
 pub fn ImpulseJoint::set_enabled(
   self : ImpulseJoint,
   enabled : Bool,
+) -> ImpulseJoint {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJoint::set_enabled_by_attached_body(
+  self : ImpulseJoint,
+  attached_enabled : Bool,
 ) -> ImpulseJoint {
   ...
 }

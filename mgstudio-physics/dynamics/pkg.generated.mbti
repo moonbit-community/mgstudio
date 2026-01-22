@@ -46,6 +46,7 @@ pub struct ImpulseJoint {
 }
 pub fn ImpulseJoint::is_enabled(Self) -> Bool
 pub fn ImpulseJoint::set_enabled(Self, Bool) -> Self
+pub fn ImpulseJoint::set_enabled_by_attached_body(Self, Bool) -> Self
 
 pub struct ImpulseJointGraph {
   nodes : Array[RigidBodyHandle]
@@ -238,6 +239,7 @@ pub fn RigidBody::is_kinematic(Self) -> Bool
 pub fn RigidBody::is_sleeping(Self) -> Bool
 pub fn RigidBody::linear_damping(Self) -> Float
 pub fn RigidBody::linvel(Self) -> @core.Vec2
+pub fn RigidBody::mark_local_mass_properties_changed(Self) -> Self
 pub fn RigidBody::mass_props(Self) -> RigidBodyMassProps
 pub fn RigidBody::position(Self) -> @core.Isometry2
 pub fn RigidBody::reset_forces(Self, Bool) -> Self

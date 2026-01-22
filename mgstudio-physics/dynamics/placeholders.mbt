@@ -1074,6 +1074,21 @@ pub fn ImpulseJoint::set_enabled(
 }
 
 ///|
+pub fn ImpulseJoint::set_enabled_by_attached_body(
+  self : ImpulseJoint,
+  attached_enabled : Bool,
+) -> ImpulseJoint {
+  if attached_enabled {
+    if self.enabled is JointEnabled::DisabledByAttachedBody {
+      self.enabled = JointEnabled::Enabled
+    }
+  } else if self.enabled is JointEnabled::Enabled {
+    self.enabled = JointEnabled::DisabledByAttachedBody
+  }
+  self
+}
+
+///|
 pub struct ImpulseJointGraph {
   nodes : Array[RigidBodyHandle]
   edges : Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)]

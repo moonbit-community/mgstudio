@@ -1018,6 +1018,14 @@ pub fn RigidBody::clear_changes(self : RigidBody) -> RigidBody {
 }
 
 ///|
+pub fn RigidBody::mark_local_mass_properties_changed(
+  self : RigidBody,
+) -> RigidBody {
+  self.changes = self.changes.insert(RIGID_BODY_CHANGES_LOCAL_MASS_PROPERTIES)
+  self
+}
+
+///|
 pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
   self.position.position
 }

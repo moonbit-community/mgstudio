@@ -24,6 +24,70 @@ fn ColliderHandle::new(id : Int, generation : Int) -> ColliderHandle {
 }
 
 ///|
+const COLLIDER_CHANGES_IN_MODIFIED_SET : Int = 1 << 0
+
+///|
+const COLLIDER_CHANGES_POSITION : Int = 1 << 1
+
+///|
+const COLLIDER_CHANGES_SHAPE : Int = 1 << 2
+
+///|
+const COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES : Int = 1 << 3
+
+///|
+const COLLIDER_CHANGES_PARENT : Int = 1 << 4
+
+///|
+const COLLIDER_CHANGES_ENABLED_OR_DISABLED : Int = 1 << 5
+
+///|
+const COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE : Int = 1 << 6
+
+///|
+const COLLIDER_CHANGES_ALL : Int = COLLIDER_CHANGES_IN_MODIFIED_SET |
+  COLLIDER_CHANGES_POSITION |
+  COLLIDER_CHANGES_SHAPE |
+  COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES |
+  COLLIDER_CHANGES_PARENT |
+  COLLIDER_CHANGES_ENABLED_OR_DISABLED |
+  COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE
+
+///|
+struct ColliderChanges {
+  mut bits : Int
+}
+
+///|
+fn ColliderChanges::all() -> ColliderChanges {
+  { bits: COLLIDER_CHANGES_ALL }
+}
+
+///|
+fn ColliderChanges::contains(self : ColliderChanges, flag : Int) -> Bool {
+  (self.bits & flag) != 0
+}
+
+///|
+fn ColliderChanges::insert(
+  self : ColliderChanges,
+  flag : Int,
+) -> ColliderChanges {
+  self.bits = self.bits | flag
+  self
+}
+
+///|
+fn ColliderChanges::remove(
+  self : ColliderChanges,
+  flag : Int,
+) -> ColliderChanges {
+  let clear_bits = self.bits & flag
+  self.bits = self.bits - clear_bits
+  self
+}
+
+///|
 pub struct ActiveCollisionTypes {
   value : Int
 }
@@ -51,6 +115,8 @@ pub struct Collider {
   active_events : ActiveEvents?
   restitution : @core.Real
   mut parent : @dynamics.RigidBodyHandle?
+  mut enabled : ColliderEnabled
+  mut changes : ColliderChanges
 }
 
 ///|
@@ -160,6 +226,8 @@ pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
     active_events: self.active_events,
     restitution: self.restitution,
     parent: None,
+    enabled: ColliderEnabled::Enabled,
+    changes: ColliderChanges::all(),
   }
 }
 
@@ -174,15 +242,44 @@ pub fn Collider::translation(self : Collider) -> @core.Vec2 {
 }
 
 ///|
+pub fn Collider::is_enabled(self : Collider) -> Bool {
+  self.enabled is ColliderEnabled::Enabled
+}
+
+///|
+pub fn Collider::set_enabled(self : Collider, enabled : Bool) -> Collider {
+  match self.enabled {
+    ColliderEnabled::Enabled | ColliderEnabled::DisabledByParent =>
+      if !enabled {
+        self.changes = self.changes.insert(COLLIDER_CHANGES_ENABLED_OR_DISABLED)
+        self.enabled = ColliderEnabled::Disabled
+      }
+    ColliderEnabled::Disabled =>
+      if enabled {
+        self.changes = self.changes.insert(COLLIDER_CHANGES_ENABLED_OR_DISABLED)
+        self.enabled = ColliderEnabled::Enabled
+      }
+  }
+  self
+}
+
+///|
+fn Collider::clear_changes(self : Collider) -> Collider {
+  self.changes = self.changes.remove(COLLIDER_CHANGES_ALL)
+  self
+}
+
+///|
 pub struct ColliderSet {
   colliders : Array[Collider?]
   generations : Array[Int]
   free_list : Array[Int]
+  modified_colliders : Array[ColliderHandle]
 }
 
 ///|
 pub fn ColliderSet::new() -> ColliderSet {
-  { colliders: [], generations: [], free_list: [] }
+  { colliders: [], generations: [], free_list: [], modified_colliders: [] }
 }
 
 ///|
@@ -237,6 +334,27 @@ fn update_collider_world_pose(
 }
 
 ///|
+fn ColliderSet::push_modified_unchecked(
+  self : ColliderSet,
+  handle : ColliderHandle,
+  collider : Collider,
+) -> Unit {
+  collider.changes = collider.changes.insert(COLLIDER_CHANGES_IN_MODIFIED_SET)
+  self.modified_colliders.push(handle)
+}
+
+///|
+fn ColliderSet::push_modified(
+  self : ColliderSet,
+  handle : ColliderHandle,
+  collider : Collider,
+) -> Unit {
+  if !collider.changes.contains(COLLIDER_CHANGES_IN_MODIFIED_SET) {
+    self.push_modified_unchecked(handle, collider)
+  }
+}
+
+///|
 fn ColliderSet::sync_with_bodies(
   self : ColliderSet,
   bodies : @dynamics.RigidBodySet,
@@ -254,7 +372,12 @@ pub fn ColliderSet::insert(
   collider : Collider,
 ) -> ColliderHandle {
   let handle = self.allocate_handle()
-  self.colliders[handle.id] = Some(collider)
+  let updated = collider
+  updated.changes = ColliderChanges::all()
+  self.colliders[handle.id] = Some(updated)
+  if self.colliders[handle.id] is Some(collider_ref) {
+    self.push_modified_unchecked(handle, collider_ref)
+  }
   handle
 }
 
@@ -267,9 +390,13 @@ pub fn ColliderSet::insert_with_parent(
 ) -> ColliderHandle {
   let handle = self.allocate_handle()
   let updated = collider
+  updated.changes = ColliderChanges::all()
   updated.parent = Some(parent)
   let updated_world = update_collider_world_pose(updated, bodies)
   self.colliders[handle.id] = Some(updated_world)
+  if self.colliders[handle.id] is Some(collider_ref) {
+    self.push_modified_unchecked(handle, collider_ref)
+  }
   handle
 }
 
@@ -285,6 +412,41 @@ pub fn ColliderSet::get(
     return None
   }
   self.colliders[handle.id]
+}
+
+///|
+pub fn ColliderSet::get_mut(
+  self : ColliderSet,
+  handle : ColliderHandle,
+) -> Collider? {
+  self.get_mut_internal_with_modification_tracking(handle)
+}
+
+///|
+pub fn ColliderSet::get_mut_internal(
+  self : ColliderSet,
+  handle : ColliderHandle,
+) -> Collider? {
+  if handle.id < 0 || handle.id >= self.colliders.length() {
+    return None
+  }
+  if self.generations[handle.id] != handle.generation {
+    return None
+  }
+  self.colliders[handle.id]
+}
+
+///|
+pub fn ColliderSet::get_mut_internal_with_modification_tracking(
+  self : ColliderSet,
+  handle : ColliderHandle,
+) -> Collider? {
+  if self.get_mut_internal(handle) is Some(collider) {
+    self.push_modified(handle, collider)
+    Some(collider)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -318,6 +480,39 @@ pub fn ColliderSet::remove(
 }
 
 ///|
+pub fn ColliderSet::take_modified(self : ColliderSet) -> Array[ColliderHandle] {
+  let result : Array[ColliderHandle] = []
+  for i in 0..<self.modified_colliders.length() {
+    let handle = self.modified_colliders[i]
+    result.push(handle)
+    if handle.id >= 0 && handle.id < self.colliders.length() {
+      if self.generations[handle.id] == handle.generation {
+        if self.colliders[handle.id] is Some(collider) {
+          collider.changes = collider.changes.remove(
+            COLLIDER_CHANGES_IN_MODIFIED_SET,
+          )
+        }
+      }
+    }
+  }
+  self.modified_colliders.clear()
+  result
+}
+
+///|
+pub fn ColliderSet::clear_changes_for(
+  self : ColliderSet,
+  handles : Array[ColliderHandle],
+) -> Unit {
+  for i in 0..<handles.length() {
+    let handle = handles[i]
+    if self.get_mut_internal(handle) is Some(collider) {
+      collider.clear_changes() |> ignore
+    }
+  }
+}
+
+///|
 pub fn ColliderSet::set_parent(
   self : ColliderSet,
   handle : ColliderHandle,
@@ -332,9 +527,76 @@ pub fn ColliderSet::set_parent(
   }
   if self.colliders[handle.id] is Some(collider) {
     collider.parent = parent
+    collider.changes = collider.changes.insert(COLLIDER_CHANGES_PARENT)
     self.colliders[handle.id] = Some(
       update_collider_world_pose(collider, bodies),
     )
+    if self.colliders[handle.id] is Some(updated) {
+      self.push_modified(handle, updated)
+    }
+  }
+}
+
+///|
+pub fn ColliderSet::set_parent_enabled(
+  self : ColliderSet,
+  parent : @dynamics.RigidBodyHandle,
+  enabled : Bool,
+) -> Unit {
+  for i in 0..<self.colliders.length() {
+    if self.colliders[i] is Some(collider) {
+      if collider.parent is Some(current_parent) &&
+        @dynamics.RigidBodyHandle::equals(current_parent, parent) {
+        if enabled {
+          if collider.enabled is ColliderEnabled::DisabledByParent {
+            collider.enabled = ColliderEnabled::Enabled
+            collider.changes = collider.changes.insert(
+              COLLIDER_CHANGES_ENABLED_OR_DISABLED,
+            )
+          }
+        } else if collider.enabled is ColliderEnabled::Enabled {
+          collider.enabled = ColliderEnabled::DisabledByParent
+          collider.changes = collider.changes.insert(
+            COLLIDER_CHANGES_ENABLED_OR_DISABLED,
+          )
+        }
+        let handle = ColliderHandle::new(i, self.generations[i])
+        self.push_modified(handle, collider)
+      }
+    }
+  }
+}
+
+///|
+pub fn handle_user_changes_to_colliders(
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+  modified_colliders : Array[ColliderHandle],
+) -> Unit {
+  for i in 0..<modified_colliders.length() {
+    let handle = modified_colliders[i]
+    if colliders.get_mut_internal(handle) is Some(collider) {
+      let changes = collider.changes
+      let parent = collider.parent
+      if changes.contains(COLLIDER_CHANGES_PARENT) {
+        let updated = update_collider_world_pose(collider, bodies)
+        updated.changes = updated.changes.insert(COLLIDER_CHANGES_POSITION)
+        if handle.id >= 0 && handle.id < colliders.colliders.length() {
+          colliders.colliders[handle.id] = Some(updated)
+        }
+      }
+      if changes.contains(COLLIDER_CHANGES_PARENT) ||
+        changes.contains(COLLIDER_CHANGES_SHAPE) ||
+        changes.contains(COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES) ||
+        changes.contains(COLLIDER_CHANGES_ENABLED_OR_DISABLED) {
+        if parent is Some(rb_handle) {
+          if bodies.get_mut_internal_with_modification_tracking(rb_handle)
+            is Some(body) {
+            body.mark_local_mass_properties_changed() |> ignore
+          }
+        }
+      }
+    }
   }
 }
 
@@ -477,9 +739,15 @@ pub fn NarrowPhase::update(
   let contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider1) {
+      if !collider1.is_enabled() {
+        continue
+      }
       let handle1 = ColliderHandle::new(i, colliders.generations[i])
       for j in (i + 1)..<colliders.colliders.length() {
         if colliders.colliders[j] is Some(collider2) {
+          if !collider2.is_enabled() {
+            continue
+          }
           let handle2 = ColliderHandle::new(j, colliders.generations[j])
           if is_same_parent(collider1, collider2) {
             continue

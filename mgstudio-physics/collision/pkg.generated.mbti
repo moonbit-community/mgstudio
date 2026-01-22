@@ -8,6 +8,7 @@ import {
 }
 
 // Values
+pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
 
 // Errors
 
@@ -37,7 +38,11 @@ pub struct Collider {
   active_events : ActiveEvents?
   restitution : Float
   mut parent : @dynamics.RigidBodyHandle?
+  mut enabled : ColliderEnabled
+  mut changes : ColliderChanges
 }
+pub fn Collider::is_enabled(Self) -> Bool
+pub fn Collider::set_enabled(Self, Bool) -> Self
 pub fn Collider::shape(Self) -> Shape
 pub fn Collider::translation(Self) -> @core.Vec2
 
@@ -60,6 +65,14 @@ pub fn ColliderBuilder::rotation(Self, Float) -> Self
 pub fn ColliderBuilder::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
 
+type ColliderChanges
+
+pub(all) enum ColliderEnabled {
+  Enabled
+  DisabledByParent
+  Disabled
+}
+
 pub struct ColliderHandle {
   id : Int
   generation : Int
@@ -69,13 +82,20 @@ pub struct ColliderSet {
   colliders : Array[Collider?]
   generations : Array[Int]
   free_list : Array[Int]
+  modified_colliders : Array[ColliderHandle]
 }
+pub fn ColliderSet::clear_changes_for(Self, Array[ColliderHandle]) -> Unit
 pub fn ColliderSet::get(Self, ColliderHandle) -> Collider?
+pub fn ColliderSet::get_mut(Self, ColliderHandle) -> Collider?
+pub fn ColliderSet::get_mut_internal(Self, ColliderHandle) -> Collider?
+pub fn ColliderSet::get_mut_internal_with_modification_tracking(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::insert(Self, Collider) -> ColliderHandle
 pub fn ColliderSet::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet) -> ColliderHandle
 pub fn ColliderSet::new() -> Self
 pub fn ColliderSet::remove(Self, ColliderHandle, @dynamics.IslandManager, @dynamics.RigidBodySet, Bool) -> Unit
 pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet) -> Unit
+pub fn ColliderSet::set_parent_enabled(Self, @dynamics.RigidBodyHandle, Bool) -> Unit
+pub fn ColliderSet::take_modified(Self) -> Array[ColliderHandle]
 
 pub struct ContactPair {
   manifold_count : Int

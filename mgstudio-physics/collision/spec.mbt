@@ -32,6 +32,13 @@ pub(all) enum ActiveEvents {
 }
 
 ///|
+pub(all) enum ColliderEnabled {
+  Enabled
+  DisabledByParent
+  Disabled
+}
+
+///|
 #declaration_only
 pub type Collider
 
@@ -132,6 +139,18 @@ pub fn Collider::translation(self : Collider) -> @core.Vec2 {
 
 ///|
 #declaration_only
+pub fn Collider::is_enabled(self : Collider) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_enabled(self : Collider, enabled : Bool) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
 pub type ColliderSet
 
 ///|
@@ -171,6 +190,15 @@ pub fn ColliderSet::get(
 
 ///|
 #declaration_only
+pub fn ColliderSet::get_mut(
+  self : ColliderSet,
+  handle : ColliderHandle,
+) -> Collider? {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderSet::remove(
   self : ColliderSet,
   handle : ColliderHandle,
@@ -188,6 +216,41 @@ pub fn ColliderSet::set_parent(
   handle : ColliderHandle,
   parent : @dynamics.RigidBodyHandle?,
   bodies : @dynamics.RigidBodySet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderSet::set_parent_enabled(
+  self : ColliderSet,
+  parent : @dynamics.RigidBodyHandle,
+  enabled : Bool,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderSet::take_modified(self : ColliderSet) -> Array[ColliderHandle] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderSet::clear_changes_for(
+  self : ColliderSet,
+  handles : Array[ColliderHandle],
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn handle_user_changes_to_colliders(
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+  modified_colliders : Array[ColliderHandle],
 ) -> Unit {
   ...
 }
