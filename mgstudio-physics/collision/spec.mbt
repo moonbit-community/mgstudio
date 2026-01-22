@@ -148,7 +148,25 @@ pub fn Collider::translation(self : Collider) -> @core.Vec2 {
 
 ///|
 #declaration_only
+pub fn Collider::rotation(self : Collider) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::is_sensor(self : Collider) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::is_enabled(self : Collider) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_sensor(self : Collider, enabled : Bool) -> Collider {
   ...
 }
 

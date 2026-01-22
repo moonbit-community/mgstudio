@@ -119,7 +119,7 @@ pub struct Collider {
   mut world_translation : @core.Vec2
   mut world_rotation : @core.Real
   active_collision_types : ActiveCollisionTypes
-  sensor : Bool
+  mut sensor : Bool
   active_events : ActiveEvents?
   restitution : @core.Real
   mut parent : @dynamics.RigidBodyHandle?
@@ -250,8 +250,27 @@ pub fn Collider::translation(self : Collider) -> @core.Vec2 {
 }
 
 ///|
+pub fn Collider::rotation(self : Collider) -> @core.Real {
+  self.world_rotation
+}
+
+///|
+pub fn Collider::is_sensor(self : Collider) -> Bool {
+  self.sensor
+}
+
+///|
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   self.enabled is ColliderEnabled::Enabled
+}
+
+///|
+pub fn Collider::set_sensor(self : Collider, enabled : Bool) -> Collider {
+  if self.sensor != enabled {
+    self.sensor = enabled
+    self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  }
+  self
 }
 
 ///|
