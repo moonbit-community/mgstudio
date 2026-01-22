@@ -239,6 +239,7 @@ pub struct RigidBody {
   mut ids : RigidBodyIds
   position : RigidBodyPosition
   mut body_type : RigidBodyType
+  dominance : RigidBodyDominance
   mut enabled : Bool
   mut activation : RigidBodyActivation
   mut damping : RigidBodyDamping
@@ -266,6 +267,8 @@ pub fn RigidBody::ccd(Self) -> RigidBodyCcd
 pub fn RigidBody::center_of_mass(Self) -> @core.Vec2
 pub fn RigidBody::clear_changes(Self) -> Self
 pub fn RigidBody::damping(Self) -> RigidBodyDamping
+pub fn RigidBody::dominance_group(Self) -> Int
+pub fn RigidBody::effective_dominance_group(Self) -> Int
 pub fn RigidBody::enable_ccd(Self, Bool) -> Self
 pub fn RigidBody::forces(Self) -> RigidBodyForces
 pub fn RigidBody::gravity_scale(Self) -> Float
@@ -294,6 +297,7 @@ pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBody::set_angular_damping(Self, Float) -> Self
 pub fn RigidBody::set_angvel(Self, Float, Bool) -> Self
 pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
+pub fn RigidBody::set_dominance_group(Self, Int) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self
 pub fn RigidBody::set_gravity_scale(Self, Float, Bool) -> Self
 pub fn RigidBody::set_linear_damping(Self, Float) -> Self
@@ -349,6 +353,7 @@ pub struct RigidBodyBuilder {
   mut enabled : Bool
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : Float
+  mut dominance_group : Int
 }
 pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
 pub fn RigidBodyBuilder::additional_solver_iterations(Self, Int) -> Self
@@ -357,6 +362,7 @@ pub fn RigidBodyBuilder::angvel(Self, Float) -> Self
 pub fn RigidBodyBuilder::build(Self) -> RigidBody
 pub fn RigidBodyBuilder::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder::ccd_enabled(Self, Bool) -> Self
+pub fn RigidBodyBuilder::dominance_group(Self, Int) -> Self
 pub fn RigidBodyBuilder::dynamic() -> Self
 pub fn RigidBodyBuilder::enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder::fixed() -> Self
@@ -389,6 +395,13 @@ pub struct RigidBodyDamping {
   mut angular_damping : Float
 }
 pub fn RigidBodyDamping::default() -> Self
+
+pub struct RigidBodyDominance {
+  mut group : Int
+}
+pub fn RigidBodyDominance::default() -> Self
+pub fn RigidBodyDominance::effective_group(Self, RigidBodyType) -> Int
+pub fn RigidBodyDominance::new(Int) -> Self
 
 pub struct RigidBodyForces {
   mut force : @core.Vec2

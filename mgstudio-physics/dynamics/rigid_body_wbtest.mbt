@@ -142,6 +142,20 @@ test "rigid body builder initial state" {
 }
 
 ///|
+/// Ported from rapier rigid-body dominance groups.
+test "rigid body dominance groups" {
+  let body = RigidBodyBuilder::dynamic().build()
+  inspect(body.dominance_group() == 0, content="true")
+  let body = body.set_dominance_group(2)
+  inspect(body.dominance_group() == 2, content="true")
+  inspect(body.effective_dominance_group() == 2, content="true")
+  let fixed = RigidBodyBuilder::fixed().build().set_dominance_group(5)
+  inspect(fixed.effective_dominance_group() == 128, content="true")
+  let body = RigidBodyBuilder::dynamic().dominance_group(7).build()
+  inspect(body.dominance_group() == 7, content="true")
+}
+
+///|
 /// Ported from rapier rigid_body builder sleeping behavior.
 test "rigid body builder sleeping state" {
   let body = RigidBodyBuilder::dynamic().sleeping(true).build()

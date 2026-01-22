@@ -130,6 +130,33 @@ fn RigidBodyChanges::remove(
 }
 
 ///|
+pub struct RigidBodyDominance {
+  mut group : Int
+}
+
+///|
+pub fn RigidBodyDominance::new(group : Int) -> RigidBodyDominance {
+  { group, }
+}
+
+///|
+pub fn RigidBodyDominance::default() -> RigidBodyDominance {
+  RigidBodyDominance::new(0)
+}
+
+///|
+pub fn RigidBodyDominance::effective_group(
+  self : RigidBodyDominance,
+  body_type : RigidBodyType,
+) -> Int {
+  if body_type.is_dynamic_or_kinematic() {
+    self.group
+  } else {
+    128
+  }
+}
+
+///|
 pub fn RigidBodyType::is_fixed(self : RigidBodyType) -> Bool {
   self is RigidBodyType::Fixed
 }
@@ -570,6 +597,7 @@ pub struct RigidBody {
   mut ids : RigidBodyIds
   position : RigidBodyPosition
   mut body_type : RigidBodyType
+  dominance : RigidBodyDominance
   mut enabled : Bool
   mut activation : RigidBodyActivation
   mut damping : RigidBodyDamping
@@ -629,6 +657,28 @@ pub fn RigidBody::is_kinematic(self : RigidBody) -> Bool {
 ///|
 pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
   self.body_type.is_dynamic_or_kinematic()
+}
+
+///|
+pub fn RigidBody::dominance_group(self : RigidBody) -> Int {
+  self.dominance.group
+}
+
+///|
+pub fn RigidBody::effective_dominance_group(self : RigidBody) -> Int {
+  self.dominance.effective_group(self.body_type)
+}
+
+///|
+pub fn RigidBody::set_dominance_group(
+  self : RigidBody,
+  group : Int,
+) -> RigidBody {
+  if self.dominance.group != group {
+    self.dominance.group = group
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_DOMINANCE)
+  }
+  self
 }
 
 ///|
@@ -1215,6 +1265,7 @@ pub struct RigidBodyBuilder {
   mut enabled : Bool
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : @core.Real
+  mut dominance_group : Int
 }
 
 ///|
@@ -1234,6 +1285,7 @@ fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
     enabled: true,
     ccd_enabled: false,
     soft_ccd_prediction: 0.0F,
+    dominance_group: 0,
   }
 }
 
@@ -1350,6 +1402,15 @@ pub fn RigidBodyBuilder::additional_solver_iterations(
 }
 
 ///|
+pub fn RigidBodyBuilder::dominance_group(
+  self : RigidBodyBuilder,
+  group : Int,
+) -> RigidBodyBuilder {
+  self.dominance_group = group
+  self
+}
+
+///|
 pub fn RigidBodyBuilder::can_sleep(
   self : RigidBodyBuilder,
   can_sleep : Bool,
@@ -1408,6 +1469,7 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     ids: RigidBodyIds::default(),
     position: pos,
     body_type: self.body_type,
+    dominance: RigidBodyDominance::new(self.dominance_group),
     enabled: self.enabled,
     activation,
     damping: RigidBodyDamping::{
@@ -1847,6 +1909,8 @@ pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
       sb.write_object(body.additional_mass)
       sb.write_char(',')
       sb.write_object(body.additional_solver_iterations)
+      sb.write_char(',')
+      sb.write_object(body.dominance.group)
     } else {
       sb.write_char('N')
     }
@@ -1994,6 +2058,12 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           } else {
             0
           }
+          let dominance_index = solver_index + 1
+          let dominance_group = if fields.length() > dominance_index {
+            parse_int_value(fields[dominance_index])
+          } else {
+            0
+          }
           let position = @core.Isometry2::new(
             @core.Vec2::new(tx, ty),
             @core.Rot2::from_angle(rot),
@@ -2007,6 +2077,7 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
             ids: RigidBodyIds::default(),
             position: rb_pos,
             body_type,
+            dominance: RigidBodyDominance::new(dominance_group),
             enabled,
             activation,
             damping: RigidBodyDamping::default(),

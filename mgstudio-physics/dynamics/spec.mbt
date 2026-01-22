@@ -79,6 +79,31 @@ pub fn RigidBodyType::is_dynamic_or_kinematic(self : RigidBodyType) -> Bool {
 }
 
 ///|
+#declaration_only
+pub type RigidBodyDominance
+
+///|
+#declaration_only
+pub fn RigidBodyDominance::new(group : Int) -> RigidBodyDominance {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyDominance::default() -> RigidBodyDominance {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyDominance::effective_group(
+  self : RigidBodyDominance,
+  body_type : RigidBodyType,
+) -> Int {
+  ...
+}
+
+///|
 pub(all) enum CoefficientCombineRule {
   Average
   Min
@@ -465,6 +490,15 @@ pub fn RigidBodyBuilder::additional_solver_iterations(
 
 ///|
 #declaration_only
+pub fn RigidBodyBuilder::dominance_group(
+  self : RigidBodyBuilder,
+  group : Int,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   ...
 }
@@ -660,6 +694,27 @@ pub fn RigidBody::is_kinematic(self : RigidBody) -> Bool {
 ///|
 #declaration_only
 pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::dominance_group(self : RigidBody) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::effective_dominance_group(self : RigidBody) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_dominance_group(
+  self : RigidBody,
+  group : Int,
+) -> RigidBody {
   ...
 }
 
