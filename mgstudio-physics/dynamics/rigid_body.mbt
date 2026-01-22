@@ -50,6 +50,76 @@ pub fn RigidBodyHandle::invalid() -> RigidBodyHandle {
 }
 
 ///|
+struct RigidBodyIds {
+  mut active_island_id : Int
+  mut active_set_id : Int
+  mut active_set_timestamp : Int
+}
+
+///|
+fn RigidBodyIds::default() -> RigidBodyIds {
+  { active_island_id: -1, active_set_id: -1, active_set_timestamp: 0 }
+}
+
+///|
+const RIGID_BODY_CHANGES_IN_MODIFIED_SET : Int = 1 << 0
+
+///|
+const RIGID_BODY_CHANGES_POSITION : Int = 1 << 1
+
+///|
+const RIGID_BODY_CHANGES_SLEEP : Int = 1 << 2
+
+///|
+const RIGID_BODY_CHANGES_COLLIDERS : Int = 1 << 3
+
+///|
+const RIGID_BODY_CHANGES_TYPE : Int = 1 << 4
+
+///|
+const RIGID_BODY_CHANGES_DOMINANCE : Int = 1 << 5
+
+///|
+const RIGID_BODY_CHANGES_LOCAL_MASS_PROPERTIES : Int = 1 << 6
+
+///|
+const RIGID_BODY_CHANGES_ENABLED_OR_DISABLED : Int = 1 << 7
+
+///|
+const RIGID_BODY_CHANGES_ALL : Int = RIGID_BODY_CHANGES_IN_MODIFIED_SET |
+  RIGID_BODY_CHANGES_POSITION |
+  RIGID_BODY_CHANGES_SLEEP |
+  RIGID_BODY_CHANGES_COLLIDERS |
+  RIGID_BODY_CHANGES_TYPE |
+  RIGID_BODY_CHANGES_DOMINANCE |
+  RIGID_BODY_CHANGES_LOCAL_MASS_PROPERTIES |
+  RIGID_BODY_CHANGES_ENABLED_OR_DISABLED
+
+///|
+struct RigidBodyChanges {
+  mut bits : Int
+}
+
+///|
+fn RigidBodyChanges::all() -> RigidBodyChanges {
+  { bits: RIGID_BODY_CHANGES_ALL }
+}
+
+///|
+fn RigidBodyChanges::insert(
+  self : RigidBodyChanges,
+  flag : Int,
+) -> RigidBodyChanges {
+  self.bits = self.bits | flag
+  self
+}
+
+///|
+fn RigidBodyChanges::contains(self : RigidBodyChanges, flag : Int) -> Bool {
+  (self.bits & flag) != 0
+}
+
+///|
 pub fn RigidBodyType::is_fixed(self : RigidBodyType) -> Bool {
   self is RigidBodyType::Fixed
 }
@@ -106,9 +176,22 @@ pub fn RigidBodyPosition::interpolate_velocity(
 }
 
 ///|
+pub fn RigidBodyPosition::integrate_forces_and_velocities(
+  self : RigidBodyPosition,
+  dt : @core.Real,
+  forces : RigidBodyForces,
+  vels : RigidBodyVelocity,
+  mprops : RigidBodyMassProps,
+) -> @core.Isometry2 {
+  let new_vels = forces.integrate(dt, vels, mprops)
+  let local_com = mprops.local_mprops.center_of_mass
+  new_vels.integrate(dt, self.position, local_com)
+}
+
+///|
 pub struct RigidBodyVelocity {
-  linvel : @core.Vec2
-  angvel : @core.Real
+  mut linvel : @core.Vec2
+  mut angvel : @core.Real
 }
 
 ///|
@@ -130,19 +213,345 @@ pub fn RigidBodyVelocity::integrate(
 }
 
 ///|
-pub struct RigidBody {
-  position : RigidBodyPosition
-  mut body_type : RigidBodyType
-  mut enabled : Bool
-  can_sleep : Bool
-  mut sleeping : Bool
-  additional_mass : @core.Real
-  mut additional_solver_iterations : Int
+pub fn RigidBodyVelocity::zero() -> RigidBodyVelocity {
+  { linvel: @core.Vec2::zero(), angvel: 0.0F }
 }
 
 ///|
-fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
-  self.body_type.is_dynamic_or_kinematic()
+pub fn RigidBodyVelocity::apply_damping(
+  self : RigidBodyVelocity,
+  dt : @core.Real,
+  damping : RigidBodyDamping,
+) -> RigidBodyVelocity {
+  let lin_scale = 1.0F / (1.0F + dt * damping.linear_damping)
+  let ang_scale = 1.0F / (1.0F + dt * damping.angular_damping)
+  {
+    linvel: @core.Vec2::new(
+      self.linvel.x * lin_scale,
+      self.linvel.y * lin_scale,
+    ),
+    angvel: self.angvel * ang_scale,
+  }
+}
+
+///|
+const DEFAULT_SLEEP_LINEAR_THRESHOLD : @core.Real = 0.4F
+
+///|
+const DEFAULT_SLEEP_ANGULAR_THRESHOLD : @core.Real = 0.5F
+
+///|
+const DEFAULT_TIME_UNTIL_SLEEP : @core.Real = 2.0F
+
+///|
+enum SleepRootState {
+  Unknown
+  TraversalPending
+  Traversed
+}
+
+///|
+pub struct RigidBodyActivation {
+  mut normalized_linear_threshold : @core.Real
+  mut angular_threshold : @core.Real
+  mut time_until_sleep : @core.Real
+  mut time_since_can_sleep : @core.Real
+  mut sleeping : Bool
+  mut sleep_root_state : SleepRootState
+}
+
+///|
+pub fn RigidBodyActivation::default() -> RigidBodyActivation {
+  RigidBodyActivation::active()
+}
+
+///|
+pub fn RigidBodyActivation::default_normalized_linear_threshold() -> @core.Real {
+  DEFAULT_SLEEP_LINEAR_THRESHOLD
+}
+
+///|
+pub fn RigidBodyActivation::default_angular_threshold() -> @core.Real {
+  DEFAULT_SLEEP_ANGULAR_THRESHOLD
+}
+
+///|
+pub fn RigidBodyActivation::default_time_until_sleep() -> @core.Real {
+  DEFAULT_TIME_UNTIL_SLEEP
+}
+
+///|
+pub fn RigidBodyActivation::active() -> RigidBodyActivation {
+  {
+    normalized_linear_threshold: RigidBodyActivation::default_normalized_linear_threshold(),
+    angular_threshold: RigidBodyActivation::default_angular_threshold(),
+    time_until_sleep: RigidBodyActivation::default_time_until_sleep(),
+    time_since_can_sleep: 0.0F,
+    sleeping: false,
+    sleep_root_state: SleepRootState::Unknown,
+  }
+}
+
+///|
+pub fn RigidBodyActivation::inactive() -> RigidBodyActivation {
+  {
+    normalized_linear_threshold: RigidBodyActivation::default_normalized_linear_threshold(),
+    angular_threshold: RigidBodyActivation::default_angular_threshold(),
+    time_until_sleep: RigidBodyActivation::default_time_until_sleep(),
+    time_since_can_sleep: RigidBodyActivation::default_time_until_sleep(),
+    sleeping: true,
+    sleep_root_state: SleepRootState::Unknown,
+  }
+}
+
+///|
+pub fn RigidBodyActivation::cannot_sleep() -> RigidBodyActivation {
+  let active = RigidBodyActivation::active()
+  active.normalized_linear_threshold = -1.0F
+  active.angular_threshold = -1.0F
+  active
+}
+
+///|
+pub fn RigidBodyActivation::is_active(self : RigidBodyActivation) -> Bool {
+  !self.sleeping
+}
+
+///|
+pub fn RigidBodyActivation::wake_up(
+  self : RigidBodyActivation,
+  strong : Bool,
+) -> RigidBodyActivation {
+  self.sleeping = false
+  if !(self.sleep_root_state is SleepRootState::TraversalPending) {
+    self.sleep_root_state = SleepRootState::Unknown
+  }
+  if strong {
+    self.time_since_can_sleep = 0.0F
+  }
+  self
+}
+
+///|
+pub fn RigidBodyActivation::sleep(
+  self : RigidBodyActivation,
+) -> RigidBodyActivation {
+  self.sleeping = true
+  self.time_since_can_sleep = self.time_until_sleep
+  self
+}
+
+///|
+pub fn RigidBodyActivation::is_eligible_for_sleep(
+  self : RigidBodyActivation,
+) -> Bool {
+  self.time_since_can_sleep >= self.time_until_sleep
+}
+
+///|
+pub fn RigidBodyActivation::update_energy(
+  self : RigidBodyActivation,
+  body_type : RigidBodyType,
+  length_unit : @core.Real,
+  sq_linvel : @core.Real,
+  sq_angvel : @core.Real,
+  dt : @core.Real,
+) -> RigidBodyActivation {
+  if self.normalized_linear_threshold < 0.0F || self.angular_threshold < 0.0F {
+    self.time_since_can_sleep = 0.0F
+    return self
+  }
+  let can_sleep = match body_type {
+    RigidBodyType::Dynamic => {
+      let linear_threshold = self.normalized_linear_threshold * length_unit
+      sq_linvel < linear_threshold * linear_threshold &&
+      sq_angvel < self.angular_threshold * self.angular_threshold
+    }
+    RigidBodyType::KinematicPositionBased =>
+      sq_linvel == 0.0F && sq_angvel == 0.0F
+    RigidBodyType::KinematicVelocityBased =>
+      sq_linvel == 0.0F && sq_angvel == 0.0F
+    RigidBodyType::Fixed => true
+  }
+  if can_sleep {
+    self.time_since_can_sleep = self.time_since_can_sleep + dt
+  } else {
+    self.time_since_can_sleep = 0.0F
+  }
+  self
+}
+
+///|
+pub struct RigidBodyDamping {
+  mut linear_damping : @core.Real
+  mut angular_damping : @core.Real
+}
+
+///|
+pub fn RigidBodyDamping::default() -> RigidBodyDamping {
+  { linear_damping: 0.0F, angular_damping: 0.0F }
+}
+
+///|
+pub struct RigidBodyForces {
+  mut force : @core.Vec2
+  mut torque : @core.Real
+  mut gravity_scale : @core.Real
+  mut user_force : @core.Vec2
+  mut user_torque : @core.Real
+}
+
+///|
+pub fn RigidBodyForces::default() -> RigidBodyForces {
+  {
+    force: @core.Vec2::zero(),
+    torque: 0.0F,
+    gravity_scale: 1.0F,
+    user_force: @core.Vec2::zero(),
+    user_torque: 0.0F,
+  }
+}
+
+///|
+pub fn RigidBodyForces::integrate(
+  self : RigidBodyForces,
+  dt : @core.Real,
+  init_vels : RigidBodyVelocity,
+  mprops : RigidBodyMassProps,
+) -> RigidBodyVelocity {
+  let linear_acc = @core.Vec2::new(
+    self.force.x * mprops.effective_inv_mass.x,
+    self.force.y * mprops.effective_inv_mass.y,
+  )
+  let angular_acc = mprops.effective_world_inv_inertia * self.torque
+  {
+    linvel: @core.Vec2::new(
+      init_vels.linvel.x + linear_acc.x * dt,
+      init_vels.linvel.y + linear_acc.y * dt,
+    ),
+    angvel: init_vels.angvel + angular_acc * dt,
+  }
+}
+
+///|
+pub fn RigidBodyForces::compute_effective_force_and_torque(
+  self : RigidBodyForces,
+  gravity : @core.Vec2,
+  mass : @core.Vec2,
+) -> RigidBodyForces {
+  self.force = @core.Vec2::new(
+    self.user_force.x + gravity.x * mass.x * self.gravity_scale,
+    self.user_force.y + gravity.y * mass.y * self.gravity_scale,
+  )
+  self.torque = self.user_torque
+  self
+}
+
+///|
+pub fn RigidBodyForces::apply_force_at_point(
+  self : RigidBodyForces,
+  rb_mprops : RigidBodyMassProps,
+  force : @core.Vec2,
+  point : @core.Vec2,
+) -> RigidBodyForces {
+  self.user_force = self.user_force.add(force)
+  let delta = @core.Vec2::new(
+    point.x - rb_mprops.world_com.x,
+    point.y - rb_mprops.world_com.y,
+  )
+  self.user_torque = self.user_torque + delta.cross(force)
+  self
+}
+
+///|
+const DEFAULT_CCD_THICKNESS : @core.Real = 1.0e30F
+
+///|
+pub struct RigidBodyCcd {
+  ccd_thickness : @core.Real
+  ccd_max_dist : @core.Real
+  ccd_active : Bool
+  mut ccd_enabled : Bool
+  mut soft_ccd_prediction : @core.Real
+}
+
+///|
+pub fn RigidBodyCcd::default() -> RigidBodyCcd {
+  {
+    ccd_thickness: DEFAULT_CCD_THICKNESS,
+    ccd_max_dist: 0.0F,
+    ccd_active: false,
+    ccd_enabled: false,
+    soft_ccd_prediction: 0.0F,
+  }
+}
+
+///|
+pub fn RigidBodyCcd::max_point_velocity(
+  self : RigidBodyCcd,
+  vels : RigidBodyVelocity,
+) -> @core.Real {
+  vels.linvel.length() + @core.abs(vels.angvel) * self.ccd_max_dist
+}
+
+///|
+pub fn RigidBodyCcd::is_moving_fast(
+  self : RigidBodyCcd,
+  dt : @core.Real,
+  vels : RigidBodyVelocity,
+  forces : RigidBodyForces?,
+) -> Bool {
+  let threshold = self.ccd_thickness / 10.0F
+  if forces is Some(active_forces) {
+    let force_term = @core.Vec2::new(
+      active_forces.force.x * dt,
+      active_forces.force.y * dt,
+    )
+    let linvel = @core.Vec2::new(
+      vels.linvel.x + force_term.x,
+      vels.linvel.y + force_term.y,
+    )
+    let angular = vels.angvel + active_forces.torque * dt
+    let angular_part = @core.abs(angular) * self.ccd_max_dist
+    linvel.length() + angular_part > threshold
+  } else {
+    self.max_point_velocity(vels) * dt > threshold
+  }
+}
+
+///|
+pub struct RigidBodyMassProps {
+  mut world_com : @core.Vec2
+  effective_inv_mass : @core.Vec2
+  effective_world_inv_inertia : @core.Real
+  local_mprops : @core.MassProperties
+}
+
+///|
+pub fn RigidBodyMassProps::default() -> RigidBodyMassProps {
+  {
+    world_com: @core.Vec2::zero(),
+    effective_inv_mass: @core.Vec2::zero(),
+    effective_world_inv_inertia: 0.0F,
+    local_mprops: @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero()),
+  }
+}
+
+///|
+pub struct RigidBody {
+  mut ids : RigidBodyIds
+  position : RigidBodyPosition
+  mut body_type : RigidBodyType
+  mut enabled : Bool
+  mut activation : RigidBodyActivation
+  mut damping : RigidBodyDamping
+  mut vels : RigidBodyVelocity
+  mut forces : RigidBodyForces
+  mut ccd : RigidBodyCcd
+  mut mass_props : RigidBodyMassProps
+  additional_mass : @core.Real
+  mut additional_solver_iterations : Int
+  mut changes : RigidBodyChanges
 }
 
 ///|
@@ -151,11 +560,47 @@ pub fn RigidBody::set_body_type(
   body_type : RigidBodyType,
   wake_up : Bool,
 ) -> RigidBody {
-  self.body_type = body_type
-  if wake_up && self.is_dynamic_or_kinematic() {
-    self.sleeping = false
+  if body_type_to_int(self.body_type) != body_type_to_int(body_type) {
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_TYPE)
+    self.body_type = body_type
+    if body_type is RigidBodyType::Fixed {
+      self.vels = RigidBodyVelocity::zero()
+    }
+    if wake_up && self.is_dynamic_or_kinematic() {
+      self.wake_up(true) |> ignore
+    }
   }
   self
+}
+
+///|
+pub fn RigidBody::body_type(self : RigidBody) -> RigidBodyType {
+  self.body_type
+}
+
+///|
+pub fn RigidBody::is_enabled(self : RigidBody) -> Bool {
+  self.enabled
+}
+
+///|
+pub fn RigidBody::is_fixed(self : RigidBody) -> Bool {
+  self.body_type.is_fixed()
+}
+
+///|
+pub fn RigidBody::is_dynamic(self : RigidBody) -> Bool {
+  self.body_type.is_dynamic()
+}
+
+///|
+pub fn RigidBody::is_kinematic(self : RigidBody) -> Bool {
+  self.body_type.is_kinematic()
+}
+
+///|
+pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
+  self.body_type.is_dynamic_or_kinematic()
 }
 
 ///|
@@ -174,7 +619,276 @@ pub fn RigidBody::set_additional_solver_iterations(
 
 ///|
 pub fn RigidBody::is_sleeping(self : RigidBody) -> Bool {
-  self.sleeping
+  self.activation.sleeping
+}
+
+///|
+pub fn RigidBody::activation(self : RigidBody) -> RigidBodyActivation {
+  self.activation
+}
+
+///|
+pub fn RigidBody::damping(self : RigidBody) -> RigidBodyDamping {
+  self.damping
+}
+
+///|
+pub fn RigidBody::linear_damping(self : RigidBody) -> @core.Real {
+  self.damping.linear_damping
+}
+
+///|
+pub fn RigidBody::set_linear_damping(
+  self : RigidBody,
+  damping : @core.Real,
+) -> RigidBody {
+  let state = self.damping
+  state.linear_damping = damping
+  self.damping = state
+  self
+}
+
+///|
+pub fn RigidBody::angular_damping(self : RigidBody) -> @core.Real {
+  self.damping.angular_damping
+}
+
+///|
+pub fn RigidBody::set_angular_damping(
+  self : RigidBody,
+  damping : @core.Real,
+) -> RigidBody {
+  let state = self.damping
+  state.angular_damping = damping
+  self.damping = state
+  self
+}
+
+///|
+pub fn RigidBody::vels(self : RigidBody) -> RigidBodyVelocity {
+  self.vels
+}
+
+///|
+pub fn RigidBody::linvel(self : RigidBody) -> @core.Vec2 {
+  self.vels.linvel
+}
+
+///|
+pub fn RigidBody::angvel(self : RigidBody) -> @core.Real {
+  self.vels.angvel
+}
+
+///|
+pub fn RigidBody::set_vels(
+  self : RigidBody,
+  vels : RigidBodyVelocity,
+  wake_up : Bool,
+) -> RigidBody {
+  let updated = self.set_linvel(vels.linvel, wake_up)
+  updated.set_angvel(vels.angvel, wake_up)
+}
+
+///|
+pub fn RigidBody::set_linvel(
+  self : RigidBody,
+  linvel : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  if !vec2_equal(self.vels.linvel, linvel) {
+    if self.body_type is RigidBodyType::Dynamic ||
+      self.body_type is RigidBodyType::KinematicVelocityBased {
+      self.vels.linvel = linvel
+      if wake_up {
+        self.wake_up(true) |> ignore
+      }
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::set_angvel(
+  self : RigidBody,
+  angvel : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.vels.angvel != angvel {
+    if self.body_type is RigidBodyType::Dynamic ||
+      self.body_type is RigidBodyType::KinematicVelocityBased {
+      self.vels.angvel = angvel
+      if wake_up {
+        self.wake_up(true) |> ignore
+      }
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::forces(self : RigidBody) -> RigidBodyForces {
+  self.forces
+}
+
+///|
+pub fn RigidBody::gravity_scale(self : RigidBody) -> @core.Real {
+  self.forces.gravity_scale
+}
+
+///|
+pub fn RigidBody::set_gravity_scale(
+  self : RigidBody,
+  scale : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.forces.gravity_scale != scale {
+    if wake_up && self.activation.sleeping {
+      self.changes = self.changes.insert(RIGID_BODY_CHANGES_SLEEP)
+      self.activation.sleeping = false
+    }
+    self.forces.gravity_scale = scale
+  }
+  self
+}
+
+///|
+pub fn RigidBody::reset_forces(self : RigidBody, wake_up : Bool) -> RigidBody {
+  if !vec2_equal(self.forces.user_force, @core.Vec2::zero()) {
+    self.forces.user_force = @core.Vec2::zero()
+    if wake_up {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::reset_torques(self : RigidBody, wake_up : Bool) -> RigidBody {
+  if self.forces.user_torque != 0.0F {
+    self.forces.user_torque = 0.0F
+    if wake_up {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::add_force(
+  self : RigidBody,
+  force : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  if !vec2_equal(force, @core.Vec2::zero()) &&
+    self.body_type is RigidBodyType::Dynamic {
+    self.forces.user_force = self.forces.user_force.add(force)
+    if wake_up {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::add_torque(
+  self : RigidBody,
+  torque : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  if torque != 0.0F && self.body_type is RigidBodyType::Dynamic {
+    self.forces.user_torque = self.forces.user_torque + torque
+    if wake_up {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::add_force_at_point(
+  self : RigidBody,
+  force : @core.Vec2,
+  point : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  if !vec2_equal(force, @core.Vec2::zero()) &&
+    self.body_type is RigidBodyType::Dynamic {
+    self.forces = self.forces.apply_force_at_point(
+      self.mass_props,
+      force,
+      point,
+    )
+    if wake_up {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::ccd(self : RigidBody) -> RigidBodyCcd {
+  self.ccd
+}
+
+///|
+pub fn RigidBody::enable_ccd(self : RigidBody, enabled : Bool) -> RigidBody {
+  let ccd = self.ccd
+  ccd.ccd_enabled = enabled
+  self.ccd = ccd
+  self
+}
+
+///|
+pub fn RigidBody::is_ccd_enabled(self : RigidBody) -> Bool {
+  self.ccd.ccd_enabled
+}
+
+///|
+pub fn RigidBody::set_soft_ccd_prediction(
+  self : RigidBody,
+  prediction_distance : @core.Real,
+) -> RigidBody {
+  let ccd = self.ccd
+  ccd.soft_ccd_prediction = prediction_distance
+  self.ccd = ccd
+  self
+}
+
+///|
+pub fn RigidBody::soft_ccd_prediction(self : RigidBody) -> @core.Real {
+  self.ccd.soft_ccd_prediction
+}
+
+///|
+pub fn RigidBody::is_ccd_active(self : RigidBody) -> Bool {
+  self.ccd.ccd_active
+}
+
+///|
+pub fn RigidBody::mass_props(self : RigidBody) -> RigidBodyMassProps {
+  self.mass_props
+}
+
+///|
+pub fn RigidBody::wake_up(self : RigidBody, strong : Bool) -> RigidBody {
+  if self.activation.sleeping {
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_SLEEP)
+  }
+  self.activation = self.activation.wake_up(strong)
+  self
+}
+
+///|
+pub fn RigidBody::sleep(self : RigidBody) -> RigidBody {
+  self.activation = self.activation.sleep()
+  self.vels = RigidBodyVelocity::zero()
+  self
+}
+
+///|
+fn RigidBody::reset_internal_references(self : RigidBody) -> RigidBody {
+  self.ids = RigidBodyIds::default()
+  self
 }
 
 ///|
@@ -195,10 +909,23 @@ pub fn RigidBody::set_translation(
 ) -> RigidBody {
   let curr_rot = self.position.position.rotation
   let next_rot = self.position.next_position.rotation
-  self.position.position = @core.Isometry2::new(translation, curr_rot)
-  self.position.next_position = @core.Isometry2::new(translation, next_rot)
-  if wake_up && self.is_dynamic_or_kinematic() {
-    self.sleeping = false
+  let same_curr = vec2_equal(self.position.position.translation, translation)
+  let same_next = vec2_equal(
+    self.position.next_position.translation,
+    translation,
+  )
+  if !same_curr || !same_next {
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_POSITION)
+    self.position.position = @core.Isometry2::new(translation, curr_rot)
+    self.position.next_position = @core.Isometry2::new(translation, next_rot)
+    let mass_props = self.mass_props
+    mass_props.world_com = self.position.position.transform_point(
+      mass_props.local_mprops.center_of_mass,
+    )
+    self.mass_props = mass_props
+    if wake_up && self.is_dynamic_or_kinematic() {
+      self.wake_up(true) |> ignore
+    }
   }
   self
 }
@@ -211,17 +938,66 @@ pub fn RigidBody::set_rotation(
 ) -> RigidBody {
   let curr_translation = self.position.position.translation
   let next_translation = self.position.next_position.translation
-  self.position.position = @core.Isometry2::new(curr_translation, rotation)
-  self.position.next_position = @core.Isometry2::new(next_translation, rotation)
-  if wake_up && self.is_dynamic_or_kinematic() {
-    self.sleeping = false
+  let same_curr = rot2_equal(self.position.position.rotation, rotation)
+  let same_next = rot2_equal(self.position.next_position.rotation, rotation)
+  if !same_curr || !same_next {
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_POSITION)
+    self.position.position = @core.Isometry2::new(curr_translation, rotation)
+    self.position.next_position = @core.Isometry2::new(
+      next_translation, rotation,
+    )
+    self.mass_props.world_com = self.position.position.transform_point(
+      self.mass_props.local_mprops.center_of_mass,
+    )
+    if wake_up && self.is_dynamic_or_kinematic() {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::set_position(
+  self : RigidBody,
+  position : @core.Isometry2,
+  wake_up : Bool,
+) -> RigidBody {
+  let same_curr = vec2_equal(
+      self.position.position.translation,
+      position.translation,
+    ) &&
+    rot2_equal(self.position.position.rotation, position.rotation)
+  let same_next = vec2_equal(
+      self.position.next_position.translation,
+      position.translation,
+    ) &&
+    rot2_equal(self.position.next_position.rotation, position.rotation)
+  if !same_curr || !same_next {
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_POSITION)
+    self.position.position = position
+    self.position.next_position = position
+    let mass_props = self.mass_props
+    mass_props.world_com = self.position.position.transform_point(
+      mass_props.local_mprops.center_of_mass,
+    )
+    self.mass_props = mass_props
+    if wake_up && self.is_dynamic_or_kinematic() {
+      self.wake_up(true) |> ignore
+    }
   }
   self
 }
 
 ///|
 pub fn RigidBody::set_enabled(self : RigidBody, enabled : Bool) -> RigidBody {
-  self.enabled = enabled
+  if enabled != self.enabled {
+    if enabled {
+      self.changes = RigidBodyChanges::all()
+    } else {
+      self.changes = self.changes.insert(RIGID_BODY_CHANGES_ENABLED_OR_DISABLED)
+    }
+    self.enabled = enabled
+  }
   self
 }
 
@@ -235,11 +1011,43 @@ pub fn RigidBody::set_next_kinematic_translation(
   self : RigidBody,
   translation : @core.Vec2,
 ) -> RigidBody {
-  if self.body_type is RigidBodyType::KinematicPositionBased {
+  if self.is_kinematic() {
     let next_rot = self.position.next_position.rotation
     self.position.next_position = @core.Isometry2::new(translation, next_rot)
     if !vec2_equal(self.position.position.translation, translation) {
-      self.sleeping = false
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::set_next_kinematic_rotation(
+  self : RigidBody,
+  rotation : @core.Rot2,
+) -> RigidBody {
+  if self.is_kinematic() {
+    let next_translation = self.position.next_position.translation
+    self.position.next_position = @core.Isometry2::new(
+      next_translation, rotation,
+    )
+    if !rot2_equal(self.position.position.rotation, rotation) {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::set_next_kinematic_position(
+  self : RigidBody,
+  position : @core.Isometry2,
+) -> RigidBody {
+  if self.is_kinematic() {
+    self.position.next_position = position
+    if !vec2_equal(self.position.position.translation, position.translation) ||
+      !rot2_equal(self.position.position.rotation, position.rotation) {
+      self.wake_up(true) |> ignore
     }
   }
   self
@@ -325,14 +1133,25 @@ pub fn RigidBodyBuilder::can_sleep(
 ///|
 pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   let pos = RigidBodyPosition::new(self.position, self.position)
+  let activation = if self.can_sleep {
+    RigidBodyActivation::active()
+  } else {
+    RigidBodyActivation::cannot_sleep()
+  }
   {
+    ids: RigidBodyIds::default(),
     position: pos,
     body_type: self.body_type,
     enabled: true,
-    can_sleep: self.can_sleep,
-    sleeping: false,
+    activation,
+    damping: RigidBodyDamping::default(),
+    vels: RigidBodyVelocity::zero(),
+    forces: RigidBodyForces::default(),
+    ccd: RigidBodyCcd::default(),
+    mass_props: RigidBodyMassProps::default(),
     additional_mass: self.additional_mass,
     additional_solver_iterations: self.additional_solver_iterations,
+    changes: RigidBodyChanges::all(),
   }
 }
 
@@ -349,10 +1168,35 @@ pub fn RigidBodySet::new() -> RigidBodySet {
 }
 
 ///|
+pub fn RigidBodySet::len(self : RigidBodySet) -> Int {
+  let mut count = 0
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(_) {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn RigidBodySet::is_empty(self : RigidBodySet) -> Bool {
+  self.len() == 0
+}
+
+///|
+pub fn RigidBodySet::contains(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> Bool {
+  self.get(handle) is Some(_)
+}
+
+///|
 pub fn RigidBodySet::insert(
   self : RigidBodySet,
   body : RigidBody,
 ) -> RigidBodyHandle {
+  let body = body.reset_internal_references()
   if self.free_list.pop() is Some(index) {
     self.bodies[index] = Some(body)
     let generation = self.generations[index]
@@ -418,7 +1262,7 @@ pub fn RigidBodySet::remove(
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
   }
-  islands.remove_body(handle)
+  islands.remove_body(self, handle)
   colliders |> ignore
   wake_up |> ignore
   impulse_joints.remove_joints_attached_to_rigid_body(handle) |> ignore
@@ -496,6 +1340,11 @@ fn vec2_equal(left : @core.Vec2, right : @core.Vec2) -> Bool {
 }
 
 ///|
+fn rot2_equal(left : @core.Rot2, right : @core.Rot2) -> Bool {
+  left.sin == right.sin && left.cos == right.cos
+}
+
+///|
 pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
   let sb = StringBuilder::new()
   sb.write_string("len=")
@@ -542,9 +1391,15 @@ pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
       sb.write_char(',')
       sb.write_object(if body.enabled { 1 } else { 0 })
       sb.write_char(',')
-      sb.write_object(if body.can_sleep { 1 } else { 0 })
+      sb.write_object(if body.activation.sleeping { 1 } else { 0 })
       sb.write_char(',')
-      sb.write_object(if body.sleeping { 1 } else { 0 })
+      sb.write_object(body.activation.normalized_linear_threshold)
+      sb.write_char(',')
+      sb.write_object(body.activation.angular_threshold)
+      sb.write_char(',')
+      sb.write_object(body.activation.time_until_sleep)
+      sb.write_char(',')
+      sb.write_object(body.activation.time_since_can_sleep)
       sb.write_char(',')
       sb.write_object(body.additional_mass)
       sb.write_char(',')
@@ -629,23 +1484,70 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           } else {
             true
           }
-          let can_sleep = if fields.length() > 8 {
-            parse_bool_value(fields[8])
+          let activation = if fields.length() > 12 {
+            let sleeping = if fields.length() > 8 {
+              parse_bool_value(fields[8])
+            } else {
+              false
+            }
+            let normalized_linear_threshold = if fields.length() > 9 {
+              parse_real_value(fields[9])
+            } else {
+              DEFAULT_SLEEP_LINEAR_THRESHOLD
+            }
+            let angular_threshold = if fields.length() > 10 {
+              parse_real_value(fields[10])
+            } else {
+              DEFAULT_SLEEP_ANGULAR_THRESHOLD
+            }
+            let time_until_sleep = if fields.length() > 11 {
+              parse_real_value(fields[11])
+            } else {
+              DEFAULT_TIME_UNTIL_SLEEP
+            }
+            let time_since_can_sleep = if fields.length() > 12 {
+              parse_real_value(fields[12])
+            } else {
+              0.0F
+            }
+            let activation = RigidBodyActivation::active()
+            activation.normalized_linear_threshold = normalized_linear_threshold
+            activation.angular_threshold = angular_threshold
+            activation.time_until_sleep = time_until_sleep
+            activation.time_since_can_sleep = time_since_can_sleep
+            activation.sleeping = sleeping
+            activation
           } else {
-            true
+            let can_sleep = if fields.length() > 8 {
+              parse_bool_value(fields[8])
+            } else {
+              true
+            }
+            let sleeping = if fields.length() > 9 {
+              parse_bool_value(fields[9])
+            } else {
+              false
+            }
+            let activation = if can_sleep {
+              RigidBodyActivation::active()
+            } else {
+              RigidBodyActivation::cannot_sleep()
+            }
+            activation.sleeping = sleeping
+            if sleeping {
+              activation.time_since_can_sleep = activation.time_until_sleep
+            }
+            activation
           }
-          let sleeping = if fields.length() > 9 {
-            parse_bool_value(fields[9])
-          } else {
-            false
-          }
-          let additional_mass = if fields.length() > 10 {
-            parse_real_value(fields[10])
+          let additional_mass_index = if fields.length() > 12 { 13 } else { 10 }
+          let additional_mass = if fields.length() > additional_mass_index {
+            parse_real_value(fields[additional_mass_index])
           } else {
             0.0F
           }
-          let additional_solver_iterations = if fields.length() > 11 {
-            parse_int_value(fields[11])
+          let solver_index = if fields.length() > 12 { 14 } else { 11 }
+          let additional_solver_iterations = if fields.length() > solver_index {
+            parse_int_value(fields[solver_index])
           } else {
             0
           }
@@ -659,13 +1561,19 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           )
           let rb_pos = RigidBodyPosition::new(position, next_position)
           let body : RigidBody = {
+            ids: RigidBodyIds::default(),
             position: rb_pos,
             body_type,
             enabled,
-            can_sleep,
-            sleeping,
+            activation,
+            damping: RigidBodyDamping::default(),
+            vels: RigidBodyVelocity::zero(),
+            forces: RigidBodyForces::default(),
+            ccd: RigidBodyCcd::default(),
+            mass_props: RigidBodyMassProps::default(),
             additional_mass,
             additional_solver_iterations,
+            changes: RigidBodyChanges::all(),
           }
           bodies.push(Some(body))
         } else {

@@ -41,3 +41,65 @@ test "rigid body builder kinematic velocity based" {
     content="true",
   )
 }
+
+///|
+/// Ported from rapier rigid_body velocity setters.
+test "rigid body velocity setters" {
+  let body = RigidBodyBuilder::dynamic().build().sleep()
+  let body = body.set_linvel(@core.Vec2::new(1.0F, -2.0F), true)
+  inspect(!body.is_sleeping(), content="true")
+  let body = body.set_angvel(3.5F, true)
+  inspect(body.linvel().x == 1.0F, content="true")
+  inspect(body.linvel().y == -2.0F, content="true")
+  inspect(body.angvel() == 3.5F, content="true")
+  let kinematic = RigidBodyBuilder::kinematic_position_based().build()
+  let kinematic = kinematic.set_linvel(@core.Vec2::new(5.0F, 0.0F), true)
+  inspect(kinematic.linvel().x == 0.0F, content="true")
+  inspect(kinematic.linvel().y == 0.0F, content="true")
+}
+
+///|
+/// Ported from rapier rigid_body force accumulation.
+test "rigid body forces and torques" {
+  let body = RigidBodyBuilder::dynamic().build()
+  let body = body.add_force(@core.Vec2::new(2.0F, -1.0F), true)
+  let body = body.add_torque(0.5F, true)
+  let forces = body.forces()
+  inspect(forces.user_force.x == 2.0F, content="true")
+  inspect(forces.user_force.y == -1.0F, content="true")
+  inspect(forces.user_torque == 0.5F, content="true")
+  let body = body.reset_forces(false)
+  let body = body.reset_torques(false)
+  let cleared = body.forces()
+  inspect(cleared.user_force.x == 0.0F, content="true")
+  inspect(cleared.user_force.y == 0.0F, content="true")
+  inspect(cleared.user_torque == 0.0F, content="true")
+}
+
+///|
+/// Ported from rapier rigid_body force-at-point behavior.
+test "rigid body force at point" {
+  let body = RigidBodyBuilder::dynamic().build()
+  let force = @core.Vec2::new(1.0F, 0.0F)
+  let point = @core.Vec2::new(0.0F, 1.0F)
+  let body = body.add_force_at_point(force, point, true)
+  let forces = body.forces()
+  inspect(forces.user_force.x == 1.0F, content="true")
+  inspect(forces.user_force.y == 0.0F, content="true")
+  inspect(forces.user_torque == -1.0F, content="true")
+}
+
+///|
+/// Ported from rapier rigid_body damping, gravity, and CCD setters.
+test "rigid body damping and ccd setters" {
+  let body = RigidBodyBuilder::dynamic().build()
+  let body = body.set_linear_damping(0.25F).set_angular_damping(0.5F)
+  inspect(body.linear_damping() == 0.25F, content="true")
+  inspect(body.angular_damping() == 0.5F, content="true")
+  let body = body.set_gravity_scale(0.0F, true)
+  inspect(body.gravity_scale() == 0.0F, content="true")
+  let body = body.enable_ccd(true).set_soft_ccd_prediction(2.5F)
+  inspect(body.is_ccd_enabled(), content="true")
+  inspect(body.soft_ccd_prediction() == 2.5F, content="true")
+  inspect(!body.is_ccd_active(), content="true")
+}

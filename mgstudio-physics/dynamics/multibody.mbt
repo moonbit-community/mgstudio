@@ -258,14 +258,14 @@ pub fn Multibody::forward_kinematics(
   let root_pose = self.root_pose(None)
   let root_link = self.links[0]
   root_link.local_to_parent = root_pose
-  root_link.local_to_world = root_pose
+  root_link.local_to_world = root_link.local_to_parent
   self.links[0] = root_link
   for i in 1..<self.links.length() {
     let link = self.links[i]
     let parent = self.links[link.parent_internal_id]
     let local_to_parent = revolute_body_to_parent(link.joint, link.joint_angle)
     link.local_to_parent = local_to_parent
-    link.local_to_world = parent.local_to_world.mul(local_to_parent)
+    link.local_to_world = parent.local_to_world.mul(link.local_to_parent)
     self.links[i] = link
   }
 }
@@ -281,7 +281,11 @@ pub fn Multibody::link(self : Multibody, id : LinkId) -> MultibodyLink? {
   if idx < 0 || idx >= self.links.length() {
     return None
   }
-  Some(self.links[idx])
+  let link = self.links[idx]
+  if link.internal_id != idx {
+    return None
+  }
+  Some(link)
 }
 
 ///|

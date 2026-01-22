@@ -418,6 +418,27 @@ pub fn RigidBodySet::new() -> RigidBodySet {
 
 ///|
 #declaration_only
+pub fn RigidBodySet::len(self : RigidBodySet) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::is_empty(self : RigidBodySet) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::contains(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodySet::insert(
   self : RigidBodySet,
   body : RigidBody,
@@ -469,6 +490,42 @@ pub fn RigidBody::set_body_type(
 
 ///|
 #declaration_only
+pub fn RigidBody::body_type(self : RigidBody) -> RigidBodyType {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::is_enabled(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::is_fixed(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::is_dynamic(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::is_kinematic(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int {
   ...
 }
@@ -485,6 +542,218 @@ pub fn RigidBody::set_additional_solver_iterations(
 ///|
 #declaration_only
 pub fn RigidBody::is_sleeping(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::activation(self : RigidBody) -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::damping(self : RigidBody) -> RigidBodyDamping {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::linear_damping(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_linear_damping(
+  self : RigidBody,
+  damping : @core.Real,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::angular_damping(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_angular_damping(
+  self : RigidBody,
+  damping : @core.Real,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::vels(self : RigidBody) -> RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::linvel(self : RigidBody) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::angvel(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_vels(
+  self : RigidBody,
+  vels : RigidBodyVelocity,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_linvel(
+  self : RigidBody,
+  linvel : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_angvel(
+  self : RigidBody,
+  angvel : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::forces(self : RigidBody) -> RigidBodyForces {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::gravity_scale(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_gravity_scale(
+  self : RigidBody,
+  scale : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::reset_forces(self : RigidBody, wake_up : Bool) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::reset_torques(self : RigidBody, wake_up : Bool) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::add_force(
+  self : RigidBody,
+  force : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::add_torque(
+  self : RigidBody,
+  torque : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::add_force_at_point(
+  self : RigidBody,
+  force : @core.Vec2,
+  point : @core.Vec2,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::ccd(self : RigidBody) -> RigidBodyCcd {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::enable_ccd(self : RigidBody, enabled : Bool) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::is_ccd_enabled(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_soft_ccd_prediction(
+  self : RigidBody,
+  prediction_distance : @core.Real,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::soft_ccd_prediction(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::is_ccd_active(self : RigidBody) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::mass_props(self : RigidBody) -> RigidBodyMassProps {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::wake_up(self : RigidBody, strong : Bool) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::sleep(self : RigidBody) -> RigidBody {
   ...
 }
 
@@ -522,7 +791,199 @@ pub fn RigidBody::set_rotation(
 
 ///|
 #declaration_only
+pub fn RigidBody::set_position(
+  self : RigidBody,
+  position : @core.Isometry2,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::set_enabled(self : RigidBody, enabled : Bool) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub type RigidBodyActivation
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::default() -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::default_normalized_linear_threshold() -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::default_angular_threshold() -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::default_time_until_sleep() -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::active() -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::inactive() -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::cannot_sleep() -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::is_active(self : RigidBodyActivation) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::wake_up(
+  self : RigidBodyActivation,
+  strong : Bool,
+) -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::sleep(
+  self : RigidBodyActivation,
+) -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::is_eligible_for_sleep(
+  self : RigidBodyActivation,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyActivation::update_energy(
+  self : RigidBodyActivation,
+  body_type : RigidBodyType,
+  length_unit : @core.Real,
+  sq_linvel : @core.Real,
+  sq_angvel : @core.Real,
+  dt : @core.Real,
+) -> RigidBodyActivation {
+  ...
+}
+
+///|
+#declaration_only
+pub type RigidBodyDamping
+
+///|
+#declaration_only
+pub fn RigidBodyDamping::default() -> RigidBodyDamping {
+  ...
+}
+
+///|
+#declaration_only
+pub type RigidBodyForces
+
+///|
+#declaration_only
+pub fn RigidBodyForces::default() -> RigidBodyForces {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyForces::integrate(
+  self : RigidBodyForces,
+  dt : @core.Real,
+  init_vels : RigidBodyVelocity,
+  mprops : RigidBodyMassProps,
+) -> RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyForces::compute_effective_force_and_torque(
+  self : RigidBodyForces,
+  gravity : @core.Vec2,
+  mass : @core.Vec2,
+) -> RigidBodyForces {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyForces::apply_force_at_point(
+  self : RigidBodyForces,
+  rb_mprops : RigidBodyMassProps,
+  force : @core.Vec2,
+  point : @core.Vec2,
+) -> RigidBodyForces {
+  ...
+}
+
+///|
+#declaration_only
+pub type RigidBodyCcd
+
+///|
+#declaration_only
+pub fn RigidBodyCcd::default() -> RigidBodyCcd {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyCcd::max_point_velocity(
+  self : RigidBodyCcd,
+  vels : RigidBodyVelocity,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyCcd::is_moving_fast(
+  self : RigidBodyCcd,
+  dt : @core.Real,
+  vels : RigidBodyVelocity,
+  forces : RigidBodyForces?,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub type RigidBodyMassProps
+
+///|
+#declaration_only
+pub fn RigidBodyMassProps::default() -> RigidBodyMassProps {
   ...
 }
 
@@ -551,6 +1012,18 @@ pub fn RigidBodyPosition::interpolate_velocity(
 
 ///|
 #declaration_only
+pub fn RigidBodyPosition::integrate_forces_and_velocities(
+  self : RigidBodyPosition,
+  dt : @core.Real,
+  forces : RigidBodyForces,
+  vels : RigidBodyVelocity,
+  mprops : RigidBodyMassProps,
+) -> @core.Isometry2 {
+  ...
+}
+
+///|
+#declaration_only
 pub type RigidBodyVelocity
 
 ///|
@@ -561,6 +1034,22 @@ pub fn RigidBodyVelocity::integrate(
   curr_pos : @core.Isometry2,
   local_com : @core.Vec2,
 ) -> @core.Isometry2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyVelocity::zero() -> RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyVelocity::apply_damping(
+  self : RigidBodyVelocity,
+  dt : @core.Real,
+  damping : RigidBodyDamping,
+) -> RigidBodyVelocity {
   ...
 }
 
@@ -899,6 +1388,24 @@ pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
 pub fn RigidBody::set_next_kinematic_translation(
   self : RigidBody,
   translation : @core.Vec2,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_next_kinematic_rotation(
+  self : RigidBody,
+  rotation : @core.Rot2,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_next_kinematic_position(
+  self : RigidBody,
+  position : @core.Isometry2,
 ) -> RigidBody {
   ...
 }

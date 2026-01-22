@@ -124,14 +124,7 @@ pub struct IslandManager {
   body_island_ids : Array[Int]
   body_island_generations : Array[Int]
   body_island_indices : Array[Int]
-  body_sleep_states : Array[SleepRootState]
-  body_sleep_timers : Array[Float]
-  body_active_timestamps : Array[Int]
   body_state_generations : Array[Int]
-  body_last_translation_x : Array[Float]
-  body_last_translation_y : Array[Float]
-  body_last_rotation : Array[Float]
-  body_has_pose : Array[Bool]
 }
 pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager::interaction_started_or_stopped(Self, RigidBodySet, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
@@ -141,10 +134,6 @@ pub fn IslandManager::update_islands(Self, Float, Float, RigidBodySet, ContactGr
 pub fn IslandManager::wake_up(Self, RigidBodySet, RigidBodyHandle, Bool) -> Unit
 
 type IslandsOptimizer
-
-type IslandsOptimizerMergeState
-
-type IslandsOptimizerSplitState
 
 type Jacobian
 pub fn Jacobian::equals(Self, Self) -> Bool
@@ -186,25 +175,90 @@ pub fn RevoluteJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
 pub fn RevoluteJointBuilder::new() -> Self
 
 pub struct RigidBody {
+  mut ids : RigidBodyIds
   position : RigidBodyPosition
   mut body_type : RigidBodyType
   mut enabled : Bool
-  can_sleep : Bool
-  mut sleeping : Bool
+  mut activation : RigidBodyActivation
+  mut damping : RigidBodyDamping
+  mut vels : RigidBodyVelocity
+  mut forces : RigidBodyForces
+  mut ccd : RigidBodyCcd
+  mut mass_props : RigidBodyMassProps
   additional_mass : Float
   mut additional_solver_iterations : Int
+  mut changes : RigidBodyChanges
 }
+pub fn RigidBody::activation(Self) -> RigidBodyActivation
+pub fn RigidBody::add_force(Self, @core.Vec2, Bool) -> Self
+pub fn RigidBody::add_force_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
+pub fn RigidBody::add_torque(Self, Float, Bool) -> Self
 pub fn RigidBody::additional_solver_iterations(Self) -> Int
+pub fn RigidBody::angular_damping(Self) -> Float
+pub fn RigidBody::angvel(Self) -> Float
+pub fn RigidBody::body_type(Self) -> RigidBodyType
+pub fn RigidBody::ccd(Self) -> RigidBodyCcd
+pub fn RigidBody::damping(Self) -> RigidBodyDamping
+pub fn RigidBody::enable_ccd(Self, Bool) -> Self
+pub fn RigidBody::forces(Self) -> RigidBodyForces
+pub fn RigidBody::gravity_scale(Self) -> Float
+pub fn RigidBody::is_ccd_active(Self) -> Bool
+pub fn RigidBody::is_ccd_enabled(Self) -> Bool
+pub fn RigidBody::is_dynamic(Self) -> Bool
+pub fn RigidBody::is_dynamic_or_kinematic(Self) -> Bool
+pub fn RigidBody::is_enabled(Self) -> Bool
+pub fn RigidBody::is_fixed(Self) -> Bool
+pub fn RigidBody::is_kinematic(Self) -> Bool
 pub fn RigidBody::is_sleeping(Self) -> Bool
+pub fn RigidBody::linear_damping(Self) -> Float
+pub fn RigidBody::linvel(Self) -> @core.Vec2
+pub fn RigidBody::mass_props(Self) -> RigidBodyMassProps
 pub fn RigidBody::position(Self) -> @core.Isometry2
+pub fn RigidBody::reset_forces(Self, Bool) -> Self
+pub fn RigidBody::reset_torques(Self, Bool) -> Self
 pub fn RigidBody::rotation(Self) -> @core.Rot2
 pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
+pub fn RigidBody::set_angular_damping(Self, Float) -> Self
+pub fn RigidBody::set_angvel(Self, Float, Bool) -> Self
 pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self
+pub fn RigidBody::set_gravity_scale(Self, Float, Bool) -> Self
+pub fn RigidBody::set_linear_damping(Self, Float) -> Self
+pub fn RigidBody::set_linvel(Self, @core.Vec2, Bool) -> Self
+pub fn RigidBody::set_next_kinematic_position(Self, @core.Isometry2) -> Self
+pub fn RigidBody::set_next_kinematic_rotation(Self, @core.Rot2) -> Self
 pub fn RigidBody::set_next_kinematic_translation(Self, @core.Vec2) -> Self
+pub fn RigidBody::set_position(Self, @core.Isometry2, Bool) -> Self
 pub fn RigidBody::set_rotation(Self, @core.Rot2, Bool) -> Self
+pub fn RigidBody::set_soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBody::set_translation(Self, @core.Vec2, Bool) -> Self
+pub fn RigidBody::set_vels(Self, RigidBodyVelocity, Bool) -> Self
+pub fn RigidBody::sleep(Self) -> Self
+pub fn RigidBody::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody::translation(Self) -> @core.Vec2
+pub fn RigidBody::vels(Self) -> RigidBodyVelocity
+pub fn RigidBody::wake_up(Self, Bool) -> Self
+
+pub struct RigidBodyActivation {
+  mut normalized_linear_threshold : Float
+  mut angular_threshold : Float
+  mut time_until_sleep : Float
+  mut time_since_can_sleep : Float
+  mut sleeping : Bool
+  mut sleep_root_state : SleepRootState
+}
+pub fn RigidBodyActivation::active() -> Self
+pub fn RigidBodyActivation::cannot_sleep() -> Self
+pub fn RigidBodyActivation::default() -> Self
+pub fn RigidBodyActivation::default_angular_threshold() -> Float
+pub fn RigidBodyActivation::default_normalized_linear_threshold() -> Float
+pub fn RigidBodyActivation::default_time_until_sleep() -> Float
+pub fn RigidBodyActivation::inactive() -> Self
+pub fn RigidBodyActivation::is_active(Self) -> Bool
+pub fn RigidBodyActivation::is_eligible_for_sleep(Self) -> Bool
+pub fn RigidBodyActivation::sleep(Self) -> Self
+pub fn RigidBodyActivation::update_energy(Self, RigidBodyType, Float, Float, Float, Float) -> Self
+pub fn RigidBodyActivation::wake_up(Self, Bool) -> Self
 
 pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
@@ -223,6 +277,37 @@ pub fn RigidBodyBuilder::kinematic_position_based() -> Self
 pub fn RigidBodyBuilder::kinematic_velocity_based() -> Self
 pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
 
+pub struct RigidBodyCcd {
+  ccd_thickness : Float
+  ccd_max_dist : Float
+  ccd_active : Bool
+  mut ccd_enabled : Bool
+  mut soft_ccd_prediction : Float
+}
+pub fn RigidBodyCcd::default() -> Self
+pub fn RigidBodyCcd::is_moving_fast(Self, Float, RigidBodyVelocity, RigidBodyForces?) -> Bool
+pub fn RigidBodyCcd::max_point_velocity(Self, RigidBodyVelocity) -> Float
+
+type RigidBodyChanges
+
+pub struct RigidBodyDamping {
+  mut linear_damping : Float
+  mut angular_damping : Float
+}
+pub fn RigidBodyDamping::default() -> Self
+
+pub struct RigidBodyForces {
+  mut force : @core.Vec2
+  mut torque : Float
+  mut gravity_scale : Float
+  mut user_force : @core.Vec2
+  mut user_torque : Float
+}
+pub fn RigidBodyForces::apply_force_at_point(Self, RigidBodyMassProps, @core.Vec2, @core.Vec2) -> Self
+pub fn RigidBodyForces::compute_effective_force_and_torque(Self, @core.Vec2, @core.Vec2) -> Self
+pub fn RigidBodyForces::default() -> Self
+pub fn RigidBodyForces::integrate(Self, Float, RigidBodyVelocity, RigidBodyMassProps) -> RigidBodyVelocity
+
 pub struct RigidBodyHandle {
   id : Int
   generation : Int
@@ -232,10 +317,21 @@ pub fn RigidBodyHandle::from_raw_parts(Int, Int) -> Self
 pub fn RigidBodyHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn RigidBodyHandle::invalid() -> Self
 
+type RigidBodyIds
+
+pub struct RigidBodyMassProps {
+  mut world_com : @core.Vec2
+  effective_inv_mass : @core.Vec2
+  effective_world_inv_inertia : Float
+  local_mprops : @core.MassProperties
+}
+pub fn RigidBodyMassProps::default() -> Self
+
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2
   mut next_position : @core.Isometry2
 }
+pub fn RigidBodyPosition::integrate_forces_and_velocities(Self, Float, RigidBodyForces, RigidBodyVelocity, RigidBodyMassProps) -> @core.Isometry2
 pub fn RigidBodyPosition::interpolate_velocity(Self, Float, @core.Vec2) -> RigidBodyVelocity
 pub fn RigidBodyPosition::new(@core.Isometry2, @core.Isometry2) -> Self
 
@@ -244,10 +340,13 @@ pub struct RigidBodySet {
   generations : Array[Int]
   free_list : Array[Int]
 }
+pub fn RigidBodySet::contains(Self, RigidBodyHandle) -> Bool
 pub fn RigidBodySet::deserialize(String) -> Self
 pub fn RigidBodySet::get(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::get_mut(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::insert(Self, RigidBody) -> RigidBodyHandle
+pub fn RigidBodySet::is_empty(Self) -> Bool
+pub fn RigidBodySet::len(Self) -> Int
 pub fn RigidBodySet::new() -> Self
 pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> Unit
 pub fn RigidBodySet::serialize(Self) -> String
@@ -264,10 +363,12 @@ pub fn RigidBodyType::is_fixed(Self) -> Bool
 pub fn RigidBodyType::is_kinematic(Self) -> Bool
 
 pub struct RigidBodyVelocity {
-  linvel : @core.Vec2
-  angvel : Float
+  mut linvel : @core.Vec2
+  mut angvel : Float
 }
+pub fn RigidBodyVelocity::apply_damping(Self, Float, RigidBodyDamping) -> Self
 pub fn RigidBodyVelocity::integrate(Self, Float, @core.Isometry2, @core.Vec2) -> @core.Isometry2
+pub fn RigidBodyVelocity::zero() -> Self
 
 type RowDVector
 pub fn RowDVector::equals(Self, Self) -> Bool
