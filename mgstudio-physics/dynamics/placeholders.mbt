@@ -511,6 +511,8 @@ fn IslandManager::update_body_sleep_timer(
     }
     RigidBodyType::KinematicPositionBased =>
       sq_linvel == 0.0F && sq_angvel == 0.0F
+    RigidBodyType::KinematicVelocityBased =>
+      sq_linvel == 0.0F && sq_angvel == 0.0F
     RigidBodyType::Fixed => true
   }
   if can_sleep_now {

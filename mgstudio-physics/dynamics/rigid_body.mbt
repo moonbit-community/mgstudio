@@ -32,6 +32,45 @@ pub fn RigidBodyHandle::equals(
 }
 
 ///|
+pub fn RigidBodyHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> RigidBodyHandle {
+  RigidBodyHandle::new(id, generation)
+}
+
+///|
+pub fn RigidBodyHandle::into_raw_parts(self : RigidBodyHandle) -> (Int, Int) {
+  (self.id, self.generation)
+}
+
+///|
+pub fn RigidBodyHandle::invalid() -> RigidBodyHandle {
+  RigidBodyHandle::new(-1, -1)
+}
+
+///|
+pub fn RigidBodyType::is_fixed(self : RigidBodyType) -> Bool {
+  self is RigidBodyType::Fixed
+}
+
+///|
+pub fn RigidBodyType::is_dynamic(self : RigidBodyType) -> Bool {
+  self is RigidBodyType::Dynamic
+}
+
+///|
+pub fn RigidBodyType::is_kinematic(self : RigidBodyType) -> Bool {
+  self is RigidBodyType::KinematicPositionBased ||
+  self is RigidBodyType::KinematicVelocityBased
+}
+
+///|
+pub fn RigidBodyType::is_dynamic_or_kinematic(self : RigidBodyType) -> Bool {
+  !self.is_fixed()
+}
+
+///|
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2
   mut next_position : @core.Isometry2
@@ -103,10 +142,7 @@ pub struct RigidBody {
 
 ///|
 fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
-  match self.body_type {
-    RigidBodyType::Fixed => false
-    _ => true
-  }
+  self.body_type.is_dynamic_or_kinematic()
 }
 
 ///|
@@ -242,6 +278,11 @@ pub fn RigidBodyBuilder::fixed() -> RigidBodyBuilder {
 ///|
 pub fn RigidBodyBuilder::kinematic_position_based() -> RigidBodyBuilder {
   RigidBodyBuilder::new(RigidBodyType::KinematicPositionBased)
+}
+
+///|
+pub fn RigidBodyBuilder::kinematic_velocity_based() -> RigidBodyBuilder {
+  RigidBodyBuilder::new(RigidBodyType::KinematicVelocityBased)
 }
 
 ///|
@@ -390,6 +431,7 @@ fn body_type_to_int(body_type : RigidBodyType) -> Int {
     RigidBodyType::Dynamic => 0
     RigidBodyType::Fixed => 1
     RigidBodyType::KinematicPositionBased => 2
+    RigidBodyType::KinematicVelocityBased => 3
   }
 }
 
@@ -399,6 +441,8 @@ fn body_type_from_int(value : Int) -> RigidBodyType {
     RigidBodyType::Fixed
   } else if value == 2 {
     RigidBodyType::KinematicPositionBased
+  } else if value == 3 {
+    RigidBodyType::KinematicVelocityBased
   } else {
     RigidBodyType::Dynamic
   }

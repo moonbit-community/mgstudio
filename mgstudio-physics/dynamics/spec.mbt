@@ -26,10 +26,56 @@ pub fn RigidBodyHandle::equals(
 }
 
 ///|
+#declaration_only
+pub fn RigidBodyHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> RigidBodyHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyHandle::into_raw_parts(self : RigidBodyHandle) -> (Int, Int) {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyHandle::invalid() -> RigidBodyHandle {
+  ...
+}
+
+///|
 pub(all) enum RigidBodyType {
   Dynamic
   Fixed
   KinematicPositionBased
+  KinematicVelocityBased
+}
+
+///|
+#declaration_only
+pub fn RigidBodyType::is_fixed(self : RigidBodyType) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyType::is_dynamic(self : RigidBodyType) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyType::is_kinematic(self : RigidBodyType) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyType::is_dynamic_or_kinematic(self : RigidBodyType) -> Bool {
+  ...
 }
 
 ///|
@@ -55,6 +101,12 @@ pub fn RigidBodyBuilder::fixed() -> RigidBodyBuilder {
 ///|
 #declaration_only
 pub fn RigidBodyBuilder::kinematic_position_based() -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::kinematic_velocity_based() -> RigidBodyBuilder {
   ...
 }
 

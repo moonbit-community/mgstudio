@@ -175,6 +175,7 @@ pub fn RigidBodyBuilder::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder::dynamic() -> Self
 pub fn RigidBodyBuilder::fixed() -> Self
 pub fn RigidBodyBuilder::kinematic_position_based() -> Self
+pub fn RigidBodyBuilder::kinematic_velocity_based() -> Self
 pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
 
 pub struct RigidBodyHandle {
@@ -182,6 +183,9 @@ pub struct RigidBodyHandle {
   generation : Int
 }
 pub fn RigidBodyHandle::equals(Self, Self) -> Bool
+pub fn RigidBodyHandle::from_raw_parts(Int, Int) -> Self
+pub fn RigidBodyHandle::into_raw_parts(Self) -> (Int, Int)
+pub fn RigidBodyHandle::invalid() -> Self
 
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2
@@ -207,7 +211,12 @@ pub(all) enum RigidBodyType {
   Dynamic
   Fixed
   KinematicPositionBased
+  KinematicVelocityBased
 }
+pub fn RigidBodyType::is_dynamic(Self) -> Bool
+pub fn RigidBodyType::is_dynamic_or_kinematic(Self) -> Bool
+pub fn RigidBodyType::is_fixed(Self) -> Bool
+pub fn RigidBodyType::is_kinematic(Self) -> Bool
 
 pub struct RigidBodyVelocity {
   linvel : @core.Vec2
