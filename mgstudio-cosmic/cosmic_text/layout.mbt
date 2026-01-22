@@ -263,7 +263,6 @@ pub fn layout_from_shape(
   if len == 0 {
     return lines
   }
-
   match wrap {
     None => {
       push_layout_line_from_shape(lines, shape, 0, len, cell_w)
@@ -354,4 +353,79 @@ pub fn layout_from_shape(
 
   push_layout_line_from_shape(lines, shape, line_start, line_end, cell_w)
   lines
+}
+
+fn apply_align_to_line(
+  text : String,
+  line : LayoutLine,
+  width : Float,
+  align : Align,
+) -> LayoutLine {
+  let extra = width - line.w
+  if extra <= 0.0F {
+    return line
+  }
+
+  match align {
+    Left => line
+    Center => {
+      let dx = extra / 2.0F
+      let glyphs : Array[LayoutGlyph] = []
+      for g in line.glyphs {
+        glyphs.push(LayoutGlyph::{ ..g, x: g.x + dx })
+      }
+      LayoutLine::{ ..line, glyphs }
+    }
+    Right | End => {
+      let dx = extra
+      let glyphs : Array[LayoutGlyph] = []
+      for g in line.glyphs {
+        glyphs.push(LayoutGlyph::{ ..g, x: g.x + dx })
+      }
+      LayoutLine::{ ..line, glyphs }
+    }
+    Justified => {
+      // MVP: distribute extra width across ASCII spaces in this line.
+      let mut space_count = 0
+      for i in line.start..<line.end {
+        if i >= 0 && i < text.length() && text.code_unit_at(i) == 32 {
+          space_count = space_count + 1
+        }
+      }
+      if space_count == 0 {
+        return line
+      }
+      let add = extra / Float::from_double(space_count.to_double())
+      let glyphs : Array[LayoutGlyph] = []
+      let mut dx = 0.0F
+      for g in line.glyphs {
+        let mut w = g.w
+        // Space glyph is identified by [start,end) covering a single code unit space.
+        if g.end - g.start == 1 && g.start >= 0 && g.start < text.length() &&
+          text.code_unit_at(g.start) == 32 {
+          w = w + add
+          glyphs.push(LayoutGlyph::{ ..g, x: g.x + dx, w })
+          dx = dx + add
+        } else {
+          glyphs.push(LayoutGlyph::{ ..g, x: g.x + dx, w })
+        }
+      }
+      LayoutLine::{ ..line, w: line.w + extra, glyphs }
+    }
+  }
+}
+
+///|
+/// Apply Align to precomputed layout lines (requires a finite width).
+pub fn apply_align(
+  text : String,
+  lines : Array[LayoutLine],
+  width : Float,
+  align : Align,
+) -> Array[LayoutLine] {
+  let out : Array[LayoutLine] = []
+  for line in lines {
+    out.push(apply_align_to_line(text, line, width, align))
+  }
+  out
 }

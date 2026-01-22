@@ -130,7 +130,11 @@ pub fn BufferLine::layout(
     let shape_opt = line.shape_opt()
     if shape_opt is Some(shape) {
       let cell_w = if match_mono_width is Some(w) { w } else { font_size }
-      let layout = layout_from_shape(line.text, shape, cell_w, width_opt, wrap)
+      let mut layout = layout_from_shape(line.text, shape, cell_w, width_opt, wrap)
+      let align = if line.align is Some(a) { a } else { Align::Left }
+      if width_opt is Some(width) {
+        layout = apply_align(line.text, layout, width, align)
+      }
       let (layout_opt, _) = line.layout_opt.take_unused()
       let layout_opt = layout_opt.set_used(layout)
       BufferLine::{ ..line, layout_opt }
