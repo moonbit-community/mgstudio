@@ -4,13 +4,19 @@ package "Milky2018/mgstudio_swash/swash/internal"
 // Values
 pub fn count(Bytes) -> Int
 
+pub fn enumerate(Bytes, UInt, (UInt, UInt) -> Unit) -> Unit
+
 pub fn is_collection(Bytes) -> Bool
 
 pub fn is_font(Bytes, Int) -> Bool
 
+pub fn map(Bytes, UInt, UInt, UInt) -> UInt?
+
 pub fn offset(Bytes, Int) -> Int?
 
 pub fn raw_tag(Bytes) -> UInt?
+
+pub fn[T : RawFont] subtable(T) -> (UInt, UInt, Bool)?
 
 pub fn[T : RawFont] table_data(T, UInt) -> BytesView?
 
@@ -26,18 +32,23 @@ pub struct BeBytes {
 }
 pub fn BeBytes::check_range(Self, Int, Int) -> Bool
 pub fn BeBytes::data(Self) -> BytesView
+pub fn BeBytes::ensure_range(Self, Int, Int) -> Bool
 pub fn BeBytes::from_view(BytesView) -> Self
 pub fn BeBytes::len(Self) -> Int
 pub fn BeBytes::new(Bytes) -> Self
+pub fn BeBytes::read_i16(Self, Int) -> Int?
 pub fn BeBytes::read_u16(Self, Int) -> UInt?
+pub fn BeBytes::read_u24(Self, Int) -> UInt?
 pub fn BeBytes::read_u32(Self, Int) -> UInt?
 pub fn BeBytes::read_u8(Self, Int) -> Byte?
+pub fn BeBytes::with_offset(Bytes, Int) -> Self?
 
 pub struct Stream {
   data : BytesView
   mut offset : Int
 }
 pub fn Stream::check_range(Self, Int) -> Bool
+pub fn Stream::data(Self) -> BytesView
 pub fn Stream::len(Self) -> Int
 pub fn Stream::new(Bytes) -> Self
 pub fn Stream::offset(Self) -> Int

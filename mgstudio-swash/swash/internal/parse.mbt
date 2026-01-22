@@ -33,6 +33,14 @@ pub fn BeBytes::from_view(data : BytesView) -> BeBytes {
 }
 
 ///|
+pub fn BeBytes::with_offset(data : Bytes, offset : Int) -> BeBytes? {
+  if offset < 0 || offset > data.length() {
+    return None
+  }
+  Some(BeBytes::from_view(data[offset:]))
+}
+
+///|
 pub fn BeBytes::data(self : BeBytes) -> BytesView {
   self.data
 }
@@ -46,6 +54,11 @@ pub fn BeBytes::len(self : BeBytes) -> Int {
 pub fn BeBytes::check_range(self : BeBytes, offset : Int, len : Int) -> Bool {
   let end = self.data.length()
   offset >= 0 && len >= 0 && offset < end && end - offset >= len
+}
+
+///|
+pub fn BeBytes::ensure_range(self : BeBytes, offset : Int, len : Int) -> Bool {
+  self.check_range(offset, len)
 }
 
 ///|
@@ -93,6 +106,40 @@ pub fn BeBytes::read_u32(self : BeBytes, offset : Int) -> UInt? {
 }
 
 ///|
+pub fn BeBytes::read_u24(self : BeBytes, offset : Int) -> UInt? {
+  if !self.check_range(offset, 3) {
+    return None
+  }
+  let b0_opt = self.data.get(offset)
+  let b1_opt = self.data.get(offset + 1)
+  let b2_opt = self.data.get(offset + 2)
+  if b0_opt is Some(b0) && b1_opt is Some(b1) && b2_opt is Some(b2) {
+    let u0 = b0.to_int().reinterpret_as_uint()
+    let u1 = b1.to_int().reinterpret_as_uint()
+    let u2 = b2.to_int().reinterpret_as_uint()
+    Some((u0 << 16) | (u1 << 8) | u2)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn BeBytes::read_i16(self : BeBytes, offset : Int) -> Int? {
+  match self.read_u16(offset) {
+    None => None
+    Some(u) => {
+      // Convert u16 bits to signed i16 in Int.
+      let v = u.reinterpret_as_int()
+      if u >= 0x8000 {
+        Some(v - 0x10000)
+      } else {
+        Some(v)
+      }
+    }
+  }
+}
+
+///|
 pub struct Stream {
   data : BytesView
   mut offset : Int
@@ -115,6 +162,11 @@ pub fn Stream::with_offset(data : Bytes, offset : Int) -> Stream? {
 ///|
 pub fn Stream::len(self : Stream) -> Int {
   self.data.length()
+}
+
+///|
+pub fn Stream::data(self : Stream) -> BytesView {
+  self.data
 }
 
 ///|
