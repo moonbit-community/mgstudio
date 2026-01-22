@@ -244,9 +244,7 @@ fn IslandManager::wake_up_body(
   } else {
     return
   }
-  if self.body_sleep_states[handle.id] is SleepRootState::TraversalPending {
-
-  } else {
+  if !(self.body_sleep_states[handle.id] is SleepRootState::TraversalPending) {
     self.body_sleep_states[handle.id] = SleepRootState::Unknown
   }
   if strong {
@@ -301,6 +299,7 @@ fn IslandManager::remove_from_awake_list(
       }
       self.awake_islands.pop() |> ignore
       island_value.id_in_awake_list = None
+      island_value.sleeping = true
       self.islands[island_id] = Some(island_value)
     }
   }
@@ -585,21 +584,16 @@ fn IslandManager::wake_up_island(
     return
   }
   if self.islands[island_id] is Some(island) {
-    let mut should_wake = false
-    if island.sleeping {
-      island.sleeping = false
-      should_wake = true
-    }
     if island.id_in_awake_list is None {
       let index = self.awake_islands.length()
       island.id_in_awake_list = Some(index)
       self.awake_islands.push(island_id)
-      should_wake = true
-    }
-    if should_wake {
+      island.sleeping = false
       for i in 0..<island.bodies.length() {
         self.wake_up_body(bodies, island.bodies[i], false)
       }
+    } else if island.sleeping {
+      island.sleeping = false
     }
     self.islands[island_id] = Some(island)
   }
@@ -626,6 +620,7 @@ pub fn IslandManager::wake_up(
 ///|
 fn IslandManager::merge_islands(
   self : IslandManager,
+  bodies : RigidBodySet,
   island_id1 : Int,
   island_id2 : Int,
 ) -> Unit {
@@ -640,6 +635,11 @@ fn IslandManager::merge_islands(
   }
   if self.islands[island_id1] is Some(island1) &&
     self.islands[island_id2] is Some(island2) {
+    let sleeping1 = island1.id_in_awake_list is None
+    let sleeping2 = island2.id_in_awake_list is None
+    if sleeping1 != sleeping2 {
+      return
+    }
     let (keep_id, remove_id) = if island1.bodies.length() <
       island2.bodies.length() {
       (island_id2, island_id1)
@@ -648,34 +648,36 @@ fn IslandManager::merge_islands(
     }
     let keep = if keep_id == island_id1 { island1 } else { island2 }
     let remove = if remove_id == island_id1 { island1 } else { island2 }
-    let offset = keep.bodies.length()
+    let mut next_index = keep.bodies.length()
     for i in 0..<remove.bodies.length() {
       let handle = remove.bodies[i]
-      keep.bodies.push(handle)
-      self.ensure_body_capacity(handle.id)
-      self.body_island_ids[handle.id] = keep_id
-      self.body_island_generations[handle.id] = handle.generation
-      self.body_island_indices[handle.id] = offset + i
+      if bodies.get(handle) is Some(_) {
+        if !sleeping1 {
+          self.wake_up_body(bodies, handle, false)
+        }
+        keep.bodies.push(handle)
+        self.ensure_body_capacity(handle.id)
+        self.body_island_ids[handle.id] = keep_id
+        self.body_island_generations[handle.id] = handle.generation
+        self.body_island_indices[handle.id] = next_index
+        next_index = next_index + 1
+      }
     }
-    let merged_sleeping = keep.sleeping && remove.sleeping
-    keep.sleeping = merged_sleeping
-    self.remove_from_awake_list(remove_id)
-    if self.islands[keep_id] is Some(updated_keep) {
-      keep.id_in_awake_list = updated_keep.id_in_awake_list
+    if remove.id_in_awake_list is Some(_) {
+      self.remove_from_awake_list(remove_id)
+    }
+    if sleeping1 {
+      keep.id_in_awake_list = None
+      keep.sleeping = true
+    } else {
+      if self.islands[keep_id] is Some(updated_keep) {
+        keep.id_in_awake_list = updated_keep.id_in_awake_list
+      }
+      keep.sleeping = false
     }
     self.islands[remove_id] = None
     self.free_islands.push(remove_id)
     self.islands[keep_id] = Some(keep)
-    if merged_sleeping {
-      self.remove_from_awake_list(keep_id)
-    } else if self.islands[keep_id] is Some(updated) {
-      if updated.id_in_awake_list is None {
-        let index = self.awake_islands.length()
-        updated.id_in_awake_list = Some(index)
-        self.awake_islands.push(keep_id)
-        self.islands[keep_id] = Some(updated)
-      }
-    }
   }
 }
 
@@ -705,7 +707,7 @@ pub fn IslandManager::interaction_started_or_stopped(
         if self.island_id_for(value1) is Some(id1) &&
           self.island_id_for(value2) is Some(id2) {
           if id1 != id2 {
-            self.merge_islands(id1, id2)
+            self.merge_islands(bodies, id1, id2)
           }
         }
       }
@@ -727,7 +729,7 @@ pub fn IslandManager::rigid_body_updated(
     if self.island_id_for(handle) is Some(island_id) {
       if !body.is_sleeping() {
         if self.islands[island_id] is Some(island) {
-          if island.sleeping {
+          if island.id_in_awake_list is None {
             self.wake_up(bodies, handle, false)
           }
         }
@@ -738,7 +740,7 @@ pub fn IslandManager::rigid_body_updated(
         let last_id = self.awake_islands[self.awake_islands.length() - 1]
         if self.islands[last_id] is Some(island) {
           if island.bodies.length() < self.optimizer.min_island_size &&
-            !island.sleeping {
+            island.id_in_awake_list is Some(_) {
             target_id = last_id
           }
         }
@@ -777,58 +779,77 @@ fn IslandManager::extract_sub_island(
     return
   }
   if self.islands[island_id] is Some(island) {
-    let remaining : Array[RigidBodyHandle] = []
-    for i in 0..<island.bodies.length() {
-      let handle = island.bodies[i]
-      if !handle_in_list(extracted, handle) {
-        remaining.push(handle)
-      }
-    }
-    if remaining.length() == 0 {
-      self.remove_from_awake_list(island_id)
-      self.islands[island_id] = None
-      self.free_islands.push(island_id)
-    } else {
-      island.bodies.clear()
-      for i in 0..<remaining.length() {
-        island.bodies.push(remaining[i])
-      }
-      for i in 0..<remaining.length() {
-        let handle = remaining[i]
-        self.ensure_body_capacity(handle.id)
-        self.body_island_ids[handle.id] = island_id
-        self.body_island_generations[handle.id] = handle.generation
-        self.body_island_indices[handle.id] = i
-      }
-      self.islands[island_id] = Some(island)
-    }
-    let new_island = Island::{
-      bodies: extracted,
+    let new_island_id = self.insert_island(Island::{
+      bodies: [],
       id_in_awake_list: None,
       sleeping,
-    }
-    let new_island_id = self.insert_island(new_island)
-    if !sleeping {
-      let index = self.awake_islands.length()
-      if self.islands[new_island_id] is Some(created) {
-        let island_value = created
-        island_value.id_in_awake_list = Some(index)
-        self.islands[new_island_id] = Some(island_value)
-      }
-      self.awake_islands.push(new_island_id)
-    }
+    })
+    let new_island_bodies : Array[RigidBodyHandle] = []
     for i in 0..<extracted.length() {
       let handle = extracted[i]
+      let mut body_index = -1
+      if handle.id >= 0 && handle.id < self.body_island_ids.length() {
+        if self.body_island_generations[handle.id] == handle.generation &&
+          self.body_island_ids[handle.id] == island_id {
+          body_index = self.body_island_indices[handle.id]
+        }
+      }
+      if body_index < 0 ||
+        body_index >= island.bodies.length() ||
+        !handle_equals(island.bodies[body_index], handle) {
+        body_index = -1
+        for j in 0..<island.bodies.length() {
+          if handle_equals(island.bodies[j], handle) {
+            body_index = j
+            break
+          }
+        }
+      }
+      if body_index < 0 {
+        continue
+      }
+      let last_index = island.bodies.length() - 1
+      if body_index != last_index {
+        let moved_handle = island.bodies[last_index]
+        island.bodies[body_index] = moved_handle
+        if moved_handle.id >= 0 &&
+          moved_handle.id < self.body_island_indices.length() {
+          self.body_island_ids[moved_handle.id] = island_id
+          self.body_island_generations[moved_handle.id] = moved_handle.generation
+          self.body_island_indices[moved_handle.id] = body_index
+        }
+      }
+      island.bodies.pop() |> ignore
+      let new_index = new_island_bodies.length()
+      new_island_bodies.push(handle)
       self.ensure_body_capacity(handle.id)
       self.body_island_ids[handle.id] = new_island_id
       self.body_island_generations[handle.id] = handle.generation
-      self.body_island_indices[handle.id] = i
+      self.body_island_indices[handle.id] = new_index
       if sleeping {
         if bodies.get_mut(handle) is Some(body) {
           body.sleeping = true
         }
       }
     }
+    if island.bodies.length() == 0 {
+      self.remove_from_awake_list(island_id)
+      self.islands[island_id] = None
+      self.free_islands.push(island_id)
+    } else {
+      self.islands[island_id] = Some(island)
+    }
+    let created_island = Island::{
+      bodies: new_island_bodies,
+      id_in_awake_list: None,
+      sleeping,
+    }
+    if !sleeping {
+      let index = self.awake_islands.length()
+      created_island.id_in_awake_list = Some(index)
+      self.awake_islands.push(new_island_id)
+    }
+    self.islands[new_island_id] = Some(created_island)
   }
 }
 
@@ -855,7 +876,7 @@ fn IslandManager::extract_sleeping_island(
   }
   if self.island_id_for(sleep_root) is Some(island_id) {
     if self.islands[island_id] is Some(active_island) {
-      if active_island.sleeping {
+      if active_island.id_in_awake_list is None {
         return 0
       }
       let new_island_bodies : Array[RigidBodyHandle] = []
@@ -872,13 +893,19 @@ fn IslandManager::extract_sleeping_island(
           if self.body_active_timestamps[handle.id] == self.traversal_timestamp {
             continue
           }
-          visited_count = visited_count + 1
           self.body_active_timestamps[handle.id] = self.traversal_timestamp
+          visited_count = visited_count + 1
           if self.is_body_eligible_for_sleep(handle, body) {
             self.body_sleep_states[handle.id] = SleepRootState::Traversed
           } else {
             self.stack.clear()
             return visited_count
+          }
+          if self.island_id_for(handle) is Some(other_island_id) {
+            if other_island_id != island_id {
+              self.stack.clear()
+              return visited_count
+            }
           }
           self.push_contacting_bodies(bodies, contacts, handle)
           self.push_linked_bodies(
@@ -898,6 +925,7 @@ fn IslandManager::extract_sleeping_island(
         self.remove_from_awake_list(island_id)
         self.islands[island_id] = Some(active_island)
       } else {
+        visited_count = visited_count + new_island_bodies.length()
         self.extract_sub_island(bodies, island_id, new_island_bodies, true)
       }
       visited_count
@@ -918,7 +946,7 @@ fn IslandManager::update_optimizer(
   multibody_joints : MultibodyJointSet,
 ) -> Unit {
   if self.optimizer.mode % 2 == 0 {
-    self.incremental_merge()
+    self.incremental_merge(bodies)
   } else {
     self.incremental_split(bodies, contacts, impulse_joints, multibody_joints)
   }
@@ -926,33 +954,44 @@ fn IslandManager::update_optimizer(
 }
 
 ///|
-fn IslandManager::incremental_merge(self : IslandManager) -> Unit {
+fn IslandManager::incremental_merge(
+  self : IslandManager,
+  bodies : RigidBodySet,
+) -> Unit {
   if self.optimizer.merge_state.curr_awake_id >= self.awake_islands.length() {
     self.optimizer.merge_state.curr_awake_id = 0
   }
-  let mut first_index = -1
+  let mut first_awake_id = -1
+  let mut first_island_id = -1
   for
-    i in self.optimizer.merge_state.curr_awake_id..<self.awake_islands.length() {
-    let island_id = self.awake_islands[i]
+    awake_id in self.optimizer.merge_state.curr_awake_id..<self.awake_islands.length() {
+    let island_id = self.awake_islands[awake_id]
     if self.islands[island_id] is Some(island) {
       if island.bodies.length() < self.optimizer.min_island_size {
-        first_index = i
+        first_awake_id = awake_id
+        first_island_id = island_id
         break
       }
     }
   }
-  if first_index < 0 {
+  if first_awake_id < 0 {
     self.optimizer.merge_state.curr_awake_id = 0
     return
   }
-  self.optimizer.merge_state.curr_awake_id = first_index + 1
-  let first_island_id = self.awake_islands[first_index]
-  for j in (first_index + 1)..<self.awake_islands.length() {
-    let second_island_id = self.awake_islands[j]
-    if self.islands[second_island_id] is Some(island) {
+  self.optimizer.merge_state.curr_awake_id = first_awake_id + 1
+  let mut found_next = false
+  for awake_id in (first_awake_id + 1)..<self.awake_islands.length() {
+    let island_id = self.awake_islands[awake_id]
+    if self.islands[island_id] is Some(island) {
       if island.bodies.length() < self.optimizer.min_island_size {
-        self.merge_islands(first_island_id, second_island_id)
-        return
+        let compatible = true
+        if compatible {
+          self.merge_islands(bodies, first_island_id, island_id)
+          return
+        } else if !found_next {
+          self.optimizer.merge_state.curr_awake_id = awake_id
+          found_next = true
+        }
       }
     }
   }
@@ -976,9 +1015,6 @@ fn IslandManager::incremental_split(
       if island.bodies.length() > self.optimizer.max_island_size {
         self.stack.clear()
         let new_island_bodies : Array[RigidBodyHandle] = []
-        if island.bodies.length() == 0 {
-          return
-        }
         self.traversal_timestamp = self.traversal_timestamp + 1
         for root_index in 0..<island.bodies.length() {
           self.stack.push(island.bodies[root_index])
@@ -994,28 +1030,25 @@ fn IslandManager::incremental_split(
                 continue
               }
               self.body_active_timestamps[handle.id] = self.traversal_timestamp
+              self.push_contacting_bodies(bodies, contacts, handle)
+              self.push_linked_bodies(
+                bodies, impulse_joints, multibody_joints, handle,
+              )
               new_island_bodies.push(handle)
               if new_island_bodies.length() > self.optimizer.max_island_size {
                 truncate_handles(new_island_bodies, len_before)
                 self.stack.clear()
                 break
               }
-              self.push_contacting_bodies(bodies, contacts, handle)
-              self.push_linked_bodies(
-                bodies, impulse_joints, multibody_joints, handle,
-              )
             }
           }
           if new_island_bodies.length() == 0 {
             return
-          }
-          if new_island_bodies.length() >= self.optimizer.min_island_size {
+          } else if new_island_bodies.length() >= self.optimizer.min_island_size {
             self.extract_sub_island(bodies, island_id, new_island_bodies, false)
-            self.optimizer.split_state.curr_awake_id = awake_id + 1
             return
           }
         }
-        return
       }
       self.optimizer.split_state.curr_awake_id = awake_id + 1
     }
