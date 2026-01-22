@@ -12,6 +12,12 @@ pub fn offset(Bytes, Int) -> Int?
 
 pub fn raw_tag(Bytes) -> UInt?
 
+pub fn table_data(Bytes, Int, UInt) -> BytesView?
+
+pub fn table_offset(Bytes, Int, UInt) -> UInt
+
+pub fn table_range(Bytes, Int, UInt) -> (UInt, UInt)?
+
 // Errors
 
 // Types and methods

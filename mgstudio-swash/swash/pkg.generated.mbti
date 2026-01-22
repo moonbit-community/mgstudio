@@ -9,6 +9,35 @@ pub fn tag_from_str_lossy(String) -> UInt
 // Errors
 
 // Types and methods
+pub struct CacheKey {
+  value : UInt64
+}
+pub fn CacheKey::new() -> Self
+pub fn CacheKey::value(Self) -> UInt64
+
+pub struct FontDataRef {
+  data : Bytes
+  len : Int
+}
+pub fn FontDataRef::data(Self) -> Bytes
+pub fn FontDataRef::fonts(Self) -> Iter[FontRef]
+pub fn FontDataRef::get(Self, Int) -> FontRef?
+pub fn FontDataRef::is_collection(Self) -> Bool
+pub fn FontDataRef::is_empty(Self) -> Bool
+pub fn FontDataRef::len(Self) -> Int
+pub fn FontDataRef::new(Bytes) -> Self?
+
+pub struct FontRef {
+  data : Bytes
+  offset : Int
+  key : CacheKey
+}
+pub fn FontRef::data(Self) -> Bytes
+pub fn FontRef::from_index(Bytes, Int) -> Self?
+pub fn FontRef::from_offset(Bytes, Int) -> Self?
+pub fn FontRef::key(Self) -> CacheKey
+pub fn FontRef::offset(Self) -> Int
+pub fn FontRef::table_data(Self, UInt) -> BytesView?
 
 // Type aliases
 pub type Tag = UInt
