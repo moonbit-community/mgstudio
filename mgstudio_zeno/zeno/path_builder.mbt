@@ -13,25 +13,13 @@
 // limitations under the License.
 
 ///|
-/// Mask generator (subset).
+/// Path builder sink interface.
 ///
-/// Ported from upstream `zeno/src/mask.rs` (Apache-2.0 OR MIT).
-pub(all) enum Format {
-  Alpha
-  Subpixel
-  CustomSubpixel(Array[Double])
-}
-
-///|
-pub fn Format::subpixel_bgra() -> Format {
-  Format::CustomSubpixel([0.3, 0.0, -0.3])
-}
-
-///|
-pub fn Format::buffer_size(self : Format, width : UInt, height : UInt) -> Int {
-  let pixel_size = match self {
-    Format::Alpha => 1
-    _ => 4
-  }
-  width.reinterpret_as_int() * height.reinterpret_as_int() * pixel_size
+/// Ported from upstream `zeno/src/path_builder.rs` (Apache-2.0 OR MIT).
+pub(open) trait PathBuilder {
+  move_to(Self, Point) -> Unit
+  line_to(Self, Point) -> Unit
+  quad_to(Self, Point, Point) -> Unit
+  curve_to(Self, Point, Point, Point) -> Unit
+  close(Self) -> Unit
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 test "Transform::identity transforms points" {
   let p = Point::new(1.0, 2.0)
   let t = Transform::identity()
@@ -20,7 +21,12 @@ test "Transform::identity transforms points" {
   inspect(q.y(), content="2")
 }
 
+///|
 test "Bounds::from_points covers all points" {
-  let b = Bounds::from_points([Point::new(0.0, 0.0), Point::new(2.0, 3.0), Point::new(-1.0, 1.0)])
+  let b = Bounds::from_points([
+    Point::new(0.0, 0.0),
+    Point::new(2.0, 3.0),
+    Point::new(-1.0, 1.0),
+  ])
   inspect(b.is_empty(), content="false")
 }

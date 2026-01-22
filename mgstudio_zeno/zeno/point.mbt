@@ -27,26 +27,32 @@ pub struct Vector {
 ///|
 pub type Point = Vector
 
+///|
 pub fn Vector::new(x : Double, y : Double) -> Vector {
   Vector::{ x, y }
 }
 
+///|
 pub fn Vector::x(self : Vector) -> Double {
   self.x
 }
 
+///|
 pub fn Vector::y(self : Vector) -> Double {
   self.y
 }
 
+///|
 pub fn Vector::length(self : Vector) -> Double {
   (self.x * self.x + self.y * self.y).sqrt()
 }
 
+///|
 pub fn Vector::floor(self : Vector) -> Vector {
   Vector::new(self.x.floor(), self.y.floor())
 }
 
+///|
 pub fn Vector::ceil(self : Vector) -> Vector {
   Vector::new(self.x.ceil(), self.y.ceil())
 }

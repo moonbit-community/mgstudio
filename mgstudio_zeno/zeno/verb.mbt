@@ -16,7 +16,6 @@
 /// Minimal zeno port: path verbs.
 ///
 /// Ported from upstream `zeno` crate (Apache-2.0 OR MIT).
-
 pub(all) enum Verb {
   MoveTo
   LineTo
@@ -24,4 +23,3 @@ pub(all) enum Verb {
   CurveTo
   Close
 }
-

@@ -16,7 +16,6 @@
 /// 2D affine transform.
 ///
 /// Ported from upstream `zeno/src/geometry.rs` (Apache-2.0 OR MIT).
-
 pub struct Transform {
   xx : Double
   xy : Double
@@ -26,18 +25,22 @@ pub struct Transform {
   y : Double
 }
 
+///|
 pub fn Transform::identity() -> Transform {
   Transform::{ xx: 1.0, xy: 0.0, yx: 0.0, yy: 1.0, x: 0.0, y: 0.0 }
 }
 
+///|
 pub fn Transform::translate(x : Double, y : Double) -> Transform {
   Transform::{ xx: 1.0, xy: 0.0, yx: 0.0, yy: 1.0, x, y }
 }
 
+///|
 pub fn Transform::scale(x : Double, y : Double) -> Transform {
   Transform::{ xx: x, xy: 0.0, yx: 0.0, yy: y, x: 0.0, y: 0.0 }
 }
 
+///|
 pub fn Transform::transform_point(self : Transform, point : Point) -> Point {
   Vector::new(
     point.x() * self.xx + point.y() * self.yx + self.x,
@@ -45,6 +48,7 @@ pub fn Transform::transform_point(self : Transform, point : Point) -> Point {
   )
 }
 
+///|
 pub fn Transform::transform_vector(self : Transform, vector : Vector) -> Vector {
   Vector::new(
     vector.x() * self.xx + vector.y() * self.yx,

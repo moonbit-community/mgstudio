@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_yazi/yazi"
+
+// Values
+
+// Errors
+type YaziError
+pub fn YaziError::to_string(Self) -> String
+
+// Types and methods
+pub struct Adler32 {
+  value : UInt
+}
+pub fn Adler32::finish(Self) -> UInt
+pub fn Adler32::new() -> Self
+pub fn Adler32::update(Self, Bytes) -> Unit
+
+pub(all) enum Format {
+  Raw
+  Zlib
+}
+
+// Type aliases
+
+// Traits
+

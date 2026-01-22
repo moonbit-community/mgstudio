@@ -13,12 +13,44 @@
 // limitations under the License.
 
 ///|
-/// Minimal zeno port: path data trait.
+/// Path data abstraction.
 ///
-/// Ported from upstream `zeno` crate (Apache-2.0 OR MIT).
-
+/// Ported from upstream `zeno/src/path_data.rs` (Apache-2.0 OR MIT).
 pub(open) trait PathData {
-  points(Self) -> Array[Point]
-  verbs(Self) -> Array[Verb]
+  commands(Self) -> Iter[Command]
+  copy_to(Self, &PathBuilder) -> Unit
 }
 
+///|
+pub struct PointsVerbsPathData {
+  points : Array[Point]
+  verbs : Array[Verb]
+}
+
+///|
+pub fn PointsVerbsPathData::new(
+  points : Array[Point],
+  verbs : Array[Verb],
+) -> PointsVerbsPathData {
+  PointsVerbsPathData::{ points, verbs }
+}
+
+///|
+pub impl PathData for PointsVerbsPathData with commands(self) {
+  let it = PointsCommands::new(self.points, self.verbs)
+  Iter::new(fn() { it.next() })
+}
+
+///|
+pub impl PathData for PointsVerbsPathData with copy_to(self, sink) {
+  let it = self.commands()
+  while it.next() is Some(cmd) {
+    match cmd {
+      Command::MoveTo(p) => sink.move_to(p)
+      Command::LineTo(p) => sink.line_to(p)
+      Command::QuadTo(c, p) => sink.quad_to(c, p)
+      Command::CurveTo(c1, c2, p) => sink.curve_to(c1, c2, p)
+      Command::Close => sink.close()
+    }
+  }
+}

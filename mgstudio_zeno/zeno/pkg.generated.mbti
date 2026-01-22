@@ -1,0 +1,117 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_zeno/zeno"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Bounds {
+  mut min : Vector
+  mut max : Vector
+  mut empty : Bool
+}
+pub fn Bounds::add_point(Self, Vector) -> Unit
+pub fn Bounds::from_points(Array[Vector]) -> Self
+pub fn Bounds::height(Self) -> Double
+pub fn Bounds::is_empty(Self) -> Bool
+pub fn Bounds::new(Vector, Vector) -> Self
+pub fn Bounds::width(Self) -> Double
+
+pub(all) enum Command {
+  MoveTo(Vector)
+  LineTo(Vector)
+  QuadTo(Vector, Vector)
+  CurveTo(Vector, Vector, Vector)
+  Close
+}
+pub fn Command::transform(Self, Transform) -> Self
+
+pub(all) enum Format {
+  Alpha
+  Subpixel
+  CustomSubpixel(Array[Double])
+}
+pub fn Format::buffer_size(Self, UInt, UInt) -> Int
+pub fn Format::subpixel_bgra() -> Self
+
+pub(all) enum Origin {
+  TopLeft
+  BottomLeft
+}
+
+pub struct Placement {
+  left : Int
+  top : Int
+  width : UInt
+  height : UInt
+}
+pub fn Placement::compute(Origin, Vector, Bounds) -> (Vector, Self)
+
+pub struct PointsCommands {
+  points : Array[Vector]
+  verbs : Array[Verb]
+  mut ppos : Int
+  mut vpos : Int
+}
+pub fn PointsCommands::new(Array[Vector], Array[Verb]) -> Self
+pub fn PointsCommands::next(Self) -> Command?
+
+pub struct PointsVerbsPathData {
+  points : Array[Vector]
+  verbs : Array[Verb]
+}
+pub fn PointsVerbsPathData::new(Array[Vector], Array[Verb]) -> Self
+pub impl PathData for PointsVerbsPathData
+
+pub struct Transform {
+  xx : Double
+  xy : Double
+  yx : Double
+  yy : Double
+  x : Double
+  y : Double
+}
+pub fn Transform::identity() -> Self
+pub fn Transform::scale(Double, Double) -> Self
+pub fn Transform::transform_point(Self, Vector) -> Vector
+pub fn Transform::transform_vector(Self, Vector) -> Vector
+pub fn Transform::translate(Double, Double) -> Self
+
+#alias(Point)
+pub struct Vector {
+  x : Double
+  y : Double
+}
+pub fn Vector::ceil(Self) -> Self
+pub fn Vector::floor(Self) -> Self
+pub fn Vector::length(Self) -> Double
+pub fn Vector::new(Double, Double) -> Self
+pub fn Vector::x(Self) -> Double
+pub fn Vector::y(Self) -> Double
+pub impl Add for Vector
+
+pub(all) enum Verb {
+  MoveTo
+  LineTo
+  QuadTo
+  CurveTo
+  Close
+}
+
+// Type aliases
+
+// Traits
+pub(open) trait PathBuilder {
+  move_to(Self, Vector) -> Unit
+  line_to(Self, Vector) -> Unit
+  quad_to(Self, Vector, Vector) -> Unit
+  curve_to(Self, Vector, Vector, Vector) -> Unit
+  close(Self) -> Unit
+}
+
+pub(open) trait PathData {
+  commands(Self) -> Iter[Command]
+  copy_to(Self, &PathBuilder) -> Unit
+}
+
