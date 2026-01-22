@@ -2,15 +2,11 @@
   "import": [
     "Milky2018/mgstudio_physics/core",
     "Milky2018/mgstudio_physics/collision",
-    "Milky2018/mgstudio_physics/dynamics",
-    "Milky2018/mgstudio_physics/pipeline",
     "Milky2018/mgstudio_physics/query"
   ],
   "test-import": [
-    "Milky2018/mgstudio_physics/core",
     "Milky2018/mgstudio_physics/collision",
     "Milky2018/mgstudio_physics/dynamics",
     "Milky2018/mgstudio_physics/pipeline",
-    "Milky2018/mgstudio_physics/query"
   ]
 }

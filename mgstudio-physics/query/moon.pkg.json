@@ -1,10 +1,5 @@
 {
   "import": [
-    "Milky2018/mgstudio_physics/core",
-    "Milky2018/mgstudio_physics/dynamics"
-  ],
-  "test-import": [
-    "Milky2018/mgstudio_physics/core",
     "Milky2018/mgstudio_physics/dynamics"
   ]
 }
