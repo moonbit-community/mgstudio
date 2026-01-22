@@ -339,6 +339,7 @@ pub struct RigidBodySet {
   bodies : Array[RigidBody?]
   generations : Array[Int]
   free_list : Array[Int]
+  modified_bodies : Array[RigidBodyHandle]
 }
 pub fn RigidBodySet::contains(Self, RigidBodyHandle) -> Bool
 pub fn RigidBodySet::deserialize(String) -> Self
@@ -348,8 +349,9 @@ pub fn RigidBodySet::insert(Self, RigidBody) -> RigidBodyHandle
 pub fn RigidBodySet::is_empty(Self) -> Bool
 pub fn RigidBodySet::len(Self) -> Int
 pub fn RigidBodySet::new() -> Self
-pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> Unit
+pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> RigidBody?
 pub fn RigidBodySet::serialize(Self) -> String
+pub fn RigidBodySet::take_modified(Self) -> Array[RigidBodyHandle]
 
 pub(all) enum RigidBodyType {
   Dynamic

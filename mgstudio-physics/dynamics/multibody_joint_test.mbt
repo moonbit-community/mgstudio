@@ -83,6 +83,7 @@ test "multibody remove" {
   }
   for handle in handles {
     bodies.remove(handle, islands, (), impulse_joints, multibody_joints, true)
+    |> ignore
   }
   colliders |> ignore
 }
@@ -101,6 +102,7 @@ test "multibody remove wakes links" {
   let joint1 = multibody_joints.insert(handle1, handle2, joint, false)
   let joint2 = multibody_joints.insert(handle2, handle3, joint, false)
   bodies.remove(handle2, islands, (), impulse_joints, multibody_joints, true)
+  |> ignore
   let wake_handles = multibody_joints.take_wake_up()
   inspect(wake_handles.length() == 3, content="true")
   if joint1 is Some(joint_handle1) {

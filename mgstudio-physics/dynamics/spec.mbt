@@ -439,6 +439,14 @@ pub fn RigidBodySet::contains(
 
 ///|
 #declaration_only
+pub fn RigidBodySet::take_modified(
+  self : RigidBodySet,
+) -> Array[RigidBodyHandle] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodySet::insert(
   self : RigidBodySet,
   body : RigidBody,
@@ -473,8 +481,8 @@ pub fn RigidBodySet::remove(
   colliders : Unit,
   impulse_joints : ImpulseJointSet,
   multibody_joints : MultibodyJointSet,
-  wake_up : Bool,
-) -> Unit {
+  remove_attached_colliders : Bool,
+) -> RigidBody? {
   ...
 }
 

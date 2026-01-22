@@ -120,6 +120,16 @@ fn RigidBodyChanges::contains(self : RigidBodyChanges, flag : Int) -> Bool {
 }
 
 ///|
+fn RigidBodyChanges::remove(
+  self : RigidBodyChanges,
+  flag : Int,
+) -> RigidBodyChanges {
+  let clear_bits = self.bits & flag
+  self.bits = self.bits - clear_bits
+  self
+}
+
+///|
 pub fn RigidBodyType::is_fixed(self : RigidBodyType) -> Bool {
   self is RigidBodyType::Fixed
 }
@@ -1160,11 +1170,12 @@ pub struct RigidBodySet {
   bodies : Array[RigidBody?]
   generations : Array[Int]
   free_list : Array[Int]
+  modified_bodies : Array[RigidBodyHandle]
 }
 
 ///|
 pub fn RigidBodySet::new() -> RigidBodySet {
-  { bodies: [], generations: [], free_list: [] }
+  { bodies: [], generations: [], free_list: [], modified_bodies: [] }
 }
 
 ///|
@@ -1192,20 +1203,70 @@ pub fn RigidBodySet::contains(
 }
 
 ///|
+pub fn RigidBodySet::take_modified(
+  self : RigidBodySet,
+) -> Array[RigidBodyHandle] {
+  let result : Array[RigidBodyHandle] = []
+  for i in 0..<self.modified_bodies.length() {
+    let handle = self.modified_bodies[i]
+    result.push(handle)
+    if handle.id >= 0 && handle.id < self.bodies.length() {
+      if self.generations[handle.id] == handle.generation {
+        if self.bodies[handle.id] is Some(body) {
+          body.changes = body.changes.remove(RIGID_BODY_CHANGES_IN_MODIFIED_SET)
+        }
+      }
+    }
+  }
+  self.modified_bodies.clear()
+  result
+}
+
+///|
+fn RigidBodySet::push_modified_unchecked(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+  body : RigidBody,
+) -> Unit {
+  body.changes = body.changes.insert(RIGID_BODY_CHANGES_IN_MODIFIED_SET)
+  self.modified_bodies.push(handle)
+}
+
+///|
+fn RigidBodySet::push_modified(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+  body : RigidBody,
+) -> Unit {
+  if !body.changes.contains(RIGID_BODY_CHANGES_IN_MODIFIED_SET) {
+    self.push_modified_unchecked(handle, body)
+  }
+}
+
+///|
 pub fn RigidBodySet::insert(
   self : RigidBodySet,
   body : RigidBody,
 ) -> RigidBodyHandle {
   let body = body.reset_internal_references()
+  body.changes = RigidBodyChanges::all()
   if self.free_list.pop() is Some(index) {
     self.bodies[index] = Some(body)
     let generation = self.generations[index]
-    RigidBodyHandle::new(index, generation)
+    let handle = RigidBodyHandle::new(index, generation)
+    if self.bodies[index] is Some(body_ref) {
+      self.push_modified_unchecked(handle, body_ref)
+    }
+    handle
   } else {
     let index = self.bodies.length()
     self.bodies.push(Some(body))
     self.generations.push(0)
-    RigidBodyHandle::new(index, 0)
+    let handle = RigidBodyHandle::new(index, 0)
+    if self.bodies[index] is Some(body_ref) {
+      self.push_modified_unchecked(handle, body_ref)
+    }
+    handle
   }
 }
 
@@ -1228,7 +1289,18 @@ pub fn RigidBodySet::get_mut(
   self : RigidBodySet,
   handle : RigidBodyHandle,
 ) -> RigidBody? {
-  self.get(handle)
+  if handle.id < 0 || handle.id >= self.bodies.length() {
+    return None
+  }
+  if self.generations[handle.id] != handle.generation {
+    return None
+  }
+  if self.bodies[handle.id] is Some(body) {
+    self.push_modified(handle, body)
+    Some(body)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -1239,34 +1311,42 @@ pub fn RigidBodySet::remove(
   colliders : Unit,
   impulse_joints : ImpulseJointSet,
   multibody_joints : MultibodyJointSet,
-  wake_up : Bool,
-) -> Unit {
+  remove_attached_colliders : Bool,
+) -> RigidBody? {
   if handle.id < 0 || handle.id >= self.bodies.length() {
     islands |> ignore
     colliders |> ignore
     impulse_joints |> ignore
     multibody_joints |> ignore
-    wake_up |> ignore
-    return
+    remove_attached_colliders |> ignore
+    return None
   }
   if self.generations[handle.id] != handle.generation {
     islands |> ignore
     colliders |> ignore
     impulse_joints |> ignore
     multibody_joints |> ignore
-    wake_up |> ignore
-    return
+    remove_attached_colliders |> ignore
+    return None
   }
-  if self.bodies[handle.id] is Some(_) {
+  if self.bodies[handle.id] is Some(body) {
     self.bodies[handle.id] = None
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
+    islands.remove_body(self, handle)
+    colliders |> ignore
+    remove_attached_colliders |> ignore
+    impulse_joints.remove_joints_attached_to_rigid_body(handle) |> ignore
+    multibody_joints.remove_joints_attached_to_rigid_body(handle)
+    Some(body)
+  } else {
+    islands |> ignore
+    colliders |> ignore
+    impulse_joints |> ignore
+    multibody_joints |> ignore
+    remove_attached_colliders |> ignore
+    None
   }
-  islands.remove_body(self, handle)
-  colliders |> ignore
-  wake_up |> ignore
-  impulse_joints.remove_joints_attached_to_rigid_body(handle) |> ignore
-  multibody_joints.remove_joints_attached_to_rigid_body(handle)
 }
 
 ///|
@@ -1588,5 +1668,5 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
   while bodies.length() < len {
     bodies.push(None)
   }
-  { bodies, generations, free_list }
+  { bodies, generations, free_list, modified_bodies: [] }
 }
