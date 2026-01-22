@@ -121,7 +121,7 @@ pub(all) enum Shape {
 
 ///|
 pub struct Collider {
-  shape : Shape
+  mut shape : Shape
   mut local_translation : @core.Vec2
   mut local_rotation : @core.Real
   mut world_translation : @core.Vec2
@@ -306,6 +306,13 @@ pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
 ///|
 pub fn Collider::shape(self : Collider) -> Shape {
   self.shape
+}
+
+///|
+pub fn Collider::set_shape(self : Collider, shape : Shape) -> Collider {
+  self.shape = shape
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
 }
 
 ///|

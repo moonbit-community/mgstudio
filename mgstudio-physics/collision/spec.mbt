@@ -187,6 +187,12 @@ pub fn Collider::shape(self : Collider) -> Shape {
 
 ///|
 #declaration_only
+pub fn Collider::set_shape(self : Collider, shape : Shape) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::translation(self : Collider) -> @core.Vec2 {
   ...
 }

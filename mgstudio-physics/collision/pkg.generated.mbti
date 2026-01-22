@@ -29,7 +29,7 @@ pub fn BroadPhaseBvh::as_query_pipeline(Self, @query.QueryDispatcher, @dynamics.
 pub fn BroadPhaseBvh::new() -> Self
 
 pub struct Collider {
-  shape : Shape
+  mut shape : Shape
   mut local_translation : @core.Vec2
   mut local_rotation : Float
   mut world_translation : @core.Vec2
@@ -71,6 +71,7 @@ pub fn Collider::set_restitution_combine_rule(Self, @dynamics.CoefficientCombine
 pub fn Collider::set_rotation(Self, Float) -> Self
 pub fn Collider::set_rotation_wrt_parent(Self, Float) -> Self
 pub fn Collider::set_sensor(Self, Bool) -> Self
+pub fn Collider::set_shape(Self, Shape) -> Self
 pub fn Collider::set_translation(Self, @core.Vec2) -> Self
 pub fn Collider::set_translation_wrt_parent(Self, @core.Vec2) -> Self
 pub fn Collider::shape(Self) -> Shape

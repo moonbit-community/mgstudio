@@ -28,6 +28,19 @@ test "collider position setters" {
 }
 
 ///|
+/// Ported from rapier collider shape setters.
+test "collider shape setters" {
+  let collider = ColliderBuilder::ball(1.0F).build()
+  let collider = collider.set_shape(Shape::Cuboid(0.5F, 1.25F))
+  if collider.shape() is Shape::Cuboid(half_width, half_height) {
+    inspect(half_width == 0.5F, content="true")
+    inspect(half_height == 1.25F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier collider material and event accessors.
 test "collider material and event accessors" {
   let collider = ColliderBuilder::ball(1.0F)
