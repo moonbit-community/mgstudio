@@ -243,9 +243,6 @@ pub fn PhysicsPipeline::step(
   event_handler : Unit,
 ) -> Unit {
   self |> ignore
-  islands |> ignore
-  impulse_joints |> ignore
-  multibody_joints |> ignore
   ccd_solver |> ignore
   physics_hooks |> ignore
   event_handler |> ignore
@@ -283,5 +280,20 @@ pub fn PhysicsPipeline::step(
     colliders,
     physics_hooks,
     event_handler,
+  )
+  let contacts = @dynamics.ContactGraph::new()
+  for i in 0..<narrow_phase.contacts.length() {
+    let contact = narrow_phase.contacts[i]
+    if colliders.get(contact.0) is Some(collider1) &&
+      colliders.get(contact.1) is Some(collider2) {
+      if collider1.parent is Some(parent1) && collider2.parent is Some(parent2) {
+        if !@dynamics.RigidBodyHandle::equals(parent1, parent2) {
+          contacts.add_pair(parent1, parent2)
+        }
+      }
+    }
+  }
+  islands.update_islands(
+    dt, 1.0F, bodies, contacts, impulse_joints, multibody_joints,
   )
 }

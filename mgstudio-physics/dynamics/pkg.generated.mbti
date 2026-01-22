@@ -14,6 +14,13 @@ pub struct CCDSolver {
 }
 pub fn CCDSolver::new() -> Self
 
+pub struct ContactGraph {
+  pairs : Array[(RigidBodyHandle, RigidBodyHandle)]
+}
+pub fn ContactGraph::add_pair(Self, RigidBodyHandle, RigidBodyHandle) -> Unit
+pub fn ContactGraph::clear(Self) -> Unit
+pub fn ContactGraph::new() -> Self
+
 type DVector
 pub fn DVector::equals(Self, Self) -> Bool
 pub fn DVector::from_array(Array[Float]) -> Self
@@ -64,16 +71,33 @@ pub struct IslandManager {
   awake_islands : Array[Int]
   free_islands : Array[Int]
   traversal_candidates : Array[SleepCandidate]
-  traversal_timestamp : Int
+  mut traversal_timestamp : Int
+  optimizer : IslandsOptimizer
+  stack : Array[RigidBodyHandle]
   body_island_ids : Array[Int]
   body_island_generations : Array[Int]
   body_island_indices : Array[Int]
+  body_sleep_states : Array[SleepRootState]
+  body_sleep_timers : Array[Float]
+  body_active_timestamps : Array[Int]
+  body_state_generations : Array[Int]
+  body_last_translation_x : Array[Float]
+  body_last_translation_y : Array[Float]
+  body_last_rotation : Array[Float]
+  body_has_pose : Array[Bool]
 }
 pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager::interaction_started_or_stopped(Self, RigidBodySet, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
 pub fn IslandManager::new() -> Self
 pub fn IslandManager::rigid_body_updated(Self, RigidBodyHandle, RigidBodySet) -> Unit
-pub fn IslandManager::wake_up(Self, RigidBodyHandle) -> Unit
+pub fn IslandManager::update_islands(Self, Float, Float, RigidBodySet, ContactGraph, ImpulseJointSet, MultibodyJointSet) -> Unit
+pub fn IslandManager::wake_up(Self, RigidBodySet, RigidBodyHandle, Bool) -> Unit
+
+type IslandsOptimizer
+
+type IslandsOptimizerMergeState
+
+type IslandsOptimizerSplitState
 
 type Jacobian
 pub fn Jacobian::equals(Self, Self) -> Bool
@@ -190,6 +214,8 @@ pub fn RowDVector::len(Self) -> Int
 pub fn RowDVector::scale(Self, Float) -> Self
 
 type SleepCandidate
+
+type SleepRootState
 
 // Type aliases
 

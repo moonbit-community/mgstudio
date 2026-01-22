@@ -231,6 +231,32 @@ pub type IslandManager
 
 ///|
 #declaration_only
+pub type ContactGraph
+
+///|
+#declaration_only
+pub fn ContactGraph::new() -> ContactGraph {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactGraph::clear(self : ContactGraph) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactGraph::add_pair(
+  self : ContactGraph,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn IslandManager::new() -> IslandManager {
   ...
 }
@@ -247,7 +273,9 @@ pub fn IslandManager::active_bodies(
 #declaration_only
 pub fn IslandManager::wake_up(
   self : IslandManager,
+  bodies : RigidBodySet,
   handle : RigidBodyHandle,
+  strong : Bool,
 ) -> Unit {
   ...
 }
@@ -271,6 +299,20 @@ pub fn IslandManager::rigid_body_updated(
   self : IslandManager,
   handle : RigidBodyHandle,
   bodies : RigidBodySet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IslandManager::update_islands(
+  self : IslandManager,
+  dt : @core.Real,
+  length_unit : @core.Real,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet,
 ) -> Unit {
   ...
 }

@@ -13,6 +13,24 @@
 // limitations under the License.
 
 ///|
+const DEFAULT_SLEEP_LINEAR_THRESHOLD : @core.Real = 0.4F
+
+///|
+const DEFAULT_SLEEP_ANGULAR_THRESHOLD : @core.Real = 0.5F
+
+///|
+const DEFAULT_TIME_UNTIL_SLEEP : @core.Real = 2.0F
+
+///|
+const MAX_SLEEP_TRAVERSAL_COST : Int = 1000
+
+///|
+const MIN_ISLAND_SIZE : Int = 1024
+
+///|
+const MAX_ISLAND_SIZE : Int = 4096
+
+///|
 struct Island {
   bodies : Array[RigidBodyHandle]
   mut id_in_awake_list : Int?
@@ -60,15 +78,86 @@ struct SleepCandidate {
 }
 
 ///|
+pub struct ContactGraph {
+  pairs : Array[(RigidBodyHandle, RigidBodyHandle)]
+}
+
+///|
+pub fn ContactGraph::new() -> ContactGraph {
+  { pairs: [] }
+}
+
+///|
+pub fn ContactGraph::clear(self : ContactGraph) -> Unit {
+  self.pairs.clear()
+}
+
+///|
+pub fn ContactGraph::add_pair(
+  self : ContactGraph,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> Unit {
+  self.pairs.push((body1, body2))
+}
+
+///|
+enum SleepRootState {
+  Unknown
+  TraversalPending
+  Traversed
+}
+
+///|
+struct IslandsOptimizerMergeState {
+  mut curr_awake_id : Int
+}
+
+///|
+struct IslandsOptimizerSplitState {
+  mut curr_awake_id : Int
+}
+
+///|
+struct IslandsOptimizer {
+  min_island_size : Int
+  max_island_size : Int
+  mut mode : Int
+  merge_state : IslandsOptimizerMergeState
+  split_state : IslandsOptimizerSplitState
+}
+
+///|
+fn IslandsOptimizer::new() -> IslandsOptimizer {
+  {
+    min_island_size: MIN_ISLAND_SIZE,
+    max_island_size: MAX_ISLAND_SIZE,
+    mode: 0,
+    merge_state: IslandsOptimizerMergeState::{ curr_awake_id: 0 },
+    split_state: IslandsOptimizerSplitState::{ curr_awake_id: 0 },
+  }
+}
+
+///|
 pub struct IslandManager {
   islands : Array[Island?]
   awake_islands : Array[Int]
   free_islands : Array[Int]
   traversal_candidates : Array[SleepCandidate]
-  traversal_timestamp : Int
+  mut traversal_timestamp : Int
+  optimizer : IslandsOptimizer
+  stack : Array[RigidBodyHandle]
   body_island_ids : Array[Int]
   body_island_generations : Array[Int]
   body_island_indices : Array[Int]
+  body_sleep_states : Array[SleepRootState]
+  body_sleep_timers : Array[@core.Real]
+  body_active_timestamps : Array[Int]
+  body_state_generations : Array[Int]
+  body_last_translation_x : Array[@core.Real]
+  body_last_translation_y : Array[@core.Real]
+  body_last_rotation : Array[@core.Real]
+  body_has_pose : Array[Bool]
 }
 
 ///|
@@ -79,9 +168,19 @@ pub fn IslandManager::new() -> IslandManager {
     free_islands: [],
     traversal_candidates: [],
     traversal_timestamp: 0,
+    optimizer: IslandsOptimizer::new(),
+    stack: [],
     body_island_ids: [],
     body_island_generations: [],
     body_island_indices: [],
+    body_sleep_states: [],
+    body_sleep_timers: [],
+    body_active_timestamps: [],
+    body_state_generations: [],
+    body_last_translation_x: [],
+    body_last_translation_y: [],
+    body_last_rotation: [],
+    body_has_pose: [],
   }
 }
 
@@ -95,7 +194,77 @@ fn IslandManager::ensure_body_capacity(self : IslandManager, id : Int) -> Unit {
     self.body_island_ids.push(-1)
     self.body_island_generations.push(0)
     self.body_island_indices.push(-1)
+    self.body_sleep_states.push(SleepRootState::Unknown)
+    self.body_sleep_timers.push(0.0F)
+    self.body_active_timestamps.push(0)
+    self.body_state_generations.push(0)
+    self.body_last_translation_x.push(0.0F)
+    self.body_last_translation_y.push(0.0F)
+    self.body_last_rotation.push(0.0F)
+    self.body_has_pose.push(false)
     i = i + 1
+  }
+}
+
+///|
+fn IslandManager::reset_body_sleep_state(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+) -> Unit {
+  if handle.id < 0 {
+    return
+  }
+  self.ensure_body_capacity(handle.id)
+  self.body_sleep_states[handle.id] = SleepRootState::Unknown
+  self.body_sleep_timers[handle.id] = 0.0F
+  self.body_active_timestamps[handle.id] = 0
+  self.body_last_translation_x[handle.id] = 0.0F
+  self.body_last_translation_y[handle.id] = 0.0F
+  self.body_last_rotation[handle.id] = 0.0F
+  self.body_has_pose[handle.id] = false
+  self.body_state_generations[handle.id] = handle.generation
+}
+
+///|
+fn IslandManager::wake_up_body(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  handle : RigidBodyHandle,
+  strong : Bool,
+) -> Unit {
+  if handle.id < 0 {
+    return
+  }
+  self.sync_body_state_generation(handle)
+  if bodies.get_mut(handle) is Some(body) {
+    if !body.is_dynamic_or_kinematic() {
+      return
+    }
+    body.sleeping = false
+  } else {
+    return
+  }
+  if self.body_sleep_states[handle.id] is SleepRootState::TraversalPending {
+
+  } else {
+    self.body_sleep_states[handle.id] = SleepRootState::Unknown
+  }
+  if strong {
+    self.body_sleep_timers[handle.id] = 0.0F
+  }
+}
+
+///|
+fn IslandManager::sync_body_state_generation(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+) -> Unit {
+  if handle.id < 0 {
+    return
+  }
+  self.ensure_body_capacity(handle.id)
+  if self.body_state_generations[handle.id] != handle.generation {
+    self.reset_body_sleep_state(handle)
   }
 }
 
@@ -143,6 +312,7 @@ fn IslandManager::insert_body(
   handle : RigidBodyHandle,
   sleeping : Bool,
 ) -> Unit {
+  self.reset_body_sleep_state(handle)
   let island = Island::new(handle, sleeping)
   if !sleeping {
     let index = self.awake_islands.length()
@@ -197,6 +367,7 @@ fn IslandManager::remove_body(
         self.body_island_ids[handle.id] = -1
         self.body_island_indices[handle.id] = -1
         self.body_island_generations[handle.id] = handle.generation
+        self.reset_body_sleep_state(handle)
       }
       if island.bodies.length() == 0 {
         self.remove_from_awake_list(island_id)
@@ -232,6 +403,161 @@ fn IslandManager::island_id_for(
 }
 
 ///|
+fn is_dynamic_or_kinematic_body(
+  bodies : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> Bool {
+  if bodies.get(handle) is Some(body) {
+    body.is_dynamic_or_kinematic()
+  } else {
+    false
+  }
+}
+
+///|
+fn handle_in_list(
+  values : Array[RigidBodyHandle],
+  handle : RigidBodyHandle,
+) -> Bool {
+  for i in 0..<values.length() {
+    if handle_equals(values[i], handle) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn truncate_handles(values : Array[RigidBodyHandle], len : Int) -> Unit {
+  while values.length() > len {
+    values.pop() |> ignore
+  }
+}
+
+///|
+fn IslandManager::is_body_eligible_for_sleep(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+  body : RigidBody,
+) -> Bool {
+  if !body.can_sleep {
+    return false
+  }
+  self.sync_body_state_generation(handle)
+  self.body_sleep_timers[handle.id] >= DEFAULT_TIME_UNTIL_SLEEP
+}
+
+///|
+fn IslandManager::update_body_sleep_timer(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+  body : RigidBody,
+  dt : @core.Real,
+  length_unit : @core.Real,
+) -> Bool {
+  self.sync_body_state_generation(handle)
+  if !body.can_sleep {
+    self.body_sleep_timers[handle.id] = 0.0F
+    self.body_sleep_states[handle.id] = SleepRootState::Unknown
+    self.body_has_pose[handle.id] = false
+    return false
+  }
+  let pos = body.translation()
+  let rot = body.rotation().angle()
+  if !self.body_has_pose[handle.id] || dt <= 0.0F {
+    self.body_last_translation_x[handle.id] = pos.x
+    self.body_last_translation_y[handle.id] = pos.y
+    self.body_last_rotation[handle.id] = rot
+    self.body_has_pose[handle.id] = true
+    self.body_sleep_timers[handle.id] = 0.0F
+    return false
+  }
+  let dx = pos.x - self.body_last_translation_x[handle.id]
+  let dy = pos.y - self.body_last_translation_y[handle.id]
+  let drot = rot - self.body_last_rotation[handle.id]
+  let inv_dt = 1.0F / dt
+  let sq_linvel = dx * inv_dt * (dx * inv_dt) + dy * inv_dt * (dy * inv_dt)
+  let sq_angvel = drot * inv_dt * (drot * inv_dt)
+  let can_sleep_now = match body.body_type {
+    RigidBodyType::Dynamic => {
+      let linear_threshold = DEFAULT_SLEEP_LINEAR_THRESHOLD * length_unit
+      sq_linvel < linear_threshold * linear_threshold &&
+      sq_angvel <
+      DEFAULT_SLEEP_ANGULAR_THRESHOLD * DEFAULT_SLEEP_ANGULAR_THRESHOLD
+    }
+    RigidBodyType::KinematicPositionBased =>
+      sq_linvel == 0.0F && sq_angvel == 0.0F
+    RigidBodyType::Fixed => true
+  }
+  if can_sleep_now {
+    self.body_sleep_timers[handle.id] = self.body_sleep_timers[handle.id] + dt
+  } else {
+    self.body_sleep_timers[handle.id] = 0.0F
+  }
+  self.body_last_translation_x[handle.id] = pos.x
+  self.body_last_translation_y[handle.id] = pos.y
+  self.body_last_rotation[handle.id] = rot
+  self.body_has_pose[handle.id] = true
+  self.body_sleep_timers[handle.id] >= DEFAULT_TIME_UNTIL_SLEEP
+}
+
+///|
+fn IslandManager::push_contacting_bodies(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  handle : RigidBodyHandle,
+) -> Unit {
+  for i in 0..<contacts.pairs.length() {
+    let pair = contacts.pairs[i]
+    if handle_equals(pair.0, handle) &&
+      is_dynamic_or_kinematic_body(bodies, pair.1) {
+      self.stack.push(pair.1)
+    } else if handle_equals(pair.1, handle) &&
+      is_dynamic_or_kinematic_body(bodies, pair.0) {
+      self.stack.push(pair.0)
+    }
+  }
+}
+
+///|
+fn IslandManager::push_linked_bodies(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Unit {
+  let attached = impulse_joints.attached_joints(handle)
+  for i in 0..<attached.length() {
+    let joint = attached[i]
+    let other = if handle_equals(joint.parent, handle) {
+      joint.child
+    } else {
+      joint.parent
+    }
+    if is_dynamic_or_kinematic_body(bodies, other) {
+      self.stack.push(other)
+    }
+  }
+  if handle.id >= 0 && handle.id < multibody_joints.body_links.length() {
+    if multibody_joints.body_links[handle.id] is Some(info) {
+      if info.mb_index >= 0 &&
+        info.mb_index < multibody_joints.multibodies.length() {
+        let multibody = multibody_joints.multibodies[info.mb_index]
+        for i in 0..<multibody.links.length() {
+          let link = multibody.links[i]
+          if !handle_equals(link.rigid_body, handle) &&
+            is_dynamic_or_kinematic_body(bodies, link.rigid_body) {
+            self.stack.push(link.rigid_body)
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
 pub fn IslandManager::active_bodies(
   self : IslandManager,
 ) -> Array[RigidBodyHandle] {
@@ -250,67 +576,104 @@ pub fn IslandManager::active_bodies(
 }
 
 ///|
+fn IslandManager::wake_up_island(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  island_id : Int,
+) -> Unit {
+  if island_id < 0 || island_id >= self.islands.length() {
+    return
+  }
+  if self.islands[island_id] is Some(island) {
+    let mut should_wake = false
+    if island.sleeping {
+      island.sleeping = false
+      should_wake = true
+    }
+    if island.id_in_awake_list is None {
+      let index = self.awake_islands.length()
+      island.id_in_awake_list = Some(index)
+      self.awake_islands.push(island_id)
+      should_wake = true
+    }
+    if should_wake {
+      for i in 0..<island.bodies.length() {
+        self.wake_up_body(bodies, island.bodies[i], false)
+      }
+    }
+    self.islands[island_id] = Some(island)
+  }
+}
+
+///|
 pub fn IslandManager::wake_up(
   self : IslandManager,
+  bodies : RigidBodySet,
   handle : RigidBodyHandle,
+  strong : Bool,
 ) -> Unit {
+  if !is_dynamic_or_kinematic_body(bodies, handle) {
+    return
+  }
   if self.island_id_for(handle) is Some(island_id) {
-    if self.islands[island_id] is Some(island) {
-      if island.sleeping {
-        island.sleeping = false
-      }
-      if island.id_in_awake_list is None {
-        let index = self.awake_islands.length()
-        island.id_in_awake_list = Some(index)
-        self.awake_islands.push(island_id)
-      }
-      self.islands[island_id] = Some(island)
-    }
+    self.wake_up_island(bodies, island_id)
   } else {
     self.insert_body(handle, false)
   }
+  self.wake_up_body(bodies, handle, strong)
 }
 
 ///|
 fn IslandManager::merge_islands(
   self : IslandManager,
-  target_id : Int,
-  source_id : Int,
+  island_id1 : Int,
+  island_id2 : Int,
 ) -> Unit {
-  if target_id == source_id {
+  if island_id1 == island_id2 {
     return
   }
-  if target_id < 0 || source_id < 0 {
+  if island_id1 < 0 || island_id2 < 0 {
     return
   }
-  if target_id >= self.islands.length() || source_id >= self.islands.length() {
+  if island_id1 >= self.islands.length() || island_id2 >= self.islands.length() {
     return
   }
-  if self.islands[target_id] is Some(target) &&
-    self.islands[source_id] is Some(source) {
-    let offset = target.bodies.length()
-    for i in 0..<source.bodies.length() {
-      let handle = source.bodies[i]
-      target.bodies.push(handle)
+  if self.islands[island_id1] is Some(island1) &&
+    self.islands[island_id2] is Some(island2) {
+    let (keep_id, remove_id) = if island1.bodies.length() <
+      island2.bodies.length() {
+      (island_id2, island_id1)
+    } else {
+      (island_id1, island_id2)
+    }
+    let keep = if keep_id == island_id1 { island1 } else { island2 }
+    let remove = if remove_id == island_id1 { island1 } else { island2 }
+    let offset = keep.bodies.length()
+    for i in 0..<remove.bodies.length() {
+      let handle = remove.bodies[i]
+      keep.bodies.push(handle)
       self.ensure_body_capacity(handle.id)
-      self.body_island_ids[handle.id] = target_id
+      self.body_island_ids[handle.id] = keep_id
       self.body_island_generations[handle.id] = handle.generation
       self.body_island_indices[handle.id] = offset + i
     }
-    let merged_sleeping = target.sleeping && source.sleeping
-    target.sleeping = merged_sleeping
-    self.remove_from_awake_list(source_id)
-    self.islands[source_id] = None
-    self.free_islands.push(source_id)
-    self.islands[target_id] = Some(target)
+    let merged_sleeping = keep.sleeping && remove.sleeping
+    keep.sleeping = merged_sleeping
+    self.remove_from_awake_list(remove_id)
+    if self.islands[keep_id] is Some(updated_keep) {
+      keep.id_in_awake_list = updated_keep.id_in_awake_list
+    }
+    self.islands[remove_id] = None
+    self.free_islands.push(remove_id)
+    self.islands[keep_id] = Some(keep)
     if merged_sleeping {
-      self.remove_from_awake_list(target_id)
-    } else if self.islands[target_id] is Some(updated) {
+      self.remove_from_awake_list(keep_id)
+    } else if self.islands[keep_id] is Some(updated) {
       if updated.id_in_awake_list is None {
         let index = self.awake_islands.length()
         updated.id_in_awake_list = Some(index)
-        self.awake_islands.push(target_id)
-        self.islands[target_id] = Some(updated)
+        self.awake_islands.push(keep_id)
+        self.islands[keep_id] = Some(updated)
       }
     }
   }
@@ -327,10 +690,10 @@ pub fn IslandManager::interaction_started_or_stopped(
 ) -> Unit {
   if wake_up {
     if handle1 is Some(value1) {
-      self.wake_up(value1)
+      self.wake_up(bodies, value1, false)
     }
     if handle2 is Some(value2) {
-      self.wake_up(value2)
+      self.wake_up(bodies, value2, false)
     }
   }
   if !started {
@@ -357,25 +720,374 @@ pub fn IslandManager::rigid_body_updated(
   bodies : RigidBodySet,
 ) -> Unit {
   if bodies.get(handle) is Some(body) {
+    self.sync_body_state_generation(handle)
     if !body.is_dynamic_or_kinematic() {
       return
     }
     if self.island_id_for(handle) is Some(island_id) {
-      if body.is_sleeping() {
+      if !body.is_sleeping() {
         if self.islands[island_id] is Some(island) {
-          if !island.sleeping {
-            island.sleeping = true
-            self.islands[island_id] = Some(island)
-            self.remove_from_awake_list(island_id)
+          if island.sleeping {
+            self.wake_up(bodies, handle, false)
           }
         }
+      }
+    } else if !body.is_sleeping() {
+      let mut target_id = -1
+      if self.awake_islands.length() > 0 {
+        let last_id = self.awake_islands[self.awake_islands.length() - 1]
+        if self.islands[last_id] is Some(island) {
+          if island.bodies.length() < self.optimizer.min_island_size &&
+            !island.sleeping {
+            target_id = last_id
+          }
+        }
+      }
+      if target_id >= 0 {
+        if self.islands[target_id] is Some(island) {
+          let index = island.bodies.length()
+          island.bodies.push(handle)
+          self.islands[target_id] = Some(island)
+          self.ensure_body_capacity(handle.id)
+          self.body_island_ids[handle.id] = target_id
+          self.body_island_generations[handle.id] = handle.generation
+          self.body_island_indices[handle.id] = index
+        }
       } else {
-        self.wake_up(handle)
+        self.insert_body(handle, false)
       }
     } else {
-      self.insert_body(handle, body.is_sleeping())
+      self.insert_body(handle, true)
     }
   }
+}
+
+///|
+fn IslandManager::extract_sub_island(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  island_id : Int,
+  extracted : Array[RigidBodyHandle],
+  sleeping : Bool,
+) -> Unit {
+  if island_id < 0 || island_id >= self.islands.length() {
+    return
+  }
+  if extracted.length() == 0 {
+    return
+  }
+  if self.islands[island_id] is Some(island) {
+    let remaining : Array[RigidBodyHandle] = []
+    for i in 0..<island.bodies.length() {
+      let handle = island.bodies[i]
+      if !handle_in_list(extracted, handle) {
+        remaining.push(handle)
+      }
+    }
+    if remaining.length() == 0 {
+      self.remove_from_awake_list(island_id)
+      self.islands[island_id] = None
+      self.free_islands.push(island_id)
+    } else {
+      island.bodies.clear()
+      for i in 0..<remaining.length() {
+        island.bodies.push(remaining[i])
+      }
+      for i in 0..<remaining.length() {
+        let handle = remaining[i]
+        self.ensure_body_capacity(handle.id)
+        self.body_island_ids[handle.id] = island_id
+        self.body_island_generations[handle.id] = handle.generation
+        self.body_island_indices[handle.id] = i
+      }
+      self.islands[island_id] = Some(island)
+    }
+    let new_island = Island::{
+      bodies: extracted,
+      id_in_awake_list: None,
+      sleeping,
+    }
+    let new_island_id = self.insert_island(new_island)
+    if !sleeping {
+      let index = self.awake_islands.length()
+      if self.islands[new_island_id] is Some(created) {
+        let island_value = created
+        island_value.id_in_awake_list = Some(index)
+        self.islands[new_island_id] = Some(island_value)
+      }
+      self.awake_islands.push(new_island_id)
+    }
+    for i in 0..<extracted.length() {
+      let handle = extracted[i]
+      self.ensure_body_capacity(handle.id)
+      self.body_island_ids[handle.id] = new_island_id
+      self.body_island_generations[handle.id] = handle.generation
+      self.body_island_indices[handle.id] = i
+      if sleeping {
+        if bodies.get_mut(handle) is Some(body) {
+          body.sleeping = true
+        }
+      }
+    }
+  }
+}
+
+///|
+fn IslandManager::extract_sleeping_island(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet,
+  sleep_root : RigidBodyHandle,
+) -> Int {
+  if sleep_root.id < 0 {
+    return 0
+  }
+  if bodies.get(sleep_root) is None {
+    return 0
+  }
+  self.sync_body_state_generation(sleep_root)
+  if self.body_sleep_states[sleep_root.id] is SleepRootState::TraversalPending {
+    self.body_sleep_states[sleep_root.id] = SleepRootState::Traversed
+  } else {
+    return 0
+  }
+  if self.island_id_for(sleep_root) is Some(island_id) {
+    if self.islands[island_id] is Some(active_island) {
+      if active_island.sleeping {
+        return 0
+      }
+      let new_island_bodies : Array[RigidBodyHandle] = []
+      self.stack.clear()
+      self.stack.push(sleep_root)
+      self.traversal_timestamp = self.traversal_timestamp + 1
+      let mut visited_count = 0
+      while self.stack.pop() is Some(handle) {
+        if bodies.get(handle) is Some(body) {
+          if !body.is_dynamic_or_kinematic() {
+            continue
+          }
+          self.sync_body_state_generation(handle)
+          if self.body_active_timestamps[handle.id] == self.traversal_timestamp {
+            continue
+          }
+          visited_count = visited_count + 1
+          self.body_active_timestamps[handle.id] = self.traversal_timestamp
+          if self.is_body_eligible_for_sleep(handle, body) {
+            self.body_sleep_states[handle.id] = SleepRootState::Traversed
+          } else {
+            self.stack.clear()
+            return visited_count
+          }
+          self.push_contacting_bodies(bodies, contacts, handle)
+          self.push_linked_bodies(
+            bodies, impulse_joints, multibody_joints, handle,
+          )
+          new_island_bodies.push(handle)
+        }
+      }
+      if active_island.bodies.length() == new_island_bodies.length() {
+        for i in 0..<active_island.bodies.length() {
+          let handle = active_island.bodies[i]
+          if bodies.get_mut(handle) is Some(body) {
+            body.sleeping = true
+          }
+        }
+        active_island.sleeping = true
+        self.remove_from_awake_list(island_id)
+        self.islands[island_id] = Some(active_island)
+      } else {
+        self.extract_sub_island(bodies, island_id, new_island_bodies, true)
+      }
+      visited_count
+    } else {
+      0
+    }
+  } else {
+    0
+  }
+}
+
+///|
+fn IslandManager::update_optimizer(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet,
+) -> Unit {
+  if self.optimizer.mode % 2 == 0 {
+    self.incremental_merge()
+  } else {
+    self.incremental_split(bodies, contacts, impulse_joints, multibody_joints)
+  }
+  self.optimizer.mode = self.optimizer.mode + 1
+}
+
+///|
+fn IslandManager::incremental_merge(self : IslandManager) -> Unit {
+  if self.optimizer.merge_state.curr_awake_id >= self.awake_islands.length() {
+    self.optimizer.merge_state.curr_awake_id = 0
+  }
+  let mut first_index = -1
+  for
+    i in self.optimizer.merge_state.curr_awake_id..<self.awake_islands.length() {
+    let island_id = self.awake_islands[i]
+    if self.islands[island_id] is Some(island) {
+      if island.bodies.length() < self.optimizer.min_island_size {
+        first_index = i
+        break
+      }
+    }
+  }
+  if first_index < 0 {
+    self.optimizer.merge_state.curr_awake_id = 0
+    return
+  }
+  self.optimizer.merge_state.curr_awake_id = first_index + 1
+  let first_island_id = self.awake_islands[first_index]
+  for j in (first_index + 1)..<self.awake_islands.length() {
+    let second_island_id = self.awake_islands[j]
+    if self.islands[second_island_id] is Some(island) {
+      if island.bodies.length() < self.optimizer.min_island_size {
+        self.merge_islands(first_island_id, second_island_id)
+        return
+      }
+    }
+  }
+}
+
+///|
+fn IslandManager::incremental_split(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet,
+) -> Unit {
+  if self.optimizer.split_state.curr_awake_id >= self.awake_islands.length() {
+    self.optimizer.split_state.curr_awake_id = 0
+  }
+  for
+    awake_id in self.optimizer.split_state.curr_awake_id..<self.awake_islands.length() {
+    let island_id = self.awake_islands[awake_id]
+    if self.islands[island_id] is Some(island) {
+      if island.bodies.length() > self.optimizer.max_island_size {
+        self.stack.clear()
+        let new_island_bodies : Array[RigidBodyHandle] = []
+        if island.bodies.length() == 0 {
+          return
+        }
+        self.traversal_timestamp = self.traversal_timestamp + 1
+        for root_index in 0..<island.bodies.length() {
+          self.stack.push(island.bodies[root_index])
+          let len_before = new_island_bodies.length()
+          while self.stack.pop() is Some(handle) {
+            if bodies.get(handle) is Some(body) {
+              if !body.is_dynamic_or_kinematic() {
+                continue
+              }
+              self.sync_body_state_generation(handle)
+              if self.body_active_timestamps[handle.id] ==
+                self.traversal_timestamp {
+                continue
+              }
+              self.body_active_timestamps[handle.id] = self.traversal_timestamp
+              new_island_bodies.push(handle)
+              if new_island_bodies.length() > self.optimizer.max_island_size {
+                truncate_handles(new_island_bodies, len_before)
+                self.stack.clear()
+                break
+              }
+              self.push_contacting_bodies(bodies, contacts, handle)
+              self.push_linked_bodies(
+                bodies, impulse_joints, multibody_joints, handle,
+              )
+            }
+          }
+          if new_island_bodies.length() == 0 {
+            return
+          }
+          if new_island_bodies.length() >= self.optimizer.min_island_size {
+            self.extract_sub_island(bodies, island_id, new_island_bodies, false)
+            self.optimizer.split_state.curr_awake_id = awake_id + 1
+            return
+          }
+        }
+        return
+      }
+      self.optimizer.split_state.curr_awake_id = awake_id + 1
+    }
+  }
+}
+
+///|
+fn IslandManager::pop_traversal_candidate(
+  self : IslandManager,
+) -> SleepCandidate? {
+  if self.traversal_candidates.length() == 0 {
+    return None
+  }
+  let candidate = self.traversal_candidates[0]
+  let mut i = 1
+  while i < self.traversal_candidates.length() {
+    self.traversal_candidates[i - 1] = self.traversal_candidates[i]
+    i = i + 1
+  }
+  self.traversal_candidates.pop() |> ignore
+  Some(candidate)
+}
+
+///|
+pub fn IslandManager::update_islands(
+  self : IslandManager,
+  dt : @core.Real,
+  length_unit : @core.Real,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet,
+) -> Unit {
+  for handle in self.active_bodies() {
+    if handle.id < 0 {
+      continue
+    }
+    if bodies.get(handle) is Some(body) {
+      if body.enabled && body.is_dynamic_or_kinematic() {
+        let eligible = self.update_body_sleep_timer(
+          handle, body, dt, length_unit,
+        )
+        if eligible {
+          if self.body_sleep_states[handle.id] is SleepRootState::Unknown {
+            self.traversal_candidates.push(SleepCandidate::{ handle, })
+            self.body_sleep_states[handle.id] = SleepRootState::TraversalPending
+          }
+        } else {
+          self.body_sleep_states[handle.id] = SleepRootState::Unknown
+        }
+      }
+    }
+  }
+  let mut cost = 0
+  while true {
+    if self.pop_traversal_candidate() is Some(candidate) {
+      cost = cost +
+        self.extract_sleeping_island(
+          bodies,
+          contacts,
+          impulse_joints,
+          multibody_joints,
+          candidate.handle,
+        )
+      if cost > MAX_SLEEP_TRAVERSAL_COST {
+        break
+      }
+    } else {
+      break
+    }
+  }
+  self.update_optimizer(bodies, contacts, impulse_joints, multibody_joints)
 }
 
 ///|
