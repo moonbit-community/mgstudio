@@ -22,6 +22,7 @@ pub struct Buffer {
   metrics : Metrics
   width_opt : Float?
   height_opt : Float?
+  scroll : Scroll
   redraw : Bool
   wrap : Wrap
   tab_width : Int
@@ -34,9 +35,10 @@ pub fn Buffer::new(metrics : Metrics) -> Buffer {
     metrics,
     width_opt: None,
     height_opt: None,
-    redraw: true,
-    wrap: Wrap::None,
-    tab_width: 4,
+    scroll: Scroll::default(),
+    redraw: false,
+    wrap: Wrap::WordOrGlyph,
+    tab_width: 8,
   }
 }
 
@@ -48,6 +50,12 @@ pub fn Buffer::lines(self : Buffer) -> Array[BufferLine] { self.lines }
 
 ///|
 pub fn Buffer::redraw(self : Buffer) -> Bool { self.redraw }
+
+///|
+pub fn Buffer::scroll(self : Buffer) -> Scroll { self.scroll }
+
+///|
+pub fn Buffer::wrap(self : Buffer) -> Wrap { self.wrap }
 
 ///|
 pub fn Buffer::set_size(self : Buffer, width_opt : Float?, height_opt : Float?) -> Buffer {
