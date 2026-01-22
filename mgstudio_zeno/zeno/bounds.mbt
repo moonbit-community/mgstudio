@@ -106,7 +106,7 @@ pub fn Bounds::is_empty(self : Bounds) -> Bool {
 }
 
 ///|
-pub struct Placement {
+pub(all) struct Placement {
   left : Int
   top : Int
   width : UInt
