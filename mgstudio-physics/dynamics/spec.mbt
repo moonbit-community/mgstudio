@@ -418,6 +418,12 @@ pub fn RigidBodySet::new() -> RigidBodySet {
 
 ///|
 #declaration_only
+pub fn RigidBodySet::with_capacity(capacity : Int) -> RigidBodySet {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodySet::len(self : RigidBodySet) -> Int {
   ...
 }
@@ -469,6 +475,50 @@ pub fn RigidBodySet::get_mut(
   self : RigidBodySet,
   handle : RigidBodyHandle,
 ) -> RigidBody? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::get_unknown_gen(
+  self : RigidBodySet,
+  id : Int,
+) -> (RigidBody, RigidBodyHandle)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::get_unknown_gen_mut(
+  self : RigidBodySet,
+  id : Int,
+) -> (RigidBody, RigidBodyHandle)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::get_pair_mut(
+  self : RigidBodySet,
+  handle1 : RigidBodyHandle,
+  handle2 : RigidBodyHandle,
+) -> (RigidBody?, RigidBody?) {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::iter(
+  self : RigidBodySet,
+) -> Array[(RigidBodyHandle, RigidBody)] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::iter_mut(
+  self : RigidBodySet,
+) -> Array[(RigidBodyHandle, RigidBody)] {
   ...
 }
 

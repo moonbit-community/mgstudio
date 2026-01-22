@@ -345,13 +345,19 @@ pub fn RigidBodySet::contains(Self, RigidBodyHandle) -> Bool
 pub fn RigidBodySet::deserialize(String) -> Self
 pub fn RigidBodySet::get(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::get_mut(Self, RigidBodyHandle) -> RigidBody?
+pub fn RigidBodySet::get_pair_mut(Self, RigidBodyHandle, RigidBodyHandle) -> (RigidBody?, RigidBody?)
+pub fn RigidBodySet::get_unknown_gen(Self, Int) -> (RigidBody, RigidBodyHandle)?
+pub fn RigidBodySet::get_unknown_gen_mut(Self, Int) -> (RigidBody, RigidBodyHandle)?
 pub fn RigidBodySet::insert(Self, RigidBody) -> RigidBodyHandle
 pub fn RigidBodySet::is_empty(Self) -> Bool
+pub fn RigidBodySet::iter(Self) -> Array[(RigidBodyHandle, RigidBody)]
+pub fn RigidBodySet::iter_mut(Self) -> Array[(RigidBodyHandle, RigidBody)]
 pub fn RigidBodySet::len(Self) -> Int
 pub fn RigidBodySet::new() -> Self
 pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> RigidBody?
 pub fn RigidBodySet::serialize(Self) -> String
 pub fn RigidBodySet::take_modified(Self) -> Array[RigidBodyHandle]
+pub fn RigidBodySet::with_capacity(Int) -> Self
 
 pub(all) enum RigidBodyType {
   Dynamic

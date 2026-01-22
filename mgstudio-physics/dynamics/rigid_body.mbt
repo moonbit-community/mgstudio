@@ -1179,6 +1179,12 @@ pub fn RigidBodySet::new() -> RigidBodySet {
 }
 
 ///|
+pub fn RigidBodySet::with_capacity(capacity : Int) -> RigidBodySet {
+  capacity |> ignore
+  RigidBodySet::new()
+}
+
+///|
 pub fn RigidBodySet::len(self : RigidBodySet) -> Int {
   let mut count = 0
   for i in 0..<self.bodies.length() {
@@ -1301,6 +1307,81 @@ pub fn RigidBodySet::get_mut(
   } else {
     None
   }
+}
+
+///|
+pub fn RigidBodySet::get_unknown_gen(
+  self : RigidBodySet,
+  id : Int,
+) -> (RigidBody, RigidBodyHandle)? {
+  if id < 0 || id >= self.bodies.length() {
+    return None
+  }
+  if self.bodies[id] is Some(body) {
+    let handle = RigidBodyHandle::new(id, self.generations[id])
+    Some((body, handle))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn RigidBodySet::get_unknown_gen_mut(
+  self : RigidBodySet,
+  id : Int,
+) -> (RigidBody, RigidBodyHandle)? {
+  if id < 0 || id >= self.bodies.length() {
+    return None
+  }
+  if self.bodies[id] is Some(body) {
+    let handle = RigidBodyHandle::new(id, self.generations[id])
+    self.push_modified(handle, body)
+    Some((body, handle))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn RigidBodySet::get_pair_mut(
+  self : RigidBodySet,
+  handle1 : RigidBodyHandle,
+  handle2 : RigidBodyHandle,
+) -> (RigidBody?, RigidBody?) {
+  if RigidBodyHandle::equals(handle1, handle2) {
+    (self.get_mut(handle1), None)
+  } else {
+    (self.get_mut(handle1), self.get_mut(handle2))
+  }
+}
+
+///|
+pub fn RigidBodySet::iter(
+  self : RigidBodySet,
+) -> Array[(RigidBodyHandle, RigidBody)] {
+  let result : Array[(RigidBodyHandle, RigidBody)] = []
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      result.push((RigidBodyHandle::new(i, self.generations[i]), body))
+    }
+  }
+  result
+}
+
+///|
+pub fn RigidBodySet::iter_mut(
+  self : RigidBodySet,
+) -> Array[(RigidBodyHandle, RigidBody)] {
+  self.modified_bodies.clear()
+  let result : Array[(RigidBodyHandle, RigidBody)] = []
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      let handle = RigidBodyHandle::new(i, self.generations[i])
+      self.push_modified_unchecked(handle, body)
+      result.push((handle, body))
+    }
+  }
+  result
 }
 
 ///|

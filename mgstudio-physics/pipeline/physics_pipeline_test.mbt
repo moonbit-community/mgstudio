@@ -67,6 +67,7 @@ test "rigid body removal before step" {
   let to_delete = [h1, h2, h3, h4]
   for h in to_delete {
     bodies.remove(h, islands, (), impulse_joints, multibody_joints, true)
+    |> ignore
   }
   pipeline.step(
     @core.Vec2::zero(),
@@ -104,6 +105,7 @@ test "collider removal before step" {
   let c_handle = colliders.insert_with_parent(collider, b_handle, bodies)
   colliders.remove(c_handle, islands, bodies, true)
   bodies.remove(b_handle, islands, (), impulse_joints, multibody_joints, true)
+  |> ignore
   for _ in 0..<10 {
     pipeline.step(
       gravity,
@@ -318,8 +320,11 @@ test "rigid body removal snapshot handle determinism" {
   let h2 = bodies.insert(rb)
   let h3 = bodies.insert(rb)
   bodies.remove(h1, islands, (), impulse_joints, multibody_joints, true)
+  |> ignore
   bodies.remove(h3, islands, (), impulse_joints, multibody_joints, true)
+  |> ignore
   bodies.remove(h2, islands, (), impulse_joints, multibody_joints, true)
+  |> ignore
   let snapshot = bodies.serialize()
   let bodies2 = @dynamics.RigidBodySet::deserialize(snapshot)
   let h1a = bodies.insert(rb)
@@ -331,4 +336,5 @@ test "rigid body removal snapshot handle determinism" {
   inspect(@dynamics.RigidBodyHandle::equals(h1a, h1b), content="true")
   inspect(@dynamics.RigidBodyHandle::equals(h2a, h2b), content="true")
   inspect(@dynamics.RigidBodyHandle::equals(h3a, h3b), content="true")
+  colliders |> ignore
 }
