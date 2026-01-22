@@ -447,6 +447,111 @@ struct MultibodyJointSet {
 }
 
 ///|
+fn multibody_root_pose(
+  multibody : Multibody,
+  root_id : Int,
+) -> (@core.Vec2, @core.Real) {
+  if root_id < 0 || root_id >= multibody.links.length() {
+    return (@core.Vec2::zero(), 0.0F)
+  }
+  let root_link = multibody.links[root_id]
+  let pose = root_link.local_to_world
+  (pose.translation, pose.rotation.angle())
+}
+
+///|
+fn collect_subtree_indices(multibody : Multibody, root_id : Int) -> Array[Int] {
+  if root_id < 0 || root_id >= multibody.links.length() {
+    return []
+  }
+  let count = multibody.links.length()
+  let children : Array[Array[Int]] = []
+  for _ in 0..<count {
+    children.push([])
+  }
+  for i in 0..<count {
+    let link = multibody.links[i]
+    let parent_id = link.parent_internal_id
+    if parent_id >= 0 && parent_id < count && parent_id != i {
+      children[parent_id].push(i)
+    }
+  }
+  let visited : Array[Bool] = []
+  for _ in 0..<count {
+    visited.push(false)
+  }
+  let stack : Array[Int] = [root_id]
+  let result : Array[Int] = []
+  while stack.pop() is Some(id) {
+    if id < 0 || id >= count {
+      continue
+    }
+    if visited[id] {
+      continue
+    }
+    visited[id] = true
+    result.push(id)
+    let child_list = children[id]
+    for i in 0..<child_list.length() {
+      stack.push(child_list[i])
+    }
+  }
+  result
+}
+
+///|
+fn build_multibody_from_indices(
+  multibody : Multibody,
+  indices : Array[Int],
+  root_id : Int,
+) -> Multibody {
+  let total = multibody.links.length()
+  let mut_order : Array[Int] = [root_id]
+  for i in 0..<indices.length() {
+    let id = indices[i]
+    if id != root_id {
+      mut_order.push(id)
+    }
+  }
+  let map : Array[Int] = []
+  for _ in 0..<total {
+    map.push(-1)
+  }
+  let new_links : Array[MultibodyLink] = []
+  for i in 0..<mut_order.length() {
+    let old_id = mut_order[i]
+    if old_id < 0 || old_id >= total {
+      continue
+    }
+    let link = multibody.links[old_id]
+    let new_id = new_links.length()
+    map[old_id] = new_id
+    link.internal_id = new_id
+    let old_parent = link.parent_internal_id
+    if old_id == root_id ||
+      old_parent == old_id ||
+      old_parent < 0 ||
+      old_parent >= total ||
+      map[old_parent] < 0 {
+      link.parent_internal_id = new_id
+    } else {
+      link.parent_internal_id = map[old_parent]
+    }
+    new_links.push(link)
+  }
+  let (root_translation, root_angle) = multibody_root_pose(multibody, root_id)
+  let new_multibody = Multibody::{
+    links: new_links,
+    ndofs: 0,
+    root_is_dynamic: multibody.root_is_dynamic,
+    root_translation,
+    root_angle,
+  }
+  new_multibody.recompute_ndofs()
+  new_multibody
+}
+
+///|
 pub fn MultibodyJointSet::new() -> MultibodyJointSet {
   { multibodies: [], body_links: [], to_wake_up: [], to_join: [] }
 }
@@ -496,6 +601,24 @@ pub fn MultibodyJointSet::iter(
     }
   }
   result
+}
+
+///|
+fn MultibodyJointSet::update_body_links_for_multibody(
+  self : MultibodyJointSet,
+  mb_index : Int,
+  multibody : Multibody,
+) -> Unit {
+  for i in 0..<multibody.links.length() {
+    let link = multibody.links[i]
+    if link.rigid_body.id >= 0 {
+      self.ensure_body_capacity(link.rigid_body.id)
+      self.body_links[link.rigid_body.id] = Some(LinkInfo::{
+        mb_index,
+        link_id: LinkId::new(link.internal_id),
+      })
+    }
+  }
 }
 
 ///|
@@ -635,18 +758,44 @@ pub fn MultibodyJointSet::remove(
       self.body_links[handle.id] = None
       return
     }
-    let removed_multibody = self.multibodies[info.mb_index]
-    for i in 0..<removed_multibody.links.length() {
-      let link = removed_multibody.links[i]
-      if link.rigid_body.id >= 0 {
-        self.ensure_body_capacity(link.rigid_body.id)
-        self.body_links[link.rigid_body.id] = None
+    let link_id = info.link_id.value
+    if link_id <= 0 {
+      return
+    }
+    let multibody = self.multibodies[info.mb_index]
+    let subtree = collect_subtree_indices(multibody, link_id)
+    if subtree.length() == 0 || subtree.length() == multibody.links.length() {
+      return
+    }
+    let remaining : Array[Int] = []
+    for i in 0..<multibody.links.length() {
+      let mut in_subtree = false
+      for j in 0..<subtree.length() {
+        if subtree[j] == i {
+          in_subtree = true
+          break
+        }
       }
-      if wake_up {
-        push_unique_handle(self.to_wake_up, link.rigid_body)
+      if !in_subtree {
+        remaining.push(i)
       }
     }
-    self.remove_multibody_at(info.mb_index)
+    if wake_up {
+      let removed_link = multibody.links[link_id]
+      push_unique_handle(self.to_wake_up, removed_link.rigid_body)
+      let parent_id = removed_link.parent_internal_id
+      if parent_id >= 0 && parent_id < multibody.links.length() {
+        let parent_link = multibody.links[parent_id]
+        push_unique_handle(self.to_wake_up, parent_link.rigid_body)
+      }
+    }
+    let remaining_mb = build_multibody_from_indices(multibody, remaining, 0)
+    let subtree_mb = build_multibody_from_indices(multibody, subtree, link_id)
+    self.multibodies[info.mb_index] = remaining_mb
+    self.update_body_links_for_multibody(info.mb_index, remaining_mb)
+    let new_index = self.multibodies.length()
+    self.multibodies.push(subtree_mb)
+    self.update_body_links_for_multibody(new_index, subtree_mb)
   } else {
     self.body_links[handle.id] = None
   }
