@@ -480,6 +480,24 @@ pub fn RigidBodySet::get_mut(
 
 ///|
 #declaration_only
+pub fn RigidBodySet::get_mut_internal(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodySet::get_mut_internal_with_modification_tracking(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodySet::get_unknown_gen(
   self : RigidBodySet,
   id : Int,
@@ -865,6 +883,12 @@ pub fn RigidBody::set_enabled(self : RigidBody, enabled : Bool) -> RigidBody {
 
 ///|
 #declaration_only
+pub fn RigidBody::clear_changes(self : RigidBody) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
 pub type RigidBodyActivation
 
 ///|
@@ -1191,6 +1215,16 @@ pub fn IslandManager::rigid_body_updated(
 
 ///|
 #declaration_only
+pub fn IslandManager::rigid_body_removed_or_disabled(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+  bodies : RigidBodySet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn IslandManager::update_islands(
   self : IslandManager,
   dt : @core.Real,
@@ -1314,6 +1348,50 @@ pub fn ImpulseJointSet::get(
 
 ///|
 #declaration_only
+pub fn ImpulseJointSet::get_mut(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  wake_up : Bool,
+) -> ImpulseJoint? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::get_unknown_gen(
+  self : ImpulseJointSet,
+  id : Int,
+) -> (ImpulseJoint, ImpulseJointHandle)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::get_unknown_gen_mut(
+  self : ImpulseJointSet,
+  id : Int,
+) -> (ImpulseJoint, ImpulseJointHandle)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::iter(
+  self : ImpulseJointSet,
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::iter_mut(
+  self : ImpulseJointSet,
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ImpulseJointSet::remove(
   self : ImpulseJointSet,
   handle : ImpulseJointHandle,
@@ -1333,7 +1411,26 @@ pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(
 
 ///|
 #declaration_only
+pub fn ImpulseJointSet::map_attached_joints_mut(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+  f : (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ImpulseJointSet::attached_joints(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+) -> Array[ImpulseJoint] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::attached_enabled_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
 ) -> Array[ImpulseJoint] {

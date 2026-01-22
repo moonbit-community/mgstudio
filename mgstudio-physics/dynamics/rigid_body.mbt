@@ -1012,6 +1012,12 @@ pub fn RigidBody::set_enabled(self : RigidBody, enabled : Bool) -> RigidBody {
 }
 
 ///|
+pub fn RigidBody::clear_changes(self : RigidBody) -> RigidBody {
+  self.changes = self.changes.remove(RIGID_BODY_CHANGES_ALL)
+  self
+}
+
+///|
 pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
   self.position.position
 }
@@ -1295,13 +1301,29 @@ pub fn RigidBodySet::get_mut(
   self : RigidBodySet,
   handle : RigidBodyHandle,
 ) -> RigidBody? {
+  self.get_mut_internal_with_modification_tracking(handle)
+}
+
+///|
+pub fn RigidBodySet::get_mut_internal(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
   if handle.id < 0 || handle.id >= self.bodies.length() {
     return None
   }
   if self.generations[handle.id] != handle.generation {
     return None
   }
-  if self.bodies[handle.id] is Some(body) {
+  self.bodies[handle.id]
+}
+
+///|
+pub fn RigidBodySet::get_mut_internal_with_modification_tracking(
+  self : RigidBodySet,
+  handle : RigidBodyHandle,
+) -> RigidBody? {
+  if self.get_mut_internal(handle) is Some(body) {
     self.push_modified(handle, body)
     Some(body)
   } else {
@@ -1414,7 +1436,7 @@ pub fn RigidBodySet::remove(
     self.bodies[handle.id] = None
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
-    islands.remove_body(self, handle)
+    islands.rigid_body_removed_or_disabled(handle, self)
     colliders |> ignore
     remove_attached_colliders |> ignore
     impulse_joints.remove_joints_attached_to_rigid_body(handle) |> ignore

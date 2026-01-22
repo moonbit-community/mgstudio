@@ -53,13 +53,20 @@ pub fn ImpulseJointHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn ImpulseJointHandle::invalid() -> Self
 
 type ImpulseJointSet
+pub fn ImpulseJointSet::attached_enabled_joints(Self, RigidBodyHandle) -> Array[ImpulseJoint]
 pub fn ImpulseJointSet::attached_joints(Self, RigidBodyHandle) -> Array[ImpulseJoint]
 pub fn ImpulseJointSet::contains(Self, ImpulseJointHandle) -> Bool
 pub fn ImpulseJointSet::get(Self, ImpulseJointHandle) -> ImpulseJoint?
+pub fn ImpulseJointSet::get_mut(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
+pub fn ImpulseJointSet::get_unknown_gen(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
+pub fn ImpulseJointSet::get_unknown_gen_mut(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
 pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> ImpulseJointHandle
 pub fn ImpulseJointSet::is_empty(Self) -> Bool
+pub fn ImpulseJointSet::iter(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet::iter_mut(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[ImpulseJoint]
 pub fn ImpulseJointSet::len(Self) -> Int
+pub fn ImpulseJointSet::map_attached_joints_mut(Self, RigidBodyHandle, (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit) -> Unit
 pub fn ImpulseJointSet::new() -> Self
 pub fn ImpulseJointSet::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
@@ -129,6 +136,7 @@ pub struct IslandManager {
 pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager::interaction_started_or_stopped(Self, RigidBodySet, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
 pub fn IslandManager::new() -> Self
+pub fn IslandManager::rigid_body_removed_or_disabled(Self, RigidBodyHandle, RigidBodySet) -> Unit
 pub fn IslandManager::rigid_body_updated(Self, RigidBodyHandle, RigidBodySet) -> Unit
 pub fn IslandManager::update_islands(Self, Float, Float, RigidBodySet, ContactGraph, ImpulseJointSet, MultibodyJointSet) -> Unit
 pub fn IslandManager::wake_up(Self, RigidBodySet, RigidBodyHandle, Bool) -> Unit
@@ -198,6 +206,7 @@ pub fn RigidBody::angular_damping(Self) -> Float
 pub fn RigidBody::angvel(Self) -> Float
 pub fn RigidBody::body_type(Self) -> RigidBodyType
 pub fn RigidBody::ccd(Self) -> RigidBodyCcd
+pub fn RigidBody::clear_changes(Self) -> Self
 pub fn RigidBody::damping(Self) -> RigidBodyDamping
 pub fn RigidBody::enable_ccd(Self, Bool) -> Self
 pub fn RigidBody::forces(Self) -> RigidBodyForces
@@ -345,6 +354,8 @@ pub fn RigidBodySet::contains(Self, RigidBodyHandle) -> Bool
 pub fn RigidBodySet::deserialize(String) -> Self
 pub fn RigidBodySet::get(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::get_mut(Self, RigidBodyHandle) -> RigidBody?
+pub fn RigidBodySet::get_mut_internal(Self, RigidBodyHandle) -> RigidBody?
+pub fn RigidBodySet::get_mut_internal_with_modification_tracking(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::get_pair_mut(Self, RigidBodyHandle, RigidBodyHandle) -> (RigidBody?, RigidBody?)
 pub fn RigidBodySet::get_unknown_gen(Self, Int) -> (RigidBody, RigidBodyHandle)?
 pub fn RigidBodySet::get_unknown_gen_mut(Self, Int) -> (RigidBody, RigidBodyHandle)?

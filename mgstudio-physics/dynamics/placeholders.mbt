@@ -650,6 +650,15 @@ pub fn IslandManager::rigid_body_updated(
 }
 
 ///|
+pub fn IslandManager::rigid_body_removed_or_disabled(
+  self : IslandManager,
+  handle : RigidBodyHandle,
+  bodies : RigidBodySet,
+) -> Unit {
+  self.remove_body(bodies, handle)
+}
+
+///|
 fn IslandManager::extract_sub_island(
   self : IslandManager,
   bodies : RigidBodySet,
@@ -1420,6 +1429,70 @@ pub fn ImpulseJointSet::get(
 }
 
 ///|
+pub fn ImpulseJointSet::get_mut(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  wake_up : Bool,
+) -> ImpulseJoint? {
+  if !self.is_handle_valid(handle) {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  let joint = self.graph_edges[edge_id].joint
+  if wake_up {
+    push_unique_handle(self.to_wake_up, joint.parent)
+    push_unique_handle(self.to_wake_up, joint.child)
+  }
+  Some(joint)
+}
+
+///|
+pub fn ImpulseJointSet::get_unknown_gen(
+  self : ImpulseJointSet,
+  id : Int,
+) -> (ImpulseJoint, ImpulseJointHandle)? {
+  if id < 0 || id >= self.joint_edge_ids.length() {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  let handle = ImpulseJointHandle::new(id, self.joint_generations[id])
+  Some((self.graph_edges[edge_id].joint, handle))
+}
+
+///|
+pub fn ImpulseJointSet::get_unknown_gen_mut(
+  self : ImpulseJointSet,
+  id : Int,
+) -> (ImpulseJoint, ImpulseJointHandle)? {
+  self.get_unknown_gen(id)
+}
+
+///|
+pub fn ImpulseJointSet::iter(
+  self : ImpulseJointSet,
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
+  let result : Array[(ImpulseJointHandle, ImpulseJoint)] = []
+  for i in 0..<self.graph_edges.length() {
+    let joint = self.graph_edges[i].joint
+    result.push((joint.handle, joint))
+  }
+  result
+}
+
+///|
+pub fn ImpulseJointSet::iter_mut(
+  self : ImpulseJointSet,
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
+  self.iter()
+}
+
+///|
 pub fn ImpulseJointSet::remove(
   self : ImpulseJointSet,
   handle : ImpulseJointHandle,
@@ -1477,6 +1550,24 @@ pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(
 }
 
 ///|
+pub fn ImpulseJointSet::map_attached_joints_mut(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+  f : (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit,
+) -> Unit {
+  if self.graph_node_for(handle) is Some(node_index) {
+    let edges = self.adjacency[node_index]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let joint = self.graph_edges[edge_id].joint
+        f(joint.parent, joint.child, joint.handle, joint)
+      }
+    }
+  }
+}
+
+///|
 pub fn ImpulseJointSet::attached_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
@@ -1494,6 +1585,14 @@ pub fn ImpulseJointSet::attached_joints(
   } else {
     []
   }
+}
+
+///|
+pub fn ImpulseJointSet::attached_enabled_joints(
+  self : ImpulseJointSet,
+  handle : RigidBodyHandle,
+) -> Array[ImpulseJoint] {
+  self.attached_joints(handle)
 }
 
 ///|

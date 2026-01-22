@@ -227,6 +227,37 @@ fn resolve_contact(
 }
 
 ///|
+fn handle_user_changes_to_bodies(
+  islands : @dynamics.IslandManager,
+  bodies : @dynamics.RigidBodySet,
+  modified_bodies : Array[@dynamics.RigidBodyHandle],
+) -> Unit {
+  for i in 0..<modified_bodies.length() {
+    let handle = modified_bodies[i]
+    if bodies.get(handle) is Some(body) {
+      if body.is_enabled() {
+        islands.rigid_body_updated(handle, bodies)
+      } else {
+        islands.rigid_body_removed_or_disabled(handle, bodies)
+      }
+    }
+  }
+}
+
+///|
+fn clear_modified_bodies(
+  bodies : @dynamics.RigidBodySet,
+  modified_bodies : Array[@dynamics.RigidBodyHandle],
+) -> Unit {
+  for i in 0..<modified_bodies.length() {
+    let handle = modified_bodies[i]
+    if bodies.get_mut_internal(handle) is Some(body) {
+      body.clear_changes() |> ignore
+    }
+  }
+}
+
+///|
 pub fn PhysicsPipeline::step(
   self : PhysicsPipeline,
   gravity : @core.Vec2,
@@ -254,6 +285,8 @@ pub fn PhysicsPipeline::step(
   for i in 0..<wake_from_multibody.length() {
     islands.wake_up(bodies, wake_from_multibody[i], true)
   }
+  let modified_before_step = bodies.take_modified()
+  handle_user_changes_to_bodies(islands, bodies, modified_before_step)
   let join_from_impulse = impulse_joints.take_to_join()
   for i in 0..<join_from_impulse.length() {
     let pair = join_from_impulse[i]
@@ -326,4 +359,7 @@ pub fn PhysicsPipeline::step(
   islands.update_islands(
     dt, 1.0F, bodies, contacts, impulse_joints, multibody_joints,
   )
+  let modified_after_step = bodies.take_modified()
+  clear_modified_bodies(bodies, modified_before_step)
+  clear_modified_bodies(bodies, modified_after_step)
 }
