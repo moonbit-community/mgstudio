@@ -1248,6 +1248,13 @@ pub fn CCDSolver::new() -> CCDSolver {
 }
 
 ///|
+pub(all) enum JointEnabled {
+  Enabled
+  DisabledByAttachedBody
+  Disabled
+}
+
+///|
 #declaration_only
 pub type ImpulseJointSet
 
@@ -1257,7 +1264,42 @@ pub type ImpulseJoint
 
 ///|
 #declaration_only
+pub type ImpulseJointGraph
+
+///|
+#declaration_only
 pub type ImpulseJointHandle
+
+///|
+#declaration_only
+pub fn ImpulseJoint::is_enabled(self : ImpulseJoint) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJoint::set_enabled(
+  self : ImpulseJoint,
+  enabled : Bool,
+) -> ImpulseJoint {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointGraph::nodes(
+  self : ImpulseJointGraph,
+) -> Array[RigidBodyHandle] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointGraph::edges(
+  self : ImpulseJointGraph,
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)] {
+  ...
+}
 
 ///|
 #declaration_only
@@ -1325,6 +1367,14 @@ pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int {
 ///|
 #declaration_only
 pub fn ImpulseJointSet::is_empty(self : ImpulseJointSet) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::joint_graph(
+  self : ImpulseJointSet,
+) -> ImpulseJointGraph {
   ...
 }
 

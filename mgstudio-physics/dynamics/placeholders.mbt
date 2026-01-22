@@ -402,7 +402,7 @@ fn IslandManager::push_linked_bodies(
   multibody_joints : MultibodyJointSet,
   handle : RigidBodyHandle,
 ) -> Unit {
-  let attached = impulse_joints.attached_joints(handle)
+  let attached = impulse_joints.attached_enabled_joints(handle)
   for i in 0..<attached.length() {
     let joint = attached[i]
     let other = if handle_equals(joint.parent, handle) {
@@ -1046,7 +1046,59 @@ pub struct ImpulseJoint {
   parent : RigidBodyHandle
   child : RigidBodyHandle
   joint : RevoluteJoint
+  mut enabled : JointEnabled
   handle : ImpulseJointHandle
+}
+
+///|
+pub fn ImpulseJoint::is_enabled(self : ImpulseJoint) -> Bool {
+  self.enabled is JointEnabled::Enabled
+}
+
+///|
+pub fn ImpulseJoint::set_enabled(
+  self : ImpulseJoint,
+  enabled : Bool,
+) -> ImpulseJoint {
+  match self.enabled {
+    JointEnabled::Enabled | JointEnabled::DisabledByAttachedBody =>
+      if !enabled {
+        self.enabled = JointEnabled::Disabled
+      }
+    JointEnabled::Disabled =>
+      if enabled {
+        self.enabled = JointEnabled::Enabled
+      }
+  }
+  self
+}
+
+///|
+pub struct ImpulseJointGraph {
+  nodes : Array[RigidBodyHandle]
+  edges : Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)]
+}
+
+///|
+pub fn ImpulseJointGraph::nodes(
+  self : ImpulseJointGraph,
+) -> Array[RigidBodyHandle] {
+  let result : Array[RigidBodyHandle] = []
+  for i in 0..<self.nodes.length() {
+    result.push(self.nodes[i])
+  }
+  result
+}
+
+///|
+pub fn ImpulseJointGraph::edges(
+  self : ImpulseJointGraph,
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)] {
+  let result : Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)] = []
+  for i in 0..<self.edges.length() {
+    result.push(self.edges[i])
+  }
+  result
 }
 
 ///|
@@ -1379,7 +1431,13 @@ pub fn ImpulseJointSet::insert(
   }
   let node1 = self.ensure_graph_node(parent)
   let node2 = self.ensure_graph_node(child)
-  let impulse_joint = ImpulseJoint::{ parent, child, joint, handle }
+  let impulse_joint = ImpulseJoint::{
+    parent,
+    child,
+    joint,
+    enabled: JointEnabled::Enabled,
+    handle,
+  }
   let edge_id = self.graph_edges.length()
   self.graph_edges.push(JointGraphEdge::{ node1, node2, joint: impulse_joint })
   self.adjacency[node1].push(edge_id)
@@ -1403,6 +1461,32 @@ pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int {
 ///|
 pub fn ImpulseJointSet::is_empty(self : ImpulseJointSet) -> Bool {
   self.graph_edges.length() == 0
+}
+
+///|
+pub fn ImpulseJointSet::joint_graph(
+  self : ImpulseJointSet,
+) -> ImpulseJointGraph {
+  let nodes : Array[RigidBodyHandle] = []
+  for i in 0..<self.graph_nodes.length() {
+    nodes.push(self.graph_nodes[i])
+  }
+  let edges : Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)] = []
+  for i in 0..<self.graph_edges.length() {
+    let edge = self.graph_edges[i]
+    let body1 = if edge.node1 >= 0 && edge.node1 < self.graph_nodes.length() {
+      self.graph_nodes[edge.node1]
+    } else {
+      RigidBodyHandle::invalid()
+    }
+    let body2 = if edge.node2 >= 0 && edge.node2 < self.graph_nodes.length() {
+      self.graph_nodes[edge.node2]
+    } else {
+      RigidBodyHandle::invalid()
+    }
+    edges.push((body1, body2, edge.joint))
+  }
+  { nodes, edges }
 }
 
 ///|
@@ -1592,7 +1676,15 @@ pub fn ImpulseJointSet::attached_enabled_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
 ) -> Array[ImpulseJoint] {
-  self.attached_joints(handle)
+  let attached = self.attached_joints(handle)
+  let result : Array[ImpulseJoint] = []
+  for i in 0..<attached.length() {
+    let joint = attached[i]
+    if joint.is_enabled() {
+      result.push(joint)
+    }
+  }
+  result
 }
 
 ///|

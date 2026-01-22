@@ -41,8 +41,18 @@ pub struct ImpulseJoint {
   parent : RigidBodyHandle
   child : RigidBodyHandle
   joint : RevoluteJoint
+  mut enabled : JointEnabled
   handle : ImpulseJointHandle
 }
+pub fn ImpulseJoint::is_enabled(Self) -> Bool
+pub fn ImpulseJoint::set_enabled(Self, Bool) -> Self
+
+pub struct ImpulseJointGraph {
+  nodes : Array[RigidBodyHandle]
+  edges : Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)]
+}
+pub fn ImpulseJointGraph::edges(Self) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)]
+pub fn ImpulseJointGraph::nodes(Self) -> Array[RigidBodyHandle]
 
 pub struct ImpulseJointHandle {
   id : Int
@@ -64,6 +74,7 @@ pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJ
 pub fn ImpulseJointSet::is_empty(Self) -> Bool
 pub fn ImpulseJointSet::iter(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::iter_mut(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet::joint_graph(Self) -> ImpulseJointGraph
 pub fn ImpulseJointSet::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[ImpulseJoint]
 pub fn ImpulseJointSet::len(Self) -> Int
 pub fn ImpulseJointSet::map_attached_joints_mut(Self, RigidBodyHandle, (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit) -> Unit
@@ -146,6 +157,12 @@ type IslandsOptimizer
 type Jacobian
 pub fn Jacobian::equals(Self, Self) -> Bool
 pub fn Jacobian::zeros(Int) -> Self
+
+pub(all) enum JointEnabled {
+  Enabled
+  DisabledByAttachedBody
+  Disabled
+}
 
 pub struct LinkId {
   value : Int

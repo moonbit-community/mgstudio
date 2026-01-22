@@ -52,6 +52,28 @@ test "impulse joint set attached and between" {
 }
 
 ///|
+/// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs behavior.
+test "impulse joint set enabled filtering" {
+  let bodies = RigidBodySet::new()
+  let joints = ImpulseJointSet::new()
+  let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let body3 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let joint = RevoluteJointBuilder::new().build()
+  let handle1 = joints.insert(body1, body2, joint, true)
+  let handle2 = joints.insert(body1, body3, joint, true)
+  handle1 |> ignore
+  if joints.get_mut(handle2, false) is Some(found) {
+    found.set_enabled(false) |> ignore
+  }
+  inspect(joints.attached_enabled_joints(body1).length() == 1, content="true")
+  if joints.get_mut(handle2, false) is Some(found) {
+    found.set_enabled(true) |> ignore
+  }
+  inspect(joints.attached_enabled_joints(body1).length() == 2, content="true")
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs examples.
 test "impulse joint set remove attached" {
   let bodies = RigidBodySet::new()
