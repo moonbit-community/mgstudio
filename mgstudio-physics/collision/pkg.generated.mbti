@@ -41,12 +41,14 @@ pub struct Collider {
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
+  mut contact_skin : Float
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
 }
 pub fn Collider::active_collision_types(Self) -> ActiveCollisionTypes
 pub fn Collider::active_events(Self) -> ActiveEvents?
+pub fn Collider::contact_skin(Self) -> Float
 pub fn Collider::friction(Self) -> Float
 pub fn Collider::friction_combine_rule(Self) -> @dynamics.CoefficientCombineRule
 pub fn Collider::is_enabled(Self) -> Bool
@@ -58,6 +60,7 @@ pub fn Collider::restitution_combine_rule(Self) -> @dynamics.CoefficientCombineR
 pub fn Collider::rotation(Self) -> Float
 pub fn Collider::set_active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn Collider::set_active_events(Self, ActiveEvents?) -> Self
+pub fn Collider::set_contact_skin(Self, Float) -> Self
 pub fn Collider::set_enabled(Self, Bool) -> Self
 pub fn Collider::set_friction(Self, Float) -> Self
 pub fn Collider::set_friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
@@ -83,11 +86,13 @@ pub struct ColliderBuilder {
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
+  mut contact_skin : Float
 }
 pub fn ColliderBuilder::active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn ColliderBuilder::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder::ball(Float) -> Self
 pub fn ColliderBuilder::build(Self) -> Collider
+pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
 pub fn ColliderBuilder::cuboid(Float, Float) -> Self
 pub fn ColliderBuilder::friction(Self, Float) -> Self
 pub fn ColliderBuilder::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self

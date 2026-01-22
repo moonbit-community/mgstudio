@@ -166,6 +166,15 @@ pub fn ColliderBuilder::restitution_combine_rule(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::contact_skin(
+  self : ColliderBuilder,
+  skin : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
   ...
 }
@@ -250,6 +259,12 @@ pub fn Collider::restitution_combine_rule(
 
 ///|
 #declaration_only
+pub fn Collider::contact_skin(self : Collider) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   ...
 }
@@ -310,6 +325,15 @@ pub fn Collider::set_restitution(
 pub fn Collider::set_restitution_combine_rule(
   self : Collider,
   rule : @dynamics.CoefficientCombineRule,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_contact_skin(
+  self : Collider,
+  skin : @core.Real,
 ) -> Collider {
   ...
 }

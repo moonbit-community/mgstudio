@@ -133,6 +133,7 @@ pub struct Collider {
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
+  mut contact_skin : @core.Real
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
@@ -150,6 +151,7 @@ pub struct ColliderBuilder {
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
+  mut contact_skin : @core.Real
 }
 
 ///|
@@ -165,6 +167,7 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
   }
 }
 
@@ -184,6 +187,7 @@ pub fn ColliderBuilder::cuboid(
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
   }
 }
 
@@ -269,6 +273,15 @@ pub fn ColliderBuilder::restitution_combine_rule(
 }
 
 ///|
+pub fn ColliderBuilder::contact_skin(
+  self : ColliderBuilder,
+  skin : @core.Real,
+) -> ColliderBuilder {
+  self.contact_skin = skin
+  self
+}
+
+///|
 pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
   {
     shape: self.shape,
@@ -283,6 +296,7 @@ pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
     friction_combine_rule: self.friction_combine_rule,
     restitution: self.restitution,
     restitution_combine_rule: self.restitution_combine_rule,
+    contact_skin: self.contact_skin,
     parent: None,
     enabled: ColliderEnabled::Enabled,
     changes: ColliderChanges::all(),
@@ -368,6 +382,11 @@ pub fn Collider::restitution_combine_rule(
 }
 
 ///|
+pub fn Collider::contact_skin(self : Collider) -> @core.Real {
+  self.contact_skin
+}
+
+///|
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   self.enabled is ColliderEnabled::Enabled
 }
@@ -437,6 +456,16 @@ pub fn Collider::set_restitution_combine_rule(
   rule : @dynamics.CoefficientCombineRule,
 ) -> Collider {
   self.restitution_combine_rule = rule
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_contact_skin(
+  self : Collider,
+  skin : @core.Real,
+) -> Collider {
+  self.contact_skin = skin
   self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }

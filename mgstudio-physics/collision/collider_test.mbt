@@ -35,6 +35,7 @@ test "collider material and event accessors" {
     .friction_combine_rule(@dynamics.CoefficientCombineRule::Max)
     .restitution(0.25F)
     .restitution_combine_rule(@dynamics.CoefficientCombineRule::Min)
+    .contact_skin(0.1F)
     .active_events(ActiveEvents::CollisionEvents)
     .build()
   inspect(collider.friction() == 0.75F, content="true")
@@ -47,6 +48,7 @@ test "collider material and event accessors" {
     collider.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Min,
     content="true",
   )
+  inspect(collider.contact_skin() == 0.1F, content="true")
   inspect(
     collider.active_events() is Some(ActiveEvents::CollisionEvents),
     content="true",
@@ -74,6 +76,8 @@ test "collider material and event accessors" {
     is @dynamics.CoefficientCombineRule::Average,
     content="true",
   )
+  let collider = collider.set_contact_skin(0.2F)
+  inspect(collider.contact_skin() == 0.2F, content="true")
   let collider = collider.set_active_events(None)
   inspect(collider.active_events() is None, content="true")
 }
