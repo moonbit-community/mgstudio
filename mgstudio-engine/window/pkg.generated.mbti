@@ -1,16 +1,16 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/window"
 
-import(
-  "Milky2018/mgstudio/app"
-)
+import {
+  "Milky2018/mgstudio/app",
+}
 
 // Values
 pub fn host_debug_string(String) -> Unit
 
 pub fn host_gpu_begin_frame(HostGpuSurface) -> HostGpuFrame
 
-pub fn host_gpu_begin_pass(Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+pub fn host_gpu_begin_pass(Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit
 
 pub fn host_gpu_configure_surface(HostGpuDevice, HostGpuSurface, Int, Int) -> Unit
 
@@ -21,6 +21,8 @@ pub fn host_gpu_create_mesh_rectangle(Float, Float) -> Int
 pub fn host_gpu_create_render_target(Int, Int, Bool) -> Int
 
 pub fn host_gpu_create_surface(HostWindow) -> HostGpuSurface
+
+pub fn host_gpu_draw_gizmo_line(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit
 
 pub fn host_gpu_draw_mesh(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 
@@ -38,6 +40,8 @@ pub fn host_window_create(Int, Int, String) -> HostWindow
 
 pub fn host_window_get_height(HostWindow) -> Int
 
+pub fn host_window_get_scale_factor(HostWindow) -> Float
+
 pub fn host_window_get_width(HostWindow) -> Int
 
 pub fn host_window_poll_events(HostWindow) -> Unit
@@ -53,6 +57,8 @@ pub fn window_height() -> Int
 pub fn window_plugin(@app.App) -> @app.App
 
 pub fn window_runner_builder(@app.App) -> () -> Unit
+
+pub fn window_scale_factor() -> Float
 
 pub fn window_set_handle(HostWindow) -> Unit
 
@@ -120,6 +126,8 @@ pub(all) enum KeyCode {
   ArrowRight
   Space
   Escape
+  Comma
+  Period
 }
 
 pub(all) enum MouseButton {

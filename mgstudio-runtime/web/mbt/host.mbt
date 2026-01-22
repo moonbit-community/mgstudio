@@ -69,11 +69,28 @@ extern "js" fn performance_now() -> Double =
   #| () => performance.now()
 
 ///|
+extern "js" fn get_device_pixel_ratio() -> Double =
+  #| () => window.devicePixelRatio || 1
+
+///|
 extern "js" fn get_canvas_pixel_size(canvas : @js.Any) -> @js.Any =
   #| (canvas) => {
   #|   const dpr = window.devicePixelRatio || 1
-  #|   const width = Math.max(1, Math.floor(canvas.clientWidth * dpr))
-  #|   const height = Math.max(1, Math.floor(canvas.clientHeight * dpr))
+  #|   let width = canvas.clientWidth
+  #|   let height = canvas.clientHeight
+  #|   if (!width || !height) {
+  #|     const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null
+  #|     if (rect) {
+  #|       width = rect.width || width
+  #|       height = rect.height || height
+  #|     }
+  #|   }
+  #|   if (!width || !height) {
+  #|     width = window.innerWidth || canvas.width || 1
+  #|     height = window.innerHeight || canvas.height || 1
+  #|   }
+  #|   width = Math.max(1, Math.floor(width * dpr))
+  #|   height = Math.max(1, Math.floor(height * dpr))
   #|   return { width, height }
   #| }
 
@@ -141,6 +158,10 @@ extern "js" fn new_map() -> @js.Any =
 ///|
 extern "js" fn new_set() -> @js.Any =
   #| () => new Set()
+
+///|
+extern "js" fn new_array() -> @js.Any =
+  #| () => []
 
 ///|
 extern "js" fn map_set(map : @js.Any, key : @js.Any, value : @js.Any) -> Unit =
@@ -265,6 +286,205 @@ extern "js" fn float32array_from_array(values : Array[Double]) -> @js.Any =
   #| (values) => new Float32Array(values)
 
 ///|
+extern "js" fn build_gizmo_vertices(
+  data : @js.Any,
+  cam_x : Double,
+  cam_y : Double,
+  cam_rotation : Double,
+  cam_scale : Double,
+  width : Double,
+  height : Double,
+  line_width : Double,
+) -> @js.Any =
+  #| (data, camX, camY, camRotation, camScale, width, height, lineWidth) => {
+  #|   let length = 0
+  #|   let getter = null
+  #|   if (Array.isArray(data) || ArrayBuffer.isView(data)) {
+  #|     length = data.length
+  #|     getter = (index) => data[index]
+  #|   } else if (data && typeof data.get === "function") {
+  #|     if (typeof data.length === "function") {
+  #|       length = Number(data.length())
+  #|     } else {
+  #|       length = Number(data.length)
+  #|     }
+  #|     getter = (index) => data.get(index)
+  #|   }
+  #|   if (!getter || !Number.isFinite(length) || length <= 0) {
+  #|     return new Float32Array(0)
+  #|   }
+  #|   const w = Number(width)
+  #|   const h = Number(height)
+  #|   if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+  #|     return new Float32Array(0)
+  #|   }
+  #|   const safeScale = Number.isFinite(camScale) && camScale !== 0 ? camScale : 1
+  #|   const scaleX = 2 / w / safeScale
+  #|   const scaleY = 2 / h / safeScale
+  #|   const cos = Math.cos(-camRotation)
+  #|   const sin = Math.sin(-camRotation)
+  #|   const halfWidth = w * 0.5
+  #|   const halfHeight = h * 0.5
+  #|   const defaultWidth = Number.isFinite(lineWidth) && lineWidth > 0 ? lineWidth : 2
+  #|   const vertices = []
+  #|   const pushQuad = (sx, sy, ex, ey, sr, sg, sb, sa, er, eg, eb, ea, offX, offY) => {
+  #|     const p1x = sx + offX
+  #|     const p1y = sy + offY
+  #|     const p2x = sx - offX
+  #|     const p2y = sy - offY
+  #|     const p3x = ex - offX
+  #|     const p3y = ey - offY
+  #|     const p4x = ex + offX
+  #|     const p4y = ey + offY
+  #|     vertices.push(
+  #|       p1x, p1y, sr, sg, sb, sa,
+  #|       p2x, p2y, sr, sg, sb, sa,
+  #|       p3x, p3y, er, eg, eb, ea,
+  #|       p1x, p1y, sr, sg, sb, sa,
+  #|       p3x, p3y, er, eg, eb, ea,
+  #|       p4x, p4y, er, eg, eb, ea,
+  #|     )
+  #|   }
+  #|   for (let i = 0; i + 15 < length; i += 16) {
+  #|     const sx = Number(getter(i))
+  #|     const sy = Number(getter(i + 1))
+  #|     const sr = Number(getter(i + 2))
+  #|     const sg = Number(getter(i + 3))
+  #|     const sb = Number(getter(i + 4))
+  #|     const sa = Number(getter(i + 5))
+  #|     const ex = Number(getter(i + 6))
+  #|     const ey = Number(getter(i + 7))
+  #|     const er = Number(getter(i + 8))
+  #|     const eg = Number(getter(i + 9))
+  #|     const eb = Number(getter(i + 10))
+  #|     const ea = Number(getter(i + 11))
+  #|     const width = Number(getter(i + 12))
+  #|     const styleKind = Number(getter(i + 13))
+  #|     const gapScale = Number(getter(i + 14))
+  #|     const lineScale = Number(getter(i + 15))
+  #|     const thickness = Number.isFinite(width) && width > 0 ? width : defaultWidth
+  #|     const halfLine = thickness * 0.5
+  #|     const relSX = sx - camX
+  #|     const relSY = sy - camY
+  #|     const relEX = ex - camX
+  #|     const relEY = ey - camY
+  #|     const viewSX = relSX * cos - relSY * sin
+  #|     const viewSY = relSX * sin + relSY * cos
+  #|     const viewEX = relEX * cos - relEY * sin
+  #|     const viewEY = relEX * sin + relEY * cos
+  #|     const ndcSX = viewSX * scaleX
+  #|     const ndcSY = viewSY * scaleY
+  #|     const ndcEX = viewEX * scaleX
+  #|     const ndcEY = viewEY * scaleY
+  #|     const screenSX = ndcSX * halfWidth
+  #|     const screenSY = ndcSY * halfHeight
+  #|     const screenEX = ndcEX * halfWidth
+  #|     const screenEY = ndcEY * halfHeight
+  #|     const dx = screenEX - screenSX
+  #|     const dy = screenEY - screenSY
+  #|     const len = Math.hypot(dx, dy)
+  #|     if (!Number.isFinite(len) || len <= 0) {
+  #|       continue
+  #|     }
+  #|     const invLen = 1 / len
+  #|     const ux = dx * invLen
+  #|     const uy = dy * invLen
+  #|     const nx = -uy * halfLine
+  #|     const ny = ux * halfLine
+  #|     const offX = nx / halfWidth
+  #|     const offY = ny / halfHeight
+  #|     let dashLen = len
+  #|     let gapLen = 0
+  #|     if (styleKind === 1) {
+  #|       dashLen = thickness
+  #|       gapLen = thickness
+  #|     } else if (styleKind === 2) {
+  #|       const safeGap = Number.isFinite(gapScale) && gapScale > 0 ? gapScale : 1
+  #|       const safeLine = Number.isFinite(lineScale) && lineScale > 0 ? lineScale : 1
+  #|       dashLen = thickness * safeLine
+  #|       gapLen = thickness * safeGap
+  #|     }
+  #|     const step = dashLen + gapLen
+  #|     if (!Number.isFinite(step) || step <= 0 || dashLen >= len) {
+  #|       pushQuad(ndcSX, ndcSY, ndcEX, ndcEY, sr, sg, sb, sa, er, eg, eb, ea, offX, offY)
+  #|       continue
+  #|     }
+  #|     const dr = er - sr
+  #|     const dg = eg - sg
+  #|     const db = eb - sb
+  #|     const da = ea - sa
+  #|     let pos = 0
+  #|     while (pos < len) {
+  #|       const segLen = Math.min(dashLen, len - pos)
+  #|       if (segLen > 0) {
+  #|         const t0 = pos * invLen
+  #|         const t1 = (pos + segLen) * invLen
+  #|         const segSX = screenSX + ux * pos
+  #|         const segSY = screenSY + uy * pos
+  #|         const segEX = screenSX + ux * (pos + segLen)
+  #|         const segEY = screenSY + uy * (pos + segLen)
+  #|         const segNdcSX = segSX / halfWidth
+  #|         const segNdcSY = segSY / halfHeight
+  #|         const segNdcEX = segEX / halfWidth
+  #|         const segNdcEY = segEY / halfHeight
+  #|         const segSr = sr + dr * t0
+  #|         const segSg = sg + dg * t0
+  #|         const segSb = sb + db * t0
+  #|         const segSa = sa + da * t0
+  #|         const segEr = sr + dr * t1
+  #|         const segEg = sg + dg * t1
+  #|         const segEb = sb + db * t1
+  #|         const segEa = sa + da * t1
+  #|         pushQuad(
+  #|           segNdcSX,
+  #|           segNdcSY,
+  #|           segNdcEX,
+  #|           segNdcEY,
+  #|           segSr,
+  #|           segSg,
+  #|           segSb,
+  #|           segSa,
+  #|           segEr,
+  #|           segEg,
+  #|           segEb,
+  #|           segEa,
+  #|           offX,
+  #|           offY,
+  #|         )
+  #|       }
+  #|       pos += step
+  #|     }
+  #|   }
+  #|   return new Float32Array(vertices)
+  #| }
+
+///|
+extern "js" fn push_gizmo_line(
+  target : @js.Any,
+  start_x : Double,
+  start_y : Double,
+  start_r : Double,
+  start_g : Double,
+  start_b : Double,
+  start_a : Double,
+  end_x : Double,
+  end_y : Double,
+  end_r : Double,
+  end_g : Double,
+  end_b : Double,
+  end_a : Double,
+  line_width : Double,
+  style_kind : Int,
+  gap_scale : Double,
+  line_scale : Double,
+) -> Unit =
+  #| (target, sx, sy, sr, sg, sb, sa, ex, ey, er, eg, eb, ea, width, style, gapScale, lineScale) => {
+  #|   if (target && typeof target.push === "function") {
+  #|     target.push(sx, sy, sr, sg, sb, sa, ex, ey, er, eg, eb, ea, width, style, gapScale, lineScale)
+  #|   }
+  #| }
+
+///|
 extern "js" fn math_cos(value : Double) -> Double =
   #| (value) => Math.cos(value)
 
@@ -339,6 +559,7 @@ struct WindowState {
   canvas : @js.Any
   mut width : Int
   mut height : Int
+  mut scale_factor : Double
 }
 
 ///|
@@ -379,6 +600,10 @@ struct GpuState {
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
   mut mesh_bind_group : @webgpu.GPUBindGroup?
+  mut gizmo_pipeline : @webgpu.GPURenderPipeline?
+  mut gizmo_vertex_buffer : @webgpu.GPUBuffer?
+  mut gizmo_vertex_capacity : Int
+  mut gizmo_lines : @js.Any
   mut meshes : @js.Any
   mut next_mesh_id : Int
   mut uniform_buffer : @webgpu.GPUBuffer?
@@ -391,6 +616,7 @@ struct GpuState {
   mut fallback_texture_id : Int
   mut sprite_shader_id : Int
   mut mesh_shader_id : Int
+  mut gizmo_shader_id : Int
 }
 
 ///|
@@ -440,6 +666,10 @@ fn new_state() -> State {
       vertex_count: 0,
       mesh_pipeline: None,
       mesh_bind_group: None,
+      gizmo_pipeline: None,
+      gizmo_vertex_buffer: None,
+      gizmo_vertex_capacity: 0,
+      gizmo_lines: new_array(),
       meshes: new_map(),
       next_mesh_id: 1,
       uniform_buffer: None,
@@ -452,6 +682,7 @@ fn new_state() -> State {
       fallback_texture_id: 0,
       sprite_shader_id: 0,
       mesh_shader_id: 0,
+      gizmo_shader_id: 0,
     },
   }
 }
@@ -503,11 +734,15 @@ fn update_window_size(state : State) -> Unit {
     let size = get_canvas_pixel_size(target)
     let width : Int = size._get("width").cast()
     let height : Int = size._get("height").cast()
-    if width == window_state.width && height == window_state.height {
+    let scale_factor = get_device_pixel_ratio()
+    if width == window_state.width &&
+      height == window_state.height &&
+      scale_factor == window_state.scale_factor {
       return
     }
     window_state.width = width
     window_state.height = height
+    window_state.scale_factor = scale_factor
     target._set("width", @js.any(width)) |> ignore
     target._set("height", @js.any(height)) |> ignore
     if state.gpu.context is Some(context) && state.gpu.device is Some(device) {
@@ -587,18 +822,12 @@ fn update_mouse_position(
   event : @js.Any,
 ) -> Unit {
   let rect = get_bounding_rect(target)
-  let rect_width : Double = rect._get("width").cast()
-  let rect_height : Double = rect._get("height").cast()
-  let target_width : Double = target._get("width").cast()
-  let target_height : Double = target._get("height").cast()
-  let scale_x = if rect_width > 0 { target_width / rect_width } else { 1 }
-  let scale_y = if rect_height > 0 { target_height / rect_height } else { 1 }
   let client_x : Double = event._get("clientX").cast()
   let client_y : Double = event._get("clientY").cast()
   let left : Double = rect._get("left").cast()
   let top : Double = rect._get("top").cast()
-  state.input.mouse_x = (client_x - left) * scale_x
-  state.input.mouse_y = (client_y - top) * scale_y
+  state.input.mouse_x = client_x - left
+  state.input.mouse_y = client_y - top
   state.input.has_cursor = true
 }
 
@@ -680,6 +909,10 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
   state.gpu.mesh_bind_group = None
+  state.gpu.gizmo_pipeline = None
+  state.gpu.gizmo_vertex_buffer = None
+  state.gpu.gizmo_vertex_capacity = 0
+  state.gpu.gizmo_lines = new_array()
   state.gpu.meshes = new_map()
   state.gpu.next_mesh_id = 1
   state.gpu.uniform_buffer = None
@@ -692,12 +925,16 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.fallback_texture_id = 0
   state.gpu.sprite_shader_id = 0
   state.gpu.mesh_shader_id = 0
+  state.gpu.gizmo_shader_id = 0
   let sprite_id = next_shader_id(state)
   let mesh_id = next_shader_id(state)
+  let gizmo_id = next_shader_id(state)
   state.gpu.sprite_shader_id = sprite_id
   state.gpu.mesh_shader_id = mesh_id
+  state.gpu.gizmo_shader_id = gizmo_id
   set_add(state.assets.loading_shaders, @js.any(sprite_id))
   set_add(state.assets.loading_shaders, @js.any(mesh_id))
+  set_add(state.assets.loading_shaders, @js.any(gizmo_id))
   map_set(
     state.assets.shader_paths,
     @js.any(sprite_id),
@@ -707,6 +944,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state.assets.shader_paths,
     @js.any(mesh_id),
     @js.any("shaders/mesh.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(gizmo_id),
+    @js.any("shaders/gizmo_lines.wgsl"),
   )
   let sprite_source = load_wgsl_from_path(
     state, sprite_id, "shaders/sprite.wgsl",
@@ -733,6 +975,20 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   set_delete(state.assets.loading_shaders, @js.any(mesh_id)) |> ignore
   if mesh_source == "" {
     state.gpu.mesh_shader_id = 0
+  }
+  let gizmo_source = load_wgsl_from_path(
+    state, gizmo_id, "shaders/gizmo_lines.wgsl",
+  ) catch {
+    err => {
+      let message = "Shader load error: " + err.to_string()
+      console_error(@js.any(message))
+      dispatch_asset_error(message)
+      ""
+    }
+  }
+  set_delete(state.assets.loading_shaders, @js.any(gizmo_id)) |> ignore
+  if gizmo_source == "" {
+    state.gpu.gizmo_shader_id = 0
   }
   if state.assets.pending_textures.length() > 0 {
     let pending : Array[PendingTexture] = []
@@ -989,6 +1245,65 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
 }
 
 ///|
+fn ensure_gizmo_pipeline(state : State) -> Unit {
+  if state.gpu.gizmo_pipeline is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    if state.gpu.gizmo_shader_id <= 0 {
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.gizmo_shader_id)
+    if shader_source is None {
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let position_attr = @webgpu.vertex_attribute(
+      0,
+      0,
+      @webgpu.VertexFormat::Float32x2,
+    )
+    let color_attr = @webgpu.vertex_attribute(
+      1,
+      8,
+      @webgpu.VertexFormat::Float32x4,
+    )
+    let vertex_layout = @webgpu.vertex_buffer_layout(24, [
+      position_attr, color_attr,
+    ])
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
+      vertex_layout,
+    ])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @webgpu.render_pipeline_descriptor(
+      @webgpu.PipelineLayout::Auto,
+      vertex_state,
+      fragment_state,
+      primitive_state,
+    )
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
+    state.gpu.gizmo_pipeline = Some(pipeline)
+  }
+}
+
+///|
 fn report_fallback_usage(state : State, id : Int, reason : String) -> Unit {
   if set_has(state.assets.loading_textures, @js.any(id)) {
     return
@@ -1200,6 +1515,10 @@ fn begin_pass(
   cam_y : Double,
   cam_rotation : Double,
   cam_scale : Double,
+  viewport_x : Double,
+  viewport_y : Double,
+  viewport_width : Double,
+  viewport_height : Double,
 ) -> Unit {
   if state.gpu.encoder is None {
     return
@@ -1227,6 +1546,17 @@ fn begin_pass(
       let attachment = @webgpu.color_attachment_clear(view_value, clear_color)
       let descriptor = @webgpu.render_pass_descriptor([attachment])
       let pass = encoder.begin_render_pass(descriptor.to_js())
+      let vp_width = if viewport_width > 0 { viewport_width } else { width }
+      let vp_height = if viewport_height > 0 { viewport_height } else { height }
+      let vp_x = if viewport_width > 0 { viewport_x } else { 0 }
+      let vp_y = if viewport_height > 0 { viewport_y } else { 0 }
+      pass.set_viewport(vp_x, vp_y, vp_width, vp_height, 0, 1)
+      pass.set_scissor_rect(
+        to_int(vp_x),
+        to_int(vp_y),
+        to_int(vp_width),
+        to_int(vp_height),
+      )
       state.gpu.current_pass = Some(pass)
       state.gpu.current_pass_info = Some(PassInfo::{
         width: if width > 0 {
@@ -1244,6 +1574,7 @@ fn begin_pass(
         cam_rotation,
         cam_scale,
       })
+      state.gpu.gizmo_lines = new_array()
     }
   }
 }
@@ -1284,13 +1615,14 @@ fn draw_sprite(
       let tex_scale_y = if tex_height > 0 { tex_height / base_size } else { 1 }
       let sprite_scale_x = scale_x * tex_scale_x
       let sprite_scale_y = scale_y * tex_scale_y
+      let safe_scale = if info.cam_scale == 0 { 1.0 } else { info.cam_scale }
       let scale_x_base = if info.width > 0 {
-        2.0 / info.width * info.cam_scale
+        2.0 / info.width / safe_scale
       } else {
         0.0
       }
       let scale_y_base = if info.height > 0 {
-        2.0 / info.height * info.cam_scale
+        2.0 / info.height / safe_scale
       } else {
         0.0
       }
@@ -1354,13 +1686,14 @@ fn draw_mesh(
   }
   if state.gpu.current_pass is Some(pass) &&
     state.gpu.current_pass_info is Some(info) {
+    let safe_scale = if info.cam_scale == 0 { 1.0 } else { info.cam_scale }
     let scale_x_base = if info.width > 0 {
-      2.0 / info.width * info.cam_scale
+      2.0 / info.width / safe_scale
     } else {
       0.0
     }
     let scale_y_base = if info.height > 0 {
-      2.0 / info.height * info.cam_scale
+      2.0 / info.height / safe_scale
     } else {
       0.0
     }
@@ -1401,6 +1734,64 @@ fn draw_mesh(
 }
 
 ///|
+fn draw_gizmo_lines(state : State, data : @js.Any) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  if state.gpu.queue is None || state.gpu.device is None {
+    return
+  }
+  ensure_gizmo_pipeline(state)
+  if state.gpu.gizmo_pipeline is None {
+    return
+  }
+  if state.gpu.current_pass is Some(pass) &&
+    state.gpu.current_pass_info is Some(info) &&
+    state.gpu.queue is Some(queue) {
+    let vertex_data = build_gizmo_vertices(
+      data,
+      info.cam_x,
+      info.cam_y,
+      info.cam_rotation,
+      info.cam_scale,
+      info.width,
+      info.height,
+      2.0,
+    )
+    let vertex_len : Double = vertex_data._get("length").cast()
+    if vertex_len <= 0 {
+      return
+    }
+    let vertex_count = to_int(vertex_len / 6.0)
+    if vertex_count <= 0 {
+      return
+    }
+    let vertex_size : Int = vertex_data._get("byteLength").cast()
+    let mut buffer_opt = state.gpu.gizmo_vertex_buffer
+    if buffer_opt is None || vertex_size > state.gpu.gizmo_vertex_capacity {
+      if state.gpu.device is Some(device) {
+        let capacity = if vertex_size < 256 { 256 } else { vertex_size }
+        let usage = @webgpu.combine_flags(
+          @webgpu.buffer_usage_vertex(),
+          @webgpu.buffer_usage_copy_dst(),
+        )
+        let desc = @webgpu.buffer_descriptor(capacity, usage)
+        let buffer = device.create_buffer(desc.to_js())
+        state.gpu.gizmo_vertex_buffer = Some(buffer)
+        state.gpu.gizmo_vertex_capacity = capacity
+        buffer_opt = Some(buffer)
+      }
+    }
+    if buffer_opt is Some(buffer) && state.gpu.gizmo_pipeline is Some(pipeline) {
+      queue.write_buffer(buffer, 0, vertex_data)
+      pass.set_pipeline(pipeline)
+      pass.set_vertex_buffer(0, buffer)
+      pass.draw(vertex_count, 1, 0, 0)
+    }
+  }
+}
+
+///|
 pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
   let state = new_state()
   let default_canvas = ensure_canvas(canvas_opt)
@@ -1419,12 +1810,14 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     let size = get_canvas_pixel_size(target)
     let pixel_width : Int = size._get("width").cast()
     let pixel_height : Int = size._get("height").cast()
+    let scale_factor = get_device_pixel_ratio()
     target._set("width", @js.any(pixel_width)) |> ignore
     target._set("height", @js.any(pixel_height)) |> ignore
     state.window = Some(WindowState::{
       canvas: target,
       width: pixel_width,
       height: pixel_height,
+      scale_factor,
     })
     bind_pointer_events(state, target)
     1
@@ -1444,6 +1837,14 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       window_state.height
     } else {
       0
+    }
+  })
+  let window_get_scale_factor = @js.from_fn1(fn(_ : @js.Any) {
+    update_window_size(state)
+    if state.window is Some(window_state) {
+      window_state.scale_factor
+    } else {
+      1.0
     }
   })
   let window_should_close = @js.from_fn1(fn(_ : @js.Any) { state.should_close })
@@ -1711,6 +2112,10 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
         arg_number(args, 8, 0),
         arg_number(args, 9, 0),
         arg_number(args, 10, 1),
+        arg_number(args, 11, 0),
+        arg_number(args, 12, 0),
+        arg_number(args, 13, 0),
+        arg_number(args, 14, 0),
       )
     }),
   )
@@ -1748,12 +2153,39 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       )
     }),
   )
+  let gpu_draw_gizmo_line = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      push_gizmo_line(
+        state.gpu.gizmo_lines,
+        arg_number(args, 0, 0),
+        arg_number(args, 1, 0),
+        arg_number(args, 2, 1),
+        arg_number(args, 3, 1),
+        arg_number(args, 4, 1),
+        arg_number(args, 5, 1),
+        arg_number(args, 6, 0),
+        arg_number(args, 7, 0),
+        arg_number(args, 8, 1),
+        arg_number(args, 9, 1),
+        arg_number(args, 10, 1),
+        arg_number(args, 11, 1),
+        arg_number(args, 12, 2),
+        to_int(arg_number(args, 13, 0)),
+        arg_number(args, 14, 1),
+        arg_number(args, 15, 1),
+      )
+    }),
+  )
   let gpu_end_pass = @js.from_fn0(fn() {
+    if state.gpu.current_pass is Some(_) {
+      draw_gizmo_lines(state, state.gpu.gizmo_lines)
+    }
     if state.gpu.current_pass is Some(pass) {
       pass.end()
     }
     state.gpu.current_pass = None
     state.gpu.current_pass_info = None
+    state.gpu.gizmo_lines = new_array()
   })
   let gpu_end_frame = @js.from_fn1(fn(_ : @js.Any) {
     if state.gpu.device is None ||
@@ -1777,6 +2209,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("window_poll_events", window_poll_events),
     ("window_get_width", window_get_width),
     ("window_get_height", window_get_height),
+    ("window_get_scale_factor", window_get_scale_factor),
     ("window_should_close", window_should_close),
     ("window_request_close", window_request_close),
     ("window_run_loop", window_run_loop),
@@ -1805,14 +2238,16 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("gpu_begin_pass", gpu_begin_pass),
     ("gpu_draw_sprite", gpu_draw_sprite),
     ("gpu_draw_mesh", gpu_draw_mesh),
+    ("gpu_draw_gizmo_line", gpu_draw_gizmo_line),
     ("gpu_end_pass", gpu_end_pass),
     ("gpu_end_frame", gpu_end_frame),
   ])
   let init = @js.from_fn0(fn() {
-    @js.from_async(async fn() {
+    @js.Promise::new(async fn(resolve, _reject) {
       let target = default_canvas
       init_webgpu(state, target)
       init_input(state)
+      resolve(())
     })
   })
   @js.from_entries([("mgstudio_host", mgstudio_host), ("init", init)])

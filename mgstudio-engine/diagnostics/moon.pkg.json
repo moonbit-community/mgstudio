@@ -1,6 +1,8 @@
 {
   "import": [
     "Milky2018/mgstudio/app",
+    "Milky2018/mgstudio/render2d",
+    "Milky2018/mgstudio/time",
     "moonbitlang/core/ref"
   ]
 }

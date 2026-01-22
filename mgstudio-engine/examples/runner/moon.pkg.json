@@ -1,5 +1,4 @@
 {
-  "is-main": true,
   "import": [
     {
       "path": "Milky2018/mgstudio/examples/2d",

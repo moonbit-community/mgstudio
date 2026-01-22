@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/diagnostics"
+
+import {
+  "Milky2018/mgstudio/app",
+}
+
+// Values
+pub fn camera_debug_config() -> CameraDebugConfig
+
+pub fn camera_debug_plugin(@app.App) -> @app.App
+
+pub fn camera_debug_plugin_with_interval(Float) -> (@app.App) -> @app.App
+
+pub fn camera_debug_set_config(CameraDebugConfig) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct CameraDebugConfig {
+  interval_seconds : Float
+}
+pub fn CameraDebugConfig::default() -> Self
+pub fn CameraDebugConfig::new(Float) -> Self
+
+// Type aliases
+
+// Traits
+

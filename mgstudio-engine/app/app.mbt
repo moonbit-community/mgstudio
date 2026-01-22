@@ -19,6 +19,19 @@ pub type SystemFn = () -> Unit
 pub type Plugin = (App) -> App
 
 ///|
+pub(open) trait SystemParam {
+  get() -> Self
+}
+
+///|
+pub fn[P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn {
+  fn() {
+    let param : P = SystemParam::get()
+    system(param)
+  }
+}
+
+///|
 pub type RunnerFn = () -> Unit
 
 ///|
@@ -61,14 +74,41 @@ pub fn App::add_startup_system(self : App, system : SystemFn) -> App {
 }
 
 ///|
+pub fn[P : SystemParam] App::add_startup_system_param(
+  self : App,
+  system : (P) -> Unit,
+) -> App {
+  self.schedule.startup.push(system_param(system))
+  self
+}
+
+///|
 pub fn App::add_system(self : App, system : SystemFn) -> App {
   self.schedule.update.push(system)
   self
 }
 
 ///|
+pub fn[P : SystemParam] App::add_system_param(
+  self : App,
+  system : (P) -> Unit,
+) -> App {
+  self.schedule.update.push(system_param(system))
+  self
+}
+
+///|
 pub fn App::add_post_update_system(self : App, system : SystemFn) -> App {
   self.schedule.post_update.push(system)
+  self
+}
+
+///|
+pub fn[P : SystemParam] App::add_post_update_system_param(
+  self : App,
+  system : (P) -> Unit,
+) -> App {
+  self.schedule.post_update.push(system_param(system))
   self
 }
 

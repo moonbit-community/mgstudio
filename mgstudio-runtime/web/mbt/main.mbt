@@ -189,6 +189,7 @@ async fn load_wasm(imports : @js.Any) -> @webassembly.WebAssemblyInstance {
   }
   let fallback = response.clone()
   let wasm_options = @js.from_entries([
+    ("builtins", @js.any(["js-string"])),
     ("importedStringConstants", @js.any("_")),
   ])
   let instance = try {
@@ -252,10 +253,6 @@ async fn main_async() -> Unit {
     set_status("WebGPU initialized.")
     let imports = @js.new_object()
     object_assign(imports, host) |> ignore
-    let wasm_js_string = @js.from_entries([
-      ("concat", @js.from_fn2(fn(a : String, b : String) { a + b })),
-    ])
-    imports._set("wasm:js-string", wasm_js_string) |> ignore
     let spectest = @js.from_entries([
       ("print_char", @js.from_fn1(make_print_char())),
     ])

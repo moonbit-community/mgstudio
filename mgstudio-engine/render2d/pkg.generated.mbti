@@ -8,7 +8,15 @@ import(
 )
 
 // Values
+pub fn gizmo_config() -> GizmoConfig
+
+pub fn gizmo_set_config(GizmoConfig) -> Unit
+
+pub fn render2d_camera_system() -> Unit
+
 pub fn render2d_create_render_target(Int, Int, Bool) -> @asset.Handle[@asset.Image]
+
+pub fn render2d_debug_log_primary_camera() -> Unit
 
 pub fn render2d_plugin(@app.App) -> @app.App
 
@@ -21,6 +29,10 @@ pub fn render2d_set_camera_scale_handle(CameraHandle, Float) -> Unit
 pub fn render2d_set_camera_transform(@math.Transform) -> Unit
 
 pub fn render2d_set_camera_transform_handle(CameraHandle, @math.Transform) -> Unit
+
+pub fn render2d_set_camera_viewport(Viewport?) -> Unit
+
+pub fn render2d_set_camera_viewport_handle(CameraHandle, Viewport?) -> Unit
 
 pub fn render2d_set_mesh_transform_handle(MeshHandle, @math.Transform) -> Unit
 
@@ -36,6 +48,8 @@ pub fn render2d_spawn_sprite(SpriteBundle) -> SpriteHandle
 
 pub fn render2d_viewport_to_world_2d(@math.Vec2) -> @math.Vec2?
 
+pub fn render2d_world_to_viewport(@math.Vec2) -> @math.Vec2?
+
 pub fn render_execute_system() -> Unit
 
 pub fn render_extract_system() -> Unit
@@ -47,15 +61,29 @@ pub fn render_queue_system() -> Unit
 // Errors
 
 // Types and methods
+pub struct Arc2dBuilder {
+  id : Int
+}
+pub fn Arc2dBuilder::resolution(Self, Int) -> Self
+
+pub struct ArrowBuilder {
+  id : Int
+}
+pub fn ArrowBuilder::with_double_end(Self) -> Self
+pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
+
 pub struct Camera2d {
   clear_color : Color
   order : Int
   scale : Float
+  viewport : Viewport?
 }
+pub fn Camera2d::clear_viewport(Self) -> Self
 pub fn Camera2d::default() -> Self
 pub fn Camera2d::new(Color) -> Self
 pub fn Camera2d::with_order(Self, Int) -> Self
 pub fn Camera2d::with_scale(Self, Float) -> Self
+pub fn Camera2d::with_viewport(Self, Viewport) -> Self
 
 pub struct Camera2dBundle {
   camera : Camera2d
@@ -95,6 +123,85 @@ pub struct ColorMaterial {
   color : Color
 }
 pub fn ColorMaterial::new(Color) -> Self
+
+pub struct Ellipse2dBuilder {
+  id : Int
+}
+pub fn Ellipse2dBuilder::resolution(Self, Int) -> Self
+
+pub(all) struct GizmoConfig {
+  enabled : Bool
+  line : GizmoLineConfig
+  depth_bias : Float
+  render_layers : RenderLayers
+}
+pub fn GizmoConfig::default() -> Self
+
+pub(all) struct GizmoLineConfig {
+  width : Float
+  perspective : Bool
+  style : GizmoLineStyle
+  joints : GizmoLineJoint
+}
+pub fn GizmoLineConfig::default() -> Self
+
+pub(all) enum GizmoLineJoint {
+  None
+  Miter
+  Round(Int)
+  Bevel
+}
+
+pub(all) enum GizmoLineStyle {
+  Solid
+  Dotted
+  Dashed(gap_scale~ : Float, line_scale~ : Float)
+}
+
+pub struct Gizmos {
+  layers : RenderLayers
+}
+pub fn Gizmos::arc_2d(Self, Isometry2d, Float, Float, Color) -> Arc2dBuilder
+pub fn Gizmos::arrow_2d(Self, @math.Vec2, @math.Vec2, Color) -> ArrowBuilder
+pub fn Gizmos::axes_2d(Self, Isometry2d, Float) -> Unit
+pub fn Gizmos::circle_2d(Self, Isometry2d, Float, Color) -> Ellipse2dBuilder
+pub fn Gizmos::cross_2d(Self, Isometry2d, Float, Color) -> Unit
+pub fn Gizmos::curve_2d(Self, Array[@math.Vec2], Color) -> Unit
+pub fn Gizmos::curve_gradient_2d(Self, Array[(@math.Vec2, Color)]) -> Unit
+pub fn Gizmos::ellipse_2d(Self, Isometry2d, @math.Vec2, Color) -> Ellipse2dBuilder
+pub fn Gizmos::grid_2d(Self, Isometry2d, @math.IVec2, @math.Vec2, Color) -> Grid2dBuilder
+pub fn Gizmos::line_2d(Self, @math.Vec2, @math.Vec2, Color) -> Unit
+pub fn Gizmos::line_gradient_2d(Self, @math.Vec2, @math.Vec2, Color, Color) -> Unit
+pub fn Gizmos::lineloop_2d(Self, Array[@math.Vec2], Color) -> Unit
+pub fn Gizmos::linestrip_2d(Self, Array[@math.Vec2], Color) -> Unit
+pub fn Gizmos::linestrip_gradient_2d(Self, Array[(@math.Vec2, Color)]) -> Unit
+pub fn Gizmos::long_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, Color) -> Arc2dBuilder
+pub fn Gizmos::new() -> Self
+pub fn Gizmos::ray_2d(Self, @math.Vec2, @math.Vec2, Color) -> Unit
+pub fn Gizmos::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, Color, Color) -> Unit
+pub fn Gizmos::rect_2d(Self, Isometry2d, @math.Vec2, Color) -> Unit
+pub fn Gizmos::rounded_rect_2d(Self, Isometry2d, @math.Vec2, Color) -> RoundedRectBuilder
+pub fn Gizmos::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, Color) -> Arc2dBuilder
+pub fn Gizmos::with_layers(Self, RenderLayers) -> Self
+pub impl @app.SystemParam for Gizmos
+
+pub struct Grid2dBuilder {
+  id : Int
+}
+pub fn Grid2dBuilder::outer_edges(Self) -> Self
+pub fn Grid2dBuilder::outer_edges_x(Self) -> Self
+pub fn Grid2dBuilder::outer_edges_y(Self) -> Self
+pub fn Grid2dBuilder::skew(Self, @math.Vec2) -> Self
+pub fn Grid2dBuilder::skew_x(Self, Float) -> Self
+pub fn Grid2dBuilder::skew_y(Self, Float) -> Self
+
+pub struct Isometry2d {
+  translation : @math.Vec2
+  rotation : Float
+}
+pub fn Isometry2d::identity() -> Self
+pub fn Isometry2d::new(@math.Vec2, Float) -> Self
+pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
 pub struct Mesh2d {
   kind : Mesh2dKind
@@ -141,6 +248,12 @@ pub(all) enum RenderTarget {
   Image(@asset.Handle[@asset.Image])
 }
 
+pub struct RoundedRectBuilder {
+  id : Int
+}
+pub fn RoundedRectBuilder::arc_resolution(Self, Int) -> Self
+pub fn RoundedRectBuilder::corner_radius(Self, Float) -> Self
+
 pub struct Sprite {
   color : Color
 }
@@ -160,6 +273,12 @@ pub struct SpriteHandle {
   id : Int
 }
 pub fn SpriteHandle::new(Int) -> Self
+
+pub struct Viewport {
+  physical_position : @math.IVec2
+  physical_size : @math.IVec2
+}
+pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 
 // Type aliases
 

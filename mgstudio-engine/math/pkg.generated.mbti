@@ -8,11 +8,24 @@ pub fn cos(Float) -> Float
 
 pub fn pi_half() -> Float
 
+pub fn pow(Float, Float) -> Float
+
 pub fn sin(Float) -> Float
 
 // Errors
 
 // Types and methods
+pub struct IVec2 {
+  x : Int
+  y : Int
+}
+pub fn IVec2::add(Self, Self) -> Self
+pub fn IVec2::max(Self, Self) -> Self
+pub fn IVec2::min(Self, Self) -> Self
+pub fn IVec2::new(Int, Int) -> Self
+pub fn IVec2::saturating_sub(Self, Self) -> Self
+pub fn IVec2::to_vec2(Self) -> Vec2
+
 pub struct Transform {
   translation : Vec2
   rotation : Float

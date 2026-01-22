@@ -61,7 +61,7 @@ pub fn AssetServer::new() -> AssetServer {
 }
 
 ///|
-let asset_default_nearest : Ref[Bool] = @ref.new(false)
+let asset_default_nearest : Ref[Bool] = Ref::new(false)
 
 ///|
 pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {

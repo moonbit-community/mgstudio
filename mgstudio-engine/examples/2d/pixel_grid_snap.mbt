@@ -41,7 +41,7 @@ priv struct PixelGridState {
 }
 
 ///|
-let pixel_state : Ref[PixelGridState] = @ref.new(PixelGridState::{
+let pixel_state : Ref[PixelGridState] = Ref::new(PixelGridState::{
   pixel_sprite: @render2d.SpriteHandle::new(-1),
   high_sprite: @render2d.SpriteHandle::new(-1),
   pixel_mesh: @render2d.MeshHandle::new(-1),
@@ -167,7 +167,7 @@ fn pixel_grid_snap_update() -> Unit {
   let min_scale = if h_scale < v_scale { h_scale } else { v_scale }
   let rounded = pixel_grid_round_scale(min_scale)
   let scale_int = if rounded < 1 { 1 } else { rounded }
-  let scale = Float::from_double(scale_int.to_double())
+  let scale = 1.0F / Float::from_double(scale_int.to_double())
   @render2d.render2d_set_camera_scale_handle(
     pixel_state.val.outer_camera,
     scale,

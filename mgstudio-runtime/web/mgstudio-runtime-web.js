@@ -50,17 +50,12 @@ function $make_array_len_and_init(a, b) {
 }
 const moonbitlang$core$builtin$$JSArray$set_length = (arr, len) => { arr.length = len; };
 const mizchi$js$core$$Any$_get = (obj, key) => obj[key];
-const mizchi$js$core$$ffi_promise_with_resolvers = () => Promise.withResolvers();
-function $36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$_try$47$232$2$(param0, param1) {
+const mizchi$js$core$$ffi_new_promise = (executor) => new Promise(executor);
+function $64$mizchi$47$js$47$core$46$Promise$58$58$new$46$lambda$46$lambda$47$317$46$State$_try$47$229$2$(param0, param1) {
   this._0 = param0;
   this._1 = param1;
 }
-$36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$_try$47$232$2$.prototype.$tag = 0;
-function $36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$State_1$2$(param0, param1) {
-  this._0 = param0;
-  this._1 = param1;
-}
-$36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$State_1$2$.prototype.$tag = 1;
+$64$mizchi$47$js$47$core$46$Promise$58$58$new$46$lambda$46$lambda$47$317$46$State$_try$47$229$2$.prototype.$tag = 0;
 const mizchi$js$core$$Any$_call = (obj, key, args) => obj[key](...args);
 function Result$Err$3$(param0) {
   this._0 = param0;
@@ -204,7 +199,7 @@ function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State
   this._4 = param4;
 }
 $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_2.prototype.$tag = 2;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$591(param0, param1, param2, param3, param4, param5) {
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$663(param0, param1, param2, param3, param4, param5) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
@@ -212,7 +207,7 @@ function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$
   this._4 = param4;
   this._5 = param5;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$591.prototype.$tag = 3;
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$663.prototype.$tag = 3;
 function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_4(param0) {
   this._0 = param0;
 }
@@ -277,10 +272,24 @@ function Option$Some$15$(param0) {
 Option$Some$15$.prototype.$tag = 1;
 const Milky2018$mgstudio$45$runtime$45$web$$get_canvas_pixel_size = (canvas) => {
    const dpr = window.devicePixelRatio || 1
-   const width = Math.max(1, Math.floor(canvas.clientWidth * dpr))
-   const height = Math.max(1, Math.floor(canvas.clientHeight * dpr))
+   let width = canvas.clientWidth
+   let height = canvas.clientHeight
+   if (!width || !height) {
+     const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null
+     if (rect) {
+       width = rect.width || width
+       height = rect.height || height
+     }
+   }
+   if (!width || !height) {
+     width = window.innerWidth || canvas.width || 1
+     height = window.innerHeight || canvas.height || 1
+   }
+   width = Math.max(1, Math.floor(width * dpr))
+   height = Math.max(1, Math.floor(height * dpr))
    return { width, height }
  };
+const Milky2018$mgstudio$45$runtime$45$web$$get_device_pixel_ratio = () => window.devicePixelRatio || 1;
 const Option$None$16$ = { $tag: 0 };
 function Option$Some$16$(param0) {
   this._0 = param0;
@@ -291,6 +300,7 @@ function Option$Some$17$(param0) {
   this._0 = param0;
 }
 Option$Some$17$.prototype.$tag = 1;
+const Milky2018$mgstudio$45$runtime$45$web$$new_array = () => [];
 const Option$None$18$ = { $tag: 0 };
 function Option$Some$18$(param0) {
   this._0 = param0;
@@ -387,6 +397,167 @@ const Milky2018$mgstudio$45$runtime$45$web$$create_rectangle_mesh_data = (width,
 const Milky2018$mgstudio$45$runtime$45$web$$dispatch_asset_error = (message) => {
    window.dispatchEvent(new CustomEvent("mgstudio-asset-error", { detail: message }))
  };
+const Milky2018$mgstudio$45$runtime$45$web$$build_gizmo_vertices = (data, camX, camY, camRotation, camScale, width, height, lineWidth) => {
+   let length = 0
+   let getter = null
+   if (Array.isArray(data) || ArrayBuffer.isView(data)) {
+     length = data.length
+     getter = (index) => data[index]
+   } else if (data && typeof data.get === "function") {
+     if (typeof data.length === "function") {
+       length = Number(data.length())
+     } else {
+       length = Number(data.length)
+     }
+     getter = (index) => data.get(index)
+   }
+   if (!getter || !Number.isFinite(length) || length <= 0) {
+     return new Float32Array(0)
+   }
+   const w = Number(width)
+   const h = Number(height)
+   if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+     return new Float32Array(0)
+   }
+   const safeScale = Number.isFinite(camScale) && camScale !== 0 ? camScale : 1
+   const scaleX = 2 / w / safeScale
+   const scaleY = 2 / h / safeScale
+   const cos = Math.cos(-camRotation)
+   const sin = Math.sin(-camRotation)
+   const halfWidth = w * 0.5
+   const halfHeight = h * 0.5
+   const defaultWidth = Number.isFinite(lineWidth) && lineWidth > 0 ? lineWidth : 2
+   const vertices = []
+   const pushQuad = (sx, sy, ex, ey, sr, sg, sb, sa, er, eg, eb, ea, offX, offY) => {
+     const p1x = sx + offX
+     const p1y = sy + offY
+     const p2x = sx - offX
+     const p2y = sy - offY
+     const p3x = ex - offX
+     const p3y = ey - offY
+     const p4x = ex + offX
+     const p4y = ey + offY
+     vertices.push(
+       p1x, p1y, sr, sg, sb, sa,
+       p2x, p2y, sr, sg, sb, sa,
+       p3x, p3y, er, eg, eb, ea,
+       p1x, p1y, sr, sg, sb, sa,
+       p3x, p3y, er, eg, eb, ea,
+       p4x, p4y, er, eg, eb, ea,
+     )
+   }
+   for (let i = 0; i + 15 < length; i += 16) {
+     const sx = Number(getter(i))
+     const sy = Number(getter(i + 1))
+     const sr = Number(getter(i + 2))
+     const sg = Number(getter(i + 3))
+     const sb = Number(getter(i + 4))
+     const sa = Number(getter(i + 5))
+     const ex = Number(getter(i + 6))
+     const ey = Number(getter(i + 7))
+     const er = Number(getter(i + 8))
+     const eg = Number(getter(i + 9))
+     const eb = Number(getter(i + 10))
+     const ea = Number(getter(i + 11))
+     const width = Number(getter(i + 12))
+     const styleKind = Number(getter(i + 13))
+     const gapScale = Number(getter(i + 14))
+     const lineScale = Number(getter(i + 15))
+     const thickness = Number.isFinite(width) && width > 0 ? width : defaultWidth
+     const halfLine = thickness * 0.5
+     const relSX = sx - camX
+     const relSY = sy - camY
+     const relEX = ex - camX
+     const relEY = ey - camY
+     const viewSX = relSX * cos - relSY * sin
+     const viewSY = relSX * sin + relSY * cos
+     const viewEX = relEX * cos - relEY * sin
+     const viewEY = relEX * sin + relEY * cos
+     const ndcSX = viewSX * scaleX
+     const ndcSY = viewSY * scaleY
+     const ndcEX = viewEX * scaleX
+     const ndcEY = viewEY * scaleY
+     const screenSX = ndcSX * halfWidth
+     const screenSY = ndcSY * halfHeight
+     const screenEX = ndcEX * halfWidth
+     const screenEY = ndcEY * halfHeight
+     const dx = screenEX - screenSX
+     const dy = screenEY - screenSY
+     const len = Math.hypot(dx, dy)
+     if (!Number.isFinite(len) || len <= 0) {
+       continue
+     }
+     const invLen = 1 / len
+     const ux = dx * invLen
+     const uy = dy * invLen
+     const nx = -uy * halfLine
+     const ny = ux * halfLine
+     const offX = nx / halfWidth
+     const offY = ny / halfHeight
+     let dashLen = len
+     let gapLen = 0
+     if (styleKind === 1) {
+       dashLen = thickness
+       gapLen = thickness
+     } else if (styleKind === 2) {
+       const safeGap = Number.isFinite(gapScale) && gapScale > 0 ? gapScale : 1
+       const safeLine = Number.isFinite(lineScale) && lineScale > 0 ? lineScale : 1
+       dashLen = thickness * safeLine
+       gapLen = thickness * safeGap
+     }
+     const step = dashLen + gapLen
+     if (!Number.isFinite(step) || step <= 0 || dashLen >= len) {
+       pushQuad(ndcSX, ndcSY, ndcEX, ndcEY, sr, sg, sb, sa, er, eg, eb, ea, offX, offY)
+       continue
+     }
+     const dr = er - sr
+     const dg = eg - sg
+     const db = eb - sb
+     const da = ea - sa
+     let pos = 0
+     while (pos < len) {
+       const segLen = Math.min(dashLen, len - pos)
+       if (segLen > 0) {
+         const t0 = pos * invLen
+         const t1 = (pos + segLen) * invLen
+         const segSX = screenSX + ux * pos
+         const segSY = screenSY + uy * pos
+         const segEX = screenSX + ux * (pos + segLen)
+         const segEY = screenSY + uy * (pos + segLen)
+         const segNdcSX = segSX / halfWidth
+         const segNdcSY = segSY / halfHeight
+         const segNdcEX = segEX / halfWidth
+         const segNdcEY = segEY / halfHeight
+         const segSr = sr + dr * t0
+         const segSg = sg + dg * t0
+         const segSb = sb + db * t0
+         const segSa = sa + da * t0
+         const segEr = sr + dr * t1
+         const segEg = sg + dg * t1
+         const segEb = sb + db * t1
+         const segEa = sa + da * t1
+         pushQuad(
+           segNdcSX,
+           segNdcSY,
+           segNdcEX,
+           segNdcEY,
+           segSr,
+           segSg,
+           segSb,
+           segSa,
+           segEr,
+           segEg,
+           segEb,
+           segEa,
+           offX,
+           offY,
+         )
+       }
+       pos += step
+     }
+   }
+   return new Float32Array(vertices)
+ };
 const Option$None$20$ = { $tag: 0 };
 function Option$Some$20$(param0) {
   this._0 = param0;
@@ -467,28 +638,28 @@ $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wgsl_from_path$46$State$Stat
 const Milky2018$mgstudio$45$runtime$45$web$$new_map = () => new Map();
 const Milky2018$mgstudio$45$runtime$45$web$$request_adapter_any = () => navigator.gpu.requestAdapter();
 const Milky2018$mgstudio$45$runtime$45$web$$request_device_any = (adapter) => adapter.requestDevice();
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$State_0(param0) {
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$State_0(param0) {
   this._0 = param0;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$State_0.prototype.$tag = 0;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$_try$47$858(param0, param1, param2) {
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$State_0.prototype.$tag = 0;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$_try$47$997(param0, param1, param2) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$_try$47$858.prototype.$tag = 1;
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$_try$47$997.prototype.$tag = 1;
 function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0(param0, param1, param2) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
 }
 $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0.prototype.$tag = 0;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$861(param0, param1, param2) {
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1000(param0, param1, param2) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$861.prototype.$tag = 1;
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1000.prototype.$tag = 1;
 function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2(param0, param1, param2, param3, param4, param5) {
   this._0 = param0;
   this._1 = param1;
@@ -498,7 +669,7 @@ function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$Sta
   this._5 = param5;
 }
 $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2.prototype.$tag = 2;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$864(param0, param1, param2, param3, param4, param5) {
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1003(param0, param1, param2, param3, param4, param5) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
@@ -506,23 +677,43 @@ function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_tr
   this._4 = param4;
   this._5 = param5;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$864.prototype.$tag = 3;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4(param0, param1, param2, param3, param4) {
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1003.prototype.$tag = 3;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4(param0, param1, param2, param3, param4, param5, param6) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
   this._3 = param3;
   this._4 = param4;
+  this._5 = param5;
+  this._6 = param6;
 }
 $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4.prototype.$tag = 4;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_5(param0, param1, param2, param3, param4) {
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1006(param0, param1, param2, param3, param4, param5, param6) {
+  this._0 = param0;
+  this._1 = param1;
+  this._2 = param2;
+  this._3 = param3;
+  this._4 = param4;
+  this._5 = param5;
+  this._6 = param6;
+}
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1006.prototype.$tag = 5;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_6(param0, param1, param2, param3, param4) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
   this._3 = param3;
   this._4 = param4;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_5.prototype.$tag = 5;
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_6.prototype.$tag = 6;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_7(param0, param1, param2, param3, param4) {
+  this._0 = param0;
+  this._1 = param1;
+  this._2 = param2;
+  this._3 = param3;
+  this._4 = param4;
+}
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_7.prototype.$tag = 7;
 const Option$None$23$ = { $tag: 0 };
 function Option$Some$23$(param0) {
   this._0 = param0;
@@ -540,36 +731,42 @@ function Option$Some$25$(param0) {
 Option$Some$25$.prototype.$tag = 1;
 const Milky2018$mgstudio$45$runtime$45$web$$new_set = () => new Set();
 const Milky2018$mgstudio$45$runtime$45$web$$performance_now = () => performance.now();
+const Milky2018$mgstudio$45$runtime$45$web$$push_gizmo_line = (target, sx, sy, sr, sg, sb, sa, ex, ey, er, eg, eb, ea, width, style, gapScale, lineScale) => {
+   if (target && typeof target.push === "function") {
+     target.push(sx, sy, sr, sg, sb, sa, ex, ey, er, eg, eb, ea, width, style, gapScale, lineScale)
+   }
+ };
 const Milky2018$mgstudio$45$runtime$45$web$$request_animation_frame = (callback) => requestAnimationFrame(callback);
 const Milky2018$mgstudio$45$runtime$45$web$$throw_error = (message) => { throw new Error(message) };
 const Milky2018$mgstudio$45$runtime$45$web$$wrap_variadic = (func) => (...args) => func(args);
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$State_0(param0) {
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$State_0(param0) {
   this._0 = param0;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$State_0.prototype.$tag = 0;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$_try$47$931(param0, param1, param2) {
-  this._0 = param0;
-  this._1 = param1;
-  this._2 = param2;
-}
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$_try$47$931.prototype.$tag = 1;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$State_0(param0, param1, param2) {
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$State_0.prototype.$tag = 0;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$_try$47$1077(param0, param1, param2) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$State_0.prototype.$tag = 0;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$_try$47$928(param0, param1, param2) {
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$_try$47$1077.prototype.$tag = 1;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$State_0(param0, param1, param2) {
   this._0 = param0;
   this._1 = param1;
   this._2 = param2;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$_try$47$928.prototype.$tag = 1;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1273$46$State$State_0(param0, param1) {
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$State_0.prototype.$tag = 0;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$_try$47$1074(param0, param1, param2) {
   this._0 = param0;
   this._1 = param1;
+  this._2 = param2;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1273$46$State$State_0.prototype.$tag = 0;
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$_try$47$1074.prototype.$tag = 1;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1454$46$State$State_0(param0, param1, param2) {
+  this._0 = param0;
+  this._1 = param1;
+  this._2 = param2;
+}
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1454$46$State$State_0.prototype.$tag = 0;
 function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_0(param0, param1, param2) {
   this._0 = param0;
   this._1 = param1;
@@ -585,14 +782,14 @@ function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$Stat
   this._5 = param5;
 }
 $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_1.prototype.$tag = 1;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$State_0(param0) {
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$State_0(param0) {
   this._0 = param0;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$State_0.prototype.$tag = 0;
-function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$_try$47$988(param0) {
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$State_0.prototype.$tag = 0;
+function $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$_try$47$1140(param0) {
   this._0 = param0;
 }
-$36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$_try$47$988.prototype.$tag = 1;
+$36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$_try$47$1140.prototype.$tag = 1;
 const $$$64$moonbitlang$47$core$47$builtin$46$StringBuilder$36$as$36$64$moonbitlang$47$core$47$builtin$46$Logger = { method_0: moonbitlang$core$builtin$$Logger$write_string$0$, method_1: moonbitlang$core$builtin$$Logger$write_substring$1$, method_2: moonbitlang$core$builtin$$Logger$write_view$0$, method_3: moonbitlang$core$builtin$$Logger$write_char$0$ };
 function Error$$to_string(_e) {
   switch (_e.$tag) {
@@ -607,9 +804,9 @@ function Error$$to_string(_e) {
     }
   }
 }
-const Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$925 = "Left";
-const Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$926 = "Middle";
-const Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$927 = "Right";
+const Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$941 = "Left";
+const Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$942 = "Middle";
+const Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$943 = "Right";
 const moonbitlang$core$builtin$$seed = moonbitlang$core$builtin$$random_seed();
 function moonbitlang$core$builtin$$Logger$write_object$4$(self, obj) {
   moonbitlang$core$builtin$$Show$output$4$(obj, self);
@@ -2277,73 +2474,50 @@ function moonbitlang$core$array$$Array$clear$17$(self) {
 function moonbitlang$core$builtin$$Show$output$11$(self, logger) {
   logger.method_table.method_0(logger.self, Error$$to_string(self));
 }
-function mizchi$js$core$$Promise$withResolvers$14$() {
-  return mizchi$js$core$$ffi_promise_with_resolvers();
+function mizchi$js$core$$new$46$42$cont$47$395(_param) {}
+function mizchi$js$core$$new$46$42$async_driver$47$396(_state) {
+  const _$42$try$47$229 = _state;
+  const reject = _$42$try$47$229._1;
+  const _try_err = _$42$try$47$229._0;
+  return reject(_try_err);
 }
-function mizchi$js$core$$from_async$46$42$cont$47$395(_param) {}
-function mizchi$js$core$$from_async$46$42$async_driver$47$396(_state) {
-  if (_state.$tag === 0) {
-    const _$42$try$47$232 = _state;
-    const reject = _$42$try$47$232._1;
-    const _try_err = _$42$try$47$232._0;
-    return reject(_try_err);
-  } else {
-    const _State_1 = _state;
-    const resolve = _State_1._1;
-    const _cont_param = _State_1._0;
-    return resolve(_cont_param);
-  }
-}
-function mizchi$js$core$$from_async$14$(f) {
-  const _bind = mizchi$js$core$$Promise$withResolvers$14$();
-  const _promise = _bind.promise;
-  const _resolve = _bind.resolve;
-  const _reject = _bind.reject;
-  let _err;
-  _L: {
-    _L$2: {
-      const _bind$2 = f((_cont_param) => {
-        const _bind$3 = mizchi$js$core$$from_async$46$42$async_driver$47$396(new $36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$State_1$2$(_cont_param, _resolve));
-        if (_bind$3 === -1) {
-          return;
+function mizchi$js$core$$Promise$new$14$(f) {
+  return mizchi$js$core$$ffi_new_promise((resolve, reject) => {
+    let _err;
+    _L: {
+      _L$2: {
+        const _bind = f((a) => {
+          resolve(a);
+        }, (e) => {
+          reject(e);
+        }, mizchi$js$core$$new$46$42$cont$47$395, (_cont_param) => {
+          const _bind$2 = mizchi$js$core$$new$46$42$async_driver$47$396(new $64$mizchi$47$js$47$core$46$Promise$58$58$new$46$lambda$46$lambda$47$317$46$State$_try$47$229$2$(_cont_param, reject));
+          if (_bind$2 === -1) {
+            return;
+          } else {
+            const _Some = _bind$2;
+            const _payload = _Some;
+            mizchi$js$core$$new$46$42$cont$47$395(_payload);
+            return;
+          }
+        });
+        let _bind$2;
+        if (_bind.$tag === 1) {
+          const _ok = _bind;
+          _bind$2 = _ok._0;
         } else {
-          const _Some = _bind$3;
-          const _payload = _Some;
-          mizchi$js$core$$from_async$46$42$cont$47$395(_payload);
-          return;
+          const _err$2 = _bind;
+          const _tmp = _err$2._0;
+          _err = _tmp;
+          break _L$2;
         }
-      }, (_cont_param) => {
-        const _bind$3 = mizchi$js$core$$from_async$46$42$async_driver$47$396(new $36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$_try$47$232$2$(_cont_param, _reject));
-        if (_bind$3 === -1) {
-          return;
-        } else {
-          const _Some = _bind$3;
-          const _payload = _Some;
-          mizchi$js$core$$from_async$46$42$cont$47$395(_payload);
-          return;
+        if (_bind$2 === -1) {
         }
-      });
-      let _bind$3;
-      if (_bind$2.$tag === 1) {
-        const _ok = _bind$2;
-        _bind$3 = _ok._0;
-      } else {
-        const _err$2 = _bind$2;
-        const _tmp = _err$2._0;
-        _err = _tmp;
-        break _L$2;
+        break _L;
       }
-      if (_bind$3 === -1) {
-      } else {
-        const _Some = _bind$3;
-        const _payload = _Some;
-        mizchi$js$core$$from_async$46$42$async_driver$47$396(new $36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$State_1$2$(_payload, _resolve));
-      }
-      break _L;
+      mizchi$js$core$$new$46$42$async_driver$47$396(new $64$mizchi$47$js$47$core$46$Promise$58$58$new$46$lambda$46$lambda$47$317$46$State$_try$47$229$2$(_err, reject));
     }
-    mizchi$js$core$$from_async$46$42$async_driver$47$396(new $36$mizchi$47$js$47$core$46$from_async$46$lambda$47$335$46$State$_try$47$232$2$(_err, _reject));
-  }
-  return _promise;
+  });
 }
 function mizchi$js$core$$Promise$wait$8$(self, _cont, _err_cont) {
   mizchi$js$core$$Any$_call(mizchi$js$core$$Any$_call(self, "then", [_cont]), "catch", [_err_cont]);
@@ -2471,6 +2645,12 @@ function Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_b
 function Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_vertex_buffer(self, slot, buffer) {
   mizchi$js$core$$Any$_call(self, "setVertexBuffer", [slot, buffer]);
 }
+function Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_viewport(self, x, y, width, height, min_depth, max_depth) {
+  mizchi$js$core$$Any$_call(self, "setViewport", [x, y, width, height, min_depth, max_depth]);
+}
+function Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_scissor_rect(self, x, y, width, height) {
+  mizchi$js$core$$Any$_call(self, "setScissorRect", [x, y, width, height]);
+}
 function Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$draw(self, vertex_count, instance_count, first_vertex, first_instance) {
   mizchi$js$core$$Any$_call(self, "draw", [vertex_count, instance_count, first_vertex, first_instance]);
 }
@@ -2506,6 +2686,13 @@ function Milky2018$mgstudio$45$runtime$45$web$webgpu$$BlendFactor$to_js_string(s
     return "src-alpha";
   } else {
     return "one-minus-src-alpha";
+  }
+}
+function Milky2018$mgstudio$45$runtime$45$web$webgpu$$VertexFormat$to_js_string(self) {
+  if (self === 0) {
+    return "float32x2";
+  } else {
+    return "float32x4";
   }
 }
 function Milky2018$mgstudio$45$runtime$45$web$webgpu$$color(r, g, b, a) {
@@ -2593,10 +2780,7 @@ function Milky2018$mgstudio$45$runtime$45$web$webgpu$$vertex_attribute(shader_lo
   return { shader_location: shader_location, offset: offset, format: format };
 }
 function Milky2018$mgstudio$45$runtime$45$web$webgpu$$VertexAttribute$to_js(self) {
-  const _tmp = { _0: "shaderLocation", _1: self.shader_location };
-  const _tmp$2 = { _0: "offset", _1: self.offset };
-  self.format;
-  return mizchi$js$core$$from_entries([_tmp, _tmp$2, { _0: "format", _1: "float32x2" }]);
+  return mizchi$js$core$$from_entries([{ _0: "shaderLocation", _1: self.shader_location }, { _0: "offset", _1: self.offset }, { _0: "format", _1: Milky2018$mgstudio$45$runtime$45$web$webgpu$$VertexFormat$to_js_string(self.format) }]);
 }
 function Milky2018$mgstudio$45$runtime$45$web$webgpu$$vertex_buffer_layout(array_stride, attributes) {
   return { array_stride: array_stride, attributes: attributes };
@@ -2987,7 +3171,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$setup_menu(doc, on_run, on_reload
     return false;
   }
 }
-function Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$993(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$1145(_state) {
   let _tmp = _state;
   _L: while (true) {
     const _state$2 = _tmp;
@@ -3015,7 +3199,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$
         const _bind = mizchi$js$core$$Promise$wait$8$(promise, (_cont_param$4) => {
           let _err;
           _L$2: {
-            const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$993(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_1(_cont_param$4));
+            const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$1145(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_1(_cont_param$4));
             let _tmp$2;
             if (_bind$2.$tag === 1) {
               const _ok = _bind$2;
@@ -3056,17 +3240,17 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$
         }
       }
       case 3: {
-        const _$42$try$47$591 = _state$2;
-        const _err_cont$2 = _$42$try$47$591._5;
-        const _cont$2 = _$42$try$47$591._4;
-        const wasm_options$2 = _$42$try$47$591._3;
-        const fallback = _$42$try$47$591._2;
-        const imports$2 = _$42$try$47$591._1;
+        const _$42$try$47$663 = _state$2;
+        const _err_cont$2 = _$42$try$47$663._5;
+        const _cont$2 = _$42$try$47$663._4;
+        const wasm_options$2 = _$42$try$47$663._3;
+        const fallback = _$42$try$47$663._2;
+        const imports$2 = _$42$try$47$663._1;
         const buffer_promise = Milky2018$mgstudio$45$runtime$45$web$$response_array_buffer(fallback);
         const _bind$2 = mizchi$js$core$$Promise$wait$21$(buffer_promise, (_cont_param$4) => {
           let _err;
           _L$2: {
-            const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$993(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_2(_cont_param$4, imports$2, wasm_options$2, _cont$2, _err_cont$2));
+            const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$1145(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_2(_cont_param$4, imports$2, wasm_options$2, _cont$2, _err_cont$2));
             let _tmp$4;
             if (_bind$3.$tag === 1) {
               const _ok = _bind$3;
@@ -3127,14 +3311,14 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$
           }
         }
         const fallback$2 = mizchi$js$web$http$$Response$clone(_cont_param$5);
-        const wasm_options$3 = mizchi$js$core$$from_entries([{ _0: "importedStringConstants", _1: "_" }]);
+        const wasm_options$3 = mizchi$js$core$$from_entries([{ _0: "builtins", _1: ["js-string"] }, { _0: "importedStringConstants", _1: "_" }]);
         const promise$2 = Milky2018$mgstudio$45$runtime$45$web$$instantiate_streaming(_cont_param$5, imports$3, wasm_options$3);
         let _err;
         _L$2: {
           const _bind$4 = mizchi$js$core$$Promise$wait$8$(promise$2, (_cont_param$6) => {
             let _err$2;
             _L$3: {
-              const _bind$5 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$993(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_4(_cont_param$6));
+              const _bind$5 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$1145(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_4(_cont_param$6));
               let _tmp$4;
               if (_bind$5.$tag === 1) {
                 const _ok = _bind$5;
@@ -3159,7 +3343,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$
           }, (_cont_param$6) => {
             let _err$2;
             _L$3: {
-              const _bind$5 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$993(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$591(_cont_param$6, imports$3, fallback$2, wasm_options$3, _cont$3, _err_cont$3));
+              const _bind$5 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$1145(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$663(_cont_param$6, imports$3, fallback$2, wasm_options$3, _cont$3, _err_cont$3));
               let _tmp$4;
               if (_bind$5.$tag === 1) {
                 const _ok = _bind$5;
@@ -3202,7 +3386,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$
             return new Result$Ok$11$(Option$None$12$);
           }
         }
-        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$591(_err, imports$3, fallback$2, wasm_options$3, _cont$3, _err_cont$3);
+        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$_try$47$663(_err, imports$3, fallback$2, wasm_options$3, _cont$3, _err_cont$3);
         continue _L;
       }
     }
@@ -3212,7 +3396,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wasm(imports, _cont, _err_co
   const _bind = mizchi$js$web$http$$fetch("./runner.wasm", "GET", undefined, undefined, undefined, Option$None$4$, undefined, undefined, -1, undefined, undefined, undefined, undefined, Option$None$10$, (_cont_param) => {
     let _err;
     _L: {
-      const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$993(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_5(_cont_param, imports, _cont, _err_cont));
+      const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$1145(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_5(_cont_param, imports, _cont, _err_cont));
       let _tmp;
       if (_bind$2.$tag === 1) {
         const _ok = _bind$2;
@@ -3247,7 +3431,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wasm(imports, _cont, _err_co
   } else {
     const _Some = _bind$2;
     const _payload = _Some;
-    return Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$993(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_5(_payload, imports, _cont, _err_cont));
+    return Milky2018$mgstudio$45$runtime$45$web$$load_wasm$46$42$async_driver$124$1145(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wasm$46$State$State_5(_payload, imports, _cont, _err_cont));
   }
 }
 function Milky2018$mgstudio$45$runtime$45$web$$arg_any(args, index) {
@@ -3370,11 +3554,13 @@ function Milky2018$mgstudio$45$runtime$45$web$$update_window_size(state) {
     const size = Milky2018$mgstudio$45$runtime$45$web$$get_canvas_pixel_size(target);
     const width = mizchi$js$core$$Any$_get(size, "width");
     const height = mizchi$js$core$$Any$_get(size, "height");
-    if (width === _window_state.width && height === _window_state.height) {
+    const scale_factor = Milky2018$mgstudio$45$runtime$45$web$$get_device_pixel_ratio();
+    if (width === _window_state.width && (height === _window_state.height && scale_factor === _window_state.scale_factor)) {
       return undefined;
     }
     _window_state.width = width;
     _window_state.height = height;
+    _window_state.scale_factor = scale_factor;
     mizchi$js$core$$Any$_set(target, "width", width);
     mizchi$js$core$$Any$_set(target, "height", height);
     const _bind$3 = state.gpu.context;
@@ -3439,7 +3625,10 @@ function Milky2018$mgstudio$45$runtime$45$web$$begin_frame(state) {
   }
   return 0;
 }
-function Milky2018$mgstudio$45$runtime$45$web$$begin_pass(state, target_id, width, height, clear_r, clear_g, clear_b, clear_a, cam_x, cam_y, cam_rotation, cam_scale) {
+function Milky2018$mgstudio$45$runtime$45$web$$to_int(value) {
+  return moonbitlang$core$double$$Double$to_int(value);
+}
+function Milky2018$mgstudio$45$runtime$45$web$$begin_pass(state, target_id, width, height, clear_r, clear_g, clear_b, clear_a, cam_x, cam_y, cam_rotation, cam_scale, viewport_x, viewport_y, viewport_width, viewport_height) {
   const _bind = state.gpu.encoder;
   if (_bind.$tag === 0) {
     return undefined;
@@ -3477,8 +3666,15 @@ function Milky2018$mgstudio$45$runtime$45$web$$begin_pass(state, target_id, widt
       const attachment = Milky2018$mgstudio$45$runtime$45$web$webgpu$$color_attachment_clear(_view_value, clear_color);
       const descriptor = Milky2018$mgstudio$45$runtime$45$web$webgpu$$render_pass_descriptor([attachment]);
       const pass = Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPUCommandEncoder$begin_render_pass(_encoder, Milky2018$mgstudio$45$runtime$45$web$webgpu$$RenderPassDescriptor$to_js(descriptor));
+      const vp_width = viewport_width > 0 ? viewport_width : width;
+      const vp_height = viewport_height > 0 ? viewport_height : height;
+      const vp_x = viewport_width > 0 ? viewport_x : 0;
+      const vp_y = viewport_height > 0 ? viewport_y : 0;
+      Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_viewport(pass, vp_x, vp_y, vp_width, vp_height, 0, 1);
+      Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_scissor_rect(pass, Milky2018$mgstudio$45$runtime$45$web$$to_int(vp_x), Milky2018$mgstudio$45$runtime$45$web$$to_int(vp_y), Milky2018$mgstudio$45$runtime$45$web$$to_int(vp_width), Milky2018$mgstudio$45$runtime$45$web$$to_int(vp_height));
       state.gpu.current_pass = new Option$Some$19$(pass);
       state.gpu.current_pass_info = { width: width > 0 ? width : 1, height: height > 0 ? height : 1, cam_x: cam_x, cam_y: cam_y, cam_rotation: cam_rotation, cam_scale: cam_scale };
+      state.gpu.gizmo_lines = Milky2018$mgstudio$45$runtime$45$web$$new_array();
       return;
     } else {
       return;
@@ -3488,22 +3684,16 @@ function Milky2018$mgstudio$45$runtime$45$web$$begin_pass(state, target_id, widt
   }
 }
 function Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name(button) {
-  return button === 0 ? Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$925 : button === 1 ? Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$926 : button === 2 ? Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$927 : undefined;
+  return button === 0 ? Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$941 : button === 1 ? Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$942 : button === 2 ? Milky2018$mgstudio$45$runtime$45$web$$mouse_button_name$46$constr$47$943 : undefined;
 }
 function Milky2018$mgstudio$45$runtime$45$web$$update_mouse_position(state, target, event) {
   const rect = Milky2018$mgstudio$45$runtime$45$web$$get_bounding_rect(target);
-  const rect_width = mizchi$js$core$$Any$_get(rect, "width");
-  const rect_height = mizchi$js$core$$Any$_get(rect, "height");
-  const target_width = mizchi$js$core$$Any$_get(target, "width");
-  const target_height = mizchi$js$core$$Any$_get(target, "height");
-  const scale_x = rect_width > 0 ? target_width / rect_width : 1;
-  const scale_y = rect_height > 0 ? target_height / rect_height : 1;
   const client_x = mizchi$js$core$$Any$_get(event, "clientX");
   const client_y = mizchi$js$core$$Any$_get(event, "clientY");
   const left = mizchi$js$core$$Any$_get(rect, "left");
   const top = mizchi$js$core$$Any$_get(rect, "top");
-  state.input.mouse_x = (client_x - left) * scale_x;
-  state.input.mouse_y = (client_y - top) * scale_y;
+  state.input.mouse_x = client_x - left;
+  state.input.mouse_y = client_y - top;
   state.input.has_cursor = true;
 }
 function Milky2018$mgstudio$45$runtime$45$web$$bind_pointer_events(state, target) {
@@ -3547,6 +3737,174 @@ function Milky2018$mgstudio$45$runtime$45$web$$bind_pointer_events(state, target
   Milky2018$mgstudio$45$runtime$45$web$$add_event_listener(target, "contextmenu", (event) => {
     Milky2018$mgstudio$45$runtime$45$web$$prevent_default(event);
   });
+}
+function Milky2018$mgstudio$45$runtime$45$web$$ensure_gizmo_pipeline(state) {
+  const _bind = state.gpu.gizmo_pipeline;
+  if (_bind.$tag === 1) {
+    return undefined;
+  }
+  const _bind$2 = state.gpu.device;
+  if (_bind$2.$tag === 0) {
+    return undefined;
+  }
+  const _bind$3 = state.gpu.device;
+  if (_bind$3.$tag === 1) {
+    const _Some = _bind$3;
+    const _device = _Some._0;
+    if (state.gpu.gizmo_shader_id <= 0) {
+      return undefined;
+    }
+    const shader_source = Milky2018$mgstudio$45$runtime$45$web$$get_shader_source(state, state.gpu.gizmo_shader_id);
+    if (shader_source === undefined) {
+      return undefined;
+    }
+    const _p = state.gpu.format;
+    const _p$2 = $64$Milky2018$47$mgstudio$45$runtime$45$web$47$webgpu$46$TextureFormat$Bgra8Unorm;
+    let format;
+    if (_p === undefined) {
+      format = _p$2;
+    } else {
+      const _p$3 = _p;
+      format = _p$3;
+    }
+    let _tmp;
+    if (shader_source === undefined) {
+      _tmp = $panic();
+    } else {
+      const _p$3 = shader_source;
+      _tmp = _p$3;
+    }
+    const shader_desc = Milky2018$mgstudio$45$runtime$45$web$webgpu$$shader_module_descriptor(_tmp);
+    const shader_module = Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPUDevice$create_shader_module(_device, Milky2018$mgstudio$45$runtime$45$web$webgpu$$ShaderModuleDescriptor$to_js(shader_desc));
+    const position_attr = Milky2018$mgstudio$45$runtime$45$web$webgpu$$vertex_attribute(0, 0, 0);
+    const color_attr = Milky2018$mgstudio$45$runtime$45$web$webgpu$$vertex_attribute(1, 8, 1);
+    const vertex_layout = Milky2018$mgstudio$45$runtime$45$web$webgpu$$vertex_buffer_layout(24, [position_attr, color_attr]);
+    const vertex_state = Milky2018$mgstudio$45$runtime$45$web$webgpu$$vertex_state(shader_module, "vs_main", [vertex_layout]);
+    const blend_component = Milky2018$mgstudio$45$runtime$45$web$webgpu$$blend_component(0, 1, 0);
+    const blend_state = Milky2018$mgstudio$45$runtime$45$web$webgpu$$blend_state(blend_component, blend_component);
+    const color_target = Milky2018$mgstudio$45$runtime$45$web$webgpu$$color_target_state(format, blend_state);
+    const fragment_state = Milky2018$mgstudio$45$runtime$45$web$webgpu$$fragment_state(shader_module, "fs_main", [color_target]);
+    const primitive_state = Milky2018$mgstudio$45$runtime$45$web$webgpu$$primitive_state(0);
+    const pipeline_desc = Milky2018$mgstudio$45$runtime$45$web$webgpu$$render_pipeline_descriptor(0, vertex_state, fragment_state, primitive_state);
+    const pipeline = Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPUDevice$create_render_pipeline(_device, Milky2018$mgstudio$45$runtime$45$web$webgpu$$RenderPipelineDescriptor$to_js(pipeline_desc));
+    state.gpu.gizmo_pipeline = new Option$Some$14$(pipeline);
+    return;
+  } else {
+    return;
+  }
+}
+function Milky2018$mgstudio$45$runtime$45$web$$draw_gizmo_lines(state, data) {
+  _L: {
+    _L$2: {
+      const _bind = state.gpu.current_pass;
+      if (_bind.$tag === 0) {
+        break _L$2;
+      } else {
+        const _bind$2 = state.gpu.current_pass_info;
+        if (_bind$2 === undefined) {
+          break _L$2;
+        }
+      }
+      break _L;
+    }
+    return undefined;
+  }
+  _L$2: {
+    _L$3: {
+      const _bind = state.gpu.queue;
+      if (_bind.$tag === 0) {
+        break _L$3;
+      } else {
+        const _bind$2 = state.gpu.device;
+        if (_bind$2.$tag === 0) {
+          break _L$3;
+        }
+      }
+      break _L$2;
+    }
+    return undefined;
+  }
+  Milky2018$mgstudio$45$runtime$45$web$$ensure_gizmo_pipeline(state);
+  const _bind = state.gpu.gizmo_pipeline;
+  if (_bind.$tag === 0) {
+    return undefined;
+  }
+  const _bind$2 = state.gpu.current_pass;
+  if (_bind$2.$tag === 1) {
+    const _Some = _bind$2;
+    const _pass = _Some._0;
+    const _bind$3 = state.gpu.current_pass_info;
+    if (_bind$3 === undefined) {
+      return;
+    } else {
+      const _Some$2 = _bind$3;
+      const _info = _Some$2;
+      const _bind$4 = state.gpu.queue;
+      if (_bind$4.$tag === 1) {
+        const _Some$3 = _bind$4;
+        const _queue = _Some$3._0;
+        const vertex_data = Milky2018$mgstudio$45$runtime$45$web$$build_gizmo_vertices(data, _info.cam_x, _info.cam_y, _info.cam_rotation, _info.cam_scale, _info.width, _info.height, 2);
+        const vertex_len = mizchi$js$core$$Any$_get(vertex_data, "length");
+        if (vertex_len <= 0) {
+          return undefined;
+        }
+        const vertex_count = Milky2018$mgstudio$45$runtime$45$web$$to_int(vertex_len / 6);
+        if (vertex_count <= 0) {
+          return undefined;
+        }
+        const vertex_size = mizchi$js$core$$Any$_get(vertex_data, "byteLength");
+        let buffer_opt = state.gpu.gizmo_vertex_buffer;
+        _L$3: {
+          _L$4: {
+            const _bind$5 = buffer_opt;
+            if (_bind$5.$tag === 0) {
+              break _L$4;
+            } else {
+              if (vertex_size > state.gpu.gizmo_vertex_capacity) {
+                break _L$4;
+              }
+            }
+            break _L$3;
+          }
+          const _bind$5 = state.gpu.device;
+          if (_bind$5.$tag === 1) {
+            const _Some$4 = _bind$5;
+            const _device = _Some$4._0;
+            const capacity = vertex_size < 256 ? 256 : vertex_size;
+            const usage = Milky2018$mgstudio$45$runtime$45$web$webgpu$$combine_flags(Milky2018$mgstudio$45$runtime$45$web$webgpu$$buffer_usage_vertex(), Milky2018$mgstudio$45$runtime$45$web$webgpu$$buffer_usage_copy_dst());
+            const desc = Milky2018$mgstudio$45$runtime$45$web$webgpu$$buffer_descriptor(capacity, usage);
+            const buffer = Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPUDevice$create_buffer(_device, Milky2018$mgstudio$45$runtime$45$web$webgpu$$BufferDescriptor$to_js(desc));
+            state.gpu.gizmo_vertex_buffer = new Option$Some$15$(buffer);
+            state.gpu.gizmo_vertex_capacity = capacity;
+            buffer_opt = new Option$Some$15$(buffer);
+          }
+        }
+        const _bind$5 = buffer_opt;
+        if (_bind$5.$tag === 1) {
+          const _Some$4 = _bind$5;
+          const _buffer = _Some$4._0;
+          const _bind$6 = state.gpu.gizmo_pipeline;
+          if (_bind$6.$tag === 1) {
+            const _Some$5 = _bind$6;
+            const _pipeline = _Some$5._0;
+            Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPUQueue$write_buffer(_queue, _buffer, 0, vertex_data);
+            Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_pipeline(_pass, _pipeline);
+            Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$set_vertex_buffer(_pass, 0, _buffer);
+            Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$draw(_pass, vertex_count, 1, 0, 0);
+            return;
+          } else {
+            return;
+          }
+        } else {
+          return;
+        }
+      } else {
+        return;
+      }
+    }
+  } else {
+    return;
+  }
 }
 function Milky2018$mgstudio$45$runtime$45$web$$ensure_mesh_pipeline(state) {
   const _bind = state.gpu.mesh_pipeline;
@@ -3687,8 +4045,9 @@ function Milky2018$mgstudio$45$runtime$45$web$$draw_mesh(state, mesh_id, x, y, r
     } else {
       const _Some$2 = _bind$2;
       const _info = _Some$2;
-      const scale_x_base = _info.width > 0 ? 2 / _info.width * _info.cam_scale : 0;
-      const scale_y_base = _info.height > 0 ? 2 / _info.height * _info.cam_scale : 0;
+      const safe_scale = _info.cam_scale === 0 ? 1 : _info.cam_scale;
+      const scale_x_base = _info.width > 0 ? 2 / _info.width / safe_scale : 0;
+      const scale_y_base = _info.height > 0 ? 2 / _info.height / safe_scale : 0;
       const cos_value = Milky2018$mgstudio$45$runtime$45$web$$math_cos(rotation);
       const sin_value = Milky2018$mgstudio$45$runtime$45$web$$math_sin(rotation);
       const cam_cos = Milky2018$mgstudio$45$runtime$45$web$$math_cos(-_info.cam_rotation);
@@ -3873,8 +4232,9 @@ function Milky2018$mgstudio$45$runtime$45$web$$draw_sprite(state, texture_id, x,
         const tex_scale_y = tex_height > 0 ? tex_height / 128 : 1;
         const sprite_scale_x = scale_x * tex_scale_x;
         const sprite_scale_y = scale_y * tex_scale_y;
-        const scale_x_base = _info.width > 0 ? 2 / _info.width * _info.cam_scale : 0;
-        const scale_y_base = _info.height > 0 ? 2 / _info.height * _info.cam_scale : 0;
+        const safe_scale = _info.cam_scale === 0 ? 1 : _info.cam_scale;
+        const scale_x_base = _info.width > 0 ? 2 / _info.width / safe_scale : 0;
+        const scale_y_base = _info.height > 0 ? 2 / _info.height / safe_scale : 0;
         const cos_value = Milky2018$mgstudio$45$runtime$45$web$$math_cos(rotation);
         const sin_value = Milky2018$mgstudio$45$runtime$45$web$$math_sin(rotation);
         const cam_cos = Milky2018$mgstudio$45$runtime$45$web$$math_cos(-_info.cam_rotation);
@@ -3956,7 +4316,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_input(state) {
 function Milky2018$mgstudio$45$runtime$45$web$$resolve_asset_url(path) {
   const text = Milky2018$mgstudio$45$runtime$45$web$$coerce_asset_path(path);
   if (text.length === 0) {
-    const _bind = moonbitlang$core$builtin$$fail$14$("Asset path is empty", "@Milky2018/mgstudio-runtime-web:host.mbt:475:5-475:32");
+    const _bind = moonbitlang$core$builtin$$fail$14$("Asset path is empty", "@Milky2018/mgstudio-runtime-web:host.mbt:706:5-706:32");
     if (_bind.$tag === 1) {
       const _ok = _bind;
       _ok._0;
@@ -3973,7 +4333,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$resolve_asset_url(path) {
   }
   return new Result$Ok$21$(_tmp);
 }
-function Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1055(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1207(_state) {
   let _tmp = _state;
   _L: while (true) {
     const _state$2 = _tmp;
@@ -4023,7 +4383,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$asyn
         const _bind$2 = mizchi$js$core$$Promise$wait$8$(Milky2018$mgstudio$45$runtime$45$web$$create_image_bitmap(_cont_param$2), (_cont_param$3) => {
           let _err;
           _L$2: {
-            const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1055(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_0(_cont_param$3, state$2, id$2, nearest$2));
+            const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1207(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_0(_cont_param$3, state$2, id$2, nearest$2));
             let _bind$4;
             if (_bind$3.$tag === 1) {
               const _ok = _bind$3;
@@ -4072,7 +4432,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$asyn
         const state$3 = _State_2._1;
         const _cont_param$3 = _State_2._0;
         if (!_cont_param$3.ok) {
-          const _bind$3 = moonbitlang$core$builtin$$fail$14$(`Failed to load texture: ${url} (${moonbitlang$core$int$$Int$to_string$46$inner(_cont_param$3.status, 10)})`, "@Milky2018/mgstudio-runtime-web:host.mbt:1066:5-1072:6");
+          const _bind$3 = moonbitlang$core$builtin$$fail$14$(`Failed to load texture: ${url} (${moonbitlang$core$int$$Int$to_string$46$inner(_cont_param$3.status, 10)})`, "@Milky2018/mgstudio-runtime-web:host.mbt:1381:5-1387:6");
           if (_bind$3.$tag === 1) {
             const _ok = _bind$3;
             _ok._0;
@@ -4083,7 +4443,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$asyn
         const _bind$3 = mizchi$js$core$$Promise$wait$8$(Milky2018$mgstudio$45$runtime$45$web$$response_blob(_cont_param$3), (_cont_param$4) => {
           let _err;
           _L$2: {
-            const _bind$4 = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1055(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_1(_cont_param$4, state$3, id$3, nearest$3, _cont$2, _err_cont$2));
+            const _bind$4 = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1207(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_1(_cont_param$4, state$3, id$3, nearest$3, _cont$2, _err_cont$2));
             let _bind$5;
             if (_bind$4.$tag === 1) {
               const _ok = _bind$4;
@@ -4153,7 +4513,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path(state, id,
   const _bind$2 = mizchi$js$web$http$$fetch(url, "GET", undefined, undefined, undefined, Option$None$4$, undefined, undefined, -1, undefined, undefined, undefined, undefined, Option$None$10$, (_cont_param) => {
     let _err;
     _L$2: {
-      const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1055(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_2(_cont_param, state, id, nearest, url, _cont, _err_cont));
+      const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1207(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_2(_cont_param, state, id, nearest, url, _cont, _err_cont));
       let _bind$4;
       if (_bind$3.$tag === 1) {
         const _ok = _bind$3;
@@ -4187,10 +4547,10 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path(state, id,
   } else {
     const _Some = _bind$3;
     const _payload = _Some;
-    return Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1055(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_2(_payload, state, id, nearest, url, _cont, _err_cont));
+    return Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path$46$42$async_driver$124$1207(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_texture_from_path$46$State$State_2(_payload, state, id, nearest, url, _cont, _err_cont));
   }
 }
-function Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1100(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1252(_state) {
   let _tmp = _state;
   while (true) {
     const _state$2 = _tmp;
@@ -4210,7 +4570,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_d
       const state = _State_1._1;
       const _cont_param = _State_1._0;
       if (!_cont_param.ok) {
-        const _bind = moonbitlang$core$builtin$$fail$14$(`Failed to load shader: ${url} (${moonbitlang$core$int$$Int$to_string$46$inner(_cont_param.status, 10)})`, "@Milky2018/mgstudio-runtime-web:host.mbt:1123:5-1125:6");
+        const _bind = moonbitlang$core$builtin$$fail$14$(`Failed to load shader: ${url} (${moonbitlang$core$int$$Int$to_string$46$inner(_cont_param.status, 10)})`, "@Milky2018/mgstudio-runtime-web:host.mbt:1438:5-1440:6");
         if (_bind.$tag === 1) {
           const _ok = _bind;
           _ok._0;
@@ -4221,7 +4581,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_d
       const _bind = mizchi$js$core$$Promise$wait$4$(Milky2018$mgstudio$45$runtime$45$web$$response_text(_cont_param), (_cont_param$2) => {
         let _err;
         _L: {
-          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1100(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wgsl_from_path$46$State$State_0(_cont_param$2, state, id));
+          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1252(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wgsl_from_path$46$State$State_0(_cont_param$2, state, id));
           let _bind$3;
           if (_bind$2.$tag === 1) {
             const _ok = _bind$2;
@@ -4273,7 +4633,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state, id, pa
   const _bind$2 = mizchi$js$web$http$$fetch(url, "GET", undefined, undefined, undefined, Option$None$4$, undefined, undefined, -1, undefined, undefined, undefined, undefined, Option$None$10$, (_cont_param) => {
     let _err;
     _L: {
-      const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1100(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wgsl_from_path$46$State$State_1(_cont_param, state, id, url, _cont, _err_cont));
+      const _bind$3 = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1252(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wgsl_from_path$46$State$State_1(_cont_param, state, id, url, _cont, _err_cont));
       let _bind$4;
       if (_bind$3.$tag === 1) {
         const _ok = _bind$3;
@@ -4307,7 +4667,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state, id, pa
   } else {
     const _Some = _bind$3;
     const _payload = _Some;
-    return Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1100(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wgsl_from_path$46$State$State_1(_payload, state, id, url, _cont, _err_cont));
+    return Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path$46$42$async_driver$124$1252(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$load_wgsl_from_path$46$State$State_1(_payload, state, id, url, _cont, _err_cont));
   }
 }
 function Milky2018$mgstudio$45$runtime$45$web$$next_shader_id(state) {
@@ -4315,8 +4675,8 @@ function Milky2018$mgstudio$45$runtime$45$web$$next_shader_id(state) {
   state.assets.next_shader_id = id + 1 | 0;
   return id;
 }
-function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$cont$124$1135(_param) {}
-function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1136(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$cont$124$1288(_param) {}
+function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1289(_state) {
   let _tmp = _state;
   while (true) {
     const _state$2 = _tmp;
@@ -4325,32 +4685,32 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
       _State_0._0;
       return undefined;
     } else {
-      const _$42$try$47$858 = _state$2;
-      const entry = _$42$try$47$858._2;
-      const state = _$42$try$47$858._1;
-      const _try_err = _$42$try$47$858._0;
+      const _$42$try$47$997 = _state$2;
+      const entry = _$42$try$47$997._2;
+      const state = _$42$try$47$997._1;
+      const _try_err = _$42$try$47$997._0;
       const message = `Texture load error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err)}`;
       Milky2018$mgstudio$45$runtime$45$web$$console_error(message);
       Milky2018$mgstudio$45$runtime$45$web$$dispatch_asset_error(message);
       Milky2018$mgstudio$45$runtime$45$web$$set_delete(state.assets.loading_textures, entry.id);
-      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$State_0(undefined);
+      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$State_0(undefined);
       continue;
     }
   }
 }
-function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(_state) {
   let _tmp = _state;
   _L: while (true) {
     const _state$2 = _tmp;
     switch (_state$2.$tag) {
       case 0: {
         const _State_0 = _state$2;
-        const mesh_id = _State_0._2;
+        const gizmo_id = _State_0._2;
         const state = _State_0._1;
         const _cont_param = _State_0._0;
-        Milky2018$mgstudio$45$runtime$45$web$$set_delete(state.assets.loading_shaders, mesh_id);
+        Milky2018$mgstudio$45$runtime$45$web$$set_delete(state.assets.loading_shaders, gizmo_id);
         if (_cont_param === "") {
-          state.gpu.mesh_shader_id = 0;
+          state.gpu.gizmo_shader_id = 0;
         }
         if (state.assets.pending_textures.length > 0) {
           const pending = [];
@@ -4379,23 +4739,23 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
               _L$2: {
                 _L$3: {
                   const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path(state, entry.id, entry.path, entry.nearest, (_cont_param$2) => {
-                    const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1136(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$State_0(_cont_param$2));
+                    const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1289(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$State_0(_cont_param$2));
                     if (_bind$2 === -1) {
                       return;
                     } else {
                       const _Some = _bind$2;
                       const _payload = _Some;
-                      Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$cont$124$1135(_payload);
+                      Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$cont$124$1288(_payload);
                       return;
                     }
                   }, (_cont_param$2) => {
-                    const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1136(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$_try$47$858(_cont_param$2, state, entry));
+                    const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1289(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$_try$47$997(_cont_param$2, state, entry));
                     if (_bind$2 === -1) {
                       return;
                     } else {
                       const _Some = _bind$2;
                       const _payload = _Some;
-                      Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$cont$124$1135(_payload);
+                      Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$cont$124$1288(_payload);
                       return;
                     }
                   });
@@ -4413,11 +4773,11 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
                   } else {
                     const _Some = _bind$2;
                     const _payload = _Some;
-                    Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1136(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$State_0(_payload));
+                    Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1289(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$State_0(_payload));
                   }
                   break _L$2;
                 }
-                Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1136(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1134$46$State$_try$47$858(_err, state, entry));
+                Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1289(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$fn$47$1287$46$State$_try$47$997(_err, state, entry));
               }
               _tmp$3 = _i + 1 | 0;
               continue;
@@ -4431,34 +4791,34 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
         }
       }
       case 1: {
-        const _$42$try$47$861 = _state$2;
-        const mesh_id$2 = _$42$try$47$861._2;
-        const state$2 = _$42$try$47$861._1;
-        const _try_err = _$42$try$47$861._0;
+        const _$42$try$47$1000 = _state$2;
+        const gizmo_id$2 = _$42$try$47$1000._2;
+        const state$2 = _$42$try$47$1000._1;
+        const _try_err = _$42$try$47$1000._0;
         const message = `Shader load error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err)}`;
         Milky2018$mgstudio$45$runtime$45$web$$console_error(message);
         Milky2018$mgstudio$45$runtime$45$web$$dispatch_asset_error(message);
-        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0("", state$2, mesh_id$2);
+        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0("", state$2, gizmo_id$2);
         continue _L;
       }
       case 2: {
         const _State_2 = _state$2;
         const _err_cont = _State_2._5;
         const _cont = _State_2._4;
-        const mesh_id$3 = _State_2._3;
-        const sprite_id = _State_2._2;
+        const gizmo_id$3 = _State_2._3;
+        const mesh_id = _State_2._2;
         const state$3 = _State_2._1;
         const _cont_param$2 = _State_2._0;
-        Milky2018$mgstudio$45$runtime$45$web$$set_delete(state$3.assets.loading_shaders, sprite_id);
+        Milky2018$mgstudio$45$runtime$45$web$$set_delete(state$3.assets.loading_shaders, mesh_id);
         if (_cont_param$2 === "") {
-          state$3.gpu.sprite_shader_id = 0;
+          state$3.gpu.mesh_shader_id = 0;
         }
         let _err;
         _L$2: {
-          const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state$3, mesh_id$3, "shaders/mesh.wgsl", (_cont_param$3) => {
+          const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state$3, gizmo_id$3, "shaders/gizmo_lines.wgsl", (_cont_param$3) => {
             let _err$2;
             _L$3: {
-              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0(_cont_param$3, state$3, mesh_id$3));
+              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0(_cont_param$3, state$3, gizmo_id$3));
               let _bind$3;
               if (_bind$2.$tag === 1) {
                 const _ok = _bind$2;
@@ -4482,7 +4842,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
           }, (_cont_param$3) => {
             let _err$2;
             _L$3: {
-              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$861(_cont_param$3, state$3, mesh_id$3));
+              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1000(_cont_param$3, state$3, gizmo_id$3));
               let _bind$3;
               if (_bind$2.$tag === 1) {
                 const _ok = _bind$2;
@@ -4519,81 +4879,46 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
           } else {
             const _Some = _bind$2;
             const _payload = _Some;
-            _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0(_payload, state$3, mesh_id$3);
+            _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_0(_payload, state$3, gizmo_id$3);
             continue _L;
           }
         }
-        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$861(_err, state$3, mesh_id$3);
+        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1000(_err, state$3, gizmo_id$3);
         continue _L;
       }
       case 3: {
-        const _$42$try$47$864 = _state$2;
-        const _err_cont$2 = _$42$try$47$864._5;
-        const _cont$2 = _$42$try$47$864._4;
-        const mesh_id$4 = _$42$try$47$864._3;
-        const sprite_id$2 = _$42$try$47$864._2;
-        const state$4 = _$42$try$47$864._1;
-        const _try_err$2 = _$42$try$47$864._0;
+        const _$42$try$47$1003 = _state$2;
+        const _err_cont$2 = _$42$try$47$1003._5;
+        const _cont$2 = _$42$try$47$1003._4;
+        const gizmo_id$4 = _$42$try$47$1003._3;
+        const mesh_id$2 = _$42$try$47$1003._2;
+        const state$4 = _$42$try$47$1003._1;
+        const _try_err$2 = _$42$try$47$1003._0;
         const message$2 = `Shader load error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err$2)}`;
         Milky2018$mgstudio$45$runtime$45$web$$console_error(message$2);
         Milky2018$mgstudio$45$runtime$45$web$$dispatch_asset_error(message$2);
-        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2("", state$4, sprite_id$2, mesh_id$4, _cont$2, _err_cont$2);
+        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2("", state$4, mesh_id$2, gizmo_id$4, _cont$2, _err_cont$2);
         continue _L;
       }
       case 4: {
         const _State_4 = _state$2;
-        const _err_cont$3 = _State_4._4;
-        const _cont$3 = _State_4._3;
-        const target = _State_4._2;
+        const _err_cont$3 = _State_4._6;
+        const _cont$3 = _State_4._5;
+        const gizmo_id$5 = _State_4._4;
+        const mesh_id$3 = _State_4._3;
+        const sprite_id = _State_4._2;
         const state$5 = _State_4._1;
         const _cont_param$3 = _State_4._0;
-        if (Milky2018$mgstudio$45$runtime$45$web$$host_is_nullish(_cont_param$3)) {
-          const _bind = moonbitlang$core$builtin$$fail$14$("WebGPU device unavailable", "@Milky2018/mgstudio-runtime-web:host.mbt:667:5-667:38");
-          if (_bind.$tag === 1) {
-            const _ok = _bind;
-            _ok._0;
-          } else {
-            return _bind;
-          }
+        Milky2018$mgstudio$45$runtime$45$web$$set_delete(state$5.assets.loading_shaders, sprite_id);
+        if (_cont_param$3 === "") {
+          state$5.gpu.sprite_shader_id = 0;
         }
-        const device = _cont_param$3;
-        const context = Milky2018$mgstudio$45$runtime$45$web$webgpu$$get_canvas_context(target);
-        const format = Milky2018$mgstudio$45$runtime$45$web$webgpu$$texture_format_from_string(Milky2018$mgstudio$45$runtime$45$web$webgpu$$preferred_canvas_format());
-        state$5.gpu.device = new Option$Some$23$(device);
-        state$5.gpu.queue = new Option$Some$24$(Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPUDevice$queue(device));
-        state$5.gpu.context = new Option$Some$25$(context);
-        state$5.gpu.format = format;
-        state$5.gpu.pipeline = Option$None$14$;
-        state$5.gpu.vertex_buffer = Option$None$15$;
-        state$5.gpu.vertex_count = 0;
-        state$5.gpu.mesh_pipeline = Option$None$14$;
-        state$5.gpu.mesh_bind_group = Option$None$20$;
-        state$5.gpu.meshes = Milky2018$mgstudio$45$runtime$45$web$$new_map();
-        state$5.gpu.next_mesh_id = 1;
-        state$5.gpu.uniform_buffer = Option$None$15$;
-        state$5.gpu.encoder = Option$None$16$;
-        state$5.gpu.current_texture = Option$None$17$;
-        state$5.gpu.current_pass = Option$None$19$;
-        state$5.gpu.current_pass_info = undefined;
-        state$5.gpu.textures = Milky2018$mgstudio$45$runtime$45$web$$new_map();
-        state$5.gpu.next_texture_id = 1;
-        state$5.gpu.fallback_texture_id = 0;
-        state$5.gpu.sprite_shader_id = 0;
-        state$5.gpu.mesh_shader_id = 0;
-        const sprite_id$3 = Milky2018$mgstudio$45$runtime$45$web$$next_shader_id(state$5);
-        const mesh_id$5 = Milky2018$mgstudio$45$runtime$45$web$$next_shader_id(state$5);
-        state$5.gpu.sprite_shader_id = sprite_id$3;
-        state$5.gpu.mesh_shader_id = mesh_id$5;
-        Milky2018$mgstudio$45$runtime$45$web$$set_add(state$5.assets.loading_shaders, sprite_id$3);
-        Milky2018$mgstudio$45$runtime$45$web$$set_add(state$5.assets.loading_shaders, mesh_id$5);
-        Milky2018$mgstudio$45$runtime$45$web$$map_set(state$5.assets.shader_paths, sprite_id$3, "shaders/sprite.wgsl");
-        Milky2018$mgstudio$45$runtime$45$web$$map_set(state$5.assets.shader_paths, mesh_id$5, "shaders/mesh.wgsl");
         let _err$2;
         _L$3: {
-          const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state$5, sprite_id$3, "shaders/sprite.wgsl", (_cont_param$4) => {
+          const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state$5, mesh_id$3, "shaders/mesh.wgsl", (_cont_param$4) => {
             let _err$3;
             _L$4: {
-              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2(_cont_param$4, state$5, sprite_id$3, mesh_id$5, _cont$3, _err_cont$3));
+              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2(_cont_param$4, state$5, mesh_id$3, gizmo_id$5, _cont$3, _err_cont$3));
               let _bind$3;
               if (_bind$2.$tag === 1) {
                 const _ok = _bind$2;
@@ -4617,7 +4942,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
           }, (_cont_param$4) => {
             let _err$3;
             _L$4: {
-              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$864(_cont_param$4, state$5, sprite_id$3, mesh_id$5, _cont$3, _err_cont$3));
+              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1003(_cont_param$4, state$5, mesh_id$3, gizmo_id$5, _cont$3, _err_cont$3));
               let _bind$3;
               if (_bind$2.$tag === 1) {
                 const _ok = _bind$2;
@@ -4654,22 +4979,37 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
           } else {
             const _Some = _bind$2;
             const _payload = _Some;
-            _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2(_payload, state$5, sprite_id$3, mesh_id$5, _cont$3, _err_cont$3);
+            _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_2(_payload, state$5, mesh_id$3, gizmo_id$5, _cont$3, _err_cont$3);
             continue _L;
           }
         }
-        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$864(_err$2, state$5, sprite_id$3, mesh_id$5, _cont$3, _err_cont$3);
+        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1003(_err$2, state$5, mesh_id$3, gizmo_id$5, _cont$3, _err_cont$3);
         continue _L;
       }
-      default: {
-        const _State_5 = _state$2;
-        const _err_cont$4 = _State_5._4;
-        const _cont$4 = _State_5._3;
-        const target$2 = _State_5._2;
-        const state$6 = _State_5._1;
-        const _cont_param$4 = _State_5._0;
+      case 5: {
+        const _$42$try$47$1006 = _state$2;
+        const _err_cont$4 = _$42$try$47$1006._6;
+        const _cont$4 = _$42$try$47$1006._5;
+        const gizmo_id$6 = _$42$try$47$1006._4;
+        const mesh_id$4 = _$42$try$47$1006._3;
+        const sprite_id$2 = _$42$try$47$1006._2;
+        const state$6 = _$42$try$47$1006._1;
+        const _try_err$3 = _$42$try$47$1006._0;
+        const message$3 = `Shader load error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err$3)}`;
+        Milky2018$mgstudio$45$runtime$45$web$$console_error(message$3);
+        Milky2018$mgstudio$45$runtime$45$web$$dispatch_asset_error(message$3);
+        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4("", state$6, sprite_id$2, mesh_id$4, gizmo_id$6, _cont$4, _err_cont$4);
+        continue _L;
+      }
+      case 6: {
+        const _State_6 = _state$2;
+        const _err_cont$5 = _State_6._4;
+        const _cont$5 = _State_6._3;
+        const target = _State_6._2;
+        const state$7 = _State_6._1;
+        const _cont_param$4 = _State_6._0;
         if (Milky2018$mgstudio$45$runtime$45$web$$host_is_nullish(_cont_param$4)) {
-          const _bind = moonbitlang$core$builtin$$fail$14$("WebGPU adapter unavailable", "@Milky2018/mgstudio-runtime-web:host.mbt:663:5-663:39");
+          const _bind = moonbitlang$core$builtin$$fail$14$("WebGPU device unavailable", "@Milky2018/mgstudio-runtime-web:host.mbt:896:5-896:38");
           if (_bind.$tag === 1) {
             const _ok = _bind;
             _ok._0;
@@ -4677,31 +5017,161 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
             return _bind;
           }
         }
-        const _bind = mizchi$js$core$$Promise$wait$8$(Milky2018$mgstudio$45$runtime$45$web$$request_device_any(_cont_param$4), (_cont_param$5) => {
-          let _err$3;
-          _L$4: {
-            const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4(_cont_param$5, state$6, target$2, _cont$4, _err_cont$4));
+        const device = _cont_param$4;
+        const context = Milky2018$mgstudio$45$runtime$45$web$webgpu$$get_canvas_context(target);
+        const format = Milky2018$mgstudio$45$runtime$45$web$webgpu$$texture_format_from_string(Milky2018$mgstudio$45$runtime$45$web$webgpu$$preferred_canvas_format());
+        state$7.gpu.device = new Option$Some$23$(device);
+        state$7.gpu.queue = new Option$Some$24$(Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPUDevice$queue(device));
+        state$7.gpu.context = new Option$Some$25$(context);
+        state$7.gpu.format = format;
+        state$7.gpu.pipeline = Option$None$14$;
+        state$7.gpu.vertex_buffer = Option$None$15$;
+        state$7.gpu.vertex_count = 0;
+        state$7.gpu.mesh_pipeline = Option$None$14$;
+        state$7.gpu.mesh_bind_group = Option$None$20$;
+        state$7.gpu.gizmo_pipeline = Option$None$14$;
+        state$7.gpu.gizmo_vertex_buffer = Option$None$15$;
+        state$7.gpu.gizmo_vertex_capacity = 0;
+        state$7.gpu.gizmo_lines = Milky2018$mgstudio$45$runtime$45$web$$new_array();
+        state$7.gpu.meshes = Milky2018$mgstudio$45$runtime$45$web$$new_map();
+        state$7.gpu.next_mesh_id = 1;
+        state$7.gpu.uniform_buffer = Option$None$15$;
+        state$7.gpu.encoder = Option$None$16$;
+        state$7.gpu.current_texture = Option$None$17$;
+        state$7.gpu.current_pass = Option$None$19$;
+        state$7.gpu.current_pass_info = undefined;
+        state$7.gpu.textures = Milky2018$mgstudio$45$runtime$45$web$$new_map();
+        state$7.gpu.next_texture_id = 1;
+        state$7.gpu.fallback_texture_id = 0;
+        state$7.gpu.sprite_shader_id = 0;
+        state$7.gpu.mesh_shader_id = 0;
+        state$7.gpu.gizmo_shader_id = 0;
+        const sprite_id$3 = Milky2018$mgstudio$45$runtime$45$web$$next_shader_id(state$7);
+        const mesh_id$5 = Milky2018$mgstudio$45$runtime$45$web$$next_shader_id(state$7);
+        const gizmo_id$7 = Milky2018$mgstudio$45$runtime$45$web$$next_shader_id(state$7);
+        state$7.gpu.sprite_shader_id = sprite_id$3;
+        state$7.gpu.mesh_shader_id = mesh_id$5;
+        state$7.gpu.gizmo_shader_id = gizmo_id$7;
+        Milky2018$mgstudio$45$runtime$45$web$$set_add(state$7.assets.loading_shaders, sprite_id$3);
+        Milky2018$mgstudio$45$runtime$45$web$$set_add(state$7.assets.loading_shaders, mesh_id$5);
+        Milky2018$mgstudio$45$runtime$45$web$$set_add(state$7.assets.loading_shaders, gizmo_id$7);
+        Milky2018$mgstudio$45$runtime$45$web$$map_set(state$7.assets.shader_paths, sprite_id$3, "shaders/sprite.wgsl");
+        Milky2018$mgstudio$45$runtime$45$web$$map_set(state$7.assets.shader_paths, mesh_id$5, "shaders/mesh.wgsl");
+        Milky2018$mgstudio$45$runtime$45$web$$map_set(state$7.assets.shader_paths, gizmo_id$7, "shaders/gizmo_lines.wgsl");
+        let _err$3;
+        _L$4: {
+          const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state$7, sprite_id$3, "shaders/sprite.wgsl", (_cont_param$5) => {
+            let _err$4;
+            _L$5: {
+              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4(_cont_param$5, state$7, sprite_id$3, mesh_id$5, gizmo_id$7, _cont$5, _err_cont$5));
+              let _bind$3;
+              if (_bind$2.$tag === 1) {
+                const _ok = _bind$2;
+                _bind$3 = _ok._0;
+              } else {
+                const _err$5 = _bind$2;
+                const _tmp$2 = _err$5._0;
+                _err$4 = _tmp$2;
+                break _L$5;
+              }
+              if (_bind$3 === -1) {
+                return;
+              } else {
+                const _Some = _bind$3;
+                const _payload = _Some;
+                _cont$5(_payload);
+                return;
+              }
+            }
+            _err_cont$5(_err$4);
+          }, (_cont_param$5) => {
+            let _err$4;
+            _L$5: {
+              const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1006(_cont_param$5, state$7, sprite_id$3, mesh_id$5, gizmo_id$7, _cont$5, _err_cont$5));
+              let _bind$3;
+              if (_bind$2.$tag === 1) {
+                const _ok = _bind$2;
+                _bind$3 = _ok._0;
+              } else {
+                const _err$5 = _bind$2;
+                const _tmp$2 = _err$5._0;
+                _err$4 = _tmp$2;
+                break _L$5;
+              }
+              if (_bind$3 === -1) {
+                return;
+              } else {
+                const _Some = _bind$3;
+                const _payload = _Some;
+                _cont$5(_payload);
+                return;
+              }
+            }
+            _err_cont$5(_err$4);
+          });
+          let _bind$2;
+          if (_bind.$tag === 1) {
+            const _ok = _bind;
+            _bind$2 = _ok._0;
+          } else {
+            const _err$4 = _bind;
+            const _tmp$2 = _err$4._0;
+            _err$3 = _tmp$2;
+            break _L$4;
+          }
+          if (_bind$2 === undefined) {
+            return new Result$Ok$22$(-1);
+          } else {
+            const _Some = _bind$2;
+            const _payload = _Some;
+            _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4(_payload, state$7, sprite_id$3, mesh_id$5, gizmo_id$7, _cont$5, _err_cont$5);
+            continue _L;
+          }
+        }
+        _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$_try$47$1006(_err$3, state$7, sprite_id$3, mesh_id$5, gizmo_id$7, _cont$5, _err_cont$5);
+        continue _L;
+      }
+      default: {
+        const _State_7 = _state$2;
+        const _err_cont$6 = _State_7._4;
+        const _cont$6 = _State_7._3;
+        const target$2 = _State_7._2;
+        const state$8 = _State_7._1;
+        const _cont_param$5 = _State_7._0;
+        if (Milky2018$mgstudio$45$runtime$45$web$$host_is_nullish(_cont_param$5)) {
+          const _bind = moonbitlang$core$builtin$$fail$14$("WebGPU adapter unavailable", "@Milky2018/mgstudio-runtime-web:host.mbt:892:5-892:39");
+          if (_bind.$tag === 1) {
+            const _ok = _bind;
+            _ok._0;
+          } else {
+            return _bind;
+          }
+        }
+        const _bind = mizchi$js$core$$Promise$wait$8$(Milky2018$mgstudio$45$runtime$45$web$$request_device_any(_cont_param$5), (_cont_param$6) => {
+          let _err$4;
+          _L$5: {
+            const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_6(_cont_param$6, state$8, target$2, _cont$6, _err_cont$6));
             let _bind$3;
             if (_bind$2.$tag === 1) {
               const _ok = _bind$2;
               _bind$3 = _ok._0;
             } else {
-              const _err$4 = _bind$2;
-              const _tmp$2 = _err$4._0;
-              _err$3 = _tmp$2;
-              break _L$4;
+              const _err$5 = _bind$2;
+              const _tmp$2 = _err$5._0;
+              _err$4 = _tmp$2;
+              break _L$5;
             }
             if (_bind$3 === -1) {
               return;
             } else {
               const _Some = _bind$3;
               const _payload = _Some;
-              _cont$4(_payload);
+              _cont$6(_payload);
               return;
             }
           }
-          _err_cont$4(_err$3);
-        }, _err_cont$4);
+          _err_cont$6(_err$4);
+        }, _err_cont$6);
         let _tmp$2;
         if (_bind.$tag === 1) {
           const _ok = _bind;
@@ -4713,7 +5183,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$12
         if (_tmp$3.$tag === 1) {
           const _Some = _tmp$3;
           const _payload = _Some._0;
-          _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_4(_payload, state$6, target$2, _cont$4, _err_cont$4);
+          _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_6(_payload, state$8, target$2, _cont$6, _err_cont$6);
           continue _L;
         } else {
           return new Result$Ok$22$(-1);
@@ -4726,7 +5196,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu(state, target, _cont,
   const _bind = mizchi$js$core$$Promise$wait$8$(Milky2018$mgstudio$45$runtime$45$web$$request_adapter_any(), (_cont_param) => {
     let _err;
     _L: {
-      const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_5(_cont_param, state, target, _cont, _err_cont));
+      const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_7(_cont_param, state, target, _cont, _err_cont));
       let _bind$3;
       if (_bind$2.$tag === 1) {
         const _ok = _bind$2;
@@ -4759,30 +5229,27 @@ function Milky2018$mgstudio$45$runtime$45$web$$init_webgpu(state, target, _cont,
   if (_tmp$2.$tag === 1) {
     const _Some = _tmp$2;
     const _payload = _Some._0;
-    return Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1129(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_5(_payload, state, target, _cont, _err_cont));
+    return Milky2018$mgstudio$45$runtime$45$web$$init_webgpu$46$42$async_driver$124$1281(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$init_webgpu$46$State$State_7(_payload, state, target, _cont, _err_cont));
   } else {
     return new Result$Ok$22$(-1);
   }
 }
 function Milky2018$mgstudio$45$runtime$45$web$$new_state() {
-  return { window: undefined, should_close: false, assets: { pending_textures: [], fallback_reported: Milky2018$mgstudio$45$runtime$45$web$$new_set(), loading_textures: Milky2018$mgstudio$45$runtime$45$web$$new_set(), texture_paths: Milky2018$mgstudio$45$runtime$45$web$$new_map(), shader_sources: Milky2018$mgstudio$45$runtime$45$web$$new_map(), shader_paths: Milky2018$mgstudio$45$runtime$45$web$$new_map(), loading_shaders: Milky2018$mgstudio$45$runtime$45$web$$new_set(), next_shader_id: 1 }, input: { pressed: Milky2018$mgstudio$45$runtime$45$web$$new_set(), just_pressed: Milky2018$mgstudio$45$runtime$45$web$$new_set(), just_released: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_buttons: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_just_pressed: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_just_released: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_x: 0, mouse_y: 0, has_cursor: false, pointer_bound: false, initialized: false }, gpu: { device: Option$None$23$, queue: Option$None$24$, context: Option$None$25$, format: undefined, pipeline: Option$None$14$, vertex_buffer: Option$None$15$, vertex_count: 0, mesh_pipeline: Option$None$14$, mesh_bind_group: Option$None$20$, meshes: Milky2018$mgstudio$45$runtime$45$web$$new_map(), next_mesh_id: 1, uniform_buffer: Option$None$15$, encoder: Option$None$16$, current_texture: Option$None$17$, current_pass: Option$None$19$, current_pass_info: undefined, textures: Milky2018$mgstudio$45$runtime$45$web$$new_map(), next_texture_id: 1, fallback_texture_id: 0, sprite_shader_id: 0, mesh_shader_id: 0 } };
+  return { window: undefined, should_close: false, assets: { pending_textures: [], fallback_reported: Milky2018$mgstudio$45$runtime$45$web$$new_set(), loading_textures: Milky2018$mgstudio$45$runtime$45$web$$new_set(), texture_paths: Milky2018$mgstudio$45$runtime$45$web$$new_map(), shader_sources: Milky2018$mgstudio$45$runtime$45$web$$new_map(), shader_paths: Milky2018$mgstudio$45$runtime$45$web$$new_map(), loading_shaders: Milky2018$mgstudio$45$runtime$45$web$$new_set(), next_shader_id: 1 }, input: { pressed: Milky2018$mgstudio$45$runtime$45$web$$new_set(), just_pressed: Milky2018$mgstudio$45$runtime$45$web$$new_set(), just_released: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_buttons: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_just_pressed: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_just_released: Milky2018$mgstudio$45$runtime$45$web$$new_set(), mouse_x: 0, mouse_y: 0, has_cursor: false, pointer_bound: false, initialized: false }, gpu: { device: Option$None$23$, queue: Option$None$24$, context: Option$None$25$, format: undefined, pipeline: Option$None$14$, vertex_buffer: Option$None$15$, vertex_count: 0, mesh_pipeline: Option$None$14$, mesh_bind_group: Option$None$20$, gizmo_pipeline: Option$None$14$, gizmo_vertex_buffer: Option$None$15$, gizmo_vertex_capacity: 0, gizmo_lines: Milky2018$mgstudio$45$runtime$45$web$$new_array(), meshes: Milky2018$mgstudio$45$runtime$45$web$$new_map(), next_mesh_id: 1, uniform_buffer: Option$None$15$, encoder: Option$None$16$, current_texture: Option$None$17$, current_pass: Option$None$19$, current_pass_info: undefined, textures: Milky2018$mgstudio$45$runtime$45$web$$new_map(), next_texture_id: 1, fallback_texture_id: 0, sprite_shader_id: 0, mesh_shader_id: 0, gizmo_shader_id: 0 } };
 }
-function Milky2018$mgstudio$45$runtime$45$web$$to_int(value) {
-  return moonbitlang$core$double$$Double$to_int(value);
-}
-function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$tick$124$23(_env) {
-  const step = _env._1;
-  const state = _env._0;
+function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$tick$124$26(_env) {
+  const state = _env._1;
+  const step = _env._0;
   if (state.should_close) {
     return undefined;
   }
   Milky2018$mgstudio$45$runtime$45$web$$host_call0_any(step);
   Milky2018$mgstudio$45$runtime$45$web$$request_animation_frame(() => {
-    Milky2018$mgstudio$45$runtime$45$web$$create_host$46$tick$124$23(_env);
+    Milky2018$mgstudio$45$runtime$45$web$$create_host$46$tick$124$26(_env);
   });
 }
-function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1228(_param) {}
-function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1229(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1409(_param) {}
+function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1410(_state) {
   let _tmp = _state;
   while (true) {
     const _state$2 = _tmp;
@@ -4791,21 +5258,21 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$12
       _State_0._0;
       return undefined;
     } else {
-      const _$42$try$47$931 = _state$2;
-      const id = _$42$try$47$931._2;
-      const state = _$42$try$47$931._1;
-      const _try_err = _$42$try$47$931._0;
+      const _$42$try$47$1077 = _state$2;
+      const id = _$42$try$47$1077._2;
+      const state = _$42$try$47$1077._1;
+      const _try_err = _$42$try$47$1077._0;
       const message = `Texture load error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err)}`;
       Milky2018$mgstudio$45$runtime$45$web$$console_error(message);
       Milky2018$mgstudio$45$runtime$45$web$$dispatch_asset_error(message);
       Milky2018$mgstudio$45$runtime$45$web$$set_delete(state.assets.loading_textures, id);
-      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$State_0(undefined);
+      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$State_0(undefined);
       continue;
     }
   }
 }
-function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1250(_param) {}
-function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1251(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1431(_param) {}
+function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1432(_state) {
   let _tmp = _state;
   while (true) {
     const _state$2 = _tmp;
@@ -4817,23 +5284,25 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$12
       Milky2018$mgstudio$45$runtime$45$web$$set_delete(state.assets.loading_shaders, id);
       return undefined;
     } else {
-      const _$42$try$47$928 = _state$2;
-      const id = _$42$try$47$928._2;
-      const state = _$42$try$47$928._1;
-      const _try_err = _$42$try$47$928._0;
+      const _$42$try$47$1074 = _state$2;
+      const id = _$42$try$47$1074._2;
+      const state = _$42$try$47$1074._1;
+      const _try_err = _$42$try$47$1074._0;
       const message = `Shader load error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err)}`;
       Milky2018$mgstudio$45$runtime$45$web$$console_error(message);
       Milky2018$mgstudio$45$runtime$45$web$$dispatch_asset_error(message);
-      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$State_0("", state, id);
+      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$State_0("", state, id);
       continue;
     }
   }
 }
-function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1276(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1457(_state) {
   const _State_0 = _state;
+  const resolve = _State_0._2;
   const state = _State_0._1;
   _State_0._0;
-  return new Result$Ok$22$(Milky2018$mgstudio$45$runtime$45$web$$init_input(state));
+  Milky2018$mgstudio$45$runtime$45$web$$init_input(state);
+  return new Result$Ok$22$(resolve(undefined));
 }
 function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
   const state = Milky2018$mgstudio$45$runtime$45$web$$new_state();
@@ -4853,9 +5322,10 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
     const size = Milky2018$mgstudio$45$runtime$45$web$$get_canvas_pixel_size(default_canvas);
     const pixel_width = mizchi$js$core$$Any$_get(size, "width");
     const pixel_height = mizchi$js$core$$Any$_get(size, "height");
+    const scale_factor = Milky2018$mgstudio$45$runtime$45$web$$get_device_pixel_ratio();
     mizchi$js$core$$Any$_set(default_canvas, "width", pixel_width);
     mizchi$js$core$$Any$_set(default_canvas, "height", pixel_height);
-    state.window = { canvas: default_canvas, width: pixel_width, height: pixel_height };
+    state.window = { canvas: default_canvas, width: pixel_width, height: pixel_height, scale_factor: scale_factor };
     Milky2018$mgstudio$45$runtime$45$web$$bind_pointer_events(state, default_canvas);
     return 1;
   };
@@ -4883,14 +5353,25 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
       return _window_state.height;
     }
   };
+  const window_get_scale_factor = (_discard_) => {
+    Milky2018$mgstudio$45$runtime$45$web$$update_window_size(state);
+    const _bind = state.window;
+    if (_bind === undefined) {
+      return 1;
+    } else {
+      const _Some = _bind;
+      const _window_state = _Some;
+      return _window_state.scale_factor;
+    }
+  };
   const window_should_close = (_discard_) => state.should_close;
   const window_request_close = (_discard_) => {
     state.should_close = true;
   };
   const window_run_loop = (step) => {
-    const _env = { _0: state, _1: step };
+    const _env = { _0: step, _1: state };
     Milky2018$mgstudio$45$runtime$45$web$$request_animation_frame(() => {
-      Milky2018$mgstudio$45$runtime$45$web$$create_host$46$tick$124$23(_env);
+      Milky2018$mgstudio$45$runtime$45$web$$create_host$46$tick$124$26(_env);
     });
   };
   const time_now = () => Milky2018$mgstudio$45$runtime$45$web$$performance_now();
@@ -5018,23 +5499,23 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
     _L: {
       _L$2: {
         const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_texture_from_path(state, id, path, nearest_value, (_cont_param) => {
-          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1229(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$State_0(_cont_param));
+          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1410(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$State_0(_cont_param));
           if (_bind$2 === -1) {
             return;
           } else {
             const _Some = _bind$2;
             const _payload = _Some;
-            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1228(_payload);
+            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1409(_payload);
             return;
           }
         }, (_cont_param) => {
-          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1229(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$_try$47$931(_cont_param, state, id));
+          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1410(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$_try$47$1077(_cont_param, state, id));
           if (_bind$2 === -1) {
             return;
           } else {
             const _Some = _bind$2;
             const _payload = _Some;
-            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1228(_payload);
+            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1409(_payload);
             return;
           }
         });
@@ -5052,11 +5533,11 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
         } else {
           const _Some = _bind$2;
           const _payload = _Some;
-          Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1229(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$State_0(_payload));
+          Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1410(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$State_0(_payload));
         }
         break _L;
       }
-      Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1229(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1227$46$State$_try$47$931(_err, state, id));
+      Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1410(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1408$46$State$_try$47$1077(_err, state, id));
     }
     return id;
   };
@@ -5072,23 +5553,23 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
     _L: {
       _L$2: {
         const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_wgsl_from_path(state, id, path_text, (_cont_param) => {
-          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1251(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$State_0(_cont_param, state, id));
+          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1432(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$State_0(_cont_param, state, id));
           if (_bind$2 === -1) {
             return;
           } else {
             const _Some = _bind$2;
             const _payload = _Some;
-            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1250(_payload);
+            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1431(_payload);
             return;
           }
         }, (_cont_param) => {
-          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1251(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$_try$47$928(_cont_param, state, id));
+          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1432(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$_try$47$1074(_cont_param, state, id));
           if (_bind$2 === -1) {
             return;
           } else {
             const _Some = _bind$2;
             const _payload = _Some;
-            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1250(_payload);
+            Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$cont$124$1431(_payload);
             return;
           }
         });
@@ -5106,11 +5587,11 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
         } else {
           const _Some = _bind$2;
           const _payload = _Some;
-          Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1251(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$State_0(_payload, state, id));
+          Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1432(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$State_0(_payload, state, id));
         }
         break _L;
       }
-      Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1251(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1249$46$State$_try$47$928(_err, state, id));
+      Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1432(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1430$46$State$_try$47$1074(_err, state, id));
     }
     return id;
   };
@@ -5209,7 +5690,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
   };
   const gpu_begin_frame = (_discard_) => Milky2018$mgstudio$45$runtime$45$web$$begin_frame(state);
   const gpu_begin_pass = Milky2018$mgstudio$45$runtime$45$web$$wrap_variadic((args) => {
-    Milky2018$mgstudio$45$runtime$45$web$$begin_pass(state, Milky2018$mgstudio$45$runtime$45$web$$to_int(Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 0, -1)), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 1, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 2, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 3, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 4, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 5, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 6, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 7, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 8, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 9, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 10, 1));
+    Milky2018$mgstudio$45$runtime$45$web$$begin_pass(state, Milky2018$mgstudio$45$runtime$45$web$$to_int(Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 0, -1)), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 1, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 2, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 3, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 4, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 5, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 6, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 7, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 8, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 9, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 10, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 11, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 12, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 13, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 14, 0));
   });
   const gpu_draw_sprite = Milky2018$mgstudio$45$runtime$45$web$$wrap_variadic((args) => {
     Milky2018$mgstudio$45$runtime$45$web$$draw_sprite(state, Milky2018$mgstudio$45$runtime$45$web$$to_int(Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 0, 0)), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 1, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 2, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 3, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 4, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 5, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 6, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 7, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 8, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 9, 1));
@@ -5217,15 +5698,23 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
   const gpu_draw_mesh = Milky2018$mgstudio$45$runtime$45$web$$wrap_variadic((args) => {
     Milky2018$mgstudio$45$runtime$45$web$$draw_mesh(state, Milky2018$mgstudio$45$runtime$45$web$$to_int(Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 0, 0)), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 1, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 2, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 3, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 4, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 5, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 6, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 7, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 8, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 9, 1));
   });
+  const gpu_draw_gizmo_line = Milky2018$mgstudio$45$runtime$45$web$$wrap_variadic((args) => {
+    Milky2018$mgstudio$45$runtime$45$web$$push_gizmo_line(state.gpu.gizmo_lines, Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 0, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 1, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 2, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 3, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 4, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 5, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 6, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 7, 0), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 8, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 9, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 10, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 11, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 12, 2), Milky2018$mgstudio$45$runtime$45$web$$to_int(Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 13, 0)), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 14, 1), Milky2018$mgstudio$45$runtime$45$web$$arg_number(args, 15, 1));
+  });
   const gpu_end_pass = () => {
     const _bind = state.gpu.current_pass;
     if (_bind.$tag === 1) {
-      const _Some = _bind;
+      Milky2018$mgstudio$45$runtime$45$web$$draw_gizmo_lines(state, state.gpu.gizmo_lines);
+    }
+    const _bind$2 = state.gpu.current_pass;
+    if (_bind$2.$tag === 1) {
+      const _Some = _bind$2;
       const _pass = _Some._0;
       Milky2018$mgstudio$45$runtime$45$web$webgpu$$GPURenderPassEncoder$end(_pass);
     }
     state.gpu.current_pass = Option$None$19$;
     state.gpu.current_pass_info = undefined;
+    state.gpu.gizmo_lines = Milky2018$mgstudio$45$runtime$45$web$$new_array();
   };
   const gpu_end_frame = (_discard_) => {
     _L: {
@@ -5270,12 +5759,12 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
     state.gpu.current_pass = Option$None$19$;
     state.gpu.current_pass_info = undefined;
   };
-  const mgstudio_host = mizchi$js$core$$from_entries([{ _0: "window_create", _1: window_create }, { _0: "window_poll_events", _1: window_poll_events }, { _0: "window_get_width", _1: window_get_width }, { _0: "window_get_height", _1: window_get_height }, { _0: "window_should_close", _1: window_should_close }, { _0: "window_request_close", _1: window_request_close }, { _0: "window_run_loop", _1: window_run_loop }, { _0: "time_now", _1: time_now }, { _0: "input_is_key_down", _1: input_is_key_down }, { _0: "input_is_key_just_pressed", _1: input_is_key_just_pressed }, { _0: "input_is_key_just_released", _1: input_is_key_just_released }, { _0: "input_finish_frame", _1: input_finish_frame }, { _0: "input_is_mouse_button_down", _1: input_is_mouse_button_down }, { _0: "input_is_mouse_button_just_pressed", _1: input_is_mouse_button_just_pressed }, { _0: "input_is_mouse_button_just_released", _1: input_is_mouse_button_just_released }, { _0: "input_mouse_x", _1: input_mouse_x }, { _0: "input_mouse_y", _1: input_mouse_y }, { _0: "input_has_cursor", _1: input_has_cursor }, { _0: "debug_string", _1: debug_string }, { _0: "gpu_request_device", _1: gpu_request_device }, { _0: "gpu_get_queue", _1: gpu_get_queue }, { _0: "gpu_create_surface", _1: gpu_create_surface }, { _0: "gpu_configure_surface", _1: gpu_configure_surface }, { _0: "asset_load_texture", _1: asset_load_texture }, { _0: "asset_load_wgsl", _1: asset_load_wgsl }, { _0: "gpu_create_render_target", _1: gpu_create_render_target }, { _0: "gpu_create_mesh_capsule", _1: gpu_create_mesh_capsule }, { _0: "gpu_create_mesh_rectangle", _1: gpu_create_mesh_rectangle }, { _0: "gpu_begin_frame", _1: gpu_begin_frame }, { _0: "gpu_begin_pass", _1: gpu_begin_pass }, { _0: "gpu_draw_sprite", _1: gpu_draw_sprite }, { _0: "gpu_draw_mesh", _1: gpu_draw_mesh }, { _0: "gpu_end_pass", _1: gpu_end_pass }, { _0: "gpu_end_frame", _1: gpu_end_frame }]);
-  const init = () => mizchi$js$core$$from_async$14$((_cont, _err_cont) => {
+  const mgstudio_host = mizchi$js$core$$from_entries([{ _0: "window_create", _1: window_create }, { _0: "window_poll_events", _1: window_poll_events }, { _0: "window_get_width", _1: window_get_width }, { _0: "window_get_height", _1: window_get_height }, { _0: "window_get_scale_factor", _1: window_get_scale_factor }, { _0: "window_should_close", _1: window_should_close }, { _0: "window_request_close", _1: window_request_close }, { _0: "window_run_loop", _1: window_run_loop }, { _0: "time_now", _1: time_now }, { _0: "input_is_key_down", _1: input_is_key_down }, { _0: "input_is_key_just_pressed", _1: input_is_key_just_pressed }, { _0: "input_is_key_just_released", _1: input_is_key_just_released }, { _0: "input_finish_frame", _1: input_finish_frame }, { _0: "input_is_mouse_button_down", _1: input_is_mouse_button_down }, { _0: "input_is_mouse_button_just_pressed", _1: input_is_mouse_button_just_pressed }, { _0: "input_is_mouse_button_just_released", _1: input_is_mouse_button_just_released }, { _0: "input_mouse_x", _1: input_mouse_x }, { _0: "input_mouse_y", _1: input_mouse_y }, { _0: "input_has_cursor", _1: input_has_cursor }, { _0: "debug_string", _1: debug_string }, { _0: "gpu_request_device", _1: gpu_request_device }, { _0: "gpu_get_queue", _1: gpu_get_queue }, { _0: "gpu_create_surface", _1: gpu_create_surface }, { _0: "gpu_configure_surface", _1: gpu_configure_surface }, { _0: "asset_load_texture", _1: asset_load_texture }, { _0: "asset_load_wgsl", _1: asset_load_wgsl }, { _0: "gpu_create_render_target", _1: gpu_create_render_target }, { _0: "gpu_create_mesh_capsule", _1: gpu_create_mesh_capsule }, { _0: "gpu_create_mesh_rectangle", _1: gpu_create_mesh_rectangle }, { _0: "gpu_begin_frame", _1: gpu_begin_frame }, { _0: "gpu_begin_pass", _1: gpu_begin_pass }, { _0: "gpu_draw_sprite", _1: gpu_draw_sprite }, { _0: "gpu_draw_mesh", _1: gpu_draw_mesh }, { _0: "gpu_draw_gizmo_line", _1: gpu_draw_gizmo_line }, { _0: "gpu_end_pass", _1: gpu_end_pass }, { _0: "gpu_end_frame", _1: gpu_end_frame }]);
+  const init = () => mizchi$js$core$$Promise$new$14$((resolve, _reject, _cont, _err_cont) => {
     const _bind = Milky2018$mgstudio$45$runtime$45$web$$init_webgpu(state, default_canvas, (_cont_param) => {
       let _err;
       _L: {
-        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1276(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1273$46$State$State_0(_cont_param, state));
+        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1457(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1454$46$State$State_0(_cont_param, state, resolve));
         let _bind$3;
         if (_bind$2.$tag === 1) {
           const _ok = _bind$2;
@@ -5309,15 +5798,15 @@ function Milky2018$mgstudio$45$runtime$45$web$$create_host(canvas_opt) {
     } else {
       const _Some = _bind$2;
       const _payload = _Some;
-      return Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1276(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1273$46$State$State_0(_payload, state));
+      return Milky2018$mgstudio$45$runtime$45$web$$create_host$46$42$async_driver$124$1457(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$create_host$46$lambda$46$lambda$47$1454$46$State$State_0(_payload, state, resolve));
     }
   });
   return mizchi$js$core$$from_entries([{ _0: "mgstudio_host", _1: mgstudio_host }, { _0: "init", _1: init }]);
 }
-function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$start_example$124$503(_env, name) {
-  const running = _env._2;
-  const exports = _env._1;
-  const set_status = _env._0;
+function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$start_example$124$575(_env, name) {
+  const set_status = _env._2;
+  const running = _env._1;
+  const exports = _env._0;
   const entry = mizchi$js$core$$Any$_get(exports, name);
   if (!Milky2018$mgstudio$45$runtime$45$web$$is_function(entry)) {
     set_status(`Missing export: ${name}`);
@@ -5328,7 +5817,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$start_example$124$5
   set_status(`Running: ${Milky2018$mgstudio$45$runtime$45$web$$strip_run_prefix(name)}`);
   return true;
 }
-function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1290(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1472(_state) {
   let _tmp = _state;
   while (true) {
     const _state$2 = _tmp;
@@ -5342,20 +5831,20 @@ function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124
       mizchi$js$core$$log(export_names);
       set_status("WASM loaded. Choose an example.");
       const running = { val: false };
-      const _env = { _0: set_status, _1: exports, _2: running };
+      const _env = { _0: exports, _1: running, _2: set_status };
       const menu_found = Milky2018$mgstudio$45$runtime$45$web$$setup_menu(doc, (name, _button) => {
         if (running.val) {
           Milky2018$mgstudio$45$runtime$45$web$$reload_with_run_target(name);
           return undefined;
         }
-        Milky2018$mgstudio$45$runtime$45$web$$main_async$46$start_example$124$503(_env, name);
+        Milky2018$mgstudio$45$runtime$45$web$$main_async$46$start_example$124$575(_env, name);
       }, () => {
         Milky2018$mgstudio$45$runtime$45$web$$reload_page();
       });
       const auto_run = Milky2018$mgstudio$45$runtime$45$web$$get_run_target_from_url();
       const _p = "";
       if (!(auto_run === _p)) {
-        Milky2018$mgstudio$45$runtime$45$web$$main_async$46$start_example$124$503(_env, auto_run);
+        Milky2018$mgstudio$45$runtime$45$web$$main_async$46$start_example$124$575(_env, auto_run);
       }
       return !menu_found ? new Result$Ok$22$(set_status(`WASM loaded. Exports: ${Milky2018$mgstudio$45$runtime$45$web$$join_strings(export_names, ", ")}`)) : new Result$Ok$22$(undefined);
     } else {
@@ -5369,8 +5858,6 @@ function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124
       set_status("WebGPU initialized.");
       const imports = mizchi$js$core$$new_object();
       Milky2018$mgstudio$45$runtime$45$web$$object_assign(imports, host);
-      const wasm_js_string = mizchi$js$core$$from_entries([{ _0: "concat", _1: (a, b) => `${a}${b}` }]);
-      mizchi$js$core$$Any$_set(imports, "wasm:js-string", wasm_js_string);
       const spectest = mizchi$js$core$$from_entries([{ _0: "print_char", _1: Milky2018$mgstudio$45$runtime$45$web$$make_print_char() }]);
       mizchi$js$core$$Any$_set(imports, "spectest", spectest);
       const moonbit_ffi = mizchi$js$core$$from_entries([{ _0: "make_closure", _1: Milky2018$mgstudio$45$runtime$45$web$$make_closure }]);
@@ -5379,7 +5866,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124
       const _bind = Milky2018$mgstudio$45$runtime$45$web$$load_wasm(imports, (_cont_param) => {
         let _err;
         _L: {
-          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1290(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_0(_cont_param, doc, set_status));
+          const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1472(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_0(_cont_param, doc, set_status));
           let _bind$3;
           if (_bind$2.$tag === 1) {
             const _ok = _bind$2;
@@ -5448,7 +5935,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$main_async(_cont, _err_cont) {
     const _bind = mizchi$js$core$$Promise$wait$8$(init_promise, (_cont_param) => {
       let _err;
       _L: {
-        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1290(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_1(_cont_param, doc, set_status, host, _cont, _err_cont));
+        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1472(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_1(_cont_param, doc, set_status, host, _cont, _err_cont));
         let _bind$3;
         if (_bind$2.$tag === 1) {
           const _ok = _bind$2;
@@ -5481,7 +5968,7 @@ function Milky2018$mgstudio$45$runtime$45$web$$main_async(_cont, _err_cont) {
     if (_tmp$2.$tag === 1) {
       const _Some$2 = _tmp$2;
       const _payload = _Some$2._0;
-      return Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1290(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_1(_payload, doc, set_status, host, _cont, _err_cont));
+      return Milky2018$mgstudio$45$runtime$45$web$$main_async$46$42$async_driver$124$1472(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$main_async$46$State$State_1(_payload, doc, set_status, host, _cont, _err_cont));
     } else {
       return new Result$Ok$22$(-1);
     }
@@ -5489,8 +5976,8 @@ function Milky2018$mgstudio$45$runtime$45$web$$main_async(_cont, _err_cont) {
     return new Result$Ok$22$(undefined);
   }
 }
-function Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$cont$124$1322(_param) {}
-function Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1323(_state) {
+function Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$cont$124$1503(_param) {}
+function Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1504(_state) {
   let _tmp = _state;
   while (true) {
     const _state$2 = _tmp;
@@ -5499,12 +5986,12 @@ function Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1
       _State_0._0;
       return undefined;
     } else {
-      const _$42$try$47$988 = _state$2;
-      const _try_err = _$42$try$47$988._0;
+      const _$42$try$47$1140 = _state$2;
+      const _try_err = _$42$try$47$1140._0;
       mizchi$js$core$$log(_try_err);
       const doc = mizchi$js$browser$dom$$document();
       const set_status = Milky2018$mgstudio$45$runtime$45$web$$create_status_overlay(doc);
-      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$State_0(set_status(`Error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err)}`));
+      _tmp = new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$State_0(set_status(`Error: ${moonbitlang$core$builtin$$Show$to_string$10$(_try_err)}`));
       continue;
     }
   }
@@ -5514,23 +6001,23 @@ function Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1
   _L: {
     _L$2: {
       const _bind = Milky2018$mgstudio$45$runtime$45$web$$main_async((_cont_param) => {
-        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1323(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$State_0(_cont_param));
+        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1504(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$State_0(_cont_param));
         if (_bind$2 === -1) {
           return;
         } else {
           const _Some = _bind$2;
           const _payload = _Some;
-          Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$cont$124$1322(_payload);
+          Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$cont$124$1503(_payload);
           return;
         }
       }, (_cont_param) => {
-        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1323(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$_try$47$988(_cont_param));
+        const _bind$2 = Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1504(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$_try$47$1140(_cont_param));
         if (_bind$2 === -1) {
           return;
         } else {
           const _Some = _bind$2;
           const _payload = _Some;
-          Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$cont$124$1322(_payload);
+          Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$cont$124$1503(_payload);
           return;
         }
       });
@@ -5548,10 +6035,10 @@ function Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1
       } else {
         const _Some = _bind$2;
         const _payload = _Some;
-        Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1323(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$State_0(_payload));
+        Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1504(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$State_0(_payload));
       }
       break _L;
     }
-    Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1323(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1321$46$State$_try$47$988(_err));
+    Milky2018$mgstudio$45$runtime$45$web$$_init$42$46$42$async_driver$124$1504(new $36$Milky2018$47$mgstudio$45$runtime$45$web$46$42$init$46$lambda$47$1502$46$State$_try$47$1140(_err));
   }
 })();

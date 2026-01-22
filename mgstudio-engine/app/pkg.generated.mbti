@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/app"
 
 // Values
+pub fn[P : SystemParam] system_param((P) -> Unit) -> () -> Unit
 
 // Errors
 
@@ -12,8 +13,11 @@ pub struct App {
 }
 pub fn App::add_plugins(Self, Array[(Self) -> Self]) -> Self
 pub fn App::add_post_update_system(Self, () -> Unit) -> Self
+pub fn[P : SystemParam] App::add_post_update_system_param(Self, (P) -> Unit) -> Self
 pub fn App::add_startup_system(Self, () -> Unit) -> Self
+pub fn[P : SystemParam] App::add_startup_system_param(Self, (P) -> Unit) -> Self
 pub fn App::add_system(Self, () -> Unit) -> Self
+pub fn[P : SystemParam] App::add_system_param(Self, (P) -> Unit) -> Self
 pub fn App::new() -> Self
 pub fn App::run(Self) -> Unit
 pub fn App::run_once(Self) -> Self
@@ -36,4 +40,7 @@ pub type RunnerFn = () -> Unit
 pub type SystemFn = () -> Unit
 
 // Traits
+pub(open) trait SystemParam {
+  get() -> Self
+}
 

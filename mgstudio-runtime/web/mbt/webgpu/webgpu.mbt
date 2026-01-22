@@ -439,6 +439,48 @@ pub fn GPURenderPassEncoder::set_vertex_buffer(
 }
 
 ///|
+pub fn GPURenderPassEncoder::set_viewport(
+  self : GPURenderPassEncoder,
+  x : Double,
+  y : Double,
+  width : Double,
+  height : Double,
+  min_depth : Double,
+  max_depth : Double,
+) -> Unit {
+  self
+  .as_any()
+  ._call("setViewport", [
+    @js.any(x),
+    @js.any(y),
+    @js.any(width),
+    @js.any(height),
+    @js.any(min_depth),
+    @js.any(max_depth),
+  ])
+  |> ignore
+}
+
+///|
+pub fn GPURenderPassEncoder::set_scissor_rect(
+  self : GPURenderPassEncoder,
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+) -> Unit {
+  self
+  .as_any()
+  ._call("setScissorRect", [
+    @js.any(x),
+    @js.any(y),
+    @js.any(width),
+    @js.any(height),
+  ])
+  |> ignore
+}
+
+///|
 pub fn GPURenderPassEncoder::draw(
   self : GPURenderPassEncoder,
   vertex_count : Int,

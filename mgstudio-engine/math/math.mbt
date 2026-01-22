@@ -24,6 +24,51 @@ pub fn Vec2::new(x : Float, y : Float) -> Vec2 {
 }
 
 ///|
+pub struct IVec2 {
+  x : Int
+  y : Int
+}
+
+///|
+pub fn IVec2::new(x : Int, y : Int) -> IVec2 {
+  IVec2::{ x, y }
+}
+
+///|
+pub fn IVec2::add(self : IVec2, other : IVec2) -> IVec2 {
+  IVec2::new(self.x + other.x, self.y + other.y)
+}
+
+///|
+pub fn IVec2::min(self : IVec2, other : IVec2) -> IVec2 {
+  let x = if self.x < other.x { self.x } else { other.x }
+  let y = if self.y < other.y { self.y } else { other.y }
+  IVec2::new(x, y)
+}
+
+///|
+pub fn IVec2::max(self : IVec2, other : IVec2) -> IVec2 {
+  let x = if self.x > other.x { self.x } else { other.x }
+  let y = if self.y > other.y { self.y } else { other.y }
+  IVec2::new(x, y)
+}
+
+///|
+pub fn IVec2::saturating_sub(self : IVec2, other : IVec2) -> IVec2 {
+  let x = if self.x - other.x < 0 { 0 } else { self.x - other.x }
+  let y = if self.y - other.y < 0 { 0 } else { self.y - other.y }
+  IVec2::new(x, y)
+}
+
+///|
+pub fn IVec2::to_vec2(self : IVec2) -> Vec2 {
+  Vec2::new(
+    Float::from_double(self.x.to_double()),
+    Float::from_double(self.y.to_double()),
+  )
+}
+
+///|
 pub fn Vec2::sub(self : Vec2, other : Vec2) -> Vec2 {
   Vec2::new(self.x - other.x, self.y - other.y)
 }
@@ -35,22 +80,27 @@ pub fn Vec2::to_angle(self : Vec2) -> Float {
 
 ///|
 pub fn atan2(y : Float, x : Float) -> Float {
-  Float::from_double(@math.atan2(y.to_double(), x.to_double()))
+  Float::from_double(@coremath.atan2(y.to_double(), x.to_double()))
 }
 
 ///|
 pub fn cos(value : Float) -> Float {
-  Float::from_double(@math.cos(value.to_double()))
+  Float::from_double(@coremath.cos(value.to_double()))
 }
 
 ///|
 pub fn sin(value : Float) -> Float {
-  Float::from_double(@math.sin(value.to_double()))
+  Float::from_double(@coremath.sin(value.to_double()))
+}
+
+///|
+pub fn pow(base : Float, exponent : Float) -> Float {
+  Float::from_double(@coremath.pow(base.to_double(), exponent.to_double()))
 }
 
 ///|
 pub fn pi_half() -> Float {
-  Float::from_double(@math.PI / 2.0)
+  Float::from_double(@coremath.PI / 2.0)
 }
 
 ///|

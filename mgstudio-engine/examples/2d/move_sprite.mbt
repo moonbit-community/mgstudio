@@ -38,7 +38,7 @@ priv struct MoveSpriteState {
 }
 
 ///|
-let move_state : Ref[MoveSpriteState] = @ref.new(MoveSpriteState::{
+let move_state : Ref[MoveSpriteState] = Ref::new(MoveSpriteState::{
   direction: Direction::Right,
   transform: @math.Transform::identity(),
 })

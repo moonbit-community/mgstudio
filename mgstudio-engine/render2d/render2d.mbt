@@ -57,6 +57,20 @@ pub fn RenderLayers::matches(self : RenderLayers, other : RenderLayers) -> Bool 
 }
 
 ///|
+pub struct Viewport {
+  physical_position : @math.IVec2
+  physical_size : @math.IVec2
+}
+
+///|
+pub fn Viewport::new(
+  physical_position : @math.IVec2,
+  physical_size : @math.IVec2,
+) -> Viewport {
+  Viewport::{ physical_position, physical_size }
+}
+
+///|
 pub struct Sprite {
   color : Color
 }
@@ -71,11 +85,12 @@ pub struct Camera2d {
   clear_color : Color
   order : Int
   scale : Float
+  viewport : Viewport?
 }
 
 ///|
 pub fn Camera2d::new(clear_color : Color) -> Camera2d {
-  Camera2d::{ clear_color, order: 0, scale: 1.0F }
+  Camera2d::{ clear_color, order: 0, scale: 1.0F, viewport: None }
 }
 
 ///|
@@ -91,6 +106,19 @@ pub fn Camera2d::with_order(self : Camera2d, order : Int) -> Camera2d {
 ///|
 pub fn Camera2d::with_scale(self : Camera2d, scale : Float) -> Camera2d {
   Camera2d::{ ..self, scale, }
+}
+
+///|
+pub fn Camera2d::with_viewport(
+  self : Camera2d,
+  viewport : Viewport,
+) -> Camera2d {
+  Camera2d::{ ..self, viewport: Some(viewport) }
+}
+
+///|
+pub fn Camera2d::clear_viewport(self : Camera2d) -> Camera2d {
+  Camera2d::{ ..self, viewport: None }
 }
 
 ///|
@@ -311,6 +339,13 @@ priv struct CameraInstance {
   mut transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
+  computed : CameraComputed
+}
+
+///|
+priv struct CameraComputed {
+  mut target_size : @math.IVec2
+  mut scale_factor : Float
 }
 
 ///|
@@ -408,6 +443,10 @@ pub fn render2d_spawn_camera(bundle : Camera2dBundle) -> CameraHandle {
     transform: bundle.transform,
     target: bundle.target,
     layers: bundle.layers,
+    computed: CameraComputed::{
+      target_size: @math.IVec2::new(0, 0),
+      scale_factor: 1.0F,
+    },
   })
   render_state.val.primary_camera = id
   CameraHandle::{ id, }
@@ -513,6 +552,7 @@ pub fn render2d_set_camera_scale_handle(
         clear_color: camera.clear_color,
         order: camera.order,
         scale,
+        viewport: camera.viewport,
       }
       return
     }
@@ -529,6 +569,73 @@ pub fn render2d_set_camera_scale(scale : Float) -> Unit {
 }
 
 ///|
+pub fn render2d_set_camera_viewport_handle(
+  handle : CameraHandle,
+  viewport : Viewport?,
+) -> Unit {
+  let count = render_state.val.cameras.length()
+  for i in 0..<count {
+    if render_state.val.cameras[i].id == handle.id {
+      let camera = render_state.val.cameras[i].camera
+      render_state.val.cameras[i].camera = Camera2d::{
+        clear_color: camera.clear_color,
+        order: camera.order,
+        scale: camera.scale,
+        viewport,
+      }
+      return
+    }
+  }
+}
+
+///|
+pub fn render2d_set_camera_viewport(viewport : Viewport?) -> Unit {
+  let id = render_state.val.primary_camera
+  if id < 0 {
+    return
+  }
+  render2d_set_camera_viewport_handle(CameraHandle::{ id, }, viewport)
+}
+
+///|
+pub fn render2d_debug_log_primary_camera() -> Unit {
+  let id = render_state.val.primary_camera
+  if id < 0 {
+    return
+  }
+  for camera in render_state.val.cameras {
+    if camera.id == id {
+      let target = camera.computed.target_size
+      let scale = camera.computed.scale_factor
+      let mut viewport_text = "None"
+      if camera.camera.viewport is Some(viewport) {
+        let pos = viewport.physical_position
+        let size = viewport.physical_size
+        viewport_text = "pos=(" +
+          pos.x.to_string() +
+          "," +
+          pos.y.to_string() +
+          ") size=(" +
+          size.x.to_string() +
+          "," +
+          size.y.to_string() +
+          ")"
+      }
+      let message = "camera_debug target=(" +
+        target.x.to_string() +
+        "," +
+        target.y.to_string() +
+        ") scale=" +
+        scale.to_string() +
+        " viewport=" +
+        viewport_text
+      @window.host_debug_string(message)
+      return
+    }
+  }
+}
+
+///|
 fn render2d_find_render_target_size(id : Int) -> RenderTargetInfo? {
   for target in render_state.val.render_targets {
     if target.id == id {
@@ -536,6 +643,128 @@ fn render2d_find_render_target_size(id : Int) -> RenderTargetInfo? {
     }
   }
   None
+}
+
+///|
+priv struct RenderTargetComputed {
+  size : @math.IVec2
+  scale_factor : Float
+}
+
+///|
+fn render2d_target_info(camera : CameraInstance) -> RenderTargetComputed? {
+  let mut width = @window.window_width()
+  let mut height = @window.window_height()
+  let mut scale_factor = @window.window_scale_factor()
+  if camera.target is Image(handle) {
+    let target_id = handle.id()
+    if render2d_find_render_target_size(target_id) is Some(info) {
+      width = info.width
+      height = info.height
+      scale_factor = 1.0F
+    } else {
+      return None
+    }
+  }
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  if scale_factor <= 0.0F {
+    scale_factor = 1.0F
+  }
+  Some(RenderTargetComputed::{
+    size: @math.IVec2::new(width, height),
+    scale_factor,
+  })
+}
+
+///|
+fn render2d_scale_ivec2(value : @math.IVec2, factor : Float) -> @math.IVec2 {
+  let fx = value.x.to_double() * factor.to_double()
+  let fy = value.y.to_double() * factor.to_double()
+  @math.IVec2::new(fx.to_int(), fy.to_int())
+}
+
+///|
+fn render2d_clamp_viewport(
+  viewport : Viewport,
+  target_size : @math.IVec2,
+) -> Viewport {
+  let mut position = viewport.physical_position
+  let mut size = viewport.physical_size
+  if position.x < 0 || position.y < 0 {
+    position = @math.IVec2::new(
+      if position.x < 0 {
+        0
+      } else {
+        position.x
+      },
+      if position.y < 0 {
+        0
+      } else {
+        position.y
+      },
+    )
+  }
+  if size.x < 0 || size.y < 0 {
+    size = @math.IVec2::new(
+      if size.x < 0 {
+        0
+      } else {
+        size.x
+      },
+      if size.y < 0 {
+        0
+      } else {
+        size.y
+      },
+    )
+  }
+  let max_position = target_size.saturating_sub(size)
+  position = position.min(max_position)
+  let max_size = target_size.saturating_sub(position)
+  size = size.min(max_size)
+  Viewport::new(position, size)
+}
+
+///|
+pub fn render2d_camera_system() -> Unit {
+  let count = render_state.val.cameras.length()
+  for i in 0..<count {
+    let camera_instance = render_state.val.cameras[i]
+    let info_opt = render2d_target_info(camera_instance)
+    if info_opt is None {
+      render_state.val.cameras[i].computed.target_size = @math.IVec2::new(0, 0)
+      render_state.val.cameras[i].computed.scale_factor = 1.0F
+      continue
+    }
+    let info = if info_opt is Some(value) { value } else { continue }
+    let old_scale = camera_instance.computed.scale_factor
+    let new_scale = info.scale_factor
+    let mut viewport_opt = camera_instance.camera.viewport
+    if old_scale > 0.0F && new_scale != old_scale {
+      if viewport_opt is Some(viewport) {
+        let resize_factor = new_scale / old_scale
+        let resized = Viewport::new(
+          render2d_scale_ivec2(viewport.physical_position, resize_factor),
+          render2d_scale_ivec2(viewport.physical_size, resize_factor),
+        )
+        viewport_opt = Some(resized)
+      }
+    }
+    if viewport_opt is Some(viewport) {
+      let clamped = render2d_clamp_viewport(viewport, info.size)
+      viewport_opt = Some(clamped)
+    }
+    render_state.val.cameras[i].camera = Camera2d::{
+      clear_color: camera_instance.camera.clear_color,
+      order: camera_instance.camera.order,
+      scale: camera_instance.camera.scale,
+      viewport: viewport_opt,
+    }
+    render_state.val.cameras[i].computed.target_size = info.size
+    render_state.val.cameras[i].computed.scale_factor = new_scale
+  }
 }
 
 ///|
@@ -585,8 +814,10 @@ pub fn render_execute_system() -> Unit {
     return
   }
   render_state.val.draw_enabled = false
+  gizmos_prepare()
   let cameras = render_state.val.cameras
   if cameras.length() == 0 {
+    gizmos_clear()
     return
   }
   let sprites = render_state.val.sprites
@@ -594,23 +825,81 @@ pub fn render_execute_system() -> Unit {
   for index in render2d_sorted_camera_indices() {
     let camera = cameras[index]
     let mut target_id = -1
-    let mut target_width = @window.window_width()
-    let mut target_height = @window.window_height()
+    let target_size = camera.computed.target_size
+    let target_width = target_size.x
+    let target_height = target_size.y
     if camera.target is Image(handle) {
       target_id = handle.id()
-      if render2d_find_render_target_size(target_id) is Some(info) {
-        target_width = info.width
-        target_height = info.height
-      }
     }
     if target_width <= 0 || target_height <= 0 {
+      continue
+    }
+    let mut scale_factor = camera.computed.scale_factor
+    if scale_factor <= 0.0F {
+      scale_factor = 1.0F
+    }
+    let mut viewport_x = 0
+    let mut viewport_y = 0
+    let mut viewport_width = target_width
+    let mut viewport_height = target_height
+    let mut view_width = target_width
+    let mut view_height = target_height
+    if camera.camera.viewport is Some(viewport) {
+      viewport_x = if viewport.physical_position.x < 0 {
+        0
+      } else {
+        viewport.physical_position.x
+      }
+      viewport_y = if viewport.physical_position.y < 0 {
+        0
+      } else {
+        viewport.physical_position.y
+      }
+      viewport_width = if viewport.physical_size.x < 0 {
+        0
+      } else {
+        viewport.physical_size.x
+      }
+      viewport_height = if viewport.physical_size.y < 0 {
+        0
+      } else {
+        viewport.physical_size.y
+      }
+      let max_width = if target_width - viewport_x < 0 {
+        0
+      } else {
+        target_width - viewport_x
+      }
+      let max_height = if target_height - viewport_y < 0 {
+        0
+      } else {
+        target_height - viewport_y
+      }
+      if viewport_width > max_width {
+        viewport_width = max_width
+      }
+      if viewport_height > max_height {
+        viewport_height = max_height
+      }
+      if viewport_width <= 0 || viewport_height <= 0 {
+        continue
+      }
+      view_width = viewport_width
+      view_height = viewport_height
+    }
+    let view_width_f = Float::from_double(view_width.to_double()) / scale_factor
+    let view_height_f = Float::from_double(view_height.to_double()) /
+      scale_factor
+    let view_width_logical = view_width_f.to_int()
+    let view_height_logical = view_height_f.to_int()
+    if view_width_logical <= 0 || view_height_logical <= 0 {
       continue
     }
     let clear = camera.camera.clear_color
     @window.host_gpu_begin_pass(
       target_id,
-      target_width,
-      target_height,
+      view_width_logical,
+      view_height_logical,
       clear.r,
       clear.g,
       clear.b,
@@ -619,6 +908,10 @@ pub fn render_execute_system() -> Unit {
       camera.transform.translation.y,
       camera.transform.rotation,
       camera.camera.scale,
+      viewport_x,
+      viewport_y,
+      viewport_width,
+      viewport_height,
     )
     for sprite in sprites {
       if sprite.layers.matches(camera.layers) {
@@ -654,8 +947,10 @@ pub fn render_execute_system() -> Unit {
         )
       }
     }
+    gizmos_draw_lines(camera.layers)
     @window.host_gpu_end_pass()
   }
+  gizmos_clear()
 }
 
 ///|
@@ -670,17 +965,13 @@ pub fn render2d_reset() -> Unit {
   render_state.val.cameras.clear()
   render_state.val.meshes.clear()
   render_state.val.render_targets.clear()
+  gizmos_reset()
 }
 
 ///|
 pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
   let id = render_state.val.primary_camera
   if id < 0 {
-    return None
-  }
-  let width = @window.window_width()
-  let height = @window.window_height()
-  if width <= 0 || height <= 0 {
     return None
   }
   let mut found : CameraInstance? = None
@@ -694,15 +985,67 @@ pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
     return None
   }
   let cam = if found is Some(value) { value } else { return None }
-  let half_width = Float::from_double(width.to_double()) / 2.0F
-  let half_height = Float::from_double(height.to_double()) / 2.0F
-  let inv_scale = if cam.camera.scale == 0.0F {
-    1.0F
-  } else {
-    1.0F / cam.camera.scale
+  let target_size = cam.computed.target_size
+  let width = target_size.x
+  let height = target_size.y
+  if width <= 0 || height <= 0 {
+    return None
   }
-  let view_x = (screen.x - half_width) * inv_scale
-  let view_y = (half_height - screen.y) * inv_scale
+  let mut scale_factor = cam.computed.scale_factor
+  if scale_factor <= 0.0F {
+    scale_factor = 1.0F
+  }
+  let mut rect_x = 0
+  let mut rect_y = 0
+  let mut rect_width = width
+  let mut rect_height = height
+  if cam.camera.viewport is Some(viewport) {
+    rect_x = if viewport.physical_position.x < 0 {
+      0
+    } else {
+      viewport.physical_position.x
+    }
+    rect_y = if viewport.physical_position.y < 0 {
+      0
+    } else {
+      viewport.physical_position.y
+    }
+    rect_width = if viewport.physical_size.x < 0 {
+      0
+    } else {
+      viewport.physical_size.x
+    }
+    rect_height = if viewport.physical_size.y < 0 {
+      0
+    } else {
+      viewport.physical_size.y
+    }
+    let max_width = if width - rect_x < 0 { 0 } else { width - rect_x }
+    let max_height = if height - rect_y < 0 { 0 } else { height - rect_y }
+    if rect_width > max_width {
+      rect_width = max_width
+    }
+    if rect_height > max_height {
+      rect_height = max_height
+    }
+    if rect_width <= 0 || rect_height <= 0 {
+      return None
+    }
+  }
+  let rect_x_f = Float::from_double(rect_x.to_double()) / scale_factor
+  let rect_y_f = Float::from_double(rect_y.to_double()) / scale_factor
+  let rect_width_f = Float::from_double(rect_width.to_double()) / scale_factor
+  let rect_height_f = Float::from_double(rect_height.to_double()) / scale_factor
+  if rect_width_f <= 0.0F || rect_height_f <= 0.0F {
+    return None
+  }
+  let half_width = rect_width_f / 2.0F
+  let half_height = rect_height_f / 2.0F
+  let scale = if cam.camera.scale == 0.0F { 1.0F } else { cam.camera.scale }
+  let local_x = screen.x - rect_x_f
+  let local_y = screen.y - rect_y_f
+  let view_x = (local_x - half_width) * scale
+  let view_y = (half_height - local_y) * scale
   let cosv = @math.cos(cam.transform.rotation)
   let sinv = @math.sin(cam.transform.rotation)
   let world_x = cam.transform.translation.x + view_x * cosv + view_y * sinv
@@ -711,9 +1054,105 @@ pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
 }
 
 ///|
+pub fn render2d_world_to_viewport(world : @math.Vec2) -> @math.Vec2? {
+  let id = render_state.val.primary_camera
+  if id < 0 {
+    return None
+  }
+  let mut found : CameraInstance? = None
+  for camera in render_state.val.cameras {
+    if camera.id == id {
+      found = Some(camera)
+      break
+    }
+  }
+  if found is None {
+    return None
+  }
+  let cam = if found is Some(value) { value } else { return None }
+  let target_size = cam.computed.target_size
+  let width = target_size.x
+  let height = target_size.y
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  let mut scale_factor = cam.computed.scale_factor
+  if scale_factor <= 0.0F {
+    scale_factor = 1.0F
+  }
+  let mut rect_x = 0
+  let mut rect_y = 0
+  let mut rect_width = width
+  let mut rect_height = height
+  if cam.camera.viewport is Some(viewport) {
+    rect_x = if viewport.physical_position.x < 0 {
+      0
+    } else {
+      viewport.physical_position.x
+    }
+    rect_y = if viewport.physical_position.y < 0 {
+      0
+    } else {
+      viewport.physical_position.y
+    }
+    rect_width = if viewport.physical_size.x < 0 {
+      0
+    } else {
+      viewport.physical_size.x
+    }
+    rect_height = if viewport.physical_size.y < 0 {
+      0
+    } else {
+      viewport.physical_size.y
+    }
+    let max_width = if width - rect_x < 0 { 0 } else { width - rect_x }
+    let max_height = if height - rect_y < 0 { 0 } else { height - rect_y }
+    if rect_width > max_width {
+      rect_width = max_width
+    }
+    if rect_height > max_height {
+      rect_height = max_height
+    }
+    if rect_width <= 0 || rect_height <= 0 {
+      return None
+    }
+  }
+  let rect_x_f = Float::from_double(rect_x.to_double()) / scale_factor
+  let rect_y_f = Float::from_double(rect_y.to_double()) / scale_factor
+  let rect_width_f = Float::from_double(rect_width.to_double()) / scale_factor
+  let rect_height_f = Float::from_double(rect_height.to_double()) / scale_factor
+  if rect_width_f <= 0.0F || rect_height_f <= 0.0F {
+    return None
+  }
+  let half_width = rect_width_f / 2.0F
+  let half_height = rect_height_f / 2.0F
+  let dx = world.x - cam.transform.translation.x
+  let dy = world.y - cam.transform.translation.y
+  let cosv = @math.cos(cam.transform.rotation)
+  let sinv = @math.sin(cam.transform.rotation)
+  let view_x = dx * cosv - dy * sinv
+  let view_y = dx * sinv + dy * cosv
+  let safe_scale = if cam.camera.scale == 0.0F {
+    1.0F
+  } else {
+    cam.camera.scale
+  }
+  let local_x = view_x / safe_scale + half_width
+  let local_y = half_height - view_y / safe_scale
+  if local_x < 0.0F ||
+    local_y < 0.0F ||
+    local_x > rect_width_f ||
+    local_y > rect_height_f {
+    return None
+  }
+  Some(@math.Vec2::new(local_x + rect_x_f, local_y + rect_y_f))
+}
+
+///|
 pub fn render2d_plugin(app : @app.App) -> @app.App {
   render2d_reset()
   app
+  .add_system(render2d_camera_system)
   .add_system(render_extract_system)
   .add_post_update_system(render_prepare_system)
   .add_post_update_system(render_queue_system)

@@ -133,12 +133,14 @@ pub fn PrimitiveTopology::to_js_string(self : PrimitiveTopology) -> String {
 ///|
 pub(all) enum VertexFormat {
   Float32x2
+  Float32x4
 }
 
 ///|
 pub fn VertexFormat::to_js_string(self : VertexFormat) -> String {
   match self {
     Float32x2 => "float32x2"
+    Float32x4 => "float32x4"
   }
 }
 

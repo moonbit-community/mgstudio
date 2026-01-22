@@ -237,7 +237,9 @@ pub fn GPURenderPassEncoder::draw(Self, Int, Int, Int, Int) -> Unit
 pub fn GPURenderPassEncoder::end(Self) -> Unit
 pub fn GPURenderPassEncoder::set_bind_group(Self, Int, GPUBindGroup) -> Unit
 pub fn GPURenderPassEncoder::set_pipeline(Self, GPURenderPipeline) -> Unit
+pub fn GPURenderPassEncoder::set_scissor_rect(Self, Int, Int, Int, Int) -> Unit
 pub fn GPURenderPassEncoder::set_vertex_buffer(Self, Int, GPUBuffer) -> Unit
+pub fn GPURenderPassEncoder::set_viewport(Self, Double, Double, Double, Double, Double, Double) -> Unit
 
 #external
 pub type GPURenderPipeline
@@ -361,6 +363,7 @@ pub fn VertexBufferLayout::to_js(Self) -> @core.Any
 
 pub(all) enum VertexFormat {
   Float32x2
+  Float32x4
 }
 pub fn VertexFormat::to_js_string(Self) -> String
 

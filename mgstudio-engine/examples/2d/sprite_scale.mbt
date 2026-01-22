@@ -31,7 +31,7 @@ priv struct SpriteScaleState {
 }
 
 ///|
-let scale_state : Ref[SpriteScaleState] = @ref.new(SpriteScaleState::{
+let scale_state : Ref[SpriteScaleState] = Ref::new(SpriteScaleState::{
   transform: @math.Transform::identity(),
 })
 

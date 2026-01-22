@@ -13,11 +13,6 @@
 // limitations under the License.
 
 ///|
-fn main {
-  ()
-}
-
-///|
 pub fn run_sprite() -> Unit {
   @examples2d.sprite_run()
 }

@@ -58,6 +58,8 @@ pub(all) enum KeyCode {
   ArrowRight
   Space
   Escape
+  Comma
+  Period
 }
 
 ///|
@@ -96,6 +98,9 @@ pub fn host_window_get_width(window : HostWindow) -> Int = "mgstudio_host" "wind
 pub fn host_window_get_height(window : HostWindow) -> Int = "mgstudio_host" "window_get_height"
 
 ///|
+pub fn host_window_get_scale_factor(window : HostWindow) -> Float = "mgstudio_host" "window_get_scale_factor"
+
+///|
 pub fn host_window_should_close(window : HostWindow) -> Bool = "mgstudio_host" "window_should_close"
 
 ///|
@@ -124,6 +129,15 @@ pub fn window_height() -> Int {
     host_window_get_height(window)
   } else {
     0
+  }
+}
+
+///|
+pub fn window_scale_factor() -> Float {
+  if window_state.val.window is Some(window) {
+    host_window_get_scale_factor(window)
+  } else {
+    1.0F
   }
 }
 
@@ -179,6 +193,10 @@ pub fn host_gpu_begin_pass(
   camera_y : Float,
   camera_rotation : Float,
   camera_scale : Float,
+  viewport_x : Int,
+  viewport_y : Int,
+  viewport_width : Int,
+  viewport_height : Int,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass"
 
 ///|
@@ -210,6 +228,26 @@ pub fn host_gpu_draw_mesh(
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh"
 
 ///|
+pub fn host_gpu_draw_gizmo_line(
+  start_x : Float,
+  start_y : Float,
+  start_r : Float,
+  start_g : Float,
+  start_b : Float,
+  start_a : Float,
+  end_x : Float,
+  end_y : Float,
+  end_r : Float,
+  end_g : Float,
+  end_b : Float,
+  end_a : Float,
+  line_width : Float,
+  style_kind : Int,
+  gap_scale : Float,
+  line_scale : Float,
+) -> Unit = "mgstudio_host" "gpu_draw_gizmo_line"
+
+///|
 pub fn host_gpu_end_pass() -> Unit = "mgstudio_host" "gpu_end_pass"
 
 ///|
@@ -235,7 +273,6 @@ pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string
 ///|
 pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
   fn() {
-    let mut app = app.run_startup()
     let window = host_window_create(800, 600, "Moon Game Studio")
     window_set_handle(window)
     let device = host_gpu_request_device()
@@ -243,6 +280,7 @@ pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
     let width = host_window_get_width(window)
     let height = host_window_get_height(window)
     host_gpu_configure_surface(device, surface, width, height)
+    let mut app = app.run_startup()
     host_window_run_loop(fn() {
       host_window_poll_events(window)
       let frame = host_gpu_begin_frame(surface)

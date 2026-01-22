@@ -31,7 +31,7 @@ priv struct RotationState {
 }
 
 ///|
-let rotation_state : Ref[RotationState] = @ref.new(RotationState::{
+let rotation_state : Ref[RotationState] = Ref::new(RotationState::{
   transform: @math.Transform::identity(),
 })
 

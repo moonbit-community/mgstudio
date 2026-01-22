@@ -47,6 +47,8 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
     ArrowRight => "ArrowRight"
     Space => "Space"
     Escape => "Escape"
+    Comma => "Comma"
+    Period => "Period"
   }
 }
 

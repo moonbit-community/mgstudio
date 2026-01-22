@@ -31,7 +31,7 @@ priv struct RotateToCursorState {
 }
 
 ///|
-let rotate_state : Ref[RotateToCursorState] = @ref.new(RotateToCursorState::{
+let rotate_state : Ref[RotateToCursorState] = Ref::new(RotateToCursorState::{
   transform: @math.Transform::identity(),
 })
 
