@@ -18,6 +18,52 @@
 /// NOTE: upstream `Attrs` contains font family/style/weight/features etc.
 /// We start with `metadata` only to support BufferLine behavior tests, and will
 /// extend it incrementally to match upstream.
+
+///|
+/// Text color (ARGB packed, aligned with upstream).
+pub struct Color {
+  value : UInt
+}
+
+///|
+pub fn Color::rgba(r : Byte, g : Byte, b : Byte, a : Byte) -> Color {
+  let av = a.to_int().reinterpret_as_uint()
+  let rv = r.to_int().reinterpret_as_uint()
+  let gv = g.to_int().reinterpret_as_uint()
+  let bv = b.to_int().reinterpret_as_uint()
+  Color::{ value: (av << 24) | (rv << 16) | (gv << 8) | bv }
+}
+
+///|
+pub fn Color::rgb(r : Byte, g : Byte, b : Byte) -> Color {
+  Color::rgba(r, g, b, 0xFF)
+}
+
+///|
+pub fn Color::r(self : Color) -> Byte {
+  ((self.value & 0x00FF0000) >> 16).reinterpret_as_int().to_byte()
+}
+
+///|
+pub fn Color::g(self : Color) -> Byte {
+  ((self.value & 0x0000FF00) >> 8).reinterpret_as_int().to_byte()
+}
+
+///|
+pub fn Color::b(self : Color) -> Byte {
+  (self.value & 0x000000FF).reinterpret_as_int().to_byte()
+}
+
+///|
+pub fn Color::a(self : Color) -> Byte {
+  ((self.value & 0xFF000000) >> 24).reinterpret_as_int().to_byte()
+}
+
+///|
+pub fn Color::as_rgba(self : Color) -> (Byte, Byte, Byte, Byte) {
+  (self.r(), self.g(), self.b(), self.a())
+}
+
 pub struct Attrs {
   metadata : Int
 }
