@@ -1310,6 +1310,36 @@ pub fn CCDSolver::new() -> CCDSolver {
 }
 
 ///|
+pub(all) enum PredictedImpacts {
+  Impacts(Array[(RigidBodyHandle, @core.Real)])
+  ImpactsAfterEndTime(@core.Real)
+  NoImpacts
+}
+
+///|
+#declaration_only
+pub fn CCDSolver::clamp_motions(
+  self : CCDSolver,
+  dt : @core.Real,
+  bodies : RigidBodySet,
+  impacts : PredictedImpacts,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CCDSolver::update_ccd_active_flags(
+  self : CCDSolver,
+  islands : IslandManager,
+  bodies : RigidBodySet,
+  dt : @core.Real,
+  include_forces : Bool,
+) -> Bool {
+  ...
+}
+
+///|
 pub(all) enum JointEnabled {
   Enabled
   DisabledByAttachedBody

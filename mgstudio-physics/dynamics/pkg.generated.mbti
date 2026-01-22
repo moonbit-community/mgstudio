@@ -12,7 +12,9 @@ import {
 // Types and methods
 pub struct CCDSolver {
 }
+pub fn CCDSolver::clamp_motions(Self, Float, RigidBodySet, PredictedImpacts) -> Unit
 pub fn CCDSolver::new() -> Self
+pub fn CCDSolver::update_ccd_active_flags(Self, IslandManager, RigidBodySet, Float, Bool) -> Bool
 
 pub(all) enum CoefficientCombineRule {
   Average
@@ -216,6 +218,12 @@ pub fn MultibodyLink::local_to_world(Self) -> @core.Isometry2
 pub struct MultibodyLinkId {
   multibody : MultibodyIndex
   id : Int
+}
+
+pub(all) enum PredictedImpacts {
+  Impacts(Array[(RigidBodyHandle, Float)])
+  ImpactsAfterEndTime(Float)
+  NoImpacts
 }
 
 type RevoluteJoint
