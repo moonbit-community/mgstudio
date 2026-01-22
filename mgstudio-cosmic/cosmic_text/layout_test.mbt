@@ -37,4 +37,3 @@ test "layout_ascii: Wrap::WordOrGlyph falls back for long words" {
   inspect(lines[3].start, content="9")
   inspect(lines[3].end, content="10")
 }
-

@@ -61,3 +61,25 @@ test "BufferLine.shape builds 1 glyph per code unit (tab uses tab_width cells)" 
     fail("expected Some(shape)")
   }
 }
+
+test "BufferLine.layout wraps words using whitespace segmentation (MVP)" {
+  let attrs = AttrsList::new(Attrs::new())
+  let line0 = BufferLine::new("hello world", Lf, attrs, Advanced)
+  let line1 = line0.layout(
+    10.0F,
+    Some(60.0F),
+    Wrap::Word,
+    None,
+    4,
+    Hinting::Disabled,
+  )
+  if line1.layout_opt() is Some(layout) {
+    inspect(layout.length(), content="2")
+    inspect(layout[0].start, content="0")
+    inspect(layout[0].end, content="5")
+    inspect(layout[1].start, content="6")
+    inspect(layout[1].end, content="11")
+  } else {
+    fail("expected Some(layout)")
+  }
+}

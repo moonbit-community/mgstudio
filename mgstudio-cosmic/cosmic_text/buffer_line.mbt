@@ -111,6 +111,38 @@ pub fn BufferLine::shape(self : BufferLine, tab_width : Int) -> BufferLine {
 }
 
 ///|
+pub fn BufferLine::layout_opt(self : BufferLine) -> Array[LayoutLine]? {
+  self.layout_opt.get()
+}
+
+///|
+pub fn BufferLine::layout(
+  self : BufferLine,
+  font_size : Float,
+  width_opt : Float?,
+  wrap : Wrap,
+  match_mono_width : Float?,
+  tab_width : Int,
+  _hinting : Hinting,
+) -> BufferLine {
+  if self.layout_opt.is_unused() {
+    let line = self.shape(tab_width)
+    let shape_opt = line.shape_opt()
+    if shape_opt is Some(shape) {
+      let cell_w = if match_mono_width is Some(w) { w } else { font_size }
+      let layout = layout_from_shape(line.text, shape, cell_w, width_opt, wrap)
+      let (layout_opt, _) = line.layout_opt.take_unused()
+      let layout_opt = layout_opt.set_used(layout)
+      BufferLine::{ ..line, layout_opt }
+    } else {
+      line
+    }
+  } else {
+    self
+  }
+}
+
+///|
 pub fn BufferLine::set_text(
   self : BufferLine,
   text : String,
