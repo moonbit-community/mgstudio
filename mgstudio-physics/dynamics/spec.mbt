@@ -1676,6 +1676,18 @@ pub fn MultibodyJointSet::insert(
 
 ///|
 #declaration_only
+pub fn MultibodyJointSet::insert_kinematic(
+  self : MultibodyJointSet,
+  parent : RigidBodyHandle,
+  child : RigidBodyHandle,
+  joint : RevoluteJoint,
+  wake_up : Bool,
+) -> MultibodyJointHandle? {
+  ...
+}
+
+///|
+#declaration_only
 pub fn MultibodyJointSet::remove(
   self : MultibodyJointSet,
   handle : MultibodyJointHandle,
@@ -1727,6 +1739,14 @@ pub fn MultibodyJointSet::get_multibody_mut_internal(
   self : MultibodyJointSet,
   index : Int,
 ) -> Multibody? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::multibodies(
+  self : MultibodyJointSet,
+) -> Array[Multibody] {
   ...
 }
 

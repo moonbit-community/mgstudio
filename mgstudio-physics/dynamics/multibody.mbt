@@ -482,7 +482,9 @@ pub fn MultibodyJointSet::iter(
   let result : Array[(MultibodyJointHandle, Multibody, LinkId)] = []
   for i in 0..<self.body_links.length() {
     if self.body_links[i] is Some(info) {
-      if info.mb_index >= 0 && info.mb_index < self.multibodies.length() {
+      if info.link_id.value > 0 &&
+        info.mb_index >= 0 &&
+        info.mb_index < self.multibodies.length() {
         result.push(
           (
             MultibodyJointHandle::new(i),
@@ -609,6 +611,17 @@ pub fn MultibodyJointSet::insert(
 }
 
 ///|
+pub fn MultibodyJointSet::insert_kinematic(
+  self : MultibodyJointSet,
+  parent : RigidBodyHandle,
+  child : RigidBodyHandle,
+  joint : RevoluteJoint,
+  wake_up : Bool,
+) -> MultibodyJointHandle? {
+  self.insert(parent, child, joint, wake_up)
+}
+
+///|
 pub fn MultibodyJointSet::remove(
   self : MultibodyJointSet,
   handle : MultibodyJointHandle,
@@ -711,6 +724,17 @@ pub fn MultibodyJointSet::get_multibody_mut_internal(
   index : Int,
 ) -> Multibody? {
   self.get_multibody(index)
+}
+
+///|
+pub fn MultibodyJointSet::multibodies(
+  self : MultibodyJointSet,
+) -> Array[Multibody] {
+  let result : Array[Multibody] = []
+  for i in 0..<self.multibodies.length() {
+    result.push(self.multibodies[i])
+  }
+  result
 }
 
 ///|
