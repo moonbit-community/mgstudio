@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_skrifa/skrifa"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct FontRef {
+  data : Bytes
+  index : UInt
+}
+pub fn FontRef::data(Self) -> Bytes
+pub fn FontRef::from_index(Bytes, UInt) -> Self?
+pub fn FontRef::index(Self) -> UInt
+pub fn FontRef::new(Bytes) -> Self?
+
+pub struct Size {
+  value : Double
+}
+pub fn Size::new(Double) -> Self
+pub fn Size::unscaled() -> Self
+pub fn Size::value(Self) -> Double
+
+// Type aliases
+pub type GlyphId = UInt
+
+pub type NormalizedCoord = Int
+
+// Traits
+
