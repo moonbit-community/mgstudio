@@ -1544,7 +1544,7 @@ pub fn MultibodyJointSet::take_to_join(
 #declaration_only
 pub fn MultibodyJointSet::iter(
   self : MultibodyJointSet,
-) -> Array[(MultibodyJointHandle, Multibody, LinkId)] {
+) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody, MultibodyLink)] {
   ...
 }
 
@@ -1664,6 +1664,20 @@ pub fn MultibodyJointHandle::invalid() -> MultibodyJointHandle {
 
 ///|
 #declaration_only
+pub type MultibodyIndex
+
+///|
+#declaration_only
+pub fn MultibodyIndex::invalid() -> MultibodyIndex {
+  ...
+}
+
+///|
+#declaration_only
+pub type MultibodyLinkId
+
+///|
+#declaration_only
 pub fn MultibodyJointHandle::from_raw_parts(
   id : Int,
   generation : Int,
@@ -1728,7 +1742,7 @@ pub fn MultibodyJointSet::remove_multibody_articulations(
 pub fn MultibodyJointSet::rigid_body_link(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
-) -> LinkId? {
+) -> MultibodyLinkId? {
   ...
 }
 
@@ -1736,7 +1750,7 @@ pub fn MultibodyJointSet::rigid_body_link(
 #declaration_only
 pub fn MultibodyJointSet::get_multibody(
   self : MultibodyJointSet,
-  index : Int,
+  index : MultibodyIndex,
 ) -> Multibody? {
   ...
 }
@@ -1745,7 +1759,7 @@ pub fn MultibodyJointSet::get_multibody(
 #declaration_only
 pub fn MultibodyJointSet::get_multibody_mut(
   self : MultibodyJointSet,
-  index : Int,
+  index : MultibodyIndex,
 ) -> Multibody? {
   ...
 }
@@ -1754,7 +1768,7 @@ pub fn MultibodyJointSet::get_multibody_mut(
 #declaration_only
 pub fn MultibodyJointSet::get_multibody_mut_internal(
   self : MultibodyJointSet,
-  index : Int,
+  index : MultibodyIndex,
 ) -> Multibody? {
   ...
 }

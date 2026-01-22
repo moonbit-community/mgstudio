@@ -449,6 +449,27 @@ pub fn MultibodyJointHandle::invalid() -> MultibodyJointHandle {
 }
 
 ///|
+pub struct MultibodyIndex {
+  value : Int
+}
+
+///|
+fn MultibodyIndex::new(value : Int) -> MultibodyIndex {
+  { value, }
+}
+
+///|
+pub fn MultibodyIndex::invalid() -> MultibodyIndex {
+  MultibodyIndex::new(-1)
+}
+
+///|
+pub struct MultibodyLinkId {
+  multibody : MultibodyIndex
+  id : Int
+}
+
+///|
 priv struct LinkInfo {
   mb_index : Int
   link_id : LinkId
@@ -599,20 +620,25 @@ pub fn MultibodyJointSet::take_to_join(
 ///|
 pub fn MultibodyJointSet::iter(
   self : MultibodyJointSet,
-) -> Array[(MultibodyJointHandle, Multibody, LinkId)] {
-  let result : Array[(MultibodyJointHandle, Multibody, LinkId)] = []
+) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody, MultibodyLink)] {
+  let result : Array[
+    (MultibodyJointHandle, MultibodyLinkId, Multibody, MultibodyLink),
+  ] = []
   for i in 0..<self.body_links.length() {
     if self.body_links[i] is Some(info) {
       if info.link_id.value > 0 &&
         info.mb_index >= 0 &&
         info.mb_index < self.multibodies.length() {
-        result.push(
-          (
-            MultibodyJointHandle::new(i),
-            self.multibodies[info.mb_index],
-            info.link_id,
-          ),
-        )
+        let multibody = self.multibodies[info.mb_index]
+        if info.link_id.value >= 0 &&
+          info.link_id.value < multibody.links.length() {
+          let link = multibody.links[info.link_id.value]
+          let link_id = MultibodyLinkId::{
+            multibody: MultibodyIndex::new(info.mb_index),
+            id: info.link_id.value,
+          }
+          result.push((MultibodyJointHandle::new(i), link_id, multibody, link))
+        }
       }
     }
   }
@@ -852,12 +878,15 @@ pub fn MultibodyJointSet::remove_multibody_articulations(
 pub fn MultibodyJointSet::rigid_body_link(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
-) -> LinkId? {
+) -> MultibodyLinkId? {
   if handle.id < 0 || handle.id >= self.body_links.length() {
     return None
   }
   if self.body_links[handle.id] is Some(info) {
-    Some(info.link_id)
+    Some(MultibodyLinkId::{
+      multibody: MultibodyIndex::new(info.mb_index),
+      id: info.link_id.value,
+    })
   } else {
     None
   }
@@ -866,19 +895,19 @@ pub fn MultibodyJointSet::rigid_body_link(
 ///|
 pub fn MultibodyJointSet::get_multibody(
   self : MultibodyJointSet,
-  index : Int,
+  index : MultibodyIndex,
 ) -> Multibody? {
-  if index < 0 || index >= self.multibodies.length() {
+  if index.value < 0 || index.value >= self.multibodies.length() {
     None
   } else {
-    Some(self.multibodies[index])
+    Some(self.multibodies[index.value])
   }
 }
 
 ///|
 pub fn MultibodyJointSet::get_multibody_mut(
   self : MultibodyJointSet,
-  index : Int,
+  index : MultibodyIndex,
 ) -> Multibody? {
   self.get_multibody(index)
 }
@@ -886,7 +915,7 @@ pub fn MultibodyJointSet::get_multibody_mut(
 ///|
 pub fn MultibodyJointSet::get_multibody_mut_internal(
   self : MultibodyJointSet,
-  index : Int,
+  index : MultibodyIndex,
 ) -> Multibody? {
   self.get_multibody(index)
 }
