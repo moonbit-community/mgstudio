@@ -79,6 +79,269 @@ pub fn RigidBodyType::is_dynamic_or_kinematic(self : RigidBodyType) -> Bool {
 }
 
 ///|
+pub(all) enum CoefficientCombineRule {
+  Average
+  Min
+  Multiply
+  Max
+  ClampedSum
+}
+
+///|
+#declaration_only
+pub fn CoefficientCombineRule::combine(
+  coeff1 : @core.Real,
+  coeff2 : @core.Real,
+  rule_value1 : CoefficientCombineRule,
+  rule_value2 : CoefficientCombineRule,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub type SpringCoefficients
+
+///|
+#declaration_only
+pub fn SpringCoefficients::new(
+  natural_frequency : @core.Real,
+  damping_ratio : @core.Real,
+) -> SpringCoefficients {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SpringCoefficients::contact_defaults() -> SpringCoefficients {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SpringCoefficients::joint_defaults() -> SpringCoefficients {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SpringCoefficients::angular_frequency(
+  self : SpringCoefficients,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SpringCoefficients::erp_inv_dt(
+  self : SpringCoefficients,
+  dt : @core.Real,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SpringCoefficients::erp(
+  self : SpringCoefficients,
+  dt : @core.Real,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SpringCoefficients::cfm_coeff(
+  self : SpringCoefficients,
+  dt : @core.Real,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SpringCoefficients::cfm_factor(
+  self : SpringCoefficients,
+  dt : @core.Real,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub type IntegrationParameters
+
+///|
+#declaration_only
+pub fn IntegrationParameters::default() -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::new() -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::inv_dt(
+  self : IntegrationParameters,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_dt(
+  self : IntegrationParameters,
+  dt : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_inv_dt(
+  self : IntegrationParameters,
+  inv_dt : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_min_ccd_dt(
+  self : IntegrationParameters,
+  min_ccd_dt : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_contact_softness(
+  self : IntegrationParameters,
+  contact_softness : SpringCoefficients,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_warmstart_coefficient(
+  self : IntegrationParameters,
+  warmstart_coefficient : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_length_unit(
+  self : IntegrationParameters,
+  length_unit : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_normalized_allowed_linear_error(
+  self : IntegrationParameters,
+  normalized_allowed_linear_error : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_normalized_max_corrective_velocity(
+  self : IntegrationParameters,
+  normalized_max_corrective_velocity : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_normalized_prediction_distance(
+  self : IntegrationParameters,
+  normalized_prediction_distance : @core.Real,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_num_solver_iterations(
+  self : IntegrationParameters,
+  num_solver_iterations : Int,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_num_internal_pgs_iterations(
+  self : IntegrationParameters,
+  num_internal_pgs_iterations : Int,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_num_internal_stabilization_iterations(
+  self : IntegrationParameters,
+  num_internal_stabilization_iterations : Int,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_min_island_size(
+  self : IntegrationParameters,
+  min_island_size : Int,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::set_max_ccd_substeps(
+  self : IntegrationParameters,
+  max_ccd_substeps : Int,
+) -> IntegrationParameters {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::allowed_linear_error(
+  self : IntegrationParameters,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::max_corrective_velocity(
+  self : IntegrationParameters,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntegrationParameters::prediction_distance(
+  self : IntegrationParameters,
+) -> @core.Real {
+  ...
+}
+
+///|
 #declaration_only
 pub type RigidBody
 

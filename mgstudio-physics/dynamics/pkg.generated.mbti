@@ -14,6 +14,15 @@ pub struct CCDSolver {
 }
 pub fn CCDSolver::new() -> Self
 
+pub(all) enum CoefficientCombineRule {
+  Average
+  Min
+  Multiply
+  Max
+  ClampedSum
+}
+pub fn CoefficientCombineRule::combine(Float, Float, Self, Self) -> Float
+
 pub struct ContactGraph {
   pairs : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
@@ -65,6 +74,42 @@ pub fn IndexSequence::rearrange_columns(Self, RowDVector, Bool) -> Unit
 pub fn IndexSequence::rearrange_rows(Self, DVector, Bool) -> Unit
 pub fn IndexSequence::remove(Self, Int) -> Unit
 pub fn IndexSequence::with_rearranged_rows_mut(Self, DVector, (DVector) -> Unit) -> Unit
+
+pub struct IntegrationParameters {
+  mut dt : Float
+  mut min_ccd_dt : Float
+  mut contact_softness : SpringCoefficients
+  mut warmstart_coefficient : Float
+  mut length_unit : Float
+  mut normalized_allowed_linear_error : Float
+  mut normalized_max_corrective_velocity : Float
+  mut normalized_prediction_distance : Float
+  mut num_solver_iterations : Int
+  mut num_internal_pgs_iterations : Int
+  mut num_internal_stabilization_iterations : Int
+  mut min_island_size : Int
+  mut max_ccd_substeps : Int
+}
+pub fn IntegrationParameters::allowed_linear_error(Self) -> Float
+pub fn IntegrationParameters::default() -> Self
+pub fn IntegrationParameters::inv_dt(Self) -> Float
+pub fn IntegrationParameters::max_corrective_velocity(Self) -> Float
+pub fn IntegrationParameters::new() -> Self
+pub fn IntegrationParameters::prediction_distance(Self) -> Float
+pub fn IntegrationParameters::set_contact_softness(Self, SpringCoefficients) -> Self
+pub fn IntegrationParameters::set_dt(Self, Float) -> Self
+pub fn IntegrationParameters::set_inv_dt(Self, Float) -> Self
+pub fn IntegrationParameters::set_length_unit(Self, Float) -> Self
+pub fn IntegrationParameters::set_max_ccd_substeps(Self, Int) -> Self
+pub fn IntegrationParameters::set_min_ccd_dt(Self, Float) -> Self
+pub fn IntegrationParameters::set_min_island_size(Self, Int) -> Self
+pub fn IntegrationParameters::set_normalized_allowed_linear_error(Self, Float) -> Self
+pub fn IntegrationParameters::set_normalized_max_corrective_velocity(Self, Float) -> Self
+pub fn IntegrationParameters::set_normalized_prediction_distance(Self, Float) -> Self
+pub fn IntegrationParameters::set_num_internal_pgs_iterations(Self, Int) -> Self
+pub fn IntegrationParameters::set_num_internal_stabilization_iterations(Self, Int) -> Self
+pub fn IntegrationParameters::set_num_solver_iterations(Self, Int) -> Self
+pub fn IntegrationParameters::set_warmstart_coefficient(Self, Float) -> Self
 
 type Island
 
@@ -234,6 +279,19 @@ pub fn RowDVector::scale(Self, Float) -> Self
 type SleepCandidate
 
 type SleepRootState
+
+pub struct SpringCoefficients {
+  natural_frequency : Float
+  damping_ratio : Float
+}
+pub fn SpringCoefficients::angular_frequency(Self) -> Float
+pub fn SpringCoefficients::cfm_coeff(Self, Float) -> Float
+pub fn SpringCoefficients::cfm_factor(Self, Float) -> Float
+pub fn SpringCoefficients::contact_defaults() -> Self
+pub fn SpringCoefficients::erp(Self, Float) -> Float
+pub fn SpringCoefficients::erp_inv_dt(Self, Float) -> Float
+pub fn SpringCoefficients::joint_defaults() -> Self
+pub fn SpringCoefficients::new(Float, Float) -> Self
 
 // Type aliases
 
