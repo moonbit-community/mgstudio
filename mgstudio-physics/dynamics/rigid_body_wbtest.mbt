@@ -114,3 +114,39 @@ test "rigid body builder ccd options" {
   inspect(body.is_ccd_enabled(), content="true")
   inspect(body.soft_ccd_prediction() == 1.25F, content="true")
 }
+
+///|
+/// Ported from rapier rigid_body builder initialization fields.
+test "rigid body builder initial state" {
+  let body = RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(1.0F, 2.0F))
+    .rotation(@core.Rot2::from_angle(0.5F))
+    .linvel(@core.Vec2::new(3.0F, -1.0F))
+    .angvel(2.5F)
+    .gravity_scale(0.5F)
+    .linear_damping(0.1F)
+    .angular_damping(0.2F)
+    .enabled(false)
+    .build()
+  inspect(body.translation().x == 1.0F, content="true")
+  inspect(body.translation().y == 2.0F, content="true")
+  let angle_delta = @core.abs(body.rotation().angle() - 0.5F)
+  inspect(angle_delta < 1.0e-4F, content="true")
+  inspect(body.linvel().x == 3.0F, content="true")
+  inspect(body.linvel().y == -1.0F, content="true")
+  inspect(body.angvel() == 2.5F, content="true")
+  inspect(body.gravity_scale() == 0.5F, content="true")
+  inspect(body.linear_damping() == 0.1F, content="true")
+  inspect(body.angular_damping() == 0.2F, content="true")
+  inspect(!body.is_enabled(), content="true")
+}
+
+///|
+/// Ported from rapier rigid_body builder sleeping behavior.
+test "rigid body builder sleeping state" {
+  let body = RigidBodyBuilder::dynamic().sleeping(true).build()
+  inspect(body.is_sleeping(), content="true")
+  inspect(body.linvel().x == 0.0F, content="true")
+  inspect(body.linvel().y == 0.0F, content="true")
+  inspect(body.angvel() == 0.0F, content="true")
+}

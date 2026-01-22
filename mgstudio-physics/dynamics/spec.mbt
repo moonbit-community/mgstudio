@@ -384,6 +384,60 @@ pub fn RigidBodyBuilder::translation(
 
 ///|
 #declaration_only
+pub fn RigidBodyBuilder::rotation(
+  self : RigidBodyBuilder,
+  rotation : @core.Rot2,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::linvel(
+  self : RigidBodyBuilder,
+  linvel : @core.Vec2,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::angvel(
+  self : RigidBodyBuilder,
+  angvel : @core.Real,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::gravity_scale(
+  self : RigidBodyBuilder,
+  scale : @core.Real,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::linear_damping(
+  self : RigidBodyBuilder,
+  damping : @core.Real,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::angular_damping(
+  self : RigidBodyBuilder,
+  damping : @core.Real,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodyBuilder::additional_mass(
   self : RigidBodyBuilder,
   mass : @core.Real,
@@ -1603,6 +1657,24 @@ pub fn RevoluteJoint::angle(
 pub fn RigidBodyBuilder::can_sleep(
   self : RigidBodyBuilder,
   can_sleep : Bool,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::sleeping(
+  self : RigidBodyBuilder,
+  sleeping : Bool,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::enabled(
+  self : RigidBodyBuilder,
+  enabled : Bool,
 ) -> RigidBodyBuilder {
   ...
 }

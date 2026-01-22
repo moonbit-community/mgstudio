@@ -1080,10 +1080,17 @@ pub fn RigidBody::set_next_kinematic_position(
 ///|
 pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
+  mut linvel : @core.Vec2
+  mut angvel : @core.Real
+  mut gravity_scale : @core.Real
+  mut linear_damping : @core.Real
+  mut angular_damping : @core.Real
   body_type : RigidBodyType
   mut additional_mass : @core.Real
   mut additional_solver_iterations : Int
   mut can_sleep : Bool
+  mut sleeping : Bool
+  mut enabled : Bool
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : @core.Real
 }
@@ -1092,10 +1099,17 @@ pub struct RigidBodyBuilder {
 fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
   {
     position: @core.Isometry2::identity(),
+    linvel: @core.Vec2::zero(),
+    angvel: 0.0F,
+    gravity_scale: 1.0F,
+    linear_damping: 0.0F,
+    angular_damping: 0.0F,
     body_type,
     additional_mass: 0.0F,
     additional_solver_iterations: 0,
     can_sleep: true,
+    sleeping: false,
+    enabled: true,
     ccd_enabled: false,
     soft_ccd_prediction: 0.0F,
   }
@@ -1132,6 +1146,61 @@ pub fn RigidBodyBuilder::translation(
 }
 
 ///|
+pub fn RigidBodyBuilder::rotation(
+  self : RigidBodyBuilder,
+  rotation : @core.Rot2,
+) -> RigidBodyBuilder {
+  let translation = self.position.translation
+  self.position = @core.Isometry2::new(translation, rotation)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::linvel(
+  self : RigidBodyBuilder,
+  linvel : @core.Vec2,
+) -> RigidBodyBuilder {
+  self.linvel = linvel
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::angvel(
+  self : RigidBodyBuilder,
+  angvel : @core.Real,
+) -> RigidBodyBuilder {
+  self.angvel = angvel
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::gravity_scale(
+  self : RigidBodyBuilder,
+  scale : @core.Real,
+) -> RigidBodyBuilder {
+  self.gravity_scale = scale
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::linear_damping(
+  self : RigidBodyBuilder,
+  damping : @core.Real,
+) -> RigidBodyBuilder {
+  self.linear_damping = damping
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::angular_damping(
+  self : RigidBodyBuilder,
+  damping : @core.Real,
+) -> RigidBodyBuilder {
+  self.angular_damping = damping
+  self
+}
+
+///|
 pub fn RigidBodyBuilder::additional_mass(
   self : RigidBodyBuilder,
   mass : @core.Real,
@@ -1155,6 +1224,24 @@ pub fn RigidBodyBuilder::can_sleep(
   can_sleep : Bool,
 ) -> RigidBodyBuilder {
   self.can_sleep = can_sleep
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::sleeping(
+  self : RigidBodyBuilder,
+  sleeping : Bool,
+) -> RigidBodyBuilder {
+  self.sleeping = sleeping
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::enabled(
+  self : RigidBodyBuilder,
+  enabled : Bool,
+) -> RigidBodyBuilder {
+  self.enabled = enabled
   self
 }
 
@@ -1184,15 +1271,20 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   } else {
     RigidBodyActivation::cannot_sleep()
   }
+  let forces = RigidBodyForces::default()
+  forces.gravity_scale = self.gravity_scale
   let mut rb = {
     ids: RigidBodyIds::default(),
     position: pos,
     body_type: self.body_type,
-    enabled: true,
+    enabled: self.enabled,
     activation,
-    damping: RigidBodyDamping::default(),
-    vels: RigidBodyVelocity::zero(),
-    forces: RigidBodyForces::default(),
+    damping: RigidBodyDamping::{
+      linear_damping: self.linear_damping,
+      angular_damping: self.angular_damping,
+    },
+    vels: RigidBodyVelocity::{ linvel: self.linvel, angvel: self.angvel },
+    forces,
     ccd: RigidBodyCcd::default(),
     mass_props: RigidBodyMassProps::default(),
     additional_mass: self.additional_mass,
@@ -1201,6 +1293,9 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   }
   rb = rb.enable_ccd(self.ccd_enabled)
   rb = rb.set_soft_ccd_prediction(self.soft_ccd_prediction)
+  if self.can_sleep && self.sleeping {
+    rb = rb.sleep()
+  }
   rb
 }
 

@@ -317,22 +317,37 @@ pub fn RigidBodyActivation::wake_up(Self, Bool) -> Self
 
 pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
+  mut linvel : @core.Vec2
+  mut angvel : Float
+  mut gravity_scale : Float
+  mut linear_damping : Float
+  mut angular_damping : Float
   body_type : RigidBodyType
   mut additional_mass : Float
   mut additional_solver_iterations : Int
   mut can_sleep : Bool
+  mut sleeping : Bool
+  mut enabled : Bool
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : Float
 }
 pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
 pub fn RigidBodyBuilder::additional_solver_iterations(Self, Int) -> Self
+pub fn RigidBodyBuilder::angular_damping(Self, Float) -> Self
+pub fn RigidBodyBuilder::angvel(Self, Float) -> Self
 pub fn RigidBodyBuilder::build(Self) -> RigidBody
 pub fn RigidBodyBuilder::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder::ccd_enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder::dynamic() -> Self
+pub fn RigidBodyBuilder::enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder::fixed() -> Self
+pub fn RigidBodyBuilder::gravity_scale(Self, Float) -> Self
 pub fn RigidBodyBuilder::kinematic_position_based() -> Self
 pub fn RigidBodyBuilder::kinematic_velocity_based() -> Self
+pub fn RigidBodyBuilder::linear_damping(Self, Float) -> Self
+pub fn RigidBodyBuilder::linvel(Self, @core.Vec2) -> Self
+pub fn RigidBodyBuilder::rotation(Self, @core.Rot2) -> Self
+pub fn RigidBodyBuilder::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
 
