@@ -2,18 +2,28 @@
 package "Milky2018/mgstudio_yazi/yazi"
 
 // Values
+pub fn decompress(Bytes, Format) -> (Array[Byte], UInt?) raise YaziError
 
 // Errors
 type YaziError
 pub fn YaziError::to_string(Self) -> String
 
 // Types and methods
-pub struct Adler32 {
-  value : UInt
+pub struct Decoder {
+  mut zlib : Bool
+  mut finished : Bool
 }
-pub fn Adler32::finish(Self) -> UInt
-pub fn Adler32::new() -> Self
-pub fn Adler32::update(Self, Bytes) -> Unit
+pub fn Decoder::new() -> Self
+pub fn Decoder::set_format(Self, Format) -> Unit
+pub fn Decoder::stream_into_vec(Self, Array[Byte]) -> DecoderStream
+
+pub struct DecoderStream {
+  decoder : Decoder
+  out : Array[Byte]
+  mut finished : Bool
+}
+pub fn DecoderStream::finish(Self) -> (UInt64, UInt?) raise YaziError
+pub fn DecoderStream::write(Self, Bytes) -> Unit raise YaziError
 
 pub(all) enum Format {
   Raw

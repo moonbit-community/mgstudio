@@ -13,43 +13,17 @@
 // limitations under the License.
 
 ///|
-/// yazi: DEFLATE (RFC 1951) + zlib wrapper (RFC 1950).
+/// Errors for yazi (deflate/zlib).
 ///
-/// This is a MoonBit port of `dfrg/yazi` (Apache-2.0 OR MIT).
-pub(all) enum Format {
-  Raw
-  Zlib
-}
-
-///|
+/// Ported from `yazi/src/lib.rs` (Apache-2.0 OR MIT).
+///
+/// Note: upstream uses the type name `Error`, but MoonBit reserves `Error`.
+/// We use `YaziError` instead.
 suberror YaziError {
   Underflow
   InvalidBitstream
   Overflow
   Finished
-}
-
-///|
-pub struct Adler32 {
-  value : UInt
-}
-
-///|
-pub fn Adler32::new() -> Adler32 {
-  Adler32::{ value: 1 }
-}
-
-///|
-pub fn Adler32::update(self : Adler32, buf : Bytes) -> Unit {
-  // TODO: full port. For now keep API shape; used by zlib verification.
-  let _ = buf
-  let _ = self
-
-}
-
-///|
-pub fn Adler32::finish(self : Adler32) -> UInt {
-  self.value
 }
 
 ///|
