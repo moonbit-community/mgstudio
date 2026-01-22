@@ -709,7 +709,15 @@ pub fn IslandManager::rigid_body_removed_or_disabled(
   handle : RigidBodyHandle,
   bodies : RigidBodySet,
 ) -> Unit {
-  self.remove_body(bodies, handle)
+  if bodies.get_mut(handle) is Some(body) {
+    let ids = body.ids
+    body.ids.active_island_id = -1
+    body.ids.active_set_id = -1
+    body.ids.active_set_timestamp = 0
+    self.remove_body_with_ids(bodies, handle, ids)
+  } else {
+    self.remove_body(bodies, handle)
+  }
 }
 
 ///|
