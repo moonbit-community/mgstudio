@@ -1698,6 +1698,43 @@ pub fn MultibodyJointSet::get_mut(
 
 ///|
 #declaration_only
+pub fn MultibodyJointSet::get_mut_internal(
+  self : MultibodyJointSet,
+  handle : MultibodyJointHandle,
+) -> (Multibody, LinkId)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::get_unknown_gen(
+  self : MultibodyJointSet,
+  id : Int,
+) -> (Multibody, LinkId, MultibodyJointHandle)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::joint_between(
+  self : MultibodyJointSet,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> (MultibodyJointHandle, Multibody, MultibodyLink)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::attached_joints(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn MultibodyJointSet::attached_bodies(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,

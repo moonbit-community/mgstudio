@@ -617,6 +617,124 @@ pub fn MultibodyJointSet::get_mut(
 }
 
 ///|
+pub fn MultibodyJointSet::get_mut_internal(
+  self : MultibodyJointSet,
+  handle : MultibodyJointHandle,
+) -> (Multibody, LinkId)? {
+  self.get(handle)
+}
+
+///|
+pub fn MultibodyJointSet::get_unknown_gen(
+  self : MultibodyJointSet,
+  id : Int,
+) -> (Multibody, LinkId, MultibodyJointHandle)? {
+  if id < 0 || id >= self.body_links.length() {
+    return None
+  }
+  if self.body_links[id] is Some(info) {
+    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
+      return None
+    }
+    Some(
+      (
+        self.multibodies[info.mb_index],
+        info.link_id,
+        MultibodyJointHandle::new(id),
+      ),
+    )
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet::joint_between(
+  self : MultibodyJointSet,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> (MultibodyJointHandle, Multibody, MultibodyLink)? {
+  if body1.id < 0 || body2.id < 0 {
+    return None
+  }
+  if body1.id >= self.body_links.length() ||
+    body2.id >= self.body_links.length() {
+    return None
+  }
+  if self.body_links[body1.id] is Some(info1) &&
+    self.body_links[body2.id] is Some(info2) {
+    if info1.mb_index != info2.mb_index {
+      return None
+    }
+    if info1.mb_index < 0 || info1.mb_index >= self.multibodies.length() {
+      return None
+    }
+    let multibody = self.multibodies[info1.mb_index]
+    if info1.link_id.value < 0 ||
+      info1.link_id.value >= multibody.links.length() ||
+      info2.link_id.value < 0 ||
+      info2.link_id.value >= multibody.links.length() {
+      return None
+    }
+    let link1 = multibody.links[info1.link_id.value]
+    let link2 = multibody.links[info2.link_id.value]
+    if link1.parent_internal_id == info2.link_id.value {
+      Some((MultibodyJointHandle::new(body1.id), multibody, link1))
+    } else if link2.parent_internal_id == info1.link_id.value {
+      Some((MultibodyJointHandle::new(body2.id), multibody, link2))
+    } else {
+      None
+    }
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet::attached_joints(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)] {
+  if handle.id < 0 || handle.id >= self.body_links.length() {
+    return []
+  }
+  if self.body_links[handle.id] is Some(info) {
+    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
+      return []
+    }
+    let multibody = self.multibodies[info.mb_index]
+    if info.link_id.value < 0 || info.link_id.value >= multibody.links.length() {
+      return []
+    }
+    let result : Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)] = []
+    let current_link = multibody.links[info.link_id.value]
+    if current_link.parent_internal_id != current_link.internal_id {
+      let parent_id = current_link.parent_internal_id
+      if parent_id >= 0 && parent_id < multibody.links.length() {
+        let parent = multibody.links[parent_id].rigid_body
+        result.push((parent, handle, MultibodyJointHandle::new(handle.id)))
+      }
+    }
+    for i in 0..<multibody.links.length() {
+      let link = multibody.links[i]
+      if link.parent_internal_id == info.link_id.value &&
+        !RigidBodyHandle::equals(link.rigid_body, handle) {
+        result.push(
+          (
+            handle,
+            link.rigid_body,
+            MultibodyJointHandle::new(link.rigid_body.id),
+          ),
+        )
+      }
+    }
+    result
+  } else {
+    []
+  }
+}
+
+///|
 pub fn MultibodyJointSet::attached_bodies(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
