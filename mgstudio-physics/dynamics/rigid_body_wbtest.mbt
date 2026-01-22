@@ -103,3 +103,14 @@ test "rigid body damping and ccd setters" {
   inspect(body.soft_ccd_prediction() == 2.5F, content="true")
   inspect(!body.is_ccd_active(), content="true")
 }
+
+///|
+/// Ported from rapier rigid_body builder CCD options.
+test "rigid body builder ccd options" {
+  let body = RigidBodyBuilder::dynamic()
+    .ccd_enabled(true)
+    .soft_ccd_prediction(1.25F)
+    .build()
+  inspect(body.is_ccd_enabled(), content="true")
+  inspect(body.soft_ccd_prediction() == 1.25F, content="true")
+}

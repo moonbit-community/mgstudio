@@ -1084,6 +1084,8 @@ pub struct RigidBodyBuilder {
   mut additional_mass : @core.Real
   mut additional_solver_iterations : Int
   mut can_sleep : Bool
+  mut ccd_enabled : Bool
+  mut soft_ccd_prediction : @core.Real
 }
 
 ///|
@@ -1094,6 +1096,8 @@ fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
     additional_mass: 0.0F,
     additional_solver_iterations: 0,
     can_sleep: true,
+    ccd_enabled: false,
+    soft_ccd_prediction: 0.0F,
   }
 }
 
@@ -1155,6 +1159,24 @@ pub fn RigidBodyBuilder::can_sleep(
 }
 
 ///|
+pub fn RigidBodyBuilder::ccd_enabled(
+  self : RigidBodyBuilder,
+  enabled : Bool,
+) -> RigidBodyBuilder {
+  self.ccd_enabled = enabled
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::soft_ccd_prediction(
+  self : RigidBodyBuilder,
+  prediction_distance : @core.Real,
+) -> RigidBodyBuilder {
+  self.soft_ccd_prediction = prediction_distance
+  self
+}
+
+///|
 pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   let pos = RigidBodyPosition::new(self.position, self.position)
   let activation = if self.can_sleep {
@@ -1162,7 +1184,7 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   } else {
     RigidBodyActivation::cannot_sleep()
   }
-  {
+  let mut rb = {
     ids: RigidBodyIds::default(),
     position: pos,
     body_type: self.body_type,
@@ -1177,6 +1199,9 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     additional_solver_iterations: self.additional_solver_iterations,
     changes: RigidBodyChanges::all(),
   }
+  rb = rb.enable_ccd(self.ccd_enabled)
+  rb = rb.set_soft_ccd_prediction(self.soft_ccd_prediction)
+  rb
 }
 
 ///|

@@ -1609,6 +1609,24 @@ pub fn RigidBodyBuilder::can_sleep(
 
 ///|
 #declaration_only
+pub fn RigidBodyBuilder::ccd_enabled(
+  self : RigidBodyBuilder,
+  enabled : Bool,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::soft_ccd_prediction(
+  self : RigidBodyBuilder,
+  prediction_distance : @core.Real,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
   ...
 }
