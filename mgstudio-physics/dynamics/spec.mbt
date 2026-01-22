@@ -1542,6 +1542,14 @@ pub fn MultibodyJointSet::take_to_join(
 
 ///|
 #declaration_only
+pub fn MultibodyJointSet::iter(
+  self : MultibodyJointSet,
+) -> Array[(MultibodyJointHandle, Multibody, LinkId)] {
+  ...
+}
+
+///|
+#declaration_only
 pub type RevoluteJointBuilder
 
 ///|
@@ -1663,6 +1671,62 @@ pub fn MultibodyJointSet::insert(
   joint : RevoluteJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::remove(
+  self : MultibodyJointSet,
+  handle : MultibodyJointHandle,
+  wake_up : Bool,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::remove_multibody_articulations(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+  wake_up : Bool,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::rigid_body_link(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> LinkId? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::get_multibody(
+  self : MultibodyJointSet,
+  index : Int,
+) -> Multibody? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::get_multibody_mut(
+  self : MultibodyJointSet,
+  index : Int,
+) -> Multibody? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::get_multibody_mut_internal(
+  self : MultibodyJointSet,
+  index : Int,
+) -> Multibody? {
   ...
 }
 

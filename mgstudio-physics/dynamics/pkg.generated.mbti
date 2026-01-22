@@ -185,12 +185,19 @@ pub fn MultibodyJointSet::attached_bodies(Self, RigidBodyHandle) -> Array[RigidB
 pub fn MultibodyJointSet::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)]
 pub fn MultibodyJointSet::bodies_attached_with_enabled_joint(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
 pub fn MultibodyJointSet::get(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
+pub fn MultibodyJointSet::get_multibody(Self, Int) -> Multibody?
+pub fn MultibodyJointSet::get_multibody_mut(Self, Int) -> Multibody?
+pub fn MultibodyJointSet::get_multibody_mut_internal(Self, Int) -> Multibody?
 pub fn MultibodyJointSet::get_mut(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
 pub fn MultibodyJointSet::get_mut_internal(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
 pub fn MultibodyJointSet::get_unknown_gen(Self, Int) -> (Multibody, LinkId, MultibodyJointHandle)?
 pub fn MultibodyJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet::iter(Self) -> Array[(MultibodyJointHandle, Multibody, LinkId)]
 pub fn MultibodyJointSet::joint_between(Self, RigidBodyHandle, RigidBodyHandle) -> (MultibodyJointHandle, Multibody, MultibodyLink)?
 pub fn MultibodyJointSet::new() -> Self
+pub fn MultibodyJointSet::remove(Self, MultibodyJointHandle, Bool) -> Unit
+pub fn MultibodyJointSet::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
+pub fn MultibodyJointSet::rigid_body_link(Self, RigidBodyHandle) -> LinkId?
 pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 

@@ -476,6 +476,27 @@ pub fn MultibodyJointSet::take_to_join(
 }
 
 ///|
+pub fn MultibodyJointSet::iter(
+  self : MultibodyJointSet,
+) -> Array[(MultibodyJointHandle, Multibody, LinkId)] {
+  let result : Array[(MultibodyJointHandle, Multibody, LinkId)] = []
+  for i in 0..<self.body_links.length() {
+    if self.body_links[i] is Some(info) {
+      if info.mb_index >= 0 && info.mb_index < self.multibodies.length() {
+        result.push(
+          (
+            MultibodyJointHandle::new(i),
+            self.multibodies[info.mb_index],
+            info.link_id,
+          ),
+        )
+      }
+    }
+  }
+  result
+}
+
+///|
 fn MultibodyJointSet::ensure_body_capacity(
   self : MultibodyJointSet,
   id : Int,
@@ -585,6 +606,111 @@ pub fn MultibodyJointSet::insert(
   }
   push_unique_pair(self.to_join, (parent, child))
   Some(MultibodyJointHandle::new(child.id))
+}
+
+///|
+pub fn MultibodyJointSet::remove(
+  self : MultibodyJointSet,
+  handle : MultibodyJointHandle,
+  wake_up : Bool,
+) -> Unit {
+  if handle.id < 0 || handle.id >= self.body_links.length() {
+    return
+  }
+  if self.body_links[handle.id] is Some(info) {
+    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
+      self.body_links[handle.id] = None
+      return
+    }
+    let removed_multibody = self.multibodies[info.mb_index]
+    for i in 0..<removed_multibody.links.length() {
+      let link = removed_multibody.links[i]
+      if link.rigid_body.id >= 0 {
+        self.ensure_body_capacity(link.rigid_body.id)
+        self.body_links[link.rigid_body.id] = None
+      }
+      if wake_up {
+        push_unique_handle(self.to_wake_up, link.rigid_body)
+      }
+    }
+    self.remove_multibody_at(info.mb_index)
+  } else {
+    self.body_links[handle.id] = None
+  }
+}
+
+///|
+pub fn MultibodyJointSet::remove_multibody_articulations(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+  wake_up : Bool,
+) -> Unit {
+  if handle.id < 0 || handle.id >= self.body_links.length() {
+    return
+  }
+  if self.body_links[handle.id] is Some(info) {
+    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
+      self.body_links[handle.id] = None
+      return
+    }
+    let removed_multibody = self.multibodies[info.mb_index]
+    for i in 0..<removed_multibody.links.length() {
+      let link = removed_multibody.links[i]
+      if link.rigid_body.id >= 0 {
+        self.ensure_body_capacity(link.rigid_body.id)
+        self.body_links[link.rigid_body.id] = None
+      }
+      if wake_up {
+        push_unique_handle(self.to_wake_up, link.rigid_body)
+      }
+    }
+    self.remove_multibody_at(info.mb_index)
+  } else {
+    self.body_links[handle.id] = None
+  }
+}
+
+///|
+pub fn MultibodyJointSet::rigid_body_link(
+  self : MultibodyJointSet,
+  handle : RigidBodyHandle,
+) -> LinkId? {
+  if handle.id < 0 || handle.id >= self.body_links.length() {
+    return None
+  }
+  if self.body_links[handle.id] is Some(info) {
+    Some(info.link_id)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet::get_multibody(
+  self : MultibodyJointSet,
+  index : Int,
+) -> Multibody? {
+  if index < 0 || index >= self.multibodies.length() {
+    None
+  } else {
+    Some(self.multibodies[index])
+  }
+}
+
+///|
+pub fn MultibodyJointSet::get_multibody_mut(
+  self : MultibodyJointSet,
+  index : Int,
+) -> Multibody? {
+  self.get_multibody(index)
+}
+
+///|
+pub fn MultibodyJointSet::get_multibody_mut_internal(
+  self : MultibodyJointSet,
+  index : Int,
+) -> Multibody? {
+  self.get_multibody(index)
 }
 
 ///|
