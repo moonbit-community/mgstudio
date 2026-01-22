@@ -98,6 +98,7 @@ pub struct RigidBody {
   can_sleep : Bool
   mut sleeping : Bool
   additional_mass : @core.Real
+  mut additional_solver_iterations : Int
 }
 
 ///|
@@ -118,6 +119,20 @@ pub fn RigidBody::set_body_type(
   if wake_up && self.is_dynamic_or_kinematic() {
     self.sleeping = false
   }
+  self
+}
+
+///|
+pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int {
+  self.additional_solver_iterations
+}
+
+///|
+pub fn RigidBody::set_additional_solver_iterations(
+  self : RigidBody,
+  additional_iterations : Int,
+) -> RigidBody {
+  self.additional_solver_iterations = additional_iterations
   self
 }
 
@@ -199,6 +214,7 @@ pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
   body_type : RigidBodyType
   mut additional_mass : @core.Real
+  mut additional_solver_iterations : Int
   mut can_sleep : Bool
 }
 
@@ -208,6 +224,7 @@ fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
     position: @core.Isometry2::identity(),
     body_type,
     additional_mass: 0.0F,
+    additional_solver_iterations: 0,
     can_sleep: true,
   }
 }
@@ -247,6 +264,15 @@ pub fn RigidBodyBuilder::additional_mass(
 }
 
 ///|
+pub fn RigidBodyBuilder::additional_solver_iterations(
+  self : RigidBodyBuilder,
+  additional_iterations : Int,
+) -> RigidBodyBuilder {
+  self.additional_solver_iterations = additional_iterations
+  self
+}
+
+///|
 pub fn RigidBodyBuilder::can_sleep(
   self : RigidBodyBuilder,
   can_sleep : Bool,
@@ -265,6 +291,7 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     can_sleep: self.can_sleep,
     sleeping: false,
     additional_mass: self.additional_mass,
+    additional_solver_iterations: self.additional_solver_iterations,
   }
 }
 
@@ -476,6 +503,8 @@ pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
       sb.write_object(if body.sleeping { 1 } else { 0 })
       sb.write_char(',')
       sb.write_object(body.additional_mass)
+      sb.write_char(',')
+      sb.write_object(body.additional_solver_iterations)
     } else {
       sb.write_char('N')
     }
@@ -571,6 +600,11 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           } else {
             0.0F
           }
+          let additional_solver_iterations = if fields.length() > 11 {
+            parse_int_value(fields[11])
+          } else {
+            0
+          }
           let position = @core.Isometry2::new(
             @core.Vec2::new(tx, ty),
             @core.Rot2::from_angle(rot),
@@ -587,6 +621,7 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
             can_sleep,
             sleeping,
             additional_mass,
+            additional_solver_iterations,
           }
           bodies.push(Some(body))
         } else {

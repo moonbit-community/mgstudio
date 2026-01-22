@@ -147,10 +147,13 @@ pub struct RigidBody {
   can_sleep : Bool
   mut sleeping : Bool
   additional_mass : Float
+  mut additional_solver_iterations : Int
 }
+pub fn RigidBody::additional_solver_iterations(Self) -> Int
 pub fn RigidBody::is_sleeping(Self) -> Bool
 pub fn RigidBody::position(Self) -> @core.Isometry2
 pub fn RigidBody::rotation(Self) -> @core.Rot2
+pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self
 pub fn RigidBody::set_next_kinematic_translation(Self, @core.Vec2) -> Self
@@ -162,9 +165,11 @@ pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
   body_type : RigidBodyType
   mut additional_mass : Float
+  mut additional_solver_iterations : Int
   mut can_sleep : Bool
 }
 pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
+pub fn RigidBodyBuilder::additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBodyBuilder::build(Self) -> RigidBody
 pub fn RigidBodyBuilder::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder::dynamic() -> Self

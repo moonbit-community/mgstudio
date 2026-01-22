@@ -78,6 +78,15 @@ pub fn RigidBodyBuilder::additional_mass(
 
 ///|
 #declaration_only
+pub fn RigidBodyBuilder::additional_solver_iterations(
+  self : RigidBodyBuilder,
+  additional_iterations : Int,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   ...
 }
@@ -139,6 +148,21 @@ pub fn RigidBody::set_body_type(
   self : RigidBody,
   body_type : RigidBodyType,
   wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_additional_solver_iterations(
+  self : RigidBody,
+  additional_iterations : Int,
 ) -> RigidBody {
   ...
 }

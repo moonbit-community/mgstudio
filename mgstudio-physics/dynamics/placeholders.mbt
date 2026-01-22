@@ -35,11 +35,21 @@ struct Island {
   bodies : Array[RigidBodyHandle]
   mut id_in_awake_list : Int?
   mut sleeping : Bool
+  mut additional_solver_iterations : Int
 }
 
 ///|
-fn Island::new(handle : RigidBodyHandle, sleeping : Bool) -> Island {
-  { bodies: [handle], id_in_awake_list: None, sleeping }
+fn Island::new(
+  handle : RigidBodyHandle,
+  sleeping : Bool,
+  additional_solver_iterations : Int,
+) -> Island {
+  {
+    bodies: [handle],
+    id_in_awake_list: None,
+    sleeping,
+    additional_solver_iterations,
+  }
 }
 
 ///|
@@ -120,8 +130,8 @@ struct IslandsOptimizerSplitState {
 
 ///|
 struct IslandsOptimizer {
-  min_island_size : Int
-  max_island_size : Int
+  mut min_island_size : Int
+  mut max_island_size : Int
   mut mode : Int
   merge_state : IslandsOptimizerMergeState
   split_state : IslandsOptimizerSplitState
@@ -182,6 +192,16 @@ pub fn IslandManager::new() -> IslandManager {
     body_last_rotation: [],
     body_has_pose: [],
   }
+}
+
+///|
+fn IslandManager::set_island_size_limits(
+  self : IslandManager,
+  min_island_size : Int,
+  max_island_size : Int,
+) -> Unit {
+  self.optimizer.min_island_size = min_island_size
+  self.optimizer.max_island_size = max_island_size
 }
 
 ///|
@@ -308,11 +328,16 @@ fn IslandManager::remove_from_awake_list(
 ///|
 fn IslandManager::insert_body(
   self : IslandManager,
+  bodies : RigidBodySet,
   handle : RigidBodyHandle,
   sleeping : Bool,
 ) -> Unit {
   self.reset_body_sleep_state(handle)
-  let island = Island::new(handle, sleeping)
+  let mut additional_solver_iterations = 0
+  if bodies.get(handle) is Some(body) {
+    additional_solver_iterations = body.additional_solver_iterations
+  }
+  let island = Island::new(handle, sleeping, additional_solver_iterations)
   if !sleeping {
     let index = self.awake_islands.length()
     island.id_in_awake_list = Some(index)
@@ -612,7 +637,7 @@ pub fn IslandManager::wake_up(
   if self.island_id_for(handle) is Some(island_id) {
     self.wake_up_island(bodies, island_id)
   } else {
-    self.insert_body(handle, false)
+    self.insert_body(bodies, handle, false)
   }
   self.wake_up_body(bodies, handle, strong)
 }
@@ -651,11 +676,14 @@ fn IslandManager::merge_islands(
     let mut next_index = keep.bodies.length()
     for i in 0..<remove.bodies.length() {
       let handle = remove.bodies[i]
-      if bodies.get(handle) is Some(_) {
+      if bodies.get(handle) is Some(body) {
         if !sleeping1 {
           self.wake_up_body(bodies, handle, false)
         }
         keep.bodies.push(handle)
+        if body.additional_solver_iterations > keep.additional_solver_iterations {
+          keep.additional_solver_iterations = body.additional_solver_iterations
+        }
         self.ensure_body_capacity(handle.id)
         self.body_island_ids[handle.id] = keep_id
         self.body_island_generations[handle.id] = handle.generation
@@ -756,10 +784,10 @@ pub fn IslandManager::rigid_body_updated(
           self.body_island_indices[handle.id] = index
         }
       } else {
-        self.insert_body(handle, false)
+        self.insert_body(bodies, handle, false)
       }
     } else {
-      self.insert_body(handle, true)
+      self.insert_body(bodies, handle, true)
     }
   }
 }
@@ -783,8 +811,10 @@ fn IslandManager::extract_sub_island(
       bodies: [],
       id_in_awake_list: None,
       sleeping,
+      additional_solver_iterations: 0,
     })
     let new_island_bodies : Array[RigidBodyHandle] = []
+    let mut additional_solver_iterations = 0
     for i in 0..<extracted.length() {
       let handle = extracted[i]
       let mut body_index = -1
@@ -831,6 +861,11 @@ fn IslandManager::extract_sub_island(
           body.sleeping = true
         }
       }
+      if bodies.get(handle) is Some(body) {
+        if body.additional_solver_iterations > additional_solver_iterations {
+          additional_solver_iterations = body.additional_solver_iterations
+        }
+      }
     }
     if island.bodies.length() == 0 {
       self.remove_from_awake_list(island_id)
@@ -843,6 +878,7 @@ fn IslandManager::extract_sub_island(
       bodies: new_island_bodies,
       id_in_awake_list: None,
       sleeping,
+      additional_solver_iterations,
     }
     if !sleeping {
       let index = self.awake_islands.length()
@@ -963,6 +999,7 @@ fn IslandManager::incremental_merge(
   }
   let mut first_awake_id = -1
   let mut first_island_id = -1
+  let mut first_solver_iterations = 0
   for
     awake_id in self.optimizer.merge_state.curr_awake_id..<self.awake_islands.length() {
     let island_id = self.awake_islands[awake_id]
@@ -970,6 +1007,7 @@ fn IslandManager::incremental_merge(
       if island.bodies.length() < self.optimizer.min_island_size {
         first_awake_id = awake_id
         first_island_id = island_id
+        first_solver_iterations = island.additional_solver_iterations
         break
       }
     }
@@ -984,8 +1022,7 @@ fn IslandManager::incremental_merge(
     let island_id = self.awake_islands[awake_id]
     if self.islands[island_id] is Some(island) {
       if island.bodies.length() < self.optimizer.min_island_size {
-        let compatible = true
-        if compatible {
+        if island.additional_solver_iterations == first_solver_iterations {
           self.merge_islands(bodies, first_island_id, island_id)
           return
         } else if !found_next {

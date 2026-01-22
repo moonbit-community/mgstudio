@@ -43,6 +43,20 @@ test "island manager merge islands" {
 }
 
 ///|
+fn merge_handles(
+  islands : IslandManager,
+  bodies : RigidBodySet,
+  handle1 : RigidBodyHandle,
+  handle2 : RigidBodyHandle,
+) -> Unit {
+  if islands.island_id_for(handle1) is Some(id1) &&
+    islands.island_id_for(handle2) is Some(id2) &&
+    id1 != id2 {
+    islands.merge_islands(bodies, id1, id2)
+  }
+}
+
+///|
 /// Ported from rapier island_manager sleep extraction behavior.
 test "island manager extract sleeping island" {
   let bodies = RigidBodySet::new()
@@ -76,6 +90,125 @@ test "island manager extract sleeping island" {
   }
   if bodies.get(handle2) is Some(body2) {
     inspect(body2.is_sleeping(), content="true")
+  } else {
+    inspect(false, content="false")
+  }
+}
+
+///|
+/// Ported from rapier island optimizer merge behavior.
+test "island manager incremental merge small islands" {
+  let bodies = RigidBodySet::new()
+  let islands = IslandManager::new()
+  islands.set_island_size_limits(3, 8)
+  let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let handle3 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let handle4 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  islands.wake_up(bodies, handle1, true)
+  islands.wake_up(bodies, handle2, true)
+  islands.wake_up(bodies, handle3, true)
+  islands.wake_up(bodies, handle4, true)
+  merge_handles(islands, bodies, handle1, handle2)
+  merge_handles(islands, bodies, handle3, handle4)
+  inspect(islands.awake_islands.length() == 2, content="true")
+  islands.incremental_merge(bodies)
+  inspect(islands.awake_islands.length() == 1, content="true")
+  if islands.island_id_for(handle1) is Some(id1) &&
+    islands.island_id_for(handle3) is Some(id3) {
+    inspect(id1 == id3, content="true")
+  } else {
+    inspect(false, content="false")
+  }
+}
+
+///|
+/// Ported from rapier island optimizer merge compatibility checks.
+test "island manager incremental merge incompatible solver iterations" {
+  let bodies = RigidBodySet::new()
+  let islands = IslandManager::new()
+  islands.set_island_size_limits(3, 8)
+  let handle1 = bodies.insert(
+    RigidBodyBuilder::dynamic().additional_solver_iterations(0).build(),
+  )
+  let handle2 = bodies.insert(
+    RigidBodyBuilder::dynamic().additional_solver_iterations(0).build(),
+  )
+  let handle3 = bodies.insert(
+    RigidBodyBuilder::dynamic().additional_solver_iterations(2).build(),
+  )
+  let handle4 = bodies.insert(
+    RigidBodyBuilder::dynamic().additional_solver_iterations(2).build(),
+  )
+  islands.wake_up(bodies, handle1, true)
+  islands.wake_up(bodies, handle2, true)
+  islands.wake_up(bodies, handle3, true)
+  islands.wake_up(bodies, handle4, true)
+  merge_handles(islands, bodies, handle1, handle2)
+  merge_handles(islands, bodies, handle3, handle4)
+  inspect(islands.awake_islands.length() == 2, content="true")
+  islands.incremental_merge(bodies)
+  inspect(islands.awake_islands.length() == 2, content="true")
+  if islands.island_id_for(handle1) is Some(id1) &&
+    islands.island_id_for(handle3) is Some(id3) {
+    inspect(id1 != id3, content="true")
+  } else {
+    inspect(false, content="false")
+  }
+}
+
+///|
+/// Ported from rapier island optimizer split behavior.
+test "island manager incremental split over max" {
+  let bodies = RigidBodySet::new()
+  let islands = IslandManager::new()
+  let contacts = ContactGraph::new()
+  let impulse_joints = ImpulseJointSet::new()
+  let multibody_joints = MultibodyJointSet::new()
+  islands.set_island_size_limits(2, 5)
+  let handles : Array[RigidBodyHandle] = []
+  for _ in 0..<6 {
+    let handle = bodies.insert(RigidBodyBuilder::dynamic().build())
+    handles.push(handle)
+    islands.wake_up(bodies, handle, true)
+  }
+  for i in 1..<handles.length() {
+    merge_handles(islands, bodies, handles[0], handles[i])
+  }
+  contacts.add_pair(handles[0], handles[1])
+  inspect(islands.awake_islands.length() == 1, content="true")
+  islands.incremental_split(bodies, contacts, impulse_joints, multibody_joints)
+  inspect(islands.awake_islands.length() == 2, content="true")
+  if islands.island_id_for(handles[0]) is Some(id1) &&
+    islands.island_id_for(handles[1]) is Some(id2) &&
+    islands.island_id_for(handles[2]) is Some(id3) {
+    inspect(id1 == id2, content="true")
+    inspect(id1 != id3, content="true")
+  } else {
+    inspect(false, content="false")
+  }
+}
+
+///|
+/// Ported from rapier island_manager interaction merge behavior.
+test "island manager cross island contact merge" {
+  let bodies = RigidBodySet::new()
+  let islands = IslandManager::new()
+  let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  islands.wake_up(bodies, handle1, true)
+  islands.wake_up(bodies, handle2, true)
+  inspect(islands.awake_islands.length() == 2, content="true")
+  islands.interaction_started_or_stopped(
+    bodies,
+    Some(handle1),
+    Some(handle2),
+    true,
+    false,
+  )
+  if islands.island_id_for(handle1) is Some(id1) &&
+    islands.island_id_for(handle2) is Some(id2) {
+    inspect(id1 == id2, content="true")
   } else {
     inspect(false, content="false")
   }
