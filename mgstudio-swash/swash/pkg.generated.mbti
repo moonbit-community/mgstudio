@@ -1,0 +1,17 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio_swash/swash"
+
+// Values
+pub fn tag_from_bytes(Bytes) -> UInt?
+
+pub fn tag_from_str_lossy(String) -> UInt
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub type Tag = UInt
+
+// Traits
+
