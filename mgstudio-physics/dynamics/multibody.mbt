@@ -438,11 +438,37 @@ priv struct LinkInfo {
 struct MultibodyJointSet {
   multibodies : Array[Multibody]
   body_links : Array[LinkInfo?]
+  to_wake_up : Array[RigidBodyHandle]
+  to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
 
 ///|
 pub fn MultibodyJointSet::new() -> MultibodyJointSet {
-  { multibodies: [], body_links: [] }
+  { multibodies: [], body_links: [], to_wake_up: [], to_join: [] }
+}
+
+///|
+pub fn MultibodyJointSet::take_wake_up(
+  self : MultibodyJointSet,
+) -> Array[RigidBodyHandle] {
+  let result : Array[RigidBodyHandle] = []
+  for i in 0..<self.to_wake_up.length() {
+    result.push(self.to_wake_up[i])
+  }
+  self.to_wake_up.clear()
+  result
+}
+
+///|
+pub fn MultibodyJointSet::take_to_join(
+  self : MultibodyJointSet,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  let result : Array[(RigidBodyHandle, RigidBodyHandle)] = []
+  for i in 0..<self.to_join.length() {
+    result.push(self.to_join[i])
+  }
+  self.to_join.clear()
+  result
 }
 
 ///|
@@ -490,7 +516,6 @@ pub fn MultibodyJointSet::insert(
   joint : RevoluteJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  wake_up |> ignore
   let parent_info = self.lookup_body(parent)
   let child_info = self.lookup_body(child)
   if parent_info.mb_index == child_info.mb_index {
@@ -523,6 +548,11 @@ pub fn MultibodyJointSet::insert(
       link_id: LinkId::new(offset + i),
     })
   }
+  if wake_up {
+    push_unique_handle(self.to_wake_up, parent)
+    push_unique_handle(self.to_wake_up, child)
+  }
+  push_unique_pair(self.to_join, (parent, child))
   Some(MultibodyJointHandle::new(child.id))
 }
 

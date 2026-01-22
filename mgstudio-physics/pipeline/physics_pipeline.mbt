@@ -246,6 +246,36 @@ pub fn PhysicsPipeline::step(
   ccd_solver |> ignore
   physics_hooks |> ignore
   event_handler |> ignore
+  let wake_from_impulse = impulse_joints.take_wake_up()
+  for i in 0..<wake_from_impulse.length() {
+    islands.wake_up(bodies, wake_from_impulse[i], true)
+  }
+  let wake_from_multibody = multibody_joints.take_wake_up()
+  for i in 0..<wake_from_multibody.length() {
+    islands.wake_up(bodies, wake_from_multibody[i], true)
+  }
+  let join_from_impulse = impulse_joints.take_to_join()
+  for i in 0..<join_from_impulse.length() {
+    let pair = join_from_impulse[i]
+    islands.interaction_started_or_stopped(
+      bodies,
+      Some(pair.0),
+      Some(pair.1),
+      true,
+      false,
+    )
+  }
+  let join_from_multibody = multibody_joints.take_to_join()
+  for i in 0..<join_from_multibody.length() {
+    let pair = join_from_multibody[i]
+    islands.interaction_started_or_stopped(
+      bodies,
+      Some(pair.0),
+      Some(pair.1),
+      true,
+      false,
+    )
+  }
   let dt = parameters.dt
   let gravity_step = @core.Vec2::new(gravity.x * dt, gravity.y * dt)
   for i in 0..<bodies.bodies.length() {

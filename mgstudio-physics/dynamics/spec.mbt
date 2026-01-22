@@ -370,6 +370,22 @@ pub fn ImpulseJointSet::new() -> ImpulseJointSet {
 
 ///|
 #declaration_only
+pub fn ImpulseJointSet::take_wake_up(
+  self : ImpulseJointSet,
+) -> Array[RigidBodyHandle] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::take_to_join(
+  self : ImpulseJointSet,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ImpulseJointSet::insert(
   self : ImpulseJointSet,
   parent : RigidBodyHandle,
@@ -455,6 +471,22 @@ pub type MultibodyJointSet
 ///|
 #declaration_only
 pub fn MultibodyJointSet::new() -> MultibodyJointSet {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::take_wake_up(
+  self : MultibodyJointSet,
+) -> Array[RigidBodyHandle] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::take_to_join(
+  self : MultibodyJointSet,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
   ...
 }
 

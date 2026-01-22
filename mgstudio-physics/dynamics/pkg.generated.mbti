@@ -54,6 +54,8 @@ pub fn ImpulseJointSet::len(Self) -> Int
 pub fn ImpulseJointSet::new() -> Self
 pub fn ImpulseJointSet::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
+pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
+pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 type IndexSequence
 pub fn IndexSequence::inv_rearrange_rows(Self, DVector) -> Unit
@@ -123,6 +125,8 @@ pub fn MultibodyJointSet::get(Self, MultibodyJointHandle) -> (Multibody, LinkId)
 pub fn MultibodyJointSet::get_mut(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
 pub fn MultibodyJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet::new() -> Self
+pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
+pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 type MultibodyLink
 pub fn MultibodyLink::local_to_world(Self) -> @core.Isometry2

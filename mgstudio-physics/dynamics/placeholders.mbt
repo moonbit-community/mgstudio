@@ -1239,6 +1239,30 @@ pub fn ImpulseJointSet::new() -> ImpulseJointSet {
 }
 
 ///|
+pub fn ImpulseJointSet::take_wake_up(
+  self : ImpulseJointSet,
+) -> Array[RigidBodyHandle] {
+  let result : Array[RigidBodyHandle] = []
+  for i in 0..<self.to_wake_up.length() {
+    result.push(self.to_wake_up[i])
+  }
+  self.to_wake_up.clear()
+  result
+}
+
+///|
+pub fn ImpulseJointSet::take_to_join(
+  self : ImpulseJointSet,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  let result : Array[(RigidBodyHandle, RigidBodyHandle)] = []
+  for i in 0..<self.to_join.length() {
+    result.push(self.to_join[i])
+  }
+  self.to_join.clear()
+  result
+}
+
+///|
 fn ImpulseJointSet::ensure_body_mapping_capacity(
   self : ImpulseJointSet,
   id : Int,
