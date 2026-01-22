@@ -1441,10 +1441,11 @@ pub fn RigidBodySet::remove(
     return None
   }
   if self.bodies[handle.id] is Some(body) {
+    let ids = body.ids
     self.bodies[handle.id] = None
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
-    islands.rigid_body_removed_or_disabled(handle, self)
+    islands.remove_body_with_ids(self, handle, ids)
     colliders |> ignore
     remove_attached_colliders |> ignore
     impulse_joints.remove_joints_attached_to_rigid_body(handle) |> ignore

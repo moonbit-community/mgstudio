@@ -335,6 +335,66 @@ fn IslandManager::remove_body(
 }
 
 ///|
+fn IslandManager::remove_body_with_ids(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  handle : RigidBodyHandle,
+  ids : RigidBodyIds,
+) -> Unit {
+  let island_id = ids.active_island_id
+  if island_id < 0 || island_id >= self.islands.length() {
+    return
+  }
+  if self.islands[island_id] is Some(island) {
+    self.ensure_body_capacity(handle.id)
+    let mut body_index = ids.active_set_id
+    if body_index < 0 ||
+      body_index >= island.bodies.length() ||
+      !handle_equals(island.bodies[body_index], handle) {
+      body_index = -1
+      for i in 0..<island.bodies.length() {
+        if handle_equals(island.bodies[i], handle) {
+          body_index = i
+          break
+        }
+      }
+    }
+    if body_index < 0 {
+      return
+    }
+    let last_index = island.bodies.length() - 1
+    if body_index != last_index {
+      let moved_handle = island.bodies[last_index]
+      island.bodies[body_index] = moved_handle
+      if moved_handle.id >= 0 &&
+        moved_handle.id < self.body_island_indices.length() {
+        self.body_island_ids[moved_handle.id] = island_id
+        self.body_island_generations[moved_handle.id] = moved_handle.generation
+        self.body_island_indices[moved_handle.id] = body_index
+        if bodies.get_mut(moved_handle) is Some(body) {
+          body.ids.active_island_id = island_id
+          body.ids.active_set_id = body_index
+        }
+      }
+    }
+    island.bodies.pop() |> ignore
+    if handle.id >= 0 && handle.id < self.body_island_ids.length() {
+      self.body_island_ids[handle.id] = -1
+      self.body_island_indices[handle.id] = -1
+      self.body_island_generations[handle.id] = handle.generation
+      self.reset_body_sleep_state(handle)
+    }
+    if island.bodies.length() == 0 {
+      self.remove_from_awake_list(island_id)
+      self.islands[island_id] = None
+      self.free_islands.push(island_id)
+    } else {
+      self.islands[island_id] = Some(island)
+    }
+  }
+}
+
+///|
 fn IslandManager::island_id_for(
   self : IslandManager,
   handle : RigidBodyHandle,
