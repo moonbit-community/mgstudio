@@ -671,6 +671,22 @@ pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int {
 
 ///|
 #declaration_only
+pub fn RigidBody::additional_mass(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_additional_mass(
+  self : RigidBody,
+  mass : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::set_additional_solver_iterations(
   self : RigidBody,
   additional_iterations : Int,

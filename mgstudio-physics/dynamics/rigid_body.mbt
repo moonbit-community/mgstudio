@@ -559,7 +559,7 @@ pub struct RigidBody {
   mut forces : RigidBodyForces
   mut ccd : RigidBodyCcd
   mut mass_props : RigidBodyMassProps
-  additional_mass : @core.Real
+  mut additional_mass : @core.Real
   mut additional_solver_iterations : Int
   mut changes : RigidBodyChanges
 }
@@ -616,6 +616,27 @@ pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
 ///|
 pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int {
   self.additional_solver_iterations
+}
+
+///|
+pub fn RigidBody::additional_mass(self : RigidBody) -> @core.Real {
+  self.additional_mass
+}
+
+///|
+pub fn RigidBody::set_additional_mass(
+  self : RigidBody,
+  mass : @core.Real,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.additional_mass != mass {
+    self.additional_mass = mass
+    self.mark_local_mass_properties_changed() |> ignore
+    if wake_up && self.is_dynamic_or_kinematic() {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
 }
 
 ///|

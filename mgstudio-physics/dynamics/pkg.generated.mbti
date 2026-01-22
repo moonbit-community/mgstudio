@@ -246,7 +246,7 @@ pub struct RigidBody {
   mut forces : RigidBodyForces
   mut ccd : RigidBodyCcd
   mut mass_props : RigidBodyMassProps
-  additional_mass : Float
+  mut additional_mass : Float
   mut additional_solver_iterations : Int
   mut changes : RigidBodyChanges
 }
@@ -254,6 +254,7 @@ pub fn RigidBody::activation(Self) -> RigidBodyActivation
 pub fn RigidBody::add_force(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::add_force_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
 pub fn RigidBody::add_torque(Self, Float, Bool) -> Self
+pub fn RigidBody::additional_mass(Self) -> Float
 pub fn RigidBody::additional_solver_iterations(Self) -> Int
 pub fn RigidBody::angular_damping(Self) -> Float
 pub fn RigidBody::angvel(Self) -> Float
@@ -280,6 +281,7 @@ pub fn RigidBody::position(Self) -> @core.Isometry2
 pub fn RigidBody::reset_forces(Self, Bool) -> Self
 pub fn RigidBody::reset_torques(Self, Bool) -> Self
 pub fn RigidBody::rotation(Self) -> @core.Rot2
+pub fn RigidBody::set_additional_mass(Self, Float, Bool) -> Self
 pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBody::set_angular_damping(Self, Float) -> Self
 pub fn RigidBody::set_angvel(Self, Float, Bool) -> Self

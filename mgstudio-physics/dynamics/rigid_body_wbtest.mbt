@@ -164,3 +164,11 @@ test "rigid body builder position" {
   let angle_delta = @core.abs(body.rotation().angle() + 0.25F)
   inspect(angle_delta < 1.0e-4F, content="true")
 }
+
+///|
+/// Ported from rapier rigid_body additional mass setter.
+test "rigid body additional mass" {
+  let body = RigidBodyBuilder::dynamic().build()
+  let body = body.set_additional_mass(2.0F, false)
+  inspect(body.additional_mass() == 2.0F, content="true")
+}
