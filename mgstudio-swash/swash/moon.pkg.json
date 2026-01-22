@@ -1,0 +1,7 @@
+{
+  "import": [
+    "moonbitlang/core/bytes",
+    "moonbitlang/core/string"
+  ]
+}
+
