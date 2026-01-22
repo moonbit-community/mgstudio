@@ -5,5 +5,10 @@
   "repository": "",
   "license": "Apache-2.0",
   "keywords": [],
-  "description": ""
+  "description": "",
+  "deps": {
+    "Milky2018/mgstudio_swash": {
+      "path": "../mgstudio-swash"
+    }
+  }
 }

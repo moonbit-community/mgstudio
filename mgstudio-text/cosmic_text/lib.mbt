@@ -19,3 +19,14 @@
 pub fn cosmic_text_version() -> String {
   "0.16.0 (upstream)"
 }
+
+// Temporary dependency smoke to ensure `mgstudio-text` can reference `mgstudio-swash`
+// via local `deps` in `moon.mod.json`. This will be removed once shaping/raster code lands.
+fn _swash_dep_smoke() -> Unit {
+  let t = @swash.tag_from_str_lossy("TEST")
+  if t == 0 {
+    ()
+  } else {
+    ()
+  }
+}
