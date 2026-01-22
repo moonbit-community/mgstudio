@@ -18,6 +18,15 @@ pub type ColliderHandle
 
 ///|
 #declaration_only
+pub fn ColliderHandle::equals(
+  self : ColliderHandle,
+  other : ColliderHandle,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub type ActiveCollisionTypes
 
 ///|
@@ -170,6 +179,15 @@ pub fn ColliderSet::insert(
 
 ///|
 #declaration_only
+pub fn ColliderSet::colliders_with_parent(
+  self : ColliderSet,
+  parent : @dynamics.RigidBodyHandle,
+) -> Array[ColliderHandle] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderSet::insert_with_parent(
   self : ColliderSet,
   collider : Collider,
@@ -288,6 +306,15 @@ pub fn NarrowPhase::intersection_pairs_with(
   self : NarrowPhase,
   handle : ColliderHandle,
 ) -> Array[IntersectionPair] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn NarrowPhase::contact_pairs_with(
+  self : NarrowPhase,
+  handle : ColliderHandle,
+) -> Array[(ColliderHandle, ColliderHandle, ContactPair)] {
   ...
 }
 

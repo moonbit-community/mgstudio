@@ -77,6 +77,7 @@ pub struct ColliderHandle {
   id : Int
   generation : Int
 }
+pub fn ColliderHandle::equals(Self, Self) -> Bool
 
 pub struct ColliderSet {
   colliders : Array[Collider?]
@@ -85,6 +86,7 @@ pub struct ColliderSet {
   modified_colliders : Array[ColliderHandle]
 }
 pub fn ColliderSet::clear_changes_for(Self, Array[ColliderHandle]) -> Unit
+pub fn ColliderSet::colliders_with_parent(Self, @dynamics.RigidBodyHandle) -> Array[ColliderHandle]
 pub fn ColliderSet::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::get_mut(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::get_mut_internal(Self, ColliderHandle) -> Collider?
@@ -114,6 +116,7 @@ pub struct NarrowPhase {
   dispatcher : @query.QueryDispatcher
 }
 pub fn NarrowPhase::contact_pair(Self, ColliderHandle, ColliderHandle) -> ContactPair?
+pub fn NarrowPhase::contact_pairs_with(Self, ColliderHandle) -> Array[(ColliderHandle, ColliderHandle, ContactPair)]
 pub fn NarrowPhase::intersection_pair(Self, ColliderHandle, ColliderHandle) -> IntersectionPair?
 pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[IntersectionPair]
 pub fn NarrowPhase::new() -> Self

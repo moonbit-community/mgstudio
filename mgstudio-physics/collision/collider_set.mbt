@@ -24,6 +24,14 @@ fn ColliderHandle::new(id : Int, generation : Int) -> ColliderHandle {
 }
 
 ///|
+pub fn ColliderHandle::equals(
+  self : ColliderHandle,
+  other : ColliderHandle,
+) -> Bool {
+  self.id == other.id && self.generation == other.generation
+}
+
+///|
 const COLLIDER_CHANGES_IN_MODIFIED_SET : Int = 1 << 0
 
 ///|
@@ -379,6 +387,23 @@ pub fn ColliderSet::insert(
     self.push_modified_unchecked(handle, collider_ref)
   }
   handle
+}
+
+///|
+pub fn ColliderSet::colliders_with_parent(
+  self : ColliderSet,
+  parent : @dynamics.RigidBodyHandle,
+) -> Array[ColliderHandle] {
+  let result : Array[ColliderHandle] = []
+  for i in 0..<self.colliders.length() {
+    if self.colliders[i] is Some(collider) {
+      if collider.parent is Some(current_parent) &&
+        @dynamics.RigidBodyHandle::equals(current_parent, parent) {
+        result.push(ColliderHandle::new(i, self.generations[i]))
+      }
+    }
+  }
+  result
 }
 
 ///|
@@ -791,6 +816,22 @@ pub fn NarrowPhase::intersection_pairs_with(
     let matches = collider_handle_equals(pair.collider1, handle) ||
       collider_handle_equals(pair.collider2, handle)
     if matches {
+      result.push(pair)
+    }
+  }
+  result
+}
+
+///|
+pub fn NarrowPhase::contact_pairs_with(
+  self : NarrowPhase,
+  handle : ColliderHandle,
+) -> Array[(ColliderHandle, ColliderHandle, ContactPair)] {
+  let result : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
+  for i in 0..<self.contacts.length() {
+    let pair = self.contacts[i]
+    if ColliderHandle::equals(pair.0, handle) ||
+      ColliderHandle::equals(pair.1, handle) {
       result.push(pair)
     }
   }

@@ -78,7 +78,7 @@ pub fn KinematicCharacterController::move_shape(
   query |> ignore
   shape |> ignore
   position |> ignore
-  handle_collision |> ignore
+  handle_collision(CharacterCollision::{  })
   let grounded = translation.y <= 0.0F || self.snap_to_ground is Some(_)
   { translation, grounded }
 }
