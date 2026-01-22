@@ -36,6 +36,15 @@ pub fn ActiveCollisionTypes::all() -> ActiveCollisionTypes {
 }
 
 ///|
+#declaration_only
+pub fn ActiveCollisionTypes::equals(
+  self : ActiveCollisionTypes,
+  other : ActiveCollisionTypes,
+) -> Bool {
+  ...
+}
+
+///|
 pub(all) enum ActiveEvents {
   CollisionEvents
 }
@@ -172,6 +181,26 @@ pub fn Collider::is_sensor(self : Collider) -> Bool {
 
 ///|
 #declaration_only
+pub fn Collider::active_collision_types(
+  self : Collider,
+) -> ActiveCollisionTypes {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::restitution(self : Collider) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   ...
 }
@@ -179,6 +208,33 @@ pub fn Collider::is_enabled(self : Collider) -> Bool {
 ///|
 #declaration_only
 pub fn Collider::set_sensor(self : Collider, enabled : Bool) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_active_collision_types(
+  self : Collider,
+  types : ActiveCollisionTypes,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_active_events(
+  self : Collider,
+  events : ActiveEvents?,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_restitution(
+  self : Collider,
+  restitution : @core.Real,
+) -> Collider {
   ...
 }
 

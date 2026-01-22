@@ -106,6 +106,14 @@ pub fn ActiveCollisionTypes::all() -> ActiveCollisionTypes {
 }
 
 ///|
+pub fn ActiveCollisionTypes::equals(
+  self : ActiveCollisionTypes,
+  other : ActiveCollisionTypes,
+) -> Bool {
+  self.value == other.value
+}
+
+///|
 pub(all) enum Shape {
   Ball(@core.Real)
   Cuboid(@core.Real, @core.Real)
@@ -118,10 +126,10 @@ pub struct Collider {
   mut local_rotation : @core.Real
   mut world_translation : @core.Vec2
   mut world_rotation : @core.Real
-  active_collision_types : ActiveCollisionTypes
+  mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
-  active_events : ActiveEvents?
-  restitution : @core.Real
+  mut active_events : ActiveEvents?
+  mut restitution : @core.Real
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
@@ -282,6 +290,23 @@ pub fn Collider::is_sensor(self : Collider) -> Bool {
 }
 
 ///|
+pub fn Collider::active_collision_types(
+  self : Collider,
+) -> ActiveCollisionTypes {
+  self.active_collision_types
+}
+
+///|
+pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
+  self.active_events
+}
+
+///|
+pub fn Collider::restitution(self : Collider) -> @core.Real {
+  self.restitution
+}
+
+///|
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   self.enabled is ColliderEnabled::Enabled
 }
@@ -292,6 +317,36 @@ pub fn Collider::set_sensor(self : Collider, enabled : Bool) -> Collider {
     self.sensor = enabled
     self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   }
+  self
+}
+
+///|
+pub fn Collider::set_active_collision_types(
+  self : Collider,
+  types : ActiveCollisionTypes,
+) -> Collider {
+  self.active_collision_types = types
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_active_events(
+  self : Collider,
+  events : ActiveEvents?,
+) -> Collider {
+  self.active_events = events
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_restitution(
+  self : Collider,
+  restitution : @core.Real,
+) -> Collider {
+  self.restitution = restitution
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 

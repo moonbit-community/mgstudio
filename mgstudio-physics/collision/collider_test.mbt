@@ -28,6 +28,28 @@ test "collider position setters" {
 }
 
 ///|
+/// Ported from rapier collider material and event accessors.
+test "collider material and event accessors" {
+  let collider = ColliderBuilder::ball(1.0F)
+    .restitution(0.25F)
+    .active_events(ActiveEvents::CollisionEvents)
+    .build()
+  inspect(collider.restitution() == 0.25F, content="true")
+  inspect(
+    collider.active_events() is Some(ActiveEvents::CollisionEvents),
+    content="true",
+  )
+  inspect(
+    collider.active_collision_types().equals(ActiveCollisionTypes::all()),
+    content="true",
+  )
+  let collider = collider.set_restitution(0.5F)
+  inspect(collider.restitution() == 0.5F, content="true")
+  let collider = collider.set_active_events(None)
+  inspect(collider.active_events() is None, content="true")
+}
+
+///|
 /// Ported from rapier collider parent offset setters.
 test "collider parent offset setters" {
   let bodies = @dynamics.RigidBodySet::new()
