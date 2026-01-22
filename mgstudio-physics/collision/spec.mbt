@@ -148,7 +148,19 @@ pub fn Collider::translation(self : Collider) -> @core.Vec2 {
 
 ///|
 #declaration_only
+pub fn Collider::position(self : Collider) -> @core.Isometry2 {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::rotation(self : Collider) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::position_wrt_parent(self : Collider) -> @core.Isometry2? {
   ...
 }
 
@@ -167,6 +179,51 @@ pub fn Collider::is_enabled(self : Collider) -> Bool {
 ///|
 #declaration_only
 pub fn Collider::set_sensor(self : Collider, enabled : Bool) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_translation(
+  self : Collider,
+  translation : @core.Vec2,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_rotation(
+  self : Collider,
+  rotation : @core.Real,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_position(
+  self : Collider,
+  position : @core.Isometry2,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_translation_wrt_parent(
+  self : Collider,
+  translation : @core.Vec2,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_rotation_wrt_parent(
+  self : Collider,
+  rotation : @core.Real,
+) -> Collider {
   ...
 }
 

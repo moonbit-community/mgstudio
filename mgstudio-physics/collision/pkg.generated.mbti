@@ -29,8 +29,8 @@ pub fn BroadPhaseBvh::new() -> Self
 
 pub struct Collider {
   shape : Shape
-  local_translation : @core.Vec2
-  local_rotation : Float
+  mut local_translation : @core.Vec2
+  mut local_rotation : Float
   mut world_translation : @core.Vec2
   mut world_rotation : Float
   active_collision_types : ActiveCollisionTypes
@@ -43,9 +43,16 @@ pub struct Collider {
 }
 pub fn Collider::is_enabled(Self) -> Bool
 pub fn Collider::is_sensor(Self) -> Bool
+pub fn Collider::position(Self) -> @core.Isometry2
+pub fn Collider::position_wrt_parent(Self) -> @core.Isometry2?
 pub fn Collider::rotation(Self) -> Float
 pub fn Collider::set_enabled(Self, Bool) -> Self
+pub fn Collider::set_position(Self, @core.Isometry2) -> Self
+pub fn Collider::set_rotation(Self, Float) -> Self
+pub fn Collider::set_rotation_wrt_parent(Self, Float) -> Self
 pub fn Collider::set_sensor(Self, Bool) -> Self
+pub fn Collider::set_translation(Self, @core.Vec2) -> Self
+pub fn Collider::set_translation_wrt_parent(Self, @core.Vec2) -> Self
 pub fn Collider::shape(Self) -> Shape
 pub fn Collider::translation(Self) -> @core.Vec2
 

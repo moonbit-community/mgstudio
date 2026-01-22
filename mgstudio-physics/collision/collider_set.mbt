@@ -114,8 +114,8 @@ pub(all) enum Shape {
 ///|
 pub struct Collider {
   shape : Shape
-  local_translation : @core.Vec2
-  local_rotation : @core.Real
+  mut local_translation : @core.Vec2
+  mut local_rotation : @core.Real
   mut world_translation : @core.Vec2
   mut world_rotation : @core.Real
   active_collision_types : ActiveCollisionTypes
@@ -250,8 +250,30 @@ pub fn Collider::translation(self : Collider) -> @core.Vec2 {
 }
 
 ///|
+pub fn Collider::position(self : Collider) -> @core.Isometry2 {
+  @core.Isometry2::new(
+    self.world_translation,
+    @core.Rot2::from_angle(self.world_rotation),
+  )
+}
+
+///|
 pub fn Collider::rotation(self : Collider) -> @core.Real {
   self.world_rotation
+}
+
+///|
+pub fn Collider::position_wrt_parent(self : Collider) -> @core.Isometry2? {
+  if self.parent is Some(_) {
+    Some(
+      @core.Isometry2::new(
+        self.local_translation,
+        @core.Rot2::from_angle(self.local_rotation),
+      ),
+    )
+  } else {
+    None
+  }
 }
 
 ///|
@@ -269,6 +291,71 @@ pub fn Collider::set_sensor(self : Collider, enabled : Bool) -> Collider {
   if self.sensor != enabled {
     self.sensor = enabled
     self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  }
+  self
+}
+
+///|
+pub fn Collider::set_translation(
+  self : Collider,
+  translation : @core.Vec2,
+) -> Collider {
+  if self.parent is None {
+    self.local_translation = translation
+    self.world_translation = translation
+    self.changes = self.changes.insert(COLLIDER_CHANGES_POSITION)
+  }
+  self
+}
+
+///|
+pub fn Collider::set_rotation(
+  self : Collider,
+  rotation : @core.Real,
+) -> Collider {
+  if self.parent is None {
+    self.local_rotation = rotation
+    self.world_rotation = rotation
+    self.changes = self.changes.insert(COLLIDER_CHANGES_POSITION)
+  }
+  self
+}
+
+///|
+pub fn Collider::set_position(
+  self : Collider,
+  position : @core.Isometry2,
+) -> Collider {
+  if self.parent is None {
+    self.local_translation = position.translation
+    self.local_rotation = position.rotation.angle()
+    self.world_translation = position.translation
+    self.world_rotation = position.rotation.angle()
+    self.changes = self.changes.insert(COLLIDER_CHANGES_POSITION)
+  }
+  self
+}
+
+///|
+pub fn Collider::set_translation_wrt_parent(
+  self : Collider,
+  translation : @core.Vec2,
+) -> Collider {
+  if self.parent is Some(_) {
+    self.local_translation = translation
+    self.changes = self.changes.insert(COLLIDER_CHANGES_PARENT)
+  }
+  self
+}
+
+///|
+pub fn Collider::set_rotation_wrt_parent(
+  self : Collider,
+  rotation : @core.Real,
+) -> Collider {
+  if self.parent is Some(_) {
+    self.local_rotation = rotation
+    self.changes = self.changes.insert(COLLIDER_CHANGES_PARENT)
   }
   self
 }
