@@ -933,6 +933,42 @@ pub fn RigidBody::mass_props(self : RigidBody) -> RigidBodyMassProps {
 
 ///|
 #declaration_only
+pub fn RigidBody::mass(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::inv_mass(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::inertia(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::inv_inertia(self : RigidBody) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::center_of_mass(self : RigidBody) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::world_com(self : RigidBody) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::wake_up(self : RigidBody, strong : Bool) -> RigidBody {
   ...
 }

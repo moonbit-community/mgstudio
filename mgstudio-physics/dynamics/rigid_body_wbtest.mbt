@@ -193,3 +193,19 @@ test "rigid body impulse application" {
   )
   inspect(body.angvel() == -1.0F, content="true")
 }
+
+///|
+/// Ported from rapier rigid_body mass property accessors.
+test "rigid body mass properties" {
+  let body = RigidBodyBuilder::dynamic().build()
+  inspect(body.mass() == 0.0F, content="true")
+  inspect(body.inv_mass() == 0.0F, content="true")
+  inspect(body.inertia() == 0.0F, content="true")
+  inspect(body.inv_inertia() == 0.0F, content="true")
+  let com = body.center_of_mass()
+  inspect(com.x == 0.0F, content="true")
+  inspect(com.y == 0.0F, content="true")
+  let world_com = body.world_com()
+  inspect(world_com.x == 0.0F, content="true")
+  inspect(world_com.y == 0.0F, content="true")
+}

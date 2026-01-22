@@ -972,6 +972,36 @@ pub fn RigidBody::mass_props(self : RigidBody) -> RigidBodyMassProps {
 }
 
 ///|
+pub fn RigidBody::mass(self : RigidBody) -> @core.Real {
+  self.mass_props.local_mprops.mass
+}
+
+///|
+pub fn RigidBody::inv_mass(self : RigidBody) -> @core.Real {
+  self.mass_props.local_mprops.inv_mass
+}
+
+///|
+pub fn RigidBody::inertia(self : RigidBody) -> @core.Real {
+  self.mass_props.local_mprops.inertia
+}
+
+///|
+pub fn RigidBody::inv_inertia(self : RigidBody) -> @core.Real {
+  self.mass_props.local_mprops.inv_inertia
+}
+
+///|
+pub fn RigidBody::center_of_mass(self : RigidBody) -> @core.Vec2 {
+  self.mass_props.local_mprops.center_of_mass
+}
+
+///|
+pub fn RigidBody::world_com(self : RigidBody) -> @core.Vec2 {
+  self.mass_props.world_com
+}
+
+///|
 pub fn RigidBody::wake_up(self : RigidBody, strong : Bool) -> RigidBody {
   if self.activation.sleeping {
     self.changes = self.changes.insert(RIGID_BODY_CHANGES_SLEEP)
