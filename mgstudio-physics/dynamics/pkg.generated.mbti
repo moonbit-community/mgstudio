@@ -354,6 +354,7 @@ pub fn RigidBodyBuilder::kinematic_position_based() -> Self
 pub fn RigidBodyBuilder::kinematic_velocity_based() -> Self
 pub fn RigidBodyBuilder::linear_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder::linvel(Self, @core.Vec2) -> Self
+pub fn RigidBodyBuilder::position(Self, @core.Isometry2) -> Self
 pub fn RigidBodyBuilder::rotation(Self, @core.Rot2) -> Self
 pub fn RigidBodyBuilder::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder::soft_ccd_prediction(Self, Float) -> Self

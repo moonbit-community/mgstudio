@@ -150,3 +150,17 @@ test "rigid body builder sleeping state" {
   inspect(body.linvel().y == 0.0F, content="true")
   inspect(body.angvel() == 0.0F, content="true")
 }
+
+///|
+/// Ported from rapier rigid_body builder position setter.
+test "rigid body builder position" {
+  let position = @core.Isometry2::new(
+    @core.Vec2::new(-1.0F, 3.0F),
+    @core.Rot2::from_angle(-0.25F),
+  )
+  let body = RigidBodyBuilder::dynamic().position(position).build()
+  inspect(body.translation().x == -1.0F, content="true")
+  inspect(body.translation().y == 3.0F, content="true")
+  let angle_delta = @core.abs(body.rotation().angle() + 0.25F)
+  inspect(angle_delta < 1.0e-4F, content="true")
+}

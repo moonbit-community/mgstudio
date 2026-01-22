@@ -1146,6 +1146,15 @@ pub fn RigidBodyBuilder::translation(
 }
 
 ///|
+pub fn RigidBodyBuilder::position(
+  self : RigidBodyBuilder,
+  position : @core.Isometry2,
+) -> RigidBodyBuilder {
+  self.position = position
+  self
+}
+
+///|
 pub fn RigidBodyBuilder::rotation(
   self : RigidBodyBuilder,
   rotation : @core.Rot2,

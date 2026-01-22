@@ -384,6 +384,15 @@ pub fn RigidBodyBuilder::translation(
 
 ///|
 #declaration_only
+pub fn RigidBodyBuilder::position(
+  self : RigidBodyBuilder,
+  position : @core.Isometry2,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodyBuilder::rotation(
   self : RigidBodyBuilder,
   rotation : @core.Rot2,
