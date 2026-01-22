@@ -18,6 +18,12 @@ pub fn Bounds::is_empty(Self) -> Bool
 pub fn Bounds::new(Vector, Vector) -> Self
 pub fn Bounds::width(Self) -> Double
 
+pub(all) enum Cap {
+  Butt
+  Square
+  Round
+}
+
 pub(all) enum Command {
   MoveTo(Vector)
   LineTo(Vector)
@@ -27,6 +33,11 @@ pub(all) enum Command {
 }
 pub fn Command::transform(Self, Transform) -> Self
 
+pub(all) enum Fill {
+  NonZero
+  EvenOdd
+}
+
 pub(all) enum Format {
   Alpha
   Subpixel
@@ -34,6 +45,12 @@ pub(all) enum Format {
 }
 pub fn Format::buffer_size(Self, UInt, UInt) -> Int
 pub fn Format::subpixel_bgra() -> Self
+
+pub(all) enum Join {
+  Bevel
+  Miter
+  Round
+}
 
 pub(all) enum Origin {
   TopLeft
@@ -63,6 +80,33 @@ pub struct PointsVerbsPathData {
 }
 pub fn PointsVerbsPathData::new(Array[Vector], Array[Verb]) -> Self
 pub impl PathData for PointsVerbsPathData
+
+pub struct Stroke {
+  mut width : Double
+  mut join : Join
+  mut miter_limit : Double
+  mut start_cap : Cap
+  mut end_cap : Cap
+  mut dashes : Array[Double]
+  mut offset : Double
+  mut scale : Bool
+}
+pub fn Stroke::cap(Self, Cap) -> Self
+pub fn Stroke::caps(Self, Cap, Cap) -> Self
+pub fn Stroke::dash(Self, Array[Double], Double) -> Self
+pub fn Stroke::default() -> Self
+pub fn Stroke::join(Self, Join) -> Self
+pub fn Stroke::miter_limit(Self, Double) -> Self
+pub fn Stroke::new(Double) -> Self
+pub fn Stroke::scale(Self, Bool) -> Self
+pub fn Stroke::width(Self, Double) -> Self
+
+pub(all) enum Style {
+  Fill(Fill)
+  Stroke(Stroke)
+}
+pub fn Style::default() -> Self
+pub fn Style::is_stroke(Self) -> Bool
 
 pub struct Transform {
   xx : Double
