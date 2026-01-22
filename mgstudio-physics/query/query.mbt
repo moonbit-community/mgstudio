@@ -13,43 +13,42 @@
 // limitations under the License.
 
 ///|
-#declaration_only
-pub type QueryFilter
-
-///|
-#declaration_only
-pub fn QueryFilter::new() -> QueryFilter {
-  ...
+pub struct QueryFilter {
+  excluded_body : @dynamics.RigidBodyHandle?
 }
 
 ///|
-#declaration_only
+pub fn QueryFilter::new() -> QueryFilter {
+  { excluded_body: None }
+}
+
+///|
 pub fn QueryFilter::exclude_rigid_body(
   self : QueryFilter,
   handle : @dynamics.RigidBodyHandle,
 ) -> QueryFilter {
-  ...
+  self |> ignore
+  { excluded_body: Some(handle) }
 }
 
 ///|
-#declaration_only
-pub type QueryPipeline
+pub struct QueryPipeline {
+  filter : QueryFilter
+  dispatcher : QueryDispatcher
+}
 
 ///|
-#declaration_only
-pub type QueryDispatcher
+pub struct QueryDispatcher {}
 
 ///|
-#declaration_only
 pub fn QueryDispatcher::new() -> QueryDispatcher {
-  ...
+  QueryDispatcher::{  }
 }
 
 ///|
-#declaration_only
 pub fn QueryPipeline::new(
   filter : QueryFilter,
   dispatcher : QueryDispatcher,
 ) -> QueryPipeline {
-  ...
+  { filter, dispatcher }
 }

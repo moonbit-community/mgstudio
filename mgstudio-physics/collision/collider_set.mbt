@@ -13,9 +13,565 @@
 // limitations under the License.
 
 ///|
-struct ColliderSet {}
+pub struct ColliderHandle {
+  id : Int
+  generation : Int
+}
+
+///|
+fn ColliderHandle::new(id : Int, generation : Int) -> ColliderHandle {
+  ColliderHandle::{ id, generation }
+}
+
+///|
+pub struct ActiveCollisionTypes {
+  value : Int
+}
+
+///|
+pub fn ActiveCollisionTypes::all() -> ActiveCollisionTypes {
+  { value: 1 }
+}
+
+///|
+pub(all) enum Shape {
+  Ball(@core.Real)
+  Cuboid(@core.Real, @core.Real)
+}
+
+///|
+pub struct Collider {
+  shape : Shape
+  local_translation : @core.Vec2
+  local_rotation : @core.Real
+  mut world_translation : @core.Vec2
+  mut world_rotation : @core.Real
+  active_collision_types : ActiveCollisionTypes
+  sensor : Bool
+  active_events : ActiveEvents?
+  restitution : @core.Real
+  mut parent : @dynamics.RigidBodyHandle?
+}
+
+///|
+pub struct ColliderBuilder {
+  shape : Shape
+  mut translation : @core.Vec2
+  mut rotation : @core.Real
+  mut active_collision_types : ActiveCollisionTypes
+  mut sensor : Bool
+  mut active_events : ActiveEvents?
+  mut restitution : @core.Real
+}
+
+///|
+pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
+  {
+    shape: Shape::Ball(radius),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::all(),
+    sensor: false,
+    active_events: None,
+    restitution: 0.0F,
+  }
+}
+
+///|
+pub fn ColliderBuilder::cuboid(
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> ColliderBuilder {
+  {
+    shape: Shape::Cuboid(half_width, half_height),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::all(),
+    sensor: false,
+    active_events: None,
+    restitution: 0.0F,
+  }
+}
+
+///|
+pub fn ColliderBuilder::translation(
+  self : ColliderBuilder,
+  translation : @core.Vec2,
+) -> ColliderBuilder {
+  self.translation = translation
+  self
+}
+
+///|
+pub fn ColliderBuilder::rotation(
+  self : ColliderBuilder,
+  rotation : @core.Real,
+) -> ColliderBuilder {
+  self.rotation = rotation
+  self
+}
+
+///|
+pub fn ColliderBuilder::active_collision_types(
+  self : ColliderBuilder,
+  types : ActiveCollisionTypes,
+) -> ColliderBuilder {
+  self.active_collision_types = types
+  self
+}
+
+///|
+pub fn ColliderBuilder::sensor(
+  self : ColliderBuilder,
+  enabled : Bool,
+) -> ColliderBuilder {
+  self.sensor = enabled
+  self
+}
+
+///|
+pub fn ColliderBuilder::active_events(
+  self : ColliderBuilder,
+  events : ActiveEvents,
+) -> ColliderBuilder {
+  self.active_events = Some(events)
+  self
+}
+
+///|
+pub fn ColliderBuilder::restitution(
+  self : ColliderBuilder,
+  value : @core.Real,
+) -> ColliderBuilder {
+  self.restitution = value
+  self
+}
+
+///|
+pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
+  {
+    shape: self.shape,
+    local_translation: self.translation,
+    local_rotation: self.rotation,
+    world_translation: self.translation,
+    world_rotation: self.rotation,
+    active_collision_types: self.active_collision_types,
+    sensor: self.sensor,
+    active_events: self.active_events,
+    restitution: self.restitution,
+    parent: None,
+  }
+}
+
+///|
+pub fn Collider::shape(self : Collider) -> Shape {
+  self.shape
+}
+
+///|
+pub fn Collider::translation(self : Collider) -> @core.Vec2 {
+  self.world_translation
+}
+
+///|
+pub struct ColliderSet {
+  colliders : Array[Collider?]
+  generations : Array[Int]
+  free_list : Array[Int]
+}
 
 ///|
 pub fn ColliderSet::new() -> ColliderSet {
-  ColliderSet::{  }
+  { colliders: [], generations: [], free_list: [] }
+}
+
+///|
+fn ColliderSet::allocate_handle(self : ColliderSet) -> ColliderHandle {
+  if self.free_list.pop() is Some(index) {
+    let generation = self.generations[index]
+    ColliderHandle::new(index, generation)
+  } else {
+    let index = self.colliders.length()
+    self.colliders.push(None)
+    self.generations.push(0)
+    ColliderHandle::new(index, 0)
+  }
+}
+
+///|
+fn collider_handle_equals(
+  left : ColliderHandle,
+  right : ColliderHandle,
+) -> Bool {
+  left.id == right.id && left.generation == right.generation
+}
+
+///|
+fn is_same_parent(left : Collider, right : Collider) -> Bool {
+  if left.parent is Some(parent1) && right.parent is Some(parent2) {
+    @dynamics.RigidBodyHandle::equals(parent1, parent2)
+  } else {
+    false
+  }
+}
+
+///|
+fn update_collider_world_pose(
+  collider : Collider,
+  bodies : @dynamics.RigidBodySet,
+) -> Collider {
+  if collider.parent is Some(parent) {
+    if bodies.get(parent) is Some(body) {
+      let body_translation = body.translation()
+      collider.world_translation = body_translation.add(
+        collider.local_translation,
+      )
+      collider.world_rotation = body.rotation().angle() +
+        collider.local_rotation
+      return collider
+    }
+  }
+  collider.world_translation = collider.local_translation
+  collider.world_rotation = collider.local_rotation
+  collider
+}
+
+///|
+fn ColliderSet::sync_with_bodies(
+  self : ColliderSet,
+  bodies : @dynamics.RigidBodySet,
+) -> Unit {
+  for i in 0..<self.colliders.length() {
+    if self.colliders[i] is Some(collider) {
+      self.colliders[i] = Some(update_collider_world_pose(collider, bodies))
+    }
+  }
+}
+
+///|
+pub fn ColliderSet::insert(
+  self : ColliderSet,
+  collider : Collider,
+) -> ColliderHandle {
+  let handle = self.allocate_handle()
+  self.colliders[handle.id] = Some(collider)
+  handle
+}
+
+///|
+pub fn ColliderSet::insert_with_parent(
+  self : ColliderSet,
+  collider : Collider,
+  parent : @dynamics.RigidBodyHandle,
+  bodies : @dynamics.RigidBodySet,
+) -> ColliderHandle {
+  let handle = self.allocate_handle()
+  let updated = collider
+  updated.parent = Some(parent)
+  let updated_world = update_collider_world_pose(updated, bodies)
+  self.colliders[handle.id] = Some(updated_world)
+  handle
+}
+
+///|
+pub fn ColliderSet::get(
+  self : ColliderSet,
+  handle : ColliderHandle,
+) -> Collider? {
+  if handle.id < 0 || handle.id >= self.colliders.length() {
+    return None
+  }
+  if self.generations[handle.id] != handle.generation {
+    return None
+  }
+  self.colliders[handle.id]
+}
+
+///|
+pub fn ColliderSet::remove(
+  self : ColliderSet,
+  handle : ColliderHandle,
+  islands : @dynamics.IslandManager,
+  bodies : @dynamics.RigidBodySet,
+  wake_up : Bool,
+) -> Unit {
+  if handle.id < 0 || handle.id >= self.colliders.length() {
+    islands |> ignore
+    bodies |> ignore
+    wake_up |> ignore
+    return
+  }
+  if self.generations[handle.id] != handle.generation {
+    islands |> ignore
+    bodies |> ignore
+    wake_up |> ignore
+    return
+  }
+  if self.colliders[handle.id] is Some(_) {
+    self.colliders[handle.id] = None
+    self.generations[handle.id] = self.generations[handle.id] + 1
+    self.free_list.push(handle.id)
+  }
+  islands |> ignore
+  bodies |> ignore
+  wake_up |> ignore
+}
+
+///|
+pub fn ColliderSet::set_parent(
+  self : ColliderSet,
+  handle : ColliderHandle,
+  parent : @dynamics.RigidBodyHandle?,
+  bodies : @dynamics.RigidBodySet,
+) -> Unit {
+  if handle.id < 0 || handle.id >= self.colliders.length() {
+    return
+  }
+  if self.generations[handle.id] != handle.generation {
+    return
+  }
+  if self.colliders[handle.id] is Some(collider) {
+    collider.parent = parent
+    self.colliders[handle.id] = Some(
+      update_collider_world_pose(collider, bodies),
+    )
+  }
+}
+
+///|
+pub struct ContactPair {
+  manifold_count : Int
+}
+
+///|
+pub fn ContactPair::manifold_count(self : ContactPair) -> Int {
+  self.manifold_count
+}
+
+///|
+pub struct NarrowPhase {
+  mut intersections : Array[IntersectionPair]
+  mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
+  dispatcher : @query.QueryDispatcher
+}
+
+///|
+pub fn NarrowPhase::new() -> NarrowPhase {
+  { intersections: [], contacts: [], dispatcher: @query.QueryDispatcher::new() }
+}
+
+///|
+fn find_intersection_pair(
+  pairs : Array[IntersectionPair],
+  first : ColliderHandle,
+  second : ColliderHandle,
+) -> IntersectionPair? {
+  for i in 0..<pairs.length() {
+    let pair = pairs[i]
+    let matches = collider_handle_equals(pair.collider1, first) &&
+      collider_handle_equals(pair.collider2, second)
+    let matches_swapped = collider_handle_equals(pair.collider1, second) &&
+      collider_handle_equals(pair.collider2, first)
+    if matches || matches_swapped {
+      return Some(pair)
+    }
+  }
+  None
+}
+
+///|
+fn find_contact_pair(
+  pairs : Array[(ColliderHandle, ColliderHandle, ContactPair)],
+  first : ColliderHandle,
+  second : ColliderHandle,
+) -> ContactPair? {
+  for i in 0..<pairs.length() {
+    let pair = pairs[i]
+    let matches = collider_handle_equals(pair.0, first) &&
+      collider_handle_equals(pair.1, second)
+    let matches_swapped = collider_handle_equals(pair.0, second) &&
+      collider_handle_equals(pair.1, first)
+    if matches || matches_swapped {
+      return Some(pair.2)
+    }
+  }
+  None
+}
+
+///|
+fn min_value(a : @core.Real, b : @core.Real) -> @core.Real {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn max_value(a : @core.Real, b : @core.Real) -> @core.Real {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn clamp_value(
+  value : @core.Real,
+  min_val : @core.Real,
+  max_val : @core.Real,
+) -> @core.Real {
+  max_value(min_val, min_value(max_val, value))
+}
+
+///|
+fn shapes_intersect(
+  shape1 : Shape,
+  pos1 : @core.Vec2,
+  shape2 : Shape,
+  pos2 : @core.Vec2,
+) -> Bool {
+  match (shape1, shape2) {
+    (Shape::Ball(r1), Shape::Ball(r2)) => {
+      let delta = pos2.sub(pos1)
+      let dist2 = delta.length_squared()
+      let radius = r1 + r2
+      dist2 <= radius * radius
+    }
+    (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) => {
+      let dx = @core.abs(pos2.x - pos1.x)
+      let dy = @core.abs(pos2.y - pos1.y)
+      dx <= hw1 + hw2 && dy <= hh1 + hh2
+    }
+    (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
+      ball_cuboid_intersect(pos1, r, pos2, hw, hh)
+    (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
+      ball_cuboid_intersect(pos2, r, pos1, hw, hh)
+  }
+}
+
+///|
+fn ball_cuboid_intersect(
+  ball_pos : @core.Vec2,
+  radius : @core.Real,
+  cuboid_pos : @core.Vec2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> Bool {
+  let dx = clamp_value(ball_pos.x - cuboid_pos.x, -half_width, half_width)
+  let dy = clamp_value(ball_pos.y - cuboid_pos.y, -half_height, half_height)
+  let closest = @core.Vec2::new(cuboid_pos.x + dx, cuboid_pos.y + dy)
+  let delta = ball_pos.sub(closest)
+  delta.length_squared() <= radius * radius
+}
+
+///|
+pub fn NarrowPhase::update(
+  self : NarrowPhase,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
+  colliders.sync_with_bodies(bodies)
+  let intersections : Array[IntersectionPair] = []
+  let contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider1) {
+      let handle1 = ColliderHandle::new(i, colliders.generations[i])
+      for j in (i + 1)..<colliders.colliders.length() {
+        if colliders.colliders[j] is Some(collider2) {
+          let handle2 = ColliderHandle::new(j, colliders.generations[j])
+          if is_same_parent(collider1, collider2) {
+            continue
+          }
+          let pos1 = collider1.world_translation
+          let pos2 = collider2.world_translation
+          let intersecting = shapes_intersect(
+            collider1.shape,
+            pos1,
+            collider2.shape,
+            pos2,
+          )
+          if intersecting {
+            if collider1.sensor || collider2.sensor {
+              intersections.push(IntersectionPair::{
+                collider1: handle1,
+                collider2: handle2,
+                intersecting,
+              })
+            } else {
+              let contact = ContactPair::{ manifold_count: 1 }
+              contacts.push((handle1, handle2, contact))
+            }
+          }
+        }
+      }
+    }
+  }
+  self.intersections = intersections
+  self.contacts = contacts
+}
+
+///|
+pub fn NarrowPhase::intersection_pairs_with(
+  self : NarrowPhase,
+  handle : ColliderHandle,
+) -> Array[IntersectionPair] {
+  let result : Array[IntersectionPair] = []
+  for i in 0..<self.intersections.length() {
+    let pair = self.intersections[i]
+    let matches = collider_handle_equals(pair.collider1, handle) ||
+      collider_handle_equals(pair.collider2, handle)
+    if matches {
+      result.push(pair)
+    }
+  }
+  result
+}
+
+///|
+pub fn NarrowPhase::contact_pair(
+  self : NarrowPhase,
+  first : ColliderHandle,
+  second : ColliderHandle,
+) -> ContactPair? {
+  find_contact_pair(self.contacts, first, second)
+}
+
+///|
+pub fn NarrowPhase::intersection_pair(
+  self : NarrowPhase,
+  first : ColliderHandle,
+  second : ColliderHandle,
+) -> IntersectionPair? {
+  find_intersection_pair(self.intersections, first, second)
+}
+
+///|
+pub fn NarrowPhase::query_dispatcher(
+  self : NarrowPhase,
+) -> @query.QueryDispatcher {
+  self.dispatcher
+}
+
+///|
+pub struct BroadPhaseBvh {}
+
+///|
+pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
+  BroadPhaseBvh::{  }
+}
+
+///|
+pub fn BroadPhaseBvh::as_query_pipeline(
+  self : BroadPhaseBvh,
+  dispatcher : @query.QueryDispatcher,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+  filter : @query.QueryFilter,
+) -> @query.QueryPipeline {
+  self |> ignore
+  bodies |> ignore
+  colliders |> ignore
+  @query.QueryPipeline::new(filter, dispatcher)
 }

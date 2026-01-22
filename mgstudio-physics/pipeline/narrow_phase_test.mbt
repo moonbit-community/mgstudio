@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/geometry/narrow_phase.rs (collider_set_parent_depenetration) adapted for 2D.
-#skip
 test "collider set parent depenetration" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
@@ -127,7 +126,6 @@ test "collider set parent depenetration" {
 
 ///|
 /// Ported from rapier/src/geometry/narrow_phase.rs (collider_set_parent_no_self_intersection) adapted for 2D.
-#skip
 test "collider set parent no self intersection" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()

@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (kinematic_and_fixed_contact_crash).
-#skip
 test "kinematic and fixed contact crash" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -50,7 +49,6 @@ test "kinematic and fixed contact crash" {
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_removal_before_step).
-#skip
 test "rigid body removal before step" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -88,7 +86,6 @@ test "rigid body removal before step" {
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (collider_removal_before_step).
-#skip
 test "collider removal before step" {
   let pipeline = PhysicsPipeline::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
@@ -127,7 +124,6 @@ test "collider removal before step" {
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_type_changed_dynamic_is_in_active_set).
-#skip
 test "rigid body type changed dynamic is in active set" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -182,7 +178,6 @@ test "rigid body type changed dynamic is in active set" {
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (joint_step_delta_time_0).
-#skip
 test "joint step delta time 0" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -233,7 +228,6 @@ test "joint step delta time 0" {
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (test_multi_sap_disable_body).
-#skip
 test "multi sap disable body" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
@@ -313,7 +307,6 @@ test "multi sap disable body" {
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_removal_snapshot_handle_determinism).
-#skip
 test "rigid body removal snapshot handle determinism" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()

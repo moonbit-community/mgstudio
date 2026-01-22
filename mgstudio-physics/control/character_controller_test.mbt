@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/control/character_controller.rs (character_controller_climb_test) adapted for 2D.
-#skip
 test "character controller climb" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -141,7 +140,6 @@ test "character controller climb" {
 
 ///|
 /// Ported from rapier/src/control/character_controller.rs (character_controller_ground_detection) adapted for 2D.
-#skip
 test "character controller ground detection" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()

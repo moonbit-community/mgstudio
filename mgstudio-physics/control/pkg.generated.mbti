@@ -12,7 +12,8 @@ import {
 // Errors
 
 // Types and methods
-pub type CharacterCollision
+pub struct CharacterCollision {
+}
 
 pub(all) enum CharacterLength {
   Relative(Float)
@@ -20,11 +21,17 @@ pub(all) enum CharacterLength {
 }
 pub fn CharacterLength::relative(Float) -> Self
 
-pub type EffectiveMovement
+pub struct EffectiveMovement {
+  translation : @core.Vec2
+  grounded : Bool
+}
 pub fn EffectiveMovement::is_grounded(Self) -> Bool
 pub fn EffectiveMovement::translation(Self) -> @core.Vec2
 
-pub type KinematicCharacterController
+pub struct KinematicCharacterController {
+  max_slope_climb_angle : Float
+  snap_to_ground : CharacterLength?
+}
 pub fn KinematicCharacterController::move_shape(Self, Float, @query.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
 pub fn KinematicCharacterController::new() -> Self
 pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self

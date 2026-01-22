@@ -250,6 +250,16 @@ pub fn NarrowPhase::intersection_pair(
 
 ///|
 #declaration_only
+pub fn NarrowPhase::update(
+  self : NarrowPhase,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn NarrowPhase::query_dispatcher(
   self : NarrowPhase,
 ) -> @query.QueryDispatcher {

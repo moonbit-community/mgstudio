@@ -10,13 +10,21 @@ import {
 // Errors
 
 // Types and methods
-pub type QueryDispatcher
+pub struct QueryDispatcher {
+}
+pub fn QueryDispatcher::new() -> Self
 
-pub type QueryFilter
+pub struct QueryFilter {
+  excluded_body : @dynamics.RigidBodyHandle?
+}
 pub fn QueryFilter::exclude_rigid_body(Self, @dynamics.RigidBodyHandle) -> Self
 pub fn QueryFilter::new() -> Self
 
-pub type QueryPipeline
+pub struct QueryPipeline {
+  filter : QueryFilter
+  dispatcher : QueryDispatcher
+}
+pub fn QueryPipeline::new(QueryFilter, QueryDispatcher) -> Self
 
 // Type aliases
 

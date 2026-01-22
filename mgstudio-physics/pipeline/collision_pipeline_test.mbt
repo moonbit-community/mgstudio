@@ -14,7 +14,6 @@
 
 ///|
 /// Ported from rapier/src/pipeline/collision_pipeline.rs (dim2 test_no_rigid_bodies).
-#skip
 test "collision pipeline no rigid bodies" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
@@ -56,7 +55,6 @@ test "collision pipeline no rigid bodies" {
 
 ///|
 /// Ported from rapier/src/pipeline/collision_pipeline.rs (dim3 test_no_rigid_bodies) adapted for 2D.
-#skip
 test "collision pipeline no rigid bodies (dim3 adapted)" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()

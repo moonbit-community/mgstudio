@@ -12,22 +12,44 @@ import {
 // Errors
 
 // Types and methods
-pub type ActiveCollisionTypes
+pub struct ActiveCollisionTypes {
+  value : Int
+}
 pub fn ActiveCollisionTypes::all() -> Self
 
 pub(all) enum ActiveEvents {
   CollisionEvents
 }
 
-pub type BroadPhaseBvh
+pub struct BroadPhaseBvh {
+}
 pub fn BroadPhaseBvh::as_query_pipeline(Self, @query.QueryDispatcher, @dynamics.RigidBodySet, ColliderSet, @query.QueryFilter) -> @query.QueryPipeline
 pub fn BroadPhaseBvh::new() -> Self
 
-pub type Collider
+pub struct Collider {
+  shape : Shape
+  local_translation : @core.Vec2
+  local_rotation : Float
+  mut world_translation : @core.Vec2
+  mut world_rotation : Float
+  active_collision_types : ActiveCollisionTypes
+  sensor : Bool
+  active_events : ActiveEvents?
+  restitution : Float
+  mut parent : @dynamics.RigidBodyHandle?
+}
 pub fn Collider::shape(Self) -> Shape
 pub fn Collider::translation(Self) -> @core.Vec2
 
-pub type ColliderBuilder
+pub struct ColliderBuilder {
+  shape : Shape
+  mut translation : @core.Vec2
+  mut rotation : Float
+  mut active_collision_types : ActiveCollisionTypes
+  mut sensor : Bool
+  mut active_events : ActiveEvents?
+  mut restitution : Float
+}
 pub fn ColliderBuilder::active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn ColliderBuilder::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder::ball(Float) -> Self
@@ -38,9 +60,16 @@ pub fn ColliderBuilder::rotation(Self, Float) -> Self
 pub fn ColliderBuilder::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
 
-pub type ColliderHandle
+pub struct ColliderHandle {
+  id : Int
+  generation : Int
+}
 
-type ColliderSet
+pub struct ColliderSet {
+  colliders : Array[Collider?]
+  generations : Array[Int]
+  free_list : Array[Int]
+}
 pub fn ColliderSet::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::insert(Self, Collider) -> ColliderHandle
 pub fn ColliderSet::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet) -> ColliderHandle
@@ -48,7 +77,9 @@ pub fn ColliderSet::new() -> Self
 pub fn ColliderSet::remove(Self, ColliderHandle, @dynamics.IslandManager, @dynamics.RigidBodySet, Bool) -> Unit
 pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet) -> Unit
 
-pub type ContactPair
+pub struct ContactPair {
+  manifold_count : Int
+}
 pub fn ContactPair::manifold_count(Self) -> Int
 
 pub struct IntersectionPair {
@@ -57,14 +88,22 @@ pub struct IntersectionPair {
   intersecting : Bool
 }
 
-pub type NarrowPhase
+pub struct NarrowPhase {
+  mut intersections : Array[IntersectionPair]
+  mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
+  dispatcher : @query.QueryDispatcher
+}
 pub fn NarrowPhase::contact_pair(Self, ColliderHandle, ColliderHandle) -> ContactPair?
 pub fn NarrowPhase::intersection_pair(Self, ColliderHandle, ColliderHandle) -> IntersectionPair?
 pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[IntersectionPair]
 pub fn NarrowPhase::new() -> Self
 pub fn NarrowPhase::query_dispatcher(Self) -> @query.QueryDispatcher
+pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
 
-pub type Shape
+pub(all) enum Shape {
+  Ball(Float)
+  Cuboid(Float, Float)
+}
 
 // Type aliases
 
