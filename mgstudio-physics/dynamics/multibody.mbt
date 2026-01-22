@@ -833,11 +833,28 @@ pub fn MultibodyJointSet::remove(
     }
     let remaining_mb = build_multibody_from_indices(multibody, remaining, 0)
     let subtree_mb = build_multibody_from_indices(multibody, subtree, link_id)
-    self.multibodies[info.mb_index] = remaining_mb
-    self.update_body_links_for_multibody(info.mb_index, remaining_mb)
-    let new_index = self.multibodies.length()
-    self.multibodies.push(subtree_mb)
-    self.update_body_links_for_multibody(new_index, subtree_mb)
+    if remaining_mb.links.length() <= 1 {
+      let link = remaining_mb.links[0]
+      if link.rigid_body.id >= 0 {
+        self.ensure_body_capacity(link.rigid_body.id)
+        self.body_links[link.rigid_body.id] = None
+      }
+      self.remove_multibody_at(info.mb_index)
+    } else {
+      self.multibodies[info.mb_index] = remaining_mb
+      self.update_body_links_for_multibody(info.mb_index, remaining_mb)
+    }
+    if subtree_mb.links.length() <= 1 {
+      let link = subtree_mb.links[0]
+      if link.rigid_body.id >= 0 {
+        self.ensure_body_capacity(link.rigid_body.id)
+        self.body_links[link.rigid_body.id] = None
+      }
+    } else {
+      let new_index = self.multibodies.length()
+      self.multibodies.push(subtree_mb)
+      self.update_body_links_for_multibody(new_index, subtree_mb)
+    }
   } else {
     self.body_links[handle.id] = None
   }
@@ -1117,26 +1134,16 @@ fn MultibodyJointSet::remove_joints_attached_to_rigid_body(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
 ) -> Unit {
-  if handle.id < 0 {
+  let attached = self.attached_joints(handle)
+  if attached.length() == 0 {
     return
   }
-  self.ensure_body_capacity(handle.id)
-  if self.body_links[handle.id] is Some(info) {
-    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
-      self.body_links[handle.id] = None
-      return
-    }
-    let removed_multibody = self.multibodies[info.mb_index]
-    for i in 0..<removed_multibody.links.length() {
-      let link = removed_multibody.links[i]
-      if link.rigid_body.id >= 0 {
-        self.ensure_body_capacity(link.rigid_body.id)
-        self.body_links[link.rigid_body.id] = None
-      }
-      push_unique_handle(self.to_wake_up, link.rigid_body)
-    }
-    self.remove_multibody_at(info.mb_index)
-  } else {
-    self.body_links[handle.id] = None
+  let to_remove : Array[MultibodyJointHandle] = []
+  for i in 0..<attached.length() {
+    let joint = attached[i]
+    to_remove.push(joint.2)
+  }
+  for i in 0..<to_remove.length() {
+    self.remove(to_remove[i], true)
   }
 }
