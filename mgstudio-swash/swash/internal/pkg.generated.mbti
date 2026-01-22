@@ -2,6 +2,16 @@
 package "Milky2018/mgstudio_swash/swash/internal"
 
 // Values
+pub const CVAR : UInt = 0x63766172
+
+pub const CVT_ : UInt = 0x63767420
+
+pub const FPGM : UInt = 0x6670676D
+
+pub const GLYF : UInt = 0x676C7966
+
+pub const GVAR : UInt = 0x67766172
+
 pub const HEAD : UInt = 0x68656164
 
 pub const HEAD_MAGIC : UInt = 0x5F0F3CF5
@@ -10,11 +20,15 @@ pub const HHEA : UInt = 0x68686561
 
 pub const HMTX : UInt = 0x686D7478
 
+pub const LOCA : UInt = 0x6C6F6361
+
 pub const MAXP : UInt = 0x6D617870
 
 pub const OS_2 : UInt = 0x4F532F32
 
 pub const POST : UInt = 0x706F7374
+
+pub const PREP : UInt = 0x70726570
 
 pub const VHEA : UInt = 0x76686561
 
@@ -31,6 +45,8 @@ pub fn div(Int, Int) -> Int
 pub fn enumerate(Bytes, UInt, (UInt, UInt) -> Unit) -> Unit
 
 pub fn floor(Int) -> Int
+
+pub fn get(Bytes, UInt, UInt, UInt, UInt) -> BytesView?
 
 pub fn is_collection(Bytes) -> Bool
 
@@ -57,6 +73,8 @@ pub fn[T : RawFont] table_data(T, UInt) -> BytesView?
 pub fn[T : RawFont] table_offset(T, UInt) -> UInt
 
 pub fn[T : RawFont] table_range(T, UInt) -> (UInt, UInt)?
+
+pub fn ymax(Bytes, UInt, UInt, UInt, UInt) -> Int?
 
 // Errors
 
@@ -154,9 +172,11 @@ pub struct Stream {
 }
 pub fn Stream::check_range(Self, Int) -> Bool
 pub fn Stream::data(Self) -> BytesView
+pub fn Stream::from_view(BytesView) -> Self
 pub fn Stream::len(Self) -> Int
 pub fn Stream::new(Bytes) -> Self
 pub fn Stream::offset(Self) -> Int
+pub fn Stream::read_i16(Self) -> Int?
 pub fn Stream::read_u16(Self) -> UInt?
 pub fn Stream::read_u32(Self) -> UInt?
 pub fn Stream::read_u8(Self) -> Byte?

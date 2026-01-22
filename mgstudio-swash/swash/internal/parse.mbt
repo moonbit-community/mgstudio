@@ -197,6 +197,11 @@ pub fn Stream::new(data : Bytes) -> Stream {
 }
 
 ///|
+pub fn Stream::from_view(data : BytesView) -> Stream {
+  Stream::{ data, offset: 0 }
+}
+
+///|
 pub fn Stream::with_offset(data : Bytes, offset : Int) -> Stream? {
   if offset < 0 || offset > data.length() {
     return None
@@ -279,6 +284,18 @@ pub fn Stream::read_u32(self : Stream) -> UInt? {
   let value = BeBytes::from_view(self.data).read_u32(self.offset)
   if value is Some(_) {
     self.offset = self.offset + 4
+  }
+  value
+}
+
+///|
+pub fn Stream::read_i16(self : Stream) -> Int? {
+  if !self.check_range(2) {
+    return None
+  }
+  let value = BeBytes::from_view(self.data).read_i16(self.offset)
+  if value is Some(_) {
+    self.offset = self.offset + 2
   }
   value
 }
