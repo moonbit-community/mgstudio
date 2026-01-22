@@ -130,9 +130,36 @@ pub fn ColliderBuilder::active_events(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::friction(
+  self : ColliderBuilder,
+  friction : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::friction_combine_rule(
+  self : ColliderBuilder,
+  rule : @dynamics.CoefficientCombineRule,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::restitution(
   self : ColliderBuilder,
   value : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::restitution_combine_rule(
+  self : ColliderBuilder,
+  rule : @dynamics.CoefficientCombineRule,
 ) -> ColliderBuilder {
   ...
 }
@@ -195,7 +222,29 @@ pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
 
 ///|
 #declaration_only
+pub fn Collider::friction(self : Collider) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::friction_combine_rule(
+  self : Collider,
+) -> @dynamics.CoefficientCombineRule {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::restitution(self : Collider) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::restitution_combine_rule(
+  self : Collider,
+) -> @dynamics.CoefficientCombineRule {
   ...
 }
 
@@ -231,9 +280,36 @@ pub fn Collider::set_active_events(
 
 ///|
 #declaration_only
+pub fn Collider::set_friction(
+  self : Collider,
+  friction : @core.Real,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_friction_combine_rule(
+  self : Collider,
+  rule : @dynamics.CoefficientCombineRule,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::set_restitution(
   self : Collider,
   restitution : @core.Real,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_restitution_combine_rule(
+  self : Collider,
+  rule : @dynamics.CoefficientCombineRule,
 ) -> Collider {
   ...
 }

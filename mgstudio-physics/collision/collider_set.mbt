@@ -129,7 +129,10 @@ pub struct Collider {
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
   mut active_events : ActiveEvents?
+  mut friction : @core.Real
+  mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
+  mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
@@ -143,7 +146,10 @@ pub struct ColliderBuilder {
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
   mut active_events : ActiveEvents?
+  mut friction : @core.Real
+  mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
+  mut restitution_combine_rule : @dynamics.CoefficientCombineRule
 }
 
 ///|
@@ -155,7 +161,10 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     active_collision_types: ActiveCollisionTypes::all(),
     sensor: false,
     active_events: None,
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
   }
 }
 
@@ -171,7 +180,10 @@ pub fn ColliderBuilder::cuboid(
     active_collision_types: ActiveCollisionTypes::all(),
     sensor: false,
     active_events: None,
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
   }
 }
 
@@ -221,11 +233,38 @@ pub fn ColliderBuilder::active_events(
 }
 
 ///|
+pub fn ColliderBuilder::friction(
+  self : ColliderBuilder,
+  friction : @core.Real,
+) -> ColliderBuilder {
+  self.friction = friction
+  self
+}
+
+///|
+pub fn ColliderBuilder::friction_combine_rule(
+  self : ColliderBuilder,
+  rule : @dynamics.CoefficientCombineRule,
+) -> ColliderBuilder {
+  self.friction_combine_rule = rule
+  self
+}
+
+///|
 pub fn ColliderBuilder::restitution(
   self : ColliderBuilder,
   value : @core.Real,
 ) -> ColliderBuilder {
   self.restitution = value
+  self
+}
+
+///|
+pub fn ColliderBuilder::restitution_combine_rule(
+  self : ColliderBuilder,
+  rule : @dynamics.CoefficientCombineRule,
+) -> ColliderBuilder {
+  self.restitution_combine_rule = rule
   self
 }
 
@@ -240,7 +279,10 @@ pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
     active_collision_types: self.active_collision_types,
     sensor: self.sensor,
     active_events: self.active_events,
+    friction: self.friction,
+    friction_combine_rule: self.friction_combine_rule,
     restitution: self.restitution,
+    restitution_combine_rule: self.restitution_combine_rule,
     parent: None,
     enabled: ColliderEnabled::Enabled,
     changes: ColliderChanges::all(),
@@ -302,8 +344,27 @@ pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
 }
 
 ///|
+pub fn Collider::friction(self : Collider) -> @core.Real {
+  self.friction
+}
+
+///|
+pub fn Collider::friction_combine_rule(
+  self : Collider,
+) -> @dynamics.CoefficientCombineRule {
+  self.friction_combine_rule
+}
+
+///|
 pub fn Collider::restitution(self : Collider) -> @core.Real {
   self.restitution
+}
+
+///|
+pub fn Collider::restitution_combine_rule(
+  self : Collider,
+) -> @dynamics.CoefficientCombineRule {
+  self.restitution_combine_rule
 }
 
 ///|
@@ -341,11 +402,41 @@ pub fn Collider::set_active_events(
 }
 
 ///|
+pub fn Collider::set_friction(
+  self : Collider,
+  friction : @core.Real,
+) -> Collider {
+  self.friction = friction
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_friction_combine_rule(
+  self : Collider,
+  rule : @dynamics.CoefficientCombineRule,
+) -> Collider {
+  self.friction_combine_rule = rule
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
 pub fn Collider::set_restitution(
   self : Collider,
   restitution : @core.Real,
 ) -> Collider {
   self.restitution = restitution
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_restitution_combine_rule(
+  self : Collider,
+  rule : @dynamics.CoefficientCombineRule,
+) -> Collider {
+  self.restitution_combine_rule = rule
   self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }

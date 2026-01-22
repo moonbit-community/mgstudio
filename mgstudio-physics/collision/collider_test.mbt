@@ -31,10 +31,22 @@ test "collider position setters" {
 /// Ported from rapier collider material and event accessors.
 test "collider material and event accessors" {
   let collider = ColliderBuilder::ball(1.0F)
+    .friction(0.75F)
+    .friction_combine_rule(@dynamics.CoefficientCombineRule::Max)
     .restitution(0.25F)
+    .restitution_combine_rule(@dynamics.CoefficientCombineRule::Min)
     .active_events(ActiveEvents::CollisionEvents)
     .build()
+  inspect(collider.friction() == 0.75F, content="true")
+  inspect(
+    collider.friction_combine_rule() is @dynamics.CoefficientCombineRule::Max,
+    content="true",
+  )
   inspect(collider.restitution() == 0.25F, content="true")
+  inspect(
+    collider.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Min,
+    content="true",
+  )
   inspect(
     collider.active_events() is Some(ActiveEvents::CollisionEvents),
     content="true",
@@ -45,6 +57,23 @@ test "collider material and event accessors" {
   )
   let collider = collider.set_restitution(0.5F)
   inspect(collider.restitution() == 0.5F, content="true")
+  let collider = collider.set_friction(0.25F)
+  inspect(collider.friction() == 0.25F, content="true")
+  let collider = collider.set_restitution_combine_rule(
+    @dynamics.CoefficientCombineRule::Max,
+  )
+  inspect(
+    collider.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Max,
+    content="true",
+  )
+  let collider = collider.set_friction_combine_rule(
+    @dynamics.CoefficientCombineRule::Average,
+  )
+  inspect(
+    collider.friction_combine_rule()
+    is @dynamics.CoefficientCombineRule::Average,
+    content="true",
+  )
   let collider = collider.set_active_events(None)
   inspect(collider.active_events() is None, content="true")
 }
