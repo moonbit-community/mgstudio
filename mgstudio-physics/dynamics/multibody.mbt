@@ -428,6 +428,22 @@ fn MultibodyJointHandle::new(id : Int) -> MultibodyJointHandle {
 }
 
 ///|
+pub fn MultibodyJointHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> MultibodyJointHandle {
+  generation |> ignore
+  MultibodyJointHandle::new(id)
+}
+
+///|
+pub fn MultibodyJointHandle::into_raw_parts(
+  self : MultibodyJointHandle,
+) -> (Int, Int) {
+  (self.id, 0)
+}
+
+///|
 pub fn MultibodyJointHandle::invalid() -> MultibodyJointHandle {
   MultibodyJointHandle::new(-1)
 }

@@ -1664,6 +1664,23 @@ pub fn MultibodyJointHandle::invalid() -> MultibodyJointHandle {
 
 ///|
 #declaration_only
+pub fn MultibodyJointHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> MultibodyJointHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointHandle::into_raw_parts(
+  self : MultibodyJointHandle,
+) -> (Int, Int) {
+  ...
+}
+
+///|
+#declaration_only
 pub fn MultibodyJointSet::insert(
   self : MultibodyJointSet,
   parent : RigidBodyHandle,

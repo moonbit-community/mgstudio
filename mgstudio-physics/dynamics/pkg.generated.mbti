@@ -178,6 +178,8 @@ pub fn Multibody::link(Self, LinkId) -> MultibodyLink?
 pub fn Multibody::ndofs(Self) -> Int
 
 type MultibodyJointHandle
+pub fn MultibodyJointHandle::from_raw_parts(Int, Int) -> Self
+pub fn MultibodyJointHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn MultibodyJointHandle::invalid() -> Self
 
 type MultibodyJointSet
