@@ -40,3 +40,17 @@ test "Buffer defaults align with upstream new_empty" {
   inspect(match buf0.hinting() { Disabled => true; _ => false }, content="true")
   inspect(buf0.scroll().line, content="0")
 }
+
+test "Buffer setters mark redraw when value changes" {
+  let buf0 = Buffer::new_empty(Metrics::new(12.0F, 14.0F))
+  let buf1 = buf0.set_wrap(Wrap::Glyph)
+  inspect(buf1.redraw(), content="true")
+  let buf2 = buf1.set_tab_width(2)
+  inspect(buf2.redraw(), content="true")
+  let buf3 = buf2.set_hinting(Hinting::Enabled)
+  inspect(buf3.redraw(), content="true")
+  let buf4 = buf3.set_monospace_width(Some(8.0F))
+  inspect(buf4.redraw(), content="true")
+  let buf5 = buf4.set_metrics(Metrics::new(13.0F, 15.0F))
+  inspect(buf5.redraw(), content="true")
+}

@@ -75,6 +75,69 @@ pub fn Buffer::wrap(self : Buffer) -> Wrap { self.wrap }
 ///|
 pub fn Buffer::hinting(self : Buffer) -> Hinting { self.hinting }
 
+fn wrap_eq(a : Wrap, b : Wrap) -> Bool {
+  match (a, b) {
+    (None, None) => true
+    (Glyph, Glyph) => true
+    (Word, Word) => true
+    (WordOrGlyph, WordOrGlyph) => true
+    _ => false
+  }
+}
+
+fn hinting_eq(a : Hinting, b : Hinting) -> Bool {
+  match (a, b) {
+    (Disabled, Disabled) => true
+    (Enabled, Enabled) => true
+    _ => false
+  }
+}
+
+///|
+pub fn Buffer::set_wrap(self : Buffer, wrap : Wrap) -> Buffer {
+  if wrap_eq(self.wrap, wrap) { self } else { Buffer::{ ..self, wrap, redraw: true } }
+}
+
+///|
+pub fn Buffer::set_tab_width(self : Buffer, tab_width : Int) -> Buffer {
+  if self.tab_width == tab_width { self } else {
+    Buffer::{ ..self, tab_width, redraw: true }
+  }
+}
+
+///|
+pub fn Buffer::set_hinting(self : Buffer, hinting : Hinting) -> Buffer {
+  if hinting_eq(self.hinting, hinting) { self } else {
+    Buffer::{ ..self, hinting, redraw: true }
+  }
+}
+
+///|
+pub fn Buffer::set_monospace_width(self : Buffer, monospace_width : Float?) -> Buffer {
+  if self.monospace_width is Some(w0) &&
+    monospace_width is Some(w1) &&
+    w0 == w1 {
+    self
+  } else if self.monospace_width is None && monospace_width is None {
+    self
+  } else {
+    Buffer::{ ..self, monospace_width, redraw: true }
+  }
+}
+
+///|
+pub fn Buffer::set_metrics(self : Buffer, metrics : Metrics) -> Buffer {
+  if metrics.line_height == 0.0F {
+    abort("line height cannot be 0")
+  }
+  if self.metrics.font_size == metrics.font_size &&
+    self.metrics.line_height == metrics.line_height {
+    self
+  } else {
+    Buffer::{ ..self, metrics, redraw: true }
+  }
+}
+
 ///|
 pub fn Buffer::set_size(self : Buffer, width_opt : Float?, height_opt : Float?) -> Buffer {
   // MVP: any size change triggers redraw.
