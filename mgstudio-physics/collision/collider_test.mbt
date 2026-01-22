@@ -96,6 +96,14 @@ test "collider parent offset setters" {
     owned.set_rotation_wrt_parent(0.25F) |> ignore
   }
   if colliders.get(handle) is Some(stored) {
+    if stored.parent() is Some(parent) {
+      inspect(
+        @dynamics.RigidBodyHandle::equals(parent, body_handle),
+        content="true",
+      )
+    } else {
+      inspect(false, content="true")
+    }
     if stored.position_wrt_parent() is Some(position) {
       inspect(position.translation.x == 0.5F, content="true")
       inspect(position.translation.y == 1.0F, content="true")

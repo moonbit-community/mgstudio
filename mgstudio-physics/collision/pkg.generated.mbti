@@ -53,6 +53,7 @@ pub fn Collider::friction(Self) -> Float
 pub fn Collider::friction_combine_rule(Self) -> @dynamics.CoefficientCombineRule
 pub fn Collider::is_enabled(Self) -> Bool
 pub fn Collider::is_sensor(Self) -> Bool
+pub fn Collider::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider::position(Self) -> @core.Isometry2
 pub fn Collider::position_wrt_parent(Self) -> @core.Isometry2?
 pub fn Collider::restitution(Self) -> Float

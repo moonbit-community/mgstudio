@@ -211,6 +211,12 @@ pub fn Collider::position_wrt_parent(self : Collider) -> @core.Isometry2? {
 
 ///|
 #declaration_only
+pub fn Collider::parent(self : Collider) -> @dynamics.RigidBodyHandle? {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::is_sensor(self : Collider) -> Bool {
   ...
 }
