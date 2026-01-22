@@ -2,7 +2,7 @@
   "is-main": true,
   "import": [
     {
-      "path": "Milky2018/mgstudio_text",
+      "path": "Milky2018/mgstudio_cosmic",
       "alias": "lib"
     }
   ]

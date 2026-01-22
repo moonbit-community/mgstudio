@@ -1,1 +1,1 @@
-# Milky2018/mgstudio_text
+# Milky2018/mgstudio_cosmic
