@@ -17,6 +17,12 @@
 ///
 /// NOTE: This is an MVP focused on wrap/layout tests; shaping/font fallback will be added later.
 
+/// Metrics hinting strategy
+pub(all) enum Hinting {
+  Disabled
+  Enabled
+}
+
 /// Wrapping mode
 pub(all) enum Wrap {
   None

@@ -32,3 +32,11 @@ test "Buffer.set_size marks redraw on change" {
   inspect(buf1.redraw(), content="true")
 }
 
+test "Buffer defaults align with upstream new_empty" {
+  let buf0 = Buffer::new_empty(Metrics::new(12.0F, 14.0F))
+  inspect(buf0.redraw(), content="false")
+  inspect(match buf0.wrap() { WordOrGlyph => true; _ => false }, content="true")
+  inspect(buf0.tab_width, content="8")
+  inspect(match buf0.hinting() { Disabled => true; _ => false }, content="true")
+  inspect(buf0.scroll().line, content="0")
+}

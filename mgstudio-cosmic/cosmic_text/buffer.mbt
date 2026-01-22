@@ -25,11 +25,24 @@ pub struct Buffer {
   scroll : Scroll
   redraw : Bool
   wrap : Wrap
+  monospace_width : Float?
   tab_width : Int
+  hinting : Hinting
 }
 
 ///|
 pub fn Buffer::new(metrics : Metrics) -> Buffer {
+  Buffer::new_empty(metrics)
+}
+
+///|
+/// Create an empty Buffer with the provided Metrics.
+///
+/// Panics (fails) if `metrics.line_height` is zero (aligned with upstream).
+pub fn Buffer::new_empty(metrics : Metrics) -> Buffer {
+  if metrics.line_height == 0.0F {
+    abort("line height cannot be 0")
+  }
   Buffer::{
     lines: [],
     metrics,
@@ -38,7 +51,9 @@ pub fn Buffer::new(metrics : Metrics) -> Buffer {
     scroll: Scroll::default(),
     redraw: false,
     wrap: Wrap::WordOrGlyph,
+    monospace_width: None,
     tab_width: 8,
+    hinting: Hinting::Disabled,
   }
 }
 
@@ -56,6 +71,9 @@ pub fn Buffer::scroll(self : Buffer) -> Scroll { self.scroll }
 
 ///|
 pub fn Buffer::wrap(self : Buffer) -> Wrap { self.wrap }
+
+///|
+pub fn Buffer::hinting(self : Buffer) -> Hinting { self.hinting }
 
 ///|
 pub fn Buffer::set_size(self : Buffer, width_opt : Float?, height_opt : Float?) -> Buffer {
