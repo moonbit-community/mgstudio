@@ -81,6 +81,13 @@ pub struct PointsVerbsPathData {
 pub fn PointsVerbsPathData::new(Array[Vector], Array[Verb]) -> Self
 pub impl PathData for PointsVerbsPathData
 
+pub struct Scratch {
+  scratch0 : Array[Byte]
+}
+pub fn Scratch::clear(Self) -> Unit
+pub fn Scratch::default() -> Self
+pub fn Scratch::new() -> Self
+
 pub struct Stroke {
   mut width : Double
   mut join : Join
