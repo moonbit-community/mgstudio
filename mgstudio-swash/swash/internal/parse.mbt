@@ -106,6 +106,52 @@ pub fn BeBytes::read_u32(self : BeBytes, offset : Int) -> UInt? {
 }
 
 ///|
+pub fn BeBytes::read_i32(self : BeBytes, offset : Int) -> Int? {
+  self.read_u32(offset).map(x => x.reinterpret_as_int())
+}
+
+///|
+pub fn BeBytes::read_u64(self : BeBytes, offset : Int) -> UInt64? {
+  if !self.check_range(offset, 8) {
+    return None
+  }
+  let view = self.data
+  match
+    (
+      view.get(offset),
+      view.get(offset + 1),
+      view.get(offset + 2),
+      view.get(offset + 3),
+      view.get(offset + 4),
+      view.get(offset + 5),
+      view.get(offset + 6),
+      view.get(offset + 7),
+    ) {
+    (
+      Some(b0),
+      Some(b1),
+      Some(b2),
+      Some(b3),
+      Some(b4),
+      Some(b5),
+      Some(b6),
+      Some(b7),
+    ) =>
+      Some(
+        (b0.to_uint64() << 56) |
+        (b1.to_uint64() << 48) |
+        (b2.to_uint64() << 40) |
+        (b3.to_uint64() << 32) |
+        (b4.to_uint64() << 24) |
+        (b5.to_uint64() << 16) |
+        (b6.to_uint64() << 8) |
+        b7.to_uint64(),
+      )
+    _ => None
+  }
+}
+
+///|
 pub fn BeBytes::read_u24(self : BeBytes, offset : Int) -> UInt? {
   if !self.check_range(offset, 3) {
     return None
