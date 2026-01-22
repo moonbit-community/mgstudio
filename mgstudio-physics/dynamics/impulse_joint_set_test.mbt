@@ -70,3 +70,25 @@ test "impulse joint set remove attached" {
   inspect(joints.contains(handle3), content="true")
   inspect(joints.len() == 1, content="true")
 }
+
+///|
+/// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs behavior.
+test "impulse joint wake and join queues" {
+  let bodies = RigidBodySet::new()
+  let joints = ImpulseJointSet::new()
+  let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let joint = RevoluteJointBuilder::new().build()
+  joints.insert(body1, body2, joint, true) |> ignore
+  joints.insert(body1, body2, joint, true) |> ignore
+  let join_pairs = joints.take_to_join()
+  inspect(join_pairs.length() == 1, content="true")
+  let wake_handles = joints.take_wake_up()
+  inspect(wake_handles.length() == 2, content="true")
+  inspect(joints.take_wake_up().length() == 0, content="true")
+  let handle = joints.insert(body1, body2, joint, false)
+  joints.take_to_join() |> ignore
+  inspect(joints.take_wake_up().length() == 0, content="true")
+  joints.remove(handle, true) |> ignore
+  inspect(joints.take_wake_up().length() == 2, content="true")
+}

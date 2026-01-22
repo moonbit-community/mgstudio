@@ -88,6 +88,34 @@ test "multibody remove" {
 }
 
 ///|
+/// Ported from rapier/src/dynamics/joint/multibody_joint/multibody_joint_set.rs behavior.
+test "multibody remove wakes links" {
+  let bodies : RigidBodySet = RigidBodySet::new()
+  let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
+  let islands = IslandManager::new()
+  let impulse_joints = ImpulseJointSet::new()
+  let joint = RevoluteJointBuilder::new().build()
+  let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let handle3 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let joint1 = multibody_joints.insert(handle1, handle2, joint, false)
+  let joint2 = multibody_joints.insert(handle2, handle3, joint, false)
+  bodies.remove(handle2, islands, (), impulse_joints, multibody_joints, true)
+  let wake_handles = multibody_joints.take_wake_up()
+  inspect(wake_handles.length() == 3, content="true")
+  if joint1 is Some(joint_handle1) {
+    inspect(multibody_joints.get(joint_handle1) is None, content="true")
+  } else {
+    inspect(false, content="false")
+  }
+  if joint2 is Some(joint_handle2) {
+    inspect(multibody_joints.get(joint_handle2) is None, content="true")
+  } else {
+    inspect(false, content="false")
+  }
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_columns).
 test "index sequence rearrange columns" {
   let seq : IndexSequence = IndexSequence::new()
