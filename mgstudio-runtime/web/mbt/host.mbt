@@ -157,30 +157,45 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     if (typeof current === "string") {
   #|       return current
   #|     }
-  #|     if (
-  #|       typeof current === "object" &&
-  #|       current != null &&
-  #|       typeof current.get === "function"
-  #|     ) {
-  #|       let len = current.length
-  #|       if (typeof len === "function") {
-  #|         len = len.call(current)
-  #|       }
-  #|       len = Number(len)
-  #|       if (!Number.isFinite(len) || len < 0) {
-  #|         break
-  #|       }
-  #|       let out = ""
-  #|       const CHUNK = 1024
-  #|       for (let start = 0; start < len; start += CHUNK) {
-  #|         const end = Math.min(len, start + CHUNK)
-  #|         const codes = new Array(end - start)
-  #|         for (let j = start; j < end; j += 1) {
-  #|           codes[j - start] = current.get(j) & 0xffff
+  #|     // MoonBit wasm-gc String is typically `array (mut i16)`.
+  #|     // Different engines may expose the `get` method on the instance or prototype.
+  #|     if (typeof current === "object" && current != null) {
+  #|       let getFn = null
+  #|       if (typeof current.get === "function") {
+  #|         getFn = current.get
+  #|       } else {
+  #|         const proto = Object.getPrototypeOf(current)
+  #|         if (proto && typeof proto.get === "function") {
+  #|           getFn = proto.get
+  #|         } else if (
+  #|           typeof WebAssembly === "object" &&
+  #|           typeof WebAssembly.Array === "function" &&
+  #|           WebAssembly.Array.prototype &&
+  #|           typeof WebAssembly.Array.prototype.get === "function"
+  #|         ) {
+  #|           getFn = WebAssembly.Array.prototype.get
   #|         }
-  #|         out += String.fromCharCode(...codes)
   #|       }
-  #|       return out
+  #|       if (getFn) {
+  #|         let len = current.length
+  #|         if (typeof len === "function") {
+  #|           len = len.call(current)
+  #|         }
+  #|         len = Number(len)
+  #|         if (Number.isFinite(len) && len >= 0) {
+  #|           let out = ""
+  #|           const CHUNK = 1024
+  #|           for (let start = 0; start < len; start += CHUNK) {
+  #|             const end = Math.min(len, start + CHUNK)
+  #|             const codes = new Array(end - start)
+  #|             for (let j = start; j < end; j += 1) {
+  #|               codes[j - start] = getFn.call(current, j) & 0xffff
+  #|             }
+  #|             out += String.fromCharCode(...codes)
+  #|           }
+  #|           return out
+  #|         }
+  #|       }
   #|     }
   #|     if (typeof current === "number" || typeof current === "bigint" || typeof current === "boolean") {
   #|       return `${current}`
@@ -209,7 +224,19 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     }
   #|     break
   #|   }
-  #|   throw new Error(`Unsupported asset path type: ${typeof path}`)
+  #|   let tag = ""
+  #|   try {
+  #|     tag = Object.prototype.toString.call(path)
+  #|   } catch {
+  #|   }
+  #|   let hasGet = false
+  #|   let hasLength = false
+  #|   try {
+  #|     hasGet = !!path && typeof path.get === "function"
+  #|     hasLength = !!path && "length" in path
+  #|   } catch {
+  #|   }
+  #|   throw new Error(`Unsupported asset path type: ${typeof path} ${tag} hasGet=${hasGet} hasLength=${hasLength}`)
   #| }
 
 ///|
