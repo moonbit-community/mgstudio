@@ -154,7 +154,7 @@ test "collider material and event accessors" {
     content="true",
   )
   inspect(
-    collider.active_collision_types().equals(ActiveCollisionTypes::all()),
+    collider.active_collision_types().equals(ActiveCollisionTypes::default()),
     content="true",
   )
   let collider = collider.set_restitution(0.5F)
@@ -198,6 +198,55 @@ test "collider material and event accessors" {
   )
   inspect(
     collider.active_events() is Some(ActiveEvents::ContactForceEvents),
+    content="true",
+  )
+}
+
+///|
+/// Ported from rapier active collision types checks.
+test "active collision types test" {
+  let defaults = ActiveCollisionTypes::default()
+  inspect(
+    defaults.test_body_types(
+      @dynamics.RigidBodyType::Dynamic,
+      @dynamics.RigidBodyType::Dynamic,
+    ),
+    content="true",
+  )
+  inspect(
+    defaults.test_body_types(
+      @dynamics.RigidBodyType::Dynamic,
+      @dynamics.RigidBodyType::Fixed,
+    ),
+    content="true",
+  )
+  inspect(
+    defaults.test_body_types(
+      @dynamics.RigidBodyType::Dynamic,
+      @dynamics.RigidBodyType::KinematicPositionBased,
+    ),
+    content="true",
+  )
+  inspect(
+    defaults.test_body_types(
+      @dynamics.RigidBodyType::KinematicPositionBased,
+      @dynamics.RigidBodyType::KinematicVelocityBased,
+    ),
+    content="false",
+  )
+  inspect(
+    defaults.test_body_types(
+      @dynamics.RigidBodyType::Fixed,
+      @dynamics.RigidBodyType::Fixed,
+    ),
+    content="false",
+  )
+  let all_types = ActiveCollisionTypes::all()
+  inspect(
+    all_types.test_body_types(
+      @dynamics.RigidBodyType::Fixed,
+      @dynamics.RigidBodyType::Fixed,
+    ),
     content="true",
   )
 }

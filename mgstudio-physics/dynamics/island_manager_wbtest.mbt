@@ -75,7 +75,6 @@ test "island manager extract sleeping island" {
       islands.merge_islands(bodies, id1, id2)
     }
   }
-  contacts.add_pair(handle1, handle2)
   if bodies.get_mut(handle1) is Some(body1) {
     body1.activation.time_since_can_sleep = body1.activation.time_until_sleep
     body1.activation.sleep_root_state = SleepRootState::TraversalPending
@@ -83,6 +82,7 @@ test "island manager extract sleeping island" {
   if bodies.get_mut(handle2) is Some(body2) {
     body2.activation.time_since_can_sleep = body2.activation.time_until_sleep
   }
+  contacts.add_pair(handle1, handle2)
   islands.extract_sleeping_island(
     bodies, contacts, impulse_joints, multibody_joints, handle1,
   )

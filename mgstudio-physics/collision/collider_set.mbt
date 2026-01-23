@@ -101,8 +101,42 @@ pub struct ActiveCollisionTypes {
 }
 
 ///|
+const ACTIVE_COLLISION_DYNAMIC_DYNAMIC : Int = 0x0001
+
+///|
+const ACTIVE_COLLISION_DYNAMIC_KINEMATIC : Int = 0x000C
+
+///|
+const ACTIVE_COLLISION_DYNAMIC_FIXED : Int = 0x0002
+
+///|
+const ACTIVE_COLLISION_KINEMATIC_KINEMATIC : Int = 0xCC00
+
+///|
+const ACTIVE_COLLISION_KINEMATIC_FIXED : Int = 0x2200
+
+///|
+const ACTIVE_COLLISION_FIXED_FIXED : Int = 0x0020
+
+///|
+const ACTIVE_COLLISION_DEFAULT : Int = ACTIVE_COLLISION_DYNAMIC_DYNAMIC |
+  ACTIVE_COLLISION_DYNAMIC_KINEMATIC |
+  ACTIVE_COLLISION_DYNAMIC_FIXED
+
+///|
+const ACTIVE_COLLISION_ALL : Int = ACTIVE_COLLISION_DEFAULT |
+  ACTIVE_COLLISION_KINEMATIC_KINEMATIC |
+  ACTIVE_COLLISION_KINEMATIC_FIXED |
+  ACTIVE_COLLISION_FIXED_FIXED
+
+///|
 pub fn ActiveCollisionTypes::all() -> ActiveCollisionTypes {
-  { value: 1 }
+  { value: ACTIVE_COLLISION_ALL }
+}
+
+///|
+pub fn ActiveCollisionTypes::default() -> ActiveCollisionTypes {
+  { value: ACTIVE_COLLISION_DEFAULT }
 }
 
 ///|
@@ -111,6 +145,29 @@ pub fn ActiveCollisionTypes::equals(
   other : ActiveCollisionTypes,
 ) -> Bool {
   self.value == other.value
+}
+
+///|
+fn rigid_body_type_index(body_type : @dynamics.RigidBodyType) -> Int {
+  match body_type {
+    @dynamics.RigidBodyType::Dynamic => 0
+    @dynamics.RigidBodyType::Fixed => 1
+    @dynamics.RigidBodyType::KinematicPositionBased => 2
+    @dynamics.RigidBodyType::KinematicVelocityBased => 3
+  }
+}
+
+///|
+pub fn ActiveCollisionTypes::test_body_types(
+  self : ActiveCollisionTypes,
+  body_type1 : @dynamics.RigidBodyType,
+  body_type2 : @dynamics.RigidBodyType,
+) -> Bool {
+  let index1 = rigid_body_type_index(body_type1)
+  let index2 = rigid_body_type_index(body_type2)
+  let mask1 = (self.value >> (index1 * 4)) & 0xF
+  let mask2 = (self.value >> (index2 * 4)) & 0xF
+  (mask1 & (1 << index2)) != 0 || (mask2 & (1 << index1)) != 0
 }
 
 ///|
@@ -228,7 +285,7 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     shape: Shape::Ball(radius),
     translation: @core.Vec2::zero(),
     rotation: 0.0F,
-    active_collision_types: ActiveCollisionTypes::all(),
+    active_collision_types: ActiveCollisionTypes::default(),
     sensor: false,
     active_events: None,
     active_hooks: ActiveHooks::empty(),
@@ -254,7 +311,7 @@ pub fn ColliderBuilder::cuboid(
     shape: Shape::Cuboid(half_width, half_height),
     translation: @core.Vec2::zero(),
     rotation: 0.0F,
-    active_collision_types: ActiveCollisionTypes::all(),
+    active_collision_types: ActiveCollisionTypes::default(),
     sensor: false,
     active_events: None,
     active_hooks: ActiveHooks::empty(),

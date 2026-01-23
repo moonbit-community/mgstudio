@@ -37,9 +37,25 @@ pub fn ActiveCollisionTypes::all() -> ActiveCollisionTypes {
 
 ///|
 #declaration_only
+pub fn ActiveCollisionTypes::default() -> ActiveCollisionTypes {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ActiveCollisionTypes::equals(
   self : ActiveCollisionTypes,
   other : ActiveCollisionTypes,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveCollisionTypes::test_body_types(
+  self : ActiveCollisionTypes,
+  body_type1 : @dynamics.RigidBodyType,
+  body_type2 : @dynamics.RigidBodyType,
 ) -> Bool {
   ...
 }
