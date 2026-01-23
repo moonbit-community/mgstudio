@@ -21,7 +21,19 @@ pub fn ActiveCollisionTypes::equals(Self, Self) -> Bool
 
 pub(all) enum ActiveEvents {
   CollisionEvents
+  ContactForceEvents
 }
+
+pub struct ActiveHooks {
+  mut value : Int
+}
+pub fn ActiveHooks::all() -> Self
+pub fn ActiveHooks::contains(Self, Self) -> Bool
+pub fn ActiveHooks::empty() -> Self
+pub fn ActiveHooks::filter_contact_pairs() -> Self
+pub fn ActiveHooks::filter_intersection_pair() -> Self
+pub fn ActiveHooks::insert(Self, Self) -> Self
+pub fn ActiveHooks::modify_solver_contacts() -> Self
 
 pub struct BroadPhaseBvh {
 }
@@ -37,17 +49,22 @@ pub struct Collider {
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
   mut active_events : ActiveEvents?
+  mut active_hooks : ActiveHooks
   mut friction : Float
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : Float
+  mut contact_force_event_threshold : Float
+  mut user_data : Int
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
 }
 pub fn Collider::active_collision_types(Self) -> ActiveCollisionTypes
 pub fn Collider::active_events(Self) -> ActiveEvents?
+pub fn Collider::active_hooks(Self) -> ActiveHooks
+pub fn Collider::contact_force_event_threshold(Self) -> Float
 pub fn Collider::contact_skin(Self) -> Float
 pub fn Collider::friction(Self) -> Float
 pub fn Collider::friction_combine_rule(Self) -> @dynamics.CoefficientCombineRule
@@ -61,6 +78,8 @@ pub fn Collider::restitution_combine_rule(Self) -> @dynamics.CoefficientCombineR
 pub fn Collider::rotation(Self) -> Float
 pub fn Collider::set_active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn Collider::set_active_events(Self, ActiveEvents?) -> Self
+pub fn Collider::set_active_hooks(Self, ActiveHooks) -> Self
+pub fn Collider::set_contact_force_event_threshold(Self, Float) -> Self
 pub fn Collider::set_contact_skin(Self, Float) -> Self
 pub fn Collider::set_enabled(Self, Bool) -> Self
 pub fn Collider::set_friction(Self, Float) -> Self
@@ -74,8 +93,10 @@ pub fn Collider::set_sensor(Self, Bool) -> Self
 pub fn Collider::set_shape(Self, Shape) -> Self
 pub fn Collider::set_translation(Self, @core.Vec2) -> Self
 pub fn Collider::set_translation_wrt_parent(Self, @core.Vec2) -> Self
+pub fn Collider::set_user_data(Self, Int) -> Self
 pub fn Collider::shape(Self) -> Shape
 pub fn Collider::translation(Self) -> @core.Vec2
+pub fn Collider::user_data(Self) -> Int
 
 pub struct ColliderBuilder {
   shape : Shape
@@ -84,18 +105,25 @@ pub struct ColliderBuilder {
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
   mut active_events : ActiveEvents?
+  mut active_hooks : ActiveHooks
   mut friction : Float
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : Float
+  mut contact_force_event_threshold : Float
+  mut user_data : Int
+  mut enabled : Bool
 }
 pub fn ColliderBuilder::active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn ColliderBuilder::active_events(Self, ActiveEvents) -> Self
+pub fn ColliderBuilder::active_hooks(Self, ActiveHooks) -> Self
 pub fn ColliderBuilder::ball(Float) -> Self
 pub fn ColliderBuilder::build(Self) -> Collider
+pub fn ColliderBuilder::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
 pub fn ColliderBuilder::cuboid(Float, Float) -> Self
+pub fn ColliderBuilder::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder::friction(Self, Float) -> Self
 pub fn ColliderBuilder::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder::restitution(Self, Float) -> Self
@@ -103,6 +131,7 @@ pub fn ColliderBuilder::restitution_combine_rule(Self, @dynamics.CoefficientComb
 pub fn ColliderBuilder::rotation(Self, Float) -> Self
 pub fn ColliderBuilder::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
+pub fn ColliderBuilder::user_data(Self, Int) -> Self
 
 type ColliderChanges
 

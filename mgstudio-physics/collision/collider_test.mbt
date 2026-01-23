@@ -49,6 +49,9 @@ test "collider material and event accessors" {
     .restitution(0.25F)
     .restitution_combine_rule(@dynamics.CoefficientCombineRule::Min)
     .contact_skin(0.1F)
+    .contact_force_event_threshold(3.0F)
+    .user_data(7)
+    .active_hooks(ActiveHooks::filter_contact_pairs())
     .active_events(ActiveEvents::CollisionEvents)
     .build()
   inspect(collider.friction() == 0.75F, content="true")
@@ -62,6 +65,12 @@ test "collider material and event accessors" {
     content="true",
   )
   inspect(collider.contact_skin() == 0.1F, content="true")
+  inspect(collider.contact_force_event_threshold() == 3.0F, content="true")
+  inspect(collider.user_data() == 7, content="true")
+  inspect(
+    collider.active_hooks().contains(ActiveHooks::filter_contact_pairs()),
+    content="true",
+  )
   inspect(
     collider.active_events() is Some(ActiveEvents::CollisionEvents),
     content="true",
@@ -91,8 +100,28 @@ test "collider material and event accessors" {
   )
   let collider = collider.set_contact_skin(0.2F)
   inspect(collider.contact_skin() == 0.2F, content="true")
+  let collider = collider.set_contact_force_event_threshold(5.0F)
+  inspect(collider.contact_force_event_threshold() == 5.0F, content="true")
+  let collider = collider.set_user_data(11)
+  inspect(collider.user_data() == 11, content="true")
+  let collider = collider.set_active_hooks(
+    ActiveHooks::filter_contact_pairs().insert(
+      ActiveHooks::modify_solver_contacts(),
+    ),
+  )
+  inspect(
+    collider.active_hooks().contains(ActiveHooks::modify_solver_contacts()),
+    content="true",
+  )
   let collider = collider.set_active_events(None)
   inspect(collider.active_events() is None, content="true")
+  let collider = collider.set_active_events(
+    Some(ActiveEvents::ContactForceEvents),
+  )
+  inspect(
+    collider.active_events() is Some(ActiveEvents::ContactForceEvents),
+    content="true",
+  )
 }
 
 ///|
@@ -102,13 +131,14 @@ test "collider parent offset setters" {
   let body = @dynamics.RigidBodyBuilder::dynamic().build()
   let body_handle = bodies.insert(body)
   let colliders = ColliderSet::new()
-  let collider = ColliderBuilder::ball(0.5F).build()
+  let collider = ColliderBuilder::ball(0.5F).enabled(false).build()
   let handle = colliders.insert_with_parent(collider, body_handle, bodies)
   if colliders.get_mut(handle) is Some(owned) {
     owned.set_translation_wrt_parent(@core.Vec2::new(0.5F, 1.0F)) |> ignore
     owned.set_rotation_wrt_parent(0.25F) |> ignore
   }
   if colliders.get(handle) is Some(stored) {
+    inspect(!stored.is_enabled(), content="true")
     if stored.parent() is Some(parent) {
       inspect(
         @dynamics.RigidBodyHandle::equals(parent, body_handle),

@@ -114,6 +114,63 @@ pub fn ActiveCollisionTypes::equals(
 }
 
 ///|
+const ACTIVE_HOOKS_FILTER_CONTACT_PAIRS : Int = 1 << 0
+
+///|
+const ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR : Int = 1 << 1
+
+///|
+const ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS : Int = 1 << 2
+
+///|
+pub struct ActiveHooks {
+  mut value : Int
+}
+
+///|
+pub fn ActiveHooks::empty() -> ActiveHooks {
+  { value: 0 }
+}
+
+///|
+pub fn ActiveHooks::all() -> ActiveHooks {
+  {
+    value: ACTIVE_HOOKS_FILTER_CONTACT_PAIRS |
+    ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR |
+    ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS,
+  }
+}
+
+///|
+pub fn ActiveHooks::filter_contact_pairs() -> ActiveHooks {
+  { value: ACTIVE_HOOKS_FILTER_CONTACT_PAIRS }
+}
+
+///|
+pub fn ActiveHooks::filter_intersection_pair() -> ActiveHooks {
+  { value: ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR }
+}
+
+///|
+pub fn ActiveHooks::modify_solver_contacts() -> ActiveHooks {
+  { value: ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS }
+}
+
+///|
+pub fn ActiveHooks::contains(self : ActiveHooks, other : ActiveHooks) -> Bool {
+  (self.value & other.value) == other.value
+}
+
+///|
+pub fn ActiveHooks::insert(
+  self : ActiveHooks,
+  other : ActiveHooks,
+) -> ActiveHooks {
+  self.value = self.value | other.value
+  self
+}
+
+///|
 pub(all) enum Shape {
   Ball(@core.Real)
   Cuboid(@core.Real, @core.Real)
@@ -129,11 +186,14 @@ pub struct Collider {
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
   mut active_events : ActiveEvents?
+  mut active_hooks : ActiveHooks
   mut friction : @core.Real
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : @core.Real
+  mut contact_force_event_threshold : @core.Real
+  mut user_data : Int
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
@@ -147,11 +207,15 @@ pub struct ColliderBuilder {
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
   mut active_events : ActiveEvents?
+  mut active_hooks : ActiveHooks
   mut friction : @core.Real
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : @core.Real
+  mut contact_force_event_threshold : @core.Real
+  mut user_data : Int
+  mut enabled : Bool
 }
 
 ///|
@@ -163,11 +227,15 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     active_collision_types: ActiveCollisionTypes::all(),
     sensor: false,
     active_events: None,
+    active_hooks: ActiveHooks::empty(),
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
   }
 }
 
@@ -183,11 +251,15 @@ pub fn ColliderBuilder::cuboid(
     active_collision_types: ActiveCollisionTypes::all(),
     sensor: false,
     active_events: None,
+    active_hooks: ActiveHooks::empty(),
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
   }
 }
 
@@ -237,6 +309,15 @@ pub fn ColliderBuilder::active_events(
 }
 
 ///|
+pub fn ColliderBuilder::active_hooks(
+  self : ColliderBuilder,
+  hooks : ActiveHooks,
+) -> ColliderBuilder {
+  self.active_hooks = hooks
+  self
+}
+
+///|
 pub fn ColliderBuilder::friction(
   self : ColliderBuilder,
   friction : @core.Real,
@@ -282,6 +363,33 @@ pub fn ColliderBuilder::contact_skin(
 }
 
 ///|
+pub fn ColliderBuilder::contact_force_event_threshold(
+  self : ColliderBuilder,
+  threshold : @core.Real,
+) -> ColliderBuilder {
+  self.contact_force_event_threshold = threshold
+  self
+}
+
+///|
+pub fn ColliderBuilder::user_data(
+  self : ColliderBuilder,
+  data : Int,
+) -> ColliderBuilder {
+  self.user_data = data
+  self
+}
+
+///|
+pub fn ColliderBuilder::enabled(
+  self : ColliderBuilder,
+  enabled : Bool,
+) -> ColliderBuilder {
+  self.enabled = enabled
+  self
+}
+
+///|
 pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
   {
     shape: self.shape,
@@ -292,13 +400,20 @@ pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
     active_collision_types: self.active_collision_types,
     sensor: self.sensor,
     active_events: self.active_events,
+    active_hooks: self.active_hooks,
     friction: self.friction,
     friction_combine_rule: self.friction_combine_rule,
     restitution: self.restitution,
     restitution_combine_rule: self.restitution_combine_rule,
     contact_skin: self.contact_skin,
+    contact_force_event_threshold: self.contact_force_event_threshold,
+    user_data: self.user_data,
     parent: None,
-    enabled: ColliderEnabled::Enabled,
+    enabled: if self.enabled {
+      ColliderEnabled::Enabled
+    } else {
+      ColliderEnabled::Disabled
+    },
     changes: ColliderChanges::all(),
   }
 }
@@ -370,6 +485,11 @@ pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
 }
 
 ///|
+pub fn Collider::active_hooks(self : Collider) -> ActiveHooks {
+  self.active_hooks
+}
+
+///|
 pub fn Collider::friction(self : Collider) -> @core.Real {
   self.friction
 }
@@ -396,6 +516,16 @@ pub fn Collider::restitution_combine_rule(
 ///|
 pub fn Collider::contact_skin(self : Collider) -> @core.Real {
   self.contact_skin
+}
+
+///|
+pub fn Collider::contact_force_event_threshold(self : Collider) -> @core.Real {
+  self.contact_force_event_threshold
+}
+
+///|
+pub fn Collider::user_data(self : Collider) -> Int {
+  self.user_data
 }
 
 ///|
@@ -428,6 +558,16 @@ pub fn Collider::set_active_events(
   events : ActiveEvents?,
 ) -> Collider {
   self.active_events = events
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_active_hooks(
+  self : Collider,
+  hooks : ActiveHooks,
+) -> Collider {
+  self.active_hooks = hooks
   self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
@@ -479,6 +619,22 @@ pub fn Collider::set_contact_skin(
 ) -> Collider {
   self.contact_skin = skin
   self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_contact_force_event_threshold(
+  self : Collider,
+  threshold : @core.Real,
+) -> Collider {
+  self.contact_force_event_threshold = threshold
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self
+}
+
+///|
+pub fn Collider::set_user_data(self : Collider, data : Int) -> Collider {
+  self.user_data = data
   self
 }
 

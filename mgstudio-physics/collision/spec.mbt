@@ -47,6 +47,56 @@ pub fn ActiveCollisionTypes::equals(
 ///|
 pub(all) enum ActiveEvents {
   CollisionEvents
+  ContactForceEvents
+}
+
+///|
+#declaration_only
+pub type ActiveHooks
+
+///|
+#declaration_only
+pub fn ActiveHooks::empty() -> ActiveHooks {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveHooks::all() -> ActiveHooks {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveHooks::filter_contact_pairs() -> ActiveHooks {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveHooks::filter_intersection_pair() -> ActiveHooks {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveHooks::modify_solver_contacts() -> ActiveHooks {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveHooks::contains(self : ActiveHooks, other : ActiveHooks) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveHooks::insert(
+  self : ActiveHooks,
+  other : ActiveHooks,
+) -> ActiveHooks {
+  ...
 }
 
 ///|
@@ -130,6 +180,15 @@ pub fn ColliderBuilder::active_events(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::active_hooks(
+  self : ColliderBuilder,
+  hooks : ActiveHooks,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::friction(
   self : ColliderBuilder,
   friction : @core.Real,
@@ -169,6 +228,33 @@ pub fn ColliderBuilder::restitution_combine_rule(
 pub fn ColliderBuilder::contact_skin(
   self : ColliderBuilder,
   skin : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::contact_force_event_threshold(
+  self : ColliderBuilder,
+  threshold : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::user_data(
+  self : ColliderBuilder,
+  data : Int,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::enabled(
+  self : ColliderBuilder,
+  enabled : Bool,
 ) -> ColliderBuilder {
   ...
 }
@@ -243,6 +329,12 @@ pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
 
 ///|
 #declaration_only
+pub fn Collider::active_hooks(self : Collider) -> ActiveHooks {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::friction(self : Collider) -> @core.Real {
   ...
 }
@@ -277,6 +369,18 @@ pub fn Collider::contact_skin(self : Collider) -> @core.Real {
 
 ///|
 #declaration_only
+pub fn Collider::contact_force_event_threshold(self : Collider) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::user_data(self : Collider) -> Int {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   ...
 }
@@ -301,6 +405,15 @@ pub fn Collider::set_active_collision_types(
 pub fn Collider::set_active_events(
   self : Collider,
   events : ActiveEvents?,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_active_hooks(
+  self : Collider,
+  hooks : ActiveHooks,
 ) -> Collider {
   ...
 }
@@ -347,6 +460,21 @@ pub fn Collider::set_contact_skin(
   self : Collider,
   skin : @core.Real,
 ) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_contact_force_event_threshold(
+  self : Collider,
+  threshold : @core.Real,
+) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_user_data(self : Collider, data : Int) -> Collider {
   ...
 }
 
