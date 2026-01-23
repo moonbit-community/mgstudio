@@ -2010,6 +2010,17 @@ pub fn ImpulseJointSet::joints_between(
 
 ///|
 #declaration_only
+pub fn ImpulseJointSet::select_active_interactions(
+  self : ImpulseJointSet,
+  islands : IslandManager,
+  bodies : RigidBodySet,
+  out : Array[Array[Int]],
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub type MultibodyJointSet
 
 ///|

@@ -1788,3 +1788,62 @@ pub fn ImpulseJointSet::joints_between(
     []
   }
 }
+
+///|
+pub fn ImpulseJointSet::select_active_interactions(
+  self : ImpulseJointSet,
+  islands : IslandManager,
+  bodies : RigidBodySet,
+  out : Array[Array[Int]],
+) -> Unit {
+  let awake_len = islands.awake_islands.length()
+  for i in 0..<awake_len {
+    if i < out.length() {
+      out[i].clear()
+    }
+  }
+  for i in 0..<self.graph_edges.length() {
+    let joint = self.graph_edges[i].joint
+    if bodies.get(joint.parent) is Some(body1) &&
+      bodies.get(joint.child) is Some(body2) {
+      if !joint.is_enabled() {
+        continue
+      }
+      if !(body1.is_dynamic_or_kinematic() || body2.is_dynamic_or_kinematic()) {
+        continue
+      }
+      if (body1.is_dynamic_or_kinematic() && body1.is_sleeping()) ||
+        (body2.is_dynamic_or_kinematic() && body2.is_sleeping()) {
+        continue
+      }
+      let mut island_awake_index = -1
+      if !body1.is_dynamic_or_kinematic() {
+        let island_id = body2.ids.active_island_id
+        if island_id < 0 || island_id >= islands.islands.length() {
+          continue
+        }
+        if islands.islands[island_id] is Some(island) {
+          if island.id_in_awake_list is Some(awake_index) {
+            island_awake_index = awake_index
+          }
+        }
+      } else {
+        let island_id = body1.ids.active_island_id
+        if island_id < 0 || island_id >= islands.islands.length() {
+          continue
+        }
+        if islands.islands[island_id] is Some(island) {
+          if island.id_in_awake_list is Some(awake_index) {
+            island_awake_index = awake_index
+          }
+        }
+      }
+      if island_awake_index < 0 {
+        continue
+      }
+      if island_awake_index >= 0 && island_awake_index < out.length() {
+        out[island_awake_index].push(i)
+      }
+    }
+  }
+}
