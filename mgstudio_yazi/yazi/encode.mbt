@@ -153,7 +153,7 @@ pub fn EncoderStream::write(
     self.adler.update(buf)
   }
   match self.encoder.level {
-    NoCompression => {
+    NoCompression =>
       // Stored blocks streaming. Flush full blocks eagerly (BFINAL=0).
       for i in 0..<buf.length() {
         self.block_buf.push(buf[i])
@@ -161,14 +161,12 @@ pub fn EncoderStream::write(
           self.flush_stored_block(false)
         }
       }
-    }
-    _ => {
+    _ =>
       // Buffer until finish (simpler than upstream's streaming compressor, but
       // still supports streaming writes at the API level).
       for i in 0..<buf.length() {
         self.block_buf.push(buf[i])
       }
-    }
   }
 }
 
@@ -184,7 +182,7 @@ pub fn EncoderStream::finish(self : EncoderStream) -> UInt64 raise YaziError {
     self.header_written = true
   }
   match self.encoder.level {
-    NoCompression => {
+    NoCompression =>
       if self.block_buf.length() > 0 {
         self.flush_stored_block(true)
       } else if self.last_header_pos != -1 {
@@ -194,9 +192,12 @@ pub fn EncoderStream::finish(self : EncoderStream) -> UInt64 raise YaziError {
         // No blocks were emitted; emit a single empty final block.
         self.flush_empty_final_block()
       }
-    }
     _ => {
-      write_deflate_static_huffman(Bytes::from_array(self.block_buf), self.out)
+      write_deflate_static_huffman(
+        Bytes::from_array(self.block_buf),
+        self.out,
+        self.encoder.level,
+      )
       self.block_buf.clear()
     }
   }
@@ -318,17 +319,28 @@ pub fn compress(
 
 // ---- Static Huffman + LZ77 (P1) -------------------------------------------
 
+///|
 priv enum Token {
   Lit(Byte)
   Match(Int, Int) // (len, dist)
 }
 
+///|
 const MIN_MATCH_LEN : Int = 3
+
+///|
 const MAX_MATCH_LEN : Int = 258
+
+///|
 const DICT_SIZE : Int = 32768
+
+///|
 const HASH_BITS : Int = 15
+
+///|
 const HASH_SIZE : Int = 1 << HASH_BITS
 
+///|
 fn reverse_bits(v0 : UInt, n : Int) -> UInt {
   let mut v = v0
   let mut out : UInt = 0
@@ -339,6 +351,7 @@ fn reverse_bits(v0 : UInt, n : Int) -> UInt {
   out
 }
 
+///|
 fn fixed_litlen(sym : Int) -> (UInt, Int) {
   // Returns (reversed_code, bit_len).
   if sym <= 143 {
@@ -352,23 +365,30 @@ fn fixed_litlen(sym : Int) -> (UInt, Int) {
   }
 }
 
+///|
 fn fixed_dist(sym : Int) -> (UInt, Int) {
   (reverse_bits(sym.reinterpret_as_uint(), 5), 5)
 }
 
+///|
 priv struct BitWriter {
   out : Array[Byte]
   mut bitbuf : UInt
   mut bits : Int
 }
 
+///|
 fn BitWriter::new(out : Array[Byte]) -> BitWriter {
   BitWriter::{ out, bitbuf: 0, bits: 0 }
 }
 
-fn BitWriter::write_bits(self : BitWriter, mut v : UInt, mut n : Int) -> Unit {
+///|
+fn BitWriter::write_bits(self : BitWriter, v0 : UInt, n0 : Int) -> Unit {
+  let mut v = v0
+  let mut n = n0
   while n > 0 {
-    self.bitbuf = self.bitbuf | ((v & 1) << self.bits.reinterpret_as_uint())
+    // DEFLATE writes bits least-significant bit first.
+    self.bitbuf = self.bitbuf | ((v & 1) << self.bits)
     self.bits = self.bits + 1
     if self.bits == 8 {
       self.out.push(byte_of_u(self.bitbuf & 0xFF))
@@ -380,10 +400,12 @@ fn BitWriter::write_bits(self : BitWriter, mut v : UInt, mut n : Int) -> Unit {
   }
 }
 
+///|
 fn BitWriter::write_code(self : BitWriter, code : UInt, n : Int) -> Unit {
   self.write_bits(code, n)
 }
 
+///|
 fn BitWriter::align_to_byte(self : BitWriter) -> Unit {
   if self.bits != 0 {
     self.out.push(byte_of_u(self.bitbuf & 0xFF))
@@ -392,14 +414,16 @@ fn BitWriter::align_to_byte(self : BitWriter) -> Unit {
   }
 }
 
+///|
 fn hash3(b : Bytes, i : Int) -> Int {
   // Simple 3-byte hash, compatible with HASH_BITS=15.
   let b0 = b[i].to_int()
   let b1 = b[i + 1].to_int()
   let b2 = b[i + 2].to_int()
-  (((b0 << 10) ^ (b1 << 5) ^ b2) & (HASH_SIZE - 1))
+  ((b0 << 10) ^ (b1 << 5) ^ b2) & (HASH_SIZE - 1)
 }
 
+///|
 fn find_match(
   input : Bytes,
   pos : Int,
@@ -418,11 +442,18 @@ fn find_match(
   let mut probes = 0
   while p != -1 && probes < max_probes {
     let dist = pos - p
-    if dist <= 0 || dist > DICT_SIZE {
+    if dist > DICT_SIZE {
       break
     }
+    if dist <= 0 {
+      p = prev[p & (DICT_SIZE - 1)]
+      continue
+    }
     let mut l = 0
-    while l < MAX_MATCH_LEN && pos + l < end && input[p + l] == input[pos + l] {
+    while l < MAX_MATCH_LEN &&
+          pos + l < end &&
+          p + l < end &&
+          input[p + l] == input[pos + l] {
       l = l + 1
     }
     if l > best_len {
@@ -442,20 +473,30 @@ fn find_match(
   }
 }
 
+///|
 fn max_probes_for_level(level : CompressionLevel) -> Int {
-  // Approximate upstream `NUM_PROBES` mapping. Higher levels probe more.
-  match level {
-    BestSpeed => 32
-    Default => 128
-    BestSize => 512
+  // Ported from `yazi/src/encode.rs` (`CompressionLevel::to_raw` + `NUM_PROBES`).
+  let raw = match level {
+    NoCompression => 0
+    BestSpeed => 1
+    Default => 6
+    BestSize => 9
     Specific(n) => {
-      let x = n.reinterpret_as_int()
-      if x <= 1 { 6 } else if x <= 3 { 32 } else if x <= 6 { 128 } else if x <= 8 { 512 } else { 1500 }
+      let v = n.reinterpret_as_int()
+      if v <= 0 {
+        0
+      } else if v >= 10 {
+        10
+      } else {
+        v
+      }
     }
-    _ => 0
   }
+  let probes = [0, 1, 6, 32, 16, 32, 128, 256, 512, 768, 1500]
+  probes[raw]
 }
 
+///|
 fn tokenize_lz77(input : Bytes, level : CompressionLevel) -> Array[Token] {
   let out : Array[Token] = []
   let n = input.length()
@@ -470,12 +511,13 @@ fn tokenize_lz77(input : Bytes, level : CompressionLevel) -> Array[Token] {
   let max_probes = max_probes_for_level(level)
   let mut i = 0
   while i < n {
+    let (mlen, mdist) = find_match(input, i, head, prev, max_probes)
+    // Insert the current position after matching, so it can't match itself.
     if i + 2 < n {
       let h = hash3(input, i)
       prev[i & (DICT_SIZE - 1)] = head[h]
       head[h] = i
     }
-    let (mlen, mdist) = find_match(input, i, head, prev, max_probes)
     if mlen >= MIN_MATCH_LEN {
       out.push(Token::Match(mlen, mdist))
       // Insert the rest of the match for better compression.
@@ -495,67 +537,61 @@ fn tokenize_lz77(input : Bytes, level : CompressionLevel) -> Array[Token] {
   out
 }
 
+///|
 fn len_code(len : Int) -> (Int, UInt, Int) {
   // Returns (symbol, extra_value, extra_bits).
-  if len == 258 {
-    return (285, 0, 0)
+  //
+  // RFC1951: Table 3 (length codes 257..285).
+  let bases = [
+    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67,
+    83, 99, 115, 131, 163, 195, 227, 258,
+  ]
+  let extra = [
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5,
+    5, 5, 0,
+  ]
+  for i in 0..<bases.length() {
+    let base = bases[i]
+    let eb = extra[i]
+    let max = base + ((1 << eb) - 1)
+    if len <= max {
+      return (257 + i, (len - base).reinterpret_as_uint(), eb)
+    }
   }
-  let l = len
-  if l <= 10 {
-    (257 + (l - 3), 0, 0)
-  } else if l <= 18 {
-    let base = 11 + (((l - 11) / 2) * 2)
-    let sym = 265 + ((l - 11) / 2)
-    (sym, (l - base).reinterpret_as_uint(), 1)
-  } else if l <= 34 {
-    let base = 19 + (((l - 19) / 4) * 4)
-    let sym = 269 + ((l - 19) / 4)
-    (sym, (l - base).reinterpret_as_uint(), 2)
-  } else if l <= 66 {
-    let base = 35 + (((l - 35) / 8) * 8)
-    let sym = 273 + ((l - 35) / 8)
-    (sym, (l - base).reinterpret_as_uint(), 3)
-  } else if l <= 130 {
-    let base = 67 + (((l - 67) / 16) * 16)
-    let sym = 277 + ((l - 67) / 16)
-    (sym, (l - base).reinterpret_as_uint(), 4)
-  } else {
-    let base = 131 + (((l - 131) / 32) * 32)
-    let sym = 281 + ((l - 131) / 32)
-    (sym, (l - base).reinterpret_as_uint(), 5)
-  }
+  (285, 0, 0)
 }
 
+///|
 fn dist_code(dist : Int) -> (Int, UInt, Int) {
   // Returns (symbol, extra_value, extra_bits).
-  let d = dist
-  if d <= 4 {
-    (d - 1, 0, 0)
-  } else {
-    let mut sym = 0
-    let mut extra_bits = 0
-    let mut base = 1
-    // Build ranges doubling every two symbols.
-    for eb in 1..<14 {
-      let step = 1 << eb
-      // two symbols per extra bit size
-      for k in 0..<2 {
-        let b = base + k * step
-        let e = b + step - 1
-        sym = 2 * eb + k + 2
-        extra_bits = eb
-        if d >= b && d <= e {
-          return (sym, (d - b).reinterpret_as_uint(), extra_bits)
-        }
-      }
-      base = base + 2 * step
+  //
+  // RFC1951: Table 4 (distance codes 0..29).
+  let bases = [
+    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769,
+    1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+  ]
+  let extra = [
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11,
+    11, 12, 12, 13, 13,
+  ]
+  for i in 0..<bases.length() {
+    let base = bases[i]
+    let eb = extra[i]
+    let max = base + ((1 << eb) - 1)
+    if dist <= max {
+      return (i, (dist - base).reinterpret_as_uint(), eb)
     }
-    (0, 0, 0)
   }
+  (0, 0, 0)
 }
 
-fn write_deflate_static_huffman(input : Bytes, out : Array[Byte]) -> Unit {
-  let tokens = tokenize_lz77(input, Default)
+///|
+fn write_deflate_static_huffman(
+  input : Bytes,
+  out : Array[Byte],
+  level : CompressionLevel,
+) -> Unit {
+  let tokens = tokenize_lz77(input, level)
   let bw = BitWriter::new(out)
   // BFINAL=1, BTYPE=01 (static Huffman)
   bw.write_bits(1, 1)
@@ -663,7 +699,7 @@ test "compress/decompress streaming (64 byte chunks)" {
   let mut pos = 0
   while pos < input.length() {
     let end = if pos + 64 <= input.length() { pos + 64 } else { input.length() }
-    stream.write(try! input[pos:end])
+    stream.write(input[pos:end].to_bytes())
     pos = end
   }
   stream.finish() |> ignore
