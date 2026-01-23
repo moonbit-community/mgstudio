@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio-runtime-native"
+
+import {
+  "Milky2018/wasmoon/runtime",
+  "Milky2018/wasmoon/types",
+}
+
+// Values
+pub fn add_mgstudio_host_imports(@runtime.Linker, HostContext) -> Unit
+
+pub fn add_moonbit_ffi_imports(@runtime.Linker, HostContext) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct HostContext {
+  mut store : @runtime.Store?
+  mut instance : @runtime.ModuleInstance?
+  next_closure_id : Ref[Int]
+  closures : Ref[Array[(Int, @types.Value, Int)]]
+  string_sink : Ref[String]
+}
+pub fn HostContext::new() -> Self
+
+// Type aliases
+
+// Traits
+

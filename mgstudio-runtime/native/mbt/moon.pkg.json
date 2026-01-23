@@ -1,0 +1,12 @@
+{
+  "is-main": true,
+  "import": [
+    "moonbitlang/core/debug",
+    "moonbitlang/x/fs",
+    "moonbitlang/x/sys",
+    "Milky2018/wasmoon/types",
+    "Milky2018/wasmoon/parser",
+    "Milky2018/wasmoon/runtime",
+    "Milky2018/wasmoon/executor"
+  ]
+}
