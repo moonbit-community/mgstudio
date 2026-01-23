@@ -54,3 +54,54 @@ pub impl PathData for PointsVerbsPathData with copy_to(self, sink) {
     }
   }
 }
+
+///|
+/// PathData implementation for SVG path strings.
+pub impl PathData for String with commands(self) {
+  let it = SvgCommands::new(self)
+  Iter::new(fn() { it.next() })
+}
+
+///|
+pub impl PathData for String with copy_to(self, sink) {
+  let it = PathData::commands(self)
+  while it.next() is Some(cmd) {
+    match cmd {
+      Command::MoveTo(p) => sink.move_to(p)
+      Command::LineTo(p) => sink.line_to(p)
+      Command::QuadTo(c, p) => sink.quad_to(c, p)
+      Command::CurveTo(c1, c2, p) => sink.curve_to(c1, c2, p)
+      Command::Close => sink.close()
+    }
+  }
+}
+
+///|
+/// PathData implementation for pre-parsed command buffers.
+pub impl PathData for Array[Command] with commands(self) {
+  let mut i = 0
+  let n = self.length()
+  Iter::new(fn() {
+    if i >= n {
+      None
+    } else {
+      let v = self[i]
+      i = i + 1
+      Some(v)
+    }
+  })
+}
+
+///|
+pub impl PathData for Array[Command] with copy_to(self, sink) {
+  let it = PathData::commands(self)
+  while it.next() is Some(cmd) {
+    match cmd {
+      Command::MoveTo(p) => sink.move_to(p)
+      Command::LineTo(p) => sink.line_to(p)
+      Command::QuadTo(c, p) => sink.quad_to(c, p)
+      Command::CurveTo(c1, c2, p) => sink.curve_to(c1, c2, p)
+      Command::Close => sink.close()
+    }
+  }
+}

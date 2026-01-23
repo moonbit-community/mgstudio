@@ -1,5 +1,14 @@
 {
   "import": [
-    "moonbitlang/core/prelude"
+    {
+      "path": "moonbitlang/core/prelude"
+    },
+    {
+      "path": "moonbitlang/core/math",
+      "alias": "coremath"
+    },
+    {
+      "path": "moonbitlang/core/strconv"
+    }
   ]
 }
