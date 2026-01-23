@@ -33,6 +33,23 @@ pub fn QueryFilter::exclude_rigid_body(
 
 ///|
 #declaration_only
+pub fn QueryFilter::groups(
+  self : QueryFilter,
+  groups : @dynamics.InteractionGroups,
+) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::groups_filter(
+  self : QueryFilter,
+) -> @dynamics.InteractionGroups? {
+  ...
+}
+
+///|
+#declaration_only
 pub type QueryPipeline
 
 ///|

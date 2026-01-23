@@ -114,229 +114,6 @@ pub fn ActiveCollisionTypes::equals(
 }
 
 ///|
-pub struct Group {
-  value : Int
-}
-
-///|
-pub fn Group::new(bits : Int) -> Group {
-  { value: bits }
-}
-
-///|
-pub fn Group::bits(self : Group) -> Int {
-  self.value
-}
-
-///|
-pub fn Group::equals(self : Group, other : Group) -> Bool {
-  self.value == other.value
-}
-
-///|
-pub fn Group::none() -> Group {
-  Group::new(0)
-}
-
-///|
-pub fn Group::all() -> Group {
-  Group::new(-1)
-}
-
-///|
-pub fn Group::group_1() -> Group {
-  Group::new(1 << 0)
-}
-
-///|
-pub fn Group::group_2() -> Group {
-  Group::new(1 << 1)
-}
-
-///|
-pub fn Group::group_3() -> Group {
-  Group::new(1 << 2)
-}
-
-///|
-pub fn Group::group_4() -> Group {
-  Group::new(1 << 3)
-}
-
-///|
-pub fn Group::group_5() -> Group {
-  Group::new(1 << 4)
-}
-
-///|
-pub fn Group::group_6() -> Group {
-  Group::new(1 << 5)
-}
-
-///|
-pub fn Group::group_7() -> Group {
-  Group::new(1 << 6)
-}
-
-///|
-pub fn Group::group_8() -> Group {
-  Group::new(1 << 7)
-}
-
-///|
-pub fn Group::group_9() -> Group {
-  Group::new(1 << 8)
-}
-
-///|
-pub fn Group::group_10() -> Group {
-  Group::new(1 << 9)
-}
-
-///|
-pub fn Group::group_11() -> Group {
-  Group::new(1 << 10)
-}
-
-///|
-pub fn Group::group_12() -> Group {
-  Group::new(1 << 11)
-}
-
-///|
-pub fn Group::group_13() -> Group {
-  Group::new(1 << 12)
-}
-
-///|
-pub fn Group::group_14() -> Group {
-  Group::new(1 << 13)
-}
-
-///|
-pub fn Group::group_15() -> Group {
-  Group::new(1 << 14)
-}
-
-///|
-pub fn Group::group_16() -> Group {
-  Group::new(1 << 15)
-}
-
-///|
-pub fn Group::or(self : Group, other : Group) -> Group {
-  Group::new(self.value | other.value)
-}
-
-///|
-pub fn Group::intersection(self : Group, other : Group) -> Group {
-  Group::new(self.value & other.value)
-}
-
-///|
-pub struct InteractionGroups {
-  mut memberships : Group
-  mut filter : Group
-  test_mode : InteractionTestMode
-}
-
-///|
-pub fn InteractionGroups::new(
-  memberships : Group,
-  filter : Group,
-  test_mode : InteractionTestMode,
-) -> InteractionGroups {
-  { memberships, filter, test_mode }
-}
-
-///|
-pub fn InteractionGroups::all() -> InteractionGroups {
-  InteractionGroups::new(Group::all(), Group::all(), InteractionTestMode::And)
-}
-
-///|
-pub fn InteractionGroups::none() -> InteractionGroups {
-  InteractionGroups::new(Group::none(), Group::none(), InteractionTestMode::And)
-}
-
-///|
-pub fn InteractionGroups::with_memberships(
-  self : InteractionGroups,
-  memberships : Group,
-) -> InteractionGroups {
-  self.memberships = memberships
-  self
-}
-
-///|
-pub fn InteractionGroups::with_filter(
-  self : InteractionGroups,
-  filter : Group,
-) -> InteractionGroups {
-  self.filter = filter
-  self
-}
-
-///|
-pub fn InteractionGroups::test_and(
-  self : InteractionGroups,
-  other : InteractionGroups,
-) -> Bool {
-  (self.memberships.bits() & other.filter.bits()) != 0 &&
-  (other.memberships.bits() & self.filter.bits()) != 0
-}
-
-///|
-pub fn InteractionGroups::test_or(
-  self : InteractionGroups,
-  other : InteractionGroups,
-) -> Bool {
-  (self.memberships.bits() & other.filter.bits()) != 0 ||
-  (other.memberships.bits() & self.filter.bits()) != 0
-}
-
-///|
-pub fn InteractionGroups::test_groups(
-  self : InteractionGroups,
-  other : InteractionGroups,
-) -> Bool {
-  match self.test_mode {
-    InteractionTestMode::And => self.test_and(other)
-    InteractionTestMode::Or =>
-      match other.test_mode {
-        InteractionTestMode::And => self.test_and(other)
-        InteractionTestMode::Or => self.test_or(other)
-      }
-  }
-}
-
-///|
-pub fn InteractionGroups::memberships(self : InteractionGroups) -> Group {
-  self.memberships
-}
-
-///|
-pub fn InteractionGroups::filter(self : InteractionGroups) -> Group {
-  self.filter
-}
-
-///|
-pub fn InteractionGroups::test_mode(
-  self : InteractionGroups,
-) -> InteractionTestMode {
-  self.test_mode
-}
-
-///|
-pub fn InteractionGroups::default() -> InteractionGroups {
-  InteractionGroups::new(
-    Group::group_1(),
-    Group::all(),
-    InteractionTestMode::And,
-  )
-}
-
-///|
 const ACTIVE_HOOKS_FILTER_CONTACT_PAIRS : Int = 1 << 0
 
 ///|
@@ -410,8 +187,8 @@ pub struct Collider {
   mut sensor : Bool
   mut active_events : ActiveEvents?
   mut active_hooks : ActiveHooks
-  mut collision_groups : InteractionGroups
-  mut solver_groups : InteractionGroups
+  mut collision_groups : @dynamics.InteractionGroups
+  mut solver_groups : @dynamics.InteractionGroups
   mut friction : @core.Real
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
@@ -433,8 +210,8 @@ pub struct ColliderBuilder {
   mut sensor : Bool
   mut active_events : ActiveEvents?
   mut active_hooks : ActiveHooks
-  mut collision_groups : InteractionGroups
-  mut solver_groups : InteractionGroups
+  mut collision_groups : @dynamics.InteractionGroups
+  mut solver_groups : @dynamics.InteractionGroups
   mut friction : @core.Real
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
@@ -455,8 +232,8 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     sensor: false,
     active_events: None,
     active_hooks: ActiveHooks::empty(),
-    collision_groups: InteractionGroups::all(),
-    solver_groups: InteractionGroups::all(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
@@ -481,8 +258,8 @@ pub fn ColliderBuilder::cuboid(
     sensor: false,
     active_events: None,
     active_hooks: ActiveHooks::empty(),
-    collision_groups: InteractionGroups::all(),
-    solver_groups: InteractionGroups::all(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
@@ -551,7 +328,7 @@ pub fn ColliderBuilder::active_hooks(
 ///|
 pub fn ColliderBuilder::collision_groups(
   self : ColliderBuilder,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> ColliderBuilder {
   self.collision_groups = groups
   self
@@ -560,7 +337,7 @@ pub fn ColliderBuilder::collision_groups(
 ///|
 pub fn ColliderBuilder::solver_groups(
   self : ColliderBuilder,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> ColliderBuilder {
   self.solver_groups = groups
   self
@@ -741,12 +518,14 @@ pub fn Collider::active_hooks(self : Collider) -> ActiveHooks {
 }
 
 ///|
-pub fn Collider::collision_groups(self : Collider) -> InteractionGroups {
+pub fn Collider::collision_groups(
+  self : Collider,
+) -> @dynamics.InteractionGroups {
   self.collision_groups
 }
 
 ///|
-pub fn Collider::solver_groups(self : Collider) -> InteractionGroups {
+pub fn Collider::solver_groups(self : Collider) -> @dynamics.InteractionGroups {
   self.solver_groups
 }
 
@@ -836,7 +615,7 @@ pub fn Collider::set_active_hooks(
 ///|
 pub fn Collider::set_collision_groups(
   self : Collider,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> Collider {
   self.collision_groups = groups
   self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
@@ -846,7 +625,7 @@ pub fn Collider::set_collision_groups(
 ///|
 pub fn Collider::set_solver_groups(
   self : Collider,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> Collider {
   self.solver_groups = groups
   self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)

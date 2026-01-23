@@ -45,251 +45,6 @@ pub fn ActiveCollisionTypes::equals(
 }
 
 ///|
-#declaration_only
-pub type Group
-
-///|
-#declaration_only
-pub fn Group::new(bits : Int) -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::bits(self : Group) -> Int {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::equals(self : Group, other : Group) -> Bool {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::none() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::all() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_1() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_2() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_3() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_4() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_5() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_6() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_7() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_8() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_9() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_10() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_11() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_12() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_13() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_14() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_15() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::group_16() -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::or(self : Group, other : Group) -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn Group::intersection(self : Group, other : Group) -> Group {
-  ...
-}
-
-///|
-pub(all) enum InteractionTestMode {
-  And
-  Or
-}
-
-///|
-#declaration_only
-pub type InteractionGroups
-
-///|
-#declaration_only
-pub fn InteractionGroups::new(
-  memberships : Group,
-  filter : Group,
-  test_mode : InteractionTestMode,
-) -> InteractionGroups {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::all() -> InteractionGroups {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::none() -> InteractionGroups {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::with_memberships(
-  self : InteractionGroups,
-  memberships : Group,
-) -> InteractionGroups {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::with_filter(
-  self : InteractionGroups,
-  filter : Group,
-) -> InteractionGroups {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::test_and(
-  self : InteractionGroups,
-  other : InteractionGroups,
-) -> Bool {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::test_or(
-  self : InteractionGroups,
-  other : InteractionGroups,
-) -> Bool {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::test_groups(
-  self : InteractionGroups,
-  other : InteractionGroups,
-) -> Bool {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::memberships(self : InteractionGroups) -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::filter(self : InteractionGroups) -> Group {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::test_mode(
-  self : InteractionGroups,
-) -> InteractionTestMode {
-  ...
-}
-
-///|
-#declaration_only
-pub fn InteractionGroups::default() -> InteractionGroups {
-  ...
-}
-
-///|
 pub(all) enum ActiveEvents {
   CollisionEvents
   ContactForceEvents
@@ -436,7 +191,7 @@ pub fn ColliderBuilder::active_hooks(
 #declaration_only
 pub fn ColliderBuilder::collision_groups(
   self : ColliderBuilder,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> ColliderBuilder {
   ...
 }
@@ -445,7 +200,7 @@ pub fn ColliderBuilder::collision_groups(
 #declaration_only
 pub fn ColliderBuilder::solver_groups(
   self : ColliderBuilder,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> ColliderBuilder {
   ...
 }
@@ -598,13 +353,15 @@ pub fn Collider::active_hooks(self : Collider) -> ActiveHooks {
 
 ///|
 #declaration_only
-pub fn Collider::collision_groups(self : Collider) -> InteractionGroups {
+pub fn Collider::collision_groups(
+  self : Collider,
+) -> @dynamics.InteractionGroups {
   ...
 }
 
 ///|
 #declaration_only
-pub fn Collider::solver_groups(self : Collider) -> InteractionGroups {
+pub fn Collider::solver_groups(self : Collider) -> @dynamics.InteractionGroups {
   ...
 }
 
@@ -697,7 +454,7 @@ pub fn Collider::set_active_hooks(
 #declaration_only
 pub fn Collider::set_collision_groups(
   self : Collider,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> Collider {
   ...
 }
@@ -706,7 +463,7 @@ pub fn Collider::set_collision_groups(
 #declaration_only
 pub fn Collider::set_solver_groups(
   self : Collider,
-  groups : InteractionGroups,
+  groups : @dynamics.InteractionGroups,
 ) -> Collider {
   ...
 }

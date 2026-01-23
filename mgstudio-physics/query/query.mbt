@@ -15,11 +15,12 @@
 ///|
 pub struct QueryFilter {
   excluded_body : @dynamics.RigidBodyHandle?
+  mut groups : @dynamics.InteractionGroups?
 }
 
 ///|
 pub fn QueryFilter::new() -> QueryFilter {
-  { excluded_body: None }
+  { excluded_body: None, groups: None }
 }
 
 ///|
@@ -28,7 +29,23 @@ pub fn QueryFilter::exclude_rigid_body(
   handle : @dynamics.RigidBodyHandle,
 ) -> QueryFilter {
   self |> ignore
-  { excluded_body: Some(handle) }
+  { excluded_body: Some(handle), groups: self.groups }
+}
+
+///|
+pub fn QueryFilter::groups(
+  self : QueryFilter,
+  groups : @dynamics.InteractionGroups,
+) -> QueryFilter {
+  self.groups = Some(groups)
+  self
+}
+
+///|
+pub fn QueryFilter::groups_filter(
+  self : QueryFilter,
+) -> @dynamics.InteractionGroups? {
+  self.groups
 }
 
 ///|

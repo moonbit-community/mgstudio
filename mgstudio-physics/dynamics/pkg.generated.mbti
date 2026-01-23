@@ -39,6 +39,33 @@ pub fn DVector::from_fn(Int, (Int) -> Float) -> Self
 pub fn DVector::len(Self) -> Int
 pub fn DVector::scale_in_place(Self, Float) -> Unit
 
+pub struct Group {
+  value : Int
+}
+pub fn Group::all() -> Self
+pub fn Group::bits(Self) -> Int
+pub fn Group::equals(Self, Self) -> Bool
+pub fn Group::group_1() -> Self
+pub fn Group::group_10() -> Self
+pub fn Group::group_11() -> Self
+pub fn Group::group_12() -> Self
+pub fn Group::group_13() -> Self
+pub fn Group::group_14() -> Self
+pub fn Group::group_15() -> Self
+pub fn Group::group_16() -> Self
+pub fn Group::group_2() -> Self
+pub fn Group::group_3() -> Self
+pub fn Group::group_4() -> Self
+pub fn Group::group_5() -> Self
+pub fn Group::group_6() -> Self
+pub fn Group::group_7() -> Self
+pub fn Group::group_8() -> Self
+pub fn Group::group_9() -> Self
+pub fn Group::intersection(Self, Self) -> Self
+pub fn Group::new(Int) -> Self
+pub fn Group::none() -> Self
+pub fn Group::or(Self, Self) -> Self
+
 pub struct ImpulseJoint {
   parent : RigidBodyHandle
   child : RigidBodyHandle
@@ -131,6 +158,29 @@ pub fn IntegrationParameters::set_num_internal_pgs_iterations(Self, Int) -> Self
 pub fn IntegrationParameters::set_num_internal_stabilization_iterations(Self, Int) -> Self
 pub fn IntegrationParameters::set_num_solver_iterations(Self, Int) -> Self
 pub fn IntegrationParameters::set_warmstart_coefficient(Self, Float) -> Self
+
+pub struct InteractionGroups {
+  mut memberships : Group
+  mut filter : Group
+  test_mode : InteractionTestMode
+}
+pub fn InteractionGroups::all() -> Self
+pub fn InteractionGroups::default() -> Self
+pub fn InteractionGroups::filter(Self) -> Group
+pub fn InteractionGroups::memberships(Self) -> Group
+pub fn InteractionGroups::new(Group, Group, InteractionTestMode) -> Self
+pub fn InteractionGroups::none() -> Self
+pub fn InteractionGroups::test_and(Self, Self) -> Bool
+pub fn InteractionGroups::test_groups(Self, Self) -> Bool
+pub fn InteractionGroups::test_mode(Self) -> InteractionTestMode
+pub fn InteractionGroups::test_or(Self, Self) -> Bool
+pub fn InteractionGroups::with_filter(Self, Group) -> Self
+pub fn InteractionGroups::with_memberships(Self, Group) -> Self
+
+pub(all) enum InteractionTestMode {
+  And
+  Or
+}
 
 type Island
 

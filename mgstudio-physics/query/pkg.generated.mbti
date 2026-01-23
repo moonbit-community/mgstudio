@@ -16,8 +16,11 @@ pub fn QueryDispatcher::new() -> Self
 
 pub struct QueryFilter {
   excluded_body : @dynamics.RigidBodyHandle?
+  mut groups : @dynamics.InteractionGroups?
 }
 pub fn QueryFilter::exclude_rigid_body(Self, @dynamics.RigidBodyHandle) -> Self
+pub fn QueryFilter::groups(Self, @dynamics.InteractionGroups) -> Self
+pub fn QueryFilter::groups_filter(Self) -> @dynamics.InteractionGroups?
 pub fn QueryFilter::new() -> Self
 
 pub struct QueryPipeline {
