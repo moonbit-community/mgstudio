@@ -465,11 +465,7 @@ fn IslandManager::push_linked_bodies(
   let attached = impulse_joints.attached_enabled_joints(handle)
   for i in 0..<attached.length() {
     let joint = attached[i]
-    let other = if handle_equals(joint.parent, handle) {
-      joint.child
-    } else {
-      joint.parent
-    }
+    let other = if handle_equals(joint.0, handle) { joint.1 } else { joint.0 }
     if is_dynamic_or_kinematic_body(bodies, other) {
       self.stack.push(other)
     }
@@ -1731,14 +1727,17 @@ pub fn ImpulseJointSet::map_attached_joints_mut(
 pub fn ImpulseJointSet::attached_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
-) -> Array[ImpulseJoint] {
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)] {
   if self.graph_node_for(handle) is Some(node_index) {
-    let result : Array[ImpulseJoint] = []
+    let result : Array[
+      (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint),
+    ] = []
     let edges = self.adjacency[node_index]
     for i in 0..<edges.length() {
       let edge_id = edges[i]
       if edge_id >= 0 && edge_id < self.graph_edges.length() {
-        result.push(self.graph_edges[edge_id].joint)
+        let joint = self.graph_edges[edge_id].joint
+        result.push((joint.parent, joint.child, joint.handle, joint))
       }
     }
     result
@@ -1751,12 +1750,14 @@ pub fn ImpulseJointSet::attached_joints(
 pub fn ImpulseJointSet::attached_enabled_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
-) -> Array[ImpulseJoint] {
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)] {
   let attached = self.attached_joints(handle)
-  let result : Array[ImpulseJoint] = []
+  let result : Array[
+    (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint),
+  ] = []
   for i in 0..<attached.length() {
     let joint = attached[i]
-    if joint.is_enabled() {
+    if joint.3.is_enabled() {
       result.push(joint)
     }
   }
@@ -1768,17 +1769,17 @@ pub fn ImpulseJointSet::joints_between(
   self : ImpulseJointSet,
   body1 : RigidBodyHandle,
   body2 : RigidBodyHandle,
-) -> Array[ImpulseJoint] {
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
   if self.graph_node_for(body1) is Some(node1_index) &&
     self.graph_node_for(body2) is Some(node2_index) {
-    let result : Array[ImpulseJoint] = []
+    let result : Array[(ImpulseJointHandle, ImpulseJoint)] = []
     let edges = self.adjacency[node1_index]
     for i in 0..<edges.length() {
       let edge_id = edges[i]
       if edge_id >= 0 && edge_id < self.graph_edges.length() {
         let edge = self.graph_edges[edge_id]
         if edge.node1 == node2_index || edge.node2 == node2_index {
-          result.push(edge.joint)
+          result.push((edge.joint.handle, edge.joint))
         }
       }
     }

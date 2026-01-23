@@ -1985,7 +1985,7 @@ pub fn ImpulseJointSet::map_attached_joints_mut(
 pub fn ImpulseJointSet::attached_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
-) -> Array[ImpulseJoint] {
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)] {
   ...
 }
 
@@ -1994,7 +1994,7 @@ pub fn ImpulseJointSet::attached_joints(
 pub fn ImpulseJointSet::attached_enabled_joints(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
-) -> Array[ImpulseJoint] {
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)] {
   ...
 }
 
@@ -2004,7 +2004,7 @@ pub fn ImpulseJointSet::joints_between(
   self : ImpulseJointSet,
   body1 : RigidBodyHandle,
   body2 : RigidBodyHandle,
-) -> Array[ImpulseJoint] {
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
   ...
 }
 

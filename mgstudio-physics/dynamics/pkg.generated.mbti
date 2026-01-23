@@ -93,8 +93,8 @@ pub fn ImpulseJointHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn ImpulseJointHandle::invalid() -> Self
 
 type ImpulseJointSet
-pub fn ImpulseJointSet::attached_enabled_joints(Self, RigidBodyHandle) -> Array[ImpulseJoint]
-pub fn ImpulseJointSet::attached_joints(Self, RigidBodyHandle) -> Array[ImpulseJoint]
+pub fn ImpulseJointSet::attached_enabled_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::contains(Self, ImpulseJointHandle) -> Bool
 pub fn ImpulseJointSet::get(Self, ImpulseJointHandle) -> ImpulseJoint?
 pub fn ImpulseJointSet::get_mut(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
@@ -105,7 +105,7 @@ pub fn ImpulseJointSet::is_empty(Self) -> Bool
 pub fn ImpulseJointSet::iter(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::iter_mut(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::joint_graph(Self) -> ImpulseJointGraph
-pub fn ImpulseJointSet::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[ImpulseJoint]
+pub fn ImpulseJointSet::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::len(Self) -> Int
 pub fn ImpulseJointSet::map_attached_joints_mut(Self, RigidBodyHandle, (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit) -> Unit
 pub fn ImpulseJointSet::new() -> Self
