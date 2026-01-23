@@ -91,6 +91,10 @@ extern "js" fn strip_run_prefix(value : String) -> String =
   #| (value) => value.startsWith("run_") ? value.slice(4) : value
 
 ///|
+extern "js" fn set_global_wasm_exports(exports : @js.Any) -> Unit =
+  #| (exports) => { globalThis.__mgstudio_wasm_exports = exports }
+
+///|
 fn set_style(style : @js.Any, name : String, value : String) -> Unit {
   style._set(name, @js.any(value)) |> ignore
 }
@@ -263,6 +267,7 @@ async fn main_async() -> Unit {
     set_status("Loading WASM...")
     let instance = load_wasm(imports)
     let exports = instance.exports()
+    set_global_wasm_exports(exports)
     let export_names = object_keys(exports)
     @js.log(@js.any(export_names))
     set_status("WASM loaded. Choose an example.")

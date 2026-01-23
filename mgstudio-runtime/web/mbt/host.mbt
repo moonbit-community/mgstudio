@@ -22,6 +22,13 @@ extern "js" fn throw_error(message : String) -> Unit =
   #| (message) => { throw new Error(message) }
 
 ///|
+extern "js" fn string_sink_push(code_unit : Int) -> Unit =
+  #| (codeUnit) => {
+  #|   const c = Number(codeUnit) & 0xffff
+  #|   globalThis.__mgstudio_string_sink_buf = (globalThis.__mgstudio_string_sink_buf || "") + String.fromCharCode(c)
+  #| }
+
+///|
 extern "js" fn any_to_string(value : @js.Any) -> String =
   #| (value) => {
   #|   if (value == null) {
@@ -197,6 +204,23 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #| (path) => {
   #|   if (path == null) {
   #|     throw new Error("Asset path is required")
+  #|   }
+  #|   // Fallback: some browsers expose wasm-gc references as fully opaque JS objects
+  #|   // (often with a null prototype). In that case, ask the guest to push UTF-16
+  #|   // code units back to the host.
+  #|   try {
+  #|     if (typeof path === "object" && path != null && Object.getPrototypeOf(path) === null) {
+  #|       const exports = globalThis.__mgstudio_wasm_exports
+  #|       const fn = exports && exports.mgstudio_host_string_to_js
+  #|       if (typeof fn === "function") {
+  #|         globalThis.__mgstudio_string_sink_buf = ""
+  #|         fn(path)
+  #|         const out = globalThis.__mgstudio_string_sink_buf || ""
+  #|         globalThis.__mgstudio_string_sink_buf = ""
+  #|         return out
+  #|       }
+  #|     }
+  #|   } catch {
   #|   }
   #|   let current = path
   #|   for (let i = 0; i < 4; i += 1) {
@@ -2829,6 +2853,12 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("gpu_get_queue", gpu_get_queue),
     ("gpu_create_surface", gpu_create_surface),
     ("gpu_configure_surface", gpu_configure_surface),
+    (
+      "string_sink_push",
+      @js.from_fn1(fn(code_unit) {
+        string_sink_push(to_int(number_or(code_unit, 0)))
+      }),
+    ),
     ("asset_load_texture", asset_load_texture),
     ("asset_load_wgsl", asset_load_wgsl),
     ("asset_load_font", asset_load_font),

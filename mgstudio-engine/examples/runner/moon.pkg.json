@@ -17,7 +17,8 @@
         "run_pixel_grid_snap",
         "run_mesh2d",
         "run_sprite_scale",
-        "run_sprite_flipping"
+        "run_sprite_flipping",
+        "mgstudio_host_string_to_js"
       ]
     }
   }
