@@ -171,6 +171,8 @@ pub impl PathBuilder for Rasterizer
 pub struct Scratch {
   mut render : HeapStorage
 }
+pub fn Scratch::apply(Self, &PathData, Style, Transform?, &PathBuilder) -> Fill
+pub fn Scratch::bounds(Self, &PathData, Style, Transform?) -> Bounds
 pub fn Scratch::clear(Self) -> Unit
 pub fn Scratch::default() -> Self
 pub fn Scratch::new() -> Self

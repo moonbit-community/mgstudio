@@ -148,9 +148,8 @@ fn Mask::placement(self : Mask) -> (Vector, Placement) {
     let placement = Placement::{ left: 0, top: 0, width, height }
     return (offset, placement)
   } else if !self.has_size {
-    let b = if self.scratch is Some(_s) {
-      // TODO(zeno): use scratch.bounds for reuse.
-      bounds(self.data, self.style, self.transform)
+    let b = if self.scratch is Some(s) {
+      s.val.bounds(self.data, self.style, self.transform)
     } else {
       bounds(self.data, self.style, self.transform)
     }

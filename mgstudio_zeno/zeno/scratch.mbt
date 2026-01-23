@@ -52,3 +52,32 @@ pub fn Scratch::set_render_storage(
 ) -> Unit {
   self.render = storage
 }
+
+///|
+/// Applies the style and transform to the path and emits the result to the sink.
+///
+/// This is a thin wrapper that exists to mirror upstream `Scratch::apply`.
+pub fn Scratch::apply(
+  _self : Scratch,
+  data : &PathData,
+  style : Style,
+  transform : Transform?,
+  sink : &PathBuilder,
+) -> Fill {
+  apply(data, style, transform, sink)
+}
+
+///|
+/// Computes the bounding box of the path.
+///
+/// Mirrors upstream `Scratch::bounds` (fill-only accurate until we port stroke).
+pub fn Scratch::bounds(
+  self : Scratch,
+  data : &PathData,
+  style : Style,
+  transform : Transform?,
+) -> Bounds {
+  let b = BoundsBuilder::new()
+  self.apply(data, style, transform, b) |> ignore
+  b.build()
+}
