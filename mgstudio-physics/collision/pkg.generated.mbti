@@ -50,6 +50,8 @@ pub struct Collider {
   mut sensor : Bool
   mut active_events : ActiveEvents?
   mut active_hooks : ActiveHooks
+  mut collision_groups : InteractionGroups
+  mut solver_groups : InteractionGroups
   mut friction : Float
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
@@ -64,6 +66,7 @@ pub struct Collider {
 pub fn Collider::active_collision_types(Self) -> ActiveCollisionTypes
 pub fn Collider::active_events(Self) -> ActiveEvents?
 pub fn Collider::active_hooks(Self) -> ActiveHooks
+pub fn Collider::collision_groups(Self) -> InteractionGroups
 pub fn Collider::contact_force_event_threshold(Self) -> Float
 pub fn Collider::contact_skin(Self) -> Float
 pub fn Collider::friction(Self) -> Float
@@ -79,6 +82,7 @@ pub fn Collider::rotation(Self) -> Float
 pub fn Collider::set_active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn Collider::set_active_events(Self, ActiveEvents?) -> Self
 pub fn Collider::set_active_hooks(Self, ActiveHooks) -> Self
+pub fn Collider::set_collision_groups(Self, InteractionGroups) -> Self
 pub fn Collider::set_contact_force_event_threshold(Self, Float) -> Self
 pub fn Collider::set_contact_skin(Self, Float) -> Self
 pub fn Collider::set_enabled(Self, Bool) -> Self
@@ -91,10 +95,12 @@ pub fn Collider::set_rotation(Self, Float) -> Self
 pub fn Collider::set_rotation_wrt_parent(Self, Float) -> Self
 pub fn Collider::set_sensor(Self, Bool) -> Self
 pub fn Collider::set_shape(Self, Shape) -> Self
+pub fn Collider::set_solver_groups(Self, InteractionGroups) -> Self
 pub fn Collider::set_translation(Self, @core.Vec2) -> Self
 pub fn Collider::set_translation_wrt_parent(Self, @core.Vec2) -> Self
 pub fn Collider::set_user_data(Self, Int) -> Self
 pub fn Collider::shape(Self) -> Shape
+pub fn Collider::solver_groups(Self) -> InteractionGroups
 pub fn Collider::translation(Self) -> @core.Vec2
 pub fn Collider::user_data(Self) -> Int
 
@@ -106,6 +112,8 @@ pub struct ColliderBuilder {
   mut sensor : Bool
   mut active_events : ActiveEvents?
   mut active_hooks : ActiveHooks
+  mut collision_groups : InteractionGroups
+  mut solver_groups : InteractionGroups
   mut friction : Float
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
@@ -120,6 +128,7 @@ pub fn ColliderBuilder::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder::active_hooks(Self, ActiveHooks) -> Self
 pub fn ColliderBuilder::ball(Float) -> Self
 pub fn ColliderBuilder::build(Self) -> Collider
+pub fn ColliderBuilder::collision_groups(Self, InteractionGroups) -> Self
 pub fn ColliderBuilder::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
 pub fn ColliderBuilder::cuboid(Float, Float) -> Self
@@ -130,6 +139,7 @@ pub fn ColliderBuilder::restitution(Self, Float) -> Self
 pub fn ColliderBuilder::restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder::rotation(Self, Float) -> Self
 pub fn ColliderBuilder::sensor(Self, Bool) -> Self
+pub fn ColliderBuilder::solver_groups(Self, InteractionGroups) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
 pub fn ColliderBuilder::user_data(Self, Int) -> Self
 
@@ -171,6 +181,56 @@ pub struct ContactPair {
   manifold_count : Int
 }
 pub fn ContactPair::manifold_count(Self) -> Int
+
+pub struct Group {
+  value : Int
+}
+pub fn Group::all() -> Self
+pub fn Group::bits(Self) -> Int
+pub fn Group::equals(Self, Self) -> Bool
+pub fn Group::group_1() -> Self
+pub fn Group::group_10() -> Self
+pub fn Group::group_11() -> Self
+pub fn Group::group_12() -> Self
+pub fn Group::group_13() -> Self
+pub fn Group::group_14() -> Self
+pub fn Group::group_15() -> Self
+pub fn Group::group_16() -> Self
+pub fn Group::group_2() -> Self
+pub fn Group::group_3() -> Self
+pub fn Group::group_4() -> Self
+pub fn Group::group_5() -> Self
+pub fn Group::group_6() -> Self
+pub fn Group::group_7() -> Self
+pub fn Group::group_8() -> Self
+pub fn Group::group_9() -> Self
+pub fn Group::intersection(Self, Self) -> Self
+pub fn Group::new(Int) -> Self
+pub fn Group::none() -> Self
+pub fn Group::or(Self, Self) -> Self
+
+pub struct InteractionGroups {
+  mut memberships : Group
+  mut filter : Group
+  test_mode : InteractionTestMode
+}
+pub fn InteractionGroups::all() -> Self
+pub fn InteractionGroups::default() -> Self
+pub fn InteractionGroups::filter(Self) -> Group
+pub fn InteractionGroups::memberships(Self) -> Group
+pub fn InteractionGroups::new(Group, Group, InteractionTestMode) -> Self
+pub fn InteractionGroups::none() -> Self
+pub fn InteractionGroups::test_and(Self, Self) -> Bool
+pub fn InteractionGroups::test_groups(Self, Self) -> Bool
+pub fn InteractionGroups::test_mode(Self) -> InteractionTestMode
+pub fn InteractionGroups::test_or(Self, Self) -> Bool
+pub fn InteractionGroups::with_filter(Self, Group) -> Self
+pub fn InteractionGroups::with_memberships(Self, Group) -> Self
+
+pub(all) enum InteractionTestMode {
+  And
+  Or
+}
 
 pub struct IntersectionPair {
   collider1 : ColliderHandle

@@ -41,6 +41,70 @@ test "collider shape setters" {
 }
 
 ///|
+/// Ported from rapier interaction groups.
+test "interaction groups behavior" {
+  let group_a = InteractionGroups::new(
+    Group::group_1(),
+    Group::group_2(),
+    InteractionTestMode::And,
+  )
+  let group_b = InteractionGroups::new(
+    Group::group_2(),
+    Group::group_1(),
+    InteractionTestMode::And,
+  )
+  inspect(group_a.test_groups(group_b), content="true")
+  let group_c = InteractionGroups::new(
+    Group::group_1(),
+    Group::group_2(),
+    InteractionTestMode::Or,
+  )
+  let group_d = InteractionGroups::new(
+    Group::group_3(),
+    Group::group_1(),
+    InteractionTestMode::Or,
+  )
+  inspect(group_c.test_groups(group_d), content="true")
+  let customized = InteractionGroups::default()
+    .with_memberships(Group::group_4())
+    .with_filter(Group::group_5())
+  inspect(customized.memberships().equals(Group::group_4()), content="true")
+  inspect(customized.filter().equals(Group::group_5()), content="true")
+}
+
+///|
+/// Ported from rapier collider group setters.
+test "collider groups accessors" {
+  let collision_groups = InteractionGroups::new(
+    Group::group_1(),
+    Group::group_2(),
+    InteractionTestMode::And,
+  )
+  let solver_groups = InteractionGroups::none()
+  let collider = ColliderBuilder::ball(1.0F)
+    .collision_groups(collision_groups)
+    .solver_groups(solver_groups)
+    .build()
+  let collision = collider.collision_groups()
+  inspect(collision.memberships().equals(Group::group_1()), content="true")
+  inspect(collision.filter().equals(Group::group_2()), content="true")
+  let solver = collider.solver_groups()
+  inspect(solver.memberships().equals(Group::none()), content="true")
+  let collider = collider.set_collision_groups(InteractionGroups::all())
+  inspect(
+    collider.collision_groups().test_mode() is InteractionTestMode::And,
+    content="true",
+  )
+  let collider = collider.set_solver_groups(
+    InteractionGroups::default().with_filter(Group::group_3()),
+  )
+  inspect(
+    collider.solver_groups().filter().equals(Group::group_3()),
+    content="true",
+  )
+}
+
+///|
 /// Ported from rapier collider material and event accessors.
 test "collider material and event accessors" {
   let collider = ColliderBuilder::ball(1.0F)
