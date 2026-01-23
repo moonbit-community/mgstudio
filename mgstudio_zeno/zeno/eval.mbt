@@ -150,13 +150,34 @@ pub fn apply(
       }
       fill
     }
-    Style::Stroke(_stroke) => {
-      // TODO(zeno): port stroke.rs (join/cap/dash) and apply here.
+    Style::Stroke(stroke) => {
+      fn map_commands(cmds : Iter[Command], t : Transform) -> Iter[Command] {
+        let buf : Array[Command] = []
+        let it = cmds
+        while it.next() is Some(cmd) {
+          buf.push(cmd.transform(t))
+        }
+        let mut i = 0
+        Iter::new(fn() {
+          if i < buf.length() {
+            let v = buf[i]
+            i = i + 1
+            Some(v)
+          } else {
+            None
+          }
+        })
+      }
+
       if transform is Some(t) {
-        let ts = TransformSink::{ sink, transform: t }
-        data.copy_to(ts)
+        if stroke.scale {
+          let ts = TransformSink::{ sink, transform: t }
+          stroke_into(data.commands(), stroke, ts)
+        } else {
+          stroke_into(map_commands(data.commands(), t), stroke, sink)
+        }
       } else {
-        data.copy_to(sink)
+        stroke_into(data.commands(), stroke, sink)
       }
       Fill::NonZero
     }

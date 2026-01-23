@@ -4,11 +4,47 @@ package "Milky2018/mgstudio_zeno/zeno"
 // Values
 pub fn apply(&PathData, Style, Transform?, &PathBuilder) -> Fill
 
+pub fn arc(&PathBuilder, Vector, Double, Double, Double, ArcSize, ArcSweep, Vector) -> Unit
+
 pub fn bounds(&PathData, Style, Transform?) -> Bounds
+
+pub fn normal(Vector, Vector) -> Vector
+
+pub fn segments(Iter[Command], Bool) -> Segments
+
+pub fn stroke_into(Iter[Command], Stroke, &PathBuilder) -> Unit
+
+pub fn stroke_with_storage(Iter[Command], Stroke, &PathBuilder, Array[Segment]) -> Unit
+
+pub fn validate_svg(String) -> Result[Unit, Int]
 
 // Errors
 
 // Types and methods
+pub struct Arc {
+  mut count : Int
+  center : (Double, Double)
+  radii : (Double, Double)
+  cosphi : Double
+  sinphi : Double
+  mut ang1 : Double
+  ang2 : Double
+  a : Double
+}
+pub fn Arc::default() -> Self
+pub fn Arc::new(Vector, Double, Double, Double, ArcSize, ArcSweep, Vector) -> Self
+pub fn Arc::next(Self) -> Command?
+
+pub(all) enum ArcSize {
+  Small
+  Large
+}
+
+pub(all) enum ArcSweep {
+  Negative
+  Positive
+}
+
 pub struct Bounds {
   mut min : Vector
   mut max : Vector
@@ -51,6 +87,22 @@ pub(all) enum Command {
 }
 pub fn Command::transform(Self, Transform) -> Self
 
+pub struct Curve {
+  a : Vector
+  b : Vector
+  c : Vector
+  d : Vector
+}
+pub fn Curve::default() -> Self
+pub fn Curve::evaluate(Self, Double) -> Vector
+pub fn Curve::from_quadratic(Vector, Vector, Vector) -> Self
+pub fn Curve::is_line(Self, Double) -> Bool
+pub fn Curve::length(Self) -> Double
+pub fn Curve::new(Vector, Vector, Vector, Vector) -> Self
+pub fn Curve::reverse(Self) -> Self
+pub fn Curve::slice(Self, Double, Double) -> Self
+pub fn Curve::time(Self, Double, Double) -> SegmentTime
+
 pub(all) enum Fill {
   NonZero
   EvenOdd
@@ -85,6 +137,16 @@ pub(all) enum Join {
   Miter
   Round
 }
+
+pub struct Line {
+  a : Vector
+  b : Vector
+}
+pub fn Line::length(Self) -> Double
+pub fn Line::new(Vector, Vector) -> Self
+pub fn Line::reverse(Self) -> Self
+pub fn Line::slice(Self, Double, Double) -> Self
+pub fn Line::time(Self, Double) -> SegmentTime
 
 pub struct Mask {
   data : &PathData
@@ -169,6 +231,7 @@ pub fn Rasterizer::storage(Self) -> HeapStorage
 pub impl PathBuilder for Rasterizer
 
 pub struct Scratch {
+  segments : Array[Segment]
   mut render : HeapStorage
 }
 pub fn Scratch::apply(Self, &PathData, Style, Transform?, &PathBuilder) -> Fill
@@ -178,6 +241,42 @@ pub fn Scratch::default() -> Self
 pub fn Scratch::new() -> Self
 pub fn Scratch::render_storage(Self) -> HeapStorage
 pub fn Scratch::set_render_storage(Self, HeapStorage) -> Unit
+
+pub enum Segment {
+  Line(Int, Line)
+  Curve(Int, Curve)
+  End(Bool)
+}
+pub fn Segment::default() -> Self
+pub fn Segment::length(Self) -> Double
+pub fn Segment::point_normal(Self, Double) -> (Vector, Vector)
+pub fn Segment::reverse(Self) -> Self
+pub fn Segment::slice(Self, Double, Double) -> Self
+pub fn Segment::time(Self, Double, Double) -> SegmentTime
+
+pub struct SegmentTime {
+  distance : Double
+  time : Double
+}
+
+pub struct Segments {
+  commands : Array[Command]
+  mut index : Int
+  mut start : Vector
+  mut prev : Vector
+  mut close : Bool
+  split : Bool
+  splits : Array[Curve]
+  mut split_count : Int
+  mut split_index : Int
+  mut last_was_end : Bool
+  mut id : Int
+  mut count : UInt
+}
+pub fn Segments::new(Bool, Array[Command]) -> Self
+pub fn Segments::next(Self) -> Segment?
+
+type State
 
 pub struct Stroke {
   mut width : Double
@@ -206,6 +305,23 @@ pub(all) enum Style {
 pub fn Style::default() -> Self
 pub fn Style::is_stroke(Self) -> Bool
 
+pub struct SvgCommands {
+  source : String
+  mut cur : Int
+  mut pos : Int
+  mut cmd_pos : Int
+  mut error : Bool
+  mut done : Bool
+  mut start_point : Vector
+  mut cur_point : Vector
+  mut last_control : Vector
+  mut last_cmd : Int
+  mut state : State
+  mut arc : Arc
+}
+pub fn SvgCommands::new(String) -> Self
+pub fn SvgCommands::next(Self) -> Command?
+
 pub struct Transform {
   xx : Double
   xy : Double
@@ -232,12 +348,26 @@ pub struct Vector {
   y : Double
 }
 pub fn Vector::ceil(Self) -> Self
+pub fn Vector::cross(Self, Self) -> Double
+pub fn Vector::distance_to(Self, Self) -> Double
+pub fn Vector::div_scalar(Self, Double) -> Self
+pub fn Vector::dot(Self, Self) -> Double
 pub fn Vector::floor(Self) -> Self
 pub fn Vector::length(Self) -> Double
+pub fn Vector::length_squared(Self) -> Double
+pub fn Vector::nearly_eq(Self, Self) -> Bool
+pub fn Vector::nearly_eq_by(Self, Self, Double) -> Bool
 pub fn Vector::new(Double, Double) -> Self
+pub fn Vector::normalize(Self) -> Self
+pub fn Vector::scale(Self, Double) -> Self
 pub fn Vector::x(Self) -> Double
 pub fn Vector::y(Self) -> Double
+pub fn Vector::zero() -> Self
 pub impl Add for Vector
+pub impl Div for Vector
+pub impl Mul for Vector
+pub impl Neg for Vector
+pub impl Sub for Vector
 
 pub(all) enum Verb {
   MoveTo
@@ -247,7 +377,38 @@ pub(all) enum Verb {
   Close
 }
 
+pub enum Vertex {
+  Start(Vector, Vector)
+  Middle(Vector, Vector, Vector)
+  End(Vector, Vector, Bool)
+}
+
+pub struct Vertices {
+  segments : Segments
+  mut prev_point : Vector
+  mut prev_dir : Vector
+  mut is_first : Bool
+}
+pub fn Vertices::new(&PathData) -> Self
+pub fn Vertices::next(Self) -> Vertex?
+pub fn Vertices::with_transform(&PathData, Transform) -> Self
+
+pub struct Walk {
+  commands : Array[Command]
+  iter : Segments
+  mut segment : Segment
+  mut segment_offset : Double
+  mut first : Bool
+  mut length : Double?
+  mut walked : Double
+}
+pub fn Walk::new(&PathData) -> Self
+pub fn Walk::remaining(Self) -> Double
+pub fn Walk::step(Self, Double) -> (Vector, Vector)?
+pub fn Walk::with_transform(&PathData, Transform) -> Self
+
 // Type aliases
+pub type SegmentId = Int
 
 // Traits
 pub(open) trait PathBuilder {
@@ -262,4 +423,6 @@ pub(open) trait PathData {
   commands(Self) -> Iter[Command]
   copy_to(Self, &PathBuilder) -> Unit
 }
+pub impl PathData for String
+pub impl PathData for Array[Command]
 

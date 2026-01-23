@@ -20,12 +20,13 @@
 /// NOTE: This is currently a minimal subset: it only stores the heap raster
 /// storage used by the rasterizer.
 pub struct Scratch {
+  segments : Array[Segment]
   mut render : HeapStorage
 }
 
 ///|
 pub fn Scratch::new() -> Scratch {
-  Scratch::{ render: HeapStorage::new() }
+  Scratch::{ segments: [], render: HeapStorage::new() }
 }
 
 ///|
@@ -38,6 +39,7 @@ pub fn Scratch::clear(self : Scratch) -> Unit {
   // Keep allocated storage but clear dynamic arrays.
   self.render.cells.clear()
   self.render.indices.clear()
+  self.segments.clear()
 }
 
 ///|
@@ -58,13 +60,59 @@ pub fn Scratch::set_render_storage(
 ///
 /// This is a thin wrapper that exists to mirror upstream `Scratch::apply`.
 pub fn Scratch::apply(
-  _self : Scratch,
+  self : Scratch,
   data : &PathData,
   style : Style,
   transform : Transform?,
   sink : &PathBuilder,
 ) -> Fill {
-  apply(data, style, transform, sink)
+  fn map_commands(cmds : Iter[Command], t : Transform) -> Iter[Command] {
+    let buf : Array[Command] = []
+    let it = cmds
+    while it.next() is Some(cmd) {
+      buf.push(cmd.transform(t))
+    }
+    let mut i = 0
+    Iter::new(fn() {
+      if i < buf.length() {
+        let v = buf[i]
+        i = i + 1
+        Some(v)
+      } else {
+        None
+      }
+    })
+  }
+
+  match style {
+    Style::Fill(fill) => {
+      if transform is Some(t) {
+        let ts = TransformSink::{ sink, transform: t }
+        data.copy_to(ts)
+      } else {
+        data.copy_to(sink)
+      }
+      fill
+    }
+    Style::Stroke(stroke) => {
+      if transform is Some(t) {
+        if stroke.scale {
+          let ts = TransformSink::{ sink, transform: t }
+          stroke_with_storage(data.commands(), stroke, ts, self.segments)
+        } else {
+          stroke_with_storage(
+            map_commands(data.commands(), t),
+            stroke,
+            sink,
+            self.segments,
+          )
+        }
+      } else {
+        stroke_with_storage(data.commands(), stroke, sink, self.segments)
+      }
+      Fill::NonZero
+    }
+  }
 }
 
 ///|
