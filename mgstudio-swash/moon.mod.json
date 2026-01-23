@@ -1,5 +1,5 @@
 {
-  "name": "Milky2018/mgstudio_swash",
+  "name": "Milky2018/moon_swash",
   "version": "0.1.0",
   "readme": "README.mbt.md",
   "repository": "",
@@ -7,14 +7,14 @@
   "keywords": [],
   "description": "",
   "deps": {
-    "Milky2018/mgstudio_zeno": {
-      "path": "../mgstudio_zeno"
+    "Milky2018/moon_zeno": {
+      "path": "../moon_zeno"
     },
-    "Milky2018/mgstudio_yazi": {
-      "path": "../mgstudio_yazi"
+    "Milky2018/moon_yazi": {
+      "path": "../moon_yazi"
     },
-    "Milky2018/mgstudio_skrifa": {
-      "path": "../mgstudio_skrifa"
+    "Milky2018/moon_skrifa": {
+      "path": "../moon_skrifa"
     }
   }
 }

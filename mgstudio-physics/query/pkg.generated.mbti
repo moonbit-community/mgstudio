@@ -1,8 +1,8 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio_physics/query"
+package "Milky2018/moon_rapier/query"
 
 import {
-  "Milky2018/mgstudio_physics/dynamics",
+  "Milky2018/moon_rapier/dynamics",
 }
 
 // Values

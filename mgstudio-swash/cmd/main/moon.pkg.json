@@ -2,7 +2,7 @@
   "is-main": true,
   "import": [
     {
-      "path": "Milky2018/mgstudio_swash",
+      "path": "Milky2018/moon_swash",
       "alias": "lib"
     }
   ]

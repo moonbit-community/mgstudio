@@ -1,1 +1,1 @@
-# Milky2018/mgstudio_cosmic
+# Milky2018/moon_cosmic

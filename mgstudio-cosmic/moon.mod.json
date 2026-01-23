@@ -1,5 +1,5 @@
 {
-  "name": "Milky2018/mgstudio_cosmic",
+  "name": "Milky2018/moon_cosmic",
   "version": "0.1.0",
   "readme": "README.mbt.md",
   "repository": "",
@@ -7,7 +7,7 @@
   "keywords": [],
   "description": "",
   "deps": {
-    "Milky2018/mgstudio_swash": {
+    "Milky2018/moon_swash": {
       "path": "../mgstudio-swash"
     }
   }

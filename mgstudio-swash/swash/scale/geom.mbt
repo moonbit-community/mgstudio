@@ -17,7 +17,7 @@
 ///
 /// Upstream swash depends on the external `zeno` crate. In this repo, we
 /// provide a minimal local subset to keep mgstudio-swash progressing while
-/// `mgstudio_zeno` is being iterated independently.
+/// `moon_zeno` is being iterated independently.
 
 pub(all) enum Verb {
   MoveTo

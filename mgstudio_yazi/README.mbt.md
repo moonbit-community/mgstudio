@@ -1,1 +1,1 @@
-# username/mgstudio_yazi
+# username/moon_yazi

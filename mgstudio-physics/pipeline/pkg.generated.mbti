@@ -1,10 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio_physics/pipeline"
+package "Milky2018/moon_rapier/pipeline"
 
 import {
-  "Milky2018/mgstudio_physics/collision",
-  "Milky2018/mgstudio_physics/core",
-  "Milky2018/mgstudio_physics/dynamics",
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/dynamics",
 }
 
 // Values

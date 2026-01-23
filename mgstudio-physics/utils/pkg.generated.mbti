@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio_physics/utils"
+package "Milky2018/moon_rapier/utils"
 
 // Values
 pub fn deserialize_from_vec_tuple(String) -> HashMap

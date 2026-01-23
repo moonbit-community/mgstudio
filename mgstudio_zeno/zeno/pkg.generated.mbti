@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio_zeno/zeno"
+package "Milky2018/moon_zeno/zeno"
 
 // Values
 pub fn apply(&PathData, Style, Transform?, &PathBuilder) -> Fill

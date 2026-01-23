@@ -3,7 +3,7 @@
     "moonbitlang/core/array",
     "moonbitlang/core/bytes",
     "moonbitlang/core/option",
-    "Milky2018/mgstudio_swash/swash",
-    "Milky2018/mgstudio_swash/swash/internal"
+    "Milky2018/moon_swash/swash",
+    "Milky2018/moon_swash/swash/internal"
   ]
 }
