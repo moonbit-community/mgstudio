@@ -36,10 +36,56 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
   #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
   #|   try {
-  #|     if (typeof value === "object" && typeof value.get === "function") {
-  #|       let len = value.length
+  #|     let current = value
+  #|     for (let i = 0; i < 4; i += 1) {
+  #|       if (typeof current !== "object" || current == null) {
+  #|         break
+  #|       }
+  #|       // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
+  #|       try {
+  #|         if ("value" in current && current.value !== current) {
+  #|           current = current.value
+  #|           continue
+  #|         }
+  #|         if ("val" in current && current.val !== current) {
+  #|           current = current.val
+  #|           continue
+  #|         }
+  #|         if ("string" in current && current.string !== current) {
+  #|           current = current.string
+  #|           continue
+  #|         }
+  #|         if ("_0" in current && current._0 !== current) {
+  #|           current = current._0
+  #|           continue
+  #|         }
+  #|       } catch {
+  #|       }
+  #|       break
+  #|     }
+  #|     if (typeof current === "object" && current != null) {
+  #|       let getFn = null
+  #|       if (typeof current.get === "function") {
+  #|         getFn = current.get
+  #|       } else {
+  #|         const proto = Object.getPrototypeOf(current)
+  #|         if (proto && typeof proto.get === "function") {
+  #|           getFn = proto.get
+  #|         } else if (
+  #|           typeof WebAssembly === "object" &&
+  #|           typeof WebAssembly.Array === "function" &&
+  #|           WebAssembly.Array.prototype &&
+  #|           typeof WebAssembly.Array.prototype.get === "function"
+  #|         ) {
+  #|           getFn = WebAssembly.Array.prototype.get
+  #|         }
+  #|       }
+  #|       if (!getFn) {
+  #|         throw new Error("no get")
+  #|       }
+  #|       let len = current.length
   #|       if (typeof len === "function") {
-  #|         len = len.call(value)
+  #|         len = len.call(current)
   #|       }
   #|       len = Number(len)
   #|       if (Number.isFinite(len) && len >= 0) {
@@ -52,7 +98,7 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|           const end = Math.min(len, i + CHUNK)
   #|           const codes = new Array(end - i)
   #|           for (let j = i; j < end; j += 1) {
-  #|             codes[j - i] = value.get(j) & 0xffff
+  #|             codes[j - i] = getFn.call(current, j) & 0xffff
   #|           }
   #|           out += String.fromCharCode(...codes)
   #|         }
@@ -157,6 +203,28 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     if (typeof current === "string") {
   #|       return current
   #|     }
+  #|     // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
+  #|     if (typeof current === "object" && current != null) {
+  #|       try {
+  #|         if ("value" in current && current.value !== current) {
+  #|           current = current.value
+  #|           continue
+  #|         }
+  #|         if ("val" in current && current.val !== current) {
+  #|           current = current.val
+  #|           continue
+  #|         }
+  #|         if ("string" in current && current.string !== current) {
+  #|           current = current.string
+  #|           continue
+  #|         }
+  #|         if ("_0" in current && current._0 !== current) {
+  #|           current = current._0
+  #|           continue
+  #|         }
+  #|       } catch {
+  #|       }
+  #|     }
   #|     // MoonBit wasm-gc String is typically `array (mut i16)`.
   #|     // Different engines may expose the `get` method on the instance or prototype.
   #|     if (typeof current === "object" && current != null) {
@@ -229,6 +297,31 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     tag = Object.prototype.toString.call(path)
   #|   } catch {
   #|   }
+  #|   let protoTag = ""
+  #|   try {
+  #|     protoTag = Object.prototype.toString.call(Object.getPrototypeOf(path))
+  #|   } catch {
+  #|   }
+  #|   let keys = ""
+  #|   let protoKeys = ""
+  #|   try {
+  #|     const own = Reflect.ownKeys(path).map((k) => String(k)).slice(0, 12)
+  #|     keys = own.join(",")
+  #|   } catch {
+  #|   }
+  #|   try {
+  #|     const proto = Object.getPrototypeOf(path)
+  #|     if (proto) {
+  #|       const own = Reflect.ownKeys(proto).map((k) => String(k)).slice(0, 12)
+  #|       protoKeys = own.join(",")
+  #|     }
+  #|   } catch {
+  #|   }
+  #|   let ctor = ""
+  #|   try {
+  #|     ctor = path && path.constructor && path.constructor.name ? path.constructor.name : ""
+  #|   } catch {
+  #|   }
   #|   let hasGet = false
   #|   let hasLength = false
   #|   try {
@@ -236,7 +329,7 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     hasLength = !!path && "length" in path
   #|   } catch {
   #|   }
-  #|   throw new Error(`Unsupported asset path type: ${typeof path} ${tag} hasGet=${hasGet} hasLength=${hasLength}`)
+  #|   throw new Error(`Unsupported asset path type: ${typeof path} ${tag} ctor=${ctor} proto=${protoTag} keys=[${keys}] protoKeys=[${protoKeys}] hasGet=${hasGet} hasLength=${hasLength}`)
   #| }
 
 ///|
@@ -2224,7 +2317,13 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     }
     let nearest_value = number_or(nearest, 0) != 0
     @js.run_async(async fn() noraise {
-      let result = load_texture_from_path(state, id, path, nearest_value) catch {
+      // Always pass the coerced JS string to avoid relying on wasm-gc string interop here.
+      let result = load_texture_from_path(
+        state,
+        id,
+        @js.any(path_text),
+        nearest_value,
+      ) catch {
         err => {
           let message = "Texture load error: " + err.to_string()
           console_error(@js.any(message))
@@ -2444,7 +2543,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       }
     }),
   )
-  let asset_load_folder = @js.from_fn1(fn(_path) {
+  let asset_load_folder = @js.from_fn1(fn(_path : @js.Any) {
     let id = state.assets.next_folder_id
     state.assets.next_folder_id = id + 1
     map_set(state.assets.folders, @js.any(id), new_array())
