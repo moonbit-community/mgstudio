@@ -17,16 +17,15 @@
 ///
 /// Ported from upstream `zeno/src/scratch.rs` (Apache-2.0 OR MIT).
 ///
-/// NOTE: This is currently a minimal skeleton. Rasterization/storage will be
-/// ported as we bring over `segment`, `stroke`, and `raster`.
+/// NOTE: This is currently a minimal subset: it only stores the heap raster
+/// storage used by the rasterizer.
 pub struct Scratch {
-  // Placeholder for future heap storage.
-  scratch0 : Array[Byte]
+  mut render : HeapStorage
 }
 
 ///|
 pub fn Scratch::new() -> Scratch {
-  Scratch::{ scratch0: [] }
+  Scratch::{ render: HeapStorage::new() }
 }
 
 ///|
@@ -36,5 +35,20 @@ pub fn Scratch::default() -> Scratch {
 
 ///|
 pub fn Scratch::clear(self : Scratch) -> Unit {
-  self.scratch0.clear()
+  // Keep allocated storage but clear dynamic arrays.
+  self.render.cells.clear()
+  self.render.indices.clear()
+}
+
+///|
+pub fn Scratch::render_storage(self : Scratch) -> HeapStorage {
+  self.render
+}
+
+///|
+pub fn Scratch::set_render_storage(
+  self : Scratch,
+  storage : HeapStorage,
+) -> Unit {
+  self.render = storage
 }

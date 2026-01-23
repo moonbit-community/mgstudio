@@ -2,6 +2,9 @@
 package "Milky2018/mgstudio_zeno/zeno"
 
 // Values
+pub fn apply(&PathData, Style, Transform?, &PathBuilder) -> Fill
+
+pub fn bounds(&PathData, Style, Transform?) -> Bounds
 
 // Errors
 
@@ -18,10 +21,25 @@ pub fn Bounds::is_empty(Self) -> Bool
 pub fn Bounds::new(Vector, Vector) -> Self
 pub fn Bounds::width(Self) -> Double
 
+pub struct BoundsBuilder {
+  mut count : Int
+  mut min : Vector
+  mut max : Vector
+}
+pub fn BoundsBuilder::new() -> Self
+pub impl PathBuilder for BoundsBuilder
+
 pub(all) enum Cap {
   Butt
   Square
   Round
+}
+
+pub struct Cell {
+  x : Int
+  mut cover : Int
+  mut area : Int
+  mut next : Int
 }
 
 pub(all) enum Command {
@@ -38,6 +56,14 @@ pub(all) enum Fill {
   EvenOdd
 }
 
+pub struct FixedPoint {
+  mut x : Int
+  mut y : Int
+}
+pub fn FixedPoint::default() -> Self
+pub fn FixedPoint::from_point(Vector) -> Self
+pub fn FixedPoint::new(Int, Int) -> Self
+
 pub(all) enum Format {
   Alpha
   Subpixel
@@ -46,18 +72,53 @@ pub(all) enum Format {
 pub fn Format::buffer_size(Self, UInt, UInt) -> Int
 pub fn Format::subpixel_bgra() -> Self
 
+pub struct HeapStorage {
+  mut min : FixedPoint
+  mut max : FixedPoint
+  cells : Array[Cell]
+  indices : Array[Int]
+}
+pub fn HeapStorage::new() -> Self
+
 pub(all) enum Join {
   Bevel
   Miter
   Round
 }
 
+pub struct Mask {
+  data : &PathData
+  mut style : Style
+  mut transform : Transform?
+  mut format : Format
+  mut origin : Origin
+  mut offset : Vector
+  mut render_offset : Vector
+  mut width : UInt
+  mut height : UInt
+  mut explicit_size : Bool
+  mut has_size : Bool
+  mut bounds_offset : Vector
+  scratch : Ref[Scratch]?
+}
+pub fn Mask::format(Self, Format) -> Self
+pub fn Mask::inspect(Self, (Format, UInt, UInt) -> Unit) -> Self
+pub fn Mask::new(&PathData) -> Self
+pub fn Mask::offset(Self, Vector) -> Self
+pub fn Mask::origin(Self, Origin) -> Self
+pub fn Mask::render_into(Self, Array[Byte], pitch? : Int) -> Placement
+pub fn Mask::render_offset(Self, Vector) -> Self
+pub fn Mask::size(Self, UInt, UInt) -> Self
+pub fn Mask::style(Self, Style) -> Self
+pub fn Mask::transform(Self, Transform?) -> Self
+pub fn Mask::with_scratch(&PathData, Ref[Scratch]) -> Self
+
 pub(all) enum Origin {
   TopLeft
   BottomLeft
 }
 
-pub struct Placement {
+pub(all) struct Placement {
   left : Int
   top : Int
   width : UInt
@@ -81,12 +142,39 @@ pub struct PointsVerbsPathData {
 pub fn PointsVerbsPathData::new(Array[Vector], Array[Verb]) -> Self
 pub impl PathData for PointsVerbsPathData
 
+pub struct Rasterizer {
+  storage : HeapStorage
+  mut xmin : Int
+  mut xmax : Int
+  mut ymin : Int
+  mut ymax : Int
+  mut height : Int
+  mut shift : Vector
+  mut start : FixedPoint
+  mut closed : Bool
+  mut current : Vector
+  mut x : Int
+  mut y : Int
+  mut px : Int
+  mut py : Int
+  mut cover : Int
+  mut area : Int
+  mut invalid : Bool
+}
+pub fn Rasterizer::new(HeapStorage) -> Self
+pub fn Rasterizer::rasterize(Self, Vector, UInt, UInt, (Self) -> Unit, Fill, Array[Byte], Int, Bool) -> Unit
+pub fn Rasterizer::rasterize_write(Self, Vector, UInt, UInt, (Self) -> Unit, Fill, Int, Bool, (Int, Int, Int, Byte) -> Unit) -> Unit
+pub fn Rasterizer::storage(Self) -> HeapStorage
+pub impl PathBuilder for Rasterizer
+
 pub struct Scratch {
-  scratch0 : Array[Byte]
+  mut render : HeapStorage
 }
 pub fn Scratch::clear(Self) -> Unit
 pub fn Scratch::default() -> Self
 pub fn Scratch::new() -> Self
+pub fn Scratch::render_storage(Self) -> HeapStorage
+pub fn Scratch::set_render_storage(Self, HeapStorage) -> Unit
 
 pub struct Stroke {
   mut width : Double
@@ -128,6 +216,12 @@ pub fn Transform::scale(Double, Double) -> Self
 pub fn Transform::transform_point(Self, Vector) -> Vector
 pub fn Transform::transform_vector(Self, Vector) -> Vector
 pub fn Transform::translate(Double, Double) -> Self
+
+pub struct TransformSink {
+  sink : &PathBuilder
+  transform : Transform
+}
+pub impl PathBuilder for TransformSink
 
 #alias(Point)
 pub struct Vector {

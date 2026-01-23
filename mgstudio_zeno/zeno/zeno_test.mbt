@@ -30,3 +30,45 @@ test "Bounds::from_points covers all points" {
   ])
   inspect(b.is_empty(), content="false")
 }
+
+///|
+test "Mask::render_into draws a filled triangle (alpha)" {
+  let data = PointsVerbsPathData::new(
+    [Point::new(1.0, 1.0), Point::new(6.0, 1.0), Point::new(3.5, 6.0)],
+    [Verb::MoveTo, Verb::LineTo, Verb::LineTo, Verb::Close],
+  )
+  let buffer : Array[Byte] = []
+  for _ in 0..<(8 * 8) {
+    buffer.push(0)
+  }
+  let placement = Mask::new(data)
+    .style(Style::Fill(Fill::NonZero))
+    .size(8U, 8U)
+    .render_into(buffer)
+  inspect(placement.width, content="8")
+  inspect(placement.height, content="8")
+  inspect(buffer[0].to_int(), content="0")
+  inspect(buffer[3 + 3 * 8].to_int() > 0, content="true")
+}
+
+///|
+test "Mask::render_into draws a filled triangle (subpixel rgb)" {
+  let data = PointsVerbsPathData::new(
+    [Point::new(1.0, 1.0), Point::new(6.0, 1.0), Point::new(3.5, 6.0)],
+    [Verb::MoveTo, Verb::LineTo, Verb::LineTo, Verb::Close],
+  )
+  let buffer : Array[Byte] = []
+  for _ in 0..<(8 * 8 * 4) {
+    buffer.push(0)
+  }
+  let _placement = Mask::new(data)
+    .style(Style::Fill(Fill::NonZero))
+    .format(Format::Subpixel)
+    .size(8U, 8U)
+    .render_into(buffer)
+  let i = (3 + 3 * 8) * 4
+  let r = buffer[i + 0].to_int()
+  let g = buffer[i + 1].to_int()
+  let b = buffer[i + 2].to_int()
+  inspect(r + g + b > 0, content="true")
+}
