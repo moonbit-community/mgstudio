@@ -18,8 +18,8 @@
 /// Ported from `yazi/src/encode.rs` (Apache-2.0 OR MIT).
 ///
 /// Implementation note:
-/// - `CompressionLevel::NoCompression` emits Stored blocks (BTYPE=00).
-/// - Other levels emit Static Huffman blocks (BTYPE=01) with basic LZ77 match finding.
+/// - Uses an upstream-aligned streaming encoder core (`EncDeflateContext`),
+///   including raw/static/dynamic block selection heuristics.
 
 // ---- Public API ------------------------------------------------------------
 
@@ -47,64 +47,71 @@ pub(all) enum CompressionStrategy {
 ///|
 /// Stateful context for compression.
 struct Encoder {
-  // P0: Keep configuration fields for API parity, but ignore them in output.
-  mut zlib : Bool
-  mut level : CompressionLevel
-  mut strategy : CompressionStrategy
+  ctx : Ref[EncDeflateContext]
 }
 
 ///|
 pub fn Encoder::new() -> Encoder {
-  Encoder::{
-    zlib: false,
-    level: CompressionLevel::Default,
-    strategy: CompressionStrategy::Default,
-  }
+  let ctx = EncDeflateContext::new(
+    Format::Raw,
+    CompressionLevel::Default,
+    CompressionStrategy::Default,
+  )
+  Encoder::{ ctx: Ref::new(ctx) }
 }
 
 ///|
+/// Sets the format of the output bitstream for the next usage of the encoder.
 pub fn Encoder::set_format(self : Encoder, format : Format) -> Unit {
-  self.zlib = match format {
+  let zlib = match format {
     Format::Zlib => true
     _ => false
   }
+  self.ctx.val.reset(zlib)
 }
 
 ///|
+/// Sets the compression level for the next usage of the encoder.
 pub fn Encoder::set_level(self : Encoder, level : CompressionLevel) -> Unit {
-  self.level = level
+  let flags = enc_make_flags(self.ctx.val.zlib, level, self.ctx.val.strategy)
+  let (p0, p1) = probes_from_flags(flags)
+  self.ctx.val.flags = flags
+  self.ctx.val.level = level
+  self.ctx.val.greedy_parsing = (flags & ENC_GREEDY_PARSING) != 0
+  self.ctx.val.dict.max_probes0 = p0
+  self.ctx.val.dict.max_probes1 = p1
 }
 
 ///|
+/// Sets the compression strategy for the next usage of the encoder.
 pub fn Encoder::set_strategy(
   self : Encoder,
   strategy : CompressionStrategy,
 ) -> Unit {
-  self.strategy = strategy
+  let flags = enc_make_flags(self.ctx.val.zlib, self.ctx.val.level, strategy)
+  let (p0, p1) = probes_from_flags(flags)
+  self.ctx.val.flags = flags
+  self.ctx.val.strategy = strategy
+  self.ctx.val.greedy_parsing = (flags & ENC_GREEDY_PARSING) != 0
+  self.ctx.val.dict.max_probes0 = p0
+  self.ctx.val.dict.max_probes1 = p1
 }
 
 ///|
 /// Compression stream combining an encoder context with an output.
 struct EncoderStream {
-  encoder : Encoder
-  out : Array[Byte]
-  out_start : Int
-  block_buf : Array[Byte]
-  mut header_written : Bool
-  mut last_header_pos : Int
+  ctx : Ref[EncDeflateContext]
+  sink : Sink
   mut finished : Bool
-  adler : Adler32
 }
 
 ///|
 /// Compression stream that writes into a fixed-size buffer.
 ///
 /// The buffer must be pre-sized; if it's not large enough to hold the
-/// compressed output, `YaziError::Overflow` is raised on `finish`.
+/// compressed output, `YaziError::Overflow` is raised.
 struct EncoderBufStream {
   inner : EncoderStream
-  buf : Array[Byte]
-  mut finished : Bool
 }
 
 ///|
@@ -113,17 +120,10 @@ pub fn Encoder::stream_into_vec(
   self : Encoder,
   vec : Array[Byte],
 ) -> EncoderStream {
-  let adler = Adler32::new()
-  EncoderStream::{
-    encoder: self,
-    out: vec,
-    out_start: vec.length(),
-    block_buf: [],
-    header_written: false,
-    last_header_pos: -1,
-    finished: false,
-    adler,
-  }
+  // Mimic upstream: creating a stream resets transient state for reuse.
+  let zlib = self.ctx.val.zlib
+  self.ctx.val.reset(zlib)
+  EncoderStream::{ ctx: self.ctx, sink: Sink::new_vec(vec), finished: false }
 }
 
 ///|
@@ -132,12 +132,19 @@ pub fn Encoder::stream_into_buf(
   self : Encoder,
   buf : Array[Byte],
 ) -> EncoderBufStream {
-  let tmp = []
-  let inner = self.stream_into_vec(tmp)
-  EncoderBufStream::{ inner, buf, finished: false }
+  let zlib = self.ctx.val.zlib
+  self.ctx.val.reset(zlib)
+  let inner = EncoderStream::{
+    ctx: self.ctx,
+    sink: Sink::new_buf(buf),
+    finished: false,
+  }
+  EncoderBufStream::{ inner, }
 }
 
 ///|
+/// Writes the specified buffer to the stream, producing compressed data
+/// in the output.
 pub fn EncoderStream::write(
   self : EncoderStream,
   buf : Bytes,
@@ -145,77 +152,26 @@ pub fn EncoderStream::write(
   if self.finished {
     raise YaziError::Finished
   }
-  if self.encoder.zlib && !self.header_written {
-    self.write_zlib_header()
-    self.header_written = true
-  }
-  if self.encoder.zlib {
-    self.adler.update(buf)
-  }
-  match self.encoder.level {
-    NoCompression =>
-      // Stored blocks streaming. Flush full blocks eagerly (BFINAL=0).
-      for i in 0..<buf.length() {
-        self.block_buf.push(buf[i])
-        if self.block_buf.length() == 65535 {
-          self.flush_stored_block(false)
-        }
-      }
-    _ =>
-      // Buffer until finish (simpler than upstream's streaming compressor, but
-      // still supports streaming writes at the API level).
-      for i in 0..<buf.length() {
-        self.block_buf.push(buf[i])
-      }
-  }
-}
-
-///|
-/// Consumes the stream, emitting a complete compressed bitstream.
-pub fn EncoderStream::finish(self : EncoderStream) -> UInt64 raise YaziError {
-  if self.finished {
-    raise YaziError::Finished
-  }
-  self.finished = true
-  if self.encoder.zlib && !self.header_written {
-    self.write_zlib_header()
-    self.header_written = true
-  }
-  match self.encoder.level {
-    NoCompression =>
-      if self.block_buf.length() > 0 {
-        self.flush_stored_block(true)
-      } else if self.last_header_pos != -1 {
-        // Mark the last block as final (BFINAL=1).
-        self.out[self.last_header_pos] = b'\x01'
-      } else {
-        // No blocks were emitted; emit a single empty final block.
-        self.flush_empty_final_block()
-      }
-    _ => {
-      write_deflate_static_huffman(
-        Bytes::from_array(self.block_buf),
-        self.out,
-        self.encoder.level,
-      )
-      self.block_buf.clear()
-    }
-  }
-  if self.encoder.zlib {
-    let checksum = self.adler.finish()
-    // Adler-32 big-endian footer.
-    self.out.push(byte_of_u((checksum >> 24) & 0xFF))
-    self.out.push(byte_of_u((checksum >> 16) & 0xFF))
-    self.out.push(byte_of_u((checksum >> 8) & 0xFF))
-    self.out.push(byte_of_u(checksum & 0xFF))
-  }
-  (self.out.length() - self.out_start).to_uint64()
+  self.ctx.val.deflate(buf, self.sink, false)
 }
 
 ///|
 /// Returns the number of compressed bytes that have been written to the output.
 pub fn EncoderStream::compressed_size(self : EncoderStream) -> UInt64 {
-  (self.out.length() - self.out_start).to_uint64()
+  self.sink.written()
+}
+
+///|
+/// Consumes the stream, flushing any input that may be buffered and any
+/// remaining output. Returns the total number of compressed bytes written.
+pub fn EncoderStream::finish(self : EncoderStream) -> UInt64 raise YaziError {
+  if self.finished {
+    raise YaziError::Finished
+  }
+  self.finished = true
+  self.ctx.val.deflate(b"", self.sink, true)
+  self.ctx.val.flush_block(self.sink, true)
+  self.sink.written()
 }
 
 ///|
@@ -223,9 +179,6 @@ pub fn EncoderBufStream::write(
   self : EncoderBufStream,
   buf : Bytes,
 ) -> Unit raise YaziError {
-  if self.finished {
-    raise YaziError::Finished
-  }
   self.inner.write(buf)
 }
 
@@ -238,66 +191,7 @@ pub fn EncoderBufStream::compressed_size(self : EncoderBufStream) -> UInt64 {
 pub fn EncoderBufStream::finish(
   self : EncoderBufStream,
 ) -> UInt64 raise YaziError {
-  if self.finished {
-    raise YaziError::Finished
-  }
-  self.finished = true
-  let written = self.inner.finish()
-  let n = self.inner.out.length()
-  if n > self.buf.length() {
-    raise YaziError::Overflow
-  }
-  for i in 0..<n {
-    self.buf[i] = self.inner.out[i]
-  }
-  written
-}
-
-///|
-fn EncoderStream::write_zlib_header(self : EncoderStream) -> Unit {
-  let cmf : UInt = 0x78
-  let flevel = match self.encoder.level {
-    NoCompression => 0
-    BestSpeed => 0
-    Default => 2
-    BestSize => 3
-    Specific(_) => 2
-  }
-  // Read strategy for now (keeps it in the data model without warnings).
-  let _ = self.encoder.strategy
-  let flg0 : UInt = flevel.reinterpret_as_uint() << 6
-  let base = cmf * 256 + flg0
-  let m : UInt = 31
-  let fcheck = (m - base % m) % m
-  let flg = flg0 | fcheck
-  // zlib header (no dictionary).
-  self.out.push(byte_of_u(cmf))
-  self.out.push(byte_of_u(flg))
-}
-
-///|
-fn EncoderStream::flush_stored_block(
-  self : EncoderStream,
-  is_final : Bool,
-) -> Unit {
-  let header_pos = self.out.length()
-  self.last_header_pos = header_pos
-  self.out.push(if is_final { b'\x01' } else { b'\x00' })
-  let len_u = self.block_buf.length().reinterpret_as_uint()
-  write_u16_le(self.out, len_u)
-  write_u16_le(self.out, (0xFFFF).reinterpret_as_uint() - len_u)
-  for b in self.block_buf {
-    self.out.push(b)
-  }
-  self.block_buf.clear()
-}
-
-///|
-fn EncoderStream::flush_empty_final_block(self : EncoderStream) -> Unit {
-  self.last_header_pos = self.out.length()
-  self.out.push(b'\x01')
-  write_u16_le(self.out, 0)
-  write_u16_le(self.out, 0xFFFF)
+  self.inner.finish()
 }
 
 ///|
@@ -316,325 +210,6 @@ pub fn compress(
   stream.finish() |> ignore
   out
 }
-
-// ---- Static Huffman + LZ77 (P1) -------------------------------------------
-
-///|
-priv enum Token {
-  Lit(Byte)
-  Match(Int, Int) // (len, dist)
-}
-
-///|
-const MIN_MATCH_LEN : Int = 3
-
-///|
-const MAX_MATCH_LEN : Int = 258
-
-///|
-const DICT_SIZE : Int = 32768
-
-///|
-const HASH_BITS : Int = 15
-
-///|
-const HASH_SIZE : Int = 1 << HASH_BITS
-
-///|
-fn reverse_bits(v0 : UInt, n : Int) -> UInt {
-  let mut v = v0
-  let mut out : UInt = 0
-  for _ in 0..<n {
-    out = (out << 1) | (v & 1)
-    v = v >> 1
-  }
-  out
-}
-
-///|
-fn fixed_litlen(sym : Int) -> (UInt, Int) {
-  // Returns (reversed_code, bit_len).
-  if sym <= 143 {
-    (reverse_bits((sym + 48).reinterpret_as_uint(), 8), 8)
-  } else if sym <= 255 {
-    (reverse_bits((sym + 256).reinterpret_as_uint(), 9), 9)
-  } else if sym <= 279 {
-    (reverse_bits((sym - 256).reinterpret_as_uint(), 7), 7)
-  } else {
-    (reverse_bits((sym - 88).reinterpret_as_uint(), 8), 8)
-  }
-}
-
-///|
-fn fixed_dist(sym : Int) -> (UInt, Int) {
-  (reverse_bits(sym.reinterpret_as_uint(), 5), 5)
-}
-
-///|
-priv struct BitWriter {
-  out : Array[Byte]
-  mut bitbuf : UInt
-  mut bits : Int
-}
-
-///|
-fn BitWriter::new(out : Array[Byte]) -> BitWriter {
-  BitWriter::{ out, bitbuf: 0, bits: 0 }
-}
-
-///|
-fn BitWriter::write_bits(self : BitWriter, v0 : UInt, n0 : Int) -> Unit {
-  let mut v = v0
-  let mut n = n0
-  while n > 0 {
-    // DEFLATE writes bits least-significant bit first.
-    self.bitbuf = self.bitbuf | ((v & 1) << self.bits)
-    self.bits = self.bits + 1
-    if self.bits == 8 {
-      self.out.push(byte_of_u(self.bitbuf & 0xFF))
-      self.bitbuf = 0
-      self.bits = 0
-    }
-    v = v >> 1
-    n = n - 1
-  }
-}
-
-///|
-fn BitWriter::write_code(self : BitWriter, code : UInt, n : Int) -> Unit {
-  self.write_bits(code, n)
-}
-
-///|
-fn BitWriter::align_to_byte(self : BitWriter) -> Unit {
-  if self.bits != 0 {
-    self.out.push(byte_of_u(self.bitbuf & 0xFF))
-    self.bitbuf = 0
-    self.bits = 0
-  }
-}
-
-///|
-fn hash3(b : Bytes, i : Int) -> Int {
-  // Simple 3-byte hash, compatible with HASH_BITS=15.
-  let b0 = b[i].to_int()
-  let b1 = b[i + 1].to_int()
-  let b2 = b[i + 2].to_int()
-  ((b0 << 10) ^ (b1 << 5) ^ b2) & (HASH_SIZE - 1)
-}
-
-///|
-fn find_match(
-  input : Bytes,
-  pos : Int,
-  head : Array[Int],
-  prev : Array[Int],
-  max_probes : Int,
-) -> (Int, Int) {
-  let end = input.length()
-  if pos + MIN_MATCH_LEN > end {
-    return (0, 0)
-  }
-  let h = hash3(input, pos)
-  let mut p = head[h]
-  let mut best_len = 0
-  let mut best_dist = 0
-  let mut probes = 0
-  while p != -1 && probes < max_probes {
-    let dist = pos - p
-    if dist > DICT_SIZE {
-      break
-    }
-    if dist <= 0 {
-      p = prev[p & (DICT_SIZE - 1)]
-      continue
-    }
-    let mut l = 0
-    while l < MAX_MATCH_LEN &&
-          pos + l < end &&
-          p + l < end &&
-          input[p + l] == input[pos + l] {
-      l = l + 1
-    }
-    if l > best_len {
-      best_len = l
-      best_dist = dist
-      if l == MAX_MATCH_LEN {
-        break
-      }
-    }
-    probes = probes + 1
-    p = prev[p & (DICT_SIZE - 1)]
-  }
-  if best_len >= MIN_MATCH_LEN {
-    (best_len, best_dist)
-  } else {
-    (0, 0)
-  }
-}
-
-///|
-fn max_probes_for_level(level : CompressionLevel) -> Int {
-  // Ported from `yazi/src/encode.rs` (`CompressionLevel::to_raw` + `NUM_PROBES`).
-  let raw = match level {
-    NoCompression => 0
-    BestSpeed => 1
-    Default => 6
-    BestSize => 9
-    Specific(n) => {
-      let v = n.reinterpret_as_int()
-      if v <= 0 {
-        0
-      } else if v >= 10 {
-        10
-      } else {
-        v
-      }
-    }
-  }
-  let probes = [0, 1, 6, 32, 16, 32, 128, 256, 512, 768, 1500]
-  probes[raw]
-}
-
-///|
-fn tokenize_lz77(input : Bytes, level : CompressionLevel) -> Array[Token] {
-  let out : Array[Token] = []
-  let n = input.length()
-  let head : Array[Int] = []
-  for _ in 0..<HASH_SIZE {
-    head.push(-1)
-  }
-  let prev : Array[Int] = []
-  for _ in 0..<DICT_SIZE {
-    prev.push(-1)
-  }
-  let max_probes = max_probes_for_level(level)
-  let mut i = 0
-  while i < n {
-    let (mlen, mdist) = find_match(input, i, head, prev, max_probes)
-    // Insert the current position after matching, so it can't match itself.
-    if i + 2 < n {
-      let h = hash3(input, i)
-      prev[i & (DICT_SIZE - 1)] = head[h]
-      head[h] = i
-    }
-    if mlen >= MIN_MATCH_LEN {
-      out.push(Token::Match(mlen, mdist))
-      // Insert the rest of the match for better compression.
-      let mut j = 1
-      while j < mlen && i + j + 2 < n {
-        let h = hash3(input, i + j)
-        prev[(i + j) & (DICT_SIZE - 1)] = head[h]
-        head[h] = i + j
-        j = j + 1
-      }
-      i = i + mlen
-    } else {
-      out.push(Token::Lit(input[i]))
-      i = i + 1
-    }
-  }
-  out
-}
-
-///|
-fn len_code(len : Int) -> (Int, UInt, Int) {
-  // Returns (symbol, extra_value, extra_bits).
-  //
-  // RFC1951: Table 3 (length codes 257..285).
-  let bases = [
-    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67,
-    83, 99, 115, 131, 163, 195, 227, 258,
-  ]
-  let extra = [
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5,
-    5, 5, 0,
-  ]
-  for i in 0..<bases.length() {
-    let base = bases[i]
-    let eb = extra[i]
-    let max = base + ((1 << eb) - 1)
-    if len <= max {
-      return (257 + i, (len - base).reinterpret_as_uint(), eb)
-    }
-  }
-  (285, 0, 0)
-}
-
-///|
-fn dist_code(dist : Int) -> (Int, UInt, Int) {
-  // Returns (symbol, extra_value, extra_bits).
-  //
-  // RFC1951: Table 4 (distance codes 0..29).
-  let bases = [
-    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769,
-    1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
-  ]
-  let extra = [
-    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11,
-    11, 12, 12, 13, 13,
-  ]
-  for i in 0..<bases.length() {
-    let base = bases[i]
-    let eb = extra[i]
-    let max = base + ((1 << eb) - 1)
-    if dist <= max {
-      return (i, (dist - base).reinterpret_as_uint(), eb)
-    }
-  }
-  (0, 0, 0)
-}
-
-///|
-fn write_deflate_static_huffman(
-  input : Bytes,
-  out : Array[Byte],
-  level : CompressionLevel,
-) -> Unit {
-  let tokens = tokenize_lz77(input, level)
-  let bw = BitWriter::new(out)
-  // BFINAL=1, BTYPE=01 (static Huffman)
-  bw.write_bits(1, 1)
-  bw.write_bits(1, 2)
-  for t in tokens {
-    match t {
-      Token::Lit(b) => {
-        let (code, n) = fixed_litlen(b.to_int())
-        bw.write_code(code, n)
-      }
-      Token::Match(len, dist) => {
-        let (lsym, lextra, lextra_bits) = len_code(len)
-        let (lcode, ln) = fixed_litlen(lsym)
-        bw.write_code(lcode, ln)
-        if lextra_bits != 0 {
-          bw.write_bits(lextra, lextra_bits)
-        }
-        let (dsym, dextra, dextra_bits) = dist_code(dist)
-        let (dcode, dn) = fixed_dist(dsym)
-        bw.write_code(dcode, dn)
-        if dextra_bits != 0 {
-          bw.write_bits(dextra, dextra_bits)
-        }
-      }
-    }
-  }
-  // End-of-block (256)
-  let (eob, eobn) = fixed_litlen(256)
-  bw.write_code(eob, eobn)
-  bw.align_to_byte()
-}
-
-// ---- Stored block deflate --------------------------------------------------
-
-///|
-fn write_u16_le(out : Array[Byte], v : UInt) -> Unit {
-  out.push((v & 0xFF).reinterpret_as_int().to_byte())
-  out.push(((v >> 8) & 0xFF).reinterpret_as_int().to_byte())
-}
-
-///|
-// Stored blocks are byte-aligned; we encode the 3-bit header as a whole byte
-// (`bfinal` in bit0, `btype=00` in bit1..2, rest zeros).
 
 // ---- Tests -----------------------------------------------------------------
 
@@ -662,8 +237,49 @@ fn generate_bytes() -> Bytes {
 }
 
 ///|
-test "compress/decompress (raw) roundtrip via stored blocks" {
+test "compress/decompress (raw) roundtrip" {
   let input = generate_bytes()
+  let compressed = compress(input, Format::Raw, CompressionLevel::Default)
+  let (decompressed, _) = decompress(Bytes::from_array(compressed), Format::Raw)
+  inspect(bytes_eq(input, decompressed), content="true")
+}
+
+///|
+test "compress/decompress (raw) roundtrip (NoCompression)" {
+  let input = generate_bytes()
+  let encoder = Encoder::new()
+  encoder.set_format(Format::Raw)
+  encoder.set_level(CompressionLevel::NoCompression)
+  let out : Array[Byte] = []
+  let stream = encoder.stream_into_vec(out)
+  stream.write(input)
+  stream.finish() |> ignore
+  let (decompressed, _) = decompress(Bytes::from_array(out), Format::Raw)
+  inspect(bytes_eq(input, decompressed), content="true")
+}
+
+///|
+test "compress/decompress (raw) roundtrip (Static strategy)" {
+  let input = generate_bytes()
+  let encoder = Encoder::new()
+  encoder.set_format(Format::Raw)
+  encoder.set_level(CompressionLevel::Default)
+  encoder.set_strategy(CompressionStrategy::Static)
+  let out : Array[Byte] = []
+  let stream = encoder.stream_into_vec(out)
+  stream.write(input)
+  stream.finish() |> ignore
+  let (decompressed, _) = decompress(Bytes::from_array(out), Format::Raw)
+  inspect(bytes_eq(input, decompressed), content="true")
+}
+
+///|
+test "compress/decompress (raw) roundtrip (no matches expected)" {
+  let a : Array[Byte] = []
+  for i in 0..<256 {
+    a.push(i.to_byte())
+  }
+  let input = Bytes::from_array(a)
   let compressed = compress(input, Format::Raw, CompressionLevel::Default)
   let (decompressed, _) = decompress(Bytes::from_array(compressed), Format::Raw)
   inspect(bytes_eq(input, decompressed), content="true")
