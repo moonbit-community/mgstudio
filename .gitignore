@@ -1,13 +1,6 @@
 bevy
-rapier
 .DS_Store
 AGENTS.md
 .private/
 .codex
-/cosmic-text/
-/swash/
-/zeno/
-/yazi/
-/fontations/
-mgstudio-cosmic/target/
-mgstudio-swash/target/
+
