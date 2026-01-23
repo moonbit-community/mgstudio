@@ -526,6 +526,38 @@ extern "js" fn write_texture(
   #| }
 
 ///|
+extern "js" fn write_texture_region(
+  queue : @js.Any,
+  texture : @js.Any,
+  data : @js.Any,
+  width : Int,
+  height : Int,
+  x : Int,
+  y : Int,
+) -> Unit =
+  #| (queue, texture, data, width, height, x, y) => {
+  #|   const bytesPerRow = width * 4
+  #|   const aligned = bytesPerRow % 256 === 0
+  #|     ? bytesPerRow
+  #|     : Math.ceil(bytesPerRow / 256) * 256
+  #|   let upload = data
+  #|   if (aligned !== bytesPerRow) {
+  #|     upload = new Uint8Array(aligned * height)
+  #|     for (let row = 0; row < height; row += 1) {
+  #|       const srcStart = row * bytesPerRow
+  #|       const dstStart = row * aligned
+  #|       upload.set(data.subarray(srcStart, srcStart + bytesPerRow), dstStart)
+  #|     }
+  #|   }
+  #|   queue.writeTexture(
+  #|     { texture, origin: { x, y } },
+  #|     upload,
+  #|     { bytesPerRow: aligned },
+  #|     [width, height, 1],
+  #|   )
+  #| }
+
+///|
 extern "js" fn create_image_bitmap(blob : @js.Any) -> @js.Promise[@js.Any] =
   #| (blob) => createImageBitmap(blob, { premultiplyAlpha: "none", colorSpaceConversion: "none" })
 
@@ -536,6 +568,84 @@ extern "js" fn response_blob(response : @js.Any) -> @js.Promise[@js.Any] =
 ///|
 extern "js" fn response_text(response : @js.Any) -> @js.Promise[String] =
   #| (response) => response.text()
+
+///|
+extern "js" fn load_font_face(
+  family : String,
+  url : String,
+) -> @js.Promise[@js.Any] =
+  #| (family, url) => {
+  #|   const face = new FontFace(family, `url(${url})`)
+  #|   return face.load().then(() => {
+  #|     document.fonts.add(face)
+  #|     return face
+  #|   })
+  #| }
+
+///|
+extern "js" fn rasterize_glyph(
+  family : String,
+  font_size : Double,
+  codepoint : Int,
+  smoothing : Bool,
+) -> @js.Any =
+  #| (() => {
+  #|   let canvas = null
+  #|   let ctx = null
+  #|   const ensure = () => {
+  #|     if (!canvas) {
+  #|       if (typeof OffscreenCanvas !== "undefined") {
+  #|         canvas = new OffscreenCanvas(1, 1)
+  #|       } else {
+  #|         canvas = document.createElement("canvas")
+  #|       }
+  #|     }
+  #|     if (!ctx) {
+  #|       ctx = canvas.getContext("2d")
+  #|     }
+  #|     return ctx
+  #|   }
+  #|   return (family, fontSize, codepoint, smoothing) => {
+  #|     const context = ensure()
+  #|     if (!context) {
+  #|       return null
+  #|     }
+  #|     const size = Math.max(1, Number(fontSize) || 16)
+  #|     const text = String.fromCodePoint(Number(codepoint) || 0)
+  #|     const fontFamily = family && family.length ? family : "sans-serif"
+  #|     const font = `${size}px "${fontFamily}"`
+  #|     context.font = font
+  #|     context.textBaseline = "alphabetic"
+  #|     context.textAlign = "left"
+  #|     const metrics = context.measureText(text)
+  #|     const left = Math.ceil(metrics.actualBoundingBoxLeft || 0)
+  #|     const right = Math.ceil(
+  #|       metrics.actualBoundingBoxRight || metrics.width || 0,
+  #|     )
+  #|     const ascent = Math.ceil(metrics.actualBoundingBoxAscent || size)
+  #|     const descent = Math.ceil(metrics.actualBoundingBoxDescent || 0)
+  #|     const width = Math.max(1, left + right)
+  #|     const height = Math.max(1, ascent + descent)
+  #|     canvas.width = width
+  #|     canvas.height = height
+  #|     context.clearRect(0, 0, width, height)
+  #|     context.font = font
+  #|     context.textBaseline = "alphabetic"
+  #|     context.textAlign = "left"
+  #|     context.imageSmoothingEnabled = !!smoothing
+  #|     context.fillStyle = "white"
+  #|     context.fillText(text, left, ascent)
+  #|     const imageData = context.getImageData(0, 0, width, height)
+  #|     const data = new Uint8Array(imageData.data.buffer.slice(0))
+  #|     return {
+  #|       width,
+  #|       height,
+  #|       offsetX: left,
+  #|       offsetY: ascent,
+  #|       data,
+  #|     }
+  #|   }
+  #| })()
 
 ///|
 struct PendingTexture {
@@ -572,6 +682,14 @@ struct AssetsState {
   shader_paths : @js.Any
   loading_shaders : @js.Any
   mut next_shader_id : Int
+  mut next_font_id : Int
+  fonts : @js.Any
+  loading_fonts : @js.Any
+  mut next_glyph_id : Int
+  glyphs : @js.Any
+  mut next_folder_id : Int
+  folders : @js.Any
+  mut folder_events : Array[Int]
 }
 
 ///|
@@ -642,6 +760,14 @@ fn new_state() -> State {
       shader_paths: new_map(),
       loading_shaders: new_set(),
       next_shader_id: 1,
+      next_font_id: 1,
+      fonts: new_map(),
+      loading_fonts: new_set(),
+      next_glyph_id: 1,
+      glyphs: new_map(),
+      next_folder_id: 1,
+      folders: new_map(),
+      folder_events: [],
     },
     input: InputState::{
       pressed: new_set(),
@@ -1104,7 +1230,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
       @webgpu.buffer_usage_uniform(),
       @webgpu.buffer_usage_copy_dst(),
     )
-    let uniform_desc = @webgpu.buffer_descriptor(64, uniform_usage)
+    let uniform_desc = @webgpu.buffer_descriptor(80, uniform_usage)
     let uniform_buffer = device.create_buffer(uniform_desc.to_js())
     let fallback_size = 64
     let texture_usage = @webgpu.combine_flags(
@@ -1593,6 +1719,30 @@ fn draw_sprite(
   b : Double,
   a : Double,
 ) -> Unit {
+  draw_sprite_uv(
+    state, texture_id, x, y, rotation, scale_x, scale_y, r, g, b, a, 0.0, 0.0, 1.0,
+    1.0,
+  )
+}
+
+///|
+fn draw_sprite_uv(
+  state : State,
+  texture_id : Int,
+  x : Double,
+  y : Double,
+  rotation : Double,
+  scale_x : Double,
+  scale_y : Double,
+  r : Double,
+  g : Double,
+  b : Double,
+  a : Double,
+  uv_min_x : Double,
+  uv_min_y : Double,
+  uv_max_x : Double,
+  uv_max_y : Double,
+) -> Unit {
   if !ensure_pass_ready(state) {
     return
   }
@@ -1610,9 +1760,23 @@ fn draw_sprite(
       state.gpu.current_pass_info is Some(info) {
       let tex_width : Double = entry_value._get("width").cast()
       let tex_height : Double = entry_value._get("height").cast()
+      let raw_uv_scale_x = uv_max_x - uv_min_x
+      let raw_uv_scale_y = uv_max_y - uv_min_y
+      let uv_scale_x = if raw_uv_scale_x <= 0 { 1.0 } else { raw_uv_scale_x }
+      let uv_scale_y = if raw_uv_scale_y <= 0 { 1.0 } else { raw_uv_scale_y }
+      let region_width = tex_width * uv_scale_x
+      let region_height = tex_height * uv_scale_y
       let base_size = 128.0
-      let tex_scale_x = if tex_width > 0 { tex_width / base_size } else { 1 }
-      let tex_scale_y = if tex_height > 0 { tex_height / base_size } else { 1 }
+      let tex_scale_x = if region_width > 0 {
+        region_width / base_size
+      } else {
+        1
+      }
+      let tex_scale_y = if region_height > 0 {
+        region_height / base_size
+      } else {
+        1
+      }
       let sprite_scale_x = scale_x * tex_scale_x
       let sprite_scale_y = scale_y * tex_scale_y
       let safe_scale = if info.cam_scale == 0 { 1.0 } else { info.cam_scale }
@@ -1647,6 +1811,10 @@ fn draw_sprite(
         g,
         b,
         a,
+        uv_min_x,
+        uv_min_y,
+        uv_scale_x,
+        uv_scale_y,
       ])
       if state.gpu.pipeline is Some(pipeline) &&
         state.gpu.vertex_buffer is Some(vertex_buffer) {
@@ -1718,6 +1886,10 @@ fn draw_mesh(
       g,
       b,
       a,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
     ])
     if state.gpu.mesh_pipeline is Some(mesh_pipeline) &&
       state.gpu.mesh_bind_group is Some(mesh_bind_group) {
@@ -1986,6 +2158,215 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     })
     id
   })
+  let asset_load_font = @js.from_fn1(fn(path) {
+    let id = state.assets.next_font_id
+    state.assets.next_font_id = id + 1
+    let path_text = coerce_asset_path(path)
+    if path_text == "" {
+      return id
+    }
+    let url = resolve_asset_url(@js.any(path_text)) catch {
+      err => {
+        let message = "Font load error: " + err.to_string()
+        console_error(@js.any(message))
+        dispatch_asset_error(message)
+        ""
+      }
+    }
+    if url == "" {
+      return id
+    }
+    let family = "mgstudio-font-" + id.to_string()
+    let entry = @js.from_entries([
+      ("id", @js.any(id)),
+      ("family", @js.any(family)),
+      ("loaded", @js.any(false)),
+    ])
+    map_set(state.assets.fonts, @js.any(id), entry)
+    set_add(state.assets.loading_fonts, @js.any(id))
+    @js.run_async(async fn() noraise {
+      let result = load_font_face(family, url).wait() catch {
+        err => {
+          let message = "Font load error: " + err.to_string()
+          console_error(@js.any(message))
+          dispatch_asset_error(message)
+          js_null()
+        }
+      }
+      if !host_is_nullish(result) {
+        entry._set("loaded", @js.any(true)) |> ignore
+      }
+      set_delete(state.assets.loading_fonts, @js.any(id)) |> ignore
+      result |> ignore
+    })
+    id
+  })
+  let font_rasterize_glyph = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let font_id = to_int(arg_number(args, 0, -1))
+      let font_size = arg_number(args, 1, 16)
+      let codepoint = to_int(arg_number(args, 2, 0))
+      let smoothing = arg_number(args, 3, 1) != 0
+      let entry = map_get(state.assets.fonts, @js.any(font_id))
+      if host_is_nullish(entry) {
+        dispatch_asset_error("Font rasterize error: font id not found")
+        return ""
+      }
+      let family = any_to_string(entry._get("family"))
+      let result = rasterize_glyph(family, font_size, codepoint, smoothing)
+      if host_is_nullish(result) {
+        dispatch_asset_error("Font rasterize error: rasterizer unavailable")
+        return ""
+      }
+      let glyph_id = state.assets.next_glyph_id
+      state.assets.next_glyph_id = glyph_id + 1
+      let width = to_int(number_or(result._get("width"), 0))
+      let height = to_int(number_or(result._get("height"), 0))
+      let offset_x = to_int(number_or(result._get("offsetX"), 0))
+      let offset_y = to_int(number_or(result._get("offsetY"), 0))
+      let data = result._get("data")
+      let glyph_entry = @js.from_entries([
+        ("width", @js.any(width)),
+        ("height", @js.any(height)),
+        ("offsetX", @js.any(offset_x)),
+        ("offsetY", @js.any(offset_y)),
+        ("data", data),
+      ])
+      map_set(state.assets.glyphs, @js.any(glyph_id), glyph_entry)
+      glyph_id.to_string() +
+      "," +
+      width.to_string() +
+      "," +
+      height.to_string() +
+      "," +
+      offset_x.to_string() +
+      "," +
+      offset_y.to_string()
+    }),
+  )
+  let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
+    let id = to_int(number_or(texture_id, -1))
+    let entry = map_get(state.gpu.textures, @js.any(id))
+    if host_is_nullish(entry) {
+      return
+    }
+    let nearest = number_or(sampler_kind, 0) != 0
+    let sampler = create_sampler(state, nearest)
+    if sampler is Some(sampler_value) {
+      entry._set("sampler", sampler_value.as_any()) |> ignore
+      entry._set("bindGroup", js_null()) |> ignore
+      ensure_bind_group_for_texture(state, entry)
+    }
+  })
+  let asset_create_dynamic_texture = @js.from_fn3(fn(width, height, nearest) {
+    if state.gpu.device is None {
+      throw_error("GPU device not ready")
+      return 0
+    }
+    ensure_pipeline_resources(state)
+    let id = state.gpu.next_texture_id
+    state.gpu.next_texture_id = id + 1
+    map_set(
+      state.assets.texture_paths,
+      @js.any(id),
+      @js.any("<dynamic-texture>"),
+    )
+    let width_value = number_or(width, 1)
+    let height_value = number_or(height, 1)
+    let safe_width = if width_value > 0 { to_int(width_value) } else { 1 }
+    let safe_height = if height_value > 0 { to_int(height_value) } else { 1 }
+    if state.gpu.device is Some(device) {
+      let texture_usage = @webgpu.combine_flags(
+        @webgpu.combine_flags(
+          @webgpu.texture_usage_texture_binding(),
+          @webgpu.texture_usage_copy_dst(),
+        ),
+        @webgpu.texture_usage_render_attachment(),
+      )
+      let texture_desc = @webgpu.texture_descriptor(
+        @webgpu.texture_size(safe_width, safe_height),
+        @webgpu.TextureFormat::Rgba8Unorm,
+        texture_usage,
+      )
+      let texture = device.create_texture(texture_desc.to_js())
+      let sampler = create_sampler(state, number_or(nearest, 0) != 0)
+      if sampler is Some(sampler_value) {
+        let entry = @js.from_entries([
+          ("id", @js.any(id)),
+          ("texture", texture.as_any()),
+          ("view", texture.create_view().as_any()),
+          ("sampler", sampler_value.as_any()),
+          ("bindGroup", js_null()),
+          ("width", @js.any(safe_width)),
+          ("height", @js.any(safe_height)),
+        ])
+        map_set(state.gpu.textures, @js.any(id), entry)
+        ensure_bind_group_for_texture(state, entry)
+      }
+    }
+    id
+  })
+  let asset_update_texture_region = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let texture_id = to_int(arg_number(args, 0, -1))
+      let x = to_int(arg_number(args, 1, 0))
+      let y = to_int(arg_number(args, 2, 0))
+      let width = to_int(arg_number(args, 3, 0))
+      let height = to_int(arg_number(args, 4, 0))
+      let glyph_id = to_int(arg_number(args, 5, -1))
+      let texture_entry = map_get(state.gpu.textures, @js.any(texture_id))
+      if host_is_nullish(texture_entry) {
+        dispatch_asset_error("Texture update error: texture id not found")
+        return
+      }
+      let glyph_entry = map_get(state.assets.glyphs, @js.any(glyph_id))
+      if host_is_nullish(glyph_entry) {
+        dispatch_asset_error("Texture update error: glyph id not found")
+        return
+      }
+      let glyph_width = to_int(number_or(glyph_entry._get("width"), 0))
+      let glyph_height = to_int(number_or(glyph_entry._get("height"), 0))
+      let target_width = if width > 0 { width } else { glyph_width }
+      let target_height = if height > 0 { height } else { glyph_height }
+      if target_width <= 0 || target_height <= 0 {
+        return
+      }
+      if state.gpu.queue is Some(queue) {
+        let data = glyph_entry._get("data")
+        write_texture_region(
+          queue.as_any(),
+          texture_entry._get("texture"),
+          data,
+          target_width,
+          target_height,
+          x,
+          y,
+        )
+      }
+    }),
+  )
+  let asset_load_folder = @js.from_fn1(fn(_path) {
+    let id = state.assets.next_folder_id
+    state.assets.next_folder_id = id + 1
+    map_set(state.assets.folders, @js.any(id), new_array())
+    state.assets.folder_events.push(3)
+    state.assets.folder_events.push(id)
+    id
+  })
+  let asset_poll_loaded_folder_events = @js.from_fn0(fn() {
+    let events = state.assets.folder_events
+    state.assets.folder_events = []
+    events
+  })
+  let asset_get_loaded_folder_handles = @js.from_fn1(fn(folder_id) {
+    let id = to_int(number_or(folder_id, -1))
+    let entry = map_get(state.assets.folders, @js.any(id))
+    if host_is_nullish(entry) {
+      new_array()
+    } else {
+      entry.cast()
+    }
+  })
   let gpu_create_render_target = @js.from_fn3(fn(width, height, nearest) {
     if state.gpu.device is None {
       throw_error("GPU device not ready")
@@ -2136,6 +2517,27 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       )
     }),
   )
+  let gpu_draw_sprite_uv = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_sprite_uv(
+        state,
+        to_int(arg_number(args, 0, 0)),
+        arg_number(args, 1, 0),
+        arg_number(args, 2, 0),
+        arg_number(args, 3, 0),
+        arg_number(args, 4, 1),
+        arg_number(args, 5, 1),
+        arg_number(args, 6, 1),
+        arg_number(args, 7, 1),
+        arg_number(args, 8, 1),
+        arg_number(args, 9, 1),
+        arg_number(args, 10, 0),
+        arg_number(args, 11, 0),
+        arg_number(args, 12, 1),
+        arg_number(args, 13, 1),
+      )
+    }),
+  )
   let gpu_draw_mesh = wrap_variadic(
     @js.from_fn1(fn(args) {
       draw_mesh(
@@ -2231,12 +2633,21 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("gpu_configure_surface", gpu_configure_surface),
     ("asset_load_texture", asset_load_texture),
     ("asset_load_wgsl", asset_load_wgsl),
+    ("asset_load_font", asset_load_font),
+    ("font_rasterize_glyph", font_rasterize_glyph),
+    ("asset_set_texture_sampler", asset_set_texture_sampler),
+    ("asset_create_dynamic_texture", asset_create_dynamic_texture),
+    ("asset_update_texture_region", asset_update_texture_region),
+    ("asset_load_folder", asset_load_folder),
+    ("asset_poll_loaded_folder_events", asset_poll_loaded_folder_events),
+    ("asset_get_loaded_folder_handles", asset_get_loaded_folder_handles),
     ("gpu_create_render_target", gpu_create_render_target),
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),
     ("gpu_begin_frame", gpu_begin_frame),
     ("gpu_begin_pass", gpu_begin_pass),
     ("gpu_draw_sprite", gpu_draw_sprite),
+    ("gpu_draw_sprite_uv", gpu_draw_sprite_uv),
     ("gpu_draw_mesh", gpu_draw_mesh),
     ("gpu_draw_gizmo_line", gpu_draw_gizmo_line),
     ("gpu_end_pass", gpu_end_pass),

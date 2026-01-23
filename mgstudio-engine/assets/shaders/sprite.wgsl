@@ -22,6 +22,7 @@ struct TransformData {
   view : vec4<f32>,
   scale : vec4<f32>,
   color : vec4<f32>,
+  uv : vec4<f32>,
 };
 
 @group(0) @binding(0) var samp : sampler;
@@ -57,7 +58,7 @@ fn vs_main(
     view_pos.y * u_transform.scale.y
   );
   out.position = vec4<f32>(ndc, 0.0, 1.0);
-  out.uv = uv;
+  out.uv = u_transform.uv.xy + uv * u_transform.uv.zw;
   return out;
 }
 

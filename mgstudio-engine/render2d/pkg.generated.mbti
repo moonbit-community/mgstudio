@@ -1,11 +1,11 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/render2d"
 
-import(
-  "Milky2018/mgstudio/app"
-  "Milky2018/mgstudio/asset"
-  "Milky2018/mgstudio/math"
-)
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/math",
+}
 
 // Values
 pub fn gizmo_config() -> GizmoConfig
@@ -14,11 +14,15 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn render2d_camera_system() -> Unit
 
+pub fn render2d_clear_overlay_sprites() -> Unit
+
 pub fn render2d_create_render_target(Int, Int, Bool) -> @asset.Handle[@asset.Image]
 
 pub fn render2d_debug_log_primary_camera() -> Unit
 
 pub fn render2d_plugin(@app.App) -> @app.App
+
+pub fn render2d_push_sprite_uv(@asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
 pub fn render2d_reset() -> Unit
 

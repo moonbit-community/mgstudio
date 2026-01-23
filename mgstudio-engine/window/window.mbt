@@ -214,6 +214,24 @@ pub fn host_gpu_draw_sprite(
 ) -> Unit = "mgstudio_host" "gpu_draw_sprite"
 
 ///|
+pub fn host_gpu_draw_sprite_uv(
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  uv_min_x : Float,
+  uv_min_y : Float,
+  uv_max_x : Float,
+  uv_max_y : Float,
+) -> Unit = "mgstudio_host" "gpu_draw_sprite_uv"
+
+///|
 pub fn host_gpu_draw_mesh(
   mesh_id : Int,
   x : Float,

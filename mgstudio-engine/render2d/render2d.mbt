@@ -330,6 +330,8 @@ priv struct SpriteInstance {
   color : Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
 }
 
 ///|
@@ -373,13 +375,14 @@ priv struct RenderState {
   mut primary_sprite : Int
   mut primary_camera : Int
   sprites : Array[SpriteInstance]
+  extra_sprites : Array[SpriteInstance]
   cameras : Array[CameraInstance]
   meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
 }
 
 ///|
-let render_state : Ref[RenderState] = @ref.new(RenderState::{
+let render_state : Ref[RenderState] = Ref::new(RenderState::{
   draw_enabled: false,
   next_sprite_id: 0,
   next_camera_id: 0,
@@ -387,10 +390,21 @@ let render_state : Ref[RenderState] = @ref.new(RenderState::{
   primary_sprite: -1,
   primary_camera: -1,
   sprites: [],
+  extra_sprites: [],
   cameras: [],
   meshes: [],
   render_targets: [],
 })
+
+///|
+fn default_uv_min() -> @math.Vec2 {
+  @math.Vec2::new(0.0F, 0.0F)
+}
+
+///|
+fn default_uv_max() -> @math.Vec2 {
+  @math.Vec2::new(1.0F, 1.0F)
+}
 
 ///|
 pub fn render2d_create_render_target(
@@ -428,6 +442,8 @@ pub fn render2d_spawn_sprite(bundle : SpriteBundle) -> SpriteHandle {
     color: bundle.sprite.color,
     texture: bundle.texture,
     layers: bundle.layers,
+    uv_min: default_uv_min(),
+    uv_max: default_uv_max(),
   })
   render_state.val.primary_sprite = id
   SpriteHandle::{ id, }
@@ -477,6 +493,31 @@ pub fn render2d_spawn_mesh(bundle : Mesh2dBundle) -> MeshHandle {
     layers: bundle.layers,
   })
   MeshHandle::{ id, }
+}
+
+///|
+pub fn render2d_clear_overlay_sprites() -> Unit {
+  render_state.val.extra_sprites.clear()
+}
+
+///|
+pub fn render2d_push_sprite_uv(
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+) -> Unit {
+  render_state.val.extra_sprites.push(SpriteInstance::{
+    id: -1,
+    transform,
+    color,
+    texture,
+    layers,
+    uv_min,
+    uv_max,
+  })
 }
 
 ///|
@@ -821,6 +862,7 @@ pub fn render_execute_system() -> Unit {
     return
   }
   let sprites = render_state.val.sprites
+  let extra_sprites = render_state.val.extra_sprites
   let meshes = render_state.val.meshes
   for index in render2d_sorted_camera_indices() {
     let camera = cameras[index]
@@ -916,7 +958,7 @@ pub fn render_execute_system() -> Unit {
     for sprite in sprites {
       if sprite.layers.matches(camera.layers) {
         let transform = sprite.transform
-        @window.host_gpu_draw_sprite(
+        @window.host_gpu_draw_sprite_uv(
           sprite.texture.id(),
           transform.translation.x,
           transform.translation.y,
@@ -927,6 +969,10 @@ pub fn render_execute_system() -> Unit {
           sprite.color.g,
           sprite.color.b,
           sprite.color.a,
+          sprite.uv_min.x,
+          sprite.uv_min.y,
+          sprite.uv_max.x,
+          sprite.uv_max.y,
         )
       }
     }
@@ -947,10 +993,32 @@ pub fn render_execute_system() -> Unit {
         )
       }
     }
+    for sprite in extra_sprites {
+      if sprite.layers.matches(camera.layers) {
+        let transform = sprite.transform
+        @window.host_gpu_draw_sprite_uv(
+          sprite.texture.id(),
+          transform.translation.x,
+          transform.translation.y,
+          transform.rotation,
+          transform.scale.x,
+          transform.scale.y,
+          sprite.color.r,
+          sprite.color.g,
+          sprite.color.b,
+          sprite.color.a,
+          sprite.uv_min.x,
+          sprite.uv_min.y,
+          sprite.uv_max.x,
+          sprite.uv_max.y,
+        )
+      }
+    }
     gizmos_draw_lines(camera.layers)
     @window.host_gpu_end_pass()
   }
   gizmos_clear()
+  render_state.val.extra_sprites.clear()
 }
 
 ///|
@@ -962,6 +1030,7 @@ pub fn render2d_reset() -> Unit {
   render_state.val.primary_sprite = -1
   render_state.val.primary_camera = -1
   render_state.val.sprites.clear()
+  render_state.val.extra_sprites.clear()
   render_state.val.cameras.clear()
   render_state.val.meshes.clear()
   render_state.val.render_targets.clear()

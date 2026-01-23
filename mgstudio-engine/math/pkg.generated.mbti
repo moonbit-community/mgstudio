@@ -26,6 +26,15 @@ pub fn IVec2::new(Int, Int) -> Self
 pub fn IVec2::saturating_sub(Self, Self) -> Self
 pub fn IVec2::to_vec2(Self) -> Vec2
 
+pub struct Rect {
+  min : Vec2
+  max : Vec2
+}
+pub fn Rect::center(Self) -> Vec2
+pub fn Rect::contains(Self, Vec2) -> Bool
+pub fn Rect::new(Vec2, Vec2) -> Self
+pub fn Rect::size(Self) -> Vec2
+
 pub struct Transform {
   translation : Vec2
   rotation : Float
@@ -33,6 +42,25 @@ pub struct Transform {
 }
 pub fn Transform::identity() -> Self
 pub fn Transform::new(Vec2, Float, Vec2) -> Self
+
+pub struct URect {
+  min : UVec2
+  max : UVec2
+}
+pub fn URect::as_rect(Self) -> Rect
+pub fn URect::new(UVec2, UVec2) -> Self
+pub fn URect::size(Self) -> UVec2
+
+pub struct UVec2 {
+  x : Int
+  y : Int
+}
+pub fn UVec2::add(Self, Self) -> Self
+pub fn UVec2::new(Int, Int) -> Self
+pub fn UVec2::saturating_sub(Self, Self) -> Self
+pub fn UVec2::splat(Int) -> Self
+pub fn UVec2::to_vec2(Self) -> Vec2
+pub fn UVec2::zero() -> Self
 
 pub struct Vec2 {
   x : Float

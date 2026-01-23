@@ -160,10 +160,12 @@ fn pixel_grid_snap_update() -> Unit {
   if width <= 0 || height <= 0 {
     return
   }
-  let h_scale = Float::from_double(width.to_double()) /
-    Float::from_double(RES_WIDTH.to_double())
-  let v_scale = Float::from_double(height.to_double()) /
-    Float::from_double(RES_HEIGHT.to_double())
+  let scale_factor = @window.window_scale_factor()
+  let safe_scale = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+  let width_f = Float::from_double(width.to_double()) / safe_scale
+  let height_f = Float::from_double(height.to_double()) / safe_scale
+  let h_scale = width_f / Float::from_double(RES_WIDTH.to_double())
+  let v_scale = height_f / Float::from_double(RES_HEIGHT.to_double())
   let min_scale = if h_scale < v_scale { h_scale } else { v_scale }
   let rounded = pixel_grid_round_scale(min_scale)
   let scale_int = if rounded < 1 { 1 } else { rounded }

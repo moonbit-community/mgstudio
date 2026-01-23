@@ -5,5 +5,16 @@
   "repository": "",
   "license": "Apache-2.0",
   "keywords": [],
-  "description": ""
+  "description": "",
+  "deps": {
+    "Milky2018/mgstudio_zeno": {
+      "path": "../mgstudio_zeno"
+    },
+    "Milky2018/mgstudio_yazi": {
+      "path": "../mgstudio_yazi"
+    },
+    "Milky2018/mgstudio_skrifa": {
+      "path": "../mgstudio_skrifa"
+    }
+  }
 }

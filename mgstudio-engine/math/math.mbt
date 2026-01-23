@@ -35,6 +35,97 @@ pub fn IVec2::new(x : Int, y : Int) -> IVec2 {
 }
 
 ///|
+pub struct UVec2 {
+  x : Int
+  y : Int
+}
+
+///|
+pub fn UVec2::new(x : Int, y : Int) -> UVec2 {
+  UVec2::{ x, y }
+}
+
+///|
+pub fn UVec2::splat(value : Int) -> UVec2 {
+  UVec2::new(value, value)
+}
+
+///|
+pub fn UVec2::zero() -> UVec2 {
+  UVec2::splat(0)
+}
+
+///|
+pub fn UVec2::to_vec2(self : UVec2) -> Vec2 {
+  Vec2::new(
+    Float::from_double(self.x.to_double()),
+    Float::from_double(self.y.to_double()),
+  )
+}
+
+///|
+pub fn UVec2::add(self : UVec2, other : UVec2) -> UVec2 {
+  UVec2::new(self.x + other.x, self.y + other.y)
+}
+
+///|
+pub fn UVec2::saturating_sub(self : UVec2, other : UVec2) -> UVec2 {
+  let x = if self.x - other.x < 0 { 0 } else { self.x - other.x }
+  let y = if self.y - other.y < 0 { 0 } else { self.y - other.y }
+  UVec2::new(x, y)
+}
+
+///|
+pub struct URect {
+  min : UVec2
+  max : UVec2
+}
+
+///|
+pub fn URect::new(min : UVec2, max : UVec2) -> URect {
+  URect::{ min, max }
+}
+
+///|
+pub fn URect::size(self : URect) -> UVec2 {
+  UVec2::new(self.max.x - self.min.x, self.max.y - self.min.y)
+}
+
+///|
+pub fn URect::as_rect(self : URect) -> Rect {
+  Rect::new(self.min.to_vec2(), self.max.to_vec2())
+}
+
+///|
+pub struct Rect {
+  min : Vec2
+  max : Vec2
+}
+
+///|
+pub fn Rect::new(min : Vec2, max : Vec2) -> Rect {
+  Rect::{ min, max }
+}
+
+///|
+pub fn Rect::size(self : Rect) -> Vec2 {
+  Vec2::new(self.max.x - self.min.x, self.max.y - self.min.y)
+}
+
+///|
+pub fn Rect::center(self : Rect) -> Vec2 {
+  Vec2::new((self.min.x + self.max.x) / 2.0F, (self.min.y + self.max.y) / 2.0F)
+}
+
+///|
+pub fn Rect::contains(self : Rect, value : Vec2) -> Bool {
+  value.x >= self.min.x &&
+  value.y >= self.min.y &&
+  value.x <= self.max.x &&
+  value.y <= self.max.y
+}
+
+///|
 pub fn IVec2::add(self : IVec2, other : IVec2) -> IVec2 {
   IVec2::new(self.x + other.x, self.y + other.y)
 }

@@ -61,6 +61,29 @@ pub fn AssetServer::new() -> AssetServer {
 }
 
 ///|
+let asset_image_paths : Ref[Array[(String, Handle[Image])]] = Ref::new([])
+
+///|
+fn asset_register_image_path(path : String, handle : Handle[Image]) -> Unit {
+  asset_image_paths.val.push((path, handle))
+}
+
+///|
+pub fn AssetServer::get_handle(
+  _self : AssetServer,
+  path : String,
+) -> Handle[Image]? {
+  let count = asset_image_paths.val.length()
+  for i in 0..<count {
+    let entry = asset_image_paths.val[i]
+    if entry.0 == path {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
 let asset_default_nearest : Ref[Bool] = Ref::new(false)
 
 ///|
@@ -75,10 +98,29 @@ pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int = "mgstudio
 pub fn host_asset_load_wgsl(path : String) -> Int = "mgstudio_host" "asset_load_wgsl"
 
 ///|
+pub fn host_asset_create_dynamic_texture(
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> Int = "mgstudio_host" "asset_create_dynamic_texture"
+
+///|
+pub fn host_asset_update_texture_region(
+  texture_id : Int,
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+  glyph_id : Int,
+) -> Unit = "mgstudio_host" "asset_update_texture_region"
+
+///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
   let id = host_asset_load_texture(path, asset_default_nearest.val)
   self.paths.push(path)
-  Handle::new(id)
+  let handle = Handle::new(id)
+  asset_register_image_path(path, handle)
+  handle
 }
 
 ///|
@@ -88,7 +130,9 @@ pub fn AssetServer::load_nearest(
 ) -> Handle[Image] {
   let id = host_asset_load_texture(path, true)
   self.paths.push(path)
-  Handle::new(id)
+  let handle = Handle::new(id)
+  asset_register_image_path(path, handle)
+  handle
 }
 
 ///|
@@ -99,6 +143,32 @@ pub fn AssetServer::load_wgsl(
   let id = host_asset_load_wgsl(path)
   self.paths.push(path)
   Handle::new(id)
+}
+
+///|
+pub fn asset_create_dynamic_texture(
+  size : @math.UVec2,
+  nearest : Bool,
+) -> Handle[Image] {
+  let id = host_asset_create_dynamic_texture(size.x, size.y, nearest)
+  Handle::new(id)
+}
+
+///|
+pub fn asset_update_texture_region(
+  texture : Handle[Image],
+  rect : @math.URect,
+  glyph_id : Int,
+) -> Unit {
+  let size = rect.size()
+  host_asset_update_texture_region(
+    texture.id(),
+    rect.min.x,
+    rect.min.y,
+    size.x,
+    size.y,
+    glyph_id,
+  )
 }
 
 ///|

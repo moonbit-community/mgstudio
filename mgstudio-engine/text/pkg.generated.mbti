@@ -1,0 +1,276 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/text"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+}
+
+// Values
+pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
+
+pub fn font_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
+
+pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
+
+pub fn host_font_rasterize_glyph(Int, Float, Int, Int) -> String
+
+pub fn text_plugin(@app.App) -> @app.App
+
+pub fn text_render_system() -> Unit
+
+pub fn text_set_content(TextHandle, String) -> Unit
+
+pub fn text_spawn(Text2dBundle) -> TextHandle
+
+pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle
+
+pub fn text_update_system() -> Unit
+
+// Errors
+
+// Types and methods
+pub struct ComputedTextBlock {
+  buffer : CosmicBuffer
+  needs_rerender : Bool
+  entities : Array[TextEntity]
+}
+pub fn ComputedTextBlock::buffer(Self) -> CosmicBuffer
+pub fn ComputedTextBlock::default() -> Self
+pub fn ComputedTextBlock::entities(Self) -> Array[TextEntity]
+pub fn ComputedTextBlock::needs_rerender(Self) -> Bool
+
+pub struct CosmicBuffer {
+  text : String
+  spans : Array[TextSpanRange]
+  font_size : Float
+  line_height : Float
+  justify : Justify
+  linebreak : LineBreak
+  max_width : Float?
+  max_height : Float?
+}
+pub fn CosmicBuffer::default() -> Self
+
+pub struct FontAtlas {
+  dynamic_texture_atlas_builder : @asset.DynamicTextureAtlasBuilder
+  glyph_locations : Array[(GlyphCacheKey, GlyphAtlasLocation)]
+  texture_atlas : @asset.Handle[@asset.TextureAtlasLayout]
+  texture : @asset.Handle[@asset.Image]
+}
+pub fn FontAtlas::add_glyph(Self, GlyphCacheKey, GlyphRaster) -> Bool
+pub fn FontAtlas::get_glyph_index(Self, GlyphCacheKey) -> GlyphAtlasLocation?
+pub fn FontAtlas::has_glyph(Self, GlyphCacheKey) -> Bool
+pub fn FontAtlas::new(@math.UVec2, FontSmoothing) -> Self
+
+pub struct FontAtlasKey {
+  font_id : Int
+  font_size_bits : Int
+  font_smoothing : FontSmoothing
+}
+pub fn FontAtlasKey::new(@asset.Handle[@asset.Font], Float, FontSmoothing) -> Self
+
+pub struct FontAtlasSet {
+  entries : Array[FontAtlasSetEntry]
+}
+pub fn FontAtlasSet::default() -> Self
+pub fn FontAtlasSet::get(Self, FontAtlasKey) -> Array[FontAtlas]?
+pub fn FontAtlasSet::get_or_insert(Self, FontAtlasKey) -> Array[FontAtlas]
+pub fn FontAtlasSet::has_glyph(Self, GlyphCacheKey, FontAtlasKey) -> Bool
+
+pub struct FontAtlasSetEntry {
+  key : FontAtlasKey
+  atlases : Array[FontAtlas]
+}
+
+pub(all) enum FontSmoothing {
+  None
+  AntiAliased
+}
+
+pub struct GlyphAtlasInfo {
+  texture : @asset.Handle[@asset.Image]
+  texture_atlas : @asset.Handle[@asset.TextureAtlasLayout]
+  location : GlyphAtlasLocation
+}
+
+pub struct GlyphAtlasLocation {
+  glyph_index : Int
+  offset : @math.IVec2
+}
+
+pub struct GlyphCacheKey {
+  glyph_id : Int
+  subpixel_x : Int
+  subpixel_y : Int
+}
+pub fn GlyphCacheKey::new(Int, Int, Int) -> Self
+
+pub struct GlyphRaster {
+  id : Int
+  size : @math.UVec2
+  offset : @math.IVec2
+}
+
+pub(all) enum Justify {
+  Left
+  Center
+  Right
+  Justified
+}
+
+pub(all) enum LineBreak {
+  WordBoundary
+  AnyCharacter
+  WordOrCharacter
+  NoWrap
+}
+
+pub(all) enum LineHeight {
+  Px(Float)
+  RelativeToFont(Float)
+}
+pub fn LineHeight::default() -> Self
+pub fn LineHeight::eval(Self, Float) -> Float
+
+pub struct PositionedGlyph {
+  position : @math.Vec2
+  size : @math.Vec2
+  atlas_info : GlyphAtlasInfo
+  span_index : Int
+  line_index : Int
+  byte_index : Int
+  byte_length : Int
+}
+
+pub struct RunGeometry {
+  span_index : Int
+  bounds : @math.Rect
+  strikethrough_y : Float
+  strikethrough_thickness : Float
+  underline_y : Float
+  underline_thickness : Float
+}
+pub fn RunGeometry::strikethrough_position(Self) -> @math.Vec2
+pub fn RunGeometry::strikethrough_size(Self) -> @math.Vec2
+pub fn RunGeometry::underline_position(Self) -> @math.Vec2
+pub fn RunGeometry::underline_size(Self) -> @math.Vec2
+
+pub struct Text2d {
+  content : String
+}
+pub fn Text2d::new(String) -> Self
+
+pub struct Text2dBundle {
+  text : Text2d
+  font : TextFont
+  color : TextColor
+  layout : TextLayout
+  bounds : TextBounds
+  line_height : LineHeight
+  shadow : Text2dShadow?
+  transform : @math.Transform
+  layers : @render2d.RenderLayers
+}
+pub fn Text2dBundle::new(Text2d, TextFont, @math.Transform) -> Self
+pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @math.Transform, @render2d.RenderLayers) -> Self
+pub fn Text2dBundle::spawn(Self) -> TextHandle
+
+pub struct Text2dShadow {
+  offset : @math.Vec2
+  color : @render2d.Color
+}
+pub fn Text2dShadow::default() -> Self
+
+pub struct TextBounds {
+  width : Float?
+  height : Float?
+}
+pub fn TextBounds::default() -> Self
+pub fn TextBounds::new(Float, Float) -> Self
+pub fn TextBounds::new_horizontal(Float) -> Self
+pub fn TextBounds::new_vertical(Float) -> Self
+
+pub struct TextColor {
+  color : @render2d.Color
+}
+pub fn TextColor::default() -> Self
+pub fn TextColor::new(@render2d.Color) -> Self
+
+pub struct TextEntity {
+  id : Int
+  depth : Int
+  font_smoothing : FontSmoothing
+}
+
+pub struct TextFont {
+  font : @asset.Handle[@asset.Font]
+  font_size : Float
+  font_smoothing : FontSmoothing
+}
+pub fn TextFont::default() -> Self
+pub fn TextFont::with_font(Self, @asset.Handle[@asset.Font]) -> Self
+pub fn TextFont::with_font_size(Self, Float) -> Self
+pub fn TextFont::with_font_smoothing(Self, FontSmoothing) -> Self
+
+pub struct TextHandle {
+  id : Int
+}
+pub fn TextHandle::new(Int) -> Self
+
+pub struct TextLayout {
+  justify : Justify
+  linebreak : LineBreak
+}
+pub fn TextLayout::default() -> Self
+pub fn TextLayout::new(Justify, LineBreak) -> Self
+pub fn TextLayout::new_with_justify(Justify) -> Self
+pub fn TextLayout::new_with_linebreak(LineBreak) -> Self
+pub fn TextLayout::new_with_no_wrap() -> Self
+pub fn TextLayout::with_justify(Self, Justify) -> Self
+pub fn TextLayout::with_linebreak(Self, LineBreak) -> Self
+pub fn TextLayout::with_no_wrap(Self) -> Self
+
+pub struct TextLayoutInfo {
+  scale_factor : Float
+  glyphs : Array[PositionedGlyph]
+  run_geometry : Array[RunGeometry]
+  size : @math.Vec2
+}
+pub fn TextLayoutInfo::clear(Self) -> Self
+pub fn TextLayoutInfo::default() -> Self
+
+pub struct TextPipeline {
+}
+pub fn TextPipeline::default() -> Self
+
+pub struct TextSpan {
+  content : String
+}
+pub fn TextSpan::new(String) -> Self
+
+pub struct TextSpanBundle {
+  span : TextSpan
+  font : TextFont
+  color : TextColor
+  line_height : LineHeight
+}
+pub fn TextSpanBundle::new(TextSpan, TextFont) -> Self
+pub fn TextSpanBundle::spawn(Self, TextHandle) -> TextSpanHandle
+
+pub struct TextSpanHandle {
+  id : Int
+}
+pub fn TextSpanHandle::new(Int) -> Self
+
+pub struct TextSpanRange {
+  start : Int
+  length : Int
+}
+
+// Type aliases
+
+// Traits
+

@@ -1,7 +1,9 @@
 {
   "import": [
     "Milky2018/mgstudio/app",
+    "Milky2018/mgstudio/asset",
     "Milky2018/mgstudio/math",
+    "Milky2018/mgstudio/render2d",
     "moonbitlang/core/ref"
   ]
 }

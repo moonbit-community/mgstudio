@@ -3,31 +3,96 @@ package "Milky2018/mgstudio/asset"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/math",
 }
 
 // Values
+pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
+
+pub fn asset_create_dynamic_texture(@math.UVec2, Bool) -> Handle[Image]
+
+pub fn asset_events_for_loaded_folder() -> Array[AssetEvent[LoadedFolder]]
+
+pub fn asset_get_loaded_folder(Handle[LoadedFolder]) -> LoadedFolder?
+
+pub fn asset_get_texture_atlas_layout(Handle[TextureAtlasLayout]) -> TextureAtlasLayout?
+
 pub fn asset_plugin(@app.App) -> @app.App
 
 pub fn asset_plugin_nearest(@app.App) -> @app.App
 
 pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 
+pub fn asset_set_texture_atlas_layout(Handle[TextureAtlasLayout], TextureAtlasLayout) -> Bool
+
+pub fn asset_set_texture_sampler(Handle[Image], ImageSampler) -> Unit
+
 pub fn asset_system() -> Unit
+
+pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
+
+pub fn host_asset_create_dynamic_texture(Int, Int, Bool) -> Int
+
+pub fn host_asset_get_loaded_folder_handles(Int) -> String
+
+pub fn host_asset_load_folder(String) -> Int
+
+pub fn host_asset_load_font(String) -> Int
 
 pub fn host_asset_load_texture(String, Bool) -> Int
 
 pub fn host_asset_load_wgsl(String) -> Int
 
+pub fn host_asset_poll_loaded_folder_events() -> String
+
+pub fn host_asset_set_texture_sampler(Int, Int) -> Unit
+
+pub fn host_asset_update_texture_region(Int, Int, Int, Int, Int, Int) -> Unit
+
 // Errors
 
 // Types and methods
+pub(all) enum AssetEvent[T] {
+  Added(Handle[T])
+  Modified(Handle[T])
+  Removed(Handle[T])
+  LoadedWithDependencies(Handle[T])
+}
+
 pub struct AssetServer {
   paths : Array[String]
 }
+pub fn AssetServer::get_handle(Self, String) -> Handle[Image]?
 pub fn AssetServer::load(Self, String) -> Handle[Image]
+pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
+pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
 pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
 pub fn AssetServer::new() -> Self
+
+pub struct Assets[T] {
+  items : Array[T]
+}
+pub fn[T] Assets::add(Self[T], T) -> Handle[T]
+pub fn[T] Assets::get(Self[T], Handle[T]) -> T?
+pub fn[T] Assets::len(Self[T]) -> Int
+pub fn[T] Assets::new() -> Self[T]
+pub fn[T] Assets::set(Self[T], Handle[T], T) -> Bool
+
+pub struct DynamicTextureAtlasBuilder {
+  size : @math.UVec2
+  padding : Int
+  free_rects : Array[@math.URect]
+}
+pub fn DynamicTextureAtlasBuilder::add_texture(Self, TextureAtlasLayout, @math.UVec2) -> (Int, @math.URect)?
+pub fn DynamicTextureAtlasBuilder::new(@math.UVec2, Int) -> Self
+
+pub(all) enum DynamicTextureAtlasBuilderError {
+  FailedToAllocateSpace
+}
+
+pub struct Font {
+}
 
 pub struct Handle[T] {
   id : Int
@@ -43,10 +108,53 @@ pub struct Image {
 }
 pub fn Image::new(Int, Int, Bytes) -> Self
 
+pub(all) enum ImageSampler {
+  Linear
+  Nearest
+}
+
+pub struct LoadedFolder {
+  host_id : Int
+  handles : Array[Handle[Image]]
+}
+
 pub struct Shader {
   source : String
 }
 pub fn Shader::new(String) -> Self
+
+pub struct TextureAtlas {
+  layout : Handle[TextureAtlasLayout]
+  index : Int
+}
+pub fn TextureAtlas::texture_rect(Self, Assets[TextureAtlasLayout]) -> @math.URect?
+pub fn TextureAtlas::with_index(Self, Int) -> Self
+pub fn TextureAtlas::with_layout(Self, Handle[TextureAtlasLayout]) -> Self
+
+pub struct TextureAtlasBuilder {
+  padding : @math.UVec2
+  textures : Array[Handle[Image]]
+}
+pub fn TextureAtlasBuilder::add_texture(Self, Handle[Image]) -> Self
+pub fn TextureAtlasBuilder::build(Self) -> (TextureAtlasLayout, TextureAtlasSources, Handle[Image])
+pub fn TextureAtlasBuilder::default() -> Self
+pub fn TextureAtlasBuilder::padding(Self, @math.UVec2) -> Self
+
+pub struct TextureAtlasLayout {
+  size : @math.UVec2
+  textures : Array[@math.URect]
+}
+pub fn TextureAtlasLayout::add_texture(Self, @math.URect) -> Int
+pub fn TextureAtlasLayout::from_grid(@math.UVec2, Int, Int, padding? : @math.UVec2, offset? : @math.UVec2) -> Self
+pub fn TextureAtlasLayout::is_empty(Self) -> Bool
+pub fn TextureAtlasLayout::len(Self) -> Int
+pub fn TextureAtlasLayout::new_empty(@math.UVec2) -> Self
+
+pub struct TextureAtlasSources {
+  texture_ids : Array[(Handle[Image], Int)]
+}
+pub fn TextureAtlasSources::handle(Self, Handle[TextureAtlasLayout], Handle[Image]) -> TextureAtlas?
+pub fn TextureAtlasSources::texture_index(Self, Handle[Image]) -> Int?
 
 // Type aliases
 
