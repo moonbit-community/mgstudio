@@ -34,32 +34,39 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|     return `${value}`
   #|   }
   #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
-  #|   const isWasmArray =
-  #|     typeof WebAssembly === "object" &&
-  #|     typeof WebAssembly.Array === "function" &&
-  #|     value instanceof WebAssembly.Array
-  #|   const hasWasmArrayShape =
-  #|     typeof value === "object" &&
-  #|     typeof value.length === "number" &&
-  #|     typeof value.get === "function"
-  #|   if (isWasmArray || hasWasmArrayShape) {
-  #|     const len = value.length >>> 0
-  #|     if (len === 0) {
-  #|       return ""
-  #|     }
-  #|     let out = ""
-  #|     const CHUNK = 1024
-  #|     for (let i = 0; i < len; i += CHUNK) {
-  #|       const end = Math.min(len, i + CHUNK)
-  #|       const codes = new Array(end - i)
-  #|       for (let j = i; j < end; j += 1) {
-  #|         codes[j - i] = value.get(j) & 0xffff
+  #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
+  #|   try {
+  #|     if (typeof value === "object" && typeof value.get === "function") {
+  #|       let len = value.length
+  #|       if (typeof len === "function") {
+  #|         len = len.call(value)
   #|       }
-  #|       out += String.fromCharCode(...codes)
+  #|       len = Number(len)
+  #|       if (Number.isFinite(len) && len >= 0) {
+  #|         if (len === 0) {
+  #|           return ""
+  #|         }
+  #|         let out = ""
+  #|         const CHUNK = 1024
+  #|         for (let i = 0; i < len; i += CHUNK) {
+  #|           const end = Math.min(len, i + CHUNK)
+  #|           const codes = new Array(end - i)
+  #|           for (let j = i; j < end; j += 1) {
+  #|             codes[j - i] = value.get(j) & 0xffff
+  #|           }
+  #|           out += String.fromCharCode(...codes)
+  #|         }
+  #|         return out
+  #|       }
   #|     }
-  #|     return out
+  #|   } catch {
   #|   }
-  #|   return String(value)
+  #|   // Avoid crashing on GC objects that disallow primitive conversion.
+  #|   try {
+  #|     return String(value)
+  #|   } catch {
+  #|     return ""
+  #|   }
   #| }
 
 ///|
@@ -153,10 +160,16 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     if (
   #|       typeof current === "object" &&
   #|       current != null &&
-  #|       typeof current.length === "number" &&
   #|       typeof current.get === "function"
   #|     ) {
-  #|       const len = current.length >>> 0
+  #|       let len = current.length
+  #|       if (typeof len === "function") {
+  #|         len = len.call(current)
+  #|       }
+  #|       len = Number(len)
+  #|       if (!Number.isFinite(len) || len < 0) {
+  #|         break
+  #|       }
   #|       let out = ""
   #|       const CHUNK = 1024
   #|       for (let start = 0; start < len; start += CHUNK) {
