@@ -2204,6 +2204,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       height: pixel_height,
       scale_factor,
     })
+    init_input(state)
     bind_pointer_events(state, target)
     1
   })
