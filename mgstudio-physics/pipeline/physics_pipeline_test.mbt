@@ -197,10 +197,12 @@ test "joint step delta time 0" {
     .additional_mass(1.0F)
     .build()
   let h_dynamic = bodies.insert(rb_dynamic)
-  let joint = @dynamics.RevoluteJointBuilder::new()
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::new()
     .local_anchor1(@core.Vec2::new(0.0F, 1.0F))
     .local_anchor2(@core.Vec2::new(0.0F, -3.0F))
-    .build()
+    .build(),
+  )
   impulse_joints.insert(h_fixed, h_dynamic, joint, true) |> ignore
   let parameters = IntegrationParameters::default().with_dt(0.0F)
   let gravity = @core.Vec2::new(0.0F, -9.81F)

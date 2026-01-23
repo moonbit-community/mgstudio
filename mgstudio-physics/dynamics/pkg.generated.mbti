@@ -39,6 +39,17 @@ pub fn DVector::from_fn(Int, (Int) -> Float) -> Self
 pub fn DVector::len(Self) -> Int
 pub fn DVector::scale_in_place(Self, Float) -> Unit
 
+pub struct GenericJoint {
+  data : RevoluteJoint
+  contacts_enabled : Bool
+  mut enabled : JointEnabled
+  user_data : Int
+}
+pub fn GenericJoint::from_revolute(RevoluteJoint) -> Self
+pub fn GenericJoint::is_enabled(Self) -> Bool
+pub fn GenericJoint::set_enabled(Self, Bool) -> Self
+pub fn GenericJoint::set_enabled_by_attached_body(Self, Bool) -> Self
+
 pub struct Group {
   value : Int
 }
@@ -67,10 +78,9 @@ pub fn Group::none() -> Self
 pub fn Group::or(Self, Self) -> Self
 
 pub struct ImpulseJoint {
-  parent : RigidBodyHandle
-  child : RigidBodyHandle
-  joint : RevoluteJoint
-  mut enabled : JointEnabled
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  mut data : GenericJoint
   handle : ImpulseJointHandle
 }
 pub fn ImpulseJoint::is_enabled(Self) -> Bool
@@ -100,7 +110,7 @@ pub fn ImpulseJointSet::get(Self, ImpulseJointHandle) -> ImpulseJoint?
 pub fn ImpulseJointSet::get_mut(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::get_unknown_gen(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
 pub fn ImpulseJointSet::get_unknown_gen_mut(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
-pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> ImpulseJointHandle
+pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> ImpulseJointHandle
 pub fn ImpulseJointSet::is_empty(Self) -> Bool
 pub fn ImpulseJointSet::iter(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::iter_mut(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
@@ -112,6 +122,7 @@ pub fn ImpulseJointSet::new() -> Self
 pub fn ImpulseJointSet::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
 pub fn ImpulseJointSet::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
+pub fn ImpulseJointSet::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
 pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 

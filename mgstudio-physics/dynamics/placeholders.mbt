@@ -180,8 +180,11 @@ fn IslandManager::wake_up_body(
   }
   self.sync_body_state_generation(handle)
   if bodies.get_mut(handle) is Some(body) {
-    if !body.is_dynamic_or_kinematic() {
+    if body.is_fixed() {
       return
+    }
+    if body.activation.sleeping {
+      body.changes = body.changes.insert(RIGID_BODY_CHANGES_SLEEP)
     }
     body.activation = body.activation.wake_up(strong)
   } else {
@@ -417,18 +420,6 @@ fn IslandManager::island_id_for(
 }
 
 ///|
-fn is_dynamic_or_kinematic_body(
-  bodies : RigidBodySet,
-  handle : RigidBodyHandle,
-) -> Bool {
-  if bodies.get(handle) is Some(body) {
-    body.is_dynamic_or_kinematic()
-  } else {
-    false
-  }
-}
-
-///|
 fn truncate_handles(values : Array[RigidBodyHandle], len : Int) -> Unit {
   while values.length() > len {
     values.pop() |> ignore
@@ -442,13 +433,12 @@ fn IslandManager::push_contacting_bodies(
   contacts : ContactGraph,
   handle : RigidBodyHandle,
 ) -> Unit {
+  bodies |> ignore
   for i in 0..<contacts.pairs.length() {
     let pair = contacts.pairs[i]
-    if handle_equals(pair.0, handle) &&
-      is_dynamic_or_kinematic_body(bodies, pair.1) {
+    if handle_equals(pair.0, handle) {
       self.stack.push(pair.1)
-    } else if handle_equals(pair.1, handle) &&
-      is_dynamic_or_kinematic_body(bodies, pair.0) {
+    } else if handle_equals(pair.1, handle) {
       self.stack.push(pair.0)
     }
   }
@@ -462,22 +452,16 @@ fn IslandManager::push_linked_bodies(
   multibody_joints : MultibodyJointSet,
   handle : RigidBodyHandle,
 ) -> Unit {
+  bodies |> ignore
   let attached = impulse_joints.attached_enabled_joints(handle)
   for i in 0..<attached.length() {
     let joint = attached[i]
     let other = if handle_equals(joint.0, handle) { joint.1 } else { joint.0 }
-    if is_dynamic_or_kinematic_body(bodies, other) {
-      self.stack.push(other)
-    }
+    self.stack.push(other)
   }
-  if handle.id >= 0 && handle.id < multibody_joints.body_links.length() {
-    let attached = multibody_joints.bodies_attached_with_enabled_joint(handle)
-    for i in 0..<attached.length() {
-      let other = attached[i]
-      if is_dynamic_or_kinematic_body(bodies, other) {
-        self.stack.push(other)
-      }
-    }
+  let attached = multibody_joints.bodies_attached_with_enabled_joint(handle)
+  for i in 0..<attached.length() {
+    self.stack.push(attached[i])
   }
 }
 
@@ -529,8 +513,11 @@ pub fn IslandManager::wake_up(
   strong : Bool,
 ) -> Unit {
   if bodies.get_mut(handle) is Some(body) {
-    if !body.is_dynamic_or_kinematic() {
+    if body.is_fixed() {
       return
+    }
+    if body.activation.sleeping {
+      body.changes = body.changes.insert(RIGID_BODY_CHANGES_SLEEP)
     }
     body.activation = body.activation.wake_up(strong)
     let island_id = body.ids.active_island_id
@@ -645,7 +632,7 @@ pub fn IslandManager::rigid_body_updated(
 ) -> Unit {
   if bodies.get_mut(handle) is Some(body) {
     self.sync_body_state_generation(handle)
-    if !body.is_dynamic_or_kinematic() {
+    if body.is_fixed() {
       return
     }
     let island_id = body.ids.active_island_id
@@ -788,6 +775,7 @@ fn IslandManager::extract_sub_island(
         body.ids.active_set_id = new_index
         if sleeping {
           body.activation = body.activation.sleep()
+          body.vels = RigidBodyVelocity::zero()
         }
         if body.additional_solver_iterations > additional_solver_iterations {
           additional_solver_iterations = body.additional_solver_iterations
@@ -830,7 +818,6 @@ fn IslandManager::extract_sleeping_island(
   if bodies.get(sleep_root) is None {
     return 0
   }
-  self.sync_body_state_generation(sleep_root)
   if bodies.get_mut(sleep_root) is Some(root_body) {
     if !(root_body.activation.sleep_root_state
       is SleepRootState::TraversalPending) {
@@ -852,10 +839,9 @@ fn IslandManager::extract_sleeping_island(
       let mut visited_count = 0
       while self.stack.pop() is Some(handle) {
         if bodies.get_mut(handle) is Some(body) {
-          if !body.is_dynamic_or_kinematic() {
+          if body.is_fixed() {
             continue
           }
-          self.sync_body_state_generation(handle)
           if body.ids.active_set_timestamp == self.traversal_timestamp {
             continue
           }
@@ -866,12 +852,6 @@ fn IslandManager::extract_sleeping_island(
           } else {
             self.stack.clear()
             return visited_count
-          }
-          if self.island_id_for(handle) is Some(other_island_id) {
-            if other_island_id != island_id {
-              self.stack.clear()
-              return visited_count
-            }
           }
           self.push_contacting_bodies(bodies, contacts, handle)
           self.push_linked_bodies(
@@ -885,6 +865,7 @@ fn IslandManager::extract_sleeping_island(
           let handle = active_island.bodies[i]
           if bodies.get_mut(handle) is Some(body) {
             body.activation = body.activation.sleep()
+            body.vels = RigidBodyVelocity::zero()
           }
         }
         self.remove_from_awake_list(island_id)
@@ -987,10 +968,9 @@ fn IslandManager::incremental_split(
           let len_before = new_island_bodies.length()
           while self.stack.pop() is Some(handle) {
             if bodies.get_mut(handle) is Some(body) {
-              if !body.is_dynamic_or_kinematic() {
+              if body.is_fixed() {
                 continue
               }
-              self.sync_body_state_generation(handle)
               if body.ids.active_set_timestamp == self.traversal_timestamp {
                 continue
               }
@@ -1053,27 +1033,25 @@ pub fn IslandManager::update_islands(
     }
     if bodies.get_mut(handle) is Some(body) {
       self.sync_body_state_generation(handle)
-      if body.enabled && body.is_dynamic_or_kinematic() {
-        let linvel = body.vels.linvel
-        let sq_linvel = linvel.x * linvel.x + linvel.y * linvel.y
-        let angvel = body.vels.angvel
-        let sq_angvel = angvel * angvel
-        body.activation = body.activation.update_energy(
-          body.body_type,
-          length_unit,
-          sq_linvel,
-          sq_angvel,
-          dt,
-        )
-        let eligible = body.activation.is_eligible_for_sleep()
-        if eligible {
-          if body.activation.sleep_root_state is SleepRootState::Unknown {
-            self.traversal_candidates.push(SleepCandidate::{ handle, })
-            body.activation.sleep_root_state = SleepRootState::TraversalPending
-          }
-        } else {
-          body.activation.sleep_root_state = SleepRootState::Unknown
+      let linvel = body.vels.linvel
+      let sq_linvel = linvel.x * linvel.x + linvel.y * linvel.y
+      let angvel = body.vels.angvel
+      let sq_angvel = angvel * angvel
+      body.activation = body.activation.update_energy(
+        body.body_type,
+        length_unit,
+        sq_linvel,
+        sq_angvel,
+        dt,
+      )
+      let eligible = body.activation.is_eligible_for_sleep()
+      if eligible {
+        if body.activation.sleep_root_state is SleepRootState::Unknown {
+          self.traversal_candidates.push(SleepCandidate::{ handle, })
+          body.activation.sleep_root_state = SleepRootState::TraversalPending
         }
+      } else {
+        body.activation.sleep_root_state = SleepRootState::Unknown
       }
     }
   }
@@ -1100,16 +1078,15 @@ pub fn IslandManager::update_islands(
 
 ///|
 pub struct ImpulseJoint {
-  parent : RigidBodyHandle
-  child : RigidBodyHandle
-  joint : RevoluteJoint
-  mut enabled : JointEnabled
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  mut data : GenericJoint
   handle : ImpulseJointHandle
 }
 
 ///|
 pub fn ImpulseJoint::is_enabled(self : ImpulseJoint) -> Bool {
-  self.enabled is JointEnabled::Enabled
+  self.data.is_enabled()
 }
 
 ///|
@@ -1117,16 +1094,7 @@ pub fn ImpulseJoint::set_enabled(
   self : ImpulseJoint,
   enabled : Bool,
 ) -> ImpulseJoint {
-  match self.enabled {
-    JointEnabled::Enabled | JointEnabled::DisabledByAttachedBody =>
-      if !enabled {
-        self.enabled = JointEnabled::Disabled
-      }
-    JointEnabled::Disabled =>
-      if enabled {
-        self.enabled = JointEnabled::Enabled
-      }
-  }
+  self.data = self.data.set_enabled(enabled)
   self
 }
 
@@ -1135,13 +1103,7 @@ pub fn ImpulseJoint::set_enabled_by_attached_body(
   self : ImpulseJoint,
   attached_enabled : Bool,
 ) -> ImpulseJoint {
-  if attached_enabled {
-    if self.enabled is JointEnabled::DisabledByAttachedBody {
-      self.enabled = JointEnabled::Enabled
-    }
-  } else if self.enabled is JointEnabled::Enabled {
-    self.enabled = JointEnabled::DisabledByAttachedBody
-  }
+  self.data = self.data.set_enabled_by_attached_body(attached_enabled)
   self
 }
 
@@ -1202,6 +1164,62 @@ pub fn ImpulseJointHandle::into_raw_parts(
 ///|
 pub fn ImpulseJointHandle::invalid() -> ImpulseJointHandle {
   ImpulseJointHandle::new(-1, -1)
+}
+
+///|
+pub struct GenericJoint {
+  data : RevoluteJoint
+  contacts_enabled : Bool
+  mut enabled : JointEnabled
+  user_data : Int
+}
+
+///|
+pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
+  {
+    data: joint,
+    contacts_enabled: true,
+    enabled: JointEnabled::Enabled,
+    user_data: 0,
+  }
+}
+
+///|
+pub fn GenericJoint::is_enabled(self : GenericJoint) -> Bool {
+  self.enabled is JointEnabled::Enabled
+}
+
+///|
+pub fn GenericJoint::set_enabled(
+  self : GenericJoint,
+  enabled : Bool,
+) -> GenericJoint {
+  match self.enabled {
+    JointEnabled::Enabled | JointEnabled::DisabledByAttachedBody =>
+      if !enabled {
+        self.enabled = JointEnabled::Disabled
+      }
+    JointEnabled::Disabled =>
+      if enabled {
+        self.enabled = JointEnabled::Enabled
+      }
+  }
+  self
+}
+
+///|
+pub fn GenericJoint::set_enabled_by_attached_body(
+  self : GenericJoint,
+  attached_enabled : Bool,
+) -> GenericJoint {
+  if attached_enabled {
+    if self.enabled is JointEnabled::DisabledByAttachedBody {
+      self.enabled = JointEnabled::Enabled
+    }
+  } else if self.enabled is JointEnabled::Enabled {
+    self.enabled = JointEnabled::DisabledByAttachedBody
+  }
+  self
 }
 
 ///|
@@ -1492,24 +1510,24 @@ fn ImpulseJointSet::remove_node(self : ImpulseJointSet, node_id : Int) -> Unit {
 ///|
 pub fn ImpulseJointSet::insert(
   self : ImpulseJointSet,
-  parent : RigidBodyHandle,
-  child : RigidBodyHandle,
-  joint : RevoluteJoint,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+  joint : GenericJoint,
   wake_up : Bool,
 ) -> ImpulseJointHandle {
   let handle = self.allocate_joint_handle()
-  if parent.id < 0 || child.id < 0 {
+  if body1.id < 0 || body2.id < 0 {
     return handle
   }
-  let node1 = self.ensure_graph_node(parent)
-  let node2 = self.ensure_graph_node(child)
-  let impulse_joint = ImpulseJoint::{
-    parent,
-    child,
-    joint,
-    enabled: JointEnabled::Enabled,
-    handle,
+  let node1 = self.ensure_graph_node(body1)
+  let node2 = self.ensure_graph_node(body2)
+  let joint_data = GenericJoint::{
+    data: joint.data,
+    contacts_enabled: joint.contacts_enabled,
+    enabled: joint.enabled,
+    user_data: joint.user_data,
   }
+  let impulse_joint = ImpulseJoint::{ body1, body2, data: joint_data, handle }
   let edge_id = self.graph_edges.length()
   self.graph_edges.push(JointGraphEdge::{ node1, node2, joint: impulse_joint })
   self.adjacency[node1].push(edge_id)
@@ -1518,10 +1536,10 @@ pub fn ImpulseJointSet::insert(
   }
   self.joint_edge_ids[handle.id] = edge_id
   if wake_up {
-    push_unique_handle(self.to_wake_up, parent)
-    push_unique_handle(self.to_wake_up, child)
+    push_unique_handle(self.to_wake_up, body1)
+    push_unique_handle(self.to_wake_up, body2)
   }
-  push_unique_pair(self.to_join, (parent, child))
+  push_unique_pair(self.to_join, (body1, body2))
   handle
 }
 
@@ -1599,10 +1617,31 @@ pub fn ImpulseJointSet::get_mut(
   }
   let joint = self.graph_edges[edge_id].joint
   if wake_up {
-    push_unique_handle(self.to_wake_up, joint.parent)
-    push_unique_handle(self.to_wake_up, joint.child)
+    push_unique_handle(self.to_wake_up, joint.body1)
+    push_unique_handle(self.to_wake_up, joint.body2)
   }
   Some(joint)
+}
+
+///|
+pub fn ImpulseJointSet::set_enabled(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  enabled : Bool,
+) -> Unit {
+  if !self.is_handle_valid(handle) {
+    return
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return
+  }
+  let edge = self.graph_edges[edge_id]
+  self.graph_edges[edge_id] = JointGraphEdge::{
+    node1: edge.node1,
+    node2: edge.node2,
+    joint: edge.joint.set_enabled(enabled),
+  }
 }
 
 ///|
@@ -1664,8 +1703,8 @@ pub fn ImpulseJointSet::remove(
     self.joint_generations[handle.id] = self.joint_generations[handle.id] + 1
     self.free_handles.push(handle.id)
     if wake_up {
-      push_unique_handle(self.to_wake_up, joint.parent)
-      push_unique_handle(self.to_wake_up, joint.child)
+      push_unique_handle(self.to_wake_up, joint.body1)
+      push_unique_handle(self.to_wake_up, joint.body2)
     }
     Some(joint)
   } else {
@@ -1717,7 +1756,7 @@ pub fn ImpulseJointSet::map_attached_joints_mut(
       let edge_id = edges[i]
       if edge_id >= 0 && edge_id < self.graph_edges.length() {
         let joint = self.graph_edges[edge_id].joint
-        f(joint.parent, joint.child, joint.handle, joint)
+        f(joint.body1, joint.body2, joint.handle, joint)
       }
     }
   }
@@ -1737,7 +1776,7 @@ pub fn ImpulseJointSet::attached_joints(
       let edge_id = edges[i]
       if edge_id >= 0 && edge_id < self.graph_edges.length() {
         let joint = self.graph_edges[edge_id].joint
-        result.push((joint.parent, joint.child, joint.handle, joint))
+        result.push((joint.body1, joint.body2, joint.handle, joint))
       }
     }
     result
@@ -1804,8 +1843,8 @@ pub fn ImpulseJointSet::select_active_interactions(
   }
   for i in 0..<self.graph_edges.length() {
     let joint = self.graph_edges[i].joint
-    if bodies.get(joint.parent) is Some(body1) &&
-      bodies.get(joint.child) is Some(body2) {
+    if bodies.get(joint.body1) is Some(body1) &&
+      bodies.get(joint.body2) is Some(body2) {
       if !joint.is_enabled() {
         continue
       }

@@ -1758,6 +1758,40 @@ pub(all) enum JointEnabled {
 
 ///|
 #declaration_only
+pub type GenericJoint
+
+///|
+#declaration_only
+pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
+  ...
+}
+
+///|
+#declaration_only
+pub fn GenericJoint::is_enabled(self : GenericJoint) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn GenericJoint::set_enabled(
+  self : GenericJoint,
+  enabled : Bool,
+) -> GenericJoint {
+  ...
+}
+
+///|
+#declaration_only
+pub fn GenericJoint::set_enabled_by_attached_body(
+  self : GenericJoint,
+  attached_enabled : Bool,
+) -> GenericJoint {
+  ...
+}
+
+///|
+#declaration_only
 pub type ImpulseJointSet
 
 ///|
@@ -1861,9 +1895,9 @@ pub fn ImpulseJointSet::take_to_join(
 #declaration_only
 pub fn ImpulseJointSet::insert(
   self : ImpulseJointSet,
-  parent : RigidBodyHandle,
-  child : RigidBodyHandle,
-  joint : RevoluteJoint,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+  joint : GenericJoint,
   wake_up : Bool,
 ) -> ImpulseJointHandle {
   ...
