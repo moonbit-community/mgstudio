@@ -146,7 +146,14 @@ pub fn gpu() -> GPU {
 
 ///|
 extern "js" fn preferred_canvas_format_raw() -> String =
-  #| () => navigator.gpu.getPreferredCanvasFormat()
+  #| () => {
+  #|   const gpu = navigator.gpu
+  #|   if (!gpu || typeof gpu.getPreferredCanvasFormat !== "function") {
+  #|     return ""
+  #|   }
+  #|   const format = gpu.getPreferredCanvasFormat()
+  #|   return typeof format === "string" ? format : ""
+  #| }
 
 ///|
 pub fn preferred_canvas_format() -> String {

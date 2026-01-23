@@ -307,7 +307,8 @@ fn main {
         @js.log(@js.any(err))
         let doc = @dom.document()
         let set_status = create_status_overlay(doc)
-        set_status("Error: " + err.to_string())
+        // `err.to_string()` can fail when the caught value is a JS exception.
+        set_status("Error: " + any_to_string(@js.any(err)))
       }
     }
     result |> ignore
