@@ -7,8 +7,6 @@
   ],
   "link": {
     "wasm-gc": {
-      "use-js-builtin-string": true,
-      "imported-string-constants": "_",
       "exports": [
         "main",
         "run_sprite",

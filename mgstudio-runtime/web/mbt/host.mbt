@@ -23,7 +23,44 @@ extern "js" fn throw_error(message : String) -> Unit =
 
 ///|
 extern "js" fn any_to_string(value : @js.Any) -> String =
-  #| (value) => String(value)
+  #| (value) => {
+  #|   if (value == null) {
+  #|     return ""
+  #|   }
+  #|   if (typeof value === "string") {
+  #|     return value
+  #|   }
+  #|   if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
+  #|     return `${value}`
+  #|   }
+  #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
+  #|   const isWasmArray =
+  #|     typeof WebAssembly === "object" &&
+  #|     typeof WebAssembly.Array === "function" &&
+  #|     value instanceof WebAssembly.Array
+  #|   const hasWasmArrayShape =
+  #|     typeof value === "object" &&
+  #|     typeof value.length === "number" &&
+  #|     typeof value.get === "function"
+  #|   if (isWasmArray || hasWasmArrayShape) {
+  #|     const len = value.length >>> 0
+  #|     if (len === 0) {
+  #|       return ""
+  #|     }
+  #|     let out = ""
+  #|     const CHUNK = 1024
+  #|     for (let i = 0; i < len; i += CHUNK) {
+  #|       const end = Math.min(len, i + CHUNK)
+  #|       const codes = new Array(end - i)
+  #|       for (let j = i; j < end; j += 1) {
+  #|         codes[j - i] = value.get(j) & 0xffff
+  #|       }
+  #|       out += String.fromCharCode(...codes)
+  #|     }
+  #|     return out
+  #|   }
+  #|   return String(value)
+  #| }
 
 ///|
 extern "js" fn host_is_nullish(value : @js.Any) -> Bool =
@@ -112,6 +149,25 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|   for (let i = 0; i < 4; i += 1) {
   #|     if (typeof current === "string") {
   #|       return current
+  #|     }
+  #|     if (
+  #|       typeof current === "object" &&
+  #|       current != null &&
+  #|       typeof current.length === "number" &&
+  #|       typeof current.get === "function"
+  #|     ) {
+  #|       const len = current.length >>> 0
+  #|       let out = ""
+  #|       const CHUNK = 1024
+  #|       for (let start = 0; start < len; start += CHUNK) {
+  #|         const end = Math.min(len, start + CHUNK)
+  #|         const codes = new Array(end - start)
+  #|         for (let j = start; j < end; j += 1) {
+  #|           codes[j - start] = current.get(j) & 0xffff
+  #|         }
+  #|         out += String.fromCharCode(...codes)
+  #|       }
+  #|       return out
   #|     }
   #|     if (typeof current === "number" || typeof current === "bigint" || typeof current === "boolean") {
   #|       return `${current}`
@@ -2068,7 +2124,10 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
   let input_mouse_x = @js.from_fn0(fn() { state.input.mouse_x })
   let input_mouse_y = @js.from_fn0(fn() { state.input.mouse_y })
   let input_has_cursor = @js.from_fn0(fn() { state.input.has_cursor })
-  let debug_string = @js.from_fn1(fn(value) { console_error(value) })
+  let debug_string = @js.from_fn1(fn(value) {
+    console_error(@js.any(any_to_string(value)))
+    0
+  })
   let gpu_request_device = @js.from_fn0(fn() {
     if state.gpu.device is None {
       throw_error("WebGPU device not initialized. Call create_host() first.")

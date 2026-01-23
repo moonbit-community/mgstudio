@@ -188,10 +188,9 @@ async fn load_wasm(imports : @js.Any) -> @webassembly.WebAssemblyInstance {
     fail("Failed to fetch runner.wasm: " + response.status.to_string())
   }
   let fallback = response.clone()
-  let wasm_options = @js.from_entries([
-    ("builtins", @js.any(["js-string"])),
-    ("importedStringConstants", @js.any("_")),
-  ])
+  // Keep Web instantiation options empty to match the Native (wasmoon) ABI.
+  // In particular, we do NOT enable the JS builtin string mode here.
+  let wasm_options = @js.new_object()
   let instance = try {
     let promise : @js.Promise[@js.Any] = instantiate_streaming(
       response.as_any(),
