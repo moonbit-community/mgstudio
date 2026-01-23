@@ -106,6 +106,7 @@ pub fn Mask::inspect(Self, (Format, UInt, UInt) -> Unit) -> Self
 pub fn Mask::new(&PathData) -> Self
 pub fn Mask::offset(Self, Vector) -> Self
 pub fn Mask::origin(Self, Origin) -> Self
+pub fn Mask::render(Self) -> (Array[Byte], Placement)
 pub fn Mask::render_into(Self, Array[Byte], pitch? : Int) -> Placement
 pub fn Mask::render_offset(Self, Vector) -> Self
 pub fn Mask::size(Self, UInt, UInt) -> Self

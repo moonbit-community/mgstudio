@@ -319,3 +319,23 @@ pub fn Mask::render_into(
   }
   placement
 }
+
+///|
+/// Renders the mask into a newly allocated buffer.
+pub fn Mask::render(self : Mask) -> (Array[Byte], Placement) {
+  let buffer : Array[Byte] = []
+  let (_, placement) = self.placement()
+  let size = self.format.buffer_size(placement.width, placement.height)
+  for _i in 0..<size {
+    buffer.push(0)
+  }
+  let pitch = placement.width.reinterpret_as_int() *
+    (match self.format {
+      Format::Alpha => 1
+      _ => 4
+    })
+  // Reuse the existing rendering path; `offset` is recomputed in `render_into`
+  // but should stay consistent with `placement()`.
+  let placement2 = self.render_into(buffer, pitch~)
+  (buffer, placement2)
+}

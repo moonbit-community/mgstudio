@@ -72,3 +72,23 @@ test "Mask::render_into draws a filled triangle (subpixel rgb)" {
   let b = buffer[i + 2].to_int()
   inspect(r + g + b > 0, content="true")
 }
+
+///|
+test "Mask::render allocates correct buffer size" {
+  let data = PointsVerbsPathData::new(
+    [Point::new(1.0, 1.0), Point::new(6.0, 1.0), Point::new(3.5, 6.0)],
+    [Verb::MoveTo, Verb::LineTo, Verb::LineTo, Verb::Close],
+  )
+  let (buf_a, placement_a) = Mask::new(data)
+    .format(Format::Alpha)
+    .size(8U, 8U)
+    .render()
+  inspect(placement_a.width, content="8")
+  inspect(buf_a.length(), content="64")
+  let (buf_s, placement_s) = Mask::new(data)
+    .format(Format::Subpixel)
+    .size(8U, 8U)
+    .render()
+  inspect(placement_s.height, content="8")
+  inspect(buf_s.length(), content="256")
+}
