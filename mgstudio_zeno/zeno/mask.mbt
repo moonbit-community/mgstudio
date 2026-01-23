@@ -240,81 +240,136 @@ pub fn Mask::render_into(
     _ => Fill::NonZero
   }
   let shift = offset + self.render_offset
-
-  // Subpixel formats are TODO; for now only alpha writes to buffer.
   let maybe_scratch = self.scratch
-  let storage = match maybe_scratch {
-    Some(s) => s.val.render_storage()
-    None => HeapStorage::new()
+  fn write_channel(
+    buffer : Array[Byte],
+    channel : Int,
+    row_offset : Int,
+    x : Int,
+    count : Int,
+    coverage : Byte,
+  ) -> Unit {
+    let mut j = row_offset + x * 4 + channel
+    for _i in 0..<count {
+      buffer[j] = coverage
+      j = j + 4
+    }
   }
-  let ras = Rasterizer::new(storage)
-  if is_subpx {
-    fn write_channel(
-      buffer : Array[Byte],
-      channel : Int,
-      row_offset : Int,
-      x : Int,
-      count : Int,
-      coverage : Byte,
-    ) -> Unit {
-      let mut j = row_offset + x * 4 + channel
-      for _i in 0..<count {
-        buffer[j] = coverage
-        j = j + 4
+
+  match maybe_scratch {
+    Some(s) => {
+      let ras = Rasterizer::new(s.val.render_storage())
+      if is_subpx {
+        ras.rasterize_write(
+          shift + subpx[0],
+          placement.width,
+          placement.height,
+          fn(r) {
+            s.val.apply(self.data, self.style, self.transform, r) |> ignore
+          },
+          fill,
+          pitch_value,
+          y_up,
+          fn(row_offset, x, count, coverage) {
+            write_channel(buffer, 0, row_offset, x, count, coverage)
+          },
+        )
+        ras.rasterize_write(
+          shift + subpx[1],
+          placement.width,
+          placement.height,
+          fn(r) {
+            s.val.apply(self.data, self.style, self.transform, r) |> ignore
+          },
+          fill,
+          pitch_value,
+          y_up,
+          fn(row_offset, x, count, coverage) {
+            write_channel(buffer, 1, row_offset, x, count, coverage)
+          },
+        )
+        ras.rasterize_write(
+          shift + subpx[2],
+          placement.width,
+          placement.height,
+          fn(r) {
+            s.val.apply(self.data, self.style, self.transform, r) |> ignore
+          },
+          fill,
+          pitch_value,
+          y_up,
+          fn(row_offset, x, count, coverage) {
+            write_channel(buffer, 2, row_offset, x, count, coverage)
+          },
+        )
+      } else {
+        ras.rasterize(
+          shift,
+          placement.width,
+          placement.height,
+          fn(r) {
+            s.val.apply(self.data, self.style, self.transform, r) |> ignore
+          },
+          fill,
+          buffer,
+          pitch_value,
+          y_up,
+        )
+      }
+      s.val.set_render_storage(ras.storage())
+    }
+    None => {
+      let ras = Rasterizer::new(HeapStorage::new())
+      if is_subpx {
+        ras.rasterize_write(
+          shift + subpx[0],
+          placement.width,
+          placement.height,
+          fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
+          fill,
+          pitch_value,
+          y_up,
+          fn(row_offset, x, count, coverage) {
+            write_channel(buffer, 0, row_offset, x, count, coverage)
+          },
+        )
+        ras.rasterize_write(
+          shift + subpx[1],
+          placement.width,
+          placement.height,
+          fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
+          fill,
+          pitch_value,
+          y_up,
+          fn(row_offset, x, count, coverage) {
+            write_channel(buffer, 1, row_offset, x, count, coverage)
+          },
+        )
+        ras.rasterize_write(
+          shift + subpx[2],
+          placement.width,
+          placement.height,
+          fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
+          fill,
+          pitch_value,
+          y_up,
+          fn(row_offset, x, count, coverage) {
+            write_channel(buffer, 2, row_offset, x, count, coverage)
+          },
+        )
+      } else {
+        ras.rasterize(
+          shift,
+          placement.width,
+          placement.height,
+          fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
+          fill,
+          buffer,
+          pitch_value,
+          y_up,
+        )
       }
     }
-
-    ras.rasterize_write(
-      shift + subpx[0],
-      placement.width,
-      placement.height,
-      fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
-      fill,
-      pitch_value,
-      y_up,
-      fn(row_offset, x, count, coverage) {
-        write_channel(buffer, 0, row_offset, x, count, coverage)
-      },
-    )
-    ras.rasterize_write(
-      shift + subpx[1],
-      placement.width,
-      placement.height,
-      fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
-      fill,
-      pitch_value,
-      y_up,
-      fn(row_offset, x, count, coverage) {
-        write_channel(buffer, 1, row_offset, x, count, coverage)
-      },
-    )
-    ras.rasterize_write(
-      shift + subpx[2],
-      placement.width,
-      placement.height,
-      fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
-      fill,
-      pitch_value,
-      y_up,
-      fn(row_offset, x, count, coverage) {
-        write_channel(buffer, 2, row_offset, x, count, coverage)
-      },
-    )
-  } else {
-    ras.rasterize(
-      shift,
-      placement.width,
-      placement.height,
-      fn(r) { apply(self.data, self.style, self.transform, r) |> ignore },
-      fill,
-      buffer,
-      pitch_value,
-      y_up,
-    )
-  }
-  match maybe_scratch {
-    Some(s) => s.val.set_render_storage(ras.storage())
-    None => ()
   }
   placement
 }
