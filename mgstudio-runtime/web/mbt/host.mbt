@@ -40,6 +40,23 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|   if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
   #|     return `${value}`
   #|   }
+  #|   // Fallback: some browsers expose wasm-gc references as fully opaque JS objects
+  #|   // (often with a null prototype). In that case, ask the guest to push UTF-16
+  #|   // code units back to the host.
+  #|   try {
+  #|     if (typeof value === "object" && value != null && Object.getPrototypeOf(value) === null) {
+  #|       const exports = globalThis.__mgstudio_wasm_exports
+  #|       const fn = exports && exports.mgstudio_host_string_to_js
+  #|       if (typeof fn === "function") {
+  #|         globalThis.__mgstudio_string_sink_buf = ""
+  #|         fn(value)
+  #|         const out = globalThis.__mgstudio_string_sink_buf || ""
+  #|         globalThis.__mgstudio_string_sink_buf = ""
+  #|         return out
+  #|       }
+  #|     }
+  #|   } catch {
+  #|   }
   #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
   #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
   #|   try {
