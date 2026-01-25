@@ -49,7 +49,7 @@ fn main {
       @debug.debug("Failed to parse wasm module: " + wasm_path)
       @debug.debug(err.to_string())
       @debug.debug(
-        "Note: wasmoon@0.1.2 currently fails on MoonBit wasm-gc rec groups with forward type references (bd: moon-game-studio-953).",
+        "Note: if you see `invalid heap type` while parsing MoonBit wasm-gc modules, upgrade Milky2018/wasmoon to >= 0.1.3.",
       )
       return
     }
