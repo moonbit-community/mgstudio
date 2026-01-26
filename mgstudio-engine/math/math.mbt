@@ -185,6 +185,11 @@ pub fn sin(value : Float) -> Float {
 }
 
 ///|
+pub fn sqrt(value : Float) -> Float {
+  @coremath.powf(value, 0.5F)
+}
+
+///|
 pub fn pow(base : Float, exponent : Float) -> Float {
   Float::from_double(@coremath.pow(base.to_double(), exponent.to_double()))
 }

@@ -12,6 +12,8 @@ pub fn pow(Float, Float) -> Float
 
 pub fn sin(Float) -> Float
 
+pub fn sqrt(Float) -> Float
+
 // Errors
 
 // Types and methods
