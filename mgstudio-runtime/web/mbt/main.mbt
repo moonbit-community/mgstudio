@@ -151,9 +151,16 @@ fn make_print_char() -> (Int) -> Unit {
 }
 
 ///|
-fn make_closure(funcref : @js.Any, closure : @js.Any) -> @js.Any {
-  funcref._call("bind", [@js.undefined(), closure]).cast()
-}
+extern "js" fn make_closure(funcref : @js.Any, closure : @js.Any) -> @js.Any =
+  #| (funcref, closure) => {
+  #|   if (typeof funcref !== "function") {
+  #|     return () => {}
+  #|   }
+  #|   if (typeof funcref.bind === "function") {
+  #|     return funcref.bind(null, closure)
+  #|   }
+  #|   return (...args) => funcref(closure, ...args)
+  #| }
 
 ///|
 fn setup_menu(
