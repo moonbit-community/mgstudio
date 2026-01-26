@@ -205,6 +205,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let entities = build_text_entities(instance)
   let glyphs : Array[PositionedGlyph] = []
   let run_geometry : Array[RunGeometry] = []
+  let mut missing_glyph = false
   let mut max_x = 0.0F
   let mut max_y = 0.0F
   let mut line_index = 0
@@ -235,6 +236,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       smoothing,
     )
     if raster_opt is None {
+      missing_glyph = true
       continue
     }
     let raster = if raster_opt is Some(value) { value } else { continue }
@@ -249,6 +251,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       atlases, cache_key, raster, smoothing,
     )
     if atlas_info_opt is None {
+      missing_glyph = true
       continue
     }
     let atlas_info = if atlas_info_opt is Some(value) {
@@ -303,7 +306,11 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   TextInstance::{
     ..instance,
     layout_info: updated,
-    computed: ComputedTextBlock::{ buffer, entities, needs_rerender: false },
+    computed: ComputedTextBlock::{
+      buffer,
+      entities,
+      needs_rerender: missing_glyph,
+    },
   }
 }
 
@@ -367,6 +374,25 @@ pub fn text_render_system() -> Unit {
         instance.transform.scale,
       )
       let color = text_span_color(instance, glyph.span_index).color
+      if instance.shadow is Some(shadow) {
+        let shadow_translation = @math.Vec2::new(
+          translation.x + shadow.offset.x,
+          translation.y + shadow.offset.y,
+        )
+        let shadow_transform = @math.Transform::new(
+          shadow_translation,
+          instance.transform.rotation,
+          instance.transform.scale,
+        )
+        @render2d.render2d_push_sprite_uv(
+          atlas_info.texture,
+          shadow_transform,
+          uv_min,
+          uv_max,
+          shadow.color,
+          instance.layers,
+        )
+      }
       @render2d.render2d_push_sprite_uv(
         atlas_info.texture,
         transform,

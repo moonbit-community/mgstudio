@@ -185,6 +185,11 @@ pub struct Text2dBundle {
 pub fn Text2dBundle::new(Text2d, TextFont, @math.Transform) -> Self
 pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @math.Transform, @render2d.RenderLayers) -> Self
 pub fn Text2dBundle::spawn(Self) -> TextHandle
+pub fn Text2dBundle::with_bounds(Self, TextBounds) -> Self
+pub fn Text2dBundle::with_color(Self, TextColor) -> Self
+pub fn Text2dBundle::with_layout(Self, TextLayout) -> Self
+pub fn Text2dBundle::with_line_height(Self, LineHeight) -> Self
+pub fn Text2dBundle::with_shadow(Self, Text2dShadow?) -> Self
 
 pub struct Text2dShadow {
   offset : @math.Vec2

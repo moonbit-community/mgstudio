@@ -85,6 +85,46 @@ pub fn Text2dBundle::new_with_layers(
 }
 
 ///|
+pub fn Text2dBundle::with_color(
+  self : Text2dBundle,
+  color : TextColor,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, color, }
+}
+
+///|
+pub fn Text2dBundle::with_layout(
+  self : Text2dBundle,
+  layout : TextLayout,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, layout, }
+}
+
+///|
+pub fn Text2dBundle::with_bounds(
+  self : Text2dBundle,
+  bounds : TextBounds,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, bounds, }
+}
+
+///|
+pub fn Text2dBundle::with_line_height(
+  self : Text2dBundle,
+  line_height : LineHeight,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, line_height, }
+}
+
+///|
+pub fn Text2dBundle::with_shadow(
+  self : Text2dBundle,
+  shadow : Text2dShadow?,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, shadow, }
+}
+
+///|
 pub fn Text2dBundle::spawn(self : Text2dBundle) -> TextHandle {
   text_spawn(self)
 }

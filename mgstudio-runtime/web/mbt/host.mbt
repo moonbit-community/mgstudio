@@ -2682,6 +2682,10 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
         dispatch_asset_error("Font rasterize error: font id not found")
         return -1
       }
+      let loaded = entry._get("loaded")
+      if host_is_nullish(loaded) || !(loaded.cast() : Bool) {
+        return -1
+      }
       let family = any_to_string(entry._get("family"))
       let result = rasterize_glyph(family, font_size, codepoint, smoothing)
       if host_is_nullish(result) {

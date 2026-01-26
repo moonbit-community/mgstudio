@@ -22,6 +22,8 @@ pub fn sprite_scale_run() -> Unit
 
 pub fn sprite_sheet_run() -> Unit
 
+pub fn text2d_run() -> Unit
+
 pub fn texture_atlas_builder_run() -> Unit
 
 pub fn texture_atlas_run() -> Unit

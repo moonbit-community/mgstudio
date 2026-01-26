@@ -22,6 +22,7 @@
         "run_sprite_animation",
         "run_texture_atlas",
         "run_texture_atlas_builder",
+        "run_text2d",
         "mgstudio_host_string_to_js"
       ]
     }
