@@ -58,6 +58,21 @@ pub fn run_sprite_flipping() -> Unit {
 }
 
 ///|
+pub fn run_sprite_sheet() -> Unit {
+  @examples2d.sprite_sheet_run()
+}
+
+///|
+pub fn run_sprite_animation() -> Unit {
+  @examples2d.sprite_animation_run()
+}
+
+///|
+pub fn run_texture_atlas() -> Unit {
+  @examples2d.texture_atlas_run()
+}
+
+///|
 /// Push UTF-16 code units of a MoonBit `String` to the host.
 ///
 /// Web runtimes that do not expose the JS `WebAssembly.Array` GC API still

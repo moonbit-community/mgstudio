@@ -48,38 +48,19 @@ pub fn host_font_rasterize_glyph(
   font_size : Float,
   codepoint : Int,
   smoothing : Int,
-) -> String = "mgstudio_host" "font_rasterize_glyph"
+) -> Int = "mgstudio_host" "font_rasterize_glyph"
 
 ///|
-fn parse_csv_ints(text : String) -> Array[Int] {
-  let values : Array[Int] = []
-  let mut current = 0
-  let mut has_value = false
-  let mut negative = false
-  let count = text.length()
-  for i in 0..<count {
-    let code = text.code_unit_at(i).to_int()
-    if code == 45 { // '-'
-      negative = true
-    } else if code >= 48 && code <= 57 {
-      current = current * 10 + (code - 48)
-      has_value = true
-    } else if code == 44 { // ','
-      if has_value {
-        let value = if negative { 0 - current } else { current }
-        values.push(value)
-        current = 0
-        has_value = false
-        negative = false
-      }
-    }
-  }
-  if has_value {
-    let value = if negative { 0 - current } else { current }
-    values.push(value)
-  }
-  values
-}
+pub fn host_font_glyph_width(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_width"
+
+///|
+pub fn host_font_glyph_height(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_height"
+
+///|
+pub fn host_font_glyph_offset_x(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_offset_x"
+
+///|
+pub fn host_font_glyph_offset_y(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_offset_y"
 
 ///|
 pub fn font_rasterize_glyph(
@@ -92,21 +73,19 @@ pub fn font_rasterize_glyph(
     FontSmoothing::None => 0
     FontSmoothing::AntiAliased => 1
   }
-  let raw = host_font_rasterize_glyph(
+  let id = host_font_rasterize_glyph(
     font.id(),
     font_size,
     codepoint,
     smoothing_id,
   )
-  let values = parse_csv_ints(raw)
-  if values.length() < 5 {
+  if id < 0 {
     return None
   }
-  let id = values[0]
-  let width = values[1]
-  let height = values[2]
-  let offset_x = values[3]
-  let offset_y = values[4]
+  let width = host_font_glyph_width(id)
+  let height = host_font_glyph_height(id)
+  let offset_x = host_font_glyph_offset_x(id)
+  let offset_y = host_font_glyph_offset_y(id)
   if width <= 0 || height <= 0 {
     return None
   }

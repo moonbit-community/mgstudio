@@ -12,11 +12,17 @@ pub fn rotate_to_cursor_run() -> Unit
 
 pub fn rotation_run() -> Unit
 
+pub fn sprite_animation_run() -> Unit
+
 pub fn sprite_flipping_run() -> Unit
 
 pub fn sprite_run() -> Unit
 
 pub fn sprite_scale_run() -> Unit
+
+pub fn sprite_sheet_run() -> Unit
+
+pub fn texture_atlas_run() -> Unit
 
 pub fn viewport_to_world_2d_run() -> Unit
 

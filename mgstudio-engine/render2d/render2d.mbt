@@ -336,8 +336,8 @@ priv struct SpriteInstance {
   color : Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
-  uv_min : @math.Vec2
-  uv_max : @math.Vec2
+  mut uv_min : @math.Vec2
+  mut uv_max : @math.Vec2
 }
 
 ///|
@@ -410,6 +410,27 @@ fn default_uv_min() -> @math.Vec2 {
 ///|
 fn default_uv_max() -> @math.Vec2 {
   @math.Vec2::new(1.0F, 1.0F)
+}
+
+///|
+fn sprite_uv_from_atlas_rect(
+  atlas_size : @math.UVec2,
+  rect : @math.URect,
+) -> (@math.Vec2, @math.Vec2)? {
+  if atlas_size.x <= 0 || atlas_size.y <= 0 {
+    return None
+  }
+  let atlas_width = Float::from_double(atlas_size.x.to_double())
+  let atlas_height = Float::from_double(atlas_size.y.to_double())
+  let uv_min = @math.Vec2::new(
+    Float::from_double(rect.min.x.to_double()) / atlas_width,
+    Float::from_double(rect.min.y.to_double()) / atlas_height,
+  )
+  let uv_max = @math.Vec2::new(
+    Float::from_double(rect.max.x.to_double()) / atlas_width,
+    Float::from_double(rect.max.y.to_double()) / atlas_height,
+  )
+  Some((uv_min, uv_max))
 }
 
 ///|
@@ -588,6 +609,62 @@ pub fn render2d_set_sprite_transform(transform : @math.Transform) -> Unit {
     return
   }
   render2d_set_sprite_transform_handle(SpriteHandle::{ id, }, transform)
+}
+
+///|
+pub fn render2d_set_sprite_uv_handle(
+  handle : SpriteHandle,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+) -> Unit {
+  let count = render_state.val.sprites.length()
+  for i in 0..<count {
+    if render_state.val.sprites[i].id == handle.id {
+      render_state.val.sprites[i].uv_min = uv_min
+      render_state.val.sprites[i].uv_max = uv_max
+      return
+    }
+  }
+}
+
+///|
+pub fn render2d_set_sprite_uv(uv_min : @math.Vec2, uv_max : @math.Vec2) -> Unit {
+  let id = render_state.val.primary_sprite
+  if id < 0 {
+    return
+  }
+  render2d_set_sprite_uv_handle(SpriteHandle::{ id, }, uv_min, uv_max)
+}
+
+///|
+pub fn render2d_set_sprite_atlas_handle(
+  handle : SpriteHandle,
+  layout : @asset.Handle[@asset.TextureAtlasLayout],
+  index : Int,
+) -> Bool {
+  if @asset.asset_get_texture_atlas_layout(layout) is Some(layout_value) {
+    if index < 0 || index >= layout_value.textures.length() {
+      return false
+    }
+    let rect = layout_value.textures[index]
+    if sprite_uv_from_atlas_rect(layout_value.size, rect) is Some(pair) {
+      render2d_set_sprite_uv_handle(handle, pair.0, pair.1)
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn render2d_set_sprite_atlas(
+  layout : @asset.Handle[@asset.TextureAtlasLayout],
+  index : Int,
+) -> Bool {
+  let id = render_state.val.primary_sprite
+  if id < 0 {
+    return false
+  }
+  render2d_set_sprite_atlas_handle(SpriteHandle::{ id, }, layout, index)
 }
 
 ///|

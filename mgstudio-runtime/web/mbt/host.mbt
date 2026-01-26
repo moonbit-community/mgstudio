@@ -2656,13 +2656,13 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       let entry = map_get(state.assets.fonts, @js.any(font_id))
       if host_is_nullish(entry) {
         dispatch_asset_error("Font rasterize error: font id not found")
-        return ""
+        return -1
       }
       let family = any_to_string(entry._get("family"))
       let result = rasterize_glyph(family, font_size, codepoint, smoothing)
       if host_is_nullish(result) {
         dispatch_asset_error("Font rasterize error: rasterizer unavailable")
-        return ""
+        return -1
       }
       let glyph_id = state.assets.next_glyph_id
       state.assets.next_glyph_id = glyph_id + 1
@@ -2679,17 +2679,45 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
         ("data", data),
       ])
       map_set(state.assets.glyphs, @js.any(glyph_id), glyph_entry)
-      glyph_id.to_string() +
-      "," +
-      width.to_string() +
-      "," +
-      height.to_string() +
-      "," +
-      offset_x.to_string() +
-      "," +
-      offset_y.to_string()
+      glyph_id
     }),
   )
+  let font_glyph_width = @js.from_fn1(fn(glyph_id) {
+    let id = to_int(number_or(glyph_id, -1))
+    let entry = map_get(state.assets.glyphs, @js.any(id))
+    if host_is_nullish(entry) {
+      0
+    } else {
+      to_int(number_or(entry._get("width"), 0))
+    }
+  })
+  let font_glyph_height = @js.from_fn1(fn(glyph_id) {
+    let id = to_int(number_or(glyph_id, -1))
+    let entry = map_get(state.assets.glyphs, @js.any(id))
+    if host_is_nullish(entry) {
+      0
+    } else {
+      to_int(number_or(entry._get("height"), 0))
+    }
+  })
+  let font_glyph_offset_x = @js.from_fn1(fn(glyph_id) {
+    let id = to_int(number_or(glyph_id, -1))
+    let entry = map_get(state.assets.glyphs, @js.any(id))
+    if host_is_nullish(entry) {
+      0
+    } else {
+      to_int(number_or(entry._get("offsetX"), 0))
+    }
+  })
+  let font_glyph_offset_y = @js.from_fn1(fn(glyph_id) {
+    let id = to_int(number_or(glyph_id, -1))
+    let entry = map_get(state.assets.glyphs, @js.any(id))
+    if host_is_nullish(entry) {
+      0
+    } else {
+      to_int(number_or(entry._get("offsetY"), 0))
+    }
+  })
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
     let entry = map_get(state.gpu.textures, @js.any(id))
@@ -3217,6 +3245,10 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("asset_load_wgsl", asset_load_wgsl),
     ("asset_load_font", asset_load_font),
     ("font_rasterize_glyph", font_rasterize_glyph),
+    ("font_glyph_width", font_glyph_width),
+    ("font_glyph_height", font_glyph_height),
+    ("font_glyph_offset_x", font_glyph_offset_x),
+    ("font_glyph_offset_y", font_glyph_offset_y),
     ("asset_set_texture_sampler", asset_set_texture_sampler),
     ("asset_create_dynamic_texture", asset_create_dynamic_texture),
     ("asset_update_texture_region", asset_update_texture_region),

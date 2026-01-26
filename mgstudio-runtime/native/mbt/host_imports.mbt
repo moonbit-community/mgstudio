@@ -249,6 +249,89 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "asset_load_wgsl",
+    fn(_args) { ok_i32(1) },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_load_font",
+    fn(_args) { ok_i32(1) },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "font_rasterize_glyph",
+    fn(_args) { ok_i32(-1) },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "font_glyph_width",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "font_glyph_height",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "font_glyph_offset_x",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "font_glyph_offset_y",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_set_texture_sampler",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_create_dynamic_texture",
+    fn(_args) { ok_i32(1) },
+    func_type=ft(
+      [@types.ValueType::I32, @types.ValueType::I32, @types.ValueType::I32],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_update_texture_region",
+    fn(_args) { ok_i32(0) },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "asset_load_folder",
     fn(_args) { ok_i32(1) },
     func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),

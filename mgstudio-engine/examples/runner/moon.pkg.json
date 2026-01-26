@@ -18,6 +18,9 @@
         "run_mesh2d",
         "run_sprite_scale",
         "run_sprite_flipping",
+        "run_sprite_sheet",
+        "run_sprite_animation",
+        "run_texture_atlas",
         "mgstudio_host_string_to_js"
       ]
     }

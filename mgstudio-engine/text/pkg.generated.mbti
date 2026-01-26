@@ -15,7 +15,15 @@ pub fn font_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothin
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
-pub fn host_font_rasterize_glyph(Int, Float, Int, Int) -> String
+pub fn host_font_glyph_height(Int) -> Int
+
+pub fn host_font_glyph_offset_x(Int) -> Int
+
+pub fn host_font_glyph_offset_y(Int) -> Int
+
+pub fn host_font_glyph_width(Int) -> Int
+
+pub fn host_font_rasterize_glyph(Int, Float, Int, Int) -> Int
 
 pub fn text_plugin(@app.App) -> @app.App
 

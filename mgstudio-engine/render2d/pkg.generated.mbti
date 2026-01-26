@@ -41,9 +41,17 @@ pub fn render2d_set_camera_viewport_handle(CameraHandle, Viewport?) -> Unit
 
 pub fn render2d_set_mesh_transform_handle(MeshHandle, @math.Transform) -> Unit
 
+pub fn render2d_set_sprite_atlas(@asset.Handle[@asset.TextureAtlasLayout], Int) -> Bool
+
+pub fn render2d_set_sprite_atlas_handle(SpriteHandle, @asset.Handle[@asset.TextureAtlasLayout], Int) -> Bool
+
 pub fn render2d_set_sprite_transform(@math.Transform) -> Unit
 
 pub fn render2d_set_sprite_transform_handle(SpriteHandle, @math.Transform) -> Unit
+
+pub fn render2d_set_sprite_uv(@math.Vec2, @math.Vec2) -> Unit
+
+pub fn render2d_set_sprite_uv_handle(SpriteHandle, @math.Vec2, @math.Vec2) -> Unit
 
 pub fn render2d_spawn_camera(Camera2dBundle) -> CameraHandle
 

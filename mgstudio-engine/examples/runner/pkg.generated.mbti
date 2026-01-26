@@ -18,9 +18,15 @@ pub fn run_rotation() -> Unit
 
 pub fn run_sprite() -> Unit
 
+pub fn run_sprite_animation() -> Unit
+
 pub fn run_sprite_flipping() -> Unit
 
 pub fn run_sprite_scale() -> Unit
+
+pub fn run_sprite_sheet() -> Unit
+
+pub fn run_texture_atlas() -> Unit
 
 // Errors
 
