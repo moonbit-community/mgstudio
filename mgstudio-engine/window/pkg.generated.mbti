@@ -52,7 +52,7 @@ pub fn host_window_poll_events(HostWindow) -> Unit
 
 pub fn host_window_request_close(HostWindow) -> Unit
 
-pub fn host_window_run_loop(() -> Unit) -> Unit
+pub fn host_window_run_loop(FuncRef[() -> Unit]) -> Unit
 
 pub fn host_window_should_close(HostWindow) -> Bool
 

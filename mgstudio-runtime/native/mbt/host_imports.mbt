@@ -149,22 +149,17 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "window_run_loop",
     fn(args) {
-      // Bring-up: call the tick closure once if we can.
-      if args.length() > 0 && args[0] is @types.Value::ExternRef(id) {
-        if find_closure(ctx, id) is Some((func_idx, env)) {
-          if ctx.store is Some(store) && ctx.instance is Some(instance) {
-            // Best-effort: most MoonBit closures expect the env as the first arg.
-            let _ = @executor.call_func_by_index(store, instance, func_idx, [
-                env,
-              ])
-              |> ignore
+      // Bring-up: call the tick function once if we can.
+      if args.length() > 0 && args[0] is @types.Value::FuncRef(func_idx) {
+        if ctx.store is Some(store) && ctx.instance is Some(instance) {
+          let _ = @executor.call_func_by_index(store, instance, func_idx, [])
+            |> ignore
 
-          }
         }
       }
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::FuncRef], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",

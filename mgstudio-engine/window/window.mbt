@@ -107,7 +107,7 @@ pub fn host_window_should_close(window : HostWindow) -> Bool = "mgstudio_host" "
 pub fn host_window_request_close(window : HostWindow) -> Unit = "mgstudio_host" "window_request_close"
 
 ///|
-pub fn host_window_run_loop(step : () -> Unit) -> Unit = "mgstudio_host" "window_run_loop"
+pub fn host_window_run_loop(step : FuncRef[() -> Unit]) -> Unit = "mgstudio_host" "window_run_loop"
 
 ///|
 pub fn window_set_handle(window : HostWindow) -> Unit {
@@ -292,6 +292,38 @@ pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int = "mgstud
 pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string"
 
 ///|
+priv struct RunnerState {
+  mut window : HostWindow?
+  mut surface : HostGpuSurface?
+  mut app : @app.App?
+}
+
+///|
+let runner_state : Ref[RunnerState] = Ref::new(RunnerState::{
+  window: None,
+  surface: None,
+  app: None,
+})
+
+///|
+fn runner_tick() -> Unit {
+  if runner_state.val.window is Some(window) {
+    if runner_state.val.surface is Some(surface) {
+      if runner_state.val.app is Some(app) {
+        host_window_poll_events(window)
+        let frame = host_gpu_begin_frame(surface)
+        let next_app = app.run_once()
+        runner_state.val.app = Some(next_app)
+        host_gpu_end_frame(frame)
+        if host_window_should_close(window) {
+          host_window_request_close(window)
+        }
+      }
+    }
+  }
+}
+
+///|
 pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
   fn() {
     let window = host_window_create(800, 600, "Moon Game Studio")
@@ -301,16 +333,12 @@ pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
     let width = host_window_get_width(window)
     let height = host_window_get_height(window)
     host_gpu_configure_surface(device, surface, width, height)
-    let mut app = app.run_startup()
-    host_window_run_loop(fn() {
-      host_window_poll_events(window)
-      let frame = host_gpu_begin_frame(surface)
-      app = app.run_once()
-      host_gpu_end_frame(frame)
-      if host_window_should_close(window) {
-        host_window_request_close(window)
-      }
-    })
+    let app = app.run_startup()
+    runner_state.val.window = Some(window)
+    runner_state.val.surface = Some(surface)
+    runner_state.val.app = Some(app)
+    let tick : FuncRef[() -> Unit] = fn() { runner_tick() }
+    host_window_run_loop(tick)
   }
 }
 
