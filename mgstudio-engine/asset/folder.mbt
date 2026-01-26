@@ -14,7 +14,6 @@
 
 ///|
 pub struct LoadedFolder {
-  host_id : Int
   handles : Array[Handle[Image]]
 }
 
@@ -39,20 +38,7 @@ pub fn host_asset_get_loaded_folder_handles(folder_id : Int) -> String = "mgstud
 let loaded_folder_assets : Ref[Assets[LoadedFolder]] = Ref::new(Assets::new())
 
 ///|
-let loaded_folder_host_map : Ref[Array[(Int, Handle[LoadedFolder])]] = Ref::new([],
-)
-
-///|
-fn loaded_folder_handle_for_host(host_id : Int) -> Handle[LoadedFolder]? {
-  let count = loaded_folder_host_map.val.length()
-  for i in 0..<count {
-    let entry = loaded_folder_host_map.val[i]
-    if entry.0 == host_id {
-      return Some(entry.1)
-    }
-  }
-  None
-}
+let loaded_folder_events : Ref[Array[AssetEvent[LoadedFolder]]] = Ref::new([])
 
 ///|
 fn parse_csv_ints(text : String) -> Array[Int] {
@@ -86,29 +72,13 @@ fn parse_csv_ints(text : String) -> Array[Int] {
 }
 
 ///|
-fn loaded_folder_update(
-  handle : Handle[LoadedFolder],
-  handles : Array[Handle[Image]],
-) -> Unit {
-  if loaded_folder_assets.val.get(handle) is Some(folder) {
-    let updated = LoadedFolder::{ host_id: folder.host_id, handles }
-    loaded_folder_assets.val.set(handle, updated) |> ignore
-  }
-}
-
-///|
 pub fn AssetServer::load_folder(
   self : AssetServer,
   path : String,
 ) -> Handle[LoadedFolder] {
   let host_id = host_asset_load_folder(path)
-  let handle = loaded_folder_assets.val.add(LoadedFolder::{
-    host_id,
-    handles: [],
-  })
-  loaded_folder_host_map.val.push((host_id, handle))
   self.paths.push(path)
-  handle
+  Handle::new(host_id)
 }
 
 ///|
@@ -117,19 +87,26 @@ pub fn asset_get_loaded_folder(handle : Handle[LoadedFolder]) -> LoadedFolder? {
 }
 
 ///|
-pub fn asset_events_for_loaded_folder() -> Array[AssetEvent[LoadedFolder]] {
+pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]] {
+  let out : Array[AssetEvent[LoadedFolder]] = []
+  for ev in loaded_folder_events.val {
+    out.push(ev)
+  }
+  loaded_folder_events.val.clear()
+  out
+}
+
+///|
+pub fn asset_update_loaded_folders() -> Unit {
+  // Ensure any leftover internal asset events don't leak between frames.
+  loaded_folder_assets.val.drain_events() |> ignore
   let raw_events = parse_csv_ints(host_asset_poll_loaded_folder_events())
-  let events : Array[AssetEvent[LoadedFolder]] = []
   let mut i = 0
   while i + 1 < raw_events.length() {
     let kind = raw_events[i]
     let host_id = raw_events[i + 1]
     i = i + 2
-    let handle_opt = loaded_folder_handle_for_host(host_id)
-    if handle_opt is None {
-      continue
-    }
-    let handle = if handle_opt is Some(value) { value } else { continue }
+    let handle = Handle::new(host_id)
     if kind == 3 {
       let image_ids = parse_csv_ints(
         host_asset_get_loaded_folder_handles(host_id),
@@ -138,15 +115,36 @@ pub fn asset_events_for_loaded_folder() -> Array[AssetEvent[LoadedFolder]] {
       for image_id in image_ids {
         handles.push(Handle::new(image_id))
       }
-      loaded_folder_update(handle, handles)
-      events.push(LoadedWithDependencies(handle))
+      loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })
+      |> ignore
+      for ev in loaded_folder_assets.val.drain_events() {
+        loaded_folder_events.val.push(ev)
+      }
+      loaded_folder_events.val.push(LoadedWithDependencies(handle))
     } else if kind == 0 {
-      events.push(Added(handle))
+      loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles: [] })
+      |> ignore
+      for ev in loaded_folder_assets.val.drain_events() {
+        loaded_folder_events.val.push(ev)
+      }
     } else if kind == 1 {
-      events.push(Modified(handle))
+      let image_ids = parse_csv_ints(
+        host_asset_get_loaded_folder_handles(host_id),
+      )
+      let handles : Array[Handle[Image]] = []
+      for image_id in image_ids {
+        handles.push(Handle::new(image_id))
+      }
+      loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })
+      |> ignore
+      for ev in loaded_folder_assets.val.drain_events() {
+        loaded_folder_events.val.push(ev)
+      }
     } else if kind == 2 {
-      events.push(Removed(handle))
+      loaded_folder_assets.val.remove(handle) |> ignore
+      for ev in loaded_folder_assets.val.drain_events() {
+        loaded_folder_events.val.push(ev)
+      }
     }
   }
-  events
 }

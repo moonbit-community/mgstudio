@@ -68,6 +68,33 @@ pub fn[T] Assets::set(self : Assets[T], handle : Handle[T], value : T) -> Bool {
 }
 
 ///|
+/// Inserts or updates the asset at the given handle id.
+///
+/// This grows the internal storage if `handle.id()` exceeds the current length.
+pub fn[T] Assets::insert(
+  self : Assets[T],
+  handle : Handle[T],
+  value : T,
+) -> Bool {
+  let id = handle.id()
+  if id < 0 {
+    return false
+  }
+  while self.items.length() <= id {
+    self.items.push(None)
+  }
+  let existed = self.items[id] is Some(_)
+  self.items[id] = Some(value)
+  if existed {
+    self.events.push(AssetEvent::Modified(handle))
+  } else {
+    self.alive = self.alive + 1
+    self.events.push(AssetEvent::Added(handle))
+  }
+  true
+}
+
+///|
 pub fn[T] Assets::remove(self : Assets[T], handle : Handle[T]) -> T? {
   let id = handle.id()
   if id < 0 || id >= self.items.length() {

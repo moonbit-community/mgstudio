@@ -11,11 +11,11 @@ pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlas
 
 pub fn asset_create_dynamic_texture(@math.UVec2, Bool) -> Handle[Image]
 
-pub fn asset_events_for_loaded_folder() -> Array[AssetEvent[LoadedFolder]]
-
 pub fn asset_get_loaded_folder(Handle[LoadedFolder]) -> LoadedFolder?
 
 pub fn asset_get_texture_atlas_layout(Handle[TextureAtlasLayout]) -> TextureAtlasLayout?
+
+pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]]
 
 pub fn asset_plugin(@app.App) -> @app.App
 
@@ -28,6 +28,8 @@ pub fn asset_set_texture_atlas_layout(Handle[TextureAtlasLayout], TextureAtlasLa
 pub fn asset_set_texture_sampler(Handle[Image], ImageSampler) -> Unit
 
 pub fn asset_system() -> Unit
+
+pub fn asset_update_loaded_folders() -> Unit
 
 pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
 
@@ -88,6 +90,7 @@ pub fn[T] Assets::add(Self[T], T) -> Handle[T]
 pub fn[T] Assets::contains(Self[T], Handle[T]) -> Bool
 pub fn[T] Assets::drain_events(Self[T]) -> Array[AssetEvent[T]]
 pub fn[T] Assets::get(Self[T], Handle[T]) -> T?
+pub fn[T] Assets::insert(Self[T], Handle[T], T) -> Bool
 pub fn[T] Assets::is_empty(Self[T]) -> Bool
 pub fn[T] Assets::len(Self[T]) -> Int
 pub fn[T] Assets::new() -> Self[T]
@@ -131,7 +134,6 @@ pub(all) enum ImageSampler {
 }
 
 pub struct LoadedFolder {
-  host_id : Int
   handles : Array[Handle[Image]]
 }
 

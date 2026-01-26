@@ -382,6 +382,13 @@ extern "js" fn strip_leading_slashes(text : String) -> String =
   #| (text) => text.replace(/^\/+/, "")
 
 ///|
+extern "js" fn split_trimmed_lines(text : String) -> Array[String] =
+  #| (text) => String(text || "")
+  #|   .split(/\r?\n/)
+  #|   .map((line) => String(line).trim())
+  #|   .filter((line) => line.length > 0 && !line.startsWith("#"))
+
+///|
 extern "js" fn new_map() -> @js.Any =
   #| () => new Map()
 
@@ -1083,6 +1090,34 @@ fn new_state() -> State {
 ///|
 fn to_int(value : Double) -> Int {
   value.to_int()
+}
+
+///|
+fn ints_to_csv(values : Array[Int]) -> String {
+  let mut out = ""
+  let n = values.length()
+  for i in 0..<n {
+    if i > 0 {
+      out = out + ","
+    }
+    out = out + values[i].to_string()
+  }
+  out
+}
+
+///|
+fn join_asset_path(base : String, entry : String) -> String {
+  if base == "" {
+    entry
+  } else {
+    let normalized = strip_leading_slashes(entry)
+    let n = base.length()
+    if n > 0 && base.code_unit_at(n - 1).to_int() == 47 { // '/'
+      base + normalized
+    } else {
+      base + "/" + normalized
+    }
+  }
 }
 
 ///|
@@ -1886,6 +1921,15 @@ async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
   let source = response_text(response.as_any()).wait()
   map_set(state.assets.shader_sources, @js.any(id), @js.any(source))
   source
+}
+
+///|
+async fn fetch_text_from_url(url : String) -> String {
+  let response = @http.fetch(url, method_="GET")
+  if !response.ok {
+    fail("Failed to fetch: " + url + " (" + response.status.to_string() + ")")
+  }
+  response_text(response.as_any()).wait()
 }
 
 ///|
@@ -2761,23 +2805,81 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
   let asset_load_folder = @js.from_fn1(fn(_path : @js.Any) {
     let id = state.assets.next_folder_id
     state.assets.next_folder_id = id + 1
-    map_set(state.assets.folders, @js.any(id), new_array())
-    state.assets.folder_events.push(3)
-    state.assets.folder_events.push(id)
+    let empty_handles : Array[Int] = []
+    map_set(state.assets.folders, @js.any(id), @js.any(empty_handles))
+    let path_text = coerce_asset_path(_path)
+    @js.run_async(async fn() noraise {
+      let handles : Array[Int] = []
+      if path_text != "" {
+        let manifest_path = join_asset_path(path_text, "folder.txt")
+        let url = resolve_asset_url(@js.any(manifest_path)) catch {
+          err => {
+            let message = "Folder load error: " + err.to_string()
+            console_error(@js.any(message))
+            dispatch_asset_error(message)
+            ""
+          }
+        }
+        if url != "" {
+          let manifest = fetch_text_from_url(url) catch {
+            err => {
+              let message = "Folder load error: " + err.to_string()
+              console_error(@js.any(message))
+              dispatch_asset_error(message)
+              ""
+            }
+          }
+          if manifest != "" {
+            for entry in split_trimmed_lines(manifest) {
+              let asset_path = join_asset_path(path_text, entry)
+              let tex_id = state.gpu.next_texture_id
+              state.gpu.next_texture_id = tex_id + 1
+              set_add(state.assets.loading_textures, @js.any(tex_id))
+              if asset_path != "" {
+                map_set(
+                  state.assets.texture_paths,
+                  @js.any(tex_id),
+                  @js.any(asset_path),
+                )
+              }
+              let result = load_texture_from_path(
+                state,
+                tex_id,
+                @js.any(asset_path),
+                false,
+              ) catch {
+                err => {
+                  let message = "Texture load error: " + err.to_string()
+                  console_error(@js.any(message))
+                  dispatch_asset_error(message)
+                  set_delete(state.assets.loading_textures, @js.any(tex_id))
+                  |> ignore
+                }
+              }
+              result |> ignore
+              handles.push(tex_id)
+            }
+          }
+        }
+      }
+      map_set(state.assets.folders, @js.any(id), @js.any(handles))
+      state.assets.folder_events.push(3)
+      state.assets.folder_events.push(id)
+    })
     id
   })
   let asset_poll_loaded_folder_events = @js.from_fn0(fn() {
     let events = state.assets.folder_events
     state.assets.folder_events = []
-    events
+    ints_to_csv(events)
   })
   let asset_get_loaded_folder_handles = @js.from_fn1(fn(folder_id) {
     let id = to_int(number_or(folder_id, -1))
     let entry = map_get(state.assets.folders, @js.any(id))
     if host_is_nullish(entry) {
-      new_array()
+      ""
     } else {
-      entry.cast()
+      ints_to_csv(entry.cast())
     }
   })
   let gpu_create_render_target = @js.from_fn3(fn(width, height, nearest) {

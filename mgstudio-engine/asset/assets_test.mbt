@@ -42,3 +42,25 @@ test "assets: insert/get/set/remove and events" {
     _ => inspect(false, content="false")
   }
 }
+
+///|
+test "assets: insert with explicit handle id grows storage" {
+  let assets : Assets[Int] = Assets::new()
+  let h = Handle::new(10)
+  inspect(assets.insert(h, 42), content="true")
+  inspect(assets.get(h).unwrap(), content="42")
+  let ev = assets.drain_events()
+  inspect(ev.length(), content="1")
+  match ev[0] {
+    AssetEvent::Added(h1) => inspect(h1.id() == 10, content="true")
+    _ => inspect(false, content="false")
+  }
+  inspect(assets.insert(h, 43), content="true")
+  inspect(assets.get(h).unwrap(), content="43")
+  let ev2 = assets.drain_events()
+  inspect(ev2.length(), content="1")
+  match ev2[0] {
+    AssetEvent::Modified(h1) => inspect(h1.id() == 10, content="true")
+    _ => inspect(false, content="false")
+  }
+}

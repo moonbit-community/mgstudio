@@ -89,6 +89,18 @@ fn ok_extern_ref(id : Int) -> Array[@types.Value] {
 }
 
 ///|
+fn ok_empty_string(ctx : HostContext) -> Array[@types.Value] {
+  // MoonBit wasm-gc `String` is typically represented as `ref array i16`,
+  // which shows up as `RefArray(1)` in our current modules.
+  if ctx.store is Some(store) {
+    let array_idx = store.alloc_array(1, [])
+    [@types.Value::ArrayRef(array_idx)]
+  } else {
+    [@types.Value::Null]
+  }
+}
+
+///|
 const HANDLE_BASE : Int = 10_000
 
 ///|
@@ -239,6 +251,24 @@ pub fn add_mgstudio_host_imports(
     func_type=ft([@types.ValueType::RefArray(1), @types.ValueType::I32], [
       @types.ValueType::I32,
     ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_load_folder",
+    fn(_args) { ok_i32(1) },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_poll_loaded_folder_events",
+    fn(_args) { ok_empty_string(ctx) },
+    func_type=ft([], [@types.ValueType::RefArray(1)]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_get_loaded_folder_handles",
+    fn(_args) { ok_empty_string(ctx) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::RefArray(1)]),
   )
   linker.add_host_func(
     "mgstudio_host",

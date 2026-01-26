@@ -199,16 +199,16 @@ pub fn asset_update_texture_region(
 
 ///|
 pub fn asset_system() -> Unit {
-
+  asset_update_loaded_folders()
 }
 
 ///|
 pub fn asset_plugin(app : @app.App) -> @app.App {
-  app.add_system(asset_system)
+  app.add_pre_update_system(asset_system)
 }
 
 ///|
 pub fn asset_plugin_nearest(app : @app.App) -> @app.App {
   asset_set_default_sampler_nearest(true)
-  app.add_system(asset_system)
+  app.add_pre_update_system(asset_system)
 }
