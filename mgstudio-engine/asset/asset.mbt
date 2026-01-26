@@ -141,6 +141,23 @@ pub fn host_asset_update_texture_region(
 ) -> Unit = "mgstudio_host" "asset_update_texture_region"
 
 ///|
+pub fn host_asset_texture_width(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_width"
+
+///|
+pub fn host_asset_texture_height(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_height"
+
+///|
+pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool = "mgstudio_host" "asset_is_texture_loaded"
+
+///|
+pub fn host_asset_copy_texture_to_texture(
+  dst_texture_id : Int,
+  dst_x : Int,
+  dst_y : Int,
+  src_texture_id : Int,
+) -> Unit = "mgstudio_host" "asset_copy_texture_to_texture"
+
+///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
   let id = host_asset_load_texture(path, asset_default_nearest.val)
   self.paths.push(path)
@@ -195,6 +212,30 @@ pub fn asset_update_texture_region(
     size.y,
     glyph_id,
   )
+}
+
+///|
+pub fn asset_texture_width(texture : Handle[Image]) -> Int {
+  host_asset_texture_width(texture.id())
+}
+
+///|
+pub fn asset_texture_height(texture : Handle[Image]) -> Int {
+  host_asset_texture_height(texture.id())
+}
+
+///|
+pub fn asset_is_texture_loaded(texture : Handle[Image]) -> Bool {
+  host_asset_is_texture_loaded(texture.id())
+}
+
+///|
+pub fn asset_copy_texture_to_texture(
+  dst : Handle[Image],
+  dst_pos : @math.UVec2,
+  src : Handle[Image],
+) -> Unit {
+  host_asset_copy_texture_to_texture(dst.id(), dst_pos.x, dst_pos.y, src.id())
 }
 
 ///|

@@ -21,6 +21,7 @@
         "run_sprite_sheet",
         "run_sprite_animation",
         "run_texture_atlas",
+        "run_texture_atlas_builder",
         "mgstudio_host_string_to_js"
       ]
     }

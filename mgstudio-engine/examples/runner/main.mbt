@@ -73,6 +73,11 @@ pub fn run_texture_atlas() -> Unit {
 }
 
 ///|
+pub fn run_texture_atlas_builder() -> Unit {
+  @examples2d.texture_atlas_builder_run()
+}
+
+///|
 /// Push UTF-16 code units of a MoonBit `String` to the host.
 ///
 /// Web runtimes that do not expose the JS `WebAssembly.Array` GC API still

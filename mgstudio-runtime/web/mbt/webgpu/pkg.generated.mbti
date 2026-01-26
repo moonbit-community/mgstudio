@@ -74,6 +74,8 @@ pub fn texture_size(Int, Int) -> TextureSize
 
 pub fn texture_usage_copy_dst() -> Int
 
+pub fn texture_usage_copy_src() -> Int
+
 pub fn texture_usage_render_attachment() -> Int
 
 pub fn texture_usage_texture_binding() -> Int

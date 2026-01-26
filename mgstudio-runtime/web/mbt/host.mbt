@@ -766,6 +766,27 @@ extern "js" fn copy_external_image_to_texture(
   #| }
 
 ///|
+extern "js" fn copy_texture_to_texture_region(
+  device : @js.Any,
+  queue : @js.Any,
+  src_texture : @js.Any,
+  dst_texture : @js.Any,
+  width : Int,
+  height : Int,
+  x : Int,
+  y : Int,
+) -> Unit =
+  #| (device, queue, srcTexture, dstTexture, width, height, x, y) => {
+  #|   const encoder = device.createCommandEncoder()
+  #|   encoder.copyTextureToTexture(
+  #|     { texture: srcTexture },
+  #|     { texture: dstTexture, origin: { x, y } },
+  #|     [width, height, 1],
+  #|   )
+  #|   queue.submit([encoder.finish()])
+  #| }
+
+///|
 extern "js" fn write_texture(
   queue : @js.Any,
   texture : @js.Any,
@@ -1862,8 +1883,11 @@ async fn load_texture_from_path(
     let height : Int = image._get("height").cast()
     let texture_usage = @webgpu.combine_flags(
       @webgpu.combine_flags(
-        @webgpu.texture_usage_texture_binding(),
-        @webgpu.texture_usage_copy_dst(),
+        @webgpu.combine_flags(
+          @webgpu.texture_usage_texture_binding(),
+          @webgpu.texture_usage_copy_dst(),
+        ),
+        @webgpu.texture_usage_copy_src(),
       ),
       @webgpu.texture_usage_render_attachment(),
     )
@@ -2752,8 +2776,11 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     if state.gpu.device is Some(device) {
       let texture_usage = @webgpu.combine_flags(
         @webgpu.combine_flags(
-          @webgpu.texture_usage_texture_binding(),
-          @webgpu.texture_usage_copy_dst(),
+          @webgpu.combine_flags(
+            @webgpu.texture_usage_texture_binding(),
+            @webgpu.texture_usage_copy_dst(),
+          ),
+          @webgpu.texture_usage_copy_src(),
         ),
         @webgpu.texture_usage_render_attachment(),
       )
@@ -2813,6 +2840,91 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
           data,
           target_width,
           target_height,
+          x,
+          y,
+        )
+      }
+    }),
+  )
+  let asset_texture_width = @js.from_fn1(fn(texture_id) {
+    let id = to_int(number_or(texture_id, -1))
+    let entry = map_get(state.gpu.textures, @js.any(id))
+    if host_is_nullish(entry) {
+      0
+    } else {
+      to_int(number_or(entry._get("width"), 0))
+    }
+  })
+  let asset_texture_height = @js.from_fn1(fn(texture_id) {
+    let id = to_int(number_or(texture_id, -1))
+    let entry = map_get(state.gpu.textures, @js.any(id))
+    if host_is_nullish(entry) {
+      0
+    } else {
+      to_int(number_or(entry._get("height"), 0))
+    }
+  })
+  let asset_is_texture_loaded = @js.from_fn1(fn(texture_id) {
+    let id = to_int(number_or(texture_id, -1))
+    if id < 0 {
+      return false
+    }
+    if set_has(state.assets.loading_textures, @js.any(id)) {
+      return false
+    }
+    let entry = map_get(state.gpu.textures, @js.any(id))
+    !host_is_nullish(entry)
+  })
+  let asset_copy_texture_to_texture = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      if state.gpu.device is None || state.gpu.queue is None {
+        dispatch_asset_error("Texture copy error: GPU device not ready")
+        return
+      }
+      let dst_id = to_int(arg_number(args, 0, -1))
+      let x = to_int(arg_number(args, 1, 0))
+      let y = to_int(arg_number(args, 2, 0))
+      let src_id = to_int(arg_number(args, 3, -1))
+      if dst_id < 0 || src_id < 0 {
+        return
+      }
+      if x < 0 || y < 0 {
+        return
+      }
+      let src_entry = map_get(state.gpu.textures, @js.any(src_id))
+      let dst_entry = map_get(state.gpu.textures, @js.any(dst_id))
+      if host_is_nullish(src_entry) {
+        dispatch_asset_error("Texture copy error: source texture id not found")
+        return
+      }
+      if host_is_nullish(dst_entry) {
+        dispatch_asset_error(
+          "Texture copy error: destination texture id not found",
+        )
+        return
+      }
+      let width = to_int(number_or(src_entry._get("width"), 0))
+      let height = to_int(number_or(src_entry._get("height"), 0))
+      if width <= 0 || height <= 0 {
+        return
+      }
+      let dst_width = to_int(number_or(dst_entry._get("width"), 0))
+      let dst_height = to_int(number_or(dst_entry._get("height"), 0))
+      if dst_width <= 0 || dst_height <= 0 {
+        return
+      }
+      if x + width > dst_width || y + height > dst_height {
+        dispatch_asset_error("Texture copy error: destination out of bounds")
+        return
+      }
+      if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
+        copy_texture_to_texture_region(
+          device.as_any(),
+          queue.as_any(),
+          src_entry._get("texture"),
+          dst_entry._get("texture"),
+          width,
+          height,
           x,
           y,
         )
@@ -3252,6 +3364,10 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("asset_set_texture_sampler", asset_set_texture_sampler),
     ("asset_create_dynamic_texture", asset_create_dynamic_texture),
     ("asset_update_texture_region", asset_update_texture_region),
+    ("asset_texture_width", asset_texture_width),
+    ("asset_texture_height", asset_texture_height),
+    ("asset_is_texture_loaded", asset_is_texture_loaded),
+    ("asset_copy_texture_to_texture", asset_copy_texture_to_texture),
     ("asset_load_folder", asset_load_folder),
     ("asset_poll_loaded_folder_event_kind", asset_poll_loaded_folder_event_kind),
     ("asset_poll_loaded_folder_event_id", asset_poll_loaded_folder_event_id),

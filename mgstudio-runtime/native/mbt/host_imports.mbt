@@ -332,6 +332,38 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "asset_texture_width",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_texture_height",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_is_texture_loaded",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_copy_texture_to_texture",
+    fn(_args) { ok_i32(0) },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "asset_load_folder",
     fn(_args) { ok_i32(1) },
     func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),

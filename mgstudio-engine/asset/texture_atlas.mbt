@@ -346,12 +346,21 @@ pub fn asset_set_texture_sampler(
 ///|
 pub struct TextureAtlasBuilder {
   padding : @math.UVec2
+  initial_size : @math.UVec2
+  max_size : @math.UVec2
+  nearest : Bool
   textures : Array[Handle[Image]]
 }
 
 ///|
 pub fn TextureAtlasBuilder::default() -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{ padding: @math.UVec2::zero(), textures: [] }
+  TextureAtlasBuilder::{
+    padding: @math.UVec2::zero(),
+    initial_size: @math.UVec2::splat(256),
+    max_size: @math.UVec2::splat(2048),
+    nearest: false,
+    textures: [],
+  }
 }
 
 ///|
@@ -359,7 +368,55 @@ pub fn TextureAtlasBuilder::padding(
   self : TextureAtlasBuilder,
   padding : @math.UVec2,
 ) -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{ padding, textures: self.textures }
+  TextureAtlasBuilder::{
+    padding,
+    initial_size: self.initial_size,
+    max_size: self.max_size,
+    nearest: self.nearest,
+    textures: self.textures,
+  }
+}
+
+///|
+pub fn TextureAtlasBuilder::initial_size(
+  self : TextureAtlasBuilder,
+  size : @math.UVec2,
+) -> TextureAtlasBuilder {
+  TextureAtlasBuilder::{
+    padding: self.padding,
+    initial_size: size,
+    max_size: self.max_size,
+    nearest: self.nearest,
+    textures: self.textures,
+  }
+}
+
+///|
+pub fn TextureAtlasBuilder::max_size(
+  self : TextureAtlasBuilder,
+  size : @math.UVec2,
+) -> TextureAtlasBuilder {
+  TextureAtlasBuilder::{
+    padding: self.padding,
+    initial_size: self.initial_size,
+    max_size: size,
+    nearest: self.nearest,
+    textures: self.textures,
+  }
+}
+
+///|
+pub fn TextureAtlasBuilder::sampler_nearest(
+  self : TextureAtlasBuilder,
+  nearest : Bool,
+) -> TextureAtlasBuilder {
+  TextureAtlasBuilder::{
+    padding: self.padding,
+    initial_size: self.initial_size,
+    max_size: self.max_size,
+    nearest,
+    textures: self.textures,
+  }
 }
 
 ///|
@@ -399,12 +456,124 @@ pub fn asset_set_texture_atlas_layout(
 }
 
 ///|
+fn int_clamp_max(value : Int, max : Int) -> Int {
+  if value > max {
+    max
+  } else {
+    value
+  }
+}
+
+///|
+pub fn TextureAtlasBuilder::try_build(
+  self : TextureAtlasBuilder,
+) -> (TextureAtlasLayout, TextureAtlasSources, Handle[Image])? {
+  let texture_count = self.textures.length()
+  if texture_count <= 0 {
+    return None
+  }
+  let padding_value = if self.padding.x > self.padding.y {
+    self.padding.x
+  } else {
+    self.padding.y
+  }
+  let mut current_size = @math.UVec2::new(
+    if self.initial_size.x > 0 {
+      self.initial_size.x
+    } else {
+      1
+    },
+    if self.initial_size.y > 0 {
+      self.initial_size.y
+    } else {
+      1
+    },
+  )
+  let max_size = @math.UVec2::new(
+    if self.max_size.x > 0 {
+      self.max_size.x
+    } else {
+      1
+    },
+    if self.max_size.y > 0 {
+      self.max_size.y
+    } else {
+      1
+    },
+  )
+  let mut attempts = 0
+  while attempts < 64 {
+    if current_size.x > max_size.x || current_size.y > max_size.y {
+      break
+    }
+    let allocator = DynamicTextureAtlasBuilder::new(current_size, padding_value)
+    let layout = TextureAtlasLayout::new_empty(current_size)
+    let sources = TextureAtlasSources::{ texture_ids: [] }
+    let rects : Array[@math.URect] = []
+    let mut ok = true
+    for i in 0..<texture_count {
+      let texture = self.textures[i]
+      let width = asset_texture_width(texture)
+      let height = asset_texture_height(texture)
+      if width <= 0 || height <= 0 {
+        ok = false
+        break
+      }
+      let size = @math.UVec2::new(width, height)
+      let allocation = allocator.add_texture(layout, size)
+      if allocation is None {
+        ok = false
+        break
+      }
+      let index = if allocation is Some(value) { value.0 } else { 0 }
+      let rect = if allocation is Some(value) {
+        value.1
+      } else {
+        ok = false
+        break
+      }
+      sources.texture_ids.push((texture, index))
+      rects.push(rect)
+    }
+    if ok {
+      let atlas_texture = asset_create_dynamic_texture(
+        current_size,
+        self.nearest,
+      )
+      for i in 0..<rects.length() {
+        let rect = rects[i]
+        asset_copy_texture_to_texture(atlas_texture, rect.min, self.textures[i])
+      }
+      return Some((layout, sources, atlas_texture))
+    }
+    let next_w = if current_size.x < max_size.x {
+      int_clamp_max(current_size.x * 2, max_size.x)
+    } else {
+      current_size.x
+    }
+    let next_h = if current_size.y < max_size.y {
+      int_clamp_max(current_size.y * 2, max_size.y)
+    } else {
+      current_size.y
+    }
+    if next_w == current_size.x && next_h == current_size.y {
+      break
+    }
+    current_size = @math.UVec2::new(next_w, next_h)
+    attempts = attempts + 1
+  }
+  None
+}
+
+///|
 pub fn TextureAtlasBuilder::build(
   self : TextureAtlasBuilder,
 ) -> (TextureAtlasLayout, TextureAtlasSources, Handle[Image]) {
-  self.padding |> ignore
-  self.textures |> ignore
-  let layout = TextureAtlasLayout::new_empty(@math.UVec2::zero())
-  let sources = TextureAtlasSources::{ texture_ids: [] }
-  (layout, sources, Handle::new(-1))
+  if self.try_build() is Some(value) {
+    value
+  } else {
+    let layout = TextureAtlasLayout::new_empty(@math.UVec2::zero())
+    let sources = TextureAtlasSources::{ texture_ids: [] }
+    (layout, sources, Handle::new(-1))
+  }
 }

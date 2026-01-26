@@ -28,6 +28,8 @@ pub fn run_sprite_sheet() -> Unit
 
 pub fn run_texture_atlas() -> Unit
 
+pub fn run_texture_atlas_builder() -> Unit
+
 // Errors
 
 // Types and methods

@@ -188,6 +188,11 @@ pub fn texture_usage_copy_dst() -> Int {
 }
 
 ///|
+pub fn texture_usage_copy_src() -> Int {
+  texture_usage_raw()._get("COPY_SRC").cast()
+}
+
+///|
 pub fn buffer_usage_vertex() -> Int {
   buffer_usage_raw()._get("VERTEX").cast()
 }
