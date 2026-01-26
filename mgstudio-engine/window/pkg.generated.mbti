@@ -18,6 +18,8 @@ pub fn host_gpu_create_mesh_capsule(Float, Float, Int) -> Int
 
 pub fn host_gpu_create_mesh_rectangle(Float, Float) -> Int
 
+pub fn host_gpu_create_mesh_triangles(String) -> Int
+
 pub fn host_gpu_create_render_target(Int, Int, Bool) -> Int
 
 pub fn host_gpu_create_surface(HostWindow) -> HostGpuSurface

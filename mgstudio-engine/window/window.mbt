@@ -286,6 +286,9 @@ pub fn host_gpu_create_mesh_capsule(
 pub fn host_gpu_create_mesh_rectangle(width : Float, height : Float) -> Int = "mgstudio_host" "gpu_create_mesh_rectangle"
 
 ///|
+pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int = "mgstudio_host" "gpu_create_mesh_triangles"
+
+///|
 pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string"
 
 ///|

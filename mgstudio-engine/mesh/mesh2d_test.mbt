@@ -31,6 +31,7 @@ test "mesh2d: validate indexed triangle list" {
   inspect(mesh.validate() is None, content="true")
   inspect(mesh.triangle_count().unwrap(), content="2")
   inspect(mesh.flatten_triangle_positions_xy().unwrap().length(), content="12")
+  inspect(mesh.encode_triangle_positions_csv() is Some(_), content="true")
 }
 
 ///|

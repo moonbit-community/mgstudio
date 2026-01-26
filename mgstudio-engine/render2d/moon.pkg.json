@@ -3,6 +3,7 @@
     "Milky2018/mgstudio/app",
     "Milky2018/mgstudio/asset",
     "Milky2018/mgstudio/math",
+    "Milky2018/mgstudio/mesh",
     "Milky2018/mgstudio/window",
     "moonbitlang/core/ref"
   ]

@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
 }
 
 // Values
@@ -211,6 +212,7 @@ pub struct Mesh2d {
   kind : Mesh2dKind
 }
 pub fn Mesh2d::from_capsule(Capsule2d) -> Self
+pub fn Mesh2d::from_geometry(@mesh.Mesh2dGeometry) -> Self
 pub fn Mesh2d::from_rectangle(Rectangle) -> Self
 
 pub struct Mesh2dBundle {
@@ -226,6 +228,7 @@ pub fn Mesh2dBundle::spawn(Self) -> MeshHandle
 pub(all) enum Mesh2dKind {
   Capsule(Capsule2d)
   Rectangle(Rectangle)
+  Geometry(@mesh.Mesh2dGeometry)
 }
 
 pub struct MeshHandle {

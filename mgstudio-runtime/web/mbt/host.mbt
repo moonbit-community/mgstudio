@@ -516,6 +516,22 @@ extern "js" fn float32array_from_array(values : Array[Double]) -> @js.Any =
   #| (values) => new Float32Array(values)
 
 ///|
+extern "js" fn float32array_from_csv(text : String) -> @js.Any =
+  #| (text) => {
+  #|   const source = String(text || "").trim()
+  #|   if (!source) {
+  #|     return new Float32Array(0)
+  #|   }
+  #|   const parts = source.split(/[,\s]+/).filter((p) => p.length > 0)
+  #|   const out = new Float32Array(parts.length)
+  #|   for (let i = 0; i < parts.length; i += 1) {
+  #|     const value = Number(parts[i])
+  #|     out[i] = Number.isFinite(value) ? value : 0
+  #|   }
+  #|   return out
+  #| }
+
+///|
 extern "js" fn build_gizmo_vertices(
   data : @js.Any,
   cam_x : Double,
@@ -2874,6 +2890,35 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     }
     id
   })
+  let gpu_create_mesh_triangles = @js.from_fn1(fn(vertices_xy) {
+    if state.gpu.device is None {
+      throw_error("GPU device not ready")
+      return 0
+    }
+    ensure_mesh_pipeline(state)
+    let id = state.gpu.next_mesh_id
+    state.gpu.next_mesh_id = id + 1
+    let vertices = float32array_from_csv(any_to_string(vertices_xy))
+    if state.gpu.device is Some(device) {
+      let vertex_size : Int = vertices._get("byteLength").cast()
+      let vertex_usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_vertex(),
+        @webgpu.buffer_usage_copy_dst(),
+      )
+      let vertex_desc = @webgpu.buffer_descriptor(vertex_size, vertex_usage)
+      let vertex_buffer = device.create_buffer(vertex_desc.to_js())
+      device.queue().write_buffer(vertex_buffer, 0, vertices)
+      let vertex_len : Double = vertices._get("length").cast()
+      let vertex_count = to_int(vertex_len / 2)
+      let entry = @js.from_entries([
+        ("id", @js.any(id)),
+        ("vertexBuffer", vertex_buffer.as_any()),
+        ("vertexCount", @js.any(vertex_count)),
+      ])
+      map_set(state.gpu.meshes, @js.any(id), entry)
+    }
+    id
+  })
   let gpu_begin_frame = @js.from_fn1(fn(_ : @js.Any) { begin_frame(state) })
   let gpu_begin_pass = wrap_variadic(
     @js.from_fn1(fn(args) {
@@ -3049,6 +3094,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("gpu_create_render_target", gpu_create_render_target),
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),
+    ("gpu_create_mesh_triangles", gpu_create_mesh_triangles),
     ("gpu_begin_frame", gpu_begin_frame),
     ("gpu_begin_pass", gpu_begin_pass),
     ("gpu_draw_sprite", gpu_draw_sprite),

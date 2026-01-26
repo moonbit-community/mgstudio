@@ -182,6 +182,7 @@ pub fn Rectangle::default() -> Rectangle {
 pub(all) enum Mesh2dKind {
   Capsule(Capsule2d)
   Rectangle(Rectangle)
+  Geometry(@mesh.Mesh2dGeometry)
 }
 
 ///|
@@ -197,6 +198,11 @@ pub fn Mesh2d::from_capsule(capsule : Capsule2d) -> Mesh2d {
 ///|
 pub fn Mesh2d::from_rectangle(rectangle : Rectangle) -> Mesh2d {
   Mesh2d::{ kind: Rectangle(rectangle) }
+}
+
+///|
+pub fn Mesh2d::from_geometry(geometry : @mesh.Mesh2dGeometry) -> Mesh2d {
+  Mesh2d::{ kind: Geometry(geometry) }
 }
 
 ///|
@@ -484,6 +490,19 @@ pub fn render2d_spawn_mesh(bundle : Mesh2dBundle) -> MeshHandle {
       let height = rectangle.half_size.y * 2.0F
       @window.host_gpu_create_mesh_rectangle(width, height)
     }
+    Geometry(geometry) =>
+      match geometry.encode_triangle_positions_csv() {
+        Some(vertices_csv) =>
+          @window.host_gpu_create_mesh_triangles(vertices_csv)
+        None => {
+          let message = match geometry.validate() {
+            Some(err) => "Mesh2dGeometry validation failed: " + err.to_string()
+            None => "Mesh2dGeometry flatten failed"
+          }
+          @window.host_debug_string(message)
+          0
+        }
+      }
   }
   render_state.val.meshes.push(MeshInstance::{
     id,

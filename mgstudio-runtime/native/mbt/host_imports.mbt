@@ -106,6 +106,15 @@ pub fn add_mgstudio_host_imports(
     },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
+  linker.add_host_func(
+    "mgstudio_host",
+    "debug_string",
+    fn(_args) {
+      // Bring-up: ignore.
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
 
   // Window.
   linker.add_host_func(
@@ -325,6 +334,12 @@ pub fn add_mgstudio_host_imports(
     func_type=ft([@types.ValueType::F32, @types.ValueType::F32], [
       @types.ValueType::I32,
     ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_create_mesh_triangles",
+    fn(_args) { ok_i32(1) },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",

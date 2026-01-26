@@ -34,7 +34,7 @@ pub(all) enum Mesh2dValidationError {
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)
   IndexOutOfBounds(Int, Int)
-}
+} derive(Eq, Show)
 
 ///|
 pub fn Mesh2dGeometry::new(
@@ -160,6 +160,28 @@ pub fn Mesh2dGeometry::flatten_triangle_positions_xy(
         let p = self.positions[idx]
         out.push(p.x.to_double())
         out.push(p.y.to_double())
+      }
+      Some(out)
+    }
+  }
+}
+
+///|
+/// Encodes non-indexed triangle list positions as a comma-separated string:
+/// `x0,y0,x1,y1,...`.
+pub fn Mesh2dGeometry::encode_triangle_positions_csv(
+  self : Mesh2dGeometry,
+) -> String? {
+  match self.flatten_triangle_positions_xy() {
+    None => None
+    Some(values) => {
+      let mut out = ""
+      let n = values.length()
+      for i in 0..<n {
+        if i > 0 {
+          out = out + ","
+        }
+        out = out + values[i].to_string()
       }
       Some(out)
     }

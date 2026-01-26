@@ -15,6 +15,7 @@ pub struct Mesh2dGeometry {
   uvs : Array[@math.Vec2]
   indices : Array[Int]?
 }
+pub fn Mesh2dGeometry::encode_triangle_positions_csv(Self) -> String?
 pub fn Mesh2dGeometry::flatten_interleaved_xy_uv(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::flatten_positions_xy(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::flatten_triangle_positions_xy(Self) -> Array[Double]?
@@ -31,6 +32,8 @@ pub(all) enum Mesh2dValidationError {
   IndicesCountNotMultipleOf3(Int)
   IndexOutOfBounds(Int, Int)
 }
+pub impl Eq for Mesh2dValidationError
+pub impl Show for Mesh2dValidationError
 
 // Type aliases
 
