@@ -32,6 +32,8 @@ pub fn system_set(name : String) -> SystemSet {
 ///|
 pub(all) enum ScheduleStage {
   Startup
+  PreUpdate
+  FixedUpdate
   Update
   PostUpdate
 } derive(Eq, Show)
@@ -98,6 +100,9 @@ pub fn SystemConfig::after(
 }
 
 ///|
+pub type DeltaSecondsFn = () -> Float
+
+///|
 pub type RunnerFn = () -> Unit
 
 ///|
@@ -106,9 +111,13 @@ pub type RunnerBuilder = (App) -> RunnerFn
 ///|
 pub struct Schedule {
   startup : Array[SystemConfig]
+  pre_update : Array[SystemConfig]
+  fixed_update : Array[SystemConfig]
   update : Array[SystemConfig]
   post_update : Array[SystemConfig]
   startup_set_edges : Array[(SystemSet, SystemSet)]
+  pre_update_set_edges : Array[(SystemSet, SystemSet)]
+  fixed_update_set_edges : Array[(SystemSet, SystemSet)]
   update_set_edges : Array[(SystemSet, SystemSet)]
   post_update_set_edges : Array[(SystemSet, SystemSet)]
 }
@@ -124,9 +133,13 @@ pub fn App::new() -> App {
   App::{
     schedule: Schedule::{
       startup: [],
+      pre_update: [],
+      fixed_update: [],
       update: [],
       post_update: [],
       startup_set_edges: [],
+      pre_update_set_edges: [],
+      fixed_update_set_edges: [],
       update_set_edges: [],
       post_update_set_edges: [],
     },
@@ -161,6 +174,54 @@ pub fn[P : SystemParam] App::add_startup_system_param(
   startup_system : (P) -> Unit,
 ) -> App {
   self.schedule.startup.push(system(system_param(startup_system)))
+  self
+}
+
+///|
+pub fn App::add_pre_update_system_config(
+  self : App,
+  config : SystemConfig,
+) -> App {
+  self.schedule.pre_update.push(config)
+  self
+}
+
+///|
+pub fn App::add_pre_update_system(self : App, system_fn : SystemFn) -> App {
+  self.schedule.pre_update.push(system(system_fn))
+  self
+}
+
+///|
+pub fn[P : SystemParam] App::add_pre_update_system_param(
+  self : App,
+  pre_update_system : (P) -> Unit,
+) -> App {
+  self.schedule.pre_update.push(system(system_param(pre_update_system)))
+  self
+}
+
+///|
+pub fn App::add_fixed_update_system_config(
+  self : App,
+  config : SystemConfig,
+) -> App {
+  self.schedule.fixed_update.push(config)
+  self
+}
+
+///|
+pub fn App::add_fixed_update_system(self : App, system_fn : SystemFn) -> App {
+  self.schedule.fixed_update.push(system(system_fn))
+  self
+}
+
+///|
+pub fn[P : SystemParam] App::add_fixed_update_system_param(
+  self : App,
+  fixed_update_system : (P) -> Unit,
+) -> App {
+  self.schedule.fixed_update.push(system(system_param(fixed_update_system)))
   self
 }
 
@@ -216,6 +277,8 @@ fn schedule_systems(
 ) -> Array[SystemConfig] {
   match stage {
     Startup => schedule.startup
+    PreUpdate => schedule.pre_update
+    FixedUpdate => schedule.fixed_update
     Update => schedule.update
     PostUpdate => schedule.post_update
   }
@@ -228,6 +291,8 @@ fn schedule_set_edges(
 ) -> Array[(SystemSet, SystemSet)] {
   match stage {
     Startup => schedule.startup_set_edges
+    PreUpdate => schedule.pre_update_set_edges
+    FixedUpdate => schedule.fixed_update_set_edges
     Update => schedule.update_set_edges
     PostUpdate => schedule.post_update_set_edges
   }
@@ -249,6 +314,102 @@ pub fn App::configure_set(
     edges.push((other, set))
   }
   self
+}
+
+///|
+priv struct FixedTimeState {
+  mut timestep_seconds : Float
+  mut max_delta_seconds : Float
+  mut overstep_seconds : Float
+  mut elapsed_seconds : Float
+  mut did_run_this_frame : Bool
+  mut steps_ran_this_frame : Int
+}
+
+///|
+const DEFAULT_FIXED_TIMESTEP_SECONDS : Float = 0.015625F
+
+///|
+const DEFAULT_FIXED_MAX_DELTA_SECONDS : Float = 0.25F
+
+///|
+let fixed_time_state : Ref[FixedTimeState] = Ref::new(FixedTimeState::{
+  timestep_seconds: DEFAULT_FIXED_TIMESTEP_SECONDS,
+  max_delta_seconds: DEFAULT_FIXED_MAX_DELTA_SECONDS,
+  overstep_seconds: 0.0F,
+  elapsed_seconds: 0.0F,
+  did_run_this_frame: false,
+  steps_ran_this_frame: 0,
+})
+
+///|
+let delta_seconds_provider : Ref[DeltaSecondsFn?] = Ref::new(None)
+
+///|
+pub fn set_delta_seconds_provider(provider : DeltaSecondsFn) -> Unit {
+  delta_seconds_provider.val = Some(provider)
+}
+
+///|
+pub fn clear_delta_seconds_provider() -> Unit {
+  delta_seconds_provider.val = None
+}
+
+///|
+pub fn fixed_time_reset() -> Unit {
+  fixed_time_state.val.overstep_seconds = 0.0F
+  fixed_time_state.val.elapsed_seconds = 0.0F
+  fixed_time_state.val.did_run_this_frame = false
+  fixed_time_state.val.steps_ran_this_frame = 0
+}
+
+///|
+pub fn fixed_time_set_timestep_seconds(seconds : Float) -> Unit {
+  if seconds > 0.0F {
+    fixed_time_state.val.timestep_seconds = seconds
+  }
+}
+
+///|
+pub fn fixed_time_set_max_delta_seconds(seconds : Float) -> Unit {
+  if seconds > 0.0F {
+    fixed_time_state.val.max_delta_seconds = seconds
+  }
+}
+
+///|
+pub fn fixed_time_timestep_seconds() -> Float {
+  fixed_time_state.val.timestep_seconds
+}
+
+///|
+pub fn fixed_time_overstep_seconds() -> Float {
+  fixed_time_state.val.overstep_seconds
+}
+
+///|
+pub fn fixed_time_elapsed_seconds() -> Float {
+  fixed_time_state.val.elapsed_seconds
+}
+
+///|
+pub fn fixed_time_overstep_fraction() -> Float {
+  let timestep = fixed_time_state.val.timestep_seconds
+  if timestep <= 0.0F {
+    0.0F
+  } else {
+    fixed_time_state.val.overstep_seconds / timestep
+  }
+}
+
+///|
+pub fn fixed_time_did_run_this_frame() -> Bool {
+  fixed_time_state.val.did_run_this_frame
+}
+
+///|
+pub fn fixed_time_steps_ran_this_frame() -> Int {
+  fixed_time_state.val.steps_ran_this_frame
 }
 
 ///|
@@ -398,6 +559,41 @@ pub fn App::run_startup(self : App) -> App {
 
 ///|
 pub fn App::run_once(self : App) -> App {
+  run_systems(
+    schedule_systems(self.schedule, PreUpdate),
+    schedule_set_edges(self.schedule, PreUpdate),
+  )
+  fixed_time_state.val.did_run_this_frame = false
+  fixed_time_state.val.steps_ran_this_frame = 0
+  let delta_raw = match delta_seconds_provider.val {
+    Some(provider) => provider()
+    None => 0.0F
+  }
+  let delta_non_negative = if delta_raw < 0.0F { 0.0F } else { delta_raw }
+  let max_delta = fixed_time_state.val.max_delta_seconds
+  let delta = if delta_non_negative > max_delta {
+    max_delta
+  } else {
+    delta_non_negative
+  }
+  fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds +
+    delta
+  let timestep = fixed_time_state.val.timestep_seconds
+  if timestep > 0.0F {
+    let fixed_systems = schedule_systems(self.schedule, FixedUpdate)
+    let fixed_edges = schedule_set_edges(self.schedule, FixedUpdate)
+    let eps = 0.0000001F
+    while fixed_time_state.val.overstep_seconds + eps >= timestep {
+      fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds -
+        timestep
+      fixed_time_state.val.elapsed_seconds = fixed_time_state.val.elapsed_seconds +
+        timestep
+      fixed_time_state.val.did_run_this_frame = true
+      fixed_time_state.val.steps_ran_this_frame = fixed_time_state.val.steps_ran_this_frame +
+        1
+      run_systems(fixed_systems, fixed_edges)
+    }
+  }
   run_systems(
     schedule_systems(self.schedule, Update),
     schedule_set_edges(self.schedule, Update),

@@ -2,6 +2,28 @@
 package "Milky2018/mgstudio/app"
 
 // Values
+pub fn clear_delta_seconds_provider() -> Unit
+
+pub fn fixed_time_did_run_this_frame() -> Bool
+
+pub fn fixed_time_elapsed_seconds() -> Float
+
+pub fn fixed_time_overstep_fraction() -> Float
+
+pub fn fixed_time_overstep_seconds() -> Float
+
+pub fn fixed_time_reset() -> Unit
+
+pub fn fixed_time_set_max_delta_seconds(Float) -> Unit
+
+pub fn fixed_time_set_timestep_seconds(Float) -> Unit
+
+pub fn fixed_time_steps_ran_this_frame() -> Int
+
+pub fn fixed_time_timestep_seconds() -> Float
+
+pub fn set_delta_seconds_provider(() -> Float) -> Unit
+
 pub fn system(() -> Unit) -> SystemConfig
 
 pub fn[P : SystemParam] system_param((P) -> Unit) -> () -> Unit
@@ -15,10 +37,16 @@ pub struct App {
   schedule : Schedule
   runner : (() -> Unit)?
 }
+pub fn App::add_fixed_update_system(Self, () -> Unit) -> Self
+pub fn App::add_fixed_update_system_config(Self, SystemConfig) -> Self
+pub fn[P : SystemParam] App::add_fixed_update_system_param(Self, (P) -> Unit) -> Self
 pub fn App::add_plugins(Self, Array[(Self) -> Self]) -> Self
 pub fn App::add_post_update_system(Self, () -> Unit) -> Self
 pub fn App::add_post_update_system_config(Self, SystemConfig) -> Self
 pub fn[P : SystemParam] App::add_post_update_system_param(Self, (P) -> Unit) -> Self
+pub fn App::add_pre_update_system(Self, () -> Unit) -> Self
+pub fn App::add_pre_update_system_config(Self, SystemConfig) -> Self
+pub fn[P : SystemParam] App::add_pre_update_system_param(Self, (P) -> Unit) -> Self
 pub fn App::add_startup_system(Self, () -> Unit) -> Self
 pub fn App::add_startup_system_config(Self, SystemConfig) -> Self
 pub fn[P : SystemParam] App::add_startup_system_param(Self, (P) -> Unit) -> Self
@@ -34,15 +62,21 @@ pub fn App::set_runner(Self, (Self) -> () -> Unit) -> Self
 
 pub struct Schedule {
   startup : Array[SystemConfig]
+  pre_update : Array[SystemConfig]
+  fixed_update : Array[SystemConfig]
   update : Array[SystemConfig]
   post_update : Array[SystemConfig]
   startup_set_edges : Array[(String, String)]
+  pre_update_set_edges : Array[(String, String)]
+  fixed_update_set_edges : Array[(String, String)]
   update_set_edges : Array[(String, String)]
   post_update_set_edges : Array[(String, String)]
 }
 
 pub(all) enum ScheduleStage {
   Startup
+  PreUpdate
+  FixedUpdate
   Update
   PostUpdate
 }
@@ -62,6 +96,8 @@ pub fn SystemConfig::in_set(Self, String) -> Self
 pub fn SystemConfig::run_if(Self, () -> Bool) -> Self
 
 // Type aliases
+pub type DeltaSecondsFn = () -> Float
+
 pub type Plugin = (App) -> App
 
 pub type RunConditionFn = () -> Bool

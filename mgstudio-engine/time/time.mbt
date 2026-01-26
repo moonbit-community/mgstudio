@@ -62,5 +62,6 @@ pub fn time_system() -> Unit {
 
 ///|
 pub fn time_plugin(app : @app.App) -> @app.App {
-  app.add_system(time_system)
+  @app.set_delta_seconds_provider(fn() { time_delta_seconds() })
+  app.add_pre_update_system(time_system)
 }

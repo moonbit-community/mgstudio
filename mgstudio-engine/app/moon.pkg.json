@@ -3,6 +3,7 @@
     {
       "path": "moonbitlang/core/hashmap",
       "alias": "hashmap"
-    }
+    },
+    "moonbitlang/core/ref"
   ]
 }
