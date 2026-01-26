@@ -1,2 +1,8 @@
 {
+  "import": [
+    {
+      "path": "moonbitlang/core/hashmap",
+      "alias": "hashmap"
+    }
+  ]
 }

@@ -19,6 +19,24 @@ pub type SystemFn = () -> Unit
 pub type Plugin = (App) -> App
 
 ///|
+pub type RunConditionFn = () -> Bool
+
+///|
+pub type SystemSet = String
+
+///|
+pub fn system_set(name : String) -> SystemSet {
+  name
+}
+
+///|
+pub(all) enum ScheduleStage {
+  Startup
+  Update
+  PostUpdate
+} derive(Eq, Show)
+
+///|
 pub(open) trait SystemParam {
   get() -> Self
 }
@@ -32,6 +50,54 @@ pub fn[P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn {
 }
 
 ///|
+pub struct SystemConfig {
+  system : SystemFn
+  run_if : RunConditionFn?
+  set : SystemSet?
+  before : Array[SystemSet]
+  after : Array[SystemSet]
+}
+
+///|
+pub fn system(system : SystemFn) -> SystemConfig {
+  SystemConfig::{ system, run_if: None, set: None, before: [], after: [] }
+}
+
+///|
+pub fn SystemConfig::run_if(
+  self : SystemConfig,
+  cond : RunConditionFn,
+) -> SystemConfig {
+  SystemConfig::{ ..self, run_if: Some(cond) }
+}
+
+///|
+pub fn SystemConfig::in_set(
+  self : SystemConfig,
+  set : SystemSet,
+) -> SystemConfig {
+  SystemConfig::{ ..self, set: Some(set) }
+}
+
+///|
+pub fn SystemConfig::before(
+  self : SystemConfig,
+  set : SystemSet,
+) -> SystemConfig {
+  self.before.push(set)
+  self
+}
+
+///|
+pub fn SystemConfig::after(
+  self : SystemConfig,
+  set : SystemSet,
+) -> SystemConfig {
+  self.after.push(set)
+  self
+}
+
+///|
 pub type RunnerFn = () -> Unit
 
 ///|
@@ -39,9 +105,12 @@ pub type RunnerBuilder = (App) -> RunnerFn
 
 ///|
 pub struct Schedule {
-  startup : Array[SystemFn]
-  update : Array[SystemFn]
-  post_update : Array[SystemFn]
+  startup : Array[SystemConfig]
+  update : Array[SystemConfig]
+  post_update : Array[SystemConfig]
+  startup_set_edges : Array[(SystemSet, SystemSet)]
+  update_set_edges : Array[(SystemSet, SystemSet)]
+  post_update_set_edges : Array[(SystemSet, SystemSet)]
 }
 
 ///|
@@ -53,7 +122,14 @@ pub struct App {
 ///|
 pub fn App::new() -> App {
   App::{
-    schedule: Schedule::{ startup: [], update: [], post_update: [] },
+    schedule: Schedule::{
+      startup: [],
+      update: [],
+      post_update: [],
+      startup_set_edges: [],
+      update_set_edges: [],
+      post_update_set_edges: [],
+    },
     runner: None,
   }
 }
@@ -68,67 +144,268 @@ pub fn App::add_plugins(self : App, plugins : Array[Plugin]) -> App {
 }
 
 ///|
-pub fn App::add_startup_system(self : App, system : SystemFn) -> App {
-  self.schedule.startup.push(system)
+pub fn App::add_startup_system_config(self : App, config : SystemConfig) -> App {
+  self.schedule.startup.push(config)
+  self
+}
+
+///|
+pub fn App::add_startup_system(self : App, system_fn : SystemFn) -> App {
+  self.schedule.startup.push(system(system_fn))
   self
 }
 
 ///|
 pub fn[P : SystemParam] App::add_startup_system_param(
   self : App,
-  system : (P) -> Unit,
+  startup_system : (P) -> Unit,
 ) -> App {
-  self.schedule.startup.push(system_param(system))
+  self.schedule.startup.push(system(system_param(startup_system)))
   self
 }
 
 ///|
-pub fn App::add_system(self : App, system : SystemFn) -> App {
-  self.schedule.update.push(system)
+pub fn App::add_system_config(self : App, config : SystemConfig) -> App {
+  self.schedule.update.push(config)
+  self
+}
+
+///|
+pub fn App::add_system(self : App, system_fn : SystemFn) -> App {
+  self.schedule.update.push(system(system_fn))
   self
 }
 
 ///|
 pub fn[P : SystemParam] App::add_system_param(
   self : App,
-  system : (P) -> Unit,
+  update_system : (P) -> Unit,
 ) -> App {
-  self.schedule.update.push(system_param(system))
+  self.schedule.update.push(system(system_param(update_system)))
   self
 }
 
 ///|
-pub fn App::add_post_update_system(self : App, system : SystemFn) -> App {
-  self.schedule.post_update.push(system)
+pub fn App::add_post_update_system_config(
+  self : App,
+  config : SystemConfig,
+) -> App {
+  self.schedule.post_update.push(config)
+  self
+}
+
+///|
+pub fn App::add_post_update_system(self : App, system_fn : SystemFn) -> App {
+  self.schedule.post_update.push(system(system_fn))
   self
 }
 
 ///|
 pub fn[P : SystemParam] App::add_post_update_system_param(
   self : App,
-  system : (P) -> Unit,
+  post_update_system : (P) -> Unit,
 ) -> App {
-  self.schedule.post_update.push(system_param(system))
+  self.schedule.post_update.push(system(system_param(post_update_system)))
   self
 }
 
 ///|
-fn run_systems(systems : Array[SystemFn]) -> Unit {
-  for system in systems {
-    system()
+fn schedule_systems(
+  schedule : Schedule,
+  stage : ScheduleStage,
+) -> Array[SystemConfig] {
+  match stage {
+    Startup => schedule.startup
+    Update => schedule.update
+    PostUpdate => schedule.post_update
+  }
+}
+
+///|
+fn schedule_set_edges(
+  schedule : Schedule,
+  stage : ScheduleStage,
+) -> Array[(SystemSet, SystemSet)] {
+  match stage {
+    Startup => schedule.startup_set_edges
+    Update => schedule.update_set_edges
+    PostUpdate => schedule.post_update_set_edges
+  }
+}
+
+///|
+pub fn App::configure_set(
+  self : App,
+  stage : ScheduleStage,
+  set : SystemSet,
+  before? : Array[SystemSet] = [],
+  after? : Array[SystemSet] = [],
+) -> App {
+  let edges = schedule_set_edges(self.schedule, stage)
+  for other in before {
+    edges.push((set, other))
+  }
+  for other in after {
+    edges.push((other, set))
+  }
+  self
+}
+
+///|
+fn run_systems(
+  systems : Array[SystemConfig],
+  set_edges : Array[(SystemSet, SystemSet)],
+) -> Unit {
+  let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
+  let set_order : Array[SystemSet] = []
+  fn push_unique(
+    seen : @hashmap.HashMap[SystemSet, Bool],
+    set_order : Array[SystemSet],
+    set : SystemSet,
+  ) -> Unit {
+    if !seen.contains(set) {
+      set_order.push(set)
+      seen.set(set, true)
+    }
+  }
+
+  let system_count = systems.length()
+  let groups : Array[SystemSet] = []
+  for i in 0..<system_count {
+    let cfg = systems[i]
+    let set = if cfg.set is Some(s) { s } else { "__anon#" + i.to_string() }
+    groups.push(set)
+    push_unique(seen, set_order, set)
+    for other in cfg.before {
+      push_unique(seen, set_order, other)
+    }
+    for other in cfg.after {
+      push_unique(seen, set_order, other)
+    }
+  }
+  for edge in set_edges {
+    push_unique(seen, set_order, edge.0)
+    push_unique(seen, set_order, edge.1)
+  }
+  let set_count = set_order.length()
+  let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap::new()
+  for i in 0..<set_count {
+    set_index.set(set_order[i], i)
+  }
+  let indeg : Array[Int] = []
+  let adj : Array[Array[Int]] = []
+  for _ in 0..<set_count {
+    indeg.push(0)
+    adj.push([])
+  }
+  fn add_edge(
+    set_index : @hashmap.HashMap[SystemSet, Int],
+    indeg : Array[Int],
+    adj : Array[Array[Int]],
+    from : SystemSet,
+    to : SystemSet,
+  ) -> Unit {
+    let from_i = set_index.at(from)
+    let to_i = set_index.at(to)
+    adj[from_i].push(to_i)
+    indeg[to_i] = indeg[to_i] + 1
+  }
+
+  for edge in set_edges {
+    add_edge(set_index, indeg, adj, edge.0, edge.1)
+  }
+  for i in 0..<system_count {
+    let cfg = systems[i]
+    let group = groups[i]
+    for other in cfg.before {
+      add_edge(set_index, indeg, adj, group, other)
+    }
+    for other in cfg.after {
+      add_edge(set_index, indeg, adj, other, group)
+    }
+  }
+  fn pop_smallest(ready : Array[Int]) -> Int {
+    let mut best_pos = 0
+    let mut best_value = ready[0]
+    let len = ready.length()
+    for i in 1..<len {
+      let value = ready[i]
+      if value < best_value {
+        best_value = value
+        best_pos = i
+      }
+    }
+    let last_index = ready.length() - 1
+    ready[best_pos] = ready[last_index]
+    ready.pop().unwrap() |> ignore
+    best_value
+  }
+
+  let ready : Array[Int] = []
+  for i in 0..<set_count {
+    if indeg[i] == 0 {
+      ready.push(i)
+    }
+  }
+  let topo : Array[Int] = []
+  while ready.length() > 0 {
+    let next = pop_smallest(ready)
+    topo.push(next)
+    for to in adj[next] {
+      indeg[to] = indeg[to] - 1
+      if indeg[to] == 0 {
+        ready.push(to)
+      }
+    }
+  }
+
+  // Cycle fallback: preserve first-seen order.
+  if topo.length() != set_count {
+    topo.clear()
+    for i in 0..<set_count {
+      topo.push(i)
+    }
+  }
+  let systems_by_set : Array[Array[Int]] = []
+  for _ in 0..<set_count {
+    systems_by_set.push([])
+  }
+  for i in 0..<system_count {
+    let set_i = set_index.at(groups[i])
+    systems_by_set[set_i].push(i)
+  }
+  for set_i in topo {
+    for system_i in systems_by_set[set_i] {
+      let cfg = systems[system_i]
+      if cfg.run_if is Some(cond) {
+        if !cond() {
+          continue
+        }
+      }
+      (cfg.system)()
+    }
   }
 }
 
 ///|
 pub fn App::run_startup(self : App) -> App {
-  run_systems(self.schedule.startup)
+  run_systems(
+    schedule_systems(self.schedule, Startup),
+    schedule_set_edges(self.schedule, Startup),
+  )
   self
 }
 
 ///|
 pub fn App::run_once(self : App) -> App {
-  run_systems(self.schedule.update)
-  run_systems(self.schedule.post_update)
+  run_systems(
+    schedule_systems(self.schedule, Update),
+    schedule_set_edges(self.schedule, Update),
+  )
+  run_systems(
+    schedule_systems(self.schedule, PostUpdate),
+    schedule_set_edges(self.schedule, PostUpdate),
+  )
   self
 }
 
