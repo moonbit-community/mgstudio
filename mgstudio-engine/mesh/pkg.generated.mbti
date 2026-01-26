@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/mesh"
+
+import {
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Mesh2dGeometry {
+  positions : Array[@math.Vec2]
+  uvs : Array[@math.Vec2]
+  indices : Array[Int]?
+}
+pub fn Mesh2dGeometry::flatten_interleaved_xy_uv(Self) -> Array[Double]?
+pub fn Mesh2dGeometry::flatten_positions_xy(Self) -> Array[Double]?
+pub fn Mesh2dGeometry::flatten_triangle_positions_xy(Self) -> Array[Double]?
+pub fn Mesh2dGeometry::new(Array[@math.Vec2], Array[@math.Vec2], Array[Int]?) -> Self
+pub fn Mesh2dGeometry::triangle_count(Self) -> Int?
+pub fn Mesh2dGeometry::validate(Self) -> Mesh2dValidationError?
+pub fn Mesh2dGeometry::vertex_count(Self) -> Int
+
+pub(all) enum Mesh2dValidationError {
+  EmptyVertices
+  AttributeLengthMismatch(Int, Int)
+  NonIndexedVertexCountNotMultipleOf3(Int)
+  IndicesEmpty
+  IndicesCountNotMultipleOf3(Int)
+  IndexOutOfBounds(Int, Int)
+}
+
+// Type aliases
+
+// Traits
+
