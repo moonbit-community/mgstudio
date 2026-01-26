@@ -850,6 +850,59 @@ pub fn render_queue_system() -> Unit {
 }
 
 ///|
+fn cmp_int(a : Int, b : Int) -> Int {
+  if a < b {
+    -1
+  } else if a > b {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn sprite_draw_indices(
+  sprites : Array[SpriteInstance],
+  layers : RenderLayers,
+) -> Array[Int] {
+  let opaque_indices : Array[Int] = []
+  let transparent : Array[Int] = []
+  let count = sprites.length()
+  for i in 0..<count {
+    let sprite = sprites[i]
+    if !sprite.layers.matches(layers) {
+      continue
+    }
+    if sprite.color.a >= 1.0F {
+      opaque_indices.push(i)
+    } else {
+      transparent.push(i)
+    }
+  }
+  // Opaque sprites can be safely re-ordered to improve batching.
+  opaque_indices.sort_by(fn(a, b) {
+    let ta = sprites[a].texture.id()
+    let tb = sprites[b].texture.id()
+    let c = cmp_int(ta, tb)
+    if c != 0 {
+      c
+    } else {
+      // Tie-break to keep the order deterministic.
+      cmp_int(a, b)
+    }
+  })
+  let out : Array[Int] = []
+  for i in opaque_indices {
+    out.push(i)
+  }
+  // Transparent sprites keep insertion order for stable blending.
+  for i in transparent {
+    out.push(i)
+  }
+  out
+}
+
+///|
 pub fn render_execute_system() -> Unit {
   if !render_state.val.draw_enabled {
     return
@@ -955,26 +1008,25 @@ pub fn render_execute_system() -> Unit {
       viewport_width,
       viewport_height,
     )
-    for sprite in sprites {
-      if sprite.layers.matches(camera.layers) {
-        let transform = sprite.transform
-        @window.host_gpu_draw_sprite_uv(
-          sprite.texture.id(),
-          transform.translation.x,
-          transform.translation.y,
-          transform.rotation,
-          transform.scale.x,
-          transform.scale.y,
-          sprite.color.r,
-          sprite.color.g,
-          sprite.color.b,
-          sprite.color.a,
-          sprite.uv_min.x,
-          sprite.uv_min.y,
-          sprite.uv_max.x,
-          sprite.uv_max.y,
-        )
-      }
+    for sprite_index in sprite_draw_indices(sprites, camera.layers) {
+      let sprite = sprites[sprite_index]
+      let transform = sprite.transform
+      @window.host_gpu_draw_sprite_uv(
+        sprite.texture.id(),
+        transform.translation.x,
+        transform.translation.y,
+        transform.rotation,
+        transform.scale.x,
+        transform.scale.y,
+        sprite.color.r,
+        sprite.color.g,
+        sprite.color.b,
+        sprite.color.a,
+        sprite.uv_min.x,
+        sprite.uv_min.y,
+        sprite.uv_max.x,
+        sprite.uv_max.y,
+      )
     }
     for mesh in meshes {
       if mesh.layers.matches(camera.layers) {
@@ -993,26 +1045,25 @@ pub fn render_execute_system() -> Unit {
         )
       }
     }
-    for sprite in extra_sprites {
-      if sprite.layers.matches(camera.layers) {
-        let transform = sprite.transform
-        @window.host_gpu_draw_sprite_uv(
-          sprite.texture.id(),
-          transform.translation.x,
-          transform.translation.y,
-          transform.rotation,
-          transform.scale.x,
-          transform.scale.y,
-          sprite.color.r,
-          sprite.color.g,
-          sprite.color.b,
-          sprite.color.a,
-          sprite.uv_min.x,
-          sprite.uv_min.y,
-          sprite.uv_max.x,
-          sprite.uv_max.y,
-        )
-      }
+    for sprite_index in sprite_draw_indices(extra_sprites, camera.layers) {
+      let sprite = extra_sprites[sprite_index]
+      let transform = sprite.transform
+      @window.host_gpu_draw_sprite_uv(
+        sprite.texture.id(),
+        transform.translation.x,
+        transform.translation.y,
+        transform.rotation,
+        transform.scale.x,
+        transform.scale.y,
+        sprite.color.r,
+        sprite.color.g,
+        sprite.color.b,
+        sprite.color.a,
+        sprite.uv_min.x,
+        sprite.uv_min.y,
+        sprite.uv_max.x,
+        sprite.uv_max.y,
+      )
     }
     gizmos_draw_lines(camera.layers)
     @window.host_gpu_end_pass()

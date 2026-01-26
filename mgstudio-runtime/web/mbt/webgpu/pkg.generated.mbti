@@ -22,6 +22,8 @@ pub fn buffer_descriptor(Int, Int) -> BufferDescriptor
 
 pub fn buffer_usage_copy_dst() -> Int
 
+pub fn buffer_usage_storage() -> Int
+
 pub fn buffer_usage_uniform() -> Int
 
 pub fn buffer_usage_vertex() -> Int

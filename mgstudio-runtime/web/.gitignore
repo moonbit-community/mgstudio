@@ -1,4 +1,6 @@
 runner.wasm
-assets/
+assets/*
+!assets/shaders/
+!assets/shaders/*.wgsl
 node_modules/
 *.tsbuildinfo

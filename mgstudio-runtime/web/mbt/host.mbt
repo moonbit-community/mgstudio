@@ -895,6 +895,13 @@ struct PassInfo {
 }
 
 ///|
+struct SpriteBatch {
+  texture_id : Int
+  first_instance : Int
+  mut instance_count : Int
+}
+
+///|
 struct WindowState {
   canvas : @js.Any
   mut width : Int
@@ -955,6 +962,13 @@ struct GpuState {
   mut meshes : @js.Any
   mut next_mesh_id : Int
   mut uniform_buffer : @webgpu.GPUBuffer?
+  mut sprite_uniform_buffer : @webgpu.GPUBuffer?
+  mut sprite_instance_buffer : @webgpu.GPUBuffer?
+  mut sprite_instance_capacity : Int
+  mut sprite_globals_bind_group : @webgpu.GPUBindGroup?
+  sprite_instance_data : Array[Double]
+  sprite_batches : Array[SpriteBatch]
+  mut sprite_instance_count : Int
   mut encoder : @webgpu.GPUCommandEncoder?
   mut current_texture : @webgpu.GPUTexture?
   mut current_pass : @webgpu.GPURenderPassEncoder?
@@ -1029,6 +1043,13 @@ fn new_state() -> State {
       meshes: new_map(),
       next_mesh_id: 1,
       uniform_buffer: None,
+      sprite_uniform_buffer: None,
+      sprite_instance_buffer: None,
+      sprite_instance_capacity: 0,
+      sprite_globals_bind_group: None,
+      sprite_instance_data: [],
+      sprite_batches: [],
+      sprite_instance_count: 0,
       encoder: None,
       current_texture: None,
       current_pass: None,
@@ -1272,6 +1293,13 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.meshes = new_map()
   state.gpu.next_mesh_id = 1
   state.gpu.uniform_buffer = None
+  state.gpu.sprite_uniform_buffer = None
+  state.gpu.sprite_instance_buffer = None
+  state.gpu.sprite_instance_capacity = 0
+  state.gpu.sprite_globals_bind_group = None
+  state.gpu.sprite_instance_data.clear()
+  state.gpu.sprite_batches.clear()
+  state.gpu.sprite_instance_count = 0
   state.gpu.encoder = None
   state.gpu.current_texture = None
   state.gpu.current_pass = None
@@ -1462,6 +1490,19 @@ fn ensure_pipeline_resources(state : State) -> Unit {
     )
     let uniform_desc = @webgpu.buffer_descriptor(80, uniform_usage)
     let uniform_buffer = device.create_buffer(uniform_desc.to_js())
+    let sprite_uniform_desc = @webgpu.buffer_descriptor(32, uniform_usage)
+    let sprite_uniform_buffer = device.create_buffer(
+      sprite_uniform_desc.to_js(),
+    )
+    let instance_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_storage(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    let instance_capacity = 65536
+    let instance_desc = @webgpu.buffer_descriptor(
+      instance_capacity, instance_usage,
+    )
+    let sprite_instance_buffer = device.create_buffer(instance_desc.to_js())
     let fallback_size = 64
     let texture_usage = @webgpu.combine_flags(
       @webgpu.combine_flags(
@@ -1502,12 +1543,19 @@ fn ensure_pipeline_resources(state : State) -> Unit {
     state.gpu.vertex_buffer = Some(vertex_buffer)
     state.gpu.vertex_count = 6
     state.gpu.uniform_buffer = Some(uniform_buffer)
+    state.gpu.sprite_uniform_buffer = Some(sprite_uniform_buffer)
+    state.gpu.sprite_instance_buffer = Some(sprite_instance_buffer)
+    state.gpu.sprite_instance_capacity = instance_capacity
+    state.gpu.sprite_globals_bind_group = None
+    state.gpu.sprite_instance_data.clear()
+    state.gpu.sprite_batches.clear()
+    state.gpu.sprite_instance_count = 0
   }
 }
 
 ///|
 fn ensure_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
-  if state.gpu.pipeline is None || state.gpu.uniform_buffer is None {
+  if state.gpu.pipeline is None {
     return
   }
   if state.gpu.device is None {
@@ -1521,19 +1569,43 @@ fn ensure_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
     return
   }
   if state.gpu.device is Some(device) && state.gpu.pipeline is Some(pipeline) {
-    if state.gpu.uniform_buffer is Some(uniform_buffer) {
-      let layout = pipeline.get_bind_group_layout(0)
-      let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
-      let view : @webgpu.GPUTextureView = entry._get("view").cast()
-      let entries = [
-        @webgpu.bind_group_entry_sampler(0, sampler),
-        @webgpu.bind_group_entry_texture(1, view),
-        @webgpu.bind_group_entry_buffer(2, uniform_buffer),
-      ]
-      let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
-      let bind_group = device.create_bind_group(bind_group_desc.to_js())
-      entry._set("bindGroup", bind_group.as_any()) |> ignore
-    }
+    let layout = pipeline.get_bind_group_layout(0)
+    let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
+    let view : @webgpu.GPUTextureView = entry._get("view").cast()
+    let entries = [
+      @webgpu.bind_group_entry_sampler(0, sampler),
+      @webgpu.bind_group_entry_texture(1, view),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    entry._set("bindGroup", bind_group.as_any()) |> ignore
+  }
+}
+
+///|
+fn ensure_sprite_globals_bind_group(state : State) -> Unit {
+  if state.gpu.pipeline is None ||
+    state.gpu.sprite_uniform_buffer is None ||
+    state.gpu.sprite_instance_buffer is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if state.gpu.sprite_globals_bind_group is Some(_) {
+    return
+  }
+  if state.gpu.device is Some(device) && state.gpu.pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(1)
+    let uniform_buffer = state.gpu.sprite_uniform_buffer.unwrap()
+    let instance_buffer = state.gpu.sprite_instance_buffer.unwrap()
+    let entries = [
+      @webgpu.bind_group_entry_buffer(0, uniform_buffer),
+      @webgpu.bind_group_entry_buffer(1, instance_buffer),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    state.gpu.sprite_globals_bind_group = Some(bind_group)
   }
 }
 
@@ -1931,6 +2003,106 @@ fn begin_pass(
         cam_scale,
       })
       state.gpu.gizmo_lines = new_array()
+      state.gpu.sprite_instance_data.clear()
+      state.gpu.sprite_batches.clear()
+      state.gpu.sprite_instance_count = 0
+      ensure_pipeline_resources(state)
+      if state.gpu.queue is Some(queue) &&
+        state.gpu.sprite_uniform_buffer is Some(sprite_uniform_buffer) {
+        let safe_scale = if cam_scale == 0 { 1.0 } else { cam_scale }
+        let scale_x_base = if width > 0 {
+          2.0 / width / safe_scale
+        } else {
+          0.0
+        }
+        let scale_y_base = if height > 0 {
+          2.0 / height / safe_scale
+        } else {
+          0.0
+        }
+        let cam_cos : Double = math_cos(-cam_rotation)
+        let cam_sin : Double = math_sin(-cam_rotation)
+        // Globals: view(x,y,cos,sin) + ndc_scale(x,y,_,_)
+        let globals = make_uniform_data([
+          cam_x, cam_y, cam_cos, cam_sin, scale_x_base, scale_y_base, 0.0, 0.0,
+        ])
+        queue.write_buffer(sprite_uniform_buffer, 0, globals)
+      }
+    }
+  }
+}
+
+///|
+fn flush_sprite_batches(state : State) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  if state.gpu.sprite_instance_count <= 0 {
+    return
+  }
+  if state.gpu.device is None || state.gpu.queue is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.pipeline is None ||
+    state.gpu.vertex_buffer is None ||
+    state.gpu.sprite_instance_buffer is None ||
+    state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
+    let required_bytes = state.gpu.sprite_instance_data.length() * 4
+    if required_bytes <= 0 {
+      return
+    }
+    if required_bytes > state.gpu.sprite_instance_capacity {
+      let capacity = if required_bytes < 256 { 256 } else { required_bytes }
+      let usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_storage(),
+        @webgpu.buffer_usage_copy_dst(),
+      )
+      let desc = @webgpu.buffer_descriptor(capacity, usage)
+      let buffer = device.create_buffer(desc.to_js())
+      state.gpu.sprite_instance_buffer = Some(buffer)
+      state.gpu.sprite_instance_capacity = capacity
+      state.gpu.sprite_globals_bind_group = None
+    }
+    ensure_sprite_globals_bind_group(state)
+    if state.gpu.sprite_instance_buffer is Some(instance_buffer) &&
+      state.gpu.sprite_globals_bind_group is Some(globals_bind_group) &&
+      state.gpu.pipeline is Some(pipeline) &&
+      state.gpu.vertex_buffer is Some(vertex_buffer) &&
+      state.gpu.current_pass is Some(pass) {
+      let instance_data = float32array_from_array(
+        state.gpu.sprite_instance_data,
+      )
+      queue.write_buffer(instance_buffer, 0, instance_data)
+      pass.set_pipeline(pipeline)
+      pass.set_vertex_buffer(0, vertex_buffer)
+      pass.set_bind_group(1, globals_bind_group)
+      for batch in state.gpu.sprite_batches {
+        let entry = get_texture_entry(state, batch.texture_id)
+        if entry is None {
+          continue
+        }
+        if entry is Some(entry_value) {
+          ensure_bind_group_for_texture(state, entry_value)
+          let bind_group_any = entry_value._get("bindGroup")
+          if host_is_nullish(bind_group_any) {
+            continue
+          }
+          pass.set_bind_group(0, bind_group_any.cast())
+          pass.draw(
+            state.gpu.vertex_count,
+            batch.instance_count,
+            0,
+            batch.first_instance,
+          )
+        }
+      }
+      state.gpu.sprite_instance_data.clear()
+      state.gpu.sprite_batches.clear()
+      state.gpu.sprite_instance_count = 0
     }
   }
 }
@@ -1981,78 +2153,62 @@ fn draw_sprite_uv(
     return
   }
   if entry is Some(entry_value) {
-    ensure_bind_group_for_texture(state, entry_value)
-    let bind_group_any = entry_value._get("bindGroup")
-    if host_is_nullish(bind_group_any) {
-      return
+    let tex_width : Double = entry_value._get("width").cast()
+    let tex_height : Double = entry_value._get("height").cast()
+    let raw_uv_scale_x = uv_max_x - uv_min_x
+    let raw_uv_scale_y = uv_max_y - uv_min_y
+    let uv_scale_x = if raw_uv_scale_x <= 0 { 1.0 } else { raw_uv_scale_x }
+    let uv_scale_y = if raw_uv_scale_y <= 0 { 1.0 } else { raw_uv_scale_y }
+    let region_width = tex_width * uv_scale_x
+    let region_height = tex_height * uv_scale_y
+    let base_size = 128.0
+    let tex_scale_x = if region_width > 0 {
+      region_width / base_size
+    } else {
+      1
     }
-    if state.gpu.current_pass is Some(pass) &&
-      state.gpu.current_pass_info is Some(info) {
-      let tex_width : Double = entry_value._get("width").cast()
-      let tex_height : Double = entry_value._get("height").cast()
-      let raw_uv_scale_x = uv_max_x - uv_min_x
-      let raw_uv_scale_y = uv_max_y - uv_min_y
-      let uv_scale_x = if raw_uv_scale_x <= 0 { 1.0 } else { raw_uv_scale_x }
-      let uv_scale_y = if raw_uv_scale_y <= 0 { 1.0 } else { raw_uv_scale_y }
-      let region_width = tex_width * uv_scale_x
-      let region_height = tex_height * uv_scale_y
-      let base_size = 128.0
-      let tex_scale_x = if region_width > 0 {
-        region_width / base_size
-      } else {
+    let tex_scale_y = if region_height > 0 {
+      region_height / base_size
+    } else {
+      1
+    }
+    let sprite_scale_x = scale_x * tex_scale_x
+    let sprite_scale_y = scale_y * tex_scale_y
+    let cos_value : Double = math_cos(rotation)
+    let sin_value : Double = math_sin(rotation)
+    let actual_texture_id : Int = entry_value._get("id").cast()
+    let first_instance = state.gpu.sprite_instance_count
+    state.gpu.sprite_instance_count = first_instance + 1
+
+    // Instance layout: model(x,y,cos,sin), scale(x,y,_,_), color, uv(min_x,min_y,scale_x,scale_y)
+    state.gpu.sprite_instance_data.push(x)
+    state.gpu.sprite_instance_data.push(y)
+    state.gpu.sprite_instance_data.push(cos_value)
+    state.gpu.sprite_instance_data.push(sin_value)
+    state.gpu.sprite_instance_data.push(sprite_scale_x)
+    state.gpu.sprite_instance_data.push(sprite_scale_y)
+    state.gpu.sprite_instance_data.push(0.0)
+    state.gpu.sprite_instance_data.push(0.0)
+    state.gpu.sprite_instance_data.push(r)
+    state.gpu.sprite_instance_data.push(g)
+    state.gpu.sprite_instance_data.push(b)
+    state.gpu.sprite_instance_data.push(a)
+    state.gpu.sprite_instance_data.push(uv_min_x)
+    state.gpu.sprite_instance_data.push(uv_min_y)
+    state.gpu.sprite_instance_data.push(uv_scale_x)
+    state.gpu.sprite_instance_data.push(uv_scale_y)
+    let batch_count = state.gpu.sprite_batches.length()
+    if batch_count > 0 &&
+      state.gpu.sprite_batches[batch_count - 1].texture_id == actual_texture_id {
+      state.gpu.sprite_batches[batch_count - 1].instance_count = state.gpu.sprite_batches[batch_count -
+        1].instance_count +
         1
-      }
-      let tex_scale_y = if region_height > 0 {
-        region_height / base_size
-      } else {
-        1
-      }
-      let sprite_scale_x = scale_x * tex_scale_x
-      let sprite_scale_y = scale_y * tex_scale_y
-      let safe_scale = if info.cam_scale == 0 { 1.0 } else { info.cam_scale }
-      let scale_x_base = if info.width > 0 {
-        2.0 / info.width / safe_scale
-      } else {
-        0.0
-      }
-      let scale_y_base = if info.height > 0 {
-        2.0 / info.height / safe_scale
-      } else {
-        0.0
-      }
-      let cos_value : Double = math_cos(rotation)
-      let sin_value : Double = math_sin(rotation)
-      let cam_cos : Double = math_cos(-info.cam_rotation)
-      let cam_sin : Double = math_sin(-info.cam_rotation)
-      update_uniform_buffer(state, [
-        x,
-        y,
-        cos_value,
-        sin_value,
-        info.cam_x,
-        info.cam_y,
-        cam_cos,
-        cam_sin,
-        scale_x_base,
-        scale_y_base,
-        sprite_scale_x,
-        sprite_scale_y,
-        r,
-        g,
-        b,
-        a,
-        uv_min_x,
-        uv_min_y,
-        uv_scale_x,
-        uv_scale_y,
-      ])
-      if state.gpu.pipeline is Some(pipeline) &&
-        state.gpu.vertex_buffer is Some(vertex_buffer) {
-        pass.set_pipeline(pipeline)
-        pass.set_bind_group(0, bind_group_any.cast())
-        pass.set_vertex_buffer(0, vertex_buffer)
-        pass.draw(state.gpu.vertex_count, 1, 0, 0)
-      }
+    } else {
+      state.gpu.sprite_batches.push(SpriteBatch::{
+        texture_id: actual_texture_id,
+        first_instance,
+        instance_count: 1,
+      })
     }
   }
 }
@@ -2074,6 +2230,7 @@ fn draw_mesh(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
+  flush_sprite_batches(state)
   ensure_mesh_pipeline(state)
   if state.gpu.mesh_pipeline is None || state.gpu.mesh_bind_group is None {
     return
@@ -2820,6 +2977,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
   )
   let gpu_end_pass = @js.from_fn0(fn() {
     if state.gpu.current_pass is Some(_) {
+      flush_sprite_batches(state)
       draw_gizmo_lines(state, state.gpu.gizmo_lines)
     }
     if state.gpu.current_pass is Some(pass) {
@@ -2836,6 +2994,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       return
     }
     if state.gpu.current_pass is Some(pass) {
+      flush_sprite_batches(state)
       pass.end()
     }
     if state.gpu.encoder is Some(encoder) && state.gpu.queue is Some(queue) {

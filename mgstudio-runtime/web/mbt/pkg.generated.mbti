@@ -22,6 +22,8 @@ type PassInfo
 
 type PendingTexture
 
+type SpriteBatch
+
 type State
 
 type WindowState

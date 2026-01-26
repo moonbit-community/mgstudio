@@ -203,6 +203,11 @@ pub fn buffer_usage_copy_dst() -> Int {
 }
 
 ///|
+pub fn buffer_usage_storage() -> Int {
+  buffer_usage_raw()._get("STORAGE").cast()
+}
+
+///|
 pub fn shader_stage_vertex() -> Int {
   shader_stage_raw()._get("VERTEX").cast()
 }
