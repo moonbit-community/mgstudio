@@ -255,15 +255,29 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
-    "asset_poll_loaded_folder_events",
-    fn(_args) { ok_empty_string(ctx) },
-    func_type=ft([], [@types.ValueType::RefArray(1)]),
+    "asset_poll_loaded_folder_event_kind",
+    fn(_args) { ok_i32(-1) },
+    func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
-    "asset_get_loaded_folder_handles",
-    fn(_args) { ok_empty_string(ctx) },
-    func_type=ft([@types.ValueType::I32], [@types.ValueType::RefArray(1)]),
+    "asset_poll_loaded_folder_event_id",
+    fn(_args) { ok_i32(-1) },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_loaded_folder_handles_len",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_loaded_folder_handles_get",
+    fn(_args) { ok_i32(-1) },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
   )
   linker.add_host_func(
     "mgstudio_host",

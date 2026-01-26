@@ -45,7 +45,9 @@ echo "Copied runner.wasm to $SCRIPT_DIR/runner.wasm"
 
 ASSETS_DIR="$ENGINE_DIR/assets"
 if [[ -d "$ASSETS_DIR" ]]; then
-  rm -rf "$SCRIPT_DIR/assets"
-  cp -R "$ASSETS_DIR" "$SCRIPT_DIR/"
-  echo "Copied assets to $SCRIPT_DIR/assets"
+  mkdir -p "$SCRIPT_DIR/assets"
+  # Keep runtime-specific assets (e.g. web shaders, folder manifests) intact.
+  # Sync engine assets into the web assets folder, but do not overwrite shaders.
+  rsync -a --exclude "shaders/" "$ASSETS_DIR/" "$SCRIPT_DIR/assets/"
+  echo "Synced engine assets to $SCRIPT_DIR/assets (excluding shaders)"
 fi

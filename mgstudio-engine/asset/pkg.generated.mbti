@@ -35,8 +35,6 @@ pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
 
 pub fn host_asset_create_dynamic_texture(Int, Int, Bool) -> Int
 
-pub fn host_asset_get_loaded_folder_handles(Int) -> String
-
 pub fn host_asset_load_folder(String) -> Int
 
 pub fn host_asset_load_font(String) -> Int
@@ -45,7 +43,13 @@ pub fn host_asset_load_texture(String, Bool) -> Int
 
 pub fn host_asset_load_wgsl(String) -> Int
 
-pub fn host_asset_poll_loaded_folder_events() -> String
+pub fn host_asset_loaded_folder_handles_get(Int, Int) -> Int
+
+pub fn host_asset_loaded_folder_handles_len(Int) -> Int
+
+pub fn host_asset_poll_loaded_folder_event_id() -> Int
+
+pub fn host_asset_poll_loaded_folder_event_kind() -> Int
 
 pub fn host_asset_set_texture_sampler(Int, Int) -> Unit
 

@@ -29,47 +29,25 @@ pub(all) enum AssetEvent[T] {
 pub fn host_asset_load_folder(path : String) -> Int = "mgstudio_host" "asset_load_folder"
 
 ///|
-pub fn host_asset_poll_loaded_folder_events() -> String = "mgstudio_host" "asset_poll_loaded_folder_events"
+pub fn host_asset_poll_loaded_folder_event_kind() -> Int = "mgstudio_host" "asset_poll_loaded_folder_event_kind"
 
 ///|
-pub fn host_asset_get_loaded_folder_handles(folder_id : Int) -> String = "mgstudio_host" "asset_get_loaded_folder_handles"
+pub fn host_asset_poll_loaded_folder_event_id() -> Int = "mgstudio_host" "asset_poll_loaded_folder_event_id"
+
+///|
+pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int = "mgstudio_host" "asset_loaded_folder_handles_len"
+
+///|
+pub fn host_asset_loaded_folder_handles_get(
+  folder_id : Int,
+  index : Int,
+) -> Int = "mgstudio_host" "asset_loaded_folder_handles_get"
 
 ///|
 let loaded_folder_assets : Ref[Assets[LoadedFolder]] = Ref::new(Assets::new())
 
 ///|
 let loaded_folder_events : Ref[Array[AssetEvent[LoadedFolder]]] = Ref::new([])
-
-///|
-fn parse_csv_ints(text : String) -> Array[Int] {
-  let values : Array[Int] = []
-  let mut current = 0
-  let mut has_value = false
-  let mut negative = false
-  let count = text.length()
-  for i in 0..<count {
-    let code = text.code_unit_at(i).to_int()
-    if code == 45 { // '-'
-      negative = true
-    } else if code >= 48 && code <= 57 {
-      current = current * 10 + (code - 48)
-      has_value = true
-    } else if code == 44 { // ','
-      if has_value {
-        let value = if negative { 0 - current } else { current }
-        values.push(value)
-        current = 0
-        has_value = false
-        negative = false
-      }
-    }
-  }
-  if has_value {
-    let value = if negative { 0 - current } else { current }
-    values.push(value)
-  }
-  values
-}
 
 ///|
 pub fn AssetServer::load_folder(
@@ -100,20 +78,20 @@ pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]] {
 pub fn asset_update_loaded_folders() -> Unit {
   // Ensure any leftover internal asset events don't leak between frames.
   loaded_folder_assets.val.drain_events() |> ignore
-  let raw_events = parse_csv_ints(host_asset_poll_loaded_folder_events())
-  let mut i = 0
-  while i + 1 < raw_events.length() {
-    let kind = raw_events[i]
-    let host_id = raw_events[i + 1]
-    i = i + 2
+  while true {
+    let kind = host_asset_poll_loaded_folder_event_kind()
+    if kind < 0 {
+      break
+    }
+    let host_id = host_asset_poll_loaded_folder_event_id()
     let handle = Handle::new(host_id)
     if kind == 3 {
-      let image_ids = parse_csv_ints(
-        host_asset_get_loaded_folder_handles(host_id),
-      )
+      let n = host_asset_loaded_folder_handles_len(host_id)
       let handles : Array[Handle[Image]] = []
-      for image_id in image_ids {
-        handles.push(Handle::new(image_id))
+      for j in 0..<n {
+        handles.push(
+          Handle::new(host_asset_loaded_folder_handles_get(host_id, j)),
+        )
       }
       loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })
       |> ignore
@@ -128,12 +106,12 @@ pub fn asset_update_loaded_folders() -> Unit {
         loaded_folder_events.val.push(ev)
       }
     } else if kind == 1 {
-      let image_ids = parse_csv_ints(
-        host_asset_get_loaded_folder_handles(host_id),
-      )
+      let n = host_asset_loaded_folder_handles_len(host_id)
       let handles : Array[Handle[Image]] = []
-      for image_id in image_ids {
-        handles.push(Handle::new(image_id))
+      for j in 0..<n {
+        handles.push(
+          Handle::new(host_asset_loaded_folder_handles_get(host_id, j)),
+        )
       }
       loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })
       |> ignore

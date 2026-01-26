@@ -950,6 +950,7 @@ struct AssetsState {
   mut next_folder_id : Int
   folders : @js.Any
   mut folder_events : Array[Int]
+  mut folder_events_pos : Int
 }
 
 ///|
@@ -1035,6 +1036,7 @@ fn new_state() -> State {
       next_folder_id: 1,
       folders: new_map(),
       folder_events: [],
+      folder_events_pos: 0,
     },
     input: InputState::{
       pressed: new_set(),
@@ -1090,19 +1092,6 @@ fn new_state() -> State {
 ///|
 fn to_int(value : Double) -> Int {
   value.to_int()
-}
-
-///|
-fn ints_to_csv(values : Array[Int]) -> String {
-  let mut out = ""
-  let n = values.length()
-  for i in 0..<n {
-    if i > 0 {
-      out = out + ","
-    }
-    out = out + values[i].to_string()
-  }
-  out
 }
 
 ///|
@@ -2863,23 +2852,64 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
         }
       }
       map_set(state.assets.folders, @js.any(id), @js.any(handles))
+      if state.assets.folder_events_pos >= state.assets.folder_events.length() {
+        state.assets.folder_events = []
+        state.assets.folder_events_pos = 0
+      }
       state.assets.folder_events.push(3)
       state.assets.folder_events.push(id)
     })
     id
   })
-  let asset_poll_loaded_folder_events = @js.from_fn0(fn() {
-    let events = state.assets.folder_events
-    state.assets.folder_events = []
-    ints_to_csv(events)
+  let asset_poll_loaded_folder_event_kind = @js.from_fn0(fn() {
+    let pos = state.assets.folder_events_pos
+    if pos >= state.assets.folder_events.length() {
+      -1
+    } else {
+      state.assets.folder_events[pos]
+    }
   })
-  let asset_get_loaded_folder_handles = @js.from_fn1(fn(folder_id) {
+  let asset_poll_loaded_folder_event_id = @js.from_fn0(fn() {
+    let pos = state.assets.folder_events_pos
+    if pos + 1 >= state.assets.folder_events.length() {
+      state.assets.folder_events = []
+      state.assets.folder_events_pos = 0
+      -1
+    } else {
+      let id = state.assets.folder_events[pos + 1]
+      let next_pos = pos + 2
+      if next_pos >= state.assets.folder_events.length() {
+        state.assets.folder_events = []
+        state.assets.folder_events_pos = 0
+      } else {
+        state.assets.folder_events_pos = next_pos
+      }
+      id
+    }
+  })
+  let asset_loaded_folder_handles_len = @js.from_fn1(fn(folder_id) {
     let id = to_int(number_or(folder_id, -1))
     let entry = map_get(state.assets.folders, @js.any(id))
     if host_is_nullish(entry) {
-      ""
+      0
     } else {
-      ints_to_csv(entry.cast())
+      let handles : Array[Int] = entry.cast()
+      handles.length()
+    }
+  })
+  let asset_loaded_folder_handles_get = @js.from_fn2(fn(folder_id, index) {
+    let id = to_int(number_or(folder_id, -1))
+    let idx = to_int(number_or(index, -1))
+    let entry = map_get(state.assets.folders, @js.any(id))
+    if host_is_nullish(entry) {
+      -1
+    } else {
+      let handles : Array[Int] = entry.cast()
+      if idx < 0 || idx >= handles.length() {
+        -1
+      } else {
+        handles[idx]
+      }
     }
   })
   let gpu_create_render_target = @js.from_fn3(fn(width, height, nearest) {
@@ -3191,8 +3221,10 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("asset_create_dynamic_texture", asset_create_dynamic_texture),
     ("asset_update_texture_region", asset_update_texture_region),
     ("asset_load_folder", asset_load_folder),
-    ("asset_poll_loaded_folder_events", asset_poll_loaded_folder_events),
-    ("asset_get_loaded_folder_handles", asset_get_loaded_folder_handles),
+    ("asset_poll_loaded_folder_event_kind", asset_poll_loaded_folder_event_kind),
+    ("asset_poll_loaded_folder_event_id", asset_poll_loaded_folder_event_id),
+    ("asset_loaded_folder_handles_len", asset_loaded_folder_handles_len),
+    ("asset_loaded_folder_handles_get", asset_loaded_folder_handles_get),
     ("gpu_create_render_target", gpu_create_render_target),
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),
