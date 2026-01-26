@@ -14,24 +14,29 @@
 
 ///|
 pub struct Assets[T] {
-  items : Array[T]
+  items : Array[T?]
+  mut alive : Int
+  events : Array[AssetEvent[T]]
 }
 
 ///|
 pub fn[T] Assets::new() -> Assets[T] {
-  Assets::{ items: [] }
+  Assets::{ items: [], alive: 0, events: [] }
 }
 
 ///|
 pub fn[T] Assets::len(self : Assets[T]) -> Int {
-  self.items.length()
+  self.alive
 }
 
 ///|
 pub fn[T] Assets::add(self : Assets[T], value : T) -> Handle[T] {
   let id = self.items.length()
-  self.items.push(value)
-  Handle::new(id)
+  self.items.push(Some(value))
+  self.alive = self.alive + 1
+  let handle = Handle::new(id)
+  self.events.push(AssetEvent::Added(handle))
+  handle
 }
 
 ///|
@@ -40,7 +45,7 @@ pub fn[T] Assets::get(self : Assets[T], handle : Handle[T]) -> T? {
   if id < 0 || id >= self.items.length() {
     None
   } else {
-    Some(self.items[id])
+    self.items[id]
   }
 }
 
@@ -50,7 +55,52 @@ pub fn[T] Assets::set(self : Assets[T], handle : Handle[T], value : T) -> Bool {
   if id < 0 || id >= self.items.length() {
     false
   } else {
-    self.items[id] = value
+    let existed = self.items[id] is Some(_)
+    self.items[id] = Some(value)
+    if existed {
+      self.events.push(AssetEvent::Modified(handle))
+    } else {
+      self.alive = self.alive + 1
+      self.events.push(AssetEvent::Added(handle))
+    }
     true
   }
+}
+
+///|
+pub fn[T] Assets::remove(self : Assets[T], handle : Handle[T]) -> T? {
+  let id = handle.id()
+  if id < 0 || id >= self.items.length() {
+    None
+  } else {
+    let value = self.items[id]
+    if value is Some(v) {
+      self.items[id] = None
+      self.alive = self.alive - 1
+      self.events.push(AssetEvent::Removed(handle))
+      Some(v)
+    } else {
+      None
+    }
+  }
+}
+
+///|
+pub fn[T] Assets::contains(self : Assets[T], handle : Handle[T]) -> Bool {
+  self.get(handle) is Some(_)
+}
+
+///|
+pub fn[T] Assets::is_empty(self : Assets[T]) -> Bool {
+  self.alive == 0
+}
+
+///|
+pub fn[T] Assets::drain_events(self : Assets[T]) -> Array[AssetEvent[T]] {
+  let out : Array[AssetEvent[T]] = []
+  for ev in self.events {
+    out.push(ev)
+  }
+  self.events.clear()
+  out
 }

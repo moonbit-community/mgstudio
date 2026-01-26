@@ -19,6 +19,22 @@ pub struct Handle[T] {
 }
 
 ///|
+pub struct AssetId[T] {
+  id : Int
+  phantom : T?
+} derive(Eq, Show)
+
+///|
+pub fn[T] AssetId::new(id : Int) -> AssetId[T] {
+  AssetId::{ id, phantom: None }
+}
+
+///|
+pub fn[T] AssetId::index(self : AssetId[T]) -> Int {
+  self.id
+}
+
+///|
 pub fn[T] Handle::new(id : Int) -> Handle[T] {
   Handle::{ id, phantom: None }
 }
@@ -26,6 +42,16 @@ pub fn[T] Handle::new(id : Int) -> Handle[T] {
 ///|
 pub fn[T] Handle::id(self : Handle[T]) -> Int {
   self.id
+}
+
+///|
+pub fn[T] Handle::asset_id(self : Handle[T]) -> AssetId[T] {
+  AssetId::new(self.id)
+}
+
+///|
+pub fn[T] Handle::from_asset_id(asset_id : AssetId[T]) -> Handle[T] {
+  Handle::new(asset_id.index())
 }
 
 ///|

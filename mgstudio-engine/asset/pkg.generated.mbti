@@ -59,6 +59,15 @@ pub(all) enum AssetEvent[T] {
   LoadedWithDependencies(Handle[T])
 }
 
+pub struct AssetId[T] {
+  id : Int
+  phantom : T?
+}
+pub fn[T] AssetId::index(Self[T]) -> Int
+pub fn[T] AssetId::new(Int) -> Self[T]
+pub impl[T : Eq] Eq for AssetId[T]
+pub impl[T : Show] Show for AssetId[T]
+
 pub struct AssetServer {
   paths : Array[String]
 }
@@ -71,12 +80,18 @@ pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
 pub fn AssetServer::new() -> Self
 
 pub struct Assets[T] {
-  items : Array[T]
+  items : Array[T?]
+  mut alive : Int
+  events : Array[AssetEvent[T]]
 }
 pub fn[T] Assets::add(Self[T], T) -> Handle[T]
+pub fn[T] Assets::contains(Self[T], Handle[T]) -> Bool
+pub fn[T] Assets::drain_events(Self[T]) -> Array[AssetEvent[T]]
 pub fn[T] Assets::get(Self[T], Handle[T]) -> T?
+pub fn[T] Assets::is_empty(Self[T]) -> Bool
 pub fn[T] Assets::len(Self[T]) -> Int
 pub fn[T] Assets::new() -> Self[T]
+pub fn[T] Assets::remove(Self[T], Handle[T]) -> T?
 pub fn[T] Assets::set(Self[T], Handle[T], T) -> Bool
 
 pub struct DynamicTextureAtlasBuilder {
@@ -98,6 +113,8 @@ pub struct Handle[T] {
   id : Int
   phantom : T?
 }
+pub fn[T] Handle::asset_id(Self[T]) -> AssetId[T]
+pub fn[T] Handle::from_asset_id(AssetId[T]) -> Self[T]
 pub fn[T] Handle::id(Self[T]) -> Int
 pub fn[T] Handle::new(Int) -> Self[T]
 
