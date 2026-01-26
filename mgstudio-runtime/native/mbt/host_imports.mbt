@@ -299,6 +299,15 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "font_measure_advance",
+    fn(_args) { ok_f32(0.0) },
+    func_type=ft(
+      [@types.ValueType::I32, @types.ValueType::F32, @types.ValueType::I32],
+      [@types.ValueType::F32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "asset_set_texture_sampler",
     fn(_args) { ok_i32(0) },
     func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [

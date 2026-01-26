@@ -63,6 +63,13 @@ pub fn host_font_glyph_offset_x(glyph_id : Int) -> Int = "mgstudio_host" "font_g
 pub fn host_font_glyph_offset_y(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_offset_y"
 
 ///|
+pub fn host_font_measure_advance(
+  font_id : Int,
+  font_size : Float,
+  codepoint : Int,
+) -> Float = "mgstudio_host" "font_measure_advance"
+
+///|
 pub fn font_rasterize_glyph(
   font : @asset.Handle[@asset.Font],
   font_size : Float,

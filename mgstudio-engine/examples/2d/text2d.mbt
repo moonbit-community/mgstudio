@@ -28,7 +28,9 @@ fn text2d_setup() -> Unit {
   let font_style = @text.TextFont::default()
     .with_font(font)
     .with_font_size(48.0F)
-  let text = @text.Text2d::new("Hello, Text2d!\nFira Sans Bold (OFL)")
+  let text = @text.Text2d::new(
+    "Hello, Text2d!\nThis line demonstrates wrapping + centering.",
+  )
   @text.Text2dBundle::new(
     text,
     font_style,
@@ -38,6 +40,8 @@ fn text2d_setup() -> Unit {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   )
+  .with_bounds(@text.TextBounds::new_horizontal(520.0F))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
   .with_shadow(Some(@text.Text2dShadow::default()))
   .with_color(@text.TextColor::new(@render2d.Color::white()))
   .spawn()

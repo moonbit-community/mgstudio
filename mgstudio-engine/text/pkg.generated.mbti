@@ -23,6 +23,8 @@ pub fn host_font_glyph_offset_y(Int) -> Int
 
 pub fn host_font_glyph_width(Int) -> Int
 
+pub fn host_font_measure_advance(Int, Float, Int) -> Float
+
 pub fn host_font_rasterize_glyph(Int, Float, Int, Int) -> Int
 
 pub fn text_plugin(@app.App) -> @app.App

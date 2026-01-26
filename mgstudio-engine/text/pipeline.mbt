@@ -212,6 +212,19 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let mut x = 0.0F
   let line_height = instance.line_height.eval(instance.font.font_size)
   let mut line_y = line_height
+  let line_widths : Array[Float] = [0.0F]
+  let max_width = match buffer.max_width {
+    Some(value) => value
+    None => -1.0F
+  }
+  let wrap_enabled = if max_width <= 0.0F {
+    false
+  } else {
+    match buffer.linebreak {
+      LineBreak::NoWrap => false
+      _ => true
+    }
+  }
   let count = buffer.text.length()
   for i in 0..<count {
     let code = buffer.text.code_unit_at(i).to_int()
@@ -219,8 +232,12 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       if x > max_x {
         max_x = x
       }
+      line_widths[line_index] = x
       x = 0.0F
       line_index = line_index + 1
+      if line_index >= line_widths.length() {
+        line_widths.push(0.0F)
+      }
       line_y = line_y + line_height
       continue
     }
@@ -229,6 +246,36 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     let span_line_height = text_span_line_height(instance, span_index)
     let span_height = span_line_height.eval(text_font.font_size)
     let smoothing = entities[span_index].font_smoothing
+    let advance = host_font_measure_advance(
+      text_font.font.id(),
+      text_font.font_size,
+      code,
+    )
+    if code == 32 {
+      x = x + advance
+      continue
+    }
+    if code == 9 {
+      let space_advance = host_font_measure_advance(
+        text_font.font.id(),
+        text_font.font_size,
+        32,
+      )
+      x = x + space_advance * 4.0F
+      continue
+    }
+    if wrap_enabled && x > 0.0F && advance > 0.0F && x + advance > max_width {
+      if x > max_x {
+        max_x = x
+      }
+      line_widths[line_index] = x
+      x = 0.0F
+      line_index = line_index + 1
+      if line_index >= line_widths.length() {
+        line_widths.push(0.0F)
+      }
+      line_y = line_y + line_height
+    }
     let raster_opt = font_rasterize_glyph(
       text_font.font,
       text_font.font_size,
@@ -291,17 +338,52 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     if glyph_max_y > max_y {
       max_y = glyph_max_y
     }
-    x = x + size_x
+    if advance > 0.0F {
+      x = x + advance
+    } else {
+      x = x + size_x
+    }
   }
   if x > max_x {
     max_x = x
   }
-  let size = @math.Vec2::new(max_x, max_y)
+  if line_index < line_widths.length() {
+    line_widths[line_index] = x
+  }
+  if line_y > max_y {
+    max_y = line_y
+  }
+  let mut target_width = max_x
+  if max_width > 0.0F && max_width > target_width {
+    target_width = max_width
+  }
+  let adjusted_glyphs : Array[PositionedGlyph] = []
+  for glyph in glyphs {
+    let mut offset_x = 0.0F
+    if glyph.line_index >= 0 && glyph.line_index < line_widths.length() {
+      let line_width = line_widths[glyph.line_index]
+      offset_x = match buffer.justify {
+        Justify::Left => 0.0F
+        Justify::Center => (target_width - line_width) / 2.0F
+        Justify::Right => target_width - line_width
+        Justify::Justified => 0.0F
+      }
+    }
+    adjusted_glyphs.push(PositionedGlyph::{
+      position: @math.Vec2::new(glyph.position.x + offset_x, glyph.position.y),
+      size: glyph.size,
+      atlas_info: glyph.atlas_info,
+      span_index: glyph.span_index,
+      line_index: glyph.line_index,
+      byte_index: glyph.byte_index,
+      byte_length: glyph.byte_length,
+    })
+  }
   let updated = TextLayoutInfo::{
     scale_factor: 1.0F,
-    glyphs,
+    glyphs: adjusted_glyphs,
     run_geometry,
-    size,
+    size: @math.Vec2::new(target_width, max_y),
   }
   TextInstance::{
     ..instance,

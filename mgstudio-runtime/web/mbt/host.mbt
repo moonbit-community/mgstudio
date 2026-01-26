@@ -922,6 +922,44 @@ extern "js" fn rasterize_glyph(
   #| })()
 
 ///|
+extern "js" fn measure_glyph_advance(
+  family : String,
+  font_size : Double,
+  codepoint : Int,
+) -> Double =
+  #| (() => {
+  #|   let canvas = null
+  #|   let ctx = null
+  #|   const ensure = () => {
+  #|     if (!canvas) {
+  #|       if (typeof OffscreenCanvas !== "undefined") {
+  #|         canvas = new OffscreenCanvas(1, 1)
+  #|       } else {
+  #|         canvas = document.createElement("canvas")
+  #|       }
+  #|     }
+  #|     if (!ctx) {
+  #|       ctx = canvas.getContext("2d")
+  #|     }
+  #|     return ctx
+  #|   }
+  #|   return (family, fontSize, codepoint) => {
+  #|     const context = ensure()
+  #|     if (!context) {
+  #|       return 0
+  #|     }
+  #|     const size = Math.max(1, Number(fontSize) || 16)
+  #|     const text = String.fromCodePoint(Number(codepoint) || 0)
+  #|     const fontFamily = family && family.length ? family : "sans-serif"
+  #|     const font = `${size}px "${fontFamily}"`
+  #|     context.font = font
+  #|     const metrics = context.measureText(text)
+  #|     const width = Number(metrics.width) || 0
+  #|     return width > 0 ? width : 0
+  #|   }
+  #| })()
+
+///|
 struct PendingTexture {
   id : Int
   path : @js.Any
@@ -2746,6 +2784,23 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       to_int(number_or(entry._get("offsetY"), 0))
     }
   })
+  let font_measure_advance = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let font_id = to_int(arg_number(args, 0, -1))
+      let font_size = arg_number(args, 1, 16)
+      let codepoint = to_int(arg_number(args, 2, 0))
+      let entry = map_get(state.assets.fonts, @js.any(font_id))
+      if host_is_nullish(entry) {
+        return 0.0
+      }
+      let loaded = entry._get("loaded")
+      if host_is_nullish(loaded) || !(loaded.cast() : Bool) {
+        return 0.0
+      }
+      let family = any_to_string(entry._get("family"))
+      measure_glyph_advance(family, font_size, codepoint)
+    }),
+  )
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
     let entry = map_get(state.gpu.textures, @js.any(id))
@@ -3365,6 +3420,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("font_glyph_height", font_glyph_height),
     ("font_glyph_offset_x", font_glyph_offset_x),
     ("font_glyph_offset_y", font_glyph_offset_y),
+    ("font_measure_advance", font_measure_advance),
     ("asset_set_texture_sampler", asset_set_texture_sampler),
     ("asset_create_dynamic_texture", asset_create_dynamic_texture),
     ("asset_update_texture_region", asset_update_texture_region),
