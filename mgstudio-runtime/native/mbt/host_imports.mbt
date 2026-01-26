@@ -84,6 +84,14 @@ fn ok_extern_null() -> Array[@types.Value] {
 }
 
 ///|
+fn ok_extern_ref(id : Int) -> Array[@types.Value] {
+  [@types.Value::ExternRef(id)]
+}
+
+///|
+const HANDLE_BASE : Int = 10_000
+
+///|
 pub fn add_mgstudio_host_imports(
   linker : @runtime.Linker,
   ctx : HostContext,
@@ -103,7 +111,10 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "window_create",
-    fn(_args) { ok_extern_null() },
+    fn(_args) {
+      // Use a stable non-null handle to avoid guest-side unwrap/panic.
+      ok_extern_ref(HANDLE_BASE + 1)
+    },
     func_type=ft(
       [
         @types.ValueType::I32,
@@ -223,13 +234,13 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_request_device",
-    fn(_args) { ok_extern_null() },
+    fn(_args) { ok_extern_ref(HANDLE_BASE + 2) },
     func_type=ft([], [@types.ValueType::ExternRef]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_surface",
-    fn(_args) { ok_extern_null() },
+    fn(_args) { ok_extern_ref(HANDLE_BASE + 3) },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),
   )
   linker.add_host_func(
@@ -249,7 +260,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_begin_frame",
-    fn(_args) { ok_extern_null() },
+    fn(_args) { ok_extern_ref(HANDLE_BASE + 4) },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),
   )
   linker.add_host_func(
