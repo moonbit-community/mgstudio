@@ -317,6 +317,19 @@ fn is_ecs_component_attr(attr : @attribute.Attribute) -> Bool {
 async fn parse_ecs_components_from_file(path : String) -> Array[String] {
   let text = read_file_text(path)
   guard text is Some(src) else { return [] }
+
+  // `moonbitlang/parser` may lag behind the compiler syntax. To avoid blocking
+  // codegen on unrelated files, only parse files that actually contain the tag.
+  let mut has_tag = false
+  for line in src.split("\n") {
+    if line.trim().has_prefix("#ecs.component") {
+      has_tag = true
+      break
+    }
+  }
+  if !has_tag {
+    return []
+  }
   let (impls, reports) = @parser.parse_string(
     src,
     name=path,
