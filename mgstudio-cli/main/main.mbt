@@ -87,7 +87,7 @@ fn make_cli_parser() -> @clap.Parser {
           ),
           "write": @clap.Arg::flag(help="Write generated files (default)."),
           "world-pkg": @clap.Arg::named(
-            nargs=@clap.Nargs::One,
+            nargs=@clap.Nargs::AtMost(1U),
             help="Optional output package directory for a generated concrete ECS World (e.g. mgstudio-engine/ecs_world).",
           ),
           "verbose": @clap.Arg::flag(
@@ -778,12 +778,10 @@ async fn collect_ecs_components_for_module(
 
 ///|
 fn is_ecs_component_attr(attr : @attribute.Attribute) -> Bool {
-  // Prefer the parsed representation, but fall back to the raw text in case
-  // attribute parsing fails (e.g. syntax errors inside the payload).
   match attr.parsed {
     Some(@attribute.Expr::Ident(id) | @attribute.Expr::Apply(id, _)) =>
       id.qual == Some("ecs") && id.name == "component"
-    _ => attr.raw.trim().has_prefix("#ecs.component")
+    _ => false
   }
 }
 
@@ -792,7 +790,7 @@ fn is_ecs_resource_attr(attr : @attribute.Attribute) -> Bool {
   match attr.parsed {
     Some(@attribute.Expr::Ident(id) | @attribute.Expr::Apply(id, _)) =>
       id.qual == Some("ecs") && id.name == "resource"
-    _ => attr.raw.trim().has_prefix("#ecs.resource")
+    _ => false
   }
 }
 
@@ -800,20 +798,6 @@ fn is_ecs_resource_attr(attr : @attribute.Attribute) -> Bool {
 async fn parse_ecs_tags_from_file(path : String) -> EcsTags {
   let text = read_file_text(path)
   guard text is Some(src) else { return { components: [], resources: [] } }
-
-  // `moonbitlang/parser` may lag behind the compiler syntax. To avoid blocking
-  // codegen on unrelated files, only parse files that actually contain the tag.
-  let mut has_tag = false
-  for line in src.split("\n") {
-    let t = line.trim()
-    if t.has_prefix("#ecs.component") || t.has_prefix("#ecs.resource") {
-      has_tag = true
-      break
-    }
-  }
-  if !has_tag {
-    return { components: [], resources: [] }
-  }
   let (impls, reports) = @parser.parse_string(
     src,
     name=path,

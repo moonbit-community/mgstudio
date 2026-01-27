@@ -14,6 +14,7 @@
 
 // Shared test-only world implementation for the app scheduler tests.
 // This keeps `App` generic but still satisfies change detection constraints.
+
 ///|
 struct TestWorld {
   mut tick : @core.Tick
