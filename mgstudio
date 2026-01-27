@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks so this wrapper keeps working when installed via `ln -s`.
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "${SOURCE}" ]]; do
+  DIR="$(cd -P -- "$(dirname -- "${SOURCE}")" && pwd)"
+  SOURCE="$(readlink "${SOURCE}")"
+  [[ "${SOURCE}" != /* ]] && SOURCE="${DIR}/${SOURCE}"
+done
+ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")" && pwd)"
 BIN="${ROOT}/mgstudio-cli/_build/native/release/build/main/main.exe"
 
 if [[ ! -x "${BIN}" ]]; then

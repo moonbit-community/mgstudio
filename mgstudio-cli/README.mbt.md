@@ -16,6 +16,27 @@ From the repo root (recommended), use the wrapper script:
 ./mgstudio gen --workspace . --check
 ```
 
+## Install (Local Symlink)
+
+For a convenient `mgstudio` on your `PATH`, install a symlink to the repo wrapper:
+
+```bash
+./scripts/mgstudio-install
+mgstudio --help
+```
+
+By default this installs to `$XDG_BIN_HOME` or `~/.local/bin`. You can customize the target directory:
+
+```bash
+./scripts/mgstudio-install --bin-dir "$HOME/.local/bin"
+```
+
+To uninstall:
+
+```bash
+./scripts/mgstudio-install --uninstall
+```
+
 Or build and run the binary directly:
 
 ```bash
