@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-pub type SystemFn = () -> Unit
+pub type SystemFn[W] = (W) -> Unit
 
 ///|
-pub type Plugin = (App) -> App
+pub type Plugin[W] = (App[W]) -> App[W]
 
 ///|
-pub type RunConditionFn = () -> Bool
+pub type RunConditionFn[W] = (W) -> Bool
 
 ///|
 pub type SystemSet = String
@@ -44,57 +44,57 @@ pub(open) trait SystemParam {
 }
 
 ///|
-pub fn[P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn {
-  fn() {
+pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
+  fn(_world : W) {
     let param : P = SystemParam::get()
     system(param)
   }
 }
 
 ///|
-pub struct SystemConfig {
-  system : SystemFn
-  run_if : RunConditionFn?
+pub struct SystemConfig[W] {
+  system : SystemFn[W]
+  run_if : RunConditionFn[W]?
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
 }
 
 ///|
-pub fn system(system : SystemFn) -> SystemConfig {
+pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
   SystemConfig::{ system, run_if: None, set: None, before: [], after: [] }
 }
 
 ///|
-pub fn SystemConfig::run_if(
-  self : SystemConfig,
-  cond : RunConditionFn,
-) -> SystemConfig {
+pub fn[W] SystemConfig::run_if(
+  self : SystemConfig[W],
+  cond : RunConditionFn[W],
+) -> SystemConfig[W] {
   SystemConfig::{ ..self, run_if: Some(cond) }
 }
 
 ///|
-pub fn SystemConfig::in_set(
-  self : SystemConfig,
+pub fn[W] SystemConfig::in_set(
+  self : SystemConfig[W],
   set : SystemSet,
-) -> SystemConfig {
+) -> SystemConfig[W] {
   SystemConfig::{ ..self, set: Some(set) }
 }
 
 ///|
-pub fn SystemConfig::before(
-  self : SystemConfig,
+pub fn[W] SystemConfig::before(
+  self : SystemConfig[W],
   set : SystemSet,
-) -> SystemConfig {
+) -> SystemConfig[W] {
   self.before.push(set)
   self
 }
 
 ///|
-pub fn SystemConfig::after(
-  self : SystemConfig,
+pub fn[W] SystemConfig::after(
+  self : SystemConfig[W],
   set : SystemSet,
-) -> SystemConfig {
+) -> SystemConfig[W] {
   self.after.push(set)
   self
 }
@@ -106,15 +106,15 @@ pub type DeltaSecondsFn = () -> Float
 pub type RunnerFn = () -> Unit
 
 ///|
-pub type RunnerBuilder = (App) -> RunnerFn
+pub type RunnerBuilder[W] = (App[W]) -> RunnerFn
 
 ///|
-pub struct Schedule {
-  startup : Array[SystemConfig]
-  pre_update : Array[SystemConfig]
-  fixed_update : Array[SystemConfig]
-  update : Array[SystemConfig]
-  post_update : Array[SystemConfig]
+pub struct Schedule[W] {
+  startup : Array[SystemConfig[W]]
+  pre_update : Array[SystemConfig[W]]
+  fixed_update : Array[SystemConfig[W]]
+  update : Array[SystemConfig[W]]
+  post_update : Array[SystemConfig[W]]
   startup_set_edges : Array[(SystemSet, SystemSet)]
   pre_update_set_edges : Array[(SystemSet, SystemSet)]
   fixed_update_set_edges : Array[(SystemSet, SystemSet)]
@@ -123,14 +123,16 @@ pub struct Schedule {
 }
 
 ///|
-pub struct App {
-  schedule : Schedule
+pub struct App[W] {
+  world : W
+  schedule : Schedule[W]
   runner : RunnerFn?
 }
 
 ///|
-pub fn App::new() -> App {
+pub fn[W] App::new(world : W) -> App[W] {
   App::{
+    world,
     schedule: Schedule::{
       startup: [],
       pre_update: [],
@@ -148,7 +150,7 @@ pub fn App::new() -> App {
 }
 
 ///|
-pub fn App::add_plugins(self : App, plugins : Array[Plugin]) -> App {
+pub fn[W] App::add_plugins(self : App[W], plugins : Array[Plugin[W]]) -> App[W] {
   let mut app = self
   for plugin in plugins {
     app = plugin(app)
@@ -157,124 +159,142 @@ pub fn App::add_plugins(self : App, plugins : Array[Plugin]) -> App {
 }
 
 ///|
-pub fn App::add_startup_system_config(self : App, config : SystemConfig) -> App {
+pub fn[W] App::add_startup_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
   self.schedule.startup.push(config)
   self
 }
 
 ///|
-pub fn App::add_startup_system(self : App, system_fn : SystemFn) -> App {
+pub fn[W] App::add_startup_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+) -> App[W] {
   self.schedule.startup.push(system(system_fn))
   self
 }
 
 ///|
-pub fn[P : SystemParam] App::add_startup_system_param(
-  self : App,
+pub fn[W, P : SystemParam] App::add_startup_system_param(
+  self : App[W],
   startup_system : (P) -> Unit,
-) -> App {
+) -> App[W] {
   self.schedule.startup.push(system(system_param(startup_system)))
   self
 }
 
 ///|
-pub fn App::add_pre_update_system_config(
-  self : App,
-  config : SystemConfig,
-) -> App {
+pub fn[W] App::add_pre_update_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
   self.schedule.pre_update.push(config)
   self
 }
 
 ///|
-pub fn App::add_pre_update_system(self : App, system_fn : SystemFn) -> App {
+pub fn[W] App::add_pre_update_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+) -> App[W] {
   self.schedule.pre_update.push(system(system_fn))
   self
 }
 
 ///|
-pub fn[P : SystemParam] App::add_pre_update_system_param(
-  self : App,
+pub fn[W, P : SystemParam] App::add_pre_update_system_param(
+  self : App[W],
   pre_update_system : (P) -> Unit,
-) -> App {
+) -> App[W] {
   self.schedule.pre_update.push(system(system_param(pre_update_system)))
   self
 }
 
 ///|
-pub fn App::add_fixed_update_system_config(
-  self : App,
-  config : SystemConfig,
-) -> App {
+pub fn[W] App::add_fixed_update_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
   self.schedule.fixed_update.push(config)
   self
 }
 
 ///|
-pub fn App::add_fixed_update_system(self : App, system_fn : SystemFn) -> App {
+pub fn[W] App::add_fixed_update_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+) -> App[W] {
   self.schedule.fixed_update.push(system(system_fn))
   self
 }
 
 ///|
-pub fn[P : SystemParam] App::add_fixed_update_system_param(
-  self : App,
+pub fn[W, P : SystemParam] App::add_fixed_update_system_param(
+  self : App[W],
   fixed_update_system : (P) -> Unit,
-) -> App {
+) -> App[W] {
   self.schedule.fixed_update.push(system(system_param(fixed_update_system)))
   self
 }
 
 ///|
-pub fn App::add_system_config(self : App, config : SystemConfig) -> App {
+pub fn[W] App::add_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
   self.schedule.update.push(config)
   self
 }
 
 ///|
-pub fn App::add_system(self : App, system_fn : SystemFn) -> App {
+pub fn[W] App::add_system(self : App[W], system_fn : SystemFn[W]) -> App[W] {
   self.schedule.update.push(system(system_fn))
   self
 }
 
 ///|
-pub fn[P : SystemParam] App::add_system_param(
-  self : App,
+pub fn[W, P : SystemParam] App::add_system_param(
+  self : App[W],
   update_system : (P) -> Unit,
-) -> App {
+) -> App[W] {
   self.schedule.update.push(system(system_param(update_system)))
   self
 }
 
 ///|
-pub fn App::add_post_update_system_config(
-  self : App,
-  config : SystemConfig,
-) -> App {
+pub fn[W] App::add_post_update_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
   self.schedule.post_update.push(config)
   self
 }
 
 ///|
-pub fn App::add_post_update_system(self : App, system_fn : SystemFn) -> App {
+pub fn[W] App::add_post_update_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+) -> App[W] {
   self.schedule.post_update.push(system(system_fn))
   self
 }
 
 ///|
-pub fn[P : SystemParam] App::add_post_update_system_param(
-  self : App,
+pub fn[W, P : SystemParam] App::add_post_update_system_param(
+  self : App[W],
   post_update_system : (P) -> Unit,
-) -> App {
+) -> App[W] {
   self.schedule.post_update.push(system(system_param(post_update_system)))
   self
 }
 
 ///|
-fn schedule_systems(
-  schedule : Schedule,
+fn[W] schedule_systems(
+  schedule : Schedule[W],
   stage : ScheduleStage,
-) -> Array[SystemConfig] {
+) -> Array[SystemConfig[W]] {
   match stage {
     Startup => schedule.startup
     PreUpdate => schedule.pre_update
@@ -285,8 +305,8 @@ fn schedule_systems(
 }
 
 ///|
-fn schedule_set_edges(
-  schedule : Schedule,
+fn[W] schedule_set_edges(
+  schedule : Schedule[W],
   stage : ScheduleStage,
 ) -> Array[(SystemSet, SystemSet)] {
   match stage {
@@ -299,13 +319,13 @@ fn schedule_set_edges(
 }
 
 ///|
-pub fn App::configure_set(
-  self : App,
+pub fn[W] App::configure_set(
+  self : App[W],
   stage : ScheduleStage,
   set : SystemSet,
   before? : Array[SystemSet] = [],
   after? : Array[SystemSet] = [],
-) -> App {
+) -> App[W] {
   let edges = schedule_set_edges(self.schedule, stage)
   for other in before {
     edges.push((set, other))
@@ -413,8 +433,9 @@ pub fn fixed_time_steps_ran_this_frame() -> Int {
 }
 
 ///|
-fn run_systems(
-  systems : Array[SystemConfig],
+fn[W] run_systems(
+  world : W,
+  systems : Array[SystemConfig[W]],
   set_edges : Array[(SystemSet, SystemSet)],
 ) -> Unit {
   let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
@@ -539,18 +560,19 @@ fn run_systems(
     for system_i in systems_by_set[set_i] {
       let cfg = systems[system_i]
       if cfg.run_if is Some(cond) {
-        if !cond() {
+        if !cond(world) {
           continue
         }
       }
-      (cfg.system)()
+      (cfg.system)(world)
     }
   }
 }
 
 ///|
-pub fn App::run_startup(self : App) -> App {
+pub fn[W] App::run_startup(self : App[W]) -> App[W] {
   run_systems(
+    self.world,
     schedule_systems(self.schedule, Startup),
     schedule_set_edges(self.schedule, Startup),
   )
@@ -558,8 +580,9 @@ pub fn App::run_startup(self : App) -> App {
 }
 
 ///|
-pub fn App::run_once(self : App) -> App {
+pub fn[W] App::run_once(self : App[W]) -> App[W] {
   run_systems(
+    self.world,
     schedule_systems(self.schedule, PreUpdate),
     schedule_set_edges(self.schedule, PreUpdate),
   )
@@ -591,14 +614,16 @@ pub fn App::run_once(self : App) -> App {
       fixed_time_state.val.did_run_this_frame = true
       fixed_time_state.val.steps_ran_this_frame = fixed_time_state.val.steps_ran_this_frame +
         1
-      run_systems(fixed_systems, fixed_edges)
+      run_systems(self.world, fixed_systems, fixed_edges)
     }
   }
   run_systems(
+    self.world,
     schedule_systems(self.schedule, Update),
     schedule_set_edges(self.schedule, Update),
   )
   run_systems(
+    self.world,
     schedule_systems(self.schedule, PostUpdate),
     schedule_set_edges(self.schedule, PostUpdate),
   )
@@ -606,7 +631,7 @@ pub fn App::run_once(self : App) -> App {
 }
 
 ///|
-pub fn App::run(self : App) -> Unit {
+pub fn[W] App::run(self : App[W]) -> Unit {
   if self.runner is Some(runner) {
     runner()
   } else {
@@ -615,7 +640,7 @@ pub fn App::run(self : App) -> Unit {
 }
 
 ///|
-pub fn App::set_runner(self : App, builder : RunnerBuilder) -> App {
+pub fn[W] App::set_runner(self : App[W], builder : RunnerBuilder[W]) -> App[W] {
   let runner = builder(self)
   App::{ ..self, runner: Some(runner) }
 }

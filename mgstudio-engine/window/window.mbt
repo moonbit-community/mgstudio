@@ -293,38 +293,21 @@ pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string
 
 ///|
 priv struct RunnerState {
-  mut window : HostWindow?
-  mut surface : HostGpuSurface?
-  mut app : @app.App?
+  mut tick : @app.RunnerFn?
 }
 
 ///|
-let runner_state : Ref[RunnerState] = Ref::new(RunnerState::{
-  window: None,
-  surface: None,
-  app: None,
-})
+let runner_state : Ref[RunnerState] = Ref::new(RunnerState::{ tick: None })
 
 ///|
 fn runner_tick() -> Unit {
-  if runner_state.val.window is Some(window) {
-    if runner_state.val.surface is Some(surface) {
-      if runner_state.val.app is Some(app) {
-        host_window_poll_events(window)
-        let frame = host_gpu_begin_frame(surface)
-        let next_app = app.run_once()
-        runner_state.val.app = Some(next_app)
-        host_gpu_end_frame(frame)
-        if host_window_should_close(window) {
-          host_window_request_close(window)
-        }
-      }
-    }
+  if runner_state.val.tick is Some(tick) {
+    tick()
   }
 }
 
 ///|
-pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
+pub fn[W] window_runner_builder(app : @app.App[W]) -> @app.RunnerFn {
   fn() {
     let window = host_window_create(800, 600, "Moon Game Studio")
     window_set_handle(window)
@@ -333,16 +316,23 @@ pub fn window_runner_builder(app : @app.App) -> @app.RunnerFn {
     let width = host_window_get_width(window)
     let height = host_window_get_height(window)
     host_gpu_configure_surface(device, surface, width, height)
-    let app = app.run_startup()
-    runner_state.val.window = Some(window)
-    runner_state.val.surface = Some(surface)
-    runner_state.val.app = Some(app)
+    let app_ref : Ref[@app.App[W]] = Ref::new(app.run_startup())
+    runner_state.val.tick = Some(fn() {
+      host_window_poll_events(window)
+      let frame = host_gpu_begin_frame(surface)
+      app_ref.val = app_ref.val.run_once()
+      host_gpu_end_frame(frame)
+      if host_window_should_close(window) {
+        host_window_request_close(window)
+      }
+    })
     let tick : FuncRef[() -> Unit] = fn() { runner_tick() }
     host_window_run_loop(tick)
+    runner_state.val.tick = None
   }
 }
 
 ///|
-pub fn window_plugin(app : @app.App) -> @app.App {
+pub fn[W] window_plugin(app : @app.App[W]) -> @app.App[W] {
   @app.App::set_runner(app, window_runner_builder)
 }

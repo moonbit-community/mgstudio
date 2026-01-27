@@ -28,9 +28,9 @@ pub fn host_input_mouse_x() -> Float
 
 pub fn host_input_mouse_y() -> Float
 
-pub fn input_finish_system() -> Unit
+pub fn[W] input_finish_system(W) -> Unit
 
-pub fn input_plugin(@app.App) -> @app.App
+pub fn[W] input_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn key_just_pressed(@window.KeyCode) -> Bool
 

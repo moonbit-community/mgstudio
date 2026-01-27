@@ -379,7 +379,12 @@ pub fn propagate() -> Unit {
 }
 
 ///|
-pub fn transform_plugin(app : @app.App) -> @app.App {
+fn[W] transform_propagate_system(_world : W) -> Unit {
+  propagate()
+}
+
+///|
+pub fn[W] transform_plugin(app : @app.App[W]) -> @app.App[W] {
   // Run propagation every frame.
-  app.add_system(fn() { propagate() })
+  app.add_system(transform_propagate_system)
 }

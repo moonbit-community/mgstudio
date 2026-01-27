@@ -35,7 +35,7 @@ pub fn set_parent(TransformId, TransformId?) -> Unit
 
 pub fn spawn(@math.Transform) -> TransformId
 
-pub fn transform_plugin(@app.App) -> @app.App
+pub fn[W] transform_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn world_transform(TransformId) -> @math.Transform?
 

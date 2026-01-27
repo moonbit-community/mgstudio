@@ -8,9 +8,9 @@ import {
 // Values
 pub fn camera_debug_config() -> CameraDebugConfig
 
-pub fn camera_debug_plugin(@app.App) -> @app.App
+pub fn[W] camera_debug_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn camera_debug_plugin_with_interval(Float) -> (@app.App) -> @app.App
+pub fn[W] camera_debug_plugin_with_interval(Float) -> (@app.App[W]) -> @app.App[W]
 
 pub fn camera_debug_set_config(CameraDebugConfig) -> Unit
 

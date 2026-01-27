@@ -6,7 +6,11 @@ package "Milky2018/mgstudio-cli/main"
 // Errors
 
 // Types and methods
+type ComponentRef
+
 type GenOptions
+
+type ModuleInfo
 
 // Type aliases
 

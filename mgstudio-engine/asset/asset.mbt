@@ -239,17 +239,17 @@ pub fn asset_copy_texture_to_texture(
 }
 
 ///|
-pub fn asset_system() -> Unit {
+pub fn[W] asset_system(_world : W) -> Unit {
   asset_update_loaded_folders()
 }
 
 ///|
-pub fn asset_plugin(app : @app.App) -> @app.App {
+pub fn[W] asset_plugin(app : @app.App[W]) -> @app.App[W] {
   app.add_pre_update_system(asset_system)
 }
 
 ///|
-pub fn asset_plugin_nearest(app : @app.App) -> @app.App {
+pub fn[W] asset_plugin_nearest(app : @app.App[W]) -> @app.App[W] {
   asset_set_default_sampler_nearest(true)
   app.add_pre_update_system(asset_system)
 }

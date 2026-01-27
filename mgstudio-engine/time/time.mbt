@@ -56,12 +56,12 @@ pub fn time_elapsed_seconds() -> Float {
 }
 
 ///|
-pub fn time_system() -> Unit {
+pub fn[W] time_system(_world : W) -> Unit {
   time_update()
 }
 
 ///|
-pub fn time_plugin(app : @app.App) -> @app.App {
+pub fn[W] time_plugin(app : @app.App[W]) -> @app.App[W] {
   @app.set_delta_seconds_provider(fn() { time_delta_seconds() })
   app.add_pre_update_system(time_system)
 }

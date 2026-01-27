@@ -13,7 +13,7 @@ pub fn gizmo_config() -> GizmoConfig
 
 pub fn gizmo_set_config(GizmoConfig) -> Unit
 
-pub fn render2d_camera_system() -> Unit
+pub fn[W] render2d_camera_system(W) -> Unit
 
 pub fn render2d_clear_overlay_sprites() -> Unit
 
@@ -21,7 +21,7 @@ pub fn render2d_create_render_target(Int, Int, Bool) -> @asset.Handle[@asset.Ima
 
 pub fn render2d_debug_log_primary_camera() -> Unit
 
-pub fn render2d_plugin(@app.App) -> @app.App
+pub fn[W] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn render2d_push_sprite_uv(@asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -63,13 +63,13 @@ pub fn render2d_viewport_to_world_2d(@math.Vec2) -> @math.Vec2?
 
 pub fn render2d_world_to_viewport(@math.Vec2) -> @math.Vec2?
 
-pub fn render_execute_system() -> Unit
+pub fn[W] render_execute_system(W) -> Unit
 
-pub fn render_extract_system() -> Unit
+pub fn[W] render_extract_system(W) -> Unit
 
-pub fn render_prepare_system() -> Unit
+pub fn[W] render_prepare_system(W) -> Unit
 
-pub fn render_queue_system() -> Unit
+pub fn[W] render_queue_system(W) -> Unit
 
 // Errors
 

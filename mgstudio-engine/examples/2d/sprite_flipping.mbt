@@ -14,12 +14,23 @@
 
 ///|
 pub fn sprite_flipping_run() -> Unit {
-  let plugins : Array[@app.Plugin] = [
-    @window.window_plugin, @asset.asset_plugin, @render2d.render2d_plugin, @input.input_plugin,
+  let plugins : Array[@app.Plugin[@ecs_world.World]] = [
+    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
+      @window.window_plugin(app)
+    },
+    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
+      @asset.asset_plugin(app)
+    },
+    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
+      @render2d.render2d_plugin(app)
+    },
+    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
+      @input.input_plugin(app)
+    },
   ]
-  @app.App::new()
+  @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(sprite_flipping_setup)
+  .add_startup_system(fn(_world : @ecs_world.World) { sprite_flipping_setup() })
   .run()
 }
 

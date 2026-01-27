@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ecs_world"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct World {
+  entities : @core.Entities
+  transform : @core.SparseSet[@math.Transform]
+}
+pub fn World::despawn(Self, @core.Entity) -> Unit raise @core.EntityError
+pub fn World::new() -> Self
+pub fn World::spawn_empty(Self) -> @core.Entity
+pub impl Has_Transform for World
+
+// Type aliases
+
+// Traits
+pub(open) trait Has_Transform {
+  get_transform_store(Self) -> @core.SparseSet[@math.Transform]
+}
+

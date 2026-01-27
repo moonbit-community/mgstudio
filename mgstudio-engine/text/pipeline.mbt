@@ -397,7 +397,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
 }
 
 ///|
-pub fn text_update_system() -> Unit {
+pub fn[W] text_update_system(_world : W) -> Unit {
   let count = text_state.val.texts.length()
   for i in 0..<count {
     text_state.val.texts[i] = text_update_layout(text_state.val.texts[i])
@@ -405,7 +405,7 @@ pub fn text_update_system() -> Unit {
 }
 
 ///|
-pub fn text_render_system() -> Unit {
+pub fn[W] text_render_system(_world : W) -> Unit {
   @render2d.render2d_clear_overlay_sprites()
   let texts = text_state.val.texts
   for instance in texts {
@@ -488,6 +488,6 @@ pub fn text_render_system() -> Unit {
 }
 
 ///|
-pub fn text_plugin(app : @app.App) -> @app.App {
+pub fn[W] text_plugin(app : @app.App[W]) -> @app.App[W] {
   app.add_system(text_update_system).add_system(text_render_system)
 }

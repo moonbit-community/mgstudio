@@ -131,11 +131,11 @@ pub fn mouse_position() -> @math.Vec2? {
 }
 
 ///|
-pub fn input_finish_system() -> Unit {
+pub fn[W] input_finish_system(_world : W) -> Unit {
   host_input_finish_frame()
 }
 
 ///|
-pub fn input_plugin(app : @app.App) -> @app.App {
+pub fn[W] input_plugin(app : @app.App[W]) -> @app.App[W] {
   app.add_post_update_system(input_finish_system)
 }

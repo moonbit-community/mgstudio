@@ -27,9 +27,9 @@ pub fn host_font_measure_advance(Int, Float, Int) -> Float
 
 pub fn host_font_rasterize_glyph(Int, Float, Int, Int) -> Int
 
-pub fn text_plugin(@app.App) -> @app.App
+pub fn[W] text_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn text_render_system() -> Unit
+pub fn[W] text_render_system(W) -> Unit
 
 pub fn text_set_content(TextHandle, String) -> Unit
 
@@ -37,7 +37,7 @@ pub fn text_spawn(Text2dBundle) -> TextHandle
 
 pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle
 
-pub fn text_update_system() -> Unit
+pub fn[W] text_update_system(W) -> Unit
 
 // Errors
 

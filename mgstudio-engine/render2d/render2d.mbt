@@ -865,7 +865,7 @@ fn render2d_clamp_viewport(
 }
 
 ///|
-pub fn render2d_camera_system() -> Unit {
+pub fn[W] render2d_camera_system(_world : W) -> Unit {
   let count = render_state.val.cameras.length()
   for i in 0..<count {
     let camera_instance = render_state.val.cameras[i]
@@ -931,17 +931,17 @@ fn render2d_sorted_camera_indices() -> Array[Int] {
 }
 
 ///|
-pub fn render_extract_system() -> Unit {
+pub fn[W] render_extract_system(_world : W) -> Unit {
   render_state.val.draw_enabled = true
 }
 
 ///|
-pub fn render_prepare_system() -> Unit {
+pub fn[W] render_prepare_system(_world : W) -> Unit {
 
 }
 
 ///|
-pub fn render_queue_system() -> Unit {
+pub fn[W] render_queue_system(_world : W) -> Unit {
 
 }
 
@@ -999,7 +999,7 @@ fn sprite_draw_indices(
 }
 
 ///|
-pub fn render_execute_system() -> Unit {
+pub fn[W] render_execute_system(_world : W) -> Unit {
   if !render_state.val.draw_enabled {
     return
   }
@@ -1365,7 +1365,7 @@ pub fn render2d_world_to_viewport(world : @math.Vec2) -> @math.Vec2? {
 }
 
 ///|
-pub fn render2d_plugin(app : @app.App) -> @app.App {
+pub fn[W] render2d_plugin(app : @app.App[W]) -> @app.App[W] {
   render2d_reset()
   app
   .add_system(render2d_camera_system)

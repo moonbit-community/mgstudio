@@ -200,6 +200,8 @@ pub fn pi_half() -> Float {
 }
 
 ///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct Transform {
   translation : Vec2
   rotation : Float

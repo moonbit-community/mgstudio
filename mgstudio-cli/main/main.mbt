@@ -86,6 +86,10 @@ fn make_cli_parser() -> @clap.Parser {
             help="Verify generated files are up-to-date (do not write).",
           ),
           "write": @clap.Arg::flag(help="Write generated files (default)."),
+          "world-pkg": @clap.Arg::named(
+            nargs=@clap.Nargs::One,
+            help="Optional output package directory for a generated concrete ECS World (e.g. mgstudio-engine/ecs_world).",
+          ),
           "verbose": @clap.Arg::flag(
             short='v',
             help="Print scanned modules and generated paths.",
@@ -113,6 +117,7 @@ fn print_cli_help(parser : @clap.Parser) -> Unit {
 struct GenOptions {
   workspace : String
   modules : Array[String]
+  world_pkg : String?
   check : Bool
   write : Bool
   verbose : Bool
@@ -120,7 +125,14 @@ struct GenOptions {
 
 ///|
 fn GenOptions::default(workspace : String) -> GenOptions {
-  { workspace, modules: [], check: false, write: true, verbose: false }
+  {
+    workspace,
+    modules: [],
+    world_pkg: None,
+    check: false,
+    write: true,
+    verbose: false,
+  }
 }
 
 ///|
@@ -146,11 +158,13 @@ fn parse_gen_options(
 ) -> GenOptions raise @clap.ParserError {
   let workspace : String = cmd.get_one("workspace")
   let modules : Array[String] = cmd.get_array("modules")
+  // `SimpleValue::get_option` is generic; let the expected type drive inference.
+  let world_pkg : String? = cmd.get_option("world-pkg")
   let check = cmd.get_flag("check").unwrap_or(false)
   let force_write = cmd.get_flag("write").unwrap_or(false)
   let write = force_write || !check
   let verbose = cmd.get_flag("verbose").unwrap_or(false)
-  { workspace, modules, check, write, verbose }
+  { workspace, modules, world_pkg, check, write, verbose }
 }
 
 ///|
@@ -210,6 +224,7 @@ async fn run_gen(opts : GenOptions) -> Unit {
       println("  - \{m}")
     }
   }
+  let module_infos = load_module_infos(module_roots)
 
   // pkg_dir -> (components, source_files)
   let components_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
@@ -233,9 +248,361 @@ async fn run_gen(opts : GenOptions) -> Unit {
       any_diff = true
     }
   }
+  if opts.world_pkg is Some(world_pkg) {
+    let ok = generate_ecs_world(
+      workspace,
+      world_pkg,
+      module_infos,
+      components_by_pkg,
+      check~,
+      verbose=opts.verbose,
+    )
+    if !ok {
+      any_diff = true
+    }
+  }
   if any_diff {
     @sys.exit(1)
   }
+}
+
+///|
+struct ModuleInfo {
+  root : String
+  name : String
+}
+
+///|
+async fn load_module_infos(module_roots : Array[String]) -> Array[ModuleInfo] {
+  let infos : Array[ModuleInfo] = []
+  for root in module_roots {
+    let path = path_join(root, "moon.mod.json")
+    match read_file_text(path) {
+      Some(src) =>
+        match parse_module_name(src) {
+          Some(name) => infos.push({ root, name })
+          None => {
+            println("Failed to parse module name from: \{path}")
+            @sys.exit(1)
+          }
+        }
+      None => {
+        println("Failed to read: \{path}")
+        @sys.exit(1)
+      }
+    }
+  }
+  infos
+}
+
+///|
+fn parse_module_name(src : String) -> String? {
+  // Minimal JSON string scan for: "name": "<module-name>"
+  let s = src.view()
+  let key = "\"name\"".view()
+  let mut i = 0
+  while i + key.length() <= s.length() {
+    if (try! s[i:i + key.length()]) == key {
+      // Seek ':' then the first '"' and the closing '"'.
+      let mut j = i + key.length()
+      while j < s.length() && s.code_unit_at(j).to_int() != ':'.to_int() {
+        j = j + 1
+      }
+      if j >= s.length() {
+        return None
+      }
+      while j < s.length() && s.code_unit_at(j).to_int() != '"'.to_int() {
+        j = j + 1
+      }
+      if j >= s.length() {
+        return None
+      }
+      let start = j + 1
+      let mut end = start
+      while end < s.length() && s.code_unit_at(end).to_int() != '"'.to_int() {
+        end = end + 1
+      }
+      if end >= s.length() {
+        return None
+      }
+      return Some(try! s[start:end].to_string())
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
+struct ComponentRef {
+  pkg_import : String
+  pkg_alias : String
+  tycon : String
+}
+
+///|
+fn module_for_pkg(
+  module_infos : Array[ModuleInfo],
+  pkg_dir : String,
+) -> ModuleInfo? {
+  let mut best : ModuleInfo? = None
+  let mut best_len = -1
+  for m in module_infos {
+    if pkg_dir == m.root || pkg_dir.has_prefix(m.root + "/") {
+      if m.root.length() > best_len {
+        best = Some(m)
+        best_len = m.root.length()
+      }
+    }
+  }
+  best
+}
+
+///|
+fn relative_pkg_path(module_root : String, pkg_dir : String) -> String? {
+  if pkg_dir == module_root {
+    return Some(".")
+  }
+  if pkg_dir.has_prefix(module_root + "/") {
+    let start = module_root.length() + 1
+    let v = pkg_dir.view()
+    Some(try! v[start:v.length()].to_string())
+  } else {
+    None
+  }
+}
+
+///|
+fn camel_to_snake(name : String) -> String {
+  let out = StringBuilder::new()
+  let mut first = true
+  for c in name {
+    if c >= 'A' && c <= 'Z' {
+      if !first {
+        out.write_char('_')
+      }
+      out.write_char(Int::unsafe_to_char(c.to_int() + 32))
+    } else {
+      out.write_char(c)
+    }
+    first = false
+  }
+  out.to_string()
+}
+
+///|
+const FMT_MAX_LINE : Int = 80
+
+fn fits_one_line(s : String) -> Bool {
+  s.length() <= FMT_MAX_LINE
+}
+
+fn render_string_array_one_line(items : Array[String]) -> String {
+  if items.length() == 0 {
+    "[]"
+  } else {
+    let quoted = items.map(fn(s) { "\"\{s}\"" }).join(",")
+    "[\{quoted}]"
+  }
+}
+
+///|
+fn component_ref_key(c : ComponentRef) -> String {
+  c.pkg_import + "/" + c.tycon
+}
+
+///|
+fn sort_component_refs(components : Array[ComponentRef]) -> Unit {
+  // Deterministic sort without relying on stdlib comparator APIs.
+  // Insertion sort is fine because component counts are small.
+  let mut i = 1
+  while i < components.length() {
+    let cur = components[i]
+    let cur_key = component_ref_key(cur)
+    let mut j = i
+    while j > 0 && cur_key < component_ref_key(components[j - 1]) {
+      components[j] = components[j - 1]
+      j = j - 1
+    }
+    components[j] = cur
+    i = i + 1
+  }
+}
+
+///|
+fn render_world_file(components : Array[ComponentRef]) -> String {
+  let header =
+    #|// Copyright 2025 International Digital Economy Academy
+    #|//
+    #|// Licensed under the Apache License, Version 2.0 (the "License");
+    #|// you may not use this file except in compliance with the License.
+    #|// You may obtain a copy of the License at
+    #|//
+    #|//     http://www.apache.org/licenses/LICENSE-2.0
+    #|//
+    #|// Unless required by applicable law or agreed to in writing, software
+    #|// distributed under the License is distributed on an "AS IS" BASIS,
+    #|// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #|// See the License for the specific language governing permissions and
+    #|// limitations under the License.
+    #|
+    #|// Code generated by `mgstudio gen`. DO NOT EDIT.
+    #|
+  let comps = components.copy()
+  sort_component_refs(comps)
+  let traits = comps
+    .map(fn(c) {
+      let snake = camel_to_snake(c.tycon)
+      "///|\n" +
+      "pub(open) trait Has_\{c.tycon} {\n" +
+      "  get_\{snake}_store(self : Self) -> @core.SparseSet[@\{c.pkg_alias}.\{c.tycon}]\n" +
+      "}\n"
+    })
+    .join("\n")
+  let fields = comps
+    .map(fn(c) {
+      let snake = camel_to_snake(c.tycon)
+      "  \{snake} : @core.SparseSet[@\{c.pkg_alias}.\{c.tycon}]\n"
+    })
+    .join("")
+  let init_fields = comps
+    .map(fn(c) {
+      let snake = camel_to_snake(c.tycon)
+      "    \{snake}: @core.SparseSet::new(),\n"
+    })
+    .join("")
+
+  let mut init_expr = "World::{ entities: @core.Entities::new()"
+  for c in comps {
+    let snake = camel_to_snake(c.tycon)
+    init_expr = init_expr + ", \{snake}: @core.SparseSet::new()"
+  }
+  init_expr = init_expr + " }"
+
+  let world_new_body = if fits_one_line(init_expr) {
+    "  \{init_expr}\n"
+  } else {
+    "  World::{\n" +
+    "    entities: @core.Entities::new(),\n" +
+    init_fields +
+    "  }\n"
+  }
+  let trait_impls = comps
+    .map(fn(c) {
+      let snake = camel_to_snake(c.tycon)
+      "///|\n" +
+      "pub impl Has_\{c.tycon} for World with get_\{snake}_store(self) {\n" +
+      "  self.\{snake}\n" +
+      "}\n"
+    })
+    .join("\n")
+  let cleanup = comps
+    .map(fn(c) {
+      let snake = camel_to_snake(c.tycon)
+      "  self.\{snake}.remove(entity) |> ignore\n"
+    })
+    .join("")
+  header +
+  "\n" +
+  traits +
+  "\n" +
+  "///|\n" +
+  "pub struct World {\n" +
+  "  entities : @core.Entities\n" +
+  fields +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub fn World::new() -> World {\n" +
+  world_new_body +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub fn World::spawn_empty(self : World) -> @core.Entity {\n" +
+  "  self.entities.spawn()\n" +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub fn World::despawn(\n" +
+  "  self : World,\n" +
+  "  entity : @core.Entity,\n" +
+  ") -> Unit raise @core.EntityError {\n" +
+  "  self.entities.despawn(entity)\n" +
+  cleanup +
+  "}\n" +
+  "\n" +
+  trait_impls
+}
+
+///|
+fn render_world_pkg_json(imports : Array[String]) -> String {
+  let items = imports.copy()
+  items.sort()
+  let body = items.map(fn(s) { "    \"\{s}\"" }).join(",\n")
+  "{\n  \"import\": [\n\{body}\n  ]\n}\n"
+}
+
+///|
+async fn generate_ecs_world(
+  workspace : String,
+  world_pkg_arg : String,
+  module_infos : Array[ModuleInfo],
+  components_by_pkg : @hashmap.HashMap[String, Array[String]],
+  check~ : Bool,
+  verbose~ : Bool,
+) -> Bool {
+  let world_pkg = if world_pkg_arg.has_prefix("/") {
+    world_pkg_arg
+  } else {
+    path_join(workspace, world_pkg_arg)
+  }
+  if check && !@fs.exists(world_pkg) {
+    println("Out of date: \{world_pkg}")
+    return false
+  }
+  if !@fs.exists(world_pkg) {
+    @fs.mkdir(world_pkg, recursive=true, permission=493) |> ignore
+  }
+
+  // Collect components with package import info.
+  let alias_to_import : @hashmap.HashMap[String, String] = @hashmap.HashMap::new()
+  let all : Array[ComponentRef] = []
+  for entry in components_by_pkg.iter() {
+    let (pkg_dir, comps) = entry
+    guard module_for_pkg(module_infos, pkg_dir) is Some(m) else {
+      println("No module root matched for package: \{pkg_dir}")
+      @sys.exit(1)
+    }
+    let rel = relative_pkg_path(m.root, pkg_dir).unwrap()
+    let pkg_import = if rel == "." { m.name } else { m.name + "/" + rel }
+    let pkg_alias = path_basename(pkg_dir)
+    if alias_to_import.get(pkg_alias) is Some(prev) && prev != pkg_import {
+      println(
+        "World import alias collision: \{pkg_alias} => \{prev} vs \{pkg_import}",
+      )
+      @sys.exit(1)
+    }
+    alias_to_import.set(pkg_alias, pkg_import)
+    for tycon in comps {
+      all.push({ pkg_import, pkg_alias, tycon })
+    }
+  }
+  let world_mbt = render_world_file(all)
+  let world_path = path_join(world_pkg, "ecs_world.g.mbt")
+  let ok_world = write_or_check(world_path, world_mbt, check~, verbose~)
+
+  // Also manage the world package imports deterministically.
+  let imports : Array[String] = []
+  imports.push("Milky2018/mgstudio/core")
+  for entry in alias_to_import.iter() {
+    let (_alias, pkg_import) = entry
+    if !imports.contains(pkg_import) {
+      imports.push(pkg_import)
+    }
+  }
+  let pkg_json = render_world_pkg_json(imports)
+  let pkg_path = path_join(world_pkg, "moon.pkg.json")
+  let ok_pkg = write_or_check(pkg_path, pkg_json, check~, verbose~)
+  ok_world && ok_pkg
 }
 
 ///|
@@ -374,33 +741,41 @@ fn render_ecs_generated_file(
   let srcs = sources.copy()
   srcs.sort()
   let static_header =
-    #| // Copyright 2025 International Digital Economy Academy
-    #| //
-    #| // Licensed under the Apache License, Version 2.0 (the "License");
-    #| // you may not use this file except in compliance with the License.
-    #| // You may obtain a copy of the License at
-    #| //
-    #| //     http://www.apache.org/licenses/LICENSE-2.0
-    #| //
-    #| // Unless required by applicable law or agreed to in writing, software
-    #| // distributed under the License is distributed on an "AS IS" BASIS,
-    #| // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #| // See the License for the specific language governing permissions and
-    #| // limitations under the License.
+    #|// Copyright 2025 International Digital Economy Academy
+    #|//
+    #|// Licensed under the Apache License, Version 2.0 (the "License");
+    #|// you may not use this file except in compliance with the License.
+    #|// You may obtain a copy of the License at
+    #|//
+    #|//     http://www.apache.org/licenses/LICENSE-2.0
+    #|//
+    #|// Unless required by applicable law or agreed to in writing, software
+    #|// distributed under the License is distributed on an "AS IS" BASIS,
+    #|// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #|// See the License for the specific language governing permissions and
+    #|// limitations under the License.
     #|
-    #| // Code generated by `mgstudio gen`. DO NOT EDIT.
+    #|// Code generated by `mgstudio gen`. DO NOT EDIT.
     #|
   let sources_joined = srcs.join(", ")
   let header = static_header +
     "// Package dir: \{pkg_dir}\n" +
     "// Sources: \{sources_joined}\n" +
     "\n"
-  let body = "///|\n" +
+  // `const` cannot hold arrays in MoonBit, and `let` names must be lowercase.
+  let literal = render_string_array_one_line(comps)
+  let body = if fits_one_line(literal) {
+    "///|\n" +
     "/// ECS component types discovered via `#ecs.component`.\n" +
-    "pub const ECS_COMPONENTS : Array[String] = [\n" +
+    "pub let ecs_components : Array[String] = \{literal}\n"
+  } else {
+    "///|\n" +
+    "/// ECS component types discovered via `#ecs.component`.\n" +
+    "pub let ecs_components : Array[String] = [\n" +
     comps.map(c => "  \"\{c}\",\n").join("") +
     "]\n"
-  header + "\n" + body
+  }
+  header + body
 }
 
 ///|

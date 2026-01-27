@@ -12,9 +12,9 @@ pub fn time_delta_seconds() -> Float
 
 pub fn time_elapsed_seconds() -> Float
 
-pub fn time_plugin(@app.App) -> @app.App
+pub fn[W] time_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn time_system() -> Unit
+pub fn[W] time_system(W) -> Unit
 
 pub fn time_update() -> Unit
 

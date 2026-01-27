@@ -24,48 +24,49 @@ pub fn fixed_time_timestep_seconds() -> Float
 
 pub fn set_delta_seconds_provider(() -> Float) -> Unit
 
-pub fn system(() -> Unit) -> SystemConfig
+pub fn[W] system((W) -> Unit) -> SystemConfig[W]
 
-pub fn[P : SystemParam] system_param((P) -> Unit) -> () -> Unit
+pub fn[W, P : SystemParam] system_param((P) -> Unit) -> (W) -> Unit
 
 pub fn system_set(String) -> String
 
 // Errors
 
 // Types and methods
-pub struct App {
-  schedule : Schedule
+pub struct App[W] {
+  world : W
+  schedule : Schedule[W]
   runner : (() -> Unit)?
 }
-pub fn App::add_fixed_update_system(Self, () -> Unit) -> Self
-pub fn App::add_fixed_update_system_config(Self, SystemConfig) -> Self
-pub fn[P : SystemParam] App::add_fixed_update_system_param(Self, (P) -> Unit) -> Self
-pub fn App::add_plugins(Self, Array[(Self) -> Self]) -> Self
-pub fn App::add_post_update_system(Self, () -> Unit) -> Self
-pub fn App::add_post_update_system_config(Self, SystemConfig) -> Self
-pub fn[P : SystemParam] App::add_post_update_system_param(Self, (P) -> Unit) -> Self
-pub fn App::add_pre_update_system(Self, () -> Unit) -> Self
-pub fn App::add_pre_update_system_config(Self, SystemConfig) -> Self
-pub fn[P : SystemParam] App::add_pre_update_system_param(Self, (P) -> Unit) -> Self
-pub fn App::add_startup_system(Self, () -> Unit) -> Self
-pub fn App::add_startup_system_config(Self, SystemConfig) -> Self
-pub fn[P : SystemParam] App::add_startup_system_param(Self, (P) -> Unit) -> Self
-pub fn App::add_system(Self, () -> Unit) -> Self
-pub fn App::add_system_config(Self, SystemConfig) -> Self
-pub fn[P : SystemParam] App::add_system_param(Self, (P) -> Unit) -> Self
-pub fn App::configure_set(Self, ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self
-pub fn App::new() -> Self
-pub fn App::run(Self) -> Unit
-pub fn App::run_once(Self) -> Self
-pub fn App::run_startup(Self) -> Self
-pub fn App::set_runner(Self, (Self) -> () -> Unit) -> Self
+pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
+pub fn[W] App::add_post_update_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_post_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_post_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W] App::add_pre_update_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_pre_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_pre_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W] App::add_startup_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W] App::add_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[W] App::new(W) -> Self[W]
+pub fn[W] App::run(Self[W]) -> Unit
+pub fn[W] App::run_once(Self[W]) -> Self[W]
+pub fn[W] App::run_startup(Self[W]) -> Self[W]
+pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 
-pub struct Schedule {
-  startup : Array[SystemConfig]
-  pre_update : Array[SystemConfig]
-  fixed_update : Array[SystemConfig]
-  update : Array[SystemConfig]
-  post_update : Array[SystemConfig]
+pub struct Schedule[W] {
+  startup : Array[SystemConfig[W]]
+  pre_update : Array[SystemConfig[W]]
+  fixed_update : Array[SystemConfig[W]]
+  update : Array[SystemConfig[W]]
+  post_update : Array[SystemConfig[W]]
   startup_set_edges : Array[(String, String)]
   pre_update_set_edges : Array[(String, String)]
   fixed_update_set_edges : Array[(String, String)]
@@ -83,30 +84,30 @@ pub(all) enum ScheduleStage {
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage
 
-pub struct SystemConfig {
-  system : () -> Unit
-  run_if : (() -> Bool)?
+pub struct SystemConfig[W] {
+  system : (W) -> Unit
+  run_if : ((W) -> Bool)?
   set : String?
   before : Array[String]
   after : Array[String]
 }
-pub fn SystemConfig::after(Self, String) -> Self
-pub fn SystemConfig::before(Self, String) -> Self
-pub fn SystemConfig::in_set(Self, String) -> Self
-pub fn SystemConfig::run_if(Self, () -> Bool) -> Self
+pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
 
 // Type aliases
 pub type DeltaSecondsFn = () -> Float
 
-pub type Plugin = (App) -> App
+pub type Plugin[W] = (App[W]) -> App[W]
 
-pub type RunConditionFn = () -> Bool
+pub type RunConditionFn[W] = (W) -> Bool
 
-pub type RunnerBuilder = (App) -> () -> Unit
+pub type RunnerBuilder[W] = (App[W]) -> () -> Unit
 
 pub type RunnerFn = () -> Unit
 
-pub type SystemFn = () -> Unit
+pub type SystemFn[W] = (W) -> Unit
 
 pub type SystemSet = String
 
