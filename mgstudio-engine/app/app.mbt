@@ -13,16 +13,16 @@
 // limitations under the License.
 
 ///|
-pub type SystemFn = () -> Unit
+pub typealias () -> Unit as SystemFn
 
 ///|
-pub type Plugin = (App) -> App
+pub typealias (App) -> App as Plugin
 
 ///|
-pub type RunConditionFn = () -> Bool
+pub typealias () -> Bool as RunConditionFn
 
 ///|
-pub type SystemSet = String
+pub typealias String as SystemSet
 
 ///|
 pub fn system_set(name : String) -> SystemSet {
@@ -100,13 +100,13 @@ pub fn SystemConfig::after(
 }
 
 ///|
-pub type DeltaSecondsFn = () -> Float
+pub typealias () -> Float as DeltaSecondsFn
 
 ///|
-pub type RunnerFn = () -> Unit
+pub typealias () -> Unit as RunnerFn
 
 ///|
-pub type RunnerBuilder = (App) -> RunnerFn
+pub typealias (App) -> RunnerFn as RunnerBuilder
 
 ///|
 pub struct Schedule {

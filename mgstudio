@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+BIN="${ROOT}/mgstudio-cli/_build/native/release/build/main/main.exe"
+
+if [[ ! -x "${BIN}" ]]; then
+  (cd "${ROOT}/mgstudio-cli" && moon build --release)
+fi
+
+exec "${BIN}" "$@"

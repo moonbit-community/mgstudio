@@ -1,0 +1,18 @@
+{
+  "is-main": true,
+  "bin-name": "mgstudio",
+  "bin-target": "native",
+  "import": [
+    "moonbitlang/async",
+    "moonbitlang/async/fs",
+    "moonbitlang/parser",
+    "moonbitlang/parser/attribute",
+    "moonbitlang/parser/syntax",
+    {
+      "path": "moonbitlang/core/hashmap",
+      "alias": "hashmap"
+    },
+    "moonbitlang/core/list",
+    "moonbitlang/x/sys"
+  ]
+}
