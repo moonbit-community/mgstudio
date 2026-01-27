@@ -4,7 +4,8 @@
   "deps": {
     "moonbitlang/async": "0.16.1",
     "moonbitlang/x": "0.4.38",
-    "moonbitlang/parser": "0.1.14"
+    "moonbitlang/parser": "0.1.14",
+    "TheWaWaR/clap": "0.2.6"
   },
   "readme": "README.mbt.md",
   "license": "Apache-2.0",

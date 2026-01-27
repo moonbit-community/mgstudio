@@ -19,36 +19,94 @@
 /// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component`.
 async fn main {
   let argv = @sys.get_cli_args()
-  if argv.length() < 2 {
-    print_help()
+  let parser = make_cli_parser()
+  let value = @clap.SimpleValue::new(parser.prog)
+  let args : Array[String] = []
+  for i in 1..<argv.length() {
+    args.push(argv[i])
+  }
+
+  // Let clap generate and format help output.
+  if args.length() == 0 {
+    print_cli_help(parser)
     @sys.exit(2)
   }
-  match argv[1] {
-    "gen" => cmd_gen(argv)
-    "-h" | "--help" | "help" => {
-      print_help()
-      @sys.exit(0)
+  let help : String? = parser.parse(value, args) catch {
+    err => {
+      println(err)
+      print_cli_help(parser)
+      @sys.exit(2)
+      None
     }
-    _ => {
-      println("Unknown command: \{argv[1]}")
-      print_help()
+  }
+  if help is Some(msg) {
+    println(msg)
+    @sys.exit(0)
+  }
+  match value.subcmd {
+    Some(cmd) =>
+      match cmd.name {
+        "gen" => cmd_gen(cmd)
+        _ => {
+          println("Unknown command: \{cmd.name}")
+          print_cli_help(parser)
+          @sys.exit(2)
+        }
+      }
+    None => {
+      print_cli_help(parser)
       @sys.exit(2)
     }
   }
 }
 
 ///|
-fn print_help() -> Unit {
-  let help =
-    #| mgstudio
-    #|
-    #| Usage:
-    #|   mgstudio gen [--workspace <path>] [--modules <path>...] [--check] [--write] [--verbose]
-    #|
-    #| Commands:
-    #|   gen    Generate `ecs.g.mbt` from `#ecs.component`
-    #|
-  println(help)
+fn make_cli_parser() -> @clap.Parser {
+  @clap.Parser::new(
+    prog="mgstudio",
+    description="mgstudio developer CLI (codegen/build/run entrypoint).",
+    subcmds={
+      "gen": @clap.SubCommand::new(
+        help="Generate ecs.g.mbt from #ecs.component.",
+        args={
+          "workspace": @clap.Arg::named(
+            short='w',
+            nargs=@clap.Nargs::One,
+            defaults=["."],
+            help="Workspace root (default: .)",
+          ),
+          // Repeatable: `--modules <path>` multiple times.
+          "modules": @clap.Arg::named(
+            short='m',
+            nargs=@clap.Nargs::Any,
+            help="Module root (repeatable). If absent, auto-discover moon.mod.json under workspace.",
+          ),
+          "check": @clap.Arg::flag(
+            short='c',
+            help="Verify generated files are up-to-date (do not write).",
+          ),
+          "write": @clap.Arg::flag(help="Write generated files (default)."),
+          "verbose": @clap.Arg::flag(
+            short='v',
+            help="Print scanned modules and generated paths.",
+          ),
+        },
+      ),
+    },
+  )
+}
+
+///|
+fn print_cli_help(parser : @clap.Parser) -> Unit {
+  let v = @clap.SimpleValue::new(parser.prog)
+  // `-h/--help` triggers `Parser::gen_help_message`.
+  let msg_opt : String? = parser.parse(v, ["-h"]) catch {
+    _ => Some("Help is unavailable.")
+  }
+  match msg_opt {
+    Some(msg) => println(msg)
+    None => println("No help message available.")
+  }
 }
 
 ///|
@@ -66,8 +124,14 @@ fn GenOptions::default(workspace : String) -> GenOptions {
 }
 
 ///|
-async fn cmd_gen(argv : Array[String]) -> Unit {
-  let opts = parse_gen_args(argv)
+async fn cmd_gen(cmd : @clap.SimpleValue) -> Unit {
+  let opts : GenOptions = parse_gen_options(cmd) catch {
+    err => {
+      println(err)
+      @sys.exit(2)
+      GenOptions::default(".")
+    }
+  }
   run_gen(opts) catch {
     err => {
       println("mgstudio gen failed: \{err}")
@@ -77,64 +141,16 @@ async fn cmd_gen(argv : Array[String]) -> Unit {
 }
 
 ///|
-fn parse_gen_args(argv : Array[String]) -> GenOptions {
-  // argv: [bin, "gen", ...]
-  let mut i = 2
-  let mut opts = GenOptions::default(".")
-  while i < argv.length() {
-    let a = argv[i]
-    match a {
-      "--workspace" => {
-        guard i + 1 < argv.length() else {
-          println("Missing value for --workspace")
-          @sys.exit(2)
-        }
-        opts = { ..opts, workspace: argv[i + 1] }
-        i = i + 2
-      }
-      "--modules" => {
-        guard i + 1 < argv.length() else {
-          println("Missing value for --modules")
-          @sys.exit(2)
-        }
-        let modules = opts.modules
-        modules.push(argv[i + 1])
-        opts = { ..opts, modules, }
-        i = i + 2
-      }
-      "--check" => {
-        opts = { ..opts, check: true, write: false }
-        i = i + 1
-      }
-      "--write" => {
-        opts = { ..opts, write: true }
-        i = i + 1
-      }
-      "--verbose" => {
-        opts = { ..opts, verbose: true }
-        i = i + 1
-      }
-      "-h" | "--help" => {
-        let help =
-          #| mgstudio gen
-          #|
-          #| Options:
-          #|   --workspace <path>  Workspace root (default ".")
-          #|   --modules <path>    Module roots (repeatable). If absent, auto-discover moon.mod.json under workspace.
-          #|   --check             Verify generated files are up-to-date (do not write).
-          #|   --write             Write generated files (default).
-          #|   --verbose           Print scanned modules and generated paths.
-          #|
-        println(help)
-        @sys.exit(0)
-      }
-      _ => {
-        println("Unknown gen option: \{a}")
-        @sys.exit(2)
-      }
-    }
-  }
-  opts
+fn parse_gen_options(
+  cmd : @clap.SimpleValue,
+) -> GenOptions raise @clap.ParserError {
+  let workspace : String = cmd.get_one("workspace")
+  let modules : Array[String] = cmd.get_array("modules")
+  let check = cmd.get_flag("check").unwrap_or(false)
+  let force_write = cmd.get_flag("write").unwrap_or(false)
+  let write = force_write || !check
+  let verbose = cmd.get_flag("verbose").unwrap_or(false)
+  { workspace, modules, check, write, verbose }
 }
 
 ///|
