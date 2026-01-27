@@ -25,6 +25,7 @@
 pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
+  mut gpu : GpuBackend?
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   // (id, env, func_idx)
@@ -36,6 +37,7 @@ pub fn HostContext::new() -> HostContext {
   HostContext::{
     store: None,
     instance: None,
+    gpu: None,
     next_closure_id: Ref::new(1),
     closures: Ref::new([]),
     string_sink: Ref::new(""),
@@ -59,16 +61,6 @@ fn alloc_closure(ctx : HostContext, func_idx : Int, env : @types.Value) -> Int {
 }
 
 ///|
-fn find_closure(ctx : HostContext, id : Int) -> (Int, @types.Value)? {
-  for entry in ctx.closures.val {
-    if entry.0 == id {
-      return Some((entry.2, entry.1))
-    }
-  }
-  None
-}
-
-///|
 fn ok_i32(value : Int) -> Array[@types.Value] {
   [@types.Value::I32(value)]
 }
@@ -86,18 +78,6 @@ fn ok_extern_null() -> Array[@types.Value] {
 ///|
 fn ok_extern_ref(id : Int) -> Array[@types.Value] {
   [@types.Value::ExternRef(id)]
-}
-
-///|
-fn ok_empty_string(ctx : HostContext) -> Array[@types.Value] {
-  // MoonBit wasm-gc `String` is typically represented as `ref array i16`,
-  // which shows up as `RefArray(1)` in our current modules.
-  if ctx.store is Some(store) {
-    let array_idx = store.alloc_array(1, [])
-    [@types.Value::ArrayRef(array_idx)]
-  } else {
-    [@types.Value::Null]
-  }
 }
 
 ///|
@@ -406,19 +386,40 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_request_device",
-    fn(_args) { ok_extern_ref(HANDLE_BASE + 2) },
+    fn(_args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      ok_extern_ref(HANDLE_BASE + 2)
+    },
     func_type=ft([], [@types.ValueType::ExternRef]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_surface",
-    fn(_args) { ok_extern_ref(HANDLE_BASE + 3) },
+    fn(_args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      ctx.gpu.unwrap().create_surface()
+      ok_extern_ref(HANDLE_BASE + 3)
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "gpu_configure_surface",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 4 &&
+        args[2] is @types.Value::I32(width) &&
+        args[3] is @types.Value::I32(height) {
+        ctx.gpu.unwrap().configure_surface(width, height)
+      }
+      ok_i32(0)
+    },
     func_type=ft(
       [
         @types.ValueType::ExternRef,
@@ -432,13 +433,47 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_begin_frame",
-    fn(_args) { ok_extern_ref(HANDLE_BASE + 4) },
+    fn(_args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      ctx.gpu.unwrap().begin_frame()
+      ok_extern_ref(HANDLE_BASE + 4)
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "gpu_begin_pass",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 15 &&
+        args[0] is @types.Value::I32(target_id) &&
+        args[1] is @types.Value::I32(width_logical) &&
+        args[2] is @types.Value::I32(height_logical) &&
+        args[3] is @types.Value::F32(clear_r) &&
+        args[4] is @types.Value::F32(clear_g) &&
+        args[5] is @types.Value::F32(clear_b) &&
+        args[6] is @types.Value::F32(clear_a) &&
+        args[7] is @types.Value::F32(camera_x) &&
+        args[8] is @types.Value::F32(camera_y) &&
+        args[9] is @types.Value::F32(camera_rot) &&
+        args[10] is @types.Value::F32(camera_scale) &&
+        args[11] is @types.Value::I32(vx) &&
+        args[12] is @types.Value::I32(vy) &&
+        args[13] is @types.Value::I32(vw) &&
+        args[14] is @types.Value::I32(vh) {
+        ctx.gpu
+        .unwrap()
+        .begin_pass(
+          target_id, width_logical, height_logical, clear_r, clear_g, clear_b, clear_a,
+          camera_x, camera_y, camera_rot, camera_scale, vx, vy, vw, vh,
+        )
+      }
+      ok_i32(0)
+    },
     func_type=ft(
       [
         @types.ValueType::I32,
@@ -463,19 +498,38 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_end_pass",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      ctx.gpu.map(fn(gpu) { gpu.end_pass() }) |> ignore
+      ok_i32(0)
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "gpu_end_frame",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      ctx.gpu.map(fn(gpu) { gpu.end_frame() }) |> ignore
+      ok_i32(0)
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_render_target",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 3 &&
+        args[0] is @types.Value::I32(w) &&
+        args[1] is @types.Value::I32(h) &&
+        args[2] is @types.Value::I32(nearest_i32) {
+        let id = ctx.gpu.unwrap().create_render_target(w, h, nearest_i32 != 0)
+        ok_i32(id)
+      } else {
+        ok_i32(-1)
+      }
+    },
     func_type=ft(
       [@types.ValueType::I32, @types.ValueType::I32, @types.ValueType::I32],
       [@types.ValueType::I32],
@@ -484,7 +538,19 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_mesh_capsule",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 3 &&
+        args[0] is @types.Value::F32(radius) &&
+        args[1] is @types.Value::F32(half_len) &&
+        args[2] is @types.Value::I32(segs) {
+        ok_i32(ctx.gpu.unwrap().create_mesh_capsule(radius, half_len, segs))
+      } else {
+        ok_i32(-1)
+      }
+    },
     func_type=ft(
       [@types.ValueType::F32, @types.ValueType::F32, @types.ValueType::I32],
       [@types.ValueType::I32],
@@ -493,7 +559,18 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_mesh_rectangle",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 2 &&
+        args[0] is @types.Value::F32(w) &&
+        args[1] is @types.Value::F32(h) {
+        ok_i32(ctx.gpu.unwrap().create_mesh_rectangle(w, h))
+      } else {
+        ok_i32(-1)
+      }
+    },
     func_type=ft([@types.ValueType::F32, @types.ValueType::F32], [
       @types.ValueType::I32,
     ]),
@@ -507,7 +584,25 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_draw_mesh",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        return ok_i32(0)
+      }
+      if args.length() >= 10 &&
+        args[0] is @types.Value::I32(mesh_id) &&
+        args[1] is @types.Value::F32(x) &&
+        args[2] is @types.Value::F32(y) &&
+        args[3] is @types.Value::F32(rot) &&
+        args[4] is @types.Value::F32(sx) &&
+        args[5] is @types.Value::F32(sy) &&
+        args[6] is @types.Value::F32(r) &&
+        args[7] is @types.Value::F32(g) &&
+        args[8] is @types.Value::F32(b) &&
+        args[9] is @types.Value::F32(a) {
+        ctx.gpu.unwrap().draw_mesh(mesh_id, x, y, rot, sx, sy, r, g, b, a)
+      }
+      ok_i32(0)
+    },
     func_type=ft(
       [
         @types.ValueType::I32,
@@ -527,7 +622,34 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_draw_sprite_uv",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        return ok_i32(0)
+      }
+      if args.length() >= 14 &&
+        args[0] is @types.Value::I32(texture_id) &&
+        args[1] is @types.Value::F32(x) &&
+        args[2] is @types.Value::F32(y) &&
+        args[3] is @types.Value::F32(rot) &&
+        args[4] is @types.Value::F32(sx) &&
+        args[5] is @types.Value::F32(sy) &&
+        args[6] is @types.Value::F32(r) &&
+        args[7] is @types.Value::F32(g) &&
+        args[8] is @types.Value::F32(b) &&
+        args[9] is @types.Value::F32(a) &&
+        args[10] is @types.Value::F32(uv_min_x) &&
+        args[11] is @types.Value::F32(uv_min_y) &&
+        args[12] is @types.Value::F32(uv_max_x) &&
+        args[13] is @types.Value::F32(uv_max_y) {
+        ctx.gpu
+        .unwrap()
+        .draw_sprite_uv(
+          texture_id, x, y, rot, sx, sy, r, g, b, a, uv_min_x, uv_min_y, uv_max_x,
+          uv_max_y,
+        )
+      }
+      ok_i32(0)
+    },
     func_type=ft(
       [
         @types.ValueType::I32,

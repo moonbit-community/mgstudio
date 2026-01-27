@@ -4,6 +4,7 @@ package "Milky2018/mgstudio-runtime-native"
 import {
   "Milky2018/wasmoon/runtime",
   "Milky2018/wasmoon/types",
+  "Milky2018/wgpu_mbt",
 }
 
 // Values
@@ -14,14 +15,108 @@ pub fn add_moonbit_ffi_imports(@runtime.Linker, HostContext) -> Unit
 // Errors
 
 // Types and methods
+pub struct GpuBackend {
+  instance : @wgpu_mbt.Instance
+  adapter : @wgpu_mbt.Adapter
+  device : @wgpu_mbt.Device
+  queue : @wgpu_mbt.Queue
+  mut surface : @wgpu_mbt.Surface?
+  mut frame : GpuFrameState?
+  mut pass_state : GpuPassState?
+  mut sprite_bgl_tex : @wgpu_mbt.BindGroupLayout?
+  mut sprite_bgl_ubo : @wgpu_mbt.BindGroupLayout?
+  mut sprite_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut sprite_pipeline : @wgpu_mbt.RenderPipeline?
+  mut sprite_uniform_buf : @wgpu_mbt.Buffer?
+  mut sprite_uniform_bg : @wgpu_mbt.BindGroup?
+  mut mesh_bgl_color : @wgpu_mbt.BindGroupLayout?
+  mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh_color_buf : @wgpu_mbt.Buffer?
+  mut mesh_color_bg : @wgpu_mbt.BindGroup?
+  mut mesh_scratch_vb : @wgpu_mbt.Buffer?
+  mut mesh_scratch_capacity : UInt64
+  next_id : Ref[Int]
+  textures : Ref[Array[GpuTextureInfo]]
+  meshes : Ref[Array[GpuMeshInfo]]
+}
+pub fn GpuBackend::begin_frame(Self) -> Unit
+pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit
+pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
+pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
+pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
+pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int
+pub fn GpuBackend::create_surface(Self) -> Unit
+pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+pub fn GpuBackend::end_frame(Self) -> Unit
+pub fn GpuBackend::end_pass(Self) -> Unit
+pub fn GpuBackend::new() -> Self
+
+pub struct GpuFrameState {
+  surface_tex : @wgpu_mbt.SurfaceTexture
+  surface_view : @wgpu_mbt.TextureView
+  encoder : @wgpu_mbt.CommandEncoder
+  mut pass : @wgpu_mbt.RenderPass?
+}
+
+pub struct GpuMeshInfo {
+  id : Int
+  vertices_xy : Array[Float]
+  indices_u16 : Array[Int]
+  index_count : UInt
+  index_buf : @wgpu_mbt.Buffer
+}
+
+pub struct GpuPassState {
+  target_id : Int
+  width_logical : Float
+  height_logical : Float
+  camera_x : Float
+  camera_y : Float
+  camera_rot : Float
+  camera_scale : Float
+  viewport_x : UInt
+  viewport_y : UInt
+  viewport_w : UInt
+  viewport_h : UInt
+}
+
+pub struct GpuTextureInfo {
+  id : Int
+  width : Int
+  height : Int
+  texture : @wgpu_mbt.Texture
+  view : @wgpu_mbt.TextureView
+  sampler : @wgpu_mbt.Sampler
+  bind_group : @wgpu_mbt.BindGroup
+}
+
 pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
+  mut gpu : GpuBackend?
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   string_sink : Ref[String]
 }
 pub fn HostContext::new() -> Self
+
+pub struct SpriteUniformPack {
+  center_ndc_x : Float
+  center_ndc_y : Float
+  half_ndc_x : Float
+  half_ndc_y : Float
+  rot : Float
+  uv_min_x : Float
+  uv_min_y : Float
+  uv_max_x : Float
+  uv_max_y : Float
+  color_r : Float
+  color_g : Float
+  color_b : Float
+  color_a : Float
+}
 
 // Type aliases
 

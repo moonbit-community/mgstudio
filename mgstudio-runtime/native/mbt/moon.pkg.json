@@ -1,6 +1,14 @@
 {
   "is-main": true,
   "import": [
+    {
+      "path": "Milky2018/wgpu_mbt",
+      "alias": "wgpu"
+    },
+    {
+      "path": "moonbitlang/core/math",
+      "alias": "coremath"
+    },
     "moonbitlang/core/debug",
     "moonbitlang/x/fs",
     "moonbitlang/x/sys",
