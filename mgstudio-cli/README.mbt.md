@@ -4,7 +4,7 @@ Developer CLI for mgstudio (native-only).
 
 ## Commands
 
-- `mgstudio gen`: scan MoonBit source files for mgstudio tags (currently `#ecs.component`) and generate per-package `ecs.g.mbt`.
+- `mgstudio gen`: scan MoonBit source files for mgstudio tags (`#ecs.component`, `#ecs.resource`) and generate per-package `ecs.g.mbt`. Optionally generates a concrete ECS `World` package.
 
 ## Usage
 
@@ -14,6 +14,7 @@ From the repo root (recommended), use the wrapper script:
 ./mgstudio --help
 ./mgstudio gen --workspace . --write
 ./mgstudio gen --workspace . --check
+./mgstudio gen --workspace . --world-pkg mgstudio-engine/ecs_world
 ```
 
 ## Install (Local Symlink)
@@ -51,10 +52,15 @@ moon -C mgstudio-cli build --release
 For each MoonBit package directory containing `moon.pkg.json`, `mgstudio gen`:
 
 - scans `.mbt` sources (skipping `_test.mbt`, `_wbtest.mbt`, and `*.g.mbt`)
-- finds `#ecs.component` on type declarations
+- finds `#ecs.component` / `#ecs.resource` on type declarations
 - writes `ecs.g.mbt` into that package directory
 
 The generated file is deterministic. Use `--check` in CI to fail on drift.
+
+If `--world-pkg <dir>` is provided, it also generates:
+
+- `<dir>/ecs_world.g.mbt`: a concrete `World` type with component stores/resources as fields
+- `<dir>/moon.pkg.json`: imports required packages for those types
 
 ## Notes
 

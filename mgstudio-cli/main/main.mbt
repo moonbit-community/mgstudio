@@ -16,7 +16,7 @@
 /// mgstudio CLI entrypoint.
 ///
 /// Currently supported:
-/// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component`.
+/// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component` / `#ecs.resource`.
 async fn main {
   let argv = @sys.get_cli_args()
   let parser = make_cli_parser()
@@ -67,7 +67,7 @@ fn make_cli_parser() -> @clap.Parser {
     description="mgstudio developer CLI (codegen/build/run entrypoint).",
     subcmds={
       "gen": @clap.SubCommand::new(
-        help="Generate ecs.g.mbt from #ecs.component.",
+        help="Generate ecs.g.mbt from #ecs.component / #ecs.resource.",
         args={
           "workspace": @clap.Arg::named(
             short='w',
@@ -121,6 +121,12 @@ struct GenOptions {
   check : Bool
   write : Bool
   verbose : Bool
+}
+
+///|
+struct EcsTags {
+  components : Array[String]
+  resources : Array[String]
 }
 
 ///|
@@ -226,23 +232,44 @@ async fn run_gen(opts : GenOptions) -> Unit {
   }
   let module_infos = load_module_infos(module_roots)
 
-  // pkg_dir -> (components, source_files)
+  // pkg_dir -> (components/resources, source_files)
   let components_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
+  let resources_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
   let sources_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
   for module_root in module_roots {
     collect_ecs_components_for_module(
-      module_root, components_by_pkg, sources_by_pkg,
+      module_root, components_by_pkg, resources_by_pkg, sources_by_pkg,
     )
   }
   let mut any_diff = false
   for entry in components_by_pkg.iter() {
     let (pkg_dir, comps) = entry
-    if comps.length() == 0 {
+    let resources : Array[String] = resources_by_pkg.get(pkg_dir).unwrap_or([])
+    if comps.length() == 0 && resources.length() == 0 {
       continue
+    }
+
+    // `ecs.g.mbt` defines access traits that reference `@core.ComponentStore`
+    // and `@core.Resource`, so tagged packages must import mgstudio core.
+    let pkg_json_path = path_join(pkg_dir, "moon.pkg.json")
+    match read_file_text(pkg_json_path) {
+      Some(pkg_src) => {
+        let updated = ensure_moon_pkg_import(pkg_src, "Milky2018/mgstudio/core")
+        let ok_pkg = write_or_check(
+          pkg_json_path,
+          updated,
+          check~,
+          verbose=opts.verbose,
+        )
+        if !ok_pkg {
+          any_diff = true
+        }
+      }
+      None => ()
     }
     let sources : Array[String] = sources_by_pkg.get(pkg_dir).unwrap_or([])
     let out_path = path_join(pkg_dir, "ecs.g.mbt")
-    let content = render_ecs_generated_file(pkg_dir, comps, sources)
+    let content = render_ecs_generated_file(pkg_dir, comps, resources, sources)
     let ok = write_or_check(out_path, content, check~, verbose=opts.verbose)
     if !ok {
       any_diff = true
@@ -254,6 +281,7 @@ async fn run_gen(opts : GenOptions) -> Unit {
       world_pkg,
       module_infos,
       components_by_pkg,
+      resources_by_pkg,
       check~,
       verbose=opts.verbose,
     )
@@ -333,7 +361,7 @@ fn parse_module_name(src : String) -> String? {
 }
 
 ///|
-struct ComponentRef {
+struct TypeRef {
   pkg_import : String
   pkg_alias : String
   tycon : String
@@ -392,10 +420,12 @@ fn camel_to_snake(name : String) -> String {
 ///|
 const FMT_MAX_LINE : Int = 80
 
+///|
 fn fits_one_line(s : String) -> Bool {
   s.length() <= FMT_MAX_LINE
 }
 
+///|
 fn render_string_array_one_line(items : Array[String]) -> String {
   if items.length() == 0 {
     "[]"
@@ -406,30 +436,33 @@ fn render_string_array_one_line(items : Array[String]) -> String {
 }
 
 ///|
-fn component_ref_key(c : ComponentRef) -> String {
+fn type_ref_key(c : TypeRef) -> String {
   c.pkg_import + "/" + c.tycon
 }
 
 ///|
-fn sort_component_refs(components : Array[ComponentRef]) -> Unit {
+fn sort_type_refs(items : Array[TypeRef]) -> Unit {
   // Deterministic sort without relying on stdlib comparator APIs.
   // Insertion sort is fine because component counts are small.
   let mut i = 1
-  while i < components.length() {
-    let cur = components[i]
-    let cur_key = component_ref_key(cur)
+  while i < items.length() {
+    let cur = items[i]
+    let cur_key = type_ref_key(cur)
     let mut j = i
-    while j > 0 && cur_key < component_ref_key(components[j - 1]) {
-      components[j] = components[j - 1]
+    while j > 0 && cur_key < type_ref_key(items[j - 1]) {
+      items[j] = items[j - 1]
       j = j - 1
     }
-    components[j] = cur
+    items[j] = cur
     i = i + 1
   }
 }
 
 ///|
-fn render_world_file(components : Array[ComponentRef]) -> String {
+fn render_world_file(
+  components : Array[TypeRef],
+  resources : Array[TypeRef],
+) -> String {
   let header =
     #|// Copyright 2025 International Digital Economy Academy
     #|//
@@ -448,53 +481,78 @@ fn render_world_file(components : Array[ComponentRef]) -> String {
     #|// Code generated by `mgstudio gen`. DO NOT EDIT.
     #|
   let comps = components.copy()
-  sort_component_refs(comps)
-  let traits = comps
+  sort_type_refs(comps)
+  let res = resources.copy()
+  sort_type_refs(res)
+  let component_fields = comps
     .map(fn(c) {
       let snake = camel_to_snake(c.tycon)
-      "///|\n" +
-      "pub(open) trait Has_\{c.tycon} {\n" +
-      "  get_\{snake}_store(self : Self) -> @core.SparseSet[@\{c.pkg_alias}.\{c.tycon}]\n" +
-      "}\n"
+      "  \{snake} : @core.ComponentStore[@\{c.pkg_alias}.\{c.tycon}]\n"
     })
-    .join("\n")
-  let fields = comps
-    .map(fn(c) {
-      let snake = camel_to_snake(c.tycon)
-      "  \{snake} : @core.SparseSet[@\{c.pkg_alias}.\{c.tycon}]\n"
+    .join("")
+  let resource_fields = res
+    .map(fn(r) {
+      let snake = camel_to_snake(r.tycon)
+      "  res_\{snake} : @core.Resource[@\{r.pkg_alias}.\{r.tycon}]\n"
     })
     .join("")
   let init_fields = comps
     .map(fn(c) {
       let snake = camel_to_snake(c.tycon)
-      "    \{snake}: @core.SparseSet::new(),\n"
+      "    \{snake}: @core.ComponentStore::new(),\n"
+    })
+    .join("") +
+    res
+    .map(fn(r) {
+      let snake = camel_to_snake(r.tycon)
+      "    res_\{snake}: @core.Resource::new(),\n"
     })
     .join("")
-
-  let mut init_expr = "World::{ entities: @core.Entities::new()"
+  let mut init_expr = "World::{ entities: @core.Entities::new(), change_tick: 0, system_context: @core.SystemContext::new()"
   for c in comps {
     let snake = camel_to_snake(c.tycon)
-    init_expr = init_expr + ", \{snake}: @core.SparseSet::new()"
+    init_expr = init_expr + ", \{snake}: @core.ComponentStore::new()"
+  }
+  for r in res {
+    let snake = camel_to_snake(r.tycon)
+    init_expr = init_expr + ", res_\{snake}: @core.Resource::new()"
   }
   init_expr = init_expr + " }"
-
   let world_new_body = if fits_one_line(init_expr) {
     "  \{init_expr}\n"
   } else {
     "  World::{\n" +
     "    entities: @core.Entities::new(),\n" +
+    "    change_tick: 0,\n" +
+    "    system_context: @core.SystemContext::new(),\n" +
     init_fields +
     "  }\n"
   }
-  let trait_impls = comps
+  let component_trait_impls = comps
     .map(fn(c) {
       let snake = camel_to_snake(c.tycon)
       "///|\n" +
-      "pub impl Has_\{c.tycon} for World with get_\{snake}_store(self) {\n" +
+      "pub impl @\{c.pkg_alias}.Has_\{c.tycon} for World with get_\{snake}_store(self) {\n" +
       "  self.\{snake}\n" +
       "}\n"
     })
     .join("\n")
+  let resource_trait_impls = res
+    .map(fn(r) {
+      let snake = camel_to_snake(r.tycon)
+      "///|\n" +
+      "pub impl @\{r.pkg_alias}.HasRes_\{r.tycon} for World with get_\{snake}_resource(self) {\n" +
+      "  self.res_\{snake}\n" +
+      "}\n"
+    })
+    .join("\n")
+  let trait_impls = component_trait_impls +
+    (if component_trait_impls.length() > 0 && resource_trait_impls.length() > 0 {
+      "\n\n"
+    } else {
+      ""
+    }) +
+    resource_trait_impls
   let cleanup = comps
     .map(fn(c) {
       let snake = camel_to_snake(c.tycon)
@@ -503,12 +561,13 @@ fn render_world_file(components : Array[ComponentRef]) -> String {
     .join("")
   header +
   "\n" +
-  traits +
-  "\n" +
   "///|\n" +
   "pub struct World {\n" +
   "  entities : @core.Entities\n" +
-  fields +
+  "  mut change_tick : @core.Tick\n" +
+  "  mut system_context : @core.SystemContext\n" +
+  component_fields +
+  resource_fields +
   "}\n" +
   "\n" +
   "///|\n" +
@@ -530,6 +589,38 @@ fn render_world_file(components : Array[ComponentRef]) -> String {
   cleanup +
   "}\n" +
   "\n" +
+  "///|\n" +
+  "pub impl @core.SpawnWorld for World with spawn_empty(self) {\n" +
+  "  self.entities.spawn()\n" +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub impl @core.SpawnWorld for World with despawn(self, entity) {\n" +
+  "  self.entities.despawn(entity)\n" +
+  cleanup +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub impl @core.ChangeTickWorld for World with read_change_tick(self) {\n" +
+  "  self.change_tick\n" +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub impl @core.ChangeTickWorld for World with increment_change_tick(self) {\n" +
+  "  self.change_tick = self.change_tick + 1\n" +
+  "  self.change_tick\n" +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub impl @core.SystemContextWorld for World with get_system_context(self) {\n" +
+  "  self.system_context\n" +
+  "}\n" +
+  "\n" +
+  "///|\n" +
+  "pub impl @core.SystemContextWorld for World with set_system_context(self, ctx) {\n" +
+  "  self.system_context = ctx\n" +
+  "}\n" +
+  "\n" +
   trait_impls
 }
 
@@ -547,6 +638,7 @@ async fn generate_ecs_world(
   world_pkg_arg : String,
   module_infos : Array[ModuleInfo],
   components_by_pkg : @hashmap.HashMap[String, Array[String]],
+  resources_by_pkg : @hashmap.HashMap[String, Array[String]],
   check~ : Bool,
   verbose~ : Bool,
 ) -> Bool {
@@ -565,9 +657,11 @@ async fn generate_ecs_world(
 
   // Collect components with package import info.
   let alias_to_import : @hashmap.HashMap[String, String] = @hashmap.HashMap::new()
-  let all : Array[ComponentRef] = []
+  let all_components : Array[TypeRef] = []
+  let all_resources : Array[TypeRef] = []
   for entry in components_by_pkg.iter() {
     let (pkg_dir, comps) = entry
+    let resources : Array[String] = resources_by_pkg.get(pkg_dir).unwrap_or([])
     guard module_for_pkg(module_infos, pkg_dir) is Some(m) else {
       println("No module root matched for package: \{pkg_dir}")
       @sys.exit(1)
@@ -583,10 +677,13 @@ async fn generate_ecs_world(
     }
     alias_to_import.set(pkg_alias, pkg_import)
     for tycon in comps {
-      all.push({ pkg_import, pkg_alias, tycon })
+      all_components.push({ pkg_import, pkg_alias, tycon })
+    }
+    for tycon in resources {
+      all_resources.push({ pkg_import, pkg_alias, tycon })
     }
   }
-  let world_mbt = render_world_file(all)
+  let world_mbt = render_world_file(all_components, all_resources)
   let world_path = path_join(world_pkg, "ecs_world.g.mbt")
   let ok_world = write_or_check(world_path, world_mbt, check~, verbose~)
 
@@ -629,6 +726,7 @@ async fn discover_modules(workspace : String, verbose~ : Bool) -> Array[String] 
 async fn collect_ecs_components_for_module(
   module_root : String,
   components_by_pkg : @hashmap.HashMap[String, Array[String]],
+  resources_by_pkg : @hashmap.HashMap[String, Array[String]],
   sources_by_pkg : @hashmap.HashMap[String, Array[String]],
 ) -> Unit {
   @fs.walk(
@@ -644,8 +742,8 @@ async fn collect_ecs_components_for_module(
         guard !file.has_suffix("_wbtest.mbt") else { continue }
         guard !file.has_suffix(".g.mbt") else { continue }
         let file_path = path_join(dir_path, file)
-        let comps = parse_ecs_components_from_file(file_path)
-        if comps.length() == 0 {
+        let tags = parse_ecs_tags_from_file(file_path)
+        if tags.components.length() == 0 && tags.resources.length() == 0 {
           continue
         }
 
@@ -653,12 +751,21 @@ async fn collect_ecs_components_for_module(
         let bucket : Array[String] = components_by_pkg
           .get(dir_path)
           .unwrap_or([])
-        for c in comps {
+        for c in tags.components {
           if !bucket.contains(c) {
             bucket.push(c)
           }
         }
         components_by_pkg.set(dir_path, bucket)
+        let res_bucket : Array[String] = resources_by_pkg
+          .get(dir_path)
+          .unwrap_or([])
+        for r in tags.resources {
+          if !res_bucket.contains(r) {
+            res_bucket.push(r)
+          }
+        }
+        resources_by_pkg.set(dir_path, res_bucket)
         let sources : Array[String] = sources_by_pkg.get(dir_path).unwrap_or([])
         if !sources.contains(file) {
           sources.push(file)
@@ -681,21 +788,31 @@ fn is_ecs_component_attr(attr : @attribute.Attribute) -> Bool {
 }
 
 ///|
-async fn parse_ecs_components_from_file(path : String) -> Array[String] {
+fn is_ecs_resource_attr(attr : @attribute.Attribute) -> Bool {
+  match attr.parsed {
+    Some(@attribute.Expr::Ident(id) | @attribute.Expr::Apply(id, _)) =>
+      id.qual == Some("ecs") && id.name == "resource"
+    _ => attr.raw.trim().has_prefix("#ecs.resource")
+  }
+}
+
+///|
+async fn parse_ecs_tags_from_file(path : String) -> EcsTags {
   let text = read_file_text(path)
-  guard text is Some(src) else { return [] }
+  guard text is Some(src) else { return { components: [], resources: [] } }
 
   // `moonbitlang/parser` may lag behind the compiler syntax. To avoid blocking
   // codegen on unrelated files, only parse files that actually contain the tag.
   let mut has_tag = false
   for line in src.split("\n") {
-    if line.trim().has_prefix("#ecs.component") {
+    let t = line.trim()
+    if t.has_prefix("#ecs.component") || t.has_prefix("#ecs.resource") {
       has_tag = true
       break
     }
   }
   if !has_tag {
-    return []
+    return { components: [], resources: [] }
   }
   let (impls, reports) = @parser.parse_string(
     src,
@@ -710,34 +827,44 @@ async fn parse_ecs_components_from_file(path : String) -> Array[String] {
     @sys.exit(1)
   }
   let comps : Array[String] = []
+  let resources : Array[String] = []
   for impl_ in impls {
     match impl_ {
       @syntax.Impl::TopTypeDef(td) => {
-        let mut marked = false
+        let mut component_marked = false
+        let mut resource_marked = false
         for attr in td.attrs {
           if is_ecs_component_attr(attr) {
-            marked = true
-            break
+            component_marked = true
+          }
+          if is_ecs_resource_attr(attr) {
+            resource_marked = true
           }
         }
-        if marked && !comps.contains(td.tycon) {
+        if component_marked && !comps.contains(td.tycon) {
           comps.push(td.tycon)
+        }
+        if resource_marked && !resources.contains(td.tycon) {
+          resources.push(td.tycon)
         }
       }
       _ => ()
     }
   }
-  comps
+  { components: comps, resources }
 }
 
 ///|
 fn render_ecs_generated_file(
   pkg_dir : String,
   components : Array[String],
+  resources : Array[String],
   sources : Array[String],
 ) -> String {
   let comps = components.copy()
   comps.sort()
+  let res = resources.copy()
+  res.sort()
   let srcs = sources.copy()
   srcs.sort()
   let static_header =
@@ -763,11 +890,12 @@ fn render_ecs_generated_file(
     "// Sources: \{sources_joined}\n" +
     "\n"
   // `const` cannot hold arrays in MoonBit, and `let` names must be lowercase.
-  let literal = render_string_array_one_line(comps)
-  let body = if fits_one_line(literal) {
+  let comps_literal = render_string_array_one_line(comps)
+  let res_literal = render_string_array_one_line(res)
+  let comps_body = if fits_one_line(comps_literal) {
     "///|\n" +
     "/// ECS component types discovered via `#ecs.component`.\n" +
-    "pub let ecs_components : Array[String] = \{literal}\n"
+    "pub let ecs_components : Array[String] = \{comps_literal}\n"
   } else {
     "///|\n" +
     "/// ECS component types discovered via `#ecs.component`.\n" +
@@ -775,7 +903,51 @@ fn render_ecs_generated_file(
     comps.map(c => "  \"\{c}\",\n").join("") +
     "]\n"
   }
-  header + body
+  let res_body = if fits_one_line(res_literal) {
+    "\n" +
+    "///|\n" +
+    "/// ECS resource types discovered via `#ecs.resource`.\n" +
+    "pub let ecs_resources : Array[String] = \{res_literal}\n"
+  } else {
+    "\n" +
+    "///|\n" +
+    "/// ECS resource types discovered via `#ecs.resource`.\n" +
+    "pub let ecs_resources : Array[String] = [\n" +
+    res.map(c => "  \"\{c}\",\n").join("") +
+    "]\n"
+  }
+  let component_traits = comps
+    .map(fn(tycon) {
+      let snake = camel_to_snake(tycon)
+      "///|\n" +
+      "pub(open) trait Has_\{tycon} {\n" +
+      "  get_\{snake}_store(self : Self) -> @core.ComponentStore[\{tycon}]\n" +
+      "}\n"
+    })
+    .join("\n")
+  let resource_traits = res
+    .map(fn(tycon) {
+      let snake = camel_to_snake(tycon)
+      "///|\n" +
+      "pub(open) trait HasRes_\{tycon} {\n" +
+      "  get_\{snake}_resource(self : Self) -> @core.Resource[\{tycon}]\n" +
+      "}\n"
+    })
+    .join("\n")
+  let traits_body = if component_traits.length() == 0 &&
+    resource_traits.length() == 0 {
+    ""
+  } else {
+    "\n" +
+    component_traits +
+    (if component_traits.length() > 0 && resource_traits.length() > 0 {
+      "\n\n"
+    } else {
+      ""
+    }) +
+    resource_traits
+  }
+  header + comps_body + res_body + traits_body
 }
 
 ///|
@@ -786,6 +958,159 @@ async fn read_file_text(path : String) -> String? {
     Some(f.read_all().text())
   } catch {
     _ => None
+  }
+}
+
+///|
+fn contains_substring(haystack : String, needle : String) -> Bool {
+  let h = haystack.view()
+  let n = needle.view()
+  if n.length() == 0 {
+    return true
+  }
+  let hl = h.length()
+  let nl = n.length()
+  if nl > hl {
+    return false
+  }
+  let mut i = 0
+  while i + nl <= hl {
+    if (try! h[i:i + nl]) == n {
+      return true
+    }
+    i = i + 1
+  }
+  false
+}
+
+///|
+fn find_substring(haystack : String, needle : String, start : Int) -> Int? {
+  let h = haystack.view()
+  let n = needle.view()
+  let hl = h.length()
+  let nl = n.length()
+  if nl == 0 {
+    return Some(start)
+  }
+  let mut i = if start < 0 { 0 } else { start }
+  while i + nl <= hl {
+    if (try! h[i:i + nl]) == n {
+      return Some(i)
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
+fn find_char_forward(s : String, start : Int, ch : Char) -> Int? {
+  let v = s.view()
+  let target = ch.to_int()
+  let mut i = if start < 0 { 0 } else { start }
+  while i < v.length() {
+    if v.code_unit_at(i).to_int() == target {
+      return Some(i)
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
+fn find_char_backward(s : String, ch : Char) -> Int? {
+  let v = s.view()
+  let target = ch.to_int()
+  let mut i = v.length() - 1
+  while i >= 0 {
+    if v.code_unit_at(i).to_int() == target {
+      return Some(i)
+    }
+    i = i - 1
+  }
+  None
+}
+
+///|
+fn is_all_whitespace(s : String, start : Int, end_ : Int) -> Bool {
+  let v = s.view()
+  let mut i = start
+  while i < end_ {
+    let c = v.code_unit_at(i).to_int()
+    if c != ' '.to_int() &&
+      c != '\n'.to_int() &&
+      c != '\r'.to_int() &&
+      c != '\t'.to_int() {
+      return false
+    }
+    i = i + 1
+  }
+  true
+}
+
+///|
+fn rstrip_index(s : String, end_ : Int) -> Int {
+  let v = s.view()
+  let mut i = end_
+  while i > 0 {
+    let c = v.code_unit_at(i - 1).to_int()
+    if c == ' '.to_int() ||
+      c == '\n'.to_int() ||
+      c == '\r'.to_int() ||
+      c == '\t'.to_int() {
+      i = i - 1
+    } else {
+      break
+    }
+  }
+  i
+}
+
+///|
+fn ensure_moon_pkg_import(src : String, import_path : String) -> String {
+  let quoted = "\"\{import_path}\""
+  if contains_substring(src, quoted) {
+    return src
+  }
+  let trimmed = src.trim()
+  if trimmed == "{}" {
+    return "{\n  \"import\": [\n    \{quoted}\n  ]\n}\n"
+  }
+  let key = "\"import\""
+  match find_substring(src, key, 0) {
+    None => {
+      // Insert a new import key before the last '}'.
+      let close_i = find_char_backward(src, '}').unwrap_or(src.length())
+      let prefix = try! src.view()[0:close_i].to_string()
+      let suffix = try! src.view()[close_i:src.length()].to_string()
+      let needs_comma = contains_substring(prefix, ":")
+      let insert = (if needs_comma { ",\n" } else { "\n" }) +
+        "  \"import\": [\n    \{quoted}\n  ]\n"
+      prefix + insert + suffix
+    }
+    Some(key_i) => {
+      // Find the '[' and matching ']'. This is a pragmatic edit for the repo's
+      // simple moon.pkg.json formatting (no nested arrays in import items).
+      let open_i = find_char_forward(src, key_i, '[').unwrap_or(src.length())
+      let close_i = find_char_forward(src, open_i, ']').unwrap_or(src.length())
+      if open_i >= close_i {
+        return src
+      }
+      let inner_start = open_i + 1
+      let inner_end = close_i
+      let inner_ws = is_all_whitespace(src, inner_start, inner_end)
+      if inner_ws {
+        // Empty import array: replace with a single line item.
+        let prefix = try! src.view()[0:inner_start].to_string()
+        let suffix = try! src.view()[inner_start:src.length()].to_string()
+        prefix + "\n    \{quoted}\n  " + suffix
+      } else {
+        // Append before ']' (but after the last non-whitespace item).
+        let insert_i = rstrip_index(src, close_i)
+        let before = try! src.view()[0:insert_i].to_string()
+        let after = try! src.view()[insert_i:src.length()].to_string()
+        before + ",\n    \{quoted}\n  " + after
+      }
+    }
   }
 }
 
