@@ -1,7 +1,14 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio"
 
+import {
+  "Milky2018/mgstudio/app",
+}
+
 // Values
+pub fn[W] default_plugins() -> Array[(@app.App[W]) -> @app.App[W]]
+
+pub fn[W] default_plugins_nearest() -> Array[(@app.App[W]) -> @app.App[W]]
 
 // Errors
 

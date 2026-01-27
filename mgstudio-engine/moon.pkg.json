@@ -1,1 +1,11 @@
-{}
+{
+  "import": [
+    "Milky2018/mgstudio/app",
+    "Milky2018/mgstudio/asset",
+    "Milky2018/mgstudio/input",
+    "Milky2018/mgstudio/render2d",
+    "Milky2018/mgstudio/text",
+    "Milky2018/mgstudio/time",
+    "Milky2018/mgstudio/window"
+  ]
+}

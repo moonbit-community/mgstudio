@@ -20,23 +20,7 @@ const RES_HEIGHT : Int = 90
 
 ///|
 pub fn pixel_grid_snap_run() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = [
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @window.window_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @time.time_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @asset.asset_plugin_nearest(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @render2d.render2d_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @input.input_plugin(app)
-    },
-  ]
+  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins_nearest()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(fn(_world : @ecs_world.World) { pixel_grid_snap_setup() })

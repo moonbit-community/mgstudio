@@ -14,26 +14,7 @@
 
 ///|
 pub fn text2d_run() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = [
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @window.window_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @time.time_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @asset.asset_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @render2d.render2d_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @text.text_plugin(app)
-    },
-    fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
-      @input.input_plugin(app)
-    },
-  ]
+  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(fn(_world : @ecs_world.World) { text2d_setup() })
