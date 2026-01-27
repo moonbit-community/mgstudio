@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/asset"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
 }
 
@@ -40,6 +41,10 @@ pub fn asset_texture_width(Handle[Image]) -> Int
 pub fn asset_update_loaded_folders() -> Unit
 
 pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
+
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
 
 pub fn host_asset_copy_texture_to_texture(Int, Int, Int, Int) -> Unit
 
@@ -166,6 +171,7 @@ pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
   index : Int
 }
+pub fn TextureAtlas::new(Handle[TextureAtlasLayout], Int) -> Self
 pub fn TextureAtlas::texture_rect(Self, Assets[TextureAtlasLayout]) -> @math.URect?
 pub fn TextureAtlas::with_index(Self, Int) -> Self
 pub fn TextureAtlas::with_layout(Self, Handle[TextureAtlasLayout]) -> Self
@@ -205,4 +211,7 @@ pub fn TextureAtlasSources::texture_index(Self, Handle[Image]) -> Int?
 // Type aliases
 
 // Traits
+pub(open) trait Has_TextureAtlas {
+  get_texture_atlas_store(Self) -> @core.ComponentStore[TextureAtlas]
+}
 

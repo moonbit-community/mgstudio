@@ -307,7 +307,9 @@ fn runner_tick() -> Unit {
 }
 
 ///|
-pub fn[W] window_runner_builder(app : @app.App[W]) -> @app.RunnerFn {
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_builder(
+  app : @app.App[W],
+) -> @app.RunnerFn {
   fn() {
     let window = host_window_create(800, 600, "Moon Game Studio")
     window_set_handle(window)
@@ -333,6 +335,8 @@ pub fn[W] window_runner_builder(app : @app.App[W]) -> @app.RunnerFn {
 }
 
 ///|
-pub fn[W] window_plugin(app : @app.App[W]) -> @app.App[W] {
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
   @app.App::set_runner(app, window_runner_builder)
 }

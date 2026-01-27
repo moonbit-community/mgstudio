@@ -23,37 +23,38 @@ pub fn pixel_grid_snap_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins_nearest()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) { pixel_grid_snap_setup() })
-  .add_system(fn(_world : @ecs_world.World) { pixel_grid_snap_update() })
+  .add_startup_system(pixel_grid_snap_setup)
+  .add_system(pixel_grid_snap_update)
   .run()
 }
 
 ///|
 priv struct PixelGridState {
-  mut pixel_sprite : @render2d.SpriteHandle
-  mut high_sprite : @render2d.SpriteHandle
-  mut pixel_mesh : @render2d.MeshHandle
-  mut outer_camera : @render2d.CameraHandle
+  mut pixel_sprite : @core.Entity
+  mut high_sprite : @core.Entity
+  mut pixel_mesh : @core.Entity
+  mut outer_camera : @core.Entity
   mut rotation : Float
 }
 
 ///|
 let pixel_state : Ref[PixelGridState] = Ref::new(PixelGridState::{
-  pixel_sprite: @render2d.SpriteHandle::new(-1),
-  high_sprite: @render2d.SpriteHandle::new(-1),
-  pixel_mesh: @render2d.MeshHandle::new(-1),
-  outer_camera: @render2d.CameraHandle::new(-1),
+  pixel_sprite: @core.Entity::placeholder(),
+  high_sprite: @core.Entity::placeholder(),
+  pixel_mesh: @core.Entity::placeholder(),
+  outer_camera: @core.Entity::placeholder(),
   rotation: 0.0F,
 })
 
 ///|
-fn pixel_grid_snap_setup() -> Unit {
+fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
   let pixel_layers = @render2d.RenderLayers::layer(0)
   let high_layers = @render2d.RenderLayers::layer(1)
   let asset_server = @asset.AssetServer::new()
   let pixel_dark = asset_server.load("pixel/bevy_pixel_dark.png")
   let pixel_light = asset_server.load("pixel/bevy_pixel_light.png")
   let canvas = @render2d.render2d_create_render_target(
+    world,
     RES_WIDTH,
     RES_HEIGHT,
     true,
@@ -64,7 +65,7 @@ fn pixel_grid_snap_setup() -> Unit {
     canvas,
     high_layers,
   )
-  canvas_sprite.spawn() |> ignore
+  canvas_sprite.spawn(world) |> ignore
   let pixel_sprite = @render2d.SpriteBundle::new_with_layers(
     @render2d.Sprite::new(@render2d.Color::white()),
     @math.Transform::new(
@@ -74,7 +75,7 @@ fn pixel_grid_snap_setup() -> Unit {
     ),
     pixel_dark,
     pixel_layers,
-  ).spawn()
+  ).spawn(world)
   let high_sprite = @render2d.SpriteBundle::new_with_layers(
     @render2d.Sprite::new(@render2d.Color::white()),
     @math.Transform::new(
@@ -84,7 +85,7 @@ fn pixel_grid_snap_setup() -> Unit {
     ),
     pixel_light,
     high_layers,
-  ).spawn()
+  ).spawn(world)
   let capsule = @render2d.Capsule2d::default()
   let mesh = @render2d.Mesh2d::from_capsule(capsule)
   let material = @render2d.ColorMaterial::new(@render2d.Color::black())
@@ -97,14 +98,14 @@ fn pixel_grid_snap_setup() -> Unit {
       @math.Vec2::new(32.0F, 32.0F),
     ),
     pixel_layers,
-  ).spawn()
+  ).spawn(world)
   let in_game_camera = @render2d.Camera2d::default().with_order(-1)
   @render2d.Camera2dBundle::new_with_layers(
     in_game_camera,
     @math.Transform::identity(),
     @render2d.RenderTarget::Image(canvas),
     pixel_layers,
-  ).spawn()
+  ).spawn(world)
   |> ignore
   let outer_camera = @render2d.Camera2d::default()
   let outer_handle = @render2d.Camera2dBundle::new_with_layers(
@@ -112,7 +113,7 @@ fn pixel_grid_snap_setup() -> Unit {
     @math.Transform::identity(),
     @render2d.RenderTarget::Screen,
     high_layers,
-  ).spawn()
+  ).spawn(world)
   pixel_state.val.pixel_sprite = pixel_sprite
   pixel_state.val.high_sprite = high_sprite
   pixel_state.val.pixel_mesh = mesh_handle
@@ -121,7 +122,13 @@ fn pixel_grid_snap_setup() -> Unit {
 }
 
 ///|
-fn pixel_grid_snap_update() -> Unit {
+fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
+  if pixel_state.val.outer_camera.is_placeholder() ||
+    pixel_state.val.pixel_sprite.is_placeholder() ||
+    pixel_state.val.high_sprite.is_placeholder() ||
+    pixel_state.val.pixel_mesh.is_placeholder() {
+    return
+  }
   let delta = @time.time_delta_seconds()
   let next_rotation = pixel_state.val.rotation + delta
   pixel_state.val.rotation = next_rotation
@@ -140,18 +147,14 @@ fn pixel_grid_snap_update() -> Unit {
     next_rotation,
     @math.Vec2::new(32.0F, 32.0F),
   )
-  @render2d.render2d_set_sprite_transform_handle(
-    pixel_state.val.pixel_sprite,
-    pixel_transform,
-  )
-  @render2d.render2d_set_sprite_transform_handle(
-    pixel_state.val.high_sprite,
-    high_transform,
-  )
-  @render2d.render2d_set_mesh_transform_handle(
-    pixel_state.val.pixel_mesh,
-    mesh_transform,
-  )
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let transform_store = @math.Has_Transform::get_transform_store(world)
+  transform_store.set(pixel_state.val.pixel_sprite, pixel_transform, tick)
+  |> ignore
+  transform_store.set(pixel_state.val.high_sprite, high_transform, tick)
+  |> ignore
+  transform_store.set(pixel_state.val.pixel_mesh, mesh_transform, tick)
+  |> ignore
   let width = @window.window_width()
   let height = @window.window_height()
   if width <= 0 || height <= 0 {
@@ -167,10 +170,15 @@ fn pixel_grid_snap_update() -> Unit {
   let rounded = pixel_grid_round_scale(min_scale)
   let scale_int = if rounded < 1 { 1 } else { rounded }
   let scale = 1.0F / Float::from_double(scale_int.to_double())
-  @render2d.render2d_set_camera_scale_handle(
-    pixel_state.val.outer_camera,
-    scale,
-  )
+  let camera_store = @render2d.Has_Camera2d::get_camera2d_store(world)
+  if camera_store.get(pixel_state.val.outer_camera) is Some(camera) {
+    camera_store.set(
+      pixel_state.val.outer_camera,
+      camera.with_scale(scale),
+      tick,
+    )
+    |> ignore
+  }
 }
 
 ///|

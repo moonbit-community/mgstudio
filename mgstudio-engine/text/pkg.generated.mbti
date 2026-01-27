@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/text"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
 }
@@ -27,9 +28,9 @@ pub fn host_font_measure_advance(Int, Float, Int) -> Float
 
 pub fn host_font_rasterize_glyph(Int, Float, Int, Int) -> Int
 
-pub fn[W] text_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn[W] text_render_system(W) -> Unit
+pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_system(W) -> Unit
 
 pub fn text_set_content(TextHandle, String) -> Unit
 

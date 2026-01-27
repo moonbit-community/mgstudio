@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/hierarchy"
+
+import {
+  "Milky2018/mgstudio/core",
+}
+
+// Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+// Errors
+
+// Types and methods
+pub struct Children {
+  entities : Array[@core.Entity]
+}
+pub fn Children::entities(Self) -> Array[@core.Entity]
+pub fn Children::new(Array[@core.Entity]) -> Self
+
+pub struct Parent {
+  entity : @core.Entity
+}
+pub fn Parent::entity(Self) -> @core.Entity
+pub fn Parent::new(@core.Entity) -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait Has_Children {
+  get_children_store(Self) -> @core.ComponentStore[Children]
+}
+
+pub(open) trait Has_Parent {
+  get_parent_store(Self) -> @core.ComponentStore[Parent]
+}
+

@@ -143,6 +143,16 @@ pub fn World::is_alive(self : World, entity : Entity) -> Bool {
 }
 
 ///|
+/// Minimal trait for worlds that can spawn/despawn entities.
+///
+/// This is used by engine helpers that are generic over a generated World type,
+/// without depending on a concrete `ecs_world` package (avoids cycles).
+pub(open) trait SpawnWorld {
+  spawn_empty(self : Self) -> Entity
+  despawn(self : Self, entity : Entity) -> Unit raise EntityError
+}
+
+///|
 struct SparseSet[T] {
   sparse : Array[Int]
   dense_entities : Array[Entity]
@@ -258,4 +268,17 @@ pub fn[T] SparseSet::remove(self : SparseSet[T], entity : Entity) -> T? {
       removed_value
     }
   }
+}
+
+///|
+pub fn[T] SparseSet::entity_at(
+  self : SparseSet[T],
+  dense_index : Int,
+) -> Entity {
+  self.dense_entities[dense_index]
+}
+
+///|
+pub fn[T] SparseSet::value_at(self : SparseSet[T], dense_index : Int) -> T {
+  self.dense_values[dense_index]
 }

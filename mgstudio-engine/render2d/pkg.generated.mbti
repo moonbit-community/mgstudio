@@ -4,68 +4,40 @@ package "Milky2018/mgstudio/render2d"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/transform",
 }
 
 // Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
 pub fn gizmo_config() -> GizmoConfig
 
 pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W] render2d_camera_system(W) -> Unit
 
-pub fn render2d_clear_overlay_sprites() -> Unit
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(W) -> Unit
 
-pub fn render2d_create_render_target(Int, Int, Bool) -> @asset.Handle[@asset.Image]
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(W, Int, Int, Bool) -> @asset.Handle[@asset.Image]
 
-pub fn render2d_debug_log_primary_camera() -> Unit
+pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
 
-pub fn[W] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn render2d_push_sprite_uv(@asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
-pub fn render2d_reset() -> Unit
+pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(W, @math.Vec2) -> @math.Vec2?
 
-pub fn render2d_set_camera_scale(Float) -> Unit
+pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @math.Vec2?
 
-pub fn render2d_set_camera_scale_handle(CameraHandle, Float) -> Unit
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
-pub fn render2d_set_camera_transform(@math.Transform) -> Unit
-
-pub fn render2d_set_camera_transform_handle(CameraHandle, @math.Transform) -> Unit
-
-pub fn render2d_set_camera_viewport(Viewport?) -> Unit
-
-pub fn render2d_set_camera_viewport_handle(CameraHandle, Viewport?) -> Unit
-
-pub fn render2d_set_mesh_transform_handle(MeshHandle, @math.Transform) -> Unit
-
-pub fn render2d_set_sprite_atlas(@asset.Handle[@asset.TextureAtlasLayout], Int) -> Bool
-
-pub fn render2d_set_sprite_atlas_handle(SpriteHandle, @asset.Handle[@asset.TextureAtlasLayout], Int) -> Bool
-
-pub fn render2d_set_sprite_transform(@math.Transform) -> Unit
-
-pub fn render2d_set_sprite_transform_handle(SpriteHandle, @math.Transform) -> Unit
-
-pub fn render2d_set_sprite_uv(@math.Vec2, @math.Vec2) -> Unit
-
-pub fn render2d_set_sprite_uv_handle(SpriteHandle, @math.Vec2, @math.Vec2) -> Unit
-
-pub fn render2d_spawn_camera(Camera2dBundle) -> CameraHandle
-
-pub fn render2d_spawn_mesh(Mesh2dBundle) -> MeshHandle
-
-pub fn render2d_spawn_sprite(SpriteBundle) -> SpriteHandle
-
-pub fn render2d_viewport_to_world_2d(@math.Vec2) -> @math.Vec2?
-
-pub fn render2d_world_to_viewport(@math.Vec2) -> @math.Vec2?
-
-pub fn[W] render_execute_system(W) -> Unit
-
-pub fn[W] render_extract_system(W) -> Unit
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render_extract_system(W) -> Unit
 
 pub fn[W] render_prepare_system(W) -> Unit
 
@@ -107,12 +79,7 @@ pub struct Camera2dBundle {
 pub fn Camera2dBundle::new(Camera2d, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_layers(Camera2d, @math.Transform, RenderTarget, RenderLayers) -> Self
 pub fn Camera2dBundle::new_with_target(Camera2d, @math.Transform, RenderTarget) -> Self
-pub fn Camera2dBundle::spawn(Self) -> CameraHandle
-
-pub struct CameraHandle {
-  id : Int
-}
-pub fn CameraHandle::new(Int) -> Self
+pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform] Camera2dBundle::spawn(Self, W) -> @core.Entity
 
 pub struct Capsule2d {
   radius : Float
@@ -198,6 +165,11 @@ pub fn Gizmos::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, Co
 pub fn Gizmos::with_layers(Self, RenderLayers) -> Self
 pub impl @app.SystemParam for Gizmos
 
+pub struct GpuMesh2d {
+  mesh_id : Int
+}
+pub fn GpuMesh2d::new(Int) -> Self
+
 pub struct Grid2dBuilder {
   id : Int
 }
@@ -231,18 +203,13 @@ pub struct Mesh2dBundle {
 }
 pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
-pub fn Mesh2dBundle::spawn(Self) -> MeshHandle
+pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform] Mesh2dBundle::spawn(Self, W) -> @core.Entity
 
 pub(all) enum Mesh2dKind {
   Capsule(Capsule2d)
   Rectangle(Rectangle)
   Geometry(@mesh.Mesh2dGeometry)
 }
-
-pub struct MeshHandle {
-  id : Int
-}
-pub fn MeshHandle::new(Int) -> Self
 
 pub struct Rectangle {
   half_size : @math.Vec2
@@ -257,6 +224,8 @@ pub struct RenderLayers {
 pub fn RenderLayers::default() -> Self
 pub fn RenderLayers::layer(Int) -> Self
 pub fn RenderLayers::matches(Self, Self) -> Bool
+
+type RenderState
 
 pub(all) enum RenderTarget {
   Screen
@@ -282,12 +251,12 @@ pub struct SpriteBundle {
 }
 pub fn SpriteBundle::new(Sprite, @math.Transform, @asset.Handle[@asset.Image]) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, @asset.Handle[@asset.Image], RenderLayers) -> Self
-pub fn SpriteBundle::spawn(Self) -> SpriteHandle
+pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_SpriteTexture + Has_RenderLayers + @math.Has_Transform] SpriteBundle::spawn(Self, W) -> @core.Entity
 
-pub struct SpriteHandle {
-  id : Int
+pub struct SpriteTexture {
+  texture : @asset.Handle[@asset.Image]
 }
-pub fn SpriteHandle::new(Int) -> Self
+pub fn SpriteTexture::new(@asset.Handle[@asset.Image]) -> Self
 
 pub struct Viewport {
   physical_position : @math.IVec2
@@ -298,4 +267,39 @@ pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 // Type aliases
 
 // Traits
+pub(open) trait HasRes_RenderState {
+  get_render_state_resource(Self) -> @core.Resource[RenderState]
+}
+
+pub(open) trait Has_Camera2d {
+  get_camera2d_store(Self) -> @core.ComponentStore[Camera2d]
+}
+
+pub(open) trait Has_ColorMaterial {
+  get_color_material_store(Self) -> @core.ComponentStore[ColorMaterial]
+}
+
+pub(open) trait Has_GpuMesh2d {
+  get_gpu_mesh2d_store(Self) -> @core.ComponentStore[GpuMesh2d]
+}
+
+pub(open) trait Has_Mesh2d {
+  get_mesh2d_store(Self) -> @core.ComponentStore[Mesh2d]
+}
+
+pub(open) trait Has_RenderLayers {
+  get_render_layers_store(Self) -> @core.ComponentStore[RenderLayers]
+}
+
+pub(open) trait Has_RenderTarget {
+  get_render_target_store(Self) -> @core.ComponentStore[RenderTarget]
+}
+
+pub(open) trait Has_Sprite {
+  get_sprite_store(Self) -> @core.ComponentStore[Sprite]
+}
+
+pub(open) trait Has_SpriteTexture {
+  get_sprite_texture_store(Self) -> @core.ComponentStore[SpriteTexture]
+}
 

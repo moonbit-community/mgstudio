@@ -36,6 +36,10 @@ pub fn Color::black() -> Color {
 }
 
 ///|
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct RenderLayers {
   mask : Int
 }
@@ -71,6 +75,10 @@ pub fn Viewport::new(
 }
 
 ///|
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct Sprite {
   color : Color
 }
@@ -81,6 +89,24 @@ pub fn Sprite::new(color : Color) -> Sprite {
 }
 
 ///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct SpriteTexture {
+  texture : @asset.Handle[@asset.Image]
+}
+
+///|
+pub fn SpriteTexture::new(
+  texture : @asset.Handle[@asset.Image],
+) -> SpriteTexture {
+  SpriteTexture::{ texture, }
+}
+
+///|
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct Camera2d {
   clear_color : Color
   order : Int
@@ -122,12 +148,20 @@ pub fn Camera2d::clear_viewport(self : Camera2d) -> Camera2d {
 }
 
 ///|
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub(all) enum RenderTarget {
   Screen
   Image(@asset.Handle[@asset.Image])
 }
 
 ///|
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct ColorMaterial {
   color : Color
 }
@@ -186,6 +220,8 @@ pub(all) enum Mesh2dKind {
 }
 
 ///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct Mesh2d {
   kind : Mesh2dKind
 }
@@ -203,6 +239,18 @@ pub fn Mesh2d::from_rectangle(rectangle : Rectangle) -> Mesh2d {
 ///|
 pub fn Mesh2d::from_geometry(geometry : @mesh.Mesh2dGeometry) -> Mesh2d {
   Mesh2d::{ kind: Geometry(geometry) }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct GpuMesh2d {
+  mesh_id : Int
+}
+
+///|
+pub fn GpuMesh2d::new(mesh_id : Int) -> GpuMesh2d {
+  GpuMesh2d::{ mesh_id, }
 }
 
 ///|
@@ -300,51 +348,20 @@ pub fn Mesh2dBundle::new_with_layers(
 }
 
 ///|
-pub struct SpriteHandle {
-  id : Int
-}
-
-///|
-pub struct CameraHandle {
-  id : Int
-}
-
-///|
-pub struct MeshHandle {
-  id : Int
-}
-
-///|
-pub fn SpriteHandle::new(id : Int) -> SpriteHandle {
-  SpriteHandle::{ id, }
-}
-
-///|
-pub fn CameraHandle::new(id : Int) -> CameraHandle {
-  CameraHandle::{ id, }
-}
-
-///|
-pub fn MeshHandle::new(id : Int) -> MeshHandle {
-  MeshHandle::{ id, }
-}
-
-///|
 priv struct SpriteInstance {
-  id : Int
-  mut transform : @math.Transform
+  transform : @math.Transform
   color : Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
-  mut uv_min : @math.Vec2
-  mut uv_max : @math.Vec2
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
 }
 
 ///|
 priv struct CameraInstance {
-  id : Int
-  mut camera : Camera2d
-  mut transform : @math.Transform
+  entity : @core.Entity
+  camera : Camera2d
+  transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
   computed : CameraComputed
@@ -352,15 +369,14 @@ priv struct CameraInstance {
 
 ///|
 priv struct CameraComputed {
-  mut target_size : @math.IVec2
-  mut scale_factor : Float
+  target_size : @math.IVec2
+  scale_factor : Float
 }
 
 ///|
 priv struct MeshInstance {
-  id : Int
   mesh_id : Int
-  mut transform : @math.Transform
+  transform : @math.Transform
   color : Color
   layers : RenderLayers
 }
@@ -373,13 +389,13 @@ priv struct RenderTargetInfo {
 }
 
 ///|
-priv struct RenderState {
+
+///|
+// ECS resource marker for codegen (`mgstudio gen`).
+#ecs.resource
+struct RenderState {
   mut draw_enabled : Bool
-  mut next_sprite_id : Int
-  mut next_camera_id : Int
-  mut next_mesh_id : Int
-  mut primary_sprite : Int
-  mut primary_camera : Int
+  mut primary_camera : @core.Entity
   sprites : Array[SpriteInstance]
   extra_sprites : Array[SpriteInstance]
   cameras : Array[CameraInstance]
@@ -388,19 +404,42 @@ priv struct RenderState {
 }
 
 ///|
-let render_state : Ref[RenderState] = Ref::new(RenderState::{
-  draw_enabled: false,
-  next_sprite_id: 0,
-  next_camera_id: 0,
-  next_mesh_id: 0,
-  primary_sprite: -1,
-  primary_camera: -1,
-  sprites: [],
-  extra_sprites: [],
-  cameras: [],
-  meshes: [],
-  render_targets: [],
-})
+fn RenderState::new() -> RenderState {
+  RenderState::{
+    draw_enabled: false,
+    primary_camera: @core.Entity::placeholder(),
+    sprites: [],
+    extra_sprites: [],
+    cameras: [],
+    meshes: [],
+    render_targets: [],
+  }
+}
+
+///|
+fn[W : HasRes_RenderState] render_state_ref(world : W) -> Ref[RenderState]? {
+  HasRes_RenderState::get_render_state_resource(world).get_ref()
+}
+
+///|
+fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_state_ref_mut(
+  world : W,
+) -> Ref[RenderState]? {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_RenderState::get_render_state_resource(world).get_ref_mut(tick)
+}
+
+///|
+fn[W : HasRes_RenderState + @core.ChangeTickWorld] init_render_state_system(
+  world : W,
+) -> Unit {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let res = HasRes_RenderState::get_render_state_resource(world)
+  if !res.is_present() {
+    res.insert(RenderState::new(), tick)
+    gizmos_reset()
+  }
+}
 
 ///|
 fn default_uv_min() -> @math.Vec2 {
@@ -434,72 +473,84 @@ fn sprite_uv_from_atlas_rect(
 }
 
 ///|
-pub fn render2d_create_render_target(
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(
+  world : W,
   width : Int,
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
   let id = @window.host_gpu_create_render_target(width, height, nearest)
-  render_state.val.render_targets.push(RenderTargetInfo::{ id, width, height })
+  let rs = render_state_ref_mut(world).unwrap()
+  rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
   @asset.Handle::new(id)
 }
 
 ///|
-pub fn SpriteBundle::spawn(self : SpriteBundle) -> SpriteHandle {
-  render2d_spawn_sprite(self)
+pub fn[
+  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_SpriteTexture + Has_RenderLayers + @math.Has_Transform,
+] SpriteBundle::spawn(
+  self : SpriteBundle,
+  world : W,
+) -> @core.Entity {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let e = @core.SpawnWorld::spawn_empty(world)
+  Has_Sprite::get_sprite_store(world).insert(e, self.sprite, tick)
+  Has_SpriteTexture::get_sprite_texture_store(world).insert(
+    e,
+    SpriteTexture::new(self.texture),
+    tick,
+  )
+  Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e,
+    self.transform,
+    tick,
+  )
+  e
 }
 
 ///|
-pub fn Camera2dBundle::spawn(self : Camera2dBundle) -> CameraHandle {
-  render2d_spawn_camera(self)
+pub fn[
+  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform,
+] Camera2dBundle::spawn(
+  self : Camera2dBundle,
+  world : W,
+) -> @core.Entity {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let e = @core.SpawnWorld::spawn_empty(world)
+  Has_Camera2d::get_camera2d_store(world).insert(e, self.camera, tick)
+  Has_RenderTarget::get_render_target_store(world).insert(e, self.target, tick)
+  Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e,
+    self.transform,
+    tick,
+  )
+  e
 }
 
 ///|
-pub fn Mesh2dBundle::spawn(self : Mesh2dBundle) -> MeshHandle {
-  render2d_spawn_mesh(self)
-}
-
-///|
-pub fn render2d_spawn_sprite(bundle : SpriteBundle) -> SpriteHandle {
-  let id = render_state.val.next_sprite_id
-  render_state.val.next_sprite_id = id + 1
-  render_state.val.sprites.push(SpriteInstance::{
-    id,
-    transform: bundle.transform,
-    color: bundle.sprite.color,
-    texture: bundle.texture,
-    layers: bundle.layers,
-    uv_min: default_uv_min(),
-    uv_max: default_uv_max(),
-  })
-  render_state.val.primary_sprite = id
-  SpriteHandle::{ id, }
-}
-
-///|
-pub fn render2d_spawn_camera(bundle : Camera2dBundle) -> CameraHandle {
-  let id = render_state.val.next_camera_id
-  render_state.val.next_camera_id = id + 1
-  render_state.val.cameras.push(CameraInstance::{
-    id,
-    camera: bundle.camera,
-    transform: bundle.transform,
-    target: bundle.target,
-    layers: bundle.layers,
-    computed: CameraComputed::{
-      target_size: @math.IVec2::new(0, 0),
-      scale_factor: 1.0F,
-    },
-  })
-  render_state.val.primary_camera = id
-  CameraHandle::{ id, }
-}
-
-///|
-pub fn render2d_spawn_mesh(bundle : Mesh2dBundle) -> MeshHandle {
-  let id = render_state.val.next_mesh_id
-  render_state.val.next_mesh_id = id + 1
-  let mesh_id = match bundle.mesh.kind {
+pub fn[
+  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform,
+] Mesh2dBundle::spawn(
+  self : Mesh2dBundle,
+  world : W,
+) -> @core.Entity {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let e = @core.SpawnWorld::spawn_empty(world)
+  Has_Mesh2d::get_mesh2d_store(world).insert(e, self.mesh, tick)
+  Has_ColorMaterial::get_color_material_store(world).insert(
+    e,
+    self.material,
+    tick,
+  )
+  Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e,
+    self.transform,
+    tick,
+  )
+  let mesh_id = match self.mesh.kind {
     Capsule(capsule) =>
       @window.host_gpu_create_mesh_capsule(
         capsule.radius,
@@ -525,23 +576,25 @@ pub fn render2d_spawn_mesh(bundle : Mesh2dBundle) -> MeshHandle {
         }
       }
   }
-  render_state.val.meshes.push(MeshInstance::{
-    id,
-    mesh_id,
-    transform: bundle.transform,
-    color: bundle.material.color,
-    layers: bundle.layers,
-  })
-  MeshHandle::{ id, }
+  Has_GpuMesh2d::get_gpu_mesh2d_store(world).insert(
+    e,
+    GpuMesh2d::new(mesh_id),
+    tick,
+  )
+  e
 }
 
 ///|
-pub fn render2d_clear_overlay_sprites() -> Unit {
-  render_state.val.extra_sprites.clear()
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_sprites.clear() })
+  |> ignore
 }
 
 ///|
-pub fn render2d_push_sprite_uv(
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
+  world : W,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
   uv_min : @math.Vec2,
@@ -549,232 +602,25 @@ pub fn render2d_push_sprite_uv(
   color : Color,
   layers : RenderLayers,
 ) -> Unit {
-  render_state.val.extra_sprites.push(SpriteInstance::{
-    id: -1,
-    transform,
-    color,
-    texture,
-    layers,
-    uv_min,
-    uv_max,
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_sprites.push(SpriteInstance::{
+      transform,
+      color,
+      texture,
+      layers,
+      uv_min,
+      uv_max,
+    })
   })
+  |> ignore
 }
 
 ///|
-pub fn render2d_set_sprite_transform_handle(
-  handle : SpriteHandle,
-  transform : @math.Transform,
-) -> Unit {
-  let count = render_state.val.sprites.length()
-  for i in 0..<count {
-    if render_state.val.sprites[i].id == handle.id {
-      render_state.val.sprites[i].transform = transform
-      return
-    }
-  }
-}
-
-///|
-pub fn render2d_set_camera_transform_handle(
-  handle : CameraHandle,
-  transform : @math.Transform,
-) -> Unit {
-  let count = render_state.val.cameras.length()
-  for i in 0..<count {
-    if render_state.val.cameras[i].id == handle.id {
-      render_state.val.cameras[i].transform = transform
-      return
-    }
-  }
-}
-
-///|
-pub fn render2d_set_mesh_transform_handle(
-  handle : MeshHandle,
-  transform : @math.Transform,
-) -> Unit {
-  let count = render_state.val.meshes.length()
-  for i in 0..<count {
-    if render_state.val.meshes[i].id == handle.id {
-      render_state.val.meshes[i].transform = transform
-      return
-    }
-  }
-}
-
-///|
-pub fn render2d_set_sprite_transform(transform : @math.Transform) -> Unit {
-  let id = render_state.val.primary_sprite
-  if id < 0 {
-    return
-  }
-  render2d_set_sprite_transform_handle(SpriteHandle::{ id, }, transform)
-}
-
-///|
-pub fn render2d_set_sprite_uv_handle(
-  handle : SpriteHandle,
-  uv_min : @math.Vec2,
-  uv_max : @math.Vec2,
-) -> Unit {
-  let count = render_state.val.sprites.length()
-  for i in 0..<count {
-    if render_state.val.sprites[i].id == handle.id {
-      render_state.val.sprites[i].uv_min = uv_min
-      render_state.val.sprites[i].uv_max = uv_max
-      return
-    }
-  }
-}
-
-///|
-pub fn render2d_set_sprite_uv(uv_min : @math.Vec2, uv_max : @math.Vec2) -> Unit {
-  let id = render_state.val.primary_sprite
-  if id < 0 {
-    return
-  }
-  render2d_set_sprite_uv_handle(SpriteHandle::{ id, }, uv_min, uv_max)
-}
-
-///|
-pub fn render2d_set_sprite_atlas_handle(
-  handle : SpriteHandle,
-  layout : @asset.Handle[@asset.TextureAtlasLayout],
-  index : Int,
-) -> Bool {
-  if @asset.asset_get_texture_atlas_layout(layout) is Some(layout_value) {
-    if index < 0 || index >= layout_value.textures.length() {
-      return false
-    }
-    let rect = layout_value.textures[index]
-    if sprite_uv_from_atlas_rect(layout_value.size, rect) is Some(pair) {
-      render2d_set_sprite_uv_handle(handle, pair.0, pair.1)
-      return true
-    }
-  }
-  false
-}
-
-///|
-pub fn render2d_set_sprite_atlas(
-  layout : @asset.Handle[@asset.TextureAtlasLayout],
-  index : Int,
-) -> Bool {
-  let id = render_state.val.primary_sprite
-  if id < 0 {
-    return false
-  }
-  render2d_set_sprite_atlas_handle(SpriteHandle::{ id, }, layout, index)
-}
-
-///|
-pub fn render2d_set_camera_transform(transform : @math.Transform) -> Unit {
-  let id = render_state.val.primary_camera
-  if id < 0 {
-    return
-  }
-  render2d_set_camera_transform_handle(CameraHandle::{ id, }, transform)
-}
-
-///|
-pub fn render2d_set_camera_scale_handle(
-  handle : CameraHandle,
-  scale : Float,
-) -> Unit {
-  let count = render_state.val.cameras.length()
-  for i in 0..<count {
-    if render_state.val.cameras[i].id == handle.id {
-      let camera = render_state.val.cameras[i].camera
-      render_state.val.cameras[i].camera = Camera2d::{
-        clear_color: camera.clear_color,
-        order: camera.order,
-        scale,
-        viewport: camera.viewport,
-      }
-      return
-    }
-  }
-}
-
-///|
-pub fn render2d_set_camera_scale(scale : Float) -> Unit {
-  let id = render_state.val.primary_camera
-  if id < 0 {
-    return
-  }
-  render2d_set_camera_scale_handle(CameraHandle::{ id, }, scale)
-}
-
-///|
-pub fn render2d_set_camera_viewport_handle(
-  handle : CameraHandle,
-  viewport : Viewport?,
-) -> Unit {
-  let count = render_state.val.cameras.length()
-  for i in 0..<count {
-    if render_state.val.cameras[i].id == handle.id {
-      let camera = render_state.val.cameras[i].camera
-      render_state.val.cameras[i].camera = Camera2d::{
-        clear_color: camera.clear_color,
-        order: camera.order,
-        scale: camera.scale,
-        viewport,
-      }
-      return
-    }
-  }
-}
-
-///|
-pub fn render2d_set_camera_viewport(viewport : Viewport?) -> Unit {
-  let id = render_state.val.primary_camera
-  if id < 0 {
-    return
-  }
-  render2d_set_camera_viewport_handle(CameraHandle::{ id, }, viewport)
-}
-
-///|
-pub fn render2d_debug_log_primary_camera() -> Unit {
-  let id = render_state.val.primary_camera
-  if id < 0 {
-    return
-  }
-  for camera in render_state.val.cameras {
-    if camera.id == id {
-      let target = camera.computed.target_size
-      let scale = camera.computed.scale_factor
-      let mut viewport_text = "None"
-      if camera.camera.viewport is Some(viewport) {
-        let pos = viewport.physical_position
-        let size = viewport.physical_size
-        viewport_text = "pos=(" +
-          pos.x.to_string() +
-          "," +
-          pos.y.to_string() +
-          ") size=(" +
-          size.x.to_string() +
-          "," +
-          size.y.to_string() +
-          ")"
-      }
-      let message = "camera_debug target=(" +
-        target.x.to_string() +
-        "," +
-        target.y.to_string() +
-        ") scale=" +
-        scale.to_string() +
-        " viewport=" +
-        viewport_text
-      @window.host_debug_string(message)
-      return
-    }
-  }
-}
-
-///|
-fn render2d_find_render_target_size(id : Int) -> RenderTargetInfo? {
-  for target in render_state.val.render_targets {
+fn render2d_find_render_target_size(
+  state : RenderState,
+  id : Int,
+) -> RenderTargetInfo? {
+  for target in state.render_targets {
     if target.id == id {
       return Some(target)
     }
@@ -789,13 +635,16 @@ priv struct RenderTargetComputed {
 }
 
 ///|
-fn render2d_target_info(camera : CameraInstance) -> RenderTargetComputed? {
+fn render2d_target_info(
+  state : RenderState,
+  target : RenderTarget,
+) -> RenderTargetComputed? {
   let mut width = @window.window_width()
   let mut height = @window.window_height()
   let mut scale_factor = @window.window_scale_factor()
-  if camera.target is Image(handle) {
+  if target is Image(handle) {
     let target_id = handle.id()
-    if render2d_find_render_target_size(target_id) is Some(info) {
+    if render2d_find_render_target_size(state, target_id) is Some(info) {
       width = info.width
       height = info.height
       scale_factor = 1.0F
@@ -813,13 +662,6 @@ fn render2d_target_info(camera : CameraInstance) -> RenderTargetComputed? {
     size: @math.IVec2::new(width, height),
     scale_factor,
   })
-}
-
-///|
-fn render2d_scale_ivec2(value : @math.IVec2, factor : Float) -> @math.IVec2 {
-  let fx = value.x.to_double() * factor.to_double()
-  let fy = value.y.to_double() * factor.to_double()
-  @math.IVec2::new(fx.to_int(), fy.to_int())
 }
 
 ///|
@@ -866,56 +708,24 @@ fn render2d_clamp_viewport(
 
 ///|
 pub fn[W] render2d_camera_system(_world : W) -> Unit {
-  let count = render_state.val.cameras.length()
-  for i in 0..<count {
-    let camera_instance = render_state.val.cameras[i]
-    let info_opt = render2d_target_info(camera_instance)
-    if info_opt is None {
-      render_state.val.cameras[i].computed.target_size = @math.IVec2::new(0, 0)
-      render_state.val.cameras[i].computed.scale_factor = 1.0F
-      continue
-    }
-    let info = if info_opt is Some(value) { value } else { continue }
-    let old_scale = camera_instance.computed.scale_factor
-    let new_scale = info.scale_factor
-    let mut viewport_opt = camera_instance.camera.viewport
-    if old_scale > 0.0F && new_scale != old_scale {
-      if viewport_opt is Some(viewport) {
-        let resize_factor = new_scale / old_scale
-        let resized = Viewport::new(
-          render2d_scale_ivec2(viewport.physical_position, resize_factor),
-          render2d_scale_ivec2(viewport.physical_size, resize_factor),
-        )
-        viewport_opt = Some(resized)
-      }
-    }
-    if viewport_opt is Some(viewport) {
-      let clamped = render2d_clamp_viewport(viewport, info.size)
-      viewport_opt = Some(clamped)
-    }
-    render_state.val.cameras[i].camera = Camera2d::{
-      clear_color: camera_instance.camera.clear_color,
-      order: camera_instance.camera.order,
-      scale: camera_instance.camera.scale,
-      viewport: viewport_opt,
-    }
-    render_state.val.cameras[i].computed.target_size = info.size
-    render_state.val.cameras[i].computed.scale_factor = new_scale
-  }
+  // Legacy system retained for API compatibility; camera extraction computes
+  // derived values each frame in `render_extract_system`.
 }
 
 ///|
-fn render2d_sorted_camera_indices() -> Array[Int] {
-  let count = render_state.val.cameras.length()
+fn render2d_sorted_camera_indices(
+  cameras : Array[CameraInstance],
+) -> Array[Int] {
+  let count = cameras.length()
   let indices : Array[Int] = []
   for i in 0..<count {
     indices.push(i)
   }
   for i in 0..<count {
     let mut min_index = i
-    let mut min_order = render_state.val.cameras[indices[i]].camera.order
+    let mut min_order = cameras[indices[i]].camera.order
     for j in (i + 1)..<count {
-      let order = render_state.val.cameras[indices[j]].camera.order
+      let order = cameras[indices[j]].camera.order
       if order < min_order {
         min_index = j
         min_order = order
@@ -931,8 +741,141 @@ fn render2d_sorted_camera_indices() -> Array[Int] {
 }
 
 ///|
-pub fn[W] render_extract_system(_world : W) -> Unit {
-  render_state.val.draw_enabled = true
+pub fn[
+  W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
+] render_extract_system(
+  world : W,
+) -> Unit {
+  guard render_state_ref_mut(world) is Some(rs) else { return }
+  rs.val.draw_enabled = true
+  rs.val.primary_camera = @core.Entity::placeholder()
+  rs.val.sprites.clear()
+  rs.val.cameras.clear()
+  rs.val.meshes.clear()
+  let camera_store = Has_Camera2d::get_camera2d_store(world)
+  let target_store = Has_RenderTarget::get_render_target_store(world)
+  let layers_store = Has_RenderLayers::get_render_layers_store(world)
+  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let global_store = @transform.Has_GlobalTransform::get_global_transform_store(
+    world,
+  )
+  camera_store.for_each(fn(entity, camera) {
+    let target = match target_store.get(entity) {
+      Some(t) => t
+      None => RenderTarget::Screen
+    }
+    let layers = match layers_store.get(entity) {
+      Some(v) => v
+      None => RenderLayers::default()
+    }
+    let transform = match global_store.get(entity) {
+      Some(gt) => gt.to_transform_approx()
+      None =>
+        match transform_store.get(entity) {
+          Some(t) => t
+          None => @math.Transform::identity()
+        }
+    }
+    let mut computed = CameraComputed::{
+      target_size: @math.IVec2::new(0, 0),
+      scale_factor: 1.0F,
+    }
+    let mut camera_value = camera
+    if render2d_target_info(rs.val, target) is Some(info) {
+      computed = CameraComputed::{
+        target_size: info.size,
+        scale_factor: info.scale_factor,
+      }
+      if camera_value.viewport is Some(viewport) {
+        let clamped = render2d_clamp_viewport(viewport, info.size)
+        camera_value = Camera2d::{
+          clear_color: camera_value.clear_color,
+          order: camera_value.order,
+          scale: camera_value.scale,
+          viewport: Some(clamped),
+        }
+      }
+    }
+    rs.val.cameras.push(CameraInstance::{
+      entity,
+      camera: camera_value,
+      transform,
+      target,
+      layers,
+      computed,
+    })
+  })
+  if rs.val.cameras.length() > 0 {
+    let order = render2d_sorted_camera_indices(rs.val.cameras)
+    if order.length() > 0 {
+      rs.val.primary_camera = rs.val.cameras[order[0]].entity
+    }
+  }
+  let sprite_store = Has_Sprite::get_sprite_store(world)
+  let sprite_tex_store = Has_SpriteTexture::get_sprite_texture_store(world)
+  let atlas_store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
+  sprite_store.for_each(fn(entity, sprite) {
+    guard sprite_tex_store.get(entity) is Some(sprite_tex) else { return }
+    let layers = match layers_store.get(entity) {
+      Some(v) => v
+      None => RenderLayers::default()
+    }
+    let transform = match global_store.get(entity) {
+      Some(gt) => gt.to_transform_approx()
+      None =>
+        match transform_store.get(entity) {
+          Some(t) => t
+          None => @math.Transform::identity()
+        }
+    }
+    let mut uv_min = default_uv_min()
+    let mut uv_max = default_uv_max()
+    if atlas_store.get(entity) is Some(atlas) {
+      if @asset.asset_get_texture_atlas_layout(atlas.layout)
+        is Some(layout_value) {
+        if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
+          let rect = layout_value.textures[atlas.index]
+          if sprite_uv_from_atlas_rect(layout_value.size, rect) is Some(pair) {
+            uv_min = pair.0
+            uv_max = pair.1
+          }
+        }
+      }
+    }
+    rs.val.sprites.push(SpriteInstance::{
+      transform,
+      color: sprite.color,
+      texture: sprite_tex.texture,
+      layers,
+      uv_min,
+      uv_max,
+    })
+  })
+  let mesh_store = Has_Mesh2d::get_mesh2d_store(world)
+  let gpu_mesh_store = Has_GpuMesh2d::get_gpu_mesh2d_store(world)
+  let material_store = Has_ColorMaterial::get_color_material_store(world)
+  mesh_store.for_each(fn(entity, _mesh) {
+    guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
+    guard material_store.get(entity) is Some(mat) else { return }
+    let layers = match layers_store.get(entity) {
+      Some(v) => v
+      None => RenderLayers::default()
+    }
+    let transform = match global_store.get(entity) {
+      Some(gt) => gt.to_transform_approx()
+      None =>
+        match transform_store.get(entity) {
+          Some(t) => t
+          None => @math.Transform::identity()
+        }
+    }
+    rs.val.meshes.push(MeshInstance::{
+      mesh_id: gpu.mesh_id,
+      transform,
+      color: mat.color,
+      layers,
+    })
+  })
 }
 
 ///|
@@ -999,21 +942,24 @@ fn sprite_draw_indices(
 }
 
 ///|
-pub fn[W] render_execute_system(_world : W) -> Unit {
-  if !render_state.val.draw_enabled {
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
+  world : W,
+) -> Unit {
+  guard render_state_ref_mut(world) is Some(rs) else { return }
+  if !rs.val.draw_enabled {
     return
   }
-  render_state.val.draw_enabled = false
+  rs.val.draw_enabled = false
   gizmos_prepare()
-  let cameras = render_state.val.cameras
+  let cameras = rs.val.cameras
   if cameras.length() == 0 {
     gizmos_clear()
     return
   }
-  let sprites = render_state.val.sprites
-  let extra_sprites = render_state.val.extra_sprites
-  let meshes = render_state.val.meshes
-  for index in render2d_sorted_camera_indices() {
+  let sprites = rs.val.sprites
+  let extra_sprites = rs.val.extra_sprites
+  let meshes = rs.val.meshes
+  for index in render2d_sorted_camera_indices(cameras) {
     let camera = cameras[index]
     let mut target_id = -1
     let target_size = camera.computed.target_size
@@ -1165,42 +1111,27 @@ pub fn[W] render_execute_system(_world : W) -> Unit {
     @window.host_gpu_end_pass()
   }
   gizmos_clear()
-  render_state.val.extra_sprites.clear()
+  rs.val.extra_sprites.clear()
 }
 
 ///|
-pub fn render2d_reset() -> Unit {
-  render_state.val.draw_enabled = false
-  render_state.val.next_sprite_id = 0
-  render_state.val.next_camera_id = 0
-  render_state.val.next_mesh_id = 0
-  render_state.val.primary_sprite = -1
-  render_state.val.primary_camera = -1
-  render_state.val.sprites.clear()
-  render_state.val.extra_sprites.clear()
-  render_state.val.cameras.clear()
-  render_state.val.meshes.clear()
-  render_state.val.render_targets.clear()
-  gizmos_reset()
-}
-
-///|
-pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
-  let id = render_state.val.primary_camera
-  if id < 0 {
+pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(
+  world : W,
+  screen : @math.Vec2,
+) -> @math.Vec2? {
+  guard render_state_ref(world) is Some(rs) else { return None }
+  let id = rs.val.primary_camera
+  if id.is_placeholder() {
     return None
   }
   let mut found : CameraInstance? = None
-  for camera in render_state.val.cameras {
-    if camera.id == id {
+  for camera in rs.val.cameras {
+    if camera.entity.id == id.id && camera.entity.generation == id.generation {
       found = Some(camera)
       break
     }
   }
-  if found is None {
-    return None
-  }
-  let cam = if found is Some(value) { value } else { return None }
+  guard found is Some(cam) else { return None }
   let target_size = cam.computed.target_size
   let width = target_size.x
   let height = target_size.y
@@ -1270,22 +1201,23 @@ pub fn render2d_viewport_to_world_2d(screen : @math.Vec2) -> @math.Vec2? {
 }
 
 ///|
-pub fn render2d_world_to_viewport(world : @math.Vec2) -> @math.Vec2? {
-  let id = render_state.val.primary_camera
-  if id < 0 {
+pub fn[W : HasRes_RenderState] render2d_world_to_viewport(
+  world_ : W,
+  world : @math.Vec2,
+) -> @math.Vec2? {
+  guard render_state_ref(world_) is Some(rs) else { return None }
+  let id = rs.val.primary_camera
+  if id.is_placeholder() {
     return None
   }
   let mut found : CameraInstance? = None
-  for camera in render_state.val.cameras {
-    if camera.id == id {
+  for camera in rs.val.cameras {
+    if camera.entity.id == id.id && camera.entity.generation == id.generation {
       found = Some(camera)
       break
     }
   }
-  if found is None {
-    return None
-  }
-  let cam = if found is Some(value) { value } else { return None }
+  guard found is Some(cam) else { return None }
   let target_size = cam.computed.target_size
   let width = target_size.x
   let height = target_size.y
@@ -1365,10 +1297,54 @@ pub fn render2d_world_to_viewport(world : @math.Vec2) -> @math.Vec2? {
 }
 
 ///|
-pub fn[W] render2d_plugin(app : @app.App[W]) -> @app.App[W] {
-  render2d_reset()
+pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
+  world : W,
+) -> Unit {
+  guard render_state_ref(world) is Some(rs) else { return }
+  let id = rs.val.primary_camera
+  if id.is_placeholder() {
+    return
+  }
+  for camera in rs.val.cameras {
+    if camera.entity.id == id.id && camera.entity.generation == id.generation {
+      let target = camera.computed.target_size
+      let scale = camera.computed.scale_factor
+      let mut viewport_text = "None"
+      if camera.camera.viewport is Some(viewport) {
+        let pos = viewport.physical_position
+        let size = viewport.physical_size
+        viewport_text = "pos=(" +
+          pos.x.to_string() +
+          "," +
+          pos.y.to_string() +
+          ") size=(" +
+          size.x.to_string() +
+          "," +
+          size.y.to_string() +
+          ")"
+      }
+      let message = "camera_debug target=(" +
+        target.x.to_string() +
+        "," +
+        target.y.to_string() +
+        ") scale=" +
+        scale.to_string() +
+        " viewport=" +
+        viewport_text
+      @window.host_debug_string(message)
+      return
+    }
+  }
+}
+
+///|
+pub fn[
+  W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
+] render2d_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
   app
-  .add_system(render2d_camera_system)
+  .add_startup_system(init_render_state_system)
   .add_system(render_extract_system)
   .add_post_update_system(render_prepare_system)
   .add_post_update_system(render_queue_system)

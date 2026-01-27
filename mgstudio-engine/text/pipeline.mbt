@@ -405,8 +405,10 @@ pub fn[W] text_update_system(_world : W) -> Unit {
 }
 
 ///|
-pub fn[W] text_render_system(_world : W) -> Unit {
-  @render2d.render2d_clear_overlay_sprites()
+pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_system(
+  world : W,
+) -> Unit {
+  @render2d.render2d_clear_overlay_sprites(world)
   let texts = text_state.val.texts
   for instance in texts {
     let layout_info = instance.layout_info
@@ -467,6 +469,7 @@ pub fn[W] text_render_system(_world : W) -> Unit {
           instance.transform.scale,
         )
         @render2d.render2d_push_sprite_uv(
+          world,
           atlas_info.texture,
           shadow_transform,
           uv_min,
@@ -476,6 +479,7 @@ pub fn[W] text_render_system(_world : W) -> Unit {
         )
       }
       @render2d.render2d_push_sprite_uv(
+        world,
         atlas_info.texture,
         transform,
         uv_min,
@@ -488,6 +492,8 @@ pub fn[W] text_render_system(_world : W) -> Unit {
 }
 
 ///|
-pub fn[W] text_plugin(app : @app.App[W]) -> @app.App[W] {
+pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
   app.add_system(text_update_system).add_system(text_render_system)
 }

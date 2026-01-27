@@ -19,20 +19,20 @@ pub fn sprite_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) { sprite_setup() })
+  .add_startup_system(sprite_setup)
   .run()
 }
 
 ///|
-fn sprite_setup() -> Unit {
+fn sprite_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform, texture).spawn() |> ignore
+  @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore
   let camera = @render2d.Camera2d::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
-  @render2d.render2d_set_sprite_transform(transform)
-  @render2d.render2d_set_camera_transform(@math.Transform::identity())
 }

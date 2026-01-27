@@ -2,8 +2,13 @@
 package "Milky2018/mgstudio/ecs_world"
 
 import {
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
 }
 
 // Values
@@ -13,17 +18,51 @@ import {
 // Types and methods
 pub struct World {
   entities : @core.Entities
-  transform : @core.SparseSet[@math.Transform]
+  mut change_tick : Int
+  mut system_context : @core.SystemContext
+  transform : @core.ComponentStore[@math.Transform]
+  mesh2d : @core.ComponentStore[@render2d.Mesh2d]
+  sprite : @core.ComponentStore[@render2d.Sprite]
+  parent : @core.ComponentStore[@hierarchy.Parent]
+  camera2d : @core.ComponentStore[@render2d.Camera2d]
+  texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
+  children : @core.ComponentStore[@hierarchy.Children]
+  gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  render_layers : @core.ComponentStore[@render2d.RenderLayers]
+  render_target : @core.ComponentStore[@render2d.RenderTarget]
+  visibility : @core.ComponentStore[@visibility.Visibility]
+  color_material : @core.ComponentStore[@render2d.ColorMaterial]
+  sprite_texture : @core.ComponentStore[@render2d.SpriteTexture]
+  global_transform : @core.ComponentStore[@transform.GlobalTransform]
+  view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
+  inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
+  res_render_state : @core.Resource[@render2d.RenderState]
 }
 pub fn World::despawn(Self, @core.Entity) -> Unit raise @core.EntityError
 pub fn World::new() -> Self
 pub fn World::spawn_empty(Self) -> @core.Entity
-pub impl Has_Transform for World
+pub impl @asset.Has_TextureAtlas for World
+pub impl @core.ChangeTickWorld for World
+pub impl @core.SpawnWorld for World
+pub impl @core.SystemContextWorld for World
+pub impl @hierarchy.Has_Children for World
+pub impl @hierarchy.Has_Parent for World
+pub impl @math.Has_Transform for World
+pub impl @render2d.HasRes_RenderState for World
+pub impl @render2d.Has_Camera2d for World
+pub impl @render2d.Has_ColorMaterial for World
+pub impl @render2d.Has_GpuMesh2d for World
+pub impl @render2d.Has_Mesh2d for World
+pub impl @render2d.Has_RenderLayers for World
+pub impl @render2d.Has_RenderTarget for World
+pub impl @render2d.Has_Sprite for World
+pub impl @render2d.Has_SpriteTexture for World
+pub impl @transform.Has_GlobalTransform for World
+pub impl @visibility.Has_InheritedVisibility for World
+pub impl @visibility.Has_ViewVisibility for World
+pub impl @visibility.Has_Visibility for World
 
 // Type aliases
 
 // Traits
-pub(open) trait Has_Transform {
-  get_transform_store(Self) -> @core.SparseSet[@math.Transform]
-}
 

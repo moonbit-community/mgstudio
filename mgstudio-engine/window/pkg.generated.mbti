@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/window"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
 }
 
 // Values
@@ -58,9 +59,9 @@ pub fn host_window_should_close(HostWindow) -> Bool
 
 pub fn window_height() -> Int
 
-pub fn[W] window_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn[W] window_runner_builder(@app.App[W]) -> () -> Unit
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_builder(@app.App[W]) -> () -> Unit
 
 pub fn window_scale_factor() -> Float
 

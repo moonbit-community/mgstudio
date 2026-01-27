@@ -19,3 +19,12 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = ["Transform"]
+
+///|
+/// ECS resource types discovered via `#ecs.resource`.
+pub let ecs_resources : Array[String] = []
+
+///|
+pub(open) trait Has_Transform {
+  get_transform_store(self : Self) -> @core.ComponentStore[Transform]
+}

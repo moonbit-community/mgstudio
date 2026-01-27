@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/app"
 
+import {
+  "Milky2018/mgstudio/core",
+}
+
 // Values
 pub fn clear_delta_seconds_provider() -> Unit
 
@@ -56,9 +60,9 @@ pub fn[W] App::add_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_system_param(Self[W], (P) -> Unit) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] App::new(W) -> Self[W]
-pub fn[W] App::run(Self[W]) -> Unit
-pub fn[W] App::run_once(Self[W]) -> Self[W]
-pub fn[W] App::run_startup(Self[W]) -> Self[W]
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run(Self[W]) -> Unit
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(Self[W]) -> Self[W]
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(Self[W]) -> Self[W]
 pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 
 pub struct Schedule[W] {
@@ -90,6 +94,7 @@ pub struct SystemConfig[W] {
   set : String?
   before : Array[String]
   after : Array[String]
+  mut last_run_tick : Int
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]

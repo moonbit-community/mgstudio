@@ -17,53 +17,55 @@ pub fn rotate_to_cursor_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) { rotate_to_cursor_setup() })
-  .add_system(fn(_world : @ecs_world.World) { rotate_to_cursor_update() })
+  .add_startup_system(rotate_to_cursor_setup)
+  .add_system(rotate_to_cursor_update)
   .run()
 }
 
 ///|
-priv struct RotateToCursorState {
-  mut transform : @math.Transform
-}
-
-///|
-let rotate_state : Ref[RotateToCursorState] = Ref::new(RotateToCursorState::{
-  transform: @math.Transform::identity(),
-})
-
-///|
-fn rotate_to_cursor_setup() -> Unit {
+fn rotate_to_cursor_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("textures/simplespace/ship_C.png")
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform, texture).spawn() |> ignore
+  @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore
   let camera = @render2d.Camera2d::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
-  rotate_state.val.transform = transform
-  @render2d.render2d_set_sprite_transform(transform)
-  @render2d.render2d_set_camera_transform(@math.Transform::identity())
 }
 
 ///|
-fn rotate_to_cursor_update() -> Unit {
+fn rotate_to_cursor_update(world : @ecs_world.World) -> Unit {
   if @input.mouse_position() is Some(screen_pos) {
-    if @render2d.render2d_viewport_to_world_2d(screen_pos) is Some(world_pos) {
-      let transform = rotate_state.val.transform
-      let delta = @math.Vec2::new(
-        world_pos.x - transform.translation.x,
-        world_pos.y - transform.translation.y,
-      )
-      let angle = delta.to_angle() - @math.pi_half()
-      let next_transform = @math.Transform::new(
-        transform.translation,
-        angle,
-        transform.scale,
-      )
-      rotate_state.val.transform = next_transform
-      @render2d.render2d_set_sprite_transform(next_transform)
+    if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
+      is Some(world_pos) {
+      let tick = @core.ChangeTickWorld::read_change_tick(world)
+      let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
+      let transform_store = @math.Has_Transform::get_transform_store(world)
+      let entities : Array[(@core.Entity, @math.Transform)] = []
+      @core.query2(transform_store, sprite_store, fn(
+        entity,
+        transform,
+        _sprite,
+      ) {
+        entities.push((entity, transform))
+      })
+      for entry in entities {
+        let transform = entry.1
+        let delta = @math.Vec2::new(
+          world_pos.x - transform.translation.x,
+          world_pos.y - transform.translation.y,
+        )
+        let angle = delta.to_angle() - @math.pi_half()
+        let next_transform = @math.Transform::new(
+          transform.translation,
+          angle,
+          transform.scale,
+        )
+        transform_store.set(entry.0, next_transform, tick) |> ignore
+      }
     }
   }
 }

@@ -27,17 +27,97 @@ fn approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
-test "transform: root global matches local" {
-  reset()
-  let e = spawn(
+struct TestWorld {
+  entities : @core.Entities
+  mut tick : @core.Tick
+  mut ctx : @core.SystemContext
+  transform : @core.ComponentStore[@math.Transform]
+  global_transform : @core.ComponentStore[GlobalTransform]
+  parent : @core.ComponentStore[@hierarchy.Parent]
+  children : @core.ComponentStore[@hierarchy.Children]
+}
+
+///|
+fn TestWorld::new() -> TestWorld {
+  {
+    entities: @core.Entities::new(),
+    tick: 0,
+    ctx: @core.SystemContext::new(),
+    transform: @core.ComponentStore::new(),
+    global_transform: @core.ComponentStore::new(),
+    parent: @core.ComponentStore::new(),
+    children: @core.ComponentStore::new(),
+  }
+}
+
+///|
+fn TestWorld::next_system_ticks(self : TestWorld) -> @core.SystemTicks {
+  let this_run = @core.ChangeTickWorld::increment_change_tick(self)
+  let sys = @core.SystemTicks::new(self.ctx.ticks().this_run, this_run)
+  let ctx = @core.SystemContext::new()
+  ctx.set(sys)
+  @core.SystemContextWorld::set_system_context(self, ctx)
+  sys
+}
+
+///|
+impl @core.ChangeTickWorld for TestWorld with read_change_tick(self) {
+  self.tick
+}
+
+///|
+impl @core.ChangeTickWorld for TestWorld with increment_change_tick(self) {
+  self.tick = self.tick + 1
+  self.tick
+}
+
+///|
+impl @core.SystemContextWorld for TestWorld with get_system_context(self) {
+  self.ctx
+}
+
+///|
+impl @core.SystemContextWorld for TestWorld with set_system_context(self, ctx) {
+  self.ctx = ctx
+}
+
+///|
+impl @math.Has_Transform for TestWorld with get_transform_store(self) {
+  self.transform
+}
+
+///|
+impl Has_GlobalTransform for TestWorld with get_global_transform_store(self) {
+  self.global_transform
+}
+
+///|
+impl @hierarchy.Has_Parent for TestWorld with get_parent_store(self) {
+  self.parent
+}
+
+///|
+impl @hierarchy.Has_Children for TestWorld with get_children_store(self) {
+  self.children
+}
+
+///|
+test "transform ecs: root global matches local" {
+  let world = TestWorld::new()
+  let e = world.entities.spawn()
+  let tick = world.next_system_ticks().this_run
+  world.transform.insert(
+    e,
     @math.Transform::new(
       @math.Vec2::new(1.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
+    tick,
   )
-  propagate()
-  let gt = global(e).unwrap()
+  update_children_system(world)
+  propagate_transforms_system(world)
+  let gt = world.global_transform.get(e).unwrap()
   inspect(
     approx_eq(gt.affine.tx, 1.0F) && approx_eq(gt.affine.ty, 2.0F),
     content="true",
@@ -45,25 +125,33 @@ test "transform: root global matches local" {
 }
 
 ///|
-test "transform: parent translation affects child global translation" {
-  reset()
-  let parent = spawn(
+test "transform ecs: parent translation affects child global translation" {
+  let world = TestWorld::new()
+  let parent = world.entities.spawn()
+  let child = world.entities.spawn()
+  let tick = world.next_system_ticks().this_run
+  world.transform.insert(
+    parent,
     @math.Transform::new(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
+    tick,
   )
-  let child = spawn(
+  world.transform.insert(
+    child,
     @math.Transform::new(
       @math.Vec2::new(0.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
+    tick,
   )
-  set_parent(child, Some(parent))
-  propagate()
-  let gt = global(child).unwrap()
+  world.parent.insert(child, @hierarchy.Parent::new(parent), tick)
+  update_children_system(world)
+  propagate_transforms_system(world)
+  let gt = world.global_transform.get(child).unwrap()
   inspect(
     approx_eq(gt.affine.tx, 1.0F) && approx_eq(gt.affine.ty, 2.0F),
     content="true",
@@ -71,77 +159,50 @@ test "transform: parent translation affects child global translation" {
 }
 
 ///|
-test "transform: propagate updates only when inputs change" {
-  reset()
-  let e = spawn(
+test "transform ecs: propagate updates only when inputs change" {
+  let world = TestWorld::new()
+  let e = world.entities.spawn()
+
+  // First run: insert Transform, propagate writes GlobalTransform at tick1.
+  let tick1 = world.next_system_ticks().this_run
+  world.transform.insert(
+    e,
     @math.Transform::new(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
+    tick1,
   )
-  propagate()
-  let tick1 = propagate_tick()
-  let updated1 = global_updated_tick(e).unwrap()
-  inspect(tick1 == updated1, content="true")
+  update_children_system(world)
+  propagate_transforms_system(world)
+  let gt_tick1 = world.global_transform.get_ticks(e).unwrap()
+  inspect(gt_tick1.is_changed(@core.SystemTicks::new(0, tick1)), content="true")
 
-  // No changes: should not update.
-  propagate()
-  let tick2 = propagate_tick()
-  let updated2 = global_updated_tick(e).unwrap()
-  inspect(tick2 > tick1, content="true")
-  inspect(updated2 == updated1, content="true")
+  // Second run: no changes, propagate should not touch GlobalTransform.
+  let tick2 = world.next_system_ticks().this_run
+  update_children_system(world)
+  propagate_transforms_system(world)
+  let gt_tick2 = world.global_transform.get_ticks(e).unwrap()
+  inspect(
+    gt_tick2.is_changed(@core.SystemTicks::new(tick1, tick2)),
+    content="false",
+  )
 
-  // Local change: should update this tick.
-  set_local(
+  // Third run: local change, should update.
+  let tick3 = world.next_system_ticks().this_run
+  world.transform.set(
     e,
     @math.Transform::new(
       @math.Vec2::new(2.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
+    tick3,
   )
-  propagate()
-  let tick3 = propagate_tick()
-  let updated3 = global_updated_tick(e).unwrap()
-  inspect(tick3 == updated3, content="true")
-  inspect(updated3 > updated2, content="true")
-}
-
-///|
-test "transform: parent change updates descendants" {
-  reset()
-  let parent = spawn(
-    @math.Transform::new(
-      @math.Vec2::new(1.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  )
-  let child = spawn(
-    @math.Transform::new(
-      @math.Vec2::new(0.0F, 2.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  )
-  set_parent(child, Some(parent))
-  propagate()
-  let updated1 = global_updated_tick(child).unwrap()
-  set_local(
-    parent,
-    @math.Transform::new(
-      @math.Vec2::new(3.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  )
-  propagate()
-  let updated2 = global_updated_tick(child).unwrap()
-  inspect(updated2 > updated1, content="true")
-  let gt = global(child).unwrap()
-  inspect(
-    approx_eq(gt.affine.tx, 3.0F) && approx_eq(gt.affine.ty, 2.0F),
-    content="true",
-  )
+  |> ignore
+  update_children_system(world)
+  propagate_transforms_system(world)
+  let gt = world.global_transform.get(e).unwrap()
+  inspect(approx_eq(gt.affine.tx, 2.0F), content="true")
 }

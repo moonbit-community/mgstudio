@@ -17,12 +17,12 @@ pub fn mesh2d_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) { mesh2d_setup() })
+  .add_startup_system(mesh2d_setup)
   .run()
 }
 
 ///|
-fn mesh2d_setup() -> Unit {
+fn mesh2d_setup(world : @ecs_world.World) -> Unit {
   let mesh = @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::default())
   let material = @render2d.ColorMaterial::new(
     @render2d.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
@@ -32,8 +32,10 @@ fn mesh2d_setup() -> Unit {
     0.0F,
     @math.Vec2::new(128.0F, 128.0F),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn() |> ignore
+  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
   let camera = @render2d.Camera2d::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }

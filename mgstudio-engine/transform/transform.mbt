@@ -13,33 +13,11 @@
 // limitations under the License.
 
 ///|
-/// Transform + hierarchy utilities inspired by Bevy's `bevy_transform`.
+/// Bevy-like transform propagation (2D-first).
 ///
 /// This package provides:
-/// - Parent/Children relationships for transform nodes
-/// - Global transform propagation (parent global * local)
-///
-/// Note: the current engine uses a lightweight handle-based scene graph rather
-/// than a full ECS. We model "entities" here as `TransformId` and expose a
-/// deterministic propagation pass that can be scheduled each frame.
-///
-
-///|
-
-///|
-pub struct TransformId {
-  id : Int
-} derive(Eq, Show)
-
-///|
-pub struct Parent {
-  entity : TransformId
-}
-
-///|
-pub struct Children {
-  entities : Array[TransformId]
-}
+/// - `GlobalTransform` component (computed world-space transform)
+/// - systems to maintain `Children` from `Parent` and propagate transforms
 
 ///|
 pub struct Affine2 {
@@ -80,6 +58,8 @@ pub fn Affine2::transform_point2(
 }
 
 ///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct GlobalTransform {
   affine : Affine2
 }
@@ -143,248 +123,112 @@ pub fn GlobalTransform::to_transform_approx(
 }
 
 ///|
-priv struct Node {
-  mut local_transform : @math.Transform
-  mut global : GlobalTransform
-  mut global_updated_tick : Int
-  mut parent : Int?
-  children : Array[Int]
-  mut changed : Bool
-}
-
-///|
-priv struct Store {
-  nodes : Array[Node]
-  mut tick : Int
-}
-
-///|
-let store : Ref[Store] = Ref::new(Store::{ nodes: [], tick: 0 })
-
-///|
-pub fn reset() -> Unit {
-  store.val.nodes.clear()
-  store.val.tick = 0
-}
-
-///|
-pub fn spawn(local_transform : @math.Transform) -> TransformId {
-  let id = store.val.nodes.length()
-  store.val.nodes.push(Node::{
-    local_transform,
-    global: GlobalTransform::identity(),
-    global_updated_tick: 0,
-    parent: None,
-    children: [],
-    changed: true,
-  })
-  TransformId::{ id, }
-}
-
-///|
-pub fn set_local(
-  entity : TransformId,
-  local_transform : @math.Transform,
-) -> Unit {
-  let id = entity.id
-  if id < 0 || id >= store.val.nodes.length() {
-    return
-  }
-  store.val.nodes[id].local_transform = local_transform
-  store.val.nodes[id].changed = true
-}
-
-///|
-pub fn set_local_transform(
-  entity : TransformId,
-  local_transform : @math.Transform,
-) -> Unit {
-  set_local(entity, local_transform)
-}
-
-///|
-pub fn local_transform(entity : TransformId) -> @math.Transform? {
-  let id = entity.id
-  if id < 0 || id >= store.val.nodes.length() {
-    None
-  } else {
-    Some(store.val.nodes[id].local_transform)
-  }
-}
-
-///|
-pub fn global(entity : TransformId) -> GlobalTransform? {
-  let id = entity.id
-  if id < 0 || id >= store.val.nodes.length() {
-    None
-  } else {
-    Some(store.val.nodes[id].global)
-  }
-}
-
-///|
-pub fn world_transform(entity : TransformId) -> @math.Transform? {
-  global(entity).map(fn(gt) { gt.to_transform_approx() })
-}
-
-///|
-pub fn propagate_tick() -> Int {
-  store.val.tick
-}
-
-///|
-pub fn global_updated_tick(entity : TransformId) -> Int? {
-  let id = entity.id
-  if id < 0 || id >= store.val.nodes.length() {
-    None
-  } else {
-    Some(store.val.nodes[id].global_updated_tick)
-  }
-}
-
-///|
-pub fn parent(entity : TransformId) -> TransformId? {
-  let id = entity.id
-  if id < 0 || id >= store.val.nodes.length() {
-    return None
-  }
-  match store.val.nodes[id].parent {
-    Some(pid) => Some(TransformId::{ id: pid })
-    None => None
-  }
-}
-
-///|
-pub fn parent_component(entity : TransformId) -> Parent? {
-  parent(entity).map(fn(p) { Parent::{ entity: p } })
-}
-
-///|
-pub fn children_component(entity : TransformId) -> Children {
-  Children::{ entities: children(entity) }
-}
-
-///|
-pub fn children(entity : TransformId) -> Array[TransformId] {
-  let id = entity.id
-  if id < 0 || id >= store.val.nodes.length() {
-    return []
-  }
-  let out : Array[TransformId] = []
-  for child_id in store.val.nodes[id].children {
-    out.push(TransformId::{ id: child_id })
-  }
-  out
-}
-
-///|
-fn is_ancestor(candidate : Int, target : Int) -> Bool {
-  let mut current = candidate
-  while true {
-    if current == target {
-      return true
+fn sort_by_parent_id(pairs : Array[(@core.Entity, @core.Entity)]) -> Unit {
+  let mut i = 1
+  while i < pairs.length() {
+    let cur = pairs[i]
+    let cur_key = cur.0.id
+    let mut j = i
+    while j > 0 && pairs[j - 1].0.id > cur_key {
+      pairs[j] = pairs[j - 1]
+      j = j - 1
     }
-    let next = store.val.nodes[current].parent
-    if next is Some(pid) {
-      current = pid
-      continue
-    } else {
-      return false
-    }
-  }
-  false
-}
-
-///|
-fn remove_child(parent_id : Int, child_id : Int) -> Unit {
-  let list = store.val.nodes[parent_id].children
-  let mut i = 0
-  let len = list.length()
-  while i < len {
-    if list[i] == child_id {
-      // Remove by swap-with-last to keep this O(1).
-      let last_index = list.length() - 1
-      list[i] = list[last_index]
-      list.pop() |> ignore
-      return
-    }
+    pairs[j] = cur
     i = i + 1
   }
 }
 
 ///|
-pub fn set_parent(entity : TransformId, parent_opt : TransformId?) -> Unit {
-  let id = entity.id
-  if id < 0 || id >= store.val.nodes.length() {
+pub fn[
+  W : @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld,
+] update_children_system(
+  world : W,
+) -> Unit {
+  let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
+  let children_store = @hierarchy.Has_Children::get_children_store(world)
+  let change_tick = @core.ChangeTickWorld::read_change_tick(world)
+
+  // Rebuild from scratch (simple, correct); later we can make this incremental.
+  let existing : Array[@core.Entity] = []
+  children_store.for_each(fn(e, _children) { existing.push(e) })
+  for e in existing {
+    children_store.remove(e) |> ignore
+  }
+  let pairs : Array[(@core.Entity, @core.Entity)] = []
+  parent_store.for_each(fn(child, parent) { pairs.push((parent.entity, child)) })
+  if pairs.length() == 0 {
     return
   }
-  let new_parent_id : Int? = parent_opt.map(fn(p) { p.id })
-  if new_parent_id is Some(pid) {
-    if pid < 0 || pid >= store.val.nodes.length() {
-      return
+  sort_by_parent_id(pairs)
+  let mut i = 0
+  while i < pairs.length() {
+    let parent = pairs[i].0
+    let children : Array[@core.Entity] = []
+    while i < pairs.length() && pairs[i].0.id == parent.id {
+      children.push(pairs[i].1)
+      i = i + 1
     }
-    if pid == id {
-      return
-    }
-    // Prevent cycles: new parent cannot be a descendant of the entity.
-    if is_ancestor(pid, id) {
-      return
-    }
+    children_store.insert(
+      parent,
+      @hierarchy.Children::new(children),
+      change_tick,
+    )
   }
-  // Detach from old parent if any.
-  if store.val.nodes[id].parent is Some(old_parent) {
-    remove_child(old_parent, id)
-  }
-  // Attach to new parent.
-  if new_parent_id is Some(pid) {
-    store.val.nodes[pid].children.push(id)
-    store.val.nodes[id].parent = Some(pid)
-  } else {
-    store.val.nodes[id].parent = None
-  }
-  store.val.nodes[id].changed = true
 }
 
 ///|
-pub fn propagate() -> Unit {
-  let count = store.val.nodes.length()
-  if count == 0 {
-    return
-  }
-  store.val.tick = store.val.tick + 1
-  let tick = store.val.tick
-  let stack : Array[(Int, GlobalTransform, Bool)] = []
-  for id in 0..<count {
-    if store.val.nodes[id].parent is None {
-      stack.push((id, GlobalTransform::identity(), false))
+pub fn[
+  W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld,
+] propagate_transforms_system(
+  world : W,
+) -> Unit {
+  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let global_store = Has_GlobalTransform::get_global_transform_store(world)
+  let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
+  let children_store = @hierarchy.Has_Children::get_children_store(world)
+  let change_tick = @core.ChangeTickWorld::read_change_tick(world)
+  let system_ticks = @core.SystemContextWorld::get_system_context(world).ticks()
+  let stack : Array[(@core.Entity, GlobalTransform, Bool)] = []
+  transform_store.for_each(fn(e, _t) {
+    if !parent_store.contains(e) {
+      stack.push((e, GlobalTransform::identity(), false))
     }
-  }
+  })
   while stack.length() > 0 {
-    let (id, parent_global, parent_changed) = stack.pop().unwrap()
-    let local_gt = GlobalTransform::from_transform(
-      store.val.nodes[id].local_transform,
-    )
-    let should_update = parent_changed || store.val.nodes[id].changed
+    let (entity, parent_global, parent_changed) = stack.pop().unwrap()
+    guard transform_store.get(entity) is Some(local_transform) else { continue }
+    let local_gt = GlobalTransform::from_transform(local_transform)
+    let local_ticks = transform_store.get_ticks(entity).unwrap()
+    let local_changed = local_ticks.is_added(system_ticks) ||
+      local_ticks.is_changed(system_ticks)
+    let should_update = parent_changed ||
+      local_changed ||
+      !global_store.contains(entity)
+    let global = parent_global.mul(local_gt)
     if should_update {
-      store.val.nodes[id].global = parent_global.mul(local_gt)
-      store.val.nodes[id].changed = false
-      store.val.nodes[id].global_updated_tick = tick
+      if global_store.contains(entity) {
+        global_store.set(entity, global, change_tick) |> ignore
+      } else {
+        global_store.insert(entity, global, change_tick)
+      }
     }
     let changed = should_update
-    let global_value = store.val.nodes[id].global
-    for child_id in store.val.nodes[id].children {
-      stack.push((child_id, global_value, changed))
+    if children_store.get(entity) is Some(children) {
+      for child in children.entities {
+        stack.push((child, global, changed))
+      }
     }
   }
 }
 
 ///|
-fn[W] transform_propagate_system(_world : W) -> Unit {
-  propagate()
-}
-
-///|
-pub fn[W] transform_plugin(app : @app.App[W]) -> @app.App[W] {
-  // Run propagation every frame.
-  app.add_system(transform_propagate_system)
+pub fn[
+  W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld,
+] transform_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
+  // Keep `Children` in sync with `Parent`, then compute `GlobalTransform`.
+  app
+  .add_pre_update_system(update_children_system)
+  .add_pre_update_system(propagate_transforms_system)
 }

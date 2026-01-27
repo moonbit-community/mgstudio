@@ -2,6 +2,9 @@
 package "Milky2018/mgstudio/core"
 
 // Values
+pub fn[A, B] query2(ComponentStore[A], ComponentStore[B], (Entity, A, B) -> Unit) -> Unit
+
+pub fn[A, B] query2_changed_a(ComponentStore[A], ComponentStore[B], SystemTicks, (Entity, A, B) -> Unit) -> Unit
 
 // Errors
 pub(all) suberror EntityError {
@@ -11,6 +14,31 @@ pub(all) suberror EntityError {
 }
 
 // Types and methods
+pub struct ComponentStore[T] {
+  storage : SparseSet[T]
+  ticks : Array[ComponentTicks]
+}
+pub fn[T] ComponentStore::contains(Self[T], Entity) -> Bool
+pub fn[T] ComponentStore::for_each(Self[T], (Entity, T) -> Unit) -> Unit
+pub fn[T] ComponentStore::for_each_added(Self[T], SystemTicks, (Entity, T) -> Unit) -> Unit
+pub fn[T] ComponentStore::for_each_changed(Self[T], SystemTicks, (Entity, T) -> Unit) -> Unit
+pub fn[T] ComponentStore::get(Self[T], Entity) -> T?
+pub fn[T] ComponentStore::get_ticks(Self[T], Entity) -> ComponentTicks?
+pub fn[T] ComponentStore::insert(Self[T], Entity, T, Int) -> Unit
+pub fn[T] ComponentStore::len(Self[T]) -> Int
+pub fn[T] ComponentStore::new() -> Self[T]
+pub fn[T] ComponentStore::remove(Self[T], Entity) -> T?
+pub fn[T] ComponentStore::set(Self[T], Entity, T, Int) -> Bool
+
+pub struct ComponentTicks {
+  mut added : Int
+  mut changed : Int
+}
+pub fn ComponentTicks::is_added(Self, SystemTicks) -> Bool
+pub fn ComponentTicks::is_changed(Self, SystemTicks) -> Bool
+pub fn ComponentTicks::new(Int) -> Self
+pub fn ComponentTicks::set_changed(Self, Int) -> Unit
+
 type Entities
 pub fn Entities::despawn(Self, Entity) -> Unit raise EntityError
 pub fn Entities::is_alive(Self, Entity) -> Bool
@@ -26,8 +54,22 @@ pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
 
+pub struct Resource[T] {
+  mut cell : Ref[T]?
+  ticks : ComponentTicks
+}
+pub fn[T] Resource::get(Self[T]) -> T?
+pub fn[T] Resource::get_ref(Self[T]) -> Ref[T]?
+pub fn[T] Resource::get_ref_mut(Self[T], Int) -> Ref[T]?
+pub fn[T] Resource::insert(Self[T], T, Int) -> Unit
+pub fn[T] Resource::is_present(Self[T]) -> Bool
+pub fn[T] Resource::new() -> Self[T]
+pub fn[T] Resource::remove(Self[T]) -> T?
+pub fn[T] Resource::ticks(Self[T]) -> ComponentTicks
+
 type SparseSet[T]
 pub fn[T] SparseSet::contains(Self[T], Entity) -> Bool
+pub fn[T] SparseSet::entity_at(Self[T], Int) -> Entity
 pub fn[T] SparseSet::get(Self[T], Entity) -> T?
 pub fn[T] SparseSet::index_of(Self[T], Entity) -> Int?
 pub fn[T] SparseSet::insert(Self[T], Entity, T) -> Unit
@@ -36,6 +78,21 @@ pub fn[T] SparseSet::len(Self[T]) -> Int
 pub fn[T] SparseSet::new() -> Self[T]
 pub fn[T] SparseSet::remove(Self[T], Entity) -> T?
 pub fn[T] SparseSet::set(Self[T], Entity, T) -> Bool
+pub fn[T] SparseSet::value_at(Self[T], Int) -> T
+
+pub struct SystemContext {
+  mut last_run : Int
+  mut this_run : Int
+}
+pub fn SystemContext::new() -> Self
+pub fn SystemContext::set(Self, SystemTicks) -> Unit
+pub fn SystemContext::ticks(Self) -> SystemTicks
+
+pub struct SystemTicks {
+  last_run : Int
+  this_run : Int
+}
+pub fn SystemTicks::new(Int, Int) -> Self
 
 type World
 pub fn World::despawn(Self, Entity) -> Unit raise EntityError
@@ -44,6 +101,21 @@ pub fn World::new() -> Self
 pub fn World::spawn_empty(Self) -> Entity
 
 // Type aliases
+pub type Tick = Int
 
 // Traits
+pub(open) trait ChangeTickWorld {
+  read_change_tick(Self) -> Int
+  increment_change_tick(Self) -> Int
+}
+
+pub(open) trait SpawnWorld {
+  spawn_empty(Self) -> Entity
+  despawn(Self, Entity) -> Unit raise EntityError
+}
+
+pub(open) trait SystemContextWorld {
+  get_system_context(Self) -> SystemContext
+  set_system_context(Self, SystemContext) -> Unit
+}
 

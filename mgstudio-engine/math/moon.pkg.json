@@ -3,6 +3,8 @@
     {
       "path": "moonbitlang/core/math",
       "alias": "coremath"
-    }
+    },
+    "Milky2018/mgstudio/core"
+  
   ]
 }

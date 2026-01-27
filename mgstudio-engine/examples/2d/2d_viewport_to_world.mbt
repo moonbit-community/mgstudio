@@ -17,16 +17,14 @@ pub fn viewport_to_world_2d_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) {
-    viewport_to_world_setup()
-  })
-  .add_system_param(viewport_to_world_update)
+  .add_startup_system(viewport_to_world_setup)
+  .add_system(viewport_to_world_update)
   .run()
 }
 
 ///|
 priv struct ViewportToWorldState {
-  mut camera_handle : @render2d.CameraHandle
+  mut camera : @core.Entity
   mut camera_transform : @math.Transform
   mut camera_scale : Float
   mut viewport : @render2d.Viewport
@@ -34,7 +32,7 @@ priv struct ViewportToWorldState {
 
 ///|
 let viewport_state : Ref[ViewportToWorldState] = Ref::new(ViewportToWorldState::{
-  camera_handle: @render2d.CameraHandle::new(-1),
+  camera: @core.Entity::placeholder(),
   camera_transform: @math.Transform::identity(),
   camera_scale: 1.0F,
   viewport: @render2d.Viewport::new(
@@ -44,12 +42,14 @@ let viewport_state : Ref[ViewportToWorldState] = Ref::new(ViewportToWorldState::
 })
 
 ///|
-fn viewport_to_world_setup() -> Unit {
+fn viewport_to_world_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let anchor_texture = asset_server.load("branding/bevy_bird_dark.png")
   let anchor_sprite = @render2d.Sprite::new(@render2d.Color::white())
   let anchor_transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(anchor_sprite, anchor_transform, anchor_texture).spawn()
+  @render2d.SpriteBundle::new(anchor_sprite, anchor_transform, anchor_texture).spawn(
+    world,
+  )
   |> ignore
   let green = @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
   let marker_mesh = @render2d.Mesh2d::from_rectangle(
@@ -57,41 +57,47 @@ fn viewport_to_world_setup() -> Unit {
   )
   let marker_material = @render2d.ColorMaterial::new(green)
   let marker_transform = @math.Transform::identity()
-  @render2d.Mesh2dBundle::new(marker_mesh, marker_material, marker_transform).spawn()
+  @render2d.Mesh2dBundle::new(marker_mesh, marker_material, marker_transform).spawn(
+    world,
+  )
   |> ignore
   let width = @window.window_width()
   let height = @window.window_height()
   let viewport = viewport_default(width, height)
   let camera = @render2d.Camera2d::default().with_viewport(viewport)
   let camera_transform = @math.Transform::identity()
-  let camera_handle = @render2d.Camera2dBundle::new(camera, camera_transform).spawn()
-  viewport_state.val.camera_handle = camera_handle
+  let camera_entity = @render2d.Camera2dBundle::new(camera, camera_transform).spawn(
+    world,
+  )
+  viewport_state.val.camera = camera_entity
   viewport_state.val.camera_transform = camera_transform
   viewport_state.val.camera_scale = 1.0F
   viewport_state.val.viewport = viewport
-  @render2d.render2d_set_camera_transform_handle(
-    camera_handle, camera_transform,
-  )
-  @render2d.render2d_set_camera_viewport_handle(camera_handle, Some(viewport))
 }
 
 ///|
-fn viewport_to_world_update(gizmos : @render2d.Gizmos) -> Unit {
+fn viewport_to_world_update(world : @ecs_world.World) -> Unit {
+  if viewport_state.val.camera.is_placeholder() {
+    return
+  }
+  let gizmos = @render2d.Gizmos::new()
   let delta = @time.time_delta_seconds()
   let speed = 600.0F * delta
   let speed_i = speed.to_int()
-  update_camera_transform(speed)
-  update_camera_scale(delta)
-  update_camera_viewport(speed_i)
-  draw_viewport_outline(gizmos)
+  update_camera_transform(world, speed)
+  update_camera_scale(world, delta)
+  update_camera_viewport(world, speed_i)
+  draw_viewport_outline(world, gizmos)
   if @input.mouse_position() is Some(screen_pos) {
-    if @render2d.render2d_viewport_to_world_2d(screen_pos) is Some(world_pos) {
+    if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
+      is Some(world_pos) {
       let white = @render2d.Color::white()
       let red = @render2d.Color::new(1.0F, 0.2F, 0.2F, 1.0F)
       let cursor_iso = @render2d.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
-      if @render2d.render2d_world_to_viewport(world_pos) is Some(viewport_pos) {
-        if @render2d.render2d_viewport_to_world_2d(viewport_pos)
+      if @render2d.render2d_world_to_viewport(world, world_pos)
+        is Some(viewport_pos) {
+        if @render2d.render2d_viewport_to_world_2d(world, viewport_pos)
           is Some(world_check) {
           let check_iso = @render2d.Isometry2d::new(world_check, 0.0F)
           gizmos.circle_2d(check_iso, 8.0F, red) |> ignore
@@ -102,7 +108,7 @@ fn viewport_to_world_update(gizmos : @render2d.Gizmos) -> Unit {
 }
 
 ///|
-fn update_camera_transform(speed : Float) -> Unit {
+fn update_camera_transform(world : @ecs_world.World, speed : Float) -> Unit {
   let camera_transform = viewport_state.val.camera_transform
   let mut x = camera_transform.translation.x
   let mut y = camera_transform.translation.y
@@ -125,15 +131,18 @@ fn update_camera_transform(speed : Float) -> Unit {
       camera_transform.scale,
     )
     viewport_state.val.camera_transform = next_camera
-    @render2d.render2d_set_camera_transform_handle(
-      viewport_state.val.camera_handle,
+    let tick = @core.ChangeTickWorld::read_change_tick(world)
+    @math.Has_Transform::get_transform_store(world).set(
+      viewport_state.val.camera,
       next_camera,
+      tick,
     )
+    |> ignore
   }
 }
 
 ///|
-fn update_camera_scale(delta : Float) -> Unit {
+fn update_camera_scale(world : @ecs_world.World, delta : Float) -> Unit {
   let mut scale = viewport_state.val.camera_scale
   if @input.key_pressed(@window.KeyCode::Comma) {
     scale = scale * @math.pow(4.0F, delta)
@@ -143,15 +152,21 @@ fn update_camera_scale(delta : Float) -> Unit {
   }
   if scale != viewport_state.val.camera_scale {
     viewport_state.val.camera_scale = scale
-    @render2d.render2d_set_camera_scale_handle(
-      viewport_state.val.camera_handle,
-      scale,
-    )
+    let tick = @core.ChangeTickWorld::read_change_tick(world)
+    let camera_store = @render2d.Has_Camera2d::get_camera2d_store(world)
+    if camera_store.get(viewport_state.val.camera) is Some(camera) {
+      camera_store.set(
+        viewport_state.val.camera,
+        camera.with_scale(scale),
+        tick,
+      )
+      |> ignore
+    }
   }
 }
 
 ///|
-fn update_camera_viewport(speed_i : Int) -> Unit {
+fn update_camera_viewport(world : @ecs_world.World, speed_i : Int) -> Unit {
   let width = @window.window_width()
   let height = @window.window_height()
   if width <= 0 || height <= 0 {
@@ -196,14 +211,23 @@ fn update_camera_viewport(speed_i : Int) -> Unit {
     viewport = @render2d.Viewport::new(position, size)
   }
   viewport_state.val.viewport = viewport
-  @render2d.render2d_set_camera_viewport_handle(
-    viewport_state.val.camera_handle,
-    Some(viewport),
-  )
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let camera_store = @render2d.Has_Camera2d::get_camera2d_store(world)
+  if camera_store.get(viewport_state.val.camera) is Some(camera) {
+    camera_store.set(
+      viewport_state.val.camera,
+      camera.with_viewport(viewport),
+      tick,
+    )
+    |> ignore
+  }
 }
 
 ///|
-fn draw_viewport_outline(gizmos : @render2d.Gizmos) -> Unit {
+fn draw_viewport_outline(
+  world : @ecs_world.World,
+  gizmos : @render2d.Gizmos,
+) -> Unit {
   let viewport = viewport_state.val.viewport
   let width = viewport.physical_size.x
   let height = viewport.physical_size.y
@@ -222,10 +246,12 @@ fn draw_viewport_outline(gizmos : @render2d.Gizmos) -> Unit {
   let top_right = @math.Vec2::new(pos_x + size_x, pos_y)
   let bottom_right = @math.Vec2::new(pos_x + size_x, pos_y + size_y)
   let bottom_left = @math.Vec2::new(pos_x, pos_y + size_y)
-  if @render2d.render2d_viewport_to_world_2d(top_left) is Some(world_tl) {
-    if @render2d.render2d_viewport_to_world_2d(top_right) is Some(world_tr) {
-      if @render2d.render2d_viewport_to_world_2d(bottom_right) is Some(world_br) {
-        if @render2d.render2d_viewport_to_world_2d(bottom_left)
+  if @render2d.render2d_viewport_to_world_2d(world, top_left) is Some(world_tl) {
+    if @render2d.render2d_viewport_to_world_2d(world, top_right)
+      is Some(world_tr) {
+      if @render2d.render2d_viewport_to_world_2d(world, bottom_right)
+        is Some(world_br) {
+        if @render2d.render2d_viewport_to_world_2d(world, bottom_left)
           is Some(world_bl) {
           let base_config = @render2d.gizmo_config()
           let dashed_line = @render2d.GizmoLineConfig::{

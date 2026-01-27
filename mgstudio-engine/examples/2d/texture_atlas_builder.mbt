@@ -17,10 +17,8 @@ pub fn texture_atlas_builder_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) {
-    texture_atlas_builder_setup()
-  })
-  .add_system(fn(_world : @ecs_world.World) { texture_atlas_builder_update() })
+  .add_startup_system(texture_atlas_builder_setup)
+  .add_system(texture_atlas_builder_update)
   .run()
 }
 
@@ -39,7 +37,7 @@ let builder_state : Ref[TextureAtlasBuilderState] = Ref::new(TextureAtlasBuilder
 })
 
 ///|
-fn texture_atlas_builder_setup() -> Unit {
+fn texture_atlas_builder_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture_a = asset_server.load("branding/bevy_bird_dark.png")
   let texture_b = asset_server.load("textures/simplespace/ship_C.png")
@@ -47,12 +45,14 @@ fn texture_atlas_builder_setup() -> Unit {
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
   let camera = @render2d.Camera2d::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
 
 ///|
-fn texture_atlas_builder_update() -> Unit {
+fn texture_atlas_builder_update(world : @ecs_world.World) -> Unit {
   if builder_state.val.built {
     return
   }
@@ -78,8 +78,10 @@ fn texture_atlas_builder_update() -> Unit {
     let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
     let index_a = sources.texture_index(texture_a).unwrap_or(-1)
     let index_b = sources.texture_index(texture_b).unwrap_or(-1)
+    let tick = @core.ChangeTickWorld::read_change_tick(world)
+    let atlas_store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
     let sprite = @render2d.Sprite::new(@render2d.Color::white())
-    let handle_a = @render2d.SpriteBundle::new(
+    let entity_a = @render2d.SpriteBundle::new(
       sprite,
       @math.Transform::new(
         @math.Vec2::new(-160.0F, 0.0F),
@@ -87,10 +89,13 @@ fn texture_atlas_builder_update() -> Unit {
         @math.Vec2::new(1.0F, 1.0F),
       ),
       atlas_texture,
-    ).spawn()
-    @render2d.render2d_set_sprite_atlas_handle(handle_a, layout_handle, index_a)
-    |> ignore
-    let handle_b = @render2d.SpriteBundle::new(
+    ).spawn(world)
+    atlas_store.insert(
+      entity_a,
+      @asset.TextureAtlas::new(layout_handle, index_a),
+      tick,
+    )
+    let entity_b = @render2d.SpriteBundle::new(
       sprite,
       @math.Transform::new(
         @math.Vec2::new(160.0F, 0.0F),
@@ -98,9 +103,12 @@ fn texture_atlas_builder_update() -> Unit {
         @math.Vec2::new(1.0F, 1.0F),
       ),
       atlas_texture,
-    ).spawn()
-    @render2d.render2d_set_sprite_atlas_handle(handle_b, layout_handle, index_b)
-    |> ignore
+    ).spawn(world)
+    atlas_store.insert(
+      entity_b,
+      @asset.TextureAtlas::new(layout_handle, index_b),
+      tick,
+    )
     builder_state.val.built = true
   }
 }

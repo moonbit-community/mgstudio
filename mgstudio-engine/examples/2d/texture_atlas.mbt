@@ -17,12 +17,12 @@ pub fn texture_atlas_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) { texture_atlas_setup() })
+  .add_startup_system(texture_atlas_setup)
   .run()
 }
 
 ///|
-fn texture_atlas_setup() -> Unit {
+fn texture_atlas_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let layout = @asset.TextureAtlasLayout::new_empty(@math.UVec2::new(256, 256))
@@ -43,6 +43,8 @@ fn texture_atlas_setup() -> Unit {
   )
   |> ignore
   let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let atlas_store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   for i in 0..<4 {
     let x = i % 2 * 160 - 80
@@ -56,11 +58,14 @@ fn texture_atlas_setup() -> Unit {
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     )
-    let handle = @render2d.SpriteBundle::new(sprite, transform, texture).spawn()
-    @render2d.render2d_set_sprite_atlas_handle(handle, layout_handle, i)
-    |> ignore
+    let entity = @render2d.SpriteBundle::new(sprite, transform, texture).spawn(
+      world,
+    )
+    atlas_store.insert(entity, @asset.TextureAtlas::new(layout_handle, i), tick)
   }
   let camera = @render2d.Camera2d::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }

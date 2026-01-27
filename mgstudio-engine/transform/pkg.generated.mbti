@@ -3,41 +3,21 @@ package "Milky2018/mgstudio/transform"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
 }
 
 // Values
-pub fn children(TransformId) -> Array[TransformId]
+pub let ecs_components : Array[String]
 
-pub fn children_component(TransformId) -> Children
+pub let ecs_resources : Array[String]
 
-pub fn global(TransformId) -> GlobalTransform?
+pub fn[W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld] propagate_transforms_system(W) -> Unit
 
-pub fn global_updated_tick(TransformId) -> Int?
+pub fn[W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld] transform_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn local_transform(TransformId) -> @math.Transform?
-
-pub fn parent(TransformId) -> TransformId?
-
-pub fn parent_component(TransformId) -> Parent?
-
-pub fn propagate() -> Unit
-
-pub fn propagate_tick() -> Int
-
-pub fn reset() -> Unit
-
-pub fn set_local(TransformId, @math.Transform) -> Unit
-
-pub fn set_local_transform(TransformId, @math.Transform) -> Unit
-
-pub fn set_parent(TransformId, TransformId?) -> Unit
-
-pub fn spawn(@math.Transform) -> TransformId
-
-pub fn[W] transform_plugin(@app.App[W]) -> @app.App[W]
-
-pub fn world_transform(TransformId) -> @math.Transform?
+pub fn[W : @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld] update_children_system(W) -> Unit
 
 // Errors
 
@@ -54,10 +34,6 @@ pub fn Affine2::identity() -> Self
 pub fn Affine2::mul(Self, Self) -> Self
 pub fn Affine2::transform_point2(Self, @math.Vec2) -> @math.Vec2
 
-pub struct Children {
-  entities : Array[TransformId]
-}
-
 pub struct GlobalTransform {
   affine : Affine2
 }
@@ -66,17 +42,10 @@ pub fn GlobalTransform::identity() -> Self
 pub fn GlobalTransform::mul(Self, Self) -> Self
 pub fn GlobalTransform::to_transform_approx(Self) -> @math.Transform
 
-pub struct Parent {
-  entity : TransformId
-}
-
-pub struct TransformId {
-  id : Int
-}
-pub impl Eq for TransformId
-pub impl Show for TransformId
-
 // Type aliases
 
 // Traits
+pub(open) trait Has_GlobalTransform {
+  get_global_transform_store(Self) -> @core.ComponentStore[GlobalTransform]
+}
 

@@ -15,8 +15,12 @@
 ///|
 test "app: run_if skips system execution" {
   let log : Array[Int] = []
-  let app = App::new(()).add_system_config(
-    system(fn(_world : Unit) { log.push(1) }).run_if(fn(_world : Unit) { false }),
+  let app = App::new(TestWorld::new()).add_system_config(
+    system(fn(_world : TestWorld) { log.push(1) }).run_if(fn(
+      _world : TestWorld,
+    ) {
+      false
+    }),
   )
   app.run_once() |> ignore
   inspect(log.length(), content="0")
@@ -27,11 +31,17 @@ test "app: schedule sets order and preserve insertion within a set" {
   let log : Array[Int] = []
   let set_a = system_set("A")
   let set_b = system_set("B")
-  let app = App::new(())
+  let app = App::new(TestWorld::new())
   app
-  .add_system_config(system(fn(_world : Unit) { log.push(1) }).in_set(set_a))
-  .add_system_config(system(fn(_world : Unit) { log.push(2) }).in_set(set_a))
-  .add_system_config(system(fn(_world : Unit) { log.push(3) }).in_set(set_b))
+  .add_system_config(
+    system(fn(_world : TestWorld) { log.push(1) }).in_set(set_a),
+  )
+  .add_system_config(
+    system(fn(_world : TestWorld) { log.push(2) }).in_set(set_a),
+  )
+  .add_system_config(
+    system(fn(_world : TestWorld) { log.push(3) }).in_set(set_b),
+  )
   .configure_set(Update, set_a, before=[set_b])
   .run_once()
   |> ignore

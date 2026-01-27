@@ -58,11 +58,19 @@ pub struct SystemConfig[W] {
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
+  mut last_run_tick : @core.Tick
 }
 
 ///|
 pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
-  SystemConfig::{ system, run_if: None, set: None, before: [], after: [] }
+  SystemConfig::{
+    system,
+    run_if: None,
+    set: None,
+    before: [],
+    after: [],
+    last_run_tick: 0,
+  }
 }
 
 ///|
@@ -433,7 +441,7 @@ pub fn fixed_time_steps_ran_this_frame() -> Int {
 }
 
 ///|
-fn[W] run_systems(
+fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_systems(
   world : W,
   systems : Array[SystemConfig[W]],
   set_edges : Array[(SystemSet, SystemSet)],
@@ -564,13 +572,24 @@ fn[W] run_systems(
           continue
         }
       }
+
+      // Align with Bevy: increment global change tick once per executed system
+      // and expose SystemTicks via World-backed context for change detection.
+      let this_run = @core.ChangeTickWorld::increment_change_tick(world)
+      let sys_ticks = @core.SystemTicks::new(cfg.last_run_tick, this_run)
+      let ctx = @core.SystemContextWorld::get_system_context(world)
+      ctx.set(sys_ticks)
+      @core.SystemContextWorld::set_system_context(world, ctx)
       (cfg.system)(world)
+      systems[system_i].last_run_tick = this_run
     }
   }
 }
 
 ///|
-pub fn[W] App::run_startup(self : App[W]) -> App[W] {
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(
+  self : App[W],
+) -> App[W] {
   run_systems(
     self.world,
     schedule_systems(self.schedule, Startup),
@@ -580,7 +599,9 @@ pub fn[W] App::run_startup(self : App[W]) -> App[W] {
 }
 
 ///|
-pub fn[W] App::run_once(self : App[W]) -> App[W] {
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(
+  self : App[W],
+) -> App[W] {
   run_systems(
     self.world,
     schedule_systems(self.schedule, PreUpdate),
@@ -631,7 +652,9 @@ pub fn[W] App::run_once(self : App[W]) -> App[W] {
 }
 
 ///|
-pub fn[W] App::run(self : App[W]) -> Unit {
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run(
+  self : App[W],
+) -> Unit {
   if self.runner is Some(runner) {
     runner()
   } else {

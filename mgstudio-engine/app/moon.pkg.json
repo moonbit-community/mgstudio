@@ -4,6 +4,7 @@
       "path": "moonbitlang/core/hashmap",
       "alias": "hashmap"
     },
+    "Milky2018/mgstudio/core",
     "moonbitlang/core/ref"
   ]
 }

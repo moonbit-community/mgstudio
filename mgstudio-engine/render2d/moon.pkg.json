@@ -5,6 +5,9 @@
     "Milky2018/mgstudio/math",
     "Milky2018/mgstudio/mesh",
     "Milky2018/mgstudio/window",
-    "moonbitlang/core/ref"
+    "moonbitlang/core/ref",
+    "Milky2018/mgstudio/core",
+    "Milky2018/mgstudio/transform"
+  
   ]
 }

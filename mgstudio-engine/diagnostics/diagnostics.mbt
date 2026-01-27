@@ -50,28 +50,30 @@ pub fn camera_debug_set_config(config : CameraDebugConfig) -> Unit {
 }
 
 ///|
-fn[W] camera_debug_system(_world : W) -> Unit {
+fn[W : @render2d.HasRes_RenderState] camera_debug_system(world : W) -> Unit {
   let interval = camera_debug_state.val.config.interval_seconds
   let mut timer = camera_debug_state.val.timer + @time.time_delta_seconds()
   if interval <= 0.0F {
-    @render2d.render2d_debug_log_primary_camera()
+    @render2d.render2d_debug_log_primary_camera(world)
     camera_debug_state.val.timer = 0.0F
     return
   }
   if timer >= interval {
     timer = timer - interval
-    @render2d.render2d_debug_log_primary_camera()
+    @render2d.render2d_debug_log_primary_camera(world)
   }
   camera_debug_state.val.timer = timer
 }
 
 ///|
-pub fn[W] camera_debug_plugin(app : @app.App[W]) -> @app.App[W] {
+pub fn[W : @render2d.HasRes_RenderState] camera_debug_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
   app.add_system(camera_debug_system)
 }
 
 ///|
-pub fn[W] camera_debug_plugin_with_interval(
+pub fn[W : @render2d.HasRes_RenderState] camera_debug_plugin_with_interval(
   interval_seconds : Float,
 ) -> @app.Plugin[W] {
   fn(app : @app.App[W]) -> @app.App[W] {

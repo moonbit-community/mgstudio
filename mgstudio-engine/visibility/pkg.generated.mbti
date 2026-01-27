@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/visibility"
+
+import {
+  "Milky2018/mgstudio/core",
+}
+
+// Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+// Errors
+
+// Types and methods
+pub struct InheritedVisibility {
+  visible : Bool
+}
+pub fn InheritedVisibility::is_visible(Self) -> Bool
+pub fn InheritedVisibility::new(Bool) -> Self
+pub impl Eq for InheritedVisibility
+pub impl Show for InheritedVisibility
+
+pub struct ViewVisibility {
+  visible : Bool
+}
+pub fn ViewVisibility::is_visible(Self) -> Bool
+pub fn ViewVisibility::new(Bool) -> Self
+pub impl Eq for ViewVisibility
+pub impl Show for ViewVisibility
+
+pub(all) enum Visibility {
+  Inherited
+  Hidden
+  Visible
+}
+pub fn Visibility::is_visible(Self) -> Bool
+pub impl Eq for Visibility
+pub impl Show for Visibility
+
+// Type aliases
+
+// Traits
+pub(open) trait Has_InheritedVisibility {
+  get_inherited_visibility_store(Self) -> @core.ComponentStore[InheritedVisibility]
+}
+
+pub(open) trait Has_ViewVisibility {
+  get_view_visibility_store(Self) -> @core.ComponentStore[ViewVisibility]
+}
+
+pub(open) trait Has_Visibility {
+  get_visibility_store(Self) -> @core.ComponentStore[Visibility]
+}
+

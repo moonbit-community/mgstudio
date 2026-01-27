@@ -1,12 +1,18 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/math"
 
+import {
+  "Milky2018/mgstudio/core",
+}
+
 // Values
 pub fn atan2(Float, Float) -> Float
 
 pub fn cos(Float) -> Float
 
 pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
 
 pub fn pi_half() -> Float
 
@@ -77,4 +83,7 @@ pub fn Vec2::to_angle(Self) -> Float
 // Type aliases
 
 // Traits
+pub(open) trait Has_Transform {
+  get_transform_store(Self) -> @core.ComponentStore[Transform]
+}
 

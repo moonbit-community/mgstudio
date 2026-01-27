@@ -2,6 +2,8 @@
   "import": [
     "Milky2018/mgstudio/app",
     "Milky2018/mgstudio/math",
-    "moonbitlang/core/ref"
+    "moonbitlang/core/ref",
+    "Milky2018/mgstudio/core"
+  
   ]
 }

@@ -17,12 +17,12 @@ pub fn text2d_run() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(fn(_world : @ecs_world.World) { text2d_setup() })
+  .add_startup_system(text2d_setup)
   .run()
 }
 
 ///|
-fn text2d_setup() -> Unit {
+fn text2d_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let font_style = @text.TextFont::default()
@@ -47,6 +47,8 @@ fn text2d_setup() -> Unit {
   .spawn()
   |> ignore
   let camera = @render2d.Camera2d::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn()
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
