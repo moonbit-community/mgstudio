@@ -4,33 +4,44 @@ package "Milky2018/mgstudio/core"
 // Values
 
 // Errors
+pub(all) suberror EntityError {
+  InvalidId(Int)
+  NotSpawned(Entity)
+  GenerationMismatch(Entity, Int)
+}
 
 // Types and methods
-pub struct Commands {
-  world : World
-}
-pub fn Commands::new(World) -> Self
-pub fn Commands::spawn(Self) -> Entity
+type Entities
+pub fn Entities::despawn(Self, Entity) -> Unit raise EntityError
+pub fn Entities::is_alive(Self, Entity) -> Bool
+pub fn Entities::len(Self) -> Int
+pub fn Entities::new() -> Self
+pub fn Entities::spawn(Self) -> Entity
 
 pub struct Entity {
   id : Int
+  generation : Int
 }
+pub fn Entity::is_placeholder(Self) -> Bool
+pub fn Entity::new(Int, Int) -> Self
+pub fn Entity::placeholder() -> Self
 
-pub struct Query[T] {
-  items : Array[T]
-}
-pub fn[T] Query::new(Array[T]) -> Self[T]
+type SparseSet[T]
+pub fn[T] SparseSet::contains(Self[T], Entity) -> Bool
+pub fn[T] SparseSet::get(Self[T], Entity) -> T?
+pub fn[T] SparseSet::index_of(Self[T], Entity) -> Int?
+pub fn[T] SparseSet::insert(Self[T], Entity, T) -> Unit
+pub fn[T] SparseSet::is_empty(Self[T]) -> Bool
+pub fn[T] SparseSet::len(Self[T]) -> Int
+pub fn[T] SparseSet::new() -> Self[T]
+pub fn[T] SparseSet::remove(Self[T], Entity) -> T?
+pub fn[T] SparseSet::set(Self[T], Entity, T) -> Bool
 
-pub struct Res[T] {
-  value : T
-}
-pub fn[T] Res::new(T) -> Self[T]
-
-pub struct World {
-  mut next_id : Int
-}
+type World
+pub fn World::despawn(Self, Entity) -> Unit raise EntityError
+pub fn World::is_alive(Self, Entity) -> Bool
 pub fn World::new() -> Self
-pub fn World::spawn(Self) -> Entity
+pub fn World::spawn_empty(Self) -> Entity
 
 // Type aliases
 
