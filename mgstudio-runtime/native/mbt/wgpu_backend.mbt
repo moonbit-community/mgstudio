@@ -330,9 +330,10 @@ pub fn GpuBackend::configure_surface(
   guard self.surface is Some(surface) else { return }
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  // Surface textures cannot be used as sampled textures (`texture_binding`).
+  // Requesting RESOURCE usage triggers a wgpu-native validation error.
   let usage = @wgpu.texture_usage_render_attachment |
-    @wgpu.texture_usage_copy_src |
-    @wgpu.texture_usage_texture_binding
+    @wgpu.texture_usage_copy_src
   surface.configure_default(self.adapter, self.device, w, h, usage) |> ignore
 }
 
