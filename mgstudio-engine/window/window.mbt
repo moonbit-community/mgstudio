@@ -349,11 +349,13 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_build
       host_gpu_end_frame(frame)
       if host_window_should_close(window) {
         host_window_request_close(window)
+        // Web runtimes cannot block in `window_run_loop`, so cleanup must happen
+        // inside the tick closure (not after `window_run_loop` returns).
+        runner_state.val.tick = None
       }
     })
     let tick : FuncRef[() -> Unit] = fn() { runner_tick() }
     host_window_run_loop(tick)
-    runner_state.val.tick = None
   }
 }
 
