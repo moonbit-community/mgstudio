@@ -1,5 +1,8 @@
 {
   "is-main": true,
+  "native-stub": [
+    "time_native.c"
+  ],
   "import": [
     {
       "path": "Milky2018/wgpu_mbt",
@@ -8,6 +11,10 @@
     {
       "path": "Milky2018/mgstudio-runtime-native/window",
       "alias": "win"
+    },
+    {
+      "path": "Milky2018/mgstudio-runtime-native/image",
+      "alias": "img"
     },
     {
       "path": "moonbitlang/core/math",

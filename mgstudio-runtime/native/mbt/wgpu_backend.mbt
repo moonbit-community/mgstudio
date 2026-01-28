@@ -449,6 +449,116 @@ fn ensure_fallback_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo {
 }
 
 ///|
+pub fn GpuBackend::create_texture_rgba8(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  pixels_rgba8 : Bytes,
+  nearest : Bool,
+) -> Int {
+  ensure_sprite_pipeline(self)
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  let usage = @wgpu.texture_usage_texture_binding |
+    @wgpu.texture_usage_copy_dst |
+    @wgpu.texture_usage_copy_src
+  let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
+  let view = tex.create_view()
+  let sampler = if nearest {
+    self.device.create_sampler_nearest_clamp()
+  } else {
+    self.device.create_sampler_linear_clamp()
+  }
+  let bg = self.device.create_bind_group_sampler_texture_2d(
+    self.sprite_bgl_tex.unwrap(),
+    sampler,
+    view,
+  )
+  let expected_len = w.reinterpret_as_int() * h.reinterpret_as_int() * 4
+  let data = if pixels_rgba8.length() == expected_len {
+    pixels_rgba8
+  } else {
+    // Defensive fallback: avoid crashing if decode output is malformed.
+    Bytes::makei(expected_len, _ => (255).to_byte())
+  }
+  self.queue.write_texture_rgba8_2d(tex, w, h, data)
+  let info = GpuTextureInfo::{
+    id,
+    width: w.reinterpret_as_int(),
+    height: h.reinterpret_as_int(),
+    texture: tex,
+    view,
+    sampler,
+    bind_group: bg,
+  }
+  self.textures.val.push(info)
+  id
+}
+
+///|
+pub fn GpuBackend::texture_width(self : GpuBackend, texture_id : Int) -> Int {
+  match find_texture(self, texture_id) {
+    Some(t) => t.width
+    None => 0
+  }
+}
+
+///|
+pub fn GpuBackend::texture_height(self : GpuBackend, texture_id : Int) -> Int {
+  match find_texture(self, texture_id) {
+    Some(t) => t.height
+    None => 0
+  }
+}
+
+///|
+pub fn GpuBackend::is_texture_loaded(
+  self : GpuBackend,
+  texture_id : Int,
+) -> Bool {
+  find_texture(self, texture_id) is Some(_)
+}
+
+///|
+pub fn GpuBackend::set_texture_sampler(
+  self : GpuBackend,
+  texture_id : Int,
+  sampler_kind : Int,
+) -> Unit {
+  if self.sprite_bgl_tex is None {
+    ensure_sprite_pipeline(self)
+  }
+  let bgl_tex = self.sprite_bgl_tex.unwrap()
+  let count = self.textures.val.length()
+  for i in 0..<count {
+    let info = self.textures.val[i]
+    if info.id == texture_id {
+      let sampler = if sampler_kind == 1 {
+        self.device.create_sampler_nearest_clamp()
+      } else {
+        self.device.create_sampler_linear_clamp()
+      }
+      let bg = self.device.create_bind_group_sampler_texture_2d(
+        bgl_tex,
+        sampler,
+        info.view,
+      )
+      self.textures.val[i] = GpuTextureInfo::{
+        id: info.id,
+        width: info.width,
+        height: info.height,
+        texture: info.texture,
+        view: info.view,
+        sampler,
+        bind_group: bg,
+      }
+      break
+    }
+  }
+}
+
+///|
 pub fn GpuBackend::create_render_target(
   self : GpuBackend,
   width : Int,
@@ -760,6 +870,48 @@ pub fn GpuBackend::create_mesh_capsule(
     vertices_xy: verts,
     indices_u16: inds,
     index_count: inds.length().reinterpret_as_uint(),
+    index_buf: ib,
+  }
+  self.meshes.val.push(info)
+  id
+}
+
+///|
+pub fn GpuBackend::create_mesh_triangles_xy(
+  self : GpuBackend,
+  vertices_xy : Array[Float],
+) -> Int {
+  let vcount = vertices_xy.length() / 2
+  if vcount <= 0 {
+    return 0
+  }
+  // The encoded geometry is expected to be a flat list of triangle vertices.
+  // Keep only complete triangles.
+  let usable_vcount = vcount - (vcount % 3)
+  if usable_vcount <= 0 || usable_vcount > 65535 {
+    return 0
+  }
+  let indices_u16 : Array[Int] = []
+  for i in 0..<usable_vcount {
+    indices_u16.push(i)
+  }
+  let id = alloc_id(self)
+  let ib_usage = @wgpu.buffer_usage_index | @wgpu.buffer_usage_copy_dst
+  let ib = self.device.create_buffer_init(usage=ib_usage, u16le_pack(indices_u16))
+  let trimmed_vertices = if usable_vcount == vcount {
+    vertices_xy
+  } else {
+    let out : Array[Float] = []
+    for i in 0..<(usable_vcount * 2) {
+      out.push(vertices_xy[i])
+    }
+    out
+  }
+  let info = GpuMeshInfo::{
+    id,
+    vertices_xy: trimmed_vertices,
+    indices_u16,
+    index_count: indices_u16.length().reinterpret_as_uint(),
     index_buf: ib,
   }
   self.meshes.val.push(info)

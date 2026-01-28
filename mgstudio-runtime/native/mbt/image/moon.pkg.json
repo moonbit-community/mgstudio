@@ -1,0 +1,17 @@
+{
+  "import": [
+    {
+      "path": "Milky2018/wgpu_mbt/c",
+      "alias": "wgpu_c"
+    }
+  ],
+  "native-stub": [
+    "stb_image_decode.c"
+  ],
+  "targets": {
+    "image.mbt": [
+      "native"
+    ]
+  }
+}
+

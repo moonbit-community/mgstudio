@@ -50,12 +50,17 @@ pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
+pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 pub fn GpuBackend::end_frame(Self) -> Unit
 pub fn GpuBackend::end_pass(Self) -> Unit
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
+pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new() -> Self
+pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit
+pub fn GpuBackend::texture_height(Self, Int) -> Int
+pub fn GpuBackend::texture_width(Self, Int) -> Int
 
 pub struct GpuFrameState {
   surface_tex : @wgpu_mbt.SurfaceTexture
@@ -101,6 +106,7 @@ pub struct HostContext {
   mut instance : @runtime.ModuleInstance?
   mut gpu : GpuBackend?
   mut window : @window.Window?
+  assets_root : String
   string_sink : Ref[Array[Char]]
   next_string_id : Ref[Int]
   strings : Ref[Array[(Int, String)]]

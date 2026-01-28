@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio-runtime-native/image"
+
+import {
+  "Milky2018/wgpu_mbt/c",
+}
+
+// Values
+pub fn decode_rgba8(Bytes) -> DecodedImage?
+
+// Errors
+
+// Types and methods
+pub struct DecodedImage {
+  raw : @c.OpaquePtr
+}
+pub fn DecodedImage::destroy(Self) -> Unit
+pub fn DecodedImage::height(Self) -> Int
+pub fn DecodedImage::is_null(Self) -> Bool
+pub fn DecodedImage::pixels_rgba8(Self) -> Bytes
+pub fn DecodedImage::width(Self) -> Int
+
+// Type aliases
+
+// Traits
+

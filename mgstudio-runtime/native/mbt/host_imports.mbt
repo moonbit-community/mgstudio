@@ -27,6 +27,7 @@ pub struct HostContext {
   mut instance : @runtime.ModuleInstance?
   mut gpu : GpuBackend?
   mut window : @win.Window?
+  assets_root : String
   string_sink : Ref[Array[Char]]
   next_string_id : Ref[Int]
   strings : Ref[Array[(Int, String)]]
@@ -37,11 +38,16 @@ pub struct HostContext {
 
 ///|
 pub fn HostContext::new() -> HostContext {
+  let assets_root = match @sys.get_env_var("MGSTUDIO_ASSETS_DIR") {
+    Some(path) if path != "" => path
+    _ => "../../../mgstudio-engine/assets"
+  }
   HostContext::{
     store: None,
     instance: None,
     gpu: None,
     window: None,
+    assets_root,
     string_sink: Ref::new([]),
     next_string_id: Ref::new(1),
     strings: Ref::new([]),
@@ -195,6 +201,40 @@ fn mouse_button_from_string(button : String) -> Int? {
 
 ///|
 const HANDLE_BASE : Int = 10_000
+
+///|
+fn strip_leading_slashes(text : String) -> String {
+  let n = text.length()
+  let mut i = 0
+  while i < n && text.code_unit_at(i).to_int() == 47 { // '/'
+    i = i + 1
+  }
+  if i == 0 {
+    text
+  } else {
+    (try! text[i:n]).to_string()
+  }
+}
+
+///|
+fn join_fs_path(base : String, entry : String) -> String {
+  if base == "" {
+    entry
+  } else if entry == "" {
+    base
+  } else {
+    let normalized = strip_leading_slashes(entry)
+    let n = base.length()
+    if n > 0 && base.code_unit_at(n - 1).to_int() == 47 { // '/'
+      base + normalized
+    } else {
+      base + "/" + normalized
+    }
+  }
+}
+
+///|
+extern "C" fn c_time_now_seconds() -> Float = "mgstudio_time_now"
 
 ///|
 pub fn add_mgstudio_host_imports(
@@ -377,7 +417,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "time_now",
-    fn(_args) { ok_f32(0.0) },
+    fn(_args) { ok_f32(c_time_now_seconds()) },
     func_type=ft([], [@types.ValueType::F32]),
   )
 
@@ -524,11 +564,63 @@ pub fn add_mgstudio_host_imports(
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
 
-  // Assets/GPU: stubs that return dummy ids / null handles.
+  // Assets: minimally support textures so sprite examples can render.
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_texture",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(path_id) &&
+        args[1] is @types.Value::I32(nearest_i32) {
+        let nearest = nearest_i32 != 0
+        let rel = string_table_get(ctx, path_id).unwrap_or("")
+        if rel == "" {
+          ok_i32(
+            ctx.gpu
+            .unwrap()
+            .create_texture_rgba8(
+              1,
+              1,
+              Bytes::makei(4, _ => (255).to_byte()),
+              nearest,
+            ),
+          )
+        } else {
+          let full_path = join_fs_path(ctx.assets_root, rel)
+          let file_bytes = @fs.read_file_to_bytes(full_path) catch {
+            _ => Bytes::makei(0, _ => (0).to_byte())
+          }
+          let decoded = @img.decode_rgba8(file_bytes)
+          match decoded {
+            Some(img) => {
+              let w = img.width()
+              let h = img.height()
+              let pixels = img.pixels_rgba8()
+              img.destroy()
+              ok_i32(
+                ctx.gpu.unwrap().create_texture_rgba8(w, h, pixels, nearest),
+              )
+            }
+            None =>
+              ok_i32(
+                ctx.gpu
+                .unwrap()
+                .create_texture_rgba8(
+                  1,
+                  1,
+                  Bytes::makei(4, _ => (255).to_byte()),
+                  nearest,
+                ),
+              )
+          }
+        }
+      } else {
+        ok_i32(-1)
+      }
+    },
     func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
       @types.ValueType::I32,
     ]),
@@ -595,7 +687,17 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_set_texture_sampler",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(texture_id) &&
+        args[1] is @types.Value::I32(sampler_kind) {
+        ctx.gpu.unwrap().set_texture_sampler(texture_id, sampler_kind)
+      }
+      ok_i32(0)
+    },
     func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
       @types.ValueType::I32,
     ]),
@@ -603,7 +705,27 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_create_dynamic_texture",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 3 &&
+        args[0] is @types.Value::I32(w) &&
+        args[1] is @types.Value::I32(h) &&
+        args[2] is @types.Value::I32(nearest_i32) {
+        let nearest = nearest_i32 != 0
+        let width = if w <= 0 { 1 } else { w }
+        let height = if h <= 0 { 1 } else { h }
+        // Initialize as transparent (RGBA=0). This is used by text atlases.
+        let byte_len = width * height * 4
+        let pixels = Bytes::makei(byte_len, _ => (0).to_byte())
+        ok_i32(
+          ctx.gpu.unwrap().create_texture_rgba8(width, height, pixels, nearest),
+        )
+      } else {
+        ok_i32(-1)
+      }
+    },
     func_type=ft(
       [@types.ValueType::I32, @types.ValueType::I32, @types.ValueType::I32],
       [@types.ValueType::I32],
@@ -628,19 +750,48 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_texture_width",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        return ok_i32(0)
+      }
+      if args.length() >= 1 && args[0] is @types.Value::I32(texture_id) {
+        ok_i32(ctx.gpu.unwrap().texture_width(texture_id))
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "asset_texture_height",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        return ok_i32(0)
+      }
+      if args.length() >= 1 && args[0] is @types.Value::I32(texture_id) {
+        ok_i32(ctx.gpu.unwrap().texture_height(texture_id))
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "asset_is_texture_loaded",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if ctx.gpu is None {
+        return ok_i32(0)
+      }
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(texture_id) &&
+        ctx.gpu.unwrap().is_texture_loaded(texture_id) {
+        ok_i32(1)
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
