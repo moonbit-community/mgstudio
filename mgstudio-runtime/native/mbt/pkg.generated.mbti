@@ -101,6 +101,9 @@ pub struct HostContext {
   mut instance : @runtime.ModuleInstance?
   mut gpu : GpuBackend?
   mut window : @window.Window?
+  string_sink : Ref[Array[Char]]
+  next_string_id : Ref[Int]
+  strings : Ref[Array[(Int, String)]]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
 }

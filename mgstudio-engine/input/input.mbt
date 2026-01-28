@@ -53,25 +53,25 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
 }
 
 ///|
-pub fn host_input_is_key_down(code : String) -> Bool = "mgstudio_host" "input_is_key_down"
+fn host_input_is_key_down_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_down"
 
 ///|
-pub fn host_input_is_key_just_pressed(code : String) -> Bool = "mgstudio_host" "input_is_key_just_pressed"
+fn host_input_is_key_just_pressed_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_just_pressed"
 
 ///|
-pub fn host_input_is_key_just_released(code : String) -> Bool = "mgstudio_host" "input_is_key_just_released"
+fn host_input_is_key_just_released_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_just_released"
 
 ///|
 pub fn host_input_finish_frame() -> Unit = "mgstudio_host" "input_finish_frame"
 
 ///|
-pub fn host_input_is_mouse_button_down(button : String) -> Bool = "mgstudio_host" "input_is_mouse_button_down"
+fn host_input_is_mouse_button_down_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_down"
 
 ///|
-pub fn host_input_is_mouse_button_just_pressed(button : String) -> Bool = "mgstudio_host" "input_is_mouse_button_just_pressed"
+fn host_input_is_mouse_button_just_pressed_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_just_pressed"
 
 ///|
-pub fn host_input_is_mouse_button_just_released(button : String) -> Bool = "mgstudio_host" "input_is_mouse_button_just_released"
+fn host_input_is_mouse_button_just_released_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_just_released"
 
 ///|
 pub fn host_input_mouse_x() -> Float = "mgstudio_host" "input_mouse_x"
@@ -84,17 +84,23 @@ pub fn host_input_has_cursor() -> Bool = "mgstudio_host" "input_has_cursor"
 
 ///|
 pub fn key_pressed(code : @window.KeyCode) -> Bool {
-  host_input_is_key_down(keycode_to_string(code))
+  @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
+    host_input_is_key_down_id(code_id)
+  })
 }
 
 ///|
 pub fn key_just_pressed(code : @window.KeyCode) -> Bool {
-  host_input_is_key_just_pressed(keycode_to_string(code))
+  @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
+    host_input_is_key_just_pressed_id(code_id)
+  })
 }
 
 ///|
 pub fn key_just_released(code : @window.KeyCode) -> Bool {
-  host_input_is_key_just_released(keycode_to_string(code))
+  @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
+    host_input_is_key_just_released_id(code_id)
+  })
 }
 
 ///|
@@ -108,17 +114,23 @@ fn mouse_button_to_string(button : @window.MouseButton) -> String {
 
 ///|
 pub fn mouse_button_pressed(button : @window.MouseButton) -> Bool {
-  host_input_is_mouse_button_down(mouse_button_to_string(button))
+  @core.with_host_string_id(mouse_button_to_string(button), fn(button_id) {
+    host_input_is_mouse_button_down_id(button_id)
+  })
 }
 
 ///|
 pub fn mouse_button_just_pressed(button : @window.MouseButton) -> Bool {
-  host_input_is_mouse_button_just_pressed(mouse_button_to_string(button))
+  @core.with_host_string_id(mouse_button_to_string(button), fn(button_id) {
+    host_input_is_mouse_button_just_pressed_id(button_id)
+  })
 }
 
 ///|
 pub fn mouse_button_just_released(button : @window.MouseButton) -> Bool {
-  host_input_is_mouse_button_just_released(mouse_button_to_string(button))
+  @core.with_host_string_id(mouse_button_to_string(button), fn(button_id) {
+    host_input_is_mouse_button_just_released_id(button_id)
+  })
 }
 
 ///|

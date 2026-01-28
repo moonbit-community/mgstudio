@@ -26,7 +26,14 @@ pub(all) enum AssetEvent[T] {
 }
 
 ///|
-pub fn host_asset_load_folder(path : String) -> Int = "mgstudio_host" "asset_load_folder"
+pub fn host_asset_load_folder(path : String) -> Int {
+  @core.with_host_string_id(path, fn(path_id) {
+    host_asset_load_folder_id(path_id)
+  })
+}
+
+///|
+fn host_asset_load_folder_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_folder"
 
 ///|
 pub fn host_asset_poll_loaded_folder_event_kind() -> Int = "mgstudio_host" "asset_poll_loaded_folder_event_kind"

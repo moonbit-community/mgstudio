@@ -16,7 +16,14 @@
 pub struct Font {}
 
 ///|
-pub fn host_asset_load_font(path : String) -> Int = "mgstudio_host" "asset_load_font"
+pub fn host_asset_load_font(path : String) -> Int {
+  @core.with_host_string_id(path, fn(path_id) {
+    host_asset_load_font_id(path_id)
+  })
+}
+
+///|
+fn host_asset_load_font_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_font"
 
 ///|
 pub fn AssetServer::load_font(

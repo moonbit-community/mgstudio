@@ -12,18 +12,6 @@ pub fn host_input_finish_frame() -> Unit
 
 pub fn host_input_has_cursor() -> Bool
 
-pub fn host_input_is_key_down(String) -> Bool
-
-pub fn host_input_is_key_just_pressed(String) -> Bool
-
-pub fn host_input_is_key_just_released(String) -> Bool
-
-pub fn host_input_is_mouse_button_down(String) -> Bool
-
-pub fn host_input_is_mouse_button_just_pressed(String) -> Bool
-
-pub fn host_input_is_mouse_button_just_released(String) -> Bool
-
 pub fn host_input_mouse_x() -> Float
 
 pub fn host_input_mouse_y() -> Float

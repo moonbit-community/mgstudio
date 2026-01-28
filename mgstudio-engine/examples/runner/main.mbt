@@ -81,19 +81,3 @@ pub fn run_texture_atlas_builder() -> Unit {
 pub fn run_text2d() -> Unit {
   @examples2d.text2d_run()
 }
-
-///|
-/// Push UTF-16 code units of a MoonBit `String` to the host.
-///
-/// Web runtimes that do not expose the JS `WebAssembly.Array` GC API still
-/// receive wasm-gc references as opaque objects. This helper lets the host
-/// reconstruct a JS string by calling back into this export.
-fn string_sink_push(code_unit : Int) -> Unit = "mgstudio_host" "string_sink_push"
-
-///|
-pub fn mgstudio_host_string_to_js(text : String) -> Unit {
-  let n = text.length()
-  for i in 0..<n {
-    string_sink_push(text.code_unit_at(i).to_int())
-  }
-}

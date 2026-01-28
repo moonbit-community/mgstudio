@@ -86,6 +86,17 @@ pub fn host_window_create(
   width : Int,
   height : Int,
   title : String,
+) -> HostWindow {
+  @core.with_host_string_id(title, fn(title_id) {
+    host_window_create_id(width, height, title_id)
+  })
+}
+
+///|
+fn host_window_create_id(
+  width : Int,
+  height : Int,
+  title_id : Int,
 ) -> HostWindow = "mgstudio_host" "window_create"
 
 ///|
@@ -286,10 +297,22 @@ pub fn host_gpu_create_mesh_capsule(
 pub fn host_gpu_create_mesh_rectangle(width : Float, height : Float) -> Int = "mgstudio_host" "gpu_create_mesh_rectangle"
 
 ///|
-pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int = "mgstudio_host" "gpu_create_mesh_triangles"
+pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int {
+  @core.with_host_string_id(vertices_xy_csv, fn(text_id) {
+    host_gpu_create_mesh_triangles_id(text_id)
+  })
+}
 
 ///|
-pub fn host_debug_string(value : String) -> Unit = "mgstudio_host" "debug_string"
+fn host_gpu_create_mesh_triangles_id(vertices_xy_csv_id : Int) -> Int = "mgstudio_host" "gpu_create_mesh_triangles"
+
+///|
+pub fn host_debug_string(value : String) -> Unit {
+  @core.with_host_string_id(value, fn(text_id) { host_debug_string_id(text_id) })
+}
+
+///|
+fn host_debug_string_id(value_id : Int) -> Unit = "mgstudio_host" "debug_string"
 
 ///|
 priv struct RunnerState {

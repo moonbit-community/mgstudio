@@ -27,6 +27,9 @@ pub struct HostContext {
   mut instance : @runtime.ModuleInstance?
   mut gpu : GpuBackend?
   mut window : @win.Window?
+  string_sink : Ref[Array[Char]]
+  next_string_id : Ref[Int]
+  strings : Ref[Array[(Int, String)]]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   // (id, env, func_idx)
@@ -39,6 +42,9 @@ pub fn HostContext::new() -> HostContext {
     instance: None,
     gpu: None,
     window: None,
+    string_sink: Ref::new([]),
+    next_string_id: Ref::new(1),
+    strings: Ref::new([]),
     next_closure_id: Ref::new(1),
     closures: Ref::new([]),
   }
@@ -81,47 +87,58 @@ fn ok_extern_ref(id : Int) -> Array[@types.Value] {
 }
 
 ///|
+fn string_table_get(ctx : HostContext, id : Int) -> String? {
+  if id <= 0 {
+    return None
+  }
+  let entries = ctx.strings.val
+  let n = entries.length()
+  for i in 0..<n {
+    let entry = entries[i]
+    if entry.0 == id {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
+fn string_table_put(ctx : HostContext, text : String) -> Int {
+  if text == "" {
+    return 0
+  }
+  let id = ctx.next_string_id.val
+  ctx.next_string_id.val = id + 1
+  ctx.strings.val.push((id, text))
+  id
+}
+
+///|
+fn string_table_drop(ctx : HostContext, id : Int) -> Unit {
+  if id <= 0 {
+    return
+  }
+  let entries = ctx.strings.val
+  let n = entries.length()
+  for i in 0..<n {
+    if entries[i].0 == id {
+      let last = n - 1
+      if i != last {
+        entries[i] = entries[last]
+      }
+      entries.pop() |> ignore
+      break
+    }
+  }
+}
+
+///|
 fn code_unit_from_gc_value(v : @types.Value) -> Int? {
   match v {
     I32(x) => Some(x & 0xFFFF)
     I64(x) => Some(x.to_int() & 0xFFFF)
     I31(x) => Some(x & 0xFFFF)
     _ => None
-  }
-}
-
-///|
-fn decode_gc_utf16_array(store : @runtime.Store, array_idx : Int) -> String {
-  let n = store.array_len(array_idx) catch { _ => return "" }
-  let chars : Array[Char] = []
-  for i in 0..<n {
-    let v = store.array_get(array_idx, i) catch { _ => return "" }
-    if code_unit_from_gc_value(v) is Some(cu) {
-      chars.push(Int::unsafe_to_char(cu))
-    } else {
-      return ""
-    }
-  }
-  String::from_array(chars)
-}
-
-///|
-fn decode_guest_string(ctx : HostContext, value : @types.Value) -> String {
-  guard ctx.store is Some(store) else { return "" }
-  let unwrapped = store.unwrap_extern(value) catch { _ => value }
-  match unwrapped {
-    ArrayRef(array_idx) => decode_gc_utf16_array(store, array_idx)
-    StructRef(struct_idx) => {
-      // Best-effort: some runtimes may wrap string in a struct; try field 0.
-      let field0 = store.struct_get(struct_idx, 0) catch {
-        _ => @types.Value::Null
-      }
-      match field0 {
-        ArrayRef(array_idx) => decode_gc_utf16_array(store, array_idx)
-        _ => ""
-      }
-    }
-    _ => ""
   }
 }
 
@@ -186,8 +203,43 @@ pub fn add_mgstudio_host_imports(
 ) -> Unit {
   linker.add_host_func(
     "mgstudio_host",
+    "string_sink_reset",
+    fn(_args) {
+      ctx.string_sink.val.clear()
+      ok_i32(0)
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "string_sink_push",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if args.length() >= 1 && code_unit_from_gc_value(args[0]) is Some(cu) {
+        ctx.string_sink.val.push(Int::unsafe_to_char(cu))
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "string_sink_take",
+    fn(_args) {
+      let text = String::from_array(ctx.string_sink.val)
+      ctx.string_sink.val.clear()
+      ok_i32(string_table_put(ctx, text))
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "string_drop",
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(id) {
+        string_table_drop(ctx, id)
+      }
+      ok_i32(0)
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
@@ -197,7 +249,7 @@ pub fn add_mgstudio_host_imports(
       // Bring-up: ignore.
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
 
   // Window.
@@ -216,11 +268,9 @@ pub fn add_mgstudio_host_imports(
         600
       }
       let title = if args.length() >= 3 {
-        let decoded = decode_guest_string(ctx, args[2])
-        if decoded == "" {
-          "Moon Game Studio"
-        } else {
-          decoded
+        match args[2] {
+          I32(id) => string_table_get(ctx, id).unwrap_or("Moon Game Studio")
+          _ => "Moon Game Studio"
         }
       } else {
         "Moon Game Studio"
@@ -230,11 +280,7 @@ pub fn add_mgstudio_host_imports(
       ok_extern_ref(HANDLE_BASE + 1)
     },
     func_type=ft(
-      [
-        @types.ValueType::I32,
-        @types.ValueType::I32,
-        @types.ValueType::RefArray(1),
-      ],
+      [@types.ValueType::I32, @types.ValueType::I32, @types.ValueType::I32],
       [@types.ValueType::ExternRef],
     ),
   )
@@ -386,90 +432,96 @@ pub fn add_mgstudio_host_imports(
     "input_is_key_down",
     fn(args) {
       if args.length() >= 1 && ctx.window is Some(win) {
-        let code = decode_guest_string(ctx, args[0])
-        if macos_keycode_from_string(code) is Some(keycode) &&
+        if args[0] is @types.Value::I32(id) &&
+          string_table_get(ctx, id) is Some(code) &&
+          macos_keycode_from_string(code) is Some(keycode) &&
           win.input_is_key_down(keycode) {
           return ok_i32(1)
         }
       }
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_is_key_just_pressed",
     fn(args) {
       if args.length() >= 1 && ctx.window is Some(win) {
-        let code = decode_guest_string(ctx, args[0])
-        if macos_keycode_from_string(code) is Some(keycode) &&
+        if args[0] is @types.Value::I32(id) &&
+          string_table_get(ctx, id) is Some(code) &&
+          macos_keycode_from_string(code) is Some(keycode) &&
           win.input_is_key_just_pressed(keycode) {
           return ok_i32(1)
         }
       }
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_is_key_just_released",
     fn(args) {
       if args.length() >= 1 && ctx.window is Some(win) {
-        let code = decode_guest_string(ctx, args[0])
-        if macos_keycode_from_string(code) is Some(keycode) &&
+        if args[0] is @types.Value::I32(id) &&
+          string_table_get(ctx, id) is Some(code) &&
+          macos_keycode_from_string(code) is Some(keycode) &&
           win.input_is_key_just_released(keycode) {
           return ok_i32(1)
         }
       }
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_is_mouse_button_down",
     fn(args) {
       if args.length() >= 1 && ctx.window is Some(win) {
-        let code = decode_guest_string(ctx, args[0])
-        if mouse_button_from_string(code) is Some(button) &&
+        if args[0] is @types.Value::I32(id) &&
+          string_table_get(ctx, id) is Some(code) &&
+          mouse_button_from_string(code) is Some(button) &&
           win.input_is_mouse_button_down(button) {
           return ok_i32(1)
         }
       }
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_is_mouse_button_just_pressed",
     fn(args) {
       if args.length() >= 1 && ctx.window is Some(win) {
-        let code = decode_guest_string(ctx, args[0])
-        if mouse_button_from_string(code) is Some(button) &&
+        if args[0] is @types.Value::I32(id) &&
+          string_table_get(ctx, id) is Some(code) &&
+          mouse_button_from_string(code) is Some(button) &&
           win.input_is_mouse_button_just_pressed(button) {
           return ok_i32(1)
         }
       }
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_is_mouse_button_just_released",
     fn(args) {
       if args.length() >= 1 && ctx.window is Some(win) {
-        let code = decode_guest_string(ctx, args[0])
-        if mouse_button_from_string(code) is Some(button) &&
+        if args[0] is @types.Value::I32(id) &&
+          string_table_get(ctx, id) is Some(code) &&
+          mouse_button_from_string(code) is Some(button) &&
           win.input_is_mouse_button_just_released(button) {
           return ok_i32(1)
         }
       }
       ok_i32(0)
     },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
 
   // Assets/GPU: stubs that return dummy ids / null handles.
@@ -477,7 +529,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "asset_load_texture",
     fn(_args) { ok_i32(1) },
-    func_type=ft([@types.ValueType::RefArray(1), @types.ValueType::I32], [
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
       @types.ValueType::I32,
     ]),
   )
@@ -485,13 +537,13 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "asset_load_wgsl",
     fn(_args) { ok_i32(1) },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_font",
     fn(_args) { ok_i32(1) },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
@@ -609,7 +661,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "asset_load_folder",
     fn(_args) { ok_i32(1) },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
@@ -838,7 +890,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_create_mesh_triangles",
     fn(_args) { ok_i32(1) },
-    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",

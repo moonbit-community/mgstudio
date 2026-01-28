@@ -22,26 +22,22 @@ extern "js" fn throw_error(message : String) -> Unit =
   #| (message) => { throw new Error(message) }
 
 ///|
-extern "js" fn ensure_wasm_gc_string_api() -> Unit =
-  #| () => {
-  #|   const ok = typeof WebAssembly === "object" &&
-  #|     typeof WebAssembly.Array === "function" &&
-  #|     WebAssembly.Array &&
-  #|     WebAssembly.Array.prototype &&
-  #|     typeof WebAssembly.Array.prototype.get === "function"
-  #|   if (!ok) {
-  #|     throw new Error(
-  #|       "mgstudio-runtime-web requires WebAssembly GC JS bindings (WebAssembly.Array.prototype.get). " +
-  #|       "This browser/runtime is not supported."
-  #|     )
-  #|   }
-  #| }
-
-///|
 extern "js" fn string_sink_push(code_unit : Int) -> Unit =
   #| (codeUnit) => {
   #|   const c = Number(codeUnit) & 0xffff
   #|   globalThis.__mgstudio_string_sink_buf = (globalThis.__mgstudio_string_sink_buf || "") + String.fromCharCode(c)
+  #| }
+
+///|
+extern "js" fn string_sink_reset_js() -> Unit =
+  #| () => { globalThis.__mgstudio_string_sink_buf = "" }
+
+///|
+extern "js" fn string_sink_take_js() -> String =
+  #| () => {
+  #|   const out = globalThis.__mgstudio_string_sink_buf || ""
+  #|   globalThis.__mgstudio_string_sink_buf = ""
+  #|   return out
   #| }
 
 ///|
@@ -389,6 +385,10 @@ extern "js" fn map_set(map : @js.Any, key : @js.Any, value : @js.Any) -> Unit =
 ///|
 extern "js" fn map_get(map : @js.Any, key : @js.Any) -> @js.Any =
   #| (map, key) => map.get(key)
+
+///|
+extern "js" fn map_delete(map : @js.Any, key : @js.Any) -> Bool =
+  #| (map, key) => map.delete(key)
 
 ///|
 extern "js" fn set_add(set : @js.Any, value : @js.Any) -> Unit =
@@ -1050,6 +1050,8 @@ struct GpuState {
 struct State {
   mut window : WindowState?
   mut should_close : Bool
+  strings : @js.Any
+  mut next_string_id : Int
   assets : AssetsState
   input : InputState
   gpu : GpuState
@@ -1060,6 +1062,8 @@ fn new_state() -> State {
   State::{
     window: None,
     should_close: false,
+    strings: new_map(),
+    next_string_id: 1,
     assets: AssetsState::{
       pending_textures: [],
       fallback_reported: new_set(),
@@ -1133,6 +1137,40 @@ fn new_state() -> State {
 ///|
 fn to_int(value : Double) -> Int {
   value.to_int()
+}
+
+///|
+fn string_from_id_optional(state : State, id_any : @js.Any) -> String {
+  let id = to_int(number_or(id_any, 0))
+  if id <= 0 {
+    return ""
+  }
+  let value = map_get(state.strings, @js.any(id))
+  if host_is_nullish(value) {
+    ""
+  } else {
+    any_to_string(value)
+  }
+}
+
+///|
+fn string_from_id_required(
+  state : State,
+  id_any : @js.Any,
+  what : String,
+) -> String {
+  let id = to_int(number_or(id_any, 0))
+  if id <= 0 {
+    throw_error(what + ": missing string id")
+    return ""
+  }
+  let value = map_get(state.strings, @js.any(id))
+  if host_is_nullish(value) {
+    throw_error(what + ": unknown string id " + id.to_string())
+    ""
+  } else {
+    any_to_string(value)
+  }
 }
 
 ///|
@@ -2445,7 +2483,6 @@ fn draw_gizmo_lines(state : State, data : @js.Any) -> Unit {
 
 ///|
 pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
-  ensure_wasm_gc_string_api()
   let state = new_state()
   let default_canvas = ensure_canvas(canvas_opt)
   let window_create = @js.from_fn3(fn(width, height, title) {
@@ -2454,11 +2491,9 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     let height_num = to_int(number_or(height, 600))
     target._set("width", @js.any(width_num)) |> ignore
     target._set("height", @js.any(height_num)) |> ignore
-    if !host_is_nullish(title) {
-      let text = any_to_string(title)
-      if text != "" {
-        @dom.document().setTitle(text)
-      }
+    let text = string_from_id_optional(state, title)
+    if text != "" {
+      @dom.document().setTitle(text)
     }
     let size = get_canvas_pixel_size(target)
     let pixel_width : Int = size._get("width").cast()
@@ -2518,15 +2553,17 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
   })
   let time_now = @js.from_fn0(fn() { performance_now() })
   let input_is_key_down = @js.from_fn1(fn(code) {
-    let text = if host_is_nullish(code) { "" } else { any_to_string(code) }
+    let text = string_from_id_required(state, code, "input_is_key_down")
     set_has(state.input.pressed, @js.any(text))
   })
   let input_is_key_just_pressed = @js.from_fn1(fn(code) {
-    let text = if host_is_nullish(code) { "" } else { any_to_string(code) }
+    let text = string_from_id_required(state, code, "input_is_key_just_pressed")
     set_has(state.input.just_pressed, @js.any(text))
   })
   let input_is_key_just_released = @js.from_fn1(fn(code) {
-    let text = if host_is_nullish(code) { "" } else { any_to_string(code) }
+    let text = string_from_id_required(
+      state, code, "input_is_key_just_released",
+    )
     set_has(state.input.just_released, @js.any(text))
   })
   let input_finish_frame = @js.from_fn0(fn() {
@@ -2536,22 +2573,49 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     set_clear(state.input.mouse_just_released)
   })
   let input_is_mouse_button_down = @js.from_fn1(fn(name) {
-    let text = if host_is_nullish(name) { "" } else { any_to_string(name) }
+    let text = string_from_id_required(
+      state, name, "input_is_mouse_button_down",
+    )
     set_has(state.input.mouse_buttons, @js.any(text))
   })
   let input_is_mouse_button_just_pressed = @js.from_fn1(fn(name) {
-    let text = if host_is_nullish(name) { "" } else { any_to_string(name) }
+    let text = string_from_id_required(
+      state, name, "input_is_mouse_button_just_pressed",
+    )
     set_has(state.input.mouse_just_pressed, @js.any(text))
   })
   let input_is_mouse_button_just_released = @js.from_fn1(fn(name) {
-    let text = if host_is_nullish(name) { "" } else { any_to_string(name) }
+    let text = string_from_id_required(
+      state, name, "input_is_mouse_button_just_released",
+    )
     set_has(state.input.mouse_just_released, @js.any(text))
   })
   let input_mouse_x = @js.from_fn0(fn() { state.input.mouse_x })
   let input_mouse_y = @js.from_fn0(fn() { state.input.mouse_y })
   let input_has_cursor = @js.from_fn0(fn() { state.input.has_cursor })
   let debug_string = @js.from_fn1(fn(value) {
-    console_error(@js.any(any_to_string(value)))
+    console_error(@js.any(string_from_id_optional(state, value)))
+    0
+  })
+  let string_sink_reset = @js.from_fn0(fn() {
+    string_sink_reset_js()
+    0
+  })
+  let string_sink_take = @js.from_fn0(fn() {
+    let text = string_sink_take_js()
+    if text == "" {
+      return 0
+    }
+    let id = state.next_string_id
+    state.next_string_id = id + 1
+    map_set(state.strings, @js.any(id), @js.any(text))
+    id
+  })
+  let string_drop = @js.from_fn1(fn(id_any) {
+    let id = to_int(number_or(id_any, 0))
+    if id > 0 {
+      map_delete(state.strings, @js.any(id)) |> ignore
+    }
     0
   })
   let gpu_request_device = @js.from_fn0(fn() {
@@ -2604,7 +2668,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     let id = state.gpu.next_texture_id
     state.gpu.next_texture_id = id + 1
     set_add(state.assets.loading_textures, @js.any(id))
-    let path_text = coerce_asset_path(path)
+    let path_text = string_from_id_required(state, path, "asset_load_texture")
     if path_text != "" {
       map_set(state.assets.texture_paths, @js.any(id), @js.any(path_text))
     }
@@ -2631,7 +2695,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
   let asset_load_wgsl = @js.from_fn1(fn(path) {
     let id = next_shader_id(state)
     set_add(state.assets.loading_shaders, @js.any(id))
-    let path_text = coerce_asset_path(path)
+    let path_text = string_from_id_required(state, path, "asset_load_wgsl")
     if path_text != "" {
       map_set(state.assets.shader_paths, @js.any(id), @js.any(path_text))
     }
@@ -2652,7 +2716,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
   let asset_load_font = @js.from_fn1(fn(path) {
     let id = state.assets.next_font_id
     state.assets.next_font_id = id + 1
-    let path_text = coerce_asset_path(path)
+    let path_text = string_from_id_required(state, path, "asset_load_font")
     if path_text == "" {
       return id
     }
@@ -2978,7 +3042,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     state.assets.next_folder_id = id + 1
     let empty_handles : Array[Int] = []
     map_set(state.assets.folders, @js.any(id), @js.any(empty_handles))
-    let path_text = coerce_asset_path(_path)
+    let path_text = string_from_id_required(state, _path, "asset_load_folder")
     @js.run_async(async fn() noraise {
       let handles : Array[Int] = []
       if path_text != "" {
@@ -3212,7 +3276,9 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ensure_mesh_pipeline(state)
     let id = state.gpu.next_mesh_id
     state.gpu.next_mesh_id = id + 1
-    let vertices = float32array_from_csv(any_to_string(vertices_xy))
+    let vertices = float32array_from_csv(
+      string_from_id_required(state, vertices_xy, "gpu_create_mesh_triangles"),
+    )
     if state.gpu.device is Some(device) {
       let vertex_size : Int = vertices._get("byteLength").cast()
       let vertex_usage = @webgpu.combine_flags(
@@ -3389,12 +3455,16 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     ("gpu_get_queue", gpu_get_queue),
     ("gpu_create_surface", gpu_create_surface),
     ("gpu_configure_surface", gpu_configure_surface),
+    ("string_sink_reset", string_sink_reset),
     (
       "string_sink_push",
       @js.from_fn1(fn(code_unit) {
         string_sink_push(to_int(number_or(code_unit, 0)))
+        0
       }),
     ),
+    ("string_sink_take", string_sink_take),
+    ("string_drop", string_drop),
     ("asset_load_texture", asset_load_texture),
     ("asset_load_wgsl", asset_load_wgsl),
     ("asset_load_font", asset_load_font),

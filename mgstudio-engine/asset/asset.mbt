@@ -118,10 +118,24 @@ pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {
 }
 
 ///|
-pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int = "mgstudio_host" "asset_load_texture"
+pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int {
+  @core.with_host_string_id(path, fn(path_id) {
+    host_asset_load_texture_id(path_id, nearest)
+  })
+}
 
 ///|
-pub fn host_asset_load_wgsl(path : String) -> Int = "mgstudio_host" "asset_load_wgsl"
+fn host_asset_load_texture_id(path_id : Int, nearest : Bool) -> Int = "mgstudio_host" "asset_load_texture"
+
+///|
+pub fn host_asset_load_wgsl(path : String) -> Int {
+  @core.with_host_string_id(path, fn(path_id) {
+    host_asset_load_wgsl_id(path_id)
+  })
+}
+
+///|
+fn host_asset_load_wgsl_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_wgsl"
 
 ///|
 pub fn host_asset_create_dynamic_texture(
