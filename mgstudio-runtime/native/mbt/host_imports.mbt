@@ -90,23 +90,69 @@ fn push_utf16_code_unit(ctx : HostContext, code_unit : Int) -> Unit {
 }
 
 ///|
-fn decode_guest_string(ctx : HostContext, value : @types.Value) -> String {
-  if ctx.store is Some(store) && ctx.instance is Some(instance) {
-    ctx.string_sink.val = ""
-    let result : Array[@types.Value] = @executor.call_exported_func(
-      store,
-      instance,
-      "mgstudio_host_string_to_js",
-      [value],
-    ) catch {
-      _ => []
+fn code_unit_from_gc_value(v : @types.Value) -> Int? {
+  match v {
+    I32(x) => Some(x & 0xFFFF)
+    I64(x) => Some(x.to_int() & 0xFFFF)
+    I31(x) => Some(x & 0xFFFF)
+    _ => None
+  }
+}
+
+///|
+fn decode_gc_utf16_array(store : @runtime.Store, array_idx : Int) -> String {
+  let n = store.array_len(array_idx) catch { _ => return "" }
+  let chars : Array[Char] = []
+  for i in 0..<n {
+    let v = store.array_get(array_idx, i) catch { _ => return "" }
+    if code_unit_from_gc_value(v) is Some(cu) {
+      chars.push(Int::unsafe_to_char(cu))
+    } else {
+      return ""
     }
-    result |> ignore
-    let out = ctx.string_sink.val
-    ctx.string_sink.val = ""
-    out
-  } else {
-    ""
+  }
+  String::from_array(chars)
+}
+
+///|
+fn decode_guest_string_fallback_via_export(
+  ctx : HostContext,
+  value : @types.Value,
+) -> String {
+  guard ctx.store is Some(store) else { return "" }
+  guard ctx.instance is Some(instance) else { return "" }
+  ctx.string_sink.val = ""
+  let result : Array[@types.Value] = @executor.call_exported_func(
+    store,
+    instance,
+    "mgstudio_host_string_to_js",
+    [value],
+  ) catch {
+    _ => []
+  }
+  result |> ignore
+  let out = ctx.string_sink.val
+  ctx.string_sink.val = ""
+  out
+}
+
+///|
+fn decode_guest_string(ctx : HostContext, value : @types.Value) -> String {
+  guard ctx.store is Some(store) else { return "" }
+  let unwrapped = store.unwrap_extern(value) catch { _ => value }
+  match unwrapped {
+    ArrayRef(array_idx) => decode_gc_utf16_array(store, array_idx)
+    StructRef(struct_idx) => {
+      // Best-effort: some runtimes may wrap string in a struct; try field 0.
+      let field0 = store.struct_get(struct_idx, 0) catch {
+        _ => @types.Value::Null
+      }
+      match field0 {
+        ArrayRef(array_idx) => decode_gc_utf16_array(store, array_idx)
+        _ => decode_guest_string_fallback_via_export(ctx, value)
+      }
+    }
+    _ => decode_guest_string_fallback_via_export(ctx, value)
   }
 }
 
