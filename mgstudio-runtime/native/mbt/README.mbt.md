@@ -19,10 +19,11 @@ back a subset of `mgstudio_host` GPU calls (surface frame + a single render pass
 sprite quads, and simple meshes).
 
 Known upstream blocker (wgpu_mbt packaging/build):
-- When `wgpu_mbt@0.1.0` is used as a dependency, its native C stub include/link
-  paths are currently resolved relative to the *consumer* workspace root. This
-  means `moon run` may fail with `wgpu.h file not found` / missing
-  `libwgpu_native.a` unless `vendor/wgpu-native` exists in this folder.
+- When `wgpu_mbt` is used as a dependency (confirmed on `0.1.0` and `0.1.1`),
+  its native C stub include/link paths are currently resolved relative to the
+  *consumer* workspace root. This means `moon run` may fail with
+  `wgpu.h file not found` / missing `libwgpu_native.a` unless
+  `vendor/wgpu-native` exists in this folder.
 
 Local workaround (until upstream fix):
 ```bash
