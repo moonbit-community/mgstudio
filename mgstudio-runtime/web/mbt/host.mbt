@@ -22,6 +22,22 @@ extern "js" fn throw_error(message : String) -> Unit =
   #| (message) => { throw new Error(message) }
 
 ///|
+extern "js" fn ensure_wasm_gc_string_api() -> Unit =
+  #| () => {
+  #|   const ok = typeof WebAssembly === "object" &&
+  #|     typeof WebAssembly.Array === "function" &&
+  #|     WebAssembly.Array &&
+  #|     WebAssembly.Array.prototype &&
+  #|     typeof WebAssembly.Array.prototype.get === "function"
+  #|   if (!ok) {
+  #|     throw new Error(
+  #|       "mgstudio-runtime-web requires WebAssembly GC JS bindings (WebAssembly.Array.prototype.get). " +
+  #|       "This browser/runtime is not supported."
+  #|     )
+  #|   }
+  #| }
+
+///|
 extern "js" fn string_sink_push(code_unit : Int) -> Unit =
   #| (codeUnit) => {
   #|   const c = Number(codeUnit) & 0xffff
@@ -39,23 +55,6 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|   }
   #|   if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
   #|     return `${value}`
-  #|   }
-  #|   // Fallback: some browsers expose wasm-gc references as fully opaque JS objects
-  #|   // (often with a null prototype). In that case, ask the guest to push UTF-16
-  #|   // code units back to the host.
-  #|   try {
-  #|     if (typeof value === "object" && value != null && Object.getPrototypeOf(value) === null) {
-  #|       const exports = globalThis.__mgstudio_wasm_exports
-  #|       const fn = exports && exports.mgstudio_host_string_to_js
-  #|       if (typeof fn === "function") {
-  #|         globalThis.__mgstudio_string_sink_buf = ""
-  #|         fn(value)
-  #|         const out = globalThis.__mgstudio_string_sink_buf || ""
-  #|         globalThis.__mgstudio_string_sink_buf = ""
-  #|         return out
-  #|       }
-  #|     }
-  #|   } catch {
   #|   }
   #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
   #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
@@ -221,23 +220,6 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #| (path) => {
   #|   if (path == null) {
   #|     throw new Error("Asset path is required")
-  #|   }
-  #|   // Fallback: some browsers expose wasm-gc references as fully opaque JS objects
-  #|   // (often with a null prototype). In that case, ask the guest to push UTF-16
-  #|   // code units back to the host.
-  #|   try {
-  #|     if (typeof path === "object" && path != null && Object.getPrototypeOf(path) === null) {
-  #|       const exports = globalThis.__mgstudio_wasm_exports
-  #|       const fn = exports && exports.mgstudio_host_string_to_js
-  #|       if (typeof fn === "function") {
-  #|         globalThis.__mgstudio_string_sink_buf = ""
-  #|         fn(path)
-  #|         const out = globalThis.__mgstudio_string_sink_buf || ""
-  #|         globalThis.__mgstudio_string_sink_buf = ""
-  #|         return out
-  #|       }
-  #|     }
-  #|   } catch {
   #|   }
   #|   let current = path
   #|   for (let i = 0; i < 4; i += 1) {
@@ -2463,6 +2445,7 @@ fn draw_gizmo_lines(state : State, data : @js.Any) -> Unit {
 
 ///|
 pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
+  ensure_wasm_gc_string_api()
   let state = new_state()
   let default_canvas = ensure_canvas(canvas_opt)
   let window_create = @js.from_fn3(fn(width, height, title) {
