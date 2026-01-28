@@ -81,6 +81,63 @@ pub fn Window::destroy(self : Window) -> Unit {
 }
 
 ///|
+/// Input: clear "just pressed/released" states for the next frame.
+pub fn Window::input_finish_frame(self : Window) -> Unit {
+  c_input_finish_frame(self.raw)
+}
+
+///|
+pub fn Window::input_has_cursor(self : Window) -> Bool {
+  c_input_has_cursor(self.raw)
+}
+
+///|
+pub fn Window::input_mouse_x(self : Window) -> Float {
+  c_input_mouse_x(self.raw)
+}
+
+///|
+pub fn Window::input_mouse_y(self : Window) -> Float {
+  c_input_mouse_y(self.raw)
+}
+
+///|
+pub fn Window::input_is_key_down(self : Window, code : Int) -> Bool {
+  c_input_is_key_down(self.raw, code)
+}
+
+///|
+pub fn Window::input_is_key_just_pressed(self : Window, code : Int) -> Bool {
+  c_input_is_key_just_pressed(self.raw, code)
+}
+
+///|
+pub fn Window::input_is_key_just_released(self : Window, code : Int) -> Bool {
+  c_input_is_key_just_released(self.raw, code)
+}
+
+///|
+pub fn Window::input_is_mouse_button_down(self : Window, button : Int) -> Bool {
+  c_input_is_mouse_button_down(self.raw, button)
+}
+
+///|
+pub fn Window::input_is_mouse_button_just_pressed(
+  self : Window,
+  button : Int,
+) -> Bool {
+  c_input_is_mouse_button_just_pressed(self.raw, button)
+}
+
+///|
+pub fn Window::input_is_mouse_button_just_released(
+  self : Window,
+  button : Int,
+) -> Bool {
+  c_input_is_mouse_button_just_released(self.raw, button)
+}
+
+///|
 #borrow(_title)
 extern "C" fn c_window_create(
   width : Int,
@@ -117,6 +174,51 @@ extern "C" fn c_window_attach_metal_layer(
   win : @wgpu_c.OpaquePtr,
   layer : @wgpu_c.OpaquePtr,
 ) -> Unit = "mgw_window_attach_metal_layer"
+
+///|
+extern "C" fn c_input_finish_frame(win : @wgpu_c.OpaquePtr) -> Unit = "mgw_input_finish_frame"
+
+///|
+extern "C" fn c_input_has_cursor(win : @wgpu_c.OpaquePtr) -> Bool = "mgw_input_has_cursor"
+
+///|
+extern "C" fn c_input_mouse_x(win : @wgpu_c.OpaquePtr) -> Float = "mgw_input_mouse_x"
+
+///|
+extern "C" fn c_input_mouse_y(win : @wgpu_c.OpaquePtr) -> Float = "mgw_input_mouse_y"
+
+///|
+extern "C" fn c_input_is_key_down(win : @wgpu_c.OpaquePtr, code : Int) -> Bool = "mgw_input_is_key_down"
+
+///|
+extern "C" fn c_input_is_key_just_pressed(
+  win : @wgpu_c.OpaquePtr,
+  code : Int,
+) -> Bool = "mgw_input_is_key_just_pressed"
+
+///|
+extern "C" fn c_input_is_key_just_released(
+  win : @wgpu_c.OpaquePtr,
+  code : Int,
+) -> Bool = "mgw_input_is_key_just_released"
+
+///|
+extern "C" fn c_input_is_mouse_button_down(
+  win : @wgpu_c.OpaquePtr,
+  button : Int,
+) -> Bool = "mgw_input_is_mouse_button_down"
+
+///|
+extern "C" fn c_input_is_mouse_button_just_pressed(
+  win : @wgpu_c.OpaquePtr,
+  button : Int,
+) -> Bool = "mgw_input_is_mouse_button_just_pressed"
+
+///|
+extern "C" fn c_input_is_mouse_button_just_released(
+  win : @wgpu_c.OpaquePtr,
+  button : Int,
+) -> Bool = "mgw_input_is_mouse_button_just_released"
 
 ///|
 /// Encode a MoonBit `String` to a UTF-8 byte buffer terminated with `\0`.

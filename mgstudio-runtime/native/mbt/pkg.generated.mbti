@@ -22,6 +22,8 @@ pub struct GpuBackend {
   device : @wgpu_mbt.Device
   queue : @wgpu_mbt.Queue
   mut surface : @wgpu_mbt.Surface?
+  mut configured_width : Int
+  mut configured_height : Int
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
   mut sprite_bgl_tex : @wgpu_mbt.BindGroupLayout?
@@ -52,6 +54,7 @@ pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 pub fn GpuBackend::end_frame(Self) -> Unit
 pub fn GpuBackend::end_pass(Self) -> Unit
+pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
 pub fn GpuBackend::new() -> Self
 
 pub struct GpuFrameState {

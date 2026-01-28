@@ -83,6 +83,85 @@ fn ok_extern_ref(id : Int) -> Array[@types.Value] {
 }
 
 ///|
+fn push_utf16_code_unit(ctx : HostContext, code_unit : Int) -> Unit {
+  let cu = code_unit & 0xFFFF
+  let ch = Int::unsafe_to_char(cu)
+  ctx.string_sink.val = ctx.string_sink.val + String::from_array([ch])
+}
+
+///|
+fn decode_guest_string(ctx : HostContext, value : @types.Value) -> String {
+  if ctx.store is Some(store) && ctx.instance is Some(instance) {
+    ctx.string_sink.val = ""
+    let result : Array[@types.Value] = @executor.call_exported_func(
+      store,
+      instance,
+      "mgstudio_host_string_to_js",
+      [value],
+    ) catch {
+      _ => []
+    }
+    result |> ignore
+    let out = ctx.string_sink.val
+    ctx.string_sink.val = ""
+    out
+  } else {
+    ""
+  }
+}
+
+///|
+fn macos_keycode_from_string(code : String) -> Int? {
+  match code {
+    "KeyA" => Some(0)
+    "KeyS" => Some(1)
+    "KeyD" => Some(2)
+    "KeyF" => Some(3)
+    "KeyH" => Some(4)
+    "KeyG" => Some(5)
+    "KeyZ" => Some(6)
+    "KeyX" => Some(7)
+    "KeyC" => Some(8)
+    "KeyV" => Some(9)
+    "KeyB" => Some(11)
+    "KeyQ" => Some(12)
+    "KeyW" => Some(13)
+    "KeyE" => Some(14)
+    "KeyR" => Some(15)
+    "KeyY" => Some(16)
+    "KeyT" => Some(17)
+    "KeyM" => Some(46)
+    "KeyN" => Some(45)
+    "KeyJ" => Some(38)
+    "KeyK" => Some(40)
+    "KeyL" => Some(37)
+    "KeyI" => Some(34)
+    "KeyO" => Some(31)
+    "KeyP" => Some(35)
+    "KeyU" => Some(32)
+    "ArrowLeft" => Some(123)
+    "ArrowRight" => Some(124)
+    "ArrowDown" => Some(125)
+    "ArrowUp" => Some(126)
+    "Space" => Some(49)
+    "Escape" => Some(53)
+    "Comma" => Some(43)
+    "Period" => Some(47)
+    _ => None
+  }
+}
+
+///|
+fn mouse_button_from_string(button : String) -> Int? {
+  match button {
+    "Left" => Some(0)
+    "Right" => Some(1)
+    "Middle" => Some(2)
+    _ => None
+  }
+}
+
+///|
 const HANDLE_BASE : Int = 10_000
 
 ///|
@@ -93,9 +172,10 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "string_sink_push",
-    fn(_args) {
-      // No-op in native bring-up. Web uses this to reconstruct strings in a
-      // fallback path; native can implement it later if needed.
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(code_unit) {
+        push_utf16_code_unit(ctx, code_unit)
+      }
       ok_i32(0)
     },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
@@ -125,10 +205,17 @@ pub fn add_mgstudio_host_imports(
       } else {
         600
       }
-      // Title is a wasm-gc string/arrayref in practice; we ignore it for now and
-      // use a fixed ASCII title. This avoids depending on guest string decoding
-      // during bring-up.
-      let win = @win.Window::create(width, height, "Moon Game Studio")
+      let title = if args.length() >= 3 {
+        let decoded = decode_guest_string(ctx, args[2])
+        if decoded == "" {
+          "Moon Game Studio"
+        } else {
+          decoded
+        }
+      } else {
+        "Moon Game Studio"
+      }
+      let win = @win.Window::create(width, height, title)
       ctx.window = Some(win)
       ok_extern_ref(HANDLE_BASE + 1)
     },
@@ -152,15 +239,11 @@ pub fn add_mgstudio_host_imports(
         guard ctx.store is Some(store) else { return ok_i32(0) }
         guard ctx.instance is Some(instance) else { return ok_i32(0) }
         while true {
-          if ctx.window is Some(win) {
-            win.poll_events()
-            if win.should_close() {
-              break
-            }
-          }
           let _ = @executor.call_func_by_index(store, instance, func_idx, [])
             |> ignore
-
+          if ctx.window is Some(win) && win.should_close() {
+            break
+          }
         }
       }
       ok_i32(0)
@@ -246,31 +329,136 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "input_finish_frame",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      ctx.window.map(fn(win) { win.input_finish_frame() }) |> ignore
+      ok_i32(0)
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_has_cursor",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      if ctx.window is Some(win) && win.input_has_cursor() {
+        ok_i32(1)
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_mouse_x",
-    fn(_args) { ok_f32(0.0) },
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_f32(win.input_mouse_x())
+      } else {
+        ok_f32(0.0)
+      }
+    },
     func_type=ft([], [@types.ValueType::F32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_mouse_y",
-    fn(_args) { ok_f32(0.0) },
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_f32(win.input_mouse_y())
+      } else {
+        ok_f32(0.0)
+      }
+    },
     func_type=ft([], [@types.ValueType::F32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_is_key_down",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if args.length() >= 1 && ctx.window is Some(win) {
+        let code = decode_guest_string(ctx, args[0])
+        if macos_keycode_from_string(code) is Some(keycode) &&
+          win.input_is_key_down(keycode) {
+          return ok_i32(1)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_is_key_just_pressed",
+    fn(args) {
+      if args.length() >= 1 && ctx.window is Some(win) {
+        let code = decode_guest_string(ctx, args[0])
+        if macos_keycode_from_string(code) is Some(keycode) &&
+          win.input_is_key_just_pressed(keycode) {
+          return ok_i32(1)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_is_key_just_released",
+    fn(args) {
+      if args.length() >= 1 && ctx.window is Some(win) {
+        let code = decode_guest_string(ctx, args[0])
+        if macos_keycode_from_string(code) is Some(keycode) &&
+          win.input_is_key_just_released(keycode) {
+          return ok_i32(1)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_is_mouse_button_down",
+    fn(args) {
+      if args.length() >= 1 && ctx.window is Some(win) {
+        let code = decode_guest_string(ctx, args[0])
+        if mouse_button_from_string(code) is Some(button) &&
+          win.input_is_mouse_button_down(button) {
+          return ok_i32(1)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_is_mouse_button_just_pressed",
+    fn(args) {
+      if args.length() >= 1 && ctx.window is Some(win) {
+        let code = decode_guest_string(ctx, args[0])
+        if mouse_button_from_string(code) is Some(button) &&
+          win.input_is_mouse_button_just_pressed(button) {
+          return ok_i32(1)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_is_mouse_button_just_released",
+    fn(args) {
+      if args.length() >= 1 && ctx.window is Some(win) {
+        let code = decode_guest_string(ctx, args[0])
+        if mouse_button_from_string(code) is Some(button) &&
+          win.input_is_mouse_button_just_released(button) {
+          return ok_i32(1)
+        }
+      }
+      ok_i32(0)
+    },
     func_type=ft([@types.ValueType::RefArray(1)], [@types.ValueType::I32]),
   )
 

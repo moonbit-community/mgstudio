@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef void *mgw_objc_id;
 typedef void *mgw_objc_sel;
@@ -45,6 +46,15 @@ typedef struct mgw_window {
   int32_t width;
   int32_t height;
   int32_t should_close;
+  int32_t has_cursor;
+  float mouse_x;
+  float mouse_y;
+  uint8_t key_down[256];
+  uint8_t key_pressed[256];
+  uint8_t key_released[256];
+  uint8_t mouse_down[8];
+  uint8_t mouse_pressed[8];
+  uint8_t mouse_released[8];
 } mgw_window_t;
 
 static void *mgw_objc_dylib = NULL;
@@ -126,6 +136,18 @@ static inline mgw_rect mgw_msg_rect(mgw_objc_id obj, mgw_objc_sel sel) {
 
 static inline void mgw_msg_void_size(mgw_objc_id obj, mgw_objc_sel sel, mgw_size sz) {
   ((void (*)(mgw_objc_id, mgw_objc_sel, mgw_size))mgw_objc_msg_send_sym)(obj, sel, sz);
+}
+
+static inline int64_t mgw_msg_i64(mgw_objc_id obj, mgw_objc_sel sel) {
+  return ((int64_t(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline uint64_t mgw_msg_u64(mgw_objc_id obj, mgw_objc_sel sel) {
+  return ((uint64_t(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline mgw_point mgw_msg_point(mgw_objc_id obj, mgw_objc_sel sel) {
+  return ((mgw_point(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
 }
 
 static inline double mgw_msg_f64(mgw_objc_id obj, mgw_objc_sel sel) {
@@ -223,6 +245,141 @@ static void mgw_window_sync_metrics(mgw_window_t *w) {
 #endif
 }
 
+static void mgw_input_handle_key(mgw_window_t *w, int32_t down, uint32_t keycode) {
+  if (!w) {
+    return;
+  }
+  if (keycode >= 256u) {
+    return;
+  }
+  uint8_t *kd = w->key_down;
+  uint8_t *kp = w->key_pressed;
+  uint8_t *kr = w->key_released;
+  if (down) {
+    if (!kd[keycode]) {
+      kp[keycode] = 1;
+    }
+    kd[keycode] = 1;
+  } else {
+    if (kd[keycode]) {
+      kr[keycode] = 1;
+    }
+    kd[keycode] = 0;
+  }
+}
+
+static void mgw_input_handle_mouse_button(mgw_window_t *w, int32_t down, uint32_t btn) {
+  if (!w) {
+    return;
+  }
+  if (btn >= 8u) {
+    return;
+  }
+  uint8_t *bd = w->mouse_down;
+  uint8_t *bp = w->mouse_pressed;
+  uint8_t *br = w->mouse_released;
+  if (down) {
+    if (!bd[btn]) {
+      bp[btn] = 1;
+    }
+    bd[btn] = 1;
+  } else {
+    if (bd[btn]) {
+      br[btn] = 1;
+    }
+    bd[btn] = 0;
+  }
+}
+
+static void mgw_input_update_mouse_location(mgw_window_t *w, mgw_objc_id ev) {
+#ifdef __APPLE__
+  if (!w || !ev || !mgw_objc_init()) {
+    return;
+  }
+  mgw_point loc = mgw_msg_point(ev, mgw_sel("locationInWindow"));
+  // Convert to top-left origin logical coordinates.
+  float x = (float)loc.x;
+  float y = (float)((double)w->height - loc.y);
+  w->mouse_x = x;
+  w->mouse_y = y;
+  // Best-effort cursor presence.
+  w->has_cursor = 1;
+#else
+  (void)w;
+  (void)ev;
+#endif
+}
+
+static void mgw_input_handle_event(mgw_window_t *w, mgw_objc_id ev) {
+#ifdef __APPLE__
+  if (!w || !ev || !mgw_objc_init()) {
+    return;
+  }
+  // NSEventType values (stable across modern macOS).
+  // https://developer.apple.com/documentation/appkit/nseventtype
+  const int64_t ty = mgw_msg_i64(ev, mgw_sel("type"));
+  switch (ty) {
+  case 10: { // KeyDown
+    uint32_t keycode = (uint32_t)mgw_msg_u64(ev, mgw_sel("keyCode"));
+    mgw_input_handle_key(w, 1, keycode);
+    break;
+  }
+  case 11: { // KeyUp
+    uint32_t keycode = (uint32_t)mgw_msg_u64(ev, mgw_sel("keyCode"));
+    mgw_input_handle_key(w, 0, keycode);
+    break;
+  }
+  case 1: // LeftMouseDown
+    mgw_input_handle_mouse_button(w, 1, 0);
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  case 2: // LeftMouseUp
+    mgw_input_handle_mouse_button(w, 0, 0);
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  case 3: // RightMouseDown
+    mgw_input_handle_mouse_button(w, 1, 1);
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  case 4: // RightMouseUp
+    mgw_input_handle_mouse_button(w, 0, 1);
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  case 25: { // OtherMouseDown
+    uint32_t btn = (uint32_t)mgw_msg_u64(ev, mgw_sel("buttonNumber"));
+    uint32_t mapped = btn > 7u ? 7u : btn;
+    mgw_input_handle_mouse_button(w, 1, mapped);
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  }
+  case 26: { // OtherMouseUp
+    uint32_t btn = (uint32_t)mgw_msg_u64(ev, mgw_sel("buttonNumber"));
+    uint32_t mapped = btn > 7u ? 7u : btn;
+    mgw_input_handle_mouse_button(w, 0, mapped);
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  }
+  case 5:  // MouseMoved
+  case 6:  // LeftMouseDragged
+  case 7:  // RightMouseDragged
+  case 27: // OtherMouseDragged
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  case 8: // MouseEntered
+    w->has_cursor = 1;
+    break;
+  case 9: // MouseExited
+    w->has_cursor = 0;
+    break;
+  default:
+    break;
+  }
+#else
+  (void)w;
+  (void)ev;
+#endif
+}
+
 MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbit_bytes_t title) {
 #ifndef __APPLE__
   (void)width;
@@ -273,6 +430,8 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   }
 
   mgw_msg_void_bool(win, mgw_sel("setReleasedWhenClosed:"), false);
+  // Ensure we receive mouse move events.
+  mgw_msg_void_bool(win, mgw_sel("setAcceptsMouseMovedEvents:"), true);
   mgw_msg_void(win, mgw_sel("center"));
   mgw_msg_void_id(win, mgw_sel("makeKeyAndOrderFront:"), NULL);
 
@@ -285,6 +444,15 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   out->width = width;
   out->height = height;
   out->should_close = 0;
+  out->has_cursor = 0;
+  out->mouse_x = 0.0f;
+  out->mouse_y = 0.0f;
+  memset(out->key_down, 0, sizeof(out->key_down));
+  memset(out->key_pressed, 0, sizeof(out->key_pressed));
+  memset(out->key_released, 0, sizeof(out->key_released));
+  memset(out->mouse_down, 0, sizeof(out->mouse_down));
+  memset(out->mouse_pressed, 0, sizeof(out->mouse_pressed));
+  memset(out->mouse_released, 0, sizeof(out->mouse_released));
 
   // Sync actual content view size (and later Metal layer) to avoid drift.
   mgw_window_sync_metrics(out);
@@ -357,6 +525,7 @@ MOONBIT_FFI_EXPORT void mgw_window_poll_events(void *win) {
       if (!ev) {
         break;
       }
+      mgw_input_handle_event(w, ev);
       ((void (*)(mgw_objc_id, mgw_objc_sel, mgw_objc_id))mgw_objc_msg_send_sym)(app, send_event_sel, ev);
     }
     mgw_msg_void(app, update_sel);
@@ -451,4 +620,116 @@ MOONBIT_FFI_EXPORT void mgw_window_attach_metal_layer(void *win, void *layer) {
   (void)win;
   (void)layer;
 #endif
+}
+
+// -----------------------------------------------------------------------------
+// Input query API (stored on mgw_window_t)
+// -----------------------------------------------------------------------------
+
+MOONBIT_FFI_EXPORT void mgw_input_finish_frame(void *win) {
+  if (!win) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  memset(w->key_pressed, 0, sizeof(w->key_pressed));
+  memset(w->key_released, 0, sizeof(w->key_released));
+  memset(w->mouse_pressed, 0, sizeof(w->mouse_pressed));
+  memset(w->mouse_released, 0, sizeof(w->mouse_released));
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_has_cursor(void *win) {
+  if (!win) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->has_cursor != 0;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_mouse_x(void *win) {
+  if (!win) {
+    return 0.0f;
+  }
+  return ((mgw_window_t *)win)->mouse_x;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_mouse_y(void *win) {
+  if (!win) {
+    return 0.0f;
+  }
+  return ((mgw_window_t *)win)->mouse_y;
+}
+
+static inline int32_t mgw_clamp_index_i32(int32_t v, int32_t max_exclusive) {
+  if (v < 0) {
+    return -1;
+  }
+  if (v >= max_exclusive) {
+    return -1;
+  }
+  return v;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_is_key_down(void *win, int32_t code) {
+  if (!win) {
+    return 0;
+  }
+  int32_t idx = mgw_clamp_index_i32(code, 256);
+  if (idx < 0) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->key_down[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_is_key_just_pressed(void *win, int32_t code) {
+  if (!win) {
+    return 0;
+  }
+  int32_t idx = mgw_clamp_index_i32(code, 256);
+  if (idx < 0) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->key_pressed[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_is_key_just_released(void *win, int32_t code) {
+  if (!win) {
+    return 0;
+  }
+  int32_t idx = mgw_clamp_index_i32(code, 256);
+  if (idx < 0) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->key_released[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_is_mouse_button_down(void *win, int32_t button) {
+  if (!win) {
+    return 0;
+  }
+  int32_t idx = mgw_clamp_index_i32(button, 8);
+  if (idx < 0) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->mouse_down[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_is_mouse_button_just_pressed(void *win, int32_t button) {
+  if (!win) {
+    return 0;
+  }
+  int32_t idx = mgw_clamp_index_i32(button, 8);
+  if (idx < 0) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->mouse_pressed[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_is_mouse_button_just_released(void *win, int32_t button) {
+  if (!win) {
+    return 0;
+  }
+  int32_t idx = mgw_clamp_index_i32(button, 8);
+  if (idx < 0) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->mouse_released[idx] != 0;
 }

@@ -17,6 +17,16 @@ pub fn Window::attach_metal_layer(Self, @c.OpaquePtr) -> Unit
 pub fn Window::create(Int, Int, String) -> Self
 pub fn Window::destroy(Self) -> Unit
 pub fn Window::height(Self) -> Int
+pub fn Window::input_finish_frame(Self) -> Unit
+pub fn Window::input_has_cursor(Self) -> Bool
+pub fn Window::input_is_key_down(Self, Int) -> Bool
+pub fn Window::input_is_key_just_pressed(Self, Int) -> Bool
+pub fn Window::input_is_key_just_released(Self, Int) -> Bool
+pub fn Window::input_is_mouse_button_down(Self, Int) -> Bool
+pub fn Window::input_is_mouse_button_just_pressed(Self, Int) -> Bool
+pub fn Window::input_is_mouse_button_just_released(Self, Int) -> Bool
+pub fn Window::input_mouse_x(Self) -> Float
+pub fn Window::input_mouse_y(Self) -> Float
 pub fn Window::is_null(Self) -> Bool
 pub fn Window::poll_events(Self) -> Unit
 pub fn Window::request_close(Self) -> Unit
