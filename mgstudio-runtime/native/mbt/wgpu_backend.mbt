@@ -87,6 +87,8 @@ pub struct GpuBackend {
   device : @wgpu.Device
   queue : @wgpu.Queue
   mut surface : @wgpu.Surface?
+  mut configured_width : Int
+  mut configured_height : Int
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
 
@@ -123,6 +125,8 @@ pub fn GpuBackend::new() -> GpuBackend {
     device,
     queue,
     surface: None,
+    configured_width: 0,
+    configured_height: 0,
     frame: None,
     pass_state: None,
     sprite_bgl_tex: None,
@@ -332,6 +336,8 @@ pub fn GpuBackend::configure_surface(
   height : Int,
 ) -> Unit {
   guard self.surface is Some(surface) else { return }
+  self.configured_width = width
+  self.configured_height = height
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   // Surface textures cannot be used as sampled textures (`texture_binding`).
@@ -339,6 +345,25 @@ pub fn GpuBackend::configure_surface(
   let usage = @wgpu.texture_usage_render_attachment |
     @wgpu.texture_usage_copy_src
   surface.configure_default(self.adapter, self.device, w, h, usage) |> ignore
+}
+
+///|
+/// Ensure the surface is configured for the latest window size.
+///
+/// This is a bring-up convenience: the guest does not yet have a resize event
+/// path, so the host keeps the surface in sync.
+pub fn GpuBackend::ensure_surface_configured(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+) -> Unit {
+  if self.surface is None {
+    return
+  }
+  if width == self.configured_width && height == self.configured_height {
+    return
+  }
+  self.configure_surface(width, height)
 }
 
 ///|

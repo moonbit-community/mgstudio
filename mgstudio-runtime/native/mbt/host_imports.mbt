@@ -495,6 +495,9 @@ pub fn add_mgstudio_host_imports(
       if ctx.gpu is None {
         ctx.gpu = Some(GpuBackend::new())
       }
+      if ctx.window is Some(win) {
+        ctx.gpu.unwrap().ensure_surface_configured(win.width(), win.height())
+      }
       ctx.gpu.unwrap().begin_frame()
       ok_extern_ref(HANDLE_BASE + 4)
     },

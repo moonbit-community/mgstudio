@@ -41,6 +41,7 @@ typedef struct {
 typedef struct mgw_window {
   mgw_objc_id ns_window;
   mgw_objc_id content_view;
+  mgw_objc_id metal_layer;
   int32_t width;
   int32_t height;
   int32_t should_close;
@@ -111,6 +112,22 @@ static inline void mgw_msg_void_i64(mgw_objc_id obj, mgw_objc_sel sel, int64_t v
   ((void (*)(mgw_objc_id, mgw_objc_sel, int64_t))mgw_objc_msg_send_sym)(obj, sel, v);
 }
 
+static inline void mgw_msg_void_f64(mgw_objc_id obj, mgw_objc_sel sel, double v) {
+  ((void (*)(mgw_objc_id, mgw_objc_sel, double))mgw_objc_msg_send_sym)(obj, sel, v);
+}
+
+static inline mgw_rect mgw_msg_rect(mgw_objc_id obj, mgw_objc_sel sel) {
+  // NOTE: This assumes the platform ABI can return `NSRect` (4x f64) via
+  // `objc_msgSend` when cast to the appropriate function pointer type.
+  // If this becomes unreliable, we should switch to an Objective-C stub or a
+  // dedicated C helper that avoids struct returns.
+  return ((mgw_rect(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline void mgw_msg_void_size(mgw_objc_id obj, mgw_objc_sel sel, mgw_size sz) {
+  ((void (*)(mgw_objc_id, mgw_objc_sel, mgw_size))mgw_objc_msg_send_sym)(obj, sel, sz);
+}
+
 static inline double mgw_msg_f64(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((double (*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
 }
@@ -170,6 +187,42 @@ static void mgw_autorelease_pool_drain(mgw_objc_id pool) {
   mgw_msg_void(pool, mgw_sel("drain"));
 }
 
+static void mgw_window_sync_metrics(mgw_window_t *w) {
+#ifdef __APPLE__
+  if (!w || !w->ns_window || !w->content_view || !mgw_objc_init()) {
+    return;
+  }
+  // Update logical size from the content view bounds.
+  mgw_rect bounds = mgw_msg_rect(w->content_view, mgw_sel("bounds"));
+  if (!(bounds.size.w > 0.0) || !(bounds.size.h > 0.0)) {
+    return;
+  }
+  int32_t new_w = (int32_t)(bounds.size.w + 0.5);
+  int32_t new_h = (int32_t)(bounds.size.h + 0.5);
+  if (new_w < 1) {
+    new_w = 1;
+  }
+  if (new_h < 1) {
+    new_h = 1;
+  }
+  w->width = new_w;
+  w->height = new_h;
+
+  // Keep CAMetalLayer in sync with backing scale and drawable size (in pixels).
+  if (w->metal_layer) {
+    double scale = mgw_msg_f64(w->ns_window, mgw_sel("backingScaleFactor"));
+    if (!(scale > 0.0)) {
+      scale = 1.0;
+    }
+    mgw_msg_void_f64(w->metal_layer, mgw_sel("setContentsScale:"), scale);
+    mgw_size drawable = {.w = bounds.size.w * scale, .h = bounds.size.h * scale};
+    mgw_msg_void_size(w->metal_layer, mgw_sel("setDrawableSize:"), drawable);
+  }
+#else
+  (void)w;
+#endif
+}
+
 MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbit_bytes_t title) {
 #ifndef __APPLE__
   (void)width;
@@ -197,8 +250,8 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   }
 
   mgw_rect rect = {.origin = {.x = 0.0, .y = 0.0}, .size = {.w = (double)width, .h = (double)height}};
-  // NSWindowStyleMaskTitled | Closable | Miniaturizable (no resize for bring-up).
-  uint64_t style = 1ull | 2ull | 4ull;
+  // NSWindowStyleMaskTitled | Closable | Miniaturizable | Resizable.
+  uint64_t style = 1ull | 2ull | 4ull | 8ull;
   // NSBackingStoreBuffered == 2
   uint64_t backing = 2ull;
   bool defer = false;
@@ -228,9 +281,13 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   mgw_window_t *out = (mgw_window_t *)calloc(1, sizeof(mgw_window_t));
   out->ns_window = win;
   out->content_view = content_view;
+  out->metal_layer = NULL;
   out->width = width;
   out->height = height;
   out->should_close = 0;
+
+  // Sync actual content view size (and later Metal layer) to avoid drift.
+  mgw_window_sync_metrics(out);
 
   mgw_autorelease_pool_drain(pool);
   return (void *)out;
@@ -304,6 +361,8 @@ MOONBIT_FFI_EXPORT void mgw_window_poll_events(void *win) {
     }
     mgw_msg_void(app, update_sel);
   }
+
+  mgw_window_sync_metrics(w);
 
   // Mark closed when the window is no longer visible.
   w->should_close = mgw_msg_bool(w->ns_window, mgw_sel("isVisible")) ? 0 : 1;
@@ -384,6 +443,8 @@ MOONBIT_FFI_EXPORT void mgw_window_attach_metal_layer(void *win, void *layer) {
   // [contentView setWantsLayer:YES]; [contentView setLayer:layer];
   mgw_msg_void_bool(w->content_view, mgw_sel("setWantsLayer:"), true);
   mgw_msg_void_id(w->content_view, mgw_sel("setLayer:"), (mgw_objc_id)layer);
+  w->metal_layer = (mgw_objc_id)layer;
+  mgw_window_sync_metrics(w);
 
   mgw_autorelease_pool_drain(pool);
 #else
