@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio-runtime-native/window"
+
+import {
+  "Milky2018/wgpu_mbt/c",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Window {
+  raw : @c.OpaquePtr
+}
+pub fn Window::attach_metal_layer(Self, @c.OpaquePtr) -> Unit
+pub fn Window::create(Int, Int, String) -> Self
+pub fn Window::destroy(Self) -> Unit
+pub fn Window::height(Self) -> Int
+pub fn Window::is_null(Self) -> Bool
+pub fn Window::poll_events(Self) -> Unit
+pub fn Window::request_close(Self) -> Unit
+pub fn Window::scale_factor(Self) -> Float
+pub fn Window::should_close(Self) -> Bool
+pub fn Window::width(Self) -> Int
+
+// Type aliases
+
+// Traits
+

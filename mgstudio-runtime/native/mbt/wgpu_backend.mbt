@@ -313,11 +313,16 @@ fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit {
 }
 
 ///|
-pub fn GpuBackend::create_surface(self : GpuBackend) -> Unit {
+pub fn GpuBackend::create_surface(
+  self : GpuBackend,
+  window : @win.Window,
+) -> Unit {
   if self.surface is Some(_) {
     return
   }
-  self.surface = Some(self.instance.create_surface_metal_layer())
+  let surface = self.instance.create_surface_metal_layer()
+  window.attach_metal_layer(surface.layer)
+  self.surface = Some(surface)
 }
 
 ///|
@@ -326,7 +331,6 @@ pub fn GpuBackend::configure_surface(
   width : Int,
   height : Int,
 ) -> Unit {
-  self.create_surface()
   guard self.surface is Some(surface) else { return }
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
@@ -339,7 +343,6 @@ pub fn GpuBackend::configure_surface(
 
 ///|
 pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
-  self.create_surface()
   guard self.surface is Some(surface) else { return }
   let st = surface.get_current_texture()
   let tex = st.take_texture()

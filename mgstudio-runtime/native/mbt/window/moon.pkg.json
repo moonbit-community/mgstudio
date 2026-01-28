@@ -1,0 +1,16 @@
+{
+  "import": [
+    {
+      "path": "Milky2018/wgpu_mbt/c",
+      "alias": "wgpu_c"
+    }
+  ],
+  "native-stub": [
+    "macos_window.c"
+  ],
+  "targets": {
+    "window.mbt": [
+      "native"
+    ]
+  }
+}

@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio-runtime-native"
 
 import {
+  "Milky2018/mgstudio-runtime-native/window",
   "Milky2018/wasmoon/runtime",
   "Milky2018/wasmoon/types",
   "Milky2018/wgpu_mbt",
@@ -46,7 +47,7 @@ pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int
-pub fn GpuBackend::create_surface(Self) -> Unit
+pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 pub fn GpuBackend::end_frame(Self) -> Unit
@@ -96,6 +97,7 @@ pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
   mut gpu : GpuBackend?
+  mut window : @window.Window?
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   string_sink : Ref[String]

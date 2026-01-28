@@ -26,6 +26,7 @@ pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
   mut gpu : GpuBackend?
+  mut window : @win.Window?
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   // (id, env, func_idx)
@@ -38,6 +39,7 @@ pub fn HostContext::new() -> HostContext {
     store: None,
     instance: None,
     gpu: None,
+    window: None,
     next_closure_id: Ref::new(1),
     closures: Ref::new([]),
     string_sink: Ref::new(""),
@@ -112,8 +114,22 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "window_create",
-    fn(_args) {
-      // Use a stable non-null handle to avoid guest-side unwrap/panic.
+    fn(args) {
+      let width = if args.length() >= 1 && args[0] is @types.Value::I32(w) {
+        w
+      } else {
+        800
+      }
+      let height = if args.length() >= 2 && args[1] is @types.Value::I32(h) {
+        h
+      } else {
+        600
+      }
+      // Title is a wasm-gc string/arrayref in practice; we ignore it for now and
+      // use a fixed ASCII title. This avoids depending on guest string decoding
+      // during bring-up.
+      let win = @win.Window::create(width, height, "Moon Game Studio")
+      ctx.window = Some(win)
       ok_extern_ref(HANDLE_BASE + 1)
     },
     func_type=ft(
@@ -129,9 +145,19 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "window_run_loop",
     fn(args) {
-      // Bring-up: call the tick function once if we can.
-      if args.length() > 0 && args[0] is @types.Value::FuncRef(func_idx) {
-        if ctx.store is Some(store) && ctx.instance is Some(instance) {
+      if args.length() == 0 {
+        return ok_i32(0)
+      }
+      if args[0] is @types.Value::FuncRef(func_idx) {
+        guard ctx.store is Some(store) else { return ok_i32(0) }
+        guard ctx.instance is Some(instance) else { return ok_i32(0) }
+        while true {
+          if ctx.window is Some(win) {
+            win.poll_events()
+            if win.should_close() {
+              break
+            }
+          }
           let _ = @executor.call_func_by_index(store, instance, func_idx, [])
             |> ignore
 
@@ -144,37 +170,67 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "window_poll_events",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      ctx.window.map(fn(win) { win.poll_events() }) |> ignore
+      ok_i32(0)
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "window_get_width",
-    fn(_args) { ok_i32(800) },
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_i32(win.width())
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "window_get_height",
-    fn(_args) { ok_i32(600) },
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_i32(win.height())
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "window_get_scale_factor",
-    fn(_args) { ok_f32(1.0) },
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_f32(win.scale_factor())
+      } else {
+        ok_f32(1.0)
+      }
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::F32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "window_should_close",
-    fn(_args) { ok_i32(1) },
+    fn(_args) {
+      if ctx.window is Some(win) && !win.should_close() {
+        ok_i32(0)
+      } else {
+        ok_i32(1)
+      }
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "window_request_close",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      ctx.window.map(fn(win) { win.request_close() }) |> ignore
+      ok_i32(0)
+    },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
 
@@ -401,7 +457,9 @@ pub fn add_mgstudio_host_imports(
       if ctx.gpu is None {
         ctx.gpu = Some(GpuBackend::new())
       }
-      ctx.gpu.unwrap().create_surface()
+      if ctx.window is Some(win) {
+        ctx.gpu.unwrap().create_surface(win)
+      }
       ok_extern_ref(HANDLE_BASE + 3)
     },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),

@@ -6,6 +6,10 @@
       "alias": "wgpu"
     },
     {
+      "path": "Milky2018/mgstudio-runtime-native/window",
+      "alias": "win"
+    },
+    {
       "path": "moonbitlang/core/math",
       "alias": "coremath"
     },
