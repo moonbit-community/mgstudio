@@ -30,7 +30,6 @@ pub struct HostContext {
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   // (id, env, func_idx)
-  string_sink : Ref[String]
 }
 
 ///|
@@ -42,7 +41,6 @@ pub fn HostContext::new() -> HostContext {
     window: None,
     next_closure_id: Ref::new(1),
     closures: Ref::new([]),
-    string_sink: Ref::new(""),
   }
 }
 
@@ -83,13 +81,6 @@ fn ok_extern_ref(id : Int) -> Array[@types.Value] {
 }
 
 ///|
-fn push_utf16_code_unit(ctx : HostContext, code_unit : Int) -> Unit {
-  let cu = code_unit & 0xFFFF
-  let ch = Int::unsafe_to_char(cu)
-  ctx.string_sink.val = ctx.string_sink.val + String::from_array([ch])
-}
-
-///|
 fn code_unit_from_gc_value(v : @types.Value) -> Int? {
   match v {
     I32(x) => Some(x & 0xFFFF)
@@ -115,28 +106,6 @@ fn decode_gc_utf16_array(store : @runtime.Store, array_idx : Int) -> String {
 }
 
 ///|
-fn decode_guest_string_fallback_via_export(
-  ctx : HostContext,
-  value : @types.Value,
-) -> String {
-  guard ctx.store is Some(store) else { return "" }
-  guard ctx.instance is Some(instance) else { return "" }
-  ctx.string_sink.val = ""
-  let result : Array[@types.Value] = @executor.call_exported_func(
-    store,
-    instance,
-    "mgstudio_host_string_to_js",
-    [value],
-  ) catch {
-    _ => []
-  }
-  result |> ignore
-  let out = ctx.string_sink.val
-  ctx.string_sink.val = ""
-  out
-}
-
-///|
 fn decode_guest_string(ctx : HostContext, value : @types.Value) -> String {
   guard ctx.store is Some(store) else { return "" }
   let unwrapped = store.unwrap_extern(value) catch { _ => value }
@@ -149,10 +118,10 @@ fn decode_guest_string(ctx : HostContext, value : @types.Value) -> String {
       }
       match field0 {
         ArrayRef(array_idx) => decode_gc_utf16_array(store, array_idx)
-        _ => decode_guest_string_fallback_via_export(ctx, value)
+        _ => ""
       }
     }
-    _ => decode_guest_string_fallback_via_export(ctx, value)
+    _ => ""
   }
 }
 
@@ -218,12 +187,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "string_sink_push",
-    fn(args) {
-      if args.length() >= 1 && args[0] is @types.Value::I32(code_unit) {
-        push_utf16_code_unit(ctx, code_unit)
-      }
-      ok_i32(0)
-    },
+    fn(_args) { ok_i32(0) },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
