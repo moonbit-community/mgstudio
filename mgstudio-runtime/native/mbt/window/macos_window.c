@@ -43,8 +43,12 @@ typedef struct mgw_window {
   mgw_objc_id ns_window;
   mgw_objc_id content_view;
   mgw_objc_id metal_layer;
+  // Physical size in pixels (used for surface configuration).
   int32_t width;
   int32_t height;
+  // Logical size in points (used for input coordinate conversion).
+  int32_t logical_width;
+  int32_t logical_height;
   int32_t should_close;
   int32_t has_cursor;
   float mouse_x;
@@ -219,23 +223,35 @@ static void mgw_window_sync_metrics(mgw_window_t *w) {
   if (!(bounds.size.w > 0.0) || !(bounds.size.h > 0.0)) {
     return;
   }
-  int32_t new_w = (int32_t)(bounds.size.w + 0.5);
-  int32_t new_h = (int32_t)(bounds.size.h + 0.5);
-  if (new_w < 1) {
-    new_w = 1;
+  int32_t logical_w = (int32_t)(bounds.size.w + 0.5);
+  int32_t logical_h = (int32_t)(bounds.size.h + 0.5);
+  if (logical_w < 1) {
+    logical_w = 1;
   }
-  if (new_h < 1) {
-    new_h = 1;
+  if (logical_h < 1) {
+    logical_h = 1;
   }
-  w->width = new_w;
-  w->height = new_h;
+  w->logical_width = logical_w;
+  w->logical_height = logical_h;
+
+  // Convert to physical pixels using backing scale factor.
+  double scale = mgw_msg_f64(w->ns_window, mgw_sel("backingScaleFactor"));
+  if (!(scale > 0.0)) {
+    scale = 1.0;
+  }
+  int32_t physical_w = (int32_t)(bounds.size.w * scale + 0.5);
+  int32_t physical_h = (int32_t)(bounds.size.h * scale + 0.5);
+  if (physical_w < 1) {
+    physical_w = 1;
+  }
+  if (physical_h < 1) {
+    physical_h = 1;
+  }
+  w->width = physical_w;
+  w->height = physical_h;
 
   // Keep CAMetalLayer in sync with backing scale and drawable size (in pixels).
   if (w->metal_layer) {
-    double scale = mgw_msg_f64(w->ns_window, mgw_sel("backingScaleFactor"));
-    if (!(scale > 0.0)) {
-      scale = 1.0;
-    }
     mgw_msg_void_f64(w->metal_layer, mgw_sel("setContentsScale:"), scale);
     mgw_size drawable = {.w = bounds.size.w * scale, .h = bounds.size.h * scale};
     mgw_msg_void_size(w->metal_layer, mgw_sel("setDrawableSize:"), drawable);
@@ -299,7 +315,7 @@ static void mgw_input_update_mouse_location(mgw_window_t *w, mgw_objc_id ev) {
   mgw_point loc = mgw_msg_point(ev, mgw_sel("locationInWindow"));
   // Convert to top-left origin logical coordinates.
   float x = (float)loc.x;
-  float y = (float)((double)w->height - loc.y);
+  float y = (float)((double)w->logical_height - loc.y);
   w->mouse_x = x;
   w->mouse_y = y;
   // Best-effort cursor presence.
@@ -441,8 +457,11 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   out->ns_window = win;
   out->content_view = content_view;
   out->metal_layer = NULL;
+  // Initialize with caller-provided logical size; sync will overwrite with actual values.
   out->width = width;
   out->height = height;
+  out->logical_width = width;
+  out->logical_height = height;
   out->should_close = 0;
   out->has_cursor = 0;
   out->mouse_x = 0.0f;

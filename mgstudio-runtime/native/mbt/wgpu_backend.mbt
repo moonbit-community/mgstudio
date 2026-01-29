@@ -271,7 +271,10 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
     #|  );
     #|  var out: VSOut;
     #|  out.pos = vec4<f32>(u.center + off, 0.0, 1.0);
-    #|  let t = (base + vec2<f32>(1.0, 1.0)) * 0.5;
+    #|  // Note: NDC Y grows upward, but texture V grows downward (v=0 at top).
+    #|  // Flip the interpolation Y to match WebGPU/wgpu UV conventions.
+    #|  let t0 = (base + vec2<f32>(1.0, 1.0)) * 0.5;
+    #|  let t = vec2<f32>(t0.x, 1.0 - t0.y);
     #|  out.uv = mix(u.uv_min, u.uv_max, t);
     #|  out.color = u.color;
     #|  return out;
