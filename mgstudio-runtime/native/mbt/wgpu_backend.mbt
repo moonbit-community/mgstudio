@@ -754,8 +754,6 @@ fn pack_sprite_uniform(pack : SpriteUniformPack) -> Bytes {
     pack.uv_min_y,
     pack.uv_max_x,
     pack.uv_max_y,
-    0.0F,
-    0.0F,
     pack.color_r,
     pack.color_g,
     pack.color_b,
