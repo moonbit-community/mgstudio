@@ -4,6 +4,7 @@ package "Milky2018/mgstudio-cli/main"
 // Values
 
 // Errors
+type RunError
 
 // Types and methods
 type EcsTags
@@ -11,6 +12,8 @@ type EcsTags
 type GenOptions
 
 type ModuleInfo
+
+type RunNativeOptions
 
 type TypeRef
 

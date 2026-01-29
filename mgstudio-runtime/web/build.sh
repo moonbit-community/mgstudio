@@ -23,7 +23,12 @@ RUNTIME_DIR="$SCRIPT_DIR/mbt"
 RUNTIME_BUNDLE="$RUNTIME_DIR/_build/js/release/build/mgstudio-runtime-web.js"
 WEB_BUNDLE="$SCRIPT_DIR/mgstudio-runtime-web.js"
 
-moon build --release --target "$TARGET" -C "$ENGINE_DIR" "$ENGINE_DIR/examples/runner"
+# Build engine examples (each example is its own package / wasm).
+for pkg in "$ENGINE_DIR/examples/2d"/*; do
+  if [[ -f "$pkg/moon.pkg.json" ]]; then
+    moon build --release --target "$TARGET" -C "$ENGINE_DIR" "$pkg"
+  fi
+done
 moon build --release --target js -C "$RUNTIME_DIR"
 
 if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
@@ -34,14 +39,7 @@ fi
 cp "$RUNTIME_BUNDLE" "$WEB_BUNDLE"
 echo "Copied runtime JS bundle to $WEB_BUNDLE"
 
-WASM_PATH="$ENGINE_DIR/_build/$TARGET/release/build/examples/runner/runner.wasm"
-if [[ ! -f "$WASM_PATH" ]]; then
-  echo "runner.wasm not found at $WASM_PATH" >&2
-  exit 1
-fi
-
-cp "$WASM_PATH" "$SCRIPT_DIR/runner.wasm"
-echo "Copied runner.wasm to $SCRIPT_DIR/runner.wasm"
+echo "Engine examples built under: $ENGINE_DIR/_build/$TARGET/release/build/examples"
 
 ASSETS_DIR="$ENGINE_DIR/assets"
 if [[ -d "$ASSETS_DIR" ]]; then

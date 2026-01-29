@@ -5,7 +5,7 @@ Developer CLI for mgstudio (native-only).
 ## Commands
 
 - `mgstudio gen`: scan MoonBit source files for mgstudio tags (`#ecs.component`, `#ecs.resource`) and generate per-package `ecs.g.mbt`. Optionally generates a concrete ECS `World` package.
-- `mgstudio run`: build the wasm-gc runner and execute it in the native runtime.
+- `mgstudio run`: run a wasm-gc game module in the native runtime (calls export `game_app`).
 
 ## Usage
 
@@ -16,7 +16,12 @@ From the repo root (recommended), use the wrapper script:
 ./mgstudio gen --workspace . --write
 ./mgstudio gen --workspace . --check
 ./mgstudio gen --workspace . --world-pkg mgstudio-engine/ecs_world
-./mgstudio run --example sprite
+
+# Build a game wasm (example).
+moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
+
+# Run the wasm (calls export: game_app).
+./mgstudio run mgstudio-runtime/examples/2d/sprite/sprite.wasm
 ```
 
 ## Install (Local Symlink)

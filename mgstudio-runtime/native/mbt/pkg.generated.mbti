@@ -22,6 +22,7 @@ pub struct GpuBackend {
   device : @wgpu_mbt.Device
   queue : @wgpu_mbt.Queue
   mut surface : @wgpu_mbt.Surface?
+  mut surface_format : UInt
   mut configured_width : Int
   mut configured_height : Int
   mut frame : GpuFrameState?
@@ -48,6 +49,7 @@ pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, F
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
+pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int

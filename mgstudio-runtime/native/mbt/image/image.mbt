@@ -25,13 +25,13 @@ pub struct DecodedImage {
 
 ///|
 pub fn DecodedImage::is_null(self : DecodedImage) -> Bool {
-  c_image_is_null(self.raw)
+  c_image_is_null_i32(self.raw) != 0
 }
 
 ///|
 pub fn decode_rgba8(bytes : Bytes) -> DecodedImage? {
   let raw = c_decode_rgba8(bytes)
-  if c_image_is_null(raw) {
+  if c_image_is_null_i32(raw) != 0 {
     None
   } else {
     Some(DecodedImage::{ raw, })
@@ -63,7 +63,7 @@ pub fn DecodedImage::destroy(self : DecodedImage) -> Unit {
 extern "C" fn c_decode_rgba8(bytes : Bytes) -> @wgpu_c.OpaquePtr = "mgimg_decode_rgba8"
 
 ///|
-extern "C" fn c_image_is_null(img : @wgpu_c.OpaquePtr) -> Bool = "mgimg_image_is_null"
+extern "C" fn c_image_is_null_i32(img : @wgpu_c.OpaquePtr) -> Int = "mgimg_image_is_null"
 
 ///|
 extern "C" fn c_image_width(img : @wgpu_c.OpaquePtr) -> Int = "mgimg_image_width"

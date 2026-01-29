@@ -14,7 +14,6 @@
 
 #include "moonbit.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,7 +82,9 @@ MOONBIT_FFI_EXPORT void *mgimg_decode_rgba8(moonbit_bytes_t bytes) {
   return (void *)img;
 }
 
-MOONBIT_FFI_EXPORT bool mgimg_image_is_null(void *img) { return img == NULL; }
+// Avoid depending on C99 `bool` in the toolchain used by MoonBit FFI builds.
+// The MoonBit side treats non-zero as true.
+MOONBIT_FFI_EXPORT int32_t mgimg_image_is_null(void *img) { return img == NULL ? 1 : 0; }
 
 MOONBIT_FFI_EXPORT int32_t mgimg_image_width(void *img) {
   if (!img) {

@@ -87,6 +87,7 @@ pub struct GpuBackend {
   device : @wgpu.Device
   queue : @wgpu.Queue
   mut surface : @wgpu.Surface?
+  mut surface_format : UInt
   mut configured_width : Int
   mut configured_height : Int
   mut frame : GpuFrameState?
@@ -125,6 +126,7 @@ pub fn GpuBackend::new() -> GpuBackend {
     device,
     queue,
     surface: None,
+    surface_format: 0U,
     configured_width: 0,
     configured_height: 0,
     frame: None,
@@ -202,17 +204,39 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   if backend.sprite_pipeline is Some(_) {
     return
   }
-  // Texture binding group.
-  let bgl_tex = backend.device.create_bind_group_layout_sampler_texture_2d()
-  // Uniform group.
-  let bgl_ubo = backend.device.create_bind_group_layout_uniform_buffer()
+  // Texture binding group (fragment stage).
+  let b0 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+  let ok0 = b0.add_sampler(
+    0U, @wgpu.shader_stage_fragment, @wgpu.sampler_binding_type_filtering,
+  )
+  let ok1 = b0.add_texture(
+    1U, @wgpu.shader_stage_fragment, @wgpu.texture_sample_type_float, @wgpu.texture_view_dimension_2d,
+  )
+  if !ok0 || !ok1 {
+    b0.free()
+    return
+  }
+  let bgl_tex = b0.finish(backend.device, label="mgstudio_sprite_tex")
+
+  // Uniform group (vertex + fragment stages).
+  let b1 = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+  let ok2 = b1.add_buffer(
+    0U,
+    @wgpu.shader_stage_vertex | @wgpu.shader_stage_fragment,
+    @wgpu.buffer_binding_type_uniform,
+  )
+  if !ok2 {
+    b1.free()
+    return
+  }
+  let bgl_ubo = b1.finish(backend.device, label="mgstudio_sprite_ubo")
   let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_ubo)
   let wgsl : String =
     #|struct U {
     #|  center: vec2<f32>,
     #|  half_size: vec2<f32>,
     #|  rot: f32,
-    #|  _pad0: vec3<f32>,
+    #|  _pad0: f32,
     #|  uv_min: vec2<f32>,
     #|  uv_max: vec2<f32>,
     #|  color: vec4<f32>,
@@ -260,7 +284,19 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
     #|}
     #|
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let pipeline = backend.device.create_render_pipeline_rgba8_with_layout(pl, sm)
+  let format = if backend.surface_format != 0U {
+    backend.surface_format
+  } else {
+    @wgpu.texture_format_rgba8_unorm
+  }
+  let desc = @wgpu_c.render_pipeline_descriptor_color_format_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
+    format,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_sprite")
   let ubo_usage = @wgpu.buffer_usage_uniform | @wgpu.buffer_usage_copy_dst
   let ubo = backend.device.create_buffer(size=64UL, usage=ubo_usage)
   let ubo_bg = backend.device.create_bind_group_uniform_buffer(bgl_ubo, ubo)
@@ -301,6 +337,7 @@ fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit {
   let pipeline = backend.device.create_render_pipeline_rgba8_pos2_with_layout(
     pl, sm,
   )
+  pipeline.set_label("mgstudio_mesh")
   let ubo_usage = @wgpu.buffer_usage_uniform | @wgpu.buffer_usage_copy_dst
   let color_buf = backend.device.create_buffer(size=16UL, usage=ubo_usage)
   let color_bg = backend.device.create_bind_group_uniform_buffer(bgl, color_buf)
@@ -344,7 +381,14 @@ pub fn GpuBackend::configure_surface(
   // Requesting RESOURCE usage triggers a wgpu-native validation error.
   let usage = @wgpu.texture_usage_render_attachment |
     @wgpu.texture_usage_copy_src
-  surface.configure_default(self.adapter, self.device, w, h, usage) |> ignore
+  self.surface_format = surface.configure_default(
+    self.adapter,
+    self.device,
+    w,
+    h,
+    usage,
+  )
+  @debug.debug("wgpu: surface_format=" + self.surface_format.to_string())
 }
 
 ///|
@@ -692,12 +736,12 @@ fn pack_sprite_uniform(pack : SpriteUniformPack) -> Bytes {
     pack.half_ndc_y,
     pack.rot,
     0.0F,
-    0.0F,
-    0.0F,
     pack.uv_min_x,
     pack.uv_min_y,
     pack.uv_max_x,
     pack.uv_max_y,
+    0.0F,
+    0.0F,
     pack.color_r,
     pack.color_g,
     pack.color_b,

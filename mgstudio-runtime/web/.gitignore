@@ -1,4 +1,3 @@
-runner.wasm
 assets/**
 !assets/**/
 !assets/shaders/

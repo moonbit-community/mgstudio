@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/2d/move_sprite"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum Direction {
+  Left
+  Right
+}
+
+// Type aliases
+
+// Traits
+

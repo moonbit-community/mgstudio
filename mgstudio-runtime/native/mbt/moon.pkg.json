@@ -9,6 +9,10 @@
       "alias": "wgpu"
     },
     {
+      "path": "Milky2018/wgpu_mbt/c",
+      "alias": "wgpu_c"
+    },
+    {
       "path": "Milky2018/mgstudio-runtime-native/window",
       "alias": "win"
     },

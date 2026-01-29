@@ -18,7 +18,7 @@
 /// This is a "bring-up" implementation: enough to instantiate and start running
 /// the wasm-gc build. Real window/GPU/input implementations will be added later.
 ///
-/// Important: the wasm imports' signatures must match the runner.wasm import
+/// Important: the wasm imports' signatures must match the game's wasm import
 /// section; otherwise instantiation fails.
 
 ///|
@@ -70,6 +70,21 @@ fn alloc_closure(ctx : HostContext, func_idx : Int, env : @types.Value) -> Int {
   ctx.next_closure_id.val = id + 1
   ctx.closures.val.push((id, env, func_idx))
   id
+}
+
+///|
+fn funcref_to_func_idx(
+  instance : @runtime.ModuleInstance,
+  func_ref : Int,
+) -> Int? {
+  // In wasmoon, `Value::FuncRef` stores the store function address.
+  // Convert it back to a module-level function index so we can call it via the executor.
+  for i in 0..<instance.func_addrs.length() {
+    if instance.func_addrs[i] == func_ref {
+      return Some(i)
+    }
+  }
+  None
 }
 
 ///|
@@ -251,9 +266,25 @@ fn join_fs_path(base : String, entry : String) -> String {
 }
 
 ///|
+fn host_trace_enabled() -> Bool {
+  match @sys.get_env_var("MGSTUDIO_NATIVE_HOST_TRACE") {
+    Some(v) if v != "" => true
+    _ => false
+  }
+}
+
+///|
+fn host_trace(msg : String) -> Unit {
+  if host_trace_enabled() {
+    @debug.debug(msg)
+  }
+}
+
+///|
 extern "C" fn c_time_now_seconds() -> Float = "mgstudio_time_now"
 
 ///|
+#warnings("-unused_try")
 pub fn add_mgstudio_host_imports(
   linker : @runtime.Linker,
   ctx : HostContext,
@@ -262,6 +293,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "string_sink_reset",
     fn(_args) {
+      host_trace("host: string_sink_reset")
       ctx.string_sink.val.clear()
       ok_i32(0)
     },
@@ -271,6 +303,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "string_sink_push",
     fn(args) {
+      host_trace("host: string_sink_push")
       if args.length() >= 1 && code_unit_from_gc_value(args[0]) is Some(cu) {
         ctx.string_sink.val.push(Int::unsafe_to_char(cu))
       }
@@ -282,6 +315,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "string_sink_take",
     fn(_args) {
+      host_trace("host: string_sink_take")
       let text = String::from_array(ctx.string_sink.val)
       ctx.string_sink.val.clear()
       ok_i32(string_table_put(ctx, text))
@@ -292,6 +326,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "string_drop",
     fn(args) {
+      host_trace("host: string_drop")
       if args.length() >= 1 && args[0] is @types.Value::I32(id) {
         string_table_drop(ctx, id)
       }
@@ -302,9 +337,19 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "debug_string",
-    fn(_args) {
-      // Bring-up: ignore.
-      ok_i32(0)
+    fn(args) {
+      // Best-effort debug output from the guest.
+      try {
+        if args.length() >= 1 && args[0] is @types.Value::I32(id) {
+          string_table_get(ctx, id).map(fn(msg) { @debug.debug(msg) }) |> ignore
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("debug_string failed: " + err.to_string())
+          raise err
+        }
+      }
     },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
@@ -314,27 +359,35 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "window_create",
     fn(args) {
-      let width = if args.length() >= 1 && args[0] is @types.Value::I32(w) {
-        w
-      } else {
-        800
-      }
-      let height = if args.length() >= 2 && args[1] is @types.Value::I32(h) {
-        h
-      } else {
-        600
-      }
-      let title = if args.length() >= 3 {
-        match args[2] {
-          I32(id) => string_table_get(ctx, id).unwrap_or("Moon Game Studio")
-          _ => "Moon Game Studio"
+      try {
+        host_trace("host: window_create")
+        let width = if args.length() >= 1 && args[0] is @types.Value::I32(w) {
+          w
+        } else {
+          800
         }
-      } else {
-        "Moon Game Studio"
+        let height = if args.length() >= 2 && args[1] is @types.Value::I32(h) {
+          h
+        } else {
+          600
+        }
+        let title = if args.length() >= 3 {
+          match args[2] {
+            I32(id) => string_table_get(ctx, id).unwrap_or("Moon Game Studio")
+            _ => "Moon Game Studio"
+          }
+        } else {
+          "Moon Game Studio"
+        }
+        let win = @win.Window::create(width, height, title)
+        ctx.window = Some(win)
+        ok_extern_ref(HANDLE_BASE + 1)
+      } catch {
+        err => {
+          @debug.debug("window_create failed: " + err.to_string())
+          raise err
+        }
       }
-      let win = @win.Window::create(width, height, title)
-      ctx.window = Some(win)
-      ok_extern_ref(HANDLE_BASE + 1)
     },
     func_type=ft(
       [@types.ValueType::I32, @types.ValueType::I32, @types.ValueType::I32],
@@ -349,11 +402,23 @@ pub fn add_mgstudio_host_imports(
         return ok_i32(0)
       }
       if args[0] is @types.Value::FuncRef(func_idx) {
+        host_trace("host: window_run_loop start")
         guard ctx.store is Some(store) else { return ok_i32(0) }
         guard ctx.instance is Some(instance) else { return ok_i32(0) }
+        let tick_idx = funcref_to_func_idx(instance, func_idx).unwrap_or(
+          func_idx,
+        )
         while true {
-          let _ = @executor.call_func_by_index(store, instance, func_idx, [])
+          let _ = try {
+            @executor.call_func_by_index(store, instance, tick_idx, [])
             |> ignore
+            0
+          } catch {
+            err => {
+              host_trace("tick trapped: " + @runtime.format_runtime_error(err))
+              raise err
+            }
+          }
           if ctx.window is Some(win) && win.should_close() {
             break
           }
@@ -586,56 +651,63 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "asset_load_texture",
     fn(args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
-      }
-      if args.length() >= 2 &&
-        args[0] is @types.Value::I32(path_id) &&
-        args[1] is @types.Value::I32(nearest_i32) {
-        let nearest = nearest_i32 != 0
-        let rel = string_table_get(ctx, path_id).unwrap_or("")
-        if rel == "" {
-          ok_i32(
-            ctx.gpu
-            .unwrap()
-            .create_texture_rgba8(
-              1,
-              1,
-              Bytes::makei(4, _ => (255).to_byte()),
-              nearest,
-            ),
-          )
-        } else {
-          let full_path = join_fs_path(ctx.assets_root, rel)
-          let file_bytes = @fs.read_file_to_bytes(full_path) catch {
-            _ => Bytes::makei(0, _ => (0).to_byte())
-          }
-          let decoded = @img.decode_rgba8(file_bytes)
-          match decoded {
-            Some(img) => {
-              let w = img.width()
-              let h = img.height()
-              let pixels = img.pixels_rgba8()
-              img.destroy()
-              ok_i32(
-                ctx.gpu.unwrap().create_texture_rgba8(w, h, pixels, nearest),
-              )
-            }
-            None =>
-              ok_i32(
-                ctx.gpu
-                .unwrap()
-                .create_texture_rgba8(
-                  1,
-                  1,
-                  Bytes::makei(4, _ => (255).to_byte()),
-                  nearest,
-                ),
-              )
-          }
+      try {
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new())
         }
-      } else {
-        ok_i32(-1)
+        if args.length() >= 2 &&
+          args[0] is @types.Value::I32(path_id) &&
+          args[1] is @types.Value::I32(nearest_i32) {
+          let nearest = nearest_i32 != 0
+          let rel = string_table_get(ctx, path_id).unwrap_or("")
+          if rel == "" {
+            ok_i32(
+              ctx.gpu
+              .unwrap()
+              .create_texture_rgba8(
+                1,
+                1,
+                Bytes::makei(4, _ => (255).to_byte()),
+                nearest,
+              ),
+            )
+          } else {
+            let full_path = join_fs_path(ctx.assets_root, rel)
+            let file_bytes = @fs.read_file_to_bytes(full_path) catch {
+              _ => Bytes::makei(0, _ => (0).to_byte())
+            }
+            let decoded = @img.decode_rgba8(file_bytes)
+            match decoded {
+              Some(img) => {
+                let w = img.width()
+                let h = img.height()
+                let pixels = img.pixels_rgba8()
+                img.destroy()
+                ok_i32(
+                  ctx.gpu.unwrap().create_texture_rgba8(w, h, pixels, nearest),
+                )
+              }
+              None =>
+                ok_i32(
+                  ctx.gpu
+                  .unwrap()
+                  .create_texture_rgba8(
+                    1,
+                    1,
+                    Bytes::makei(4, _ => (255).to_byte()),
+                    nearest,
+                  ),
+                )
+            }
+          }
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        err => {
+          @debug.debug("asset_load_texture failed: " + err.to_string())
+          raise err
+        }
       }
     },
     func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
@@ -861,10 +933,18 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_request_device",
     fn(_args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+      try {
+        host_trace("host: gpu_request_device")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new())
+        }
+        ok_extern_ref(HANDLE_BASE + 2)
+      } catch {
+        err => {
+          @debug.debug("gpu_request_device failed: " + err.to_string())
+          raise err
+        }
       }
-      ok_extern_ref(HANDLE_BASE + 2)
     },
     func_type=ft([], [@types.ValueType::ExternRef]),
   )
@@ -872,13 +952,21 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_create_surface",
     fn(_args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+      try {
+        host_trace("host: gpu_create_surface")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new())
+        }
+        if ctx.window is Some(win) {
+          ctx.gpu.unwrap().create_surface(win)
+        }
+        ok_extern_ref(HANDLE_BASE + 3)
+      } catch {
+        err => {
+          @debug.debug("gpu_create_surface failed: " + err.to_string())
+          raise err
+        }
       }
-      if ctx.window is Some(win) {
-        ctx.gpu.unwrap().create_surface(win)
-      }
-      ok_extern_ref(HANDLE_BASE + 3)
     },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),
   )
@@ -886,15 +974,23 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_configure_surface",
     fn(args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+      try {
+        host_trace("host: gpu_configure_surface")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new())
+        }
+        if args.length() >= 4 &&
+          args[2] is @types.Value::I32(width) &&
+          args[3] is @types.Value::I32(height) {
+          ctx.gpu.unwrap().configure_surface(width, height)
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("gpu_configure_surface failed: " + err.to_string())
+          raise err
+        }
       }
-      if args.length() >= 4 &&
-        args[2] is @types.Value::I32(width) &&
-        args[3] is @types.Value::I32(height) {
-        ctx.gpu.unwrap().configure_surface(width, height)
-      }
-      ok_i32(0)
     },
     func_type=ft(
       [
@@ -910,14 +1006,22 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_begin_frame",
     fn(_args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+      try {
+        host_trace("host: gpu_begin_frame")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new())
+        }
+        if ctx.window is Some(win) {
+          ctx.gpu.unwrap().ensure_surface_configured(win.width(), win.height())
+        }
+        ctx.gpu.unwrap().begin_frame()
+        ok_extern_ref(HANDLE_BASE + 4)
+      } catch {
+        err => {
+          @debug.debug("gpu_begin_frame failed: " + err.to_string())
+          raise err
+        }
       }
-      if ctx.window is Some(win) {
-        ctx.gpu.unwrap().ensure_surface_configured(win.width(), win.height())
-      }
-      ctx.gpu.unwrap().begin_frame()
-      ok_extern_ref(HANDLE_BASE + 4)
     },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),
   )

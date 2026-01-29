@@ -45,19 +45,19 @@ extern "js" fn reload_page() -> Unit =
   #| () => window.location.reload()
 
 ///|
-extern "js" fn reload_with_run_target(target : String) -> Unit =
-  #| (target) => {
+extern "js" fn reload_with_wasm_path(path : String) -> Unit =
+  #| (path) => {
   #|   const url = new URL(window.location.href)
-  #|   url.searchParams.set("run", target)
+  #|   url.searchParams.set("wasm", path)
   #|   window.location.href = url.toString()
   #| }
 
 ///|
-extern "js" fn get_run_target_from_url() -> String =
+extern "js" fn get_wasm_path_from_url() -> String =
   #| () => {
   #|   const params = new URLSearchParams(window.location.search)
-  #|   const target = params.get("run")
-  #|   return target ? target.trim() : ""
+  #|   const value = params.get("wasm")
+  #|   return value ? value.trim() : ""
   #| }
 
 ///|
@@ -85,10 +85,6 @@ extern "js" fn instantiate_bytes_with_options(
 ///|
 extern "js" fn join_strings(values : Array[String], sep : String) -> String =
   #| (values, sep) => values.join(sep)
-
-///|
-extern "js" fn strip_run_prefix(value : String) -> String =
-  #| (value) => value.startsWith("run_") ? value.slice(4) : value
 
 ///|
 extern "js" fn set_global_wasm_exports(exports : @js.Any) -> Unit =
@@ -172,9 +168,9 @@ fn setup_menu(
   if menu is Some(menu_el) {
     let buttons = menu_el.getElementsByTagName("button")
     for button in buttons {
-      let run_target = button.getAttribute("data-run")
+      let wasm_target = button.getAttribute("data-wasm")
       let action = button.getAttribute("data-action")
-      if run_target is Some(target) {
+      if wasm_target is Some(target) {
         button
         .as_event_target()
         .addEventListener("click", fn(_) { on_run(target, button) })
@@ -193,10 +189,15 @@ fn setup_menu(
 ///|
 
 ///|
-async fn load_wasm(imports : @js.Any) -> @webassembly.WebAssemblyInstance {
-  let response = @http.fetch("./runner.wasm", method_="GET")
+async fn load_wasm(
+  imports : @js.Any,
+  wasm_path : String,
+) -> @webassembly.WebAssemblyInstance {
+  let response = @http.fetch(wasm_path, method_="GET")
   if !response.ok {
-    fail("Failed to fetch runner.wasm: " + response.status.to_string())
+    fail(
+      "Failed to fetch wasm (" + wasm_path + "): " + response.status.to_string(),
+    )
   }
   let fallback = response.clone()
   // Keep Web instantiation options empty to match the Native (wasmoon) ABI.
@@ -271,42 +272,52 @@ async fn main_async() -> Unit {
       ("make_closure", @js.from_fn2(make_closure)),
     ])
     imports._set("moonbit:ffi", moonbit_ffi) |> ignore
-    set_status("Loading WASM...")
-    let instance = load_wasm(imports)
-    let exports = instance.exports()
-    set_global_wasm_exports(exports)
-    let export_names = object_keys(exports)
-    @js.log(@js.any(export_names))
-    set_status("WASM loaded. Choose an example.")
     let mut running = false
-    let start_example = fn(name : String) -> Bool {
-      let entry = exports._get(name).cast()
+    let start_example = async fn(wasm_path : String) -> Bool noraise {
+      set_status("Loading WASM: " + wasm_path)
+      let instance = load_wasm(imports, wasm_path) catch {
+        err => {
+          set_status("Failed to load wasm: " + any_to_string(@js.any(err)))
+          return false
+        }
+      }
+      let exports = instance.exports()
+      set_global_wasm_exports(exports)
+      let export_names = object_keys(exports)
+      @js.log(@js.any(export_names))
+      let entry = exports._get("game_app").cast()
       if !is_function(entry) {
-        set_status("Missing export: " + name)
+        set_status(
+          "Missing export: game_app (available: " +
+          join_strings(export_names, ", ") +
+          ")",
+        )
         return false
       }
       running = true
       call0_any(entry) |> ignore
-      set_status("Running: " + strip_run_prefix(name))
+      set_status("Running: " + wasm_path)
       true
     }
     let menu_found = setup_menu(
       doc,
-      fn(name, _button) {
+      fn(wasm_path, _button) {
         if running {
-          reload_with_run_target(name)
+          reload_with_wasm_path(wasm_path)
           return
         }
-        start_example(name) |> ignore
+        @js.run_async(async fn() noraise { start_example(wasm_path) |> ignore })
       },
       fn() { reload_page() },
     )
-    let auto_run = get_run_target_from_url()
-    if auto_run != "" {
-      start_example(auto_run) |> ignore
+    let auto_wasm = get_wasm_path_from_url()
+    if auto_wasm != "" {
+      start_example(auto_wasm) |> ignore
+    } else {
+      set_status("Choose an example.")
     }
     if !menu_found {
-      set_status("WASM loaded. Exports: " + join_strings(export_names, ", "))
+      set_status("Missing menu element. Append ?wasm=<path> to auto-run.")
     }
   }
 }

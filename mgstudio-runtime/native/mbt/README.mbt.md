@@ -9,8 +9,8 @@ imports, and attempts to instantiate the wasm-gc build.
 
 The WasmGC `rec` forward-reference parser bug is fixed in `Milky2018/wasmoon >= 0.1.3`.
 
-Current blocker: the `mgstudio_host` implementation is still stubs (GPU/window/assets),
-so running examples may trap (`unreachable`). See bd issue `moon-game-studio-1r4`.
+The runtime runs a game wasm module and calls its single exported entrypoint:
+`game_app() -> Unit`.
 
 ## WGPU bring-up
 
@@ -19,26 +19,17 @@ back a subset of `mgstudio_host` GPU calls (surface frame + a single render pass
 sprite quads, and simple meshes).
 
 Known upstream blocker (wgpu_mbt packaging/build):
-- On `wgpu_mbt<=0.1.2`, using it as a dependency can fail because native C stub
-  include/link paths are resolved relative to the *consumer* workspace root
-  (`wgpu.h file not found` / missing `libwgpu_native.a`).
-- On `wgpu_mbt>=0.1.4`, the include-path failure is improved, but the dynamic
-  library `libwgpu_native.dylib` still needs to exist at runtime (wgpu-mbt uses
-  `dlopen`). For now you may need to build it manually via Cargo inside the
-  dependency tree, or set `MBT_WGPU_NATIVE_LIB`.
-
-Local workaround (until upstream fix):
-```bash
-cd mgstudio-runtime/native/mbt
-ln -s .mooncakes/Milky2018/wgpu_mbt/vendor vendor
-moon run . ../../../mgstudio-engine/_build/wasm-gc/release/build/examples/runner/runner.wasm run_sprite
-```
+- `wgpu_mbt` requires `libwgpu_native` at runtime (wgpu-mbt uses `dlopen`).
+  Newer `wgpu_mbt` releases no longer bundle `libwgpu_native`; you must provide
+  it explicitly via `MBT_WGPU_NATIVE_LIB` (or `mgstudio run --wgpu-lib ...`).
 
 Recommended workflow (from repo root):
 ```bash
-./mgstudio run --example sprite
-# or explicitly:
-./mgstudio run native --example sprite
+# Build a game wasm (example).
+moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
+
+# Run the wasm (calls export: game_app).
+./mgstudio run mgstudio-runtime/examples/2d/sprite/sprite.wasm
 ```
 
 If you hit `failed to dlopen libwgpu_native`, set `MBT_WGPU_NATIVE_LIB` (or pass
