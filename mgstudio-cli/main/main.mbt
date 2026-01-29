@@ -318,7 +318,7 @@ fn render_argv(args : Array[String]) -> String {
 async fn run_native(opts : RunNativeOptions) -> Unit {
   let workspace = @fs.realpath(opts.workspace)
   let engine_dir = path_join(workspace, "mgstudio-engine")
-  let runtime_dir = path_join(workspace, "mgstudio-runtime/native/mbt")
+  let runtime_dir = path_join(workspace, "mgstudio-runtime/native")
   if opts.do_gen {
     run_gen(GenOptions::default(workspace))
   }

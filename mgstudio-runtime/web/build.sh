@@ -19,7 +19,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
 ENGINE_DIR="$REPO_DIR/mgstudio-engine"
 TARGET=${TARGET:-wasm-gc}
-RUNTIME_DIR="$SCRIPT_DIR/mbt"
+RUNTIME_DIR="$SCRIPT_DIR"
 RUNTIME_BUNDLE="$RUNTIME_DIR/_build/js/release/build/mgstudio-runtime-web.js"
 WEB_BUNDLE="$SCRIPT_DIR/mgstudio-runtime-web.js"
 
