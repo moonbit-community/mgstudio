@@ -14,6 +14,7 @@
 
 #include "moonbit.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,4 +122,3 @@ MOONBIT_FFI_EXPORT void mgimg_image_destroy(void *img) {
   }
   free(p);
 }
-
