@@ -513,6 +513,10 @@ async fn run_gen(opts : GenOptions) -> Unit {
   }
   let module_infos = load_module_infos(module_roots)
 
+  // Track generated .mbt files and format only those. This avoids reformatting
+  // unrelated user-edited files, while keeping codegen output consistent.
+  let gen_mbt_paths : Array[String] = []
+
   // pkg_dir -> (components/resources, source_files)
   let components_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
   let resources_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
@@ -542,7 +546,7 @@ async fn run_gen(opts : GenOptions) -> Unit {
           check~,
           verbose=opts.verbose,
         )
-        if !ok_pkg {
+        if !ok_pkg.ok {
           any_diff = true
         }
       }
@@ -552,7 +556,10 @@ async fn run_gen(opts : GenOptions) -> Unit {
     let out_path = path_join(pkg_dir, "ecs.g.mbt")
     let content = render_ecs_generated_file(pkg_dir, comps, resources, sources)
     let ok = write_or_check(out_path, content, check~, verbose=opts.verbose)
-    if !ok {
+    if ok.changed {
+      gen_mbt_paths.push(out_path)
+    }
+    if !ok.ok {
       any_diff = true
     }
   }
@@ -565,9 +572,23 @@ async fn run_gen(opts : GenOptions) -> Unit {
       resources_by_pkg,
       check~,
       verbose=opts.verbose,
+      gen_mbt_paths,
     )
     if !ok {
       any_diff = true
+    }
+  }
+  if !check {
+    // Format only generated files so `mgstudio gen` doesn't touch unrelated code.
+    for p in gen_mbt_paths {
+      if opts.verbose {
+        println("Formatting: \{p}")
+      }
+      let code = @process.run("moonfmt", ["-w", p], cwd=workspace)
+      if code != 0 {
+        println("moonfmt failed: \{p} (exit=\{code})")
+        @sys.exit(1)
+      }
     }
   }
   if any_diff {
@@ -922,6 +943,7 @@ async fn generate_ecs_world(
   resources_by_pkg : @hashmap.HashMap[String, Array[String]],
   check~ : Bool,
   verbose~ : Bool,
+  gen_mbt_paths : Array[String],
 ) -> Bool {
   let world_pkg = if world_pkg_arg.has_prefix("/") {
     world_pkg_arg
@@ -967,6 +989,9 @@ async fn generate_ecs_world(
   let world_mbt = render_world_file(all_components, all_resources)
   let world_path = path_join(world_pkg, "ecs_world.g.mbt")
   let ok_world = write_or_check(world_path, world_mbt, check~, verbose~)
+  if ok_world.changed {
+    gen_mbt_paths.push(world_path)
+  }
 
   // Also manage the world package imports deterministically.
   let imports : Array[String] = []
@@ -980,7 +1005,7 @@ async fn generate_ecs_world(
   let pkg_json = render_world_pkg_json(imports)
   let pkg_path = path_join(world_pkg, "moon.pkg.json")
   let ok_pkg = write_or_check(pkg_path, pkg_json, check~, verbose~)
-  ok_world && ok_pkg
+  ok_world.ok && ok_pkg.ok
 }
 
 ///|
@@ -1388,24 +1413,30 @@ async fn write_file_text(path : String, content : String) -> Unit {
 }
 
 ///|
+struct WriteOrCheckResult {
+  ok : Bool
+  changed : Bool
+}
+
+///|
 async fn write_or_check(
   path : String,
   content : String,
   check~ : Bool,
   verbose~ : Bool,
-) -> Bool {
+) -> WriteOrCheckResult {
   let existing = read_file_text(path)
   if existing is Some(s) && s == content {
     if verbose {
       println("OK: \{path}")
     }
-    true
+    { ok: true, changed: false }
   } else if check {
     println("Out of date: \{path}")
-    false
+    { ok: false, changed: false }
   } else {
     write_file_text(path, content)
     println("Generated: \{path}")
-    true
+    { ok: true, changed: true }
   }
 }
