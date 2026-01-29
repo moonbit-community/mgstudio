@@ -17,7 +17,7 @@
 ///
 /// This is intentionally small and incremental:
 /// - supports surface frame begin/end + a single render pass
-/// - supports textured sprite quads (no alpha blending yet)
+/// - supports textured sprite quads (alpha blending)
 /// - supports solid-color mesh draw for rectangle/capsule meshes
 ///
 /// Missing capabilities are tracked in bd and should be reported upstream.
@@ -301,7 +301,7 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   } else {
     @wgpu.texture_format_rgba8_unorm
   }
-  let desc = @wgpu_c.render_pipeline_descriptor_color_format_new(
+  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
     pl.raw_handle(),
     sm.raw_handle(),
     format,

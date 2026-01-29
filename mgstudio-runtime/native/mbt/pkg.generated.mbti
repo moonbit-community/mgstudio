@@ -120,9 +120,11 @@ pub fn HostContext::new() -> Self
 pub struct SpriteUniformPack {
   center_ndc_x : Float
   center_ndc_y : Float
-  half_ndc_x : Float
-  half_ndc_y : Float
+  half_view_x : Float
+  half_view_y : Float
   rot : Float
+  inv_half_w : Float
+  inv_half_h : Float
   uv_min_x : Float
   uv_min_y : Float
   uv_max_x : Float

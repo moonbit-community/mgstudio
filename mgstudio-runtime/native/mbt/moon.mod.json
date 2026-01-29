@@ -6,7 +6,9 @@
       "path": "../wasmoon"
     },
     "moonbitlang/x": "0.4.38",
-    "Milky2018/wgpu_mbt": "0.1.12"
+    "Milky2018/wgpu_mbt": {
+      "path": "../wgpu_mbt"
+    }
   },
   "readme": "README.mbt.md",
   "license": "Apache-2.0",
