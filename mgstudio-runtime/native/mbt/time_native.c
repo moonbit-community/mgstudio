@@ -17,15 +17,17 @@
 #include <stdint.h>
 #include <time.h>
 
-// Monotonic time in seconds (f32) for `mgstudio_host.time_now`.
+// Monotonic time in milliseconds (f32) for `mgstudio_host.time_now`.
+//
+// Engine time code expects Web-like semantics where `time_now` is in ms
+// (matching `performance.now()`), then divides by 1000 to compute seconds.
 MOONBIT_FFI_EXPORT float mgstudio_time_now(void) {
   struct timespec ts;
 #if defined(CLOCK_MONOTONIC)
   if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-    double sec = (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
-    return (float)sec;
+    double ms = (double)ts.tv_sec * 1000.0 + (double)ts.tv_nsec * 1e-6;
+    return (float)ms;
   }
 #endif
   return 0.0f;
 }
-
