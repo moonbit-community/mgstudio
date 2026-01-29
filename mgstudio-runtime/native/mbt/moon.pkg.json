@@ -20,6 +20,10 @@
       "path": "moonbitlang/core/math",
       "alias": "coremath"
     },
+    {
+      "path": "moonbitlang/core/strconv",
+      "alias": "strconv"
+    },
     "moonbitlang/core/debug",
     "moonbitlang/x/fs",
     "moonbitlang/x/sys",

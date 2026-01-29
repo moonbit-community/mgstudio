@@ -34,5 +34,15 @@ ln -s .mooncakes/Milky2018/wgpu_mbt/vendor vendor
 moon run . ../../../mgstudio-engine/_build/wasm-gc/release/build/examples/runner/runner.wasm run_sprite
 ```
 
+Recommended workflow (from repo root):
+```bash
+./mgstudio run --example sprite
+# or explicitly:
+./mgstudio run native --example sprite
+```
+
+If you hit `failed to dlopen libwgpu_native`, set `MBT_WGPU_NATIVE_LIB` (or pass
+`--wgpu-lib` to `mgstudio run`) to point to a built `libwgpu_native.dylib`.
+
 If you hit build errors beyond the above, please capture the full log and update
 bd issue `moon-game-studio-izv`.

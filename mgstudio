@@ -11,7 +11,20 @@ done
 ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")" && pwd)"
 BIN="${ROOT}/mgstudio-cli/_build/native/release/build/main/main.exe"
 
+NEED_BUILD=0
 if [[ ! -x "${BIN}" ]]; then
+  NEED_BUILD=1
+else
+  # Rebuild when CLI sources changed since last build.
+  if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
+    NEED_BUILD=1
+  fi
+  if [[ "${ROOT}/mgstudio-cli/moon.mod.json" -nt "${BIN}" ]]; then
+    NEED_BUILD=1
+  fi
+fi
+
+if [[ "${NEED_BUILD}" -eq 1 ]]; then
   (cd "${ROOT}/mgstudio-cli" && moon build --release)
 fi
 

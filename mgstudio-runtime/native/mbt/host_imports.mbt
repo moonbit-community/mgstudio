@@ -217,6 +217,23 @@ fn strip_leading_slashes(text : String) -> String {
 }
 
 ///|
+fn parse_f32_csv_list(csv : String) -> Array[Float]? {
+  if csv == "" {
+    return Some([])
+  }
+  let out : Array[Float] = []
+  for part in csv.split(",") {
+    let s = part.to_string().trim()
+    if s == "" {
+      continue
+    }
+    let n = @strconv.parse_double(s) catch { _ => return None }
+    out.push(Float::from_double(n))
+  }
+  Some(out)
+}
+
+///|
 fn join_fs_path(base : String, entry : String) -> String {
   if base == "" {
     entry
@@ -1040,7 +1057,24 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_mesh_triangles",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 1 && args[0] is @types.Value::I32(text_id) {
+        match string_table_get(ctx, text_id) {
+          Some(csv) =>
+            match parse_f32_csv_list(csv) {
+              Some(verts) =>
+                ok_i32(ctx.gpu.unwrap().create_mesh_triangles_xy(verts))
+              None => ok_i32(0)
+            }
+          None => ok_i32(0)
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(

@@ -17,6 +17,7 @@
 ///
 /// Currently supported:
 /// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component` / `#ecs.resource`.
+/// - `mgstudio run`: build wasm runner and execute it in the native runtime.
 async fn main {
   let argv = @sys.get_cli_args()
   let parser = make_cli_parser()
@@ -47,6 +48,7 @@ async fn main {
     Some(cmd) =>
       match cmd.name {
         "gen" => cmd_gen(cmd)
+        "run" => cmd_run(cmd)
         _ => {
           println("Unknown command: \{cmd.name}")
           print_cli_help(parser)
@@ -96,6 +98,84 @@ fn make_cli_parser() -> @clap.Parser {
           ),
         },
       ),
+      "run": @clap.SubCommand::new(
+        help="Build and run the wasm-gc runner in the native runtime.",
+        args={
+          "workspace": @clap.Arg::named(
+            short='w',
+            nargs=@clap.Nargs::One,
+            defaults=["."],
+            help="Workspace root (default: .)",
+          ),
+          "no-gen": @clap.Arg::flag(
+            help="Skip `mgstudio gen` before building/running.",
+          ),
+          "debug": @clap.Arg::flag(help="Use debug builds (default: release)."),
+          "wasm": @clap.Arg::named(
+            nargs=@clap.Nargs::AtMost(1U),
+            help="Path to runner.wasm (default: build mgstudio-engine/examples/runner).",
+          ),
+          "example": @clap.Arg::named(
+            short='x',
+            nargs=@clap.Nargs::AtMost(1U),
+            help="Example name (maps to export `run_<example>`, e.g. `sprite`).",
+          ),
+          "export": @clap.Arg::named(
+            short='e',
+            nargs=@clap.Nargs::AtMost(1U),
+            help="Export name to call (default: run_sprite).",
+          ),
+          "assets-dir": @clap.Arg::named(
+            nargs=@clap.Nargs::AtMost(1U),
+            help="Assets root path (sets MGSTUDIO_ASSETS_DIR).",
+          ),
+          "wgpu-lib": @clap.Arg::named(
+            nargs=@clap.Nargs::AtMost(1U),
+            help="Override libwgpu_native path (sets MBT_WGPU_NATIVE_LIB).",
+          ),
+        },
+        subcmds={
+          "native": @clap.SubCommand::new(
+            help="Alias of `mgstudio run` (native runtime).",
+            args={
+              "workspace": @clap.Arg::named(
+                short='w',
+                nargs=@clap.Nargs::One,
+                defaults=["."],
+                help="Workspace root (default: .)",
+              ),
+              "no-gen": @clap.Arg::flag(
+                help="Skip `mgstudio gen` before building/running.",
+              ),
+              "debug": @clap.Arg::flag(
+                help="Use debug builds (default: release).",
+              ),
+              "wasm": @clap.Arg::named(
+                nargs=@clap.Nargs::AtMost(1U),
+                help="Path to runner.wasm (default: build mgstudio-engine/examples/runner).",
+              ),
+              "example": @clap.Arg::named(
+                short='x',
+                nargs=@clap.Nargs::AtMost(1U),
+                help="Example name (maps to export `run_<example>`, e.g. `sprite`).",
+              ),
+              "export": @clap.Arg::named(
+                short='e',
+                nargs=@clap.Nargs::AtMost(1U),
+                help="Export name to call (default: run_sprite).",
+              ),
+              "assets-dir": @clap.Arg::named(
+                nargs=@clap.Nargs::AtMost(1U),
+                help="Assets root path (sets MGSTUDIO_ASSETS_DIR).",
+              ),
+              "wgpu-lib": @clap.Arg::named(
+                nargs=@clap.Nargs::AtMost(1U),
+                help="Override libwgpu_native path (sets MBT_WGPU_NATIVE_LIB).",
+              ),
+            },
+          ),
+        },
+      ),
     },
   )
 }
@@ -121,6 +201,23 @@ struct GenOptions {
   check : Bool
   write : Bool
   verbose : Bool
+}
+
+///|
+struct RunNativeOptions {
+  workspace : String
+  do_gen : Bool
+  release : Bool
+  wasm : String?
+  export_name : String
+  assets_dir : String?
+  wgpu_lib : String?
+}
+
+///|
+suberror RunError {
+  ProcessFailed(String, Int)
+  MissingFile(String)
 }
 
 ///|
@@ -156,6 +253,177 @@ async fn cmd_gen(cmd : @clap.SimpleValue) -> Unit {
       @sys.exit(1)
     }
   }
+}
+
+///|
+async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
+  // `mgstudio run` defaults to native runtime.
+  let effective = match cmd.subcmd {
+    Some(sub) if sub.name == "native" => sub
+    Some(sub) => {
+      println("Unknown run backend: \{sub.name}")
+      @sys.exit(2)
+      cmd
+    }
+    None => cmd
+  }
+  let opts : RunNativeOptions = parse_run_native_options(effective) catch {
+    err => {
+      println(err)
+      @sys.exit(2)
+      parse_run_native_options_defaults(".")
+    }
+  }
+  run_native(opts) catch {
+    err => {
+      println("mgstudio run failed: \{err}")
+      @sys.exit(1)
+    }
+  }
+}
+
+///|
+fn parse_run_native_options_defaults(workspace : String) -> RunNativeOptions {
+  {
+    workspace,
+    do_gen: true,
+    release: true,
+    wasm: None,
+    export_name: "run_sprite",
+    assets_dir: None,
+    wgpu_lib: None,
+  }
+}
+
+///|
+fn parse_run_native_options(
+  cmd : @clap.SimpleValue,
+) -> RunNativeOptions raise @clap.ParserError {
+  let workspace : String = cmd.get_one("workspace")
+  let no_gen = cmd.get_flag("no-gen").unwrap_or(false)
+  let debug = cmd.get_flag("debug").unwrap_or(false)
+  let wasm : String? = cmd.get_option("wasm")
+  let example : String? = cmd.get_option("example")
+  let export_flag : String? = cmd.get_option("export")
+  let export_name = match export_flag {
+    Some(name) if name != "" => name
+    _ =>
+      match example {
+        Some(ex) if ex != "" => "run_" + ex
+        _ => "run_sprite"
+      }
+  }
+  let assets_dir : String? = cmd.get_option("assets-dir")
+  let wgpu_lib : String? = cmd.get_option("wgpu-lib")
+  {
+    workspace,
+    do_gen: !no_gen,
+    release: !debug,
+    wasm,
+    export_name,
+    assets_dir,
+    wgpu_lib,
+  }
+}
+
+///|
+async fn run_process_checked(
+  cmd : String,
+  args : Array[String],
+  cwd? : String,
+  extra_env? : Map[String, String] = {},
+) -> Unit {
+  let code = @process.run(cmd, args, cwd?, extra_env~)
+  if code != 0 {
+    raise RunError::ProcessFailed("\{cmd} \{render_argv(args)}", code)
+  }
+}
+
+///|
+fn render_argv(args : Array[String]) -> String {
+  let mut out = ""
+  for i in 0..<args.length() {
+    if i > 0 {
+      out = out + " "
+    }
+    out = out + args[i]
+  }
+  out
+}
+
+///|
+async fn ensure_runtime_vendor_symlink(runtime_dir : String) -> Unit {
+  let vendor = path_join(runtime_dir, "vendor")
+  if @fs.exists(vendor) {
+    return
+  }
+  let target = path_join(runtime_dir, ".mooncakes/Milky2018/wgpu_mbt/vendor")
+  if !@fs.exists(target) {
+    // Let the subsequent `moon build` fail with a proper error message.
+    return
+  }
+  @fs.symlink(vendor, target~)
+}
+
+///|
+async fn run_native(opts : RunNativeOptions) -> Unit {
+  let workspace = @fs.realpath(opts.workspace)
+  let engine_dir = path_join(workspace, "mgstudio-engine")
+  let runner_pkg = path_join(engine_dir, "examples/runner")
+  let runtime_dir = path_join(workspace, "mgstudio-runtime/native/mbt")
+  if opts.do_gen {
+    run_gen(GenOptions::default(workspace))
+  }
+
+  // Build wasm runner.
+  let engine_args : Array[String] = if opts.release {
+    ["build", "--release", "--target", "wasm-gc", "-C", engine_dir, runner_pkg]
+  } else {
+    ["build", "--target", "wasm-gc", "-C", engine_dir, runner_pkg]
+  }
+  run_process_checked("moon", engine_args, cwd=workspace)
+
+  // Build native runtime executable.
+  ensure_runtime_vendor_symlink(runtime_dir)
+  let runtime_args : Array[String] = if opts.release {
+    ["build", "--release", "-C", runtime_dir]
+  } else {
+    ["build", "-C", runtime_dir]
+  }
+  run_process_checked("moon", runtime_args, cwd=workspace)
+  let profile = if opts.release { "release" } else { "debug" }
+  let default_wasm = path_join(
+    engine_dir,
+    "_build/wasm-gc/\{profile}/build/examples/runner/runner.wasm",
+  )
+  let wasm_path = opts.wasm.unwrap_or(default_wasm)
+  if !@fs.exists(wasm_path) {
+    raise RunError::MissingFile(wasm_path)
+  }
+  let runtime_exe = path_join(
+    runtime_dir,
+    "_build/native/\{profile}/build/mgstudio-runtime-native.exe",
+  )
+  if !@fs.exists(runtime_exe) {
+    raise RunError::MissingFile(runtime_exe)
+  }
+
+  // Ensure assets path works regardless of current working directory.
+  let assets_dir = match opts.assets_dir {
+    Some(path) if path != "" => path
+    _ => path_join(workspace, "mgstudio-engine/assets")
+  }
+  let extra_env : Map[String, String] = match opts.wgpu_lib {
+    Some(p) if p != "" =>
+      { "MGSTUDIO_ASSETS_DIR": assets_dir, "MBT_WGPU_NATIVE_LIB": p }
+    _ => { "MGSTUDIO_ASSETS_DIR": assets_dir }
+  }
+  run_process_checked(
+    runtime_exe,
+    [wasm_path, opts.export_name],
+    cwd=workspace,
+    extra_env~,
+  )
 }
 
 ///|

@@ -887,7 +887,7 @@ pub fn GpuBackend::create_mesh_triangles_xy(
   }
   // The encoded geometry is expected to be a flat list of triangle vertices.
   // Keep only complete triangles.
-  let usable_vcount = vcount - (vcount % 3)
+  let usable_vcount = vcount - vcount % 3
   if usable_vcount <= 0 || usable_vcount > 65535 {
     return 0
   }
@@ -897,7 +897,10 @@ pub fn GpuBackend::create_mesh_triangles_xy(
   }
   let id = alloc_id(self)
   let ib_usage = @wgpu.buffer_usage_index | @wgpu.buffer_usage_copy_dst
-  let ib = self.device.create_buffer_init(usage=ib_usage, u16le_pack(indices_u16))
+  let ib = self.device.create_buffer_init(
+    usage=ib_usage,
+    u16le_pack(indices_u16),
+  )
   let trimmed_vertices = if usable_vcount == vcount {
     vertices_xy
   } else {
