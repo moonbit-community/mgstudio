@@ -44,9 +44,11 @@ pub struct GpuMeshInfo {
 pub struct SpriteUniformPack {
   center_ndc_x : Float
   center_ndc_y : Float
-  half_ndc_x : Float
-  half_ndc_y : Float
+  half_view_x : Float
+  half_view_y : Float
   rot : Float
+  inv_half_w : Float
+  inv_half_h : Float
   uv_min_x : Float
   uv_min_y : Float
   uv_max_x : Float
@@ -234,8 +236,10 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   let wgsl : String =
     #|struct U {
     #|  center: vec2<f32>,
-    #|  half_size: vec2<f32>,
+    #|  half_size_view: vec2<f32>,
     #|  rot: f32,
+    #|  inv_half_w: f32,
+    #|  inv_half_h: f32,
     #|  _pad0: f32,
     #|  uv_min: vec2<f32>,
     #|  uv_max: vec2<f32>,
@@ -265,10 +269,15 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
     #|  let base = p[vid];
     #|  let c = cos(u.rot);
     #|  let s = sin(u.rot);
-    #|  let off = vec2<f32>(
-    #|    base.x * u.half_size.x * c - base.y * u.half_size.y * s,
-    #|    base.x * u.half_size.x * s + base.y * u.half_size.y * c,
+    #|  // Rotate in view space (logical pixels / world units), then map to NDC
+    #|  // with per-axis scales. Rotating in NDC would distort when the viewport
+    #|  // aspect ratio is not 1 (anisotropic viewport transform).
+    #|  let view = vec2<f32>(base.x * u.half_size_view.x, base.y * u.half_size_view.y);
+    #|  let rot_view = vec2<f32>(
+    #|    view.x * c - view.y * s,
+    #|    view.x * s + view.y * c,
     #|  );
+    #|  let off = vec2<f32>(rot_view.x * u.inv_half_w, rot_view.y * u.inv_half_h);
     #|  var out: VSOut;
     #|  out.pos = vec4<f32>(u.center + off, 0.0, 1.0);
     #|  // Note: NDC Y grows upward, but texture V grows downward (v=0 at top).
@@ -735,10 +744,12 @@ fn pack_sprite_uniform(pack : SpriteUniformPack) -> Bytes {
   let floats : Array[Float] = [
     pack.center_ndc_x,
     pack.center_ndc_y,
-    pack.half_ndc_x,
-    pack.half_ndc_y,
+    pack.half_view_x,
+    pack.half_view_y,
     pack.rot,
-    0.0F,
+    pack.inv_half_w,
+    pack.inv_half_h,
+    0.0F, // _pad0
     pack.uv_min_x,
     pack.uv_min_y,
     pack.uv_max_x,
@@ -795,14 +806,16 @@ pub fn GpuBackend::draw_sprite_uv(
   let center_ndc_y = view_y / half_h
   let sprite_w = Float::from_double(tex.width.to_double())
   let sprite_h = Float::from_double(tex.height.to_double())
-  let half_ndc_x = sprite_w * scale_x * 0.5F * inv_scale / half_w
-  let half_ndc_y = sprite_h * scale_y * 0.5F * inv_scale / half_h
+  let half_view_x = sprite_w * scale_x * 0.5F * inv_scale
+  let half_view_y = sprite_h * scale_y * 0.5F * inv_scale
   let pack = SpriteUniformPack::{
     center_ndc_x,
     center_ndc_y,
-    half_ndc_x,
-    half_ndc_y,
+    half_view_x,
+    half_view_y,
     rot: rotation - ps.camera_rot,
+    inv_half_w: 1.0F / half_w,
+    inv_half_h: 1.0F / half_h,
     uv_min_x,
     uv_min_y,
     uv_max_x,
