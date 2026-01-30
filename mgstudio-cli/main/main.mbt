@@ -85,26 +85,9 @@ fn make_cli_parser() -> @clap.Parser {
       "gen": @clap.SubCommand::new(
         help="Generate ecs.g.mbt from #ecs.component / #ecs.resource.",
         args={
-          "workspace": @clap.Arg::named(
-            short='w',
-            nargs=@clap.Nargs::One,
-            defaults=["."],
-            help="Workspace root (default: .)",
-          ),
-          // Repeatable: `--modules <path>` multiple times.
-          "modules": @clap.Arg::named(
-            short='m',
-            nargs=@clap.Nargs::Any,
-            help="Module root (repeatable). If absent, auto-discover moon.mod.json under workspace.",
-          ),
           "check": @clap.Arg::flag(
             short='c',
             help="Verify generated files are up-to-date (do not write).",
-          ),
-          "write": @clap.Arg::flag(help="Write generated files (default)."),
-          "world-pkg": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="Optional output package directory for a generated concrete ECS World (e.g. mgstudio-engine/ecs_world).",
           ),
           "verbose": @clap.Arg::flag(
             short='v',
@@ -188,11 +171,7 @@ fn print_subcommand_help(parser : @clap.Parser, name : String) -> Unit {
 
 ///|
 struct GenOptions {
-  workspace : String
-  modules : Array[String]
-  world_pkg : String?
   check : Bool
-  write : Bool
   verbose : Bool
 }
 
@@ -226,26 +205,8 @@ struct EcsTags {
 }
 
 ///|
-fn GenOptions::default(workspace : String) -> GenOptions {
-  {
-    workspace,
-    modules: [],
-    world_pkg: None,
-    check: false,
-    write: true,
-    verbose: false,
-  }
-}
-
-///|
 async fn cmd_gen(cmd : @clap.SimpleValue) -> Unit {
-  let opts : GenOptions = parse_gen_options(cmd) catch {
-    err => {
-      println(err)
-      @sys.exit(2)
-      GenOptions::default(".")
-    }
-  }
+  let opts : GenOptions = parse_gen_options(cmd)
   run_gen(opts) catch {
     err => {
       println("mgstudio gen failed: \{err}")
@@ -699,18 +660,10 @@ async fn serve_web(opts : ServeOptions) -> Unit {
 }
 
 ///|
-fn parse_gen_options(
-  cmd : @clap.SimpleValue,
-) -> GenOptions raise @clap.ParserError {
-  let workspace : String = cmd.get_one("workspace")
-  let modules : Array[String] = cmd.get_array("modules")
-  // `SimpleValue::get_option` is generic; let the expected type drive inference.
-  let world_pkg : String? = cmd.get_option("world-pkg")
+fn parse_gen_options(cmd : @clap.SimpleValue) -> GenOptions {
   let check = cmd.get_flag("check").unwrap_or(false)
-  let force_write = cmd.get_flag("write").unwrap_or(false)
-  let write = force_write || !check
   let verbose = cmd.get_flag("verbose").unwrap_or(false)
-  { workspace, modules, world_pkg, check, write, verbose }
+  { check, verbose }
 }
 
 ///|
@@ -748,28 +701,19 @@ fn should_skip_dir(path : String) -> Bool {
 
 ///|
 async fn run_gen(opts : GenOptions) -> Unit {
-  let check = opts.check || !opts.write
-  let workspace = @fs.realpath(opts.workspace)
-  let module_roots : Array[String] = []
-  if opts.modules.length() > 0 {
-    for m in opts.modules {
-      module_roots.push(@fs.realpath(m))
-    }
-  } else {
-    for m in discover_modules(workspace, verbose=opts.verbose) {
-      module_roots.push(m)
-    }
-  }
-  if module_roots.length() == 0 {
-    println("No modules found under workspace: \{workspace}")
-    @sys.exit(1)
+  let check = opts.check
+  let module_root = @fs.realpath(".")
+  let mod_json = path_join(module_root, "moon.mod.json")
+  if !@fs.exists(mod_json) {
+    raise RunError::InvalidArgs(
+      "mgstudio gen must run in a MoonBit module directory (missing moon.mod.json): " +
+      module_root,
+    )
   }
   if opts.verbose {
-    println("Modules:")
-    for m in module_roots {
-      println("  - \{m}")
-    }
+    println("Module: \{module_root}")
   }
+  let module_roots : Array[String] = [module_root]
   let module_infos = load_module_infos(module_roots)
 
   // Track generated .mbt files and format only those. This avoids reformatting
@@ -780,11 +724,9 @@ async fn run_gen(opts : GenOptions) -> Unit {
   let components_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
   let resources_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
   let sources_by_pkg : @hashmap.HashMap[String, Array[String]] = @hashmap.HashMap::new()
-  for module_root in module_roots {
-    collect_ecs_components_for_module(
-      module_root, components_by_pkg, resources_by_pkg, sources_by_pkg,
-    )
-  }
+  collect_ecs_components_for_module(
+    module_root, components_by_pkg, resources_by_pkg, sources_by_pkg,
+  )
   let mut any_diff = false
   for entry in components_by_pkg.iter() {
     let (pkg_dir, comps) = entry
@@ -822,20 +764,19 @@ async fn run_gen(opts : GenOptions) -> Unit {
       any_diff = true
     }
   }
-  if opts.world_pkg is Some(world_pkg) {
-    let ok = generate_ecs_world(
-      workspace,
-      world_pkg,
-      module_infos,
-      components_by_pkg,
-      resources_by_pkg,
-      check~,
-      verbose=opts.verbose,
-      gen_mbt_paths,
-    )
-    if !ok {
-      any_diff = true
-    }
+  // Always generate the ECS world package at a fixed location.
+  let ok = generate_ecs_world(
+    module_root,
+    "ecs_world",
+    module_infos,
+    components_by_pkg,
+    resources_by_pkg,
+    check~,
+    verbose=opts.verbose,
+    gen_mbt_paths,
+  )
+  if !ok {
+    any_diff = true
   }
   if !check {
     // Format only generated files so `mgstudio gen` doesn't touch unrelated code.
@@ -843,7 +784,7 @@ async fn run_gen(opts : GenOptions) -> Unit {
       if opts.verbose {
         println("Formatting: \{p}")
       }
-      let code = @process.run("moonfmt", ["-w", p], cwd=workspace)
+      let code = @process.run("moonfmt", ["-w", p], cwd=module_root)
       if code != 0 {
         println("moonfmt failed: \{p} (exit=\{code})")
         @sys.exit(1)
@@ -1265,26 +1206,6 @@ async fn generate_ecs_world(
   let pkg_path = path_join(world_pkg, "moon.pkg.json")
   let ok_pkg = write_or_check(pkg_path, pkg_json, check~, verbose~)
   ok_world.ok && ok_pkg.ok
-}
-
-///|
-async fn discover_modules(workspace : String, verbose~ : Bool) -> Array[String] {
-  let modules : Array[String] = []
-  @fs.walk(
-    workspace,
-    exclude=path => should_skip_dir(path),
-    max_concurrency=64,
-    fn(path, files) {
-      if files.contains("moon.mod.json") {
-        if verbose {
-          println("Discovered module: \{path}")
-        }
-        modules.push(path)
-      }
-    },
-  )
-  modules.sort()
-  modules
 }
 
 ///|

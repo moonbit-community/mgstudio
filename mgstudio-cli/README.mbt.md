@@ -15,9 +15,10 @@ From the repo root (recommended), use the wrapper script:
 
 ```bash
 ./mgstudio --help
-./mgstudio gen --workspace . --write
-./mgstudio gen --workspace . --check
-./mgstudio gen --workspace . --world-pkg mgstudio-engine/ecs_world
+
+# Run codegen in your game/module directory (must contain moon.mod.json).
+(cd mgstudio-engine && ../mgstudio gen)
+(cd mgstudio-engine && ../mgstudio gen --check)
 
 # Build a game wasm (example).
 moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
