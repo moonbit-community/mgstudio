@@ -98,11 +98,6 @@ fn make_cli_parser() -> @clap.Parser {
       "run": @clap.SubCommand::new(
         help="Run a game described by a game config file in native runtime (calls export `game_app`).",
         args={
-          "runtime-root": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="Runtime root directory. If omitted, auto-discover by searching parent folders for ./mgstudio-runtime/.",
-          ),
-          "debug": @clap.Arg::flag(help="Use debug builds (default: release)."),
           "game": @clap.Arg::named(
             short='g',
             nargs=@clap.Nargs::AtMost(1U),
@@ -177,8 +172,6 @@ struct GenOptions {
 
 ///|
 struct RunOptions {
-  runtime_root : String?
-  release : Bool
   game : String?
   wgpu_lib : String?
 }
@@ -194,7 +187,6 @@ struct ServeOptions {
 suberror RunError {
   ProcessFailed(String, Int)
   MissingFile(String)
-  MissingRuntimeRoot(String)
   InvalidArgs(String)
 }
 
@@ -267,18 +259,16 @@ async fn cmd_new(cmd : @clap.SimpleValue) -> Unit {
 
 ///|
 fn parse_run_options_defaults(_workspace : String) -> RunOptions {
-  { release: true, runtime_root: None, game: None, wgpu_lib: None }
+  { game: None, wgpu_lib: None }
 }
 
 ///|
 fn parse_run_options(
   cmd : @clap.SimpleValue,
 ) -> RunOptions raise @clap.ParserError {
-  let debug = cmd.get_flag("debug").unwrap_or(false)
-  let runtime_root : String? = cmd.get_option("runtime-root")
   let game : String? = cmd.get_option("game")
   let wgpu_lib : String? = cmd.get_option("wgpu-lib")
-  { release: !debug, runtime_root, game, wgpu_lib }
+  { game, wgpu_lib }
 }
 
 ///|
@@ -491,97 +481,28 @@ async fn new_game_project(name : String) -> Unit {
 }
 
 ///|
-async fn find_runtime_root_from(start_dir : String) -> String? {
-  let mut dir = start_dir
-  while dir != "" {
-    let marker = path_join(dir, "mgstudio-runtime")
-    if @fs.exists(marker) {
-      return Some(dir)
-    }
-    let parent = @path.Path(dir).dirname().to_string()
-    if parent == dir {
-      break
-    }
-    dir = parent
-  }
-  None
-}
-
-///|
-async fn resolve_runtime_root(
-  runtime_root : String?,
-  wasm_path : String,
-) -> String {
-  let cwd = @fs.realpath(".")
-  match runtime_root {
-    Some(root) if root.trim() != "" => {
-      let r = if is_absolute_path(root) { root } else { path_join(cwd, root) }
-      let marker = path_join(r, "mgstudio-runtime")
-      if !@fs.exists(marker) {
-        raise RunError::MissingRuntimeRoot(r)
-      }
-      r
-    }
-    _ => {
-      let wasm_dir = path_dirname(wasm_path)
-      match find_runtime_root_from(wasm_dir) {
-        Some(r) => r
-        None =>
-          match find_runtime_root_from(cwd) {
-            Some(r) => r
-            None =>
-              raise RunError::MissingRuntimeRoot(
-                "Cannot find ./mgstudio-runtime/ from " +
-                cwd +
-                " (or " +
-                wasm_dir +
-                "). Pass --runtime-root.",
-              )
-          }
-      }
-    }
-  }
-}
-
-///|
 async fn run_native(opts : RunOptions) -> Unit {
   let game_cfg_path = resolve_game_config_path(opts.game)
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
-  if cfg.data_spec_native.has_prefix("idb:") {
-    raise RunError::InvalidArgs(
-      "Native runtime does not support idb data source: " + cfg.data_spec_native,
-    )
-  }
-  let wasm_path = cfg.cart_path
-  let runtime_root = resolve_runtime_root(opts.runtime_root, wasm_path)
-  let runtime_dir = path_join(runtime_root, "mgstudio-runtime/native")
-  let profile = if opts.release { "release" } else { "debug" }
-  let mut runtime_exe = path_join(runtime_dir, "mgstudio-runtime-native.exe")
-  let built_exe = path_join(
-    runtime_dir,
-    "_build/native/\{profile}/build/mgstudio-runtime-native.exe",
-  )
-  if !@fs.exists(runtime_exe) && !@fs.exists(built_exe) {
-    // Developer fallback: if sources are present, build the runtime.
-    let has_sources = @fs.exists(path_join(runtime_dir, "moon.mod.json"))
-    if has_sources {
-      let runtime_args : Array[String] = if opts.release {
-        ["build", "--release", "-C", runtime_dir]
-      } else {
-        ["build", "-C", runtime_dir]
-      }
-      run_process_checked("moon", runtime_args, cwd=runtime_root)
-    }
-  }
-  if !@fs.exists(runtime_exe) && @fs.exists(built_exe) {
-    runtime_exe = built_exe
-  }
-  if !@fs.exists(runtime_exe) {
-    raise RunError::MissingFile(runtime_exe)
-  }
   let assets_source = cfg.assets_spec
   let data_source = cfg.data_spec_native
+  if assets_source.has_prefix("http://") || assets_source.has_prefix("https://") {
+    raise RunError::InvalidArgs(
+      "Native runtime only supports dir assets source today (got: " +
+      assets_source +
+      ")",
+    )
+  }
+  if data_source.has_prefix("idb:") ||
+    data_source.has_prefix("http://") ||
+    data_source.has_prefix("https://") {
+    raise RunError::InvalidArgs(
+      "Native runtime only supports dir data source today (got: " +
+      data_source +
+      ")",
+    )
+  }
   let wgpu_lib = match opts.wgpu_lib {
     Some(p) if p.trim() != "" => Some(p.trim().to_string())
     _ =>
@@ -593,20 +514,7 @@ async fn run_native(opts : RunOptions) -> Unit {
   if wgpu_lib is Some(p) {
     println("Using MBT_WGPU_NATIVE_LIB: \{p}")
   }
-  let extra_env : Map[String, String] = match wgpu_lib {
-    Some(p) =>
-      {
-        "MGSTUDIO_ASSETS_SOURCE": assets_source,
-        "MGSTUDIO_DATA_SOURCE": data_source,
-        "MBT_WGPU_NATIVE_LIB": p,
-      }
-    _ =>
-      {
-        "MGSTUDIO_ASSETS_SOURCE": assets_source,
-        "MGSTUDIO_DATA_SOURCE": data_source,
-      }
-  }
-  run_process_checked(runtime_exe, [wasm_path], cwd=runtime_root, extra_env~)
+  @native_rt.run_game(cfg.cart_path, assets_source, data_source, wgpu_lib?)
 }
 
 ///|

@@ -1,5 +1,4 @@
 {
-  "is-main": true,
   "native-stub": [
     "time_native.c",
     "wgpu_helpers.c"

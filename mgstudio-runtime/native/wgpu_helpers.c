@@ -23,7 +23,10 @@
 
 #include <stdint.h>
 
-#include "webgpu.h"
+// wgpu_mbt vendors the canonical webgpu.h under .mooncakes/.
+// We include it via a relative path so building this module as a dependency
+// (e.g. from mgstudio-cli) does not require extra C include flags.
+#include ".mooncakes/Milky2018/wgpu_mbt/src/c/webgpu.h"
 
 // Provided by Milky2018/wgpu_mbt (wgpu_stub_descs_pipelines.c).
 WGPURenderPipelineDescriptor *mbt_wgpu_render_pipeline_descriptor_rgba8_alpha_blend_new(
@@ -40,7 +43,11 @@ WGPURenderPipelineDescriptor *mgstudio_wgpu_render_pipeline_descriptor_color_for
   if (!desc || !desc->fragment || !desc->fragment->targets) {
     return NULL;
   }
-  desc->fragment->targets[0].format = (WGPUTextureFormat)format_u32;
+  // WebGPU C headers mark these pointers as `const`, but this descriptor is
+  // allocated and owned by us (via wgpu_mbt stub helpers), so mutating the
+  // first target's format is safe here.
+  WGPUFragmentState *frag = (WGPUFragmentState *)(uintptr_t)desc->fragment;
+  WGPUColorTargetState *targets = (WGPUColorTargetState *)(uintptr_t)frag->targets;
+  targets[0].format = (WGPUTextureFormat)format_u32;
   return desc;
 }
-

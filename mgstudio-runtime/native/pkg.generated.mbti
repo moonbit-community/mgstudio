@@ -14,6 +14,8 @@ pub fn add_mgstudio_host_imports(@runtime.Linker, HostContext) -> Unit
 
 pub fn add_moonbit_ffi_imports(@runtime.Linker, HostContext) -> Unit
 
+pub fn run_game(String, String, String, wgpu_lib? : String) -> Unit raise
+
 // Errors
 
 // Types and methods
@@ -117,7 +119,7 @@ pub struct HostContext {
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
 }
-pub fn HostContext::new() -> Self
+pub fn HostContext::new(String, String) -> Self raise
 
 pub struct SpriteUniformPack {
   center_ndc_x : Float

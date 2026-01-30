@@ -9,6 +9,8 @@ type RunError
 // Types and methods
 type EcsTags
 
+type GameConfig
+
 type GenOptions
 
 type ModuleInfo

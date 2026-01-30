@@ -38,7 +38,10 @@ pub struct HostContext {
 }
 
 ///|
-pub fn HostContext::new() -> HostContext {
+pub fn HostContext::new(
+  assets_source_spec : String,
+  data_source_spec : String,
+) -> HostContext raise {
   fn ensure_dir_all(path : String) -> Unit {
     if path == "" || @fs.path_exists(path) {
       return
@@ -52,30 +55,14 @@ pub fn HostContext::new() -> HostContext {
     }
   }
 
-  let default_assets_root = "../../../mgstudio-engine/assets"
-  let assets_spec = match @sys.get_env_var("MGSTUDIO_ASSETS_SOURCE") {
-    Some(s) if s.trim() != "" => Some(s)
-    _ =>
-      match @sys.get_env_var("MGSTUDIO_ASSETS_DIR") {
-        Some(s) if s.trim() != "" => Some("dir:" + s.trim().to_string())
-        _ => None
-      }
-  }
   let assets_source : @rtcore.SourceSpec = @rtcore.parse_dir_source(
-    assets_spec, default_assets_root,
-  ) catch {
-    _ => @rtcore.dir_source(default_assets_root)
-  }
-  let default_data_root = ".mgstudio-data"
-  let data_spec = match @sys.get_env_var("MGSTUDIO_DATA_SOURCE") {
-    Some(s) if s.trim() != "" => Some(s)
-    _ => None
-  }
+    Some(assets_source_spec),
+    ".",
+  )
   let data_source : @rtcore.SourceSpec = @rtcore.parse_dir_source(
-    data_spec, default_data_root,
-  ) catch {
-    _ => @rtcore.dir_source(default_data_root)
-  }
+    Some(data_source_spec),
+    ".",
+  )
   ensure_dir_all(data_source.base)
   HostContext::{
     store: None,

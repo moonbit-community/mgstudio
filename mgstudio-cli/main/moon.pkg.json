@@ -20,6 +20,10 @@
       "alias": "path"
     },
     "moonbitlang/x/json5",
-    "moonbitlang/x/sys"
+    "moonbitlang/x/sys",
+    {
+      "path": "Milky2018/mgstudio-runtime-native",
+      "alias": "native_rt"
+    }
   ]
 }

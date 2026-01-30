@@ -82,13 +82,9 @@ Notes:
 
 ### Non-Repo Layouts (Distributed Games)
 
-`mgstudio` does not require a full git repo. If the runtime is not discoverable near the wasm file, pass:
+`mgstudio` does not require a full git repo. It runs the game described by `moon.game.json` (or your `--game` path).
 
-```bash
-./mgstudio run --game path/to/moon.game.json --runtime-root /path/to/runtime_bundle_root
-```
-
-`mgstudio serve` uses a staged served root and loads `mgstudio-runtime-web.js` from the URL provided in config (or a default GitHub release URL). It does not need `--runtime-root`.
+`mgstudio serve` uses a staged served root and loads `mgstudio-runtime-web.js` from the URL provided in config (or a default GitHub release URL).
 
 ## Install (Local Symlink)
 

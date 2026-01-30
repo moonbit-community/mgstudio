@@ -5,7 +5,10 @@
     "moonbitlang/async": "0.16.1",
     "moonbitlang/x": "0.4.38",
     "moonbitlang/parser": "0.1.15",
-    "TheWaWaR/clap": "0.2.6"
+    "TheWaWaR/clap": "0.2.6",
+    "Milky2018/mgstudio-runtime-native": {
+      "path": "../mgstudio-runtime/native"
+    }
   },
   "readme": "README.mbt.md",
   "license": "Apache-2.0",
