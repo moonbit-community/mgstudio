@@ -183,7 +183,7 @@ suberror RunError {
   ProcessFailed(String, Int)
   MissingFile(String)
   InvalidArgs(String)
-}
+} derive(Show)
 
 ///|
 struct EcsTags {
@@ -213,7 +213,15 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
   }
   run_native(opts) catch {
     err => {
-      println("mgstudio run failed: \{err}")
+      match err {
+        RunError::MissingFile(path) => {
+          println("mgstudio run failed: Missing file: \{path}")
+          println(
+            "Hint: run in a directory containing moon.game.json, or pass --game <path>.",
+          )
+        }
+        _ => println("mgstudio run failed: \{err}")
+      }
       @sys.exit(1)
     }
   }
@@ -230,7 +238,15 @@ async fn cmd_serve(cmd : @clap.SimpleValue) -> Unit {
   }
   serve_web(opts) catch {
     err => {
-      println("mgstudio serve failed: \{err}")
+      match err {
+        RunError::MissingFile(path) => {
+          println("mgstudio serve failed: Missing file: \{path}")
+          println(
+            "Hint: run in a directory containing moon.game.json, or pass --game <path>.",
+          )
+        }
+        _ => println("mgstudio serve failed: \{err}")
+      }
       @sys.exit(1)
     }
   }
