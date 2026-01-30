@@ -488,6 +488,7 @@ async fn new_game_project(name : String) -> Unit {
     "\",\n" +
     "  \"assets\": \"./assets\",\n" +
     "  \"data\": \"./tmp/data\",\n" +
+    "  \"native\": { \"wgpu_lib\": \"\" },\n" +
     "  \"web\": { \"addr\": \"localhost\", \"port\": 8099, \"data\": \"idb:mgstudio\", \"runtime_js\": \"" +
     DEFAULT_WEB_RUNTIME_JS +
     "\" }\n" +
@@ -620,8 +621,19 @@ async fn run_native(opts : RunOptions) -> Unit {
   }
   let assets_source = cfg.assets_spec
   let data_source = cfg.data_spec_native
-  let extra_env : Map[String, String] = match opts.wgpu_lib {
-    Some(p) if p != "" =>
+  let wgpu_lib = match opts.wgpu_lib {
+    Some(p) if p.trim() != "" => Some(p.trim().to_string())
+    _ =>
+      match cfg.native_wgpu_lib {
+        Some(p) if p.trim() != "" => Some(p.trim().to_string())
+        _ => None
+      }
+  }
+  if wgpu_lib is Some(p) {
+    println("Using MBT_WGPU_NATIVE_LIB: \{p}")
+  }
+  let extra_env : Map[String, String] = match wgpu_lib {
+    Some(p) =>
       {
         "MGSTUDIO_ASSETS_SOURCE": assets_source,
         "MGSTUDIO_DATA_SOURCE": data_source,

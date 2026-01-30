@@ -34,6 +34,8 @@ struct GameConfig {
   web_port : String
   /// URL to `mgstudio-runtime-web.js` (CDN / GitHub release).
   web_runtime_js : String
+  /// Optional native-only override for libwgpu_native.
+  native_wgpu_lib : String?
 }
 
 ///|
@@ -152,6 +154,14 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
   let data_spec_web = normalize_source_spec_idb(
     web_data_raw, data_raw, "idb:mgstudio",
   )
+  let native_obj : Map[String, Json]? = get_optional_object(
+    root, "native", abs_path,
+  )
+  // Prefer native.wgpu_lib; fall back to legacy top-level wgpu_lib if present.
+  let native_wgpu_lib = match native_obj {
+    Some(native) => get_optional_string(native, "wgpu_lib", abs_path)
+    None => get_optional_string(root, "wgpu_lib", abs_path)
+  }
   {
     file_path: abs_path,
     dir: cfg_dir,
@@ -163,6 +173,7 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
     web_addr,
     web_port,
     web_runtime_js,
+    native_wgpu_lib,
   }
 }
 

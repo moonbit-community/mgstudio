@@ -43,6 +43,7 @@ Minimal example:
   "cart": "./_build/wasm-gc/release/build/main/main.wasm",
   "assets": "./assets",
   "data": "./tmp/data",
+  "native": { "wgpu_lib": "/absolute/path/to/libwgpu_native.dylib" },
   "web": { "addr": "localhost", "port": 8099 }
 }
 ```
