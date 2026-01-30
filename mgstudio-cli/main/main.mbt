@@ -103,10 +103,6 @@ fn make_cli_parser() -> @clap.Parser {
             nargs=@clap.Nargs::AtMost(1U),
             help="Path to game config file. If omitted, search for ./moon.game.json from current directory upwards.",
           ),
-          "wgpu-lib": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="Override libwgpu_native path (sets MBT_WGPU_NATIVE_LIB).",
-          ),
         },
       ),
       "serve": @clap.SubCommand::new(
@@ -173,7 +169,6 @@ struct GenOptions {
 ///|
 struct RunOptions {
   game : String?
-  wgpu_lib : String?
 }
 
 ///|
@@ -259,7 +254,7 @@ async fn cmd_new(cmd : @clap.SimpleValue) -> Unit {
 
 ///|
 fn parse_run_options_defaults(_workspace : String) -> RunOptions {
-  { game: None, wgpu_lib: None }
+  { game: None }
 }
 
 ///|
@@ -267,8 +262,7 @@ fn parse_run_options(
   cmd : @clap.SimpleValue,
 ) -> RunOptions raise @clap.ParserError {
   let game : String? = cmd.get_option("game")
-  let wgpu_lib : String? = cmd.get_option("wgpu-lib")
-  { game, wgpu_lib }
+  { game, }
 }
 
 ///|
@@ -503,15 +497,8 @@ async fn run_native(opts : RunOptions) -> Unit {
       ")",
     )
   }
-  let wgpu_lib = match opts.wgpu_lib {
-    Some(p) if p.trim() != "" => Some(p.trim().to_string())
-    _ =>
-      match cfg.native_wgpu_lib {
-        Some(p) if p.trim() != "" => Some(p.trim().to_string())
-        _ => None
-      }
-  }
-  if wgpu_lib is Some(p) {
+  let wgpu_lib = cfg.native_wgpu_lib
+  if wgpu_lib is Some(p) && p.trim() != "" {
     println("Using MBT_WGPU_NATIVE_LIB: \{p}")
   }
   @native_rt.run_game(cfg.cart_path, assets_source, data_source, wgpu_lib?)

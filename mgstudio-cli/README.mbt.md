@@ -64,7 +64,7 @@ Notes:
 ./mgstudio run --game path/to/moon.game.json
 
 # optional: override libwgpu_native path
-./mgstudio run --game path/to/moon.game.json --wgpu-lib /absolute/path/to/libwgpu_native.dylib
+./mgstudio run --game path/to/moon.game.json
 ```
 
 ### Web (Browser)
