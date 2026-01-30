@@ -61,6 +61,22 @@ extern "js" fn get_wasm_path_from_url() -> String =
   #| }
 
 ///|
+extern "js" fn get_assets_source_from_url() -> String =
+  #| () => {
+  #|   const params = new URLSearchParams(window.location.search)
+  #|   const value = params.get("assets_source")
+  #|   return value ? value.trim() : ""
+  #| }
+
+///|
+extern "js" fn get_data_source_from_url() -> String =
+  #| () => {
+  #|   const params = new URLSearchParams(window.location.search)
+  #|   const value = params.get("data_source")
+  #|   return value ? value.trim() : ""
+  #| }
+
+///|
 extern "js" fn response_array_buffer(response : @js.Any) -> @js.Any =
   #| (response) => response.arrayBuffer()
 
@@ -256,7 +272,19 @@ async fn main_async() -> Unit {
     return
   }
   if canvas_opt is Some(canvas) {
-    let host = create_host(Some(canvas))
+    let assets_source = get_assets_source_from_url()
+    let data_source = get_data_source_from_url()
+    let assets_source_final = if assets_source != "" {
+      assets_source
+    } else {
+      "dir:./assets/"
+    }
+    let data_source_final = if data_source != "" {
+      data_source
+    } else {
+      "idb:mgstudio"
+    }
+    let host = create_host(Some(canvas), assets_source_final, data_source_final)
     let init_promise : @js.Promise[@js.Any] = call0_any(
       host._get("init").cast(),
     ).cast()

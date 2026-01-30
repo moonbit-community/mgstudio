@@ -28,6 +28,14 @@
       "path": "moonbitlang/core/strconv",
       "alias": "strconv"
     },
+    {
+      "path": "moonbitlang/x/path",
+      "alias": "path"
+    },
+    {
+      "path": "Milky2018/mgstudio-runtime-core",
+      "alias": "rtcore"
+    },
     "moonbitlang/core/debug",
     "moonbitlang/x/fs",
     "moonbitlang/x/sys",

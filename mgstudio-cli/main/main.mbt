@@ -127,9 +127,13 @@ fn make_cli_parser() -> @clap.Parser {
             defaults=["native"],
             help="Runtime platform: native|web (default: native).",
           ),
-          "assets-dir": @clap.Arg::named(
+          "assets-source": @clap.Arg::named(
             nargs=@clap.Nargs::AtMost(1U),
-            help="Assets root path (sets MGSTUDIO_ASSETS_DIR).",
+            help="Assets source spec (e.g. dir:./assets, http:https://.../assets/).",
+          ),
+          "data-source": @clap.Arg::named(
+            nargs=@clap.Nargs::AtMost(1U),
+            help="User data source spec (e.g. dir:./save, idb:my_game).",
           ),
           "wgpu-lib": @clap.Arg::named(
             nargs=@clap.Nargs::AtMost(1U),
@@ -185,7 +189,8 @@ struct RunOptions {
   release : Bool
   platform : String
   wasm : String
-  assets_dir : String?
+  assets_source : String?
+  data_source : String?
   wgpu_lib : String?
 }
 
@@ -270,7 +275,8 @@ fn parse_run_options_defaults(workspace : String) -> RunOptions {
     release: true,
     platform: "native",
     wasm: "",
-    assets_dir: None,
+    assets_source: None,
+    data_source: None,
     wgpu_lib: None,
   }
 }
@@ -284,7 +290,8 @@ fn parse_run_options(
   let debug = cmd.get_flag("debug").unwrap_or(false)
   let platform : String = cmd.get_one("platform")
   let wasm : String = cmd.get_one("wasm")
-  let assets_dir : String? = cmd.get_option("assets-dir")
+  let assets_source : String? = cmd.get_option("assets-source")
+  let data_source : String? = cmd.get_option("data-source")
   let wgpu_lib : String? = cmd.get_option("wgpu-lib")
   {
     workspace,
@@ -292,7 +299,8 @@ fn parse_run_options(
     release: !debug,
     platform,
     wasm,
-    assets_dir,
+    assets_source,
+    data_source,
     wgpu_lib,
   }
 }
@@ -327,7 +335,6 @@ fn render_argv(args : Array[String]) -> String {
 ///|
 async fn run_native(opts : RunOptions) -> Unit {
   let workspace = @fs.realpath(opts.workspace)
-  let engine_dir = path_join(workspace, "mgstudio-engine")
   let runtime_dir = path_join(workspace, "mgstudio-runtime/native")
   if opts.do_gen {
     run_gen(GenOptions::default(workspace))
@@ -356,16 +363,34 @@ async fn run_native(opts : RunOptions) -> Unit {
   if !@fs.exists(runtime_exe) {
     raise RunError::MissingFile(runtime_exe)
   }
-
-  // Ensure assets path works regardless of current working directory.
-  let assets_dir = match opts.assets_dir {
-    Some(path) if path != "" => path
-    _ => path_join(engine_dir, "assets")
+  let wasm_dir = path_dirname(wasm_path)
+  let default_assets_dir = path_join(wasm_dir, "assets")
+  let assets_source = match opts.assets_source {
+    Some(s) if s != "" => normalize_source_spec(s, "dir:")
+    _ =>
+      if @fs.exists(default_assets_dir) {
+        "dir:" + default_assets_dir
+      } else {
+        "dir:" + wasm_dir
+      }
+  }
+  let default_data_dir = path_join(wasm_dir, ".mgstudio-data")
+  let data_source = match opts.data_source {
+    Some(s) if s != "" => normalize_source_spec(s, "dir:")
+    _ => "dir:" + default_data_dir
   }
   let extra_env : Map[String, String] = match opts.wgpu_lib {
     Some(p) if p != "" =>
-      { "MGSTUDIO_ASSETS_DIR": assets_dir, "MBT_WGPU_NATIVE_LIB": p }
-    _ => { "MGSTUDIO_ASSETS_DIR": assets_dir }
+      {
+        "MGSTUDIO_ASSETS_SOURCE": assets_source,
+        "MGSTUDIO_DATA_SOURCE": data_source,
+        "MBT_WGPU_NATIVE_LIB": p,
+      }
+    _ =>
+      {
+        "MGSTUDIO_ASSETS_SOURCE": assets_source,
+        "MGSTUDIO_DATA_SOURCE": data_source,
+      }
   }
   run_process_checked(runtime_exe, [wasm_path], cwd=workspace, extra_env~)
 }
@@ -409,11 +434,21 @@ async fn run_web(opts : RunOptions) -> Unit {
   }
   let wasm_dst = path_join(runtime_dir, "game.wasm")
   run_process_checked("cp", [wasm_src, wasm_dst], cwd=workspace)
+  let assets_source = match opts.assets_source {
+    Some(s) if s != "" => normalize_source_spec(s, "dir:")
+    _ => "dir:./assets/"
+  }
+  let data_source = match opts.data_source {
+    Some(s) if s != "" => normalize_source_spec(s, "idb:")
+    _ => "idb:mgstudio"
+  }
 
   // Serve the web runtime folder. The web runtime supports `?wasm=<path>`.
   let port = "8099"
   println("")
-  println("Serving web runtime at: http://localhost:\{port}/?wasm=./game.wasm")
+  println(
+    "Serving web runtime at: http://localhost:\{port}/?wasm=./game.wasm&assets_source=\{assets_source}&data_source=\{data_source}",
+  )
   println("Press Ctrl+C to stop.")
   println("")
   let server_args = ["-m", "http.server", port, "--directory", runtime_dir]
@@ -438,21 +473,28 @@ fn parse_gen_options(
 
 ///|
 fn path_basename(path : String) -> String {
-  let mut last = ""
-  for part in path.split("/") {
-    last = part.to_string()
-  }
-  last
+  @path.Path(path).basename().to_string()
 }
 
 ///|
 fn path_join(dir : String, file : String) -> String {
-  if dir is "" {
-    file
-  } else if dir is [.., '/'] {
-    dir + file
+  @path.Path(dir).join(file).to_string()
+}
+
+///|
+fn path_dirname(path : String) -> String {
+  @path.Path(path).dirname().to_string()
+}
+
+///|
+fn normalize_source_spec(spec : String, default_scheme : String) -> String {
+  if spec.has_prefix("dir:") ||
+    spec.has_prefix("http:") ||
+    spec.has_prefix("https:") ||
+    spec.has_prefix("idb:") {
+    spec
   } else {
-    "\{dir}/\{file}"
+    default_scheme + spec
   }
 }
 

@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio-runtime-core"
+
+// Values
+pub fn dir_source(String) -> SourceSpec
+
+pub fn ensure_trailing_slash(String) -> String
+
+pub fn idb_source(String) -> SourceSpec
+
+pub fn is_http_url(String) -> Bool
+
+pub fn join_dir(String, String) -> String raise
+
+pub fn join_url(String, String) -> String raise
+
+pub fn normalize_logical_path(String) -> String raise
+
+pub fn parse_dir_source(String?, String) -> SourceSpec raise
+
+pub fn parse_idb_source(String?, String) -> SourceSpec raise
+
+pub fn parse_url_source(String?, String) -> SourceSpec raise
+
+pub fn url_source(String) -> SourceSpec
+
+// Errors
+pub(all) suberror SourceSpecError {
+  InvalidSpec(String)
+  UnsupportedSpec(String)
+  UnsafePath(String)
+}
+
+// Types and methods
+pub(all) enum SourceBackend {
+  Dir
+  Url
+  Idb
+}
+
+pub struct SourceSpec {
+  backend : SourceBackend
+  base : String
+}
+
+// Type aliases
+
+// Traits
+

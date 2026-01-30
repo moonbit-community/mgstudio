@@ -7,7 +7,7 @@ import {
 }
 
 // Values
-pub fn create_host(@dom.Element?) -> @core.Any
+pub fn create_host(@dom.Element?, String, String) -> @core.Any
 
 // Errors
 

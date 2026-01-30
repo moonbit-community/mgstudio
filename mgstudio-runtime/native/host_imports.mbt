@@ -27,7 +27,8 @@ pub struct HostContext {
   mut instance : @runtime.ModuleInstance?
   mut gpu : GpuBackend?
   mut window : @win.Window?
-  assets_root : String
+  assets_source : @rtcore.SourceSpec
+  data_source : @rtcore.SourceSpec
   string_sink : Ref[Array[Char]]
   next_string_id : Ref[Int]
   strings : Ref[Array[(Int, String)]]
@@ -38,16 +39,51 @@ pub struct HostContext {
 
 ///|
 pub fn HostContext::new() -> HostContext {
-  let assets_root = match @sys.get_env_var("MGSTUDIO_ASSETS_DIR") {
-    Some(path) if path != "" => path
-    _ => "../../../mgstudio-engine/assets"
+  fn ensure_dir_all(path : String) -> Unit {
+    if path == "" || @fs.path_exists(path) {
+      return
+    }
+    let parent = @path.Path(path).dirname().to_string()
+    if parent != "" && parent != path {
+      ensure_dir_all(parent)
+    }
+    @fs.create_dir(path) catch {
+      _ => ()
+    }
   }
+
+  let default_assets_root = "../../../mgstudio-engine/assets"
+  let assets_spec = match @sys.get_env_var("MGSTUDIO_ASSETS_SOURCE") {
+    Some(s) if s.trim() != "" => Some(s)
+    _ =>
+      match @sys.get_env_var("MGSTUDIO_ASSETS_DIR") {
+        Some(s) if s.trim() != "" => Some("dir:" + s.trim().to_string())
+        _ => None
+      }
+  }
+  let assets_source : @rtcore.SourceSpec = @rtcore.parse_dir_source(
+    assets_spec, default_assets_root,
+  ) catch {
+    _ => @rtcore.dir_source(default_assets_root)
+  }
+  let default_data_root = ".mgstudio-data"
+  let data_spec = match @sys.get_env_var("MGSTUDIO_DATA_SOURCE") {
+    Some(s) if s.trim() != "" => Some(s)
+    _ => None
+  }
+  let data_source : @rtcore.SourceSpec = @rtcore.parse_dir_source(
+    data_spec, default_data_root,
+  ) catch {
+    _ => @rtcore.dir_source(default_data_root)
+  }
+  ensure_dir_all(data_source.base)
   HostContext::{
     store: None,
     instance: None,
     gpu: None,
     window: None,
-    assets_root,
+    assets_source,
+    data_source,
     string_sink: Ref::new([]),
     next_string_id: Ref::new(1),
     strings: Ref::new([]),
@@ -672,7 +708,12 @@ pub fn add_mgstudio_host_imports(
               ),
             )
           } else {
-            let full_path = join_fs_path(ctx.assets_root, rel)
+            let full_path = @rtcore.join_dir(
+              ctx.assets_source.base,
+              strip_leading_slashes(rel),
+            ) catch {
+              _ => join_fs_path(ctx.assets_source.base, rel)
+            }
             let file_bytes = @fs.read_file_to_bytes(full_path) catch {
               _ => Bytes::makei(0, _ => (0).to_byte())
             }

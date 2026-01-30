@@ -13,9 +13,11 @@ type GenOptions
 
 type ModuleInfo
 
-type RunNativeOptions
+type RunOptions
 
 type TypeRef
+
+type WriteOrCheckResult
 
 // Type aliases
 

@@ -135,6 +135,29 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #| }
 
 ///|
+extern "js" fn idb_open_kv_db(name : String) -> @js.Promise[@js.Any] =
+  #| (name) => new Promise((resolve, reject) => {
+  #|   if (typeof indexedDB === "undefined") {
+  #|     reject(new Error("IndexedDB is not available"))
+  #|     return
+  #|   }
+  #|   const dbName = `mgstudio:${name}`
+  #|   const req = indexedDB.open(dbName, 1)
+  #|   req.onupgradeneeded = () => {
+  #|     const db = req.result
+  #|     try {
+  #|       if (!db.objectStoreNames.contains("kv")) {
+  #|         db.createObjectStore("kv")
+  #|       }
+  #|     } catch (e) {
+  #|       // ignore
+  #|     }
+  #|   }
+  #|   req.onsuccess = () => resolve(req.result)
+  #|   req.onerror = () => reject(req.error || new Error("IndexedDB open failed"))
+  #| })
+
+///|
 extern "js" fn host_is_nullish(value : @js.Any) -> Bool =
   #| (value) => value == null
 
@@ -1050,6 +1073,9 @@ struct GpuState {
 struct State {
   mut window : WindowState?
   mut should_close : Bool
+  assets_source : @rtcore.SourceSpec
+  data_source : @rtcore.SourceSpec
+  mut data_db : @js.Any?
   strings : @js.Any
   mut next_string_id : Int
   assets : AssetsState
@@ -1058,10 +1084,16 @@ struct State {
 }
 
 ///|
-fn new_state() -> State {
+fn new_state(
+  assets_source : @rtcore.SourceSpec,
+  data_source : @rtcore.SourceSpec,
+) -> State {
   State::{
     window: None,
     should_close: false,
+    assets_source,
+    data_source,
+    data_db: None,
     strings: new_map(),
     next_string_id: 1,
     assets: AssetsState::{
@@ -1196,7 +1228,7 @@ fn next_shader_id(state : State) -> Int {
 }
 
 ///|
-fn resolve_asset_url(path : @js.Any) -> String raise {
+fn resolve_asset_url(state : State, path : @js.Any) -> String raise {
   let text = coerce_asset_path(path)
   if text.length() == 0 {
     fail("Asset path is empty")
@@ -1205,7 +1237,26 @@ fn resolve_asset_url(path : @js.Any) -> String raise {
     text
   } else {
     let normalized = strip_leading_slashes(text)
-    "./assets/" + normalized
+    @rtcore.join_url(state.assets_source.base, normalized)
+  }
+}
+
+///|
+async fn init_data_source(state : State) -> Unit {
+  match state.data_source.backend {
+    @rtcore.SourceBackend::Idb => {
+      let ns = state.data_source.base
+      let db = idb_open_kv_db(ns).wait() catch {
+        err => {
+          console_error(@js.any("IndexedDB init failed: " + err.to_string()))
+          js_null()
+        }
+      }
+      if !host_is_nullish(db) {
+        state.data_db = Some(db)
+      }
+    }
+    _ => ()
   }
 }
 
@@ -1922,7 +1973,7 @@ async fn load_texture_from_path(
     state.assets.pending_textures.push(PendingTexture::{ id, path, nearest })
     return
   }
-  let url = resolve_asset_url(path)
+  let url = resolve_asset_url(state, path)
   let response = @http.fetch(url, method_="GET")
   if !response.ok {
     fail(
@@ -1982,7 +2033,7 @@ async fn load_texture_from_path(
 
 ///|
 async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
-  let url = resolve_asset_url(@js.any(path))
+  let url = resolve_asset_url(state, @js.any(path))
   let response = @http.fetch(url, method_="GET")
   if !response.ok {
     fail(
@@ -2482,8 +2533,32 @@ fn draw_gizmo_lines(state : State, data : @js.Any) -> Unit {
 }
 
 ///|
-pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
-  let state = new_state()
+pub fn create_host(
+  canvas_opt : @dom.Element?,
+  assets_source_spec : String,
+  data_source_spec : String,
+) -> @js.Any {
+  let assets_source : @rtcore.SourceSpec = @rtcore.parse_url_source(
+    Some(assets_source_spec),
+    "./assets/",
+  ) catch {
+    _ => @rtcore.url_source("./assets/")
+  }
+  let data_source : @rtcore.SourceSpec = @rtcore.parse_idb_source(
+    Some(data_source_spec),
+    "mgstudio",
+  ) catch {
+    _ => @rtcore.idb_source("mgstudio")
+  }
+  let state = new_state(assets_source, data_source)
+  @js.log(
+    @js.any(
+      "mgstudio-runtime-web assets-source=" +
+      state.assets_source.base +
+      " data-source=" +
+      state.data_source.base,
+    ),
+  )
   let default_canvas = ensure_canvas(canvas_opt)
   let window_create = @js.from_fn3(fn(width, height, title) {
     let target = default_canvas
@@ -2720,7 +2795,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
     if path_text == "" {
       return id
     }
-    let url = resolve_asset_url(@js.any(path_text)) catch {
+    let url = resolve_asset_url(state, @js.any(path_text)) catch {
       err => {
         let message = "Font load error: " + err.to_string()
         console_error(@js.any(message))
@@ -3047,7 +3122,7 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       let handles : Array[Int] = []
       if path_text != "" {
         let manifest_path = join_asset_path(path_text, "folder.txt")
-        let url = resolve_asset_url(@js.any(manifest_path)) catch {
+        let url = resolve_asset_url(state, @js.any(manifest_path)) catch {
           err => {
             let message = "Folder load error: " + err.to_string()
             console_error(@js.any(message))
@@ -3504,6 +3579,10 @@ pub fn create_host(canvas_opt : @dom.Element?) -> @js.Any {
       let target = default_canvas
       init_webgpu(state, target)
       init_input(state)
+      init_data_source(state)
+      if state.data_db is Some(_) {
+        @js.log(@js.any("mgstudio-runtime-web data-source ready (IndexedDB)"))
+      }
       resolve(())
     })
   })

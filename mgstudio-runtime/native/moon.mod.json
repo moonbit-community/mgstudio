@@ -5,6 +5,9 @@
     "Milky2018/wasmoon": {
       "path": "wasmoon"
     },
+    "Milky2018/mgstudio-runtime-core": {
+      "path": "../core"
+    },
     "moonbitlang/x": "0.4.38",
     "Milky2018/wgpu_mbt": {
       "path": "wgpu_mbt"
