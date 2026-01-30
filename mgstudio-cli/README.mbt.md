@@ -6,6 +6,7 @@ Developer CLI for mgstudio (native-only).
 
 - `mgstudio gen`: scan MoonBit source files for mgstudio tags (`#ecs.component`, `#ecs.resource`) and generate per-package `ecs.g.mbt`. Optionally generates a concrete ECS `World` package.
 - `mgstudio run`: run a wasm-gc game module in the native runtime (calls export `game_app`).
+- `mgstudio serve`: serve the web runtime and run a wasm-gc game module in the browser (calls export `game_app`).
 
 ## Usage
 
@@ -22,6 +23,40 @@ moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/example
 
 # Run the wasm (calls export: game_app).
 ./mgstudio run mgstudio-runtime/examples/2d/sprite/sprite.wasm
+
+# Serve the web runtime and run it in browser.
+./mgstudio serve mgstudio-runtime/examples/2d/sprite/sprite.wasm
+```
+
+## Running Example Games
+
+`mgstudio run/serve` always runs a *wasm file*. It does not build game wasm for you.
+
+### Native (Local Window)
+
+```bash
+./mgstudio run path/to/game.wasm
+./mgstudio run path/to/game.wasm --assets-source dir:./assets --data-source dir:./save
+./mgstudio run path/to/game.wasm --wgpu-lib /absolute/path/to/libwgpu_native.dylib
+```
+
+### Web (Browser)
+
+```bash
+./mgstudio serve path/to/game.wasm
+./mgstudio serve path/to/game.wasm --port 8099
+./mgstudio serve path/to/game.wasm --data-source idb:my_game
+```
+
+For `serve`, `--assets-source dir:<path>` (or a local folder path) will be mounted automatically and converted to a fetchable URL base for the browser runtime.
+
+### Non-Repo Layouts (Distributed Games)
+
+`mgstudio` does not require a full git repo. If the runtime is not discoverable near the wasm file, pass:
+
+```bash
+./mgstudio run path/to/game.wasm --runtime-root /path/to/runtime_bundle_root
+./mgstudio serve path/to/game.wasm --runtime-root /path/to/runtime_bundle_root
 ```
 
 ## Install (Local Symlink)
