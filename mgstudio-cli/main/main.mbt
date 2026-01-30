@@ -452,14 +452,13 @@ async fn new_game_project(name : String) -> Unit {
   let icon_dst = path_join(project_dir, "assets/branding/icon.png")
   // A 64x64 PNG with a simple colored pattern (opaque).
   let icon_b64 = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAvUlEQVR4nO3aQQ2AMAwEwfe/6YbHnA0Wq0o0pQjQm8yqY7b2wz3gqg8v0f3JQwAAAAAAAAAAAPwK8cG9m5lqQG5mK1w7m6y5m6wYk8Y0m8bY0m8Zs5f3wZy8bYx7t7c1pZ2u4f3j2mQk9v2fZ1Zr3T2y8G3G2O2S1y8i1x0mAAAAAAAAAAAAAAD4F8o8k2x2xkYAAAAASUVORK5CYII="
-  run_process_checked(
-    "python3",
-    [
-      "-c", "import base64,sys; data=base64.b64decode(sys.argv[1]); open(sys.argv[2],'wb').write(data)",
-      icon_b64, icon_dst,
-    ],
-    cwd=project_dir,
-  )
+  let icon_bytes = @base64.decode(icon_b64.view()) catch {
+    err =>
+      raise RunError::InvalidArgs(
+        "Failed to decode built-in icon.png base64: " + err.to_string(),
+      )
+  }
+  write_file_bytes(icon_dst, icon_bytes)
 
   // Update moon.mod.json to depend on mgstudio and prefer wasm-gc.
   let mod_json_path = path_join(project_dir, "moon.mod.json")
@@ -1682,6 +1681,14 @@ fn ensure_moon_pkg_import(src : String, import_path : String) -> String {
 
 ///|
 async fn write_file_text(path : String, content : String) -> Unit {
+  // 0o644
+  let f = @fs.create(path, permission=420)
+  defer f.close()
+  f.write(content)
+}
+
+///|
+async fn write_file_bytes(path : String, content : Bytes) -> Unit {
   // 0o644
   let f = @fs.create(path, permission=420)
   defer f.close()
