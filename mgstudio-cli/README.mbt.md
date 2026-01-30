@@ -1,6 +1,6 @@
 # mgstudio-cli
 
-Developer CLI for mgstudio (native-only).
+Developer CLI for mgstudio (native + web).
 
 ## Commands
 
@@ -41,9 +41,7 @@ Minimal example:
 ```json
 {
   "mgstudio": "0.1.0",
-  "cart": "./_build/wasm-gc/release/build/main/main.wasm",
-  "assets": "./assets",
-  "data": "./tmp/data",
+  "cart": "./_build/wasm-gc/release/build/cmd/main/main.wasm",
   "native": { "wgpu_lib": "/absolute/path/to/libwgpu_native.dylib" },
   "web": { "addr": "localhost", "port": 8099 }
 }
@@ -53,6 +51,7 @@ Notes:
 
 - Paths are resolved relative to the config file directory.
 - File name is not fixed. Use `--game <path>` to point to any config file name.
+- `assets` and `data` are optional. If omitted, defaults are `./assets` (if it exists) and `./tmp/data`.
 
 ### Native (Local Window)
 
@@ -61,9 +60,6 @@ Notes:
 ./mgstudio run
 
 # or specify a config path explicitly
-./mgstudio run --game path/to/moon.game.json
-
-# optional: override libwgpu_native path
 ./mgstudio run --game path/to/moon.game.json
 ```
 
@@ -125,11 +121,6 @@ For each MoonBit package directory containing `moon.pkg.json`, `mgstudio gen`:
 - writes `ecs.g.mbt` into that package directory
 
 The generated file is deterministic. Use `--check` in CI to fail on drift.
-
-If `--world-pkg <dir>` is provided, it also generates:
-
-- `<dir>/ecs_world.g.mbt`: a concrete `World` type with component stores/resources as fields
-- `<dir>/moon.pkg.json`: imports required packages for those types
 
 ## Notes
 

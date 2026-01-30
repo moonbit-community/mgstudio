@@ -417,28 +417,208 @@ async fn new_game_project(name : String) -> Unit {
   }
   run_process_checked("moon", ["new", project_name], cwd~)
 
-  // Provide a tiny "ready-to-run" skeleton. Dependencies will be configured by
-  // users as needed; the runner only needs a wasm artifact path.
-  @fs.mkdir(path_join(project_dir, "assets"), permission=0o755, recursive=true)
+  // Rewrite the template into a runnable mgstudio game (similar to
+  // mgstudio-engine/examples/2d/*), while keeping the project minimal.
+  //
+  // NOTE: `moon new` creates a default root package (fib/sum demo). We keep the
+  // root package as a small library placeholder, and put the actual game in
+  // `cmd/main` so `moon build --target wasm-gc --release` produces a wasm.
+
+  // Remove template CI and hooks to keep the generated project focused.
+  @fs.rmdir(path_join(project_dir, ".githooks"), recursive=true) catch {
+    _ => ()
+  }
+  @fs.rmdir(path_join(project_dir, ".github"), recursive=true) catch {
+    _ => ()
+  }
+  @fs.remove(path_join(project_dir, "AGENTS.md")) catch {
+    _ => ()
+  }
+
+  // Create assets/data directories. Game config defaults will pick these up.
+  @fs.mkdir(
+    path_join(project_dir, "assets/branding"),
+    permission=0o755,
+    recursive=true,
+  )
   @fs.mkdir(
     path_join(project_dir, "tmp/data"),
     permission=0o755,
     recursive=true,
   )
-  let cart = "./_build/wasm-gc/release/build/main/main.wasm"
+
+  // Write a tiny icon.png (base64) so the default sprite/rotation demo runs
+  // without requiring any external assets.
+  let icon_dst = path_join(project_dir, "assets/branding/icon.png")
+  // A 64x64 PNG with a simple colored pattern (opaque).
+  let icon_b64 = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAvUlEQVR4nO3aQQ2AMAwEwfe/6YbHnA0Wq0o0pQjQm8yqY7b2wz3gqg8v0f3JQwAAAAAAAAAAAPwK8cG9m5lqQG5mK1w7m6y5m6wYk8Y0m8bY0m8Zs5f3wZy8bYx7t7c1pZ2u4f3j2mQk9v2fZ1Zr3T2y8G3G2O2S1y8i1x0mAAAAAAAAAAAAAAD4F8o8k2x2xkYAAAAASUVORK5CYII="
+  run_process_checked(
+    "python3",
+    [
+      "-c", "import base64,sys; data=base64.b64decode(sys.argv[1]); open(sys.argv[2],'wb').write(data)",
+      icon_b64, icon_dst,
+    ],
+    cwd=project_dir,
+  )
+
+  // Update moon.mod.json to depend on mgstudio and prefer wasm-gc.
+  let mod_json_path = path_join(project_dir, "moon.mod.json")
+  let mod_src_opt = read_file_text(mod_json_path)
+  let module_name = match mod_src_opt {
+    Some(src) => parse_module_name(src).unwrap_or("username/" + project_name)
+    None => "username/" + project_name
+  }
+  // Prefer a local engine path when `mgstudio new` is run from the mgstudio
+  // monorepo root; otherwise fall back to a registry version.
+  let deps_entry = if @fs.exists(
+      path_join(cwd, "mgstudio-engine/moon.mod.json"),
+    ) {
+    "\"deps\": { \"Milky2018/mgstudio\": { \"path\": \"../mgstudio-engine\" } },\n"
+  } else {
+    "\"deps\": { \"Milky2018/mgstudio\": \"0.1.0\" },\n"
+  }
+  let mod_json = "{\n" +
+    "  \"name\": \"" +
+    module_name +
+    "\",\n" +
+    "  \"version\": \"0.1.0\",\n" +
+    "  " +
+    deps_entry +
+    "  \"readme\": \"README.mbt.md\",\n" +
+    "  \"repository\": \"\",\n" +
+    "  \"license\": \"Apache-2.0\",\n" +
+    "  \"keywords\": [],\n" +
+    "  \"description\": \"\",\n" +
+    "  \"preferred-target\": \"wasm-gc\"\n" +
+    "}\n"
+  write_file_text(mod_json_path, mod_json)
+
+  // Make the root package a minimal library placeholder (kept for MoonBit
+  // module layout), and remove the demo tests.
+  write_file_text(
+    path_join(project_dir, project_name + ".mbt"),
+    "// Copyright 2025 International Digital Economy Academy\n" +
+    "//\n" +
+    "// Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
+    "// you may not use this file except in compliance with the License.\n" +
+    "// You may obtain a copy of the License at\n" +
+    "//\n" +
+    "//     http://www.apache.org/licenses/LICENSE-2.0\n" +
+    "//\n" +
+    "// Unless required by applicable law or agreed to in writing, software\n" +
+    "// distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+    "// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+    "// See the License for the specific language governing permissions and\n" +
+    "// limitations under the License.\n\n" +
+    "///|\n" +
+    "pub fn placeholder() -> Unit {\n" +
+    "  ()\n" +
+    "}\n",
+  )
+  @fs.remove(path_join(project_dir, project_name + "_test.mbt")) catch {
+    _ => ()
+  }
+
+  // Game package: cmd/main exports `game_app`.
+  let cmd_main_dir = path_join(project_dir, "cmd/main")
+  write_file_text(
+    path_join(cmd_main_dir, "moon.pkg.json"),
+    "{\n" +
+    "  \"is-main\": true,\n" +
+    "  \"import\": [\n" +
+    "    \"Milky2018/mgstudio/app\",\n" +
+    "    \"Milky2018/mgstudio/asset\",\n" +
+    "    \"Milky2018/mgstudio/core\",\n" +
+    "    \"Milky2018/mgstudio/ecs_world\",\n" +
+    "    \"Milky2018/mgstudio/math\",\n" +
+    "    \"Milky2018/mgstudio\",\n" +
+    "    \"Milky2018/mgstudio/render2d\",\n" +
+    "    \"Milky2018/mgstudio/time\"\n" +
+    "  ],\n" +
+    "  \"link\": {\n" +
+    "    \"wasm-gc\": {\n" +
+    "      \"exports\": [\n" +
+    "        \"game_app\"\n" +
+    "      ]\n" +
+    "    }\n" +
+    "  }\n" +
+    "}\n",
+  )
+  write_file_text(
+    path_join(cmd_main_dir, "main.mbt"),
+    "// Copyright 2025 International Digital Economy Academy\n" +
+    "//\n" +
+    "// Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
+    "// you may not use this file except in compliance with the License.\n" +
+    "// You may obtain a copy of the License at\n" +
+    "//\n" +
+    "//     http://www.apache.org/licenses/LICENSE-2.0\n" +
+    "//\n" +
+    "// Unless required by applicable law or agreed to in writing, software\n" +
+    "// distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+    "// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+    "// See the License for the specific language governing permissions and\n" +
+    "// limitations under the License.\n\n" +
+    "///|\n" +
+    "fn main {\n" +
+    "  // Keep empty: mgstudio runtime will call the exported `game_app`.\n" +
+    "}\n\n" +
+    "///|\n" +
+    "pub fn game_app() -> Unit {\n" +
+    "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
+    "  @app.App::new(@ecs_world.World::new())\n" +
+    "  .add_plugins(plugins)\n" +
+    "  .add_startup_system(rotation_setup)\n" +
+    "  .add_system(rotation_update)\n" +
+    "  .run()\n" +
+    "}\n\n" +
+    "///|\n" +
+    "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +
+    "  let asset_server = @asset.AssetServer::new()\n" +
+    "  let texture = asset_server.load(\"branding/icon.png\")\n" +
+    "  let sprite = @render2d.Sprite::new(@render2d.Color::white())\n" +
+    "  let transform = @math.Transform::identity()\n" +
+    "  @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore\n" +
+    "  let camera = @render2d.Camera2d::default()\n" +
+    "  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world) |> ignore\n" +
+    "}\n\n" +
+    "///|\n" +
+    "fn rotation_update(world : @ecs_world.World) -> Unit {\n" +
+    "  let delta_secs = @time.time_delta_seconds()\n" +
+    "  let speed = 1.0F\n" +
+    "  let tick = @core.ChangeTickWorld::read_change_tick(world)\n" +
+    "  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)\n" +
+    "  let transform_store = @math.Has_Transform::get_transform_store(world)\n" +
+    "  let entities : Array[(@core.Entity, @math.Transform)] = []\n" +
+    "  @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {\n" +
+    "    entities.push((entity, transform))\n" +
+    "  })\n" +
+    "  for entry in entities {\n" +
+    "    let transform = entry.1\n" +
+    "    let next_rotation = transform.rotation + speed * delta_secs\n" +
+    "    let next_transform = @math.Transform::new(\n" +
+    "      transform.translation,\n" +
+    "      next_rotation,\n" +
+    "      transform.scale,\n" +
+    "    )\n" +
+    "    transform_store.set(entry.0, next_transform, tick) |> ignore\n" +
+    "  }\n" +
+    "}\n",
+  )
+
+  // Game config: minimal; assets/data default to ./assets and ./tmp/data.
+  let cart = "./_build/wasm-gc/release/build/cmd/main/main.wasm"
   let game_json = "{\n" +
     "  \"mgstudio\": \"0.1.0\",\n" +
     "  \"cart\": \"" +
     cart +
     "\",\n" +
-    "  \"assets\": \"./assets\",\n" +
-    "  \"data\": \"./tmp/data\",\n" +
     "  \"native\": { \"wgpu_lib\": \"\" },\n" +
-    "  \"web\": { \"addr\": \"localhost\", \"port\": 8099, \"data\": \"idb:mgstudio\", \"runtime_js\": \"" +
-    DEFAULT_WEB_RUNTIME_JS +
-    "\" }\n" +
+    "  \"web\": { \"addr\": \"localhost\", \"port\": 8099 }\n" +
     "}\n"
   write_file_text(path_join(project_dir, "moon.game.json"), game_json)
+
+  // Optional: a standalone index.html that loads the web runtime directly.
   let index_html = "<!doctype html>\n" +
     "<html lang=\"en\">\n" +
     "  <head>\n" +
@@ -472,6 +652,27 @@ async fn new_game_project(name : String) -> Unit {
     "  </body>\n" +
     "</html>\n"
   write_file_text(path_join(project_dir, "index.html"), index_html)
+
+  // Replace README with mgstudio-oriented instructions.
+  write_file_text(
+    path_join(project_dir, "README.mbt.md"),
+    "# " +
+    project_name +
+    "\n\n" +
+    "A minimal MoonBit + mgstudio game.\n\n" +
+    "## Build\n\n" +
+    "```bash\n" +
+    "moon build --release --target wasm-gc\n" +
+    "```\n\n" +
+    "## Run (Native)\n\n" +
+    "```bash\n" +
+    "mgstudio run\n" +
+    "```\n\n" +
+    "## Run (Web)\n\n" +
+    "```bash\n" +
+    "mgstudio serve\n" +
+    "```\n",
+  )
 }
 
 ///|
