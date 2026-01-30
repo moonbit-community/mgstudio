@@ -21,6 +21,17 @@
 /// - supports solid-color mesh draw for rectangle/capsule meshes
 ///
 /// Missing capabilities are tracked in bd and should be reported upstream.
+
+///|
+/// wgpu_mbt 0.2.x does not provide an "alpha blend + arbitrary format" pipeline
+/// descriptor helper, so mgstudio provides its own small C helper.
+extern "C" fn wgpu_render_pipeline_descriptor_color_format_alpha_blend_new(
+  layout : @wgpu_c.WGPUPipelineLayout,
+  shader_module : @wgpu_c.WGPUShaderModule,
+  format_u32 : UInt,
+) -> @wgpu_c.WGPURenderPipelineDescriptorPtr = "mgstudio_wgpu_render_pipeline_descriptor_color_format_alpha_blend_new"
+
+///|
 pub struct GpuTextureInfo {
   id : Int
   width : Int
@@ -209,10 +220,15 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   // Texture binding group (fragment stage).
   let b0 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
   let ok0 = b0.add_sampler(
-    0U, @wgpu.shader_stage_fragment, @wgpu.sampler_binding_type_filtering,
+    0U,
+    @wgpu.SHADER_STAGE_FRAGMENT,
+    @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
   )
   let ok1 = b0.add_texture(
-    1U, @wgpu.shader_stage_fragment, @wgpu.texture_sample_type_float, @wgpu.texture_view_dimension_2d,
+    1U,
+    @wgpu.SHADER_STAGE_FRAGMENT,
+    @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
   )
   if !ok0 || !ok1 {
     b0.free()
@@ -224,8 +240,8 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   let b1 = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
   let ok2 = b1.add_buffer(
     0U,
-    @wgpu.shader_stage_vertex | @wgpu.shader_stage_fragment,
-    @wgpu.buffer_binding_type_uniform,
+    @wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT,
+    @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
   )
   if !ok2 {
     b1.free()
@@ -299,9 +315,9 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   let format = if backend.surface_format != 0U {
     backend.surface_format
   } else {
-    @wgpu.texture_format_rgba8_unorm
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
   }
-  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
+  let desc = wgpu_render_pipeline_descriptor_color_format_alpha_blend_new(
     pl.raw_handle(),
     sm.raw_handle(),
     format,
@@ -309,7 +325,7 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_sprite")
-  let ubo_usage = @wgpu.buffer_usage_uniform | @wgpu.buffer_usage_copy_dst
+  let ubo_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
   let ubo = backend.device.create_buffer(size=64UL, usage=ubo_usage)
   let ubo_bg = backend.device.create_bind_group_uniform_buffer(bgl_ubo, ubo)
   backend.sprite_bgl_tex = Some(bgl_tex)
@@ -350,10 +366,10 @@ fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit {
     pl, sm,
   )
   pipeline.set_label("mgstudio_mesh")
-  let ubo_usage = @wgpu.buffer_usage_uniform | @wgpu.buffer_usage_copy_dst
+  let ubo_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
   let color_buf = backend.device.create_buffer(size=16UL, usage=ubo_usage)
   let color_bg = backend.device.create_bind_group_uniform_buffer(bgl, color_buf)
-  let vb_usage = @wgpu.buffer_usage_vertex | @wgpu.buffer_usage_copy_dst
+  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
   let scratch = backend.device.create_buffer(size=64UL, usage=vb_usage)
   backend.mesh_bgl_color = Some(bgl)
   backend.mesh_pipeline_layout = Some(pl)
@@ -391,8 +407,8 @@ pub fn GpuBackend::configure_surface(
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   // Surface textures cannot be used as sampled textures (`texture_binding`).
   // Requesting RESOURCE usage triggers a wgpu-native validation error.
-  let usage = @wgpu.texture_usage_render_attachment |
-    @wgpu.texture_usage_copy_src
+  let usage = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_COPY_SRC
   self.surface_format = surface.configure_default(
     self.adapter,
     self.device,
@@ -477,9 +493,9 @@ fn ensure_fallback_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo {
     let bgl_tex = backend.sprite_bgl_tex.unwrap()
     let w = 128U
     let h = 128U
-    let usage = @wgpu.texture_usage_texture_binding |
-      @wgpu.texture_usage_copy_dst |
-      @wgpu.texture_usage_copy_src
+    let usage = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+      @wgpu.TEXTURE_USAGE_COPY_DST |
+      @wgpu.TEXTURE_USAGE_COPY_SRC
     let tex = backend.device.create_texture_rgba8_2d_with_usage(w, h, usage)
     let view = tex.create_view()
     let sampler = backend.device.create_sampler_linear_clamp()
@@ -516,9 +532,9 @@ pub fn GpuBackend::create_texture_rgba8(
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  let usage = @wgpu.texture_usage_texture_binding |
-    @wgpu.texture_usage_copy_dst |
-    @wgpu.texture_usage_copy_src
+  let usage = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST |
+    @wgpu.TEXTURE_USAGE_COPY_SRC
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
   let sampler = if nearest {
@@ -625,10 +641,10 @@ pub fn GpuBackend::create_render_target(
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  let usage = @wgpu.texture_usage_render_attachment |
-    @wgpu.texture_usage_texture_binding |
-    @wgpu.texture_usage_copy_src |
-    @wgpu.texture_usage_copy_dst
+  let usage = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_SRC |
+    @wgpu.TEXTURE_USAGE_COPY_DST
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
   let sampler = if nearest {
@@ -842,7 +858,7 @@ pub fn GpuBackend::create_mesh_rectangle(
   let hh = height * 0.5F
   let vertices_xy : Array[Float] = [-hw, -hh, hw, -hh, hw, hh, -hw, hh]
   let indices_u16 : Array[Int] = [0, 1, 2, 0, 2, 3]
-  let ib_usage = @wgpu.buffer_usage_index | @wgpu.buffer_usage_copy_dst
+  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
   let bytes = u16le_pack(indices_u16)
   let ib = self.device.create_buffer_init(usage=ib_usage, bytes)
   let info = GpuMeshInfo::{
@@ -921,7 +937,7 @@ pub fn GpuBackend::create_mesh_capsule(
     inds.push(center_r + 1 + i)
     inds.push(center_r + 1 + i + 1)
   }
-  let ib_usage = @wgpu.buffer_usage_index | @wgpu.buffer_usage_copy_dst
+  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
   let ib = self.device.create_buffer_init(usage=ib_usage, u16le_pack(inds))
   let info = GpuMeshInfo::{
     id,
@@ -954,7 +970,7 @@ pub fn GpuBackend::create_mesh_triangles_xy(
     indices_u16.push(i)
   }
   let id = alloc_id(self)
-  let ib_usage = @wgpu.buffer_usage_index | @wgpu.buffer_usage_copy_dst
+  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
   let ib = self.device.create_buffer_init(
     usage=ib_usage,
     u16le_pack(indices_u16),
@@ -1000,7 +1016,7 @@ fn ensure_mesh_scratch(backend : GpuBackend, needed : UInt64) -> Unit {
   } else {
     needed
   }
-  let vb_usage = @wgpu.buffer_usage_vertex | @wgpu.buffer_usage_copy_dst
+  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
   let buf = backend.device.create_buffer(size=new_cap, usage=vb_usage)
   if backend.mesh_scratch_vb is Some(old) {
     old.release()

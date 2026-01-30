@@ -1,7 +1,8 @@
 {
   "is-main": true,
   "native-stub": [
-    "time_native.c"
+    "time_native.c",
+    "wgpu_helpers.c"
   ],
   "import": [
     {
