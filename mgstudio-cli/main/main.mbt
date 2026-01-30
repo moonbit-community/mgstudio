@@ -131,7 +131,7 @@ fn make_cli_parser() -> @clap.Parser {
             help="Override libwgpu_native path (sets MBT_WGPU_NATIVE_LIB).",
           ),
           "wasm": @clap.Arg::positional(
-            nargs=@clap.Nargs::One,
+            nargs=@clap.Nargs::Fixed(1U),
             help="Path to the game wasm file (must export `game_app`).",
           ),
         },
@@ -158,7 +158,7 @@ fn make_cli_parser() -> @clap.Parser {
             help="User data source spec (web default: idb:mgstudio).",
           ),
           "wasm": @clap.Arg::positional(
-            nargs=@clap.Nargs::One,
+            nargs=@clap.Nargs::Fixed(1U),
             help="Path to the game wasm file (must export `game_app`).",
           ),
         },
@@ -315,7 +315,13 @@ fn parse_run_options(
 ) -> RunOptions raise @clap.ParserError {
   let debug = cmd.get_flag("debug").unwrap_or(false)
   let runtime_root : String? = cmd.get_option("runtime-root")
-  let wasm : String = cmd.get_one("wasm")
+  // Positional args are stored in SimpleValue.positional_args, not in args map.
+  let wasm_args : Array[String] = cmd.get_positional()
+  guard wasm_args.get(0) is Some(wasm) else {
+    raise @clap.ParserError::InvalidArgumentValue(
+      "Missing required positional argument: wasm",
+    )
+  }
   let assets_source : String? = cmd.get_option("assets-source")
   let data_source : String? = cmd.get_option("data-source")
   let wgpu_lib : String? = cmd.get_option("wgpu-lib")
@@ -341,7 +347,13 @@ fn parse_serve_options(
   let debug = cmd.get_flag("debug").unwrap_or(false)
   let runtime_root : String? = cmd.get_option("runtime-root")
   let port : String? = cmd.get_option("port")
-  let wasm : String = cmd.get_one("wasm")
+  // Positional args are stored in SimpleValue.positional_args, not in args map.
+  let wasm_args : Array[String] = cmd.get_positional()
+  guard wasm_args.get(0) is Some(wasm) else {
+    raise @clap.ParserError::InvalidArgumentValue(
+      "Missing required positional argument: wasm",
+    )
+  }
   let assets_source : String? = cmd.get_option("assets-source")
   let data_source : String? = cmd.get_option("data-source")
   {
