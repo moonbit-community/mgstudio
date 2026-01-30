@@ -33,7 +33,9 @@ fn host_string_drop(id : Int) -> Unit = "mgstudio_host" "string_drop"
 
 ///|
 pub fn[T] with_host_string_id(text : String, f : (Int) -> T) -> T {
-  if text == "" {
+  // NOTE: Avoid `String` equality (`==`) in wasm-gc guest code for now.
+  // `Milky2018/wasmoon` currently traps on string equality (unreachable).
+  if text.length() == 0 {
     return f(0)
   }
   host_string_sink_reset()

@@ -220,6 +220,24 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
             "Hint: run in a directory containing moon.game.json, or pass --game <path>.",
           )
         }
+        @native_rt.NativeRuntimeError::MissingExport(name) =>
+          println("mgstudio run failed: Missing wasm export: \{name}")
+        @native_rt.NativeRuntimeError::ExportCallFailed(name, msg) => {
+          println("mgstudio run failed: Export call failed: \{name}")
+          println(msg)
+        }
+        @native_rt.NativeRuntimeError::InstantiateFailed(path, msg) => {
+          println("mgstudio run failed: Wasm instantiate failed: \{path}")
+          println(msg)
+        }
+        @native_rt.NativeRuntimeError::ParseWasmFailed(path, msg) => {
+          println("mgstudio run failed: Wasm parse failed: \{path}")
+          println(msg)
+        }
+        @native_rt.NativeRuntimeError::ReadWasmFailed(path, msg) => {
+          println("mgstudio run failed: Failed to read wasm: \{path}")
+          println(msg)
+        }
         _ => println("mgstudio run failed: \{err}")
       }
       @sys.exit(1)

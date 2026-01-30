@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-priv suberror NativeRuntimeError {
+pub(all) suberror NativeRuntimeError {
   InvalidWasmPath(String)
   ReadWasmFailed(String, String)
   ParseWasmFailed(String, String)
   InstantiateFailed(String, String)
   MissingExport(String)
   ExportCallFailed(String, String)
-}
+} derive(Show)
 
 ///|
 fn dump_func_imports(mod_ : @types.Module) -> Unit {
@@ -111,6 +111,22 @@ pub fn run_game(
   }
   ctx.instance = Some(instance)
   @debug.debug("WASM instantiated: " + wasm_path)
+  if is_env_flag_set("MGSTUDIO_NATIVE_DUMP_GUEST_GLOBALS") {
+    try {
+      let store = ctx.store.unwrap()
+      // These globals are commonly used by MoonBit runtime init and should be
+      // non-null after `start` runs. Useful for diagnosing start/init issues.
+      for idx in [33, 40, 41] {
+        if idx >= 0 && idx < instance.global_addrs.length() {
+          let addr = instance.global_addrs[idx]
+          let v = store.get_global(addr).get()
+          @debug.debug("guest global[\{idx}] = \{v.to_string()}")
+        }
+      }
+    } catch {
+      err => @debug.debug("dump globals failed: " + err.to_string())
+    }
+  }
 
   // Contract: the game module exports exactly one entrypoint `game_app`.
   let mut has_entry = false
