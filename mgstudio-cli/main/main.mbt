@@ -17,7 +17,7 @@
 ///
 /// Currently supported:
 /// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component` / `#ecs.resource`.
-/// - `mgstudio run`: run a wasm-gc game module in the native runtime (calls `game_app`).
+/// - `mgstudio run`: run a wasm-gc game module in the selected runtime (calls `game_app`).
 async fn main {
   let argv = @sys.get_cli_args()
   let parser = make_cli_parser()
@@ -26,7 +26,7 @@ async fn main {
   for i in 1..<argv.length() {
     args.push(argv[i])
   }
-  let normalized_args = normalize_cli_args(args)
+  let normalized_args = args
 
   // Let clap generate and format help output.
   if normalized_args.length() == 0 {
@@ -36,7 +36,16 @@ async fn main {
   let help : String? = parser.parse(value, normalized_args) catch {
     err => {
       println(err)
-      print_cli_help(parser)
+      if normalized_args.length() > 0 {
+        let top = normalized_args[0]
+        if top == "run" || top == "gen" {
+          print_subcommand_help(parser, top)
+        } else {
+          print_cli_help(parser)
+        }
+      } else {
+        print_cli_help(parser)
+      }
       @sys.exit(2)
       None
     }
@@ -100,7 +109,7 @@ fn make_cli_parser() -> @clap.Parser {
         },
       ),
       "run": @clap.SubCommand::new(
-        help="Run a wasm-gc game module in the native runtime (calls export `game_app`).",
+        help="Run a wasm-gc game module in the selected runtime (calls export `game_app`).",
         args={
           "workspace": @clap.Arg::named(
             short='w',
@@ -112,9 +121,11 @@ fn make_cli_parser() -> @clap.Parser {
             help="Skip `mgstudio gen` before building/running.",
           ),
           "debug": @clap.Arg::flag(help="Use debug builds (default: release)."),
-          "wasm": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="Path to the game wasm file (must export `game_app`). You can also pass it as a positional arg: `mgstudio run <wasm>`.",
+          "platform": @clap.Arg::named(
+            short='P',
+            nargs=@clap.Nargs::One,
+            defaults=["native"],
+            help="Runtime platform: native|web (default: native).",
           ),
           "assets-dir": @clap.Arg::named(
             nargs=@clap.Nargs::AtMost(1U),
@@ -124,36 +135,9 @@ fn make_cli_parser() -> @clap.Parser {
             nargs=@clap.Nargs::AtMost(1U),
             help="Override libwgpu_native path (sets MBT_WGPU_NATIVE_LIB).",
           ),
-        },
-        subcmds={
-          "native": @clap.SubCommand::new(
-            help="Alias of `mgstudio run` (native runtime).",
-            args={
-              "workspace": @clap.Arg::named(
-                short='w',
-                nargs=@clap.Nargs::One,
-                defaults=["."],
-                help="Workspace root (default: .)",
-              ),
-              "no-gen": @clap.Arg::flag(
-                help="Skip `mgstudio gen` before building/running.",
-              ),
-              "debug": @clap.Arg::flag(
-                help="Use debug builds (default: release).",
-              ),
-              "wasm": @clap.Arg::named(
-                nargs=@clap.Nargs::AtMost(1U),
-                help="Path to the game wasm file (must export `game_app`). You can also pass it as a positional arg: `mgstudio run native <wasm>`.",
-              ),
-              "assets-dir": @clap.Arg::named(
-                nargs=@clap.Nargs::AtMost(1U),
-                help="Assets root path (sets MGSTUDIO_ASSETS_DIR).",
-              ),
-              "wgpu-lib": @clap.Arg::named(
-                nargs=@clap.Nargs::AtMost(1U),
-                help="Override libwgpu_native path (sets MBT_WGPU_NATIVE_LIB).",
-              ),
-            },
+          "wasm": @clap.Arg::positional(
+            nargs=@clap.Nargs::One,
+            help="Path to the game wasm file (must export `game_app`).",
           ),
         },
       ),
@@ -175,6 +159,16 @@ fn print_cli_help(parser : @clap.Parser) -> Unit {
 }
 
 ///|
+fn print_subcommand_help(parser : @clap.Parser, name : String) -> Unit {
+  let v = @clap.SimpleValue::new(parser.prog)
+  let msg_opt : String? = parser.parse(v, [name, "-h"]) catch { _ => None }
+  match msg_opt {
+    Some(msg) => println(msg)
+    None => print_cli_help(parser)
+  }
+}
+
+///|
 struct GenOptions {
   workspace : String
   modules : Array[String]
@@ -185,11 +179,12 @@ struct GenOptions {
 }
 
 ///|
-struct RunNativeOptions {
+struct RunOptions {
   workspace : String
   do_gen : Bool
   release : Bool
-  wasm : String?
+  platform : String
+  wasm : String
   assets_dir : String?
   wgpu_lib : String?
 }
@@ -237,54 +232,69 @@ async fn cmd_gen(cmd : @clap.SimpleValue) -> Unit {
 
 ///|
 async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
-  // `mgstudio run` defaults to native runtime.
-  let effective = match cmd.subcmd {
-    Some(sub) if sub.name == "native" => sub
-    Some(sub) => {
-      println("Unknown run backend: \{sub.name}")
-      @sys.exit(2)
-      cmd
-    }
-    None => cmd
-  }
-  let opts : RunNativeOptions = parse_run_native_options(effective) catch {
+  let opts : RunOptions = parse_run_options(cmd) catch {
     err => {
       println(err)
       @sys.exit(2)
-      parse_run_native_options_defaults(".")
+      parse_run_options_defaults(".")
     }
   }
-  run_native(opts) catch {
-    err => {
-      println("mgstudio run failed: \{err}")
-      @sys.exit(1)
+  match opts.platform {
+    "native" =>
+      run_native(opts) catch {
+        err => {
+          println("mgstudio run failed: \{err}")
+          @sys.exit(1)
+        }
+      }
+    "web" =>
+      run_web(opts) catch {
+        err => {
+          println("mgstudio run failed: \{err}")
+          @sys.exit(1)
+        }
+      }
+    other => {
+      println("Unknown platform: \{other}")
+      println("Supported: --platform native|web")
+      @sys.exit(2)
     }
   }
 }
 
 ///|
-fn parse_run_native_options_defaults(workspace : String) -> RunNativeOptions {
+fn parse_run_options_defaults(workspace : String) -> RunOptions {
   {
     workspace,
     do_gen: true,
     release: true,
-    wasm: None,
+    platform: "native",
+    wasm: "",
     assets_dir: None,
     wgpu_lib: None,
   }
 }
 
 ///|
-fn parse_run_native_options(
+fn parse_run_options(
   cmd : @clap.SimpleValue,
-) -> RunNativeOptions raise @clap.ParserError {
+) -> RunOptions raise @clap.ParserError {
   let workspace : String = cmd.get_one("workspace")
   let no_gen = cmd.get_flag("no-gen").unwrap_or(false)
   let debug = cmd.get_flag("debug").unwrap_or(false)
-  let wasm : String? = cmd.get_option("wasm")
+  let platform : String = cmd.get_one("platform")
+  let wasm : String = cmd.get_one("wasm")
   let assets_dir : String? = cmd.get_option("assets-dir")
   let wgpu_lib : String? = cmd.get_option("wgpu-lib")
-  { workspace, do_gen: !no_gen, release: !debug, wasm, assets_dir, wgpu_lib }
+  {
+    workspace,
+    do_gen: !no_gen,
+    release: !debug,
+    platform,
+    wasm,
+    assets_dir,
+    wgpu_lib,
+  }
 }
 
 ///|
@@ -315,7 +325,7 @@ fn render_argv(args : Array[String]) -> String {
 }
 
 ///|
-async fn run_native(opts : RunNativeOptions) -> Unit {
+async fn run_native(opts : RunOptions) -> Unit {
   let workspace = @fs.realpath(opts.workspace)
   let engine_dir = path_join(workspace, "mgstudio-engine")
   let runtime_dir = path_join(workspace, "mgstudio-runtime/native")
@@ -331,26 +341,10 @@ async fn run_native(opts : RunNativeOptions) -> Unit {
   }
   run_process_checked("moon", runtime_args, cwd=workspace)
   let profile = if opts.release { "release" } else { "debug" }
-  let wasm_path = match opts.wasm {
-    Some(p) if p != "" =>
-      if p.has_prefix("/") {
-        p
-      } else {
-        path_join(workspace, p)
-      }
-    _ => {
-      println("Missing required argument: <path/to/game.wasm>")
-      println("")
-      println("Usage:")
-      println("  mgstudio run <path/to/game.wasm>")
-      println("")
-      println("Contract:")
-      println(
-        "  The wasm module must export exactly one entrypoint: game_app() -> Unit",
-      )
-      @sys.exit(2)
-      ""
-    }
+  let wasm_path = if opts.wasm.has_prefix("/") {
+    opts.wasm
+  } else {
+    path_join(workspace, opts.wasm)
   }
   if !@fs.exists(wasm_path) {
     raise RunError::MissingFile(wasm_path)
@@ -377,64 +371,54 @@ async fn run_native(opts : RunNativeOptions) -> Unit {
 }
 
 ///|
-/// Provide a small UX improvement: allow `mgstudio run <wasm>` as positional,
-/// while Clap still parses `--wasm <path>`.
-fn normalize_cli_args(args : Array[String]) -> Array[String] {
-  if args.length() == 0 {
-    return args
+async fn run_web(opts : RunOptions) -> Unit {
+  let workspace = @fs.realpath(opts.workspace)
+  let runtime_dir = path_join(workspace, "mgstudio-runtime/web")
+  if opts.do_gen {
+    run_gen(GenOptions::default(workspace))
   }
-  if args[0] != "run" {
-    return args
+  // Build the web runtime JS bundle.
+  let runtime_args : Array[String] = if opts.release {
+    ["build", "--release", "--target", "js", "-C", runtime_dir]
+  } else {
+    ["build", "--target", "js", "-C", runtime_dir]
   }
-  // If user already uses `--wasm`, do not rewrite anything.
-  for a in args {
-    if a == "--wasm" {
-      return args
-    }
-  }
-  // Support: `mgstudio run native <wasm>`
-  let mut start = 1
-  if args.length() >= 2 && args[1] == "native" {
-    start = 2
-  }
-  let positional_idxs : Array[Int] = []
-  let mut i = start
-  while i < args.length() {
-    let a = args[i]
-    if a.has_prefix("-") {
-      if is_run_flag_with_value(a) && i + 1 < args.length() {
-        i = i + 2
-      } else {
-        i = i + 1
-      }
-    } else {
-      positional_idxs.push(i)
-      i = i + 1
-    }
-  }
-  if positional_idxs.length() != 1 {
-    return args
-  }
-  let idx = positional_idxs[0]
-  let out : Array[String] = []
-  for j in 0..<args.length() {
-    if j == idx {
-      out.push("--wasm")
-      out.push(args[j])
-    } else {
-      out.push(args[j])
-    }
-  }
-  out
-}
+  run_process_checked("moon", runtime_args, cwd=workspace)
 
-///|
-fn is_run_flag_with_value(flag : String) -> Bool {
-  flag == "-w" ||
-  flag == "--workspace" ||
-  flag == "--wasm" ||
-  flag == "--assets-dir" ||
-  flag == "--wgpu-lib"
+  // Copy the built bundle into `mgstudio-runtime/web/mgstudio-runtime-web.js`,
+  // matching `mgstudio-runtime/web/build.sh`.
+  let js_profile = if opts.release { "release" } else { "debug" }
+  let built_bundle = path_join(
+    runtime_dir,
+    "_build/js/\{js_profile}/build/mgstudio-runtime-web.js",
+  )
+  if !@fs.exists(built_bundle) {
+    raise RunError::MissingFile(built_bundle)
+  }
+  let bundle_dst = path_join(runtime_dir, "mgstudio-runtime-web.js")
+  run_process_checked("cp", [built_bundle, bundle_dst], cwd=workspace)
+
+  // Make the wasm available under the served web root.
+  let wasm_src = if opts.wasm.has_prefix("/") {
+    opts.wasm
+  } else {
+    path_join(workspace, opts.wasm)
+  }
+  if !@fs.exists(wasm_src) {
+    raise RunError::MissingFile(wasm_src)
+  }
+  let wasm_dst = path_join(runtime_dir, "game.wasm")
+  run_process_checked("cp", [wasm_src, wasm_dst], cwd=workspace)
+
+  // Serve the web runtime folder. The web runtime supports `?wasm=<path>`.
+  let port = "8099"
+  println("")
+  println("Serving web runtime at: http://localhost:\{port}/?wasm=./game.wasm")
+  println("Press Ctrl+C to stop.")
+  println("")
+  let server_args = ["-m", "http.server", port, "--directory", runtime_dir]
+  // Block until the server exits.
+  run_process_checked("python3", server_args, cwd=workspace)
 }
 
 ///|
