@@ -19,10 +19,7 @@
       "path": "moonbitlang/x/path",
       "alias": "path"
     },
-    {
-      "path": "moonbitlang/x/codec/base64",
-      "alias": "base64"
-    },
+    "moonbitlang/x/codec/base64",
     "moonbitlang/x/json5",
     "moonbitlang/x/sys",
     {
