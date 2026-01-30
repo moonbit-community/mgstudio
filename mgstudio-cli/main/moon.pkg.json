@@ -10,15 +10,9 @@
     "moonbitlang/parser",
     "moonbitlang/parser/attribute",
     "moonbitlang/parser/syntax",
-    {
-      "path": "moonbitlang/core/hashmap",
-      "alias": "hashmap"
-    },
+    "moonbitlang/core/hashmap",
     "moonbitlang/core/list",
-    {
-      "path": "moonbitlang/x/path",
-      "alias": "path"
-    },
+    "moonbitlang/x/path",
     "moonbitlang/x/codec/base64",
     "moonbitlang/x/json5",
     "moonbitlang/x/sys",
