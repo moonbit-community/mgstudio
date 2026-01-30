@@ -12,6 +12,7 @@
     "moonbitlang/parser/syntax",
     "moonbitlang/core/hashmap",
     "moonbitlang/core/list",
+    "moonbitlang/core/json",
     "moonbitlang/x/path",
     "moonbitlang/x/codec/base64",
     "moonbitlang/x/json5",

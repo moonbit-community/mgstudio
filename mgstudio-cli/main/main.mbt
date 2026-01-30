@@ -419,10 +419,6 @@ async fn new_game_project(name : String) -> Unit {
 
   // Rewrite the template into a runnable mgstudio game (similar to
   // mgstudio-engine/examples/2d/*), while keeping the project minimal.
-  //
-  // NOTE: `moon new` creates a default root package (fib/sum demo). We keep the
-  // root package as a small library placeholder, and put the actual game in
-  // `cmd/main` so `moon build --target wasm-gc --release` produces a wasm.
 
   // Remove template CI and hooks to keep the generated project focused.
   @fs.rmdir(path_join(project_dir, ".githooks"), recursive=true) catch {
@@ -432,6 +428,11 @@ async fn new_game_project(name : String) -> Unit {
     _ => ()
   }
   @fs.remove(path_join(project_dir, "AGENTS.md")) catch {
+    _ => ()
+  }
+  // `moon new` creates `cmd/main` as the default binary package; mgstudio games
+  // don't need a `main` entrypoint.
+  @fs.rmdir(path_join(project_dir, "cmd"), recursive=true) catch {
     _ => ()
   }
 
@@ -451,7 +452,7 @@ async fn new_game_project(name : String) -> Unit {
   // without requiring any external assets.
   let icon_dst = path_join(project_dir, "assets/branding/icon.png")
   // A 64x64 PNG with a simple colored pattern (opaque).
-  let icon_b64 = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAvUlEQVR4nO3aQQ2AMAwEwfe/6YbHnA0Wq0o0pQjQm8yqY7b2wz3gqg8v0f3JQwAAAAAAAAAAAPwK8cG9m5lqQG5mK1w7m6y5m6wYk8Y0m8bY0m8Zs5f3wZy8bYx7t7c1pZ2u4f3j2mQk9v2fZ1Zr3T2y8G3G2O2S1y8i1x0mAAAAAAAAAAAAAAD4F8o8k2x2xkYAAAAASUVORK5CYII="
+  let icon_b64 = "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"
   let icon_bytes = @base64.decode(icon_b64.view()) catch {
     err =>
       raise RunError::InvalidArgs(
@@ -467,15 +468,7 @@ async fn new_game_project(name : String) -> Unit {
     Some(src) => parse_module_name(src).unwrap_or("username/" + project_name)
     None => "username/" + project_name
   }
-  // Prefer a local engine path when `mgstudio new` is run from the mgstudio
-  // monorepo root; otherwise fall back to a registry version.
-  let deps_entry = if @fs.exists(
-      path_join(cwd, "mgstudio-engine/moon.mod.json"),
-    ) {
-    "\"deps\": { \"Milky2018/mgstudio\": { \"path\": \"../mgstudio-engine\" } },\n"
-  } else {
-    "\"deps\": { \"Milky2018/mgstudio\": \"0.1.0\" },\n"
-  }
+  let deps_entry = "\"deps\": { \"Milky2018/mgstudio\": \"0.1.0\" },\n"
   let mod_json = "{\n" +
     "  \"name\": \"" +
     module_name +
@@ -492,22 +485,10 @@ async fn new_game_project(name : String) -> Unit {
     "}\n"
   write_file_text(mod_json_path, mod_json)
 
-  // Make the root package a minimal library placeholder (kept for MoonBit
-  // module layout), and remove the demo tests.
+  // Root package: export `game_app` (no `main` function needed).
   write_file_text(
-    path_join(project_dir, project_name + ".mbt"),
-    "///|\n" + "pub fn placeholder() -> Unit {\n" + "  ()\n" + "}\n",
-  )
-  @fs.remove(path_join(project_dir, project_name + "_test.mbt")) catch {
-    _ => ()
-  }
-
-  // Game package: cmd/main exports `game_app`.
-  let cmd_main_dir = path_join(project_dir, "cmd/main")
-  write_file_text(
-    path_join(cmd_main_dir, "moon.pkg.json"),
+    path_join(project_dir, "moon.pkg.json"),
     "{\n" +
-    "  \"is-main\": true,\n" +
     "  \"import\": [\n" +
     "    \"Milky2018/mgstudio/app\",\n" +
     "    \"Milky2018/mgstudio/asset\",\n" +
@@ -527,12 +508,10 @@ async fn new_game_project(name : String) -> Unit {
     "  }\n" +
     "}\n",
   )
+
+  // Replace the root demo with a minimal rotating sprite example.
   write_file_text(
-    path_join(cmd_main_dir, "main.mbt"),
-    "///|\n" +
-    "fn main {\n" +
-    "  // Keep empty: mgstudio runtime will call the exported `game_app`.\n" +
-    "}\n\n" +
+    path_join(project_dir, project_name + ".mbt"),
     "///|\n" +
     "pub fn game_app() -> Unit {\n" +
     "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
@@ -575,17 +554,16 @@ async fn new_game_project(name : String) -> Unit {
     "  }\n" +
     "}\n",
   )
+  @fs.remove(path_join(project_dir, project_name + "_test.mbt")) catch {
+    _ => ()
+  }
 
   // Game config: minimal; assets/data default to ./assets and ./tmp/data.
-  let cart = "./_build/wasm-gc/release/build/cmd/main/main.wasm"
-  let game_json = "{\n" +
-    "  \"mgstudio\": \"0.1.0\",\n" +
-    "  \"cart\": \"" +
+  let cart = "./_build/wasm-gc/release/build/" + project_name + ".wasm"
+  let game_json_raw = "{\"mgstudio\":\"0.1.0\",\"cart\":\"" +
     cart +
-    "\",\n" +
-    "  \"native\": { \"wgpu_lib\": \"\" },\n" +
-    "  \"web\": { \"addr\": \"localhost\", \"port\": 8099 }\n" +
-    "}\n"
+    "\",\"native\":{\"wgpu_lib\":\"\"},\"web\":{\"addr\":\"localhost\",\"port\":8099}}"
+  let game_json = @json.parse(game_json_raw).stringify(indent=2) + "\n"
   write_file_text(path_join(project_dir, "moon.game.json"), game_json)
 
   // Optional: a standalone index.html that loads the web runtime directly.
