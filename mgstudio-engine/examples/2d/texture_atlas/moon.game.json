@@ -1,0 +1,7 @@
+{
+  "mgstudio": "0.1.0",
+  "cart": "../../../_build/wasm-gc/release/build/examples/2d/texture_atlas/texture_atlas.wasm",
+  "assets": "../../../assets",
+  "data": "./tmp/data",
+  "web": { "addr": "localhost", "port": 8099, "data": "idb:mgstudio", "runtime_js": "https://github.com/moonbit-community/mgstudio/releases/latest/download/mgstudio-runtime-web.js" }
+}

@@ -19,6 +19,7 @@
       "path": "moonbitlang/x/path",
       "alias": "path"
     },
+    "moonbitlang/x/json5",
     "moonbitlang/x/sys"
   ]
 }

@@ -5,8 +5,9 @@ Developer CLI for mgstudio (native-only).
 ## Commands
 
 - `mgstudio gen`: scan MoonBit source files for mgstudio tags (`#ecs.component`, `#ecs.resource`) and generate per-package `ecs.g.mbt`. Optionally generates a concrete ECS `World` package.
-- `mgstudio run`: run a wasm-gc game module in the native runtime (calls export `game_app`).
-- `mgstudio serve`: serve the web runtime and run a wasm-gc game module in the browser (calls export `game_app`).
+- `mgstudio run`: run a game described by a game config file in the native runtime (calls export `game_app`).
+- `mgstudio serve`: serve the web runtime and run a game described by a game config file in the browser (calls export `game_app`).
+- `mgstudio new`: create a new MoonBit game project template (`moon new` + `moon.game.json` + `index.html`).
 
 ## Usage
 
@@ -21,43 +22,71 @@ From the repo root (recommended), use the wrapper script:
 # Build a game wasm (example).
 moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
 
-# Run the wasm (calls export: game_app).
-./mgstudio run mgstudio-runtime/examples/2d/sprite/sprite.wasm
+# Run (calls export: game_app). The runner reads ./moon.game.json (or use --game).
+./mgstudio run --game mgstudio-engine/examples/2d/sprite/moon.game.json
 
-# Serve the web runtime and run it in browser.
-./mgstudio serve mgstudio-runtime/examples/2d/sprite/sprite.wasm
+# Serve (browser). The runner reads ./moon.game.json (or use --game).
+./mgstudio serve --game mgstudio-engine/examples/2d/sprite/moon.game.json
 ```
 
 ## Running Example Games
 
-`mgstudio run/serve` always runs a *wasm file*. It does not build game wasm for you.
+`mgstudio run/serve` reads a game config JSON file (default name: `moon.game.json`). It does not build game wasm for you.
+
+### Game Config (`moon.game.json`)
+
+Minimal example:
+
+```json
+{
+  "mgstudio": "0.1.0",
+  "cart": "./_build/wasm-gc/release/build/main/main.wasm",
+  "assets": "./assets",
+  "data": "./tmp/data",
+  "web": { "addr": "localhost", "port": 8099 }
+}
+```
+
+Notes:
+
+- Paths are resolved relative to the config file directory.
+- File name is not fixed. Use `--game <path>` to point to any config file name.
 
 ### Native (Local Window)
 
 ```bash
-./mgstudio run path/to/game.wasm
-./mgstudio run path/to/game.wasm --assets-source dir:./assets --data-source dir:./save
-./mgstudio run path/to/game.wasm --wgpu-lib /absolute/path/to/libwgpu_native.dylib
+# auto-discover ./moon.game.json from current directory upwards
+./mgstudio run
+
+# or specify a config path explicitly
+./mgstudio run --game path/to/moon.game.json
+
+# optional: override libwgpu_native path
+./mgstudio run --game path/to/moon.game.json --wgpu-lib /absolute/path/to/libwgpu_native.dylib
 ```
 
 ### Web (Browser)
 
 ```bash
-./mgstudio serve path/to/game.wasm
-./mgstudio serve path/to/game.wasm --port 8099
-./mgstudio serve path/to/game.wasm --data-source idb:my_game
-```
+# auto-discover ./moon.game.json from current directory upwards
+./mgstudio serve
 
-For `serve`, `--assets-source dir:<path>` (or a local folder path) will be mounted automatically and converted to a fetchable URL base for the browser runtime.
+# or specify a config path explicitly
+./mgstudio serve --game path/to/moon.game.json
+
+# optional: override bind/port
+./mgstudio serve --game path/to/moon.game.json --port 8099
+```
 
 ### Non-Repo Layouts (Distributed Games)
 
 `mgstudio` does not require a full git repo. If the runtime is not discoverable near the wasm file, pass:
 
 ```bash
-./mgstudio run path/to/game.wasm --runtime-root /path/to/runtime_bundle_root
-./mgstudio serve path/to/game.wasm --runtime-root /path/to/runtime_bundle_root
+./mgstudio run --game path/to/moon.game.json --runtime-root /path/to/runtime_bundle_root
 ```
+
+`mgstudio serve` uses a staged served root and loads `mgstudio-runtime-web.js` from the URL provided in config (or a default GitHub release URL). It does not need `--runtime-root`.
 
 ## Install (Local Symlink)
 

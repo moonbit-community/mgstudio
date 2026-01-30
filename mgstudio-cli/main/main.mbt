@@ -17,8 +17,9 @@
 ///
 /// Currently supported:
 /// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component` / `#ecs.resource`.
-/// - `mgstudio run`: run a wasm-gc game module in native runtime (calls `game_app`).
-/// - `mgstudio serve`: serve the web runtime and run the game in browser (calls `game_app`).
+/// - `mgstudio run`: run a game config in native runtime (calls `game_app`).
+/// - `mgstudio serve`: serve the web runtime and run a game config in browser (calls `game_app`).
+/// - `mgstudio new`: create a new game project template.
 async fn main {
   let argv = @sys.get_cli_args()
   let parser = make_cli_parser()
@@ -39,7 +40,7 @@ async fn main {
       println(err)
       if normalized_args.length() > 0 {
         let top = normalized_args[0]
-        if top == "run" || top == "serve" || top == "gen" {
+        if top == "run" || top == "serve" || top == "gen" || top == "new" {
           print_subcommand_help(parser, top)
         } else {
           print_cli_help(parser)
@@ -61,6 +62,7 @@ async fn main {
         "gen" => cmd_gen(cmd)
         "run" => cmd_run(cmd)
         "serve" => cmd_serve(cmd)
+        "new" => cmd_new(cmd)
         _ => {
           println("Unknown command: \{cmd.name}")
           print_cli_help(parser)
@@ -111,55 +113,49 @@ fn make_cli_parser() -> @clap.Parser {
         },
       ),
       "run": @clap.SubCommand::new(
-        help="Run a wasm-gc game module in native runtime (calls export `game_app`).",
+        help="Run a game described by a game config file in native runtime (calls export `game_app`).",
         args={
           "runtime-root": @clap.Arg::named(
             nargs=@clap.Nargs::AtMost(1U),
             help="Runtime root directory. If omitted, auto-discover by searching parent folders for ./mgstudio-runtime/.",
           ),
           "debug": @clap.Arg::flag(help="Use debug builds (default: release)."),
-          "assets-source": @clap.Arg::named(
+          "game": @clap.Arg::named(
+            short='g',
             nargs=@clap.Nargs::AtMost(1U),
-            help="Assets source spec (native default: dir:<wasm_dir>/assets if exists else dir:<wasm_dir>).",
-          ),
-          "data-source": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="User data source spec (native default: dir:<wasm_dir>/.mgstudio-data).",
+            help="Path to game config file. If omitted, search for ./moon.game.json from current directory upwards.",
           ),
           "wgpu-lib": @clap.Arg::named(
             nargs=@clap.Nargs::AtMost(1U),
             help="Override libwgpu_native path (sets MBT_WGPU_NATIVE_LIB).",
           ),
-          "wasm": @clap.Arg::positional(
-            nargs=@clap.Nargs::Fixed(1U),
-            help="Path to the game wasm file (must export `game_app`).",
-          ),
         },
       ),
       "serve": @clap.SubCommand::new(
-        help="Serve the web runtime and run a wasm-gc game module in browser (calls export `game_app`).",
+        help="Serve the web runtime and run a game described by a game config file in browser (calls export `game_app`).",
         args={
-          "runtime-root": @clap.Arg::named(
+          "game": @clap.Arg::named(
+            short='g',
             nargs=@clap.Nargs::AtMost(1U),
-            help="Runtime root directory. If omitted, auto-discover by searching parent folders for ./mgstudio-runtime/.",
+            help="Path to game config file. If omitted, search for ./moon.game.json from current directory upwards.",
           ),
-          "debug": @clap.Arg::flag(help="Use debug builds (default: release)."),
+          "addr": @clap.Arg::named(
+            nargs=@clap.Nargs::AtMost(1U),
+            help="Override web server bind address (default: from game config or localhost).",
+          ),
           "port": @clap.Arg::named(
             short='p',
             nargs=@clap.Nargs::AtMost(1U),
-            help="HTTP port to serve on (default: 8099).",
+            help="Override web server port (default: from game config or 8099).",
           ),
-          "assets-source": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="Assets source spec. If a local dir (dir:<path> or an existing folder), it will be mounted under the served root automatically.",
-          ),
-          "data-source": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="User data source spec (web default: idb:mgstudio).",
-          ),
-          "wasm": @clap.Arg::positional(
+        },
+      ),
+      "new": @clap.SubCommand::new(
+        help="Create a new MoonBit game project (moon new + moon.game.json + index.html).",
+        args={
+          "name": @clap.Arg::positional(
             nargs=@clap.Nargs::Fixed(1U),
-            help="Path to the game wasm file (must export `game_app`).",
+            help="Project name (directory to create).",
           ),
         },
       ),
@@ -204,20 +200,15 @@ struct GenOptions {
 struct RunOptions {
   runtime_root : String?
   release : Bool
-  wasm : String
-  assets_source : String?
-  data_source : String?
+  game : String?
   wgpu_lib : String?
 }
 
 ///|
 struct ServeOptions {
-  runtime_root : String?
-  release : Bool
-  port : String
-  wasm : String
-  assets_source : String?
-  data_source : String?
+  game : String?
+  addr : String?
+  port : String?
 }
 
 ///|
@@ -298,15 +289,24 @@ async fn cmd_serve(cmd : @clap.SimpleValue) -> Unit {
 }
 
 ///|
-fn parse_run_options_defaults(_workspace : String) -> RunOptions {
-  {
-    release: true,
-    runtime_root: None,
-    wasm: "",
-    assets_source: None,
-    data_source: None,
-    wgpu_lib: None,
+async fn cmd_new(cmd : @clap.SimpleValue) -> Unit {
+  let name_args : Array[String] = cmd.get_positional()
+  guard name_args.get(0) is Some(name) else {
+    println("Missing required positional argument: name")
+    @sys.exit(2)
+    return
   }
+  new_game_project(name) catch {
+    err => {
+      println("mgstudio new failed: \{err}")
+      @sys.exit(1)
+    }
+  }
+}
+
+///|
+fn parse_run_options_defaults(_workspace : String) -> RunOptions {
+  { release: true, runtime_root: None, game: None, wgpu_lib: None }
 }
 
 ///|
@@ -315,55 +315,24 @@ fn parse_run_options(
 ) -> RunOptions raise @clap.ParserError {
   let debug = cmd.get_flag("debug").unwrap_or(false)
   let runtime_root : String? = cmd.get_option("runtime-root")
-  // Positional args are stored in SimpleValue.positional_args, not in args map.
-  let wasm_args : Array[String] = cmd.get_positional()
-  guard wasm_args.get(0) is Some(wasm) else {
-    raise @clap.ParserError::InvalidArgumentValue(
-      "Missing required positional argument: wasm",
-    )
-  }
-  let assets_source : String? = cmd.get_option("assets-source")
-  let data_source : String? = cmd.get_option("data-source")
+  let game : String? = cmd.get_option("game")
   let wgpu_lib : String? = cmd.get_option("wgpu-lib")
-  { release: !debug, runtime_root, wasm, assets_source, data_source, wgpu_lib }
+  { release: !debug, runtime_root, game, wgpu_lib }
 }
 
 ///|
 fn parse_serve_options_defaults() -> ServeOptions {
-  {
-    runtime_root: None,
-    release: true,
-    port: "8099",
-    wasm: "",
-    assets_source: None,
-    data_source: None,
-  }
+  { game: None, addr: None, port: None }
 }
 
 ///|
 fn parse_serve_options(
   cmd : @clap.SimpleValue,
 ) -> ServeOptions raise @clap.ParserError {
-  let debug = cmd.get_flag("debug").unwrap_or(false)
-  let runtime_root : String? = cmd.get_option("runtime-root")
+  let game : String? = cmd.get_option("game")
+  let addr : String? = cmd.get_option("addr")
   let port : String? = cmd.get_option("port")
-  // Positional args are stored in SimpleValue.positional_args, not in args map.
-  let wasm_args : Array[String] = cmd.get_positional()
-  guard wasm_args.get(0) is Some(wasm) else {
-    raise @clap.ParserError::InvalidArgumentValue(
-      "Missing required positional argument: wasm",
-    )
-  }
-  let assets_source : String? = cmd.get_option("assets-source")
-  let data_source : String? = cmd.get_option("data-source")
-  {
-    runtime_root,
-    release: !debug,
-    port: port.unwrap_or("8099"),
-    wasm,
-    assets_source,
-    data_source,
-  }
+  { game, addr, port }
 }
 
 ///|
@@ -419,20 +388,144 @@ fn ensure_trailing_slash(text : String) -> String {
 }
 
 ///|
-async fn resolve_wasm_path(wasm_arg : String) -> String {
-  if wasm_arg.trim() == "" {
-    raise RunError::InvalidArgs("missing wasm path")
+fn render_web_index_html(runtime_js_url : String) -> String {
+  // Keep a dummy menu element so the web runtime doesn't overwrite the status
+  // with "Missing menu element".
+  "<!doctype html>\n" +
+  "<html lang=\"en\">\n" +
+  "  <head>\n" +
+  "    <meta charset=\"utf-8\" />\n" +
+  "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" +
+  "    <title>Moon Game Studio</title>\n" +
+  "    <style>\n" +
+  "      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b0f16; }\n" +
+  "      canvas { display: block; width: 100%; height: 100%; }\n" +
+  "      #mgstudio-menu { display: none; }\n" +
+  "    </style>\n" +
+  "  </head>\n" +
+  "  <body>\n" +
+  "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
+  "    <div id=\"mgstudio-menu\"></div>\n" +
+  "    <script type=\"module\" src=\"" +
+  runtime_js_url +
+  "\"></script>\n" +
+  "  </body>\n" +
+  "</html>\n"
+}
+
+///|
+async fn stage_assets(
+  stage_root : String,
+  assets_spec : String,
+) -> (String, Bool) {
+  let spec = assets_spec.trim().to_string()
+  if spec.has_prefix("dir:") {
+    let local_path = strip_dir_prefix(spec)
+    if !@fs.exists(local_path) {
+      raise RunError::MissingFile(local_path)
+    }
+    let mount = path_join(stage_root, "_mgstudio_assets")
+    if @fs.exists(mount) {
+      @fs.rmdir(mount, recursive=true) catch {
+        _ => @fs.remove(mount) catch { _ => () }
+      }
+    }
+    @fs.symlink(mount, target=local_path)
+    ("./_mgstudio_assets/", true)
+  } else if spec.has_prefix("http://") || spec.has_prefix("https://") {
+    (ensure_trailing_slash(spec), false)
+  } else {
+    raise RunError::InvalidArgs("Unsupported assets spec for web: " + spec)
+  }
+}
+
+///|
+fn url_encode_component(value : String) -> String {
+  // Minimal percent-encoding for query values. This is sufficient for our
+  // expected values (relative paths, idb:*, and https://* base URLs).
+  let b = StringBuilder::new(size_hint=value.length())
+  for c in value {
+    match c {
+      ' ' => b.write_string("%20")
+      '%' => b.write_string("%25")
+      '&' => b.write_string("%26")
+      '#' => b.write_string("%23")
+      '?' => b.write_string("%3F")
+      '=' => b.write_string("%3D")
+      '+' => b.write_string("%2B")
+      _ => b.write_char(c)
+    }
+  }
+  b.to_string()
+}
+
+///|
+async fn new_game_project(name : String) -> Unit {
+  let project_name = name.trim().to_string()
+  if project_name == "" {
+    raise RunError::InvalidArgs("project name is empty")
   }
   let cwd = @fs.realpath(".")
-  let path = if is_absolute_path(wasm_arg) {
-    wasm_arg
-  } else {
-    path_join(cwd, wasm_arg)
+  let project_dir = path_join(cwd, project_name)
+  if @fs.exists(project_dir) {
+    raise RunError::InvalidArgs("path already exists: " + project_dir)
   }
-  if !@fs.exists(path) {
-    raise RunError::MissingFile(path)
-  }
-  path
+  run_process_checked("moon", ["new", project_name], cwd~)
+
+  // Provide a tiny "ready-to-run" skeleton. Dependencies will be configured by
+  // users as needed; the runner only needs a wasm artifact path.
+  @fs.mkdir(path_join(project_dir, "assets"), permission=0o755, recursive=true)
+  @fs.mkdir(
+    path_join(project_dir, "tmp/data"),
+    permission=0o755,
+    recursive=true,
+  )
+  let cart = "./_build/wasm-gc/release/build/main/main.wasm"
+  let game_json = "{\n" +
+    "  \"mgstudio\": \"0.1.0\",\n" +
+    "  \"cart\": \"" +
+    cart +
+    "\",\n" +
+    "  \"assets\": \"./assets\",\n" +
+    "  \"data\": \"./tmp/data\",\n" +
+    "  \"web\": { \"addr\": \"localhost\", \"port\": 8099, \"data\": \"idb:mgstudio\", \"runtime_js\": \"" +
+    DEFAULT_WEB_RUNTIME_JS +
+    "\" }\n" +
+    "}\n"
+  write_file_text(path_join(project_dir, "moon.game.json"), game_json)
+  let index_html = "<!doctype html>\n" +
+    "<html lang=\"en\">\n" +
+    "  <head>\n" +
+    "    <meta charset=\"utf-8\" />\n" +
+    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" +
+    "    <title>Moon Game Studio</title>\n" +
+    "    <style>\n" +
+    "      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b0f16; }\n" +
+    "      canvas { display: block; width: 100%; height: 100%; }\n" +
+    "      #mgstudio-menu { display: none; }\n" +
+    "    </style>\n" +
+    "  </head>\n" +
+    "  <body>\n" +
+    "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
+    "    <div id=\"mgstudio-menu\"></div>\n" +
+    "    <script>\n" +
+    "      // Default to the game build output when no query string is provided.\n" +
+    "      const url = new URL(window.location.href);\n" +
+    "      if (!url.searchParams.get('wasm')) {\n" +
+    "        url.searchParams.set('wasm', '" +
+    cart +
+    "');\n" +
+    "        url.searchParams.set('assets_source', './assets/');\n" +
+    "        url.searchParams.set('data_source', 'idb:mgstudio');\n" +
+    "        history.replaceState(null, '', url.toString());\n" +
+    "      }\n" +
+    "    </script>\n" +
+    "    <script type=\"module\" src=\"" +
+    DEFAULT_WEB_RUNTIME_JS +
+    "\"></script>\n" +
+    "  </body>\n" +
+    "</html>\n"
+  write_file_text(path_join(project_dir, "index.html"), index_html)
 }
 
 ///|
@@ -490,7 +583,15 @@ async fn resolve_runtime_root(
 
 ///|
 async fn run_native(opts : RunOptions) -> Unit {
-  let wasm_path = resolve_wasm_path(opts.wasm)
+  let game_cfg_path = resolve_game_config_path(opts.game)
+  let cfg = load_game_config(game_cfg_path)
+  println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
+  if cfg.data_spec_native.has_prefix("idb:") {
+    raise RunError::InvalidArgs(
+      "Native runtime does not support idb data source: " + cfg.data_spec_native,
+    )
+  }
+  let wasm_path = cfg.cart_path
   let runtime_root = resolve_runtime_root(opts.runtime_root, wasm_path)
   let runtime_dir = path_join(runtime_root, "mgstudio-runtime/native")
   let profile = if opts.release { "release" } else { "debug" }
@@ -517,36 +618,8 @@ async fn run_native(opts : RunOptions) -> Unit {
   if !@fs.exists(runtime_exe) {
     raise RunError::MissingFile(runtime_exe)
   }
-  let wasm_dir = path_dirname(wasm_path)
-  let default_assets_dir = path_join(wasm_dir, "assets")
-  let assets_source = match opts.assets_source {
-    Some(s) if s.trim() != "" => {
-      let v = s.trim().to_string()
-      if v.has_prefix("dir:") {
-        v
-      } else {
-        "dir:" + v
-      }
-    }
-    _ =>
-      if @fs.exists(default_assets_dir) {
-        "dir:" + default_assets_dir
-      } else {
-        "dir:" + wasm_dir
-      }
-  }
-  let default_data_dir = path_join(wasm_dir, ".mgstudio-data")
-  let data_source = match opts.data_source {
-    Some(s) if s.trim() != "" => {
-      let v = s.trim().to_string()
-      if v.has_prefix("dir:") {
-        v
-      } else {
-        "dir:" + v
-      }
-    }
-    _ => "dir:" + default_data_dir
-  }
+  let assets_source = cfg.assets_spec
+  let data_source = cfg.data_spec_native
   let extra_env : Map[String, String] = match opts.wgpu_lib {
     Some(p) if p != "" =>
       {
@@ -565,42 +638,13 @@ async fn run_native(opts : RunOptions) -> Unit {
 
 ///|
 async fn serve_web(opts : ServeOptions) -> Unit {
-  let wasm_path = resolve_wasm_path(opts.wasm)
-  let runtime_root = resolve_runtime_root(opts.runtime_root, wasm_path)
-  let template_dir = path_join(runtime_root, "mgstudio-runtime/web")
+  let game_cfg_path = resolve_game_config_path(opts.game)
+  let cfg = load_game_config(game_cfg_path)
+  println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
+  let wasm_path = cfg.cart_path
 
-  // Ensure the web runtime bundle exists (build as a developer fallback).
-  let bundle_src = path_join(template_dir, "mgstudio-runtime-web.js")
-  if !@fs.exists(bundle_src) {
-    let has_sources = @fs.exists(path_join(template_dir, "moon.mod.json"))
-    if has_sources {
-      let runtime_args : Array[String] = if opts.release {
-        ["build", "--release", "--target", "js", "-C", template_dir]
-      } else {
-        ["build", "--target", "js", "-C", template_dir]
-      }
-      run_process_checked("moon", runtime_args, cwd=runtime_root)
-      let js_profile = if opts.release { "release" } else { "debug" }
-      let built_bundle = path_join(
-        template_dir,
-        "_build/js/\{js_profile}/build/mgstudio-runtime-web.js",
-      )
-      if @fs.exists(built_bundle) {
-        run_process_checked("cp", [built_bundle, bundle_src], cwd=runtime_root)
-      }
-    }
-  }
-  if !@fs.exists(bundle_src) {
-    raise RunError::MissingFile(bundle_src)
-  }
-  let index_src = path_join(template_dir, "index.html")
-  if !@fs.exists(index_src) {
-    raise RunError::MissingFile(index_src)
-  }
-
-  // Stage a served root to avoid mutating the runtime template folder.
-  let cwd = @fs.realpath(".")
-  let stage_root = path_join(cwd, ".mgstudio/serve")
+  // Stage a served root alongside the game config.
+  let stage_root = path_join(cfg.dir, ".mgstudio/serve")
   if @fs.exists(stage_root) {
     @fs.rmdir(stage_root, recursive=true) catch {
       _ => @fs.remove(stage_root) catch { _ => () }
@@ -608,77 +652,38 @@ async fn serve_web(opts : ServeOptions) -> Unit {
   }
   @fs.mkdir(stage_root, permission=0o755, recursive=true)
 
-  // Copy runtime entry files.
-  run_process_checked("cp", [index_src, stage_root], cwd=runtime_root)
-  run_process_checked("cp", [bundle_src, stage_root], cwd=runtime_root)
+  // Write index.html that loads the web runtime from CDN / GitHub release.
+  let index_dst = path_join(stage_root, "index.html")
+  write_file_text(index_dst, render_web_index_html(cfg.web_runtime_js))
 
   // Copy game wasm into served root.
   let wasm_dst = path_join(stage_root, "game.wasm")
-  run_process_checked("cp", [wasm_path, wasm_dst], cwd=runtime_root)
+  run_process_checked("cp", [wasm_path, wasm_dst], cwd=cfg.dir)
 
   // Assets: either mount a local directory or use a URL base.
-  let mut assets_base = "./assets/"
-  let mut mounted_assets = false
-  match opts.assets_source {
-    Some(s) if s.trim() != "" => {
-      let spec = s.trim().to_string()
-      let local_path = strip_dir_prefix(spec)
-      let is_remote = spec.has_prefix("http://") || spec.has_prefix("https://")
-      if !is_remote && @fs.exists(local_path) {
-        let mount = path_join(stage_root, "_mgstudio_assets")
-        if @fs.exists(mount) {
-          @fs.rmdir(mount, recursive=true) catch {
-            _ => @fs.remove(mount) catch { _ => () }
-          }
-        }
-        @fs.symlink(mount, target=local_path)
-        assets_base = "./_mgstudio_assets/"
-        mounted_assets = true
-      } else if !is_remote && spec.has_prefix("dir:") {
-        raise RunError::MissingFile(local_path)
-      } else {
-        // Treat as URL base (relative or absolute).
-        assets_base = ensure_trailing_slash(strip_dir_prefix(spec))
-      }
-    }
-    _ => ()
-  }
-  if !mounted_assets {
-    // Default: mount the runtime template's bundled assets folder if present.
-    let template_assets = path_join(template_dir, "assets")
-    if @fs.exists(template_assets) {
-      let mount = path_join(stage_root, "assets")
-      if @fs.exists(mount) {
-        @fs.rmdir(mount, recursive=true) catch {
-          _ => @fs.remove(mount) catch { _ => () }
-        }
-      }
-      @fs.symlink(mount, target=template_assets)
-      assets_base = "./assets/"
-    }
-  }
+  let (assets_base, _mounted) = stage_assets(stage_root, cfg.assets_spec)
 
-  // Data source for web: default to IndexedDB.
-  let data_source = match opts.data_source {
-    Some(s) if s.trim() != "" => {
-      let v = s.trim().to_string()
-      if v.has_prefix("idb:") {
-        v
-      } else {
-        "idb:" + v
-      }
-    }
-    _ => "idb:mgstudio"
+  // Data source for web: prefer idb.
+  let data_source = cfg.data_spec_web
+  if !data_source.has_prefix("idb:") {
+    raise RunError::InvalidArgs(
+      "Web runtime only supports idb data source today (got: " +
+      data_source +
+      ")",
+    )
   }
-  let port = opts.port
+  let addr = opts.addr.unwrap_or(cfg.web_addr)
+  let port = opts.port.unwrap_or(cfg.web_port)
   println("")
   println(
-    "Serving web runtime at: http://localhost:\{port}/?wasm=./game.wasm&assets_source=\{assets_base}&data_source=\{data_source}",
+    "Serving web runtime at: http://\{addr}:\{port}/?wasm=./game.wasm&assets_source=\{url_encode_component(assets_base)}&data_source=\{url_encode_component(data_source)}",
   )
   println("Press Ctrl+C to stop.")
   println("")
-  let server_args = ["-m", "http.server", port, "--directory", stage_root]
-  run_process_checked("python3", server_args, cwd=runtime_root)
+  let server_args = [
+    "-m", "http.server", port, "--bind", addr, "--directory", stage_root,
+  ]
+  run_process_checked("python3", server_args, cwd=cfg.dir)
 }
 
 ///|
