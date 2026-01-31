@@ -137,32 +137,6 @@ fn build_text_buffer(instance : TextInstance) -> CosmicBuffer {
 }
 
 ///|
-fn resolve_span_index(buffer : CosmicBuffer, byte_index : Int) -> Int {
-  let count = buffer.spans.length()
-  for i in 0..<count {
-    let span = buffer.spans[i]
-    if byte_index >= span.start && byte_index < span.start + span.length {
-      return i
-    }
-  }
-  0
-}
-
-///|
-fn text_span_font(instance : TextInstance, span_index : Int) -> TextFont {
-  if span_index == 0 {
-    instance.font
-  } else {
-    let index = span_index - 1
-    if index >= 0 && index < instance.spans.length() {
-      instance.spans[index].font
-    } else {
-      instance.font
-    }
-  }
-}
-
-///|
 fn text_span_color(instance : TextInstance, span_index : Int) -> TextColor {
   if span_index == 0 {
     instance.color
@@ -177,24 +151,162 @@ fn text_span_color(instance : TextInstance, span_index : Int) -> TextColor {
 }
 
 ///|
-fn text_span_line_height(
-  instance : TextInstance,
-  span_index : Int,
-) -> LineHeight {
-  if span_index == 0 {
-    instance.line_height
-  } else {
-    let index = span_index - 1
-    if index >= 0 && index < instance.spans.length() {
-      instance.spans[index].line_height
-    } else {
-      instance.line_height
+let font_atlas_set_state : Ref[FontAtlasSet] = Ref::new(FontAtlasSet::default())
+
+///|
+/// Global font system state for `mgstudio/cosmic` (engine-side shaping/wrap/BiDi).
+priv struct CosmicFontSystemState {
+  font_system : @cosmic.FontSystem
+  // Map asset font handle id -> cosmic font id (best-effort: first face in the data).
+  handle_to_font_id : Array[(Int, Int)]
+  // Map cosmic font id -> asset font handle id (for rasterization/atlas selection).
+  font_id_to_handle_id : Array[Int]
+  // Cache family names for asset font handles (best-effort).
+  handle_to_family : Array[(Int, String)]
+}
+
+///|
+let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref::new(CosmicFontSystemState::{
+  font_system: @cosmic.FontSystem::new(),
+  handle_to_font_id: [],
+  font_id_to_handle_id: [],
+  handle_to_family: [],
+})
+
+///|
+fn find_int_pair_value(pairs : Array[(Int, Int)], key : Int) -> Int? {
+  let n = pairs.length()
+  for i in 0..<n {
+    if pairs[i].0 == key {
+      return Some(pairs[i].1)
+    }
+  }
+  None
+}
+
+///|
+fn find_str_pair_value(pairs : Array[(Int, String)], key : Int) -> String? {
+  let n = pairs.length()
+  for i in 0..<n {
+    if pairs[i].0 == key {
+      return Some(pairs[i].1)
+    }
+  }
+  None
+}
+
+///|
+fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
+  let handle_id = font.id()
+  let state0 = cosmic_font_system_state.val
+  match find_int_pair_value(state0.handle_to_font_id, handle_id) {
+    Some(id) => return Some(id)
+    None => ()
+  }
+  let bytes_opt = @asset.asset_font_read_bytes(font)
+  if bytes_opt is None {
+    return None
+  }
+  let bytes = if bytes_opt is Some(v) { v } else { return None }
+  let old_len = state0.font_system.fonts().length()
+  let font_system = state0.font_system.load_font_data(bytes)
+  let new_len = font_system.fonts().length()
+  if new_len <= old_len {
+    return None
+  }
+  let handle_to_font_id = state0.handle_to_font_id
+  handle_to_font_id.push((handle_id, old_len))
+  let font_id_to_handle_id = state0.font_id_to_handle_id
+  for _i in old_len..<new_len {
+    font_id_to_handle_id.push(handle_id)
+  }
+  let handle_to_family = state0.handle_to_family
+  if find_str_pair_value(handle_to_family, handle_id) is None {
+    let fonts = font_system.fonts()
+    if old_len >= 0 && old_len < fonts.length() {
+      let family = fonts[old_len].family_name()
+      handle_to_family.push((handle_id, family))
+    }
+  }
+  cosmic_font_system_state.val = CosmicFontSystemState::{
+    font_system,
+    handle_to_font_id,
+    font_id_to_handle_id,
+    handle_to_family,
+  }
+  Some(old_len)
+}
+
+///|
+fn cosmic_font_family_name(font : @asset.Handle[@asset.Font]) -> String? {
+  let handle_id = font.id()
+  let state0 = cosmic_font_system_state.val
+  match find_str_pair_value(state0.handle_to_family, handle_id) {
+    Some(v) => Some(v)
+    None => {
+      // Best-effort: ensure the font is loaded, then query again.
+      cosmic_get_or_load_font_id(font) |> ignore
+      find_str_pair_value(
+        cosmic_font_system_state.val.handle_to_family,
+        handle_id,
+      )
     }
   }
 }
 
 ///|
-let font_atlas_set_state : Ref[FontAtlasSet] = Ref::new(FontAtlasSet::default())
+fn cosmic_font_handle_id_for_font_id(font_id : Int) -> Int? {
+  let ids = cosmic_font_system_state.val.font_id_to_handle_id
+  if font_id < 0 || font_id >= ids.length() {
+    return None
+  }
+  Some(ids[font_id])
+}
+
+///|
+fn justify_is_left(justify : Justify) -> Bool {
+  match justify {
+    Justify::Left => true
+    _ => false
+  }
+}
+
+///|
+fn font_smoothing_is_none(smoothing : FontSmoothing) -> Bool {
+  match smoothing {
+    FontSmoothing::None => true
+    _ => false
+  }
+}
+
+///|
+fn cosmic_physical_xy(
+  glyph : @cosmic.LayoutGlyph,
+  font_smoothing : FontSmoothing,
+) -> (Int, Int) {
+  let font_size = glyph.font_size
+  let mut x = glyph.x
+  let mut y = glyph.y
+  let mut x_offset = glyph.x_offset
+  let mut y_offset = glyph.y_offset
+  if font_smoothing_is_none(font_smoothing) {
+    x = @cosmic.roundf(x)
+    y = @cosmic.roundf(y)
+    x_offset = @cosmic.roundf(x_offset)
+    y_offset = @cosmic.roundf(y_offset)
+  }
+  let pos_x = x + font_size * x_offset
+  let pos_y = @cosmic.truncf(y - font_size * y_offset)
+  let (_, px, py) = @cosmic.CacheKey::new(
+    glyph.font_id,
+    glyph.glyph_id,
+    font_size,
+    (pos_x, pos_y),
+    glyph.font_weight,
+    glyph.cache_key_flags,
+  )
+  (px, py)
+}
 
 ///|
 fn text_update_layout(instance : TextInstance) -> TextInstance {
@@ -203,187 +315,235 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   }
   let buffer = build_text_buffer(instance)
   let entities = build_text_entities(instance)
+
+  // Ensure all fonts used by this text block are loaded into the cosmic font system.
+  cosmic_get_or_load_font_id(instance.font.font) |> ignore
+  for span in instance.spans {
+    cosmic_get_or_load_font_id(span.font.font) |> ignore
+  }
+  let font_system = cosmic_font_system_state.val.font_system
+
+  // Build rich text spans for cosmic buffer.
+  let spans : Array[(String, @cosmic.Attrs)] = []
+  let base_family = cosmic_font_family_name(instance.font.font)
+  let mut base_attrs = @cosmic.Attrs::with_metadata(0)
+  if base_family is Some(name) && name.length() > 0 {
+    base_attrs = base_attrs.family(@cosmic.Family::Name(name))
+  }
+  spans.push((instance.text.content, base_attrs))
+  for i in 0..<instance.spans.length() {
+    let sp = instance.spans[i]
+    let idx = i + 1
+    let fam = cosmic_font_family_name(sp.font.font)
+    let mut attrs = @cosmic.Attrs::with_metadata(idx)
+    if fam is Some(name) && name.length() > 0 {
+      attrs = attrs.family(@cosmic.Family::Name(name))
+    }
+    spans.push((sp.span.content, attrs))
+  }
+  let wrap = match buffer.linebreak {
+    LineBreak::WordBoundary => @cosmic.Wrap::Word
+    LineBreak::AnyCharacter => @cosmic.Wrap::Glyph
+    LineBreak::WordOrCharacter => @cosmic.Wrap::WordOrGlyph
+    LineBreak::NoWrap => @cosmic.Wrap::None
+  }
+  let align = match buffer.justify {
+    Justify::Left => @cosmic.Align::Left
+    Justify::Center => @cosmic.Align::Center
+    Justify::Right => @cosmic.Align::Right
+    Justify::Justified => @cosmic.Align::Justified
+  }
+
+  // `mgstudio/cosmic` currently uses a single (buffer-wide) Metrics like upstream cosmic-text.
+  // We conservatively pick the maximum line height across spans to avoid clipping.
+  let mut metrics_line_height = buffer.line_height
+  for sp in instance.spans {
+    let lh = sp.line_height.eval(sp.font.font_size)
+    if lh > metrics_line_height {
+      metrics_line_height = lh
+    }
+  }
+  let metrics = @cosmic.Metrics::new(buffer.font_size, metrics_line_height)
+  let mut cosmic_buffer = @cosmic.Buffer::new_empty(metrics)
+  cosmic_buffer = cosmic_buffer.set_wrap(wrap)
+  cosmic_buffer = cosmic_buffer.set_size(buffer.max_width, buffer.max_height)
+  cosmic_buffer = cosmic_buffer.set_rich_text(
+    spans,
+    base_attrs,
+    @cosmic.Shaping::Advanced,
+    Some(align),
+  )
+
+  // Layout pass (best-effort).
+  cosmic_buffer = cosmic_buffer.layout_all_with_font_system(font_system)
+  // Workaround for alignment not working for unbounded text (bevy parity).
+  if buffer.max_width is None && !justify_is_left(buffer.justify) {
+    let mut w = 0.0F
+    for run in cosmic_buffer.layout_runs() {
+      if run.line_w > w {
+        w = run.line_w
+      }
+    }
+    cosmic_buffer = cosmic_buffer.set_size(Some(w), buffer.max_height)
+    cosmic_buffer = cosmic_buffer.layout_all_with_font_system(font_system)
+  }
   let glyphs : Array[PositionedGlyph] = []
   let run_geometry : Array[RunGeometry] = []
   let mut missing_glyph = false
-  let mut max_x = 0.0F
-  let mut max_y = 0.0F
-  let mut line_index = 0
-  let mut x = 0.0F
-  let line_height = instance.line_height.eval(instance.font.font_size)
-  let mut line_y = line_height
-  let line_widths : Array[Float] = [0.0F]
-  let max_width = match buffer.max_width {
-    Some(value) => value
-    None => -1.0F
-  }
-  let wrap_enabled = if max_width <= 0.0F {
-    false
-  } else {
-    match buffer.linebreak {
-      LineBreak::NoWrap => false
-      _ => true
+  let mut box_w = 0.0F
+  let mut box_h = 0.0F
+  for run in cosmic_buffer.layout_runs() {
+    if run.line_w > box_w {
+      box_w = run.line_w
     }
-  }
-  let count = buffer.text.length()
-  for i in 0..<count {
-    let code = buffer.text.code_unit_at(i).to_int()
-    if code == 10 {
-      if x > max_x {
-        max_x = x
+    box_h = box_h + run.line_height
+    let mut maybe_run_geom : RunGeometry? = None
+    let mut end_x = 0.0F
+    for layout_glyph0 in run.glyphs {
+      let span_index = layout_glyph0.metadata
+      if span_index < 0 || span_index >= entities.length() {
+        continue
       }
-      line_widths[line_index] = x
-      x = 0.0F
-      line_index = line_index + 1
-      if line_index >= line_widths.length() {
-        line_widths.push(0.0F)
+      if maybe_run_geom is Some(rg) && rg.span_index != span_index {
+        run_geometry.push(rg)
+        maybe_run_geom = None
       }
-      line_y = line_y + line_height
-      continue
-    }
-    let span_index = resolve_span_index(buffer, i)
-    let text_font = text_span_font(instance, span_index)
-    let span_line_height = text_span_line_height(instance, span_index)
-    let span_height = span_line_height.eval(text_font.font_size)
-    let smoothing = entities[span_index].font_smoothing
-    let advance = font_measure_advance(
-      text_font.font,
-      text_font.font_size,
-      code,
-    )
-    if code == 32 {
-      x = x + advance
-      continue
-    }
-    if code == 9 {
-      let space_advance = font_measure_advance(
-        text_font.font,
-        text_font.font_size,
-        32,
+      if maybe_run_geom is None {
+        let font_opt = font_system.get_font(layout_glyph0.font_id)
+        let font_ref = match font_opt {
+          None => continue
+          Some(f) => f
+        }
+        let m = font_ref.metrics([])
+        let upem = m.units_per_em.to_int()
+        let scalar = if upem <= 0 {
+          0.0F
+        } else {
+          layout_glyph0.font_size / Float::from_double(upem.to_double())
+        }
+        let stroke = Float::from_double(
+          (m.stroke_size * scalar.to_double()).round(),
+        )
+        let stroke_size = if stroke < 1.0F { 1.0F } else { stroke }
+        let start = if end_x > layout_glyph0.x {
+          end_x
+        } else {
+          layout_glyph0.x
+        }
+        maybe_run_geom = Some(RunGeometry::{
+          span_index,
+          bounds: @math.Rect::new(
+            @math.Vec2::new(start, run.line_top),
+            @math.Vec2::new(start, run.line_top + run.line_height),
+          ),
+          strikethrough_y: @cosmic.roundf(
+            run.line_y -
+            Float::from_double(m.strikeout_offset * scalar.to_double()),
+          ),
+          strikethrough_thickness: stroke_size,
+          underline_y: @cosmic.roundf(
+            run.line_y -
+            Float::from_double(m.underline_offset * scalar.to_double()),
+          ),
+          underline_thickness: stroke_size,
+        })
+      }
+      end_x = layout_glyph0.x + layout_glyph0.w
+      if maybe_run_geom is Some(rg0) {
+        let bounds = @math.Rect::new(
+          rg0.bounds.min,
+          @math.Vec2::new(end_x, rg0.bounds.max.y),
+        )
+        maybe_run_geom = Some(RunGeometry::{ ..rg0, bounds, })
+      }
+      let font_smoothing = entities[span_index].font_smoothing
+      let (phys_x_i, phys_y_i) = cosmic_physical_xy(
+        layout_glyph0, font_smoothing,
       )
-      x = x + space_advance * 4.0F
-      continue
-    }
-    if wrap_enabled && x > 0.0F && advance > 0.0F && x + advance > max_width {
-      if x > max_x {
-        max_x = x
+      let font_handle_id_opt = cosmic_font_handle_id_for_font_id(
+        layout_glyph0.font_id,
+      )
+      if font_handle_id_opt is None {
+        missing_glyph = true
+        continue
       }
-      line_widths[line_index] = x
-      x = 0.0F
-      line_index = line_index + 1
-      if line_index >= line_widths.length() {
-        line_widths.push(0.0F)
+      let font_handle_id = if font_handle_id_opt is Some(v) {
+        v
+      } else {
+        continue
       }
-      line_y = line_y + line_height
-    }
-    let raster_opt = font_rasterize_glyph(
-      text_font.font,
-      text_font.font_size,
-      code,
-      smoothing,
-    )
-    if raster_opt is None {
-      missing_glyph = true
-      continue
-    }
-    let raster = if raster_opt is Some(value) { value } else { continue }
-    let cache_key = GlyphCacheKey::new(raster.glyph_id, 0, 0)
-    let font_key = FontAtlasKey::new(
-      text_font.font,
-      text_font.font_size,
-      smoothing,
-    )
-    let atlases = font_atlas_set_state.val.get_or_insert(font_key)
-    let atlas_info_opt = add_glyph_to_atlas(
-      atlases, cache_key, raster, smoothing,
-    )
-    if atlas_info_opt is None {
-      missing_glyph = true
-      continue
-    }
-    let atlas_info = if atlas_info_opt is Some(value) {
-      value
-    } else {
-      continue
-    }
-    let size_x = Float::from_double(raster.size.x.to_double())
-    let size_y = Float::from_double(raster.size.y.to_double())
-    let offset_x = Float::from_double(raster.offset.x.to_double())
-    let offset_y = Float::from_double(raster.offset.y.to_double())
-    let glyph_min_x = x + offset_x
-    let line_base = if span_height > line_height {
-      span_height
-    } else {
-      line_height
-    }
-    let glyph_min_y = line_y - offset_y + (line_base - line_height)
-    let glyph_center_x = glyph_min_x + size_x / 2.0F
-    let glyph_center_y = glyph_min_y + size_y / 2.0F
-    let glyph_pos = @math.Vec2::new(glyph_center_x, glyph_center_y)
-    let glyph_size = @math.Vec2::new(size_x, size_y)
-    glyphs.push(PositionedGlyph::{
-      position: glyph_pos,
-      size: glyph_size,
-      atlas_info,
-      span_index,
-      line_index,
-      byte_index: i,
-      byte_length: 1,
-    })
-    let glyph_max_x = glyph_min_x + size_x
-    let glyph_max_y = glyph_min_y + size_y
-    if glyph_max_x > max_x {
-      max_x = glyph_max_x
-    }
-    if glyph_max_y > max_y {
-      max_y = glyph_max_y
-    }
-    if advance > 0.0F {
-      x = x + advance
-    } else {
-      x = x + size_x
-    }
-  }
-  if x > max_x {
-    max_x = x
-  }
-  if line_index < line_widths.length() {
-    line_widths[line_index] = x
-  }
-  if line_y > max_y {
-    max_y = line_y
-  }
-  let mut target_width = max_x
-  if max_width > 0.0F && max_width > target_width {
-    target_width = max_width
-  }
-  let adjusted_glyphs : Array[PositionedGlyph] = []
-  for glyph in glyphs {
-    let mut offset_x = 0.0F
-    if glyph.line_index >= 0 && glyph.line_index < line_widths.length() {
-      let line_width = line_widths[glyph.line_index]
-      offset_x = match buffer.justify {
-        Justify::Left => 0.0F
-        Justify::Center => (target_width - line_width) / 2.0F
-        Justify::Right => target_width - line_width
-        Justify::Justified => 0.0F
+      let font_handle = @asset.Handle::new(font_handle_id)
+      let raster_opt = font_rasterize_glyph_id(
+        font_handle,
+        layout_glyph0.font_size,
+        layout_glyph0.glyph_id,
+        font_smoothing,
+      )
+      if raster_opt is None {
+        missing_glyph = true
+        continue
       }
+      let raster = if raster_opt is Some(v) { v } else { continue }
+      let cache_key = GlyphCacheKey::new(raster.glyph_id, 0, 0)
+      let font_key = FontAtlasKey::new(
+        font_handle,
+        layout_glyph0.font_size,
+        font_smoothing,
+      )
+      let atlases = font_atlas_set_state.val.get_or_insert(font_key)
+      let atlas_info_opt = add_glyph_to_atlas(
+        atlases, cache_key, raster, font_smoothing,
+      )
+      if atlas_info_opt is None {
+        missing_glyph = true
+        continue
+      }
+      let atlas_info = if atlas_info_opt is Some(v) { v } else { continue }
+      let layout_opt = @asset.asset_get_texture_atlas_layout(
+        atlas_info.texture_atlas,
+      )
+      if layout_opt is None {
+        missing_glyph = true
+        continue
+      }
+      let atlas_layout = if layout_opt is Some(v) { v } else { continue }
+      let rect_opt = atlas_layout.textures.get(atlas_info.location.glyph_index)
+      if rect_opt is None {
+        missing_glyph = true
+        continue
+      }
+      let rect = if rect_opt is Some(v) { v } else { continue }
+      let glyph_size_u = rect.size()
+      let glyph_size_x = Float::from_double(glyph_size_u.x.to_double())
+      let glyph_size_y = Float::from_double(glyph_size_u.y.to_double())
+      let left = Float::from_double(atlas_info.location.offset.x.to_double())
+      let top = Float::from_double(atlas_info.location.offset.y.to_double())
+      let phys_x = Float::from_double(phys_x_i.to_double())
+      let phys_y = Float::from_double(phys_y_i.to_double())
+      let x = glyph_size_x / 2.0F + left + phys_x
+      let y = @cosmic.roundf(run.line_y) + phys_y - top + glyph_size_y / 2.0F
+      glyphs.push(PositionedGlyph::{
+        position: @math.Vec2::new(x, y),
+        size: @math.Vec2::new(glyph_size_x, glyph_size_y),
+        atlas_info,
+        span_index,
+        line_index: run.line_i,
+        byte_index: layout_glyph0.start,
+        byte_length: layout_glyph0.end - layout_glyph0.start,
+      })
     }
-    adjusted_glyphs.push(PositionedGlyph::{
-      position: @math.Vec2::new(glyph.position.x + offset_x, glyph.position.y),
-      size: glyph.size,
-      atlas_info: glyph.atlas_info,
-      span_index: glyph.span_index,
-      line_index: glyph.line_index,
-      byte_index: glyph.byte_index,
-      byte_length: glyph.byte_length,
-    })
+    if maybe_run_geom is Some(rg) {
+      run_geometry.push(rg)
+    }
   }
   let updated = TextLayoutInfo::{
     scale_factor: 1.0F,
-    glyphs: adjusted_glyphs,
+    glyphs,
     run_geometry,
-    size: @math.Vec2::new(target_width, max_y),
+    size: @math.Vec2::new(
+      Float::from_double(box_w.to_double().ceil()),
+      Float::from_double(box_h.to_double().ceil()),
+    ),
   }
   TextInstance::{
     ..instance,

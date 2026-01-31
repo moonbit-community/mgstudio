@@ -131,6 +131,32 @@ pub fn font_rasterize_glyph(
   }
   let entry = if entry_opt is Some(v) { v } else { return None }
   let gid = entry.charmap.map(codepoint.reinterpret_as_uint())
+  if gid.to_int() == 0 {
+    return None
+  }
+  font_rasterize_glyph_id(font, font_size, gid.to_int(), smoothing)
+}
+
+///|
+/// Rasterize a glyph by its glyph ID (already shaped).
+///
+/// This is required for complex shaping (ligatures, marks) where mapping from
+/// codepoint -> glyph_id is not sufficient.
+pub fn font_rasterize_glyph_id(
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  glyph_id : Int,
+  smoothing : FontSmoothing,
+) -> GlyphRaster? {
+  if glyph_id <= 0 || glyph_id > 0xFFFF {
+    return None
+  }
+  let entry_opt = swash_get_font(font)
+  if entry_opt is None {
+    return None
+  }
+  let entry = if entry_opt is Some(v) { v } else { return None }
+  let gid = glyph_id.to_uint16()
   let hint = match smoothing {
     FontSmoothing::None => false
     FontSmoothing::AntiAliased => true
@@ -155,34 +181,21 @@ pub fn font_rasterize_glyph(
     return None
   }
   let pixel_count = width * height
-  let pixels = match img.content() {
-    @swash_scale.Content::Mask => {
-      let mask = img.data()
-      Bytes::makei(pixel_count * 4, i => {
-        let ch = i % 4
-        if ch == 3 {
-          let pi = i / 4
-          match mask.get(pi) {
-            None => (0).to_byte()
-            Some(a) => a
-          }
-        } else {
-          (255).to_byte()
-        }
-      })
-    }
-    @swash_scale.Content::Color => {
-      let rgba = img.data()
-      // Defensive: ensure the size matches RGBA8.
-      if rgba.length() == pixel_count * 4 {
-        rgba
-      } else {
-        Bytes::makei(pixel_count * 4, _ => (0).to_byte())
-      }
-    }
-    _ =>
-      // TODO: SubpixelMask conversion.
-      return None
+  // Normalize all swash image formats (Mask/SubpixelMask/Color) into
+  // premultiplied RGBA8 (bevy/cosmic-text compatible).
+  let ok = img.to_rgba8([
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+    (255).to_byte(),
+  ])
+  if !ok {
+    return None
+  }
+  let pixels = img.data()
+  // Defensive: ensure the size matches RGBA8.
+  if pixels.length() != pixel_count * 4 {
+    return None
   }
   Some(GlyphRaster::{
     glyph_id: gid.to_int(),
