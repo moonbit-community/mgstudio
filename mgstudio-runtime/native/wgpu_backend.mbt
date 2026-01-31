@@ -23,13 +23,8 @@
 /// Missing capabilities are tracked in bd and should be reported upstream.
 
 ///|
-/// wgpu_mbt 0.2.x does not provide an "alpha blend + arbitrary format" pipeline
-/// descriptor helper, so mgstudio provides its own small C helper.
-extern "C" fn wgpu_render_pipeline_descriptor_color_format_alpha_blend_new(
-  layout : @wgpu_c.WGPUPipelineLayout,
-  shader_module : @wgpu_c.WGPUShaderModule,
-  format_u32 : UInt,
-) -> @wgpu_c.WGPURenderPipelineDescriptorPtr = "mgstudio_wgpu_render_pipeline_descriptor_color_format_alpha_blend_new"
+/// Use wgpu_mbt's "alpha blend + arbitrary format" render pipeline descriptor
+/// helper (added in wgpu_mbt 0.2.2).
 
 ///|
 pub struct GpuTextureInfo {
@@ -317,7 +312,7 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   } else {
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
   }
-  let desc = wgpu_render_pipeline_descriptor_color_format_alpha_blend_new(
+  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
     pl.raw_handle(),
     sm.raw_handle(),
     format,
