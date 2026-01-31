@@ -5,6 +5,9 @@
     "Milky2018/mgstudio/math",
     "Milky2018/mgstudio/render2d",
     "Milky2018/mgstudio/core",
+    { "path": "Milky2018/moon_zeno", "alias": "moon_zeno" },
+    { "path": "Milky2018/moon_swash", "alias": "swash" },
+    { "path": "Milky2018/moon_swash/scale", "alias": "swash_scale" },
     "moonbitlang/core/ref"
   ]
 }

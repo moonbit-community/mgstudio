@@ -41,6 +41,31 @@ extern "js" fn string_sink_take_js() -> String =
   #| }
 
 ///|
+/// Bytes sink helpers (engine -> host).
+///
+/// We mirror the existing `string_sink_*` protocol but for raw bytes. This is
+/// used for uploading RGBA8 data (e.g. glyph atlas updates) without passing
+/// wasm-gc `Bytes` across the boundary.
+extern "js" fn bytes_sink_push_js(byte : Int) -> Unit =
+  #| (byte) => {
+  #|   const b = Number(byte) & 0xff
+  #|   globalThis.__mgstudio_bytes_sink_buf = (globalThis.__mgstudio_bytes_sink_buf || [])
+  #|   globalThis.__mgstudio_bytes_sink_buf.push(b)
+  #| }
+
+///|
+extern "js" fn bytes_sink_reset_js() -> Unit =
+  #| () => { globalThis.__mgstudio_bytes_sink_buf = [] }
+
+///|
+extern "js" fn bytes_sink_take_js() -> @js.Any =
+  #| () => {
+  #|   const arr = globalThis.__mgstudio_bytes_sink_buf || []
+  #|   globalThis.__mgstudio_bytes_sink_buf = []
+  #|   return new Uint8Array(arr)
+  #| }
+
+///|
 extern "js" fn any_to_string(value : @js.Any) -> String =
   #| (value) => {
   #|   if (value == null) {
@@ -849,6 +874,20 @@ extern "js" fn response_text(response : @js.Any) -> @js.Promise[String] =
   #| (response) => response.text()
 
 ///|
+extern "js" fn uint8array_from_array_buffer(
+  buf : @arraybuffer.ArrayBuffer,
+) -> @js.Any =
+  #| (buf) => new Uint8Array(buf)
+
+///|
+extern "js" fn uint8array_get_u8(arr : @js.Any, index : Int) -> Int =
+  #| (arr, index) => {
+  #|   const i = Number(index) | 0
+  #|   if (!arr || i < 0 || i >= arr.length) return 0
+  #|   return Number(arr[i]) & 0xff
+  #| }
+
+///|
 extern "js" fn load_font_face(
   family : String,
   url : String,
@@ -1011,6 +1050,8 @@ struct AssetsState {
   loading_fonts : @js.Any
   mut next_glyph_id : Int
   glyphs : @js.Any
+  mut next_blob_id : Int
+  blobs : @js.Any
   mut next_folder_id : Int
   folders : @js.Any
   mut folder_events : Array[Int]
@@ -1110,6 +1151,8 @@ fn new_state(
       loading_fonts: new_set(),
       next_glyph_id: 1,
       glyphs: new_map(),
+      next_blob_id: 1,
+      blobs: new_map(),
       next_folder_id: 1,
       folders: new_map(),
       folder_events: [],
@@ -2693,6 +2736,24 @@ pub fn create_host(
     }
     0
   })
+  let bytes_sink_reset = @js.from_fn0(fn() {
+    bytes_sink_reset_js()
+    0
+  })
+  let bytes_sink_take = @js.from_fn0(fn() {
+    let data = bytes_sink_take_js()
+    let id = state.assets.next_blob_id
+    state.assets.next_blob_id = id + 1
+    map_set(state.assets.blobs, @js.any(id), data)
+    id
+  })
+  let bytes_drop = @js.from_fn1(fn(id_any) {
+    let id = to_int(number_or(id_any, 0))
+    if id > 0 {
+      map_delete(state.assets.blobs, @js.any(id)) |> ignore
+    }
+    0
+  })
   let gpu_request_device = @js.from_fn0(fn() {
     if state.gpu.device is None {
       throw_error("WebGPU device not initialized. Call create_host() first.")
@@ -2811,6 +2872,7 @@ pub fn create_host(
       ("id", @js.any(id)),
       ("family", @js.any(family)),
       ("loaded", @js.any(false)),
+      ("bytes", js_null()),
     ])
     map_set(state.assets.fonts, @js.any(id), entry)
     set_add(state.assets.loading_fonts, @js.any(id))
@@ -2825,6 +2887,27 @@ pub fn create_host(
       }
       if !host_is_nullish(result) {
         entry._set("loaded", @js.any(true)) |> ignore
+      }
+      // Best-effort: also fetch and store raw font bytes for engine-side text.
+      // If fetching fails, keep `bytes` as nullish and let the engine retry later.
+      let bytes_resp_opt : @http.Response? = Some(
+        @http.fetch(url, method_="GET"),
+      ) catch {
+        _ => None
+      }
+      if bytes_resp_opt is Some(bytes_resp) {
+        if bytes_resp.ok {
+          let promise : @js.Promise[@arraybuffer.ArrayBuffer] = response_array_buffer(
+            bytes_resp.as_any(),
+          ).cast()
+          let buf_opt : @arraybuffer.ArrayBuffer? = Some(promise.wait()) catch {
+            _ => None
+          }
+          if buf_opt is Some(buf) {
+            let bytes_u8 = uint8array_from_array_buffer(buf)
+            entry._set("bytes", bytes_u8) |> ignore
+          }
+        }
       }
       set_delete(state.assets.loading_fonts, @js.any(id)) |> ignore
       result |> ignore
@@ -2923,6 +3006,35 @@ pub fn create_host(
       measure_glyph_advance(family, font_size, codepoint)
     }),
   )
+  let asset_font_bytes_len = @js.from_fn1(fn(font_id_any) {
+    let font_id = to_int(number_or(font_id_any, -1))
+    let entry = map_get(state.assets.fonts, @js.any(font_id))
+    if host_is_nullish(entry) {
+      0
+    } else {
+      let bytes = entry._get("bytes")
+      if host_is_nullish(bytes) {
+        0
+      } else {
+        to_int(number_or(bytes._get("length"), 0))
+      }
+    }
+  })
+  let asset_font_bytes_get = @js.from_fn2(fn(font_id_any, index_any) {
+    let font_id = to_int(number_or(font_id_any, -1))
+    let index = to_int(number_or(index_any, -1))
+    let entry = map_get(state.assets.fonts, @js.any(font_id))
+    if host_is_nullish(entry) || index < 0 {
+      0
+    } else {
+      let bytes = entry._get("bytes")
+      if host_is_nullish(bytes) {
+        0
+      } else {
+        uint8array_get_u8(bytes, index)
+      }
+    }
+  })
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
     let entry = map_get(state.gpu.textures, @js.any(id))
@@ -3021,6 +3133,40 @@ pub fn create_host(
           data,
           target_width,
           target_height,
+          x,
+          y,
+        )
+      }
+    }),
+  )
+  let asset_update_texture_region_bytes = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let texture_id = to_int(arg_number(args, 0, -1))
+      let x = to_int(arg_number(args, 1, 0))
+      let y = to_int(arg_number(args, 2, 0))
+      let width = to_int(arg_number(args, 3, 0))
+      let height = to_int(arg_number(args, 4, 0))
+      let bytes_id = to_int(arg_number(args, 5, -1))
+      if width <= 0 || height <= 0 {
+        return
+      }
+      let texture_entry = map_get(state.gpu.textures, @js.any(texture_id))
+      if host_is_nullish(texture_entry) {
+        dispatch_asset_error("Texture update error: texture id not found")
+        return
+      }
+      let blob = map_get(state.assets.blobs, @js.any(bytes_id))
+      if host_is_nullish(blob) {
+        dispatch_asset_error("Texture update error: bytes id not found")
+        return
+      }
+      if state.gpu.queue is Some(queue) {
+        write_texture_region(
+          queue.as_any(),
+          texture_entry._get("texture"),
+          blob,
+          width,
+          height,
           x,
           y,
         )
@@ -3540,9 +3686,21 @@ pub fn create_host(
     ),
     ("string_sink_take", string_sink_take),
     ("string_drop", string_drop),
+    ("bytes_sink_reset", bytes_sink_reset),
+    (
+      "bytes_sink_push",
+      @js.from_fn1(fn(byte_any) {
+        bytes_sink_push_js(to_int(number_or(byte_any, 0)))
+        0
+      }),
+    ),
+    ("bytes_sink_take", bytes_sink_take),
+    ("bytes_drop", bytes_drop),
     ("asset_load_texture", asset_load_texture),
     ("asset_load_wgsl", asset_load_wgsl),
     ("asset_load_font", asset_load_font),
+    ("asset_font_bytes_len", asset_font_bytes_len),
+    ("asset_font_bytes_get", asset_font_bytes_get),
     ("font_rasterize_glyph", font_rasterize_glyph),
     ("font_glyph_width", font_glyph_width),
     ("font_glyph_height", font_glyph_height),
@@ -3552,6 +3710,7 @@ pub fn create_host(
     ("asset_set_texture_sampler", asset_set_texture_sampler),
     ("asset_create_dynamic_texture", asset_create_dynamic_texture),
     ("asset_update_texture_region", asset_update_texture_region),
+    ("asset_update_texture_region_bytes", asset_update_texture_region_bytes),
     ("asset_texture_width", asset_texture_width),
     ("asset_texture_height", asset_texture_height),
     ("asset_is_texture_loaded", asset_is_texture_loaded),

@@ -17,6 +17,15 @@ pub fn add_moonbit_ffi_imports(@runtime.Linker, HostContext) -> Unit
 pub fn run_game(String, String, String, wgpu_lib? : String) -> Unit raise
 
 // Errors
+pub(all) suberror NativeRuntimeError {
+  InvalidWasmPath(String)
+  ReadWasmFailed(String, String)
+  ParseWasmFailed(String, String)
+  InstantiateFailed(String, String)
+  MissingExport(String)
+  ExportCallFailed(String, String)
+}
+pub impl Show for NativeRuntimeError
 
 // Types and methods
 pub struct GpuBackend {
@@ -66,6 +75,7 @@ pub fn GpuBackend::new() -> Self
 pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
+pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit
 
 pub struct GpuFrameState {
   surface_tex : @wgpu_mbt.SurfaceTexture
@@ -116,6 +126,11 @@ pub struct HostContext {
   string_sink : Ref[Array[Char]]
   next_string_id : Ref[Int]
   strings : Ref[Array[(Int, String)]]
+  bytes_sink : Ref[Array[Byte]]
+  next_bytes_id : Ref[Int]
+  bytes : Ref[Array[(Int, Bytes)]]
+  next_font_id : Ref[Int]
+  fonts : Ref[Array[(Int, Bytes)]]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
 }

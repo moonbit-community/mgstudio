@@ -2,6 +2,7 @@
   "is-main": true,
   "import": [
     "mizchi/js",
+    "mizchi/js/core",
     "mizchi/js/builtins/arraybuffer",
     "mizchi/js/browser/dom",
     "mizchi/js/web/http",

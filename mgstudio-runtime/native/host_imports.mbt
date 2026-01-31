@@ -32,6 +32,11 @@ pub struct HostContext {
   string_sink : Ref[Array[Char]]
   next_string_id : Ref[Int]
   strings : Ref[Array[(Int, String)]]
+  bytes_sink : Ref[Array[Byte]]
+  next_bytes_id : Ref[Int]
+  bytes : Ref[Array[(Int, Bytes)]]
+  next_font_id : Ref[Int]
+  fonts : Ref[Array[(Int, Bytes)]]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   // (id, env, func_idx)
@@ -74,6 +79,11 @@ pub fn HostContext::new(
     string_sink: Ref::new([]),
     next_string_id: Ref::new(1),
     strings: Ref::new([]),
+    bytes_sink: Ref::new([]),
+    next_bytes_id: Ref::new(1),
+    bytes: Ref::new([]),
+    next_font_id: Ref::new(1),
+    fonts: Ref::new([]),
     next_closure_id: Ref::new(1),
     closures: Ref::new([]),
   }
@@ -174,6 +184,76 @@ fn string_table_drop(ctx : HostContext, id : Int) -> Unit {
       break
     }
   }
+}
+
+///|
+fn bytes_table_get(ctx : HostContext, id : Int) -> Bytes? {
+  if id <= 0 {
+    return None
+  }
+  let entries = ctx.bytes.val
+  let n = entries.length()
+  for i in 0..<n {
+    let entry = entries[i]
+    if entry.0 == id {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
+fn bytes_table_put(ctx : HostContext, data : Bytes) -> Int {
+  if data.length() == 0 {
+    return 0
+  }
+  let id = ctx.next_bytes_id.val
+  ctx.next_bytes_id.val = id + 1
+  ctx.bytes.val.push((id, data))
+  id
+}
+
+///|
+fn bytes_table_drop(ctx : HostContext, id : Int) -> Unit {
+  if id <= 0 {
+    return
+  }
+  let entries = ctx.bytes.val
+  let n = entries.length()
+  for i in 0..<n {
+    if entries[i].0 == id {
+      let last = n - 1
+      if i != last {
+        entries[i] = entries[last]
+      }
+      entries.pop() |> ignore
+      break
+    }
+  }
+}
+
+///|
+fn font_table_get(ctx : HostContext, id : Int) -> Bytes? {
+  if id <= 0 {
+    return None
+  }
+  let entries = ctx.fonts.val
+  let n = entries.length()
+  for i in 0..<n {
+    let entry = entries[i]
+    if entry.0 == id {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
+fn font_table_put(ctx : HostContext, data : Bytes) -> Int {
+  let id = ctx.next_font_id.val
+  ctx.next_font_id.val = id + 1
+  ctx.fonts.val.push((id, data))
+  id
 }
 
 ///|
@@ -352,6 +432,51 @@ pub fn add_mgstudio_host_imports(
       host_trace("host: string_drop")
       if args.length() >= 1 && args[0] is @types.Value::I32(id) {
         string_table_drop(ctx, id)
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "bytes_sink_reset",
+    fn(_args) {
+      host_trace("host: bytes_sink_reset")
+      ctx.bytes_sink.val.clear()
+      ok_i32(0)
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "bytes_sink_push",
+    fn(args) {
+      host_trace("host: bytes_sink_push")
+      if args.length() >= 1 && args[0] is @types.Value::I32(x) {
+        ctx.bytes_sink.val.push((x & 0xFF).to_byte())
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "bytes_sink_take",
+    fn(_args) {
+      host_trace("host: bytes_sink_take")
+      let data = Bytes::from_array(ctx.bytes_sink.val)
+      ctx.bytes_sink.val.clear()
+      ok_i32(bytes_table_put(ctx, data))
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "bytes_drop",
+    fn(args) {
+      host_trace("host: bytes_drop")
+      if args.length() >= 1 && args[0] is @types.Value::I32(id) {
+        bytes_table_drop(ctx, id)
       }
       ok_i32(0)
     },
@@ -751,8 +876,73 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_font",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      try {
+        if args.length() >= 1 && args[0] is @types.Value::I32(path_id) {
+          let rel = string_table_get(ctx, path_id).unwrap_or("")
+          let bytes = if rel == "" {
+            Bytes::makei(0, _ => (0).to_byte())
+          } else {
+            let full_path = @rtcore.join_dir(
+              ctx.assets_source.base,
+              strip_leading_slashes(rel),
+            ) catch {
+              _ => join_fs_path(ctx.assets_source.base, rel)
+            }
+            @fs.read_file_to_bytes(full_path) catch {
+              _ => Bytes::makei(0, _ => (0).to_byte())
+            }
+          }
+          ok_i32(font_table_put(ctx, bytes))
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        err => {
+          @debug.debug("asset_load_font failed: " + err.to_string())
+          raise err
+        }
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_font_bytes_len",
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(font_id) {
+        match font_table_get(ctx, font_id) {
+          None => ok_i32(0)
+          Some(b) => ok_i32(b.length())
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_font_bytes_get",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(font_id) &&
+        args[1] is @types.Value::I32(index) {
+        match font_table_get(ctx, font_id) {
+          None => ok_i32(0)
+          Some(b) =>
+            match b.get(index) {
+              None => ok_i32(0)
+              Some(v) => ok_i32(v.to_int())
+            }
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
   )
   linker.add_host_func(
     "mgstudio_host",
@@ -852,6 +1042,42 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "asset_update_texture_region",
     fn(_args) { ok_i32(0) },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_update_texture_region_bytes",
+    fn(args) {
+      if ctx.gpu is None {
+        ctx.gpu = Some(GpuBackend::new())
+      }
+      if args.length() >= 6 &&
+        args[0] is @types.Value::I32(texture_id) &&
+        args[1] is @types.Value::I32(x) &&
+        args[2] is @types.Value::I32(y) &&
+        args[3] is @types.Value::I32(w) &&
+        args[4] is @types.Value::I32(h) &&
+        args[5] is @types.Value::I32(bytes_id) {
+        match bytes_table_get(ctx, bytes_id) {
+          None => ()
+          Some(pixels) =>
+            ctx.gpu
+            .unwrap()
+            .write_texture_region_rgba8(texture_id, x, y, w, h, pixels)
+        }
+      }
+      ok_i32(0)
+    },
     func_type=ft(
       [
         @types.ValueType::I32,

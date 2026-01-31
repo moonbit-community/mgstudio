@@ -26,6 +26,12 @@ pub fn host_asset_load_font(path : String) -> Int {
 fn host_asset_load_font_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_font"
 
 ///|
+pub fn host_asset_font_bytes_len(font_id : Int) -> Int = "mgstudio_host" "asset_font_bytes_len"
+
+///|
+pub fn host_asset_font_bytes_get(font_id : Int, index : Int) -> Int = "mgstudio_host" "asset_font_bytes_get"
+
+///|
 pub fn AssetServer::load_font(
   self : AssetServer,
   path : String,
@@ -33,4 +39,15 @@ pub fn AssetServer::load_font(
   let id = host_asset_load_font(path)
   self.paths.push(path)
   Handle::new(id)
+}
+
+///|
+pub fn asset_font_read_bytes(font : Handle[Font]) -> Bytes? {
+  let len = host_asset_font_bytes_len(font.id())
+  if len <= 0 {
+    return None
+  }
+  Some(
+    Bytes::makei(len, i => host_asset_font_bytes_get(font.id(), i).to_byte()),
+  )
 }

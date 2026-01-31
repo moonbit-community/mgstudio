@@ -246,8 +246,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     let span_line_height = text_span_line_height(instance, span_index)
     let span_height = span_line_height.eval(text_font.font_size)
     let smoothing = entities[span_index].font_smoothing
-    let advance = host_font_measure_advance(
-      text_font.font.id(),
+    let advance = font_measure_advance(
+      text_font.font,
       text_font.font_size,
       code,
     )
@@ -256,8 +256,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       continue
     }
     if code == 9 {
-      let space_advance = host_font_measure_advance(
-        text_font.font.id(),
+      let space_advance = font_measure_advance(
+        text_font.font,
         text_font.font_size,
         32,
       )
@@ -287,7 +287,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       continue
     }
     let raster = if raster_opt is Some(value) { value } else { continue }
-    let cache_key = GlyphCacheKey::new(raster.id, 0, 0)
+    let cache_key = GlyphCacheKey::new(raster.glyph_id, 0, 0)
     let font_key = FontAtlasKey::new(
       text_font.font,
       text_font.font_size,

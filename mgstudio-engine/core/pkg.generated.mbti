@@ -6,6 +6,8 @@ pub fn[A, B] query2(ComponentStore[A], ComponentStore[B], (Entity, A, B) -> Unit
 
 pub fn[A, B] query2_changed_a(ComponentStore[A], ComponentStore[B], SystemTicks, (Entity, A, B) -> Unit) -> Unit
 
+pub fn[T] with_host_bytes_id(Bytes, (Int) -> T) -> T
+
 pub fn[T] with_host_string_id(String, (Int) -> T) -> T
 
 // Errors

@@ -37,37 +37,86 @@ fn glyph_cache_key_equals(a : GlyphCacheKey, b : GlyphCacheKey) -> Bool {
 
 ///|
 pub struct GlyphRaster {
-  id : Int
+  glyph_id : Int
   size : @math.UVec2
   offset : @math.IVec2
+  pixels_rgba8 : Bytes
 }
 
 ///|
-pub fn host_font_rasterize_glyph(
-  font_id : Int,
+priv struct SwashFontCacheEntry {
+  font_id : Int
+  font : @swash.FontRef
+  charmap : @swash.Charmap
+}
+
+///|
+priv struct SwashFontCache {
+  entries : Array[SwashFontCacheEntry]
+}
+
+///|
+let swash_font_cache : Ref[SwashFontCache] = Ref::new(SwashFontCache::{
+  entries: [],
+})
+
+///|
+let swash_scale_context : Ref[@swash_scale.ScaleContext] = Ref::new(
+  @swash_scale.ScaleContext::new(),
+)
+
+///|
+fn swash_get_font(
+  font_handle : @asset.Handle[@asset.Font],
+) -> SwashFontCacheEntry? {
+  let entries = swash_font_cache.val.entries
+  let n = entries.length()
+  for i in 0..<n {
+    if entries[i].font_id == font_handle.id() {
+      return Some(entries[i])
+    }
+  }
+  let bytes_opt = @asset.asset_font_read_bytes(font_handle)
+  if bytes_opt is None {
+    return None
+  }
+  let bytes = if bytes_opt is Some(b) { b } else { return None }
+  let data_ref_opt = @swash.FontDataRef::new(bytes)
+  if data_ref_opt is None {
+    return None
+  }
+  let data_ref = if data_ref_opt is Some(v) { v } else { return None }
+  let font_opt = data_ref.get(0)
+  if font_opt is None {
+    return None
+  }
+  let font = if font_opt is Some(v) { v } else { return None }
+  let entry = SwashFontCacheEntry::{
+    font_id: font_handle.id(),
+    font,
+    charmap: @swash.Charmap::from_font(font),
+  }
+  swash_font_cache.val.entries.push(entry)
+  Some(entry)
+}
+
+///|
+pub fn font_measure_advance(
+  font : @asset.Handle[@asset.Font],
   font_size : Float,
   codepoint : Int,
-  smoothing : Int,
-) -> Int = "mgstudio_host" "font_rasterize_glyph"
-
-///|
-pub fn host_font_glyph_width(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_width"
-
-///|
-pub fn host_font_glyph_height(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_height"
-
-///|
-pub fn host_font_glyph_offset_x(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_offset_x"
-
-///|
-pub fn host_font_glyph_offset_y(glyph_id : Int) -> Int = "mgstudio_host" "font_glyph_offset_y"
-
-///|
-pub fn host_font_measure_advance(
-  font_id : Int,
-  font_size : Float,
-  codepoint : Int,
-) -> Float = "mgstudio_host" "font_measure_advance"
+) -> Float {
+  let entry_opt = swash_get_font(font)
+  if entry_opt is None {
+    return 0.0F
+  }
+  let entry = if entry_opt is Some(v) { v } else { return 0.0F }
+  let gid = entry.charmap.map(codepoint.reinterpret_as_uint()).to_int()
+  let glyph_metrics = entry.font
+    .glyph_metrics([].op_as_view())
+    .scale(font_size.to_double())
+  Float::from_double(glyph_metrics.advance_width(gid.to_uint16()))
+}
 
 ///|
 pub fn font_rasterize_glyph(
@@ -76,30 +125,70 @@ pub fn font_rasterize_glyph(
   codepoint : Int,
   smoothing : FontSmoothing,
 ) -> GlyphRaster? {
-  let smoothing_id = match smoothing {
-    FontSmoothing::None => 0
-    FontSmoothing::AntiAliased => 1
-  }
-  let id = host_font_rasterize_glyph(
-    font.id(),
-    font_size,
-    codepoint,
-    smoothing_id,
-  )
-  if id < 0 {
+  let entry_opt = swash_get_font(font)
+  if entry_opt is None {
     return None
   }
-  let width = host_font_glyph_width(id)
-  let height = host_font_glyph_height(id)
-  let offset_x = host_font_glyph_offset_x(id)
-  let offset_y = host_font_glyph_offset_y(id)
+  let entry = if entry_opt is Some(v) { v } else { return None }
+  let gid = entry.charmap.map(codepoint.reinterpret_as_uint())
+  let hint = match smoothing {
+    FontSmoothing::None => false
+    FontSmoothing::AntiAliased => true
+  }
+  let scaler = swash_scale_context.val
+    .builder(entry.font)
+    .size(font_size.to_double())
+    .hint(hint)
+    .build()
+  let render = @swash_scale.Render::new([@swash_scale.Source::Outline])
+  let img_opt = render.render(scaler, gid)
+  if img_opt is None {
+    return None
+  }
+  let img = if img_opt is Some(v) { v } else { return None }
+  // `placement()` comes from moon_zeno; we keep the explicit type so the
+  // dependency is tracked and fields are accessible.
+  let placement : @moon_zeno.Placement = img.placement()
+  let width = placement.width.reinterpret_as_int()
+  let height = placement.height.reinterpret_as_int()
   if width <= 0 || height <= 0 {
     return None
   }
+  let pixel_count = width * height
+  let pixels = match img.content() {
+    @swash_scale.Content::Mask => {
+      let mask = img.data()
+      Bytes::makei(pixel_count * 4, i => {
+        let ch = i % 4
+        if ch == 3 {
+          let pi = i / 4
+          match mask.get(pi) {
+            None => (0).to_byte()
+            Some(a) => a
+          }
+        } else {
+          (255).to_byte()
+        }
+      })
+    }
+    @swash_scale.Content::Color => {
+      let rgba = img.data()
+      // Defensive: ensure the size matches RGBA8.
+      if rgba.length() == pixel_count * 4 {
+        rgba
+      } else {
+        Bytes::makei(pixel_count * 4, _ => (0).to_byte())
+      }
+    }
+    _ =>
+      // TODO: SubpixelMask conversion.
+      return None
+  }
   Some(GlyphRaster::{
-    id,
+    glyph_id: gid.to_int(),
     size: @math.UVec2::new(width, height),
-    offset: @math.IVec2::new(offset_x, offset_y),
+    offset: @math.IVec2::new(placement.left, placement.top),
+    pixels_rgba8: pixels,
   })
 }
 
@@ -179,7 +268,11 @@ pub fn FontAtlas::add_glyph(
   let index = if allocation is Some(value) { value.0 } else { return false }
   let rect = if allocation is Some(value) { value.1 } else { return false }
   @asset.asset_set_texture_atlas_layout(self.texture_atlas, layout) |> ignore
-  @asset.asset_update_texture_region(self.texture, rect, raster.id)
+  @asset.asset_update_texture_region_rgba8(
+    self.texture,
+    rect,
+    raster.pixels_rgba8,
+  )
   self.glyph_locations.push(
     (
       cache_key,

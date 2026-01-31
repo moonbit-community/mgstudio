@@ -14,6 +14,8 @@ pub fn asset_copy_texture_to_texture(Handle[Image], @math.UVec2, Handle[Image]) 
 
 pub fn asset_create_dynamic_texture(@math.UVec2, Bool) -> Handle[Image]
 
+pub fn asset_font_read_bytes(Handle[Font]) -> Bytes?
+
 pub fn asset_get_loaded_folder(Handle[LoadedFolder]) -> LoadedFolder?
 
 pub fn asset_get_texture_atlas_layout(Handle[TextureAtlasLayout]) -> TextureAtlasLayout?
@@ -42,6 +44,8 @@ pub fn asset_update_loaded_folders() -> Unit
 
 pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
 
+pub fn asset_update_texture_region_rgba8(Handle[Image], @math.URect, Bytes) -> Unit
+
 pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
@@ -49,6 +53,10 @@ pub let ecs_resources : Array[String]
 pub fn host_asset_copy_texture_to_texture(Int, Int, Int, Int) -> Unit
 
 pub fn host_asset_create_dynamic_texture(Int, Int, Bool) -> Int
+
+pub fn host_asset_font_bytes_get(Int, Int) -> Int
+
+pub fn host_asset_font_bytes_len(Int) -> Int
 
 pub fn host_asset_is_texture_loaded(Int) -> Bool
 
@@ -75,6 +83,8 @@ pub fn host_asset_texture_height(Int) -> Int
 pub fn host_asset_texture_width(Int) -> Int
 
 pub fn host_asset_update_texture_region(Int, Int, Int, Int, Int, Int) -> Unit
+
+pub fn host_asset_update_texture_region_bytes(Int, Int, Int, Int, Int, Int) -> Unit
 
 // Errors
 

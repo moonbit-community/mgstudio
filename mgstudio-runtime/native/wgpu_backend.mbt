@@ -580,6 +580,83 @@ pub fn GpuBackend::texture_height(self : GpuBackend, texture_id : Int) -> Int {
 }
 
 ///|
+/// Update a sub-rectangle of an RGBA8 2D texture.
+///
+/// Note: WGPU requires `bytes_per_row` to be 256-byte aligned, so we may need to
+/// pad each row before calling `Queue::write_texture_ptr`.
+pub fn GpuBackend::write_texture_region_rgba8(
+  self : GpuBackend,
+  texture_id : Int,
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+  pixels_rgba8 : Bytes,
+) -> Unit {
+  match find_texture(self, texture_id) {
+    None => ()
+    Some(info) => {
+      if width <= 0 || height <= 0 {
+        return
+      }
+      let w = width.reinterpret_as_uint()
+      let h = height.reinterpret_as_uint()
+      let origin_x = if x < 0 { 0U } else { x.reinterpret_as_uint() }
+      let origin_y = if y < 0 { 0U } else { y.reinterpret_as_uint() }
+      let bytes_per_row = width * 4
+      if bytes_per_row <= 0 {
+        return
+      }
+      let mut aligned = bytes_per_row
+      if aligned % 256 != 0 {
+        aligned = (aligned / 256 + 1) * 256
+      }
+      let expected = bytes_per_row * height
+      let src = if pixels_rgba8.length() == expected {
+        pixels_rgba8
+      } else {
+        // Defensive: malformed input. Fill with transparent pixels.
+        Bytes::makei(expected, _ => (0).to_byte())
+      }
+      let upload = if aligned == bytes_per_row {
+        src
+      } else {
+        Bytes::makei(aligned * height, i => {
+          let row = i / aligned
+          let col = i % aligned
+          if col < bytes_per_row {
+            let src_i = row * bytes_per_row + col
+            match src.get(src_i) {
+              Some(b) => b
+              None => (0).to_byte()
+            }
+          } else {
+            (0).to_byte()
+          }
+        })
+      }
+      let tex_info = @wgpu_c.texel_copy_texture_info_new(
+        info.texture.raw,
+        0U,
+        origin_x,
+        origin_y,
+        0U,
+      )
+      let layout = @wgpu_c.texel_copy_buffer_layout_new(
+        0UL,
+        aligned.reinterpret_as_uint(),
+        h,
+      )
+      let extent = @wgpu_c.extent3d_new(w, h, 1U)
+      self.queue.write_texture_ptr(tex_info, upload, layout, extent)
+      @wgpu_c.extent3d_free(extent)
+      @wgpu_c.texel_copy_buffer_layout_free(layout)
+      @wgpu_c.texel_copy_texture_info_free(tex_info)
+    }
+  }
+}
+
+///|
 pub fn GpuBackend::is_texture_loaded(
   self : GpuBackend,
   texture_id : Int,

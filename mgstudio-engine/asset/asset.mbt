@@ -155,6 +155,16 @@ pub fn host_asset_update_texture_region(
 ) -> Unit = "mgstudio_host" "asset_update_texture_region"
 
 ///|
+pub fn host_asset_update_texture_region_bytes(
+  texture_id : Int,
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+  bytes_id : Int,
+) -> Unit = "mgstudio_host" "asset_update_texture_region_bytes"
+
+///|
 pub fn host_asset_texture_width(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_width"
 
 ///|
@@ -226,6 +236,26 @@ pub fn asset_update_texture_region(
     size.y,
     glyph_id,
   )
+}
+
+///|
+pub fn asset_update_texture_region_rgba8(
+  texture : Handle[Image],
+  rect : @math.URect,
+  pixels_rgba8 : Bytes,
+) -> Unit {
+  let size = rect.size()
+  @core.with_host_bytes_id(pixels_rgba8, fn(bytes_id) {
+    host_asset_update_texture_region_bytes(
+      texture.id(),
+      rect.min.x,
+      rect.min.y,
+      size.x,
+      size.y,
+      bytes_id,
+    )
+  })
+  |> ignore
 }
 
 ///|

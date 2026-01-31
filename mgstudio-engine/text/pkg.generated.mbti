@@ -12,21 +12,11 @@ import {
 // Values
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
 
+pub fn font_measure_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
+
 pub fn font_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
-
-pub fn host_font_glyph_height(Int) -> Int
-
-pub fn host_font_glyph_offset_x(Int) -> Int
-
-pub fn host_font_glyph_offset_y(Int) -> Int
-
-pub fn host_font_glyph_width(Int) -> Int
-
-pub fn host_font_measure_advance(Int, Float, Int) -> Float
-
-pub fn host_font_rasterize_glyph(Int, Float, Int, Int) -> Int
 
 pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(@app.App[W]) -> @app.App[W]
 
@@ -120,9 +110,10 @@ pub struct GlyphCacheKey {
 pub fn GlyphCacheKey::new(Int, Int, Int) -> Self
 
 pub struct GlyphRaster {
-  id : Int
+  glyph_id : Int
   size : @math.UVec2
   offset : @math.IVec2
+  pixels_rgba8 : Bytes
 }
 
 pub(all) enum Justify {
