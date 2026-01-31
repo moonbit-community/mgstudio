@@ -154,7 +154,7 @@ fn text_span_color(instance : TextInstance, span_index : Int) -> TextColor {
 let font_atlas_set_state : Ref[FontAtlasSet] = Ref::new(FontAtlasSet::default())
 
 ///|
-/// Global font system state for `mgstudio/cosmic` (engine-side shaping/wrap/BiDi).
+/// Global font system state for `moon_cosmic` (engine-side shaping/wrap/BiDi).
 priv struct CosmicFontSystemState {
   font_system : @cosmic.FontSystem
   // Map asset font handle id -> cosmic font id (best-effort: first face in the data).
@@ -325,8 +325,9 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
 
   // Build rich text spans for cosmic buffer.
   let spans : Array[(String, @cosmic.Attrs)] = []
+  let base_metrics = @cosmic.Metrics::new(buffer.font_size, buffer.line_height)
   let base_family = cosmic_font_family_name(instance.font.font)
-  let mut base_attrs = @cosmic.Attrs::with_metadata(0)
+  let mut base_attrs = @cosmic.Attrs::with_metadata(0).metrics(base_metrics)
   if base_family is Some(name) && name.length() > 0 {
     base_attrs = base_attrs.family(@cosmic.Family::Name(name))
   }
@@ -335,7 +336,11 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     let sp = instance.spans[i]
     let idx = i + 1
     let fam = cosmic_font_family_name(sp.font.font)
-    let mut attrs = @cosmic.Attrs::with_metadata(idx)
+    let metrics = @cosmic.Metrics::new(
+      sp.font.font_size,
+      sp.line_height.eval(sp.font.font_size),
+    )
+    let mut attrs = @cosmic.Attrs::with_metadata(idx).metrics(metrics)
     if fam is Some(name) && name.length() > 0 {
       attrs = attrs.family(@cosmic.Family::Name(name))
     }
@@ -353,18 +358,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     Justify::Right => @cosmic.Align::Right
     Justify::Justified => @cosmic.Align::Justified
   }
-
-  // `mgstudio/cosmic` currently uses a single (buffer-wide) Metrics like upstream cosmic-text.
-  // We conservatively pick the maximum line height across spans to avoid clipping.
-  let mut metrics_line_height = buffer.line_height
-  for sp in instance.spans {
-    let lh = sp.line_height.eval(sp.font.font_size)
-    if lh > metrics_line_height {
-      metrics_line_height = lh
-    }
-  }
-  let metrics = @cosmic.Metrics::new(buffer.font_size, metrics_line_height)
-  let mut cosmic_buffer = @cosmic.Buffer::new_empty(metrics)
+  let mut cosmic_buffer = @cosmic.Buffer::new_empty(base_metrics)
   cosmic_buffer = cosmic_buffer.set_wrap(wrap)
   cosmic_buffer = cosmic_buffer.set_size(buffer.max_width, buffer.max_height)
   cosmic_buffer = cosmic_buffer.set_rich_text(
