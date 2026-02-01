@@ -4,6 +4,7 @@ package "Milky2018/mgstudio-runtime-native"
 import {
   "Milky2018/mgstudio-runtime-core",
   "Milky2018/mgstudio-runtime-native/window",
+  "Milky2018/wasmoon/jit",
   "Milky2018/wasmoon/runtime",
   "Milky2018/wasmoon/types",
   "Milky2018/wgpu_mbt",
@@ -14,9 +15,22 @@ pub fn add_mgstudio_host_imports(@runtime.Linker, HostContext) -> Unit
 
 pub fn add_moonbit_ffi_imports(@runtime.Linker, HostContext) -> Unit
 
+pub fn call_jit_func_by_index(@jit.JITModule, Int) -> Bool raise @jit.JITTrap
+
+pub fn prepare_jit_for_instance(@types.Module, @runtime.ModuleInstance, @runtime.Store) -> @jit.JITModule raise NativeJitSetupError
+
 pub fn run_game(String, String, String, wgpu_lib? : String) -> Unit raise
 
 // Errors
+pub(all) suberror NativeJitSetupError {
+  UnsupportedModule(String)
+  JitLoadFailed
+  MemoryInitFailed
+  GlobalsAllocFailed
+  MissingCHeap
+}
+pub impl Show for NativeJitSetupError
+
 pub(all) suberror NativeRuntimeError {
   InvalidWasmPath(String)
   ReadWasmFailed(String, String)
@@ -24,6 +38,8 @@ pub(all) suberror NativeRuntimeError {
   InstantiateFailed(String, String)
   MissingExport(String)
   ExportCallFailed(String, String)
+  JitSetupFailed(String)
+  JitCallFailed(String, String)
 }
 pub impl Show for NativeRuntimeError
 
@@ -33,6 +49,7 @@ pub struct GpuBackend {
   adapter : @wgpu_mbt.Adapter
   device : @wgpu_mbt.Device
   queue : @wgpu_mbt.Queue
+  assets_base : String
   mut surface : @wgpu_mbt.Surface?
   mut surface_format : UInt
   mut configured_width : Int
@@ -71,7 +88,7 @@ pub fn GpuBackend::end_frame(Self) -> Unit
 pub fn GpuBackend::end_pass(Self) -> Unit
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
-pub fn GpuBackend::new() -> Self
+pub fn GpuBackend::new(assets_base? : String) -> Self
 pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
@@ -119,6 +136,7 @@ pub struct GpuTextureInfo {
 pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
+  mut jit : @jit.JITModule?
   mut gpu : GpuBackend?
   mut window : @window.Window?
   assets_source : @mgstudio-runtime-core.SourceSpec
@@ -131,6 +149,8 @@ pub struct HostContext {
   bytes : Ref[Array[(Int, Bytes)]]
   next_font_id : Ref[Int]
   fonts : Ref[Array[(Int, Bytes)]]
+  next_shader_id : Ref[Int]
+  shaders : Ref[Array[(Int, String)]]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
 }

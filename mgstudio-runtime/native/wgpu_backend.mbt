@@ -94,6 +94,7 @@ pub struct GpuBackend {
   adapter : @wgpu.Adapter
   device : @wgpu.Device
   queue : @wgpu.Queue
+  assets_base : String
   mut surface : @wgpu.Surface?
   mut surface_format : UInt
   mut configured_width : Int
@@ -123,7 +124,7 @@ pub struct GpuBackend {
 }
 
 ///|
-pub fn GpuBackend::new() -> GpuBackend {
+pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
   let instance = @wgpu.Instance::create()
   let adapter = instance.request_adapter_sync()
   let device = adapter.request_device_sync(instance)
@@ -133,6 +134,7 @@ pub fn GpuBackend::new() -> GpuBackend {
     adapter,
     device,
     queue,
+    assets_base,
     surface: None,
     surface_format: 0U,
     configured_width: 0,
@@ -208,6 +210,43 @@ fn f32le_pack(xs : Array[Float]) -> Bytes {
 }
 
 ///|
+fn join_asset_path(base : String, rel : String) -> String {
+  fn strip_trailing_slash(s : String) -> String {
+    if s.length() == 0 {
+      return s
+    }
+    let last = s.code_unit_at(s.length() - 1)
+    if last == '/' {
+      try! s[:s.length() - 1].to_string()
+    } else {
+      s
+    }
+  }
+
+  @rtcore.join_dir(base, rel) catch {
+    _ => strip_trailing_slash(base) + "/" + rel
+  }
+}
+
+///|
+fn load_wgsl_from_assets(backend : GpuBackend, rel : String) -> String? {
+  let base = backend.assets_base.trim().to_string()
+  if base == "" {
+    return None
+  }
+  let full_path = join_asset_path(base, rel)
+  let source = @fs.read_file_to_string(full_path) catch {
+    err => {
+      @debug.debug(
+        "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
+      )
+      return None
+    }
+  }
+  Some(source)
+}
+
+///|
 fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   if backend.sprite_pipeline is Some(_) {
     return
@@ -244,68 +283,11 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   }
   let bgl_ubo = b1.finish(backend.device, label="mgstudio_sprite_ubo")
   let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_ubo)
-  let wgsl : String =
-    #|struct U {
-    #|  center: vec2<f32>,
-    #|  half_size_view: vec2<f32>,
-    #|  rot: f32,
-    #|  inv_half_w: f32,
-    #|  inv_half_h: f32,
-    #|  _pad0: f32,
-    #|  uv_min: vec2<f32>,
-    #|  uv_max: vec2<f32>,
-    #|  color: vec4<f32>,
-    #|};
-    #|
-    #|struct VSOut {
-    #|  @builtin(position) pos: vec4<f32>,
-    #|  @location(0) uv: vec2<f32>,
-    #|  @location(1) color: vec4<f32>,
-    #|};
-    #|
-    #|@group(0) @binding(0) var samp : sampler;
-    #|@group(0) @binding(1) var tex : texture_2d<f32>;
-    #|@group(1) @binding(0) var<uniform> u : U;
-    #|
-    #|@vertex
-    #|fn vs_main(@builtin(vertex_index) vid: u32) -> VSOut {
-    #|  var p = array<vec2<f32>, 6>(
-    #|    vec2<f32>(-1.0, -1.0),
-    #|    vec2<f32>( 1.0, -1.0),
-    #|    vec2<f32>( 1.0,  1.0),
-    #|    vec2<f32>(-1.0, -1.0),
-    #|    vec2<f32>( 1.0,  1.0),
-    #|    vec2<f32>(-1.0,  1.0),
-    #|  );
-    #|  let base = p[vid];
-    #|  let c = cos(u.rot);
-    #|  let s = sin(u.rot);
-    #|  // Rotate in view space (logical pixels / world units), then map to NDC
-    #|  // with per-axis scales. Rotating in NDC would distort when the viewport
-    #|  // aspect ratio is not 1 (anisotropic viewport transform).
-    #|  let view = vec2<f32>(base.x * u.half_size_view.x, base.y * u.half_size_view.y);
-    #|  let rot_view = vec2<f32>(
-    #|    view.x * c - view.y * s,
-    #|    view.x * s + view.y * c,
-    #|  );
-    #|  let off = vec2<f32>(rot_view.x * u.inv_half_w, rot_view.y * u.inv_half_h);
-    #|  var out: VSOut;
-    #|  out.pos = vec4<f32>(u.center + off, 0.0, 1.0);
-    #|  // Note: NDC Y grows upward, but texture V grows downward (v=0 at top).
-    #|  // Flip the interpolation Y to match WebGPU/wgpu UV conventions.
-    #|  let t0 = (base + vec2<f32>(1.0, 1.0)) * 0.5;
-    #|  let t = vec2<f32>(t0.x, 1.0 - t0.y);
-    #|  out.uv = mix(u.uv_min, u.uv_max, t);
-    #|  out.color = u.color;
-    #|  return out;
-    #|}
-    #|
-    #|@fragment
-    #|fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
-    #|  let texel = textureSample(tex, samp, in.uv);
-    #|  return texel * in.color;
-    #|}
-    #|
+  guard load_wgsl_from_assets(backend, "shaders/runtime_native/sprite.wgsl")
+    is Some(wgsl) else {
+    @debug.debug("wgpu: sprite shader missing; skip sprite pipeline init")
+    return
+  }
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let format = if backend.surface_format != 0U {
     backend.surface_format
@@ -339,23 +321,11 @@ fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit {
   }
   let bgl = backend.device.create_bind_group_layout_uniform_buffer()
   let pl = backend.device.create_pipeline_layout_1(bgl)
-  let wgsl : String =
-    #|struct VSOut { @builtin(position) pos: vec4<f32> };
-    #|
-    #|@group(0) @binding(0) var<uniform> color : vec4<f32>;
-    #|
-    #|@vertex
-    #|fn vs_main(@location(0) pos: vec2<f32>) -> VSOut {
-    #|  var out: VSOut;
-    #|  out.pos = vec4<f32>(pos, 0.0, 1.0);
-    #|  return out;
-    #|}
-    #|
-    #|@fragment
-    #|fn fs_main() -> @location(0) vec4<f32> {
-    #|  return color;
-    #|}
-    #|
+  guard load_wgsl_from_assets(backend, "shaders/runtime_native/mesh.wgsl")
+    is Some(wgsl) else {
+    @debug.debug("wgpu: mesh shader missing; skip mesh pipeline init")
+    return
+  }
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = backend.device.create_render_pipeline_rgba8_pos2_with_layout(
     pl, sm,
@@ -872,6 +842,9 @@ pub fn GpuBackend::draw_sprite_uv(
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(ps) else { return }
   ensure_sprite_pipeline(self)
+  guard self.sprite_pipeline is Some(pipeline) else { return }
+  guard self.sprite_uniform_buf is Some(uniform_buf) else { return }
+  guard self.sprite_uniform_bg is Some(uniform_bg) else { return }
   let tex = ensure_fallback_texture(self, texture_id)
   let half_w = ps.width_logical / 2.0F
   let half_h = ps.height_logical / 2.0F
@@ -912,10 +885,10 @@ pub fn GpuBackend::draw_sprite_uv(
     color_a,
   }
   let bytes = pack_sprite_uniform(pack)
-  self.queue.write_buffer(self.sprite_uniform_buf.unwrap(), 0UL, bytes)
-  pass.set_pipeline(self.sprite_pipeline.unwrap())
+  self.queue.write_buffer(uniform_buf, 0UL, bytes)
+  pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, tex.bind_group, [])
-  pass.set_bind_group(1U, self.sprite_uniform_bg.unwrap(), [])
+  pass.set_bind_group(1U, uniform_bg, [])
   pass.draw(6U, 1U, 0U, 0U)
 }
 
@@ -1116,6 +1089,9 @@ pub fn GpuBackend::draw_mesh(
   guard self.pass_state is Some(ps) else { return }
   guard find_mesh(self, mesh_id) is Some(mesh) else { return }
   ensure_mesh_pipeline(self)
+  guard self.mesh_pipeline is Some(pipeline) else { return }
+  guard self.mesh_color_buf is Some(color_buf) else { return }
+  guard self.mesh_color_bg is Some(color_bg) else { return }
   let half_w = ps.width_logical / 2.0F
   let half_h = ps.height_logical / 2.0F
   if half_w == 0.0F || half_h == 0.0F {
@@ -1124,7 +1100,7 @@ pub fn GpuBackend::draw_mesh(
 
   // Update mesh color uniform.
   let color_bytes = f32le_pack([color_r, color_g, color_b, color_a])
-  self.queue.write_buffer(self.mesh_color_buf.unwrap(), 0UL, color_bytes)
+  self.queue.write_buffer(color_buf, 0UL, color_bytes)
 
   // Transform each vertex into NDC and upload to scratch buffer.
   let cosr = cosf(rotation)
@@ -1153,10 +1129,11 @@ pub fn GpuBackend::draw_mesh(
   let bytes = f32le_pack(verts_ndc)
   let needed = bytes.length().to_uint64()
   ensure_mesh_scratch(self, needed)
-  self.queue.write_buffer(self.mesh_scratch_vb.unwrap(), 0UL, bytes)
-  pass.set_pipeline(self.mesh_pipeline.unwrap())
-  pass.set_bind_group(0U, self.mesh_color_bg.unwrap(), [])
-  pass.set_vertex_buffer(0U, self.mesh_scratch_vb.unwrap(), 0UL, needed)
+  guard self.mesh_scratch_vb is Some(scratch_vb) else { return }
+  self.queue.write_buffer(scratch_vb, 0UL, bytes)
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(0U, color_bg, [])
+  pass.set_vertex_buffer(0U, scratch_vb, 0UL, needed)
   let index_bytes = (mesh.indices_u16.length() * 2).to_uint64()
   pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
   pass.draw_indexed(

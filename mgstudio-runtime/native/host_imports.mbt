@@ -38,6 +38,8 @@ pub struct HostContext {
   bytes : Ref[Array[(Int, Bytes)]]
   next_font_id : Ref[Int]
   fonts : Ref[Array[(Int, Bytes)]]
+  next_shader_id : Ref[Int]
+  shaders : Ref[Array[(Int, String)]]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   // (id, env, func_idx)
@@ -86,6 +88,8 @@ pub fn HostContext::new(
     bytes: Ref::new([]),
     next_font_id: Ref::new(1),
     fonts: Ref::new([]),
+    next_shader_id: Ref::new(1),
+    shaders: Ref::new([]),
     next_closure_id: Ref::new(1),
     closures: Ref::new([]),
   }
@@ -255,6 +259,14 @@ fn font_table_put(ctx : HostContext, data : Bytes) -> Int {
   let id = ctx.next_font_id.val
   ctx.next_font_id.val = id + 1
   ctx.fonts.val.push((id, data))
+  id
+}
+
+///|
+fn shader_table_put(ctx : HostContext, source : String) -> Int {
+  let id = ctx.next_shader_id.val
+  ctx.next_shader_id.val = id + 1
+  ctx.shaders.val.push((id, source))
   id
 }
 
@@ -824,7 +836,7 @@ pub fn add_mgstudio_host_imports(
     fn(args) {
       try {
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new())
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
         }
         if args.length() >= 2 &&
           args[0] is @types.Value::I32(path_id) &&
@@ -893,7 +905,35 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_wgsl",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      try {
+        if args.length() >= 1 && args[0] is @types.Value::I32(path_id) {
+          let rel = string_table_get(ctx, path_id).unwrap_or("")
+          if rel == "" {
+            return ok_i32(-1)
+          }
+          let full_path = @rtcore.join_dir(
+            ctx.assets_source.base,
+            strip_leading_slashes(rel),
+          ) catch {
+            _ => join_fs_path(ctx.assets_source.base, rel)
+          }
+          let source = @fs.read_file_to_string(full_path) catch { _ => "" }
+          if source == "" {
+            ok_i32(-1)
+          } else {
+            ok_i32(shader_table_put(ctx, source))
+          }
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        err => {
+          @debug.debug("asset_load_wgsl failed: " + err.to_string())
+          raise err
+        }
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
@@ -1019,7 +1059,7 @@ pub fn add_mgstudio_host_imports(
     "asset_set_texture_sampler",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 2 &&
         args[0] is @types.Value::I32(texture_id) &&
@@ -1037,7 +1077,7 @@ pub fn add_mgstudio_host_imports(
     "asset_create_dynamic_texture",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 3 &&
         args[0] is @types.Value::I32(w) &&
@@ -1082,7 +1122,7 @@ pub fn add_mgstudio_host_imports(
     "asset_update_texture_region_bytes",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 6 &&
         args[0] is @types.Value::I32(texture_id) &&
@@ -1213,7 +1253,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_request_device")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new())
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
         }
         ok_extern_ref(HANDLE_BASE + 2)
       } catch {
@@ -1232,7 +1272,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_create_surface")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new())
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
         }
         if ctx.window is Some(win) {
           ctx.gpu.unwrap().create_surface(win)
@@ -1254,7 +1294,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_configure_surface")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new())
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
         }
         if args.length() >= 4 &&
           args[2] is @types.Value::I32(width) &&
@@ -1286,7 +1326,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_begin_frame")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new())
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
         }
         if ctx.window is Some(win) {
           ctx.gpu.unwrap().ensure_surface_configured(win.width(), win.height())
@@ -1307,7 +1347,7 @@ pub fn add_mgstudio_host_imports(
     "gpu_begin_pass",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 15 &&
         args[0] is @types.Value::I32(target_id) &&
@@ -1378,7 +1418,7 @@ pub fn add_mgstudio_host_imports(
     "gpu_create_render_target",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 3 &&
         args[0] is @types.Value::I32(w) &&
@@ -1400,7 +1440,7 @@ pub fn add_mgstudio_host_imports(
     "gpu_create_mesh_capsule",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 3 &&
         args[0] is @types.Value::F32(radius) &&
@@ -1421,7 +1461,7 @@ pub fn add_mgstudio_host_imports(
     "gpu_create_mesh_rectangle",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 2 &&
         args[0] is @types.Value::F32(w) &&
@@ -1440,7 +1480,7 @@ pub fn add_mgstudio_host_imports(
     "gpu_create_mesh_triangles",
     fn(args) {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new())
+        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
       }
       if args.length() >= 1 && args[0] is @types.Value::I32(text_id) {
         match string_table_get(ctx, text_id) {
