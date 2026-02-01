@@ -20,6 +20,7 @@ pub(all) suberror NativeRuntimeError {
   InstantiateFailed(String, String)
   MissingExport(String)
   ExportCallFailed(String, String)
+  JitSetupFailed(String)
   JitCallFailed(String, String)
 } derive(Show)
 
@@ -147,12 +148,13 @@ pub fn run_game(
     raise NativeRuntimeError::MissingExport("game_app")
   }
 
-  // Best-effort: if JIT setup fails, fall back to the interpreter.
+  // JIT is the default execution engine. Set `MGSTUDIO_NATIVE_NO_JIT=1` to
+  // force the interpreter for debugging.
   if use_jit {
-    match prepare_jit_for_instance(wasm_module, instance, store) {
-      Some(jm) => ctx.jit = Some(jm)
-      None => @debug.debug("JIT disabled (unsupported module or setup failed)")
+    let jm = prepare_jit_for_instance(wasm_module, instance, store) catch {
+      err => raise NativeRuntimeError::JitSetupFailed(err.to_string())
     }
+    ctx.jit = Some(jm)
   }
   match ctx.jit {
     Some(jm) => {

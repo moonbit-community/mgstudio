@@ -19,6 +19,15 @@
 /// module state initialization) and then switches to JIT for hot execution.
 
 ///|
+pub(all) suberror NativeJitSetupError {
+  UnsupportedModule(String)
+  JitLoadFailed
+  MemoryInitFailed
+  GlobalsAllocFailed
+  MissingCHeap
+} derive(Show)
+
+///|
 fn store_addr_to_module_func_idx(
   instance : @runtime.ModuleInstance,
   store_addr : Int,
@@ -266,9 +275,11 @@ pub fn prepare_jit_for_instance(
   wasm_module : @types.Module,
   instance : @runtime.ModuleInstance,
   store : @runtime.Store,
-) -> @jit.JITModule? {
+) -> @jit.JITModule raise NativeJitSetupError {
   if @wast.has_unsupported_instructions(wasm_module) {
-    return None
+    raise NativeJitSetupError::UnsupportedModule(
+      "module contains JIT-unsupported instructions",
+    )
   }
   let opt_level = read_env_int("MGSTUDIO_NATIVE_JIT_OPT_LEVEL", 2)
   let actual_memory_max : Int? = if instance.mem_addrs.length() > 0 {
@@ -294,7 +305,7 @@ pub fn prepare_jit_for_instance(
   let jit_module = @jit.JITModule::load_with_imports(
     pc, func_signatures, external_imports,
   )
-  guard jit_module is Some(jm) else { return None }
+  guard jit_module is Some(jm) else { raise NativeJitSetupError::JitLoadFailed }
 
   // Enable arbitrary host function imports in JIT mode.
   @wast.install_jit_hostcall_dispatcher(jm, store, instance)
@@ -308,11 +319,14 @@ pub fn prepare_jit_for_instance(
 
   // Share memories via descriptor pointers.
   guard @wast.init_jit_memories_from_store(instance, store, jm) is Some(_) else {
-    return None
+    raise NativeJitSetupError::MemoryInitFailed
   }
 
   // Initialize globals from the interpreter state.
   let globals_ptr = alloc_and_init_jit_globals(instance, store, jm)
+  if globals_ptr == 0L && !instance.global_addrs.is_empty() {
+    raise NativeJitSetupError::GlobalsAllocFailed
+  }
   if globals_ptr != 0L {
     jm.set_globals(globals_ptr)
   }
@@ -332,9 +346,9 @@ pub fn prepare_jit_for_instance(
       @jit.gc_setup(heap, store.module_types, canonical)
       jm.set_gc_heap(heap.get_ptr())
     }
-    None => ()
+    None => raise NativeJitSetupError::MissingCHeap
   }
-  Some(jm)
+  jm
 }
 
 ///|
