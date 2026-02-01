@@ -8,6 +8,7 @@ import {
   "Milky2018/wasmoon/runtime",
   "Milky2018/wasmoon/types",
   "Milky2018/wgpu_mbt",
+  "Milky2018/wgpu_mbt/c",
 }
 
 // Values
@@ -19,9 +20,16 @@ pub fn call_jit_func_by_index(@jit.JITModule, Int) -> Bool raise @jit.JITTrap
 
 pub fn prepare_jit_for_instance(@types.Module, @runtime.ModuleInstance, @runtime.Store) -> @jit.JITModule raise NativeJitSetupError
 
+pub fn render_pipeline_descriptor_color_format_alpha_blend_pos2_new(@c.WGPUPipelineLayout, @c.WGPUShaderModule, UInt) -> @c.WGPURenderPipelineDescriptorPtr
+
 pub fn run_game(String, String, String, wgpu_lib? : String) -> Unit raise
 
 // Errors
+pub(all) suberror GpuBackendError {
+  Fatal(String)
+}
+pub impl Show for GpuBackendError
+
 pub(all) suberror NativeJitSetupError {
   UnsupportedModule(String)
   JitLoadFailed
@@ -60,6 +68,8 @@ pub struct GpuBackend {
   mut sprite_bgl_globals : @wgpu_mbt.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut sprite_pipeline : @wgpu_mbt.RenderPipeline?
+  mut sprite_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut sprite_pipeline_surface_format : UInt
   mut sprite_globals_buf : @wgpu_mbt.Buffer?
   mut sprite_instance_buf : @wgpu_mbt.Buffer?
   mut sprite_instance_capacity : UInt64
@@ -70,6 +80,8 @@ pub struct GpuBackend {
   mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut mesh_pipeline_surface_format : UInt
   mut mesh_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh_uniform_bg : @wgpu_mbt.BindGroup?
   next_id : Ref[Int]
@@ -77,22 +89,22 @@ pub struct GpuBackend {
   meshes : Ref[Array[GpuMeshInfo]]
 }
 pub fn GpuBackend::begin_frame(Self) -> Unit
-pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit
+pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
-pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int
+pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
-pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int
-pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
-pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
-pub fn GpuBackend::end_frame(Self) -> Unit
-pub fn GpuBackend::end_pass(Self) -> Unit
+pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
+pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self
-pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit
+pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
 pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit

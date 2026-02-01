@@ -1,6 +1,7 @@
 {
   "native-stub": [
-    "time_native.c"
+    "time_native.c",
+    "wgpu_desc_native.c"
   ],
   "import": [
     {

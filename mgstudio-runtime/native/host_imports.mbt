@@ -147,6 +147,13 @@ fn ok_extern_ref(id : Int) -> Array[@types.Value] {
 }
 
 ///|
+fn[T] host_fail(what : String, err : String) -> T raise @runtime.RuntimeError {
+  let msg = what + " failed: " + err
+  @debug.debug(msg)
+  raise @runtime.RuntimeError::InvalidConstantExpression(msg)
+}
+
+///|
 fn string_table_get(ctx : HostContext, id : Int) -> String? {
   if id <= 0 {
     return None
@@ -509,7 +516,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("debug_string failed: " + err.to_string())
-          raise err
+          host_fail("debug_string", err.to_string())
         }
       }
     },
@@ -547,7 +554,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("window_create failed: " + err.to_string())
-          raise err
+          host_fail("window_create", err.to_string())
         }
       }
     },
@@ -894,7 +901,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("asset_load_texture failed: " + err.to_string())
-          raise err
+          host_fail("asset_load_texture", err.to_string())
         }
       }
     },
@@ -930,7 +937,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("asset_load_wgsl failed: " + err.to_string())
-          raise err
+          host_fail("asset_load_wgsl", err.to_string())
         }
       }
     },
@@ -963,7 +970,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("asset_load_font failed: " + err.to_string())
-          raise err
+          host_fail("asset_load_font", err.to_string())
         }
       }
     },
@@ -1058,15 +1065,22 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "asset_set_texture_sampler",
     fn(args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+      try {
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 2 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::I32(sampler_kind) {
+          ctx.gpu.unwrap().set_texture_sampler(texture_id, sampler_kind)
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("asset_set_texture_sampler failed: " + err.to_string())
+          host_fail("asset_set_texture_sampler", err.to_string())
+        }
       }
-      if args.length() >= 2 &&
-        args[0] is @types.Value::I32(texture_id) &&
-        args[1] is @types.Value::I32(sampler_kind) {
-        ctx.gpu.unwrap().set_texture_sampler(texture_id, sampler_kind)
-      }
-      ok_i32(0)
     },
     func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
       @types.ValueType::I32,
@@ -1076,24 +1090,35 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "asset_create_dynamic_texture",
     fn(args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
-      }
-      if args.length() >= 3 &&
-        args[0] is @types.Value::I32(w) &&
-        args[1] is @types.Value::I32(h) &&
-        args[2] is @types.Value::I32(nearest_i32) {
-        let nearest = nearest_i32 != 0
-        let width = if w <= 0 { 1 } else { w }
-        let height = if h <= 0 { 1 } else { h }
-        // Initialize as transparent (RGBA=0). This is used by text atlases.
-        let byte_len = width * height * 4
-        let pixels = Bytes::makei(byte_len, _ => (0).to_byte())
-        ok_i32(
-          ctx.gpu.unwrap().create_texture_rgba8(width, height, pixels, nearest),
-        )
-      } else {
-        ok_i32(-1)
+      try {
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 3 &&
+          args[0] is @types.Value::I32(w) &&
+          args[1] is @types.Value::I32(h) &&
+          args[2] is @types.Value::I32(nearest_i32) {
+          let nearest = nearest_i32 != 0
+          let width = if w <= 0 { 1 } else { w }
+          let height = if h <= 0 { 1 } else { h }
+          // Initialize as transparent (RGBA=0). This is used by text atlases.
+          let byte_len = width * height * 4
+          let pixels = Bytes::makei(byte_len, _ => (0).to_byte())
+          ok_i32(
+            ctx.gpu
+            .unwrap()
+            .create_texture_rgba8(width, height, pixels, nearest),
+          )
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        err => {
+          @debug.debug(
+            "asset_create_dynamic_texture failed: " + err.to_string(),
+          )
+          host_fail("asset_create_dynamic_texture", err.to_string())
+        }
       }
     },
     func_type=ft(
@@ -1259,7 +1284,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("gpu_request_device failed: " + err.to_string())
-          raise err
+          host_fail("gpu_request_device", err.to_string())
         }
       }
     },
@@ -1281,7 +1306,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("gpu_create_surface failed: " + err.to_string())
-          raise err
+          host_fail("gpu_create_surface", err.to_string())
         }
       }
     },
@@ -1305,7 +1330,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("gpu_configure_surface failed: " + err.to_string())
-          raise err
+          host_fail("gpu_configure_surface", err.to_string())
         }
       }
     },
@@ -1336,7 +1361,7 @@ pub fn add_mgstudio_host_imports(
       } catch {
         err => {
           @debug.debug("gpu_begin_frame failed: " + err.to_string())
-          raise err
+          host_fail("gpu_begin_frame", err.to_string())
         }
       }
     },
@@ -1346,33 +1371,41 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_begin_pass",
     fn(args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+      try {
+        host_trace("host: gpu_begin_pass")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 15 &&
+          args[0] is @types.Value::I32(target_id) &&
+          args[1] is @types.Value::I32(width_logical) &&
+          args[2] is @types.Value::I32(height_logical) &&
+          args[3] is @types.Value::F32(clear_r) &&
+          args[4] is @types.Value::F32(clear_g) &&
+          args[5] is @types.Value::F32(clear_b) &&
+          args[6] is @types.Value::F32(clear_a) &&
+          args[7] is @types.Value::F32(camera_x) &&
+          args[8] is @types.Value::F32(camera_y) &&
+          args[9] is @types.Value::F32(camera_rot) &&
+          args[10] is @types.Value::F32(camera_scale) &&
+          args[11] is @types.Value::I32(vx) &&
+          args[12] is @types.Value::I32(vy) &&
+          args[13] is @types.Value::I32(vw) &&
+          args[14] is @types.Value::I32(vh) {
+          ctx.gpu
+          .unwrap()
+          .begin_pass(
+            target_id, width_logical, height_logical, clear_r, clear_g, clear_b,
+            clear_a, camera_x, camera_y, camera_rot, camera_scale, vx, vy, vw, vh,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("gpu_begin_pass failed: " + err.to_string())
+          host_fail("gpu_begin_pass", err.to_string())
+        }
       }
-      if args.length() >= 15 &&
-        args[0] is @types.Value::I32(target_id) &&
-        args[1] is @types.Value::I32(width_logical) &&
-        args[2] is @types.Value::I32(height_logical) &&
-        args[3] is @types.Value::F32(clear_r) &&
-        args[4] is @types.Value::F32(clear_g) &&
-        args[5] is @types.Value::F32(clear_b) &&
-        args[6] is @types.Value::F32(clear_a) &&
-        args[7] is @types.Value::F32(camera_x) &&
-        args[8] is @types.Value::F32(camera_y) &&
-        args[9] is @types.Value::F32(camera_rot) &&
-        args[10] is @types.Value::F32(camera_scale) &&
-        args[11] is @types.Value::I32(vx) &&
-        args[12] is @types.Value::I32(vy) &&
-        args[13] is @types.Value::I32(vw) &&
-        args[14] is @types.Value::I32(vh) {
-        ctx.gpu
-        .unwrap()
-        .begin_pass(
-          target_id, width_logical, height_logical, clear_r, clear_g, clear_b, clear_a,
-          camera_x, camera_y, camera_rot, camera_scale, vx, vy, vw, vh,
-        )
-      }
-      ok_i32(0)
     },
     func_type=ft(
       [
@@ -1399,8 +1432,18 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_end_pass",
     fn(_args) {
-      ctx.gpu.map(fn(gpu) { gpu.end_pass() }) |> ignore
-      ok_i32(0)
+      try {
+        host_trace("host: gpu_end_pass")
+        if ctx.gpu is Some(gpu) {
+          gpu.end_pass()
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("gpu_end_pass failed: " + err.to_string())
+          host_fail("gpu_end_pass", err.to_string())
+        }
+      }
     },
     func_type=ft([], [@types.ValueType::I32]),
   )
@@ -1408,8 +1451,18 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_end_frame",
     fn(_args) {
-      ctx.gpu.map(fn(gpu) { gpu.end_frame() }) |> ignore
-      ok_i32(0)
+      try {
+        host_trace("host: gpu_end_frame")
+        if ctx.gpu is Some(gpu) {
+          gpu.end_frame()
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("gpu_end_frame failed: " + err.to_string())
+          host_fail("gpu_end_frame", err.to_string())
+        }
+      }
     },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
@@ -1417,17 +1470,25 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_create_render_target",
     fn(args) {
-      if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
-      }
-      if args.length() >= 3 &&
-        args[0] is @types.Value::I32(w) &&
-        args[1] is @types.Value::I32(h) &&
-        args[2] is @types.Value::I32(nearest_i32) {
-        let id = ctx.gpu.unwrap().create_render_target(w, h, nearest_i32 != 0)
-        ok_i32(id)
-      } else {
-        ok_i32(-1)
+      try {
+        host_trace("host: gpu_create_render_target")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 3 &&
+          args[0] is @types.Value::I32(w) &&
+          args[1] is @types.Value::I32(h) &&
+          args[2] is @types.Value::I32(nearest_i32) {
+          let id = ctx.gpu.unwrap().create_render_target(w, h, nearest_i32 != 0)
+          ok_i32(id)
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        err => {
+          @debug.debug("gpu_create_render_target failed: " + err.to_string())
+          host_fail("gpu_create_render_target", err.to_string())
+        }
       }
     },
     func_type=ft(
@@ -1502,23 +1563,31 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_draw_mesh",
     fn(args) {
-      if ctx.gpu is None {
-        return ok_i32(0)
+      try {
+        host_trace("host: gpu_draw_mesh")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 10 &&
+          args[0] is @types.Value::I32(mesh_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) {
+          ctx.gpu.unwrap().draw_mesh(mesh_id, x, y, rot, sx, sy, r, g, b, a)
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("gpu_draw_mesh failed: " + err.to_string())
+          host_fail("gpu_draw_mesh", err.to_string())
+        }
       }
-      if args.length() >= 10 &&
-        args[0] is @types.Value::I32(mesh_id) &&
-        args[1] is @types.Value::F32(x) &&
-        args[2] is @types.Value::F32(y) &&
-        args[3] is @types.Value::F32(rot) &&
-        args[4] is @types.Value::F32(sx) &&
-        args[5] is @types.Value::F32(sy) &&
-        args[6] is @types.Value::F32(r) &&
-        args[7] is @types.Value::F32(g) &&
-        args[8] is @types.Value::F32(b) &&
-        args[9] is @types.Value::F32(a) {
-        ctx.gpu.unwrap().draw_mesh(mesh_id, x, y, rot, sx, sy, r, g, b, a)
-      }
-      ok_i32(0)
     },
     func_type=ft(
       [
@@ -1540,32 +1609,40 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "gpu_draw_sprite_uv",
     fn(args) {
-      if ctx.gpu is None {
-        return ok_i32(0)
+      try {
+        host_trace("host: gpu_draw_sprite_uv")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 14 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) &&
+          args[10] is @types.Value::F32(uv_min_x) &&
+          args[11] is @types.Value::F32(uv_min_y) &&
+          args[12] is @types.Value::F32(uv_max_x) &&
+          args[13] is @types.Value::F32(uv_max_y) {
+          ctx.gpu
+          .unwrap()
+          .draw_sprite_uv(
+            texture_id, x, y, rot, sx, sy, r, g, b, a, uv_min_x, uv_min_y, uv_max_x,
+            uv_max_y,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        err => {
+          @debug.debug("gpu_draw_sprite_uv failed: " + err.to_string())
+          host_fail("gpu_draw_sprite_uv", err.to_string())
+        }
       }
-      if args.length() >= 14 &&
-        args[0] is @types.Value::I32(texture_id) &&
-        args[1] is @types.Value::F32(x) &&
-        args[2] is @types.Value::F32(y) &&
-        args[3] is @types.Value::F32(rot) &&
-        args[4] is @types.Value::F32(sx) &&
-        args[5] is @types.Value::F32(sy) &&
-        args[6] is @types.Value::F32(r) &&
-        args[7] is @types.Value::F32(g) &&
-        args[8] is @types.Value::F32(b) &&
-        args[9] is @types.Value::F32(a) &&
-        args[10] is @types.Value::F32(uv_min_x) &&
-        args[11] is @types.Value::F32(uv_min_y) &&
-        args[12] is @types.Value::F32(uv_max_x) &&
-        args[13] is @types.Value::F32(uv_max_y) {
-        ctx.gpu
-        .unwrap()
-        .draw_sprite_uv(
-          texture_id, x, y, rot, sx, sy, r, g, b, a, uv_min_x, uv_min_y, uv_max_x,
-          uv_max_y,
-        )
-      }
-      ok_i32(0)
     },
     func_type=ft(
       [

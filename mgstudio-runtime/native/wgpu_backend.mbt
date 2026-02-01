@@ -95,6 +95,8 @@ pub struct GpuBackend {
   mut sprite_bgl_globals : @wgpu.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu.PipelineLayout?
   mut sprite_pipeline : @wgpu.RenderPipeline?
+  mut sprite_pipeline_surface : @wgpu.RenderPipeline?
+  mut sprite_pipeline_surface_format : UInt
   mut sprite_globals_buf : @wgpu.Buffer?
   mut sprite_instance_buf : @wgpu.Buffer?
   mut sprite_instance_capacity : UInt64
@@ -107,6 +109,8 @@ pub struct GpuBackend {
   mut mesh_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh_pipeline : @wgpu.RenderPipeline?
+  mut mesh_pipeline_surface : @wgpu.RenderPipeline?
+  mut mesh_pipeline_surface_format : UInt
   mut mesh_uniform_buf : @wgpu.Buffer?
   mut mesh_uniform_bg : @wgpu.BindGroup?
   next_id : Ref[Int]
@@ -136,6 +140,8 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     sprite_bgl_globals: None,
     sprite_pipeline_layout: None,
     sprite_pipeline: None,
+    sprite_pipeline_surface: None,
+    sprite_pipeline_surface_format: 0U,
     sprite_globals_buf: None,
     sprite_instance_buf: None,
     sprite_instance_capacity: 0UL,
@@ -146,6 +152,8 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     mesh_bgl_uniform: None,
     mesh_pipeline_layout: None,
     mesh_pipeline: None,
+    mesh_pipeline_surface: None,
+    mesh_pipeline_surface_format: 0U,
     mesh_uniform_buf: None,
     mesh_uniform_bg: None,
     next_id: Ref::new(1),
@@ -168,9 +176,13 @@ fn sinf(x : Float) -> Float {
 }
 
 ///|
-fn fatal(message : String) -> Unit {
-  @debug.debug(message)
-  @sys.exit(1)
+pub(all) suberror GpuBackendError {
+  Fatal(String)
+} derive(Show)
+
+///|
+fn[T] fatal(message : String) -> T raise GpuBackendError {
+  raise GpuBackendError::Fatal(message)
 }
 
 ///|
@@ -229,26 +241,26 @@ fn join_asset_path(base : String, rel : String) -> String {
 }
 
 ///|
-fn load_wgsl_from_assets_required(backend : GpuBackend, rel : String) -> String {
+fn load_wgsl_from_assets_required(
+  backend : GpuBackend,
+  rel : String,
+) -> String raise GpuBackendError {
   let base = backend.assets_base.trim().to_string()
   if base == "" {
     fatal("wgpu: assets_base is empty; cannot load shader: " + rel)
-    return ""
   }
   let full_path = join_asset_path(base, rel)
   @fs.read_file_to_string(full_path) catch {
-    err => {
+    err =>
       fatal(
         "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
       )
-      ""
-    }
   }
 }
 
 ///|
-fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
-  if backend.sprite_pipeline is Some(_) {
+fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
+  if backend.sprite_pipeline_layout is Some(_) {
     return
   }
   // Texture binding group (fragment stage).
@@ -285,27 +297,9 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   if !ok2 || !ok3 {
     b1.free()
     fatal("wgpu: failed to build sprite bind group layout")
-    return
   }
   let bgl_globals = b1.finish(backend.device, label="mgstudio_sprite_globals")
   let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_globals)
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/sprite.wgsl",
-  )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let format = if backend.surface_format != 0U {
-    backend.surface_format
-  } else {
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
-  }
-  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
-    pl.raw_handle(),
-    sm.raw_handle(),
-    format,
-  )
-  let pipeline = backend.device.create_render_pipeline_ptr(desc)
-  @wgpu_c.render_pipeline_descriptor_free(desc)
-  pipeline.set_label("mgstudio_sprite")
   let globals_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
   let globals_buf = backend.device.create_buffer(size=32UL, usage=globals_usage)
   let instance_usage = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
@@ -317,7 +311,6 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   backend.sprite_bgl_tex = Some(bgl_tex)
   backend.sprite_bgl_globals = Some(bgl_globals)
   backend.sprite_pipeline_layout = Some(pl)
-  backend.sprite_pipeline = Some(pipeline)
   backend.sprite_globals_buf = Some(globals_buf)
   backend.sprite_instance_buf = Some(instance_buf)
   backend.sprite_instance_capacity = instance_cap
@@ -325,11 +318,90 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   backend.sprite_instance_data.clear()
   backend.sprite_batches.clear()
   backend.sprite_instance_count = 0U
+}
+
+///|
+fn ensure_sprite_pipeline_rgba8(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_sprite_resources(backend)
+  if backend.sprite_pipeline is Some(_) {
+    return
+  }
+  guard backend.sprite_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/2d/sprite.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_sprite_rgba8")
+  backend.sprite_pipeline = Some(pipeline)
   sm.release()
 }
 
 ///|
-fn ensure_sprite_globals_bind_group(backend : GpuBackend) -> Unit {
+fn ensure_sprite_pipeline_surface(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_sprite_resources(backend)
+  let format = backend.surface_format
+  if format == 0U || format == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
+    return
+  }
+  if backend.sprite_pipeline_surface_format == format &&
+    backend.sprite_pipeline_surface is Some(_) {
+    return
+  }
+  if backend.sprite_pipeline_surface is Some(old) {
+    old.release()
+  }
+  guard backend.sprite_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/2d/sprite.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
+    format,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_sprite_surface")
+  backend.sprite_pipeline_surface = Some(pipeline)
+  backend.sprite_pipeline_surface_format = format
+  sm.release()
+}
+
+///|
+fn sprite_pipeline_for_current_pass(
+  backend : GpuBackend,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let target_is_surface = match backend.pass_state {
+    Some(ps) => ps.target_id == -1
+    None => false
+  }
+  if target_is_surface &&
+    backend.surface_format != 0U &&
+    backend.surface_format != @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
+    ensure_sprite_pipeline_surface(backend)
+    backend.sprite_pipeline_surface
+  } else {
+    ensure_sprite_pipeline_rgba8(backend)
+    backend.sprite_pipeline
+  }
+}
+
+///|
+fn ensure_sprite_globals_bind_group(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
   if backend.sprite_globals_bg is Some(_) {
     return
   }
@@ -342,38 +414,100 @@ fn ensure_sprite_globals_bind_group(backend : GpuBackend) -> Unit {
   if !ok0 || !ok1 {
     b.free()
     fatal("wgpu: failed to build sprite globals bind group")
-    return
   }
   let bg = b.finish(backend.device, layout, label="mgstudio_sprite_globals")
   backend.sprite_globals_bg = Some(bg)
 }
 
 ///|
-fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit {
+fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit raise GpuBackendError {
+  if backend.mesh_pipeline_layout is None {
+    let bgl = backend.device.create_bind_group_layout_uniform_buffer()
+    let pl = backend.device.create_pipeline_layout_1(bgl)
+    backend.mesh_bgl_uniform = Some(bgl)
+    backend.mesh_pipeline_layout = Some(pl)
+  }
+  if backend.mesh_uniform_buf is None || backend.mesh_uniform_bg is None {
+    guard backend.mesh_bgl_uniform is Some(bgl) else { return }
+    let ubo_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
+    let uniform_buf = backend.device.create_buffer(size=80UL, usage=ubo_usage)
+    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
+      bgl, uniform_buf,
+    )
+    backend.mesh_uniform_buf = Some(uniform_buf)
+    backend.mesh_uniform_bg = Some(uniform_bg)
+  }
   if backend.mesh_pipeline is Some(_) {
     return
   }
-  let bgl = backend.device.create_bind_group_layout_uniform_buffer()
-  let pl = backend.device.create_pipeline_layout_1(bgl)
+  guard backend.mesh_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/2d/mesh.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let pipeline = backend.device.create_render_pipeline_rgba8_pos2_with_layout(
-    pl, sm,
+  let desc = render_pipeline_descriptor_color_format_alpha_blend_pos2_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
   )
-  pipeline.set_label("mgstudio_mesh")
-  let ubo_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
-  let uniform_buf = backend.device.create_buffer(size=80UL, usage=ubo_usage)
-  let uniform_bg = backend.device.create_bind_group_uniform_buffer(
-    bgl, uniform_buf,
-  )
-  backend.mesh_bgl_uniform = Some(bgl)
-  backend.mesh_pipeline_layout = Some(pl)
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_mesh_rgba8")
   backend.mesh_pipeline = Some(pipeline)
-  backend.mesh_uniform_buf = Some(uniform_buf)
-  backend.mesh_uniform_bg = Some(uniform_bg)
   sm.release()
+}
+
+///|
+fn ensure_mesh_pipeline_surface(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_mesh_pipeline(backend)
+  let format = backend.surface_format
+  if format == 0U || format == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
+    return
+  }
+  if backend.mesh_pipeline_surface_format == format &&
+    backend.mesh_pipeline_surface is Some(_) {
+    return
+  }
+  if backend.mesh_pipeline_surface is Some(old) {
+    old.release()
+  }
+  guard backend.mesh_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/2d/mesh.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = render_pipeline_descriptor_color_format_alpha_blend_pos2_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
+    format,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_mesh_surface")
+  backend.mesh_pipeline_surface = Some(pipeline)
+  backend.mesh_pipeline_surface_format = format
+  sm.release()
+}
+
+///|
+fn mesh_pipeline_for_current_pass(
+  backend : GpuBackend,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let target_is_surface = match backend.pass_state {
+    Some(ps) => ps.target_id == -1
+    None => false
+  }
+  if target_is_surface &&
+    backend.surface_format != 0U &&
+    backend.surface_format != @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
+    ensure_mesh_pipeline_surface(backend)
+    backend.mesh_pipeline_surface
+  } else {
+    ensure_mesh_pipeline(backend)
+    backend.mesh_pipeline
+  }
 }
 
 ///|
@@ -449,7 +583,7 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
 }
 
 ///|
-pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit {
+pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
     flush_sprite_batches(self)
@@ -481,11 +615,14 @@ fn find_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo? {
 }
 
 ///|
-fn ensure_fallback_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo {
+fn ensure_fallback_texture(
+  backend : GpuBackend,
+  id : Int,
+) -> GpuTextureInfo raise GpuBackendError {
   if find_texture(backend, id) is Some(t) {
     t
   } else {
-    ensure_sprite_pipeline(backend)
+    ensure_sprite_resources(backend)
     let bgl_tex = backend.sprite_bgl_tex.unwrap()
     let w = 128U
     let h = 128U
@@ -523,8 +660,8 @@ pub fn GpuBackend::create_texture_rgba8(
   height : Int,
   pixels_rgba8 : Bytes,
   nearest : Bool,
-) -> Int {
-  ensure_sprite_pipeline(self)
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
@@ -670,9 +807,9 @@ pub fn GpuBackend::set_texture_sampler(
   self : GpuBackend,
   texture_id : Int,
   sampler_kind : Int,
-) -> Unit {
+) -> Unit raise GpuBackendError {
   if self.sprite_bgl_tex is None {
-    ensure_sprite_pipeline(self)
+    ensure_sprite_resources(self)
   }
   let bgl_tex = self.sprite_bgl_tex.unwrap()
   let count = self.textures.val.length()
@@ -709,8 +846,8 @@ pub fn GpuBackend::create_render_target(
   width : Int,
   height : Int,
   nearest : Bool,
-) -> Int {
-  ensure_sprite_pipeline(self)
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
@@ -773,7 +910,7 @@ pub fn GpuBackend::begin_pass(
   viewport_y : Int,
   viewport_w : Int,
   viewport_h : Int,
-) -> Unit {
+) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
     pass.end()
@@ -820,7 +957,7 @@ pub fn GpuBackend::begin_pass(
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
   self.sprite_instance_count = 0U
-  ensure_sprite_pipeline(self)
+  ensure_sprite_resources(self)
   if self.sprite_globals_buf is Some(globals_buf) {
     let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
     let w = Float::from_double(width_logical.to_double())
@@ -838,7 +975,7 @@ pub fn GpuBackend::begin_pass(
 }
 
 ///|
-pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit {
+pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
     flush_sprite_batches(self)
@@ -850,14 +987,15 @@ pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn flush_sprite_batches(backend : GpuBackend) -> Unit {
+fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
   guard backend.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   if backend.sprite_instance_count == 0U {
     return
   }
-  ensure_sprite_pipeline(backend)
-  guard backend.sprite_pipeline is Some(pipeline) else { return }
+  guard sprite_pipeline_for_current_pass(backend) is Some(pipeline) else {
+    return
+  }
   let float_count = backend.sprite_instance_data.length()
   if float_count <= 0 {
     backend.sprite_instance_data.clear()
@@ -913,10 +1051,10 @@ pub fn GpuBackend::draw_sprite_uv(
   uv_min_y : Float,
   uv_max_x : Float,
   uv_max_y : Float,
-) -> Unit {
+) -> Unit raise GpuBackendError {
   guard self.frame is Some(_) else { return }
   guard self.pass_state is Some(_) else { return }
-  ensure_sprite_pipeline(self)
+  ensure_sprite_resources(self)
   let tex = ensure_fallback_texture(self, texture_id)
 
   // Match Web runtime's sprite sizing convention (base quad is 128x128).
@@ -1151,14 +1289,13 @@ pub fn GpuBackend::draw_mesh(
   color_g : Float,
   color_b : Float,
   color_a : Float,
-) -> Unit {
+) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(ps) else { return }
   flush_sprite_batches(self)
   guard find_mesh(self, mesh_id) is Some(mesh) else { return }
-  ensure_mesh_pipeline(self)
-  guard self.mesh_pipeline is Some(pipeline) else { return }
+  guard mesh_pipeline_for_current_pass(self) is Some(pipeline) else { return }
   guard self.mesh_uniform_buf is Some(uniform_buf) else { return }
   guard self.mesh_uniform_bg is Some(uniform_bg) else { return }
   let safe_scale = ps.camera_scale
