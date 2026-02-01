@@ -109,8 +109,6 @@ pub struct GpuBackend {
   mut mesh_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh_pipeline : @wgpu.RenderPipeline?
-  mut mesh_pipeline_surface : @wgpu.RenderPipeline?
-  mut mesh_pipeline_surface_format : UInt
   mut mesh_uniform_buf : @wgpu.Buffer?
   mut mesh_uniform_bg : @wgpu.BindGroup?
   next_id : Ref[Int]
@@ -152,8 +150,6 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     mesh_bgl_uniform: None,
     mesh_pipeline_layout: None,
     mesh_pipeline: None,
-    mesh_pipeline_surface: None,
-    mesh_pipeline_surface_format: 0U,
     mesh_uniform_buf: None,
     mesh_uniform_bg: None,
     next_id: Ref::new(1),
@@ -445,49 +441,23 @@ fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend, "shaders/mgstudio/2d/mesh.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = render_pipeline_descriptor_color_format_alpha_blend_pos2_new(
+  // NOTE: wgpu_mbt does not yet expose a (format-aware, alpha-blended, pos2)
+  // render pipeline descriptor helper. This fallback uses the built-in RGBA8
+  // pos2 descriptor and therefore:
+  // - does not support alpha blending
+  // - only matches RGBA8 render targets (not arbitrary surface formats)
+  //
+  // Once wgpu_mbt adds a helper equivalent to:
+  // `render_pipeline_descriptor_color_format_alpha_blend_pos2_new`,
+  // switch back and re-enable mesh draws on the surface.
+  let desc = @wgpu_c.render_pipeline_descriptor_rgba8_pos2_new(
     pl.raw_handle(),
     sm.raw_handle(),
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_mesh_rgba8")
   backend.mesh_pipeline = Some(pipeline)
-  sm.release()
-}
-
-///|
-fn ensure_mesh_pipeline_surface(
-  backend : GpuBackend,
-) -> Unit raise GpuBackendError {
-  ensure_mesh_pipeline(backend)
-  let format = backend.surface_format
-  if format == 0U || format == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
-    return
-  }
-  if backend.mesh_pipeline_surface_format == format &&
-    backend.mesh_pipeline_surface is Some(_) {
-    return
-  }
-  if backend.mesh_pipeline_surface is Some(old) {
-    old.release()
-  }
-  guard backend.mesh_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/mesh.wgsl",
-  )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = render_pipeline_descriptor_color_format_alpha_blend_pos2_new(
-    pl.raw_handle(),
-    sm.raw_handle(),
-    format,
-  )
-  let pipeline = backend.device.create_render_pipeline_ptr(desc)
-  @wgpu_c.render_pipeline_descriptor_free(desc)
-  pipeline.set_label("mgstudio_mesh_surface")
-  backend.mesh_pipeline_surface = Some(pipeline)
-  backend.mesh_pipeline_surface_format = format
   sm.release()
 }
 
@@ -499,15 +469,15 @@ fn mesh_pipeline_for_current_pass(
     Some(ps) => ps.target_id == -1
     None => false
   }
+  // Currently the mesh pipeline only supports RGBA8 targets. Skip mesh draws on
+  // non-RGBA8 surfaces to avoid wgpu-native validation errors.
   if target_is_surface &&
     backend.surface_format != 0U &&
     backend.surface_format != @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
-    ensure_mesh_pipeline_surface(backend)
-    backend.mesh_pipeline_surface
-  } else {
-    ensure_mesh_pipeline(backend)
-    backend.mesh_pipeline
+    return None
   }
+  ensure_mesh_pipeline(backend)
+  backend.mesh_pipeline
 }
 
 ///|

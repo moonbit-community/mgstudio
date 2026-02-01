@@ -8,7 +8,6 @@ import {
   "Milky2018/wasmoon/runtime",
   "Milky2018/wasmoon/types",
   "Milky2018/wgpu_mbt",
-  "Milky2018/wgpu_mbt/c",
 }
 
 // Values
@@ -19,8 +18,6 @@ pub fn add_moonbit_ffi_imports(@runtime.Linker, HostContext) -> Unit
 pub fn call_jit_func_by_index(@jit.JITModule, Int) -> Bool raise @jit.JITTrap
 
 pub fn prepare_jit_for_instance(@types.Module, @runtime.ModuleInstance, @runtime.Store) -> @jit.JITModule raise NativeJitSetupError
-
-pub fn render_pipeline_descriptor_color_format_alpha_blend_pos2_new(@c.WGPUPipelineLayout, @c.WGPUShaderModule, UInt) -> @c.WGPURenderPipelineDescriptorPtr
 
 pub fn run_game(String, String, String, wgpu_lib? : String) -> Unit raise
 
@@ -80,8 +77,6 @@ pub struct GpuBackend {
   mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
-  mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
-  mut mesh_pipeline_surface_format : UInt
   mut mesh_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh_uniform_bg : @wgpu_mbt.BindGroup?
   next_id : Ref[Int]
