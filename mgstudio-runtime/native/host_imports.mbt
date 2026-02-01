@@ -25,6 +25,7 @@
 pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
+  mut jit : @jit.JITModule?
   mut gpu : GpuBackend?
   mut window : @win.Window?
   assets_source : @rtcore.SourceSpec
@@ -72,6 +73,7 @@ pub fn HostContext::new(
   HostContext::{
     store: None,
     instance: None,
+    jit: None,
     gpu: None,
     window: None,
     assets_source,
@@ -557,15 +559,36 @@ pub fn add_mgstudio_host_imports(
           func_idx,
         )
         while true {
-          let _ = try {
-            @executor.call_func_by_index(store, instance, tick_idx, [])
-            |> ignore
-            0
-          } catch {
-            err => {
-              host_trace("tick trapped: " + @runtime.format_runtime_error(err))
-              raise err
-            }
+          let _ = match ctx.jit {
+            Some(jm) =>
+              try {
+                if !call_jit_func_by_index(jm, tick_idx) {
+                  raise @runtime.RuntimeError::LinkErrorDetail(
+                    "JIT function not found: \{tick_idx}",
+                  )
+                }
+                0
+              } catch {
+                jit_err => {
+                  host_trace("tick jit trapped: " + jit_err.to_string())
+                  raise @runtime.RuntimeError::LinkErrorDetail(
+                    jit_err.to_string(),
+                  )
+                }
+              }
+            None =>
+              try {
+                @executor.call_func_by_index(store, instance, tick_idx, [])
+                |> ignore
+                0
+              } catch {
+                err => {
+                  host_trace(
+                    "tick trapped: " + @runtime.format_runtime_error(err),
+                  )
+                  raise err
+                }
+              }
           }
           if ctx.window is Some(win) && win.should_close() {
             break

@@ -20,6 +20,7 @@ pub(all) suberror NativeRuntimeError {
   InstantiateFailed(String, String)
   MissingExport(String)
   ExportCallFailed(String, String)
+  JitCallFailed(String, String)
 } derive(Show)
 
 ///|
@@ -94,12 +95,18 @@ pub fn run_game(
     dump_func_imports(wasm_module)
   }
   let ctx = HostContext::new(assets_source_spec, data_source_spec)
-  let linker = @runtime.Linker::new()
+  let use_jit = !is_env_flag_set("MGSTUDIO_NATIVE_NO_JIT")
+  let store = if use_jit {
+    @runtime.Store::with_c_heap()
+  } else {
+    @runtime.Store::new()
+  }
+  let linker = @runtime.Linker::with_store(store)
   add_mgstudio_host_imports(linker, ctx)
   add_moonbit_ffi_imports(linker, ctx)
 
   // Capture store/instance so host callbacks can call back into the guest.
-  ctx.store = Some(linker.get_store())
+  ctx.store = Some(store)
   let instance = @executor.instantiate_with_linker(
     linker, "runner", wasm_module,
   ) catch {
@@ -139,22 +146,54 @@ pub fn run_game(
   if !has_entry {
     raise NativeRuntimeError::MissingExport("game_app")
   }
-  @debug.debug("Calling export: game_app")
-  let result = @executor.call_exported_func(
-    ctx.store.unwrap(),
-    instance,
-    "game_app",
-    [],
-  ) catch {
-    err =>
-      raise NativeRuntimeError::ExportCallFailed(
+
+  // Best-effort: if JIT setup fails, fall back to the interpreter.
+  if use_jit {
+    match prepare_jit_for_instance(wasm_module, instance, store) {
+      Some(jm) => ctx.jit = Some(jm)
+      None => @debug.debug("JIT disabled (unsupported module or setup failed)")
+    }
+  }
+  match ctx.jit {
+    Some(jm) => {
+      @debug.debug("Calling export (JIT): game_app")
+      match jm.get_func_by_name("game_app") {
+        Some(f) => {
+          let result = jm.call_with_context(f, []) catch {
+            err =>
+              raise NativeRuntimeError::JitCallFailed(
+                "game_app",
+                err.to_string(),
+              )
+          }
+          let rendered : Array[String] = []
+          for item in result {
+            rendered.push(item.to_string())
+          }
+          @debug.debug(rendered)
+        }
+        None => raise NativeRuntimeError::MissingExport("game_app")
+      }
+    }
+    None => {
+      @debug.debug("Calling export: game_app")
+      let result = @executor.call_exported_func(
+        ctx.store.unwrap(),
+        instance,
         "game_app",
-        @runtime.format_runtime_error(err),
-      )
+        [],
+      ) catch {
+        err =>
+          raise NativeRuntimeError::ExportCallFailed(
+            "game_app",
+            @runtime.format_runtime_error(err),
+          )
+      }
+      let rendered : Array[String] = []
+      for item in result {
+        rendered.push(item.to_string())
+      }
+      @debug.debug(rendered)
+    }
   }
-  let rendered : Array[String] = []
-  for item in result {
-    rendered.push(item.to_string())
-  }
-  @debug.debug(rendered)
 }
