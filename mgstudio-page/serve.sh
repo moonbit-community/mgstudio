@@ -18,5 +18,11 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 PORT=${PORT:-8099}
 
-echo "Serving $SCRIPT_DIR at http://localhost:$PORT"
-python3 -m http.server "$PORT" --directory "$SCRIPT_DIR"
+if [[ ! -d "$SCRIPT_DIR/dist" ]]; then
+  echo "dist/ not found; run ./build.sh first" >&2
+  exit 1
+fi
+
+echo "Serving $SCRIPT_DIR/dist at http://localhost:$PORT"
+python3 -m http.server "$PORT" --directory "$SCRIPT_DIR/dist"
+

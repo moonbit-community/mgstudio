@@ -1547,46 +1547,19 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     @js.any(gizmo_id),
     @js.any("shaders/gizmo_lines.wgsl"),
   )
-  let sprite_source = load_wgsl_from_path(
-    state, sprite_id, "shaders/sprite.wgsl",
-  ) catch {
-    err => {
-      let message = "Shader load error: " + err.to_string()
-      console_error(@js.any(message))
-      dispatch_asset_error(message)
-      ""
-    }
-  }
+
+  // Built-in shaders are embedded in the web runtime so releases do not need
+  // to ship an additional assets folder.
+  map_set(state.assets.shader_sources, @js.any(sprite_id), @js.any(SPRITE_WGSL))
+  map_set(state.assets.shader_sources, @js.any(mesh_id), @js.any(MESH_WGSL))
+  map_set(
+    state.assets.shader_sources,
+    @js.any(gizmo_id),
+    @js.any(GIZMO_LINES_WGSL),
+  )
   set_delete(state.assets.loading_shaders, @js.any(sprite_id)) |> ignore
-  if sprite_source == "" {
-    state.gpu.sprite_shader_id = 0
-  }
-  let mesh_source = load_wgsl_from_path(state, mesh_id, "shaders/mesh.wgsl") catch {
-    err => {
-      let message = "Shader load error: " + err.to_string()
-      console_error(@js.any(message))
-      dispatch_asset_error(message)
-      ""
-    }
-  }
   set_delete(state.assets.loading_shaders, @js.any(mesh_id)) |> ignore
-  if mesh_source == "" {
-    state.gpu.mesh_shader_id = 0
-  }
-  let gizmo_source = load_wgsl_from_path(
-    state, gizmo_id, "shaders/gizmo_lines.wgsl",
-  ) catch {
-    err => {
-      let message = "Shader load error: " + err.to_string()
-      console_error(@js.any(message))
-      dispatch_asset_error(message)
-      ""
-    }
-  }
   set_delete(state.assets.loading_shaders, @js.any(gizmo_id)) |> ignore
-  if gizmo_source == "" {
-    state.gpu.gizmo_shader_id = 0
-  }
   if state.assets.pending_textures.length() > 0 {
     let pending : Array[PendingTexture] = []
     for item in state.assets.pending_textures {

@@ -1,5 +1,0 @@
-# One relative path per line.
-# Lines starting with `#` are ignored.
-bevy_bird_dark.png
-icon.png
-

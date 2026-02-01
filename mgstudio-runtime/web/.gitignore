@@ -1,8 +1,5 @@
-assets/**
-!assets/**/
-!assets/shaders/
-!assets/shaders/*.wgsl
-!assets/**/folder.txt
+assets/
+dist/
 node_modules/
 *.tsbuildinfo
 .DS_Store

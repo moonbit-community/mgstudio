@@ -16,19 +16,11 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-REPO_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
-ENGINE_DIR="$REPO_DIR/mgstudio-engine"
-TARGET=${TARGET:-wasm-gc}
 RUNTIME_DIR="$SCRIPT_DIR"
 RUNTIME_BUNDLE="$RUNTIME_DIR/_build/js/release/build/mgstudio-runtime-web.js"
-WEB_BUNDLE="$SCRIPT_DIR/mgstudio-runtime-web.js"
+OUT_DIR=${OUT_DIR:-"$SCRIPT_DIR/dist"}
+OUT_BUNDLE="$OUT_DIR/mgstudio-runtime-web.js"
 
-# Build engine examples (each example is its own package / wasm).
-for pkg in "$ENGINE_DIR/examples/2d"/*; do
-  if [[ -f "$pkg/moon.pkg.json" ]]; then
-    moon build --release --target "$TARGET" -C "$ENGINE_DIR" "$pkg"
-  fi
-done
 moon build --release --target js -C "$RUNTIME_DIR"
 
 if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
@@ -36,16 +28,6 @@ if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
   exit 1
 fi
 
-cp "$RUNTIME_BUNDLE" "$WEB_BUNDLE"
-echo "Copied runtime JS bundle to $WEB_BUNDLE"
-
-echo "Engine examples built under: $ENGINE_DIR/_build/$TARGET/release/build/examples"
-
-ASSETS_DIR="$ENGINE_DIR/assets"
-if [[ -d "$ASSETS_DIR" ]]; then
-  mkdir -p "$SCRIPT_DIR/assets"
-  # Keep runtime-specific assets (e.g. web shaders, folder manifests) intact.
-  # Sync engine assets into the web assets folder, but do not overwrite shaders.
-  rsync -a --exclude "shaders/" "$ASSETS_DIR/" "$SCRIPT_DIR/assets/"
-  echo "Synced engine assets to $SCRIPT_DIR/assets (excluding shaders)"
-fi
+mkdir -p "$OUT_DIR"
+cp "$RUNTIME_BUNDLE" "$OUT_BUNDLE"
+echo "Copied runtime JS bundle to $OUT_BUNDLE"
