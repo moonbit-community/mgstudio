@@ -40,29 +40,17 @@ pub struct GpuTextureInfo {
 ///|
 pub struct GpuMeshInfo {
   id : Int
-  vertices_xy : Array[Float]
-  indices_u16 : Array[Int]
   index_count : UInt
+  vertex_count : UInt
+  vertex_buf : @wgpu.Buffer
   index_buf : @wgpu.Buffer
 }
 
 ///|
-pub struct SpriteUniformPack {
-  center_ndc_x : Float
-  center_ndc_y : Float
-  half_view_x : Float
-  half_view_y : Float
-  rot : Float
-  inv_half_w : Float
-  inv_half_h : Float
-  uv_min_x : Float
-  uv_min_y : Float
-  uv_max_x : Float
-  uv_max_y : Float
-  color_r : Float
-  color_g : Float
-  color_b : Float
-  color_a : Float
+pub struct SpriteBatch {
+  texture_id : Int
+  first_instance : UInt
+  mut instance_count : UInt
 }
 
 ///|
@@ -104,20 +92,23 @@ pub struct GpuBackend {
 
   // Sprite pipeline (textured quads).
   mut sprite_bgl_tex : @wgpu.BindGroupLayout?
-  mut sprite_bgl_ubo : @wgpu.BindGroupLayout?
+  mut sprite_bgl_globals : @wgpu.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu.PipelineLayout?
   mut sprite_pipeline : @wgpu.RenderPipeline?
-  mut sprite_uniform_buf : @wgpu.Buffer?
-  mut sprite_uniform_bg : @wgpu.BindGroup?
+  mut sprite_globals_buf : @wgpu.Buffer?
+  mut sprite_instance_buf : @wgpu.Buffer?
+  mut sprite_instance_capacity : UInt64
+  mut sprite_globals_bg : @wgpu.BindGroup?
+  sprite_instance_data : Array[Float]
+  sprite_batches : Array[SpriteBatch]
+  mut sprite_instance_count : UInt
 
   // Mesh pipeline (solid-color).
-  mut mesh_bgl_color : @wgpu.BindGroupLayout?
+  mut mesh_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh_pipeline : @wgpu.RenderPipeline?
-  mut mesh_color_buf : @wgpu.Buffer?
-  mut mesh_color_bg : @wgpu.BindGroup?
-  mut mesh_scratch_vb : @wgpu.Buffer?
-  mut mesh_scratch_capacity : UInt64
+  mut mesh_uniform_buf : @wgpu.Buffer?
+  mut mesh_uniform_bg : @wgpu.BindGroup?
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
   meshes : Ref[Array[GpuMeshInfo]]
@@ -142,18 +133,21 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     frame: None,
     pass_state: None,
     sprite_bgl_tex: None,
-    sprite_bgl_ubo: None,
+    sprite_bgl_globals: None,
     sprite_pipeline_layout: None,
     sprite_pipeline: None,
-    sprite_uniform_buf: None,
-    sprite_uniform_bg: None,
-    mesh_bgl_color: None,
+    sprite_globals_buf: None,
+    sprite_instance_buf: None,
+    sprite_instance_capacity: 0UL,
+    sprite_globals_bg: None,
+    sprite_instance_data: [],
+    sprite_batches: [],
+    sprite_instance_count: 0U,
+    mesh_bgl_uniform: None,
     mesh_pipeline_layout: None,
     mesh_pipeline: None,
-    mesh_color_buf: None,
-    mesh_color_bg: None,
-    mesh_scratch_vb: None,
-    mesh_scratch_capacity: 0UL,
+    mesh_uniform_buf: None,
+    mesh_uniform_bg: None,
     next_id: Ref::new(1),
     textures: Ref::new([]),
     meshes: Ref::new([]),
@@ -171,6 +165,12 @@ fn cosf(x : Float) -> Float {
 ///|
 fn sinf(x : Float) -> Float {
   Float::from_double(@coremath.sin(x.to_double()))
+}
+
+///|
+fn fatal(message : String) -> Unit {
+  @debug.debug(message)
+  @sys.exit(1)
 }
 
 ///|
@@ -229,21 +229,21 @@ fn join_asset_path(base : String, rel : String) -> String {
 }
 
 ///|
-fn load_wgsl_from_assets(backend : GpuBackend, rel : String) -> String? {
+fn load_wgsl_from_assets_required(backend : GpuBackend, rel : String) -> String {
   let base = backend.assets_base.trim().to_string()
   if base == "" {
-    return None
+    fatal("wgpu: assets_base is empty; cannot load shader: " + rel)
+    return ""
   }
   let full_path = join_asset_path(base, rel)
-  let source = @fs.read_file_to_string(full_path) catch {
+  @fs.read_file_to_string(full_path) catch {
     err => {
-      @debug.debug(
+      fatal(
         "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
       )
-      return None
+      ""
     }
   }
-  Some(source)
 }
 
 ///|
@@ -270,24 +270,28 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   }
   let bgl_tex = b0.finish(backend.device, label="mgstudio_sprite_tex")
 
-  // Uniform group (vertex + fragment stages).
-  let b1 = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+  // Globals + instances group (vertex stage).
+  let b1 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
   let ok2 = b1.add_buffer(
     0U,
-    @wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT,
+    @wgpu.SHADER_STAGE_VERTEX,
     @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
   )
-  if !ok2 {
+  let ok3 = b1.add_buffer(
+    1U,
+    @wgpu.SHADER_STAGE_VERTEX,
+    @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+  )
+  if !ok2 || !ok3 {
     b1.free()
+    fatal("wgpu: failed to build sprite bind group layout")
     return
   }
-  let bgl_ubo = b1.finish(backend.device, label="mgstudio_sprite_ubo")
-  let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_ubo)
-  guard load_wgsl_from_assets(backend, "shaders/runtime_native/sprite.wgsl")
-    is Some(wgsl) else {
-    @debug.debug("wgpu: sprite shader missing; skip sprite pipeline init")
-    return
-  }
+  let bgl_globals = b1.finish(backend.device, label="mgstudio_sprite_globals")
+  let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_globals)
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/2d/sprite.wgsl",
+  )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let format = if backend.surface_format != 0U {
     backend.surface_format
@@ -302,16 +306,46 @@ fn ensure_sprite_pipeline(backend : GpuBackend) -> Unit {
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_sprite")
-  let ubo_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
-  let ubo = backend.device.create_buffer(size=64UL, usage=ubo_usage)
-  let ubo_bg = backend.device.create_bind_group_uniform_buffer(bgl_ubo, ubo)
+  let globals_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
+  let globals_buf = backend.device.create_buffer(size=32UL, usage=globals_usage)
+  let instance_usage = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
+  let instance_cap = 65536UL
+  let instance_buf = backend.device.create_buffer(
+    size=instance_cap,
+    usage=instance_usage,
+  )
   backend.sprite_bgl_tex = Some(bgl_tex)
-  backend.sprite_bgl_ubo = Some(bgl_ubo)
+  backend.sprite_bgl_globals = Some(bgl_globals)
   backend.sprite_pipeline_layout = Some(pl)
   backend.sprite_pipeline = Some(pipeline)
-  backend.sprite_uniform_buf = Some(ubo)
-  backend.sprite_uniform_bg = Some(ubo_bg)
+  backend.sprite_globals_buf = Some(globals_buf)
+  backend.sprite_instance_buf = Some(instance_buf)
+  backend.sprite_instance_capacity = instance_cap
+  backend.sprite_globals_bg = None
+  backend.sprite_instance_data.clear()
+  backend.sprite_batches.clear()
+  backend.sprite_instance_count = 0U
   sm.release()
+}
+
+///|
+fn ensure_sprite_globals_bind_group(backend : GpuBackend) -> Unit {
+  if backend.sprite_globals_bg is Some(_) {
+    return
+  }
+  guard backend.sprite_bgl_globals is Some(layout) else { return }
+  guard backend.sprite_globals_buf is Some(globals_buf) else { return }
+  guard backend.sprite_instance_buf is Some(instance_buf) else { return }
+  let b = @wgpu.BindGroupBuilder::new(max_entries=2UL)
+  let ok0 = b.add_buffer(0U, globals_buf)
+  let ok1 = b.add_buffer(1U, instance_buf)
+  if !ok0 || !ok1 {
+    b.free()
+    fatal("wgpu: failed to build sprite globals bind group")
+    return
+  }
+  let bg = b.finish(backend.device, layout, label="mgstudio_sprite_globals")
+  backend.sprite_globals_bg = Some(bg)
 }
 
 ///|
@@ -321,28 +355,24 @@ fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit {
   }
   let bgl = backend.device.create_bind_group_layout_uniform_buffer()
   let pl = backend.device.create_pipeline_layout_1(bgl)
-  guard load_wgsl_from_assets(backend, "shaders/runtime_native/mesh.wgsl")
-    is Some(wgsl) else {
-    @debug.debug("wgpu: mesh shader missing; skip mesh pipeline init")
-    return
-  }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/2d/mesh.wgsl",
+  )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = backend.device.create_render_pipeline_rgba8_pos2_with_layout(
     pl, sm,
   )
   pipeline.set_label("mgstudio_mesh")
   let ubo_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
-  let color_buf = backend.device.create_buffer(size=16UL, usage=ubo_usage)
-  let color_bg = backend.device.create_bind_group_uniform_buffer(bgl, color_buf)
-  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
-  let scratch = backend.device.create_buffer(size=64UL, usage=vb_usage)
-  backend.mesh_bgl_color = Some(bgl)
+  let uniform_buf = backend.device.create_buffer(size=80UL, usage=ubo_usage)
+  let uniform_bg = backend.device.create_bind_group_uniform_buffer(
+    bgl, uniform_buf,
+  )
+  backend.mesh_bgl_uniform = Some(bgl)
   backend.mesh_pipeline_layout = Some(pl)
   backend.mesh_pipeline = Some(pipeline)
-  backend.mesh_color_buf = Some(color_buf)
-  backend.mesh_color_bg = Some(color_bg)
-  backend.mesh_scratch_vb = Some(scratch)
-  backend.mesh_scratch_capacity = 64UL
+  backend.mesh_uniform_buf = Some(uniform_buf)
+  backend.mesh_uniform_bg = Some(uniform_bg)
   sm.release()
 }
 
@@ -422,6 +452,7 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
 pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
+    flush_sprite_batches(self)
     pass.end()
     pass.release()
     frame.pass = None
@@ -784,12 +815,33 @@ pub fn GpuBackend::begin_pass(
     viewport_w: vw,
     viewport_h: vh,
   })
+
+  // Reset sprite batching state and update sprite globals for this pass.
+  self.sprite_instance_data.clear()
+  self.sprite_batches.clear()
+  self.sprite_instance_count = 0U
+  ensure_sprite_pipeline(self)
+  if self.sprite_globals_buf is Some(globals_buf) {
+    let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
+    let w = Float::from_double(width_logical.to_double())
+    let h = Float::from_double(height_logical.to_double())
+    let scale_x_base = if w > 0.0F { 2.0F / w / safe_scale } else { 0.0F }
+    let scale_y_base = if h > 0.0F { 2.0F / h / safe_scale } else { 0.0F }
+    let cam_cos = cosf(-camera_rot)
+    let cam_sin = sinf(-camera_rot)
+    // Globals: view(x,y,cos,sin) + ndc_scale(x,y,_,_)
+    let bytes = f32le_pack([
+      camera_x, camera_y, cam_cos, cam_sin, scale_x_base, scale_y_base, 0.0F, 0.0F,
+    ])
+    self.queue.write_buffer(globals_buf, 0UL, bytes)
+  }
 }
 
 ///|
 pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
+    flush_sprite_batches(self)
     pass.end()
     pass.release()
     frame.pass = None
@@ -798,26 +850,50 @@ pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn pack_sprite_uniform(pack : SpriteUniformPack) -> Bytes {
-  let floats : Array[Float] = [
-    pack.center_ndc_x,
-    pack.center_ndc_y,
-    pack.half_view_x,
-    pack.half_view_y,
-    pack.rot,
-    pack.inv_half_w,
-    pack.inv_half_h,
-    0.0F, // _pad0
-    pack.uv_min_x,
-    pack.uv_min_y,
-    pack.uv_max_x,
-    pack.uv_max_y,
-    pack.color_r,
-    pack.color_g,
-    pack.color_b,
-    pack.color_a,
-  ]
-  f32le_pack(floats)
+fn flush_sprite_batches(backend : GpuBackend) -> Unit {
+  guard backend.frame is Some(frame) else { return }
+  guard frame.pass is Some(pass) else { return }
+  if backend.sprite_instance_count == 0U {
+    return
+  }
+  ensure_sprite_pipeline(backend)
+  guard backend.sprite_pipeline is Some(pipeline) else { return }
+  let float_count = backend.sprite_instance_data.length()
+  if float_count <= 0 {
+    backend.sprite_instance_data.clear()
+    backend.sprite_batches.clear()
+    backend.sprite_instance_count = 0U
+    return
+  }
+  let required_bytes = (float_count * 4).to_uint64()
+  if required_bytes > backend.sprite_instance_capacity {
+    let new_cap = if required_bytes < 256UL { 256UL } else { required_bytes }
+    let usage = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
+    let new_buf = backend.device.create_buffer(size=new_cap, usage~)
+    if backend.sprite_instance_buf is Some(old) {
+      old.release()
+    }
+    backend.sprite_instance_buf = Some(new_buf)
+    backend.sprite_instance_capacity = new_cap
+    backend.sprite_globals_bg = None
+  }
+  ensure_sprite_globals_bind_group(backend)
+  guard backend.sprite_instance_buf is Some(instance_buf) else { return }
+  guard backend.sprite_globals_bg is Some(globals_bg) else { return }
+
+  // Upload instances.
+  let bytes = f32le_pack(backend.sprite_instance_data)
+  backend.queue.write_buffer(instance_buf, 0UL, bytes)
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(1U, globals_bg, [])
+  for batch in backend.sprite_batches {
+    let tex = ensure_fallback_texture(backend, batch.texture_id)
+    pass.set_bind_group(0U, tex.bind_group, [])
+    pass.draw(6U, batch.instance_count, 0U, batch.first_instance)
+  }
+  backend.sprite_instance_data.clear()
+  backend.sprite_batches.clear()
+  backend.sprite_instance_count = 0U
 }
 
 ///|
@@ -838,58 +914,60 @@ pub fn GpuBackend::draw_sprite_uv(
   uv_max_x : Float,
   uv_max_y : Float,
 ) -> Unit {
-  guard self.frame is Some(frame) else { return }
-  guard frame.pass is Some(pass) else { return }
-  guard self.pass_state is Some(ps) else { return }
+  guard self.frame is Some(_) else { return }
+  guard self.pass_state is Some(_) else { return }
   ensure_sprite_pipeline(self)
-  guard self.sprite_pipeline is Some(pipeline) else { return }
-  guard self.sprite_uniform_buf is Some(uniform_buf) else { return }
-  guard self.sprite_uniform_bg is Some(uniform_bg) else { return }
   let tex = ensure_fallback_texture(self, texture_id)
-  let half_w = ps.width_logical / 2.0F
-  let half_h = ps.height_logical / 2.0F
-  if half_w == 0.0F || half_h == 0.0F {
-    return
+
+  // Match Web runtime's sprite sizing convention (base quad is 128x128).
+  let raw_uv_scale_x = uv_max_x - uv_min_x
+  let raw_uv_scale_y = uv_max_y - uv_min_y
+  let uv_scale_x = if raw_uv_scale_x <= 0.0F { 1.0F } else { raw_uv_scale_x }
+  let uv_scale_y = if raw_uv_scale_y <= 0.0F { 1.0F } else { raw_uv_scale_y }
+  let tex_w = Float::from_double(tex.width.to_double())
+  let tex_h = Float::from_double(tex.height.to_double())
+  let region_w = tex_w * uv_scale_x
+  let region_h = tex_h * uv_scale_y
+  let base_size = 128.0F
+  let tex_scale_x = if region_w > 0.0F { region_w / base_size } else { 1.0F }
+  let tex_scale_y = if region_h > 0.0F { region_h / base_size } else { 1.0F }
+  let sprite_scale_x = scale_x * tex_scale_x
+  let sprite_scale_y = scale_y * tex_scale_y
+  let cosv = cosf(rotation)
+  let sinv = sinf(rotation)
+  let first_instance = self.sprite_instance_count
+  self.sprite_instance_count = first_instance + 1U
+
+  // Instance layout: model(x,y,cos,sin), scale(x,y,_,_), color, uv(min_x,min_y,scale_x,scale_y)
+  self.sprite_instance_data.push(x)
+  self.sprite_instance_data.push(y)
+  self.sprite_instance_data.push(cosv)
+  self.sprite_instance_data.push(sinv)
+  self.sprite_instance_data.push(sprite_scale_x)
+  self.sprite_instance_data.push(sprite_scale_y)
+  self.sprite_instance_data.push(0.0F)
+  self.sprite_instance_data.push(0.0F)
+  self.sprite_instance_data.push(color_r)
+  self.sprite_instance_data.push(color_g)
+  self.sprite_instance_data.push(color_b)
+  self.sprite_instance_data.push(color_a)
+  self.sprite_instance_data.push(uv_min_x)
+  self.sprite_instance_data.push(uv_min_y)
+  self.sprite_instance_data.push(uv_scale_x)
+  self.sprite_instance_data.push(uv_scale_y)
+  let batch_count = self.sprite_batches.length()
+  if batch_count > 0 &&
+    self.sprite_batches[batch_count - 1].texture_id == tex.id {
+    self.sprite_batches[batch_count - 1].instance_count = self.sprite_batches[batch_count -
+      1].instance_count +
+      1U
+  } else {
+    self.sprite_batches.push(SpriteBatch::{
+      texture_id: tex.id,
+      first_instance,
+      instance_count: 1U,
+    })
   }
-  let dx = x - ps.camera_x
-  let dy = y - ps.camera_y
-  let cosc = cosf(ps.camera_rot)
-  let sinc = sinf(ps.camera_rot)
-  // Rotate by -camera_rot.
-  let rx = dx * cosc + dy * sinc
-  let ry = -dx * sinc + dy * cosc
-  let inv_scale = 1.0F / ps.camera_scale
-  let view_x = rx * inv_scale
-  let view_y = ry * inv_scale
-  let center_ndc_x = view_x / half_w
-  let center_ndc_y = view_y / half_h
-  let sprite_w = Float::from_double(tex.width.to_double())
-  let sprite_h = Float::from_double(tex.height.to_double())
-  let half_view_x = sprite_w * scale_x * 0.5F * inv_scale
-  let half_view_y = sprite_h * scale_y * 0.5F * inv_scale
-  let pack = SpriteUniformPack::{
-    center_ndc_x,
-    center_ndc_y,
-    half_view_x,
-    half_view_y,
-    rot: rotation - ps.camera_rot,
-    inv_half_w: 1.0F / half_w,
-    inv_half_h: 1.0F / half_h,
-    uv_min_x,
-    uv_min_y,
-    uv_max_x,
-    uv_max_y,
-    color_r,
-    color_g,
-    color_b,
-    color_a,
-  }
-  let bytes = pack_sprite_uniform(pack)
-  self.queue.write_buffer(uniform_buf, 0UL, bytes)
-  pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, tex.bind_group, [])
-  pass.set_bind_group(1U, uniform_bg, [])
-  pass.draw(6U, 1U, 0U, 0U)
 }
 
 ///|
@@ -903,14 +981,17 @@ pub fn GpuBackend::create_mesh_rectangle(
   let hh = height * 0.5F
   let vertices_xy : Array[Float] = [-hw, -hh, hw, -hh, hw, hh, -hw, hh]
   let indices_u16 : Array[Int] = [0, 1, 2, 0, 2, 3]
+  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let vb_bytes = f32le_pack(vertices_xy)
+  let vb = self.device.create_buffer_init(usage=vb_usage, vb_bytes)
   let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
-  let bytes = u16le_pack(indices_u16)
-  let ib = self.device.create_buffer_init(usage=ib_usage, bytes)
+  let ib_bytes = u16le_pack(indices_u16)
+  let ib = self.device.create_buffer_init(usage=ib_usage, ib_bytes)
   let info = GpuMeshInfo::{
     id,
-    vertices_xy,
-    indices_u16,
     index_count: 6U,
+    vertex_count: 4U,
+    vertex_buf: vb,
     index_buf: ib,
   }
   self.meshes.val.push(info)
@@ -982,13 +1063,15 @@ pub fn GpuBackend::create_mesh_capsule(
     inds.push(center_r + 1 + i)
     inds.push(center_r + 1 + i + 1)
   }
+  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let vb = self.device.create_buffer_init(usage=vb_usage, f32le_pack(verts))
   let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
   let ib = self.device.create_buffer_init(usage=ib_usage, u16le_pack(inds))
   let info = GpuMeshInfo::{
     id,
-    vertices_xy: verts,
-    indices_u16: inds,
     index_count: inds.length().reinterpret_as_uint(),
+    vertex_count: (verts.length() / 2).reinterpret_as_uint(),
+    vertex_buf: vb,
     index_buf: ib,
   }
   self.meshes.val.push(info)
@@ -1015,11 +1098,6 @@ pub fn GpuBackend::create_mesh_triangles_xy(
     indices_u16.push(i)
   }
   let id = alloc_id(self)
-  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
-  let ib = self.device.create_buffer_init(
-    usage=ib_usage,
-    u16le_pack(indices_u16),
-  )
   let trimmed_vertices = if usable_vcount == vcount {
     vertices_xy
   } else {
@@ -1029,11 +1107,21 @@ pub fn GpuBackend::create_mesh_triangles_xy(
     }
     out
   }
+  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let vb = self.device.create_buffer_init(
+    usage=vb_usage,
+    f32le_pack(trimmed_vertices),
+  )
+  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let ib = self.device.create_buffer_init(
+    usage=ib_usage,
+    u16le_pack(indices_u16),
+  )
   let info = GpuMeshInfo::{
     id,
-    vertices_xy: trimmed_vertices,
-    indices_u16,
     index_count: indices_u16.length().reinterpret_as_uint(),
+    vertex_count: usable_vcount.reinterpret_as_uint(),
+    vertex_buf: vb,
     index_buf: ib,
   }
   self.meshes.val.push(info)
@@ -1048,26 +1136,6 @@ fn find_mesh(backend : GpuBackend, id : Int) -> GpuMeshInfo? {
     }
   }
   None
-}
-
-///|
-fn ensure_mesh_scratch(backend : GpuBackend, needed : UInt64) -> Unit {
-  ensure_mesh_pipeline(backend)
-  if backend.mesh_scratch_capacity >= needed {
-    return
-  }
-  let new_cap = if needed < backend.mesh_scratch_capacity * 2UL {
-    backend.mesh_scratch_capacity * 2UL
-  } else {
-    needed
-  }
-  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
-  let buf = backend.device.create_buffer(size=new_cap, usage=vb_usage)
-  if backend.mesh_scratch_vb is Some(old) {
-    old.release()
-  }
-  backend.mesh_scratch_vb = Some(buf)
-  backend.mesh_scratch_capacity = new_cap
 }
 
 ///|
@@ -1087,60 +1155,55 @@ pub fn GpuBackend::draw_mesh(
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(ps) else { return }
+  flush_sprite_batches(self)
   guard find_mesh(self, mesh_id) is Some(mesh) else { return }
   ensure_mesh_pipeline(self)
   guard self.mesh_pipeline is Some(pipeline) else { return }
-  guard self.mesh_color_buf is Some(color_buf) else { return }
-  guard self.mesh_color_bg is Some(color_bg) else { return }
-  let half_w = ps.width_logical / 2.0F
-  let half_h = ps.height_logical / 2.0F
-  if half_w == 0.0F || half_h == 0.0F {
-    return
+  guard self.mesh_uniform_buf is Some(uniform_buf) else { return }
+  guard self.mesh_uniform_bg is Some(uniform_bg) else { return }
+  let safe_scale = ps.camera_scale
+  let scale_x_base = if ps.width_logical > 0.0F {
+    2.0F / ps.width_logical / safe_scale
+  } else {
+    0.0F
   }
-
-  // Update mesh color uniform.
-  let color_bytes = f32le_pack([color_r, color_g, color_b, color_a])
-  self.queue.write_buffer(color_buf, 0UL, color_bytes)
-
-  // Transform each vertex into NDC and upload to scratch buffer.
+  let scale_y_base = if ps.height_logical > 0.0F {
+    2.0F / ps.height_logical / safe_scale
+  } else {
+    0.0F
+  }
   let cosr = cosf(rotation)
   let sinr = sinf(rotation)
-  let cosc = cosf(ps.camera_rot)
-  let sinc = sinf(ps.camera_rot)
-  let inv_cam = 1.0F / ps.camera_scale
-  let verts_ndc : Array[Float] = []
-  let count = mesh.vertices_xy.length() / 2
-  for i in 0..<count {
-    let lx = mesh.vertices_xy[i * 2] * scale_x
-    let ly = mesh.vertices_xy[i * 2 + 1] * scale_y
-    // Model rotation + translation (world).
-    let wx = x + lx * cosr - ly * sinr
-    let wy = y + lx * sinr + ly * cosr
-    // Camera inverse.
-    let dx = wx - ps.camera_x
-    let dy = wy - ps.camera_y
-    let rx = dx * cosc + dy * sinc
-    let ry = -dx * sinc + dy * cosc
-    let vx = rx * inv_cam
-    let vy = ry * inv_cam
-    verts_ndc.push(vx / half_w)
-    verts_ndc.push(vy / half_h)
-  }
-  let bytes = f32le_pack(verts_ndc)
-  let needed = bytes.length().to_uint64()
-  ensure_mesh_scratch(self, needed)
-  guard self.mesh_scratch_vb is Some(scratch_vb) else { return }
-  self.queue.write_buffer(scratch_vb, 0UL, bytes)
+  let cam_cos = cosf(-ps.camera_rot)
+  let cam_sin = sinf(-ps.camera_rot)
+  let bytes = f32le_pack([
+    x,
+    y,
+    cosr,
+    sinr,
+    ps.camera_x,
+    ps.camera_y,
+    cam_cos,
+    cam_sin,
+    scale_x_base,
+    scale_y_base,
+    scale_x,
+    scale_y,
+    color_r,
+    color_g,
+    color_b,
+    color_a,
+    0.0F,
+    0.0F,
+    1.0F,
+    1.0F,
+  ])
+  self.queue.write_buffer(uniform_buf, 0UL, bytes)
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, color_bg, [])
-  pass.set_vertex_buffer(0U, scratch_vb, 0UL, needed)
-  let index_bytes = (mesh.indices_u16.length() * 2).to_uint64()
+  pass.set_bind_group(0U, uniform_bg, [])
+  let vb_bytes = (mesh.vertex_count.reinterpret_as_int() * 8).to_uint64()
+  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
+  let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
   pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
-  pass.draw_indexed(
-    mesh.indices_u16.length().reinterpret_as_uint(),
-    1U,
-    0U,
-    0,
-    0U,
-  )
+  pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
 }

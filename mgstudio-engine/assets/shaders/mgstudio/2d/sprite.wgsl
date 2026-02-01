@@ -35,14 +35,33 @@ struct InstanceData {
 @group(1) @binding(0) var<uniform> u_globals : Globals;
 @group(1) @binding(1) var<storage, read> instances : array<InstanceData>;
 
+const QUAD_POS : array<vec2<f32>, 6> = array<vec2<f32>, 6>(
+  vec2<f32>(-64.0, 64.0),
+  vec2<f32>(-64.0, -64.0),
+  vec2<f32>(64.0, -64.0),
+  vec2<f32>(-64.0, 64.0),
+  vec2<f32>(64.0, -64.0),
+  vec2<f32>(64.0, 64.0),
+);
+
+const QUAD_UV : array<vec2<f32>, 6> = array<vec2<f32>, 6>(
+  vec2<f32>(0.0, 0.0),
+  vec2<f32>(0.0, 1.0),
+  vec2<f32>(1.0, 1.0),
+  vec2<f32>(0.0, 0.0),
+  vec2<f32>(1.0, 1.0),
+  vec2<f32>(1.0, 0.0),
+);
+
 @vertex
 fn vs_main(
-  @location(0) position : vec2<f32>,
-  @location(1) uv : vec2<f32>,
+  @builtin(vertex_index) vertex_index : u32,
   @builtin(instance_index) instance_index : u32,
 ) -> VertexOut {
   var out : VertexOut;
   let inst = instances[instance_index];
+  let position = QUAD_POS[vertex_index];
+  let uv = QUAD_UV[vertex_index];
   let cosv = inst.model.z;
   let sinv = inst.model.w;
   let scaled = vec2<f32>(
@@ -78,4 +97,3 @@ fn fs_main(
 ) -> @location(0) vec4<f32> {
   return textureSample(tex, samp, uv) * color;
 }
-

@@ -487,17 +487,6 @@ extern "js" fn create_checkerboard_data(size : Int) -> @js.Any =
   #| }
 
 ///|
-extern "js" fn create_sprite_vertices() -> @js.Any =
-  #| () => new Float32Array([
-  #|   -64.0, 64.0, 0.0, 0.0,
-  #|   -64.0, -64.0, 0.0, 1.0,
-  #|   64.0, -64.0, 1.0, 1.0,
-  #|   -64.0, 64.0, 0.0, 0.0,
-  #|   64.0, -64.0, 1.0, 1.0,
-  #|   64.0, 64.0, 1.0, 0.0,
-  #| ])
-
-///|
 extern "js" fn create_rectangle_mesh_data(
   width : Double,
   height : Double,
@@ -1080,7 +1069,6 @@ struct GpuState {
   mut context : @webgpu.GPUCanvasContext?
   mut format : @webgpu.TextureFormat?
   mut pipeline : @webgpu.GPURenderPipeline?
-  mut vertex_buffer : @webgpu.GPUBuffer?
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
   mut mesh_bind_group : @webgpu.GPUBindGroup?
@@ -1177,7 +1165,6 @@ fn new_state(
       context: None,
       format: None,
       pipeline: None,
-      vertex_buffer: None,
       vertex_count: 0,
       mesh_pipeline: None,
       mesh_bind_group: None,
@@ -1495,7 +1482,6 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.context = Some(context)
   state.gpu.format = Some(format)
   state.gpu.pipeline = None
-  state.gpu.vertex_buffer = None
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
   state.gpu.mesh_bind_group = None
@@ -1535,60 +1521,26 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   map_set(
     state.assets.shader_paths,
     @js.any(sprite_id),
-    @js.any("shaders/runtime_web/sprite.wgsl"),
+    @js.any("shaders/mgstudio/2d/sprite.wgsl"),
   )
   map_set(
     state.assets.shader_paths,
     @js.any(mesh_id),
-    @js.any("shaders/runtime_web/mesh.wgsl"),
+    @js.any("shaders/mgstudio/2d/mesh.wgsl"),
   )
   map_set(
     state.assets.shader_paths,
     @js.any(gizmo_id),
-    @js.any("shaders/runtime_web/gizmo_lines.wgsl"),
+    @js.any("shaders/mgstudio/gizmo/lines.wgsl"),
   )
-  let sprite_source = load_wgsl_from_path(
-    state, sprite_id, "shaders/runtime_web/sprite.wgsl",
-  ) catch {
-    err => {
-      let message = "Shader load error: " + err.to_string()
-      console_error(@js.any(message))
-      dispatch_asset_error(message)
-      ""
-    }
-  }
+  load_wgsl_from_path(state, sprite_id, "shaders/mgstudio/2d/sprite.wgsl")
+  |> ignore
   set_delete(state.assets.loading_shaders, @js.any(sprite_id)) |> ignore
-  if sprite_source == "" {
-    state.gpu.sprite_shader_id = 0
-  }
-  let mesh_source = load_wgsl_from_path(
-    state, mesh_id, "shaders/runtime_web/mesh.wgsl",
-  ) catch {
-    err => {
-      let message = "Shader load error: " + err.to_string()
-      console_error(@js.any(message))
-      dispatch_asset_error(message)
-      ""
-    }
-  }
+  load_wgsl_from_path(state, mesh_id, "shaders/mgstudio/2d/mesh.wgsl") |> ignore
   set_delete(state.assets.loading_shaders, @js.any(mesh_id)) |> ignore
-  if mesh_source == "" {
-    state.gpu.mesh_shader_id = 0
-  }
-  let gizmo_source = load_wgsl_from_path(
-    state, gizmo_id, "shaders/runtime_web/gizmo_lines.wgsl",
-  ) catch {
-    err => {
-      let message = "Shader load error: " + err.to_string()
-      console_error(@js.any(message))
-      dispatch_asset_error(message)
-      ""
-    }
-  }
+  load_wgsl_from_path(state, gizmo_id, "shaders/mgstudio/gizmo/lines.wgsl")
+  |> ignore
   set_delete(state.assets.loading_shaders, @js.any(gizmo_id)) |> ignore
-  if gizmo_source == "" {
-    state.gpu.gizmo_shader_id = 0
-  }
   if state.assets.pending_textures.length() > 0 {
     let pending : Array[PendingTexture] = []
     for item in state.assets.pending_textures {
@@ -1654,22 +1606,8 @@ fn ensure_pipeline_resources(state : State) -> Unit {
     let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
-    let position_attr = @webgpu.vertex_attribute(
-      0,
-      0,
-      @webgpu.VertexFormat::Float32x2,
-    )
-    let uv_attr = @webgpu.vertex_attribute(
-      1,
-      8,
-      @webgpu.VertexFormat::Float32x2,
-    )
-    let vertex_layout = @webgpu.vertex_buffer_layout(16, [
-      position_attr, uv_attr,
-    ])
-    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
-      vertex_layout,
-    ])
+    // Sprite vertices are generated from @builtin(vertex_index) in WGSL.
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [])
     let blend_component = @webgpu.blend_component(
       @webgpu.BlendFactor::SrcAlpha,
       @webgpu.BlendFactor::OneMinusSrcAlpha,
@@ -1690,15 +1628,6 @@ fn ensure_pipeline_resources(state : State) -> Unit {
       primitive_state,
     )
     let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
-    let vertices = create_sprite_vertices()
-    let vertex_size : Int = vertices._get("byteLength").cast()
-    let vertex_usage = @webgpu.combine_flags(
-      @webgpu.buffer_usage_vertex(),
-      @webgpu.buffer_usage_copy_dst(),
-    )
-    let vertex_desc = @webgpu.buffer_descriptor(vertex_size, vertex_usage)
-    let vertex_buffer = device.create_buffer(vertex_desc.to_js())
-    device.queue().write_buffer(vertex_buffer, 0, vertices)
     let uniform_usage = @webgpu.combine_flags(
       @webgpu.buffer_usage_uniform(),
       @webgpu.buffer_usage_copy_dst(),
@@ -1755,7 +1684,6 @@ fn ensure_pipeline_resources(state : State) -> Unit {
       map_set(state.gpu.textures, @js.any(state.gpu.fallback_texture_id), entry)
     }
     state.gpu.pipeline = Some(pipeline)
-    state.gpu.vertex_buffer = Some(vertex_buffer)
     state.gpu.vertex_count = 6
     state.gpu.uniform_buffer = Some(uniform_buffer)
     state.gpu.sprite_uniform_buffer = Some(sprite_uniform_buffer)
@@ -2123,7 +2051,7 @@ fn ensure_pass_ready(state : State) -> Bool {
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return false
   }
-  if state.gpu.pipeline is None || state.gpu.vertex_buffer is None {
+  if state.gpu.pipeline is None {
     return false
   }
   if state.gpu.uniform_buffer is None {
@@ -2272,7 +2200,6 @@ fn flush_sprite_batches(state : State) -> Unit {
   }
   ensure_pipeline_resources(state)
   if state.gpu.pipeline is None ||
-    state.gpu.vertex_buffer is None ||
     state.gpu.sprite_instance_buffer is None ||
     state.gpu.sprite_uniform_buffer is None {
     return
@@ -2298,14 +2225,12 @@ fn flush_sprite_batches(state : State) -> Unit {
     if state.gpu.sprite_instance_buffer is Some(instance_buffer) &&
       state.gpu.sprite_globals_bind_group is Some(globals_bind_group) &&
       state.gpu.pipeline is Some(pipeline) &&
-      state.gpu.vertex_buffer is Some(vertex_buffer) &&
       state.gpu.current_pass is Some(pass) {
       let instance_data = float32array_from_array(
         state.gpu.sprite_instance_data,
       )
       queue.write_buffer(instance_buffer, 0, instance_data)
       pass.set_pipeline(pipeline)
-      pass.set_vertex_buffer(0, vertex_buffer)
       pass.set_bind_group(1, globals_bind_group)
       for batch in state.gpu.sprite_batches {
         let entry = get_texture_entry(state, batch.texture_id)

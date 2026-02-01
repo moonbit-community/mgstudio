@@ -57,18 +57,21 @@ pub struct GpuBackend {
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
   mut sprite_bgl_tex : @wgpu_mbt.BindGroupLayout?
-  mut sprite_bgl_ubo : @wgpu_mbt.BindGroupLayout?
+  mut sprite_bgl_globals : @wgpu_mbt.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut sprite_pipeline : @wgpu_mbt.RenderPipeline?
-  mut sprite_uniform_buf : @wgpu_mbt.Buffer?
-  mut sprite_uniform_bg : @wgpu_mbt.BindGroup?
-  mut mesh_bgl_color : @wgpu_mbt.BindGroupLayout?
+  mut sprite_globals_buf : @wgpu_mbt.Buffer?
+  mut sprite_instance_buf : @wgpu_mbt.Buffer?
+  mut sprite_instance_capacity : UInt64
+  mut sprite_globals_bg : @wgpu_mbt.BindGroup?
+  sprite_instance_data : Array[Float]
+  sprite_batches : Array[SpriteBatch]
+  mut sprite_instance_count : UInt
+  mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
-  mut mesh_color_buf : @wgpu_mbt.Buffer?
-  mut mesh_color_bg : @wgpu_mbt.BindGroup?
-  mut mesh_scratch_vb : @wgpu_mbt.Buffer?
-  mut mesh_scratch_capacity : UInt64
+  mut mesh_uniform_buf : @wgpu_mbt.Buffer?
+  mut mesh_uniform_bg : @wgpu_mbt.BindGroup?
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
   meshes : Ref[Array[GpuMeshInfo]]
@@ -103,9 +106,9 @@ pub struct GpuFrameState {
 
 pub struct GpuMeshInfo {
   id : Int
-  vertices_xy : Array[Float]
-  indices_u16 : Array[Int]
   index_count : UInt
+  vertex_count : UInt
+  vertex_buf : @wgpu_mbt.Buffer
   index_buf : @wgpu_mbt.Buffer
 }
 
@@ -156,22 +159,10 @@ pub struct HostContext {
 }
 pub fn HostContext::new(String, String) -> Self raise
 
-pub struct SpriteUniformPack {
-  center_ndc_x : Float
-  center_ndc_y : Float
-  half_view_x : Float
-  half_view_y : Float
-  rot : Float
-  inv_half_w : Float
-  inv_half_h : Float
-  uv_min_x : Float
-  uv_min_y : Float
-  uv_max_x : Float
-  uv_max_y : Float
-  color_r : Float
-  color_g : Float
-  color_b : Float
-  color_a : Float
+pub struct SpriteBatch {
+  texture_id : Int
+  first_instance : UInt
+  mut instance_count : UInt
 }
 
 // Type aliases
