@@ -32,7 +32,7 @@ fn sprite_flipping_setup(world : @ecs_world.World) -> Unit {
     @math.Vec2::new(-1.0F, 1.0F),
   )
   @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore
-  let camera = @render2d.Camera2d::default()
+  let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )

@@ -44,7 +44,7 @@ fn texture_atlas_builder_setup(world : @ecs_world.World) -> Unit {
   builder_state.val.built = false
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
-  let camera = @render2d.Camera2d::default()
+  let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )

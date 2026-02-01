@@ -107,44 +107,86 @@ pub fn SpriteTexture::new(
 ///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
-pub struct Camera2d {
-  clear_color : Color
-  order : Int
-  scale : Float
+pub struct Camera {
   viewport : Viewport?
+  order : Int
+  clear_color : Color
 }
 
 ///|
-pub fn Camera2d::new(clear_color : Color) -> Camera2d {
-  Camera2d::{ clear_color, order: 0, scale: 1.0F, viewport: None }
+pub fn Camera::new(clear_color : Color) -> Camera {
+  Camera::{ viewport: None, order: 0, clear_color }
 }
+
+///|
+pub fn Camera::default() -> Camera {
+  Camera::new(Color::new(0.5F, 0.5F, 0.5F, 1.0F))
+}
+
+///|
+pub fn Camera::with_order(self : Camera, order : Int) -> Camera {
+  Camera::{ ..self, order, }
+}
+
+///|
+pub fn Camera::with_viewport(self : Camera, viewport : Viewport) -> Camera {
+  Camera::{ ..self, viewport: Some(viewport) }
+}
+
+///|
+pub fn Camera::clear_viewport(self : Camera) -> Camera {
+  Camera::{ ..self, viewport: None }
+}
+
+///|
+/// The projection parameters for an orthographic camera.
+/// Stored inside `Projection` (mirrors Bevy's `Projection::Orthographic`).
+pub struct OrthographicProjection {
+  scale : Float
+}
+
+///|
+pub fn OrthographicProjection::new(scale : Float) -> OrthographicProjection {
+  let safe = if scale == 0.0F { 1.0F } else { scale }
+  OrthographicProjection::{ scale: safe }
+}
+
+///|
+pub fn OrthographicProjection::default_2d() -> OrthographicProjection {
+  OrthographicProjection::new(1.0F)
+}
+
+///|
+pub fn OrthographicProjection::with_scale(
+  self : OrthographicProjection,
+  scale : Float,
+) -> OrthographicProjection {
+  self |> ignore
+  OrthographicProjection::new(scale)
+}
+
+///|
+/// Camera projection type (mirrors Bevy's `Projection` component).
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub(all) enum Projection {
+  Orthographic(OrthographicProjection)
+}
+
+///|
+pub fn Projection::orthographic_2d() -> Projection {
+  Orthographic(OrthographicProjection::default_2d())
+}
+
+///|
+/// Marker component that enables 2D camera semantics (mirrors Bevy's `Camera2d`).
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Camera2d {}
 
 ///|
 pub fn Camera2d::default() -> Camera2d {
-  Camera2d::new(Color::new(0.5F, 0.5F, 0.5F, 1.0F))
-}
-
-///|
-pub fn Camera2d::with_order(self : Camera2d, order : Int) -> Camera2d {
-  Camera2d::{ ..self, order, }
-}
-
-///|
-pub fn Camera2d::with_scale(self : Camera2d, scale : Float) -> Camera2d {
-  Camera2d::{ ..self, scale, }
-}
-
-///|
-pub fn Camera2d::with_viewport(
-  self : Camera2d,
-  viewport : Viewport,
-) -> Camera2d {
-  Camera2d::{ ..self, viewport: Some(viewport) }
-}
-
-///|
-pub fn Camera2d::clear_viewport(self : Camera2d) -> Camera2d {
-  Camera2d::{ ..self, viewport: None }
+  Camera2d::{  }
 }
 
 ///|
@@ -282,7 +324,9 @@ pub fn SpriteBundle::new_with_layers(
 
 ///|
 pub struct Camera2dBundle {
-  camera : Camera2d
+  camera : Camera
+  projection : Projection
+  camera2d : Camera2d
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
@@ -290,11 +334,29 @@ pub struct Camera2dBundle {
 
 ///|
 pub fn Camera2dBundle::new(
-  camera : Camera2d,
+  camera : Camera,
   transform : @math.Transform,
 ) -> Camera2dBundle {
   Camera2dBundle::{
     camera,
+    projection: Projection::orthographic_2d(),
+    camera2d: Camera2d::default(),
+    transform,
+    target: RenderTarget::Screen,
+    layers: RenderLayers::default(),
+  }
+}
+
+///|
+pub fn Camera2dBundle::new_with_projection(
+  camera : Camera,
+  projection : Projection,
+  transform : @math.Transform,
+) -> Camera2dBundle {
+  Camera2dBundle::{
+    camera,
+    projection,
+    camera2d: Camera2d::default(),
     transform,
     target: RenderTarget::Screen,
     layers: RenderLayers::default(),
@@ -303,21 +365,35 @@ pub fn Camera2dBundle::new(
 
 ///|
 pub fn Camera2dBundle::new_with_target(
-  camera : Camera2d,
+  camera : Camera,
   transform : @math.Transform,
   target : RenderTarget,
 ) -> Camera2dBundle {
-  Camera2dBundle::{ camera, transform, target, layers: RenderLayers::default() }
+  Camera2dBundle::{
+    camera,
+    projection: Projection::orthographic_2d(),
+    camera2d: Camera2d::default(),
+    transform,
+    target,
+    layers: RenderLayers::default(),
+  }
 }
 
 ///|
 pub fn Camera2dBundle::new_with_layers(
-  camera : Camera2d,
+  camera : Camera,
   transform : @math.Transform,
   target : RenderTarget,
   layers : RenderLayers,
 ) -> Camera2dBundle {
-  Camera2dBundle::{ camera, transform, target, layers }
+  Camera2dBundle::{
+    camera,
+    projection: Projection::orthographic_2d(),
+    camera2d: Camera2d::default(),
+    transform,
+    target,
+    layers,
+  }
 }
 
 ///|
@@ -360,7 +436,8 @@ priv struct SpriteInstance {
 ///|
 priv struct CameraInstance {
   entity : @core.Entity
-  camera : Camera2d
+  camera : Camera
+  projection : OrthographicProjection
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
@@ -511,14 +588,16 @@ pub fn[
 
 ///|
 pub fn[
-  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform,
+  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform,
 ] Camera2dBundle::spawn(
   self : Camera2dBundle,
   world : W,
 ) -> @core.Entity {
   let tick = @core.ChangeTickWorld::read_change_tick(world)
   let e = @core.SpawnWorld::spawn_empty(world)
-  Has_Camera2d::get_camera2d_store(world).insert(e, self.camera, tick)
+  Has_Camera2d::get_camera2d_store(world).insert(e, self.camera2d, tick)
+  Has_Camera::get_camera_store(world).insert(e, self.camera, tick)
+  Has_Projection::get_projection_store(world).insert(e, self.projection, tick)
   Has_RenderTarget::get_render_target_store(world).insert(e, self.target, tick)
   Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
   @math.Has_Transform::get_transform_store(world).insert(
@@ -742,7 +821,7 @@ fn render2d_sorted_camera_indices(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
 ] render_extract_system(
   world : W,
 ) -> Unit {
@@ -752,14 +831,16 @@ pub fn[
   rs.val.sprites.clear()
   rs.val.cameras.clear()
   rs.val.meshes.clear()
-  let camera_store = Has_Camera2d::get_camera2d_store(world)
+  let camera2d_store = Has_Camera2d::get_camera2d_store(world)
+  let camera_store = Has_Camera::get_camera_store(world)
+  let projection_store = Has_Projection::get_projection_store(world)
   let target_store = Has_RenderTarget::get_render_target_store(world)
   let layers_store = Has_RenderLayers::get_render_layers_store(world)
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let global_store = @transform.Has_GlobalTransform::get_global_transform_store(
     world,
   )
-  camera_store.for_each(fn(entity, camera) {
+  camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
       Some(t) => t
       None => RenderTarget::Screen
@@ -767,6 +848,14 @@ pub fn[
     let layers = match layers_store.get(entity) {
       Some(v) => v
       None => RenderLayers::default()
+    }
+    let camera = match camera_store.get(entity) {
+      Some(v) => v
+      None => Camera::default()
+    }
+    let projection = match projection_store.get(entity) {
+      Some(Orthographic(p)) => p
+      None => OrthographicProjection::default_2d()
     }
     let transform = match global_store.get(entity) {
       Some(gt) => gt.to_transform_approx()
@@ -788,17 +877,17 @@ pub fn[
       }
       if camera_value.viewport is Some(viewport) {
         let clamped = render2d_clamp_viewport(viewport, info.size)
-        camera_value = Camera2d::{
-          clear_color: camera_value.clear_color,
-          order: camera_value.order,
-          scale: camera_value.scale,
+        camera_value = Camera::{
           viewport: Some(clamped),
+          order: camera_value.order,
+          clear_color: camera_value.clear_color,
         }
       }
     }
     rs.val.cameras.push(CameraInstance::{
       entity,
       camera: camera_value,
+      projection,
       transform,
       target,
       layers,
@@ -1044,7 +1133,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       camera.transform.translation.x,
       camera.transform.translation.y,
       camera.transform.rotation,
-      camera.camera.scale,
+      camera.projection.scale,
       viewport_x,
       viewport_y,
       viewport_width,
@@ -1135,6 +1224,7 @@ pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(
   render2d_camera_viewport_to_world_2d(
     screen,
     cam.camera,
+    cam.projection,
     cam.transform,
     cam.computed.target_size,
     cam.computed.scale_factor,
@@ -1162,6 +1252,7 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(
   render2d_camera_world_to_viewport_2d(
     world,
     cam.camera,
+    cam.projection,
     cam.transform,
     cam.computed.target_size,
     cam.computed.scale_factor,
@@ -1172,7 +1263,8 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(
 /// Shared math for camera viewport conversions. `screen` is in logical pixels.
 pub fn render2d_camera_viewport_to_world_2d(
   screen : @math.Vec2,
-  camera : Camera2d,
+  camera : Camera,
+  projection : OrthographicProjection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -1201,7 +1293,7 @@ pub fn render2d_camera_viewport_to_world_2d(
   }
   let half_width = rect_width_f / 2.0F
   let half_height = rect_height_f / 2.0F
-  let scale = if camera.scale == 0.0F { 1.0F } else { camera.scale }
+  let scale = if projection.scale == 0.0F { 1.0F } else { projection.scale }
   let local_x = screen.x - rect_x_f
   let local_y = screen.y - rect_y_f
   let view_x = (local_x - half_width) * scale
@@ -1217,7 +1309,8 @@ pub fn render2d_camera_viewport_to_world_2d(
 /// Shared math for camera viewport conversions. Return value is in logical pixels.
 pub fn render2d_camera_world_to_viewport_2d(
   world : @math.Vec2,
-  camera : Camera2d,
+  camera : Camera,
+  projection : OrthographicProjection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -1252,7 +1345,11 @@ pub fn render2d_camera_world_to_viewport_2d(
   let sinv = @math.sin(camera_transform.rotation)
   let view_x = dx * cosv - dy * sinv
   let view_y = dx * sinv + dy * cosv
-  let safe_scale = if camera.scale == 0.0F { 1.0F } else { camera.scale }
+  let safe_scale = if projection.scale == 0.0F {
+    1.0F
+  } else {
+    projection.scale
+  }
   let local_x = view_x / safe_scale + half_width
   let local_y = half_height - view_y / safe_scale
   if local_x < 0.0F ||
@@ -1312,6 +1409,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
     if camera.entity.id == id.id && camera.entity.generation == id.generation {
       let target = camera.computed.target_size
       let scale = camera.computed.scale_factor
+      let proj_scale = camera.projection.scale
       let mut viewport_text = "None"
       if camera.camera.viewport is Some(viewport) {
         let pos = viewport.physical_position
@@ -1332,6 +1430,8 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
         target.y.to_string() +
         ") scale=" +
         scale.to_string() +
+        " proj_scale=" +
+        proj_scale.to_string() +
         " viewport=" +
         viewport_text
       @window.host_debug_string(message)
@@ -1342,7 +1442,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
 ] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

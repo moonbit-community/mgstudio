@@ -59,7 +59,7 @@ fn sprite_animation_setup(world : @ecs_world.World) -> Unit {
     @asset.TextureAtlas::new(layout_handle, 0),
     tick,
   )
-  let camera = @render2d.Camera2d::default()
+  let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )

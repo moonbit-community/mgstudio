@@ -18,7 +18,7 @@
 /// This lives in the top-level `Milky2018/mgstudio` package to avoid dependency
 /// cycles (`app` cannot depend on `window/asset/render2d/...`).
 pub fn[
-  W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d,
+  W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d,
 ] default_plugins() -> Array[@app.Plugin[W]] {
   [
     fn(app : @app.App[W]) -> @app.App[W] { @window.window_plugin(app) },
@@ -34,7 +34,7 @@ pub fn[
 ///|
 /// Default plugin bundle with "nearest" sampling for textures (useful for pixel art).
 pub fn[
-  W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d,
+  W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d,
 ] default_plugins_nearest() -> Array[@app.Plugin[W]] {
   [
     fn(app : @app.App[W]) -> @app.App[W] { @window.window_plugin(app) },

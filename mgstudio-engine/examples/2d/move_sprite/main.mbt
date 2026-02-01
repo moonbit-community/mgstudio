@@ -45,7 +45,7 @@ fn move_sprite_setup(world : @ecs_world.World) -> Unit {
   let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let transform = @math.Transform::identity()
   @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore
-  let camera = @render2d.Camera2d::default()
+  let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )

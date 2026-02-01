@@ -99,7 +99,7 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
     ),
     pixel_layers,
   ).spawn(world)
-  let in_game_camera = @render2d.Camera2d::default().with_order(-1)
+  let in_game_camera = @render2d.Camera::default().with_order(-1)
   @render2d.Camera2dBundle::new_with_layers(
     in_game_camera,
     @math.Transform::identity(),
@@ -107,7 +107,7 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
     pixel_layers,
   ).spawn(world)
   |> ignore
-  let outer_camera = @render2d.Camera2d::default()
+  let outer_camera = @render2d.Camera::default()
   let outer_handle = @render2d.Camera2dBundle::new_with_layers(
     outer_camera,
     @math.Transform::identity(),
@@ -170,15 +170,15 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
   let rounded = pixel_grid_round_scale(min_scale)
   let scale_int = if rounded < 1 { 1 } else { rounded }
   let scale = 1.0F / Float::from_double(scale_int.to_double())
-  let camera_store = @render2d.Has_Camera2d::get_camera2d_store(world)
-  if camera_store.get(pixel_state.val.outer_camera) is Some(camera) {
-    camera_store.set(
-      pixel_state.val.outer_camera,
-      camera.with_scale(scale),
-      tick,
-    )
-    |> ignore
-  }
+  let projection_store = @render2d.Has_Projection::get_projection_store(world)
+  projection_store.set(
+    pixel_state.val.outer_camera,
+    @render2d.Projection::Orthographic(
+      @render2d.OrthographicProjection::new(scale),
+    ),
+    tick,
+  )
+  |> ignore
 }
 
 ///|

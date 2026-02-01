@@ -28,7 +28,8 @@ fn approx_eq(a : Float, b : Float) -> Bool {
 
 ///|
 test "render2d: viewport_to_world and world_to_viewport roundtrip (identity camera)" {
-  let camera = Camera2d::default()
+  let camera = Camera::default()
+  let projection = OrthographicProjection::default_2d()
   let transform = @math.Transform::identity()
   let target = @math.IVec2::new(100, 100)
   let scale_factor = 1.0F
@@ -37,7 +38,7 @@ test "render2d: viewport_to_world and world_to_viewport roundtrip (identity came
   let center = @math.Vec2::new(50.0F, 50.0F)
   let ok_center = match
     render2d_camera_viewport_to_world_2d(
-      center, camera, transform, target, scale_factor,
+      center, camera, projection, transform, target, scale_factor,
     ) {
     Some(world_center) =>
       approx_eq(world_center.x, 0.0F) && approx_eq(world_center.y, 0.0F)
@@ -49,12 +50,12 @@ test "render2d: viewport_to_world and world_to_viewport roundtrip (identity came
   let screen = @math.Vec2::new(12.5F, 87.25F)
   let ok_roundtrip = match
     render2d_camera_viewport_to_world_2d(
-      screen, camera, transform, target, scale_factor,
+      screen, camera, projection, transform, target, scale_factor,
     ) {
     Some(world_pos) =>
       match
         render2d_camera_world_to_viewport_2d(
-          world_pos, camera, transform, target, scale_factor,
+          world_pos, camera, projection, transform, target, scale_factor,
         ) {
         Some(screen_back) =>
           approx_eq(screen_back.x, screen.x) &&
@@ -68,7 +69,8 @@ test "render2d: viewport_to_world and world_to_viewport roundtrip (identity came
 
 ///|
 test "render2d: viewport_to_world uses logical pixels when scale_factor != 1" {
-  let camera = Camera2d::default()
+  let camera = Camera::default()
+  let projection = OrthographicProjection::default_2d()
   let transform = @math.Transform::identity()
   let target = @math.IVec2::new(200, 100) // physical
   let scale_factor = 2.0F
@@ -77,7 +79,7 @@ test "render2d: viewport_to_world uses logical pixels when scale_factor != 1" {
   let center = @math.Vec2::new(50.0F, 25.0F)
   let ok_center = match
     render2d_camera_viewport_to_world_2d(
-      center, camera, transform, target, scale_factor,
+      center, camera, projection, transform, target, scale_factor,
     ) {
     Some(world_center) =>
       approx_eq(world_center.x, 0.0F) && approx_eq(world_center.y, 0.0F)
@@ -88,9 +90,10 @@ test "render2d: viewport_to_world uses logical pixels when scale_factor != 1" {
 
 ///|
 test "render2d: viewport rect clamps to target size" {
-  let camera = Camera2d::default().with_viewport(
+  let camera = Camera::default().with_viewport(
     Viewport::new(@math.IVec2::new(90, 90), @math.IVec2::new(50, 50)),
   )
+  let projection = OrthographicProjection::default_2d()
   let transform = @math.Transform::identity()
   let target = @math.IVec2::new(100, 100)
 
@@ -98,7 +101,7 @@ test "render2d: viewport rect clamps to target size" {
   let screen = @math.Vec2::new(95.0F, 95.0F)
   let ok_center = match
     render2d_camera_viewport_to_world_2d(
-      screen, camera, transform, target, 1.0F,
+      screen, camera, projection, transform, target, 1.0F,
     ) {
     Some(world_pos) =>
       approx_eq(world_pos.x, 0.0F) && approx_eq(world_pos.y, 0.0F)

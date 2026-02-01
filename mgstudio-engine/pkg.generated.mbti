@@ -12,9 +12,9 @@ import {
 }
 
 // Values
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d] default_plugins() -> Array[(@app.App[W]) -> @app.App[W]]
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d] default_plugins() -> Array[(@app.App[W]) -> @app.App[W]]
 
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d] default_plugins_nearest() -> Array[(@app.App[W]) -> @app.App[W]]
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_SpriteTexture + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d] default_plugins_nearest() -> Array[(@app.App[W]) -> @app.App[W]]
 
 // Errors
 

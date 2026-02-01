@@ -6,6 +6,7 @@ pub struct World {
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
   transform : @core.ComponentStore[@math.Transform]
+  camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
   parent : @core.ComponentStore[@hierarchy.Parent]
@@ -13,6 +14,7 @@ pub struct World {
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  projection : @core.ComponentStore[@render2d.Projection]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -31,6 +33,7 @@ pub fn World::new() -> World {
     change_tick: 0,
     system_context: @core.SystemContext::new(),
     transform: @core.ComponentStore::new(),
+    camera: @core.ComponentStore::new(),
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
     parent: @core.ComponentStore::new(),
@@ -38,6 +41,7 @@ pub fn World::new() -> World {
     texture_atlas: @core.ComponentStore::new(),
     children: @core.ComponentStore::new(),
     gpu_mesh2d: @core.ComponentStore::new(),
+    projection: @core.ComponentStore::new(),
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
@@ -62,6 +66,7 @@ pub fn World::despawn(
 ) -> Unit raise @core.EntityError {
   self.entities.despawn(entity)
   self.transform.remove(entity) |> ignore
+  self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
@@ -69,6 +74,7 @@ pub fn World::despawn(
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
+  self.projection.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
@@ -88,6 +94,7 @@ pub impl @core.SpawnWorld for World with spawn_empty(self) {
 pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.entities.despawn(entity)
   self.transform.remove(entity) |> ignore
+  self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
@@ -95,6 +102,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
+  self.projection.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
@@ -132,6 +140,11 @@ pub impl @math.Has_Transform for World with get_transform_store(self) {
 }
 
 ///|
+pub impl @render2d.Has_Camera for World with get_camera_store(self) {
+  self.camera
+}
+
+///|
 pub impl @render2d.Has_Mesh2d for World with get_mesh2d_store(self) {
   self.mesh2d
 }
@@ -164,6 +177,11 @@ pub impl @hierarchy.Has_Children for World with get_children_store(self) {
 ///|
 pub impl @render2d.Has_GpuMesh2d for World with get_gpu_mesh2d_store(self) {
   self.gpu_mesh2d
+}
+
+///|
+pub impl @render2d.Has_Projection for World with get_projection_store(self) {
+  self.projection
 }
 
 ///|

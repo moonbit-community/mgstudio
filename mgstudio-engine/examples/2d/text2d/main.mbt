@@ -46,7 +46,7 @@ fn text2d_setup(world : @ecs_world.World) -> Unit {
   .with_color(@text.TextColor::new(@render2d.Color::white()))
   .spawn()
   |> ignore
-  let camera = @render2d.Camera2d::default()
+  let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )

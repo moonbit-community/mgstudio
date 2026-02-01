@@ -57,7 +57,7 @@ fn sprite_sheet_setup(world : @ecs_world.World) -> Unit {
       idx = idx + 1
     }
   }
-  let camera = @render2d.Camera2d::default()
+  let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )

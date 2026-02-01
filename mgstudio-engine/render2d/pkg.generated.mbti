@@ -21,9 +21,9 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W] render2d_camera_system(W) -> Unit
 
-pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera2d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera2d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(W) -> Unit
 
@@ -31,7 +31,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 
 pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -41,7 +41,7 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @mat
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render_extract_system(W) -> Unit
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render_extract_system(W) -> Unit
 
 pub fn[W] render_prepare_system(W) -> Unit
 
@@ -61,29 +61,34 @@ pub struct ArrowBuilder {
 pub fn ArrowBuilder::with_double_end(Self) -> Self
 pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
 
-pub struct Camera2d {
-  clear_color : Color
-  order : Int
-  scale : Float
+pub struct Camera {
   viewport : Viewport?
+  order : Int
+  clear_color : Color
 }
-pub fn Camera2d::clear_viewport(Self) -> Self
+pub fn Camera::clear_viewport(Self) -> Self
+pub fn Camera::default() -> Self
+pub fn Camera::new(Color) -> Self
+pub fn Camera::with_order(Self, Int) -> Self
+pub fn Camera::with_viewport(Self, Viewport) -> Self
+
+pub struct Camera2d {
+}
 pub fn Camera2d::default() -> Self
-pub fn Camera2d::new(Color) -> Self
-pub fn Camera2d::with_order(Self, Int) -> Self
-pub fn Camera2d::with_scale(Self, Float) -> Self
-pub fn Camera2d::with_viewport(Self, Viewport) -> Self
 
 pub struct Camera2dBundle {
-  camera : Camera2d
+  camera : Camera
+  projection : Projection
+  camera2d : Camera2d
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
 }
-pub fn Camera2dBundle::new(Camera2d, @math.Transform) -> Self
-pub fn Camera2dBundle::new_with_layers(Camera2d, @math.Transform, RenderTarget, RenderLayers) -> Self
-pub fn Camera2dBundle::new_with_target(Camera2d, @math.Transform, RenderTarget) -> Self
-pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform] Camera2dBundle::spawn(Self, W) -> @core.Entity
+pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
+pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
+pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
+pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
+pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform] Camera2dBundle::spawn(Self, W) -> @core.Entity
 
 pub struct Capsule2d {
   radius : Float
@@ -215,6 +220,18 @@ pub(all) enum Mesh2dKind {
   Geometry(@mesh.Mesh2dGeometry)
 }
 
+pub struct OrthographicProjection {
+  scale : Float
+}
+pub fn OrthographicProjection::default_2d() -> Self
+pub fn OrthographicProjection::new(Float) -> Self
+pub fn OrthographicProjection::with_scale(Self, Float) -> Self
+
+pub(all) enum Projection {
+  Orthographic(OrthographicProjection)
+}
+pub fn Projection::orthographic_2d() -> Self
+
 pub struct Rectangle {
   half_size : @math.Vec2
 }
@@ -275,6 +292,10 @@ pub(open) trait HasRes_RenderState {
   get_render_state_resource(Self) -> @core.Resource[RenderState]
 }
 
+pub(open) trait Has_Camera {
+  get_camera_store(Self) -> @core.ComponentStore[Camera]
+}
+
 pub(open) trait Has_Camera2d {
   get_camera2d_store(Self) -> @core.ComponentStore[Camera2d]
 }
@@ -289,6 +310,10 @@ pub(open) trait Has_GpuMesh2d {
 
 pub(open) trait Has_Mesh2d {
   get_mesh2d_store(Self) -> @core.ComponentStore[Mesh2d]
+}
+
+pub(open) trait Has_Projection {
+  get_projection_store(Self) -> @core.ComponentStore[Projection]
 }
 
 pub(open) trait Has_RenderLayers {

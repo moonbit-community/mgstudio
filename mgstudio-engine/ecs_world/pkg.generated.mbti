@@ -21,6 +21,7 @@ pub struct World {
   mut change_tick : Int
   mut system_context : @core.SystemContext
   transform : @core.ComponentStore[@math.Transform]
+  camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
   parent : @core.ComponentStore[@hierarchy.Parent]
@@ -28,6 +29,7 @@ pub struct World {
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  projection : @core.ComponentStore[@render2d.Projection]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -49,10 +51,12 @@ pub impl @hierarchy.Has_Children for World
 pub impl @hierarchy.Has_Parent for World
 pub impl @math.Has_Transform for World
 pub impl @render2d.HasRes_RenderState for World
+pub impl @render2d.Has_Camera for World
 pub impl @render2d.Has_Camera2d for World
 pub impl @render2d.Has_ColorMaterial for World
 pub impl @render2d.Has_GpuMesh2d for World
 pub impl @render2d.Has_Mesh2d for World
+pub impl @render2d.Has_Projection for World
 pub impl @render2d.Has_RenderLayers for World
 pub impl @render2d.Has_RenderTarget for World
 pub impl @render2d.Has_Sprite for World

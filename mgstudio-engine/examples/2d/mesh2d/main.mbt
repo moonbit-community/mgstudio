@@ -33,7 +33,7 @@ fn mesh2d_setup(world : @ecs_world.World) -> Unit {
     @math.Vec2::new(128.0F, 128.0F),
   )
   @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
-  let camera = @render2d.Camera2d::default()
+  let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
