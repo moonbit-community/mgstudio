@@ -21,6 +21,10 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W] render2d_camera_system(W) -> Unit
 
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera2d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera2d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(W) -> Unit
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(W, Int, Int, Bool) -> @asset.Handle[@asset.Image]
