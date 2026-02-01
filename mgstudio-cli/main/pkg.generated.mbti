@@ -5,6 +5,7 @@ package "Milky2018/mgstudio-cli/main"
 
 // Errors
 type RunError
+pub impl Show for RunError
 
 // Types and methods
 type EcsTags

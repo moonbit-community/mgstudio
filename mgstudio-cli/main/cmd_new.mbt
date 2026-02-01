@@ -186,7 +186,7 @@ async fn new_game_project(name : String) -> Unit {
   let cart = "./_build/wasm-gc/release/build/" + project_name + ".wasm"
   let game_json_raw = "{\"mgstudio\":\"0.1.0\",\"cart\":\"" +
     cart +
-    "\",\"native\":{\"wgpu_lib\":\"\"},\"web\":{\"addr\":\"localhost\",\"port\":8099}}"
+    "\",\"native\":{\"wgpu_lib\":\"\"},\"web\":{\"addr\":\"127.0.0.1\",\"port\":8099}}"
   let game_json = @json.parse(game_json_raw).stringify(indent=2) + "\n"
   write_file_text(path_join(project_dir, "moon.game.json"), game_json)
 

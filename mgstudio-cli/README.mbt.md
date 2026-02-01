@@ -43,7 +43,7 @@ Minimal example:
   "mgstudio": "0.1.0",
   "cart": "./_build/wasm-gc/release/build/cmd/main/main.wasm",
   "native": { "wgpu_lib": "/absolute/path/to/libwgpu_native.dylib" },
-  "web": { "addr": "localhost", "port": 8099 }
+  "web": { "addr": "127.0.0.1", "port": 8099 }
 }
 ```
 

@@ -129,8 +129,8 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
   let web_obj : Map[String, Json]? = get_optional_object(root, "web", abs_path)
   let web_addr = match web_obj {
     Some(web) =>
-      get_optional_string(web, "addr", abs_path).unwrap_or("localhost")
-    None => "localhost"
+      get_optional_string(web, "addr", abs_path).unwrap_or("127.0.0.1")
+    None => "127.0.0.1"
   }
   let web_port = match web_obj {
     Some(web) =>

@@ -51,7 +51,7 @@ fn make_cli_parser() -> @clap.Parser {
           ),
           "addr": @clap.Arg::named(
             nargs=@clap.Nargs::AtMost(1U),
-            help="Override web server bind address (default: from game config or localhost).",
+            help="Override web server bind address (default: from game config or 127.0.0.1).",
           ),
           "port": @clap.Arg::named(
             short='p',

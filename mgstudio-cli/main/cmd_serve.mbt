@@ -167,12 +167,16 @@ async fn serve_web(opts : ServeOptions) -> Unit {
       ")",
     )
   }
-  let addr = opts.addr.unwrap_or(cfg.web_addr)
+  let raw_addr = opts.addr.unwrap_or(cfg.web_addr)
+  // Prefer IPv4 loopback to avoid browsers/extensions that auto-upgrade
+  // `localhost` to HTTPS or hit IPv6 (::1) with TLS probes.
+  let addr = if raw_addr == "localhost" { "127.0.0.1" } else { raw_addr }
   let port = opts.port.unwrap_or(cfg.web_port)
   println("")
   println(
     "Serving web runtime at: http://\{addr}:\{port}/?wasm=./game.wasm&assets_source=\{url_encode_component(assets_base)}&data_source=\{url_encode_component(data_source)}",
   )
+  println("Note: this server is plain HTTP. Do not use https:// for this URL.")
   println("Press Ctrl+C to stop.")
   println("")
   let server_args = [
