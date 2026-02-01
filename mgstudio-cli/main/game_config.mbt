@@ -80,6 +80,27 @@ async fn resolve_game_config_path(game_opt : String?) -> String raise Error {
 
 ///|
 async fn load_game_config(file_path : String) -> GameConfig raise Error {
+  fn expand_home_path(raw : String) -> String {
+    let s = raw.trim().to_string()
+    let home = @sys.get_env_var("HOME").unwrap_or("")
+    if home == "" {
+      return s
+    }
+    if s == "$HOME" {
+      home
+    } else if s.has_prefix("$HOME/") {
+      let rest = (try! s[5:]).to_string()
+      home + rest
+    } else if s == "~" {
+      home
+    } else if s.has_prefix("~/") {
+      let rest = (try! s[1:]).to_string()
+      home + rest
+    } else {
+      s
+    }
+  }
+
   let abs_path = if is_absolute_path(file_path) {
     file_path
   } else {
@@ -158,9 +179,14 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
     root, "native", abs_path,
   )
   // Prefer native.wgpu_lib; fall back to legacy top-level wgpu_lib if present.
-  let native_wgpu_lib = match native_obj {
+  let native_wgpu_lib_raw = match native_obj {
     Some(native) => get_optional_string(native, "wgpu_lib", abs_path)
     None => get_optional_string(root, "wgpu_lib", abs_path)
+  }
+  let native_wgpu_lib = match native_wgpu_lib_raw {
+    Some(v) if v.trim() != "" => Some(expand_home_path(v))
+    Some(_) => None
+    None => None
   }
   {
     file_path: abs_path,

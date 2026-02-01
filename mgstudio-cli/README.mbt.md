@@ -42,7 +42,7 @@ Minimal example:
 {
   "mgstudio": "0.1.0",
   "cart": "./_build/wasm-gc/release/build/cmd/main/main.wasm",
-  "native": { "wgpu_lib": "/absolute/path/to/libwgpu_native.dylib" },
+  "native": { "wgpu_lib": "$HOME/.local/lib/libwgpu_native.dylib" },
   "web": { "addr": "127.0.0.1", "port": 8099 }
 }
 ```
@@ -50,6 +50,7 @@ Minimal example:
 Notes:
 
 - Paths are resolved relative to the config file directory.
+- `native.wgpu_lib` supports `$HOME` and `~/` expansion.
 - File name is not fixed. Use `--game <path>` to point to any config file name.
 - `assets` and `data` are optional. If omitted, defaults are `./assets` (if it exists) and `./tmp/data`.
 
