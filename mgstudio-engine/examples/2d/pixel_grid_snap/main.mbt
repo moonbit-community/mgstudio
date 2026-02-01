@@ -60,30 +60,27 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
     true,
   )
   let canvas_sprite = @render2d.SpriteBundle::new_with_layers(
-    @render2d.Sprite::new(@render2d.Color::white()),
+    @render2d.Sprite::from_image(canvas),
     @math.Transform::identity(),
-    canvas,
     high_layers,
   )
   canvas_sprite.spawn(world) |> ignore
   let pixel_sprite = @render2d.SpriteBundle::new_with_layers(
-    @render2d.Sprite::new(@render2d.Color::white()),
+    @render2d.Sprite::from_image(pixel_dark),
     @math.Transform::new(
       @math.Vec2::new(-45.0F, 20.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
-    pixel_dark,
     pixel_layers,
   ).spawn(world)
   let high_sprite = @render2d.SpriteBundle::new_with_layers(
-    @render2d.Sprite::new(@render2d.Color::white()),
+    @render2d.Sprite::from_image(pixel_light),
     @math.Transform::new(
       @math.Vec2::new(-45.0F, -20.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
-    pixel_light,
     high_layers,
   ).spawn(world)
   let capsule = @render2d.Capsule2d::default()

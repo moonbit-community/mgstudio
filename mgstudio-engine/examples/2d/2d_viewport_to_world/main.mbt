@@ -45,11 +45,9 @@ let viewport_state : Ref[ViewportToWorldState] = Ref::new(ViewportToWorldState::
 fn viewport_to_world_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let anchor_texture = asset_server.load("branding/bevy_bird_dark.png")
-  let anchor_sprite = @render2d.Sprite::new(@render2d.Color::white())
+  let anchor_sprite = @render2d.Sprite::from_image(anchor_texture)
   let anchor_transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(anchor_sprite, anchor_transform, anchor_texture).spawn(
-    world,
-  )
+  @render2d.SpriteBundle::new(anchor_sprite, anchor_transform).spawn(world)
   |> ignore
   let green = @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
   let marker_mesh = @render2d.Mesh2d::from_rectangle(

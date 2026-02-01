@@ -43,9 +43,6 @@ fn texture_atlas_setup(world : @ecs_world.World) -> Unit {
   )
   |> ignore
   let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let atlas_store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
-  let sprite = @render2d.Sprite::new(@render2d.Color::white())
   for i in 0..<4 {
     let x = i % 2 * 160 - 80
     let y = 80 - i / 2 * 160
@@ -58,10 +55,11 @@ fn texture_atlas_setup(world : @ecs_world.World) -> Unit {
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     )
-    let entity = @render2d.SpriteBundle::new(sprite, transform, texture).spawn(
-      world,
+    let sprite = @render2d.Sprite::from_atlas_image(
+      texture,
+      @asset.TextureAtlas::new(layout_handle, i),
     )
-    atlas_store.insert(entity, @asset.TextureAtlas::new(layout_handle, i), tick)
+    @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
   }
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(

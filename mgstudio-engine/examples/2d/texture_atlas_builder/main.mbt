@@ -78,37 +78,30 @@ fn texture_atlas_builder_update(world : @ecs_world.World) -> Unit {
     let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
     let index_a = sources.texture_index(texture_a).unwrap_or(-1)
     let index_b = sources.texture_index(texture_b).unwrap_or(-1)
-    let tick = @core.ChangeTickWorld::read_change_tick(world)
-    let atlas_store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
-    let sprite = @render2d.Sprite::new(@render2d.Color::white())
     let entity_a = @render2d.SpriteBundle::new(
-      sprite,
+      @render2d.Sprite::from_atlas_image(
+        atlas_texture,
+        @asset.TextureAtlas::new(layout_handle, index_a),
+      ),
       @math.Transform::new(
         @math.Vec2::new(-160.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
       ),
-      atlas_texture,
     ).spawn(world)
-    atlas_store.insert(
-      entity_a,
-      @asset.TextureAtlas::new(layout_handle, index_a),
-      tick,
-    )
+    entity_a |> ignore
     let entity_b = @render2d.SpriteBundle::new(
-      sprite,
+      @render2d.Sprite::from_atlas_image(
+        atlas_texture,
+        @asset.TextureAtlas::new(layout_handle, index_b),
+      ),
       @math.Transform::new(
         @math.Vec2::new(160.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
       ),
-      atlas_texture,
     ).spawn(world)
-    atlas_store.insert(
-      entity_b,
-      @asset.TextureAtlas::new(layout_handle, index_b),
-      tick,
-    )
+    entity_b |> ignore
     builder_state.val.built = true
   }
 }

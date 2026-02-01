@@ -26,9 +26,9 @@ pub fn game_app() -> Unit {
 fn rotation_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let sprite = @render2d.Sprite::new(@render2d.Color::white())
+  let sprite = @render2d.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore
+  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,

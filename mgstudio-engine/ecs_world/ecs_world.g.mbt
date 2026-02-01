@@ -6,6 +6,7 @@ pub struct World {
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
   transform : @core.ComponentStore[@math.Transform]
+  anchor : @core.ComponentStore[@render2d.Anchor]
   camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
@@ -19,7 +20,6 @@ pub struct World {
   render_target : @core.ComponentStore[@render2d.RenderTarget]
   visibility : @core.ComponentStore[@visibility.Visibility]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
-  sprite_texture : @core.ComponentStore[@render2d.SpriteTexture]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
@@ -33,6 +33,7 @@ pub fn World::new() -> World {
     change_tick: 0,
     system_context: @core.SystemContext::new(),
     transform: @core.ComponentStore::new(),
+    anchor: @core.ComponentStore::new(),
     camera: @core.ComponentStore::new(),
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
@@ -46,7 +47,6 @@ pub fn World::new() -> World {
     render_target: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
-    sprite_texture: @core.ComponentStore::new(),
     global_transform: @core.ComponentStore::new(),
     view_visibility: @core.ComponentStore::new(),
     inherited_visibility: @core.ComponentStore::new(),
@@ -66,6 +66,7 @@ pub fn World::despawn(
 ) -> Unit raise @core.EntityError {
   self.entities.despawn(entity)
   self.transform.remove(entity) |> ignore
+  self.anchor.remove(entity) |> ignore
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
@@ -79,7 +80,6 @@ pub fn World::despawn(
   self.render_target.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
-  self.sprite_texture.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
@@ -94,6 +94,7 @@ pub impl @core.SpawnWorld for World with spawn_empty(self) {
 pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.entities.despawn(entity)
   self.transform.remove(entity) |> ignore
+  self.anchor.remove(entity) |> ignore
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
@@ -107,7 +108,6 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.render_target.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
-  self.sprite_texture.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
@@ -137,6 +137,11 @@ pub impl @core.SystemContextWorld for World with set_system_context(self, ctx) {
 ///|
 pub impl @math.Has_Transform for World with get_transform_store(self) {
   self.transform
+}
+
+///|
+pub impl @render2d.Has_Anchor for World with get_anchor_store(self) {
+  self.anchor
 }
 
 ///|
@@ -204,13 +209,6 @@ pub impl @render2d.Has_ColorMaterial for World with get_color_material_store(
   self,
 ) {
   self.color_material
-}
-
-///|
-pub impl @render2d.Has_SpriteTexture for World with get_sprite_texture_store(
-  self,
-) {
-  self.sprite_texture
 }
 
 ///|

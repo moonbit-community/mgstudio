@@ -5,13 +5,18 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Camera", "Mesh2d", "Sprite", "Camera2d", "GpuMesh2d", "Projection", "RenderLayers",
-  "RenderTarget", "ColorMaterial", "SpriteTexture",
+  "Anchor", "Camera", "Mesh2d", "Sprite", "Camera2d", "GpuMesh2d", "Projection",
+  "RenderLayers", "RenderTarget", "ColorMaterial",
 ]
 
 ///|
 /// ECS resource types discovered via `#ecs.resource`.
 pub let ecs_resources : Array[String] = ["RenderState"]
+
+///|
+pub(open) trait Has_Anchor {
+  get_anchor_store(self : Self) -> @core.ComponentStore[Anchor]
+}
 
 ///|
 pub(open) trait Has_Camera {
@@ -56,11 +61,6 @@ pub(open) trait Has_RenderTarget {
 ///|
 pub(open) trait Has_ColorMaterial {
   get_color_material_store(self : Self) -> @core.ComponentStore[ColorMaterial]
-}
-
-///|
-pub(open) trait Has_SpriteTexture {
-  get_sprite_texture_store(self : Self) -> @core.ComponentStore[SpriteTexture]
 }
 
 ///|

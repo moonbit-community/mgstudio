@@ -31,7 +31,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 
 pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -41,7 +41,7 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @mat
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld] render_extract_system(W) -> Unit
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld] render_extract_system(W) -> Unit
 
 pub fn[W] render_prepare_system(W) -> Unit
 
@@ -50,6 +50,22 @@ pub fn[W] render_queue_system(W) -> Unit
 // Errors
 
 // Types and methods
+pub struct Anchor {
+  value : @math.Vec2
+}
+pub fn Anchor::as_vec(Self) -> @math.Vec2
+pub fn Anchor::bottom_center() -> Self
+pub fn Anchor::bottom_left() -> Self
+pub fn Anchor::bottom_right() -> Self
+pub fn Anchor::center() -> Self
+pub fn Anchor::center_left() -> Self
+pub fn Anchor::center_right() -> Self
+pub fn Anchor::default() -> Self
+pub fn Anchor::new(@math.Vec2) -> Self
+pub fn Anchor::top_center() -> Self
+pub fn Anchor::top_left() -> Self
+pub fn Anchor::top_right() -> Self
+
 pub struct Arc2dBuilder {
   id : Int
 }
@@ -260,24 +276,32 @@ pub fn RoundedRectBuilder::arc_resolution(Self, Int) -> Self
 pub fn RoundedRectBuilder::corner_radius(Self, Float) -> Self
 
 pub struct Sprite {
+  image : @asset.Handle[@asset.Image]
+  texture_atlas : @asset.TextureAtlas?
   color : Color
+  flip_x : Bool
+  flip_y : Bool
+  custom_size : @math.Vec2?
+  rect : @math.Rect?
 }
-pub fn Sprite::new(Color) -> Self
+pub fn Sprite::from_atlas_image(@asset.Handle[@asset.Image], @asset.TextureAtlas) -> Self
+pub fn Sprite::from_image(@asset.Handle[@asset.Image]) -> Self
+pub fn Sprite::with_color(Self, Color) -> Self
+pub fn Sprite::with_custom_size(Self, @math.Vec2?) -> Self
+pub fn Sprite::with_flip_x(Self, Bool) -> Self
+pub fn Sprite::with_flip_y(Self, Bool) -> Self
+pub fn Sprite::with_rect(Self, @math.Rect?) -> Self
+pub fn Sprite::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 
 pub struct SpriteBundle {
   sprite : Sprite
+  anchor : Anchor
   transform : @math.Transform
-  texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
 }
-pub fn SpriteBundle::new(Sprite, @math.Transform, @asset.Handle[@asset.Image]) -> Self
-pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, @asset.Handle[@asset.Image], RenderLayers) -> Self
-pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_SpriteTexture + Has_RenderLayers + @math.Has_Transform] SpriteBundle::spawn(Self, W) -> @core.Entity
-
-pub struct SpriteTexture {
-  texture : @asset.Handle[@asset.Image]
-}
-pub fn SpriteTexture::new(@asset.Handle[@asset.Image]) -> Self
+pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
+pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
+pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform] SpriteBundle::spawn(Self, W) -> @core.Entity
 
 pub struct Viewport {
   physical_position : @math.IVec2
@@ -290,6 +314,10 @@ pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 // Traits
 pub(open) trait HasRes_RenderState {
   get_render_state_resource(Self) -> @core.Resource[RenderState]
+}
+
+pub(open) trait Has_Anchor {
+  get_anchor_store(Self) -> @core.ComponentStore[Anchor]
 }
 
 pub(open) trait Has_Camera {
@@ -326,9 +354,5 @@ pub(open) trait Has_RenderTarget {
 
 pub(open) trait Has_Sprite {
   get_sprite_store(Self) -> @core.ComponentStore[Sprite]
-}
-
-pub(open) trait Has_SpriteTexture {
-  get_sprite_texture_store(Self) -> @core.ComponentStore[SpriteTexture]
 }
 

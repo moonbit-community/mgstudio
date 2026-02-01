@@ -80,26 +80,137 @@ pub fn Viewport::new(
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Sprite {
+  image : @asset.Handle[@asset.Image]
+  texture_atlas : @asset.TextureAtlas?
   color : Color
+  flip_x : Bool
+  flip_y : Bool
+  custom_size : @math.Vec2?
+  rect : @math.Rect?
 }
 
 ///|
-pub fn Sprite::new(color : Color) -> Sprite {
-  Sprite::{ color, }
+pub fn Sprite::from_image(image : @asset.Handle[@asset.Image]) -> Sprite {
+  Sprite::{
+    image,
+    texture_atlas: None,
+    color: Color::white(),
+    flip_x: false,
+    flip_y: false,
+    custom_size: None,
+    rect: None,
+  }
+}
+
+///|
+pub fn Sprite::from_atlas_image(
+  image : @asset.Handle[@asset.Image],
+  atlas : @asset.TextureAtlas,
+) -> Sprite {
+  Sprite::{ ..Sprite::from_image(image), texture_atlas: Some(atlas) }
+}
+
+///|
+pub fn Sprite::with_texture_atlas(
+  self : Sprite,
+  texture_atlas : @asset.TextureAtlas?,
+) -> Sprite {
+  Sprite::{ ..self, texture_atlas, }
+}
+
+///|
+pub fn Sprite::with_color(self : Sprite, color : Color) -> Sprite {
+  Sprite::{ ..self, color, }
+}
+
+///|
+pub fn Sprite::with_flip_x(self : Sprite, flip_x : Bool) -> Sprite {
+  Sprite::{ ..self, flip_x, }
+}
+
+///|
+pub fn Sprite::with_flip_y(self : Sprite, flip_y : Bool) -> Sprite {
+  Sprite::{ ..self, flip_y, }
+}
+
+///|
+pub fn Sprite::with_custom_size(
+  self : Sprite,
+  custom_size : @math.Vec2?,
+) -> Sprite {
+  Sprite::{ ..self, custom_size, }
+}
+
+///|
+pub fn Sprite::with_rect(self : Sprite, rect : @math.Rect?) -> Sprite {
+  Sprite::{ ..self, rect, }
 }
 
 ///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
-pub struct SpriteTexture {
-  texture : @asset.Handle[@asset.Image]
+pub struct Anchor {
+  value : @math.Vec2
 }
 
 ///|
-pub fn SpriteTexture::new(
-  texture : @asset.Handle[@asset.Image],
-) -> SpriteTexture {
-  SpriteTexture::{ texture, }
+pub fn Anchor::new(value : @math.Vec2) -> Anchor {
+  Anchor::{ value, }
+}
+
+///|
+pub fn Anchor::as_vec(self : Anchor) -> @math.Vec2 {
+  self.value
+}
+
+///|
+pub fn Anchor::bottom_left() -> Anchor {
+  Anchor::new(@math.Vec2::new(-0.5F, -0.5F))
+}
+
+///|
+pub fn Anchor::bottom_center() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.0F, -0.5F))
+}
+
+///|
+pub fn Anchor::bottom_right() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.5F, -0.5F))
+}
+
+///|
+pub fn Anchor::center_left() -> Anchor {
+  Anchor::new(@math.Vec2::new(-0.5F, 0.0F))
+}
+
+///|
+pub fn Anchor::center() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.0F, 0.0F))
+}
+
+///|
+pub fn Anchor::center_right() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.5F, 0.0F))
+}
+
+///|
+pub fn Anchor::top_left() -> Anchor {
+  Anchor::new(@math.Vec2::new(-0.5F, 0.5F))
+}
+
+///|
+pub fn Anchor::top_center() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.0F, 0.5F))
+}
+
+///|
+pub fn Anchor::top_right() -> Anchor {
+  Anchor::new(@math.Vec2::new(0.5F, 0.5F))
+}
+
+///|
+pub fn Anchor::default() -> Anchor {
+  Anchor::center()
 }
 
 ///|
@@ -298,8 +409,8 @@ pub fn GpuMesh2d::new(mesh_id : Int) -> GpuMesh2d {
 ///|
 pub struct SpriteBundle {
   sprite : Sprite
+  anchor : Anchor
   transform : @math.Transform
-  texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
 }
 
@@ -307,19 +418,22 @@ pub struct SpriteBundle {
 pub fn SpriteBundle::new(
   sprite : Sprite,
   transform : @math.Transform,
-  texture : @asset.Handle[@asset.Image],
 ) -> SpriteBundle {
-  SpriteBundle::{ sprite, transform, texture, layers: RenderLayers::default() }
+  SpriteBundle::{
+    sprite,
+    anchor: Anchor::default(),
+    transform,
+    layers: RenderLayers::default(),
+  }
 }
 
 ///|
 pub fn SpriteBundle::new_with_layers(
   sprite : Sprite,
   transform : @math.Transform,
-  texture : @asset.Handle[@asset.Image],
   layers : RenderLayers,
 ) -> SpriteBundle {
-  SpriteBundle::{ sprite, transform, texture, layers }
+  SpriteBundle::{ sprite, anchor: Anchor::default(), transform, layers }
 }
 
 ///|
@@ -426,6 +540,8 @@ pub fn Mesh2dBundle::new_with_layers(
 ///|
 priv struct SpriteInstance {
   transform : @math.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
   color : Color
   texture : @asset.Handle[@asset.Image]
   layers : RenderLayers
@@ -529,24 +645,118 @@ fn default_uv_max() -> @math.Vec2 {
 }
 
 ///|
-fn sprite_uv_from_atlas_rect(
-  atlas_size : @math.UVec2,
-  rect : @math.URect,
-) -> (@math.Vec2, @math.Vec2)? {
-  if atlas_size.x <= 0 || atlas_size.y <= 0 {
+priv struct SpriteUvInfo {
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+}
+
+///|
+fn sprite_vec2_add(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
+  @math.Vec2::new(a.x + b.x, a.y + b.y)
+}
+
+///|
+fn sprite_vec2_mul(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
+  @math.Vec2::new(a.x * b.x, a.y * b.y)
+}
+
+///|
+fn sprite_draw_scale(
+  sprite : Sprite,
+  transform_scale : @math.Vec2,
+) -> @math.Vec2 {
+  let base = match sprite.custom_size {
+    Some(v) => v
+    None => @math.Vec2::new(1.0F, 1.0F)
+  }
+  sprite_vec2_mul(transform_scale, base)
+}
+
+///|
+fn sprite_anchor_offset(
+  anchor : Anchor,
+  rotation : Float,
+  draw_scale : @math.Vec2,
+) -> @math.Vec2 {
+  let a = anchor.as_vec()
+  let offset_local = @math.Vec2::new(-a.x * draw_scale.x, -a.y * draw_scale.y)
+  let cosv = @math.cos(rotation)
+  let sinv = @math.sin(rotation)
+  @math.Vec2::new(
+    offset_local.x * cosv - offset_local.y * sinv,
+    offset_local.x * sinv + offset_local.y * cosv,
+  )
+}
+
+///|
+fn swap_float_pair(a : Float, b : Float) -> (Float, Float) {
+  (b, a)
+}
+
+///|
+fn sprite_uv_from_sprite(sprite : Sprite) -> SpriteUvInfo? {
+  let texture_id = sprite.image.id()
+  let mut image_width = @asset.host_asset_texture_width(texture_id)
+  let mut image_height = @asset.host_asset_texture_height(texture_id)
+  if image_width <= 0 || image_height <= 0 {
+    // Avoid division by zero for not-yet-loaded textures.
+    image_width = 1
+    image_height = 1
+  }
+  let image_rect = @math.Rect::new(
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(
+      Float::from_double(image_width.to_double()),
+      Float::from_double(image_height.to_double()),
+    ),
+  )
+  let atlas_rect = match sprite.texture_atlas {
+    Some(atlas) =>
+      match @asset.asset_get_texture_atlas_layout(atlas.layout) {
+        Some(layout_value) =>
+          if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
+            Some(layout_value.textures[atlas.index].as_rect())
+          } else {
+            None
+          }
+        None => None
+      }
+    None => None
+  }
+  let texture_rect = match (atlas_rect, sprite.rect) {
+    (None, None) => image_rect
+    (None, Some(r)) => r
+    (Some(ar), None) => ar
+    (Some(ar), Some(r)) => {
+      let min = sprite_vec2_add(r.min, ar.min)
+      let max = sprite_vec2_add(r.max, ar.min)
+      @math.Rect::new(min, max)
+    }
+  }
+  let denom_x = Float::from_double(image_width.to_double())
+  let denom_y = Float::from_double(image_height.to_double())
+  if denom_x <= 0.0F || denom_y <= 0.0F {
     return None
   }
-  let atlas_width = Float::from_double(atlas_size.x.to_double())
-  let atlas_height = Float::from_double(atlas_size.y.to_double())
-  let uv_min = @math.Vec2::new(
-    Float::from_double(rect.min.x.to_double()) / atlas_width,
-    Float::from_double(rect.min.y.to_double()) / atlas_height,
+  let mut uv_min = @math.Vec2::new(
+    texture_rect.min.x / denom_x,
+    texture_rect.min.y / denom_y,
   )
-  let uv_max = @math.Vec2::new(
-    Float::from_double(rect.max.x.to_double()) / atlas_width,
-    Float::from_double(rect.max.y.to_double()) / atlas_height,
+  let mut uv_max = @math.Vec2::new(
+    texture_rect.max.x / denom_x,
+    texture_rect.max.y / denom_y,
   )
-  Some((uv_min, uv_max))
+  if sprite.flip_x {
+    let pair = swap_float_pair(uv_min.x, uv_max.x)
+    uv_min = @math.Vec2::new(pair.0, uv_min.y)
+    uv_max = @math.Vec2::new(pair.1, uv_max.y)
+  }
+  if sprite.flip_y {
+    let pair = swap_float_pair(uv_min.y, uv_max.y)
+    uv_min = @math.Vec2::new(uv_min.x, pair.0)
+    uv_max = @math.Vec2::new(uv_max.x, pair.1)
+  }
+  Some(SpriteUvInfo::{ uv_min, uv_max })
 }
 
 ///|
@@ -564,7 +774,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 
 ///|
 pub fn[
-  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_SpriteTexture + Has_RenderLayers + @math.Has_Transform,
+  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform,
 ] SpriteBundle::spawn(
   self : SpriteBundle,
   world : W,
@@ -572,11 +782,7 @@ pub fn[
   let tick = @core.ChangeTickWorld::read_change_tick(world)
   let e = @core.SpawnWorld::spawn_empty(world)
   Has_Sprite::get_sprite_store(world).insert(e, self.sprite, tick)
-  Has_SpriteTexture::get_sprite_texture_store(world).insert(
-    e,
-    SpriteTexture::new(self.texture),
-    tick,
-  )
+  Has_Anchor::get_anchor_store(world).insert(e, self.anchor, tick)
   Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
   @math.Has_Transform::get_transform_store(world).insert(
     e,
@@ -684,6 +890,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
   render_state_ref_mut(world).map(fn(rs) {
     rs.val.extra_sprites.push(SpriteInstance::{
       transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale: transform.scale,
       color,
       texture,
       layers,
@@ -821,7 +1029,7 @@ fn render2d_sorted_camera_indices(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld,
 ] render_extract_system(
   world : W,
 ) -> Unit {
@@ -901,10 +1109,12 @@ pub fn[
     }
   }
   let sprite_store = Has_Sprite::get_sprite_store(world)
-  let sprite_tex_store = Has_SpriteTexture::get_sprite_texture_store(world)
-  let atlas_store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
+  let anchor_store = Has_Anchor::get_anchor_store(world)
   sprite_store.for_each(fn(entity, sprite) {
-    guard sprite_tex_store.get(entity) is Some(sprite_tex) else { return }
+    let anchor = match anchor_store.get(entity) {
+      Some(a) => a
+      None => Anchor::default()
+    }
     let layers = match layers_store.get(entity) {
       Some(v) => v
       None => RenderLayers::default()
@@ -919,22 +1129,22 @@ pub fn[
     }
     let mut uv_min = default_uv_min()
     let mut uv_max = default_uv_max()
-    if atlas_store.get(entity) is Some(atlas) {
-      if @asset.asset_get_texture_atlas_layout(atlas.layout)
-        is Some(layout_value) {
-        if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
-          let rect = layout_value.textures[atlas.index]
-          if sprite_uv_from_atlas_rect(layout_value.size, rect) is Some(pair) {
-            uv_min = pair.0
-            uv_max = pair.1
-          }
-        }
-      }
+    if sprite_uv_from_sprite(sprite) is Some(info) {
+      uv_min = info.uv_min
+      uv_max = info.uv_max
     }
+    let draw_scale = sprite_draw_scale(sprite, transform.scale)
+    let anchor_offset = sprite_anchor_offset(
+      anchor,
+      transform.rotation,
+      draw_scale,
+    )
     rs.val.sprites.push(SpriteInstance::{
       transform,
+      anchor_offset,
+      draw_scale,
       color: sprite.color,
-      texture: sprite_tex.texture,
+      texture: sprite.image,
       layers,
       uv_min,
       uv_max,
@@ -1142,13 +1352,17 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     for sprite_index in sprite_draw_indices(sprites, camera.layers) {
       let sprite = sprites[sprite_index]
       let transform = sprite.transform
+      let pos = @math.Vec2::new(
+        transform.translation.x + sprite.anchor_offset.x,
+        transform.translation.y + sprite.anchor_offset.y,
+      )
       @window.host_gpu_draw_sprite_uv(
         sprite.texture.id(),
-        transform.translation.x,
-        transform.translation.y,
+        pos.x,
+        pos.y,
         transform.rotation,
-        transform.scale.x,
-        transform.scale.y,
+        sprite.draw_scale.x,
+        sprite.draw_scale.y,
         sprite.color.r,
         sprite.color.g,
         sprite.color.b,
@@ -1179,13 +1393,17 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     for sprite_index in sprite_draw_indices(extra_sprites, camera.layers) {
       let sprite = extra_sprites[sprite_index]
       let transform = sprite.transform
+      let pos = @math.Vec2::new(
+        transform.translation.x + sprite.anchor_offset.x,
+        transform.translation.y + sprite.anchor_offset.y,
+      )
       @window.host_gpu_draw_sprite_uv(
         sprite.texture.id(),
-        transform.translation.x,
-        transform.translation.y,
+        pos.x,
+        pos.y,
         transform.rotation,
-        transform.scale.x,
-        transform.scale.y,
+        sprite.draw_scale.x,
+        sprite.draw_scale.y,
         sprite.color.r,
         sprite.color.g,
         sprite.color.b,
@@ -1442,7 +1660,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_SpriteTexture + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @asset.Has_TextureAtlas + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld,
 ] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

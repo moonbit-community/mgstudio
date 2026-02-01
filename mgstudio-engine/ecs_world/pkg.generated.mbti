@@ -21,6 +21,7 @@ pub struct World {
   mut change_tick : Int
   mut system_context : @core.SystemContext
   transform : @core.ComponentStore[@math.Transform]
+  anchor : @core.ComponentStore[@render2d.Anchor]
   camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
@@ -34,7 +35,6 @@ pub struct World {
   render_target : @core.ComponentStore[@render2d.RenderTarget]
   visibility : @core.ComponentStore[@visibility.Visibility]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
-  sprite_texture : @core.ComponentStore[@render2d.SpriteTexture]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
@@ -51,6 +51,7 @@ pub impl @hierarchy.Has_Children for World
 pub impl @hierarchy.Has_Parent for World
 pub impl @math.Has_Transform for World
 pub impl @render2d.HasRes_RenderState for World
+pub impl @render2d.Has_Anchor for World
 pub impl @render2d.Has_Camera for World
 pub impl @render2d.Has_Camera2d for World
 pub impl @render2d.Has_ColorMaterial for World
@@ -60,7 +61,6 @@ pub impl @render2d.Has_Projection for World
 pub impl @render2d.Has_RenderLayers for World
 pub impl @render2d.Has_RenderTarget for World
 pub impl @render2d.Has_Sprite for World
-pub impl @render2d.Has_SpriteTexture for World
 pub impl @transform.Has_GlobalTransform for World
 pub impl @visibility.Has_InheritedVisibility for World
 pub impl @visibility.Has_ViewVisibility for World

@@ -31,9 +31,6 @@ fn sprite_sheet_setup(world : @ecs_world.World) -> Unit {
     2,
   )
   let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let atlas_store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
-  let sprite = @render2d.Sprite::new(@render2d.Color::white())
   let mut idx = 0
   for y in 0..<2 {
     for x in 0..<2 {
@@ -46,14 +43,9 @@ fn sprite_sheet_setup(world : @ecs_world.World) -> Unit {
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
       )
-      let entity = @render2d.SpriteBundle::new(sprite, transform, texture).spawn(
-        world,
-      )
-      atlas_store.insert(
-        entity,
-        @asset.TextureAtlas::new(layout_handle, idx),
-        tick,
-      )
+      let atlas = @asset.TextureAtlas::new(layout_handle, idx)
+      let sprite = @render2d.Sprite::from_atlas_image(texture, atlas)
+      @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
       idx = idx + 1
     }
   }

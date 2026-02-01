@@ -48,17 +48,12 @@ fn sprite_animation_setup(world : @ecs_world.World) -> Unit {
     2,
   )
   let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
-  let sprite = @render2d.Sprite::new(@render2d.Color::white())
-  let transform = @math.Transform::identity()
-  let entity = @render2d.SpriteBundle::new(sprite, transform, texture).spawn(
-    world,
-  )
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  @asset.Has_TextureAtlas::get_texture_atlas_store(world).insert(
-    entity,
+  let sprite = @render2d.Sprite::from_atlas_image(
+    texture,
     @asset.TextureAtlas::new(layout_handle, 0),
-    tick,
   )
+  let transform = @math.Transform::identity()
+  let entity = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
@@ -85,9 +80,10 @@ fn sprite_animation_update(world : @ecs_world.World) -> Unit {
         layout_handle,
         animation_state.val.index,
       )
-      let store = @asset.Has_TextureAtlas::get_texture_atlas_store(world)
-      if !store.set(sprite_entity, atlas, tick) {
-        store.insert(sprite_entity, atlas, tick)
+      let store = @render2d.Has_Sprite::get_sprite_store(world)
+      if store.get(sprite_entity) is Some(sprite) {
+        store.set(sprite_entity, sprite.with_texture_atlas(Some(atlas)), tick)
+        |> ignore
       }
     }
   }
