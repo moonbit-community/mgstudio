@@ -41,11 +41,9 @@ jobs:
           WGPU_NATIVE_TAG: ${{ inputs.wgpu_native_tag }}
         run: |
           set -euo pipefail
-          tag="${WGPU_NATIVE_TAG}"
-          if [[ -z "${tag}" ]]; then
-            echo "Missing wgpu_native_tag input" >&2
-            exit 1
-          fi
+          # NOTE: `inputs.*` are only available for workflow_dispatch. For release builds
+          # we use a fixed default tag that is known to ship the darwin-arm64 dylib.
+          tag="${WGPU_NATIVE_TAG:-v27.0.4.0}"
 
           tmp="${RUNNER_TEMP}/wgpu-native"
           rm -rf "${tmp}"
