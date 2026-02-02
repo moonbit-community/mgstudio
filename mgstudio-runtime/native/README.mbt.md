@@ -30,7 +30,7 @@ Recommended workflow (from repo root):
 moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
 
 # Run the game described by moon.game.json (calls export: game_app).
-./mgstudio run --game mgstudio-engine/examples/2d/sprite/moon.game.json
+./mgstudio-dev run --game mgstudio-engine/examples/2d/sprite/moon.game.json
 ```
 
 If you hit `failed to dlopen libwgpu_native`, verify your SDK installation:

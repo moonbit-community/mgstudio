@@ -2,6 +2,14 @@
 
 An experimental Bevy-aligned game engine and tooling stack written in MoonBit.
 
+### Install (end users)
+
+Install the mgstudio SDK + CLI from GitHub Releases (darwin-arm64):
+
+```bash
+curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/download/mgstudio-install.sh | bash
+```
+
 ### Repository layout
 
 - `mgstudio-engine/`: engine core (ECS, math, 2D rendering, text, assets, etc.)
@@ -15,24 +23,27 @@ An experimental Bevy-aligned game engine and tooling stack written in MoonBit.
 
 ### Quick start (local development)
 
-1. Build and install an SDK (assets + web runtime JS + native wgpu dylib):
-   - `scripts/mgstudio-sdk-build` (requires `libwgpu_native.dylib`, see below)
-   - `scripts/mgstudio-sdk-install`
+1. Install the SDK (recommended even for repo dev):
+   - `./mgstudio-install.sh`
 2. Create a new game:
-   - `./mgstudio new mygame`
-   - For local engine development: `./mgstudio new mygame --local-engine`
-3. Build the game cart (Wasm GC):
+   - `mgstudio new mygame`
+   - For local engine development (path dependency): `./mgstudio-dev new mygame --local-engine`
+3. Build the game cart (Wasm GC, from the game directory):
    - `cd mygame && moon build --release --target wasm-gc`
 4. Run:
-   - Native: `./mgstudio run -g mygame/moon.game.json`
-   - Web: `./mgstudio serve -g mygame/moon.game.json` (plain HTTP)
+   - Native: `mgstudio run -g mygame/moon.game.json`
+   - Web: `mgstudio serve -g mygame/moon.game.json` (plain HTTP)
 
 ### Common commands
 
-- `./mgstudio gen` — generate `ecs.g.mbt` files from `#ecs.component` / `#ecs.resource`
-- `./mgstudio new <name>` — scaffold a game project
-- `./mgstudio run` — run a game in the native runtime
-- `./mgstudio serve` — serve the web runtime and run a game in the browser
+- `mgstudio gen` — generate `ecs.g.mbt` files from `#ecs.component` / `#ecs.resource`
+- `mgstudio new <name>` — scaffold a game project
+- `mgstudio run` — run a game in the native runtime
+- `mgstudio serve` — serve the web runtime and run a game in the browser
+
+Repo development wrapper:
+
+- `./mgstudio-dev ...` builds `mgstudio-cli` (release) and runs it
 
 Project quality gates (per module):
 
@@ -49,27 +60,6 @@ The CLI uses `sdkroot` to locate:
 - `share/mgstudio/assets/` (engine default assets, including built-in shaders)
 - `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle for `serve`)
 - `lib/libwgpu_native.dylib` (native runtime dependency; current focus is `darwin-arm64`)
-
-### Installing `libwgpu_native.dylib` (macOS)
-
-`wgpu_mbt` loads `libwgpu_native.dylib` at runtime via `dlopen`. The mgstudio SDK bundles this dylib at:
-
-- `<sdkroot>/lib/libwgpu_native.dylib`
-
-Recommended way to obtain the dylib is via `Milky2018/wgpu_mbt` prebuilt release assets.
-`scripts/mgstudio-sdk-build` can also auto-fetch it (default) when it is missing.
-
-```bash
-moon new _tmp_wgpu && cd _tmp_wgpu
-moon add Milky2018/wgpu_mbt   # downloads to $HOME/.local/lib/libwgpu_native.dylib (postadd hook)
-ls -la "$HOME/.local/lib/libwgpu_native.dylib"
-```
-
-Then build the SDK:
-
-```bash
-scripts/mgstudio-sdk-build
-```
 
 ### Notes
 

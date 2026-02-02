@@ -11,23 +11,29 @@ Developer CLI for mgstudio (native + web).
 
 ## Usage
 
-From the repo root (recommended), use the wrapper script:
+If you installed mgstudio via the SDK, use the `mgstudio` command:
 
 ```bash
-./mgstudio --help
+mgstudio --help
 
 # Run codegen in your game/module directory (must contain moon.mod.json).
-(cd mgstudio-engine && ../mgstudio gen)
-(cd mgstudio-engine && ../mgstudio gen --check)
+(cd mgstudio-engine && mgstudio gen)
+(cd mgstudio-engine && mgstudio gen --check)
 
 # Build a game wasm (example).
 moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
 
 # Run (calls export: game_app). The runner reads ./moon.game.json (or use --game).
-./mgstudio run --game mgstudio-engine/examples/2d/sprite/moon.game.json
+mgstudio run --game mgstudio-engine/examples/2d/sprite/moon.game.json
 
 # Serve (browser). The runner reads ./moon.game.json (or use --game).
-./mgstudio serve --game mgstudio-engine/examples/2d/sprite/moon.game.json
+mgstudio serve --game mgstudio-engine/examples/2d/sprite/moon.game.json
+```
+
+From this repo root, use the dev wrapper:
+
+```bash
+./mgstudio-dev --help
 ```
 
 ## Running Example Games
@@ -61,23 +67,23 @@ Notes:
 
 ```bash
 # auto-discover ./moon.game.json from current directory upwards
-./mgstudio run
+mgstudio run
 
 # or specify a config path explicitly
-./mgstudio run --game path/to/moon.game.json
+mgstudio run --game path/to/moon.game.json
 ```
 
 ### Web (Browser)
 
 ```bash
 # auto-discover ./moon.game.json from current directory upwards
-./mgstudio serve
+mgstudio serve
 
 # or specify a config path explicitly
-./mgstudio serve --game path/to/moon.game.json
+mgstudio serve --game path/to/moon.game.json
 
 # optional: override bind/port
-./mgstudio serve --game path/to/moon.game.json --port 8099
+mgstudio serve --game path/to/moon.game.json --port 8099
 ```
 
 ### Non-Repo Layouts (Distributed Games)
@@ -87,7 +93,7 @@ Notes:
 `mgstudio serve` uses a staged served root and copies `mgstudio-runtime-web.js`
 from the SDK into the served directory (offline by default).
 
-## Install (Local Symlink)
+## Install
 
 ### Install (SDK)
 
@@ -98,36 +104,11 @@ contains:
 - `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle, for `mgstudio serve`)
 - `lib/libwgpu_native.dylib` (native rendering via `wgpu_mbt`)
 
-For local development you can build and install a SDK directory into the default
-location `$HOME/.local/share/mgstudio/current`:
+Recommended install (darwin-arm64):
 
 ```bash
-# Build the SDK dir (requires a local libwgpu_native.dylib).
-./scripts/mgstudio-sdk-build --wgpu-lib /path/to/libwgpu_native.dylib
-
-# Install it into $HOME/.local/share/mgstudio/current and link mgstudio into ~/.local/bin.
-./scripts/mgstudio-sdk-install --from ./_out/sdk/mgstudio-sdk-*-darwin-arm64
-```
-
-### Install (Repo Symlink, Dev Only)
-
-For a convenient `mgstudio` on your `PATH`, install a symlink to the repo wrapper:
-
-```bash
-./scripts/mgstudio-install
+curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/download/mgstudio-install.sh | bash
 mgstudio --help
-```
-
-By default this installs to `$XDG_BIN_HOME` or `~/.local/bin`. You can customize the target directory:
-
-```bash
-./scripts/mgstudio-install --bin-dir "$HOME/.local/bin"
-```
-
-To uninstall:
-
-```bash
-./scripts/mgstudio-install --uninstall
 ```
 
 Or build and run the binary directly:
