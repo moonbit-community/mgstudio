@@ -16,7 +16,7 @@ An experimental Bevy-aligned game engine and tooling stack written in MoonBit.
 ### Quick start (local development)
 
 1. Build and install an SDK (assets + web runtime JS + native wgpu dylib):
-   - `scripts/mgstudio-sdk-build`
+   - `scripts/mgstudio-sdk-build` (requires `libwgpu_native.dylib`, see below)
    - `scripts/mgstudio-sdk-install`
 2. Create a new game:
    - `./mgstudio new mygame`
@@ -50,8 +50,27 @@ The CLI uses `sdkroot` to locate:
 - `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle for `serve`)
 - `lib/libwgpu_native.dylib` (native runtime dependency; current focus is `darwin-arm64`)
 
+### Installing `libwgpu_native.dylib` (macOS)
+
+`wgpu_mbt` loads `libwgpu_native.dylib` at runtime via `dlopen`. The mgstudio SDK bundles this dylib at:
+
+- `<sdkroot>/lib/libwgpu_native.dylib`
+
+Recommended way to obtain the dylib is via `Milky2018/wgpu_mbt` prebuilt release assets:
+
+```bash
+moon new _tmp_wgpu && cd _tmp_wgpu
+moon add Milky2018/wgpu_mbt   # downloads to $HOME/.local/lib/libwgpu_native.dylib (postadd hook)
+ls -la "$HOME/.local/lib/libwgpu_native.dylib"
+```
+
+Then build the SDK:
+
+```bash
+scripts/mgstudio-sdk-build --wgpu-lib "$HOME/.local/lib/libwgpu_native.dylib"
+```
+
 ### Notes
 
 - Planning artifacts live under `.private/` and should not be committed.
 - Use `bd` for task tracking.
-

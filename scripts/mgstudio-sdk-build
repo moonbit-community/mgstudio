@@ -29,10 +29,11 @@ The SDK layout is:
   <SDK_DIR>/share/mgstudio/manifest.json
 
 Usage:
-  scripts/mgstudio-sdk-build --wgpu-lib <path> [--out <dir>] [--version <v>] [--no-tar]
+  scripts/mgstudio-sdk-build [--wgpu-lib <path>] [--out <dir>] [--version <v>] [--no-tar]
 
 Options:
-  --wgpu-lib <path>  Path to libwgpu_native.dylib to include in the SDK (required)
+  --wgpu-lib <path>  Path to libwgpu_native.dylib to include in the SDK
+                     (default: $HOME/.local/lib/libwgpu_native.dylib)
   --out <dir>        Output directory (default: ./_out/sdk)
   --version <v>      SDK version string (default: git describe --tags --always)
   --no-tar           Do not create a .tar.gz alongside the SDK directory
@@ -41,7 +42,7 @@ EOF
 }
 
 OUT_DIR="./_out/sdk"
-WGPU_LIB=""
+WGPU_LIB="${HOME}/.local/lib/libwgpu_native.dylib"
 SDK_VERSION=""
 NO_TAR=0
 
@@ -75,12 +76,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "${WGPU_LIB}" ]]; then
-  echo "Missing required option: --wgpu-lib <path>" >&2
-  exit 2
-fi
 if [[ ! -f "${WGPU_LIB}" ]]; then
-  echo "File not found: --wgpu-lib ${WGPU_LIB}" >&2
+  cat >&2 <<EOF
+libwgpu_native not found: ${WGPU_LIB}
+
+Install it first, then re-run mgstudio-sdk-build.
+
+Recommended (uses Milky2018/wgpu_mbt postadd to download a prebuilt dylib):
+  moon new _tmp_wgpu && cd _tmp_wgpu
+  moon add Milky2018/wgpu_mbt
+  ls -la "${HOME}/.local/lib/libwgpu_native.dylib"
+
+Or build wgpu-native yourself and copy the resulting dylib to:
+  ${HOME}/.local/lib/libwgpu_native.dylib
+
+You can also pass an explicit path:
+  scripts/mgstudio-sdk-build --wgpu-lib /absolute/path/to/libwgpu_native.dylib
+EOF
   exit 2
 fi
 
