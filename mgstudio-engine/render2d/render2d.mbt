@@ -535,6 +535,9 @@ pub struct SpriteBundle {
   anchor : Anchor
   transform : @math.Transform
   layers : RenderLayers
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
 }
 
 ///|
@@ -547,6 +550,9 @@ pub fn SpriteBundle::new(
     anchor: Anchor::default(),
     transform,
     layers: RenderLayers::default(),
+    visibility: @visibility.Visibility::Inherited,
+    inherited_visibility: @visibility.InheritedVisibility::new(true),
+    view_visibility: @visibility.ViewVisibility::new(true),
   }
 }
 
@@ -556,7 +562,15 @@ pub fn SpriteBundle::new_with_layers(
   transform : @math.Transform,
   layers : RenderLayers,
 ) -> SpriteBundle {
-  SpriteBundle::{ sprite, anchor: Anchor::default(), transform, layers }
+  SpriteBundle::{
+    sprite,
+    anchor: Anchor::default(),
+    transform,
+    layers,
+    visibility: @visibility.Visibility::Inherited,
+    inherited_visibility: @visibility.InheritedVisibility::new(true),
+    view_visibility: @visibility.ViewVisibility::new(true),
+  }
 }
 
 ///|
@@ -639,6 +653,9 @@ pub struct Mesh2dBundle {
   material : ColorMaterial
   transform : @math.Transform
   layers : RenderLayers
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
 }
 
 ///|
@@ -647,7 +664,15 @@ pub fn Mesh2dBundle::new(
   material : ColorMaterial,
   transform : @math.Transform,
 ) -> Mesh2dBundle {
-  Mesh2dBundle::{ mesh, material, transform, layers: RenderLayers::default() }
+  Mesh2dBundle::{
+    mesh,
+    material,
+    transform,
+    layers: RenderLayers::default(),
+    visibility: @visibility.Visibility::Inherited,
+    inherited_visibility: @visibility.InheritedVisibility::new(true),
+    view_visibility: @visibility.ViewVisibility::new(true),
+  }
 }
 
 ///|
@@ -657,7 +682,15 @@ pub fn Mesh2dBundle::new_with_layers(
   transform : @math.Transform,
   layers : RenderLayers,
 ) -> Mesh2dBundle {
-  Mesh2dBundle::{ mesh, material, transform, layers }
+  Mesh2dBundle::{
+    mesh,
+    material,
+    transform,
+    layers,
+    visibility: @visibility.Visibility::Inherited,
+    inherited_visibility: @visibility.InheritedVisibility::new(true),
+    view_visibility: @visibility.ViewVisibility::new(true),
+  }
 }
 
 ///|
@@ -899,7 +932,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 
 ///|
 pub fn[
-  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform,
+  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility,
 ] SpriteBundle::spawn(
   self : SpriteBundle,
   world : W,
@@ -909,6 +942,21 @@ pub fn[
   Has_Sprite::get_sprite_store(world).insert(e, self.sprite, tick)
   Has_Anchor::get_anchor_store(world).insert(e, self.anchor, tick)
   Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
+  @visibility.Has_Visibility::get_visibility_store(world).insert(
+    e,
+    self.visibility,
+    tick,
+  )
+  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
+    e,
+    self.inherited_visibility,
+    tick,
+  )
+  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
+    e,
+    self.view_visibility,
+    tick,
+  )
   @math.Has_Transform::get_transform_store(world).insert(
     e,
     self.transform,
@@ -941,7 +989,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform,
+  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility,
 ] Mesh2dBundle::spawn(
   self : Mesh2dBundle,
   world : W,
@@ -955,6 +1003,21 @@ pub fn[
     tick,
   )
   Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
+  @visibility.Has_Visibility::get_visibility_store(world).insert(
+    e,
+    self.visibility,
+    tick,
+  )
+  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
+    e,
+    self.inherited_visibility,
+    tick,
+  )
+  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
+    e,
+    self.view_visibility,
+    tick,
+  )
   @math.Has_Transform::get_transform_store(world).insert(
     e,
     self.transform,
@@ -1149,7 +1212,7 @@ fn render2d_sorted_camera_indices(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] render_extract_system(
   world : W,
 ) -> Unit {
@@ -1164,6 +1227,9 @@ pub fn[
   let projection_store = Has_Projection::get_projection_store(world)
   let target_store = Has_RenderTarget::get_render_target_store(world)
   let layers_store = Has_RenderLayers::get_render_layers_store(world)
+  let view_visibility_store = @visibility.Has_ViewVisibility::get_view_visibility_store(
+    world,
+  )
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let global_store = @transform.Has_GlobalTransform::get_global_transform_store(
     world,
@@ -1231,6 +1297,9 @@ pub fn[
   let sprite_store = Has_Sprite::get_sprite_store(world)
   let anchor_store = Has_Anchor::get_anchor_store(world)
   sprite_store.for_each(fn(entity, sprite) {
+    if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
+      return
+    }
     let anchor = match anchor_store.get(entity) {
       Some(a) => a
       None => Anchor::default()
@@ -1278,6 +1347,9 @@ pub fn[
   let gpu_mesh_store = Has_GpuMesh2d::get_gpu_mesh2d_store(world)
   let material_store = Has_ColorMaterial::get_color_material_store(world)
   mesh_store.for_each(fn(entity, _mesh) {
+    if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
+      return
+    }
     guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
     guard material_store.get(entity) is Some(mat) else { return }
     let layers = match layers_store.get(entity) {
@@ -1923,7 +1995,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

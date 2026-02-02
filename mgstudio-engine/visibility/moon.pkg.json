@@ -1,7 +1,12 @@
 {
 
   "import": [
-    "Milky2018/mgstudio/core"
+    "Milky2018/mgstudio/app",
+    "Milky2018/mgstudio/core",
+    "Milky2018/mgstudio/hierarchy"
+  ],
+  "test-import": [
+    "Milky2018/mgstudio/ecs_world",
+    "Milky2018/mgstudio/transform"
   ]
 }
-

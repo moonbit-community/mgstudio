@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
 }
 
 // Values
@@ -31,7 +32,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 
 pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -41,7 +42,7 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @mat
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld] render_extract_system(W) -> Unit
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render_extract_system(W) -> Unit
 
 pub fn[W] render_prepare_system(W) -> Unit
 
@@ -232,10 +233,13 @@ pub struct Mesh2dBundle {
   material : ColorMaterial
   transform : @math.Transform
   layers : RenderLayers
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
 }
 pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
-pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform] Mesh2dBundle::spawn(Self, W) -> @core.Entity
+pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility] Mesh2dBundle::spawn(Self, W) -> @core.Entity
 
 pub struct OrthographicProjection {
   scale : Float
@@ -299,10 +303,13 @@ pub struct SpriteBundle {
   anchor : Anchor
   transform : @math.Transform
   layers : RenderLayers
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
 }
 pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
-pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform] SpriteBundle::spawn(Self, W) -> @core.Entity
+pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility] SpriteBundle::spawn(Self, W) -> @core.Entity
 
 pub struct Viewport {
   physical_position : @math.IVec2

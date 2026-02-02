@@ -2,13 +2,19 @@
 package "Milky2018/mgstudio/visibility"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/hierarchy",
 }
 
 // Values
 pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
+
+pub fn[W : Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld] visibility_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn[W : Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld] visibility_propagate_system(W) -> Unit
 
 // Errors
 
