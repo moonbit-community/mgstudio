@@ -72,20 +72,74 @@ jobs:
           INPUT_SDK_VERSION: ${{ inputs.sdk_version }}
         run: |
           set -euo pipefail
-          version="${INPUT_SDK_VERSION:-${RELEASE_TAG}}"
-          if [[ -z "${version}" ]]; then
+          raw="${INPUT_SDK_VERSION:-${RELEASE_TAG}}"
+          if [[ -z "${raw}" ]]; then
             echo "Unable to determine SDK version (missing release tag and sdk_version input)" >&2
             exit 1
           fi
+
+          # Release tags are usually `vX.Y.Z`, but we want filenames to be `X.Y.Z`.
+          version="${raw#v}"
 
           out="${RUNNER_TEMP}/sdk-out"
           rm -rf "${out}"
           mkdir -p "${out}"
 
-          ./scripts/mgstudio-sdk-build \
-            --wgpu-lib "${WGPU_NATIVE_LIB}" \
-            --out "${out}" \
-            --version "${version}"
+          sdk_dir="${out}/mgstudio-sdk-${version}-darwin-arm64"
+          rm -rf "${sdk_dir}"
+          mkdir -p "${sdk_dir}/bin" "${sdk_dir}/lib" "${sdk_dir}/share/mgstudio"
+
+          echo "Building mgstudio-cli (native release)..."
+          moon build --release -C "./mgstudio-cli"
+          cli_bin="./mgstudio-cli/_build/native/release/build/main/main.exe"
+          test -x "${cli_bin}"
+          cp "${cli_bin}" "${sdk_dir}/bin/mgstudio"
+          chmod +x "${sdk_dir}/bin/mgstudio"
+
+          echo "Building mgstudio-runtime-web.js..."
+          OUT_DIR="${sdk_dir}/share/mgstudio/web" ./mgstudio-runtime/web/build.sh
+          test -f "${sdk_dir}/share/mgstudio/web/mgstudio-runtime-web.js"
+
+          echo "Copying engine default assets..."
+          mkdir -p "${sdk_dir}/share/mgstudio/assets"
+          cp -R "./mgstudio-engine/assets/." "${sdk_dir}/share/mgstudio/assets/"
+
+          echo "Copying libwgpu_native..."
+          cp "${WGPU_NATIVE_LIB}" "${sdk_dir}/lib/libwgpu_native.dylib"
+
+          echo "Copying license texts..."
+          mkdir -p "${sdk_dir}/share/mgstudio/licenses"
+          cp "./mgstudio-engine/LICENSE" "${sdk_dir}/share/mgstudio/licenses/LICENSE"
+          if [[ -f "./third_party/wgpu-native/LICENSE-APACHE" ]]; then
+            mkdir -p "${sdk_dir}/share/mgstudio/licenses/wgpu-native"
+            cp "./third_party/wgpu-native/LICENSE-APACHE" "${sdk_dir}/share/mgstudio/licenses/wgpu-native/LICENSE-APACHE"
+            cp "./third_party/wgpu-native/LICENSE-MIT" "${sdk_dir}/share/mgstudio/licenses/wgpu-native/LICENSE-MIT"
+          fi
+          if [[ -f "./docs/CREDITS.md" ]]; then
+            cp "./docs/CREDITS.md" "${sdk_dir}/share/mgstudio/licenses/CREDITS.md"
+          fi
+
+          echo "Writing manifest..."
+          git_sha="$(git rev-parse HEAD 2>/dev/null || echo "")"
+          build_date="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          cat >"${sdk_dir}/share/mgstudio/manifest.json" <<EOF
+          {
+            "name": "mgstudio-sdk",
+            "version": "${version}",
+            "platform": "darwin-arm64",
+            "git_sha": "${git_sha}",
+            "build_date": "${build_date}"
+          }
+          EOF
+
+          echo "Packing tarball..."
+          tarball="${out}/mgstudio-sdk-${version}-darwin-arm64.tar.gz"
+          (cd "${out}" && tar -czf "${tarball}" "mgstudio-sdk-${version}-darwin-arm64")
+          test -f "${tarball}"
+
+          echo "Writing SHA256SUMS..."
+          (cd "${out}" && shasum -a 256 "$(basename "${tarball}")" > SHA256SUMS)
+          test -f "${out}/SHA256SUMS"
 
           echo "SDK_OUT=${out}" >> "$GITHUB_ENV"
           echo "SDK_TAR=${out}/mgstudio-sdk-${version}-darwin-arm64.tar.gz" >> "$GITHUB_ENV"
@@ -101,6 +155,7 @@ jobs:
           files: |
             ${{ env.SDK_TAR }}
             ${{ env.SDK_SHA }}
+            mgstudio-install.sh
 
       - name: Upload workflow artifacts
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -110,4 +165,3 @@ jobs:
           path: |
             ${{ env.SDK_TAR }}
             ${{ env.SDK_SHA }}
-
