@@ -148,6 +148,32 @@ pub fn font_rasterize_glyph_id(
   glyph_id : Int,
   smoothing : FontSmoothing,
 ) -> GlyphRaster? {
+  // Default to the "zero bin" for subpixel placement.
+  font_rasterize_glyph_id_subpixel(font, font_size, glyph_id, smoothing, 0, 0)
+}
+
+///|
+/// Rasterize a glyph with a subpixel cache key (cosmic-text compatible).
+///
+/// `subpixel_x/subpixel_y` are bin indices in [0..3], matching
+/// `cosmic-text`/`moon_cosmic` (`Zero/One/Two/Three` → 0/1/2/3).
+pub fn font_rasterize_glyph_id_subpixel(
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  glyph_id : Int,
+  smoothing : FontSmoothing,
+  subpixel_x : Int,
+  subpixel_y : Int,
+) -> GlyphRaster? {
+  fn subpixel_bin_as_double(bin : Int) -> Double {
+    match bin {
+      1 => 0.25
+      2 => 0.5
+      3 => 0.75
+      _ => 0.0
+    }
+  }
+
   if glyph_id <= 0 || glyph_id > 0xFFFF {
     return None
   }
@@ -166,7 +192,12 @@ pub fn font_rasterize_glyph_id(
     .size(font_size.to_double())
     .hint(hint)
     .build()
-  let render = @swash_scale.Render::new([@swash_scale.Source::Outline])
+  let render = @swash_scale.Render::new([@swash_scale.Source::Outline]).offset(
+    @moon_zeno.Vector::new(
+      subpixel_bin_as_double(subpixel_x),
+      subpixel_bin_as_double(subpixel_y),
+    ),
+  )
   let img_opt = render.render(scaler, gid)
   if img_opt is None {
     return None

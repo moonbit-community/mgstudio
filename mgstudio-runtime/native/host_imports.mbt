@@ -518,9 +518,11 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("debug_string failed: " + err.to_string())
-          host_fail("debug_string", err.to_string())
+        _ => {
+          // Avoid calling Error::to_string here: it can trigger a MoonBit native
+          // backend ordering bug in the generated blackbox test harness.
+          @debug.debug("debug_string failed")
+          host_fail("debug_string", "<error>")
         }
       }
     },
@@ -556,9 +558,9 @@ pub fn add_mgstudio_host_imports(
         ctx.window = Some(win)
         ok_extern_ref(HANDLE_BASE + 1)
       } catch {
-        err => {
-          @debug.debug("window_create failed: " + err.to_string())
-          host_fail("window_create", err.to_string())
+        _ => {
+          @debug.debug("window_create failed")
+          host_fail("window_create", "<error>")
         }
       }
     },
@@ -593,10 +595,10 @@ pub fn add_mgstudio_host_imports(
                 0
               } catch {
                 jit_err => {
-                  host_trace("tick jit trapped: " + jit_err.to_string())
-                  raise @runtime.RuntimeError::LinkErrorDetail(
-                    jit_err.to_string(),
-                  )
+                  // Avoid Error::to_string here; see comment in debug_string.
+                  host_trace("tick jit trapped")
+                  jit_err |> ignore // keep the binding for debugging while avoiding to_string
+                  raise @runtime.RuntimeError::LinkErrorDetail("JIT trapped")
                 }
               }
             None =>
@@ -903,9 +905,9 @@ pub fn add_mgstudio_host_imports(
           ok_i32(-1)
         }
       } catch {
-        err => {
-          @debug.debug("asset_load_texture failed: " + err.to_string())
-          host_fail("asset_load_texture", err.to_string())
+        _ => {
+          @debug.debug("asset_load_texture failed")
+          host_fail("asset_load_texture", "<error>")
         }
       }
     },
@@ -939,9 +941,9 @@ pub fn add_mgstudio_host_imports(
           ok_i32(-1)
         }
       } catch {
-        err => {
-          @debug.debug("asset_load_wgsl failed: " + err.to_string())
-          host_fail("asset_load_wgsl", err.to_string())
+        _ => {
+          @debug.debug("asset_load_wgsl failed")
+          host_fail("asset_load_wgsl", "<error>")
         }
       }
     },
@@ -972,9 +974,9 @@ pub fn add_mgstudio_host_imports(
           ok_i32(-1)
         }
       } catch {
-        err => {
-          @debug.debug("asset_load_font failed: " + err.to_string())
-          host_fail("asset_load_font", err.to_string())
+        _ => {
+          @debug.debug("asset_load_font failed")
+          host_fail("asset_load_font", "<error>")
         }
       }
     },
@@ -1080,9 +1082,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("asset_set_texture_sampler failed: " + err.to_string())
-          host_fail("asset_set_texture_sampler", err.to_string())
+        _ => {
+          @debug.debug("asset_set_texture_sampler failed")
+          host_fail("asset_set_texture_sampler", "<error>")
         }
       }
     },
@@ -1117,11 +1119,9 @@ pub fn add_mgstudio_host_imports(
           ok_i32(-1)
         }
       } catch {
-        err => {
-          @debug.debug(
-            "asset_create_dynamic_texture failed: " + err.to_string(),
-          )
-          host_fail("asset_create_dynamic_texture", err.to_string())
+        _ => {
+          @debug.debug("asset_create_dynamic_texture failed")
+          host_fail("asset_create_dynamic_texture", "<error>")
         }
       }
     },
@@ -1286,9 +1286,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_extern_ref(HANDLE_BASE + 2)
       } catch {
-        err => {
-          @debug.debug("gpu_request_device failed: " + err.to_string())
-          host_fail("gpu_request_device", err.to_string())
+        _ => {
+          @debug.debug("gpu_request_device failed")
+          host_fail("gpu_request_device", "<error>")
         }
       }
     },
@@ -1308,9 +1308,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_extern_ref(HANDLE_BASE + 3)
       } catch {
-        err => {
-          @debug.debug("gpu_create_surface failed: " + err.to_string())
-          host_fail("gpu_create_surface", err.to_string())
+        _ => {
+          @debug.debug("gpu_create_surface failed")
+          host_fail("gpu_create_surface", "<error>")
         }
       }
     },
@@ -1332,9 +1332,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("gpu_configure_surface failed: " + err.to_string())
-          host_fail("gpu_configure_surface", err.to_string())
+        _ => {
+          @debug.debug("gpu_configure_surface failed")
+          host_fail("gpu_configure_surface", "<error>")
         }
       }
     },
@@ -1363,9 +1363,9 @@ pub fn add_mgstudio_host_imports(
         ctx.gpu.unwrap().begin_frame()
         ok_extern_ref(HANDLE_BASE + 4)
       } catch {
-        err => {
-          @debug.debug("gpu_begin_frame failed: " + err.to_string())
-          host_fail("gpu_begin_frame", err.to_string())
+        _ => {
+          @debug.debug("gpu_begin_frame failed")
+          host_fail("gpu_begin_frame", "<error>")
         }
       }
     },
@@ -1405,9 +1405,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("gpu_begin_pass failed: " + err.to_string())
-          host_fail("gpu_begin_pass", err.to_string())
+        _ => {
+          @debug.debug("gpu_begin_pass failed")
+          host_fail("gpu_begin_pass", "<error>")
         }
       }
     },
@@ -1443,9 +1443,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("gpu_end_pass failed: " + err.to_string())
-          host_fail("gpu_end_pass", err.to_string())
+        _ => {
+          @debug.debug("gpu_end_pass failed")
+          host_fail("gpu_end_pass", "<error>")
         }
       }
     },
@@ -1462,9 +1462,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("gpu_end_frame failed: " + err.to_string())
-          host_fail("gpu_end_frame", err.to_string())
+        _ => {
+          @debug.debug("gpu_end_frame failed")
+          host_fail("gpu_end_frame", "<error>")
         }
       }
     },
@@ -1489,9 +1489,9 @@ pub fn add_mgstudio_host_imports(
           ok_i32(-1)
         }
       } catch {
-        err => {
-          @debug.debug("gpu_create_render_target failed: " + err.to_string())
-          host_fail("gpu_create_render_target", err.to_string())
+        _ => {
+          @debug.debug("gpu_create_render_target failed")
+          host_fail("gpu_create_render_target", "<error>")
         }
       }
     },
@@ -1587,9 +1587,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("gpu_draw_mesh failed: " + err.to_string())
-          host_fail("gpu_draw_mesh", err.to_string())
+        _ => {
+          @debug.debug("gpu_draw_mesh failed")
+          host_fail("gpu_draw_mesh", "<error>")
         }
       }
     },
@@ -1642,9 +1642,9 @@ pub fn add_mgstudio_host_imports(
         }
         ok_i32(0)
       } catch {
-        err => {
-          @debug.debug("gpu_draw_sprite_uv failed: " + err.to_string())
-          host_fail("gpu_draw_sprite_uv", err.to_string())
+        _ => {
+          @debug.debug("gpu_draw_sprite_uv failed")
+          host_fail("gpu_draw_sprite_uv", "<error>")
         }
       }
     },

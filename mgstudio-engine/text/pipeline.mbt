@@ -283,7 +283,7 @@ fn font_smoothing_is_none(smoothing : FontSmoothing) -> Bool {
 fn cosmic_physical_xy(
   glyph : @cosmic.LayoutGlyph,
   font_smoothing : FontSmoothing,
-) -> (Int, Int) {
+) -> (Int, Int, Int, Int) {
   let font_size = glyph.font_size
   let mut x = glyph.x
   let mut y = glyph.y
@@ -297,7 +297,7 @@ fn cosmic_physical_xy(
   }
   let pos_x = x + font_size * x_offset
   let pos_y = @cosmic.truncf(y - font_size * y_offset)
-  let (_, px, py) = @cosmic.CacheKey::new(
+  let (cache_key, px, py) = @cosmic.CacheKey::new(
     glyph.font_id,
     glyph.glyph_id,
     font_size,
@@ -305,7 +305,16 @@ fn cosmic_physical_xy(
     glyph.font_weight,
     glyph.cache_key_flags,
   )
-  (px, py)
+  fn bin_index(bin : @cosmic.SubpixelBin) -> Int {
+    match bin {
+      @cosmic.SubpixelBin::Zero => 0
+      @cosmic.SubpixelBin::One => 1
+      @cosmic.SubpixelBin::Two => 2
+      @cosmic.SubpixelBin::Three => 3
+    }
+  }
+
+  (px, py, bin_index(cache_key.x_bin), bin_index(cache_key.y_bin))
 }
 
 ///|
@@ -451,7 +460,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         maybe_run_geom = Some(RunGeometry::{ ..rg0, bounds, })
       }
       let font_smoothing = entities[span_index].font_smoothing
-      let (phys_x_i, phys_y_i) = cosmic_physical_xy(
+      let (phys_x_i, phys_y_i, subpixel_x, subpixel_y) = cosmic_physical_xy(
         layout_glyph0, font_smoothing,
       )
       let font_handle_id_opt = cosmic_font_handle_id_for_font_id(
@@ -467,18 +476,24 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         continue
       }
       let font_handle = @asset.Handle::new(font_handle_id)
-      let raster_opt = font_rasterize_glyph_id(
+      let raster_opt = font_rasterize_glyph_id_subpixel(
         font_handle,
         layout_glyph0.font_size,
         layout_glyph0.glyph_id,
         font_smoothing,
+        subpixel_x,
+        subpixel_y,
       )
       if raster_opt is None {
         missing_glyph = true
         continue
       }
       let raster = if raster_opt is Some(v) { v } else { continue }
-      let cache_key = GlyphCacheKey::new(raster.glyph_id, 0, 0)
+      let cache_key = GlyphCacheKey::new(
+        raster.glyph_id,
+        subpixel_x,
+        subpixel_y,
+      )
       let font_key = FontAtlasKey::new(
         font_handle,
         layout_glyph0.font_size,

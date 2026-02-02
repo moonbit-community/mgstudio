@@ -18,6 +18,8 @@ pub fn font_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothin
 
 pub fn font_rasterize_glyph_id(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
 
+pub fn font_rasterize_glyph_id_subpixel(@asset.Handle[@asset.Font], Float, Int, FontSmoothing, Int, Int) -> GlyphRaster?
+
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
 pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(@app.App[W]) -> @app.App[W]
