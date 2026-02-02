@@ -107,7 +107,15 @@ async fn run_native(opts : RunOptions) -> Unit {
   // Stage an overlay assets dir so the native runtime sees both game assets and
   // SDK-provided engine assets (e.g. built-in shaders).
   let stage_root = path_join(cfg.dir, ".mgstudio/run")
-  @fs.mkdir(stage_root, permission=0o755, recursive=true)
+  if @fs.exists(stage_root) {
+    if @fs.kind(stage_root, follow_symlink=true) != @fs.FileKind::Directory {
+      raise RunError::InvalidArgs(
+        "Expected a directory, but found a non-directory path at: " + stage_root,
+      )
+    }
+  } else {
+    @fs.mkdir(stage_root, permission=0o755, recursive=true)
+  }
   let overlay_assets_dir = path_join(stage_root, "_mgstudio_assets")
   let game_assets_dir = strip_dir_prefix(assets_source)
   stage_assets_overlay(
