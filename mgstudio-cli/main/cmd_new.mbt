@@ -103,9 +103,8 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     // For local development: point to the repo working tree.
     "\"deps\": { \"Milky2018/mgstudio\": { \"path\": \"../mgstudio-engine\" } },\n"
   } else {
-    "\"deps\": { \"Milky2018/mgstudio\": \"" +
-    latest_mgstudio_version() +
-    "\" },\n"
+    // For user projects: let `moon add` resolve the latest registry version.
+    "\"deps\": {},\n"
   }
   let mod_json = "{\n" +
     "  \"name\": \"" +
@@ -122,6 +121,9 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     "  \"preferred-target\": \"wasm-gc\"\n" +
     "}\n"
   write_file_text(mod_json_path, mod_json)
+  if !use_local_engine {
+    run_process_checked("moon", ["add", "Milky2018/mgstudio"], cwd=project_dir)
+  }
 
   // Root package: export `game_app` (no `main` function needed).
   write_file_text(
@@ -150,7 +152,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   // Replace the root demo with a minimal rotating sprite example.
   write_file_text(
     path_join(project_dir, project_name + ".mbt"),
-    render_rotation_demo(use_local_engine),
+    render_rotation_demo(),
   )
   @fs.remove(path_join(project_dir, project_name + "_test.mbt")) catch {
     _ => ()
@@ -200,104 +202,50 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
 }
 
 ///|
-
-///|
-const DEFAULT_MGSTUDIO_VERSION : String = "0.1.0"
-
-///|
-fn latest_mgstudio_version() -> String {
-  // Keep `mgstudio new` deterministic by default. Update this constant when we
-  // bump `Milky2018/mgstudio` on the registry.
-  DEFAULT_MGSTUDIO_VERSION
-}
-
-///|
-fn render_rotation_demo(use_local_engine : Bool) -> String {
-  if use_local_engine {
-    // This matches the API in the mgstudio repo working tree.
-    "///|\n" +
-    "pub fn game_app() -> Unit {\n" +
-    "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
-    "  @app.App::new(@ecs_world.World::new())\n" +
-    "  .add_plugins(plugins)\n" +
-    "  .add_startup_system(rotation_setup)\n" +
-    "  .add_system(rotation_update)\n" +
-    "  .run()\n" +
-    "}\n\n" +
-    "///|\n" +
-    "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +
-    "  let asset_server = @asset.AssetServer::new()\n" +
-    "  let texture = asset_server.load(\"branding/icon.png\")\n" +
-    "  let sprite = @render2d.Sprite::from_image(texture)\n" +
-    "  let transform = @math.Transform::identity()\n" +
-    "  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore\n" +
-    "  let camera = @render2d.Camera::default()\n" +
-    "  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world) |> ignore\n" +
-    "}\n\n" +
-    "///|\n" +
-    "fn rotation_update(world : @ecs_world.World) -> Unit {\n" +
-    "  let delta_secs = @time.time_delta_seconds()\n" +
-    "  let speed = 1.0F\n" +
-    "  let tick = @core.ChangeTickWorld::read_change_tick(world)\n" +
-    "  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)\n" +
-    "  let transform_store = @math.Has_Transform::get_transform_store(world)\n" +
-    "  let entities : Array[(@core.Entity, @math.Transform)] = []\n" +
-    "  @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {\n" +
-    "    entities.push((entity, transform))\n" +
-    "  })\n" +
-    "  for entry in entities {\n" +
-    "    let transform = entry.1\n" +
-    "    let next_rotation_z = transform.rotation_z() + speed * delta_secs\n" +
-    "    let next_transform = @math.Transform::from_xy_rotation_scale(\n" +
-    "      @math.Vec2::new(transform.translation.x, transform.translation.y),\n" +
-    "      next_rotation_z,\n" +
-    "      @math.Vec2::new(transform.scale.x, transform.scale.y),\n" +
-    "      z=transform.translation.z,\n" +
-    "    )\n" +
-    "    transform_store.set(entry.0, next_transform, tick) |> ignore\n" +
-    "  }\n" +
-    "}\n"
-  } else {
-    // This matches Milky2018/mgstudio@\{DEFAULT_MGSTUDIO_VERSION} on the registry.
-    "///|\n" +
-    "pub fn game_app() -> Unit {\n" +
-    "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
-    "  @app.App::new(@ecs_world.World::new())\n" +
-    "  .add_plugins(plugins)\n" +
-    "  .add_startup_system(rotation_setup)\n" +
-    "  .add_system(rotation_update)\n" +
-    "  .run()\n" +
-    "}\n\n" +
-    "///|\n" +
-    "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +
-    "  let asset_server = @asset.AssetServer::new()\n" +
-    "  let texture = asset_server.load(\"branding/icon.png\")\n" +
-    "  let sprite = @render2d.Sprite::new(@render2d.Color::white())\n" +
-    "  let transform = @math.Transform::identity()\n" +
-    "  @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore\n" +
-    "  let camera = @render2d.Camera2d::default()\n" +
-    "  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world) |> ignore\n" +
-    "}\n\n" +
-    "///|\n" +
-    "fn rotation_update(world : @ecs_world.World) -> Unit {\n" +
-    "  let delta_secs = @time.time_delta_seconds()\n" +
-    "  let speed = 1.0F\n" +
-    "  let tick = @core.ChangeTickWorld::read_change_tick(world)\n" +
-    "  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)\n" +
-    "  let transform_store = @math.Has_Transform::get_transform_store(world)\n" +
-    "  let entities : Array[(@core.Entity, @math.Transform)] = []\n" +
-    "  @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {\n" +
-    "    entities.push((entity, transform))\n" +
-    "  })\n" +
-    "  for entry in entities {\n" +
-    "    let transform = entry.1\n" +
-    "    let next_transform = @math.Transform::new(\n" +
-    "      transform.translation,\n" +
-    "      transform.rotation + speed * delta_secs,\n" +
-    "      transform.scale,\n" +
-    "    )\n" +
-    "    transform_store.set(entry.0, next_transform, tick) |> ignore\n" +
-    "  }\n" +
-    "}\n"
-  }
+fn render_rotation_demo() -> String {
+  // This matches the API in the mgstudio repo working tree examples.
+  // Dependency resolution is controlled by `--local-engine` (path) vs `moon add`
+  // (latest registry).
+  "///|\n" +
+  "pub fn game_app() -> Unit {\n" +
+  "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
+  "  @app.App::new(@ecs_world.World::new())\n" +
+  "  .add_plugins(plugins)\n" +
+  "  .add_startup_system(rotation_setup)\n" +
+  "  .add_system(rotation_update)\n" +
+  "  .run()\n" +
+  "}\n\n" +
+  "///|\n" +
+  "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +
+  "  let asset_server = @asset.AssetServer::new()\n" +
+  "  let texture = asset_server.load(\"branding/icon.png\")\n" +
+  "  let sprite = @render2d.Sprite::from_image(texture)\n" +
+  "  let transform = @math.Transform::identity()\n" +
+  "  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore\n" +
+  "  let camera = @render2d.Camera::default()\n" +
+  "  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world) |> ignore\n" +
+  "}\n\n" +
+  "///|\n" +
+  "fn rotation_update(world : @ecs_world.World) -> Unit {\n" +
+  "  let delta_secs = @time.time_delta_seconds()\n" +
+  "  let speed = 1.0F\n" +
+  "  let tick = @core.ChangeTickWorld::read_change_tick(world)\n" +
+  "  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)\n" +
+  "  let transform_store = @math.Has_Transform::get_transform_store(world)\n" +
+  "  let entities : Array[(@core.Entity, @math.Transform)] = []\n" +
+  "  @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {\n" +
+  "    entities.push((entity, transform))\n" +
+  "  })\n" +
+  "  for entry in entities {\n" +
+  "    let transform = entry.1\n" +
+  "    let next_rotation_z = transform.rotation_z() + speed * delta_secs\n" +
+  "    let next_transform = @math.Transform::from_xy_rotation_scale(\n" +
+  "      @math.Vec2::new(transform.translation.x, transform.translation.y),\n" +
+  "      next_rotation_z,\n" +
+  "      @math.Vec2::new(transform.scale.x, transform.scale.y),\n" +
+  "      z=transform.translation.z,\n" +
+  "    )\n" +
+  "    transform_store.set(entry.0, next_transform, tick) |> ignore\n" +
+  "  }\n" +
+  "}\n"
 }
