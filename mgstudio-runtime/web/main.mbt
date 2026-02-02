@@ -277,7 +277,9 @@ async fn main_async() -> Unit {
     let assets_source_final = if assets_source != "" {
       assets_source
     } else {
-      "dir:./assets/"
+      // `mgstudio serve` stages the final overlay assets under `./_mgstudio_assets/`.
+      // Default to it so opening the served root without query params works.
+      "dir:./_mgstudio_assets/"
     }
     let data_source_final = if data_source != "" {
       data_source

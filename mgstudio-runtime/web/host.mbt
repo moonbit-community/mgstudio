@@ -2518,9 +2518,9 @@ pub fn create_host(
 ) -> @js.Any {
   let assets_source : @rtcore.SourceSpec = @rtcore.parse_url_source(
     Some(assets_source_spec),
-    "./assets/",
+    "./_mgstudio_assets/",
   ) catch {
-    _ => @rtcore.url_source("./assets/")
+    _ => @rtcore.url_source("./_mgstudio_assets/")
   }
   let data_source : @rtcore.SourceSpec = @rtcore.parse_idb_source(
     Some(data_source_spec),
