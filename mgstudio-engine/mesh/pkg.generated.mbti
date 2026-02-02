@@ -10,6 +10,11 @@ import {
 // Errors
 
 // Types and methods
+pub struct Mesh {
+  geometry2d : Mesh2dGeometry
+}
+pub fn Mesh::from_2d_geometry(Mesh2dGeometry) -> Self
+
 pub struct Mesh2dGeometry {
   positions : Array[@math.Vec2]
   uvs : Array[@math.Vec2]

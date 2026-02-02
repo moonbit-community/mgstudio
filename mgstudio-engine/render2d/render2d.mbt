@@ -311,17 +311,46 @@ pub(all) enum RenderTarget {
 }
 
 ///|
+pub struct ColorMaterialAsset {
+  color : Color
+}
+
+///|
+pub fn ColorMaterialAsset::new(color : Color) -> ColorMaterialAsset {
+  ColorMaterialAsset::{ color, }
+}
+
+///|
+let color_material_assets : Ref[@asset.Assets[ColorMaterialAsset]] = Ref::new(
+  @asset.Assets::new(),
+)
+
+///|
+fn color_material_get(
+  handle : @asset.Handle[ColorMaterialAsset],
+) -> ColorMaterialAsset? {
+  color_material_assets.val.get(handle)
+}
 
 ///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct ColorMaterial {
-  color : Color
+  handle : @asset.Handle[ColorMaterialAsset]
 }
 
 ///|
 pub fn ColorMaterial::new(color : Color) -> ColorMaterial {
-  ColorMaterial::{ color, }
+  let handle = color_material_assets.val.add(ColorMaterialAsset::new(color))
+  ColorMaterial::{ handle, }
+}
+
+///|
+pub fn ColorMaterial::color(self : ColorMaterial) -> Color {
+  match color_material_get(self.handle) {
+    Some(mat) => mat.color
+    None => Color::white()
+  }
 }
 
 ///|
@@ -366,32 +395,126 @@ pub fn Rectangle::default() -> Rectangle {
 }
 
 ///|
-pub(all) enum Mesh2dKind {
-  Capsule(Capsule2d)
-  Rectangle(Rectangle)
-  Geometry(@mesh.Mesh2dGeometry)
-}
-
-///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Mesh2d {
-  kind : Mesh2dKind
+  mesh : @asset.Handle[@mesh.Mesh]
+}
+
+///|
+let mesh_assets : Ref[@asset.Assets[@mesh.Mesh]] = Ref::new(
+  @asset.Assets::new(),
+)
+
+///|
+fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
+  mesh_assets.val.add(mesh)
+}
+
+///|
+fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
+  mesh_assets.val.get(handle)
+}
+
+///|
+pub fn Mesh2d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh2d {
+  Mesh2d::{ mesh, }
+}
+
+///|
+fn rectangle_to_mesh2d_geometry(rectangle : Rectangle) -> @mesh.Mesh2dGeometry {
+  let hx = rectangle.half_size.x
+  let hy = rectangle.half_size.y
+  let positions = [
+    @math.Vec2::new(-hx, -hy),
+    @math.Vec2::new(hx, -hy),
+    @math.Vec2::new(hx, hy),
+    @math.Vec2::new(-hx, hy),
+  ]
+  let uvs = [
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+  ]
+  let indices = [0, 1, 2, 0, 2, 3]
+  @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
+}
+
+///|
+fn capsule_to_mesh2d_geometry(capsule : Capsule2d) -> @mesh.Mesh2dGeometry {
+  let r = capsule.radius
+  let half = capsule.half_length
+  let mut segments = capsule.segments
+  if segments < 4 {
+    segments = 4
+  }
+  let pi = @math.pi_half() * 2.0F
+  // Build a convex polygon perimeter (CCW), then triangulate as an indexed fan.
+  let perimeter : Array[@math.Vec2] = []
+  // Top arc: theta 0..pi (includes endpoints).
+  for i in 0..<(segments + 1) {
+    let t = Float::from_double(i.to_double()) /
+      Float::from_double(segments.to_double())
+    let theta = t * pi
+    // theta in [0, pi]
+    let x = @math.cos(theta) * r
+    let y = @math.sin(theta) * r + half
+    perimeter.push(@math.Vec2::new(x, y))
+  }
+  // Left side down to bottom arc start.
+  perimeter.push(@math.Vec2::new(-r, -half))
+  // Bottom arc: theta pi..2pi (skip first point to avoid dup).
+  for i in 1..<(segments + 1) {
+    let t = Float::from_double(i.to_double()) /
+      Float::from_double(segments.to_double())
+    let theta = pi + t * pi
+    let x = @math.cos(theta) * r
+    let y = @math.sin(theta) * r - half
+    perimeter.push(@math.Vec2::new(x, y))
+  }
+  // Right side back to start is implicit.
+  let positions : Array[@math.Vec2] = []
+  positions.push(@math.Vec2::new(0.0F, 0.0F)) // center
+  for p in perimeter {
+    positions.push(p)
+  }
+  // Simple UVs based on bounds.
+  let denom_x = if r == 0.0F { 1.0F } else { 2.0F * r }
+  let denom_y = if half + r == 0.0F { 1.0F } else { 2.0F * (half + r) }
+  let uvs : Array[@math.Vec2] = []
+  for p in positions {
+    let u = p.x / denom_x + 0.5F
+    let v = p.y / denom_y + 0.5F
+    uvs.push(@math.Vec2::new(u, v))
+  }
+  let indices : Array[Int] = []
+  let n = perimeter.length()
+  for i in 0..<n {
+    let a = 0
+    let b = 1 + i
+    let c = 1 + (i + 1) % n
+    indices.push(a)
+    indices.push(b)
+    indices.push(c)
+  }
+  @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
 }
 
 ///|
 pub fn Mesh2d::from_capsule(capsule : Capsule2d) -> Mesh2d {
-  Mesh2d::{ kind: Capsule(capsule) }
+  Mesh2d::from_geometry(capsule_to_mesh2d_geometry(capsule))
 }
 
 ///|
 pub fn Mesh2d::from_rectangle(rectangle : Rectangle) -> Mesh2d {
-  Mesh2d::{ kind: Rectangle(rectangle) }
+  Mesh2d::from_geometry(rectangle_to_mesh2d_geometry(rectangle))
 }
 
 ///|
 pub fn Mesh2d::from_geometry(geometry : @mesh.Mesh2dGeometry) -> Mesh2d {
-  Mesh2d::{ kind: Geometry(geometry) }
+  let mesh = @mesh.Mesh::from_2d_geometry(geometry)
+  Mesh2d::new(mesh_asset_add(mesh))
 }
 
 ///|
@@ -837,23 +960,13 @@ pub fn[
     self.transform,
     tick,
   )
-  let mesh_id = match self.mesh.kind {
-    Capsule(capsule) =>
-      @window.host_gpu_create_mesh_capsule(
-        capsule.radius,
-        capsule.half_length,
-        capsule.segments,
-      )
-    Rectangle(rectangle) => {
-      let width = rectangle.half_size.x * 2.0F
-      let height = rectangle.half_size.y * 2.0F
-      @window.host_gpu_create_mesh_rectangle(width, height)
-    }
-    Geometry(geometry) =>
-      match geometry.encode_triangle_positions_csv() {
+  let mesh_id = match mesh_asset_get(self.mesh.mesh) {
+    Some(mesh_asset) =>
+      match mesh_asset.geometry2d.encode_triangle_positions_csv() {
         Some(vertices_csv) =>
           @window.host_gpu_create_mesh_triangles(vertices_csv)
         None => {
+          let geometry = mesh_asset.geometry2d
           let message = match geometry.validate() {
             Some(err) => "Mesh2dGeometry validation failed: " + err.to_string()
             None => "Mesh2dGeometry flatten failed"
@@ -862,6 +975,10 @@ pub fn[
           0
         }
       }
+    None => {
+      @window.host_debug_string("Mesh2d spawn failed: mesh handle not found")
+      0
+    }
   }
   Has_GpuMesh2d::get_gpu_mesh2d_store(world).insert(
     e,
@@ -1179,7 +1296,7 @@ pub fn[
       entity,
       mesh_id: gpu.mesh_id,
       transform,
-      color: mat.color,
+      color: mat.color(),
       layers,
     })
   })

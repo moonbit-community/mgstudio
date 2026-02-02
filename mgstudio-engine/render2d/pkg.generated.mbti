@@ -125,9 +125,15 @@ pub fn Color::new(Float, Float, Float, Float) -> Self
 pub fn Color::white() -> Self
 
 pub struct ColorMaterial {
+  handle : @asset.Handle[ColorMaterialAsset]
+}
+pub fn ColorMaterial::color(Self) -> Color
+pub fn ColorMaterial::new(Color) -> Self
+
+pub struct ColorMaterialAsset {
   color : Color
 }
-pub fn ColorMaterial::new(Color) -> Self
+pub fn ColorMaterialAsset::new(Color) -> Self
 
 pub struct Ellipse2dBuilder {
   id : Int
@@ -214,11 +220,12 @@ pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
 pub struct Mesh2d {
-  kind : Mesh2dKind
+  mesh : @asset.Handle[@mesh.Mesh]
 }
 pub fn Mesh2d::from_capsule(Capsule2d) -> Self
 pub fn Mesh2d::from_geometry(@mesh.Mesh2dGeometry) -> Self
 pub fn Mesh2d::from_rectangle(Rectangle) -> Self
+pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
 
 pub struct Mesh2dBundle {
   mesh : Mesh2d
@@ -229,12 +236,6 @@ pub struct Mesh2dBundle {
 pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
 pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform] Mesh2dBundle::spawn(Self, W) -> @core.Entity
-
-pub(all) enum Mesh2dKind {
-  Capsule(Capsule2d)
-  Rectangle(Rectangle)
-  Geometry(@mesh.Mesh2dGeometry)
-}
 
 pub struct OrthographicProjection {
   scale : Float
