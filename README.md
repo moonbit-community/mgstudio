@@ -56,7 +56,8 @@ The CLI uses `sdkroot` to locate:
 
 - `<sdkroot>/lib/libwgpu_native.dylib`
 
-Recommended way to obtain the dylib is via `Milky2018/wgpu_mbt` prebuilt release assets:
+Recommended way to obtain the dylib is via `Milky2018/wgpu_mbt` prebuilt release assets.
+`scripts/mgstudio-sdk-build` can also auto-fetch it (default) when it is missing.
 
 ```bash
 moon new _tmp_wgpu && cd _tmp_wgpu
@@ -67,7 +68,7 @@ ls -la "$HOME/.local/lib/libwgpu_native.dylib"
 Then build the SDK:
 
 ```bash
-scripts/mgstudio-sdk-build --wgpu-lib "$HOME/.local/lib/libwgpu_native.dylib"
+scripts/mgstudio-sdk-build
 ```
 
 ### Notes
