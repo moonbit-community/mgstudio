@@ -539,6 +539,7 @@ pub fn Mesh2dBundle::new_with_layers(
 
 ///|
 priv struct SpriteInstance {
+  entity : @core.Entity
   transform : @math.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
@@ -568,6 +569,7 @@ priv struct CameraComputed {
 
 ///|
 priv struct MeshInstance {
+  entity : @core.Entity
   mesh_id : Int
   transform : @math.Transform
   color : Color
@@ -889,6 +891,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
 ) -> Unit {
   render_state_ref_mut(world).map(fn(rs) {
     rs.val.extra_sprites.push(SpriteInstance::{
+      entity: @core.Entity::placeholder(),
       transform,
       anchor_offset: @math.Vec2::new(0.0F, 0.0F),
       draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
@@ -1143,6 +1146,7 @@ pub fn[
       draw_scale,
     )
     rs.val.sprites.push(SpriteInstance::{
+      entity,
       transform,
       anchor_offset,
       draw_scale,
@@ -1172,6 +1176,7 @@ pub fn[
         }
     }
     rs.val.meshes.push(MeshInstance::{
+      entity,
       mesh_id: gpu.mesh_id,
       transform,
       color: mat.color,
@@ -1213,94 +1218,126 @@ fn cmp_float(a : Float, b : Float) -> Int {
 }
 
 ///|
-fn sprite_draw_indices(
+priv enum DrawKind {
+  SpriteMain(Int)
+  SpriteExtra(Int)
+  Mesh(Int)
+}
+
+///|
+priv struct DrawItem {
+  kind : DrawKind
+  z : Float
+  // 0 = opaque, 1 = transparent (opaque first for stable blending).
+  phase : Int
+  // Rough pipeline grouping: 0 = sprite, 1 = mesh.
+  pipeline : Int
+  // Batch key for opaque items (e.g. texture id / mesh id).
+  batch : Int
+  // Stable tie-break keys.
+  entity_id : Int
+  entity_generation : Int
+  tie : Int
+}
+
+///|
+fn draw_items_for_layers(
   sprites : Array[SpriteInstance],
+  extra_sprites : Array[SpriteInstance],
+  meshes : Array[MeshInstance],
   layers : RenderLayers,
-) -> Array[Int] {
-  let opaque_indices : Array[Int] = []
-  let transparent : Array[Int] = []
-  let count = sprites.length()
-  for i in 0..<count {
+) -> Array[DrawItem] {
+  let items : Array[DrawItem] = []
+  for i in 0..<sprites.length() {
     let sprite = sprites[i]
     if !sprite.layers.matches(layers) {
       continue
     }
-    if sprite.color.a >= 1.0F {
-      opaque_indices.push(i)
-    } else {
-      transparent.push(i)
-    }
+    let phase = if sprite.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: SpriteMain(i),
+      z: sprite.transform.translation.z,
+      phase,
+      pipeline: 0,
+      batch: sprite.texture.id(),
+      entity_id: sprite.entity.id,
+      entity_generation: sprite.entity.generation,
+      tie: i,
+    })
   }
-  // Opaque sprites can be safely re-ordered to improve batching.
-  opaque_indices.sort_by(fn(a, b) {
-    let za = sprites[a].transform.translation.z
-    let zb = sprites[b].transform.translation.z
-    let cz = cmp_float(za, zb)
+  for i in 0..<extra_sprites.length() {
+    let sprite = extra_sprites[i]
+    if !sprite.layers.matches(layers) {
+      continue
+    }
+    let phase = if sprite.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: SpriteExtra(i),
+      z: sprite.transform.translation.z,
+      phase,
+      pipeline: 0,
+      batch: sprite.texture.id(),
+      entity_id: sprite.entity.id,
+      entity_generation: sprite.entity.generation,
+      // Ensure extra-sprites tie-break after main sprites with the same entity key.
+      tie: 1_000_000 + i,
+    })
+  }
+  for i in 0..<meshes.length() {
+    let mesh = meshes[i]
+    if !mesh.layers.matches(layers) {
+      continue
+    }
+    let phase = if mesh.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: Mesh(i),
+      z: mesh.transform.translation.z,
+      phase,
+      pipeline: 1,
+      batch: mesh.mesh_id,
+      entity_id: mesh.entity.id,
+      entity_generation: mesh.entity.generation,
+      tie: i,
+    })
+  }
+  items.sort_by(fn(a, b) {
+    let cz = cmp_float(a.z, b.z)
     if cz != 0 {
       return cz
     }
-    let ta = sprites[a].texture.id()
-    let tb = sprites[b].texture.id()
-    let c = cmp_int(ta, tb)
-    if c != 0 {
-      c
-    } else {
-      // Tie-break to keep the order deterministic.
-      cmp_int(a, b)
+    let cp = cmp_int(a.phase, b.phase)
+    if cp != 0 {
+      return cp
     }
-  })
-  let out : Array[Int] = []
-  for i in opaque_indices {
-    out.push(i)
-  }
-  // Transparent sprites are sorted by Z for correct 2D layering.
-  transparent.sort_by(fn(a, b) {
-    let za = sprites[a].transform.translation.z
-    let zb = sprites[b].transform.translation.z
-    let cz = cmp_float(za, zb)
-    if cz != 0 {
-      cz
-    } else {
-      // Tie-break to keep the order deterministic.
-      cmp_int(a, b)
+    let cpipe = cmp_int(a.pipeline, b.pipeline)
+    if cpipe != 0 {
+      return cpipe
     }
+    if a.phase == 0 {
+      let cb = cmp_int(a.batch, b.batch)
+      if cb != 0 {
+        return cb
+      }
+    }
+    let ce = cmp_int(a.entity_id, b.entity_id)
+    if ce != 0 {
+      return ce
+    }
+    let cg = cmp_int(a.entity_generation, b.entity_generation)
+    if cg != 0 {
+      return cg
+    }
+    cmp_int(a.tie, b.tie)
   })
-  for i in transparent {
-    out.push(i)
-  }
-  out
+  items
 }
 
 ///|
-fn mesh_draw_indices(
-  meshes : Array[MeshInstance],
-  layers : RenderLayers,
-) -> Array[Int] {
-  let indices : Array[Int] = []
-  let count = meshes.length()
-  for i in 0..<count {
-    if meshes[i].layers.matches(layers) {
-      indices.push(i)
-    }
-  }
-  indices.sort_by(fn(a, b) {
-    let za = meshes[a].transform.translation.z
-    let zb = meshes[b].transform.translation.z
-    let cz = cmp_float(za, zb)
-    if cz != 0 {
-      cz
-    } else {
-      cmp_int(a, b)
-    }
-  })
-  indices
-}
-
-///|
-test "render2d: sprite draw order uses translation.z" {
+test "render2d: unified draw items order sprites and meshes by z" {
   let layers = RenderLayers::default()
   let sprites : Array[SpriteInstance] = [
     SpriteInstance::{
+      entity: @core.Entity::new(2, 0),
       transform: @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
@@ -1315,75 +1352,26 @@ test "render2d: sprite draw order uses translation.z" {
       uv_min: @math.Vec2::new(0.0F, 0.0F),
       uv_max: @math.Vec2::new(1.0F, 1.0F),
     },
-    SpriteInstance::{
+  ]
+  let extra : Array[SpriteInstance] = []
+  let meshes : Array[MeshInstance] = [
+    MeshInstance::{
+      entity: @core.Entity::new(1, 0),
+      mesh_id: 7,
       transform: @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
         z=-1.0F,
       ),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-      texture: @asset.Handle::new(1),
-      layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-    },
-    // Transparent sprite at z=0 should be drawn after opaque sprites at z=0.
-    SpriteInstance::{
-      transform: @math.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(0.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=0.0F,
-      ),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::new(1.0F, 1.0F, 1.0F, 0.5F),
-      texture: @asset.Handle::new(3),
-      layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-    },
-  ]
-  let order = sprite_draw_indices(sprites, layers)
-  let ok = order.length() == 3 &&
-    order[0] == 1 &&
-    order[1] == 0 &&
-    order[2] == 2
-  inspect(ok, content="true")
-}
-
-///|
-test "render2d: mesh draw order uses translation.z" {
-  let layers = RenderLayers::default()
-  let meshes : Array[MeshInstance] = [
-    MeshInstance::{
-      mesh_id: 1,
-      transform: @math.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(0.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=2.0F,
-      ),
-      color: Color::white(),
-      layers,
-    },
-    MeshInstance::{
-      mesh_id: 2,
-      transform: @math.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(0.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=-2.0F,
-      ),
       color: Color::white(),
       layers,
     },
   ]
-  let order = mesh_draw_indices(meshes, layers)
-  let ok = order.length() == 2 && order[0] == 1 && order[1] == 0
+  let items = draw_items_for_layers(sprites, extra, meshes, layers)
+  let ok = items.length() == 2 &&
+    items[0].kind is Mesh(0) &&
+    items[1].kind is SpriteMain(0)
   inspect(ok, content="true")
 }
 
@@ -1496,69 +1484,79 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       viewport_width,
       viewport_height,
     )
-    for sprite_index in sprite_draw_indices(sprites, camera.layers) {
-      let sprite = sprites[sprite_index]
-      let transform = sprite.transform
-      let pos = @math.Vec2::new(
-        transform.translation.x + sprite.anchor_offset.x,
-        transform.translation.y + sprite.anchor_offset.y,
-      )
-      @window.host_gpu_draw_sprite_uv(
-        sprite.texture.id(),
-        pos.x,
-        pos.y,
-        transform.rotation_z(),
-        sprite.draw_scale.x,
-        sprite.draw_scale.y,
-        sprite.color.r,
-        sprite.color.g,
-        sprite.color.b,
-        sprite.color.a,
-        sprite.uv_min.x,
-        sprite.uv_min.y,
-        sprite.uv_max.x,
-        sprite.uv_max.y,
-      )
-    }
-    for mesh_index in mesh_draw_indices(meshes, camera.layers) {
-      let mesh = meshes[mesh_index]
-      let transform = mesh.transform
-      @window.host_gpu_draw_mesh(
-        mesh.mesh_id,
-        transform.translation.x,
-        transform.translation.y,
-        transform.rotation_z(),
-        transform.scale.x,
-        transform.scale.y,
-        mesh.color.r,
-        mesh.color.g,
-        mesh.color.b,
-        mesh.color.a,
-      )
-    }
-    for sprite_index in sprite_draw_indices(extra_sprites, camera.layers) {
-      let sprite = extra_sprites[sprite_index]
-      let transform = sprite.transform
-      let pos = @math.Vec2::new(
-        transform.translation.x + sprite.anchor_offset.x,
-        transform.translation.y + sprite.anchor_offset.y,
-      )
-      @window.host_gpu_draw_sprite_uv(
-        sprite.texture.id(),
-        pos.x,
-        pos.y,
-        transform.rotation_z(),
-        sprite.draw_scale.x,
-        sprite.draw_scale.y,
-        sprite.color.r,
-        sprite.color.g,
-        sprite.color.b,
-        sprite.color.a,
-        sprite.uv_min.x,
-        sprite.uv_min.y,
-        sprite.uv_max.x,
-        sprite.uv_max.y,
-      )
+    let draw_items = draw_items_for_layers(
+      sprites,
+      extra_sprites,
+      meshes,
+      camera.layers,
+    )
+    for item in draw_items {
+      match item.kind {
+        SpriteMain(i) => {
+          let sprite = sprites[i]
+          let transform = sprite.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + sprite.anchor_offset.x,
+            transform.translation.y + sprite.anchor_offset.y,
+          )
+          @window.host_gpu_draw_sprite_uv(
+            sprite.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            sprite.draw_scale.x,
+            sprite.draw_scale.y,
+            sprite.color.r,
+            sprite.color.g,
+            sprite.color.b,
+            sprite.color.a,
+            sprite.uv_min.x,
+            sprite.uv_min.y,
+            sprite.uv_max.x,
+            sprite.uv_max.y,
+          )
+        }
+        SpriteExtra(i) => {
+          let sprite = extra_sprites[i]
+          let transform = sprite.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + sprite.anchor_offset.x,
+            transform.translation.y + sprite.anchor_offset.y,
+          )
+          @window.host_gpu_draw_sprite_uv(
+            sprite.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            sprite.draw_scale.x,
+            sprite.draw_scale.y,
+            sprite.color.r,
+            sprite.color.g,
+            sprite.color.b,
+            sprite.color.a,
+            sprite.uv_min.x,
+            sprite.uv_min.y,
+            sprite.uv_max.x,
+            sprite.uv_max.y,
+          )
+        }
+        Mesh(i) => {
+          let mesh = meshes[i]
+          let transform = mesh.transform
+          @window.host_gpu_draw_mesh(
+            mesh.mesh_id,
+            transform.translation.x,
+            transform.translation.y,
+            transform.rotation_z(),
+            transform.scale.x,
+            transform.scale.y,
+            mesh.color.r,
+            mesh.color.g,
+            mesh.color.b,
+            mesh.color.a,
+          )
+        }
+      }
     }
     gizmos_draw_lines(camera.layers)
     @window.host_gpu_end_pass()

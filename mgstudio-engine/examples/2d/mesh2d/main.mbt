@@ -23,6 +23,18 @@ pub fn game_app() -> Unit {
 
 ///|
 fn mesh2d_setup(world : @ecs_world.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
+  let texture = asset_server.load("branding/icon.png")
+  let sprite = @render2d.Sprite::from_image(texture).with_custom_size(
+    Some(@math.Vec2::new(64.0F, 64.0F)),
+  )
+  let sprite_transform = @math.Transform::from_xy_rotation_scale(
+    @math.Vec2::new(0.0F, 0.0F),
+    0.0F,
+    @math.Vec2::new(1.0F, 1.0F),
+    z=1.0F,
+  )
+  @render2d.SpriteBundle::new(sprite, sprite_transform).spawn(world) |> ignore
   let mesh = @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::default())
   let material = @render2d.ColorMaterial::new(
     @render2d.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
