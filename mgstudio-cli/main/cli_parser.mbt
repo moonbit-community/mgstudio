@@ -67,6 +67,9 @@ fn make_cli_parser() -> @clap.Parser {
             nargs=@clap.Nargs::Fixed(1U),
             help="Project name (directory to create).",
           ),
+          "local-engine": @clap.Arg::flag(
+            help="Use local mgstudio-engine from ../mgstudio-engine (path dependency).",
+          ),
         },
       ),
     },
