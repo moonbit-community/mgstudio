@@ -30,11 +30,3 @@ async fn write_file_text(path : String, content : String) -> Unit {
   defer f.close()
   f.write(content)
 }
-
-///|
-async fn write_file_bytes(path : String, content : Bytes) -> Unit {
-  // 0o644
-  let f = @fs.create(path, permission=420)
-  defer f.close()
-  f.write(content)
-}

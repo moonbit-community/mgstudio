@@ -14,7 +14,6 @@
     "moonbitlang/core/list",
     "moonbitlang/core/json",
     "moonbitlang/x/path",
-    "moonbitlang/x/codec/base64",
     "moonbitlang/x/json5",
     "moonbitlang/x/sys",
     {
