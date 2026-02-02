@@ -43,6 +43,10 @@ pub struct HostContext {
   fonts : Ref[Array[(Int, Bytes)]]
   next_shader_id : Ref[Int]
   shaders : Ref[Array[(Int, String)]]
+  next_folder_id : Ref[Int]
+  folders : Ref[Array[(Int, Array[Int])]]
+  folder_events : Ref[Array[Int]]
+  folder_events_pos : Ref[Int]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
   // (id, env, func_idx)
@@ -94,6 +98,10 @@ pub fn HostContext::new(
     fonts: Ref::new([]),
     next_shader_id: Ref::new(1),
     shaders: Ref::new([]),
+    next_folder_id: Ref::new(1),
+    folders: Ref::new([]),
+    folder_events: Ref::new([]),
+    folder_events_pos: Ref::new(0),
     next_closure_id: Ref::new(1),
     closures: Ref::new([]),
   }
@@ -391,6 +399,126 @@ fn join_fs_path(base : String, entry : String) -> String {
       base + "/" + normalized
     }
   }
+}
+
+///|
+fn ensure_gpu_backend(ctx : HostContext) -> Unit {
+  if ctx.gpu is None {
+    ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+  }
+}
+
+///|
+fn load_texture_from_assets(
+  ctx : HostContext,
+  rel : String,
+  nearest : Bool,
+) -> Int raise {
+  ensure_gpu_backend(ctx)
+  if rel == "" {
+    return ctx.gpu
+      .unwrap()
+      .create_texture_rgba8(
+        1,
+        1,
+        Bytes::makei(4, _ => (255).to_byte()),
+        nearest,
+      )
+  }
+  let full_path = @rtcore.join_dir(
+    ctx.assets_source.base,
+    strip_leading_slashes(rel),
+  ) catch {
+    _ => join_fs_path(ctx.assets_source.base, rel)
+  }
+  let file_bytes = @fs.read_file_to_bytes(full_path) catch {
+    _ => Bytes::makei(0, _ => (0).to_byte())
+  }
+  let decoded = @img.decode_rgba8(file_bytes)
+  match decoded {
+    Some(img) => {
+      let w = img.width()
+      let h = img.height()
+      let pixels = img.pixels_rgba8()
+      img.destroy()
+      ctx.gpu.unwrap().create_texture_rgba8(w, h, pixels, nearest)
+    }
+    None =>
+      ctx.gpu
+      .unwrap()
+      .create_texture_rgba8(
+        1,
+        1,
+        Bytes::makei(4, _ => (255).to_byte()),
+        nearest,
+      )
+  }
+}
+
+///|
+fn split_trimmed_lines(text : String) -> Array[String] {
+  let out : Array[String] = []
+  let buf : Array[Char] = []
+  fn flush(out : Array[String], buf : Array[Char]) -> Unit {
+    if buf.length() == 0 {
+      return
+    }
+    let line = String::from_array(buf).trim().to_string()
+    buf.clear()
+    if line != "" && !line.has_prefix("#") {
+      out.push(line)
+    }
+  }
+
+  for c in text {
+    if c == '\n' || c == '\r' {
+      flush(out, buf)
+    } else {
+      buf.push(c)
+    }
+  }
+  flush(out, buf)
+  out
+}
+
+///|
+fn folder_table_set(
+  ctx : HostContext,
+  folder_id : Int,
+  handles : Array[Int],
+) -> Unit {
+  let entries = ctx.folders.val
+  let n = entries.length()
+  for i in 0..<n {
+    if entries[i].0 == folder_id {
+      entries[i] = (folder_id, handles)
+      return
+    }
+  }
+  entries.push((folder_id, handles))
+}
+
+///|
+fn folder_table_get(ctx : HostContext, folder_id : Int) -> Array[Int]? {
+  let entries = ctx.folders.val
+  let n = entries.length()
+  for i in 0..<n {
+    if entries[i].0 == folder_id {
+      return Some(entries[i].1)
+    }
+  }
+  None
+}
+
+///|
+fn folder_events_push(ctx : HostContext, kind : Int, folder_id : Int) -> Unit {
+  let pos = ctx.folder_events_pos.val
+  if pos >= ctx.folder_events.val.length() {
+    ctx.folder_events.val.clear()
+    ctx.folder_events_pos.val = 0
+  }
+  ctx.folder_events.val.push(kind)
+  ctx.folder_events.val.push(folder_id)
 }
 
 ///|
@@ -856,51 +984,7 @@ pub fn add_mgstudio_host_imports(
           args[1] is @types.Value::I32(nearest_i32) {
           let nearest = nearest_i32 != 0
           let rel = string_table_get(ctx, path_id).unwrap_or("")
-          if rel == "" {
-            ok_i32(
-              ctx.gpu
-              .unwrap()
-              .create_texture_rgba8(
-                1,
-                1,
-                Bytes::makei(4, _ => (255).to_byte()),
-                nearest,
-              ),
-            )
-          } else {
-            let full_path = @rtcore.join_dir(
-              ctx.assets_source.base,
-              strip_leading_slashes(rel),
-            ) catch {
-              _ => join_fs_path(ctx.assets_source.base, rel)
-            }
-            let file_bytes = @fs.read_file_to_bytes(full_path) catch {
-              _ => Bytes::makei(0, _ => (0).to_byte())
-            }
-            let decoded = @img.decode_rgba8(file_bytes)
-            match decoded {
-              Some(img) => {
-                let w = img.width()
-                let h = img.height()
-                let pixels = img.pixels_rgba8()
-                img.destroy()
-                ok_i32(
-                  ctx.gpu.unwrap().create_texture_rgba8(w, h, pixels, nearest),
-                )
-              }
-              None =>
-                ok_i32(
-                  ctx.gpu
-                  .unwrap()
-                  .create_texture_rgba8(
-                    1,
-                    1,
-                    Bytes::makei(4, _ => (255).to_byte()),
-                    nearest,
-                  ),
-                )
-            }
-          }
+          ok_i32(load_texture_from_assets(ctx, rel, nearest))
         } else {
           ok_i32(-1)
         }
@@ -1246,31 +1330,116 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_folder",
-    fn(_args) { ok_i32(1) },
+    fn(args) {
+      try {
+        host_trace("host: asset_load_folder")
+        if args.length() >= 1 && args[0] is @types.Value::I32(path_id) {
+          let base_rel = string_table_get(ctx, path_id).unwrap_or("")
+          let folder_id = ctx.next_folder_id.val
+          ctx.next_folder_id.val = folder_id + 1
+          let handles : Array[Int] = []
+          let manifest_rel = join_fs_path(base_rel, "folder.txt")
+          let manifest_full = @rtcore.join_dir(
+            ctx.assets_source.base,
+            strip_leading_slashes(manifest_rel),
+          ) catch {
+            _ => join_fs_path(ctx.assets_source.base, manifest_rel)
+          }
+          let manifest = @fs.read_file_to_string(manifest_full) catch {
+            _ => ""
+          }
+          if manifest != "" {
+            for entry in split_trimmed_lines(manifest) {
+              let asset_rel = join_fs_path(base_rel, entry)
+              handles.push(load_texture_from_assets(ctx, asset_rel, false))
+            }
+          }
+          folder_table_set(ctx, folder_id, handles)
+          folder_events_push(ctx, 3, folder_id)
+          ok_i32(folder_id)
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        _ => {
+          @debug.debug("asset_load_folder failed")
+          host_fail("asset_load_folder", "<error>")
+        }
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "asset_poll_loaded_folder_event_kind",
-    fn(_args) { ok_i32(-1) },
+    fn(_args) {
+      let pos = ctx.folder_events_pos.val
+      if pos >= ctx.folder_events.val.length() {
+        ok_i32(-1)
+      } else {
+        ok_i32(ctx.folder_events.val[pos])
+      }
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "asset_poll_loaded_folder_event_id",
-    fn(_args) { ok_i32(-1) },
+    fn(_args) {
+      let pos = ctx.folder_events_pos.val
+      if pos + 1 >= ctx.folder_events.val.length() {
+        ctx.folder_events.val.clear()
+        ctx.folder_events_pos.val = 0
+        ok_i32(-1)
+      } else {
+        let id = ctx.folder_events.val[pos + 1]
+        let next_pos = pos + 2
+        if next_pos >= ctx.folder_events.val.length() {
+          ctx.folder_events.val.clear()
+          ctx.folder_events_pos.val = 0
+        } else {
+          ctx.folder_events_pos.val = next_pos
+        }
+        ok_i32(id)
+      }
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "asset_loaded_folder_handles_len",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(folder_id) {
+        match folder_table_get(ctx, folder_id) {
+          None => ok_i32(0)
+          Some(handles) => ok_i32(handles.length())
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "asset_loaded_folder_handles_get",
-    fn(_args) { ok_i32(-1) },
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(folder_id) &&
+        args[1] is @types.Value::I32(index) {
+        match folder_table_get(ctx, folder_id) {
+          None => ok_i32(-1)
+          Some(handles) =>
+            if index < 0 || index >= handles.length() {
+              ok_i32(-1)
+            } else {
+              ok_i32(handles[index])
+            }
+        }
+      } else {
+        ok_i32(-1)
+      }
+    },
     func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
       @types.ValueType::I32,
     ]),

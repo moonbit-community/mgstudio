@@ -163,6 +163,10 @@ pub struct HostContext {
   fonts : Ref[Array[(Int, Bytes)]]
   next_shader_id : Ref[Int]
   shaders : Ref[Array[(Int, String)]]
+  next_folder_id : Ref[Int]
+  folders : Ref[Array[(Int, Array[Int])]]
+  folder_events : Ref[Array[Int]]
+  folder_events_pos : Ref[Int]
   next_closure_id : Ref[Int]
   closures : Ref[Array[(Int, @types.Value, Int)]]
 }
