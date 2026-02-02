@@ -614,6 +614,28 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "bytes_sink_push_u32",
+    fn(args) {
+      host_trace("host: bytes_sink_push_u32")
+      if args.length() >= 1 && args[0] is @types.Value::I32(word_i32) {
+        let u = word_i32.reinterpret_as_uint()
+        ctx.bytes_sink.val.push((u & 0xFFU).reinterpret_as_int().to_byte())
+        ctx.bytes_sink.val.push(
+          ((u >> 8) & 0xFFU).reinterpret_as_int().to_byte(),
+        )
+        ctx.bytes_sink.val.push(
+          ((u >> 16) & 0xFFU).reinterpret_as_int().to_byte(),
+        )
+        ctx.bytes_sink.val.push(
+          ((u >> 24) & 0xFFU).reinterpret_as_int().to_byte(),
+        )
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "bytes_sink_take",
     fn(_args) {
       host_trace("host: bytes_sink_take")
@@ -1095,6 +1117,37 @@ pub fn add_mgstudio_host_imports(
               None => ok_i32(0)
               Some(v) => ok_i32(v.to_int())
             }
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_font_bytes_get_u32",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(font_id) &&
+        args[1] is @types.Value::I32(index) &&
+        index >= 0 {
+        match font_table_get(ctx, font_id) {
+          None => ok_i32(0)
+          Some(b) => {
+            let mut out : UInt = 0U
+            for j in 0..<4 {
+              match b.get(index + j) {
+                None => ()
+                Some(v) =>
+                  out = out |
+                    ((v.to_int().reinterpret_as_uint() & 0xFFU) << (j * 8))
+              }
+            }
+            ok_i32(out.reinterpret_as_int())
+          }
         }
       } else {
         ok_i32(0)

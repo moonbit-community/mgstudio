@@ -25,6 +25,9 @@ fn host_bytes_sink_reset() -> Unit = "mgstudio_host" "bytes_sink_reset"
 fn host_bytes_sink_push(byte : Int) -> Unit = "mgstudio_host" "bytes_sink_push"
 
 ///|
+fn host_bytes_sink_push_u32(word : Int) -> Unit = "mgstudio_host" "bytes_sink_push_u32"
+
+///|
 fn host_bytes_sink_take() -> Int = "mgstudio_host" "bytes_sink_take"
 
 ///|
@@ -37,12 +40,38 @@ pub fn[T] with_host_bytes_id(data : Bytes, f : (Int) -> T) -> T {
   }
   host_bytes_sink_reset()
   let n = data.length()
-  for i in 0..<n {
+  let mut i = 0
+  while i + 4 <= n {
+    let b0 = match data.get(i) {
+      None => 0
+      Some(v) => v.to_int()
+    }
+    let b1 = match data.get(i + 1) {
+      None => 0
+      Some(v) => v.to_int()
+    }
+    let b2 = match data.get(i + 2) {
+      None => 0
+      Some(v) => v.to_int()
+    }
+    let b3 = match data.get(i + 3) {
+      None => 0
+      Some(v) => v.to_int()
+    }
+    let word_u : UInt = (b0 & 0xFF).reinterpret_as_uint() |
+      ((b1 & 0xFF).reinterpret_as_uint() << 8) |
+      ((b2 & 0xFF).reinterpret_as_uint() << 16) |
+      ((b3 & 0xFF).reinterpret_as_uint() << 24)
+    host_bytes_sink_push_u32(word_u.reinterpret_as_int())
+    i = i + 4
+  }
+  while i < n {
     let b = match data.get(i) {
       None => 0
       Some(v) => v.to_int()
     }
     host_bytes_sink_push(b)
+    i = i + 1
   }
   let id = host_bytes_sink_take()
   let out = f(id)

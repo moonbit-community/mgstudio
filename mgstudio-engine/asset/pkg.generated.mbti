@@ -56,6 +56,8 @@ pub fn host_asset_create_dynamic_texture(Int, Int, Bool) -> Int
 
 pub fn host_asset_font_bytes_get(Int, Int) -> Int
 
+pub fn host_asset_font_bytes_get_u32(Int, Int) -> Int
+
 pub fn host_asset_font_bytes_len(Int) -> Int
 
 pub fn host_asset_is_texture_loaded(Int) -> Bool

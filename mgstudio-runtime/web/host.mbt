@@ -54,6 +54,14 @@ extern "js" fn bytes_sink_push_js(byte : Int) -> Unit =
   #| }
 
 ///|
+extern "js" fn bytes_sink_push_u32_js(word : Int) -> Unit =
+  #| (word) => {
+  #|   const u = Number(word) >>> 0
+  #|   globalThis.__mgstudio_bytes_sink_buf = (globalThis.__mgstudio_bytes_sink_buf || [])
+  #|   globalThis.__mgstudio_bytes_sink_buf.push(u & 0xff, (u >>> 8) & 0xff, (u >>> 16) & 0xff, (u >>> 24) & 0xff)
+  #| }
+
+///|
 extern "js" fn bytes_sink_reset_js() -> Unit =
   #| () => { globalThis.__mgstudio_bytes_sink_buf = [] }
 
@@ -2962,6 +2970,25 @@ pub fn create_host(
       }
     }
   })
+  let asset_font_bytes_get_u32 = @js.from_fn2(fn(font_id_any, index_any) {
+    let font_id = to_int(number_or(font_id_any, -1))
+    let index = to_int(number_or(index_any, -1))
+    let entry = map_get(state.assets.fonts, @js.any(font_id))
+    if host_is_nullish(entry) || index < 0 {
+      0
+    } else {
+      let bytes = entry._get("bytes")
+      if host_is_nullish(bytes) {
+        0
+      } else {
+        let b0 = uint8array_get_u8(bytes, index)
+        let b1 = uint8array_get_u8(bytes, index + 1)
+        let b2 = uint8array_get_u8(bytes, index + 2)
+        let b3 = uint8array_get_u8(bytes, index + 3)
+        b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+      }
+    }
+  })
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
     let entry = map_get(state.gpu.textures, @js.any(id))
@@ -3621,6 +3648,13 @@ pub fn create_host(
         0
       }),
     ),
+    (
+      "bytes_sink_push_u32",
+      @js.from_fn1(fn(word_any) {
+        bytes_sink_push_u32_js(to_int(number_or(word_any, 0)))
+        0
+      }),
+    ),
     ("bytes_sink_take", bytes_sink_take),
     ("bytes_drop", bytes_drop),
     ("asset_load_texture", asset_load_texture),
@@ -3628,6 +3662,7 @@ pub fn create_host(
     ("asset_load_font", asset_load_font),
     ("asset_font_bytes_len", asset_font_bytes_len),
     ("asset_font_bytes_get", asset_font_bytes_get),
+    ("asset_font_bytes_get_u32", asset_font_bytes_get_u32),
     ("font_rasterize_glyph", font_rasterize_glyph),
     ("font_glyph_width", font_glyph_width),
     ("font_glyph_height", font_glyph_height),
