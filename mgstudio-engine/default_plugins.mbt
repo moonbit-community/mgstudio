@@ -15,34 +15,18 @@
 ///|
 /// Default plugin bundle, aligned with Bevy's `DefaultPlugins` concept.
 ///
-/// This lives in the top-level `Milky2018/mgstudio` package to avoid dependency
-/// cycles (`app` cannot depend on `window/asset/render2d/...`).
-pub fn[W : DefaultPluginsWorld] default_plugins() -> Array[@app.Plugin[W]] {
-  [
-    fn(app : @app.App[W]) -> @app.App[W] { @window.window_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @time.time_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @asset.asset_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @transform.transform_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @visibility.visibility_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @text.text_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @input.input_plugin(app) },
-  ]
+/// Implementation lives in `Milky2018/mgstudio/internal` (similar to Bevy's
+/// `bevy_internal`) and is forwarded here for a stable user-facing API.
+pub fn[W : @internal.DefaultPluginsWorld] default_plugins() -> Array[
+  @app.Plugin[W],
+] {
+  @internal.default_plugins()
 }
 
 ///|
 /// Default plugin bundle with "nearest" sampling for textures (useful for pixel art).
-pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[
+pub fn[W : @internal.DefaultPluginsWorld] default_plugins_nearest() -> Array[
   @app.Plugin[W],
 ] {
-  [
-    fn(app : @app.App[W]) -> @app.App[W] { @window.window_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @time.time_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @asset.asset_plugin_nearest(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @transform.transform_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @visibility.visibility_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @text.text_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @input.input_plugin(app) },
-  ]
+  @internal.default_plugins_nearest()
 }

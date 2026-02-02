@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/internal"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs_world",
+  "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
+}
+
+// Values
+pub fn[W : DefaultPluginsWorld] default_plugins() -> Array[(@app.App[W]) -> @app.App[W]]
+
+pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[(@app.App[W]) -> @app.App[W]]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+pub(open) trait DefaultPluginsWorld : @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_Anchor + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d {
+}
+pub impl DefaultPluginsWorld for @ecs_world.World
+
