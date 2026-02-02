@@ -35,6 +35,13 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon version
 
+      - name: Update MoonBit registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon update
+
       - name: Download wgpu-native (libwgpu_native.dylib)
         shell: bash
         env:
