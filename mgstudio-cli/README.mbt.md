@@ -65,6 +65,21 @@ Notes:
 
 # or specify a config path explicitly
 ./mgstudio run --game path/to/moon.game.json
+
+# select the Rust/wasmtime native backend (experimental)
+./mgstudio run --backend wasmtime
+```
+
+Note: the wasmtime backend is currently experimental and may fail to compile
+some `wasm-gc` carts on AArch64 due to upstream codegen limitations.
+It currently supports basic 2D sprite + mesh rendering via `wgpu`, but some
+APIs (e.g. fonts/folder async assets) may still be stubbed.
+
+macOS (Apple Silicon) workaround: build/run the runtime as x86_64 under Rosetta:
+
+```bash
+export MGSTUDIO_WASMTIME_CARGO_TARGET=x86_64-apple-darwin
+./mgstudio run --backend wasmtime
 ```
 
 ### Web (Browser)
