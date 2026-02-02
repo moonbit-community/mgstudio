@@ -126,6 +126,18 @@ cp -R "${ROOT}/mgstudio-engine/assets/." "${SDK_DIR}/share/mgstudio/assets/"
 echo "Copying libwgpu_native..."
 cp "${WGPU_LIB}" "${SDK_DIR}/lib/libwgpu_native.dylib"
 
+echo "Copying license texts..."
+mkdir -p "${SDK_DIR}/share/mgstudio/licenses"
+# Project license (Apache-2.0) lives under mgstudio-engine/ in this repo.
+cp "${ROOT}/mgstudio-engine/LICENSE" "${SDK_DIR}/share/mgstudio/licenses/LICENSE"
+# Third-party: wgpu-native (Apache-2.0 OR MIT). Keep minimal license texts in repo.
+if [[ -f "${ROOT}/third_party/wgpu-native/LICENSE-APACHE" ]]; then
+  mkdir -p "${SDK_DIR}/share/mgstudio/licenses/wgpu-native"
+  cp "${ROOT}/third_party/wgpu-native/LICENSE-APACHE" "${SDK_DIR}/share/mgstudio/licenses/wgpu-native/LICENSE-APACHE"
+  cp "${ROOT}/third_party/wgpu-native/LICENSE-MIT" "${SDK_DIR}/share/mgstudio/licenses/wgpu-native/LICENSE-MIT"
+fi
+cp "${ROOT}/docs/CREDITS.md" "${SDK_DIR}/share/mgstudio/licenses/CREDITS.md"
+
 echo "Writing manifest..."
 GIT_SHA="$(git -C "${ROOT}" rev-parse HEAD 2>/dev/null || echo "")"
 BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -146,4 +158,13 @@ if [[ "${NO_TAR}" -eq 0 ]]; then
   TAR="${OUT_DIR}/mgstudio-sdk-${SDK_VERSION}-darwin-arm64.tar.gz"
   echo "Creating tarball: ${TAR}"
   (cd "${OUT_DIR}" && tar -czf "$(basename "${TAR}")" "$(basename "${SDK_DIR}")")
+
+  # Produce a SHA256SUMS file next to the tarball (common release convention).
+  if command -v shasum >/dev/null 2>&1; then
+    (cd "${OUT_DIR}" && shasum -a 256 "$(basename "${TAR}")" > SHA256SUMS)
+  elif command -v sha256sum >/dev/null 2>&1; then
+    (cd "${OUT_DIR}" && sha256sum "$(basename "${TAR}")" > SHA256SUMS)
+  else
+    echo "Warning: no sha256 tool found; skipping SHA256SUMS" >&2
+  fi
 fi

@@ -1,0 +1,113 @@
+name: release-sdk-darwin-arm64
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      sdk_version:
+        description: "SDK version string (defaults to the release tag)"
+        required: false
+        type: string
+      wgpu_native_tag:
+        description: "wgpu-native release tag to download libwgpu_native from (e.g. v27.0.4.0)"
+        required: false
+        default: "v27.0.4.0"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    name: Build & Upload SDK (darwin-arm64)
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          moon --version
+
+      - name: Download wgpu-native (libwgpu_native.dylib)
+        shell: bash
+        env:
+          WGPU_NATIVE_TAG: ${{ inputs.wgpu_native_tag }}
+        run: |
+          set -euo pipefail
+          tag="${WGPU_NATIVE_TAG}"
+          if [[ -z "${tag}" ]]; then
+            echo "Missing wgpu_native_tag input" >&2
+            exit 1
+          fi
+
+          tmp="${RUNNER_TEMP}/wgpu-native"
+          rm -rf "${tmp}"
+          mkdir -p "${tmp}"
+
+          zip="wgpu-macos-aarch64-release.zip"
+          url="https://github.com/gfx-rs/wgpu-native/releases/download/${tag}/${zip}"
+          echo "Downloading: ${url}"
+          curl -fL -o "${tmp}/${zip}" "${url}"
+          unzip -q "${tmp}/${zip}" -d "${tmp}/unpacked"
+
+          if [[ ! -f "${tmp}/unpacked/lib/libwgpu_native.dylib" ]]; then
+            echo "libwgpu_native.dylib not found in downloaded archive" >&2
+            find "${tmp}/unpacked" -maxdepth 3 -type f | head -n 200 >&2 || true
+            exit 1
+          fi
+
+          echo "WGPU_NATIVE_LIB=${tmp}/unpacked/lib/libwgpu_native.dylib" >> "$GITHUB_ENV"
+
+      - name: Build SDK directory + tarball
+        shell: bash
+        env:
+          # Prefer the release tag name when running on release events.
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_SDK_VERSION: ${{ inputs.sdk_version }}
+        run: |
+          set -euo pipefail
+          version="${INPUT_SDK_VERSION:-${RELEASE_TAG}}"
+          if [[ -z "${version}" ]]; then
+            echo "Unable to determine SDK version (missing release tag and sdk_version input)" >&2
+            exit 1
+          fi
+
+          out="${RUNNER_TEMP}/sdk-out"
+          rm -rf "${out}"
+          mkdir -p "${out}"
+
+          ./scripts/mgstudio-sdk-build \
+            --wgpu-lib "${WGPU_NATIVE_LIB}" \
+            --out "${out}" \
+            --version "${version}"
+
+          echo "SDK_OUT=${out}" >> "$GITHUB_ENV"
+          echo "SDK_TAR=${out}/mgstudio-sdk-${version}-darwin-arm64.tar.gz" >> "$GITHUB_ENV"
+          echo "SDK_SHA=${out}/SHA256SUMS" >> "$GITHUB_ENV"
+
+          test -f "${out}/mgstudio-sdk-${version}-darwin-arm64.tar.gz"
+          test -f "${out}/SHA256SUMS"
+
+      - name: Upload release assets
+        if: ${{ github.event_name == 'release' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.SDK_TAR }}
+            ${{ env.SDK_SHA }}
+
+      - name: Upload workflow artifacts
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mgstudio-sdk-darwin-arm64
+          path: |
+            ${{ env.SDK_TAR }}
+            ${{ env.SDK_SHA }}
+
