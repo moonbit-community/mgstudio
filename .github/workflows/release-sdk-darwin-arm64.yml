@@ -25,6 +25,8 @@ jobs:
     env:
       # Needed for dependencies that use `gh` in postadd hooks (e.g. wgpu_mbt).
       GH_TOKEN: ${{ github.token }}
+      # CI builds should not depend on per-module postadd side effects.
+      MOON_IGNORE_POSTADD: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
