@@ -41,7 +41,7 @@ fn make_cli_parser() -> @clap.Parser {
           ),
           "backend": @clap.Arg::named(
             nargs=@clap.Nargs::AtMost(1U),
-            help="Native backend: wasmoon (default) | wasmtime (Rust).",
+            help="Native backend: wasmoon (default) | wasmtime (Rust, experimental).",
           ),
         },
       ),
