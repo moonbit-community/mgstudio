@@ -15,6 +15,7 @@
 ///|
 struct RunOptions {
   game : String?
+  backend : String?
 }
 
 ///|
@@ -62,7 +63,7 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
 
 ///|
 fn parse_run_options_defaults(_workspace : String) -> RunOptions {
-  { game: None }
+  { game: None, backend: None }
 }
 
 ///|
@@ -70,7 +71,8 @@ fn parse_run_options(
   cmd : @clap.SimpleValue,
 ) -> RunOptions raise @clap.ParserError {
   let game : String? = cmd.get_option("game")
-  { game, }
+  let backend : String? = cmd.get_option("backend")
+  { game, backend, }
 }
 
 ///|
@@ -79,6 +81,7 @@ async fn run_native(opts : RunOptions) -> Unit {
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
   let sdk = resolve_sdk_layout(cfg)
+  let backend = opts.backend.unwrap_or("wasmoon").trim().to_string()
   let assets_source = cfg.assets_spec
   let data_source = cfg.data_spec_native
   if assets_source.has_prefix("http://") || assets_source.has_prefix("https://") {
@@ -117,12 +120,52 @@ async fn run_native(opts : RunOptions) -> Unit {
     cfg.assets_allow_sdk_override,
   )
   let final_assets_source = "dir:" + overlay_assets_dir
-  println("Using SDK libwgpu_native: \{sdk.native_wgpu_lib}")
-  let wgpu_lib : String? = Some(sdk.native_wgpu_lib)
-  @native_rt.run_game(
-    cfg.cart_path,
-    final_assets_source,
-    data_source,
-    wgpu_lib?,
+  if backend == "" || backend == "wasmoon" {
+    println("Using SDK libwgpu_native: \{sdk.native_wgpu_lib}")
+    let wgpu_lib : String? = Some(sdk.native_wgpu_lib)
+    @native_rt.run_game(
+      cfg.cart_path,
+      final_assets_source,
+      data_source,
+      wgpu_lib?,
+    )
+  } else if backend == "wasmtime" {
+    run_native_wasmtime(cfg.cart_path, final_assets_source, data_source, cfg.sdk_root)
+  } else {
+    raise RunError::InvalidArgs(
+      "Unknown --backend: " + backend + " (expected: wasmoon|wasmtime)",
+    )
+  }
+}
+
+///|
+async fn run_native_wasmtime(
+  cart_path : String,
+  assets_source : String,
+  data_source : String,
+  sdk_root : String,
+) -> Unit {
+  // Prefer a runtime shipped in the SDK (optional / experimental).
+  let bin_in_sdk = path_join(sdk_root, "bin/mgstudio-runtime-native-wasmtime")
+
+  // Allow explicit override for local development.
+  let bin_override : String? = @sys.get_env_var("MGSTUDIO_WASMTIME_RUNTIME")
+
+  let bin =
+    match bin_override {
+      Some(p) if p.trim() != "" => p.trim().to_string()
+      _ if @fs.exists(bin_in_sdk) => bin_in_sdk
+      _ =>
+        raise RunError::InvalidArgs(
+          "Wasmtime backend selected but runtime binary not found.\n" +
+          "- Install it into SDK: " +
+          bin_in_sdk +
+          "\n" +
+          "- Or set MGSTUDIO_WASMTIME_RUNTIME to an absolute path.",
+        )
+    }
+  run_process_checked(
+    bin,
+    ["--cart", cart_path, "--assets", assets_source, "--data", data_source],
   )
 }
