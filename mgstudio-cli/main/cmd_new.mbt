@@ -186,10 +186,27 @@ async fn new_game_project(name : String) -> Unit {
   // Game config: minimal; assets/data default to ./assets and ./tmp/data.
   let cart = "./_build/wasm-gc/release/build/" + project_name + ".wasm"
   // sdkroot is required. Default to a conventional user install location.
-  let game_json_raw = "{\"mgstudio\":\"0.1.0\",\"sdkroot\":\"$HOME/.local/share/mgstudio/current\",\"cart\":\"" +
-    cart +
-    "\",\"web\":{\"addr\":\"127.0.0.1\",\"port\":8099},\"assets_allow_sdk_override\":false}"
-  let game_json = @json.parse(game_json_raw).stringify(indent=2) + "\n"
+  //
+  // We intentionally construct a structured Json object (instead of
+  // concatenating a raw JSON string) to avoid quoting/escaping bugs.
+  let game_cfg_json : Json = Json::object(
+    Map::from_array([
+      ("mgstudio", Json::string("0.1.0")),
+      ("sdkroot", Json::string("$HOME/.local/share/mgstudio/current")),
+      ("cart", Json::string(cart)),
+      (
+        "web",
+        Json::object(
+          Map::from_array([
+            ("addr", Json::string("127.0.0.1")),
+            ("port", Json::number(8099.0, repr="8099")),
+          ]),
+        ),
+      ),
+      ("assets_allow_sdk_override", Json::boolean(false)),
+    ]),
+  )
+  let game_json = game_cfg_json.stringify(indent=2) + "\n"
   write_file_text(path_join(project_dir, "moon.game.json"), game_json)
 
   // Replace README with mgstudio-oriented instructions.
