@@ -24,8 +24,19 @@ pub(all) suberror NativeJitSetupError {
   JitLoadFailed
   MemoryInitFailed
   GlobalsAllocFailed
+  MissingJitTable(Int)
   MissingCHeap
 } derive(Show)
+
+///|
+/// Prepared JIT state for a module instance.
+///
+/// Note: `globals_ptr` is allocated via `@jit.alloc_memory` and must be freed
+/// by the embedder (JIT does not own it).
+pub struct PreparedJit {
+  jm : @jit.JITModule
+  globals_ptr : Int64
+}
 
 ///|
 fn store_addr_to_module_func_idx(
@@ -275,7 +286,7 @@ pub fn prepare_jit_for_instance(
   wasm_module : @types.Module,
   instance : @runtime.ModuleInstance,
   store : @runtime.Store,
-) -> @jit.JITModule raise NativeJitSetupError {
+) -> PreparedJit raise NativeJitSetupError {
   if @wast.has_unsupported_instructions(wasm_module) {
     raise NativeJitSetupError::UnsupportedModule(
       "module contains JIT-unsupported instructions",
@@ -335,6 +346,11 @@ pub fn prepare_jit_for_instance(
   // (possibly mutated by start) interpreter tables into JIT tables.
   @wast.init_elem_segments(wasm_module, jm, instance, store)
   @wast.sync_tables_to_jit(instance, store, jm)
+  for table_addr in instance.table_addrs {
+    if store.get_jit_table(table_addr) is None {
+      raise NativeJitSetupError::MissingJitTable(table_addr)
+    }
+  }
 
   // GC setup (required for wasm-gc).
   match store.c_heap {
@@ -348,7 +364,7 @@ pub fn prepare_jit_for_instance(
     }
     None => raise NativeJitSetupError::MissingCHeap
   }
-  jm
+  PreparedJit::{ jm, globals_ptr }
 }
 
 ///|

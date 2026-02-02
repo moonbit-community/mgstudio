@@ -17,7 +17,7 @@ pub fn add_moonbit_ffi_imports(@runtime.Linker, HostContext) -> Unit
 
 pub fn call_jit_func_by_index(@jit.JITModule, Int) -> Bool raise @jit.JITTrap
 
-pub fn prepare_jit_for_instance(@types.Module, @runtime.ModuleInstance, @runtime.Store) -> @jit.JITModule raise NativeJitSetupError
+pub fn prepare_jit_for_instance(@types.Module, @runtime.ModuleInstance, @runtime.Store) -> PreparedJit raise NativeJitSetupError
 
 pub fn run_game(String, String, String, wgpu_lib? : String) -> Unit raise
 
@@ -32,6 +32,7 @@ pub(all) suberror NativeJitSetupError {
   JitLoadFailed
   MemoryInitFailed
   GlobalsAllocFailed
+  MissingJitTable(Int)
   MissingCHeap
 }
 pub impl Show for NativeJitSetupError
@@ -147,6 +148,7 @@ pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
   mut jit : @jit.JITModule?
+  mut jit_globals_ptr : Int64
   mut gpu : GpuBackend?
   mut window : @window.Window?
   assets_source : @mgstudio-runtime-core.SourceSpec
@@ -165,6 +167,11 @@ pub struct HostContext {
   closures : Ref[Array[(Int, @types.Value, Int)]]
 }
 pub fn HostContext::new(String, String) -> Self raise
+
+pub struct PreparedJit {
+  jm : @jit.JITModule
+  globals_ptr : Int64
+}
 
 pub struct SpriteBatch {
   texture_id : Int

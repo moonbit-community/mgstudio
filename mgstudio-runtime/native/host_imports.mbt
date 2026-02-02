@@ -26,6 +26,9 @@ pub struct HostContext {
   mut store : @runtime.Store?
   mut instance : @runtime.ModuleInstance?
   mut jit : @jit.JITModule?
+  // Owned JIT globals backing store (allocated via @jit.alloc_memory). JIT does
+  // not free it, so the runtime must free it on shutdown.
+  mut jit_globals_ptr : Int64
   mut gpu : GpuBackend?
   mut window : @win.Window?
   assets_source : @rtcore.SourceSpec
@@ -76,6 +79,7 @@ pub fn HostContext::new(
     store: None,
     instance: None,
     jit: None,
+    jit_globals_ptr: 0L,
     gpu: None,
     window: None,
     assets_source,
