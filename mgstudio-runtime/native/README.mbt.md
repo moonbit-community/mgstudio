@@ -20,20 +20,25 @@ sprite quads, and simple meshes).
 
 Known upstream blocker (wgpu_mbt packaging/build):
 - `wgpu_mbt` requires `libwgpu_native` at runtime (wgpu-mbt uses `dlopen`).
-  Newer `wgpu_mbt` releases no longer bundle `libwgpu_native`; you must provide
-  it explicitly via `MBT_WGPU_NATIVE_LIB` (or `mgstudio run --wgpu-lib ...`).
+  Newer `wgpu_mbt` releases no longer bundle `libwgpu_native`; mgstudio provides
+  it via the SDK (`moon.game.json.sdkroot/lib/libwgpu_native.dylib`) and passes
+  it to the native runtime (which sets `MBT_WGPU_NATIVE_LIB` internally).
 
 Recommended workflow (from repo root):
 ```bash
 # Build a game wasm (example).
 moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
 
-# Run the wasm (calls export: game_app).
-./mgstudio run mgstudio-runtime/examples/2d/sprite/sprite.wasm
+# Run the game described by moon.game.json (calls export: game_app).
+./mgstudio run --game mgstudio-engine/examples/2d/sprite/moon.game.json
 ```
 
-If you hit `failed to dlopen libwgpu_native`, set `MBT_WGPU_NATIVE_LIB` (or pass
-`--wgpu-lib` to `mgstudio run`) to point to a built `libwgpu_native.dylib`.
+If you hit `failed to dlopen libwgpu_native`, verify your SDK installation:
+
+- `moon.game.json.sdkroot` points to a valid SDK directory
+- `<sdkroot>/lib/libwgpu_native.dylib` exists
+- `<sdkroot>/share/mgstudio/assets/` exists
+- `<sdkroot>/share/mgstudio/web/mgstudio-runtime-web.js` exists
 
 If you hit build errors beyond the above, please capture the full log and update
 bd issue `moon-game-studio-izv`.

@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# Copyright 2025 International Digital Economy Academy
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+mgstudio-sdk-build
+
+Build a local darwin-arm64 mgstudio SDK directory.
+
+The SDK layout is:
+  <SDK_DIR>/bin/mgstudio
+  <SDK_DIR>/lib/libwgpu_native.dylib
+  <SDK_DIR>/share/mgstudio/assets/...
+  <SDK_DIR>/share/mgstudio/web/mgstudio-runtime-web.js
+  <SDK_DIR>/share/mgstudio/manifest.json
+
+Usage:
+  scripts/mgstudio-sdk-build --wgpu-lib <path> [--out <dir>] [--version <v>] [--no-tar]
+
+Options:
+  --wgpu-lib <path>  Path to libwgpu_native.dylib to include in the SDK (required)
+  --out <dir>        Output directory (default: ./_out/sdk)
+  --version <v>      SDK version string (default: git describe --tags --always)
+  --no-tar           Do not create a .tar.gz alongside the SDK directory
+  -h, --help         Show this help
+EOF
+}
+
+OUT_DIR="./_out/sdk"
+WGPU_LIB=""
+SDK_VERSION=""
+NO_TAR=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --wgpu-lib)
+      WGPU_LIB="${2:-}"
+      shift 2
+      ;;
+    --out)
+      OUT_DIR="${2:-}"
+      shift 2
+      ;;
+    --version)
+      SDK_VERSION="${2:-}"
+      shift 2
+      ;;
+    --no-tar)
+      NO_TAR=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ -z "${WGPU_LIB}" ]]; then
+  echo "Missing required option: --wgpu-lib <path>" >&2
+  exit 2
+fi
+if [[ ! -f "${WGPU_LIB}" ]]; then
+  echo "File not found: --wgpu-lib ${WGPU_LIB}" >&2
+  exit 2
+fi
+
+# Resolve this script location, following symlinks, so we can compute repo root.
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "${SOURCE}" ]]; do
+  DIR="$(cd -P -- "$(dirname -- "${SOURCE}")" && pwd)"
+  SOURCE="$(readlink "${SOURCE}")"
+  [[ "${SOURCE}" != /* ]] && SOURCE="${DIR}/${SOURCE}"
+done
+ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")/.." && pwd)"
+
+if [[ -z "${SDK_VERSION}" ]]; then
+  SDK_VERSION="$(git -C "${ROOT}" describe --tags --always 2>/dev/null || echo "0.0.0-dev")"
+fi
+
+SDK_DIR="${OUT_DIR}/mgstudio-sdk-${SDK_VERSION}-darwin-arm64"
+rm -rf "${SDK_DIR}"
+mkdir -p "${SDK_DIR}/bin" "${SDK_DIR}/lib" "${SDK_DIR}/share/mgstudio"
+
+echo "Building mgstudio-cli (native release)..."
+moon build --release -C "${ROOT}/mgstudio-cli"
+CLI_BIN="${ROOT}/mgstudio-cli/_build/native/release/build/main/main.exe"
+if [[ ! -x "${CLI_BIN}" ]]; then
+  echo "mgstudio-cli binary not found at: ${CLI_BIN}" >&2
+  exit 1
+fi
+cp "${CLI_BIN}" "${SDK_DIR}/bin/mgstudio"
+chmod +x "${SDK_DIR}/bin/mgstudio"
+
+echo "Building mgstudio-runtime-web.js..."
+OUT_DIR="${SDK_DIR}/share/mgstudio/web" bash "${ROOT}/mgstudio-runtime/web/build.sh"
+RUNTIME_JS="${SDK_DIR}/share/mgstudio/web/mgstudio-runtime-web.js"
+if [[ ! -f "${RUNTIME_JS}" ]]; then
+  echo "Runtime JS bundle not found at: ${RUNTIME_JS}" >&2
+  exit 1
+fi
+
+echo "Copying engine default assets..."
+mkdir -p "${SDK_DIR}/share/mgstudio/assets"
+cp -R "${ROOT}/mgstudio-engine/assets/." "${SDK_DIR}/share/mgstudio/assets/"
+
+echo "Copying libwgpu_native..."
+cp "${WGPU_LIB}" "${SDK_DIR}/lib/libwgpu_native.dylib"
+
+echo "Writing manifest..."
+GIT_SHA="$(git -C "${ROOT}" rev-parse HEAD 2>/dev/null || echo "")"
+BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+cat >"${SDK_DIR}/share/mgstudio/manifest.json" <<EOF
+{
+  "name": "mgstudio-sdk",
+  "version": "${SDK_VERSION}",
+  "platform": "darwin-arm64",
+  "git_sha": "${GIT_SHA}",
+  "built_at_utc": "${BUILD_DATE}"
+}
+EOF
+
+echo "Built SDK directory: ${SDK_DIR}"
+
+if [[ "${NO_TAR}" -eq 0 ]]; then
+  mkdir -p "${OUT_DIR}"
+  TAR="${OUT_DIR}/mgstudio-sdk-${SDK_VERSION}-darwin-arm64.tar.gz"
+  echo "Creating tarball: ${TAR}"
+  (cd "${OUT_DIR}" && tar -czf "$(basename "${TAR}")" "$(basename "${SDK_DIR}")")
+fi

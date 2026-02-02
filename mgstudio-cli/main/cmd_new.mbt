@@ -189,23 +189,18 @@ async fn new_game_project(name : String) -> Unit {
   //
   // We intentionally construct a structured Json object (instead of
   // concatenating a raw JSON string) to avoid quoting/escaping bugs.
-  let game_cfg_json : Json = Json::object(
-    Map::from_array([
-      ("mgstudio", Json::string("0.1.0")),
-      ("sdkroot", Json::string("$HOME/.local/share/mgstudio/current")),
-      ("cart", Json::string(cart)),
-      (
-        "web",
-        Json::object(
-          Map::from_array([
-            ("addr", Json::string("127.0.0.1")),
-            ("port", Json::number(8099.0, repr="8099")),
-          ]),
-        ),
-      ),
-      ("assets_allow_sdk_override", Json::boolean(false)),
-    ]),
-  )
+  //
+  // We prefer the built-in Json literal syntax here for readability.
+  let game_cfg_json : Json = {
+    "mgstudio": "0.1.0",
+    "sdkroot": "$HOME/.local/share/mgstudio/current",
+    // `cart` is not a literal, so it must be wrapped into Json explicitly.
+    "cart": Json::string(cart),
+    "web": { "addr": "127.0.0.1", "port": 8099 },
+    "assets_allow_sdk_override": false,
+  }
+  // `moonbitlang/core/json` provides `Json.stringify(...)` as a method (there is
+  // no `@json.stringify` function exported in the current toolchain).
   let game_json = game_cfg_json.stringify(indent=2) + "\n"
   write_file_text(path_join(project_dir, "moon.game.json"), game_json)
 

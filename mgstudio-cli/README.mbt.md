@@ -89,6 +89,28 @@ from the SDK into the served directory (offline by default).
 
 ## Install (Local Symlink)
 
+### Install (SDK)
+
+`mgstudio` expects an SDK directory (configured via `moon.game.json.sdkroot`) that
+contains:
+
+- `share/mgstudio/assets/` (engine default assets, including built-in shaders)
+- `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle, for `mgstudio serve`)
+- `lib/libwgpu_native.dylib` (native rendering via `wgpu_mbt`)
+
+For local development you can build and install a SDK directory into the default
+location `$HOME/.local/share/mgstudio/current`:
+
+```bash
+# Build the SDK dir (requires a local libwgpu_native.dylib).
+./scripts/mgstudio-sdk-build --wgpu-lib /path/to/libwgpu_native.dylib
+
+# Install it into $HOME/.local/share/mgstudio/current and link mgstudio into ~/.local/bin.
+./scripts/mgstudio-sdk-install --from ./_out/sdk/mgstudio-sdk-*-darwin-arm64
+```
+
+### Install (Repo Symlink, Dev Only)
+
 For a convenient `mgstudio` on your `PATH`, install a symlink to the repo wrapper:
 
 ```bash

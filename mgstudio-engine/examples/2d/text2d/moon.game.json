@@ -8,6 +8,6 @@
     "port": 8099,
     "data": "idb:mgstudio"
   },
-  "sdkroot": "/Users/zhengyu/.local/share/mgstudio/current",
+  "sdkroot": "$HOME/.local/share/mgstudio/current",
   "assets_allow_sdk_override": false
 }
