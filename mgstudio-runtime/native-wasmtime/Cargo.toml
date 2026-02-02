@@ -1,0 +1,17 @@
+[package]
+name = "mgstudio-runtime-native-wasmtime"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+bytemuck = { version = "1", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+pollster = "0.3"
+thiserror = "2"
+wasmtime = { version = "41", features = ["gc", "parallel-compilation"] }
+wgpu = "28"
+# winit 0.30 still exposes `EventLoop::create_window` (deprecated) which we use to
+# match mgstudio's synchronous `window_create` host contract.
+winit = "0.30.12"
