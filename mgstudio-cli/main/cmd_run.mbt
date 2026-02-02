@@ -78,9 +78,17 @@ async fn run_native(opts : RunOptions) -> Unit {
   let game_cfg_path = resolve_game_config_path(opts.game)
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
+  let sdk = resolve_sdk_layout(cfg)
   let assets_source = cfg.assets_spec
   let data_source = cfg.data_spec_native
   if assets_source.has_prefix("http://") || assets_source.has_prefix("https://") {
+    raise RunError::InvalidArgs(
+      "Native runtime only supports dir assets source today (got: " +
+      assets_source +
+      ")",
+    )
+  }
+  if !assets_source.has_prefix("dir:") {
     raise RunError::InvalidArgs(
       "Native runtime only supports dir assets source today (got: " +
       assets_source +
@@ -96,9 +104,25 @@ async fn run_native(opts : RunOptions) -> Unit {
       ")",
     )
   }
-  let wgpu_lib = cfg.native_wgpu_lib
-  if wgpu_lib is Some(p) && p.trim() != "" {
-    println("Using MBT_WGPU_NATIVE_LIB: \{p}")
-  }
-  @native_rt.run_game(cfg.cart_path, assets_source, data_source, wgpu_lib?)
+  // Stage an overlay assets dir so the native runtime sees both game assets and
+  // SDK-provided engine assets (e.g. built-in shaders).
+  let stage_root = path_join(cfg.dir, ".mgstudio/run")
+  @fs.mkdir(stage_root, permission=0o755, recursive=true)
+  let overlay_assets_dir = path_join(stage_root, "_mgstudio_assets")
+  let game_assets_dir = strip_dir_prefix(assets_source)
+  stage_assets_overlay(
+    overlay_assets_dir,
+    sdk.assets_dir,
+    game_assets_dir,
+    cfg.assets_allow_sdk_override,
+  )
+  let final_assets_source = "dir:" + overlay_assets_dir
+  println("Using SDK libwgpu_native: \{sdk.native_wgpu_lib}")
+  let wgpu_lib : String? = Some(sdk.native_wgpu_lib)
+  @native_rt.run_game(
+    cfg.cart_path,
+    final_assets_source,
+    data_source,
+    wgpu_lib?,
+  )
 }

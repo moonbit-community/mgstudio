@@ -20,14 +20,3 @@ fn strip_dir_prefix(spec : String) -> String {
     spec
   }
 }
-
-///|
-fn ensure_trailing_slash(text : String) -> String {
-  if text == "" {
-    ""
-  } else if text is [.., '/'] {
-    text
-  } else {
-    text + "/"
-  }
-}

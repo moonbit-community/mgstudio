@@ -60,7 +60,7 @@ fn parse_serve_options(
 }
 
 ///|
-fn render_web_index_html(runtime_js_url : String) -> String {
+fn render_web_index_html() -> String {
   // Keep a dummy menu element so the web runtime doesn't overwrite the status
   // with "Missing menu element".
   "<!doctype html>\n" +
@@ -78,9 +78,7 @@ fn render_web_index_html(runtime_js_url : String) -> String {
   "  <body>\n" +
   "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
   "    <div id=\"mgstudio-menu\"></div>\n" +
-  "    <script type=\"module\" src=\"" +
-  runtime_js_url +
-  "\"></script>\n" +
+  "    <script type=\"module\" src=\"./mgstudio-runtime-web.js\"></script>\n" +
   "  </body>\n" +
   "</html>\n"
 }
@@ -88,6 +86,8 @@ fn render_web_index_html(runtime_js_url : String) -> String {
 ///|
 async fn stage_assets(
   stage_root : String,
+  sdk_assets_dir : String,
+  allow_sdk_override : Bool,
   assets_spec : String,
 ) -> (String, Bool) {
   let spec = assets_spec.trim().to_string()
@@ -96,16 +96,17 @@ async fn stage_assets(
     if !@fs.exists(local_path) {
       raise RunError::MissingFile(local_path)
     }
-    let mount = path_join(stage_root, "_mgstudio_assets")
-    if @fs.exists(mount) {
-      @fs.rmdir(mount, recursive=true) catch {
-        _ => @fs.remove(mount) catch { _ => () }
-      }
-    }
-    @fs.symlink(mount, target=local_path)
+    let overlay = path_join(stage_root, "_mgstudio_assets")
+    stage_assets_overlay(
+      overlay, sdk_assets_dir, local_path, allow_sdk_override,
+    )
     ("./_mgstudio_assets/", true)
   } else if spec.has_prefix("http://") || spec.has_prefix("https://") {
-    (ensure_trailing_slash(spec), false)
+    raise RunError::InvalidArgs(
+      "HTTP assets are not supported when using an SDK-root overlay (got: " +
+      spec +
+      ")",
+    )
   } else {
     raise RunError::InvalidArgs("Unsupported assets spec for web: " + spec)
   }
@@ -136,6 +137,7 @@ async fn serve_web(opts : ServeOptions) -> Unit {
   let game_cfg_path = resolve_game_config_path(opts.game)
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
+  let sdk = resolve_sdk_layout(cfg)
   let wasm_path = cfg.cart_path
 
   // Stage a served root alongside the game config.
@@ -147,16 +149,25 @@ async fn serve_web(opts : ServeOptions) -> Unit {
   }
   @fs.mkdir(stage_root, permission=0o755, recursive=true)
 
-  // Write index.html that loads the web runtime from CDN / GitHub release.
+  // Write index.html that loads the web runtime JS bundle from the staged SDK file.
   let index_dst = path_join(stage_root, "index.html")
-  write_file_text(index_dst, render_web_index_html(cfg.web_runtime_js))
+  write_file_text(index_dst, render_web_index_html())
+
+  // Copy mgstudio-runtime-web.js from SDK into served root (offline by default).
+  let runtime_dst = path_join(stage_root, "mgstudio-runtime-web.js")
+  copy_file(sdk.web_runtime_js, runtime_dst)
 
   // Copy game wasm into served root.
   let wasm_dst = path_join(stage_root, "game.wasm")
   run_process_checked("cp", [wasm_path, wasm_dst], cwd=cfg.dir)
 
   // Assets: either mount a local directory or use a URL base.
-  let (assets_base, _mounted) = stage_assets(stage_root, cfg.assets_spec)
+  let (assets_base, _mounted) = stage_assets(
+    stage_root,
+    sdk.assets_dir,
+    cfg.assets_allow_sdk_override,
+    cfg.assets_spec,
+  )
 
   // Data source for web: prefer idb.
   let data_source = cfg.data_spec_web

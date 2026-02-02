@@ -18,6 +18,8 @@ type ModuleInfo
 
 type RunOptions
 
+type SdkLayout
+
 type ServeOptions
 
 type TypeRef

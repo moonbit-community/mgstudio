@@ -20,10 +20,14 @@ struct GameConfig {
   dir : String
   /// Config version string (e.g. "0.1.0").
   mgstudio : String
+  /// Absolute path to the SDK root directory (required).
+  sdk_root : String
   /// Absolute path to the game wasm file.
   cart_path : String
   /// Assets source spec (e.g. "dir:/abs/path/assets" or "https://.../assets/").
   assets_spec : String
+  /// Whether game assets may override SDK-provided engine assets.
+  assets_allow_sdk_override : Bool
   /// Data source spec for native run (typically "dir:/abs/path/tmp/data").
   data_spec_native : String
   /// Data source spec for web serve (typically "idb:mgstudio").
@@ -32,14 +36,7 @@ struct GameConfig {
   web_addr : String
   /// Web server port (for `mgstudio serve`).
   web_port : String
-  /// URL to `mgstudio-runtime-web.js` (CDN / GitHub release).
-  web_runtime_js : String
-  /// Optional native-only override for libwgpu_native.
-  native_wgpu_lib : String?
 }
-
-///|
-const DEFAULT_WEB_RUNTIME_JS : String = "https://github.com/moonbit-community/mgstudio/releases/latest/download/mgstudio-runtime-web.js"
 
 ///|
 async fn resolve_game_config_path(game_opt : String?) -> String raise Error {
@@ -121,6 +118,19 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
   }
   let root = expect_object(json, "root", abs_path)
   let mgstudio = get_required_string(root, "mgstudio", abs_path)
+  let sdk_root_raw = get_required_string(root, "sdkroot", abs_path)
+  let sdk_root_raw = expand_home_path(sdk_root_raw)
+  let sdk_root_path = if is_absolute_path(sdk_root_raw) {
+    sdk_root_raw
+  } else {
+    path_join(cfg_dir, sdk_root_raw)
+  }
+  let sdk_root = @fs.realpath(sdk_root_path) catch {
+    _ =>
+      raise RunError::InvalidArgs(
+        abs_path + ": sdkroot does not exist: " + sdk_root_path,
+      )
+  }
   let cart_raw = get_required_string(root, "cart", abs_path)
   let cart_path = resolve_path_relative(cfg_dir, cart_raw, abs_path)
   if !@fs.exists(cart_path) {
@@ -130,6 +140,15 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
   // assets/data are optional; defaults are chosen to keep the config small.
   let assets_raw : String? = get_optional_string(root, "assets", abs_path)
   let data_raw : String? = get_optional_string(root, "data", abs_path)
+  let assets_allow_sdk_override = match root.get("assets_allow_sdk_override") {
+    Some(Json::True) => true
+    Some(Json::False) => false
+    Some(_) =>
+      raise RunError::InvalidArgs(
+        abs_path + ": field assets_allow_sdk_override must be boolean",
+      )
+    None => false
+  }
   let assets_spec = match assets_raw {
     Some(raw) if raw.trim() != "" =>
       normalize_assets_spec(raw, cfg_dir, abs_path)
@@ -158,13 +177,6 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
       get_optional_number_as_port(web, "port", abs_path).unwrap_or("8099")
     None => "8099"
   }
-  let web_runtime_js = match web_obj {
-    Some(web) =>
-      get_optional_string(web, "runtime_js", abs_path).unwrap_or(
-        DEFAULT_WEB_RUNTIME_JS,
-      )
-    None => DEFAULT_WEB_RUNTIME_JS
-  }
 
   // Web data source: prefer web.data; otherwise fall back to top-level data if
   // it is already an idb spec; else default to idb:mgstudio.
@@ -175,31 +187,18 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
   let data_spec_web = normalize_source_spec_idb(
     web_data_raw, data_raw, "idb:mgstudio",
   )
-  let native_obj : Map[String, Json]? = get_optional_object(
-    root, "native", abs_path,
-  )
-  // Prefer native.wgpu_lib; fall back to legacy top-level wgpu_lib if present.
-  let native_wgpu_lib_raw = match native_obj {
-    Some(native) => get_optional_string(native, "wgpu_lib", abs_path)
-    None => get_optional_string(root, "wgpu_lib", abs_path)
-  }
-  let native_wgpu_lib = match native_wgpu_lib_raw {
-    Some(v) if v.trim() != "" => Some(expand_home_path(v))
-    Some(_) => None
-    None => None
-  }
   {
     file_path: abs_path,
     dir: cfg_dir,
     mgstudio,
+    sdk_root,
     cart_path,
     assets_spec,
+    assets_allow_sdk_override,
     data_spec_native,
     data_spec_web,
     web_addr,
     web_port,
-    web_runtime_js,
-    native_wgpu_lib,
   }
 }
 

@@ -7,7 +7,7 @@ Developer CLI for mgstudio (native + web).
 - `mgstudio gen`: scan MoonBit source files for mgstudio tags (`#ecs.component`, `#ecs.resource`) and generate per-package `ecs.g.mbt`. Optionally generates a concrete ECS `World` package.
 - `mgstudio run`: run a game described by a game config file in the native runtime (calls export `game_app`).
 - `mgstudio serve`: serve the web runtime and run a game described by a game config file in the browser (calls export `game_app`).
-- `mgstudio new`: create a new MoonBit game project template (`moon new` + `moon.game.json` + `index.html`).
+- `mgstudio new`: create a new MoonBit game project template (`moon new` + `moon.game.json`).
 
 ## Usage
 
@@ -41,18 +41,21 @@ Minimal example:
 ```json
 {
   "mgstudio": "0.1.0",
+  "sdkroot": "$HOME/.local/share/mgstudio/current",
   "cart": "./_build/wasm-gc/release/build/cmd/main/main.wasm",
-  "native": { "wgpu_lib": "$HOME/.local/lib/libwgpu_native.dylib" },
-  "web": { "addr": "127.0.0.1", "port": 8099 }
+  "web": { "addr": "127.0.0.1", "port": 8099 },
+  "assets_allow_sdk_override": false
 }
 ```
 
 Notes:
 
 - Paths are resolved relative to the config file directory.
-- `native.wgpu_lib` supports `$HOME` and `~/` expansion.
+- `sdkroot` supports `$HOME` and `~/` expansion.
 - File name is not fixed. Use `--game <path>` to point to any config file name.
 - `assets` and `data` are optional. If omitted, defaults are `./assets` (if it exists) and `./tmp/data`.
+  The CLI builds an assets overlay so both game assets and SDK-provided engine
+  assets are visible to runtimes.
 
 ### Native (Local Window)
 
@@ -81,7 +84,8 @@ Notes:
 
 `mgstudio` does not require a full git repo. It runs the game described by `moon.game.json` (or your `--game` path).
 
-`mgstudio serve` uses a staged served root and loads `mgstudio-runtime-web.js` from the URL provided in config (or a default GitHub release URL).
+`mgstudio serve` uses a staged served root and copies `mgstudio-runtime-web.js`
+from the SDK into the served directory (offline by default).
 
 ## Install (Local Symlink)
 

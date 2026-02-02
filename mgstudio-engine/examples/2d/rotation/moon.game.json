@@ -3,5 +3,11 @@
   "cart": "../../../_build/wasm-gc/release/build/examples/2d/rotation/rotation.wasm",
   "assets": "../../../assets",
   "data": "./tmp/data",
-  "web": { "addr": "localhost", "port": 8099, "data": "idb:mgstudio", "runtime_js": "https://github.com/moonbit-community/mgstudio/releases/latest/download/mgstudio-runtime-web.js" }
+  "web": {
+    "addr": "localhost",
+    "port": 8099,
+    "data": "idb:mgstudio"
+  },
+  "sdkroot": "/Users/zhengyu/.local/share/mgstudio/current",
+  "assets_allow_sdk_override": false
 }

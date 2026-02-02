@@ -185,46 +185,12 @@ async fn new_game_project(name : String) -> Unit {
 
   // Game config: minimal; assets/data default to ./assets and ./tmp/data.
   let cart = "./_build/wasm-gc/release/build/" + project_name + ".wasm"
-  let game_json_raw = "{\"mgstudio\":\"0.1.0\",\"cart\":\"" +
+  // sdkroot is required. Default to a conventional user install location.
+  let game_json_raw = "{\"mgstudio\":\"0.1.0\",\"sdkroot\":\"$HOME/.local/share/mgstudio/current\",\"cart\":\"" +
     cart +
-    "\",\"native\":{\"wgpu_lib\":\"$HOME/.local/lib/libwgpu_native.dylib\"},\"web\":{\"addr\":\"127.0.0.1\",\"port\":8099}}"
+    "\",\"web\":{\"addr\":\"127.0.0.1\",\"port\":8099},\"assets_allow_sdk_override\":false}"
   let game_json = @json.parse(game_json_raw).stringify(indent=2) + "\n"
   write_file_text(path_join(project_dir, "moon.game.json"), game_json)
-
-  // Optional: a standalone index.html that loads the web runtime directly.
-  let index_html = "<!doctype html>\n" +
-    "<html lang=\"en\">\n" +
-    "  <head>\n" +
-    "    <meta charset=\"utf-8\" />\n" +
-    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" +
-    "    <title>Moon Game Studio</title>\n" +
-    "    <style>\n" +
-    "      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b0f16; }\n" +
-    "      canvas { display: block; width: 100%; height: 100%; }\n" +
-    "      #mgstudio-menu { display: none; }\n" +
-    "    </style>\n" +
-    "  </head>\n" +
-    "  <body>\n" +
-    "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
-    "    <div id=\"mgstudio-menu\"></div>\n" +
-    "    <script>\n" +
-    "      // Default to the game build output when no query string is provided.\n" +
-    "      const url = new URL(window.location.href);\n" +
-    "      if (!url.searchParams.get('wasm')) {\n" +
-    "        url.searchParams.set('wasm', '" +
-    cart +
-    "');\n" +
-    "        url.searchParams.set('assets_source', './assets/');\n" +
-    "        url.searchParams.set('data_source', 'idb:mgstudio');\n" +
-    "        history.replaceState(null, '', url.toString());\n" +
-    "      }\n" +
-    "    </script>\n" +
-    "    <script type=\"module\" src=\"" +
-    DEFAULT_WEB_RUNTIME_JS +
-    "\"></script>\n" +
-    "  </body>\n" +
-    "</html>\n"
-  write_file_text(path_join(project_dir, "index.html"), index_html)
 
   // Replace README with mgstudio-oriented instructions.
   write_file_text(
