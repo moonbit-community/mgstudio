@@ -506,8 +506,9 @@ pub fn GpuBackend::configure_surface(
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   // Surface textures cannot be used as sampled textures (`texture_binding`).
   // Requesting RESOURCE usage triggers a wgpu-native validation error.
-  let usage = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_COPY_SRC
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   self.surface_format = surface.configure_default(
     self.adapter,
     self.device,
@@ -596,9 +597,10 @@ fn ensure_fallback_texture(
     let bgl_tex = backend.sprite_bgl_tex.unwrap()
     let w = 128U
     let h = 128U
-    let usage = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
       @wgpu.TEXTURE_USAGE_COPY_DST |
       @wgpu.TEXTURE_USAGE_COPY_SRC
+    let usage = @wgpu.TextureUsage::from_u64(usage_bits)
     let tex = backend.device.create_texture_rgba8_2d_with_usage(w, h, usage)
     let view = tex.create_view()
     let sampler = backend.device.create_sampler_linear_clamp()
@@ -635,9 +637,10 @@ pub fn GpuBackend::create_texture_rgba8(
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  let usage = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+  let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
     @wgpu.TEXTURE_USAGE_COPY_DST |
     @wgpu.TEXTURE_USAGE_COPY_SRC
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
   let sampler = if nearest {
@@ -821,10 +824,11 @@ pub fn GpuBackend::create_render_target(
   let id = alloc_id(self)
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  let usage = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
     @wgpu.TEXTURE_USAGE_COPY_SRC |
     @wgpu.TEXTURE_USAGE_COPY_DST
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
   let sampler = if nearest {

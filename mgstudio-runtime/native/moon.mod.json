@@ -7,7 +7,7 @@
       "path": "../core"
     },
     "moonbitlang/x": "0.4.38",
-    "Milky2018/wgpu_mbt": "0.2.2"
+    "Milky2018/wgpu_mbt": "0.2.19"
   },
   "readme": "README.mbt.md",
   "license": "Apache-2.0",
