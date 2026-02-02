@@ -130,7 +130,7 @@ async fn run_native(opts : RunOptions) -> Unit {
       wgpu_lib?,
     )
   } else if backend == "wasmtime" {
-    run_native_wasmtime(cfg.cart_path, final_assets_source, data_source)
+    run_native_wasmtime(cfg.cart_path, final_assets_source, data_source, cfg.sdk_root)
   } else {
     raise RunError::InvalidArgs(
       "Unknown --backend: " + backend + " (expected: wasmoon|wasmtime)",
@@ -143,63 +143,27 @@ async fn run_native_wasmtime(
   cart_path : String,
   assets_source : String,
   data_source : String,
+  sdk_root : String,
 ) -> Unit {
-  // Option 1: user-provided binary path.
-  match @sys.get_env_var("MGSTUDIO_WASMTIME_RUNTIME") {
-    Some(bin) if bin.trim() != "" => {
-      run_process_checked(
-        bin.trim().to_string(),
-        ["--cart", cart_path, "--assets", assets_source, "--data", data_source],
-      )
-      return
-    }
-    _ => ()
-  }
+  // Prefer a runtime shipped in the SDK (optional / experimental).
+  let bin_in_sdk = path_join(sdk_root, "bin/mgstudio-runtime-native-wasmtime")
 
-  // Option 2: auto-discover within this repo by searching upward for the
-  // Cargo project folder and building it if needed.
-  let cwd = @fs.realpath(".")
-  let mut dir = cwd
-  let marker = "mgstudio-runtime/native-wasmtime/Cargo.toml"
-  let mut crate_dir : String? = None
-  while dir != "" {
-    let candidate = path_join(dir, marker)
-    if @fs.exists(candidate) {
-      crate_dir = Some(path_join(dir, "mgstudio-runtime/native-wasmtime"))
-      break
-    }
-    let parent = @path.Path(dir).dirname().to_string()
-    if parent == dir {
-      break
-    }
-    dir = parent
-  }
-  guard crate_dir is Some(cd) else {
-    raise RunError::InvalidArgs(
-      "Cannot locate native-wasmtime runtime. Set MGSTUDIO_WASMTIME_RUNTIME to the binary path, or run inside the mgstudio-dev repo.",
-    )
-  }
+  // Allow explicit override for local development.
+  let bin_override : String? = @sys.get_env_var("MGSTUDIO_WASMTIME_RUNTIME")
 
-  // Build (release) and run.
-  let cargo_target : String? = @sys.get_env_var("MGSTUDIO_WASMTIME_CARGO_TARGET")
-  if cargo_target is Some(t) && t.trim() != "" {
-    let triple = t.trim().to_string()
-    run_process_checked(
-      "cargo",
-      ["build", "--release", "--target", triple],
-      cwd=cd,
-    )
-  } else {
-    run_process_checked("cargo", ["build", "--release"], cwd=cd)
-  }
-  let bin = match cargo_target {
-    Some(t) if t.trim() != "" =>
-      path_join(
-        cd,
-        "target/" + t.trim().to_string() + "/release/mgstudio-runtime-native-wasmtime",
-      )
-    _ => path_join(cd, "target/release/mgstudio-runtime-native-wasmtime")
-  }
+  let bin =
+    match bin_override {
+      Some(p) if p.trim() != "" => p.trim().to_string()
+      _ if @fs.exists(bin_in_sdk) => bin_in_sdk
+      _ =>
+        raise RunError::InvalidArgs(
+          "Wasmtime backend selected but runtime binary not found.\n" +
+          "- Install it into SDK: " +
+          bin_in_sdk +
+          "\n" +
+          "- Or set MGSTUDIO_WASMTIME_RUNTIME to an absolute path.",
+        )
+    }
   run_process_checked(
     bin,
     ["--cart", cart_path, "--assets", assets_source, "--data", data_source],

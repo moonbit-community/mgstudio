@@ -16,8 +16,7 @@ cargo build --release
 
 ## Run (direct)
 
-The mgstudio CLI will eventually spawn this runtime when `--backend wasmtime`
-is selected. During bring-up you can run it directly:
+During bring-up you can run it directly:
 
 ```bash
 ./target/release/mgstudio-runtime-native-wasmtime \
@@ -25,6 +24,15 @@ is selected. During bring-up you can run it directly:
   --assets dir:/abs/path/to/assets \
   --data dir:/abs/path/to/tmp/data
 ```
+
+## Run (via mgstudio CLI)
+
+`mgstudio run --backend wasmtime` is treated as **experimental**.
+
+The CLI expects the runtime binary either:
+
+- installed in the SDK at `<sdkroot>/bin/mgstudio-runtime-native-wasmtime`, or
+- provided explicitly via `MGSTUDIO_WASMTIME_RUNTIME=/abs/path/to/mgstudio-runtime-native-wasmtime`
 
 Notes:
 
@@ -41,3 +49,10 @@ Notes:
     workaround is to build this runtime for `x86_64-apple-darwin` and run it
     via Rosetta.
   - Fonts/folder async asset APIs and gizmo line rendering are still stubbed.
+
+## Licensing / Distribution Notes
+
+If we ever ship prebuilt binaries of this runtime (as part of an SDK),
+we should also ship corresponding third-party license notices for the Rust
+dependency tree (`wasmtime`, `wgpu`, `winit`, etc.). A common approach is to
+generate notices from `Cargo.lock` during the packaging step.
