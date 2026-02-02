@@ -22,6 +22,9 @@ jobs:
   build-and-upload:
     name: Build & Upload SDK (darwin-arm64)
     runs-on: macos-14
+    env:
+      # Needed for dependencies that use `gh` in postadd hooks (e.g. wgpu_mbt).
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
