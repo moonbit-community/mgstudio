@@ -891,7 +891,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
     rs.val.extra_sprites.push(SpriteInstance::{
       transform,
       anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: transform.scale,
+      draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
       color,
       texture,
       layers,
@@ -1133,10 +1133,13 @@ pub fn[
       uv_min = info.uv_min
       uv_max = info.uv_max
     }
-    let draw_scale = sprite_draw_scale(sprite, transform.scale)
+    let draw_scale = sprite_draw_scale(
+      sprite,
+      @math.Vec2::new(transform.scale.x, transform.scale.y),
+    )
     let anchor_offset = sprite_anchor_offset(
       anchor,
-      transform.rotation,
+      transform.rotation_z(),
       draw_scale,
     )
     rs.val.sprites.push(SpriteInstance::{
@@ -1199,6 +1202,17 @@ fn cmp_int(a : Int, b : Int) -> Int {
 }
 
 ///|
+fn cmp_float(a : Float, b : Float) -> Int {
+  if a < b {
+    -1
+  } else if a > b {
+    1
+  } else {
+    0
+  }
+}
+
+///|
 fn sprite_draw_indices(
   sprites : Array[SpriteInstance],
   layers : RenderLayers,
@@ -1219,6 +1233,12 @@ fn sprite_draw_indices(
   }
   // Opaque sprites can be safely re-ordered to improve batching.
   opaque_indices.sort_by(fn(a, b) {
+    let za = sprites[a].transform.translation.z
+    let zb = sprites[b].transform.translation.z
+    let cz = cmp_float(za, zb)
+    if cz != 0 {
+      return cz
+    }
     let ta = sprites[a].texture.id()
     let tb = sprites[b].texture.id()
     let c = cmp_int(ta, tb)
@@ -1233,11 +1253,138 @@ fn sprite_draw_indices(
   for i in opaque_indices {
     out.push(i)
   }
-  // Transparent sprites keep insertion order for stable blending.
+  // Transparent sprites are sorted by Z for correct 2D layering.
+  transparent.sort_by(fn(a, b) {
+    let za = sprites[a].transform.translation.z
+    let zb = sprites[b].transform.translation.z
+    let cz = cmp_float(za, zb)
+    if cz != 0 {
+      cz
+    } else {
+      // Tie-break to keep the order deterministic.
+      cmp_int(a, b)
+    }
+  })
   for i in transparent {
     out.push(i)
   }
   out
+}
+
+///|
+fn mesh_draw_indices(
+  meshes : Array[MeshInstance],
+  layers : RenderLayers,
+) -> Array[Int] {
+  let indices : Array[Int] = []
+  let count = meshes.length()
+  for i in 0..<count {
+    if meshes[i].layers.matches(layers) {
+      indices.push(i)
+    }
+  }
+  indices.sort_by(fn(a, b) {
+    let za = meshes[a].transform.translation.z
+    let zb = meshes[b].transform.translation.z
+    let cz = cmp_float(za, zb)
+    if cz != 0 {
+      cz
+    } else {
+      cmp_int(a, b)
+    }
+  })
+  indices
+}
+
+///|
+test "render2d: sprite draw order uses translation.z" {
+  let layers = RenderLayers::default()
+  let sprites : Array[SpriteInstance] = [
+    SpriteInstance::{
+      transform: @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=0.0F,
+      ),
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale: @math.Vec2::new(1.0F, 1.0F),
+      color: Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      texture: @asset.Handle::new(2),
+      layers,
+      uv_min: @math.Vec2::new(0.0F, 0.0F),
+      uv_max: @math.Vec2::new(1.0F, 1.0F),
+    },
+    SpriteInstance::{
+      transform: @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=-1.0F,
+      ),
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale: @math.Vec2::new(1.0F, 1.0F),
+      color: Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      texture: @asset.Handle::new(1),
+      layers,
+      uv_min: @math.Vec2::new(0.0F, 0.0F),
+      uv_max: @math.Vec2::new(1.0F, 1.0F),
+    },
+    // Transparent sprite at z=0 should be drawn after opaque sprites at z=0.
+    SpriteInstance::{
+      transform: @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=0.0F,
+      ),
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale: @math.Vec2::new(1.0F, 1.0F),
+      color: Color::new(1.0F, 1.0F, 1.0F, 0.5F),
+      texture: @asset.Handle::new(3),
+      layers,
+      uv_min: @math.Vec2::new(0.0F, 0.0F),
+      uv_max: @math.Vec2::new(1.0F, 1.0F),
+    },
+  ]
+  let order = sprite_draw_indices(sprites, layers)
+  let ok = order.length() == 3 &&
+    order[0] == 1 &&
+    order[1] == 0 &&
+    order[2] == 2
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: mesh draw order uses translation.z" {
+  let layers = RenderLayers::default()
+  let meshes : Array[MeshInstance] = [
+    MeshInstance::{
+      mesh_id: 1,
+      transform: @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=2.0F,
+      ),
+      color: Color::white(),
+      layers,
+    },
+    MeshInstance::{
+      mesh_id: 2,
+      transform: @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=-2.0F,
+      ),
+      color: Color::white(),
+      layers,
+    },
+  ]
+  let order = mesh_draw_indices(meshes, layers)
+  let ok = order.length() == 2 && order[0] == 1 && order[1] == 0
+  inspect(ok, content="true")
 }
 
 ///|
@@ -1342,7 +1489,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       clear.a,
       camera.transform.translation.x,
       camera.transform.translation.y,
-      camera.transform.rotation,
+      camera.transform.rotation_z(),
       camera.projection.scale,
       viewport_x,
       viewport_y,
@@ -1360,7 +1507,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
         sprite.texture.id(),
         pos.x,
         pos.y,
-        transform.rotation,
+        transform.rotation_z(),
         sprite.draw_scale.x,
         sprite.draw_scale.y,
         sprite.color.r,
@@ -1373,22 +1520,21 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
         sprite.uv_max.y,
       )
     }
-    for mesh in meshes {
-      if mesh.layers.matches(camera.layers) {
-        let transform = mesh.transform
-        @window.host_gpu_draw_mesh(
-          mesh.mesh_id,
-          transform.translation.x,
-          transform.translation.y,
-          transform.rotation,
-          transform.scale.x,
-          transform.scale.y,
-          mesh.color.r,
-          mesh.color.g,
-          mesh.color.b,
-          mesh.color.a,
-        )
-      }
+    for mesh_index in mesh_draw_indices(meshes, camera.layers) {
+      let mesh = meshes[mesh_index]
+      let transform = mesh.transform
+      @window.host_gpu_draw_mesh(
+        mesh.mesh_id,
+        transform.translation.x,
+        transform.translation.y,
+        transform.rotation_z(),
+        transform.scale.x,
+        transform.scale.y,
+        mesh.color.r,
+        mesh.color.g,
+        mesh.color.b,
+        mesh.color.a,
+      )
     }
     for sprite_index in sprite_draw_indices(extra_sprites, camera.layers) {
       let sprite = extra_sprites[sprite_index]
@@ -1401,7 +1547,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
         sprite.texture.id(),
         pos.x,
         pos.y,
-        transform.rotation,
+        transform.rotation_z(),
         sprite.draw_scale.x,
         sprite.draw_scale.y,
         sprite.color.r,
@@ -1516,8 +1662,9 @@ pub fn render2d_camera_viewport_to_world_2d(
   let local_y = screen.y - rect_y_f
   let view_x = (local_x - half_width) * scale
   let view_y = (half_height - local_y) * scale
-  let cosv = @math.cos(camera_transform.rotation)
-  let sinv = @math.sin(camera_transform.rotation)
+  let rot_z = camera_transform.rotation_z()
+  let cosv = @math.cos(rot_z)
+  let sinv = @math.sin(rot_z)
   let world_x = camera_transform.translation.x + view_x * cosv + view_y * sinv
   let world_y = camera_transform.translation.y - view_x * sinv + view_y * cosv
   Some(@math.Vec2::new(world_x, world_y))
@@ -1559,8 +1706,9 @@ pub fn render2d_camera_world_to_viewport_2d(
   let half_height = rect_height_f / 2.0F
   let dx = world.x - camera_transform.translation.x
   let dy = world.y - camera_transform.translation.y
-  let cosv = @math.cos(camera_transform.rotation)
-  let sinv = @math.sin(camera_transform.rotation)
+  let rot_z = camera_transform.rotation_z()
+  let cosv = @math.cos(rot_z)
+  let sinv = @math.sin(rot_z)
   let view_x = dx * cosv - dy * sinv
   let view_y = dx * sinv + dy * cosv
   let safe_scale = if projection.scale == 0.0F {

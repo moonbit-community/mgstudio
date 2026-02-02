@@ -49,10 +49,11 @@ fn sprite_scale_update(world : @ecs_world.World) -> Unit {
   })
   for entry in entities {
     let transform = entry.1
-    let next_transform = @math.Transform::new(
-      transform.translation,
-      transform.rotation,
+    let next_transform = @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(transform.translation.x, transform.translation.y),
+      transform.rotation_z(),
       @math.Vec2::new(pulse, pulse),
+      z=transform.translation.z,
     )
     transform_store.set(entry.0, next_transform, tick) |> ignore
   }

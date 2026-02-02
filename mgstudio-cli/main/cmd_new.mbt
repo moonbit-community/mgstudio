@@ -149,10 +149,10 @@ async fn new_game_project(name : String) -> Unit {
     "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +
     "  let asset_server = @asset.AssetServer::new()\n" +
     "  let texture = asset_server.load(\"branding/icon.png\")\n" +
-    "  let sprite = @render2d.Sprite::new(@render2d.Color::white())\n" +
+    "  let sprite = @render2d.Sprite::from_image(texture)\n" +
     "  let transform = @math.Transform::identity()\n" +
-    "  @render2d.SpriteBundle::new(sprite, transform, texture).spawn(world) |> ignore\n" +
-    "  let camera = @render2d.Camera2d::default()\n" +
+    "  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore\n" +
+    "  let camera = @render2d.Camera::default()\n" +
     "  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world) |> ignore\n" +
     "}\n\n" +
     "///|\n" +
@@ -168,11 +168,12 @@ async fn new_game_project(name : String) -> Unit {
     "  })\n" +
     "  for entry in entities {\n" +
     "    let transform = entry.1\n" +
-    "    let next_rotation = transform.rotation + speed * delta_secs\n" +
-    "    let next_transform = @math.Transform::new(\n" +
-    "      transform.translation,\n" +
-    "      next_rotation,\n" +
-    "      transform.scale,\n" +
+    "    let next_rotation_z = transform.rotation_z() + speed * delta_secs\n" +
+    "    let next_transform = @math.Transform::from_xy_rotation_scale(\n" +
+    "      @math.Vec2::new(transform.translation.x, transform.translation.y),\n" +
+    "      next_rotation_z,\n" +
+    "      @math.Vec2::new(transform.scale.x, transform.scale.y),\n" +
+    "      z=transform.translation.z,\n" +
     "    )\n" +
     "    transform_store.set(entry.0, next_transform, tick) |> ignore\n" +
     "  }\n" +

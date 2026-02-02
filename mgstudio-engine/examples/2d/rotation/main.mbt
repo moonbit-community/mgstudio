@@ -49,11 +49,12 @@ fn rotation_update(world : @ecs_world.World) -> Unit {
   })
   for entry in entities {
     let transform = entry.1
-    let next_rotation = transform.rotation + speed * delta_secs
-    let next_transform = @math.Transform::new(
-      transform.translation,
-      next_rotation,
-      transform.scale,
+    let next_rotation_z = transform.rotation_z() + speed * delta_secs
+    let next_transform = @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(transform.translation.x, transform.translation.y),
+      next_rotation_z,
+      @math.Vec2::new(transform.scale.x, transform.scale.y),
+      z=transform.translation.z,
     )
     transform_store.set(entry.0, next_transform, tick) |> ignore
   }

@@ -59,10 +59,11 @@ fn rotate_to_cursor_update(world : @ecs_world.World) -> Unit {
           world_pos.y - transform.translation.y,
         )
         let angle = delta.to_angle() - @math.pi_half()
-        let next_transform = @math.Transform::new(
-          transform.translation,
+        let next_transform = @math.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(transform.translation.x, transform.translation.y),
           angle,
-          transform.scale,
+          @math.Vec2::new(transform.scale.x, transform.scale.y),
+          z=transform.translation.z,
         )
         transform_store.set(entry.0, next_transform, tick) |> ignore
       }

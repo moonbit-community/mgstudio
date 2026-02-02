@@ -72,10 +72,11 @@ fn move_sprite_movement(world : @ecs_world.World) -> Unit {
       transform.translation.x + move_x,
       transform.translation.y,
     )
-    let next_transform = @math.Transform::new(
+    let next_transform = @math.Transform::from_xy_rotation_scale(
       translation,
-      transform.rotation,
-      transform.scale,
+      transform.rotation_z(),
+      @math.Vec2::new(transform.scale.x, transform.scale.y),
+      z=transform.translation.z,
     )
     transform_store.set(entry.0, next_transform, tick) |> ignore
     if translation.x > 200.0F {

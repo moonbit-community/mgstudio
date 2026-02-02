@@ -38,7 +38,7 @@ fn sprite_sheet_setup(world : @ecs_world.World) -> Unit {
         Float::from_double((x * 160 - 80).to_double()),
         Float::from_double((80 - y * 160).to_double()),
       )
-      let transform = @math.Transform::new(
+      let transform = @math.Transform::from_xy_rotation_scale(
         translation,
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

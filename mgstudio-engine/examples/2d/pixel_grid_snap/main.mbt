@@ -67,7 +67,7 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
   canvas_sprite.spawn(world) |> ignore
   let pixel_sprite = @render2d.SpriteBundle::new_with_layers(
     @render2d.Sprite::from_image(pixel_dark),
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-45.0F, 20.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -76,7 +76,7 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   let high_sprite = @render2d.SpriteBundle::new_with_layers(
     @render2d.Sprite::from_image(pixel_light),
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-45.0F, -20.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -89,7 +89,7 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
   let mesh_handle = @render2d.Mesh2dBundle::new_with_layers(
     mesh,
     material,
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(25.0F, 0.0F),
       0.0F,
       @math.Vec2::new(32.0F, 32.0F),
@@ -129,17 +129,17 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
   let delta = @time.time_delta_seconds()
   let next_rotation = pixel_state.val.rotation + delta
   pixel_state.val.rotation = next_rotation
-  let pixel_transform = @math.Transform::new(
+  let pixel_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(-45.0F, 20.0F),
     next_rotation,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  let high_transform = @math.Transform::new(
+  let high_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(-45.0F, -20.0F),
     next_rotation,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  let mesh_transform = @math.Transform::new(
+  let mesh_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(25.0F, 0.0F),
     next_rotation,
     @math.Vec2::new(32.0F, 32.0F),

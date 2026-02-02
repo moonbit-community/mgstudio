@@ -606,10 +606,11 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
         instance.transform.translation.x + offset.x,
         instance.transform.translation.y + offset.y,
       )
-      let transform = @math.Transform::new(
+      let transform = @math.Transform::from_xy_rotation_scale(
         translation,
-        instance.transform.rotation,
-        instance.transform.scale,
+        instance.transform.rotation_z(),
+        @math.Vec2::new(instance.transform.scale.x, instance.transform.scale.y),
+        z=instance.transform.translation.z,
       )
       let color = text_span_color(instance, glyph.span_index).color
       if instance.shadow is Some(shadow) {
@@ -617,10 +618,14 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
           translation.x + shadow.offset.x,
           translation.y + shadow.offset.y,
         )
-        let shadow_transform = @math.Transform::new(
+        let shadow_transform = @math.Transform::from_xy_rotation_scale(
           shadow_translation,
-          instance.transform.rotation,
-          instance.transform.scale,
+          instance.transform.rotation_z(),
+          @math.Vec2::new(
+            instance.transform.scale.x,
+            instance.transform.scale.y,
+          ),
+          z=instance.transform.translation.z,
         )
         @render2d.render2d_push_sprite_uv(
           world,

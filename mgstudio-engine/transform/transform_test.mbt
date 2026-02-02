@@ -108,7 +108,7 @@ test "transform ecs: root global matches local" {
   let tick = world.next_system_ticks().this_run
   world.transform.insert(
     e,
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -132,7 +132,7 @@ test "transform ecs: parent translation affects child global translation" {
   let tick = world.next_system_ticks().this_run
   world.transform.insert(
     parent,
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -141,7 +141,7 @@ test "transform ecs: parent translation affects child global translation" {
   )
   world.transform.insert(
     child,
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -167,7 +167,7 @@ test "transform ecs: propagate updates only when inputs change" {
   let tick1 = world.next_system_ticks().this_run
   world.transform.insert(
     e,
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -193,7 +193,7 @@ test "transform ecs: propagate updates only when inputs change" {
   let tick3 = world.next_system_ticks().this_run
   world.transform.set(
     e,
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(2.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

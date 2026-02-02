@@ -123,10 +123,11 @@ fn update_camera_transform(world : @ecs_world.World, speed : Float) -> Unit {
     x = x + speed
   }
   if x != camera_transform.translation.x || y != camera_transform.translation.y {
-    let next_camera = @math.Transform::new(
+    let next_camera = @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(x, y),
-      camera_transform.rotation,
-      camera_transform.scale,
+      camera_transform.rotation_z(),
+      @math.Vec2::new(camera_transform.scale.x, camera_transform.scale.y),
+      z=camera_transform.translation.z,
     )
     viewport_state.val.camera_transform = next_camera
     let tick = @core.ChangeTickWorld::read_change_tick(world)

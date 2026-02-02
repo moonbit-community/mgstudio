@@ -26,7 +26,7 @@ fn sprite_flipping_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @render2d.Sprite::from_image(texture).with_flip_x(true)
-  let transform = @math.Transform::new(
+  let transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 0.0F),
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),

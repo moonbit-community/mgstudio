@@ -36,6 +36,7 @@ pub fn Affine2::transform_point2(Self, @math.Vec2) -> @math.Vec2
 
 pub struct GlobalTransform {
   affine : Affine2
+  z : Float
 }
 pub fn GlobalTransform::from_transform(@math.Transform) -> Self
 pub fn GlobalTransform::identity() -> Self

@@ -62,19 +62,21 @@ pub fn Affine2::transform_point2(
 #ecs.component
 pub struct GlobalTransform {
   affine : Affine2
+  z : Float
 }
 
 ///|
 pub fn GlobalTransform::identity() -> GlobalTransform {
-  GlobalTransform::{ affine: Affine2::identity() }
+  GlobalTransform::{ affine: Affine2::identity(), z: 0.0F }
 }
 
 ///|
 pub fn GlobalTransform::from_transform(
   transform : @math.Transform,
 ) -> GlobalTransform {
-  let cosv = @math.cos(transform.rotation)
-  let sinv = @math.sin(transform.rotation)
+  let rot_z = transform.rotation_z()
+  let cosv = @math.cos(rot_z)
+  let sinv = @math.sin(rot_z)
   let sx = transform.scale.x
   let sy = transform.scale.y
   let a = cosv * sx
@@ -90,6 +92,7 @@ pub fn GlobalTransform::from_transform(
       tx: transform.translation.x,
       ty: transform.translation.y,
     },
+    z: transform.translation.z,
   }
 }
 
@@ -98,7 +101,10 @@ pub fn GlobalTransform::mul(
   self : GlobalTransform,
   other : GlobalTransform,
 ) -> GlobalTransform {
-  GlobalTransform::{ affine: self.affine.mul(other.affine) }
+  GlobalTransform::{
+    affine: self.affine.mul(other.affine),
+    z: self.z + other.z,
+  }
 }
 
 ///|
@@ -115,10 +121,11 @@ pub fn GlobalTransform::to_transform_approx(
   let rotation = if scale_x == 0.0F { 0.0F } else { @math.atan2(b, a) }
   let det = a * d - b * c
   let scale_y = if scale_x == 0.0F { 0.0F } else { det / scale_x }
-  @math.Transform::new(
+  @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(self.affine.tx, self.affine.ty),
     rotation,
     @math.Vec2::new(scale_x, scale_y),
+    z=self.z,
   )
 }
 

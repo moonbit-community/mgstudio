@@ -24,6 +24,38 @@ pub fn Vec2::new(x : Float, y : Float) -> Vec2 {
 }
 
 ///|
+pub struct Vec3 {
+  x : Float
+  y : Float
+  z : Float
+}
+
+///|
+pub fn Vec3::new(x : Float, y : Float, z : Float) -> Vec3 {
+  Vec3::{ x, y, z }
+}
+
+///|
+pub fn Vec3::splat(v : Float) -> Vec3 {
+  Vec3::new(v, v, v)
+}
+
+///|
+pub fn Vec3::zero() -> Vec3 {
+  Vec3::splat(0.0F)
+}
+
+///|
+pub fn Vec3::add(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
+}
+
+///|
+pub fn Vec3::mul(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(self.x * other.x, self.y * other.y, self.z * other.z)
+}
+
+///|
 pub struct IVec2 {
   x : Int
   y : Int
@@ -200,19 +232,72 @@ pub fn pi_half() -> Float {
 }
 
 ///|
+/// Quaternion (x, y, z, w).
+pub struct Quat {
+  x : Float
+  y : Float
+  z : Float
+  w : Float
+}
+
+///|
+pub fn Quat::identity() -> Quat {
+  Quat::{ x: 0.0F, y: 0.0F, z: 0.0F, w: 1.0F }
+}
+
+///|
+/// Rotation around Z axis (radians).
+pub fn Quat::from_rotation_z(angle : Float) -> Quat {
+  let half = angle / 2.0F
+  Quat::{ x: 0.0F, y: 0.0F, z: sin(half), w: cos(half) }
+}
+
+///|
+pub fn Quat::mul(self : Quat, other : Quat) -> Quat {
+  // Hamilton product.
+  let x = self.w * other.x +
+    self.x * other.w +
+    self.y * other.z -
+    self.z * other.y
+  let y = self.w * other.y -
+    self.x * other.z +
+    self.y * other.w +
+    self.z * other.x
+  let z = self.w * other.z +
+    self.x * other.y -
+    self.y * other.x +
+    self.z * other.w
+  let w = self.w * other.w -
+    self.x * other.x -
+    self.y * other.y -
+    self.z * other.z
+  Quat::{ x, y, z, w }
+}
+
+///|
+/// Approximate yaw (rotation around Z) in radians.
+pub fn Quat::to_rotation_z_angle(self : Quat) -> Float {
+  // Tait-Bryan (Z-Y-X), yaw:
+  // yaw = atan2(2*(w*z + x*y), 1 - 2*(y*y + z*z))
+  let t0 = 2.0F * (self.w * self.z + self.x * self.y)
+  let t1 = 1.0F - 2.0F * (self.y * self.y + self.z * self.z)
+  atan2(t0, t1)
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Transform {
-  translation : Vec2
-  rotation : Float
-  scale : Vec2
+  translation : Vec3
+  rotation : Quat
+  scale : Vec3
 }
 
 ///|
 pub fn Transform::new(
-  translation : Vec2,
-  rotation : Float,
-  scale : Vec2,
+  translation : Vec3,
+  rotation : Quat,
+  scale : Vec3,
 ) -> Transform {
   Transform::{ translation, rotation, scale }
 }
@@ -220,8 +305,38 @@ pub fn Transform::new(
 ///|
 pub fn Transform::identity() -> Transform {
   Transform::{
-    translation: Vec2::new(0.0F, 0.0F),
-    rotation: 0.0F,
-    scale: Vec2::new(1.0F, 1.0F),
+    translation: Vec3::zero(),
+    rotation: Quat::identity(),
+    scale: Vec3::splat(1.0F),
   }
+}
+
+///|
+pub fn Transform::from_xyz(x : Float, y : Float, z : Float) -> Transform {
+  Transform::new(Vec3::new(x, y, z), Quat::identity(), Vec3::splat(1.0F))
+}
+
+///|
+pub fn Transform::from_xy(x : Float, y : Float) -> Transform {
+  Transform::from_xyz(x, y, 0.0F)
+}
+
+///|
+/// Convenience for 2D usage: translation.xy + rotation about Z + scale.xy.
+pub fn Transform::from_xy_rotation_scale(
+  translation : Vec2,
+  rotation_z : Float,
+  scale : Vec2,
+  z? : Float = 0.0F,
+) -> Transform {
+  Transform::new(
+    Vec3::new(translation.x, translation.y, z),
+    Quat::from_rotation_z(rotation_z),
+    Vec3::new(scale.x, scale.y, 1.0F),
+  )
+}
+
+///|
+pub fn Transform::rotation_z(self : Transform) -> Float {
+  self.rotation.to_rotation_z_angle()
 }

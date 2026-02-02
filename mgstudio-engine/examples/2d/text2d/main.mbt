@@ -34,7 +34,7 @@ fn text2d_setup(world : @ecs_world.World) -> Unit {
   @text.Text2dBundle::new(
     text,
     font_style,
-    @math.Transform::new(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
