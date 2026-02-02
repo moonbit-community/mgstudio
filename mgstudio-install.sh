@@ -27,12 +27,13 @@ and links the `mgstudio` command into:
   $XDG_BIN_HOME (default) or ~/.local/bin
 
 Usage:
-  mgstudio-install.sh [--version <v>] [--sdkroot <dir>] [--bin-dir <dir>] [--dry-run]
+  mgstudio-install.sh [--version <v>] [--sdkroot <dir>] [--bin-dir <dir>] [--verbose] [--dry-run]
 
 Options:
   --version <v>    Install a specific version (e.g. 0.1.1). Default: latest
   --sdkroot <dir>  Install destination SDK root (default: $HOME/.local/share/mgstudio/current)
   --bin-dir <dir>  Where to install the `mgstudio` symlink (default: $XDG_BIN_HOME, else ~/.local/bin)
+  --verbose        Print progress information
   --dry-run        Print actions without modifying the filesystem
   -h, --help       Show this help
 
@@ -46,6 +47,7 @@ VERSION="latest"
 SDKROOT="${HOME}/.local/share/mgstudio/current"
 BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
 DRY_RUN=0
+VERBOSE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -63,6 +65,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       DRY_RUN=1
+      shift
+      ;;
+    --verbose)
+      VERBOSE=1
       shift
       ;;
     -h|--help)
@@ -115,6 +121,33 @@ fi
 
 SUMS_URL="${BASE_URL}/${SDK_SHA256SUMS}"
 
+log_step() {
+  if [[ "${VERBOSE}" -eq 1 ]]; then
+    echo "$@"
+  fi
+}
+
+if [[ "${DRY_RUN}" -eq 1 ]]; then
+  if [[ "${VERSION}" == "latest" ]]; then
+    echo "Dry run."
+    echo "  Version:  latest (${SDK_PLATFORM})"
+    echo "  SDK root: ${SDKROOT}"
+    echo "  CLI:      ${BIN_DIR}/mgstudio"
+    echo "  Note: resolving the exact SDK tarball for 'latest' requires downloading ${SUMS_URL}."
+    echo "        Use --version <v> for a deterministic dry run."
+    exit 0
+  fi
+
+  SDK_URL="${BASE_URL}/${SDK_TARBALL}"
+  echo "Dry run."
+  echo "  Version:  ${VERSION} (${SDK_PLATFORM})"
+  echo "  SDK root: ${SDKROOT}"
+  echo "  CLI:      ${BIN_DIR}/mgstudio"
+  echo "  Would download: ${SDK_URL}"
+  echo "  Would download: ${SUMS_URL}"
+  exit 0
+fi
+
 run() {
   if [[ "${DRY_RUN}" -eq 1 ]]; then
     echo "+ $*"
@@ -151,13 +184,6 @@ fetch() {
   run curl -fsSL --proto '=https' --tlsv1.2 -o "$out" "$url"
 }
 
-echo "mgstudio installer"
-echo "  version:   ${VERSION}"
-echo "  platform:  ${SDK_PLATFORM}"
-echo "  sdkroot:   ${SDKROOT}"
-echo "  bin-dir:   ${BIN_DIR}"
-echo "  base url:  ${BASE_URL}"
-
 BASE_DIR="$(dirname -- "${SDKROOT}")"
 INSTALL_TMP="${BASE_DIR}/.tmp.mgstudio-install.$$"
 
@@ -175,7 +201,7 @@ run mkdir -p "${INSTALL_TMP}"
 TARBALL_PATH="${INSTALL_TMP}/${SDK_TARBALL}"
 SUMS_PATH="${INSTALL_TMP}/${SDK_SHA256SUMS}"
 
-echo "Downloading..."
+log_step "Downloading release assets..."
 fetch "${SUMS_URL}" "${SUMS_PATH}"
 
 if [[ "${VERSION}" == "latest" ]]; then
@@ -198,10 +224,10 @@ if [[ "${VERSION}" == "latest" ]]; then
 fi
 
 SDK_URL="${BASE_URL}/${SDK_TARBALL}"
-echo "  sdk url:   ${SDK_URL}"
+log_step "Downloading SDK tarball..."
 fetch "${SDK_URL}" "${TARBALL_PATH}"
 
-echo "Verifying SHA256..."
+log_step "Verifying SHA256..."
 EXPECTED="$(
   awk -v target="${SDK_TARBALL}" '
     {
@@ -225,7 +251,7 @@ if [[ "${EXPECTED}" != "${ACTUAL}" ]]; then
   exit 1
 fi
 
-echo "Unpacking..."
+log_step "Unpacking..."
 require_cmd tar
 UNPACK_DIR="${INSTALL_TMP}/unpack"
 run mkdir -p "${UNPACK_DIR}"
@@ -255,18 +281,27 @@ if [[ ! -f "${SDK_DIR}/lib/libwgpu_native.dylib" ]]; then
   exit 2
 fi
 
-echo "Installing (atomic swap)..."
+log_step "Installing (atomic swap)..."
 STAGE_DIR="${BASE_DIR}/.tmp.mgstudio-sdk.stage.$$"
 run rm -rf "${STAGE_DIR}"
 run cp -R "${SDK_DIR}/." "${STAGE_DIR}/"
 run rm -rf "${SDKROOT}"
 run mv "${STAGE_DIR}" "${SDKROOT}"
 
-echo "Linking CLI..."
+log_step "Linking CLI..."
 run mkdir -p "${BIN_DIR}"
 run ln -sfn "${SDKROOT}/bin/mgstudio" "${BIN_DIR}/mgstudio"
 
-echo "Done."
+RESOLVED_VERSION="${VERSION}"
+if [[ "${RESOLVED_VERSION}" == "latest" ]]; then
+  # Parse `mgstudio-sdk-<version>-darwin-arm64.tar.gz`
+  RESOLVED_VERSION="$(
+    echo "${SDK_TARBALL}" | sed -E 's/^mgstudio-sdk-([0-9]+\.[0-9]+\.[0-9]+)-darwin-arm64\.tar\.gz$/\1/'
+  )"
+fi
+
+echo "mgstudio installed."
+echo "  Version:  ${RESOLVED_VERSION} (${SDK_PLATFORM})"
 echo "  SDK root: ${SDKROOT}"
 echo "  CLI:      ${BIN_DIR}/mgstudio"
-echo "Make sure '${BIN_DIR}' is on your PATH."
+echo "Next: ensure '${BIN_DIR}' is on your PATH."
