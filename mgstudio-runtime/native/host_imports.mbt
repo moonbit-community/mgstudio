@@ -538,6 +538,7 @@ fn host_trace(msg : String) -> Unit {
 
 ///|
 extern "C" fn c_time_now_seconds() -> Float = "mgstudio_time_now"
+extern "C" fn c_spectest_print_char(ch : Int) -> Unit = "mgstudio_spectest_print_char"
 
 ///|
 #warnings("-unused_try")
@@ -545,6 +546,20 @@ pub fn add_mgstudio_host_imports(
   linker : @runtime.Linker,
   ctx : HostContext,
 ) -> Unit {
+  // wasm spec test host module.
+  linker.add_host_func(
+    "spectest",
+    "print_char",
+    fn(args) {
+      // Print a single byte to stdout (no newline).
+      if args.length() >= 1 && code_unit_from_gc_value(args[0]) is Some(cu) {
+        c_spectest_print_char(cu & 0xFF)
+      }
+      []
+    },
+    func_type=ft([@types.ValueType::I32], []),
+  )
+
   linker.add_host_func(
     "mgstudio_host",
     "string_sink_reset",

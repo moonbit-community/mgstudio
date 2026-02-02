@@ -12,6 +12,9 @@ The WasmGC `rec` forward-reference parser bug is fixed in `Milky2018/wasmoon >= 
 The runtime runs a game wasm module and calls its single exported entrypoint:
 `game_app() -> Unit`.
 
+We also provide a small subset of wasm spec test imports (e.g. `spectest.print_char`)
+so we can reuse upstream test modules during bring-up.
+
 ## WGPU bring-up
 
 We are experimenting with a minimal native renderer using `Milky2018/wgpu_mbt` to
