@@ -84,7 +84,7 @@ pub struct GpuBackend {
   queue : @wgpu.Queue
   assets_base : String
   mut surface : @wgpu.Surface?
-  mut surface_format : UInt
+  mut surface_format : @wgpu.TextureFormat?
   mut configured_width : Int
   mut configured_height : Int
   mut frame : GpuFrameState?
@@ -96,7 +96,7 @@ pub struct GpuBackend {
   mut sprite_pipeline_layout : @wgpu.PipelineLayout?
   mut sprite_pipeline : @wgpu.RenderPipeline?
   mut sprite_pipeline_surface : @wgpu.RenderPipeline?
-  mut sprite_pipeline_surface_format : UInt
+  mut sprite_pipeline_surface_format : @wgpu.TextureFormat?
   mut sprite_globals_buf : @wgpu.Buffer?
   mut sprite_instance_buf : @wgpu.Buffer?
   mut sprite_instance_capacity : UInt64
@@ -129,7 +129,7 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     queue,
     assets_base,
     surface: None,
-    surface_format: 0U,
+    surface_format: None,
     configured_width: 0,
     configured_height: 0,
     frame: None,
@@ -139,7 +139,7 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     sprite_pipeline_layout: None,
     sprite_pipeline: None,
     sprite_pipeline_surface: None,
-    sprite_pipeline_surface_format: 0U,
+    sprite_pipeline_surface_format: None,
     sprite_globals_buf: None,
     sprite_instance_buf: None,
     sprite_instance_capacity: 0UL,
@@ -179,6 +179,21 @@ pub(all) suberror GpuBackendError {
 ///|
 fn[T] fatal(message : String) -> T raise GpuBackendError {
   raise GpuBackendError::Fatal(message)
+}
+
+///|
+fn ss(raw : UInt64) -> @wgpu.ShaderStage {
+  @wgpu.ShaderStage::from_u64(raw)
+}
+
+///|
+fn bu(raw : UInt64) -> @wgpu.BufferUsage {
+  @wgpu.BufferUsage::from_u64(raw)
+}
+
+///|
+fn tf(raw : UInt) -> @wgpu.TextureFormat {
+  @wgpu.TextureFormat::from_u32(raw)
 }
 
 ///|
@@ -263,12 +278,12 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
   let b0 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
   let ok0 = b0.add_sampler(
     0U,
-    @wgpu.SHADER_STAGE_FRAGMENT,
+    ss(@wgpu.SHADER_STAGE_FRAGMENT),
     @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
   )
   let ok1 = b0.add_texture(
     1U,
-    @wgpu.SHADER_STAGE_FRAGMENT,
+    ss(@wgpu.SHADER_STAGE_FRAGMENT),
     @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
   )
@@ -282,12 +297,12 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
   let b1 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
   let ok2 = b1.add_buffer(
     0U,
-    @wgpu.SHADER_STAGE_VERTEX,
+    ss(@wgpu.SHADER_STAGE_VERTEX),
     @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
   )
   let ok3 = b1.add_buffer(
     1U,
-    @wgpu.SHADER_STAGE_VERTEX,
+    ss(@wgpu.SHADER_STAGE_VERTEX),
     @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
   )
   if !ok2 || !ok3 {
@@ -296,9 +311,13 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
   }
   let bgl_globals = b1.finish(backend.device, label="mgstudio_sprite_globals")
   let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_globals)
-  let globals_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
+  let globals_usage = bu(
+    @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+  )
   let globals_buf = backend.device.create_buffer(size=32UL, usage=globals_usage)
-  let instance_usage = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
+  let instance_usage = bu(
+    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+  )
   let instance_cap = 65536UL
   let instance_buf = backend.device.create_buffer(
     size=instance_cap,
@@ -346,11 +365,12 @@ fn ensure_sprite_pipeline_surface(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
-  let format = backend.surface_format
-  if format == 0U || format == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
+  guard backend.surface_format is Some(format) else { return }
+  if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
-  if backend.sprite_pipeline_surface_format == format &&
+  if backend.sprite_pipeline_surface_format is Some(prev) &&
+    prev == format &&
     backend.sprite_pipeline_surface is Some(_) {
     return
   }
@@ -365,13 +385,13 @@ fn ensure_sprite_pipeline_surface(
   let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
     pl.raw_handle(),
     sm.raw_handle(),
-    format,
+    format.to_u32(),
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_sprite_surface")
   backend.sprite_pipeline_surface = Some(pipeline)
-  backend.sprite_pipeline_surface_format = format
+  backend.sprite_pipeline_surface_format = Some(format)
   sm.release()
 }
 
@@ -383,11 +403,17 @@ fn sprite_pipeline_for_current_pass(
     Some(ps) => ps.target_id == -1
     None => false
   }
-  if target_is_surface &&
-    backend.surface_format != 0U &&
-    backend.surface_format != @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
-    ensure_sprite_pipeline_surface(backend)
-    backend.sprite_pipeline_surface
+  if target_is_surface {
+    match backend.surface_format {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+        ensure_sprite_pipeline_surface(backend)
+        backend.sprite_pipeline_surface
+      }
+      _ => {
+        ensure_sprite_pipeline_rgba8(backend)
+        backend.sprite_pipeline
+      }
+    }
   } else {
     ensure_sprite_pipeline_rgba8(backend)
     backend.sprite_pipeline
@@ -425,7 +451,7 @@ fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit raise GpuBackendError {
   }
   if backend.mesh_uniform_buf is None || backend.mesh_uniform_bg is None {
     guard backend.mesh_bgl_uniform is Some(bgl) else { return }
-    let ubo_usage = @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST
+    let ubo_usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
     let uniform_buf = backend.device.create_buffer(size=80UL, usage=ubo_usage)
     let uniform_bg = backend.device.create_bind_group_uniform_buffer(
       bgl, uniform_buf,
@@ -471,10 +497,12 @@ fn mesh_pipeline_for_current_pass(
   }
   // Currently the mesh pipeline only supports RGBA8 targets. Skip mesh draws on
   // non-RGBA8 surfaces to avoid wgpu-native validation errors.
-  if target_is_surface &&
-    backend.surface_format != 0U &&
-    backend.surface_format != @wgpu.TEXTURE_FORMAT_RGBA8_UNORM {
-    return None
+  if target_is_surface {
+    match backend.surface_format {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) =>
+        return None
+      _ => ()
+    }
   }
   ensure_mesh_pipeline(backend)
   backend.mesh_pipeline
@@ -509,14 +537,14 @@ pub fn GpuBackend::configure_surface(
   let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_COPY_SRC
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
-  self.surface_format = surface.configure_default(
-    self.adapter,
-    self.device,
-    w,
-    h,
-    usage,
+  self.surface_format = Some(
+    surface.configure_default(self.adapter, self.device, w, h, usage),
   )
-  @debug.debug("wgpu: surface_format=" + self.surface_format.to_string())
+  let fmt_u32 = match self.surface_format {
+    Some(f) => f.to_u32()
+    None => 0U
+  }
+  @debug.debug("wgpu: surface_format_u32=" + fmt_u32.to_string())
 }
 
 ///|
@@ -980,7 +1008,7 @@ fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
   let required_bytes = (float_count * 4).to_uint64()
   if required_bytes > backend.sprite_instance_capacity {
     let new_cap = if required_bytes < 256UL { 256UL } else { required_bytes }
-    let usage = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
+    let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
     let new_buf = backend.device.create_buffer(size=new_cap, usage~)
     if backend.sprite_instance_buf is Some(old) {
       old.release()
@@ -1093,10 +1121,10 @@ pub fn GpuBackend::create_mesh_rectangle(
   let hh = height * 0.5F
   let vertices_xy : Array[Float] = [-hw, -hh, hw, -hh, hw, hh, -hw, hh]
   let indices_u16 : Array[Int] = [0, 1, 2, 0, 2, 3]
-  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let vb_bytes = f32le_pack(vertices_xy)
   let vb = self.device.create_buffer_init(usage=vb_usage, vb_bytes)
-  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let ib_bytes = u16le_pack(indices_u16)
   let ib = self.device.create_buffer_init(usage=ib_usage, ib_bytes)
   let info = GpuMeshInfo::{
@@ -1175,9 +1203,9 @@ pub fn GpuBackend::create_mesh_capsule(
     inds.push(center_r + 1 + i)
     inds.push(center_r + 1 + i + 1)
   }
-  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let vb = self.device.create_buffer_init(usage=vb_usage, f32le_pack(verts))
-  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let ib = self.device.create_buffer_init(usage=ib_usage, u16le_pack(inds))
   let info = GpuMeshInfo::{
     id,
@@ -1219,12 +1247,12 @@ pub fn GpuBackend::create_mesh_triangles_xy(
     }
     out
   }
-  let vb_usage = @wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let vb = self.device.create_buffer_init(
     usage=vb_usage,
     f32le_pack(trimmed_vertices),
   )
-  let ib_usage = @wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST
+  let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let ib = self.device.create_buffer_init(
     usage=ib_usage,
     u16le_pack(indices_u16),
