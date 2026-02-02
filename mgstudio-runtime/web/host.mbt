@@ -2849,6 +2849,15 @@ pub fn create_host(
     })
     id
   })
+
+  // Legacy text host APIs.
+  //
+  // The current Text2d pipeline rasterizes glyphs in the guest using
+  // `moon_swash` (and shapes/line-breaks with `moon_cosmic`), sourcing font
+  // bytes via `asset_font_bytes_*`.
+  //
+  // These Canvas2D-based helpers are kept for backwards-compatibility and
+  // debugging, but are not required for core rendering.
   let font_rasterize_glyph = wrap_variadic(
     @js.from_fn1(fn(args) {
       let font_id = to_int(arg_number(args, 0, -1))

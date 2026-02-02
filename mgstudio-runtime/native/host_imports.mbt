@@ -1157,6 +1157,14 @@ pub fn add_mgstudio_host_imports(
       @types.ValueType::I32,
     ]),
   )
+
+  // Legacy text host APIs.
+  //
+  // The current Text2d pipeline runs entirely in the guest: glyph rasterization
+  // uses `moon_swash`, and shaping/line-breaking/BiDi uses `moon_cosmic`,
+  // sourcing font bytes via `asset_font_bytes_*`.
+  //
+  // We keep these stubs for backwards-compatibility with older guest modules.
   linker.add_host_func(
     "mgstudio_host",
     "font_rasterize_glyph",
