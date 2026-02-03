@@ -1865,13 +1865,41 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
       fragment_state,
       primitive_state,
     )
+    device.push_error_scope("validation")
     let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "mesh_pipeline_validation_error",
+          "Mesh pipeline validation error: " + any_to_string(err_any),
+        )
+      }
+    })
     state.gpu.mesh_pipeline = Some(pipeline)
     if state.gpu.uniform_buffer is Some(uniform_buffer) {
       let layout = pipeline.get_bind_group_layout(0)
       let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
       let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+      device.push_error_scope("validation")
       let bind_group = device.create_bind_group(bind_group_desc.to_js())
+      let bind_group_error_promise = device.pop_error_scope()
+      @js.run_async(async fn() noraise {
+        let err_any : @js.Any = bind_group_error_promise.wait() catch {
+          _ => js_null()
+        }
+        if !host_is_nullish(err_any) {
+          report_asset_error_once(
+            state,
+            "mesh_bind_group_validation_error",
+            "Mesh bind group validation error: " + any_to_string(err_any),
+          )
+        }
+      })
       state.gpu.mesh_bind_group = Some(bind_group)
     }
   }
@@ -2928,7 +2956,21 @@ pub fn create_host(
           if buf_opt is Some(buf) {
             let bytes_u8 = uint8array_from_array_buffer(buf)
             entry._set("bytes", bytes_u8) |> ignore
+          } else {
+            dispatch_asset_error(
+              "Font bytes load error: failed to read ArrayBuffer (path: " +
+              path_text +
+              ")",
+            )
           }
+        } else {
+          dispatch_asset_error(
+            "Font bytes load error: fetch failed (" +
+            bytes_resp.status.to_string() +
+            ") (path: " +
+            path_text +
+            ")",
+          )
         }
       }
       set_delete(state.assets.loading_fonts, @js.any(id)) |> ignore
@@ -3175,7 +3217,8 @@ pub fn create_host(
       if target_width <= 0 || target_height <= 0 {
         return
       }
-      if state.gpu.queue is Some(queue) {
+      if state.gpu.queue is Some(queue) && state.gpu.device is Some(device) {
+        device.push_error_scope("validation")
         let data = glyph_entry._get("data")
         write_texture_region(
           queue.as_any(),
@@ -3186,6 +3229,18 @@ pub fn create_host(
           x,
           y,
         )
+        let promise = device.pop_error_scope()
+        @js.run_async(async fn() noraise {
+          let err_any : @js.Any = promise.wait() catch { _ => js_null() }
+          if !host_is_nullish(err_any) {
+            report_asset_error_once(
+              state,
+              "texture_update_glyph_validation_error",
+              "Texture update (glyph) validation error: " +
+              any_to_string(err_any),
+            )
+          }
+        })
       }
     }),
   )
@@ -3210,7 +3265,8 @@ pub fn create_host(
         dispatch_asset_error("Texture update error: bytes id not found")
         return
       }
-      if state.gpu.queue is Some(queue) {
+      if state.gpu.queue is Some(queue) && state.gpu.device is Some(device) {
+        device.push_error_scope("validation")
         write_texture_region(
           queue.as_any(),
           texture_entry._get("texture"),
@@ -3220,6 +3276,17 @@ pub fn create_host(
           x,
           y,
         )
+        let promise = device.pop_error_scope()
+        @js.run_async(async fn() noraise {
+          let err_any : @js.Any = promise.wait() catch { _ => js_null() }
+          if !host_is_nullish(err_any) {
+            report_asset_error_once(
+              state,
+              "texture_update_validation_error",
+              "Texture update validation error: " + any_to_string(err_any),
+            )
+          }
+        })
       }
     }),
   )
