@@ -207,12 +207,22 @@ extern "js" fn host_call0_any(func : @js.Any) -> @js.Any =
   #| (func) => func()
 
 ///|
-extern "js" fn js_try0(func : @js.Any) -> @js.Any raise =
-  #| (func) => {
+extern "js" fn bind_uncaptured_error_handler(
+  device : @js.Any,
+  handler : @js.Any,
+) -> Unit =
+  #| (device, handler) => {
+  #|   if (!device) {
+  #|     return
+  #|   }
+  #|   if (typeof device.addEventListener === "function") {
+  #|     device.addEventListener("uncapturederror", handler)
+  #|     return
+  #|   }
+  #|   // Fallback for implementations that only expose the property handler.
   #|   try {
-  #|     return func()
-  #|   } catch (err) {
-  #|     throw err
+  #|     device.onuncapturederror = handler
+  #|   } catch {
   #|   }
   #| }
 
@@ -1495,9 +1505,8 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   let device : @webgpu.GPUDevice = device_any.cast()
   // Surface WebGPU validation/runtime failures in the same overlay used for
   // asset loading errors. Without this, pipeline/shader issues can fail silently.
-  add_event_listener(
+  bind_uncaptured_error_handler(
     device.as_any(),
-    "uncapturederror",
     @js.from_fn1(fn(event : @js.Any) {
       let err_any = event._get("error")
       let message = if host_is_nullish(err_any) {
@@ -1641,32 +1650,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
     }
     let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
-    let shader_module_any = js_try0(
-      @js.from_fn0(fn() {
-        device.create_shader_module(shader_desc.to_js()).as_any()
-      }),
-    ) catch {
-      err => {
-        let path_hint_any = map_get(
-          state.assets.shader_paths,
-          @js.any(state.gpu.sprite_shader_id),
-        )
-        let suffix = if host_is_nullish(path_hint_any) {
-          ""
-        } else {
-          " (path: " + any_to_string(path_hint_any) + ")"
-        }
-        report_asset_error_once(
-          state,
-          "sprite_pipeline_shader_module_error",
-          "Sprite pipeline error: failed to create shader module: " +
-          err.to_string() +
-          suffix,
-        )
-        return
-      }
-    }
-    let shader_module : @webgpu.GPUShaderModule = shader_module_any.cast()
+    let shader_module = device.create_shader_module(shader_desc.to_js())
     // Sprite vertices are generated from @builtin(vertex_index) in WGSL.
     let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [])
     let blend_component = @webgpu.blend_component(
@@ -1881,43 +1865,13 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
       fragment_state,
       primitive_state,
     )
-    let pipeline_any = js_try0(
-      @js.from_fn0(fn() {
-        device.create_render_pipeline(pipeline_desc.to_js()).as_any()
-      }),
-    ) catch {
-      err => {
-        report_asset_error_once(
-          state,
-          "mesh_pipeline_create_error",
-          "Mesh pipeline error: failed to create render pipeline: " +
-          err.to_string(),
-        )
-        return
-      }
-    }
-    let pipeline : @webgpu.GPURenderPipeline = pipeline_any.cast()
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
     state.gpu.mesh_pipeline = Some(pipeline)
     if state.gpu.uniform_buffer is Some(uniform_buffer) {
       let layout = pipeline.get_bind_group_layout(0)
       let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
       let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
-      let bind_group_any = js_try0(
-        @js.from_fn0(fn() {
-          device.create_bind_group(bind_group_desc.to_js()).as_any()
-        }),
-      ) catch {
-        err => {
-          report_asset_error_once(
-            state,
-            "mesh_pipeline_bind_group_error",
-            "Mesh pipeline error: failed to create bind group: " +
-            err.to_string(),
-          )
-          return
-        }
-      }
-      let bind_group : @webgpu.GPUBindGroup = bind_group_any.cast()
+      let bind_group = device.create_bind_group(bind_group_desc.to_js())
       state.gpu.mesh_bind_group = Some(bind_group)
     }
   }
