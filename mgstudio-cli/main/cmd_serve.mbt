@@ -60,7 +60,11 @@ fn parse_serve_options(
 }
 
 ///|
-fn render_web_index_html() -> String {
+fn render_web_index_html(
+  default_wasm_path : String,
+  default_assets_source : String,
+  default_data_source : String,
+) -> String {
   // Keep a dummy menu element so the web runtime doesn't overwrite the status
   // with "Missing menu element".
   "<!doctype html>\n" +
@@ -78,6 +82,32 @@ fn render_web_index_html() -> String {
   "  <body>\n" +
   "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
   "    <div id=\"mgstudio-menu\"></div>\n" +
+  "    <script>\n" +
+  "      (() => {\n" +
+  "        const url = new URL(window.location.href)\n" +
+  "        const params = url.searchParams\n" +
+  "        let changed = false\n" +
+  "        const ensure = (key, value) => {\n" +
+  "          const raw = params.get(key)\n" +
+  "          if (!raw || !raw.trim()) {\n" +
+  "            params.set(key, value)\n" +
+  "            changed = true\n" +
+  "          }\n" +
+  "        }\n" +
+  "        ensure(\"wasm\", \"" +
+  default_wasm_path +
+  "\")\n" +
+  "        ensure(\"assets_source\", \"" +
+  default_assets_source +
+  "\")\n" +
+  "        ensure(\"data_source\", \"" +
+  default_data_source +
+  "\")\n" +
+  "        if (changed) {\n" +
+  "          window.location.replace(url.toString())\n" +
+  "        }\n" +
+  "      })()\n" +
+  "    </script>\n" +
   "    <script type=\"module\" src=\"./mgstudio-runtime-web.js\"></script>\n" +
   "  </body>\n" +
   "</html>\n"
@@ -149,10 +179,6 @@ async fn serve_web(opts : ServeOptions) -> Unit {
   }
   @fs.mkdir(stage_root, permission=0o755, recursive=true)
 
-  // Write index.html that loads the web runtime JS bundle from the staged SDK file.
-  let index_dst = path_join(stage_root, "index.html")
-  write_file_text(index_dst, render_web_index_html())
-
   // Copy mgstudio-runtime-web.js from SDK into served root (offline by default).
   let runtime_dst = path_join(stage_root, "mgstudio-runtime-web.js")
   copy_file(sdk.web_runtime_js, runtime_dst)
@@ -178,14 +204,25 @@ async fn serve_web(opts : ServeOptions) -> Unit {
       ")",
     )
   }
+
+  // Write index.html that loads the web runtime JS bundle from the staged SDK file.
+  // Default to a playable base URL without requiring query parameters.
+  // The runtime still supports overriding these via URL params for debugging.
+  let index_dst = path_join(stage_root, "index.html")
+  write_file_text(
+    index_dst,
+    render_web_index_html("./game.wasm", assets_base, data_source),
+  )
   let raw_addr = opts.addr.unwrap_or(cfg.web_addr)
   // Prefer IPv4 loopback to avoid browsers/extensions that auto-upgrade
   // `localhost` to HTTPS or hit IPv6 (::1) with TLS probes.
   let addr = if raw_addr == "localhost" { "127.0.0.1" } else { raw_addr }
   let port = opts.port.unwrap_or(cfg.web_port)
   println("")
+  println("Serving web runtime at: http://\{addr}:\{port}/")
+  println("Note: opening the base URL will auto-run ./game.wasm.")
   println(
-    "Serving web runtime at: http://\{addr}:\{port}/?wasm=./game.wasm&assets_source=\{url_encode_component(assets_base)}&data_source=\{url_encode_component(data_source)}",
+    "Full URL (explicit params): http://\{addr}:\{port}/?wasm=./game.wasm&assets_source=\{url_encode_component(assets_base)}&data_source=\{url_encode_component(data_source)}",
   )
   println("Note: this server is plain HTTP. Do not use https:// for this URL.")
   println("Press Ctrl+C to stop.")
