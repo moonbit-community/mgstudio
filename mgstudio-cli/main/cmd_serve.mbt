@@ -195,15 +195,9 @@ async fn serve_web(opts : ServeOptions) -> Unit {
     cfg.assets_spec,
   )
 
-  // Data source for web: prefer idb.
-  let data_source = cfg.data_spec_web
-  if !data_source.has_prefix("idb:") {
-    raise RunError::InvalidArgs(
-      "Web runtime only supports idb data source today (got: " +
-      data_source +
-      ")",
-    )
-  }
+  // Data source for web: fixed namespace for now.
+  cfg.data_spec_web |> ignore
+  let data_source = "idb:mgstudio"
 
   // Write index.html that loads the web runtime JS bundle from the staged SDK file.
   // Default to a playable base URL without requiring query parameters.
