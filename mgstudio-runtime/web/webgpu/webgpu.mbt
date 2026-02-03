@@ -37,6 +37,16 @@ pub type GPUDevice
 pub fn GPUDevice::as_any(self : GPUDevice) -> @js.Any = "%identity"
 
 ///|
+pub fn GPUDevice::push_error_scope(self : GPUDevice, filter : String) -> Unit {
+  self.as_any()._call("pushErrorScope", [@js.any(filter)]) |> ignore
+}
+
+///|
+pub fn GPUDevice::pop_error_scope(self : GPUDevice) -> @js.Promise[@js.Any] {
+  self.as_any()._call("popErrorScope", []).cast()
+}
+
+///|
 #external
 pub type GPUQueue
 

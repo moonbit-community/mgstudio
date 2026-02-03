@@ -207,6 +207,26 @@ extern "js" fn host_call0_any(func : @js.Any) -> @js.Any =
   #| (func) => func()
 
 ///|
+extern "js" fn bind_uncaptured_error_handler(
+  device : @js.Any,
+  handler : @js.Any,
+) -> Unit =
+  #| (device, handler) => {
+  #|   if (!device) {
+  #|     return
+  #|   }
+  #|   if (typeof device.addEventListener === "function") {
+  #|     device.addEventListener("uncapturederror", handler)
+  #|     return
+  #|   }
+  #|   // Fallback for implementations that only expose the property handler.
+  #|   try {
+  #|     device.onuncapturederror = handler
+  #|   } catch {
+  #|   }
+  #| }
+
+///|
 extern "js" fn number_or(value : @js.Any, fallback : Double) -> Double =
   #| (value, fallback) => {
   #|   const num = Number(value)
@@ -1036,6 +1056,7 @@ struct WindowState {
 struct AssetsState {
   pending_textures : Array[PendingTexture]
   fallback_reported : @js.Any
+  reported_errors : @js.Any
   loading_textures : @js.Any
   texture_paths : @js.Any
   shader_sources : @js.Any
@@ -1136,6 +1157,7 @@ fn new_state(
     assets: AssetsState::{
       pending_textures: [],
       fallback_reported: new_set(),
+      reported_errors: new_set(),
       loading_textures: new_set(),
       texture_paths: new_map(),
       shader_sources: new_map(),
@@ -1481,6 +1503,21 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     fail("WebGPU device unavailable")
   }
   let device : @webgpu.GPUDevice = device_any.cast()
+  // Surface WebGPU validation/runtime failures in the same overlay used for
+  // asset loading errors. Without this, pipeline/shader issues can fail silently.
+  bind_uncaptured_error_handler(
+    device.as_any(),
+    @js.from_fn1(fn(event : @js.Any) {
+      let err_any = event._get("error")
+      let message = if host_is_nullish(err_any) {
+        "WebGPU uncaptured error"
+      } else {
+        "WebGPU uncaptured error: " + any_to_string(err_any)
+      }
+      console_error(@js.any(message))
+      dispatch_asset_error(message)
+    }),
+  )
   let context = @webgpu.get_canvas_context(target)
   let format = @webgpu.texture_format_from_string(
     @webgpu.preferred_canvas_format(),
@@ -1774,10 +1811,27 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
   }
   if state.gpu.device is Some(device) {
     if state.gpu.mesh_shader_id <= 0 {
+      report_asset_error_once(
+        state, "mesh_pipeline_missing_shader_id", "Mesh pipeline error: mesh shader id not initialized",
+      )
       return
     }
     let shader_source = get_shader_source(state, state.gpu.mesh_shader_id)
     if shader_source is None {
+      let path_hint_any = map_get(
+        state.assets.shader_paths,
+        @js.any(state.gpu.mesh_shader_id),
+      )
+      let suffix = if host_is_nullish(path_hint_any) {
+        ""
+      } else {
+        " (path: " + any_to_string(path_hint_any) + ")"
+      }
+      report_asset_error_once(
+        state,
+        "mesh_pipeline_missing_shader_source",
+        "Mesh pipeline error: shader source not loaded" + suffix,
+      )
       return
     }
     let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
@@ -1811,13 +1865,41 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
       fragment_state,
       primitive_state,
     )
+    device.push_error_scope("validation")
     let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "mesh_pipeline_validation_error",
+          "Mesh pipeline validation error: " + any_to_string(err_any),
+        )
+      }
+    })
     state.gpu.mesh_pipeline = Some(pipeline)
     if state.gpu.uniform_buffer is Some(uniform_buffer) {
       let layout = pipeline.get_bind_group_layout(0)
       let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
       let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+      device.push_error_scope("validation")
       let bind_group = device.create_bind_group(bind_group_desc.to_js())
+      let bind_group_error_promise = device.pop_error_scope()
+      @js.run_async(async fn() noraise {
+        let err_any : @js.Any = bind_group_error_promise.wait() catch {
+          _ => js_null()
+        }
+        if !host_is_nullish(err_any) {
+          report_asset_error_once(
+            state,
+            "mesh_bind_group_validation_error",
+            "Mesh bind group validation error: " + any_to_string(err_any),
+          )
+        }
+      })
       state.gpu.mesh_bind_group = Some(bind_group)
     }
   }
@@ -1904,6 +1986,30 @@ fn report_fallback_usage(state : State, id : Int, reason : String) -> Unit {
     suffix
   console_error(@js.any(message))
   dispatch_asset_error(message)
+}
+
+///|
+fn report_asset_error_once(
+  state : State,
+  key : String,
+  message : String,
+) -> Unit {
+  if set_has(state.assets.reported_errors, @js.any(key)) {
+    return
+  }
+  set_add(state.assets.reported_errors, @js.any(key))
+  console_error(@js.any(message))
+  dispatch_asset_error(message)
+}
+
+///|
+fn report_debug_once(state : State, key : String, message : String) -> Unit {
+  let full_key = "debug/" + key
+  if set_has(state.assets.reported_errors, @js.any(full_key)) {
+    return
+  }
+  set_add(state.assets.reported_errors, @js.any(full_key))
+  @js.log(@js.any(message))
 }
 
 ///|
@@ -2085,6 +2191,11 @@ fn begin_frame(state : State) -> Int {
   if state.gpu.context is Some(context) && state.gpu.device is Some(device) {
     update_window_size(state)
     ensure_pipeline_resources(state)
+    // Capture per-frame validation errors (including draw command issues) that
+    // might otherwise fail silently in some browsers.
+    //
+    // We pop this scope in `gpu_end_frame` after submitting the command buffer.
+    device.push_error_scope("validation")
     state.gpu.encoder = Some(device.create_command_encoder())
     state.gpu.current_texture = Some(context.get_current_texture())
     return 1
@@ -2111,6 +2222,27 @@ fn begin_pass(
   viewport_width : Double,
   viewport_height : Double,
 ) -> Unit {
+  report_debug_once(
+    state,
+    "begin_pass_clear",
+    "begin_pass clear=(" +
+    clear_r.to_string() +
+    "," +
+    clear_g.to_string() +
+    "," +
+    clear_b.to_string() +
+    "," +
+    clear_a.to_string() +
+    ") size=(" +
+    width.to_string() +
+    "," +
+    height.to_string() +
+    ") viewport=(" +
+    viewport_width.to_string() +
+    "," +
+    viewport_height.to_string() +
+    ")",
+  )
   if state.gpu.encoder is None {
     return
   }
@@ -2212,6 +2344,14 @@ fn flush_sprite_batches(state : State) -> Unit {
     state.gpu.sprite_uniform_buffer is None {
     return
   }
+  report_debug_once(
+    state,
+    "flush_sprite_batches",
+    "flush_sprite_batches: instances=" +
+    state.gpu.sprite_instance_count.to_string() +
+    " batches=" +
+    state.gpu.sprite_batches.length().to_string(),
+  )
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
     let required_bytes = state.gpu.sprite_instance_data.length() * 4
     if required_bytes <= 0 {
@@ -2305,6 +2445,37 @@ fn draw_sprite_uv(
   uv_max_x : Double,
   uv_max_y : Double,
 ) -> Unit {
+  report_debug_once(
+    state,
+    "draw_sprite_uv_called",
+    "draw_sprite_uv called: tex_id=" +
+    texture_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ") color=(" +
+    r.to_string() +
+    "," +
+    g.to_string() +
+    "," +
+    b.to_string() +
+    "," +
+    a.to_string() +
+    ") uv=(" +
+    uv_min_x.to_string() +
+    "," +
+    uv_min_y.to_string() +
+    ")-(" +
+    uv_max_x.to_string() +
+    "," +
+    uv_max_y.to_string() +
+    ")",
+  )
   if !ensure_pass_ready(state) {
     return
   }
@@ -2317,10 +2488,13 @@ fn draw_sprite_uv(
     let tex_height : Double = entry_value._get("height").cast()
     let raw_uv_scale_x = uv_max_x - uv_min_x
     let raw_uv_scale_y = uv_max_y - uv_min_y
-    let uv_scale_x = if raw_uv_scale_x <= 0 { 1.0 } else { raw_uv_scale_x }
-    let uv_scale_y = if raw_uv_scale_y <= 0 { 1.0 } else { raw_uv_scale_y }
-    let region_width = tex_width * uv_scale_x
-    let region_height = tex_height * uv_scale_y
+    // Preserve negative uv_scale for sprite flipping; only treat "zero-sized" as fallback.
+    let uv_scale_x = if raw_uv_scale_x == 0 { 1.0 } else { raw_uv_scale_x }
+    let uv_scale_y = if raw_uv_scale_y == 0 { 1.0 } else { raw_uv_scale_y }
+    let uv_scale_abs_x = if uv_scale_x < 0 { -uv_scale_x } else { uv_scale_x }
+    let uv_scale_abs_y = if uv_scale_y < 0 { -uv_scale_y } else { uv_scale_y }
+    let region_width = tex_width * uv_scale_abs_x
+    let region_height = tex_height * uv_scale_abs_y
     let base_size = 128.0
     let tex_scale_x = if region_width > 0 {
       region_width / base_size
@@ -2387,16 +2561,47 @@ fn draw_mesh(
   b : Double,
   a : Double,
 ) -> Unit {
+  report_debug_once(
+    state,
+    "draw_mesh_called",
+    "draw_mesh called: mesh_id=" +
+    mesh_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ") color=(" +
+    r.to_string() +
+    "," +
+    g.to_string() +
+    "," +
+    b.to_string() +
+    "," +
+    a.to_string() +
+    ")",
+  )
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
   flush_sprite_batches(state)
   ensure_mesh_pipeline(state)
   if state.gpu.mesh_pipeline is None || state.gpu.mesh_bind_group is None {
+    report_asset_error_once(
+      state, "mesh_draw_pipeline_not_ready", "Mesh draw skipped: mesh pipeline not ready",
+    )
     return
   }
   let mesh_entry = map_get(state.gpu.meshes, @js.any(mesh_id))
   if host_is_nullish(mesh_entry) {
+    report_asset_error_once(
+      state,
+      "mesh_draw_missing_mesh_" + mesh_id.to_string(),
+      "Mesh draw skipped: mesh id not found (" + mesh_id.to_string() + ")",
+    )
     return
   }
   if state.gpu.current_pass is Some(pass) &&
@@ -2412,6 +2617,15 @@ fn draw_mesh(
     } else {
       0.0
     }
+    report_debug_once(
+      state,
+      "mesh_ndc_scale",
+      "mesh ndc_scale=(" +
+      scale_x_base.to_string() +
+      "," +
+      scale_y_base.to_string() +
+      ")",
+    )
     let cos_value : Double = math_cos(rotation)
     let sin_value : Double = math_sin(rotation)
     let cam_cos : Double = math_cos(-info.cam_rotation)
@@ -2446,6 +2660,19 @@ fn draw_mesh(
         ._get("vertexBuffer")
         .cast()
       let vertex_count : Int = mesh_entry._get("vertexCount").cast()
+      report_debug_once(
+        state,
+        "mesh_vertex_count",
+        "draw_mesh vertex_count=" + vertex_count.to_string(),
+      )
+      if vertex_count <= 0 {
+        report_asset_error_once(
+          state,
+          "mesh_draw_empty_vertices_" + mesh_id.to_string(),
+          "Mesh draw skipped: empty vertex buffer (" + mesh_id.to_string() + ")",
+        )
+        return
+      }
       pass.set_vertex_buffer(0, vertex_buffer)
       pass.draw(vertex_count, 1, 0, 0)
     }
@@ -2841,7 +3068,44 @@ pub fn create_host(
           if buf_opt is Some(buf) {
             let bytes_u8 = uint8array_from_array_buffer(buf)
             entry._set("bytes", bytes_u8) |> ignore
+            let len = to_int(number_or(bytes_u8._get("length"), 0))
+            let b0 = uint8array_get_u8(bytes_u8, 0)
+            let b1 = uint8array_get_u8(bytes_u8, 1)
+            let b2 = uint8array_get_u8(bytes_u8, 2)
+            let b3 = uint8array_get_u8(bytes_u8, 3)
+            report_debug_once(
+              state,
+              "font_bytes_loaded_" + id.to_string(),
+              "font bytes loaded: id=" +
+              id.to_string() +
+              " len=" +
+              len.to_string() +
+              " magic=[" +
+              b0.to_string() +
+              "," +
+              b1.to_string() +
+              "," +
+              b2.to_string() +
+              "," +
+              b3.to_string() +
+              "] path=" +
+              path_text,
+            )
+          } else {
+            dispatch_asset_error(
+              "Font bytes load error: failed to read ArrayBuffer (path: " +
+              path_text +
+              ")",
+            )
           }
+        } else {
+          dispatch_asset_error(
+            "Font bytes load error: fetch failed (" +
+            bytes_resp.status.to_string() +
+            ") (path: " +
+            path_text +
+            ")",
+          )
         }
       }
       set_delete(state.assets.loading_fonts, @js.any(id)) |> ignore
@@ -2960,7 +3224,18 @@ pub fn create_host(
       if host_is_nullish(bytes) {
         0
       } else {
-        to_int(number_or(bytes._get("length"), 0))
+        let len = to_int(number_or(bytes._get("length"), 0))
+        if len > 0 {
+          report_debug_once(
+            state,
+            "font_bytes_len_" + font_id.to_string(),
+            "asset_font_bytes_len: font_id=" +
+            font_id.to_string() +
+            " len=" +
+            len.to_string(),
+          )
+        }
+        len
       }
     }
   })
@@ -3088,7 +3363,8 @@ pub fn create_host(
       if target_width <= 0 || target_height <= 0 {
         return
       }
-      if state.gpu.queue is Some(queue) {
+      if state.gpu.queue is Some(queue) && state.gpu.device is Some(device) {
+        device.push_error_scope("validation")
         let data = glyph_entry._get("data")
         write_texture_region(
           queue.as_any(),
@@ -3099,6 +3375,18 @@ pub fn create_host(
           x,
           y,
         )
+        let promise = device.pop_error_scope()
+        @js.run_async(async fn() noraise {
+          let err_any : @js.Any = promise.wait() catch { _ => js_null() }
+          if !host_is_nullish(err_any) {
+            report_asset_error_once(
+              state,
+              "texture_update_glyph_validation_error",
+              "Texture update (glyph) validation error: " +
+              any_to_string(err_any),
+            )
+          }
+        })
       }
     }),
   )
@@ -3123,7 +3411,8 @@ pub fn create_host(
         dispatch_asset_error("Texture update error: bytes id not found")
         return
       }
-      if state.gpu.queue is Some(queue) {
+      if state.gpu.queue is Some(queue) && state.gpu.device is Some(device) {
+        device.push_error_scope("validation")
         write_texture_region(
           queue.as_any(),
           texture_entry._get("texture"),
@@ -3133,6 +3422,17 @@ pub fn create_host(
           x,
           y,
         )
+        let promise = device.pop_error_scope()
+        @js.run_async(async fn() noraise {
+          let err_any : @js.Any = promise.wait() catch { _ => js_null() }
+          if !host_is_nullish(err_any) {
+            report_asset_error_once(
+              state,
+              "texture_update_validation_error",
+              "Texture update validation error: " + any_to_string(err_any),
+            )
+          }
+        })
       }
     }),
   )
@@ -3474,6 +3774,15 @@ pub fn create_host(
       device.queue().write_buffer(vertex_buffer, 0, vertices)
       let vertex_len : Double = vertices._get("length").cast()
       let vertex_count = to_int(vertex_len / 2)
+      if vertex_count <= 0 {
+        report_asset_error_once(
+          state,
+          "mesh_create_empty_vertices_" + id.to_string(),
+          "Mesh create error: empty vertex data (mesh id " +
+          id.to_string() +
+          ")",
+        )
+      }
       let entry = @js.from_entries([
         ("id", @js.any(id)),
         ("vertexBuffer", vertex_buffer.as_any()),
@@ -3606,8 +3915,23 @@ pub fn create_host(
       flush_sprite_batches(state)
       pass.end()
     }
-    if state.gpu.encoder is Some(encoder) && state.gpu.queue is Some(queue) {
+    if state.gpu.encoder is Some(encoder) &&
+      state.gpu.queue is Some(queue) &&
+      state.gpu.device is Some(device) {
       queue.submit([encoder.finish()])
+      let frame_error_promise = device.pop_error_scope()
+      @js.run_async(async fn() noraise {
+        let err_any : @js.Any = frame_error_promise.wait() catch {
+          _ => js_null()
+        }
+        if !host_is_nullish(err_any) {
+          report_asset_error_once(
+            state,
+            "frame_validation_error",
+            "WebGPU frame validation error: " + any_to_string(err_any),
+          )
+        }
+      })
     }
     state.gpu.encoder = None
     state.gpu.current_texture = None
@@ -3705,9 +4029,21 @@ pub fn create_host(
     ("gpu_end_frame", gpu_end_frame),
   ])
   let init = @js.from_fn0(fn() {
-    @js.Promise::new(async fn(resolve, _reject) {
+    @js.Promise::new(async fn(resolve, reject) {
       let target = default_canvas
-      init_webgpu(state, target)
+      // Ensure async host initialization completes before the guest starts.
+      // Some examples (mesh2d/text2d) create GPU resources during startup; if the
+      // device isn't ready yet, host imports throw and the guest will crash.
+      init_webgpu(state, target) catch {
+        err => {
+          let msg = "mgstudio-runtime-web init_webgpu failed: " +
+            err.to_string()
+          console_error(@js.any(msg))
+          dispatch_asset_error(msg)
+          reject(err)
+          return
+        }
+      }
       init_input(state)
       init_data_source(state)
       if state.data_db is Some(_) {

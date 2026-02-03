@@ -806,6 +806,10 @@ fn default_uv_max() -> @math.Vec2 {
 priv struct SpriteUvInfo {
   uv_min : @math.Vec2
   uv_max : @math.Vec2
+  // Pixel size of the resolved sprite region (image rect / atlas rect / sprite rect).
+  // This is used to interpret `Sprite.custom_size` as a final size (Bevy-style),
+  // while the host expects a scale factor.
+  region_size : @math.Vec2
 }
 
 ///|
@@ -822,12 +826,24 @@ fn sprite_vec2_mul(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
 fn sprite_draw_scale(
   sprite : Sprite,
   transform_scale : @math.Vec2,
+  region_size : @math.Vec2,
 ) -> @math.Vec2 {
-  let base = match sprite.custom_size {
-    Some(v) => v
-    None => @math.Vec2::new(1.0F, 1.0F)
+  match sprite.custom_size {
+    None => transform_scale
+    Some(custom_size) => {
+      // The host's sprite shader uses a fixed 128x128 quad and scales it by:
+      //   host_scale * (region_pixels / 128)
+      // To make `custom_size` represent a final size in world units, we convert
+      // it into a scale factor relative to the region size here.
+      let denom_x = if region_size.x == 0.0F { 1.0F } else { region_size.x }
+      let denom_y = if region_size.y == 0.0F { 1.0F } else { region_size.y }
+      let factor = @math.Vec2::new(
+        custom_size.x / denom_x,
+        custom_size.y / denom_y,
+      )
+      sprite_vec2_mul(transform_scale, factor)
+    }
   }
-  sprite_vec2_mul(transform_scale, base)
 }
 
 ///|
@@ -896,6 +912,10 @@ fn sprite_uv_from_sprite(sprite : Sprite) -> SpriteUvInfo? {
   if denom_x <= 0.0F || denom_y <= 0.0F {
     return None
   }
+  let region_size = @math.Vec2::new(
+    texture_rect.max.x - texture_rect.min.x,
+    texture_rect.max.y - texture_rect.min.y,
+  )
   let mut uv_min = @math.Vec2::new(
     texture_rect.min.x / denom_x,
     texture_rect.min.y / denom_y,
@@ -914,7 +934,7 @@ fn sprite_uv_from_sprite(sprite : Sprite) -> SpriteUvInfo? {
     uv_min = @math.Vec2::new(uv_min.x, pair.0)
     uv_max = @math.Vec2::new(uv_max.x, pair.1)
   }
-  Some(SpriteUvInfo::{ uv_min, uv_max })
+  Some(SpriteUvInfo::{ uv_min, uv_max, region_size })
 }
 
 ///|
@@ -1318,13 +1338,16 @@ pub fn[
     }
     let mut uv_min = default_uv_min()
     let mut uv_max = default_uv_max()
+    let mut region_size = @math.Vec2::new(1.0F, 1.0F)
     if sprite_uv_from_sprite(sprite) is Some(info) {
       uv_min = info.uv_min
       uv_max = info.uv_max
+      region_size = info.region_size
     }
     let draw_scale = sprite_draw_scale(
       sprite,
       @math.Vec2::new(transform.scale.x, transform.scale.y),
+      region_size,
     )
     let anchor_offset = sprite_anchor_offset(
       anchor,

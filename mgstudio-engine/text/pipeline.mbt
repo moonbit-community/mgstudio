@@ -217,8 +217,17 @@ fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
   let handle_to_font_id = state0.handle_to_font_id
   handle_to_font_id.push((handle_id, old_len))
   let font_id_to_handle_id = state0.font_id_to_handle_id
-  for _i in old_len..<new_len {
-    font_id_to_handle_id.push(handle_id)
+  // `FontSystem::new()` may preload system fonts, so `font_id` is not
+  // guaranteed to start from 0 for user-loaded fonts. Keep an index-aligned
+  // mapping (font_id -> asset handle id) and use -1 as "unknown".
+  while font_id_to_handle_id.length() < old_len {
+    font_id_to_handle_id.push(-1)
+  }
+  while font_id_to_handle_id.length() < new_len {
+    font_id_to_handle_id.push(-1)
+  }
+  for i in old_len..<new_len {
+    font_id_to_handle_id[i] = handle_id
   }
   let handle_to_family = state0.handle_to_family
   if find_str_pair_value(handle_to_family, handle_id) is None {
@@ -260,7 +269,12 @@ fn cosmic_font_handle_id_for_font_id(font_id : Int) -> Int? {
   if font_id < 0 || font_id >= ids.length() {
     return None
   }
-  Some(ids[font_id])
+  let handle_id = ids[font_id]
+  if handle_id <= 0 {
+    None
+  } else {
+    Some(handle_id)
+  }
 }
 
 ///|
@@ -326,9 +340,19 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let entities = build_text_entities(instance)
 
   // Ensure all fonts used by this text block are loaded into the cosmic font system.
-  cosmic_get_or_load_font_id(instance.font.font) |> ignore
+  //
+  // Important: When font bytes are not yet available (async host load),
+  // `cosmic_get_or_load_font_id` returns None and the layout phase may produce
+  // zero glyphs. We must keep `needs_rerender=true` in that case so the text
+  // retries once assets become available.
+  let mut missing_glyph = false
+  if cosmic_get_or_load_font_id(instance.font.font) is None {
+    missing_glyph = true
+  }
   for span in instance.spans {
-    cosmic_get_or_load_font_id(span.font.font) |> ignore
+    if cosmic_get_or_load_font_id(span.font.font) is None {
+      missing_glyph = true
+    }
   }
   let font_system = cosmic_font_system_state.val.font_system
 
@@ -392,7 +416,6 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   }
   let glyphs : Array[PositionedGlyph] = []
   let run_geometry : Array[RunGeometry] = []
-  let mut missing_glyph = false
   let mut box_w = 0.0F
   let mut box_h = 0.0F
   for run in cosmic_buffer.layout_runs() {

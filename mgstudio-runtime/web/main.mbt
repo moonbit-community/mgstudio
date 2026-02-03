@@ -262,7 +262,7 @@ async fn main_async() -> Unit {
     let message = if is_nullish(detail) {
       "Unknown asset error"
     } else {
-      detail.cast()
+      any_to_string(detail)
     }
     set_status("Asset error: " + message)
   })
@@ -277,9 +277,9 @@ async fn main_async() -> Unit {
     let assets_source_final = if assets_source != "" {
       assets_source
     } else {
-      // `mgstudio serve` stages the final overlay assets under `./_mgstudio_assets/`.
-      // Default to it so opening the served root without query params works.
-      "dir:./_mgstudio_assets/"
+      // Default to a local `./assets/` folder. `mgstudio serve` writes a staged
+      // `index.html` that injects explicit URL params when needed.
+      "dir:./assets/"
     }
     let data_source_final = if data_source != "" {
       data_source
