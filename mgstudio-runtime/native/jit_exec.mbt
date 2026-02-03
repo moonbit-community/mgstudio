@@ -101,11 +101,35 @@ fn read_env_int(key : String, default_ : Int) -> Int {
 }
 
 ///|
+fn is_jit_trace_enabled() -> Bool {
+  match @sys.get_env_var("MGSTUDIO_NATIVE_JIT_TRACE") {
+    Some(v) if v.trim() != "" => true
+    _ => false
+  }
+}
+
+///|
+fn jit_trace(msg : String) -> Unit {
+  if is_jit_trace_enabled() {
+    @debug.debug("[jit-trace] " + msg)
+  }
+}
+
+///|
 fn compile_module_to_precompiled(
   wasm_module : @types.Module,
   opt_level : Int,
   actual_memory_max? : Int? = None,
 ) -> @cwasm.PrecompiledModule {
+  if is_jit_trace_enabled() {
+    let total_codes = wasm_module.codes.length()
+    jit_trace(
+      "compile_module_to_precompiled: opt_level=" +
+      opt_level.to_string() +
+      " codes=" +
+      total_codes.to_string(),
+    )
+  }
   let precompiled = @cwasm.PrecompiledModule::new(@cwasm.AArch64)
 
   // Record imported functions (needed for import trampolines and func table).
@@ -124,24 +148,74 @@ fn compile_module_to_precompiled(
   let normalized = clamp_opt_level(opt_level)
 
   // Compile local functions.
+  let total_codes = wasm_module.codes.length()
   for i, _ in wasm_module.codes {
     let func_idx = num_func_imports + i
     let func_name = @wast.get_func_name(wasm_module, func_idx)
+    if is_jit_trace_enabled() {
+      // Avoid overly chatty output; enough to see progress or where we stall.
+      if i == 0 || i == total_codes - 1 || (i % 200 == 0) {
+        jit_trace(
+          "compiling code " +
+          i.to_string() +
+          "/" +
+          total_codes.to_string() +
+          " (func_idx=" +
+          func_idx.to_string() +
+          " name=" +
+          func_name +
+          ")",
+        )
+      }
+    }
+    let trace_stages = is_jit_trace_enabled() && (i == 0 || i == total_codes - 1)
+    if trace_stages {
+      jit_trace("  stage: translate_function begin (func_idx=" + func_idx.to_string() + ")")
+    }
     let ir_func = @ir.translate_function(
       wasm_module,
       i,
       name=func_name,
       memory_max_override=actual_memory_max,
     )
+    if trace_stages {
+      jit_trace("  stage: optimize begin (func_idx=" + func_idx.to_string() + ")")
+    }
     @ir.optimize_with_level(ir_func, @ir.OptLevel::from_int(normalized))
     |> ignore
+    if trace_stages {
+      jit_trace("  stage: lower_function begin (func_idx=" + func_idx.to_string() + ")")
+    }
     let vcode = @lower.lower_function(ir_func, num_imports=num_func_imports)
+    if trace_stages {
+      let blocks = vcode.get_blocks()
+      let mut insts = 0
+      for b in blocks {
+        insts = insts + b.insts.length()
+      }
+      // These numbers help diagnose pathological regalloc behavior.
+      jit_trace(
+        "  vcode stats: blocks=" +
+        blocks.length().to_string() +
+        " insts=" +
+        insts.to_string() +
+        " next_vreg_id=" +
+        vcode.next_vreg_id.to_string(),
+      )
+      jit_trace("  stage: regalloc begin (func_idx=" + func_idx.to_string() + ")")
+    }
     let allocated = @regalloc.allocate_registers_backtracking(vcode)
+    if trace_stages {
+      jit_trace("  stage: emit_function begin (func_idx=" + func_idx.to_string() + ")")
+    }
     let mc = @emit.emit_function(
       allocated,
       debug_func_idx=None,
       force_frame_setup=false,
     )
+    if trace_stages {
+      jit_trace("  stage: add_function begin (func_idx=" + func_idx.to_string() + ")")
+    }
     let compiled = @vcode.CompiledFunction::new(func_name, mc, 0)
     let type_idx = wasm_module.funcs[i]
     let ft = wasm_module.get_func_type(type_idx)
@@ -152,6 +226,9 @@ fn compile_module_to_precompiled(
       ft.params.length(),
       ft.results.length(),
     )
+    if trace_stages {
+      jit_trace("  stage: done (func_idx=" + func_idx.to_string() + ")")
+    }
   }
   precompiled
 }
@@ -287,12 +364,14 @@ pub fn prepare_jit_for_instance(
   instance : @runtime.ModuleInstance,
   store : @runtime.Store,
 ) -> PreparedJit raise NativeJitSetupError {
+  jit_trace("prepare_jit_for_instance: begin")
   if @wast.has_unsupported_instructions(wasm_module) {
     raise NativeJitSetupError::UnsupportedModule(
       "module contains JIT-unsupported instructions",
     )
   }
   let opt_level = read_env_int("MGSTUDIO_NATIVE_JIT_OPT_LEVEL", 2)
+  jit_trace("opt_level=" + opt_level.to_string())
   let actual_memory_max : Int? = if instance.mem_addrs.length() > 0 {
     try {
       let mem = store.get_mem(instance.mem_addrs[0])
@@ -304,36 +383,50 @@ pub fn prepare_jit_for_instance(
   } else {
     None
   }
+  let actual_memory_max_desc = match actual_memory_max {
+    Some(v) => v.to_string()
+    None => "(none)".to_string()
+  }
+  jit_trace("actual_memory_max=" + actual_memory_max_desc)
+  jit_trace("compiling module -> precompiled")
   let pc = compile_module_to_precompiled(
     wasm_module,
     opt_level,
     actual_memory_max~,
   )
+  jit_trace("building func signatures")
   let func_signatures = @wast.build_func_signatures(wasm_module)
+  jit_trace("building external imports")
   let external_imports = @wast.build_external_imports_for_jit(
     wasm_module, instance, store,
   )
+  jit_trace("loading JIT module")
   let jit_module = @jit.JITModule::load_with_imports(
     pc, func_signatures, external_imports,
   )
   guard jit_module is Some(jm) else { raise NativeJitSetupError::JitLoadFailed }
 
   // Enable arbitrary host function imports in JIT mode.
+  jit_trace("install hostcall dispatcher")
   @wast.install_jit_hostcall_dispatcher(jm, store, instance)
 
   // Use an independent wasm stack when possible (better trap behavior and
   // avoids host stack blow-ups).
+  jit_trace("alloc wasm stack")
   jm.alloc_wasm_stack(16L * 1024L * 1024L) |> ignore
 
   // WASI built-ins (no-op for non-WASI modules, but harmless).
+  jit_trace("init WASI")
   jm.init_wasi_quiet([], [], [])
 
   // Share memories via descriptor pointers.
+  jit_trace("init jit memories from store")
   guard @wast.init_jit_memories_from_store(instance, store, jm) is Some(_) else {
     raise NativeJitSetupError::MemoryInitFailed
   }
 
   // Initialize globals from the interpreter state.
+  jit_trace("alloc/init globals")
   let globals_ptr = alloc_and_init_jit_globals(instance, store, jm)
   if globals_ptr == 0L && !instance.global_addrs.is_empty() {
     raise NativeJitSetupError::GlobalsAllocFailed
@@ -344,7 +437,9 @@ pub fn prepare_jit_for_instance(
 
   // Tables: initialize shared tables from elem segments and then sync the
   // (possibly mutated by start) interpreter tables into JIT tables.
+  jit_trace("init elem segments")
   @wast.init_elem_segments(wasm_module, jm, instance, store)
+  jit_trace("sync tables to jit")
   @wast.sync_tables_to_jit(instance, store, jm)
   for table_addr in instance.table_addrs {
     if store.get_jit_table(table_addr) is None {
@@ -353,6 +448,7 @@ pub fn prepare_jit_for_instance(
   }
 
   // GC setup (required for wasm-gc).
+  jit_trace("gc_setup")
   match store.c_heap {
     Some(heap) => {
       let canonical = @types.compute_canonical_type_indices(
@@ -364,6 +460,7 @@ pub fn prepare_jit_for_instance(
     }
     None => raise NativeJitSetupError::MissingCHeap
   }
+  jit_trace("prepare_jit_for_instance: done")
   PreparedJit::{ jm, globals_ptr }
 }
 
