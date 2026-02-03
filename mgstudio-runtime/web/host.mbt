@@ -2003,6 +2003,16 @@ fn report_asset_error_once(
 }
 
 ///|
+fn report_debug_once(state : State, key : String, message : String) -> Unit {
+  let full_key = "debug/" + key
+  if set_has(state.assets.reported_errors, @js.any(full_key)) {
+    return
+  }
+  set_add(state.assets.reported_errors, @js.any(full_key))
+  @js.log(@js.any(message))
+}
+
+///|
 fn get_shader_source(state : State, id : Int) -> String? {
   let entry = map_get(state.assets.shader_sources, @js.any(id))
   if host_is_nullish(entry) {
@@ -2181,6 +2191,11 @@ fn begin_frame(state : State) -> Int {
   if state.gpu.context is Some(context) && state.gpu.device is Some(device) {
     update_window_size(state)
     ensure_pipeline_resources(state)
+    // Capture per-frame validation errors (including draw command issues) that
+    // might otherwise fail silently in some browsers.
+    //
+    // We pop this scope in `gpu_end_frame` after submitting the command buffer.
+    device.push_error_scope("validation")
     state.gpu.encoder = Some(device.create_command_encoder())
     state.gpu.current_texture = Some(context.get_current_texture())
     return 1
@@ -2207,6 +2222,27 @@ fn begin_pass(
   viewport_width : Double,
   viewport_height : Double,
 ) -> Unit {
+  report_debug_once(
+    state,
+    "begin_pass_clear",
+    "begin_pass clear=(" +
+    clear_r.to_string() +
+    "," +
+    clear_g.to_string() +
+    "," +
+    clear_b.to_string() +
+    "," +
+    clear_a.to_string() +
+    ") size=(" +
+    width.to_string() +
+    "," +
+    height.to_string() +
+    ") viewport=(" +
+    viewport_width.to_string() +
+    "," +
+    viewport_height.to_string() +
+    ")",
+  )
   if state.gpu.encoder is None {
     return
   }
@@ -2308,6 +2344,14 @@ fn flush_sprite_batches(state : State) -> Unit {
     state.gpu.sprite_uniform_buffer is None {
     return
   }
+  report_debug_once(
+    state,
+    "flush_sprite_batches",
+    "flush_sprite_batches: instances=" +
+    state.gpu.sprite_instance_count.to_string() +
+    " batches=" +
+    state.gpu.sprite_batches.length().to_string(),
+  )
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
     let required_bytes = state.gpu.sprite_instance_data.length() * 4
     if required_bytes <= 0 {
@@ -2401,6 +2445,37 @@ fn draw_sprite_uv(
   uv_max_x : Double,
   uv_max_y : Double,
 ) -> Unit {
+  report_debug_once(
+    state,
+    "draw_sprite_uv_called",
+    "draw_sprite_uv called: tex_id=" +
+    texture_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ") color=(" +
+    r.to_string() +
+    "," +
+    g.to_string() +
+    "," +
+    b.to_string() +
+    "," +
+    a.to_string() +
+    ") uv=(" +
+    uv_min_x.to_string() +
+    "," +
+    uv_min_y.to_string() +
+    ")-(" +
+    uv_max_x.to_string() +
+    "," +
+    uv_max_y.to_string() +
+    ")",
+  )
   if !ensure_pass_ready(state) {
     return
   }
@@ -2486,6 +2561,29 @@ fn draw_mesh(
   b : Double,
   a : Double,
 ) -> Unit {
+  report_debug_once(
+    state,
+    "draw_mesh_called",
+    "draw_mesh called: mesh_id=" +
+    mesh_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ") color=(" +
+    r.to_string() +
+    "," +
+    g.to_string() +
+    "," +
+    b.to_string() +
+    "," +
+    a.to_string() +
+    ")",
+  )
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
@@ -2519,6 +2617,15 @@ fn draw_mesh(
     } else {
       0.0
     }
+    report_debug_once(
+      state,
+      "mesh_ndc_scale",
+      "mesh ndc_scale=(" +
+      scale_x_base.to_string() +
+      "," +
+      scale_y_base.to_string() +
+      ")",
+    )
     let cos_value : Double = math_cos(rotation)
     let sin_value : Double = math_sin(rotation)
     let cam_cos : Double = math_cos(-info.cam_rotation)
@@ -2553,6 +2660,11 @@ fn draw_mesh(
         ._get("vertexBuffer")
         .cast()
       let vertex_count : Int = mesh_entry._get("vertexCount").cast()
+      report_debug_once(
+        state,
+        "mesh_vertex_count",
+        "draw_mesh vertex_count=" + vertex_count.to_string(),
+      )
       if vertex_count <= 0 {
         report_asset_error_once(
           state,
@@ -2956,6 +3068,29 @@ pub fn create_host(
           if buf_opt is Some(buf) {
             let bytes_u8 = uint8array_from_array_buffer(buf)
             entry._set("bytes", bytes_u8) |> ignore
+            let len = to_int(number_or(bytes_u8._get("length"), 0))
+            let b0 = uint8array_get_u8(bytes_u8, 0)
+            let b1 = uint8array_get_u8(bytes_u8, 1)
+            let b2 = uint8array_get_u8(bytes_u8, 2)
+            let b3 = uint8array_get_u8(bytes_u8, 3)
+            report_debug_once(
+              state,
+              "font_bytes_loaded_" + id.to_string(),
+              "font bytes loaded: id=" +
+              id.to_string() +
+              " len=" +
+              len.to_string() +
+              " magic=[" +
+              b0.to_string() +
+              "," +
+              b1.to_string() +
+              "," +
+              b2.to_string() +
+              "," +
+              b3.to_string() +
+              "] path=" +
+              path_text,
+            )
           } else {
             dispatch_asset_error(
               "Font bytes load error: failed to read ArrayBuffer (path: " +
@@ -3089,7 +3224,18 @@ pub fn create_host(
       if host_is_nullish(bytes) {
         0
       } else {
-        to_int(number_or(bytes._get("length"), 0))
+        let len = to_int(number_or(bytes._get("length"), 0))
+        if len > 0 {
+          report_debug_once(
+            state,
+            "font_bytes_len_" + font_id.to_string(),
+            "asset_font_bytes_len: font_id=" +
+            font_id.to_string() +
+            " len=" +
+            len.to_string(),
+          )
+        }
+        len
       }
     }
   })
@@ -3769,8 +3915,23 @@ pub fn create_host(
       flush_sprite_batches(state)
       pass.end()
     }
-    if state.gpu.encoder is Some(encoder) && state.gpu.queue is Some(queue) {
+    if state.gpu.encoder is Some(encoder) &&
+      state.gpu.queue is Some(queue) &&
+      state.gpu.device is Some(device) {
       queue.submit([encoder.finish()])
+      let frame_error_promise = device.pop_error_scope()
+      @js.run_async(async fn() noraise {
+        let err_any : @js.Any = frame_error_promise.wait() catch {
+          _ => js_null()
+        }
+        if !host_is_nullish(err_any) {
+          report_asset_error_once(
+            state,
+            "frame_validation_error",
+            "WebGPU frame validation error: " + any_to_string(err_any),
+          )
+        }
+      })
     }
     state.gpu.encoder = None
     state.gpu.current_texture = None
@@ -3868,9 +4029,21 @@ pub fn create_host(
     ("gpu_end_frame", gpu_end_frame),
   ])
   let init = @js.from_fn0(fn() {
-    @js.Promise::new(async fn(resolve, _reject) {
+    @js.Promise::new(async fn(resolve, reject) {
       let target = default_canvas
-      init_webgpu(state, target)
+      // Ensure async host initialization completes before the guest starts.
+      // Some examples (mesh2d/text2d) create GPU resources during startup; if the
+      // device isn't ready yet, host imports throw and the guest will crash.
+      init_webgpu(state, target) catch {
+        err => {
+          let msg = "mgstudio-runtime-web init_webgpu failed: " +
+            err.to_string()
+          console_error(@js.any(msg))
+          dispatch_asset_error(msg)
+          reject(err)
+          return
+        }
+      }
       init_input(state)
       init_data_source(state)
       if state.data_db is Some(_) {
