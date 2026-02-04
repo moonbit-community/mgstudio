@@ -28,6 +28,10 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
 
 pub fn text_set_content(TextHandle, String) -> Unit
 
+pub fn text_set_layers(TextHandle, @render2d.RenderLayers) -> Unit
+
+pub fn text_set_transform(TextHandle, @math.Transform) -> Unit
+
 pub fn text_spawn(Text2dBundle) -> TextHandle
 
 pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle

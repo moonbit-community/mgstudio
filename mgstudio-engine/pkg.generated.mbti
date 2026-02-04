@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/visibility",
 }
 

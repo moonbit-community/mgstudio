@@ -17,6 +17,10 @@ pub fn[W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @
 
 pub fn[W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld] transform_plugin(@app.App[W]) -> @app.App[W]
 
+pub let transform_set_propagate : String
+
+pub let transform_set_update_children : String
+
 pub fn[W : @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld] update_children_system(W) -> Unit
 
 // Errors

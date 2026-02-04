@@ -1,0 +1,166 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ui"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/visibility",
+}
+
+// Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+pub fn[W : HasRes_UiContext + Has_UiLayout + Has_ButtonColors + Has_InteractionState + @render2d.Has_Sprite + @core.ChangeTickWorld] ui_interaction_system(W) -> Unit
+
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_InteractionState + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
+
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_InteractionState + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
+
+pub let ui_set_context : String
+
+pub let ui_set_interaction : String
+
+pub let ui_set_layout : String
+
+pub fn[W : HasRes_UiContext + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld] ui_update_context_system(W) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct BackgroundColor {
+  color : @render2d.Color
+}
+pub fn BackgroundColor::new(@render2d.Color) -> Self
+
+pub struct ButtonColors {
+  normal : @render2d.Color
+  hovered : @render2d.Color
+  pressed : @render2d.Color
+}
+pub fn ButtonColors::new(@render2d.Color, @render2d.Color, @render2d.Color) -> Self
+
+pub(all) enum Interaction {
+  None
+  Hovered
+  Pressed
+}
+pub impl Eq for Interaction
+pub impl Show for Interaction
+
+pub struct InteractionState {
+  value : Interaction
+}
+pub fn InteractionState::default() -> Self
+pub fn InteractionState::new(Interaction) -> Self
+
+pub struct Style {
+  position : UiRect
+  size : UiSize
+  z_index : Int
+}
+pub fn Style::default() -> Self
+pub fn Style::new(UiRect, UiSize, Int) -> Self
+
+pub struct UiContext {
+  mut white_texture : @asset.Handle[@asset.Image]
+  mut viewport_origin : @math.Vec2
+  mut viewport_size : @math.Vec2
+  mut camera_entity : @core.Entity?
+  mut camera_transform : @math.Transform
+  mut camera_scale : Float
+  mut pointer_pos : @math.Vec2?
+  mut pointer_down : Bool
+}
+pub fn UiContext::default() -> Self
+pub fn UiContext::new(@asset.Handle[@asset.Image], @math.Vec2, @math.Vec2, @core.Entity?, @math.Transform, Float, @math.Vec2?, Bool) -> Self
+
+pub struct UiImage {
+  image : @asset.Handle[@asset.Image]
+}
+pub fn UiImage::new(@asset.Handle[@asset.Image]) -> Self
+
+pub struct UiLayout {
+  rect : @math.Rect
+}
+pub fn UiLayout::new(@math.Rect) -> Self
+
+pub struct UiRect {
+  left : Val
+  top : Val
+  right : Val
+  bottom : Val
+}
+pub fn UiRect::default() -> Self
+pub fn UiRect::new(Val, Val, Val, Val) -> Self
+
+pub struct UiRoot {
+}
+pub fn UiRoot::default() -> Self
+
+pub struct UiSize {
+  width : Val
+  height : Val
+}
+pub fn UiSize::default() -> Self
+pub fn UiSize::new(Val, Val) -> Self
+
+pub struct UiText {
+  handle : @text.TextHandle
+}
+pub fn UiText::new(@text.TextHandle) -> Self
+
+pub(all) enum Val {
+  Auto
+  Px(Float)
+  Percent(Float)
+}
+
+// Type aliases
+
+// Traits
+pub(open) trait HasRes_UiContext {
+  get_ui_context_resource(Self) -> @core.Resource[UiContext]
+}
+
+pub(open) trait Has_BackgroundColor {
+  get_background_color_store(Self) -> @core.ComponentStore[BackgroundColor]
+}
+
+pub(open) trait Has_ButtonColors {
+  get_button_colors_store(Self) -> @core.ComponentStore[ButtonColors]
+}
+
+pub(open) trait Has_InteractionState {
+  get_interaction_state_store(Self) -> @core.ComponentStore[InteractionState]
+}
+
+pub(open) trait Has_Style {
+  get_style_store(Self) -> @core.ComponentStore[Style]
+}
+
+pub(open) trait Has_UiImage {
+  get_ui_image_store(Self) -> @core.ComponentStore[UiImage]
+}
+
+pub(open) trait Has_UiLayout {
+  get_ui_layout_store(Self) -> @core.ComponentStore[UiLayout]
+}
+
+pub(open) trait Has_UiRoot {
+  get_ui_root_store(Self) -> @core.ComponentStore[UiRoot]
+}
+
+pub(open) trait Has_UiText {
+  get_ui_text_store(Self) -> @core.ComponentStore[UiText]
+}
+

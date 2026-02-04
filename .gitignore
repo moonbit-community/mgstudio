@@ -1,5 +1,6 @@
 bevy
 mygame
+.mgstudio/
 .DS_Store
 AGENTS.md
 .private/
