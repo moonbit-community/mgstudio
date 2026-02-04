@@ -497,6 +497,124 @@ extern "js" fn append_canvas_to_body(canvas : @js.Any) -> Unit =
   #| (canvas) => document.body.appendChild(canvas)
 
 ///|
+extern "js" fn a11y_actions_len_js() -> Int =
+  #| () => {
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   return arr.length | 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_target_js(index : Int) -> Int =
+  #| (index) => {
+  #|   const i = Number(index) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   return it ? (Number(it[0]) | 0) : 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_kind_js(index : Int) -> Int =
+  #| (index) => {
+  #|   const i = Number(index) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   return it ? (Number(it[1]) | 0) : 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_clear_js() -> Unit =
+  #| () => { globalThis.__mgstudio_a11y_actions = [] }
+
+///| Ensure (and position) the a11y DOM overlay above the canvas.
+extern "js" fn a11y_begin_update_js(canvas : @js.Any) -> @js.Any =
+  #| (canvas) => {
+  #|   if (!canvas || typeof document !== "object") return null
+  #|   let container = globalThis.__mgstudio_a11y_container
+  #|   if (!container) {
+  #|     container = document.createElement("div")
+  #|     container.id = "mgstudio-a11y"
+  #|     container.style.position = "absolute"
+  #|     container.style.pointerEvents = "none"
+  #|     container.style.opacity = "1"
+  #|     container.style.zIndex = "2147483647"
+  #|     document.body.appendChild(container)
+  #|     globalThis.__mgstudio_a11y_container = container
+  #|   }
+  #|   const rect = canvas.getBoundingClientRect()
+  #|   const left = rect.left + (window.scrollX || 0)
+  #|   const top = rect.top + (window.scrollY || 0)
+  #|   container.style.left = `${left}px`
+  #|   container.style.top = `${top}px`
+  #|   container.style.width = `${rect.width}px`
+  #|   container.style.height = `${rect.height}px`
+  #|   // Clear previous children.
+  #|   while (container.firstChild) container.removeChild(container.firstChild)
+  #|   return container
+  #| }
+
+///| Add one accessible element to the overlay.
+extern "js" fn a11y_push_node_js(
+  container : @js.Any,
+  node_id : Int,
+  role_id : Int,
+  x : Double,
+  y : Double,
+  w : Double,
+  h : Double,
+  name : String,
+  actions_mask : Int,
+) -> Unit =
+  #| (container, nodeId, roleId, x, y, w, h, name, actionsMask) => {
+  #|   if (!container) return
+  #|   const id = Number(nodeId) | 0
+  #|   const role = Number(roleId) | 0
+  #|   const mask = Number(actionsMask) | 0
+  #|   const el = (role === 3) ? document.createElement("button") : document.createElement("div")
+  #|   el.style.position = "absolute"
+  #|   el.style.left = `${Number(x)}px`
+  #|   el.style.top = `${Number(y)}px`
+  #|   el.style.width = `${Math.max(0, Number(w))}px`
+  #|   el.style.height = `${Math.max(0, Number(h))}px`
+  #|   el.style.opacity = "0.001"
+  #|   el.style.pointerEvents = "auto"
+  #|   el.style.background = "transparent"
+  #|   el.style.border = "0"
+  #|   el.style.padding = "0"
+  #|   el.style.margin = "0"
+  #|   el.style.color = "transparent"
+  #|   el.dataset.mgstudioNodeId = String(id)
+  #|   const label = String(name || "")
+  #|   if (label) {
+  #|     el.setAttribute("aria-label", label)
+  #|     el.textContent = label
+  #|   }
+  #|   // Focusable when it has any actions.
+  #|   if (mask !== 0) {
+  #|     el.tabIndex = 0
+  #|   }
+  #|   // Actions: 1 = Focus, 2 = Default
+  #|   el.addEventListener("focus", () => {
+  #|     globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|     globalThis.__mgstudio_a11y_actions.push([id, 1])
+  #|   })
+  #|   if ((mask & 2) !== 0) {
+  #|     el.addEventListener("click", () => {
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, 2])
+  #|     })
+  #|     el.addEventListener("keydown", (ev) => {
+  #|       const key = ev && ev.key
+  #|       if (key === "Enter" || key === " ") {
+  #|         ev.preventDefault()
+  #|         globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|         globalThis.__mgstudio_a11y_actions.push([id, 2])
+  #|       }
+  #|     })
+  #|   }
+  #|   container.appendChild(el)
+  #| }
+
+///|
 extern "js" fn create_checkerboard_data(size : Int) -> @js.Any =
   #| (size) => {
   #|   const data = new Uint8Array(size * size * 4)
@@ -1035,6 +1153,10 @@ struct PassInfo {
   cam_y : Double
   cam_rotation : Double
   cam_scale : Double
+  viewport_x : Double
+  viewport_y : Double
+  viewport_width : Double
+  viewport_height : Double
 }
 
 ///|
@@ -1086,6 +1208,8 @@ struct InputState {
   mouse_just_released : @js.Any
   mut mouse_x : Double
   mut mouse_y : Double
+  mut wheel_x : Double
+  mut wheel_y : Double
   mut has_cursor : Bool
   mut pointer_bound : Bool
   mut initialized : Bool
@@ -1139,6 +1263,7 @@ struct State {
   assets : AssetsState
   input : InputState
   gpu : GpuState
+  mut a11y_container : @js.Any?
 }
 
 ///|
@@ -1185,6 +1310,8 @@ fn new_state(
       mouse_just_released: new_set(),
       mouse_x: 0,
       mouse_y: 0,
+      wheel_x: 0,
+      wheel_y: 0,
       has_cursor: false,
       pointer_bound: false,
       initialized: false,
@@ -1223,6 +1350,7 @@ fn new_state(
       mesh_shader_id: 0,
       gizmo_shader_id: 0,
     },
+    a11y_container: None,
   }
 }
 
@@ -1372,6 +1500,8 @@ fn init_input(state : State) -> Unit {
     return
   }
   state.input.initialized = true
+  state.input.wheel_x = 0.0
+  state.input.wheel_y = 0.0
   let win = @dom.window().as_any()
   add_event_listener(
     win,
@@ -1489,6 +1619,19 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
     target,
     "contextmenu",
     @js.from_fn1(fn(event : @js.Any) { prevent_default(event) }),
+  )
+  add_event_listener(
+    target,
+    "wheel",
+    @js.from_fn1(fn(event : @js.Any) {
+      // Keep wheel deltas in logical units (CSS pixels / lines depending on browser).
+      // Consumers should interpret sign and scaling as needed.
+      let dx : Double = event._get("deltaX").cast()
+      let dy : Double = event._get("deltaY").cast()
+      state.input.wheel_x = state.input.wheel_x + dx
+      state.input.wheel_y = state.input.wheel_y + dy
+      prevent_default(event)
+    }),
   )
 }
 
@@ -2296,6 +2439,10 @@ fn begin_pass(
         cam_y,
         cam_rotation,
         cam_scale,
+        viewport_x: vp_x,
+        viewport_y: vp_y,
+        viewport_width: vp_width,
+        viewport_height: vp_height,
       })
       state.gpu.gizmo_lines = new_array()
       state.gpu.sprite_instance_data.clear()
@@ -2851,6 +2998,8 @@ pub fn create_host(
     set_clear(state.input.just_released)
     set_clear(state.input.mouse_just_pressed)
     set_clear(state.input.mouse_just_released)
+    state.input.wheel_x = 0.0
+    state.input.wheel_y = 0.0
   })
   let input_is_mouse_button_down = @js.from_fn1(fn(name) {
     let text = string_from_id_required(
@@ -2872,9 +3021,57 @@ pub fn create_host(
   })
   let input_mouse_x = @js.from_fn0(fn() { state.input.mouse_x })
   let input_mouse_y = @js.from_fn0(fn() { state.input.mouse_y })
+  let input_wheel_x = @js.from_fn0(fn() { state.input.wheel_x })
+  let input_wheel_y = @js.from_fn0(fn() { state.input.wheel_y })
   let input_has_cursor = @js.from_fn0(fn() { state.input.has_cursor })
   let debug_string = @js.from_fn1(fn(value) {
     console_error(@js.any(string_from_id_optional(state, value)))
+    0
+  })
+  let a11y_begin_update = @js.from_fn1(fn(_root_any : @js.Any) {
+    if state.window is None {
+      return 0
+    }
+    let canvas = state.window.unwrap().canvas
+    state.a11y_container = Some(a11y_begin_update_js(canvas))
+    0
+  })
+  let a11y_push_node = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      guard state.a11y_container is Some(container) else { return }
+      let node_id = to_int(arg_number(args, 0, 0))
+      let _parent_id = to_int(arg_number(args, 1, 0)) |> ignore
+      let role_id = to_int(arg_number(args, 2, 0))
+      let x = arg_number(args, 3, 0)
+      let y = arg_number(args, 4, 0)
+      let w = arg_number(args, 5, 0)
+      let h = arg_number(args, 6, 0)
+      let name_id = to_int(arg_number(args, 7, 0))
+      let actions_mask = to_int(arg_number(args, 8, 0))
+      let name = string_from_id_optional(state, @js.any(name_id))
+      a11y_push_node_js(
+        container,
+        node_id,
+        role_id,
+        x,
+        y,
+        w,
+        h,
+        name,
+        actions_mask,
+      )
+    }),
+  )
+  let a11y_end_update = @js.from_fn0(fn() { 0 })
+  let a11y_actions_len = @js.from_fn0(fn() { a11y_actions_len_js() })
+  let a11y_action_target = @js.from_fn1(fn(index_any) {
+    a11y_actions_target_js(to_int(number_or(index_any, 0)))
+  })
+  let a11y_action_kind = @js.from_fn1(fn(index_any) {
+    a11y_actions_kind_js(to_int(number_or(index_any, 0)))
+  })
+  let a11y_actions_clear = @js.from_fn0(fn() {
+    a11y_actions_clear_js()
     0
   })
   let string_sink_reset = @js.from_fn0(fn() {
@@ -3815,6 +4012,37 @@ pub fn create_host(
       )
     }),
   )
+  let gpu_set_scissor = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      if state.gpu.current_pass is None {
+        return
+      }
+      flush_sprite_batches(state)
+      if state.gpu.current_pass is Some(pass) {
+        pass.set_scissor_rect(
+          to_int(arg_number(args, 0, 0)),
+          to_int(arg_number(args, 1, 0)),
+          to_int(arg_number(args, 2, 0)),
+          to_int(arg_number(args, 3, 0)),
+        )
+      }
+    }),
+  )
+  let gpu_clear_scissor = @js.from_fn0(fn() {
+    if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+      return
+    }
+    flush_sprite_batches(state)
+    if state.gpu.current_pass is Some(pass) &&
+      state.gpu.current_pass_info is Some(info) {
+      pass.set_scissor_rect(
+        to_int(info.viewport_x),
+        to_int(info.viewport_y),
+        to_int(info.viewport_width),
+        to_int(info.viewport_height),
+      )
+    }
+  })
   let gpu_draw_sprite = wrap_variadic(
     @js.from_fn1(fn(args) {
       draw_sprite(
@@ -3957,12 +4185,23 @@ pub fn create_host(
     ("input_is_mouse_button_just_released", input_is_mouse_button_just_released),
     ("input_mouse_x", input_mouse_x),
     ("input_mouse_y", input_mouse_y),
+    ("input_wheel_x", input_wheel_x),
+    ("input_wheel_y", input_wheel_y),
     ("input_has_cursor", input_has_cursor),
     ("debug_string", debug_string),
+    ("a11y_begin_update", a11y_begin_update),
+    ("a11y_push_node", a11y_push_node),
+    ("a11y_end_update", a11y_end_update),
+    ("a11y_actions_len", a11y_actions_len),
+    ("a11y_action_target", a11y_action_target),
+    ("a11y_action_kind", a11y_action_kind),
+    ("a11y_actions_clear", a11y_actions_clear),
     ("gpu_request_device", gpu_request_device),
     ("gpu_get_queue", gpu_get_queue),
     ("gpu_create_surface", gpu_create_surface),
     ("gpu_configure_surface", gpu_configure_surface),
+    ("gpu_set_scissor", gpu_set_scissor),
+    ("gpu_clear_scissor", gpu_clear_scissor),
     ("string_sink_reset", string_sink_reset),
     (
       "string_sink_push",

@@ -5,13 +5,16 @@ pub struct World {
   entities : @core.Entities
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
-  style : @core.ComponentStore[@ui.Style]
+  node : @core.ComponentStore[@ui.Node]
   button : @core.ComponentStore[@ui.Button]
   ui_root : @core.ComponentStore[@ui.UiRoot]
   ui_text : @core.ComponentStore[@ui.UiText]
+  z_index : @core.ComponentStore[@ui.ZIndex]
   ui_image : @core.ComponentStore[@ui.UiImage]
   ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
+  border_color : @core.ComponentStore[@ui.BorderColor]
+  focus_policy : @core.ComponentStore[@ui.FocusPolicy]
   interaction : @core.ComponentStore[@ui.Interaction]
   ccd2d : @core.ComponentStore[@physics2d.Ccd2d]
   anchor : @core.ComponentStore[@render2d.Anchor]
@@ -19,8 +22,11 @@ pub struct World {
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
+  global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
   parent : @core.ComponentStore[@hierarchy.Parent]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
+  calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
+  scroll_position : @core.ComponentStore[@ui.ScrollPosition]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
@@ -33,39 +39,31 @@ pub struct World {
   velocity2d : @core.ComponentStore[@physics2d.Velocity2d]
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
+  scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
   rigid_body2d : @core.ComponentStore[@physics2d.RigidBody2d]
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   visibility : @core.ComponentStore[@visibility.Visibility]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
-  active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
-  contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
   restitution2d : @core.ComponentStore[@physics2d.Restitution2d]
-  active_events2d : @core.ComponentStore[@physics2d.ActiveEvents2d]
   gravity_scale2d : @core.ComponentStore[@physics2d.GravityScale2d]
-  impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
+  relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
-  collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
-  multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
-  collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
-  rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[
     @physics2d.FrictionCombineRule2d,
-  ]
-  active_collision_types2d : @core.ComponentStore[
-    @physics2d.ActiveCollisionTypes2d,
   ]
   rapier_collider_handle2d : @core.ComponentStore[
     @physics2d.RapierColliderHandle2d,
@@ -73,35 +71,19 @@ pub struct World {
   rapier_collider_handle3d : @core.ComponentStore[
     @physics3d.RapierColliderHandle3d,
   ]
-  collider_mass_properties2d : @core.ComponentStore[
-    @physics2d.ColliderMassProperties2d,
-  ]
   restitution_combine_rule2d : @core.ComponentStore[
     @physics2d.RestitutionCombineRule2d,
-  ]
-  additional_mass_properties2d : @core.ComponentStore[
-    @physics2d.AdditionalMassProperties2d,
-  ]
-  rapier_impulse_joint_handle2d : @core.ComponentStore[
-    @physics2d.RapierImpulseJointHandle2d,
-  ]
-  additional_solver_iterations2d : @core.ComponentStore[
-    @physics2d.AdditionalSolverIterations2d,
   ]
   contact_force_event_threshold2d : @core.ComponentStore[
     @physics2d.ContactForceEventThreshold2d,
   ]
-  rapier_multibody_joint_handle2d : @core.ComponentStore[
-    @physics2d.RapierMultibodyJointHandle2d,
-  ]
-  kinematic_character_controller2d : @core.ComponentStore[
-    @physics2d.KinematicCharacterController2d,
-  ]
-  kinematic_character_controller_output2d : @core.ComponentStore[
-    @physics2d.KinematicCharacterControllerOutput2d,
-  ]
+  res_ui_scale : @core.Resource[@ui.UiScale]
+  res_ui_stack : @core.Resource[@ui.UiStack]
   res_ui_context : @core.Resource[@ui.UiContext]
+  res_a11y_state : @core.Resource[@a11y.A11yState]
+  res_picking_state : @core.Resource[@picking.PickingState]
   res_render_state : @core.Resource[@render2d.RenderState]
+  res_picking_events : @core.Resource[@picking.PickingEvents]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -116,13 +98,16 @@ pub fn World::new() -> World {
     entities: @core.Entities::new(),
     change_tick: 0,
     system_context: @core.SystemContext::new(),
-    style: @core.ComponentStore::new(),
+    node: @core.ComponentStore::new(),
     button: @core.ComponentStore::new(),
     ui_root: @core.ComponentStore::new(),
     ui_text: @core.ComponentStore::new(),
+    z_index: @core.ComponentStore::new(),
     ui_image: @core.ComponentStore::new(),
     ui_layout: @core.ComponentStore::new(),
     transform: @core.ComponentStore::new(),
+    border_color: @core.ComponentStore::new(),
+    focus_policy: @core.ComponentStore::new(),
     interaction: @core.ComponentStore::new(),
     ccd2d: @core.ComponentStore::new(),
     anchor: @core.ComponentStore::new(),
@@ -130,8 +115,11 @@ pub fn World::new() -> World {
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
     button_colors: @core.ComponentStore::new(),
+    global_z_index: @core.ComponentStore::new(),
     parent: @core.ComponentStore::new(),
     camera2d: @core.ComponentStore::new(),
+    calculated_clip: @core.ComponentStore::new(),
+    scroll_position: @core.ComponentStore::new(),
     texture_atlas: @core.ComponentStore::new(),
     children: @core.ComponentStore::new(),
     gpu_mesh2d: @core.ComponentStore::new(),
@@ -144,49 +132,41 @@ pub fn World::new() -> World {
     velocity2d: @core.ComponentStore::new(),
     collider3d: @core.ComponentStore::new(),
     velocity3d: @core.ComponentStore::new(),
+    scissor_rect: @core.ComponentStore::new(),
     dominance2d: @core.ComponentStore::new(),
     rigid_body2d: @core.ComponentStore::new(),
     rigid_body3d: @core.ComponentStore::new(),
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
+    accessibility_label: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
     locked_axes2d: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
-    active_hooks2d: @core.ComponentStore::new(),
-    contact_skin2d: @core.ComponentStore::new(),
     restitution2d: @core.ComponentStore::new(),
-    active_events2d: @core.ComponentStore::new(),
     gravity_scale2d: @core.ComponentStore::new(),
-    impulse_joint2d: @core.ComponentStore::new(),
     solver_groups2d: @core.ComponentStore::new(),
     external_force2d: @core.ComponentStore::new(),
     global_transform: @core.ComponentStore::new(),
+    relative_cursor_position: @core.ComponentStore::new(),
     view_visibility: @core.ComponentStore::new(),
-    collider_parent2d: @core.ComponentStore::new(),
-    multibody_joint2d: @core.ComponentStore::new(),
     collider_density2d: @core.ComponentStore::new(),
-    collider_enabled2d: @core.ComponentStore::new(),
     collision_groups2d: @core.ComponentStore::new(),
     external_impulse2d: @core.ComponentStore::new(),
     rapier_body_handle2d: @core.ComponentStore::new(),
-    rigid_body_enabled2d: @core.ComponentStore::new(),
     rapier_body_handle3d: @core.ComponentStore::new(),
     inherited_visibility: @core.ComponentStore::new(),
     friction_combine_rule2d: @core.ComponentStore::new(),
-    active_collision_types2d: @core.ComponentStore::new(),
     rapier_collider_handle2d: @core.ComponentStore::new(),
     rapier_collider_handle3d: @core.ComponentStore::new(),
-    collider_mass_properties2d: @core.ComponentStore::new(),
     restitution_combine_rule2d: @core.ComponentStore::new(),
-    additional_mass_properties2d: @core.ComponentStore::new(),
-    rapier_impulse_joint_handle2d: @core.ComponentStore::new(),
-    additional_solver_iterations2d: @core.ComponentStore::new(),
     contact_force_event_threshold2d: @core.ComponentStore::new(),
-    rapier_multibody_joint_handle2d: @core.ComponentStore::new(),
-    kinematic_character_controller2d: @core.ComponentStore::new(),
-    kinematic_character_controller_output2d: @core.ComponentStore::new(),
+    res_ui_scale: @core.Resource::new(),
+    res_ui_stack: @core.Resource::new(),
     res_ui_context: @core.Resource::new(),
+    res_a11y_state: @core.Resource::new(),
+    res_picking_state: @core.Resource::new(),
     res_render_state: @core.Resource::new(),
+    res_picking_events: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
     res_physics2d_events: @core.Resource::new(),
     res_physics3d_config: @core.Resource::new(),
@@ -207,13 +187,16 @@ pub fn World::despawn(
   entity : @core.Entity,
 ) -> Unit raise @core.EntityError {
   self.entities.despawn(entity)
-  self.style.remove(entity) |> ignore
+  self.node.remove(entity) |> ignore
   self.button.remove(entity) |> ignore
   self.ui_root.remove(entity) |> ignore
   self.ui_text.remove(entity) |> ignore
+  self.z_index.remove(entity) |> ignore
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
+  self.border_color.remove(entity) |> ignore
+  self.focus_policy.remove(entity) |> ignore
   self.interaction.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
   self.anchor.remove(entity) |> ignore
@@ -221,8 +204,11 @@ pub fn World::despawn(
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
+  self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
+  self.calculated_clip.remove(entity) |> ignore
+  self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
@@ -235,47 +221,34 @@ pub fn World::despawn(
   self.velocity2d.remove(entity) |> ignore
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
+  self.scissor_rect.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
   self.rigid_body2d.remove(entity) |> ignore
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.accessibility_label.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
-  self.active_hooks2d.remove(entity) |> ignore
-  self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
-  self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
-  self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
+  self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
-  self.collider_parent2d.remove(entity) |> ignore
-  self.multibody_joint2d.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
-  self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
-  self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
-  self.active_collision_types2d.remove(entity) |> ignore
   self.rapier_collider_handle2d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
-  self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
-  self.additional_mass_properties2d.remove(entity) |> ignore
-  self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
-  self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
-  self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
-  self.kinematic_character_controller2d.remove(entity) |> ignore
-  self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
 
 ///|
@@ -286,13 +259,16 @@ pub impl @core.SpawnWorld for World with spawn_empty(self) {
 ///|
 pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.entities.despawn(entity)
-  self.style.remove(entity) |> ignore
+  self.node.remove(entity) |> ignore
   self.button.remove(entity) |> ignore
   self.ui_root.remove(entity) |> ignore
   self.ui_text.remove(entity) |> ignore
+  self.z_index.remove(entity) |> ignore
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
+  self.border_color.remove(entity) |> ignore
+  self.focus_policy.remove(entity) |> ignore
   self.interaction.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
   self.anchor.remove(entity) |> ignore
@@ -300,8 +276,11 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
+  self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
+  self.calculated_clip.remove(entity) |> ignore
+  self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
@@ -314,47 +293,34 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.velocity2d.remove(entity) |> ignore
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
+  self.scissor_rect.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
   self.rigid_body2d.remove(entity) |> ignore
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.accessibility_label.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
-  self.active_hooks2d.remove(entity) |> ignore
-  self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
-  self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
-  self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
+  self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
-  self.collider_parent2d.remove(entity) |> ignore
-  self.multibody_joint2d.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
-  self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
-  self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
-  self.active_collision_types2d.remove(entity) |> ignore
   self.rapier_collider_handle2d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
-  self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
-  self.additional_mass_properties2d.remove(entity) |> ignore
-  self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
-  self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
-  self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
-  self.kinematic_character_controller2d.remove(entity) |> ignore
-  self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
 
 ///|
@@ -379,8 +345,8 @@ pub impl @core.SystemContextWorld for World with set_system_context(self, ctx) {
 }
 
 ///|
-pub impl @ui.Has_Style for World with get_style_store(self) {
-  self.style
+pub impl @ui.Has_Node for World with get_node_store(self) {
+  self.node
 }
 
 ///|
@@ -399,6 +365,11 @@ pub impl @ui.Has_UiText for World with get_ui_text_store(self) {
 }
 
 ///|
+pub impl @ui.Has_ZIndex for World with get_z_index_store(self) {
+  self.z_index
+}
+
+///|
 pub impl @ui.Has_UiImage for World with get_ui_image_store(self) {
   self.ui_image
 }
@@ -411,6 +382,16 @@ pub impl @ui.Has_UiLayout for World with get_ui_layout_store(self) {
 ///|
 pub impl @math.Has_Transform for World with get_transform_store(self) {
   self.transform
+}
+
+///|
+pub impl @ui.Has_BorderColor for World with get_border_color_store(self) {
+  self.border_color
+}
+
+///|
+pub impl @ui.Has_FocusPolicy for World with get_focus_policy_store(self) {
+  self.focus_policy
 }
 
 ///|
@@ -449,6 +430,11 @@ pub impl @ui.Has_ButtonColors for World with get_button_colors_store(self) {
 }
 
 ///|
+pub impl @ui.Has_GlobalZIndex for World with get_global_z_index_store(self) {
+  self.global_z_index
+}
+
+///|
 pub impl @hierarchy.Has_Parent for World with get_parent_store(self) {
   self.parent
 }
@@ -456,6 +442,16 @@ pub impl @hierarchy.Has_Parent for World with get_parent_store(self) {
 ///|
 pub impl @render2d.Has_Camera2d for World with get_camera2d_store(self) {
   self.camera2d
+}
+
+///|
+pub impl @ui.Has_CalculatedClip for World with get_calculated_clip_store(self) {
+  self.calculated_clip
+}
+
+///|
+pub impl @ui.Has_ScrollPosition for World with get_scroll_position_store(self) {
+  self.scroll_position
 }
 
 ///|
@@ -519,6 +515,11 @@ pub impl @physics3d.Has_Velocity3d for World with get_velocity3d_store(self) {
 }
 
 ///|
+pub impl @render2d.Has_ScissorRect for World with get_scissor_rect_store(self) {
+  self.scissor_rect
+}
+
+///|
 pub impl @physics2d.Has_Dominance2d for World with get_dominance2d_store(self) {
   self.dominance2d
 }
@@ -544,6 +545,13 @@ pub impl @render2d.Has_RenderTarget for World with get_render_target_store(self)
 }
 
 ///|
+pub impl @ui.Has_AccessibilityLabel for World with get_accessibility_label_store(
+  self,
+) {
+  self.accessibility_label
+}
+
+///|
 pub impl @visibility.Has_Visibility for World with get_visibility_store(self) {
   self.visibility
 }
@@ -563,20 +571,6 @@ pub impl @render2d.Has_ColorMaterial for World with get_color_material_store(
 }
 
 ///|
-pub impl @physics2d.Has_ActiveHooks2d for World with get_active_hooks2d_store(
-  self,
-) {
-  self.active_hooks2d
-}
-
-///|
-pub impl @physics2d.Has_ContactSkin2d for World with get_contact_skin2d_store(
-  self,
-) {
-  self.contact_skin2d
-}
-
-///|
 pub impl @physics2d.Has_Restitution2d for World with get_restitution2d_store(
   self,
 ) {
@@ -584,24 +578,10 @@ pub impl @physics2d.Has_Restitution2d for World with get_restitution2d_store(
 }
 
 ///|
-pub impl @physics2d.Has_ActiveEvents2d for World with get_active_events2d_store(
-  self,
-) {
-  self.active_events2d
-}
-
-///|
 pub impl @physics2d.Has_GravityScale2d for World with get_gravity_scale2d_store(
   self,
 ) {
   self.gravity_scale2d
-}
-
-///|
-pub impl @physics2d.Has_ImpulseJoint2d for World with get_impulse_joint2d_store(
-  self,
-) {
-  self.impulse_joint2d
 }
 
 ///|
@@ -626,6 +606,13 @@ pub impl @transform.Has_GlobalTransform for World with get_global_transform_stor
 }
 
 ///|
+pub impl @ui.Has_RelativeCursorPosition for World with get_relative_cursor_position_store(
+  self,
+) {
+  self.relative_cursor_position
+}
+
+///|
 pub impl @visibility.Has_ViewVisibility for World with get_view_visibility_store(
   self,
 ) {
@@ -633,31 +620,10 @@ pub impl @visibility.Has_ViewVisibility for World with get_view_visibility_store
 }
 
 ///|
-pub impl @physics2d.Has_ColliderParent2d for World with get_collider_parent2d_store(
-  self,
-) {
-  self.collider_parent2d
-}
-
-///|
-pub impl @physics2d.Has_MultibodyJoint2d for World with get_multibody_joint2d_store(
-  self,
-) {
-  self.multibody_joint2d
-}
-
-///|
 pub impl @physics2d.Has_ColliderDensity2d for World with get_collider_density2d_store(
   self,
 ) {
   self.collider_density2d
-}
-
-///|
-pub impl @physics2d.Has_ColliderEnabled2d for World with get_collider_enabled2d_store(
-  self,
-) {
-  self.collider_enabled2d
 }
 
 ///|
@@ -682,13 +648,6 @@ pub impl @physics2d.Has_RapierBodyHandle2d for World with get_rapier_body_handle
 }
 
 ///|
-pub impl @physics2d.Has_RigidBodyEnabled2d for World with get_rigid_body_enabled2d_store(
-  self,
-) {
-  self.rigid_body_enabled2d
-}
-
-///|
 pub impl @physics3d.Has_RapierBodyHandle3d for World with get_rapier_body_handle3d_store(
   self,
 ) {
@@ -710,13 +669,6 @@ pub impl @physics2d.Has_FrictionCombineRule2d for World with get_friction_combin
 }
 
 ///|
-pub impl @physics2d.Has_ActiveCollisionTypes2d for World with get_active_collision_types2d_store(
-  self,
-) {
-  self.active_collision_types2d
-}
-
-///|
 pub impl @physics2d.Has_RapierColliderHandle2d for World with get_rapier_collider_handle2d_store(
   self,
 ) {
@@ -731,38 +683,10 @@ pub impl @physics3d.Has_RapierColliderHandle3d for World with get_rapier_collide
 }
 
 ///|
-pub impl @physics2d.Has_ColliderMassProperties2d for World with get_collider_mass_properties2d_store(
-  self,
-) {
-  self.collider_mass_properties2d
-}
-
-///|
 pub impl @physics2d.Has_RestitutionCombineRule2d for World with get_restitution_combine_rule2d_store(
   self,
 ) {
   self.restitution_combine_rule2d
-}
-
-///|
-pub impl @physics2d.Has_AdditionalMassProperties2d for World with get_additional_mass_properties2d_store(
-  self,
-) {
-  self.additional_mass_properties2d
-}
-
-///|
-pub impl @physics2d.Has_RapierImpulseJointHandle2d for World with get_rapier_impulse_joint_handle2d_store(
-  self,
-) {
-  self.rapier_impulse_joint_handle2d
-}
-
-///|
-pub impl @physics2d.Has_AdditionalSolverIterations2d for World with get_additional_solver_iterations2d_store(
-  self,
-) {
-  self.additional_solver_iterations2d
 }
 
 ///|
@@ -773,24 +697,13 @@ pub impl @physics2d.Has_ContactForceEventThreshold2d for World with get_contact_
 }
 
 ///|
-pub impl @physics2d.Has_RapierMultibodyJointHandle2d for World with get_rapier_multibody_joint_handle2d_store(
-  self,
-) {
-  self.rapier_multibody_joint_handle2d
+pub impl @ui.HasRes_UiScale for World with get_ui_scale_resource(self) {
+  self.res_ui_scale
 }
 
 ///|
-pub impl @physics2d.Has_KinematicCharacterController2d for World with get_kinematic_character_controller2d_store(
-  self,
-) {
-  self.kinematic_character_controller2d
-}
-
-///|
-pub impl @physics2d.Has_KinematicCharacterControllerOutput2d for World with get_kinematic_character_controller_output2d_store(
-  self,
-) {
-  self.kinematic_character_controller_output2d
+pub impl @ui.HasRes_UiStack for World with get_ui_stack_resource(self) {
+  self.res_ui_stack
 }
 
 ///|
@@ -799,10 +712,29 @@ pub impl @ui.HasRes_UiContext for World with get_ui_context_resource(self) {
 }
 
 ///|
+pub impl @a11y.HasRes_A11yState for World with get_a11y_state_resource(self) {
+  self.res_a11y_state
+}
+
+///|
+pub impl @picking.HasRes_PickingState for World with get_picking_state_resource(
+  self,
+) {
+  self.res_picking_state
+}
+
+///|
 pub impl @render2d.HasRes_RenderState for World with get_render_state_resource(
   self,
 ) {
   self.res_render_state
+}
+
+///|
+pub impl @picking.HasRes_PickingEvents for World with get_picking_events_resource(
+  self,
+) {
+  self.res_picking_events
 }
 
 ///|

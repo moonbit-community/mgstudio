@@ -53,6 +53,8 @@ typedef struct mgw_window {
   int32_t has_cursor;
   float mouse_x;
   float mouse_y;
+  float wheel_x;
+  float wheel_y;
   uint8_t key_down[256];
   uint8_t key_pressed[256];
   uint8_t key_released[256];
@@ -387,6 +389,15 @@ static void mgw_input_handle_event(mgw_window_t *w, mgw_objc_id ev) {
   case 9: // MouseExited
     w->has_cursor = 0;
     break;
+  case 22: { // ScrollWheel
+    // `scrollingDelta*` are in points; we keep them as logical units.
+    double dx = mgw_msg_f64(ev, mgw_sel("scrollingDeltaX"));
+    double dy = mgw_msg_f64(ev, mgw_sel("scrollingDeltaY"));
+    w->wheel_x += (float)dx;
+    w->wheel_y += (float)dy;
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  }
   default:
     break;
   }
@@ -466,6 +477,8 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   out->has_cursor = 0;
   out->mouse_x = 0.0f;
   out->mouse_y = 0.0f;
+  out->wheel_x = 0.0f;
+  out->wheel_y = 0.0f;
   memset(out->key_down, 0, sizeof(out->key_down));
   memset(out->key_pressed, 0, sizeof(out->key_pressed));
   memset(out->key_released, 0, sizeof(out->key_released));
@@ -654,6 +667,8 @@ MOONBIT_FFI_EXPORT void mgw_input_finish_frame(void *win) {
   memset(w->key_released, 0, sizeof(w->key_released));
   memset(w->mouse_pressed, 0, sizeof(w->mouse_pressed));
   memset(w->mouse_released, 0, sizeof(w->mouse_released));
+  w->wheel_x = 0.0f;
+  w->wheel_y = 0.0f;
 }
 
 MOONBIT_FFI_EXPORT int32_t mgw_input_has_cursor(void *win) {
@@ -675,6 +690,20 @@ MOONBIT_FFI_EXPORT float mgw_input_mouse_y(void *win) {
     return 0.0f;
   }
   return ((mgw_window_t *)win)->mouse_y;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_wheel_x(void *win) {
+  if (!win) {
+    return 0.0f;
+  }
+  return ((mgw_window_t *)win)->wheel_x;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_wheel_y(void *win) {
+  if (!win) {
+    return 0.0f;
+  }
+  return ((mgw_window_t *)win)->wheel_y;
 }
 
 static inline int32_t mgw_clamp_index_i32(int32_t v, int32_t max_exclusive) {

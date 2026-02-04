@@ -211,6 +211,17 @@ pub fn host_gpu_begin_pass(
 ) -> Unit = "mgstudio_host" "gpu_begin_pass"
 
 ///|
+pub fn host_gpu_set_scissor(
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+) -> Unit = "mgstudio_host" "gpu_set_scissor"
+
+///|
+pub fn host_gpu_clear_scissor() -> Unit = "mgstudio_host" "gpu_clear_scissor"
+
+///|
 pub fn host_gpu_draw_sprite(
   texture_id : Int,
   x : Float,

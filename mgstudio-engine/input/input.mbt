@@ -83,6 +83,12 @@ pub fn host_input_mouse_y() -> Float = "mgstudio_host" "input_mouse_y"
 pub fn host_input_has_cursor() -> Bool = "mgstudio_host" "input_has_cursor"
 
 ///|
+pub fn host_input_wheel_x() -> Float = "mgstudio_host" "input_wheel_x"
+
+///|
+pub fn host_input_wheel_y() -> Float = "mgstudio_host" "input_wheel_y"
+
+///|
 pub fn key_pressed(code : @window.KeyCode) -> Bool {
   @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
     host_input_is_key_down_id(code_id)
@@ -139,6 +145,21 @@ pub fn mouse_position() -> @math.Vec2? {
     Some(@math.Vec2::new(host_input_mouse_x(), host_input_mouse_y()))
   } else {
     None
+  }
+}
+
+///| Mouse wheel delta since last `host_input_finish_frame()`.
+pub fn mouse_wheel_delta() -> @math.Vec2 {
+  @math.Vec2::new(host_input_wheel_x(), host_input_wheel_y())
+}
+
+///| Mouse wheel delta, or `None` if both components are zero.
+pub fn mouse_wheel_delta_opt() -> @math.Vec2? {
+  let v = mouse_wheel_delta()
+  if v.x == 0.0F && v.y == 0.0F {
+    None
+  } else {
+    Some(v)
   }
 }
 

@@ -2,10 +2,13 @@
   "import": [
     "Milky2018/mgstudio/app",
     "Milky2018/mgstudio/asset",
+    "Milky2018/mgstudio/a11y",
+    "Milky2018/mgstudio/accesskit",
     "Milky2018/mgstudio/core",
     "Milky2018/mgstudio/hierarchy",
     "Milky2018/mgstudio/input",
     "Milky2018/mgstudio/math",
+    "Milky2018/mgstudio/picking",
     "Milky2018/mgstudio/render2d",
     "Milky2018/mgstudio/text",
     "Milky2018/mgstudio/transform",
@@ -17,4 +20,3 @@
     "Milky2018/mgstudio/ecs_world"
   ]
 }
-

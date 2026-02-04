@@ -102,6 +102,16 @@ pub fn Window::input_mouse_y(self : Window) -> Float {
 }
 
 ///|
+pub fn Window::input_wheel_x(self : Window) -> Float {
+  c_input_wheel_x(self.raw)
+}
+
+///|
+pub fn Window::input_wheel_y(self : Window) -> Float {
+  c_input_wheel_y(self.raw)
+}
+
+///|
 pub fn Window::input_is_key_down(self : Window, code : Int) -> Bool {
   c_input_is_key_down(self.raw, code)
 }
@@ -186,6 +196,12 @@ extern "C" fn c_input_mouse_x(win : @wgpu_c.OpaquePtr) -> Float = "mgw_input_mou
 
 ///|
 extern "C" fn c_input_mouse_y(win : @wgpu_c.OpaquePtr) -> Float = "mgw_input_mouse_y"
+
+///|
+extern "C" fn c_input_wheel_x(win : @wgpu_c.OpaquePtr) -> Float = "mgw_input_wheel_x"
+
+///|
+extern "C" fn c_input_wheel_y(win : @wgpu_c.OpaquePtr) -> Float = "mgw_input_wheel_y"
 
 ///|
 extern "C" fn c_input_is_key_down(win : @wgpu_c.OpaquePtr, code : Int) -> Bool = "mgw_input_is_key_down"

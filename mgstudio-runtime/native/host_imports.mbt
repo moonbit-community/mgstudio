@@ -695,6 +695,63 @@ pub fn add_mgstudio_host_imports(
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
 
+  // A11y (stub; web runtime provides the full bridge).
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_begin_update",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_push_node",
+    fn(_args) { ok_i32(0) },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_end_update",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_actions_len",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_target",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_kind",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_actions_clear",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+
   // Window.
   linker.add_host_func(
     "mgstudio_host",
@@ -905,6 +962,30 @@ pub fn add_mgstudio_host_imports(
     fn(_args) {
       if ctx.window is Some(win) {
         ok_f32(win.input_mouse_y())
+      } else {
+        ok_f32(0.0)
+      }
+    },
+    func_type=ft([], [@types.ValueType::F32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_wheel_x",
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_f32(win.input_wheel_x())
+      } else {
+        ok_f32(0.0)
+      }
+    },
+    func_type=ft([], [@types.ValueType::F32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_wheel_y",
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_f32(win.input_wheel_y())
       } else {
         ok_f32(0.0)
       }
@@ -1677,6 +1758,60 @@ pub fn add_mgstudio_host_imports(
       ],
       [@types.ValueType::I32],
     ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_set_scissor",
+    fn(args) {
+      try {
+        host_trace("host: gpu_set_scissor")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 4 &&
+          args[0] is @types.Value::I32(x) &&
+          args[1] is @types.Value::I32(y) &&
+          args[2] is @types.Value::I32(w) &&
+          args[3] is @types.Value::I32(h) {
+          ctx.gpu.unwrap().set_scissor(x, y, w, h)
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_set_scissor failed")
+          host_fail("gpu_set_scissor", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_clear_scissor",
+    fn(_args) {
+      try {
+        host_trace("host: gpu_clear_scissor")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        ctx.gpu.unwrap().clear_scissor()
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_clear_scissor failed")
+          host_fail("gpu_clear_scissor", "<error>")
+        }
+      }
+    },
+    func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",

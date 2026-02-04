@@ -147,6 +147,25 @@ pub fn Sprite::with_rect(self : Sprite, rect : @math.Rect?) -> Sprite {
 }
 
 ///|
+/// A per-entity scissor rectangle in *logical* pixels, relative to the active
+/// camera's view (top-left origin).
+///
+/// When present, `render_execute_system` converts it into physical pixels using
+/// the camera's scale factor and viewport offset, then applies it via
+/// `host_gpu_set_scissor`.
+///
+/// This is primarily used by UI clipping (overflow/scroll).
+#ecs.component
+pub struct ScissorRect {
+  rect : @math.Rect
+}
+
+///|
+pub fn ScissorRect::new(rect : @math.Rect) -> ScissorRect {
+  ScissorRect::{ rect }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Anchor {
@@ -704,6 +723,7 @@ priv struct SpriteInstance {
   layers : RenderLayers
   uv_min : @math.Vec2
   uv_max : @math.Vec2
+  scissor : @math.Rect?
 }
 
 ///|
@@ -1100,6 +1120,35 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
       layers,
       uv_min,
       uv_max,
+      scissor: None,
+    })
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor(
+  world : W,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_sprites.push(SpriteInstance::{
+      entity: @core.Entity::placeholder(),
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
+      color,
+      texture,
+      layers,
+      uv_min,
+      uv_max,
+      scissor,
     })
   })
   |> ignore
@@ -1232,7 +1281,7 @@ fn render2d_sorted_camera_indices(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] render_extract_system(
   world : W,
 ) -> Unit {
@@ -1316,6 +1365,7 @@ pub fn[
   }
   let sprite_store = Has_Sprite::get_sprite_store(world)
   let anchor_store = Has_Anchor::get_anchor_store(world)
+  let scissor_store = Has_ScissorRect::get_scissor_rect_store(world)
   sprite_store.for_each(fn(entity, sprite) {
     if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
       return
@@ -1354,6 +1404,10 @@ pub fn[
       transform.rotation_z(),
       draw_scale,
     )
+    let scissor = match scissor_store.get(entity) {
+      Some(v) => Some(v.rect)
+      None => None
+    }
     rs.val.sprites.push(SpriteInstance::{
       entity,
       transform,
@@ -1364,6 +1418,7 @@ pub fn[
       layers,
       uv_min,
       uv_max,
+      scissor,
     })
   })
   let mesh_store = Has_Mesh2d::get_mesh2d_store(world)
@@ -1563,6 +1618,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
       layers,
       uv_min: @math.Vec2::new(0.0F, 0.0F),
       uv_max: @math.Vec2::new(1.0F, 1.0F),
+      scissor: None,
     },
   ]
   let extra : Array[SpriteInstance] = []
@@ -1605,6 +1661,58 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   let sprites = rs.val.sprites
   let extra_sprites = rs.val.extra_sprites
   let meshes = rs.val.meshes
+
+  fn int_from_f32_floor_nonneg(x : Float) -> Int {
+    if x <= 0.0F { 0 } else { x.to_int() }
+  }
+
+  fn int_from_f32_ceil_nonneg(x : Float) -> Int {
+    if x <= 0.0F {
+      0
+    } else {
+      let i = x.to_int()
+      let f = Float::from_double(i.to_double())
+      if f < x { i + 1 } else { i }
+    }
+  }
+
+  fn physical_scissor_for_camera(
+    rect : @math.Rect,
+    viewport_x : Int,
+    viewport_y : Int,
+    viewport_w : Int,
+    viewport_h : Int,
+    scale_factor : Float,
+  ) -> (Int, Int, Int, Int) {
+    let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+    let min_x = int_from_f32_floor_nonneg(rect.min.x * sf)
+    let min_y = int_from_f32_floor_nonneg(rect.min.y * sf)
+    let max_x = int_from_f32_ceil_nonneg(rect.max.x * sf)
+    let max_y = int_from_f32_ceil_nonneg(rect.max.y * sf)
+    let mut x = viewport_x + min_x
+    let mut y = viewport_y + min_y
+    let mut w = max_x - min_x
+    let mut h = max_y - min_y
+    // Clamp to the camera viewport in physical pixels.
+    if x < viewport_x {
+      let dx = viewport_x - x
+      x = viewport_x
+      w = w - dx
+    }
+    if y < viewport_y {
+      let dy = viewport_y - y
+      y = viewport_y
+      h = h - dy
+    }
+    let max_w = viewport_w - (x - viewport_x)
+    let max_h = viewport_h - (y - viewport_y)
+    if w > max_w { w = max_w }
+    if h > max_h { h = max_h }
+    if w < 0 { w = 0 }
+    if h < 0 { h = 0 }
+    (x, y, w, h)
+  }
+
   for index in render2d_sorted_camera_indices(cameras) {
     let camera = cameras[index]
     let mut target_id = -1
@@ -1702,10 +1810,51 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       meshes,
       camera.layers,
     )
+    let mut scissor_active = false
+    let mut scissor_x = 0
+    let mut scissor_y = 0
+    let mut scissor_w = 0
+    let mut scissor_h = 0
+
+    fn apply_scissor(
+      rect_opt : @math.Rect?,
+    ) -> Unit {
+      match rect_opt {
+        None => {
+          if scissor_active {
+            @window.host_gpu_clear_scissor()
+            scissor_active = false
+          }
+        }
+        Some(rect) => {
+          let (sx, sy, sw, sh) = physical_scissor_for_camera(
+            rect,
+            viewport_x,
+            viewport_y,
+            viewport_width,
+            viewport_height,
+            scale_factor,
+          )
+          if !scissor_active ||
+            sx != scissor_x ||
+            sy != scissor_y ||
+            sw != scissor_w ||
+            sh != scissor_h {
+            @window.host_gpu_set_scissor(sx, sy, sw, sh)
+            scissor_active = true
+            scissor_x = sx
+            scissor_y = sy
+            scissor_w = sw
+            scissor_h = sh
+          }
+        }
+      }
+    }
     for item in draw_items {
       match item.kind {
         SpriteMain(i) => {
           let sprite = sprites[i]
+          apply_scissor(sprite.scissor)
           let transform = sprite.transform
           let pos = @math.Vec2::new(
             transform.translation.x + sprite.anchor_offset.x,
@@ -1730,6 +1879,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
         }
         SpriteExtra(i) => {
           let sprite = extra_sprites[i]
+          apply_scissor(sprite.scissor)
           let transform = sprite.transform
           let pos = @math.Vec2::new(
             transform.translation.x + sprite.anchor_offset.x,
@@ -1753,6 +1903,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
           )
         }
         Mesh(i) => {
+          apply_scissor(None)
           let mesh = meshes[i]
           let transform = mesh.transform
           @window.host_gpu_draw_mesh(
@@ -2018,7 +2169,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

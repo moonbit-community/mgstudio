@@ -39,18 +39,14 @@ test "ui: layout computes rect and camera-compensated transform" {
     @hierarchy.Parent::new(root),
     tick,
   )
-  Has_Style::get_style_store(world).insert(
+  Has_Node::get_node_store(world).insert(
     node,
-    Style::new(
-      UiRect::new(
-        Val::Px(40.0F),
-        Val::Px(50.0F),
-        Val::Auto,
-        Val::Auto,
-      ),
-      UiSize::new(Val::Px(200.0F), Val::Px(60.0F)),
-      0,
-    ).with_position_type(PositionType::Absolute),
+    Node::default()
+    .with_position_type(PositionType::Absolute)
+    .with_left(Val::Px(40.0F))
+    .with_top(Val::Px(50.0F))
+    .with_width(Val::Px(200.0F))
+    .with_height(Val::Px(60.0F)),
     tick,
   )
 

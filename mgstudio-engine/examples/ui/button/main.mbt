@@ -85,13 +85,11 @@ fn ui_button_setup(world : @ecs_world.World) -> Unit {
     tick,
   )
   // Bevy-like: center children in the root container.
-  @ui.Has_Style::get_style_store(world).insert(
+  @ui.Has_Node::get_node_store(world).insert(
     root,
-    @ui.Style::new(
-      @ui.UiRect::default(),
-      @ui.UiSize::new(@ui.Val::Percent(100.0F), @ui.Val::Percent(100.0F)),
-      0,
-    )
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F))
     .with_justify_content(@ui.JustifyContent::Center)
     .with_align_items(@ui.AlignItems::Center),
     tick,
@@ -105,15 +103,17 @@ fn ui_button_setup(world : @ecs_world.World) -> Unit {
     tick,
   )
   @ui.Has_Button::get_button_store(world).insert(button, @ui.Button::default(), tick)
-  let button_style = @ui.Style::new(
-    @ui.UiRect::default(),
-    @ui.UiSize::new(@ui.Val::Px(150.0F), @ui.Val::Px(65.0F)),
-    0,
+  @ui.Has_AccessibilityLabel::get_accessibility_label_store(world).insert(
+    button,
+    @ui.AccessibilityLabel::new("Button".to_string()),
+    tick,
   )
-  // Bevy-like: center children inside the button node.
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_align_items(@ui.AlignItems::Center)
-  @ui.Has_Style::get_style_store(world).insert(button, button_style, tick)
+  let button_node : @ui.Node = @ui.Node::default()
+    .with_width(@ui.Val::Px(150.0F))
+    .with_height(@ui.Val::Px(65.0F))
+    .with_justify_content(@ui.JustifyContent::Center)
+    .with_align_items(@ui.AlignItems::Center)
+  @ui.Has_Node::get_node_store(world).insert(button, button_node, tick)
   let normal = @render2d.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
   @ui.Has_BackgroundColor::get_background_color_store(world).insert(
     button,
@@ -140,13 +140,11 @@ fn ui_button_setup(world : @ecs_world.World) -> Unit {
     @hierarchy.Parent::new(button),
     tick,
   )
-  let label_style = @ui.Style::new(
-    @ui.UiRect::default(),
-    // Let the text node size itself to its content (Bevy-like).
-    @ui.UiSize::new(@ui.Val::Auto, @ui.Val::Auto),
-    1,
-  )
-  @ui.Has_Style::get_style_store(world).insert(label, label_style, tick)
+  let label_node : @ui.Node = @ui.Node::default()
+    .with_width(@ui.Val::Auto)
+    .with_height(@ui.Val::Auto)
+  @ui.Has_Node::get_node_store(world).insert(label, label_node, tick)
+  @ui.Has_ZIndex::get_z_index_store(world).insert(label, @ui.ZIndex::new(1), tick)
   @ui.Has_UiText::get_ui_text_store(world).insert(
     label,
     @ui.UiText::new(label_handle),

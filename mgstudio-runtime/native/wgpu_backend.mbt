@@ -977,6 +977,38 @@ pub fn GpuBackend::begin_pass(
 }
 
 ///|
+pub fn GpuBackend::set_scissor(
+  self : GpuBackend,
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard frame.pass is Some(pass) else { return }
+  flush_sprite_batches(self)
+  let sx = if x < 0 { 0U } else { x.reinterpret_as_uint() }
+  let sy = if y < 0 { 0U } else { y.reinterpret_as_uint() }
+  let sw = if width < 0 { 0U } else { width.reinterpret_as_uint() }
+  let sh = if height < 0 { 0U } else { height.reinterpret_as_uint() }
+  pass.set_scissor_rect(sx, sy, sw, sh)
+}
+
+///|
+pub fn GpuBackend::clear_scissor(self : GpuBackend) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard frame.pass is Some(pass) else { return }
+  guard self.pass_state is Some(pass_state) else { return }
+  flush_sprite_batches(self)
+  pass.set_scissor_rect(
+    pass_state.viewport_x,
+    pass_state.viewport_y,
+    pass_state.viewport_w,
+    pass_state.viewport_h,
+  )
+}
+
+///|
 pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
