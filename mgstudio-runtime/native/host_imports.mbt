@@ -538,6 +538,8 @@ fn host_trace(msg : String) -> Unit {
 
 ///|
 extern "C" fn c_time_now_seconds() -> Float = "mgstudio_time_now"
+
+///|
 extern "C" fn c_spectest_print_char(ch : Int) -> Unit = "mgstudio_spectest_print_char"
 
 ///|
@@ -559,7 +561,6 @@ pub fn add_mgstudio_host_imports(
     },
     func_type=ft([@types.ValueType::I32], []),
   )
-
   linker.add_host_func(
     "mgstudio_host",
     "string_sink_reset",

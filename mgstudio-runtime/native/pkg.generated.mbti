@@ -57,7 +57,7 @@ pub struct GpuBackend {
   queue : @wgpu_mbt.Queue
   assets_base : String
   mut surface : @wgpu_mbt.Surface?
-  mut surface_format : UInt
+  mut surface_format : @wgpu_mbt.TextureFormat?
   mut configured_width : Int
   mut configured_height : Int
   mut frame : GpuFrameState?
@@ -67,7 +67,7 @@ pub struct GpuBackend {
   mut sprite_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut sprite_pipeline : @wgpu_mbt.RenderPipeline?
   mut sprite_pipeline_surface : @wgpu_mbt.RenderPipeline?
-  mut sprite_pipeline_surface_format : UInt
+  mut sprite_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut sprite_globals_buf : @wgpu_mbt.Buffer?
   mut sprite_instance_buf : @wgpu_mbt.Buffer?
   mut sprite_instance_capacity : UInt64

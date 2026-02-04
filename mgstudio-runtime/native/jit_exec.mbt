@@ -154,7 +154,7 @@ fn compile_module_to_precompiled(
     let func_name = @wast.get_func_name(wasm_module, func_idx)
     if is_jit_trace_enabled() {
       // Avoid overly chatty output; enough to see progress or where we stall.
-      if i == 0 || i == total_codes - 1 || (i % 200 == 0) {
+      if i == 0 || i == total_codes - 1 || i % 200 == 0 {
         jit_trace(
           "compiling code " +
           i.to_string() +
@@ -168,9 +168,14 @@ fn compile_module_to_precompiled(
         )
       }
     }
-    let trace_stages = is_jit_trace_enabled() && (i == 0 || i == total_codes - 1)
+    let trace_stages = is_jit_trace_enabled() &&
+      (i == 0 || i == total_codes - 1)
     if trace_stages {
-      jit_trace("  stage: translate_function begin (func_idx=" + func_idx.to_string() + ")")
+      jit_trace(
+        "  stage: translate_function begin (func_idx=" +
+        func_idx.to_string() +
+        ")",
+      )
     }
     let ir_func = @ir.translate_function(
       wasm_module,
@@ -179,12 +184,16 @@ fn compile_module_to_precompiled(
       memory_max_override=actual_memory_max,
     )
     if trace_stages {
-      jit_trace("  stage: optimize begin (func_idx=" + func_idx.to_string() + ")")
+      jit_trace(
+        "  stage: optimize begin (func_idx=" + func_idx.to_string() + ")",
+      )
     }
     @ir.optimize_with_level(ir_func, @ir.OptLevel::from_int(normalized))
     |> ignore
     if trace_stages {
-      jit_trace("  stage: lower_function begin (func_idx=" + func_idx.to_string() + ")")
+      jit_trace(
+        "  stage: lower_function begin (func_idx=" + func_idx.to_string() + ")",
+      )
     }
     let vcode = @lower.lower_function(ir_func, num_imports=num_func_imports)
     if trace_stages {
@@ -202,11 +211,15 @@ fn compile_module_to_precompiled(
         " next_vreg_id=" +
         vcode.next_vreg_id.to_string(),
       )
-      jit_trace("  stage: regalloc begin (func_idx=" + func_idx.to_string() + ")")
+      jit_trace(
+        "  stage: regalloc begin (func_idx=" + func_idx.to_string() + ")",
+      )
     }
     let allocated = @regalloc.allocate_registers_backtracking(vcode)
     if trace_stages {
-      jit_trace("  stage: emit_function begin (func_idx=" + func_idx.to_string() + ")")
+      jit_trace(
+        "  stage: emit_function begin (func_idx=" + func_idx.to_string() + ")",
+      )
     }
     let mc = @emit.emit_function(
       allocated,
@@ -214,7 +227,9 @@ fn compile_module_to_precompiled(
       force_frame_setup=false,
     )
     if trace_stages {
-      jit_trace("  stage: add_function begin (func_idx=" + func_idx.to_string() + ")")
+      jit_trace(
+        "  stage: add_function begin (func_idx=" + func_idx.to_string() + ")",
+      )
     }
     let compiled = @vcode.CompiledFunction::new(func_name, mc, 0)
     let type_idx = wasm_module.funcs[i]
