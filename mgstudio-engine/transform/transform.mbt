@@ -257,4 +257,11 @@ pub fn[
     transform_set_update_children,
     before=[transform_set_propagate],
   )
+  // If FixedUpdate ran this frame (e.g. physics moved bodies), refresh
+  // GlobalTransform again before Update systems like render extraction.
+  .add_system_config(
+    @app.system(propagate_transforms_system).run_if(fn(_world : W) {
+      @app.fixed_time_did_run_this_frame()
+    }),
+  )
 }

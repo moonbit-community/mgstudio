@@ -45,6 +45,7 @@ pub struct Quat {
 pub fn Quat::from_rotation_z(Float) -> Self
 pub fn Quat::identity() -> Self
 pub fn Quat::mul(Self, Self) -> Self
+pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::to_rotation_z_angle(Self) -> Float
 
 pub struct Rect {

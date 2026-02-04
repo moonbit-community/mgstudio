@@ -22,15 +22,23 @@ pub fn font_rasterize_glyph_id_subpixel(@asset.Handle[@asset.Font], Float, Int, 
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
+pub fn text_get_layout_size(TextHandle) -> @math.Vec2?
+
 pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_system(W) -> Unit
+
+pub fn text_set_anchor(TextHandle, @render2d.Anchor) -> Unit
 
 pub fn text_set_content(TextHandle, String) -> Unit
 
 pub fn text_set_layers(TextHandle, @render2d.RenderLayers) -> Unit
 
 pub fn text_set_transform(TextHandle, @math.Transform) -> Unit
+
+pub fn text_set_ui_node_size(TextHandle, @math.Vec2?) -> Unit
+
+pub fn text_set_y_axis(TextHandle, YAxisOrientation) -> Unit
 
 pub fn text_spawn(Text2dBundle) -> TextHandle
 
@@ -183,15 +191,19 @@ pub struct Text2dBundle {
   shadow : Text2dShadow?
   transform : @math.Transform
   layers : @render2d.RenderLayers
+  anchor : @render2d.Anchor
+  y_axis : YAxisOrientation
 }
 pub fn Text2dBundle::new(Text2d, TextFont, @math.Transform) -> Self
 pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @math.Transform, @render2d.RenderLayers) -> Self
 pub fn Text2dBundle::spawn(Self) -> TextHandle
+pub fn Text2dBundle::with_anchor(Self, @render2d.Anchor) -> Self
 pub fn Text2dBundle::with_bounds(Self, TextBounds) -> Self
 pub fn Text2dBundle::with_color(Self, TextColor) -> Self
 pub fn Text2dBundle::with_layout(Self, TextLayout) -> Self
 pub fn Text2dBundle::with_line_height(Self, LineHeight) -> Self
 pub fn Text2dBundle::with_shadow(Self, Text2dShadow?) -> Self
+pub fn Text2dBundle::with_y_axis(Self, YAxisOrientation) -> Self
 
 pub struct Text2dShadow {
   offset : @math.Vec2
@@ -284,6 +296,13 @@ pub struct TextSpanRange {
   start : Int
   length : Int
 }
+
+pub(all) enum YAxisOrientation {
+  TopToBottom
+  BottomToTop
+}
+pub impl Eq for YAxisOrientation
+pub impl Show for YAxisOrientation
 
 // Type aliases
 
