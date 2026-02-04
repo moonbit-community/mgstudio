@@ -17,7 +17,7 @@
 ///
 /// Note:
 /// - Physics v1 ignores `@math.Transform.scale`.
-/// - One collider per entity is assumed for v1 (use child entities for compound shapes).
+/// - For compound bodies, use `ColliderParent2d` (child colliders) or `ColliderShape2d::compound`.
 
 ///|
 // ECS component marker for codegen (`mgstudio gen`).
@@ -53,6 +53,13 @@ pub enum ColliderShape2d {
   CapsuleX(Float, Float)
   CapsuleY(Float, Float)
   Segment(@math.Vec2, @math.Vec2)
+  Polyline(Array[@math.Vec2], Array[(Int, Int)]?)
+  ConvexPolygon(Array[@math.Vec2])
+  TriMesh(Array[@math.Vec2], Array[(Int, Int, Int)])
+  /// A compound shape composed of sub-shapes with local transforms.
+  Compound(Array[(@math.Transform, ColliderShape2d)])
+  /// Escape hatch: use a Rapier shape directly.
+  Raw(@collision.Shape)
 }
 
 ///|
@@ -92,6 +99,42 @@ pub fn ColliderShape2d::segment(
   b : @math.Vec2,
 ) -> ColliderShape2d {
   Segment(a, b)
+}
+
+///|
+pub fn ColliderShape2d::polyline(
+  vertices : Array[@math.Vec2],
+  indices? : Array[(Int, Int)]? = None,
+) -> ColliderShape2d {
+  Polyline(vertices, indices)
+}
+
+///|
+/// The vertices are expected to describe a convex polygon in counter-clockwise order.
+pub fn ColliderShape2d::convex_polygon(
+  vertices : Array[@math.Vec2],
+) -> ColliderShape2d {
+  ConvexPolygon(vertices)
+}
+
+///|
+pub fn ColliderShape2d::trimesh(
+  vertices : Array[@math.Vec2],
+  indices : Array[(Int, Int, Int)],
+) -> ColliderShape2d {
+  TriMesh(vertices, indices)
+}
+
+///|
+pub fn ColliderShape2d::compound(
+  parts : Array[(@math.Transform, ColliderShape2d)],
+) -> ColliderShape2d {
+  Compound(parts)
+}
+
+///|
+pub fn ColliderShape2d::raw(shape : @collision.Shape) -> ColliderShape2d {
+  Raw(shape)
 }
 
 ///|
@@ -394,6 +437,137 @@ pub fn SolverGroups2d::new(
 }
 
 ///|
+/// Enable/disable a collider without despawning it.
+#ecs.component
+pub struct ColliderEnabled2d {
+  enabled : Bool
+}
+
+///|
+pub fn ColliderEnabled2d::new(enabled : Bool) -> ColliderEnabled2d {
+  { enabled, }
+}
+
+///|
+pub fn ColliderEnabled2d::disabled() -> ColliderEnabled2d {
+  { enabled: false }
+}
+
+///|
+/// Per-collider active collision type mask.
+#ecs.component
+pub struct ActiveCollisionTypes2d {
+  types : @collision.ActiveCollisionTypes
+}
+
+///|
+pub fn ActiveCollisionTypes2d::new(
+  types : @collision.ActiveCollisionTypes,
+) -> ActiveCollisionTypes2d {
+  { types, }
+}
+
+///|
+/// Per-collider active event mask (collision/contact-force events).
+#ecs.component
+pub struct ActiveEvents2d {
+  events : @collision.ActiveEvents
+}
+
+///|
+pub fn ActiveEvents2d::new(events : @collision.ActiveEvents) -> ActiveEvents2d {
+  { events, }
+}
+
+///|
+/// Per-collider active hook mask (enables contact/intersection filtering, etc.).
+#ecs.component
+pub struct ActiveHooks2d {
+  hooks : @collision.ActiveHooks
+}
+
+///|
+pub fn ActiveHooks2d::new(hooks : @collision.ActiveHooks) -> ActiveHooks2d {
+  { hooks, }
+}
+
+///|
+/// Per-collider contact skin thickness.
+#ecs.component
+pub struct ContactSkin2d {
+  skin : Float
+}
+
+///|
+pub fn ContactSkin2d::new(skin : Float) -> ContactSkin2d {
+  { skin, }
+}
+
+///|
+/// Override per-collider mass properties.
+#ecs.component
+pub struct ColliderMassProperties2d {
+  mass_properties : @rapier_core.MassProperties
+}
+
+///|
+pub fn ColliderMassProperties2d::new(
+  mass_properties : @rapier_core.MassProperties,
+) -> ColliderMassProperties2d {
+  { mass_properties, }
+}
+
+///|
+/// Enable/disable a rigid body without despawning it.
+#ecs.component
+pub struct RigidBodyEnabled2d {
+  enabled : Bool
+}
+
+///|
+pub fn RigidBodyEnabled2d::new(enabled : Bool) -> RigidBodyEnabled2d {
+  { enabled, }
+}
+
+///|
+pub fn RigidBodyEnabled2d::disabled() -> RigidBodyEnabled2d {
+  { enabled: false }
+}
+
+///|
+/// Additional mass-properties applied on top of the collider-derived mass.
+#ecs.component
+pub struct AdditionalMassProperties2d {
+  props : @dynamics.RigidBodyAdditionalMassProps
+}
+
+///|
+pub fn AdditionalMassProperties2d::mass(mass : Float) -> AdditionalMassProperties2d {
+  { props: @dynamics.RigidBodyAdditionalMassProps::mass(mass) }
+}
+
+///|
+pub fn AdditionalMassProperties2d::mass_properties(
+  props : @rapier_core.MassProperties,
+) -> AdditionalMassProperties2d {
+  { props: @dynamics.RigidBodyAdditionalMassProps::mass_properties(props) }
+}
+
+///|
+/// Additional solver iterations for a rigid body.
+#ecs.component
+pub struct AdditionalSolverIterations2d {
+  iterations : Int
+}
+
+///|
+pub fn AdditionalSolverIterations2d::new(
+  iterations : Int,
+) -> AdditionalSolverIterations2d {
+  { iterations, }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct RapierBodyHandle2d {
@@ -429,24 +603,48 @@ pub fn RapierColliderHandle2d::new(
 #ecs.resource
 pub struct Physics2dConfig {
   gravity : @math.Vec2
+  /// If false, the physics pipeline does not step.
+  physics_pipeline_active : Bool
+  /// Integration parameters (dt is overridden by mgstudio fixed timestep).
+  integration : @dynamics.IntegrationParameters
 }
 
 ///|
 pub fn Physics2dConfig::default() -> Physics2dConfig {
-  { gravity: @math.Vec2::new(0.0F, -9.81F) }
+  {
+    gravity: @math.Vec2::new(0.0F, -9.81F),
+    physics_pipeline_active: true,
+    integration: @dynamics.IntegrationParameters::default(),
+  }
 }
 
 ///|
 pub fn Physics2dConfig::new(gravity : @math.Vec2) -> Physics2dConfig {
-  Physics2dConfig::{ gravity, }
+  Physics2dConfig::{ ..Physics2dConfig::default(), gravity, }
 }
 
 ///|
 pub fn Physics2dConfig::with_gravity(
-  _self : Physics2dConfig,
+  self : Physics2dConfig,
   gravity : @math.Vec2,
 ) -> Physics2dConfig {
-  Physics2dConfig::{ gravity, }
+  Physics2dConfig::{ ..self, gravity, }
+}
+
+///|
+pub fn Physics2dConfig::with_physics_pipeline_active(
+  self : Physics2dConfig,
+  active : Bool,
+) -> Physics2dConfig {
+  Physics2dConfig::{ ..self, physics_pipeline_active: active, }
+}
+
+///|
+pub fn Physics2dConfig::with_integration_parameters(
+  self : Physics2dConfig,
+  integration : @dynamics.IntegrationParameters,
+) -> Physics2dConfig {
+  Physics2dConfig::{ ..self, integration, }
 }
 
 ///|
@@ -463,7 +661,7 @@ pub struct Physics2dContext {
   ccd : @dynamics.CCDSolver
   mut pipeline : @pipeline.PhysicsPipeline
   mut integration : @dynamics.IntegrationParameters
-  hooks : @pipeline.PhysicsHooks
+  mut hooks : @pipeline.PhysicsHooks
   mut event_handler : @pipeline.EventHandler
   mut query_pipeline : @collision.QueryPipelineMut
 
@@ -522,7 +720,7 @@ pub fn Physics2dContext::query(
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + @core.SystemContextWorld + @core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
+  W : @core.ChangeTickWorld + @core.SystemContextWorld + @core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
 ] physics2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

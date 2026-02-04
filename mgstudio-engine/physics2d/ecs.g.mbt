@@ -6,12 +6,14 @@
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
   "Ccd2d", "Damping2d", "Collider2d", "Friction2d", "Sleeping2d", "Velocity2d", "Dominance2d",
-  "RigidBody2d", "LockedAxes2d", "Restitution2d", "GravityScale2d", "ImpulseJoint2d",
-  "SolverGroups2d", "ExternalForce2d", "ColliderParent2d", "MultibodyJoint2d", "ColliderDensity2d",
-  "CollisionGroups2d", "ExternalImpulse2d", "RapierBodyHandle2d", "FrictionCombineRule2d",
-  "RapierColliderHandle2d", "RestitutionCombineRule2d", "RapierImpulseJointHandle2d",
-  "ContactForceEventThreshold2d", "RapierMultibodyJointHandle2d", "KinematicCharacterController2d",
-  "KinematicCharacterControllerOutput2d",
+  "RigidBody2d", "LockedAxes2d", "ActiveHooks2d", "ContactSkin2d", "Restitution2d",
+  "ActiveEvents2d", "GravityScale2d", "ImpulseJoint2d", "SolverGroups2d", "ExternalForce2d",
+  "ColliderParent2d", "MultibodyJoint2d", "ColliderDensity2d", "ColliderEnabled2d",
+  "CollisionGroups2d", "ExternalImpulse2d", "RapierBodyHandle2d", "RigidBodyEnabled2d",
+  "FrictionCombineRule2d", "ActiveCollisionTypes2d", "RapierColliderHandle2d", "ColliderMassProperties2d",
+  "RestitutionCombineRule2d", "AdditionalMassProperties2d", "RapierImpulseJointHandle2d",
+  "AdditionalSolverIterations2d", "ContactForceEventThreshold2d", "RapierMultibodyJointHandle2d",
+  "KinematicCharacterController2d", "KinematicCharacterControllerOutput2d",
 ]
 
 ///|
@@ -66,8 +68,23 @@ pub(open) trait Has_LockedAxes2d {
 }
 
 ///|
+pub(open) trait Has_ActiveHooks2d {
+  get_active_hooks2d_store(self : Self) -> @core.ComponentStore[ActiveHooks2d]
+}
+
+///|
+pub(open) trait Has_ContactSkin2d {
+  get_contact_skin2d_store(self : Self) -> @core.ComponentStore[ContactSkin2d]
+}
+
+///|
 pub(open) trait Has_Restitution2d {
   get_restitution2d_store(self : Self) -> @core.ComponentStore[Restitution2d]
+}
+
+///|
+pub(open) trait Has_ActiveEvents2d {
+  get_active_events2d_store(self : Self) -> @core.ComponentStore[ActiveEvents2d]
 }
 
 ///|
@@ -114,6 +131,13 @@ pub(open) trait Has_ColliderDensity2d {
 }
 
 ///|
+pub(open) trait Has_ColliderEnabled2d {
+  get_collider_enabled2d_store(self : Self) -> @core.ComponentStore[
+    ColliderEnabled2d,
+  ]
+}
+
+///|
 pub(open) trait Has_CollisionGroups2d {
   get_collision_groups2d_store(self : Self) -> @core.ComponentStore[
     CollisionGroups2d,
@@ -135,9 +159,23 @@ pub(open) trait Has_RapierBodyHandle2d {
 }
 
 ///|
+pub(open) trait Has_RigidBodyEnabled2d {
+  get_rigid_body_enabled2d_store(self : Self) -> @core.ComponentStore[
+    RigidBodyEnabled2d,
+  ]
+}
+
+///|
 pub(open) trait Has_FrictionCombineRule2d {
   get_friction_combine_rule2d_store(self : Self) -> @core.ComponentStore[
     FrictionCombineRule2d,
+  ]
+}
+
+///|
+pub(open) trait Has_ActiveCollisionTypes2d {
+  get_active_collision_types2d_store(self : Self) -> @core.ComponentStore[
+    ActiveCollisionTypes2d,
   ]
 }
 
@@ -149,6 +187,13 @@ pub(open) trait Has_RapierColliderHandle2d {
 }
 
 ///|
+pub(open) trait Has_ColliderMassProperties2d {
+  get_collider_mass_properties2d_store(self : Self) -> @core.ComponentStore[
+    ColliderMassProperties2d,
+  ]
+}
+
+///|
 pub(open) trait Has_RestitutionCombineRule2d {
   get_restitution_combine_rule2d_store(self : Self) -> @core.ComponentStore[
     RestitutionCombineRule2d,
@@ -156,9 +201,23 @@ pub(open) trait Has_RestitutionCombineRule2d {
 }
 
 ///|
+pub(open) trait Has_AdditionalMassProperties2d {
+  get_additional_mass_properties2d_store(self : Self) -> @core.ComponentStore[
+    AdditionalMassProperties2d,
+  ]
+}
+
+///|
 pub(open) trait Has_RapierImpulseJointHandle2d {
   get_rapier_impulse_joint_handle2d_store(self : Self) -> @core.ComponentStore[
     RapierImpulseJointHandle2d,
+  ]
+}
+
+///|
+pub(open) trait Has_AdditionalSolverIterations2d {
+  get_additional_solver_iterations2d_store(self : Self) -> @core.ComponentStore[
+    AdditionalSolverIterations2d,
   ]
 }
 

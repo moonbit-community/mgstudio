@@ -92,19 +92,6 @@ pub fn Physics2dContext::query_filter_exclude_entity(
 }
 
 ///|
-fn to_rapier_shape(shape : ColliderShape2d) -> @collision.Shape {
-  match shape {
-    Ball(radius) => @collision.Shape::Ball(radius)
-    Cuboid(hx, hy) => @collision.Shape::Cuboid(hx, hy)
-    CapsuleX(half_height, radius) =>
-      @collision.Shape::CapsuleX(half_height, radius)
-    CapsuleY(half_height, radius) =>
-      @collision.Shape::CapsuleY(half_height, radius)
-    Segment(a, b) =>
-      @collision.Shape::Segment(mg_vec2_to_rapier(a), mg_vec2_to_rapier(b))
-  }
-}
-
 ///|
 fn rect_to_aabb(rect : @math.Rect) -> @rapier_core.Aabb {
   @rapier_core.Aabb::new(
@@ -424,7 +411,10 @@ pub fn Physics2dContext::intersect_shape_entities_with_filter(
   let hs = self
     .query()
     .with_filter(filter)
-    .intersect_shape(mg_transform_to_iso2(shape_pos), to_rapier_shape(shape))
+    .intersect_shape(
+      mg_transform_to_iso2(shape_pos),
+      collider_shape2d_to_rapier(shape),
+    )
   let out : Array[@core.Entity] = []
   for h in hs {
     if entity_from_collider_handle(self, h) is Some(e) {
@@ -477,7 +467,7 @@ pub fn Physics2dContext::cast_shape_entity(
     query.cast_shape(
       mg_transform_to_iso2(shape_pos),
       mg_vec2_to_rapier(shape_vel),
-      to_rapier_shape(shape),
+      collider_shape2d_to_rapier(shape),
       options,
     ) {
     Some((h, hit)) =>
@@ -509,7 +499,7 @@ pub fn Physics2dContext::cast_shape_entity_with_filter(
     query.cast_shape(
       mg_transform_to_iso2(shape_pos),
       mg_vec2_to_rapier(shape_vel),
-      to_rapier_shape(shape),
+      collider_shape2d_to_rapier(shape),
       options,
     ) {
     Some((h, hit)) =>

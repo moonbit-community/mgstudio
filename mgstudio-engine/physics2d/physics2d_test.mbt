@@ -28,6 +28,9 @@ struct Physics2dTestWorld {
   sleeping : @core.ComponentStore[Sleeping2d]
   external_force : @core.ComponentStore[ExternalForce2d]
   external_impulse : @core.ComponentStore[ExternalImpulse2d]
+  rigid_body_enabled : @core.ComponentStore[RigidBodyEnabled2d]
+  additional_mass_properties : @core.ComponentStore[AdditionalMassProperties2d]
+  additional_solver_iterations : @core.ComponentStore[AdditionalSolverIterations2d]
   contact_force_threshold : @core.ComponentStore[ContactForceEventThreshold2d]
   collider_density : @core.ComponentStore[ColliderDensity2d]
   friction : @core.ComponentStore[Friction2d]
@@ -36,6 +39,12 @@ struct Physics2dTestWorld {
   restitution_rule : @core.ComponentStore[RestitutionCombineRule2d]
   collision_groups : @core.ComponentStore[CollisionGroups2d]
   solver_groups : @core.ComponentStore[SolverGroups2d]
+  collider_enabled : @core.ComponentStore[ColliderEnabled2d]
+  active_collision_types : @core.ComponentStore[ActiveCollisionTypes2d]
+  active_events : @core.ComponentStore[ActiveEvents2d]
+  active_hooks : @core.ComponentStore[ActiveHooks2d]
+  contact_skin : @core.ComponentStore[ContactSkin2d]
+  collider_mass_properties : @core.ComponentStore[ColliderMassProperties2d]
   kcc : @core.ComponentStore[KinematicCharacterController2d]
   kcc_output : @core.ComponentStore[KinematicCharacterControllerOutput2d]
   impulse_joint : @core.ComponentStore[ImpulseJoint2d]
@@ -66,6 +75,9 @@ fn Physics2dTestWorld::new() -> Physics2dTestWorld {
     sleeping: @core.ComponentStore::new(),
     external_force: @core.ComponentStore::new(),
     external_impulse: @core.ComponentStore::new(),
+    rigid_body_enabled: @core.ComponentStore::new(),
+    additional_mass_properties: @core.ComponentStore::new(),
+    additional_solver_iterations: @core.ComponentStore::new(),
     contact_force_threshold: @core.ComponentStore::new(),
     collider_density: @core.ComponentStore::new(),
     friction: @core.ComponentStore::new(),
@@ -74,6 +86,12 @@ fn Physics2dTestWorld::new() -> Physics2dTestWorld {
     restitution_rule: @core.ComponentStore::new(),
     collision_groups: @core.ComponentStore::new(),
     solver_groups: @core.ComponentStore::new(),
+    collider_enabled: @core.ComponentStore::new(),
+    active_collision_types: @core.ComponentStore::new(),
+    active_events: @core.ComponentStore::new(),
+    active_hooks: @core.ComponentStore::new(),
+    contact_skin: @core.ComponentStore::new(),
+    collider_mass_properties: @core.ComponentStore::new(),
     kcc: @core.ComponentStore::new(),
     kcc_output: @core.ComponentStore::new(),
     impulse_joint: @core.ComponentStore::new(),
@@ -175,6 +193,27 @@ impl Has_ExternalImpulse2d for Physics2dTestWorld with get_external_impulse2d_st
 }
 
 ///|
+impl Has_RigidBodyEnabled2d for Physics2dTestWorld with get_rigid_body_enabled2d_store(
+  self,
+) {
+  self.rigid_body_enabled
+}
+
+///|
+impl Has_AdditionalMassProperties2d for Physics2dTestWorld with get_additional_mass_properties2d_store(
+  self,
+) {
+  self.additional_mass_properties
+}
+
+///|
+impl Has_AdditionalSolverIterations2d for Physics2dTestWorld with get_additional_solver_iterations2d_store(
+  self,
+) {
+  self.additional_solver_iterations
+}
+
+///|
 impl Has_ContactForceEventThreshold2d for Physics2dTestWorld with get_contact_force_event_threshold2d_store(
   self,
 ) {
@@ -224,6 +263,44 @@ impl Has_SolverGroups2d for Physics2dTestWorld with get_solver_groups2d_store(
   self,
 ) {
   self.solver_groups
+}
+
+///|
+impl Has_ColliderEnabled2d for Physics2dTestWorld with get_collider_enabled2d_store(
+  self,
+) {
+  self.collider_enabled
+}
+
+///|
+impl Has_ActiveCollisionTypes2d for Physics2dTestWorld with get_active_collision_types2d_store(
+  self,
+) {
+  self.active_collision_types
+}
+
+///|
+impl Has_ActiveEvents2d for Physics2dTestWorld with get_active_events2d_store(
+  self,
+) {
+  self.active_events
+}
+
+///|
+impl Has_ActiveHooks2d for Physics2dTestWorld with get_active_hooks2d_store(self) {
+  self.active_hooks
+}
+
+///|
+impl Has_ContactSkin2d for Physics2dTestWorld with get_contact_skin2d_store(self) {
+  self.contact_skin
+}
+
+///|
+impl Has_ColliderMassProperties2d for Physics2dTestWorld with get_collider_mass_properties2d_store(
+  self,
+) {
+  self.collider_mass_properties
 }
 
 ///|
@@ -982,6 +1059,211 @@ test "physics2d: query pipeline sees inserted colliders" {
     Some(s) => inspect(s.entity.id == floor.id, content="true")
     None => inspect(false, content="false")
   }
+}
+
+///|
+test "physics2d: convex polygon and compound colliders can be inserted" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+
+  let convex = @core.Entity::new(10, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    convex,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(5.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    convex,
+    RigidBody2d::fixed(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    convex,
+    Collider2d::new(
+      ColliderShape2d::convex_polygon([
+        @math.Vec2::new(-1.0F, -1.0F),
+        @math.Vec2::new(1.0F, -1.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        @math.Vec2::new(-1.0F, 1.0F),
+      ]),
+    ),
+    tick,
+  )
+
+  let compound = @core.Entity::new(11, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    compound,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(-5.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    compound,
+    RigidBody2d::fixed(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    compound,
+    Collider2d::new(
+      ColliderShape2d::compound([
+        (
+          @math.Transform::from_xy_rotation_scale(
+            @math.Vec2::new(-1.0F, 0.0F),
+            0.0F,
+            @math.Vec2::new(1.0F, 1.0F),
+            z=0.0F,
+          ),
+          ColliderShape2d::ball(0.5F),
+        ),
+        (
+          @math.Transform::from_xy_rotation_scale(
+            @math.Vec2::new(1.0F, 0.0F),
+            0.0F,
+            @math.Vec2::new(1.0F, 1.0F),
+            z=0.0F,
+          ),
+          ColliderShape2d::ball(0.5F),
+        ),
+      ]),
+    ),
+    tick,
+  )
+
+  physics2d_sync_insertions_system(world)
+  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+    .get_ref()
+    .unwrap().val
+
+  let hits1 = ctx.intersect_aabb_entities_conservative(
+    @math.Rect::new(
+      @math.Vec2::new(4.0F, -2.0F),
+      @math.Vec2::new(6.0F, 2.0F),
+    ),
+  )
+  let mut has_convex = false
+  for e in hits1 {
+    if e.id == convex.id { has_convex = true }
+  }
+  inspect(has_convex, content="true")
+
+  let hits2 = ctx.intersect_aabb_entities_conservative(
+    @math.Rect::new(
+      @math.Vec2::new(-6.0F, -2.0F),
+      @math.Vec2::new(-4.0F, 2.0F),
+    ),
+  )
+  let mut has_compound = false
+  for e in hits2 {
+    if e.id == compound.id { has_compound = true }
+  }
+  inspect(has_compound, content="true")
+}
+
+///|
+test "physics2d: hooks filter_contact_pair can disable contacts" {
+  let old_hooks = physics2d_hooks_config()
+  let called = Ref::new(false)
+  let mapped = Ref::new(false)
+  physics2d_set_filter_contact_pair(fn(_bodies, _colliders, h1, _h2) {
+    called.val = true
+    mapped.val = physics2d_hook_entity_from_collider_handle(h1) is Some(_)
+    false
+  })
+
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+
+  let a = @core.Entity::new(20, 1)
+  let b = @core.Entity::new(21, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    a,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(-0.49F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  @math.Has_Transform::get_transform_store(world).insert(
+    b,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.49F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(a, RigidBody2d::dynamic(), tick)
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(b, RigidBody2d::dynamic(), tick)
+  Has_Collider2d::get_collider2d_store(world).insert(
+    a,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    b,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_Velocity2d::get_velocity2d_store(world).insert(
+    a,
+    Velocity2d::new(@math.Vec2::new(1.0F, 0.0F), 0.0F),
+    tick,
+  )
+  Has_Velocity2d::get_velocity2d_store(world).insert(
+    b,
+    Velocity2d::new(@math.Vec2::new(-1.0F, 0.0F), 0.0F),
+    tick,
+  )
+  Has_ActiveHooks2d::get_active_hooks2d_store(world).insert(
+    a,
+    ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
+    tick,
+  )
+  Has_ActiveHooks2d::get_active_hooks2d_store(world).insert(
+    b,
+    ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
+    tick,
+  )
+
+  physics2d_clear_events_system(world)
+  physics2d_sync_insertions_system(world)
+  physics2d_sync_world_to_rapier_system(world)
+  physics2d_step_system(world)
+
+  inspect(called.val, content="true")
+  inspect(mapped.val, content="true")
+  let events = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
+    .get_ref()
+    .unwrap().val
+  inspect(events.collisions.length() == 0, content="true")
+
+  physics2d_hooks_set_config(old_hooks)
 }
 
 ///|
