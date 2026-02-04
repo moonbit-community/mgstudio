@@ -18,11 +18,11 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : HasRes_UiContext + Has_UiLayout + Has_ButtonColors + Has_InteractionState + @render2d.Has_Sprite + @core.ChangeTickWorld] ui_interaction_system(W) -> Unit
+pub fn[W : HasRes_UiContext + Has_UiLayout + Has_Button + Has_Interaction + Has_ButtonColors + @render2d.Has_Sprite + @core.ChangeTickWorld] ui_interaction_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_InteractionState + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_InteractionState + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
 
@@ -37,10 +37,21 @@ pub fn[W : HasRes_UiContext + @render2d.Has_Camera2d + @render2d.Has_Camera + @r
 // Errors
 
 // Types and methods
+pub(all) enum AlignItems {
+  FlexStart
+  Center
+}
+pub impl Eq for AlignItems
+pub impl Show for AlignItems
+
 pub struct BackgroundColor {
   color : @render2d.Color
 }
 pub fn BackgroundColor::new(@render2d.Color) -> Self
+
+pub struct Button {
+}
+pub fn Button::default() -> Self
 
 pub struct ButtonColors {
   normal : @render2d.Color
@@ -57,19 +68,33 @@ pub(all) enum Interaction {
 pub impl Eq for Interaction
 pub impl Show for Interaction
 
-pub struct InteractionState {
-  value : Interaction
+pub(all) enum JustifyContent {
+  FlexStart
+  Center
 }
-pub fn InteractionState::default() -> Self
-pub fn InteractionState::new(Interaction) -> Self
+pub impl Eq for JustifyContent
+pub impl Show for JustifyContent
+
+pub(all) enum PositionType {
+  Relative
+  Absolute
+}
+pub impl Eq for PositionType
+pub impl Show for PositionType
 
 pub struct Style {
   position : UiRect
   size : UiSize
   z_index : Int
+  position_type : PositionType
+  justify_content : JustifyContent
+  align_items : AlignItems
 }
 pub fn Style::default() -> Self
 pub fn Style::new(UiRect, UiSize, Int) -> Self
+pub fn Style::with_align_items(Self, AlignItems) -> Self
+pub fn Style::with_justify_content(Self, JustifyContent) -> Self
+pub fn Style::with_position_type(Self, PositionType) -> Self
 
 pub struct UiContext {
   mut white_texture : @asset.Handle[@asset.Image]
@@ -136,12 +161,16 @@ pub(open) trait Has_BackgroundColor {
   get_background_color_store(Self) -> @core.ComponentStore[BackgroundColor]
 }
 
+pub(open) trait Has_Button {
+  get_button_store(Self) -> @core.ComponentStore[Button]
+}
+
 pub(open) trait Has_ButtonColors {
   get_button_colors_store(Self) -> @core.ComponentStore[ButtonColors]
 }
 
-pub(open) trait Has_InteractionState {
-  get_interaction_state_store(Self) -> @core.ComponentStore[InteractionState]
+pub(open) trait Has_Interaction {
+  get_interaction_store(Self) -> @core.ComponentStore[Interaction]
 }
 
 pub(open) trait Has_Style {

@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/physics3d",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/visibility",
 }
 
@@ -22,17 +23,26 @@ pub struct World {
   entities : @core.Entities
   mut change_tick : Int
   mut system_context : @core.SystemContext
+  style : @core.ComponentStore[@ui.Style]
+  button : @core.ComponentStore[@ui.Button]
+  ui_root : @core.ComponentStore[@ui.UiRoot]
+  ui_text : @core.ComponentStore[@ui.UiText]
+  ui_image : @core.ComponentStore[@ui.UiImage]
+  ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
+  interaction : @core.ComponentStore[@ui.Interaction]
   ccd2d : @core.ComponentStore[@physics2d.Ccd2d]
   anchor : @core.ComponentStore[@render2d.Anchor]
   camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
+  button_colors : @core.ComponentStore[@ui.ButtonColors]
   parent : @core.ComponentStore[@hierarchy.Parent]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
@@ -66,6 +76,7 @@ pub struct World {
   rapier_collider_handle3d : @core.ComponentStore[@physics3d.RapierColliderHandle3d]
   restitution_combine_rule2d : @core.ComponentStore[@physics2d.RestitutionCombineRule2d]
   contact_force_event_threshold2d : @core.ComponentStore[@physics2d.ContactForceEventThreshold2d]
+  res_ui_context : @core.Resource[@ui.UiContext]
   res_render_state : @core.Resource[@render2d.RenderState]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
@@ -128,6 +139,16 @@ pub impl @render2d.Has_RenderLayers for World
 pub impl @render2d.Has_RenderTarget for World
 pub impl @render2d.Has_Sprite for World
 pub impl @transform.Has_GlobalTransform for World
+pub impl @ui.HasRes_UiContext for World
+pub impl @ui.Has_BackgroundColor for World
+pub impl @ui.Has_Button for World
+pub impl @ui.Has_ButtonColors for World
+pub impl @ui.Has_Interaction for World
+pub impl @ui.Has_Style for World
+pub impl @ui.Has_UiImage for World
+pub impl @ui.Has_UiLayout for World
+pub impl @ui.Has_UiRoot for World
+pub impl @ui.Has_UiText for World
 pub impl @visibility.Has_InheritedVisibility for World
 pub impl @visibility.Has_ViewVisibility for World
 pub impl @visibility.Has_Visibility for World

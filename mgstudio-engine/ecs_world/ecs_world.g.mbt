@@ -5,17 +5,26 @@ pub struct World {
   entities : @core.Entities
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
+  style : @core.ComponentStore[@ui.Style]
+  button : @core.ComponentStore[@ui.Button]
+  ui_root : @core.ComponentStore[@ui.UiRoot]
+  ui_text : @core.ComponentStore[@ui.UiText]
+  ui_image : @core.ComponentStore[@ui.UiImage]
+  ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
+  interaction : @core.ComponentStore[@ui.Interaction]
   ccd2d : @core.ComponentStore[@physics2d.Ccd2d]
   anchor : @core.ComponentStore[@render2d.Anchor]
   camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
+  button_colors : @core.ComponentStore[@ui.ButtonColors]
   parent : @core.ComponentStore[@hierarchy.Parent]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
@@ -59,6 +68,7 @@ pub struct World {
   contact_force_event_threshold2d : @core.ComponentStore[
     @physics2d.ContactForceEventThreshold2d,
   ]
+  res_ui_context : @core.Resource[@ui.UiContext]
   res_render_state : @core.Resource[@render2d.RenderState]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
@@ -74,17 +84,26 @@ pub fn World::new() -> World {
     entities: @core.Entities::new(),
     change_tick: 0,
     system_context: @core.SystemContext::new(),
+    style: @core.ComponentStore::new(),
+    button: @core.ComponentStore::new(),
+    ui_root: @core.ComponentStore::new(),
+    ui_text: @core.ComponentStore::new(),
+    ui_image: @core.ComponentStore::new(),
+    ui_layout: @core.ComponentStore::new(),
     transform: @core.ComponentStore::new(),
+    interaction: @core.ComponentStore::new(),
     ccd2d: @core.ComponentStore::new(),
     anchor: @core.ComponentStore::new(),
     camera: @core.ComponentStore::new(),
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
+    button_colors: @core.ComponentStore::new(),
     parent: @core.ComponentStore::new(),
     camera2d: @core.ComponentStore::new(),
     texture_atlas: @core.ComponentStore::new(),
     children: @core.ComponentStore::new(),
     gpu_mesh2d: @core.ComponentStore::new(),
+    background_color: @core.ComponentStore::new(),
     damping2d: @core.ComponentStore::new(),
     projection: @core.ComponentStore::new(),
     collider2d: @core.ComponentStore::new(),
@@ -118,6 +137,7 @@ pub fn World::new() -> World {
     rapier_collider_handle3d: @core.ComponentStore::new(),
     restitution_combine_rule2d: @core.ComponentStore::new(),
     contact_force_event_threshold2d: @core.ComponentStore::new(),
+    res_ui_context: @core.Resource::new(),
     res_render_state: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
     res_physics2d_events: @core.Resource::new(),
@@ -139,17 +159,26 @@ pub fn World::despawn(
   entity : @core.Entity,
 ) -> Unit raise @core.EntityError {
   self.entities.despawn(entity)
+  self.style.remove(entity) |> ignore
+  self.button.remove(entity) |> ignore
+  self.ui_root.remove(entity) |> ignore
+  self.ui_text.remove(entity) |> ignore
+  self.ui_image.remove(entity) |> ignore
+  self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
+  self.interaction.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
   self.anchor.remove(entity) |> ignore
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
+  self.button_colors.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
+  self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
@@ -193,17 +222,26 @@ pub impl @core.SpawnWorld for World with spawn_empty(self) {
 ///|
 pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.entities.despawn(entity)
+  self.style.remove(entity) |> ignore
+  self.button.remove(entity) |> ignore
+  self.ui_root.remove(entity) |> ignore
+  self.ui_text.remove(entity) |> ignore
+  self.ui_image.remove(entity) |> ignore
+  self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
+  self.interaction.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
   self.anchor.remove(entity) |> ignore
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
+  self.button_colors.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
+  self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
@@ -261,8 +299,43 @@ pub impl @core.SystemContextWorld for World with set_system_context(self, ctx) {
 }
 
 ///|
+pub impl @ui.Has_Style for World with get_style_store(self) {
+  self.style
+}
+
+///|
+pub impl @ui.Has_Button for World with get_button_store(self) {
+  self.button
+}
+
+///|
+pub impl @ui.Has_UiRoot for World with get_ui_root_store(self) {
+  self.ui_root
+}
+
+///|
+pub impl @ui.Has_UiText for World with get_ui_text_store(self) {
+  self.ui_text
+}
+
+///|
+pub impl @ui.Has_UiImage for World with get_ui_image_store(self) {
+  self.ui_image
+}
+
+///|
+pub impl @ui.Has_UiLayout for World with get_ui_layout_store(self) {
+  self.ui_layout
+}
+
+///|
 pub impl @math.Has_Transform for World with get_transform_store(self) {
   self.transform
+}
+
+///|
+pub impl @ui.Has_Interaction for World with get_interaction_store(self) {
+  self.interaction
 }
 
 ///|
@@ -291,6 +364,11 @@ pub impl @render2d.Has_Sprite for World with get_sprite_store(self) {
 }
 
 ///|
+pub impl @ui.Has_ButtonColors for World with get_button_colors_store(self) {
+  self.button_colors
+}
+
+///|
 pub impl @hierarchy.Has_Parent for World with get_parent_store(self) {
   self.parent
 }
@@ -313,6 +391,11 @@ pub impl @hierarchy.Has_Children for World with get_children_store(self) {
 ///|
 pub impl @render2d.Has_GpuMesh2d for World with get_gpu_mesh2d_store(self) {
   self.gpu_mesh2d
+}
+
+///|
+pub impl @ui.Has_BackgroundColor for World with get_background_color_store(self) {
+  self.background_color
 }
 
 ///|
@@ -516,6 +599,11 @@ pub impl @physics2d.Has_ContactForceEventThreshold2d for World with get_contact_
   self,
 ) {
   self.contact_force_event_threshold2d
+}
+
+///|
+pub impl @ui.HasRes_UiContext for World with get_ui_context_resource(self) {
+  self.res_ui_context
 }
 
 ///|
