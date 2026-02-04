@@ -538,6 +538,65 @@ test "physics2d: external impulse applies once and clears" {
 }
 
 ///|
+test "physics2d: default collider density yields non-zero mass" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let e = @core.Entity::new(0, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    e,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  // No `ColliderDensity2d` here: this test asserts moon_rapier's default density
+  // behaves like upstream Rapier (non-zero mass).
+  Has_Collider2d::get_collider2d_store(world).insert(
+    e,
+    Collider2d::new(ColliderShape2d::ball(0.2F)),
+    tick,
+  )
+  Has_Velocity2d::get_velocity2d_store(world).insert(
+    e,
+    Velocity2d::zero(),
+    tick,
+  )
+  Has_ExternalImpulse2d::get_external_impulse2d_store(world).insert(
+    e,
+    ExternalImpulse2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
+    tick,
+  )
+  physics2d_sync_insertions_system(world)
+  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+    .get_ref()
+    .unwrap().val
+  let bh = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(world)
+    .get(e)
+    .unwrap().handle
+  inspect(ctx.rigid_bodies.get(bh).unwrap().inv_mass() > 0.0F, content="true")
+  physics2d_sync_world_to_rapier_system(world)
+  physics2d_step_system(world)
+  physics2d_writeback_system(world)
+  let v = Has_Velocity2d::get_velocity2d_store(world).get(e).unwrap()
+  inspect(v.linvel.x > 0.0F, content="true")
+}
+
+///|
 test "physics2d: external force persists" {
   @app.fixed_time_reset()
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
