@@ -2,11 +2,13 @@
 package "Milky2018/mgstudio/ui"
 
 import {
+  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",
@@ -18,13 +20,27 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : HasRes_UiContext + Has_UiLayout + Has_Button + Has_Interaction + Has_ButtonColors + @render2d.Has_Sprite + @core.ChangeTickWorld] ui_interaction_system(W) -> Unit
+pub fn[W : @a11y.HasRes_A11yState + @picking.HasRes_PickingEvents + Has_Interaction + @core.ChangeTickWorld] ui_a11y_apply_actions_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
+pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_AccessibilityLabel + @hierarchy.Has_Parent] ui_a11y_update_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Style + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld] ui_clip_system(W) -> Unit
+
+pub fn[W : HasRes_UiContext + HasRes_UiStack + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + Has_ButtonColors + @render2d.Has_Sprite + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_interaction_system(W) -> Unit
+
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ZIndex + Has_ScrollPosition + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
+
+pub fn[W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
+
+pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @core.ChangeTickWorld] ui_scroll_system(W) -> Unit
+
+pub let ui_set_a11y : String
+
+pub let ui_set_a11y_apply : String
+
+pub let ui_set_clip : String
 
 pub let ui_set_context : String
 
@@ -32,22 +48,80 @@ pub let ui_set_interaction : String
 
 pub let ui_set_layout : String
 
+pub let ui_set_scroll : String
+
+pub let ui_set_stack : String
+
+pub fn[W : HasRes_UiStack + Has_UiRoot + Has_UiLayout + Has_ZIndex + Has_GlobalZIndex + @hierarchy.Has_Children + @hierarchy.Has_Parent + @core.ChangeTickWorld] ui_stack_system(W) -> Unit
+
 pub fn[W : HasRes_UiContext + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld] ui_update_context_system(W) -> Unit
 
 // Errors
 
 // Types and methods
-pub(all) enum AlignItems {
-  FlexStart
+pub struct AccessibilityLabel {
+  text : String
+}
+pub fn AccessibilityLabel::new(String) -> Self
+
+pub(all) enum AlignContent {
   Center
+  Default
+  End
+  FlexEnd
+  FlexStart
+  SpaceAround
+  SpaceBetween
+  SpaceEvenly
+  Start
+  Stretch
+}
+pub impl Eq for AlignContent
+pub impl Show for AlignContent
+
+pub(all) enum AlignItems {
+  Baseline
+  Center
+  Default
+  End
+  FlexEnd
+  FlexStart
+  Start
+  Stretch
 }
 pub impl Eq for AlignItems
 pub impl Show for AlignItems
+
+pub(all) enum AlignSelf {
+  Auto
+  Baseline
+  Center
+  End
+  FlexEnd
+  FlexStart
+  Start
+  Stretch
+}
+pub impl Eq for AlignSelf
+pub impl Show for AlignSelf
 
 pub struct BackgroundColor {
   color : @render2d.Color
 }
 pub fn BackgroundColor::new(@render2d.Color) -> Self
+
+pub struct BorderColor {
+  color : @render2d.Color
+}
+pub fn BorderColor::new(@render2d.Color) -> Self
+
+pub struct BorderRadius {
+  top_left : Val
+  top_right : Val
+  bottom_left : Val
+  bottom_right : Val
+}
+pub fn BorderRadius::default() -> Self
 
 pub struct Button {
 }
@@ -60,6 +134,91 @@ pub struct ButtonColors {
 }
 pub fn ButtonColors::new(@render2d.Color, @render2d.Color, @render2d.Color) -> Self
 
+pub struct CalculatedClip {
+  clip : @math.Rect
+}
+
+pub(all) enum Display {
+  Block
+  Flex
+  Grid
+  None
+}
+pub impl Eq for Display
+pub impl Show for Display
+
+pub(all) enum FlexDirection {
+  Column
+  ColumnReverse
+  Row
+  RowReverse
+}
+pub impl Eq for FlexDirection
+pub impl Show for FlexDirection
+
+pub(all) enum FlexWrap {
+  NoWrap
+  Wrap
+  WrapReverse
+}
+pub impl Eq for FlexWrap
+pub impl Show for FlexWrap
+
+pub(all) enum FocusPolicy {
+  Block
+  Pass
+}
+pub fn FocusPolicy::default() -> Self
+pub impl Eq for FocusPolicy
+pub impl Show for FocusPolicy
+
+pub struct GlobalZIndex {
+  value : Int
+}
+pub fn GlobalZIndex::new(Int) -> Self
+
+pub(all) enum GridAutoFlow {
+  Column
+  ColumnDense
+  Row
+  RowDense
+}
+pub impl Eq for GridAutoFlow
+pub impl Show for GridAutoFlow
+
+pub struct GridPlacement {
+  start : Int?
+  span : Int?
+  end : Int?
+}
+pub fn GridPlacement::auto() -> Self
+pub fn GridPlacement::default() -> Self
+pub fn GridPlacement::end(Int) -> Self
+pub fn GridPlacement::end_span(Int, Int) -> Self
+pub fn GridPlacement::span(Int) -> Self
+pub fn GridPlacement::start(Int) -> Self
+pub fn GridPlacement::start_end(Int, Int) -> Self
+pub fn GridPlacement::start_span(Int, Int) -> Self
+
+pub(all) enum GridTrack {
+  Auto
+  Px(Float)
+  Percent(Float)
+  Fr(Float)
+  MinContent
+  MaxContent
+}
+pub impl Eq for GridTrack
+pub impl Show for GridTrack
+
+pub(all) enum GridTrackRepetition {
+  Count(Int)
+  AutoFill
+  AutoFit
+}
+pub impl Eq for GridTrackRepetition
+pub impl Show for GridTrackRepetition
+
 pub(all) enum Interaction {
   None
   Hovered
@@ -69,11 +228,119 @@ pub impl Eq for Interaction
 pub impl Show for Interaction
 
 pub(all) enum JustifyContent {
-  FlexStart
   Center
+  Default
+  End
+  FlexEnd
+  FlexStart
+  SpaceAround
+  SpaceBetween
+  SpaceEvenly
+  Start
+  Stretch
 }
 pub impl Eq for JustifyContent
 pub impl Show for JustifyContent
+
+pub(all) enum JustifyItems {
+  Baseline
+  Center
+  Default
+  End
+  Start
+  Stretch
+}
+pub impl Eq for JustifyItems
+pub impl Show for JustifyItems
+
+pub(all) enum JustifySelf {
+  Auto
+  Baseline
+  Center
+  End
+  Start
+  Stretch
+}
+pub impl Eq for JustifySelf
+pub impl Show for JustifySelf
+
+pub struct Node {
+  display : Display
+  position_type : PositionType
+  overflow : Overflow
+  overflow_clip_margin : OverflowClipMargin
+  left : Val
+  right : Val
+  top : Val
+  bottom : Val
+  width : Val
+  height : Val
+  min_width : Val
+  min_height : Val
+  max_width : Val
+  max_height : Val
+  aspect_ratio : Float?
+  align_items : AlignItems
+  justify_items : JustifyItems
+  align_self : AlignSelf
+  justify_self : JustifySelf
+  align_content : AlignContent
+  justify_content : JustifyContent
+  margin : UiRect
+  padding : UiRect
+  border : UiRect
+  flex_direction : FlexDirection
+  flex_wrap : FlexWrap
+  flex_grow : Float
+  flex_shrink : Float
+  flex_basis : Val
+  row_gap : Val
+  column_gap : Val
+  grid_auto_flow : GridAutoFlow
+  grid_template_rows : Array[RepeatedGridTrack]
+  grid_template_columns : Array[RepeatedGridTrack]
+  grid_auto_rows : Array[GridTrack]
+  grid_auto_columns : Array[GridTrack]
+  grid_row : GridPlacement
+  grid_column : GridPlacement
+}
+pub fn Node::default() -> Self
+pub fn Node::with_align_items(Self, AlignItems) -> Self
+pub fn Node::with_height(Self, Val) -> Self
+pub fn Node::with_justify_content(Self, JustifyContent) -> Self
+pub fn Node::with_left(Self, Val) -> Self
+pub fn Node::with_position_type(Self, PositionType) -> Self
+pub fn Node::with_top(Self, Val) -> Self
+pub fn Node::with_width(Self, Val) -> Self
+
+pub struct Overflow {
+  x : OverflowAxis
+  y : OverflowAxis
+}
+pub fn Overflow::default() -> Self
+
+pub(all) enum OverflowAxis {
+  Clip
+  Hidden
+  Scroll
+  Visible
+}
+pub impl Eq for OverflowAxis
+pub impl Show for OverflowAxis
+
+pub(all) enum OverflowClipBox {
+  BorderBox
+  PaddingBox
+  ContentBox
+}
+pub impl Eq for OverflowClipBox
+pub impl Show for OverflowClipBox
+
+pub struct OverflowClipMargin {
+  visual_box : OverflowClipBox
+  margin : Float
+}
+pub fn OverflowClipMargin::default() -> Self
 
 pub(all) enum PositionType {
   Relative
@@ -82,19 +349,29 @@ pub(all) enum PositionType {
 pub impl Eq for PositionType
 pub impl Show for PositionType
 
-pub struct Style {
-  position : UiRect
-  size : UiSize
-  z_index : Int
-  position_type : PositionType
-  justify_content : JustifyContent
-  align_items : AlignItems
+pub struct RelativeCursorPosition {
+  normalized_visible_node_rect : @math.Rect
+  normalized : @math.Vec2?
 }
-pub fn Style::default() -> Self
-pub fn Style::new(UiRect, UiSize, Int) -> Self
-pub fn Style::with_align_items(Self, AlignItems) -> Self
-pub fn Style::with_justify_content(Self, JustifyContent) -> Self
-pub fn Style::with_position_type(Self, PositionType) -> Self
+
+pub struct RepeatedGridTrack {
+  repetition : GridTrackRepetition
+  tracks : Array[GridTrack]
+}
+pub fn RepeatedGridTrack::default() -> Self
+
+pub struct ScrollPosition {
+  offset_x : Float
+  offset_y : Float
+}
+pub fn ScrollPosition::default() -> Self
+
+pub(all) enum UiAntiAlias {
+  Off
+  On
+}
+pub impl Eq for UiAntiAlias
+pub impl Show for UiAntiAlias
 
 pub struct UiContext {
   mut white_texture : @asset.Handle[@asset.Image]
@@ -105,9 +382,12 @@ pub struct UiContext {
   mut camera_scale : Float
   mut pointer_pos : @math.Vec2?
   mut pointer_down : Bool
+  mut pointer_just_pressed : Bool
+  mut pointer_just_released : Bool
+  mut wheel_delta : @math.Vec2
 }
 pub fn UiContext::default() -> Self
-pub fn UiContext::new(@asset.Handle[@asset.Image], @math.Vec2, @math.Vec2, @core.Entity?, @math.Transform, Float, @math.Vec2?, Bool) -> Self
+pub fn UiContext::new(@asset.Handle[@asset.Image], @math.Vec2, @math.Vec2, @core.Entity?, @math.Transform, Float, @math.Vec2?, Bool, pointer_just_pressed? : Bool, pointer_just_released? : Bool, wheel_delta? : @math.Vec2) -> Self
 
 pub struct UiImage {
   image : @asset.Handle[@asset.Image]
@@ -132,12 +412,17 @@ pub struct UiRoot {
 }
 pub fn UiRoot::default() -> Self
 
-pub struct UiSize {
-  width : Val
-  height : Val
+pub struct UiScale {
+  value : Float
 }
-pub fn UiSize::default() -> Self
-pub fn UiSize::new(Val, Val) -> Self
+pub fn UiScale::new(Float) -> Self
+
+pub struct UiStack {
+  mut uinodes : Array[@core.Entity]
+}
+pub fn UiStack::clear(Ref[Self]) -> Unit
+pub fn UiStack::default() -> Self
+pub fn UiStack::uinodes(Self) -> Array[@core.Entity]
 
 pub struct UiText {
   handle : @text.TextHandle
@@ -148,7 +433,16 @@ pub(all) enum Val {
   Auto
   Px(Float)
   Percent(Float)
+  Vw(Float)
+  Vh(Float)
+  VMin(Float)
+  VMax(Float)
 }
+
+pub struct ZIndex {
+  value : Int
+}
+pub fn ZIndex::new(Int) -> Self
 
 // Type aliases
 
@@ -157,8 +451,24 @@ pub(open) trait HasRes_UiContext {
   get_ui_context_resource(Self) -> @core.Resource[UiContext]
 }
 
+pub(open) trait HasRes_UiScale {
+  get_ui_scale_resource(Self) -> @core.Resource[UiScale]
+}
+
+pub(open) trait HasRes_UiStack {
+  get_ui_stack_resource(Self) -> @core.Resource[UiStack]
+}
+
+pub(open) trait Has_AccessibilityLabel {
+  get_accessibility_label_store(Self) -> @core.ComponentStore[AccessibilityLabel]
+}
+
 pub(open) trait Has_BackgroundColor {
   get_background_color_store(Self) -> @core.ComponentStore[BackgroundColor]
+}
+
+pub(open) trait Has_BorderColor {
+  get_border_color_store(Self) -> @core.ComponentStore[BorderColor]
 }
 
 pub(open) trait Has_Button {
@@ -169,12 +479,32 @@ pub(open) trait Has_ButtonColors {
   get_button_colors_store(Self) -> @core.ComponentStore[ButtonColors]
 }
 
+pub(open) trait Has_CalculatedClip {
+  get_calculated_clip_store(Self) -> @core.ComponentStore[CalculatedClip]
+}
+
+pub(open) trait Has_FocusPolicy {
+  get_focus_policy_store(Self) -> @core.ComponentStore[FocusPolicy]
+}
+
+pub(open) trait Has_GlobalZIndex {
+  get_global_z_index_store(Self) -> @core.ComponentStore[GlobalZIndex]
+}
+
 pub(open) trait Has_Interaction {
   get_interaction_store(Self) -> @core.ComponentStore[Interaction]
 }
 
-pub(open) trait Has_Style {
-  get_style_store(Self) -> @core.ComponentStore[Style]
+pub(open) trait Has_Node {
+  get_node_store(Self) -> @core.ComponentStore[Node]
+}
+
+pub(open) trait Has_RelativeCursorPosition {
+  get_relative_cursor_position_store(Self) -> @core.ComponentStore[RelativeCursorPosition]
+}
+
+pub(open) trait Has_ScrollPosition {
+  get_scroll_position_store(Self) -> @core.ComponentStore[ScrollPosition]
 }
 
 pub(open) trait Has_UiImage {
@@ -191,5 +521,9 @@ pub(open) trait Has_UiRoot {
 
 pub(open) trait Has_UiText {
   get_ui_text_store(Self) -> @core.ComponentStore[UiText]
+}
+
+pub(open) trait Has_ZIndex {
+  get_z_index_store(Self) -> @core.ComponentStore[ZIndex]
 }
 

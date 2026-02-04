@@ -1,0 +1,61 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/a11y"
+
+import {
+  "Milky2018/mgstudio/accesskit",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+}
+
+// Values
+pub fn a11y_host_begin_update(Int) -> Unit
+
+pub fn a11y_host_end_update() -> Unit
+
+pub fn a11y_host_push_node(Int, Int, Int, Float, Float, Float, Float, Int, Int) -> Unit
+
+pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(W) -> Unit
+
+pub let a11y_set : String
+
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] ensure_a11y_state(W) -> Unit
+
+pub let host_action_default_bit : Int
+
+pub let host_action_focus_bit : Int
+
+pub let host_role_button : Int
+
+pub let host_role_container : Int
+
+pub let host_role_label : Int
+
+pub let host_role_window : Int
+
+pub fn node_id_for_entity(@core.Entity) -> Int
+
+// Errors
+
+// Types and methods
+pub struct A11yState {
+  mut last_update : @accesskit.TreeUpdate?
+  mut pending_actions : Array[@accesskit.ActionRequest]
+}
+pub fn A11yState::default() -> Self
+pub fn A11yState::drain_actions(Ref[Self]) -> Array[@accesskit.ActionRequest]
+pub fn A11yState::push_action(Ref[Self], @accesskit.ActionRequest) -> Unit
+pub fn A11yState::set_update(Ref[Self], @accesskit.TreeUpdate) -> Unit
+
+// Type aliases
+
+// Traits
+pub(open) trait HasRes_A11yState {
+  get_a11y_state_resource(Self) -> @core.Resource[A11yState]
+}
+

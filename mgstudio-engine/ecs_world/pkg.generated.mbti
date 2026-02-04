@@ -2,12 +2,14 @@
 package "Milky2018/mgstudio/ecs_world"
 
 import {
+  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/physics2d",
   "Milky2018/mgstudio/physics3d",
+  "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",
@@ -23,13 +25,16 @@ pub struct World {
   entities : @core.Entities
   mut change_tick : Int
   mut system_context : @core.SystemContext
-  style : @core.ComponentStore[@ui.Style]
+  node : @core.ComponentStore[@ui.Node]
   button : @core.ComponentStore[@ui.Button]
   ui_root : @core.ComponentStore[@ui.UiRoot]
   ui_text : @core.ComponentStore[@ui.UiText]
+  z_index : @core.ComponentStore[@ui.ZIndex]
   ui_image : @core.ComponentStore[@ui.UiImage]
   ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
+  border_color : @core.ComponentStore[@ui.BorderColor]
+  focus_policy : @core.ComponentStore[@ui.FocusPolicy]
   interaction : @core.ComponentStore[@ui.Interaction]
   ccd2d : @core.ComponentStore[@physics2d.Ccd2d]
   anchor : @core.ComponentStore[@render2d.Anchor]
@@ -37,8 +42,11 @@ pub struct World {
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
+  global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
   parent : @core.ComponentStore[@hierarchy.Parent]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
+  calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
+  scroll_position : @core.ComponentStore[@ui.ScrollPosition]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
@@ -51,11 +59,13 @@ pub struct World {
   velocity2d : @core.ComponentStore[@physics2d.Velocity2d]
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
+  scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
   rigid_body2d : @core.ComponentStore[@physics2d.RigidBody2d]
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   visibility : @core.ComponentStore[@visibility.Visibility]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
@@ -64,6 +74,7 @@ pub struct World {
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
+  relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
@@ -76,8 +87,13 @@ pub struct World {
   rapier_collider_handle3d : @core.ComponentStore[@physics3d.RapierColliderHandle3d]
   restitution_combine_rule2d : @core.ComponentStore[@physics2d.RestitutionCombineRule2d]
   contact_force_event_threshold2d : @core.ComponentStore[@physics2d.ContactForceEventThreshold2d]
+  res_ui_scale : @core.Resource[@ui.UiScale]
+  res_ui_stack : @core.Resource[@ui.UiStack]
   res_ui_context : @core.Resource[@ui.UiContext]
+  res_a11y_state : @core.Resource[@a11y.A11yState]
+  res_picking_state : @core.Resource[@picking.PickingState]
   res_render_state : @core.Resource[@render2d.RenderState]
+  res_picking_events : @core.Resource[@picking.PickingEvents]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -88,6 +104,7 @@ pub struct World {
 pub fn World::despawn(Self, @core.Entity) -> Unit raise @core.EntityError
 pub fn World::new() -> Self
 pub fn World::spawn_empty(Self) -> @core.Entity
+pub impl @a11y.HasRes_A11yState for World
 pub impl @asset.Has_TextureAtlas for World
 pub impl @core.ChangeTickWorld for World
 pub impl @core.SpawnWorld for World
@@ -127,6 +144,8 @@ pub impl @physics3d.Has_RapierBodyHandle3d for World
 pub impl @physics3d.Has_RapierColliderHandle3d for World
 pub impl @physics3d.Has_RigidBody3d for World
 pub impl @physics3d.Has_Velocity3d for World
+pub impl @picking.HasRes_PickingEvents for World
+pub impl @picking.HasRes_PickingState for World
 pub impl @render2d.HasRes_RenderState for World
 pub impl @render2d.Has_Anchor for World
 pub impl @render2d.Has_Camera for World
@@ -137,18 +156,29 @@ pub impl @render2d.Has_Mesh2d for World
 pub impl @render2d.Has_Projection for World
 pub impl @render2d.Has_RenderLayers for World
 pub impl @render2d.Has_RenderTarget for World
+pub impl @render2d.Has_ScissorRect for World
 pub impl @render2d.Has_Sprite for World
 pub impl @transform.Has_GlobalTransform for World
 pub impl @ui.HasRes_UiContext for World
+pub impl @ui.HasRes_UiScale for World
+pub impl @ui.HasRes_UiStack for World
+pub impl @ui.Has_AccessibilityLabel for World
 pub impl @ui.Has_BackgroundColor for World
+pub impl @ui.Has_BorderColor for World
 pub impl @ui.Has_Button for World
 pub impl @ui.Has_ButtonColors for World
+pub impl @ui.Has_CalculatedClip for World
+pub impl @ui.Has_FocusPolicy for World
+pub impl @ui.Has_GlobalZIndex for World
 pub impl @ui.Has_Interaction for World
-pub impl @ui.Has_Style for World
+pub impl @ui.Has_Node for World
+pub impl @ui.Has_RelativeCursorPosition for World
+pub impl @ui.Has_ScrollPosition for World
 pub impl @ui.Has_UiImage for World
 pub impl @ui.Has_UiLayout for World
 pub impl @ui.Has_UiRoot for World
 pub impl @ui.Has_UiText for World
+pub impl @ui.Has_ZIndex for World
 pub impl @visibility.Has_InheritedVisibility for World
 pub impl @visibility.Has_ViewVisibility for World
 pub impl @visibility.Has_Visibility for World

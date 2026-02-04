@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/taffy"
+
+import {
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Layout {
+  size : @math.Vec2
+  location : @math.Vec2
+}
+pub fn Layout::default() -> Self
+
+pub struct Taffy {
+  mut next_id : Int
+}
+pub fn Taffy::compute_layout(Self, Int, _available_space? : @math.Vec2) -> Unit
+pub fn Taffy::new() -> Self
+pub fn Taffy::new_leaf(Self) -> Int
+pub fn Taffy::new_with_children(Self, Array[Int]) -> Int
+
+// Type aliases
+pub type NodeId = Int
+
+// Traits
+

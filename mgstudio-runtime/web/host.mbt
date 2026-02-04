@@ -549,6 +549,8 @@ extern "js" fn a11y_begin_update_js(canvas : @js.Any) -> @js.Any =
   #|   container.style.height = `${rect.height}px`
   #|   // Clear previous children.
   #|   while (container.firstChild) container.removeChild(container.firstChild)
+  #|   // Reset per-frame node lookup (used for parenting).
+  #|   globalThis.__mgstudio_a11y_nodes = new Map()
   #|   return container
   #| }
 
@@ -556,6 +558,7 @@ extern "js" fn a11y_begin_update_js(canvas : @js.Any) -> @js.Any =
 extern "js" fn a11y_push_node_js(
   container : @js.Any,
   node_id : Int,
+  parent_id : Int,
   role_id : Int,
   x : Double,
   y : Double,
@@ -564,9 +567,10 @@ extern "js" fn a11y_push_node_js(
   name : String,
   actions_mask : Int,
 ) -> Unit =
-  #| (container, nodeId, roleId, x, y, w, h, name, actionsMask) => {
+  #| (container, nodeId, parentId, roleId, x, y, w, h, name, actionsMask) => {
   #|   if (!container) return
   #|   const id = Number(nodeId) | 0
+  #|   const pid = Number(parentId) | 0
   #|   const role = Number(roleId) | 0
   #|   const mask = Number(actionsMask) | 0
   #|   const el = (role === 3) ? document.createElement("button") : document.createElement("div")
@@ -611,7 +615,12 @@ extern "js" fn a11y_push_node_js(
   #|       }
   #|     })
   #|   }
-  #|   container.appendChild(el)
+  #|   const nodes = globalThis.__mgstudio_a11y_nodes
+  #|   if (nodes && typeof nodes.set === "function") {
+  #|     nodes.set(id, el)
+  #|   }
+  #|   const parentEl = (nodes && typeof nodes.get === "function") ? nodes.get(pid) : null
+  #|   ;(parentEl || container).appendChild(el)
   #| }
 
 ///|
@@ -3040,7 +3049,7 @@ pub fn create_host(
     @js.from_fn1(fn(args) {
       guard state.a11y_container is Some(container) else { return }
       let node_id = to_int(arg_number(args, 0, 0))
-      let _parent_id = to_int(arg_number(args, 1, 0)) |> ignore
+      let parent_id = to_int(arg_number(args, 1, 0))
       let role_id = to_int(arg_number(args, 2, 0))
       let x = arg_number(args, 3, 0)
       let y = arg_number(args, 4, 0)
@@ -3052,6 +3061,7 @@ pub fn create_host(
       a11y_push_node_js(
         container,
         node_id,
+        parent_id,
         role_id,
         x,
         y,

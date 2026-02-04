@@ -13,6 +13,8 @@ pub fn host_gpu_begin_frame(HostGpuSurface) -> HostGpuFrame
 
 pub fn host_gpu_begin_pass(Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit
 
+pub fn host_gpu_clear_scissor() -> Unit
+
 pub fn host_gpu_configure_surface(HostGpuDevice, HostGpuSurface, Int, Int) -> Unit
 
 pub fn host_gpu_create_mesh_capsule(Float, Float, Int) -> Int
@@ -40,6 +42,8 @@ pub fn host_gpu_end_pass() -> Unit
 pub fn host_gpu_get_queue(HostGpuDevice) -> HostGpuQueue
 
 pub fn host_gpu_request_device() -> HostGpuDevice
+
+pub fn host_gpu_set_scissor(Int, Int, Int, Int) -> Unit
 
 pub fn host_window_create(Int, Int, String) -> HostWindow
 

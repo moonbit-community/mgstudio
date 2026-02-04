@@ -1,0 +1,81 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/picking"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+pub fn[W : HasRes_PickingState + @core.ChangeTickWorld] ensure_picking_state_system(W) -> Unit
+
+pub fn[W : HasRes_PickingEvents + @core.ChangeTickWorld] picking_clear_system(W) -> Unit
+
+pub fn[W : HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld] picking_plugin(@app.App[W]) -> @app.App[W]
+
+pub let picking_set : String
+
+// Errors
+
+// Types and methods
+pub struct PickingEvents {
+  mut events : Array[PointerEvent]
+}
+pub fn PickingEvents::default() -> Self
+pub fn PickingEvents::drain(Ref[Self]) -> Array[PointerEvent]
+pub fn PickingEvents::push(Ref[Self], PointerEvent) -> Unit
+
+pub struct PickingState {
+  mut hovered : @core.Entity?
+  mut pressed : @core.Entity?
+  mut last_position : @math.Vec2?
+}
+pub fn PickingState::default() -> Self
+pub fn PickingState::set_hovered(Ref[Self], @core.Entity?) -> Unit
+pub fn PickingState::set_last_position(Ref[Self], @math.Vec2?) -> Unit
+pub fn PickingState::set_pressed(Ref[Self], @core.Entity?) -> Unit
+
+pub(all) enum PointerButton {
+  Primary
+  Secondary
+  Middle
+}
+pub impl Eq for PointerButton
+pub impl Show for PointerButton
+
+pub struct PointerEvent {
+  pointer : Int
+  kind : PointerEventKind
+  position : @math.Vec2
+  target : @core.Entity?
+}
+pub fn PointerEvent::new(Int, PointerEventKind, @math.Vec2, target? : @core.Entity?) -> Self
+
+pub(all) enum PointerEventKind {
+  Move
+  Enter
+  Leave
+  Down
+  Up
+  Click
+}
+pub impl Eq for PointerEventKind
+pub impl Show for PointerEventKind
+
+// Type aliases
+pub type PointerId = Int
+
+// Traits
+pub(open) trait HasRes_PickingEvents {
+  get_picking_events_resource(Self) -> @core.Resource[PickingEvents]
+}
+
+pub(open) trait HasRes_PickingState {
+  get_picking_state_resource(Self) -> @core.Resource[PickingState]
+}
+

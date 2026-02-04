@@ -39,6 +39,7 @@ test "ui: interaction updates component state" {
     tick,
   )
 
+  ui_stack_system(world)
   ui_interaction_system(world)
 
   let s0 = Has_Interaction::get_interaction_store(world).get(e).unwrap()
@@ -56,6 +57,7 @@ test "ui: interaction updates component state" {
     true,
   )
   HasRes_UiContext::get_ui_context_resource(world).insert(ctx2, tick)
+  ui_stack_system(world)
   ui_interaction_system(world)
   let s1 = Has_Interaction::get_interaction_store(world).get(e).unwrap()
   inspect(s1 == Interaction::Pressed, content="true")
@@ -72,6 +74,7 @@ test "ui: interaction updates component state" {
     false,
   )
   HasRes_UiContext::get_ui_context_resource(world).insert(ctx3, tick)
+  ui_stack_system(world)
   ui_interaction_system(world)
   let s2 = Has_Interaction::get_interaction_store(world).get(e).unwrap()
   inspect(s2 == Interaction::None, content="true")

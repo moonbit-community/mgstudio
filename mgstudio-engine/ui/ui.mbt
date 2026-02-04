@@ -335,6 +335,16 @@ pub fn UiStack::default() -> UiStack {
 }
 
 ///|
+pub fn UiStack::uinodes(self : UiStack) -> Array[@core.Entity] {
+  self.uinodes
+}
+
+///|
+pub fn UiStack::clear(self : Ref[UiStack]) -> Unit {
+  self.val.uinodes = []
+}
+
+///|
 #ecs.component
 pub struct ScrollPosition {
   offset_x : Float
@@ -720,6 +730,9 @@ pub let ui_set_scroll : @app.SystemSet = @app.system_set("mgstudio.ui.scroll")
 
 ///|
 pub let ui_set_clip : @app.SystemSet = @app.system_set("mgstudio.ui.clip")
+
+///|
+pub let ui_set_stack : @app.SystemSet = @app.system_set("mgstudio.ui.stack")
 
 ///|
 pub let ui_set_a11y : @app.SystemSet = @app.system_set("mgstudio.ui.a11y")
@@ -1208,188 +1221,328 @@ pub fn[
     }
   }
 
-  fn layout_subtree(
-    entity : @core.Entity,
-    parent_rect : @math.Rect,
-    assigned_rect : @math.Rect?,
-  ) -> Unit {
-    let node_opt = node_store.get(entity)
-    let self_rect = match (assigned_rect, node_opt) {
-      (Some(r), _) => r
-      (None, Some(node)) =>
-        match node.position_type {
-          PositionType::Absolute =>
-            node_rect_absolute(
-              parent_rect,
-              node,
-              ctx0.viewport_size,
-              auto_size_for_entity(entity),
-            )
-          PositionType::Relative => parent_rect
+  fn f2d(v : Float) -> Double { v.to_double() }
+
+  fn d2f(v : Double) -> Float { Float::from_double(v) }
+
+  fn dim_for_val(val : Val) -> @moon_taffy.Dimension {
+    match val {
+      Auto => @moon_taffy.auto()
+      Px(px) => @moon_taffy.length(f2d(px))
+      Percent(p) => @moon_taffy.percent(f2d(p))
+      Vw(p) => @moon_taffy.length(f2d(ctx0.viewport_size.x * (p / 100.0F)))
+      Vh(p) => @moon_taffy.length(f2d(ctx0.viewport_size.y * (p / 100.0F)))
+      VMin(p) => {
+        let m = if ctx0.viewport_size.x < ctx0.viewport_size.y {
+          ctx0.viewport_size.x
+        } else {
+          ctx0.viewport_size.y
         }
-      (None, None) => parent_rect
+        @moon_taffy.length(f2d(m * (p / 100.0F)))
+      }
+      VMax(p) => {
+        let m = if ctx0.viewport_size.x > ctx0.viewport_size.y {
+          ctx0.viewport_size.x
+        } else {
+          ctx0.viewport_size.y
+        }
+        @moon_taffy.length(f2d(m * (p / 100.0F)))
+      }
     }
-    // Container style defaults (mirrors Bevy defaults loosely; only the subset we implement matters).
-    let self_node = match node_opt {
-      Some(s) => s
+  }
+
+  fn rect_for_uirect(r : UiRect) -> @moon_taffy.Rect[@moon_taffy.Dimension] {
+    @moon_taffy.Rect::new(
+      left=dim_for_val(r.left),
+      right=dim_for_val(r.right),
+      top=dim_for_val(r.top),
+      bottom=dim_for_val(r.bottom),
+    )
+  }
+
+  fn size_for_vals(w : Val, h : Val) -> @moon_taffy.Size[@moon_taffy.Dimension] {
+    @moon_taffy.Size::new(width=dim_for_val(w), height=dim_for_val(h))
+  }
+
+  fn overflow_axis_to_taffy(axis : OverflowAxis) -> @moon_taffy.Overflow {
+    match axis {
+      OverflowAxis::Visible => @moon_taffy.overflow_visible()
+      OverflowAxis::Hidden => @moon_taffy.overflow_hidden()
+      OverflowAxis::Scroll => @moon_taffy.overflow_scroll()
+      OverflowAxis::Clip => @moon_taffy.overflow_clip()
+    }
+  }
+
+  fn overflow_to_taffy(overflow : Overflow) -> @moon_taffy.Point[@moon_taffy.Overflow] {
+    @moon_taffy.Point::new(
+      x=overflow_axis_to_taffy(overflow.x),
+      y=overflow_axis_to_taffy(overflow.y),
+    )
+  }
+
+  fn display_to_taffy(display : Display) -> @moon_taffy.Display {
+    match display {
+      Display::Block => @moon_taffy.display_block()
+      Display::Flex => @moon_taffy.display_flex()
+      Display::Grid => @moon_taffy.display_grid()
+      Display::None => @moon_taffy.display_none()
+    }
+  }
+
+  fn position_to_taffy(position_type : PositionType) -> @moon_taffy.Position {
+    match position_type {
+      PositionType::Relative => @moon_taffy.position_relative()
+      PositionType::Absolute => @moon_taffy.position_absolute()
+    }
+  }
+
+  fn flex_direction_to_taffy(dir : FlexDirection) -> @moon_taffy.FlexDirection {
+    match dir {
+      // moon_taffy v0.1.0 only exposes constructors for (Row, Column) directions.
+      FlexDirection::Row => @moon_taffy.flex_direction_row()
+      FlexDirection::RowReverse => @moon_taffy.flex_direction_row()
+      FlexDirection::Column => @moon_taffy.flex_direction_column()
+      FlexDirection::ColumnReverse => @moon_taffy.flex_direction_column()
+    }
+  }
+
+  fn flex_wrap_to_taffy(wrap : FlexWrap) -> @moon_taffy.FlexWrap {
+    match wrap {
+      // moon_taffy v0.1.0 only exposes constructors for (NoWrap, Wrap).
+      FlexWrap::NoWrap => @moon_taffy.flex_wrap_no_wrap()
+      FlexWrap::Wrap => @moon_taffy.flex_wrap_wrap()
+      FlexWrap::WrapReverse => @moon_taffy.flex_wrap_wrap()
+    }
+  }
+
+  fn justify_content_to_taffy(content : JustifyContent) -> @moon_taffy.AlignContent {
+    match content {
+      // moon_taffy v0.1.0 only exposes constructors for (FlexStart, FlexEnd, Center).
+      JustifyContent::Center => @moon_taffy.justify_content_center()
+      JustifyContent::End => @moon_taffy.justify_content_flex_end()
+      JustifyContent::FlexEnd => @moon_taffy.justify_content_flex_end()
+      _ => @moon_taffy.justify_content_flex_start()
+    }
+  }
+
+  fn entity_key(e : @core.Entity) -> (Int, Int) { (e.id, e.generation) }
+
+  fn style_for_entity(entity : @core.Entity, is_root : Bool) -> @moon_taffy.Style {
+    let node = match node_store.get(entity) {
+      Some(v) => v
       None => Node::default()
     }
-    let scroll = match scroll_store.get(entity) {
-      Some(v) => v
-      None => ScrollPosition::default()
+
+    let mut style = @moon_taffy.Style::default()
+      .with_display(display_to_taffy(node.display))
+      .with_position(position_to_taffy(node.position_type))
+      .with_inset(
+        @moon_taffy.Rect::new(
+          left=dim_for_val(node.left),
+          right=dim_for_val(node.right),
+          top=dim_for_val(node.top),
+          bottom=dim_for_val(node.bottom),
+        ),
+      )
+      .with_margin(rect_for_uirect(node.margin))
+      .with_padding(rect_for_uirect(node.padding))
+      .with_border(rect_for_uirect(node.border))
+      .with_size(size_for_vals(node.width, node.height))
+      .with_min_size(size_for_vals(node.min_width, node.min_height))
+      .with_max_size(size_for_vals(node.max_width, node.max_height))
+      .with_flex_direction(flex_direction_to_taffy(node.flex_direction))
+      .with_flex_wrap(flex_wrap_to_taffy(node.flex_wrap))
+      .with_flex_grow(node.flex_grow.to_double())
+      .with_flex_shrink(node.flex_shrink.to_double())
+      .with_flex_basis(dim_for_val(node.flex_basis))
+      .with_justify_content(justify_content_to_taffy(node.justify_content))
+      .with_gap(
+        @moon_taffy.Size::new(
+          width=dim_for_val(node.column_gap),
+          height=dim_for_val(node.row_gap),
+        ),
+      )
+      .with_overflow(overflow_to_taffy(node.overflow))
+
+    if node.aspect_ratio is Some(r) {
+      style = style.with_aspect_ratio(r.to_double())
     }
-    let rect_for_children = @math.Rect::new(
-      @math.Vec2::new(
-        self_rect.min.x - scroll.offset_x,
-        self_rect.min.y - scroll.offset_y,
-      ),
-      @math.Vec2::new(
-        self_rect.max.x - scroll.offset_x,
-        self_rect.max.y - scroll.offset_y,
-      ),
+
+    if is_root {
+      style = style.with_position(@moon_taffy.position_relative())
+        .with_size(
+          @moon_taffy.Size::new(
+            width=@moon_taffy.length(f2d(ctx0.viewport_size.x)),
+            height=@moon_taffy.length(f2d(ctx0.viewport_size.y)),
+          ),
+        )
+    }
+
+    style
+  }
+
+  fn layout_root(root : @core.Entity) -> Unit {
+    let taffy = @moon_taffy.TaffyTree::new()
+    let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap::new()
+    let node_to_entity : @hashmap.HashMap[Int, @core.Entity] = @hashmap.HashMap::new()
+
+    fn build(entity : @core.Entity, is_root : Bool) -> Int {
+      let style = style_for_entity(entity, is_root)
+      let child_ids : Array[Int] = []
+      if children_store.get(entity) is Some(children) {
+        for child in children.entities {
+          child_ids.push(build(child, false))
+        }
+      }
+      let id =
+        if child_ids.length() == 0 {
+          taffy.new_leaf(style)
+        } else {
+          taffy.new_with_children(style, child_ids)
+        }
+      entity_to_node.set(entity_key(entity), id)
+      node_to_entity.set(id, entity)
+      id
+    }
+
+    let root_node_id = build(root, true)
+    let avail = @moon_taffy.Size::new(
+      width=@moon_taffy.available_space_definite(f2d(ctx0.viewport_size.x)),
+      height=@moon_taffy.available_space_definite(f2d(ctx0.viewport_size.y)),
     )
 
-    // Update UiLayout when this node has an explicit Node.
-    if node_opt is Some(_) {
-      let layout = UiLayout::new(self_rect)
+    fn measure(
+      _known : @moon_taffy.Size[Double?],
+      _available : @moon_taffy.Size[@moon_taffy.AvailableSpace],
+      node_id : Int,
+      _ctx : Unit?,
+      _style : @moon_taffy.Style,
+    ) -> @moon_taffy.Size[Double] {
+      match node_to_entity.get(node_id) {
+        Some(entity) => {
+          let sz = auto_size_for_entity(entity)
+          @moon_taffy.Size::new(width=f2d(sz.x), height=f2d(sz.y))
+        }
+        None => @moon_taffy.Size::zero()
+      }
+    }
+
+    let compute_res = try? taffy.compute_layout_with_measure(root_node_id, avail, measure)
+    match compute_res {
+      Ok(_) => ()
+      Err(_) => return
+    }
+
+    fn apply_layout(entity : @core.Entity, parent_rect : @math.Rect) -> Unit {
+      guard entity_to_node.get(entity_key(entity)) is Some(node_id) else { return }
+      let layout_res = try? taffy.layout(node_id)
+      guard layout_res is Ok(tl) else { return }
+      let parent_origin = parent_rect.min
+      let loc = @math.Vec2::new(d2f(tl.location.x), d2f(tl.location.y))
+      let mut size = @math.Vec2::new(d2f(tl.size.width), d2f(tl.size.height))
+      let mut min = @math.Vec2::new(parent_origin.x + loc.x, parent_origin.y + loc.y)
+      let mut max = @math.Vec2::new(min.x + size.x, min.y + size.y)
+      let mut rect = @math.Rect::new(min, max)
+
+      // Workaround: moon_taffy v0.1.0 currently does not apply absolute `inset`
+      // offsets (left/top/right/bottom). We re-apply Bevy-style absolute layout
+      // here so existing UI code can depend on it.
+      match node_store.get(entity) {
+        Some(node) =>
+          match node.position_type {
+            PositionType::Absolute => {
+              rect = node_rect_absolute(
+                parent_rect,
+                node,
+                ctx0.viewport_size,
+                auto_size_for_entity(entity),
+              )
+              size = rect.size()
+              min = rect.min
+              max = rect.max
+            }
+            _ => ()
+          }
+        None => ()
+      }
+
+      let layout = UiLayout::new(rect)
       if layout_store.contains(entity) {
         layout_store.set(entity, layout, tick) |> ignore
       } else {
         layout_store.insert(entity, layout, tick)
       }
-    }
 
-    // Update render2d / transform for UI nodes.
-    if node_opt is Some(_node) {
-      let z_index = match z_store.get(entity) {
-        Some(v) => v.value
-        None => 0
-      }
-      let transform = ui_world_transform(ctx0, self_rect, z_index)
-      if transform_store.contains(entity) {
-        transform_store.set(entity, transform, tick) |> ignore
-      } else {
-        transform_store.insert(entity, transform, tick)
-      }
-      let layers = ensure_layers_default(world, entity)
-      ensure_visibility_defaults(world, entity)
-
-      if should_draw_node(sprite_store, bg_store, img_store, button_store, entity) {
-        let texture = match img_store.get(entity) {
-          Some(v) => v.image
-          None => ctx0.white_texture
+      // Update render2d / transform for UI nodes (Node component required).
+      if node_store.contains(entity) {
+        let z_index = match z_store.get(entity) {
+          Some(v) => v.value
+          None => 0
         }
-        let size = self_rect.size()
-        let button_colors_opt = button_store.get(entity)
-        let color = match button_colors_opt {
-          Some(colors) => button_color_for_state(colors, interaction_store.get(entity))
-          None =>
-            match bg_store.get(entity) {
-              Some(v) => v.color
-              None => @render2d.Color::white()
-            }
-        }
-        let sprite = @render2d.Sprite::from_image(texture)
-          .with_color(color)
-          .with_custom_size(Some(size))
-        if sprite_store.contains(entity) {
-          sprite_store.set(entity, sprite, tick) |> ignore
+        let transform = ui_world_transform(ctx0, rect, z_index)
+        if transform_store.contains(entity) {
+          transform_store.set(entity, transform, tick) |> ignore
         } else {
-          sprite_store.insert(entity, sprite, tick)
+          transform_store.insert(entity, transform, tick)
+        }
+        let layers = ensure_layers_default(world, entity)
+        ensure_visibility_defaults(world, entity)
+
+        if should_draw_node(sprite_store, bg_store, img_store, button_store, entity) {
+          let texture = match img_store.get(entity) {
+            Some(v) => v.image
+            None => ctx0.white_texture
+          }
+          let button_colors_opt = button_store.get(entity)
+          let color = match button_colors_opt {
+            Some(colors) => button_color_for_state(colors, interaction_store.get(entity))
+            None =>
+              match bg_store.get(entity) {
+                Some(v) => v.color
+                None => @render2d.Color::white()
+              }
+          }
+          let sprite = @render2d.Sprite::from_image(texture)
+            .with_color(color)
+            .with_custom_size(Some(size))
+          if sprite_store.contains(entity) {
+            sprite_store.set(entity, sprite, tick) |> ignore
+          } else {
+            sprite_store.insert(entity, sprite, tick)
+          }
+        }
+
+        // Sync text handles (state-based text pipeline) for label nodes.
+        if ui_text_store.get(entity) is Some(text_node) {
+          @text.text_set_y_axis(text_node.handle, @text.YAxisOrientation::TopToBottom)
+          @text.text_set_ui_node_size(text_node.handle, Some(size))
+          @text.text_set_transform(text_node.handle, transform)
+          @text.text_set_layers(text_node.handle, layers)
         }
       }
 
-      // Sync text handles (state-based text pipeline) for label nodes.
-      if ui_text_store.get(entity) is Some(text_node) {
-        let text_node_size = self_rect.size()
-        // Bevy UI parity: glyph positions are laid out in top-left origin (+Y down).
-        // The text renderer uses `ui_node_size` to translate from node center to node top-left.
-        @text.text_set_y_axis(text_node.handle, @text.YAxisOrientation::TopToBottom)
-        @text.text_set_ui_node_size(text_node.handle, Some(text_node_size))
-        @text.text_set_transform(text_node.handle, transform)
-        @text.text_set_layers(text_node.handle, layers)
+      let scroll = match scroll_store.get(entity) {
+        Some(v) => v
+        None => ScrollPosition::default()
+      }
+      let child_rect = @math.Rect::new(
+        @math.Vec2::new(rect.min.x - scroll.offset_x, rect.min.y - scroll.offset_y),
+        @math.Vec2::new(rect.max.x - scroll.offset_x, rect.max.y - scroll.offset_y),
+      )
+      if children_store.get(entity) is Some(children) {
+        for child in children.entities {
+          apply_layout(child, child_rect)
+        }
       }
     }
 
-    // Traverse children.
-    if children_store.get(entity) is Some(children) {
-      // First pass: layout absolute-positioned children immediately; collect relative children
-      // for a minimal row-layout (Bevy-like defaults).
-      let relative_entities : Array[@core.Entity] = []
-      let relative_sizes : Array[@math.Vec2] = []
-      for child in children.entities {
-        match node_store.get(child) {
-          None => layout_subtree(child, rect_for_children, None)
-          Some(child_node) =>
-            match child_node.position_type {
-              PositionType::Absolute => {
-                let child_rect = node_rect_absolute(
-                  rect_for_children,
-                  child_node,
-                  ctx0.viewport_size,
-                  auto_size_for_entity(child),
-                )
-                layout_subtree(child, rect_for_children, Some(child_rect))
-              }
-              PositionType::Relative => {
-                let child_size = node_size(
-                  self_rect,
-                  child_node,
-                  ctx0.viewport_size,
-                  auto_size_for_entity(child),
-                )
-                relative_entities.push(child)
-                relative_sizes.push(child_size)
-              }
-            }
-        }
-      }
-
-      if relative_entities.length() > 0 {
-        let parent_size = self_rect.size()
-        let mut total_w = 0.0F
-        for i in 0..<relative_entities.length() {
-          total_w = total_w + relative_sizes[i].x
-        }
-        let mut start_x = 0.0F
-        match self_node.justify_content {
-          JustifyContent::FlexStart => start_x = 0.0F
-          JustifyContent::Center => {
-            let dx = (parent_size.x - total_w) / 2.0F
-            start_x = if dx < 0.0F { 0.0F } else { dx }
-          }
-          _ => start_x = 0.0F
-        }
-        let mut cursor_x = start_x
-        for i in 0..<relative_entities.length() {
-          let child = relative_entities[i]
-          let child_size = relative_sizes[i]
-          let mut y = 0.0F
-          match self_node.align_items {
-            AlignItems::FlexStart => y = 0.0F
-            AlignItems::Center => {
-              let dy = (parent_size.y - child_size.y) / 2.0F
-              y = if dy < 0.0F { 0.0F } else { dy }
-            }
-            _ => y = 0.0F
-          }
-          let min = @math.Vec2::new(
-            rect_for_children.min.x + cursor_x,
-            rect_for_children.min.y + y,
-          )
-          let max = @math.Vec2::new(min.x + child_size.x, min.y + child_size.y)
-          let child_rect = @math.Rect::new(min, max)
-          layout_subtree(child, rect_for_children, Some(child_rect))
-          cursor_x = cursor_x + child_size.x
-        }
-      }
-    }
+    apply_layout(root, root_rect)
   }
 
   let mut any_root = false
   root_store.for_each(fn(root, _marker) {
     any_root = true
-    layout_subtree(root, root_rect, None)
+    layout_root(root)
   })
   any_root |> ignore
 }
@@ -1397,19 +1550,21 @@ pub fn[
 ///| Update `ScrollPosition` using the current mouse wheel delta.
 ///
 /// This is an MVP scroll implementation:
-/// - Picks the topmost scroll container under the pointer by `ZIndex`.
+/// - Picks the topmost scroll container under the pointer by `UiStack`.
 /// - Applies wheel deltas directly to the stored offsets (clamped to >= 0).
 pub fn[
   W :
     HasRes_UiContext +
+    HasRes_UiStack +
     Has_Node +
-    Has_ZIndex +
     Has_UiLayout +
     Has_ScrollPosition +
     @core.ChangeTickWorld,
 ] ui_scroll_system(world : W) -> Unit {
   let res = HasRes_UiContext::get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
+  let stack_res = HasRes_UiStack::get_ui_stack_resource(world)
+  guard stack_res.get() is Some(stack0) else { return }
   guard ctx0.pointer_pos is Some(pointer) else { return }
   let delta = ctx0.wheel_delta
   if delta.x == 0.0F && delta.y == 0.0F {
@@ -1417,45 +1572,33 @@ pub fn[
   }
 
   let node_store = Has_Node::get_node_store(world)
-  let z_store = Has_ZIndex::get_z_index_store(world)
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let scroll_store = Has_ScrollPosition::get_scroll_position_store(world)
 
-  let mut best_entity : @core.Entity? = None
-  let mut best_z = 0
-
-  scroll_store.for_each(fn(entity, _scroll) {
-    guard layout_store.get(entity) is Some(layout) else { return }
-    guard node_store.get(entity) is Some(node) else { return }
+  let mut target : @core.Entity? = None
+  for i in 0..<stack0.uinodes.length() {
+    let idx = stack0.uinodes.length() - 1 - i
+    let entity = stack0.uinodes[idx]
+    if !scroll_store.contains(entity) {
+      continue
+    }
+    guard layout_store.get(entity) is Some(layout) else { continue }
+    guard node_store.get(entity) is Some(node) else { continue }
     if !(layout.rect.contains(pointer)) {
-      return
+      continue
     }
     let can_scroll = node.overflow.x == OverflowAxis::Scroll ||
       node.overflow.y == OverflowAxis::Scroll
     if !can_scroll {
-      return
+      continue
     }
-    let z = match z_store.get(entity) {
-      Some(v) => v.value
-      None => 0
-    }
-    match best_entity {
-      None => {
-        best_entity = Some(entity)
-        best_z = z
-      }
-      Some(_) => {
-        if z >= best_z {
-          best_entity = Some(entity)
-          best_z = z
-        }
-      }
-    }
-  })
+    target = Some(entity)
+    break
+  }
 
-  guard best_entity is Some(target) else { return }
+  guard target is Some(target_e) else { return }
   let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let prev = match scroll_store.get(target) {
+  let prev = match scroll_store.get(target_e) {
     Some(v) => v
     None => ScrollPosition::default()
   }
@@ -1464,10 +1607,10 @@ pub fn[
   if next_x < 0.0F { next_x = 0.0F }
   if next_y < 0.0F { next_y = 0.0F }
   let next = ScrollPosition::{ offset_x: next_x, offset_y: next_y }
-  if scroll_store.contains(target) {
-    scroll_store.set(target, next, tick) |> ignore
+  if scroll_store.contains(target_e) {
+    scroll_store.set(target_e, next, tick) |> ignore
   } else {
-    scroll_store.insert(target, next, tick)
+    scroll_store.insert(target_e, next, tick)
   }
 }
 
@@ -1570,45 +1713,222 @@ pub fn[
   })
 }
 
+///| Build `UiStack` ordering (back-to-front), aligned with Bevy `ui_stack_system`.
+///
+/// Roots are:
+/// - Any UI entity with `UiLayout` and no `Parent`
+/// - Any entity with `GlobalZIndex` and `UiLayout` (even if parented)
+/// - Any entity tagged `UiRoot` (compat with older code paths)
+///
+/// Children are visited in depth-first order, sorted by `ZIndex` ascending,
+/// while preserving insertion order for ties.
+pub fn[
+  W :
+    HasRes_UiStack +
+    Has_UiRoot +
+    Has_UiLayout +
+    Has_ZIndex +
+    Has_GlobalZIndex +
+    @hierarchy.Has_Children +
+    @hierarchy.Has_Parent +
+    @core.ChangeTickWorld,
+] ui_stack_system(world : W) -> Unit {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let res = HasRes_UiStack::get_ui_stack_resource(world)
+  if !res.is_present() {
+    res.insert(UiStack::default(), tick)
+  }
+  guard res.get_ref_mut(tick) is Some(stack) else { return }
+  UiStack::clear(stack)
+
+  let root_store = Has_UiRoot::get_ui_root_store(world)
+  let layout_store = Has_UiLayout::get_ui_layout_store(world)
+  let z_store = Has_ZIndex::get_z_index_store(world)
+  let gz_store = Has_GlobalZIndex::get_global_z_index_store(world)
+  let children_store = @hierarchy.Has_Children::get_children_store(world)
+  let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
+
+  fn entity_key(e : @core.Entity) -> (Int, Int) { (e.id, e.generation) }
+
+  fn cmp_int(a : Int, b : Int) -> Int {
+    if a < b { -1 } else if a > b { 1 } else { 0 }
+  }
+
+  fn local_z(z_store : @core.ComponentStore[ZIndex], entity : @core.Entity) -> Int {
+    match z_store.get(entity) {
+      Some(v) => v.value
+      None => 0
+    }
+  }
+
+  fn global_z(
+    gz_store : @core.ComponentStore[GlobalZIndex],
+    entity : @core.Entity,
+  ) -> Int {
+    match gz_store.get(entity) {
+      Some(v) => v.value
+      None => 0
+    }
+  }
+
+  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let roots : Array[(@core.Entity, Int, Int, Int)] = []
+
+  // Root candidates: unparented UI layout nodes.
+  let mut root_tie = 0
+  layout_store.for_each(fn(entity, _layout) {
+    if parent_store.contains(entity) {
+      return
+    }
+    let key = entity_key(entity)
+    if visited.contains(key) {
+      return
+    }
+    visited.set(key, true)
+    roots.push((entity, global_z(gz_store, entity), local_z(z_store, entity), root_tie))
+    root_tie = root_tie + 1
+  })
+
+  // Compat roots: explicit UiRoot markers.
+  root_store.for_each(fn(entity, _marker) {
+    guard layout_store.contains(entity) else { return }
+    let key = entity_key(entity)
+    if visited.contains(key) {
+      return
+    }
+    visited.set(key, true)
+    roots.push((entity, global_z(gz_store, entity), local_z(z_store, entity), root_tie))
+    root_tie = root_tie + 1
+  })
+
+  // Global-z roots (even if parented).
+  gz_store.for_each(fn(entity, _gz) {
+    guard layout_store.contains(entity) else { return }
+    let key = entity_key(entity)
+    if visited.contains(key) {
+      return
+    }
+    visited.set(key, true)
+    roots.push((entity, global_z(gz_store, entity), local_z(z_store, entity), root_tie))
+    root_tie = root_tie + 1
+  })
+
+  // Sort roots by (global_z, local_z, tie).
+  roots.sort_by(fn(a, b) {
+    let cg = cmp_int(a.1, b.1)
+    if cg != 0 { return cg }
+    let cl = cmp_int(a.2, b.2)
+    if cl != 0 { return cl }
+    cmp_int(a.3, b.3)
+  })
+
+  fn visit(
+    entity : @core.Entity,
+    layout_store : @core.ComponentStore[UiLayout],
+    z_store : @core.ComponentStore[ZIndex],
+    gz_store : @core.ComponentStore[GlobalZIndex],
+    children_store : @core.ComponentStore[@hierarchy.Children],
+    stack : Ref[UiStack],
+  ) -> Unit {
+    guard layout_store.contains(entity) else { return }
+    stack.val.uinodes.push(entity)
+
+    guard children_store.get(entity) is Some(children) else { return }
+    let buf : Array[(@core.Entity, Int, Int)] = []
+    for i in 0..<children.entities.length() {
+      let child = children.entities[i]
+      if !layout_store.contains(child) {
+        continue
+      }
+      // Avoid revisiting nodes that will be treated as separate roots.
+      if gz_store.contains(child) {
+        continue
+      }
+      buf.push((child, local_z(z_store, child), i))
+    }
+    buf.sort_by(fn(a, b) {
+      let cz = cmp_int(a.1, b.1)
+      if cz != 0 { return cz }
+      cmp_int(a.2, b.2)
+    })
+    for item in buf {
+      visit(item.0, layout_store, z_store, gz_store, children_store, stack)
+    }
+  }
+
+  for root in roots {
+    visit(root.0, layout_store, z_store, gz_store, children_store, stack)
+  }
+}
+
 ///| Extract UI accessibility nodes and send them to the host bridge.
 pub fn[
   W :
     HasRes_UiContext +
+    HasRes_UiStack +
     Has_UiLayout +
     Has_Button +
     Has_AccessibilityLabel +
-    @hierarchy.Has_Parent +
-    @core.ChangeTickWorld,
+    @hierarchy.Has_Parent,
 ] ui_a11y_update_system(world : W) -> Unit {
   let res = HasRes_UiContext::get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
   guard ctx0.camera_entity is Some(_) else { return }
+
+  let stack_res = HasRes_UiStack::get_ui_stack_resource(world)
+  guard stack_res.get() is Some(stack0) else { return }
 
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let button_store = Has_Button::get_button_store(world)
   let label_store = Has_AccessibilityLabel::get_accessibility_label_store(world)
   let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
 
-  let root_id = 1
+  // Host root id should not collide with entity-derived node ids.
+  let root_id = -1
   @a11y.a11y_host_begin_update(root_id)
 
-  let entities : Array[@core.Entity] = []
-  button_store.for_each(fn(entity, _btn) { entities.push(entity) })
-  label_store.for_each(fn(entity, _label) {
-    // Avoid duplicates.
-    let mut exists = false
-    for e in entities {
-      if e.id == entity.id && e.generation == entity.generation {
-        exists = true
+  // Build the set of required nodes (focusables + their ancestor chain), so
+  // `parent_id` always points to a node present in this update.
+  let required : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+
+  fn key(entity : @core.Entity) -> (Int, Int) { (entity.id, entity.generation) }
+
+  fn mark_required(
+    required : @hashmap.HashMap[(Int, Int), Bool],
+    parent_store : @core.ComponentStore[@hierarchy.Parent],
+    layout_store : @core.ComponentStore[UiLayout],
+    entity : @core.Entity,
+  ) -> Unit {
+    let mut cur = Some(entity)
+    while cur is Some(e) {
+      if !layout_store.contains(e) {
         break
       }
+      let k = key(e)
+      if required.contains(k) {
+        break
+      }
+      required.set(k, true)
+      cur = match parent_store.get(e) {
+        Some(p) => Some(p.entity)
+        None => None
+      }
     }
-    if !exists {
-      entities.push(entity)
-    }
-  })
+  }
 
-  for entity in entities {
+  for entity in stack0.uinodes {
+    if layout_store.get(entity) is None {
+      continue
+    }
+    if button_store.contains(entity) || label_store.contains(entity) {
+      mark_required(required, parent_store, layout_store, entity)
+    }
+  }
+
+  for entity in stack0.uinodes {
+    if !required.contains(key(entity)) {
+      continue
+    }
     guard layout_store.get(entity) is Some(layout) else { continue }
     let rect = layout.rect
     let x = ctx0.viewport_origin.x + rect.min.x
@@ -1619,14 +1939,22 @@ pub fn[
 
     let node_id = @a11y.node_id_for_entity(entity)
     let parent_id = match parent_store.get(entity) {
-      Some(p) => @a11y.node_id_for_entity(p.entity)
+      Some(p) =>
+        if required.contains(key(p.entity)) && layout_store.contains(p.entity) {
+          @a11y.node_id_for_entity(p.entity)
+        } else {
+          root_id
+        }
       None => root_id
     }
-    let role_id = if button_store.contains(entity) {
-      @a11y.host_role_button
-    } else {
-      @a11y.host_role_label
-    }
+    let role_id =
+      if button_store.contains(entity) {
+        @a11y.host_role_button
+      } else if label_store.contains(entity) {
+        @a11y.host_role_label
+      } else {
+        @a11y.host_role_container
+      }
     let mut actions_mask = 0
     if role_id == @a11y.host_role_button {
       actions_mask = @a11y.host_action_focus_bit + @a11y.host_action_default_bit
@@ -1712,9 +2040,9 @@ pub fn[
 pub fn[
   W :
     HasRes_UiContext +
+    HasRes_UiStack +
     @picking.HasRes_PickingEvents +
     @picking.HasRes_PickingState +
-    Has_ZIndex +
     Has_UiLayout +
     Has_Button +
     Has_Interaction +
@@ -1728,6 +2056,8 @@ pub fn[
 ] ui_interaction_system(world : W) -> Unit {
   let res = HasRes_UiContext::get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
+  let stack_res = HasRes_UiStack::get_ui_stack_resource(world)
+  guard stack_res.get() is Some(stack0) else { return }
 
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let button_store = Has_Button::get_button_store(world)
@@ -1737,7 +2067,6 @@ pub fn[
   )
   let focus_store = Has_FocusPolicy::get_focus_policy_store(world)
   let clip_store = Has_CalculatedClip::get_calculated_clip_store(world)
-  let z_store = Has_ZIndex::get_z_index_store(world)
   let colors_store = Has_ButtonColors::get_button_colors_store(world)
   let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
   let vv_store = @visibility.Has_ViewVisibility::get_view_visibility_store(world)
@@ -1796,10 +2125,21 @@ pub fn[
     @math.Rect::new(min, max)
   }
 
-  // Build the moused-over list (potentially multiple, ordered later).
-  let hovered : Array[@core.Entity] = []
+  // Apply interactions in UiStack order (front-to-back) until a `Block` focus
+  // policy is hit. This matches Bevy: the last entry in UiStack receives input
+  // first.
+  let active : Array[@core.Entity] = []
+  let mut captured = false
   if pointer is Some(p) {
-    for entity in candidates {
+    for i in 0..<stack0.uinodes.length() {
+      if captured {
+        break
+      }
+      let idx = stack0.uinodes.length() - 1 - i
+      let entity = stack0.uinodes[idx]
+      if !candidates_contains(candidates, entity) {
+        continue
+      }
       if vv_store.get(entity) is Some(vv) && !vv.is_visible() {
         continue
       }
@@ -1850,53 +2190,21 @@ pub fn[
         cursor_store.insert(entity, rcp, tick)
       }
 
-      hovered.push(entity)
-    }
-  }
+      let next = if down { Interaction::Pressed } else { Interaction::Hovered }
+      if state_store.contains(entity) {
+        state_store.set(entity, next, tick) |> ignore
+      } else {
+        state_store.insert(entity, next, tick)
+      }
+      active.push(entity)
 
-  // Sort by z desc, then stable entity key.
-  hovered.sort_by(fn(a, b) {
-    let za = match z_store.get(a) {
-      Some(v) => v.value
-      None => 0
-    }
-    let zb = match z_store.get(b) {
-      Some(v) => v.value
-      None => 0
-    }
-    if za != zb {
-      // Descending by z.
-      if za > zb { -1 } else { 1 }
-    } else if a.id != b.id {
-      if a.id > b.id { -1 } else { 1 }
-    } else if a.generation != b.generation {
-      if a.generation > b.generation { -1 } else { 1 }
-    } else {
-      0
-    }
-  })
-
-  // Apply interactions: top nodes until a `Block` focus policy is hit.
-  let active : Array[@core.Entity] = []
-  let mut captured = false
-  for entity in hovered {
-    if captured {
-      break
-    }
-    let next = if down { Interaction::Pressed } else { Interaction::Hovered }
-    if state_store.contains(entity) {
-      state_store.set(entity, next, tick) |> ignore
-    } else {
-      state_store.insert(entity, next, tick)
-    }
-    active.push(entity)
-
-    let focus = match focus_store.get(entity) {
-      Some(v) => v
-      None => FocusPolicy::Block
-    }
-    if focus == FocusPolicy::Block {
-      captured = true
+      let focus = match focus_store.get(entity) {
+        Some(v) => v
+        None => FocusPolicy::Block
+      }
+      if focus == FocusPolicy::Block {
+        captured = true
+      }
     }
   }
 
@@ -2058,6 +2366,8 @@ pub fn[
     Has_UiRoot +
     Has_Node +
     Has_ZIndex +
+    Has_GlobalZIndex +
+    HasRes_UiStack +
     Has_ScrollPosition +
     Has_UiLayout +
     Has_CalculatedClip +
@@ -2098,6 +2408,9 @@ pub fn[
   )
   .add_pre_update_system_config(@app.system(ui_clip_system).in_set(ui_set_clip))
   .add_pre_update_system_config(
+    @app.system(ui_stack_system).in_set(ui_set_stack),
+  )
+  .add_pre_update_system_config(
     @app.system(ui_a11y_update_system).in_set(ui_set_a11y),
   )
   .add_pre_update_system_config(
@@ -2114,8 +2427,9 @@ pub fn[
     after=[@transform.transform_set_update_children],
     before=[@transform.transform_set_propagate],
   )
-  .configure_set(@app.PreUpdate, ui_set_clip, after=[ui_set_layout], before=[ui_set_a11y])
-  .configure_set(@app.PreUpdate, ui_set_a11y, after=[ui_set_clip], before=[ui_set_interaction])
+  .configure_set(@app.PreUpdate, ui_set_clip, after=[ui_set_layout], before=[ui_set_stack])
+  .configure_set(@app.PreUpdate, ui_set_stack, after=[ui_set_clip], before=[ui_set_a11y])
+  .configure_set(@app.PreUpdate, ui_set_a11y, after=[ui_set_stack], before=[ui_set_interaction])
   .configure_set(@app.PreUpdate, ui_set_interaction, after=[ui_set_a11y])
   .configure_set(@app.PreUpdate, ui_set_a11y_apply, after=[ui_set_interaction])
 }
