@@ -163,6 +163,18 @@ pub fn[
   })
   for e in remove_bodies {
     if body_handle_store.get(e) is Some(h) {
+      // Remove and detach all colliders attached to this body (including
+      // colliders authored by other entities).
+      let attached = ctx.colliders.colliders_with_parent(h.handle)
+      for ch in attached {
+        let raw = ch.into_raw_parts()
+        if ctx.collider_to_entity.get(raw) is Some(owner) {
+          collider_handle_store.remove(owner) |> ignore
+          ctx.entity_to_collider.remove(entity_key(owner))
+          ctx.collider_to_entity.remove(raw)
+        }
+      }
+
       @pipeline.remove_rigid_body(
         ctx.rigid_bodies,
         h.handle,
@@ -264,6 +276,18 @@ pub fn[
   }
   for k in dead_body_keys {
     if ctx.entity_to_body.get(k) is Some(handle) {
+      // Remove and detach all colliders attached to this body (including
+      // colliders authored by other entities).
+      let attached = ctx.colliders.colliders_with_parent(handle)
+      for ch in attached {
+        let raw = ch.into_raw_parts()
+        if ctx.collider_to_entity.get(raw) is Some(owner) {
+          collider_handle_store.remove(owner) |> ignore
+          ctx.entity_to_collider.remove(entity_key(owner))
+          ctx.collider_to_entity.remove(raw)
+        }
+      }
+
       @pipeline.remove_rigid_body(
         ctx.rigid_bodies,
         handle,
@@ -326,7 +350,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
+  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
 ] physics2d_sync_insertions_system(
   world : W,
 ) -> Unit {
@@ -360,6 +384,7 @@ pub fn[
   let solver_groups_store = Has_SolverGroups2d::get_solver_groups2d_store(world)
   let rb_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col_store = Has_Collider2d::get_collider2d_store(world)
+  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(world)
   let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
     world,
   )
@@ -479,15 +504,48 @@ pub fn[
         handle
       }
       None => {
-        let transform = transform_store
-          .get(entity)
-          .unwrap_or(@math.Transform::identity())
-        let iso = mg_transform_to_iso2(transform)
-        let collider = builder
-          .translation(iso.translation)
-          .rotation(iso.rotation.angle())
-          .build()
-        ctx.colliders.insert(collider)
+        match col_parent_store.get(entity) {
+          Some(p) =>
+            match body_handle_store.get(p.parent) {
+              Some(parent_bh) => {
+                let transform = transform_store
+                  .get(entity)
+                  .unwrap_or(@math.Transform::identity())
+                let iso = mg_transform_to_iso2(transform)
+                let collider = builder
+                  .translation(iso.translation)
+                  .rotation(iso.rotation.angle())
+                  .build()
+                ctx.colliders.insert_with_parent(
+                  collider,
+                  parent_bh.handle,
+                  ctx.rigid_bodies,
+                )
+              }
+              None => {
+                let transform = transform_store
+                  .get(entity)
+                  .unwrap_or(@math.Transform::identity())
+                let iso = mg_transform_to_iso2(transform)
+                let collider = builder
+                  .translation(iso.translation)
+                  .rotation(iso.rotation.angle())
+                  .build()
+                ctx.colliders.insert(collider)
+              }
+            }
+          None => {
+            let transform = transform_store
+              .get(entity)
+              .unwrap_or(@math.Transform::identity())
+            let iso = mg_transform_to_iso2(transform)
+            let collider = builder
+              .translation(iso.translation)
+              .rotation(iso.rotation.angle())
+              .build()
+            ctx.colliders.insert(collider)
+          }
+        }
       }
     }
     collider_handle_store.insert(
@@ -505,7 +563,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
+  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
 ] physics2d_sync_world_to_rapier_system(
   world : W,
 ) -> Unit {
@@ -518,6 +576,7 @@ pub fn[
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let rb2d_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col2d_store = Has_Collider2d::get_collider2d_store(world)
+  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(world)
   let vel_store = Has_Velocity2d::get_velocity2d_store(world)
   let damping_store = Has_Damping2d::get_damping2d_store(world)
   let gravity_scale_store = Has_GravityScale2d::get_gravity_scale2d_store(world)
@@ -599,6 +658,15 @@ pub fn[
     }
     if body_handle_store.contains(entity) {
       return
+    }
+    if col_parent_store.get(entity) is Some(p) {
+      if body_handle_store.get(p.parent) is Some(_parent_bh) {
+        let transform = transform_store
+          .get(entity)
+          .unwrap_or(@math.Transform::identity())
+        collider.set_position_wrt_parent(mg_transform_to_iso2(transform)) |> ignore
+        return
+      }
     }
     let transform = transform_store
       .get(entity)
@@ -693,6 +761,9 @@ pub fn[
       |> ignore
     }
   })
+
+  // Keep query pipeline in sync with any transform/authoring changes.
+  ctx.query_pipeline.update()
 }
 
 ///|

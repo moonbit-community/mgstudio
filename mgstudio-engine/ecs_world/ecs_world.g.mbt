@@ -48,6 +48,7 @@ pub struct World {
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
+  collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
@@ -75,6 +76,12 @@ pub struct World {
   ]
   rapier_multibody_joint_handle2d : @core.ComponentStore[
     @physics2d.RapierMultibodyJointHandle2d,
+  ]
+  kinematic_character_controller2d : @core.ComponentStore[
+    @physics2d.KinematicCharacterController2d,
+  ]
+  kinematic_character_controller_output2d : @core.ComponentStore[
+    @physics2d.KinematicCharacterControllerOutput2d,
   ]
   res_ui_context : @core.Resource[@ui.UiContext]
   res_render_state : @core.Resource[@render2d.RenderState]
@@ -135,6 +142,7 @@ pub fn World::new() -> World {
     external_force2d: @core.ComponentStore::new(),
     global_transform: @core.ComponentStore::new(),
     view_visibility: @core.ComponentStore::new(),
+    collider_parent2d: @core.ComponentStore::new(),
     multibody_joint2d: @core.ComponentStore::new(),
     collider_density2d: @core.ComponentStore::new(),
     collision_groups2d: @core.ComponentStore::new(),
@@ -149,6 +157,8 @@ pub fn World::new() -> World {
     rapier_impulse_joint_handle2d: @core.ComponentStore::new(),
     contact_force_event_threshold2d: @core.ComponentStore::new(),
     rapier_multibody_joint_handle2d: @core.ComponentStore::new(),
+    kinematic_character_controller2d: @core.ComponentStore::new(),
+    kinematic_character_controller_output2d: @core.ComponentStore::new(),
     res_ui_context: @core.Resource::new(),
     res_render_state: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
@@ -214,6 +224,7 @@ pub fn World::despawn(
   self.external_force2d.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
+  self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
@@ -228,6 +239,8 @@ pub fn World::despawn(
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
+  self.kinematic_character_controller2d.remove(entity) |> ignore
+  self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
 
 ///|
@@ -281,6 +294,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.external_force2d.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
+  self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
@@ -295,6 +309,8 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
+  self.kinematic_character_controller2d.remove(entity) |> ignore
+  self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
 
 ///|
@@ -552,6 +568,13 @@ pub impl @visibility.Has_ViewVisibility for World with get_view_visibility_store
 }
 
 ///|
+pub impl @physics2d.Has_ColliderParent2d for World with get_collider_parent2d_store(
+  self,
+) {
+  self.collider_parent2d
+}
+
+///|
 pub impl @physics2d.Has_MultibodyJoint2d for World with get_multibody_joint2d_store(
   self,
 ) {
@@ -647,6 +670,20 @@ pub impl @physics2d.Has_RapierMultibodyJointHandle2d for World with get_rapier_m
   self,
 ) {
   self.rapier_multibody_joint_handle2d
+}
+
+///|
+pub impl @physics2d.Has_KinematicCharacterController2d for World with get_kinematic_character_controller2d_store(
+  self,
+) {
+  self.kinematic_character_controller2d
+}
+
+///|
+pub impl @physics2d.Has_KinematicCharacterControllerOutput2d for World with get_kinematic_character_controller_output2d_store(
+  self,
+) {
+  self.kinematic_character_controller_output2d
 }
 
 ///|

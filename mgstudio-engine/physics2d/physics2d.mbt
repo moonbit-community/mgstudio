@@ -113,6 +113,25 @@ pub fn Collider2d::sensor(self : Collider2d, sensor : Bool) -> Collider2d {
 }
 
 ///|
+/// Attach a collider entity to a different rigid-body entity.
+///
+/// This is the 2D equivalent of Bevy+Rapier "child colliders": set `RigidBody2d`
+/// on one entity and `Collider2d + ColliderParent2d` on another to create
+/// multi-collider rigid bodies.
+///
+/// Note: The collider entity's `@math.Transform` is interpreted as the collider
+/// pose relative to the parent body.
+#ecs.component
+pub struct ColliderParent2d {
+  parent : @core.Entity
+}
+
+///|
+pub fn ColliderParent2d::new(parent : @core.Entity) -> ColliderParent2d {
+  { parent, }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Velocity2d {
@@ -503,7 +522,7 @@ pub fn Physics2dContext::query(
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + @core.SystemContextWorld + @core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
+  W : @core.ChangeTickWorld + @core.SystemContextWorld + @core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
 ] physics2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
@@ -514,6 +533,7 @@ pub fn[
   .add_fixed_update_system(physics2d_sync_insertions_system)
   .add_fixed_update_system(physics2d_sync_joints_system)
   .add_fixed_update_system(physics2d_sync_world_to_rapier_system)
+  .add_fixed_update_system(physics2d_character_controller_system)
   .add_fixed_update_system(physics2d_step_system)
   .add_fixed_update_system(physics2d_writeback_system)
 }
