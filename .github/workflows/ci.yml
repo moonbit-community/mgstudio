@@ -1,0 +1,127 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+
+env:
+  # Needed for dependencies that use `gh` in postadd hooks (e.g. wgpu_mbt).
+  GH_TOKEN: ${{ github.token }}
+  # CI should be able to run without relying on postadd side effects.
+  MOON_IGNORE_POSTADD: "1"
+
+jobs:
+  engine:
+    name: engine (moon check/test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Update MoonBit registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon update
+
+      - name: moon check
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-engine check
+
+      - name: moon test
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-engine test
+
+  runtime-native:
+    name: runtime/native (moon check/test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Update MoonBit registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon update
+
+      - name: moon check
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-runtime/native check
+
+      - name: moon test
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-runtime/native test
+
+  runtime-web:
+    name: runtime/web (moon check/test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Update MoonBit registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon update
+
+      - name: moon check
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-runtime/web check
+
+      - name: moon test
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-runtime/web test
+
