@@ -47,6 +47,31 @@ fn make_collider_builder(shape : ColliderShape2d) -> @collision.ColliderBuilder 
         mg_vec2_to_rapier(a),
         mg_vec2_to_rapier(b),
       )
+    Polyline(vertices, indices) => {
+      let vs : Array[@rapier_core.Vec2] = []
+      for v in vertices {
+        vs.push(mg_vec2_to_rapier(v))
+      }
+      @collision.ColliderBuilder::polyline(vs, indices)
+    }
+    ConvexPolygon(vertices) => {
+      let vs : Array[@rapier_core.Vec2] = []
+      for v in vertices {
+        vs.push(mg_vec2_to_rapier(v))
+      }
+      @collision.ColliderBuilder::new(@collision.Shape::ConvexPolygon(vs))
+    }
+    TriMesh(vertices, indices) => {
+      let vs : Array[@rapier_core.Vec2] = []
+      for v in vertices {
+        vs.push(mg_vec2_to_rapier(v))
+      }
+      @collision.ColliderBuilder::new(@collision.Shape::TriMesh(vs, indices))
+    }
+    Compound(parts) => @collision.ColliderBuilder::new(
+      collider_shape2d_to_rapier(Compound(parts)),
+    )
+    Raw(shape) => @collision.ColliderBuilder::new(shape)
   }
 }
 
@@ -93,6 +118,37 @@ fn solver_groups_to_rapier(
 }
 
 ///|
+fn recompute_body_mass_properties(
+  ctx : Physics2dContext,
+  bodyh : @dynamics.RigidBodyHandle,
+) -> Unit {
+  guard ctx.rigid_bodies.get_mut_internal_with_modification_tracking(bodyh)
+    is Some(body) else {
+    return
+  }
+  match body.body_type() {
+    @dynamics.RigidBodyType::Dynamic => ()
+    _ => return
+  }
+  let attached = ctx.colliders.colliders_with_parent(bodyh)
+  if attached.length() == 0 {
+    return
+  }
+  let mut m = @rapier_core.MassProperties::default()
+  for ch in attached {
+    if ctx.colliders.get(ch) is Some(col) {
+      let mut mp = col.mass_properties()
+      match col.position_wrt_parent() {
+        Some(rel) => mp = mp.transform_by(rel)
+        None => ()
+      }
+      m = m.add(mp)
+    }
+  }
+  body.set_local_mass_properties(m) |> ignore
+}
+
+///|
 pub fn[
   W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
 ] physics2d_init_resources_system(
@@ -127,7 +183,7 @@ pub fn[W : @core.ChangeTickWorld + HasRes_Physics2dEvents] physics2d_clear_event
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
+  W : @core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext,
 ] physics2d_cleanup_despawned_system(
   world : W,
 ) -> Unit {
@@ -137,10 +193,20 @@ pub fn[
   let ctx = ctx_ref.val
   let rb_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col_store = Has_Collider2d::get_collider2d_store(world)
+  let impulse_joint_store = Has_ImpulseJoint2d::get_impulse_joint2d_store(world)
+  let multibody_joint_store = Has_MultibodyJoint2d::get_multibody_joint2d_store(
+    world,
+  )
   let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
     world,
   )
   let collider_handle_store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
+    world,
+  )
+  let impulse_joint_handle_store = Has_RapierImpulseJointHandle2d::get_rapier_impulse_joint_handle2d_store(
+    world,
+  )
+  let multibody_joint_handle_store = Has_RapierMultibodyJointHandle2d::get_rapier_multibody_joint_handle2d_store(
     world,
   )
 
@@ -153,6 +219,18 @@ pub fn[
   })
   for e in remove_bodies {
     if body_handle_store.get(e) is Some(h) {
+      // Remove and detach all colliders attached to this body (including
+      // colliders authored by other entities).
+      let attached = ctx.colliders.colliders_with_parent(h.handle)
+      for ch in attached {
+        let raw = ch.into_raw_parts()
+        if ctx.collider_to_entity.get(raw) is Some(owner) {
+          collider_handle_store.remove(owner) |> ignore
+          ctx.entity_to_collider.remove(entity_key(owner))
+          ctx.collider_to_entity.remove(raw)
+        }
+      }
+
       @pipeline.remove_rigid_body(
         ctx.rigid_bodies,
         h.handle,
@@ -175,6 +253,20 @@ pub fn[
         ctx.entity_to_collider.remove(entity_key(e))
         ctx.collider_to_entity.remove(ch.handle.into_raw_parts())
       }
+
+      // Drop joint handles authored by this entity; `remove_rigid_body` removes
+      // all attached joints in Rapier.
+      if impulse_joint_handle_store.get(e) is Some(jh) {
+        impulse_joint_handle_store.remove(e) |> ignore
+        ctx.entity_to_impulse_joint.remove(entity_key(e))
+        // Best-effort remove: the joint may already be gone.
+        ctx.impulse_joints.remove(jh.handle, true) |> ignore
+      }
+      if multibody_joint_handle_store.get(e) is Some(jh) {
+        multibody_joint_handle_store.remove(e) |> ignore
+        ctx.entity_to_multibody_joint.remove(entity_key(e))
+        ctx.multibody_joints.remove(jh.handle, true)
+      }
     }
   }
   let remove_colliders : Array[@core.Entity] = []
@@ -193,10 +285,44 @@ pub fn[
     }
   }
 
+  // Remove joints when the authoring component is removed or bodies are missing.
+  let remove_impulse_joints : Array[@core.Entity] = []
+  impulse_joint_handle_store.for_each(fn(e, _h) {
+    if !impulse_joint_store.contains(e) || !body_handle_store.contains(e) {
+      remove_impulse_joints.push(e)
+    }
+  })
+  for e in remove_impulse_joints {
+    if impulse_joint_handle_store.get(e) is Some(h) {
+      ctx.impulse_joints.remove(h.handle, true) |> ignore
+      impulse_joint_handle_store.remove(e) |> ignore
+      ctx.entity_to_impulse_joint.remove(entity_key(e))
+    }
+  }
+  let remove_multibody_joints : Array[@core.Entity] = []
+  multibody_joint_handle_store.for_each(fn(e, _h) {
+    if !multibody_joint_store.contains(e) || !body_handle_store.contains(e) {
+      remove_multibody_joints.push(e)
+    }
+  })
+  for e in remove_multibody_joints {
+    if multibody_joint_handle_store.get(e) is Some(h) {
+      ctx.multibody_joints.remove(h.handle, true)
+      multibody_joint_handle_store.remove(e) |> ignore
+      ctx.entity_to_multibody_joint.remove(entity_key(e))
+    }
+  }
+
   // 2) Remove rapier state when entities are despawned (handle components gone).
   let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
   body_handle_store.for_each(fn(e, _h) { alive.set(entity_key(e), true) })
   collider_handle_store.for_each(fn(e, _h) { alive.set(entity_key(e), true) })
+  impulse_joint_handle_store.for_each(fn(e, _h) {
+    alive.set(entity_key(e), true)
+  })
+  multibody_joint_handle_store.for_each(fn(e, _h) {
+    alive.set(entity_key(e), true)
+  })
   let dead_body_keys : Array[(Int, Int)] = []
   for entry in ctx.entity_to_body.iter() {
     let (k, _h) = entry
@@ -206,6 +332,18 @@ pub fn[
   }
   for k in dead_body_keys {
     if ctx.entity_to_body.get(k) is Some(handle) {
+      // Remove and detach all colliders attached to this body (including
+      // colliders authored by other entities).
+      let attached = ctx.colliders.colliders_with_parent(handle)
+      for ch in attached {
+        let raw = ch.into_raw_parts()
+        if ctx.collider_to_entity.get(raw) is Some(owner) {
+          collider_handle_store.remove(owner) |> ignore
+          ctx.entity_to_collider.remove(entity_key(owner))
+          ctx.collider_to_entity.remove(raw)
+        }
+      }
+
       @pipeline.remove_rigid_body(
         ctx.rigid_bodies,
         handle,
@@ -235,11 +373,40 @@ pub fn[
       ctx.collider_to_entity.remove(handle.into_raw_parts())
     }
   }
+  let dead_impulse_joint_keys : Array[(Int, Int)] = []
+  for entry in ctx.entity_to_impulse_joint.iter() {
+    let (k, _h) = entry
+    if !alive.contains(k) {
+      dead_impulse_joint_keys.push(k)
+    }
+  }
+  for k in dead_impulse_joint_keys {
+    if ctx.entity_to_impulse_joint.get(k) is Some(handle) {
+      ctx.impulse_joints.remove(handle, true) |> ignore
+      ctx.entity_to_impulse_joint.remove(k)
+    }
+  }
+  let dead_multibody_joint_keys : Array[(Int, Int)] = []
+  for entry in ctx.entity_to_multibody_joint.iter() {
+    let (k, _h) = entry
+    if !alive.contains(k) {
+      dead_multibody_joint_keys.push(k)
+    }
+  }
+  for k in dead_multibody_joint_keys {
+    if ctx.entity_to_multibody_joint.get(k) is Some(handle) {
+      ctx.multibody_joints.remove(handle, true)
+      ctx.entity_to_multibody_joint.remove(k)
+    }
+  }
+
+  // Keep query pipeline in sync with removals.
+  ctx.query_pipeline.update()
 }
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
+  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
 ] physics2d_sync_insertions_system(
   world : W,
 ) -> Unit {
@@ -255,6 +422,15 @@ pub fn[
   let ccd_store = Has_Ccd2d::get_ccd2d_store(world)
   let dominance_store = Has_Dominance2d::get_dominance2d_store(world)
   let sleeping_store = Has_Sleeping2d::get_sleeping2d_store(world)
+  let rb_enabled_store = Has_RigidBodyEnabled2d::get_rigid_body_enabled2d_store(
+    world,
+  )
+  let additional_mass_props_store = Has_AdditionalMassProperties2d::get_additional_mass_properties2d_store(
+    world,
+  )
+  let additional_solver_iter_store = Has_AdditionalSolverIterations2d::get_additional_solver_iterations2d_store(
+    world,
+  )
   let contact_force_threshold_store = Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
     world,
   )
@@ -271,14 +447,28 @@ pub fn[
     world,
   )
   let solver_groups_store = Has_SolverGroups2d::get_solver_groups2d_store(world)
+  let collider_enabled_store = Has_ColliderEnabled2d::get_collider_enabled2d_store(
+    world,
+  )
+  let active_collision_types_store = Has_ActiveCollisionTypes2d::get_active_collision_types2d_store(
+    world,
+  )
+  let active_events_store = Has_ActiveEvents2d::get_active_events2d_store(world)
+  let active_hooks_store = Has_ActiveHooks2d::get_active_hooks2d_store(world)
+  let contact_skin_store = Has_ContactSkin2d::get_contact_skin2d_store(world)
+  let collider_mass_props_store = Has_ColliderMassProperties2d::get_collider_mass_properties2d_store(
+    world,
+  )
   let rb_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col_store = Has_Collider2d::get_collider2d_store(world)
+  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(world)
   let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
     world,
   )
   let collider_handle_store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
     world,
   )
+  let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
 
   // Insert rigid bodies.
   rb_store.for_each(fn(entity, rb2d) {
@@ -326,6 +516,15 @@ pub fn[
     if sleeping_store.get(entity) is Some(s) {
       builder = builder.sleeping(s.sleeping)
     }
+    if rb_enabled_store.get(entity) is Some(e) {
+      builder = builder.enabled(e.enabled)
+    }
+    if additional_mass_props_store.get(entity) is Some(m) {
+      builder = builder.additional_mass_properties(m.props)
+    }
+    if additional_solver_iter_store.get(entity) is Some(it) {
+      builder = builder.additional_solver_iterations(it.iterations)
+    }
     let rb = builder.build()
     let handle = ctx.rigid_bodies.insert(rb)
     body_handle_store.insert(entity, RapierBodyHandle2d::new(handle), tick)
@@ -337,8 +536,31 @@ pub fn[
     if collider_handle_store.contains(entity) {
       return
     }
-    let mut active_events = @collision.ActiveEvents::collision_events()
     let mut builder = make_collider_builder(col2d.shape).sensor(col2d.sensor)
+    if collider_enabled_store.get(entity) is Some(e) {
+      builder = builder.enabled(e.enabled)
+    }
+    if active_collision_types_store.get(entity) is Some(t) {
+      builder = builder.active_collision_types(t.types)
+    }
+    if active_hooks_store.get(entity) is Some(h) {
+      builder = builder.active_hooks(h.hooks)
+    }
+    if contact_skin_store.get(entity) is Some(s) {
+      builder = builder.contact_skin(s.skin)
+    }
+
+    let active_events = match active_events_store.get(entity) {
+      Some(a) => a.events
+      None =>
+        if contact_force_threshold_store.get(entity) is Some(_) {
+          @collision.ActiveEvents::collision_events().insert(
+            @collision.ActiveEvents::contact_force_events(),
+          )
+        } else {
+          @collision.ActiveEvents::collision_events()
+        }
+    }
     // No workaround policy: do NOT set a default density here.
     // If moon_rapier defaults are incorrect, users must opt-in via
     // `ColliderDensity2d` until upstream fixes the default behavior.
@@ -364,43 +586,77 @@ pub fn[
       builder = builder.solver_groups(solver_groups_to_rapier(g))
     }
     if contact_force_threshold_store.get(entity) is Some(th) {
-      active_events = active_events.insert(
-        @collision.ActiveEvents::contact_force_events(),
-      )
       builder = builder.contact_force_event_threshold(th.threshold)
     }
     builder = builder.active_events(active_events).user_data(entity.id)
     let handle = match body_handle_store.get(entity) {
       Some(bodyh) => {
-        let collider = builder.build()
-        // moon_rapier currently doesn't recompute body mass properties when
-        // attaching colliders. For now (v1 assumes one collider per entity),
-        // set the body's local mass properties from the attached collider so
-        // impulses/forces work immediately.
-        let mprops = collider.mass_properties()
+        let mut collider = builder.build()
+        if collider_mass_props_store.get(entity) is Some(mp) {
+          collider = collider.set_mass_properties(mp.mass_properties)
+        }
         let handle = ctx.colliders.insert_with_parent(
           collider,
           bodyh.handle,
           ctx.rigid_bodies,
         )
-        if ctx.rigid_bodies.get_mut_internal_with_modification_tracking(
-            bodyh.handle,
-          )
-          is Some(body) {
-          body.set_local_mass_properties(mprops) |> ignore
-        }
+        touched_bodies.set(bodyh.handle.into_raw_parts(), true)
         handle
       }
       None => {
-        let transform = transform_store
-          .get(entity)
-          .unwrap_or(@math.Transform::identity())
-        let iso = mg_transform_to_iso2(transform)
-        let collider = builder
-          .translation(iso.translation)
-          .rotation(iso.rotation.angle())
-          .build()
-        ctx.colliders.insert(collider)
+        match col_parent_store.get(entity) {
+          Some(p) =>
+            match body_handle_store.get(p.parent) {
+              Some(parent_bh) => {
+                let transform = transform_store
+                  .get(entity)
+                  .unwrap_or(@math.Transform::identity())
+                let iso = mg_transform_to_iso2(transform)
+                let mut collider = builder
+                  .translation(iso.translation)
+                  .rotation(iso.rotation.angle())
+                  .build()
+                if collider_mass_props_store.get(entity) is Some(mp) {
+                  collider = collider.set_mass_properties(mp.mass_properties)
+                }
+                let handle = ctx.colliders.insert_with_parent(
+                  collider,
+                  parent_bh.handle,
+                  ctx.rigid_bodies,
+                )
+                touched_bodies.set(parent_bh.handle.into_raw_parts(), true)
+                handle
+              }
+              None => {
+                let transform = transform_store
+                  .get(entity)
+                  .unwrap_or(@math.Transform::identity())
+                let iso = mg_transform_to_iso2(transform)
+                let mut collider = builder
+                  .translation(iso.translation)
+                  .rotation(iso.rotation.angle())
+                  .build()
+                if collider_mass_props_store.get(entity) is Some(mp) {
+                  collider = collider.set_mass_properties(mp.mass_properties)
+                }
+                ctx.colliders.insert(collider)
+              }
+            }
+          None => {
+            let transform = transform_store
+              .get(entity)
+              .unwrap_or(@math.Transform::identity())
+            let iso = mg_transform_to_iso2(transform)
+            let mut collider = builder
+              .translation(iso.translation)
+              .rotation(iso.rotation.angle())
+              .build()
+            if collider_mass_props_store.get(entity) is Some(mp) {
+              collider = collider.set_mass_properties(mp.mass_properties)
+            }
+            ctx.colliders.insert(collider)
+          }
+        }
       }
     }
     collider_handle_store.insert(
@@ -411,23 +667,38 @@ pub fn[
     ctx.entity_to_collider.set(entity_key(entity), handle)
     ctx.collider_to_entity.set(handle.into_raw_parts(), entity)
   })
+
+  // Keep query pipeline in sync with insertions.
+  ctx.query_pipeline.update()
+
+  // Recompute mass properties for bodies that gained colliders this frame.
+  for entry in touched_bodies.iter() {
+    let (k, _v) = entry
+    let (id, gen) = k
+    recompute_body_mass_properties(ctx, @dynamics.RigidBodyHandle::from_raw_parts(id, gen))
+  }
 }
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
+  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext,
 ] physics2d_sync_world_to_rapier_system(
   world : W,
 ) -> Unit {
   let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let cfg_res = HasRes_Physics2dConfig::get_physics2d_config_resource(world)
   let ctx_res = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+  guard cfg_res.get_ref() is Some(cfg_ref) else { return }
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
+  let cfg = cfg_ref.val
   let ctx = ctx_ref.val
   let dt = @app.fixed_time_timestep_seconds()
-  ctx.integration = ctx.integration.set_dt(dt)
+  ctx.integration = cfg.integration.set_dt(dt)
+  physics2d_apply_global_hooks(ctx)
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let rb2d_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col2d_store = Has_Collider2d::get_collider2d_store(world)
+  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(world)
   let vel_store = Has_Velocity2d::get_velocity2d_store(world)
   let damping_store = Has_Damping2d::get_damping2d_store(world)
   let gravity_scale_store = Has_GravityScale2d::get_gravity_scale2d_store(world)
@@ -435,6 +706,15 @@ pub fn[
   let ccd_store = Has_Ccd2d::get_ccd2d_store(world)
   let dominance_store = Has_Dominance2d::get_dominance2d_store(world)
   let sleeping_store = Has_Sleeping2d::get_sleeping2d_store(world)
+  let rb_enabled_store = Has_RigidBodyEnabled2d::get_rigid_body_enabled2d_store(
+    world,
+  )
+  let additional_mass_props_store = Has_AdditionalMassProperties2d::get_additional_mass_properties2d_store(
+    world,
+  )
+  let additional_solver_iter_store = Has_AdditionalSolverIterations2d::get_additional_solver_iterations2d_store(
+    world,
+  )
   let external_force_store = Has_ExternalForce2d::get_external_force2d_store(
     world,
   )
@@ -457,6 +737,18 @@ pub fn[
     world,
   )
   let solver_groups_store = Has_SolverGroups2d::get_solver_groups2d_store(world)
+  let collider_enabled_store = Has_ColliderEnabled2d::get_collider_enabled2d_store(
+    world,
+  )
+  let active_collision_types_store = Has_ActiveCollisionTypes2d::get_active_collision_types2d_store(
+    world,
+  )
+  let active_events_store = Has_ActiveEvents2d::get_active_events2d_store(world)
+  let active_hooks_store = Has_ActiveHooks2d::get_active_hooks2d_store(world)
+  let contact_skin_store = Has_ContactSkin2d::get_contact_skin2d_store(world)
+  let collider_mass_props_store = Has_ColliderMassProperties2d::get_collider_mass_properties2d_store(
+    world,
+  )
   let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
     world,
   )
@@ -473,7 +765,12 @@ pub fn[
     }
     if col2d_store.get(entity) is Some(col2d) {
       collider.set_sensor(col2d.sensor) |> ignore
+      collider.set_shape(collider_shape2d_to_rapier(col2d.shape)) |> ignore
     }
+    collider.set_enabled(
+      collider_enabled_store.get(entity).map(fn(e) { e.enabled }).unwrap_or(true),
+    )
+    |> ignore
     if density_store.get(entity) is Some(d) {
       collider.set_density(d.density) |> ignore
     }
@@ -495,20 +792,45 @@ pub fn[
     if solver_groups_store.get(entity) is Some(g) {
       collider.set_solver_groups(solver_groups_to_rapier(g)) |> ignore
     }
+    if active_collision_types_store.get(entity) is Some(t) {
+      collider.set_active_collision_types(t.types) |> ignore
+    }
+    if active_hooks_store.get(entity) is Some(h) {
+      collider.set_active_hooks(h.hooks) |> ignore
+    }
+    if contact_skin_store.get(entity) is Some(s) {
+      collider.set_contact_skin(s.skin) |> ignore
+    }
+    if collider_mass_props_store.get(entity) is Some(mp) {
+      collider.set_mass_properties(mp.mass_properties) |> ignore
+    }
+
+    let active_events = match active_events_store.get(entity) {
+      Some(a) => a.events
+      None =>
+        if contact_force_threshold_store.get(entity) is Some(_) {
+          @collision.ActiveEvents::collision_events().insert(
+            @collision.ActiveEvents::contact_force_events(),
+          )
+        } else {
+          @collision.ActiveEvents::collision_events()
+        }
+    }
+    collider.set_active_events(active_events) |> ignore
     if contact_force_threshold_store.get(entity) is Some(th) {
-      collider.set_active_events(
-        @collision.ActiveEvents::collision_events().insert(
-          @collision.ActiveEvents::contact_force_events(),
-        ),
-      )
-      |> ignore
       collider.set_contact_force_event_threshold(th.threshold) |> ignore
-    } else {
-      collider.set_active_events(@collision.ActiveEvents::collision_events())
-      |> ignore
     }
     if body_handle_store.contains(entity) {
       return
+    }
+    if col_parent_store.get(entity) is Some(p) {
+      if body_handle_store.get(p.parent) is Some(_parent_bh) {
+        let transform = transform_store
+          .get(entity)
+          .unwrap_or(@math.Transform::identity())
+        collider.set_position_wrt_parent(mg_transform_to_iso2(transform)) |> ignore
+        return
+      }
     }
     let transform = transform_store
       .get(entity)
@@ -533,7 +855,8 @@ pub fn[
         .get(entity)
         .unwrap_or(@math.Transform::identity())
       let iso = mg_transform_to_iso2(transform)
-      body.set_position(iso, false) |> ignore
+      body.set_next_kinematic_translation(iso.translation) |> ignore
+      body.set_next_kinematic_rotation(iso.rotation) |> ignore
     }
 
     // Apply user-driven velocity updates.
@@ -574,6 +897,14 @@ pub fn[
       dominance_store.get(entity).map(fn(d) { d.group }).unwrap_or(0),
     )
     |> ignore
+    body.set_enabled(rb_enabled_store.get(entity).map(fn(e) { e.enabled }).unwrap_or(true))
+    |> ignore
+    if additional_mass_props_store.get(entity) is Some(m) {
+      body.set_additional_mass_properties(m.props, true) |> ignore
+    }
+    if additional_solver_iter_store.get(entity) is Some(it) {
+      body.set_additional_solver_iterations(it.iterations) |> ignore
+    }
     match sleeping_store.get(entity) {
       Some(s) =>
         if s.sleeping {
@@ -602,6 +933,15 @@ pub fn[
       |> ignore
     }
   })
+
+  // Keep query pipeline in sync with any transform/authoring changes.
+  ctx.query_pipeline.update()
+
+  // Ensure mass properties stay correct for multi-collider bodies when collider
+  // authoring components (density, etc.) change.
+  body_handle_store.for_each(fn(_entity, bh) {
+    recompute_body_mass_properties(ctx, bh.handle)
+  })
 }
 
 ///|
@@ -621,6 +961,11 @@ pub fn[
   let ctx = ctx_ref.val
   let events = ev_ref.val
   let gravity = mg_vec2_to_rapier(cfg.gravity)
+  if !cfg.physics_pipeline_active {
+    ctx.query_pipeline.update()
+    return
+  }
+  physics2d_hooks_set_current_collider_map(ctx.collider_to_entity)
   ctx.pipeline.step(
     gravity,
     ctx.integration,
@@ -675,6 +1020,10 @@ pub fn[
       _ => ()
     }
   }
+
+  // Update query pipeline after stepping so queries see current positions.
+  ctx.query_pipeline.update()
+  physics2d_hooks_clear_current_collider_map()
 }
 
 ///|

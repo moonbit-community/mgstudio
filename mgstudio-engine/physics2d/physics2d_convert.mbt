@@ -47,3 +47,50 @@ pub fn iso2_to_mg_transform(
     z~,
   )
 }
+
+///|
+/// Convert mgstudio's 2D collider shape to Rapier's shape.
+pub fn collider_shape2d_to_rapier(
+  shape : ColliderShape2d,
+) -> @collision.Shape {
+  match shape {
+    Ball(radius) => @collision.Shape::Ball(radius)
+    Cuboid(hx, hy) => @collision.Shape::Cuboid(hx, hy)
+    CapsuleX(half_height, radius) =>
+      @collision.Shape::CapsuleX(half_height, radius)
+    CapsuleY(half_height, radius) =>
+      @collision.Shape::CapsuleY(half_height, radius)
+    Segment(a, b) =>
+      @collision.Shape::Segment(mg_vec2_to_rapier(a), mg_vec2_to_rapier(b))
+    Polyline(vertices, indices) => {
+      let vs : Array[@rapier_core.Vec2] = []
+      for v in vertices {
+        vs.push(mg_vec2_to_rapier(v))
+      }
+      @collision.Shape::Polyline(vs, indices)
+    }
+    ConvexPolygon(vertices) => {
+      let vs : Array[@rapier_core.Vec2] = []
+      for v in vertices {
+        vs.push(mg_vec2_to_rapier(v))
+      }
+      @collision.Shape::ConvexPolygon(vs)
+    }
+    TriMesh(vertices, indices) => {
+      let vs : Array[@rapier_core.Vec2] = []
+      for v in vertices {
+        vs.push(mg_vec2_to_rapier(v))
+      }
+      @collision.Shape::TriMesh(vs, indices)
+    }
+    Compound(parts) => {
+      let out : Array[(@rapier_core.Isometry2, @collision.Shape)] = []
+      for part in parts {
+        let (t, s) = part
+        out.push((mg_transform_to_iso2(t), collider_shape2d_to_rapier(s)))
+      }
+      @collision.Shape::Compound(out)
+    }
+    Raw(s) => s
+  }
+}
