@@ -60,7 +60,28 @@ fn parse_serve_options(
 }
 
 ///|
-fn render_web_index_html() -> String {
+fn js_string_escape(value : String) -> String {
+  // Minimal JS string escaping for embedding small default URLs into index.html.
+  let b = StringBuilder::new(size_hint=value.length())
+  for c in value {
+    match c {
+      '\\' => b.write_string("\\\\")
+      '"' => b.write_string("\\\"")
+      '\n' => b.write_string("\\n")
+      '\r' => b.write_string("\\r")
+      '\t' => b.write_string("\\t")
+      _ => b.write_char(c)
+    }
+  }
+  b.to_string()
+}
+
+///|
+fn render_web_index_html(
+  default_wasm : String,
+  default_assets_source : String,
+  default_data_source : String,
+) -> String {
   // Keep a dummy menu element so the web runtime doesn't overwrite the status
   // with "Missing menu element".
   "<!doctype html>\n" +
@@ -78,6 +99,35 @@ fn render_web_index_html() -> String {
   "  <body>\n" +
   "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
   "    <div id=\"mgstudio-menu\"></div>\n" +
+  // Make the "bare" serve URL work (no query string copied) by injecting the
+  // same defaults that `mgstudio serve` prints, before loading the runtime.
+  "    <script>\n" +
+  "      (() => {\n" +
+  "        const url = new URL(window.location.href);\n" +
+  "        let changed = false;\n" +
+  "        if (!url.searchParams.get('wasm')) {\n" +
+  "          url.searchParams.set('wasm', \"" +
+  js_string_escape(default_wasm) +
+  "\");\n" +
+  "          changed = true;\n" +
+  "        }\n" +
+  "        if (!url.searchParams.get('assets_source')) {\n" +
+  "          url.searchParams.set('assets_source', \"" +
+  js_string_escape(default_assets_source) +
+  "\");\n" +
+  "          changed = true;\n" +
+  "        }\n" +
+  "        if (!url.searchParams.get('data_source')) {\n" +
+  "          url.searchParams.set('data_source', \"" +
+  js_string_escape(default_data_source) +
+  "\");\n" +
+  "          changed = true;\n" +
+  "        }\n" +
+  "        if (changed) {\n" +
+  "          window.location.replace(url.toString());\n" +
+  "        }\n" +
+  "      })();\n" +
+  "    </script>\n" +
   "    <script type=\"module\" src=\"./mgstudio-runtime-web.js\"></script>\n" +
   "  </body>\n" +
   "</html>\n"
@@ -149,10 +199,6 @@ async fn serve_web(opts : ServeOptions) -> Unit {
   }
   @fs.mkdir(stage_root, permission=0o755, recursive=true)
 
-  // Write index.html that loads the web runtime JS bundle from the staged SDK file.
-  let index_dst = path_join(stage_root, "index.html")
-  write_file_text(index_dst, render_web_index_html())
-
   // Copy mgstudio-runtime-web.js from SDK into served root (offline by default).
   let runtime_dst = path_join(stage_root, "mgstudio-runtime-web.js")
   copy_file(sdk.web_runtime_js, runtime_dst)
@@ -178,6 +224,15 @@ async fn serve_web(opts : ServeOptions) -> Unit {
       ")",
     )
   }
+
+  // Write index.html that loads the web runtime JS bundle from the staged SDK file.
+  // Note: this is written after staging assets/data defaults so opening
+  // `http://127.0.0.1:<port>/` "just works" (no need to copy the full URL).
+  let index_dst = path_join(stage_root, "index.html")
+  write_file_text(
+    index_dst,
+    render_web_index_html("./game.wasm", assets_base, data_source),
+  )
   let raw_addr = opts.addr.unwrap_or(cfg.web_addr)
   // Prefer IPv4 loopback to avoid browsers/extensions that auto-upgrade
   // `localhost` to HTTPS or hit IPv6 (::1) with TLS probes.
