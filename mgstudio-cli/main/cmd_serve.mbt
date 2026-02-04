@@ -60,8 +60,25 @@ fn parse_serve_options(
 }
 
 ///|
+fn js_string_escape(value : String) -> String {
+  // Minimal JS string escaping for embedding small default URLs into index.html.
+  let b = StringBuilder::new(size_hint=value.length())
+  for c in value {
+    match c {
+      '\\' => b.write_string("\\\\")
+      '"' => b.write_string("\\\"")
+      '\n' => b.write_string("\\n")
+      '\r' => b.write_string("\\r")
+      '\t' => b.write_string("\\t")
+      _ => b.write_char(c)
+    }
+  }
+  b.to_string()
+}
+
+///|
 fn render_web_index_html(
-  default_wasm_path : String,
+  default_wasm : String,
   default_assets_source : String,
   default_data_source : String,
 ) -> String {
@@ -82,31 +99,34 @@ fn render_web_index_html(
   "  <body>\n" +
   "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
   "    <div id=\"mgstudio-menu\"></div>\n" +
+  // Make the "bare" serve URL work (no query string copied) by injecting the
+  // same defaults that `mgstudio serve` prints, before loading the runtime.
   "    <script>\n" +
   "      (() => {\n" +
-  "        const url = new URL(window.location.href)\n" +
-  "        const params = url.searchParams\n" +
-  "        let changed = false\n" +
-  "        const ensure = (key, value) => {\n" +
-  "          const raw = params.get(key)\n" +
-  "          if (!raw || !raw.trim()) {\n" +
-  "            params.set(key, value)\n" +
-  "            changed = true\n" +
-  "          }\n" +
+  "        const url = new URL(window.location.href);\n" +
+  "        let changed = false;\n" +
+  "        if (!url.searchParams.get('wasm')) {\n" +
+  "          url.searchParams.set('wasm', \"" +
+  js_string_escape(default_wasm) +
+  "\");\n" +
+  "          changed = true;\n" +
   "        }\n" +
-  "        ensure(\"wasm\", \"" +
-  default_wasm_path +
-  "\")\n" +
-  "        ensure(\"assets_source\", \"" +
-  default_assets_source +
-  "\")\n" +
-  "        ensure(\"data_source\", \"" +
-  default_data_source +
-  "\")\n" +
+  "        if (!url.searchParams.get('assets_source')) {\n" +
+  "          url.searchParams.set('assets_source', \"" +
+  js_string_escape(default_assets_source) +
+  "\");\n" +
+  "          changed = true;\n" +
+  "        }\n" +
+  "        if (!url.searchParams.get('data_source')) {\n" +
+  "          url.searchParams.set('data_source', \"" +
+  js_string_escape(default_data_source) +
+  "\");\n" +
+  "          changed = true;\n" +
+  "        }\n" +
   "        if (changed) {\n" +
-  "          window.location.replace(url.toString())\n" +
+  "          window.location.replace(url.toString());\n" +
   "        }\n" +
-  "      })()\n" +
+  "      })();\n" +
   "    </script>\n" +
   "    <script type=\"module\" src=\"./mgstudio-runtime-web.js\"></script>\n" +
   "  </body>\n" +
