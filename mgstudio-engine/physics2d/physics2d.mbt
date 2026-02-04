@@ -536,4 +536,5 @@ pub fn[
   .add_fixed_update_system(physics2d_character_controller_system)
   .add_fixed_update_system(physics2d_step_system)
   .add_fixed_update_system(physics2d_writeback_system)
+  .add_post_update_system(physics2d_debug_render_system)
 }

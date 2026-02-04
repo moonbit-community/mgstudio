@@ -29,11 +29,88 @@ pub struct RayHitNormal2d {
 }
 
 ///|
+pub struct PointProjection2d {
+  entity : @core.Entity
+  point : @math.Vec2
+  is_inside : Bool
+}
+
+///|
+pub struct PointProjectionFeature2d {
+  entity : @core.Entity
+  point : @math.Vec2
+  is_inside : Bool
+  feature : @collision.FeatureId
+}
+
+///|
+pub struct ShapeCastHit2d {
+  entity : @core.Entity
+  toi : Float
+  point : @math.Vec2
+  normal : @math.Vec2
+}
+
+///|
 fn entity_from_collider_handle(
   ctx : Physics2dContext,
   h : @collision.ColliderHandle,
 ) -> @core.Entity? {
   ctx.collider_to_entity.get(h.into_raw_parts())
+}
+
+///|
+pub fn Physics2dContext::rigid_body_handle_of(
+  self : Physics2dContext,
+  entity : @core.Entity,
+) -> @dynamics.RigidBodyHandle? {
+  self.entity_to_body.get(entity_key(entity))
+}
+
+///|
+pub fn Physics2dContext::collider_handle_of(
+  self : Physics2dContext,
+  entity : @core.Entity,
+) -> @collision.ColliderHandle? {
+  self.entity_to_collider.get(entity_key(entity))
+}
+
+///|
+pub fn Physics2dContext::query_filter_exclude_entity(
+  self : Physics2dContext,
+  filter : @collision.QueryFilter,
+  entity : @core.Entity,
+) -> @collision.QueryFilter {
+  match self.collider_handle_of(entity) {
+    Some(h) => filter.exclude_collider(h)
+    None =>
+      match self.rigid_body_handle_of(entity) {
+        Some(bh) => filter.exclude_rigid_body(bh)
+        None => filter
+      }
+  }
+}
+
+///|
+fn to_rapier_shape(shape : ColliderShape2d) -> @collision.Shape {
+  match shape {
+    Ball(radius) => @collision.Shape::Ball(radius)
+    Cuboid(hx, hy) => @collision.Shape::Cuboid(hx, hy)
+    CapsuleX(half_height, radius) =>
+      @collision.Shape::CapsuleX(half_height, radius)
+    CapsuleY(half_height, radius) =>
+      @collision.Shape::CapsuleY(half_height, radius)
+    Segment(a, b) =>
+      @collision.Shape::Segment(mg_vec2_to_rapier(a), mg_vec2_to_rapier(b))
+  }
+}
+
+///|
+fn rect_to_aabb(rect : @math.Rect) -> @rapier_core.Aabb {
+  @rapier_core.Aabb::new(
+    mg_vec2_to_rapier(rect.min),
+    mg_vec2_to_rapier(rect.max),
+  )
 }
 
 ///|
@@ -44,8 +121,34 @@ pub fn Physics2dContext::cast_ray_entity(
   max_toi : Float,
   solid : Bool,
 ) -> RayHit2d? {
-  let ray = @collision.Ray::new(mg_vec2_to_rapier(origin), mg_vec2_to_rapier(dir))
+  let ray = @collision.Ray::new(
+    mg_vec2_to_rapier(origin),
+    mg_vec2_to_rapier(dir),
+  )
   match self.query().cast_ray(ray, max_toi, solid) {
+    Some((h, toi)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) => Some(RayHit2d::{ entity: e, toi })
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Physics2dContext::cast_ray_entity_with_filter(
+  self : Physics2dContext,
+  origin : @math.Vec2,
+  dir : @math.Vec2,
+  max_toi : Float,
+  solid : Bool,
+  filter : @collision.QueryFilter,
+) -> RayHit2d? {
+  let ray = @collision.Ray::new(
+    mg_vec2_to_rapier(origin),
+    mg_vec2_to_rapier(dir),
+  )
+  match self.query().with_filter(filter).cast_ray(ray, max_toi, solid) {
     Some((h, toi)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) => Some(RayHit2d::{ entity: e, toi })
@@ -63,7 +166,10 @@ pub fn Physics2dContext::cast_ray_and_get_normal_entity(
   max_toi : Float,
   solid : Bool,
 ) -> RayHitNormal2d? {
-  let ray = @collision.Ray::new(mg_vec2_to_rapier(origin), mg_vec2_to_rapier(dir))
+  let ray = @collision.Ray::new(
+    mg_vec2_to_rapier(origin),
+    mg_vec2_to_rapier(dir),
+  )
   match self.query().cast_ray_and_get_normal(ray, max_toi, solid) {
     Some((h, inter)) =>
       match entity_from_collider_handle(self, h) {
@@ -77,6 +183,83 @@ pub fn Physics2dContext::cast_ray_and_get_normal_entity(
       }
     None => None
   }
+}
+
+///|
+pub fn Physics2dContext::cast_ray_and_get_normal_entity_with_filter(
+  self : Physics2dContext,
+  origin : @math.Vec2,
+  dir : @math.Vec2,
+  max_toi : Float,
+  solid : Bool,
+  filter : @collision.QueryFilter,
+) -> RayHitNormal2d? {
+  let ray = @collision.Ray::new(
+    mg_vec2_to_rapier(origin),
+    mg_vec2_to_rapier(dir),
+  )
+  match
+    self
+    .query()
+    .with_filter(filter)
+    .cast_ray_and_get_normal(ray, max_toi, solid) {
+    Some((h, inter)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) =>
+          Some(RayHitNormal2d::{
+            entity: e,
+            toi: inter.toi(),
+            normal: rapier_vec2_to_mg(inter.normal()),
+          })
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Physics2dContext::intersect_ray_entities_with_filter(
+  self : Physics2dContext,
+  origin : @math.Vec2,
+  dir : @math.Vec2,
+  max_toi : Float,
+  solid : Bool,
+  filter : @collision.QueryFilter,
+) -> Array[RayHitNormal2d] {
+  let ray = @collision.Ray::new(
+    mg_vec2_to_rapier(origin),
+    mg_vec2_to_rapier(dir),
+  )
+  let hits = self.query().with_filter(filter).intersect_ray(ray, max_toi, solid)
+  let out : Array[RayHitNormal2d] = []
+  for pair in hits {
+    let (h, inter) = pair
+    if entity_from_collider_handle(self, h) is Some(e) {
+      out.push(RayHitNormal2d::{
+        entity: e,
+        toi: inter.toi(),
+        normal: rapier_vec2_to_mg(inter.normal()),
+      })
+    }
+  }
+  out
+}
+
+///|
+pub fn Physics2dContext::intersect_ray_entities(
+  self : Physics2dContext,
+  origin : @math.Vec2,
+  dir : @math.Vec2,
+  max_toi : Float,
+  solid : Bool,
+) -> Array[RayHitNormal2d] {
+  self.intersect_ray_entities_with_filter(
+    origin,
+    dir,
+    max_toi,
+    solid,
+    @collision.QueryFilter::new(),
+  )
 }
 
 ///|
@@ -94,3 +277,252 @@ pub fn Physics2dContext::intersect_point_entities(
   out
 }
 
+///|
+pub fn Physics2dContext::intersect_point_entities_with_filter(
+  self : Physics2dContext,
+  point : @math.Vec2,
+  filter : @collision.QueryFilter,
+) -> Array[@core.Entity] {
+  let hs = self
+    .query()
+    .with_filter(filter)
+    .intersect_point(mg_vec2_to_rapier(point))
+  let out : Array[@core.Entity] = []
+  for h in hs {
+    if entity_from_collider_handle(self, h) is Some(e) {
+      out.push(e)
+    }
+  }
+  out
+}
+
+///|
+pub fn Physics2dContext::project_point_entity(
+  self : Physics2dContext,
+  point : @math.Vec2,
+  max_dist : Float,
+  solid : Bool,
+) -> PointProjection2d? {
+  match self.query().project_point(mg_vec2_to_rapier(point), max_dist, solid) {
+    Some((h, proj)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) =>
+          Some(PointProjection2d::{
+            entity: e,
+            point: rapier_vec2_to_mg(proj.point()),
+            is_inside: proj.is_inside(),
+          })
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Physics2dContext::project_point_entity_with_filter(
+  self : Physics2dContext,
+  point : @math.Vec2,
+  max_dist : Float,
+  solid : Bool,
+  filter : @collision.QueryFilter,
+) -> PointProjection2d? {
+  match
+    self
+    .query()
+    .with_filter(filter)
+    .project_point(mg_vec2_to_rapier(point), max_dist, solid) {
+    Some((h, proj)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) =>
+          Some(PointProjection2d::{
+            entity: e,
+            point: rapier_vec2_to_mg(proj.point()),
+            is_inside: proj.is_inside(),
+          })
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Physics2dContext::project_point_and_get_feature_entity(
+  self : Physics2dContext,
+  point : @math.Vec2,
+  max_dist : Float,
+  solid : Bool,
+) -> PointProjectionFeature2d? {
+  match
+    self.query().project_point_and_get_feature(
+      mg_vec2_to_rapier(point),
+      max_dist,
+      solid,
+    ) {
+    Some((h, proj, feature)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) =>
+          Some(PointProjectionFeature2d::{
+            entity: e,
+            point: rapier_vec2_to_mg(proj.point()),
+            is_inside: proj.is_inside(),
+            feature,
+          })
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Physics2dContext::project_point_and_get_feature_entity_with_filter(
+  self : Physics2dContext,
+  point : @math.Vec2,
+  max_dist : Float,
+  solid : Bool,
+  filter : @collision.QueryFilter,
+) -> PointProjectionFeature2d? {
+  match
+    self
+    .query()
+    .with_filter(filter)
+    .project_point_and_get_feature(mg_vec2_to_rapier(point), max_dist, solid) {
+    Some((h, proj, feature)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) =>
+          Some(PointProjectionFeature2d::{
+            entity: e,
+            point: rapier_vec2_to_mg(proj.point()),
+            is_inside: proj.is_inside(),
+            feature,
+          })
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Physics2dContext::intersect_shape_entities(
+  self : Physics2dContext,
+  shape : ColliderShape2d,
+  shape_pos : @math.Transform,
+) -> Array[@core.Entity] {
+  self.intersect_shape_entities_with_filter(
+    shape,
+    shape_pos,
+    @collision.QueryFilter::new(),
+  )
+}
+
+///|
+pub fn Physics2dContext::intersect_shape_entities_with_filter(
+  self : Physics2dContext,
+  shape : ColliderShape2d,
+  shape_pos : @math.Transform,
+  filter : @collision.QueryFilter,
+) -> Array[@core.Entity] {
+  let hs = self
+    .query()
+    .with_filter(filter)
+    .intersect_shape(mg_transform_to_iso2(shape_pos), to_rapier_shape(shape))
+  let out : Array[@core.Entity] = []
+  for h in hs {
+    if entity_from_collider_handle(self, h) is Some(e) {
+      out.push(e)
+    }
+  }
+  out
+}
+
+///|
+pub fn Physics2dContext::intersect_aabb_entities_conservative(
+  self : Physics2dContext,
+  rect : @math.Rect,
+) -> Array[@core.Entity] {
+  self.intersect_aabb_entities_conservative_with_filter(
+    rect,
+    @collision.QueryFilter::new(),
+  )
+}
+
+///|
+pub fn Physics2dContext::intersect_aabb_entities_conservative_with_filter(
+  self : Physics2dContext,
+  rect : @math.Rect,
+  filter : @collision.QueryFilter,
+) -> Array[@core.Entity] {
+  let hs = self
+    .query()
+    .with_filter(filter)
+    .intersect_aabb_conservative(rect_to_aabb(rect))
+  let out : Array[@core.Entity] = []
+  for h in hs {
+    if entity_from_collider_handle(self, h) is Some(e) {
+      out.push(e)
+    }
+  }
+  out
+}
+
+///|
+pub fn Physics2dContext::cast_shape_entity(
+  self : Physics2dContext,
+  shape : ColliderShape2d,
+  shape_pos : @math.Transform,
+  shape_vel : @math.Vec2,
+  options : @collision.ShapeCastOptions,
+) -> ShapeCastHit2d? {
+  let query = self.query()
+  match
+    query.cast_shape(
+      mg_transform_to_iso2(shape_pos),
+      mg_vec2_to_rapier(shape_vel),
+      to_rapier_shape(shape),
+      options,
+    ) {
+    Some((h, hit)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) =>
+          Some(ShapeCastHit2d::{
+            entity: e,
+            toi: hit.toi(),
+            point: rapier_vec2_to_mg(hit.point()),
+            normal: rapier_vec2_to_mg(hit.normal()),
+          })
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+pub fn Physics2dContext::cast_shape_entity_with_filter(
+  self : Physics2dContext,
+  shape : ColliderShape2d,
+  shape_pos : @math.Transform,
+  shape_vel : @math.Vec2,
+  options : @collision.ShapeCastOptions,
+  filter : @collision.QueryFilter,
+) -> ShapeCastHit2d? {
+  let query = self.query().with_filter(filter)
+  match
+    query.cast_shape(
+      mg_transform_to_iso2(shape_pos),
+      mg_vec2_to_rapier(shape_vel),
+      to_rapier_shape(shape),
+      options,
+    ) {
+    Some((h, hit)) =>
+      match entity_from_collider_handle(self, h) {
+        Some(e) =>
+          Some(ShapeCastHit2d::{
+            entity: e,
+            toi: hit.toi(),
+            point: rapier_vec2_to_mg(hit.point()),
+            normal: rapier_vec2_to_mg(hit.normal()),
+          })
+        None => None
+      }
+    None => None
+  }
+}

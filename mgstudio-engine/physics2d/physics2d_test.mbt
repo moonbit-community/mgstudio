@@ -909,6 +909,79 @@ test "physics2d: query pipeline sees inserted colliders" {
     Some(h) => inspect(h.entity.id == floor.id, content="true")
     None => inspect(false, content="false")
   }
+  let at_origin = ctx.intersect_point_entities(@math.Vec2::new(0.0F, 0.0F))
+  inspect(at_origin.length() > 0, content="true")
+  inspect(at_origin[0].id == floor.id, content="true")
+  let excluded = ctx.query_filter_exclude_entity(
+    @collision.QueryFilter::new(),
+    floor,
+  )
+  let miss = ctx.cast_ray_entity_with_filter(
+    @math.Vec2::new(0.0F, 10.0F),
+    @math.Vec2::new(0.0F, -1.0F),
+    100.0F,
+    true,
+    excluded,
+  )
+  inspect(miss is None, content="true")
+  let proj = ctx.project_point_entity(@math.Vec2::new(0.0F, 3.0F), 10.0F, true)
+  inspect(proj is Some(_), content="true")
+  match proj {
+    Some(p) => inspect(p.entity.id == floor.id, content="true")
+    None => inspect(false, content="false")
+  }
+  let proj2 = ctx.project_point_entity_with_filter(
+    @math.Vec2::new(0.0F, 3.0F),
+    10.0F,
+    true,
+    excluded,
+  )
+  inspect(proj2 is None, content="true")
+  let feat = ctx.project_point_and_get_feature_entity(
+    @math.Vec2::new(0.0F, 3.0F),
+    10.0F,
+    true,
+  )
+  inspect(feat is Some(_), content="true")
+  match feat {
+    Some(p) => inspect(p.entity.id == floor.id, content="true")
+    None => inspect(false, content="false")
+  }
+  let shape_hits = ctx.intersect_shape_entities(
+    ColliderShape2d::ball(0.5F),
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+  )
+  inspect(shape_hits.length() > 0, content="true")
+  inspect(shape_hits[0].id == floor.id, content="true")
+  let aabb_hits = ctx.intersect_aabb_entities_conservative(
+    @math.Rect::new(
+      @math.Vec2::new(-1.0F, -1.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  inspect(aabb_hits.length() > 0, content="true")
+  inspect(aabb_hits[0].id == floor.id, content="true")
+  let sweep = ctx.cast_shape_entity(
+    ColliderShape2d::ball(0.5F),
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 3.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    @math.Vec2::new(0.0F, -1.0F),
+    @collision.ShapeCastOptions::new(10.0F, false),
+  )
+  inspect(sweep is Some(_), content="true")
+  match sweep {
+    Some(s) => inspect(s.entity.id == floor.id, content="true")
+    None => inspect(false, content="false")
+  }
 }
 
 ///|

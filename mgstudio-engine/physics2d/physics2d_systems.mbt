@@ -93,6 +93,37 @@ fn solver_groups_to_rapier(
 }
 
 ///|
+fn recompute_body_mass_properties(
+  ctx : Physics2dContext,
+  bodyh : @dynamics.RigidBodyHandle,
+) -> Unit {
+  guard ctx.rigid_bodies.get_mut_internal_with_modification_tracking(bodyh)
+    is Some(body) else {
+    return
+  }
+  match body.body_type() {
+    @dynamics.RigidBodyType::Dynamic => ()
+    _ => return
+  }
+  let attached = ctx.colliders.colliders_with_parent(bodyh)
+  if attached.length() == 0 {
+    return
+  }
+  let mut m = @rapier_core.MassProperties::default()
+  for ch in attached {
+    if ctx.colliders.get(ch) is Some(col) {
+      let mut mp = col.mass_properties()
+      match col.position_wrt_parent() {
+        Some(rel) => mp = mp.transform_by(rel)
+        None => ()
+      }
+      m = m.add(mp)
+    }
+  }
+  body.set_local_mass_properties(m) |> ignore
+}
+
+///|
 pub fn[
   W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
 ] physics2d_init_resources_system(
@@ -391,6 +422,7 @@ pub fn[
   let collider_handle_store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
     world,
   )
+  let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
 
   // Insert rigid bodies.
   rb_store.for_each(fn(entity, rb2d) {
@@ -485,22 +517,12 @@ pub fn[
     let handle = match body_handle_store.get(entity) {
       Some(bodyh) => {
         let collider = builder.build()
-        // moon_rapier currently doesn't recompute body mass properties when
-        // attaching colliders. For now (v1 assumes one collider per entity),
-        // set the body's local mass properties from the attached collider so
-        // impulses/forces work immediately.
-        let mprops = collider.mass_properties()
         let handle = ctx.colliders.insert_with_parent(
           collider,
           bodyh.handle,
           ctx.rigid_bodies,
         )
-        if ctx.rigid_bodies.get_mut_internal_with_modification_tracking(
-            bodyh.handle,
-          )
-          is Some(body) {
-          body.set_local_mass_properties(mprops) |> ignore
-        }
+        touched_bodies.set(bodyh.handle.into_raw_parts(), true)
         handle
       }
       None => {
@@ -516,11 +538,13 @@ pub fn[
                   .translation(iso.translation)
                   .rotation(iso.rotation.angle())
                   .build()
-                ctx.colliders.insert_with_parent(
+                let handle = ctx.colliders.insert_with_parent(
                   collider,
                   parent_bh.handle,
                   ctx.rigid_bodies,
                 )
+                touched_bodies.set(parent_bh.handle.into_raw_parts(), true)
+                handle
               }
               None => {
                 let transform = transform_store
@@ -559,6 +583,13 @@ pub fn[
 
   // Keep query pipeline in sync with insertions.
   ctx.query_pipeline.update()
+
+  // Recompute mass properties for bodies that gained colliders this frame.
+  for entry in touched_bodies.iter() {
+    let (k, _v) = entry
+    let (id, gen) = k
+    recompute_body_mass_properties(ctx, @dynamics.RigidBodyHandle::from_raw_parts(id, gen))
+  }
 }
 
 ///|
@@ -764,6 +795,12 @@ pub fn[
 
   // Keep query pipeline in sync with any transform/authoring changes.
   ctx.query_pipeline.update()
+
+  // Ensure mass properties stay correct for multi-collider bodies when collider
+  // authoring components (density, etc.) change.
+  body_handle_store.for_each(fn(_entity, bh) {
+    recompute_body_mass_properties(ctx, bh.handle)
+  })
 }
 
 ///|

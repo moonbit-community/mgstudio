@@ -111,3 +111,71 @@ pub fn RapierMultibodyJointHandle2d::new(
 ) -> RapierMultibodyJointHandle2d {
   { handle, other }
 }
+
+///|
+/// Mgstudio-friendly 2D joint builders that produce `@dynamics.GenericJoint`.
+///
+/// These helpers mirror Bevy+Rapier's intent: keep user code in mgstudio math
+/// types and let the integration layer handle conversions.
+///|
+pub fn joint2d_fixed(
+  local_anchor1 : @math.Vec2,
+  local_anchor2 : @math.Vec2,
+) -> @dynamics.GenericJoint {
+  let j = @dynamics.FixedJointBuilder::new()
+    .local_anchor1(mg_vec2_to_rapier(local_anchor1))
+    .local_anchor2(mg_vec2_to_rapier(local_anchor2))
+    .build()
+  @dynamics.GenericJoint::from_fixed(j)
+}
+
+///|
+pub fn joint2d_revolute(
+  local_anchor1 : @math.Vec2,
+  local_anchor2 : @math.Vec2,
+) -> @dynamics.GenericJoint {
+  let j = @dynamics.RevoluteJointBuilder::new()
+    .local_anchor1(mg_vec2_to_rapier(local_anchor1))
+    .local_anchor2(mg_vec2_to_rapier(local_anchor2))
+    .build()
+  @dynamics.GenericJoint::from_revolute(j)
+}
+
+///|
+pub fn joint2d_prismatic(
+  local_axis : @math.Vec2,
+  local_anchor1 : @math.Vec2,
+  local_anchor2 : @math.Vec2,
+) -> @dynamics.GenericJoint {
+  let j = @dynamics.PrismaticJointBuilder::new(mg_vec2_to_rapier(local_axis))
+    .local_anchor1(mg_vec2_to_rapier(local_anchor1))
+    .local_anchor2(mg_vec2_to_rapier(local_anchor2))
+    .build()
+  @dynamics.GenericJoint::from_prismatic(j)
+}
+
+///|
+pub fn joint2d_rope(
+  max_distance : Float,
+  local_anchor1 : @math.Vec2,
+  local_anchor2 : @math.Vec2,
+) -> @dynamics.GenericJoint {
+  let j = @dynamics.RopeJointBuilder::new(max_distance)
+    .local_anchor1(mg_vec2_to_rapier(local_anchor1))
+    .local_anchor2(mg_vec2_to_rapier(local_anchor2))
+    .build()
+  @dynamics.GenericJoint::from_rope(j)
+}
+
+///|
+pub fn joint2d_pin_slot(
+  local_axis : @math.Vec2,
+  local_anchor1 : @math.Vec2,
+  local_anchor2 : @math.Vec2,
+) -> @dynamics.GenericJoint {
+  let j = @dynamics.PinSlotJointBuilder::new(mg_vec2_to_rapier(local_axis))
+    .local_anchor1(mg_vec2_to_rapier(local_anchor1))
+    .local_anchor2(mg_vec2_to_rapier(local_anchor2))
+    .build()
+  @dynamics.GenericJoint::from_pin_slot(j)
+}

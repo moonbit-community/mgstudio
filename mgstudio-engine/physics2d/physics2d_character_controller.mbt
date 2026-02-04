@@ -70,6 +70,103 @@ pub fn KinematicCharacterController2d::with_translation(
 }
 
 ///|
+/// Adds to the current one-shot translation (useful when multiple systems contribute to movement).
+pub fn KinematicCharacterController2d::add_translation(
+  self : KinematicCharacterController2d,
+  delta : @math.Vec2,
+) -> KinematicCharacterController2d {
+  KinematicCharacterController2d::{
+    ..self,
+    translation: @math.Vec2::new(
+      self.translation.x + delta.x,
+      self.translation.y + delta.y,
+    ),
+  }
+}
+
+///|
+pub fn KinematicCharacterController2d::reset_translation(
+  self : KinematicCharacterController2d,
+) -> KinematicCharacterController2d {
+  KinematicCharacterController2d::{
+    ..self,
+    translation: @math.Vec2::new(0.0F, 0.0F),
+  }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_up(
+  self : KinematicCharacterController2d,
+  up : @math.Vec2,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_up(mg_vec2_to_rapier(up))
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_slide(
+  self : KinematicCharacterController2d,
+  slide : Bool,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_slide(slide)
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_offset(
+  self : KinematicCharacterController2d,
+  offset : @control.CharacterLength,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_offset(offset)
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_snap_to_ground(
+  self : KinematicCharacterController2d,
+  snap : @control.CharacterLength?,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_snap_to_ground(snap)
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_autostep(
+  self : KinematicCharacterController2d,
+  autostep : @control.CharacterAutostep?,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_autostep(autostep)
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_max_slope_climb_angle(
+  self : KinematicCharacterController2d,
+  angle : Float,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_max_slope_climb_angle(angle)
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_min_slope_slide_angle(
+  self : KinematicCharacterController2d,
+  angle : Float,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_min_slope_slide_angle(angle)
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
+pub fn KinematicCharacterController2d::with_normal_nudge_factor(
+  self : KinematicCharacterController2d,
+  factor : Float,
+) -> KinematicCharacterController2d {
+  let controller = self.controller.with_normal_nudge_factor(factor)
+  KinematicCharacterController2d::{ ..self, controller, }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct KinematicCharacterControllerOutput2d {
@@ -87,6 +184,13 @@ pub fn KinematicCharacterControllerOutput2d::new() -> KinematicCharacterControll
     sliding_down_slope: false,
     collisions: [],
   }
+}
+
+///|
+pub fn KinematicCharacterControllerOutput2d::without_collisions(
+  self : KinematicCharacterControllerOutput2d,
+) -> KinematicCharacterControllerOutput2d {
+  KinematicCharacterControllerOutput2d::{ ..self, collisions: [] }
 }
 
 ///|
@@ -126,6 +230,9 @@ pub fn[
     }
     guard collider_handle_store.get(entity) is Some(ch) else { return }
     guard ctx.colliders.get(ch.handle) is Some(col) else { return }
+    if col.parent() is Some(_) {
+      return
+    }
     let shape = col.shape()
     let character_pos = col.position()
     let collisions : Array[CharacterCollision2d] = []
@@ -182,10 +289,7 @@ pub fn[
     }
     controller_store.set(
       entity,
-      KinematicCharacterController2d::{
-        ..kcc,
-        translation: @math.Vec2::new(0.0F, 0.0F),
-      },
+      KinematicCharacterController2d::{ ..kcc, }.reset_translation(),
       tick,
     )
     |> ignore
