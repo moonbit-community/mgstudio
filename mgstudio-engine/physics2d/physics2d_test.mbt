@@ -299,6 +299,11 @@ test "physics2d: falling body collides and writes back transform" {
     Collider2d::new(ColliderShape2d::ball(0.5F)),
     tick,
   )
+  Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+    ball,
+    ColliderDensity2d::new(1.0F),
+    tick,
+  )
   Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
     world,
   ).insert(ball, ContactForceEventThreshold2d::new(0.0F), tick)
@@ -386,6 +391,16 @@ test "physics2d: gravity scale 0 disables gravity" {
     Collider2d::new(ColliderShape2d::ball(0.2F)),
     tick,
   )
+  Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+    no_grav,
+    ColliderDensity2d::new(1.0F),
+    tick,
+  )
+  Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+    grav,
+    ColliderDensity2d::new(1.0F),
+    tick,
+  )
   Has_GravityScale2d::get_gravity_scale2d_store(world).insert(
     no_grav,
     GravityScale2d::new(0.0F),
@@ -458,6 +473,11 @@ test "physics2d: damping reduces velocity" {
       Collider2d::new(ColliderShape2d::ball(0.2F)),
       tick,
     )
+    Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+      e,
+      ColliderDensity2d::new(1.0F),
+      tick,
+    )
     Has_Velocity2d::get_velocity2d_store(world).insert(
       e,
       Velocity2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
@@ -515,6 +535,11 @@ test "physics2d: external impulse applies once and clears" {
     Collider2d::new(ColliderShape2d::ball(0.2F)),
     tick,
   )
+  Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+    e,
+    ColliderDensity2d::new(1.0F),
+    tick,
+  )
   Has_Velocity2d::get_velocity2d_store(world).insert(
     e,
     Velocity2d::zero(),
@@ -567,6 +592,11 @@ test "physics2d: external force persists" {
   Has_Collider2d::get_collider2d_store(world).insert(
     e,
     Collider2d::new(ColliderShape2d::ball(0.2F)),
+    tick,
+  )
+  Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+    e,
+    ColliderDensity2d::new(1.0F),
     tick,
   )
   Has_Velocity2d::get_velocity2d_store(world).insert(
@@ -647,6 +677,11 @@ test "physics2d: CCD prevents tunneling through thin floor" {
       Collider2d::new(ColliderShape2d::ball(0.01F)),
       tick,
     )
+    Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+      ball,
+      ColliderDensity2d::new(1.0F),
+      tick,
+    )
     Has_Velocity2d::get_velocity2d_store(world).insert(
       ball,
       Velocity2d::new(@math.Vec2::new(0.0F, -200.0F), 0.0F),
@@ -700,6 +735,11 @@ test "physics2d: collision groups filter collision events" {
     Has_Collider2d::get_collider2d_store(world).insert(
       e,
       Collider2d::new(ColliderShape2d::ball(0.5F)),
+      tick,
+    )
+    Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+      e,
+      ColliderDensity2d::new(1.0F),
       tick,
     )
     Has_Velocity2d::get_velocity2d_store(world).insert(

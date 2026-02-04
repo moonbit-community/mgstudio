@@ -338,15 +338,13 @@ pub fn[
       return
     }
     let mut active_events = @collision.ActiveEvents::collision_events()
-    // Align with upstream Rapier defaults: colliders should have non-zero
-    // density by default (Rapier uses density=1.0).
-    let density = density_store
-      .get(entity)
-      .map(fn(d) { d.density })
-      .unwrap_or(1.0F)
-    let mut builder = make_collider_builder(col2d.shape)
-      .sensor(col2d.sensor)
-      .density(density)
+    let mut builder = make_collider_builder(col2d.shape).sensor(col2d.sensor)
+    // No workaround policy: do NOT set a default density here.
+    // If moon_rapier defaults are incorrect, users must opt-in via
+    // `ColliderDensity2d` until upstream fixes the default behavior.
+    if density_store.get(entity) is Some(d) {
+      builder = builder.density(d.density)
+    }
     if friction_store.get(entity) is Some(f) {
       builder = builder.friction(f.coefficient)
     }

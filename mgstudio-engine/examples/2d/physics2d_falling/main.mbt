@@ -53,6 +53,9 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
   let cf_store = @physics2d.Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
     world,
   )
+  let density_store = @physics2d.Has_ColliderDensity2d::get_collider_density2d_store(
+    world,
+  )
   rb_store.insert(floor, @physics2d.RigidBody2d::fixed(), tick)
   col_store.insert(
     floor,
@@ -86,6 +89,7 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(12.0F)),
     tick,
   )
+  density_store.insert(ball, @physics2d.ColliderDensity2d::new(1.0F), tick)
   cf_store.insert(
     ball,
     @physics2d.ContactForceEventThreshold2d::new(0.0F),
