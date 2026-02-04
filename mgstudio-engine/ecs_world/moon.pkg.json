@@ -1,5 +1,6 @@
 {
   "import": [
+    "Milky2018/mgstudio/ui",
     "Milky2018/mgstudio/core",
     "Milky2018/mgstudio/math",
     "Milky2018/mgstudio/asset",

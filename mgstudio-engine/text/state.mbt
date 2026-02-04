@@ -43,6 +43,8 @@ pub struct Text2dBundle {
   shadow : Text2dShadow?
   transform : @math.Transform
   layers : @render2d.RenderLayers
+  anchor : @render2d.Anchor
+  y_axis : YAxisOrientation
 }
 
 ///|
@@ -61,6 +63,8 @@ pub fn Text2dBundle::new(
     shadow: None,
     transform,
     layers: @render2d.RenderLayers::default(),
+    anchor: @render2d.Anchor::default(),
+    y_axis: YAxisOrientation::BottomToTop,
   }
 }
 
@@ -81,6 +85,8 @@ pub fn Text2dBundle::new_with_layers(
     shadow: None,
     transform,
     layers,
+    anchor: @render2d.Anchor::default(),
+    y_axis: YAxisOrientation::BottomToTop,
   }
 }
 
@@ -122,6 +128,22 @@ pub fn Text2dBundle::with_shadow(
   shadow : Text2dShadow?,
 ) -> Text2dBundle {
   Text2dBundle::{ ..self, shadow, }
+}
+
+///| Set the anchor used for world-space `Text2d` positioning (Bevy-aligned).
+pub fn Text2dBundle::with_anchor(
+  self : Text2dBundle,
+  anchor : @render2d.Anchor,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, anchor }
+}
+
+///| Set the layout coordinate orientation.
+pub fn Text2dBundle::with_y_axis(
+  self : Text2dBundle,
+  y_axis : YAxisOrientation,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, y_axis }
 }
 
 ///|
@@ -176,6 +198,11 @@ priv struct TextInstance {
   shadow : Text2dShadow?
   transform : @math.Transform
   layers : @render2d.RenderLayers
+  anchor : @render2d.Anchor
+  y_axis : YAxisOrientation
+  /// When set, this text handle is treated as "UI text" and will be positioned
+  /// relative to a UI node's top-left corner (Bevy UI extraction semantics).
+  ui_node_size : @math.Vec2?
   spans : Array[TextSpanInstance]
   computed : ComputedTextBlock
   layout_info : TextLayoutInfo
@@ -210,6 +237,9 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     shadow: bundle.shadow,
     transform: bundle.transform,
     layers: bundle.layers,
+    anchor: bundle.anchor,
+    y_axis: bundle.y_axis,
+    ui_node_size: None,
     spans: [],
     computed: ComputedTextBlock::default(),
     layout_info: TextLayoutInfo::default(),
@@ -270,4 +300,62 @@ pub fn text_set_content(handle : TextHandle, content : String) -> Unit {
     text: Text2d::{ content, },
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
+}
+
+///| Update the transform of a text handle without marking it as needing rerender.
+pub fn text_set_transform(handle : TextHandle, transform : @math.Transform) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{ ..instance, transform })
+}
+
+///| Update the render layers of a text handle without marking it as needing rerender.
+pub fn text_set_layers(
+  handle : TextHandle,
+  layers : @render2d.RenderLayers,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{ ..instance, layers })
+}
+
+///| Update the anchor of a text handle without marking it as needing rerender.
+pub fn text_set_anchor(
+  handle : TextHandle,
+  anchor : @render2d.Anchor,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{ ..instance, anchor })
+}
+
+///| Update the y-axis orientation of a text handle without marking it as needing rerender.
+pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
+  // Orientation affects glyph coordinates, so we must relayout.
+  text_update_instance(handle, instance => {
+    if instance.y_axis == y_axis {
+      instance
+    } else {
+      TextInstance::{
+        ..instance,
+        y_axis,
+        computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+      }
+    }
+  })
+}
+
+///| Mark a text handle as UI text and provide the size of the owning UI node in logical pixels.
+///|
+///| This does not affect shaping, but it changes how glyphs are positioned when rendered.
+pub fn text_set_ui_node_size(
+  handle : TextHandle,
+  size : @math.Vec2?,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{ ..instance, ui_node_size: size })
+}
+
+///| Get the last computed logical layout size (may lag by one frame).
+pub fn text_get_layout_size(handle : TextHandle) -> @math.Vec2? {
+  let count = text_state.val.texts.length()
+  for i in 0..<count {
+    if text_state.val.texts[i].id == handle.id {
+      return Some(text_state.val.texts[i].layout_info.size)
+    }
+  }
+  None
 }

@@ -414,15 +414,23 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     cosmic_buffer = cosmic_buffer.set_size(Some(w), buffer.max_height)
     cosmic_buffer = cosmic_buffer.layout_all_with_font_system(font_system)
   }
+  // First pass: compute the "box size" used for layout and optional y-axis flip.
+  // Mirrors Bevy `buffer_dimensions` (max line width, sum of line heights, ceil).
+  let mut box_w_raw = 0.0F
+  let mut box_h_raw = 0.0F
+  for run in cosmic_buffer.layout_runs() {
+    if run.line_w > box_w_raw {
+      box_w_raw = run.line_w
+    }
+    box_h_raw = box_h_raw + run.line_height
+  }
+  let box_w = Float::from_double(box_w_raw.to_double().ceil())
+  let box_h = Float::from_double(box_h_raw.to_double().ceil())
+
+  // Second pass: produce glyphs + run geometry.
   let glyphs : Array[PositionedGlyph] = []
   let run_geometry : Array[RunGeometry] = []
-  let mut box_w = 0.0F
-  let mut box_h = 0.0F
   for run in cosmic_buffer.layout_runs() {
-    if run.line_w > box_w {
-      box_w = run.line_w
-    }
-    box_h = box_h + run.line_height
     let mut maybe_run_geom : RunGeometry? = None
     let mut end_x = 0.0F
     for layout_glyph0 in run.glyphs {
@@ -553,7 +561,12 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let phys_x = Float::from_double(phys_x_i.to_double())
       let phys_y = Float::from_double(phys_y_i.to_double())
       let x = glyph_size_x / 2.0F + left + phys_x
-      let y = @cosmic.roundf(run.line_y) + phys_y - top + glyph_size_y / 2.0F
+      let y_raw = @cosmic.roundf(run.line_y) + phys_y - top + glyph_size_y / 2.0F
+      // Bevy parity: `BottomToTop` flips Y using the computed box height.
+      let y = match instance.y_axis {
+        YAxisOrientation::TopToBottom => y_raw
+        YAxisOrientation::BottomToTop => box_h - y_raw
+      }
       glyphs.push(PositionedGlyph::{
         position: @math.Vec2::new(x, y),
         size: @math.Vec2::new(glyph_size_x, glyph_size_y),
@@ -572,10 +585,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     scale_factor: 1.0F,
     glyphs,
     run_geometry,
-    size: @math.Vec2::new(
-      Float::from_double(box_w.to_double().ceil()),
-      Float::from_double(box_h.to_double().ceil()),
-    ),
+    size: @math.Vec2::new(box_w, box_h),
   }
   TextInstance::{
     ..instance,
@@ -604,9 +614,56 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
   let texts = text_state.val.texts
   for instance in texts {
     let layout_info = instance.layout_info
+    fn rotate_vec2(v : @math.Vec2, rot : Float) -> @math.Vec2 {
+      let cosv = @math.cos(rot)
+      let sinv = @math.sin(rot)
+      @math.Vec2::new(v.x * cosv - v.y * sinv, v.x * sinv + v.y * cosv)
+    }
+
+    fn to_y_up(y_axis : YAxisOrientation, v : @math.Vec2) -> @math.Vec2 {
+      match y_axis {
+        YAxisOrientation::TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
+        YAxisOrientation::BottomToTop => v
+      }
+    }
+
+    let rot = instance.transform.rotation_z()
+    let scale = @math.Vec2::new(
+      instance.transform.scale.x,
+      instance.transform.scale.y,
+    )
+    let base = @math.Vec2::new(
+      instance.transform.translation.x,
+      instance.transform.translation.y,
+    )
+
+    // Bevy parity:
+    // - Text2d: use `Anchor` + `TextLayoutInfo.size` to compute the local origin.
+    // - UI text: treat `GlobalTransform`/`Transform` as the center of the UI node, then translate
+    //   by (-0.5 * node_size) to convert to top-left origin.
     let layout_size = layout_info.size
-    let origin_x = 0.0F - layout_size.x / 2.0F
-    let origin_y = layout_size.y / 2.0F
+    let mut origin_offset_layout = @math.Vec2::new(0.0F, 0.0F)
+    if instance.ui_node_size is Some(node_size) {
+      origin_offset_layout = @math.Vec2::new(
+        0.0F - node_size.x / 2.0F,
+        0.0F - node_size.y / 2.0F,
+      )
+    } else {
+      let a = instance.anchor.as_vec()
+      // text_anchor = -(anchor + 0.5)
+      let text_anchor = @math.Vec2::new(
+        0.0F - (a.x + 0.5F),
+        0.0F - (a.y + 0.5F),
+      )
+      origin_offset_layout = @math.Vec2::new(
+        layout_size.x * text_anchor.x,
+        layout_size.y * text_anchor.y,
+      )
+    }
+
+    // Convert layout coordinates (+Y down for UI) into our world-style local (+Y up) coordinates.
+    let origin_offset = to_y_up(instance.y_axis, origin_offset_layout)
+
     for glyph in layout_info.glyphs {
       let atlas_info = glyph.atlas_info
       let layout_opt = @asset.asset_get_texture_atlas_layout(
@@ -635,19 +692,18 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
         Float::from_double(rect.max.x.to_double()) / atlas_width,
         Float::from_double(rect.max.y.to_double()) / atlas_height,
       )
-      let glyph_pos = glyph.position
-      let offset = @math.Vec2::new(
-        origin_x + glyph_pos.x,
-        origin_y - glyph_pos.y,
+      let glyph_pos = to_y_up(instance.y_axis, glyph.position)
+      let local_pos = @math.Vec2::new(
+        origin_offset.x + glyph_pos.x,
+        origin_offset.y + glyph_pos.y,
       )
-      let translation = @math.Vec2::new(
-        instance.transform.translation.x + offset.x,
-        instance.transform.translation.y + offset.y,
-      )
+      let local_scaled = @math.Vec2::new(local_pos.x * scale.x, local_pos.y * scale.y)
+      let offset = rotate_vec2(local_scaled, rot)
+      let translation = @math.Vec2::new(base.x + offset.x, base.y + offset.y)
       let transform = @math.Transform::from_xy_rotation_scale(
         translation,
-        instance.transform.rotation_z(),
-        @math.Vec2::new(instance.transform.scale.x, instance.transform.scale.y),
+        rot,
+        scale,
         z=instance.transform.translation.z,
       )
       let color = text_span_color(instance, glyph.span_index).color
@@ -659,10 +715,7 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
         let shadow_transform = @math.Transform::from_xy_rotation_scale(
           shadow_translation,
           instance.transform.rotation_z(),
-          @math.Vec2::new(
-            instance.transform.scale.x,
-            instance.transform.scale.y,
-          ),
+          scale,
           z=instance.transform.translation.z,
         )
         @render2d.render2d_push_sprite_uv(

@@ -229,6 +229,16 @@ pub fn[
 }
 
 ///|
+pub let transform_set_update_children : @app.SystemSet = @app.system_set(
+  "mgstudio.transform.update_children",
+)
+
+///|
+pub let transform_set_propagate : @app.SystemSet = @app.system_set(
+  "mgstudio.transform.propagate",
+)
+
+///|
 pub fn[
   W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld,
 ] transform_plugin(
@@ -236,6 +246,15 @@ pub fn[
 ) -> @app.App[W] {
   // Keep `Children` in sync with `Parent`, then compute `GlobalTransform`.
   app
-  .add_pre_update_system(update_children_system)
-  .add_pre_update_system(propagate_transforms_system)
+  .add_pre_update_system_config(
+    @app.system(update_children_system).in_set(transform_set_update_children),
+  )
+  .add_pre_update_system_config(
+    @app.system(propagate_transforms_system).in_set(transform_set_propagate),
+  )
+  .configure_set(
+    @app.PreUpdate,
+    transform_set_update_children,
+    before=[transform_set_propagate],
+  )
 }

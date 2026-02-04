@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/visibility",
 }
 
@@ -20,17 +21,25 @@ pub struct World {
   entities : @core.Entities
   mut change_tick : Int
   mut system_context : @core.SystemContext
+  style : @core.ComponentStore[@ui.Style]
+  ui_root : @core.ComponentStore[@ui.UiRoot]
+  ui_text : @core.ComponentStore[@ui.UiText]
+  ui_image : @core.ComponentStore[@ui.UiImage]
+  ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
   anchor : @core.ComponentStore[@render2d.Anchor]
   camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
+  button_colors : @core.ComponentStore[@ui.ButtonColors]
   parent : @core.ComponentStore[@hierarchy.Parent]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  background_color : @core.ComponentStore[@ui.BackgroundColor]
   projection : @core.ComponentStore[@render2d.Projection]
+  interaction_state : @core.ComponentStore[@ui.InteractionState]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -38,6 +47,7 @@ pub struct World {
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
+  res_ui_context : @core.Resource[@ui.UiContext]
   res_render_state : @core.Resource[@render2d.RenderState]
 }
 pub fn World::despawn(Self, @core.Entity) -> Unit raise @core.EntityError
@@ -62,6 +72,15 @@ pub impl @render2d.Has_RenderLayers for World
 pub impl @render2d.Has_RenderTarget for World
 pub impl @render2d.Has_Sprite for World
 pub impl @transform.Has_GlobalTransform for World
+pub impl @ui.HasRes_UiContext for World
+pub impl @ui.Has_BackgroundColor for World
+pub impl @ui.Has_ButtonColors for World
+pub impl @ui.Has_InteractionState for World
+pub impl @ui.Has_Style for World
+pub impl @ui.Has_UiImage for World
+pub impl @ui.Has_UiLayout for World
+pub impl @ui.Has_UiRoot for World
+pub impl @ui.Has_UiText for World
 pub impl @visibility.Has_InheritedVisibility for World
 pub impl @visibility.Has_ViewVisibility for World
 pub impl @visibility.Has_Visibility for World

@@ -24,7 +24,7 @@
 ///   messages stay readable.
 ///
 /// Note: This does not reduce the actual requirements; it only names them.
-pub(open) trait DefaultPluginsWorld: @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_Anchor + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d {
+pub(open) trait DefaultPluginsWorld: @core.ChangeTickWorld + @core.SystemContextWorld + @math.Has_Transform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_Anchor + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_Mesh2d + @render2d.Has_ColorMaterial + @render2d.Has_GpuMesh2d + @ui.HasRes_UiContext + @ui.Has_UiRoot + @ui.Has_Style + @ui.Has_UiLayout + @ui.Has_BackgroundColor + @ui.Has_UiImage + @ui.Has_ButtonColors + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_UiText {
 }
 
 ///|
@@ -41,6 +41,7 @@ pub fn[W : DefaultPluginsWorld] default_plugins() -> Array[@app.Plugin[W]] {
     fn(app : @app.App[W]) -> @app.App[W] { @asset.asset_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @transform.transform_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @visibility.visibility_plugin(app) },
+    fn(app : @app.App[W]) -> @app.App[W] { @ui.ui_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @text.text_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @input.input_plugin(app) },
@@ -58,6 +59,7 @@ pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[
     fn(app : @app.App[W]) -> @app.App[W] { @asset.asset_plugin_nearest(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @transform.transform_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @visibility.visibility_plugin(app) },
+    fn(app : @app.App[W]) -> @app.App[W] { @ui.ui_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @text.text_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @input.input_plugin(app) },
