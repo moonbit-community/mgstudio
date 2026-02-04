@@ -1,0 +1,153 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/physics3d"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/math",
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/pipeline",
+  "moonbitlang/core/hashmap",
+}
+
+// Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+pub fn iso3_to_mg_transform(@Milky2018/moon_rapier/core.Isometry3) -> @math.Transform
+
+pub fn mg_quat_to_rapier(@math.Quat) -> @Milky2018/moon_rapier/core.Quat
+
+pub fn mg_transform_to_iso3(@math.Transform) -> @Milky2018/moon_rapier/core.Isometry3
+
+pub fn mg_vec3_to_rapier(@math.Vec3) -> @Milky2018/moon_rapier/core.Vec3
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext] physics3d_cleanup_despawned_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dEvents] physics3d_clear_events_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_init_resources_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @Milky2018/mgstudio/core.SystemContextWorld + @Milky2018/mgstudio/core.SpawnWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_step_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext] physics3d_sync_insertions_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext] physics3d_sync_world_to_rapier_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext] physics3d_writeback_system(W) -> Unit
+
+pub fn rapier_quat_to_mg(@Milky2018/moon_rapier/core.Quat) -> @math.Quat
+
+pub fn rapier_vec3_to_mg(@Milky2018/moon_rapier/core.Vec3) -> @math.Vec3
+
+// Errors
+
+// Types and methods
+pub struct Collider3d {
+  shape : ColliderShape3d
+  sensor : Bool
+}
+pub fn Collider3d::new(ColliderShape3d) -> Self
+pub fn Collider3d::sensor(Self, Bool) -> Self
+
+pub enum ColliderShape3d {
+  Ball(Float)
+  Cuboid(Float, Float, Float)
+}
+pub fn ColliderShape3d::ball(Float) -> Self
+pub fn ColliderShape3d::cuboid(Float, Float, Float) -> Self
+
+pub enum CollisionEvent3d {
+  Started(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
+  Stopped(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
+}
+
+pub struct Physics3dConfig {
+  gravity : @math.Vec3
+}
+pub fn Physics3dConfig::default() -> Self
+pub fn Physics3dConfig::new(@math.Vec3) -> Self
+
+pub struct Physics3dContext {
+  rigid_bodies : @dynamics.RigidBodySet3D
+  colliders : @collision.ColliderSet3D
+  islands : @dynamics.IslandManager3D
+  broad_phase : @collision.BroadPhase3D
+  narrow_phase : @collision.NarrowPhase3D
+  mut pipeline : @pipeline.PhysicsPipeline3DReal
+  mut integration : @dynamics.IntegrationParameters
+  mut event_handler : @pipeline.EventHandler3D
+  entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]
+  entity_to_collider : @hashmap.HashMap[(Int, Int), @collision.ColliderHandle3D]
+  collider_to_entity : @hashmap.HashMap[(Int, Int), @Milky2018/mgstudio/core.Entity]
+}
+pub fn Physics3dContext::new() -> Self
+
+pub struct Physics3dEvents {
+  mut collisions : Array[CollisionEvent3d]
+}
+pub fn Physics3dEvents::clear(Self) -> Unit
+pub fn Physics3dEvents::new() -> Self
+
+pub struct RapierBodyHandle3d {
+  handle : @dynamics.RigidBodyHandle
+}
+pub fn RapierBodyHandle3d::new(@dynamics.RigidBodyHandle) -> Self
+
+pub struct RapierColliderHandle3d {
+  handle : @collision.ColliderHandle3D
+}
+pub fn RapierColliderHandle3d::new(@collision.ColliderHandle3D) -> Self
+
+pub struct RigidBody3d {
+  body_type : @dynamics.RigidBodyType
+}
+pub fn RigidBody3d::dynamic() -> Self
+pub fn RigidBody3d::fixed() -> Self
+pub fn RigidBody3d::kinematic_position_based() -> Self
+pub fn RigidBody3d::kinematic_velocity_based() -> Self
+
+pub struct Velocity3d {
+  linvel : @math.Vec3
+  angvel : @math.Vec3
+}
+pub fn Velocity3d::zero() -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait HasRes_Physics3dConfig {
+  get_physics3d_config_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics3dConfig]
+}
+
+pub(open) trait HasRes_Physics3dContext {
+  get_physics3d_context_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics3dContext]
+}
+
+pub(open) trait HasRes_Physics3dEvents {
+  get_physics3d_events_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics3dEvents]
+}
+
+pub(open) trait Has_Collider3d {
+  get_collider3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Collider3d]
+}
+
+pub(open) trait Has_RapierBodyHandle3d {
+  get_rapier_body_handle3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle3d]
+}
+
+pub(open) trait Has_RapierColliderHandle3d {
+  get_rapier_collider_handle3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RapierColliderHandle3d]
+}
+
+pub(open) trait Has_RigidBody3d {
+  get_rigid_body3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RigidBody3d]
+}
+
+pub(open) trait Has_Velocity3d {
+  get_velocity3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Velocity3d]
+}
+

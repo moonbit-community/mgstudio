@@ -1,0 +1,328 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/physics2d"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/math",
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/pipeline",
+  "moonbitlang/core/hashmap",
+}
+
+// Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+pub fn iso2_to_mg_transform(@Milky2018/moon_rapier/core.Isometry2, Float) -> @math.Transform
+
+pub fn mg_transform_to_iso2(@math.Transform) -> @Milky2018/moon_rapier/core.Isometry2
+
+pub fn mg_vec2_to_rapier(@math.Vec2) -> @Milky2018/moon_rapier/core.Vec2
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext] physics2d_cleanup_despawned_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dEvents] physics2d_clear_events_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents] physics2d_init_resources_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @Milky2018/mgstudio/core.SystemContextWorld + @Milky2018/mgstudio/core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents] physics2d_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents] physics2d_step_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext] physics2d_sync_insertions_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext] physics2d_sync_world_to_rapier_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_Velocity2d + Has_RapierBodyHandle2d + HasRes_Physics2dContext] physics2d_writeback_system(W) -> Unit
+
+pub fn rapier_vec2_to_mg(@Milky2018/moon_rapier/core.Vec2) -> @math.Vec2
+
+// Errors
+
+// Types and methods
+pub struct Ccd2d {
+  enabled : Bool
+  soft_prediction : Float
+}
+pub fn Ccd2d::enabled() -> Self
+pub fn Ccd2d::new(Bool, Float) -> Self
+
+pub struct Collider2d {
+  shape : ColliderShape2d
+  sensor : Bool
+}
+pub fn Collider2d::new(ColliderShape2d) -> Self
+pub fn Collider2d::sensor(Self, Bool) -> Self
+
+pub struct ColliderDensity2d {
+  density : Float
+}
+pub fn ColliderDensity2d::new(Float) -> Self
+
+pub enum ColliderShape2d {
+  Ball(Float)
+  Cuboid(Float, Float)
+  CapsuleX(Float, Float)
+  CapsuleY(Float, Float)
+  Segment(@math.Vec2, @math.Vec2)
+}
+pub fn ColliderShape2d::ball(Float) -> Self
+pub fn ColliderShape2d::capsule_x(Float, Float) -> Self
+pub fn ColliderShape2d::capsule_y(Float, Float) -> Self
+pub fn ColliderShape2d::cuboid(Float, Float) -> Self
+pub fn ColliderShape2d::segment(@math.Vec2, @math.Vec2) -> Self
+
+pub enum CollisionEvent2d {
+  Started(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
+  Stopped(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
+}
+
+pub struct CollisionGroups2d {
+  memberships : Int
+  filter : Int
+  test_mode : @dynamics.InteractionTestMode
+}
+pub fn CollisionGroups2d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
+
+pub struct ContactForceEvent2d {
+  entity1 : @Milky2018/mgstudio/core.Entity
+  entity2 : @Milky2018/mgstudio/core.Entity
+  total_force : @math.Vec2
+  total_force_magnitude : Float
+  max_force_direction : @math.Vec2
+  max_force_magnitude : Float
+}
+
+pub struct ContactForceEventThreshold2d {
+  threshold : Float
+}
+pub fn ContactForceEventThreshold2d::new(Float) -> Self
+
+pub struct Damping2d {
+  linear : Float
+  angular : Float
+}
+pub fn Damping2d::new(Float, Float) -> Self
+
+pub struct Dominance2d {
+  group : Int
+}
+pub fn Dominance2d::new(Int) -> Self
+
+pub struct ExternalForce2d {
+  force : @math.Vec2
+  torque : Float
+}
+pub fn ExternalForce2d::new(@math.Vec2, Float) -> Self
+pub fn ExternalForce2d::zero() -> Self
+
+pub struct ExternalImpulse2d {
+  impulse : @math.Vec2
+  torque_impulse : Float
+}
+pub fn ExternalImpulse2d::new(@math.Vec2, Float) -> Self
+pub fn ExternalImpulse2d::zero() -> Self
+
+pub struct Friction2d {
+  coefficient : Float
+}
+pub fn Friction2d::new(Float) -> Self
+
+pub struct FrictionCombineRule2d {
+  rule : @dynamics.CoefficientCombineRule
+}
+pub fn FrictionCombineRule2d::new(@dynamics.CoefficientCombineRule) -> Self
+
+pub struct GravityScale2d {
+  scale : Float
+}
+pub fn GravityScale2d::new(Float) -> Self
+
+pub struct LockedAxes2d {
+  lock_translations : Bool
+  lock_rotations : Bool
+}
+pub fn LockedAxes2d::locked() -> Self
+pub fn LockedAxes2d::new(Bool, Bool) -> Self
+
+pub struct Physics2dConfig {
+  gravity : @math.Vec2
+}
+pub fn Physics2dConfig::default() -> Self
+pub fn Physics2dConfig::new(@math.Vec2) -> Self
+pub fn Physics2dConfig::with_gravity(Self, @math.Vec2) -> Self
+
+pub struct Physics2dContext {
+  rigid_bodies : @dynamics.RigidBodySet
+  colliders : @collision.ColliderSet
+  islands : @dynamics.IslandManager
+  broad_phase : @collision.BroadPhaseBvh
+  narrow_phase : @collision.NarrowPhase
+  impulse_joints : @dynamics.ImpulseJointSet
+  multibody_joints : @dynamics.MultibodyJointSet
+  ccd : @dynamics.CCDSolver
+  mut pipeline : @pipeline.PhysicsPipeline
+  mut integration : @dynamics.IntegrationParameters
+  hooks : @pipeline.PhysicsHooks
+  mut event_handler : @pipeline.EventHandler
+  entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]
+  entity_to_collider : @hashmap.HashMap[(Int, Int), @collision.ColliderHandle]
+  collider_to_entity : @hashmap.HashMap[(Int, Int), @Milky2018/mgstudio/core.Entity]
+}
+pub fn Physics2dContext::new() -> Self
+
+pub struct Physics2dEvents {
+  mut collisions : Array[CollisionEvent2d]
+  mut contact_forces : Array[ContactForceEvent2d]
+}
+pub fn Physics2dEvents::clear(Self) -> Unit
+pub fn Physics2dEvents::new() -> Self
+
+pub struct RapierBodyHandle2d {
+  handle : @dynamics.RigidBodyHandle
+}
+pub fn RapierBodyHandle2d::new(@dynamics.RigidBodyHandle) -> Self
+
+pub struct RapierColliderHandle2d {
+  handle : @collision.ColliderHandle
+}
+pub fn RapierColliderHandle2d::new(@collision.ColliderHandle) -> Self
+
+pub struct Restitution2d {
+  coefficient : Float
+}
+pub fn Restitution2d::new(Float) -> Self
+
+pub struct RestitutionCombineRule2d {
+  rule : @dynamics.CoefficientCombineRule
+}
+pub fn RestitutionCombineRule2d::new(@dynamics.CoefficientCombineRule) -> Self
+
+pub struct RigidBody2d {
+  body_type : @dynamics.RigidBodyType
+}
+pub fn RigidBody2d::dynamic() -> Self
+pub fn RigidBody2d::fixed() -> Self
+pub fn RigidBody2d::kinematic_position_based() -> Self
+pub fn RigidBody2d::kinematic_velocity_based() -> Self
+
+pub struct Sleeping2d {
+  sleeping : Bool
+}
+pub fn Sleeping2d::new(Bool) -> Self
+
+pub struct SolverGroups2d {
+  memberships : Int
+  filter : Int
+  test_mode : @dynamics.InteractionTestMode
+}
+pub fn SolverGroups2d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
+
+pub struct Velocity2d {
+  linvel : @math.Vec2
+  angvel : Float
+}
+pub fn Velocity2d::new(@math.Vec2, Float) -> Self
+pub fn Velocity2d::zero() -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait HasRes_Physics2dConfig {
+  get_physics2d_config_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics2dConfig]
+}
+
+pub(open) trait HasRes_Physics2dContext {
+  get_physics2d_context_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics2dContext]
+}
+
+pub(open) trait HasRes_Physics2dEvents {
+  get_physics2d_events_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics2dEvents]
+}
+
+pub(open) trait Has_Ccd2d {
+  get_ccd2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Ccd2d]
+}
+
+pub(open) trait Has_Collider2d {
+  get_collider2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Collider2d]
+}
+
+pub(open) trait Has_ColliderDensity2d {
+  get_collider_density2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ColliderDensity2d]
+}
+
+pub(open) trait Has_CollisionGroups2d {
+  get_collision_groups2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[CollisionGroups2d]
+}
+
+pub(open) trait Has_ContactForceEventThreshold2d {
+  get_contact_force_event_threshold2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold2d]
+}
+
+pub(open) trait Has_Damping2d {
+  get_damping2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Damping2d]
+}
+
+pub(open) trait Has_Dominance2d {
+  get_dominance2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Dominance2d]
+}
+
+pub(open) trait Has_ExternalForce2d {
+  get_external_force2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ExternalForce2d]
+}
+
+pub(open) trait Has_ExternalImpulse2d {
+  get_external_impulse2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ExternalImpulse2d]
+}
+
+pub(open) trait Has_Friction2d {
+  get_friction2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Friction2d]
+}
+
+pub(open) trait Has_FrictionCombineRule2d {
+  get_friction_combine_rule2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[FrictionCombineRule2d]
+}
+
+pub(open) trait Has_GravityScale2d {
+  get_gravity_scale2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[GravityScale2d]
+}
+
+pub(open) trait Has_LockedAxes2d {
+  get_locked_axes2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[LockedAxes2d]
+}
+
+pub(open) trait Has_RapierBodyHandle2d {
+  get_rapier_body_handle2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle2d]
+}
+
+pub(open) trait Has_RapierColliderHandle2d {
+  get_rapier_collider_handle2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RapierColliderHandle2d]
+}
+
+pub(open) trait Has_Restitution2d {
+  get_restitution2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Restitution2d]
+}
+
+pub(open) trait Has_RestitutionCombineRule2d {
+  get_restitution_combine_rule2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RestitutionCombineRule2d]
+}
+
+pub(open) trait Has_RigidBody2d {
+  get_rigid_body2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RigidBody2d]
+}
+
+pub(open) trait Has_Sleeping2d {
+  get_sleeping2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Sleeping2d]
+}
+
+pub(open) trait Has_SolverGroups2d {
+  get_solver_groups2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[SolverGroups2d]
+}
+
+pub(open) trait Has_Velocity2d {
+  get_velocity2d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Velocity2d]
+}
+

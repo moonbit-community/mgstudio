@@ -12,6 +12,8 @@
     "Milky2018/mgstudio/time",
     "Milky2018/mgstudio/transform",
     "Milky2018/mgstudio/ui",
+    "Milky2018/mgstudio/physics2d",
+    "Milky2018/mgstudio/physics3d",
     "Milky2018/mgstudio/visibility",
     "Milky2018/mgstudio/window"
   ]

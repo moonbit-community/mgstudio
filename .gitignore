@@ -6,3 +6,4 @@ AGENTS.md
 .private/
 .codex
 /mgstudio-runtime/web/mgstudio-runtime-web.js
+**/.mgstudio/run/

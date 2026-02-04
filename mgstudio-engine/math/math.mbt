@@ -241,6 +241,15 @@ pub struct Quat {
 }
 
 ///|
+/// Construct a quaternion from raw components (x, y, z, w).
+///
+/// This is primarily for engine integrations (e.g. 3D physics) that need to
+/// convert from external quaternion representations.
+pub fn Quat::new(x : Float, y : Float, z : Float, w : Float) -> Quat {
+  Quat::{ x, y, z, w }
+}
+
+///|
 pub fn Quat::identity() -> Quat {
   Quat::{ x: 0.0F, y: 0.0F, z: 0.0F, w: 1.0F }
 }

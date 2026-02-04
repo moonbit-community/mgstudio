@@ -1,0 +1,489 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Rapier-based 2D physics integration (Bevy-like, 2D-first).
+///
+/// Note:
+/// - Physics v1 ignores `@math.Transform.scale`.
+/// - One collider per entity is assumed for v1 (use child entities for compound shapes).
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct RigidBody2d {
+  body_type : @dynamics.RigidBodyType
+}
+
+///|
+pub fn RigidBody2d::dynamic() -> RigidBody2d {
+  { body_type: @dynamics.RigidBodyType::Dynamic }
+}
+
+///|
+pub fn RigidBody2d::fixed() -> RigidBody2d {
+  { body_type: @dynamics.RigidBodyType::Fixed }
+}
+
+///|
+pub fn RigidBody2d::kinematic_position_based() -> RigidBody2d {
+  { body_type: @dynamics.RigidBodyType::KinematicPositionBased }
+}
+
+///|
+pub fn RigidBody2d::kinematic_velocity_based() -> RigidBody2d {
+  { body_type: @dynamics.RigidBodyType::KinematicVelocityBased }
+}
+
+///|
+pub enum ColliderShape2d {
+  Ball(Float)
+  Cuboid(Float, Float)
+  CapsuleX(Float, Float)
+  CapsuleY(Float, Float)
+  Segment(@math.Vec2, @math.Vec2)
+}
+
+///|
+/// Constructors for `ColliderShape2d`.
+///
+/// Note: MoonBit currently exports enums as "read-only" by default, so external
+/// packages cannot construct `ColliderShape2d` via `ColliderShape2d::Ball(...)`.
+/// These helpers are the public way to create shapes.
+pub fn ColliderShape2d::ball(radius : Float) -> ColliderShape2d {
+  Ball(radius)
+}
+
+///|
+pub fn ColliderShape2d::cuboid(hx : Float, hy : Float) -> ColliderShape2d {
+  Cuboid(hx, hy)
+}
+
+///|
+pub fn ColliderShape2d::capsule_x(
+  half_height : Float,
+  radius : Float,
+) -> ColliderShape2d {
+  CapsuleX(half_height, radius)
+}
+
+///|
+pub fn ColliderShape2d::capsule_y(
+  half_height : Float,
+  radius : Float,
+) -> ColliderShape2d {
+  CapsuleY(half_height, radius)
+}
+
+///|
+pub fn ColliderShape2d::segment(
+  a : @math.Vec2,
+  b : @math.Vec2,
+) -> ColliderShape2d {
+  Segment(a, b)
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Collider2d {
+  shape : ColliderShape2d
+  sensor : Bool
+}
+
+///|
+pub fn Collider2d::new(shape : ColliderShape2d) -> Collider2d {
+  { shape, sensor: false }
+}
+
+///|
+pub fn Collider2d::sensor(self : Collider2d, sensor : Bool) -> Collider2d {
+  Collider2d::{ ..self, sensor, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Velocity2d {
+  linvel : @math.Vec2
+  angvel : Float
+}
+
+///|
+pub fn Velocity2d::zero() -> Velocity2d {
+  { linvel: @math.Vec2::new(0.0F, 0.0F), angvel: 0.0F }
+}
+
+///|
+pub fn Velocity2d::new(linvel : @math.Vec2, angvel : Float) -> Velocity2d {
+  { linvel, angvel }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Damping2d {
+  linear : Float
+  angular : Float
+}
+
+///|
+pub fn Damping2d::new(linear : Float, angular : Float) -> Damping2d {
+  { linear, angular }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct GravityScale2d {
+  scale : Float
+}
+
+///|
+pub fn GravityScale2d::new(scale : Float) -> GravityScale2d {
+  GravityScale2d::{ scale, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct LockedAxes2d {
+  lock_translations : Bool
+  lock_rotations : Bool
+}
+
+///|
+pub fn LockedAxes2d::new(
+  lock_translations : Bool,
+  lock_rotations : Bool,
+) -> LockedAxes2d {
+  { lock_translations, lock_rotations }
+}
+
+///|
+pub fn LockedAxes2d::locked() -> LockedAxes2d {
+  { lock_translations: true, lock_rotations: true }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Ccd2d {
+  enabled : Bool
+  soft_prediction : Float
+}
+
+///|
+pub fn Ccd2d::enabled() -> Ccd2d {
+  { enabled: true, soft_prediction: 0.0F }
+}
+
+///|
+pub fn Ccd2d::new(enabled : Bool, soft_prediction : Float) -> Ccd2d {
+  { enabled, soft_prediction }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Dominance2d {
+  group : Int
+}
+
+///|
+pub fn Dominance2d::new(group : Int) -> Dominance2d {
+  Dominance2d::{ group, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Sleeping2d {
+  sleeping : Bool
+}
+
+///|
+pub fn Sleeping2d::new(sleeping : Bool) -> Sleeping2d {
+  Sleeping2d::{ sleeping, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct ExternalForce2d {
+  force : @math.Vec2
+  torque : Float
+}
+
+///|
+pub fn ExternalForce2d::zero() -> ExternalForce2d {
+  { force: @math.Vec2::new(0.0F, 0.0F), torque: 0.0F }
+}
+
+///|
+pub fn ExternalForce2d::new(
+  force : @math.Vec2,
+  torque : Float,
+) -> ExternalForce2d {
+  { force, torque }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct ExternalImpulse2d {
+  impulse : @math.Vec2
+  torque_impulse : Float
+}
+
+///|
+pub fn ExternalImpulse2d::zero() -> ExternalImpulse2d {
+  { impulse: @math.Vec2::new(0.0F, 0.0F), torque_impulse: 0.0F }
+}
+
+///|
+pub fn ExternalImpulse2d::new(
+  impulse : @math.Vec2,
+  torque_impulse : Float,
+) -> ExternalImpulse2d {
+  { impulse, torque_impulse }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct ContactForceEventThreshold2d {
+  threshold : Float
+}
+
+///|
+pub fn ContactForceEventThreshold2d::new(
+  threshold : Float,
+) -> ContactForceEventThreshold2d {
+  ContactForceEventThreshold2d::{ threshold, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct ColliderDensity2d {
+  density : Float
+}
+
+///|
+pub fn ColliderDensity2d::new(density : Float) -> ColliderDensity2d {
+  { density, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Friction2d {
+  coefficient : Float
+}
+
+///|
+pub fn Friction2d::new(coefficient : Float) -> Friction2d {
+  { coefficient, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct FrictionCombineRule2d {
+  rule : @dynamics.CoefficientCombineRule
+}
+
+///|
+pub fn FrictionCombineRule2d::new(
+  rule : @dynamics.CoefficientCombineRule,
+) -> FrictionCombineRule2d {
+  { rule, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Restitution2d {
+  coefficient : Float
+}
+
+///|
+pub fn Restitution2d::new(coefficient : Float) -> Restitution2d {
+  { coefficient, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct RestitutionCombineRule2d {
+  rule : @dynamics.CoefficientCombineRule
+}
+
+///|
+pub fn RestitutionCombineRule2d::new(
+  rule : @dynamics.CoefficientCombineRule,
+) -> RestitutionCombineRule2d {
+  { rule, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct CollisionGroups2d {
+  memberships : Int
+  filter : Int
+  test_mode : @dynamics.InteractionTestMode
+}
+
+///|
+pub fn CollisionGroups2d::new(
+  memberships : Int,
+  filter : Int,
+  test_mode : @dynamics.InteractionTestMode,
+) -> CollisionGroups2d {
+  { memberships, filter, test_mode }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct SolverGroups2d {
+  memberships : Int
+  filter : Int
+  test_mode : @dynamics.InteractionTestMode
+}
+
+///|
+pub fn SolverGroups2d::new(
+  memberships : Int,
+  filter : Int,
+  test_mode : @dynamics.InteractionTestMode,
+) -> SolverGroups2d {
+  { memberships, filter, test_mode }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct RapierBodyHandle2d {
+  handle : @dynamics.RigidBodyHandle
+}
+
+///|
+pub fn RapierBodyHandle2d::new(
+  handle : @dynamics.RigidBodyHandle,
+) -> RapierBodyHandle2d {
+  { handle, }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct RapierColliderHandle2d {
+  handle : @collision.ColliderHandle
+}
+
+///|
+pub fn RapierColliderHandle2d::new(
+  handle : @collision.ColliderHandle,
+) -> RapierColliderHandle2d {
+  { handle, }
+}
+
+///|
+// ECS resource marker for codegen (`mgstudio gen`).
+#ecs.resource
+pub struct Physics2dConfig {
+  gravity : @math.Vec2
+}
+
+///|
+pub fn Physics2dConfig::default() -> Physics2dConfig {
+  { gravity: @math.Vec2::new(0.0F, -9.81F) }
+}
+
+///|
+pub fn Physics2dConfig::new(gravity : @math.Vec2) -> Physics2dConfig {
+  Physics2dConfig::{ gravity, }
+}
+
+///|
+pub fn Physics2dConfig::with_gravity(
+  _self : Physics2dConfig,
+  gravity : @math.Vec2,
+) -> Physics2dConfig {
+  Physics2dConfig::{ gravity, }
+}
+
+///|
+// ECS resource marker for codegen (`mgstudio gen`).
+#ecs.resource
+pub struct Physics2dContext {
+  rigid_bodies : @dynamics.RigidBodySet
+  colliders : @collision.ColliderSet
+  islands : @dynamics.IslandManager
+  broad_phase : @collision.BroadPhaseBvh
+  narrow_phase : @collision.NarrowPhase
+  impulse_joints : @dynamics.ImpulseJointSet
+  multibody_joints : @dynamics.MultibodyJointSet
+  ccd : @dynamics.CCDSolver
+  mut pipeline : @pipeline.PhysicsPipeline
+  mut integration : @dynamics.IntegrationParameters
+  hooks : @pipeline.PhysicsHooks
+  mut event_handler : @pipeline.EventHandler
+
+  // (entity.id, entity.generation) -> handle
+  entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]
+  entity_to_collider : @hashmap.HashMap[(Int, Int), @collision.ColliderHandle]
+  // (collider_handle.id, collider_handle.generation) -> entity
+  collider_to_entity : @hashmap.HashMap[(Int, Int), @core.Entity]
+}
+
+///|
+pub fn Physics2dContext::new() -> Physics2dContext {
+  Physics2dContext::{
+    rigid_bodies: @dynamics.RigidBodySet::new(),
+    colliders: @collision.ColliderSet::new(),
+    islands: @dynamics.IslandManager::new(),
+    broad_phase: @collision.BroadPhaseBvh::new(),
+    narrow_phase: @collision.NarrowPhase::new(),
+    impulse_joints: @dynamics.ImpulseJointSet::new(),
+    multibody_joints: @dynamics.MultibodyJointSet::new(),
+    ccd: @dynamics.CCDSolver::new(),
+    pipeline: @pipeline.PhysicsPipeline::new(),
+    integration: @dynamics.IntegrationParameters::default(),
+    hooks: @pipeline.PhysicsHooks::new(),
+    event_handler: @pipeline.EventHandler::new(),
+    entity_to_body: @hashmap.HashMap::new(),
+    entity_to_collider: @hashmap.HashMap::new(),
+    collider_to_entity: @hashmap.HashMap::new(),
+  }
+}
+
+///|
+pub fn[
+  W : @core.ChangeTickWorld + @core.SystemContextWorld + @core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
+] physics2d_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
+  app
+  .add_startup_system(physics2d_init_resources_system)
+  .add_pre_update_system(physics2d_clear_events_system)
+  .add_pre_update_system(physics2d_cleanup_despawned_system)
+  .add_fixed_update_system(physics2d_sync_insertions_system)
+  .add_fixed_update_system(physics2d_sync_world_to_rapier_system)
+  .add_fixed_update_system(physics2d_step_system)
+  .add_fixed_update_system(physics2d_writeback_system)
+}
