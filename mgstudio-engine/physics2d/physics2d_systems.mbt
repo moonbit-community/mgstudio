@@ -127,7 +127,7 @@ pub fn[W : @core.ChangeTickWorld + HasRes_Physics2dEvents] physics2d_clear_event
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
+  W : @core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext,
 ] physics2d_cleanup_despawned_system(
   world : W,
 ) -> Unit {
@@ -137,10 +137,20 @@ pub fn[
   let ctx = ctx_ref.val
   let rb_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col_store = Has_Collider2d::get_collider2d_store(world)
+  let impulse_joint_store = Has_ImpulseJoint2d::get_impulse_joint2d_store(world)
+  let multibody_joint_store = Has_MultibodyJoint2d::get_multibody_joint2d_store(
+    world,
+  )
   let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
     world,
   )
   let collider_handle_store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
+    world,
+  )
+  let impulse_joint_handle_store = Has_RapierImpulseJointHandle2d::get_rapier_impulse_joint_handle2d_store(
+    world,
+  )
+  let multibody_joint_handle_store = Has_RapierMultibodyJointHandle2d::get_rapier_multibody_joint_handle2d_store(
     world,
   )
 
@@ -175,6 +185,20 @@ pub fn[
         ctx.entity_to_collider.remove(entity_key(e))
         ctx.collider_to_entity.remove(ch.handle.into_raw_parts())
       }
+
+      // Drop joint handles authored by this entity; `remove_rigid_body` removes
+      // all attached joints in Rapier.
+      if impulse_joint_handle_store.get(e) is Some(jh) {
+        impulse_joint_handle_store.remove(e) |> ignore
+        ctx.entity_to_impulse_joint.remove(entity_key(e))
+        // Best-effort remove: the joint may already be gone.
+        ctx.impulse_joints.remove(jh.handle, true) |> ignore
+      }
+      if multibody_joint_handle_store.get(e) is Some(jh) {
+        multibody_joint_handle_store.remove(e) |> ignore
+        ctx.entity_to_multibody_joint.remove(entity_key(e))
+        ctx.multibody_joints.remove(jh.handle, true)
+      }
     }
   }
   let remove_colliders : Array[@core.Entity] = []
@@ -193,10 +217,44 @@ pub fn[
     }
   }
 
+  // Remove joints when the authoring component is removed or bodies are missing.
+  let remove_impulse_joints : Array[@core.Entity] = []
+  impulse_joint_handle_store.for_each(fn(e, _h) {
+    if !impulse_joint_store.contains(e) || !body_handle_store.contains(e) {
+      remove_impulse_joints.push(e)
+    }
+  })
+  for e in remove_impulse_joints {
+    if impulse_joint_handle_store.get(e) is Some(h) {
+      ctx.impulse_joints.remove(h.handle, true) |> ignore
+      impulse_joint_handle_store.remove(e) |> ignore
+      ctx.entity_to_impulse_joint.remove(entity_key(e))
+    }
+  }
+  let remove_multibody_joints : Array[@core.Entity] = []
+  multibody_joint_handle_store.for_each(fn(e, _h) {
+    if !multibody_joint_store.contains(e) || !body_handle_store.contains(e) {
+      remove_multibody_joints.push(e)
+    }
+  })
+  for e in remove_multibody_joints {
+    if multibody_joint_handle_store.get(e) is Some(h) {
+      ctx.multibody_joints.remove(h.handle, true)
+      multibody_joint_handle_store.remove(e) |> ignore
+      ctx.entity_to_multibody_joint.remove(entity_key(e))
+    }
+  }
+
   // 2) Remove rapier state when entities are despawned (handle components gone).
   let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
   body_handle_store.for_each(fn(e, _h) { alive.set(entity_key(e), true) })
   collider_handle_store.for_each(fn(e, _h) { alive.set(entity_key(e), true) })
+  impulse_joint_handle_store.for_each(fn(e, _h) {
+    alive.set(entity_key(e), true)
+  })
+  multibody_joint_handle_store.for_each(fn(e, _h) {
+    alive.set(entity_key(e), true)
+  })
   let dead_body_keys : Array[(Int, Int)] = []
   for entry in ctx.entity_to_body.iter() {
     let (k, _h) = entry
@@ -235,6 +293,35 @@ pub fn[
       ctx.collider_to_entity.remove(handle.into_raw_parts())
     }
   }
+  let dead_impulse_joint_keys : Array[(Int, Int)] = []
+  for entry in ctx.entity_to_impulse_joint.iter() {
+    let (k, _h) = entry
+    if !alive.contains(k) {
+      dead_impulse_joint_keys.push(k)
+    }
+  }
+  for k in dead_impulse_joint_keys {
+    if ctx.entity_to_impulse_joint.get(k) is Some(handle) {
+      ctx.impulse_joints.remove(handle, true) |> ignore
+      ctx.entity_to_impulse_joint.remove(k)
+    }
+  }
+  let dead_multibody_joint_keys : Array[(Int, Int)] = []
+  for entry in ctx.entity_to_multibody_joint.iter() {
+    let (k, _h) = entry
+    if !alive.contains(k) {
+      dead_multibody_joint_keys.push(k)
+    }
+  }
+  for k in dead_multibody_joint_keys {
+    if ctx.entity_to_multibody_joint.get(k) is Some(handle) {
+      ctx.multibody_joints.remove(handle, true)
+      ctx.entity_to_multibody_joint.remove(k)
+    }
+  }
+
+  // Keep query pipeline in sync with removals.
+  ctx.query_pipeline.update()
 }
 
 ///|
@@ -411,6 +498,9 @@ pub fn[
     ctx.entity_to_collider.set(entity_key(entity), handle)
     ctx.collider_to_entity.set(handle.into_raw_parts(), entity)
   })
+
+  // Keep query pipeline in sync with insertions.
+  ctx.query_pipeline.update()
 }
 
 ///|
@@ -533,7 +623,8 @@ pub fn[
         .get(entity)
         .unwrap_or(@math.Transform::identity())
       let iso = mg_transform_to_iso2(transform)
-      body.set_position(iso, false) |> ignore
+      body.set_next_kinematic_translation(iso.translation) |> ignore
+      body.set_next_kinematic_rotation(iso.rotation) |> ignore
     }
 
     // Apply user-driven velocity updates.
@@ -675,6 +766,9 @@ pub fn[
       _ => ()
     }
   }
+
+  // Update query pipeline after stepping so queries see current positions.
+  ctx.query_pipeline.update()
 }
 
 ///|

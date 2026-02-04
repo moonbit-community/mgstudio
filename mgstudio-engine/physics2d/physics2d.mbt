@@ -403,6 +403,9 @@ pub fn RapierColliderHandle2d::new(
 }
 
 ///|
+/// Joint authoring components live in `physics2d_joints.mbt`.
+
+///|
 // ECS resource marker for codegen (`mgstudio gen`).
 #ecs.resource
 pub struct Physics2dConfig {
@@ -443,19 +446,35 @@ pub struct Physics2dContext {
   mut integration : @dynamics.IntegrationParameters
   hooks : @pipeline.PhysicsHooks
   mut event_handler : @pipeline.EventHandler
+  mut query_pipeline : @collision.QueryPipelineMut
 
   // (entity.id, entity.generation) -> handle
   entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]
   entity_to_collider : @hashmap.HashMap[(Int, Int), @collision.ColliderHandle]
+  entity_to_impulse_joint : @hashmap.HashMap[
+    (Int, Int),
+    @dynamics.ImpulseJointHandle,
+  ]
+  entity_to_multibody_joint : @hashmap.HashMap[
+    (Int, Int),
+    @dynamics.MultibodyJointHandle,
+  ]
   // (collider_handle.id, collider_handle.generation) -> entity
   collider_to_entity : @hashmap.HashMap[(Int, Int), @core.Entity]
 }
 
 ///|
 pub fn Physics2dContext::new() -> Physics2dContext {
+  let rigid_bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let query_pipeline = @collision.QueryPipelineMut::new(
+    @collision.QueryFilter::new(),
+    rigid_bodies,
+    colliders,
+  )
   Physics2dContext::{
-    rigid_bodies: @dynamics.RigidBodySet::new(),
-    colliders: @collision.ColliderSet::new(),
+    rigid_bodies,
+    colliders,
     islands: @dynamics.IslandManager::new(),
     broad_phase: @collision.BroadPhaseBvh::new(),
     narrow_phase: @collision.NarrowPhase::new(),
@@ -466,15 +485,25 @@ pub fn Physics2dContext::new() -> Physics2dContext {
     integration: @dynamics.IntegrationParameters::default(),
     hooks: @pipeline.PhysicsHooks::new(),
     event_handler: @pipeline.EventHandler::new(),
+    query_pipeline,
     entity_to_body: @hashmap.HashMap::new(),
     entity_to_collider: @hashmap.HashMap::new(),
+    entity_to_impulse_joint: @hashmap.HashMap::new(),
+    entity_to_multibody_joint: @hashmap.HashMap::new(),
     collider_to_entity: @hashmap.HashMap::new(),
   }
 }
 
 ///|
+pub fn Physics2dContext::query(
+  self : Physics2dContext,
+) -> @collision.QueryPipeline {
+  self.query_pipeline.as_ref()
+}
+
+///|
 pub fn[
-  W : @core.ChangeTickWorld + @core.SystemContextWorld + @core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
+  W : @core.ChangeTickWorld + @core.SystemContextWorld + @core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
 ] physics2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
@@ -483,6 +512,7 @@ pub fn[
   .add_pre_update_system(physics2d_clear_events_system)
   .add_pre_update_system(physics2d_cleanup_despawned_system)
   .add_fixed_update_system(physics2d_sync_insertions_system)
+  .add_fixed_update_system(physics2d_sync_joints_system)
   .add_fixed_update_system(physics2d_sync_world_to_rapier_system)
   .add_fixed_update_system(physics2d_step_system)
   .add_fixed_update_system(physics2d_writeback_system)

@@ -35,8 +35,12 @@ struct Physics2dTestWorld {
   restitution_rule : @core.ComponentStore[RestitutionCombineRule2d]
   collision_groups : @core.ComponentStore[CollisionGroups2d]
   solver_groups : @core.ComponentStore[SolverGroups2d]
+  impulse_joint : @core.ComponentStore[ImpulseJoint2d]
+  multibody_joint : @core.ComponentStore[MultibodyJoint2d]
   body_handle : @core.ComponentStore[RapierBodyHandle2d]
   collider_handle : @core.ComponentStore[RapierColliderHandle2d]
+  impulse_joint_handle : @core.ComponentStore[RapierImpulseJointHandle2d]
+  multibody_joint_handle : @core.ComponentStore[RapierMultibodyJointHandle2d]
   config : @core.Resource[Physics2dConfig]
   context : @core.Resource[Physics2dContext]
   events : @core.Resource[Physics2dEvents]
@@ -66,8 +70,12 @@ fn Physics2dTestWorld::new() -> Physics2dTestWorld {
     restitution_rule: @core.ComponentStore::new(),
     collision_groups: @core.ComponentStore::new(),
     solver_groups: @core.ComponentStore::new(),
+    impulse_joint: @core.ComponentStore::new(),
+    multibody_joint: @core.ComponentStore::new(),
     body_handle: @core.ComponentStore::new(),
     collider_handle: @core.ComponentStore::new(),
+    impulse_joint_handle: @core.ComponentStore::new(),
+    multibody_joint_handle: @core.ComponentStore::new(),
     config: @core.Resource::new(),
     context: @core.Resource::new(),
     events: @core.Resource::new(),
@@ -206,6 +214,20 @@ impl Has_SolverGroups2d for Physics2dTestWorld with get_solver_groups2d_store(
 }
 
 ///|
+impl Has_ImpulseJoint2d for Physics2dTestWorld with get_impulse_joint2d_store(
+  self,
+) {
+  self.impulse_joint
+}
+
+///|
+impl Has_MultibodyJoint2d for Physics2dTestWorld with get_multibody_joint2d_store(
+  self,
+) {
+  self.multibody_joint
+}
+
+///|
 impl Has_RapierBodyHandle2d for Physics2dTestWorld with get_rapier_body_handle2d_store(
   self,
 ) {
@@ -217,6 +239,20 @@ impl Has_RapierColliderHandle2d for Physics2dTestWorld with get_rapier_collider_
   self,
 ) {
   self.collider_handle
+}
+
+///|
+impl Has_RapierImpulseJointHandle2d for Physics2dTestWorld with get_rapier_impulse_joint_handle2d_store(
+  self,
+) {
+  self.impulse_joint_handle
+}
+
+///|
+impl Has_RapierMultibodyJointHandle2d for Physics2dTestWorld with get_rapier_multibody_joint_handle2d_store(
+  self,
+) {
+  self.multibody_joint_handle
 }
 
 ///|
@@ -797,4 +833,153 @@ test "physics2d: collision groups filter collision events" {
     .get_ref()
     .unwrap().val
   inspect(events.collisions.length() == 0, content="true")
+}
+
+///|
+test "physics2d: query pipeline sees inserted colliders" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let floor = @core.Entity::new(0, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    floor,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    floor,
+    RigidBody2d::fixed(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    floor,
+    Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
+    tick,
+  )
+  physics2d_sync_insertions_system(world)
+  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+    .get_ref()
+    .unwrap().val
+  let floor_ch = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
+      world,
+    )
+    .get(floor)
+    .unwrap().handle
+  let ray = @collision.Ray::new(
+    mg_vec2_to_rapier(@math.Vec2::new(0.0F, 10.0F)),
+    mg_vec2_to_rapier(@math.Vec2::new(0.0F, -1.0F)),
+  )
+  let hit = ctx.query().cast_ray(ray, 100.0F, true)
+  inspect(hit is Some(_), content="true")
+  match hit {
+    Some((h, _toi)) =>
+      inspect(h.into_raw_parts() == floor_ch.into_raw_parts(), content="true")
+    None => inspect(false, content="false")
+  }
+}
+
+///|
+test "physics2d: impulse joint is inserted and cleaned up" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let a = @core.Entity::new(0, 1)
+  let b = @core.Entity::new(1, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    a,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    a,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    a,
+    Collider2d::new(ColliderShape2d::ball(0.2F)),
+    tick,
+  )
+  Has_Velocity2d::get_velocity2d_store(world).insert(
+    a,
+    Velocity2d::zero(),
+    tick,
+  )
+  @math.Has_Transform::get_transform_store(world).insert(
+    b,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(1.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    b,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    b,
+    Collider2d::new(ColliderShape2d::ball(0.2F)),
+    tick,
+  )
+  Has_Velocity2d::get_velocity2d_store(world).insert(
+    b,
+    Velocity2d::zero(),
+    tick,
+  )
+  let fixed = @dynamics.FixedJointBuilder::new().build()
+  let data = @dynamics.GenericJoint::from_fixed(fixed)
+  Has_ImpulseJoint2d::get_impulse_joint2d_store(world).insert(
+    a,
+    ImpulseJoint2d::new(b, data),
+    tick,
+  )
+  physics2d_sync_insertions_system(world)
+  physics2d_sync_joints_system(world)
+  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+    .get_ref()
+    .unwrap().val
+  inspect(ctx.impulse_joints.len() == 1, content="true")
+  inspect(
+    Has_RapierImpulseJointHandle2d::get_rapier_impulse_joint_handle2d_store(
+      world,
+    ).contains(a),
+    content="true",
+  )
+
+  // Remove authoring component and verify cleanup removes the Rapier joint.
+  Has_ImpulseJoint2d::get_impulse_joint2d_store(world).remove(a) |> ignore
+  physics2d_cleanup_despawned_system(world)
+  inspect(ctx.impulse_joints.len() == 0, content="true")
+  inspect(
+    !Has_RapierImpulseJointHandle2d::get_rapier_impulse_joint_handle2d_store(
+      world,
+    ).contains(a),
+    content="true",
+  )
 }
