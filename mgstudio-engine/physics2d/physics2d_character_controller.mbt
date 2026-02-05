@@ -205,7 +205,7 @@ pub fn[
   let ctx = ctx_ref.val
 
   // Ensure queries see the latest collider positions (e.g. standalone colliders synced from Transform).
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
   let dt = @app.fixed_time_timestep_seconds()
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
@@ -242,6 +242,8 @@ pub fn[
     let movement = kcc.controller.move_shape(
       dt,
       query,
+      ctx.rigid_bodies,
+      ctx.colliders,
       shape,
       character_pos,
       mg_vec2_to_rapier(kcc.translation),
@@ -289,12 +291,12 @@ pub fn[
     }
     controller_store.set(
       entity,
-      KinematicCharacterController2d::{ ..kcc, }.reset_translation(),
+      KinematicCharacterController2d::{ ..kcc }.reset_translation(),
       tick,
     )
     |> ignore
   })
 
   // Colliders moved; keep query pipeline consistent.
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
 }

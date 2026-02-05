@@ -29,7 +29,6 @@ pub struct Physics2dHooksConfig {
     @collision.ColliderHandle,
     @collision.ColliderHandle,
   ) -> Bool)?
-
   /// Return false to ignore the intersection (sensor) pair entirely.
   filter_intersection_pair : ((
     @dynamics.RigidBodySet,
@@ -37,7 +36,6 @@ pub struct Physics2dHooksConfig {
     @collision.ColliderHandle,
     @collision.ColliderHandle,
   ) -> Bool)?
-
   /// Return (solve_contacts, friction_dir2) to override solver behavior.
   modify_solver_contacts : ((
     @dynamics.RigidBodySet,
@@ -46,7 +44,6 @@ pub struct Physics2dHooksConfig {
     @collision.ColliderHandle,
     @collision.ContactManifold,
   ) -> (Bool, @rapier_core.Vec2))?
-
   modify_solver_contacts_with_solver_contacts : ((
     @dynamics.RigidBodySet,
     @collision.ColliderSet,
@@ -68,10 +65,12 @@ pub fn Physics2dHooksConfig::default() -> Physics2dHooksConfig {
   }
 }
 
+///|
 let physics2d_hooks_state : Ref[Physics2dHooksConfig] = Ref::new(
   Physics2dHooksConfig::default(),
 )
 
+///|
 let physics2d_hook_collider_to_entity : Ref[
   @hashmap.HashMap[(Int, Int), @core.Entity],
 ] = Ref::new(@hashmap.HashMap::new())
@@ -96,13 +95,19 @@ pub fn physics2d_set_filter_contact_pair(
   ) -> Bool,
 ) -> Unit {
   let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{ ..c, filter_contact_pair: Some(f) }
+  physics2d_hooks_state.val = Physics2dHooksConfig::{
+    ..c,
+    filter_contact_pair: Some(f),
+  }
 }
 
 ///|
 pub fn physics2d_clear_filter_contact_pair() -> Unit {
   let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{ ..c, filter_contact_pair: None }
+  physics2d_hooks_state.val = Physics2dHooksConfig::{
+    ..c,
+    filter_contact_pair: None,
+  }
 }
 
 ///|
@@ -124,7 +129,10 @@ pub fn physics2d_set_filter_intersection_pair(
 ///|
 pub fn physics2d_clear_filter_intersection_pair() -> Unit {
   let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{ ..c, filter_intersection_pair: None }
+  physics2d_hooks_state.val = Physics2dHooksConfig::{
+    ..c,
+    filter_intersection_pair: None,
+  }
 }
 
 ///|
@@ -138,13 +146,19 @@ pub fn physics2d_set_modify_solver_contacts(
   ) -> (Bool, @rapier_core.Vec2),
 ) -> Unit {
   let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{ ..c, modify_solver_contacts: Some(f) }
+  physics2d_hooks_state.val = Physics2dHooksConfig::{
+    ..c,
+    modify_solver_contacts: Some(f),
+  }
 }
 
 ///|
 pub fn physics2d_clear_modify_solver_contacts() -> Unit {
   let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{ ..c, modify_solver_contacts: None }
+  physics2d_hooks_state.val = Physics2dHooksConfig::{
+    ..c,
+    modify_solver_contacts: None,
+  }
 }
 
 ///|

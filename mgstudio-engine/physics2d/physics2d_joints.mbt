@@ -117,6 +117,7 @@ pub fn RapierMultibodyJointHandle2d::new(
 ///
 /// These helpers mirror Bevy+Rapier's intent: keep user code in mgstudio math
 /// types and let the integration layer handle conversions.
+
 ///|
 pub fn joint2d_fixed(
   local_anchor1 : @math.Vec2,
