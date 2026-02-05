@@ -17,6 +17,7 @@
 #include <dlfcn.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -63,11 +64,46 @@ typedef struct mgw_window {
   uint8_t mouse_released[8];
 } mgw_window_t;
 
+// -----------------------------------------------------------------------------
+// A11y (NSAccessibility) bridge
+// -----------------------------------------------------------------------------
+
+typedef struct mgw_a11y_node {
+  int32_t node_id;
+  int32_t parent_id;
+  int32_t role_id;
+  float x;
+  float y;
+  float w;
+  float h;
+  int32_t actions_mask;
+  mgw_objc_id element;
+} mgw_a11y_node_t;
+
+static mgw_a11y_node_t *mgw_a11y_nodes = NULL;
+static int32_t mgw_a11y_nodes_len = 0;
+static int32_t mgw_a11y_nodes_cap = 0;
+static int32_t mgw_a11y_root_id = -1;
+static mgw_objc_id mgw_a11y_pool = NULL;
+
+typedef struct mgw_a11y_action {
+  int32_t target;
+  int32_t kind;
+} mgw_a11y_action_t;
+
+static mgw_a11y_action_t *mgw_a11y_actions = NULL;
+static int32_t mgw_a11y_actions_len = 0;
+static int32_t mgw_a11y_actions_cap = 0;
+static mgw_objc_id mgw_a11y_retained_tree = NULL;
+
 static void *mgw_objc_dylib = NULL;
 static void *mgw_cocoa = NULL;
 static void *mgw_objc_get_class_sym = NULL;
 static void *mgw_sel_register_name_sym = NULL;
 static void *mgw_objc_msg_send_sym = NULL;
+static void *mgw_objc_allocate_class_pair_sym = NULL;
+static void *mgw_objc_register_class_pair_sym = NULL;
+static void *mgw_class_add_method_sym = NULL;
 
 static bool mgw_objc_init(void) {
   if (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym &&
@@ -93,8 +129,13 @@ static bool mgw_objc_init(void) {
   mgw_objc_get_class_sym = dlsym(mgw_objc_dylib, "objc_getClass");
   mgw_sel_register_name_sym = dlsym(mgw_objc_dylib, "sel_registerName");
   mgw_objc_msg_send_sym = dlsym(mgw_objc_dylib, "objc_msgSend");
+  mgw_objc_allocate_class_pair_sym = dlsym(mgw_objc_dylib, "objc_allocateClassPair");
+  mgw_objc_register_class_pair_sym = dlsym(mgw_objc_dylib, "objc_registerClassPair");
+  mgw_class_add_method_sym = dlsym(mgw_objc_dylib, "class_addMethod");
 
-  return (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym);
+  return (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym &&
+          mgw_objc_allocate_class_pair_sym && mgw_objc_register_class_pair_sym &&
+          mgw_class_add_method_sym);
 #else
   return false;
 #endif
@@ -110,6 +151,14 @@ static inline mgw_objc_sel mgw_sel(const char *name) {
 
 static inline mgw_objc_id mgw_msg_id(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline const char *mgw_msg_cstr(mgw_objc_id obj, mgw_objc_sel sel) {
+  return ((const char *(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline bool mgw_msg_bool_id(mgw_objc_id obj, mgw_objc_sel sel, mgw_objc_id arg0) {
+  return ((bool (*)(mgw_objc_id, mgw_objc_sel, mgw_objc_id))mgw_objc_msg_send_sym)(obj, sel, arg0);
 }
 
 static inline void mgw_msg_void(mgw_objc_id obj, mgw_objc_sel sel) {
@@ -138,6 +187,19 @@ static inline mgw_rect mgw_msg_rect(mgw_objc_id obj, mgw_objc_sel sel) {
   // If this becomes unreliable, we should switch to an Objective-C stub or a
   // dedicated C helper that avoids struct returns.
   return ((mgw_rect(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline mgw_rect mgw_msg_rect_rect(mgw_objc_id obj, mgw_objc_sel sel, mgw_rect rect) {
+  return ((mgw_rect(*)(mgw_objc_id, mgw_objc_sel, mgw_rect))mgw_objc_msg_send_sym)(obj, sel, rect);
+}
+
+static inline mgw_rect mgw_msg_rect_rect_id(mgw_objc_id obj, mgw_objc_sel sel, mgw_rect rect, mgw_objc_id arg0) {
+  return ((mgw_rect(*)(mgw_objc_id, mgw_objc_sel, mgw_rect, mgw_objc_id))mgw_objc_msg_send_sym)(obj, sel, rect,
+                                                                                                  arg0);
+}
+
+static inline void mgw_msg_void_rect(mgw_objc_id obj, mgw_objc_sel sel, mgw_rect rect) {
+  ((void (*)(mgw_objc_id, mgw_objc_sel, mgw_rect))mgw_objc_msg_send_sym)(obj, sel, rect);
 }
 
 static inline void mgw_msg_void_size(mgw_objc_id obj, mgw_objc_sel sel, mgw_size sz) {
@@ -172,6 +234,126 @@ static mgw_objc_id mgw_nsstring_utf8(const char *cstr) {
   mgw_objc_sel s = mgw_sel("stringWithUTF8String:");
   return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel, const char *))mgw_objc_msg_send_sym)(
       (mgw_objc_id)nsstring, s, cstr);
+}
+
+static void mgw_a11y_actions_push(int32_t target, int32_t kind) {
+  if (mgw_a11y_actions_len + 1 > mgw_a11y_actions_cap) {
+    int32_t next = mgw_a11y_actions_cap ? mgw_a11y_actions_cap * 2 : 64;
+    mgw_a11y_action_t *next_buf =
+        (mgw_a11y_action_t *)realloc(mgw_a11y_actions, (size_t)next * sizeof(mgw_a11y_action_t));
+    if (!next_buf) {
+      return;
+    }
+    mgw_a11y_actions = next_buf;
+    mgw_a11y_actions_cap = next;
+  }
+  mgw_a11y_actions[mgw_a11y_actions_len].target = target;
+  mgw_a11y_actions[mgw_a11y_actions_len].kind = kind;
+  mgw_a11y_actions_len += 1;
+}
+
+static mgw_objc_id mgw_a11y_element_class(void);
+
+static bool mgw_a11y_perform_press(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return false;
+  }
+  mgw_objc_id ident = mgw_msg_id(self, mgw_sel("accessibilityIdentifier"));
+  if (!ident) {
+    return false;
+  }
+  const char *cstr = mgw_msg_cstr(ident, mgw_sel("UTF8String"));
+  if (!cstr) {
+    return false;
+  }
+  int32_t node_id = (int32_t)atoi(cstr);
+  if (node_id == 0) {
+    return false;
+  }
+  mgw_a11y_actions_push(node_id, 2 /* Default */);
+  return true;
+#else
+  (void)self;
+  return false;
+#endif
+}
+
+static mgw_objc_id mgw_a11y_action_names(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return NULL;
+  }
+  mgw_objc_id role = mgw_msg_id(self, mgw_sel("accessibilityRole"));
+  mgw_objc_id ax_button = mgw_nsstring_utf8("AXButton");
+  bool is_button = false;
+  if (role && ax_button) {
+    is_button = mgw_msg_bool_id(role, mgw_sel("isEqualToString:" /* NSString */), ax_button);
+  }
+  mgw_objc_class nsarray_cls = mgw_cls("NSArray");
+  if (!nsarray_cls) {
+    return NULL;
+  }
+  if (!is_button) {
+    return mgw_msg_id((mgw_objc_id)nsarray_cls, mgw_sel("array"));
+  }
+  mgw_objc_id press = mgw_nsstring_utf8("AXPress");
+  if (!press) {
+    return mgw_msg_id((mgw_objc_id)nsarray_cls, mgw_sel("array"));
+  }
+  mgw_objc_sel arr_sel = mgw_sel("arrayWithObject:");
+  return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel, mgw_objc_id))mgw_objc_msg_send_sym)(
+      (mgw_objc_id)nsarray_cls, arr_sel, press);
+#else
+  (void)self;
+  return NULL;
+#endif
+}
+
+static mgw_objc_id mgw_a11y_element_class(void) {
+#ifndef __APPLE__
+  return NULL;
+#else
+  static mgw_objc_id cached = NULL;
+  if (cached) {
+    return cached;
+  }
+  if (!mgw_objc_init()) {
+    return NULL;
+  }
+  // Try to look up the class first (in case it was already registered).
+  mgw_objc_id existing = (mgw_objc_id)mgw_cls("MGWA11yElement");
+  if (existing) {
+    cached = existing;
+    return cached;
+  }
+
+  mgw_objc_class base = mgw_cls("NSAccessibilityElement");
+  if (!base) {
+    return NULL;
+  }
+  mgw_objc_class (*alloc_pair)(mgw_objc_class, const char *, size_t) =
+      (mgw_objc_class(*)(mgw_objc_class, const char *, size_t))mgw_objc_allocate_class_pair_sym;
+  void (*register_pair)(mgw_objc_class) =
+      (void (*)(mgw_objc_class))mgw_objc_register_class_pair_sym;
+  bool (*class_add_method)(mgw_objc_class, mgw_objc_sel, void *, const char *) =
+      (bool (*)(mgw_objc_class, mgw_objc_sel, void *, const char *))mgw_class_add_method_sym;
+
+  mgw_objc_class cls = alloc_pair(base, "MGWA11yElement", 0);
+  if (!cls) {
+    return NULL;
+  }
+  // BOOL accessibilityPerformPress()
+  class_add_method(cls, mgw_sel("accessibilityPerformPress"), (void *)&mgw_a11y_perform_press, "B@:");
+  // NSArray* accessibilityActionNames()
+  class_add_method(cls, mgw_sel("accessibilityActionNames"), (void *)&mgw_a11y_action_names, "@@:");
+
+  register_pair(cls);
+  cached = (mgw_objc_id)cls;
+  return cached;
+#endif
 }
 
 static void mgw_app_ensure_started(void) {
@@ -503,6 +685,14 @@ MOONBIT_FFI_EXPORT void mgw_window_destroy(void *win) {
   }
   mgw_window_t *w = (mgw_window_t *)win;
   mgw_objc_id pool = mgw_autorelease_pool_new();
+  if (mgw_a11y_retained_tree) {
+    mgw_msg_void(mgw_a11y_retained_tree, mgw_sel("release"));
+    mgw_a11y_retained_tree = NULL;
+  }
+  if (mgw_a11y_pool) {
+    mgw_autorelease_pool_drain(mgw_a11y_pool);
+    mgw_a11y_pool = NULL;
+  }
   if (w->ns_window) {
     mgw_msg_void(w->ns_window, mgw_sel("close"));
     mgw_msg_void(w->ns_window, mgw_sel("release"));
@@ -781,3 +971,228 @@ MOONBIT_FFI_EXPORT int32_t mgw_input_is_mouse_button_just_released(void *win, in
   }
   return ((mgw_window_t *)win)->mouse_released[idx] != 0;
 }
+
+MOONBIT_FFI_EXPORT void mgw_a11y_begin_update(void *win, int32_t root_id) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window || !w->content_view) {
+    return;
+  }
+  mgw_app_ensure_started();
+  mgw_a11y_root_id = root_id;
+  mgw_a11y_nodes_len = 0;
+  if (mgw_a11y_pool) {
+    mgw_autorelease_pool_drain(mgw_a11y_pool);
+    mgw_a11y_pool = NULL;
+  }
+  mgw_a11y_pool = mgw_autorelease_pool_new();
+#else
+  (void)win;
+  (void)root_id;
+#endif
+}
+
+static mgw_a11y_node_t *mgw_a11y_node_find(int32_t node_id) {
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    if (mgw_a11y_nodes[i].node_id == node_id) {
+      return &mgw_a11y_nodes[i];
+    }
+  }
+  return NULL;
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_push_node(void *win, int32_t node_id, int32_t parent_id, int32_t role_id,
+                                          float x, float y, float width, float height, moonbit_bytes_t name,
+                                          int32_t actions_mask) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window || !w->content_view) {
+    return;
+  }
+  if (mgw_a11y_nodes_len + 1 > mgw_a11y_nodes_cap) {
+    int32_t next = mgw_a11y_nodes_cap ? mgw_a11y_nodes_cap * 2 : 256;
+    mgw_a11y_node_t *next_buf =
+        (mgw_a11y_node_t *)realloc(mgw_a11y_nodes, (size_t)next * sizeof(mgw_a11y_node_t));
+    if (!next_buf) {
+      return;
+    }
+    mgw_a11y_nodes = next_buf;
+    mgw_a11y_nodes_cap = next;
+  }
+
+  mgw_objc_id el_cls = mgw_a11y_element_class();
+  if (!el_cls) {
+    return;
+  }
+  mgw_objc_id element = mgw_msg_id(el_cls, mgw_sel("new"));
+  if (!element) {
+    return;
+  }
+  // Put the element under autorelease; the retained tree keeps it alive.
+  element = mgw_msg_id(element, mgw_sel("autorelease"));
+
+  // Identifier = node id, used for action callbacks.
+  char id_buf[64];
+  snprintf(id_buf, sizeof(id_buf), "%d", (int)node_id);
+  mgw_objc_id ident = mgw_nsstring_utf8(id_buf);
+  if (ident) {
+    mgw_msg_void_id(element, mgw_sel("setAccessibilityIdentifier:"), ident);
+  }
+
+  // Role.
+  const char *role_str = "AXGroup";
+  if (role_id == 3) {
+    role_str = "AXButton";
+  } else if (role_id == 4) {
+    role_str = "AXStaticText";
+  } else if (role_id == 1) {
+    role_str = "AXWindow";
+  }
+  mgw_objc_id ns_role = mgw_nsstring_utf8(role_str);
+  if (ns_role) {
+    mgw_msg_void_id(element, mgw_sel("setAccessibilityRole:"), ns_role);
+  }
+
+  // Label.
+  if (name && ((const char *)name)[0] != 0) {
+    mgw_objc_id label = mgw_nsstring_utf8((const char *)name);
+    if (label) {
+      mgw_msg_void_id(element, mgw_sel("setAccessibilityLabel:"), label);
+    }
+  }
+
+  // Frame in parent space (content view coordinates).
+  //
+  // We intentionally avoid converting to screen coordinates here to reduce
+  // reliance on struct-return objc_msgSend ABIs.
+  mgw_rect bounds = mgw_msg_rect(w->content_view, mgw_sel("bounds"));
+  bool flipped = mgw_msg_bool(w->content_view, mgw_sel("isFlipped"));
+  double view_x = (double)x;
+  double view_y = flipped ? (double)y : (bounds.size.h - (double)y - (double)height);
+  mgw_rect view_rect = {.origin = {.x = view_x, .y = view_y}, .size = {.w = (double)width, .h = (double)height}};
+  mgw_msg_void_rect(element, mgw_sel("setAccessibilityFrameInParentSpace:"), view_rect);
+
+  mgw_a11y_node_t *slot = &mgw_a11y_nodes[mgw_a11y_nodes_len];
+  slot->node_id = node_id;
+  slot->parent_id = parent_id;
+  slot->role_id = role_id;
+  slot->x = x;
+  slot->y = y;
+  slot->w = width;
+  slot->h = height;
+  slot->actions_mask = actions_mask;
+  slot->element = element;
+  mgw_a11y_nodes_len += 1;
+#else
+  (void)win;
+  (void)node_id;
+  (void)parent_id;
+  (void)role_id;
+  (void)x;
+  (void)y;
+  (void)width;
+  (void)height;
+  (void)name;
+  (void)actions_mask;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_end_update(void *win) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->content_view) {
+    return;
+  }
+  mgw_objc_class mut_array_cls = mgw_cls("NSMutableArray");
+  if (!mut_array_cls) {
+    return;
+  }
+  mgw_objc_id roots = mgw_msg_id((mgw_objc_id)mut_array_cls, mgw_sel("array"));
+
+  // Create a child list per node.
+  mgw_objc_id *children_lists = NULL;
+  if (mgw_a11y_nodes_len > 0) {
+    children_lists = (mgw_objc_id *)calloc((size_t)mgw_a11y_nodes_len, sizeof(mgw_objc_id));
+  }
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    children_lists[i] = mgw_msg_id((mgw_objc_id)mut_array_cls, mgw_sel("array"));
+  }
+
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    mgw_a11y_node_t *node = &mgw_a11y_nodes[i];
+    mgw_objc_id parent_el = NULL;
+    if (node->parent_id != mgw_a11y_root_id) {
+      mgw_a11y_node_t *parent = mgw_a11y_node_find(node->parent_id);
+      if (parent) {
+        parent_el = parent->element;
+        // Append to parent's child list.
+        for (int32_t p = 0; p < mgw_a11y_nodes_len; p += 1) {
+          if (mgw_a11y_nodes[p].node_id == node->parent_id) {
+            mgw_msg_void_id(children_lists[p], mgw_sel("addObject:"), node->element);
+            break;
+          }
+        }
+      }
+    }
+    if (!parent_el) {
+      mgw_msg_void_id(roots, mgw_sel("addObject:"), node->element);
+      parent_el = w->content_view;
+    }
+    mgw_msg_void_id(node->element, mgw_sel("setAccessibilityParent:"), parent_el);
+    mgw_msg_void_id(node->element, mgw_sel("setAccessibilityWindow:"), w->ns_window);
+  }
+
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    mgw_a11y_node_t *node = &mgw_a11y_nodes[i];
+    mgw_msg_void_id(node->element, mgw_sel("setAccessibilityChildren:"), children_lists[i]);
+  }
+
+  mgw_msg_void_id(w->content_view, mgw_sel("setAccessibilityChildren:"), roots);
+
+  // Retain the tree so nodes stay alive after draining the autorelease pool.
+  if (mgw_a11y_retained_tree) {
+    mgw_msg_void(mgw_a11y_retained_tree, mgw_sel("release"));
+    mgw_a11y_retained_tree = NULL;
+  }
+  if (roots) {
+    mgw_a11y_retained_tree = mgw_msg_id(roots, mgw_sel("retain"));
+  }
+
+  if (children_lists) {
+    free(children_lists);
+  }
+  if (mgw_a11y_pool) {
+    mgw_autorelease_pool_drain(mgw_a11y_pool);
+    mgw_a11y_pool = NULL;
+  }
+#else
+  (void)win;
+#endif
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_actions_len(void) { return mgw_a11y_actions_len; }
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_target(int32_t index) {
+  if (index < 0 || index >= mgw_a11y_actions_len) {
+    return 0;
+  }
+  return mgw_a11y_actions[index].target;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_kind(int32_t index) {
+  if (index < 0 || index >= mgw_a11y_actions_len) {
+    return 0;
+  }
+  return mgw_a11y_actions[index].kind;
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_actions_clear(void) { mgw_a11y_actions_len = 0; }

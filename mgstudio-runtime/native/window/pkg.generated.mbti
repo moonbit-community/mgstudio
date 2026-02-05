@@ -13,6 +13,13 @@ import {
 pub struct Window {
   raw : @c.OpaquePtr
 }
+pub fn Window::a11y_action_kind(Self, Int) -> Int
+pub fn Window::a11y_action_target(Self, Int) -> Int
+pub fn Window::a11y_actions_clear(Self) -> Unit
+pub fn Window::a11y_actions_len(Self) -> Int
+pub fn Window::a11y_begin_update(Self, Int) -> Unit
+pub fn Window::a11y_end_update(Self) -> Unit
+pub fn Window::a11y_push_node(Self, Int, Int, Int, Float, Float, Float, Float, String, Int) -> Unit
 pub fn Window::attach_metal_layer(Self, @c.OpaquePtr) -> Unit
 pub fn Window::create(Int, Int, String) -> Self
 pub fn Window::destroy(Self) -> Unit

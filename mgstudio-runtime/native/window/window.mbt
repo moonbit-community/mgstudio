@@ -148,6 +148,71 @@ pub fn Window::input_is_mouse_button_just_released(
 }
 
 ///|
+/// A11y: Begin an accessibility tree update.
+pub fn Window::a11y_begin_update(self : Window, root_id : Int) -> Unit {
+  c_a11y_begin_update(self.raw, root_id)
+}
+
+///|
+/// A11y: Push one node (flat list with a parent id) to the host bridge.
+pub fn Window::a11y_push_node(
+  self : Window,
+  node_id : Int,
+  parent_id : Int,
+  role_id : Int,
+  x : Float,
+  y : Float,
+  width : Float,
+  height : Float,
+  name : String,
+  actions_mask : Int,
+) -> Unit {
+  let name_cstr = string_to_utf8_cstr(name)
+  c_a11y_push_node(
+    self.raw,
+    node_id,
+    parent_id,
+    role_id,
+    x,
+    y,
+    width,
+    height,
+    name_cstr,
+    actions_mask,
+  )
+}
+
+///|
+/// A11y: Finish a full-tree update.
+pub fn Window::a11y_end_update(self : Window) -> Unit {
+  c_a11y_end_update(self.raw)
+}
+
+///|
+pub fn Window::a11y_actions_len(self : Window) -> Int {
+  self |> ignore
+  c_a11y_actions_len()
+}
+
+///|
+pub fn Window::a11y_action_target(self : Window, index : Int) -> Int {
+  self |> ignore
+  c_a11y_action_target(index)
+}
+
+///|
+pub fn Window::a11y_action_kind(self : Window, index : Int) -> Int {
+  self |> ignore
+  c_a11y_action_kind(index)
+}
+
+///|
+pub fn Window::a11y_actions_clear(self : Window) -> Unit {
+  self |> ignore
+  c_a11y_actions_clear()
+}
+
+///|
 #borrow(_title)
 extern "C" fn c_window_create(
   width : Int,
@@ -235,6 +300,42 @@ extern "C" fn c_input_is_mouse_button_just_released(
   win : @wgpu_c.OpaquePtr,
   button : Int,
 ) -> Bool = "mgw_input_is_mouse_button_just_released"
+
+///|
+extern "C" fn c_a11y_begin_update(
+  win : @wgpu_c.OpaquePtr,
+  root_id : Int,
+) -> Unit = "mgw_a11y_begin_update"
+
+///|
+#borrow(_name)
+extern "C" fn c_a11y_push_node(
+  win : @wgpu_c.OpaquePtr,
+  node_id : Int,
+  parent_id : Int,
+  role_id : Int,
+  x : Float,
+  y : Float,
+  width : Float,
+  height : Float,
+  _name : Bytes,
+  actions_mask : Int,
+) -> Unit = "mgw_a11y_push_node"
+
+///|
+extern "C" fn c_a11y_end_update(win : @wgpu_c.OpaquePtr) -> Unit = "mgw_a11y_end_update"
+
+///|
+extern "C" fn c_a11y_actions_len() -> Int = "mgw_a11y_actions_len"
+
+///|
+extern "C" fn c_a11y_action_target(index : Int) -> Int = "mgw_a11y_action_target"
+
+///|
+extern "C" fn c_a11y_action_kind(index : Int) -> Int = "mgw_a11y_action_kind"
+
+///|
+extern "C" fn c_a11y_actions_clear() -> Unit = "mgw_a11y_actions_clear"
 
 ///|
 /// Encode a MoonBit `String` to a UTF-8 byte buffer terminated with `\0`.

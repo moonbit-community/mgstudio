@@ -84,6 +84,15 @@ pub struct GpuBackend {
   ui_instance_data : Array[Float]
   ui_batches : Array[UiBatch]
   mut ui_instance_count : UInt
+  mut ui_shadow_pipeline : @wgpu_mbt.RenderPipeline?
+  mut ui_shadow_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut ui_shadow_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut ui_shadow_instance_buf : @wgpu_mbt.Buffer?
+  mut ui_shadow_instance_capacity : UInt64
+  mut ui_shadow_globals_bg : @wgpu_mbt.BindGroup?
+  ui_shadow_instance_data : Array[Float]
+  ui_shadow_batches : Array[UiBatch]
+  mut ui_shadow_instance_count : UInt
   mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
@@ -105,6 +114,7 @@ pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError

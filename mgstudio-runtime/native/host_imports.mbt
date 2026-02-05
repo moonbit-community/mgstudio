@@ -695,17 +695,59 @@ pub fn add_mgstudio_host_imports(
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
 
-  // A11y (stub; web runtime provides the full bridge).
+  // A11y (macOS NSAccessibility bridge).
   linker.add_host_func(
     "mgstudio_host",
     "a11y_begin_update",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      try {
+        if args.length() >= 1 &&
+          args[0] is @types.Value::I32(root_id) &&
+          ctx.window is Some(win) {
+          win.a11y_begin_update(root_id)
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_begin_update failed")
+          host_fail("a11y_begin_update", "<error>")
+        }
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "a11y_push_node",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() < 9 {
+          return ok_i32(0)
+        }
+        guard args[0] is @types.Value::I32(node_id) else { return ok_i32(0) }
+        guard args[1] is @types.Value::I32(parent_id) else { return ok_i32(0) }
+        guard args[2] is @types.Value::I32(role_id) else { return ok_i32(0) }
+        guard args[3] is @types.Value::F32(x) else { return ok_i32(0) }
+        guard args[4] is @types.Value::F32(y) else { return ok_i32(0) }
+        guard args[5] is @types.Value::F32(w) else { return ok_i32(0) }
+        guard args[6] is @types.Value::F32(h) else { return ok_i32(0) }
+        guard args[7] is @types.Value::I32(name_id) else { return ok_i32(0) }
+        guard args[8] is @types.Value::I32(actions_mask) else {
+          return ok_i32(0)
+        }
+        let name = string_table_get(ctx, name_id).unwrap_or("")
+        win.a11y_push_node(
+          node_id, parent_id, role_id, x, y, w, h, name, actions_mask,
+        )
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_push_node failed")
+          host_fail("a11y_push_node", "<error>")
+        }
+      }
+    },
     func_type=ft(
       [
         @types.ValueType::I32,
@@ -724,31 +766,93 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_end_update",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      try {
+        if ctx.window is Some(win) {
+          win.a11y_end_update()
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_end_update failed")
+          host_fail("a11y_end_update", "<error>")
+        }
+      }
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "a11y_actions_len",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      try {
+        if ctx.window is Some(win) {
+          return ok_i32(win.a11y_actions_len())
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_actions_len failed")
+          host_fail("a11y_actions_len", "<error>")
+        }
+      }
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "a11y_action_target",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 1 && args[0] is @types.Value::I32(index) {
+          return ok_i32(win.a11y_action_target(index))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_target failed")
+          host_fail("a11y_action_target", "<error>")
+        }
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "a11y_action_kind",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 1 && args[0] is @types.Value::I32(index) {
+          return ok_i32(win.a11y_action_kind(index))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_kind failed")
+          host_fail("a11y_action_kind", "<error>")
+        }
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "a11y_actions_clear",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      try {
+        if ctx.window is Some(win) {
+          win.a11y_actions_clear()
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_actions_clear failed")
+          host_fail("a11y_actions_clear", "<error>")
+        }
+      }
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
 
