@@ -13,50 +13,69 @@
 // limitations under the License.
 
 ///|
-/// Global physics hooks configuration for 2D Rapier integration.
+/// Bevy-style physics hooks configuration for 2D Rapier integration.
 ///
-/// Rapier's `PhysicsHooks` callbacks are invoked from inside `PhysicsPipeline::step`
-/// and do not have access to mgstudio's ECS world. We still provide:
-/// - A global place to register callbacks.
-/// - A helper to map `ColliderHandle -> Entity` during the current `step`.
+/// Rapier invokes `PhysicsHooks` callbacks from inside `PhysicsPipeline::step`.
+/// Those callbacks do not have access to mgstudio's ECS world.
+///
+/// Like `bevy_rapier`, mgstudio stores the owning `Entity` on each Rapier collider
+/// (and rigid-body) using `user_data128 = (entity.id, entity.generation)`.
+/// This lets hooks recover entity semantics from Rapier handles.
 
 ///|
-pub struct Physics2dHooksConfig {
+pub struct Physics2dPairHookContext {
+  bodies : @dynamics.RigidBodySet
+  colliders : @collision.ColliderSet
+  collider1 : @collision.ColliderHandle
+  collider2 : @collision.ColliderHandle
+  entity1 : @core.Entity?
+  entity2 : @core.Entity?
+}
+
+///|
+pub struct Physics2dContactHookContext {
+  bodies : @dynamics.RigidBodySet
+  colliders : @collision.ColliderSet
+  collider1 : @collision.ColliderHandle
+  collider2 : @collision.ColliderHandle
+  entity1 : @core.Entity?
+  entity2 : @core.Entity?
+  manifold : @collision.ContactManifold
+}
+
+///|
+pub struct Physics2dContactHookWithSolverContactsContext {
+  bodies : @dynamics.RigidBodySet
+  colliders : @collision.ColliderSet
+  collider1 : @collision.ColliderHandle
+  collider2 : @collision.ColliderHandle
+  entity1 : @core.Entity?
+  entity2 : @core.Entity?
+  manifold : @collision.ContactManifold
+  solver_contacts : Array[@collision.SolverContact]
+  solver_flags : @collision.SolverFlags
+}
+
+///|
+/// Register user-defined callbacks as an ECS resource (Bevy-style).
+#ecs.resource
+pub struct Physics2dHooks {
   /// Return false to ignore the contact pair entirely.
-  filter_contact_pair : ((
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-  ) -> Bool)?
+  filter_contact_pair : ((Physics2dPairHookContext) -> Bool)?
   /// Return false to ignore the intersection (sensor) pair entirely.
-  filter_intersection_pair : ((
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-  ) -> Bool)?
+  filter_intersection_pair : ((Physics2dPairHookContext) -> Bool)?
   /// Return (solve_contacts, friction_dir2) to override solver behavior.
-  modify_solver_contacts : ((
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-    @collision.ContactManifold,
-  ) -> (Bool, @rapier_core.Vec2))?
+  modify_solver_contacts : ((Physics2dContactHookContext) -> (
+    Bool,
+    @rapier_core.Vec2,
+  ))?
   modify_solver_contacts_with_solver_contacts : ((
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-    @collision.ContactManifold,
-    Array[@collision.SolverContact],
-    @collision.SolverFlags,
+    Physics2dContactHookWithSolverContactsContext,
   ) -> @collision.SolverFlags)?
 }
 
 ///|
-pub fn Physics2dHooksConfig::default() -> Physics2dHooksConfig {
+pub fn Physics2dHooks::default() -> Physics2dHooks {
   {
     filter_contact_pair: None,
     filter_intersection_pair: None,
@@ -66,170 +85,164 @@ pub fn Physics2dHooksConfig::default() -> Physics2dHooksConfig {
 }
 
 ///|
-let physics2d_hooks_state : Ref[Physics2dHooksConfig] = Ref::new(
-  Physics2dHooksConfig::default(),
-)
-
-///|
-let physics2d_hook_collider_to_entity : Ref[
-  @hashmap.HashMap[(Int, Int), @core.Entity],
-] = Ref::new(@hashmap.HashMap::new())
-
-///|
-pub fn physics2d_hooks_config() -> Physics2dHooksConfig {
-  physics2d_hooks_state.val
+pub fn Physics2dHooks::with_filter_contact_pair(
+  self : Physics2dHooks,
+  f : (Physics2dPairHookContext) -> Bool,
+) -> Physics2dHooks {
+  Physics2dHooks::{ ..self, filter_contact_pair: Some(f) }
 }
 
 ///|
-pub fn physics2d_hooks_set_config(config : Physics2dHooksConfig) -> Unit {
-  physics2d_hooks_state.val = config
+pub fn Physics2dHooks::with_filter_intersection_pair(
+  self : Physics2dHooks,
+  f : (Physics2dPairHookContext) -> Bool,
+) -> Physics2dHooks {
+  Physics2dHooks::{ ..self, filter_intersection_pair: Some(f) }
 }
 
 ///|
-pub fn physics2d_set_filter_contact_pair(
-  f : (
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-  ) -> Bool,
-) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
-    filter_contact_pair: Some(f),
-  }
+pub fn Physics2dHooks::with_modify_solver_contacts(
+  self : Physics2dHooks,
+  f : (Physics2dContactHookContext) -> (Bool, @rapier_core.Vec2),
+) -> Physics2dHooks {
+  Physics2dHooks::{ ..self, modify_solver_contacts: Some(f) }
 }
 
 ///|
-pub fn physics2d_clear_filter_contact_pair() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
-    filter_contact_pair: None,
-  }
-}
-
-///|
-pub fn physics2d_set_filter_intersection_pair(
-  f : (
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-  ) -> Bool,
-) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
-    filter_intersection_pair: Some(f),
-  }
-}
-
-///|
-pub fn physics2d_clear_filter_intersection_pair() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
-    filter_intersection_pair: None,
-  }
-}
-
-///|
-pub fn physics2d_set_modify_solver_contacts(
-  f : (
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-    @collision.ContactManifold,
-  ) -> (Bool, @rapier_core.Vec2),
-) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
-    modify_solver_contacts: Some(f),
-  }
-}
-
-///|
-pub fn physics2d_clear_modify_solver_contacts() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
-    modify_solver_contacts: None,
-  }
-}
-
-///|
-pub fn physics2d_set_modify_solver_contacts_with_solver_contacts(
-  f : (
-    @dynamics.RigidBodySet,
-    @collision.ColliderSet,
-    @collision.ColliderHandle,
-    @collision.ColliderHandle,
-    @collision.ContactManifold,
-    Array[@collision.SolverContact],
-    @collision.SolverFlags,
-  ) -> @collision.SolverFlags,
-) -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
+pub fn Physics2dHooks::with_modify_solver_contacts_with_solver_contacts(
+  self : Physics2dHooks,
+  f : (Physics2dContactHookWithSolverContactsContext) -> @collision.SolverFlags,
+) -> Physics2dHooks {
+  Physics2dHooks::{
+    ..self,
     modify_solver_contacts_with_solver_contacts: Some(f),
   }
 }
 
 ///|
-pub fn physics2d_clear_modify_solver_contacts_with_solver_contacts() -> Unit {
-  let c = physics2d_hooks_state.val
-  physics2d_hooks_state.val = Physics2dHooksConfig::{
-    ..c,
-    modify_solver_contacts_with_solver_contacts: None,
-  }
+fn physics2d_user_data128_from_entity(
+  e : @core.Entity,
+) -> @rapier_core.UserData128 {
+  let hi = UInt64::extend_uint(e.id.reinterpret_as_uint())
+  let lo = UInt64::extend_uint(e.generation.reinterpret_as_uint())
+  @rapier_core.UserData128::from_parts(hi, lo)
 }
 
 ///|
-/// Map a Rapier collider handle to the owning entity for the current `PhysicsPipeline::step`.
-///
-/// Note: This is only valid during the time the engine is stepping physics.
-pub fn physics2d_hook_entity_from_collider_handle(
+fn physics2d_entity_from_user_data128(
+  data : @rapier_core.UserData128,
+) -> @core.Entity? {
+  let (_hi, lo) = data.to_parts()
+  // Generation `0` is reserved for placeholders/unset.
+  if UInt64::equal(lo, UInt64::default()) {
+    return None
+  }
+  let (hi, lo) = data.to_parts()
+  Some(@core.Entity::new(hi.to_int(), lo.to_int()))
+}
+
+///|
+fn physics2d_entity_from_collider_handle_via_user_data(
+  colliders : @collision.ColliderSet,
   h : @collision.ColliderHandle,
 ) -> @core.Entity? {
-  physics2d_hook_collider_to_entity.val.get(h.into_raw_parts())
+  match colliders.get(h) {
+    Some(c) => physics2d_entity_from_user_data128(c.user_data128())
+    None => None
+  }
 }
 
 ///|
-pub fn physics2d_hooks_set_current_collider_map(
-  map : @hashmap.HashMap[(Int, Int), @core.Entity],
-) -> Unit {
-  physics2d_hook_collider_to_entity.val = map
-}
-
-///|
-pub fn physics2d_hooks_clear_current_collider_map() -> Unit {
-  physics2d_hook_collider_to_entity.val = @hashmap.HashMap::new()
-}
-
-///|
-pub fn physics2d_apply_global_hooks(ctx : Physics2dContext) -> Unit {
-  let c = physics2d_hooks_state.val
+fn physics2d_build_rapier_hooks(cfg : Physics2dHooks) -> @pipeline.PhysicsHooks {
   let mut hooks = @pipeline.PhysicsHooks::new()
-  match c.filter_contact_pair {
-    Some(f) => hooks = hooks.filter_contact_pair(f)
+  match cfg.filter_contact_pair {
+    Some(f) =>
+      hooks = hooks.filter_contact_pair(fn(bodies, colliders, h1, h2) {
+        f(Physics2dPairHookContext::{
+          bodies,
+          colliders,
+          collider1: h1,
+          collider2: h2,
+          entity1: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h1,
+          ),
+          entity2: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h2,
+          ),
+        })
+      })
     None => ()
   }
-  match c.filter_intersection_pair {
-    Some(f) => hooks = hooks.filter_intersection_pair(f)
+  match cfg.filter_intersection_pair {
+    Some(f) =>
+      hooks = hooks.filter_intersection_pair(fn(bodies, colliders, h1, h2) {
+        f(Physics2dPairHookContext::{
+          bodies,
+          colliders,
+          collider1: h1,
+          collider2: h2,
+          entity1: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h1,
+          ),
+          entity2: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h2,
+          ),
+        })
+      })
     None => ()
   }
-  match c.modify_solver_contacts {
-    Some(f) => hooks = hooks.modify_solver_contacts(f)
+  match cfg.modify_solver_contacts {
+    Some(f) =>
+      hooks = hooks.modify_solver_contacts(fn(bodies, colliders, h1, h2, m) {
+        f(Physics2dContactHookContext::{
+          bodies,
+          colliders,
+          collider1: h1,
+          collider2: h2,
+          entity1: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h1,
+          ),
+          entity2: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h2,
+          ),
+          manifold: m,
+        })
+      })
     None => ()
   }
-  match c.modify_solver_contacts_with_solver_contacts {
-    Some(f) => hooks = hooks.modify_solver_contacts_with_solver_contacts(f)
+  match cfg.modify_solver_contacts_with_solver_contacts {
+    Some(f) =>
+      hooks = hooks.modify_solver_contacts_with_solver_contacts(fn(
+        bodies,
+        colliders,
+        h1,
+        h2,
+        m,
+        contacts,
+        flags,
+      ) {
+        f(Physics2dContactHookWithSolverContactsContext::{
+          bodies,
+          colliders,
+          collider1: h1,
+          collider2: h2,
+          entity1: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h1,
+          ),
+          entity2: physics2d_entity_from_collider_handle_via_user_data(
+            colliders, h2,
+          ),
+          manifold: m,
+          solver_contacts: contacts,
+          solver_flags: flags,
+        })
+      })
     None => ()
   }
-  ctx.hooks = hooks
+  hooks
+}
+
+///|
+fn physics2d_apply_hooks(ctx : Physics2dContext, cfg : Physics2dHooks) -> Unit {
+  ctx.hooks = physics2d_build_rapier_hooks(cfg)
 }

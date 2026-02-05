@@ -59,25 +59,42 @@ pub struct World {
   visibility : @core.ComponentStore[@visibility.Visibility]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
+  active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
+  contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
   restitution2d : @core.ComponentStore[@physics2d.Restitution2d]
+  active_events2d : @core.ComponentStore[@physics2d.ActiveEvents2d]
   gravity_scale2d : @core.ComponentStore[@physics2d.GravityScale2d]
+  impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
+  collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
+  multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
+  collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
+  rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[@physics2d.FrictionCombineRule2d]
+  active_collision_types2d : @core.ComponentStore[@physics2d.ActiveCollisionTypes2d]
   rapier_collider_handle2d : @core.ComponentStore[@physics2d.RapierColliderHandle2d]
   rapier_collider_handle3d : @core.ComponentStore[@physics3d.RapierColliderHandle3d]
+  collider_mass_properties2d : @core.ComponentStore[@physics2d.ColliderMassProperties2d]
   restitution_combine_rule2d : @core.ComponentStore[@physics2d.RestitutionCombineRule2d]
+  additional_mass_properties2d : @core.ComponentStore[@physics2d.AdditionalMassProperties2d]
+  rapier_impulse_joint_handle2d : @core.ComponentStore[@physics2d.RapierImpulseJointHandle2d]
+  additional_solver_iterations2d : @core.ComponentStore[@physics2d.AdditionalSolverIterations2d]
   contact_force_event_threshold2d : @core.ComponentStore[@physics2d.ContactForceEventThreshold2d]
+  rapier_multibody_joint_handle2d : @core.ComponentStore[@physics2d.RapierMultibodyJointHandle2d]
+  kinematic_character_controller2d : @core.ComponentStore[@physics2d.KinematicCharacterController2d]
+  kinematic_character_controller_output2d : @core.ComponentStore[@physics2d.KinematicCharacterControllerOutput2d]
   res_ui_context : @core.Resource[@ui.UiContext]
   res_render_state : @core.Resource[@render2d.RenderState]
+  res_physics2d_hooks : @core.Resource[@physics2d.Physics2dHooks]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -98,11 +115,21 @@ pub impl @math.Has_Transform for World
 pub impl @physics2d.HasRes_Physics2dConfig for World
 pub impl @physics2d.HasRes_Physics2dContext for World
 pub impl @physics2d.HasRes_Physics2dEvents for World
+pub impl @physics2d.HasRes_Physics2dHooks for World
+pub impl @physics2d.Has_ActiveCollisionTypes2d for World
+pub impl @physics2d.Has_ActiveEvents2d for World
+pub impl @physics2d.Has_ActiveHooks2d for World
+pub impl @physics2d.Has_AdditionalMassProperties2d for World
+pub impl @physics2d.Has_AdditionalSolverIterations2d for World
 pub impl @physics2d.Has_Ccd2d for World
 pub impl @physics2d.Has_Collider2d for World
 pub impl @physics2d.Has_ColliderDensity2d for World
+pub impl @physics2d.Has_ColliderEnabled2d for World
+pub impl @physics2d.Has_ColliderMassProperties2d for World
+pub impl @physics2d.Has_ColliderParent2d for World
 pub impl @physics2d.Has_CollisionGroups2d for World
 pub impl @physics2d.Has_ContactForceEventThreshold2d for World
+pub impl @physics2d.Has_ContactSkin2d for World
 pub impl @physics2d.Has_Damping2d for World
 pub impl @physics2d.Has_Dominance2d for World
 pub impl @physics2d.Has_ExternalForce2d for World
@@ -110,12 +137,19 @@ pub impl @physics2d.Has_ExternalImpulse2d for World
 pub impl @physics2d.Has_Friction2d for World
 pub impl @physics2d.Has_FrictionCombineRule2d for World
 pub impl @physics2d.Has_GravityScale2d for World
+pub impl @physics2d.Has_ImpulseJoint2d for World
+pub impl @physics2d.Has_KinematicCharacterController2d for World
+pub impl @physics2d.Has_KinematicCharacterControllerOutput2d for World
 pub impl @physics2d.Has_LockedAxes2d for World
+pub impl @physics2d.Has_MultibodyJoint2d for World
 pub impl @physics2d.Has_RapierBodyHandle2d for World
 pub impl @physics2d.Has_RapierColliderHandle2d for World
+pub impl @physics2d.Has_RapierImpulseJointHandle2d for World
+pub impl @physics2d.Has_RapierMultibodyJointHandle2d for World
 pub impl @physics2d.Has_Restitution2d for World
 pub impl @physics2d.Has_RestitutionCombineRule2d for World
 pub impl @physics2d.Has_RigidBody2d for World
+pub impl @physics2d.Has_RigidBodyEnabled2d for World
 pub impl @physics2d.Has_Sleeping2d for World
 pub impl @physics2d.Has_SolverGroups2d for World
 pub impl @physics2d.Has_Velocity2d for World

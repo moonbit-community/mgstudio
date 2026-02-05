@@ -118,7 +118,7 @@ fn recompute_body_mass_properties(
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
+  W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents + HasRes_Physics2dHooks,
 ] physics2d_init_resources_system(
   world : W,
 ) -> Unit {
@@ -134,6 +134,10 @@ pub fn[
   let ev_res = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
   if !ev_res.is_present() {
     ev_res.insert(Physics2dEvents::new(), tick)
+  }
+  let hooks_res = HasRes_Physics2dHooks::get_physics2d_hooks_resource(world)
+  if !hooks_res.is_present() {
+    hooks_res.insert(Physics2dHooks::default(), tick)
   }
 }
 
@@ -455,7 +459,9 @@ pub fn[
       @dynamics.RigidBodyType::KinematicVelocityBased =>
         @dynamics.RigidBodyBuilder::kinematic_velocity_based()
     }
-    let mut builder = builder.position(iso)
+    let mut builder = builder
+      .position(iso)
+      .user_data128(physics2d_user_data128_from_entity(entity))
     if vel_store.get(entity) is Some(v) {
       builder = builder.linvel(mg_vec2_to_rapier(v.linvel)).angvel(v.angvel)
     }
@@ -563,7 +569,9 @@ pub fn[
     if contact_force_threshold_store.get(entity) is Some(th) {
       builder = builder.contact_force_event_threshold(th.threshold)
     }
-    builder = builder.active_events(active_events).user_data(entity.id)
+    builder = builder
+      .active_events(active_events)
+      .user_data128(physics2d_user_data128_from_entity(entity))
     let handle = match body_handle_store.get(entity) {
       Some(bodyh) => {
         let mut collider = builder.build()
@@ -662,7 +670,6 @@ pub fn[
   let ctx = ctx_ref.val
   let dt = @app.fixed_time_timestep_seconds()
   ctx.integration = cfg.integration.set_dt(dt)
-  physics2d_apply_global_hooks(ctx)
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let rb2d_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col2d_store = Has_Collider2d::get_collider2d_store(world)
@@ -726,6 +733,17 @@ pub fn[
     world,
   )
 
+  // Keep `user_data128` in sync so hooks/events can recover the owning entity.
+  body_handle_store.for_each(fn(entity, bh) {
+    guard ctx.rigid_bodies.get_mut_internal_with_modification_tracking(
+        bh.handle,
+      )
+      is Some(body) else {
+      return
+    }
+    body.set_user_data128(physics2d_user_data128_from_entity(entity)) |> ignore
+  })
+
   // Colliders: update authoring properties and keep standalone colliders
   // (no parent rigid body) following Transform.
   collider_handle_store.for_each(fn(entity, ch) {
@@ -733,6 +751,8 @@ pub fn[
       is Some(collider) else {
       return
     }
+    collider.set_user_data128(physics2d_user_data128_from_entity(entity))
+    |> ignore
     let transform = transform_store
       .get(entity)
       .unwrap_or(@math.Transform::identity())
@@ -923,7 +943,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
+  W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents + HasRes_Physics2dHooks,
 ] physics2d_step_system(
   world : W,
 ) -> Unit {
@@ -931,18 +951,23 @@ pub fn[
   let cfg_res = HasRes_Physics2dConfig::get_physics2d_config_resource(world)
   let ctx_res = HasRes_Physics2dContext::get_physics2d_context_resource(world)
   let ev_res = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
+  let hooks_res = HasRes_Physics2dHooks::get_physics2d_hooks_resource(world)
   guard cfg_res.get_ref() is Some(cfg_ref) else { return }
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   guard ev_res.get_ref_mut(tick) is Some(ev_ref) else { return }
   let cfg = cfg_ref.val
   let ctx = ctx_ref.val
   let events = ev_ref.val
+  let hooks_cfg = match hooks_res.get_ref() {
+    Some(r) => r.val
+    None => Physics2dHooks::default()
+  }
+  physics2d_apply_hooks(ctx, hooks_cfg)
   let gravity = mg_vec2_to_rapier(cfg.gravity)
   if !cfg.physics_pipeline_active {
     ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
     return
   }
-  physics2d_hooks_set_current_collider_map(ctx.collider_to_entity)
   ctx.pipeline.step(
     gravity,
     ctx.integration,
@@ -968,8 +993,14 @@ pub fn[
     }
     let h1 = ev.collider1()
     let h2 = ev.collider2()
-    let e1 = ctx.collider_to_entity.get(h1.into_raw_parts())
-    let e2 = ctx.collider_to_entity.get(h2.into_raw_parts())
+    let e1 = physics2d_entity_from_collider_handle_via_user_data(
+      ctx.colliders,
+      h1,
+    )
+    let e2 = physics2d_entity_from_collider_handle_via_user_data(
+      ctx.colliders,
+      h2,
+    )
     match (e1, e2) {
       (Some(a), Some(b)) => {
         let sensor = false
@@ -986,8 +1017,14 @@ pub fn[
   for ev in rapier_intersection_events {
     let h1 = ev.collider1()
     let h2 = ev.collider2()
-    let e1 = ctx.collider_to_entity.get(h1.into_raw_parts())
-    let e2 = ctx.collider_to_entity.get(h2.into_raw_parts())
+    let e1 = physics2d_entity_from_collider_handle_via_user_data(
+      ctx.colliders,
+      h1,
+    )
+    let e2 = physics2d_entity_from_collider_handle_via_user_data(
+      ctx.colliders,
+      h2,
+    )
     match (e1, e2) {
       (Some(a), Some(b)) => {
         let sensor = true
@@ -1004,8 +1041,14 @@ pub fn[
   for ev in rapier_contact_force_events {
     let h1 = ev.collider1()
     let h2 = ev.collider2()
-    let e1 = ctx.collider_to_entity.get(h1.into_raw_parts())
-    let e2 = ctx.collider_to_entity.get(h2.into_raw_parts())
+    let e1 = physics2d_entity_from_collider_handle_via_user_data(
+      ctx.colliders,
+      h1,
+    )
+    let e2 = physics2d_entity_from_collider_handle_via_user_data(
+      ctx.colliders,
+      h2,
+    )
     match (e1, e2) {
       (Some(a), Some(b)) =>
         events.contact_forces.push(ContactForceEvent2d::{
@@ -1022,7 +1065,6 @@ pub fn[
 
   // Update query pipeline after stepping so queries see current positions.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-  physics2d_hooks_clear_current_collider_map()
 }
 
 ///|

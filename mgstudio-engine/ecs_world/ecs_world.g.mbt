@@ -102,6 +102,7 @@ pub struct World {
   ]
   res_ui_context : @core.Resource[@ui.UiContext]
   res_render_state : @core.Resource[@render2d.RenderState]
+  res_physics2d_hooks : @core.Resource[@physics2d.Physics2dHooks]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -187,6 +188,7 @@ pub fn World::new() -> World {
     kinematic_character_controller_output2d: @core.ComponentStore::new(),
     res_ui_context: @core.Resource::new(),
     res_render_state: @core.Resource::new(),
+    res_physics2d_hooks: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
     res_physics2d_events: @core.Resource::new(),
     res_physics3d_config: @core.Resource::new(),
@@ -803,6 +805,13 @@ pub impl @render2d.HasRes_RenderState for World with get_render_state_resource(
   self,
 ) {
   self.res_render_state
+}
+
+///|
+pub impl @physics2d.HasRes_Physics2dHooks for World with get_physics2d_hooks_resource(
+  self,
+) {
+  self.res_physics2d_hooks
 }
 
 ///|
