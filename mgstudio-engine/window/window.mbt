@@ -319,6 +319,45 @@ pub fn host_gpu_draw_ui_box_shadow(
 ) -> Unit = "mgstudio_host" "gpu_draw_ui_box_shadow"
 
 ///|
+/// Draw a UI texture slice (9-slice / tiled) using the Bevy-aligned texture
+/// slicing shader.
+///
+/// Parameters:
+/// - `scale_x/scale_y`: quad bounds in world units.
+/// - `texture_slices`: normalized texture slice dividing lines (left, top, right, bottom).
+/// - `target_slices`: normalized target slice dividing lines (left, top, right, bottom).
+/// - `repeat`: repeat factors (side_x, side_y, center_x, center_y).
+/// - `atlas_rect`: normalized atlas rect (left, top, right, bottom).
+pub fn host_gpu_draw_ui_texture_slice(
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  texture_slice_l : Float,
+  texture_slice_t : Float,
+  texture_slice_r : Float,
+  texture_slice_b : Float,
+  target_slice_l : Float,
+  target_slice_t : Float,
+  target_slice_r : Float,
+  target_slice_b : Float,
+  repeat_side_x : Float,
+  repeat_side_y : Float,
+  repeat_center_x : Float,
+  repeat_center_y : Float,
+  atlas_l : Float,
+  atlas_t : Float,
+  atlas_r : Float,
+  atlas_b : Float,
+) -> Unit = "mgstudio_host" "gpu_draw_ui_texture_slice"
+
+///|
 pub fn host_gpu_draw_mesh(
   mesh_id : Int,
   x : Float,

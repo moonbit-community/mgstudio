@@ -814,6 +814,26 @@ priv struct UiBoxShadowInstance {
 }
 
 ///|
+priv struct UiTextureSliceInstance {
+  entity : @core.Entity
+  transform : @math.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : Color
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  scissor : @math.Rect?
+  // Normalized texture slice dividing lines (left, top, right, bottom).
+  texture_slices : @math.Vec4
+  // Normalized target slice dividing lines (left, top, right, bottom).
+  target_slices : @math.Vec4
+  // Repeat factors (side_x, side_y, center_x, center_y).
+  repeat : @math.Vec4
+  // Normalized atlas rect (left, top, right, bottom).
+  atlas_rect : @math.Vec4
+}
+
+///|
 priv struct CameraInstance {
   entity : @core.Entity
   camera : Camera
@@ -858,6 +878,7 @@ struct RenderState {
   extra_sprites : Array[SpriteInstance]
   extra_ui_rects : Array[UiRectInstance]
   extra_ui_box_shadows : Array[UiBoxShadowInstance]
+  extra_ui_texture_slices : Array[UiTextureSliceInstance]
   cameras : Array[CameraInstance]
   meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
@@ -872,6 +893,7 @@ fn RenderState::new() -> RenderState {
     extra_sprites: [],
     extra_ui_rects: [],
     extra_ui_box_shadows: [],
+    extra_ui_texture_slices: [],
     cameras: [],
     meshes: [],
     render_targets: [],
@@ -1262,6 +1284,16 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui
 }
 
 ///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_texture_slices(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_texture_slices.clear()
+  })
+  |> ignore
+}
+
+///|
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(
   world : W,
   entity : @core.Entity,
@@ -1326,6 +1358,40 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shad
       blur,
       samples,
       scissor,
+    })
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(
+  world : W,
+  entity : @core.Entity,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+  texture_slices : @math.Vec4,
+  target_slices : @math.Vec4,
+  repeat : @math.Vec4,
+  atlas_rect : @math.Vec4,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_texture_slices.push(UiTextureSliceInstance::{
+      entity,
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale,
+      color,
+      texture,
+      layers,
+      scissor,
+      texture_slices,
+      target_slices,
+      repeat,
+      atlas_rect,
     })
   })
   |> ignore
@@ -1667,6 +1733,7 @@ priv enum DrawKind {
   SpriteExtra(Int)
   UiRectExtra(Int)
   UiBoxShadowExtra(Int)
+  UiTextureSliceExtra(Int)
   Mesh(Int)
 }
 
@@ -1692,6 +1759,7 @@ fn draw_items_for_layers(
   extra_sprites : Array[SpriteInstance],
   extra_ui_rects : Array[UiRectInstance],
   extra_ui_box_shadows : Array[UiBoxShadowInstance],
+  extra_ui_texture_slices : Array[UiTextureSliceInstance],
   meshes : Array[MeshInstance],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -1763,6 +1831,23 @@ fn draw_items_for_layers(
       entity_id: shadow.entity.id,
       entity_generation: shadow.entity.generation,
       tie: 2_500_000 + i,
+    })
+  }
+  for i in 0..<extra_ui_texture_slices.length() {
+    let slice = extra_ui_texture_slices[i]
+    if !slice.layers.matches(layers) {
+      continue
+    }
+    let phase = if slice.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: UiTextureSliceExtra(i),
+      z: slice.transform.translation.z,
+      phase,
+      pipeline: 2,
+      batch: slice.texture.id(),
+      entity_id: slice.entity.id,
+      entity_generation: slice.entity.generation,
+      tie: 2_000_000 + i,
     })
   }
   for i in 0..<meshes.length() {
@@ -1839,6 +1924,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let extra : Array[SpriteInstance] = []
   let extra_ui : Array[UiRectInstance] = []
   let extra_shadow : Array[UiBoxShadowInstance] = []
+  let extra_slices : Array[UiTextureSliceInstance] = []
   let meshes : Array[MeshInstance] = [
     MeshInstance::{
       entity: @core.Entity::new(1, 0),
@@ -1854,7 +1940,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
     },
   ]
   let items = draw_items_for_layers(
-    sprites, extra, extra_ui, extra_shadow, meshes, layers,
+    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, layers,
   )
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
@@ -1878,12 +1964,14 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     rs.val.extra_sprites.clear()
     rs.val.extra_ui_rects.clear()
     rs.val.extra_ui_box_shadows.clear()
+    rs.val.extra_ui_texture_slices.clear()
     return
   }
   let sprites = rs.val.sprites
   let extra_sprites = rs.val.extra_sprites
   let extra_ui_rects = rs.val.extra_ui_rects
   let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
+  let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
   let meshes = rs.val.meshes
   fn int_from_f32_floor_nonneg(x : Float) -> Int {
     if x <= 0.0F {
@@ -2048,6 +2136,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       extra_sprites,
       extra_ui_rects,
       extra_ui_box_shadows,
+      extra_ui_texture_slices,
       meshes,
       camera.layers,
     )
@@ -2213,6 +2302,43 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             shadow.radius.bottom_left,
             shadow.blur,
             shadow.samples,
+          )
+        }
+        UiTextureSliceExtra(i) => {
+          let slice = extra_ui_texture_slices[i]
+          apply_scissor(slice.scissor)
+          let transform = slice.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + slice.anchor_offset.x,
+            transform.translation.y + slice.anchor_offset.y,
+          )
+          @window.host_gpu_draw_ui_texture_slice(
+            slice.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            slice.draw_scale.x,
+            slice.draw_scale.y,
+            slice.color.r,
+            slice.color.g,
+            slice.color.b,
+            slice.color.a,
+            slice.texture_slices.x,
+            slice.texture_slices.y,
+            slice.texture_slices.z,
+            slice.texture_slices.w,
+            slice.target_slices.x,
+            slice.target_slices.y,
+            slice.target_slices.z,
+            slice.target_slices.w,
+            slice.repeat.x,
+            slice.repeat.y,
+            slice.repeat.z,
+            slice.repeat.w,
+            slice.atlas_rect.x,
+            slice.atlas_rect.y,
+            slice.atlas_rect.z,
+            slice.atlas_rect.w,
           )
         }
       }

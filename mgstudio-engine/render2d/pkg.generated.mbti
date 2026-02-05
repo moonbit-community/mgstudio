@@ -32,6 +32,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_rects(W) -> Unit
 
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_texture_slices(W) -> Unit
+
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(W, Int, Int, Bool) -> @asset.Handle[@asset.Image]
 
 pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
@@ -45,6 +47,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_s
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shadow_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(W, @math.Vec2) -> @math.Vec2?
 

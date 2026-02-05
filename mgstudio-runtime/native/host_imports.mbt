@@ -2233,6 +2233,91 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_draw_ui_texture_slice",
+    fn(args) {
+      try {
+        host_trace("host: gpu_draw_ui_texture_slice")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 26 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) &&
+          args[10] is @types.Value::F32(texture_slice_l) &&
+          args[11] is @types.Value::F32(texture_slice_t) &&
+          args[12] is @types.Value::F32(texture_slice_r) &&
+          args[13] is @types.Value::F32(texture_slice_b) &&
+          args[14] is @types.Value::F32(target_slice_l) &&
+          args[15] is @types.Value::F32(target_slice_t) &&
+          args[16] is @types.Value::F32(target_slice_r) &&
+          args[17] is @types.Value::F32(target_slice_b) &&
+          args[18] is @types.Value::F32(repeat_side_x) &&
+          args[19] is @types.Value::F32(repeat_side_y) &&
+          args[20] is @types.Value::F32(repeat_center_x) &&
+          args[21] is @types.Value::F32(repeat_center_y) &&
+          args[22] is @types.Value::F32(atlas_l) &&
+          args[23] is @types.Value::F32(atlas_t) &&
+          args[24] is @types.Value::F32(atlas_r) &&
+          args[25] is @types.Value::F32(atlas_b) {
+          ctx.gpu
+          .unwrap()
+          .draw_ui_texture_slice(
+            texture_id, x, y, rot, sx, sy, r, g, b, a, texture_slice_l, texture_slice_t,
+            texture_slice_r, texture_slice_b, target_slice_l, target_slice_t, target_slice_r,
+            target_slice_b, repeat_side_x, repeat_side_y, repeat_center_x, repeat_center_y,
+            atlas_l, atlas_t, atlas_r, atlas_b,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_ui_texture_slice failed")
+          host_fail("gpu_draw_ui_texture_slice", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_draw_ui_box_shadow",
     fn(args) {
       try {

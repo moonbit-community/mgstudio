@@ -888,11 +888,258 @@ pub fn UiImage::with_rect(self : UiImage, rect : @math.Rect?) -> UiImage {
 /// Controls how an image widget is altered to fit within layout constraints.
 ///
 /// This is Bevy-aligned (`NodeImageMode` / `ImageNode`), but currently only
-/// `Auto` and `Stretch` are implemented in mgstudio.
-pub(all) enum NodeImageMode {
-  Auto
+/// `Auto` and `Stretch` are always supported, with `Sliced` / `Tiled` backed by
+/// the texture slicing shader pipeline.
+
+///|
+/// Pixel padding for 9-slicing borders (Bevy `BorderRect`).
+pub struct BorderRect {
+  left : Float
+  right : Float
+  top : Float
+  bottom : Float
+}
+
+///|
+pub fn BorderRect::new(
+  left : Float,
+  right : Float,
+  top : Float,
+  bottom : Float,
+) -> BorderRect {
+  BorderRect::{ left, right, top, bottom }
+}
+
+///|
+pub fn BorderRect::square(value : Float) -> BorderRect {
+  BorderRect::{ left: value, right: value, top: value, bottom: value }
+}
+
+///|
+pub fn BorderRect::rectangle(
+  horizontal : Float,
+  vertical : Float,
+) -> BorderRect {
+  BorderRect::{
+    left: horizontal,
+    right: horizontal,
+    top: vertical,
+    bottom: vertical,
+  }
+}
+
+///|
+pub fn BorderRect::default() -> BorderRect {
+  BorderRect::square(0.0F)
+}
+
+///|
+/// Defines how a texture slice scales when resized (Bevy `SliceScaleMode`).
+pub(all) enum SliceScaleMode {
   Stretch
+  Tile(Float)
 } derive(Eq, Show)
+
+///|
+pub fn SliceScaleMode::default() -> SliceScaleMode {
+  SliceScaleMode::Stretch
+}
+
+///|
+/// 9-slicing configuration (Bevy `TextureSlicer`).
+pub struct TextureSlicer {
+  border : BorderRect
+  center_scale_mode : SliceScaleMode
+  sides_scale_mode : SliceScaleMode
+  max_corner_scale : Float
+}
+
+///|
+pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
+  TextureSlicer::{
+    border,
+    center_scale_mode: SliceScaleMode::Stretch,
+    sides_scale_mode: SliceScaleMode::Stretch,
+    max_corner_scale: 1.0F,
+  }
+}
+
+///|
+pub fn TextureSlicer::default() -> TextureSlicer {
+  TextureSlicer::new(BorderRect::default())
+}
+
+///|
+pub(all) enum NodeImageMode {
+  /// Size is determined by the source image, then clamped by layout constraints.
+  Auto
+  /// The image is resized to match the node's layout size (ignores aspect ratio).
+  Stretch
+  /// 9-sliced scaling using a `TextureSlicer`.
+  Sliced(TextureSlicer)
+  /// Tiled scaling for the full texture region.
+  Tiled(Bool, Bool, Float)
+}
+
+///|
+pub fn NodeImageMode::default() -> NodeImageMode {
+  NodeImageMode::Auto
+}
+
+///|
+pub fn NodeImageMode::uses_slices(self : NodeImageMode) -> Bool {
+  match self {
+    NodeImageMode::Sliced(_) => true
+    NodeImageMode::Tiled(_, _, _) => true
+    _ => false
+  }
+}
+
+///|
+fn clamp_stretch_value(v : Float) -> Float {
+  if v < 0.001F {
+    0.001F
+  } else {
+    v
+  }
+}
+
+///|
+fn min3(a : Float, b : Float, c : Float) -> Float {
+  let ab = if a < b { a } else { b }
+  if ab < c {
+    ab
+  } else {
+    c
+  }
+}
+
+///|
+fn compute_tiled_axis(
+  tile : Bool,
+  image_extent : Float,
+  target_extent : Float,
+  stretch_value : Float,
+) -> Float {
+  if tile {
+    let denom = image_extent * clamp_stretch_value(stretch_value)
+    if denom == 0.0F {
+      1.0F
+    } else {
+      target_extent / denom
+    }
+  } else {
+    1.0F
+  }
+}
+
+///|
+fn compute_tiled_subaxis(
+  image_extent : Float,
+  target_extent : Float,
+  mode : SliceScaleMode,
+) -> Float {
+  match mode {
+    SliceScaleMode::Stretch => 1.0F
+    SliceScaleMode::Tile(stretch_value) => {
+      let denom = image_extent * clamp_stretch_value(stretch_value)
+      if denom == 0.0F {
+        1.0F
+      } else {
+        target_extent / denom
+      }
+    }
+  }
+}
+
+///|
+fn compute_texture_slices(
+  image_size : @math.Vec2,
+  target_size : @math.Vec2,
+  mode : NodeImageMode,
+) -> (@math.Vec4, @math.Vec4, @math.Vec4) {
+  match mode {
+    NodeImageMode::Sliced(slicer) => {
+      let denom_x = if image_size.x == 0.0F { 1.0F } else { image_size.x }
+      let denom_y = if image_size.y == 0.0F { 1.0F } else { image_size.y }
+      let tdenom_x = if target_size.x == 0.0F { 1.0F } else { target_size.x }
+      let tdenom_y = if target_size.y == 0.0F { 1.0F } else { target_size.y }
+      let min_coeff = min3(
+        target_size.x / denom_x,
+        target_size.y / denom_y,
+        slicer.max_corner_scale,
+      )
+      let slices = @math.Vec4::new(
+        slicer.border.left / denom_x,
+        slicer.border.top / denom_y,
+        1.0F - slicer.border.right / denom_x,
+        1.0F - slicer.border.bottom / denom_y,
+      )
+      let border = @math.Vec4::new(
+        slicer.border.left / tdenom_x * min_coeff,
+        slicer.border.top / tdenom_y * min_coeff,
+        1.0F - slicer.border.right / tdenom_x * min_coeff,
+        1.0F - slicer.border.bottom / tdenom_y * min_coeff,
+      )
+      let image_side_width = denom_x * (slices.z - slices.x)
+      let image_side_height = denom_y * (slices.w - slices.y)
+      let target_side_width = tdenom_x * (border.z - border.x)
+      let target_side_height = tdenom_y * (border.w - border.y)
+      let repeat_side_x = compute_tiled_subaxis(
+        image_side_width,
+        target_side_width,
+        slicer.sides_scale_mode,
+      )
+      let repeat_side_y = compute_tiled_subaxis(
+        image_side_height,
+        target_side_height,
+        slicer.sides_scale_mode,
+      )
+      let repeat_center_x = compute_tiled_subaxis(
+        image_side_width,
+        target_side_width,
+        slicer.center_scale_mode,
+      )
+      let repeat_center_y = compute_tiled_subaxis(
+        image_side_height,
+        target_side_height,
+        slicer.center_scale_mode,
+      )
+      (
+        slices,
+        border,
+        @math.Vec4::new(
+          repeat_side_x, repeat_side_y, repeat_center_x, repeat_center_y,
+        ),
+      )
+    }
+    NodeImageMode::Tiled(tile_x, tile_y, stretch_value) => {
+      let rx = compute_tiled_axis(
+        tile_x,
+        image_size.x,
+        target_size.x,
+        stretch_value,
+      )
+      let ry = compute_tiled_axis(
+        tile_y,
+        image_size.y,
+        target_size.y,
+        stretch_value,
+      )
+      (
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+        @math.Vec4::new(1.0F, 1.0F, rx, ry),
+      )
+    }
+    _ =>
+      (
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+        @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
+      )
+  }
+}
 
 ///|
 /// A UI node that renders an image (Bevy v0.15.3 `ImageNode`).
@@ -3024,6 +3271,7 @@ pub fn[
   guard stack_res.get() is Some(stack0) else { return }
   @render2d.render2d_clear_overlay_ui_rects(world)
   @render2d.render2d_clear_overlay_ui_box_shadows(world)
+  @render2d.render2d_clear_overlay_ui_texture_slices(world)
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let node_store = Has_Node::get_node_store(world)
   let bg_store = Has_BackgroundColor::get_background_color_store(world)
@@ -3382,6 +3630,7 @@ pub fn[
             img.rect,
             img.flip_x,
             img.flip_y,
+            Some(img.image_mode),
           ),
         )
       None =>
@@ -3395,6 +3644,7 @@ pub fn[
                 img.rect,
                 img.flip_x,
                 img.flip_y,
+                None,
               ),
             )
           None => None
@@ -3408,6 +3658,10 @@ pub fn[
         let rect = info.3
         let flip_x = info.4
         let flip_y = info.5
+        let mode = match info.6 {
+          Some(m) => m
+          None => NodeImageMode::Stretch
+        }
         let mut image_width = @asset.asset_texture_width(texture)
         let mut image_height = @asset.asset_texture_height(texture)
         if image_width <= 0 || image_height <= 0 {
@@ -3439,21 +3693,55 @@ pub fn[
         let uv_min_img = pair.0
         let uv_max_img = pair.1
         let t_content = transform_with_z(t0, z_base + UI_STACK_Z_CONTENT)
-        @render2d.render2d_push_ui_rect_uv_scissor(
-          world,
-          entity,
-          texture,
-          t_content,
-          draw_scale,
-          uv_min_img,
-          uv_max_img,
-          color,
-          layers,
-          scissor,
-          flags | UI_DRAW_FLAG_TEXTURED,
-          radius,
-          border,
-        )
+        if color.a > 0.0F && NodeImageMode::uses_slices(mode) {
+          let sf = safe_scale_factor(@window.window_scale_factor())
+          let target_size = @math.Vec2::new(size.x * sf, size.y * sf)
+          // Image slicing uses the size of the selected texture region (atlas/rect).
+          let image_rect = @math.Rect::new(
+            @math.Vec2::new(0.0F, 0.0F),
+            @math.Vec2::new(image_size.x, image_size.y),
+          )
+          let texture_rect = match (atlas_rect, rect) {
+            (None, None) => image_rect
+            (None, Some(r)) => r
+            (Some(ar), None) => ar
+            (Some(ar), Some(r)) => {
+              let min = vec2_add(r.min, ar.min)
+              let max = vec2_add(r.max, ar.min)
+              @math.Rect::new(min, max)
+            }
+          }
+          let region_size = texture_rect.size()
+          let (texture_slices, target_slices, repeat) = compute_texture_slices(
+            region_size, target_size, mode,
+          )
+          let atlas_rect_uv = @math.Vec4::new(
+            uv_min_img.x,
+            uv_min_img.y,
+            uv_max_img.x,
+            uv_max_img.y,
+          )
+          @render2d.render2d_push_ui_texture_slice_scissor(
+            world, entity, texture, t_content, draw_scale, color, layers, scissor,
+            texture_slices, target_slices, repeat, atlas_rect_uv,
+          )
+        } else if color.a > 0.0F {
+          @render2d.render2d_push_ui_rect_uv_scissor(
+            world,
+            entity,
+            texture,
+            t_content,
+            draw_scale,
+            uv_min_img,
+            uv_max_img,
+            color,
+            layers,
+            scissor,
+            flags | UI_DRAW_FLAG_TEXTURED,
+            radius,
+            border,
+          )
+        }
       }
       None => ()
     }

@@ -107,6 +107,15 @@ pub fn Vec3::new(Float, Float, Float) -> Self
 pub fn Vec3::splat(Float) -> Self
 pub fn Vec3::zero() -> Self
 
+pub struct Vec4 {
+  x : Float
+  y : Float
+  z : Float
+  w : Float
+}
+pub fn Vec4::new(Float, Float, Float, Float) -> Self
+pub fn Vec4::splat(Float) -> Self
+
 // Type aliases
 
 // Traits

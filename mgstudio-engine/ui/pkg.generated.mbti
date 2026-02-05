@@ -131,6 +131,17 @@ pub fn BorderRadius::new(Val, Val, Val, Val) -> Self
 pub fn BorderRadius::percent(Float, Float, Float, Float) -> Self
 pub fn BorderRadius::px(Float, Float, Float, Float) -> Self
 
+pub struct BorderRect {
+  left : Float
+  right : Float
+  top : Float
+  bottom : Float
+}
+pub fn BorderRect::default() -> Self
+pub fn BorderRect::new(Float, Float, Float, Float) -> Self
+pub fn BorderRect::rectangle(Float, Float) -> Self
+pub fn BorderRect::square(Float) -> Self
+
 pub struct BoxShadow {
   color : @render2d.Color
   x_offset : Val
@@ -364,9 +375,11 @@ pub fn Node::with_width(Self, Val) -> Self
 pub(all) enum NodeImageMode {
   Auto
   Stretch
+  Sliced(TextureSlicer)
+  Tiled(Bool, Bool, Float)
 }
-pub impl Eq for NodeImageMode
-pub impl Show for NodeImageMode
+pub fn NodeImageMode::default() -> Self
+pub fn NodeImageMode::uses_slices(Self) -> Bool
 
 pub struct Outline {
   width : Val
@@ -435,6 +448,23 @@ pub struct ScrollPosition {
   offset_y : Float
 }
 pub fn ScrollPosition::default() -> Self
+
+pub(all) enum SliceScaleMode {
+  Stretch
+  Tile(Float)
+}
+pub fn SliceScaleMode::default() -> Self
+pub impl Eq for SliceScaleMode
+pub impl Show for SliceScaleMode
+
+pub struct TextureSlicer {
+  border : BorderRect
+  center_scale_mode : SliceScaleMode
+  sides_scale_mode : SliceScaleMode
+  max_corner_scale : Float
+}
+pub fn TextureSlicer::default() -> Self
+pub fn TextureSlicer::new(BorderRect) -> Self
 
 pub(all) enum UiAntiAlias {
   Off

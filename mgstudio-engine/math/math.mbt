@@ -56,6 +56,24 @@ pub fn Vec3::mul(self : Vec3, other : Vec3) -> Vec3 {
 }
 
 ///|
+pub struct Vec4 {
+  x : Float
+  y : Float
+  z : Float
+  w : Float
+}
+
+///|
+pub fn Vec4::new(x : Float, y : Float, z : Float, w : Float) -> Vec4 {
+  Vec4::{ x, y, z, w }
+}
+
+///|
+pub fn Vec4::splat(v : Float) -> Vec4 {
+  Vec4::new(v, v, v, v)
+}
+
+///|
 pub struct IVec2 {
   x : Int
   y : Int
