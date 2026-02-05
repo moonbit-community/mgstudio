@@ -77,8 +77,13 @@ pub struct Overflow {
 }
 
 ///|
+pub fn Overflow::new(x : OverflowAxis, y : OverflowAxis) -> Overflow {
+  Overflow::{ x, y }
+}
+
+///|
 pub fn Overflow::default() -> Overflow {
-  Overflow::{ x: OverflowAxis::Visible, y: OverflowAxis::Visible }
+  Overflow::new(OverflowAxis::Visible, OverflowAxis::Visible)
 }
 
 ///|
@@ -96,7 +101,38 @@ pub struct OverflowClipMargin {
 
 ///|
 pub fn OverflowClipMargin::default() -> OverflowClipMargin {
-  OverflowClipMargin::{ visual_box: OverflowClipBox::BorderBox, margin: 0.0F }
+  OverflowClipMargin::{ visual_box: OverflowClipBox::ContentBox, margin: 0.0F }
+}
+
+///|
+pub fn OverflowClipMargin::new(
+  visual_box : OverflowClipBox,
+  margin : Float,
+) -> OverflowClipMargin {
+  OverflowClipMargin::{ visual_box, margin }
+}
+
+///|
+pub fn OverflowClipMargin::content_box() -> OverflowClipMargin {
+  OverflowClipMargin::new(OverflowClipBox::ContentBox, 0.0F)
+}
+
+///|
+pub fn OverflowClipMargin::padding_box() -> OverflowClipMargin {
+  OverflowClipMargin::new(OverflowClipBox::PaddingBox, 0.0F)
+}
+
+///|
+pub fn OverflowClipMargin::border_box() -> OverflowClipMargin {
+  OverflowClipMargin::new(OverflowClipBox::BorderBox, 0.0F)
+}
+
+///|
+pub fn OverflowClipMargin::with_margin(
+  self : OverflowClipMargin,
+  margin : Float,
+) -> OverflowClipMargin {
+  OverflowClipMargin::{ ..self, margin, }
 }
 
 ///|
@@ -672,6 +708,29 @@ pub fn Node::with_position_type(
 ///|
 pub fn Node::with_display(self : Node, display : Display) -> Node {
   Node::{ ..self, display, }
+}
+
+///|
+pub fn Node::with_overflow(self : Node, overflow : Overflow) -> Node {
+  Node::{ ..self, overflow, }
+}
+
+///|
+pub fn Node::with_overflow_clip_margin(
+  self : Node,
+  overflow_clip_margin : OverflowClipMargin,
+) -> Node {
+  Node::{ ..self, overflow_clip_margin, }
+}
+
+///|
+pub fn Node::with_padding(self : Node, padding : UiRect) -> Node {
+  Node::{ ..self, padding, }
+}
+
+///|
+pub fn Node::with_border(self : Node, border : UiRect) -> Node {
+  Node::{ ..self, border, }
 }
 
 ///|
@@ -1924,6 +1983,60 @@ pub fn[
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(ctx0.viewport_size.x, ctx0.viewport_size.y),
   )
+  fn clamp_nonneg(v : Float) -> Float {
+    if v < 0.0F {
+      0.0F
+    } else {
+      v
+    }
+  }
+
+  fn resolve_axis(
+    val : Val,
+    node_axis : Float,
+    viewport_size : @math.Vec2,
+  ) -> Float {
+    match val {
+      Val::Auto => 0.0F
+      Val::Px(px) => px
+      Val::Percent(p) => node_axis * (p / 100.0F)
+      Val::Vw(p) => viewport_size.x * (p / 100.0F)
+      Val::Vh(p) => viewport_size.y * (p / 100.0F)
+      Val::VMin(p) => {
+        let m = if viewport_size.x < viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
+      }
+      Val::VMax(p) => {
+        let m = if viewport_size.x > viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
+      }
+    }
+  }
+
+  fn resolve_uirect_px(
+    rect : UiRect,
+    node_size : @math.Vec2,
+    viewport_size : @math.Vec2,
+  ) -> (Float, Float, Float, Float) {
+    let left = clamp_nonneg(resolve_axis(rect.left, node_size.x, viewport_size))
+    let right = clamp_nonneg(
+      resolve_axis(rect.right, node_size.x, viewport_size),
+    )
+    let top = clamp_nonneg(resolve_axis(rect.top, node_size.y, viewport_size))
+    let bottom = clamp_nonneg(
+      resolve_axis(rect.bottom, node_size.y, viewport_size),
+    )
+    (left, top, right, bottom)
+  }
+
   fn rect_intersect(a : @math.Rect, b : @math.Rect) -> @math.Rect {
     let min_x = if a.min.x > b.min.x { a.min.x } else { b.min.x }
     let min_y = if a.min.y > b.min.y { a.min.y } else { b.min.y }
@@ -1985,7 +2098,53 @@ pub fn[
       let overflow_clips = node.overflow.x != OverflowAxis::Visible ||
         node.overflow.y != OverflowAxis::Visible
       if overflow_clips {
-        child_clip = rect_intersect(self_clip, layout.rect)
+        let size = layout.rect.size()
+        let (border_l, border_t, border_r, border_b) = resolve_uirect_px(
+          node.border,
+          size,
+          ctx0.viewport_size,
+        )
+        let (padding_l, padding_t, padding_r, padding_b) = resolve_uirect_px(
+          node.padding,
+          size,
+          ctx0.viewport_size,
+        )
+        let (inset_l, inset_t, inset_r, inset_b) = match
+          node.overflow_clip_margin.visual_box {
+          OverflowClipBox::BorderBox => (0.0F, 0.0F, 0.0F, 0.0F)
+          OverflowClipBox::PaddingBox =>
+            (border_l, border_t, border_r, border_b)
+          OverflowClipBox::ContentBox =>
+            (
+              border_l + padding_l,
+              border_t + padding_t,
+              border_r + padding_r,
+              border_b + padding_b,
+            )
+        }
+        let margin = clamp_nonneg(node.overflow_clip_margin.margin)
+        let min = @math.Vec2::new(
+          layout.rect.min.x + inset_l - margin,
+          layout.rect.min.y + inset_t - margin,
+        )
+        let max = @math.Vec2::new(
+          layout.rect.max.x - inset_r + margin,
+          layout.rect.max.y - inset_b + margin,
+        )
+        let mut clip_rect = @math.Rect::new(min, max)
+        if node.overflow.x == OverflowAxis::Visible {
+          clip_rect = @math.Rect::new(
+            @math.Vec2::new(self_clip.min.x, clip_rect.min.y),
+            @math.Vec2::new(self_clip.max.x, clip_rect.max.y),
+          )
+        }
+        if node.overflow.y == OverflowAxis::Visible {
+          clip_rect = @math.Rect::new(
+            @math.Vec2::new(clip_rect.min.x, self_clip.min.y),
+            @math.Vec2::new(clip_rect.max.x, self_clip.max.y),
+          )
+        }
+        child_clip = rect_intersect(self_clip, clip_rect)
         child_clipped = true
       }
     }

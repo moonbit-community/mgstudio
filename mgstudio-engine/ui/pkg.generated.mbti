@@ -329,12 +329,16 @@ pub struct Node {
 }
 pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
+pub fn Node::with_border(Self, UiRect) -> Self
 pub fn Node::with_display(Self, Display) -> Self
 pub fn Node::with_grid_template_columns(Self, Array[RepeatedGridTrack]) -> Self
 pub fn Node::with_grid_template_rows(Self, Array[RepeatedGridTrack]) -> Self
 pub fn Node::with_height(Self, Val) -> Self
 pub fn Node::with_justify_content(Self, JustifyContent) -> Self
 pub fn Node::with_left(Self, Val) -> Self
+pub fn Node::with_overflow(Self, Overflow) -> Self
+pub fn Node::with_overflow_clip_margin(Self, OverflowClipMargin) -> Self
+pub fn Node::with_padding(Self, UiRect) -> Self
 pub fn Node::with_position_type(Self, PositionType) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
@@ -352,6 +356,7 @@ pub struct Overflow {
   y : OverflowAxis
 }
 pub fn Overflow::default() -> Self
+pub fn Overflow::new(OverflowAxis, OverflowAxis) -> Self
 
 pub(all) enum OverflowAxis {
   Clip
@@ -374,7 +379,12 @@ pub struct OverflowClipMargin {
   visual_box : OverflowClipBox
   margin : Float
 }
+pub fn OverflowClipMargin::border_box() -> Self
+pub fn OverflowClipMargin::content_box() -> Self
 pub fn OverflowClipMargin::default() -> Self
+pub fn OverflowClipMargin::new(OverflowClipBox, Float) -> Self
+pub fn OverflowClipMargin::padding_box() -> Self
+pub fn OverflowClipMargin::with_margin(Self, Float) -> Self
 
 pub(all) enum PositionType {
   Relative
