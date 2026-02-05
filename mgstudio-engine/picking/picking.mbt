@@ -700,9 +700,10 @@ fn picking_primary_hit(
 }
 
 ///|
-fn entity_from_node_id(node_id : Int) -> @core.Entity {
-  let id = node_id / 65536
-  let gen = node_id - id * 65536
+fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
+  let packed = node_id.to_u64().to_int()
+  let id = packed / 65536
+  let gen = packed - id * 65536
   @core.Entity::new(id, gen)
 }
 
@@ -730,9 +731,9 @@ pub fn[
   }
   let interaction_store = @ui.Has_Interaction::get_interaction_store(world)
   for req in actions {
-    let entity = entity_from_node_id(req.target)
-    match req.action {
-      @accesskit.Action::Focus =>
+    let entity = entity_from_node_id(req.target_node())
+    match req.action() {
+      @moon_accesskit.Action::Focus =>
         // MVP: focus is handled by the host (tab/VO). Engine-side focus routing is TODO.
         entity |> ignore
       _ => {

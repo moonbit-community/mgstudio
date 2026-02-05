@@ -21,8 +21,8 @@
 ///|
 #ecs.resource
 pub struct A11yState {
-  mut last_update : @accesskit.TreeUpdate?
-  mut pending_actions : Array[@accesskit.ActionRequest]
+  mut last_update : @moon_accesskit.TreeUpdate?
+  mut pending_actions : Array[@moon_accesskit.ActionRequest]
 }
 
 ///|
@@ -33,7 +33,7 @@ pub fn A11yState::default() -> A11yState {
 ///|
 pub fn A11yState::push_action(
   self : Ref[A11yState],
-  action : @accesskit.ActionRequest,
+  action : @moon_accesskit.ActionRequest,
 ) -> Unit {
   self.val.pending_actions = self.val.pending_actions + [action]
 }
@@ -41,7 +41,7 @@ pub fn A11yState::push_action(
 ///|
 pub fn A11yState::drain_actions(
   self : Ref[A11yState],
-) -> Array[@accesskit.ActionRequest] {
+) -> Array[@moon_accesskit.ActionRequest] {
   let out = self.val.pending_actions
   self.val.pending_actions = []
   out
@@ -50,7 +50,7 @@ pub fn A11yState::drain_actions(
 ///|
 pub fn A11yState::set_update(
   self : Ref[A11yState],
-  update : @accesskit.TreeUpdate,
+  update : @moon_accesskit.TreeUpdate,
 ) -> Unit {
   self.val.last_update = Some(update)
 }
@@ -180,10 +180,16 @@ pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(
     let target = host_a11y_action_target(i)
     let kind = host_a11y_action_kind(i)
     let action = match kind {
-      1 => @accesskit.Action::Focus
-      _ => @accesskit.Action::Default
+      1 => @moon_accesskit.Action::Focus
+      _ => @moon_accesskit.Action::Click
     }
-    A11yState::push_action(state, @accesskit.ActionRequest::new(target, action))
+    let node_id = @moon_accesskit.NodeId::from_u64(target.to_uint64())
+    let req = @moon_accesskit.ActionRequest::new(
+      action,
+      @moon_accesskit.TreeId::root(),
+      node_id,
+    )
+    A11yState::push_action(state, req)
   }
   host_a11y_actions_clear()
 }
