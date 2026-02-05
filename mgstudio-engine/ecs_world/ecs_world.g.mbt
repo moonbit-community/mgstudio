@@ -31,6 +31,7 @@ pub struct World {
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
   parent : @core.ComponentStore[@hierarchy.Parent]
+  image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
@@ -166,6 +167,7 @@ pub fn World::new() -> World {
     button_colors: @core.ComponentStore::new(),
     global_z_index: @core.ComponentStore::new(),
     parent: @core.ComponentStore::new(),
+    image_node_size: @core.ComponentStore::new(),
     camera2d: @core.ComponentStore::new(),
     calculated_clip: @core.ComponentStore::new(),
     scroll_position: @core.ComponentStore::new(),
@@ -281,6 +283,7 @@ pub fn World::despawn(
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
+  self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
@@ -377,6 +380,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
+  self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
@@ -588,6 +592,11 @@ pub impl @ui.Has_GlobalZIndex for World with get_global_z_index_store(self) {
 ///|
 pub impl @hierarchy.Has_Parent for World with get_parent_store(self) {
   self.parent
+}
+
+///|
+pub impl @ui.Has_ImageNodeSize for World with get_image_node_size_store(self) {
+  self.image_node_size
 }
 
 ///|

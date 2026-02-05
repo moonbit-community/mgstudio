@@ -7,8 +7,8 @@
 pub let ecs_components : Array[String] = [
   "Node", "Label", "Button", "UiRoot", "UiText", "ZIndex", "Outline", "UiImage",
   "UiLayout", "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy",
-  "Interaction", "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex", "CalculatedClip",
-  "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "UiBoxShadowSamples",
+  "Interaction", "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex", "ImageNodeSize",
+  "CalculatedClip", "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "UiBoxShadowSamples",
   "RelativeCursorPosition",
 ]
 
@@ -109,6 +109,11 @@ pub(open) trait Has_ButtonColors {
 ///|
 pub(open) trait Has_GlobalZIndex {
   get_global_z_index_store(self : Self) -> @core.ComponentStore[GlobalZIndex]
+}
+
+///|
+pub(open) trait Has_ImageNodeSize {
+  get_image_node_size_store(self : Self) -> @core.ComponentStore[ImageNodeSize]
 }
 
 ///|

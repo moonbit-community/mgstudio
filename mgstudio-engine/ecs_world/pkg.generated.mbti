@@ -51,6 +51,7 @@ pub struct World {
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
   parent : @core.ComponentStore[@hierarchy.Parent]
+  image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
@@ -218,6 +219,7 @@ pub impl @ui.Has_ContentSize for World
 pub impl @ui.Has_FocusPolicy for World
 pub impl @ui.Has_GlobalZIndex for World
 pub impl @ui.Has_ImageNode for World
+pub impl @ui.Has_ImageNodeSize for World
 pub impl @ui.Has_Interaction for World
 pub impl @ui.Has_Label for World
 pub impl @ui.Has_Node for World

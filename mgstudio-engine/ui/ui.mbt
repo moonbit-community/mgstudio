@@ -819,6 +819,26 @@ pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
 }
 
 ///|
+/// Bevy-aligned image size component (Bevy v0.15.3 `ImageNodeSize`).
+///
+/// Stores the size of the selected image region in pixels (rect/atlas/texture).
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct ImageNodeSize {
+  size : @math.UVec2
+}
+
+///|
+pub fn ImageNodeSize::default() -> ImageNodeSize {
+  ImageNodeSize::{ size: @math.UVec2::zero() }
+}
+
+///|
+pub fn ImageNodeSize::size(self : ImageNodeSize) -> @math.UVec2 {
+  self.size
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct BackgroundColor {
@@ -1758,7 +1778,7 @@ fn button_color_for_state(
 /// This mirrors Bevy's `update_image_content_size_system`, adapted to mgstudio's
 /// logical UI coordinate space.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld,
 ] ui_image_content_size_system(
   world : W,
 ) -> Unit {
@@ -1769,6 +1789,7 @@ pub fn[
   let ui_text_store = Has_UiText::get_ui_text_store(world)
   let ui_image_store = Has_UiImage::get_ui_image_store(world)
   let image_node_store = Has_ImageNode::get_image_node_store(world)
+  let image_size_store = Has_ImageNodeSize::get_image_node_size_store(world)
   let content_size_store = Has_ContentSize::get_content_size_store(world)
   let tick = @core.ChangeTickWorld::read_change_tick(world)
   let sf = safe_scale_factor(@window.window_scale_factor())
@@ -1801,6 +1822,12 @@ pub fn[
     }
   }
 
+  fn uvec2_from_size_px(size_px : @math.Vec2) -> @math.UVec2 {
+    let w = if size_px.x <= 0.0F { 0 } else { size_px.x.to_int() }
+    let h = if size_px.y <= 0.0F { 0 } else { size_px.y.to_int() }
+    @math.UVec2::new(w, h)
+  }
+
   fn update_content_size(entity : @core.Entity, size_px : @math.Vec2) -> Unit {
     if size_px.x <= 0.0F || size_px.y <= 0.0F {
       return
@@ -1816,6 +1843,22 @@ pub fn[
           content_size_store.set(entity, next, tick) |> ignore
         }
       None => content_size_store.insert(entity, next, tick)
+    }
+  }
+
+  fn update_image_node_size(
+    entity : @core.Entity,
+    size_px : @math.Vec2,
+  ) -> Unit {
+    let next = ImageNodeSize::{ size: uvec2_from_size_px(size_px) }
+    match image_size_store.get(entity) {
+      Some(prev) =>
+        if prev.size.x == next.size.x && prev.size.y == next.size.y {
+          ()
+        } else {
+          image_size_store.set(entity, next, tick) |> ignore
+        }
+      None => image_size_store.insert(entity, next, tick)
     }
   }
 
@@ -1847,6 +1890,7 @@ pub fn[
         }
     }
     update_content_size(entity, size_px)
+    update_image_node_size(entity, size_px)
   })
 
   // Legacy UiImage compatibility: treat as Auto-sized content when ImageNode is absent.
@@ -3956,7 +4000,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
