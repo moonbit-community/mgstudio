@@ -75,6 +75,15 @@ pub struct GpuBackend {
   sprite_instance_data : Array[Float]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : UInt
+  mut ui_pipeline : @wgpu_mbt.RenderPipeline?
+  mut ui_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut ui_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut ui_instance_buf : @wgpu_mbt.Buffer?
+  mut ui_instance_capacity : UInt64
+  mut ui_globals_bg : @wgpu_mbt.BindGroup?
+  ui_instance_data : Array[Float]
+  ui_batches : Array[UiBatch]
+  mut ui_instance_count : UInt
   mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
@@ -86,6 +95,7 @@ pub struct GpuBackend {
 }
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
@@ -95,11 +105,13 @@ pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self
+pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
@@ -178,6 +190,12 @@ pub struct PreparedJit {
 }
 
 pub struct SpriteBatch {
+  texture_id : Int
+  first_instance : UInt
+  mut instance_count : UInt
+}
+
+pub struct UiBatch {
   texture_id : Int
   first_instance : UInt
   mut instance_count : UInt

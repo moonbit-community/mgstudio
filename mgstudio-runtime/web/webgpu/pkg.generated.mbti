@@ -222,6 +222,8 @@ pub fn GPUDevice::create_render_pipeline(Self, @core.Any) -> GPURenderPipeline
 pub fn GPUDevice::create_sampler(Self, @core.Any) -> GPUSampler
 pub fn GPUDevice::create_shader_module(Self, @core.Any) -> GPUShaderModule
 pub fn GPUDevice::create_texture(Self, @core.Any) -> GPUTexture
+pub fn GPUDevice::pop_error_scope(Self) -> @core.Promise[@core.Any]
+pub fn GPUDevice::push_error_scope(Self, String) -> Unit
 pub fn GPUDevice::queue(Self) -> GPUQueue
 
 #external

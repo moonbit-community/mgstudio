@@ -908,6 +908,35 @@ pub let ui_set_a11y_apply : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let ui_set_render_extract : @app.SystemSet = @app.system_set(
+  "mgstudio.ui.render_extract",
+)
+
+///|
+const UI_DRAW_FLAG_BORDER : Int = 2
+
+///|
+const UI_DRAW_FLAG_ANTIALIAS : Int = 4
+
+///|
+const UI_STACK_Z_BASE : Float = 10000.0F
+
+///|
+const UI_STACK_Z_STEP : Float = 10.0F
+
+///|
+const UI_STACK_Z_BACKGROUND : Float = 0.0F
+
+///|
+const UI_STACK_Z_CONTENT : Float = 1.0F
+
+///|
+const UI_STACK_Z_BORDER : Float = 2.0F
+
+///|
+const UI_STACK_Z_TEXT : Float = 3.0F
+
+///|
 fn int_to_float(value : Int) -> Float {
   Float::from_double(value.to_double())
 }
@@ -1183,7 +1212,7 @@ fn[W : @core.ChangeTickWorld + @render2d.Has_RenderLayers] ensure_layers_default
 fn ui_world_transform(
   ctx : UiContext,
   rect : @math.Rect,
-  z_index : Int,
+  z : Float,
 ) -> @math.Transform {
   let viewport_w = ctx.viewport_size.x
   let viewport_h = ctx.viewport_size.y
@@ -1204,7 +1233,6 @@ fn ui_world_transform(
   )
   let offset = rotate_vec2(center_scaled, cam_rot)
   let world_pos = @math.Vec2::new(cam_pos.x + offset.x, cam_pos.y + offset.y)
-  let z = 10000.0F + Float::from_double(z_index.to_double())
   @math.Transform::from_xy_rotation_scale(
     world_pos,
     cam_rot,
@@ -1231,7 +1259,7 @@ fn button_color_for_state(
 
 ///|
 pub fn[
-  W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_ScrollPosition + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld,
+  W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ScrollPosition + Has_UiLayout + Has_UiImage + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld,
 ] ui_layout_system(
   world : W,
 ) -> Unit {
@@ -1241,15 +1269,11 @@ pub fn[
   let root_store = Has_UiRoot::get_ui_root_store(world)
   let node_store = Has_Node::get_node_store(world)
   let content_size_store = Has_ContentSize::get_content_size_store(world)
-  let z_store = Has_ZIndex::get_z_index_store(world)
   let scroll_store = Has_ScrollPosition::get_scroll_position_store(world)
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let children_store = @hierarchy.Has_Children::get_children_store(world)
   let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
-  let bg_store = Has_BackgroundColor::get_background_color_store(world)
   let img_store = Has_UiImage::get_ui_image_store(world)
-  let button_store = Has_ButtonColors::get_button_colors_store(world)
-  let interaction_store = Has_Interaction::get_interaction_store(world)
   let ui_text_store = Has_UiText::get_ui_text_store(world)
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let tick = @core.ChangeTickWorld::read_change_tick(world)
@@ -1258,16 +1282,10 @@ pub fn[
     @math.Vec2::new(ctx0.viewport_size.x, ctx0.viewport_size.y),
   )
   fn should_draw_node(
-    sprite_store : @core.ComponentStore[@render2d.Sprite],
-    bg_store : @core.ComponentStore[BackgroundColor],
     img_store : @core.ComponentStore[UiImage],
-    button_store : @core.ComponentStore[ButtonColors],
     entity : @core.Entity,
   ) -> Bool {
-    sprite_store.contains(entity) ||
-    bg_store.contains(entity) ||
-    img_store.contains(entity) ||
-    button_store.contains(entity)
+    img_store.contains(entity)
   }
 
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
@@ -1729,11 +1747,7 @@ pub fn[
 
       // Update render2d / transform for UI nodes (Node component required).
       if node_store.contains(entity) {
-        let z_index = match z_store.get(entity) {
-          Some(v) => v.value
-          None => 0
-        }
-        let transform = ui_world_transform(ctx0, rect, z_index)
+        let transform = ui_world_transform(ctx0, rect, 0.0F)
         if transform_store.contains(entity) {
           transform_store.set(entity, transform, tick) |> ignore
         } else {
@@ -1741,25 +1755,10 @@ pub fn[
         }
         let layers = ensure_layers_default(world, entity)
         ensure_visibility_defaults(world, entity)
-        if should_draw_node(
-            sprite_store, bg_store, img_store, button_store, entity,
-          ) {
-          let texture = match img_store.get(entity) {
-            Some(v) => v.image
-            None => ctx0.white_texture
-          }
-          let button_colors_opt = button_store.get(entity)
-          let color = match button_colors_opt {
-            Some(colors) =>
-              button_color_for_state(colors, interaction_store.get(entity))
-            None =>
-              match bg_store.get(entity) {
-                Some(v) => v.color
-                None => @render2d.Color::white()
-              }
-          }
+        if should_draw_node(img_store, entity) {
+          let texture = img_store.get(entity).unwrap().image
           let sprite = @render2d.Sprite::from_image(texture)
-            .with_color(color)
+            .with_color(@render2d.Color::white())
             .with_custom_size(Some(size))
           if sprite_store.contains(entity) {
             sprite_store.set(entity, sprite, tick) |> ignore
@@ -1983,7 +1982,7 @@ pub fn[
 /// Children are visited in depth-first order, sorted by `ZIndex` ascending,
 /// while preserving insertion order for ties.
 pub fn[
-  W : HasRes_UiStack + Has_UiRoot + Has_UiLayout + Has_ZIndex + Has_GlobalZIndex + @hierarchy.Has_Children + @hierarchy.Has_Parent + @core.ChangeTickWorld,
+  W : HasRes_UiStack + Has_UiRoot + Has_UiLayout + Has_ZIndex + Has_GlobalZIndex + Has_UiText + @hierarchy.Has_Children + @hierarchy.Has_Parent + @math.Has_Transform + @core.ChangeTickWorld,
 ] ui_stack_system(
   world : W,
 ) -> Unit {
@@ -2000,6 +1999,8 @@ pub fn[
   let gz_store = Has_GlobalZIndex::get_global_z_index_store(world)
   let children_store = @hierarchy.Has_Children::get_children_store(world)
   let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
+  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let ui_text_store = Has_UiText::get_ui_text_store(world)
   fn entity_key(e : @core.Entity) -> (Int, Int) {
     (e.id, e.generation)
   }
@@ -2131,6 +2132,50 @@ pub fn[
 
   for root in roots {
     visit(root.0, layout_store, z_store, gz_store, children_store, stack)
+  }
+
+  // Convert the Bevy-style UiStack ordering into a stable render z for the
+  // engine's 2D renderer. We reserve a high base z to keep UI on top of 2D
+  // world sprites, and use a coarse step to allow per-node sublayers.
+  for i in 0..<stack.val.uinodes.length() {
+    let entity = stack.val.uinodes[i]
+    let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
+    let z = z_base + UI_STACK_Z_CONTENT
+    match transform_store.get(entity) {
+      Some(t0) => {
+        let pos = @math.Vec2::new(t0.translation.x, t0.translation.y)
+        let scale = @math.Vec2::new(t0.scale.x, t0.scale.y)
+        let t = @math.Transform::from_xy_rotation_scale(
+          pos,
+          t0.rotation_z(),
+          scale,
+          z~,
+        )
+        if transform_store.contains(entity) {
+          transform_store.set(entity, t, tick) |> ignore
+        } else {
+          transform_store.insert(entity, t, tick)
+        }
+      }
+      None => ()
+    }
+    if ui_text_store.get(entity) is Some(text_node) {
+      match transform_store.get(entity) {
+        Some(t1) => {
+          let pos = @math.Vec2::new(t1.translation.x, t1.translation.y)
+          let scale = @math.Vec2::new(t1.scale.x, t1.scale.y)
+          let z = z_base + UI_STACK_Z_TEXT
+          let t_text = @math.Transform::from_xy_rotation_scale(
+            pos,
+            t1.rotation_z(),
+            scale,
+            z~,
+          )
+          @text.text_set_transform(text_node.handle, t_text)
+        }
+        None => ()
+      }
+    }
   }
 }
 
@@ -2296,7 +2341,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + Has_ButtonColors + @render2d.Has_Sprite + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_interaction_system(
   world : W,
 ) -> Unit {
@@ -2312,8 +2357,6 @@ pub fn[
   )
   let focus_store = Has_FocusPolicy::get_focus_policy_store(world)
   let clip_store = Has_CalculatedClip::get_calculated_clip_store(world)
-  let colors_store = Has_ButtonColors::get_button_colors_store(world)
-  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
   let vv_store = @visibility.Has_ViewVisibility::get_view_visibility_store(
     world,
   )
@@ -2472,15 +2515,6 @@ pub fn[
     }
   }
 
-  // Keep sprite colors in sync when `ButtonColors` is present (MVP compatibility).
-  colors_store.for_each(fn(entity, colors) {
-    if sprite_store.get(entity) is Some(sprite0) {
-      let desired = button_color_for_state(colors, state_store.get(entity))
-      let sprite = sprite0.with_color(desired)
-      sprite_store.set(entity, sprite, tick) |> ignore
-    }
-  })
-
   // Picking event generation (single pointer = 0).
   let events_res = @picking.HasRes_PickingEvents::get_picking_events_resource(
     world,
@@ -2619,7 +2653,251 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_ButtonColors + Has_Interaction + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+] ui_render_extract_system(
+  world : W,
+) -> Unit {
+  let res = HasRes_UiContext::get_ui_context_resource(world)
+  guard res.get() is Some(ctx0) else { return }
+  let stack_res = HasRes_UiStack::get_ui_stack_resource(world)
+  guard stack_res.get() is Some(stack0) else { return }
+  @render2d.render2d_clear_overlay_ui_rects(world)
+  let layout_store = Has_UiLayout::get_ui_layout_store(world)
+  let node_store = Has_Node::get_node_store(world)
+  let bg_store = Has_BackgroundColor::get_background_color_store(world)
+  let button_store = Has_ButtonColors::get_button_colors_store(world)
+  let interaction_store = Has_Interaction::get_interaction_store(world)
+  let border_color_store = Has_BorderColor::get_border_color_store(world)
+  let radius_store = Has_BorderRadius::get_border_radius_store(world)
+  let aa_store = Has_UiAntiAlias::get_ui_anti_alias_store(world)
+  let layers_store = @render2d.Has_RenderLayers::get_render_layers_store(world)
+  let scissor_store = @render2d.Has_ScissorRect::get_scissor_rect_store(world)
+  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let vv_store = @visibility.Has_ViewVisibility::get_view_visibility_store(
+    world,
+  )
+  fn clamp_nonneg(v : Float) -> Float {
+    if v < 0.0F {
+      0.0F
+    } else {
+      v
+    }
+  }
+
+  fn resolve_axis(
+    val : Val,
+    node_axis : Float,
+    viewport_size : @math.Vec2,
+  ) -> Float {
+    match val {
+      Val::Auto => 0.0F
+      Val::Px(px) => px
+      Val::Percent(p) => node_axis * (p / 100.0F)
+      Val::Vw(p) => viewport_size.x * (p / 100.0F)
+      Val::Vh(p) => viewport_size.y * (p / 100.0F)
+      Val::VMin(p) => {
+        let m = if viewport_size.x < viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
+      }
+      Val::VMax(p) => {
+        let m = if viewport_size.x > viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
+      }
+    }
+  }
+
+  fn resolve_radius_single(
+    val : Val,
+    node_size : @math.Vec2,
+    viewport_size : @math.Vec2,
+  ) -> Float {
+    let min_elem = if node_size.x < node_size.y {
+      node_size.x
+    } else {
+      node_size.y
+    }
+    let raw = match val {
+      Val::Auto => 0.0F
+      Val::Px(px) => px
+      Val::Percent(p) => min_elem * (p / 100.0F)
+      Val::Vw(p) => viewport_size.x * (p / 100.0F)
+      Val::Vh(p) => viewport_size.y * (p / 100.0F)
+      Val::VMin(p) => {
+        let m = if viewport_size.x < viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
+      }
+      Val::VMax(p) => {
+        let m = if viewport_size.x > viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
+      }
+    }
+    let clamped = clamp_nonneg(raw)
+    let max_r = 0.5F * min_elem
+    if clamped > max_r {
+      max_r
+    } else {
+      clamped
+    }
+  }
+
+  fn transform_with_z(t : @math.Transform, z : Float) -> @math.Transform {
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(t.translation.x, t.translation.y),
+      t.rotation_z(),
+      @math.Vec2::new(t.scale.x, t.scale.y),
+      z~,
+    )
+  }
+
+  let uv_min = @math.Vec2::new(0.0F, 0.0F)
+  let uv_max = @math.Vec2::new(1.0F, 1.0F)
+  for i in 0..<stack0.uinodes.length() {
+    let entity = stack0.uinodes[i]
+    if vv_store.get(entity) is Some(vv) && !vv.is_visible() {
+      continue
+    }
+    guard layout_store.get(entity) is Some(layout) else { continue }
+    guard node_store.get(entity) is Some(node) else { continue }
+    guard transform_store.get(entity) is Some(t0) else { continue }
+    let rect = layout.rect
+    let size = rect.size()
+    if size.x <= 0.0F || size.y <= 0.0F {
+      continue
+    }
+    let layers = match layers_store.get(entity) {
+      Some(v) => v
+      None => @render2d.RenderLayers::default()
+    }
+    let scissor = match scissor_store.get(entity) {
+      Some(v) => Some(v.rect)
+      None => None
+    }
+    let scale_x = t0.scale.x
+    let scale_y = t0.scale.y
+    let draw_scale = @math.Vec2::new(scale_x * size.x, scale_y * size.y)
+    let scale_min = if scale_x < scale_y { scale_x } else { scale_y }
+    let border_left = clamp_nonneg(
+        resolve_axis(node.border.left, size.x, ctx0.viewport_size),
+      ) *
+      scale_x
+    let border_right = clamp_nonneg(
+        resolve_axis(node.border.right, size.x, ctx0.viewport_size),
+      ) *
+      scale_x
+    let border_top = clamp_nonneg(
+        resolve_axis(node.border.top, size.y, ctx0.viewport_size),
+      ) *
+      scale_y
+    let border_bottom = clamp_nonneg(
+        resolve_axis(node.border.bottom, size.y, ctx0.viewport_size),
+      ) *
+      scale_y
+    let border = @render2d.UiBorderRect::new(
+      border_left, border_top, border_right, border_bottom,
+    )
+    let radius = match radius_store.get(entity) {
+      Some(r) => {
+        let tl = resolve_radius_single(r.top_left, size, ctx0.viewport_size) *
+          scale_min
+        let tr = resolve_radius_single(r.top_right, size, ctx0.viewport_size) *
+          scale_min
+        let br = resolve_radius_single(r.bottom_right, size, ctx0.viewport_size) *
+          scale_min
+        let bl = resolve_radius_single(r.bottom_left, size, ctx0.viewport_size) *
+          scale_min
+        @render2d.UiCornerRadii::new(tl, tr, br, bl)
+      }
+      None => @render2d.UiCornerRadii::zero()
+    }
+    let mut flags = 0
+    let aa_enabled = match aa_store.get(entity) {
+      Some(UiAntiAlias::Off) => false
+      _ => true
+    }
+    if aa_enabled {
+      flags = flags | UI_DRAW_FLAG_ANTIALIAS
+    }
+    let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
+    // Background color.
+    let bg_color_opt = match button_store.get(entity) {
+      Some(colors) =>
+        Some(button_color_for_state(colors, interaction_store.get(entity)))
+      None =>
+        match bg_store.get(entity) {
+          Some(v) => Some(v.color)
+          None => None
+        }
+    }
+    match bg_color_opt {
+      Some(color) =>
+        if color.a > 0.0F {
+          let t_bg = transform_with_z(t0, z_base + UI_STACK_Z_BACKGROUND)
+          @render2d.render2d_push_ui_rect_uv_scissor(
+            world,
+            entity,
+            ctx0.white_texture,
+            t_bg,
+            draw_scale,
+            uv_min,
+            uv_max,
+            color,
+            layers,
+            scissor,
+            flags,
+            radius,
+            border,
+          )
+        }
+      None => ()
+    }
+
+    // Border.
+    let has_border = border_left > 0.0F ||
+      border_right > 0.0F ||
+      border_top > 0.0F ||
+      border_bottom > 0.0F
+    if has_border &&
+      border_color_store.get(entity) is Some(bc) &&
+      bc.color.a > 0.0F {
+      let t_border = transform_with_z(t0, z_base + UI_STACK_Z_BORDER)
+      @render2d.render2d_push_ui_rect_uv_scissor(
+        world,
+        entity,
+        ctx0.white_texture,
+        t_border,
+        draw_scale,
+        uv_min,
+        uv_max,
+        bc.color,
+        layers,
+        scissor,
+        flags | UI_DRAW_FLAG_BORDER,
+        radius,
+        border,
+      )
+    }
+  }
+}
+
+///|
+pub fn[
+  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
@@ -2646,6 +2924,9 @@ pub fn[
   .add_pre_update_system_config(
     @app.system(ui_a11y_apply_actions_system).in_set(ui_set_a11y_apply),
   )
+  .add_pre_update_system_config(
+    @app.system(ui_render_extract_system).in_set(ui_set_render_extract),
+  )
   .configure_set(@app.PreUpdate, ui_set_context, after=[@picking.picking_set], before=[
     ui_set_scroll,
   ])
@@ -2669,4 +2950,7 @@ pub fn[
   ])
   .configure_set(@app.PreUpdate, ui_set_interaction, after=[ui_set_a11y])
   .configure_set(@app.PreUpdate, ui_set_a11y_apply, after=[ui_set_interaction])
+  .configure_set(@app.PreUpdate, ui_set_render_extract, after=[
+    ui_set_a11y_apply,
+  ])
 }

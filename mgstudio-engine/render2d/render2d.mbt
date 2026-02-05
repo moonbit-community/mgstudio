@@ -166,6 +166,54 @@ pub fn ScissorRect::new(rect : @math.Rect) -> ScissorRect {
 }
 
 ///|
+/// UI corner radii (top-left, top-right, bottom-right, bottom-left) in logical pixels.
+pub struct UiCornerRadii {
+  top_left : Float
+  top_right : Float
+  bottom_right : Float
+  bottom_left : Float
+}
+
+///|
+pub fn UiCornerRadii::new(
+  top_left : Float,
+  top_right : Float,
+  bottom_right : Float,
+  bottom_left : Float,
+) -> UiCornerRadii {
+  UiCornerRadii::{ top_left, top_right, bottom_right, bottom_left }
+}
+
+///|
+pub fn UiCornerRadii::zero() -> UiCornerRadii {
+  UiCornerRadii::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
+
+///|
+/// UI border thickness (left, top, right, bottom) in logical pixels.
+pub struct UiBorderRect {
+  left : Float
+  top : Float
+  right : Float
+  bottom : Float
+}
+
+///|
+pub fn UiBorderRect::new(
+  left : Float,
+  top : Float,
+  right : Float,
+  bottom : Float,
+) -> UiBorderRect {
+  UiBorderRect::{ left, top, right, bottom }
+}
+
+///|
+pub fn UiBorderRect::zero() -> UiBorderRect {
+  UiBorderRect::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Anchor {
@@ -727,6 +775,23 @@ priv struct SpriteInstance {
 }
 
 ///|
+priv struct UiRectInstance {
+  entity : @core.Entity
+  transform : @math.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : Color
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+  scissor : @math.Rect?
+  flags : Int
+  radius : UiCornerRadii
+  border : UiBorderRect
+}
+
+///|
 priv struct CameraInstance {
   entity : @core.Entity
   camera : Camera
@@ -769,6 +834,7 @@ struct RenderState {
   mut primary_camera : @core.Entity
   sprites : Array[SpriteInstance]
   extra_sprites : Array[SpriteInstance]
+  extra_ui_rects : Array[UiRectInstance]
   cameras : Array[CameraInstance]
   meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
@@ -781,6 +847,7 @@ fn RenderState::new() -> RenderState {
     primary_camera: @core.Entity::placeholder(),
     sprites: [],
     extra_sprites: [],
+    extra_ui_rects: [],
     cameras: [],
     meshes: [],
     render_targets: [],
@@ -1155,6 +1222,50 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_s
 }
 
 ///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_rects(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_rects.clear() })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(
+  world : W,
+  entity : @core.Entity,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+  flags : Int,
+  radius : UiCornerRadii,
+  border : UiBorderRect,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_rects.push(UiRectInstance::{
+      entity,
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale,
+      color,
+      texture,
+      layers,
+      uv_min,
+      uv_max,
+      scissor,
+      flags,
+      radius,
+      border,
+    })
+  })
+  |> ignore
+}
+
+///|
 fn render2d_find_render_target_size(
   state : RenderState,
   id : Int,
@@ -1488,6 +1599,7 @@ fn cmp_float(a : Float, b : Float) -> Int {
 priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
+  UiRectExtra(Int)
   Mesh(Int)
 }
 
@@ -1497,7 +1609,7 @@ priv struct DrawItem {
   z : Float
   // 0 = opaque, 1 = transparent (opaque first for stable blending).
   phase : Int
-  // Rough pipeline grouping: 0 = sprite, 1 = mesh.
+  // Rough pipeline grouping: 0 = sprite, 1 = mesh, 2 = ui.
   pipeline : Int
   // Batch key for opaque items (e.g. texture id / mesh id).
   batch : Int
@@ -1511,6 +1623,7 @@ priv struct DrawItem {
 fn draw_items_for_layers(
   sprites : Array[SpriteInstance],
   extra_sprites : Array[SpriteInstance],
+  extra_ui_rects : Array[UiRectInstance],
   meshes : Array[MeshInstance],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -1548,6 +1661,23 @@ fn draw_items_for_layers(
       entity_generation: sprite.entity.generation,
       // Ensure extra-sprites tie-break after main sprites with the same entity key.
       tie: 1_000_000 + i,
+    })
+  }
+  for i in 0..<extra_ui_rects.length() {
+    let rect = extra_ui_rects[i]
+    if !rect.layers.matches(layers) {
+      continue
+    }
+    let phase = if rect.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: UiRectExtra(i),
+      z: rect.transform.translation.z,
+      phase,
+      pipeline: 2,
+      batch: rect.texture.id(),
+      entity_id: rect.entity.id,
+      entity_generation: rect.entity.generation,
+      tie: 2_000_000 + i,
     })
   }
   for i in 0..<meshes.length() {
@@ -1622,6 +1752,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
     },
   ]
   let extra : Array[SpriteInstance] = []
+  let extra_ui : Array[UiRectInstance] = []
   let meshes : Array[MeshInstance] = [
     MeshInstance::{
       entity: @core.Entity::new(1, 0),
@@ -1636,7 +1767,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
       layers,
     },
   ]
-  let items = draw_items_for_layers(sprites, extra, meshes, layers)
+  let items = draw_items_for_layers(sprites, extra, extra_ui, meshes, layers)
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
@@ -1656,10 +1787,13 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   let cameras = rs.val.cameras
   if cameras.length() == 0 {
     gizmos_clear()
+    rs.val.extra_sprites.clear()
+    rs.val.extra_ui_rects.clear()
     return
   }
   let sprites = rs.val.sprites
   let extra_sprites = rs.val.extra_sprites
+  let extra_ui_rects = rs.val.extra_ui_rects
   let meshes = rs.val.meshes
   fn int_from_f32_floor_nonneg(x : Float) -> Int {
     if x <= 0.0F {
@@ -1822,6 +1956,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     let draw_items = draw_items_for_layers(
       sprites,
       extra_sprites,
+      extra_ui_rects,
       meshes,
       camera.layers,
     )
@@ -1926,6 +2061,40 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             mesh.color.a,
           )
         }
+        UiRectExtra(i) => {
+          let rect = extra_ui_rects[i]
+          apply_scissor(rect.scissor)
+          let transform = rect.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + rect.anchor_offset.x,
+            transform.translation.y + rect.anchor_offset.y,
+          )
+          @window.host_gpu_draw_ui_rect(
+            rect.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            rect.draw_scale.x,
+            rect.draw_scale.y,
+            rect.color.r,
+            rect.color.g,
+            rect.color.b,
+            rect.color.a,
+            rect.uv_min.x,
+            rect.uv_min.y,
+            rect.uv_max.x,
+            rect.uv_max.y,
+            rect.flags,
+            rect.radius.top_left,
+            rect.radius.top_right,
+            rect.radius.bottom_right,
+            rect.radius.bottom_left,
+            rect.border.left,
+            rect.border.top,
+            rect.border.right,
+            rect.border.bottom,
+          )
+        }
       }
     }
     gizmos_draw_lines(camera.layers)
@@ -1933,6 +2102,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   }
   gizmos_clear()
   rs.val.extra_sprites.clear()
+  rs.val.extra_ui_rects.clear()
 }
 
 ///|

@@ -26,6 +26,8 @@ type SpriteBatch
 
 type State
 
+type UiBatch
+
 type WindowState
 
 // Type aliases

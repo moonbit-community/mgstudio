@@ -254,6 +254,40 @@ pub fn host_gpu_draw_sprite_uv(
 ) -> Unit = "mgstudio_host" "gpu_draw_sprite_uv"
 
 ///|
+/// Draw a UI rectangle (background or border) using the dedicated UI pipeline.
+///
+/// Parameters intentionally mirror `gpu_draw_sprite_uv` plus UI-specific fields:
+/// - `flags`: bitset (TEXTURED/BORDER/ANTI_ALIAS) defined by the engine-side UI
+///   extraction.
+/// - `radius_*`: corner radii in logical pixels (top-left, top-right, bottom-right, bottom-left).
+/// - `border_*`: border thickness in logical pixels (left, top, right, bottom).
+pub fn host_gpu_draw_ui_rect(
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  uv_min_x : Float,
+  uv_min_y : Float,
+  uv_max_x : Float,
+  uv_max_y : Float,
+  flags : Int,
+  radius_tl : Float,
+  radius_tr : Float,
+  radius_br : Float,
+  radius_bl : Float,
+  border_left : Float,
+  border_top : Float,
+  border_right : Float,
+  border_bottom : Float,
+) -> Unit = "mgstudio_host" "gpu_draw_ui_rect"
+
+///|
 pub fn host_gpu_draw_mesh(
   mesh_id : Int,
   x : Float,
