@@ -527,8 +527,8 @@ extern "js" fn a11y_actions_clear_js() -> Unit =
 
 ///|
 /// Ensure (and position) the a11y DOM overlay above the canvas.
-extern "js" fn a11y_begin_update_js(canvas : @js.Any) -> @js.Any =
-  #| (canvas) => {
+extern "js" fn a11y_begin_update_js(canvas : @js.Any, root_id : Int) -> @js.Any =
+  #| (canvas, rootId) => {
   #|   if (!canvas || typeof document !== "object") return null
   #|   let container = globalThis.__mgstudio_a11y_container
   #|   if (!container) {
@@ -548,10 +548,15 @@ extern "js" fn a11y_begin_update_js(canvas : @js.Any) -> @js.Any =
   #|   container.style.top = `${top}px`
   #|   container.style.width = `${rect.width}px`
   #|   container.style.height = `${rect.height}px`
-  #|   // Clear previous children.
-  #|   while (container.firstChild) container.removeChild(container.firstChild)
-  #|   // Reset per-frame node lookup (used for parenting).
-  #|   globalThis.__mgstudio_a11y_nodes = new Map()
+  #|   const rid = Number(rootId) | 0
+  #|   if (rid) globalThis.__mgstudio_a11y_root_id = rid
+  #|   // Persistent node lookup across frames (to preserve focus).
+  #|   if (!globalThis.__mgstudio_a11y_nodes) {
+  #|     globalThis.__mgstudio_a11y_nodes = new Map()
+  #|   }
+  #|   // Per-frame bookkeeping.
+  #|   globalThis.__mgstudio_a11y_frame_seen = new Set()
+  #|   globalThis.__mgstudio_a11y_frame_order = []
   #|   return container
   #| }
 
@@ -575,40 +580,45 @@ extern "js" fn a11y_push_node_js(
   #|   const pid = Number(parentId) | 0
   #|   const role = Number(roleId) | 0
   #|   const mask = Number(actionsMask) | 0
-  #|   const el = (role === 3) ? document.createElement("button") : document.createElement("div")
+  #|   const nodes = globalThis.__mgstudio_a11y_nodes
+  #|   const seen = globalThis.__mgstudio_a11y_frame_seen
+  #|   const order = globalThis.__mgstudio_a11y_frame_order
+  #|   if (order && Array.isArray(order)) order.push(id)
+  #|   if (seen && typeof seen.add === "function") seen.add(id)
+  #|   const tag = (role === 3) ? "button" : "div"
+  #|   let el = nodes && typeof nodes.get === "function" ? nodes.get(id) : null
+  #|   if (!el || String(el.tagName || "").toLowerCase() !== tag) {
+  #|     const next = document.createElement(tag)
+  #|     if (el && el.parentNode) {
+  #|       el.parentNode.replaceChild(next, el)
+  #|     }
+  #|     el = next
+  #|     if (nodes && typeof nodes.set === "function") {
+  #|       nodes.set(id, el)
+  #|     }
+  #|     // Init-once styles and listeners.
   #|   el.style.position = "absolute"
-  #|   el.style.left = `${Number(x)}px`
-  #|   el.style.top = `${Number(y)}px`
-  #|   el.style.width = `${Math.max(0, Number(w))}px`
-  #|   el.style.height = `${Math.max(0, Number(h))}px`
-  #|   el.style.opacity = "0.001"
-  #|   el.style.pointerEvents = "auto"
+  #|     el.style.opacity = "0.001"
   #|   el.style.background = "transparent"
   #|   el.style.border = "0"
   #|   el.style.padding = "0"
   #|   el.style.margin = "0"
   #|   el.style.color = "transparent"
-  #|   el.dataset.mgstudioNodeId = String(id)
-  #|   const label = String(name || "")
-  #|   if (label) {
-  #|     el.setAttribute("aria-label", label)
-  #|     el.textContent = label
-  #|   }
-  #|   // Focusable when it has any actions.
-  #|   if (mask !== 0) {
-  #|     el.tabIndex = 0
-  #|   }
-  #|   // Actions: 1 = Focus, 2 = Default
-  #|   el.addEventListener("focus", () => {
-  #|     globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
-  #|     globalThis.__mgstudio_a11y_actions.push([id, 1])
-  #|   })
-  #|   if ((mask & 2) !== 0) {
+  #|     el.addEventListener("focus", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & 1) === 0) return
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, 1])
+  #|     })
   #|     el.addEventListener("click", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & 2) === 0) return
   #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
   #|       globalThis.__mgstudio_a11y_actions.push([id, 2])
   #|     })
   #|     el.addEventListener("keydown", (ev) => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & 2) === 0) return
   #|       const key = ev && ev.key
   #|       if (key === "Enter" || key === " ") {
   #|         ev.preventDefault()
@@ -616,13 +626,63 @@ extern "js" fn a11y_push_node_js(
   #|         globalThis.__mgstudio_a11y_actions.push([id, 2])
   #|       }
   #|     })
+  #|     container.appendChild(el)
   #|   }
+  #|   // Per-frame dynamic styles / attributes.
+  #|   el.style.left = `${Number(x)}px`
+  #|   el.style.top = `${Number(y)}px`
+  #|   el.style.width = `${Math.max(0, Number(w))}px`
+  #|   el.style.height = `${Math.max(0, Number(h))}px`
+  #|   el.style.pointerEvents = mask !== 0 ? "auto" : "none"
+  #|   el.dataset.mgstudioNodeId = String(id)
+  #|   el.dataset.mgstudioParentId = String(pid)
+  #|   el.dataset.mgstudioRoleId = String(role)
+  #|   el.dataset.mgstudioActionsMask = String(mask)
+  #|   const label = String(name || "")
+  #|   if (label) {
+  #|     el.setAttribute("aria-label", label)
+  #|     el.textContent = label
+  #|   } else {
+  #|     el.removeAttribute("aria-label")
+  #|     el.textContent = ""
+  #|   }
+  #|   // Focusable when it has any actions.
+  #|   el.tabIndex = mask !== 0 ? 0 : -1
+  #| }
+
+///|
+/// Finalize a11y overlay update: reparent and prune nodes while preserving focus.
+extern "js" fn a11y_end_update_js(container : @js.Any) -> Unit =
+  #| (container) => {
+  #|   if (!container) return
   #|   const nodes = globalThis.__mgstudio_a11y_nodes
-  #|   if (nodes && typeof nodes.set === "function") {
-  #|     nodes.set(id, el)
+  #|   const seen = globalThis.__mgstudio_a11y_frame_seen
+  #|   const order = globalThis.__mgstudio_a11y_frame_order || []
+  #|   if (!nodes || typeof nodes.forEach !== "function") return
+  #|   // Prune unseen nodes (remove from DOM and map).
+  #|   nodes.forEach((el, id) => {
+  #|     if (!seen || !seen.has(id)) {
+  #|       try { if (el && el.parentNode) el.parentNode.removeChild(el) } catch {}
+  #|       try { nodes.delete(id) } catch {}
+  #|     }
+  #|   })
+  #|   // Rebuild parent->children lists in the order nodes were pushed this frame.
+  #|   const childrenByParent = new Map()
+  #|   for (let i = 0; i < order.length; i += 1) {
+  #|     const id = Number(order[i]) | 0
+  #|     const el = nodes.get(id)
+  #|     if (!el) continue
+  #|     const pid = Number(el.dataset && el.dataset.mgstudioParentId) | 0
+  #|     let arr = childrenByParent.get(pid)
+  #|     if (!arr) { arr = []; childrenByParent.set(pid, arr) }
+  #|     arr.push(el)
   #|   }
-  #|   const parentEl = (nodes && typeof nodes.get === "function") ? nodes.get(pid) : null
-  #|   ;(parentEl || container).appendChild(el)
+  #|   childrenByParent.forEach((children, pid) => {
+  #|     const parentEl = nodes.get(pid) || container
+  #|     for (let i = 0; i < children.length; i += 1) {
+  #|       parentEl.appendChild(children[i])
+  #|     }
+  #|   })
   #| }
 
 ///|
@@ -4241,12 +4301,13 @@ pub fn create_host(
     console_error(@js.any(string_from_id_optional(state, value)))
     0
   })
-  let a11y_begin_update = @js.from_fn1(fn(_root_any : @js.Any) {
+  let a11y_begin_update = @js.from_fn1(fn(root_any : @js.Any) {
     if state.window is None {
       return 0
     }
     let canvas = state.window.unwrap().canvas
-    state.a11y_container = Some(a11y_begin_update_js(canvas))
+    let root_id = to_int(number_or(root_any, 0))
+    state.a11y_container = Some(a11y_begin_update_js(canvas, root_id))
     0
   })
   let a11y_push_node = wrap_variadic(
@@ -4267,7 +4328,12 @@ pub fn create_host(
       )
     }),
   )
-  let a11y_end_update = @js.from_fn0(fn() { 0 })
+  let a11y_end_update = @js.from_fn0(fn() {
+    if state.a11y_container is Some(container) {
+      a11y_end_update_js(container)
+    }
+    0
+  })
   let a11y_actions_len = @js.from_fn0(fn() { a11y_actions_len_js() })
   let a11y_action_target = @js.from_fn1(fn(index_any) {
     a11y_actions_target_js(to_int(number_or(index_any, 0)))
