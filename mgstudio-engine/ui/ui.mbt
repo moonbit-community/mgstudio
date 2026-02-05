@@ -1354,6 +1354,9 @@ pub let ui_set_interaction : @app.SystemSet = @app.system_set(
 pub let ui_set_scroll : @app.SystemSet = @app.system_set("mgstudio.ui.scroll")
 
 ///|
+pub let ui_set_measure : @app.SystemSet = @app.system_set("mgstudio.ui.measure")
+
+///|
 pub let ui_set_clip : @app.SystemSet = @app.system_set("mgstudio.ui.clip")
 
 ///|
@@ -1466,6 +1469,18 @@ fn[W : HasRes_UiContext + @core.ChangeTickWorld] ensure_ui_context_resource(
   let res = HasRes_UiContext::get_ui_context_resource(world)
   if !res.is_present() {
     res.insert(UiContext::default(), tick)
+  }
+  res.get_ref_mut(tick)
+}
+
+///|
+fn[W : HasRes_UiScale + @core.ChangeTickWorld] ensure_ui_scale_resource(
+  world : W,
+) -> Ref[UiScale]? {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let res = HasRes_UiScale::get_ui_scale_resource(world)
+  if !res.is_present() {
+    res.insert(UiScale::new(1.0F), tick)
   }
   res.get_ref_mut(tick)
 }
@@ -1724,6 +1739,133 @@ fn button_color_for_state(
       }
     None => colors.normal
   }
+}
+
+///|
+/// Update `ContentSize` for image nodes when `NodeImageMode::Auto`.
+///
+/// This mirrors Bevy's `update_image_content_size_system`, adapted to mgstudio's
+/// logical UI coordinate space.
+pub fn[
+  W : HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld,
+] ui_image_content_size_system(
+  world : W,
+) -> Unit {
+  let res = HasRes_UiContext::get_ui_context_resource(world)
+  guard res.get() is Some(_) else { return }
+  guard ensure_ui_scale_resource(world) is Some(ui_scale) else { return }
+  let node_store = Has_Node::get_node_store(world)
+  let ui_text_store = Has_UiText::get_ui_text_store(world)
+  let ui_image_store = Has_UiImage::get_ui_image_store(world)
+  let image_node_store = Has_ImageNode::get_image_node_store(world)
+  let content_size_store = Has_ContentSize::get_content_size_store(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let sf = safe_scale_factor(@window.window_scale_factor())
+  let ui_scale_value = if ui_scale.val.value <= 0.0F {
+    1.0F
+  } else {
+    ui_scale.val.value
+  }
+  let inv_px_scale = ui_scale_value / sf
+  let transparent_id = @asset.asset_transparent_texture().id()
+  fn rect_size(rect : @math.Rect) -> @math.Vec2 {
+    rect.size()
+  }
+
+  fn texture_size(handle : @asset.Handle[@asset.Image]) -> @math.Vec2 {
+    let w = @asset.asset_texture_width(handle)
+    let h = @asset.asset_texture_height(handle)
+    @math.Vec2::new(int_to_float(w), int_to_float(h))
+  }
+
+  fn atlas_rect_for(atlas : @asset.TextureAtlas) -> @math.Rect? {
+    match @asset.asset_get_texture_atlas_layout(atlas.layout) {
+      Some(layout_value) =>
+        if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
+          Some(layout_value.textures[atlas.index].as_rect())
+        } else {
+          None
+        }
+      None => None
+    }
+  }
+
+  fn update_content_size(entity : @core.Entity, size_px : @math.Vec2) -> Unit {
+    if size_px.x <= 0.0F || size_px.y <= 0.0F {
+      return
+    }
+    let next = ContentSize::new(
+      @math.Vec2::new(size_px.x * inv_px_scale, size_px.y * inv_px_scale),
+    )
+    match content_size_store.get(entity) {
+      Some(prev) =>
+        if prev.size.x == next.size.x && prev.size.y == next.size.y {
+          ()
+        } else {
+          content_size_store.set(entity, next, tick) |> ignore
+        }
+      None => content_size_store.insert(entity, next, tick)
+    }
+  }
+
+  // ImageNode (Bevy-aligned).
+  image_node_store.for_each(fn(entity, image_node) {
+    if !node_store.contains(entity) || ui_text_store.contains(entity) {
+      return
+    }
+    let is_auto = match image_node.image_mode {
+      NodeImageMode::Auto => true
+      _ => false
+    }
+    if image_node.image.id() == transparent_id || !is_auto {
+      if content_size_store.contains(entity) {
+        content_size_store.remove(entity) |> ignore
+      }
+      return
+    }
+    let size_px = match image_node.rect {
+      Some(r) => rect_size(r)
+      None =>
+        match image_node.texture_atlas {
+          Some(atlas) =>
+            match atlas_rect_for(atlas) {
+              Some(ar) => rect_size(ar)
+              None => texture_size(image_node.image)
+            }
+          None => texture_size(image_node.image)
+        }
+    }
+    update_content_size(entity, size_px)
+  })
+
+  // Legacy UiImage compatibility: treat as Auto-sized content when ImageNode is absent.
+  ui_image_store.for_each(fn(entity, ui_image) {
+    if image_node_store.contains(entity) {
+      return
+    }
+    if !node_store.contains(entity) || ui_text_store.contains(entity) {
+      return
+    }
+    if ui_image.image.id() == transparent_id {
+      if content_size_store.contains(entity) {
+        content_size_store.remove(entity) |> ignore
+      }
+      return
+    }
+    let size_px = match ui_image.rect {
+      Some(r) => rect_size(r)
+      None =>
+        match ui_image.texture_atlas {
+          Some(atlas) =>
+            match atlas_rect_for(atlas) {
+              Some(ar) => rect_size(ar)
+              None => texture_size(ui_image.image)
+            }
+          None => texture_size(ui_image.image)
+        }
+    }
+    update_content_size(entity, size_px)
+  })
 }
 
 ///|
@@ -3879,7 +4021,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiScale + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
@@ -3889,6 +4031,9 @@ pub fn[
   )
   .add_pre_update_system_config(
     @app.system(ui_scroll_system).in_set(ui_set_scroll),
+  )
+  .add_pre_update_system_config(
+    @app.system(ui_image_content_size_system).in_set(ui_set_measure),
   )
   .add_pre_update_system_config(
     @app.system(ui_layout_system).in_set(ui_set_layout),
@@ -3913,6 +4058,9 @@ pub fn[
     ui_set_scroll,
   ])
   .configure_set(@app.PreUpdate, ui_set_scroll, after=[ui_set_context], before=[
+    ui_set_measure,
+  ])
+  .configure_set(@app.PreUpdate, ui_set_measure, after=[ui_set_scroll], before=[
     ui_set_layout,
   ])
   .configure_set(
