@@ -6,6 +6,7 @@
     "Milky2018/mgstudio-runtime-core": {
       "path": "../core"
     },
+    "Milky2018/moon_accesskit": "0.2.1",
     "moonbitlang/x": "0.4.38",
     "Milky2018/wgpu_mbt": "0.4.7"
   },

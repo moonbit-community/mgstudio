@@ -7,6 +7,9 @@
     "mizchi/js/browser/dom",
     "mizchi/js/web/http",
     "mizchi/js/web/webassembly",
+    "Milky2018/moon_accesskit",
+    "moonbitlang/core/hashmap",
+    "moonbitlang/core/json",
     {
       "path": "Milky2018/mgstudio-runtime-core",
       "alias": "rtcore"

@@ -783,6 +783,121 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "a11y_apply_update",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        guard args.length() >= 1 && args[0] is @types.Value::I32(payload_id) else {
+          return ok_i32(0)
+        }
+        let payload = string_table_get(ctx, payload_id).unwrap_or("")
+        if payload == "" {
+          return ok_i32(0)
+        }
+        let json = @json.parse(payload)
+        let update : @moon_accesskit.TreeUpdate = @json.from_json(json)
+
+        // We keep the existing NSAccessibility bridge (begin/push/end), but the
+        // engine->runtime boundary is now AccessKit TreeUpdate.
+        win.a11y_begin_update(-1)
+        let nodes_by_id : @hashmap.HashMap[UInt64, @moon_accesskit.Node] = @hashmap.HashMap::new()
+        for nu in update.nodes() {
+          nodes_by_id.set(nu.id().to_u64(), nu.node())
+        }
+        let root_id = match update.tree() {
+          Some(t) => t.root_id().to_u64()
+          None => 0UL
+        }
+        fn host_role(role : @moon_accesskit.Role) -> Int {
+          match role {
+            @moon_accesskit.Role::Window
+            | @moon_accesskit.Role::Application
+            | @moon_accesskit.Role::RootWebArea => 1
+            @moon_accesskit.Role::Button
+            | @moon_accesskit.Role::DefaultButton => 3
+            @moon_accesskit.Role::Label
+            | @moon_accesskit.Role::TextRun
+            | @moon_accesskit.Role::Paragraph => 4
+            @moon_accesskit.Role::Image => 5
+            _ => 2
+          }
+        }
+
+        fn name_for(node : @moon_accesskit.Node) -> String {
+          match node.label() {
+            Some(s) => s
+            None => node.value().unwrap_or("")
+          }
+        }
+
+        let stack : Array[(UInt64, UInt64)] = []
+        stack.push((0UL, root_id))
+        let visited : @hashmap.HashMap[UInt64, Bool] = @hashmap.HashMap::new()
+        while stack.length() > 0 {
+          let (parent_id, cur_id) = stack.pop().unwrap()
+          if visited.contains(cur_id) {
+            continue
+          }
+          visited.set(cur_id, true)
+          guard nodes_by_id.get(cur_id) is Some(node) else { continue }
+          if cur_id != root_id {
+            let parent_int = if parent_id == 0UL {
+              -1
+            } else {
+              parent_id.to_int()
+            }
+            let node_int = cur_id.to_int()
+            let actions_mask = (if node.supports_action(
+                  @moon_accesskit.Action::Focus,
+                ) {
+                1
+              } else {
+                0
+              }) +
+              (if node.supports_action(@moon_accesskit.Action::Click) {
+                2
+              } else {
+                0
+              })
+            match node.bounds() {
+              Some(b) => {
+                let x = Float::from_double(b.x0)
+                let y = Float::from_double(b.y0)
+                let w = Float::from_double(b.x1 - b.x0)
+                let h = Float::from_double(b.y1 - b.y0)
+                win.a11y_push_node(
+                  node_int,
+                  parent_int,
+                  host_role(node.role()),
+                  x,
+                  y,
+                  w,
+                  h,
+                  name_for(node),
+                  actions_mask,
+                )
+              }
+              None => ()
+            }
+          }
+          let children = node.children()
+          for i in 0..<children.length() {
+            stack.push((cur_id, children[i].to_u64()))
+          }
+        }
+        win.a11y_end_update()
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_apply_update failed")
+          host_fail("a11y_apply_update", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "a11y_actions_len",
     fn(_args) {
       try {

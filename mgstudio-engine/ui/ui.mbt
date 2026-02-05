@@ -3026,30 +3026,52 @@ pub fn[
 }
 
 ///|
-/// Extract UI accessibility nodes and send them to the host bridge.
+/// Build an AccessKit `TreeUpdate` for the current UI tree.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + @hierarchy.Has_Parent,
-] ui_a11y_update_system(
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+] ui_build_a11y_tree_update(
   world : W,
-) -> Unit {
+) -> @moon_accesskit.TreeUpdate {
   let res = HasRes_UiContext::get_ui_context_resource(world)
-  guard res.get() is Some(ctx0) else { return }
-  guard ctx0.camera_entity is Some(_) else { return }
+  guard res.get() is Some(ctx0) else {
+    let root = @moon_accesskit.NodeId::root()
+    let update = @moon_accesskit.TreeUpdate::new(
+      @moon_accesskit.TreeId::root(),
+      root,
+    )
+    update.set_tree(@moon_accesskit.Tree::new(root))
+    update
+  }
+  guard ctx0.camera_entity is Some(_) else {
+    let root = @moon_accesskit.NodeId::root()
+    let update = @moon_accesskit.TreeUpdate::new(
+      @moon_accesskit.TreeId::root(),
+      root,
+    )
+    update.set_tree(@moon_accesskit.Tree::new(root))
+    update
+  }
   let stack_res = HasRes_UiStack::get_ui_stack_resource(world)
-  guard stack_res.get() is Some(stack0) else { return }
+  guard stack_res.get() is Some(stack0) else {
+    let root = @moon_accesskit.NodeId::root()
+    let update = @moon_accesskit.TreeUpdate::new(
+      @moon_accesskit.TreeId::root(),
+      root,
+    )
+    update.set_tree(@moon_accesskit.Tree::new(root))
+    update
+  }
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let button_store = Has_Button::get_button_store(world)
   let label_widget_store = Has_Label::get_label_store(world)
   let image_node_store = Has_ImageNode::get_image_node_store(world)
   let label_store = Has_AccessibilityLabel::get_accessibility_label_store(world)
+  let ui_text_store = Has_UiText::get_ui_text_store(world)
   let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
-
-  // Host root id should not collide with entity-derived node ids.
-  let root_id = -1
-  @a11y.a11y_host_begin_update(root_id)
+  let children_store = @hierarchy.Has_Children::get_children_store(world)
 
   // Build the set of required nodes (focusables + their ancestor chain), so
-  // `parent_id` always points to a node present in this update.
+  // every node's parent always exists in this update.
   let required : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
   fn key(entity : @core.Entity) -> (Int, Int) {
     (entity.id, entity.generation)
@@ -3089,60 +3111,193 @@ pub fn[
       mark_required(required, parent_store, layout_store, entity)
     }
   }
+  fn push_nonempty(parts : Ref[Array[String]], text : String) -> Unit {
+    let trimmed = text.trim()
+    if trimmed != "" {
+      parts.val.push(trimmed.to_string())
+    }
+  }
+
+  fn collect_subtree_text(
+    entity : @core.Entity,
+    children_store : @core.ComponentStore[@hierarchy.Children],
+    ui_text_store : @core.ComponentStore[UiText],
+    out : Ref[Array[String]],
+  ) -> Unit {
+    if ui_text_store.get(entity) is Some(text_node) {
+      match @text.text_get_content(text_node.handle) {
+        Some(s) => push_nonempty(out, s)
+        None => ()
+      }
+    }
+    guard children_store.get(entity) is Some(children) else { return }
+    for i in 0..<children.entities.length() {
+      collect_subtree_text(
+        children.entities[i],
+        children_store,
+        ui_text_store,
+        out,
+      )
+    }
+  }
+
+  fn join_with_space(parts : Array[String]) -> String {
+    if parts.length() == 0 {
+      return ""
+    }
+    let sb = StringBuilder::new(size_hint=0)
+    for i in 0..<parts.length() {
+      if i > 0 {
+        sb.write_char(' ')
+      }
+      sb.write_string(parts[i])
+    }
+    sb.to_string()
+  }
+
+  fn calc_label_from_children(
+    entity : @core.Entity,
+    children_store : @core.ComponentStore[@hierarchy.Children],
+    ui_text_store : @core.ComponentStore[UiText],
+  ) -> String? {
+    guard children_store.get(entity) is Some(children) else { return None }
+    let mut name : String? = None
+    for i in 0..<children.entities.length() {
+      let child = children.entities[i]
+      let parts : Array[String] = []
+      let out = Ref::new(parts)
+      collect_subtree_text(child, children_store, ui_text_store, out)
+      if out.val.length() > 0 {
+        name = Some(join_with_space(out.val))
+      }
+    }
+    name
+  }
+
+  fn calc_value_from_self(
+    entity : @core.Entity,
+    children_store : @core.ComponentStore[@hierarchy.Children],
+    ui_text_store : @core.ComponentStore[UiText],
+  ) -> String? {
+    let parts : Array[String] = []
+    let out = Ref::new(parts)
+    collect_subtree_text(entity, children_store, ui_text_store, out)
+    if out.val.length() == 0 {
+      None
+    } else {
+      Some(join_with_space(out.val))
+    }
+  }
+
+  // Root node.
+  let tree_id = @moon_accesskit.TreeId::root()
+  let root_id = @moon_accesskit.NodeId::root()
+  let update = @moon_accesskit.TreeUpdate::new(tree_id, root_id)
+  update.set_tree(@moon_accesskit.Tree::new(root_id))
+  let root_node = @moon_accesskit.Node::new(@moon_accesskit.Role::Window)
+  root_node.set_bounds(
+    @moon_accesskit.Rect::new(
+      ctx0.viewport_origin.x.to_double(),
+      ctx0.viewport_origin.y.to_double(),
+      (ctx0.viewport_origin.x + ctx0.viewport_size.x).to_double(),
+      (ctx0.viewport_origin.y + ctx0.viewport_size.y).to_double(),
+    ),
+  )
+
+  // Attach top-level required nodes under the root.
+  for entity in stack0.uinodes {
+    if !required.contains(key(entity)) {
+      continue
+    }
+    let parent_required = match parent_store.get(entity) {
+      Some(p) =>
+        required.contains(key(p.entity)) && layout_store.contains(p.entity)
+      None => false
+    }
+    if !parent_required {
+      root_node.push_child(@a11y.node_id_for_entity(entity))
+    }
+  }
+  update.push_node(root_id, root_node)
   for entity in stack0.uinodes {
     if !required.contains(key(entity)) {
       continue
     }
     guard layout_store.get(entity) is Some(layout) else { continue }
-    let rect = layout.rect
-    let x = ctx0.viewport_origin.x + rect.min.x
-    let y = ctx0.viewport_origin.y + rect.min.y
-    let size = rect.size()
-    let width = size.x
-    let height = size.y
     let node_id = @a11y.node_id_for_entity(entity)
-    let parent_id = match parent_store.get(entity) {
-      Some(p) =>
-        if required.contains(key(p.entity)) && layout_store.contains(p.entity) {
-          @a11y.node_id_for_entity(p.entity)
-        } else {
-          root_id
-        }
-      None => root_id
-    }
-    let role_id = if button_store.contains(entity) {
-      @a11y.host_role_button
+    let role = if button_store.contains(entity) {
+      @moon_accesskit.Role::Button
     } else if label_widget_store.contains(entity) {
-      @a11y.host_role_label
+      @moon_accesskit.Role::Label
     } else if image_node_store.contains(entity) {
-      @a11y.host_role_image
+      @moon_accesskit.Role::Image
     } else {
-      @a11y.host_role_container
+      @moon_accesskit.Role::GenericContainer
     }
-    let mut actions_mask = 0
-    if role_id == @a11y.host_role_button {
-      actions_mask = @a11y.host_action_focus_bit + @a11y.host_action_default_bit
-    }
-    let name = match label_store.get(entity) {
-      Some(v) => v.text
-      None =>
-        if role_id == @a11y.host_role_button {
-          "Button"
-        } else if role_id == @a11y.host_role_image {
-          "Image"
-        } else if role_id == @a11y.host_role_label {
-          "Label"
-        } else {
-          ""
+    let node = @moon_accesskit.Node::new(role)
+
+    // Children in hierarchy order (filtered to required set).
+    if children_store.get(entity) is Some(children) {
+      for i in 0..<children.entities.length() {
+        let child = children.entities[i]
+        if required.contains(key(child)) {
+          node.push_child(@a11y.node_id_for_entity(child))
         }
+      }
     }
-    @core.with_host_string_id(name, fn(name_id) {
-      @a11y.a11y_host_push_node(
-        node_id, parent_id, role_id, x, y, width, height, name_id, actions_mask,
-      )
-    })
+    let rect = layout.rect
+    let x0 = (ctx0.viewport_origin.x + rect.min.x).to_double()
+    let y0 = (ctx0.viewport_origin.y + rect.min.y).to_double()
+    let size = rect.size()
+    let x1 = (ctx0.viewport_origin.x + rect.min.x + size.x).to_double()
+    let y1 = (ctx0.viewport_origin.y + rect.min.y + size.y).to_double()
+    node.set_bounds(@moon_accesskit.Rect::new(x0, y0, x1, y1))
+    if role == @moon_accesskit.Role::Button {
+      node.add_action(@moon_accesskit.Action::Focus)
+      node.add_action(@moon_accesskit.Action::Click)
+    }
+    let explicit_label = match label_store.get(entity) {
+      Some(v) => v.text
+      None => ""
+    }
+    if role == @moon_accesskit.Role::Button ||
+      role == @moon_accesskit.Role::Image {
+      let name = if explicit_label != "" {
+        Some(explicit_label)
+      } else {
+        calc_label_from_children(entity, children_store, ui_text_store)
+      }
+      match name {
+        Some(s) => if s != "" { node.set_label(s) }
+        None => ()
+      }
+    } else if role == @moon_accesskit.Role::Label {
+      let value = if explicit_label != "" {
+        Some(explicit_label)
+      } else {
+        calc_value_from_self(entity, children_store, ui_text_store)
+      }
+      match value {
+        Some(s) => if s != "" { node.set_value(s) }
+        None => ()
+      }
+    } else if explicit_label != "" {
+      node.set_label(explicit_label)
+    }
+    update.push_node(node_id, node)
   }
-  @a11y.a11y_host_end_update()
+  update
+}
+
+///|
+/// Extract UI accessibility nodes and send them to the host bridge.
+pub fn[
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+] ui_a11y_update_system(
+  world : W,
+) -> Unit {
+  let update = ui_build_a11y_tree_update(world)
+  @a11y.a11y_host_apply_update(update)
 }
 
 ///|

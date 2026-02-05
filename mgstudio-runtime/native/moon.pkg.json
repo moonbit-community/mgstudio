@@ -25,11 +25,14 @@
       "alias": "coremath"
     },
     "moonbitlang/core/strconv",
+    "moonbitlang/core/json",
     "moonbitlang/x/path",
     {
       "path": "Milky2018/mgstudio-runtime-core",
       "alias": "rtcore"
     },
+    "Milky2018/moon_accesskit",
+    "moonbitlang/core/hashmap",
     "moonbitlang/core/debug",
     "moonbitlang/x/fs",
     "moonbitlang/x/sys",

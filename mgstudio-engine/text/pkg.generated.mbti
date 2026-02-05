@@ -22,6 +22,8 @@ pub fn font_rasterize_glyph_id_subpixel(@asset.Handle[@asset.Font], Float, Int, 
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
+pub fn text_get_content(TextHandle) -> String?
+
 pub fn text_get_layout_size(TextHandle) -> @math.Vec2?
 
 pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(@app.App[W]) -> @app.App[W]

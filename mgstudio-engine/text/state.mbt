@@ -370,3 +370,15 @@ pub fn text_get_layout_size(handle : TextHandle) -> @math.Vec2? {
   }
   None
 }
+
+///|
+/// Get the current text content for a handle.
+pub fn text_get_content(handle : TextHandle) -> String? {
+  let count = text_state.val.texts.length()
+  for i in 0..<count {
+    if text_state.val.texts[i].id == handle.id {
+      return Some(text_state.val.texts[i].text.content)
+    }
+  }
+  None
+}

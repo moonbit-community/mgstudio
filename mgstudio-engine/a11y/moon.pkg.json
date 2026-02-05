@@ -3,6 +3,7 @@
     "Milky2018/mgstudio/app",
     "Milky2018/mgstudio/core",
     "Milky2018/moon_accesskit",
+    "moonbitlang/core/json",
     "moonbitlang/core/ref"
   ]
 }

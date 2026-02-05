@@ -701,7 +701,11 @@ fn picking_primary_hit(
 
 ///|
 fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
-  let packed = node_id.to_u64().to_int()
+  let raw = node_id.to_u64()
+  if raw == 0UL {
+    return @core.Entity::new(0, 0)
+  }
+  let packed = raw.to_int() - 1
   let id = packed / 65536
   let gen = packed - id * 65536
   @core.Entity::new(id, gen)

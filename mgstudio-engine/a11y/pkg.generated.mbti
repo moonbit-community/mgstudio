@@ -8,6 +8,8 @@ import {
 }
 
 // Values
+pub fn a11y_host_apply_update(@moon_accesskit.TreeUpdate) -> Unit
+
 pub fn a11y_host_begin_update(Int) -> Unit
 
 pub fn a11y_host_end_update() -> Unit
@@ -40,7 +42,7 @@ pub let host_role_label : Int
 
 pub let host_role_window : Int
 
-pub fn node_id_for_entity(@core.Entity) -> Int
+pub fn node_id_for_entity(@core.Entity) -> @moon_accesskit.NodeId
 
 // Errors
 

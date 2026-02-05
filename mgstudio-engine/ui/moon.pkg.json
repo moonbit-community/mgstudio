@@ -12,8 +12,10 @@
     "Milky2018/mgstudio/transform",
     "Milky2018/mgstudio/visibility",
     "Milky2018/mgstudio/window",
+    "Milky2018/moon_accesskit",
     "Milky2018/moon_taffy",
     "moonbitlang/core/hashmap",
+    "moonbitlang/core/json",
     "moonbitlang/core/ref"
   ],
   "test-import": [

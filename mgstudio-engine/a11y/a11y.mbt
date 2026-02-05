@@ -115,10 +115,11 @@ pub let host_action_default_bit : Int = 2
 
 ///|
 /// Convert an entity into a stable `NodeId` for the host bridge.
-pub fn node_id_for_entity(entity : @core.Entity) -> Int {
-  // Pack (id, generation) into a 32-bit-ish integer. This is stable for a
-  // single session and good enough for the initial bridge.
-  entity.id * 65536 + entity.generation
+pub fn node_id_for_entity(entity : @core.Entity) -> @moon_accesskit.NodeId {
+  // Pack (id, generation) into a small `u64` for JSON/JS safety, while
+  // reserving 0 for AccessKit's root node.
+  let packed = entity.id * 65536 + entity.generation + 1
+  @moon_accesskit.NodeId::from_u64(packed.to_uint64())
 }
 
 ///|
@@ -149,6 +150,18 @@ pub fn a11y_host_push_node(
 /// End a full-tree update on the host.
 pub fn a11y_host_end_update() -> Unit {
   host_a11y_end_update()
+}
+
+///|
+fn host_a11y_apply_update(update_json_id : Int) -> Unit = "mgstudio_host" "a11y_apply_update"
+
+///|
+/// Apply an AccessKit `TreeUpdate` to the host runtime.
+pub fn a11y_host_apply_update(update : @moon_accesskit.TreeUpdate) -> Unit {
+  let payload = update.to_json().stringify()
+  @core.with_host_string_id(payload, fn(payload_id) {
+    host_a11y_apply_update(payload_id)
+  })
 }
 
 ///|

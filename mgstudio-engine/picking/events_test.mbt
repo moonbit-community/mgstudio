@@ -186,7 +186,7 @@ test "picking: a11y focus action maps to hovered interaction" {
     tick,
   )
   let entity = @core.Entity::new(7, 3)
-  let packed = entity.id * 65536 + entity.generation
+  let packed = entity.id * 65536 + entity.generation + 1
   let req = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::Focus,
     @moon_accesskit.TreeId::root(),
