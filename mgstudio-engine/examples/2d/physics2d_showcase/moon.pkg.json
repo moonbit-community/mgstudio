@@ -1,0 +1,22 @@
+{
+  "import": [
+    "Milky2018/mgstudio/app",
+    "Milky2018/mgstudio/asset",
+    "Milky2018/mgstudio/core",
+    "Milky2018/mgstudio/ecs_world",
+    "Milky2018/mgstudio/input",
+    "Milky2018/mgstudio/math",
+    "Milky2018/mgstudio",
+    "Milky2018/mgstudio/physics2d",
+    "Milky2018/mgstudio/render2d",
+    "Milky2018/mgstudio/window",
+    "Milky2018/moon_rapier/collision"
+  ],
+  "link": {
+    "wasm-gc": {
+      "exports": [
+        "game_app"
+      ]
+    }
+  }
+}
