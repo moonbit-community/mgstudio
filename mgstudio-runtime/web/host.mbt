@@ -604,6 +604,10 @@ extern "js" fn a11y_push_node_js(
   #|   el.style.padding = "0"
   #|   el.style.margin = "0"
   #|   el.style.color = "transparent"
+  #|     if (tag === "button") {
+  #|       // Avoid implicit "submit" semantics when the overlay lives inside a form.
+  #|       el.type = "button"
+  #|     }
   #|     el.addEventListener("focus", () => {
   #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
   #|       if ((m & 1) === 0) return
@@ -638,6 +642,17 @@ extern "js" fn a11y_push_node_js(
   #|   el.dataset.mgstudioParentId = String(pid)
   #|   el.dataset.mgstudioRoleId = String(role)
   #|   el.dataset.mgstudioActionsMask = String(mask)
+  #|   // ARIA roles (rough mapping to host role ids).
+  #|   const ariaRole =
+  #|     (role === 1) ? "application" :
+  #|     (role === 2) ? "group" :
+  #|     (role === 4) ? "text" :
+  #|     (role === 5) ? "img" :
+  #|     null
+  #|   if (tag !== "button") {
+  #|     if (ariaRole) el.setAttribute("role", ariaRole)
+  #|     else el.removeAttribute("role")
+  #|   }
   #|   const label = String(name || "")
   #|   if (label) {
   #|     el.setAttribute("aria-label", label)

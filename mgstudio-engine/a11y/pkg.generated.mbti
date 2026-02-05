@@ -34,6 +34,8 @@ pub let host_role_button : Int
 
 pub let host_role_container : Int
 
+pub let host_role_image : Int
+
 pub let host_role_label : Int
 
 pub let host_role_window : Int

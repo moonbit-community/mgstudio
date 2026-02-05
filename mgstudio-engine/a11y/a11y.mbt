@@ -104,6 +104,9 @@ pub let host_role_button : Int = 3
 pub let host_role_label : Int = 4
 
 ///|
+pub let host_role_image : Int = 5
+
+///|
 /// Action mask bits shared with runtimes.
 pub let host_action_focus_bit : Int = 1
 

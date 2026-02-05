@@ -26,6 +26,7 @@ pub struct World {
   mut change_tick : Int
   mut system_context : @core.SystemContext
   node : @core.ComponentStore[@ui.Node]
+  label : @core.ComponentStore[@ui.Label]
   button : @core.ComponentStore[@ui.Button]
   ui_root : @core.ComponentStore[@ui.UiRoot]
   ui_text : @core.ComponentStore[@ui.UiText]
@@ -218,6 +219,7 @@ pub impl @ui.Has_FocusPolicy for World
 pub impl @ui.Has_GlobalZIndex for World
 pub impl @ui.Has_ImageNode for World
 pub impl @ui.Has_Interaction for World
+pub impl @ui.Has_Label for World
 pub impl @ui.Has_Node for World
 pub impl @ui.Has_Outline for World
 pub impl @ui.Has_RelativeCursorPosition for World

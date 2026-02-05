@@ -172,3 +172,33 @@ test "picking: handles multiple pointers independently" {
   inspect(events[1].kind == PointerEventKind::Enter, content="true")
   inspect(events[3].kind == PointerEventKind::Enter, content="true")
 }
+
+///|
+test "picking: a11y focus action maps to hovered interaction" {
+  let world = @ecs_world.World::new()
+  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
+    @a11y.A11yState::default(),
+    tick,
+  )
+  HasRes_PickingEvents::get_picking_events_resource(world).insert(
+    PickingEvents::default(),
+    tick,
+  )
+  let entity = @core.Entity::new(7, 3)
+  let packed = entity.id * 65536 + entity.generation
+  let req = @moon_accesskit.ActionRequest::new(
+    @moon_accesskit.Action::Focus,
+    @moon_accesskit.TreeId::root(),
+    @moon_accesskit.NodeId::from_u64(packed.to_uint64()),
+  )
+  let state = @a11y.HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(
+    tick,
+  )
+  @a11y.A11yState::push_action(state.unwrap(), req)
+  picking_apply_a11y_actions_system(world)
+  let interaction = @ui.Has_Interaction::get_interaction_store(world).get(
+    entity,
+  )
+  inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
+}

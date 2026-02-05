@@ -1051,6 +1051,8 @@ MOONBIT_FFI_EXPORT void mgw_a11y_push_node(void *win, int32_t node_id, int32_t p
     role_str = "AXButton";
   } else if (role_id == 4) {
     role_str = "AXStaticText";
+  } else if (role_id == 5) {
+    role_str = "AXImage";
   } else if (role_id == 1) {
     role_str = "AXWindow";
   }

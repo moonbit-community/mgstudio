@@ -5,9 +5,9 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Node", "Button", "UiRoot", "UiText", "ZIndex", "Outline", "UiImage", "UiLayout",
-  "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction",
-  "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex", "CalculatedClip",
+  "Node", "Label", "Button", "UiRoot", "UiText", "ZIndex", "Outline", "UiImage",
+  "UiLayout", "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy",
+  "Interaction", "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex", "CalculatedClip",
   "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "UiBoxShadowSamples",
   "RelativeCursorPosition",
 ]
@@ -19,6 +19,11 @@ pub let ecs_resources : Array[String] = ["UiScale", "UiStack", "UiContext"]
 ///|
 pub(open) trait Has_Node {
   get_node_store(self : Self) -> @core.ComponentStore[Node]
+}
+
+///|
+pub(open) trait Has_Label {
+  get_label_store(self : Self) -> @core.ComponentStore[Label]
 }
 
 ///|

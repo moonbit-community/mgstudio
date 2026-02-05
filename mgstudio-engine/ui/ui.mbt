@@ -1234,6 +1234,17 @@ pub fn Button::default() -> Button {
 }
 
 ///|
+/// Bevy-aligned label marker component (Bevy v0.15.3 `Label` widget marker).
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Label {}
+
+///|
+pub fn Label::default() -> Label {
+  Label::{  }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct ButtonColors {
@@ -2304,17 +2315,111 @@ pub fn[
       width=@moon_taffy.available_space_definite(f2d(ctx0.viewport_size.x)),
       height=@moon_taffy.available_space_definite(f2d(ctx0.viewport_size.y)),
     )
+    fn available_to_option(v : @moon_taffy.AvailableSpace) -> Double? {
+      match v {
+        @moon_taffy.AvailDefinite(x) => Some(x)
+        _ => None
+      }
+    }
+
+    fn resolve_dimension(
+      dim : @moon_taffy.Dimension,
+      parent : Double?,
+    ) -> Double? {
+      match dim {
+        @moon_taffy.DimLength(x) => Some(x)
+        @moon_taffy.DimPercent(p) =>
+          match parent {
+            Some(base) => Some(base * (p / 100.0))
+            None => None
+          }
+        _ => None
+      }
+    }
+
+    fn clamp_f64(v : Double, min_v : Double?, max_v : Double?) -> Double {
+      let mut out = v
+      match min_v {
+        Some(mn) => if out < mn { out = mn }
+        None => ()
+      }
+      match max_v {
+        Some(mx) => if out > mx { out = mx }
+        None => ()
+      }
+      out
+    }
+
+    fn maybe_clamp_f64(
+      v : Double?,
+      min_v : Double?,
+      max_v : Double?,
+    ) -> Double? {
+      match v {
+        Some(x) => Some(clamp_f64(x, min_v, max_v))
+        None => None
+      }
+    }
+
     fn measure(
-      _known : @moon_taffy.Size[Double?],
-      _available : @moon_taffy.Size[@moon_taffy.AvailableSpace],
+      known : @moon_taffy.Size[Double?],
+      available : @moon_taffy.Size[@moon_taffy.AvailableSpace],
       node_id : Int,
       _ctx : Unit?,
-      _style : @moon_taffy.Style,
+      style : @moon_taffy.Style,
     ) -> @moon_taffy.Size[Double] {
       match node_to_entity.get(node_id) {
         Some(entity) => {
-          let sz = auto_size_for_entity(entity)
-          @moon_taffy.Size::new(width=f2d(sz.x), height=f2d(sz.y))
+          let intrinsic = auto_size_for_entity(entity)
+          let intrinsic_w = f2d(intrinsic.x)
+          let intrinsic_h = f2d(intrinsic.y)
+          let parent_w = available_to_option(available.width)
+          let parent_h = available_to_option(available.height)
+          let s_w = resolve_dimension(style.size.width, parent_w)
+          let s_min_w = resolve_dimension(style.min_size.width, parent_w)
+          let s_max_w = resolve_dimension(style.max_size.width, parent_w)
+          let s_h = resolve_dimension(style.size.height, parent_h)
+          let s_min_h = resolve_dimension(style.min_size.height, parent_h)
+          let s_max_h = resolve_dimension(style.max_size.height, parent_h)
+          let width0 = match known.width {
+            Some(w) => Some(w)
+            None => {
+              let base = match s_w {
+                Some(x) => Some(x)
+                None => s_min_w
+              }
+              maybe_clamp_f64(base, s_min_w, s_max_w)
+            }
+          }
+          let height0 = match known.height {
+            Some(h) => Some(h)
+            None => {
+              let base = match s_h {
+                Some(x) => Some(x)
+                None => s_min_h
+              }
+              maybe_clamp_f64(base, s_min_h, s_max_h)
+            }
+          }
+          let intrinsic_aspect = if intrinsic_h == 0.0 {
+            1.0
+          } else {
+            intrinsic_w / intrinsic_h
+          }
+          let aspect = match style.aspect_ratio {
+            Some(ar) => ar
+            None => intrinsic_aspect
+          }
+          let mut width = width0
+          let mut height = height0
+          match (width, height) {
+            (Some(w), None) => if aspect != 0.0 { height = Some(w / aspect) }
+            (None, Some(h)) => width = Some(h * aspect)
+            _ => ()
+          }
+          let out_w = clamp_f64(width.unwrap_or(intrinsic_w), s_min_w, s_max_w)
+          let out_h = clamp_f64(height.unwrap_or(intrinsic_h), s_min_h, s_max_h)
+          @moon_taffy.Size::new(width=out_w, height=out_h)
         }
         None => @moon_taffy.Size::zero()
       }
@@ -2879,7 +2984,7 @@ pub fn[
 ///|
 /// Extract UI accessibility nodes and send them to the host bridge.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_AccessibilityLabel + @hierarchy.Has_Parent,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + @hierarchy.Has_Parent,
 ] ui_a11y_update_system(
   world : W,
 ) -> Unit {
@@ -2890,6 +2995,8 @@ pub fn[
   guard stack_res.get() is Some(stack0) else { return }
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let button_store = Has_Button::get_button_store(world)
+  let label_widget_store = Has_Label::get_label_store(world)
+  let image_node_store = Has_ImageNode::get_image_node_store(world)
   let label_store = Has_AccessibilityLabel::get_accessibility_label_store(world)
   let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
 
@@ -2931,7 +3038,10 @@ pub fn[
     if layout_store.get(entity) is None {
       continue
     }
-    if button_store.contains(entity) || label_store.contains(entity) {
+    if button_store.contains(entity) ||
+      label_widget_store.contains(entity) ||
+      image_node_store.contains(entity) ||
+      label_store.contains(entity) {
       mark_required(required, parent_store, layout_store, entity)
     }
   }
@@ -2958,8 +3068,10 @@ pub fn[
     }
     let role_id = if button_store.contains(entity) {
       @a11y.host_role_button
-    } else if label_store.contains(entity) {
+    } else if label_widget_store.contains(entity) {
       @a11y.host_role_label
+    } else if image_node_store.contains(entity) {
+      @a11y.host_role_image
     } else {
       @a11y.host_role_container
     }
@@ -2969,7 +3081,16 @@ pub fn[
     }
     let name = match label_store.get(entity) {
       Some(v) => v.text
-      None => if role_id == @a11y.host_role_button { "Button" } else { "" }
+      None =>
+        if role_id == @a11y.host_role_button {
+          "Button"
+        } else if role_id == @a11y.host_role_image {
+          "Image"
+        } else if role_id == @a11y.host_role_label {
+          "Label"
+        } else {
+          ""
+        }
     }
     @core.with_host_string_id(name, fn(name_id) {
       @a11y.a11y_host_push_node(
@@ -3202,7 +3323,7 @@ fn ui_uv_from_image_rects(
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + HasRes_UiScale + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_render_extract_system(
   world : W,
 ) -> Unit {
@@ -3636,7 +3757,22 @@ pub fn[
         let t_content = transform_with_z(t0, z_base + UI_STACK_Z_CONTENT)
         if color.a > 0.0F && NodeImageMode::uses_slices(mode) {
           let sf = safe_scale_factor(@window.window_scale_factor())
-          let target_size = @math.Vec2::new(size.x * sf, size.y * sf)
+          let ui_scale_value = match ensure_ui_scale_resource(world) {
+            Some(ui_scale) =>
+              if ui_scale.val.value <= 0.0F {
+                1.0F
+              } else {
+                ui_scale.val.value
+              }
+            None => 1.0F
+          }
+          // `size` is in logical UI units. Convert to physical pixels before
+          // computing slice/tiling parameters to match Bevy.
+          let px_per_ui = sf / ui_scale_value
+          let target_size = @math.Vec2::new(
+            size.x * px_per_ui,
+            size.y * px_per_ui,
+          )
           // Image slicing uses the size of the selected texture region (atlas/rect).
           let image_rect = @math.Rect::new(
             @math.Vec2::new(0.0F, 0.0F),
@@ -3820,7 +3956,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

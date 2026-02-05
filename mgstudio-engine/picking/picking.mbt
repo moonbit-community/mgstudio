@@ -734,8 +734,14 @@ pub fn[
     let entity = entity_from_node_id(req.target_node())
     match req.action() {
       @moon_accesskit.Action::Focus =>
-        // MVP: focus is handled by the host (tab/VO). Engine-side focus routing is TODO.
-        entity |> ignore
+        // Map focus-driven navigation (tab / VO) to the hovered state so UI can
+        // reflect focus without requiring pointer position.
+        if interaction_store.contains(entity) {
+          interaction_store.set(entity, @ui.Interaction::Hovered, tick)
+          |> ignore
+        } else {
+          interaction_store.insert(entity, @ui.Interaction::Hovered, tick)
+        }
       _ => {
         if interaction_store.contains(entity) {
           interaction_store.set(entity, @ui.Interaction::Pressed, tick)

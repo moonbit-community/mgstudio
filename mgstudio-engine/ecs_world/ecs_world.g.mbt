@@ -6,6 +6,7 @@ pub struct World {
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
   node : @core.ComponentStore[@ui.Node]
+  label : @core.ComponentStore[@ui.Label]
   button : @core.ComponentStore[@ui.Button]
   ui_root : @core.ComponentStore[@ui.UiRoot]
   ui_text : @core.ComponentStore[@ui.UiText]
@@ -140,6 +141,7 @@ pub fn World::new() -> World {
     change_tick: 0,
     system_context: @core.SystemContext::new(),
     node: @core.ComponentStore::new(),
+    label: @core.ComponentStore::new(),
     button: @core.ComponentStore::new(),
     ui_root: @core.ComponentStore::new(),
     ui_text: @core.ComponentStore::new(),
@@ -254,6 +256,7 @@ pub fn World::despawn(
 ) -> Unit raise @core.EntityError {
   self.entities.despawn(entity)
   self.node.remove(entity) |> ignore
+  self.label.remove(entity) |> ignore
   self.button.remove(entity) |> ignore
   self.ui_root.remove(entity) |> ignore
   self.ui_text.remove(entity) |> ignore
@@ -349,6 +352,7 @@ pub impl @core.SpawnWorld for World with spawn_empty(self) {
 pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.entities.despawn(entity)
   self.node.remove(entity) |> ignore
+  self.label.remove(entity) |> ignore
   self.button.remove(entity) |> ignore
   self.ui_root.remove(entity) |> ignore
   self.ui_text.remove(entity) |> ignore
@@ -459,6 +463,11 @@ pub impl @core.SystemContextWorld for World with set_system_context(self, ctx) {
 ///|
 pub impl @ui.Has_Node for World with get_node_store(self) {
   self.node
+}
+
+///|
+pub impl @ui.Has_Label for World with get_label_store(self) {
+  self.label
 }
 
 ///|
