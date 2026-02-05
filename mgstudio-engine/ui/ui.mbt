@@ -2981,64 +2981,8 @@ pub fn[
 }
 
 ///|
-/// Apply host-driven accessibility actions to UI state and picking events.
 pub fn[
-  W : @a11y.HasRes_A11yState + @picking.HasRes_PickingEvents + Has_Interaction + @core.ChangeTickWorld,
-] ui_a11y_apply_actions_system(
-  world : W,
-) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  guard @a11y.HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(tick)
-    is Some(state) else {
-    return
-  }
-  let actions = @a11y.A11yState::drain_actions(state)
-  if actions.length() == 0 {
-    return
-  }
-  guard @picking.HasRes_PickingEvents::get_picking_events_resource(world).get_ref_mut(
-      tick,
-    )
-    is Some(events) else {
-    return
-  }
-  let interaction_store = Has_Interaction::get_interaction_store(world)
-  fn entity_from_node_id(node_id : Int) -> @core.Entity {
-    let id = node_id / 65536
-    let gen = node_id - id * 65536
-    @core.Entity::new(id, gen)
-  }
-
-  for req in actions {
-    let entity = entity_from_node_id(req.target)
-    match req.action {
-      @accesskit.Action::Focus =>
-        // MVP: focus is handled by the host (tab/VO). Engine-side focus routing is TODO.
-        entity |> ignore
-      _ => {
-        // Treat `Default` as an activation/click.
-        if interaction_store.contains(entity) {
-          interaction_store.set(entity, Interaction::Pressed, tick) |> ignore
-        } else {
-          interaction_store.insert(entity, Interaction::Pressed, tick)
-        }
-        @picking.PickingEvents::push(
-          events,
-          @picking.PointerEvent::new(
-            0,
-            @picking.PointerEventKind::Click,
-            @math.Vec2::new(0.0F, 0.0F),
-            target=Some(entity),
-          ),
-        )
-      }
-    }
-  }
-}
-
-///|
-pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_interaction_system(
   world : W,
 ) -> Unit {
@@ -3060,18 +3004,8 @@ pub fn[
   let tick = @core.ChangeTickWorld::read_change_tick(world)
   let pointer = ctx0.pointer_pos
   let down = ctx0.pointer_down
-  let just_pressed = ctx0.pointer_just_pressed
-  let just_released = ctx0.pointer_just_released
   fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
     a.id == b.id && a.generation == b.generation
-  }
-
-  fn option_entity_eq(a : @core.Entity?, b : @core.Entity?) -> Bool {
-    match (a, b) {
-      (None, None) => true
-      (Some(x), Some(y)) => entity_eq(x, y)
-      _ => false
-    }
   }
 
   fn candidates_contains(xs : Array[@core.Entity], e : @core.Entity) -> Bool {
@@ -3210,141 +3144,6 @@ pub fn[
     if prev != Interaction::None {
       state_store.set(entity, Interaction::None, tick) |> ignore
     }
-  }
-
-  // Picking event generation (single pointer = 0).
-  let events_res = @picking.HasRes_PickingEvents::get_picking_events_resource(
-    world,
-  )
-  let state_res = @picking.HasRes_PickingState::get_picking_state_resource(
-    world,
-  )
-  guard events_res.get_ref_mut(tick) is Some(events) else { return }
-  guard state_res.get_ref_mut(tick) is Some(picking_state) else { return }
-  let pointer_id : @picking.PointerId = 0
-  let hit_top : @core.Entity? = if active.length() > 0 {
-    Some(active[0])
-  } else {
-    None
-  }
-
-  // Move.
-  if pointer is Some(pos) {
-    match picking_state.val.last_position {
-      Some(prev) =>
-        if prev.x != pos.x || prev.y != pos.y {
-          @picking.PickingEvents::push(
-            events,
-            @picking.PointerEvent::new(
-              pointer_id,
-              @picking.PointerEventKind::Move,
-              pos,
-            ),
-          )
-        }
-      None =>
-        @picking.PickingEvents::push(
-          events,
-          @picking.PointerEvent::new(
-            pointer_id,
-            @picking.PointerEventKind::Move,
-            pos,
-          ),
-        )
-    }
-    @picking.PickingState::set_last_position(picking_state, Some(pos))
-  } else {
-    @picking.PickingState::set_last_position(picking_state, None)
-  }
-
-  // Hover enter/leave.
-  let prev_hovered = picking_state.val.hovered
-  if !option_entity_eq(prev_hovered, hit_top) {
-    match prev_hovered {
-      Some(prev_e) => {
-        let pos = match pointer {
-          Some(v) => v
-          None => @math.Vec2::new(0.0F, 0.0F)
-        }
-        @picking.PickingEvents::push(
-          events,
-          @picking.PointerEvent::new(
-            pointer_id,
-            @picking.PointerEventKind::Leave,
-            pos,
-            target=Some(prev_e),
-          ),
-        )
-      }
-      None => ()
-    }
-    match hit_top {
-      Some(next_e) => {
-        let pos = match pointer {
-          Some(v) => v
-          None => @math.Vec2::new(0.0F, 0.0F)
-        }
-        @picking.PickingEvents::push(
-          events,
-          @picking.PointerEvent::new(
-            pointer_id,
-            @picking.PointerEventKind::Enter,
-            pos,
-            target=Some(next_e),
-          ),
-        )
-      }
-      None => ()
-    }
-    @picking.PickingState::set_hovered(picking_state, hit_top)
-  }
-
-  // Down / up / click.
-  if just_pressed {
-    if pointer is Some(pos) && hit_top is Some(target) {
-      @picking.PickingEvents::push(
-        events,
-        @picking.PointerEvent::new(
-          pointer_id,
-          @picking.PointerEventKind::Down,
-          pos,
-          target=Some(target),
-        ),
-      )
-      @picking.PickingState::set_pressed(picking_state, Some(target))
-    }
-  }
-  if just_released {
-    let pos = match pointer {
-      Some(v) => v
-      None => @math.Vec2::new(0.0F, 0.0F)
-    }
-    match picking_state.val.pressed {
-      Some(pressed_entity) => {
-        @picking.PickingEvents::push(
-          events,
-          @picking.PointerEvent::new(
-            pointer_id,
-            @picking.PointerEventKind::Up,
-            pos,
-            target=Some(pressed_entity),
-          ),
-        )
-        if hit_top is Some(hit_entity) && entity_eq(hit_entity, pressed_entity) {
-          @picking.PickingEvents::push(
-            events,
-            @picking.PointerEvent::new(
-              pointer_id,
-              @picking.PointerEventKind::Click,
-              pos,
-              target=Some(pressed_entity),
-            ),
-          )
-        }
-      }
-      None => ()
-    }
-    @picking.PickingState::set_pressed(picking_state, None)
   }
 }
 
@@ -4021,7 +3820,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiScale + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
@@ -4049,14 +3848,9 @@ pub fn[
     @app.system(ui_interaction_system).in_set(ui_set_interaction),
   )
   .add_pre_update_system_config(
-    @app.system(ui_a11y_apply_actions_system).in_set(ui_set_a11y_apply),
-  )
-  .add_pre_update_system_config(
     @app.system(ui_render_extract_system).in_set(ui_set_render_extract),
   )
-  .configure_set(@app.PreUpdate, ui_set_context, after=[@picking.picking_set], before=[
-    ui_set_scroll,
-  ])
+  .configure_set(@app.PreUpdate, ui_set_context, before=[ui_set_scroll])
   .configure_set(@app.PreUpdate, ui_set_scroll, after=[ui_set_context], before=[
     ui_set_measure,
   ])
@@ -4079,8 +3873,7 @@ pub fn[
     ui_set_interaction,
   ])
   .configure_set(@app.PreUpdate, ui_set_interaction, after=[ui_set_a11y])
-  .configure_set(@app.PreUpdate, ui_set_a11y_apply, after=[ui_set_interaction])
   .configure_set(@app.PreUpdate, ui_set_render_extract, after=[
-    ui_set_a11y_apply,
+    ui_set_interaction,
   ])
 }

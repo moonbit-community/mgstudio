@@ -8,7 +8,14 @@ pub let ecs_components : Array[String] = []
 
 ///|
 /// ECS resource types discovered via `#ecs.resource`.
-pub let ecs_resources : Array[String] = ["PickingState", "PickingEvents"]
+pub let ecs_resources : Array[String] = [
+  "PickingHits", "PickingState", "PickingEvents", "PointerInputs",
+]
+
+///|
+pub(open) trait HasRes_PickingHits {
+  get_picking_hits_resource(self : Self) -> @core.Resource[PickingHits]
+}
 
 ///|
 pub(open) trait HasRes_PickingState {
@@ -18,4 +25,9 @@ pub(open) trait HasRes_PickingState {
 ///|
 pub(open) trait HasRes_PickingEvents {
   get_picking_events_resource(self : Self) -> @core.Resource[PickingEvents]
+}
+
+///|
+pub(open) trait HasRes_PointerInputs {
+  get_pointer_inputs_resource(self : Self) -> @core.Resource[PointerInputs]
 }

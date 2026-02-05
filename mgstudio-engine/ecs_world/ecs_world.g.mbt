@@ -120,9 +120,11 @@ pub struct World {
   res_ui_stack : @core.Resource[@ui.UiStack]
   res_ui_context : @core.Resource[@ui.UiContext]
   res_a11y_state : @core.Resource[@a11y.A11yState]
+  res_picking_hits : @core.Resource[@picking.PickingHits]
   res_picking_state : @core.Resource[@picking.PickingState]
   res_render_state : @core.Resource[@render2d.RenderState]
   res_picking_events : @core.Resource[@picking.PickingEvents]
+  res_pointer_inputs : @core.Resource[@picking.PointerInputs]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -226,9 +228,11 @@ pub fn World::new() -> World {
     res_ui_stack: @core.Resource::new(),
     res_ui_context: @core.Resource::new(),
     res_a11y_state: @core.Resource::new(),
+    res_picking_hits: @core.Resource::new(),
     res_picking_state: @core.Resource::new(),
     res_render_state: @core.Resource::new(),
     res_picking_events: @core.Resource::new(),
+    res_pointer_inputs: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
     res_physics2d_events: @core.Resource::new(),
     res_physics3d_config: @core.Resource::new(),
@@ -974,6 +978,13 @@ pub impl @a11y.HasRes_A11yState for World with get_a11y_state_resource(self) {
 }
 
 ///|
+pub impl @picking.HasRes_PickingHits for World with get_picking_hits_resource(
+  self,
+) {
+  self.res_picking_hits
+}
+
+///|
 pub impl @picking.HasRes_PickingState for World with get_picking_state_resource(
   self,
 ) {
@@ -992,6 +1003,13 @@ pub impl @picking.HasRes_PickingEvents for World with get_picking_events_resourc
   self,
 ) {
   self.res_picking_events
+}
+
+///|
+pub impl @picking.HasRes_PointerInputs for World with get_pointer_inputs_resource(
+  self,
+) {
+  self.res_pointer_inputs
 }
 
 ///|

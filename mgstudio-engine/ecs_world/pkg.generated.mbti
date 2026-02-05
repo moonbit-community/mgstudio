@@ -114,9 +114,11 @@ pub struct World {
   res_ui_stack : @core.Resource[@ui.UiStack]
   res_ui_context : @core.Resource[@ui.UiContext]
   res_a11y_state : @core.Resource[@a11y.A11yState]
+  res_picking_hits : @core.Resource[@picking.PickingHits]
   res_picking_state : @core.Resource[@picking.PickingState]
   res_render_state : @core.Resource[@render2d.RenderState]
   res_picking_events : @core.Resource[@picking.PickingEvents]
+  res_pointer_inputs : @core.Resource[@picking.PointerInputs]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -184,7 +186,9 @@ pub impl @physics3d.Has_RapierColliderHandle3d for World
 pub impl @physics3d.Has_RigidBody3d for World
 pub impl @physics3d.Has_Velocity3d for World
 pub impl @picking.HasRes_PickingEvents for World
+pub impl @picking.HasRes_PickingHits for World
 pub impl @picking.HasRes_PickingState for World
+pub impl @picking.HasRes_PointerInputs for World
 pub impl @render2d.HasRes_RenderState for World
 pub impl @render2d.Has_Anchor for World
 pub impl @render2d.Has_Camera for World

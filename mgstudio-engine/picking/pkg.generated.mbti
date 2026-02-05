@@ -2,9 +2,14 @@
 package "Milky2018/mgstudio/picking"
 
 import {
+  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/ui",
+  "Milky2018/mgstudio/visibility",
 }
 
 // Values
@@ -12,13 +17,33 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : HasRes_PickingHits + @core.ChangeTickWorld] ensure_picking_hits_system(W) -> Unit
+
 pub fn[W : HasRes_PickingState + @core.ChangeTickWorld] ensure_picking_state_system(W) -> Unit
+
+pub fn[W : HasRes_PointerInputs + @core.ChangeTickWorld] ensure_pointer_inputs_system(W) -> Unit
+
+pub fn[W : @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @core.ChangeTickWorld] picking_apply_a11y_actions_system(W) -> Unit
 
 pub fn[W : HasRes_PickingEvents + @core.ChangeTickWorld] picking_clear_system(W) -> Unit
 
-pub fn[W : HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld] picking_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_PointerInputs + @core.ChangeTickWorld] picking_collect_mouse_system(W) -> Unit
+
+pub fn[W : HasRes_PointerInputs + HasRes_PickingHits + HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld] picking_generate_events_system(W) -> Unit
+
+pub fn[W : HasRes_PickingEvents + HasRes_PickingState + HasRes_PickingHits + HasRes_PointerInputs + @a11y.HasRes_A11yState + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] picking_plugin(@app.App[W]) -> @app.App[W]
 
 pub let picking_set : String
+
+pub let picking_set_events : String
+
+pub let picking_set_hits : String
+
+pub let picking_set_input : String
+
+pub fn[W : HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] picking_sprite2d_hit_test_system(W) -> Unit
+
+pub fn[W : HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] picking_ui_hit_test_system(W) -> Unit
 
 // Errors
 
@@ -30,15 +55,29 @@ pub fn PickingEvents::default() -> Self
 pub fn PickingEvents::drain(Ref[Self]) -> Array[PointerEvent]
 pub fn PickingEvents::push(Ref[Self], PointerEvent) -> Unit
 
+pub struct PickingHits {
+  mut ui : Array[@core.Entity?]
+  mut sprite2d : Array[@core.Entity?]
+}
+pub fn PickingHits::default() -> Self
+pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?]) -> Self
+pub fn PickingHits::set_sprite2d(Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingHits::set_ui(Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?
+pub fn PickingHits::ui(Self, Int) -> @core.Entity?
+
 pub struct PickingState {
-  mut hovered : @core.Entity?
-  mut pressed : @core.Entity?
-  mut last_position : @math.Vec2?
+  mut hovered : Array[@core.Entity?]
+  mut pressed : Array[@core.Entity?]
+  mut last_position : Array[@math.Vec2?]
 }
 pub fn PickingState::default() -> Self
-pub fn PickingState::set_hovered(Ref[Self], @core.Entity?) -> Unit
-pub fn PickingState::set_last_position(Ref[Self], @math.Vec2?) -> Unit
-pub fn PickingState::set_pressed(Ref[Self], @core.Entity?) -> Unit
+pub fn PickingState::hovered(Self, Int) -> @core.Entity?
+pub fn PickingState::last_position(Self, Int) -> @math.Vec2?
+pub fn PickingState::pressed(Self, Int) -> @core.Entity?
+pub fn PickingState::set_hovered(Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingState::set_last_position(Ref[Self], Int, @math.Vec2?) -> Unit
+pub fn PickingState::set_pressed(Ref[Self], Int, @core.Entity?) -> Unit
 
 pub(all) enum PointerButton {
   Primary
@@ -67,6 +106,23 @@ pub(all) enum PointerEventKind {
 pub impl Eq for PointerEventKind
 pub impl Show for PointerEventKind
 
+pub struct PointerInput {
+  pointer : Int
+  window_position : @math.Vec2?
+  down : Bool
+  just_pressed : Bool
+  just_released : Bool
+}
+pub fn PointerInput::new(Int, @math.Vec2?, Bool, Bool, Bool) -> Self
+
+pub struct PointerInputs {
+  mut pointers : Array[PointerInput]
+}
+pub fn PointerInputs::clear(Ref[Self]) -> Unit
+pub fn PointerInputs::default() -> Self
+pub fn PointerInputs::from_array(Array[PointerInput]) -> Self
+pub fn PointerInputs::push(Ref[Self], PointerInput) -> Unit
+
 // Type aliases
 pub type PointerId = Int
 
@@ -75,7 +131,15 @@ pub(open) trait HasRes_PickingEvents {
   get_picking_events_resource(Self) -> @core.Resource[PickingEvents]
 }
 
+pub(open) trait HasRes_PickingHits {
+  get_picking_hits_resource(Self) -> @core.Resource[PickingHits]
+}
+
 pub(open) trait HasRes_PickingState {
   get_picking_state_resource(Self) -> @core.Resource[PickingState]
+}
+
+pub(open) trait HasRes_PointerInputs {
+  get_pointer_inputs_resource(Self) -> @core.Resource[PointerInputs]
 }
 
