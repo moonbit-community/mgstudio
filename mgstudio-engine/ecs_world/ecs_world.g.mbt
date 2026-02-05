@@ -14,6 +14,7 @@ pub struct World {
   ui_image : @core.ComponentStore[@ui.UiImage]
   ui_layout : @core.ComponentStore[@ui.UiLayout]
   box_shadow : @core.ComponentStore[@ui.BoxShadow]
+  image_node : @core.ComponentStore[@ui.ImageNode]
   transform : @core.ComponentStore[@math.Transform]
   border_color : @core.ComponentStore[@ui.BorderColor]
   content_size : @core.ComponentStore[@ui.ContentSize]
@@ -145,6 +146,7 @@ pub fn World::new() -> World {
     ui_image: @core.ComponentStore::new(),
     ui_layout: @core.ComponentStore::new(),
     box_shadow: @core.ComponentStore::new(),
+    image_node: @core.ComponentStore::new(),
     transform: @core.ComponentStore::new(),
     border_color: @core.ComponentStore::new(),
     content_size: @core.ComponentStore::new(),
@@ -256,6 +258,7 @@ pub fn World::despawn(
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
   self.box_shadow.remove(entity) |> ignore
+  self.image_node.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
   self.content_size.remove(entity) |> ignore
@@ -350,6 +353,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
   self.box_shadow.remove(entity) |> ignore
+  self.image_node.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
   self.content_size.remove(entity) |> ignore
@@ -491,6 +495,11 @@ pub impl @ui.Has_UiLayout for World with get_ui_layout_store(self) {
 ///|
 pub impl @ui.Has_BoxShadow for World with get_box_shadow_store(self) {
   self.box_shadow
+}
+
+///|
+pub impl @ui.Has_ImageNode for World with get_image_node_store(self) {
+  self.image_node
 }
 
 ///|

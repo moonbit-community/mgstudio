@@ -118,6 +118,35 @@ pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {
 }
 
 ///|
+let asset_transparent_texture_handle : Ref[Handle[Image]?] = Ref::new(None)
+
+///|
+/// Returns a lazily-created 1x1 fully transparent texture handle.
+///
+/// This is used to match Bevy's `TRANSPARENT_IMAGE_HANDLE` behavior in widgets
+/// (e.g. `ImageNode::default()`).
+pub fn asset_transparent_texture() -> Handle[Image] {
+  match asset_transparent_texture_handle.val {
+    Some(h) => h
+    None => {
+      let size = @math.UVec2::new(1, 1)
+      let handle = asset_create_dynamic_texture(size, false)
+      let rect = @math.URect::new(
+        @math.UVec2::new(0, 0),
+        @math.UVec2::new(1, 1),
+      )
+      // moonbitlang/parser may not accept method calls on integer literals.
+      let u : Int = 0
+      let b : Byte = u.to_byte()
+      let bytes = Bytes::from_array([b, b, b, b])
+      asset_update_texture_region_rgba8(handle, rect, bytes)
+      asset_transparent_texture_handle.val = Some(handle)
+      handle
+    }
+  }
+}
+
+///|
 pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int {
   @core.with_host_string_id(path, fn(path_id) {
     host_asset_load_texture_id(path_id, nearest)

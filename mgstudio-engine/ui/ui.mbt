@@ -885,6 +885,87 @@ pub fn UiImage::with_rect(self : UiImage, rect : @math.Rect?) -> UiImage {
 ///|
 
 ///|
+/// Controls how an image widget is altered to fit within layout constraints.
+///
+/// This is Bevy-aligned (`NodeImageMode` / `ImageNode`), but currently only
+/// `Auto` and `Stretch` are implemented in mgstudio.
+pub(all) enum NodeImageMode {
+  Auto
+  Stretch
+} derive(Eq, Show)
+
+///|
+/// A UI node that renders an image (Bevy v0.15.3 `ImageNode`).
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct ImageNode {
+  color : @render2d.Color
+  image : @asset.Handle[@asset.Image]
+  texture_atlas : @asset.TextureAtlas?
+  flip_x : Bool
+  flip_y : Bool
+  rect : @math.Rect?
+  image_mode : NodeImageMode
+}
+
+///|
+pub fn ImageNode::default() -> ImageNode {
+  ImageNode::{
+    color: @render2d.Color::white(),
+    image: @asset.asset_transparent_texture(),
+    texture_atlas: None,
+    flip_x: false,
+    flip_y: false,
+    rect: None,
+    image_mode: NodeImageMode::Auto,
+  }
+}
+
+///|
+pub fn ImageNode::new(image : @asset.Handle[@asset.Image]) -> ImageNode {
+  ImageNode::{ ..ImageNode::default(), image, }
+}
+
+///|
+pub fn ImageNode::with_color(
+  self : ImageNode,
+  color : @render2d.Color,
+) -> ImageNode {
+  ImageNode::{ ..self, color, }
+}
+
+///|
+pub fn ImageNode::with_texture_atlas(
+  self : ImageNode,
+  texture_atlas : @asset.TextureAtlas?,
+) -> ImageNode {
+  ImageNode::{ ..self, texture_atlas, }
+}
+
+///|
+pub fn ImageNode::with_flip_x(self : ImageNode) -> ImageNode {
+  ImageNode::{ ..self, flip_x: true }
+}
+
+///|
+pub fn ImageNode::with_flip_y(self : ImageNode) -> ImageNode {
+  ImageNode::{ ..self, flip_y: true }
+}
+
+///|
+pub fn ImageNode::with_rect(self : ImageNode, rect : @math.Rect?) -> ImageNode {
+  ImageNode::{ ..self, rect, }
+}
+
+///|
+pub fn ImageNode::with_mode(
+  self : ImageNode,
+  image_mode : NodeImageMode,
+) -> ImageNode {
+  ImageNode::{ ..self, image_mode, }
+}
+
+///|
 /// Bevy-aligned interaction state component.
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
@@ -2933,7 +3014,7 @@ fn ui_uv_from_image_rects(
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_render_extract_system(
   world : W,
 ) -> Unit {
@@ -2947,6 +3028,7 @@ pub fn[
   let node_store = Has_Node::get_node_store(world)
   let bg_store = Has_BackgroundColor::get_background_color_store(world)
   let img_store = Has_UiImage::get_ui_image_store(world)
+  let image_node_store = Has_ImageNode::get_image_node_store(world)
   let button_store = Has_ButtonColors::get_button_colors_store(world)
   let interaction_store = Has_Interaction::get_interaction_store(world)
   let outline_store = Has_Outline::get_outline_store(world)
@@ -3289,11 +3371,45 @@ pub fn[
       None => ()
     }
 
-    // UiImage content.
-    match img_store.get(entity) {
-      Some(img) => {
-        let mut image_width = @asset.asset_texture_width(img.image)
-        let mut image_height = @asset.asset_texture_height(img.image)
+    // Image content (Bevy `ImageNode`, with `UiImage` compatibility).
+    let image_info = match image_node_store.get(entity) {
+      Some(img) =>
+        Some(
+          (
+            img.image,
+            img.color,
+            img.texture_atlas,
+            img.rect,
+            img.flip_x,
+            img.flip_y,
+          ),
+        )
+      None =>
+        match img_store.get(entity) {
+          Some(img) =>
+            Some(
+              (
+                img.image,
+                img.color,
+                img.texture_atlas,
+                img.rect,
+                img.flip_x,
+                img.flip_y,
+              ),
+            )
+          None => None
+        }
+    }
+    match image_info {
+      Some(info) => {
+        let texture = info.0
+        let color = info.1
+        let texture_atlas = info.2
+        let rect = info.3
+        let flip_x = info.4
+        let flip_y = info.5
+        let mut image_width = @asset.asset_texture_width(texture)
+        let mut image_height = @asset.asset_texture_height(texture)
         if image_width <= 0 || image_height <= 0 {
           // Avoid division by zero for not-yet-loaded textures.
           image_width = 1
@@ -3303,7 +3419,7 @@ pub fn[
           Float::from_double(image_width.to_double()),
           Float::from_double(image_height.to_double()),
         )
-        let atlas_rect = match img.texture_atlas {
+        let atlas_rect = match texture_atlas {
           Some(atlas) =>
             match @asset.asset_get_texture_atlas_layout(atlas.layout) {
               Some(layout_value) =>
@@ -3318,11 +3434,7 @@ pub fn[
           None => None
         }
         let pair = ui_uv_from_image_rects(
-          image_size,
-          atlas_rect,
-          img.rect,
-          img.flip_x,
-          img.flip_y,
+          image_size, atlas_rect, rect, flip_x, flip_y,
         )
         let uv_min_img = pair.0
         let uv_max_img = pair.1
@@ -3330,12 +3442,12 @@ pub fn[
         @render2d.render2d_push_ui_rect_uv_scissor(
           world,
           entity,
-          img.image,
+          texture,
           t_content,
           draw_scale,
           uv_min_img,
           uv_max_img,
-          img.color,
+          color,
           layers,
           scissor,
           flags | UI_DRAW_FLAG_TEXTURED,
@@ -3479,7 +3591,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

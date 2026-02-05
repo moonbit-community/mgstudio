@@ -34,6 +34,7 @@ pub struct World {
   ui_image : @core.ComponentStore[@ui.UiImage]
   ui_layout : @core.ComponentStore[@ui.UiLayout]
   box_shadow : @core.ComponentStore[@ui.BoxShadow]
+  image_node : @core.ComponentStore[@ui.ImageNode]
   transform : @core.ComponentStore[@math.Transform]
   border_color : @core.ComponentStore[@ui.BorderColor]
   content_size : @core.ComponentStore[@ui.ContentSize]
@@ -211,6 +212,7 @@ pub impl @ui.Has_CalculatedClip for World
 pub impl @ui.Has_ContentSize for World
 pub impl @ui.Has_FocusPolicy for World
 pub impl @ui.Has_GlobalZIndex for World
+pub impl @ui.Has_ImageNode for World
 pub impl @ui.Has_Interaction for World
 pub impl @ui.Has_Node for World
 pub impl @ui.Has_Outline for World

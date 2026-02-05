@@ -40,6 +40,8 @@ pub fn asset_texture_height(Handle[Image]) -> Int
 
 pub fn asset_texture_width(Handle[Image]) -> Int
 
+pub fn asset_transparent_texture() -> Handle[Image]
+
 pub fn asset_update_loaded_folders() -> Unit
 
 pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit

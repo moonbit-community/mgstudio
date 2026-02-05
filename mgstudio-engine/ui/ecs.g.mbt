@@ -6,9 +6,10 @@
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
   "Node", "Button", "UiRoot", "UiText", "ZIndex", "Outline", "UiImage", "UiLayout",
-  "BoxShadow", "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "UiAntiAlias",
-  "BorderRadius", "ButtonColors", "GlobalZIndex", "CalculatedClip", "ScrollPosition",
-  "BackgroundColor", "AccessibilityLabel", "UiBoxShadowSamples", "RelativeCursorPosition",
+  "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction",
+  "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex", "CalculatedClip",
+  "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "UiBoxShadowSamples",
+  "RelativeCursorPosition",
 ]
 
 ///|
@@ -58,6 +59,11 @@ pub(open) trait Has_UiLayout {
 ///|
 pub(open) trait Has_BoxShadow {
   get_box_shadow_store(self : Self) -> @core.ComponentStore[BoxShadow]
+}
+
+///|
+pub(open) trait Has_ImageNode {
+  get_image_node_store(self : Self) -> @core.ComponentStore[ImageNode]
 }
 
 ///|
