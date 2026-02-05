@@ -6,7 +6,7 @@
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
   "Node", "Button", "UiRoot", "UiText", "ZIndex", "UiImage", "UiLayout", "BorderColor",
-  "FocusPolicy", "Interaction", "ButtonColors", "GlobalZIndex", "CalculatedClip",
+  "ContentSize", "FocusPolicy", "Interaction", "ButtonColors", "GlobalZIndex", "CalculatedClip",
   "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "RelativeCursorPosition",
 ]
 
@@ -52,6 +52,11 @@ pub(open) trait Has_UiLayout {
 ///|
 pub(open) trait Has_BorderColor {
   get_border_color_store(self : Self) -> @core.ComponentStore[BorderColor]
+}
+
+///|
+pub(open) trait Has_ContentSize {
+  get_content_size_store(self : Self) -> @core.ComponentStore[ContentSize]
 }
 
 ///|

@@ -162,7 +162,7 @@ pub struct ScissorRect {
 
 ///|
 pub fn ScissorRect::new(rect : @math.Rect) -> ScissorRect {
-  ScissorRect::{ rect }
+  ScissorRect::{ rect, }
 }
 
 ///|
@@ -1661,9 +1661,12 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   let sprites = rs.val.sprites
   let extra_sprites = rs.val.extra_sprites
   let meshes = rs.val.meshes
-
   fn int_from_f32_floor_nonneg(x : Float) -> Int {
-    if x <= 0.0F { 0 } else { x.to_int() }
+    if x <= 0.0F {
+      0
+    } else {
+      x.to_int()
+    }
   }
 
   fn int_from_f32_ceil_nonneg(x : Float) -> Int {
@@ -1672,7 +1675,11 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     } else {
       let i = x.to_int()
       let f = Float::from_double(i.to_double())
-      if f < x { i + 1 } else { i }
+      if f < x {
+        i + 1
+      } else {
+        i
+      }
     }
   }
 
@@ -1706,10 +1713,18 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     }
     let max_w = viewport_w - (x - viewport_x)
     let max_h = viewport_h - (y - viewport_y)
-    if w > max_w { w = max_w }
-    if h > max_h { h = max_h }
-    if w < 0 { w = 0 }
-    if h < 0 { h = 0 }
+    if w > max_w {
+      w = max_w
+    }
+    if h > max_h {
+      h = max_h
+    }
+    if w < 0 {
+      w = 0
+    }
+    if h < 0 {
+      h = 0
+    }
     (x, y, w, h)
   }
 
@@ -1815,25 +1830,16 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     let mut scissor_y = 0
     let mut scissor_w = 0
     let mut scissor_h = 0
-
-    fn apply_scissor(
-      rect_opt : @math.Rect?,
-    ) -> Unit {
+    fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
       match rect_opt {
-        None => {
+        None =>
           if scissor_active {
             @window.host_gpu_clear_scissor()
             scissor_active = false
           }
-        }
         Some(rect) => {
           let (sx, sy, sw, sh) = physical_scissor_for_camera(
-            rect,
-            viewport_x,
-            viewport_y,
-            viewport_width,
-            viewport_height,
-            scale_factor,
+            rect, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
           )
           if !scissor_active ||
             sx != scissor_x ||
@@ -1850,6 +1856,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
         }
       }
     }
+
     for item in draw_items {
       match item.kind {
         SpriteMain(i) => {

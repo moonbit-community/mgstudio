@@ -29,10 +29,8 @@ test "ui: layout computes rect and camera-compensated transform" {
     false,
   )
   HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
-
   let root = world.spawn_empty()
   Has_UiRoot::get_ui_root_store(world).insert(root, UiRoot::default(), tick)
-
   let node = world.spawn_empty()
   @hierarchy.Has_Parent::get_parent_store(world).insert(
     node,
@@ -53,14 +51,12 @@ test "ui: layout computes rect and camera-compensated transform" {
   // Build Children from Parent before layout.
   @transform.update_children_system(world)
   ui_layout_system(world)
-
   let rect = Has_UiLayout::get_ui_layout_store(world).get(node).unwrap().rect
   let ok_rect = rect.min.x == 40.0F &&
     rect.min.y == 50.0F &&
     rect.max.x == 240.0F &&
     rect.max.y == 110.0F
   inspect(ok_rect, content="true")
-
   let t = @math.Has_Transform::get_transform_store(world).get(node).unwrap()
   // Expected center in viewport coords: (140, 80)
   // Viewport center origin (+Y up): (-260, 220)
@@ -94,7 +90,14 @@ test "ui: pointer conversion to viewport space" {
   let origin = @math.Vec2::new(10.0F, 15.0F)
   let size = @math.Vec2::new(100.0F, 100.0F)
   let in_view = ui_pointer_pos_in_viewport(pos, origin, size)
-  inspect(in_view.unwrap().x == 10.0F && in_view.unwrap().y == 25.0F, content="true")
-  let out_view = ui_pointer_pos_in_viewport(@math.Vec2::new(5.0F, 0.0F), origin, size)
+  inspect(
+    in_view.unwrap().x == 10.0F && in_view.unwrap().y == 25.0F,
+    content="true",
+  )
+  let out_view = ui_pointer_pos_in_viewport(
+    @math.Vec2::new(5.0F, 0.0F),
+    origin,
+    size,
+  )
   inspect(out_view is None, content="true")
 }

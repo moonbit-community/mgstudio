@@ -16,7 +16,6 @@
 test "ui: interaction updates component state" {
   let world = @ecs_world.World::new()
   let tick = @core.ChangeTickWorld::increment_change_tick(world)
-
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -28,20 +27,20 @@ test "ui: interaction updates component state" {
     false,
   )
   HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
-
   let e = world.spawn_empty()
   Has_Button::get_button_store(world).insert(e, Button::default(), tick)
   Has_UiLayout::get_ui_layout_store(world).insert(
     e,
     UiLayout::new(
-      @math.Rect::new(@math.Vec2::new(40.0F, 50.0F), @math.Vec2::new(240.0F, 110.0F)),
+      @math.Rect::new(
+        @math.Vec2::new(40.0F, 50.0F),
+        @math.Vec2::new(240.0F, 110.0F),
+      ),
     ),
     tick,
   )
-
   ui_stack_system(world)
   ui_interaction_system(world)
-
   let s0 = Has_Interaction::get_interaction_store(world).get(e).unwrap()
   inspect(s0 == Interaction::Hovered, content="true")
 

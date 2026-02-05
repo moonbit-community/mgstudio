@@ -22,7 +22,8 @@ pub fn game_app() -> Unit {
   .run()
 }
 
-///| Bevy-aligned button update system (simplified).
+///|
+/// Bevy-aligned button update system (simplified).
 fn button_system(world : @ecs_world.World) -> Unit {
   let tick = @core.ChangeTickWorld::read_change_tick(world)
   let button_store = @ui.Has_Button::get_button_store(world)
@@ -30,11 +31,9 @@ fn button_system(world : @ecs_world.World) -> Unit {
   let bg_store = @ui.Has_BackgroundColor::get_background_color_store(world)
   let children_store = @hierarchy.Has_Children::get_children_store(world)
   let ui_text_store = @ui.Has_UiText::get_ui_text_store(world)
-
   let normal = @render2d.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
   let hovered = @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F)
   let pressed = @render2d.Color::new(0.35F, 0.75F, 0.35F, 1.0F)
-
   button_store.for_each(fn(entity, _btn) {
     let state = match interaction_store.get(entity) {
       Some(v) => v
@@ -51,7 +50,6 @@ fn button_system(world : @ecs_world.World) -> Unit {
     } else {
       bg_store.insert(entity, bg, tick)
     }
-
     let label_text = match state {
       @ui.Interaction::Pressed => "Press"
       _ => "Button"
@@ -102,7 +100,11 @@ fn ui_button_setup(world : @ecs_world.World) -> Unit {
     @hierarchy.Parent::new(root),
     tick,
   )
-  @ui.Has_Button::get_button_store(world).insert(button, @ui.Button::default(), tick)
+  @ui.Has_Button::get_button_store(world).insert(
+    button,
+    @ui.Button::default(),
+    tick,
+  )
   @ui.Has_AccessibilityLabel::get_accessibility_label_store(world).insert(
     button,
     @ui.AccessibilityLabel::new("Button".to_string()),
@@ -144,7 +146,11 @@ fn ui_button_setup(world : @ecs_world.World) -> Unit {
     .with_width(@ui.Val::Auto)
     .with_height(@ui.Val::Auto)
   @ui.Has_Node::get_node_store(world).insert(label, label_node, tick)
-  @ui.Has_ZIndex::get_z_index_store(world).insert(label, @ui.ZIndex::new(1), tick)
+  @ui.Has_ZIndex::get_z_index_store(world).insert(
+    label,
+    @ui.ZIndex::new(1),
+    tick,
+  )
   @ui.Has_UiText::get_ui_text_store(world).insert(
     label,
     @ui.UiText::new(label_handle),

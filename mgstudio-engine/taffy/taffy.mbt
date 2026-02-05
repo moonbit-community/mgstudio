@@ -31,7 +31,10 @@ pub struct Layout {
 
 ///|
 pub fn Layout::default() -> Layout {
-  Layout::{ size: @math.Vec2::new(0.0F, 0.0F), location: @math.Vec2::new(0.0F, 0.0F) }
+  Layout::{
+    size: @math.Vec2::new(0.0F, 0.0F),
+    location: @math.Vec2::new(0.0F, 0.0F),
+  }
 }
 
 ///|
@@ -52,7 +55,10 @@ pub fn Taffy::new_leaf(self : Taffy) -> NodeId {
 }
 
 ///|
-pub fn Taffy::new_with_children(self : Taffy, _children : Array[NodeId]) -> NodeId {
+pub fn Taffy::new_with_children(
+  self : Taffy,
+  _children : Array[NodeId],
+) -> NodeId {
   // Placeholder: real implementation maintains a tree and style cache.
   self.new_leaf()
 }

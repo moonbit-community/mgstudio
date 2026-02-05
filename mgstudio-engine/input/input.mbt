@@ -148,12 +148,14 @@ pub fn mouse_position() -> @math.Vec2? {
   }
 }
 
-///| Mouse wheel delta since last `host_input_finish_frame()`.
+///|
+/// Mouse wheel delta since last `host_input_finish_frame()`.
 pub fn mouse_wheel_delta() -> @math.Vec2 {
   @math.Vec2::new(host_input_wheel_x(), host_input_wheel_y())
 }
 
-///| Mouse wheel delta, or `None` if both components are zero.
+///|
+/// Mouse wheel delta, or `None` if both components are zero.
 pub fn mouse_wheel_delta_opt() -> @math.Vec2? {
   let v = mouse_wheel_delta()
   if v.x == 0.0F && v.y == 0.0F {

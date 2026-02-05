@@ -28,9 +28,9 @@ pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_Calcula
 
 pub fn[W : HasRes_UiContext + HasRes_UiStack + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + Has_ButtonColors + @render2d.Has_Sprite + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_interaction_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ZIndex + Has_ScrollPosition + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_ScrollPosition + Has_UiLayout + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
 
@@ -137,6 +137,11 @@ pub fn ButtonColors::new(@render2d.Color, @render2d.Color, @render2d.Color) -> S
 pub struct CalculatedClip {
   clip : @math.Rect
 }
+
+pub struct ContentSize {
+  size : @math.Vec2
+}
+pub fn ContentSize::new(@math.Vec2) -> Self
 
 pub(all) enum Display {
   Block
@@ -306,6 +311,9 @@ pub struct Node {
 }
 pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
+pub fn Node::with_display(Self, Display) -> Self
+pub fn Node::with_grid_template_columns(Self, Array[RepeatedGridTrack]) -> Self
+pub fn Node::with_grid_template_rows(Self, Array[RepeatedGridTrack]) -> Self
 pub fn Node::with_height(Self, Val) -> Self
 pub fn Node::with_justify_content(Self, JustifyContent) -> Self
 pub fn Node::with_left(Self, Val) -> Self
@@ -359,6 +367,7 @@ pub struct RepeatedGridTrack {
   tracks : Array[GridTrack]
 }
 pub fn RepeatedGridTrack::default() -> Self
+pub fn RepeatedGridTrack::new(GridTrackRepetition, Array[GridTrack]) -> Self
 
 pub struct ScrollPosition {
   offset_x : Float
@@ -481,6 +490,10 @@ pub(open) trait Has_ButtonColors {
 
 pub(open) trait Has_CalculatedClip {
   get_calculated_clip_store(Self) -> @core.ComponentStore[CalculatedClip]
+}
+
+pub(open) trait Has_ContentSize {
+  get_content_size_store(Self) -> @core.ComponentStore[ContentSize]
 }
 
 pub(open) trait Has_FocusPolicy {

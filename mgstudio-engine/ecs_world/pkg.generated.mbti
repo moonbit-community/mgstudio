@@ -34,6 +34,7 @@ pub struct World {
   ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
   border_color : @core.ComponentStore[@ui.BorderColor]
+  content_size : @core.ComponentStore[@ui.ContentSize]
   focus_policy : @core.ComponentStore[@ui.FocusPolicy]
   interaction : @core.ComponentStore[@ui.Interaction]
   ccd2d : @core.ComponentStore[@physics2d.Ccd2d]
@@ -168,6 +169,7 @@ pub impl @ui.Has_BorderColor for World
 pub impl @ui.Has_Button for World
 pub impl @ui.Has_ButtonColors for World
 pub impl @ui.Has_CalculatedClip for World
+pub impl @ui.Has_ContentSize for World
 pub impl @ui.Has_FocusPolicy for World
 pub impl @ui.Has_GlobalZIndex for World
 pub impl @ui.Has_Interaction for World

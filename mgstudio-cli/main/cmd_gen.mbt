@@ -137,19 +137,6 @@ async fn run_gen(opts : GenOptions) -> Unit {
   if !ok {
     any_diff = true
   }
-  if !check {
-    // Format only generated files so `mgstudio gen` doesn't touch unrelated code.
-    for p in gen_mbt_paths {
-      if opts.verbose {
-        println("Formatting: \{p}")
-      }
-      let code = @process.run("moonfmt", ["-w", p], cwd=module_root)
-      if code != 0 {
-        println("moonfmt failed: \{p} (exit=\{code})")
-        @sys.exit(1)
-      }
-    }
-  }
   if any_diff {
     @sys.exit(1)
   }
@@ -882,14 +869,35 @@ struct WriteOrCheckResult {
 }
 
 ///|
+async fn format_generated_mbt(path : String, content : String) -> String {
+  let tmp_path = path + ".mgstudio_gen.tmp.mbt"
+  write_file_text(tmp_path, content)
+  let code = @process.run("moonfmt", ["-w", tmp_path])
+  if code != 0 {
+    println("moonfmt failed: \{tmp_path} (exit=\{code})")
+    @sys.exit(1)
+  }
+  let formatted = read_file_text(tmp_path).unwrap_or(content)
+  @fs.remove(tmp_path) catch {
+    _ => ()
+  }
+  formatted
+}
+
+///|
 async fn write_or_check(
   path : String,
   content : String,
   check~ : Bool,
   verbose~ : Bool,
 ) -> WriteOrCheckResult {
+  let final_content = if path.has_suffix(".mbt") {
+    format_generated_mbt(path, content)
+  } else {
+    content
+  }
   let existing = read_file_text(path)
-  if existing is Some(s) && s == content {
+  if existing is Some(s) && s == final_content {
     if verbose {
       println("OK: \{path}")
     }
@@ -898,7 +906,7 @@ async fn write_or_check(
     println("Out of date: \{path}")
     { ok: false, changed: false }
   } else {
-    write_file_text(path, content)
+    write_file_text(path, final_content)
     println("Generated: \{path}")
     { ok: true, changed: true }
   }

@@ -49,9 +49,13 @@ pub(all) enum LineBreak {
 }
 
 ///| Y-axis orientation for text layout coordinates.
+
 ///|
+
 ///| - `TopToBottom`: origin at top-left, +Y goes down (UI-style layout).
-///| - `BottomToTop`: origin at bottom-left, +Y goes up (world-style layout).
+
+///|
+/// - `BottomToTop`: origin at bottom-left, +Y goes up (world-style layout).
 pub(all) enum YAxisOrientation {
   TopToBottom
   BottomToTop

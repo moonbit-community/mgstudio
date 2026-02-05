@@ -561,7 +561,10 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let phys_x = Float::from_double(phys_x_i.to_double())
       let phys_y = Float::from_double(phys_y_i.to_double())
       let x = glyph_size_x / 2.0F + left + phys_x
-      let y_raw = @cosmic.roundf(run.line_y) + phys_y - top + glyph_size_y / 2.0F
+      let y_raw = @cosmic.roundf(run.line_y) +
+        phys_y -
+        top +
+        glyph_size_y / 2.0F
       // Bevy parity: `BottomToTop` flips Y using the computed box height.
       let y = match instance.y_axis {
         YAxisOrientation::TopToBottom => y_raw
@@ -663,7 +666,6 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
 
     // Convert layout coordinates (+Y down for UI) into our world-style local (+Y up) coordinates.
     let origin_offset = to_y_up(instance.y_axis, origin_offset_layout)
-
     for glyph in layout_info.glyphs {
       let atlas_info = glyph.atlas_info
       let layout_opt = @asset.asset_get_texture_atlas_layout(
@@ -697,7 +699,10 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
         origin_offset.x + glyph_pos.x,
         origin_offset.y + glyph_pos.y,
       )
-      let local_scaled = @math.Vec2::new(local_pos.x * scale.x, local_pos.y * scale.y)
+      let local_scaled = @math.Vec2::new(
+        local_pos.x * scale.x,
+        local_pos.y * scale.y,
+      )
       let offset = rotate_vec2(local_scaled, rot)
       let translation = @math.Vec2::new(base.x + offset.x, base.y + offset.y)
       let transform = @math.Transform::from_xy_rotation_scale(

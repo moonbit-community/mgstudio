@@ -68,7 +68,10 @@ pub fn PickingEvents::default() -> PickingEvents {
 }
 
 ///|
-pub fn PickingEvents::push(self : Ref[PickingEvents], event : PointerEvent) -> Unit {
+pub fn PickingEvents::push(
+  self : Ref[PickingEvents],
+  event : PointerEvent,
+) -> Unit {
   self.val.events = self.val.events + [event]
 }
 
@@ -146,7 +149,8 @@ pub fn[W : HasRes_PickingState + @core.ChangeTickWorld] ensure_picking_state_sys
 pub fn[W : HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld] picking_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
-  app.add_pre_update_system_config(
+  app
+  .add_pre_update_system_config(
     @app.system(picking_clear_system).in_set(picking_set),
   )
   .add_pre_update_system_config(

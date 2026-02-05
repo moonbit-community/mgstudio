@@ -14,6 +14,7 @@ pub struct World {
   ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
   border_color : @core.ComponentStore[@ui.BorderColor]
+  content_size : @core.ComponentStore[@ui.ContentSize]
   focus_policy : @core.ComponentStore[@ui.FocusPolicy]
   interaction : @core.ComponentStore[@ui.Interaction]
   ccd2d : @core.ComponentStore[@physics2d.Ccd2d]
@@ -107,6 +108,7 @@ pub fn World::new() -> World {
     ui_layout: @core.ComponentStore::new(),
     transform: @core.ComponentStore::new(),
     border_color: @core.ComponentStore::new(),
+    content_size: @core.ComponentStore::new(),
     focus_policy: @core.ComponentStore::new(),
     interaction: @core.ComponentStore::new(),
     ccd2d: @core.ComponentStore::new(),
@@ -196,6 +198,7 @@ pub fn World::despawn(
   self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
+  self.content_size.remove(entity) |> ignore
   self.focus_policy.remove(entity) |> ignore
   self.interaction.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
@@ -268,6 +271,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
+  self.content_size.remove(entity) |> ignore
   self.focus_policy.remove(entity) |> ignore
   self.interaction.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
@@ -387,6 +391,11 @@ pub impl @math.Has_Transform for World with get_transform_store(self) {
 ///|
 pub impl @ui.Has_BorderColor for World with get_border_color_store(self) {
   self.border_color
+}
+
+///|
+pub impl @ui.Has_ContentSize for World with get_content_size_store(self) {
+  self.content_size
 }
 
 ///|
