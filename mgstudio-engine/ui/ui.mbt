@@ -836,8 +836,10 @@ pub fn BackgroundColor::new(color : @render2d.Color) -> BackgroundColor {
 pub struct UiImage {
   color : @render2d.Color
   image : @asset.Handle[@asset.Image]
+  texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
   flip_y : Bool
+  rect : @math.Rect?
 }
 
 ///|
@@ -845,14 +847,24 @@ pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
   UiImage::{
     color: @render2d.Color::white(),
     image,
+    texture_atlas: None,
     flip_x: false,
     flip_y: false,
+    rect: None,
   }
 }
 
 ///|
 pub fn UiImage::with_color(self : UiImage, color : @render2d.Color) -> UiImage {
   UiImage::{ ..self, color, }
+}
+
+///|
+pub fn UiImage::with_texture_atlas(
+  self : UiImage,
+  texture_atlas : @asset.TextureAtlas?,
+) -> UiImage {
+  UiImage::{ ..self, texture_atlas, }
 }
 
 ///|
@@ -863,6 +875,11 @@ pub fn UiImage::with_flip_x(self : UiImage) -> UiImage {
 ///|
 pub fn UiImage::with_flip_y(self : UiImage) -> UiImage {
   UiImage::{ ..self, flip_y: true }
+}
+
+///|
+pub fn UiImage::with_rect(self : UiImage, rect : @math.Rect?) -> UiImage {
+  UiImage::{ ..self, rect, }
 }
 
 ///|
@@ -2862,6 +2879,59 @@ pub fn[
 }
 
 ///|
+fn vec2_add(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
+  @math.Vec2::new(a.x + b.x, a.y + b.y)
+}
+
+///|
+fn ui_uv_from_image_rects(
+  image_size : @math.Vec2,
+  atlas_rect : @math.Rect?,
+  rect : @math.Rect?,
+  flip_x : Bool,
+  flip_y : Bool,
+) -> (@math.Vec2, @math.Vec2) {
+  let denom_x = image_size.x
+  let denom_y = image_size.y
+  if denom_x <= 0.0F || denom_y <= 0.0F {
+    return (@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 1.0F))
+  }
+  let image_rect = @math.Rect::new(
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(denom_x, denom_y),
+  )
+  let texture_rect = match (atlas_rect, rect) {
+    (None, None) => image_rect
+    (None, Some(r)) => r
+    (Some(ar), None) => ar
+    (Some(ar), Some(r)) => {
+      let min = vec2_add(r.min, ar.min)
+      let max = vec2_add(r.max, ar.min)
+      @math.Rect::new(min, max)
+    }
+  }
+  let mut uv_min = @math.Vec2::new(
+    texture_rect.min.x / denom_x,
+    texture_rect.min.y / denom_y,
+  )
+  let mut uv_max = @math.Vec2::new(
+    texture_rect.max.x / denom_x,
+    texture_rect.max.y / denom_y,
+  )
+  if flip_x {
+    let tmp = uv_min.x
+    uv_min = @math.Vec2::new(uv_max.x, uv_min.y)
+    uv_max = @math.Vec2::new(tmp, uv_max.y)
+  }
+  if flip_y {
+    let tmp = uv_min.y
+    uv_min = @math.Vec2::new(uv_min.x, uv_max.y)
+    uv_max = @math.Vec2::new(uv_max.x, tmp)
+  }
+  (uv_min, uv_max)
+}
+
+///|
 pub fn[
   W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_render_extract_system(
@@ -3222,22 +3292,40 @@ pub fn[
     // UiImage content.
     match img_store.get(entity) {
       Some(img) => {
-        let mut u0 = uv_min.x
-        let mut v0 = uv_min.y
-        let mut u1 = uv_max.x
-        let mut v1 = uv_max.y
-        if img.flip_x {
-          let tmp = u0
-          u0 = u1
-          u1 = tmp
+        let mut image_width = @asset.asset_texture_width(img.image)
+        let mut image_height = @asset.asset_texture_height(img.image)
+        if image_width <= 0 || image_height <= 0 {
+          // Avoid division by zero for not-yet-loaded textures.
+          image_width = 1
+          image_height = 1
         }
-        if img.flip_y {
-          let tmp = v0
-          v0 = v1
-          v1 = tmp
+        let image_size = @math.Vec2::new(
+          Float::from_double(image_width.to_double()),
+          Float::from_double(image_height.to_double()),
+        )
+        let atlas_rect = match img.texture_atlas {
+          Some(atlas) =>
+            match @asset.asset_get_texture_atlas_layout(atlas.layout) {
+              Some(layout_value) =>
+                if atlas.index >= 0 &&
+                  atlas.index < layout_value.textures.length() {
+                  Some(layout_value.textures[atlas.index].as_rect())
+                } else {
+                  None
+                }
+              None => None
+            }
+          None => None
         }
-        let uv_min_img = @math.Vec2::new(u0, v0)
-        let uv_max_img = @math.Vec2::new(u1, v1)
+        let pair = ui_uv_from_image_rects(
+          image_size,
+          atlas_rect,
+          img.rect,
+          img.flip_x,
+          img.flip_y,
+        )
+        let uv_min_img = pair.0
+        let uv_max_img = pair.1
         let t_content = transform_with_z(t0, z_base + UI_STACK_Z_CONTENT)
         @render2d.render2d_push_ui_rect_uv_scissor(
           world,

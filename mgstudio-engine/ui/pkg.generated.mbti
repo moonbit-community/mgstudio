@@ -443,13 +443,17 @@ pub fn UiContext::new(@asset.Handle[@asset.Image], @math.Vec2, @math.Vec2, @core
 pub struct UiImage {
   color : @render2d.Color
   image : @asset.Handle[@asset.Image]
+  texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
   flip_y : Bool
+  rect : @math.Rect?
 }
 pub fn UiImage::new(@asset.Handle[@asset.Image]) -> Self
 pub fn UiImage::with_color(Self, @render2d.Color) -> Self
 pub fn UiImage::with_flip_x(Self) -> Self
 pub fn UiImage::with_flip_y(Self) -> Self
+pub fn UiImage::with_rect(Self, @math.Rect?) -> Self
+pub fn UiImage::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 
 pub struct UiLayout {
   rect : @math.Rect
