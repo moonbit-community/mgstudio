@@ -5,9 +5,10 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Node", "Button", "UiRoot", "UiText", "ZIndex", "UiImage", "UiLayout", "BorderColor",
-  "ContentSize", "FocusPolicy", "Interaction", "ButtonColors", "GlobalZIndex", "CalculatedClip",
-  "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "RelativeCursorPosition",
+  "Node", "Button", "UiRoot", "UiText", "ZIndex", "Outline", "UiImage", "UiLayout",
+  "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "UiAntiAlias", "BorderRadius",
+  "ButtonColors", "GlobalZIndex", "CalculatedClip", "ScrollPosition", "BackgroundColor",
+  "AccessibilityLabel", "UiBoxShadowSamples", "RelativeCursorPosition",
 ]
 
 ///|
@@ -37,6 +38,11 @@ pub(open) trait Has_UiText {
 ///|
 pub(open) trait Has_ZIndex {
   get_z_index_store(self : Self) -> @core.ComponentStore[ZIndex]
+}
+
+///|
+pub(open) trait Has_Outline {
+  get_outline_store(self : Self) -> @core.ComponentStore[Outline]
 }
 
 ///|
@@ -70,6 +76,16 @@ pub(open) trait Has_Interaction {
 }
 
 ///|
+pub(open) trait Has_UiAntiAlias {
+  get_ui_anti_alias_store(self : Self) -> @core.ComponentStore[UiAntiAlias]
+}
+
+///|
+pub(open) trait Has_BorderRadius {
+  get_border_radius_store(self : Self) -> @core.ComponentStore[BorderRadius]
+}
+
+///|
 pub(open) trait Has_ButtonColors {
   get_button_colors_store(self : Self) -> @core.ComponentStore[ButtonColors]
 }
@@ -100,6 +116,13 @@ pub(open) trait Has_BackgroundColor {
 pub(open) trait Has_AccessibilityLabel {
   get_accessibility_label_store(self : Self) -> @core.ComponentStore[
     AccessibilityLabel,
+  ]
+}
+
+///|
+pub(open) trait Has_UiBoxShadowSamples {
+  get_ui_box_shadow_samples_store(self : Self) -> @core.ComponentStore[
+    UiBoxShadowSamples,
   ]
 }
 

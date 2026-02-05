@@ -121,7 +121,11 @@ pub struct BorderRadius {
   bottom_left : Val
   bottom_right : Val
 }
+pub fn BorderRadius::all(Val) -> Self
 pub fn BorderRadius::default() -> Self
+pub fn BorderRadius::new(Val, Val, Val, Val) -> Self
+pub fn BorderRadius::percent(Float, Float, Float, Float) -> Self
+pub fn BorderRadius::px(Float, Float, Float, Float) -> Self
 
 pub struct Button {
 }
@@ -321,6 +325,14 @@ pub fn Node::with_position_type(Self, PositionType) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
 
+pub struct Outline {
+  width : Val
+  offset : Val
+  color : @render2d.Color
+}
+pub fn Outline::default() -> Self
+pub fn Outline::new(Val, Val, @render2d.Color) -> Self
+
 pub struct Overflow {
   x : OverflowAxis
   y : OverflowAxis
@@ -381,6 +393,12 @@ pub(all) enum UiAntiAlias {
 }
 pub impl Eq for UiAntiAlias
 pub impl Show for UiAntiAlias
+
+pub struct UiBoxShadowSamples {
+  samples : Int
+}
+pub fn UiBoxShadowSamples::default() -> Self
+pub fn UiBoxShadowSamples::new(Int) -> Self
 
 pub struct UiContext {
   mut white_texture : @asset.Handle[@asset.Image]
@@ -480,6 +498,10 @@ pub(open) trait Has_BorderColor {
   get_border_color_store(Self) -> @core.ComponentStore[BorderColor]
 }
 
+pub(open) trait Has_BorderRadius {
+  get_border_radius_store(Self) -> @core.ComponentStore[BorderRadius]
+}
+
 pub(open) trait Has_Button {
   get_button_store(Self) -> @core.ComponentStore[Button]
 }
@@ -512,12 +534,24 @@ pub(open) trait Has_Node {
   get_node_store(Self) -> @core.ComponentStore[Node]
 }
 
+pub(open) trait Has_Outline {
+  get_outline_store(Self) -> @core.ComponentStore[Outline]
+}
+
 pub(open) trait Has_RelativeCursorPosition {
   get_relative_cursor_position_store(Self) -> @core.ComponentStore[RelativeCursorPosition]
 }
 
 pub(open) trait Has_ScrollPosition {
   get_scroll_position_store(Self) -> @core.ComponentStore[ScrollPosition]
+}
+
+pub(open) trait Has_UiAntiAlias {
+  get_ui_anti_alias_store(Self) -> @core.ComponentStore[UiAntiAlias]
+}
+
+pub(open) trait Has_UiBoxShadowSamples {
+  get_ui_box_shadow_samples_store(Self) -> @core.ComponentStore[UiBoxShadowSamples]
 }
 
 pub(open) trait Has_UiImage {

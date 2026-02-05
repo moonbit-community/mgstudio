@@ -405,12 +405,19 @@ pub fn FocusPolicy::default() -> FocusPolicy {
 }
 
 ///|
+/// Controls whether UI should render with antialiasing.
+///
+/// This is Bevy-aligned (`UiAntiAlias`) and is currently consumed by the UI
+/// render pipeline (tracked separately).
+#ecs.component
 pub(all) enum UiAntiAlias {
   Off
   On
 } derive(Eq, Show)
 
 ///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
 pub struct BorderRadius {
   top_left : Val
   top_right : Val
@@ -426,6 +433,99 @@ pub fn BorderRadius::default() -> BorderRadius {
     bottom_left: Val::Px(0.0F),
     bottom_right: Val::Px(0.0F),
   }
+}
+
+///|
+pub fn BorderRadius::all(radius : Val) -> BorderRadius {
+  BorderRadius::{
+    top_left: radius,
+    top_right: radius,
+    bottom_left: radius,
+    bottom_right: radius,
+  }
+}
+
+///|
+pub fn BorderRadius::new(
+  top_left : Val,
+  top_right : Val,
+  bottom_right : Val,
+  bottom_left : Val,
+) -> BorderRadius {
+  BorderRadius::{ top_left, top_right, bottom_left, bottom_right }
+}
+
+///|
+pub fn BorderRadius::px(
+  top_left : Float,
+  top_right : Float,
+  bottom_right : Float,
+  bottom_left : Float,
+) -> BorderRadius {
+  BorderRadius::new(
+    Val::Px(top_left),
+    Val::Px(top_right),
+    Val::Px(bottom_right),
+    Val::Px(bottom_left),
+  )
+}
+
+///|
+pub fn BorderRadius::percent(
+  top_left : Float,
+  top_right : Float,
+  bottom_right : Float,
+  bottom_left : Float,
+) -> BorderRadius {
+  BorderRadius::new(
+    Val::Percent(top_left),
+    Val::Percent(top_right),
+    Val::Percent(bottom_right),
+    Val::Percent(bottom_left),
+  )
+}
+
+///|
+#ecs.component
+pub struct Outline {
+  width : Val
+  offset : Val
+  color : @render2d.Color
+}
+
+///|
+pub fn Outline::new(
+  width : Val,
+  offset : Val,
+  color : @render2d.Color,
+) -> Outline {
+  Outline::{ width, offset, color }
+}
+
+///|
+pub fn Outline::default() -> Outline {
+  Outline::{
+    width: Val::Px(0.0F),
+    offset: Val::Px(0.0F),
+    color: @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+  }
+}
+
+///|
+#ecs.component
+pub struct UiBoxShadowSamples {
+  samples : Int
+}
+
+///|
+pub fn UiBoxShadowSamples::new(samples : Int) -> UiBoxShadowSamples {
+  let safe = if samples < 0 { 0 } else { samples }
+  UiBoxShadowSamples::{ samples: safe }
+}
+
+///|
+pub fn UiBoxShadowSamples::default() -> UiBoxShadowSamples {
+  UiBoxShadowSamples::new(4)
 }
 
 ///|

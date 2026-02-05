@@ -10,6 +10,7 @@ pub struct World {
   ui_root : @core.ComponentStore[@ui.UiRoot]
   ui_text : @core.ComponentStore[@ui.UiText]
   z_index : @core.ComponentStore[@ui.ZIndex]
+  outline : @core.ComponentStore[@ui.Outline]
   ui_image : @core.ComponentStore[@ui.UiImage]
   ui_layout : @core.ComponentStore[@ui.UiLayout]
   transform : @core.ComponentStore[@math.Transform]
@@ -17,11 +18,13 @@ pub struct World {
   content_size : @core.ComponentStore[@ui.ContentSize]
   focus_policy : @core.ComponentStore[@ui.FocusPolicy]
   interaction : @core.ComponentStore[@ui.Interaction]
+  ui_anti_alias : @core.ComponentStore[@ui.UiAntiAlias]
   ccd2d : @core.ComponentStore[@physics2d.Ccd2d]
   anchor : @core.ComponentStore[@render2d.Anchor]
   camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
+  border_radius : @core.ComponentStore[@ui.BorderRadius]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
   parent : @core.ComponentStore[@hierarchy.Parent]
@@ -47,6 +50,7 @@ pub struct World {
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
+  ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
@@ -136,6 +140,7 @@ pub fn World::new() -> World {
     ui_root: @core.ComponentStore::new(),
     ui_text: @core.ComponentStore::new(),
     z_index: @core.ComponentStore::new(),
+    outline: @core.ComponentStore::new(),
     ui_image: @core.ComponentStore::new(),
     ui_layout: @core.ComponentStore::new(),
     transform: @core.ComponentStore::new(),
@@ -143,11 +148,13 @@ pub fn World::new() -> World {
     content_size: @core.ComponentStore::new(),
     focus_policy: @core.ComponentStore::new(),
     interaction: @core.ComponentStore::new(),
+    ui_anti_alias: @core.ComponentStore::new(),
     ccd2d: @core.ComponentStore::new(),
     anchor: @core.ComponentStore::new(),
     camera: @core.ComponentStore::new(),
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
+    border_radius: @core.ComponentStore::new(),
     button_colors: @core.ComponentStore::new(),
     global_z_index: @core.ComponentStore::new(),
     parent: @core.ComponentStore::new(),
@@ -173,6 +180,7 @@ pub fn World::new() -> World {
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
     accessibility_label: @core.ComponentStore::new(),
+    ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
     locked_axes2d: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
@@ -242,6 +250,7 @@ pub fn World::despawn(
   self.ui_root.remove(entity) |> ignore
   self.ui_text.remove(entity) |> ignore
   self.z_index.remove(entity) |> ignore
+  self.outline.remove(entity) |> ignore
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
@@ -249,11 +258,13 @@ pub fn World::despawn(
   self.content_size.remove(entity) |> ignore
   self.focus_policy.remove(entity) |> ignore
   self.interaction.remove(entity) |> ignore
+  self.ui_anti_alias.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
   self.anchor.remove(entity) |> ignore
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
+  self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
@@ -279,6 +290,7 @@ pub fn World::despawn(
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
+  self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
@@ -331,6 +343,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.ui_root.remove(entity) |> ignore
   self.ui_text.remove(entity) |> ignore
   self.z_index.remove(entity) |> ignore
+  self.outline.remove(entity) |> ignore
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
@@ -338,11 +351,13 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.content_size.remove(entity) |> ignore
   self.focus_policy.remove(entity) |> ignore
   self.interaction.remove(entity) |> ignore
+  self.ui_anti_alias.remove(entity) |> ignore
   self.ccd2d.remove(entity) |> ignore
   self.anchor.remove(entity) |> ignore
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
+  self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
@@ -368,6 +383,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
+  self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
@@ -454,6 +470,11 @@ pub impl @ui.Has_ZIndex for World with get_z_index_store(self) {
 }
 
 ///|
+pub impl @ui.Has_Outline for World with get_outline_store(self) {
+  self.outline
+}
+
+///|
 pub impl @ui.Has_UiImage for World with get_ui_image_store(self) {
   self.ui_image
 }
@@ -489,6 +510,11 @@ pub impl @ui.Has_Interaction for World with get_interaction_store(self) {
 }
 
 ///|
+pub impl @ui.Has_UiAntiAlias for World with get_ui_anti_alias_store(self) {
+  self.ui_anti_alias
+}
+
+///|
 pub impl @physics2d.Has_Ccd2d for World with get_ccd2d_store(self) {
   self.ccd2d
 }
@@ -511,6 +537,11 @@ pub impl @render2d.Has_Mesh2d for World with get_mesh2d_store(self) {
 ///|
 pub impl @render2d.Has_Sprite for World with get_sprite_store(self) {
   self.sprite
+}
+
+///|
+pub impl @ui.Has_BorderRadius for World with get_border_radius_store(self) {
+  self.border_radius
 }
 
 ///|
@@ -638,6 +669,13 @@ pub impl @ui.Has_AccessibilityLabel for World with get_accessibility_label_store
   self,
 ) {
   self.accessibility_label
+}
+
+///|
+pub impl @ui.Has_UiBoxShadowSamples for World with get_ui_box_shadow_samples_store(
+  self,
+) {
+  self.ui_box_shadow_samples
 }
 
 ///|
