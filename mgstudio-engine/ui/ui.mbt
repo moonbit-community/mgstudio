@@ -421,6 +421,11 @@ pub struct CalculatedClip {
 }
 
 ///|
+pub fn CalculatedClip::new(clip : @math.Rect) -> CalculatedClip {
+  CalculatedClip::{ clip, }
+}
+
+///|
 #ecs.component
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
@@ -3028,7 +3033,7 @@ pub fn[
 ///|
 /// Build an AccessKit `TreeUpdate` for the current UI tree.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
 ] ui_build_a11y_tree_update(
   world : W,
 ) -> @moon_accesskit.TreeUpdate {
@@ -3069,6 +3074,10 @@ pub fn[
   let ui_text_store = Has_UiText::get_ui_text_store(world)
   let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
   let children_store = @hierarchy.Has_Children::get_children_store(world)
+  let clip_store = Has_CalculatedClip::get_calculated_clip_store(world)
+  let view_visibility_store = @visibility.Has_ViewVisibility::get_view_visibility_store(
+    world,
+  )
 
   // Build the set of required nodes (focusables + their ancestor chain), so
   // every node's parent always exists in this update.
@@ -3178,15 +3187,11 @@ pub fn[
     entity : @core.Entity,
     children_store : @core.ComponentStore[@hierarchy.Children],
     ui_text_store : @core.ComponentStore[UiText],
-  ) -> String? {
+  ) -> String {
     let parts : Array[String] = []
     let out = Ref::new(parts)
     collect_subtree_text(entity, children_store, ui_text_store, out)
-    if out.val.length() == 0 {
-      None
-    } else {
-      Some(join_with_space(out.val))
-    }
+    join_with_space(out.val)
   }
 
   // Root node.
@@ -3252,6 +3257,13 @@ pub fn[
     let x1 = (ctx0.viewport_origin.x + rect.min.x + size.x).to_double()
     let y1 = (ctx0.viewport_origin.y + rect.min.y + size.y).to_double()
     node.set_bounds(@moon_accesskit.Rect::new(x0, y0, x1, y1))
+    if clip_store.contains(entity) {
+      node.set_clips_children()
+    }
+    match view_visibility_store.get(entity) {
+      Some(vv) => if !vv.is_visible() { node.set_hidden() }
+      None => ()
+    }
     if role == @moon_accesskit.Role::Button {
       node.add_action(@moon_accesskit.Action::Focus)
       node.add_action(@moon_accesskit.Action::Click)
@@ -3273,14 +3285,12 @@ pub fn[
       }
     } else if role == @moon_accesskit.Role::Label {
       let value = if explicit_label != "" {
-        Some(explicit_label)
+        explicit_label
       } else {
         calc_value_from_self(entity, children_store, ui_text_store)
       }
-      match value {
-        Some(s) => if s != "" { node.set_value(s) }
-        None => ()
-      }
+      // Bevy-aligned: keep a `Label` node's value even if it is empty.
+      node.set_value(value)
     } else if explicit_label != "" {
       node.set_label(explicit_label)
     }
@@ -3292,7 +3302,7 @@ pub fn[
 ///|
 /// Extract UI accessibility nodes and send them to the host bridge.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
 ] ui_a11y_update_system(
   world : W,
 ) -> Unit {
