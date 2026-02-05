@@ -92,7 +92,7 @@ typedef struct mgw_a11y_action {
 } mgw_a11y_action_t;
 
 static mgw_a11y_action_t *mgw_a11y_actions = NULL;
-static int32_t mgw_a11y_actions_len = 0;
+static int32_t mgw_a11y_actions_count = 0;
 static int32_t mgw_a11y_actions_cap = 0;
 static mgw_objc_id mgw_a11y_retained_tree = NULL;
 
@@ -237,7 +237,7 @@ static mgw_objc_id mgw_nsstring_utf8(const char *cstr) {
 }
 
 static void mgw_a11y_actions_push(int32_t target, int32_t kind) {
-  if (mgw_a11y_actions_len + 1 > mgw_a11y_actions_cap) {
+  if (mgw_a11y_actions_count + 1 > mgw_a11y_actions_cap) {
     int32_t next = mgw_a11y_actions_cap ? mgw_a11y_actions_cap * 2 : 64;
     mgw_a11y_action_t *next_buf =
         (mgw_a11y_action_t *)realloc(mgw_a11y_actions, (size_t)next * sizeof(mgw_a11y_action_t));
@@ -247,9 +247,9 @@ static void mgw_a11y_actions_push(int32_t target, int32_t kind) {
     mgw_a11y_actions = next_buf;
     mgw_a11y_actions_cap = next;
   }
-  mgw_a11y_actions[mgw_a11y_actions_len].target = target;
-  mgw_a11y_actions[mgw_a11y_actions_len].kind = kind;
-  mgw_a11y_actions_len += 1;
+  mgw_a11y_actions[mgw_a11y_actions_count].target = target;
+  mgw_a11y_actions[mgw_a11y_actions_count].kind = kind;
+  mgw_a11y_actions_count += 1;
 }
 
 static mgw_objc_id mgw_a11y_element_class(void);
@@ -1179,20 +1179,20 @@ MOONBIT_FFI_EXPORT void mgw_a11y_end_update(void *win) {
 #endif
 }
 
-MOONBIT_FFI_EXPORT int32_t mgw_a11y_actions_len(void) { return mgw_a11y_actions_len; }
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_actions_len(void) { return mgw_a11y_actions_count; }
 
 MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_target(int32_t index) {
-  if (index < 0 || index >= mgw_a11y_actions_len) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
     return 0;
   }
   return mgw_a11y_actions[index].target;
 }
 
 MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_kind(int32_t index) {
-  if (index < 0 || index >= mgw_a11y_actions_len) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
     return 0;
   }
   return mgw_a11y_actions[index].kind;
 }
 
-MOONBIT_FFI_EXPORT void mgw_a11y_actions_clear(void) { mgw_a11y_actions_len = 0; }
+MOONBIT_FFI_EXPORT void mgw_a11y_actions_clear(void) { mgw_a11y_actions_count = 0; }
