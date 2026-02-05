@@ -1264,6 +1264,13 @@ struct GpuState {
   ui_instance_data : Array[Double]
   ui_batches : Array[UiBatch]
   mut ui_instance_count : Int
+  mut ui_shadow_pipeline : @webgpu.GPURenderPipeline?
+  mut ui_shadow_instance_buffer : @webgpu.GPUBuffer?
+  mut ui_shadow_instance_capacity : Int
+  mut ui_shadow_globals_bind_group : @webgpu.GPUBindGroup?
+  ui_shadow_instance_data : Array[Double]
+  ui_shadow_batches : Array[UiBatch]
+  mut ui_shadow_instance_count : Int
   mut encoder : @webgpu.GPUCommandEncoder?
   mut current_texture : @webgpu.GPUTexture?
   mut current_pass : @webgpu.GPURenderPassEncoder?
@@ -1273,6 +1280,7 @@ struct GpuState {
   mut fallback_texture_id : Int
   mut sprite_shader_id : Int
   mut ui_shader_id : Int
+  mut ui_shadow_shader_id : Int
   mut mesh_shader_id : Int
   mut gizmo_shader_id : Int
 }
@@ -1372,6 +1380,13 @@ fn new_state(
       ui_instance_data: [],
       ui_batches: [],
       ui_instance_count: 0,
+      ui_shadow_pipeline: None,
+      ui_shadow_instance_buffer: None,
+      ui_shadow_instance_capacity: 0,
+      ui_shadow_globals_bind_group: None,
+      ui_shadow_instance_data: [],
+      ui_shadow_batches: [],
+      ui_shadow_instance_count: 0,
       encoder: None,
       current_texture: None,
       current_pass: None,
@@ -1381,6 +1396,7 @@ fn new_state(
       fallback_texture_id: 0,
       sprite_shader_id: 0,
       ui_shader_id: 0,
+      ui_shadow_shader_id: 0,
       mesh_shader_id: 0,
       gizmo_shader_id: 0,
     },
@@ -1728,6 +1744,13 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.ui_instance_data.clear()
   state.gpu.ui_batches.clear()
   state.gpu.ui_instance_count = 0
+  state.gpu.ui_shadow_pipeline = None
+  state.gpu.ui_shadow_instance_buffer = None
+  state.gpu.ui_shadow_instance_capacity = 0
+  state.gpu.ui_shadow_globals_bind_group = None
+  state.gpu.ui_shadow_instance_data.clear()
+  state.gpu.ui_shadow_batches.clear()
+  state.gpu.ui_shadow_instance_count = 0
   state.gpu.encoder = None
   state.gpu.current_texture = None
   state.gpu.current_pass = None
@@ -1737,18 +1760,22 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.fallback_texture_id = 0
   state.gpu.sprite_shader_id = 0
   state.gpu.ui_shader_id = 0
+  state.gpu.ui_shadow_shader_id = 0
   state.gpu.mesh_shader_id = 0
   state.gpu.gizmo_shader_id = 0
   let sprite_id = next_shader_id(state)
   let ui_id = next_shader_id(state)
+  let ui_shadow_id = next_shader_id(state)
   let mesh_id = next_shader_id(state)
   let gizmo_id = next_shader_id(state)
   state.gpu.sprite_shader_id = sprite_id
   state.gpu.ui_shader_id = ui_id
+  state.gpu.ui_shadow_shader_id = ui_shadow_id
   state.gpu.mesh_shader_id = mesh_id
   state.gpu.gizmo_shader_id = gizmo_id
   set_add(state.assets.loading_shaders, @js.any(sprite_id))
   set_add(state.assets.loading_shaders, @js.any(ui_id))
+  set_add(state.assets.loading_shaders, @js.any(ui_shadow_id))
   set_add(state.assets.loading_shaders, @js.any(mesh_id))
   set_add(state.assets.loading_shaders, @js.any(gizmo_id))
   map_set(
@@ -1763,6 +1790,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   map_set(
     state.assets.shader_paths,
+    @js.any(ui_shadow_id),
+    @js.any("shaders/mgstudio/ui/box_shadow.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
     @js.any(mesh_id),
     @js.any("shaders/mgstudio/2d/mesh.wgsl"),
   )
@@ -1773,6 +1805,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   load_wgsl_from_path(state, sprite_id, "shaders/mgstudio/2d/sprite.wgsl")
   |> ignore
+  load_wgsl_from_path(
+    state, ui_shadow_id, "shaders/mgstudio/ui/box_shadow.wgsl",
+  )
+  |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(ui_shadow_id)) |> ignore
   set_delete(state.assets.loading_shaders, @js.any(sprite_id)) |> ignore
   load_wgsl_from_path(state, ui_id, "shaders/mgstudio/ui/ui.wgsl") |> ignore
   set_delete(state.assets.loading_shaders, @js.any(ui_id)) |> ignore
@@ -2155,6 +2192,176 @@ fn ensure_ui_globals_bind_group(state : State) -> Unit {
       }
     })
     state.gpu.ui_globals_bind_group = Some(bind_group)
+  }
+}
+
+///|
+fn ensure_ui_shadow_pipeline_resources(state : State) -> Unit {
+  if state.gpu.ui_shadow_pipeline is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    if state.gpu.ui_shadow_shader_id <= 0 {
+      report_asset_error_once(
+        state, "ui_shadow_pipeline_missing_shader_id", "UI box shadow pipeline error: shader id not initialized",
+      )
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.ui_shadow_shader_id)
+    if shader_source is None {
+      let path_hint_any = map_get(
+        state.assets.shader_paths,
+        @js.any(state.gpu.ui_shadow_shader_id),
+      )
+      let suffix = if host_is_nullish(path_hint_any) {
+        ""
+      } else {
+        " (path: " + any_to_string(path_hint_any) + ")"
+      }
+      report_asset_error_once(
+        state,
+        "ui_shadow_pipeline_missing_shader_source",
+        "UI box shadow pipeline error: shader source not loaded" + suffix,
+      )
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @webgpu.render_pipeline_descriptor(
+      @webgpu.PipelineLayout::Auto,
+      vertex_state,
+      fragment_state,
+      primitive_state,
+    )
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_shadow_pipeline_validation_error",
+          "UI box shadow pipeline validation error: " + any_to_string(err_any),
+        )
+      }
+    })
+    let instance_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_storage(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    let instance_capacity = 65536
+    let instance_desc = @webgpu.buffer_descriptor(
+      instance_capacity, instance_usage,
+    )
+    let instance_buffer = device.create_buffer(instance_desc.to_js())
+    state.gpu.ui_shadow_pipeline = Some(pipeline)
+    state.gpu.ui_shadow_instance_buffer = Some(instance_buffer)
+    state.gpu.ui_shadow_instance_capacity = instance_capacity
+    state.gpu.ui_shadow_globals_bind_group = None
+    state.gpu.ui_shadow_instance_data.clear()
+    state.gpu.ui_shadow_batches.clear()
+    state.gpu.ui_shadow_instance_count = 0
+  }
+}
+
+///|
+fn ensure_ui_shadow_bind_group_for_texture(
+  state : State,
+  entry : @js.Any,
+) -> Unit {
+  if state.gpu.ui_shadow_pipeline is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if !host_is_nullish(entry._get("uiShadowBindGroup")) {
+    return
+  }
+  if host_is_nullish(entry._get("sampler")) ||
+    host_is_nullish(entry._get("view")) {
+    return
+  }
+  if state.gpu.device is Some(device) &&
+    state.gpu.ui_shadow_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(0)
+    let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
+    let view : @webgpu.GPUTextureView = entry._get("view").cast()
+    let entries = [
+      @webgpu.bind_group_entry_sampler(0, sampler),
+      @webgpu.bind_group_entry_texture(1, view),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    entry._set("uiShadowBindGroup", bind_group.as_any()) |> ignore
+  }
+}
+
+///|
+fn ensure_ui_shadow_globals_bind_group(state : State) -> Unit {
+  if state.gpu.ui_shadow_pipeline is None ||
+    state.gpu.sprite_uniform_buffer is None ||
+    state.gpu.ui_shadow_instance_buffer is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if state.gpu.ui_shadow_globals_bind_group is Some(_) {
+    return
+  }
+  if state.gpu.device is Some(device) &&
+    state.gpu.ui_shadow_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(1)
+    let uniform_buffer = state.gpu.sprite_uniform_buffer.unwrap()
+    let instance_buffer = state.gpu.ui_shadow_instance_buffer.unwrap()
+    let entries = [
+      @webgpu.bind_group_entry_buffer(0, uniform_buffer),
+      @webgpu.bind_group_entry_buffer(1, instance_buffer),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    device.push_error_scope("validation")
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    let bind_group_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = bind_group_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_shadow_globals_bind_group_validation_error",
+          "UI box shadow globals bind group validation error: " +
+          any_to_string(err_any),
+        )
+      }
+    })
+    state.gpu.ui_shadow_globals_bind_group = Some(bind_group)
   }
 }
 
@@ -2855,6 +3062,86 @@ fn flush_ui_batches(state : State) -> Unit {
 }
 
 ///|
+fn flush_ui_shadow_batches(state : State) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  if state.gpu.ui_shadow_instance_count <= 0 {
+    return
+  }
+  if state.gpu.device is None || state.gpu.queue is None {
+    return
+  }
+  ensure_ui_shadow_pipeline_resources(state)
+  if state.gpu.ui_shadow_pipeline is None ||
+    state.gpu.ui_shadow_instance_buffer is None ||
+    state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  report_debug_once(
+    state,
+    "flush_ui_shadow_batches",
+    "flush_ui_shadow_batches: instances=" +
+    state.gpu.ui_shadow_instance_count.to_string() +
+    " batches=" +
+    state.gpu.ui_shadow_batches.length().to_string(),
+  )
+  if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
+    let required_bytes = state.gpu.ui_shadow_instance_data.length() * 4
+    if required_bytes <= 0 {
+      return
+    }
+    if required_bytes > state.gpu.ui_shadow_instance_capacity {
+      let capacity = if required_bytes < 256 { 256 } else { required_bytes }
+      let usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_storage(),
+        @webgpu.buffer_usage_copy_dst(),
+      )
+      let desc = @webgpu.buffer_descriptor(capacity, usage)
+      let buffer = device.create_buffer(desc.to_js())
+      state.gpu.ui_shadow_instance_buffer = Some(buffer)
+      state.gpu.ui_shadow_instance_capacity = capacity
+      state.gpu.ui_shadow_globals_bind_group = None
+    }
+    ensure_ui_shadow_globals_bind_group(state)
+    if state.gpu.ui_shadow_instance_buffer is Some(instance_buffer) &&
+      state.gpu.ui_shadow_globals_bind_group is Some(globals_bind_group) &&
+      state.gpu.ui_shadow_pipeline is Some(pipeline) &&
+      state.gpu.current_pass is Some(pass) {
+      let instance_data = float32array_from_array(
+        state.gpu.ui_shadow_instance_data,
+      )
+      queue.write_buffer(instance_buffer, 0, instance_data)
+      pass.set_pipeline(pipeline)
+      pass.set_bind_group(1, globals_bind_group)
+      for batch in state.gpu.ui_shadow_batches {
+        let entry = get_texture_entry(state, batch.texture_id)
+        if entry is None {
+          continue
+        }
+        if entry is Some(entry_value) {
+          ensure_ui_shadow_bind_group_for_texture(state, entry_value)
+          let bind_group_any = entry_value._get("uiShadowBindGroup")
+          if host_is_nullish(bind_group_any) {
+            continue
+          }
+          pass.set_bind_group(0, bind_group_any.cast())
+          pass.draw(
+            state.gpu.vertex_count,
+            batch.instance_count,
+            0,
+            batch.first_instance,
+          )
+        }
+      }
+      state.gpu.ui_shadow_instance_data.clear()
+      state.gpu.ui_shadow_batches.clear()
+      state.gpu.ui_shadow_instance_count = 0
+    }
+  }
+}
+
+///|
 fn draw_sprite(
   state : State,
   texture_id : Int,
@@ -2926,6 +3213,7 @@ fn draw_sprite_uv(
   if !ensure_pass_ready(state) {
     return
   }
+  flush_ui_shadow_batches(state)
   flush_ui_batches(state)
   let entry = get_texture_entry(state, texture_id)
   if entry is None {
@@ -3042,35 +3330,20 @@ fn draw_ui_rect(
     return
   }
   flush_sprite_batches(state)
+  flush_ui_shadow_batches(state)
   ensure_ui_pipeline_resources(state)
   let entry = get_texture_entry(state, texture_id)
   if entry is None {
     return
   }
   if entry is Some(entry_value) {
-    let tex_width : Double = entry_value._get("width").cast()
-    let tex_height : Double = entry_value._get("height").cast()
     let raw_uv_scale_x = uv_max_x - uv_min_x
     let raw_uv_scale_y = uv_max_y - uv_min_y
     let uv_scale_x = if raw_uv_scale_x == 0 { 1.0 } else { raw_uv_scale_x }
     let uv_scale_y = if raw_uv_scale_y == 0 { 1.0 } else { raw_uv_scale_y }
-    let uv_scale_abs_x = if uv_scale_x < 0 { -uv_scale_x } else { uv_scale_x }
-    let uv_scale_abs_y = if uv_scale_y < 0 { -uv_scale_y } else { uv_scale_y }
-    let region_width = tex_width * uv_scale_abs_x
-    let region_height = tex_height * uv_scale_abs_y
     let base_size = 128.0
-    let tex_scale_x = if region_width > 0 {
-      region_width / base_size
-    } else {
-      1
-    }
-    let tex_scale_y = if region_height > 0 {
-      region_height / base_size
-    } else {
-      1
-    }
-    let ui_scale_x = scale_x * tex_scale_x
-    let ui_scale_y = scale_y * tex_scale_y
+    let ui_scale_x = scale_x / base_size
+    let ui_scale_y = scale_y / base_size
     let cos_value : Double = math_cos(rotation)
     let sin_value : Double = math_sin(rotation)
     let actual_texture_id : Int = entry_value._get("id").cast()
@@ -3124,6 +3397,109 @@ fn draw_ui_rect(
 }
 
 ///|
+fn draw_ui_box_shadow(
+  state : State,
+  texture_id : Int,
+  x : Double,
+  y : Double,
+  rotation : Double,
+  scale_x : Double,
+  scale_y : Double,
+  r : Double,
+  g : Double,
+  b : Double,
+  a : Double,
+  size_x : Double,
+  size_y : Double,
+  radius_tl : Double,
+  radius_tr : Double,
+  radius_br : Double,
+  radius_bl : Double,
+  blur : Double,
+  samples : Double,
+) -> Unit {
+  report_debug_once(
+    state,
+    "draw_ui_box_shadow_called",
+    "draw_ui_box_shadow called: tex_id=" +
+    texture_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ") size=(" +
+    size_x.to_string() +
+    "," +
+    size_y.to_string() +
+    ") blur=" +
+    blur.to_string() +
+    " samples=" +
+    samples.to_string(),
+  )
+  if !ensure_pass_ready(state) {
+    return
+  }
+  flush_ui_batches(state)
+  flush_sprite_batches(state)
+  ensure_ui_shadow_pipeline_resources(state)
+  let entry = get_texture_entry(state, texture_id)
+  if entry is None {
+    return
+  }
+  if entry is Some(entry_value) {
+    let base_size = 128.0
+    let shadow_scale_x = scale_x / base_size
+    let shadow_scale_y = scale_y / base_size
+    let cos_value : Double = math_cos(rotation)
+    let sin_value : Double = math_sin(rotation)
+    let actual_texture_id : Int = entry_value._get("id").cast()
+    let first_instance = state.gpu.ui_shadow_instance_count
+    state.gpu.ui_shadow_instance_count = first_instance + 1
+
+    // Instance layout:
+    // model, scale(bounds/128), color, size(x,y,blur,samples), radius(tl,tr,br,bl)
+    state.gpu.ui_shadow_instance_data.push(x)
+    state.gpu.ui_shadow_instance_data.push(y)
+    state.gpu.ui_shadow_instance_data.push(cos_value)
+    state.gpu.ui_shadow_instance_data.push(sin_value)
+    state.gpu.ui_shadow_instance_data.push(shadow_scale_x)
+    state.gpu.ui_shadow_instance_data.push(shadow_scale_y)
+    state.gpu.ui_shadow_instance_data.push(0.0)
+    state.gpu.ui_shadow_instance_data.push(0.0)
+    state.gpu.ui_shadow_instance_data.push(r)
+    state.gpu.ui_shadow_instance_data.push(g)
+    state.gpu.ui_shadow_instance_data.push(b)
+    state.gpu.ui_shadow_instance_data.push(a)
+    state.gpu.ui_shadow_instance_data.push(size_x)
+    state.gpu.ui_shadow_instance_data.push(size_y)
+    state.gpu.ui_shadow_instance_data.push(blur)
+    state.gpu.ui_shadow_instance_data.push(samples)
+    state.gpu.ui_shadow_instance_data.push(radius_tl)
+    state.gpu.ui_shadow_instance_data.push(radius_tr)
+    state.gpu.ui_shadow_instance_data.push(radius_br)
+    state.gpu.ui_shadow_instance_data.push(radius_bl)
+    let batch_count = state.gpu.ui_shadow_batches.length()
+    if batch_count > 0 &&
+      state.gpu.ui_shadow_batches[batch_count - 1].texture_id ==
+      actual_texture_id {
+      state.gpu.ui_shadow_batches[batch_count - 1].instance_count = state.gpu.ui_shadow_batches[batch_count -
+        1].instance_count +
+        1
+    } else {
+      state.gpu.ui_shadow_batches.push(UiBatch::{
+        texture_id: actual_texture_id,
+        first_instance,
+        instance_count: 1,
+      })
+    }
+  }
+}
+
+///|
 fn draw_mesh(
   state : State,
   mesh_id : Int,
@@ -3163,6 +3539,7 @@ fn draw_mesh(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
+  flush_ui_shadow_batches(state)
   flush_ui_batches(state)
   flush_sprite_batches(state)
   ensure_mesh_pipeline(state)
@@ -4443,6 +4820,7 @@ pub fn create_host(
       if state.gpu.current_pass is None {
         return
       }
+      flush_ui_shadow_batches(state)
       flush_ui_batches(state)
       flush_sprite_batches(state)
       if state.gpu.current_pass is Some(pass) {
@@ -4459,6 +4837,7 @@ pub fn create_host(
     if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
       return
     }
+    flush_ui_shadow_batches(state)
     flush_ui_batches(state)
     flush_sprite_batches(state)
     if state.gpu.current_pass is Some(pass) &&
@@ -4539,6 +4918,31 @@ pub fn create_host(
       )
     }),
   )
+  let gpu_draw_ui_box_shadow = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_ui_box_shadow(
+        state,
+        to_int(arg_number(args, 0, 0)),
+        arg_number(args, 1, 0),
+        arg_number(args, 2, 0),
+        arg_number(args, 3, 0),
+        arg_number(args, 4, 1),
+        arg_number(args, 5, 1),
+        arg_number(args, 6, 1),
+        arg_number(args, 7, 1),
+        arg_number(args, 8, 1),
+        arg_number(args, 9, 1),
+        arg_number(args, 10, 0),
+        arg_number(args, 11, 0),
+        arg_number(args, 12, 0),
+        arg_number(args, 13, 0),
+        arg_number(args, 14, 0),
+        arg_number(args, 15, 0),
+        arg_number(args, 16, 0),
+        arg_number(args, 17, 4),
+      )
+    }),
+  )
   let gpu_draw_mesh = wrap_variadic(
     @js.from_fn1(fn(args) {
       draw_mesh(
@@ -4581,6 +4985,7 @@ pub fn create_host(
   )
   let gpu_end_pass = @js.from_fn0(fn() {
     if state.gpu.current_pass is Some(_) {
+      flush_ui_shadow_batches(state)
       flush_ui_batches(state)
       flush_sprite_batches(state)
       draw_gizmo_lines(state, state.gpu.gizmo_lines)
@@ -4599,6 +5004,7 @@ pub fn create_host(
       return
     }
     if state.gpu.current_pass is Some(pass) {
+      flush_ui_shadow_batches(state)
       flush_ui_batches(state)
       flush_sprite_batches(state)
       pass.end()
@@ -4723,6 +5129,7 @@ pub fn create_host(
     ("gpu_draw_sprite", gpu_draw_sprite),
     ("gpu_draw_sprite_uv", gpu_draw_sprite_uv),
     ("gpu_draw_ui_rect", gpu_draw_ui_rect),
+    ("gpu_draw_ui_box_shadow", gpu_draw_ui_box_shadow),
     ("gpu_draw_mesh", gpu_draw_mesh),
     ("gpu_draw_gizmo_line", gpu_draw_gizmo_line),
     ("gpu_end_pass", gpu_end_pass),

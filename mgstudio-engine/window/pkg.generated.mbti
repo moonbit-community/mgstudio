@@ -35,6 +35,8 @@ pub fn host_gpu_draw_sprite(Int, Float, Float, Float, Float, Float, Float, Float
 
 pub fn host_gpu_draw_sprite_uv(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 
+pub fn host_gpu_draw_ui_box_shadow(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit
+
 pub fn host_gpu_draw_ui_rect(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 
 pub fn host_gpu_end_frame(HostGpuFrame) -> Unit

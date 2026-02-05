@@ -33,6 +33,7 @@ pub struct World {
   outline : @core.ComponentStore[@ui.Outline]
   ui_image : @core.ComponentStore[@ui.UiImage]
   ui_layout : @core.ComponentStore[@ui.UiLayout]
+  box_shadow : @core.ComponentStore[@ui.BoxShadow]
   transform : @core.ComponentStore[@math.Transform]
   border_color : @core.ComponentStore[@ui.BorderColor]
   content_size : @core.ComponentStore[@ui.ContentSize]
@@ -203,6 +204,7 @@ pub impl @ui.Has_AccessibilityLabel for World
 pub impl @ui.Has_BackgroundColor for World
 pub impl @ui.Has_BorderColor for World
 pub impl @ui.Has_BorderRadius for World
+pub impl @ui.Has_BoxShadow for World
 pub impl @ui.Has_Button for World
 pub impl @ui.Has_ButtonColors for World
 pub impl @ui.Has_CalculatedClip for World

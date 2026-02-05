@@ -792,6 +792,28 @@ priv struct UiRectInstance {
 }
 
 ///|
+priv struct UiBoxShadowInstance {
+  entity : @core.Entity
+  transform : @math.Transform
+  anchor_offset : @math.Vec2
+  // Full geometry bounds (shadow size + 6*blur), in world units.
+  draw_scale : @math.Vec2
+  color : Color
+  // Dummy texture binding (pipeline shares sprite/ui bind group layout).
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  // Inner shadow size (node size + spread), in world units.
+  size : @math.Vec2
+  // Corner radii: top-left, top-right, bottom-right, bottom-left (world units).
+  radius : UiCornerRadii
+  // Blur radius (world units).
+  blur : Float
+  // Shadow samples (host shader integration steps).
+  samples : Int
+  scissor : @math.Rect?
+}
+
+///|
 priv struct CameraInstance {
   entity : @core.Entity
   camera : Camera
@@ -835,6 +857,7 @@ struct RenderState {
   sprites : Array[SpriteInstance]
   extra_sprites : Array[SpriteInstance]
   extra_ui_rects : Array[UiRectInstance]
+  extra_ui_box_shadows : Array[UiBoxShadowInstance]
   cameras : Array[CameraInstance]
   meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
@@ -848,6 +871,7 @@ fn RenderState::new() -> RenderState {
     sprites: [],
     extra_sprites: [],
     extra_ui_rects: [],
+    extra_ui_box_shadows: [],
     cameras: [],
     meshes: [],
     render_targets: [],
@@ -1230,6 +1254,14 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui
 }
 
 ///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_box_shadows(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_box_shadows.clear() })
+  |> ignore
+}
+
+///|
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(
   world : W,
   entity : @core.Entity,
@@ -1260,6 +1292,40 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_
       flags,
       radius,
       border,
+    })
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shadow_scissor(
+  world : W,
+  entity : @core.Entity,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+  size : @math.Vec2,
+  radius : UiCornerRadii,
+  blur : Float,
+  samples : Int,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_box_shadows.push(UiBoxShadowInstance::{
+      entity,
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale,
+      color,
+      texture,
+      layers,
+      size,
+      radius,
+      blur,
+      samples,
+      scissor,
     })
   })
   |> ignore
@@ -1600,6 +1666,7 @@ priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
   UiRectExtra(Int)
+  UiBoxShadowExtra(Int)
   Mesh(Int)
 }
 
@@ -1624,6 +1691,7 @@ fn draw_items_for_layers(
   sprites : Array[SpriteInstance],
   extra_sprites : Array[SpriteInstance],
   extra_ui_rects : Array[UiRectInstance],
+  extra_ui_box_shadows : Array[UiBoxShadowInstance],
   meshes : Array[MeshInstance],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -1678,6 +1746,23 @@ fn draw_items_for_layers(
       entity_id: rect.entity.id,
       entity_generation: rect.entity.generation,
       tie: 2_000_000 + i,
+    })
+  }
+  for i in 0..<extra_ui_box_shadows.length() {
+    let shadow = extra_ui_box_shadows[i]
+    if !shadow.layers.matches(layers) {
+      continue
+    }
+    let phase = if shadow.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: UiBoxShadowExtra(i),
+      z: shadow.transform.translation.z,
+      phase,
+      pipeline: 2,
+      batch: shadow.texture.id(),
+      entity_id: shadow.entity.id,
+      entity_generation: shadow.entity.generation,
+      tie: 2_500_000 + i,
     })
   }
   for i in 0..<meshes.length() {
@@ -1753,6 +1838,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   ]
   let extra : Array[SpriteInstance] = []
   let extra_ui : Array[UiRectInstance] = []
+  let extra_shadow : Array[UiBoxShadowInstance] = []
   let meshes : Array[MeshInstance] = [
     MeshInstance::{
       entity: @core.Entity::new(1, 0),
@@ -1767,7 +1853,9 @@ test "render2d: unified draw items order sprites and meshes by z" {
       layers,
     },
   ]
-  let items = draw_items_for_layers(sprites, extra, extra_ui, meshes, layers)
+  let items = draw_items_for_layers(
+    sprites, extra, extra_ui, extra_shadow, meshes, layers,
+  )
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
@@ -1789,11 +1877,13 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     gizmos_clear()
     rs.val.extra_sprites.clear()
     rs.val.extra_ui_rects.clear()
+    rs.val.extra_ui_box_shadows.clear()
     return
   }
   let sprites = rs.val.sprites
   let extra_sprites = rs.val.extra_sprites
   let extra_ui_rects = rs.val.extra_ui_rects
+  let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
   let meshes = rs.val.meshes
   fn int_from_f32_floor_nonneg(x : Float) -> Int {
     if x <= 0.0F {
@@ -1957,6 +2047,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       sprites,
       extra_sprites,
       extra_ui_rects,
+      extra_ui_box_shadows,
       meshes,
       camera.layers,
     )
@@ -2095,6 +2186,35 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             rect.border.bottom,
           )
         }
+        UiBoxShadowExtra(i) => {
+          let shadow = extra_ui_box_shadows[i]
+          apply_scissor(shadow.scissor)
+          let transform = shadow.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + shadow.anchor_offset.x,
+            transform.translation.y + shadow.anchor_offset.y,
+          )
+          @window.host_gpu_draw_ui_box_shadow(
+            shadow.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            shadow.draw_scale.x,
+            shadow.draw_scale.y,
+            shadow.color.r,
+            shadow.color.g,
+            shadow.color.b,
+            shadow.color.a,
+            shadow.size.x,
+            shadow.size.y,
+            shadow.radius.top_left,
+            shadow.radius.top_right,
+            shadow.radius.bottom_right,
+            shadow.radius.bottom_left,
+            shadow.blur,
+            shadow.samples,
+          )
+        }
       }
     }
     gizmos_draw_lines(camera.layers)
@@ -2103,6 +2223,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   gizmos_clear()
   rs.val.extra_sprites.clear()
   rs.val.extra_ui_rects.clear()
+  rs.val.extra_ui_box_shadows.clear()
 }
 
 ///|

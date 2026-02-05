@@ -513,6 +513,39 @@ pub fn Outline::default() -> Outline {
 
 ///|
 #ecs.component
+pub struct BoxShadow {
+  color : @render2d.Color
+  x_offset : Val
+  y_offset : Val
+  spread_radius : Val
+  blur_radius : Val
+}
+
+///|
+pub fn BoxShadow::new(
+  color : @render2d.Color,
+  x_offset : Val,
+  y_offset : Val,
+  spread_radius : Val,
+  blur_radius : Val,
+) -> BoxShadow {
+  BoxShadow::{ color, x_offset, y_offset, spread_radius, blur_radius }
+}
+
+///|
+pub fn BoxShadow::default() -> BoxShadow {
+  // Match Bevy defaults (v0.15.3).
+  BoxShadow::{
+    color: @render2d.Color::black(),
+    x_offset: Val::Percent(20.0F),
+    y_offset: Val::Percent(20.0F),
+    spread_radius: Val::Px(0.0F),
+    blur_radius: Val::Percent(10.0F),
+  }
+}
+
+///|
+#ecs.component
 pub struct UiBoxShadowSamples {
   samples : Int
 }
@@ -929,6 +962,9 @@ const UI_STACK_Z_STEP : Float = 10.0F
 
 ///|
 const UI_STACK_Z_BACKGROUND : Float = 0.0F
+
+///|
+const UI_STACK_Z_SHADOW : Float = -1.0F
 
 ///|
 const UI_STACK_Z_CONTENT : Float = 1.0F
@@ -2645,7 +2681,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_render_extract_system(
   world : W,
 ) -> Unit {
@@ -2654,6 +2690,7 @@ pub fn[
   let stack_res = HasRes_UiStack::get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
   @render2d.render2d_clear_overlay_ui_rects(world)
+  @render2d.render2d_clear_overlay_ui_box_shadows(world)
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let node_store = Has_Node::get_node_store(world)
   let bg_store = Has_BackgroundColor::get_background_color_store(world)
@@ -2661,6 +2698,10 @@ pub fn[
   let button_store = Has_ButtonColors::get_button_colors_store(world)
   let interaction_store = Has_Interaction::get_interaction_store(world)
   let outline_store = Has_Outline::get_outline_store(world)
+  let shadow_store = Has_BoxShadow::get_box_shadow_store(world)
+  let shadow_samples_store = Has_UiBoxShadowSamples::get_ui_box_shadow_samples_store(
+    world,
+  )
   let border_color_store = Has_BorderColor::get_border_color_store(world)
   let radius_store = Has_BorderRadius::get_border_radius_store(world)
   let aa_store = Has_UiAntiAlias::get_ui_anti_alias_store(world)
@@ -2774,6 +2815,14 @@ pub fn[
     )
   }
 
+  let shadow_samples = match ctx0.camera_entity {
+    Some(cam) =>
+      match shadow_samples_store.get(cam) {
+        Some(v) => v.samples
+        None => UiBoxShadowSamples::default().samples
+      }
+    None => UiBoxShadowSamples::default().samples
+  }
   let uv_min = @math.Vec2::new(0.0F, 0.0F)
   let uv_max = @math.Vec2::new(1.0F, 1.0F)
   for i in 0..<stack0.uinodes.length() {
@@ -2843,6 +2892,118 @@ pub fn[
       flags = flags | UI_DRAW_FLAG_ANTIALIAS
     }
     let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
+
+    // BoxShadow (behind background/content/border/text).
+    match shadow_store.get(entity) {
+      Some(shadow) =>
+        if shadow.color.a > 0.0F {
+          let spread_x = resolve_axis(
+            shadow.spread_radius,
+            size.x,
+            ctx0.viewport_size,
+          )
+          let spread_ratio = (spread_x + size.x) / size.x
+          let spread_y = size.y * spread_ratio - size.y
+          let shadow_size = @math.Vec2::new(
+            size.x + spread_x,
+            size.y + spread_y,
+          )
+          if shadow_size.x > 0.0F && shadow_size.y > 0.0F {
+            let blur = clamp_nonneg(
+              resolve_axis(shadow.blur_radius, size.x, ctx0.viewport_size),
+            )
+            let bounds = @math.Vec2::new(
+              shadow_size.x + 6.0F * blur,
+              shadow_size.y + 6.0F * blur,
+            )
+            if bounds.x > 0.0F && bounds.y > 0.0F {
+              let offset_x = resolve_axis(
+                shadow.x_offset,
+                size.x,
+                ctx0.viewport_size,
+              )
+              let offset_y = resolve_axis(
+                shadow.y_offset,
+                size.y,
+                ctx0.viewport_size,
+              )
+              // UI uses +Y down; world uses +Y up.
+              let offset_local = @math.Vec2::new(
+                offset_x * scale_x,
+                -offset_y * scale_y,
+              )
+              let offset_world = rotate_vec2(offset_local, t0.rotation_z())
+              let t_shadow = @math.Transform::from_xy_rotation_scale(
+                @math.Vec2::new(
+                  t0.translation.x + offset_world.x,
+                  t0.translation.y + offset_world.y,
+                ),
+                t0.rotation_z(),
+                @math.Vec2::new(t0.scale.x, t0.scale.y),
+                z=z_base + UI_STACK_Z_SHADOW,
+              )
+              let radius_shadow = match radius_store.get(entity) {
+                Some(r) => {
+                  let tl = resolve_radius_single(
+                      r.top_left,
+                      size,
+                      ctx0.viewport_size,
+                    ) *
+                    spread_ratio *
+                    scale_min
+                  let tr = resolve_radius_single(
+                      r.top_right,
+                      size,
+                      ctx0.viewport_size,
+                    ) *
+                    spread_ratio *
+                    scale_min
+                  let br = resolve_radius_single(
+                      r.bottom_right,
+                      size,
+                      ctx0.viewport_size,
+                    ) *
+                    spread_ratio *
+                    scale_min
+                  let bl = resolve_radius_single(
+                      r.bottom_left,
+                      size,
+                      ctx0.viewport_size,
+                    ) *
+                    spread_ratio *
+                    scale_min
+                  @render2d.UiCornerRadii::new(tl, tr, br, bl)
+                }
+                None => @render2d.UiCornerRadii::zero()
+              }
+              let draw_scale_shadow = @math.Vec2::new(
+                scale_x * bounds.x,
+                scale_y * bounds.y,
+              )
+              let size_shadow_world = @math.Vec2::new(
+                scale_x * shadow_size.x,
+                scale_y * shadow_size.y,
+              )
+              @render2d.render2d_push_ui_box_shadow_scissor(
+                world,
+                entity,
+                ctx0.white_texture,
+                t_shadow,
+                draw_scale_shadow,
+                shadow.color,
+                layers,
+                scissor,
+                size_shadow_world,
+                radius_shadow,
+                blur * scale_min,
+                shadow_samples,
+              )
+            }
+          }
+        }
+      None => ()
+    }
+
     // Background color.
     let bg_color_opt = match button_store.get(entity) {
       Some(colors) =>
@@ -3032,7 +3193,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

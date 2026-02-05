@@ -288,6 +288,37 @@ pub fn host_gpu_draw_ui_rect(
 ) -> Unit = "mgstudio_host" "gpu_draw_ui_rect"
 
 ///|
+/// Draw a UI box shadow using a dedicated pipeline adapted from Bevy's `box_shadow.wgsl`.
+///
+/// Parameters:
+/// - `x/y/rotation`: world-space transform for the shadow quad (centered).
+/// - `scale_x/scale_y`: quad bounds (shadow size + 6*blur) in world units.
+/// - `size_x/size_y`: inner shadow size (node size + spread) in world units.
+/// - `radius_*`: corner radii (top-left, top-right, bottom-right, bottom-left) in world units.
+/// - `blur`: blur radius in world units.
+/// - `samples`: integration steps for the gaussian approximation (>= 1 recommended).
+pub fn host_gpu_draw_ui_box_shadow(
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  size_x : Float,
+  size_y : Float,
+  radius_tl : Float,
+  radius_tr : Float,
+  radius_br : Float,
+  radius_bl : Float,
+  blur : Float,
+  samples : Int,
+) -> Unit = "mgstudio_host" "gpu_draw_ui_box_shadow"
+
+///|
 pub fn host_gpu_draw_mesh(
   mesh_id : Int,
   x : Float,

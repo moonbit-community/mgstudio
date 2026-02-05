@@ -2129,6 +2129,73 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_draw_ui_box_shadow",
+    fn(args) {
+      try {
+        host_trace("host: gpu_draw_ui_box_shadow")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 18 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) &&
+          args[10] is @types.Value::F32(size_x) &&
+          args[11] is @types.Value::F32(size_y) &&
+          args[12] is @types.Value::F32(radius_tl) &&
+          args[13] is @types.Value::F32(radius_tr) &&
+          args[14] is @types.Value::F32(radius_br) &&
+          args[15] is @types.Value::F32(radius_bl) &&
+          args[16] is @types.Value::F32(blur) &&
+          args[17] is @types.Value::I32(samples) {
+          ctx.gpu
+          .unwrap()
+          .draw_ui_box_shadow(
+            texture_id, x, y, rot, sx, sy, r, g, b, a, size_x, size_y, radius_tl,
+            radius_tr, radius_br, radius_bl, blur, samples,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_ui_box_shadow failed")
+          host_fail("gpu_draw_ui_box_shadow", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_draw_gizmo_line",
     fn(_args) { ok_i32(0) },
     func_type=ft(

@@ -123,6 +123,17 @@ pub struct GpuBackend {
   ui_batches : Array[UiBatch]
   mut ui_instance_count : UInt
 
+  // UI box shadow pipeline (Bevy-aligned).
+  mut ui_shadow_pipeline : @wgpu.RenderPipeline?
+  mut ui_shadow_pipeline_surface : @wgpu.RenderPipeline?
+  mut ui_shadow_pipeline_surface_format : @wgpu.TextureFormat?
+  mut ui_shadow_instance_buf : @wgpu.Buffer?
+  mut ui_shadow_instance_capacity : UInt64
+  mut ui_shadow_globals_bg : @wgpu.BindGroup?
+  ui_shadow_instance_data : Array[Float]
+  ui_shadow_batches : Array[UiBatch]
+  mut ui_shadow_instance_count : UInt
+
   // Mesh pipeline (solid-color).
   mut mesh_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu.PipelineLayout?
@@ -174,6 +185,15 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     ui_instance_data: [],
     ui_batches: [],
     ui_instance_count: 0U,
+    ui_shadow_pipeline: None,
+    ui_shadow_pipeline_surface: None,
+    ui_shadow_pipeline_surface_format: None,
+    ui_shadow_instance_buf: None,
+    ui_shadow_instance_capacity: 0UL,
+    ui_shadow_globals_bg: None,
+    ui_shadow_instance_data: [],
+    ui_shadow_batches: [],
+    ui_shadow_instance_count: 0U,
     mesh_bgl_uniform: None,
     mesh_pipeline_layout: None,
     mesh_pipeline: None,
@@ -595,6 +615,140 @@ fn ensure_ui_globals_bind_group(
 }
 
 ///|
+fn ensure_ui_shadow_resources(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_sprite_resources(backend)
+  if backend.ui_shadow_instance_buf is Some(_) {
+    return
+  }
+  let instance_usage = bu(
+    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+  )
+  let instance_cap = 65536UL
+  let instance_buf = backend.device.create_buffer(
+    size=instance_cap,
+    usage=instance_usage,
+  )
+  backend.ui_shadow_instance_buf = Some(instance_buf)
+  backend.ui_shadow_instance_capacity = instance_cap
+  backend.ui_shadow_globals_bg = None
+  backend.ui_shadow_instance_data.clear()
+  backend.ui_shadow_batches.clear()
+  backend.ui_shadow_instance_count = 0U
+}
+
+///|
+fn ensure_ui_shadow_pipeline_rgba8(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_ui_shadow_resources(backend)
+  if backend.ui_shadow_pipeline is Some(_) {
+    return
+  }
+  guard backend.sprite_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/ui/box_shadow.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_ui_box_shadow_rgba8")
+  backend.ui_shadow_pipeline = Some(pipeline)
+  sm.release()
+}
+
+///|
+fn ensure_ui_shadow_pipeline_surface(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_ui_shadow_resources(backend)
+  guard backend.surface_format is Some(format) else { return }
+  if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
+    return
+  }
+  if backend.ui_shadow_pipeline_surface_format is Some(prev) &&
+    prev == format &&
+    backend.ui_shadow_pipeline_surface is Some(_) {
+    return
+  }
+  if backend.ui_shadow_pipeline_surface is Some(old) {
+    old.release()
+  }
+  guard backend.sprite_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/ui/box_shadow.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
+    format.to_u32(),
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_ui_box_shadow_surface")
+  backend.ui_shadow_pipeline_surface = Some(pipeline)
+  backend.ui_shadow_pipeline_surface_format = Some(format)
+  sm.release()
+}
+
+///|
+fn ui_shadow_pipeline_for_current_pass(
+  backend : GpuBackend,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let target_is_surface = match backend.pass_state {
+    Some(ps) => ps.target_id == -1
+    None => false
+  }
+  if target_is_surface {
+    match backend.surface_format {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+        ensure_ui_shadow_pipeline_surface(backend)
+        backend.ui_shadow_pipeline_surface
+      }
+      _ => {
+        ensure_ui_shadow_pipeline_rgba8(backend)
+        backend.ui_shadow_pipeline
+      }
+    }
+  } else {
+    ensure_ui_shadow_pipeline_rgba8(backend)
+    backend.ui_shadow_pipeline
+  }
+}
+
+///|
+fn ensure_ui_shadow_globals_bind_group(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  if backend.ui_shadow_globals_bg is Some(_) {
+    return
+  }
+  guard backend.sprite_bgl_globals is Some(layout) else { return }
+  guard backend.sprite_globals_buf is Some(globals_buf) else { return }
+  guard backend.ui_shadow_instance_buf is Some(instance_buf) else { return }
+  let b = @wgpu.BindGroupBuilder::new(max_entries=2UL)
+  let ok0 = b.add_buffer(0U, globals_buf)
+  let ok1 = b.add_buffer(1U, instance_buf)
+  if !ok0 || !ok1 {
+    b.free()
+    fatal("wgpu: failed to build ui box shadow globals bind group")
+  }
+  let bg = b.finish(
+    backend.device,
+    layout,
+    label="mgstudio_ui_box_shadow_globals",
+  )
+  backend.ui_shadow_globals_bg = Some(bg)
+}
+
+///|
 fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit raise GpuBackendError {
   if backend.mesh_pipeline_layout is None {
     let bgl = backend.device.create_bind_group_layout_uniform_buffer()
@@ -738,6 +892,7 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
 pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
+    flush_ui_shadow_batches(self)
     flush_ui_batches(self)
     flush_sprite_batches(self)
     pass.end()
@@ -1143,6 +1298,7 @@ pub fn GpuBackend::set_scissor(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
+  flush_ui_shadow_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
   let sx = if x < 0 { 0U } else { x.reinterpret_as_uint() }
@@ -1159,6 +1315,7 @@ pub fn GpuBackend::clear_scissor(
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(pass_state) else { return }
+  flush_ui_shadow_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
   pass.set_scissor_rect(
@@ -1173,6 +1330,7 @@ pub fn GpuBackend::clear_scissor(
 pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
+    flush_ui_shadow_batches(self)
     flush_ui_batches(self)
     flush_sprite_batches(self)
     pass.end()
@@ -1180,6 +1338,52 @@ pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
     frame.pass = None
   }
   self.pass_state = None
+}
+
+///|
+fn flush_ui_shadow_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
+  guard backend.frame is Some(frame) else { return }
+  guard frame.pass is Some(pass) else { return }
+  if backend.ui_shadow_instance_count == 0U {
+    return
+  }
+  guard ui_shadow_pipeline_for_current_pass(backend) is Some(pipeline) else {
+    return
+  }
+  let float_count = backend.ui_shadow_instance_data.length()
+  if float_count <= 0 {
+    backend.ui_shadow_instance_data.clear()
+    backend.ui_shadow_batches.clear()
+    backend.ui_shadow_instance_count = 0U
+    return
+  }
+  let required_bytes = (float_count * 4).to_uint64()
+  if required_bytes > backend.ui_shadow_instance_capacity {
+    let new_cap = if required_bytes < 256UL { 256UL } else { required_bytes }
+    let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
+    let new_buf = backend.device.create_buffer(size=new_cap, usage~)
+    if backend.ui_shadow_instance_buf is Some(old) {
+      old.release()
+    }
+    backend.ui_shadow_instance_buf = Some(new_buf)
+    backend.ui_shadow_instance_capacity = new_cap
+    backend.ui_shadow_globals_bg = None
+  }
+  ensure_ui_shadow_globals_bind_group(backend)
+  guard backend.ui_shadow_instance_buf is Some(instance_buf) else { return }
+  guard backend.ui_shadow_globals_bg is Some(globals_bg) else { return }
+  let bytes = f32le_pack(backend.ui_shadow_instance_data)
+  backend.queue.write_buffer(instance_buf, 0UL, bytes)
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(1U, globals_bg, [])
+  for batch in backend.ui_shadow_batches {
+    let tex = ensure_fallback_texture(backend, batch.texture_id)
+    pass.set_bind_group(0U, tex.bind_group, [])
+    pass.draw(6U, batch.instance_count, 0U, batch.first_instance)
+  }
+  backend.ui_shadow_instance_data.clear()
+  backend.ui_shadow_batches.clear()
+  backend.ui_shadow_instance_count = 0U
 }
 
 ///|
@@ -1294,6 +1498,7 @@ pub fn GpuBackend::draw_sprite_uv(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(_) else { return }
   guard self.pass_state is Some(_) else { return }
+  flush_ui_shadow_batches(self)
   flush_ui_batches(self)
   ensure_sprite_resources(self)
   let tex = ensure_fallback_texture(self, texture_id)
@@ -1378,24 +1583,21 @@ pub fn GpuBackend::draw_ui_rect(
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(_) else { return }
   guard self.pass_state is Some(_) else { return }
+  flush_ui_shadow_batches(self)
   flush_sprite_batches(self)
   ensure_ui_resources(self)
   let tex = ensure_fallback_texture(self, texture_id)
 
-  // Match sprite sizing convention (base quad is 128x128).
+  // UI sizing convention:
+  // - Engine passes `scale_x/scale_y` in logical pixels (final rect size).
+  // - Vertex shader uses a 128x128 base quad, so convert pixels -> quad scale.
   let raw_uv_scale_x = uv_max_x - uv_min_x
   let raw_uv_scale_y = uv_max_y - uv_min_y
   let uv_scale_x = if raw_uv_scale_x <= 0.0F { 1.0F } else { raw_uv_scale_x }
   let uv_scale_y = if raw_uv_scale_y <= 0.0F { 1.0F } else { raw_uv_scale_y }
-  let tex_w = Float::from_double(tex.width.to_double())
-  let tex_h = Float::from_double(tex.height.to_double())
-  let region_w = tex_w * uv_scale_x
-  let region_h = tex_h * uv_scale_y
   let base_size = 128.0F
-  let tex_scale_x = if region_w > 0.0F { region_w / base_size } else { 1.0F }
-  let tex_scale_y = if region_h > 0.0F { region_h / base_size } else { 1.0F }
-  let ui_scale_x = scale_x * tex_scale_x
-  let ui_scale_y = scale_y * tex_scale_y
+  let ui_scale_x = scale_x / base_size
+  let ui_scale_y = scale_y / base_size
   let cosv = cosf(rotation)
   let sinv = sinf(rotation)
   let first_instance = self.ui_instance_count
@@ -1445,6 +1647,86 @@ pub fn GpuBackend::draw_ui_rect(
       1U
   } else {
     self.ui_batches.push(UiBatch::{
+      texture_id: tex.id,
+      first_instance,
+      instance_count: 1U,
+    })
+  }
+}
+
+///|
+pub fn GpuBackend::draw_ui_box_shadow(
+  self : GpuBackend,
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  size_x : Float,
+  size_y : Float,
+  radius_tl : Float,
+  radius_tr : Float,
+  radius_br : Float,
+  radius_bl : Float,
+  blur : Float,
+  samples : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(_) else { return }
+  guard self.pass_state is Some(_) else { return }
+  flush_ui_batches(self)
+  flush_sprite_batches(self)
+  ensure_ui_shadow_resources(self)
+  let tex = ensure_fallback_texture(self, texture_id)
+
+  // Geometry is a 128x128 base quad; engine passes final bounds in world units.
+  let base_size = 128.0F
+  let shadow_scale_x = scale_x / base_size
+  let shadow_scale_y = scale_y / base_size
+  let cosv = cosf(rotation)
+  let sinv = sinf(rotation)
+  let first_instance = self.ui_shadow_instance_count
+  self.ui_shadow_instance_count = first_instance + 1U
+  let samples_f = Float::from_double(samples.to_double())
+
+  // Instance layout:
+  // - model(x,y,cos,sin)
+  // - scale(x,y,_,_) where x/y represent bounds / 128
+  // - color
+  // - size(x,y,blur,samples)
+  // - radius(tl,tr,br,bl)
+  self.ui_shadow_instance_data.push(x)
+  self.ui_shadow_instance_data.push(y)
+  self.ui_shadow_instance_data.push(cosv)
+  self.ui_shadow_instance_data.push(sinv)
+  self.ui_shadow_instance_data.push(shadow_scale_x)
+  self.ui_shadow_instance_data.push(shadow_scale_y)
+  self.ui_shadow_instance_data.push(0.0F)
+  self.ui_shadow_instance_data.push(0.0F)
+  self.ui_shadow_instance_data.push(color_r)
+  self.ui_shadow_instance_data.push(color_g)
+  self.ui_shadow_instance_data.push(color_b)
+  self.ui_shadow_instance_data.push(color_a)
+  self.ui_shadow_instance_data.push(size_x)
+  self.ui_shadow_instance_data.push(size_y)
+  self.ui_shadow_instance_data.push(blur)
+  self.ui_shadow_instance_data.push(samples_f)
+  self.ui_shadow_instance_data.push(radius_tl)
+  self.ui_shadow_instance_data.push(radius_tr)
+  self.ui_shadow_instance_data.push(radius_br)
+  self.ui_shadow_instance_data.push(radius_bl)
+  let batch_count = self.ui_shadow_batches.length()
+  if batch_count > 0 &&
+    self.ui_shadow_batches[batch_count - 1].texture_id == tex.id {
+    self.ui_shadow_batches[batch_count - 1].instance_count = self.ui_shadow_batches[batch_count -
+      1].instance_count +
+      1U
+  } else {
+    self.ui_shadow_batches.push(UiBatch::{
       texture_id: tex.id,
       first_instance,
       instance_count: 1U,
@@ -1637,6 +1919,7 @@ pub fn GpuBackend::draw_mesh(
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
   guard self.pass_state is Some(ps) else { return }
+  flush_ui_shadow_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard find_mesh(self, mesh_id) is Some(mesh) else { return }
