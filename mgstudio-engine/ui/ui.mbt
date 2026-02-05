@@ -913,6 +913,9 @@ pub let ui_set_render_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
+const UI_DRAW_FLAG_TEXTURED : Int = 1
+
+///|
 const UI_DRAW_FLAG_BORDER : Int = 2
 
 ///|
@@ -935,6 +938,9 @@ const UI_STACK_Z_BORDER : Float = 2.0F
 
 ///|
 const UI_STACK_Z_TEXT : Float = 3.0F
+
+///|
+const UI_STACK_Z_OUTLINE : Float = 4.0F
 
 ///|
 fn int_to_float(value : Int) -> Float {
@@ -1281,13 +1287,6 @@ pub fn[
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(ctx0.viewport_size.x, ctx0.viewport_size.y),
   )
-  fn should_draw_node(
-    img_store : @core.ComponentStore[UiImage],
-    entity : @core.Entity,
-  ) -> Bool {
-    img_store.contains(entity)
-  }
-
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match content_size_store.get(entity) {
       Some(v) => v.size
@@ -1755,16 +1754,9 @@ pub fn[
         }
         let layers = ensure_layers_default(world, entity)
         ensure_visibility_defaults(world, entity)
-        if should_draw_node(img_store, entity) {
-          let texture = img_store.get(entity).unwrap().image
-          let sprite = @render2d.Sprite::from_image(texture)
-            .with_color(@render2d.Color::white())
-            .with_custom_size(Some(size))
-          if sprite_store.contains(entity) {
-            sprite_store.set(entity, sprite, tick) |> ignore
-          } else {
-            sprite_store.insert(entity, sprite, tick)
-          }
+        if img_store.contains(entity) && sprite_store.contains(entity) {
+          // UiImage rendering is handled by the UI pipeline, not the Sprite pipeline.
+          sprite_store.remove(entity) |> ignore
         }
 
         // Sync text handles (state-based text pipeline) for label nodes.
@@ -2653,7 +2645,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_ButtonColors + Has_Interaction + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_render_extract_system(
   world : W,
 ) -> Unit {
@@ -2665,8 +2657,10 @@ pub fn[
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let node_store = Has_Node::get_node_store(world)
   let bg_store = Has_BackgroundColor::get_background_color_store(world)
+  let img_store = Has_UiImage::get_ui_image_store(world)
   let button_store = Has_ButtonColors::get_button_colors_store(world)
   let interaction_store = Has_Interaction::get_interaction_store(world)
+  let outline_store = Has_Outline::get_outline_store(world)
   let border_color_store = Has_BorderColor::get_border_color_store(world)
   let radius_store = Has_BorderRadius::get_border_radius_store(world)
   let aa_store = Has_UiAntiAlias::get_ui_anti_alias_store(world)
@@ -2748,6 +2742,21 @@ pub fn[
       }
     }
     let clamped = clamp_nonneg(raw)
+    let max_r = 0.5F * min_elem
+    if clamped > max_r {
+      max_r
+    } else {
+      clamped
+    }
+  }
+
+  fn clamp_radius_nonneg(radius : Float, node_size : @math.Vec2) -> Float {
+    let clamped = clamp_nonneg(radius)
+    let min_elem = if node_size.x < node_size.y {
+      node_size.x
+    } else {
+      node_size.y
+    }
     let max_r = 0.5F * min_elem
     if clamped > max_r {
       max_r
@@ -2867,6 +2876,29 @@ pub fn[
       None => ()
     }
 
+    // UiImage content.
+    match img_store.get(entity) {
+      Some(img) => {
+        let t_content = transform_with_z(t0, z_base + UI_STACK_Z_CONTENT)
+        @render2d.render2d_push_ui_rect_uv_scissor(
+          world,
+          entity,
+          img.image,
+          t_content,
+          draw_scale,
+          uv_min,
+          uv_max,
+          @render2d.Color::white(),
+          layers,
+          scissor,
+          flags | UI_DRAW_FLAG_TEXTURED,
+          radius,
+          border,
+        )
+      }
+      None => ()
+    }
+
     // Border.
     let has_border = border_left > 0.0F ||
       border_right > 0.0F ||
@@ -2892,12 +2924,115 @@ pub fn[
         border,
       )
     }
+
+    // Outline.
+    match outline_store.get(entity) {
+      Some(outline) =>
+        if outline.color.a > 0.0F {
+          let outline_width = clamp_nonneg(
+            resolve_axis(outline.width, size.x, ctx0.viewport_size),
+          )
+          if outline_width > 0.0F {
+            let outline_offset = resolve_axis(
+              outline.offset,
+              size.x,
+              ctx0.viewport_size,
+            )
+            let outer = outline_offset + outline_width
+            let outline_size = @math.Vec2::new(
+              size.x + 2.0F * outer,
+              size.y + 2.0F * outer,
+            )
+            if outline_size.x > 0.0F && outline_size.y > 0.0F {
+              let t_outline = transform_with_z(t0, z_base + UI_STACK_Z_OUTLINE)
+              let outline_draw_scale = @math.Vec2::new(
+                scale_x * outline_size.x,
+                scale_y * outline_size.y,
+              )
+              let outline_border = @render2d.UiBorderRect::new(
+                outline_width * scale_x,
+                outline_width * scale_y,
+                outline_width * scale_x,
+                outline_width * scale_y,
+              )
+              let outline_radius = match radius_store.get(entity) {
+                Some(r) => {
+                  let tl = clamp_radius_nonneg(
+                      resolve_radius_single(
+                        r.top_left,
+                        size,
+                        ctx0.viewport_size,
+                      ) +
+                      outer,
+                      outline_size,
+                    ) *
+                    scale_min
+                  let tr = clamp_radius_nonneg(
+                      resolve_radius_single(
+                        r.top_right,
+                        size,
+                        ctx0.viewport_size,
+                      ) +
+                      outer,
+                      outline_size,
+                    ) *
+                    scale_min
+                  let br = clamp_radius_nonneg(
+                      resolve_radius_single(
+                        r.bottom_right,
+                        size,
+                        ctx0.viewport_size,
+                      ) +
+                      outer,
+                      outline_size,
+                    ) *
+                    scale_min
+                  let bl = clamp_radius_nonneg(
+                      resolve_radius_single(
+                        r.bottom_left,
+                        size,
+                        ctx0.viewport_size,
+                      ) +
+                      outer,
+                      outline_size,
+                    ) *
+                    scale_min
+                  @render2d.UiCornerRadii::new(tl, tr, br, bl)
+                }
+                None =>
+                  @render2d.UiCornerRadii::new(
+                    clamp_radius_nonneg(outer, outline_size) * scale_min,
+                    clamp_radius_nonneg(outer, outline_size) * scale_min,
+                    clamp_radius_nonneg(outer, outline_size) * scale_min,
+                    clamp_radius_nonneg(outer, outline_size) * scale_min,
+                  )
+              }
+              @render2d.render2d_push_ui_rect_uv_scissor(
+                world,
+                entity,
+                ctx0.white_texture,
+                t_outline,
+                outline_draw_scale,
+                uv_min,
+                uv_max,
+                outline.color,
+                layers,
+                scissor,
+                flags | UI_DRAW_FLAG_BORDER,
+                outline_radius,
+                outline_border,
+              )
+            }
+          }
+        }
+      None => ()
+    }
   }
 }
 
 ///|
 pub fn[
-  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_UiContext + @picking.HasRes_PickingEvents + @picking.HasRes_PickingState + @a11y.HasRes_A11yState + Has_UiRoot + Has_Node + Has_ContentSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ButtonColors + Has_Button + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
