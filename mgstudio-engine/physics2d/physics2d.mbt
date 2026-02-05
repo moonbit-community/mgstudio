@@ -16,7 +16,7 @@
 /// Rapier-based 2D physics integration (Bevy-like, 2D-first).
 ///
 /// Note:
-/// - Physics v1 ignores `@math.Transform.scale`.
+/// - mgstudio bakes `@math.Transform.scale` into collider shapes (best-effort).
 /// - For compound bodies, use `ColliderParent2d` (child colliders) or `ColliderShape2d::compound`.
 
 ///|
@@ -542,7 +542,9 @@ pub struct AdditionalMassProperties2d {
 }
 
 ///|
-pub fn AdditionalMassProperties2d::mass(mass : Float) -> AdditionalMassProperties2d {
+pub fn AdditionalMassProperties2d::mass(
+  mass : Float,
+) -> AdditionalMassProperties2d {
   { props: @dynamics.RigidBodyAdditionalMassProps::mass(mass) }
 }
 
@@ -636,7 +638,7 @@ pub fn Physics2dConfig::with_physics_pipeline_active(
   self : Physics2dConfig,
   active : Bool,
 ) -> Physics2dConfig {
-  Physics2dConfig::{ ..self, physics_pipeline_active: active, }
+  Physics2dConfig::{ ..self, physics_pipeline_active: active }
 }
 
 ///|

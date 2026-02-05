@@ -13,6 +13,15 @@
 // limitations under the License.
 
 ///|
+fn absf(x : Float) -> Float {
+  if x < 0.0F {
+    -x
+  } else {
+    x
+  }
+}
+
+///|
 struct Physics2dTestWorld {
   mut tick : @core.Tick
   transform : @core.ComponentStore[@math.Transform]
@@ -30,7 +39,9 @@ struct Physics2dTestWorld {
   external_impulse : @core.ComponentStore[ExternalImpulse2d]
   rigid_body_enabled : @core.ComponentStore[RigidBodyEnabled2d]
   additional_mass_properties : @core.ComponentStore[AdditionalMassProperties2d]
-  additional_solver_iterations : @core.ComponentStore[AdditionalSolverIterations2d]
+  additional_solver_iterations : @core.ComponentStore[
+    AdditionalSolverIterations2d,
+  ]
   contact_force_threshold : @core.ComponentStore[ContactForceEventThreshold2d]
   collider_density : @core.ComponentStore[ColliderDensity2d]
   friction : @core.ComponentStore[Friction2d]
@@ -287,12 +298,16 @@ impl Has_ActiveEvents2d for Physics2dTestWorld with get_active_events2d_store(
 }
 
 ///|
-impl Has_ActiveHooks2d for Physics2dTestWorld with get_active_hooks2d_store(self) {
+impl Has_ActiveHooks2d for Physics2dTestWorld with get_active_hooks2d_store(
+  self,
+) {
   self.active_hooks
 }
 
 ///|
-impl Has_ContactSkin2d for Physics2dTestWorld with get_contact_skin2d_store(self) {
+impl Has_ContactSkin2d for Physics2dTestWorld with get_contact_skin2d_store(
+  self,
+) {
   self.contact_skin
 }
 
@@ -1036,10 +1051,7 @@ test "physics2d: query pipeline sees inserted colliders" {
   inspect(shape_hits.length() > 0, content="true")
   inspect(shape_hits[0].id == floor.id, content="true")
   let aabb_hits = ctx.intersect_aabb_entities_conservative(
-    @math.Rect::new(
-      @math.Vec2::new(-1.0F, -1.0F),
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
+    @math.Rect::new(@math.Vec2::new(-1.0F, -1.0F), @math.Vec2::new(1.0F, 1.0F)),
   )
   inspect(aabb_hits.length() > 0, content="true")
   inspect(aabb_hits[0].id == floor.id, content="true")
@@ -1072,7 +1084,6 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
   .get_ref_mut(tick)
   .unwrap().val
   = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
-
   let convex = @core.Entity::new(10, 1)
   @math.Has_Transform::get_transform_store(world).insert(
     convex,
@@ -1101,7 +1112,6 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     ),
     tick,
   )
-
   let compound = @core.Entity::new(11, 1)
   @math.Has_Transform::get_transform_store(world).insert(
     compound,
@@ -1144,33 +1154,28 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     ),
     tick,
   )
-
   physics2d_sync_insertions_system(world)
   let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
     .get_ref()
     .unwrap().val
-
   let hits1 = ctx.intersect_aabb_entities_conservative(
-    @math.Rect::new(
-      @math.Vec2::new(4.0F, -2.0F),
-      @math.Vec2::new(6.0F, 2.0F),
-    ),
+    @math.Rect::new(@math.Vec2::new(4.0F, -2.0F), @math.Vec2::new(6.0F, 2.0F)),
   )
   let mut has_convex = false
   for e in hits1 {
-    if e.id == convex.id { has_convex = true }
+    if e.id == convex.id {
+      has_convex = true
+    }
   }
   inspect(has_convex, content="true")
-
   let hits2 = ctx.intersect_aabb_entities_conservative(
-    @math.Rect::new(
-      @math.Vec2::new(-6.0F, -2.0F),
-      @math.Vec2::new(-4.0F, 2.0F),
-    ),
+    @math.Rect::new(@math.Vec2::new(-6.0F, -2.0F), @math.Vec2::new(-4.0F, 2.0F)),
   )
   let mut has_compound = false
   for e in hits2 {
-    if e.id == compound.id { has_compound = true }
+    if e.id == compound.id {
+      has_compound = true
+    }
   }
   inspect(has_compound, content="true")
 }
@@ -1185,7 +1190,6 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     mapped.val = physics2d_hook_entity_from_collider_handle(h1) is Some(_)
     false
   })
-
   @app.fixed_time_reset()
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
@@ -1195,7 +1199,6 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
   .get_ref_mut(tick)
   .unwrap().val
   = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
-
   let a = @core.Entity::new(20, 1)
   let b = @core.Entity::new(21, 1)
   @math.Has_Transform::get_transform_store(world).insert(
@@ -1218,8 +1221,16 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(a, RigidBody2d::dynamic(), tick)
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(b, RigidBody2d::dynamic(), tick)
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    a,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    b,
+    RigidBody2d::dynamic(),
+    tick,
+  )
   Has_Collider2d::get_collider2d_store(world).insert(
     a,
     Collider2d::new(ColliderShape2d::ball(0.5F)),
@@ -1250,19 +1261,16 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
     tick,
   )
-
   physics2d_clear_events_system(world)
   physics2d_sync_insertions_system(world)
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
-
   inspect(called.val, content="true")
   inspect(mapped.val, content="true")
   let events = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
     .get_ref()
     .unwrap().val
   inspect(events.collisions.length() == 0, content="true")
-
   physics2d_hooks_set_config(old_hooks)
 }
 
@@ -1505,4 +1513,67 @@ test "physics2d: kinematic character controller moves and outputs" {
     .unwrap()
   inspect(out.effective_translation.y <= 0.0F, content="true")
   inspect(out.collisions.length() > 0, content="true")
+}
+
+///|
+test "physics2d: transform scale bakes into collider shape" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let e1 = @core.Entity::new(0, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e1,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(2.0F, 3.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    e1,
+    Collider2d::new(ColliderShape2d::cuboid(1.0F, 2.0F)),
+    tick,
+  )
+  let e2 = @core.Entity::new(1, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e2,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(2.0F, 3.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    e2,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  physics2d_sync_insertions_system(world)
+  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+    .get_ref()
+    .unwrap().val
+  let ch_store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
+    world,
+  )
+  let h1 = ch_store.get(e1).unwrap().handle
+  let h2 = ch_store.get(e2).unwrap().handle
+  let col1 = ctx.colliders.get(h1).unwrap()
+  let col2 = ctx.colliders.get(h2).unwrap()
+  match col1.shape() {
+    Cuboid(hx, hy) => {
+      inspect(absf(hx - 2.0F) < 1.0e-4F, content="true")
+      inspect(absf(hy - 6.0F) < 1.0e-4F, content="true")
+    }
+    _ => inspect(false, content="true")
+  }
+  match col2.shape() {
+    Ball(r) => inspect(absf(r - 1.5F) < 1.0e-4F, content="true")
+    _ => inspect(false, content="true")
+  }
 }
