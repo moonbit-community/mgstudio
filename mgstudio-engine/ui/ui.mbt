@@ -834,12 +834,35 @@ pub fn BackgroundColor::new(color : @render2d.Color) -> BackgroundColor {
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct UiImage {
+  color : @render2d.Color
   image : @asset.Handle[@asset.Image]
+  flip_x : Bool
+  flip_y : Bool
 }
 
 ///|
 pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
-  UiImage::{ image, }
+  UiImage::{
+    color: @render2d.Color::white(),
+    image,
+    flip_x: false,
+    flip_y: false,
+  }
+}
+
+///|
+pub fn UiImage::with_color(self : UiImage, color : @render2d.Color) -> UiImage {
+  UiImage::{ ..self, color, }
+}
+
+///|
+pub fn UiImage::with_flip_x(self : UiImage) -> UiImage {
+  UiImage::{ ..self, flip_x: true }
+}
+
+///|
+pub fn UiImage::with_flip_y(self : UiImage) -> UiImage {
+  UiImage::{ ..self, flip_y: true }
 }
 
 ///|
@@ -3199,6 +3222,22 @@ pub fn[
     // UiImage content.
     match img_store.get(entity) {
       Some(img) => {
+        let mut u0 = uv_min.x
+        let mut v0 = uv_min.y
+        let mut u1 = uv_max.x
+        let mut v1 = uv_max.y
+        if img.flip_x {
+          let tmp = u0
+          u0 = u1
+          u1 = tmp
+        }
+        if img.flip_y {
+          let tmp = v0
+          v0 = v1
+          v1 = tmp
+        }
+        let uv_min_img = @math.Vec2::new(u0, v0)
+        let uv_max_img = @math.Vec2::new(u1, v1)
         let t_content = transform_with_z(t0, z_base + UI_STACK_Z_CONTENT)
         @render2d.render2d_push_ui_rect_uv_scissor(
           world,
@@ -3206,9 +3245,9 @@ pub fn[
           img.image,
           t_content,
           draw_scale,
-          uv_min,
-          uv_max,
-          @render2d.Color::white(),
+          uv_min_img,
+          uv_max_img,
+          img.color,
           layers,
           scissor,
           flags | UI_DRAW_FLAG_TEXTURED,

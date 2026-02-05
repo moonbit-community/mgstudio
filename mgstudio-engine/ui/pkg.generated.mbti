@@ -441,9 +441,15 @@ pub fn UiContext::default() -> Self
 pub fn UiContext::new(@asset.Handle[@asset.Image], @math.Vec2, @math.Vec2, @core.Entity?, @math.Transform, Float, @math.Vec2?, Bool, pointer_just_pressed? : Bool, pointer_just_released? : Bool, wheel_delta? : @math.Vec2) -> Self
 
 pub struct UiImage {
+  color : @render2d.Color
   image : @asset.Handle[@asset.Image]
+  flip_x : Bool
+  flip_y : Bool
 }
 pub fn UiImage::new(@asset.Handle[@asset.Image]) -> Self
+pub fn UiImage::with_color(Self, @render2d.Color) -> Self
+pub fn UiImage::with_flip_x(Self) -> Self
+pub fn UiImage::with_flip_y(Self) -> Self
 
 pub struct UiLayout {
   rect : @math.Rect
