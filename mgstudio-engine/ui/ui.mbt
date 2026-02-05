@@ -1439,10 +1439,10 @@ pub fn[
 
   fn grid_auto_flow_to_taffy(flow : GridAutoFlow) -> @moon_taffy.GridAutoFlow {
     match flow {
-      GridAutoFlow::Row | GridAutoFlow::RowDense =>
-        @moon_taffy.grid_auto_flow_row()
-      GridAutoFlow::Column | GridAutoFlow::ColumnDense =>
-        @moon_taffy.grid_auto_flow_column()
+      GridAutoFlow::Row => @moon_taffy.grid_auto_flow_row()
+      GridAutoFlow::RowDense => @moon_taffy.grid_auto_flow_row_dense()
+      GridAutoFlow::Column => @moon_taffy.grid_auto_flow_column()
+      GridAutoFlow::ColumnDense => @moon_taffy.grid_auto_flow_column_dense()
     }
   }
 
