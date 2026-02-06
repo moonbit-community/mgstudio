@@ -29,7 +29,7 @@ pub impl Show for GpuBackendError
 
 pub(all) suberror NativeJitSetupError {
   UnsupportedModule(String)
-  JitLoadFailed
+  JitLoadFailed(String)
   MemoryInitFailed
   GlobalsAllocFailed
   MissingJitTable(Int)
