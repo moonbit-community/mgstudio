@@ -142,6 +142,17 @@ fn should_show_jit_progress(total_codes : Int) -> Bool {
 }
 
 ///|
+fn should_include_start_in_jit() -> Bool {
+  read_env_bool("MGSTUDIO_NATIVE_JIT_INCLUDE_START", false)
+}
+
+///|
+fn should_force_indirect_jit_calls(total_codes : Int) -> Bool {
+  let default_enabled = total_codes >= 1024
+  read_env_bool("MGSTUDIO_NATIVE_JIT_FORCE_INDIRECT_CALLS", default_enabled)
+}
+
+///|
 fn render_jit_progress_bar(done : Int, total : Int, width : Int) -> String {
   if total <= 0 {
     return "[" + "#".repeat(width) + "]"
@@ -344,6 +355,15 @@ fn build_jit_load_failure_message(
 }
 
 ///|
+fn build_start_stub_compiled_function(
+  func_name : String,
+) -> @vcode.CompiledFunction {
+  let mc = @emit.MachineCode::new()
+  mc.emit_ret(30)
+  @vcode.CompiledFunction::new(func_name, mc, 0)
+}
+
+///|
 fn compile_module_to_precompiled(
   wasm_module : @types.Module,
   opt_level : Int,
@@ -374,6 +394,25 @@ fn compile_module_to_precompiled(
   }
   let num_func_imports = @wast.count_func_imports(wasm_module.imports)
   let normalized = clamp_opt_level(opt_level)
+  let start_func_idx = wasm_module.start
+  let include_start_in_jit = should_include_start_in_jit()
+  let force_indirect_calls = should_force_indirect_jit_calls(
+    wasm_module.codes.length(),
+  )
+  let lowering_num_imports = if force_indirect_calls {
+    -1
+  } else {
+    num_func_imports
+  }
+  if is_jit_trace_enabled() {
+    jit_trace(
+      "lowering_num_imports=" +
+      lowering_num_imports.to_string() +
+      " (force_indirect_calls=" +
+      force_indirect_calls.to_string() +
+      ")",
+    )
+  }
 
   // Compile local functions.
   let total_codes = wasm_module.codes.length()
@@ -389,6 +428,35 @@ fn compile_module_to_precompiled(
   for i, _ in wasm_module.codes {
     let func_idx = num_func_imports + i
     let func_name = @wast.get_func_name(wasm_module, func_idx)
+    if !include_start_in_jit &&
+      start_func_idx is Some(start_idx) &&
+      start_idx == func_idx {
+      if is_jit_trace_enabled() {
+        jit_trace(
+          "use stub JIT body for start function func_idx=" +
+          func_idx.to_string(),
+        )
+      }
+      let type_idx = wasm_module.funcs[i]
+      let ft = wasm_module.get_func_type(type_idx)
+      let compiled = build_start_stub_compiled_function(func_name)
+      precompiled.add_function(
+        func_idx,
+        func_name,
+        compiled,
+        ft.params.length(),
+        ft.results.length(),
+      )
+      if progress_enabled && total_codes > 0 {
+        let done = i + 1
+        let percent = done * 100 / total_codes
+        if done == total_codes || percent >= last_progress_percent + 2 {
+          print_jit_progress(done, total_codes)
+          last_progress_percent = percent
+        }
+      }
+      continue
+    }
     if is_jit_trace_enabled() {
       // Avoid overly chatty output; enough to see progress or where we stall.
       if i == 0 || i == total_codes - 1 || i % 200 == 0 {
@@ -432,7 +500,7 @@ fn compile_module_to_precompiled(
         "  stage: lower_function begin (func_idx=" + func_idx.to_string() + ")",
       )
     }
-    let vcode = @lower.lower_function(ir_func, num_imports=num_func_imports)
+    let vcode = @lower.lower_function(ir_func, num_imports=lowering_num_imports)
     if trace_stages {
       let blocks = vcode.get_blocks()
       let mut insts = 0

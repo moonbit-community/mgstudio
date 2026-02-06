@@ -35,6 +35,14 @@ else
   if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
+  # Rebuild when native runtime sources changed (path dependency of mgstudio-cli).
+  if find "${ROOT}/mgstudio-runtime/native" -type f \( -name '*.mbt' -o -name '*.c' -o -name 'moon.pkg.json' -o -name 'moon.mod.json' \) -newer "${BIN}" | grep -q .; then
+    NEED_BUILD=1
+  fi
+  # Rebuild when runtime-core sources changed (path dependency of native runtime).
+  if find "${ROOT}/mgstudio-runtime/core" -type f \( -name '*.mbt' -o -name 'moon.pkg.json' -o -name 'moon.mod.json' \) -newer "${BIN}" | grep -q .; then
+    NEED_BUILD=1
+  fi
   if [[ "${ROOT}/mgstudio-cli/moon.mod.json" -nt "${BIN}" ]]; then
     NEED_BUILD=1
   fi
