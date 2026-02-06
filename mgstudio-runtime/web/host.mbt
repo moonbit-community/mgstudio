@@ -45,7 +45,7 @@ extern "js" fn string_sink_take_js() -> String =
 ///
 /// We mirror the existing `string_sink_*` protocol but for raw bytes. This is
 /// used for uploading RGBA8 data (e.g. glyph atlas updates) without passing
-/// wasm-gc `Bytes` across the boundary.
+/// wasm `Bytes` across the boundary.
 extern "js" fn bytes_sink_push_js(byte : Int) -> Unit =
   #| (byte) => {
   #|   const b = Number(byte) & 0xff
@@ -85,7 +85,7 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|   if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
   #|     return `${value}`
   #|   }
-  #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
+  #|   // Decode MoonBit wasm `String` (typically an array of UTF-16 i16 code units).
   #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
   #|   try {
   #|     let current = value
@@ -93,7 +93,7 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|       if (typeof current !== "object" || current == null) {
   #|         break
   #|       }
-  #|       // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
+  #|       // Unwrap common wrapper shapes (defensive, for wasm reference objects).
   #|       try {
   #|         if ("value" in current && current.value !== current) {
   #|           current = current.value
@@ -298,7 +298,7 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     if (typeof current === "string") {
   #|       return current
   #|     }
-  #|     // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
+  #|     // Unwrap common wrapper shapes (defensive, for wasm reference objects).
   #|     if (typeof current === "object" && current != null) {
   #|       try {
   #|         if ("value" in current && current.value !== current) {
@@ -320,7 +320,7 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|       } catch {
   #|       }
   #|     }
-  #|     // MoonBit wasm-gc String is typically `array (mut i16)`.
+  #|     // MoonBit wasm String is typically `array (mut i16)`.
   #|     // Different engines may expose the `get` method on the instance or prototype.
   #|     if (typeof current === "object" && current != null) {
   #|       let getFn = null
@@ -2972,7 +2972,7 @@ pub fn create_host(
     }
     let nearest_value = number_or(nearest, 0) != 0
     @js.run_async(async fn() noraise {
-      // Always pass the coerced JS string to avoid relying on wasm-gc string interop here.
+      // Always pass the coerced JS string to avoid relying on wasm string interop here.
       let result = load_texture_from_path(
         state,
         id,

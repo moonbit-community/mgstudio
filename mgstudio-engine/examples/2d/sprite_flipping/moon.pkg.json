@@ -8,7 +8,7 @@
     "Milky2018/mgstudio/render2d"
   ],
   "link": {
-    "wasm-gc": {
+    "wasm": {
       "exports": [
         "game_app"
       ]

@@ -10,7 +10,7 @@
     "Milky2018/mgstudio/time"
   ],
   "link": {
-    "wasm-gc": {
+    "wasm": {
       "exports": [
         "game_app"
       ]

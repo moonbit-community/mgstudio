@@ -13,7 +13,7 @@
     "Milky2018/moon_rapier/collision"
   ],
   "link": {
-    "wasm-gc": {
+    "wasm": {
       "exports": [
         "game_app"
       ]

@@ -9,7 +9,7 @@
     "Milky2018/mgstudio/text"
   ],
   "link": {
-    "wasm-gc": {
+    "wasm": {
       "exports": [
         "game_app"
       ]

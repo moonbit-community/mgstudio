@@ -16,7 +16,7 @@
 /// Native host stubs for `mgstudio_host` and `moonbit:ffi`.
 ///
 /// This is a "bring-up" implementation: enough to instantiate and start running
-/// the wasm-gc build. Real window/GPU/input implementations will be added later.
+/// the wasm build. Real window/GPU/input implementations will be added later.
 ///
 /// Important: the wasm imports' signatures must match the game's wasm import
 /// section; otherwise instantiation fails.
