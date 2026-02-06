@@ -830,16 +830,19 @@ pub fn add_mgstudio_host_imports(
           }
         }
 
-        let stack : Array[(UInt64, UInt64)] = []
-        stack.push((0UL, root_id))
+        let stack : Array[(UInt64, UInt64, Bool)] = []
+        stack.push((0UL, root_id, false))
         let visited : @hashmap.HashMap[UInt64, Bool] = @hashmap.HashMap::new()
         while stack.length() > 0 {
-          let (parent_id, cur_id) = stack.pop().unwrap()
+          let (parent_id, cur_id, hidden_ancestor) = stack.pop().unwrap()
           if visited.contains(cur_id) {
             continue
           }
           visited.set(cur_id, true)
           guard nodes_by_id.get(cur_id) is Some(node) else { continue }
+          if hidden_ancestor || node.is_hidden() {
+            continue
+          }
           if cur_id != root_id {
             let parent_int = if parent_id == 0UL {
               -1
@@ -882,7 +885,7 @@ pub fn add_mgstudio_host_imports(
           }
           let children = node.children()
           for i in 0..<children.length() {
-            stack.push((cur_id, children[i].to_u64()))
+            stack.push((cur_id, children[i].to_u64(), false))
           }
         }
         win.a11y_end_update()

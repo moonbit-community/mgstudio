@@ -19,9 +19,9 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_a11y_update_system(W) -> Unit
+pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_a11y_update_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_build_a11y_tree_update(W) -> @moon_accesskit.TreeUpdate
+pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_build_a11y_tree_update(W) -> @moon_accesskit.TreeUpdate
 
 pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld] ui_clip_system(W) -> Unit
 

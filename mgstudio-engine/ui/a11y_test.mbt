@@ -255,3 +255,67 @@ test "ui: a11y label widget keeps empty value" {
   }
   assert_true(found)
 }
+
+///|
+test "ui: a11y focus follows top-most interactive node" {
+  let world = @ecs_world.World::new()
+  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let ctx = UiContext::new(
+    @asset.Handle::new(1),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(800.0F, 600.0F),
+    Some(@core.Entity::new(0, 0)),
+    @math.Transform::identity(),
+    1.0F,
+    None,
+    false,
+  )
+  HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
+  let back = world.spawn_empty()
+  Has_Button::get_button_store(world).insert(back, Button::default(), tick)
+  Has_UiLayout::get_ui_layout_store(world).insert(
+    back,
+    UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(10.0F, 10.0F),
+        @math.Vec2::new(120.0F, 60.0F),
+      ),
+    ),
+    tick,
+  )
+  Has_Interaction::get_interaction_store(world).insert(
+    back,
+    Interaction::Hovered,
+    tick,
+  )
+  let front = world.spawn_empty()
+  Has_Button::get_button_store(world).insert(front, Button::default(), tick)
+  Has_UiLayout::get_ui_layout_store(world).insert(
+    front,
+    UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(20.0F, 20.0F),
+        @math.Vec2::new(130.0F, 70.0F),
+      ),
+    ),
+    tick,
+  )
+  Has_Interaction::get_interaction_store(world).insert(
+    front,
+    Interaction::Pressed,
+    tick,
+  )
+  @hierarchy.Has_Children::get_children_store(world).insert(
+    back,
+    @hierarchy.Children::new([front]),
+    tick,
+  )
+  @hierarchy.Has_Parent::get_parent_store(world).insert(
+    front,
+    @hierarchy.Parent::new(back),
+    tick,
+  )
+  ui_stack_system(world)
+  let update = ui_build_a11y_tree_update(world)
+  assert_eq(update.focus(), @a11y.node_id_for_entity(front))
+}

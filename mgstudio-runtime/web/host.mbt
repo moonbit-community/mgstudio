@@ -681,6 +681,21 @@ extern "js" fn a11y_end_update_js(container : @js.Any) -> Unit =
   #|       try { nodes.delete(id) } catch {}
   #|     }
   #|   })
+
+///|
+extern "js" fn a11y_focus_node_js(node_id : Int) -> Unit =
+  #| (nodeId) => {
+  #|   const nodes = globalThis.__mgstudio_a11y_nodes
+  #|   if (!nodes || typeof nodes.get !== "function") return
+  #|   const id = Number(nodeId) | 0
+  #|   const el = nodes.get(id)
+  #|   if (!el || typeof el.focus !== "function") return
+  #|   try {
+  #|     el.focus({ preventScroll: true })
+  #|   } catch (_) {
+  #|     try { el.focus() } catch (_) {}
+  #|   }
+  #| }
   #|   // Rebuild parent->children lists in the order nodes were pushed this frame.
   #|   const childrenByParent = new Map()
   #|   for (let i = 0; i < order.length; i += 1) {
@@ -4372,6 +4387,7 @@ pub fn create_host(
     for nu in update.nodes() {
       nodes_by_id.set(nu.id().to_u64(), nu.node())
     }
+    let focused_id = update.focus().to_u64()
     fn host_role(role : @moon_accesskit.Role) -> Int {
       match role {
         @moon_accesskit.Role::Window
@@ -4397,16 +4413,19 @@ pub fn create_host(
       Some(t) => t.root_id().to_u64()
       None => 0UL
     }
-    let stack : Array[(UInt64, UInt64)] = []
-    stack.push((0UL, root_id))
+    let stack : Array[(UInt64, UInt64, Bool)] = []
+    stack.push((0UL, root_id, false))
     let visited : @hashmap.HashMap[UInt64, Bool] = @hashmap.HashMap::new()
     while stack.length() > 0 {
-      let (parent_id, cur_id) = stack.pop().unwrap()
+      let (parent_id, cur_id, hidden_ancestor) = stack.pop().unwrap()
       if visited.contains(cur_id) {
         continue
       }
       visited.set(cur_id, true)
       guard nodes_by_id.get(cur_id) is Some(node) else { continue }
+      if hidden_ancestor || node.is_hidden() {
+        continue
+      }
       let parent_int = if parent_id == 0UL { -1 } else { parent_id.to_int() }
       let cur_int = cur_id.to_int()
       if cur_id != root_id {
@@ -4446,10 +4465,13 @@ pub fn create_host(
       }
       let children = node.children()
       for i in 0..<children.length() {
-        stack.push((cur_id, children[i].to_u64()))
+        stack.push((cur_id, children[i].to_u64(), false))
       }
     }
     a11y_end_update_js(container)
+    if focused_id != 0UL {
+      a11y_focus_node_js(focused_id.to_int())
+    }
     0
   })
   let a11y_actions_len = @js.from_fn0(fn() { a11y_actions_len_js() })

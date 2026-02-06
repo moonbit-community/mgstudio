@@ -3033,7 +3033,7 @@ pub fn[
 ///|
 /// Build an AccessKit `TreeUpdate` for the current UI tree.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
 ] ui_build_a11y_tree_update(
   world : W,
 ) -> @moon_accesskit.TreeUpdate {
@@ -3072,6 +3072,7 @@ pub fn[
   let image_node_store = Has_ImageNode::get_image_node_store(world)
   let label_store = Has_AccessibilityLabel::get_accessibility_label_store(world)
   let ui_text_store = Has_UiText::get_ui_text_store(world)
+  let interaction_store = Has_Interaction::get_interaction_store(world)
   let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
   let children_store = @hierarchy.Has_Children::get_children_store(world)
   let clip_store = Has_CalculatedClip::get_calculated_clip_store(world)
@@ -3197,7 +3198,27 @@ pub fn[
   // Root node.
   let tree_id = @moon_accesskit.TreeId::root()
   let root_id = @moon_accesskit.NodeId::root()
-  let update = @moon_accesskit.TreeUpdate::new(tree_id, root_id)
+  let mut focus_id = root_id
+  let mut focus_found = false
+  // Pick focus from top-most interactive node in UiStack order.
+  for i in 0..<stack0.uinodes.length() {
+    if focus_found {
+      continue
+    }
+    let idx = stack0.uinodes.length() - 1 - i
+    let entity = stack0.uinodes[idx]
+    if !required.contains(key(entity)) || !button_store.contains(entity) {
+      continue
+    }
+    match interaction_store.get(entity) {
+      Some(Interaction::Hovered) | Some(Interaction::Pressed) => {
+        focus_id = @a11y.node_id_for_entity(entity)
+        focus_found = true
+      }
+      _ => ()
+    }
+  }
+  let update = @moon_accesskit.TreeUpdate::new(tree_id, focus_id)
   update.set_tree(@moon_accesskit.Tree::new(root_id))
   let root_node = @moon_accesskit.Node::new(@moon_accesskit.Role::Window)
   root_node.set_bounds(
@@ -3302,7 +3323,7 @@ pub fn[
 ///|
 /// Extract UI accessibility nodes and send them to the host bridge.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
 ] ui_a11y_update_system(
   world : W,
 ) -> Unit {
