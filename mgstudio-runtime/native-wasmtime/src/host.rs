@@ -117,9 +117,9 @@ impl HostState {
         }
     }
 
-    fn now_seconds_f32(&self) -> f32 {
+    fn now_millis_f32(&self) -> f32 {
         let dt: Duration = self.start_time.elapsed();
-        dt.as_secs_f32()
+        dt.as_secs_f32() * 1000.0
     }
 
     fn ensure_gpu(&mut self) -> anyhow::Result<&mut GpuBackend> {
@@ -425,12 +425,7 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             };
 
             loop {
-                // Keep window events flowing even if the guest doesn't call
-                // `window_poll_events` every frame. This avoids apparent UI
-                // freezes on some platforms.
-                if let Some(win) = caller.data_mut().window.as_mut() {
-                    win.pump_events();
-                }
+                // The guest is responsible for calling `window_poll_events` each tick.
                 tick.call(&mut caller, &[], &mut []).context("tick() trapped")?;
                 let should_close = caller
                     .data()
@@ -566,7 +561,7 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
         &[],
         &[ValType::F32],
         |caller, _args, out| {
-            ok_f32(out, caller.data().now_seconds_f32());
+            ok_f32(out, caller.data().now_millis_f32());
             Ok(())
         },
     )?;
