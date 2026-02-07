@@ -83,8 +83,11 @@ APIs (e.g. fonts/folder async assets) may still be stubbed.
 
 The CLI expects the wasmtime runtime binary at:
 
-- `<sdkroot>/bin/mgstudio-runtime-native-wasmtime` (if you ship it in your SDK), or
+- `<sdkroot>/bin/mgstudio-runtime-native-wasmtime` (bundled in current SDK releases), or
 - via `MGSTUDIO_WASMTIME_RUNTIME=/abs/path/to/mgstudio-runtime-native-wasmtime`
+
+In this repo, `./mgstudio-dev run --backend wasmtime ...` auto-builds and uses
+the local runtime if `MGSTUDIO_WASMTIME_RUNTIME` is not set.
 
 macOS (Apple Silicon) workaround: build/run the runtime as `x86_64-apple-darwin`
 under Rosetta:
@@ -124,6 +127,7 @@ from the SDK into the served directory (offline by default).
 `mgstudio` expects an SDK directory (configured via `moon.game.json.sdkroot`) that
 contains:
 
+- `bin/mgstudio-runtime-native-wasmtime` (for `mgstudio run --backend wasmtime`)
 - `share/mgstudio/assets/` (engine default assets, including built-in shaders)
 - `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle, for `mgstudio serve`)
 - `lib/libwgpu_native.dylib` (native rendering via `wgpu_mbt`)

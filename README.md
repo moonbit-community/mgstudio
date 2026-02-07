@@ -28,7 +28,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
 2. Create a new game:
    - `mgstudio new mygame`
    - For local engine development (path dependency): `./mgstudio-dev new mygame --local-engine`
-3. Build the game cart (Wasm GC, from the game directory):
+3. Build the game cart (Wasm, from the game directory):
    - `cd mygame && moon build --release --target wasm`
 4. Run:
    - Native: `mgstudio run -g mygame/moon.game.json`
@@ -44,6 +44,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
 Repo development wrapper:
 
 - `./mgstudio-dev ...` builds `mgstudio-cli` (release) and runs it
+- `./mgstudio-dev run --backend wasmtime ...` also auto-builds local `mgstudio-runtime-native-wasmtime` when needed
 
 Project quality gates (per module):
 
@@ -57,6 +58,7 @@ Games are configured via `moon.game.json`. The key field is:
 
 The CLI uses `sdkroot` to locate:
 
+- `bin/mgstudio-runtime-native-wasmtime` (native wasmtime runtime for `run --backend wasmtime`)
 - `share/mgstudio/assets/` (engine default assets, including built-in shaders)
 - `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle for `serve`)
 - `lib/libwgpu_native.dylib` (native runtime dependency; current focus is `darwin-arm64`)

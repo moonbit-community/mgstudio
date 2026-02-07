@@ -107,6 +107,13 @@ jobs:
           cp "${cli_bin}" "${sdk_dir}/bin/mgstudio"
           chmod +x "${sdk_dir}/bin/mgstudio"
 
+          echo "Building mgstudio-runtime-native-wasmtime (release)..."
+          cargo build --release --manifest-path "./mgstudio-runtime/native-wasmtime/Cargo.toml"
+          wasmtime_bin="./mgstudio-runtime/native-wasmtime/target/release/mgstudio-runtime-native-wasmtime"
+          test -x "${wasmtime_bin}"
+          cp "${wasmtime_bin}" "${sdk_dir}/bin/mgstudio-runtime-native-wasmtime"
+          chmod +x "${sdk_dir}/bin/mgstudio-runtime-native-wasmtime"
+
           echo "Building mgstudio-runtime-web.js..."
           OUT_DIR="${sdk_dir}/share/mgstudio/web" ./mgstudio-runtime/web/build.sh
           test -f "${sdk_dir}/share/mgstudio/web/mgstudio-runtime-web.js"
@@ -128,6 +135,10 @@ jobs:
           fi
           if [[ -f "./docs/CREDITS.md" ]]; then
             cp "./docs/CREDITS.md" "${sdk_dir}/share/mgstudio/licenses/CREDITS.md"
+          fi
+          if [[ -f "./mgstudio-runtime/native-wasmtime/THIRD_PARTY_NOTICES.md" ]]; then
+            mkdir -p "${sdk_dir}/share/mgstudio/licenses/wasmtime"
+            cp "./mgstudio-runtime/native-wasmtime/THIRD_PARTY_NOTICES.md" "${sdk_dir}/share/mgstudio/licenses/wasmtime/THIRD_PARTY_NOTICES.md"
           fi
 
           echo "Writing manifest..."

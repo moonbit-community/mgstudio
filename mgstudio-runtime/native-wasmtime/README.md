@@ -52,7 +52,6 @@ Notes:
 
 ## Licensing / Distribution Notes
 
-If we ever ship prebuilt binaries of this runtime (as part of an SDK),
-we should also ship corresponding third-party license notices for the Rust
-dependency tree (`wasmtime`, `wgpu`, `winit`, etc.). A common approach is to
-generate notices from `Cargo.lock` during the packaging step.
+SDK packaging ships this runtime binary and includes
+`THIRD_PARTY_NOTICES.md` under `share/mgstudio/licenses/wasmtime/`.
+Keep this file in sync with `Cargo.lock` whenever dependencies change.
