@@ -76,7 +76,7 @@ fn parse_run_options(
 ) -> RunOptions raise @clap.ParserError {
   let game : String? = cmd.get_option("game")
   let backend : String? = cmd.get_option("backend")
-  { game, backend, }
+  { game, backend }
 }
 
 ///|
@@ -142,7 +142,12 @@ async fn run_native(opts : RunOptions) -> Unit {
       wgpu_lib?,
     )
   } else if backend == "wasmtime" {
-    run_native_wasmtime(cfg.cart_path, final_assets_source, data_source, cfg.sdk_root)
+    run_native_wasmtime(
+      cfg.cart_path,
+      final_assets_source,
+      data_source,
+      cfg.sdk_root,
+    )
   } else {
     raise RunError::InvalidArgs(
       "Unknown --backend: " + backend + " (expected: wasmoon|wasmtime)",
@@ -162,22 +167,19 @@ async fn run_native_wasmtime(
 
   // Allow explicit override for local development.
   let bin_override : String? = @sys.get_env_var("MGSTUDIO_WASMTIME_RUNTIME")
-
-  let bin =
-    match bin_override {
-      Some(p) if p.trim() != "" => p.trim().to_string()
-      _ if @fs.exists(bin_in_sdk) => bin_in_sdk
-      _ =>
-        raise RunError::InvalidArgs(
-          "Wasmtime backend selected but runtime binary not found.\n" +
-          "- Install it into SDK: " +
-          bin_in_sdk +
-          "\n" +
-          "- Or set MGSTUDIO_WASMTIME_RUNTIME to an absolute path.",
-        )
-    }
-  run_process_checked(
-    bin,
-    ["--cart", cart_path, "--assets", assets_source, "--data", data_source],
-  )
+  let bin = match bin_override {
+    Some(p) if p.trim() != "" => p.trim().to_string()
+    _ if @fs.exists(bin_in_sdk) => bin_in_sdk
+    _ =>
+      raise RunError::InvalidArgs(
+        "Wasmtime backend selected but runtime binary not found.\n" +
+        "- Install it into SDK: " +
+        bin_in_sdk +
+        "\n" +
+        "- Or set MGSTUDIO_WASMTIME_RUNTIME to an absolute path.",
+      )
+  }
+  run_process_checked(bin, [
+    "--cart", cart_path, "--assets", assets_source, "--data", data_source,
+  ])
 }
