@@ -1,6 +1,6 @@
 {
   "mgstudio": "0.1.0",
-  "cart": "../../../_build/wasm-gc/release/build/examples/2d/texture_atlas/texture_atlas.wasm",
+  "cart": "../../../_build/wasm/release/build/examples/2d/texture_atlas/texture_atlas.wasm",
   "assets": "../../../assets",
   "data": "./tmp/data",
   "web": {

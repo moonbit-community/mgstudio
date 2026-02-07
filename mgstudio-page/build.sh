@@ -18,7 +18,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 
-TARGET=${TARGET:-wasm-gc}
+TARGET=${TARGET:-wasm}
 
 ENGINE_DIR="$REPO_DIR/mgstudio-engine"
 RUNTIME_WEB_DIR="$REPO_DIR/mgstudio-runtime/web"
@@ -65,4 +65,3 @@ echo "Copying assets into page dist..."
 rsync -a --delete "$ASSETS_DIR/" "$DIST_DIR/assets/"
 
 echo "Built: $DIST_DIR"
-

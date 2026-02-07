@@ -29,7 +29,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
    - `mgstudio new mygame`
    - For local engine development (path dependency): `./mgstudio-dev new mygame --local-engine`
 3. Build the game cart (Wasm GC, from the game directory):
-   - `cd mygame && moon build --release --target wasm-gc`
+   - `cd mygame && moon build --release --target wasm`
 4. Run:
    - Native: `mgstudio run -g mygame/moon.game.json`
    - Web: `mgstudio serve -g mygame/moon.game.json` (plain HTTP)

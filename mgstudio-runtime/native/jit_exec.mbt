@@ -142,13 +142,8 @@ fn should_show_jit_progress(total_codes : Int) -> Bool {
 }
 
 ///|
-fn should_include_start_in_jit() -> Bool {
-  read_env_bool("MGSTUDIO_NATIVE_JIT_INCLUDE_START", false)
-}
-
-///|
-fn should_force_indirect_jit_calls(total_codes : Int) -> Bool {
-  let default_enabled = total_codes >= 1024
+fn should_force_indirect_jit_calls() -> Bool {
+  let default_enabled = false
   read_env_bool("MGSTUDIO_NATIVE_JIT_FORCE_INDIRECT_CALLS", default_enabled)
 }
 
@@ -355,15 +350,6 @@ fn build_jit_load_failure_message(
 }
 
 ///|
-fn build_start_stub_compiled_function(
-  func_name : String,
-) -> @vcode.CompiledFunction {
-  let mc = @emit.MachineCode::new()
-  mc.emit_ret(30)
-  @vcode.CompiledFunction::new(func_name, mc, 0)
-}
-
-///|
 fn compile_module_to_precompiled(
   wasm_module : @types.Module,
   opt_level : Int,
@@ -394,11 +380,7 @@ fn compile_module_to_precompiled(
   }
   let num_func_imports = @wast.count_func_imports(wasm_module.imports)
   let normalized = clamp_opt_level(opt_level)
-  let start_func_idx = wasm_module.start
-  let include_start_in_jit = should_include_start_in_jit()
-  let force_indirect_calls = should_force_indirect_jit_calls(
-    wasm_module.codes.length(),
-  )
+  let force_indirect_calls = should_force_indirect_jit_calls()
   let lowering_num_imports = if force_indirect_calls {
     -1
   } else {
@@ -428,35 +410,6 @@ fn compile_module_to_precompiled(
   for i, _ in wasm_module.codes {
     let func_idx = num_func_imports + i
     let func_name = @wast.get_func_name(wasm_module, func_idx)
-    if !include_start_in_jit &&
-      start_func_idx is Some(start_idx) &&
-      start_idx == func_idx {
-      if is_jit_trace_enabled() {
-        jit_trace(
-          "use stub JIT body for start function func_idx=" +
-          func_idx.to_string(),
-        )
-      }
-      let type_idx = wasm_module.funcs[i]
-      let ft = wasm_module.get_func_type(type_idx)
-      let compiled = build_start_stub_compiled_function(func_name)
-      precompiled.add_function(
-        func_idx,
-        func_name,
-        compiled,
-        ft.params.length(),
-        ft.results.length(),
-      )
-      if progress_enabled && total_codes > 0 {
-        let done = i + 1
-        let percent = done * 100 / total_codes
-        if done == total_codes || percent >= last_progress_percent + 2 {
-          print_jit_progress(done, total_codes)
-          last_progress_percent = percent
-        }
-      }
-      continue
-    }
     if is_jit_trace_enabled() {
       // Avoid overly chatty output; enough to see progress or where we stall.
       if i == 0 || i == total_codes - 1 || i % 200 == 0 {
@@ -729,15 +682,17 @@ pub fn prepare_jit_for_instance(
     wasm_module, instance, store,
   )
   jit_trace("loading JIT module")
-  let jit_module = @jit.JITModule::load_with_imports(
+  let jm = @jit.JITModule::load_with_imports(
     pc, func_signatures, external_imports,
-  )
-  guard jit_module is Some(jm) else {
-    raise NativeJitSetupError::JitLoadFailed(
-      build_jit_load_failure_message(
-        wasm_module, pc, func_signatures, external_imports,
-      ),
-    )
+  ) catch {
+    err =>
+      raise NativeJitSetupError::JitLoadFailed(
+        build_jit_load_failure_message(
+          wasm_module, pc, func_signatures, external_imports,
+        ) +
+        "\nwasmoon_load_error: " +
+        err.to_string(),
+      )
   }
 
   // Enable arbitrary host function imports in JIT mode.
@@ -781,7 +736,7 @@ pub fn prepare_jit_for_instance(
     }
   }
 
-  // GC setup (required for wasm-gc).
+  // GC setup (required for wasm).
   jit_trace("gc_setup")
   match store.c_heap {
     Some(heap) => {
@@ -789,7 +744,14 @@ pub fn prepare_jit_for_instance(
         store.module_types,
         type_rec_groups=store.module_rec_groups,
       )
-      @jit.gc_setup(heap, store.module_types, canonical)
+      @jit.gc_setup(
+        heap,
+        store.module_types,
+        canonical,
+        func_type_indices=instance.func_type_indices,
+        func_table_ptr=jm.get_func_table_ptr(),
+        num_funcs=jm.get_func_count(),
+      )
       jm.set_gc_heap(heap.get_ptr())
     }
     None => raise NativeJitSetupError::MissingCHeap
