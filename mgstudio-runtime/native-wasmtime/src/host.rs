@@ -425,7 +425,12 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             };
 
             loop {
-                // The guest is responsible for calling `window_poll_events` each tick.
+                // Keep window events flowing even if the guest doesn't call
+                // `window_poll_events` every frame. This avoids apparent UI
+                // freezes on some platforms.
+                if let Some(win) = caller.data_mut().window.as_mut() {
+                    win.pump_events();
+                }
                 tick.call(&mut caller, &[], &mut []).context("tick() trapped")?;
                 let should_close = caller
                     .data()
