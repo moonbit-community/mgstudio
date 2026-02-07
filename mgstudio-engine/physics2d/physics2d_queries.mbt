@@ -92,6 +92,7 @@ pub fn Physics2dContext::query_filter_exclude_entity(
 }
 
 ///|
+
 ///|
 fn rect_to_aabb(rect : @math.Rect) -> @rapier_core.Aabb {
   @rapier_core.Aabb::new(
@@ -340,11 +341,9 @@ pub fn Physics2dContext::project_point_and_get_feature_entity(
   solid : Bool,
 ) -> PointProjectionFeature2d? {
   match
-    self.query().project_point_and_get_feature(
-      mg_vec2_to_rapier(point),
-      max_dist,
-      solid,
-    ) {
+    self
+    .query()
+    .project_point_and_get_feature(mg_vec2_to_rapier(point), max_dist, solid) {
     Some((h, proj, feature)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>

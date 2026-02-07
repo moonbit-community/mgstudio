@@ -808,6 +808,7 @@ pub fn add_mgstudio_host_imports(
           Some(t) => t.root_id().to_u64()
           None => 0UL
         }
+        let focused_id = update.focus().to_u64()
         fn host_role(role : @moon_accesskit.Role) -> Int {
           match role {
             @moon_accesskit.Role::Window
@@ -824,9 +825,16 @@ pub fn add_mgstudio_host_imports(
         }
 
         fn name_for(node : @moon_accesskit.Node) -> String {
-          match node.label() {
-            Some(s) => s
-            None => node.value().unwrap_or("")
+          if node.supports_action(@moon_accesskit.Action::SetValue) {
+            match node.value() {
+              Some(s) => s
+              None => node.label().unwrap_or("")
+            }
+          } else {
+            match node.label() {
+              Some(s) => s
+              None => node.value().unwrap_or("")
+            }
           }
         }
 
@@ -850,6 +858,12 @@ pub fn add_mgstudio_host_imports(
               parent_id.to_int()
             }
             let node_int = cur_id.to_int()
+            let supports_scroll = node.supports_action(
+                @moon_accesskit.Action::ScrollUp,
+              ) ||
+              node.supports_action(@moon_accesskit.Action::ScrollDown) ||
+              node.supports_action(@moon_accesskit.Action::ScrollLeft) ||
+              node.supports_action(@moon_accesskit.Action::ScrollRight)
             let actions_mask = (if node.supports_action(
                   @moon_accesskit.Action::Focus,
                 ) {
@@ -859,6 +873,12 @@ pub fn add_mgstudio_host_imports(
               }) +
               (if node.supports_action(@moon_accesskit.Action::Click) {
                 2
+              } else {
+                0
+              }) +
+              (if supports_scroll { 4 } else { 0 }) +
+              (if node.supports_action(@moon_accesskit.Action::SetValue) {
+                8
               } else {
                 0
               })
@@ -889,6 +909,9 @@ pub fn add_mgstudio_host_imports(
           }
         }
         win.a11y_end_update()
+        if focused_id != 0UL && focused_id != root_id {
+          win.a11y_set_focus(focused_id.to_int())
+        }
         ok_i32(0)
       } catch {
         _ => {
@@ -954,6 +977,48 @@ pub fn add_mgstudio_host_imports(
       }
     },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_value_len",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 1 && args[0] is @types.Value::I32(index) {
+          return ok_i32(win.a11y_action_value_len(index))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_value_len failed")
+          host_fail("a11y_action_value_len", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_value_code_unit",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 2 &&
+          args[0] is @types.Value::I32(index) &&
+          args[1] is @types.Value::I32(offset) {
+          return ok_i32(win.a11y_action_value_code_unit(index, offset))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_value_code_unit failed")
+          host_fail("a11y_action_value_code_unit", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
   )
   linker.add_host_func(
     "mgstudio_host",

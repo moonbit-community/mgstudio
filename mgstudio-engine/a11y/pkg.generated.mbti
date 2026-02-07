@@ -32,6 +32,10 @@ pub let host_action_default_bit : Int
 
 pub let host_action_focus_bit : Int
 
+pub let host_action_scroll_bit : Int
+
+pub let host_action_set_value_bit : Int
+
 pub let host_role_button : Int
 
 pub let host_role_container : Int
@@ -50,10 +54,13 @@ pub fn node_id_for_entity(@core.Entity) -> @moon_accesskit.NodeId
 pub struct A11yState {
   mut last_update : @moon_accesskit.TreeUpdate?
   mut pending_actions : Array[@moon_accesskit.ActionRequest]
+  mut focused_node : @moon_accesskit.NodeId
 }
 pub fn A11yState::default() -> Self
 pub fn A11yState::drain_actions(Ref[Self]) -> Array[@moon_accesskit.ActionRequest]
+pub fn A11yState::focused_node(Self) -> @moon_accesskit.NodeId
 pub fn A11yState::push_action(Ref[Self], @moon_accesskit.ActionRequest) -> Unit
+pub fn A11yState::set_focused_node(Ref[Self], @moon_accesskit.NodeId) -> Unit
 pub fn A11yState::set_update(Ref[Self], @moon_accesskit.TreeUpdate) -> Unit
 
 // Type aliases

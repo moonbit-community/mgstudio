@@ -257,7 +257,7 @@ test "ui: a11y label widget keeps empty value" {
 }
 
 ///|
-test "ui: a11y focus follows top-most interactive node" {
+test "ui: a11y focus follows A11yState instead of hover state" {
   let world = @ecs_world.World::new()
   let tick = @core.ChangeTickWorld::increment_change_tick(world)
   let ctx = UiContext::new(
@@ -271,6 +271,10 @@ test "ui: a11y focus follows top-most interactive node" {
     false,
   )
   HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
+  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
+    @a11y.A11yState::default(),
+    tick,
+  )
   let back = world.spawn_empty()
   Has_Button::get_button_store(world).insert(back, Button::default(), tick)
   Has_UiLayout::get_ui_layout_store(world).insert(
@@ -315,7 +319,75 @@ test "ui: a11y focus follows top-most interactive node" {
     @hierarchy.Parent::new(back),
     tick,
   )
+  let a11y_state = @a11y.HasRes_A11yState::get_a11y_state_resource(world)
+    .get_ref_mut(tick)
+    .unwrap()
+  @a11y.A11yState::set_focused_node(a11y_state, @a11y.node_id_for_entity(back))
   ui_stack_system(world)
   let update = ui_build_a11y_tree_update(world)
-  assert_eq(update.focus(), @a11y.node_id_for_entity(front))
+  assert_eq(update.focus(), @a11y.node_id_for_entity(back))
+}
+
+///|
+test "ui: editable label node is exported as text input with SetValue" {
+  let world = @ecs_world.World::new()
+  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let ctx = UiContext::new(
+    @asset.Handle::new(1),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(800.0F, 600.0F),
+    Some(@core.Entity::new(0, 0)),
+    @math.Transform::identity(),
+    1.0F,
+    None,
+    false,
+  )
+  HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
+  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
+    @a11y.A11yState::default(),
+    tick,
+  )
+  let editable = world.spawn_empty()
+  Has_Label::get_label_store(world).insert(editable, Label::default(), tick)
+  Has_AccessibilityLabel::get_accessibility_label_store(world).insert(
+    editable,
+    AccessibilityLabel::new("Status input"),
+    tick,
+  )
+  Has_UiLayout::get_ui_layout_store(world).insert(
+    editable,
+    UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(20.0F, 40.0F),
+        @math.Vec2::new(260.0F, 90.0F),
+      ),
+    ),
+    tick,
+  )
+  let handle = @text.Text2dBundle::new(
+    @text.Text2d::new("Editable status"),
+    @text.TextFont::default(),
+    @math.Transform::identity(),
+  ).spawn()
+  Has_UiText::get_ui_text_store(world).insert(
+    editable,
+    UiText::new(handle),
+    tick,
+  )
+  ui_stack_system(world)
+  let update = ui_build_a11y_tree_update(world)
+  let node_id = @a11y.node_id_for_entity(editable)
+  let mut found = false
+  for nu in update.nodes() {
+    if nu.id() == node_id {
+      found = true
+      let node = nu.node()
+      assert_eq(node.role(), @moon_accesskit.Role::TextInput)
+      assert_eq(node.label(), Some("Status input"))
+      assert_eq(node.value(), Some("Editable status"))
+      assert_true(node.supports_action(@moon_accesskit.Action::SetValue))
+      assert_true(node.supports_action(@moon_accesskit.Action::Focus))
+    }
+  }
+  assert_true(found)
 }

@@ -43,6 +43,7 @@ pub fn Physics2dDebugRenderConfig::default() -> Physics2dDebugRenderConfig {
   }
 }
 
+///|
 let physics2d_debug_render_state : Ref[Physics2dDebugRenderConfig] = Ref::new(
   Physics2dDebugRenderConfig::default(),
 )
@@ -62,7 +63,10 @@ pub fn physics2d_debug_render_set_config(
 ///|
 pub fn physics2d_debug_render_set_enabled(enabled : Bool) -> Unit {
   let c = physics2d_debug_render_state.val
-  physics2d_debug_render_state.val = Physics2dDebugRenderConfig::{ ..c, enabled, }
+  physics2d_debug_render_state.val = Physics2dDebugRenderConfig::{
+    ..c,
+    enabled,
+  }
 }
 
 ///|
@@ -153,8 +157,12 @@ fn draw_shape_2d(
     TriMesh(verts, tris) =>
       for tri in tris {
         let (i, j, k) = tri
-        if i >= 0 && j >= 0 && k >= 0 &&
-          i < verts.length() && j < verts.length() && k < verts.length() {
+        if i >= 0 &&
+          j >= 0 &&
+          k >= 0 &&
+          i < verts.length() &&
+          j < verts.length() &&
+          k < verts.length() {
           let a = transform_point(iso, verts[i])
           let b = transform_point(iso, verts[j])
           let c = transform_point(iso, verts[k])
@@ -172,9 +180,9 @@ fn draw_shape_2d(
 }
 
 ///|
-pub fn[
-  W : HasRes_Physics2dContext,
-] physics2d_debug_render_system(world : W) -> Unit {
+pub fn[W : HasRes_Physics2dContext] physics2d_debug_render_system(
+  world : W,
+) -> Unit {
   let config = physics2d_debug_render_state.val
   if !config.enabled {
     return
@@ -182,27 +190,31 @@ pub fn[
   let ctx_res = HasRes_Physics2dContext::get_physics2d_context_resource(world)
   guard ctx_res.get_ref() is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-
   let gizmos = @render2d.Gizmos::new()
-
   if config.colliders {
     for pair in ctx.colliders.iter_enabled() {
       let (_h, col) = pair
       let iso = col.position()
-      let color = if col.is_sensor() { config.sensor_color } else {
+      let color = if col.is_sensor() {
+        config.sensor_color
+      } else {
         config.collider_color
       }
       draw_shape_2d(gizmos, iso, col.shape(), color)
     }
   }
-
   if config.rigid_bodies {
     for pair in ctx.rigid_bodies.iter() {
       let (_h, body) = pair
-      ignore(gizmos.cross_2d(iso2_to_gizmo(body.position()), 0.15F, config.rigid_body_color))
+      ignore(
+        gizmos.cross_2d(
+          iso2_to_gizmo(body.position()),
+          0.15F,
+          config.rigid_body_color,
+        ),
+      )
     }
   }
-
   if config.impulse_joints {
     for pair in ctx.impulse_joints.iter() {
       let (_h, j) = pair

@@ -342,6 +342,7 @@ pub fn TextureDescriptor::to_js(Self) -> @core.Any
 
 pub(all) enum TextureFormat {
   Rgba8Unorm
+  Rgba8UnormSrgb
   Bgra8Unorm
   Other(String)
 }

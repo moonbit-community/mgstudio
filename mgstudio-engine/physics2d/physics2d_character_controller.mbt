@@ -289,7 +289,7 @@ pub fn[
     }
     controller_store.set(
       entity,
-      KinematicCharacterController2d::{ ..kcc, }.reset_translation(),
+      KinematicCharacterController2d::{ ..kcc }.reset_translation(),
       tick,
     )
     |> ignore

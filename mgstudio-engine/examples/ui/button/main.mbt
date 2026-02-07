@@ -17,143 +17,189 @@ pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(ui_button_setup)
-  .add_system(button_system)
+  .add_startup_system(ui_scene_setup)
   .run()
 }
 
 ///|
-/// Bevy-aligned button update system (simplified).
-fn button_system(world : @ecs_world.World) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let button_store = @ui.Has_Button::get_button_store(world)
-  let interaction_store = @ui.Has_Interaction::get_interaction_store(world)
-  let bg_store = @ui.Has_BackgroundColor::get_background_color_store(world)
-  let children_store = @hierarchy.Has_Children::get_children_store(world)
-  let ui_text_store = @ui.Has_UiText::get_ui_text_store(world)
-  let normal = @render2d.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
-  let hovered = @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F)
-  let pressed = @render2d.Color::new(0.35F, 0.75F, 0.35F, 1.0F)
-  button_store.for_each(fn(entity, _btn) {
-    let state = match interaction_store.get(entity) {
-      Some(v) => v
-      None => @ui.Interaction::None
-    }
-    let color = match state {
-      @ui.Interaction::Pressed => pressed
-      @ui.Interaction::Hovered => hovered
-      @ui.Interaction::None => normal
-    }
-    let bg = @ui.BackgroundColor::new(color)
-    if bg_store.contains(entity) {
-      bg_store.set(entity, bg, tick) |> ignore
-    } else {
-      bg_store.insert(entity, bg, tick)
-    }
-    let label_text = match state {
-      @ui.Interaction::Pressed => "Press"
-      _ => "Button"
-    }
-    if children_store.get(entity) is Some(children) {
-      for child in children.entities {
-        if ui_text_store.get(child) is Some(text_node) {
-          @text.text_set_content(text_node.handle, label_text.to_string())
-        }
-      }
-    }
-  })
-}
-
-///|
-fn ui_button_setup(world : @ecs_world.World) -> Unit {
+fn ui_scene_setup(world : @ecs_world.World) -> Unit {
   let tick = @core.ChangeTickWorld::increment_change_tick(world)
-
-  // Camera.
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
-
-  // Root node (full-screen viewport space).
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let root = world.spawn_empty()
   @ui.Has_UiRoot::get_ui_root_store(world).insert(
     root,
     @ui.UiRoot::default(),
     tick,
   )
-  // Bevy-like: center children in the root container.
   @ui.Has_Node::get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
+    .with_flex_direction(@ui.FlexDirection::Column)
     .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_align_items(@ui.AlignItems::Center)
+    .with_row_gap(@ui.Val::Px(18.0F)),
     tick,
   )
-
-  // Button node.
-  let button = world.spawn_empty()
+  let panel = world.spawn_empty()
   @hierarchy.Has_Parent::get_parent_store(world).insert(
-    button,
+    panel,
     @hierarchy.Parent::new(root),
     tick,
   )
-  @ui.Has_Button::get_button_store(world).insert(
-    button,
-    @ui.Button::default(),
+  @ui.Has_Node::get_node_store(world).insert(
+    panel,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(420.0F))
+    .with_height(@ui.Val::Px(190.0F))
+    .with_overflow(
+      @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
+    )
+    .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F))),
     tick,
   )
-  @ui.Has_AccessibilityLabel::get_accessibility_label_store(world).insert(
-    button,
-    @ui.AccessibilityLabel::new("Button".to_string()),
+  @ui.Has_ScrollPosition::get_scroll_position_store(world).insert(
+    panel,
+    @ui.ScrollPosition::default(),
     tick,
   )
-  let button_node : @ui.Node = @ui.Node::default()
-    .with_width(@ui.Val::Px(150.0F))
-    .with_height(@ui.Val::Px(65.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-  @ui.Has_Node::get_node_store(world).insert(button, button_node, tick)
-  let normal = @render2d.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
-  @ui.Has_BackgroundColor::get_background_color_store(world).insert(
-    button,
-    @ui.BackgroundColor::new(normal),
+  let panel_content = world.spawn_empty()
+  @hierarchy.Has_Parent::get_parent_store(world).insert(
+    panel_content,
+    @hierarchy.Parent::new(panel),
     tick,
   )
-
-  // Label node (text handle is state-based, synced by UI systems).
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let font_style = @text.TextFont::default()
-    .with_font(font)
-    .with_font_size(33.0F)
-  let label_handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Button"),
-      font_style,
+  @ui.Has_Node::get_node_store(world).insert(
+    panel_content,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(760.0F))
+    .with_height(@ui.Val::Px(420.0F))
+    .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
+    tick,
+  )
+  let panel_text_handle = @text.Text2dBundle::new(
+      @text.Text2d::new(
+        "Scrollable panel (clip + scissor test)\nUse wheel or screen reader scroll actions.\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
+      ),
+      @text.TextFont::default().with_font(font).with_font_size(18.0F),
       @math.Transform::identity(),
     )
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
-  let label = world.spawn_empty()
+  let panel_text = world.spawn_empty()
   @hierarchy.Has_Parent::get_parent_store(world).insert(
-    label,
-    @hierarchy.Parent::new(button),
+    panel_text,
+    @hierarchy.Parent::new(panel_content),
     tick,
   )
-  let label_node : @ui.Node = @ui.Node::default()
-    .with_width(@ui.Val::Auto)
-    .with_height(@ui.Val::Auto)
-  @ui.Has_Node::get_node_store(world).insert(label, label_node, tick)
-  @ui.Has_ZIndex::get_z_index_store(world).insert(
-    label,
-    @ui.ZIndex::new(1),
+  @ui.Has_Node::get_node_store(world).insert(
+    panel_text,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(720.0F))
+    .with_height(@ui.Val::Auto),
     tick,
   )
   @ui.Has_UiText::get_ui_text_store(world).insert(
-    label,
-    @ui.UiText::new(label_handle),
+    panel_text,
+    @ui.UiText::new(panel_text_handle),
+    tick,
+  )
+  @ui.Has_Label::get_label_store(world).insert(
+    panel_text,
+    @ui.Label::default(),
+    tick,
+  )
+  let editable_section = world.spawn_empty()
+  @hierarchy.Has_Parent::get_parent_store(world).insert(
+    editable_section,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.Has_Node::get_node_store(world).insert(
+    editable_section,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(420.0F))
+    .with_flex_direction(@ui.FlexDirection::Column)
+    .with_row_gap(@ui.Val::Px(8.0F)),
+    tick,
+  )
+  let editable_title = world.spawn_empty()
+  @hierarchy.Has_Parent::get_parent_store(world).insert(
+    editable_title,
+    @hierarchy.Parent::new(editable_section),
+    tick,
+  )
+  @ui.Has_Node::get_node_store(world).insert(
+    editable_title,
+    @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    tick,
+  )
+  let editable_title_text = @text.Text2dBundle::new(
+      @text.Text2d::new("Editable status"),
+      @text.TextFont::default()
+      .with_font(font)
+      .with_font_size(24.0F)
+      .with_font_smoothing(@text.FontSmoothing::None),
+      @math.Transform::identity(),
+    )
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .spawn()
+  @ui.Has_UiText::get_ui_text_store(world).insert(
+    editable_title,
+    @ui.UiText::new(editable_title_text),
+    tick,
+  )
+  @ui.Has_Label::get_label_store(world).insert(
+    editable_title,
+    @ui.Label::default(),
+    tick,
+  )
+  let editable = world.spawn_empty()
+  @hierarchy.Has_Parent::get_parent_store(world).insert(
+    editable,
+    @hierarchy.Parent::new(editable_section),
+    tick,
+  )
+  @ui.Has_Node::get_node_store(world).insert(
+    editable,
+    @ui.Node::default()
+    .with_width(@ui.Val::Px(420.0F))
+    .with_height(@ui.Val::Px(48.0F))
+    .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F))),
+    tick,
+  )
+  @ui.Has_BackgroundColor::get_background_color_store(world).insert(
+    editable,
+    @ui.BackgroundColor::new(@render2d.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
+    tick,
+  )
+  @ui.Has_AccessibilityLabel::get_accessibility_label_store(world).insert(
+    editable,
+    @ui.AccessibilityLabel::new("Status input".to_string()),
+    tick,
+  )
+  let editable_text = @text.Text2dBundle::new(
+      @text.Text2d::new(""),
+      @text.TextFont::default().with_font(font).with_font_size(24.0F),
+      @math.Transform::identity(),
+    )
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .spawn()
+  @ui.Has_UiText::get_ui_text_store(world).insert(
+    editable,
+    @ui.UiText::new(editable_text),
+    tick,
+  )
+  @ui.Has_Label::get_label_store(world).insert(
+    editable,
+    @ui.Label::default(),
     tick,
   )
 }

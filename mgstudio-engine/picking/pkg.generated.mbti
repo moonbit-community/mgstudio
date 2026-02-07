@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/transform",
@@ -23,7 +24,7 @@ pub fn[W : HasRes_PickingState + @core.ChangeTickWorld] ensure_picking_state_sys
 
 pub fn[W : HasRes_PointerInputs + @core.ChangeTickWorld] ensure_pointer_inputs_system(W) -> Unit
 
-pub fn[W : @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @core.ChangeTickWorld] picking_apply_a11y_actions_system(W) -> Unit
+pub fn[W : @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @ui.Has_ScrollPosition + @ui.Has_Node + @ui.Has_UiLayout + @ui.Has_UiText + @hierarchy.Has_Children + @core.ChangeTickWorld] picking_apply_a11y_actions_system(W) -> Unit
 
 pub fn[W : HasRes_PickingEvents + @core.ChangeTickWorld] picking_clear_system(W) -> Unit
 
@@ -31,7 +32,7 @@ pub fn[W : HasRes_PointerInputs + @core.ChangeTickWorld] picking_collect_mouse_s
 
 pub fn[W : HasRes_PointerInputs + HasRes_PickingHits + HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld] picking_generate_events_system(W) -> Unit
 
-pub fn[W : HasRes_PickingEvents + HasRes_PickingState + HasRes_PickingHits + HasRes_PointerInputs + @a11y.HasRes_A11yState + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] picking_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_PickingEvents + HasRes_PickingState + HasRes_PickingHits + HasRes_PointerInputs + @a11y.HasRes_A11yState + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Node + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @ui.Has_ScrollPosition + @ui.Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] picking_plugin(@app.App[W]) -> @app.App[W]
 
 pub let picking_set : String
 

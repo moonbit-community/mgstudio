@@ -43,7 +43,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
 
 Repo development wrapper:
 
-- `./mgstudio-dev ...` builds `mgstudio-cli` (release) and runs it
+- `./mgstudio-dev ...` builds `mgstudio-cli` (release), syncs SDK web runtime + assets to `$HOME/.local/share/mgstudio/current`, then runs it
 
 Project quality gates (per module):
 

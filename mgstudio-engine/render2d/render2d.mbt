@@ -1981,20 +1981,6 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     }
   }
 
-  fn int_from_f32_ceil_nonneg(x : Float) -> Int {
-    if x <= 0.0F {
-      0
-    } else {
-      let i = x.to_int()
-      let f = Float::from_double(i.to_double())
-      if f < x {
-        i + 1
-      } else {
-        i
-      }
-    }
-  }
-
   fn physical_scissor_for_camera(
     rect : @math.Rect,
     viewport_x : Int,
@@ -2006,8 +1992,16 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
     let min_x = int_from_f32_floor_nonneg(rect.min.x * sf)
     let min_y = int_from_f32_floor_nonneg(rect.min.y * sf)
-    let max_x = int_from_f32_ceil_nonneg(rect.max.x * sf)
-    let max_y = int_from_f32_ceil_nonneg(rect.max.y * sf)
+    // Match Bevy-style clipping behavior more closely: clamp the max edge with
+    // floor semantics to avoid leaking a trailing row/column into adjacent UI.
+    let mut max_x = int_from_f32_floor_nonneg(rect.max.x * sf)
+    let mut max_y = int_from_f32_floor_nonneg(rect.max.y * sf)
+    if max_x < min_x {
+      max_x = min_x
+    }
+    if max_y < min_y {
+      max_y = min_y
+    }
     let mut x = viewport_x + min_x
     let mut y = viewport_y + min_y
     let mut w = max_x - min_x

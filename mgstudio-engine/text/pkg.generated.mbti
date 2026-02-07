@@ -7,12 +7,15 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
+  "Milky2018/moon_cosmic",
 }
 
 // Values
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
 
 pub fn font_measure_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
+
+pub fn font_rasterize_cache_key(@moon_cosmic.FontSystem, @moon_cosmic.CacheKey, FontSmoothing) -> GlyphRaster?
 
 pub fn font_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
 
@@ -22,9 +25,33 @@ pub fn font_rasterize_glyph_id_subpixel(@asset.Handle[@asset.Font], Float, Int, 
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
+pub fn text_debug_all_draws() -> Array[TextDebugGlyphDraw]
+
+pub fn text_debug_clear_frame() -> Unit
+
+pub fn text_debug_draw_count(TextHandle) -> Int
+
+pub fn text_debug_draws(TextHandle) -> Array[TextDebugGlyphDraw]
+
+pub fn text_debug_overlap_count(TextHandle, TextHandle) -> Int
+
+pub fn text_debug_push_glyph(Int, @math.Rect, @math.Rect?, Int, @math.Vec2, @math.Vec2) -> Unit
+
+pub fn text_debug_text_infos() -> Array[TextDebugTextInfo]
+
+pub fn text_debug_visible_draw_count(TextHandle) -> Int
+
+pub fn text_debug_visible_overlap_count(TextHandle, TextHandle) -> Int
+
 pub fn text_get_content(TextHandle) -> String?
 
 pub fn text_get_layout_size(TextHandle) -> @math.Vec2?
+
+pub fn text_get_transform(TextHandle) -> @math.Transform?
+
+pub fn text_get_ui_scissor(TextHandle) -> @math.Rect?
+
+pub fn text_get_visual_bounds(TextHandle) -> @math.Rect?
 
 pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(@app.App[W]) -> @app.App[W]
 
@@ -39,6 +66,8 @@ pub fn text_set_layers(TextHandle, @render2d.RenderLayers) -> Unit
 pub fn text_set_transform(TextHandle, @math.Transform) -> Unit
 
 pub fn text_set_ui_node_size(TextHandle, @math.Vec2?) -> Unit
+
+pub fn text_set_ui_scissor(TextHandle, @math.Rect?) -> Unit
 
 pub fn text_set_y_axis(TextHandle, YAxisOrientation) -> Unit
 
@@ -124,8 +153,10 @@ pub struct GlyphCacheKey {
   glyph_id : Int
   subpixel_x : Int
   subpixel_y : Int
+  font_weight : Int
+  flags : UInt
 }
-pub fn GlyphCacheKey::new(Int, Int, Int) -> Self
+pub fn GlyphCacheKey::new(Int, Int, Int, Int, UInt) -> Self
 
 pub struct GlyphRaster {
   glyph_id : Int
@@ -228,6 +259,20 @@ pub struct TextColor {
 pub fn TextColor::default() -> Self
 pub fn TextColor::new(@render2d.Color) -> Self
 
+pub struct TextDebugGlyphDraw {
+  text_id : Int
+  bounds : @math.Rect
+  scissor : @math.Rect?
+  texture_id : Int
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+}
+
+pub struct TextDebugTextInfo {
+  text_id : Int
+  content : String
+}
+
 pub struct TextEntity {
   id : Int
   depth : Int
@@ -247,6 +292,7 @@ pub fn TextFont::with_font_smoothing(Self, FontSmoothing) -> Self
 pub struct TextHandle {
   id : Int
 }
+pub fn TextHandle::id(Self) -> Int
 pub fn TextHandle::new(Int) -> Self
 
 pub struct TextLayout {

@@ -189,6 +189,12 @@ pub fn Window::a11y_end_update(self : Window) -> Unit {
 }
 
 ///|
+/// A11y: Request host accessibility focus on a node.
+pub fn Window::a11y_set_focus(self : Window, node_id : Int) -> Unit {
+  c_a11y_set_focus(self.raw, node_id)
+}
+
+///|
 pub fn Window::a11y_actions_len(self : Window) -> Int {
   self |> ignore
   c_a11y_actions_len()
@@ -204,6 +210,22 @@ pub fn Window::a11y_action_target(self : Window, index : Int) -> Int {
 pub fn Window::a11y_action_kind(self : Window, index : Int) -> Int {
   self |> ignore
   c_a11y_action_kind(index)
+}
+
+///|
+pub fn Window::a11y_action_value_len(self : Window, index : Int) -> Int {
+  self |> ignore
+  c_a11y_action_value_len(index)
+}
+
+///|
+pub fn Window::a11y_action_value_code_unit(
+  self : Window,
+  index : Int,
+  offset : Int,
+) -> Int {
+  self |> ignore
+  c_a11y_action_value_code_unit(index, offset)
 }
 
 ///|
@@ -326,6 +348,9 @@ extern "C" fn c_a11y_push_node(
 extern "C" fn c_a11y_end_update(win : @wgpu_c.OpaquePtr) -> Unit = "mgw_a11y_end_update"
 
 ///|
+extern "C" fn c_a11y_set_focus(win : @wgpu_c.OpaquePtr, node_id : Int) -> Unit = "mgw_a11y_set_focus"
+
+///|
 extern "C" fn c_a11y_actions_len() -> Int = "mgw_a11y_actions_len"
 
 ///|
@@ -333,6 +358,12 @@ extern "C" fn c_a11y_action_target(index : Int) -> Int = "mgw_a11y_action_target
 
 ///|
 extern "C" fn c_a11y_action_kind(index : Int) -> Int = "mgw_a11y_action_kind"
+
+///|
+extern "C" fn c_a11y_action_value_len(index : Int) -> Int = "mgw_a11y_action_value_len"
+
+///|
+extern "C" fn c_a11y_action_value_code_unit(index : Int, offset : Int) -> Int = "mgw_a11y_action_value_code_unit"
 
 ///|
 extern "C" fn c_a11y_actions_clear() -> Unit = "mgw_a11y_actions_clear"

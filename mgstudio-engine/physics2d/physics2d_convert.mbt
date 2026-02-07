@@ -50,9 +50,7 @@ pub fn iso2_to_mg_transform(
 
 ///|
 /// Convert mgstudio's 2D collider shape to Rapier's shape.
-pub fn collider_shape2d_to_rapier(
-  shape : ColliderShape2d,
-) -> @collision.Shape {
+pub fn collider_shape2d_to_rapier(shape : ColliderShape2d) -> @collision.Shape {
   match shape {
     Ball(radius) => @collision.Shape::Ball(radius)
     Cuboid(hx, hy) => @collision.Shape::Cuboid(hx, hy)

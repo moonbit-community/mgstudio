@@ -11,6 +11,6 @@
   "readme": "README.mbt.md",
   "license": "Apache-2.0",
   "keywords": [],
-  "preferred-target": "js",
-  "description": ""
+  "description": "",
+  "preferred-target": "js"
 }

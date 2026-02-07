@@ -47,6 +47,11 @@ pub fn UiRect::default() -> UiRect {
 }
 
 ///|
+pub fn UiRect::all(value : Val) -> UiRect {
+  UiRect::new(value, value, value, value)
+}
+
+///|
 /// Bevy-aligned display (matches Taffy).
 pub(all) enum Display {
   Block
@@ -415,6 +420,23 @@ pub fn ScrollPosition::default() -> ScrollPosition {
 }
 
 ///|
+pub fn ScrollPosition::new(
+  offset_x : Float,
+  offset_y : Float,
+) -> ScrollPosition {
+  ScrollPosition::{ offset_x, offset_y }
+}
+
+///|
+pub fn ScrollPosition::with_delta(
+  self : ScrollPosition,
+  dx : Float,
+  dy : Float,
+) -> ScrollPosition {
+  ScrollPosition::{ offset_x: self.offset_x + dx, offset_y: self.offset_y + dy }
+}
+
+///|
 #ecs.component
 pub struct CalculatedClip {
   clip : @math.Rect
@@ -769,6 +791,19 @@ pub fn Node::with_justify_content(
 ///|
 pub fn Node::with_align_items(self : Node, align_items : AlignItems) -> Node {
   Node::{ ..self, align_items, }
+}
+
+///|
+pub fn Node::with_flex_direction(
+  self : Node,
+  flex_direction : FlexDirection,
+) -> Node {
+  Node::{ ..self, flex_direction, }
+}
+
+///|
+pub fn Node::with_row_gap(self : Node, row_gap : Val) -> Node {
+  Node::{ ..self, row_gap, }
 }
 
 ///|
@@ -1778,6 +1813,22 @@ fn button_color_for_state(
 }
 
 ///|
+fn image_measure_size_px(
+  rect : @math.Rect?,
+  atlas_rect : @math.Rect?,
+  texture_size_fn : () -> @math.Vec2,
+) -> @math.Vec2 {
+  match rect {
+    Some(r) => r.size()
+    None =>
+      match atlas_rect {
+        Some(ar) => ar.size()
+        None => texture_size_fn()
+      }
+  }
+}
+
+///|
 /// Update `ContentSize` for image nodes when `NodeImageMode::Auto`.
 ///
 /// This mirrors Bevy's `update_image_content_size_system`, adapted to mgstudio's
@@ -1805,10 +1856,6 @@ pub fn[
   }
   let inv_px_scale = ui_scale_value / sf
   let transparent_id = @asset.asset_transparent_texture().id()
-  fn rect_size(rect : @math.Rect) -> @math.Vec2 {
-    rect.size()
-  }
-
   fn texture_size(handle : @asset.Handle[@asset.Image]) -> @math.Vec2 {
     let w = @asset.asset_texture_width(handle)
     let h = @asset.asset_texture_height(handle)
@@ -1882,18 +1929,13 @@ pub fn[
       }
       return
     }
-    let size_px = match image_node.rect {
-      Some(r) => rect_size(r)
-      None =>
-        match image_node.texture_atlas {
-          Some(atlas) =>
-            match atlas_rect_for(atlas) {
-              Some(ar) => rect_size(ar)
-              None => texture_size(image_node.image)
-            }
-          None => texture_size(image_node.image)
-        }
+    let atlas_rect = match image_node.texture_atlas {
+      Some(atlas) => atlas_rect_for(atlas)
+      None => None
     }
+    let size_px = image_measure_size_px(image_node.rect, atlas_rect, () => texture_size(
+      image_node.image,
+    ))
     update_content_size(entity, size_px)
     update_image_node_size(entity, size_px)
   })
@@ -1912,18 +1954,13 @@ pub fn[
       }
       return
     }
-    let size_px = match ui_image.rect {
-      Some(r) => rect_size(r)
-      None =>
-        match ui_image.texture_atlas {
-          Some(atlas) =>
-            match atlas_rect_for(atlas) {
-              Some(ar) => rect_size(ar)
-              None => texture_size(ui_image.image)
-            }
-          None => texture_size(ui_image.image)
-        }
+    let atlas_rect = match ui_image.texture_atlas {
+      Some(atlas) => atlas_rect_for(atlas)
+      None => None
     }
+    let size_px = image_measure_size_px(ui_image.rect, atlas_rect, () => texture_size(
+      ui_image.image,
+    ))
     update_content_size(entity, size_px)
   })
 }
@@ -1997,6 +2034,44 @@ pub fn[
           ctx0.viewport_size.y
         }
         @moon_taffy.length(f2d(m * (p / 100.0F)))
+      }
+    }
+  }
+
+  fn clamp_nonneg(v : Float) -> Float {
+    if v < 0.0F {
+      0.0F
+    } else {
+      v
+    }
+  }
+
+  fn resolve_axis(
+    val : Val,
+    node_axis : Float,
+    viewport_size : @math.Vec2,
+  ) -> Float {
+    match val {
+      Val::Auto => 0.0F
+      Val::Px(px) => px
+      Val::Percent(p) => node_axis * (p / 100.0F)
+      Val::Vw(p) => viewport_size.x * (p / 100.0F)
+      Val::Vh(p) => viewport_size.y * (p / 100.0F)
+      Val::VMin(p) => {
+        let m = if viewport_size.x < viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
+      }
+      Val::VMax(p) => {
+        let m = if viewport_size.x > viewport_size.y {
+          viewport_size.x
+        } else {
+          viewport_size.y
+        }
+        m * (p / 100.0F)
       }
     }
   }
@@ -2520,17 +2595,83 @@ pub fn[
 
         // Sync text handles (state-based text pipeline) for label nodes.
         if ui_text_store.get(entity) is Some(text_node) {
+          let node = match node_store.get(entity) {
+            Some(v) => v
+            None => Node::default()
+          }
+          let border_l = clamp_nonneg(
+            resolve_axis(node.border.left, size.x, ctx0.viewport_size),
+          )
+          let border_r = clamp_nonneg(
+            resolve_axis(node.border.right, size.x, ctx0.viewport_size),
+          )
+          let border_t = clamp_nonneg(
+            resolve_axis(node.border.top, size.y, ctx0.viewport_size),
+          )
+          let border_b = clamp_nonneg(
+            resolve_axis(node.border.bottom, size.y, ctx0.viewport_size),
+          )
+          let pad_l = clamp_nonneg(
+            resolve_axis(node.padding.left, size.x, ctx0.viewport_size),
+          )
+          let pad_r = clamp_nonneg(
+            resolve_axis(node.padding.right, size.x, ctx0.viewport_size),
+          )
+          let pad_t = clamp_nonneg(
+            resolve_axis(node.padding.top, size.y, ctx0.viewport_size),
+          )
+          let pad_b = clamp_nonneg(
+            resolve_axis(node.padding.bottom, size.y, ctx0.viewport_size),
+          )
+          let inset_l = border_l + pad_l
+          let inset_r = border_r + pad_r
+          let inset_t = border_t + pad_t
+          let inset_b = border_b + pad_b
+          let content_size = @math.Vec2::new(
+            clamp_nonneg(size.x - inset_l - inset_r),
+            clamp_nonneg(size.y - inset_t - inset_b),
+          )
+          let content_min = @math.Vec2::new(
+            rect.min.x + inset_l,
+            rect.min.y + inset_t,
+          )
+          let content_rect = @math.Rect::new(
+            content_min,
+            @math.Vec2::new(
+              content_min.x + content_size.x,
+              content_min.y + content_size.y,
+            ),
+          )
+          let text_transform = ui_world_transform(ctx0, content_rect, 0.0F)
           @text.text_set_y_axis(
             text_node.handle,
             @text.YAxisOrientation::TopToBottom,
           )
-          @text.text_set_ui_node_size(text_node.handle, Some(size))
-          @text.text_set_transform(text_node.handle, transform)
+          @text.text_set_ui_node_size(text_node.handle, Some(content_size))
+          @text.text_set_transform(text_node.handle, text_transform)
           @text.text_set_layers(text_node.handle, layers)
         }
       }
-      let scroll = match scroll_store.get(entity) {
+      let scroll_raw = match scroll_store.get(entity) {
         Some(v) => v
+        None => ScrollPosition::default()
+      }
+      let scroll = match node_store.get(entity) {
+        Some(node) => {
+          let x = if node.overflow.x == OverflowAxis::Scroll &&
+            scroll_raw.offset_x > 0.0F {
+            scroll_raw.offset_x
+          } else {
+            0.0F
+          }
+          let y = if node.overflow.y == OverflowAxis::Scroll &&
+            scroll_raw.offset_y > 0.0F {
+            scroll_raw.offset_y
+          } else {
+            0.0F
+          }
+          ScrollPosition::new(x, y)
+        }
         None => ScrollPosition::default()
       }
       let child_rect = @math.Rect::new(
@@ -2568,7 +2709,7 @@ pub fn[
 /// - Picks the topmost scroll container under the pointer by `UiStack`.
 /// - Applies wheel deltas directly to the stored offsets (clamped to >= 0).
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @core.ChangeTickWorld,
+  W : HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @hierarchy.Has_Children + @core.ChangeTickWorld,
 ] ui_scroll_system(
   world : W,
 ) -> Unit {
@@ -2584,6 +2725,7 @@ pub fn[
   let node_store = Has_Node::get_node_store(world)
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let scroll_store = Has_ScrollPosition::get_scroll_position_store(world)
+  let children_store = @hierarchy.Has_Children::get_children_store(world)
   let mut target : @core.Entity? = None
   for i in 0..<stack0.uinodes.length() {
     let idx = stack0.uinodes.length() - 1 - i
@@ -2610,13 +2752,117 @@ pub fn[
     Some(v) => v
     None => ScrollPosition::default()
   }
-  let mut next_x = prev.offset_x + delta.x
-  let mut next_y = prev.offset_y + delta.y
+  guard node_store.get(target_e) is Some(target_node) else { return }
+  let scrolls_x = target_node.overflow.x == OverflowAxis::Scroll
+  let scrolls_y = target_node.overflow.y == OverflowAxis::Scroll
+  let abs_dx = if delta.x < 0.0F { 0.0F - delta.x } else { delta.x }
+  let abs_dy = if delta.y < 0.0F { 0.0F - delta.y } else { delta.y }
+  let mut dx = delta.x
+  let mut dy = delta.y
+  // Match the host accessibility wheel bridge: when both axes are scrollable,
+  // pick the dominant axis to avoid accidental horizontal drift from touchpads.
+  if scrolls_x && scrolls_y {
+    if abs_dy >= abs_dx {
+      dx = 0.0F
+    } else {
+      dy = 0.0F
+    }
+  }
+  let mut max_offset_x = 0.0F
+  let mut max_offset_y = 0.0F
+  if layout_store.get(target_e) is Some(target_layout) &&
+    children_store.get(target_e) is Some(children) {
+    let target_size = target_layout.rect.size()
+    if target_size.x > 0.0F && target_size.y > 0.0F {
+      let mut content_min : @math.Vec2? = None
+      let mut content_max : @math.Vec2? = None
+      for i in 0..<children.entities.length() {
+        let child = children.entities[i]
+        if layout_store.get(child) is Some(child_layout) {
+          let unscrolled_min = @math.Vec2::new(
+            child_layout.rect.min.x + prev.offset_x,
+            child_layout.rect.min.y + prev.offset_y,
+          )
+          let unscrolled_max = @math.Vec2::new(
+            child_layout.rect.max.x + prev.offset_x,
+            child_layout.rect.max.y + prev.offset_y,
+          )
+          content_min = match content_min {
+            Some(current) =>
+              Some(
+                @math.Vec2::new(
+                  if unscrolled_min.x < current.x {
+                    unscrolled_min.x
+                  } else {
+                    current.x
+                  },
+                  if unscrolled_min.y < current.y {
+                    unscrolled_min.y
+                  } else {
+                    current.y
+                  },
+                ),
+              )
+            None => Some(unscrolled_min)
+          }
+          content_max = match content_max {
+            Some(current) =>
+              Some(
+                @math.Vec2::new(
+                  if unscrolled_max.x > current.x {
+                    unscrolled_max.x
+                  } else {
+                    current.x
+                  },
+                  if unscrolled_max.y > current.y {
+                    unscrolled_max.y
+                  } else {
+                    current.y
+                  },
+                ),
+              )
+            None => Some(unscrolled_max)
+          }
+        }
+      }
+      match (content_min, content_max) {
+        (Some(min_v), Some(max_v)) => {
+          let content_w = max_v.x - min_v.x
+          let content_h = max_v.y - min_v.y
+          let overflow_x = content_w - target_size.x
+          let overflow_y = content_h - target_size.y
+          if overflow_x > 0.0F {
+            max_offset_x = overflow_x
+          }
+          if overflow_y > 0.0F {
+            max_offset_y = overflow_y
+          }
+        }
+        _ => ()
+      }
+    }
+  }
+  let mut next_x = if target_node.overflow.x == OverflowAxis::Scroll {
+    prev.offset_x + dx
+  } else {
+    0.0F
+  }
+  let mut next_y = if target_node.overflow.y == OverflowAxis::Scroll {
+    prev.offset_y + dy
+  } else {
+    0.0F
+  }
   if next_x < 0.0F {
     next_x = 0.0F
   }
   if next_y < 0.0F {
     next_y = 0.0F
+  }
+  if next_x > max_offset_x {
+    next_x = max_offset_x
+  }
+  if next_y > max_offset_y {
+    next_y = max_offset_y
   }
   let next = ScrollPosition::{ offset_x: next_x, offset_y: next_y }
   if scroll_store.contains(target_e) {
@@ -2629,7 +2875,7 @@ pub fn[
 ///|
 /// Compute `CalculatedClip` and attach `@render2d.ScissorRect` for clipped UI.
 pub fn[
-  W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld,
+  W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + Has_UiText + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld,
 ] ui_clip_system(
   world : W,
 ) -> Unit {
@@ -2640,6 +2886,7 @@ pub fn[
   let node_store = Has_Node::get_node_store(world)
   let layout_store = Has_UiLayout::get_ui_layout_store(world)
   let clip_store = Has_CalculatedClip::get_calculated_clip_store(world)
+  let ui_text_store = Has_UiText::get_ui_text_store(world)
   let scissor_store = @render2d.Has_ScissorRect::get_scissor_rect_store(world)
   let children_store = @hierarchy.Has_Children::get_children_store(world)
   let tick = @core.ChangeTickWorld::read_change_tick(world)
@@ -2751,6 +2998,15 @@ pub fn[
       }
     } else if scissor_store.contains(entity) {
       scissor_store.remove(entity) |> ignore
+    }
+    if ui_text_store.get(entity) is Some(text_node) {
+      let text_scissor = if clipped_by_parent &&
+        !rect_is_full_viewport(self_clip) {
+        Some(self_clip)
+      } else {
+        None
+      }
+      @text.text_set_ui_scissor(text_node.handle, text_scissor)
     }
     let node = match node_store.get(entity) {
       Some(v) => v
@@ -3011,7 +3267,7 @@ pub fn[
       None => ()
     }
     if ui_text_store.get(entity) is Some(text_node) {
-      match transform_store.get(entity) {
+      match @text.text_get_transform(text_node.handle) {
         Some(t1) => {
           let pos = @math.Vec2::new(t1.translation.x, t1.translation.y)
           let scale = @math.Vec2::new(t1.scale.x, t1.scale.y)
@@ -3033,7 +3289,7 @@ pub fn[
 ///|
 /// Build an AccessKit `TreeUpdate` for the current UI tree.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+  W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
 ] ui_build_a11y_tree_update(
   world : W,
 ) -> @moon_accesskit.TreeUpdate {
@@ -3072,13 +3328,14 @@ pub fn[
   let image_node_store = Has_ImageNode::get_image_node_store(world)
   let label_store = Has_AccessibilityLabel::get_accessibility_label_store(world)
   let ui_text_store = Has_UiText::get_ui_text_store(world)
-  let interaction_store = Has_Interaction::get_interaction_store(world)
+  let scroll_store = Has_ScrollPosition::get_scroll_position_store(world)
   let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
   let children_store = @hierarchy.Has_Children::get_children_store(world)
   let clip_store = Has_CalculatedClip::get_calculated_clip_store(world)
   let view_visibility_store = @visibility.Has_ViewVisibility::get_view_visibility_store(
     world,
   )
+  let a11y_state_res = @a11y.HasRes_A11yState::get_a11y_state_resource(world)
 
   // Build the set of required nodes (focusables + their ancestor chain), so
   // every node's parent always exists in this update.
@@ -3198,24 +3455,20 @@ pub fn[
   // Root node.
   let tree_id = @moon_accesskit.TreeId::root()
   let root_id = @moon_accesskit.NodeId::root()
-  let mut focus_id = root_id
-  let mut focus_found = false
-  // Pick focus from top-most interactive node in UiStack order.
-  for i in 0..<stack0.uinodes.length() {
-    if focus_found {
-      continue
-    }
-    let idx = stack0.uinodes.length() - 1 - i
-    let entity = stack0.uinodes[idx]
-    if !required.contains(key(entity)) || !button_store.contains(entity) {
-      continue
-    }
-    match interaction_store.get(entity) {
-      Some(Interaction::Hovered) | Some(Interaction::Pressed) => {
-        focus_id = @a11y.node_id_for_entity(entity)
-        focus_found = true
+  let mut focus_id = match a11y_state_res.get() {
+    Some(state) => @a11y.A11yState::focused_node(state)
+    None => root_id
+  }
+  if focus_id != root_id {
+    let mut exists = false
+    for entity in stack0.uinodes {
+      if required.contains(key(entity)) &&
+        @a11y.node_id_for_entity(entity) == focus_id {
+        exists = true
       }
-      _ => ()
+    }
+    if !exists {
+      focus_id = root_id
     }
   }
   let update = @moon_accesskit.TreeUpdate::new(tree_id, focus_id)
@@ -3251,8 +3504,17 @@ pub fn[
     }
     guard layout_store.get(entity) is Some(layout) else { continue }
     let node_id = @a11y.node_id_for_entity(entity)
+    let explicit_label = match label_store.get(entity) {
+      Some(v) => v.text
+      None => ""
+    }
+    let is_editable = label_widget_store.contains(entity) &&
+      ui_text_store.contains(entity) &&
+      explicit_label != ""
     let role = if button_store.contains(entity) {
       @moon_accesskit.Role::Button
+    } else if is_editable {
+      @moon_accesskit.Role::TextInput
     } else if label_widget_store.contains(entity) {
       @moon_accesskit.Role::Label
     } else if image_node_store.contains(entity) {
@@ -3285,13 +3547,20 @@ pub fn[
       Some(vv) => if !vv.is_visible() { node.set_hidden() }
       None => ()
     }
+    let can_set_value = role == @moon_accesskit.Role::TextInput
     if role == @moon_accesskit.Role::Button {
       node.add_action(@moon_accesskit.Action::Focus)
       node.add_action(@moon_accesskit.Action::Click)
     }
-    let explicit_label = match label_store.get(entity) {
-      Some(v) => v.text
-      None => ""
+    if scroll_store.contains(entity) {
+      node.add_action(@moon_accesskit.Action::ScrollUp)
+      node.add_action(@moon_accesskit.Action::ScrollDown)
+      node.add_action(@moon_accesskit.Action::ScrollLeft)
+      node.add_action(@moon_accesskit.Action::ScrollRight)
+    }
+    if can_set_value {
+      node.add_action(@moon_accesskit.Action::SetValue)
+      node.add_action(@moon_accesskit.Action::Focus)
     }
     if role == @moon_accesskit.Role::Button ||
       role == @moon_accesskit.Role::Image {
@@ -3305,13 +3574,19 @@ pub fn[
         None => ()
       }
     } else if role == @moon_accesskit.Role::Label {
-      let value = if explicit_label != "" {
-        explicit_label
-      } else {
-        calc_value_from_self(entity, children_store, ui_text_store)
+      let value = calc_value_from_self(entity, children_store, ui_text_store)
+      if explicit_label != "" {
+        node.set_label(explicit_label)
       }
       // Bevy-aligned: keep a `Label` node's value even if it is empty.
       node.set_value(value)
+    } else if role == @moon_accesskit.Role::TextInput {
+      if explicit_label != "" {
+        node.set_label(explicit_label)
+      }
+      node.set_value(
+        calc_value_from_self(entity, children_store, ui_text_store),
+      )
     } else if explicit_label != "" {
       node.set_label(explicit_label)
     }
@@ -3323,7 +3598,7 @@ pub fn[
 ///|
 /// Extract UI accessibility nodes and send them to the host bridge.
 pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
+  W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
 ] ui_a11y_update_system(
   world : W,
 ) -> Unit {
@@ -4186,7 +4461,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] ui_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

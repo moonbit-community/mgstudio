@@ -85,6 +85,16 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|   if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
   #|     return `${value}`
   #|   }
+  #|   if (typeof value === "object") {
+  #|     try {
+  #|       const name = typeof value.name === "string" ? value.name : ""
+  #|       const message = typeof value.message === "string" ? value.message : ""
+  #|       if (message.length > 0) {
+  #|         return name.length > 0 ? `${name}: ${message}` : message
+  #|       }
+  #|     } catch {
+  #|     }
+  #|   }
   #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
   #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
   #|   try {
@@ -522,6 +532,31 @@ extern "js" fn a11y_actions_kind_js(index : Int) -> Int =
   #| }
 
 ///|
+extern "js" fn a11y_actions_value_len_js(index : Int) -> Int =
+  #| (index) => {
+  #|   const i = Number(index) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   const value = it && it.length > 2 ? String(it[2] ?? "") : ""
+  #|   return value.length | 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_value_code_unit_js(
+  index : Int,
+  offset : Int,
+) -> Int =
+  #| (index, offset) => {
+  #|   const i = Number(index) | 0
+  #|   const j = Number(offset) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   const value = it && it.length > 2 ? String(it[2] ?? "") : ""
+  #|   if (j < 0 || j >= value.length) return 0
+  #|   return value.charCodeAt(j) | 0
+  #| }
+
+///|
 extern "js" fn a11y_actions_clear_js() -> Unit =
   #| () => { globalThis.__mgstudio_a11y_actions = [] }
 
@@ -535,7 +570,11 @@ extern "js" fn a11y_begin_update_js(canvas : @js.Any, root_id : Int) -> @js.Any 
   #|     container = document.createElement("div")
   #|     container.id = "mgstudio-a11y"
   #|     container.style.position = "absolute"
-  #|     container.style.pointerEvents = "none"
+  #|     // Keep the root as a structural container only. Interactive hit areas
+  #|     // are on child nodes; setting width/height to 0 avoids swallowing
+  #|     // canvas input while keeping absolute children targetable.
+  #|     container.style.pointerEvents = "auto"
+  #|     container.style.overflow = "visible"
   #|     container.style.opacity = "1"
   #|     container.style.zIndex = "2147483647"
   #|     document.body.appendChild(container)
@@ -546,8 +585,8 @@ extern "js" fn a11y_begin_update_js(canvas : @js.Any, root_id : Int) -> @js.Any 
   #|   const top = rect.top + (window.scrollY || 0)
   #|   container.style.left = `${left}px`
   #|   container.style.top = `${top}px`
-  #|   container.style.width = `${rect.width}px`
-  #|   container.style.height = `${rect.height}px`
+  #|   container.style.width = `0px`
+  #|   container.style.height = `0px`
   #|   const rid = Number(rootId) | 0
   #|   if (rid) globalThis.__mgstudio_a11y_root_id = rid
   #|   // Persistent node lookup across frames (to preserve focus).
@@ -571,21 +610,35 @@ extern "js" fn a11y_push_node_js(
   y : Double,
   w : Double,
   h : Double,
-  name : String,
+  label : String,
+  value : String,
   actions_mask : Int,
 ) -> Unit =
-  #| (container, nodeId, parentId, roleId, x, y, w, h, name, actionsMask) => {
+  #| (container, nodeId, parentId, roleId, x, y, w, h, label, value, actionsMask) => {
   #|   if (!container) return
   #|   const id = Number(nodeId) | 0
   #|   const pid = Number(parentId) | 0
   #|   const role = Number(roleId) | 0
   #|   const mask = Number(actionsMask) | 0
+  #|   const labelText = String(label || "")
+  #|   const valueText = String(value || "")
+  #|   const MASK_FOCUS = 1
+  #|   const MASK_DEFAULT = 2
+  #|   const MASK_SCROLL = 4
+  #|   const MASK_SET_VALUE = 8
+  #|   const ACTION_FOCUS = 1
+  #|   const ACTION_DEFAULT = 2
+  #|   const ACTION_SCROLL_UP = 3
+  #|   const ACTION_SCROLL_DOWN = 4
+  #|   const ACTION_SCROLL_LEFT = 5
+  #|   const ACTION_SCROLL_RIGHT = 6
+  #|   const ACTION_SET_VALUE = 7
   #|   const nodes = globalThis.__mgstudio_a11y_nodes
   #|   const seen = globalThis.__mgstudio_a11y_frame_seen
   #|   const order = globalThis.__mgstudio_a11y_frame_order
   #|   if (order && Array.isArray(order)) order.push(id)
   #|   if (seen && typeof seen.add === "function") seen.add(id)
-  #|   const tag = (role === 3) ? "button" : "div"
+  #|   const tag = (mask & MASK_SET_VALUE) !== 0 ? "input" : ((role === 3) ? "button" : "div")
   #|   let el = nodes && typeof nodes.get === "function" ? nodes.get(id) : null
   #|   if (!el || String(el.tagName || "").toLowerCase() !== tag) {
   #|     const next = document.createElement(tag)
@@ -598,7 +651,7 @@ extern "js" fn a11y_push_node_js(
   #|     }
   #|     // Init-once styles and listeners.
   #|   el.style.position = "absolute"
-  #|     el.style.opacity = "0.001"
+  #|     el.style.opacity = "0"
   #|   el.style.background = "transparent"
   #|   el.style.border = "0"
   #|   el.style.padding = "0"
@@ -607,32 +660,104 @@ extern "js" fn a11y_push_node_js(
   #|     if (tag === "button") {
   #|       // Avoid implicit "submit" semantics when the overlay lives inside a form.
   #|       el.type = "button"
+  #|     } else if (tag === "input") {
+  #|       el.type = "text"
+  #|       el.autocomplete = "off"
+  #|       el.spellcheck = false
   #|     }
   #|     el.addEventListener("focus", () => {
   #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
-  #|       if ((m & 1) === 0) return
+  #|       if ((m & MASK_FOCUS) === 0) return
   #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
-  #|       globalThis.__mgstudio_a11y_actions.push([id, 1])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_FOCUS])
   #|     })
   #|     el.addEventListener("click", () => {
   #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
-  #|       if ((m & 2) === 0) return
+  #|       if ((m & MASK_DEFAULT) === 0) return
   #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
-  #|       globalThis.__mgstudio_a11y_actions.push([id, 2])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_DEFAULT])
   #|     })
   #|     el.addEventListener("keydown", (ev) => {
   #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
-  #|       if ((m & 2) === 0) return
   #|       const key = ev && ev.key
-  #|       if (key === "Enter" || key === " ") {
+  #|       if ((m & MASK_DEFAULT) !== 0 && (key === "Enter" || key === " ")) {
   #|         ev.preventDefault()
   #|         globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
-  #|         globalThis.__mgstudio_a11y_actions.push([id, 2])
+  #|         globalThis.__mgstudio_a11y_actions.push([id, ACTION_DEFAULT])
+  #|         return
+  #|       }
+  #|       if ((m & MASK_SCROLL) !== 0) {
+  #|         let k = 0
+  #|         if (key === "ArrowUp" || key === "PageUp") k = ACTION_SCROLL_UP
+  #|         else if (key === "ArrowDown" || key === "PageDown") k = ACTION_SCROLL_DOWN
+  #|         else if (key === "ArrowLeft") k = ACTION_SCROLL_LEFT
+  #|         else if (key === "ArrowRight") k = ACTION_SCROLL_RIGHT
+  #|         if (k !== 0) {
+  #|           ev.preventDefault()
+  #|           globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|           globalThis.__mgstudio_a11y_actions.push([id, k])
+  #|         }
   #|       }
   #|     })
+  #|     el.addEventListener("wheel", (ev) => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_SCROLL) === 0) return
+  #|       const dx = Number(ev && ev.deltaX) || 0
+  #|       const dy = Number(ev && ev.deltaY) || 0
+  #|       let k = 0
+  #|       if (Math.abs(dy) >= Math.abs(dx)) {
+  #|         k = dy >= 0 ? ACTION_SCROLL_DOWN : ACTION_SCROLL_UP
+  #|       } else {
+  #|         k = dx >= 0 ? ACTION_SCROLL_RIGHT : ACTION_SCROLL_LEFT
+  #|       }
+  #|       if (k !== 0) {
+  #|         ev.preventDefault()
+  #|         globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|         globalThis.__mgstudio_a11y_actions.push([id, k])
+  #|       }
+  #|     }, { passive: false })
+  #|     el.addEventListener("input", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_SET_VALUE) === 0) return
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_SET_VALUE, String(el.value || "")])
+  #|     })
+  #|     el.addEventListener("change", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_SET_VALUE) === 0) return
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_SET_VALUE, String(el.value || "")])
+  #|     })
+  #|     if ((mask & MASK_SET_VALUE) !== 0) {
+  #|       el.addEventListener("blur", () => {
+  #|         const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|         if ((m & MASK_SET_VALUE) === 0) return
+  #|         globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|         globalThis.__mgstudio_a11y_actions.push([id, ACTION_SET_VALUE, String(el.value || "")])
+  #|       })
+  #|     }
   #|     container.appendChild(el)
   #|   }
   #|   // Per-frame dynamic styles / attributes.
+  #|   // Keep nodes visually hidden every frame (important across hot reloads /
+  #|   // reused DOM nodes), while still focusable for accessibility actions.
+  #|   el.style.position = "absolute"
+  #|   el.style.opacity = "0"
+  #|   el.style.background = "transparent"
+  #|   el.style.border = "0"
+  #|   el.style.padding = "0"
+  #|   el.style.margin = "0"
+  #|   el.style.color = "transparent"
+  #|   el.style.textShadow = "none"
+  #|   el.style.caretColor = "transparent"
+  #|   el.style.fontSize = "0px"
+  #|   el.style.lineHeight = "0"
+  #|   if (tag === "input" && (mask & MASK_SET_VALUE) !== 0) {
+  #|     const focused = typeof document === "object" && document.activeElement === el
+  #|     if (!focused && String(el.value || "") !== valueText) {
+  #|       el.value = valueText
+  #|       }
+  #|   }
   #|   el.style.left = `${Number(x)}px`
   #|   el.style.top = `${Number(y)}px`
   #|   el.style.width = `${Math.max(0, Number(w))}px`
@@ -653,14 +778,15 @@ extern "js" fn a11y_push_node_js(
   #|     if (ariaRole) el.setAttribute("role", ariaRole)
   #|     else el.removeAttribute("role")
   #|   }
-  #|   const label = String(name || "")
-  #|   if (label) {
-  #|     el.setAttribute("aria-label", label)
-  #|     el.textContent = label
+  #|   const accessibleName = labelText !== "" ? labelText : valueText
+  #|   if (accessibleName !== "") {
+  #|     el.setAttribute("aria-label", accessibleName)
   #|   } else {
   #|     el.removeAttribute("aria-label")
-  #|     el.textContent = ""
   #|   }
+  #|   // Keep overlay nodes non-visual; accessibility comes from ARIA attrs
+  #|   // and input value, not from rendered DOM text.
+  #|   el.textContent = ""
   #|   // Focusable when it has any actions.
   #|   el.tabIndex = mask !== 0 ? 0 : -1
   #| }
@@ -681,21 +807,6 @@ extern "js" fn a11y_end_update_js(container : @js.Any) -> Unit =
   #|       try { nodes.delete(id) } catch {}
   #|     }
   #|   })
-
-///|
-extern "js" fn a11y_focus_node_js(node_id : Int) -> Unit =
-  #| (nodeId) => {
-  #|   const nodes = globalThis.__mgstudio_a11y_nodes
-  #|   if (!nodes || typeof nodes.get !== "function") return
-  #|   const id = Number(nodeId) | 0
-  #|   const el = nodes.get(id)
-  #|   if (!el || typeof el.focus !== "function") return
-  #|   try {
-  #|     el.focus({ preventScroll: true })
-  #|   } catch (_) {
-  #|     try { el.focus() } catch (_) {}
-  #|   }
-  #| }
   #|   // Rebuild parent->children lists in the order nodes were pushed this frame.
   #|   const childrenByParent = new Map()
   #|   for (let i = 0; i < order.length; i += 1) {
@@ -716,6 +827,21 @@ extern "js" fn a11y_focus_node_js(node_id : Int) -> Unit =
   #| }
 
 ///|
+extern "js" fn a11y_focus_node_js(node_id : Int) -> Unit =
+  #| (nodeId) => {
+  #|   const nodes = globalThis.__mgstudio_a11y_nodes
+  #|   if (!nodes || typeof nodes.get !== "function") return
+  #|   const id = Number(nodeId) | 0
+  #|   const el = nodes.get(id)
+  #|   if (!el || typeof el.focus !== "function") return
+  #|   try {
+  #|     el.focus({ preventScroll: true })
+  #|   } catch (_) {
+  #|     try { el.focus() } catch (_) {}
+  #|   }
+  #| }
+
+///|
 extern "js" fn create_checkerboard_data(size : Int) -> @js.Any =
   #| (size) => {
   #|   const data = new Uint8Array(size * size * 4)
@@ -731,6 +857,14 @@ extern "js" fn create_checkerboard_data(size : Int) -> @js.Any =
   #|     }
   #|   }
   #|   return data
+  #| }
+
+///|
+extern "js" fn create_zero_rgba_data(width : Int, height : Int) -> @js.Any =
+  #| (width, height) => {
+  #|   const w = Math.max(1, Number(width) | 0)
+  #|   const h = Math.max(1, Number(height) | 0)
+  #|   return new Uint8Array(w * h * 4)
   #| }
 
 ///|
@@ -1396,6 +1530,7 @@ struct State {
   input : InputState
   gpu : GpuState
   mut a11y_container : @js.Any?
+  mut a11y_focused_node : Int
 }
 
 ///|
@@ -1507,6 +1642,7 @@ fn new_state(
       gizmo_shader_id: 0,
     },
     a11y_container: None,
+    a11y_focused_node: 0,
   }
 }
 
@@ -4354,7 +4490,7 @@ pub fn create_host(
       let actions_mask = to_int(arg_number(args, 8, 0))
       let name = string_from_id_optional(state, @js.any(name_id))
       a11y_push_node_js(
-        container, node_id, parent_id, role_id, x, y, w, h, name, actions_mask,
+        container, node_id, parent_id, role_id, x, y, w, h, name, name, actions_mask,
       )
     }),
   )
@@ -4402,11 +4538,15 @@ pub fn create_host(
       }
     }
 
-    fn name_for(node : @moon_accesskit.Node) -> String {
+    fn label_for(node : @moon_accesskit.Node) -> String {
       match node.label() {
         Some(s) => s
-        None => node.value().unwrap_or("")
+        None => ""
       }
+    }
+
+    fn value_for(node : @moon_accesskit.Node) -> String {
+      node.value().unwrap_or("")
     }
 
     let root_id = match update.tree() {
@@ -4429,6 +4569,12 @@ pub fn create_host(
       let parent_int = if parent_id == 0UL { -1 } else { parent_id.to_int() }
       let cur_int = cur_id.to_int()
       if cur_id != root_id {
+        let supports_scroll = node.supports_action(
+            @moon_accesskit.Action::ScrollUp,
+          ) ||
+          node.supports_action(@moon_accesskit.Action::ScrollDown) ||
+          node.supports_action(@moon_accesskit.Action::ScrollLeft) ||
+          node.supports_action(@moon_accesskit.Action::ScrollRight)
         let actions_mask = (if node.supports_action(
               @moon_accesskit.Action::Focus,
             ) {
@@ -4438,6 +4584,12 @@ pub fn create_host(
           }) +
           (if node.supports_action(@moon_accesskit.Action::Click) {
             2
+          } else {
+            0
+          }) +
+          (if supports_scroll { 4 } else { 0 }) +
+          (if node.supports_action(@moon_accesskit.Action::SetValue) {
+            8
           } else {
             0
           })
@@ -4456,7 +4608,8 @@ pub fn create_host(
               y,
               w,
               h,
-              name_for(node),
+              label_for(node),
+              value_for(node),
               actions_mask,
             )
           }
@@ -4470,7 +4623,13 @@ pub fn create_host(
     }
     a11y_end_update_js(container)
     if focused_id != 0UL {
-      a11y_focus_node_js(focused_id.to_int())
+      let focused_node = focused_id.to_int()
+      if state.a11y_focused_node != focused_node {
+        a11y_focus_node_js(focused_node)
+        state.a11y_focused_node = focused_node
+      }
+    } else {
+      state.a11y_focused_node = 0
     }
     0
   })
@@ -4481,6 +4640,16 @@ pub fn create_host(
   let a11y_action_kind = @js.from_fn1(fn(index_any) {
     a11y_actions_kind_js(to_int(number_or(index_any, 0)))
   })
+  let a11y_action_value_len = @js.from_fn1(fn(index_any) {
+    a11y_actions_value_len_js(to_int(number_or(index_any, 0)))
+  })
+  let a11y_action_value_code_unit = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let index = to_int(arg_number(args, 0, 0))
+      let offset = to_int(arg_number(args, 1, 0))
+      a11y_actions_value_code_unit_js(index, offset)
+    }),
+  )
   let a11y_actions_clear = @js.from_fn0(fn() {
     a11y_actions_clear_js()
     0
@@ -4927,10 +5096,21 @@ pub fn create_host(
       )
       let texture_desc = @webgpu.texture_descriptor(
         @webgpu.texture_size(safe_width, safe_height),
-        @webgpu.TextureFormat::Rgba8Unorm,
+        @webgpu.TextureFormat::Rgba8UnormSrgb,
         texture_usage,
       )
       let texture = device.create_texture(texture_desc.to_js())
+      // Match Bevy font-atlas behavior: dynamic textures start fully transparent.
+      let clear_data = create_zero_rgba_data(safe_width, safe_height)
+      write_texture_region(
+        device.queue().as_any(),
+        texture.as_any(),
+        clear_data,
+        safe_width,
+        safe_height,
+        0,
+        0,
+      )
       let sampler = create_sampler(state, number_or(nearest, 0) != 0)
       if sampler is Some(sampler_value) {
         let entry = @js.from_entries([
@@ -5711,6 +5891,8 @@ pub fn create_host(
     ("a11y_actions_len", a11y_actions_len),
     ("a11y_action_target", a11y_action_target),
     ("a11y_action_kind", a11y_action_kind),
+    ("a11y_action_value_len", a11y_action_value_len),
+    ("a11y_action_value_code_unit", a11y_action_value_code_unit),
     ("a11y_actions_clear", a11y_actions_clear),
     ("gpu_request_device", gpu_request_device),
     ("gpu_get_queue", gpu_get_queue),

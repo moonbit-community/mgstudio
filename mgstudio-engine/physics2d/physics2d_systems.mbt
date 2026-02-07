@@ -68,9 +68,10 @@ fn make_collider_builder(shape : ColliderShape2d) -> @collision.ColliderBuilder 
       }
       @collision.ColliderBuilder::new(@collision.Shape::TriMesh(vs, indices))
     }
-    Compound(parts) => @collision.ColliderBuilder::new(
-      collider_shape2d_to_rapier(Compound(parts)),
-    )
+    Compound(parts) =>
+      @collision.ColliderBuilder::new(
+        collider_shape2d_to_rapier(Compound(parts)),
+      )
     Raw(shape) => @collision.ColliderBuilder::new(shape)
   }
 }
@@ -230,7 +231,6 @@ pub fn[
           ctx.collider_to_entity.remove(raw)
         }
       }
-
       @pipeline.remove_rigid_body(
         ctx.rigid_bodies,
         h.handle,
@@ -343,7 +343,6 @@ pub fn[
           ctx.collider_to_entity.remove(raw)
         }
       }
-
       @pipeline.remove_rigid_body(
         ctx.rigid_bodies,
         handle,
@@ -461,7 +460,9 @@ pub fn[
   )
   let rb_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col_store = Has_Collider2d::get_collider2d_store(world)
-  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(world)
+  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(
+    world,
+  )
   let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
     world,
   )
@@ -549,7 +550,6 @@ pub fn[
     if contact_skin_store.get(entity) is Some(s) {
       builder = builder.contact_skin(s.skin)
     }
-
     let active_events = match active_events_store.get(entity) {
       Some(a) => a.events
       None =>
@@ -603,7 +603,7 @@ pub fn[
         touched_bodies.set(bodyh.handle.into_raw_parts(), true)
         handle
       }
-      None => {
+      None =>
         match col_parent_store.get(entity) {
           Some(p) =>
             match body_handle_store.get(p.parent) {
@@ -657,7 +657,6 @@ pub fn[
             ctx.colliders.insert(collider)
           }
         }
-      }
     }
     collider_handle_store.insert(
       entity,
@@ -675,7 +674,10 @@ pub fn[
   for entry in touched_bodies.iter() {
     let (k, _v) = entry
     let (id, gen) = k
-    recompute_body_mass_properties(ctx, @dynamics.RigidBodyHandle::from_raw_parts(id, gen))
+    recompute_body_mass_properties(
+      ctx,
+      @dynamics.RigidBodyHandle::from_raw_parts(id, gen),
+    )
   }
 }
 
@@ -698,7 +700,9 @@ pub fn[
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let rb2d_store = Has_RigidBody2d::get_rigid_body2d_store(world)
   let col2d_store = Has_Collider2d::get_collider2d_store(world)
-  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(world)
+  let col_parent_store = Has_ColliderParent2d::get_collider_parent2d_store(
+    world,
+  )
   let vel_store = Has_Velocity2d::get_velocity2d_store(world)
   let damping_store = Has_Damping2d::get_damping2d_store(world)
   let gravity_scale_store = Has_GravityScale2d::get_gravity_scale2d_store(world)
@@ -768,7 +772,10 @@ pub fn[
       collider.set_shape(collider_shape2d_to_rapier(col2d.shape)) |> ignore
     }
     collider.set_enabled(
-      collider_enabled_store.get(entity).map(fn(e) { e.enabled }).unwrap_or(true),
+      collider_enabled_store
+      .get(entity)
+      .map(fn(e) { e.enabled })
+      .unwrap_or(true),
     )
     |> ignore
     if density_store.get(entity) is Some(d) {
@@ -804,7 +811,6 @@ pub fn[
     if collider_mass_props_store.get(entity) is Some(mp) {
       collider.set_mass_properties(mp.mass_properties) |> ignore
     }
-
     let active_events = match active_events_store.get(entity) {
       Some(a) => a.events
       None =>
@@ -828,7 +834,8 @@ pub fn[
         let transform = transform_store
           .get(entity)
           .unwrap_or(@math.Transform::identity())
-        collider.set_position_wrt_parent(mg_transform_to_iso2(transform)) |> ignore
+        collider.set_position_wrt_parent(mg_transform_to_iso2(transform))
+        |> ignore
         return
       }
     }
@@ -897,7 +904,9 @@ pub fn[
       dominance_store.get(entity).map(fn(d) { d.group }).unwrap_or(0),
     )
     |> ignore
-    body.set_enabled(rb_enabled_store.get(entity).map(fn(e) { e.enabled }).unwrap_or(true))
+    body.set_enabled(
+      rb_enabled_store.get(entity).map(fn(e) { e.enabled }).unwrap_or(true),
+    )
     |> ignore
     if additional_mass_props_store.get(entity) is Some(m) {
       body.set_additional_mass_properties(m.props, true) |> ignore

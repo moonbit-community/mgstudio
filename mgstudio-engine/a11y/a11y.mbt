@@ -23,11 +23,16 @@
 pub struct A11yState {
   mut last_update : @moon_accesskit.TreeUpdate?
   mut pending_actions : Array[@moon_accesskit.ActionRequest]
+  mut focused_node : @moon_accesskit.NodeId
 }
 
 ///|
 pub fn A11yState::default() -> A11yState {
-  A11yState::{ last_update: None, pending_actions: [] }
+  A11yState::{
+    last_update: None,
+    pending_actions: [],
+    focused_node: @moon_accesskit.NodeId::root(),
+  }
 }
 
 ///|
@@ -53,6 +58,19 @@ pub fn A11yState::set_update(
   update : @moon_accesskit.TreeUpdate,
 ) -> Unit {
   self.val.last_update = Some(update)
+}
+
+///|
+pub fn A11yState::focused_node(self : A11yState) -> @moon_accesskit.NodeId {
+  self.focused_node
+}
+
+///|
+pub fn A11yState::set_focused_node(
+  self : Ref[A11yState],
+  node : @moon_accesskit.NodeId,
+) -> Unit {
+  self.val.focused_node = node
 }
 
 // -----------------------------------------------------------------------------
@@ -88,6 +106,12 @@ fn host_a11y_action_target(index : Int) -> Int = "mgstudio_host" "a11y_action_ta
 fn host_a11y_action_kind(index : Int) -> Int = "mgstudio_host" "a11y_action_kind"
 
 ///|
+fn host_a11y_action_value_len(index : Int) -> Int = "mgstudio_host" "a11y_action_value_len"
+
+///|
+fn host_a11y_action_value_code_unit(index : Int, offset : Int) -> Int = "mgstudio_host" "a11y_action_value_code_unit"
+
+///|
 fn host_a11y_actions_clear() -> Unit = "mgstudio_host" "a11y_actions_clear"
 
 ///|
@@ -114,12 +138,36 @@ pub let host_action_focus_bit : Int = 1
 pub let host_action_default_bit : Int = 2
 
 ///|
+pub let host_action_scroll_bit : Int = 4
+
+///|
+pub let host_action_set_value_bit : Int = 8
+
+///|
 /// Convert an entity into a stable `NodeId` for the host bridge.
 pub fn node_id_for_entity(entity : @core.Entity) -> @moon_accesskit.NodeId {
   // Pack (id, generation) into a small `u64` for JSON/JS safety, while
   // reserving 0 for AccessKit's root node.
   let packed = entity.id * 65536 + entity.generation + 1
   @moon_accesskit.NodeId::from_u64(packed.to_uint64())
+}
+
+///|
+fn host_action_value(index : Int) -> String? {
+  let len = host_a11y_action_value_len(index)
+  if len <= 0 {
+    return None
+  }
+  let chars : Array[Char] = []
+  for i in 0..<len {
+    let cu = host_a11y_action_value_code_unit(index, i)
+    if cu.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
+  }
+  Some(String::from_array(chars))
 }
 
 ///|
@@ -197,6 +245,12 @@ pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(
     let kind = host_a11y_action_kind(i)
     let action = match kind {
       1 => @moon_accesskit.Action::Focus
+      2 => @moon_accesskit.Action::Click
+      3 => @moon_accesskit.Action::ScrollUp
+      4 => @moon_accesskit.Action::ScrollDown
+      5 => @moon_accesskit.Action::ScrollLeft
+      6 => @moon_accesskit.Action::ScrollRight
+      7 => @moon_accesskit.Action::SetValue
       _ => @moon_accesskit.Action::Click
     }
     let node_id = @moon_accesskit.NodeId::from_u64(target.to_uint64())
@@ -205,6 +259,14 @@ pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(
       @moon_accesskit.TreeId::root(),
       node_id,
     )
+    if action == @moon_accesskit.Action::SetValue &&
+      host_action_value(i) is Some(value) {
+      req.set_data(@moon_accesskit.ActionData::Value(value))
+    }
+    if action == @moon_accesskit.Action::Focus ||
+      action == @moon_accesskit.Action::SetValue {
+      A11yState::set_focused_node(state, node_id)
+    }
     A11yState::push_action(state, req)
   }
   host_a11y_actions_clear()

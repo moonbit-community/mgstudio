@@ -202,3 +202,129 @@ test "picking: a11y focus action maps to hovered interaction" {
   )
   inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
 }
+
+///|
+test "picking: a11y scroll actions update ScrollPosition without click events" {
+  let world = @ecs_world.World::new()
+  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
+    @a11y.A11yState::default(),
+    tick,
+  )
+  HasRes_PickingEvents::get_picking_events_resource(world).insert(
+    PickingEvents::default(),
+    tick,
+  )
+  let entity = @core.Entity::new(9, 1)
+  @ui.Has_Node::get_node_store(world).insert(
+    entity,
+    @ui.Node::default().with_overflow(
+      @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
+    ),
+    tick,
+  )
+  @ui.Has_UiLayout::get_ui_layout_store(world).insert(
+    entity,
+    @ui.UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(100.0F, 100.0F),
+      ),
+    ),
+    tick,
+  )
+  @ui.Has_ScrollPosition::get_scroll_position_store(world).insert(
+    entity,
+    @ui.ScrollPosition::default(),
+    tick,
+  )
+  let child = @core.Entity::new(10, 1)
+  @ui.Has_UiLayout::get_ui_layout_store(world).insert(
+    child,
+    @ui.UiLayout::new(
+      @math.Rect::new(
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(100.0F, 260.0F),
+      ),
+    ),
+    tick,
+  )
+  @hierarchy.Has_Children::get_children_store(world).insert(
+    entity,
+    @hierarchy.Children::new([child]),
+    tick,
+  )
+  let packed = entity.id * 65536 + entity.generation + 1
+  let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
+  let req_down = @moon_accesskit.ActionRequest::new(
+    @moon_accesskit.Action::ScrollDown,
+    @moon_accesskit.TreeId::root(),
+    node_id,
+  )
+  let req_right = @moon_accesskit.ActionRequest::new(
+    @moon_accesskit.Action::ScrollRight,
+    @moon_accesskit.TreeId::root(),
+    node_id,
+  )
+  let state = @a11y.HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(
+    tick,
+  )
+  @a11y.A11yState::push_action(state.unwrap(), req_down)
+  @a11y.A11yState::push_action(state.unwrap(), req_right)
+  picking_apply_a11y_actions_system(world)
+  let scroll = @ui.Has_ScrollPosition::get_scroll_position_store(world).get(
+    entity,
+  )
+  inspect(
+    scroll is Some(v) && v.offset_x == 0.0F && v.offset_y == 24.0F,
+    content="true",
+  )
+  let events = drain_events(world, tick)
+  inspect(events.length(), content="0")
+}
+
+///|
+test "picking: a11y set-value action updates UiText content" {
+  let world = @ecs_world.World::new()
+  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
+    @a11y.A11yState::default(),
+    tick,
+  )
+  HasRes_PickingEvents::get_picking_events_resource(world).insert(
+    PickingEvents::default(),
+    tick,
+  )
+  let text_handle = @text.text_spawn(
+    @text.Text2dBundle::new(
+      @text.Text2d::new("Old"),
+      @text.TextFont::default(),
+      @math.Transform::identity(),
+    ),
+  )
+  let entity = @core.Entity::new(11, 2)
+  @ui.Has_UiText::get_ui_text_store(world).insert(
+    entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
+  let packed = entity.id * 65536 + entity.generation + 1
+  let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
+  let req = @moon_accesskit.ActionRequest::new(
+    @moon_accesskit.Action::SetValue,
+    @moon_accesskit.TreeId::root(),
+    node_id,
+  )
+  req.set_data(@moon_accesskit.ActionData::Value("Updated"))
+  let state = @a11y.HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(
+    tick,
+  )
+  @a11y.A11yState::push_action(state.unwrap(), req)
+  picking_apply_a11y_actions_system(world)
+  inspect(
+    @text.text_get_content(text_handle).unwrap() == "Updated",
+    content="true",
+  )
+  let events = drain_events(world, tick)
+  inspect(events.length(), content="0")
+}

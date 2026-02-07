@@ -188,6 +188,21 @@ async fn serve_web(opts : ServeOptions) -> Unit {
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
   let sdk = resolve_sdk_layout(cfg)
+  let runtime_src_text = read_file_text(sdk.web_runtime_js)
+  let runtime_ok = match runtime_src_text {
+    Some(src) =>
+      src.contains("\"a11y_action_target\"") &&
+      src.contains("\"a11y_action_value_len\"")
+    None => false
+  }
+  if !runtime_ok {
+    raise RunError::InvalidArgs(
+      "SDK web runtime is outdated at " +
+      sdk.web_runtime_js +
+      " (missing A11y bridge imports: a11y_action_target/a11y_action_value_len). " +
+      "Please update sdkroot runtime bundle.",
+    )
+  }
   let wasm_path = cfg.cart_path
 
   // Stage a served root alongside the game config.

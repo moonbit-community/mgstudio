@@ -714,7 +714,7 @@ fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
 ///|
 /// Apply host-driven accessibility actions to UI state and picking events.
 pub fn[
-  W : @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @core.ChangeTickWorld,
+  W : @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @ui.Has_ScrollPosition + @ui.Has_Node + @ui.Has_UiLayout + @ui.Has_UiText + @hierarchy.Has_Children + @core.ChangeTickWorld,
 ] picking_apply_a11y_actions_system(
   world : W,
 ) -> Unit {
@@ -734,10 +734,127 @@ pub fn[
     return
   }
   let interaction_store = @ui.Has_Interaction::get_interaction_store(world)
+  let scroll_store = @ui.Has_ScrollPosition::get_scroll_position_store(world)
+  let node_store = @ui.Has_Node::get_node_store(world)
+  let layout_store = @ui.Has_UiLayout::get_ui_layout_store(world)
+  let ui_text_store = @ui.Has_UiText::get_ui_text_store(world)
+  let children_store = @hierarchy.Has_Children::get_children_store(world)
+  let scroll_step = 24.0F
+  fn apply_scroll_delta(entity : @core.Entity, dx : Float, dy : Float) -> Unit {
+    guard node_store.get(entity) is Some(target_node) else { return }
+    let prev = match scroll_store.get(entity) {
+      Some(v) => v
+      None => @ui.ScrollPosition::default()
+    }
+    let mut max_offset_x = 0.0F
+    let mut max_offset_y = 0.0F
+    if layout_store.get(entity) is Some(target_layout) &&
+      children_store.get(entity) is Some(children) {
+      let target_size = target_layout.rect.size()
+      if target_size.x > 0.0F && target_size.y > 0.0F {
+        let mut content_min : @math.Vec2? = None
+        let mut content_max : @math.Vec2? = None
+        for i in 0..<children.entities.length() {
+          let child = children.entities[i]
+          if layout_store.get(child) is Some(child_layout) {
+            let unscrolled_min = @math.Vec2::new(
+              child_layout.rect.min.x + prev.offset_x,
+              child_layout.rect.min.y + prev.offset_y,
+            )
+            let unscrolled_max = @math.Vec2::new(
+              child_layout.rect.max.x + prev.offset_x,
+              child_layout.rect.max.y + prev.offset_y,
+            )
+            content_min = match content_min {
+              Some(current) =>
+                Some(
+                  @math.Vec2::new(
+                    if unscrolled_min.x < current.x {
+                      unscrolled_min.x
+                    } else {
+                      current.x
+                    },
+                    if unscrolled_min.y < current.y {
+                      unscrolled_min.y
+                    } else {
+                      current.y
+                    },
+                  ),
+                )
+              None => Some(unscrolled_min)
+            }
+            content_max = match content_max {
+              Some(current) =>
+                Some(
+                  @math.Vec2::new(
+                    if unscrolled_max.x > current.x {
+                      unscrolled_max.x
+                    } else {
+                      current.x
+                    },
+                    if unscrolled_max.y > current.y {
+                      unscrolled_max.y
+                    } else {
+                      current.y
+                    },
+                  ),
+                )
+              None => Some(unscrolled_max)
+            }
+          }
+        }
+        match (content_min, content_max) {
+          (Some(min_v), Some(max_v)) => {
+            let content_w = max_v.x - min_v.x
+            let content_h = max_v.y - min_v.y
+            let overflow_x = content_w - target_size.x
+            let overflow_y = content_h - target_size.y
+            if overflow_x > 0.0F {
+              max_offset_x = overflow_x
+            }
+            if overflow_y > 0.0F {
+              max_offset_y = overflow_y
+            }
+          }
+          _ => ()
+        }
+      }
+    }
+    let mut next_x = if target_node.overflow.x == @ui.OverflowAxis::Scroll {
+      prev.offset_x + dx
+    } else {
+      0.0F
+    }
+    let mut next_y = if target_node.overflow.y == @ui.OverflowAxis::Scroll {
+      prev.offset_y + dy
+    } else {
+      0.0F
+    }
+    if next_x < 0.0F {
+      next_x = 0.0F
+    }
+    if next_y < 0.0F {
+      next_y = 0.0F
+    }
+    if next_x > max_offset_x {
+      next_x = max_offset_x
+    }
+    if next_y > max_offset_y {
+      next_y = max_offset_y
+    }
+    let next = @ui.ScrollPosition::new(next_x, next_y)
+    if scroll_store.contains(entity) {
+      scroll_store.set(entity, next, tick) |> ignore
+    } else {
+      scroll_store.insert(entity, next, tick)
+    }
+  }
+
   for req in actions {
     let entity = entity_from_node_id(req.target_node())
     match req.action() {
-      @moon_accesskit.Action::Focus =>
+      @moon_accesskit.Action::Focus => {
+        @a11y.A11yState::set_focused_node(state, req.target_node())
         // Map focus-driven navigation (tab / VO) to the hovered state so UI can
         // reflect focus without requiring pointer position.
         if interaction_store.contains(entity) {
@@ -746,7 +863,9 @@ pub fn[
         } else {
           interaction_store.insert(entity, @ui.Interaction::Hovered, tick)
         }
-      _ => {
+      }
+      @moon_accesskit.Action::Click => {
+        @a11y.A11yState::set_focused_node(state, req.target_node())
         if interaction_store.contains(entity) {
           interaction_store.set(entity, @ui.Interaction::Pressed, tick)
           |> ignore
@@ -763,6 +882,21 @@ pub fn[
           ),
         )
       }
+      @moon_accesskit.Action::ScrollUp =>
+        apply_scroll_delta(entity, 0.0F, -scroll_step)
+      @moon_accesskit.Action::ScrollDown =>
+        apply_scroll_delta(entity, 0.0F, scroll_step)
+      @moon_accesskit.Action::ScrollLeft =>
+        apply_scroll_delta(entity, -scroll_step, 0.0F)
+      @moon_accesskit.Action::ScrollRight =>
+        apply_scroll_delta(entity, scroll_step, 0.0F)
+      @moon_accesskit.Action::SetValue =>
+        if req.data() is Some(@moon_accesskit.ActionData::Value(value)) &&
+          ui_text_store.get(entity) is Some(text_node) {
+          @a11y.A11yState::set_focused_node(state, req.target_node())
+          @text.text_set_content(text_node.handle, value)
+        }
+      _ => ()
     }
   }
 }
@@ -905,7 +1039,7 @@ pub fn[
 
 ///|
 pub fn[
-  W : HasRes_PickingEvents + HasRes_PickingState + HasRes_PickingHits + HasRes_PointerInputs + @a11y.HasRes_A11yState + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_PickingEvents + HasRes_PickingState + HasRes_PickingHits + HasRes_PointerInputs + @a11y.HasRes_A11yState + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Node + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @ui.Has_ScrollPosition + @ui.Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] picking_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

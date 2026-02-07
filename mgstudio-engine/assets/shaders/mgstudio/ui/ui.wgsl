@@ -165,6 +165,10 @@ fn antialias(distance : f32) -> f32 {
   return saturate(0.5 - distance);
 }
 
+fn saturate(value : f32) -> f32 {
+  return clamp(value, 0.0, 1.0);
+}
+
 fn draw_border(in : VertexOut, texture_color : vec4<f32>) -> vec4<f32> {
   let color = select(in.color, in.color * texture_color, enabled(in.flags, TEXTURED));
   let external_distance = sd_rounded_box(in.point, in.size, in.radius);
@@ -184,7 +188,11 @@ fn draw_border(in : VertexOut, texture_color : vec4<f32>) -> vec4<f32> {
 fn draw_background(in : VertexOut, texture_color : vec4<f32>) -> vec4<f32> {
   let color = select(in.color, in.color * texture_color, enabled(in.flags, TEXTURED));
   let internal_distance = sd_inset_rounded_box(in.point, in.size, in.radius, in.border);
-  let t = if enabled(in.flags, ANTI_ALIAS) { antialias(internal_distance) } else { 1.0 - step(0.0, internal_distance) };
+  let t = select(
+    1.0 - step(0.0, internal_distance),
+    antialias(internal_distance),
+    enabled(in.flags, ANTI_ALIAS),
+  );
   return vec4(color.rgb, saturate(color.a * t));
 }
 

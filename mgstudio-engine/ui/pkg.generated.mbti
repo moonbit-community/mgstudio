@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/ui"
 
 import {
+  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
@@ -19,11 +20,11 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_a11y_update_system(W) -> Unit
+pub fn[W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_a11y_update_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_Interaction + Has_CalculatedClip + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_build_a11y_tree_update(W) -> @moon_accesskit.TreeUpdate
+pub fn[W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children] ui_build_a11y_tree_update(W) -> @moon_accesskit.TreeUpdate
 
-pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld] ui_clip_system(W) -> Unit
+pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + Has_UiText + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld] ui_clip_system(W) -> Unit
 
 pub fn[W : HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld] ui_image_content_size_system(W) -> Unit
 
@@ -31,13 +32,13 @@ pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_I
 
 pub fn[W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ScrollPosition + Has_UiLayout + Has_UiImage + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld] ui_layout_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
 
 pub fn[W : HasRes_UiContext + HasRes_UiStack + HasRes_UiScale + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] ui_render_extract_system(W) -> Unit
 
-pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @core.ChangeTickWorld] ui_scroll_system(W) -> Unit
+pub fn[W : HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @hierarchy.Has_Children + @core.ChangeTickWorld] ui_scroll_system(W) -> Unit
 
 pub let ui_set_a11y : String
 
@@ -374,6 +375,7 @@ pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
 pub fn Node::with_border(Self, UiRect) -> Self
 pub fn Node::with_display(Self, Display) -> Self
+pub fn Node::with_flex_direction(Self, FlexDirection) -> Self
 pub fn Node::with_grid_template_columns(Self, Array[RepeatedGridTrack]) -> Self
 pub fn Node::with_grid_template_rows(Self, Array[RepeatedGridTrack]) -> Self
 pub fn Node::with_height(Self, Val) -> Self
@@ -383,6 +385,7 @@ pub fn Node::with_overflow(Self, Overflow) -> Self
 pub fn Node::with_overflow_clip_margin(Self, OverflowClipMargin) -> Self
 pub fn Node::with_padding(Self, UiRect) -> Self
 pub fn Node::with_position_type(Self, PositionType) -> Self
+pub fn Node::with_row_gap(Self, Val) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
 
@@ -462,6 +465,8 @@ pub struct ScrollPosition {
   offset_y : Float
 }
 pub fn ScrollPosition::default() -> Self
+pub fn ScrollPosition::new(Float, Float) -> Self
+pub fn ScrollPosition::with_delta(Self, Float, Float) -> Self
 
 pub(all) enum SliceScaleMode {
   Stretch
@@ -535,6 +540,7 @@ pub struct UiRect {
   right : Val
   bottom : Val
 }
+pub fn UiRect::all(Val) -> Self
 pub fn UiRect::default() -> Self
 pub fn UiRect::new(Val, Val, Val, Val) -> Self
 

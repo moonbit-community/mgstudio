@@ -89,7 +89,26 @@ static mgw_objc_id mgw_a11y_pool = NULL;
 typedef struct mgw_a11y_action {
   int32_t target;
   int32_t kind;
+  uint16_t *value_units;
+  int32_t value_len;
 } mgw_a11y_action_t;
+
+enum {
+  MGW_A11Y_ACTION_KIND_FOCUS = 1,
+  MGW_A11Y_ACTION_KIND_DEFAULT = 2,
+  MGW_A11Y_ACTION_KIND_SCROLL_UP = 3,
+  MGW_A11Y_ACTION_KIND_SCROLL_DOWN = 4,
+  MGW_A11Y_ACTION_KIND_SCROLL_LEFT = 5,
+  MGW_A11Y_ACTION_KIND_SCROLL_RIGHT = 6,
+  MGW_A11Y_ACTION_KIND_SET_VALUE = 7,
+};
+
+enum {
+  MGW_A11Y_ACTION_MASK_FOCUS = 1,
+  MGW_A11Y_ACTION_MASK_DEFAULT = 2,
+  MGW_A11Y_ACTION_MASK_SCROLL = 4,
+  MGW_A11Y_ACTION_MASK_SET_VALUE = 8,
+};
 
 static mgw_a11y_action_t *mgw_a11y_actions = NULL;
 static int32_t mgw_a11y_actions_count = 0;
@@ -161,6 +180,10 @@ static inline bool mgw_msg_bool_id(mgw_objc_id obj, mgw_objc_sel sel, mgw_objc_i
   return ((bool (*)(mgw_objc_id, mgw_objc_sel, mgw_objc_id))mgw_objc_msg_send_sym)(obj, sel, arg0);
 }
 
+static inline bool mgw_msg_bool_sel(mgw_objc_id obj, mgw_objc_sel sel, mgw_objc_sel arg0) {
+  return ((bool (*)(mgw_objc_id, mgw_objc_sel, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel, arg0);
+}
+
 static inline void mgw_msg_void(mgw_objc_id obj, mgw_objc_sel sel) {
   ((void (*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
 }
@@ -226,6 +249,10 @@ static inline bool mgw_msg_bool(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((bool (*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
 }
 
+static inline uint16_t mgw_msg_u16_u64(mgw_objc_id obj, mgw_objc_sel sel, uint64_t arg0) {
+  return ((uint16_t(*)(mgw_objc_id, mgw_objc_sel, uint64_t))mgw_objc_msg_send_sym)(obj, sel, arg0);
+}
+
 static mgw_objc_id mgw_nsstring_utf8(const char *cstr) {
   mgw_objc_class nsstring = mgw_cls("NSString");
   if (!nsstring) {
@@ -236,20 +263,88 @@ static mgw_objc_id mgw_nsstring_utf8(const char *cstr) {
       (mgw_objc_id)nsstring, s, cstr);
 }
 
-static void mgw_a11y_actions_push(int32_t target, int32_t kind) {
+static int32_t mgw_a11y_actions_push(int32_t target, int32_t kind) {
   if (mgw_a11y_actions_count + 1 > mgw_a11y_actions_cap) {
     int32_t next = mgw_a11y_actions_cap ? mgw_a11y_actions_cap * 2 : 64;
     mgw_a11y_action_t *next_buf =
         (mgw_a11y_action_t *)realloc(mgw_a11y_actions, (size_t)next * sizeof(mgw_a11y_action_t));
     if (!next_buf) {
-      return;
+      return -1;
     }
     mgw_a11y_actions = next_buf;
     mgw_a11y_actions_cap = next;
   }
-  mgw_a11y_actions[mgw_a11y_actions_count].target = target;
-  mgw_a11y_actions[mgw_a11y_actions_count].kind = kind;
+  int32_t index = mgw_a11y_actions_count;
+  mgw_a11y_actions[index].target = target;
+  mgw_a11y_actions[index].kind = kind;
+  mgw_a11y_actions[index].value_units = NULL;
+  mgw_a11y_actions[index].value_len = 0;
   mgw_a11y_actions_count += 1;
+  return index;
+}
+
+static void mgw_a11y_actions_push_with_value(int32_t target, int32_t kind, mgw_objc_id value) {
+  int32_t index = mgw_a11y_actions_push(target, kind);
+  if (index < 0 || !value || !mgw_objc_init()) {
+    return;
+  }
+  mgw_objc_id value_string = value;
+  mgw_objc_sel responds_sel = mgw_sel("respondsToSelector:");
+  mgw_objc_sel length_sel = mgw_sel("length");
+  mgw_objc_sel description_sel = mgw_sel("description");
+  if (!mgw_msg_bool_sel(value_string, responds_sel, length_sel)) {
+    value_string = mgw_msg_id(value, description_sel);
+  }
+  if (!value_string || !mgw_msg_bool_sel(value_string, responds_sel, length_sel)) {
+    return;
+  }
+  int64_t length_i64 = mgw_msg_i64(value_string, length_sel);
+  if (length_i64 <= 0) {
+    return;
+  }
+  int32_t length = (int32_t)length_i64;
+  if (length > 8192) {
+    length = 8192;
+  }
+  uint16_t *units = (uint16_t *)malloc((size_t)length * sizeof(uint16_t));
+  if (!units) {
+    return;
+  }
+  mgw_objc_sel char_at_sel = mgw_sel("characterAtIndex:");
+  for (int32_t i = 0; i < length; i += 1) {
+    units[i] = mgw_msg_u16_u64(value_string, char_at_sel, (uint64_t)i);
+  }
+  mgw_a11y_actions[index].value_units = units;
+  mgw_a11y_actions[index].value_len = length;
+}
+
+static int32_t mgw_a11y_actions_mask_from_node_id(int32_t node_id) {
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    if (mgw_a11y_nodes[i].node_id == node_id) {
+      return mgw_a11y_nodes[i].actions_mask;
+    }
+  }
+  return 0;
+}
+
+static int32_t mgw_a11y_node_id_from_element(mgw_objc_id self) {
+#ifdef __APPLE__
+  if (!self || !mgw_objc_init()) {
+    return 0;
+  }
+  mgw_objc_id ident = mgw_msg_id(self, mgw_sel("accessibilityIdentifier"));
+  if (!ident) {
+    return 0;
+  }
+  const char *cstr = mgw_msg_cstr(ident, mgw_sel("UTF8String"));
+  if (!cstr) {
+    return 0;
+  }
+  return (int32_t)atoi(cstr);
+#else
+  (void)self;
+  return 0;
+#endif
 }
 
 static mgw_objc_id mgw_a11y_element_class(void);
@@ -260,23 +355,105 @@ static bool mgw_a11y_perform_press(mgw_objc_id self, mgw_objc_sel _cmd) {
   if (!mgw_objc_init()) {
     return false;
   }
-  mgw_objc_id ident = mgw_msg_id(self, mgw_sel("accessibilityIdentifier"));
-  if (!ident) {
-    return false;
-  }
-  const char *cstr = mgw_msg_cstr(ident, mgw_sel("UTF8String"));
-  if (!cstr) {
-    return false;
-  }
-  int32_t node_id = (int32_t)atoi(cstr);
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
   if (node_id == 0) {
     return false;
   }
-  mgw_a11y_actions_push(node_id, 2 /* Default */);
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_DEFAULT) == 0) {
+    return false;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_DEFAULT);
   return true;
 #else
   (void)self;
   return false;
+#endif
+}
+
+static bool mgw_a11y_perform_increment(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return false;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return false;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_SCROLL) == 0) {
+    return false;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_SCROLL_DOWN);
+  return true;
+#else
+  (void)self;
+  return false;
+#endif
+}
+
+static bool mgw_a11y_perform_decrement(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return false;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return false;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_SCROLL) == 0) {
+    return false;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_SCROLL_UP);
+  return true;
+#else
+  (void)self;
+  return false;
+#endif
+}
+
+static void mgw_a11y_set_value(mgw_objc_id self, mgw_objc_sel _cmd, mgw_objc_id value) {
+  (void)_cmd;
+  (void)value;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_SET_VALUE) == 0) {
+    return;
+  }
+  mgw_a11y_actions_push_with_value(node_id, MGW_A11Y_ACTION_KIND_SET_VALUE, value);
+#else
+  (void)self;
+#endif
+}
+
+static void mgw_a11y_set_focused(mgw_objc_id self, mgw_objc_sel _cmd, bool focused) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!focused || !mgw_objc_init()) {
+    return;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_FOCUS) == 0) {
+    return;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_FOCUS);
+#else
+  (void)self;
+  (void)focused;
 #endif
 }
 
@@ -286,26 +463,33 @@ static mgw_objc_id mgw_a11y_action_names(mgw_objc_id self, mgw_objc_sel _cmd) {
   if (!mgw_objc_init()) {
     return NULL;
   }
-  mgw_objc_id role = mgw_msg_id(self, mgw_sel("accessibilityRole"));
-  mgw_objc_id ax_button = mgw_nsstring_utf8("AXButton");
-  bool is_button = false;
-  if (role && ax_button) {
-    is_button = mgw_msg_bool_id(role, mgw_sel("isEqualToString:" /* NSString */), ax_button);
-  }
-  mgw_objc_class nsarray_cls = mgw_cls("NSArray");
-  if (!nsarray_cls) {
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  mgw_objc_class mut_array_cls = mgw_cls("NSMutableArray");
+  if (!mut_array_cls) {
     return NULL;
   }
-  if (!is_button) {
-    return mgw_msg_id((mgw_objc_id)nsarray_cls, mgw_sel("array"));
+  mgw_objc_id out = mgw_msg_id((mgw_objc_id)mut_array_cls, mgw_sel("array"));
+  if (!out) {
+    return NULL;
   }
-  mgw_objc_id press = mgw_nsstring_utf8("AXPress");
-  if (!press) {
-    return mgw_msg_id((mgw_objc_id)nsarray_cls, mgw_sel("array"));
+  if (mask & MGW_A11Y_ACTION_MASK_DEFAULT) {
+    mgw_objc_id press = mgw_nsstring_utf8("AXPress");
+    if (press) {
+      mgw_msg_void_id(out, mgw_sel("addObject:"), press);
+    }
   }
-  mgw_objc_sel arr_sel = mgw_sel("arrayWithObject:");
-  return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel, mgw_objc_id))mgw_objc_msg_send_sym)(
-      (mgw_objc_id)nsarray_cls, arr_sel, press);
+  if (mask & MGW_A11Y_ACTION_MASK_SCROLL) {
+    mgw_objc_id inc = mgw_nsstring_utf8("AXIncrement");
+    mgw_objc_id dec = mgw_nsstring_utf8("AXDecrement");
+    if (inc) {
+      mgw_msg_void_id(out, mgw_sel("addObject:"), inc);
+    }
+    if (dec) {
+      mgw_msg_void_id(out, mgw_sel("addObject:"), dec);
+    }
+  }
+  return out;
 #else
   (void)self;
   return NULL;
@@ -347,6 +531,18 @@ static mgw_objc_id mgw_a11y_element_class(void) {
   }
   // BOOL accessibilityPerformPress()
   class_add_method(cls, mgw_sel("accessibilityPerformPress"), (void *)&mgw_a11y_perform_press, "B@:");
+  // BOOL accessibilityPerformIncrement()
+  class_add_method(cls, mgw_sel("accessibilityPerformIncrement"), (void *)&mgw_a11y_perform_increment, "B@:");
+  // BOOL accessibilityPerformDecrement()
+  class_add_method(cls, mgw_sel("accessibilityPerformDecrement"), (void *)&mgw_a11y_perform_decrement, "B@:");
+  // void setAccessibilityValue:(id)
+  class_add_method(cls, mgw_sel("setAccessibilityValue:"), (void *)&mgw_a11y_set_value, "v@:@");
+  // void accessibilitySetValue:(id)
+  class_add_method(cls, mgw_sel("accessibilitySetValue:"), (void *)&mgw_a11y_set_value, "v@:@");
+  // void setAccessibilityFocused:(BOOL)
+  class_add_method(cls, mgw_sel("setAccessibilityFocused:"), (void *)&mgw_a11y_set_focused, "v@:B");
+  // void accessibilitySetFocused:(BOOL)
+  class_add_method(cls, mgw_sel("accessibilitySetFocused:"), (void *)&mgw_a11y_set_focused, "v@:B");
   // NSArray* accessibilityActionNames()
   class_add_method(cls, mgw_sel("accessibilityActionNames"), (void *)&mgw_a11y_action_names, "@@:");
 
@@ -1181,6 +1377,36 @@ MOONBIT_FFI_EXPORT void mgw_a11y_end_update(void *win) {
 #endif
 }
 
+MOONBIT_FFI_EXPORT void mgw_a11y_set_focus(void *win, int32_t node_id) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init() || node_id == 0) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window || !w->content_view) {
+    return;
+  }
+  mgw_a11y_node_t *node = mgw_a11y_node_find(node_id);
+  if (!node || !node->element) {
+    return;
+  }
+  mgw_objc_sel set_focus_sel = mgw_sel("setAccessibilityFocusedUIElement:");
+  mgw_objc_sel responds_sel = mgw_sel("respondsToSelector:");
+  mgw_objc_id focus_target = NULL;
+  if (mgw_msg_bool_sel(w->ns_window, responds_sel, set_focus_sel)) {
+    focus_target = w->ns_window;
+  } else if (mgw_msg_bool_sel(w->content_view, responds_sel, set_focus_sel)) {
+    focus_target = w->content_view;
+  }
+  if (focus_target) {
+    mgw_msg_void_id(focus_target, set_focus_sel, node->element);
+  }
+#else
+  (void)win;
+  (void)node_id;
+#endif
+}
+
 MOONBIT_FFI_EXPORT int32_t mgw_a11y_actions_len(void) { return mgw_a11y_actions_count; }
 
 MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_target(int32_t index) {
@@ -1197,4 +1423,31 @@ MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_kind(int32_t index) {
   return mgw_a11y_actions[index].kind;
 }
 
-MOONBIT_FFI_EXPORT void mgw_a11y_actions_clear(void) { mgw_a11y_actions_count = 0; }
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_value_len(int32_t index) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
+    return 0;
+  }
+  return mgw_a11y_actions[index].value_len;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_value_code_unit(int32_t index, int32_t offset) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
+    return 0;
+  }
+  mgw_a11y_action_t action = mgw_a11y_actions[index];
+  if (!action.value_units || offset < 0 || offset >= action.value_len) {
+    return 0;
+  }
+  return (int32_t)action.value_units[offset];
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_actions_clear(void) {
+  for (int32_t i = 0; i < mgw_a11y_actions_count; i += 1) {
+    if (mgw_a11y_actions[i].value_units) {
+      free(mgw_a11y_actions[i].value_units);
+      mgw_a11y_actions[i].value_units = NULL;
+    }
+    mgw_a11y_actions[i].value_len = 0;
+  }
+  mgw_a11y_actions_count = 0;
+}
