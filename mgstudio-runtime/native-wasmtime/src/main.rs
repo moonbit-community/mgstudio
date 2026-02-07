@@ -13,7 +13,7 @@ mod gpu_backend;
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
-    /// Path to the wasm cart (built with MoonBit's wasm-gc target).
+    /// Path to the wasm cart (built with MoonBit's wasm target).
     #[arg(long)]
     cart: PathBuf,
 

@@ -2,7 +2,7 @@
 
 A reference native runtime for **mgstudio** implemented in Rust (Cargo), using:
 
-- `wasmtime` (Wasm runtime; intended to run `wasm-gc` carts built by MoonBit)
+- `wasmtime` (Wasm runtime; intended to run `wasm` carts built by MoonBit)
 - `wgpu` + `winit` (windowing + GPU)
 
 This runtime is designed to be a side-by-side comparison with the existing
@@ -44,7 +44,7 @@ Notes:
   - texture assets: `asset_load_texture`, `asset_create_dynamic_texture`,
     `asset_update_texture_region_bytes`, and basic sampler switching
 - Known limitations (as of 2026-02-02):
-  - On Apple Silicon (AArch64) some `wasm-gc` carts may not yet compile in
+  - On Apple Silicon (AArch64) some carts may not yet compile in
     Wasmtime/Cranelift due to upstream codegen limitations. A practical
     workaround is to build this runtime for `x86_64-apple-darwin` and run it
     via Rosetta.
