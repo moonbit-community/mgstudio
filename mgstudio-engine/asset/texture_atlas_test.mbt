@@ -58,3 +58,48 @@ test "dynamic texture atlas: fails to allocate when atlas too small" {
   let allocation = builder.add_texture(layout, @math.UVec2::new(4, 4))
   inspect(allocation is None, content="true")
 }
+
+///|
+test "dynamic texture atlas: stress non-overlap with varied sizes" {
+  let atlas_size = @math.UVec2::new(256, 256)
+  let builder = DynamicTextureAtlasBuilder::new(atlas_size, 1)
+  let layout = TextureAtlasLayout::new_empty(atlas_size)
+  let rects : Array[@math.URect] = []
+  let mut seed = (0x1234ABCD).reinterpret_as_uint()
+  fn next_rand(seed : UInt) -> UInt {
+    seed * 1664525U + 1013904223U
+  }
+
+  let requested : Array[@math.UVec2] = []
+  for _ in 0..<600 {
+    seed = next_rand(seed)
+    let w = (seed % 31U).reinterpret_as_int() + 1
+    seed = next_rand(seed)
+    let h = (seed % 31U).reinterpret_as_int() + 1
+    let size = @math.UVec2::new(w, h)
+    requested.push(size)
+    let allocation = builder.add_texture(layout, size)
+    match allocation {
+      None => ()
+      Some(value) => {
+        let rect = value.1
+        rects.push(rect)
+        let rect_size = rect.size()
+        inspect(rect_size.x, content=w.to_string())
+        inspect(rect_size.y, content=h.to_string())
+      }
+    }
+  }
+  for rect in rects {
+    inspect(rect.min.x >= 0, content="true")
+    inspect(rect.min.y >= 0, content="true")
+    inspect(rect.max.x <= atlas_size.x, content="true")
+    inspect(rect.max.y <= atlas_size.y, content="true")
+  }
+  for i in 0..<rects.length() {
+    for j in (i + 1)..<rects.length() {
+      inspect(rects_overlap(rects[i], rects[j]), content="false")
+    }
+  }
+  inspect(layout.len(), content=rects.length().to_string())
+}

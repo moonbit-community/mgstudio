@@ -15,8 +15,6 @@ import {
 // Values
 pub fn collider_shape2d_to_rapier(ColliderShape2d) -> @collision.Shape
 
-pub fn collider_shape2d_to_rapier_scaled(ColliderShape2d, @math.Vec2) -> @collision.Shape
-
 pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
@@ -33,17 +31,25 @@ pub fn joint2d_revolute(@math.Vec2, @math.Vec2) -> @dynamics.GenericJoint
 
 pub fn joint2d_rope(Float, @math.Vec2, @math.Vec2) -> @dynamics.GenericJoint
 
-pub fn mg_transform_scale2d_abs(@math.Transform) -> @math.Vec2
-
 pub fn mg_transform_to_iso2(@math.Transform) -> @Milky2018/moon_rapier/core.Isometry2
 
 pub fn mg_vec2_to_rapier(@math.Vec2) -> @Milky2018/moon_rapier/core.Vec2
+
+pub fn physics2d_apply_global_hooks(Physics2dContext) -> Unit
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext] physics2d_character_controller_system(W) -> Unit
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext] physics2d_cleanup_despawned_system(W) -> Unit
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dEvents] physics2d_clear_events_system(W) -> Unit
+
+pub fn physics2d_clear_filter_contact_pair() -> Unit
+
+pub fn physics2d_clear_filter_intersection_pair() -> Unit
+
+pub fn physics2d_clear_modify_solver_contacts() -> Unit
+
+pub fn physics2d_clear_modify_solver_contacts_with_solver_contacts() -> Unit
 
 pub fn physics2d_debug_render_config() -> Physics2dDebugRenderConfig
 
@@ -53,11 +59,29 @@ pub fn physics2d_debug_render_set_enabled(Bool) -> Unit
 
 pub fn[W : HasRes_Physics2dContext] physics2d_debug_render_system(W) -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents + HasRes_Physics2dHooks] physics2d_init_resources_system(W) -> Unit
+pub fn physics2d_hook_entity_from_collider_handle(@collision.ColliderHandle) -> @Milky2018/mgstudio/core.Entity?
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @Milky2018/mgstudio/core.SystemContextWorld + @Milky2018/mgstudio/core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents + HasRes_Physics2dHooks] physics2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn physics2d_hooks_clear_current_collider_map() -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents + HasRes_Physics2dHooks] physics2d_step_system(W) -> Unit
+pub fn physics2d_hooks_config() -> Physics2dHooksConfig
+
+pub fn physics2d_hooks_set_config(Physics2dHooksConfig) -> Unit
+
+pub fn physics2d_hooks_set_current_collider_map(@hashmap.HashMap[(Int, Int), @Milky2018/mgstudio/core.Entity]) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents] physics2d_init_resources_system(W) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @Milky2018/mgstudio/core.SystemContextWorld + @Milky2018/mgstudio/core.SpawnWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents] physics2d_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn physics2d_set_filter_contact_pair((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
+
+pub fn physics2d_set_filter_intersection_pair((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Unit
+
+pub fn physics2d_set_modify_solver_contacts((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @Milky2018/moon_rapier/core.Vec2)) -> Unit
+
+pub fn physics2d_set_modify_solver_contacts_with_solver_contacts((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags) -> Unit
+
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents] physics2d_step_system(W) -> Unit
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext] physics2d_sync_insertions_system(W) -> Unit
 
@@ -299,28 +323,6 @@ pub fn Physics2dConfig::with_gravity(Self, @math.Vec2) -> Self
 pub fn Physics2dConfig::with_integration_parameters(Self, @dynamics.IntegrationParameters) -> Self
 pub fn Physics2dConfig::with_physics_pipeline_active(Self, Bool) -> Self
 
-pub struct Physics2dContactHookContext {
-  bodies : @dynamics.RigidBodySet
-  colliders : @collision.ColliderSet
-  collider1 : @collision.ColliderHandle
-  collider2 : @collision.ColliderHandle
-  entity1 : @Milky2018/mgstudio/core.Entity?
-  entity2 : @Milky2018/mgstudio/core.Entity?
-  manifold : @collision.ContactManifold
-}
-
-pub struct Physics2dContactHookWithSolverContactsContext {
-  bodies : @dynamics.RigidBodySet
-  colliders : @collision.ColliderSet
-  collider1 : @collision.ColliderHandle
-  collider2 : @collision.ColliderHandle
-  entity1 : @Milky2018/mgstudio/core.Entity?
-  entity2 : @Milky2018/mgstudio/core.Entity?
-  manifold : @collision.ContactManifold
-  solver_contacts : Array[@collision.SolverContact]
-  solver_flags : @collision.SolverFlags
-}
-
 pub struct Physics2dContext {
   rigid_bodies : @dynamics.RigidBodySet
   colliders : @collision.ColliderSet
@@ -384,26 +386,13 @@ pub struct Physics2dEvents {
 pub fn Physics2dEvents::clear(Self) -> Unit
 pub fn Physics2dEvents::new() -> Self
 
-pub struct Physics2dHooks {
-  filter_contact_pair : ((Physics2dPairHookContext) -> Bool)?
-  filter_intersection_pair : ((Physics2dPairHookContext) -> Bool)?
-  modify_solver_contacts : ((Physics2dContactHookContext) -> (Bool, @Milky2018/moon_rapier/core.Vec2))?
-  modify_solver_contacts_with_solver_contacts : ((Physics2dContactHookWithSolverContactsContext) -> @collision.SolverFlags)?
+pub struct Physics2dHooksConfig {
+  filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
+  filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
+  modify_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @Milky2018/moon_rapier/core.Vec2))?
+  modify_solver_contacts_with_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags)?
 }
-pub fn Physics2dHooks::default() -> Self
-pub fn Physics2dHooks::with_filter_contact_pair(Self, (Physics2dPairHookContext) -> Bool) -> Self
-pub fn Physics2dHooks::with_filter_intersection_pair(Self, (Physics2dPairHookContext) -> Bool) -> Self
-pub fn Physics2dHooks::with_modify_solver_contacts(Self, (Physics2dContactHookContext) -> (Bool, @Milky2018/moon_rapier/core.Vec2)) -> Self
-pub fn Physics2dHooks::with_modify_solver_contacts_with_solver_contacts(Self, (Physics2dContactHookWithSolverContactsContext) -> @collision.SolverFlags) -> Self
-
-pub struct Physics2dPairHookContext {
-  bodies : @dynamics.RigidBodySet
-  colliders : @collision.ColliderSet
-  collider1 : @collision.ColliderHandle
-  collider2 : @collision.ColliderHandle
-  entity1 : @Milky2018/mgstudio/core.Entity?
-  entity2 : @Milky2018/mgstudio/core.Entity?
-}
+pub fn Physics2dHooksConfig::default() -> Self
 
 pub struct PointProjection2d {
   entity : @Milky2018/mgstudio/core.Entity
@@ -514,10 +503,6 @@ pub(open) trait HasRes_Physics2dContext {
 
 pub(open) trait HasRes_Physics2dEvents {
   get_physics2d_events_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics2dEvents]
-}
-
-pub(open) trait HasRes_Physics2dHooks {
-  get_physics2d_hooks_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics2dHooks]
 }
 
 pub(open) trait Has_ActiveCollisionTypes2d {

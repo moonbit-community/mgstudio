@@ -21,7 +21,7 @@
 ///|
 pub(all) suberror NativeJitSetupError {
   UnsupportedModule(String)
-  JitLoadFailed(String)
+  JitLoadFailed
   MemoryInitFailed
   GlobalsAllocFailed
   MissingJitTable(Int)
@@ -116,240 +116,6 @@ fn jit_trace(msg : String) -> Unit {
 }
 
 ///|
-fn read_env_bool(key : String, default_ : Bool) -> Bool {
-  match @sys.get_env_var(key) {
-    Some(v) => {
-      let normalized = v.trim().to_lower()
-      if normalized == "" {
-        default_
-      } else if normalized == "0" ||
-        normalized == "false" ||
-        normalized == "off" ||
-        normalized == "no" {
-        false
-      } else {
-        true
-      }
-    }
-    None => default_
-  }
-}
-
-///|
-fn should_show_jit_progress(total_codes : Int) -> Bool {
-  let default_enabled = total_codes >= 32
-  read_env_bool("MGSTUDIO_NATIVE_JIT_PROGRESS", default_enabled)
-}
-
-///|
-fn should_force_indirect_jit_calls() -> Bool {
-  let default_enabled = false
-  read_env_bool("MGSTUDIO_NATIVE_JIT_FORCE_INDIRECT_CALLS", default_enabled)
-}
-
-///|
-fn render_jit_progress_bar(done : Int, total : Int, width : Int) -> String {
-  if total <= 0 {
-    return "[" + "#".repeat(width) + "]"
-  }
-  let clamped_done = if done < 0 {
-    0
-  } else if done > total {
-    total
-  } else {
-    done
-  }
-  let filled = clamped_done * width / total
-  "[" + "#".repeat(filled) + "-".repeat(width - filled) + "]"
-}
-
-///|
-fn print_jit_progress(done : Int, total : Int) -> Unit {
-  let percent = if total <= 0 { 100 } else { done * 100 / total }
-  println(
-    "[jit-progress] compile " +
-    render_jit_progress_bar(done, total, 32) +
-    " " +
-    done.to_string() +
-    "/" +
-    total.to_string() +
-    " (" +
-    percent.to_string() +
-    "%)",
-  )
-}
-
-///|
-fn join_strings(values : Array[String], sep : String) -> String {
-  let mut out = ""
-  for i, value in values {
-    if i != 0 {
-      out = out + sep
-    }
-    out = out + value
-  }
-  out
-}
-
-///|
-fn format_list_with_limit(values : Array[String], limit : Int) -> String {
-  if values.is_empty() {
-    return "(none)"
-  }
-  let shown : Array[String] = []
-  for value in values {
-    if shown.length() >= limit {
-      break
-    }
-    shown.push(value)
-  }
-  let mut suffix = ""
-  if values.length() > shown.length() {
-    suffix = " ... +" + (values.length() - shown.length()).to_string()
-  }
-  join_strings(shown, ", ") + suffix
-}
-
-///|
-fn summarize_external_imports(
-  external_imports : Map[String, Map[String, Int64]],
-) -> (Int, Int, Int) {
-  let module_count = external_imports.length()
-  let mut func_count = 0
-  let mut hostcall_count = 0
-  for _, by_name in external_imports {
-    func_count = func_count + by_name.length()
-    for _, ptr in by_name {
-      if ptr < 0L {
-        hostcall_count = hostcall_count + 1
-      }
-    }
-  }
-  (module_count, func_count, hostcall_count)
-}
-
-///|
-fn collect_missing_imports(
-  wasm_module : @types.Module,
-  external_imports : Map[String, Map[String, Int64]],
-) -> Array[String] {
-  let missing : Array[String] = []
-  for imp in wasm_module.imports {
-    if imp.desc is @types.ImportDesc::Func(_) {
-      let has_builtin = @jit.get_import_trampoline(imp.mod_name, imp.name)
-        is Some(_)
-      let has_external = match external_imports.get(imp.mod_name) {
-        Some(by_name) => by_name.get(imp.name) is Some(_)
-        None => false
-      }
-      if !has_builtin && !has_external {
-        missing.push(imp.mod_name + "." + imp.name)
-      }
-    }
-  }
-  missing
-}
-
-///|
-fn collect_import_signature_mismatches(
-  pc : @cwasm.PrecompiledModule,
-  func_signatures : Array[(Array[@types.ValueType], Array[@types.ValueType])],
-) -> Array[String] {
-  let mismatches : Array[String] = []
-  for i, imp in pc.imports {
-    if i >= func_signatures.length() {
-      mismatches.push(
-        imp.module_name +
-        "." +
-        imp.func_name +
-        " signature missing at index " +
-        i.to_string(),
-      )
-      continue
-    }
-    let (params, results) = func_signatures[i]
-    if params.length() != imp.num_params || results.length() != imp.num_results {
-      mismatches.push(
-        imp.module_name +
-        "." +
-        imp.func_name +
-        " expected " +
-        imp.num_params.to_string() +
-        "->" +
-        imp.num_results.to_string() +
-        " but got " +
-        params.length().to_string() +
-        "->" +
-        results.length().to_string(),
-      )
-    }
-  }
-  mismatches
-}
-
-///|
-fn collect_empty_compiled_functions(
-  pc : @cwasm.PrecompiledModule,
-) -> Array[String] {
-  let empty_funcs : Array[String] = []
-  for entry in pc.functions {
-    if entry.code.is_empty() {
-      empty_funcs.push(entry.func_idx.to_string() + ":" + entry.name)
-    }
-  }
-  empty_funcs
-}
-
-///|
-fn build_jit_load_failure_message(
-  wasm_module : @types.Module,
-  pc : @cwasm.PrecompiledModule,
-  func_signatures : Array[(Array[@types.ValueType], Array[@types.ValueType])],
-  external_imports : Map[String, Map[String, Int64]],
-) -> String {
-  let func_imports = @wast.count_func_imports(wasm_module.imports)
-  let total_funcs = func_imports + wasm_module.funcs.length()
-  let (external_modules, external_funcs, external_hostcalls) = summarize_external_imports(
-    external_imports,
-  )
-  let missing_imports = collect_missing_imports(wasm_module, external_imports)
-  let signature_mismatches = collect_import_signature_mismatches(
-    pc, func_signatures,
-  )
-  let empty_compiled_funcs = collect_empty_compiled_functions(pc)
-  let summary = "JIT module load failed.\n" +
-    "stats: wasm_import_funcs=" +
-    func_imports.to_string() +
-    ", precompiled_imports=" +
-    pc.imports.length().to_string() +
-    ", wasm_local_funcs=" +
-    wasm_module.funcs.length().to_string() +
-    ", wasm_codes=" +
-    wasm_module.codes.length().to_string() +
-    ", precompiled_funcs=" +
-    pc.functions.length().to_string() +
-    ", total_funcs_expected=" +
-    total_funcs.to_string() +
-    ", func_signatures=" +
-    func_signatures.length().to_string() +
-    ", external_modules=" +
-    external_modules.to_string() +
-    ", external_funcs=" +
-    external_funcs.to_string() +
-    ", external_hostcalls=" +
-    external_hostcalls.to_string()
-  let details = "\nmissing_imports: " +
-    format_list_with_limit(missing_imports, 8) +
-    "\nimport_signature_mismatches: " +
-    format_list_with_limit(signature_mismatches, 8) +
-    "\nempty_compiled_functions: " +
-    format_list_with_limit(empty_compiled_funcs, 8)
-  let hints = "\nhints: set MGSTUDIO_NATIVE_JIT_TRACE=1 for per-stage logs; " +
-    "set MGSTUDIO_NATIVE_NO_JIT=1 to run with interpreter fallback."
-  summary + details + hints
-}
-
-///|
 fn compile_module_to_precompiled(
   wasm_module : @types.Module,
   opt_level : Int,
@@ -380,33 +146,9 @@ fn compile_module_to_precompiled(
   }
   let num_func_imports = @wast.count_func_imports(wasm_module.imports)
   let normalized = clamp_opt_level(opt_level)
-  let force_indirect_calls = should_force_indirect_jit_calls()
-  let lowering_num_imports = if force_indirect_calls {
-    -1
-  } else {
-    num_func_imports
-  }
-  if is_jit_trace_enabled() {
-    jit_trace(
-      "lowering_num_imports=" +
-      lowering_num_imports.to_string() +
-      " (force_indirect_calls=" +
-      force_indirect_calls.to_string() +
-      ")",
-    )
-  }
 
   // Compile local functions.
   let total_codes = wasm_module.codes.length()
-  let progress_enabled = should_show_jit_progress(total_codes)
-  let mut last_progress_percent = -1
-  if progress_enabled {
-    if total_codes == 0 {
-      print_jit_progress(0, 0)
-    } else {
-      print_jit_progress(0, total_codes)
-    }
-  }
   for i, _ in wasm_module.codes {
     let func_idx = num_func_imports + i
     let func_name = @wast.get_func_name(wasm_module, func_idx)
@@ -453,7 +195,7 @@ fn compile_module_to_precompiled(
         "  stage: lower_function begin (func_idx=" + func_idx.to_string() + ")",
       )
     }
-    let vcode = @lower.lower_function(ir_func, num_imports=lowering_num_imports)
+    let vcode = @lower.lower_function(ir_func, num_imports=num_func_imports)
     if trace_stages {
       let blocks = vcode.get_blocks()
       let mut insts = 0
@@ -499,14 +241,6 @@ fn compile_module_to_precompiled(
       ft.params.length(),
       ft.results.length(),
     )
-    if progress_enabled && total_codes > 0 {
-      let done = i + 1
-      let percent = done * 100 / total_codes
-      if done == total_codes || percent >= last_progress_percent + 2 {
-        print_jit_progress(done, total_codes)
-        last_progress_percent = percent
-      }
-    }
     if trace_stages {
       jit_trace("  stage: done (func_idx=" + func_idx.to_string() + ")")
     }
@@ -682,18 +416,10 @@ pub fn prepare_jit_for_instance(
     wasm_module, instance, store,
   )
   jit_trace("loading JIT module")
-  let jm = @jit.JITModule::load_with_imports(
+  let jit_module = @jit.JITModule::load_with_imports(
     pc, func_signatures, external_imports,
-  ) catch {
-    err =>
-      raise NativeJitSetupError::JitLoadFailed(
-        build_jit_load_failure_message(
-          wasm_module, pc, func_signatures, external_imports,
-        ) +
-        "\nwasmoon_load_error: " +
-        err.to_string(),
-      )
-  }
+  )
+  guard jit_module is Some(jm) else { raise NativeJitSetupError::JitLoadFailed }
 
   // Enable arbitrary host function imports in JIT mode.
   jit_trace("install hostcall dispatcher")
@@ -736,7 +462,7 @@ pub fn prepare_jit_for_instance(
     }
   }
 
-  // GC setup (required for wasm).
+  // GC setup (required for wasm-gc).
   jit_trace("gc_setup")
   match store.c_heap {
     Some(heap) => {
@@ -744,14 +470,7 @@ pub fn prepare_jit_for_instance(
         store.module_types,
         type_rec_groups=store.module_rec_groups,
       )
-      @jit.gc_setup(
-        heap,
-        store.module_types,
-        canonical,
-        func_type_indices=instance.func_type_indices,
-        func_table_ptr=jm.get_func_table_ptr(),
-        num_funcs=jm.get_func_count(),
-      )
+      @jit.gc_setup(heap, store.module_types, canonical)
       jm.set_gc_heap(heap.get_ptr())
     }
     None => raise NativeJitSetupError::MissingCHeap

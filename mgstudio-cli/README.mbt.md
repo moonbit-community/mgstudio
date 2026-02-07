@@ -21,7 +21,7 @@ mgstudio --help
 (cd mgstudio-engine && mgstudio gen --check)
 
 # Build a game wasm (example).
-moon build --release --target wasm -C mgstudio-engine mgstudio-engine/examples/2d/sprite
+moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
 
 # Run (calls export: game_app). The runner reads ./moon.game.json (or use --game).
 mgstudio run --game mgstudio-engine/examples/2d/sprite/moon.game.json
@@ -48,7 +48,7 @@ Minimal example:
 {
   "mgstudio": "0.1.0",
   "sdkroot": "$HOME/.local/share/mgstudio/current",
-  "cart": "./_build/wasm/release/build/cmd/main/main.wasm",
+  "cart": "./_build/wasm-gc/release/build/cmd/main/main.wasm",
   "web": { "addr": "127.0.0.1", "port": 8099 },
   "assets_allow_sdk_override": false
 }

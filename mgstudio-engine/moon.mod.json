@@ -3,14 +3,16 @@
   "version": "0.1.1",
   "deps": {
     "Milky2018/moon_cosmic": "0.1.1",
-    "Milky2018/moon_rapier": "0.1.16",
+    "Milky2018/moon_rapier": "0.1.12",
     "Milky2018/moon_swash": "0.1.2",
-    "Milky2018/moon_zeno": "0.1.0"
+    "Milky2018/moon_zeno": "0.1.0",
+    "Milky2018/moon_taffy": "0.1.24",
+    "Milky2018/moon_accesskit": "0.2.1"
   },
   "readme": "README.mbt.md",
   "repository": "",
   "license": "Apache-2.0",
   "keywords": [],
   "description": "",
-  "preferred-target": "wasm"
+  "preferred-target": "wasm-gc"
 }

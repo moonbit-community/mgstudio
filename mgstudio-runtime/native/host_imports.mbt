@@ -16,7 +16,7 @@
 /// Native host stubs for `mgstudio_host` and `moonbit:ffi`.
 ///
 /// This is a "bring-up" implementation: enough to instantiate and start running
-/// the wasm build. Real window/GPU/input implementations will be added later.
+/// the wasm-gc build. Real window/GPU/input implementations will be added later.
 ///
 /// Important: the wasm imports' signatures must match the game's wasm import
 /// section; otherwise instantiation fails.
@@ -695,6 +695,350 @@ pub fn add_mgstudio_host_imports(
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
 
+  // A11y (macOS NSAccessibility bridge).
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_begin_update",
+    fn(args) {
+      try {
+        if args.length() >= 1 &&
+          args[0] is @types.Value::I32(root_id) &&
+          ctx.window is Some(win) {
+          win.a11y_begin_update(root_id)
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_begin_update failed")
+          host_fail("a11y_begin_update", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_push_node",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() < 9 {
+          return ok_i32(0)
+        }
+        guard args[0] is @types.Value::I32(node_id) else { return ok_i32(0) }
+        guard args[1] is @types.Value::I32(parent_id) else { return ok_i32(0) }
+        guard args[2] is @types.Value::I32(role_id) else { return ok_i32(0) }
+        guard args[3] is @types.Value::F32(x) else { return ok_i32(0) }
+        guard args[4] is @types.Value::F32(y) else { return ok_i32(0) }
+        guard args[5] is @types.Value::F32(w) else { return ok_i32(0) }
+        guard args[6] is @types.Value::F32(h) else { return ok_i32(0) }
+        guard args[7] is @types.Value::I32(name_id) else { return ok_i32(0) }
+        guard args[8] is @types.Value::I32(actions_mask) else {
+          return ok_i32(0)
+        }
+        let name = string_table_get(ctx, name_id).unwrap_or("")
+        win.a11y_push_node(
+          node_id, parent_id, role_id, x, y, w, h, name, actions_mask,
+        )
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_push_node failed")
+          host_fail("a11y_push_node", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_end_update",
+    fn(_args) {
+      try {
+        if ctx.window is Some(win) {
+          win.a11y_end_update()
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_end_update failed")
+          host_fail("a11y_end_update", "<error>")
+        }
+      }
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_apply_update",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        guard args.length() >= 1 && args[0] is @types.Value::I32(payload_id) else {
+          return ok_i32(0)
+        }
+        let payload = string_table_get(ctx, payload_id).unwrap_or("")
+        if payload == "" {
+          return ok_i32(0)
+        }
+        let json = @json.parse(payload)
+        let update : @moon_accesskit.TreeUpdate = @json.from_json(json)
+
+        // We keep the existing NSAccessibility bridge (begin/push/end), but the
+        // engine->runtime boundary is now AccessKit TreeUpdate.
+        win.a11y_begin_update(-1)
+        let nodes_by_id : @hashmap.HashMap[UInt64, @moon_accesskit.Node] = @hashmap.HashMap::new()
+        for nu in update.nodes() {
+          nodes_by_id.set(nu.id().to_u64(), nu.node())
+        }
+        let root_id = match update.tree() {
+          Some(t) => t.root_id().to_u64()
+          None => 0UL
+        }
+        let focused_id = update.focus().to_u64()
+        fn host_role(role : @moon_accesskit.Role) -> Int {
+          match role {
+            @moon_accesskit.Role::Window
+            | @moon_accesskit.Role::Application
+            | @moon_accesskit.Role::RootWebArea => 1
+            @moon_accesskit.Role::Button
+            | @moon_accesskit.Role::DefaultButton => 3
+            @moon_accesskit.Role::Label
+            | @moon_accesskit.Role::TextRun
+            | @moon_accesskit.Role::Paragraph => 4
+            @moon_accesskit.Role::Image => 5
+            _ => 2
+          }
+        }
+
+        fn name_for(node : @moon_accesskit.Node) -> String {
+          if node.supports_action(@moon_accesskit.Action::SetValue) {
+            match node.value() {
+              Some(s) => s
+              None => node.label().unwrap_or("")
+            }
+          } else {
+            match node.label() {
+              Some(s) => s
+              None => node.value().unwrap_or("")
+            }
+          }
+        }
+
+        let stack : Array[(UInt64, UInt64, Bool)] = []
+        stack.push((0UL, root_id, false))
+        let visited : @hashmap.HashMap[UInt64, Bool] = @hashmap.HashMap::new()
+        while stack.length() > 0 {
+          let (parent_id, cur_id, hidden_ancestor) = stack.pop().unwrap()
+          if visited.contains(cur_id) {
+            continue
+          }
+          visited.set(cur_id, true)
+          guard nodes_by_id.get(cur_id) is Some(node) else { continue }
+          if hidden_ancestor || node.is_hidden() {
+            continue
+          }
+          if cur_id != root_id {
+            let parent_int = if parent_id == 0UL {
+              -1
+            } else {
+              parent_id.to_int()
+            }
+            let node_int = cur_id.to_int()
+            let supports_scroll = node.supports_action(
+                @moon_accesskit.Action::ScrollUp,
+              ) ||
+              node.supports_action(@moon_accesskit.Action::ScrollDown) ||
+              node.supports_action(@moon_accesskit.Action::ScrollLeft) ||
+              node.supports_action(@moon_accesskit.Action::ScrollRight)
+            let actions_mask = (if node.supports_action(
+                  @moon_accesskit.Action::Focus,
+                ) {
+                1
+              } else {
+                0
+              }) +
+              (if node.supports_action(@moon_accesskit.Action::Click) {
+                2
+              } else {
+                0
+              }) +
+              (if supports_scroll { 4 } else { 0 }) +
+              (if node.supports_action(@moon_accesskit.Action::SetValue) {
+                8
+              } else {
+                0
+              })
+            match node.bounds() {
+              Some(b) => {
+                let x = Float::from_double(b.x0)
+                let y = Float::from_double(b.y0)
+                let w = Float::from_double(b.x1 - b.x0)
+                let h = Float::from_double(b.y1 - b.y0)
+                win.a11y_push_node(
+                  node_int,
+                  parent_int,
+                  host_role(node.role()),
+                  x,
+                  y,
+                  w,
+                  h,
+                  name_for(node),
+                  actions_mask,
+                )
+              }
+              None => ()
+            }
+          }
+          let children = node.children()
+          for i in 0..<children.length() {
+            stack.push((cur_id, children[i].to_u64(), false))
+          }
+        }
+        win.a11y_end_update()
+        if focused_id != 0UL && focused_id != root_id {
+          win.a11y_set_focus(focused_id.to_int())
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_apply_update failed")
+          host_fail("a11y_apply_update", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_actions_len",
+    fn(_args) {
+      try {
+        if ctx.window is Some(win) {
+          return ok_i32(win.a11y_actions_len())
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_actions_len failed")
+          host_fail("a11y_actions_len", "<error>")
+        }
+      }
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_target",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 1 && args[0] is @types.Value::I32(index) {
+          return ok_i32(win.a11y_action_target(index))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_target failed")
+          host_fail("a11y_action_target", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_kind",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 1 && args[0] is @types.Value::I32(index) {
+          return ok_i32(win.a11y_action_kind(index))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_kind failed")
+          host_fail("a11y_action_kind", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_value_len",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 1 && args[0] is @types.Value::I32(index) {
+          return ok_i32(win.a11y_action_value_len(index))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_value_len failed")
+          host_fail("a11y_action_value_len", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_action_value_code_unit",
+    fn(args) {
+      try {
+        guard ctx.window is Some(win) else { return ok_i32(0) }
+        if args.length() >= 2 &&
+          args[0] is @types.Value::I32(index) &&
+          args[1] is @types.Value::I32(offset) {
+          return ok_i32(win.a11y_action_value_code_unit(index, offset))
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_action_value_code_unit failed")
+          host_fail("a11y_action_value_code_unit", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "a11y_actions_clear",
+    fn(_args) {
+      try {
+        if ctx.window is Some(win) {
+          win.a11y_actions_clear()
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("a11y_actions_clear failed")
+          host_fail("a11y_actions_clear", "<error>")
+        }
+      }
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+
   // Window.
   linker.add_host_func(
     "mgstudio_host",
@@ -905,6 +1249,30 @@ pub fn add_mgstudio_host_imports(
     fn(_args) {
       if ctx.window is Some(win) {
         ok_f32(win.input_mouse_y())
+      } else {
+        ok_f32(0.0)
+      }
+    },
+    func_type=ft([], [@types.ValueType::F32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_wheel_x",
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_f32(win.input_wheel_x())
+      } else {
+        ok_f32(0.0)
+      }
+    },
+    func_type=ft([], [@types.ValueType::F32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_wheel_y",
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_f32(win.input_wheel_y())
       } else {
         ok_f32(0.0)
       }
@@ -1680,6 +2048,60 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_set_scissor",
+    fn(args) {
+      try {
+        host_trace("host: gpu_set_scissor")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 4 &&
+          args[0] is @types.Value::I32(x) &&
+          args[1] is @types.Value::I32(y) &&
+          args[2] is @types.Value::I32(w) &&
+          args[3] is @types.Value::I32(h) {
+          ctx.gpu.unwrap().set_scissor(x, y, w, h)
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_set_scissor failed")
+          host_fail("gpu_set_scissor", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_clear_scissor",
+    fn(_args) {
+      try {
+        host_trace("host: gpu_clear_scissor")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        ctx.gpu.unwrap().clear_scissor()
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_clear_scissor failed")
+          host_fail("gpu_clear_scissor", "<error>")
+        }
+      }
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_end_pass",
     fn(_args) {
       try {
@@ -1910,6 +2332,236 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_draw_ui_rect",
+    fn(args) {
+      try {
+        host_trace("host: gpu_draw_ui_rect")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 23 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) &&
+          args[10] is @types.Value::F32(uv_min_x) &&
+          args[11] is @types.Value::F32(uv_min_y) &&
+          args[12] is @types.Value::F32(uv_max_x) &&
+          args[13] is @types.Value::F32(uv_max_y) &&
+          args[14] is @types.Value::I32(flags) &&
+          args[15] is @types.Value::F32(radius_tl) &&
+          args[16] is @types.Value::F32(radius_tr) &&
+          args[17] is @types.Value::F32(radius_br) &&
+          args[18] is @types.Value::F32(radius_bl) &&
+          args[19] is @types.Value::F32(border_left) &&
+          args[20] is @types.Value::F32(border_top) &&
+          args[21] is @types.Value::F32(border_right) &&
+          args[22] is @types.Value::F32(border_bottom) {
+          ctx.gpu
+          .unwrap()
+          .draw_ui_rect(
+            texture_id, x, y, rot, sx, sy, r, g, b, a, uv_min_x, uv_min_y, uv_max_x,
+            uv_max_y, flags, radius_tl, radius_tr, radius_br, radius_bl, border_left,
+            border_top, border_right, border_bottom,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_ui_rect failed")
+          host_fail("gpu_draw_ui_rect", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_draw_ui_texture_slice",
+    fn(args) {
+      try {
+        host_trace("host: gpu_draw_ui_texture_slice")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 26 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) &&
+          args[10] is @types.Value::F32(texture_slice_l) &&
+          args[11] is @types.Value::F32(texture_slice_t) &&
+          args[12] is @types.Value::F32(texture_slice_r) &&
+          args[13] is @types.Value::F32(texture_slice_b) &&
+          args[14] is @types.Value::F32(target_slice_l) &&
+          args[15] is @types.Value::F32(target_slice_t) &&
+          args[16] is @types.Value::F32(target_slice_r) &&
+          args[17] is @types.Value::F32(target_slice_b) &&
+          args[18] is @types.Value::F32(repeat_side_x) &&
+          args[19] is @types.Value::F32(repeat_side_y) &&
+          args[20] is @types.Value::F32(repeat_center_x) &&
+          args[21] is @types.Value::F32(repeat_center_y) &&
+          args[22] is @types.Value::F32(atlas_l) &&
+          args[23] is @types.Value::F32(atlas_t) &&
+          args[24] is @types.Value::F32(atlas_r) &&
+          args[25] is @types.Value::F32(atlas_b) {
+          ctx.gpu
+          .unwrap()
+          .draw_ui_texture_slice(
+            texture_id, x, y, rot, sx, sy, r, g, b, a, texture_slice_l, texture_slice_t,
+            texture_slice_r, texture_slice_b, target_slice_l, target_slice_t, target_slice_r,
+            target_slice_b, repeat_side_x, repeat_side_y, repeat_center_x, repeat_center_y,
+            atlas_l, atlas_t, atlas_r, atlas_b,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_ui_texture_slice failed")
+          host_fail("gpu_draw_ui_texture_slice", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_draw_ui_box_shadow",
+    fn(args) {
+      try {
+        host_trace("host: gpu_draw_ui_box_shadow")
+        if ctx.gpu is None {
+          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        }
+        if args.length() >= 18 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) &&
+          args[10] is @types.Value::F32(size_x) &&
+          args[11] is @types.Value::F32(size_y) &&
+          args[12] is @types.Value::F32(radius_tl) &&
+          args[13] is @types.Value::F32(radius_tr) &&
+          args[14] is @types.Value::F32(radius_br) &&
+          args[15] is @types.Value::F32(radius_bl) &&
+          args[16] is @types.Value::F32(blur) &&
+          args[17] is @types.Value::I32(samples) {
+          ctx.gpu
+          .unwrap()
+          .draw_ui_box_shadow(
+            texture_id, x, y, rot, sx, sy, r, g, b, a, size_x, size_y, radius_tl,
+            radius_tr, radius_br, radius_bl, blur, samples,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_ui_box_shadow failed")
+          host_fail("gpu_draw_ui_box_shadow", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
       ],
       [@types.ValueType::I32],
     ),

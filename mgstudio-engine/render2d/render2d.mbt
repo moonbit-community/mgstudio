@@ -147,6 +147,73 @@ pub fn Sprite::with_rect(self : Sprite, rect : @math.Rect?) -> Sprite {
 }
 
 ///|
+/// A per-entity scissor rectangle in *logical* pixels, relative to the active
+/// camera's view (top-left origin).
+///
+/// When present, `render_execute_system` converts it into physical pixels using
+/// the camera's scale factor and viewport offset, then applies it via
+/// `host_gpu_set_scissor`.
+///
+/// This is primarily used by UI clipping (overflow/scroll).
+#ecs.component
+pub struct ScissorRect {
+  rect : @math.Rect
+}
+
+///|
+pub fn ScissorRect::new(rect : @math.Rect) -> ScissorRect {
+  ScissorRect::{ rect, }
+}
+
+///|
+/// UI corner radii (top-left, top-right, bottom-right, bottom-left) in logical pixels.
+pub struct UiCornerRadii {
+  top_left : Float
+  top_right : Float
+  bottom_right : Float
+  bottom_left : Float
+}
+
+///|
+pub fn UiCornerRadii::new(
+  top_left : Float,
+  top_right : Float,
+  bottom_right : Float,
+  bottom_left : Float,
+) -> UiCornerRadii {
+  UiCornerRadii::{ top_left, top_right, bottom_right, bottom_left }
+}
+
+///|
+pub fn UiCornerRadii::zero() -> UiCornerRadii {
+  UiCornerRadii::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
+
+///|
+/// UI border thickness (left, top, right, bottom) in logical pixels.
+pub struct UiBorderRect {
+  left : Float
+  top : Float
+  right : Float
+  bottom : Float
+}
+
+///|
+pub fn UiBorderRect::new(
+  left : Float,
+  top : Float,
+  right : Float,
+  bottom : Float,
+) -> UiBorderRect {
+  UiBorderRect::{ left, top, right, bottom }
+}
+
+///|
+pub fn UiBorderRect::zero() -> UiBorderRect {
+  UiBorderRect::new(0.0F, 0.0F, 0.0F, 0.0F)
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Anchor {
@@ -704,6 +771,66 @@ priv struct SpriteInstance {
   layers : RenderLayers
   uv_min : @math.Vec2
   uv_max : @math.Vec2
+  scissor : @math.Rect?
+}
+
+///|
+priv struct UiRectInstance {
+  entity : @core.Entity
+  transform : @math.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : Color
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+  scissor : @math.Rect?
+  flags : Int
+  radius : UiCornerRadii
+  border : UiBorderRect
+}
+
+///|
+priv struct UiBoxShadowInstance {
+  entity : @core.Entity
+  transform : @math.Transform
+  anchor_offset : @math.Vec2
+  // Full geometry bounds (shadow size + 6*blur), in world units.
+  draw_scale : @math.Vec2
+  color : Color
+  // Dummy texture binding (pipeline shares sprite/ui bind group layout).
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  // Inner shadow size (node size + spread), in world units.
+  size : @math.Vec2
+  // Corner radii: top-left, top-right, bottom-right, bottom-left (world units).
+  radius : UiCornerRadii
+  // Blur radius (world units).
+  blur : Float
+  // Shadow samples (host shader integration steps).
+  samples : Int
+  scissor : @math.Rect?
+}
+
+///|
+priv struct UiTextureSliceInstance {
+  entity : @core.Entity
+  transform : @math.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : Color
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  scissor : @math.Rect?
+  // Normalized texture slice dividing lines (left, top, right, bottom).
+  texture_slices : @math.Vec4
+  // Normalized target slice dividing lines (left, top, right, bottom).
+  target_slices : @math.Vec4
+  // Repeat factors (side_x, side_y, center_x, center_y).
+  repeat : @math.Vec4
+  // Normalized atlas rect (left, top, right, bottom).
+  atlas_rect : @math.Vec4
 }
 
 ///|
@@ -749,6 +876,9 @@ struct RenderState {
   mut primary_camera : @core.Entity
   sprites : Array[SpriteInstance]
   extra_sprites : Array[SpriteInstance]
+  extra_ui_rects : Array[UiRectInstance]
+  extra_ui_box_shadows : Array[UiBoxShadowInstance]
+  extra_ui_texture_slices : Array[UiTextureSliceInstance]
   cameras : Array[CameraInstance]
   meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
@@ -761,6 +891,9 @@ fn RenderState::new() -> RenderState {
     primary_camera: @core.Entity::placeholder(),
     sprites: [],
     extra_sprites: [],
+    extra_ui_rects: [],
+    extra_ui_box_shadows: [],
+    extra_ui_texture_slices: [],
     cameras: [],
     meshes: [],
     render_targets: [],
@@ -1100,6 +1233,165 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
       layers,
       uv_min,
       uv_max,
+      scissor: None,
+    })
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor(
+  world : W,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_sprites.push(SpriteInstance::{
+      entity: @core.Entity::placeholder(),
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
+      color,
+      texture,
+      layers,
+      uv_min,
+      uv_max,
+      scissor,
+    })
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_rects(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_rects.clear() })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_box_shadows(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_box_shadows.clear() })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_texture_slices(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_texture_slices.clear()
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(
+  world : W,
+  entity : @core.Entity,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+  flags : Int,
+  radius : UiCornerRadii,
+  border : UiBorderRect,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_rects.push(UiRectInstance::{
+      entity,
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale,
+      color,
+      texture,
+      layers,
+      uv_min,
+      uv_max,
+      scissor,
+      flags,
+      radius,
+      border,
+    })
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shadow_scissor(
+  world : W,
+  entity : @core.Entity,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+  size : @math.Vec2,
+  radius : UiCornerRadii,
+  blur : Float,
+  samples : Int,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_box_shadows.push(UiBoxShadowInstance::{
+      entity,
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale,
+      color,
+      texture,
+      layers,
+      size,
+      radius,
+      blur,
+      samples,
+      scissor,
+    })
+  })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(
+  world : W,
+  entity : @core.Entity,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  color : Color,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
+  texture_slices : @math.Vec4,
+  target_slices : @math.Vec4,
+  repeat : @math.Vec4,
+  atlas_rect : @math.Vec4,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_ui_texture_slices.push(UiTextureSliceInstance::{
+      entity,
+      transform,
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale,
+      color,
+      texture,
+      layers,
+      scissor,
+      texture_slices,
+      target_slices,
+      repeat,
+      atlas_rect,
     })
   })
   |> ignore
@@ -1232,7 +1524,7 @@ fn render2d_sorted_camera_indices(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] render_extract_system(
   world : W,
 ) -> Unit {
@@ -1316,6 +1608,7 @@ pub fn[
   }
   let sprite_store = Has_Sprite::get_sprite_store(world)
   let anchor_store = Has_Anchor::get_anchor_store(world)
+  let scissor_store = Has_ScissorRect::get_scissor_rect_store(world)
   sprite_store.for_each(fn(entity, sprite) {
     if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
       return
@@ -1354,6 +1647,10 @@ pub fn[
       transform.rotation_z(),
       draw_scale,
     )
+    let scissor = match scissor_store.get(entity) {
+      Some(v) => Some(v.rect)
+      None => None
+    }
     rs.val.sprites.push(SpriteInstance::{
       entity,
       transform,
@@ -1364,6 +1661,7 @@ pub fn[
       layers,
       uv_min,
       uv_max,
+      scissor,
     })
   })
   let mesh_store = Has_Mesh2d::get_mesh2d_store(world)
@@ -1433,6 +1731,9 @@ fn cmp_float(a : Float, b : Float) -> Int {
 priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
+  UiRectExtra(Int)
+  UiBoxShadowExtra(Int)
+  UiTextureSliceExtra(Int)
   Mesh(Int)
 }
 
@@ -1442,7 +1743,7 @@ priv struct DrawItem {
   z : Float
   // 0 = opaque, 1 = transparent (opaque first for stable blending).
   phase : Int
-  // Rough pipeline grouping: 0 = sprite, 1 = mesh.
+  // Rough pipeline grouping: 0 = sprite, 1 = mesh, 2 = ui.
   pipeline : Int
   // Batch key for opaque items (e.g. texture id / mesh id).
   batch : Int
@@ -1456,6 +1757,9 @@ priv struct DrawItem {
 fn draw_items_for_layers(
   sprites : Array[SpriteInstance],
   extra_sprites : Array[SpriteInstance],
+  extra_ui_rects : Array[UiRectInstance],
+  extra_ui_box_shadows : Array[UiBoxShadowInstance],
+  extra_ui_texture_slices : Array[UiTextureSliceInstance],
   meshes : Array[MeshInstance],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -1493,6 +1797,57 @@ fn draw_items_for_layers(
       entity_generation: sprite.entity.generation,
       // Ensure extra-sprites tie-break after main sprites with the same entity key.
       tie: 1_000_000 + i,
+    })
+  }
+  for i in 0..<extra_ui_rects.length() {
+    let rect = extra_ui_rects[i]
+    if !rect.layers.matches(layers) {
+      continue
+    }
+    let phase = if rect.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: UiRectExtra(i),
+      z: rect.transform.translation.z,
+      phase,
+      pipeline: 2,
+      batch: rect.texture.id(),
+      entity_id: rect.entity.id,
+      entity_generation: rect.entity.generation,
+      tie: 2_000_000 + i,
+    })
+  }
+  for i in 0..<extra_ui_box_shadows.length() {
+    let shadow = extra_ui_box_shadows[i]
+    if !shadow.layers.matches(layers) {
+      continue
+    }
+    let phase = if shadow.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: UiBoxShadowExtra(i),
+      z: shadow.transform.translation.z,
+      phase,
+      pipeline: 2,
+      batch: shadow.texture.id(),
+      entity_id: shadow.entity.id,
+      entity_generation: shadow.entity.generation,
+      tie: 2_500_000 + i,
+    })
+  }
+  for i in 0..<extra_ui_texture_slices.length() {
+    let slice = extra_ui_texture_slices[i]
+    if !slice.layers.matches(layers) {
+      continue
+    }
+    let phase = if slice.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: UiTextureSliceExtra(i),
+      z: slice.transform.translation.z,
+      phase,
+      pipeline: 2,
+      batch: slice.texture.id(),
+      entity_id: slice.entity.id,
+      entity_generation: slice.entity.generation,
+      tie: 2_000_000 + i,
     })
   }
   for i in 0..<meshes.length() {
@@ -1563,9 +1918,13 @@ test "render2d: unified draw items order sprites and meshes by z" {
       layers,
       uv_min: @math.Vec2::new(0.0F, 0.0F),
       uv_max: @math.Vec2::new(1.0F, 1.0F),
+      scissor: None,
     },
   ]
   let extra : Array[SpriteInstance] = []
+  let extra_ui : Array[UiRectInstance] = []
+  let extra_shadow : Array[UiBoxShadowInstance] = []
+  let extra_slices : Array[UiTextureSliceInstance] = []
   let meshes : Array[MeshInstance] = [
     MeshInstance::{
       entity: @core.Entity::new(1, 0),
@@ -1580,7 +1939,9 @@ test "render2d: unified draw items order sprites and meshes by z" {
       layers,
     },
   ]
-  let items = draw_items_for_layers(sprites, extra, meshes, layers)
+  let items = draw_items_for_layers(
+    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, layers,
+  )
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
@@ -1600,11 +1961,79 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   let cameras = rs.val.cameras
   if cameras.length() == 0 {
     gizmos_clear()
+    rs.val.extra_sprites.clear()
+    rs.val.extra_ui_rects.clear()
+    rs.val.extra_ui_box_shadows.clear()
+    rs.val.extra_ui_texture_slices.clear()
     return
   }
   let sprites = rs.val.sprites
   let extra_sprites = rs.val.extra_sprites
+  let extra_ui_rects = rs.val.extra_ui_rects
+  let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
+  let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
   let meshes = rs.val.meshes
+  fn int_from_f32_floor_nonneg(x : Float) -> Int {
+    if x <= 0.0F {
+      0
+    } else {
+      x.to_int()
+    }
+  }
+
+  fn physical_scissor_for_camera(
+    rect : @math.Rect,
+    viewport_x : Int,
+    viewport_y : Int,
+    viewport_w : Int,
+    viewport_h : Int,
+    scale_factor : Float,
+  ) -> (Int, Int, Int, Int) {
+    let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+    let min_x = int_from_f32_floor_nonneg(rect.min.x * sf)
+    let min_y = int_from_f32_floor_nonneg(rect.min.y * sf)
+    // Match Bevy-style clipping behavior more closely: clamp the max edge with
+    // floor semantics to avoid leaking a trailing row/column into adjacent UI.
+    let mut max_x = int_from_f32_floor_nonneg(rect.max.x * sf)
+    let mut max_y = int_from_f32_floor_nonneg(rect.max.y * sf)
+    if max_x < min_x {
+      max_x = min_x
+    }
+    if max_y < min_y {
+      max_y = min_y
+    }
+    let mut x = viewport_x + min_x
+    let mut y = viewport_y + min_y
+    let mut w = max_x - min_x
+    let mut h = max_y - min_y
+    // Clamp to the camera viewport in physical pixels.
+    if x < viewport_x {
+      let dx = viewport_x - x
+      x = viewport_x
+      w = w - dx
+    }
+    if y < viewport_y {
+      let dy = viewport_y - y
+      y = viewport_y
+      h = h - dy
+    }
+    let max_w = viewport_w - (x - viewport_x)
+    let max_h = viewport_h - (y - viewport_y)
+    if w > max_w {
+      w = max_w
+    }
+    if h > max_h {
+      h = max_h
+    }
+    if w < 0 {
+      w = 0
+    }
+    if h < 0 {
+      h = 0
+    }
+    (x, y, w, h)
+  }
+
   for index in render2d_sorted_camera_indices(cameras) {
     let camera = cameras[index]
     let mut target_id = -1
@@ -1699,13 +2128,49 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     let draw_items = draw_items_for_layers(
       sprites,
       extra_sprites,
+      extra_ui_rects,
+      extra_ui_box_shadows,
+      extra_ui_texture_slices,
       meshes,
       camera.layers,
     )
+    let mut scissor_active = false
+    let mut scissor_x = 0
+    let mut scissor_y = 0
+    let mut scissor_w = 0
+    let mut scissor_h = 0
+    fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
+      match rect_opt {
+        None =>
+          if scissor_active {
+            @window.host_gpu_clear_scissor()
+            scissor_active = false
+          }
+        Some(rect) => {
+          let (sx, sy, sw, sh) = physical_scissor_for_camera(
+            rect, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
+          )
+          if !scissor_active ||
+            sx != scissor_x ||
+            sy != scissor_y ||
+            sw != scissor_w ||
+            sh != scissor_h {
+            @window.host_gpu_set_scissor(sx, sy, sw, sh)
+            scissor_active = true
+            scissor_x = sx
+            scissor_y = sy
+            scissor_w = sw
+            scissor_h = sh
+          }
+        }
+      }
+    }
+
     for item in draw_items {
       match item.kind {
         SpriteMain(i) => {
           let sprite = sprites[i]
+          apply_scissor(sprite.scissor)
           let transform = sprite.transform
           let pos = @math.Vec2::new(
             transform.translation.x + sprite.anchor_offset.x,
@@ -1730,6 +2195,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
         }
         SpriteExtra(i) => {
           let sprite = extra_sprites[i]
+          apply_scissor(sprite.scissor)
           let transform = sprite.transform
           let pos = @math.Vec2::new(
             transform.translation.x + sprite.anchor_offset.x,
@@ -1753,6 +2219,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
           )
         }
         Mesh(i) => {
+          apply_scissor(None)
           let mesh = meshes[i]
           let transform = mesh.transform
           @window.host_gpu_draw_mesh(
@@ -1768,6 +2235,106 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             mesh.color.a,
           )
         }
+        UiRectExtra(i) => {
+          let rect = extra_ui_rects[i]
+          apply_scissor(rect.scissor)
+          let transform = rect.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + rect.anchor_offset.x,
+            transform.translation.y + rect.anchor_offset.y,
+          )
+          @window.host_gpu_draw_ui_rect(
+            rect.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            rect.draw_scale.x,
+            rect.draw_scale.y,
+            rect.color.r,
+            rect.color.g,
+            rect.color.b,
+            rect.color.a,
+            rect.uv_min.x,
+            rect.uv_min.y,
+            rect.uv_max.x,
+            rect.uv_max.y,
+            rect.flags,
+            rect.radius.top_left,
+            rect.radius.top_right,
+            rect.radius.bottom_right,
+            rect.radius.bottom_left,
+            rect.border.left,
+            rect.border.top,
+            rect.border.right,
+            rect.border.bottom,
+          )
+        }
+        UiBoxShadowExtra(i) => {
+          let shadow = extra_ui_box_shadows[i]
+          apply_scissor(shadow.scissor)
+          let transform = shadow.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + shadow.anchor_offset.x,
+            transform.translation.y + shadow.anchor_offset.y,
+          )
+          @window.host_gpu_draw_ui_box_shadow(
+            shadow.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            shadow.draw_scale.x,
+            shadow.draw_scale.y,
+            shadow.color.r,
+            shadow.color.g,
+            shadow.color.b,
+            shadow.color.a,
+            shadow.size.x,
+            shadow.size.y,
+            shadow.radius.top_left,
+            shadow.radius.top_right,
+            shadow.radius.bottom_right,
+            shadow.radius.bottom_left,
+            shadow.blur,
+            shadow.samples,
+          )
+        }
+        UiTextureSliceExtra(i) => {
+          let slice = extra_ui_texture_slices[i]
+          apply_scissor(slice.scissor)
+          let transform = slice.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + slice.anchor_offset.x,
+            transform.translation.y + slice.anchor_offset.y,
+          )
+          @window.host_gpu_draw_ui_texture_slice(
+            slice.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            slice.draw_scale.x,
+            slice.draw_scale.y,
+            slice.color.r,
+            slice.color.g,
+            slice.color.b,
+            slice.color.a,
+            slice.texture_slices.x,
+            slice.texture_slices.y,
+            slice.texture_slices.z,
+            slice.texture_slices.w,
+            slice.target_slices.x,
+            slice.target_slices.y,
+            slice.target_slices.z,
+            slice.target_slices.w,
+            slice.repeat.x,
+            slice.repeat.y,
+            slice.repeat.z,
+            slice.repeat.w,
+            slice.atlas_rect.x,
+            slice.atlas_rect.y,
+            slice.atlas_rect.z,
+            slice.atlas_rect.w,
+          )
+        }
       }
     }
     gizmos_draw_lines(camera.layers)
@@ -1775,6 +2342,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   }
   gizmos_clear()
   rs.val.extra_sprites.clear()
+  rs.val.extra_ui_rects.clear()
+  rs.val.extra_ui_box_shadows.clear()
 }
 
 ///|
@@ -2018,7 +2587,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 
 ///|
 pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
+  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
 ] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {

@@ -45,7 +45,7 @@ extern "js" fn string_sink_take_js() -> String =
 ///
 /// We mirror the existing `string_sink_*` protocol but for raw bytes. This is
 /// used for uploading RGBA8 data (e.g. glyph atlas updates) without passing
-/// wasm `Bytes` across the boundary.
+/// wasm-gc `Bytes` across the boundary.
 extern "js" fn bytes_sink_push_js(byte : Int) -> Unit =
   #| (byte) => {
   #|   const b = Number(byte) & 0xff
@@ -85,7 +85,17 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|   if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
   #|     return `${value}`
   #|   }
-  #|   // Decode MoonBit wasm `String` (typically an array of UTF-16 i16 code units).
+  #|   if (typeof value === "object") {
+  #|     try {
+  #|       const name = typeof value.name === "string" ? value.name : ""
+  #|       const message = typeof value.message === "string" ? value.message : ""
+  #|       if (message.length > 0) {
+  #|         return name.length > 0 ? `${name}: ${message}` : message
+  #|       }
+  #|     } catch {
+  #|     }
+  #|   }
+  #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
   #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
   #|   try {
   #|     let current = value
@@ -93,7 +103,7 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|       if (typeof current !== "object" || current == null) {
   #|         break
   #|       }
-  #|       // Unwrap common wrapper shapes (defensive, for wasm reference objects).
+  #|       // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
   #|       try {
   #|         if ("value" in current && current.value !== current) {
   #|           current = current.value
@@ -298,7 +308,7 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     if (typeof current === "string") {
   #|       return current
   #|     }
-  #|     // Unwrap common wrapper shapes (defensive, for wasm reference objects).
+  #|     // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
   #|     if (typeof current === "object" && current != null) {
   #|       try {
   #|         if ("value" in current && current.value !== current) {
@@ -320,7 +330,7 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|       } catch {
   #|       }
   #|     }
-  #|     // MoonBit wasm String is typically `array (mut i16)`.
+  #|     // MoonBit wasm-gc String is typically `array (mut i16)`.
   #|     // Different engines may expose the `get` method on the instance or prototype.
   #|     if (typeof current === "object" && current != null) {
   #|       let getFn = null
@@ -497,6 +507,341 @@ extern "js" fn append_canvas_to_body(canvas : @js.Any) -> Unit =
   #| (canvas) => document.body.appendChild(canvas)
 
 ///|
+extern "js" fn a11y_actions_len_js() -> Int =
+  #| () => {
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   return arr.length | 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_target_js(index : Int) -> Int =
+  #| (index) => {
+  #|   const i = Number(index) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   return it ? (Number(it[0]) | 0) : 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_kind_js(index : Int) -> Int =
+  #| (index) => {
+  #|   const i = Number(index) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   return it ? (Number(it[1]) | 0) : 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_value_len_js(index : Int) -> Int =
+  #| (index) => {
+  #|   const i = Number(index) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   const value = it && it.length > 2 ? String(it[2] ?? "") : ""
+  #|   return value.length | 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_value_code_unit_js(
+  index : Int,
+  offset : Int,
+) -> Int =
+  #| (index, offset) => {
+  #|   const i = Number(index) | 0
+  #|   const j = Number(offset) | 0
+  #|   const arr = globalThis.__mgstudio_a11y_actions || []
+  #|   const it = arr[i]
+  #|   const value = it && it.length > 2 ? String(it[2] ?? "") : ""
+  #|   if (j < 0 || j >= value.length) return 0
+  #|   return value.charCodeAt(j) | 0
+  #| }
+
+///|
+extern "js" fn a11y_actions_clear_js() -> Unit =
+  #| () => { globalThis.__mgstudio_a11y_actions = [] }
+
+///|
+/// Ensure (and position) the a11y DOM overlay above the canvas.
+extern "js" fn a11y_begin_update_js(canvas : @js.Any, root_id : Int) -> @js.Any =
+  #| (canvas, rootId) => {
+  #|   if (!canvas || typeof document !== "object") return null
+  #|   let container = globalThis.__mgstudio_a11y_container
+  #|   if (!container) {
+  #|     container = document.createElement("div")
+  #|     container.id = "mgstudio-a11y"
+  #|     container.style.position = "absolute"
+  #|     // Keep the root as a structural container only. Interactive hit areas
+  #|     // are on child nodes; setting width/height to 0 avoids swallowing
+  #|     // canvas input while keeping absolute children targetable.
+  #|     container.style.pointerEvents = "auto"
+  #|     container.style.overflow = "visible"
+  #|     container.style.opacity = "1"
+  #|     container.style.zIndex = "2147483647"
+  #|     document.body.appendChild(container)
+  #|     globalThis.__mgstudio_a11y_container = container
+  #|   }
+  #|   const rect = canvas.getBoundingClientRect()
+  #|   const left = rect.left + (window.scrollX || 0)
+  #|   const top = rect.top + (window.scrollY || 0)
+  #|   container.style.left = `${left}px`
+  #|   container.style.top = `${top}px`
+  #|   container.style.width = `0px`
+  #|   container.style.height = `0px`
+  #|   const rid = Number(rootId) | 0
+  #|   if (rid) globalThis.__mgstudio_a11y_root_id = rid
+  #|   // Persistent node lookup across frames (to preserve focus).
+  #|   if (!globalThis.__mgstudio_a11y_nodes) {
+  #|     globalThis.__mgstudio_a11y_nodes = new Map()
+  #|   }
+  #|   // Per-frame bookkeeping.
+  #|   globalThis.__mgstudio_a11y_frame_seen = new Set()
+  #|   globalThis.__mgstudio_a11y_frame_order = []
+  #|   return container
+  #| }
+
+///|
+/// Add one accessible element to the overlay.
+extern "js" fn a11y_push_node_js(
+  container : @js.Any,
+  node_id : Int,
+  parent_id : Int,
+  role_id : Int,
+  x : Double,
+  y : Double,
+  w : Double,
+  h : Double,
+  label : String,
+  value : String,
+  actions_mask : Int,
+) -> Unit =
+  #| (container, nodeId, parentId, roleId, x, y, w, h, label, value, actionsMask) => {
+  #|   if (!container) return
+  #|   const id = Number(nodeId) | 0
+  #|   const pid = Number(parentId) | 0
+  #|   const role = Number(roleId) | 0
+  #|   const mask = Number(actionsMask) | 0
+  #|   const labelText = String(label || "")
+  #|   const valueText = String(value || "")
+  #|   const MASK_FOCUS = 1
+  #|   const MASK_DEFAULT = 2
+  #|   const MASK_SCROLL = 4
+  #|   const MASK_SET_VALUE = 8
+  #|   const ACTION_FOCUS = 1
+  #|   const ACTION_DEFAULT = 2
+  #|   const ACTION_SCROLL_UP = 3
+  #|   const ACTION_SCROLL_DOWN = 4
+  #|   const ACTION_SCROLL_LEFT = 5
+  #|   const ACTION_SCROLL_RIGHT = 6
+  #|   const ACTION_SET_VALUE = 7
+  #|   const nodes = globalThis.__mgstudio_a11y_nodes
+  #|   const seen = globalThis.__mgstudio_a11y_frame_seen
+  #|   const order = globalThis.__mgstudio_a11y_frame_order
+  #|   if (order && Array.isArray(order)) order.push(id)
+  #|   if (seen && typeof seen.add === "function") seen.add(id)
+  #|   const tag = (mask & MASK_SET_VALUE) !== 0 ? "input" : ((role === 3) ? "button" : "div")
+  #|   let el = nodes && typeof nodes.get === "function" ? nodes.get(id) : null
+  #|   if (!el || String(el.tagName || "").toLowerCase() !== tag) {
+  #|     const next = document.createElement(tag)
+  #|     if (el && el.parentNode) {
+  #|       el.parentNode.replaceChild(next, el)
+  #|     }
+  #|     el = next
+  #|     if (nodes && typeof nodes.set === "function") {
+  #|       nodes.set(id, el)
+  #|     }
+  #|     // Init-once styles and listeners.
+  #|   el.style.position = "absolute"
+  #|     el.style.opacity = "0"
+  #|   el.style.background = "transparent"
+  #|   el.style.border = "0"
+  #|   el.style.padding = "0"
+  #|   el.style.margin = "0"
+  #|   el.style.color = "transparent"
+  #|     if (tag === "button") {
+  #|       // Avoid implicit "submit" semantics when the overlay lives inside a form.
+  #|       el.type = "button"
+  #|     } else if (tag === "input") {
+  #|       el.type = "text"
+  #|       el.autocomplete = "off"
+  #|       el.spellcheck = false
+  #|     }
+  #|     el.addEventListener("focus", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_FOCUS) === 0) return
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_FOCUS])
+  #|     })
+  #|     el.addEventListener("click", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_DEFAULT) === 0) return
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_DEFAULT])
+  #|     })
+  #|     el.addEventListener("keydown", (ev) => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       const key = ev && ev.key
+  #|       if ((m & MASK_DEFAULT) !== 0 && (key === "Enter" || key === " ")) {
+  #|         ev.preventDefault()
+  #|         globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|         globalThis.__mgstudio_a11y_actions.push([id, ACTION_DEFAULT])
+  #|         return
+  #|       }
+  #|       if ((m & MASK_SCROLL) !== 0) {
+  #|         let k = 0
+  #|         if (key === "ArrowUp" || key === "PageUp") k = ACTION_SCROLL_UP
+  #|         else if (key === "ArrowDown" || key === "PageDown") k = ACTION_SCROLL_DOWN
+  #|         else if (key === "ArrowLeft") k = ACTION_SCROLL_LEFT
+  #|         else if (key === "ArrowRight") k = ACTION_SCROLL_RIGHT
+  #|         if (k !== 0) {
+  #|           ev.preventDefault()
+  #|           globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|           globalThis.__mgstudio_a11y_actions.push([id, k])
+  #|         }
+  #|       }
+  #|     })
+  #|     el.addEventListener("wheel", (ev) => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_SCROLL) === 0) return
+  #|       const dx = Number(ev && ev.deltaX) || 0
+  #|       const dy = Number(ev && ev.deltaY) || 0
+  #|       let k = 0
+  #|       if (Math.abs(dy) >= Math.abs(dx)) {
+  #|         k = dy >= 0 ? ACTION_SCROLL_DOWN : ACTION_SCROLL_UP
+  #|       } else {
+  #|         k = dx >= 0 ? ACTION_SCROLL_RIGHT : ACTION_SCROLL_LEFT
+  #|       }
+  #|       if (k !== 0) {
+  #|         ev.preventDefault()
+  #|         globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|         globalThis.__mgstudio_a11y_actions.push([id, k])
+  #|       }
+  #|     }, { passive: false })
+  #|     el.addEventListener("input", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_SET_VALUE) === 0) return
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_SET_VALUE, String(el.value || "")])
+  #|     })
+  #|     el.addEventListener("change", () => {
+  #|       const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|       if ((m & MASK_SET_VALUE) === 0) return
+  #|       globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|       globalThis.__mgstudio_a11y_actions.push([id, ACTION_SET_VALUE, String(el.value || "")])
+  #|     })
+  #|     if ((mask & MASK_SET_VALUE) !== 0) {
+  #|       el.addEventListener("blur", () => {
+  #|         const m = Number(el.dataset && el.dataset.mgstudioActionsMask) | 0
+  #|         if ((m & MASK_SET_VALUE) === 0) return
+  #|         globalThis.__mgstudio_a11y_actions = (globalThis.__mgstudio_a11y_actions || [])
+  #|         globalThis.__mgstudio_a11y_actions.push([id, ACTION_SET_VALUE, String(el.value || "")])
+  #|       })
+  #|     }
+  #|     container.appendChild(el)
+  #|   }
+  #|   // Per-frame dynamic styles / attributes.
+  #|   // Keep nodes visually hidden every frame (important across hot reloads /
+  #|   // reused DOM nodes), while still focusable for accessibility actions.
+  #|   el.style.position = "absolute"
+  #|   el.style.opacity = "0"
+  #|   el.style.background = "transparent"
+  #|   el.style.border = "0"
+  #|   el.style.padding = "0"
+  #|   el.style.margin = "0"
+  #|   el.style.color = "transparent"
+  #|   el.style.textShadow = "none"
+  #|   el.style.caretColor = "transparent"
+  #|   el.style.fontSize = "0px"
+  #|   el.style.lineHeight = "0"
+  #|   if (tag === "input" && (mask & MASK_SET_VALUE) !== 0) {
+  #|     const focused = typeof document === "object" && document.activeElement === el
+  #|     if (!focused && String(el.value || "") !== valueText) {
+  #|       el.value = valueText
+  #|       }
+  #|   }
+  #|   el.style.left = `${Number(x)}px`
+  #|   el.style.top = `${Number(y)}px`
+  #|   el.style.width = `${Math.max(0, Number(w))}px`
+  #|   el.style.height = `${Math.max(0, Number(h))}px`
+  #|   el.style.pointerEvents = mask !== 0 ? "auto" : "none"
+  #|   el.dataset.mgstudioNodeId = String(id)
+  #|   el.dataset.mgstudioParentId = String(pid)
+  #|   el.dataset.mgstudioRoleId = String(role)
+  #|   el.dataset.mgstudioActionsMask = String(mask)
+  #|   // ARIA roles (rough mapping to host role ids).
+  #|   const ariaRole =
+  #|     (role === 1) ? "application" :
+  #|     (role === 2) ? "group" :
+  #|     (role === 4) ? "text" :
+  #|     (role === 5) ? "img" :
+  #|     null
+  #|   if (tag !== "button") {
+  #|     if (ariaRole) el.setAttribute("role", ariaRole)
+  #|     else el.removeAttribute("role")
+  #|   }
+  #|   const accessibleName = labelText !== "" ? labelText : valueText
+  #|   if (accessibleName !== "") {
+  #|     el.setAttribute("aria-label", accessibleName)
+  #|   } else {
+  #|     el.removeAttribute("aria-label")
+  #|   }
+  #|   // Keep overlay nodes non-visual; accessibility comes from ARIA attrs
+  #|   // and input value, not from rendered DOM text.
+  #|   el.textContent = ""
+  #|   // Focusable when it has any actions.
+  #|   el.tabIndex = mask !== 0 ? 0 : -1
+  #| }
+
+///|
+/// Finalize a11y overlay update: reparent and prune nodes while preserving focus.
+extern "js" fn a11y_end_update_js(container : @js.Any) -> Unit =
+  #| (container) => {
+  #|   if (!container) return
+  #|   const nodes = globalThis.__mgstudio_a11y_nodes
+  #|   const seen = globalThis.__mgstudio_a11y_frame_seen
+  #|   const order = globalThis.__mgstudio_a11y_frame_order || []
+  #|   if (!nodes || typeof nodes.forEach !== "function") return
+  #|   // Prune unseen nodes (remove from DOM and map).
+  #|   nodes.forEach((el, id) => {
+  #|     if (!seen || !seen.has(id)) {
+  #|       try { if (el && el.parentNode) el.parentNode.removeChild(el) } catch {}
+  #|       try { nodes.delete(id) } catch {}
+  #|     }
+  #|   })
+  #|   // Rebuild parent->children lists in the order nodes were pushed this frame.
+  #|   const childrenByParent = new Map()
+  #|   for (let i = 0; i < order.length; i += 1) {
+  #|     const id = Number(order[i]) | 0
+  #|     const el = nodes.get(id)
+  #|     if (!el) continue
+  #|     const pid = Number(el.dataset && el.dataset.mgstudioParentId) | 0
+  #|     let arr = childrenByParent.get(pid)
+  #|     if (!arr) { arr = []; childrenByParent.set(pid, arr) }
+  #|     arr.push(el)
+  #|   }
+  #|   childrenByParent.forEach((children, pid) => {
+  #|     const parentEl = nodes.get(pid) || container
+  #|     for (let i = 0; i < children.length; i += 1) {
+  #|       parentEl.appendChild(children[i])
+  #|     }
+  #|   })
+  #| }
+
+///|
+extern "js" fn a11y_focus_node_js(node_id : Int) -> Unit =
+  #| (nodeId) => {
+  #|   const nodes = globalThis.__mgstudio_a11y_nodes
+  #|   if (!nodes || typeof nodes.get !== "function") return
+  #|   const id = Number(nodeId) | 0
+  #|   const el = nodes.get(id)
+  #|   if (!el || typeof el.focus !== "function") return
+  #|   try {
+  #|     el.focus({ preventScroll: true })
+  #|   } catch (_) {
+  #|     try { el.focus() } catch (_) {}
+  #|   }
+  #| }
+
+///|
 extern "js" fn create_checkerboard_data(size : Int) -> @js.Any =
   #| (size) => {
   #|   const data = new Uint8Array(size * size * 4)
@@ -512,6 +857,14 @@ extern "js" fn create_checkerboard_data(size : Int) -> @js.Any =
   #|     }
   #|   }
   #|   return data
+  #| }
+
+///|
+extern "js" fn create_zero_rgba_data(width : Int, height : Int) -> @js.Any =
+  #| (width, height) => {
+  #|   const w = Math.max(1, Number(width) | 0)
+  #|   const h = Math.max(1, Number(height) | 0)
+  #|   return new Uint8Array(w * h * 4)
   #| }
 
 ///|
@@ -1035,10 +1388,21 @@ struct PassInfo {
   cam_y : Double
   cam_rotation : Double
   cam_scale : Double
+  viewport_x : Double
+  viewport_y : Double
+  viewport_width : Double
+  viewport_height : Double
 }
 
 ///|
 struct SpriteBatch {
+  texture_id : Int
+  first_instance : Int
+  mut instance_count : Int
+}
+
+///|
+struct UiBatch {
   texture_id : Int
   first_instance : Int
   mut instance_count : Int
@@ -1086,6 +1450,8 @@ struct InputState {
   mouse_just_released : @js.Any
   mut mouse_x : Double
   mut mouse_y : Double
+  mut wheel_x : Double
+  mut wheel_y : Double
   mut has_cursor : Bool
   mut pointer_bound : Bool
   mut initialized : Bool
@@ -1115,6 +1481,27 @@ struct GpuState {
   sprite_instance_data : Array[Double]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : Int
+  mut ui_pipeline : @webgpu.GPURenderPipeline?
+  mut ui_instance_buffer : @webgpu.GPUBuffer?
+  mut ui_instance_capacity : Int
+  mut ui_globals_bind_group : @webgpu.GPUBindGroup?
+  ui_instance_data : Array[Double]
+  ui_batches : Array[UiBatch]
+  mut ui_instance_count : Int
+  mut ui_shadow_pipeline : @webgpu.GPURenderPipeline?
+  mut ui_shadow_instance_buffer : @webgpu.GPUBuffer?
+  mut ui_shadow_instance_capacity : Int
+  mut ui_shadow_globals_bind_group : @webgpu.GPUBindGroup?
+  ui_shadow_instance_data : Array[Double]
+  ui_shadow_batches : Array[UiBatch]
+  mut ui_shadow_instance_count : Int
+  mut ui_slice_pipeline : @webgpu.GPURenderPipeline?
+  mut ui_slice_instance_buffer : @webgpu.GPUBuffer?
+  mut ui_slice_instance_capacity : Int
+  mut ui_slice_globals_bind_group : @webgpu.GPUBindGroup?
+  ui_slice_instance_data : Array[Double]
+  ui_slice_batches : Array[UiBatch]
+  mut ui_slice_instance_count : Int
   mut encoder : @webgpu.GPUCommandEncoder?
   mut current_texture : @webgpu.GPUTexture?
   mut current_pass : @webgpu.GPURenderPassEncoder?
@@ -1123,6 +1510,9 @@ struct GpuState {
   mut next_texture_id : Int
   mut fallback_texture_id : Int
   mut sprite_shader_id : Int
+  mut ui_shader_id : Int
+  mut ui_shadow_shader_id : Int
+  mut ui_slice_shader_id : Int
   mut mesh_shader_id : Int
   mut gizmo_shader_id : Int
 }
@@ -1139,6 +1529,8 @@ struct State {
   assets : AssetsState
   input : InputState
   gpu : GpuState
+  mut a11y_container : @js.Any?
+  mut a11y_focused_node : Int
 }
 
 ///|
@@ -1185,6 +1577,8 @@ fn new_state(
       mouse_just_released: new_set(),
       mouse_x: 0,
       mouse_y: 0,
+      wheel_x: 0,
+      wheel_y: 0,
       has_cursor: false,
       pointer_bound: false,
       initialized: false,
@@ -1212,6 +1606,27 @@ fn new_state(
       sprite_instance_data: [],
       sprite_batches: [],
       sprite_instance_count: 0,
+      ui_pipeline: None,
+      ui_instance_buffer: None,
+      ui_instance_capacity: 0,
+      ui_globals_bind_group: None,
+      ui_instance_data: [],
+      ui_batches: [],
+      ui_instance_count: 0,
+      ui_shadow_pipeline: None,
+      ui_shadow_instance_buffer: None,
+      ui_shadow_instance_capacity: 0,
+      ui_shadow_globals_bind_group: None,
+      ui_shadow_instance_data: [],
+      ui_shadow_batches: [],
+      ui_shadow_instance_count: 0,
+      ui_slice_pipeline: None,
+      ui_slice_instance_buffer: None,
+      ui_slice_instance_capacity: 0,
+      ui_slice_globals_bind_group: None,
+      ui_slice_instance_data: [],
+      ui_slice_batches: [],
+      ui_slice_instance_count: 0,
       encoder: None,
       current_texture: None,
       current_pass: None,
@@ -1220,9 +1635,14 @@ fn new_state(
       next_texture_id: 1,
       fallback_texture_id: 0,
       sprite_shader_id: 0,
+      ui_shader_id: 0,
+      ui_shadow_shader_id: 0,
+      ui_slice_shader_id: 0,
       mesh_shader_id: 0,
       gizmo_shader_id: 0,
     },
+    a11y_container: None,
+    a11y_focused_node: 0,
   }
 }
 
@@ -1372,6 +1792,8 @@ fn init_input(state : State) -> Unit {
     return
   }
   state.input.initialized = true
+  state.input.wheel_x = 0.0
+  state.input.wheel_y = 0.0
   let win = @dom.window().as_any()
   add_event_listener(
     win,
@@ -1490,6 +1912,19 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
     "contextmenu",
     @js.from_fn1(fn(event : @js.Any) { prevent_default(event) }),
   )
+  add_event_listener(
+    target,
+    "wheel",
+    @js.from_fn1(fn(event : @js.Any) {
+      // Keep wheel deltas in logical units (CSS pixels / lines depending on browser).
+      // Consumers should interpret sign and scaling as needed.
+      let dx : Double = event._get("deltaX").cast()
+      let dy : Double = event._get("deltaY").cast()
+      state.input.wheel_x = state.input.wheel_x + dx
+      state.input.wheel_y = state.input.wheel_y + dy
+      prevent_default(event)
+    }),
+  )
 }
 
 ///|
@@ -1544,6 +1979,27 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.sprite_instance_data.clear()
   state.gpu.sprite_batches.clear()
   state.gpu.sprite_instance_count = 0
+  state.gpu.ui_pipeline = None
+  state.gpu.ui_instance_buffer = None
+  state.gpu.ui_instance_capacity = 0
+  state.gpu.ui_globals_bind_group = None
+  state.gpu.ui_instance_data.clear()
+  state.gpu.ui_batches.clear()
+  state.gpu.ui_instance_count = 0
+  state.gpu.ui_shadow_pipeline = None
+  state.gpu.ui_shadow_instance_buffer = None
+  state.gpu.ui_shadow_instance_capacity = 0
+  state.gpu.ui_shadow_globals_bind_group = None
+  state.gpu.ui_shadow_instance_data.clear()
+  state.gpu.ui_shadow_batches.clear()
+  state.gpu.ui_shadow_instance_count = 0
+  state.gpu.ui_slice_pipeline = None
+  state.gpu.ui_slice_instance_buffer = None
+  state.gpu.ui_slice_instance_capacity = 0
+  state.gpu.ui_slice_globals_bind_group = None
+  state.gpu.ui_slice_instance_data.clear()
+  state.gpu.ui_slice_batches.clear()
+  state.gpu.ui_slice_instance_count = 0
   state.gpu.encoder = None
   state.gpu.current_texture = None
   state.gpu.current_pass = None
@@ -1552,21 +2008,48 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.next_texture_id = 1
   state.gpu.fallback_texture_id = 0
   state.gpu.sprite_shader_id = 0
+  state.gpu.ui_shader_id = 0
+  state.gpu.ui_shadow_shader_id = 0
+  state.gpu.ui_slice_shader_id = 0
   state.gpu.mesh_shader_id = 0
   state.gpu.gizmo_shader_id = 0
   let sprite_id = next_shader_id(state)
+  let ui_id = next_shader_id(state)
+  let ui_shadow_id = next_shader_id(state)
+  let ui_slice_id = next_shader_id(state)
   let mesh_id = next_shader_id(state)
   let gizmo_id = next_shader_id(state)
   state.gpu.sprite_shader_id = sprite_id
+  state.gpu.ui_shader_id = ui_id
+  state.gpu.ui_shadow_shader_id = ui_shadow_id
+  state.gpu.ui_slice_shader_id = ui_slice_id
   state.gpu.mesh_shader_id = mesh_id
   state.gpu.gizmo_shader_id = gizmo_id
   set_add(state.assets.loading_shaders, @js.any(sprite_id))
+  set_add(state.assets.loading_shaders, @js.any(ui_id))
+  set_add(state.assets.loading_shaders, @js.any(ui_shadow_id))
+  set_add(state.assets.loading_shaders, @js.any(ui_slice_id))
   set_add(state.assets.loading_shaders, @js.any(mesh_id))
   set_add(state.assets.loading_shaders, @js.any(gizmo_id))
   map_set(
     state.assets.shader_paths,
     @js.any(sprite_id),
     @js.any("shaders/mgstudio/2d/sprite.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(ui_id),
+    @js.any("shaders/mgstudio/ui/ui.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(ui_shadow_id),
+    @js.any("shaders/mgstudio/ui/box_shadow.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(ui_slice_id),
+    @js.any("shaders/mgstudio/ui/ui_texture_slice.wgsl"),
   )
   map_set(
     state.assets.shader_paths,
@@ -1580,7 +2063,19 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   load_wgsl_from_path(state, sprite_id, "shaders/mgstudio/2d/sprite.wgsl")
   |> ignore
+  load_wgsl_from_path(
+    state, ui_shadow_id, "shaders/mgstudio/ui/box_shadow.wgsl",
+  )
+  |> ignore
+  load_wgsl_from_path(
+    state, ui_slice_id, "shaders/mgstudio/ui/ui_texture_slice.wgsl",
+  )
+  |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(ui_shadow_id)) |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(ui_slice_id)) |> ignore
   set_delete(state.assets.loading_shaders, @js.any(sprite_id)) |> ignore
+  load_wgsl_from_path(state, ui_id, "shaders/mgstudio/ui/ui.wgsl") |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(ui_id)) |> ignore
   load_wgsl_from_path(state, mesh_id, "shaders/mgstudio/2d/mesh.wgsl") |> ignore
   set_delete(state.assets.loading_shaders, @js.any(mesh_id)) |> ignore
   load_wgsl_from_path(state, gizmo_id, "shaders/mgstudio/gizmo/lines.wgsl")
@@ -1723,6 +2218,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
         ("view", texture.create_view().as_any()),
         ("sampler", sampler_value.as_any()),
         ("bindGroup", js_null()),
+        ("uiBindGroup", js_null()),
         ("width", @js.any(fallback_size)),
         ("height", @js.any(fallback_size)),
       ])
@@ -1794,6 +2290,513 @@ fn ensure_sprite_globals_bind_group(state : State) -> Unit {
     let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
     let bind_group = device.create_bind_group(bind_group_desc.to_js())
     state.gpu.sprite_globals_bind_group = Some(bind_group)
+  }
+}
+
+///|
+fn ensure_ui_pipeline_resources(state : State) -> Unit {
+  if state.gpu.ui_pipeline is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    if state.gpu.ui_shader_id <= 0 {
+      report_asset_error_once(
+        state, "ui_pipeline_missing_shader_id", "UI pipeline error: ui shader id not initialized",
+      )
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.ui_shader_id)
+    if shader_source is None {
+      let path_hint_any = map_get(
+        state.assets.shader_paths,
+        @js.any(state.gpu.ui_shader_id),
+      )
+      let suffix = if host_is_nullish(path_hint_any) {
+        ""
+      } else {
+        " (path: " + any_to_string(path_hint_any) + ")"
+      }
+      report_asset_error_once(
+        state,
+        "ui_pipeline_missing_shader_source",
+        "UI pipeline error: shader source not loaded" + suffix,
+      )
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    // UI vertices are generated from @builtin(vertex_index) in WGSL.
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @webgpu.render_pipeline_descriptor(
+      @webgpu.PipelineLayout::Auto,
+      vertex_state,
+      fragment_state,
+      primitive_state,
+    )
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_pipeline_validation_error",
+          "UI pipeline validation error: " + any_to_string(err_any),
+        )
+      }
+    })
+    let instance_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_storage(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    let instance_capacity = 65536
+    let instance_desc = @webgpu.buffer_descriptor(
+      instance_capacity, instance_usage,
+    )
+    let ui_instance_buffer = device.create_buffer(instance_desc.to_js())
+    state.gpu.ui_pipeline = Some(pipeline)
+    state.gpu.ui_instance_buffer = Some(ui_instance_buffer)
+    state.gpu.ui_instance_capacity = instance_capacity
+    state.gpu.ui_globals_bind_group = None
+    state.gpu.ui_instance_data.clear()
+    state.gpu.ui_batches.clear()
+    state.gpu.ui_instance_count = 0
+  }
+}
+
+///|
+fn ensure_ui_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
+  if state.gpu.ui_pipeline is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if !host_is_nullish(entry._get("uiBindGroup")) {
+    return
+  }
+  if host_is_nullish(entry._get("sampler")) ||
+    host_is_nullish(entry._get("view")) {
+    return
+  }
+  if state.gpu.device is Some(device) && state.gpu.ui_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(0)
+    let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
+    let view : @webgpu.GPUTextureView = entry._get("view").cast()
+    let entries = [
+      @webgpu.bind_group_entry_sampler(0, sampler),
+      @webgpu.bind_group_entry_texture(1, view),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    entry._set("uiBindGroup", bind_group.as_any()) |> ignore
+  }
+}
+
+///|
+fn ensure_ui_globals_bind_group(state : State) -> Unit {
+  if state.gpu.ui_pipeline is None ||
+    state.gpu.sprite_uniform_buffer is None ||
+    state.gpu.ui_instance_buffer is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if state.gpu.ui_globals_bind_group is Some(_) {
+    return
+  }
+  if state.gpu.device is Some(device) && state.gpu.ui_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(1)
+    let uniform_buffer = state.gpu.sprite_uniform_buffer.unwrap()
+    let instance_buffer = state.gpu.ui_instance_buffer.unwrap()
+    let entries = [
+      @webgpu.bind_group_entry_buffer(0, uniform_buffer),
+      @webgpu.bind_group_entry_buffer(1, instance_buffer),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    device.push_error_scope("validation")
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    let bind_group_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = bind_group_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_globals_bind_group_validation_error",
+          "UI globals bind group validation error: " + any_to_string(err_any),
+        )
+      }
+    })
+    state.gpu.ui_globals_bind_group = Some(bind_group)
+  }
+}
+
+///|
+fn ensure_ui_shadow_pipeline_resources(state : State) -> Unit {
+  if state.gpu.ui_shadow_pipeline is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    if state.gpu.ui_shadow_shader_id <= 0 {
+      report_asset_error_once(
+        state, "ui_shadow_pipeline_missing_shader_id", "UI box shadow pipeline error: shader id not initialized",
+      )
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.ui_shadow_shader_id)
+    if shader_source is None {
+      let path_hint_any = map_get(
+        state.assets.shader_paths,
+        @js.any(state.gpu.ui_shadow_shader_id),
+      )
+      let suffix = if host_is_nullish(path_hint_any) {
+        ""
+      } else {
+        " (path: " + any_to_string(path_hint_any) + ")"
+      }
+      report_asset_error_once(
+        state,
+        "ui_shadow_pipeline_missing_shader_source",
+        "UI box shadow pipeline error: shader source not loaded" + suffix,
+      )
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @webgpu.render_pipeline_descriptor(
+      @webgpu.PipelineLayout::Auto,
+      vertex_state,
+      fragment_state,
+      primitive_state,
+    )
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_shadow_pipeline_validation_error",
+          "UI box shadow pipeline validation error: " + any_to_string(err_any),
+        )
+      }
+    })
+    let instance_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_storage(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    let instance_capacity = 65536
+    let instance_desc = @webgpu.buffer_descriptor(
+      instance_capacity, instance_usage,
+    )
+    let instance_buffer = device.create_buffer(instance_desc.to_js())
+    state.gpu.ui_shadow_pipeline = Some(pipeline)
+    state.gpu.ui_shadow_instance_buffer = Some(instance_buffer)
+    state.gpu.ui_shadow_instance_capacity = instance_capacity
+    state.gpu.ui_shadow_globals_bind_group = None
+    state.gpu.ui_shadow_instance_data.clear()
+    state.gpu.ui_shadow_batches.clear()
+    state.gpu.ui_shadow_instance_count = 0
+  }
+}
+
+///|
+fn ensure_ui_shadow_bind_group_for_texture(
+  state : State,
+  entry : @js.Any,
+) -> Unit {
+  if state.gpu.ui_shadow_pipeline is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if !host_is_nullish(entry._get("uiShadowBindGroup")) {
+    return
+  }
+  if host_is_nullish(entry._get("sampler")) ||
+    host_is_nullish(entry._get("view")) {
+    return
+  }
+  if state.gpu.device is Some(device) &&
+    state.gpu.ui_shadow_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(0)
+    let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
+    let view : @webgpu.GPUTextureView = entry._get("view").cast()
+    let entries = [
+      @webgpu.bind_group_entry_sampler(0, sampler),
+      @webgpu.bind_group_entry_texture(1, view),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    entry._set("uiShadowBindGroup", bind_group.as_any()) |> ignore
+  }
+}
+
+///|
+fn ensure_ui_shadow_globals_bind_group(state : State) -> Unit {
+  if state.gpu.ui_shadow_pipeline is None ||
+    state.gpu.sprite_uniform_buffer is None ||
+    state.gpu.ui_shadow_instance_buffer is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if state.gpu.ui_shadow_globals_bind_group is Some(_) {
+    return
+  }
+  if state.gpu.device is Some(device) &&
+    state.gpu.ui_shadow_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(1)
+    let uniform_buffer = state.gpu.sprite_uniform_buffer.unwrap()
+    let instance_buffer = state.gpu.ui_shadow_instance_buffer.unwrap()
+    let entries = [
+      @webgpu.bind_group_entry_buffer(0, uniform_buffer),
+      @webgpu.bind_group_entry_buffer(1, instance_buffer),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    device.push_error_scope("validation")
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    let bind_group_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = bind_group_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_shadow_globals_bind_group_validation_error",
+          "UI box shadow globals bind group validation error: " +
+          any_to_string(err_any),
+        )
+      }
+    })
+    state.gpu.ui_shadow_globals_bind_group = Some(bind_group)
+  }
+}
+
+///|
+fn ensure_ui_slice_pipeline_resources(state : State) -> Unit {
+  if state.gpu.ui_slice_pipeline is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    if state.gpu.ui_slice_shader_id <= 0 {
+      report_asset_error_once(
+        state, "ui_slice_pipeline_missing_shader_id", "UI texture slice pipeline error: shader id not initialized",
+      )
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.ui_slice_shader_id)
+    if shader_source is None {
+      let path_hint_any = map_get(
+        state.assets.shader_paths,
+        @js.any(state.gpu.ui_slice_shader_id),
+      )
+      let suffix = if host_is_nullish(path_hint_any) {
+        ""
+      } else {
+        " (path: " + any_to_string(path_hint_any) + ")"
+      }
+      report_asset_error_once(
+        state,
+        "ui_slice_pipeline_missing_shader_source",
+        "UI texture slice pipeline error: shader source not loaded" + suffix,
+      )
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    // UI slice vertices are generated from @builtin(vertex_index) in WGSL.
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @webgpu.render_pipeline_descriptor(
+      @webgpu.PipelineLayout::Auto,
+      vertex_state,
+      fragment_state,
+      primitive_state,
+    )
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc.to_js())
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_slice_pipeline_validation_error",
+          "UI texture slice pipeline validation error: " +
+          any_to_string(err_any),
+        )
+      }
+    })
+    let instance_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_storage(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    let instance_capacity = 65536
+    let instance_desc = @webgpu.buffer_descriptor(
+      instance_capacity, instance_usage,
+    )
+    let instance_buffer = device.create_buffer(instance_desc.to_js())
+    state.gpu.ui_slice_pipeline = Some(pipeline)
+    state.gpu.ui_slice_instance_buffer = Some(instance_buffer)
+    state.gpu.ui_slice_instance_capacity = instance_capacity
+    state.gpu.ui_slice_globals_bind_group = None
+    state.gpu.ui_slice_instance_data.clear()
+    state.gpu.ui_slice_batches.clear()
+    state.gpu.ui_slice_instance_count = 0
+  }
+}
+
+///|
+fn ensure_ui_slice_bind_group_for_texture(
+  state : State,
+  entry : @js.Any,
+) -> Unit {
+  if state.gpu.ui_slice_pipeline is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if !host_is_nullish(entry._get("uiSliceBindGroup")) {
+    return
+  }
+  if host_is_nullish(entry._get("sampler")) ||
+    host_is_nullish(entry._get("view")) {
+    return
+  }
+  if state.gpu.device is Some(device) &&
+    state.gpu.ui_slice_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(0)
+    let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
+    let view : @webgpu.GPUTextureView = entry._get("view").cast()
+    let entries = [
+      @webgpu.bind_group_entry_sampler(0, sampler),
+      @webgpu.bind_group_entry_texture(1, view),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    entry._set("uiSliceBindGroup", bind_group.as_any()) |> ignore
+  }
+}
+
+///|
+fn ensure_ui_slice_globals_bind_group(state : State) -> Unit {
+  if state.gpu.ui_slice_pipeline is None ||
+    state.gpu.sprite_uniform_buffer is None ||
+    state.gpu.ui_slice_instance_buffer is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if state.gpu.ui_slice_globals_bind_group is Some(_) {
+    return
+  }
+  if state.gpu.device is Some(device) &&
+    state.gpu.ui_slice_pipeline is Some(pipeline) {
+    let layout = pipeline.get_bind_group_layout(1)
+    let uniform_buffer = state.gpu.sprite_uniform_buffer.unwrap()
+    let instance_buffer = state.gpu.ui_slice_instance_buffer.unwrap()
+    let entries = [
+      @webgpu.bind_group_entry_buffer(0, uniform_buffer),
+      @webgpu.bind_group_entry_buffer(1, instance_buffer),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    device.push_error_scope("validation")
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    let bind_group_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = bind_group_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "ui_slice_globals_bind_group_validation_error",
+          "UI texture slice globals bind group validation error: " +
+          any_to_string(err_any),
+        )
+      }
+    })
+    state.gpu.ui_slice_globals_bind_group = Some(bind_group)
   }
 }
 
@@ -2108,6 +3111,7 @@ async fn load_texture_from_path(
         ("view", texture.create_view().as_any()),
         ("sampler", sampler_value.as_any()),
         ("bindGroup", js_null()),
+        ("uiBindGroup", js_null()),
         ("width", @js.any(width)),
         ("height", @js.any(height)),
       ])
@@ -2296,11 +3300,18 @@ fn begin_pass(
         cam_y,
         cam_rotation,
         cam_scale,
+        viewport_x: vp_x,
+        viewport_y: vp_y,
+        viewport_width: vp_width,
+        viewport_height: vp_height,
       })
       state.gpu.gizmo_lines = new_array()
       state.gpu.sprite_instance_data.clear()
       state.gpu.sprite_batches.clear()
       state.gpu.sprite_instance_count = 0
+      state.gpu.ui_instance_data.clear()
+      state.gpu.ui_batches.clear()
+      state.gpu.ui_instance_count = 0
       ensure_pipeline_resources(state)
       if state.gpu.queue is Some(queue) &&
         state.gpu.sprite_uniform_buffer is Some(sprite_uniform_buffer) {
@@ -2408,6 +3419,244 @@ fn flush_sprite_batches(state : State) -> Unit {
 }
 
 ///|
+fn flush_ui_batches(state : State) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  if state.gpu.ui_instance_count <= 0 {
+    return
+  }
+  if state.gpu.device is None || state.gpu.queue is None {
+    return
+  }
+  ensure_ui_pipeline_resources(state)
+  if state.gpu.ui_pipeline is None ||
+    state.gpu.ui_instance_buffer is None ||
+    state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  report_debug_once(
+    state,
+    "flush_ui_batches",
+    "flush_ui_batches: instances=" +
+    state.gpu.ui_instance_count.to_string() +
+    " batches=" +
+    state.gpu.ui_batches.length().to_string(),
+  )
+  if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
+    let required_bytes = state.gpu.ui_instance_data.length() * 4
+    if required_bytes <= 0 {
+      return
+    }
+    if required_bytes > state.gpu.ui_instance_capacity {
+      let capacity = if required_bytes < 256 { 256 } else { required_bytes }
+      let usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_storage(),
+        @webgpu.buffer_usage_copy_dst(),
+      )
+      let desc = @webgpu.buffer_descriptor(capacity, usage)
+      let buffer = device.create_buffer(desc.to_js())
+      state.gpu.ui_instance_buffer = Some(buffer)
+      state.gpu.ui_instance_capacity = capacity
+      state.gpu.ui_globals_bind_group = None
+    }
+    ensure_ui_globals_bind_group(state)
+    if state.gpu.ui_instance_buffer is Some(instance_buffer) &&
+      state.gpu.ui_globals_bind_group is Some(globals_bind_group) &&
+      state.gpu.ui_pipeline is Some(pipeline) &&
+      state.gpu.current_pass is Some(pass) {
+      let instance_data = float32array_from_array(state.gpu.ui_instance_data)
+      queue.write_buffer(instance_buffer, 0, instance_data)
+      pass.set_pipeline(pipeline)
+      pass.set_bind_group(1, globals_bind_group)
+      for batch in state.gpu.ui_batches {
+        let entry = get_texture_entry(state, batch.texture_id)
+        if entry is None {
+          continue
+        }
+        if entry is Some(entry_value) {
+          ensure_ui_bind_group_for_texture(state, entry_value)
+          let bind_group_any = entry_value._get("uiBindGroup")
+          if host_is_nullish(bind_group_any) {
+            continue
+          }
+          pass.set_bind_group(0, bind_group_any.cast())
+          pass.draw(
+            state.gpu.vertex_count,
+            batch.instance_count,
+            0,
+            batch.first_instance,
+          )
+        }
+      }
+      state.gpu.ui_instance_data.clear()
+      state.gpu.ui_batches.clear()
+      state.gpu.ui_instance_count = 0
+    }
+  }
+}
+
+///|
+fn flush_ui_shadow_batches(state : State) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  if state.gpu.ui_shadow_instance_count <= 0 {
+    return
+  }
+  if state.gpu.device is None || state.gpu.queue is None {
+    return
+  }
+  ensure_ui_shadow_pipeline_resources(state)
+  if state.gpu.ui_shadow_pipeline is None ||
+    state.gpu.ui_shadow_instance_buffer is None ||
+    state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  report_debug_once(
+    state,
+    "flush_ui_shadow_batches",
+    "flush_ui_shadow_batches: instances=" +
+    state.gpu.ui_shadow_instance_count.to_string() +
+    " batches=" +
+    state.gpu.ui_shadow_batches.length().to_string(),
+  )
+  if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
+    let required_bytes = state.gpu.ui_shadow_instance_data.length() * 4
+    if required_bytes <= 0 {
+      return
+    }
+    if required_bytes > state.gpu.ui_shadow_instance_capacity {
+      let capacity = if required_bytes < 256 { 256 } else { required_bytes }
+      let usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_storage(),
+        @webgpu.buffer_usage_copy_dst(),
+      )
+      let desc = @webgpu.buffer_descriptor(capacity, usage)
+      let buffer = device.create_buffer(desc.to_js())
+      state.gpu.ui_shadow_instance_buffer = Some(buffer)
+      state.gpu.ui_shadow_instance_capacity = capacity
+      state.gpu.ui_shadow_globals_bind_group = None
+    }
+    ensure_ui_shadow_globals_bind_group(state)
+    if state.gpu.ui_shadow_instance_buffer is Some(instance_buffer) &&
+      state.gpu.ui_shadow_globals_bind_group is Some(globals_bind_group) &&
+      state.gpu.ui_shadow_pipeline is Some(pipeline) &&
+      state.gpu.current_pass is Some(pass) {
+      let instance_data = float32array_from_array(
+        state.gpu.ui_shadow_instance_data,
+      )
+      queue.write_buffer(instance_buffer, 0, instance_data)
+      pass.set_pipeline(pipeline)
+      pass.set_bind_group(1, globals_bind_group)
+      for batch in state.gpu.ui_shadow_batches {
+        let entry = get_texture_entry(state, batch.texture_id)
+        if entry is None {
+          continue
+        }
+        if entry is Some(entry_value) {
+          ensure_ui_shadow_bind_group_for_texture(state, entry_value)
+          let bind_group_any = entry_value._get("uiShadowBindGroup")
+          if host_is_nullish(bind_group_any) {
+            continue
+          }
+          pass.set_bind_group(0, bind_group_any.cast())
+          pass.draw(
+            state.gpu.vertex_count,
+            batch.instance_count,
+            0,
+            batch.first_instance,
+          )
+        }
+      }
+      state.gpu.ui_shadow_instance_data.clear()
+      state.gpu.ui_shadow_batches.clear()
+      state.gpu.ui_shadow_instance_count = 0
+    }
+  }
+}
+
+///|
+fn flush_ui_slice_batches(state : State) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  if state.gpu.ui_slice_instance_count <= 0 {
+    return
+  }
+  if state.gpu.device is None || state.gpu.queue is None {
+    return
+  }
+  ensure_ui_slice_pipeline_resources(state)
+  if state.gpu.ui_slice_pipeline is None ||
+    state.gpu.ui_slice_instance_buffer is None ||
+    state.gpu.sprite_uniform_buffer is None {
+    return
+  }
+  report_debug_once(
+    state,
+    "flush_ui_slice_batches",
+    "flush_ui_slice_batches: instances=" +
+    state.gpu.ui_slice_instance_count.to_string() +
+    " batches=" +
+    state.gpu.ui_slice_batches.length().to_string(),
+  )
+  if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
+    let required_bytes = state.gpu.ui_slice_instance_data.length() * 4
+    if required_bytes <= 0 {
+      return
+    }
+    if required_bytes > state.gpu.ui_slice_instance_capacity {
+      let capacity = if required_bytes < 256 { 256 } else { required_bytes }
+      let usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_storage(),
+        @webgpu.buffer_usage_copy_dst(),
+      )
+      let desc = @webgpu.buffer_descriptor(capacity, usage)
+      let buffer = device.create_buffer(desc.to_js())
+      state.gpu.ui_slice_instance_buffer = Some(buffer)
+      state.gpu.ui_slice_instance_capacity = capacity
+      state.gpu.ui_slice_globals_bind_group = None
+    }
+    ensure_ui_slice_globals_bind_group(state)
+    if state.gpu.ui_slice_instance_buffer is Some(instance_buffer) &&
+      state.gpu.ui_slice_globals_bind_group is Some(globals_bind_group) &&
+      state.gpu.ui_slice_pipeline is Some(pipeline) &&
+      state.gpu.current_pass is Some(pass) {
+      let instance_data = float32array_from_array(
+        state.gpu.ui_slice_instance_data,
+      )
+      queue.write_buffer(instance_buffer, 0, instance_data)
+      pass.set_pipeline(pipeline)
+      pass.set_bind_group(1, globals_bind_group)
+      for batch in state.gpu.ui_slice_batches {
+        let entry = get_texture_entry(state, batch.texture_id)
+        if entry is None {
+          continue
+        }
+        if entry is Some(entry_value) {
+          ensure_ui_slice_bind_group_for_texture(state, entry_value)
+          let bind_group_any = entry_value._get("uiSliceBindGroup")
+          if host_is_nullish(bind_group_any) {
+            continue
+          }
+          pass.set_bind_group(0, bind_group_any.cast())
+          pass.draw(
+            state.gpu.vertex_count,
+            batch.instance_count,
+            0,
+            batch.first_instance,
+          )
+        }
+      }
+      state.gpu.ui_slice_instance_data.clear()
+      state.gpu.ui_slice_batches.clear()
+      state.gpu.ui_slice_instance_count = 0
+    }
+  }
+}
+
+///|
 fn draw_sprite(
   state : State,
   texture_id : Int,
@@ -2479,6 +3728,9 @@ fn draw_sprite_uv(
   if !ensure_pass_ready(state) {
     return
   }
+  flush_ui_shadow_batches(state)
+  flush_ui_slice_batches(state)
+  flush_ui_batches(state)
   let entry = get_texture_entry(state, texture_id)
   if entry is None {
     return
@@ -2548,6 +3800,337 @@ fn draw_sprite_uv(
 }
 
 ///|
+fn draw_ui_rect(
+  state : State,
+  texture_id : Int,
+  x : Double,
+  y : Double,
+  rotation : Double,
+  scale_x : Double,
+  scale_y : Double,
+  r : Double,
+  g : Double,
+  b : Double,
+  a : Double,
+  uv_min_x : Double,
+  uv_min_y : Double,
+  uv_max_x : Double,
+  uv_max_y : Double,
+  flags : Double,
+  radius_tl : Double,
+  radius_tr : Double,
+  radius_br : Double,
+  radius_bl : Double,
+  border_left : Double,
+  border_top : Double,
+  border_right : Double,
+  border_bottom : Double,
+) -> Unit {
+  report_debug_once(
+    state,
+    "draw_ui_rect_called",
+    "draw_ui_rect called: tex_id=" +
+    texture_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ") flags=" +
+    flags.to_string(),
+  )
+  if !ensure_pass_ready(state) {
+    return
+  }
+  flush_sprite_batches(state)
+  flush_ui_shadow_batches(state)
+  flush_ui_slice_batches(state)
+  ensure_ui_pipeline_resources(state)
+  let entry = get_texture_entry(state, texture_id)
+  if entry is None {
+    return
+  }
+  if entry is Some(entry_value) {
+    let raw_uv_scale_x = uv_max_x - uv_min_x
+    let raw_uv_scale_y = uv_max_y - uv_min_y
+    let uv_scale_x = if raw_uv_scale_x == 0 { 1.0 } else { raw_uv_scale_x }
+    let uv_scale_y = if raw_uv_scale_y == 0 { 1.0 } else { raw_uv_scale_y }
+    let base_size = 128.0
+    let ui_scale_x = scale_x / base_size
+    let ui_scale_y = scale_y / base_size
+    let cos_value : Double = math_cos(rotation)
+    let sin_value : Double = math_sin(rotation)
+    let actual_texture_id : Int = entry_value._get("id").cast()
+    let first_instance = state.gpu.ui_instance_count
+    state.gpu.ui_instance_count = first_instance + 1
+
+    // Instance layout:
+    // model, scale, color, uv, flags(f32 + padding), radius, border
+    state.gpu.ui_instance_data.push(x)
+    state.gpu.ui_instance_data.push(y)
+    state.gpu.ui_instance_data.push(cos_value)
+    state.gpu.ui_instance_data.push(sin_value)
+    state.gpu.ui_instance_data.push(ui_scale_x)
+    state.gpu.ui_instance_data.push(ui_scale_y)
+    state.gpu.ui_instance_data.push(0.0)
+    state.gpu.ui_instance_data.push(0.0)
+    state.gpu.ui_instance_data.push(r)
+    state.gpu.ui_instance_data.push(g)
+    state.gpu.ui_instance_data.push(b)
+    state.gpu.ui_instance_data.push(a)
+    state.gpu.ui_instance_data.push(uv_min_x)
+    state.gpu.ui_instance_data.push(uv_min_y)
+    state.gpu.ui_instance_data.push(uv_scale_x)
+    state.gpu.ui_instance_data.push(uv_scale_y)
+    state.gpu.ui_instance_data.push(flags)
+    state.gpu.ui_instance_data.push(0.0)
+    state.gpu.ui_instance_data.push(0.0)
+    state.gpu.ui_instance_data.push(0.0)
+    state.gpu.ui_instance_data.push(radius_tl)
+    state.gpu.ui_instance_data.push(radius_tr)
+    state.gpu.ui_instance_data.push(radius_br)
+    state.gpu.ui_instance_data.push(radius_bl)
+    state.gpu.ui_instance_data.push(border_left)
+    state.gpu.ui_instance_data.push(border_top)
+    state.gpu.ui_instance_data.push(border_right)
+    state.gpu.ui_instance_data.push(border_bottom)
+    let batch_count = state.gpu.ui_batches.length()
+    if batch_count > 0 &&
+      state.gpu.ui_batches[batch_count - 1].texture_id == actual_texture_id {
+      state.gpu.ui_batches[batch_count - 1].instance_count = state.gpu.ui_batches[batch_count -
+        1].instance_count +
+        1
+    } else {
+      state.gpu.ui_batches.push(UiBatch::{
+        texture_id: actual_texture_id,
+        first_instance,
+        instance_count: 1,
+      })
+    }
+  }
+}
+
+///|
+fn draw_ui_texture_slice(
+  state : State,
+  texture_id : Int,
+  x : Double,
+  y : Double,
+  rotation : Double,
+  scale_x : Double,
+  scale_y : Double,
+  r : Double,
+  g : Double,
+  b : Double,
+  a : Double,
+  texture_slice_l : Double,
+  texture_slice_t : Double,
+  texture_slice_r : Double,
+  texture_slice_b : Double,
+  target_slice_l : Double,
+  target_slice_t : Double,
+  target_slice_r : Double,
+  target_slice_b : Double,
+  repeat_side_x : Double,
+  repeat_side_y : Double,
+  repeat_center_x : Double,
+  repeat_center_y : Double,
+  atlas_l : Double,
+  atlas_t : Double,
+  atlas_r : Double,
+  atlas_b : Double,
+) -> Unit {
+  report_debug_once(
+    state,
+    "draw_ui_texture_slice_called",
+    "draw_ui_texture_slice called: tex_id=" +
+    texture_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ")",
+  )
+  if !ensure_pass_ready(state) {
+    return
+  }
+  flush_ui_shadow_batches(state)
+  flush_sprite_batches(state)
+  flush_ui_batches(state)
+  ensure_ui_slice_pipeline_resources(state)
+  let entry = get_texture_entry(state, texture_id)
+  if entry is None {
+    return
+  }
+  if entry is Some(entry_value) {
+    let base_size = 128.0
+    let ui_scale_x = scale_x / base_size
+    let ui_scale_y = scale_y / base_size
+    let cos_value : Double = math_cos(rotation)
+    let sin_value : Double = math_sin(rotation)
+    let actual_texture_id : Int = entry_value._get("id").cast()
+    let first_instance = state.gpu.ui_slice_instance_count
+    state.gpu.ui_slice_instance_count = first_instance + 1
+
+    // Instance layout:
+    // model, scale, color, texture_slices, target_slices, repeat, atlas_rect
+    state.gpu.ui_slice_instance_data.push(x)
+    state.gpu.ui_slice_instance_data.push(y)
+    state.gpu.ui_slice_instance_data.push(cos_value)
+    state.gpu.ui_slice_instance_data.push(sin_value)
+    state.gpu.ui_slice_instance_data.push(ui_scale_x)
+    state.gpu.ui_slice_instance_data.push(ui_scale_y)
+    state.gpu.ui_slice_instance_data.push(0.0)
+    state.gpu.ui_slice_instance_data.push(0.0)
+    state.gpu.ui_slice_instance_data.push(r)
+    state.gpu.ui_slice_instance_data.push(g)
+    state.gpu.ui_slice_instance_data.push(b)
+    state.gpu.ui_slice_instance_data.push(a)
+    state.gpu.ui_slice_instance_data.push(texture_slice_l)
+    state.gpu.ui_slice_instance_data.push(texture_slice_t)
+    state.gpu.ui_slice_instance_data.push(texture_slice_r)
+    state.gpu.ui_slice_instance_data.push(texture_slice_b)
+    state.gpu.ui_slice_instance_data.push(target_slice_l)
+    state.gpu.ui_slice_instance_data.push(target_slice_t)
+    state.gpu.ui_slice_instance_data.push(target_slice_r)
+    state.gpu.ui_slice_instance_data.push(target_slice_b)
+    state.gpu.ui_slice_instance_data.push(repeat_side_x)
+    state.gpu.ui_slice_instance_data.push(repeat_side_y)
+    state.gpu.ui_slice_instance_data.push(repeat_center_x)
+    state.gpu.ui_slice_instance_data.push(repeat_center_y)
+    state.gpu.ui_slice_instance_data.push(atlas_l)
+    state.gpu.ui_slice_instance_data.push(atlas_t)
+    state.gpu.ui_slice_instance_data.push(atlas_r)
+    state.gpu.ui_slice_instance_data.push(atlas_b)
+    let batch_count = state.gpu.ui_slice_batches.length()
+    if batch_count > 0 &&
+      state.gpu.ui_slice_batches[batch_count - 1].texture_id ==
+      actual_texture_id {
+      state.gpu.ui_slice_batches[batch_count - 1].instance_count = state.gpu.ui_slice_batches[batch_count -
+        1].instance_count +
+        1
+    } else {
+      state.gpu.ui_slice_batches.push(UiBatch::{
+        texture_id: actual_texture_id,
+        first_instance,
+        instance_count: 1,
+      })
+    }
+  }
+}
+
+///|
+fn draw_ui_box_shadow(
+  state : State,
+  texture_id : Int,
+  x : Double,
+  y : Double,
+  rotation : Double,
+  scale_x : Double,
+  scale_y : Double,
+  r : Double,
+  g : Double,
+  b : Double,
+  a : Double,
+  size_x : Double,
+  size_y : Double,
+  radius_tl : Double,
+  radius_tr : Double,
+  radius_br : Double,
+  radius_bl : Double,
+  blur : Double,
+  samples : Double,
+) -> Unit {
+  report_debug_once(
+    state,
+    "draw_ui_box_shadow_called",
+    "draw_ui_box_shadow called: tex_id=" +
+    texture_id.to_string() +
+    " pos=(" +
+    x.to_string() +
+    "," +
+    y.to_string() +
+    ") scale=(" +
+    scale_x.to_string() +
+    "," +
+    scale_y.to_string() +
+    ") size=(" +
+    size_x.to_string() +
+    "," +
+    size_y.to_string() +
+    ") blur=" +
+    blur.to_string() +
+    " samples=" +
+    samples.to_string(),
+  )
+  if !ensure_pass_ready(state) {
+    return
+  }
+  flush_ui_slice_batches(state)
+  flush_ui_batches(state)
+  flush_sprite_batches(state)
+  ensure_ui_shadow_pipeline_resources(state)
+  let entry = get_texture_entry(state, texture_id)
+  if entry is None {
+    return
+  }
+  if entry is Some(entry_value) {
+    let base_size = 128.0
+    let shadow_scale_x = scale_x / base_size
+    let shadow_scale_y = scale_y / base_size
+    let cos_value : Double = math_cos(rotation)
+    let sin_value : Double = math_sin(rotation)
+    let actual_texture_id : Int = entry_value._get("id").cast()
+    let first_instance = state.gpu.ui_shadow_instance_count
+    state.gpu.ui_shadow_instance_count = first_instance + 1
+
+    // Instance layout:
+    // model, scale(bounds/128), color, size(x,y,blur,samples), radius(tl,tr,br,bl)
+    state.gpu.ui_shadow_instance_data.push(x)
+    state.gpu.ui_shadow_instance_data.push(y)
+    state.gpu.ui_shadow_instance_data.push(cos_value)
+    state.gpu.ui_shadow_instance_data.push(sin_value)
+    state.gpu.ui_shadow_instance_data.push(shadow_scale_x)
+    state.gpu.ui_shadow_instance_data.push(shadow_scale_y)
+    state.gpu.ui_shadow_instance_data.push(0.0)
+    state.gpu.ui_shadow_instance_data.push(0.0)
+    state.gpu.ui_shadow_instance_data.push(r)
+    state.gpu.ui_shadow_instance_data.push(g)
+    state.gpu.ui_shadow_instance_data.push(b)
+    state.gpu.ui_shadow_instance_data.push(a)
+    state.gpu.ui_shadow_instance_data.push(size_x)
+    state.gpu.ui_shadow_instance_data.push(size_y)
+    state.gpu.ui_shadow_instance_data.push(blur)
+    state.gpu.ui_shadow_instance_data.push(samples)
+    state.gpu.ui_shadow_instance_data.push(radius_tl)
+    state.gpu.ui_shadow_instance_data.push(radius_tr)
+    state.gpu.ui_shadow_instance_data.push(radius_br)
+    state.gpu.ui_shadow_instance_data.push(radius_bl)
+    let batch_count = state.gpu.ui_shadow_batches.length()
+    if batch_count > 0 &&
+      state.gpu.ui_shadow_batches[batch_count - 1].texture_id ==
+      actual_texture_id {
+      state.gpu.ui_shadow_batches[batch_count - 1].instance_count = state.gpu.ui_shadow_batches[batch_count -
+        1].instance_count +
+        1
+    } else {
+      state.gpu.ui_shadow_batches.push(UiBatch::{
+        texture_id: actual_texture_id,
+        first_instance,
+        instance_count: 1,
+      })
+    }
+  }
+}
+
+///|
 fn draw_mesh(
   state : State,
   mesh_id : Int,
@@ -2587,6 +4170,9 @@ fn draw_mesh(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
+  flush_ui_shadow_batches(state)
+  flush_ui_slice_batches(state)
+  flush_ui_batches(state)
   flush_sprite_batches(state)
   ensure_mesh_pipeline(state)
   if state.gpu.mesh_pipeline is None || state.gpu.mesh_bind_group is None {
@@ -2851,6 +4437,8 @@ pub fn create_host(
     set_clear(state.input.just_released)
     set_clear(state.input.mouse_just_pressed)
     set_clear(state.input.mouse_just_released)
+    state.input.wheel_x = 0.0
+    state.input.wheel_y = 0.0
   })
   let input_is_mouse_button_down = @js.from_fn1(fn(name) {
     let text = string_from_id_required(
@@ -2872,9 +4460,198 @@ pub fn create_host(
   })
   let input_mouse_x = @js.from_fn0(fn() { state.input.mouse_x })
   let input_mouse_y = @js.from_fn0(fn() { state.input.mouse_y })
+  let input_wheel_x = @js.from_fn0(fn() { state.input.wheel_x })
+  let input_wheel_y = @js.from_fn0(fn() { state.input.wheel_y })
   let input_has_cursor = @js.from_fn0(fn() { state.input.has_cursor })
   let debug_string = @js.from_fn1(fn(value) {
     console_error(@js.any(string_from_id_optional(state, value)))
+    0
+  })
+  let a11y_begin_update = @js.from_fn1(fn(root_any : @js.Any) {
+    if state.window is None {
+      return 0
+    }
+    let canvas = state.window.unwrap().canvas
+    let root_id = to_int(number_or(root_any, 0))
+    state.a11y_container = Some(a11y_begin_update_js(canvas, root_id))
+    0
+  })
+  let a11y_push_node = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      guard state.a11y_container is Some(container) else { return }
+      let node_id = to_int(arg_number(args, 0, 0))
+      let parent_id = to_int(arg_number(args, 1, 0))
+      let role_id = to_int(arg_number(args, 2, 0))
+      let x = arg_number(args, 3, 0)
+      let y = arg_number(args, 4, 0)
+      let w = arg_number(args, 5, 0)
+      let h = arg_number(args, 6, 0)
+      let name_id = to_int(arg_number(args, 7, 0))
+      let actions_mask = to_int(arg_number(args, 8, 0))
+      let name = string_from_id_optional(state, @js.any(name_id))
+      a11y_push_node_js(
+        container, node_id, parent_id, role_id, x, y, w, h, name, name, actions_mask,
+      )
+    }),
+  )
+  let a11y_end_update = @js.from_fn0(fn() {
+    if state.a11y_container is Some(container) {
+      a11y_end_update_js(container)
+    }
+    0
+  })
+  let a11y_apply_update = @js.from_fn1(fn(update_any : @js.Any) {
+    if state.window is None {
+      return 0
+    }
+    let update_id = to_int(number_or(update_any, 0))
+    if update_id <= 0 {
+      return 0
+    }
+    let payload = string_from_id_optional(state, @js.any(update_id))
+    if payload == "" {
+      return 0
+    }
+    let json = @json.parse(payload) catch { _ => return 0 }
+    let update : @moon_accesskit.TreeUpdate = @json.from_json(json) catch {
+      _ => return 0
+    }
+    let canvas = state.window.unwrap().canvas
+    state.a11y_container = Some(a11y_begin_update_js(canvas, -1))
+    guard state.a11y_container is Some(container) else { return 0 }
+    let nodes_by_id : @hashmap.HashMap[UInt64, @moon_accesskit.Node] = @hashmap.HashMap::new()
+    for nu in update.nodes() {
+      nodes_by_id.set(nu.id().to_u64(), nu.node())
+    }
+    let focused_id = update.focus().to_u64()
+    fn host_role(role : @moon_accesskit.Role) -> Int {
+      match role {
+        @moon_accesskit.Role::Window
+        | @moon_accesskit.Role::Application
+        | @moon_accesskit.Role::RootWebArea => 1
+        @moon_accesskit.Role::Button | @moon_accesskit.Role::DefaultButton => 3
+        @moon_accesskit.Role::Label
+        | @moon_accesskit.Role::TextRun
+        | @moon_accesskit.Role::Paragraph => 4
+        @moon_accesskit.Role::Image => 5
+        _ => 2
+      }
+    }
+
+    fn label_for(node : @moon_accesskit.Node) -> String {
+      match node.label() {
+        Some(s) => s
+        None => ""
+      }
+    }
+
+    fn value_for(node : @moon_accesskit.Node) -> String {
+      node.value().unwrap_or("")
+    }
+
+    let root_id = match update.tree() {
+      Some(t) => t.root_id().to_u64()
+      None => 0UL
+    }
+    let stack : Array[(UInt64, UInt64, Bool)] = []
+    stack.push((0UL, root_id, false))
+    let visited : @hashmap.HashMap[UInt64, Bool] = @hashmap.HashMap::new()
+    while stack.length() > 0 {
+      let (parent_id, cur_id, hidden_ancestor) = stack.pop().unwrap()
+      if visited.contains(cur_id) {
+        continue
+      }
+      visited.set(cur_id, true)
+      guard nodes_by_id.get(cur_id) is Some(node) else { continue }
+      if hidden_ancestor || node.is_hidden() {
+        continue
+      }
+      let parent_int = if parent_id == 0UL { -1 } else { parent_id.to_int() }
+      let cur_int = cur_id.to_int()
+      if cur_id != root_id {
+        let supports_scroll = node.supports_action(
+            @moon_accesskit.Action::ScrollUp,
+          ) ||
+          node.supports_action(@moon_accesskit.Action::ScrollDown) ||
+          node.supports_action(@moon_accesskit.Action::ScrollLeft) ||
+          node.supports_action(@moon_accesskit.Action::ScrollRight)
+        let actions_mask = (if node.supports_action(
+              @moon_accesskit.Action::Focus,
+            ) {
+            1
+          } else {
+            0
+          }) +
+          (if node.supports_action(@moon_accesskit.Action::Click) {
+            2
+          } else {
+            0
+          }) +
+          (if supports_scroll { 4 } else { 0 }) +
+          (if node.supports_action(@moon_accesskit.Action::SetValue) {
+            8
+          } else {
+            0
+          })
+        match node.bounds() {
+          Some(b) => {
+            let x = b.x0
+            let y = b.y0
+            let w = b.x1 - b.x0
+            let h = b.y1 - b.y0
+            a11y_push_node_js(
+              container,
+              cur_int,
+              parent_int,
+              host_role(node.role()),
+              x,
+              y,
+              w,
+              h,
+              label_for(node),
+              value_for(node),
+              actions_mask,
+            )
+          }
+          None => ()
+        }
+      }
+      let children = node.children()
+      for i in 0..<children.length() {
+        stack.push((cur_id, children[i].to_u64(), false))
+      }
+    }
+    a11y_end_update_js(container)
+    if focused_id != 0UL {
+      let focused_node = focused_id.to_int()
+      if state.a11y_focused_node != focused_node {
+        a11y_focus_node_js(focused_node)
+        state.a11y_focused_node = focused_node
+      }
+    } else {
+      state.a11y_focused_node = 0
+    }
+    0
+  })
+  let a11y_actions_len = @js.from_fn0(fn() { a11y_actions_len_js() })
+  let a11y_action_target = @js.from_fn1(fn(index_any) {
+    a11y_actions_target_js(to_int(number_or(index_any, 0)))
+  })
+  let a11y_action_kind = @js.from_fn1(fn(index_any) {
+    a11y_actions_kind_js(to_int(number_or(index_any, 0)))
+  })
+  let a11y_action_value_len = @js.from_fn1(fn(index_any) {
+    a11y_actions_value_len_js(to_int(number_or(index_any, 0)))
+  })
+  let a11y_action_value_code_unit = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let index = to_int(arg_number(args, 0, 0))
+      let offset = to_int(arg_number(args, 1, 0))
+      a11y_actions_value_code_unit_js(index, offset)
+    }),
+  )
+  let a11y_actions_clear = @js.from_fn0(fn() {
+    a11y_actions_clear_js()
     0
   })
   let string_sink_reset = @js.from_fn0(fn() {
@@ -2972,7 +4749,7 @@ pub fn create_host(
     }
     let nearest_value = number_or(nearest, 0) != 0
     @js.run_async(async fn() noraise {
-      // Always pass the coerced JS string to avoid relying on wasm string interop here.
+      // Always pass the coerced JS string to avoid relying on wasm-gc string interop here.
       let result = load_texture_from_path(
         state,
         id,
@@ -3284,7 +5061,9 @@ pub fn create_host(
     if sampler is Some(sampler_value) {
       entry._set("sampler", sampler_value.as_any()) |> ignore
       entry._set("bindGroup", js_null()) |> ignore
+      entry._set("uiBindGroup", js_null()) |> ignore
       ensure_bind_group_for_texture(state, entry)
+      ensure_ui_bind_group_for_texture(state, entry)
     }
   })
   let asset_create_dynamic_texture = @js.from_fn3(fn(width, height, nearest) {
@@ -3317,10 +5096,21 @@ pub fn create_host(
       )
       let texture_desc = @webgpu.texture_descriptor(
         @webgpu.texture_size(safe_width, safe_height),
-        @webgpu.TextureFormat::Rgba8Unorm,
+        @webgpu.TextureFormat::Rgba8UnormSrgb,
         texture_usage,
       )
       let texture = device.create_texture(texture_desc.to_js())
+      // Match Bevy font-atlas behavior: dynamic textures start fully transparent.
+      let clear_data = create_zero_rgba_data(safe_width, safe_height)
+      write_texture_region(
+        device.queue().as_any(),
+        texture.as_any(),
+        clear_data,
+        safe_width,
+        safe_height,
+        0,
+        0,
+      )
       let sampler = create_sampler(state, number_or(nearest, 0) != 0)
       if sampler is Some(sampler_value) {
         let entry = @js.from_entries([
@@ -3329,6 +5119,7 @@ pub fn create_host(
           ("view", texture.create_view().as_any()),
           ("sampler", sampler_value.as_any()),
           ("bindGroup", js_null()),
+          ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
         ])
@@ -3678,6 +5469,7 @@ pub fn create_host(
           ("view", texture.create_view().as_any()),
           ("sampler", sampler_value.as_any()),
           ("bindGroup", js_null()),
+          ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
         ])
@@ -3815,6 +5607,43 @@ pub fn create_host(
       )
     }),
   )
+  let gpu_set_scissor = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      if state.gpu.current_pass is None {
+        return
+      }
+      flush_ui_shadow_batches(state)
+      flush_ui_slice_batches(state)
+      flush_ui_batches(state)
+      flush_sprite_batches(state)
+      if state.gpu.current_pass is Some(pass) {
+        pass.set_scissor_rect(
+          to_int(arg_number(args, 0, 0)),
+          to_int(arg_number(args, 1, 0)),
+          to_int(arg_number(args, 2, 0)),
+          to_int(arg_number(args, 3, 0)),
+        )
+      }
+    }),
+  )
+  let gpu_clear_scissor = @js.from_fn0(fn() {
+    if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+      return
+    }
+    flush_ui_shadow_batches(state)
+    flush_ui_slice_batches(state)
+    flush_ui_batches(state)
+    flush_sprite_batches(state)
+    if state.gpu.current_pass is Some(pass) &&
+      state.gpu.current_pass_info is Some(info) {
+      pass.set_scissor_rect(
+        to_int(info.viewport_x),
+        to_int(info.viewport_y),
+        to_int(info.viewport_width),
+        to_int(info.viewport_height),
+      )
+    }
+  })
   let gpu_draw_sprite = wrap_variadic(
     @js.from_fn1(fn(args) {
       draw_sprite(
@@ -3850,6 +5679,94 @@ pub fn create_host(
         arg_number(args, 11, 0),
         arg_number(args, 12, 1),
         arg_number(args, 13, 1),
+      )
+    }),
+  )
+  let gpu_draw_ui_rect = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_ui_rect(
+        state,
+        to_int(arg_number(args, 0, 0)),
+        arg_number(args, 1, 0),
+        arg_number(args, 2, 0),
+        arg_number(args, 3, 0),
+        arg_number(args, 4, 1),
+        arg_number(args, 5, 1),
+        arg_number(args, 6, 1),
+        arg_number(args, 7, 1),
+        arg_number(args, 8, 1),
+        arg_number(args, 9, 1),
+        arg_number(args, 10, 0),
+        arg_number(args, 11, 0),
+        arg_number(args, 12, 1),
+        arg_number(args, 13, 1),
+        arg_number(args, 14, 0),
+        arg_number(args, 15, 0),
+        arg_number(args, 16, 0),
+        arg_number(args, 17, 0),
+        arg_number(args, 18, 0),
+        arg_number(args, 19, 0),
+        arg_number(args, 20, 0),
+        arg_number(args, 21, 0),
+        arg_number(args, 22, 0),
+      )
+    }),
+  )
+  let gpu_draw_ui_texture_slice = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_ui_texture_slice(
+        state,
+        to_int(arg_number(args, 0, 0)),
+        arg_number(args, 1, 0),
+        arg_number(args, 2, 0),
+        arg_number(args, 3, 0),
+        arg_number(args, 4, 1),
+        arg_number(args, 5, 1),
+        arg_number(args, 6, 1),
+        arg_number(args, 7, 1),
+        arg_number(args, 8, 1),
+        arg_number(args, 9, 1),
+        arg_number(args, 10, 0),
+        arg_number(args, 11, 0),
+        arg_number(args, 12, 0),
+        arg_number(args, 13, 0),
+        arg_number(args, 14, 0),
+        arg_number(args, 15, 0),
+        arg_number(args, 16, 0),
+        arg_number(args, 17, 0),
+        arg_number(args, 18, 0),
+        arg_number(args, 19, 0),
+        arg_number(args, 20, 0),
+        arg_number(args, 21, 0),
+        arg_number(args, 22, 0),
+        arg_number(args, 23, 0),
+        arg_number(args, 24, 1),
+        arg_number(args, 25, 1),
+      )
+    }),
+  )
+  let gpu_draw_ui_box_shadow = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_ui_box_shadow(
+        state,
+        to_int(arg_number(args, 0, 0)),
+        arg_number(args, 1, 0),
+        arg_number(args, 2, 0),
+        arg_number(args, 3, 0),
+        arg_number(args, 4, 1),
+        arg_number(args, 5, 1),
+        arg_number(args, 6, 1),
+        arg_number(args, 7, 1),
+        arg_number(args, 8, 1),
+        arg_number(args, 9, 1),
+        arg_number(args, 10, 0),
+        arg_number(args, 11, 0),
+        arg_number(args, 12, 0),
+        arg_number(args, 13, 0),
+        arg_number(args, 14, 0),
+        arg_number(args, 15, 0),
+        arg_number(args, 16, 0),
+        arg_number(args, 17, 4),
       )
     }),
   )
@@ -3895,6 +5812,9 @@ pub fn create_host(
   )
   let gpu_end_pass = @js.from_fn0(fn() {
     if state.gpu.current_pass is Some(_) {
+      flush_ui_shadow_batches(state)
+      flush_ui_slice_batches(state)
+      flush_ui_batches(state)
       flush_sprite_batches(state)
       draw_gizmo_lines(state, state.gpu.gizmo_lines)
     }
@@ -3912,6 +5832,9 @@ pub fn create_host(
       return
     }
     if state.gpu.current_pass is Some(pass) {
+      flush_ui_shadow_batches(state)
+      flush_ui_slice_batches(state)
+      flush_ui_batches(state)
       flush_sprite_batches(state)
       pass.end()
     }
@@ -3957,12 +5880,26 @@ pub fn create_host(
     ("input_is_mouse_button_just_released", input_is_mouse_button_just_released),
     ("input_mouse_x", input_mouse_x),
     ("input_mouse_y", input_mouse_y),
+    ("input_wheel_x", input_wheel_x),
+    ("input_wheel_y", input_wheel_y),
     ("input_has_cursor", input_has_cursor),
     ("debug_string", debug_string),
+    ("a11y_begin_update", a11y_begin_update),
+    ("a11y_push_node", a11y_push_node),
+    ("a11y_end_update", a11y_end_update),
+    ("a11y_apply_update", a11y_apply_update),
+    ("a11y_actions_len", a11y_actions_len),
+    ("a11y_action_target", a11y_action_target),
+    ("a11y_action_kind", a11y_action_kind),
+    ("a11y_action_value_len", a11y_action_value_len),
+    ("a11y_action_value_code_unit", a11y_action_value_code_unit),
+    ("a11y_actions_clear", a11y_actions_clear),
     ("gpu_request_device", gpu_request_device),
     ("gpu_get_queue", gpu_get_queue),
     ("gpu_create_surface", gpu_create_surface),
     ("gpu_configure_surface", gpu_configure_surface),
+    ("gpu_set_scissor", gpu_set_scissor),
+    ("gpu_clear_scissor", gpu_clear_scissor),
     ("string_sink_reset", string_sink_reset),
     (
       "string_sink_push",
@@ -4023,6 +5960,9 @@ pub fn create_host(
     ("gpu_begin_pass", gpu_begin_pass),
     ("gpu_draw_sprite", gpu_draw_sprite),
     ("gpu_draw_sprite_uv", gpu_draw_sprite_uv),
+    ("gpu_draw_ui_rect", gpu_draw_ui_rect),
+    ("gpu_draw_ui_texture_slice", gpu_draw_ui_texture_slice),
+    ("gpu_draw_ui_box_shadow", gpu_draw_ui_box_shadow),
     ("gpu_draw_mesh", gpu_draw_mesh),
     ("gpu_draw_gizmo_line", gpu_draw_gizmo_line),
     ("gpu_end_pass", gpu_end_pass),

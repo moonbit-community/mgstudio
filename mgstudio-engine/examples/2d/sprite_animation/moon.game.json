@@ -1,6 +1,6 @@
 {
   "mgstudio": "0.1.0",
-  "cart": "../../../_build/wasm/release/build/examples/2d/sprite_animation/sprite_animation.wasm",
+  "cart": "../../../_build/wasm-gc/release/build/examples/2d/sprite_animation/sprite_animation.wasm",
   "assets": "../../../assets",
   "data": "./tmp/data",
   "web": {

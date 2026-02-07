@@ -2,6 +2,7 @@
   "import": [
     "Milky2018/mgstudio/app",
     "Milky2018/mgstudio/asset",
+    "Milky2018/mgstudio/a11y",
     "Milky2018/mgstudio/core",
     "Milky2018/mgstudio/hierarchy",
     "Milky2018/mgstudio/input",
@@ -11,10 +12,13 @@
     "Milky2018/mgstudio/transform",
     "Milky2018/mgstudio/visibility",
     "Milky2018/mgstudio/window",
+    "Milky2018/moon_accesskit",
+    "Milky2018/moon_taffy",
+    "moonbitlang/core/hashmap",
+    "moonbitlang/core/json",
     "moonbitlang/core/ref"
   ],
   "test-import": [
     "Milky2018/mgstudio/ecs_world"
   ]
 }
-

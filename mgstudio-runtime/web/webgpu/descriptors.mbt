@@ -42,6 +42,7 @@ pub fn StoreOp::to_js_string(self : StoreOp) -> String {
 ///|
 pub(all) enum TextureFormat {
   Rgba8Unorm
+  Rgba8UnormSrgb
   Bgra8Unorm
   Other(String)
 }
@@ -50,6 +51,8 @@ pub(all) enum TextureFormat {
 pub fn texture_format_from_string(value : String) -> TextureFormat {
   if value == "rgba8unorm" {
     Rgba8Unorm
+  } else if value == "rgba8unorm-srgb" {
+    Rgba8UnormSrgb
   } else if value == "bgra8unorm" {
     Bgra8Unorm
   } else {
@@ -61,6 +64,7 @@ pub fn texture_format_from_string(value : String) -> TextureFormat {
 pub fn TextureFormat::to_js_string(self : TextureFormat) -> String {
   match self {
     Rgba8Unorm => "rgba8unorm"
+    Rgba8UnormSrgb => "rgba8unorm-srgb"
     Bgra8Unorm => "bgra8unorm"
     Other(value) => value
   }

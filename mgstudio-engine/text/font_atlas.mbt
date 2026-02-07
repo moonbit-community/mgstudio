@@ -17,6 +17,8 @@ pub struct GlyphCacheKey {
   glyph_id : Int
   subpixel_x : Int
   subpixel_y : Int
+  font_weight : Int
+  flags : UInt
 }
 
 ///|
@@ -24,15 +26,19 @@ pub fn GlyphCacheKey::new(
   glyph_id : Int,
   subpixel_x : Int,
   subpixel_y : Int,
+  font_weight : Int,
+  flags : UInt,
 ) -> GlyphCacheKey {
-  GlyphCacheKey::{ glyph_id, subpixel_x, subpixel_y }
+  GlyphCacheKey::{ glyph_id, subpixel_x, subpixel_y, font_weight, flags }
 }
 
 ///|
 fn glyph_cache_key_equals(a : GlyphCacheKey, b : GlyphCacheKey) -> Bool {
   a.glyph_id == b.glyph_id &&
   a.subpixel_x == b.subpixel_x &&
-  a.subpixel_y == b.subpixel_y
+  a.subpixel_y == b.subpixel_y &&
+  a.font_weight == b.font_weight &&
+  a.flags == b.flags
 }
 
 ///|
@@ -63,6 +69,11 @@ let swash_font_cache : Ref[SwashFontCache] = Ref::new(SwashFontCache::{
 ///|
 let swash_scale_context : Ref[@swash_scale.ScaleContext] = Ref::new(
   @swash_scale.ScaleContext::new(),
+)
+
+///|
+let cosmic_swash_cache : Ref[@cosmic.SwashCache] = Ref::new(
+  @cosmic.SwashCache::new(),
 )
 
 ///|
@@ -212,24 +223,165 @@ pub fn font_rasterize_glyph_id_subpixel(
     return None
   }
   let pixel_count = width * height
-  // Normalize all swash image formats (Mask/SubpixelMask/Color) into
-  // premultiplied RGBA8 (bevy/cosmic-text compatible).
-  let ok = img.to_rgba8([
-    (255).to_byte(),
-    (255).to_byte(),
-    (255).to_byte(),
-    (255).to_byte(),
-  ])
-  if !ok {
-    return None
+  fn byte_at(bytes : Bytes, index : Int) -> Int {
+    match bytes.get(index) {
+      Some(v) => v.to_int() & 0xFF
+      None => 0
+    }
   }
-  let pixels = img.data()
-  // Defensive: ensure the size matches RGBA8.
-  if pixels.length() != pixel_count * 4 {
-    return None
+
+  fn alpha_for_smoothing(alpha : Int, smoothing : FontSmoothing) -> Int {
+    match smoothing {
+      FontSmoothing::None => if alpha > 127 { 255 } else { 0 }
+      FontSmoothing::AntiAliased => alpha
+    }
+  }
+
+  // Bevy parity:
+  // - Mask: output straight-alpha white glyphs ([255,255,255,a]).
+  // - SubpixelMask: be conservative, collapse to grayscale alpha via max(R,G,B).
+  // - Color: pass through RGBA.
+  let src = img.data()
+  let pixels = match img.content() {
+    @swash_scale.Content::Mask => {
+      if src.length() < pixel_count {
+        return None
+      }
+      Bytes::makei(pixel_count * 4, i => {
+        let pixel_index = i / 4
+        let channel = i % 4
+        let mask_alpha = alpha_for_smoothing(
+          byte_at(src, pixel_index),
+          smoothing,
+        )
+        if channel == 3 {
+          mask_alpha.to_byte()
+        } else {
+          (255).to_byte()
+        }
+      })
+    }
+    @swash_scale.Content::SubpixelMask => {
+      if src.length() < pixel_count * 4 {
+        return None
+      }
+      Bytes::makei(pixel_count * 4, i => {
+        let pixel_index = i / 4
+        let channel = i % 4
+        let base = pixel_index * 4
+        let r = byte_at(src, base)
+        let g = byte_at(src, base + 1)
+        let b = byte_at(src, base + 2)
+        let max_rg = if r > g { r } else { g }
+        let coverage = if max_rg > b { max_rg } else { b }
+        let alpha = alpha_for_smoothing(coverage, smoothing)
+        if channel == 3 {
+          alpha.to_byte()
+        } else {
+          (255).to_byte()
+        }
+      })
+    }
+    @swash_scale.Content::Color => {
+      if src.length() < pixel_count * 4 {
+        return None
+      }
+      src
+    }
   }
   Some(GlyphRaster::{
     glyph_id: gid.to_int(),
+    size: @math.UVec2::new(width, height),
+    offset: @math.IVec2::new(placement.left, placement.top),
+    pixels_rgba8: pixels,
+  })
+}
+
+///|
+/// Rasterize a glyph directly from `cosmic` physical cache key (Bevy parity).
+///
+/// This follows Bevy's `physical_glyph.cache_key -> swash_cache.get_image_uncached`
+/// flow and avoids rebuilding a partial key from `layout_glyph`.
+pub fn font_rasterize_cache_key(
+  font_system : @cosmic.FontSystem,
+  cache_key : @cosmic.CacheKey,
+  smoothing : FontSmoothing,
+) -> GlyphRaster? {
+  let image_opt = cosmic_swash_cache.val.get_image_uncached(
+    font_system, cache_key,
+  )
+  if image_opt is None {
+    return None
+  }
+  let image = if image_opt is Some(v) { v } else { return None }
+  let placement = image.placement()
+  let width = placement.width.reinterpret_as_int()
+  let height = placement.height.reinterpret_as_int()
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  let pixel_count = width * height
+  let src = image.data()
+  fn byte_at(bytes : Bytes, index : Int) -> Int {
+    match bytes.get(index) {
+      Some(v) => v.to_int() & 0xFF
+      None => 0
+    }
+  }
+
+  fn alpha_for_smoothing(alpha : Int, smoothing : FontSmoothing) -> Int {
+    match smoothing {
+      FontSmoothing::None => if alpha > 127 { 255 } else { 0 }
+      FontSmoothing::AntiAliased => alpha
+    }
+  }
+
+  let pixels = match image.content() {
+    @swash_scale.Content::Mask => {
+      if src.length() < pixel_count {
+        return None
+      }
+      Bytes::makei(pixel_count * 4, i => {
+        let pixel_index = i / 4
+        let channel = i % 4
+        let alpha = alpha_for_smoothing(byte_at(src, pixel_index), smoothing)
+        if channel == 3 {
+          alpha.to_byte()
+        } else {
+          (255).to_byte()
+        }
+      })
+    }
+    @swash_scale.Content::SubpixelMask => {
+      if src.length() < pixel_count * 4 {
+        return None
+      }
+      Bytes::makei(pixel_count * 4, i => {
+        let pixel_index = i / 4
+        let channel = i % 4
+        let base = pixel_index * 4
+        let r = byte_at(src, base)
+        let g = byte_at(src, base + 1)
+        let b = byte_at(src, base + 2)
+        let max_rg = if r > g { r } else { g }
+        let coverage = if max_rg > b { max_rg } else { b }
+        let alpha = alpha_for_smoothing(coverage, smoothing)
+        if channel == 3 {
+          alpha.to_byte()
+        } else {
+          (255).to_byte()
+        }
+      })
+    }
+    @swash_scale.Content::Color => {
+      if src.length() < pixel_count * 4 {
+        return None
+      }
+      src
+    }
+  }
+  Some(GlyphRaster::{
+    glyph_id: cache_key.glyph_id,
     size: @math.UVec2::new(width, height),
     offset: @math.IVec2::new(placement.left, placement.top),
     pixels_rgba8: pixels,
@@ -254,13 +406,13 @@ pub fn FontAtlas::new(
     FontSmoothing::AntiAliased => false
   }
   let texture = @asset.asset_create_dynamic_texture(size, nearest)
+  let texture_atlas_layout = @asset.TextureAtlasLayout::new_empty(size)
+  let builder = @asset.DynamicTextureAtlasBuilder::new(size, 1)
   let texture_atlas = @asset.asset_add_texture_atlas_layout(
-    @asset.TextureAtlasLayout::new_empty(size),
+    texture_atlas_layout,
   )
   FontAtlas::{
-    dynamic_texture_atlas_builder: @asset.DynamicTextureAtlasBuilder::new(
-      size, 1,
-    ),
+    dynamic_texture_atlas_builder: builder,
     glyph_locations: [],
     texture_atlas,
     texture,

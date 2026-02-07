@@ -17,6 +17,7 @@
 #include <dlfcn.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -53,6 +54,8 @@ typedef struct mgw_window {
   int32_t has_cursor;
   float mouse_x;
   float mouse_y;
+  float wheel_x;
+  float wheel_y;
   uint8_t key_down[256];
   uint8_t key_pressed[256];
   uint8_t key_released[256];
@@ -61,11 +64,65 @@ typedef struct mgw_window {
   uint8_t mouse_released[8];
 } mgw_window_t;
 
+// -----------------------------------------------------------------------------
+// A11y (NSAccessibility) bridge
+// -----------------------------------------------------------------------------
+
+typedef struct mgw_a11y_node {
+  int32_t node_id;
+  int32_t parent_id;
+  int32_t role_id;
+  float x;
+  float y;
+  float w;
+  float h;
+  int32_t actions_mask;
+  mgw_objc_id element;
+} mgw_a11y_node_t;
+
+static mgw_a11y_node_t *mgw_a11y_nodes = NULL;
+static int32_t mgw_a11y_nodes_len = 0;
+static int32_t mgw_a11y_nodes_cap = 0;
+static int32_t mgw_a11y_root_id = -1;
+static mgw_objc_id mgw_a11y_pool = NULL;
+
+typedef struct mgw_a11y_action {
+  int32_t target;
+  int32_t kind;
+  uint16_t *value_units;
+  int32_t value_len;
+} mgw_a11y_action_t;
+
+enum {
+  MGW_A11Y_ACTION_KIND_FOCUS = 1,
+  MGW_A11Y_ACTION_KIND_DEFAULT = 2,
+  MGW_A11Y_ACTION_KIND_SCROLL_UP = 3,
+  MGW_A11Y_ACTION_KIND_SCROLL_DOWN = 4,
+  MGW_A11Y_ACTION_KIND_SCROLL_LEFT = 5,
+  MGW_A11Y_ACTION_KIND_SCROLL_RIGHT = 6,
+  MGW_A11Y_ACTION_KIND_SET_VALUE = 7,
+};
+
+enum {
+  MGW_A11Y_ACTION_MASK_FOCUS = 1,
+  MGW_A11Y_ACTION_MASK_DEFAULT = 2,
+  MGW_A11Y_ACTION_MASK_SCROLL = 4,
+  MGW_A11Y_ACTION_MASK_SET_VALUE = 8,
+};
+
+static mgw_a11y_action_t *mgw_a11y_actions = NULL;
+static int32_t mgw_a11y_actions_count = 0;
+static int32_t mgw_a11y_actions_cap = 0;
+static mgw_objc_id mgw_a11y_retained_tree = NULL;
+
 static void *mgw_objc_dylib = NULL;
 static void *mgw_cocoa = NULL;
 static void *mgw_objc_get_class_sym = NULL;
 static void *mgw_sel_register_name_sym = NULL;
 static void *mgw_objc_msg_send_sym = NULL;
+static void *mgw_objc_allocate_class_pair_sym = NULL;
+static void *mgw_objc_register_class_pair_sym = NULL;
+static void *mgw_class_add_method_sym = NULL;
 
 static bool mgw_objc_init(void) {
   if (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym &&
@@ -91,8 +148,13 @@ static bool mgw_objc_init(void) {
   mgw_objc_get_class_sym = dlsym(mgw_objc_dylib, "objc_getClass");
   mgw_sel_register_name_sym = dlsym(mgw_objc_dylib, "sel_registerName");
   mgw_objc_msg_send_sym = dlsym(mgw_objc_dylib, "objc_msgSend");
+  mgw_objc_allocate_class_pair_sym = dlsym(mgw_objc_dylib, "objc_allocateClassPair");
+  mgw_objc_register_class_pair_sym = dlsym(mgw_objc_dylib, "objc_registerClassPair");
+  mgw_class_add_method_sym = dlsym(mgw_objc_dylib, "class_addMethod");
 
-  return (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym);
+  return (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym &&
+          mgw_objc_allocate_class_pair_sym && mgw_objc_register_class_pair_sym &&
+          mgw_class_add_method_sym);
 #else
   return false;
 #endif
@@ -108,6 +170,18 @@ static inline mgw_objc_sel mgw_sel(const char *name) {
 
 static inline mgw_objc_id mgw_msg_id(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline const char *mgw_msg_cstr(mgw_objc_id obj, mgw_objc_sel sel) {
+  return ((const char *(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline bool mgw_msg_bool_id(mgw_objc_id obj, mgw_objc_sel sel, mgw_objc_id arg0) {
+  return ((bool (*)(mgw_objc_id, mgw_objc_sel, mgw_objc_id))mgw_objc_msg_send_sym)(obj, sel, arg0);
+}
+
+static inline bool mgw_msg_bool_sel(mgw_objc_id obj, mgw_objc_sel sel, mgw_objc_sel arg0) {
+  return ((bool (*)(mgw_objc_id, mgw_objc_sel, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel, arg0);
 }
 
 static inline void mgw_msg_void(mgw_objc_id obj, mgw_objc_sel sel) {
@@ -138,6 +212,19 @@ static inline mgw_rect mgw_msg_rect(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((mgw_rect(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
 }
 
+static inline mgw_rect mgw_msg_rect_rect(mgw_objc_id obj, mgw_objc_sel sel, mgw_rect rect) {
+  return ((mgw_rect(*)(mgw_objc_id, mgw_objc_sel, mgw_rect))mgw_objc_msg_send_sym)(obj, sel, rect);
+}
+
+static inline mgw_rect mgw_msg_rect_rect_id(mgw_objc_id obj, mgw_objc_sel sel, mgw_rect rect, mgw_objc_id arg0) {
+  return ((mgw_rect(*)(mgw_objc_id, mgw_objc_sel, mgw_rect, mgw_objc_id))mgw_objc_msg_send_sym)(obj, sel, rect,
+                                                                                                  arg0);
+}
+
+static inline void mgw_msg_void_rect(mgw_objc_id obj, mgw_objc_sel sel, mgw_rect rect) {
+  ((void (*)(mgw_objc_id, mgw_objc_sel, mgw_rect))mgw_objc_msg_send_sym)(obj, sel, rect);
+}
+
 static inline void mgw_msg_void_size(mgw_objc_id obj, mgw_objc_sel sel, mgw_size sz) {
   ((void (*)(mgw_objc_id, mgw_objc_sel, mgw_size))mgw_objc_msg_send_sym)(obj, sel, sz);
 }
@@ -162,6 +249,10 @@ static inline bool mgw_msg_bool(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((bool (*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
 }
 
+static inline uint16_t mgw_msg_u16_u64(mgw_objc_id obj, mgw_objc_sel sel, uint64_t arg0) {
+  return ((uint16_t(*)(mgw_objc_id, mgw_objc_sel, uint64_t))mgw_objc_msg_send_sym)(obj, sel, arg0);
+}
+
 static mgw_objc_id mgw_nsstring_utf8(const char *cstr) {
   mgw_objc_class nsstring = mgw_cls("NSString");
   if (!nsstring) {
@@ -170,6 +261,295 @@ static mgw_objc_id mgw_nsstring_utf8(const char *cstr) {
   mgw_objc_sel s = mgw_sel("stringWithUTF8String:");
   return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel, const char *))mgw_objc_msg_send_sym)(
       (mgw_objc_id)nsstring, s, cstr);
+}
+
+static int32_t mgw_a11y_actions_push(int32_t target, int32_t kind) {
+  if (mgw_a11y_actions_count + 1 > mgw_a11y_actions_cap) {
+    int32_t next = mgw_a11y_actions_cap ? mgw_a11y_actions_cap * 2 : 64;
+    mgw_a11y_action_t *next_buf =
+        (mgw_a11y_action_t *)realloc(mgw_a11y_actions, (size_t)next * sizeof(mgw_a11y_action_t));
+    if (!next_buf) {
+      return -1;
+    }
+    mgw_a11y_actions = next_buf;
+    mgw_a11y_actions_cap = next;
+  }
+  int32_t index = mgw_a11y_actions_count;
+  mgw_a11y_actions[index].target = target;
+  mgw_a11y_actions[index].kind = kind;
+  mgw_a11y_actions[index].value_units = NULL;
+  mgw_a11y_actions[index].value_len = 0;
+  mgw_a11y_actions_count += 1;
+  return index;
+}
+
+static void mgw_a11y_actions_push_with_value(int32_t target, int32_t kind, mgw_objc_id value) {
+  int32_t index = mgw_a11y_actions_push(target, kind);
+  if (index < 0 || !value || !mgw_objc_init()) {
+    return;
+  }
+  mgw_objc_id value_string = value;
+  mgw_objc_sel responds_sel = mgw_sel("respondsToSelector:");
+  mgw_objc_sel length_sel = mgw_sel("length");
+  mgw_objc_sel description_sel = mgw_sel("description");
+  if (!mgw_msg_bool_sel(value_string, responds_sel, length_sel)) {
+    value_string = mgw_msg_id(value, description_sel);
+  }
+  if (!value_string || !mgw_msg_bool_sel(value_string, responds_sel, length_sel)) {
+    return;
+  }
+  int64_t length_i64 = mgw_msg_i64(value_string, length_sel);
+  if (length_i64 <= 0) {
+    return;
+  }
+  int32_t length = (int32_t)length_i64;
+  if (length > 8192) {
+    length = 8192;
+  }
+  uint16_t *units = (uint16_t *)malloc((size_t)length * sizeof(uint16_t));
+  if (!units) {
+    return;
+  }
+  mgw_objc_sel char_at_sel = mgw_sel("characterAtIndex:");
+  for (int32_t i = 0; i < length; i += 1) {
+    units[i] = mgw_msg_u16_u64(value_string, char_at_sel, (uint64_t)i);
+  }
+  mgw_a11y_actions[index].value_units = units;
+  mgw_a11y_actions[index].value_len = length;
+}
+
+static int32_t mgw_a11y_actions_mask_from_node_id(int32_t node_id) {
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    if (mgw_a11y_nodes[i].node_id == node_id) {
+      return mgw_a11y_nodes[i].actions_mask;
+    }
+  }
+  return 0;
+}
+
+static int32_t mgw_a11y_node_id_from_element(mgw_objc_id self) {
+#ifdef __APPLE__
+  if (!self || !mgw_objc_init()) {
+    return 0;
+  }
+  mgw_objc_id ident = mgw_msg_id(self, mgw_sel("accessibilityIdentifier"));
+  if (!ident) {
+    return 0;
+  }
+  const char *cstr = mgw_msg_cstr(ident, mgw_sel("UTF8String"));
+  if (!cstr) {
+    return 0;
+  }
+  return (int32_t)atoi(cstr);
+#else
+  (void)self;
+  return 0;
+#endif
+}
+
+static mgw_objc_id mgw_a11y_element_class(void);
+
+static bool mgw_a11y_perform_press(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return false;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return false;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_DEFAULT) == 0) {
+    return false;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_DEFAULT);
+  return true;
+#else
+  (void)self;
+  return false;
+#endif
+}
+
+static bool mgw_a11y_perform_increment(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return false;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return false;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_SCROLL) == 0) {
+    return false;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_SCROLL_DOWN);
+  return true;
+#else
+  (void)self;
+  return false;
+#endif
+}
+
+static bool mgw_a11y_perform_decrement(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return false;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return false;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_SCROLL) == 0) {
+    return false;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_SCROLL_UP);
+  return true;
+#else
+  (void)self;
+  return false;
+#endif
+}
+
+static void mgw_a11y_set_value(mgw_objc_id self, mgw_objc_sel _cmd, mgw_objc_id value) {
+  (void)_cmd;
+  (void)value;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_SET_VALUE) == 0) {
+    return;
+  }
+  mgw_a11y_actions_push_with_value(node_id, MGW_A11Y_ACTION_KIND_SET_VALUE, value);
+#else
+  (void)self;
+#endif
+}
+
+static void mgw_a11y_set_focused(mgw_objc_id self, mgw_objc_sel _cmd, bool focused) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!focused || !mgw_objc_init()) {
+    return;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  if (node_id == 0) {
+    return;
+  }
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  if ((mask & MGW_A11Y_ACTION_MASK_FOCUS) == 0) {
+    return;
+  }
+  mgw_a11y_actions_push(node_id, MGW_A11Y_ACTION_KIND_FOCUS);
+#else
+  (void)self;
+  (void)focused;
+#endif
+}
+
+static mgw_objc_id mgw_a11y_action_names(mgw_objc_id self, mgw_objc_sel _cmd) {
+  (void)_cmd;
+#ifdef __APPLE__
+  if (!mgw_objc_init()) {
+    return NULL;
+  }
+  int32_t node_id = mgw_a11y_node_id_from_element(self);
+  int32_t mask = mgw_a11y_actions_mask_from_node_id(node_id);
+  mgw_objc_class mut_array_cls = mgw_cls("NSMutableArray");
+  if (!mut_array_cls) {
+    return NULL;
+  }
+  mgw_objc_id out = mgw_msg_id((mgw_objc_id)mut_array_cls, mgw_sel("array"));
+  if (!out) {
+    return NULL;
+  }
+  if (mask & MGW_A11Y_ACTION_MASK_DEFAULT) {
+    mgw_objc_id press = mgw_nsstring_utf8("AXPress");
+    if (press) {
+      mgw_msg_void_id(out, mgw_sel("addObject:"), press);
+    }
+  }
+  if (mask & MGW_A11Y_ACTION_MASK_SCROLL) {
+    mgw_objc_id inc = mgw_nsstring_utf8("AXIncrement");
+    mgw_objc_id dec = mgw_nsstring_utf8("AXDecrement");
+    if (inc) {
+      mgw_msg_void_id(out, mgw_sel("addObject:"), inc);
+    }
+    if (dec) {
+      mgw_msg_void_id(out, mgw_sel("addObject:"), dec);
+    }
+  }
+  return out;
+#else
+  (void)self;
+  return NULL;
+#endif
+}
+
+static mgw_objc_id mgw_a11y_element_class(void) {
+#ifndef __APPLE__
+  return NULL;
+#else
+  static mgw_objc_id cached = NULL;
+  if (cached) {
+    return cached;
+  }
+  if (!mgw_objc_init()) {
+    return NULL;
+  }
+  // Try to look up the class first (in case it was already registered).
+  mgw_objc_id existing = (mgw_objc_id)mgw_cls("MGWA11yElement");
+  if (existing) {
+    cached = existing;
+    return cached;
+  }
+
+  mgw_objc_class base = mgw_cls("NSAccessibilityElement");
+  if (!base) {
+    return NULL;
+  }
+  mgw_objc_class (*alloc_pair)(mgw_objc_class, const char *, size_t) =
+      (mgw_objc_class(*)(mgw_objc_class, const char *, size_t))mgw_objc_allocate_class_pair_sym;
+  void (*register_pair)(mgw_objc_class) =
+      (void (*)(mgw_objc_class))mgw_objc_register_class_pair_sym;
+  bool (*class_add_method)(mgw_objc_class, mgw_objc_sel, void *, const char *) =
+      (bool (*)(mgw_objc_class, mgw_objc_sel, void *, const char *))mgw_class_add_method_sym;
+
+  mgw_objc_class cls = alloc_pair(base, "MGWA11yElement", 0);
+  if (!cls) {
+    return NULL;
+  }
+  // BOOL accessibilityPerformPress()
+  class_add_method(cls, mgw_sel("accessibilityPerformPress"), (void *)&mgw_a11y_perform_press, "B@:");
+  // BOOL accessibilityPerformIncrement()
+  class_add_method(cls, mgw_sel("accessibilityPerformIncrement"), (void *)&mgw_a11y_perform_increment, "B@:");
+  // BOOL accessibilityPerformDecrement()
+  class_add_method(cls, mgw_sel("accessibilityPerformDecrement"), (void *)&mgw_a11y_perform_decrement, "B@:");
+  // void setAccessibilityValue:(id)
+  class_add_method(cls, mgw_sel("setAccessibilityValue:"), (void *)&mgw_a11y_set_value, "v@:@");
+  // void accessibilitySetValue:(id)
+  class_add_method(cls, mgw_sel("accessibilitySetValue:"), (void *)&mgw_a11y_set_value, "v@:@");
+  // void setAccessibilityFocused:(BOOL)
+  class_add_method(cls, mgw_sel("setAccessibilityFocused:"), (void *)&mgw_a11y_set_focused, "v@:B");
+  // void accessibilitySetFocused:(BOOL)
+  class_add_method(cls, mgw_sel("accessibilitySetFocused:"), (void *)&mgw_a11y_set_focused, "v@:B");
+  // NSArray* accessibilityActionNames()
+  class_add_method(cls, mgw_sel("accessibilityActionNames"), (void *)&mgw_a11y_action_names, "@@:");
+
+  register_pair(cls);
+  cached = (mgw_objc_id)cls;
+  return cached;
+#endif
 }
 
 static void mgw_app_ensure_started(void) {
@@ -387,6 +767,15 @@ static void mgw_input_handle_event(mgw_window_t *w, mgw_objc_id ev) {
   case 9: // MouseExited
     w->has_cursor = 0;
     break;
+  case 22: { // ScrollWheel
+    // `scrollingDelta*` are in points; we keep them as logical units.
+    double dx = mgw_msg_f64(ev, mgw_sel("scrollingDeltaX"));
+    double dy = mgw_msg_f64(ev, mgw_sel("scrollingDeltaY"));
+    w->wheel_x += (float)dx;
+    w->wheel_y += (float)dy;
+    mgw_input_update_mouse_location(w, ev);
+    break;
+  }
   default:
     break;
   }
@@ -466,6 +855,8 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   out->has_cursor = 0;
   out->mouse_x = 0.0f;
   out->mouse_y = 0.0f;
+  out->wheel_x = 0.0f;
+  out->wheel_y = 0.0f;
   memset(out->key_down, 0, sizeof(out->key_down));
   memset(out->key_pressed, 0, sizeof(out->key_pressed));
   memset(out->key_released, 0, sizeof(out->key_released));
@@ -490,6 +881,14 @@ MOONBIT_FFI_EXPORT void mgw_window_destroy(void *win) {
   }
   mgw_window_t *w = (mgw_window_t *)win;
   mgw_objc_id pool = mgw_autorelease_pool_new();
+  if (mgw_a11y_retained_tree) {
+    mgw_msg_void(mgw_a11y_retained_tree, mgw_sel("release"));
+    mgw_a11y_retained_tree = NULL;
+  }
+  if (mgw_a11y_pool) {
+    mgw_autorelease_pool_drain(mgw_a11y_pool);
+    mgw_a11y_pool = NULL;
+  }
   if (w->ns_window) {
     mgw_msg_void(w->ns_window, mgw_sel("close"));
     mgw_msg_void(w->ns_window, mgw_sel("release"));
@@ -654,6 +1053,8 @@ MOONBIT_FFI_EXPORT void mgw_input_finish_frame(void *win) {
   memset(w->key_released, 0, sizeof(w->key_released));
   memset(w->mouse_pressed, 0, sizeof(w->mouse_pressed));
   memset(w->mouse_released, 0, sizeof(w->mouse_released));
+  w->wheel_x = 0.0f;
+  w->wheel_y = 0.0f;
 }
 
 MOONBIT_FFI_EXPORT int32_t mgw_input_has_cursor(void *win) {
@@ -675,6 +1076,20 @@ MOONBIT_FFI_EXPORT float mgw_input_mouse_y(void *win) {
     return 0.0f;
   }
   return ((mgw_window_t *)win)->mouse_y;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_wheel_x(void *win) {
+  if (!win) {
+    return 0.0f;
+  }
+  return ((mgw_window_t *)win)->wheel_x;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_wheel_y(void *win) {
+  if (!win) {
+    return 0.0f;
+  }
+  return ((mgw_window_t *)win)->wheel_y;
 }
 
 static inline int32_t mgw_clamp_index_i32(int32_t v, int32_t max_exclusive) {
@@ -751,4 +1166,288 @@ MOONBIT_FFI_EXPORT int32_t mgw_input_is_mouse_button_just_released(void *win, in
     return 0;
   }
   return ((mgw_window_t *)win)->mouse_released[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_begin_update(void *win, int32_t root_id) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window || !w->content_view) {
+    return;
+  }
+  mgw_app_ensure_started();
+  mgw_a11y_root_id = root_id;
+  mgw_a11y_nodes_len = 0;
+  if (mgw_a11y_pool) {
+    mgw_autorelease_pool_drain(mgw_a11y_pool);
+    mgw_a11y_pool = NULL;
+  }
+  mgw_a11y_pool = mgw_autorelease_pool_new();
+#else
+  (void)win;
+  (void)root_id;
+#endif
+}
+
+static mgw_a11y_node_t *mgw_a11y_node_find(int32_t node_id) {
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    if (mgw_a11y_nodes[i].node_id == node_id) {
+      return &mgw_a11y_nodes[i];
+    }
+  }
+  return NULL;
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_push_node(void *win, int32_t node_id, int32_t parent_id, int32_t role_id,
+                                          float x, float y, float width, float height, moonbit_bytes_t name,
+                                          int32_t actions_mask) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window || !w->content_view) {
+    return;
+  }
+  if (mgw_a11y_nodes_len + 1 > mgw_a11y_nodes_cap) {
+    int32_t next = mgw_a11y_nodes_cap ? mgw_a11y_nodes_cap * 2 : 256;
+    mgw_a11y_node_t *next_buf =
+        (mgw_a11y_node_t *)realloc(mgw_a11y_nodes, (size_t)next * sizeof(mgw_a11y_node_t));
+    if (!next_buf) {
+      return;
+    }
+    mgw_a11y_nodes = next_buf;
+    mgw_a11y_nodes_cap = next;
+  }
+
+  mgw_objc_id el_cls = mgw_a11y_element_class();
+  if (!el_cls) {
+    return;
+  }
+  mgw_objc_id element = mgw_msg_id(el_cls, mgw_sel("new"));
+  if (!element) {
+    return;
+  }
+  // Put the element under autorelease; the retained tree keeps it alive.
+  element = mgw_msg_id(element, mgw_sel("autorelease"));
+
+  // Identifier = node id, used for action callbacks.
+  char id_buf[64];
+  snprintf(id_buf, sizeof(id_buf), "%d", (int)node_id);
+  mgw_objc_id ident = mgw_nsstring_utf8(id_buf);
+  if (ident) {
+    mgw_msg_void_id(element, mgw_sel("setAccessibilityIdentifier:"), ident);
+  }
+
+  // Role.
+  const char *role_str = "AXGroup";
+  if (role_id == 3) {
+    role_str = "AXButton";
+  } else if (role_id == 4) {
+    role_str = "AXStaticText";
+  } else if (role_id == 5) {
+    role_str = "AXImage";
+  } else if (role_id == 1) {
+    role_str = "AXWindow";
+  }
+  mgw_objc_id ns_role = mgw_nsstring_utf8(role_str);
+  if (ns_role) {
+    mgw_msg_void_id(element, mgw_sel("setAccessibilityRole:"), ns_role);
+  }
+
+  // Label.
+  if (name && ((const char *)name)[0] != 0) {
+    mgw_objc_id label = mgw_nsstring_utf8((const char *)name);
+    if (label) {
+      mgw_msg_void_id(element, mgw_sel("setAccessibilityLabel:"), label);
+    }
+  }
+
+  // Frame in parent space (content view coordinates).
+  //
+  // We intentionally avoid converting to screen coordinates here to reduce
+  // reliance on struct-return objc_msgSend ABIs.
+  mgw_rect bounds = mgw_msg_rect(w->content_view, mgw_sel("bounds"));
+  bool flipped = mgw_msg_bool(w->content_view, mgw_sel("isFlipped"));
+  double view_x = (double)x;
+  double view_y = flipped ? (double)y : (bounds.size.h - (double)y - (double)height);
+  mgw_rect view_rect = {.origin = {.x = view_x, .y = view_y}, .size = {.w = (double)width, .h = (double)height}};
+  mgw_msg_void_rect(element, mgw_sel("setAccessibilityFrameInParentSpace:"), view_rect);
+
+  mgw_a11y_node_t *slot = &mgw_a11y_nodes[mgw_a11y_nodes_len];
+  slot->node_id = node_id;
+  slot->parent_id = parent_id;
+  slot->role_id = role_id;
+  slot->x = x;
+  slot->y = y;
+  slot->w = width;
+  slot->h = height;
+  slot->actions_mask = actions_mask;
+  slot->element = element;
+  mgw_a11y_nodes_len += 1;
+#else
+  (void)win;
+  (void)node_id;
+  (void)parent_id;
+  (void)role_id;
+  (void)x;
+  (void)y;
+  (void)width;
+  (void)height;
+  (void)name;
+  (void)actions_mask;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_end_update(void *win) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->content_view) {
+    return;
+  }
+  mgw_objc_class mut_array_cls = mgw_cls("NSMutableArray");
+  if (!mut_array_cls) {
+    return;
+  }
+  mgw_objc_id roots = mgw_msg_id((mgw_objc_id)mut_array_cls, mgw_sel("array"));
+
+  // Create a child list per node.
+  mgw_objc_id *children_lists = NULL;
+  if (mgw_a11y_nodes_len > 0) {
+    children_lists = (mgw_objc_id *)calloc((size_t)mgw_a11y_nodes_len, sizeof(mgw_objc_id));
+  }
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    children_lists[i] = mgw_msg_id((mgw_objc_id)mut_array_cls, mgw_sel("array"));
+  }
+
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    mgw_a11y_node_t *node = &mgw_a11y_nodes[i];
+    mgw_objc_id parent_el = NULL;
+    if (node->parent_id != mgw_a11y_root_id) {
+      mgw_a11y_node_t *parent = mgw_a11y_node_find(node->parent_id);
+      if (parent) {
+        parent_el = parent->element;
+        // Append to parent's child list.
+        for (int32_t p = 0; p < mgw_a11y_nodes_len; p += 1) {
+          if (mgw_a11y_nodes[p].node_id == node->parent_id) {
+            mgw_msg_void_id(children_lists[p], mgw_sel("addObject:"), node->element);
+            break;
+          }
+        }
+      }
+    }
+    if (!parent_el) {
+      mgw_msg_void_id(roots, mgw_sel("addObject:"), node->element);
+      parent_el = w->content_view;
+    }
+    mgw_msg_void_id(node->element, mgw_sel("setAccessibilityParent:"), parent_el);
+    mgw_msg_void_id(node->element, mgw_sel("setAccessibilityWindow:"), w->ns_window);
+  }
+
+  for (int32_t i = 0; i < mgw_a11y_nodes_len; i += 1) {
+    mgw_a11y_node_t *node = &mgw_a11y_nodes[i];
+    mgw_msg_void_id(node->element, mgw_sel("setAccessibilityChildren:"), children_lists[i]);
+  }
+
+  mgw_msg_void_id(w->content_view, mgw_sel("setAccessibilityChildren:"), roots);
+
+  // Retain the tree so nodes stay alive after draining the autorelease pool.
+  if (mgw_a11y_retained_tree) {
+    mgw_msg_void(mgw_a11y_retained_tree, mgw_sel("release"));
+    mgw_a11y_retained_tree = NULL;
+  }
+  if (roots) {
+    mgw_a11y_retained_tree = mgw_msg_id(roots, mgw_sel("retain"));
+  }
+
+  if (children_lists) {
+    free(children_lists);
+  }
+  if (mgw_a11y_pool) {
+    mgw_autorelease_pool_drain(mgw_a11y_pool);
+    mgw_a11y_pool = NULL;
+  }
+#else
+  (void)win;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_set_focus(void *win, int32_t node_id) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init() || node_id == 0) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window || !w->content_view) {
+    return;
+  }
+  mgw_a11y_node_t *node = mgw_a11y_node_find(node_id);
+  if (!node || !node->element) {
+    return;
+  }
+  mgw_objc_sel set_focus_sel = mgw_sel("setAccessibilityFocusedUIElement:");
+  mgw_objc_sel responds_sel = mgw_sel("respondsToSelector:");
+  mgw_objc_id focus_target = NULL;
+  if (mgw_msg_bool_sel(w->ns_window, responds_sel, set_focus_sel)) {
+    focus_target = w->ns_window;
+  } else if (mgw_msg_bool_sel(w->content_view, responds_sel, set_focus_sel)) {
+    focus_target = w->content_view;
+  }
+  if (focus_target) {
+    mgw_msg_void_id(focus_target, set_focus_sel, node->element);
+  }
+#else
+  (void)win;
+  (void)node_id;
+#endif
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_actions_len(void) { return mgw_a11y_actions_count; }
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_target(int32_t index) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
+    return 0;
+  }
+  return mgw_a11y_actions[index].target;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_kind(int32_t index) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
+    return 0;
+  }
+  return mgw_a11y_actions[index].kind;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_value_len(int32_t index) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
+    return 0;
+  }
+  return mgw_a11y_actions[index].value_len;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_a11y_action_value_code_unit(int32_t index, int32_t offset) {
+  if (index < 0 || index >= mgw_a11y_actions_count) {
+    return 0;
+  }
+  mgw_a11y_action_t action = mgw_a11y_actions[index];
+  if (!action.value_units || offset < 0 || offset >= action.value_len) {
+    return 0;
+  }
+  return (int32_t)action.value_units[offset];
+}
+
+MOONBIT_FFI_EXPORT void mgw_a11y_actions_clear(void) {
+  for (int32_t i = 0; i < mgw_a11y_actions_count; i += 1) {
+    if (mgw_a11y_actions[i].value_units) {
+      free(mgw_a11y_actions[i].value_units);
+      mgw_a11y_actions[i].value_units = NULL;
+    }
+    mgw_a11y_actions[i].value_len = 0;
+  }
+  mgw_a11y_actions_count = 0;
 }

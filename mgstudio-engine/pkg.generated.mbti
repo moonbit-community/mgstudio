@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio"
 
 import {
+  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/hierarchy",
@@ -9,6 +10,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/physics2d",
   "Milky2018/mgstudio/physics3d",
+  "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",

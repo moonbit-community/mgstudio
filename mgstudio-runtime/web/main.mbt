@@ -103,6 +103,60 @@ extern "js" fn join_strings(values : Array[String], sep : String) -> String =
   #| (values, sep) => values.join(sep)
 
 ///|
+/// Ensure required A11y imports are callable before wasm instantiation.
+///
+/// This protects startup from stale/non-callable host bindings (for example,
+/// when the runtime page and engine wasm are temporarily out of sync).
+extern "js" fn ensure_a11y_import_callables(imports : @js.Any) -> Unit =
+  #| (imports) => {
+  #|   if (!imports || typeof imports !== "object") return
+  #|   let host = imports.mgstudio_host
+  #|   if (!host || typeof host !== "object") {
+  #|     host = {}
+  #|     imports.mgstudio_host = host
+  #|   }
+  #|   const fallbackI32 = () => 0
+  #|   const fallbackVoid = () => {}
+  #|   const required = {
+  #|     a11y_begin_update: fallbackVoid,
+  #|     a11y_push_node: fallbackVoid,
+  #|     a11y_end_update: fallbackVoid,
+  #|     a11y_apply_update: fallbackVoid,
+  #|     a11y_actions_len: fallbackI32,
+  #|     a11y_action_target: fallbackI32,
+  #|     a11y_action_kind: fallbackI32,
+  #|     a11y_action_value_len: fallbackI32,
+  #|     a11y_action_value_code_unit: fallbackI32,
+  #|     a11y_actions_clear: fallbackVoid,
+  #|   }
+  #|   for (const key of Object.keys(required)) {
+  #|     if (typeof host[key] !== "function") {
+  #|       host[key] = required[key]
+  #|     }
+  #|   }
+  #| }
+
+///|
+extern "js" fn describe_a11y_imports(imports : @js.Any) -> String =
+  #| (imports) => {
+  #|   if (!imports || typeof imports !== "object") {
+  #|     return "imports=<invalid>"
+  #|   }
+  #|   const host = imports.mgstudio_host
+  #|   if (!host || typeof host !== "object") {
+  #|     return "mgstudio_host=<invalid>"
+  #|   }
+  #|   const keys = [
+  #|     "a11y_actions_len",
+  #|     "a11y_action_target",
+  #|     "a11y_action_kind",
+  #|     "a11y_action_value_len",
+  #|     "a11y_action_value_code_unit",
+  #|   ]
+  #|   return keys.map((k) => `${k}:${typeof host[k]}`).join(", ")
+  #| }
+
+///|
 extern "js" fn set_global_wasm_exports(exports : @js.Any) -> Unit =
   #| (exports) => { globalThis.__mgstudio_wasm_exports = exports }
 
@@ -209,6 +263,7 @@ async fn load_wasm(
   imports : @js.Any,
   wasm_path : String,
 ) -> @webassembly.WebAssemblyInstance {
+  ensure_a11y_import_callables(imports)
   let response = @http.fetch(wasm_path, method_="GET")
   if !response.ok {
     fail(
@@ -294,6 +349,7 @@ async fn main_async() -> Unit {
     set_status("WebGPU initialized.")
     let imports = @js.new_object()
     object_assign(imports, host) |> ignore
+    ensure_a11y_import_callables(imports)
     let spectest = @js.from_entries([
       ("print_char", @js.from_fn1(make_print_char())),
     ])
@@ -307,7 +363,12 @@ async fn main_async() -> Unit {
       set_status("Loading WASM: " + wasm_path)
       let instance = load_wasm(imports, wasm_path) catch {
         err => {
-          set_status("Failed to load wasm: " + any_to_string(@js.any(err)))
+          set_status(
+            "Failed to load wasm: " +
+            any_to_string(@js.any(err)) +
+            " | host imports: " +
+            describe_a11y_imports(imports),
+          )
           return false
         }
       }

@@ -28,13 +28,27 @@ pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProj
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(W) -> Unit
 
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_box_shadows(W) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_rects(W) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_texture_slices(W) -> Unit
+
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(W, Int, Int, Bool) -> @asset.Handle[@asset.Image]
 
 pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shadow_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(W, @math.Vec2) -> @math.Vec2?
 
@@ -42,7 +56,7 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @mat
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render_extract_system(W) -> Unit
+pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render_extract_system(W) -> Unit
 
 pub fn[W] render_prepare_system(W) -> Unit
 
@@ -280,6 +294,11 @@ pub struct RoundedRectBuilder {
 pub fn RoundedRectBuilder::arc_resolution(Self, Int) -> Self
 pub fn RoundedRectBuilder::corner_radius(Self, Float) -> Self
 
+pub struct ScissorRect {
+  rect : @math.Rect
+}
+pub fn ScissorRect::new(@math.Rect) -> Self
+
 pub struct Sprite {
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
@@ -310,6 +329,24 @@ pub struct SpriteBundle {
 pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
 pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility] SpriteBundle::spawn(Self, W) -> @core.Entity
+
+pub struct UiBorderRect {
+  left : Float
+  top : Float
+  right : Float
+  bottom : Float
+}
+pub fn UiBorderRect::new(Float, Float, Float, Float) -> Self
+pub fn UiBorderRect::zero() -> Self
+
+pub struct UiCornerRadii {
+  top_left : Float
+  top_right : Float
+  bottom_right : Float
+  bottom_left : Float
+}
+pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
+pub fn UiCornerRadii::zero() -> Self
 
 pub struct Viewport {
   physical_position : @math.IVec2
@@ -358,6 +395,10 @@ pub(open) trait Has_RenderLayers {
 
 pub(open) trait Has_RenderTarget {
   get_render_target_store(Self) -> @core.ComponentStore[RenderTarget]
+}
+
+pub(open) trait Has_ScissorRect {
+  get_scissor_rect_store(Self) -> @core.ComponentStore[ScissorRect]
 }
 
 pub(open) trait Has_Sprite {

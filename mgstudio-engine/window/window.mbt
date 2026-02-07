@@ -211,6 +211,17 @@ pub fn host_gpu_begin_pass(
 ) -> Unit = "mgstudio_host" "gpu_begin_pass"
 
 ///|
+pub fn host_gpu_set_scissor(
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+) -> Unit = "mgstudio_host" "gpu_set_scissor"
+
+///|
+pub fn host_gpu_clear_scissor() -> Unit = "mgstudio_host" "gpu_clear_scissor"
+
+///|
 pub fn host_gpu_draw_sprite(
   texture_id : Int,
   x : Float,
@@ -241,6 +252,110 @@ pub fn host_gpu_draw_sprite_uv(
   uv_max_x : Float,
   uv_max_y : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_sprite_uv"
+
+///|
+/// Draw a UI rectangle (background or border) using the dedicated UI pipeline.
+///
+/// Parameters intentionally mirror `gpu_draw_sprite_uv` plus UI-specific fields:
+/// - `flags`: bitset (TEXTURED/BORDER/ANTI_ALIAS) defined by the engine-side UI
+///   extraction.
+/// - `radius_*`: corner radii in logical pixels (top-left, top-right, bottom-right, bottom-left).
+/// - `border_*`: border thickness in logical pixels (left, top, right, bottom).
+pub fn host_gpu_draw_ui_rect(
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  uv_min_x : Float,
+  uv_min_y : Float,
+  uv_max_x : Float,
+  uv_max_y : Float,
+  flags : Int,
+  radius_tl : Float,
+  radius_tr : Float,
+  radius_br : Float,
+  radius_bl : Float,
+  border_left : Float,
+  border_top : Float,
+  border_right : Float,
+  border_bottom : Float,
+) -> Unit = "mgstudio_host" "gpu_draw_ui_rect"
+
+///|
+/// Draw a UI box shadow using a dedicated pipeline adapted from Bevy's `box_shadow.wgsl`.
+///
+/// Parameters:
+/// - `x/y/rotation`: world-space transform for the shadow quad (centered).
+/// - `scale_x/scale_y`: quad bounds (shadow size + 6*blur) in world units.
+/// - `size_x/size_y`: inner shadow size (node size + spread) in world units.
+/// - `radius_*`: corner radii (top-left, top-right, bottom-right, bottom-left) in world units.
+/// - `blur`: blur radius in world units.
+/// - `samples`: integration steps for the gaussian approximation (>= 1 recommended).
+pub fn host_gpu_draw_ui_box_shadow(
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  size_x : Float,
+  size_y : Float,
+  radius_tl : Float,
+  radius_tr : Float,
+  radius_br : Float,
+  radius_bl : Float,
+  blur : Float,
+  samples : Int,
+) -> Unit = "mgstudio_host" "gpu_draw_ui_box_shadow"
+
+///|
+/// Draw a UI texture slice (9-slice / tiled) using the Bevy-aligned texture
+/// slicing shader.
+///
+/// Parameters:
+/// - `scale_x/scale_y`: quad bounds in world units.
+/// - `texture_slices`: normalized texture slice dividing lines (left, top, right, bottom).
+/// - `target_slices`: normalized target slice dividing lines (left, top, right, bottom).
+/// - `repeat`: repeat factors (side_x, side_y, center_x, center_y).
+/// - `atlas_rect`: normalized atlas rect (left, top, right, bottom).
+pub fn host_gpu_draw_ui_texture_slice(
+  texture_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  texture_slice_l : Float,
+  texture_slice_t : Float,
+  texture_slice_r : Float,
+  texture_slice_b : Float,
+  target_slice_l : Float,
+  target_slice_t : Float,
+  target_slice_r : Float,
+  target_slice_b : Float,
+  repeat_side_x : Float,
+  repeat_side_y : Float,
+  repeat_center_x : Float,
+  repeat_center_y : Float,
+  atlas_l : Float,
+  atlas_t : Float,
+  atlas_r : Float,
+  atlas_b : Float,
+) -> Unit = "mgstudio_host" "gpu_draw_ui_texture_slice"
 
 ///|
 pub fn host_gpu_draw_mesh(

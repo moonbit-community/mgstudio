@@ -53,10 +53,6 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
           println("mgstudio run failed: Failed to read wasm: \{path}")
           println(msg)
         }
-        @native_rt.NativeRuntimeError::JitSetupFailed(msg) => {
-          println("mgstudio run failed: JIT setup failed")
-          println(msg)
-        }
         _ => println("mgstudio run failed: \{err}")
       }
       @sys.exit(1)

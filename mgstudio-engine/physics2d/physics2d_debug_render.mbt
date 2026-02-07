@@ -100,31 +100,6 @@ fn draw_shape_2d(
         @math.Vec2::new(2.0F * hx, 2.0F * hy),
         color,
       )
-    HalfSpace(outward_normal) => {
-      let n = if outward_normal.length_squared() <= 1.0e-12F {
-        @rapier_core.Vec2::new(0.0F, 1.0F)
-      } else {
-        outward_normal.normalize()
-      }
-      let t = @rapier_core.Vec2::new(-n.y, n.x)
-      let extent = 20.0F
-      let a = transform_point(
-        iso,
-        @rapier_core.Vec2::new(t.x * extent, t.y * extent),
-      )
-      let b = transform_point(
-        iso,
-        @rapier_core.Vec2::new(-t.x * extent, -t.y * extent),
-      )
-      gizmos.line_2d(a, b, color)
-      // Draw the outward normal direction.
-      let o = transform_point(iso, @rapier_core.Vec2::new(0.0F, 0.0F))
-      let tip = transform_point(
-        iso,
-        @rapier_core.Vec2::new(n.x * 1.0F, n.y * 1.0F),
-      )
-      gizmos.line_2d(o, tip, color)
-    }
     CapsuleX(half_height, radius) =>
       ignore(
         gizmos
@@ -170,28 +145,6 @@ fn draw_shape_2d(
           }
         }
       }
-    HeightField(heights, scale) => {
-      let ps : Array[@math.Vec2] = []
-      if heights.length() == 1 {
-        ps.push(
-          transform_point(
-            iso,
-            @rapier_core.Vec2::new(0.0F, heights[0] * scale.y),
-          ),
-        )
-      } else if heights.length() >= 2 {
-        let denom = Float::from_double((heights.length() - 1).to_double())
-        let step = scale.x / denom
-        for i in 0..<heights.length() {
-          let x = -scale.x / 2.0F + Float::from_double(i.to_double()) * step
-          let y = heights[i] * scale.y
-          ps.push(transform_point(iso, @rapier_core.Vec2::new(x, y)))
-        }
-      }
-      if ps.length() >= 2 {
-        gizmos.linestrip_2d(ps, color)
-      }
-    }
     ConvexPolygon(verts) => {
       let ps : Array[@math.Vec2] = []
       for v in verts {
@@ -223,7 +176,6 @@ fn draw_shape_2d(
         let (local_iso, sub) = part
         draw_shape_2d(gizmos, iso.mul(local_iso), sub, color)
       }
-    Round(inner, _border_radius) => draw_shape_2d(gizmos, iso, inner.val, color)
   }
 }
 

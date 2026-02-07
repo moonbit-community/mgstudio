@@ -80,14 +80,6 @@ fn is_env_flag_set(key : String) -> Bool {
 }
 
 ///|
-fn format_jit_setup_error(err : NativeJitSetupError) -> String {
-  match err {
-    NativeJitSetupError::JitLoadFailed(msg) => msg
-    _ => err.to_string()
-  }
-}
-
-///|
 pub fn run_game(
   wasm_path : String,
   assets_source_spec : String,
@@ -176,8 +168,7 @@ pub fn run_game(
     // force the interpreter for debugging.
     if use_jit {
       let prepared = prepare_jit_for_instance(wasm_module, instance, store) catch {
-        err =>
-          raise NativeRuntimeError::JitSetupFailed(format_jit_setup_error(err))
+        err => raise NativeRuntimeError::JitSetupFailed(err.to_string())
       }
       ctx.jit = Some(prepared.jm)
       ctx.jit_globals_ptr = prepared.globals_ptr

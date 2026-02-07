@@ -26,6 +26,21 @@ while [[ -h "${SOURCE}" ]]; do
 done
 ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")" && pwd)"
 BIN="${ROOT}/mgstudio-cli/_build/native/release/build/main/main.exe"
+SDKROOT="${MGSTUDIO_SDKROOT:-${HOME}/.local/share/mgstudio/current}"
+SDK_WEB_DIR="${SDKROOT}/share/mgstudio/web"
+SDK_ASSETS_DIR="${SDKROOT}/share/mgstudio/assets"
+
+sync_sdk() {
+  mkdir -p "${SDK_WEB_DIR}"
+  (
+    cd "${ROOT}"
+    OUT_DIR="${SDK_WEB_DIR}" ./mgstudio-runtime/web/build.sh
+  )
+
+  rm -rf "${SDK_ASSETS_DIR}"
+  mkdir -p "${SDK_ASSETS_DIR}"
+  cp -R "${ROOT}/mgstudio-engine/assets/." "${SDK_ASSETS_DIR}/"
+}
 
 NEED_BUILD=0
 if [[ ! -x "${BIN}" ]]; then
@@ -33,14 +48,6 @@ if [[ ! -x "${BIN}" ]]; then
 else
   # Rebuild when CLI sources changed since last build.
   if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
-    NEED_BUILD=1
-  fi
-  # Rebuild when native runtime sources changed (path dependency of mgstudio-cli).
-  if find "${ROOT}/mgstudio-runtime/native" -type f \( -name '*.mbt' -o -name '*.c' -o -name 'moon.pkg.json' -o -name 'moon.mod.json' \) -newer "${BIN}" | grep -q .; then
-    NEED_BUILD=1
-  fi
-  # Rebuild when runtime-core sources changed (path dependency of native runtime).
-  if find "${ROOT}/mgstudio-runtime/core" -type f \( -name '*.mbt' -o -name 'moon.pkg.json' -o -name 'moon.mod.json' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
   if [[ "${ROOT}/mgstudio-cli/moon.mod.json" -nt "${BIN}" ]]; then
@@ -51,5 +58,7 @@ fi
 if [[ "${NEED_BUILD}" -eq 1 ]]; then
   (cd "${ROOT}/mgstudio-cli" && moon build --release)
 fi
+
+sync_sdk
 
 exec "${BIN}" "$@"

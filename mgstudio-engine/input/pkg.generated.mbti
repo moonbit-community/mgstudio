@@ -16,6 +16,10 @@ pub fn host_input_mouse_x() -> Float
 
 pub fn host_input_mouse_y() -> Float
 
+pub fn host_input_wheel_x() -> Float
+
+pub fn host_input_wheel_y() -> Float
+
 pub fn[W] input_finish_system(W) -> Unit
 
 pub fn[W] input_plugin(@app.App[W]) -> @app.App[W]
@@ -33,6 +37,10 @@ pub fn mouse_button_just_released(@window.MouseButton) -> Bool
 pub fn mouse_button_pressed(@window.MouseButton) -> Bool
 
 pub fn mouse_position() -> @math.Vec2?
+
+pub fn mouse_wheel_delta() -> @math.Vec2
+
+pub fn mouse_wheel_delta_opt() -> @math.Vec2?
 
 // Errors
 

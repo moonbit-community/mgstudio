@@ -17,7 +17,7 @@
     "moonbitlang/core/ref"
   ],
   "link": {
-    "wasm": {
+    "wasm-gc": {
       "exports": [
         "game_app"
       ]

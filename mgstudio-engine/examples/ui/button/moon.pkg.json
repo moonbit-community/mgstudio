@@ -12,11 +12,10 @@
     "Milky2018/mgstudio/ui"
   ],
   "link": {
-    "wasm": {
+    "wasm-gc": {
       "exports": [
         "game_app"
       ]
     }
   }
 }
-

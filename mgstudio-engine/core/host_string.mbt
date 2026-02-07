@@ -15,7 +15,7 @@
 ///|
 /// Host string interop helpers.
 ///
-/// We do not pass wasm `String` across the host boundary. Instead, the guest
+/// We do not pass wasm-gc `String` across the host boundary. Instead, the guest
 /// interns strings into the host via the `string_sink_*` protocol and passes an
 /// `Int` handle (string id) to other host calls.
 
@@ -33,7 +33,7 @@ fn host_string_drop(id : Int) -> Unit = "mgstudio_host" "string_drop"
 
 ///|
 pub fn[T] with_host_string_id(text : String, f : (Int) -> T) -> T {
-  // NOTE: Avoid `String` equality (`==`) in wasm guest code for now.
+  // NOTE: Avoid `String` equality (`==`) in wasm-gc guest code for now.
   // `Milky2018/wasmoon` currently traps on string equality (unreachable).
   if text.length() == 0 {
     return f(0)

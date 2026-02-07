@@ -286,39 +286,10 @@ fn justify_is_left(justify : Justify) -> Bool {
 }
 
 ///|
-fn font_smoothing_is_none(smoothing : FontSmoothing) -> Bool {
-  match smoothing {
-    FontSmoothing::None => true
-    _ => false
-  }
-}
-
-///|
 fn cosmic_physical_xy(
   glyph : @cosmic.LayoutGlyph,
   font_smoothing : FontSmoothing,
-) -> (Int, Int, Int, Int) {
-  let font_size = glyph.font_size
-  let mut x = glyph.x
-  let mut y = glyph.y
-  let mut x_offset = glyph.x_offset
-  let mut y_offset = glyph.y_offset
-  if font_smoothing_is_none(font_smoothing) {
-    x = @cosmic.roundf(x)
-    y = @cosmic.roundf(y)
-    x_offset = @cosmic.roundf(x_offset)
-    y_offset = @cosmic.roundf(y_offset)
-  }
-  let pos_x = x + font_size * x_offset
-  let pos_y = @cosmic.truncf(y - font_size * y_offset)
-  let (cache_key, px, py) = @cosmic.CacheKey::new(
-    glyph.font_id,
-    glyph.glyph_id,
-    font_size,
-    (pos_x, pos_y),
-    glyph.font_weight,
-    glyph.cache_key_flags,
-  )
+) -> (@cosmic.CacheKey, Int, Int, Int, Int) {
   fn bin_index(bin : @cosmic.SubpixelBin) -> Int {
     match bin {
       @cosmic.SubpixelBin::Zero => 0
@@ -327,8 +298,50 @@ fn cosmic_physical_xy(
       @cosmic.SubpixelBin::Three => 3
     }
   }
-
-  (px, py, bin_index(cache_key.x_bin), bin_index(cache_key.y_bin))
+  // Bevy parity:
+  // - FontSmoothing::None rounds subpixel layout fields first, then builds
+  //   the physical glyph from that rounded layout glyph.
+  // - FontSmoothing::AntiAliased uses the original layout glyph directly.
+  match font_smoothing {
+    FontSmoothing::None => {
+      // `moon_cosmic.LayoutGlyph` is externally read-only, so we cannot clone-and-edit
+      // like Bevy's Rust code. Rebuild the same rounded physical parameters directly.
+      let rounded_x = @cosmic.roundf(glyph.x)
+      let rounded_y = @cosmic.roundf(glyph.y)
+      let rounded_x_offset = @cosmic.roundf(glyph.x_offset)
+      let rounded_y_offset = @cosmic.roundf(glyph.y_offset)
+      let x_off = glyph.font_size * rounded_x_offset
+      let y_off = glyph.font_size * rounded_y_offset
+      let pos_x = rounded_x + x_off
+      let pos_y = @cosmic.truncf(rounded_y - y_off)
+      let (cache_key, phys_x, phys_y) = @cosmic.CacheKey::new(
+        glyph.font_id,
+        glyph.glyph_id,
+        glyph.font_size,
+        (pos_x, pos_y),
+        glyph.font_weight,
+        glyph.cache_key_flags,
+      )
+      (
+        cache_key,
+        phys_x,
+        phys_y,
+        bin_index(cache_key.x_bin()),
+        bin_index(cache_key.y_bin()),
+      )
+    }
+    FontSmoothing::AntiAliased => {
+      let physical = glyph.physical((0.0F, 0.0F), 1.0F)
+      let cache_key = physical.cache_key
+      (
+        cache_key,
+        physical.x,
+        physical.y,
+        bin_index(cache_key.x_bin()),
+        bin_index(cache_key.y_bin()),
+      )
+    }
+  }
 }
 
 ///|
@@ -431,6 +444,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let glyphs : Array[PositionedGlyph] = []
   let run_geometry : Array[RunGeometry] = []
   for run in cosmic_buffer.layout_runs() {
+    let run_glyph_start = glyphs.length()
+    let mut run_top_correction = 0.0F
     let mut maybe_run_geom : RunGeometry? = None
     let mut end_x = 0.0F
     for layout_glyph0 in run.glyphs {
@@ -438,12 +453,14 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       if span_index < 0 || span_index >= entities.length() {
         continue
       }
+      let font_smoothing = entities[span_index].font_smoothing
+      let layout_glyph = layout_glyph0
       if maybe_run_geom is Some(rg) && rg.span_index != span_index {
         run_geometry.push(rg)
         maybe_run_geom = None
       }
       if maybe_run_geom is None {
-        let font_opt = font_system.get_font(layout_glyph0.font_id)
+        let font_opt = font_system.get_font(layout_glyph.font_id)
         let font_ref = match font_opt {
           None => continue
           Some(f) => f
@@ -453,17 +470,13 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         let scalar = if upem <= 0 {
           0.0F
         } else {
-          layout_glyph0.font_size / Float::from_double(upem.to_double())
+          layout_glyph.font_size / Float::from_double(upem.to_double())
         }
         let stroke = Float::from_double(
           (m.stroke_size * scalar.to_double()).round(),
         )
         let stroke_size = if stroke < 1.0F { 1.0F } else { stroke }
-        let start = if end_x > layout_glyph0.x {
-          end_x
-        } else {
-          layout_glyph0.x
-        }
+        let start = if end_x > layout_glyph.x { end_x } else { layout_glyph.x }
         maybe_run_geom = Some(RunGeometry::{
           span_index,
           bounds: @math.Rect::new(
@@ -482,7 +495,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
           underline_thickness: stroke_size,
         })
       }
-      end_x = layout_glyph0.x + layout_glyph0.w
+      end_x = layout_glyph.x + layout_glyph.w
       if maybe_run_geom is Some(rg0) {
         let bounds = @math.Rect::new(
           rg0.bounds.min,
@@ -490,12 +503,11 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         )
         maybe_run_geom = Some(RunGeometry::{ ..rg0, bounds, })
       }
-      let font_smoothing = entities[span_index].font_smoothing
-      let (phys_x_i, phys_y_i, subpixel_x, subpixel_y) = cosmic_physical_xy(
-        layout_glyph0, font_smoothing,
+      let (physical_key, phys_x_i, phys_y_i, subpixel_x, subpixel_y) = cosmic_physical_xy(
+        layout_glyph, font_smoothing,
       )
       let font_handle_id_opt = cosmic_font_handle_id_for_font_id(
-        layout_glyph0.font_id,
+        layout_glyph.font_id,
       )
       if font_handle_id_opt is None {
         missing_glyph = true
@@ -507,13 +519,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         continue
       }
       let font_handle = @asset.Handle::new(font_handle_id)
-      let raster_opt = font_rasterize_glyph_id_subpixel(
-        font_handle,
-        layout_glyph0.font_size,
-        layout_glyph0.glyph_id,
-        font_smoothing,
-        subpixel_x,
-        subpixel_y,
+      let raster_opt = font_rasterize_cache_key(
+        font_system, physical_key, font_smoothing,
       )
       if raster_opt is None {
         missing_glyph = true
@@ -521,13 +528,15 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       }
       let raster = if raster_opt is Some(v) { v } else { continue }
       let cache_key = GlyphCacheKey::new(
-        raster.glyph_id,
+        physical_key.glyph_id,
         subpixel_x,
         subpixel_y,
+        physical_key.font_weight,
+        physical_key.flags,
       )
       let font_key = FontAtlasKey::new(
         font_handle,
-        layout_glyph0.font_size,
+        Float::reinterpret_from_uint(physical_key.font_size_bits),
         font_smoothing,
       )
       let atlases = font_atlas_set_state.val.get_or_insert(font_key)
@@ -560,8 +569,15 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let top = Float::from_double(atlas_info.location.offset.y.to_double())
       let phys_x = Float::from_double(phys_x_i.to_double())
       let phys_y = Float::from_double(phys_y_i.to_double())
+      let correction = if top > phys_y { top - phys_y } else { 0.0F }
+      if correction > run_top_correction {
+        run_top_correction = correction
+      }
       let x = glyph_size_x / 2.0F + left + phys_x
-      let y_raw = @cosmic.roundf(run.line_y) + phys_y - top + glyph_size_y / 2.0F
+      let y_raw = @cosmic.roundf(run.line_y) +
+        phys_y -
+        top +
+        glyph_size_y / 2.0F
       // Bevy parity: `BottomToTop` flips Y using the computed box height.
       let y = match instance.y_axis {
         YAxisOrientation::TopToBottom => y_raw
@@ -576,6 +592,38 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         byte_index: layout_glyph0.start,
         byte_length: layout_glyph0.end - layout_glyph0.start,
       })
+    }
+    if instance.y_axis == YAxisOrientation::TopToBottom &&
+      run_top_correction > 0.0F {
+      let run_glyph_end = glyphs.length()
+      for i in run_glyph_start..<run_glyph_end {
+        let g = glyphs[i]
+        glyphs[i] = PositionedGlyph::{
+          ..g,
+          position: @math.Vec2::new(
+            g.position.x,
+            g.position.y + run_top_correction,
+          ),
+        }
+      }
+      if maybe_run_geom is Some(rg0) {
+        let bounds = @math.Rect::new(
+          @math.Vec2::new(
+            rg0.bounds.min.x,
+            rg0.bounds.min.y + run_top_correction,
+          ),
+          @math.Vec2::new(
+            rg0.bounds.max.x,
+            rg0.bounds.max.y + run_top_correction,
+          ),
+        )
+        maybe_run_geom = Some(RunGeometry::{
+          ..rg0,
+          bounds,
+          strikethrough_y: rg0.strikethrough_y + run_top_correction,
+          underline_y: rg0.underline_y + run_top_correction,
+        })
+      }
     }
     if maybe_run_geom is Some(rg) {
       run_geometry.push(rg)
@@ -611,6 +659,7 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
   world : W,
 ) -> Unit {
   @render2d.render2d_clear_overlay_sprites(world)
+  text_debug_clear_frame()
   let texts = text_state.val.texts
   for instance in texts {
     let layout_info = instance.layout_info
@@ -620,11 +669,97 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
       @math.Vec2::new(v.x * cosv - v.y * sinv, v.x * sinv + v.y * cosv)
     }
 
+    fn absf(v : Float) -> Float {
+      if v < 0.0F {
+        0.0F - v
+      } else {
+        v
+      }
+    }
+
     fn to_y_up(y_axis : YAxisOrientation, v : @math.Vec2) -> @math.Vec2 {
       match y_axis {
         YAxisOrientation::TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
         YAxisOrientation::BottomToTop => v
       }
+    }
+
+    fn round_to_pixel(v : Float, pixel_scale : Float) -> Float {
+      let sf = if pixel_scale <= 0.0F { 1.0F } else { pixel_scale }
+      Float::from_double(
+        (v.to_double() * sf.to_double()).round() / sf.to_double(),
+      )
+    }
+
+    fn glyph_world_bounds(
+      center : @math.Vec2,
+      glyph_size : @math.Vec2,
+      scale : @math.Vec2,
+      rotation : Float,
+    ) -> @math.Rect {
+      let half = @math.Vec2::new(
+        glyph_size.x * absf(scale.x) / 2.0F,
+        glyph_size.y * absf(scale.y) / 2.0F,
+      )
+      let p0 = rotate_vec2(
+        @math.Vec2::new(0.0F - half.x, 0.0F - half.y),
+        rotation,
+      )
+      let p1 = rotate_vec2(@math.Vec2::new(half.x, 0.0F - half.y), rotation)
+      let p2 = rotate_vec2(@math.Vec2::new(half.x, half.y), rotation)
+      let p3 = rotate_vec2(@math.Vec2::new(0.0F - half.x, half.y), rotation)
+      let x0 = center.x + p0.x
+      let y0 = center.y + p0.y
+      let x1 = center.x + p1.x
+      let y1 = center.y + p1.y
+      let x2 = center.x + p2.x
+      let y2 = center.y + p2.y
+      let x3 = center.x + p3.x
+      let y3 = center.y + p3.y
+      let mut min_x = x0
+      let mut max_x = x0
+      let mut min_y = y0
+      let mut max_y = y0
+      if x1 < min_x {
+        min_x = x1
+      }
+      if x2 < min_x {
+        min_x = x2
+      }
+      if x3 < min_x {
+        min_x = x3
+      }
+      if x1 > max_x {
+        max_x = x1
+      }
+      if x2 > max_x {
+        max_x = x2
+      }
+      if x3 > max_x {
+        max_x = x3
+      }
+      if y1 < min_y {
+        min_y = y1
+      }
+      if y2 < min_y {
+        min_y = y2
+      }
+      if y3 < min_y {
+        min_y = y3
+      }
+      if y1 > max_y {
+        max_y = y1
+      }
+      if y2 > max_y {
+        max_y = y2
+      }
+      if y3 > max_y {
+        max_y = y3
+      }
+      @math.Rect::new(
+        @math.Vec2::new(min_x, min_y),
+        @math.Vec2::new(max_x, max_y),
+      )
     }
 
     let rot = instance.transform.rotation_z()
@@ -663,7 +798,25 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
 
     // Convert layout coordinates (+Y down for UI) into our world-style local (+Y up) coordinates.
     let origin_offset = to_y_up(instance.y_axis, origin_offset_layout)
-
+    let origin_scaled = @math.Vec2::new(
+      origin_offset.x * scale.x,
+      origin_offset.y * scale.y,
+    )
+    let origin_rotated = rotate_vec2(origin_scaled, rot)
+    let mut text_origin = @math.Vec2::new(
+      base.x + origin_rotated.x,
+      base.y + origin_rotated.y,
+    )
+    // Bevy parity for UI text extraction: snap the node's top-left origin to
+    // physical pixels (DPR aware) before adding per-glyph offsets.
+    // before adding per-glyph offsets.
+    if instance.ui_node_size is Some(_) {
+      let pixel_scale = @window.window_scale_factor()
+      text_origin = @math.Vec2::new(
+        round_to_pixel(text_origin.x, pixel_scale),
+        round_to_pixel(text_origin.y, pixel_scale),
+      )
+    }
     for glyph in layout_info.glyphs {
       let atlas_info = glyph.atlas_info
       let layout_opt = @asset.asset_get_texture_atlas_layout(
@@ -693,19 +846,22 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
         Float::from_double(rect.max.y.to_double()) / atlas_height,
       )
       let glyph_pos = to_y_up(instance.y_axis, glyph.position)
-      let local_pos = @math.Vec2::new(
-        origin_offset.x + glyph_pos.x,
-        origin_offset.y + glyph_pos.y,
+      let local_scaled = @math.Vec2::new(
+        glyph_pos.x * scale.x,
+        glyph_pos.y * scale.y,
       )
-      let local_scaled = @math.Vec2::new(local_pos.x * scale.x, local_pos.y * scale.y)
       let offset = rotate_vec2(local_scaled, rot)
-      let translation = @math.Vec2::new(base.x + offset.x, base.y + offset.y)
+      let translation = @math.Vec2::new(
+        text_origin.x + offset.x,
+        text_origin.y + offset.y,
+      )
       let transform = @math.Transform::from_xy_rotation_scale(
         translation,
         rot,
         scale,
         z=instance.transform.translation.z,
       )
+      let glyph_bounds = glyph_world_bounds(translation, glyph.size, scale, rot)
       let color = text_span_color(instance, glyph.span_index).color
       if instance.shadow is Some(shadow) {
         let shadow_translation = @math.Vec2::new(
@@ -718,7 +874,7 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
           scale,
           z=instance.transform.translation.z,
         )
-        @render2d.render2d_push_sprite_uv(
+        @render2d.render2d_push_sprite_uv_scissor(
           world,
           atlas_info.texture,
           shadow_transform,
@@ -726,9 +882,10 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
           uv_max,
           shadow.color,
           instance.layers,
+          instance.ui_scissor,
         )
       }
-      @render2d.render2d_push_sprite_uv(
+      @render2d.render2d_push_sprite_uv_scissor(
         world,
         atlas_info.texture,
         transform,
@@ -736,6 +893,15 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
         uv_max,
         color,
         instance.layers,
+        instance.ui_scissor,
+      )
+      text_debug_push_glyph(
+        instance.id,
+        glyph_bounds,
+        instance.ui_scissor,
+        atlas_info.texture.id(),
+        uv_min,
+        uv_max,
       )
     }
   }

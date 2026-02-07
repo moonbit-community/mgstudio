@@ -5,7 +5,7 @@ Native (host) runtime for `mgstudio-engine` powered by `Milky2018/wasmoon`.
 ## Status
 
 This is a bring-up PoC that wires a `wasmoon` linker with stub `mgstudio_host`
-imports, and attempts to instantiate the wasm build.
+imports, and attempts to instantiate the wasm-gc build.
 
 The WasmGC `rec` forward-reference parser bug is fixed in `Milky2018/wasmoon >= 0.1.3`.
 
@@ -30,7 +30,7 @@ Known upstream blocker (wgpu_mbt packaging/build):
 Recommended workflow (from repo root):
 ```bash
 # Build a game wasm (example).
-moon build --release --target wasm -C mgstudio-engine mgstudio-engine/examples/2d/sprite
+moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
 
 # Run the game described by moon.game.json (calls export: game_app).
 ./mgstudio-dev run --game mgstudio-engine/examples/2d/sprite/moon.game.json

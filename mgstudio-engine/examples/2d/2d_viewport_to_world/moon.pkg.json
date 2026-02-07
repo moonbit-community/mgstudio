@@ -12,7 +12,7 @@
     "Milky2018/mgstudio/window"
   ],
   "link": {
-    "wasm": {
+    "wasm-gc": {
       "exports": [
         "game_app"
       ]

@@ -29,7 +29,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
    - `mgstudio new mygame`
    - For local engine development (path dependency): `./mgstudio-dev new mygame --local-engine`
 3. Build the game cart (Wasm GC, from the game directory):
-   - `cd mygame && moon build --release --target wasm`
+   - `cd mygame && moon build --release --target wasm-gc`
 4. Run:
    - Native: `mgstudio run -g mygame/moon.game.json`
    - Web: `mgstudio serve -g mygame/moon.game.json` (plain HTTP)
@@ -43,7 +43,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
 
 Repo development wrapper:
 
-- `./mgstudio-dev ...` builds `mgstudio-cli` (release) and runs it
+- `./mgstudio-dev ...` builds `mgstudio-cli` (release), syncs SDK web runtime + assets to `$HOME/.local/share/mgstudio/current`, then runs it
 
 Project quality gates (per module):
 

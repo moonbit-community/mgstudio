@@ -13,15 +13,6 @@
 // limitations under the License.
 
 ///|
-fn absf(x : Float) -> Float {
-  if x < 0.0F {
-    -x
-  } else {
-    x
-  }
-}
-
-///|
 struct Physics2dTestWorld {
   mut tick : @core.Tick
   transform : @core.ComponentStore[@math.Transform]
@@ -67,7 +58,6 @@ struct Physics2dTestWorld {
   config : @core.Resource[Physics2dConfig]
   context : @core.Resource[Physics2dContext]
   events : @core.Resource[Physics2dEvents]
-  hooks : @core.Resource[Physics2dHooks]
 }
 
 ///|
@@ -115,7 +105,6 @@ fn Physics2dTestWorld::new() -> Physics2dTestWorld {
     config: @core.Resource::new(),
     context: @core.Resource::new(),
     events: @core.Resource::new(),
-    hooks: @core.Resource::new(),
   }
 }
 
@@ -395,13 +384,6 @@ impl HasRes_Physics2dEvents for Physics2dTestWorld with get_physics2d_events_res
   self,
 ) {
   self.events
-}
-
-///|
-impl HasRes_Physics2dHooks for Physics2dTestWorld with get_physics2d_hooks_resource(
-  self,
-) {
-  self.hooks
 }
 
 ///|
@@ -1191,21 +1173,19 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
 
 ///|
 test "physics2d: hooks filter_contact_pair can disable contacts" {
+  let old_hooks = physics2d_hooks_config()
   let called = Ref::new(false)
   let mapped = Ref::new(false)
+  physics2d_set_filter_contact_pair(fn(_bodies, _colliders, h1, _h2) {
+    called.val = true
+    mapped.val = physics2d_hook_entity_from_collider_handle(h1) is Some(_)
+    false
+  })
   @app.fixed_time_reset()
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
   let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dHooks::get_physics2d_hooks_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dHooks::default().with_filter_contact_pair(fn(ctx) {
-    called.val = true
-    mapped.val = ctx.entity1 is Some(_) && ctx.entity2 is Some(_)
-    false
-  })
   HasRes_Physics2dConfig::get_physics2d_config_resource(world)
   .get_ref_mut(tick)
   .unwrap().val
@@ -1282,6 +1262,7 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     .get_ref()
     .unwrap().val
   inspect(events.collisions.length() == 0, content="true")
+  physics2d_hooks_set_config(old_hooks)
 }
 
 ///|
@@ -1523,67 +1504,4 @@ test "physics2d: kinematic character controller moves and outputs" {
     .unwrap()
   inspect(out.effective_translation.y <= 0.0F, content="true")
   inspect(out.collisions.length() > 0, content="true")
-}
-
-///|
-test "physics2d: transform scale bakes into collider shape" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
-  let world = Physics2dTestWorld::new()
-  physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let e1 = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
-    e1,
-    @math.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(2.0F, 3.0F),
-      z=0.0F,
-    ),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    e1,
-    Collider2d::new(ColliderShape2d::cuboid(1.0F, 2.0F)),
-    tick,
-  )
-  let e2 = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
-    e2,
-    @math.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(2.0F, 3.0F),
-      z=0.0F,
-    ),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    e2,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  physics2d_sync_insertions_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
-  let ch_store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
-    world,
-  )
-  let h1 = ch_store.get(e1).unwrap().handle
-  let h2 = ch_store.get(e2).unwrap().handle
-  let col1 = ctx.colliders.get(h1).unwrap()
-  let col2 = ctx.colliders.get(h2).unwrap()
-  match col1.shape() {
-    Cuboid(hx, hy) => {
-      inspect(absf(hx - 2.0F) < 1.0e-4F, content="true")
-      inspect(absf(hy - 6.0F) < 1.0e-4F, content="true")
-    }
-    _ => inspect(false, content="true")
-  }
-  match col2.shape() {
-    Ball(r) => inspect(absf(r - 1.5F) < 1.0e-4F, content="true")
-    _ => inspect(false, content="true")
-  }
 }
