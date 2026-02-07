@@ -280,6 +280,11 @@ if [[ ! -f "${SDK_DIR}/lib/libwgpu_native.dylib" ]]; then
   echo "Invalid SDK (missing libwgpu_native): ${SDK_DIR}/lib/libwgpu_native.dylib" >&2
   exit 2
 fi
+if [[ -f "${SDK_DIR}/bin/mgstudio-runtime-native-wasmtime" ]] &&
+  [[ ! -x "${SDK_DIR}/bin/mgstudio-runtime-native-wasmtime" ]]; then
+  echo "Invalid SDK (wasmtime runtime is not executable): ${SDK_DIR}/bin/mgstudio-runtime-native-wasmtime" >&2
+  exit 2
+fi
 
 log_step "Installing (atomic swap)..."
 STAGE_DIR="${BASE_DIR}/.tmp.mgstudio-sdk.stage.$$"
@@ -304,4 +309,9 @@ echo "mgstudio installed."
 echo "  Version:  ${RESOLVED_VERSION} (${SDK_PLATFORM})"
 echo "  SDK root: ${SDKROOT}"
 echo "  CLI:      ${BIN_DIR}/mgstudio"
+if [[ -x "${SDKROOT}/bin/mgstudio-runtime-native-wasmtime" ]]; then
+  echo "  Wasmtime: ${SDKROOT}/bin/mgstudio-runtime-native-wasmtime (ready)"
+else
+  echo "  Wasmtime: not bundled in this SDK release"
+fi
 echo "Next: ensure '${BIN_DIR}' is on your PATH."
