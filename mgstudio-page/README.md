@@ -20,3 +20,6 @@ The output is written to `dist/`.
 ./serve.sh
 ```
 
+## Deploy
+
+`main` branch pushes deploy `mgstudio-page/dist` to GitHub Pages via `.github/workflows/pages.yml`.
