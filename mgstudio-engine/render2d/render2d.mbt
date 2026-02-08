@@ -380,11 +380,22 @@ pub(all) enum RenderTarget {
 ///|
 pub struct ColorMaterialAsset {
   color : Color
+  alpha_mode : AlphaMode2d
 }
 
 ///|
-pub fn ColorMaterialAsset::new(color : Color) -> ColorMaterialAsset {
-  ColorMaterialAsset::{ color, }
+pub(all) enum AlphaMode2d {
+  Opaque
+  Mask(Float)
+  Blend
+}
+
+///|
+pub fn ColorMaterialAsset::new(
+  color : Color,
+  alpha_mode : AlphaMode2d,
+) -> ColorMaterialAsset {
+  ColorMaterialAsset::{ color, alpha_mode }
 }
 
 ///|
@@ -408,7 +419,9 @@ pub struct ColorMaterial {
 
 ///|
 pub fn ColorMaterial::new(color : Color) -> ColorMaterial {
-  let handle = color_material_assets.val.add(ColorMaterialAsset::new(color))
+  let handle = color_material_assets.val.add(
+    ColorMaterialAsset::new(color, AlphaMode2d::Blend),
+  )
   ColorMaterial::{ handle, }
 }
 
@@ -417,6 +430,33 @@ pub fn ColorMaterial::color(self : ColorMaterial) -> Color {
   match color_material_get(self.handle) {
     Some(mat) => mat.color
     None => Color::white()
+  }
+}
+
+///|
+pub fn ColorMaterial::new_with_alpha_mode(
+  color : Color,
+  alpha_mode : AlphaMode2d,
+) -> ColorMaterial {
+  let handle = color_material_assets.val.add(
+    ColorMaterialAsset::new(color, alpha_mode),
+  )
+  ColorMaterial::{ handle, }
+}
+
+///|
+pub fn ColorMaterial::with_alpha_mode(
+  self : ColorMaterial,
+  alpha_mode : AlphaMode2d,
+) -> ColorMaterial {
+  ColorMaterial::new_with_alpha_mode(self.color(), alpha_mode)
+}
+
+///|
+pub fn ColorMaterial::alpha_mode(self : ColorMaterial) -> AlphaMode2d {
+  match color_material_get(self.handle) {
+    Some(mat) => mat.alpha_mode
+    None => AlphaMode2d::Blend
   }
 }
 
@@ -856,6 +896,7 @@ priv struct MeshInstance {
   mesh_id : Int
   transform : @math.Transform
   color : Color
+  alpha_mode : AlphaMode2d
   layers : RenderLayers
 }
 
@@ -1690,6 +1731,7 @@ pub fn[
       mesh_id: gpu.mesh_id,
       transform,
       color: mat.color(),
+      alpha_mode: mat.alpha_mode(),
       layers,
     })
   })
@@ -1724,6 +1766,24 @@ fn cmp_float(a : Float, b : Float) -> Int {
     1
   } else {
     0
+  }
+}
+
+///|
+fn mesh_alpha_phase(alpha_mode : AlphaMode2d, alpha : Float) -> Int? {
+  match alpha_mode {
+    Opaque => Some(0)
+    Blend => Some(if alpha >= 1.0F { 0 } else { 1 })
+    Mask(cutoff) => if alpha >= cutoff { Some(0) } else { None }
+  }
+}
+
+///|
+fn mesh_draw_alpha(alpha_mode : AlphaMode2d, alpha : Float) -> Float? {
+  match alpha_mode {
+    Opaque => Some(1.0F)
+    Blend => Some(alpha)
+    Mask(cutoff) => if alpha >= cutoff { Some(1.0F) } else { None }
   }
 }
 
@@ -1855,7 +1915,9 @@ fn draw_items_for_layers(
     if !mesh.layers.matches(layers) {
       continue
     }
-    let phase = if mesh.color.a >= 1.0F { 0 } else { 1 }
+    guard mesh_alpha_phase(mesh.alpha_mode, mesh.color.a) is Some(phase) else {
+      continue
+    }
     items.push(DrawItem::{
       kind: Mesh(i),
       z: mesh.transform.translation.z,
@@ -1936,6 +1998,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
         z=-1.0F,
       ),
       color: Color::white(),
+      alpha_mode: AlphaMode2d::Blend,
       layers,
     },
   ]
@@ -1945,6 +2008,74 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: mesh opaque alpha mode stays in opaque phase" {
+  let layers = RenderLayers::default()
+  let sprites : Array[SpriteInstance] = []
+  let extra : Array[SpriteInstance] = []
+  let extra_ui : Array[UiRectInstance] = []
+  let extra_shadow : Array[UiBoxShadowInstance] = []
+  let extra_slices : Array[UiTextureSliceInstance] = []
+  let meshes : Array[MeshInstance] = [
+    MeshInstance::{
+      entity: @core.Entity::new(2, 0),
+      mesh_id: 10,
+      transform: @math.Transform::identity(),
+      color: Color::new(1.0F, 0.0F, 0.0F, 0.2F),
+      alpha_mode: AlphaMode2d::Opaque,
+      layers,
+    },
+    MeshInstance::{
+      entity: @core.Entity::new(1, 0),
+      mesh_id: 11,
+      transform: @math.Transform::identity(),
+      color: Color::new(0.0F, 1.0F, 0.0F, 0.2F),
+      alpha_mode: AlphaMode2d::Blend,
+      layers,
+    },
+  ]
+  let items = draw_items_for_layers(
+    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, layers,
+  )
+  let ok = items.length() == 2 &&
+    items[0].kind is Mesh(0) &&
+    items[1].kind is Mesh(1)
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: mesh mask alpha mode drops below cutoff" {
+  let layers = RenderLayers::default()
+  let sprites : Array[SpriteInstance] = []
+  let extra : Array[SpriteInstance] = []
+  let extra_ui : Array[UiRectInstance] = []
+  let extra_shadow : Array[UiBoxShadowInstance] = []
+  let extra_slices : Array[UiTextureSliceInstance] = []
+  let meshes : Array[MeshInstance] = [
+    MeshInstance::{
+      entity: @core.Entity::new(1, 0),
+      mesh_id: 20,
+      transform: @math.Transform::identity(),
+      color: Color::new(1.0F, 1.0F, 1.0F, 0.2F),
+      alpha_mode: AlphaMode2d::Mask(0.5F),
+      layers,
+    },
+    MeshInstance::{
+      entity: @core.Entity::new(2, 0),
+      mesh_id: 21,
+      transform: @math.Transform::identity(),
+      color: Color::new(1.0F, 1.0F, 1.0F, 0.8F),
+      alpha_mode: AlphaMode2d::Mask(0.5F),
+      layers,
+    },
+  ]
+  let items = draw_items_for_layers(
+    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, layers,
+  )
+  let ok = items.length() == 1 && items[0].kind is Mesh(1)
   inspect(ok, content="true")
 }
 
@@ -2221,6 +2352,10 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
         Mesh(i) => {
           apply_scissor(None)
           let mesh = meshes[i]
+          guard mesh_draw_alpha(mesh.alpha_mode, mesh.color.a)
+            is Some(draw_alpha) else {
+            continue
+          }
           let transform = mesh.transform
           @window.host_gpu_draw_mesh(
             mesh.mesh_id,
@@ -2232,7 +2367,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             mesh.color.r,
             mesh.color.g,
             mesh.color.b,
-            mesh.color.a,
+            draw_alpha,
           )
         }
         UiRectExtra(i) => {

@@ -65,6 +65,12 @@ pub fn[W] render_queue_system(W) -> Unit
 // Errors
 
 // Types and methods
+pub(all) enum AlphaMode2d {
+  Opaque
+  Mask(Float)
+  Blend
+}
+
 pub struct Anchor {
   value : @math.Vec2
 }
@@ -142,13 +148,17 @@ pub fn Color::white() -> Self
 pub struct ColorMaterial {
   handle : @asset.Handle[ColorMaterialAsset]
 }
+pub fn ColorMaterial::alpha_mode(Self) -> AlphaMode2d
 pub fn ColorMaterial::color(Self) -> Color
 pub fn ColorMaterial::new(Color) -> Self
+pub fn ColorMaterial::new_with_alpha_mode(Color, AlphaMode2d) -> Self
+pub fn ColorMaterial::with_alpha_mode(Self, AlphaMode2d) -> Self
 
 pub struct ColorMaterialAsset {
   color : Color
+  alpha_mode : AlphaMode2d
 }
-pub fn ColorMaterialAsset::new(Color) -> Self
+pub fn ColorMaterialAsset::new(Color, AlphaMode2d) -> Self
 
 pub struct Ellipse2dBuilder {
   id : Int
