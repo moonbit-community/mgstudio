@@ -61,6 +61,35 @@ fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
+fn physics2d_showcase_spawn_controls_overlay() -> Unit {
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let content = "Physics2D Showcase Controls\nW/A/S/D or Arrow Keys: Move player\nLeft Click: Spawn ball at cursor\nG: Toggle debug render\nH: Toggle ghost pair no-collision"
+  let font_style = @text.TextFont::default()
+    .with_font(font)
+    .with_font_size(20.0F)
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    font_style,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(-390.0F, 300.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=50.0F,
+    ),
+  )
+  .with_anchor(@render2d.Anchor::top_left())
+  .with_bounds(@text.TextBounds::new_horizontal(780.0F))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .with_color(
+    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+  )
+  .with_shadow(Some(@text.Text2dShadow::default()))
+  .spawn()
+  |> ignore
+}
+
+///|
 fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
   let tick = @core.ChangeTickWorld::read_change_tick(world)
 
@@ -85,6 +114,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
     world,
   )
   |> ignore
+  physics2d_showcase_spawn_controls_overlay()
   let transform_store = @math.Has_Transform::get_transform_store(world)
   let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
   let rb_store = @physics2d.Has_RigidBody2d::get_rigid_body2d_store(world)

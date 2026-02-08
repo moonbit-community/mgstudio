@@ -10,6 +10,7 @@
     "Milky2018/mgstudio",
     "Milky2018/mgstudio/physics2d",
     "Milky2018/mgstudio/render2d",
+    "Milky2018/mgstudio/text",
     "Milky2018/mgstudio/window"
   ],
   "link": {
