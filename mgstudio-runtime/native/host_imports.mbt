@@ -1093,7 +1093,9 @@ pub fn add_mgstudio_host_imports(
         let tick_idx = funcref_to_func_idx(instance, func_idx).unwrap_or(
           func_idx,
         )
+        host_trace("host: window_run_loop tick_idx=\{tick_idx}")
         while true {
+          host_trace("tick: call_jit begin")
           let _ = match ctx.jit {
             Some(jm) =>
               try {
@@ -1125,8 +1127,13 @@ pub fn add_mgstudio_host_imports(
                 }
               }
           }
+          host_trace("tick: call_jit done")
           if ctx.window is Some(win) && win.should_close() {
+            host_trace("tick: should_close true")
             break
+          }
+          if ctx.window is Some(_) {
+            host_trace("tick: should_close false")
           }
         }
       }
@@ -2128,6 +2135,7 @@ pub fn add_mgstudio_host_imports(
         if ctx.gpu is Some(gpu) {
           gpu.end_frame()
         }
+        host_trace("host: gpu_end_frame done")
         ok_i32(0)
       } catch {
         _ => {

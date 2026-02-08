@@ -1057,12 +1057,19 @@ pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
   let cmd = frame.encoder.finish()
   self.queue.submit_one(cmd)
   cmd.release()
+  guard self.surface is Some(surface) else {
+    frame.encoder.release()
+    frame.surface_view.release()
+    frame.surface_tex.release()
+    self.frame = None
+    self.pass_state = None
+    return
+  }
+  surface.present() |> ignore
+  self.instance.process_events()
   frame.encoder.release()
   frame.surface_view.release()
   frame.surface_tex.release()
-  guard self.surface is Some(surface) else { return }
-  surface.present() |> ignore
-  self.instance.process_events()
   self.frame = None
   self.pass_state = None
 }
