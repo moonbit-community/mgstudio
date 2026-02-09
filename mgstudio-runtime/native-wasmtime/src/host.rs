@@ -7,15 +7,15 @@ use wasmtime::{AnyRef, Caller, ExternRef, Func, FuncType, Linker, Store, Val, Va
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-use crate::native_window::NativeWindow;
 use crate::gpu_backend::GpuBackend;
+use crate::native_window::NativeWindow;
 
 use crate::source_spec::{join_dir_best_effort, DirSourceSpec};
 
 pub struct HostState {
-  pub trace_host: bool,
-  pub assets: DirSourceSpec,
-  pub data: DirSourceSpec,
+    pub trace_host: bool,
+    pub assets: DirSourceSpec,
+    pub data: DirSourceSpec,
 
     start_time: Instant,
 
@@ -191,20 +191,30 @@ fn ok_externref_null(out: &mut [Val]) {
     out[0] = Val::ExternRef(None);
 }
 
-fn ok_externref_i32(mut caller: impl wasmtime::AsContextMut, out: &mut [Val], value: i32) -> anyhow::Result<()> {
+fn ok_externref_i32(
+    mut caller: impl wasmtime::AsContextMut,
+    out: &mut [Val],
+    value: i32,
+) -> anyhow::Result<()> {
     let r = ExternRef::new(&mut caller, value)?;
     out[0] = Val::ExternRef(Some(r));
     Ok(())
 }
 
-pub fn define_imports(store: &mut Store<HostState>, linker: &mut Linker<HostState>) -> anyhow::Result<()> {
+pub fn define_imports(
+    store: &mut Store<HostState>,
+    linker: &mut Linker<HostState>,
+) -> anyhow::Result<()> {
     define_mgstudio_host_imports(store, linker)?;
     define_moonbit_ffi_imports(store, linker)?;
     define_spectest_imports(store, linker)?;
     Ok(())
 }
 
-fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linker<HostState>) -> anyhow::Result<()> {
+fn define_mgstudio_host_imports(
+    store: &mut Store<HostState>,
+    linker: &mut Linker<HostState>,
+) -> anyhow::Result<()> {
     // string_sink_reset() -> i32
     define_func(
         store,
@@ -232,7 +242,10 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
         |mut caller, args, out| {
             caller.data().host_trace("host: string_sink_push");
             if let Some(cu) = args.get(0).and_then(|v| v.i32()) {
-                caller.data_mut().string_sink.push((cu as u32 & 0xFFFF) as u16);
+                caller
+                    .data_mut()
+                    .string_sink
+                    .push((cu as u32 & 0xFFFF) as u16);
             }
             ok_i32(out, 0);
             Ok(())
@@ -320,7 +333,10 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             caller.data().host_trace("host: bytes_sink_push_u32");
             if let Some(word) = args.get(0).and_then(|v| v.i32()) {
                 let u = word as u32;
-                caller.data_mut().bytes_sink.extend_from_slice(&u.to_le_bytes());
+                caller
+                    .data_mut()
+                    .bytes_sink
+                    .extend_from_slice(&u.to_le_bytes());
             }
             ok_i32(out, 0);
             Ok(())
@@ -426,7 +442,8 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
 
             loop {
                 // The guest is responsible for calling `window_poll_events` each tick.
-                tick.call(&mut caller, &[], &mut []).context("tick() trapped")?;
+                tick.call(&mut caller, &[], &mut [])
+                    .context("tick() trapped")?;
                 let should_close = caller
                     .data()
                     .window
@@ -654,9 +671,10 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             &[ValType::I32],
             &[ValType::I32],
             move |caller, args, out| {
-                let ok = if let (Some(win), Some(code_id)) =
-                    (caller.data().window.as_ref(), args.get(0).and_then(|v| v.i32()))
-                {
+                let ok = if let (Some(win), Some(code_id)) = (
+                    caller.data().window.as_ref(),
+                    args.get(0).and_then(|v| v.i32()),
+                ) {
                     if let Some(code) = caller.data().string_table_get(code_id) {
                         if let Some(kc) = parse_keycode(code) {
                             match which {
@@ -694,9 +712,10 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             &[ValType::I32],
             &[ValType::I32],
             move |caller, args, out| {
-                let ok = if let (Some(win), Some(btn_id)) =
-                    (caller.data().window.as_ref(), args.get(0).and_then(|v| v.i32()))
-                {
+                let ok = if let (Some(win), Some(btn_id)) = (
+                    caller.data().window.as_ref(),
+                    args.get(0).and_then(|v| v.i32()),
+                ) {
                     if let Some(btn) = caller.data().string_table_get(btn_id) {
                         if let Some(b) = parse_mouse_button(btn) {
                             match which {
@@ -788,7 +807,14 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
         linker,
         "mgstudio_host",
         "asset_update_texture_region_bytes",
-        &[ValType::I32, ValType::I32, ValType::I32, ValType::I32, ValType::I32, ValType::I32],
+        &[
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+        ],
         &[ValType::I32],
         |mut caller, args, out| {
             let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
@@ -862,7 +888,12 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
         &[ValType::I32],
         |caller, args, out| {
             let id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
-            let ok = caller.data().gpu.as_ref().map(|g| g.is_texture_loaded(id)).unwrap_or(false);
+            let ok = caller
+                .data()
+                .gpu
+                .as_ref()
+                .map(|g| g.is_texture_loaded(id))
+                .unwrap_or(false);
             ok_i32(out, if ok { 1 } else { 0 });
             Ok(())
         },
@@ -950,7 +981,12 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
         linker,
         "mgstudio_host",
         "gpu_configure_surface",
-        &[ValType::EXTERNREF, ValType::EXTERNREF, ValType::I32, ValType::I32],
+        &[
+            ValType::EXTERNREF,
+            ValType::EXTERNREF,
+            ValType::I32,
+            ValType::I32,
+        ],
         &[ValType::I32],
         |mut caller, args, out| {
             caller.data().host_trace("host: gpu_configure_surface");
@@ -1108,7 +1144,9 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             let uv_min = (f(10), f(11));
             let uv_max = (f(12), f(13));
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
-                gpu.draw_sprite_uv(texture_id, x, y, rotation, scale_x, scale_y, color, uv_min, uv_max)?;
+                gpu.draw_sprite_uv(
+                    texture_id, x, y, rotation, scale_x, scale_y, color, uv_min, uv_max,
+                )?;
             }
             ok_i32(out, 0);
             Ok(())
@@ -1131,6 +1169,11 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -1145,8 +1188,14 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
             let scale_x = f(4);
             let scale_y = f(5);
             let color = [f(6), f(7), f(8), f(9)];
+            let texture_id = args.get(10).and_then(|v| v.i32()).unwrap_or(-1);
+            let uv_offset = (f(11), f(12));
+            let uv_scale = (f(13), f(14));
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
-                gpu.draw_mesh(mesh_id, x, y, rotation, scale_x, scale_y, color)?;
+                gpu.draw_mesh(
+                    mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_offset,
+                    uv_scale,
+                )?;
             }
             ok_i32(out, 0);
             Ok(())
@@ -1229,48 +1278,173 @@ fn define_mgstudio_host_imports(store: &mut Store<HostState>, linker: &mut Linke
 
     // Remaining imports: keep as no-ops for now (fonts, folders, capsule mesh, gizmo lines, etc).
     for (name, params, results, default_i32) in [
-        ("asset_load_wgsl", vec![ValType::I32], vec![ValType::I32], -1),
-        ("asset_load_font", vec![ValType::I32], vec![ValType::I32], -1),
-        ("asset_font_bytes_len", vec![ValType::I32], vec![ValType::I32], 0),
-        ("asset_font_bytes_get", vec![ValType::I32, ValType::I32], vec![ValType::I32], 0),
-        ("asset_font_bytes_get_u32", vec![ValType::I32, ValType::I32], vec![ValType::I32], 0),
-        ("font_rasterize_glyph", vec![ValType::I32, ValType::F32, ValType::I32, ValType::I32], vec![ValType::I32], -1),
-        ("font_glyph_width", vec![ValType::I32], vec![ValType::I32], 0),
-        ("font_glyph_height", vec![ValType::I32], vec![ValType::I32], 0),
-        ("font_glyph_offset_x", vec![ValType::I32], vec![ValType::I32], 0),
-        ("font_glyph_offset_y", vec![ValType::I32], vec![ValType::I32], 0),
-        ("font_measure_advance", vec![ValType::I32, ValType::F32, ValType::I32], vec![ValType::F32], 0),
-        ("asset_update_texture_region", vec![ValType::I32, ValType::I32, ValType::I32, ValType::I32, ValType::I32, ValType::I32], vec![ValType::I32], 0),
-        ("asset_load_folder", vec![ValType::I32], vec![ValType::I32], -1),
-        ("asset_poll_loaded_folder_event_kind", vec![], vec![ValType::I32], -1),
-        ("asset_poll_loaded_folder_event_id", vec![], vec![ValType::I32], -1),
-        ("asset_loaded_folder_handles_len", vec![ValType::I32], vec![ValType::I32], 0),
-        ("asset_loaded_folder_handles_get", vec![ValType::I32, ValType::I32], vec![ValType::I32], -1),
-        ("gpu_create_mesh_capsule", vec![ValType::F32, ValType::F32, ValType::I32], vec![ValType::I32], -1),
-        ("gpu_draw_gizmo_line", vec![
-            ValType::F32, ValType::F32, ValType::F32, ValType::F32,
-            ValType::F32, ValType::F32, ValType::F32, ValType::F32,
-            ValType::F32, ValType::F32, ValType::F32, ValType::F32,
-            ValType::F32, ValType::I32, ValType::F32, ValType::F32,
-        ], vec![ValType::I32], 0),
+        (
+            "asset_load_wgsl",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "asset_load_font",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "asset_font_bytes_len",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "asset_font_bytes_get",
+            vec![ValType::I32, ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "asset_font_bytes_get_u32",
+            vec![ValType::I32, ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "font_rasterize_glyph",
+            vec![ValType::I32, ValType::F32, ValType::I32, ValType::I32],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "font_glyph_width",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "font_glyph_height",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "font_glyph_offset_x",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "font_glyph_offset_y",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "font_measure_advance",
+            vec![ValType::I32, ValType::F32, ValType::I32],
+            vec![ValType::F32],
+            0,
+        ),
+        (
+            "asset_update_texture_region",
+            vec![
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+            ],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "asset_load_folder",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "asset_poll_loaded_folder_event_kind",
+            vec![],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "asset_poll_loaded_folder_event_id",
+            vec![],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "asset_loaded_folder_handles_len",
+            vec![ValType::I32],
+            vec![ValType::I32],
+            0,
+        ),
+        (
+            "asset_loaded_folder_handles_get",
+            vec![ValType::I32, ValType::I32],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "gpu_create_mesh_capsule",
+            vec![ValType::F32, ValType::F32, ValType::I32],
+            vec![ValType::I32],
+            -1,
+        ),
+        (
+            "gpu_draw_gizmo_line",
+            vec![
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::F32,
+                ValType::I32,
+                ValType::F32,
+                ValType::F32,
+            ],
+            vec![ValType::I32],
+            0,
+        ),
     ] {
         let default0 = default_i32;
         let result0 = results[0].clone();
-        define_func(store, linker, "mgstudio_host", name, &params, &results, move |_caller, _args, out| {
-            match &result0 {
-                ValType::I32 => ok_i32(out, default0),
-                ValType::F32 => ok_f32(out, 0.0),
-                ValType::Ref(_) => ok_externref_null(out),
-                _ => ok_i32(out, default0),
-            }
-            Ok(())
-        })?;
+        define_func(
+            store,
+            linker,
+            "mgstudio_host",
+            name,
+            &params,
+            &results,
+            move |_caller, _args, out| {
+                match &result0 {
+                    ValType::I32 => ok_i32(out, default0),
+                    ValType::F32 => ok_f32(out, 0.0),
+                    ValType::Ref(_) => ok_externref_null(out),
+                    _ => ok_i32(out, default0),
+                }
+                Ok(())
+            },
+        )?;
     }
 
     Ok(())
 }
 
-fn define_moonbit_ffi_imports(store: &mut Store<HostState>, linker: &mut Linker<HostState>) -> anyhow::Result<()> {
+fn define_moonbit_ffi_imports(
+    store: &mut Store<HostState>,
+    linker: &mut Linker<HostState>,
+) -> anyhow::Result<()> {
     // moonbit:ffi.make_closure(funcref, anyref) -> externref
     define_func(
         store,
@@ -1292,7 +1466,13 @@ fn define_moonbit_ffi_imports(store: &mut Store<HostState>, linker: &mut Linker<
 
             let id = caller.data().next_closure_id;
             caller.data_mut().next_closure_id += 1;
-            caller.data_mut().closures.insert(id, ClosureEntry { func, env: env_owned });
+            caller.data_mut().closures.insert(
+                id,
+                ClosureEntry {
+                    func,
+                    env: env_owned,
+                },
+            );
 
             ok_externref_i32(&mut caller, out, id)?;
             Ok(())
@@ -1302,7 +1482,10 @@ fn define_moonbit_ffi_imports(store: &mut Store<HostState>, linker: &mut Linker<
     Ok(())
 }
 
-fn define_spectest_imports(store: &mut Store<HostState>, linker: &mut Linker<HostState>) -> anyhow::Result<()> {
+fn define_spectest_imports(
+    store: &mut Store<HostState>,
+    linker: &mut Linker<HostState>,
+) -> anyhow::Result<()> {
     // Some MoonBit-generated wasm modules import `spectest.print_char` for low-level debug output.
     define_func(
         store,
@@ -1329,10 +1512,19 @@ fn define_func(
     name: &str,
     params: &[ValType],
     results: &[ValType],
-    f: impl for<'a> Fn(Caller<'a, HostState>, &[Val], &mut [Val]) -> anyhow::Result<()> + Send + Sync + 'static,
+    f: impl for<'a> Fn(Caller<'a, HostState>, &[Val], &mut [Val]) -> anyhow::Result<()>
+        + Send
+        + Sync
+        + 'static,
 ) -> anyhow::Result<()> {
-    let ty = FuncType::new(store.engine(), params.iter().cloned(), results.iter().cloned());
-    let func = Func::new(&mut *store, ty, move |caller, args, out| f(caller, args, out));
+    let ty = FuncType::new(
+        store.engine(),
+        params.iter().cloned(),
+        results.iter().cloned(),
+    );
+    let func = Func::new(&mut *store, ty, move |caller, args, out| {
+        f(caller, args, out)
+    });
     linker.define(&mut *store, module, name, func)?;
     Ok(())
 }

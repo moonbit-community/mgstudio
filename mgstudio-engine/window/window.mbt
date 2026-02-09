@@ -369,6 +369,11 @@ pub fn host_gpu_draw_mesh(
   color_g : Float,
   color_b : Float,
   color_a : Float,
+  texture_id : Int,
+  uv_offset_x : Float,
+  uv_offset_y : Float,
+  uv_scale_x : Float,
+  uv_scale_y : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh"
 
 ///|

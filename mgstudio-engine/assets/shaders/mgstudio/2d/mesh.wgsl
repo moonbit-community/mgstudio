@@ -14,6 +14,7 @@
 
 struct VertexOut {
   @builtin(position) position : vec4<f32>,
+  @location(0) uv : vec2<f32>,
 };
 
 struct TransformData {
@@ -25,6 +26,8 @@ struct TransformData {
 };
 
 @group(0) @binding(0) var<uniform> u_transform : TransformData;
+@group(1) @binding(0) var u_texture_sampler : sampler;
+@group(1) @binding(1) var u_texture : texture_2d<f32>;
 
 @vertex
 fn vs_main(@location(0) position : vec2<f32>) -> VertexOut {
@@ -51,11 +54,19 @@ fn vs_main(@location(0) position : vec2<f32>) -> VertexOut {
     view_pos.x * u_transform.scale.x,
     view_pos.y * u_transform.scale.y
   );
+  let uv_base = position + vec2<f32>(0.5, 0.5);
+  out.uv = vec2<f32>(
+    u_transform.uv.x + uv_base.x * u_transform.uv.z,
+    u_transform.uv.y + uv_base.y * u_transform.uv.w,
+  );
   out.position = vec4<f32>(ndc, 0.0, 1.0);
   return out;
 }
 
 @fragment
-fn fs_main() -> @location(0) vec4<f32> {
-  return u_transform.color;
+fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
+  if u_transform.uv.z < 0.0 || u_transform.uv.w < 0.0 {
+    return u_transform.color;
+  }
+  return textureSample(u_texture, u_texture_sampler, in.uv) * u_transform.color;
 }

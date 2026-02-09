@@ -73,8 +73,11 @@ impl NativeWindow {
     pub fn pump_events(&mut self) {
         // Refresh scale factor each pump (can change when moving the window between displays).
         self.scale_factor = self.window.scale_factor();
-        let (should_close, input, scale_factor) =
-            (&mut self.should_close, &mut self.input, &mut self.scale_factor);
+        let (should_close, input, scale_factor) = (
+            &mut self.should_close,
+            &mut self.input,
+            &mut self.scale_factor,
+        );
         let mut handler = PumpHandler {
             should_close,
             input,
@@ -158,14 +161,20 @@ fn handle_window_event(
                 }
             }
         }
-        WindowEvent::ScaleFactorChanged { scale_factor: sf, .. } => {
+        WindowEvent::ScaleFactorChanged {
+            scale_factor: sf, ..
+        } => {
             *scale_factor = sf;
         }
         _ => {}
     }
 }
 
-fn set_cursor_position(input: &mut NativeWindowInput, scale_factor: f64, pos: PhysicalPosition<f64>) {
+fn set_cursor_position(
+    input: &mut NativeWindowInput,
+    scale_factor: f64,
+    pos: PhysicalPosition<f64>,
+) {
     let logical: LogicalPosition<f64> = pos.to_logical(scale_factor);
     input.mouse_x = logical.x as f32;
     input.mouse_y = logical.y as f32;

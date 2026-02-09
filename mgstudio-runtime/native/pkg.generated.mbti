@@ -29,7 +29,8 @@ pub impl Show for GpuBackendError
 
 pub(all) suberror NativeJitSetupError {
   UnsupportedModule(String)
-  JitLoadFailed
+  JitLoadFailed(String)
+  GcSetupFailed(String)
   MemoryInitFailed
   GlobalsAllocFailed
   MissingJitTable(Int)
@@ -121,7 +122,7 @@ pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
-pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError

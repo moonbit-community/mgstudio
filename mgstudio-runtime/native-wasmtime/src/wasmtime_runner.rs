@@ -33,9 +33,8 @@ pub fn run_cart(opts: RunCartOpts) -> anyhow::Result<()> {
     let module = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         Module::from_file(&engine, &opts.cart_path)
     })) {
-        Ok(res) => res.with_context(|| {
-            format!("failed to load wasm module: {}", opts.cart_path.display())
-        })?,
+        Ok(res) => res
+            .with_context(|| format!("failed to load wasm module: {}", opts.cart_path.display()))?,
         Err(_) => {
             // Known issue: Cranelift AArch64 can panic during veneer/island fixups when compiling
             // very large functions in some wasm-gc modules. Convert the panic into a normal
@@ -50,7 +49,10 @@ pub fn run_cart(opts: RunCartOpts) -> anyhow::Result<()> {
         dump_func_imports(&module);
     }
 
-    let mut store = Store::new(&engine, HostState::new(opts.assets, opts.data, opts.trace_host));
+    let mut store = Store::new(
+        &engine,
+        HostState::new(opts.assets, opts.data, opts.trace_host),
+    );
     let mut linker = Linker::new(&engine);
     host::define_imports(&mut store, &mut linker).context("failed to define host imports")?;
 

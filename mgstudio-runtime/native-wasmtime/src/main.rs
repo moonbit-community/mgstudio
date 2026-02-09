@@ -3,11 +3,11 @@ use std::path::PathBuf;
 use anyhow::Context;
 use clap::Parser;
 
-mod source_spec;
-mod host;
-mod wasmtime_runner;
-mod native_window;
 mod gpu_backend;
+mod host;
+mod native_window;
+mod source_spec;
+mod wasmtime_runner;
 
 /// A reference native runtime for mgstudio implemented in Rust (wasmtime + wgpu).
 #[derive(Parser, Debug)]
@@ -42,9 +42,10 @@ fn main() -> anyhow::Result<()> {
         .canonicalize()
         .with_context(|| format!("invalid --cart path: {}", args.cart.display()))?;
 
-    let assets = source_spec::parse_dir_source(&args.assets, ".")
-        .context("invalid --assets source spec")?;
-    let data = source_spec::parse_dir_source(&args.data, "./tmp/data").context("invalid --data source spec")?;
+    let assets =
+        source_spec::parse_dir_source(&args.assets, ".").context("invalid --assets source spec")?;
+    let data = source_spec::parse_dir_source(&args.data, "./tmp/data")
+        .context("invalid --data source spec")?;
 
     wasmtime_runner::run_cart(wasmtime_runner::RunCartOpts {
         cart_path: cart,

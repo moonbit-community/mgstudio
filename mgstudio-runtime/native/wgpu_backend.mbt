@@ -904,9 +904,11 @@ fn ensure_ui_slice_globals_bind_group(
 
 ///|
 fn ensure_mesh_pipeline(backend : GpuBackend) -> Unit raise GpuBackendError {
+  ensure_sprite_resources(backend)
   if backend.mesh_pipeline_layout is None {
+    guard backend.sprite_bgl_tex is Some(bgl_tex) else { return }
     let bgl = backend.device.create_bind_group_layout_uniform_buffer()
-    let pl = backend.device.create_pipeline_layout_1(bgl)
+    let pl = backend.device.create_pipeline_layout_2(bgl, bgl_tex)
     backend.mesh_bgl_uniform = Some(bgl)
     backend.mesh_pipeline_layout = Some(pl)
   }
@@ -1288,10 +1290,11 @@ pub fn GpuBackend::set_texture_sampler(
   for i in 0..<count {
     let info = self.textures.val[i]
     if info.id == texture_id {
-      let sampler = if sampler_kind == 1 {
-        self.device.create_sampler_nearest_clamp()
-      } else {
-        self.device.create_sampler_linear_clamp()
+      let sampler = match sampler_kind {
+        1 => self.device.create_sampler_nearest_clamp()
+        2 => self.device.create_sampler_linear_repeat()
+        3 => self.device.create_sampler_nearest_repeat()
+        _ => self.device.create_sampler_linear_clamp()
       }
       let bg = self.device.create_bind_group_sampler_texture_2d(
         bgl_tex,
@@ -2233,6 +2236,11 @@ pub fn GpuBackend::draw_mesh(
   color_g : Float,
   color_b : Float,
   color_a : Float,
+  texture_id : Int,
+  uv_offset_x : Float,
+  uv_offset_y : Float,
+  uv_scale_x : Float,
+  uv_scale_y : Float,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -2245,6 +2253,9 @@ pub fn GpuBackend::draw_mesh(
   guard mesh_pipeline_for_current_pass(self) is Some(pipeline) else { return }
   guard self.mesh_uniform_buf is Some(uniform_buf) else { return }
   guard self.mesh_uniform_bg is Some(uniform_bg) else { return }
+  let resolved_texture_id = if texture_id < 0 { -1 } else { texture_id }
+  let texture = ensure_fallback_texture(self, resolved_texture_id)
+  let textured = texture_id >= 0
   let safe_scale = ps.camera_scale
   let scale_x_base = if ps.width_logical > 0.0F {
     2.0F / ps.width_logical / safe_scale
@@ -2260,6 +2271,10 @@ pub fn GpuBackend::draw_mesh(
   let sinr = sinf(rotation)
   let cam_cos = cosf(-ps.camera_rot)
   let cam_sin = sinf(-ps.camera_rot)
+  let uv_offset_x_value = if textured { uv_offset_x } else { 0.0F }
+  let uv_offset_y_value = if textured { uv_offset_y } else { 0.0F }
+  let uv_scale_x_value = if textured { uv_scale_x } else { -1.0F }
+  let uv_scale_y_value = if textured { uv_scale_y } else { -1.0F }
   let bytes = f32le_pack([
     x,
     y,
@@ -2277,14 +2292,15 @@ pub fn GpuBackend::draw_mesh(
     color_g,
     color_b,
     color_a,
-    0.0F,
-    0.0F,
-    1.0F,
-    1.0F,
+    uv_offset_x_value,
+    uv_offset_y_value,
+    uv_scale_x_value,
+    uv_scale_y_value,
   ])
   self.queue.write_buffer(uniform_buf, 0UL, bytes)
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, uniform_bg, [])
+  pass.set_bind_group(1U, texture.bind_group, [])
   let vb_bytes = (mesh.vertex_count.reinterpret_as_int() * 8).to_uint64()
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
   let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()

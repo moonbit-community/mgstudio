@@ -338,6 +338,8 @@ pub fn DynamicTextureAtlasBuilder::add_texture(
 pub(all) enum ImageSampler {
   Linear
   Nearest
+  LinearRepeat
+  NearestRepeat
 }
 
 ///|
@@ -351,6 +353,8 @@ pub fn asset_set_texture_sampler(
   let sampler_id = match sampler {
     Linear => 0
     Nearest => 1
+    LinearRepeat => 2
+    NearestRepeat => 3
   }
   host_asset_set_texture_sampler(texture.id(), sampler_id)
 }

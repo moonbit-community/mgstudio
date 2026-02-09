@@ -2259,7 +2259,42 @@ pub fn add_mgstudio_host_imports(
           args[7] is @types.Value::F32(g) &&
           args[8] is @types.Value::F32(b) &&
           args[9] is @types.Value::F32(a) {
-          ctx.gpu.unwrap().draw_mesh(mesh_id, x, y, rot, sx, sy, r, g, b, a)
+          let texture_id = if args.length() > 10 &&
+            args[10] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let uv_offset_x = if args.length() > 11 &&
+            args[11] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let uv_offset_y = if args.length() > 12 &&
+            args[12] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let uv_scale_x = if args.length() > 13 &&
+            args[13] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let uv_scale_y = if args.length() > 14 &&
+            args[14] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          ctx.gpu
+          .unwrap()
+          .draw_mesh(
+            mesh_id, x, y, rot, sx, sy, r, g, b, a, texture_id, uv_offset_x, uv_offset_y,
+            uv_scale_x, uv_scale_y,
+          )
         }
         ok_i32(0)
       } catch {
@@ -2277,6 +2312,11 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,

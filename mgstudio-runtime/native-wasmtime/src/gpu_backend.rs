@@ -101,6 +101,9 @@ struct MeshDraw {
     scale_x: f32,
     scale_y: f32,
     color: [f32; 4],
+    texture_id: i32,
+    uv_offset: [f32; 2],
+    uv_scale: [f32; 2],
     ubo_offset: u32, // computed during encoding
 }
 
@@ -194,7 +197,10 @@ impl GpuBackend {
         &self.device
     }
 
-    pub fn create_surface_from_window(&self, window: Arc<Window>) -> anyhow::Result<wgpu::Surface<'static>> {
+    pub fn create_surface_from_window(
+        &self,
+        window: Arc<Window>,
+    ) -> anyhow::Result<wgpu::Surface<'static>> {
         // Keep an Arc clone alive inside the Surface handle source so the surface remains valid.
         let surface: wgpu::Surface<'static> = self
             .instance
@@ -222,8 +228,16 @@ impl GpuBackend {
 
         let caps = surface.get_capabilities(&self.adapter);
         let format = pick_surface_format(&caps);
-        let present_mode = caps.present_modes.first().copied().unwrap_or(wgpu::PresentMode::Fifo);
-        let alpha_mode = caps.alpha_modes.first().copied().unwrap_or(wgpu::CompositeAlphaMode::Auto);
+        let present_mode = caps
+            .present_modes
+            .first()
+            .copied()
+            .unwrap_or(wgpu::PresentMode::Fifo);
+        let alpha_mode = caps
+            .alpha_modes
+            .first()
+            .copied()
+            .unwrap_or(wgpu::CompositeAlphaMode::Auto);
 
         // Match mgstudio native runtime: surfaces must be renderable and copyable out.
         let usage = wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC;
@@ -299,7 +313,9 @@ impl GpuBackend {
             self.end_pass()?;
         }
 
-        let Some(mut frame) = self.frame.take() else { return Ok(()) };
+        let Some(mut frame) = self.frame.take() else {
+            return Ok(());
+        };
         let cmd = frame.encoder.finish();
         self.queue.submit(Some(cmd));
 
@@ -324,7 +340,9 @@ impl GpuBackend {
         camera_scale: f32,
         viewport: (i32, i32, i32, i32),
     ) -> anyhow::Result<()> {
-        let Some(_frame) = self.frame.as_ref() else { return Ok(()) };
+        let Some(_frame) = self.frame.as_ref() else {
+            return Ok(());
+        };
 
         // If a pass is already open, end it (matching native runtime behavior).
         if self.pass.is_some() {
@@ -339,7 +357,11 @@ impl GpuBackend {
 
         let width_logical = width_logical.max(1) as f32;
         let height_logical = height_logical.max(1) as f32;
-        let camera_scale = if camera_scale == 0.0 { 1.0 } else { camera_scale };
+        let camera_scale = if camera_scale == 0.0 {
+            1.0
+        } else {
+            camera_scale
+        };
 
         let target_format = self.target_format_for_id(target_id)?;
         let st = GpuPassState {
@@ -375,7 +397,9 @@ impl GpuBackend {
     }
 
     pub fn end_pass(&mut self) -> anyhow::Result<()> {
-        let Some(mut pass) = self.pass.take() else { return Ok(()) };
+        let Some(mut pass) = self.pass.take() else {
+            return Ok(());
+        };
         pass.flush_sprites();
 
         // Collect sprite segments (by reference) to prepare storage buffer + per-segment bind groups.
@@ -399,14 +423,24 @@ impl GpuBackend {
 
         // Clone wgpu handles so we don't hold long-lived borrows across the encoding phase.
         let sprite_pipeline = if pass.st.target_format == wgpu::TextureFormat::Rgba8Unorm {
-            self.sprite.pipeline_rgba8.as_ref().expect("sprite rgba8 pipeline").clone()
+            self.sprite
+                .pipeline_rgba8
+                .as_ref()
+                .expect("sprite rgba8 pipeline")
+                .clone()
         } else {
-            self.sprite.pipeline_surface.as_ref().expect("sprite surface pipeline").clone()
+            self.sprite
+                .pipeline_surface
+                .as_ref()
+                .expect("sprite surface pipeline")
+                .clone()
         };
         let mesh_pipeline = self.mesh.pipelines.get(&pass.st.target_format).cloned();
         let mesh_bg = self.mesh.uniform_bg.as_ref().cloned();
 
-        let Some(mut frame) = self.frame.take() else { return Ok(()) };
+        let Some(mut frame) = self.frame.take() else {
+            return Ok(());
+        };
         let target_view: &wgpu::TextureView = if pass.st.target_id == -1 {
             match frame.surface_view.as_ref() {
                 Some(v) => v,
@@ -426,27 +460,29 @@ impl GpuBackend {
         };
 
         {
-            let mut rp = frame.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("mgstudio-pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: target_view,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: pass.st.clear[0] as f64,
-                            g: pass.st.clear[1] as f64,
-                            b: pass.st.clear[2] as f64,
-                            a: pass.st.clear[3] as f64,
-                        }),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
+            let mut rp = frame
+                .encoder
+                .begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("mgstudio-pass"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: target_view,
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color {
+                                r: pass.st.clear[0] as f64,
+                                g: pass.st.clear[1] as f64,
+                                b: pass.st.clear[2] as f64,
+                                a: pass.st.clear[3] as f64,
+                            }),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
 
             rp.set_viewport(
                 pass.st.viewport_x as f32,
@@ -470,22 +506,38 @@ impl GpuBackend {
                         if seg.instance_count == 0 {
                             continue;
                         }
-                        let Some(bg) = sprite_segment_bgs.get(seg_i) else { break };
+                        let Some(bg) = sprite_segment_bgs.get(seg_i) else {
+                            break;
+                        };
                         seg_i += 1;
 
                         rp.set_pipeline(&sprite_pipeline);
                         rp.set_bind_group(1, bg, &[]);
                         for batch in &seg.batches {
-                            let Some(tex) = self.textures.get(&batch.texture_id) else { continue };
+                            let Some(tex) = self.textures.get(&batch.texture_id) else {
+                                continue;
+                            };
                             rp.set_bind_group(0, &tex.bind_group, &[]);
-                            rp.draw(0..6, batch.first_instance..(batch.first_instance + batch.instance_count));
+                            rp.draw(
+                                0..6,
+                                batch.first_instance..(batch.first_instance + batch.instance_count),
+                            );
                         }
                     }
                     DrawCmd::Mesh(draw) => {
-                        let (Some(pipeline), Some(bg)) = (mesh_pipeline.as_ref(), mesh_bg.as_ref()) else { continue };
-                        let Some(mesh) = self.meshes.get(&draw.mesh_id) else { continue };
+                        let (Some(pipeline), Some(bg)) = (mesh_pipeline.as_ref(), mesh_bg.as_ref())
+                        else {
+                            continue;
+                        };
+                        let Some(mesh) = self.meshes.get(&draw.mesh_id) else {
+                            continue;
+                        };
+                        let Some(tex) = self.textures.get(&draw.texture_id) else {
+                            continue;
+                        };
                         rp.set_pipeline(pipeline);
                         rp.set_bind_group(0, bg, &[draw.ubo_offset]);
+                        rp.set_bind_group(1, &tex.bind_group, &[]);
                         rp.set_vertex_buffer(0, mesh.vertex_buf.slice(..));
                         rp.set_index_buffer(mesh.index_buf.slice(..), wgpu::IndexFormat::Uint16);
                         rp.draw_indexed(0..mesh.index_count, 0, 0..1);
@@ -520,18 +572,36 @@ impl GpuBackend {
             None => return Ok(()),
         };
 
-        let Some(pass) = self.pass.as_mut() else { return Ok(()) };
+        let Some(pass) = self.pass.as_mut() else {
+            return Ok(());
+        };
 
         // Match native runtime's sprite sizing convention (base quad is 128x128).
         let raw_uv_scale_x = uv_max.0 - uv_min.0;
         let raw_uv_scale_y = uv_max.1 - uv_min.1;
-        let uv_scale_x = if raw_uv_scale_x <= 0.0 { 1.0 } else { raw_uv_scale_x };
-        let uv_scale_y = if raw_uv_scale_y <= 0.0 { 1.0 } else { raw_uv_scale_y };
+        let uv_scale_x = if raw_uv_scale_x <= 0.0 {
+            1.0
+        } else {
+            raw_uv_scale_x
+        };
+        let uv_scale_y = if raw_uv_scale_y <= 0.0 {
+            1.0
+        } else {
+            raw_uv_scale_y
+        };
         let region_w = tex_w as f32 * uv_scale_x;
         let region_h = tex_h as f32 * uv_scale_y;
         let base_size = 128.0f32;
-        let tex_scale_x = if region_w > 0.0 { region_w / base_size } else { 1.0 };
-        let tex_scale_y = if region_h > 0.0 { region_h / base_size } else { 1.0 };
+        let tex_scale_x = if region_w > 0.0 {
+            region_w / base_size
+        } else {
+            1.0
+        };
+        let tex_scale_y = if region_h > 0.0 {
+            region_h / base_size
+        } else {
+            1.0
+        };
         let sprite_scale_x = scale_x * tex_scale_x;
         let sprite_scale_y = scale_y * tex_scale_y;
 
@@ -584,11 +654,29 @@ impl GpuBackend {
         scale_x: f32,
         scale_y: f32,
         color: [f32; 4],
+        texture_id: i32,
+        uv_offset: (f32, f32),
+        uv_scale: (f32, f32),
     ) -> anyhow::Result<()> {
-        let Some(pass) = self.pass.as_mut() else { return Ok(()) };
         if self.frame.is_none() {
             return Ok(());
         }
+        let textured = texture_id >= 0;
+        let requested_texture_id = if textured { texture_id } else { -1 };
+        let resolved_texture_id = self.ensure_fallback_texture(requested_texture_id)?;
+        let uv_offset = if textured {
+            [uv_offset.0, uv_offset.1]
+        } else {
+            [0.0, 0.0]
+        };
+        let uv_scale = if textured {
+            [uv_scale.0, uv_scale.1]
+        } else {
+            [-1.0, -1.0]
+        };
+        let Some(pass) = self.pass.as_mut() else {
+            return Ok(());
+        };
         pass.flush_sprites();
         pass.commands.push(DrawCmd::Mesh(MeshDraw {
             mesh_id,
@@ -598,6 +686,9 @@ impl GpuBackend {
             scale_x,
             scale_y,
             color,
+            texture_id: resolved_texture_id,
+            uv_offset,
+            uv_scale,
             ubo_offset: 0,
         }));
         Ok(())
@@ -611,16 +702,20 @@ impl GpuBackend {
         let vertices: [f32; 8] = [-hw, -hh, hw, -hh, hw, hh, -hw, hh];
         let indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
-        let vb = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("mgstudio-mesh-rect-vb"),
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
-        let ib = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("mgstudio-mesh-rect-ib"),
-            contents: bytemuck::cast_slice(&indices),
-            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-        });
+        let vb = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("mgstudio-mesh-rect-vb"),
+                contents: bytemuck::cast_slice(&vertices),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        let ib = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("mgstudio-mesh-rect-ib"),
+                contents: bytemuck::cast_slice(&indices),
+                usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+            });
         self.meshes.insert(
             id,
             GpuMesh {
@@ -649,16 +744,20 @@ impl GpuBackend {
         }
         let id = self.next_mesh_id;
         self.next_mesh_id += 1;
-        let vb = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("mgstudio-mesh-tris-vb"),
-            contents: bytemuck::cast_slice(trimmed),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
-        let ib = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("mgstudio-mesh-tris-ib"),
-            contents: bytemuck::cast_slice(indices.as_slice()),
-            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-        });
+        let vb = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("mgstudio-mesh-tris-vb"),
+                contents: bytemuck::cast_slice(trimmed),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        let ib = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("mgstudio-mesh-tris-ib"),
+                contents: bytemuck::cast_slice(indices.as_slice()),
+                usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+            });
         self.meshes.insert(
             id,
             GpuMesh {
@@ -671,7 +770,13 @@ impl GpuBackend {
         id
     }
 
-    pub fn create_texture_rgba8(&mut self, width: u32, height: u32, pixels_rgba8: &[u8], nearest: bool) -> anyhow::Result<i32> {
+    pub fn create_texture_rgba8(
+        &mut self,
+        width: u32,
+        height: u32,
+        pixels_rgba8: &[u8],
+        nearest: bool,
+    ) -> anyhow::Result<i32> {
         self.ensure_sprite_resources()?;
         let id = self.next_texture_id;
         self.next_texture_id += 1;
@@ -679,11 +784,23 @@ impl GpuBackend {
         Ok(id)
     }
 
-    pub fn create_render_target(&mut self, width: u32, height: u32, nearest: bool) -> anyhow::Result<i32> {
+    pub fn create_render_target(
+        &mut self,
+        width: u32,
+        height: u32,
+        nearest: bool,
+    ) -> anyhow::Result<i32> {
         self.ensure_sprite_resources()?;
         let id = self.next_texture_id;
         self.next_texture_id += 1;
-        self.create_texture_rgba8_with_id(id, width, height, &vec![0u8; (width.max(1) * height.max(1) * 4) as usize], nearest, true)?;
+        self.create_texture_rgba8_with_id(
+            id,
+            width,
+            height,
+            &vec![0u8; (width.max(1) * height.max(1) * 4) as usize],
+            nearest,
+            true,
+        )?;
         Ok(id)
     }
 
@@ -692,7 +809,10 @@ impl GpuBackend {
     }
 
     pub fn texture_height(&self, texture_id: i32) -> u32 {
-        self.textures.get(&texture_id).map(|t| t.height).unwrap_or(0)
+        self.textures
+            .get(&texture_id)
+            .map(|t| t.height)
+            .unwrap_or(0)
     }
 
     pub fn is_texture_loaded(&self, texture_id: i32) -> bool {
@@ -708,7 +828,9 @@ impl GpuBackend {
         height: u32,
         pixels_rgba8: &[u8],
     ) -> anyhow::Result<()> {
-        let Some(tex) = self.textures.get(&texture_id) else { return Ok(()) };
+        let Some(tex) = self.textures.get(&texture_id) else {
+            return Ok(());
+        };
         let expected = (width * height * 4) as usize;
         if pixels_rgba8.len() < expected {
             return Ok(());
@@ -735,12 +857,24 @@ impl GpuBackend {
         Ok(())
     }
 
-    pub fn copy_texture_to_texture(&mut self, dst_texture_id: i32, dst_x: u32, dst_y: u32, src_texture_id: i32) -> anyhow::Result<()> {
-        let Some(dst) = self.textures.get(&dst_texture_id) else { return Ok(()) };
-        let Some(src) = self.textures.get(&src_texture_id) else { return Ok(()) };
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("mgstudio-copy-texture"),
-        });
+    pub fn copy_texture_to_texture(
+        &mut self,
+        dst_texture_id: i32,
+        dst_x: u32,
+        dst_y: u32,
+        src_texture_id: i32,
+    ) -> anyhow::Result<()> {
+        let Some(dst) = self.textures.get(&dst_texture_id) else {
+            return Ok(());
+        };
+        let Some(src) = self.textures.get(&src_texture_id) else {
+            return Ok(());
+        };
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("mgstudio-copy-texture"),
+            });
         let w = src.width.min(dst.width.saturating_sub(dst_x));
         let h = src.height.min(dst.height.saturating_sub(dst_y));
         if w == 0 || h == 0 {
@@ -756,7 +890,11 @@ impl GpuBackend {
             wgpu::TexelCopyTextureInfo {
                 texture: &dst.texture,
                 mip_level: 0,
-                origin: wgpu::Origin3d { x: dst_x, y: dst_y, z: 0 },
+                origin: wgpu::Origin3d {
+                    x: dst_x,
+                    y: dst_y,
+                    z: 0,
+                },
                 aspect: wgpu::TextureAspect::All,
             },
             wgpu::Extent3d {
@@ -770,20 +908,31 @@ impl GpuBackend {
         Ok(())
     }
 
-    pub fn set_texture_sampler(&mut self, texture_id: i32, sampler_kind: i32) -> anyhow::Result<()> {
-        // 0 = linear, otherwise nearest (best-effort; matches current engine usage).
-        let nearest = sampler_kind != 0;
+    pub fn set_texture_sampler(
+        &mut self,
+        texture_id: i32,
+        sampler_kind: i32,
+    ) -> anyhow::Result<()> {
+        let nearest = sampler_kind == 1 || sampler_kind == 3;
+        let repeat = sampler_kind == 2 || sampler_kind == 3;
+        let address_mode = if repeat {
+            wgpu::AddressMode::Repeat
+        } else {
+            wgpu::AddressMode::ClampToEdge
+        };
         self.ensure_sprite_resources()?;
-        let Some(tex) = self.textures.get_mut(&texture_id) else { return Ok(()) };
+        let Some(tex) = self.textures.get_mut(&texture_id) else {
+            return Ok(());
+        };
         let sampler = if nearest {
             self.device.create_sampler(&wgpu::SamplerDescriptor {
                 label: Some("mgstudio-sampler-nearest"),
                 mag_filter: wgpu::FilterMode::Nearest,
                 min_filter: wgpu::FilterMode::Nearest,
                 mipmap_filter: wgpu::MipmapFilterMode::Nearest,
-                address_mode_u: wgpu::AddressMode::ClampToEdge,
-                address_mode_v: wgpu::AddressMode::ClampToEdge,
-                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                address_mode_u: address_mode,
+                address_mode_v: address_mode,
+                address_mode_w: address_mode,
                 ..Default::default()
             })
         } else {
@@ -792,9 +941,9 @@ impl GpuBackend {
                 mag_filter: wgpu::FilterMode::Linear,
                 min_filter: wgpu::FilterMode::Linear,
                 mipmap_filter: wgpu::MipmapFilterMode::Linear,
-                address_mode_u: wgpu::AddressMode::ClampToEdge,
-                address_mode_v: wgpu::AddressMode::ClampToEdge,
-                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                address_mode_u: address_mode,
+                address_mode_v: address_mode,
+                address_mode_w: address_mode,
                 ..Default::default()
             })
         };
@@ -839,7 +988,9 @@ impl GpuBackend {
                 | wgpu::TextureUsages::COPY_SRC
                 | wgpu::TextureUsages::RENDER_ATTACHMENT
         } else {
-            wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::COPY_SRC
+            wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC
         };
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("mgstudio-texture"),
@@ -941,7 +1092,8 @@ impl GpuBackend {
 
     fn target_format_for_id(&self, target_id: i32) -> anyhow::Result<wgpu::TextureFormat> {
         if target_id == -1 {
-            self.surface_format.ok_or_else(|| anyhow!("wgpu: surface not configured"))
+            self.surface_format
+                .ok_or_else(|| anyhow!("wgpu: surface not configured"))
         } else {
             self.textures
                 .get(&target_id)
@@ -989,60 +1141,66 @@ impl GpuBackend {
         }
 
         // group(0): sampler + texture
-        let bgl_tex = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("mgstudio_sprite_tex_bgl"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
+        let bgl_tex = self
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("mgstudio_sprite_tex_bgl"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        });
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                ],
+            });
 
         // group(1): globals uniform + instances storage
-        let bgl_globals = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("mgstudio_sprite_globals_bgl"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+        let bgl_globals = self
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("mgstudio_sprite_globals_bgl"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-            ],
-        });
+                ],
+            });
 
-        let pipeline_layout = self.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("mgstudio_sprite_pl"),
-            bind_group_layouts: &[&bgl_tex, &bgl_globals],
-            immediate_size: 0,
-        });
+        let pipeline_layout = self
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("mgstudio_sprite_pl"),
+                bind_group_layouts: &[&bgl_tex, &bgl_globals],
+                immediate_size: 0,
+            });
 
         let globals_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("mgstudio_sprite_globals"),
@@ -1081,47 +1239,56 @@ impl GpuBackend {
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: sprite pipeline layout not initialized"))?;
         let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/sprite.wgsl")?;
-        let sm = self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("mgstudio_sprite_wgsl"),
-            source: wgpu::ShaderSource::Wgsl(wgsl.into()),
-        });
-        let pipeline = self.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("mgstudio_sprite_rgba8"),
-            layout: Some(pl),
-            vertex: wgpu::VertexState {
-                module: &sm,
-                entry_point: Some("vs_main"),
-                compilation_options: Default::default(),
-                buffers: &[],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &sm,
-                entry_point: Some("fs_main"),
-                compilation_options: Default::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                ..Default::default()
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview_mask: None,
-            cache: None,
-        });
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_sprite_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_sprite_rgba8"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fs_main"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
         self.sprite.pipeline_rgba8 = Some(pipeline);
         Ok(())
     }
 
-    fn ensure_sprite_pipeline_for_format(&mut self, format: wgpu::TextureFormat) -> anyhow::Result<()> {
+    fn ensure_sprite_pipeline_for_format(
+        &mut self,
+        format: wgpu::TextureFormat,
+    ) -> anyhow::Result<()> {
         if format == wgpu::TextureFormat::Rgba8Unorm {
             return self.ensure_sprite_pipeline_rgba8();
         }
-        if self.sprite.pipeline_surface_format == Some(format) && self.sprite.pipeline_surface.is_some() {
+        if self.sprite.pipeline_surface_format == Some(format)
+            && self.sprite.pipeline_surface.is_some()
+        {
             return Ok(());
         }
 
@@ -1131,45 +1298,51 @@ impl GpuBackend {
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: sprite pipeline layout not initialized"))?;
         let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/sprite.wgsl")?;
-        let sm = self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("mgstudio_sprite_wgsl_surface"),
-            source: wgpu::ShaderSource::Wgsl(wgsl.into()),
-        });
-        let pipeline = self.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("mgstudio_sprite_surface"),
-            layout: Some(pl),
-            vertex: wgpu::VertexState {
-                module: &sm,
-                entry_point: Some("vs_main"),
-                compilation_options: Default::default(),
-                buffers: &[],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &sm,
-                entry_point: Some("fs_main"),
-                compilation_options: Default::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                ..Default::default()
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview_mask: None,
-            cache: None,
-        });
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_sprite_wgsl_surface"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_sprite_surface"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fs_main"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
         self.sprite.pipeline_surface = Some(pipeline);
         self.sprite.pipeline_surface_format = Some(format);
         Ok(())
     }
 
     fn write_sprite_globals(&self, st: &GpuPassState) {
-        let Some(buf) = self.sprite.globals_buf.as_ref() else { return };
+        let Some(buf) = self.sprite.globals_buf.as_ref() else {
+            return;
+        };
         let safe_scale = st.camera_scale;
         let scale_x_base = if st.width_logical > 0.0 {
             2.0 / st.width_logical / safe_scale
@@ -1193,7 +1366,8 @@ impl GpuBackend {
             0.0,
             0.0,
         ];
-        self.queue.write_buffer(buf, 0, bytemuck::cast_slice(&globals));
+        self.queue
+            .write_buffer(buf, 0, bytemuck::cast_slice(&globals));
     }
 
     fn prepare_sprite_segments(
@@ -1296,35 +1470,50 @@ impl GpuBackend {
 
         for batch in &seg.batches {
             let id = self.ensure_fallback_texture(batch.texture_id)?;
-            let Some(tg) = self.textures.get(&id) else { continue };
+            let Some(tg) = self.textures.get(&id) else {
+                continue;
+            };
             rp.set_bind_group(0, &tg.bind_group, &[]);
-            rp.draw(0..6, batch.first_instance..(batch.first_instance + batch.instance_count));
+            rp.draw(
+                0..6,
+                batch.first_instance..(batch.first_instance + batch.instance_count),
+            );
         }
         Ok(())
     }
 
     fn ensure_mesh_resources(&mut self) -> anyhow::Result<()> {
+        self.ensure_sprite_resources()?;
         if self.mesh.pipeline_layout.is_some() {
             return Ok(());
         }
-        let bgl_uniform = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("mgstudio_mesh_uniform_bgl"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: true,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-        });
-        let pl = self.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("mgstudio_mesh_pl"),
-            bind_group_layouts: &[&bgl_uniform],
-            immediate_size: 0,
-        });
+        let bgl_tex = self
+            .sprite
+            .bgl_tex
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: sprite texture bind group layout not initialized"))?;
+        let bgl_uniform = self
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("mgstudio_mesh_uniform_bgl"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: true,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+        let pl = self
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("mgstudio_mesh_pl"),
+                bind_group_layouts: &[&bgl_uniform, bgl_tex],
+                immediate_size: 0,
+            });
         let cap = 256u64; // will grow on demand (alignment is at least 256 on Metal)
         let uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("mgstudio_mesh_uniform_buf"),
@@ -1363,10 +1552,12 @@ impl GpuBackend {
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: mesh pipeline layout missing"))?;
         let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/mesh.wgsl")?;
-        let sm = self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("mgstudio_mesh_wgsl"),
-            source: wgpu::ShaderSource::Wgsl(wgsl.into()),
-        });
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_mesh_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
         let vb_layout = wgpu::VertexBufferLayout {
             array_stride: 8,
             step_mode: wgpu::VertexStepMode::Vertex,
@@ -1376,41 +1567,47 @@ impl GpuBackend {
                 format: wgpu::VertexFormat::Float32x2,
             }],
         };
-        let pipeline = self.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("mgstudio_mesh_pipeline"),
-            layout: Some(pl),
-            vertex: wgpu::VertexState {
-                module: &sm,
-                entry_point: Some("vs_main"),
-                compilation_options: Default::default(),
-                buffers: &[vb_layout],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &sm,
-                entry_point: Some("fs_main"),
-                compilation_options: Default::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                ..Default::default()
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview_mask: None,
-            cache: None,
-        });
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_mesh_pipeline"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[vb_layout],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fs_main"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
         self.mesh.pipelines.insert(format, pipeline);
         Ok(())
     }
 
     fn prepare_mesh_uniforms(&mut self, pass: &mut GpuPassRecorder) -> anyhow::Result<()> {
         // Assign dynamic offsets for each mesh draw (alignment is backend-limited).
-        let align = self.device.limits().min_uniform_buffer_offset_alignment.max(256) as u64;
+        let align = self
+            .device
+            .limits()
+            .min_uniform_buffer_offset_alignment
+            .max(256) as u64;
         let mut buf: Vec<u8> = Vec::new();
 
         for cmd in &mut pass.commands {
@@ -1484,7 +1681,9 @@ impl GpuBackend {
             .uniform_bg
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: missing mesh uniform bind group"))?;
-        let Some(mesh) = self.meshes.get(&draw.mesh_id) else { return Ok(()) };
+        let Some(mesh) = self.meshes.get(&draw.mesh_id) else {
+            return Ok(());
+        };
 
         rp.set_pipeline(pipeline);
         rp.set_bind_group(0, bg, &[draw.ubo_offset]);
@@ -1512,20 +1711,29 @@ impl GpuPassRecorder {
 fn pick_surface_format(caps: &wgpu::SurfaceCapabilities) -> wgpu::TextureFormat {
     // Prefer SRGB formats when available (common on Metal).
     for f in caps.formats.iter().copied() {
-        if matches!(f, wgpu::TextureFormat::Bgra8UnormSrgb | wgpu::TextureFormat::Rgba8UnormSrgb) {
+        if matches!(
+            f,
+            wgpu::TextureFormat::Bgra8UnormSrgb | wgpu::TextureFormat::Rgba8UnormSrgb
+        ) {
             return f;
         }
     }
-    caps.formats.first().copied().unwrap_or(wgpu::TextureFormat::Bgra8UnormSrgb)
+    caps.formats
+        .first()
+        .copied()
+        .unwrap_or(wgpu::TextureFormat::Bgra8UnormSrgb)
 }
 
 fn load_wgsl_required(assets_base: &str, rel: &str) -> anyhow::Result<String> {
     let base = assets_base.trim();
     if base.is_empty() {
-        return Err(anyhow!("wgpu: assets_base is empty; cannot load shader: {rel}"));
+        return Err(anyhow!(
+            "wgpu: assets_base is empty; cannot load shader: {rel}"
+        ));
     }
     let full = std::path::Path::new(base).join(rel.trim_start_matches('/'));
-    std::fs::read_to_string(&full).with_context(|| format!("wgpu: failed to read shader: {}", full.display()))
+    std::fs::read_to_string(&full)
+        .with_context(|| format!("wgpu: failed to read shader: {}", full.display()))
 }
 
 fn align_up(v: u64, align: u64) -> u64 {
@@ -1569,10 +1777,10 @@ fn mesh_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> [u8; 80] {
         draw.color[1],
         draw.color[2],
         draw.color[3],
-        0.0,
-        0.0,
-        1.0,
-        1.0,
+        draw.uv_offset[0],
+        draw.uv_offset[1],
+        draw.uv_scale[0],
+        draw.uv_scale[1],
     ];
     let mut out = [0u8; 80];
     out.copy_from_slice(bytemuck::cast_slice(&floats));

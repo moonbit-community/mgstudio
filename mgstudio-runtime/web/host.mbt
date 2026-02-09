@@ -2110,18 +2110,49 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
 }
 
 ///|
-fn create_sampler(state : State, nearest : Bool) -> @webgpu.GPUSampler? {
+fn sampler_kind_from_nearest(nearest : Bool) -> Int {
+  if nearest {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn sampler_kind_is_nearest(sampler_kind : Int) -> Bool {
+  sampler_kind == 1 || sampler_kind == 3
+}
+
+///|
+fn sampler_kind_is_repeat(sampler_kind : Int) -> Bool {
+  sampler_kind == 2 || sampler_kind == 3
+}
+
+///|
+fn create_sampler(state : State, sampler_kind : Int) -> @webgpu.GPUSampler? {
   if state.gpu.device is None {
     return None
   }
   if state.gpu.device is Some(device) {
-    let filter = if nearest {
+    let filter = if sampler_kind_is_nearest(sampler_kind) {
       @webgpu.FilterMode::Nearest
     } else {
       @webgpu.FilterMode::Linear
     }
-    let descriptor = @webgpu.sampler_descriptor(filter, filter)
-    Some(device.create_sampler(descriptor.to_js()))
+    let address_mode = if sampler_kind_is_repeat(sampler_kind) {
+      "repeat"
+    } else {
+      "clamp-to-edge"
+    }
+    let descriptor = @js.from_entries([
+      ("magFilter", @js.any(filter.to_js_string())),
+      ("minFilter", @js.any(filter.to_js_string())),
+      ("mipmapFilter", @js.any(filter.to_js_string())),
+      ("addressModeU", @js.any(address_mode)),
+      ("addressModeV", @js.any(address_mode)),
+      ("addressModeW", @js.any(address_mode)),
+    ])
+    Some(device.create_sampler(descriptor))
   } else {
     None
   }
@@ -2210,7 +2241,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
       fallback_size,
       fallback_size,
     )
-    let sampler = create_sampler(state, true)
+    let sampler = create_sampler(state, sampler_kind_from_nearest(true))
     if sampler is Some(sampler_value) {
       let entry = @js.from_entries([
         ("id", @js.any(state.gpu.fallback_texture_id)),
@@ -3103,7 +3134,7 @@ async fn load_texture_from_path(
       width,
       height,
     )
-    let sampler = create_sampler(state, nearest)
+    let sampler = create_sampler(state, sampler_kind_from_nearest(nearest))
     if sampler is Some(sampler_value) {
       let entry = @js.from_entries([
         ("id", @js.any(id)),
@@ -4143,6 +4174,11 @@ fn draw_mesh(
   g : Double,
   b : Double,
   a : Double,
+  texture_id : Int,
+  uv_offset_x : Double,
+  uv_offset_y : Double,
+  uv_scale_x : Double,
+  uv_scale_y : Double,
 ) -> Unit {
   report_debug_once(
     state,
@@ -4165,6 +4201,16 @@ fn draw_mesh(
     b.to_string() +
     "," +
     a.to_string() +
+    ") texture=" +
+    texture_id.to_string() +
+    " uv_offset=(" +
+    uv_offset_x.to_string() +
+    "," +
+    uv_offset_y.to_string() +
+    ") uv_scale=(" +
+    uv_scale_x.to_string() +
+    "," +
+    uv_scale_y.to_string() +
     ")",
   )
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
@@ -4190,8 +4236,19 @@ fn draw_mesh(
     )
     return
   }
+  let textured = texture_id >= 0
+  let mesh_texture_id = if textured {
+    texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let texture_entry = get_texture_entry(state, mesh_texture_id)
+  if texture_entry is None {
+    return
+  }
   if state.gpu.current_pass is Some(pass) &&
-    state.gpu.current_pass_info is Some(info) {
+    state.gpu.current_pass_info is Some(info) &&
+    texture_entry is Some(texture_entry_value) {
     let safe_scale = if info.cam_scale == 0 { 1.0 } else { info.cam_scale }
     let scale_x_base = if info.width > 0 {
       2.0 / info.width / safe_scale
@@ -4216,6 +4273,10 @@ fn draw_mesh(
     let sin_value : Double = math_sin(rotation)
     let cam_cos : Double = math_cos(-info.cam_rotation)
     let cam_sin : Double = math_sin(-info.cam_rotation)
+    let uv0_x = if textured { uv_offset_x } else { 0.0 }
+    let uv0_y = if textured { uv_offset_y } else { 0.0 }
+    let uvs_x = if textured { uv_scale_x } else { -1.0 }
+    let uvs_y = if textured { uv_scale_y } else { -1.0 }
     update_uniform_buffer(state, [
       x,
       y,
@@ -4233,15 +4294,22 @@ fn draw_mesh(
       g,
       b,
       a,
-      0.0,
-      0.0,
-      1.0,
-      1.0,
+      uv0_x,
+      uv0_y,
+      uvs_x,
+      uvs_y,
     ])
+    ensure_bind_group_for_texture(state, texture_entry_value)
+    let texture_bind_group_any = texture_entry_value._get("bindGroup")
+    if host_is_nullish(texture_bind_group_any) {
+      return
+    }
+    let texture_bind_group : @webgpu.GPUBindGroup = texture_bind_group_any.cast()
     if state.gpu.mesh_pipeline is Some(mesh_pipeline) &&
       state.gpu.mesh_bind_group is Some(mesh_bind_group) {
       pass.set_pipeline(mesh_pipeline)
       pass.set_bind_group(0, mesh_bind_group)
+      pass.set_bind_group(1, texture_bind_group)
       let vertex_buffer : @webgpu.GPUBuffer = mesh_entry
         ._get("vertexBuffer")
         .cast()
@@ -5056,8 +5124,8 @@ pub fn create_host(
     if host_is_nullish(entry) {
       return
     }
-    let nearest = number_or(sampler_kind, 0) != 0
-    let sampler = create_sampler(state, nearest)
+    let kind = to_int(number_or(sampler_kind, 0))
+    let sampler = create_sampler(state, kind)
     if sampler is Some(sampler_value) {
       entry._set("sampler", sampler_value.as_any()) |> ignore
       entry._set("bindGroup", js_null()) |> ignore
@@ -5111,7 +5179,10 @@ pub fn create_host(
         0,
         0,
       )
-      let sampler = create_sampler(state, number_or(nearest, 0) != 0)
+      let sampler = create_sampler(
+        state,
+        sampler_kind_from_nearest(number_or(nearest, 0) != 0),
+      )
       if sampler is Some(sampler_value) {
         let entry = @js.from_entries([
           ("id", @js.any(id)),
@@ -5461,7 +5532,10 @@ pub fn create_host(
         texture_usage,
       )
       let texture = device.create_texture(texture_desc.to_js())
-      let sampler = create_sampler(state, number_or(nearest, 0) != 0)
+      let sampler = create_sampler(
+        state,
+        sampler_kind_from_nearest(number_or(nearest, 0) != 0),
+      )
       if sampler is Some(sampler_value) {
         let entry = @js.from_entries([
           ("id", @js.any(id)),
@@ -5784,6 +5858,11 @@ pub fn create_host(
         arg_number(args, 7, 1),
         arg_number(args, 8, 1),
         arg_number(args, 9, 1),
+        to_int(arg_number(args, 10, -1)),
+        arg_number(args, 11, 0),
+        arg_number(args, 12, 0),
+        arg_number(args, 13, 1),
+        arg_number(args, 14, 1),
       )
     }),
   )

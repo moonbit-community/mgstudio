@@ -72,4 +72,3 @@ fn normalize_logical_path(path: &str) -> anyhow::Result<String> {
     }
     Ok(parts.join("/"))
 }
-

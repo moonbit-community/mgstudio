@@ -26,6 +26,8 @@ pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProj
 
 pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprite_texture_slices(W) -> Unit
+
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(W) -> Unit
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_box_shadows(W) -> Unit
@@ -87,6 +89,15 @@ pub fn Anchor::top_center() -> Self
 pub fn Anchor::top_left() -> Self
 pub fn Anchor::top_right() -> Self
 
+pub struct Annulus {
+  inner_radius : Float
+  outer_radius : Float
+  vertices : Int
+}
+pub fn Annulus::default() -> Self
+pub fn Annulus::new(Float, Float) -> Self
+pub fn Annulus::with_vertices(Self, Int) -> Self
+
 pub struct Arc2dBuilder {
   id : Int
 }
@@ -97,6 +108,16 @@ pub struct ArrowBuilder {
 }
 pub fn ArrowBuilder::with_double_end(Self) -> Self
 pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
+
+pub struct BorderRect {
+  left : Float
+  right : Float
+  top : Float
+  bottom : Float
+}
+pub fn BorderRect::default() -> Self
+pub fn BorderRect::new(Float, Float, Float, Float) -> Self
+pub fn BorderRect::square(Float) -> Self
 
 pub struct Camera {
   viewport : Viewport?
@@ -135,6 +156,38 @@ pub struct Capsule2d {
 pub fn Capsule2d::default() -> Self
 pub fn Capsule2d::new(Float, Float, Int) -> Self
 
+pub struct Circle {
+  radius : Float
+  vertices : Int
+}
+pub fn Circle::default() -> Self
+pub fn Circle::new(Float) -> Self
+pub fn Circle::with_vertices(Self, Int) -> Self
+
+pub struct CircularSector {
+  radius : Float
+  half_angle : Float
+  vertices : Int
+}
+pub fn CircularSector::angle(Self) -> Float
+pub fn CircularSector::default() -> Self
+pub fn CircularSector::from_turns(Float, Float) -> Self
+pub fn CircularSector::half_angle(Self) -> Float
+pub fn CircularSector::new(Float, Float) -> Self
+pub fn CircularSector::with_vertices(Self, Int) -> Self
+
+pub struct CircularSegment {
+  radius : Float
+  half_angle : Float
+  vertices : Int
+}
+pub fn CircularSegment::angle(Self) -> Float
+pub fn CircularSegment::default() -> Self
+pub fn CircularSegment::from_turns(Float, Float) -> Self
+pub fn CircularSegment::half_angle(Self) -> Float
+pub fn CircularSegment::new(Float, Float) -> Self
+pub fn CircularSegment::with_vertices(Self, Int) -> Self
+
 pub struct Color {
   r : Float
   g : Float
@@ -150,15 +203,33 @@ pub struct ColorMaterial {
 }
 pub fn ColorMaterial::alpha_mode(Self) -> AlphaMode2d
 pub fn ColorMaterial::color(Self) -> Color
+pub fn ColorMaterial::from_image(@asset.Handle[@asset.Image]) -> Self
 pub fn ColorMaterial::new(Color) -> Self
 pub fn ColorMaterial::new_with_alpha_mode(Color, AlphaMode2d) -> Self
+pub fn ColorMaterial::texture(Self) -> @asset.Handle[@asset.Image]?
+pub fn ColorMaterial::uv_offset(Self) -> @math.Vec2
+pub fn ColorMaterial::uv_scale(Self) -> @math.Vec2
 pub fn ColorMaterial::with_alpha_mode(Self, AlphaMode2d) -> Self
+pub fn ColorMaterial::with_texture(Self, @asset.Handle[@asset.Image]) -> Self
+pub fn ColorMaterial::with_uv_offset(Self, @math.Vec2) -> Self
+pub fn ColorMaterial::with_uv_scale(Self, @math.Vec2) -> Self
 
 pub struct ColorMaterialAsset {
   color : Color
   alpha_mode : AlphaMode2d
+  texture : @asset.Handle[@asset.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
 }
-pub fn ColorMaterialAsset::new(Color, AlphaMode2d) -> Self
+pub fn ColorMaterialAsset::new(Color, AlphaMode2d, texture? : @asset.Handle[@asset.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2) -> Self
+
+pub struct Ellipse {
+  half_size : @math.Vec2
+  vertices : Int
+}
+pub fn Ellipse::default() -> Self
+pub fn Ellipse::new(Float, Float) -> Self
+pub fn Ellipse::with_vertices(Self, Int) -> Self
 
 pub struct Ellipse2dBuilder {
   id : Int
@@ -247,9 +318,20 @@ pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
+pub fn Mesh2d::from_annulus(Annulus) -> Self
 pub fn Mesh2d::from_capsule(Capsule2d) -> Self
+pub fn Mesh2d::from_circle(Circle) -> Self
+pub fn Mesh2d::from_circular_sector(CircularSector) -> Self
+pub fn Mesh2d::from_circular_segment(CircularSegment) -> Self
+pub fn Mesh2d::from_ellipse(Ellipse) -> Self
 pub fn Mesh2d::from_geometry(@mesh.Mesh2dGeometry) -> Self
+pub fn Mesh2d::from_polyline(Polyline2d) -> Self
 pub fn Mesh2d::from_rectangle(Rectangle) -> Self
+pub fn Mesh2d::from_regular_polygon(RegularPolygon) -> Self
+pub fn Mesh2d::from_rhombus(Rhombus) -> Self
+pub fn Mesh2d::from_ring(Ring2d) -> Self
+pub fn Mesh2d::from_segment(Segment2d) -> Self
+pub fn Mesh2d::from_triangle(Triangle2d) -> Self
 pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
 
 pub struct Mesh2dBundle {
@@ -272,6 +354,13 @@ pub fn OrthographicProjection::default_2d() -> Self
 pub fn OrthographicProjection::new(Float) -> Self
 pub fn OrthographicProjection::with_scale(Self, Float) -> Self
 
+pub struct Polyline2d {
+  points : Array[@math.Vec2]
+  half_thickness : Float
+}
+pub fn Polyline2d::new(Array[@math.Vec2]) -> Self
+pub fn Polyline2d::with_half_thickness(Self, Float) -> Self
+
 pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
@@ -283,6 +372,13 @@ pub struct Rectangle {
 pub fn Rectangle::default() -> Self
 pub fn Rectangle::from_size(@math.Vec2) -> Self
 pub fn Rectangle::new(Float, Float) -> Self
+
+pub struct RegularPolygon {
+  radius : Float
+  sides : Int
+}
+pub fn RegularPolygon::default() -> Self
+pub fn RegularPolygon::new(Float, Int) -> Self
 
 pub struct RenderLayers {
   mask : Int
@@ -298,6 +394,21 @@ pub(all) enum RenderTarget {
   Image(@asset.Handle[@asset.Image])
 }
 
+pub struct Rhombus {
+  half_diagonal : @math.Vec2
+}
+pub fn Rhombus::default() -> Self
+pub fn Rhombus::new(Float, Float) -> Self
+
+pub struct Ring2d {
+  outer_radius : Float
+  inner_radius : Float
+  vertices : Int
+}
+pub fn Ring2d::default() -> Self
+pub fn Ring2d::new(Float, Float) -> Self
+pub fn Ring2d::with_vertices(Self, Int) -> Self
+
 pub struct RoundedRectBuilder {
   id : Int
 }
@@ -309,6 +420,20 @@ pub struct ScissorRect {
 }
 pub fn ScissorRect::new(@math.Rect) -> Self
 
+pub struct Segment2d {
+  start : @math.Vec2
+  end : @math.Vec2
+  half_thickness : Float
+}
+pub fn Segment2d::new(@math.Vec2, @math.Vec2) -> Self
+pub fn Segment2d::with_half_thickness(Self, Float) -> Self
+
+pub(all) enum SliceScaleMode {
+  Stretch
+  Tile(Float)
+}
+pub fn SliceScaleMode::default() -> Self
+
 pub struct Sprite {
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
@@ -317,6 +442,7 @@ pub struct Sprite {
   flip_y : Bool
   custom_size : @math.Vec2?
   rect : @math.Rect?
+  image_mode : SpriteImageMode
 }
 pub fn Sprite::from_atlas_image(@asset.Handle[@asset.Image], @asset.TextureAtlas) -> Self
 pub fn Sprite::from_image(@asset.Handle[@asset.Image]) -> Self
@@ -324,6 +450,7 @@ pub fn Sprite::with_color(Self, Color) -> Self
 pub fn Sprite::with_custom_size(Self, @math.Vec2?) -> Self
 pub fn Sprite::with_flip_x(Self, Bool) -> Self
 pub fn Sprite::with_flip_y(Self, Bool) -> Self
+pub fn Sprite::with_image_mode(Self, SpriteImageMode) -> Self
 pub fn Sprite::with_rect(Self, @math.Rect?) -> Self
 pub fn Sprite::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
 
@@ -339,6 +466,32 @@ pub struct SpriteBundle {
 pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
 pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility] SpriteBundle::spawn(Self, W) -> @core.Entity
+
+pub(all) enum SpriteImageMode {
+  Auto
+  Sliced(TextureSlicer)
+}
+pub fn SpriteImageMode::default() -> Self
+
+pub struct TextureSlicer {
+  border : BorderRect
+  center_scale_mode : SliceScaleMode
+  sides_scale_mode : SliceScaleMode
+  max_corner_scale : Float
+}
+pub fn TextureSlicer::default() -> Self
+pub fn TextureSlicer::new(BorderRect) -> Self
+pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self
+pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
+pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
+
+pub struct Triangle2d {
+  a : @math.Vec2
+  b : @math.Vec2
+  c : @math.Vec2
+}
+pub fn Triangle2d::default() -> Self
+pub fn Triangle2d::new(@math.Vec2, @math.Vec2, @math.Vec2) -> Self
 
 pub struct UiBorderRect {
   left : Float

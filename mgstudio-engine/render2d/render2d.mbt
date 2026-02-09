@@ -87,6 +87,112 @@ pub struct Sprite {
   flip_y : Bool
   custom_size : @math.Vec2?
   rect : @math.Rect?
+  image_mode : SpriteImageMode
+}
+
+///|
+pub struct BorderRect {
+  left : Float
+  right : Float
+  top : Float
+  bottom : Float
+}
+
+///|
+pub fn BorderRect::new(
+  left : Float,
+  right : Float,
+  top : Float,
+  bottom : Float,
+) -> BorderRect {
+  BorderRect::{ left, right, top, bottom }
+}
+
+///|
+pub fn BorderRect::square(value : Float) -> BorderRect {
+  BorderRect::{ left: value, right: value, top: value, bottom: value }
+}
+
+///|
+pub fn BorderRect::default() -> BorderRect {
+  BorderRect::square(0.0F)
+}
+
+///|
+pub(all) enum SliceScaleMode {
+  Stretch
+  Tile(Float)
+}
+
+///|
+pub fn SliceScaleMode::default() -> SliceScaleMode {
+  SliceScaleMode::Stretch
+}
+
+///|
+pub struct TextureSlicer {
+  border : BorderRect
+  center_scale_mode : SliceScaleMode
+  sides_scale_mode : SliceScaleMode
+  max_corner_scale : Float
+}
+
+///|
+pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
+  TextureSlicer::{
+    border,
+    center_scale_mode: SliceScaleMode::Stretch,
+    sides_scale_mode: SliceScaleMode::Stretch,
+    max_corner_scale: 1.0F,
+  }
+}
+
+///|
+pub fn TextureSlicer::default() -> TextureSlicer {
+  TextureSlicer::new(BorderRect::default())
+}
+
+///|
+pub fn TextureSlicer::with_center_scale_mode(
+  self : TextureSlicer,
+  center_scale_mode : SliceScaleMode,
+) -> TextureSlicer {
+  TextureSlicer::{ ..self, center_scale_mode, }
+}
+
+///|
+pub fn TextureSlicer::with_sides_scale_mode(
+  self : TextureSlicer,
+  sides_scale_mode : SliceScaleMode,
+) -> TextureSlicer {
+  TextureSlicer::{ ..self, sides_scale_mode, }
+}
+
+///|
+pub fn TextureSlicer::with_max_corner_scale(
+  self : TextureSlicer,
+  max_corner_scale : Float,
+) -> TextureSlicer {
+  TextureSlicer::{ ..self, max_corner_scale, }
+}
+
+///|
+pub(all) enum SpriteImageMode {
+  Auto
+  Sliced(TextureSlicer)
+}
+
+///|
+pub fn SpriteImageMode::default() -> SpriteImageMode {
+  SpriteImageMode::Auto
+}
+
+///|
+fn sprite_image_mode_uses_slices(mode : SpriteImageMode) -> Bool {
+  match mode {
+    SpriteImageMode::Sliced(_) => true
+    _ => false
+  }
 }
 
 ///|
@@ -99,6 +205,7 @@ pub fn Sprite::from_image(image : @asset.Handle[@asset.Image]) -> Sprite {
     flip_y: false,
     custom_size: None,
     rect: None,
+    image_mode: SpriteImageMode::Auto,
   }
 }
 
@@ -144,6 +251,14 @@ pub fn Sprite::with_custom_size(
 ///|
 pub fn Sprite::with_rect(self : Sprite, rect : @math.Rect?) -> Sprite {
   Sprite::{ ..self, rect, }
+}
+
+///|
+pub fn Sprite::with_image_mode(
+  self : Sprite,
+  image_mode : SpriteImageMode,
+) -> Sprite {
+  Sprite::{ ..self, image_mode, }
 }
 
 ///|
@@ -381,6 +496,9 @@ pub(all) enum RenderTarget {
 pub struct ColorMaterialAsset {
   color : Color
   alpha_mode : AlphaMode2d
+  texture : @asset.Handle[@asset.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
 }
 
 ///|
@@ -394,8 +512,11 @@ pub(all) enum AlphaMode2d {
 pub fn ColorMaterialAsset::new(
   color : Color,
   alpha_mode : AlphaMode2d,
+  texture? : @asset.Handle[@asset.Image]? = None,
+  uv_offset? : @math.Vec2 = @math.Vec2::new(0.0F, 0.0F),
+  uv_scale? : @math.Vec2 = @math.Vec2::new(1.0F, 1.0F),
 ) -> ColorMaterialAsset {
-  ColorMaterialAsset::{ color, alpha_mode }
+  ColorMaterialAsset::{ color, alpha_mode, texture, uv_offset, uv_scale }
 }
 
 ///|
@@ -418,11 +539,41 @@ pub struct ColorMaterial {
 }
 
 ///|
-pub fn ColorMaterial::new(color : Color) -> ColorMaterial {
+fn color_material_add(
+  color : Color,
+  alpha_mode : AlphaMode2d,
+  texture : @asset.Handle[@asset.Image]?,
+  uv_offset : @math.Vec2,
+  uv_scale : @math.Vec2,
+) -> ColorMaterial {
   let handle = color_material_assets.val.add(
-    ColorMaterialAsset::new(color, AlphaMode2d::Blend),
+    ColorMaterialAsset::new(color, alpha_mode, texture~, uv_offset~, uv_scale~),
   )
   ColorMaterial::{ handle, }
+}
+
+///|
+pub fn ColorMaterial::new(color : Color) -> ColorMaterial {
+  color_material_add(
+    color,
+    AlphaMode2d::Blend,
+    None,
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+}
+
+///|
+pub fn ColorMaterial::from_image(
+  texture : @asset.Handle[@asset.Image],
+) -> ColorMaterial {
+  color_material_add(
+    Color::white(),
+    AlphaMode2d::Blend,
+    Some(texture),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+  )
 }
 
 ///|
@@ -438,10 +589,13 @@ pub fn ColorMaterial::new_with_alpha_mode(
   color : Color,
   alpha_mode : AlphaMode2d,
 ) -> ColorMaterial {
-  let handle = color_material_assets.val.add(
-    ColorMaterialAsset::new(color, alpha_mode),
+  color_material_add(
+    color,
+    alpha_mode,
+    None,
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
   )
-  ColorMaterial::{ handle, }
 }
 
 ///|
@@ -449,7 +603,13 @@ pub fn ColorMaterial::with_alpha_mode(
   self : ColorMaterial,
   alpha_mode : AlphaMode2d,
 ) -> ColorMaterial {
-  ColorMaterial::new_with_alpha_mode(self.color(), alpha_mode)
+  color_material_add(
+    self.color(),
+    alpha_mode,
+    self.texture(),
+    self.uv_offset(),
+    self.uv_scale(),
+  )
 }
 
 ///|
@@ -458,6 +618,74 @@ pub fn ColorMaterial::alpha_mode(self : ColorMaterial) -> AlphaMode2d {
     Some(mat) => mat.alpha_mode
     None => AlphaMode2d::Blend
   }
+}
+
+///|
+pub fn ColorMaterial::texture(
+  self : ColorMaterial,
+) -> @asset.Handle[@asset.Image]? {
+  match color_material_get(self.handle) {
+    Some(mat) => mat.texture
+    None => None
+  }
+}
+
+///|
+pub fn ColorMaterial::uv_offset(self : ColorMaterial) -> @math.Vec2 {
+  match color_material_get(self.handle) {
+    Some(mat) => mat.uv_offset
+    None => @math.Vec2::new(0.0F, 0.0F)
+  }
+}
+
+///|
+pub fn ColorMaterial::uv_scale(self : ColorMaterial) -> @math.Vec2 {
+  match color_material_get(self.handle) {
+    Some(mat) => mat.uv_scale
+    None => @math.Vec2::new(1.0F, 1.0F)
+  }
+}
+
+///|
+pub fn ColorMaterial::with_texture(
+  self : ColorMaterial,
+  texture : @asset.Handle[@asset.Image],
+) -> ColorMaterial {
+  color_material_add(
+    self.color(),
+    self.alpha_mode(),
+    Some(texture),
+    self.uv_offset(),
+    self.uv_scale(),
+  )
+}
+
+///|
+pub fn ColorMaterial::with_uv_offset(
+  self : ColorMaterial,
+  uv_offset : @math.Vec2,
+) -> ColorMaterial {
+  color_material_add(
+    self.color(),
+    self.alpha_mode(),
+    self.texture(),
+    uv_offset,
+    self.uv_scale(),
+  )
+}
+
+///|
+pub fn ColorMaterial::with_uv_scale(
+  self : ColorMaterial,
+  uv_scale : @math.Vec2,
+) -> ColorMaterial {
+  color_material_add(
+    self.color(),
+    self.alpha_mode(),
+    self.texture(),
+    self.uv_offset(),
+    uv_scale,
+  )
 }
 
 ///|
@@ -499,6 +727,279 @@ pub fn Rectangle::from_size(size : @math.Vec2) -> Rectangle {
 ///|
 pub fn Rectangle::default() -> Rectangle {
   Rectangle::{ half_size: @math.Vec2::new(0.5F, 0.5F) }
+}
+
+///|
+pub struct Circle {
+  radius : Float
+  vertices : Int
+}
+
+///|
+pub fn Circle::new(radius : Float) -> Circle {
+  Circle::{ radius, vertices: 32 }
+}
+
+///|
+pub fn Circle::with_vertices(self : Circle, vertices : Int) -> Circle {
+  Circle::{ ..self, vertices, }
+}
+
+///|
+pub fn Circle::default() -> Circle {
+  Circle::new(0.5F)
+}
+
+///|
+pub struct Ellipse {
+  half_size : @math.Vec2
+  vertices : Int
+}
+
+///|
+pub fn Ellipse::new(half_width : Float, half_height : Float) -> Ellipse {
+  Ellipse::{ half_size: @math.Vec2::new(half_width, half_height), vertices: 32 }
+}
+
+///|
+pub fn Ellipse::with_vertices(self : Ellipse, vertices : Int) -> Ellipse {
+  Ellipse::{ ..self, vertices, }
+}
+
+///|
+pub fn Ellipse::default() -> Ellipse {
+  Ellipse::new(0.5F, 0.25F)
+}
+
+///|
+pub struct Annulus {
+  inner_radius : Float
+  outer_radius : Float
+  vertices : Int
+}
+
+///|
+pub fn Annulus::new(inner_radius : Float, outer_radius : Float) -> Annulus {
+  Annulus::{ inner_radius, outer_radius, vertices: 48 }
+}
+
+///|
+pub fn Annulus::with_vertices(self : Annulus, vertices : Int) -> Annulus {
+  Annulus::{ ..self, vertices, }
+}
+
+///|
+pub fn Annulus::default() -> Annulus {
+  Annulus::new(0.25F, 0.5F)
+}
+
+///|
+pub struct Ring2d {
+  outer_radius : Float
+  inner_radius : Float
+  vertices : Int
+}
+
+///|
+pub fn Ring2d::new(outer_radius : Float, inner_radius : Float) -> Ring2d {
+  Ring2d::{ outer_radius, inner_radius, vertices: 48 }
+}
+
+///|
+pub fn Ring2d::with_vertices(self : Ring2d, vertices : Int) -> Ring2d {
+  Ring2d::{ ..self, vertices, }
+}
+
+///|
+pub fn Ring2d::default() -> Ring2d {
+  Ring2d::new(0.5F, 0.25F)
+}
+
+///|
+pub struct Rhombus {
+  half_diagonal : @math.Vec2
+}
+
+///|
+pub fn Rhombus::new(width : Float, height : Float) -> Rhombus {
+  Rhombus::{ half_diagonal: @math.Vec2::new(width / 2.0F, height / 2.0F) }
+}
+
+///|
+pub fn Rhombus::default() -> Rhombus {
+  Rhombus::new(1.0F, 1.0F)
+}
+
+///|
+pub struct RegularPolygon {
+  radius : Float
+  sides : Int
+}
+
+///|
+pub fn RegularPolygon::new(radius : Float, sides : Int) -> RegularPolygon {
+  RegularPolygon::{ radius, sides }
+}
+
+///|
+pub fn RegularPolygon::default() -> RegularPolygon {
+  RegularPolygon::new(0.5F, 6)
+}
+
+///|
+pub struct Triangle2d {
+  a : @math.Vec2
+  b : @math.Vec2
+  c : @math.Vec2
+}
+
+///|
+pub fn Triangle2d::new(
+  a : @math.Vec2,
+  b : @math.Vec2,
+  c : @math.Vec2,
+) -> Triangle2d {
+  Triangle2d::{ a, b, c }
+}
+
+///|
+pub fn Triangle2d::default() -> Triangle2d {
+  Triangle2d::{
+    a: @math.Vec2::new(0.0F, 0.5F),
+    b: @math.Vec2::new(-0.5F, -0.5F),
+    c: @math.Vec2::new(0.5F, -0.5F),
+  }
+}
+
+///|
+pub struct Segment2d {
+  start : @math.Vec2
+  end : @math.Vec2
+  half_thickness : Float
+}
+
+///|
+pub fn Segment2d::new(start : @math.Vec2, end : @math.Vec2) -> Segment2d {
+  Segment2d::{ start, end, half_thickness: 2.5F }
+}
+
+///|
+pub fn Segment2d::with_half_thickness(
+  self : Segment2d,
+  half_thickness : Float,
+) -> Segment2d {
+  Segment2d::{ ..self, half_thickness, }
+}
+
+///|
+pub struct Polyline2d {
+  points : Array[@math.Vec2]
+  half_thickness : Float
+}
+
+///|
+pub fn Polyline2d::new(points : Array[@math.Vec2]) -> Polyline2d {
+  Polyline2d::{ points, half_thickness: 2.5F }
+}
+
+///|
+pub fn Polyline2d::with_half_thickness(
+  self : Polyline2d,
+  half_thickness : Float,
+) -> Polyline2d {
+  Polyline2d::{ ..self, half_thickness, }
+}
+
+///|
+pub struct CircularSector {
+  radius : Float
+  half_angle : Float
+  vertices : Int
+}
+
+///|
+pub fn CircularSector::new(
+  radius : Float,
+  half_angle : Float,
+) -> CircularSector {
+  CircularSector::{ radius, half_angle, vertices: 32 }
+}
+
+///|
+pub fn CircularSector::from_turns(
+  radius : Float,
+  fraction : Float,
+) -> CircularSector {
+  CircularSector::new(radius, fraction * @math.pi_half() * 2.0F)
+}
+
+///|
+pub fn CircularSector::with_vertices(
+  self : CircularSector,
+  vertices : Int,
+) -> CircularSector {
+  CircularSector::{ ..self, vertices, }
+}
+
+///|
+pub fn CircularSector::half_angle(self : CircularSector) -> Float {
+  self.half_angle
+}
+
+///|
+pub fn CircularSector::angle(self : CircularSector) -> Float {
+  self.half_angle * 2.0F
+}
+
+///|
+pub fn CircularSector::default() -> CircularSector {
+  CircularSector::new(0.5F, @math.pi_half() * 2.0F / 3.0F)
+}
+
+///|
+pub struct CircularSegment {
+  radius : Float
+  half_angle : Float
+  vertices : Int
+}
+
+///|
+pub fn CircularSegment::new(
+  radius : Float,
+  half_angle : Float,
+) -> CircularSegment {
+  CircularSegment::{ radius, half_angle, vertices: 32 }
+}
+
+///|
+pub fn CircularSegment::from_turns(
+  radius : Float,
+  fraction : Float,
+) -> CircularSegment {
+  CircularSegment::new(radius, fraction * @math.pi_half() * 2.0F)
+}
+
+///|
+pub fn CircularSegment::with_vertices(
+  self : CircularSegment,
+  vertices : Int,
+) -> CircularSegment {
+  CircularSegment::{ ..self, vertices, }
+}
+
+///|
+pub fn CircularSegment::half_angle(self : CircularSegment) -> Float {
+  self.half_angle
+}
+
+///|
+pub fn CircularSegment::angle(self : CircularSegment) -> Float {
+  self.half_angle * 2.0F
+}
+
+///|
+pub fn CircularSegment::default() -> CircularSegment {
+  CircularSegment::new(0.5F, @math.pi_half() * 2.0F / 3.0F)
 }
 
 ///|
@@ -545,6 +1046,442 @@ fn rectangle_to_mesh2d_geometry(rectangle : Rectangle) -> @mesh.Mesh2dGeometry {
     @math.Vec2::new(0.0F, 1.0F),
   ]
   let indices = [0, 1, 2, 0, 2, 3]
+  @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
+}
+
+///|
+fn shape_abs_float(v : Float) -> Float {
+  if v < 0.0F {
+    -v
+  } else {
+    v
+  }
+}
+
+///|
+fn shape_safe_positive(v : Float, fallback : Float) -> Float {
+  if v <= 0.0F {
+    fallback
+  } else {
+    v
+  }
+}
+
+///|
+fn shape_safe_segments(v : Int, minimum : Int) -> Int {
+  if v < minimum {
+    minimum
+  } else {
+    v
+  }
+}
+
+///|
+fn shape_tau() -> Float {
+  @math.pi_half() * 4.0F
+}
+
+///|
+fn shape_positions_to_uvs(positions : Array[@math.Vec2]) -> Array[@math.Vec2] {
+  if positions.length() == 0 {
+    return []
+  }
+  let mut min_x = positions[0].x
+  let mut max_x = positions[0].x
+  let mut min_y = positions[0].y
+  let mut max_y = positions[0].y
+  for p in positions {
+    if p.x < min_x {
+      min_x = p.x
+    }
+    if p.x > max_x {
+      max_x = p.x
+    }
+    if p.y < min_y {
+      min_y = p.y
+    }
+    if p.y > max_y {
+      max_y = p.y
+    }
+  }
+  let dx = if max_x - min_x == 0.0F { 1.0F } else { max_x - min_x }
+  let dy = if max_y - min_y == 0.0F { 1.0F } else { max_y - min_y }
+  let uvs : Array[@math.Vec2] = []
+  for p in positions {
+    let u = (p.x - min_x) / dx
+    let v = (p.y - min_y) / dy
+    uvs.push(@math.Vec2::new(u, v))
+  }
+  uvs
+}
+
+///|
+fn shape_geometry_from_nonindexed_positions(
+  positions : Array[@math.Vec2],
+) -> @mesh.Mesh2dGeometry {
+  let safe_positions : Array[@math.Vec2] = []
+  if positions.length() >= 3 {
+    for p in positions {
+      safe_positions.push(p)
+    }
+  } else {
+    safe_positions.push(@math.Vec2::new(-0.5F, -0.5F))
+    safe_positions.push(@math.Vec2::new(0.5F, -0.5F))
+    safe_positions.push(@math.Vec2::new(0.0F, 0.5F))
+  }
+  let uvs = shape_positions_to_uvs(safe_positions)
+  @mesh.Mesh2dGeometry::new(safe_positions, uvs, None)
+}
+
+///|
+fn shape_triangulate_fan(perimeter : Array[@math.Vec2]) -> Array[@math.Vec2] {
+  let out : Array[@math.Vec2] = []
+  let n = perimeter.length()
+  if n < 3 {
+    return out
+  }
+  let pivot = perimeter[0]
+  for i in 1..<(n - 1) {
+    out.push(pivot)
+    out.push(perimeter[i])
+    out.push(perimeter[i + 1])
+  }
+  out
+}
+
+///|
+fn shape_perimeter_circle(radius : Float, segments : Int) -> Array[@math.Vec2] {
+  let perimeter : Array[@math.Vec2] = []
+  let tau = shape_tau()
+  for i in 0..<segments {
+    let t = Float::from_double(i.to_double()) /
+      Float::from_double(segments.to_double())
+    let theta = t * tau
+    perimeter.push(
+      @math.Vec2::new(@math.cos(theta) * radius, @math.sin(theta) * radius),
+    )
+  }
+  perimeter
+}
+
+///|
+fn shape_perimeter_ellipse(
+  half_size : @math.Vec2,
+  segments : Int,
+) -> Array[@math.Vec2] {
+  let perimeter : Array[@math.Vec2] = []
+  let tau = shape_tau()
+  for i in 0..<segments {
+    let t = Float::from_double(i.to_double()) /
+      Float::from_double(segments.to_double())
+    let theta = t * tau
+    perimeter.push(
+      @math.Vec2::new(
+        @math.cos(theta) * half_size.x,
+        @math.sin(theta) * half_size.y,
+      ),
+    )
+  }
+  perimeter
+}
+
+///|
+fn circle_to_mesh2d_geometry(circle : Circle) -> @mesh.Mesh2dGeometry {
+  let radius = shape_safe_positive(shape_abs_float(circle.radius), 0.5F)
+  let segments = shape_safe_segments(circle.vertices, 3)
+  shape_geometry_from_nonindexed_positions(
+    shape_triangulate_fan(shape_perimeter_circle(radius, segments)),
+  )
+}
+
+///|
+fn ellipse_to_mesh2d_geometry(ellipse : Ellipse) -> @mesh.Mesh2dGeometry {
+  let hx = shape_safe_positive(shape_abs_float(ellipse.half_size.x), 0.5F)
+  let hy = shape_safe_positive(shape_abs_float(ellipse.half_size.y), 0.5F)
+  let segments = shape_safe_segments(ellipse.vertices, 3)
+  shape_geometry_from_nonindexed_positions(
+    shape_triangulate_fan(
+      shape_perimeter_ellipse(@math.Vec2::new(hx, hy), segments),
+    ),
+  )
+}
+
+///|
+fn annulus_to_mesh2d_geometry(annulus : Annulus) -> @mesh.Mesh2dGeometry {
+  let mut inner = shape_abs_float(annulus.inner_radius)
+  let mut outer = shape_abs_float(annulus.outer_radius)
+  if outer < inner {
+    let pair = swap_float_pair(inner, outer)
+    inner = pair.0
+    outer = pair.1
+  }
+  outer = shape_safe_positive(outer, 0.5F)
+  if inner >= outer {
+    inner = outer * 0.5F
+  }
+  let segments = shape_safe_segments(annulus.vertices, 3)
+  let tau = shape_tau()
+  let triangles : Array[@math.Vec2] = []
+  for i in 0..<segments {
+    let t0 = Float::from_double(i.to_double()) /
+      Float::from_double(segments.to_double())
+    let t1 = Float::from_double((i + 1).to_double()) /
+      Float::from_double(segments.to_double())
+    let theta0 = t0 * tau
+    let theta1 = t1 * tau
+    let o0 = @math.Vec2::new(
+      @math.cos(theta0) * outer,
+      @math.sin(theta0) * outer,
+    )
+    let o1 = @math.Vec2::new(
+      @math.cos(theta1) * outer,
+      @math.sin(theta1) * outer,
+    )
+    let i0 = @math.Vec2::new(
+      @math.cos(theta0) * inner,
+      @math.sin(theta0) * inner,
+    )
+    let i1 = @math.Vec2::new(
+      @math.cos(theta1) * inner,
+      @math.sin(theta1) * inner,
+    )
+    triangles.push(o0)
+    triangles.push(o1)
+    triangles.push(i1)
+    triangles.push(o0)
+    triangles.push(i1)
+    triangles.push(i0)
+  }
+  shape_geometry_from_nonindexed_positions(triangles)
+}
+
+///|
+fn ring_to_mesh2d_geometry(ring : Ring2d) -> @mesh.Mesh2dGeometry {
+  annulus_to_mesh2d_geometry(
+    Annulus::new(ring.inner_radius, ring.outer_radius).with_vertices(
+      ring.vertices,
+    ),
+  )
+}
+
+///|
+fn rhombus_to_mesh2d_geometry(rhombus : Rhombus) -> @mesh.Mesh2dGeometry {
+  let hx = shape_safe_positive(shape_abs_float(rhombus.half_diagonal.x), 0.5F)
+  let hy = shape_safe_positive(shape_abs_float(rhombus.half_diagonal.y), 0.5F)
+  let perimeter = [
+    @math.Vec2::new(0.0F, hy),
+    @math.Vec2::new(hx, 0.0F),
+    @math.Vec2::new(0.0F, -hy),
+    @math.Vec2::new(-hx, 0.0F),
+  ]
+  shape_geometry_from_nonindexed_positions(shape_triangulate_fan(perimeter))
+}
+
+///|
+fn regular_polygon_to_mesh2d_geometry(
+  polygon : RegularPolygon,
+) -> @mesh.Mesh2dGeometry {
+  let radius = shape_safe_positive(shape_abs_float(polygon.radius), 0.5F)
+  let sides = shape_safe_segments(polygon.sides, 3)
+  let perimeter : Array[@math.Vec2] = []
+  let tau = shape_tau()
+  for i in 0..<sides {
+    let t = Float::from_double(i.to_double()) /
+      Float::from_double(sides.to_double())
+    let theta = t * tau + @math.pi_half()
+    perimeter.push(
+      @math.Vec2::new(@math.cos(theta) * radius, @math.sin(theta) * radius),
+    )
+  }
+  shape_geometry_from_nonindexed_positions(shape_triangulate_fan(perimeter))
+}
+
+///|
+fn triangle_to_mesh2d_geometry(triangle : Triangle2d) -> @mesh.Mesh2dGeometry {
+  shape_geometry_from_nonindexed_positions([triangle.a, triangle.b, triangle.c])
+}
+
+///|
+fn shape_segment_triangles(
+  start : @math.Vec2,
+  end : @math.Vec2,
+  half_thickness : Float,
+) -> Array[@math.Vec2] {
+  let triangles : Array[@math.Vec2] = []
+  let thickness = shape_safe_positive(shape_abs_float(half_thickness), 0.5F)
+  let dx = end.x - start.x
+  let dy = end.y - start.y
+  let len = @math.sqrt(dx * dx + dy * dy)
+  if len <= 0.0001F {
+    let p0 = @math.Vec2::new(start.x - thickness, start.y - thickness)
+    let p1 = @math.Vec2::new(start.x + thickness, start.y - thickness)
+    let p2 = @math.Vec2::new(start.x + thickness, start.y + thickness)
+    let p3 = @math.Vec2::new(start.x - thickness, start.y + thickness)
+    triangles.push(p0)
+    triangles.push(p1)
+    triangles.push(p2)
+    triangles.push(p0)
+    triangles.push(p2)
+    triangles.push(p3)
+    return triangles
+  }
+  let nx = -dy / len * thickness
+  let ny = dx / len * thickness
+  let p0 = @math.Vec2::new(start.x + nx, start.y + ny)
+  let p1 = @math.Vec2::new(end.x + nx, end.y + ny)
+  let p2 = @math.Vec2::new(end.x - nx, end.y - ny)
+  let p3 = @math.Vec2::new(start.x - nx, start.y - ny)
+  triangles.push(p0)
+  triangles.push(p1)
+  triangles.push(p2)
+  triangles.push(p0)
+  triangles.push(p2)
+  triangles.push(p3)
+  triangles
+}
+
+///|
+fn segment_to_mesh2d_geometry(segment : Segment2d) -> @mesh.Mesh2dGeometry {
+  shape_geometry_from_nonindexed_positions(
+    shape_segment_triangles(segment.start, segment.end, segment.half_thickness),
+  )
+}
+
+///|
+fn polyline_to_mesh2d_geometry(polyline : Polyline2d) -> @mesh.Mesh2dGeometry {
+  let points = polyline.points
+  if points.length() < 2 {
+    return shape_geometry_from_nonindexed_positions([])
+  }
+  let triangles : Array[@math.Vec2] = []
+  for i in 0..<(points.length() - 1) {
+    let part = shape_segment_triangles(
+      points[i],
+      points[i + 1],
+      polyline.half_thickness,
+    )
+    for p in part {
+      triangles.push(p)
+    }
+  }
+  shape_geometry_from_nonindexed_positions(triangles)
+}
+
+///|
+fn shape_clamp_float(
+  value : Float,
+  min_value : Float,
+  max_value : Float,
+) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn arc_safe_half_angle(raw_half_angle : Float) -> Float {
+  shape_clamp_float(
+    shape_abs_float(raw_half_angle),
+    0.0F,
+    @math.pi_half() * 2.0F,
+  )
+}
+
+///|
+fn arc_angle_from_index(
+  first_angle : Float,
+  last_angle : Float,
+  index : Int,
+  count : Int,
+) -> Float {
+  if count <= 1 {
+    first_angle
+  } else {
+    let t = Float::from_double(index.to_double()) /
+      Float::from_double((count - 1).to_double())
+    first_angle + (last_angle - first_angle) * t
+  }
+}
+
+///|
+fn circular_sector_to_mesh2d_geometry(
+  sector : CircularSector,
+) -> @mesh.Mesh2dGeometry {
+  let radius = shape_safe_positive(shape_abs_float(sector.radius), 0.5F)
+  let half_angle = arc_safe_half_angle(sector.half_angle)
+  let resolution = shape_safe_segments(sector.vertices, 2)
+  let first_angle = @math.pi_half() - half_angle
+  let last_angle = @math.pi_half() + half_angle
+  let positions : Array[@math.Vec2] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+  positions.push(@math.Vec2::new(0.0F, 0.0F))
+  uvs.push(@math.Vec2::new(0.5F, 0.5F))
+  for i in 0..<resolution {
+    let angle = arc_angle_from_index(first_angle, last_angle, i, resolution)
+    positions.push(
+      @math.Vec2::new(@math.cos(angle) * radius, @math.sin(angle) * radius),
+    )
+    uvs.push(
+      @math.Vec2::new(
+        @math.cos(-angle) * 0.5F + 0.5F,
+        @math.sin(-angle) * 0.5F + 0.5F,
+      ),
+    )
+  }
+  for i in 1..<resolution {
+    indices.push(0)
+    indices.push(i)
+    indices.push(i + 1)
+  }
+  @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
+}
+
+///|
+fn circular_segment_apothem(radius : Float, half_angle : Float) -> Float {
+  let half_chord = radius * @math.sin(half_angle)
+  let leg = radius * radius - half_chord * half_chord
+  let positive_leg = if leg < 0.0F { 0.0F } else { leg }
+  let sign = if half_angle <= @math.pi_half() { 1.0F } else { -1.0F }
+  sign * @math.sqrt(positive_leg)
+}
+
+///|
+fn circular_segment_to_mesh2d_geometry(
+  segment : CircularSegment,
+) -> @mesh.Mesh2dGeometry {
+  let radius = shape_safe_positive(shape_abs_float(segment.radius), 0.5F)
+  let half_angle = arc_safe_half_angle(segment.half_angle)
+  let resolution = shape_safe_segments(segment.vertices, 2)
+  let first_angle = @math.pi_half() - half_angle
+  let last_angle = @math.pi_half() + half_angle
+  let midpoint_y = circular_segment_apothem(radius, half_angle)
+  let positions : Array[@math.Vec2] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+  positions.push(@math.Vec2::new(0.0F, midpoint_y))
+  uvs.push(@math.Vec2::new(0.5F, 0.5F - 0.5F * midpoint_y / radius))
+  for i in 0..<resolution {
+    let angle = arc_angle_from_index(first_angle, last_angle, i, resolution)
+    positions.push(
+      @math.Vec2::new(@math.cos(angle) * radius, @math.sin(angle) * radius),
+    )
+    uvs.push(
+      @math.Vec2::new(
+        @math.cos(-angle) * 0.5F + 0.5F,
+        @math.sin(-angle) * 0.5F + 0.5F,
+      ),
+    )
+  }
+  for i in 1..<resolution {
+    indices.push(0)
+    indices.push(i)
+    indices.push(i + 1)
+  }
   @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
 }
 
@@ -611,6 +1548,61 @@ fn capsule_to_mesh2d_geometry(capsule : Capsule2d) -> @mesh.Mesh2dGeometry {
 ///|
 pub fn Mesh2d::from_capsule(capsule : Capsule2d) -> Mesh2d {
   Mesh2d::from_geometry(capsule_to_mesh2d_geometry(capsule))
+}
+
+///|
+pub fn Mesh2d::from_circular_sector(sector : CircularSector) -> Mesh2d {
+  Mesh2d::from_geometry(circular_sector_to_mesh2d_geometry(sector))
+}
+
+///|
+pub fn Mesh2d::from_circular_segment(segment : CircularSegment) -> Mesh2d {
+  Mesh2d::from_geometry(circular_segment_to_mesh2d_geometry(segment))
+}
+
+///|
+pub fn Mesh2d::from_circle(circle : Circle) -> Mesh2d {
+  Mesh2d::from_geometry(circle_to_mesh2d_geometry(circle))
+}
+
+///|
+pub fn Mesh2d::from_ellipse(ellipse : Ellipse) -> Mesh2d {
+  Mesh2d::from_geometry(ellipse_to_mesh2d_geometry(ellipse))
+}
+
+///|
+pub fn Mesh2d::from_annulus(annulus : Annulus) -> Mesh2d {
+  Mesh2d::from_geometry(annulus_to_mesh2d_geometry(annulus))
+}
+
+///|
+pub fn Mesh2d::from_ring(ring : Ring2d) -> Mesh2d {
+  Mesh2d::from_geometry(ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_rhombus(rhombus : Rhombus) -> Mesh2d {
+  Mesh2d::from_geometry(rhombus_to_mesh2d_geometry(rhombus))
+}
+
+///|
+pub fn Mesh2d::from_regular_polygon(polygon : RegularPolygon) -> Mesh2d {
+  Mesh2d::from_geometry(regular_polygon_to_mesh2d_geometry(polygon))
+}
+
+///|
+pub fn Mesh2d::from_triangle(triangle : Triangle2d) -> Mesh2d {
+  Mesh2d::from_geometry(triangle_to_mesh2d_geometry(triangle))
+}
+
+///|
+pub fn Mesh2d::from_segment(segment : Segment2d) -> Mesh2d {
+  Mesh2d::from_geometry(segment_to_mesh2d_geometry(segment))
+}
+
+///|
+pub fn Mesh2d::from_polyline(polyline : Polyline2d) -> Mesh2d {
+  Mesh2d::from_geometry(polyline_to_mesh2d_geometry(polyline))
 }
 
 ///|
@@ -815,6 +1807,22 @@ priv struct SpriteInstance {
 }
 
 ///|
+priv struct SpriteTextureSliceInstance {
+  entity : @core.Entity
+  transform : @math.Transform
+  anchor_offset : @math.Vec2
+  draw_scale : @math.Vec2
+  color : Color
+  texture : @asset.Handle[@asset.Image]
+  layers : RenderLayers
+  scissor : @math.Rect?
+  texture_slices : @math.Vec4
+  target_slices : @math.Vec4
+  repeat : @math.Vec4
+  atlas_rect : @math.Vec4
+}
+
+///|
 priv struct UiRectInstance {
   entity : @core.Entity
   transform : @math.Transform
@@ -897,6 +1905,9 @@ priv struct MeshInstance {
   transform : @math.Transform
   color : Color
   alpha_mode : AlphaMode2d
+  texture : @asset.Handle[@asset.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
   layers : RenderLayers
 }
 
@@ -917,6 +1928,7 @@ struct RenderState {
   mut primary_camera : @core.Entity
   sprites : Array[SpriteInstance]
   extra_sprites : Array[SpriteInstance]
+  extra_sprite_texture_slices : Array[SpriteTextureSliceInstance]
   extra_ui_rects : Array[UiRectInstance]
   extra_ui_box_shadows : Array[UiBoxShadowInstance]
   extra_ui_texture_slices : Array[UiTextureSliceInstance]
@@ -932,6 +1944,7 @@ fn RenderState::new() -> RenderState {
     primary_camera: @core.Entity::placeholder(),
     sprites: [],
     extra_sprites: [],
+    extra_sprite_texture_slices: [],
     extra_ui_rects: [],
     extra_ui_box_shadows: [],
     extra_ui_texture_slices: [],
@@ -1112,6 +2125,123 @@ fn sprite_uv_from_sprite(sprite : Sprite) -> SpriteUvInfo? {
 }
 
 ///|
+fn sprite_abs_float(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn clamp_stretch_value(v : Float) -> Float {
+  if v < 0.001F {
+    0.001F
+  } else {
+    v
+  }
+}
+
+///|
+fn min3(a : Float, b : Float, c : Float) -> Float {
+  let ab = if a < b { a } else { b }
+  if ab < c {
+    ab
+  } else {
+    c
+  }
+}
+
+///|
+fn compute_tiled_subaxis(
+  image_extent : Float,
+  target_extent : Float,
+  mode : SliceScaleMode,
+) -> Float {
+  match mode {
+    SliceScaleMode::Stretch => 1.0F
+    SliceScaleMode::Tile(stretch_value) => {
+      let denom = image_extent * clamp_stretch_value(stretch_value)
+      if denom == 0.0F {
+        1.0F
+      } else {
+        target_extent / denom
+      }
+    }
+  }
+}
+
+///|
+fn compute_sprite_texture_slices(
+  image_size : @math.Vec2,
+  target_size : @math.Vec2,
+  mode : SpriteImageMode,
+) -> (@math.Vec4, @math.Vec4, @math.Vec4) {
+  match mode {
+    SpriteImageMode::Sliced(slicer) => {
+      let denom_x = if image_size.x == 0.0F { 1.0F } else { image_size.x }
+      let denom_y = if image_size.y == 0.0F { 1.0F } else { image_size.y }
+      let tdenom_x = if target_size.x == 0.0F { 1.0F } else { target_size.x }
+      let tdenom_y = if target_size.y == 0.0F { 1.0F } else { target_size.y }
+      let min_coeff = min3(
+        target_size.x / denom_x,
+        target_size.y / denom_y,
+        slicer.max_corner_scale,
+      )
+      let slices = @math.Vec4::new(
+        slicer.border.left / denom_x,
+        slicer.border.top / denom_y,
+        1.0F - slicer.border.right / denom_x,
+        1.0F - slicer.border.bottom / denom_y,
+      )
+      let border = @math.Vec4::new(
+        slicer.border.left / tdenom_x * min_coeff,
+        slicer.border.top / tdenom_y * min_coeff,
+        1.0F - slicer.border.right / tdenom_x * min_coeff,
+        1.0F - slicer.border.bottom / tdenom_y * min_coeff,
+      )
+      let image_side_width = denom_x * (slices.z - slices.x)
+      let image_side_height = denom_y * (slices.w - slices.y)
+      let target_side_width = tdenom_x * (border.z - border.x)
+      let target_side_height = tdenom_y * (border.w - border.y)
+      let repeat_side_x = compute_tiled_subaxis(
+        image_side_width,
+        target_side_width,
+        slicer.sides_scale_mode,
+      )
+      let repeat_side_y = compute_tiled_subaxis(
+        image_side_height,
+        target_side_height,
+        slicer.sides_scale_mode,
+      )
+      let repeat_center_x = compute_tiled_subaxis(
+        image_side_width,
+        target_side_width,
+        slicer.center_scale_mode,
+      )
+      let repeat_center_y = compute_tiled_subaxis(
+        image_side_height,
+        target_side_height,
+        slicer.center_scale_mode,
+      )
+      (
+        slices,
+        border,
+        @math.Vec4::new(
+          repeat_side_x, repeat_side_y, repeat_center_x, repeat_center_y,
+        ),
+      )
+    }
+    _ =>
+      (
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+        @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
+      )
+  }
+}
+
+///|
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(
   world : W,
   width : Int,
@@ -1250,6 +2380,16 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sp
   world : W,
 ) -> Unit {
   render_state_ref_mut(world).map(fn(rs) { rs.val.extra_sprites.clear() })
+  |> ignore
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprite_texture_slices(
+  world : W,
+) -> Unit {
+  render_state_ref_mut(world).map(fn(rs) {
+    rs.val.extra_sprite_texture_slices.clear()
+  })
   |> ignore
 }
 
@@ -1692,18 +2832,44 @@ pub fn[
       Some(v) => Some(v.rect)
       None => None
     }
-    rs.val.sprites.push(SpriteInstance::{
-      entity,
-      transform,
-      anchor_offset,
-      draw_scale,
-      color: sprite.color,
-      texture: sprite.image,
-      layers,
-      uv_min,
-      uv_max,
-      scissor,
-    })
+    if sprite_image_mode_uses_slices(sprite.image_mode) {
+      let target_size = @math.Vec2::new(
+        sprite_abs_float(draw_scale.x),
+        sprite_abs_float(draw_scale.y),
+      )
+      let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+        region_size,
+        target_size,
+        sprite.image_mode,
+      )
+      rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
+        entity,
+        transform,
+        anchor_offset,
+        draw_scale,
+        color: sprite.color,
+        texture: sprite.image,
+        layers,
+        scissor,
+        texture_slices,
+        target_slices,
+        repeat,
+        atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+      })
+    } else {
+      rs.val.sprites.push(SpriteInstance::{
+        entity,
+        transform,
+        anchor_offset,
+        draw_scale,
+        color: sprite.color,
+        texture: sprite.image,
+        layers,
+        uv_min,
+        uv_max,
+        scissor,
+      })
+    }
   })
   let mesh_store = Has_Mesh2d::get_mesh2d_store(world)
   let gpu_mesh_store = Has_GpuMesh2d::get_gpu_mesh2d_store(world)
@@ -1732,6 +2898,9 @@ pub fn[
       transform,
       color: mat.color(),
       alpha_mode: mat.alpha_mode(),
+      texture: mat.texture(),
+      uv_offset: mat.uv_offset(),
+      uv_scale: mat.uv_scale(),
       layers,
     })
   })
@@ -1791,6 +2960,7 @@ fn mesh_draw_alpha(alpha_mode : AlphaMode2d, alpha : Float) -> Float? {
 priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
+  SpriteTextureSliceExtra(Int)
   UiRectExtra(Int)
   UiBoxShadowExtra(Int)
   UiTextureSliceExtra(Int)
@@ -1817,6 +2987,7 @@ priv struct DrawItem {
 fn draw_items_for_layers(
   sprites : Array[SpriteInstance],
   extra_sprites : Array[SpriteInstance],
+  extra_sprite_texture_slices : Array[SpriteTextureSliceInstance],
   extra_ui_rects : Array[UiRectInstance],
   extra_ui_box_shadows : Array[UiBoxShadowInstance],
   extra_ui_texture_slices : Array[UiTextureSliceInstance],
@@ -1857,6 +3028,23 @@ fn draw_items_for_layers(
       entity_generation: sprite.entity.generation,
       // Ensure extra-sprites tie-break after main sprites with the same entity key.
       tie: 1_000_000 + i,
+    })
+  }
+  for i in 0..<extra_sprite_texture_slices.length() {
+    let slice = extra_sprite_texture_slices[i]
+    if !slice.layers.matches(layers) {
+      continue
+    }
+    let phase = if slice.color.a >= 1.0F { 0 } else { 1 }
+    items.push(DrawItem::{
+      kind: SpriteTextureSliceExtra(i),
+      z: slice.transform.translation.z,
+      phase,
+      pipeline: 0,
+      batch: slice.texture.id(),
+      entity_id: slice.entity.id,
+      entity_generation: slice.entity.generation,
+      tie: 1_500_000 + i,
     })
   }
   for i in 0..<extra_ui_rects.length() {
@@ -1984,6 +3172,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
     },
   ]
   let extra : Array[SpriteInstance] = []
+  let extra_sprite_slices : Array[SpriteTextureSliceInstance] = []
   let extra_ui : Array[UiRectInstance] = []
   let extra_shadow : Array[UiBoxShadowInstance] = []
   let extra_slices : Array[UiTextureSliceInstance] = []
@@ -1999,11 +3188,15 @@ test "render2d: unified draw items order sprites and meshes by z" {
       ),
       color: Color::white(),
       alpha_mode: AlphaMode2d::Blend,
+      texture: None,
+      uv_offset: @math.Vec2::new(0.0F, 0.0F),
+      uv_scale: @math.Vec2::new(1.0F, 1.0F),
       layers,
     },
   ]
   let items = draw_items_for_layers(
-    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, layers,
+    sprites, extra, extra_sprite_slices, extra_ui, extra_shadow, extra_slices, meshes,
+    layers,
   )
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
@@ -2016,6 +3209,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let layers = RenderLayers::default()
   let sprites : Array[SpriteInstance] = []
   let extra : Array[SpriteInstance] = []
+  let extra_sprite_slices : Array[SpriteTextureSliceInstance] = []
   let extra_ui : Array[UiRectInstance] = []
   let extra_shadow : Array[UiBoxShadowInstance] = []
   let extra_slices : Array[UiTextureSliceInstance] = []
@@ -2026,6 +3220,9 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
       transform: @math.Transform::identity(),
       color: Color::new(1.0F, 0.0F, 0.0F, 0.2F),
       alpha_mode: AlphaMode2d::Opaque,
+      texture: None,
+      uv_offset: @math.Vec2::new(0.0F, 0.0F),
+      uv_scale: @math.Vec2::new(1.0F, 1.0F),
       layers,
     },
     MeshInstance::{
@@ -2034,11 +3231,15 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
       transform: @math.Transform::identity(),
       color: Color::new(0.0F, 1.0F, 0.0F, 0.2F),
       alpha_mode: AlphaMode2d::Blend,
+      texture: None,
+      uv_offset: @math.Vec2::new(0.0F, 0.0F),
+      uv_scale: @math.Vec2::new(1.0F, 1.0F),
       layers,
     },
   ]
   let items = draw_items_for_layers(
-    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, layers,
+    sprites, extra, extra_sprite_slices, extra_ui, extra_shadow, extra_slices, meshes,
+    layers,
   )
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
@@ -2051,6 +3252,7 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
   let layers = RenderLayers::default()
   let sprites : Array[SpriteInstance] = []
   let extra : Array[SpriteInstance] = []
+  let extra_sprite_slices : Array[SpriteTextureSliceInstance] = []
   let extra_ui : Array[UiRectInstance] = []
   let extra_shadow : Array[UiBoxShadowInstance] = []
   let extra_slices : Array[UiTextureSliceInstance] = []
@@ -2061,6 +3263,9 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
       transform: @math.Transform::identity(),
       color: Color::new(1.0F, 1.0F, 1.0F, 0.2F),
       alpha_mode: AlphaMode2d::Mask(0.5F),
+      texture: None,
+      uv_offset: @math.Vec2::new(0.0F, 0.0F),
+      uv_scale: @math.Vec2::new(1.0F, 1.0F),
       layers,
     },
     MeshInstance::{
@@ -2069,13 +3274,60 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
       transform: @math.Transform::identity(),
       color: Color::new(1.0F, 1.0F, 1.0F, 0.8F),
       alpha_mode: AlphaMode2d::Mask(0.5F),
+      texture: None,
+      uv_offset: @math.Vec2::new(0.0F, 0.0F),
+      uv_scale: @math.Vec2::new(1.0F, 1.0F),
       layers,
     },
   ]
   let items = draw_items_for_layers(
-    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, layers,
+    sprites, extra, extra_sprite_slices, extra_ui, extra_shadow, extra_slices, meshes,
+    layers,
   )
   let ok = items.length() == 1 && items[0].kind is Mesh(1)
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: shape geometry builders validate" {
+  let polyline = Polyline2d::new([
+    @math.Vec2::new(-40.0F, 40.0F),
+    @math.Vec2::new(0.0F, -40.0F),
+    @math.Vec2::new(40.0F, 40.0F),
+  ]).with_half_thickness(3.0F)
+  let geometries : Array[@mesh.Mesh2dGeometry] = [
+    circle_to_mesh2d_geometry(Circle::new(10.0F).with_vertices(24)),
+    ellipse_to_mesh2d_geometry(Ellipse::new(8.0F, 12.0F).with_vertices(24)),
+    annulus_to_mesh2d_geometry(Annulus::new(4.0F, 10.0F).with_vertices(24)),
+    ring_to_mesh2d_geometry(Ring2d::new(10.0F, 7.0F).with_vertices(24)),
+    circular_sector_to_mesh2d_geometry(
+      CircularSector::from_turns(10.0F, 0.35F).with_vertices(24),
+    ),
+    circular_segment_to_mesh2d_geometry(
+      CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24),
+    ),
+    rhombus_to_mesh2d_geometry(Rhombus::new(12.0F, 20.0F)),
+    regular_polygon_to_mesh2d_geometry(RegularPolygon::new(10.0F, 6)),
+    triangle_to_mesh2d_geometry(Triangle2d::default()),
+    segment_to_mesh2d_geometry(
+      Segment2d::new(
+        @math.Vec2::new(-30.0F, 30.0F),
+        @math.Vec2::new(30.0F, -30.0F),
+      ).with_half_thickness(3.0F),
+    ),
+    polyline_to_mesh2d_geometry(polyline),
+    capsule_to_mesh2d_geometry(Capsule2d::new(5.0F, 10.0F, 16)),
+    rectangle_to_mesh2d_geometry(Rectangle::new(10.0F, 20.0F)),
+  ]
+  let mut ok = true
+  for geometry in geometries {
+    if geometry.validate() is Some(_) {
+      ok = false
+    }
+    if geometry.triangle_count() is None {
+      ok = false
+    }
+  }
   inspect(ok, content="true")
 }
 
@@ -2093,6 +3345,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   if cameras.length() == 0 {
     gizmos_clear()
     rs.val.extra_sprites.clear()
+    rs.val.extra_sprite_texture_slices.clear()
     rs.val.extra_ui_rects.clear()
     rs.val.extra_ui_box_shadows.clear()
     rs.val.extra_ui_texture_slices.clear()
@@ -2100,6 +3353,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   }
   let sprites = rs.val.sprites
   let extra_sprites = rs.val.extra_sprites
+  let extra_sprite_texture_slices = rs.val.extra_sprite_texture_slices
   let extra_ui_rects = rs.val.extra_ui_rects
   let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
   let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
@@ -2259,6 +3513,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     let draw_items = draw_items_for_layers(
       sprites,
       extra_sprites,
+      extra_sprite_texture_slices,
       extra_ui_rects,
       extra_ui_box_shadows,
       extra_ui_texture_slices,
@@ -2349,6 +3604,43 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             sprite.uv_max.y,
           )
         }
+        SpriteTextureSliceExtra(i) => {
+          let slice = extra_sprite_texture_slices[i]
+          apply_scissor(slice.scissor)
+          let transform = slice.transform
+          let pos = @math.Vec2::new(
+            transform.translation.x + slice.anchor_offset.x,
+            transform.translation.y + slice.anchor_offset.y,
+          )
+          @window.host_gpu_draw_ui_texture_slice(
+            slice.texture.id(),
+            pos.x,
+            pos.y,
+            transform.rotation_z(),
+            slice.draw_scale.x,
+            slice.draw_scale.y,
+            slice.color.r,
+            slice.color.g,
+            slice.color.b,
+            slice.color.a,
+            slice.texture_slices.x,
+            slice.texture_slices.y,
+            slice.texture_slices.z,
+            slice.texture_slices.w,
+            slice.target_slices.x,
+            slice.target_slices.y,
+            slice.target_slices.z,
+            slice.target_slices.w,
+            slice.repeat.x,
+            slice.repeat.y,
+            slice.repeat.z,
+            slice.repeat.w,
+            slice.atlas_rect.x,
+            slice.atlas_rect.y,
+            slice.atlas_rect.z,
+            slice.atlas_rect.w,
+          )
+        }
         Mesh(i) => {
           apply_scissor(None)
           let mesh = meshes[i]
@@ -2357,6 +3649,10 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             continue
           }
           let transform = mesh.transform
+          let texture_id = match mesh.texture {
+            Some(texture) => texture.id()
+            None => -1
+          }
           @window.host_gpu_draw_mesh(
             mesh.mesh_id,
             transform.translation.x,
@@ -2368,6 +3664,11 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             mesh.color.g,
             mesh.color.b,
             draw_alpha,
+            texture_id,
+            mesh.uv_offset.x,
+            mesh.uv_offset.y,
+            mesh.uv_scale.x,
+            mesh.uv_scale.y,
           )
         }
         UiRectExtra(i) => {
@@ -2477,8 +3778,10 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
   }
   gizmos_clear()
   rs.val.extra_sprites.clear()
+  rs.val.extra_sprite_texture_slices.clear()
   rs.val.extra_ui_rects.clear()
   rs.val.extra_ui_box_shadows.clear()
+  rs.val.extra_ui_texture_slices.clear()
 }
 
 ///|

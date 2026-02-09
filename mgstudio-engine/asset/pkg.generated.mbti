@@ -170,6 +170,8 @@ pub fn Image::new(Int, Int, Bytes) -> Self
 pub(all) enum ImageSampler {
   Linear
   Nearest
+  LinearRepeat
+  NearestRepeat
 }
 
 pub struct LoadedFolder {
