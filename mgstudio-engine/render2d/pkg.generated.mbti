@@ -470,8 +470,21 @@ pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + 
 pub(all) enum SpriteImageMode {
   Auto
   Sliced(TextureSlicer)
+  Tiled(SpriteTiling)
 }
 pub fn SpriteImageMode::default() -> Self
+pub fn SpriteImageMode::tiled(tile_x? : Bool, tile_y? : Bool, stretch_value? : Float) -> Self
+
+pub struct SpriteTiling {
+  tile_x : Bool
+  tile_y : Bool
+  stretch_value : Float
+}
+pub fn SpriteTiling::default() -> Self
+pub fn SpriteTiling::new(Bool, Bool, Float) -> Self
+pub fn SpriteTiling::with_stretch_value(Self, Float) -> Self
+pub fn SpriteTiling::with_tile_x(Self, Bool) -> Self
+pub fn SpriteTiling::with_tile_y(Self, Bool) -> Self
 
 pub struct TextureSlicer {
   border : BorderRect

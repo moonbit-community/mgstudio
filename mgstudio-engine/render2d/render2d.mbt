@@ -130,6 +130,51 @@ pub fn SliceScaleMode::default() -> SliceScaleMode {
 }
 
 ///|
+pub struct SpriteTiling {
+  tile_x : Bool
+  tile_y : Bool
+  stretch_value : Float
+}
+
+///|
+pub fn SpriteTiling::new(
+  tile_x : Bool,
+  tile_y : Bool,
+  stretch_value : Float,
+) -> SpriteTiling {
+  SpriteTiling::{ tile_x, tile_y, stretch_value }
+}
+
+///|
+pub fn SpriteTiling::default() -> SpriteTiling {
+  SpriteTiling::new(true, true, 1.0F)
+}
+
+///|
+pub fn SpriteTiling::with_tile_x(
+  self : SpriteTiling,
+  tile_x : Bool,
+) -> SpriteTiling {
+  SpriteTiling::{ ..self, tile_x, }
+}
+
+///|
+pub fn SpriteTiling::with_tile_y(
+  self : SpriteTiling,
+  tile_y : Bool,
+) -> SpriteTiling {
+  SpriteTiling::{ ..self, tile_y, }
+}
+
+///|
+pub fn SpriteTiling::with_stretch_value(
+  self : SpriteTiling,
+  stretch_value : Float,
+) -> SpriteTiling {
+  SpriteTiling::{ ..self, stretch_value, }
+}
+
+///|
 pub struct TextureSlicer {
   border : BorderRect
   center_scale_mode : SliceScaleMode
@@ -180,6 +225,7 @@ pub fn TextureSlicer::with_max_corner_scale(
 pub(all) enum SpriteImageMode {
   Auto
   Sliced(TextureSlicer)
+  Tiled(SpriteTiling)
 }
 
 ///|
@@ -193,6 +239,15 @@ fn sprite_image_mode_uses_slices(mode : SpriteImageMode) -> Bool {
     SpriteImageMode::Sliced(_) => true
     _ => false
   }
+}
+
+///|
+pub fn SpriteImageMode::tiled(
+  tile_x? : Bool = true,
+  tile_y? : Bool = true,
+  stretch_value? : Float = 1.0F,
+) -> SpriteImageMode {
+  SpriteImageMode::Tiled(SpriteTiling::new(tile_x, tile_y, stretch_value))
 }
 
 ///|
@@ -2172,6 +2227,60 @@ fn compute_tiled_subaxis(
 }
 
 ///|
+fn tiled_repeat_factor(draw_scale_axis : Float, stretch_value : Float) -> Float {
+  let safe_stretch = clamp_stretch_value(stretch_value)
+  let draw_abs = sprite_abs_float(draw_scale_axis)
+  if draw_abs < 0.000001F {
+    1.0F
+  } else {
+    draw_abs / safe_stretch
+  }
+}
+
+///|
+fn apply_tiled_sprite_image_mode(
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  draw_scale : @math.Vec2,
+  image_mode : SpriteImageMode,
+) -> (@math.Vec2, @math.Vec2, @math.Vec2, Bool) {
+  match image_mode {
+    SpriteImageMode::Tiled(tiling) => {
+      let repeat_x = if tiling.tile_x {
+        tiled_repeat_factor(draw_scale.x, tiling.stretch_value)
+      } else {
+        1.0F
+      }
+      let repeat_y = if tiling.tile_y {
+        tiled_repeat_factor(draw_scale.y, tiling.stretch_value)
+      } else {
+        1.0F
+      }
+      let uv_span_x = uv_max.x - uv_min.x
+      let uv_span_y = uv_max.y - uv_min.y
+      let next_uv_max = @math.Vec2::new(
+        uv_min.x + uv_span_x * repeat_x,
+        uv_min.y + uv_span_y * repeat_y,
+      )
+      let next_draw_scale = @math.Vec2::new(
+        if tiling.tile_x {
+          draw_scale.x / repeat_x
+        } else {
+          draw_scale.x
+        },
+        if tiling.tile_y {
+          draw_scale.y / repeat_y
+        } else {
+          draw_scale.y
+        },
+      )
+      (uv_min, next_uv_max, next_draw_scale, true)
+    }
+    _ => (uv_min, uv_max, draw_scale, false)
+  }
+}
+
+///|
 fn compute_sprite_texture_slices(
   image_size : @math.Vec2,
   target_size : @math.Vec2,
@@ -2832,6 +2941,18 @@ pub fn[
       Some(v) => Some(v.rect)
       None => None
     }
+    let (uv_draw_min, uv_draw_max, draw_scale_for_host, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
+      uv_min,
+      uv_max,
+      draw_scale,
+      sprite.image_mode,
+    )
+    if needs_repeat_sampler {
+      @asset.asset_set_texture_sampler(
+        sprite.image,
+        @asset.ImageSampler::LinearRepeat,
+      )
+    }
     if sprite_image_mode_uses_slices(sprite.image_mode) {
       let target_size = @math.Vec2::new(
         sprite_abs_float(draw_scale.x),
@@ -2861,12 +2982,12 @@ pub fn[
         entity,
         transform,
         anchor_offset,
-        draw_scale,
+        draw_scale: draw_scale_for_host,
         color: sprite.color,
         texture: sprite.image,
         layers,
-        uv_min,
-        uv_max,
+        uv_min: uv_draw_min,
+        uv_max: uv_draw_max,
         scissor,
       })
     }
@@ -3285,6 +3406,48 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
     layers,
   )
   let ok = items.length() == 1 && items[0].kind is Mesh(1)
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: tiled sprite mode adjusts uv and draw scale" {
+  let mode = SpriteImageMode::tiled(stretch_value=0.5F)
+  let (uv_min, uv_max, draw_scale, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(0.5F, 1.0F),
+    mode,
+  )
+  let ok = uv_min.x == 0.0F &&
+    uv_min.y == 0.0F &&
+    uv_max.x == 1.0F &&
+    uv_max.y == 2.0F &&
+    draw_scale.x == 0.5F &&
+    draw_scale.y == 0.5F &&
+    needs_repeat_sampler
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: tiled sprite mode keeps non-tiled axis unchanged" {
+  let mode = SpriteImageMode::tiled(
+    tile_x=false,
+    tile_y=true,
+    stretch_value=0.25F,
+  )
+  let (uv_min, uv_max, draw_scale, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
+    @math.Vec2::new(0.2F, 0.3F),
+    @math.Vec2::new(0.6F, 0.9F),
+    @math.Vec2::new(1.0F, 0.5F),
+    mode,
+  )
+  let ok = uv_min.x == 0.2F &&
+    uv_min.y == 0.3F &&
+    uv_max.x == 0.6F &&
+    uv_max.y == 1.5F &&
+    draw_scale.x == 1.0F &&
+    draw_scale.y == 0.25F &&
+    needs_repeat_sampler
   inspect(ok, content="true")
 }
 
