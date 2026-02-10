@@ -28,11 +28,11 @@ DIST_DIR="$SCRIPT_DIR/dist"
 echo "Building engine examples..."
 while IFS= read -r pkg; do
   pkg_dir=$(dirname "$pkg")
-  moon build --release --target "$TARGET" -C "$ENGINE_DIR" "$pkg_dir"
+  moon -C "$ENGINE_DIR" build --release --target "$TARGET" "$pkg_dir"
 done < <(find "$ENGINE_DIR/examples" -name moon.pkg.json -print | sort)
 
 echo "Building web runtime JS bundle..."
-moon build --release --target js -C "$RUNTIME_WEB_DIR"
+moon -C "$RUNTIME_WEB_DIR" build --release --target js
 
 RUNTIME_BUNDLE="$RUNTIME_WEB_DIR/_build/js/release/build/mgstudio-runtime-web.js"
 if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
@@ -65,4 +65,3 @@ echo "Copying assets into page dist..."
 rsync -a --delete "$ASSETS_DIR/" "$DIST_DIR/assets/"
 
 echo "Built: $DIST_DIR"
-

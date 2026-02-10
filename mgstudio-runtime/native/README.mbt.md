@@ -30,7 +30,7 @@ Known upstream blocker (wgpu_mbt packaging/build):
 Recommended workflow (from repo root):
 ```bash
 # Build a game wasm (example).
-moon build --release --target wasm-gc -C mgstudio-engine mgstudio-engine/examples/2d/sprite
+moon -C mgstudio-engine build --release --target wasm-gc mgstudio-engine/examples/2d/sprite
 
 # Run the game described by moon.game.json (calls export: game_app).
 ./mgstudio-dev run --game mgstudio-engine/examples/2d/sprite/moon.game.json

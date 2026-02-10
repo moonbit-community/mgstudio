@@ -21,7 +21,7 @@ RUNTIME_BUNDLE="$RUNTIME_DIR/_build/js/release/build/mgstudio-runtime-web.js"
 OUT_DIR=${OUT_DIR:-"$SCRIPT_DIR/dist"}
 OUT_BUNDLE="$OUT_DIR/mgstudio-runtime-web.js"
 
-moon build --release --target js -C "$RUNTIME_DIR"
+moon -C "$RUNTIME_DIR" build --release --target js
 
 if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
   echo "Runtime JS bundle not found at $RUNTIME_BUNDLE" >&2
