@@ -174,6 +174,48 @@ let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref::new(CosmicFontS
 })
 
 ///|
+fn int_array_contains(xs : Array[Int], value : Int) -> Bool {
+  for x in xs {
+    if x == value {
+      return true
+    }
+  }
+  false
+}
+
+///|
+let text_warned_missing_font_ids : Ref[Array[Int]] = Ref::new([])
+
+///|
+let text_warned_missing_glyph_ids : Ref[Array[Int]] = Ref::new([])
+
+///|
+fn text_warn_missing_font_once(text_id : Int, font_handle : Int) -> Unit {
+  if int_array_contains(text_warned_missing_font_ids.val, text_id) {
+    return
+  }
+  text_warned_missing_font_ids.val.push(text_id)
+  @window.host_debug_string(
+    "Text2d warning: font bytes unavailable, text_id=" +
+    text_id.to_string() +
+    ", font_handle=" +
+    font_handle.to_string(),
+  )
+}
+
+///|
+fn text_warn_missing_glyph_once(text_id : Int) -> Unit {
+  if int_array_contains(text_warned_missing_glyph_ids.val, text_id) {
+    return
+  }
+  text_warned_missing_glyph_ids.val.push(text_id)
+  @window.host_debug_string(
+    "Text2d warning: glyph rasterization or atlas upload not ready, text_id=" +
+    text_id.to_string(),
+  )
+}
+
+///|
 fn find_int_pair_value(pairs : Array[(Int, Int)], key : Int) -> Int? {
   let n = pairs.length()
   for i in 0..<n {
@@ -361,10 +403,12 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let mut missing_glyph = false
   if cosmic_get_or_load_font_id(instance.font.font) is None {
     missing_glyph = true
+    text_warn_missing_font_once(instance.id, instance.font.font.id())
   }
   for span in instance.spans {
     if cosmic_get_or_load_font_id(span.font.font) is None {
       missing_glyph = true
+      text_warn_missing_font_once(instance.id, span.font.font.id())
     }
   }
   let font_system = cosmic_font_system_state.val.font_system
@@ -524,6 +568,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       )
       if raster_opt is None {
         missing_glyph = true
+        text_warn_missing_glyph_once(instance.id)
         continue
       }
       let raster = if raster_opt is Some(v) { v } else { continue }

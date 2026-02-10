@@ -1560,6 +1560,232 @@ test "physics2d: child collider attaches to parent body" {
 }
 
 ///|
+test "physics2d: multiple child colliders aggregate parent mass" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+
+  let body_single = @core.Entity::new(0, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    body_single,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(-3.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    body_single,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  let child_single = @core.Entity::new(1, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    child_single,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    child_single,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
+    child_single,
+    ColliderParent2d::new(body_single),
+    tick,
+  )
+
+  let body_double = @core.Entity::new(2, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    body_double,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(3.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    body_double,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  let child_double_a = @core.Entity::new(3, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    child_double_a,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(-0.75F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    child_double_a,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
+    child_double_a,
+    ColliderParent2d::new(body_double),
+    tick,
+  )
+  let child_double_b = @core.Entity::new(4, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    child_double_b,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.75F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    child_double_b,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
+    child_double_b,
+    ColliderParent2d::new(body_double),
+    tick,
+  )
+
+  physics2d_sync_insertions_system(world)
+  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+    .get_ref()
+    .unwrap().val
+  let bh_single = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(world)
+    .get(body_single)
+    .unwrap().handle
+  let bh_double = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(world)
+    .get(body_double)
+    .unwrap().handle
+  let inv_single = ctx.rigid_bodies.get(bh_single).unwrap().inv_mass()
+  let inv_double = ctx.rigid_bodies.get(bh_double).unwrap().inv_mass()
+  inspect(inv_single > 0.0F, content="true")
+  inspect(inv_double > 0.0F, content="true")
+  inspect(inv_double < inv_single, content="true")
+}
+
+///|
+test "physics2d: collision events use child collider entity mapping" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
+
+  let floor = @core.Entity::new(10, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    floor,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, -1.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    floor,
+    RigidBody2d::fixed(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    floor,
+    Collider2d::new(ColliderShape2d::cuboid(5.0F, 0.5F)),
+    tick,
+  )
+
+  let body = @core.Entity::new(11, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    body,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    body,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  let child = @core.Entity::new(12, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    child,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.6F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    child,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
+    child,
+    ColliderParent2d::new(body),
+    tick,
+  )
+
+  physics2d_sync_insertions_system(world)
+  let mut seen_child = false
+  let mut seen_parent = false
+  for _ in 0..<120 {
+    physics2d_clear_events_system(world)
+    physics2d_sync_world_to_rapier_system(world)
+    physics2d_step_system(world)
+    let events = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
+      .get_ref()
+      .unwrap().val
+    for ev in events.collisions {
+      match ev {
+        CollisionEvent2d::Started(a, b, _) => {
+          if a.id == child.id || b.id == child.id {
+            seen_child = true
+          }
+          if a.id == body.id || b.id == body.id {
+            seen_parent = true
+          }
+        }
+        CollisionEvent2d::Stopped(_, _, _) => ()
+      }
+    }
+  }
+  inspect(seen_child, content="true")
+  inspect(!seen_parent, content="true")
+}
+
+///|
 test "physics2d: kinematic character controller moves and outputs" {
   @app.fixed_time_reset()
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
