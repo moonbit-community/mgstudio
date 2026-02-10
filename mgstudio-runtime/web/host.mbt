@@ -178,6 +178,32 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #| }
 
 ///|
+extern "js" fn shader_module_get_compilation_info(
+  shader_module_any : @js.Any,
+) -> @js.Promise[@js.Any] =
+  #| (shader_module_any) => {
+  #|   if (!shader_module_any || typeof shader_module_any.getCompilationInfo !== "function") {
+  #|     return Promise.resolve(null)
+  #|   }
+  #|   return shader_module_any.getCompilationInfo()
+  #| }
+
+///|
+extern "js" fn shader_compilation_info_to_text(info : @js.Any) -> String =
+  #| (info) => {
+  #|   if (!info || !Array.isArray(info.messages)) return ""
+  #|   const lines = []
+  #|   for (const message of info.messages) {
+  #|     const type = message?.type ?? "info"
+  #|     const line = Number(message?.lineNum ?? 0)
+  #|     const pos = Number(message?.linePos ?? 0)
+  #|     const text = String(message?.message ?? "")
+  #|     lines.push(`${type} L${line}:${pos} ${text}`)
+  #|   }
+  #|   return lines.join("\n")
+  #| }
+
+///|
 extern "js" fn idb_open_kv_db(name : String) -> @js.Promise[@js.Any] =
   #| (name) => new Promise((resolve, reject) => {
   #|   if (typeof indexedDB === "undefined") {
@@ -1536,6 +1562,8 @@ struct GpuState {
   mut mesh_bind_group : @webgpu.GPUBindGroup?
   mut mesh3d_pipeline : @webgpu.GPURenderPipeline?
   mut mesh3d_bind_group : @webgpu.GPUBindGroup?
+  mut mesh3d_uniform_layout : @webgpu.GPUBindGroupLayout?
+  mut mesh3d_material_layout : @webgpu.GPUBindGroupLayout?
   mut depth_texture : @webgpu.GPUTexture?
   mut depth_view : @webgpu.GPUTextureView?
   mut depth_width : Int
@@ -1668,6 +1696,8 @@ fn new_state(
       mesh_bind_group: None,
       mesh3d_pipeline: None,
       mesh3d_bind_group: None,
+      mesh3d_uniform_layout: None,
+      mesh3d_material_layout: None,
       depth_texture: None,
       depth_view: None,
       depth_width: 0,
@@ -2048,6 +2078,8 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.mesh_bind_group = None
   state.gpu.mesh3d_pipeline = None
   state.gpu.mesh3d_bind_group = None
+  state.gpu.mesh3d_uniform_layout = None
+  state.gpu.mesh3d_material_layout = None
   state.gpu.depth_texture = None
   state.gpu.depth_view = None
   state.gpu.depth_width = 0
@@ -3157,6 +3189,113 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
     let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
+    @js.run_async(async fn() noraise {
+      let info_any : @js.Any = shader_module_get_compilation_info(
+        shader_module.as_any(),
+      ).wait() catch {
+        _ => js_null()
+      }
+      let info_text = shader_compilation_info_to_text(info_any)
+      if info_text != "" {
+        report_debug_once(
+          state,
+          "mesh3d_shader_compilation_info",
+          "Mesh3d shader compilation info:\n" + info_text,
+        )
+      }
+    })
+    if state.gpu.mesh3d_uniform_layout is None {
+      let fragment_stage = @webgpu.shader_stage_fragment()
+      let vertex_fragment_stage = @webgpu.combine_flags(
+        @webgpu.shader_stage_vertex(),
+        fragment_stage,
+      )
+      let uniform_layout_desc = @js.from_entries([
+        (
+          "entries",
+          @js.any([
+            @js.from_entries([
+              ("binding", @js.any(0)),
+              ("visibility", @js.any(vertex_fragment_stage)),
+              ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
+            ]),
+          ]),
+        ),
+      ])
+      let uniform_layout = device.create_bind_group_layout(uniform_layout_desc)
+      state.gpu.mesh3d_uniform_layout = Some(uniform_layout)
+      let material_layout_desc = @js.from_entries([
+        (
+          "entries",
+          @js.any([
+            @js.from_entries([
+              ("binding", @js.any(0)),
+              ("visibility", @js.any(fragment_stage)),
+              ("sampler", @js.from_entries([("type", @js.any("filtering"))])),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(1)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(2)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(3)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(4)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(5)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
+          ]),
+        ),
+      ])
+      let material_layout = device.create_bind_group_layout(
+        material_layout_desc,
+      )
+      state.gpu.mesh3d_material_layout = Some(material_layout)
+    }
     let position_attr = @webgpu.vertex_attribute(
       shader_location=0,
       offset=0,
@@ -3191,13 +3330,26 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
     let primitive_state = @webgpu.primitive_state(
       @webgpu.PrimitiveTopology::TriangleList,
     )
+    guard state.gpu.mesh3d_uniform_layout is Some(uniform_layout) else {
+      return
+    }
+    guard state.gpu.mesh3d_material_layout is Some(material_layout) else {
+      return
+    }
+    let pipeline_layout_desc = @js.from_entries([
+      (
+        "bindGroupLayouts",
+        @js.any([uniform_layout.as_any(), material_layout.as_any()]),
+      ),
+    ])
+    let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
     let depth_state = @js.from_entries([
       ("format", @js.any("depth24plus")),
       ("depthWriteEnabled", @js.any(true)),
       ("depthCompare", @js.any("less-equal")),
     ])
     let pipeline_desc = @js.from_entries([
-      ("layout", @js.any("auto")),
+      ("layout", pipeline_layout.as_any()),
       ("vertex", vertex_state.to_js()),
       ("fragment", fragment_state.to_js()),
       ("primitive", primitive_state.to_js()),
@@ -3219,8 +3371,8 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
       }
     })
     state.gpu.mesh3d_pipeline = Some(pipeline)
-    if state.gpu.uniform_buffer is Some(uniform_buffer) {
-      let layout = pipeline.get_bind_group_layout(0)
+    if state.gpu.uniform_buffer is Some(uniform_buffer) &&
+      state.gpu.mesh3d_uniform_layout is Some(layout) {
       let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
       let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
       device.push_error_scope("validation")
@@ -5014,7 +5166,9 @@ fn draw_mesh3d(
       let occlusion_view : @webgpu.GPUTextureView = occlusion_texture_entry_value
         ._get("view")
         .cast()
-      let material_layout = mesh3d_pipeline.get_bind_group_layout(1)
+      guard state.gpu.mesh3d_material_layout is Some(material_layout) else {
+        return
+      }
       let material_entries = [
         @webgpu.bind_group_entry_sampler(0, base_sampler),
         @webgpu.bind_group_entry_texture(1, base_view),
