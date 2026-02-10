@@ -15,7 +15,7 @@
 ///|
 test "ui: clip respects overflow_clip_margin visual_box and margin" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let tick = world.increment_change_tick()
 
   // Seed UiContext (camera_entity must be present for ui_clip_system).
   let ctx = UiContext::new(
@@ -28,15 +28,11 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     None,
     false,
   )
-  HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
+  world.get_ui_context_resource().insert(ctx, tick)
   let root = world.spawn_empty()
-  Has_UiRoot::get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  world.get_ui_root_store().insert(root, UiRoot::default(), tick)
   let container = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    container,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  world.get_parent_store().insert(container, @hierarchy.Parent::new(root), tick)
   let container_node = Node::default()
     .with_width(Val::Px(100.0F))
     .with_height(Val::Px(100.0F))
@@ -55,20 +51,20 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     .with_overflow_clip_margin(
       OverflowClipMargin::content_box().with_margin(2.0F),
     )
-  Has_Node::get_node_store(world).insert(container, container_node, tick)
+  world.get_node_store().insert(container, container_node, tick)
   let child = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(container),
-    tick,
-  )
-  Has_Node::get_node_store(world).insert(child, Node::default(), tick)
+  world
+  .get_parent_store()
+  .insert(child, @hierarchy.Parent::new(container), tick)
+  world.get_node_store().insert(child, Node::default(), tick)
 
   // Build Children from Parent before clip.
   @transform.update_children_system(world)
 
   // Seed UiLayout so the clip system doesn't depend on layout implementation.
-  Has_UiLayout::get_ui_layout_store(world).insert(
+  world
+  .get_ui_layout_store()
+  .insert(
     container,
     UiLayout::new(
       @math.Rect::new(
@@ -78,7 +74,9 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     ),
     tick,
   )
-  Has_UiLayout::get_ui_layout_store(world).insert(
+  world
+  .get_ui_layout_store()
+  .insert(
     child,
     UiLayout::new(
       @math.Rect::new(@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 1.0F)),
@@ -86,7 +84,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     tick,
   )
   ui_clip_system(world)
-  let scissor_store = @render2d.Has_ScissorRect::get_scissor_rect_store(world)
+  let scissor_store = world.get_scissor_rect_store()
   let scissor = scissor_store.get(child).unwrap().rect
   // BorderBox: (10,20)-(110,120)
   // ContentBox inset: border(5)+padding(10)=15 => (25,35)-(95,105)
@@ -101,7 +99,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
 ///|
 test "ui: overflow Visible disables clipping per-axis" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let tick = world.increment_change_tick()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -112,16 +110,14 @@ test "ui: overflow Visible disables clipping per-axis" {
     None,
     false,
   )
-  HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
+  world.get_ui_context_resource().insert(ctx, tick)
   let root = world.spawn_empty()
-  Has_UiRoot::get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  world.get_ui_root_store().insert(root, UiRoot::default(), tick)
   let container = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    container,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  Has_Node::get_node_store(world).insert(
+  world.get_parent_store().insert(container, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
     container,
     Node::default().with_overflow(
       Overflow::new(OverflowAxis::Visible, OverflowAxis::Hidden),
@@ -129,14 +125,14 @@ test "ui: overflow Visible disables clipping per-axis" {
     tick,
   )
   let child = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(container),
-    tick,
-  )
-  Has_Node::get_node_store(world).insert(child, Node::default(), tick)
+  world
+  .get_parent_store()
+  .insert(child, @hierarchy.Parent::new(container), tick)
+  world.get_node_store().insert(child, Node::default(), tick)
   @transform.update_children_system(world)
-  Has_UiLayout::get_ui_layout_store(world).insert(
+  world
+  .get_ui_layout_store()
+  .insert(
     container,
     UiLayout::new(
       @math.Rect::new(
@@ -146,7 +142,9 @@ test "ui: overflow Visible disables clipping per-axis" {
     ),
     tick,
   )
-  Has_UiLayout::get_ui_layout_store(world).insert(
+  world
+  .get_ui_layout_store()
+  .insert(
     child,
     UiLayout::new(
       @math.Rect::new(@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 1.0F)),
@@ -154,7 +152,7 @@ test "ui: overflow Visible disables clipping per-axis" {
     tick,
   )
   ui_clip_system(world)
-  let scissor_store = @render2d.Has_ScissorRect::get_scissor_rect_store(world)
+  let scissor_store = world.get_scissor_rect_store()
   let scissor = scissor_store.get(child).unwrap().rect
   // X should not be clipped by container; Y should be.
   let ok_x = scissor.min.x == 0.0F && scissor.max.x == 800.0F

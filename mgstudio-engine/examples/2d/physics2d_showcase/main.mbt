@@ -91,12 +91,10 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
 
 ///|
 fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let tick = world.read_change_tick()
 
   // Make gravity visible in "pixel-ish" space.
-  let cfg_res = @physics2d.HasRes_Physics2dConfig::get_physics2d_config_resource(
-    world,
-  )
+  let cfg_res = world.get_physics2d_config_resource()
   match cfg_res.get_ref_mut(tick) {
     Some(r) =>
       r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -800.0F))
@@ -115,30 +113,20 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
   )
   |> ignore
   physics2d_showcase_spawn_controls_overlay()
-  let transform_store = @math.Has_Transform::get_transform_store(world)
-  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
-  let rb_store = @physics2d.Has_RigidBody2d::get_rigid_body2d_store(world)
-  let col_store = @physics2d.Has_Collider2d::get_collider2d_store(world)
-  let vel_store = @physics2d.Has_Velocity2d::get_velocity2d_store(world)
-  let friction_store = @physics2d.Has_Friction2d::get_friction2d_store(world)
-  let restitution_store = @physics2d.Has_Restitution2d::get_restitution2d_store(
-    world,
-  )
-  let active_hooks_store = @physics2d.Has_ActiveHooks2d::get_active_hooks2d_store(
-    world,
-  )
-  let kcc_store = @physics2d.Has_KinematicCharacterController2d::get_kinematic_character_controller2d_store(
-    world,
-  )
-  let kcc_out_store = @physics2d.Has_KinematicCharacterControllerOutput2d::get_kinematic_character_controller_output2d_store(
-    world,
-  )
-  let impulse_joint_store = @physics2d.Has_ImpulseJoint2d::get_impulse_joint2d_store(
-    world,
-  )
+  let transform_store = world.get_transform_store()
+  let sprite_store = world.get_sprite_store()
+  let rb_store = world.get_rigid_body2d_store()
+  let col_store = world.get_collider2d_store()
+  let vel_store = world.get_velocity2d_store()
+  let friction_store = world.get_friction2d_store()
+  let restitution_store = world.get_restitution2d_store()
+  let active_hooks_store = world.get_active_hooks2d_store()
+  let kcc_store = world.get_kinematic_character_controller2d_store()
+  let kcc_out_store = world.get_kinematic_character_controller_output2d_store()
+  let impulse_joint_store = world.get_impulse_joint2d_store()
 
   // Static world bounds.
-  let floor = @core.SpawnWorld::spawn_empty(world)
+  let floor = world.spawn_empty()
   transform_store.insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
@@ -165,7 +153,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
     tick,
   )
   friction_store.insert(floor, @physics2d.Friction2d::new(1.0F), tick)
-  let left_wall = @core.SpawnWorld::spawn_empty(world)
+  let left_wall = world.spawn_empty()
   transform_store.insert(
     left_wall,
     @math.Transform::from_xy_rotation_scale(
@@ -184,7 +172,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  let right_wall = @core.SpawnWorld::spawn_empty(world)
+  let right_wall = world.spawn_empty()
   transform_store.insert(
     right_wall,
     @math.Transform::from_xy_rotation_scale(
@@ -205,7 +193,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
   )
 
   // A sensor zone: only the player triggers it (via hooks intersection filtering).
-  let sensor_zone = @core.SpawnWorld::spawn_empty(world)
+  let sensor_zone = world.spawn_empty()
   transform_store.insert(
     sensor_zone,
     @math.Transform::from_xy_rotation_scale(
@@ -239,7 +227,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
   )
 
   // Player character controller (no rigid body, collider moved via KCC each fixed step).
-  let player = @core.SpawnWorld::spawn_empty(world)
+  let player = world.spawn_empty()
   transform_store.insert(
     player,
     @math.Transform::from_xy_rotation_scale(
@@ -287,7 +275,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
     let i_f = Float::from_int(i)
     let x = -220.0F + i_f * 90.0F
     let y = -180.0F + i_f * 45.0F
-    let box = @core.SpawnWorld::spawn_empty(world)
+    let box = world.spawn_empty()
     transform_store.insert(
       box,
       @math.Transform::from_xy_rotation_scale(
@@ -319,7 +307,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
   }
 
   // Rope joint pendulum.
-  let anchor = @core.SpawnWorld::spawn_empty(world)
+  let anchor = world.spawn_empty()
   transform_store.insert(
     anchor,
     @math.Transform::from_xy_rotation_scale(
@@ -336,7 +324,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(6.0F)),
     tick,
   )
-  let bob = @core.SpawnWorld::spawn_empty(world)
+  let bob = world.spawn_empty()
   transform_store.insert(
     bob,
     @math.Transform::from_xy_rotation_scale(
@@ -374,7 +362,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
   )
 
   // A "ghost" ball pair: hooks can disable contacts for this specific pair.
-  let ghost_a = @core.SpawnWorld::spawn_empty(world)
+  let ghost_a = world.spawn_empty()
   transform_store.insert(
     ghost_a,
     @math.Transform::from_xy_rotation_scale(
@@ -410,7 +398,7 @@ fn physics2d_showcase_setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  let ghost_b = @core.SpawnWorld::spawn_empty(world)
+  let ghost_b = world.spawn_empty()
   transform_store.insert(
     ghost_b,
     @math.Transform::from_xy_rotation_scale(
@@ -513,10 +501,8 @@ fn physics2d_showcase_player_controls_fixed(world : @ecs_world.World) -> Unit {
     )
   }
   guard showcase_entities.val.player is Some(player) else { return }
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let kcc_store = @physics2d.Has_KinematicCharacterController2d::get_kinematic_character_controller2d_store(
-    world,
-  )
+  let tick = world.read_change_tick()
+  let kcc_store = world.get_kinematic_character_controller2d_store()
   guard kcc_store.get(player) is Some(kcc) else { return }
   let mut axis = @math.Vec2::new(0.0F, 0.0F)
   if @input.key_pressed(@window.KeyCode::KeyA) ||
@@ -550,15 +536,15 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs_world.World) -> Unit {
   guard @render2d.render2d_viewport_to_world_2d(world, screen_pos) is Some(p) else {
     return
   }
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let transform_store = @math.Has_Transform::get_transform_store(world)
-  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
-  let rb_store = @physics2d.Has_RigidBody2d::get_rigid_body2d_store(world)
-  let col_store = @physics2d.Has_Collider2d::get_collider2d_store(world)
-  let vel_store = @physics2d.Has_Velocity2d::get_velocity2d_store(world)
-  let ball = @core.SpawnWorld::spawn_empty(world)
+  let transform_store = world.get_transform_store()
+  let sprite_store = world.get_sprite_store()
+  let rb_store = world.get_rigid_body2d_store()
+  let col_store = world.get_collider2d_store()
+  let vel_store = world.get_velocity2d_store()
+  let ball = world.spawn_empty()
   transform_store.insert(
     ball,
     @math.Transform::from_xy_rotation_scale(
@@ -592,9 +578,7 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs_world.World) -> Unit {
 
 ///|
 fn physics2d_showcase_print_events(world : @ecs_world.World) -> Unit {
-  let ev_res = @physics2d.HasRes_Physics2dEvents::get_physics2d_events_resource(
-    world,
-  )
+  let ev_res = world.get_physics2d_events_resource()
   guard ev_res.get_ref() is Some(r) else { return }
   for ev in r.val.collisions {
     match ev {

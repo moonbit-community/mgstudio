@@ -59,9 +59,9 @@ fn move_sprite_movement(world : @ecs_world.World) -> Unit {
   let speed = 150.0F
   let delta = speed * delta_secs
   let move_x = if move_state.val.direction is Right { delta } else { -delta }
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
-  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let tick = world.read_change_tick()
+  let sprite_store = world.get_sprite_store()
+  let transform_store = world.get_transform_store()
   let entities : Array[(@core.Entity, @math.Transform)] = []
   @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {
     entities.push((entity, transform))

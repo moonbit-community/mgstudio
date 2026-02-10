@@ -116,64 +116,44 @@ test "physics3d: falling body collides and writes back transform" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics3dTestWorld::new()
   physics3d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let cfg_res = HasRes_Physics3dConfig::get_physics3d_config_resource(world)
+  let tick = world.read_change_tick()
+  let cfg_res = world.get_physics3d_config_resource()
   cfg_res.get_ref_mut(tick).unwrap().val = Physics3dConfig::new(
     @math.Vec3::new(0.0F, -200.0F, 0.0F),
   )
   let floor = @core.Entity::new(0, 1)
   let ball = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
-    floor,
-    @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
-    tick,
-  )
-  Has_RigidBody3d::get_rigid_body3d_store(world).insert(
-    floor,
-    RigidBody3d::fixed(),
-    tick,
-  )
-  Has_Collider3d::get_collider3d_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(floor, @math.Transform::from_xyz(0.0F, -1.0F, 0.0F), tick)
+  world.get_rigid_body3d_store().insert(floor, RigidBody3d::fixed(), tick)
+  world
+  .get_collider3d_store()
+  .insert(
     floor,
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
     tick,
   )
-  @math.Has_Transform::get_transform_store(world).insert(
-    ball,
-    @math.Transform::from_xyz(0.0F, 5.0F, 0.0F),
-    tick,
-  )
-  Has_RigidBody3d::get_rigid_body3d_store(world).insert(
-    ball,
-    RigidBody3d::dynamic(),
-    tick,
-  )
-  Has_Collider3d::get_collider3d_store(world).insert(
-    ball,
-    Collider3d::new(ColliderShape3d::ball(0.5F)),
-    tick,
-  )
-  Has_Velocity3d::get_velocity3d_store(world).insert(
-    ball,
-    Velocity3d::zero(),
-    tick,
-  )
+  world
+  .get_transform_store()
+  .insert(ball, @math.Transform::from_xyz(0.0F, 5.0F, 0.0F), tick)
+  world.get_rigid_body3d_store().insert(ball, RigidBody3d::dynamic(), tick)
+  world
+  .get_collider3d_store()
+  .insert(ball, Collider3d::new(ColliderShape3d::ball(0.5F)), tick)
+  world.get_velocity3d_store().insert(ball, Velocity3d::zero(), tick)
   physics3d_clear_events_system(world)
   physics3d_sync_insertions_system(world)
-  let initial_y = @math.Has_Transform::get_transform_store(world)
-    .get(ball)
-    .unwrap().translation.y
+  let initial_y = world.get_transform_store().get(ball).unwrap().translation.y
   let mut i = 0
   while i < 120 {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    @core.ChangeTickWorld::increment_change_tick(world) |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let final_y = @math.Has_Transform::get_transform_store(world)
-    .get(ball)
-    .unwrap().translation.y
+  let final_y = world.get_transform_store().get(ball).unwrap().translation.y
   inspect(final_y < initial_y, content="true")
 }
 
@@ -183,44 +163,32 @@ test "physics3d: sensor collision events are emitted" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics3dTestWorld::new()
   physics3d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let cfg_res = HasRes_Physics3dConfig::get_physics3d_config_resource(world)
+  let tick = world.read_change_tick()
+  let cfg_res = world.get_physics3d_config_resource()
   cfg_res.get_ref_mut(tick).unwrap().val = Physics3dConfig::new(
     @math.Vec3::new(0.0F, -200.0F, 0.0F),
   )
   let floor = @core.Entity::new(0, 1)
   let ball = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
-    floor,
-    @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
-    tick,
-  )
-  Has_RigidBody3d::get_rigid_body3d_store(world).insert(
-    floor,
-    RigidBody3d::fixed(),
-    tick,
-  )
-  Has_Collider3d::get_collider3d_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(floor, @math.Transform::from_xyz(0.0F, -1.0F, 0.0F), tick)
+  world.get_rigid_body3d_store().insert(floor, RigidBody3d::fixed(), tick)
+  world
+  .get_collider3d_store()
+  .insert(
     floor,
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
     tick,
   )
-  @math.Has_Transform::get_transform_store(world).insert(
-    ball,
-    @math.Transform::from_xyz(0.0F, 5.0F, 0.0F),
-    tick,
-  )
-  Has_RigidBody3d::get_rigid_body3d_store(world).insert(
-    ball,
-    RigidBody3d::dynamic(),
-    tick,
-  )
+  world
+  .get_transform_store()
+  .insert(ball, @math.Transform::from_xyz(0.0F, 5.0F, 0.0F), tick)
+  world.get_rigid_body3d_store().insert(ball, RigidBody3d::dynamic(), tick)
   // Mark the ball collider as a sensor so the 3DReal backend will emit Started/Stopped events.
-  Has_Collider3d::get_collider3d_store(world).insert(
-    ball,
-    Collider3d::new(ColliderShape3d::ball(0.5F)).sensor(true),
-    tick,
-  )
+  world
+  .get_collider3d_store()
+  .insert(ball, Collider3d::new(ColliderShape3d::ball(0.5F)).sensor(true), tick)
   physics3d_clear_events_system(world)
   physics3d_sync_insertions_system(world)
   let mut i = 0
@@ -228,11 +196,9 @@ test "physics3d: sensor collision events are emitted" {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    @core.ChangeTickWorld::increment_change_tick(world) |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let events = HasRes_Physics3dEvents::get_physics3d_events_resource(world)
-    .get_ref()
-    .unwrap().val
+  let events = world.get_physics3d_events_resource().get_ref().unwrap().val
   inspect(events.collisions.length() > 0, content="true")
 }

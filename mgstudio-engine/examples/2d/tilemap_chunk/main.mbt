@@ -127,7 +127,7 @@ fn update_fake_player(
   let t = (1.0F + @math.sin(@time.time_elapsed_seconds())) * 0.5F
   let next_x = start + (end - start) * t
 
-  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let transform_store = world.get_transform_store()
   guard transform_store.get(tilemap_chunk_state.val.player) is Some(transform) else {
     return
   }
@@ -137,7 +137,7 @@ fn update_fake_player(
     @math.Vec2::new(transform.scale.x, transform.scale.y),
     z=transform.translation.z,
   )
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let tick = world.read_change_tick()
   transform_store.set(tilemap_chunk_state.val.player, next_transform, tick)
   |> ignore
 }

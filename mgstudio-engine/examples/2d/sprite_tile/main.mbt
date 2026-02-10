@@ -71,8 +71,8 @@ fn sprite_tile_animate(world : @ecs_world.World) -> Unit {
   }
   sprite_tile_animation_state.val.current = sprite_tile_animation_state.val.current +
     sprite_tile_animation_state.val.speed * @time.time_delta_seconds()
-  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let sprite_store = world.get_sprite_store()
+  let tick = world.read_change_tick()
   if sprite_store.get(entity) is Some(sprite) {
     sprite_store.set(
       entity,

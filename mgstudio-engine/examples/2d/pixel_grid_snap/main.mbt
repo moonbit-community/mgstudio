@@ -144,8 +144,8 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
     next_rotation,
     @math.Vec2::new(32.0F, 32.0F),
   )
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let tick = world.read_change_tick()
+  let transform_store = world.get_transform_store()
   transform_store.set(pixel_state.val.pixel_sprite, pixel_transform, tick)
   |> ignore
   transform_store.set(pixel_state.val.high_sprite, high_transform, tick)
@@ -167,7 +167,7 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
   let rounded = pixel_grid_round_scale(min_scale)
   let scale_int = if rounded < 1 { 1 } else { rounded }
   let scale = 1.0F / Float::from_double(scale_int.to_double())
-  let projection_store = @render2d.Has_Projection::get_projection_store(world)
+  let projection_store = world.get_projection_store()
   projection_store.set(
     pixel_state.val.outer_camera,
     @render2d.Projection::Orthographic(

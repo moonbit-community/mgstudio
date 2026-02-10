@@ -151,9 +151,9 @@ pub fn[
 ] update_children_system(
   world : W,
 ) -> Unit {
-  let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
-  let children_store = @hierarchy.Has_Children::get_children_store(world)
-  let change_tick = @core.ChangeTickWorld::read_change_tick(world)
+  let parent_store = world.get_parent_store()
+  let children_store = world.get_children_store()
+  let change_tick = world.read_change_tick()
 
   // Rebuild from scratch (simple, correct); later we can make this incremental.
   let existing : Array[@core.Entity] = []
@@ -189,12 +189,12 @@ pub fn[
 ] propagate_transforms_system(
   world : W,
 ) -> Unit {
-  let transform_store = @math.Has_Transform::get_transform_store(world)
-  let global_store = Has_GlobalTransform::get_global_transform_store(world)
-  let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
-  let children_store = @hierarchy.Has_Children::get_children_store(world)
-  let change_tick = @core.ChangeTickWorld::read_change_tick(world)
-  let system_ticks = @core.SystemContextWorld::get_system_context(world).ticks()
+  let transform_store = world.get_transform_store()
+  let global_store = world.get_global_transform_store()
+  let parent_store = world.get_parent_store()
+  let children_store = world.get_children_store()
+  let change_tick = world.read_change_tick()
+  let system_ticks = world.get_system_context().ticks()
   let stack : Array[(@core.Entity, GlobalTransform, Bool)] = []
   transform_store.for_each(fn(e, _t) {
     if !parent_store.contains(e) {

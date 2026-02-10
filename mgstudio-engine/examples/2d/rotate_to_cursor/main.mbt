@@ -41,9 +41,9 @@ fn rotate_to_cursor_update(world : @ecs_world.World) -> Unit {
   if @input.mouse_position() is Some(screen_pos) {
     if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
       is Some(world_pos) {
-      let tick = @core.ChangeTickWorld::read_change_tick(world)
-      let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
-      let transform_store = @math.Has_Transform::get_transform_store(world)
+      let tick = world.read_change_tick()
+      let sprite_store = world.get_sprite_store()
+      let transform_store = world.get_transform_store()
       let entities : Array[(@core.Entity, @math.Transform)] = []
       @core.query2(transform_store, sprite_store, fn(
         entity,

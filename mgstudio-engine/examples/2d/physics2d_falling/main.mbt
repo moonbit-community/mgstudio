@@ -25,10 +25,8 @@ pub fn game_app() -> Unit {
 ///|
 fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
   // Make gravity visible in "pixel-ish" space.
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let cfg_res = @physics2d.HasRes_Physics2dConfig::get_physics2d_config_resource(
-    world,
-  )
+  let tick = world.read_change_tick()
+  let cfg_res = world.get_physics2d_config_resource()
   match cfg_res.get_ref_mut(tick) {
     Some(r) =>
       r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
@@ -48,11 +46,9 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
   let floor = @render2d.SpriteBundle::new(floor_sprite, floor_transform).spawn(
     world,
   )
-  let rb_store = @physics2d.Has_RigidBody2d::get_rigid_body2d_store(world)
-  let col_store = @physics2d.Has_Collider2d::get_collider2d_store(world)
-  let cf_store = @physics2d.Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
-    world,
-  )
+  let rb_store = world.get_rigid_body2d_store()
+  let col_store = world.get_collider2d_store()
+  let cf_store = world.get_contact_force_event_threshold2d_store()
   rb_store.insert(floor, @physics2d.RigidBody2d::fixed(), tick)
   col_store.insert(
     floor,
@@ -79,7 +75,7 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
   let ball = @render2d.SpriteBundle::new(ball_sprite, ball_transform).spawn(
     world,
   )
-  let vel_store = @physics2d.Has_Velocity2d::get_velocity2d_store(world)
+  let vel_store = world.get_velocity2d_store()
   rb_store.insert(ball, @physics2d.RigidBody2d::dynamic(), tick)
   col_store.insert(
     ball,
@@ -103,9 +99,7 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn physics2d_print_events(world : @ecs_world.World) -> Unit {
-  let ev_res = @physics2d.HasRes_Physics2dEvents::get_physics2d_events_resource(
-    world,
-  )
+  let ev_res = world.get_physics2d_events_resource()
   match ev_res.get_ref() {
     Some(r) => {
       for ev in r.val.collisions {

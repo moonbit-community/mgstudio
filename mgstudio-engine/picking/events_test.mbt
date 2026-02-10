@@ -14,7 +14,7 @@
 
 ///|
 fn drain_events(world : @ecs_world.World, tick : Int) -> Array[PointerEvent] {
-  let events_res = HasRes_PickingEvents::get_picking_events_resource(world)
+  let events_res = world.get_picking_events_resource()
   let events = events_res.get_ref_mut(tick).unwrap()
   PickingEvents::drain(events)
 }
@@ -26,8 +26,8 @@ fn set_frame(
   inputs : PointerInputs,
   hits : PickingHits,
 ) -> Unit {
-  HasRes_PointerInputs::get_pointer_inputs_resource(world).insert(inputs, tick)
-  HasRes_PickingHits::get_picking_hits_resource(world).insert(hits, tick)
+  world.get_pointer_inputs_resource().insert(inputs, tick)
+  world.get_picking_hits_resource().insert(hits, tick)
   picking_clear_system(world)
   picking_generate_events_system(world)
 }
@@ -35,23 +35,11 @@ fn set_frame(
 ///|
 test "picking: generates enter/leave and click events (single pointer)" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
-  HasRes_PickingState::get_picking_state_resource(world).insert(
-    PickingState::default(),
-    tick,
-  )
-  HasRes_PickingEvents::get_picking_events_resource(world).insert(
-    PickingEvents::default(),
-    tick,
-  )
-  HasRes_PointerInputs::get_pointer_inputs_resource(world).insert(
-    PointerInputs::default(),
-    tick,
-  )
-  HasRes_PickingHits::get_picking_hits_resource(world).insert(
-    PickingHits::default(),
-    tick,
-  )
+  let tick = world.increment_change_tick()
+  world.get_picking_state_resource().insert(PickingState::default(), tick)
+  world.get_picking_events_resource().insert(PickingEvents::default(), tick)
+  world.get_pointer_inputs_resource().insert(PointerInputs::default(), tick)
+  world.get_picking_hits_resource().insert(PickingHits::default(), tick)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
   let pos0 = @math.Vec2::new(10.0F, 20.0F)
@@ -133,23 +121,11 @@ test "picking: generates enter/leave and click events (single pointer)" {
 ///|
 test "picking: handles multiple pointers independently" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
-  HasRes_PickingState::get_picking_state_resource(world).insert(
-    PickingState::default(),
-    tick,
-  )
-  HasRes_PickingEvents::get_picking_events_resource(world).insert(
-    PickingEvents::default(),
-    tick,
-  )
-  HasRes_PointerInputs::get_pointer_inputs_resource(world).insert(
-    PointerInputs::default(),
-    tick,
-  )
-  HasRes_PickingHits::get_picking_hits_resource(world).insert(
-    PickingHits::default(),
-    tick,
-  )
+  let tick = world.increment_change_tick()
+  world.get_picking_state_resource().insert(PickingState::default(), tick)
+  world.get_picking_events_resource().insert(PickingEvents::default(), tick)
+  world.get_pointer_inputs_resource().insert(PointerInputs::default(), tick)
+  world.get_picking_hits_resource().insert(PickingHits::default(), tick)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
   let p0 = @math.Vec2::new(5.0F, 5.0F)
@@ -176,15 +152,9 @@ test "picking: handles multiple pointers independently" {
 ///|
 test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
-  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
-    @a11y.A11yState::default(),
-    tick,
-  )
-  HasRes_PickingEvents::get_picking_events_resource(world).insert(
-    PickingEvents::default(),
-    tick,
-  )
+  let tick = world.increment_change_tick()
+  world.get_a11y_state_resource().insert(@a11y.A11yState::default(), tick)
+  world.get_picking_events_resource().insert(PickingEvents::default(), tick)
   let entity = @core.Entity::new(7, 3)
   let packed = entity.id * 65536 + entity.generation + 1
   let req = @moon_accesskit.ActionRequest::new(
@@ -192,38 +162,32 @@ test "picking: a11y focus action maps to hovered interaction" {
     @moon_accesskit.TreeId::root(),
     @moon_accesskit.NodeId::from_u64(packed.to_uint64()),
   )
-  let state = @a11y.HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(
-    tick,
-  )
+  let state = world.get_a11y_state_resource().get_ref_mut(tick)
   @a11y.A11yState::push_action(state.unwrap(), req)
   picking_apply_a11y_actions_system(world)
-  let interaction = @ui.Has_Interaction::get_interaction_store(world).get(
-    entity,
-  )
+  let interaction = world.get_interaction_store().get(entity)
   inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
 }
 
 ///|
 test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
-  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
-    @a11y.A11yState::default(),
-    tick,
-  )
-  HasRes_PickingEvents::get_picking_events_resource(world).insert(
-    PickingEvents::default(),
-    tick,
-  )
+  let tick = world.increment_change_tick()
+  world.get_a11y_state_resource().insert(@a11y.A11yState::default(), tick)
+  world.get_picking_events_resource().insert(PickingEvents::default(), tick)
   let entity = @core.Entity::new(9, 1)
-  @ui.Has_Node::get_node_store(world).insert(
+  world
+  .get_node_store()
+  .insert(
     entity,
     @ui.Node::default().with_overflow(
       @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
     ),
     tick,
   )
-  @ui.Has_UiLayout::get_ui_layout_store(world).insert(
+  world
+  .get_ui_layout_store()
+  .insert(
     entity,
     @ui.UiLayout::new(
       @math.Rect::new(
@@ -233,13 +197,13 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     ),
     tick,
   )
-  @ui.Has_ScrollPosition::get_scroll_position_store(world).insert(
-    entity,
-    @ui.ScrollPosition::default(),
-    tick,
-  )
+  world
+  .get_scroll_position_store()
+  .insert(entity, @ui.ScrollPosition::default(), tick)
   let child = @core.Entity::new(10, 1)
-  @ui.Has_UiLayout::get_ui_layout_store(world).insert(
+  world
+  .get_ui_layout_store()
+  .insert(
     child,
     @ui.UiLayout::new(
       @math.Rect::new(
@@ -249,11 +213,9 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     ),
     tick,
   )
-  @hierarchy.Has_Children::get_children_store(world).insert(
-    entity,
-    @hierarchy.Children::new([child]),
-    tick,
-  )
+  world
+  .get_children_store()
+  .insert(entity, @hierarchy.Children::new([child]), tick)
   let packed = entity.id * 65536 + entity.generation + 1
   let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
   let req_down = @moon_accesskit.ActionRequest::new(
@@ -266,15 +228,11 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     @moon_accesskit.TreeId::root(),
     node_id,
   )
-  let state = @a11y.HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(
-    tick,
-  )
+  let state = world.get_a11y_state_resource().get_ref_mut(tick)
   @a11y.A11yState::push_action(state.unwrap(), req_down)
   @a11y.A11yState::push_action(state.unwrap(), req_right)
   picking_apply_a11y_actions_system(world)
-  let scroll = @ui.Has_ScrollPosition::get_scroll_position_store(world).get(
-    entity,
-  )
+  let scroll = world.get_scroll_position_store().get(entity)
   inspect(
     scroll is Some(v) && v.offset_x == 0.0F && v.offset_y == 24.0F,
     content="true",
@@ -286,15 +244,9 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
 ///|
 test "picking: a11y set-value action updates UiText content" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
-  @a11y.HasRes_A11yState::get_a11y_state_resource(world).insert(
-    @a11y.A11yState::default(),
-    tick,
-  )
-  HasRes_PickingEvents::get_picking_events_resource(world).insert(
-    PickingEvents::default(),
-    tick,
-  )
+  let tick = world.increment_change_tick()
+  world.get_a11y_state_resource().insert(@a11y.A11yState::default(), tick)
+  world.get_picking_events_resource().insert(PickingEvents::default(), tick)
   let text_handle = @text.text_spawn(
     @text.Text2dBundle::new(
       @text.Text2d::new("Old"),
@@ -303,11 +255,7 @@ test "picking: a11y set-value action updates UiText content" {
     ),
   )
   let entity = @core.Entity::new(11, 2)
-  @ui.Has_UiText::get_ui_text_store(world).insert(
-    entity,
-    @ui.UiText::new(text_handle),
-    tick,
-  )
+  world.get_ui_text_store().insert(entity, @ui.UiText::new(text_handle), tick)
   let packed = entity.id * 65536 + entity.generation + 1
   let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
   let req = @moon_accesskit.ActionRequest::new(
@@ -316,9 +264,7 @@ test "picking: a11y set-value action updates UiText content" {
     node_id,
   )
   req.set_data(@moon_accesskit.ActionData::Value("Updated"))
-  let state = @a11y.HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(
-    tick,
-  )
+  let state = world.get_a11y_state_resource().get_ref_mut(tick)
   @a11y.A11yState::push_action(state.unwrap(), req)
   picking_apply_a11y_actions_system(world)
   inspect(

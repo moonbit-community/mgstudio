@@ -2350,23 +2350,23 @@ fn RenderState::new() -> RenderState {
 
 ///|
 fn[W : HasRes_RenderState] render_state_ref(world : W) -> Ref[RenderState]? {
-  HasRes_RenderState::get_render_state_resource(world).get_ref()
+  world.get_render_state_resource().get_ref()
 }
 
 ///|
 fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_state_ref_mut(
   world : W,
 ) -> Ref[RenderState]? {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_RenderState::get_render_state_resource(world).get_ref_mut(tick)
+  let tick = world.read_change_tick()
+  world.get_render_state_resource().get_ref_mut(tick)
 }
 
 ///|
 fn[W : HasRes_RenderState + @core.ChangeTickWorld] init_render_state_system(
   world : W,
 ) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let res = HasRes_RenderState::get_render_state_resource(world)
+  let tick = world.read_change_tick()
+  let res = world.get_render_state_resource()
   if !res.is_present() {
     res.insert(RenderState::new(), tick)
     gizmos_reset()
@@ -2709,31 +2709,17 @@ pub fn[
   self : SpriteBundle,
   world : W,
 ) -> @core.Entity {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let e = @core.SpawnWorld::spawn_empty(world)
-  Has_Sprite::get_sprite_store(world).insert(e, self.sprite, tick)
-  Has_Anchor::get_anchor_store(world).insert(e, self.anchor, tick)
-  Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
-  @visibility.Has_Visibility::get_visibility_store(world).insert(
-    e,
-    self.visibility,
-    tick,
-  )
-  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    e,
-    self.inherited_visibility,
-    tick,
-  )
-  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    e,
-    self.view_visibility,
-    tick,
-  )
-  @math.Has_Transform::get_transform_store(world).insert(
-    e,
-    self.transform,
-    tick,
-  )
+  let tick = world.read_change_tick()
+  let e = world.spawn_empty()
+  world.get_sprite_store().insert(e, self.sprite, tick)
+  world.get_anchor_store().insert(e, self.anchor, tick)
+  world.get_render_layers_store().insert(e, self.layers, tick)
+  world.get_visibility_store().insert(e, self.visibility, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(e, self.inherited_visibility, tick)
+  world.get_view_visibility_store().insert(e, self.view_visibility, tick)
+  world.get_transform_store().insert(e, self.transform, tick)
   e
 }
 
@@ -2744,18 +2730,14 @@ pub fn[
   self : Camera2dBundle,
   world : W,
 ) -> @core.Entity {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let e = @core.SpawnWorld::spawn_empty(world)
-  Has_Camera2d::get_camera2d_store(world).insert(e, self.camera2d, tick)
-  Has_Camera::get_camera_store(world).insert(e, self.camera, tick)
-  Has_Projection::get_projection_store(world).insert(e, self.projection, tick)
-  Has_RenderTarget::get_render_target_store(world).insert(e, self.target, tick)
-  Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
-  @math.Has_Transform::get_transform_store(world).insert(
-    e,
-    self.transform,
-    tick,
-  )
+  let tick = world.read_change_tick()
+  let e = world.spawn_empty()
+  world.get_camera2d_store().insert(e, self.camera2d, tick)
+  world.get_camera_store().insert(e, self.camera, tick)
+  world.get_projection_store().insert(e, self.projection, tick)
+  world.get_render_target_store().insert(e, self.target, tick)
+  world.get_render_layers_store().insert(e, self.layers, tick)
+  world.get_transform_store().insert(e, self.transform, tick)
   e
 }
 
@@ -2766,35 +2748,17 @@ pub fn[
   self : Mesh2dBundle,
   world : W,
 ) -> @core.Entity {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let e = @core.SpawnWorld::spawn_empty(world)
-  Has_Mesh2d::get_mesh2d_store(world).insert(e, self.mesh, tick)
-  Has_ColorMaterial::get_color_material_store(world).insert(
-    e,
-    self.material,
-    tick,
-  )
-  Has_RenderLayers::get_render_layers_store(world).insert(e, self.layers, tick)
-  @visibility.Has_Visibility::get_visibility_store(world).insert(
-    e,
-    self.visibility,
-    tick,
-  )
-  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    e,
-    self.inherited_visibility,
-    tick,
-  )
-  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    e,
-    self.view_visibility,
-    tick,
-  )
-  @math.Has_Transform::get_transform_store(world).insert(
-    e,
-    self.transform,
-    tick,
-  )
+  let tick = world.read_change_tick()
+  let e = world.spawn_empty()
+  world.get_mesh2d_store().insert(e, self.mesh, tick)
+  world.get_color_material_store().insert(e, self.material, tick)
+  world.get_render_layers_store().insert(e, self.layers, tick)
+  world.get_visibility_store().insert(e, self.visibility, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(e, self.inherited_visibility, tick)
+  world.get_view_visibility_store().insert(e, self.view_visibility, tick)
+  world.get_transform_store().insert(e, self.transform, tick)
   let mesh_id = match mesh_asset_get(self.mesh.mesh) {
     Some(mesh_asset) =>
       match mesh_asset.geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
@@ -2815,11 +2779,7 @@ pub fn[
       0
     }
   }
-  Has_GpuMesh2d::get_gpu_mesh2d_store(world).insert(
-    e,
-    GpuMesh2d::new(mesh_id),
-    tick,
-  )
+  world.get_gpu_mesh2d_store().insert(e, GpuMesh2d::new(mesh_id), tick)
   e
 }
 
@@ -3163,18 +3123,14 @@ pub fn[
   rs.val.sprites.clear()
   rs.val.cameras.clear()
   rs.val.meshes.clear()
-  let camera2d_store = Has_Camera2d::get_camera2d_store(world)
-  let camera_store = Has_Camera::get_camera_store(world)
-  let projection_store = Has_Projection::get_projection_store(world)
-  let target_store = Has_RenderTarget::get_render_target_store(world)
-  let layers_store = Has_RenderLayers::get_render_layers_store(world)
-  let view_visibility_store = @visibility.Has_ViewVisibility::get_view_visibility_store(
-    world,
-  )
-  let transform_store = @math.Has_Transform::get_transform_store(world)
-  let global_store = @transform.Has_GlobalTransform::get_global_transform_store(
-    world,
-  )
+  let camera2d_store = world.get_camera2d_store()
+  let camera_store = world.get_camera_store()
+  let projection_store = world.get_projection_store()
+  let target_store = world.get_render_target_store()
+  let layers_store = world.get_render_layers_store()
+  let view_visibility_store = world.get_view_visibility_store()
+  let transform_store = world.get_transform_store()
+  let global_store = world.get_global_transform_store()
   camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
       Some(t) => t
@@ -3235,9 +3191,9 @@ pub fn[
       rs.val.primary_camera = rs.val.cameras[order[0]].entity
     }
   }
-  let sprite_store = Has_Sprite::get_sprite_store(world)
-  let anchor_store = Has_Anchor::get_anchor_store(world)
-  let scissor_store = Has_ScissorRect::get_scissor_rect_store(world)
+  let sprite_store = world.get_sprite_store()
+  let anchor_store = world.get_anchor_store()
+  let scissor_store = world.get_scissor_rect_store()
   sprite_store.for_each(fn(entity, sprite) {
     if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
       return
@@ -3331,9 +3287,9 @@ pub fn[
       })
     }
   })
-  let mesh_store = Has_Mesh2d::get_mesh2d_store(world)
-  let gpu_mesh_store = Has_GpuMesh2d::get_gpu_mesh2d_store(world)
-  let material_store = Has_ColorMaterial::get_color_material_store(world)
+  let mesh_store = world.get_mesh2d_store()
+  let gpu_mesh_store = world.get_gpu_mesh2d_store()
+  let material_store = world.get_color_material_store()
   mesh_store.for_each(fn(entity, _mesh) {
     if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
       return

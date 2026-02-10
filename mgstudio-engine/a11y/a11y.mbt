@@ -219,8 +219,8 @@ pub let a11y_set : @app.SystemSet = @app.system_set("mgstudio.a11y")
 pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] ensure_a11y_state(
   world : W,
 ) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let res = HasRes_A11yState::get_a11y_state_resource(world)
+  let tick = world.read_change_tick()
+  let res = world.get_a11y_state_resource()
   if res.get() is None {
     res.insert(A11yState::default(), tick)
   }
@@ -231,9 +231,8 @@ pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] ensure_a11y_state(
 pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(
   world : W,
 ) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  guard HasRes_A11yState::get_a11y_state_resource(world).get_ref_mut(tick)
-    is Some(state) else {
+  let tick = world.read_change_tick()
+  guard world.get_a11y_state_resource().get_ref_mut(tick) is Some(state) else {
     return
   }
   let n = host_a11y_actions_len()

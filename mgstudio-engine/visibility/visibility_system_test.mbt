@@ -15,133 +15,85 @@
 ///|
 test "visibility: inherited child is hidden when parent is hidden" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let tick = world.increment_change_tick()
   let parent = world.spawn_empty()
-  @visibility.Has_Visibility::get_visibility_store(world).insert(
-    parent,
-    @visibility.Visibility::Hidden,
-    tick,
-  )
-  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    parent,
-    @visibility.InheritedVisibility::new(true),
-    tick,
-  )
-  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    parent,
-    @visibility.ViewVisibility::new(true),
-    tick,
-  )
+  world
+  .get_visibility_store()
+  .insert(parent, @visibility.Visibility::Hidden, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(parent, @visibility.InheritedVisibility::new(true), tick)
+  world
+  .get_view_visibility_store()
+  .insert(parent, @visibility.ViewVisibility::new(true), tick)
   let child = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(parent),
-    tick,
-  )
-  @visibility.Has_Visibility::get_visibility_store(world).insert(
-    child,
-    @visibility.Visibility::Inherited,
-    tick,
-  )
-  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    child,
-    @visibility.InheritedVisibility::new(true),
-    tick,
-  )
-  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    child,
-    @visibility.ViewVisibility::new(true),
-    tick,
-  )
+  world.get_parent_store().insert(child, @hierarchy.Parent::new(parent), tick)
+  world
+  .get_visibility_store()
+  .insert(child, @visibility.Visibility::Inherited, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(child, @visibility.InheritedVisibility::new(true), tick)
+  world
+  .get_view_visibility_store()
+  .insert(child, @visibility.ViewVisibility::new(true), tick)
   @transform.update_children_system(world)
   @visibility.visibility_propagate_system(world)
-  let iv = @visibility.Has_InheritedVisibility::get_inherited_visibility_store(
-    world,
-  ).get(child)
+  let iv = world.get_inherited_visibility_store().get(child)
   inspect(iv.unwrap().is_visible(), content="false")
 }
 
 ///|
 test "visibility: Visible overrides hidden parent (bevy semantics)" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let tick = world.increment_change_tick()
   let parent = world.spawn_empty()
-  @visibility.Has_Visibility::get_visibility_store(world).insert(
-    parent,
-    @visibility.Visibility::Hidden,
-    tick,
-  )
-  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    parent,
-    @visibility.InheritedVisibility::new(true),
-    tick,
-  )
-  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    parent,
-    @visibility.ViewVisibility::new(true),
-    tick,
-  )
+  world
+  .get_visibility_store()
+  .insert(parent, @visibility.Visibility::Hidden, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(parent, @visibility.InheritedVisibility::new(true), tick)
+  world
+  .get_view_visibility_store()
+  .insert(parent, @visibility.ViewVisibility::new(true), tick)
   let child = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(parent),
-    tick,
-  )
-  @visibility.Has_Visibility::get_visibility_store(world).insert(
-    child,
-    @visibility.Visibility::Visible,
-    tick,
-  )
-  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    child,
-    @visibility.InheritedVisibility::new(false),
-    tick,
-  )
-  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    child,
-    @visibility.ViewVisibility::new(false),
-    tick,
-  )
+  world.get_parent_store().insert(child, @hierarchy.Parent::new(parent), tick)
+  world
+  .get_visibility_store()
+  .insert(child, @visibility.Visibility::Visible, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(child, @visibility.InheritedVisibility::new(false), tick)
+  world
+  .get_view_visibility_store()
+  .insert(child, @visibility.ViewVisibility::new(false), tick)
   @transform.update_children_system(world)
   @visibility.visibility_propagate_system(world)
-  let iv = @visibility.Has_InheritedVisibility::get_inherited_visibility_store(
-    world,
-  ).get(child)
+  let iv = world.get_inherited_visibility_store().get(child)
   inspect(iv.unwrap().is_visible(), content="true")
 }
 
 ///|
 test "visibility: Inherited falls back to visible when parent lacks components" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let tick = world.increment_change_tick()
   let parent = world.spawn_empty()
   // Parent intentionally has no Visibility/InheritedVisibility/ViewVisibility.
 
   let child = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(parent),
-    tick,
-  )
-  @visibility.Has_Visibility::get_visibility_store(world).insert(
-    child,
-    @visibility.Visibility::Inherited,
-    tick,
-  )
-  @visibility.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    child,
-    @visibility.InheritedVisibility::new(false),
-    tick,
-  )
-  @visibility.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    child,
-    @visibility.ViewVisibility::new(false),
-    tick,
-  )
+  world.get_parent_store().insert(child, @hierarchy.Parent::new(parent), tick)
+  world
+  .get_visibility_store()
+  .insert(child, @visibility.Visibility::Inherited, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(child, @visibility.InheritedVisibility::new(false), tick)
+  world
+  .get_view_visibility_store()
+  .insert(child, @visibility.ViewVisibility::new(false), tick)
   @transform.update_children_system(world)
   @visibility.visibility_propagate_system(world)
-  let iv = @visibility.Has_InheritedVisibility::get_inherited_visibility_store(
-    world,
-  ).get(child)
+  let iv = world.get_inherited_visibility_store().get(child)
   inspect(iv.unwrap().is_visible(), content="true")
 }

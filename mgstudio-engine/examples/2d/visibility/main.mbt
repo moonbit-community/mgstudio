@@ -35,40 +35,24 @@ pub fn game_app() -> Unit {
 
 ///|
 fn visibility_setup(world : @ecs_world.World) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let tick = world.read_change_tick()
   let parent = world.spawn_empty()
   parent_entity_state.val = Some(parent)
-  @math.Has_Transform::get_transform_store(world).insert(
-    parent,
-    @math.Transform::identity(),
-    tick,
-  )
-  @vis.Has_Visibility::get_visibility_store(world).insert(
-    parent,
-    @vis.Visibility::Visible,
-    tick,
-  )
-  @vis.Has_InheritedVisibility::get_inherited_visibility_store(world).insert(
-    parent,
-    @vis.InheritedVisibility::new(true),
-    tick,
-  )
-  @vis.Has_ViewVisibility::get_view_visibility_store(world).insert(
-    parent,
-    @vis.ViewVisibility::new(true),
-    tick,
-  )
+  world.get_transform_store().insert(parent, @math.Transform::identity(), tick)
+  world.get_visibility_store().insert(parent, @vis.Visibility::Visible, tick)
+  world
+  .get_inherited_visibility_store()
+  .insert(parent, @vis.InheritedVisibility::new(true), tick)
+  world
+  .get_view_visibility_store()
+  .insert(parent, @vis.ViewVisibility::new(true), tick)
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @render2d.Sprite::from_image(texture)
   let child = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
     world,
   )
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(parent),
-    tick,
-  )
+  world.get_parent_store().insert(child, @hierarchy.Parent::new(parent), tick)
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
@@ -85,8 +69,8 @@ fn visibility_toggle_system(world : @ecs_world.World) -> Unit {
     return
   }
   guard parent_entity_state.val is Some(parent) else { return }
-  let store = @vis.Has_Visibility::get_visibility_store(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let store = world.get_visibility_store()
+  let tick = world.read_change_tick()
   let next = match store.get(parent) {
     Some(@vis.Visibility::Hidden) => @vis.Visibility::Visible
     Some(@vis.Visibility::Visible) => @vis.Visibility::Hidden

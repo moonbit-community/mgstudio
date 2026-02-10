@@ -130,12 +130,10 @@ fn update_camera_transform(world : @ecs_world.World, speed : Float) -> Unit {
       z=camera_transform.translation.z,
     )
     viewport_state.val.camera_transform = next_camera
-    let tick = @core.ChangeTickWorld::read_change_tick(world)
-    @math.Has_Transform::get_transform_store(world).set(
-      viewport_state.val.camera,
-      next_camera,
-      tick,
-    )
+    let tick = world.read_change_tick()
+    world
+    .get_transform_store()
+    .set(viewport_state.val.camera, next_camera, tick)
     |> ignore
   }
 }
@@ -151,8 +149,8 @@ fn update_camera_scale(world : @ecs_world.World, delta : Float) -> Unit {
   }
   if scale != viewport_state.val.camera_scale {
     viewport_state.val.camera_scale = scale
-    let tick = @core.ChangeTickWorld::read_change_tick(world)
-    let projection_store = @render2d.Has_Projection::get_projection_store(world)
+    let tick = world.read_change_tick()
+    let projection_store = world.get_projection_store()
     projection_store.set(
       viewport_state.val.camera,
       @render2d.Projection::Orthographic(
@@ -210,8 +208,8 @@ fn update_camera_viewport(world : @ecs_world.World, speed_i : Int) -> Unit {
     viewport = @render2d.Viewport::new(position, size)
   }
   viewport_state.val.viewport = viewport
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let camera_store = @render2d.Has_Camera::get_camera_store(world)
+  let tick = world.read_change_tick()
+  let camera_store = world.get_camera_store()
   if camera_store.get(viewport_state.val.camera) is Some(camera) {
     camera_store.set(
       viewport_state.val.camera,

@@ -52,11 +52,11 @@ fn TestWorld::new() -> TestWorld {
 
 ///|
 fn TestWorld::next_system_ticks(self : TestWorld) -> @core.SystemTicks {
-  let this_run = @core.ChangeTickWorld::increment_change_tick(self)
+  let this_run = self.increment_change_tick()
   let sys = @core.SystemTicks::new(self.ctx.ticks().this_run, this_run)
   let ctx = @core.SystemContext::new()
   ctx.set(sys)
-  @core.SystemContextWorld::set_system_context(self, ctx)
+  self.set_system_context(ctx)
   sys
 }
 

@@ -187,7 +187,7 @@ pub fn[W : HasRes_Physics2dContext] physics2d_debug_render_system(
   if !config.enabled {
     return
   }
-  let ctx_res = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+  let ctx_res = world.get_physics2d_context_resource()
   guard ctx_res.get_ref() is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
   let gizmos = @render2d.Gizmos::new()

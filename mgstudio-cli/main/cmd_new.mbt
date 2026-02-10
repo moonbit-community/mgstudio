@@ -229,9 +229,9 @@ fn render_rotation_demo() -> String {
   "fn rotation_update(world : @ecs_world.World) -> Unit {\n" +
   "  let delta_secs = @time.time_delta_seconds()\n" +
   "  let speed = 1.0F\n" +
-  "  let tick = @core.ChangeTickWorld::read_change_tick(world)\n" +
-  "  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)\n" +
-  "  let transform_store = @math.Has_Transform::get_transform_store(world)\n" +
+  "  let tick = world.read_change_tick()\n" +
+  "  let sprite_store = world.get_sprite_store()\n" +
+  "  let transform_store = world.get_transform_store()\n" +
   "  let entities : Array[(@core.Entity, @math.Transform)] = []\n" +
   "  @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {\n" +
   "    entities.push((entity, transform))\n" +

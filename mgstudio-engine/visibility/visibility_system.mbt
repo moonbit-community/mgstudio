@@ -29,14 +29,12 @@ pub fn[
 ] visibility_propagate_system(
   world : W,
 ) -> Unit {
-  let visibility_store = Has_Visibility::get_visibility_store(world)
-  let inherited_store = Has_InheritedVisibility::get_inherited_visibility_store(
-    world,
-  )
-  let view_store = Has_ViewVisibility::get_view_visibility_store(world)
-  let parent_store = @hierarchy.Has_Parent::get_parent_store(world)
-  let children_store = @hierarchy.Has_Children::get_children_store(world)
-  let change_tick = @core.ChangeTickWorld::read_change_tick(world)
+  let visibility_store = world.get_visibility_store()
+  let inherited_store = world.get_inherited_visibility_store()
+  let view_store = world.get_view_visibility_store()
+  let parent_store = world.get_parent_store()
+  let children_store = world.get_children_store()
+  let change_tick = world.read_change_tick()
 
   // Identify roots: entities that either have no parent, or whose parent lacks
   // the required visibility components (Bevy fallback).

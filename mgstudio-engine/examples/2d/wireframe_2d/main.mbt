@@ -122,7 +122,7 @@ fn wireframe_update(world : @ecs_world.World) -> Unit {
   }
 
   let gizmos = @render2d.Gizmos::new()
-  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let transform_store = world.get_transform_store()
 
   if wireframe_scene_state.val.global_enabled {
     guard wireframe_scene_state.val.rectangle_geometry is Some(rect_geometry) else {

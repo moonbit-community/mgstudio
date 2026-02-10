@@ -23,7 +23,7 @@ pub fn game_app() -> Unit {
 
 ///|
 fn ui_scene_setup(world : @ecs_world.World) -> Unit {
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let tick = world.increment_change_tick()
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
@@ -32,12 +32,10 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let root = world.spawn_empty()
-  @ui.Has_UiRoot::get_ui_root_store(world).insert(
-    root,
-    @ui.UiRoot::default(),
-    tick,
-  )
-  @ui.Has_Node::get_node_store(world).insert(
+  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
+  world
+  .get_node_store()
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -49,12 +47,10 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
     tick,
   )
   let panel = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    panel,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.Has_Node::get_node_store(world).insert(
+  world.get_parent_store().insert(panel, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
     panel,
     @ui.Node::default()
     .with_width(@ui.Val::Px(420.0F))
@@ -65,18 +61,16 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
     .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F))),
     tick,
   )
-  @ui.Has_ScrollPosition::get_scroll_position_store(world).insert(
-    panel,
-    @ui.ScrollPosition::default(),
-    tick,
-  )
+  world
+  .get_scroll_position_store()
+  .insert(panel, @ui.ScrollPosition::default(), tick)
   let panel_content = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    panel_content,
-    @hierarchy.Parent::new(panel),
-    tick,
-  )
-  @ui.Has_Node::get_node_store(world).insert(
+  world
+  .get_parent_store()
+  .insert(panel_content, @hierarchy.Parent::new(panel), tick)
+  world
+  .get_node_store()
+  .insert(
     panel_content,
     @ui.Node::default()
     .with_width(@ui.Val::Px(760.0F))
@@ -94,35 +88,29 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
   let panel_text = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    panel_text,
-    @hierarchy.Parent::new(panel_content),
-    tick,
-  )
-  @ui.Has_Node::get_node_store(world).insert(
+  world
+  .get_parent_store()
+  .insert(panel_text, @hierarchy.Parent::new(panel_content), tick)
+  world
+  .get_node_store()
+  .insert(
     panel_text,
     @ui.Node::default()
     .with_width(@ui.Val::Px(720.0F))
     .with_height(@ui.Val::Auto),
     tick,
   )
-  @ui.Has_UiText::get_ui_text_store(world).insert(
-    panel_text,
-    @ui.UiText::new(panel_text_handle),
-    tick,
-  )
-  @ui.Has_Label::get_label_store(world).insert(
-    panel_text,
-    @ui.Label::default(),
-    tick,
-  )
+  world
+  .get_ui_text_store()
+  .insert(panel_text, @ui.UiText::new(panel_text_handle), tick)
+  world.get_label_store().insert(panel_text, @ui.Label::default(), tick)
   let editable_section = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    editable_section,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.Has_Node::get_node_store(world).insert(
+  world
+  .get_parent_store()
+  .insert(editable_section, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
     editable_section,
     @ui.Node::default()
     .with_width(@ui.Val::Px(420.0F))
@@ -131,12 +119,12 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
     tick,
   )
   let editable_title = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    editable_title,
-    @hierarchy.Parent::new(editable_section),
-    tick,
-  )
-  @ui.Has_Node::get_node_store(world).insert(
+  world
+  .get_parent_store()
+  .insert(editable_title, @hierarchy.Parent::new(editable_section), tick)
+  world
+  .get_node_store()
+  .insert(
     editable_title,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
     tick,
@@ -151,23 +139,17 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
     )
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
-  @ui.Has_UiText::get_ui_text_store(world).insert(
-    editable_title,
-    @ui.UiText::new(editable_title_text),
-    tick,
-  )
-  @ui.Has_Label::get_label_store(world).insert(
-    editable_title,
-    @ui.Label::default(),
-    tick,
-  )
+  world
+  .get_ui_text_store()
+  .insert(editable_title, @ui.UiText::new(editable_title_text), tick)
+  world.get_label_store().insert(editable_title, @ui.Label::default(), tick)
   let editable = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    editable,
-    @hierarchy.Parent::new(editable_section),
-    tick,
-  )
-  @ui.Has_Node::get_node_store(world).insert(
+  world
+  .get_parent_store()
+  .insert(editable, @hierarchy.Parent::new(editable_section), tick)
+  world
+  .get_node_store()
+  .insert(
     editable,
     @ui.Node::default()
     .with_width(@ui.Val::Px(420.0F))
@@ -175,12 +157,16 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
     .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F))),
     tick,
   )
-  @ui.Has_BackgroundColor::get_background_color_store(world).insert(
+  world
+  .get_background_color_store()
+  .insert(
     editable,
     @ui.BackgroundColor::new(@render2d.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
     tick,
   )
-  @ui.Has_AccessibilityLabel::get_accessibility_label_store(world).insert(
+  world
+  .get_accessibility_label_store()
+  .insert(
     editable,
     @ui.AccessibilityLabel::new("Status input".to_string()),
     tick,
@@ -192,14 +178,8 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
     )
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
-  @ui.Has_UiText::get_ui_text_store(world).insert(
-    editable,
-    @ui.UiText::new(editable_text),
-    tick,
-  )
-  @ui.Has_Label::get_label_store(world).insert(
-    editable,
-    @ui.Label::default(),
-    tick,
-  )
+  world
+  .get_ui_text_store()
+  .insert(editable, @ui.UiText::new(editable_text), tick)
+  world.get_label_store().insert(editable, @ui.Label::default(), tick)
 }

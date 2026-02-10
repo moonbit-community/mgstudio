@@ -398,9 +398,9 @@ test "physics2d: falling body collides and writes back transform" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let tick = world.read_change_tick()
   // Make the test converge quickly.
-  let cfg_res = HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  let cfg_res = world.get_physics2d_config_resource()
   cfg_res.get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
     @math.Vec2::new(0.0F, -200.0F),
   )
@@ -408,7 +408,9 @@ test "physics2d: falling body collides and writes back transform" {
   let ball = @core.Entity::new(1, 1)
 
   // Floor at y = -1 with half-height 0.5 => top at y = -0.5.
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -1.0F),
@@ -418,20 +420,16 @@ test "physics2d: falling body collides and writes back transform" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    floor,
-    RigidBody2d::fixed(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    floor,
-    Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
-    tick,
-  )
-  Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
-    world,
-  ).insert(floor, ContactForceEventThreshold2d::new(0.0F), tick)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world.get_rigid_body2d_store().insert(floor, RigidBody2d::fixed(), tick)
+  world
+  .get_collider2d_store()
+  .insert(floor, Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)), tick)
+  world
+  .get_contact_force_event_threshold2d_store()
+  .insert(floor, ContactForceEventThreshold2d::new(0.0F), tick)
+  world
+  .get_transform_store()
+  .insert(
     ball,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 5.0F),
@@ -441,29 +439,17 @@ test "physics2d: falling body collides and writes back transform" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    ball,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    ball,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
-    world,
-  ).insert(ball, ContactForceEventThreshold2d::new(0.0F), tick)
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    ball,
-    Velocity2d::zero(),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(ball, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(ball, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_contact_force_event_threshold2d_store()
+  .insert(ball, ContactForceEventThreshold2d::new(0.0F), tick)
+  world.get_velocity2d_store().insert(ball, Velocity2d::zero(), tick)
   physics2d_clear_events_system(world)
   physics2d_sync_insertions_system(world)
-  let initial_y = @math.Has_Transform::get_transform_store(world)
-    .get(ball)
-    .unwrap().translation.y
+  let initial_y = world.get_transform_store().get(ball).unwrap().translation.y
 
   // Step for ~2 seconds.
   let mut i = 0
@@ -471,16 +457,12 @@ test "physics2d: falling body collides and writes back transform" {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    @core.ChangeTickWorld::increment_change_tick(world) |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let final_y = @math.Has_Transform::get_transform_store(world)
-    .get(ball)
-    .unwrap().translation.y
+  let final_y = world.get_transform_store().get(ball).unwrap().translation.y
   inspect(final_y < initial_y, content="true")
-  let events = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
-    .get_ref()
-    .unwrap().val
+  let events = world.get_physics2d_events_resource().get_ref().unwrap().val
   inspect(events.collisions.length() > 0, content="true")
   inspect(events.contact_forces.length() > 0, content="true")
 }
@@ -491,14 +473,15 @@ test "physics2d: gravity scale 0 disables gravity" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, -100.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, -100.0F),
+  )
   let no_grav = @core.Entity::new(0, 1)
   let grav = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     no_grav,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-1.0F, 2.0F),
@@ -508,7 +491,9 @@ test "physics2d: gravity scale 0 disables gravity" {
     ),
     tick,
   )
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     grav,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 2.0F),
@@ -518,60 +503,34 @@ test "physics2d: gravity scale 0 disables gravity" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    no_grav,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    grav,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    no_grav,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    grav,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_GravityScale2d::get_gravity_scale2d_store(world).insert(
-    no_grav,
-    GravityScale2d::new(0.0F),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    no_grav,
-    Velocity2d::zero(),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    grav,
-    Velocity2d::zero(),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(no_grav, RigidBody2d::dynamic(), tick)
+  world.get_rigid_body2d_store().insert(grav, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(no_grav, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world
+  .get_collider2d_store()
+  .insert(grav, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world
+  .get_gravity_scale2d_store()
+  .insert(no_grav, GravityScale2d::new(0.0F), tick)
+  world.get_velocity2d_store().insert(no_grav, Velocity2d::zero(), tick)
+  world.get_velocity2d_store().insert(grav, Velocity2d::zero(), tick)
   physics2d_sync_insertions_system(world)
-  let y0 = @math.Has_Transform::get_transform_store(world).get(no_grav).unwrap().translation.y
-  let y1 = @math.Has_Transform::get_transform_store(world).get(grav).unwrap().translation.y
+  let y0 = world.get_transform_store().get(no_grav).unwrap().translation.y
+  let y1 = world.get_transform_store().get(grav).unwrap().translation.y
   let mut i = 0
   while i < 60 {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    @core.ChangeTickWorld::increment_change_tick(world) |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
   // Debug (kept): this test asserts semantics via positions; keep the following
   // assertions focused and avoid relying on exact floating-point equality.
-  let y0_final = @math.Has_Transform::get_transform_store(world)
-    .get(no_grav)
-    .unwrap().translation.y
-  let y1_final = @math.Has_Transform::get_transform_store(world)
-    .get(grav)
-    .unwrap().translation.y
+  let y0_final = world.get_transform_store().get(no_grav).unwrap().translation.y
+  let y1_final = world.get_transform_store().get(grav).unwrap().translation.y
   inspect(y0_final > y0 - 0.01F, content="true")
   inspect(y1_final < y1, content="true")
 }
@@ -582,15 +541,16 @@ test "physics2d: damping reduces velocity" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let no_damp = @core.Entity::new(0, 1)
   let damp = @core.Entity::new(1, 1)
   for e in [no_damp, damp] {
-    @math.Has_Transform::get_transform_store(world).insert(
+    world
+    .get_transform_store()
+    .insert(
       e,
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
@@ -600,38 +560,26 @@ test "physics2d: damping reduces velocity" {
       ),
       tick,
     )
-    Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-      e,
-      RigidBody2d::dynamic(),
-      tick,
-    )
-    Has_Collider2d::get_collider2d_store(world).insert(
-      e,
-      Collider2d::new(ColliderShape2d::ball(0.2F)),
-      tick,
-    )
-    Has_Velocity2d::get_velocity2d_store(world).insert(
-      e,
-      Velocity2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
-      tick,
-    )
+    world.get_rigid_body2d_store().insert(e, RigidBody2d::dynamic(), tick)
+    world
+    .get_collider2d_store()
+    .insert(e, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+    world
+    .get_velocity2d_store()
+    .insert(e, Velocity2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F), tick)
   }
-  Has_Damping2d::get_damping2d_store(world).insert(
-    damp,
-    Damping2d::new(10.0F, 0.0F),
-    tick,
-  )
+  world.get_damping2d_store().insert(damp, Damping2d::new(10.0F, 0.0F), tick)
   physics2d_sync_insertions_system(world)
   let mut i = 0
   while i < 120 {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    @core.ChangeTickWorld::increment_change_tick(world) |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let v_no = Has_Velocity2d::get_velocity2d_store(world).get(no_damp).unwrap().linvel.x
-  let v_damp = Has_Velocity2d::get_velocity2d_store(world).get(damp).unwrap().linvel.x
+  let v_no = world.get_velocity2d_store().get(no_damp).unwrap().linvel.x
+  let v_damp = world.get_velocity2d_store().get(damp).unwrap().linvel.x
   inspect(v_damp < v_no, content="true")
 }
 
@@ -641,13 +589,14 @@ test "physics2d: external impulse applies once and clears" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let e = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     e,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -657,35 +606,21 @@ test "physics2d: external impulse applies once and clears" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    e,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    e,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    e,
-    Velocity2d::zero(),
-    tick,
-  )
-  Has_ExternalImpulse2d::get_external_impulse2d_store(world).insert(
-    e,
-    ExternalImpulse2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(e, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(e, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world.get_velocity2d_store().insert(e, Velocity2d::zero(), tick)
+  world
+  .get_external_impulse2d_store()
+  .insert(e, ExternalImpulse2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F), tick)
   physics2d_sync_insertions_system(world)
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
   physics2d_writeback_system(world)
-  let v = Has_Velocity2d::get_velocity2d_store(world).get(e).unwrap()
+  let v = world.get_velocity2d_store().get(e).unwrap()
   inspect(v.linvel.x > 0.0F, content="true")
-  let imp = Has_ExternalImpulse2d::get_external_impulse2d_store(world)
-    .get(e)
-    .unwrap()
+  let imp = world.get_external_impulse2d_store().get(e).unwrap()
   inspect(imp.impulse.x == 0.0F, content="true")
 }
 
@@ -695,13 +630,14 @@ test "physics2d: default collider density yields non-zero mass" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let e = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     e,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -711,40 +647,24 @@ test "physics2d: default collider density yields non-zero mass" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    e,
-    RigidBody2d::dynamic(),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(e, RigidBody2d::dynamic(), tick)
   // No `ColliderDensity2d` here: this test asserts moon_rapier's default density
   // behaves like upstream Rapier (non-zero mass).
-  Has_Collider2d::get_collider2d_store(world).insert(
-    e,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    e,
-    Velocity2d::zero(),
-    tick,
-  )
-  Has_ExternalImpulse2d::get_external_impulse2d_store(world).insert(
-    e,
-    ExternalImpulse2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F),
-    tick,
-  )
+  world
+  .get_collider2d_store()
+  .insert(e, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world.get_velocity2d_store().insert(e, Velocity2d::zero(), tick)
+  world
+  .get_external_impulse2d_store()
+  .insert(e, ExternalImpulse2d::new(@math.Vec2::new(10.0F, 0.0F), 0.0F), tick)
   physics2d_sync_insertions_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
-  let bh = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(world)
-    .get(e)
-    .unwrap().handle
+  let ctx = world.get_physics2d_context_resource().get_ref().unwrap().val
+  let bh = world.get_rapier_body_handle2d_store().get(e).unwrap().handle
   inspect(ctx.rigid_bodies.get(bh).unwrap().inv_mass() > 0.0F, content="true")
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
   physics2d_writeback_system(world)
-  let v = Has_Velocity2d::get_velocity2d_store(world).get(e).unwrap()
+  let v = world.get_velocity2d_store().get(e).unwrap()
   inspect(v.linvel.x > 0.0F, content="true")
 }
 
@@ -754,13 +674,14 @@ test "physics2d: external force persists" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let e = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     e,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -770,37 +691,25 @@ test "physics2d: external force persists" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    e,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    e,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    e,
-    Velocity2d::zero(),
-    tick,
-  )
-  Has_ExternalForce2d::get_external_force2d_store(world).insert(
-    e,
-    ExternalForce2d::new(@math.Vec2::new(50.0F, 0.0F), 0.0F),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(e, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(e, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world.get_velocity2d_store().insert(e, Velocity2d::zero(), tick)
+  world
+  .get_external_force2d_store()
+  .insert(e, ExternalForce2d::new(@math.Vec2::new(50.0F, 0.0F), 0.0F), tick)
   physics2d_sync_insertions_system(world)
-  let x0 = @math.Has_Transform::get_transform_store(world).get(e).unwrap().translation.x
+  let x0 = world.get_transform_store().get(e).unwrap().translation.x
   let mut i = 0
   while i < 30 {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    @core.ChangeTickWorld::increment_change_tick(world) |> ignore
+    world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let x1 = @math.Has_Transform::get_transform_store(world).get(e).unwrap().translation.x
+  let x1 = world.get_transform_store().get(e).unwrap().translation.x
   inspect(x1 > x0, content="true")
 }
 
@@ -811,14 +720,15 @@ test "physics2d: CCD prevents tunneling through thin floor" {
     @app.fixed_time_set_timestep_seconds(1.0F / 10.0F)
     let world = Physics2dTestWorld::new()
     physics2d_init_resources_system(world)
-    let tick = @core.ChangeTickWorld::read_change_tick(world)
-    HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-    .get_ref_mut(tick)
-    .unwrap().val
-    = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+    let tick = world.read_change_tick()
+    world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+      @math.Vec2::new(0.0F, 0.0F),
+    )
     let floor = @core.Entity::new(0, 1)
     let ball = @core.Entity::new(1, 1)
-    @math.Has_Transform::get_transform_store(world).insert(
+    world
+    .get_transform_store()
+    .insert(
       floor,
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
@@ -828,17 +738,13 @@ test "physics2d: CCD prevents tunneling through thin floor" {
       ),
       tick,
     )
-    Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-      floor,
-      RigidBody2d::fixed(),
-      tick,
-    )
-    Has_Collider2d::get_collider2d_store(world).insert(
-      floor,
-      Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.01F)),
-      tick,
-    )
-    @math.Has_Transform::get_transform_store(world).insert(
+    world.get_rigid_body2d_store().insert(floor, RigidBody2d::fixed(), tick)
+    world
+    .get_collider2d_store()
+    .insert(floor, Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.01F)), tick)
+    world
+    .get_transform_store()
+    .insert(
       ball,
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 1.0F),
@@ -848,29 +754,21 @@ test "physics2d: CCD prevents tunneling through thin floor" {
       ),
       tick,
     )
-    Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-      ball,
-      RigidBody2d::dynamic(),
-      tick,
-    )
-    Has_Collider2d::get_collider2d_store(world).insert(
-      ball,
-      Collider2d::new(ColliderShape2d::ball(0.01F)),
-      tick,
-    )
-    Has_Velocity2d::get_velocity2d_store(world).insert(
-      ball,
-      Velocity2d::new(@math.Vec2::new(0.0F, -200.0F), 0.0F),
-      tick,
-    )
+    world.get_rigid_body2d_store().insert(ball, RigidBody2d::dynamic(), tick)
+    world
+    .get_collider2d_store()
+    .insert(ball, Collider2d::new(ColliderShape2d::ball(0.01F)), tick)
+    world
+    .get_velocity2d_store()
+    .insert(ball, Velocity2d::new(@math.Vec2::new(0.0F, -200.0F), 0.0F), tick)
     if ccd_enabled {
-      Has_Ccd2d::get_ccd2d_store(world).insert(ball, Ccd2d::enabled(), tick)
+      world.get_ccd2d_store().insert(ball, Ccd2d::enabled(), tick)
     }
     physics2d_sync_insertions_system(world)
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    @math.Has_Transform::get_transform_store(world).get(ball).unwrap().translation.y
+    world.get_transform_store().get(ball).unwrap().translation.y
   }
 
   let y_no_ccd = run(false)
@@ -885,15 +783,16 @@ test "physics2d: collision groups filter collision events" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let a = @core.Entity::new(0, 1)
   let b = @core.Entity::new(1, 1)
   for e in [a, b] {
-    @math.Has_Transform::get_transform_store(world).insert(
+    world
+    .get_transform_store()
+    .insert(
       e,
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
@@ -903,39 +802,37 @@ test "physics2d: collision groups filter collision events" {
       ),
       tick,
     )
-    Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-      e,
-      RigidBody2d::dynamic(),
-      tick,
-    )
-    Has_Collider2d::get_collider2d_store(world).insert(
-      e,
-      Collider2d::new(ColliderShape2d::ball(0.5F)),
-      tick,
-    )
-    Has_Velocity2d::get_velocity2d_store(world).insert(
-      e,
-      Velocity2d::zero(),
-      tick,
-    )
+    world.get_rigid_body2d_store().insert(e, RigidBody2d::dynamic(), tick)
+    world
+    .get_collider2d_store()
+    .insert(e, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+    world.get_velocity2d_store().insert(e, Velocity2d::zero(), tick)
   }
   // Put them in disjoint groups so they never collide.
-  Has_CollisionGroups2d::get_collision_groups2d_store(world).insert(
+  world
+  .get_collision_groups2d_store()
+  .insert(
     a,
     CollisionGroups2d::new(1, 1, @dynamics.InteractionTestMode::And),
     tick,
   )
-  Has_CollisionGroups2d::get_collision_groups2d_store(world).insert(
+  world
+  .get_collision_groups2d_store()
+  .insert(
     b,
     CollisionGroups2d::new(2, 2, @dynamics.InteractionTestMode::And),
     tick,
   )
-  Has_SolverGroups2d::get_solver_groups2d_store(world).insert(
+  world
+  .get_solver_groups2d_store()
+  .insert(
     a,
     SolverGroups2d::new(1, 1, @dynamics.InteractionTestMode::And),
     tick,
   )
-  Has_SolverGroups2d::get_solver_groups2d_store(world).insert(
+  world
+  .get_solver_groups2d_store()
+  .insert(
     b,
     SolverGroups2d::new(2, 2, @dynamics.InteractionTestMode::And),
     tick,
@@ -945,9 +842,7 @@ test "physics2d: collision groups filter collision events" {
   physics2d_sync_world_to_rapier_system(world)
   physics2d_step_system(world)
   physics2d_writeback_system(world)
-  let events = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
-    .get_ref()
-    .unwrap().val
+  let events = world.get_physics2d_events_resource().get_ref().unwrap().val
   inspect(events.collisions.length() == 0, content="true")
 }
 
@@ -957,13 +852,14 @@ test "physics2d: collider material and active event properties sync to rapier" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let e_default = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     e_default,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -973,37 +869,25 @@ test "physics2d: collider material and active event properties sync to rapier" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    e_default,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    e_default,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
-    e_default,
-    ColliderDensity2d::new(2.5F),
-    tick,
-  )
-  Has_Friction2d::get_friction2d_store(world).insert(
-    e_default,
-    Friction2d::new(0.25F),
-    tick,
-  )
-  Has_Restitution2d::get_restitution2d_store(world).insert(
-    e_default,
-    Restitution2d::new(0.75F),
-    tick,
-  )
-  Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
-    world,
-  ).insert(e_default, ContactForceEventThreshold2d::new(0.125F), tick)
+  world.get_rigid_body2d_store().insert(e_default, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(e_default, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_collider_density2d_store()
+  .insert(e_default, ColliderDensity2d::new(2.5F), tick)
+  world.get_friction2d_store().insert(e_default, Friction2d::new(0.25F), tick)
+  world
+  .get_restitution2d_store()
+  .insert(e_default, Restitution2d::new(0.75F), tick)
+  world
+  .get_contact_force_event_threshold2d_store()
+  .insert(e_default, ContactForceEventThreshold2d::new(0.125F), tick)
 
   let e_override = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     e_override,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 0.0F),
@@ -1013,31 +897,25 @@ test "physics2d: collider material and active event properties sync to rapier" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    e_override,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    e_override,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_ActiveEvents2d::get_active_events2d_store(world).insert(
+  world
+  .get_rigid_body2d_store()
+  .insert(e_override, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(e_override, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_active_events2d_store()
+  .insert(
     e_override,
     ActiveEvents2d::new(@collision.ActiveEvents::collision_events()),
     tick,
   )
-  Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
-    world,
-  ).insert(e_override, ContactForceEventThreshold2d::new(0.125F), tick)
+  world
+  .get_contact_force_event_threshold2d_store()
+  .insert(e_override, ContactForceEventThreshold2d::new(0.125F), tick)
   physics2d_sync_insertions_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
-  let store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
-    world,
-  )
+  let ctx = world.get_physics2d_context_resource().get_ref().unwrap().val
+  let store = world.get_rapier_collider_handle2d_store()
 
   let ch0 = store.get(e_default).unwrap().handle
   let collider0 = ctx.colliders.get(ch0).unwrap()
@@ -1083,13 +961,14 @@ test "physics2d: query pipeline sees inserted colliders" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let floor = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -1099,20 +978,12 @@ test "physics2d: query pipeline sees inserted colliders" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    floor,
-    RigidBody2d::fixed(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    floor,
-    Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(floor, RigidBody2d::fixed(), tick)
+  world
+  .get_collider2d_store()
+  .insert(floor, Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)), tick)
   physics2d_sync_insertions_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
+  let ctx = world.get_physics2d_context_resource().get_ref().unwrap().val
   let hit = ctx.cast_ray_entity(
     @math.Vec2::new(0.0F, 10.0F),
     @math.Vec2::new(0.0F, -1.0F),
@@ -1202,13 +1073,14 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let convex = @core.Entity::new(10, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     convex,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(5.0F, 0.0F),
@@ -1218,12 +1090,10 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    convex,
-    RigidBody2d::fixed(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
+  world.get_rigid_body2d_store().insert(convex, RigidBody2d::fixed(), tick)
+  world
+  .get_collider2d_store()
+  .insert(
     convex,
     Collider2d::new(
       ColliderShape2d::convex_polygon([
@@ -1236,7 +1106,9 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     tick,
   )
   let compound = @core.Entity::new(11, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     compound,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-5.0F, 0.0F),
@@ -1246,12 +1118,10 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    compound,
-    RigidBody2d::fixed(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
+  world.get_rigid_body2d_store().insert(compound, RigidBody2d::fixed(), tick)
+  world
+  .get_collider2d_store()
+  .insert(
     compound,
     Collider2d::new(
       ColliderShape2d::compound([
@@ -1278,9 +1148,7 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     tick,
   )
   physics2d_sync_insertions_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
+  let ctx = world.get_physics2d_context_resource().get_ref().unwrap().val
   let hits1 = ctx.intersect_aabb_entities_conservative(
     @math.Rect::new(@math.Vec2::new(4.0F, -2.0F), @math.Vec2::new(6.0F, 2.0F)),
   )
@@ -1317,14 +1185,15 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let a = @core.Entity::new(20, 1)
   let b = @core.Entity::new(21, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     a,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-0.49F, 0.0F),
@@ -1334,7 +1203,9 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     ),
     tick,
   )
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     b,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.49F, 0.0F),
@@ -1344,42 +1215,30 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    a,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    b,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    a,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    b,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    a,
-    Velocity2d::new(@math.Vec2::new(1.0F, 0.0F), 0.0F),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    b,
-    Velocity2d::new(@math.Vec2::new(-1.0F, 0.0F), 0.0F),
-    tick,
-  )
-  Has_ActiveHooks2d::get_active_hooks2d_store(world).insert(
+  world.get_rigid_body2d_store().insert(a, RigidBody2d::dynamic(), tick)
+  world.get_rigid_body2d_store().insert(b, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(a, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_collider2d_store()
+  .insert(b, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_velocity2d_store()
+  .insert(a, Velocity2d::new(@math.Vec2::new(1.0F, 0.0F), 0.0F), tick)
+  world
+  .get_velocity2d_store()
+  .insert(b, Velocity2d::new(@math.Vec2::new(-1.0F, 0.0F), 0.0F), tick)
+  world
+  .get_active_hooks2d_store()
+  .insert(
     a,
     ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
     tick,
   )
-  Has_ActiveHooks2d::get_active_hooks2d_store(world).insert(
+  world
+  .get_active_hooks2d_store()
+  .insert(
     b,
     ActiveHooks2d::new(@collision.ActiveHooks::filter_contact_pairs()),
     tick,
@@ -1390,9 +1249,7 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
   physics2d_step_system(world)
   inspect(called.val, content="true")
   inspect(mapped.val, content="true")
-  let events = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
-    .get_ref()
-    .unwrap().val
+  let events = world.get_physics2d_events_resource().get_ref().unwrap().val
   inspect(events.collisions.length() == 0, content="true")
   physics2d_hooks_set_config(old_hooks)
 }
@@ -1403,14 +1260,15 @@ test "physics2d: impulse joint is inserted and cleaned up" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let a = @core.Entity::new(0, 1)
   let b = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     a,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -1420,22 +1278,14 @@ test "physics2d: impulse joint is inserted and cleaned up" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    a,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    a,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    a,
-    Velocity2d::zero(),
-    tick,
-  )
-  @math.Has_Transform::get_transform_store(world).insert(
+  world.get_rigid_body2d_store().insert(a, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(a, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world.get_velocity2d_store().insert(a, Velocity2d::zero(), tick)
+  world
+  .get_transform_store()
+  .insert(
     b,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
@@ -1445,49 +1295,31 @@ test "physics2d: impulse joint is inserted and cleaned up" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    b,
-    RigidBody2d::dynamic(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    b,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_Velocity2d::get_velocity2d_store(world).insert(
-    b,
-    Velocity2d::zero(),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(b, RigidBody2d::dynamic(), tick)
+  world
+  .get_collider2d_store()
+  .insert(b, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world.get_velocity2d_store().insert(b, Velocity2d::zero(), tick)
   let fixed = @dynamics.FixedJointBuilder::new().build()
   let data = @dynamics.GenericJoint::from_fixed(fixed)
-  Has_ImpulseJoint2d::get_impulse_joint2d_store(world).insert(
-    a,
-    ImpulseJoint2d::new(b, data),
-    tick,
-  )
+  world
+  .get_impulse_joint2d_store()
+  .insert(a, ImpulseJoint2d::new(b, data), tick)
   physics2d_sync_insertions_system(world)
   physics2d_sync_joints_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
+  let ctx = world.get_physics2d_context_resource().get_ref().unwrap().val
   inspect(ctx.impulse_joints.len() == 1, content="true")
   inspect(
-    Has_RapierImpulseJointHandle2d::get_rapier_impulse_joint_handle2d_store(
-      world,
-    ).contains(a),
+    world.get_rapier_impulse_joint_handle2d_store().contains(a),
     content="true",
   )
 
   // Remove authoring component and verify cleanup removes the Rapier joint.
-  Has_ImpulseJoint2d::get_impulse_joint2d_store(world).remove(a) |> ignore
+  world.get_impulse_joint2d_store().remove(a) |> ignore
   physics2d_cleanup_despawned_system(world)
   inspect(ctx.impulse_joints.len() == 0, content="true")
   inspect(
-    !Has_RapierImpulseJointHandle2d::get_rapier_impulse_joint_handle2d_store(
-      world,
-    ).contains(a),
+    !world.get_rapier_impulse_joint_handle2d_store().contains(a),
     content="true",
   )
 }
@@ -1498,13 +1330,14 @@ test "physics2d: child collider attaches to parent body" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let body = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     body,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -1514,13 +1347,11 @@ test "physics2d: child collider attaches to parent body" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    body,
-    RigidBody2d::dynamic(),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(body, RigidBody2d::dynamic(), tick)
   let child = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     child,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
@@ -1530,26 +1361,16 @@ test "physics2d: child collider attaches to parent body" {
     ),
     tick,
   )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    child,
-    Collider2d::new(ColliderShape2d::ball(0.2F)),
-    tick,
-  )
-  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
-    child,
-    ColliderParent2d::new(body),
-    tick,
-  )
+  world
+  .get_collider2d_store()
+  .insert(child, Collider2d::new(ColliderShape2d::ball(0.2F)), tick)
+  world
+  .get_collider_parent2d_store()
+  .insert(child, ColliderParent2d::new(body), tick)
   physics2d_sync_insertions_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
-  let bh = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(world)
-    .get(body)
-    .unwrap().handle
-  let ch = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(world)
-    .get(child)
-    .unwrap().handle
+  let ctx = world.get_physics2d_context_resource().get_ref().unwrap().val
+  let bh = world.get_rapier_body_handle2d_store().get(body).unwrap().handle
+  let ch = world.get_rapier_collider_handle2d_store().get(child).unwrap().handle
   let collider = ctx.colliders.get(ch).unwrap()
   inspect(
     collider.parent().unwrap().into_raw_parts() == bh.into_raw_parts(),
@@ -1565,14 +1386,15 @@ test "physics2d: multiple child colliders aggregate parent mass" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
 
   let body_single = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     body_single,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-3.0F, 0.0F),
@@ -1582,13 +1404,13 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    body_single,
-    RigidBody2d::dynamic(),
-    tick,
-  )
+  world
+  .get_rigid_body2d_store()
+  .insert(body_single, RigidBody2d::dynamic(), tick)
   let child_single = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     child_single,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -1598,19 +1420,17 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     ),
     tick,
   )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    child_single,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
-    child_single,
-    ColliderParent2d::new(body_single),
-    tick,
-  )
+  world
+  .get_collider2d_store()
+  .insert(child_single, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_collider_parent2d_store()
+  .insert(child_single, ColliderParent2d::new(body_single), tick)
 
   let body_double = @core.Entity::new(2, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     body_double,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 0.0F),
@@ -1620,13 +1440,13 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    body_double,
-    RigidBody2d::dynamic(),
-    tick,
-  )
+  world
+  .get_rigid_body2d_store()
+  .insert(body_double, RigidBody2d::dynamic(), tick)
   let child_double_a = @core.Entity::new(3, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     child_double_a,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-0.75F, 0.0F),
@@ -1636,18 +1456,16 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     ),
     tick,
   )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    child_double_a,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
-    child_double_a,
-    ColliderParent2d::new(body_double),
-    tick,
-  )
+  world
+  .get_collider2d_store()
+  .insert(child_double_a, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_collider_parent2d_store()
+  .insert(child_double_a, ColliderParent2d::new(body_double), tick)
   let child_double_b = @core.Entity::new(4, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     child_double_b,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.75F, 0.0F),
@@ -1657,25 +1475,21 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     ),
     tick,
   )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    child_double_b,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
-    child_double_b,
-    ColliderParent2d::new(body_double),
-    tick,
-  )
+  world
+  .get_collider2d_store()
+  .insert(child_double_b, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_collider_parent2d_store()
+  .insert(child_double_b, ColliderParent2d::new(body_double), tick)
 
   physics2d_sync_insertions_system(world)
-  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
-    .get_ref()
-    .unwrap().val
-  let bh_single = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(world)
+  let ctx = world.get_physics2d_context_resource().get_ref().unwrap().val
+  let bh_single = world
+    .get_rapier_body_handle2d_store()
     .get(body_single)
     .unwrap().handle
-  let bh_double = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(world)
+  let bh_double = world
+    .get_rapier_body_handle2d_store()
     .get(body_double)
     .unwrap().handle
   let inv_single = ctx.rigid_bodies.get(bh_single).unwrap().inv_mass()
@@ -1691,14 +1505,15 @@ test "physics2d: collision events use child collider entity mapping" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, -500.0F),
+  )
 
   let floor = @core.Entity::new(10, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -1.0F),
@@ -1708,19 +1523,15 @@ test "physics2d: collision events use child collider entity mapping" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    floor,
-    RigidBody2d::fixed(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    floor,
-    Collider2d::new(ColliderShape2d::cuboid(5.0F, 0.5F)),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(floor, RigidBody2d::fixed(), tick)
+  world
+  .get_collider2d_store()
+  .insert(floor, Collider2d::new(ColliderShape2d::cuboid(5.0F, 0.5F)), tick)
 
   let body = @core.Entity::new(11, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     body,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -1730,13 +1541,11 @@ test "physics2d: collision events use child collider entity mapping" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    body,
-    RigidBody2d::dynamic(),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(body, RigidBody2d::dynamic(), tick)
   let child = @core.Entity::new(12, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     child,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.6F),
@@ -1746,16 +1555,12 @@ test "physics2d: collision events use child collider entity mapping" {
     ),
     tick,
   )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    child,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_ColliderParent2d::get_collider_parent2d_store(world).insert(
-    child,
-    ColliderParent2d::new(body),
-    tick,
-  )
+  world
+  .get_collider2d_store()
+  .insert(child, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_collider_parent2d_store()
+  .insert(child, ColliderParent2d::new(body), tick)
 
   physics2d_sync_insertions_system(world)
   let mut seen_child = false
@@ -1764,9 +1569,7 @@ test "physics2d: collision events use child collider entity mapping" {
     physics2d_clear_events_system(world)
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
-    let events = HasRes_Physics2dEvents::get_physics2d_events_resource(world)
-      .get_ref()
-      .unwrap().val
+    let events = world.get_physics2d_events_resource().get_ref().unwrap().val
     for ev in events.collisions {
       match ev {
         CollisionEvent2d::Started(a, b, _) => {
@@ -1791,13 +1594,14 @@ test "physics2d: kinematic character controller moves and outputs" {
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
   let world = Physics2dTestWorld::new()
   physics2d_init_resources_system(world)
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
-  .get_ref_mut(tick)
-  .unwrap().val
-  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world.get_physics2d_config_resource().get_ref_mut(tick).unwrap().val = Physics2dConfig::new(
+    @math.Vec2::new(0.0F, 0.0F),
+  )
   let floor = @core.Entity::new(0, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -1807,18 +1611,14 @@ test "physics2d: kinematic character controller moves and outputs" {
     ),
     tick,
   )
-  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
-    floor,
-    RigidBody2d::fixed(),
-    tick,
-  )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    floor,
-    Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
-    tick,
-  )
+  world.get_rigid_body2d_store().insert(floor, RigidBody2d::fixed(), tick)
+  world
+  .get_collider2d_store()
+  .insert(floor, Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)), tick)
   let character = @core.Entity::new(1, 1)
-  @math.Has_Transform::get_transform_store(world).insert(
+  world
+  .get_transform_store()
+  .insert(
     character,
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 2.0F),
@@ -1828,14 +1628,12 @@ test "physics2d: kinematic character controller moves and outputs" {
     ),
     tick,
   )
-  Has_Collider2d::get_collider2d_store(world).insert(
-    character,
-    Collider2d::new(ColliderShape2d::ball(0.5F)),
-    tick,
-  )
-  Has_KinematicCharacterController2d::get_kinematic_character_controller2d_store(
-    world,
-  ).insert(
+  world
+  .get_collider2d_store()
+  .insert(character, Collider2d::new(ColliderShape2d::ball(0.5F)), tick)
+  world
+  .get_kinematic_character_controller2d_store()
+  .insert(
     character,
     KinematicCharacterController2d::default().with_translation(
       @math.Vec2::new(0.0F, -2.0F),
@@ -1845,19 +1643,15 @@ test "physics2d: kinematic character controller moves and outputs" {
   physics2d_sync_insertions_system(world)
   physics2d_sync_world_to_rapier_system(world)
   physics2d_character_controller_system(world)
-  let y = @math.Has_Transform::get_transform_store(world)
-    .get(character)
-    .unwrap().translation.y
+  let y = world.get_transform_store().get(character).unwrap().translation.y
   inspect(y > 0.9F, content="true")
-  let kcc_after = Has_KinematicCharacterController2d::get_kinematic_character_controller2d_store(
-      world,
-    )
+  let kcc_after = world
+    .get_kinematic_character_controller2d_store()
     .get(character)
     .unwrap()
   inspect(kcc_after.translation.y == 0.0F, content="true")
-  let out = Has_KinematicCharacterControllerOutput2d::get_kinematic_character_controller_output2d_store(
-      world,
-    )
+  let out = world
+    .get_kinematic_character_controller_output2d_store()
     .get(character)
     .unwrap()
   inspect(out.effective_translation.y <= 0.0F, content="true")

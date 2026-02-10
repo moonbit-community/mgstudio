@@ -575,11 +575,11 @@ fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_systems(
 
       // Align with Bevy: increment global change tick once per executed system
       // and expose SystemTicks via World-backed context for change detection.
-      let this_run = @core.ChangeTickWorld::increment_change_tick(world)
+      let this_run = world.increment_change_tick()
       let sys_ticks = @core.SystemTicks::new(cfg.last_run_tick, this_run)
-      let ctx = @core.SystemContextWorld::get_system_context(world)
+      let ctx = world.get_system_context()
       ctx.set(sys_ticks)
-      @core.SystemContextWorld::set_system_context(world, ctx)
+      world.set_system_context(ctx)
       (cfg.system)(world)
       systems[system_i].last_run_tick = this_run
     }

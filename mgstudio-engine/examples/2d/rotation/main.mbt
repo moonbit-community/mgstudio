@@ -40,9 +40,9 @@ fn rotation_setup(world : @ecs_world.World) -> Unit {
 fn rotation_update(world : @ecs_world.World) -> Unit {
   let delta_secs = @time.time_delta_seconds()
   let speed = 1.0F
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
-  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let tick = world.read_change_tick()
+  let sprite_store = world.get_sprite_store()
+  let transform_store = world.get_transform_store()
   let entities : Array[(@core.Entity, @math.Transform)] = []
   @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {
     entities.push((entity, transform))

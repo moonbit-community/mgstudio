@@ -32,10 +32,8 @@ let state : Ref[SanityState] = Ref::new({ ball: None })
 
 ///|
 fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let cfg_res = @physics3d.HasRes_Physics3dConfig::get_physics3d_config_resource(
-    world,
-  )
+  let tick = world.read_change_tick()
+  let cfg_res = world.get_physics3d_config_resource()
   match cfg_res.get_ref_mut(tick) {
     Some(r) =>
       r.val = @physics3d.Physics3dConfig::new(
@@ -52,8 +50,8 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
   let floor = @render2d.SpriteBundle::new(floor_sprite, floor_transform).spawn(
     world,
   )
-  let rb_store = @physics3d.Has_RigidBody3d::get_rigid_body3d_store(world)
-  let col_store = @physics3d.Has_Collider3d::get_collider3d_store(world)
+  let rb_store = world.get_rigid_body3d_store()
+  let col_store = world.get_collider3d_store()
   rb_store.insert(floor, @physics3d.RigidBody3d::fixed(), tick)
   col_store.insert(
     floor,
@@ -90,14 +88,12 @@ fn physics3d_sanity_print(world : @ecs_world.World) -> Unit {
   match state.val.ball {
     None => ()
     Some(ball) => {
-      let transform_store = @math.Has_Transform::get_transform_store(world)
+      let transform_store = world.get_transform_store()
       match transform_store.get(ball) {
         None => ()
         Some(t) => println("ball.y=\{t.translation.y}")
       }
-      let ev_res = @physics3d.HasRes_Physics3dEvents::get_physics3d_events_resource(
-        world,
-      )
+      let ev_res = world.get_physics3d_events_resource()
       match ev_res.get_ref() {
         Some(r) =>
           for ev in r.val.collisions {

@@ -90,9 +90,9 @@ fn dynamic_mip_update(world : @ecs_world.World) -> Unit {
   let display_size = MIN_VISUAL_SIZE +
     (MAX_VISUAL_SIZE - MIN_VISUAL_SIZE) * oscillation
   let next_level = pick_mip_level(display_size, textures.length())
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let tick = world.read_change_tick()
 
-  let transform_store = @math.Has_Transform::get_transform_store(world)
+  let transform_store = world.get_transform_store()
   if transform_store.get(sprite_entity) is Some(transform) {
     let next_transform = @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(transform.translation.x, transform.translation.y),
@@ -103,7 +103,7 @@ fn dynamic_mip_update(world : @ecs_world.World) -> Unit {
     transform_store.set(sprite_entity, next_transform, tick) |> ignore
   }
   if next_level != dynamic_mip_state.val.current_level {
-    let sprite_store = @render2d.Has_Sprite::get_sprite_store(world)
+    let sprite_store = world.get_sprite_store()
     if sprite_store.get(sprite_entity) is Some(_sprite) {
       let next_sprite = @render2d.Sprite::from_image(textures[next_level]).with_custom_size(
         Some(@math.Vec2::new(1.0F, 1.0F)),

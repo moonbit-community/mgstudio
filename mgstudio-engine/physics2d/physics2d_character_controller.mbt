@@ -199,27 +199,19 @@ pub fn[
 ] physics2d_character_controller_system(
   world : W,
 ) -> Unit {
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let ctx_res = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+  let tick = world.read_change_tick()
+  let ctx_res = world.get_physics2d_context_resource()
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
 
   // Ensure queries see the latest collider positions (e.g. standalone colliders synced from Transform).
   ctx.query_pipeline.update()
   let dt = @app.fixed_time_timestep_seconds()
-  let transform_store = @math.Has_Transform::get_transform_store(world)
-  let body_handle_store = Has_RapierBodyHandle2d::get_rapier_body_handle2d_store(
-    world,
-  )
-  let collider_handle_store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
-    world,
-  )
-  let controller_store = Has_KinematicCharacterController2d::get_kinematic_character_controller2d_store(
-    world,
-  )
-  let output_store = Has_KinematicCharacterControllerOutput2d::get_kinematic_character_controller_output2d_store(
-    world,
-  )
+  let transform_store = world.get_transform_store()
+  let body_handle_store = world.get_rapier_body_handle2d_store()
+  let collider_handle_store = world.get_rapier_collider_handle2d_store()
+  let controller_store = world.get_kinematic_character_controller2d_store()
+  let output_store = world.get_kinematic_character_controller_output2d_store()
   controller_store.for_each(fn(entity, kcc) {
     // Avoid conflicting with rigid-body driven motion for now.
     if body_handle_store.contains(entity) {

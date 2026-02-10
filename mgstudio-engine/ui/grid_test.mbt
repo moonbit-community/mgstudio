@@ -15,7 +15,7 @@
 ///|
 test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   let world = @ecs_world.World::new()
-  let tick = @core.ChangeTickWorld::increment_change_tick(world)
+  let tick = world.increment_change_tick()
 
   // Seed UiContext to avoid any host texture calls in tests.
   let ctx = UiContext::new(
@@ -28,10 +28,12 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
     None,
     false,
   )
-  HasRes_UiContext::get_ui_context_resource(world).insert(ctx, tick)
+  world.get_ui_context_resource().insert(ctx, tick)
   let root = world.spawn_empty()
-  Has_UiRoot::get_ui_root_store(world).insert(root, UiRoot::default(), tick)
-  Has_Node::get_node_store(world).insert(
+  world.get_ui_root_store().insert(root, UiRoot::default(), tick)
+  world
+  .get_node_store()
+  .insert(
     root,
     Node::default()
     .with_display(Display::Grid)
@@ -50,24 +52,16 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
     tick,
   )
   let a = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    a,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  Has_Node::get_node_store(world).insert(a, Node::default(), tick)
+  world.get_parent_store().insert(a, @hierarchy.Parent::new(root), tick)
+  world.get_node_store().insert(a, Node::default(), tick)
   let b = world.spawn_empty()
-  @hierarchy.Has_Parent::get_parent_store(world).insert(
-    b,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  Has_Node::get_node_store(world).insert(b, Node::default(), tick)
+  world.get_parent_store().insert(b, @hierarchy.Parent::new(root), tick)
+  world.get_node_store().insert(b, Node::default(), tick)
 
   // Build Children from Parent before layout.
   @transform.update_children_system(world)
   ui_layout_system(world)
-  let layout_store = Has_UiLayout::get_ui_layout_store(world)
+  let layout_store = world.get_ui_layout_store()
   let ra = layout_store.get(a).unwrap().rect
   let rb = layout_store.get(b).unwrap().rect
   inspect(ra.min.x == 0.0F, content="true")

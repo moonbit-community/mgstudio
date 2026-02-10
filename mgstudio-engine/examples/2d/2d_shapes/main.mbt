@@ -146,9 +146,9 @@ fn shapes_setup(world : @ecs_world.World) -> Unit {
 fn shapes_rotate(world : @ecs_world.World) -> Unit {
   let delta_secs = @time.time_delta_seconds()
   let speed = 0.5F
-  let tick = @core.ChangeTickWorld::read_change_tick(world)
-  let transform_store = @math.Has_Transform::get_transform_store(world)
-  let mesh_store = @render2d.Has_Mesh2d::get_mesh2d_store(world)
+  let tick = world.read_change_tick()
+  let transform_store = world.get_transform_store()
+  let mesh_store = world.get_mesh2d_store()
   let entities : Array[(@core.Entity, @math.Transform)] = []
   @core.query2(transform_store, mesh_store, fn(entity, transform, _mesh) {
     entities.push((entity, transform))

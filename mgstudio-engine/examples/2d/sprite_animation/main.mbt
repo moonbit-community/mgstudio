@@ -75,12 +75,12 @@ fn sprite_animation_update(world : @ecs_world.World) -> Unit {
     if animation_state.val.timer >= 0.2F {
       animation_state.val.timer = 0.0F
       animation_state.val.index = (animation_state.val.index + 1) % 4
-      let tick = @core.ChangeTickWorld::read_change_tick(world)
+      let tick = world.read_change_tick()
       let atlas = @asset.TextureAtlas::new(
         layout_handle,
         animation_state.val.index,
       )
-      let store = @render2d.Has_Sprite::get_sprite_store(world)
+      let store = world.get_sprite_store()
       if store.get(sprite_entity) is Some(sprite) {
         store.set(sprite_entity, sprite.with_texture_atlas(Some(atlas)), tick)
         |> ignore
