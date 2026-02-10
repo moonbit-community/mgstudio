@@ -406,7 +406,7 @@ pub fn[W : Physics2dCleanupWorld] physics2d_cleanup_despawned_system(
   }
 
   // Keep query pipeline in sync with removals.
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
 }
 
 ///|
@@ -646,7 +646,7 @@ pub fn[W : Physics2dSyncInsertionsWorld] physics2d_sync_insertions_system(
   })
 
   // Keep query pipeline in sync with insertions.
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
 
   // Recompute mass properties for bodies that gained colliders this frame.
   for entry in touched_bodies.iter() {
@@ -890,7 +890,7 @@ pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_syste
   })
 
   // Keep query pipeline in sync with any transform/authoring changes.
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
 
   // Ensure mass properties stay correct for multi-collider bodies when collider
   // authoring components (density, etc.) change.
@@ -913,7 +913,7 @@ pub fn[W : Physics2dResourcesWorld] physics2d_step_system(world : W) -> Unit {
   let events = ev_ref.val
   let gravity = mg_vec2_to_rapier(cfg.gravity)
   if !cfg.physics_pipeline_active {
-    ctx.query_pipeline.update()
+    ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
     return
   }
   physics2d_hooks_set_current_collider_map(ctx.collider_to_entity)
@@ -973,7 +973,7 @@ pub fn[W : Physics2dResourcesWorld] physics2d_step_system(world : W) -> Unit {
   }
 
   // Update query pipeline after stepping so queries see current positions.
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
   physics2d_hooks_clear_current_collider_map()
 }
 

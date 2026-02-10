@@ -113,7 +113,10 @@ pub fn Physics2dContext::cast_ray_entity(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
-  match self.query().cast_ray(ray, max_toi, solid) {
+  match
+    self
+    .query()
+    .cast_ray(self.rigid_bodies, self.colliders, ray, max_toi, solid) {
     Some((h, toi)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) => Some(RayHit2d::{ entity: e, toi })
@@ -136,7 +139,11 @@ pub fn Physics2dContext::cast_ray_entity_with_filter(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
-  match self.query().with_filter(filter).cast_ray(ray, max_toi, solid) {
+  match
+    self
+    .query()
+    .with_filter(filter)
+    .cast_ray(self.rigid_bodies, self.colliders, ray, max_toi, solid) {
     Some((h, toi)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) => Some(RayHit2d::{ entity: e, toi })
@@ -158,7 +165,16 @@ pub fn Physics2dContext::cast_ray_and_get_normal_entity(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
-  match self.query().cast_ray_and_get_normal(ray, max_toi, solid) {
+  match
+    self
+    .query()
+    .cast_ray_and_get_normal(
+      self.rigid_bodies,
+      self.colliders,
+      ray,
+      max_toi,
+      solid,
+    ) {
     Some((h, inter)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
@@ -190,7 +206,13 @@ pub fn Physics2dContext::cast_ray_and_get_normal_entity_with_filter(
     self
     .query()
     .with_filter(filter)
-    .cast_ray_and_get_normal(ray, max_toi, solid) {
+    .cast_ray_and_get_normal(
+      self.rigid_bodies,
+      self.colliders,
+      ray,
+      max_toi,
+      solid,
+    ) {
     Some((h, inter)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
@@ -218,7 +240,10 @@ pub fn Physics2dContext::intersect_ray_entities_with_filter(
     mg_vec2_to_rapier(origin),
     mg_vec2_to_rapier(dir),
   )
-  let hits = self.query().with_filter(filter).intersect_ray(ray, max_toi, solid)
+  let hits = self
+    .query()
+    .with_filter(filter)
+    .intersect_ray(self.rigid_bodies, self.colliders, ray, max_toi, solid)
   let out : Array[RayHitNormal2d] = []
   for pair in hits {
     let (h, inter) = pair
@@ -255,7 +280,13 @@ pub fn Physics2dContext::intersect_point_entities(
   self : Physics2dContext,
   point : @math.Vec2,
 ) -> Array[@core.Entity] {
-  let hs = self.query().intersect_point(mg_vec2_to_rapier(point))
+  let hs = self
+    .query()
+    .intersect_point(
+      self.rigid_bodies,
+      self.colliders,
+      mg_vec2_to_rapier(point),
+    )
   let out : Array[@core.Entity] = []
   for h in hs {
     if entity_from_collider_handle(self, h) is Some(e) {
@@ -274,7 +305,11 @@ pub fn Physics2dContext::intersect_point_entities_with_filter(
   let hs = self
     .query()
     .with_filter(filter)
-    .intersect_point(mg_vec2_to_rapier(point))
+    .intersect_point(
+      self.rigid_bodies,
+      self.colliders,
+      mg_vec2_to_rapier(point),
+    )
   let out : Array[@core.Entity] = []
   for h in hs {
     if entity_from_collider_handle(self, h) is Some(e) {
@@ -291,7 +326,16 @@ pub fn Physics2dContext::project_point_entity(
   max_dist : Float,
   solid : Bool,
 ) -> PointProjection2d? {
-  match self.query().project_point(mg_vec2_to_rapier(point), max_dist, solid) {
+  match
+    self
+    .query()
+    .project_point(
+      self.rigid_bodies,
+      self.colliders,
+      mg_vec2_to_rapier(point),
+      max_dist,
+      solid,
+    ) {
     Some((h, proj)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
@@ -318,7 +362,13 @@ pub fn Physics2dContext::project_point_entity_with_filter(
     self
     .query()
     .with_filter(filter)
-    .project_point(mg_vec2_to_rapier(point), max_dist, solid) {
+    .project_point(
+      self.rigid_bodies,
+      self.colliders,
+      mg_vec2_to_rapier(point),
+      max_dist,
+      solid,
+    ) {
     Some((h, proj)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
@@ -343,7 +393,13 @@ pub fn Physics2dContext::project_point_and_get_feature_entity(
   match
     self
     .query()
-    .project_point_and_get_feature(mg_vec2_to_rapier(point), max_dist, solid) {
+    .project_point_and_get_feature(
+      self.rigid_bodies,
+      self.colliders,
+      mg_vec2_to_rapier(point),
+      max_dist,
+      solid,
+    ) {
     Some((h, proj, feature)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
@@ -371,7 +427,13 @@ pub fn Physics2dContext::project_point_and_get_feature_entity_with_filter(
     self
     .query()
     .with_filter(filter)
-    .project_point_and_get_feature(mg_vec2_to_rapier(point), max_dist, solid) {
+    .project_point_and_get_feature(
+      self.rigid_bodies,
+      self.colliders,
+      mg_vec2_to_rapier(point),
+      max_dist,
+      solid,
+    ) {
     Some((h, proj, feature)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
@@ -411,6 +473,8 @@ pub fn Physics2dContext::intersect_shape_entities_with_filter(
     .query()
     .with_filter(filter)
     .intersect_shape(
+      self.rigid_bodies,
+      self.colliders,
       mg_transform_to_iso2(shape_pos),
       collider_shape2d_to_rapier(shape),
     )
@@ -443,7 +507,11 @@ pub fn Physics2dContext::intersect_aabb_entities_conservative_with_filter(
   let hs = self
     .query()
     .with_filter(filter)
-    .intersect_aabb_conservative(rect_to_aabb(rect))
+    .intersect_aabb_conservative(
+      self.rigid_bodies,
+      self.colliders,
+      rect_to_aabb(rect),
+    )
   let out : Array[@core.Entity] = []
   for h in hs {
     if entity_from_collider_handle(self, h) is Some(e) {
@@ -464,6 +532,8 @@ pub fn Physics2dContext::cast_shape_entity(
   let query = self.query()
   match
     query.cast_shape(
+      self.rigid_bodies,
+      self.colliders,
       mg_transform_to_iso2(shape_pos),
       mg_vec2_to_rapier(shape_vel),
       collider_shape2d_to_rapier(shape),
@@ -496,6 +566,8 @@ pub fn Physics2dContext::cast_shape_entity_with_filter(
   let query = self.query().with_filter(filter)
   match
     query.cast_shape(
+      self.rigid_bodies,
+      self.colliders,
       mg_transform_to_iso2(shape_pos),
       mg_vec2_to_rapier(shape_vel),
       collider_shape2d_to_rapier(shape),

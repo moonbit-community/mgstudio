@@ -207,7 +207,7 @@ pub fn[W : Physics2dCharacterControllerWorld] physics2d_character_controller_sys
   let ctx = ctx_ref.val
 
   // Ensure queries see the latest collider positions (e.g. standalone colliders synced from Transform).
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
   let dt = @app.fixed_time_timestep_seconds()
   let transform_store = world.get_transform_store()
   let body_handle_store = world.get_rapier_body_handle2d_store()
@@ -236,6 +236,8 @@ pub fn[W : Physics2dCharacterControllerWorld] physics2d_character_controller_sys
     let movement = kcc.controller.move_shape(
       dt,
       query,
+      ctx.rigid_bodies,
+      ctx.colliders,
       shape,
       character_pos,
       mg_vec2_to_rapier(kcc.translation),
@@ -290,5 +292,5 @@ pub fn[W : Physics2dCharacterControllerWorld] physics2d_character_controller_sys
   })
 
   // Colliders moved; keep query pipeline consistent.
-  ctx.query_pipeline.update()
+  ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
 }

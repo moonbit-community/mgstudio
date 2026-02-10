@@ -176,6 +176,7 @@ fn draw_shape_2d(
         let (local_iso, sub) = part
         draw_shape_2d(gizmos, iso.mul(local_iso), sub, color)
       }
+    _ => ()
   }
 }
 
