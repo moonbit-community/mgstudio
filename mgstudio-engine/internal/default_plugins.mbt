@@ -45,8 +45,10 @@ pub fn[W : DefaultPluginsWorld] default_plugins() -> Array[@app.Plugin[W]] {
     fn(app : @app.App[W]) -> @app.App[W] { @picking.picking_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @a11y.a11y_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @ui.ui_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @text.text_plugin(app) },
+    // Overlay producers (UI/text/gizmos) must run before render2d extract,
+    // otherwise their overlay sprites will miss the current frame.
+    fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @physics2d.physics2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @physics3d.physics3d_plugin(app) },
   ]
@@ -67,8 +69,10 @@ pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[
     fn(app : @app.App[W]) -> @app.App[W] { @picking.picking_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @a11y.a11y_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @ui.ui_plugin(app) },
-    fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @text.text_plugin(app) },
+    // Overlay producers (UI/text/gizmos) must run before render2d extract,
+    // otherwise their overlay sprites will miss the current frame.
+    fn(app : @app.App[W]) -> @app.App[W] { @render2d.render2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @physics2d.physics2d_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @physics3d.physics3d_plugin(app) },
   ]
