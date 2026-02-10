@@ -194,9 +194,11 @@ pub fn KinematicCharacterControllerOutput2d::without_collisions(
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
-] physics2d_character_controller_system(
+pub(open) trait Physics2dCharacterControllerWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_KinematicCharacterController2d + Has_KinematicCharacterControllerOutput2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext {
+}
+
+///|
+pub fn[W : Physics2dCharacterControllerWorld] physics2d_character_controller_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()

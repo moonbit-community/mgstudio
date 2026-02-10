@@ -24,9 +24,11 @@
 /// (no frustum culling yet).
 
 ///|
-pub fn[
-  W : Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld,
-] visibility_propagate_system(
+pub(open) trait VisibilityPropagationWorld: Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld {
+}
+
+///|
+pub fn[W : VisibilityPropagationWorld] visibility_propagate_system(
   world : W,
 ) -> Unit {
   let visibility_store = world.get_visibility_store()
@@ -106,9 +108,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld,
-] visibility_plugin(
+pub fn[W : VisibilityPropagationWorld] visibility_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   // Must run after `transform.update_children_system` so `Children` is in sync.

@@ -21,9 +21,11 @@ fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext,
-] physics2d_sync_joints_system(
+pub(open) trait Physics2dSyncJointsWorld: @core.ChangeTickWorld + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext {
+}
+
+///|
+pub fn[W : Physics2dSyncJointsWorld] physics2d_sync_joints_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()

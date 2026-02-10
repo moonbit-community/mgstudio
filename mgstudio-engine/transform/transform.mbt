@@ -184,9 +184,11 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld,
-] propagate_transforms_system(
+pub(open) trait TransformPropagationWorld: @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld {
+}
+
+///|
+pub fn[W : TransformPropagationWorld] propagate_transforms_system(
   world : W,
 ) -> Unit {
   let transform_store = world.get_transform_store()
@@ -239,9 +241,7 @@ pub let transform_set_propagate : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn[
-  W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld,
-] transform_plugin(
+pub fn[W : TransformPropagationWorld] transform_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   // Keep `Children` in sync with `Parent`, then compute `GlobalTransform`.

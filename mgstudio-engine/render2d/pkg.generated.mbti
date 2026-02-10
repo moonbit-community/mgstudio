@@ -44,7 +44,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(W, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : RenderExtractWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -62,7 +62,7 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @mat
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
-pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render_extract_system(W) -> Unit
+pub fn[W : RenderExtractWorld] render_extract_system(W) -> Unit
 
 pub fn[W] render_prepare_system(W) -> Unit
 
@@ -159,7 +159,7 @@ pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
 pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
-pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform] Camera2dBundle::spawn(Self, W) -> @core.Entity
+pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(Self, W) -> @core.Entity
 
 pub struct Capsule2d {
   radius : Float
@@ -359,7 +359,7 @@ pub struct Mesh2dBundle {
 }
 pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
-pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility] Mesh2dBundle::spawn(Self, W) -> @core.Entity
+pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(Self, W) -> @core.Entity
 
 pub struct OrthographicProjection {
   scale : Float
@@ -479,7 +479,7 @@ pub struct SpriteBundle {
 }
 pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
-pub fn[W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility] SpriteBundle::spawn(Self, W) -> @core.Entity
+pub fn[W : SpriteBundleSpawnWorld] SpriteBundle::spawn(Self, W) -> @core.Entity
 
 pub(all) enum SpriteImageMode {
   Auto
@@ -569,6 +569,9 @@ pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 // Type aliases
 
 // Traits
+pub(open) trait Camera2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform {
+}
+
 pub(open) trait HasRes_RenderState {
   get_render_state_resource(Self) -> @core.Resource[RenderState]
 }
@@ -615,5 +618,14 @@ pub(open) trait Has_ScissorRect {
 
 pub(open) trait Has_Sprite {
   get_sprite_store(Self) -> @core.ComponentStore[Sprite]
+}
+
+pub(open) trait Mesh2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+}
+
+pub(open) trait RenderExtractWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+pub(open) trait SpriteBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 

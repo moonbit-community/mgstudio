@@ -150,9 +150,27 @@ fn recompute_body_mass_properties(
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
-] physics2d_init_resources_system(
+pub(open) trait Physics2dResourcesWorld: @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents {
+}
+
+///|
+pub(open) trait Physics2dCleanupWorld: @core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext {
+}
+
+///|
+pub(open) trait Physics2dSyncInsertionsWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext {
+}
+
+///|
+pub(open) trait Physics2dSyncWorldToRapierWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext {
+}
+
+///|
+pub(open) trait Physics2dWritebackWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_Velocity2d + Has_RapierBodyHandle2d + HasRes_Physics2dContext {
+}
+
+///|
+pub fn[W : Physics2dResourcesWorld] physics2d_init_resources_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -183,9 +201,7 @@ pub fn[W : @core.ChangeTickWorld + HasRes_Physics2dEvents] physics2d_clear_event
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext,
-] physics2d_cleanup_despawned_system(
+pub fn[W : Physics2dCleanupWorld] physics2d_cleanup_despawned_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -394,9 +410,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext,
-] physics2d_sync_insertions_system(
+pub fn[W : Physics2dSyncInsertionsWorld] physics2d_sync_insertions_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -646,9 +660,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext,
-] physics2d_sync_world_to_rapier_system(
+pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -888,11 +900,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents,
-] physics2d_step_system(
-  world : W,
-) -> Unit {
+pub fn[W : Physics2dResourcesWorld] physics2d_step_system(world : W) -> Unit {
   let tick = world.read_change_tick()
   let cfg_res = world.get_physics2d_config_resource()
   let ctx_res = world.get_physics2d_context_resource()
@@ -970,9 +978,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_Velocity2d + Has_RapierBodyHandle2d + HasRes_Physics2dContext,
-] physics2d_writeback_system(
+pub fn[W : Physics2dWritebackWorld] physics2d_writeback_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()

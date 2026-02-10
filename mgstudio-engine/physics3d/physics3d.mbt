@@ -184,9 +184,11 @@ pub fn Physics3dContext::new() -> Physics3dContext {
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents,
-] physics3d_plugin(
+pub(open) trait Physics3dPluginWorld: Physics3dResourcesWorld + Physics3dCleanupWorld + Physics3dSyncInsertionsWorld + Physics3dSyncWorldToRapierWorld + Physics3dWritebackWorld {
+}
+
+///|
+pub fn[W : Physics3dPluginWorld] physics3d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app

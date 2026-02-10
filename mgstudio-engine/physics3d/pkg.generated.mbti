@@ -23,21 +23,21 @@ pub fn mg_transform_to_iso3(@math.Transform) -> @Milky2018/moon_rapier/core.Isom
 
 pub fn mg_vec3_to_rapier(@math.Vec3) -> @Milky2018/moon_rapier/core.Vec3
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext] physics3d_cleanup_despawned_system(W) -> Unit
+pub fn[W : Physics3dCleanupWorld] physics3d_cleanup_despawned_system(W) -> Unit
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dEvents] physics3d_clear_events_system(W) -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_init_resources_system(W) -> Unit
+pub fn[W : Physics3dResourcesWorld] physics3d_init_resources_system(W) -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : Physics3dPluginWorld] physics3d_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_step_system(W) -> Unit
+pub fn[W : Physics3dResourcesWorld] physics3d_step_system(W) -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext] physics3d_sync_insertions_system(W) -> Unit
+pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(W) -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext] physics3d_sync_world_to_rapier_system(W) -> Unit
+pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_system(W) -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext] physics3d_writeback_system(W) -> Unit
+pub fn[W : Physics3dWritebackWorld] physics3d_writeback_system(W) -> Unit
 
 pub fn rapier_quat_to_mg(@Milky2018/moon_rapier/core.Quat) -> @math.Quat
 
@@ -149,5 +149,23 @@ pub(open) trait Has_RigidBody3d {
 
 pub(open) trait Has_Velocity3d {
   get_velocity3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Velocity3d]
+}
+
+pub(open) trait Physics3dCleanupWorld : @Milky2018/mgstudio/core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+}
+
+pub(open) trait Physics3dPluginWorld : Physics3dResourcesWorld + Physics3dCleanupWorld + Physics3dSyncInsertionsWorld + Physics3dSyncWorldToRapierWorld + Physics3dWritebackWorld {
+}
+
+pub(open) trait Physics3dResourcesWorld : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents {
+}
+
+pub(open) trait Physics3dSyncInsertionsWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+}
+
+pub(open) trait Physics3dSyncWorldToRapierWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
+}
+
+pub(open) trait Physics3dWritebackWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
 }
 

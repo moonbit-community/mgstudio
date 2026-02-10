@@ -13,9 +13,9 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld] propagate_transforms_system(W) -> Unit
+pub fn[W : TransformPropagationWorld] propagate_transforms_system(W) -> Unit
 
-pub fn[W : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld] transform_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : TransformPropagationWorld] transform_plugin(@app.App[W]) -> @app.App[W]
 
 pub let transform_set_propagate : String
 
@@ -52,5 +52,8 @@ pub fn GlobalTransform::to_transform_approx(Self) -> @math.Transform
 // Traits
 pub(open) trait Has_GlobalTransform {
   get_global_transform_store(Self) -> @core.ComponentStore[GlobalTransform]
+}
+
+pub(open) trait TransformPropagationWorld : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 

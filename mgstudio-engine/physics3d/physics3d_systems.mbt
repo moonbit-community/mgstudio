@@ -43,9 +43,27 @@ fn make_collider_builder(
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents,
-] physics3d_init_resources_system(
+pub(open) trait Physics3dResourcesWorld: @core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents {
+}
+
+///|
+pub(open) trait Physics3dCleanupWorld: @core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+}
+
+///|
+pub(open) trait Physics3dSyncInsertionsWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+}
+
+///|
+pub(open) trait Physics3dSyncWorldToRapierWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
+}
+
+///|
+pub(open) trait Physics3dWritebackWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
+}
+
+///|
+pub fn[W : Physics3dResourcesWorld] physics3d_init_resources_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -76,9 +94,7 @@ pub fn[W : @core.ChangeTickWorld + HasRes_Physics3dEvents] physics3d_clear_event
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext,
-] physics3d_cleanup_despawned_system(
+pub fn[W : Physics3dCleanupWorld] physics3d_cleanup_despawned_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -170,9 +186,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext,
-] physics3d_sync_insertions_system(
+pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -259,9 +273,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext,
-] physics3d_sync_world_to_rapier_system(
+pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -298,11 +310,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents,
-] physics3d_step_system(
-  world : W,
-) -> Unit {
+pub fn[W : Physics3dResourcesWorld] physics3d_step_system(world : W) -> Unit {
   let tick = world.read_change_tick()
   let cfg_res = world.get_physics3d_config_resource()
   let ctx_res = world.get_physics3d_context_resource()
@@ -348,9 +356,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.ChangeTickWorld + @math.Has_Transform + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext,
-] physics3d_writeback_system(
+pub fn[W : Physics3dWritebackWorld] physics3d_writeback_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()

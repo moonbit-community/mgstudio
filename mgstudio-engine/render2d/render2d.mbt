@@ -2703,9 +2703,23 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 }
 
 ///|
-pub fn[
-  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility,
-] SpriteBundle::spawn(
+pub(open) trait SpriteBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+}
+
+///|
+pub(open) trait Camera2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform {
+}
+
+///|
+pub(open) trait Mesh2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+}
+
+///|
+pub(open) trait RenderExtractWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+///|
+pub fn[W : SpriteBundleSpawnWorld] SpriteBundle::spawn(
   self : SpriteBundle,
   world : W,
 ) -> @core.Entity {
@@ -2724,9 +2738,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform,
-] Camera2dBundle::spawn(
+pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(
   self : Camera2dBundle,
   world : W,
 ) -> @core.Entity {
@@ -2742,9 +2754,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility,
-] Mesh2dBundle::spawn(
+pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(
   self : Mesh2dBundle,
   world : W,
 ) -> @core.Entity {
@@ -3112,11 +3122,7 @@ fn render2d_sorted_camera_indices(
 }
 
 ///|
-pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] render_extract_system(
-  world : W,
-) -> Unit {
+pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
   guard render_state_ref_mut(world) is Some(rs) else { return }
   rs.val.draw_enabled = true
   rs.val.primary_camera = @core.Entity::placeholder()
@@ -4482,9 +4488,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 }
 
 ///|
-pub fn[
-  W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] render2d_plugin(
+pub fn[W : RenderExtractWorld] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app

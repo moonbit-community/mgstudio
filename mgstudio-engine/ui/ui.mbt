@@ -1607,11 +1607,51 @@ fn clamp_viewport_to_window(
 }
 
 ///|
-pub fn[
-  W : HasRes_UiContext + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld,
-] ui_update_context_system(
-  world : W,
-) -> Unit {
+pub(open) trait UiUpdateContextWorld: HasRes_UiContext + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiVisibilityDefaultsWorld: @core.ChangeTickWorld + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+}
+
+///|
+pub(open) trait UiImageContentSizeWorld: HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiLayoutWorld: HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ScrollPosition + Has_UiLayout + Has_UiImage + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiScrollWorld: HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @hierarchy.Has_Children + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiClipWorld: HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + Has_UiText + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiStackWorld: HasRes_UiStack + Has_UiRoot + Has_UiLayout + Has_ZIndex + Has_GlobalZIndex + Has_UiText + @hierarchy.Has_Children + @hierarchy.Has_Parent + @math.Has_Transform + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiA11yWorld: @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children {
+}
+
+///|
+pub(open) trait UiInteractionWorld: HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiRenderExtractWorld: HasRes_UiContext + HasRes_UiStack + HasRes_UiScale + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait UiPluginWorld: @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+///|
+pub fn[W : UiUpdateContextWorld] ui_update_context_system(world : W) -> Unit {
   guard ensure_ui_context_resource(world) is Some(ctx) else { return }
   create_white_texture_if_needed(ctx)
   let win_w = @window.window_width()
@@ -1715,9 +1755,7 @@ pub fn[
 }
 
 ///|
-fn[
-  W : @core.ChangeTickWorld + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility,
-] ensure_visibility_defaults(
+fn[W : UiVisibilityDefaultsWorld] ensure_visibility_defaults(
   world : W,
   entity : @core.Entity,
 ) -> Unit {
@@ -1827,9 +1865,7 @@ fn image_measure_size_px(
 ///
 /// This mirrors Bevy's `update_image_content_size_system`, adapted to mgstudio's
 /// logical UI coordinate space.
-pub fn[
-  W : HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld,
-] ui_image_content_size_system(
+pub fn[W : UiImageContentSizeWorld] ui_image_content_size_system(
   world : W,
 ) -> Unit {
   let res = world.get_ui_context_resource()
@@ -1960,11 +1996,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ScrollPosition + Has_UiLayout + Has_UiImage + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld,
-] ui_layout_system(
-  world : W,
-) -> Unit {
+pub fn[W : UiLayoutWorld] ui_layout_system(world : W) -> Unit {
   let res = world.get_ui_context_resource()
   guard res.get() is Some(ctx0) else { return }
   guard ctx0.camera_entity is Some(_) else { return }
@@ -2702,11 +2734,7 @@ pub fn[
 /// This is an MVP scroll implementation:
 /// - Picks the topmost scroll container under the pointer by `UiStack`.
 /// - Applies wheel deltas directly to the stored offsets (clamped to >= 0).
-pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @hierarchy.Has_Children + @core.ChangeTickWorld,
-] ui_scroll_system(
-  world : W,
-) -> Unit {
+pub fn[W : UiScrollWorld] ui_scroll_system(world : W) -> Unit {
   let res = world.get_ui_context_resource()
   guard res.get() is Some(ctx0) else { return }
   let stack_res = world.get_ui_stack_resource()
@@ -2868,11 +2896,7 @@ pub fn[
 
 ///|
 /// Compute `CalculatedClip` and attach `@render2d.ScissorRect` for clipped UI.
-pub fn[
-  W : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + Has_UiText + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld,
-] ui_clip_system(
-  world : W,
-) -> Unit {
+pub fn[W : UiClipWorld] ui_clip_system(world : W) -> Unit {
   let res = world.get_ui_context_resource()
   guard res.get() is Some(ctx0) else { return }
   guard ctx0.camera_entity is Some(_) else { return }
@@ -3082,11 +3106,7 @@ pub fn[
 ///
 /// Children are visited in depth-first order, sorted by `ZIndex` ascending,
 /// while preserving insertion order for ties.
-pub fn[
-  W : HasRes_UiStack + Has_UiRoot + Has_UiLayout + Has_ZIndex + Has_GlobalZIndex + Has_UiText + @hierarchy.Has_Children + @hierarchy.Has_Parent + @math.Has_Transform + @core.ChangeTickWorld,
-] ui_stack_system(
-  world : W,
-) -> Unit {
+pub fn[W : UiStackWorld] ui_stack_system(world : W) -> Unit {
   let tick = world.read_change_tick()
   let res = world.get_ui_stack_resource()
   if !res.is_present() {
@@ -3282,9 +3302,7 @@ pub fn[
 
 ///|
 /// Build an AccessKit `TreeUpdate` for the current UI tree.
-pub fn[
-  W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
-] ui_build_a11y_tree_update(
+pub fn[W : UiA11yWorld] ui_build_a11y_tree_update(
   world : W,
 ) -> @moon_accesskit.TreeUpdate {
   let res = world.get_ui_context_resource()
@@ -3589,21 +3607,13 @@ pub fn[
 
 ///|
 /// Extract UI accessibility nodes and send them to the host bridge.
-pub fn[
-  W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children,
-] ui_a11y_update_system(
-  world : W,
-) -> Unit {
+pub fn[W : UiA11yWorld] ui_a11y_update_system(world : W) -> Unit {
   let update = ui_build_a11y_tree_update(world)
   @a11y.a11y_host_apply_update(update)
 }
 
 ///|
-pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] ui_interaction_system(
-  world : W,
-) -> Unit {
+pub fn[W : UiInteractionWorld] ui_interaction_system(world : W) -> Unit {
   let res = world.get_ui_context_resource()
   guard res.get() is Some(ctx0) else { return }
   let stack_res = world.get_ui_stack_resource()
@@ -3815,11 +3825,7 @@ fn ui_uv_from_image_rects(
 }
 
 ///|
-pub fn[
-  W : HasRes_UiContext + HasRes_UiStack + HasRes_UiScale + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] ui_render_extract_system(
-  world : W,
-) -> Unit {
+pub fn[W : UiRenderExtractWorld] ui_render_extract_system(world : W) -> Unit {
   let res = world.get_ui_context_resource()
   guard res.get() is Some(ctx0) else { return }
   let stack_res = world.get_ui_stack_resource()
@@ -4444,11 +4450,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] ui_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn[W : UiPluginWorld] ui_plugin(app : @app.App[W]) -> @app.App[W] {
   app
   .add_pre_update_system_config(
     @app.system(ui_update_context_system).in_set(ui_set_context),

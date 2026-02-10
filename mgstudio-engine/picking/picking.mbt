@@ -485,10 +485,28 @@ fn sprite_region_size(sprite : @render2d.Sprite) -> @math.Vec2 {
 }
 
 ///|
+pub(open) trait PickingSpriteHitTestWorld: HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait PickingUiHitTestWorld: HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait PickingApplyA11yActionsWorld: @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @ui.Has_ScrollPosition + @ui.Has_Node + @ui.Has_UiLayout + @ui.Has_UiText + @hierarchy.Has_Children + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait PickingGenerateEventsWorld: HasRes_PointerInputs + HasRes_PickingHits + HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld {
+}
+
+///|
+pub(open) trait PickingPluginWorld: PickingSpriteHitTestWorld + PickingUiHitTestWorld + PickingApplyA11yActionsWorld + PickingGenerateEventsWorld {
+}
+
+///|
 /// 2D sprite hit testing backend (orthographic camera, clip-agnostic).
-pub fn[
-  W : HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] picking_sprite2d_hit_test_system(
+pub fn[W : PickingSpriteHitTestWorld] picking_sprite2d_hit_test_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -604,11 +622,7 @@ pub fn[
 
 ///|
 /// UI hit testing backend (front-to-back, clip aware).
-pub fn[
-  W : HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] picking_ui_hit_test_system(
-  world : W,
-) -> Unit {
+pub fn[W : PickingUiHitTestWorld] picking_ui_hit_test_system(world : W) -> Unit {
   let tick = world.read_change_tick()
   let inputs_res = world.get_pointer_inputs_resource()
   let hits_res = world.get_picking_hits_resource()
@@ -704,9 +718,7 @@ fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
 
 ///|
 /// Apply host-driven accessibility actions to UI state and picking events.
-pub fn[
-  W : @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @ui.Has_ScrollPosition + @ui.Has_Node + @ui.Has_UiLayout + @ui.Has_UiText + @hierarchy.Has_Children + @core.ChangeTickWorld,
-] picking_apply_a11y_actions_system(
+pub fn[W : PickingApplyA11yActionsWorld] picking_apply_a11y_actions_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -890,9 +902,7 @@ pub fn[
 
 ///|
 /// Generate pointer enter/leave/down/up/click events from hit-test results.
-pub fn[
-  W : HasRes_PointerInputs + HasRes_PickingHits + HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld,
-] picking_generate_events_system(
+pub fn[W : PickingGenerateEventsWorld] picking_generate_events_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
@@ -1022,11 +1032,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  W : HasRes_PickingEvents + HasRes_PickingState + HasRes_PickingHits + HasRes_PointerInputs + @a11y.HasRes_A11yState + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Node + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @ui.Has_ScrollPosition + @ui.Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld,
-] picking_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn[W : PickingPluginWorld] picking_plugin(app : @app.App[W]) -> @app.App[W] {
   app
   .add_pre_update_system_config(
     @app.system(picking_clear_system).in_set(picking_set_input),
