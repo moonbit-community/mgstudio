@@ -29,7 +29,7 @@ pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dEvents] ph
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_init_resources_system(W) -> Unit
 
-pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @Milky2018/mgstudio/core.SystemContextWorld + @Milky2018/mgstudio/core.SpawnWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents] physics3d_step_system(W) -> Unit
 

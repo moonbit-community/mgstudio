@@ -516,7 +516,7 @@ async fn collect_ecs_components_for_module(
     module_root,
     exclude=path => should_skip_dir(path),
     max_concurrency=64,
-    fn(dir_path, files) {
+    async fn(dir_path, files) {
       // Only generate into real MoonBit packages.
       guard files.contains("moon.pkg.json") else { return }
       for file in files {

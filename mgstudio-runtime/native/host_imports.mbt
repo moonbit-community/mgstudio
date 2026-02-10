@@ -676,7 +676,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "debug_string",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       // Best-effort debug output from the guest.
       try {
         if args.length() >= 1 && args[0] is @types.Value::I32(id) {
@@ -699,7 +699,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_begin_update",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         if args.length() >= 1 &&
           args[0] is @types.Value::I32(root_id) &&
@@ -719,7 +719,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_push_node",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         guard ctx.window is Some(win) else { return ok_i32(0) }
         if args.length() < 9 {
@@ -766,7 +766,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_end_update",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         if ctx.window is Some(win) {
           win.a11y_end_update()
@@ -784,7 +784,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_apply_update",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         guard ctx.window is Some(win) else { return ok_i32(0) }
         guard args.length() >= 1 && args[0] is @types.Value::I32(payload_id) else {
@@ -925,7 +925,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_actions_len",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         if ctx.window is Some(win) {
           return ok_i32(win.a11y_actions_len())
@@ -943,7 +943,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_action_target",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         guard ctx.window is Some(win) else { return ok_i32(0) }
         if args.length() >= 1 && args[0] is @types.Value::I32(index) {
@@ -962,7 +962,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_action_kind",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         guard ctx.window is Some(win) else { return ok_i32(0) }
         if args.length() >= 1 && args[0] is @types.Value::I32(index) {
@@ -981,7 +981,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_action_value_len",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         guard ctx.window is Some(win) else { return ok_i32(0) }
         if args.length() >= 1 && args[0] is @types.Value::I32(index) {
@@ -1000,7 +1000,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_action_value_code_unit",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         guard ctx.window is Some(win) else { return ok_i32(0) }
         if args.length() >= 2 &&
@@ -1023,7 +1023,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_actions_clear",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         if ctx.window is Some(win) {
           win.a11y_actions_clear()
@@ -1043,7 +1043,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "window_create",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: window_create")
         let width = if args.length() >= 1 && args[0] is @types.Value::I32(w) {
@@ -1082,7 +1082,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "window_run_loop",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       if args.length() == 0 {
         return ok_i32(0)
       }
@@ -1387,7 +1387,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_texture",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         if ctx.gpu is None {
           ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
@@ -1415,7 +1415,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_wgsl",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         if args.length() >= 1 && args[0] is @types.Value::I32(path_id) {
           let rel = string_table_get(ctx, path_id).unwrap_or("")
@@ -1449,7 +1449,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_font",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         if args.length() >= 1 && args[0] is @types.Value::I32(path_id) {
           let rel = string_table_get(ctx, path_id).unwrap_or("")
@@ -1606,7 +1606,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_set_texture_sampler",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         if ctx.gpu is None {
           ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
@@ -1631,7 +1631,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_create_dynamic_texture",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         if ctx.gpu is None {
           ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
@@ -1782,7 +1782,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_load_folder",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: asset_load_folder")
         if args.length() >= 1 && args[0] is @types.Value::I32(path_id) {
@@ -1899,7 +1899,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_request_device",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_request_device")
         if ctx.gpu is None {
@@ -1918,7 +1918,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_surface",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_create_surface")
         if ctx.gpu is None {
@@ -1940,7 +1940,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_configure_surface",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_configure_surface")
         if ctx.gpu is None {
@@ -1972,7 +1972,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_begin_frame",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_begin_frame")
         if ctx.gpu is None {
@@ -1995,7 +1995,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_begin_pass",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_begin_pass")
         if ctx.gpu is None {
@@ -2056,7 +2056,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_set_scissor",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_set_scissor")
         if ctx.gpu is None {
@@ -2090,7 +2090,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_clear_scissor",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_clear_scissor")
         if ctx.gpu is None {
@@ -2110,7 +2110,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_end_pass",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_end_pass")
         if ctx.gpu is Some(gpu) {
@@ -2129,7 +2129,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_end_frame",
-    fn(_args) {
+    fn(_args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_end_frame")
         if ctx.gpu is Some(gpu) {
@@ -2149,7 +2149,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_render_target",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_create_render_target")
         if ctx.gpu is None {
@@ -2242,7 +2242,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_draw_mesh",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_draw_mesh")
         if ctx.gpu is None {
@@ -2328,7 +2328,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_draw_sprite_uv",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_draw_sprite_uv")
         if ctx.gpu is None {
@@ -2387,7 +2387,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_draw_ui_rect",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_draw_ui_rect")
         if ctx.gpu is None {
@@ -2465,7 +2465,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_draw_ui_texture_slice",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_draw_ui_texture_slice")
         if ctx.gpu is None {
@@ -2550,7 +2550,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_draw_ui_box_shadow",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_draw_ui_box_shadow")
         if ctx.gpu is None {

@@ -40,6 +40,7 @@ pub fn AssetServer::load_font(
   path : String,
 ) -> Handle[Font] {
   let id = host_asset_load_font(path)
+  Font::{  } |> ignore
   self.paths.push(path)
   Handle::new(id)
 }

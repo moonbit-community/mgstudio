@@ -106,6 +106,8 @@ pub struct GpuBackend {
   mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut mesh_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut mesh_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh_uniform_bg : @wgpu_mbt.BindGroup?
   next_id : Ref[Int]
@@ -119,6 +121,7 @@ pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
+pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
