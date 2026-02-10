@@ -50,13 +50,35 @@ limitations under the License.
         gap: 8px;
         width: min(760px, calc(100vw - 32px));
         overflow: auto;
+        transform: translateX(0);
+        transition: transform 160ms ease;
+      }
+      .menu.collapsed {
+        transform: translateX(calc(-100% + 36px));
       }
       .menu h1 {
         font-size: 12px;
-        margin: 0;
+        margin: 0 0 2px 0;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         color: rgba(246, 248, 255, 0.7);
+      }
+      .menu-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .menu-toggle {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: rgba(28, 36, 58, 0.9);
+        color: #f6f8ff;
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
       }
       .menu-grid {
         display: grid;
@@ -99,11 +121,33 @@ limitations under the License.
   <body>
     <canvas id="mgstudio-canvas"></canvas>
     <div id="mgstudio-menu" class="menu">
-      <h1>Examples</h1>
+      <div class="menu-top">
+        <h1>Examples</h1>
+        <button id="mgstudio-menu-toggle" class="menu-toggle" type="button" aria-expanded="true" aria-label="Collapse examples menu">&lt;</button>
+      </div>
       <div class="menu-grid">
         <!-- __EXAMPLE_GROUPS__ -->
       </div>
     </div>
+    <script>
+      (() => {
+        const menu = document.getElementById("mgstudio-menu");
+        const toggle = document.getElementById("mgstudio-menu-toggle");
+        if (!menu || !toggle) return;
+        const applyState = (collapsed) => {
+          menu.classList.toggle("collapsed", collapsed);
+          toggle.textContent = collapsed ? ">" : "<";
+          toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          toggle.setAttribute("aria-label", collapsed ? "Expand examples menu" : "Collapse examples menu");
+        };
+        let collapsed = false;
+        toggle.addEventListener("click", () => {
+          collapsed = !collapsed;
+          applyState(collapsed);
+        });
+        applyState(false);
+      })();
+    </script>
     <script type="module" src="./mgstudio-runtime-web.js"></script>
   </body>
 </html>
