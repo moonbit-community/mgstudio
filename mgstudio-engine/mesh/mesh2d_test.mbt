@@ -32,6 +32,14 @@ test "mesh2d: validate indexed triangle list" {
   inspect(mesh.triangle_count().unwrap(), content="2")
   inspect(mesh.flatten_triangle_positions_xy().unwrap().length(), content="12")
   inspect(mesh.encode_triangle_positions_csv() is Some(_), content="true")
+  inspect(
+    mesh.flatten_triangle_interleaved_xy_uv_rgba().unwrap().length(),
+    content="48",
+  )
+  inspect(
+    mesh.encode_triangle_interleaved_xy_uv_rgba_csv() is Some(_),
+    content="true",
+  )
 }
 
 ///|
@@ -53,6 +61,19 @@ test "mesh2d: validate non-indexed vertex count multiple of 3" {
   let mesh = Mesh2dGeometry::new(positions, uvs, None)
   match mesh.validate() {
     Some(Mesh2dValidationError::NonIndexedVertexCountNotMultipleOf3(_)) =>
+      inspect(true, content="true")
+    _ => inspect(false, content="false")
+  }
+}
+
+///|
+test "mesh2d: validate color attribute length mismatch" {
+  let positions = [@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 0.0F)]
+  let uvs = [@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 0.0F)]
+  let colors = [@math.Vec4::splat(1.0F)]
+  let mesh = Mesh2dGeometry::new_with_colors(positions, uvs, colors, None)
+  match mesh.validate() {
+    Some(Mesh2dValidationError::ColorAttributeLengthMismatch(_, _)) =>
       inspect(true, content="true")
     _ => inspect(false, content="false")
   }

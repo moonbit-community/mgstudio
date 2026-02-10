@@ -23,6 +23,7 @@
 pub struct Mesh2dGeometry {
   positions : Array[@math.Vec2]
   uvs : Array[@math.Vec2]
+  colors : Array[@math.Vec4]?
   indices : Array[Int]?
 }
 
@@ -30,6 +31,7 @@ pub struct Mesh2dGeometry {
 pub(all) enum Mesh2dValidationError {
   EmptyVertices
   AttributeLengthMismatch(Int, Int)
+  ColorAttributeLengthMismatch(Int, Int)
   NonIndexedVertexCountNotMultipleOf3(Int)
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)
@@ -42,7 +44,17 @@ pub fn Mesh2dGeometry::new(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> Mesh2dGeometry {
-  Mesh2dGeometry::{ positions, uvs, indices }
+  Mesh2dGeometry::{ positions, uvs, colors: None, indices }
+}
+
+///|
+pub fn Mesh2dGeometry::new_with_colors(
+  positions : Array[@math.Vec2],
+  uvs : Array[@math.Vec2],
+  colors : Array[@math.Vec4],
+  indices : Array[Int]?,
+) -> Mesh2dGeometry {
+  Mesh2dGeometry::{ positions, uvs, colors: Some(colors), indices }
 }
 
 ///|
@@ -58,6 +70,16 @@ pub fn Mesh2dGeometry::validate(
     return Some(
       Mesh2dValidationError::AttributeLengthMismatch(vertex_count, uv_count),
     )
+  }
+  if self.colors is Some(colors) {
+    let color_count = colors.length()
+    if color_count != vertex_count {
+      return Some(
+        Mesh2dValidationError::ColorAttributeLengthMismatch(
+          vertex_count, color_count,
+        ),
+      )
+    }
   }
   match self.indices {
     None => {
@@ -144,6 +166,61 @@ pub fn Mesh2dGeometry::flatten_interleaved_xy_uv(
 }
 
 ///|
+fn mesh2d_vertex_color_or_white(
+  colors : Array[@math.Vec4]?,
+  index : Int,
+) -> @math.Vec4 {
+  if colors is Some(values) {
+    values[index]
+  } else {
+    @math.Vec4::splat(1.0F)
+  }
+}
+
+///|
+pub fn Mesh2dGeometry::flatten_triangle_interleaved_xy_uv_rgba(
+  self : Mesh2dGeometry,
+) -> Array[Double]? {
+  if self.validate() is Some(_) {
+    return None
+  }
+  let out : Array[Double] = []
+  match self.indices {
+    None => {
+      let n = self.positions.length()
+      for i in 0..<n {
+        let p = self.positions[i]
+        let uv = self.uvs[i]
+        let color = mesh2d_vertex_color_or_white(self.colors, i)
+        out.push(p.x.to_double())
+        out.push(p.y.to_double())
+        out.push(uv.x.to_double())
+        out.push(uv.y.to_double())
+        out.push(color.x.to_double())
+        out.push(color.y.to_double())
+        out.push(color.z.to_double())
+        out.push(color.w.to_double())
+      }
+    }
+    Some(indices) =>
+      for idx in indices {
+        let p = self.positions[idx]
+        let uv = self.uvs[idx]
+        let color = mesh2d_vertex_color_or_white(self.colors, idx)
+        out.push(p.x.to_double())
+        out.push(p.y.to_double())
+        out.push(uv.x.to_double())
+        out.push(uv.y.to_double())
+        out.push(color.x.to_double())
+        out.push(color.y.to_double())
+        out.push(color.z.to_double())
+        out.push(color.w.to_double())
+      }
+  }
+  Some(out)
+}
+
+///|
 /// Returns a non-indexed triangle-list position buffer (xy per vertex).
 /// If the mesh is indexed, this expands indices on the CPU.
 pub fn Mesh2dGeometry::flatten_triangle_positions_xy(
@@ -167,12 +244,67 @@ pub fn Mesh2dGeometry::flatten_triangle_positions_xy(
 }
 
 ///|
+pub fn Mesh2dGeometry::wireframe_segments(
+  self : Mesh2dGeometry,
+) -> Array[(@math.Vec2, @math.Vec2)]? {
+  if self.validate() is Some(_) {
+    return None
+  }
+  let out : Array[(@math.Vec2, @math.Vec2)] = []
+  match self.indices {
+    None => {
+      let n = self.positions.length()
+      for i in 0..<(n / 3) {
+        let a = self.positions[i * 3]
+        let b = self.positions[i * 3 + 1]
+        let c = self.positions[i * 3 + 2]
+        out.push((a, b))
+        out.push((b, c))
+        out.push((c, a))
+      }
+    }
+    Some(indices) => {
+      let n = indices.length()
+      for i in 0..<(n / 3) {
+        let a = self.positions[indices[i * 3]]
+        let b = self.positions[indices[i * 3 + 1]]
+        let c = self.positions[indices[i * 3 + 2]]
+        out.push((a, b))
+        out.push((b, c))
+        out.push((c, a))
+      }
+    }
+  }
+  Some(out)
+}
+
+///|
 /// Encodes non-indexed triangle list positions as a comma-separated string:
 /// `x0,y0,x1,y1,...`.
 pub fn Mesh2dGeometry::encode_triangle_positions_csv(
   self : Mesh2dGeometry,
 ) -> String? {
   match self.flatten_triangle_positions_xy() {
+    None => None
+    Some(values) => {
+      let mut out = ""
+      let n = values.length()
+      for i in 0..<n {
+        if i > 0 {
+          out = out + ","
+        }
+        out = out + values[i].to_string()
+      }
+      Some(out)
+    }
+  }
+}
+
+///|
+pub fn Mesh2dGeometry::encode_triangle_interleaved_xy_uv_rgba_csv(
+  self : Mesh2dGeometry,
+) -> String? {
+  match self.flatten_triangle_interleaved_xy_uv_rgba() {
     None => None
     Some(values) => {
       let mut out = ""

@@ -1,0 +1,4 @@
+import {
+  "Milky2018/mgstudio/app",
+  "moonbitlang/core/ref",
+}

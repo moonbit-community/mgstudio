@@ -1270,7 +1270,7 @@ fn define_mgstudio_host_imports(
                 }
             }
             let gpu = caller.data_mut().ensure_gpu()?;
-            let id = gpu.create_mesh_triangles_xy(&floats);
+            let id = gpu.create_mesh_triangles_xyuvrgba(&floats);
             ok_i32(out, id);
             Ok(())
         },

@@ -1848,6 +1848,345 @@ pub fn Mesh2dBundle::new_with_layers(
 }
 
 ///|
+pub struct TileData {
+  tileset_index : Int
+}
+
+///|
+pub fn TileData::from_tileset_index(tileset_index : Int) -> TileData {
+  let value = if tileset_index < 0 { 0 } else { tileset_index }
+  TileData::{ tileset_index: value }
+}
+
+///|
+pub struct TilemapChunk {
+  chunk_size : @math.UVec2
+  tile_display_size : @math.UVec2
+  tileset : @asset.Handle[@asset.Image]
+  tileset_grid : @math.UVec2
+}
+
+///|
+pub fn TilemapChunk::new(
+  chunk_size : @math.UVec2,
+  tile_display_size : @math.UVec2,
+  tileset : @asset.Handle[@asset.Image],
+  tileset_grid : @math.UVec2,
+) -> TilemapChunk {
+  TilemapChunk::{ chunk_size, tile_display_size, tileset, tileset_grid }
+}
+
+///|
+pub fn TilemapChunk::tile_capacity(self : TilemapChunk) -> Int {
+  self.chunk_size.x * self.chunk_size.y
+}
+
+///|
+fn tilemap_chunk_safe_uvec2(
+  value : @math.UVec2,
+  fallback : @math.UVec2,
+) -> @math.UVec2 {
+  let x = if value.x <= 0 { fallback.x } else { value.x }
+  let y = if value.y <= 0 { fallback.y } else { value.y }
+  @math.UVec2::new(x, y)
+}
+
+///|
+fn tilemap_chunk_local_center(
+  chunk : TilemapChunk,
+  tile_pos : @math.UVec2,
+) -> @math.Vec2 {
+  let safe_chunk_size = tilemap_chunk_safe_uvec2(
+    chunk.chunk_size,
+    @math.UVec2::new(1, 1),
+  )
+  let safe_tile_size = tilemap_chunk_safe_uvec2(
+    chunk.tile_display_size,
+    @math.UVec2::new(1, 1),
+  )
+  let tile_w = Float::from_double(safe_tile_size.x.to_double())
+  let tile_h = Float::from_double(safe_tile_size.y.to_double())
+  let chunk_w = Float::from_double(safe_chunk_size.x.to_double()) * tile_w
+  let chunk_h = Float::from_double(safe_chunk_size.y.to_double()) * tile_h
+  let origin_x = -chunk_w / 2.0F + tile_w / 2.0F
+  let origin_y = chunk_h / 2.0F - tile_h / 2.0F
+  let x = origin_x + Float::from_double(tile_pos.x.to_double()) * tile_w
+  let y = origin_y - Float::from_double(tile_pos.y.to_double()) * tile_h
+  @math.Vec2::new(x, y)
+}
+
+///|
+pub fn TilemapChunk::calculate_tile_transform(
+  self : TilemapChunk,
+  tile_pos : @math.UVec2,
+) -> @math.Transform {
+  let local_center = tilemap_chunk_local_center(self, tile_pos)
+  let safe_tile_size = tilemap_chunk_safe_uvec2(
+    self.tile_display_size,
+    @math.UVec2::new(1, 1),
+  )
+  @math.Transform::from_xy_rotation_scale(
+    local_center,
+    0.0F,
+    @math.Vec2::new(
+      Float::from_double(safe_tile_size.x.to_double()),
+      Float::from_double(safe_tile_size.y.to_double()),
+    ),
+  )
+}
+
+///|
+pub struct TilemapChunkTileData {
+  tile_data : Array[TileData?]
+}
+
+///|
+pub fn TilemapChunkTileData::new(
+  tile_data : Array[TileData?],
+) -> TilemapChunkTileData {
+  TilemapChunkTileData::{ tile_data, }
+}
+
+///|
+pub fn TilemapChunkTileData::tile_data_from_tile_pos(
+  self : TilemapChunkTileData,
+  chunk_size : @math.UVec2,
+  tile_pos : @math.UVec2,
+) -> TileData? {
+  if tile_pos.x < 0 || tile_pos.y < 0 {
+    return None
+  }
+  if tile_pos.x >= chunk_size.x || tile_pos.y >= chunk_size.y {
+    return None
+  }
+  let index = tile_pos.y * chunk_size.x + tile_pos.x
+  if index < 0 || index >= self.tile_data.length() {
+    return None
+  }
+  self.tile_data[index]
+}
+
+///|
+pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(
+  self : TilemapChunkTileData,
+  chunk_size : @math.UVec2,
+  tile_pos : @math.UVec2,
+  value : TileData?,
+) -> TilemapChunkTileData {
+  if tile_pos.x < 0 || tile_pos.y < 0 {
+    return self
+  }
+  if tile_pos.x >= chunk_size.x || tile_pos.y >= chunk_size.y {
+    return self
+  }
+  let index = tile_pos.y * chunk_size.x + tile_pos.x
+  if index < 0 || index >= self.tile_data.length() {
+    return self
+  }
+  let next : Array[TileData?] = []
+  for i in 0..<self.tile_data.length() {
+    if i == index {
+      next.push(value)
+    } else {
+      next.push(self.tile_data[i])
+    }
+  }
+  TilemapChunkTileData::{ tile_data: next }
+}
+
+///|
+fn render2d_transform_point_2d(
+  transform : @math.Transform,
+  point : @math.Vec2,
+) -> @math.Vec2 {
+  let scaled = @math.Vec2::new(
+    point.x * transform.scale.x,
+    point.y * transform.scale.y,
+  )
+  let rotation = transform.rotation_z()
+  let cosv = @math.cos(rotation)
+  let sinv = @math.sin(rotation)
+  let rotated_x = scaled.x * cosv - scaled.y * sinv
+  let rotated_y = scaled.x * sinv + scaled.y * cosv
+  @math.Vec2::new(
+    rotated_x + transform.translation.x,
+    rotated_y + transform.translation.y,
+  )
+}
+
+///|
+fn tilemap_chunk_uv_rect(
+  tileset_index : Int,
+  tileset_grid : @math.UVec2,
+) -> (@math.Vec2, @math.Vec2)? {
+  let safe_grid = tilemap_chunk_safe_uvec2(tileset_grid, @math.UVec2::new(1, 1))
+  let tile_count = safe_grid.x * safe_grid.y
+  if tileset_index < 0 || tileset_index >= tile_count {
+    return None
+  }
+  let col = tileset_index % safe_grid.x
+  let row = tileset_index / safe_grid.x
+  let inv_w = 1.0F / Float::from_double(safe_grid.x.to_double())
+  let inv_h = 1.0F / Float::from_double(safe_grid.y.to_double())
+  let uv_min = @math.Vec2::new(
+    Float::from_double(col.to_double()) * inv_w,
+    Float::from_double(row.to_double()) * inv_h,
+  )
+  let uv_max = @math.Vec2::new(uv_min.x + inv_w, uv_min.y + inv_h)
+  Some((uv_min, uv_max))
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(
+  world : W,
+  chunk : TilemapChunk,
+  tile_data : TilemapChunkTileData,
+  transform : @math.Transform,
+  layers : RenderLayers,
+) -> Unit {
+  let safe_chunk_size = tilemap_chunk_safe_uvec2(
+    chunk.chunk_size,
+    @math.UVec2::new(1, 1),
+  )
+  let safe_tile_size = tilemap_chunk_safe_uvec2(
+    chunk.tile_display_size,
+    @math.UVec2::new(1, 1),
+  )
+  let tile_scale = @math.Vec2::new(
+    Float::from_double(safe_tile_size.x.to_double()) * transform.scale.x,
+    Float::from_double(safe_tile_size.y.to_double()) * transform.scale.y,
+  )
+  for y in 0..<safe_chunk_size.y {
+    for x in 0..<safe_chunk_size.x {
+      let tile_pos = @math.UVec2::new(x, y)
+      guard tile_data.tile_data_from_tile_pos(safe_chunk_size, tile_pos)
+        is Some(tile) else {
+        continue
+      }
+      guard tilemap_chunk_uv_rect(tile.tileset_index, chunk.tileset_grid)
+        is Some((uv_min, uv_max)) else {
+        continue
+      }
+      let world_pos = render2d_transform_point_2d(
+        transform,
+        tilemap_chunk_local_center(
+          TilemapChunk::{
+            chunk_size: safe_chunk_size,
+            tile_display_size: safe_tile_size,
+            tileset: chunk.tileset,
+            tileset_grid: chunk.tileset_grid,
+          },
+          tile_pos,
+        ),
+      )
+      let tile_transform = @math.Transform::from_xy_rotation_scale(
+        world_pos,
+        transform.rotation_z(),
+        tile_scale,
+        z=transform.translation.z,
+      )
+      render2d_push_sprite_uv(
+        world,
+        chunk.tileset,
+        tile_transform,
+        uv_min,
+        uv_max,
+        Color::white(),
+        layers,
+      )
+    }
+  }
+}
+
+///|
+pub(all) struct Bloom2dSettings {
+  enabled : Bool
+  intensity : Float
+  spread : Float
+  pass_count : Int
+  tint : Color
+}
+
+///|
+pub fn Bloom2dSettings::default() -> Bloom2dSettings {
+  Bloom2dSettings::{
+    enabled: true,
+    intensity: 0.6F,
+    spread: 0.08F,
+    pass_count: 6,
+    tint: Color::white(),
+  }
+}
+
+///|
+fn bloom2d_clamp_pass_count(value : Int) -> Int {
+  if value < 1 {
+    1
+  } else if value > 24 {
+    24
+  } else {
+    value
+  }
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overlay(
+  world : W,
+  source : @asset.Handle[@asset.Image],
+  base_transform : @math.Transform,
+  settings : Bloom2dSettings,
+  layers : RenderLayers,
+) -> Unit {
+  if !settings.enabled {
+    return
+  }
+  let pass_count = bloom2d_clamp_pass_count(settings.pass_count)
+  let intensity = if settings.intensity < 0.0F {
+    0.0F
+  } else {
+    settings.intensity
+  }
+  let spread = if settings.spread < 0.0F { 0.0F } else { settings.spread }
+  let pass_count_f = Float::from_double(pass_count.to_double())
+  for i in 0..<pass_count {
+    let idx = i + 1
+    let idx_f = Float::from_double(idx.to_double())
+    let t = idx_f / pass_count_f
+    let alpha_weight = (1.0F - t * 0.7F) * (intensity / pass_count_f)
+    if alpha_weight <= 0.0F {
+      continue
+    }
+    let scale_factor = 1.0F + spread * idx_f
+    let pass_transform = @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(
+        base_transform.translation.x,
+        base_transform.translation.y,
+      ),
+      base_transform.rotation_z(),
+      @math.Vec2::new(
+        base_transform.scale.x * scale_factor,
+        base_transform.scale.y * scale_factor,
+      ),
+      z=base_transform.translation.z + idx_f * 0.001F,
+    )
+    render2d_push_sprite_uv(
+      world,
+      source,
+      pass_transform,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      Color::new(
+        settings.tint.r,
+        settings.tint.g,
+        settings.tint.b,
+        settings.tint.a * alpha_weight,
+      ),
+      layers,
+    )
+  }
+}
+
+///|
 priv struct SpriteInstance {
   entity : @core.Entity
   transform : @math.Transform
@@ -2458,7 +2797,7 @@ pub fn[
   )
   let mesh_id = match mesh_asset_get(self.mesh.mesh) {
     Some(mesh_asset) =>
-      match mesh_asset.geometry2d.encode_triangle_positions_csv() {
+      match mesh_asset.geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
         Some(vertices_csv) =>
           @window.host_gpu_create_mesh_triangles(vertices_csv)
         None => {

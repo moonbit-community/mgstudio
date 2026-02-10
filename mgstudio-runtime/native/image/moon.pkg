@@ -1,0 +1,8 @@
+import {
+  "Milky2018/wgpu_mbt/c" @wgpu_c,
+}
+
+options(
+  "native-stub": [ "stb_image_decode.c" ],
+  targets: { "image.mbt": [ "native" ] },
+)

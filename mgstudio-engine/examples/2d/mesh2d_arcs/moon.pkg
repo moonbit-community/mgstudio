@@ -1,0 +1,11 @@
+import {
+  "Milky2018/mgstudio",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs_world",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+}
+
+options(
+  link: { "wasm-gc": { "exports": [ "game_app" ] } },
+)

@@ -699,7 +699,14 @@ impl GpuBackend {
         self.next_mesh_id += 1;
         let hw = width * 0.5;
         let hh = height * 0.5;
-        let vertices: [f32; 8] = [-hw, -hh, hw, -hh, hw, hh, -hw, hh];
+        let vertices: [f32; 48] = [
+            -hw, -hh, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, //
+            hw, -hh, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, //
+            hw, hh, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, //
+            -hw, -hh, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, //
+            hw, hh, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, //
+            -hw, hh, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, //
+        ];
         let indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
 
         let vb = self
@@ -719,7 +726,7 @@ impl GpuBackend {
         self.meshes.insert(
             id,
             GpuMesh {
-                vertex_count: 4,
+                vertex_count: 6,
                 index_count: 6,
                 vertex_buf: vb,
                 index_buf: ib,
@@ -728,8 +735,8 @@ impl GpuBackend {
         id
     }
 
-    pub fn create_mesh_triangles_xy(&mut self, vertices_xy: &[f32]) -> i32 {
-        let vcount = vertices_xy.len() / 2;
+    pub fn create_mesh_triangles_xyuvrgba(&mut self, vertices: &[f32]) -> i32 {
+        let vcount = vertices.len() / 8;
         if vcount == 0 {
             return 0;
         }
@@ -737,7 +744,7 @@ impl GpuBackend {
         if usable_vcount == 0 || usable_vcount > 65535 {
             return 0;
         }
-        let trimmed = &vertices_xy[..usable_vcount * 2];
+        let trimmed = &vertices[..usable_vcount * 8];
         let mut indices: Vec<u16> = Vec::with_capacity(usable_vcount);
         for i in 0..usable_vcount {
             indices.push(i as u16);
@@ -1559,13 +1566,25 @@ impl GpuBackend {
                 source: wgpu::ShaderSource::Wgsl(wgsl.into()),
             });
         let vb_layout = wgpu::VertexBufferLayout {
-            array_stride: 8,
+            array_stride: 32,
             step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[wgpu::VertexAttribute {
-                offset: 0,
-                shader_location: 0,
-                format: wgpu::VertexFormat::Float32x2,
-            }],
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: 8,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: 16,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x4,
+                },
+            ],
         };
         let pipeline = self
             .device

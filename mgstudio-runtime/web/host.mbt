@@ -877,14 +877,17 @@ extern "js" fn create_rectangle_mesh_data(
   #|   const h = Number(height) || 1
   #|   const halfW = w / 2
   #|   const halfH = h / 2
-  #|   return new Float32Array([
-  #|     -halfW, -halfH,
-  #|     halfW, -halfH,
-  #|     halfW, halfH,
-  #|     -halfW, -halfH,
-  #|     halfW, halfH,
-  #|     -halfW, halfH,
-  #|   ])
+  #|   const pushVertex = (arr, x, y, u, v) => {
+  #|     arr.push(x, y, u, v, 1, 1, 1, 1)
+  #|   }
+  #|   const data = []
+  #|   pushVertex(data, -halfW, -halfH, 0, 0)
+  #|   pushVertex(data, halfW, -halfH, 1, 0)
+  #|   pushVertex(data, halfW, halfH, 1, 1)
+  #|   pushVertex(data, -halfW, -halfH, 0, 0)
+  #|   pushVertex(data, halfW, halfH, 1, 1)
+  #|   pushVertex(data, -halfW, halfH, 0, 1)
+  #|   return new Float32Array(data)
   #| }
 
 ///|
@@ -907,13 +910,33 @@ extern "js" fn create_capsule_mesh_data(
   #|     points.push([Math.cos(angle) * r, -half + Math.sin(angle) * r])
   #|   }
   #|   const vertexData = []
+  #|   const minX = -r
+  #|   const maxX = r
+  #|   const minY = -(half + r)
+  #|   const maxY = half + r
+  #|   const invW = 1 / Math.max(1e-6, maxX - minX)
+  #|   const invH = 1 / Math.max(1e-6, maxY - minY)
+  #|   const pushVertex = (x, y) => {
+  #|     vertexData.push(
+  #|       x,
+  #|       y,
+  #|       (x - minX) * invW,
+  #|       (y - minY) * invH,
+  #|       1,
+  #|       1,
+  #|       1,
+  #|       1,
+  #|     )
+  #|   }
   #|   const cx = 0
   #|   const cy = 0
   #|   const count = points.length
   #|   for (let i = 0; i < count; i += 1) {
   #|     const p0 = points[i]
   #|     const p1 = points[(i + 1) % count]
-  #|     vertexData.push(cx, cy, p0[0], p0[1], p1[0], p1[1])
+  #|     pushVertex(cx, cy)
+  #|     pushVertex(p0[0], p0[1])
+  #|     pushVertex(p1[0], p1[1])
   #|   }
   #|   return new Float32Array(vertexData)
   #| }
@@ -2876,7 +2899,19 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
       0,
       @webgpu.VertexFormat::Float32x2,
     )
-    let vertex_layout = @webgpu.vertex_buffer_layout(8, [position_attr])
+    let uv_attr = @webgpu.vertex_attribute(
+      8,
+      1,
+      @webgpu.VertexFormat::Float32x2,
+    )
+    let color_attr = @webgpu.vertex_attribute(
+      16,
+      2,
+      @webgpu.VertexFormat::Float32x4,
+    )
+    let vertex_layout = @webgpu.vertex_buffer_layout(32, [
+      position_attr, uv_attr, color_attr,
+    ])
     let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
       vertex_layout,
     ])
@@ -5576,7 +5611,7 @@ pub fn create_host(
       let vertex_buffer = device.create_buffer(vertex_desc.to_js())
       device.queue().write_buffer(vertex_buffer, 0, vertices)
       let vertex_len : Double = vertices._get("length").cast()
-      let vertex_count = to_int(vertex_len / 2)
+      let vertex_count = to_int(vertex_len / 8)
       let entry = @js.from_entries([
         ("id", @js.any(id)),
         ("vertexBuffer", vertex_buffer.as_any()),
@@ -5608,7 +5643,7 @@ pub fn create_host(
       let vertex_buffer = device.create_buffer(vertex_desc.to_js())
       device.queue().write_buffer(vertex_buffer, 0, vertices)
       let vertex_len : Double = vertices._get("length").cast()
-      let vertex_count = to_int(vertex_len / 2)
+      let vertex_count = to_int(vertex_len / 8)
       let entry = @js.from_entries([
         ("id", @js.any(id)),
         ("vertexBuffer", vertex_buffer.as_any()),
@@ -5639,7 +5674,7 @@ pub fn create_host(
       let vertex_buffer = device.create_buffer(vertex_desc.to_js())
       device.queue().write_buffer(vertex_buffer, 0, vertices)
       let vertex_len : Double = vertices._get("length").cast()
-      let vertex_count = to_int(vertex_len / 2)
+      let vertex_count = to_int(vertex_len / 8)
       if vertex_count <= 0 {
         report_asset_error_once(
           state,

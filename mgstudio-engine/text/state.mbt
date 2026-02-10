@@ -544,13 +544,18 @@ pub fn text_set_anchor(handle : TextHandle, anchor : @render2d.Anchor) -> Unit {
 /// Update the y-axis orientation of a text handle without marking it as needing rerender.
 pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
   // Orientation affects glyph coordinates, so we must relayout.
-  text_update_instance(handle, instance => if instance.y_axis == y_axis {
-    instance
-  } else {
-    TextInstance::{
-      ..instance,
-      y_axis,
-      computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  text_update_instance(handle, instance => {
+    if instance.y_axis == y_axis {
+      instance
+    } else {
+      TextInstance::{
+        ..instance,
+        y_axis,
+        computed: ComputedTextBlock::{
+          ..instance.computed,
+          needs_rerender: true,
+        },
+      }
     }
   })
 }

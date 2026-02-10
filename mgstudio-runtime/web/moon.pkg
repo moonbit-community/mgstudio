@@ -1,0 +1,17 @@
+import {
+  "mizchi/js",
+  "mizchi/js/core",
+  "mizchi/js/builtins/arraybuffer",
+  "mizchi/js/browser/dom",
+  "mizchi/js/web/http",
+  "mizchi/js/web/webassembly",
+  "Milky2018/moon_accesskit",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/json",
+  "Milky2018/mgstudio-runtime-core" @rtcore,
+  "Milky2018/mgstudio-runtime-web/webgpu",
+}
+
+options(
+  "is-main": true,
+)

@@ -1,0 +1,23 @@
+import {
+  "TheWaWaR/clap",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/process",
+  "moonbitlang/parser",
+  "moonbitlang/parser/attribute",
+  "moonbitlang/parser/syntax",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/list",
+  "moonbitlang/core/json",
+  "moonbitlang/x/path",
+  "moonbitlang/x/codec/base64",
+  "moonbitlang/x/json5",
+  "moonbitlang/x/sys",
+  "Milky2018/mgstudio-runtime-native" @native_rt,
+}
+
+options(
+  "bin-name": "mgstudio",
+  "bin-target": "native",
+  "is-main": true,
+)

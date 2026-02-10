@@ -1933,9 +1933,9 @@ pub fn[
       Some(atlas) => atlas_rect_for(atlas)
       None => None
     }
-    let size_px = image_measure_size_px(image_node.rect, atlas_rect, () => texture_size(
-      image_node.image,
-    ))
+    let size_px = image_measure_size_px(image_node.rect, atlas_rect, () => {
+      texture_size(image_node.image)
+    })
     update_content_size(entity, size_px)
     update_image_node_size(entity, size_px)
   })
@@ -1958,9 +1958,9 @@ pub fn[
       Some(atlas) => atlas_rect_for(atlas)
       None => None
     }
-    let size_px = image_measure_size_px(ui_image.rect, atlas_rect, () => texture_size(
-      ui_image.image,
-    ))
+    let size_px = image_measure_size_px(ui_image.rect, atlas_rect, () => {
+      texture_size(ui_image.image)
+    })
     update_content_size(entity, size_px)
   })
 }

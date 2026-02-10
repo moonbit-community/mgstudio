@@ -1,7 +1,0 @@
-{
-  "import": [
-    "moonbitlang/core/hashmap",
-    "Milky2018/mgstudio/core",
-    "moonbitlang/core/ref"
-  ]
-}

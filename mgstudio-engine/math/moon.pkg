@@ -1,0 +1,4 @@
+import {
+  "moonbitlang/core/math" @coremath,
+  "Milky2018/mgstudio/core",
+}

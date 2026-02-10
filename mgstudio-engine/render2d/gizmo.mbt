@@ -806,6 +806,41 @@ pub fn Gizmos::line_2d(
 }
 
 ///|
+fn gizmo_transform_point_2d(
+  transform : @math.Transform,
+  point : @math.Vec2,
+) -> @math.Vec2 {
+  let scaled = @math.Vec2::new(
+    point.x * transform.scale.x,
+    point.y * transform.scale.y,
+  )
+  let rotation = transform.rotation_z()
+  let cosv = @math.cos(rotation)
+  let sinv = @math.sin(rotation)
+  let rotated_x = scaled.x * cosv - scaled.y * sinv
+  let rotated_y = scaled.x * sinv + scaled.y * cosv
+  @math.Vec2::new(
+    rotated_x + transform.translation.x,
+    rotated_y + transform.translation.y,
+  )
+}
+
+///|
+pub fn Gizmos::mesh_wireframe_2d(
+  self : Gizmos,
+  geometry : @mesh.Mesh2dGeometry,
+  transform : @math.Transform,
+  color : Color,
+) -> Unit {
+  guard geometry.wireframe_segments() is Some(segments) else { return }
+  for segment in segments {
+    let world_start = gizmo_transform_point_2d(transform, segment.0)
+    let world_end = gizmo_transform_point_2d(transform, segment.1)
+    gizmos_add_line(world_start, world_end, color, color, self.layers)
+  }
+}
+
+///|
 pub fn Gizmos::line_gradient_2d(
   self : Gizmos,
   start : @math.Vec2,

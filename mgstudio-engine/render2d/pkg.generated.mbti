@@ -40,6 +40,10 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 
 pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
 
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overlay(W, @asset.Handle[@asset.Image], @math.Transform, Bloom2dSettings, RenderLayers) -> Unit
+
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(W, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
+
 pub fn[W : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
@@ -108,6 +112,15 @@ pub struct ArrowBuilder {
 }
 pub fn ArrowBuilder::with_double_end(Self) -> Self
 pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
+
+pub(all) struct Bloom2dSettings {
+  enabled : Bool
+  intensity : Float
+  spread : Float
+  pass_count : Int
+  tint : Color
+}
+pub fn Bloom2dSettings::default() -> Self
 
 pub struct BorderRect {
   left : Float
@@ -283,6 +296,7 @@ pub fn Gizmos::lineloop_2d(Self, Array[@math.Vec2], Color) -> Unit
 pub fn Gizmos::linestrip_2d(Self, Array[@math.Vec2], Color) -> Unit
 pub fn Gizmos::linestrip_gradient_2d(Self, Array[(@math.Vec2, Color)]) -> Unit
 pub fn Gizmos::long_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, Color) -> Arc2dBuilder
+pub fn Gizmos::mesh_wireframe_2d(Self, @mesh.Mesh2dGeometry, @math.Transform, Color) -> Unit
 pub fn Gizmos::new() -> Self
 pub fn Gizmos::ray_2d(Self, @math.Vec2, @math.Vec2, Color) -> Unit
 pub fn Gizmos::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, Color, Color) -> Unit
@@ -497,6 +511,28 @@ pub fn TextureSlicer::new(BorderRect) -> Self
 pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self
 pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
 pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
+
+pub struct TileData {
+  tileset_index : Int
+}
+pub fn TileData::from_tileset_index(Int) -> Self
+
+pub struct TilemapChunk {
+  chunk_size : @math.UVec2
+  tile_display_size : @math.UVec2
+  tileset : @asset.Handle[@asset.Image]
+  tileset_grid : @math.UVec2
+}
+pub fn TilemapChunk::calculate_tile_transform(Self, @math.UVec2) -> @math.Transform
+pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@asset.Image], @math.UVec2) -> Self
+pub fn TilemapChunk::tile_capacity(Self) -> Int
+
+pub struct TilemapChunkTileData {
+  tile_data : Array[TileData?]
+}
+pub fn TilemapChunkTileData::new(Array[TileData?]) -> Self
+pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2, TileData?) -> Self
+pub fn TilemapChunkTileData::tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2) -> TileData?
 
 pub struct Triangle2d {
   a : @math.Vec2

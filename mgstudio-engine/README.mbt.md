@@ -26,7 +26,7 @@ pipeline.
 
 Example:
 
-```mbt
+```mbt nocheck
 let cfg = @physics2d.physics2d_hooks_config()
 @physics2d.physics2d_hooks_set_config(
   @physics2d.Physics2dHooksConfig::{

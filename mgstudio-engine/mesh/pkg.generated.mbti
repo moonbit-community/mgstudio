@@ -18,20 +18,26 @@ pub fn Mesh::from_2d_geometry(Mesh2dGeometry) -> Self
 pub struct Mesh2dGeometry {
   positions : Array[@math.Vec2]
   uvs : Array[@math.Vec2]
+  colors : Array[@math.Vec4]?
   indices : Array[Int]?
 }
+pub fn Mesh2dGeometry::encode_triangle_interleaved_xy_uv_rgba_csv(Self) -> String?
 pub fn Mesh2dGeometry::encode_triangle_positions_csv(Self) -> String?
 pub fn Mesh2dGeometry::flatten_interleaved_xy_uv(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::flatten_positions_xy(Self) -> Array[Double]?
+pub fn Mesh2dGeometry::flatten_triangle_interleaved_xy_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::flatten_triangle_positions_xy(Self) -> Array[Double]?
 pub fn Mesh2dGeometry::new(Array[@math.Vec2], Array[@math.Vec2], Array[Int]?) -> Self
+pub fn Mesh2dGeometry::new_with_colors(Array[@math.Vec2], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
 pub fn Mesh2dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh2dGeometry::validate(Self) -> Mesh2dValidationError?
 pub fn Mesh2dGeometry::vertex_count(Self) -> Int
+pub fn Mesh2dGeometry::wireframe_segments(Self) -> Array[(@math.Vec2, @math.Vec2)]?
 
 pub(all) enum Mesh2dValidationError {
   EmptyVertices
   AttributeLengthMismatch(Int, Int)
+  ColorAttributeLengthMismatch(Int, Int)
   NonIndexedVertexCountNotMultipleOf3(Int)
   IndicesEmpty
   IndicesCountNotMultipleOf3(Int)

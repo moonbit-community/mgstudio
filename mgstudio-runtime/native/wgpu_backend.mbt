@@ -907,7 +907,7 @@ fn ensure_ui_slice_globals_bind_group(
 }
 
 ///|
-fn mesh_pipeline_desc_pos2_alpha_blend(
+fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   layout : @wgpu.PipelineLayout,
   shader : @wgpu.ShaderModule,
   format : UInt,
@@ -920,18 +920,32 @@ fn mesh_pipeline_desc_pos2_alpha_blend(
   @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(builder)
   @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
     builder,
-    8UL,
+    32UL,
     @wgpu.VERTEX_STEP_MODE_VERTEX,
   )
-  let ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+  let pos_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X2,
     0UL,
     0U,
   )
-  if !ok {
+  let uv_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+    builder,
+    @wgpu.VERTEX_FORMAT_FLOAT32X2,
+    8UL,
+    1U,
+  )
+  let color_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+    builder,
+    @wgpu.VERTEX_FORMAT_FLOAT32X4,
+    16UL,
+    2U,
+  )
+  if !pos_ok || !uv_ok || !color_ok {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
-    fatal("wgpu: failed to configure mesh vertex attribute for pos2 pipeline")
+    fatal(
+      "wgpu: failed to configure mesh vertex attributes for pos2+uv2+color4 pipeline",
+    )
   }
   @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder,
@@ -970,7 +984,7 @@ fn ensure_mesh_pipeline_rgba8(
     backend, "shaders/mgstudio/2d/mesh.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = mesh_pipeline_desc_pos2_alpha_blend(
+  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
     sm,
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
@@ -1004,7 +1018,11 @@ fn ensure_mesh_pipeline_surface(
     backend, "shaders/mgstudio/2d/mesh.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = mesh_pipeline_desc_pos2_alpha_blend(pl, sm, format.to_u32())
+  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    format.to_u32(),
+  )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_mesh_surface")
@@ -2127,10 +2145,43 @@ pub fn GpuBackend::create_mesh_rectangle(
   let id = alloc_id(self)
   let hw = width * 0.5F
   let hh = height * 0.5F
-  let vertices_xy : Array[Float] = [-hw, -hh, hw, -hh, hw, hh, -hw, hh]
+  let vertices : Array[Float] = [
+    -hw,
+    -hh,
+    0.0F,
+    0.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    hw,
+    -hh,
+    1.0F,
+    0.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    hw,
+    hh,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    -hw,
+    hh,
+    0.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+  ]
   let indices_u16 : Array[Int] = [0, 1, 2, 0, 2, 3]
   let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
-  let vb_bytes = f32le_pack(vertices_xy)
+  let vb_bytes = f32le_pack(vertices)
   let vb = self.device.create_buffer_init(usage=vb_usage, vb_bytes)
   let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let ib_bytes = u16le_pack(indices_u16)
@@ -2156,21 +2207,21 @@ pub fn GpuBackend::create_mesh_capsule(
   let id = alloc_id(self)
   // Simple triangulated capsule: rectangle body + two semicircle fans.
   let segs = if segments < 4 { 4 } else { segments }
-  let verts : Array[Float] = []
+  let verts_xy : Array[Float] = []
   let inds : Array[Int] = []
 
   // Base rectangle vertices (4).
   let hw = half_length
   let hh = radius
   let base0 = 0
-  verts.push(-hw)
-  verts.push(-hh)
-  verts.push(hw)
-  verts.push(-hh)
-  verts.push(hw)
-  verts.push(hh)
-  verts.push(-hw)
-  verts.push(hh)
+  verts_xy.push(-hw)
+  verts_xy.push(-hh)
+  verts_xy.push(hw)
+  verts_xy.push(-hh)
+  verts_xy.push(hw)
+  verts_xy.push(hh)
+  verts_xy.push(-hw)
+  verts_xy.push(hh)
   inds.push(base0 + 0)
   inds.push(base0 + 1)
   inds.push(base0 + 2)
@@ -2179,15 +2230,15 @@ pub fn GpuBackend::create_mesh_capsule(
   inds.push(base0 + 3)
 
   // Left semicircle.
-  let center_l = verts.length() / 2
-  verts.push(-hw)
-  verts.push(0.0F)
+  let center_l = verts_xy.length() / 2
+  verts_xy.push(-hw)
+  verts_xy.push(0.0F)
   for i in 0..<(segs + 1) {
     let t = Float::from_double(i.to_double()) /
       Float::from_double(segs.to_double())
     let ang = PI * (t + 0.5F) // from 90deg to 270deg
-    verts.push(-hw + cosf(ang) * radius)
-    verts.push(sinf(ang) * radius)
+    verts_xy.push(-hw + cosf(ang) * radius)
+    verts_xy.push(sinf(ang) * radius)
   }
   for i in 0..<segs {
     inds.push(center_l)
@@ -2196,21 +2247,22 @@ pub fn GpuBackend::create_mesh_capsule(
   }
 
   // Right semicircle.
-  let center_r = verts.length() / 2
-  verts.push(hw)
-  verts.push(0.0F)
+  let center_r = verts_xy.length() / 2
+  verts_xy.push(hw)
+  verts_xy.push(0.0F)
   for i in 0..<(segs + 1) {
     let t = Float::from_double(i.to_double()) /
       Float::from_double(segs.to_double())
     let ang = PI * (t - 0.5F) // from -90deg to 90deg
-    verts.push(hw + cosf(ang) * radius)
-    verts.push(sinf(ang) * radius)
+    verts_xy.push(hw + cosf(ang) * radius)
+    verts_xy.push(sinf(ang) * radius)
   }
   for i in 0..<segs {
     inds.push(center_r)
     inds.push(center_r + 1 + i)
     inds.push(center_r + 1 + i + 1)
   }
+  let verts = mesh_interleaved_xyuvrgba_from_xy(verts_xy)
   let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
   let vb = self.device.create_buffer_init(usage=vb_usage, f32le_pack(verts))
   let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
@@ -2218,7 +2270,7 @@ pub fn GpuBackend::create_mesh_capsule(
   let info = GpuMeshInfo::{
     id,
     index_count: inds.length().reinterpret_as_uint(),
-    vertex_count: (verts.length() / 2).reinterpret_as_uint(),
+    vertex_count: (verts.length() / 8).reinterpret_as_uint(),
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -2231,12 +2283,65 @@ pub fn GpuBackend::create_mesh_triangles_xy(
   self : GpuBackend,
   vertices_xy : Array[Float],
 ) -> Int {
+  let vertices = mesh_interleaved_xyuvrgba_from_xy(vertices_xy)
+  self.create_mesh_triangles_xyuvrgba(vertices)
+}
+
+///|
+fn mesh_interleaved_xyuvrgba_from_xy(
+  vertices_xy : Array[Float],
+) -> Array[Float] {
   let vcount = vertices_xy.length() / 2
+  if vcount <= 0 {
+    return []
+  }
+  let mut min_x = vertices_xy[0]
+  let mut max_x = vertices_xy[0]
+  let mut min_y = vertices_xy[1]
+  let mut max_y = vertices_xy[1]
+  for i in 0..<vcount {
+    let x = vertices_xy[i * 2]
+    let y = vertices_xy[i * 2 + 1]
+    if x < min_x {
+      min_x = x
+    }
+    if x > max_x {
+      max_x = x
+    }
+    if y < min_y {
+      min_y = y
+    }
+    if y > max_y {
+      max_y = y
+    }
+  }
+  let width = if max_x - min_x == 0.0F { 1.0F } else { max_x - min_x }
+  let height = if max_y - min_y == 0.0F { 1.0F } else { max_y - min_y }
+  let out : Array[Float] = []
+  for i in 0..<vcount {
+    let x = vertices_xy[i * 2]
+    let y = vertices_xy[i * 2 + 1]
+    out.push(x)
+    out.push(y)
+    out.push((x - min_x) / width)
+    out.push((y - min_y) / height)
+    out.push(1.0F)
+    out.push(1.0F)
+    out.push(1.0F)
+    out.push(1.0F)
+  }
+  out
+}
+
+///|
+pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
+  self : GpuBackend,
+  vertices : Array[Float],
+) -> Int {
+  let vcount = vertices.length() / 8
   if vcount <= 0 {
     return 0
   }
-  // The encoded geometry is expected to be a flat list of triangle vertices.
-  // Keep only complete triangles.
   let usable_vcount = vcount - vcount % 3
   if usable_vcount <= 0 || usable_vcount > 65535 {
     return 0
@@ -2247,11 +2352,11 @@ pub fn GpuBackend::create_mesh_triangles_xy(
   }
   let id = alloc_id(self)
   let trimmed_vertices = if usable_vcount == vcount {
-    vertices_xy
+    vertices
   } else {
     let out : Array[Float] = []
-    for i in 0..<(usable_vcount * 2) {
-      out.push(vertices_xy[i])
+    for i in 0..<(usable_vcount * 8) {
+      out.push(vertices[i])
     }
     out
   }
@@ -2364,7 +2469,7 @@ pub fn GpuBackend::draw_mesh(
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, uniform_bg, [])
   pass.set_bind_group(1U, texture.bind_group, [])
-  let vb_bytes = (mesh.vertex_count.reinterpret_as_int() * 8).to_uint64()
+  let vb_bytes = (mesh.vertex_count.reinterpret_as_int() * 32).to_uint64()
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
   let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
   pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)

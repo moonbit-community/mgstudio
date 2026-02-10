@@ -2228,7 +2228,7 @@ pub fn add_mgstudio_host_imports(
           Some(csv) =>
             match parse_f32_csv_list(csv) {
               Some(verts) =>
-                ok_i32(ctx.gpu.unwrap().create_mesh_triangles_xy(verts))
+                ok_i32(ctx.gpu.unwrap().create_mesh_triangles_xyuvrgba(verts))
               None => ok_i32(0)
             }
           None => ok_i32(0)

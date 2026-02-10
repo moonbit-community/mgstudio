@@ -1,0 +1,13 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/window",
+  "Milky2018/moon_cosmic" @cosmic,
+  "Milky2018/moon_zeno" @moon_zeno,
+  "Milky2018/moon_swash" @swash,
+  "Milky2018/moon_swash/scale" @swash_scale,
+  "moonbitlang/core/ref",
+}
