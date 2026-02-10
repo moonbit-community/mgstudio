@@ -8,5 +8,5 @@ import {
 }
 
 options(
-  link: { "wasm-gc": { "exports": [ "game_app" ] } },
+  link: { "wasm": { "exports": [ "game_app" ] } },
 )
