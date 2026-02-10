@@ -25,6 +25,63 @@ RUNTIME_WEB_DIR="$REPO_DIR/mgstudio-runtime/web"
 
 DIST_DIR="$SCRIPT_DIR/dist"
 
+fn_title_case() {
+  printf '%s' "$1" | tr '_' ' ' | awk '{
+    for (i = 1; i <= NF; i++) {
+      $i = toupper(substr($i, 1, 1)) substr($i, 2)
+    }
+    print
+  }'
+}
+
+generate_examples_menu() {
+  local dist_dir="$1"
+  local menu_html="$2"
+  local current_group=""
+  local found=0
+
+  while IFS= read -r wasm_rel; do
+    found=1
+    local path_no_prefix="${wasm_rel#examples/}"
+    local group="${path_no_prefix%%/*}"
+    local example_name
+    example_name="$(basename "$wasm_rel" .wasm)"
+    local group_label
+    group_label="$(fn_title_case "$group")"
+    local example_label
+    example_label="$(fn_title_case "$example_name")"
+
+    if [[ "$group" != "$current_group" ]]; then
+      if [[ -n "$current_group" ]]; then
+        printf '%s\n' "      </div>" "    </section>" >> "$menu_html"
+      fi
+      printf '%s\n' \
+        "    <section class=\"example-group\">" \
+        "      <h2>${group_label}</h2>" \
+        "      <div class=\"example-buttons\">" >> "$menu_html"
+      current_group="$group"
+    fi
+
+    printf '        <button type="button" data-wasm="./%s">%s</button>\n' \
+      "$wasm_rel" \
+      "$example_label" >> "$menu_html"
+  done < <(find "$dist_dir/examples" -name '*.wasm' -print | sed "s|$dist_dir/||" | sort)
+
+  if [[ "$found" -eq 0 ]]; then
+    echo "No built wasm examples found under $dist_dir/examples" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "      </div>" "    </section>" >> "$menu_html"
+  printf '%s\n' \
+    "    <section class=\"example-group\">" \
+    "      <h2>Actions</h2>" \
+    "      <div class=\"example-buttons\">" \
+    "        <button type=\"button\" data-action=\"reload\">Reload</button>" \
+    "      </div>" \
+    "    </section>" >> "$menu_html"
+}
+
 echo "Building engine examples..."
 while IFS= read -r pkg; do
   pkg_dir=$(dirname "$pkg")
@@ -55,7 +112,6 @@ fi
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-cp "$SCRIPT_DIR/index.html" "$DIST_DIR/index.html"
 cp "$RUNTIME_BUNDLE" "$DIST_DIR/mgstudio-runtime-web.js"
 
 echo "Copying examples into page dist..."
@@ -63,5 +119,22 @@ rsync -a --delete "$EXAMPLES_DIR/" "$DIST_DIR/examples/"
 
 echo "Copying assets into page dist..."
 rsync -a --delete "$ASSETS_DIR/" "$DIST_DIR/assets/"
+
+echo "Generating examples menu..."
+MENU_HTML=$(mktemp)
+INDEX_OUT=$(mktemp)
+generate_examples_menu "$DIST_DIR" "$MENU_HTML"
+awk -v menu_file="$MENU_HTML" '
+  /__EXAMPLE_GROUPS__/ {
+    while ((getline line < menu_file) > 0) {
+      print line
+    }
+    close(menu_file)
+    next
+  }
+  { print }
+' "$SCRIPT_DIR/index.html" > "$INDEX_OUT"
+mv "$INDEX_OUT" "$DIST_DIR/index.html"
+rm -f "$MENU_HTML"
 
 echo "Built: $DIST_DIR"

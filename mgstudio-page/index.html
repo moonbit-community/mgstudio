@@ -36,6 +36,7 @@ limitations under the License.
       .menu {
         position: fixed;
         left: 16px;
+        top: 16px;
         bottom: 16px;
         padding: 12px 16px;
         background: rgba(8, 12, 20, 0.8);
@@ -44,9 +45,11 @@ limitations under the License.
         font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
         font-size: 12px;
         color: #f6f8ff;
-        display: grid;
+        display: flex;
+        flex-direction: column;
         gap: 8px;
-        min-width: 200px;
+        width: min(760px, calc(100vw - 32px));
+        overflow: auto;
       }
       .menu h1 {
         font-size: 12px;
@@ -54,6 +57,27 @@ limitations under the License.
         text-transform: uppercase;
         letter-spacing: 0.08em;
         color: rgba(246, 248, 255, 0.7);
+      }
+      .menu-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        align-items: start;
+      }
+      .example-group {
+        display: grid;
+        gap: 8px;
+      }
+      .example-group h2 {
+        margin: 0;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(246, 248, 255, 0.65);
+      }
+      .example-buttons {
+        display: grid;
+        gap: 8px;
       }
       .menu button {
         appearance: none;
@@ -76,23 +100,9 @@ limitations under the License.
     <canvas id="mgstudio-canvas"></canvas>
     <div id="mgstudio-menu" class="menu">
       <h1>Examples</h1>
-      <button type="button" data-wasm="./examples/2d/sprite/sprite.wasm">Sprite</button>
-      <button type="button" data-wasm="./examples/2d/move_sprite/move_sprite.wasm">Move Sprite</button>
-      <button type="button" data-wasm="./examples/2d/rotation/rotation.wasm">Rotation</button>
-      <button type="button" data-wasm="./examples/2d/sprite_scale/sprite_scale.wasm">Sprite Scale</button>
-      <button type="button" data-wasm="./examples/2d/sprite_flipping/sprite_flipping.wasm">Sprite Flipping</button>
-      <button type="button" data-wasm="./examples/2d/sprite_sheet/sprite_sheet.wasm">Sprite Sheet</button>
-      <button type="button" data-wasm="./examples/2d/sprite_animation/sprite_animation.wasm">Sprite Animation</button>
-      <button type="button" data-wasm="./examples/2d/texture_atlas/texture_atlas.wasm">Texture Atlas</button>
-      <button type="button" data-wasm="./examples/2d/texture_atlas_builder/texture_atlas_builder.wasm">Texture Atlas Builder</button>
-      <button type="button" data-wasm="./examples/2d/rotate_to_cursor/rotate_to_cursor.wasm">Rotate To Cursor</button>
-      <button type="button" data-wasm="./examples/2d/2d_viewport_to_world/2d_viewport_to_world.wasm">Viewport To World</button>
-      <button type="button" data-wasm="./examples/2d/pixel_grid_snap/pixel_grid_snap.wasm">Pixel Grid Snap</button>
-      <button type="button" data-wasm="./examples/2d/mesh2d/mesh2d.wasm">Mesh2d</button>
-      <button type="button" data-wasm="./examples/2d/text2d/text2d.wasm">Text2d</button>
-      <button type="button" data-wasm="./examples/2d/visibility/visibility.wasm">Visibility</button>
-      <button type="button" data-wasm="./examples/2d/physics2d_showcase/physics2d_showcase.wasm">Physics2D Showcase</button>
-      <button type="button" data-action="reload">Reload</button>
+      <div class="menu-grid">
+        <!-- __EXAMPLE_GROUPS__ -->
+      </div>
     </div>
     <script type="module" src="./mgstudio-runtime-web.js"></script>
   </body>
