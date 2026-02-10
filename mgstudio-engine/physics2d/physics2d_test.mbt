@@ -387,6 +387,12 @@ impl HasRes_Physics2dEvents for Physics2dTestWorld with get_physics2d_events_res
 }
 
 ///|
+fn approx_eq_f32(a : Float, b : Float) -> Bool {
+  let diff = if a >= b { a - b } else { b - a }
+  diff < 0.0001F
+}
+
+///|
 test "physics2d: falling body collides and writes back transform" {
   @app.fixed_time_reset()
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
@@ -943,6 +949,132 @@ test "physics2d: collision groups filter collision events" {
     .get_ref()
     .unwrap().val
   inspect(events.collisions.length() == 0, content="true")
+}
+
+///|
+test "physics2d: collider material and active event properties sync to rapier" {
+  @app.fixed_time_reset()
+  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  let world = Physics2dTestWorld::new()
+  physics2d_init_resources_system(world)
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  HasRes_Physics2dConfig::get_physics2d_config_resource(world)
+  .get_ref_mut(tick)
+  .unwrap().val
+  = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
+  let e_default = @core.Entity::new(0, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e_default,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    e_default,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    e_default,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_ColliderDensity2d::get_collider_density2d_store(world).insert(
+    e_default,
+    ColliderDensity2d::new(2.5F),
+    tick,
+  )
+  Has_Friction2d::get_friction2d_store(world).insert(
+    e_default,
+    Friction2d::new(0.25F),
+    tick,
+  )
+  Has_Restitution2d::get_restitution2d_store(world).insert(
+    e_default,
+    Restitution2d::new(0.75F),
+    tick,
+  )
+  Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
+    world,
+  ).insert(e_default, ContactForceEventThreshold2d::new(0.125F), tick)
+
+  let e_override = @core.Entity::new(1, 1)
+  @math.Has_Transform::get_transform_store(world).insert(
+    e_override,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(3.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=0.0F,
+    ),
+    tick,
+  )
+  Has_RigidBody2d::get_rigid_body2d_store(world).insert(
+    e_override,
+    RigidBody2d::dynamic(),
+    tick,
+  )
+  Has_Collider2d::get_collider2d_store(world).insert(
+    e_override,
+    Collider2d::new(ColliderShape2d::ball(0.5F)),
+    tick,
+  )
+  Has_ActiveEvents2d::get_active_events2d_store(world).insert(
+    e_override,
+    ActiveEvents2d::new(@collision.ActiveEvents::collision_events()),
+    tick,
+  )
+  Has_ContactForceEventThreshold2d::get_contact_force_event_threshold2d_store(
+    world,
+  ).insert(e_override, ContactForceEventThreshold2d::new(0.125F), tick)
+  physics2d_sync_insertions_system(world)
+  let ctx = HasRes_Physics2dContext::get_physics2d_context_resource(world)
+    .get_ref()
+    .unwrap().val
+  let store = Has_RapierColliderHandle2d::get_rapier_collider_handle2d_store(
+    world,
+  )
+
+  let ch0 = store.get(e_default).unwrap().handle
+  let collider0 = ctx.colliders.get(ch0).unwrap()
+  inspect(approx_eq_f32(collider0.density(), 2.5F), content="true")
+  inspect(approx_eq_f32(collider0.friction(), 0.25F), content="true")
+  inspect(approx_eq_f32(collider0.restitution(), 0.75F), content="true")
+  inspect(
+    collider0
+    .active_events()
+    .contains(@collision.ActiveEvents::collision_events()),
+    content="true",
+  )
+  inspect(
+    collider0
+    .active_events()
+    .contains(@collision.ActiveEvents::contact_force_events()),
+    content="true",
+  )
+  inspect(
+    approx_eq_f32(collider0.contact_force_event_threshold(), 0.125F),
+    content="true",
+  )
+
+  let ch1 = store.get(e_override).unwrap().handle
+  let collider1 = ctx.colliders.get(ch1).unwrap()
+  inspect(
+    collider1
+    .active_events()
+    .contains(@collision.ActiveEvents::collision_events()),
+    content="true",
+  )
+  inspect(
+    !collider1
+    .active_events()
+    .contains(@collision.ActiveEvents::contact_force_events()),
+    content="true",
+  )
 }
 
 ///|
