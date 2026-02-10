@@ -152,27 +152,27 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_metallic_roughness_map = u_mesh.map_flags.z > 0.5;
   let has_occlusion_map = u_mesh.map_flags.w > 0.5;
   let has_normal_map = u_mesh.material_params.w > 0.5;
-  let base_color = if !has_base_map || u_mesh.uv.z < 0.0 || u_mesh.uv.w < 0.0 {
-    in.color
-  } else {
-    textureSample(u_base_color_texture, u_material_sampler, in.uv) * in.color
-  };
-  let emissive_tex = if has_emissive_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
-    textureSample(u_emissive_texture, u_material_sampler, in.uv).xyz
-  } else {
-    vec3<f32>(1.0, 1.0, 1.0)
-  };
-  let metallic_roughness_tex =
-    if has_metallic_roughness_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
-      textureSample(u_metallic_roughness_texture, u_material_sampler, in.uv)
-    } else {
-      vec4<f32>(1.0, 1.0, 1.0, 1.0)
-    };
-  let occlusion_tex = if has_occlusion_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
-    textureSample(u_occlusion_texture, u_material_sampler, in.uv).r
-  } else {
-    1.0
-  };
+  var base_color = in.color;
+  if has_base_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
+    base_color = textureSample(u_base_color_texture, u_material_sampler, in.uv) *
+      in.color;
+  }
+  var emissive_tex = vec3<f32>(1.0, 1.0, 1.0);
+  if has_emissive_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
+    emissive_tex = textureSample(u_emissive_texture, u_material_sampler, in.uv).xyz;
+  }
+  var metallic_roughness_tex = vec4<f32>(1.0, 1.0, 1.0, 1.0);
+  if has_metallic_roughness_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
+    metallic_roughness_tex = textureSample(
+      u_metallic_roughness_texture,
+      u_material_sampler,
+      in.uv,
+    );
+  }
+  var occlusion_tex = 1.0;
+  if has_occlusion_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
+    occlusion_tex = textureSample(u_occlusion_texture, u_material_sampler, in.uv).r;
+  }
   let dp1 = dpdx(in.world_pos);
   let dp2 = dpdy(in.world_pos);
   var normal = safe_normalize(cross(dp1, dp2));

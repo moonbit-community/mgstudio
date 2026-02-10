@@ -1140,6 +1140,8 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
           "mesh3d_pipeline_validation_error",
           "Mesh3d pipeline validation error: " + any_to_string(err_any),
         )
+        state.gpu.mesh3d_pipeline = None
+        state.gpu.mesh3d_bind_group = None
       }
     })
     state.gpu.mesh3d_pipeline = Some(pipeline)
@@ -1160,6 +1162,7 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
             "mesh3d_bind_group_validation_error",
             "Mesh3d bind group validation error: " + any_to_string(err_any),
           )
+          state.gpu.mesh3d_bind_group = None
         }
       })
       state.gpu.mesh3d_bind_group = Some(bind_group)
