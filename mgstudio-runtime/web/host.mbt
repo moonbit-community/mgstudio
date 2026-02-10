@@ -2900,13 +2900,13 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
       @webgpu.VertexFormat::Float32x2,
     )
     let uv_attr = @webgpu.vertex_attribute(
-      8,
       1,
+      8,
       @webgpu.VertexFormat::Float32x2,
     )
     let color_attr = @webgpu.vertex_attribute(
-      16,
       2,
+      16,
       @webgpu.VertexFormat::Float32x4,
     )
     let vertex_layout = @webgpu.vertex_buffer_layout(32, [

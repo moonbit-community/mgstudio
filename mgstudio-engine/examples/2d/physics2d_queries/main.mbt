@@ -28,10 +28,33 @@ pub fn game_app() -> Unit {
 ///|
 priv struct QueryState {
   mut accumulator : Float
+  mut phase : Float
+  mut ray_line : @core.Entity?
+  mut hit_marker : @core.Entity?
 }
 
 ///|
-let query_state : Ref[QueryState] = Ref::new(QueryState::{ accumulator: 0.0F })
+let query_state : Ref[QueryState] = Ref::new(QueryState::{
+  accumulator: 0.0F,
+  phase: 0.0F,
+  ray_line: None,
+  hit_marker: None,
+})
+
+///|
+const RAY_ORIGIN_Y : Float = 300.0F
+
+///|
+const RAY_LENGTH : Float = 1000.0F
+
+///|
+const RAY_HALF_LENGTH : Float = 500.0F
+
+///|
+const RAY_LINE_SCALE_Y : Float = 7.8125F
+
+///|
+const RAY_SWEEP_AMPLITUDE : Float = 220.0F
 
 ///|
 fn physics2d_queries_setup(world : @ecs_world.World) -> Unit {
@@ -98,10 +121,58 @@ fn physics2d_queries_setup(world : @ecs_world.World) -> Unit {
     world,
   )
   |> ignore
+
+  // Visible query line.
+  let ray_line_sprite = @render2d.Sprite::from_image(texture).with_color(
+    @render2d.Color::new(1.0F, 0.95F, 0.2F, 0.65F),
+  )
+  let ray_line_transform = @math.Transform::from_xy_rotation_scale(
+    @math.Vec2::new(0.0F, RAY_ORIGIN_Y - RAY_HALF_LENGTH),
+    0.0F,
+    @math.Vec2::new(0.035F, RAY_LINE_SCALE_Y),
+    z=2.0F,
+  )
+  let ray_line = @render2d.SpriteBundle::new(
+    ray_line_sprite, ray_line_transform,
+  ).spawn(world)
+
+  // Visible hit marker.
+  let hit_marker_sprite = @render2d.Sprite::from_image(texture).with_color(
+    @render2d.Color::new(1.0F, 0.25F, 0.25F, 0.9F),
+  )
+  let hit_marker_transform = @math.Transform::from_xy_rotation_scale(
+    @math.Vec2::new(0.0F, RAY_ORIGIN_Y),
+    0.0F,
+    @math.Vec2::new(0.14F, 0.14F),
+    z=3.0F,
+  )
+  let hit_marker = @render2d.SpriteBundle::new(
+    hit_marker_sprite, hit_marker_transform,
+  ).spawn(world)
+
+  query_state.val.phase = 0.0F
+  query_state.val.ray_line = Some(ray_line)
+  query_state.val.hit_marker = Some(hit_marker)
 }
 
 ///|
 fn physics2d_queries_raycast(world : @ecs_world.World) -> Unit {
+  let tick = @core.ChangeTickWorld::read_change_tick(world)
+  let transform_store = @math.Has_Transform::get_transform_store(world)
+  query_state.val.phase = query_state.val.phase +
+    @time.time_delta_seconds() * 0.75F
+  let ray_x = @math.sin(query_state.val.phase) * RAY_SWEEP_AMPLITUDE
+
+  if query_state.val.ray_line is Some(ray_line) {
+    let ray_transform = @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(ray_x, RAY_ORIGIN_Y - RAY_HALF_LENGTH),
+      0.0F,
+      @math.Vec2::new(0.035F, RAY_LINE_SCALE_Y),
+      z=2.0F,
+    )
+    transform_store.insert(ray_line, ray_transform, tick)
+  }
+
   query_state.val.accumulator = query_state.val.accumulator +
     @time.time_delta_seconds()
   if query_state.val.accumulator < 1.0F {
@@ -114,16 +185,37 @@ fn physics2d_queries_raycast(world : @ecs_world.World) -> Unit {
   guard ctx_res.get_ref() is Some(r) else { return }
   let ctx = r.val
   let hit = ctx.cast_ray_and_get_normal_entity(
-    @math.Vec2::new(0.0F, 300.0F),
+    @math.Vec2::new(ray_x, RAY_ORIGIN_Y),
     @math.Vec2::new(0.0F, -1.0F),
-    1000.0F,
+    RAY_LENGTH,
     true,
   )
   match hit {
-    None => println("Ray hit: none")
-    Some(h) =>
+    None => {
+      if query_state.val.hit_marker is Some(hit_marker) {
+        let hidden_transform = @math.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(ray_x, RAY_ORIGIN_Y + 128.0F),
+          0.0F,
+          @math.Vec2::new(0.08F, 0.08F),
+          z=3.0F,
+        )
+        transform_store.insert(hit_marker, hidden_transform, tick)
+      }
+      println("Ray hit: none")
+    }
+    Some(h) => {
+      if query_state.val.hit_marker is Some(hit_marker) {
+        let hit_transform = @math.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(ray_x, RAY_ORIGIN_Y - h.toi),
+          0.0F,
+          @math.Vec2::new(0.14F, 0.14F),
+          z=3.0F,
+        )
+        transform_store.insert(hit_marker, hit_transform, tick)
+      }
       println(
         "Ray hit: entity=\{h.entity.id} toi=\{h.toi} normal=(\{h.normal.x},\{h.normal.y})",
       )
+    }
   }
 }
