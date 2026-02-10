@@ -15,6 +15,7 @@ use crate::source_spec::{join_dir_best_effort, DirSourceSpec};
 pub struct HostState {
     pub trace_host: bool,
     pub assets: DirSourceSpec,
+    #[allow(dead_code)]
     pub data: DirSourceSpec,
 
     start_time: Instant,
@@ -1042,10 +1043,14 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
+            ValType::I32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
@@ -1084,6 +1089,172 @@ fn define_mgstudio_host_imports(
                     camera_rot,
                     camera_scale,
                     (vx, vy, vw, vh),
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_begin_pass_3d",
+        &[
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let target_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let w_logical = args.get(1).and_then(|v| v.i32()).unwrap_or(1);
+            let h_logical = args.get(2).and_then(|v| v.i32()).unwrap_or(1);
+            let f = |i: usize| match args.get(i) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let clear = [f(3), f(4), f(5), f(6)];
+            let camera_x = f(7);
+            let camera_y = f(8);
+            let camera_z = f(9);
+            let camera_rot_x = f(10);
+            let camera_rot_y = f(11);
+            let camera_rot_z = f(12);
+            let camera_rot_w = f(13);
+            let camera_fov_y = f(14);
+            let camera_near = f(15);
+            let camera_far = f(16);
+            let vx = args.get(17).and_then(|v| v.i32()).unwrap_or(0);
+            let vy = args.get(18).and_then(|v| v.i32()).unwrap_or(0);
+            let vw = args.get(19).and_then(|v| v.i32()).unwrap_or(0);
+            let vh = args.get(20).and_then(|v| v.i32()).unwrap_or(0);
+            let ambient_r = f(21);
+            let ambient_g = f(22);
+            let ambient_b = f(23);
+            let ambient_brightness = f(24);
+            let directional_dir_x = f(25);
+            let directional_dir_y = f(26);
+            let directional_dir_z = f(27);
+            let directional_color_r = f(28);
+            let directional_color_g = f(29);
+            let directional_color_b = f(30);
+            let directional_illuminance = f(31);
+            let point_pos_x = f(32);
+            let point_pos_y = f(33);
+            let point_pos_z = f(34);
+            let point_color_r = f(35);
+            let point_color_g = f(36);
+            let point_color_b = f(37);
+            let point_intensity = f(38);
+            let point_range = f(39);
+            let spot_pos_x = f(40);
+            let spot_pos_y = f(41);
+            let spot_pos_z = f(42);
+            let spot_dir_x = f(43);
+            let spot_dir_y = f(44);
+            let spot_dir_z = f(45);
+            let spot_color_r = f(46);
+            let spot_color_g = f(47);
+            let spot_color_b = f(48);
+            let spot_intensity = f(49);
+            let spot_range = f(50);
+            let spot_inner_angle = f(51);
+            let spot_outer_angle = f(52);
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.begin_pass_3d(
+                    target_id,
+                    w_logical,
+                    h_logical,
+                    clear,
+                    camera_x,
+                    camera_y,
+                    camera_z,
+                    camera_rot_x,
+                    camera_rot_y,
+                    camera_rot_z,
+                    camera_rot_w,
+                    camera_fov_y,
+                    camera_near,
+                    camera_far,
+                    (vx, vy, vw, vh),
+                    [ambient_r, ambient_g, ambient_b, ambient_brightness],
+                    [
+                        directional_dir_x,
+                        directional_dir_y,
+                        directional_dir_z,
+                        directional_illuminance,
+                    ],
+                    [
+                        directional_color_r,
+                        directional_color_g,
+                        directional_color_b,
+                    ],
+                    [point_pos_x, point_pos_y, point_pos_z, point_range],
+                    [point_color_r, point_color_g, point_color_b, point_intensity],
+                    [spot_pos_x, spot_pos_y, spot_pos_z, spot_range],
+                    [spot_dir_x, spot_dir_y, spot_dir_z, spot_inner_angle],
+                    [spot_color_r, spot_color_g, spot_color_b, spot_intensity],
+                    spot_outer_angle,
                 )?;
             }
             ok_i32(out, 0);
@@ -1174,6 +1345,13 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -1195,6 +1373,106 @@ fn define_mgstudio_host_imports(
                 gpu.draw_mesh(
                     mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_offset,
                     uv_scale,
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_mesh3d",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let mesh_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let f = |i: usize| match args.get(i) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let x = f(1);
+            let y = f(2);
+            let z = f(3);
+            let rotation_x = f(4);
+            let rotation_y = f(5);
+            let rotation_z = f(6);
+            let rotation_w = f(7);
+            let scale_x = f(8);
+            let scale_y = f(9);
+            let scale_z = f(10);
+            let color = [f(11), f(12), f(13), f(14)];
+            let texture_id = args.get(15).and_then(|v| v.i32()).unwrap_or(-1);
+            let uv_offset = (f(16), f(17));
+            let uv_scale = (f(18), f(19));
+            let normal_texture_id = args.get(20).and_then(|v| v.i32()).unwrap_or(-1);
+            let emissive_texture_id = args.get(21).and_then(|v| v.i32()).unwrap_or(-1);
+            let metallic_roughness_texture_id = args.get(22).and_then(|v| v.i32()).unwrap_or(-1);
+            let occlusion_texture_id = args.get(23).and_then(|v| v.i32()).unwrap_or(-1);
+            let emissive = [f(24), f(25), f(26)];
+            let unlit = f(27);
+            let metallic = f(28);
+            let roughness = f(29);
+            let reflectance = f(30);
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_mesh3d(
+                    mesh_id,
+                    x,
+                    y,
+                    z,
+                    rotation_x,
+                    rotation_y,
+                    rotation_z,
+                    rotation_w,
+                    scale_x,
+                    scale_y,
+                    scale_z,
+                    color,
+                    texture_id,
+                    uv_offset,
+                    uv_scale,
+                    normal_texture_id,
+                    emissive_texture_id,
+                    metallic_roughness_texture_id,
+                    occlusion_texture_id,
+                    emissive,
+                    unlit,
+                    metallic,
+                    roughness,
+                    reflectance,
                 )?;
             }
             ok_i32(out, 0);
@@ -1271,6 +1549,39 @@ fn define_mgstudio_host_imports(
             }
             let gpu = caller.data_mut().ensure_gpu()?;
             let id = gpu.create_mesh_triangles_xyuvrgba(&floats);
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_create_mesh_triangles3d",
+        &[ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let text_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let csv = caller.data().string_table_get(text_id).unwrap_or("");
+            let mut floats: Vec<f32> = Vec::new();
+            for line in csv.lines() {
+                let t = line.trim();
+                if t.is_empty() || t.starts_with('#') {
+                    continue;
+                }
+                for part in t.split(|c: char| c == ',' || c.is_whitespace()) {
+                    let p = part.trim();
+                    if p.is_empty() {
+                        continue;
+                    }
+                    if let Ok(v) = p.parse::<f32>() {
+                        floats.push(v);
+                    }
+                }
+            }
+            let gpu = caller.data_mut().ensure_gpu()?;
+            let id = gpu.create_mesh_triangles_xyzuvrgba(&floats);
             ok_i32(out, id);
             Ok(())
         },

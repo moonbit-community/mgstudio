@@ -402,9 +402,16 @@ fn join_fs_path(base : String, entry : String) -> String {
 }
 
 ///|
-fn ensure_gpu_backend(ctx : HostContext) -> Unit {
+fn ensure_gpu_backend(ctx : HostContext) -> Unit raise @runtime.RuntimeError {
   if ctx.gpu is None {
-    ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+    let backend = GpuBackend::new(assets_base=ctx.assets_source.base) catch {
+      err =>
+        match err {
+          GpuBackendError::Fatal(message) =>
+            host_fail("gpu_backend_init", message)
+        }
+    }
+    ctx.gpu = Some(backend)
   }
 }
 
@@ -1390,7 +1397,7 @@ pub fn add_mgstudio_host_imports(
     fn(args) raise @runtime.RuntimeError {
       try {
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 2 &&
           args[0] is @types.Value::I32(path_id) &&
@@ -1609,7 +1616,7 @@ pub fn add_mgstudio_host_imports(
     fn(args) raise @runtime.RuntimeError {
       try {
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 2 &&
           args[0] is @types.Value::I32(texture_id) &&
@@ -1634,7 +1641,7 @@ pub fn add_mgstudio_host_imports(
     fn(args) raise @runtime.RuntimeError {
       try {
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 3 &&
           args[0] is @types.Value::I32(w) &&
@@ -1685,9 +1692,9 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "asset_update_texture_region_bytes",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        ensure_gpu_backend(ctx)
       }
       if args.length() >= 6 &&
         args[0] is @types.Value::I32(texture_id) &&
@@ -1903,7 +1910,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_request_device")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         ok_extern_ref(HANDLE_BASE + 2)
       } catch {
@@ -1922,7 +1929,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_create_surface")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if ctx.window is Some(win) {
           ctx.gpu.unwrap().create_surface(win)
@@ -1944,7 +1951,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_configure_surface")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 4 &&
           args[2] is @types.Value::I32(width) &&
@@ -1976,7 +1983,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_begin_frame")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if ctx.window is Some(win) {
           ctx.gpu.unwrap().ensure_surface_configured(win.width(), win.height())
@@ -1999,7 +2006,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_begin_pass")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 15 &&
           args[0] is @types.Value::I32(target_id) &&
@@ -2055,12 +2062,333 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_begin_pass_3d",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        host_trace("host: gpu_begin_pass_3d")
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        if args.length() >= 21 &&
+          args[0] is @types.Value::I32(target_id) &&
+          args[1] is @types.Value::I32(width_logical) &&
+          args[2] is @types.Value::I32(height_logical) &&
+          args[3] is @types.Value::F32(clear_r) &&
+          args[4] is @types.Value::F32(clear_g) &&
+          args[5] is @types.Value::F32(clear_b) &&
+          args[6] is @types.Value::F32(clear_a) &&
+          args[7] is @types.Value::F32(camera_x) &&
+          args[8] is @types.Value::F32(camera_y) &&
+          args[9] is @types.Value::F32(camera_z) &&
+          args[10] is @types.Value::F32(camera_rot_x) &&
+          args[11] is @types.Value::F32(camera_rot_y) &&
+          args[12] is @types.Value::F32(camera_rot_z) &&
+          args[13] is @types.Value::F32(camera_rot_w) &&
+          args[14] is @types.Value::F32(camera_fov_y) &&
+          args[15] is @types.Value::F32(camera_near) &&
+          args[16] is @types.Value::F32(camera_far) &&
+          args[17] is @types.Value::I32(vx) &&
+          args[18] is @types.Value::I32(vy) &&
+          args[19] is @types.Value::I32(vw) &&
+          args[20] is @types.Value::I32(vh) {
+          let ambient_r = if args.length() > 21 &&
+            args[21] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let ambient_g = if args.length() > 22 &&
+            args[22] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let ambient_b = if args.length() > 23 &&
+            args[23] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let ambient_brightness = if args.length() > 24 &&
+            args[24] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let directional_dir_x = if args.length() > 25 &&
+            args[25] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let directional_dir_y = if args.length() > 26 &&
+            args[26] is @types.Value::F32(v) {
+            v
+          } else {
+            -1.0F
+          }
+          let directional_dir_z = if args.length() > 27 &&
+            args[27] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let directional_color_r = if args.length() > 28 &&
+            args[28] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let directional_color_g = if args.length() > 29 &&
+            args[29] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let directional_color_b = if args.length() > 30 &&
+            args[30] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let directional_illuminance = if args.length() > 31 &&
+            args[31] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let point_pos_x = if args.length() > 32 &&
+            args[32] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let point_pos_y = if args.length() > 33 &&
+            args[33] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let point_pos_z = if args.length() > 34 &&
+            args[34] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let point_color_r = if args.length() > 35 &&
+            args[35] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let point_color_g = if args.length() > 36 &&
+            args[36] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let point_color_b = if args.length() > 37 &&
+            args[37] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let point_intensity = if args.length() > 38 &&
+            args[38] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let point_range = if args.length() > 39 &&
+            args[39] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let spot_pos_x = if args.length() > 40 &&
+            args[40] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let spot_pos_y = if args.length() > 41 &&
+            args[41] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let spot_pos_z = if args.length() > 42 &&
+            args[42] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let spot_dir_x = if args.length() > 43 &&
+            args[43] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let spot_dir_y = if args.length() > 44 &&
+            args[44] is @types.Value::F32(v) {
+            v
+          } else {
+            -1.0F
+          }
+          let spot_dir_z = if args.length() > 45 &&
+            args[45] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let spot_color_r = if args.length() > 46 &&
+            args[46] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let spot_color_g = if args.length() > 47 &&
+            args[47] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let spot_color_b = if args.length() > 48 &&
+            args[48] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let spot_intensity = if args.length() > 49 &&
+            args[49] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let spot_range = if args.length() > 50 &&
+            args[50] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let spot_inner_angle = if args.length() > 51 &&
+            args[51] is @types.Value::F32(v) {
+            v
+          } else {
+            0.6F
+          }
+          let spot_outer_angle = if args.length() > 52 &&
+            args[52] is @types.Value::F32(v) {
+            v
+          } else {
+            0.8F
+          }
+          ctx.gpu
+          .unwrap()
+          .begin_pass_3d(
+            target_id, width_logical, height_logical, clear_r, clear_g, clear_b,
+            clear_a, camera_x, camera_y, camera_z, camera_rot_x, camera_rot_y, camera_rot_z,
+            camera_rot_w, camera_fov_y, camera_near, camera_far, vx, vy, vw, vh,
+            ambient_r, ambient_g, ambient_b, ambient_brightness, directional_dir_x,
+            directional_dir_y, directional_dir_z, directional_color_r, directional_color_g,
+            directional_color_b, directional_illuminance, point_pos_x, point_pos_y,
+            point_pos_z, point_color_r, point_color_g, point_color_b, point_intensity,
+            point_range, spot_pos_x, spot_pos_y, spot_pos_z, spot_dir_x, spot_dir_y,
+            spot_dir_z, spot_color_r, spot_color_g, spot_color_b, spot_intensity,
+            spot_range, spot_inner_angle, spot_outer_angle,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_begin_pass_3d failed")
+          host_fail("gpu_begin_pass_3d", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_set_scissor",
     fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_set_scissor")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 4 &&
           args[0] is @types.Value::I32(x) &&
@@ -2094,7 +2422,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_clear_scissor")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         ctx.gpu.unwrap().clear_scissor()
         ok_i32(0)
@@ -2153,7 +2481,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_create_render_target")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 3 &&
           args[0] is @types.Value::I32(w) &&
@@ -2179,9 +2507,9 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_mesh_capsule",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        ensure_gpu_backend(ctx)
       }
       if args.length() >= 3 &&
         args[0] is @types.Value::F32(radius) &&
@@ -2200,9 +2528,9 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_mesh_rectangle",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        ensure_gpu_backend(ctx)
       }
       if args.length() >= 2 &&
         args[0] is @types.Value::F32(w) &&
@@ -2219,9 +2547,9 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "gpu_create_mesh_triangles",
-    fn(args) {
+    fn(args) raise @runtime.RuntimeError {
       if ctx.gpu is None {
-        ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+        ensure_gpu_backend(ctx)
       }
       if args.length() >= 1 && args[0] is @types.Value::I32(text_id) {
         match string_table_get(ctx, text_id) {
@@ -2241,12 +2569,35 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_create_mesh_triangles3d",
+    fn(args) raise @runtime.RuntimeError {
+      if ctx.gpu is None {
+        ensure_gpu_backend(ctx)
+      }
+      if args.length() >= 1 && args[0] is @types.Value::I32(text_id) {
+        match string_table_get(ctx, text_id) {
+          Some(csv) =>
+            match parse_f32_csv_list(csv) {
+              Some(verts) =>
+                ok_i32(ctx.gpu.unwrap().create_mesh_triangles_xyzuvrgba(verts))
+              None => ok_i32(0)
+            }
+          None => ok_i32(0)
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_draw_mesh",
     fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_draw_mesh")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 10 &&
           args[0] is @types.Value::I32(mesh_id) &&
@@ -2327,12 +2678,162 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_draw_mesh3d",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        host_trace("host: gpu_draw_mesh3d")
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        if args.length() >= 20 &&
+          args[0] is @types.Value::I32(mesh_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(z) &&
+          args[4] is @types.Value::F32(rotation_x) &&
+          args[5] is @types.Value::F32(rotation_y) &&
+          args[6] is @types.Value::F32(rotation_z) &&
+          args[7] is @types.Value::F32(rotation_w) &&
+          args[8] is @types.Value::F32(scale_x) &&
+          args[9] is @types.Value::F32(scale_y) &&
+          args[10] is @types.Value::F32(scale_z) &&
+          args[11] is @types.Value::F32(color_r) &&
+          args[12] is @types.Value::F32(color_g) &&
+          args[13] is @types.Value::F32(color_b) &&
+          args[14] is @types.Value::F32(color_a) &&
+          args[15] is @types.Value::I32(texture_id) &&
+          args[16] is @types.Value::F32(uv_offset_x) &&
+          args[17] is @types.Value::F32(uv_offset_y) &&
+          args[18] is @types.Value::F32(uv_scale_x) &&
+          args[19] is @types.Value::F32(uv_scale_y) {
+          let normal_texture_id = if args.length() > 20 &&
+            args[20] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let emissive_texture_id = if args.length() > 21 &&
+            args[21] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let metallic_roughness_texture_id = if args.length() > 22 &&
+            args[22] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let occlusion_texture_id = if args.length() > 23 &&
+            args[23] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let emissive_r = if args.length() > 24 &&
+            args[24] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let emissive_g = if args.length() > 25 &&
+            args[25] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let emissive_b = if args.length() > 26 &&
+            args[26] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let unlit = if args.length() > 27 && args[27] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let metallic = if args.length() > 28 &&
+            args[28] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let roughness = if args.length() > 29 &&
+            args[29] is @types.Value::F32(v) {
+            v
+          } else {
+            0.5F
+          }
+          let reflectance = if args.length() > 30 &&
+            args[30] is @types.Value::F32(v) {
+            v
+          } else {
+            0.5F
+          }
+          ctx.gpu
+          .unwrap()
+          .draw_mesh3d(
+            mesh_id, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
+            scale_y, scale_z, color_r, color_g, color_b, color_a, texture_id, uv_offset_x,
+            uv_offset_y, uv_scale_x, uv_scale_y, normal_texture_id, emissive_texture_id,
+            metallic_roughness_texture_id, occlusion_texture_id, emissive_r, emissive_g,
+            emissive_b, unlit, metallic, roughness, reflectance,
+          )
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_mesh3d failed")
+          host_fail("gpu_draw_mesh3d", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_draw_sprite_uv",
     fn(args) raise @runtime.RuntimeError {
       try {
         host_trace("host: gpu_draw_sprite_uv")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 14 &&
           args[0] is @types.Value::I32(texture_id) &&
@@ -2391,7 +2892,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_draw_ui_rect")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 23 &&
           args[0] is @types.Value::I32(texture_id) &&
@@ -2469,7 +2970,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_draw_ui_texture_slice")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 26 &&
           args[0] is @types.Value::I32(texture_id) &&
@@ -2554,7 +3055,7 @@ pub fn add_mgstudio_host_imports(
       try {
         host_trace("host: gpu_draw_ui_box_shadow")
         if ctx.gpu is None {
-          ctx.gpu = Some(GpuBackend::new(assets_base=ctx.assets_source.base))
+          ensure_gpu_backend(ctx)
         }
         if args.length() >= 18 &&
           args[0] is @types.Value::I32(texture_id) &&

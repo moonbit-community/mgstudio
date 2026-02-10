@@ -33,11 +33,18 @@ pub struct World {
   parent : @core.ComponentStore[@hierarchy.Parent]
   image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
+  camera3d : @core.ComponentStore[@render3d.Camera3d]
+  camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  mesh3d : @core.ComponentStore[@render3d.Mesh3d]
+  mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
+  point_light : @core.ComponentStore[@render3d.PointLight]
+  directional_light : @core.ComponentStore[@render3d.DirectionalLight]
+  spot_light : @core.ComponentStore[@render3d.SpotLight]
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
@@ -125,6 +132,7 @@ pub struct World {
   res_picking_hits : @core.Resource[@picking.PickingHits]
   res_picking_state : @core.Resource[@picking.PickingState]
   res_render_state : @core.Resource[@render2d.RenderState]
+  res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
   res_picking_events : @core.Resource[@picking.PickingEvents]
   res_pointer_inputs : @core.Resource[@picking.PointerInputs]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
@@ -169,11 +177,18 @@ pub fn World::new() -> World {
     parent: @core.ComponentStore::new(),
     image_node_size: @core.ComponentStore::new(),
     camera2d: @core.ComponentStore::new(),
+    camera3d: @core.ComponentStore::new(),
+    camera_projection3d: @core.ComponentStore::new(),
     calculated_clip: @core.ComponentStore::new(),
     scroll_position: @core.ComponentStore::new(),
     texture_atlas: @core.ComponentStore::new(),
     children: @core.ComponentStore::new(),
     gpu_mesh2d: @core.ComponentStore::new(),
+    mesh3d: @core.ComponentStore::new(),
+    mesh_material3d: @core.ComponentStore::new(),
+    point_light: @core.ComponentStore::new(),
+    directional_light: @core.ComponentStore::new(),
+    spot_light: @core.ComponentStore::new(),
     background_color: @core.ComponentStore::new(),
     damping2d: @core.ComponentStore::new(),
     projection: @core.ComponentStore::new(),
@@ -235,6 +250,7 @@ pub fn World::new() -> World {
     res_picking_hits: @core.Resource::new(),
     res_picking_state: @core.Resource::new(),
     res_render_state: @core.Resource::new(),
+    res_global_ambient_light: @core.Resource::new(),
     res_picking_events: @core.Resource::new(),
     res_pointer_inputs: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
@@ -285,11 +301,18 @@ pub fn World::despawn(
   self.parent.remove(entity) |> ignore
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
+  self.camera3d.remove(entity) |> ignore
+  self.camera_projection3d.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
+  self.mesh3d.remove(entity) |> ignore
+  self.mesh_material3d.remove(entity) |> ignore
+  self.point_light.remove(entity) |> ignore
+  self.directional_light.remove(entity) |> ignore
+  self.spot_light.remove(entity) |> ignore
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
@@ -382,11 +405,18 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.parent.remove(entity) |> ignore
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
+  self.camera3d.remove(entity) |> ignore
+  self.camera_projection3d.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
+  self.mesh3d.remove(entity) |> ignore
+  self.mesh_material3d.remove(entity) |> ignore
+  self.point_light.remove(entity) |> ignore
+  self.directional_light.remove(entity) |> ignore
+  self.spot_light.remove(entity) |> ignore
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
@@ -605,6 +635,18 @@ pub impl @render2d.Has_Camera2d for World with get_camera2d_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_Camera3d for World with get_camera3d_store(self) {
+  self.camera3d
+}
+
+///|
+pub impl @render3d.Has_CameraProjection3d for World with get_camera_projection3d_store(
+  self,
+) {
+  self.camera_projection3d
+}
+
+///|
 pub impl @ui.Has_CalculatedClip for World with get_calculated_clip_store(self) {
   self.calculated_clip
 }
@@ -627,6 +669,35 @@ pub impl @hierarchy.Has_Children for World with get_children_store(self) {
 ///|
 pub impl @render2d.Has_GpuMesh2d for World with get_gpu_mesh2d_store(self) {
   self.gpu_mesh2d
+}
+
+///|
+pub impl @render3d.Has_Mesh3d for World with get_mesh3d_store(self) {
+  self.mesh3d
+}
+
+///|
+pub impl @render3d.Has_MeshMaterial3d for World with get_mesh_material3d_store(
+  self,
+) {
+  self.mesh_material3d
+}
+
+///|
+pub impl @render3d.Has_PointLight for World with get_point_light_store(self) {
+  self.point_light
+}
+
+///|
+pub impl @render3d.Has_DirectionalLight for World with get_directional_light_store(
+  self,
+) {
+  self.directional_light
+}
+
+///|
+pub impl @render3d.Has_SpotLight for World with get_spot_light_store(self) {
+  self.spot_light
 }
 
 ///|
@@ -1014,6 +1085,13 @@ pub impl @render2d.HasRes_RenderState for World with get_render_state_resource(
   self,
 ) {
   self.res_render_state
+}
+
+///|
+pub impl @render3d.HasRes_GlobalAmbientLight for World with get_global_ambient_light_resource(
+  self,
+) {
+  self.res_global_ambient_light
 }
 
 ///|

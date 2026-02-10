@@ -370,6 +370,7 @@ pub fn VertexBufferLayout::to_js(Self) -> @core.Any
 
 pub(all) enum VertexFormat {
   Float32x2
+  Float32x3
   Float32x4
 }
 pub fn VertexFormat::to_js_string(Self) -> String

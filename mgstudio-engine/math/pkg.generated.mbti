@@ -42,10 +42,14 @@ pub struct Quat {
   z : Float
   w : Float
 }
+pub fn Quat::from_axis_angle(Vec3, Float) -> Self
+pub fn Quat::from_rotation_x(Float) -> Self
+pub fn Quat::from_rotation_y(Float) -> Self
 pub fn Quat::from_rotation_z(Float) -> Self
 pub fn Quat::identity() -> Self
 pub fn Quat::mul(Self, Self) -> Self
 pub fn Quat::new(Float, Float, Float, Float) -> Self
+pub fn Quat::normalize(Self) -> Self
 pub fn Quat::to_rotation_z_angle(Self) -> Float
 
 pub struct Rect {
@@ -66,8 +70,12 @@ pub fn Transform::from_xy(Float, Float) -> Self
 pub fn Transform::from_xy_rotation_scale(Vec2, Float, Vec2, z? : Float) -> Self
 pub fn Transform::from_xyz(Float, Float, Float) -> Self
 pub fn Transform::identity() -> Self
+pub fn Transform::looking_at(Self, Vec3, Vec3) -> Self
 pub fn Transform::new(Vec3, Quat, Vec3) -> Self
 pub fn Transform::rotation_z(Self) -> Float
+pub fn Transform::with_rotation(Self, Quat) -> Self
+pub fn Transform::with_scale(Self, Vec3) -> Self
+pub fn Transform::with_translation(Self, Vec3) -> Self
 
 pub struct URect {
   min : UVec2
@@ -102,9 +110,17 @@ pub struct Vec3 {
   z : Float
 }
 pub fn Vec3::add(Self, Self) -> Self
+pub fn Vec3::cross(Self, Self) -> Self
+pub fn Vec3::dot(Self, Self) -> Float
+pub fn Vec3::length(Self) -> Float
+pub fn Vec3::length_squared(Self) -> Float
 pub fn Vec3::mul(Self, Self) -> Self
+pub fn Vec3::mul_scalar(Self, Float) -> Self
+pub fn Vec3::neg(Self) -> Self
 pub fn Vec3::new(Float, Float, Float) -> Self
+pub fn Vec3::normalize_or_zero(Self) -> Self
 pub fn Vec3::splat(Float) -> Self
+pub fn Vec3::sub(Self, Self) -> Self
 pub fn Vec3::zero() -> Self
 
 pub struct Vec4 {

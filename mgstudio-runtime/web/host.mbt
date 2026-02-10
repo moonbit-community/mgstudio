@@ -1169,6 +1169,10 @@ extern "js" fn math_sin(value : Double) -> Double =
   #| (value) => Math.sin(value)
 
 ///|
+extern "js" fn math_atan2(y : Double, x : Double) -> Double =
+  #| (y, x) => Math.atan2(y, x)
+
+///|
 extern "js" fn request_adapter_any() -> @js.Promise[@js.Any] =
   #| () => navigator.gpu.requestAdapter()
 
@@ -1411,10 +1415,50 @@ struct PassInfo {
   cam_y : Double
   cam_rotation : Double
   cam_scale : Double
+  cam_z : Double
+  cam_rot_x : Double
+  cam_rot_y : Double
+  cam_rot_z : Double
+  cam_rot_w : Double
+  cam_fov_y : Double
+  cam_near : Double
+  cam_far : Double
   viewport_x : Double
   viewport_y : Double
   viewport_width : Double
   viewport_height : Double
+  ambient_r : Double
+  ambient_g : Double
+  ambient_b : Double
+  ambient_brightness : Double
+  directional_dir_x : Double
+  directional_dir_y : Double
+  directional_dir_z : Double
+  directional_color_r : Double
+  directional_color_g : Double
+  directional_color_b : Double
+  directional_illuminance : Double
+  point_pos_x : Double
+  point_pos_y : Double
+  point_pos_z : Double
+  point_color_r : Double
+  point_color_g : Double
+  point_color_b : Double
+  point_intensity : Double
+  point_range : Double
+  spot_pos_x : Double
+  spot_pos_y : Double
+  spot_pos_z : Double
+  spot_dir_x : Double
+  spot_dir_y : Double
+  spot_dir_z : Double
+  spot_color_r : Double
+  spot_color_g : Double
+  spot_color_b : Double
+  spot_intensity : Double
+  spot_range : Double
+  spot_inner_angle : Double
+  spot_outer_angle : Double
 }
 
 ///|
@@ -1490,6 +1534,12 @@ struct GpuState {
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
   mut mesh_bind_group : @webgpu.GPUBindGroup?
+  mut mesh3d_pipeline : @webgpu.GPURenderPipeline?
+  mut mesh3d_bind_group : @webgpu.GPUBindGroup?
+  mut depth_texture : @webgpu.GPUTexture?
+  mut depth_view : @webgpu.GPUTextureView?
+  mut depth_width : Int
+  mut depth_height : Int
   mut gizmo_pipeline : @webgpu.GPURenderPipeline?
   mut gizmo_vertex_buffer : @webgpu.GPUBuffer?
   mut gizmo_vertex_capacity : Int
@@ -1537,6 +1587,7 @@ struct GpuState {
   mut ui_shadow_shader_id : Int
   mut ui_slice_shader_id : Int
   mut mesh_shader_id : Int
+  mut mesh3d_shader_id : Int
   mut gizmo_shader_id : Int
 }
 
@@ -1615,6 +1666,12 @@ fn new_state(
       vertex_count: 0,
       mesh_pipeline: None,
       mesh_bind_group: None,
+      mesh3d_pipeline: None,
+      mesh3d_bind_group: None,
+      depth_texture: None,
+      depth_view: None,
+      depth_width: 0,
+      depth_height: 0,
       gizmo_pipeline: None,
       gizmo_vertex_buffer: None,
       gizmo_vertex_capacity: 0,
@@ -1662,6 +1719,7 @@ fn new_state(
       ui_shadow_shader_id: 0,
       ui_slice_shader_id: 0,
       mesh_shader_id: 0,
+      mesh3d_shader_id: 0,
       gizmo_shader_id: 0,
     },
     a11y_container: None,
@@ -1988,6 +2046,12 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
   state.gpu.mesh_bind_group = None
+  state.gpu.mesh3d_pipeline = None
+  state.gpu.mesh3d_bind_group = None
+  state.gpu.depth_texture = None
+  state.gpu.depth_view = None
+  state.gpu.depth_width = 0
+  state.gpu.depth_height = 0
   state.gpu.gizmo_pipeline = None
   state.gpu.gizmo_vertex_buffer = None
   state.gpu.gizmo_vertex_capacity = 0
@@ -2035,24 +2099,28 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.ui_shadow_shader_id = 0
   state.gpu.ui_slice_shader_id = 0
   state.gpu.mesh_shader_id = 0
+  state.gpu.mesh3d_shader_id = 0
   state.gpu.gizmo_shader_id = 0
   let sprite_id = next_shader_id(state)
   let ui_id = next_shader_id(state)
   let ui_shadow_id = next_shader_id(state)
   let ui_slice_id = next_shader_id(state)
   let mesh_id = next_shader_id(state)
+  let mesh3d_id = next_shader_id(state)
   let gizmo_id = next_shader_id(state)
   state.gpu.sprite_shader_id = sprite_id
   state.gpu.ui_shader_id = ui_id
   state.gpu.ui_shadow_shader_id = ui_shadow_id
   state.gpu.ui_slice_shader_id = ui_slice_id
   state.gpu.mesh_shader_id = mesh_id
+  state.gpu.mesh3d_shader_id = mesh3d_id
   state.gpu.gizmo_shader_id = gizmo_id
   set_add(state.assets.loading_shaders, @js.any(sprite_id))
   set_add(state.assets.loading_shaders, @js.any(ui_id))
   set_add(state.assets.loading_shaders, @js.any(ui_shadow_id))
   set_add(state.assets.loading_shaders, @js.any(ui_slice_id))
   set_add(state.assets.loading_shaders, @js.any(mesh_id))
+  set_add(state.assets.loading_shaders, @js.any(mesh3d_id))
   set_add(state.assets.loading_shaders, @js.any(gizmo_id))
   map_set(
     state.assets.shader_paths,
@@ -2081,6 +2149,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   map_set(
     state.assets.shader_paths,
+    @js.any(mesh3d_id),
+    @js.any("shaders/mgstudio/3d/mesh3d.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
     @js.any(gizmo_id),
     @js.any("shaders/mgstudio/gizmo/lines.wgsl"),
   )
@@ -2101,6 +2174,9 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   set_delete(state.assets.loading_shaders, @js.any(ui_id)) |> ignore
   load_wgsl_from_path(state, mesh_id, "shaders/mgstudio/2d/mesh.wgsl") |> ignore
   set_delete(state.assets.loading_shaders, @js.any(mesh_id)) |> ignore
+  load_wgsl_from_path(state, mesh3d_id, "shaders/mgstudio/3d/mesh3d.wgsl")
+  |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(mesh3d_id)) |> ignore
   load_wgsl_from_path(state, gizmo_id, "shaders/mgstudio/gizmo/lines.wgsl")
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(gizmo_id)) |> ignore
@@ -2226,7 +2302,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
       @webgpu.buffer_usage_uniform(),
       @webgpu.buffer_usage_copy_dst(),
     )
-    let uniform_desc = @webgpu.buffer_descriptor(80, uniform_usage)
+    let uniform_desc = @webgpu.buffer_descriptor(512, uniform_usage)
     let uniform_buffer = device.create_buffer(uniform_desc.to_js())
     let sprite_uniform_desc = @webgpu.buffer_descriptor(32, uniform_usage)
     let sprite_uniform_buffer = device.create_buffer(
@@ -2273,6 +2349,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
         ("sampler", sampler_value.as_any()),
         ("bindGroup", js_null()),
         ("meshBindGroup", js_null()),
+        ("mesh3dBindGroup", js_null()),
         ("uiBindGroup", js_null()),
         ("width", @js.any(fallback_size)),
         ("height", @js.any(fallback_size)),
@@ -2349,6 +2426,12 @@ fn ensure_mesh_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
     let bind_group = device.create_bind_group(bind_group_desc.to_js())
     entry._set("meshBindGroup", bind_group.as_any()) |> ignore
   }
+}
+
+///|
+fn ensure_mesh3d_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
+  state |> ignore
+  entry |> ignore
 }
 
 ///|
@@ -2928,19 +3011,19 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
     let position_attr = @webgpu.vertex_attribute(
       shader_location=0,
       offset=0,
-      format=@webgpu.VertexFormat::Float32x2,
+      format=@webgpu.VertexFormat::Float32x3,
     )
     let uv_attr = @webgpu.vertex_attribute(
       shader_location=1,
-      offset=8,
+      offset=12,
       format=@webgpu.VertexFormat::Float32x2,
     )
     let color_attr = @webgpu.vertex_attribute(
       shader_location=2,
-      offset=16,
+      offset=20,
       format=@webgpu.VertexFormat::Float32x4,
     )
-    let vertex_layout = @webgpu.vertex_buffer_layout(32, [
+    let vertex_layout = @webgpu.vertex_buffer_layout(36, [
       position_attr, uv_attr, color_attr,
     ])
     let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
@@ -3001,6 +3084,161 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
         }
       })
       state.gpu.mesh_bind_group = Some(bind_group)
+    }
+  }
+}
+
+///|
+fn ensure_depth_texture(state : State, width : Int, height : Int) -> Unit {
+  if state.gpu.device is None {
+    return
+  }
+  let safe_width = if width > 0 { width } else { 1 }
+  let safe_height = if height > 0 { height } else { 1 }
+  if state.gpu.depth_texture is Some(_) &&
+    state.gpu.depth_view is Some(_) &&
+    state.gpu.depth_width == safe_width &&
+    state.gpu.depth_height == safe_height {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    let usage = @webgpu.texture_usage_render_attachment()
+    let descriptor = @webgpu.texture_descriptor(
+      @webgpu.texture_size(safe_width, safe_height),
+      @webgpu.TextureFormat::Other("depth24plus"),
+      usage,
+    )
+    let texture = device.create_texture(descriptor.to_js())
+    let view = texture.create_view()
+    state.gpu.depth_texture = Some(texture)
+    state.gpu.depth_view = Some(view)
+    state.gpu.depth_width = safe_width
+    state.gpu.depth_height = safe_height
+  }
+}
+
+///|
+fn ensure_mesh3d_pipeline(state : State) -> Unit {
+  if state.gpu.mesh3d_pipeline is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.uniform_buffer is None {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    if state.gpu.mesh3d_shader_id <= 0 {
+      report_asset_error_once(
+        state, "mesh3d_pipeline_missing_shader_id", "Mesh3d pipeline error: shader id not initialized",
+      )
+      return
+    }
+    let shader_source = get_shader_source(state, state.gpu.mesh3d_shader_id)
+    if shader_source is None {
+      let path_hint_any = map_get(
+        state.assets.shader_paths,
+        @js.any(state.gpu.mesh3d_shader_id),
+      )
+      let suffix = if host_is_nullish(path_hint_any) {
+        ""
+      } else {
+        " (path: " + any_to_string(path_hint_any) + ")"
+      }
+      report_asset_error_once(
+        state,
+        "mesh3d_pipeline_missing_shader_source",
+        "Mesh3d pipeline error: shader source not loaded" + suffix,
+      )
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let position_attr = @webgpu.vertex_attribute(
+      shader_location=0,
+      offset=0,
+      format=@webgpu.VertexFormat::Float32x3,
+    )
+    let uv_attr = @webgpu.vertex_attribute(
+      shader_location=1,
+      offset=12,
+      format=@webgpu.VertexFormat::Float32x2,
+    )
+    let color_attr = @webgpu.vertex_attribute(
+      shader_location=2,
+      offset=20,
+      format=@webgpu.VertexFormat::Float32x4,
+    )
+    let vertex_layout = @webgpu.vertex_buffer_layout(36, [
+      position_attr, uv_attr, color_attr,
+    ])
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
+      vertex_layout,
+    ])
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
+      color_target,
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let depth_state = @js.from_entries([
+      ("format", @js.any("depth24plus")),
+      ("depthWriteEnabled", @js.any(true)),
+      ("depthCompare", @js.any("less-equal")),
+    ])
+    let pipeline_desc = @js.from_entries([
+      ("layout", @js.any("auto")),
+      ("vertex", vertex_state.to_js()),
+      ("fragment", fragment_state.to_js()),
+      ("primitive", primitive_state.to_js()),
+      ("depthStencil", depth_state),
+    ])
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc)
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "mesh3d_pipeline_validation_error",
+          "Mesh3d pipeline validation error: " + any_to_string(err_any),
+        )
+      }
+    })
+    state.gpu.mesh3d_pipeline = Some(pipeline)
+    if state.gpu.uniform_buffer is Some(uniform_buffer) {
+      let layout = pipeline.get_bind_group_layout(0)
+      let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
+      let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+      device.push_error_scope("validation")
+      let bind_group = device.create_bind_group(bind_group_desc.to_js())
+      let bind_group_error_promise = device.pop_error_scope()
+      @js.run_async(async fn() noraise {
+        let err_any : @js.Any = bind_group_error_promise.wait() catch {
+          _ => js_null()
+        }
+        if !host_is_nullish(err_any) {
+          report_asset_error_once(
+            state,
+            "mesh3d_bind_group_validation_error",
+            "Mesh3d bind group validation error: " + any_to_string(err_any),
+          )
+        }
+      })
+      state.gpu.mesh3d_bind_group = Some(bind_group)
     }
   }
 }
@@ -3209,6 +3447,7 @@ async fn load_texture_from_path(
         ("sampler", sampler_value.as_any()),
         ("bindGroup", js_null()),
         ("meshBindGroup", js_null()),
+        ("mesh3dBindGroup", js_null()),
         ("uiBindGroup", js_null()),
         ("width", @js.any(width)),
         ("height", @js.any(height)),
@@ -3319,10 +3558,51 @@ fn begin_pass(
   cam_y : Double,
   cam_rotation : Double,
   cam_scale : Double,
+  is_3d : Bool,
+  cam_z : Double,
+  cam_rot_x : Double,
+  cam_rot_y : Double,
+  cam_rot_z : Double,
+  cam_rot_w : Double,
+  cam_fov_y : Double,
+  cam_near : Double,
+  cam_far : Double,
   viewport_x : Double,
   viewport_y : Double,
   viewport_width : Double,
   viewport_height : Double,
+  ambient_r : Double,
+  ambient_g : Double,
+  ambient_b : Double,
+  ambient_brightness : Double,
+  directional_dir_x : Double,
+  directional_dir_y : Double,
+  directional_dir_z : Double,
+  directional_color_r : Double,
+  directional_color_g : Double,
+  directional_color_b : Double,
+  directional_illuminance : Double,
+  point_pos_x : Double,
+  point_pos_y : Double,
+  point_pos_z : Double,
+  point_color_r : Double,
+  point_color_g : Double,
+  point_color_b : Double,
+  point_intensity : Double,
+  point_range : Double,
+  spot_pos_x : Double,
+  spot_pos_y : Double,
+  spot_pos_z : Double,
+  spot_dir_x : Double,
+  spot_dir_y : Double,
+  spot_dir_z : Double,
+  spot_color_r : Double,
+  spot_color_g : Double,
+  spot_color_b : Double,
+  spot_intensity : Double,
+  spot_range : Double,
+  spot_inner_angle : Double,
+  spot_outer_angle : Double,
 ) -> Unit {
   report_debug_once(
     state,
@@ -3350,9 +3630,15 @@ fn begin_pass(
   }
   if state.gpu.encoder is Some(encoder) {
     let mut view : @webgpu.GPUTextureView? = None
+    let mut target_width = if width > 0 { to_int(width) } else { 1 }
+    let mut target_height = if height > 0 { to_int(height) } else { 1 }
     if target_id < 0 {
       if state.gpu.current_texture is Some(current_texture) {
         view = Some(current_texture.create_view())
+      }
+      if state.window is Some(window_state) {
+        target_width = window_state.width
+        target_height = window_state.height
       }
     } else {
       let target_entry = map_get(state.gpu.textures, @js.any(target_id))
@@ -3361,6 +3647,8 @@ fn begin_pass(
         if !host_is_nullish(view_any) {
           view = Some(view_any.cast())
         }
+        target_width = to_int(number_or(target_entry._get("width"), width))
+        target_height = to_int(number_or(target_entry._get("height"), height))
       }
     }
     if view is None {
@@ -3369,12 +3657,32 @@ fn begin_pass(
     if view is Some(view_value) {
       let clear_color = @webgpu.color(clear_r, clear_g, clear_b, clear_a)
       let attachment = @webgpu.color_attachment_clear(view_value, clear_color)
-      let descriptor = @webgpu.render_pass_descriptor([attachment])
-      let pass = encoder.begin_render_pass(descriptor.to_js())
       let vp_width = if viewport_width > 0 { viewport_width } else { width }
       let vp_height = if viewport_height > 0 { viewport_height } else { height }
       let vp_x = if viewport_width > 0 { viewport_x } else { 0 }
       let vp_y = if viewport_height > 0 { viewport_y } else { 0 }
+      if is_3d {
+        ensure_depth_texture(state, target_width, target_height)
+      }
+      let descriptor_any = if is_3d {
+        if state.gpu.depth_view is Some(depth_view) {
+          let depth_attachment = @js.from_entries([
+            ("view", depth_view.as_any()),
+            ("depthClearValue", @js.any(1.0)),
+            ("depthLoadOp", @js.any("clear")),
+            ("depthStoreOp", @js.any("store")),
+          ])
+          @js.from_entries([
+            ("colorAttachments", @js.any([attachment.to_js()])),
+            ("depthStencilAttachment", depth_attachment),
+          ])
+        } else {
+          @webgpu.render_pass_descriptor([attachment]).to_js()
+        }
+      } else {
+        @webgpu.render_pass_descriptor([attachment]).to_js()
+      }
+      let pass = encoder.begin_render_pass(descriptor_any)
       pass.set_viewport(vp_x, vp_y, vp_width, vp_height, 0, 1)
       pass.set_scissor_rect(
         to_int(vp_x),
@@ -3398,10 +3706,50 @@ fn begin_pass(
         cam_y,
         cam_rotation,
         cam_scale,
+        cam_z,
+        cam_rot_x,
+        cam_rot_y,
+        cam_rot_z,
+        cam_rot_w,
+        cam_fov_y,
+        cam_near,
+        cam_far,
         viewport_x: vp_x,
         viewport_y: vp_y,
         viewport_width: vp_width,
         viewport_height: vp_height,
+        ambient_r,
+        ambient_g,
+        ambient_b,
+        ambient_brightness,
+        directional_dir_x,
+        directional_dir_y,
+        directional_dir_z,
+        directional_color_r,
+        directional_color_g,
+        directional_color_b,
+        directional_illuminance,
+        point_pos_x,
+        point_pos_y,
+        point_pos_z,
+        point_color_r,
+        point_color_g,
+        point_color_b,
+        point_intensity,
+        point_range,
+        spot_pos_x,
+        spot_pos_y,
+        spot_pos_z,
+        spot_dir_x,
+        spot_dir_y,
+        spot_dir_z,
+        spot_color_r,
+        spot_color_g,
+        spot_color_b,
+        spot_intensity,
+        spot_range,
+        spot_inner_angle,
+        spot_outer_angle,
       })
       state.gpu.gizmo_lines = new_array()
       state.gpu.sprite_instance_data.clear()
@@ -4303,6 +4651,17 @@ fn draw_mesh(
     )
     return
   }
+  let vertex_layout_kind : Int = mesh_entry._get("vertexLayoutKind").cast()
+  if vertex_layout_kind != 1 {
+    report_asset_error_once(
+      state,
+      "mesh_draw_layout_mismatch_" + mesh_id.to_string(),
+      "Mesh draw skipped: vertex layout is not 2D-compatible (" +
+      mesh_id.to_string() +
+      ")",
+    )
+    return
+  }
   let textured = texture_id >= 0
   let mesh_texture_id = if textured {
     texture_id
@@ -4365,6 +4724,42 @@ fn draw_mesh(
       uv0_y,
       uvs_x,
       uvs_y,
+      info.ambient_r,
+      info.ambient_g,
+      info.ambient_b,
+      info.ambient_brightness,
+      info.directional_dir_x,
+      info.directional_dir_y,
+      info.directional_dir_z,
+      info.directional_illuminance,
+      info.directional_color_r,
+      info.directional_color_g,
+      info.directional_color_b,
+      1.0,
+      info.point_pos_x,
+      info.point_pos_y,
+      info.point_pos_z,
+      info.point_range,
+      info.point_color_r,
+      info.point_color_g,
+      info.point_color_b,
+      info.point_intensity,
+      info.spot_pos_x,
+      info.spot_pos_y,
+      info.spot_pos_z,
+      info.spot_range,
+      info.spot_dir_x,
+      info.spot_dir_y,
+      info.spot_dir_z,
+      info.spot_inner_angle,
+      info.spot_color_r,
+      info.spot_color_g,
+      info.spot_color_b,
+      info.spot_intensity,
+      info.spot_outer_angle,
+      0.0,
+      0.0,
+      0.0,
     ])
     ensure_mesh_bind_group_for_texture(state, texture_entry_value)
     let texture_bind_group_any = texture_entry_value._get("meshBindGroup")
@@ -4391,6 +4786,297 @@ fn draw_mesh(
           state,
           "mesh_draw_empty_vertices_" + mesh_id.to_string(),
           "Mesh draw skipped: empty vertex buffer (" + mesh_id.to_string() + ")",
+        )
+        return
+      }
+      pass.set_vertex_buffer(0, vertex_buffer)
+      pass.draw(vertex_count, 1, 0, 0)
+    }
+  }
+}
+
+///|
+fn draw_mesh3d(
+  state : State,
+  mesh_id : Int,
+  x : Double,
+  y : Double,
+  z : Double,
+  rotation_x : Double,
+  rotation_y : Double,
+  rotation_z : Double,
+  rotation_w : Double,
+  scale_x : Double,
+  scale_y : Double,
+  scale_z : Double,
+  r : Double,
+  g : Double,
+  b : Double,
+  a : Double,
+  texture_id : Int,
+  uv_offset_x : Double,
+  uv_offset_y : Double,
+  uv_scale_x : Double,
+  uv_scale_y : Double,
+  normal_texture_id : Int,
+  emissive_texture_id : Int,
+  metallic_roughness_texture_id : Int,
+  occlusion_texture_id : Int,
+  emissive_r : Double,
+  emissive_g : Double,
+  emissive_b : Double,
+  unlit : Double,
+  metallic : Double,
+  roughness : Double,
+  reflectance : Double,
+) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  flush_ui_shadow_batches(state)
+  flush_ui_slice_batches(state)
+  flush_ui_batches(state)
+  flush_sprite_batches(state)
+  ensure_mesh3d_pipeline(state)
+  if state.gpu.mesh3d_pipeline is None || state.gpu.mesh3d_bind_group is None {
+    report_asset_error_once(
+      state, "mesh3d_draw_pipeline_not_ready", "Mesh3d draw skipped: mesh3d pipeline not ready",
+    )
+    return
+  }
+  let mesh_entry = map_get(state.gpu.meshes, @js.any(mesh_id))
+  if host_is_nullish(mesh_entry) {
+    report_asset_error_once(
+      state,
+      "mesh3d_draw_missing_mesh_" + mesh_id.to_string(),
+      "Mesh3d draw skipped: mesh id not found (" + mesh_id.to_string() + ")",
+    )
+    return
+  }
+  let vertex_layout_kind : Int = mesh_entry._get("vertexLayoutKind").cast()
+  if vertex_layout_kind != 2 {
+    report_asset_error_once(
+      state,
+      "mesh3d_draw_layout_mismatch_" + mesh_id.to_string(),
+      "Mesh3d draw skipped: vertex layout is not 3D-compatible (" +
+      mesh_id.to_string() +
+      ")",
+    )
+    return
+  }
+  let textured = texture_id >= 0
+  let base_texture_id = if textured {
+    texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let emissive_textured = emissive_texture_id >= 0
+  let normal_textured = normal_texture_id >= 0
+  let resolved_normal_texture_id = if normal_textured {
+    normal_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let resolved_emissive_texture_id = if emissive_textured {
+    emissive_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let metallic_roughness_textured = metallic_roughness_texture_id >= 0
+  let resolved_metallic_roughness_texture_id = if metallic_roughness_textured {
+    metallic_roughness_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let occlusion_textured = occlusion_texture_id >= 0
+  let resolved_occlusion_texture_id = if occlusion_textured {
+    occlusion_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let base_texture_entry = get_texture_entry(state, base_texture_id)
+  let normal_texture_entry = get_texture_entry(
+    state, resolved_normal_texture_id,
+  )
+  let emissive_texture_entry = get_texture_entry(
+    state, resolved_emissive_texture_id,
+  )
+  let metallic_roughness_texture_entry = get_texture_entry(
+    state, resolved_metallic_roughness_texture_id,
+  )
+  let occlusion_texture_entry = get_texture_entry(
+    state, resolved_occlusion_texture_id,
+  )
+  if base_texture_entry is None ||
+    normal_texture_entry is None ||
+    emissive_texture_entry is None ||
+    metallic_roughness_texture_entry is None ||
+    occlusion_texture_entry is None {
+    return
+  }
+  if state.gpu.current_pass is Some(pass) &&
+    state.gpu.current_pass_info is Some(info) &&
+    base_texture_entry is Some(base_texture_entry_value) &&
+    normal_texture_entry is Some(normal_texture_entry_value) &&
+    emissive_texture_entry is Some(emissive_texture_entry_value) &&
+    metallic_roughness_texture_entry
+    is Some(metallic_roughness_texture_entry_value) &&
+    occlusion_texture_entry is Some(occlusion_texture_entry_value) {
+    let aspect = if info.height > 0 { info.width / info.height } else { 1.0 }
+    let uv0_x = if textured { uv_offset_x } else { 0.0 }
+    let uv0_y = if textured { uv_offset_y } else { 0.0 }
+    let uvs_x = if textured { uv_scale_x } else { -1.0 }
+    let uvs_y = if textured { uv_scale_y } else { -1.0 }
+    update_uniform_buffer(state, [
+      x,
+      y,
+      z,
+      1.0,
+      rotation_x,
+      rotation_y,
+      rotation_z,
+      rotation_w,
+      scale_x,
+      scale_y,
+      scale_z,
+      1.0,
+      info.cam_x,
+      info.cam_y,
+      info.cam_z,
+      1.0,
+      info.cam_rot_x,
+      info.cam_rot_y,
+      info.cam_rot_z,
+      info.cam_rot_w,
+      info.cam_fov_y,
+      aspect,
+      info.cam_near,
+      info.cam_far,
+      r,
+      g,
+      b,
+      a,
+      uv0_x,
+      uv0_y,
+      uvs_x,
+      uvs_y,
+      info.ambient_r,
+      info.ambient_g,
+      info.ambient_b,
+      info.ambient_brightness,
+      info.directional_dir_x,
+      info.directional_dir_y,
+      info.directional_dir_z,
+      info.directional_illuminance,
+      info.directional_color_r,
+      info.directional_color_g,
+      info.directional_color_b,
+      1.0,
+      info.point_pos_x,
+      info.point_pos_y,
+      info.point_pos_z,
+      info.point_range,
+      info.point_color_r,
+      info.point_color_g,
+      info.point_color_b,
+      info.point_intensity,
+      info.spot_pos_x,
+      info.spot_pos_y,
+      info.spot_pos_z,
+      info.spot_range,
+      info.spot_dir_x,
+      info.spot_dir_y,
+      info.spot_dir_z,
+      info.spot_inner_angle,
+      info.spot_color_r,
+      info.spot_color_g,
+      info.spot_color_b,
+      info.spot_intensity,
+      info.spot_outer_angle,
+      0.0,
+      0.0,
+      0.0,
+      emissive_r,
+      emissive_g,
+      emissive_b,
+      unlit,
+      metallic,
+      roughness,
+      reflectance,
+      if normal_textured {
+        1.0
+      } else {
+        0.0
+      },
+      if textured {
+        1.0
+      } else {
+        0.0
+      },
+      if emissive_textured {
+        1.0
+      } else {
+        0.0
+      },
+      if metallic_roughness_textured {
+        1.0
+      } else {
+        0.0
+      },
+      if occlusion_textured {
+        1.0
+      } else {
+        0.0
+      },
+    ])
+    if state.gpu.mesh3d_pipeline is Some(mesh3d_pipeline) &&
+      state.gpu.mesh3d_bind_group is Some(mesh3d_bind_group) &&
+      state.gpu.device is Some(device) {
+      let base_sampler : @webgpu.GPUSampler = base_texture_entry_value
+        ._get("sampler")
+        .cast()
+      let base_view : @webgpu.GPUTextureView = base_texture_entry_value
+        ._get("view")
+        .cast()
+      let normal_view : @webgpu.GPUTextureView = normal_texture_entry_value
+        ._get("view")
+        .cast()
+      let emissive_view : @webgpu.GPUTextureView = emissive_texture_entry_value
+        ._get("view")
+        .cast()
+      let metallic_roughness_view : @webgpu.GPUTextureView = metallic_roughness_texture_entry_value
+        ._get("view")
+        .cast()
+      let occlusion_view : @webgpu.GPUTextureView = occlusion_texture_entry_value
+        ._get("view")
+        .cast()
+      let material_layout = mesh3d_pipeline.get_bind_group_layout(1)
+      let material_entries = [
+        @webgpu.bind_group_entry_sampler(0, base_sampler),
+        @webgpu.bind_group_entry_texture(1, base_view),
+        @webgpu.bind_group_entry_texture(2, normal_view),
+        @webgpu.bind_group_entry_texture(3, emissive_view),
+        @webgpu.bind_group_entry_texture(4, metallic_roughness_view),
+        @webgpu.bind_group_entry_texture(5, occlusion_view),
+      ]
+      let material_desc = @webgpu.bind_group_descriptor(
+        material_layout, material_entries,
+      )
+      let material_bg = device.create_bind_group(material_desc.to_js())
+      pass.set_pipeline(mesh3d_pipeline)
+      pass.set_bind_group(0, mesh3d_bind_group)
+      pass.set_bind_group(1, material_bg)
+      let vertex_buffer : @webgpu.GPUBuffer = mesh_entry
+        ._get("vertexBuffer")
+        .cast()
+      let vertex_count : Int = mesh_entry._get("vertexCount").cast()
+      if vertex_count <= 0 {
+        report_asset_error_once(
+          state,
+          "mesh3d_draw_empty_vertices_" + mesh_id.to_string(),
+          "Mesh3d draw skipped: empty vertex buffer (" +
+          mesh_id.to_string() +
+          ")",
         )
         return
       }
@@ -5197,9 +5883,11 @@ pub fn create_host(
       entry._set("sampler", sampler_value.as_any()) |> ignore
       entry._set("bindGroup", js_null()) |> ignore
       entry._set("meshBindGroup", js_null()) |> ignore
+      entry._set("mesh3dBindGroup", js_null()) |> ignore
       entry._set("uiBindGroup", js_null()) |> ignore
       ensure_bind_group_for_texture(state, entry)
       ensure_mesh_bind_group_for_texture(state, entry)
+      ensure_mesh3d_bind_group_for_texture(state, entry)
       ensure_ui_bind_group_for_texture(state, entry)
     }
   })
@@ -5260,6 +5948,7 @@ pub fn create_host(
           ("sampler", sampler_value.as_any()),
           ("bindGroup", js_null()),
           ("meshBindGroup", js_null()),
+          ("mesh3dBindGroup", js_null()),
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
@@ -5614,6 +6303,7 @@ pub fn create_host(
           ("sampler", sampler_value.as_any()),
           ("bindGroup", js_null()),
           ("meshBindGroup", js_null()),
+          ("mesh3dBindGroup", js_null()),
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
@@ -5652,6 +6342,7 @@ pub fn create_host(
         ("id", @js.any(id)),
         ("vertexBuffer", vertex_buffer.as_any()),
         ("vertexCount", @js.any(vertex_count)),
+        ("vertexLayoutKind", @js.any(1)),
       ])
       map_set(state.gpu.meshes, @js.any(id), entry)
     }
@@ -5684,6 +6375,7 @@ pub fn create_host(
         ("id", @js.any(id)),
         ("vertexBuffer", vertex_buffer.as_any()),
         ("vertexCount", @js.any(vertex_count)),
+        ("vertexLayoutKind", @js.any(1)),
       ])
       map_set(state.gpu.meshes, @js.any(id), entry)
     }
@@ -5724,6 +6416,50 @@ pub fn create_host(
         ("id", @js.any(id)),
         ("vertexBuffer", vertex_buffer.as_any()),
         ("vertexCount", @js.any(vertex_count)),
+        ("vertexLayoutKind", @js.any(1)),
+      ])
+      map_set(state.gpu.meshes, @js.any(id), entry)
+    }
+    id
+  })
+  let gpu_create_mesh_triangles3d = @js.from_fn1(fn(vertices_xyzuvrgba) {
+    if state.gpu.device is None {
+      throw_error("GPU device not ready")
+      return 0
+    }
+    ensure_mesh3d_pipeline(state)
+    let id = state.gpu.next_mesh_id
+    state.gpu.next_mesh_id = id + 1
+    let vertices = float32array_from_csv(
+      string_from_id_required(
+        state, vertices_xyzuvrgba, "gpu_create_mesh_triangles3d",
+      ),
+    )
+    if state.gpu.device is Some(device) {
+      let vertex_size : Int = vertices._get("byteLength").cast()
+      let vertex_usage = @webgpu.combine_flags(
+        @webgpu.buffer_usage_vertex(),
+        @webgpu.buffer_usage_copy_dst(),
+      )
+      let vertex_desc = @webgpu.buffer_descriptor(vertex_size, vertex_usage)
+      let vertex_buffer = device.create_buffer(vertex_desc.to_js())
+      device.queue().write_buffer(vertex_buffer, 0, vertices)
+      let vertex_len : Double = vertices._get("length").cast()
+      let vertex_count = to_int(vertex_len / 9)
+      if vertex_count <= 0 {
+        report_asset_error_once(
+          state,
+          "mesh3d_create_empty_vertices_" + id.to_string(),
+          "Mesh3d create error: empty vertex data (mesh id " +
+          id.to_string() +
+          ")",
+        )
+      }
+      let entry = @js.from_entries([
+        ("id", @js.any(id)),
+        ("vertexBuffer", vertex_buffer.as_any()),
+        ("vertexCount", @js.any(vertex_count)),
+        ("vertexLayoutKind", @js.any(2)),
       ])
       map_set(state.gpu.meshes, @js.any(id), entry)
     }
@@ -5745,10 +6481,122 @@ pub fn create_host(
         arg_number(args, 8, 0),
         arg_number(args, 9, 0),
         arg_number(args, 10, 1),
+        false,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.5707963267948966,
+        0.1,
+        1000.0,
         arg_number(args, 11, 0),
         arg_number(args, 12, 0),
         arg_number(args, 13, 0),
         arg_number(args, 14, 0),
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        0.6,
+        0.8,
+      )
+    }),
+  )
+  let gpu_begin_pass_3d = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let camera_rot_x = arg_number(args, 10, 0)
+      let camera_rot_y = arg_number(args, 11, 0)
+      let camera_rot_z = arg_number(args, 12, 0)
+      let camera_rot_w = arg_number(args, 13, 1)
+      let siny_cosp = 2.0 *
+        (camera_rot_w * camera_rot_z + camera_rot_x * camera_rot_y)
+      let cosy_cosp = 1.0 -
+        2.0 * (camera_rot_y * camera_rot_y + camera_rot_z * camera_rot_z)
+      begin_pass(
+        state,
+        to_int(arg_number(args, 0, -1)),
+        arg_number(args, 1, 1),
+        arg_number(args, 2, 1),
+        arg_number(args, 3, 0),
+        arg_number(args, 4, 0),
+        arg_number(args, 5, 0),
+        arg_number(args, 6, 1),
+        arg_number(args, 7, 0),
+        arg_number(args, 8, 0),
+        math_atan2(siny_cosp, cosy_cosp),
+        1.0,
+        true,
+        arg_number(args, 9, 0),
+        camera_rot_x,
+        camera_rot_y,
+        camera_rot_z,
+        camera_rot_w,
+        arg_number(args, 14, 1.5707963267948966),
+        arg_number(args, 15, 0.1),
+        arg_number(args, 16, 1000.0),
+        arg_number(args, 17, 0),
+        arg_number(args, 18, 0),
+        arg_number(args, 19, 0),
+        arg_number(args, 20, 0),
+        arg_number(args, 21, 1),
+        arg_number(args, 22, 1),
+        arg_number(args, 23, 1),
+        arg_number(args, 24, 0),
+        arg_number(args, 25, 0),
+        arg_number(args, 26, -1),
+        arg_number(args, 27, 0),
+        arg_number(args, 28, 1),
+        arg_number(args, 29, 1),
+        arg_number(args, 30, 1),
+        arg_number(args, 31, 0),
+        arg_number(args, 32, 0),
+        arg_number(args, 33, 0),
+        arg_number(args, 34, 0),
+        arg_number(args, 35, 1),
+        arg_number(args, 36, 1),
+        arg_number(args, 37, 1),
+        arg_number(args, 38, 0),
+        arg_number(args, 39, 1),
+        arg_number(args, 40, 0),
+        arg_number(args, 41, 0),
+        arg_number(args, 42, 0),
+        arg_number(args, 43, 0),
+        arg_number(args, 44, -1),
+        arg_number(args, 45, 0),
+        arg_number(args, 46, 1),
+        arg_number(args, 47, 1),
+        arg_number(args, 48, 1),
+        arg_number(args, 49, 0),
+        arg_number(args, 50, 1),
+        arg_number(args, 51, 0.6),
+        arg_number(args, 52, 0.8),
       )
     }),
   )
@@ -5937,6 +6785,44 @@ pub fn create_host(
       )
     }),
   )
+  let gpu_draw_mesh3d = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_mesh3d(
+        state,
+        to_int(arg_number(args, 0, 0)),
+        arg_number(args, 1, 0),
+        arg_number(args, 2, 0),
+        arg_number(args, 3, 0),
+        arg_number(args, 4, 0),
+        arg_number(args, 5, 0),
+        arg_number(args, 6, 0),
+        arg_number(args, 7, 1),
+        arg_number(args, 8, 1),
+        arg_number(args, 9, 1),
+        arg_number(args, 10, 1),
+        arg_number(args, 11, 1),
+        arg_number(args, 12, 1),
+        arg_number(args, 13, 1),
+        arg_number(args, 14, 1),
+        to_int(arg_number(args, 15, -1)),
+        arg_number(args, 16, 0),
+        arg_number(args, 17, 0),
+        arg_number(args, 18, 1),
+        arg_number(args, 19, 1),
+        to_int(arg_number(args, 20, -1)),
+        to_int(arg_number(args, 21, -1)),
+        to_int(arg_number(args, 22, -1)),
+        to_int(arg_number(args, 23, -1)),
+        arg_number(args, 24, 0),
+        arg_number(args, 25, 0),
+        arg_number(args, 26, 0),
+        arg_number(args, 27, 0),
+        arg_number(args, 28, 0),
+        arg_number(args, 29, 0.5),
+        arg_number(args, 30, 0.5),
+      )
+    }),
+  )
   let gpu_draw_gizmo_line = wrap_variadic(
     @js.from_fn1(fn(args) {
       push_gizmo_line(
@@ -6106,14 +6992,17 @@ pub fn create_host(
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),
     ("gpu_create_mesh_triangles", gpu_create_mesh_triangles),
+    ("gpu_create_mesh_triangles3d", gpu_create_mesh_triangles3d),
     ("gpu_begin_frame", gpu_begin_frame),
     ("gpu_begin_pass", gpu_begin_pass),
+    ("gpu_begin_pass_3d", gpu_begin_pass_3d),
     ("gpu_draw_sprite", gpu_draw_sprite),
     ("gpu_draw_sprite_uv", gpu_draw_sprite_uv),
     ("gpu_draw_ui_rect", gpu_draw_ui_rect),
     ("gpu_draw_ui_texture_slice", gpu_draw_ui_texture_slice),
     ("gpu_draw_ui_box_shadow", gpu_draw_ui_box_shadow),
     ("gpu_draw_mesh", gpu_draw_mesh),
+    ("gpu_draw_mesh3d", gpu_draw_mesh3d),
     ("gpu_draw_gizmo_line", gpu_draw_gizmo_line),
     ("gpu_end_pass", gpu_end_pass),
     ("gpu_end_frame", gpu_end_frame),

@@ -13,15 +13,22 @@
 // limitations under the License.
 
 ///|
-/// A minimal mesh asset type (shared by 2D/3D later).
-///
-/// For now we only store 2D triangle geometry (`Mesh2dGeometry`) because the
-/// runtime backends are still bring-up / immediate-mode.
+pub(all) enum MeshGeometry {
+  Geometry2d(Mesh2dGeometry)
+  Geometry3d(Mesh3dGeometry)
+}
+
+///|
 pub struct Mesh {
-  geometry2d : Mesh2dGeometry
+  geometry : MeshGeometry
 }
 
 ///|
 pub fn Mesh::from_2d_geometry(geometry2d : Mesh2dGeometry) -> Mesh {
-  Mesh::{ geometry2d, }
+  Mesh::{ geometry: MeshGeometry::Geometry2d(geometry2d) }
+}
+
+///|
+pub fn Mesh::from_3d_geometry(geometry3d : Mesh3dGeometry) -> Mesh {
+  Mesh::{ geometry: MeshGeometry::Geometry3d(geometry3d) }
 }

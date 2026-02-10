@@ -8,7 +8,7 @@
     },
     "Milky2018/moon_accesskit": "0.2.1",
     "moonbitlang/x": "0.4.38",
-    "Milky2018/wgpu_mbt": "0.4.7"
+    "Milky2018/wgpu_mbt": "0.8.0"
   },
   "readme": "README.mbt.md",
   "license": "Apache-2.0",

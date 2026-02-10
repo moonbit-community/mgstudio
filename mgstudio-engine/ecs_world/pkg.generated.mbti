@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/physics3d",
   "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/render3d",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/visibility",
@@ -53,11 +54,18 @@ pub struct World {
   parent : @core.ComponentStore[@hierarchy.Parent]
   image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
+  camera3d : @core.ComponentStore[@render3d.Camera3d]
+  camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
+  mesh3d : @core.ComponentStore[@render3d.Mesh3d]
+  mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
+  point_light : @core.ComponentStore[@render3d.PointLight]
+  directional_light : @core.ComponentStore[@render3d.DirectionalLight]
+  spot_light : @core.ComponentStore[@render3d.SpotLight]
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
@@ -119,6 +127,7 @@ pub struct World {
   res_picking_hits : @core.Resource[@picking.PickingHits]
   res_picking_state : @core.Resource[@picking.PickingState]
   res_render_state : @core.Resource[@render2d.RenderState]
+  res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
   res_picking_events : @core.Resource[@picking.PickingEvents]
   res_pointer_inputs : @core.Resource[@picking.PointerInputs]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
@@ -203,6 +212,14 @@ pub impl @render2d.Has_RenderLayers for World
 pub impl @render2d.Has_RenderTarget for World
 pub impl @render2d.Has_ScissorRect for World
 pub impl @render2d.Has_Sprite for World
+pub impl @render3d.HasRes_GlobalAmbientLight for World
+pub impl @render3d.Has_Camera3d for World
+pub impl @render3d.Has_CameraProjection3d for World
+pub impl @render3d.Has_DirectionalLight for World
+pub impl @render3d.Has_Mesh3d for World
+pub impl @render3d.Has_MeshMaterial3d for World
+pub impl @render3d.Has_PointLight for World
+pub impl @render3d.Has_SpotLight for World
 pub impl @transform.Has_GlobalTransform for World
 pub impl @ui.HasRes_UiContext for World
 pub impl @ui.HasRes_UiScale for World

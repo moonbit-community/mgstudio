@@ -41,15 +41,17 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
       )
     None => ()
   }
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/icon.png")
-
-  // Floor (rendered as a 2D sprite; simulated with 3D collider at z=0).
-  let floor_sprite = @render2d.Sprite::from_image(texture)
-  let floor_transform = @math.Transform::from_xyz(0.0F, -200.0F, 0.0F)
-  let floor = @render2d.SpriteBundle::new(floor_sprite, floor_transform).spawn(
-    world,
+  let floor_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::new(0.28F, 0.32F, 0.36F, 1.0F),
+    ),
   )
+  let floor_bundle = @render3d.MeshMaterial3dBundle::new(
+    @render3d.Mesh3d::from_plane(640.0F, 640.0F),
+    @render3d.MeshMaterial3d::new(floor_material),
+    @math.Transform::from_xyz(0.0F, -200.0F, 0.0F),
+  )
+  let floor = floor_bundle.spawn(world)
   let rb_store = world.get_rigid_body3d_store()
   let col_store = world.get_collider3d_store()
   rb_store.insert(floor, @physics3d.RigidBody3d::fixed(), tick)
@@ -61,12 +63,17 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
     tick,
   )
 
-  // Ball.
-  let ball_sprite = @render2d.Sprite::from_image(texture)
-  let ball_transform = @math.Transform::from_xyz(0.0F, 200.0F, 0.0F)
-  let ball = @render2d.SpriteBundle::new(ball_sprite, ball_transform).spawn(
-    world,
+  let ball_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::new(0.9F, 0.2F, 0.2F, 1.0F),
+    ),
   )
+  let ball_bundle = @render3d.MeshMaterial3dBundle::new(
+    @render3d.Mesh3d::from_cuboid(24.0F, 24.0F, 24.0F),
+    @render3d.MeshMaterial3d::new(ball_material),
+    @math.Transform::from_xyz(0.0F, 200.0F, 0.0F),
+  )
+  let ball = ball_bundle.spawn(world)
   rb_store.insert(ball, @physics3d.RigidBody3d::dynamic(), tick)
   col_store.insert(
     ball,
@@ -75,11 +82,38 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
   )
   state.val.ball = Some(ball)
 
-  // Camera.
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
+  let ambient = world.get_global_ambient_light_resource()
+  if ambient.get_ref_mut(tick) is Some(a) {
+    a.val = @render3d.GlobalAmbientLight::new(
+      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      0.45F,
+    )
+  }
+  let light = world.spawn_empty()
+  world
+  .get_point_light_store()
+  .insert(
+    light,
+    @render3d.PointLight::new(
+      @render2d.Color::white(),
+      100000.0F,
+      2000.0F,
+      false,
+    ),
+    tick,
   )
+  world
+  .get_transform_store()
+  .insert(light, @math.Transform::from_xyz(220.0F, 360.0F, 220.0F), tick)
+
+  let camera = @render2d.Camera::default()
+  @render3d.Camera3dBundle::new(
+    camera,
+    @math.Transform::from_xyz(0.0F, 120.0F, 420.0F).looking_at(
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  ).spawn(world)
   |> ignore
 }
 

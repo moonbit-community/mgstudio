@@ -51,8 +51,57 @@ pub fn Vec3::add(self : Vec3, other : Vec3) -> Vec3 {
 }
 
 ///|
+pub fn Vec3::sub(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
+}
+
+///|
+pub fn Vec3::neg(self : Vec3) -> Vec3 {
+  Vec3::new(-self.x, -self.y, -self.z)
+}
+
+///|
 pub fn Vec3::mul(self : Vec3, other : Vec3) -> Vec3 {
   Vec3::new(self.x * other.x, self.y * other.y, self.z * other.z)
+}
+
+///|
+pub fn Vec3::mul_scalar(self : Vec3, scalar : Float) -> Vec3 {
+  Vec3::new(self.x * scalar, self.y * scalar, self.z * scalar)
+}
+
+///|
+pub fn Vec3::dot(self : Vec3, other : Vec3) -> Float {
+  self.x * other.x + self.y * other.y + self.z * other.z
+}
+
+///|
+pub fn Vec3::cross(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(
+    self.y * other.z - self.z * other.y,
+    self.z * other.x - self.x * other.z,
+    self.x * other.y - self.y * other.x,
+  )
+}
+
+///|
+pub fn Vec3::length_squared(self : Vec3) -> Float {
+  self.dot(self)
+}
+
+///|
+pub fn Vec3::length(self : Vec3) -> Float {
+  sqrt(self.length_squared())
+}
+
+///|
+pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
+  let len_sq = self.length_squared()
+  if len_sq <= 1.0e-12F {
+    return Vec3::zero()
+  }
+  let inv_len = 1.0F / sqrt(len_sq)
+  self.mul_scalar(inv_len)
 }
 
 ///|
@@ -280,6 +329,34 @@ pub fn Quat::from_rotation_z(angle : Float) -> Quat {
 }
 
 ///|
+pub fn Quat::from_rotation_x(angle : Float) -> Quat {
+  let half = angle / 2.0F
+  Quat::{ x: sin(half), y: 0.0F, z: 0.0F, w: cos(half) }
+}
+
+///|
+pub fn Quat::from_rotation_y(angle : Float) -> Quat {
+  let half = angle / 2.0F
+  Quat::{ x: 0.0F, y: sin(half), z: 0.0F, w: cos(half) }
+}
+
+///|
+pub fn Quat::from_axis_angle(axis : Vec3, angle : Float) -> Quat {
+  let unit_axis = axis.normalize_or_zero()
+  if unit_axis.length_squared() <= 1.0e-12F {
+    return Quat::identity()
+  }
+  let half = angle / 2.0F
+  let s = sin(half)
+  Quat::{
+    x: unit_axis.x * s,
+    y: unit_axis.y * s,
+    z: unit_axis.z * s,
+    w: cos(half),
+  }
+}
+
+///|
 pub fn Quat::mul(self : Quat, other : Quat) -> Quat {
   // Hamilton product.
   let x = self.w * other.x +
@@ -309,6 +386,72 @@ pub fn Quat::to_rotation_z_angle(self : Quat) -> Float {
   let t0 = 2.0F * (self.w * self.z + self.x * self.y)
   let t1 = 1.0F - 2.0F * (self.y * self.y + self.z * self.z)
   atan2(t0, t1)
+}
+
+///|
+pub fn Quat::normalize(self : Quat) -> Quat {
+  let len_sq = self.x * self.x +
+    self.y * self.y +
+    self.z * self.z +
+    self.w * self.w
+  if len_sq <= 1.0e-12F {
+    return Quat::identity()
+  }
+  let inv_len = 1.0F / sqrt(len_sq)
+  Quat::{
+    x: self.x * inv_len,
+    y: self.y * inv_len,
+    z: self.z * inv_len,
+    w: self.w * inv_len,
+  }
+}
+
+///|
+fn quat_from_basis(x_axis : Vec3, y_axis : Vec3, z_axis : Vec3) -> Quat {
+  let m00 = x_axis.x
+  let m01 = y_axis.x
+  let m02 = z_axis.x
+  let m10 = x_axis.y
+  let m11 = y_axis.y
+  let m12 = z_axis.y
+  let m20 = x_axis.z
+  let m21 = y_axis.z
+  let m22 = z_axis.z
+  let trace = m00 + m11 + m22
+  if trace > 0.0F {
+    let s = sqrt(trace + 1.0F) * 2.0F
+    return Quat::{
+      x: (m21 - m12) / s,
+      y: (m02 - m20) / s,
+      z: (m10 - m01) / s,
+      w: 0.25F * s,
+    }.normalize()
+  }
+  if m00 > m11 && m00 > m22 {
+    let s = sqrt(1.0F + m00 - m11 - m22) * 2.0F
+    return Quat::{
+      x: 0.25F * s,
+      y: (m01 + m10) / s,
+      z: (m02 + m20) / s,
+      w: (m21 - m12) / s,
+    }.normalize()
+  }
+  if m11 > m22 {
+    let s = sqrt(1.0F + m11 - m00 - m22) * 2.0F
+    return Quat::{
+      x: (m01 + m10) / s,
+      y: 0.25F * s,
+      z: (m12 + m21) / s,
+      w: (m02 - m20) / s,
+    }.normalize()
+  }
+  let s = sqrt(1.0F + m22 - m00 - m11) * 2.0F
+  Quat::{
+    x: (m02 + m20) / s,
+    y: (m12 + m21) / s,
+    z: 0.25F * s,
+    w: (m10 - m01) / s,
+  }.normalize()
 }
 
 ///|
@@ -366,4 +509,51 @@ pub fn Transform::from_xy_rotation_scale(
 ///|
 pub fn Transform::rotation_z(self : Transform) -> Float {
   self.rotation.to_rotation_z_angle()
+}
+
+///|
+pub fn Transform::with_translation(
+  self : Transform,
+  translation : Vec3,
+) -> Transform {
+  Transform::{ translation, rotation: self.rotation, scale: self.scale }
+}
+
+///|
+pub fn Transform::with_rotation(self : Transform, rotation : Quat) -> Transform {
+  Transform::{ translation: self.translation, rotation, scale: self.scale }
+}
+
+///|
+pub fn Transform::with_scale(self : Transform, scale : Vec3) -> Transform {
+  Transform::{ translation: self.translation, rotation: self.rotation, scale }
+}
+
+///|
+pub fn Transform::looking_at(
+  self : Transform,
+  target : Vec3,
+  up : Vec3,
+) -> Transform {
+  let forward = target.sub(self.translation).normalize_or_zero()
+  if forward.length_squared() <= 1.0e-12F {
+    return self
+  }
+  let up_hint = if up.length_squared() <= 1.0e-12F {
+    Vec3::new(0.0F, 1.0F, 0.0F)
+  } else {
+    up.normalize_or_zero()
+  }
+  // Bevy follows a right-handed convention where local -Z points forward.
+  let z_axis = forward.neg()
+  let mut x_axis = up_hint.cross(z_axis).normalize_or_zero()
+  if x_axis.length_squared() <= 1.0e-12F {
+    x_axis = Vec3::new(1.0F, 0.0F, 0.0F).cross(z_axis).normalize_or_zero()
+    if x_axis.length_squared() <= 1.0e-12F {
+      x_axis = Vec3::new(0.0F, 0.0F, 1.0F).cross(z_axis).normalize_or_zero()
+    }
+  }
+  let y_axis = z_axis.cross(x_axis).normalize_or_zero()
+  let rotation = quat_from_basis(x_axis, y_axis, z_axis)
+  Transform::{ translation: self.translation, rotation, scale: self.scale }
 }

@@ -1075,8 +1075,54 @@ fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
 }
 
 ///|
+pub fn render_mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
+  mesh_asset_add(mesh)
+}
+
+///|
 fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
   mesh_assets.val.get(handle)
+}
+
+///|
+pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
+  match mesh_asset_get(mesh) {
+    Some(mesh_asset) =>
+      match mesh_asset.geometry {
+        @mesh.MeshGeometry::Geometry2d(geometry2d) =>
+          match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
+            Some(vertices_csv) =>
+              @window.host_gpu_create_mesh_triangles(vertices_csv)
+            None => {
+              let message = match geometry2d.validate() {
+                Some(err) =>
+                  "Mesh2dGeometry validation failed: " + err.to_string()
+                None => "Mesh2dGeometry flatten failed"
+              }
+              @window.host_debug_string(message)
+              0
+            }
+          }
+        @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+          match geometry3d.encode_triangle_interleaved_xyz_uv_rgba_csv() {
+            Some(vertices_csv) =>
+              @window.host_gpu_create_mesh_triangles3d(vertices_csv)
+            None => {
+              let message = match geometry3d.validate() {
+                Some(err) =>
+                  "Mesh3dGeometry validation failed: " + err.to_string()
+                None => "Mesh3dGeometry flatten failed"
+              }
+              @window.host_debug_string(message)
+              0
+            }
+          }
+      }
+    None => {
+      @window.host_debug_string("Mesh2d upload failed: mesh handle not found")
+      0
+    }
+  }
 }
 
 ///|
@@ -2769,26 +2815,7 @@ pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(
   .insert(e, self.inherited_visibility, tick)
   world.get_view_visibility_store().insert(e, self.view_visibility, tick)
   world.get_transform_store().insert(e, self.transform, tick)
-  let mesh_id = match mesh_asset_get(self.mesh.mesh) {
-    Some(mesh_asset) =>
-      match mesh_asset.geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
-        Some(vertices_csv) =>
-          @window.host_gpu_create_mesh_triangles(vertices_csv)
-        None => {
-          let geometry = mesh_asset.geometry2d
-          let message = match geometry.validate() {
-            Some(err) => "Mesh2dGeometry validation failed: " + err.to_string()
-            None => "Mesh2dGeometry flatten failed"
-          }
-          @window.host_debug_string(message)
-          0
-        }
-      }
-    None => {
-      @window.host_debug_string("Mesh2d spawn failed: mesh handle not found")
-      0
-    }
-  }
+  let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
   world.get_gpu_mesh2d_store().insert(e, GpuMesh2d::new(mesh_id), tick)
   e
 }

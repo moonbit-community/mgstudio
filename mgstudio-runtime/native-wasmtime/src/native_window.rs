@@ -93,10 +93,6 @@ impl NativeWindow {
         self.window.inner_size()
     }
 
-    pub fn window(&self) -> &Window {
-        self.window.as_ref()
-    }
-
     pub fn window_arc(&self) -> Arc<Window> {
         self.window.clone()
     }

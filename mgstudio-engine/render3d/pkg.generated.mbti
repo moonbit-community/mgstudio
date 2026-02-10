@@ -1,0 +1,226 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render3d"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/visibility",
+}
+
+// Values
+pub fn[W : Render3dExecuteWorld] render3d_execute_system(W) -> Unit
+
+pub fn[W : Render3dPluginWorld] render3d_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn[W : Render3dPrepareWorld] render3d_prepare_system(W) -> Unit
+
+pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
+
+pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMaterial?
+
+pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) enum AlphaMode3d {
+  Opaque
+  Mask(Float)
+  Blend
+  Premultiplied
+  Add
+  Multiply
+  AlphaToCoverage
+}
+
+pub struct Camera3d {
+}
+pub fn Camera3d::default() -> Self
+
+pub struct Camera3dBundle {
+  camera : @render2d.Camera
+  projection : CameraProjection3d
+  camera3d : Camera3d
+  transform : @math.Transform
+  target : @render2d.RenderTarget
+  layers : @render2d.RenderLayers
+}
+pub fn Camera3dBundle::new(@render2d.Camera, @math.Transform) -> Self
+pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection3d, @math.Transform) -> Self
+pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(Self, W) -> @core.Entity
+
+pub struct CameraProjection3d {
+  projection : Projection3d
+}
+pub fn CameraProjection3d::default() -> Self
+
+pub struct DirectionalLight {
+  color : @render2d.Color
+  illuminance : Float
+  shadow_maps_enabled : Bool
+}
+pub fn DirectionalLight::default() -> Self
+pub fn DirectionalLight::new(@render2d.Color, Float, Bool) -> Self
+
+pub(all) enum Face3d {
+  Front
+  Back
+}
+
+pub struct GlobalAmbientLight {
+  color : @render2d.Color
+  brightness : Float
+}
+pub fn GlobalAmbientLight::default() -> Self
+pub fn GlobalAmbientLight::new(@render2d.Color, Float) -> Self
+
+pub struct Mesh3d {
+  mesh : @asset.Handle[@mesh.Mesh]
+}
+pub fn Mesh3d::from_cuboid(Float, Float, Float) -> Self
+pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
+pub fn Mesh3d::from_plane(Float, Float) -> Self
+pub fn Mesh3d::from_tetrahedron(Float) -> Self
+pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
+
+pub struct MeshMaterial3d {
+  material : @asset.Handle[StandardMaterial]
+}
+pub fn MeshMaterial3d::new(@asset.Handle[StandardMaterial]) -> Self
+
+pub struct MeshMaterial3dBundle {
+  mesh : Mesh3d
+  material : MeshMaterial3d
+  transform : @math.Transform
+  layers : @render2d.RenderLayers
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
+}
+pub fn MeshMaterial3dBundle::new(Mesh3d, MeshMaterial3d, @math.Transform) -> Self
+pub fn[W : MeshMaterial3dBundleSpawnWorld] MeshMaterial3dBundle::spawn(Self, W) -> @core.Entity
+
+pub struct OrthographicProjection3d {
+  scale : Float
+  near : Float
+  far : Float
+}
+pub fn OrthographicProjection3d::default() -> Self
+
+pub struct PerspectiveProjection3d {
+  fov : Float
+  near : Float
+  far : Float
+  aspect_ratio : Float
+}
+pub fn PerspectiveProjection3d::default() -> Self
+pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
+
+pub struct PointLight {
+  color : @render2d.Color
+  intensity : Float
+  range : Float
+  shadow_maps_enabled : Bool
+}
+pub fn PointLight::default() -> Self
+pub fn PointLight::new(@render2d.Color, Float, Float, Bool) -> Self
+
+pub(all) enum Projection3d {
+  Perspective(PerspectiveProjection3d)
+  Orthographic(OrthographicProjection3d)
+}
+pub fn Projection3d::orthographic_default() -> Self
+pub fn Projection3d::perspective_default() -> Self
+
+pub struct SpotLight {
+  color : @render2d.Color
+  intensity : Float
+  range : Float
+  inner_angle : Float
+  outer_angle : Float
+  shadow_maps_enabled : Bool
+}
+pub fn SpotLight::default() -> Self
+pub fn SpotLight::new(@render2d.Color, Float, Float, Float, Float, Bool) -> Self
+
+pub struct StandardMaterial {
+  base_color : @render2d.Color
+  base_color_texture : @asset.Handle[@asset.Image]?
+  normal_map_texture : @asset.Handle[@asset.Image]?
+  emissive : @render2d.Color
+  emissive_texture : @asset.Handle[@asset.Image]?
+  metallic : Float
+  metallic_roughness_texture : @asset.Handle[@asset.Image]?
+  perceptual_roughness : Float
+  reflectance : Float
+  occlusion_texture : @asset.Handle[@asset.Image]?
+  alpha_mode : AlphaMode3d
+  unlit : Bool
+  cull_mode : Face3d?
+}
+pub fn StandardMaterial::default() -> Self
+pub fn StandardMaterial::from_color(@render2d.Color) -> Self
+pub fn StandardMaterial::with_alpha_mode(Self, AlphaMode3d) -> Self
+pub fn StandardMaterial::with_base_color(Self, @render2d.Color) -> Self
+pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_emissive(Self, @render2d.Color) -> Self
+pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+}
+
+pub(open) trait HasRes_GlobalAmbientLight {
+  get_global_ambient_light_resource(Self) -> @core.Resource[GlobalAmbientLight]
+}
+
+pub(open) trait Has_Camera3d {
+  get_camera3d_store(Self) -> @core.ComponentStore[Camera3d]
+}
+
+pub(open) trait Has_CameraProjection3d {
+  get_camera_projection3d_store(Self) -> @core.ComponentStore[CameraProjection3d]
+}
+
+pub(open) trait Has_DirectionalLight {
+  get_directional_light_store(Self) -> @core.ComponentStore[DirectionalLight]
+}
+
+pub(open) trait Has_Mesh3d {
+  get_mesh3d_store(Self) -> @core.ComponentStore[Mesh3d]
+}
+
+pub(open) trait Has_MeshMaterial3d {
+  get_mesh_material3d_store(Self) -> @core.ComponentStore[MeshMaterial3d]
+}
+
+pub(open) trait Has_PointLight {
+  get_point_light_store(Self) -> @core.ComponentStore[PointLight]
+}
+
+pub(open) trait Has_SpotLight {
+  get_spot_light_store(Self) -> @core.ComponentStore[SpotLight]
+}
+
+pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+}
+
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+}
+
+pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {
+}
+
+pub(open) trait Render3dPrepareWorld : Has_Mesh3d + @render2d.Has_GpuMesh2d + @core.ChangeTickWorld {
+}
+

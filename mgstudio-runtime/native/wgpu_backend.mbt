@@ -42,6 +42,7 @@ pub struct GpuMeshInfo {
   id : Int
   index_count : UInt
   vertex_count : UInt
+  vertex_stride_bytes : UInt64
   vertex_buf : @wgpu.Buffer
   index_buf : @wgpu.Buffer
 }
@@ -61,18 +62,69 @@ pub struct UiBatch {
 }
 
 ///|
+pub struct Mesh3dMaterialBindGroupCacheEntry {
+  base_texture_id : Int
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  bind_group : @wgpu.BindGroup
+}
+
+///|
 pub struct GpuPassState {
   target_id : Int
   width_logical : Float
   height_logical : Float
+  is_3d : Bool
   camera_x : Float
   camera_y : Float
   camera_rot : Float
   camera_scale : Float
+  camera_z : Float
+  camera_rot_x : Float
+  camera_rot_y : Float
+  camera_rot_z : Float
+  camera_rot_w : Float
+  camera_fov_y : Float
+  camera_near : Float
+  camera_far : Float
   viewport_x : UInt
   viewport_y : UInt
   viewport_w : UInt
   viewport_h : UInt
+  ambient_r : Float
+  ambient_g : Float
+  ambient_b : Float
+  ambient_brightness : Float
+  directional_dir_x : Float
+  directional_dir_y : Float
+  directional_dir_z : Float
+  directional_color_r : Float
+  directional_color_g : Float
+  directional_color_b : Float
+  directional_illuminance : Float
+  point_pos_x : Float
+  point_pos_y : Float
+  point_pos_z : Float
+  point_color_r : Float
+  point_color_g : Float
+  point_color_b : Float
+  point_intensity : Float
+  point_range : Float
+  spot_pos_x : Float
+  spot_pos_y : Float
+  spot_pos_z : Float
+  spot_dir_x : Float
+  spot_dir_y : Float
+  spot_dir_z : Float
+  spot_color_r : Float
+  spot_color_g : Float
+  spot_color_b : Float
+  spot_intensity : Float
+  spot_range : Float
+  spot_inner_angle : Float
+  spot_outer_angle : Float
 }
 
 ///|
@@ -96,6 +148,11 @@ pub struct GpuBackend {
   mut configured_height : Int
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
+  mut depth_texture : @wgpu.Texture?
+  mut depth_view : @wgpu.TextureView?
+  mut depth_target_id : Int
+  mut depth_width : Int
+  mut depth_height : Int
 
   // Sprite pipeline (textured quads).
   mut sprite_bgl_tex : @wgpu.BindGroupLayout?
@@ -153,16 +210,34 @@ pub struct GpuBackend {
   mut mesh_pipeline_surface_format : @wgpu.TextureFormat?
   mut mesh_uniform_buf : @wgpu.Buffer?
   mut mesh_uniform_bg : @wgpu.BindGroup?
+  mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
+  mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
+  mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh3d_pipeline : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_surface : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
+  mut mesh3d_uniform_buf : @wgpu.Buffer?
+  mut mesh3d_uniform_bg : @wgpu.BindGroup?
+  mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
   meshes : Ref[Array[GpuMeshInfo]]
 }
 
 ///|
-pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
-  let instance = @wgpu.Instance::create()
-  let adapter = instance.request_adapter_sync()
-  let device = adapter.request_device_sync(instance)
+pub fn GpuBackend::new(
+  assets_base? : String = "",
+) -> GpuBackend raise GpuBackendError {
+  let instance = @wgpu.Instance::create() catch {
+    err => fatal("wgpu: Instance::create failed: " + err.message())
+  }
+  let adapter = instance.request_adapter_sync() catch {
+    err =>
+      fatal("wgpu: Instance::request_adapter_sync failed: " + err.message())
+  }
+  let device = adapter.request_device_sync(instance) catch {
+    err => fatal("wgpu: Adapter::request_device_sync failed: " + err.message())
+  }
   let queue = device.queue()
   GpuBackend::{
     instance,
@@ -176,6 +251,11 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     configured_height: 0,
     frame: None,
     pass_state: None,
+    depth_texture: None,
+    depth_view: None,
+    depth_target_id: -2,
+    depth_width: 0,
+    depth_height: 0,
     sprite_bgl_tex: None,
     sprite_bgl_globals: None,
     sprite_pipeline_layout: None,
@@ -223,6 +303,15 @@ pub fn GpuBackend::new(assets_base? : String = "") -> GpuBackend {
     mesh_pipeline_surface_format: None,
     mesh_uniform_buf: None,
     mesh_uniform_bg: None,
+    mesh3d_bgl_uniform: None,
+    mesh3d_bgl_material: None,
+    mesh3d_pipeline_layout: None,
+    mesh3d_pipeline: None,
+    mesh3d_pipeline_surface: None,
+    mesh3d_pipeline_surface_format: None,
+    mesh3d_uniform_buf: None,
+    mesh3d_uniform_bg: None,
+    mesh3d_material_bg_cache: Ref::new([]),
     next_id: Ref::new(1),
     textures: Ref::new([]),
     meshes: Ref::new([]),
@@ -240,6 +329,18 @@ fn cosf(x : Float) -> Float {
 ///|
 fn sinf(x : Float) -> Float {
   Float::from_double(@coremath.sin(x.to_double()))
+}
+
+///|
+fn atan2f(y : Float, x : Float) -> Float {
+  Float::from_double(@coremath.atan2(y.to_double(), x.to_double()))
+}
+
+///|
+fn quat_to_z_rotation(x : Float, y : Float, z : Float, w : Float) -> Float {
+  let siny_cosp = 2.0F * (w * z + x * y)
+  let cosy_cosp = 1.0F - 2.0F * (y * y + z * z)
+  atan2f(siny_cosp, cosy_cosp)
 }
 
 ///|
@@ -911,46 +1012,78 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   layout : @wgpu.PipelineLayout,
   shader : @wgpu.ShaderModule,
   format : UInt,
+  with_depth? : Bool = false,
+  position3d? : Bool = false,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
     shader.raw_handle(),
   )
-  @wgpu_c.render_pipeline_desc_builder_set_color_target_format(builder, format)
-  @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(builder)
-  @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
+  let set_format_ok = @wgpu_c.render_pipeline_desc_builder_set_color_target_format(
+    builder, format,
+  )
+  let set_blend_ok = @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(
     builder,
-    32UL,
+  )
+  let vertex_stride = if position3d { 36UL } else { 32UL }
+  let pos_format = if position3d {
+    @wgpu.VERTEX_FORMAT_FLOAT32X3
+  } else {
+    @wgpu.VERTEX_FORMAT_FLOAT32X2
+  }
+  let uv_offset = if position3d { 12UL } else { 8UL }
+  let color_offset = if position3d { 20UL } else { 16UL }
+  let set_vertex_layout_ok = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
+    builder,
+    vertex_stride,
     @wgpu.VERTEX_STEP_MODE_VERTEX,
   )
   let pos_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-    builder,
-    @wgpu.VERTEX_FORMAT_FLOAT32X2,
-    0UL,
-    0U,
+    builder, pos_format, 0UL, 0U,
   )
   let uv_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X2,
-    8UL,
+    uv_offset,
     1U,
   )
   let color_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X4,
-    16UL,
+    color_offset,
     2U,
   )
-  if !pos_ok || !uv_ok || !color_ok {
+  if set_format_ok == 0U ||
+    set_blend_ok == 0U ||
+    set_vertex_layout_ok == 0U ||
+    pos_ok == 0U ||
+    uv_ok == 0U ||
+    color_ok == 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal(
       "wgpu: failed to configure mesh vertex attributes for pos2+uv2+color4 pipeline",
     )
   }
-  @wgpu_c.render_pipeline_desc_builder_set_topology(
+  let set_topology_ok = @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder,
     @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
   )
+  if set_topology_ok == 0U {
+    @wgpu_c.render_pipeline_desc_builder_free(builder)
+    fatal("wgpu: failed to configure mesh pipeline topology")
+  }
+  if with_depth {
+    let set_depth_ok = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
+      builder,
+      @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
+      true,
+      @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
+    )
+    if set_depth_ok == 0U {
+      @wgpu_c.render_pipeline_desc_builder_free(builder)
+      fatal("wgpu: failed to configure mesh pipeline depth-stencil state")
+    }
+  }
   @wgpu_c.render_pipeline_desc_builder_finish(builder)
 }
 
@@ -988,6 +1121,8 @@ fn ensure_mesh_pipeline_rgba8(
     pl,
     sm,
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    with_depth=true,
+    position3d=true,
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
@@ -1022,6 +1157,8 @@ fn ensure_mesh_pipeline_surface(
     pl,
     sm,
     format.to_u32(),
+    with_depth=true,
+    position3d=true,
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
@@ -1050,6 +1187,154 @@ fn mesh_pipeline_for_current_pass(
   }
   ensure_mesh_pipeline_rgba8(backend)
   backend.mesh_pipeline
+}
+
+///|
+fn ensure_mesh3d_pipeline_rgba8(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_sprite_resources(backend)
+  if backend.mesh3d_pipeline_layout is None {
+    let bgl = backend.device.create_bind_group_layout_uniform_buffer()
+    let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=6UL)
+    let material_ok = material_builder.add_sampler(
+        0U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        1U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_texture(
+        2U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_texture(
+        3U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_texture(
+        4U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_texture(
+        5U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      )
+    if !material_ok {
+      material_builder.free()
+      fatal("wgpu: failed to build mesh3d material bind group layout")
+    }
+    let material_bgl = material_builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_material_bgl",
+    )
+    let pl = backend.device.create_pipeline_layout_2(bgl, material_bgl)
+    backend.mesh3d_bgl_uniform = Some(bgl)
+    backend.mesh3d_bgl_material = Some(material_bgl)
+    backend.mesh3d_pipeline_layout = Some(pl)
+    mesh3d_material_cache_clear(backend)
+  }
+  if backend.mesh3d_uniform_buf is None || backend.mesh3d_uniform_bg is None {
+    guard backend.mesh3d_bgl_uniform is Some(bgl) else { return }
+    let ubo_usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    let uniform_buf = backend.device.create_buffer(size=512UL, usage=ubo_usage)
+    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
+      bgl, uniform_buf,
+    )
+    backend.mesh3d_uniform_buf = Some(uniform_buf)
+    backend.mesh3d_uniform_bg = Some(uniform_bg)
+  }
+  if backend.mesh3d_pipeline is Some(_) {
+    return
+  }
+  guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/3d/mesh3d.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    with_depth=true,
+    position3d=true,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_mesh3d_rgba8")
+  backend.mesh3d_pipeline = Some(pipeline)
+  sm.release()
+}
+
+///|
+fn ensure_mesh3d_pipeline_surface(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_sprite_resources(backend)
+  guard backend.surface_format is Some(format) else { return }
+  if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
+    return
+  }
+  if backend.mesh3d_pipeline_surface_format is Some(prev) &&
+    prev == format &&
+    backend.mesh3d_pipeline_surface is Some(_) {
+    return
+  }
+  if backend.mesh3d_pipeline_surface is Some(old) {
+    old.release()
+  }
+  guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/3d/mesh3d.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    format.to_u32(),
+    with_depth=true,
+    position3d=true,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_mesh3d_surface")
+  backend.mesh3d_pipeline_surface = Some(pipeline)
+  backend.mesh3d_pipeline_surface_format = Some(format)
+  sm.release()
+}
+
+///|
+fn mesh3d_pipeline_for_current_pass(
+  backend : GpuBackend,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let target_is_surface = match backend.pass_state {
+    Some(ps) => ps.target_id == -1
+    None => false
+  }
+  if target_is_surface {
+    match backend.surface_format {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+        ensure_mesh3d_pipeline_surface(backend)
+        return backend.mesh3d_pipeline_surface
+      }
+      _ => ()
+    }
+  }
+  ensure_mesh3d_pipeline_rgba8(backend)
+  backend.mesh3d_pipeline
 }
 
 ///|
@@ -1168,6 +1453,63 @@ fn find_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo? {
 }
 
 ///|
+fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
+  for entry in backend.mesh3d_material_bg_cache.val {
+    entry.bind_group.release()
+  }
+  backend.mesh3d_material_bg_cache.val.clear()
+}
+
+///|
+fn mesh3d_material_cache_get_or_create(
+  backend : GpuBackend,
+  base_texture : GpuTextureInfo,
+  normal_texture : GpuTextureInfo,
+  emissive_texture : GpuTextureInfo,
+  metallic_roughness_texture : GpuTextureInfo,
+  occlusion_texture : GpuTextureInfo,
+) -> @wgpu.BindGroup raise GpuBackendError {
+  for entry in backend.mesh3d_material_bg_cache.val {
+    if entry.base_texture_id == base_texture.id &&
+      entry.normal_texture_id == normal_texture.id &&
+      entry.emissive_texture_id == emissive_texture.id &&
+      entry.metallic_roughness_texture_id == metallic_roughness_texture.id &&
+      entry.occlusion_texture_id == occlusion_texture.id {
+      return entry.bind_group
+    }
+  }
+  let layout = match backend.mesh3d_bgl_material {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d material bind group layout")
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
+  let ok = builder.add_sampler(0U, base_texture.sampler) &&
+    builder.add_texture_view(1U, base_texture.view) &&
+    builder.add_texture_view(2U, normal_texture.view) &&
+    builder.add_texture_view(3U, emissive_texture.view) &&
+    builder.add_texture_view(4U, metallic_roughness_texture.view) &&
+    builder.add_texture_view(5U, occlusion_texture.view)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build mesh3d material bind group")
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    layout,
+    label="mgstudio_mesh3d_material_bg",
+  )
+  backend.mesh3d_material_bg_cache.val.push(Mesh3dMaterialBindGroupCacheEntry::{
+    base_texture_id: base_texture.id,
+    normal_texture_id: normal_texture.id,
+    emissive_texture_id: emissive_texture.id,
+    metallic_roughness_texture_id: metallic_roughness_texture.id,
+    occlusion_texture_id: occlusion_texture.id,
+    bind_group,
+  })
+  bind_group
+}
+
+///|
 fn ensure_fallback_texture(
   backend : GpuBackend,
   id : Int,
@@ -1203,6 +1545,7 @@ fn ensure_fallback_texture(
       bind_group: bg,
     }
     backend.textures.val.push(info)
+    mesh3d_material_cache_clear(backend)
     info
   }
 }
@@ -1253,6 +1596,7 @@ pub fn GpuBackend::create_texture_rgba8(
     bind_group: bg,
   }
   self.textures.val.push(info)
+  mesh3d_material_cache_clear(self)
   id
 }
 
@@ -1391,6 +1735,7 @@ pub fn GpuBackend::set_texture_sampler(
         sampler,
         bind_group: bg,
       }
+      mesh3d_material_cache_clear(self)
       break
     }
   }
@@ -1434,6 +1779,7 @@ pub fn GpuBackend::create_render_target(
     bind_group: bg,
   }
   self.textures.val.push(info)
+  mesh3d_material_cache_clear(self)
   id
 }
 
@@ -1447,6 +1793,54 @@ fn target_view(backend : GpuBackend, target_id : Int) -> @wgpu.TextureView? {
   } else {
     find_texture(backend, target_id).map(fn(t) { t.view })
   }
+}
+
+///|
+fn target_size_for_pass(backend : GpuBackend, target_id : Int) -> (Int, Int)? {
+  if target_id == -1 {
+    Some((backend.configured_width, backend.configured_height))
+  } else {
+    match find_texture(backend, target_id) {
+      Some(info) => Some((info.width, info.height))
+      None => None
+    }
+  }
+}
+
+///|
+fn ensure_depth_view_for_target(
+  backend : GpuBackend,
+  target_id : Int,
+) -> @wgpu.TextureView? {
+  guard target_size_for_pass(backend, target_id) is Some((raw_w, raw_h)) else {
+    return None
+  }
+  let width = if raw_w <= 0 { 1 } else { raw_w }
+  let height = if raw_h <= 0 { 1 } else { raw_h }
+  if backend.depth_target_id == target_id &&
+    backend.depth_width == width &&
+    backend.depth_height == height {
+    if backend.depth_view is Some(view) {
+      return Some(view)
+    }
+  }
+  if backend.depth_view is Some(old_view) {
+    old_view.release()
+  }
+  if backend.depth_texture is Some(old_tex) {
+    old_tex.release()
+  }
+  let depth_tex = backend.device.create_texture_depth24plus_2d(
+    width.reinterpret_as_uint(),
+    height.reinterpret_as_uint(),
+  )
+  let depth_view = depth_tex.create_view()
+  backend.depth_texture = Some(depth_tex)
+  backend.depth_view = Some(depth_view)
+  backend.depth_target_id = target_id
+  backend.depth_width = width
+  backend.depth_height = height
+  Some(depth_view)
 }
 
 ///|
@@ -1496,6 +1890,7 @@ pub fn GpuBackend::begin_pass(
     target_id,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
+    is_3d: false,
     camera_x,
     camera_y,
     camera_rot,
@@ -1504,10 +1899,50 @@ pub fn GpuBackend::begin_pass(
     } else {
       camera_scale
     },
+    camera_z: 0.0F,
+    camera_rot_x: 0.0F,
+    camera_rot_y: 0.0F,
+    camera_rot_z: 0.0F,
+    camera_rot_w: 1.0F,
+    camera_fov_y: PI * 0.5F,
+    camera_near: 0.1F,
+    camera_far: 1000.0F,
     viewport_x: vx,
     viewport_y: vy,
     viewport_w: vw,
     viewport_h: vh,
+    ambient_r: 1.0F,
+    ambient_g: 1.0F,
+    ambient_b: 1.0F,
+    ambient_brightness: 0.0F,
+    directional_dir_x: 0.0F,
+    directional_dir_y: -1.0F,
+    directional_dir_z: 0.0F,
+    directional_color_r: 1.0F,
+    directional_color_g: 1.0F,
+    directional_color_b: 1.0F,
+    directional_illuminance: 0.0F,
+    point_pos_x: 0.0F,
+    point_pos_y: 0.0F,
+    point_pos_z: 0.0F,
+    point_color_r: 1.0F,
+    point_color_g: 1.0F,
+    point_color_b: 1.0F,
+    point_intensity: 0.0F,
+    point_range: 1.0F,
+    spot_pos_x: 0.0F,
+    spot_pos_y: 0.0F,
+    spot_pos_z: 0.0F,
+    spot_dir_x: 0.0F,
+    spot_dir_y: -1.0F,
+    spot_dir_z: 0.0F,
+    spot_color_r: 1.0F,
+    spot_color_g: 1.0F,
+    spot_color_b: 1.0F,
+    spot_intensity: 0.0F,
+    spot_range: 1.0F,
+    spot_inner_angle: 0.6F,
+    spot_outer_angle: 0.8F,
   })
 
   // Reset sprite batching state and update sprite globals for this pass.
@@ -1533,6 +1968,189 @@ pub fn GpuBackend::begin_pass(
     let cam_cos = cosf(-camera_rot)
     let cam_sin = sinf(-camera_rot)
     // Globals: view(x,y,cos,sin) + ndc_scale(x,y,_,_)
+    let bytes = f32le_pack([
+      camera_x, camera_y, cam_cos, cam_sin, scale_x_base, scale_y_base, 0.0F, 0.0F,
+    ])
+    self.queue.write_buffer(globals_buf, 0UL, bytes)
+  }
+}
+
+///|
+pub fn GpuBackend::begin_pass_3d(
+  self : GpuBackend,
+  target_id : Int,
+  width_logical : Int,
+  height_logical : Int,
+  clear_r : Float,
+  clear_g : Float,
+  clear_b : Float,
+  clear_a : Float,
+  camera_x : Float,
+  camera_y : Float,
+  camera_z : Float,
+  camera_rot_x : Float,
+  camera_rot_y : Float,
+  camera_rot_z : Float,
+  camera_rot_w : Float,
+  camera_fov_y : Float,
+  camera_near : Float,
+  camera_far : Float,
+  viewport_x : Int,
+  viewport_y : Int,
+  viewport_w : Int,
+  viewport_h : Int,
+  ambient_r : Float,
+  ambient_g : Float,
+  ambient_b : Float,
+  ambient_brightness : Float,
+  directional_dir_x : Float,
+  directional_dir_y : Float,
+  directional_dir_z : Float,
+  directional_color_r : Float,
+  directional_color_g : Float,
+  directional_color_b : Float,
+  directional_illuminance : Float,
+  point_pos_x : Float,
+  point_pos_y : Float,
+  point_pos_z : Float,
+  point_color_r : Float,
+  point_color_g : Float,
+  point_color_b : Float,
+  point_intensity : Float,
+  point_range : Float,
+  spot_pos_x : Float,
+  spot_pos_y : Float,
+  spot_pos_z : Float,
+  spot_dir_x : Float,
+  spot_dir_y : Float,
+  spot_dir_z : Float,
+  spot_color_r : Float,
+  spot_color_g : Float,
+  spot_color_b : Float,
+  spot_intensity : Float,
+  spot_range : Float,
+  spot_inner_angle : Float,
+  spot_outer_angle : Float,
+) -> Unit raise GpuBackendError {
+  let camera_rot = quat_to_z_rotation(
+    camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
+  )
+  guard self.frame is Some(frame) else { return }
+  if frame.pass is Some(pass) {
+    pass.end()
+    pass.release()
+    frame.pass = None
+  }
+  guard target_view(self, target_id) is Some(view) else { return }
+  guard ensure_depth_view_for_target(self, target_id) is Some(depth_view) else {
+    return
+  }
+  let pass = frame.encoder.begin_render_pass_color_depth_u32(
+    view,
+    depth_view,
+    color_load_op_u32=@wgpu.LOAD_OP_CLEAR,
+    color_store_op_u32=@wgpu.STORE_OP_STORE,
+    color_clear_r_f32=clear_r,
+    color_clear_g_f32=clear_g,
+    color_clear_b_f32=clear_b,
+    color_clear_a_f32=clear_a,
+    depth_load_op_u32=@wgpu.LOAD_OP_CLEAR,
+    depth_store_op_u32=@wgpu.STORE_OP_STORE,
+    depth_clear_value_f32=1.0F,
+    depth_read_only=false,
+    stencil_load_op_u32=@wgpu.LOAD_OP_CLEAR,
+    stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+    stencil_clear_value_u32=0U,
+    stencil_read_only=true,
+  )
+  let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
+  let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }
+  let vw = if viewport_w < 0 { 0U } else { viewport_w.reinterpret_as_uint() }
+  let vh = if viewport_h < 0 { 0U } else { viewport_h.reinterpret_as_uint() }
+  pass.set_viewport(
+    Float::from_double(vx.to_double()),
+    Float::from_double(vy.to_double()),
+    Float::from_double(vw.to_double()),
+    Float::from_double(vh.to_double()),
+    0.0F,
+    1.0F,
+  )
+  pass.set_scissor_rect(vx, vy, vw, vh)
+  frame.pass = Some(pass)
+  self.pass_state = Some(GpuPassState::{
+    target_id,
+    width_logical: Float::from_double(width_logical.to_double()),
+    height_logical: Float::from_double(height_logical.to_double()),
+    is_3d: true,
+    camera_x,
+    camera_y,
+    camera_rot,
+    camera_scale: 1.0F,
+    camera_z,
+    camera_rot_x,
+    camera_rot_y,
+    camera_rot_z,
+    camera_rot_w,
+    camera_fov_y,
+    camera_near,
+    camera_far,
+    viewport_x: vx,
+    viewport_y: vy,
+    viewport_w: vw,
+    viewport_h: vh,
+    ambient_r,
+    ambient_g,
+    ambient_b,
+    ambient_brightness,
+    directional_dir_x,
+    directional_dir_y,
+    directional_dir_z,
+    directional_color_r,
+    directional_color_g,
+    directional_color_b,
+    directional_illuminance,
+    point_pos_x,
+    point_pos_y,
+    point_pos_z,
+    point_color_r,
+    point_color_g,
+    point_color_b,
+    point_intensity,
+    point_range,
+    spot_pos_x,
+    spot_pos_y,
+    spot_pos_z,
+    spot_dir_x,
+    spot_dir_y,
+    spot_dir_z,
+    spot_color_r,
+    spot_color_g,
+    spot_color_b,
+    spot_intensity,
+    spot_range,
+    spot_inner_angle,
+    spot_outer_angle,
+  })
+  self.sprite_instance_data.clear()
+  self.sprite_batches.clear()
+  self.sprite_instance_count = 0U
+  self.ui_instance_data.clear()
+  self.ui_batches.clear()
+  self.ui_instance_count = 0U
+  self.ui_shadow_instance_data.clear()
+  self.ui_shadow_batches.clear()
+  self.ui_shadow_instance_count = 0U
+  self.ui_slice_instance_data.clear()
+  self.ui_slice_batches.clear()
+  self.ui_slice_instance_count = 0U
+  ensure_sprite_resources(self)
+  if self.sprite_globals_buf is Some(globals_buf) {
+    let w = Float::from_double(width_logical.to_double())
+    let h = Float::from_double(height_logical.to_double())
+    let scale_x_base = if w > 0.0F { 2.0F / w } else { 0.0F }
+    let scale_y_base = if h > 0.0F { 2.0F / h } else { 0.0F }
+    let cam_cos = cosf(-camera_rot)
+    let cam_sin = sinf(-camera_rot)
     let bytes = f32le_pack([
       camera_x, camera_y, cam_cos, cam_sin, scale_x_base, scale_y_base, 0.0F, 0.0F,
     ])
@@ -2190,6 +2808,7 @@ pub fn GpuBackend::create_mesh_rectangle(
     id,
     index_count: 6U,
     vertex_count: 4U,
+    vertex_stride_bytes: 32UL,
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -2271,6 +2890,7 @@ pub fn GpuBackend::create_mesh_capsule(
     id,
     index_count: inds.length().reinterpret_as_uint(),
     vertex_count: (verts.length() / 8).reinterpret_as_uint(),
+    vertex_stride_bytes: 32UL,
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -2374,6 +2994,56 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     id,
     index_count: indices_u16.length().reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
+    vertex_stride_bytes: 32UL,
+    vertex_buf: vb,
+    index_buf: ib,
+  }
+  self.meshes.val.push(info)
+  id
+}
+
+///|
+pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(
+  self : GpuBackend,
+  vertices : Array[Float],
+) -> Int {
+  let vcount = vertices.length() / 9
+  if vcount <= 0 {
+    return 0
+  }
+  let usable_vcount = vcount - vcount % 3
+  if usable_vcount <= 0 || usable_vcount > 65535 {
+    return 0
+  }
+  let indices_u16 : Array[Int] = []
+  for i in 0..<usable_vcount {
+    indices_u16.push(i)
+  }
+  let id = alloc_id(self)
+  let trimmed_vertices = if usable_vcount == vcount {
+    vertices
+  } else {
+    let out : Array[Float] = []
+    for i in 0..<(usable_vcount * 9) {
+      out.push(vertices[i])
+    }
+    out
+  }
+  let vb_usage = bu(@wgpu.BUFFER_USAGE_VERTEX | @wgpu.BUFFER_USAGE_COPY_DST)
+  let vb = self.device.create_buffer_init(
+    usage=vb_usage,
+    f32le_pack(trimmed_vertices),
+  )
+  let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
+  let ib = self.device.create_buffer_init(
+    usage=ib_usage,
+    u16le_pack(indices_u16),
+  )
+  let info = GpuMeshInfo::{
+    id,
+    index_count: indices_u16.length().reinterpret_as_uint(),
+    vertex_count: usable_vcount.reinterpret_as_uint(),
+    vertex_stride_bytes: 36UL,
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -2418,6 +3088,9 @@ pub fn GpuBackend::draw_mesh(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard find_mesh(self, mesh_id) is Some(mesh) else { return }
+  if mesh.vertex_stride_bytes != 32UL {
+    return
+  }
   guard mesh_pipeline_for_current_pass(self) is Some(pipeline) else { return }
   guard self.mesh_uniform_buf is Some(uniform_buf) else { return }
   guard self.mesh_uniform_bg is Some(uniform_bg) else { return }
@@ -2469,7 +3142,222 @@ pub fn GpuBackend::draw_mesh(
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, uniform_bg, [])
   pass.set_bind_group(1U, texture.bind_group, [])
-  let vb_bytes = (mesh.vertex_count.reinterpret_as_int() * 32).to_uint64()
+  let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
+    mesh.vertex_stride_bytes
+  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
+  let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
+  pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+  pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
+}
+
+///|
+pub fn GpuBackend::draw_mesh3d(
+  self : GpuBackend,
+  mesh_id : Int,
+  x : Float,
+  y : Float,
+  z : Float,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  texture_id : Int,
+  uv_offset_x : Float,
+  uv_offset_y : Float,
+  uv_scale_x : Float,
+  uv_scale_y : Float,
+  normal_texture_id : Int,
+  emissive_texture_id : Int,
+  metallic_roughness_texture_id : Int,
+  occlusion_texture_id : Int,
+  emissive_r : Float,
+  emissive_g : Float,
+  emissive_b : Float,
+  unlit : Float,
+  metallic : Float,
+  roughness : Float,
+  reflectance : Float,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard frame.pass is Some(pass) else { return }
+  guard self.pass_state is Some(ps) else { return }
+  flush_ui_shadow_batches(self)
+  flush_ui_slice_batches(self)
+  flush_ui_batches(self)
+  flush_sprite_batches(self)
+  guard find_mesh(self, mesh_id) is Some(mesh) else { return }
+  if mesh.vertex_stride_bytes != 36UL {
+    return
+  }
+  guard mesh3d_pipeline_for_current_pass(self) is Some(pipeline) else { return }
+  guard self.mesh3d_uniform_buf is Some(uniform_buf) else { return }
+  guard self.mesh3d_uniform_bg is Some(uniform_bg) else { return }
+  let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
+  let resolved_normal_texture_id = if normal_texture_id < 0 {
+    -1
+  } else {
+    normal_texture_id
+  }
+  let resolved_emissive_texture_id = if emissive_texture_id < 0 {
+    -1
+  } else {
+    emissive_texture_id
+  }
+  let resolved_metallic_roughness_texture_id = if metallic_roughness_texture_id <
+    0 {
+    -1
+  } else {
+    metallic_roughness_texture_id
+  }
+  let resolved_occlusion_texture_id = if occlusion_texture_id < 0 {
+    -1
+  } else {
+    occlusion_texture_id
+  }
+  let base_texture = ensure_fallback_texture(self, resolved_base_texture_id)
+  let normal_texture = ensure_fallback_texture(self, resolved_normal_texture_id)
+  let emissive_texture = ensure_fallback_texture(
+    self, resolved_emissive_texture_id,
+  )
+  let metallic_roughness_texture = ensure_fallback_texture(
+    self, resolved_metallic_roughness_texture_id,
+  )
+  let occlusion_texture = ensure_fallback_texture(
+    self, resolved_occlusion_texture_id,
+  )
+  let textured = texture_id >= 0
+  let normal_textured = normal_texture_id >= 0
+  let emissive_textured = emissive_texture_id >= 0
+  let metallic_roughness_textured = metallic_roughness_texture_id >= 0
+  let occlusion_textured = occlusion_texture_id >= 0
+  let aspect_ratio = if ps.height_logical > 0.0F {
+    ps.width_logical / ps.height_logical
+  } else {
+    1.0F
+  }
+  let uv_offset_x_value = if textured { uv_offset_x } else { 0.0F }
+  let uv_offset_y_value = if textured { uv_offset_y } else { 0.0F }
+  let uv_scale_x_value = if textured { uv_scale_x } else { -1.0F }
+  let uv_scale_y_value = if textured { uv_scale_y } else { -1.0F }
+  let bytes = f32le_pack([
+    x,
+    y,
+    z,
+    1.0F,
+    rotation_x,
+    rotation_y,
+    rotation_z,
+    rotation_w,
+    scale_x,
+    scale_y,
+    scale_z,
+    1.0F,
+    ps.camera_x,
+    ps.camera_y,
+    ps.camera_z,
+    1.0F,
+    ps.camera_rot_x,
+    ps.camera_rot_y,
+    ps.camera_rot_z,
+    ps.camera_rot_w,
+    ps.camera_fov_y,
+    aspect_ratio,
+    ps.camera_near,
+    ps.camera_far,
+    color_r,
+    color_g,
+    color_b,
+    color_a,
+    uv_offset_x_value,
+    uv_offset_y_value,
+    uv_scale_x_value,
+    uv_scale_y_value,
+    ps.ambient_r,
+    ps.ambient_g,
+    ps.ambient_b,
+    ps.ambient_brightness,
+    ps.directional_dir_x,
+    ps.directional_dir_y,
+    ps.directional_dir_z,
+    ps.directional_illuminance,
+    ps.directional_color_r,
+    ps.directional_color_g,
+    ps.directional_color_b,
+    1.0F,
+    ps.point_pos_x,
+    ps.point_pos_y,
+    ps.point_pos_z,
+    ps.point_range,
+    ps.point_color_r,
+    ps.point_color_g,
+    ps.point_color_b,
+    ps.point_intensity,
+    ps.spot_pos_x,
+    ps.spot_pos_y,
+    ps.spot_pos_z,
+    ps.spot_range,
+    ps.spot_dir_x,
+    ps.spot_dir_y,
+    ps.spot_dir_z,
+    ps.spot_inner_angle,
+    ps.spot_color_r,
+    ps.spot_color_g,
+    ps.spot_color_b,
+    ps.spot_intensity,
+    ps.spot_outer_angle,
+    0.0F,
+    0.0F,
+    0.0F,
+    emissive_r,
+    emissive_g,
+    emissive_b,
+    unlit,
+    metallic,
+    roughness,
+    reflectance,
+    if normal_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if emissive_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if metallic_roughness_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if occlusion_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+  ])
+  self.queue.write_buffer(uniform_buf, 0UL, bytes)
+  let material_bg = mesh3d_material_cache_get_or_create(
+    self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
+    occlusion_texture,
+  )
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(0U, uniform_bg, [])
+  pass.set_bind_group(1U, material_bg, [])
+  let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
+    mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
   let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
   pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)

@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/render3d",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",

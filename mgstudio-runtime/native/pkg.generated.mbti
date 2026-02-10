@@ -63,6 +63,11 @@ pub struct GpuBackend {
   mut configured_height : Int
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
+  mut depth_texture : @wgpu_mbt.Texture?
+  mut depth_view : @wgpu_mbt.TextureView?
+  mut depth_target_id : Int
+  mut depth_width : Int
+  mut depth_height : Int
   mut sprite_bgl_tex : @wgpu_mbt.BindGroupLayout?
   mut sprite_bgl_globals : @wgpu_mbt.BindGroupLayout?
   mut sprite_pipeline_layout : @wgpu_mbt.PipelineLayout?
@@ -110,22 +115,34 @@ pub struct GpuBackend {
   mut mesh_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut mesh_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh_uniform_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut mesh3d_uniform_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_uniform_bg : @wgpu_mbt.BindGroup?
+  mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
   meshes : Ref[Array[GpuMeshInfo]]
 }
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
+pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
@@ -134,7 +151,7 @@ pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
-pub fn GpuBackend::new(assets_base? : String) -> Self
+pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::texture_height(Self, Int) -> Int
@@ -152,6 +169,7 @@ pub struct GpuMeshInfo {
   id : Int
   index_count : UInt
   vertex_count : UInt
+  vertex_stride_bytes : UInt64
   vertex_buf : @wgpu_mbt.Buffer
   index_buf : @wgpu_mbt.Buffer
 }
@@ -160,14 +178,55 @@ pub struct GpuPassState {
   target_id : Int
   width_logical : Float
   height_logical : Float
+  is_3d : Bool
   camera_x : Float
   camera_y : Float
   camera_rot : Float
   camera_scale : Float
+  camera_z : Float
+  camera_rot_x : Float
+  camera_rot_y : Float
+  camera_rot_z : Float
+  camera_rot_w : Float
+  camera_fov_y : Float
+  camera_near : Float
+  camera_far : Float
   viewport_x : UInt
   viewport_y : UInt
   viewport_w : UInt
   viewport_h : UInt
+  ambient_r : Float
+  ambient_g : Float
+  ambient_b : Float
+  ambient_brightness : Float
+  directional_dir_x : Float
+  directional_dir_y : Float
+  directional_dir_z : Float
+  directional_color_r : Float
+  directional_color_g : Float
+  directional_color_b : Float
+  directional_illuminance : Float
+  point_pos_x : Float
+  point_pos_y : Float
+  point_pos_z : Float
+  point_color_r : Float
+  point_color_g : Float
+  point_color_b : Float
+  point_intensity : Float
+  point_range : Float
+  spot_pos_x : Float
+  spot_pos_y : Float
+  spot_pos_z : Float
+  spot_dir_x : Float
+  spot_dir_y : Float
+  spot_dir_z : Float
+  spot_color_r : Float
+  spot_color_g : Float
+  spot_color_b : Float
+  spot_intensity : Float
+  spot_range : Float
+  spot_inner_angle : Float
+  spot_outer_angle : Float
 }
 
 pub struct GpuTextureInfo {
@@ -207,6 +266,15 @@ pub struct HostContext {
   closures : Ref[Array[(Int, @types.Value, Int)]]
 }
 pub fn HostContext::new(String, String) -> Self raise
+
+pub struct Mesh3dMaterialBindGroupCacheEntry {
+  base_texture_id : Int
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  bind_group : @wgpu_mbt.BindGroup
+}
 
 pub struct PreparedJit {
   jm : @jit.JITModule

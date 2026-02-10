@@ -52,10 +52,25 @@ struct GpuPassState {
 
     clear: [f32; 4],
 
+    is_3d: bool,
     camera_x: f32,
     camera_y: f32,
     camera_rot: f32,
     camera_scale: f32,
+    camera_z: f32,
+    camera_rot_quat: [f32; 4],
+    camera_fov_y: f32,
+    camera_near: f32,
+    camera_far: f32,
+    ambient: [f32; 4],
+    directional_dir_illum: [f32; 4],
+    directional_color: [f32; 3],
+    point_pos_range: [f32; 4],
+    point_color_intensity: [f32; 4],
+    spot_pos_range: [f32; 4],
+    spot_dir_inner: [f32; 4],
+    spot_color_intensity: [f32; 4],
+    spot_outer_angle: f32,
 
     // Physical (pixels) viewport/scissor.
     viewport_x: u32,
@@ -95,15 +110,30 @@ struct SpriteSegment {
 
 struct MeshDraw {
     mesh_id: i32,
+    is_3d: bool,
     x: f32,
     y: f32,
+    z: f32,
     rotation: f32,
+    rotation_quat: [f32; 4],
     scale_x: f32,
     scale_y: f32,
+    scale_z: f32,
     color: [f32; 4],
     texture_id: i32,
+    normal_texture_id: i32,
+    emissive_texture_id: i32,
+    metallic_roughness_texture_id: i32,
+    occlusion_texture_id: i32,
     uv_offset: [f32; 2],
     uv_scale: [f32; 2],
+    map_flags: [f32; 4],
+    emissive: [f32; 3],
+    unlit: f32,
+    metallic: f32,
+    roughness: f32,
+    reflectance: f32,
+    normal_map_flag: f32,
     ubo_offset: u32, // computed during encoding
 }
 
@@ -123,8 +153,15 @@ struct GpuMesh {
     #[allow(dead_code)]
     vertex_count: u32,
     index_count: u32,
+    layout: MeshVertexLayout,
     vertex_buf: wgpu::Buffer,
     index_buf: wgpu::Buffer,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MeshVertexLayout {
+    XyUvRgba,
+    XyzUvRgba,
 }
 
 #[derive(Default)]
@@ -145,8 +182,11 @@ struct SpriteRenderer {
 #[derive(Default)]
 struct MeshRenderer {
     bgl_uniform: Option<wgpu::BindGroupLayout>,
+    bgl_material_3d: Option<wgpu::BindGroupLayout>,
     pipeline_layout: Option<wgpu::PipelineLayout>,
+    pipeline_layout_3d: Option<wgpu::PipelineLayout>,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
+    pipelines_3d: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
 
     uniform_buf: Option<wgpu::Buffer>,
     uniform_bg: Option<wgpu::BindGroup>,
@@ -370,10 +410,25 @@ impl GpuBackend {
             width_logical,
             height_logical,
             clear,
+            is_3d: false,
             camera_x,
             camera_y,
             camera_rot,
             camera_scale,
+            camera_z: 0.0,
+            camera_rot_quat: [0.0, 0.0, 0.0, 1.0],
+            camera_fov_y: std::f32::consts::FRAC_PI_2,
+            camera_near: 0.1,
+            camera_far: 1000.0,
+            ambient: [1.0, 1.0, 1.0, 0.0],
+            directional_dir_illum: [0.0, -1.0, 0.0, 0.0],
+            directional_color: [1.0, 1.0, 1.0],
+            point_pos_range: [0.0, 0.0, 0.0, 1.0],
+            point_color_intensity: [1.0, 1.0, 1.0, 0.0],
+            spot_pos_range: [0.0, 0.0, 0.0, 1.0],
+            spot_dir_inner: [0.0, -1.0, 0.0, 0.6],
+            spot_color_intensity: [1.0, 1.0, 1.0, 0.0],
+            spot_outer_angle: 0.8,
             viewport_x: vx,
             viewport_y: vy,
             viewport_w: vw,
@@ -396,6 +451,65 @@ impl GpuBackend {
         Ok(())
     }
 
+    pub fn begin_pass_3d(
+        &mut self,
+        target_id: i32,
+        width_logical: i32,
+        height_logical: i32,
+        clear: [f32; 4],
+        camera_x: f32,
+        camera_y: f32,
+        camera_z: f32,
+        camera_rot_x: f32,
+        camera_rot_y: f32,
+        camera_rot_z: f32,
+        camera_rot_w: f32,
+        camera_fov_y: f32,
+        camera_near: f32,
+        camera_far: f32,
+        viewport: (i32, i32, i32, i32),
+        ambient: [f32; 4],
+        directional_dir_illum: [f32; 4],
+        directional_color: [f32; 3],
+        point_pos_range: [f32; 4],
+        point_color_intensity: [f32; 4],
+        spot_pos_range: [f32; 4],
+        spot_dir_inner: [f32; 4],
+        spot_color_intensity: [f32; 4],
+        spot_outer_angle: f32,
+    ) -> anyhow::Result<()> {
+        let camera_rot = quat_to_z_rotation(camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w);
+        self.begin_pass(
+            target_id,
+            width_logical,
+            height_logical,
+            clear,
+            camera_x,
+            camera_y,
+            camera_rot,
+            1.0,
+            viewport,
+        )?;
+        if let Some(pass) = self.pass.as_mut() {
+            pass.st.is_3d = true;
+            pass.st.camera_z = camera_z;
+            pass.st.camera_rot_quat = [camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w];
+            pass.st.camera_fov_y = camera_fov_y;
+            pass.st.camera_near = camera_near;
+            pass.st.camera_far = camera_far;
+            pass.st.ambient = ambient;
+            pass.st.directional_dir_illum = directional_dir_illum;
+            pass.st.directional_color = directional_color;
+            pass.st.point_pos_range = point_pos_range;
+            pass.st.point_color_intensity = point_color_intensity;
+            pass.st.spot_pos_range = spot_pos_range;
+            pass.st.spot_dir_inner = spot_dir_inner;
+            pass.st.spot_color_intensity = spot_color_intensity;
+            pass.st.spot_outer_angle = spot_outer_angle;
+        }
+        Ok(())
+    }
+
     pub fn end_pass(&mut self) -> anyhow::Result<()> {
         let Some(mut pass) = self.pass.take() else {
             return Ok(());
@@ -404,20 +518,30 @@ impl GpuBackend {
 
         // Collect sprite segments (by reference) to prepare storage buffer + per-segment bind groups.
         let mut sprite_segments: Vec<&SpriteSegment> = Vec::new();
-        let mut has_mesh = false;
+        let mut has_mesh_2d = false;
+        let mut has_mesh_3d = false;
         for cmd in &pass.commands {
             match cmd {
                 DrawCmd::Sprites(seg) => sprite_segments.push(seg),
-                DrawCmd::Mesh(_) => has_mesh = true,
+                DrawCmd::Mesh(draw) => {
+                    if draw.is_3d {
+                        has_mesh_3d = true;
+                    } else {
+                        has_mesh_2d = true;
+                    }
+                }
             }
         }
 
         // Prepare sprite instance storage + bind groups.
         let sprite_segment_bgs = self.prepare_sprite_segments(&pass.st, &sprite_segments)?;
 
-        // Prepare mesh pipeline + uniforms only if needed.
-        if has_mesh {
+        // Prepare mesh pipelines + uniforms only if needed.
+        if has_mesh_2d {
             self.ensure_mesh_pipeline(pass.st.target_format)?;
+        }
+        if has_mesh_3d {
+            self.ensure_mesh3d_pipeline(pass.st.target_format)?;
         }
         self.prepare_mesh_uniforms(&mut pass)?;
 
@@ -435,31 +559,68 @@ impl GpuBackend {
                 .expect("sprite surface pipeline")
                 .clone()
         };
-        let mesh_pipeline = self.mesh.pipelines.get(&pass.st.target_format).cloned();
+        let mesh_pipeline_2d = self.mesh.pipelines.get(&pass.st.target_format).cloned();
+        let mesh_pipeline_3d = self.mesh.pipelines_3d.get(&pass.st.target_format).cloned();
         let mesh_bg = self.mesh.uniform_bg.as_ref().cloned();
 
         let Some(mut frame) = self.frame.take() else {
             return Ok(());
         };
-        let target_view: &wgpu::TextureView = if pass.st.target_id == -1 {
-            match frame.surface_view.as_ref() {
-                Some(v) => v,
-                None => {
-                    self.frame = Some(frame);
-                    return Ok(());
+        let (target_view, target_width, target_height): (&wgpu::TextureView, u32, u32) =
+            if pass.st.target_id == -1 {
+                match frame.surface_view.as_ref() {
+                    Some(v) => {
+                        let (w, h) = self.configured_size;
+                        (v, w.max(1), h.max(1))
+                    }
+                    None => {
+                        self.frame = Some(frame);
+                        return Ok(());
+                    }
                 }
-            }
-        } else {
-            match self.textures.get(&pass.st.target_id) {
-                Some(t) => &t.view,
-                None => {
-                    self.frame = Some(frame);
-                    return Ok(());
+            } else {
+                match self.textures.get(&pass.st.target_id) {
+                    Some(t) => (&t.view, t.width.max(1), t.height.max(1)),
+                    None => {
+                        self.frame = Some(frame);
+                        return Ok(());
+                    }
                 }
-            }
+            };
+        let mut depth_texture: Option<wgpu::Texture> = None;
+        let mut depth_view: Option<wgpu::TextureView> = None;
+        if pass.st.is_3d {
+            let depth_tex = self.device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("mgstudio-pass-depth"),
+                size: wgpu::Extent3d {
+                    width: target_width,
+                    height: target_height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Depth24Plus,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            });
+            let view = depth_tex.create_view(&wgpu::TextureViewDescriptor::default());
+            depth_texture = Some(depth_tex);
+            depth_view = Some(view);
         };
 
         {
+            let depth_attachment =
+                depth_view
+                    .as_ref()
+                    .map(|view| wgpu::RenderPassDepthStencilAttachment {
+                        view,
+                        depth_ops: Some(wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(1.0),
+                            store: wgpu::StoreOp::Store,
+                        }),
+                        stencil_ops: None,
+                    });
             let mut rp = frame
                 .encoder
                 .begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -478,7 +639,7 @@ impl GpuBackend {
                             store: wgpu::StoreOp::Store,
                         },
                     })],
-                    depth_stencil_attachment: None,
+                    depth_stencil_attachment: depth_attachment,
                     timestamp_writes: None,
                     occlusion_query_set: None,
                     multiview_mask: None,
@@ -525,19 +686,97 @@ impl GpuBackend {
                         }
                     }
                     DrawCmd::Mesh(draw) => {
-                        let (Some(pipeline), Some(bg)) = (mesh_pipeline.as_ref(), mesh_bg.as_ref())
-                        else {
+                        let pipeline = if draw.is_3d {
+                            mesh_pipeline_3d.as_ref()
+                        } else {
+                            mesh_pipeline_2d.as_ref()
+                        };
+                        let (Some(pipeline), Some(bg)) = (pipeline, mesh_bg.as_ref()) else {
                             continue;
                         };
                         let Some(mesh) = self.meshes.get(&draw.mesh_id) else {
                             continue;
                         };
-                        let Some(tex) = self.textures.get(&draw.texture_id) else {
+                        if draw.is_3d && mesh.layout != MeshVertexLayout::XyzUvRgba {
                             continue;
-                        };
+                        }
+                        if !draw.is_3d && mesh.layout != MeshVertexLayout::XyUvRgba {
+                            continue;
+                        }
                         rp.set_pipeline(pipeline);
                         rp.set_bind_group(0, bg, &[draw.ubo_offset]);
-                        rp.set_bind_group(1, &tex.bind_group, &[]);
+                        if draw.is_3d {
+                            let Some(base_tex) = self.textures.get(&draw.texture_id) else {
+                                continue;
+                            };
+                            let Some(normal_tex) = self.textures.get(&draw.normal_texture_id)
+                            else {
+                                continue;
+                            };
+                            let Some(emissive_tex) = self.textures.get(&draw.emissive_texture_id)
+                            else {
+                                continue;
+                            };
+                            let Some(metallic_roughness_tex) =
+                                self.textures.get(&draw.metallic_roughness_texture_id)
+                            else {
+                                continue;
+                            };
+                            let Some(occlusion_tex) = self.textures.get(&draw.occlusion_texture_id)
+                            else {
+                                continue;
+                            };
+                            let layout = pipeline.get_bind_group_layout(1);
+                            let material_bg =
+                                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                                    label: Some("mgstudio-mesh3d-material-bg"),
+                                    layout: &layout,
+                                    entries: &[
+                                        wgpu::BindGroupEntry {
+                                            binding: 0,
+                                            resource: wgpu::BindingResource::Sampler(
+                                                &base_tex.sampler,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 1,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &base_tex.view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 2,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &normal_tex.view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 3,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &emissive_tex.view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 4,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &metallic_roughness_tex.view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 5,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &occlusion_tex.view,
+                                            ),
+                                        },
+                                    ],
+                                });
+                            rp.set_bind_group(1, &material_bg, &[]);
+                        } else {
+                            let Some(tex) = self.textures.get(&draw.texture_id) else {
+                                continue;
+                            };
+                            rp.set_bind_group(1, &tex.bind_group, &[]);
+                        }
                         rp.set_vertex_buffer(0, mesh.vertex_buf.slice(..));
                         rp.set_index_buffer(mesh.index_buf.slice(..), wgpu::IndexFormat::Uint16);
                         rp.draw_indexed(0..mesh.index_count, 0, 0..1);
@@ -545,6 +784,10 @@ impl GpuBackend {
                 }
             }
         }
+
+        // Keep depth resources alive until encoding is finished.
+        let _ = depth_texture;
+        let _ = depth_view;
 
         self.frame = Some(frame);
         Ok(())
@@ -680,15 +923,149 @@ impl GpuBackend {
         pass.flush_sprites();
         pass.commands.push(DrawCmd::Mesh(MeshDraw {
             mesh_id,
+            is_3d: false,
             x,
             y,
+            z: 0.0,
             rotation,
+            rotation_quat: [0.0, 0.0, 0.0, 1.0],
             scale_x,
             scale_y,
+            scale_z: 1.0,
             color,
             texture_id: resolved_texture_id,
+            normal_texture_id: resolved_texture_id,
+            emissive_texture_id: resolved_texture_id,
+            metallic_roughness_texture_id: resolved_texture_id,
+            occlusion_texture_id: resolved_texture_id,
             uv_offset,
             uv_scale,
+            map_flags: [if textured { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
+            emissive: [0.0, 0.0, 0.0],
+            unlit: 0.0,
+            metallic: 0.0,
+            roughness: 0.5,
+            reflectance: 0.5,
+            normal_map_flag: 0.0,
+            ubo_offset: 0,
+        }));
+        Ok(())
+    }
+
+    pub fn draw_mesh3d(
+        &mut self,
+        mesh_id: i32,
+        x: f32,
+        y: f32,
+        z: f32,
+        rotation_x: f32,
+        rotation_y: f32,
+        rotation_z: f32,
+        rotation_w: f32,
+        scale_x: f32,
+        scale_y: f32,
+        scale_z: f32,
+        color: [f32; 4],
+        texture_id: i32,
+        uv_offset: (f32, f32),
+        uv_scale: (f32, f32),
+        normal_texture_id: i32,
+        emissive_texture_id: i32,
+        metallic_roughness_texture_id: i32,
+        occlusion_texture_id: i32,
+        emissive: [f32; 3],
+        unlit: f32,
+        metallic: f32,
+        roughness: f32,
+        reflectance: f32,
+    ) -> anyhow::Result<()> {
+        if self.frame.is_none() {
+            return Ok(());
+        }
+        let textured = texture_id >= 0;
+        let requested_texture_id = if textured { texture_id } else { -1 };
+        let resolved_texture_id = self.ensure_fallback_texture(requested_texture_id)?;
+        let normal_textured = normal_texture_id >= 0;
+        let requested_normal_texture_id = if normal_textured {
+            normal_texture_id
+        } else {
+            -1
+        };
+        let resolved_normal_texture_id =
+            self.ensure_fallback_texture(requested_normal_texture_id)?;
+        let emissive_textured = emissive_texture_id >= 0;
+        let requested_emissive_texture_id = if emissive_textured {
+            emissive_texture_id
+        } else {
+            -1
+        };
+        let resolved_emissive_texture_id =
+            self.ensure_fallback_texture(requested_emissive_texture_id)?;
+        let metallic_roughness_textured = metallic_roughness_texture_id >= 0;
+        let requested_metallic_roughness_texture_id = if metallic_roughness_textured {
+            metallic_roughness_texture_id
+        } else {
+            -1
+        };
+        let resolved_metallic_roughness_texture_id =
+            self.ensure_fallback_texture(requested_metallic_roughness_texture_id)?;
+        let occlusion_textured = occlusion_texture_id >= 0;
+        let requested_occlusion_texture_id = if occlusion_textured {
+            occlusion_texture_id
+        } else {
+            -1
+        };
+        let resolved_occlusion_texture_id =
+            self.ensure_fallback_texture(requested_occlusion_texture_id)?;
+        let uv_offset = if textured {
+            [uv_offset.0, uv_offset.1]
+        } else {
+            [0.0, 0.0]
+        };
+        let uv_scale = if textured {
+            [uv_scale.0, uv_scale.1]
+        } else {
+            [-1.0, -1.0]
+        };
+        let Some(pass) = self.pass.as_mut() else {
+            return Ok(());
+        };
+        pass.flush_sprites();
+        pass.commands.push(DrawCmd::Mesh(MeshDraw {
+            mesh_id,
+            is_3d: true,
+            x,
+            y,
+            z,
+            rotation: 0.0,
+            rotation_quat: [rotation_x, rotation_y, rotation_z, rotation_w],
+            scale_x,
+            scale_y,
+            scale_z,
+            color,
+            texture_id: resolved_texture_id,
+            normal_texture_id: resolved_normal_texture_id,
+            emissive_texture_id: resolved_emissive_texture_id,
+            metallic_roughness_texture_id: resolved_metallic_roughness_texture_id,
+            occlusion_texture_id: resolved_occlusion_texture_id,
+            uv_offset,
+            uv_scale,
+            map_flags: [
+                if textured { 1.0 } else { 0.0 },
+                if emissive_textured { 1.0 } else { 0.0 },
+                if metallic_roughness_textured {
+                    1.0
+                } else {
+                    0.0
+                },
+                if occlusion_textured { 1.0 } else { 0.0 },
+            ],
+            emissive,
+            unlit,
+            metallic,
+            roughness,
+            reflectance,
+            normal_map_flag: if normal_textured { 1.0 } else { 0.0 },
             ubo_offset: 0,
         }));
         Ok(())
@@ -728,6 +1105,7 @@ impl GpuBackend {
             GpuMesh {
                 vertex_count: 6,
                 index_count: 6,
+                layout: MeshVertexLayout::XyUvRgba,
                 vertex_buf: vb,
                 index_buf: ib,
             },
@@ -770,6 +1148,50 @@ impl GpuBackend {
             GpuMesh {
                 vertex_count: usable_vcount as u32,
                 index_count: usable_vcount as u32,
+                layout: MeshVertexLayout::XyUvRgba,
+                vertex_buf: vb,
+                index_buf: ib,
+            },
+        );
+        id
+    }
+
+    pub fn create_mesh_triangles_xyzuvrgba(&mut self, vertices: &[f32]) -> i32 {
+        let vcount = vertices.len() / 9;
+        if vcount == 0 {
+            return 0;
+        }
+        let usable_vcount = vcount - (vcount % 3);
+        if usable_vcount == 0 || usable_vcount > 65535 {
+            return 0;
+        }
+        let trimmed = &vertices[..usable_vcount * 9];
+        let mut indices: Vec<u16> = Vec::with_capacity(usable_vcount);
+        for i in 0..usable_vcount {
+            indices.push(i as u16);
+        }
+        let id = self.next_mesh_id;
+        self.next_mesh_id += 1;
+        let vb = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("mgstudio-mesh3d-tris-vb"),
+                contents: bytemuck::cast_slice(trimmed),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        let ib = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("mgstudio-mesh3d-tris-ib"),
+                contents: bytemuck::cast_slice(indices.as_slice()),
+                usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+            });
+        self.meshes.insert(
+            id,
+            GpuMesh {
+                vertex_count: usable_vcount as u32,
+                index_count: usable_vcount as u32,
+                layout: MeshVertexLayout::XyzUvRgba,
                 vertex_buf: vb,
                 index_buf: ib,
             },
@@ -1514,11 +1936,81 @@ impl GpuBackend {
                     count: None,
                 }],
             });
+        let bgl_material_3d =
+            self.device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("mgstudio_mesh3d_material_bgl"),
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 3,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 4,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 5,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                    ],
+                });
         let pl = self
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("mgstudio_mesh_pl"),
                 bind_group_layouts: &[&bgl_uniform, bgl_tex],
+                immediate_size: 0,
+            });
+        let pl_3d = self
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("mgstudio_mesh3d_pl"),
+                bind_group_layouts: &[&bgl_uniform, &bgl_material_3d],
                 immediate_size: 0,
             });
         let cap = 256u64; // will grow on demand (alignment is at least 256 on Metal)
@@ -1541,7 +2033,9 @@ impl GpuBackend {
             }],
         });
         self.mesh.bgl_uniform = Some(bgl_uniform);
+        self.mesh.bgl_material_3d = Some(bgl_material_3d);
         self.mesh.pipeline_layout = Some(pl);
+        self.mesh.pipeline_layout_3d = Some(pl_3d);
         self.mesh.uniform_buf = Some(uniform_buf);
         self.mesh.uniform_bg = Some(bg);
         self.mesh.uniform_capacity = cap;
@@ -1566,21 +2060,21 @@ impl GpuBackend {
                 source: wgpu::ShaderSource::Wgsl(wgsl.into()),
             });
         let vb_layout = wgpu::VertexBufferLayout {
-            array_stride: 32,
+            array_stride: 36,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
                     offset: 0,
                     shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x2,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
-                    offset: 8,
+                    offset: 12,
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
-                    offset: 16,
+                    offset: 20,
                     shader_location: 2,
                     format: wgpu::VertexFormat::Float32x4,
                 },
@@ -1620,6 +2114,84 @@ impl GpuBackend {
         Ok(())
     }
 
+    fn ensure_mesh3d_pipeline(&mut self, format: wgpu::TextureFormat) -> anyhow::Result<()> {
+        self.ensure_mesh_resources()?;
+        if self.mesh.pipelines_3d.contains_key(&format) {
+            return Ok(());
+        }
+        let pl = self
+            .mesh
+            .pipeline_layout_3d
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: mesh3d pipeline layout missing"))?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/3d/mesh3d.wgsl")?;
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_mesh3d_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let vb_layout = wgpu::VertexBufferLayout {
+            array_stride: 36,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute {
+                    offset: 12,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: 20,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x4,
+                },
+            ],
+        };
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_mesh3d_pipeline"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[vb_layout],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fs_main"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: wgpu::TextureFormat::Depth24Plus,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::LessEqual,
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
+                }),
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        self.mesh.pipelines_3d.insert(format, pipeline);
+        Ok(())
+    }
+
     fn prepare_mesh_uniforms(&mut self, pass: &mut GpuPassRecorder) -> anyhow::Result<()> {
         // Assign dynamic offsets for each mesh draw (alignment is backend-limited).
         let align = self
@@ -1637,7 +2209,7 @@ impl GpuBackend {
                 }
                 let bytes = mesh_uniform_bytes(&pass.st, draw);
                 draw.ubo_offset = offset as u32;
-                buf.extend_from_slice(&bytes);
+                buf.extend_from_slice(bytes.as_slice());
 
                 // Pad to alignment for the next entry.
                 let padded = align_up(buf.len() as u64, align) as usize;
@@ -1762,7 +2334,20 @@ fn align_up(v: u64, align: u64) -> u64 {
     ((v + align - 1) / align) * align
 }
 
-fn mesh_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> [u8; 80] {
+fn quat_to_z_rotation(x: f32, y: f32, z: f32, w: f32) -> f32 {
+    let siny_cosp = 2.0f32 * (w * z + x * y);
+    let cosy_cosp = 1.0f32 - 2.0f32 * (y * y + z * z);
+    siny_cosp.atan2(cosy_cosp)
+}
+
+fn mesh_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
+    if draw.is_3d {
+        return mesh3d_uniform_bytes(pass, draw);
+    }
+    mesh2d_uniform_bytes(pass, draw)
+}
+
+fn mesh2d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     let safe_scale = pass.camera_scale;
     let scale_x_base = if pass.width_logical > 0.0 {
         2.0 / pass.width_logical / safe_scale
@@ -1801,7 +2386,96 @@ fn mesh_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> [u8; 80] {
         draw.uv_scale[0],
         draw.uv_scale[1],
     ];
-    let mut out = [0u8; 80];
-    out.copy_from_slice(bytemuck::cast_slice(&floats));
-    out
+    bytemuck::cast_slice(&floats).to_vec()
+}
+
+fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
+    let aspect_ratio = if pass.height_logical > 0.0 {
+        pass.width_logical / pass.height_logical
+    } else {
+        1.0
+    };
+    let floats: [f32; 80] = [
+        draw.x,
+        draw.y,
+        draw.z,
+        1.0,
+        draw.rotation_quat[0],
+        draw.rotation_quat[1],
+        draw.rotation_quat[2],
+        draw.rotation_quat[3],
+        draw.scale_x,
+        draw.scale_y,
+        draw.scale_z,
+        1.0,
+        pass.camera_x,
+        pass.camera_y,
+        pass.camera_z,
+        1.0,
+        pass.camera_rot_quat[0],
+        pass.camera_rot_quat[1],
+        pass.camera_rot_quat[2],
+        pass.camera_rot_quat[3],
+        pass.camera_fov_y,
+        aspect_ratio,
+        pass.camera_near,
+        pass.camera_far,
+        draw.color[0],
+        draw.color[1],
+        draw.color[2],
+        draw.color[3],
+        draw.uv_offset[0],
+        draw.uv_offset[1],
+        draw.uv_scale[0],
+        draw.uv_scale[1],
+        pass.ambient[0],
+        pass.ambient[1],
+        pass.ambient[2],
+        pass.ambient[3],
+        pass.directional_dir_illum[0],
+        pass.directional_dir_illum[1],
+        pass.directional_dir_illum[2],
+        pass.directional_dir_illum[3],
+        pass.directional_color[0],
+        pass.directional_color[1],
+        pass.directional_color[2],
+        1.0,
+        pass.point_pos_range[0],
+        pass.point_pos_range[1],
+        pass.point_pos_range[2],
+        pass.point_pos_range[3],
+        pass.point_color_intensity[0],
+        pass.point_color_intensity[1],
+        pass.point_color_intensity[2],
+        pass.point_color_intensity[3],
+        pass.spot_pos_range[0],
+        pass.spot_pos_range[1],
+        pass.spot_pos_range[2],
+        pass.spot_pos_range[3],
+        pass.spot_dir_inner[0],
+        pass.spot_dir_inner[1],
+        pass.spot_dir_inner[2],
+        pass.spot_dir_inner[3],
+        pass.spot_color_intensity[0],
+        pass.spot_color_intensity[1],
+        pass.spot_color_intensity[2],
+        pass.spot_color_intensity[3],
+        pass.spot_outer_angle,
+        0.0,
+        0.0,
+        0.0,
+        draw.emissive[0],
+        draw.emissive[1],
+        draw.emissive[2],
+        draw.unlit,
+        draw.metallic,
+        draw.roughness,
+        draw.reflectance,
+        draw.normal_map_flag,
+        draw.map_flags[0],
+        draw.map_flags[1],
+        draw.map_flags[2],
+        draw.map_flags[3],
+    ];
+    bytemuck::cast_slice(&floats).to_vec()
 }

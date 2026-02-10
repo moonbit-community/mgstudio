@@ -56,6 +56,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
+pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
+
 pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(W, @math.Vec2) -> @math.Vec2?
 
 pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @math.Vec2?
@@ -63,6 +65,8 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @mat
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
 pub fn[W : RenderExtractWorld] render_extract_system(W) -> Unit
+
+pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
 pub fn[W] render_prepare_system(W) -> Unit
 
