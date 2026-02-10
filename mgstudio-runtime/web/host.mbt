@@ -2272,6 +2272,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
         ("view", texture.create_view().as_any()),
         ("sampler", sampler_value.as_any()),
         ("bindGroup", js_null()),
+        ("meshBindGroup", js_null()),
         ("uiBindGroup", js_null()),
         ("width", @js.any(fallback_size)),
         ("height", @js.any(fallback_size)),
@@ -2317,6 +2318,36 @@ fn ensure_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
     let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
     let bind_group = device.create_bind_group(bind_group_desc.to_js())
     entry._set("bindGroup", bind_group.as_any()) |> ignore
+  }
+}
+
+///|
+fn ensure_mesh_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
+  if state.gpu.mesh_pipeline is None {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  if !host_is_nullish(entry._get("meshBindGroup")) {
+    return
+  }
+  if host_is_nullish(entry._get("sampler")) ||
+    host_is_nullish(entry._get("view")) {
+    return
+  }
+  if state.gpu.device is Some(device) &&
+    state.gpu.mesh_pipeline is Some(mesh_pipeline) {
+    let layout = mesh_pipeline.get_bind_group_layout(1)
+    let sampler : @webgpu.GPUSampler = entry._get("sampler").cast()
+    let view : @webgpu.GPUTextureView = entry._get("view").cast()
+    let entries = [
+      @webgpu.bind_group_entry_sampler(0, sampler),
+      @webgpu.bind_group_entry_texture(1, view),
+    ]
+    let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+    let bind_group = device.create_bind_group(bind_group_desc.to_js())
+    entry._set("meshBindGroup", bind_group.as_any()) |> ignore
   }
 }
 
@@ -3177,6 +3208,7 @@ async fn load_texture_from_path(
         ("view", texture.create_view().as_any()),
         ("sampler", sampler_value.as_any()),
         ("bindGroup", js_null()),
+        ("meshBindGroup", js_null()),
         ("uiBindGroup", js_null()),
         ("width", @js.any(width)),
         ("height", @js.any(height)),
@@ -4334,8 +4366,8 @@ fn draw_mesh(
       uvs_x,
       uvs_y,
     ])
-    ensure_bind_group_for_texture(state, texture_entry_value)
-    let texture_bind_group_any = texture_entry_value._get("bindGroup")
+    ensure_mesh_bind_group_for_texture(state, texture_entry_value)
+    let texture_bind_group_any = texture_entry_value._get("meshBindGroup")
     if host_is_nullish(texture_bind_group_any) {
       return
     }
@@ -5164,8 +5196,10 @@ pub fn create_host(
     if sampler is Some(sampler_value) {
       entry._set("sampler", sampler_value.as_any()) |> ignore
       entry._set("bindGroup", js_null()) |> ignore
+      entry._set("meshBindGroup", js_null()) |> ignore
       entry._set("uiBindGroup", js_null()) |> ignore
       ensure_bind_group_for_texture(state, entry)
+      ensure_mesh_bind_group_for_texture(state, entry)
       ensure_ui_bind_group_for_texture(state, entry)
     }
   })
@@ -5225,6 +5259,7 @@ pub fn create_host(
           ("view", texture.create_view().as_any()),
           ("sampler", sampler_value.as_any()),
           ("bindGroup", js_null()),
+          ("meshBindGroup", js_null()),
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
@@ -5578,6 +5613,7 @@ pub fn create_host(
           ("view", texture.create_view().as_any()),
           ("sampler", sampler_value.as_any()),
           ("bindGroup", js_null()),
+          ("meshBindGroup", js_null()),
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
