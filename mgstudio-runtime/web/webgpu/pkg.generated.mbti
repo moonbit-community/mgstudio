@@ -80,7 +80,7 @@ pub fn texture_usage_render_attachment() -> Int
 
 pub fn texture_usage_texture_binding() -> Int
 
-pub fn vertex_attribute(Int, Int, VertexFormat) -> VertexAttribute
+pub fn vertex_attribute(shader_location? : Int, offset? : Int, format? : VertexFormat) -> VertexAttribute
 
 pub fn vertex_buffer_layout(Int, Array[VertexAttribute]) -> VertexBufferLayout
 

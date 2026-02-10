@@ -2895,19 +2895,19 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     let position_attr = @webgpu.vertex_attribute(
-      0,
-      0,
-      @webgpu.VertexFormat::Float32x2,
+      shader_location=0,
+      offset=0,
+      format=@webgpu.VertexFormat::Float32x2,
     )
     let uv_attr = @webgpu.vertex_attribute(
-      1,
-      8,
-      @webgpu.VertexFormat::Float32x2,
+      shader_location=1,
+      offset=8,
+      format=@webgpu.VertexFormat::Float32x2,
     )
     let color_attr = @webgpu.vertex_attribute(
-      2,
-      16,
-      @webgpu.VertexFormat::Float32x4,
+      shader_location=2,
+      offset=16,
+      format=@webgpu.VertexFormat::Float32x4,
     )
     let vertex_layout = @webgpu.vertex_buffer_layout(32, [
       position_attr, uv_attr, color_attr,
@@ -2994,14 +2994,14 @@ fn ensure_gizmo_pipeline(state : State) -> Unit {
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     let position_attr = @webgpu.vertex_attribute(
-      0,
-      0,
-      @webgpu.VertexFormat::Float32x2,
+      shader_location=0,
+      offset=0,
+      format=@webgpu.VertexFormat::Float32x2,
     )
     let color_attr = @webgpu.vertex_attribute(
-      1,
-      8,
-      @webgpu.VertexFormat::Float32x4,
+      shader_location=1,
+      offset=8,
+      format=@webgpu.VertexFormat::Float32x4,
     )
     let vertex_layout = @webgpu.vertex_buffer_layout(24, [
       position_attr, color_attr,

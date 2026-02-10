@@ -384,9 +384,9 @@ pub struct VertexAttribute {
 
 ///|
 pub fn vertex_attribute(
-  shader_location : Int,
-  offset : Int,
-  format : VertexFormat,
+  shader_location? : Int = 0,
+  offset? : Int = 0,
+  format? : VertexFormat = VertexFormat::Float32x2,
 ) -> VertexAttribute {
   VertexAttribute::{ shader_location, offset, format }
 }
