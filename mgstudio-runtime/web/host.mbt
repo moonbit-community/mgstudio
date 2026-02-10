@@ -3011,19 +3011,19 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
     let position_attr = @webgpu.vertex_attribute(
       shader_location=0,
       offset=0,
-      format=@webgpu.VertexFormat::Float32x3,
+      format=@webgpu.VertexFormat::Float32x2,
     )
     let uv_attr = @webgpu.vertex_attribute(
       shader_location=1,
-      offset=12,
+      offset=8,
       format=@webgpu.VertexFormat::Float32x2,
     )
     let color_attr = @webgpu.vertex_attribute(
       shader_location=2,
-      offset=20,
+      offset=16,
       format=@webgpu.VertexFormat::Float32x4,
     )
-    let vertex_layout = @webgpu.vertex_buffer_layout(36, [
+    let vertex_layout = @webgpu.vertex_buffer_layout(32, [
       position_attr, uv_attr, color_attr,
     ])
     let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
@@ -4724,42 +4724,6 @@ fn draw_mesh(
       uv0_y,
       uvs_x,
       uvs_y,
-      info.ambient_r,
-      info.ambient_g,
-      info.ambient_b,
-      info.ambient_brightness,
-      info.directional_dir_x,
-      info.directional_dir_y,
-      info.directional_dir_z,
-      info.directional_illuminance,
-      info.directional_color_r,
-      info.directional_color_g,
-      info.directional_color_b,
-      1.0,
-      info.point_pos_x,
-      info.point_pos_y,
-      info.point_pos_z,
-      info.point_range,
-      info.point_color_r,
-      info.point_color_g,
-      info.point_color_b,
-      info.point_intensity,
-      info.spot_pos_x,
-      info.spot_pos_y,
-      info.spot_pos_z,
-      info.spot_range,
-      info.spot_dir_x,
-      info.spot_dir_y,
-      info.spot_dir_z,
-      info.spot_inner_angle,
-      info.spot_color_r,
-      info.spot_color_g,
-      info.spot_color_b,
-      info.spot_intensity,
-      info.spot_outer_angle,
-      0.0,
-      0.0,
-      0.0,
     ])
     ensure_mesh_bind_group_for_texture(state, texture_entry_value)
     let texture_bind_group_any = texture_entry_value._get("meshBindGroup")
