@@ -73,13 +73,6 @@ generate_examples_menu() {
   fi
 
   printf '%s\n' "      </div>" "    </section>" >> "$menu_html"
-  printf '%s\n' \
-    "    <section class=\"example-group\">" \
-    "      <h2>Actions</h2>" \
-    "      <div class=\"example-buttons\">" \
-    "        <button type=\"button\" data-action=\"reload\">Reload</button>" \
-    "      </div>" \
-    "    </section>" >> "$menu_html"
 }
 
 echo "Building engine examples..."
