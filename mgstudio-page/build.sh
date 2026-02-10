@@ -18,7 +18,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 
-TARGET=${TARGET:-wasm-gc}
+TARGET=${TARGET:-wasm}
 
 ENGINE_DIR="$REPO_DIR/mgstudio-engine"
 RUNTIME_WEB_DIR="$REPO_DIR/mgstudio-runtime/web"
@@ -29,7 +29,7 @@ echo "Building engine examples..."
 while IFS= read -r pkg; do
   pkg_dir=$(dirname "$pkg")
   moon -C "$ENGINE_DIR" build --release --target "$TARGET" "$pkg_dir"
-done < <(find "$ENGINE_DIR/examples" -name moon.pkg.json -print | sort)
+done < <(find "$ENGINE_DIR/examples" \( -name moon.pkg -o -name moon.pkg.json \) -print | sort)
 
 echo "Building web runtime JS bundle..."
 moon -C "$RUNTIME_WEB_DIR" build --release --target js
