@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio-runtime-web"
+package "Milky2018/mgstudio-runtime-web/host"
 
 import {
   "mizchi/js/browser/dom",
@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn any_to_string_export(@core.Any) -> String
+
 pub fn create_host(@dom.Element?, String, String) -> @core.Any
 
 // Errors
