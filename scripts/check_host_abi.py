@@ -175,6 +175,21 @@ def parse_native_wasmtime(repo_root: Path) -> SourceTable:
         params = params_match.group("params")
         arity = len(re.findall(r"ValType::[A-Za-z_]\w*", params))
         append_func(table, name, arity, file_path.as_posix())
+
+    for name_match in re.finditer(
+        r'\(\s*"(?P<name>input_is_(?:key|mouse_button)_[A-Za-z_]\w*)"\s*,\s*\d+\s*\)',
+        source,
+    ):
+        append_func(table, name_match.group("name"), 1, file_path.as_posix())
+
+    for tuple_match in re.finditer(
+        r'\(\s*"(?P<name>[A-Za-z_]\w*)"\s*,\s*vec!\[(?P<params>.*?)\]\s*,\s*vec!\[(?P<results>.*?)\]\s*,\s*[-\d]+\s*,?\s*\)',
+        source,
+        re.DOTALL,
+    ):
+        arity = len(re.findall(r"ValType::[A-Za-z_]\w*", tuple_match.group("params")))
+        append_func(table, tuple_match.group("name"), arity, file_path.as_posix())
+
     return SourceTable("runtime/native-wasmtime", table)
 
 

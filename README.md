@@ -49,6 +49,7 @@ Repo development wrapper:
 Project quality gates (per module):
 
 - `moon check`, `moon test`, `moon fmt`, `moon info`
+- `python3 scripts/check_host_abi.py` (verify `mgstudio_host` function name/arity parity across engine + runtimes)
 
 ### SDK and `moon.game.json`
 

@@ -397,6 +397,138 @@ fn define_mgstudio_host_imports(
         },
     )?;
 
+    // A11y (stubbed in wasmtime backend for now).
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_begin_update",
+        &[ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_push_node",
+        &[
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::I32,
+        ],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_end_update",
+        &[],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_apply_update",
+        &[ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_actions_len",
+        &[],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_action_target",
+        &[ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, -1);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_action_kind",
+        &[ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_action_value_len",
+        &[ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_action_value_code_unit",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "a11y_actions_clear",
+        &[],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
     // Window.
     define_func(
         store,
@@ -420,6 +552,141 @@ fn define_mgstudio_host_imports(
                 caller.data_mut().window = Some(win);
             }
             ok_externref_i32(&mut caller, out, 10_001)?;
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_set_scissor",
+        &[ValType::I32, ValType::I32, ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_clear_scissor",
+        &[],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_ui_rect",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_ui_texture_slice",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_ui_box_shadow",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+        ],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
             Ok(())
         },
     )?;
@@ -654,6 +921,32 @@ fn define_mgstudio_host_imports(
                 .map(|win| win.input.mouse_y)
                 .unwrap_or(0.0);
             ok_f32(out, y);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_wheel_x",
+        &[],
+        &[ValType::F32],
+        |_caller, _args, out| {
+            ok_f32(out, 0.0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_wheel_y",
+        &[],
+        &[ValType::F32],
+        |_caller, _args, out| {
+            ok_f32(out, 0.0);
             Ok(())
         },
     )?;
@@ -958,6 +1251,20 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "gpu_get_queue",
+        &[ValType::EXTERNREF],
+        &[ValType::EXTERNREF],
+        |mut caller, _args, out| {
+            let _ = caller.data_mut().ensure_gpu()?;
+            ok_externref_i32(&mut caller, out, 10_020)?;
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "gpu_create_surface",
         &[ValType::EXTERNREF],
         &[ValType::EXTERNREF],
@@ -1043,14 +1350,10 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
-            ValType::I32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
-            ValType::I32,
-            ValType::I32,
-            ValType::I32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
@@ -1123,14 +1426,6 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
-            ValType::I32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
@@ -1282,6 +1577,54 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "gpu_draw_sprite",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let f = |i: usize| match args.get(i) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let x = f(1);
+            let y = f(2);
+            let rotation = f(3);
+            let scale_x = f(4);
+            let scale_y = f(5);
+            let color = [f(6), f(7), f(8), f(9)];
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_sprite_uv(
+                    texture_id,
+                    x,
+                    y,
+                    rotation,
+                    scale_x,
+                    scale_y,
+                    color,
+                    (0.0, 0.0),
+                    (1.0, 1.0),
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "gpu_draw_sprite_uv",
         &[
             ValType::I32,
@@ -1345,13 +1688,6 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
-            ValType::F32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -1406,6 +1742,7 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
             ValType::I32,
             ValType::I32,
             ValType::I32,

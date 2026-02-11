@@ -14,6 +14,19 @@ env:
   MOON_IGNORE_POSTADD: "1"
 
 jobs:
+  host-abi:
+    name: host ABI consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check mgstudio_host ABI
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_host_abi.py
+
   engine:
     name: engine (moon check/test)
     runs-on: ubuntu-latest

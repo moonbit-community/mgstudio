@@ -1924,6 +1924,25 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_get_queue",
+    fn(_args) raise @runtime.RuntimeError {
+      try {
+        host_trace("host: gpu_get_queue")
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        ok_extern_ref(HANDLE_BASE + 1)
+      } catch {
+        _ => {
+          @debug.debug("gpu_get_queue failed")
+          host_fail("gpu_get_queue", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::ExternRef]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_create_surface",
     fn(_args) raise @runtime.RuntimeError {
       try {
@@ -2329,22 +2348,6 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
@@ -2815,6 +2818,54 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_draw_sprite",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        host_trace("host: gpu_draw_sprite")
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        if args.length() >= 10 &&
+          args[0] is @types.Value::I32(texture_id) &&
+          args[1] is @types.Value::F32(x) &&
+          args[2] is @types.Value::F32(y) &&
+          args[3] is @types.Value::F32(rot) &&
+          args[4] is @types.Value::F32(sx) &&
+          args[5] is @types.Value::F32(sy) &&
+          args[6] is @types.Value::F32(r) &&
+          args[7] is @types.Value::F32(g) &&
+          args[8] is @types.Value::F32(b) &&
+          args[9] is @types.Value::F32(a) {
+          ctx.gpu
+          .unwrap()
+          .draw_sprite_uv(texture_id, x, y, rot, sx, sy, r, g, b, a, 0.0, 0.0, 1.0, 1.0)
+        }
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_sprite failed")
+          host_fail("gpu_draw_sprite", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
