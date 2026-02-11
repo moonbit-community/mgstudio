@@ -21,7 +21,7 @@ priv struct ShapesState {
 let shapes_state : Ref[ShapesState] = Ref::new({ rotating: [] })
 
 ///|
-pub fn game_main() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -157,5 +157,5 @@ fn shapes_rotate_system(world : @ecs_world.World) -> Unit {
 
 ///|
 fn main {
-  game_main()
+  app_main()
 }

@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/2d/physics2d_showcase"
 
 // Values
-pub fn game_main() -> Unit
+pub fn app_main() -> Unit
 
 // Errors
 

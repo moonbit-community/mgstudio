@@ -32,7 +32,7 @@ fn make_cli_parser() -> @clap.Parser {
         },
       ),
       "run": @clap.SubCommand::new(
-        help="Build and run the game package described by moon.game.json in native mode.",
+        help="Build and run a game described by moon.game.json in native mode (entry package `main`).",
         args={
           "game": @clap.Arg::named(
             short='g',

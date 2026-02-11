@@ -32,6 +32,7 @@ Minimal example:
 {
   "mgstudio": "0.1.0",
   "sdkroot": "$HOME/.local/share/mgstudio/current",
+  "entry": "examples/2d/sprite",
   "web": { "addr": "127.0.0.1", "port": 8099 },
   "assets_allow_sdk_override": false
 }
@@ -39,12 +40,12 @@ Minimal example:
 
 Notes:
 
-- `moon.game.json` must live in the target package directory (the one containing `moon.pkg`).
-- The game package should expose `pub fn game_main() -> Unit` and keep `fn main { game_main() }`.
+- `entry` is a package path (module-relative), or a config-dir-relative package path (for example `"."`).
+- Entry package should export `pub fn app_main() -> Unit` and keep `fn main { app_main() }`.
 - Paths are resolved relative to the config file directory.
 - `sdkroot` supports `$HOME` and `~/` expansion.
 - `assets` and `data` are optional. Defaults are `./assets` (if present) and `./tmp/data`.
-- `mgstudio run/serve` auto-build from the package inferred by the config directory; no prebuilt cart path is required.
+- `mgstudio run/serve` auto-build from `entry`; no prebuilt cart path is required.
 
 ## SDK Expectations
 

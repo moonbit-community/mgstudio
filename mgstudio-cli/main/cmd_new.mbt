@@ -162,6 +162,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   let game_cfg_json : Json = {
     "mgstudio": "0.1.0",
     "sdkroot": "$HOME/.local/share/mgstudio/current",
+    "entry": ".",
     "web": { "addr": "127.0.0.1", "port": 8099 },
     "assets_allow_sdk_override": false,
   }
@@ -198,7 +199,7 @@ fn render_rotation_demo() -> String {
   // Dependency resolution is controlled by `--local-engine` (path) vs `moon add`
   // (latest registry).
   "///|\n" +
-  "pub fn game_main() -> Unit {\n" +
+  "pub fn app_main() -> Unit {\n" +
   "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
   "  @app.App::new(@ecs_world.World::new())\n" +
   "  .add_plugins(plugins)\n" +
@@ -208,7 +209,7 @@ fn render_rotation_demo() -> String {
   "}\n\n" +
   "///|\n" +
   "fn main {\n" +
-  "  game_main()\n" +
+  "  app_main()\n" +
   "}\n\n" +
   "///|\n" +
   "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +

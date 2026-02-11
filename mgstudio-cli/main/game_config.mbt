@@ -24,8 +24,8 @@ struct GameConfig {
   sdk_root : String
   /// Absolute module root containing moon.mod.json.
   module_root : String
-  /// Game package path inferred from the config directory (module-relative).
-  package_path : String
+  /// Package entry path for moon build/run (module-relative).
+  entry : String
   /// Assets source spec (e.g. "dir:/abs/path/assets" or "https://.../assets/").
   assets_spec : String
   /// Whether game assets may override SDK-provided engine assets.
@@ -134,9 +134,8 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
         abs_path + ": sdkroot does not exist: " + sdk_root_path,
       )
   }
-  let package_path = package_path_from_config_dir(
-    cfg_dir, module_root, abs_path,
-  )
+  let entry_raw = get_required_string(root, "entry", abs_path)
+  let entry = normalize_entry_package(entry_raw, cfg_dir, module_root, abs_path)
 
   // assets/data are optional; defaults are chosen to keep the config small.
   let assets_raw : String? = get_optional_string(root, "assets", abs_path)
@@ -194,7 +193,7 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
     mgstudio,
     sdk_root,
     module_root,
-    package_path,
+    entry,
     assets_spec,
     assets_allow_sdk_override,
     data_spec_native,
@@ -330,35 +329,65 @@ async fn find_module_root(
 }
 
 ///|
-async fn package_path_from_config_dir(
+async fn normalize_entry_package(
+  raw : String,
   cfg_dir : String,
   module_root : String,
   path : String,
 ) -> String raise Error {
-  let canonical = @fs.realpath(cfg_dir) catch {
-    _ => raise RunError::MissingFile(cfg_dir)
+  async fn package_path_from_abs(
+    abs_dir : String,
+    module_root : String,
+    path : String,
+  ) -> String raise Error {
+    let canonical = @fs.realpath(abs_dir) catch {
+      _ => raise RunError::MissingFile(abs_dir)
+    }
+    let pkg_file = path_join(canonical, "moon.pkg")
+    if !@fs.exists(pkg_file) {
+      raise RunError::InvalidArgs(
+        path + ": entry package missing moon.pkg: " + canonical,
+      )
+    }
+    if canonical == module_root {
+      return "."
+    }
+    let prefix = module_root + "/"
+    if !canonical.has_prefix(prefix) {
+      raise RunError::InvalidArgs(
+        path +
+        ": entry path must be under module root (" +
+        module_root +
+        "): " +
+        canonical,
+      )
+    }
+    (try! canonical[prefix.length():]).to_string()
   }
-  let pkg_file = path_join(canonical, "moon.pkg")
-  if !@fs.exists(pkg_file) {
+
+  let v = raw.trim().to_string()
+  if v == "" {
+    raise RunError::InvalidArgs(path + ": entry must not be empty")
+  }
+  if is_absolute_path(v) ||
+    v == "." ||
+    v.has_prefix("./") ||
+    v.has_prefix("../") {
+    let abs_dir = if is_absolute_path(v) { v } else { path_join(cfg_dir, v) }
+    return package_path_from_abs(abs_dir, module_root, path)
+  }
+  let from_cfg = path_join(cfg_dir, v)
+  if @fs.exists(path_join(from_cfg, "moon.pkg")) {
+    return package_path_from_abs(from_cfg, module_root, path)
+  }
+  let module_rel = if v.has_prefix("./") { (try! v[2:]).to_string() } else { v }
+  let from_module = path_join(module_root, module_rel)
+  if !@fs.exists(path_join(from_module, "moon.pkg")) {
     raise RunError::InvalidArgs(
-      path +
-      ": moon.game.json must be placed in a package directory containing moon.pkg",
+      path + ": entry package not found: " + module_rel,
     )
   }
-  if canonical == module_root {
-    return "."
-  }
-  let prefix = module_root + "/"
-  if !canonical.has_prefix(prefix) {
-    raise RunError::InvalidArgs(
-      path +
-      ": config directory must be under module root (" +
-      module_root +
-      "): " +
-      canonical,
-    )
-  }
-  (try! canonical[prefix.length():]).to_string()
+  module_rel
 }
 
 ///|

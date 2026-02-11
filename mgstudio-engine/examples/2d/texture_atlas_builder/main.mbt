@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_main() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -108,5 +108,5 @@ fn texture_atlas_builder_update(world : @ecs_world.World) -> Unit {
 
 ///|
 fn main {
-  game_main()
+  app_main()
 }

@@ -24,7 +24,7 @@
 let parent_entity_state : Ref[@core.Entity?] = Ref::new(None)
 
 ///|
-pub fn game_main() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -92,5 +92,5 @@ fn visibility_toggle_system(world : @ecs_world.World) -> Unit {
 
 ///|
 fn main {
-  game_main()
+  app_main()
 }

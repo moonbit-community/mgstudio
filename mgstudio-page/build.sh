@@ -125,7 +125,7 @@ EOF
   cat > "$launcher_pkg_dir/main.mbt" <<EOF
 fn main {
   @platform.run_after_ready(fn() {
-    @game.game_main()
+    @game.app_main()
   })
 }
 EOF

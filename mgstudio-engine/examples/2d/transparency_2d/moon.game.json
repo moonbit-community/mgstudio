@@ -1,5 +1,6 @@
 {
   "mgstudio": "0.1.0",
+  "entry": ".",
   "assets": "../../../assets",
   "data": "./tmp/data",
   "web": {

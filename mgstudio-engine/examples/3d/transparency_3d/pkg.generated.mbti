@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/3d/transparency_3d"
 
 // Values
-pub fn game_main() -> Unit
+pub fn app_main() -> Unit
 
 // Errors
 
