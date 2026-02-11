@@ -248,17 +248,6 @@ fn physics3d_showcase_setup(world : @ecs_world.World) -> Unit {
   )
   physics3d_showcase_reset_camera_pose()
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100),
-    @math.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(980.0F, 176.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::new(0.04F, 0.05F, 0.08F, 0.78F)),
-    @math.Transform::from_xyz(0.0F, 286.0F, 32.0F),
-  ).spawn(world)
-  |> ignore
   println(
     "physics3d_showcase controls: RightMouse look, WASD move, Q/E up/down, R reset, LeftClick/Space spawn, Hold F auto spawn",
   )
@@ -705,12 +694,6 @@ fn physics3d_showcase_events_and_stats(world : @ecs_world.World) -> Unit {
               entity_eq(entity_b, sensor_entity) {
               physics3d_showcase_state.val.sensor_entered = physics3d_showcase_state.val.sensor_entered +
                 1
-              println(
-                "sensor enter: a=" +
-                entity_a.id.to_string() +
-                ", b=" +
-                entity_b.id.to_string(),
-              )
             }
           }
         }
