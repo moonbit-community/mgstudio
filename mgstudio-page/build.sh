@@ -37,6 +37,7 @@ fn_title_case() {
 generate_examples_menu() {
   local dist_dir="$1"
   local menu_html="$2"
+  local version="$3"
   local current_group=""
   local found=0
 
@@ -62,8 +63,9 @@ generate_examples_menu() {
       current_group="$group"
     fi
 
-    printf '        <button type="button" data-wasm="./%s">%s</button>\n' \
+    printf '        <button type="button" data-wasm="./%s?v=%s">%s</button>\n' \
       "$wasm_rel" \
+      "$version" \
       "$example_label" >> "$menu_html"
   done < <(find "$dist_dir/examples" -name '*.wasm' -print | sed "s|$dist_dir/||" | sort)
 
@@ -114,9 +116,10 @@ echo "Copying assets into page dist..."
 rsync -a --delete "$ASSETS_DIR/" "$DIST_DIR/assets/"
 
 echo "Generating examples menu..."
+RUNTIME_VERSION=$(date +%s)
 MENU_HTML=$(mktemp)
 INDEX_OUT=$(mktemp)
-generate_examples_menu "$DIST_DIR" "$MENU_HTML"
+generate_examples_menu "$DIST_DIR" "$MENU_HTML" "$RUNTIME_VERSION"
 awk -v menu_file="$MENU_HTML" '
   /__EXAMPLE_GROUPS__/ {
     while ((getline line < menu_file) > 0) {
@@ -127,7 +130,8 @@ awk -v menu_file="$MENU_HTML" '
   }
   { print }
 ' "$SCRIPT_DIR/index.html" > "$INDEX_OUT"
-mv "$INDEX_OUT" "$DIST_DIR/index.html"
+sed "s/__RUNTIME_VERSION__/$RUNTIME_VERSION/g" "$INDEX_OUT" > "$DIST_DIR/index.html"
 rm -f "$MENU_HTML"
+rm -f "$INDEX_OUT"
 
 echo "Built: $DIST_DIR"

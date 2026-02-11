@@ -24,5 +24,25 @@ if [[ ! -d "$SCRIPT_DIR/dist" ]]; then
 fi
 
 echo "Serving $SCRIPT_DIR/dist at http://localhost:$PORT"
-python3 -m http.server "$PORT" --directory "$SCRIPT_DIR/dist"
+python3 - "$PORT" "$SCRIPT_DIR/dist" <<'PY'
+import http.server
+import pathlib
+import socketserver
+import sys
 
+port = int(sys.argv[1])
+root = pathlib.Path(sys.argv[2]).resolve()
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(root), **kwargs)
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
+with socketserver.TCPServer(("", port), Handler) as httpd:
+    httpd.serve_forever()
+PY

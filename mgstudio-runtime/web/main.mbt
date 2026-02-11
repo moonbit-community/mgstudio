@@ -121,13 +121,13 @@ extern "js" fn ensure_a11y_import_callables(imports : @js.Any) -> Unit =
   #|     a11y_begin_update: fallbackVoid,
   #|     a11y_push_node: fallbackVoid,
   #|     a11y_end_update: fallbackVoid,
-  #|     a11y_apply_update: fallbackVoid,
+  #|     a11y_apply_update: fallbackI32,
   #|     a11y_actions_len: fallbackI32,
   #|     a11y_action_target: fallbackI32,
   #|     a11y_action_kind: fallbackI32,
   #|     a11y_action_value_len: fallbackI32,
   #|     a11y_action_value_code_unit: fallbackI32,
-  #|     a11y_actions_clear: fallbackVoid,
+  #|     a11y_actions_clear: fallbackI32,
   #|   }
   #|   for (const key of Object.keys(required)) {
   #|     if (typeof host[key] !== "function") {
@@ -154,6 +154,54 @@ extern "js" fn describe_a11y_imports(imports : @js.Any) -> String =
   #|     "a11y_action_value_code_unit",
   #|   ]
   #|   return keys.map((k) => `${k}:${typeof host[k]}`).join(", ")
+  #| }
+
+///|
+extern "js" fn describe_error_debug(value : @js.Any) -> String =
+  #| (value) => {
+  #|   if (value == null) return ""
+  #|   const parts = []
+  #|   try {
+  #|     const name = typeof value.name === "string" ? value.name : ""
+  #|     const message = typeof value.message === "string" ? value.message : ""
+  #|     if (name || message) {
+  #|       parts.push(name && message ? `${name}: ${message}` : (name || message))
+  #|     }
+  #|   } catch {
+  #|   }
+  #|   try {
+  #|     if (typeof value.stack === "string" && value.stack.length > 0) {
+  #|       parts.push(value.stack)
+  #|     }
+  #|   } catch {
+  #|   }
+  #|   try {
+  #|     if (typeof value === "object") {
+  #|       const keys = Object.keys(value)
+  #|       if (keys.length > 0) {
+  #|         parts.push(`keys=${keys.join(",")}`)
+  #|       }
+  #|       const cause = value.cause
+  #|       if (cause && cause !== value) {
+  #|         const causeName = typeof cause.name === "string" ? cause.name : ""
+  #|         const causeMessage = typeof cause.message === "string" ? cause.message : ""
+  #|         if (causeName || causeMessage) {
+  #|           parts.push(
+  #|             `cause=${causeName && causeMessage ? `${causeName}: ${causeMessage}` : (causeName || causeMessage)}`,
+  #|           )
+  #|         }
+  #|       }
+  #|     }
+  #|   } catch {
+  #|   }
+  #|   if (parts.length > 0) {
+  #|     return parts.join(" | ")
+  #|   }
+  #|   try {
+  #|     return String(value)
+  #|   } catch {
+  #|     return ""
+  #|   }
   #| }
 
 ///|
@@ -363,9 +411,10 @@ async fn main_async() -> Unit {
       set_status("Loading WASM: " + wasm_path)
       let instance = load_wasm(imports, wasm_path) catch {
         err => {
+          let err_debug = describe_error_debug(@js.any(err))
           set_status(
             "Failed to load wasm: " +
-            any_to_string(@js.any(err)) +
+            err_debug +
             " | host imports: " +
             describe_a11y_imports(imports),
           )
