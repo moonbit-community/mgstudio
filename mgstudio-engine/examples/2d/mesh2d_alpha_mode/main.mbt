@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn app_main() -> Unit {
+pub fn game_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -101,5 +101,5 @@ fn mesh2d_alpha_mode_setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn main {
-  app_main()
+  game_main()
 }

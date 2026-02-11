@@ -35,7 +35,7 @@ fn json_string_escape(value : String) -> String {
 }
 
 ///|
-async fn entry_import_path(cfg : GameConfig) -> String raise Error {
+async fn package_import_path(cfg : GameConfig) -> String raise Error {
   let mod_path = path_join(cfg.module_root, "moon.mod.json")
   let mod_src_opt = read_file_text(mod_path)
   guard mod_src_opt is Some(mod_src) else {
@@ -47,10 +47,10 @@ async fn entry_import_path(cfg : GameConfig) -> String raise Error {
       "Cannot parse module name from moon.mod.json: " + mod_path,
     )
   }
-  if cfg.entry == "." {
+  if cfg.package_path == "." {
     mod_name
   } else {
-    mod_name + "/" + cfg.entry
+    mod_name + "/" + cfg.package_path
   }
 }
 
@@ -116,10 +116,10 @@ fn render_launcher_mod_json(
 }
 
 ///|
-fn render_native_launcher_pkg(entry_import : String) -> String {
+fn render_native_launcher_pkg(package_import : String) -> String {
   "import {\n" +
   "  \"" +
-  entry_import +
+  package_import +
   "\" @game,\n" +
   "  \"Milky2018/mgstudio/platform\" @platform,\n" +
   "}\n\n" +
@@ -130,10 +130,10 @@ fn render_native_launcher_pkg(entry_import : String) -> String {
 }
 
 ///|
-fn render_web_launcher_pkg(entry_import : String) -> String {
+fn render_web_launcher_pkg(package_import : String) -> String {
   "import {\n" +
   "  \"" +
-  entry_import +
+  package_import +
   "\" @game,\n" +
   "  \"Milky2018/mgstudio/platform\" @platform,\n" +
   "}\n\n" +
@@ -147,7 +147,7 @@ fn render_web_launcher_pkg(entry_import : String) -> String {
 fn render_native_launcher_main() -> String {
   "fn main {\n" +
   "  @platform.run_after_ready(fn() {\n" +
-  "    @game.app_main()\n" +
+  "    @game.game_main()\n" +
   "  })\n" +
   "}\n"
 }
@@ -156,7 +156,7 @@ fn render_native_launcher_main() -> String {
 fn render_web_launcher_main() -> String {
   "fn main {\n" +
   "  @platform.run_after_ready(fn() {\n" +
-  "    @game.app_main()\n" +
+  "    @game.game_main()\n" +
   "  })\n" +
   "}\n"
 }
@@ -182,7 +182,7 @@ async fn prepare_launcher(
   cfg : GameConfig,
   backend : LauncherBackend,
 ) -> (String, String) raise Error {
-  let entry_import = entry_import_path(cfg)
+  let package_import = package_import_path(cfg)
   let stage_root = path_join(cfg.dir, ".mgstudio/launcher")
   let launcher_root = path_join(
     stage_root,
@@ -227,7 +227,7 @@ async fn prepare_launcher(
     Native => {
       write_file_text(
         path_join(launcher_pkg_dir, "moon.pkg"),
-        render_native_launcher_pkg(entry_import),
+        render_native_launcher_pkg(package_import),
       )
       write_file_text(
         path_join(launcher_pkg_dir, "main.mbt"),
@@ -237,7 +237,7 @@ async fn prepare_launcher(
     Web => {
       write_file_text(
         path_join(launcher_pkg_dir, "moon.pkg"),
-        render_web_launcher_pkg(entry_import),
+        render_web_launcher_pkg(package_import),
       )
       write_file_text(
         path_join(launcher_pkg_dir, "main.mbt"),

@@ -19,7 +19,7 @@ const RES_WIDTH : Int = 160
 const RES_HEIGHT : Int = 90
 
 ///|
-pub fn app_main() -> Unit {
+pub fn game_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins_nearest()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -191,5 +191,5 @@ fn pixel_grid_round_scale(value : Float) -> Int {
 
 ///|
 fn main {
-  app_main()
+  game_main()
 }

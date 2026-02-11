@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/2d/sprite_sheet"
 
 // Values
-pub fn app_main() -> Unit
+pub fn game_main() -> Unit
 
 // Errors
 

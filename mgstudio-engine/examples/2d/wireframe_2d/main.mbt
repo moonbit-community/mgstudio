@@ -41,7 +41,7 @@ let wireframe_scene_state : Ref[WireframeSceneState] = Ref::new(WireframeSceneSt
 })
 
 ///|
-pub fn app_main() -> Unit {
+pub fn game_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -211,5 +211,5 @@ fn build_circle_geometry(
 
 ///|
 fn main {
-  app_main()
+  game_main()
 }

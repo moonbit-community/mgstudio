@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/2d/2d_shapes"
 
 // Values
-pub fn app_main() -> Unit
+pub fn game_main() -> Unit
 
 // Errors
 
