@@ -24,6 +24,7 @@ pub fn game_app() -> Unit {
   .add_fixed_update_system(physics3d_showcase_kinematic_motion_fixed)
   .add_plugins(plugins)
   .add_startup_system(physics3d_showcase_setup)
+  .add_system(physics3d_showcase_camera_controls)
   .add_system(physics3d_showcase_overlay_system)
   .add_system(physics3d_showcase_spawn_controls)
   .add_system(physics3d_showcase_events_and_stats)
@@ -37,6 +38,11 @@ priv struct Physics3dShowcaseState {
   mut overlay_spawned : Bool
   mut kinematic_bar : @core.Entity?
   mut sensor_zone : @core.Entity?
+  mut camera_entity : @core.Entity?
+  mut camera_position : @math.Vec3
+  mut camera_yaw : Float
+  mut camera_pitch : Float
+  mut camera_last_cursor : @math.Vec2?
   mut next_auto_fire_time : Float
   mut spawn_serial : Int
   mut collision_started : Int
@@ -52,6 +58,11 @@ let physics3d_showcase_state : Ref[Physics3dShowcaseState] = Ref::new({
   overlay_spawned: false,
   kinematic_bar: None,
   sensor_zone: None,
+  camera_entity: None,
+  camera_position: @math.Vec3::new(0.0F, 180.0F, 860.0F),
+  camera_yaw: 0.0F,
+  camera_pitch: 0.0F,
+  camera_last_cursor: None,
   next_auto_fire_time: 0.0,
   spawn_serial: 0,
   collision_started: 0,
@@ -59,6 +70,44 @@ let physics3d_showcase_state : Ref[Physics3dShowcaseState] = Ref::new({
   sensor_left: 0,
   last_stats_print_time: 0.0,
 })
+
+const CAMERA_MOVE_SPEED : Float = 360.0F
+
+const CAMERA_LOOK_SENSITIVITY : Float = 0.0075F
+
+const CAMERA_PITCH_LIMIT : Float = 1.45F
+
+///|
+fn clamp_float(value : Float, min_value : Float, max_value : Float) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn physics3d_showcase_camera_forward(yaw : Float, pitch : Float) -> @math.Vec3 {
+  @math.Vec3::new(
+    @math.sin(yaw) * @math.cos(pitch),
+    @math.sin(pitch),
+    -@math.cos(yaw) * @math.cos(pitch),
+  )
+  .normalize_or_zero()
+}
+
+///|
+fn physics3d_showcase_reset_camera_pose() -> Unit {
+  let position = @math.Vec3::new(0.0F, 180.0F, 860.0F)
+  let target = @math.Vec3::new(0.0F, 20.0F, 0.0F)
+  let forward = target.sub(position).normalize_or_zero()
+  let horizontal = @math.sqrt(forward.x * forward.x + forward.z * forward.z)
+  physics3d_showcase_state.val.camera_position = position
+  physics3d_showcase_state.val.camera_yaw = @math.atan2(forward.x, -forward.z)
+  physics3d_showcase_state.val.camera_pitch = @math.atan2(forward.y, horizontal)
+}
 
 ///|
 fn entity_eq(lhs : @core.Entity, rhs : @core.Entity) -> Bool {
@@ -196,6 +245,22 @@ fn physics3d_showcase_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   physics3d_showcase_state.val.overlay_font = Some(
     asset_server.load_font("fonts/FiraSans-Bold.ttf"),
+  )
+  physics3d_showcase_reset_camera_pose()
+
+  @render2d.Camera2dBundle::new(
+    @render2d.Camera::default().with_order(100),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(980.0F, 176.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::new(0.04F, 0.05F, 0.08F, 0.78F)),
+    @math.Transform::from_xyz(0.0F, 286.0F, 32.0F),
+  ).spawn(world)
+  |> ignore
+  println(
+    "physics3d_showcase controls: RightMouse look, WASD move, Q/E up/down, R reset, LeftClick/Space spawn, Hold F auto spawn",
   )
 
   let config_resource = world.get_physics3d_config_resource()
@@ -432,14 +497,23 @@ fn physics3d_showcase_setup(world : @ecs_world.World) -> Unit {
     )
   }
 
-  @render3d.Camera3dBundle::new(
+  let camera_entity = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 180.0F, 860.0F).looking_at(
-      @math.Vec3::new(0.0F, 20.0F, 0.0F),
+    @math.Transform::from_xyz(
+      physics3d_showcase_state.val.camera_position.x,
+      physics3d_showcase_state.val.camera_position.y,
+      physics3d_showcase_state.val.camera_position.z,
+    ).looking_at(
+      physics3d_showcase_state.val.camera_position.add(
+        physics3d_showcase_camera_forward(
+          physics3d_showcase_state.val.camera_yaw,
+          physics3d_showcase_state.val.camera_pitch,
+        ),
+      ),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+  physics3d_showcase_state.val.camera_entity = Some(camera_entity)
 }
 
 ///|
@@ -467,11 +541,87 @@ fn physics3d_showcase_kinematic_motion_fixed(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn physics3d_showcase_overlay_system(_world : @ecs_world.World) -> Unit {
-  if physics3d_showcase_state.val.overlay_spawned {
+fn physics3d_showcase_camera_controls(world : @ecs_world.World) -> Unit {
+  guard physics3d_showcase_state.val.camera_entity is Some(camera_entity) else {
     return
   }
-  if @time.time_elapsed_seconds() < 2.0F {
+
+  let mut yaw = physics3d_showcase_state.val.camera_yaw
+  let mut pitch = physics3d_showcase_state.val.camera_pitch
+  if @input.mouse_position() is Some(cursor) {
+    if @input.mouse_button_pressed(@window.MouseButton::Right) {
+      if physics3d_showcase_state.val.camera_last_cursor is Some(last_cursor) {
+        let delta = cursor.sub(last_cursor)
+        yaw = yaw + delta.x * CAMERA_LOOK_SENSITIVITY
+        pitch = clamp_float(
+          pitch - delta.y * CAMERA_LOOK_SENSITIVITY,
+          -CAMERA_PITCH_LIMIT,
+          CAMERA_PITCH_LIMIT,
+        )
+      }
+    }
+    physics3d_showcase_state.val.camera_last_cursor = Some(cursor)
+  } else {
+    physics3d_showcase_state.val.camera_last_cursor = None
+  }
+
+  if @input.key_just_pressed(@window.KeyCode::KeyR) {
+    physics3d_showcase_reset_camera_pose()
+    yaw = physics3d_showcase_state.val.camera_yaw
+    pitch = physics3d_showcase_state.val.camera_pitch
+  }
+
+  let forward = physics3d_showcase_camera_forward(yaw, pitch)
+  let forward_flat = @math.Vec3::new(forward.x, 0.0F, forward.z).normalize_or_zero()
+  let right = @math.Vec3::new(@math.cos(yaw), 0.0F, @math.sin(yaw)).normalize_or_zero()
+  let mut move_direction = @math.Vec3::zero()
+  if @input.key_pressed(@window.KeyCode::KeyW) ||
+    @input.key_pressed(@window.KeyCode::ArrowUp) {
+    move_direction = move_direction.add(forward_flat)
+  }
+  if @input.key_pressed(@window.KeyCode::KeyS) ||
+    @input.key_pressed(@window.KeyCode::ArrowDown) {
+    move_direction = move_direction.sub(forward_flat)
+  }
+  if @input.key_pressed(@window.KeyCode::KeyA) ||
+    @input.key_pressed(@window.KeyCode::ArrowLeft) {
+    move_direction = move_direction.sub(right)
+  }
+  if @input.key_pressed(@window.KeyCode::KeyD) ||
+    @input.key_pressed(@window.KeyCode::ArrowRight) {
+    move_direction = move_direction.add(right)
+  }
+  if @input.key_pressed(@window.KeyCode::KeyE) {
+    move_direction = move_direction.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
+  }
+  if @input.key_pressed(@window.KeyCode::KeyQ) {
+    move_direction = move_direction.sub(@math.Vec3::new(0.0F, 1.0F, 0.0F))
+  }
+
+  let mut position = physics3d_showcase_state.val.camera_position
+  if move_direction.length_squared() > 0.000001F {
+    let delta_seconds = clamp_float(@time.time_delta_seconds(), 0.0F, 0.05F)
+    let delta = move_direction
+      .normalize_or_zero()
+      .mul_scalar(CAMERA_MOVE_SPEED * delta_seconds)
+    position = position.add(delta)
+  }
+
+  let transform = @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
+    position.add(forward),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  let tick = world.read_change_tick()
+  world.get_transform_store().insert(camera_entity, transform, tick)
+
+  physics3d_showcase_state.val.camera_position = position
+  physics3d_showcase_state.val.camera_yaw = yaw
+  physics3d_showcase_state.val.camera_pitch = pitch
+}
+
+///|
+fn physics3d_showcase_overlay_system(_world : @ecs_world.World) -> Unit {
+  if physics3d_showcase_state.val.overlay_spawned {
     return
   }
   guard physics3d_showcase_state.val.overlay_font is Some(font) else { return }
@@ -501,7 +651,7 @@ fn physics3d_showcase_overlay_system(_world : @ecs_world.World) -> Unit {
     is None {
     return
   }
-  let content = "Physics3D Showcase\nLeft Click / Space: spawn impact body\nHold F: auto spawn stream\nKinematic sweeper + sensor stats active"
+  let content = "Physics3D Showcase Controls\nRight Mouse: Look around\nW/A/S/D or Arrow Keys: Move camera\nQ/E: Move down/up   R: Reset camera\nLeft Click / Space: Spawn impact body\nHold F: Auto spawn stream\nKinematic sweeper + sensor stats active"
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
