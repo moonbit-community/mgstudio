@@ -32,21 +32,17 @@ fn make_cli_parser() -> @clap.Parser {
         },
       ),
       "run": @clap.SubCommand::new(
-        help="Run a game described by a game config file in native runtime (calls export `game_app`).",
+        help="Build and run a game described by moon.game.json in native mode (entry package `main`).",
         args={
           "game": @clap.Arg::named(
             short='g',
             nargs=@clap.Nargs::AtMost(1U),
             help="Path to game config file. If omitted, search for ./moon.game.json from current directory upwards.",
           ),
-          "backend": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="Native backend: wasmoon (default) | wasmtime (Rust, experimental).",
-          ),
         },
       ),
       "serve": @clap.SubCommand::new(
-        help="Serve the web runtime and run a game described by a game config file in browser (calls export `game_app`).",
+        help="Build and serve a game described by moon.game.json in web mode.",
         args={
           "game": @clap.Arg::named(
             short='g',

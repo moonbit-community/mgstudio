@@ -53,40 +53,64 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
 }
 
 ///|
-fn host_input_is_key_down_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_down"
+fn host_input_is_key_down_id(code_id : Int) -> Bool {
+  @platform.input_is_key_down(code_id)
+}
 
 ///|
-fn host_input_is_key_just_pressed_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_just_pressed"
+fn host_input_is_key_just_pressed_id(code_id : Int) -> Bool {
+  @platform.input_is_key_just_pressed(code_id)
+}
 
 ///|
-fn host_input_is_key_just_released_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_just_released"
+fn host_input_is_key_just_released_id(code_id : Int) -> Bool {
+  @platform.input_is_key_just_released(code_id)
+}
 
 ///|
-pub fn host_input_finish_frame() -> Unit = "mgstudio_host" "input_finish_frame"
+pub fn host_input_finish_frame() -> Unit {
+  @platform.input_finish_frame()
+}
 
 ///|
-fn host_input_is_mouse_button_down_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_down"
+fn host_input_is_mouse_button_down_id(button_id : Int) -> Bool {
+  @platform.input_is_mouse_button_down(button_id)
+}
 
 ///|
-fn host_input_is_mouse_button_just_pressed_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_just_pressed"
+fn host_input_is_mouse_button_just_pressed_id(button_id : Int) -> Bool {
+  @platform.input_is_mouse_button_just_pressed(button_id)
+}
 
 ///|
-fn host_input_is_mouse_button_just_released_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_just_released"
+fn host_input_is_mouse_button_just_released_id(button_id : Int) -> Bool {
+  @platform.input_is_mouse_button_just_released(button_id)
+}
 
 ///|
-pub fn host_input_mouse_x() -> Float = "mgstudio_host" "input_mouse_x"
+pub fn host_input_mouse_x() -> Float {
+  @platform.input_mouse_x()
+}
 
 ///|
-pub fn host_input_mouse_y() -> Float = "mgstudio_host" "input_mouse_y"
+pub fn host_input_mouse_y() -> Float {
+  @platform.input_mouse_y()
+}
 
 ///|
-pub fn host_input_has_cursor() -> Bool = "mgstudio_host" "input_has_cursor"
+pub fn host_input_has_cursor() -> Bool {
+  @platform.input_has_cursor()
+}
 
 ///|
-pub fn host_input_wheel_x() -> Float = "mgstudio_host" "input_wheel_x"
+pub fn host_input_wheel_x() -> Float {
+  @platform.input_wheel_x()
+}
 
 ///|
-pub fn host_input_wheel_y() -> Float = "mgstudio_host" "input_wheel_y"
+pub fn host_input_wheel_y() -> Float {
+  @platform.input_wheel_y()
+}
 
 ///|
 pub fn key_pressed(code : @window.KeyCode) -> Bool {

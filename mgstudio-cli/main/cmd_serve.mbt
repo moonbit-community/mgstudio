@@ -20,6 +20,20 @@ struct ServeOptions {
 }
 
 ///|
+fn launcher_js_output_path(
+  launcher_root : String,
+  launcher_pkg : String,
+) -> String {
+  path_join(
+    launcher_root,
+    path_join(
+      "_build/js/release/build",
+      path_join(launcher_pkg, launcher_pkg + ".js"),
+    ),
+  )
+}
+
+///|
 async fn cmd_serve(cmd : @clap.SimpleValue) -> Unit {
   let opts : ServeOptions = parse_serve_options(cmd) catch {
     err => {
@@ -78,12 +92,9 @@ fn js_string_escape(value : String) -> String {
 
 ///|
 fn render_web_index_html(
-  default_wasm : String,
   default_assets_source : String,
   default_data_source : String,
 ) -> String {
-  // Keep a dummy menu element so the web runtime doesn't overwrite the status
-  // with "Missing menu element".
   "<!doctype html>\n" +
   "<html lang=\"en\">\n" +
   "  <head>\n" +
@@ -93,42 +104,22 @@ fn render_web_index_html(
   "    <style>\n" +
   "      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b0f16; }\n" +
   "      canvas { display: block; width: 100%; height: 100%; }\n" +
-  "      #mgstudio-menu { display: none; }\n" +
   "    </style>\n" +
   "  </head>\n" +
   "  <body>\n" +
   "    <canvas id=\"mgstudio-canvas\"></canvas>\n" +
-  "    <div id=\"mgstudio-menu\"></div>\n" +
-  // Make the "bare" serve URL work (no query string copied) by injecting the
-  // same defaults that `mgstudio serve` prints, before loading the runtime.
   "    <script>\n" +
-  "      (() => {\n" +
-  "        const url = new URL(window.location.href);\n" +
-  "        let changed = false;\n" +
-  "        if (!url.searchParams.get('wasm')) {\n" +
-  "          url.searchParams.set('wasm', \"" +
-  js_string_escape(default_wasm) +
-  "\");\n" +
-  "          changed = true;\n" +
-  "        }\n" +
-  "        if (!url.searchParams.get('assets_source')) {\n" +
-  "          url.searchParams.set('assets_source', \"" +
+  "      window.__MGSTUDIO_CONFIG = {\n" +
+  "        assets_source: \"" +
   js_string_escape(default_assets_source) +
-  "\");\n" +
-  "          changed = true;\n" +
-  "        }\n" +
-  "        if (!url.searchParams.get('data_source')) {\n" +
-  "          url.searchParams.set('data_source', \"" +
+  "\",\n" +
+  "        data_source: \"" +
   js_string_escape(default_data_source) +
-  "\");\n" +
-  "          changed = true;\n" +
-  "        }\n" +
-  "        if (changed) {\n" +
-  "          window.location.replace(url.toString());\n" +
-  "        }\n" +
-  "      })();\n" +
+  "\",\n" +
+  "        canvas_id: \"mgstudio-canvas\",\n" +
+  "      };\n" +
   "    </script>\n" +
-  "    <script type=\"module\" src=\"./mgstudio-runtime-web.js\"></script>\n" +
+  "    <script type=\"module\" src=\"./game.js\"></script>\n" +
   "  </body>\n" +
   "</html>\n"
 }
@@ -163,47 +154,19 @@ async fn stage_assets(
 }
 
 ///|
-fn url_encode_component(value : String) -> String {
-  // Minimal percent-encoding for query values. This is sufficient for our
-  // expected values (relative paths, idb:*, and https://* base URLs).
-  let b = StringBuilder::new(size_hint=value.length())
-  for c in value {
-    match c {
-      ' ' => b.write_string("%20")
-      '%' => b.write_string("%25")
-      '&' => b.write_string("%26")
-      '#' => b.write_string("%23")
-      '?' => b.write_string("%3F")
-      '=' => b.write_string("%3D")
-      '+' => b.write_string("%2B")
-      _ => b.write_char(c)
-    }
-  }
-  b.to_string()
-}
-
-///|
 async fn serve_web(opts : ServeOptions) -> Unit {
   let game_cfg_path = resolve_game_config_path(opts.game)
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
   let sdk = resolve_sdk_layout(cfg)
-  let runtime_src_text = read_file_text(sdk.web_runtime_js)
-  let runtime_ok = match runtime_src_text {
-    Some(src) =>
-      src.contains("\"a11y_action_target\"") &&
-      src.contains("\"a11y_action_value_len\"")
-    None => false
+  let (launcher_root, launcher_pkg) = prepare_launcher(cfg, Web)
+  run_process_checked("moon", [
+    "-C", launcher_root, "build", "--release", "--target", "js", launcher_pkg,
+  ])
+  let game_js = launcher_js_output_path(launcher_root, launcher_pkg)
+  if !@fs.exists(game_js) {
+    raise RunError::MissingFile(game_js)
   }
-  if !runtime_ok {
-    raise RunError::InvalidArgs(
-      "SDK web runtime is outdated at " +
-      sdk.web_runtime_js +
-      " (missing A11y bridge imports: a11y_action_target/a11y_action_value_len). " +
-      "Please update sdkroot runtime bundle.",
-    )
-  }
-  let wasm_path = cfg.cart_path
 
   // Stage a served root alongside the game config.
   let stage_root = path_join(cfg.dir, ".mgstudio/serve")
@@ -214,13 +177,9 @@ async fn serve_web(opts : ServeOptions) -> Unit {
   }
   @fs.mkdir(stage_root, permission=0o755, recursive=true)
 
-  // Copy mgstudio-runtime-web.js from SDK into served root (offline by default).
-  let runtime_dst = path_join(stage_root, "mgstudio-runtime-web.js")
-  copy_file(sdk.web_runtime_js, runtime_dst)
-
-  // Copy game wasm into served root.
-  let wasm_dst = path_join(stage_root, "game.wasm")
-  run_process_checked("cp", [wasm_path, wasm_dst], cwd=cfg.dir)
+  // Copy game js entry into served root.
+  let game_js_dst = path_join(stage_root, "game.js")
+  run_process_checked("cp", [game_js, game_js_dst], cwd=cfg.dir)
 
   // Assets: either mount a local directory or use a URL base.
   let (assets_base, _mounted) = stage_assets(
@@ -230,29 +189,20 @@ async fn serve_web(opts : ServeOptions) -> Unit {
     cfg.assets_spec,
   )
 
-  // Data source for web: fixed namespace for now.
-  cfg.data_spec_web |> ignore
-  let data_source = "idb:mgstudio"
+  // Data source for web.
+  let data_source = cfg.data_spec_web
 
-  // Write index.html that loads the web runtime JS bundle from the staged SDK file.
-  // Default to a playable base URL without requiring query parameters.
-  // The runtime still supports overriding these via URL params for debugging.
+  // Write index.html that loads the built game JS bundle directly.
   let index_dst = path_join(stage_root, "index.html")
-  write_file_text(
-    index_dst,
-    render_web_index_html("./game.wasm", assets_base, data_source),
-  )
+  write_file_text(index_dst, render_web_index_html(assets_base, data_source))
   let raw_addr = opts.addr.unwrap_or(cfg.web_addr)
   // Prefer IPv4 loopback to avoid browsers/extensions that auto-upgrade
   // `localhost` to HTTPS or hit IPv6 (::1) with TLS probes.
   let addr = if raw_addr == "localhost" { "127.0.0.1" } else { raw_addr }
   let port = opts.port.unwrap_or(cfg.web_port)
   println("")
-  println("Serving web runtime at: http://\{addr}:\{port}/")
-  println("Note: opening the base URL will auto-run ./game.wasm.")
-  println(
-    "Full URL (explicit params): http://\{addr}:\{port}/?wasm=./game.wasm&assets_source=\{url_encode_component(assets_base)}&data_source=\{url_encode_component(data_source)}",
-  )
+  println("Serving web app at: http://\{addr}:\{port}/")
+  println("Note: opening the base URL will auto-run ./game.js.")
   println("Note: this server is plain HTTP. Do not use https:// for this URL.")
   println("Press Ctrl+C to stop.")
   println("")

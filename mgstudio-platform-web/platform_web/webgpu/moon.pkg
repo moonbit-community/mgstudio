@@ -1,0 +1,7 @@
+import {
+  "mizchi/js",
+}
+
+options(
+  targets: { "descriptors.mbt": [ "js" ], "webgpu.mbt": [ "js" ] },
+)

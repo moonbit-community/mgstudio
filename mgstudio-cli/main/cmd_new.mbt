@@ -61,8 +61,8 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   @fs.remove(path_join(project_dir, "AGENTS.md")) catch {
     _ => ()
   }
-  // `moon new` creates `cmd/main` as the default binary package; mgstudio games
-  // don't need a `main` entrypoint.
+  // `moon new` creates `cmd/main` as the default binary package; we keep a
+  // single root package as the game entry.
   @fs.rmdir(path_join(project_dir, "cmd"), recursive=true) catch {
     _ => ()
   }
@@ -92,7 +92,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   }
   write_file_bytes(icon_dst, icon_bytes)
 
-  // Update moon.mod.json to depend on mgstudio and prefer wasm-gc.
+  // Update moon.mod.json to depend on mgstudio and prefer native.
   let mod_json_path = path_join(project_dir, "moon.mod.json")
   let mod_src_opt = read_file_text(mod_json_path)
   let module_name = match mod_src_opt {
@@ -118,35 +118,29 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     "  \"license\": \"Apache-2.0\",\n" +
     "  \"keywords\": [],\n" +
     "  \"description\": \"\",\n" +
-    "  \"preferred-target\": \"wasm-gc\"\n" +
+    "  \"preferred-target\": \"native\"\n" +
     "}\n"
   write_file_text(mod_json_path, mod_json)
   if !use_local_engine {
     run_process_checked("moon", ["add", "Milky2018/mgstudio"], cwd=project_dir)
   }
 
-  // Root package: export `game_app` (no `main` function needed).
+  // Root package: executable entry (`fn main`).
   write_file_text(
-    path_join(project_dir, "moon.pkg.json"),
-    "{\n" +
-    "  \"import\": [\n" +
-    "    \"Milky2018/mgstudio/app\",\n" +
-    "    \"Milky2018/mgstudio/asset\",\n" +
-    "    \"Milky2018/mgstudio/core\",\n" +
-    "    \"Milky2018/mgstudio/ecs_world\",\n" +
-    "    \"Milky2018/mgstudio/math\",\n" +
-    "    \"Milky2018/mgstudio\",\n" +
-    "    \"Milky2018/mgstudio/render2d\",\n" +
-    "    \"Milky2018/mgstudio/time\"\n" +
-    "  ],\n" +
-    "  \"link\": {\n" +
-    "    \"wasm-gc\": {\n" +
-    "      \"exports\": [\n" +
-    "        \"game_app\"\n" +
-    "      ]\n" +
-    "    }\n" +
-    "  }\n" +
-    "}\n",
+    path_join(project_dir, "moon.pkg"),
+    "import {\n" +
+    "  \"Milky2018/mgstudio\",\n" +
+    "  \"Milky2018/mgstudio/app\",\n" +
+    "  \"Milky2018/mgstudio/asset\",\n" +
+    "  \"Milky2018/mgstudio/core\",\n" +
+    "  \"Milky2018/mgstudio/ecs_world\",\n" +
+    "  \"Milky2018/mgstudio/math\",\n" +
+    "  \"Milky2018/mgstudio/render2d\",\n" +
+    "  \"Milky2018/mgstudio/time\",\n" +
+    "}\n\n" +
+    "options(\n" +
+    "  \"is-main\": true,\n" +
+    ")\n",
   )
 
   // Replace the root demo with a minimal rotating sprite example.
@@ -159,7 +153,6 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   }
 
   // Game config: minimal; assets/data default to ./assets and ./tmp/data.
-  let cart = "./_build/wasm-gc/release/build/" + project_name + ".wasm"
   // sdkroot is required. Default to a conventional user install location.
   //
   // We intentionally construct a structured Json object (instead of
@@ -169,8 +162,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   let game_cfg_json : Json = {
     "mgstudio": "0.1.0",
     "sdkroot": "$HOME/.local/share/mgstudio/current",
-    // `cart` is not a literal, so it must be wrapped into Json explicitly.
-    "cart": Json::string(cart),
+    "entry": ".",
     "web": { "addr": "127.0.0.1", "port": 8099 },
     "assets_allow_sdk_override": false,
   }
@@ -188,7 +180,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     "A minimal MoonBit + mgstudio game.\n\n" +
     "## Build\n\n" +
     "```bash\n" +
-    "moon build --release --target wasm-gc\n" +
+    "moon build --release --target native .\n" +
     "```\n\n" +
     "## Run (Native)\n\n" +
     "```bash\n" +
@@ -207,13 +199,17 @@ fn render_rotation_demo() -> String {
   // Dependency resolution is controlled by `--local-engine` (path) vs `moon add`
   // (latest registry).
   "///|\n" +
-  "pub fn game_app() -> Unit {\n" +
+  "pub fn app_main() -> Unit {\n" +
   "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
   "  @app.App::new(@ecs_world.World::new())\n" +
   "  .add_plugins(plugins)\n" +
   "  .add_startup_system(rotation_setup)\n" +
   "  .add_system(rotation_update)\n" +
   "  .run()\n" +
+  "}\n\n" +
+  "///|\n" +
+  "fn main {\n" +
+  "  app_main()\n" +
   "}\n\n" +
   "///|\n" +
   "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +

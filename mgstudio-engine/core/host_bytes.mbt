@@ -19,19 +19,29 @@
 /// We avoid passing wasm-gc `Bytes` across the host boundary directly.
 
 ///|
-fn host_bytes_sink_reset() -> Unit = "mgstudio_host" "bytes_sink_reset"
+fn host_bytes_sink_reset() -> Unit {
+  @platform.bytes_sink_reset()
+}
 
 ///|
-fn host_bytes_sink_push(byte : Int) -> Unit = "mgstudio_host" "bytes_sink_push"
+fn host_bytes_sink_push(byte : Int) -> Unit {
+  @platform.bytes_sink_push(byte)
+}
 
 ///|
-fn host_bytes_sink_push_u32(word : Int) -> Unit = "mgstudio_host" "bytes_sink_push_u32"
+fn host_bytes_sink_push_u32(word : Int) -> Unit {
+  @platform.bytes_sink_push_u32(word)
+}
 
 ///|
-fn host_bytes_sink_take() -> Int = "mgstudio_host" "bytes_sink_take"
+fn host_bytes_sink_take() -> Int {
+  @platform.bytes_sink_take()
+}
 
 ///|
-fn host_bytes_drop(id : Int) -> Unit = "mgstudio_host" "bytes_drop"
+fn host_bytes_drop(id : Int) -> Unit {
+  @platform.bytes_drop(id)
+}
 
 ///|
 pub fn[T] with_host_bytes_id(data : Bytes, f : (Int) -> T) -> T {

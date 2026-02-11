@@ -27,16 +27,9 @@ done
 ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")" && pwd)"
 BIN="${ROOT}/mgstudio-cli/_build/native/release/build/main/main.exe"
 SDKROOT="${MGSTUDIO_SDKROOT:-${HOME}/.local/share/mgstudio/current}"
-SDK_WEB_DIR="${SDKROOT}/share/mgstudio/web"
 SDK_ASSETS_DIR="${SDKROOT}/share/mgstudio/assets"
 
 sync_sdk() {
-  mkdir -p "${SDK_WEB_DIR}"
-  (
-    cd "${ROOT}"
-    OUT_DIR="${SDK_WEB_DIR}" ./mgstudio-runtime/web/build.sh
-  )
-
   rm -rf "${SDK_ASSETS_DIR}"
   mkdir -p "${SDK_ASSETS_DIR}"
   cp -R "${ROOT}/mgstudio-engine/assets/." "${SDK_ASSETS_DIR}/"
@@ -47,7 +40,7 @@ if [[ ! -x "${BIN}" ]]; then
   NEED_BUILD=1
 else
   # Rebuild when CLI sources changed since last build.
-  if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
+  if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
   if [[ "${ROOT}/mgstudio-cli/moon.mod.json" -nt "${BIN}" ]]; then
@@ -60,58 +53,5 @@ if [[ "${NEED_BUILD}" -eq 1 ]]; then
 fi
 
 sync_sdk
-
-# Repo dev convenience:
-# - If user runs `mgstudio run --backend wasmtime` and does not provide
-#   MGSTUDIO_WASMTIME_RUNTIME, build/use local Rust runtime automatically.
-USE_LOCAL_WASMTIME=0
-if [[ -z "${MGSTUDIO_WASMTIME_RUNTIME:-}" && "${1:-}" == "run" ]]; then
-  ARGS=("$@")
-  BACKEND=""
-  for ((i = 1; i < ${#ARGS[@]}; i++)); do
-    ARG="${ARGS[i]}"
-    if [[ "${ARG}" == "--backend" ]]; then
-      if (( i + 1 < ${#ARGS[@]} )); then
-        BACKEND="${ARGS[i + 1]}"
-        ((i++))
-      fi
-      continue
-    fi
-    if [[ "${ARG}" == --backend=* ]]; then
-      BACKEND="${ARG#--backend=}"
-      continue
-    fi
-  done
-  if [[ "${BACKEND}" == "wasmtime" ]]; then
-    USE_LOCAL_WASMTIME=1
-  fi
-fi
-
-if [[ "${USE_LOCAL_WASMTIME}" -eq 1 ]]; then
-  if ! command -v cargo >/dev/null 2>&1; then
-    echo "mgstudio-dev: --backend wasmtime requires cargo in PATH" >&2
-    exit 2
-  fi
-  WASMTIME_DIR="${ROOT}/mgstudio-runtime/native-wasmtime"
-  WASMTIME_BIN="${WASMTIME_DIR}/target/release/mgstudio-runtime-native-wasmtime"
-  NEED_WASMTIME_BUILD=0
-  if [[ ! -x "${WASMTIME_BIN}" ]]; then
-    NEED_WASMTIME_BUILD=1
-  else
-    if find "${WASMTIME_DIR}/src" -type f -name '*.rs' -newer "${WASMTIME_BIN}" | grep -q .; then
-      NEED_WASMTIME_BUILD=1
-    fi
-    if [[ "${WASMTIME_DIR}/Cargo.toml" -nt "${WASMTIME_BIN}" ]]; then
-      NEED_WASMTIME_BUILD=1
-    fi
-    if [[ "${WASMTIME_DIR}/Cargo.lock" -nt "${WASMTIME_BIN}" ]]; then
-      NEED_WASMTIME_BUILD=1
-    fi
-  fi
-  if [[ "${NEED_WASMTIME_BUILD}" -eq 1 ]]; then
-    (cd "${WASMTIME_DIR}" && cargo build --release)
-  fi
-  export MGSTUDIO_WASMTIME_RUNTIME="${WASMTIME_BIN}"
-fi
 
 exec "${BIN}" "$@"

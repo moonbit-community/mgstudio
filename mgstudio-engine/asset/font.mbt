@@ -23,16 +23,24 @@ pub fn host_asset_load_font(path : String) -> Int {
 }
 
 ///|
-fn host_asset_load_font_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_font"
+fn host_asset_load_font_id(path_id : Int) -> Int {
+  @platform.asset_load_font(path_id)
+}
 
 ///|
-pub fn host_asset_font_bytes_len(font_id : Int) -> Int = "mgstudio_host" "asset_font_bytes_len"
+pub fn host_asset_font_bytes_len(font_id : Int) -> Int {
+  @platform.asset_font_bytes_len(font_id)
+}
 
 ///|
-pub fn host_asset_font_bytes_get(font_id : Int, index : Int) -> Int = "mgstudio_host" "asset_font_bytes_get"
+pub fn host_asset_font_bytes_get(font_id : Int, index : Int) -> Int {
+  @platform.asset_font_bytes_get(font_id, index)
+}
 
 ///|
-pub fn host_asset_font_bytes_get_u32(font_id : Int, index : Int) -> Int = "mgstudio_host" "asset_font_bytes_get_u32"
+pub fn host_asset_font_bytes_get_u32(font_id : Int, index : Int) -> Int {
+  @platform.asset_font_bytes_get_u32(font_id, index)
+}
 
 ///|
 pub fn AssetServer::load_font(

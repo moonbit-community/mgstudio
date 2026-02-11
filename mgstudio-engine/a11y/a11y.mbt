@@ -78,7 +78,9 @@ pub fn A11yState::set_focused_node(
 // -----------------------------------------------------------------------------
 
 ///|
-fn host_a11y_begin_update(root_id : Int) -> Unit = "mgstudio_host" "a11y_begin_update"
+fn host_a11y_begin_update(root_id : Int) -> Unit {
+  @platform.a11y_begin_update(root_id)
+}
 
 ///|
 fn host_a11y_push_node(
@@ -91,28 +93,46 @@ fn host_a11y_push_node(
   height : Float,
   name_id : Int,
   actions_mask : Int,
-) -> Unit = "mgstudio_host" "a11y_push_node"
+) -> Unit {
+  @platform.a11y_push_node(
+    node_id, parent_id, role_id, x, y, width, height, name_id, actions_mask,
+  )
+}
 
 ///|
-fn host_a11y_end_update() -> Unit = "mgstudio_host" "a11y_end_update"
+fn host_a11y_end_update() -> Unit {
+  @platform.a11y_end_update()
+}
 
 ///|
-fn host_a11y_actions_len() -> Int = "mgstudio_host" "a11y_actions_len"
+fn host_a11y_actions_len() -> Int {
+  @platform.a11y_actions_len()
+}
 
 ///|
-fn host_a11y_action_target(index : Int) -> Int = "mgstudio_host" "a11y_action_target"
+fn host_a11y_action_target(index : Int) -> Int {
+  @platform.a11y_action_target(index)
+}
 
 ///|
-fn host_a11y_action_kind(index : Int) -> Int = "mgstudio_host" "a11y_action_kind"
+fn host_a11y_action_kind(index : Int) -> Int {
+  @platform.a11y_action_kind(index)
+}
 
 ///|
-fn host_a11y_action_value_len(index : Int) -> Int = "mgstudio_host" "a11y_action_value_len"
+fn host_a11y_action_value_len(index : Int) -> Int {
+  @platform.a11y_action_value_len(index)
+}
 
 ///|
-fn host_a11y_action_value_code_unit(index : Int, offset : Int) -> Int = "mgstudio_host" "a11y_action_value_code_unit"
+fn host_a11y_action_value_code_unit(index : Int, offset : Int) -> Int {
+  @platform.a11y_action_value_code_unit(index, offset)
+}
 
 ///|
-fn host_a11y_actions_clear() -> Unit = "mgstudio_host" "a11y_actions_clear"
+fn host_a11y_actions_clear() -> Unit {
+  @platform.a11y_actions_clear()
+}
 
 ///|
 /// Role ids shared with runtimes.
@@ -201,7 +221,9 @@ pub fn a11y_host_end_update() -> Unit {
 }
 
 ///|
-fn host_a11y_apply_update(update_json_id : Int) -> Unit = "mgstudio_host" "a11y_apply_update"
+fn host_a11y_apply_update(update_json_id : Int) -> Unit {
+  @platform.a11y_apply_update(update_json_id)
+}
 
 ///|
 /// Apply an AccessKit `TreeUpdate` to the host runtime.

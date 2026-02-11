@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 ///|
 struct RunOptions {
   game : String?
-  backend : String?
 }
 
 ///|
@@ -24,7 +23,7 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
     err => {
       println(err)
       @sys.exit(2)
-      parse_run_options_defaults(".")
+      parse_run_options_defaults()
     }
   }
   run_native(opts) catch {
@@ -36,24 +35,6 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
             "Hint: run in a directory containing moon.game.json, or pass --game <path>.",
           )
         }
-        @native_rt.NativeRuntimeError::MissingExport(name) =>
-          println("mgstudio run failed: Missing wasm export: \{name}")
-        @native_rt.NativeRuntimeError::ExportCallFailed(name, msg) => {
-          println("mgstudio run failed: Export call failed: \{name}")
-          println(msg)
-        }
-        @native_rt.NativeRuntimeError::InstantiateFailed(path, msg) => {
-          println("mgstudio run failed: Wasm instantiate failed: \{path}")
-          println(msg)
-        }
-        @native_rt.NativeRuntimeError::ParseWasmFailed(path, msg) => {
-          println("mgstudio run failed: Wasm parse failed: \{path}")
-          println(msg)
-        }
-        @native_rt.NativeRuntimeError::ReadWasmFailed(path, msg) => {
-          println("mgstudio run failed: Failed to read wasm: \{path}")
-          println(msg)
-        }
         _ => println("mgstudio run failed: \{err}")
       }
       @sys.exit(1)
@@ -62,8 +43,8 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
 }
 
 ///|
-fn parse_run_options_defaults(_workspace : String) -> RunOptions {
-  { game: None, backend: None }
+fn parse_run_options_defaults() -> RunOptions {
+  { game: None }
 }
 
 ///|
@@ -71,8 +52,7 @@ fn parse_run_options(
   cmd : @clap.SimpleValue,
 ) -> RunOptions raise @clap.ParserError {
   let game : String? = cmd.get_option("game")
-  let backend : String? = cmd.get_option("backend")
-  { game, backend }
+  { game, }
 }
 
 ///|
@@ -81,19 +61,18 @@ async fn run_native(opts : RunOptions) -> Unit {
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
   let sdk = resolve_sdk_layout(cfg)
-  let backend = opts.backend.unwrap_or("wasmoon").trim().to_string()
   let assets_source = cfg.assets_spec
   let data_source = cfg.data_spec_native
   if assets_source.has_prefix("http://") || assets_source.has_prefix("https://") {
     raise RunError::InvalidArgs(
-      "Native runtime only supports dir assets source today (got: " +
+      "Native mode only supports dir assets source today (got: " +
       assets_source +
       ")",
     )
   }
   if !assets_source.has_prefix("dir:") {
     raise RunError::InvalidArgs(
-      "Native runtime only supports dir assets source today (got: " +
+      "Native mode only supports dir assets source today (got: " +
       assets_source +
       ")",
     )
@@ -102,13 +81,11 @@ async fn run_native(opts : RunOptions) -> Unit {
     data_source.has_prefix("http://") ||
     data_source.has_prefix("https://") {
     raise RunError::InvalidArgs(
-      "Native runtime only supports dir data source today (got: " +
+      "Native mode only supports dir data source today (got: " +
       data_source +
       ")",
     )
   }
-  // Stage an overlay assets dir so the native runtime sees both game assets and
-  // SDK-provided engine assets (e.g. built-in shaders).
   let stage_root = path_join(cfg.dir, ".mgstudio/run")
   if @fs.exists(stage_root) {
     if @fs.kind(stage_root, follow_symlink=true) != @fs.FileKind::Directory {
@@ -128,54 +105,28 @@ async fn run_native(opts : RunOptions) -> Unit {
     cfg.assets_allow_sdk_override,
   )
   let final_assets_source = "dir:" + overlay_assets_dir
-  if backend == "" || backend == "wasmoon" {
-    println("Using SDK libwgpu_native: \{sdk.native_wgpu_lib}")
-    let wgpu_lib : String? = Some(sdk.native_wgpu_lib)
-    @native_rt.run_game(
-      cfg.cart_path,
-      final_assets_source,
-      data_source,
-      wgpu_lib?,
-    )
-  } else if backend == "wasmtime" {
-    run_native_wasmtime(
-      cfg.cart_path,
-      final_assets_source,
-      data_source,
-      cfg.sdk_root,
-    )
-  } else {
-    raise RunError::InvalidArgs(
-      "Unknown --backend: " + backend + " (expected: wasmoon|wasmtime)",
-    )
-  }
-}
 
-///|
-async fn run_native_wasmtime(
-  cart_path : String,
-  assets_source : String,
-  data_source : String,
-  sdk_root : String,
-) -> Unit {
-  // Prefer a runtime shipped in the SDK (optional / experimental).
-  let bin_in_sdk = path_join(sdk_root, "bin/mgstudio-runtime-native-wasmtime")
-
-  // Allow explicit override for local development.
-  let bin_override : String? = @sys.get_env_var("MGSTUDIO_WASMTIME_RUNTIME")
-  let bin = match bin_override {
-    Some(p) if p.trim() != "" => p.trim().to_string()
-    _ if @fs.exists(bin_in_sdk) => bin_in_sdk
-    _ =>
-      raise RunError::InvalidArgs(
-        "Wasmtime backend selected but runtime binary not found.\n" +
-        "- Install it into SDK: " +
-        bin_in_sdk +
-        "\n" +
-        "- Or set MGSTUDIO_WASMTIME_RUNTIME to an absolute path.",
-      )
-  }
-  run_process_checked(bin, [
-    "--cart", cart_path, "--assets", assets_source, "--data", data_source,
+  let (launcher_root, launcher_pkg) = prepare_launcher(cfg, Native)
+  run_process_checked("moon", [
+    "-C", launcher_root, "build", "--release", "--target", "native", launcher_pkg,
   ])
+  println("Using SDK libwgpu_native: \{sdk.native_wgpu_lib}")
+  let lib_dir = path_dirname(sdk.native_wgpu_lib)
+  let prev_dyld = @sys.get_env_var("DYLD_LIBRARY_PATH").unwrap_or("")
+  let prev_ld = @sys.get_env_var("LD_LIBRARY_PATH").unwrap_or("")
+  let dyld = if prev_dyld == "" { lib_dir } else { lib_dir + ":" + prev_dyld }
+  let ld = if prev_ld == "" { lib_dir } else { lib_dir + ":" + prev_ld }
+  let env : Map[String, String] = {
+    "MGSTUDIO_ASSETS_SOURCE": final_assets_source,
+    "MGSTUDIO_DATA_SOURCE": data_source,
+    "DYLD_LIBRARY_PATH": dyld,
+    "LD_LIBRARY_PATH": ld,
+  }
+  run_process_checked(
+    "moon",
+    [
+      "-C", launcher_root, "run", "--release", "--target", "native", launcher_pkg,
+    ],
+    extra_env=env,
+  )
 }

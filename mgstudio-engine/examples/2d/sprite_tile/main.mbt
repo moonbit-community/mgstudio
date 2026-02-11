@@ -31,7 +31,7 @@ let sprite_tile_animation_state : Ref[SpriteTileAnimationState] = Ref::new(Sprit
 })
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -88,4 +88,9 @@ fn sprite_tile_animate(world : @ecs_world.World) -> Unit {
     )
     |> ignore
   }
+}
+
+///|
+fn main {
+  app_main()
 }

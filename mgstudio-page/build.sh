@@ -18,10 +18,11 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 
-TARGET=${TARGET:-wasm}
+TARGET=${TARGET:-js}
 
 ENGINE_DIR="$REPO_DIR/mgstudio-engine"
-RUNTIME_WEB_DIR="$REPO_DIR/mgstudio-runtime/web"
+WEB_PLATFORM_DIR="${MGSTUDIO_PLATFORM_WEB_MODULE:-$REPO_DIR/mgstudio-platform-web}"
+LAUNCHER_ROOT="$SCRIPT_DIR/.tmp/page-launcher"
 
 DIST_DIR="$SCRIPT_DIR/dist"
 
@@ -40,12 +41,12 @@ generate_examples_menu() {
   local current_group=""
   local found=0
 
-  while IFS= read -r wasm_rel; do
+  while IFS= read -r game_rel; do
     found=1
-    local path_no_prefix="${wasm_rel#examples/}"
+    local path_no_prefix="${game_rel#examples/}"
     local group="${path_no_prefix%%/*}"
     local example_name
-    example_name="$(basename "$wasm_rel" .wasm)"
+    example_name="$(basename "$game_rel" .js)"
     local group_label
     group_label="$(fn_title_case "$group")"
     local example_label
@@ -62,37 +63,91 @@ generate_examples_menu() {
       current_group="$group"
     fi
 
-    printf '        <button type="button" data-wasm="./%s">%s</button>\n' \
-      "$wasm_rel" \
+    printf '        <button type="button" data-game="./%s">%s</button>\n' \
+      "$game_rel" \
       "$example_label" >> "$menu_html"
-  done < <(find "$dist_dir/examples" -name '*.wasm' -print | sed "s|$dist_dir/||" | sort)
+  done < <(find "$dist_dir/examples" -name '*.js' -print | sed "s|$dist_dir/||" | sort)
 
   if [[ "$found" -eq 0 ]]; then
-    echo "No built wasm examples found under $dist_dir/examples" >&2
+    echo "No built js examples found under $dist_dir/examples" >&2
     exit 1
   fi
 
   printf '%s\n' "      </div>" "    </section>" >> "$menu_html"
 }
 
-echo "Building engine examples..."
-while IFS= read -r pkg; do
-  pkg_dir=$(dirname "$pkg")
-  moon -C "$ENGINE_DIR" build --release --target "$TARGET" "$pkg_dir"
-done < <(find "$ENGINE_DIR/examples" -name moon.pkg -print | sort)
+write_launcher_module() {
+  rm -rf "$LAUNCHER_ROOT"
+  mkdir -p "$LAUNCHER_ROOT/launchers"
+  cat > "$LAUNCHER_ROOT/moon.mod.json" <<EOF
+{
+  "name": "mgstudio/page-launchers",
+  "version": "0.1.0",
+  "deps": {
+    "Milky2018/mgstudio": { "path": "$ENGINE_DIR" },
+    "Milky2018/mgstudio-platform-web": { "path": "$WEB_PLATFORM_DIR" }
+  },
+  "readme": "README.mbt.md",
+  "license": "Apache-2.0",
+  "keywords": [],
+  "description": "",
+  "preferred-target": "js"
+}
+EOF
+  cat > "$LAUNCHER_ROOT/README.mbt.md" <<EOF
+# mgstudio page launchers
+EOF
+}
 
-echo "Building web runtime JS bundle..."
-moon -C "$RUNTIME_WEB_DIR" build --release --target js
+launcher_name_for_pkg() {
+  local pkg_rel="$1"
+  printf '%s' "$pkg_rel" | tr '/.-' '___'
+}
 
-RUNTIME_BUNDLE="$RUNTIME_WEB_DIR/_build/js/release/build/mgstudio-runtime-web.js"
-if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
-  echo "Runtime JS bundle not found at $RUNTIME_BUNDLE" >&2
+build_example_launcher() {
+  local pkg_rel="$1"
+  local entry_import="Milky2018/mgstudio/$pkg_rel"
+  local launcher_name
+  launcher_name="$(launcher_name_for_pkg "$pkg_rel")"
+  local launcher_pkg_dir="$LAUNCHER_ROOT/launchers/$launcher_name"
+  mkdir -p "$launcher_pkg_dir"
+  cat > "$launcher_pkg_dir/moon.pkg" <<EOF
+import {
+  "$entry_import" @game,
+  "Milky2018/mgstudio/platform" @platform,
+}
+
+options(
+  "is-main": true,
+  overrides: [ "Milky2018/mgstudio-platform-web/platform_web" ],
+)
+EOF
+  cat > "$launcher_pkg_dir/main.mbt" <<EOF
+fn main {
+  @platform.run_after_ready(fn() {
+    @game.app_main()
+  })
+}
+EOF
+
+  moon -C "$LAUNCHER_ROOT" build --release --target "$TARGET" "launchers/$launcher_name"
+  local built_js="$LAUNCHER_ROOT/_build/$TARGET/release/build/launchers/$launcher_name/$launcher_name.js"
+  if [[ ! -f "$built_js" ]]; then
+    echo "Built launcher output not found: $built_js" >&2
+    exit 1
+  fi
+  local dst_js="$DIST_DIR/examples/${pkg_rel}.js"
+  mkdir -p "$(dirname "$dst_js")"
+  cp "$built_js" "$dst_js"
+}
+
+if [[ "$TARGET" != "js" ]]; then
+  echo "mgstudio-page/build.sh supports TARGET=js only (got: $TARGET)" >&2
   exit 1
 fi
 
-EXAMPLES_DIR="$ENGINE_DIR/_build/$TARGET/release/build/examples"
-if [[ ! -d "$EXAMPLES_DIR" ]]; then
-  echo "Examples output directory not found at $EXAMPLES_DIR" >&2
+if [[ ! -f "$WEB_PLATFORM_DIR/moon.mod.json" ]]; then
+  echo "Web platform module not found: $WEB_PLATFORM_DIR/moon.mod.json" >&2
   exit 1
 fi
 
@@ -102,13 +157,18 @@ if [[ ! -d "$ASSETS_DIR" ]]; then
   exit 1
 fi
 
+echo "Building engine examples (web launchers)..."
 rm -rf "$DIST_DIR"
-mkdir -p "$DIST_DIR"
+mkdir -p "$DIST_DIR/examples"
+write_launcher_module
+while IFS= read -r pkg; do
+  pkg_dir=$(dirname "$pkg")
+  pkg_rel="${pkg_dir#"$ENGINE_DIR/"}"
+  build_example_launcher "$pkg_rel"
+done < <(find "$ENGINE_DIR/examples" -name moon.pkg -print | sort)
 
-cp "$RUNTIME_BUNDLE" "$DIST_DIR/mgstudio-runtime-web.js"
-
-echo "Copying examples into page dist..."
-rsync -a --delete "$EXAMPLES_DIR/" "$DIST_DIR/examples/"
+rm -rf "$LAUNCHER_ROOT"
+rmdir "$SCRIPT_DIR/.tmp" 2>/dev/null || true
 
 echo "Copying assets into page dist..."
 rsync -a --delete "$ASSETS_DIR/" "$DIST_DIR/assets/"

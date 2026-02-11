@@ -1,0 +1,21 @@
+import {
+  "mizchi/js",
+  "mizchi/js/core",
+  "mizchi/js/builtins/arraybuffer",
+  "mizchi/js/browser/dom",
+  "mizchi/js/web/http",
+  "Milky2018/moon_accesskit",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/json",
+  "Milky2018/mgstudio/platform/source_spec" @rtcore,
+  "Milky2018/mgstudio-platform-web/platform_web/webgpu",
+}
+
+options(
+  targets: {
+    "api.mbt": [ "js" ],
+    "js_bridge.mbt": [ "js" ],
+    "runtime_core.mbt": [ "js" ],
+    "state_init.mbt": [ "js" ],
+  },
+)

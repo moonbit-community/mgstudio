@@ -21,7 +21,7 @@ priv struct TransparencyState {
 let transparency_state : Ref[TransparencyState] = Ref::new({ materials: [] })
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -167,4 +167,9 @@ fn transparency_fade_system(_world : @ecs_world.World) -> Unit {
       @render3d.standard_material_set(handle, next_material) |> ignore
     }
   }
+}
+
+///|
+fn main {
+  app_main()
 }

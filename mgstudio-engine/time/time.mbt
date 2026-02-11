@@ -27,7 +27,9 @@ let time_state : Ref[Time] = @ref.new(Time::{
 })
 
 ///|
-pub fn host_time_now() -> Float = "mgstudio_host" "time_now"
+pub fn host_time_now() -> Float {
+  @platform.time_now()
+}
 
 ///|
 pub fn time_update() -> Unit {

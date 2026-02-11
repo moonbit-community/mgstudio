@@ -16,7 +16,7 @@
 /// Physics2D query example:
 /// - Builds a simple scene (floor + ball).
 /// - Periodically raycasts downward and prints the closest hit.
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -210,4 +210,9 @@ fn physics2d_queries_raycast(world : @ecs_world.World) -> Unit {
       )
     }
   }
+}
+
+///|
+fn main {
+  app_main()
 }

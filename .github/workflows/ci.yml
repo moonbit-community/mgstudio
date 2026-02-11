@@ -42,7 +42,9 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-engine check
+          moon -C mgstudio-engine clean
+          moon -C mgstudio-engine check --target native
+          moon -C mgstudio-engine check --target js
 
       - name: moon test
         shell: bash
@@ -51,8 +53,8 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon -C mgstudio-engine test
 
-  runtime-native:
-    name: runtime/native (moon check/test)
+  platform-web:
+    name: platform-web (moon check js)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -79,18 +81,42 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/native clean
-          moon -C mgstudio-runtime/native check
+          moon -C mgstudio-platform-web clean
+          moon -C mgstudio-platform-web check --target js
 
-      - name: moon test
+  platform-native:
+    name: platform-native (moon check native)
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Update MoonBit registry
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/native test
+          moon update
 
-  runtime-web:
-    name: runtime/web (moon check/test)
+      - name: moon check
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-platform-native clean
+          moon -C mgstudio-platform-native check --target native
+
+  cli:
+    name: cli (moon check)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -117,12 +143,35 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/web clean
-          moon -C mgstudio-runtime/web check
+          moon -C mgstudio-cli clean
+          moon -C mgstudio-cli check --target native
 
-      - name: moon test
+  page:
+    name: page (build js examples)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Update MoonBit registry
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/web test
+          moon update
+
+      - name: build page
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          ./mgstudio-page/build.sh

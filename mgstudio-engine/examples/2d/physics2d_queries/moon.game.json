@@ -1,6 +1,6 @@
 {
   "mgstudio": "0.1.0",
-  "cart": "../../../_build/wasm-gc/release/build/examples/2d/physics2d_queries/physics2d_queries.wasm",
+  "entry": ".",
   "assets": "../../../assets",
   "data": "./tmp/data",
   "web": {

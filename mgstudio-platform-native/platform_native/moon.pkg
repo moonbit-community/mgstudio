@@ -1,0 +1,26 @@
+import {
+  "Milky2018/wgpu_mbt" @wgpu,
+  "Milky2018/wgpu_mbt/c" @wgpu_c,
+  "Milky2018/mgstudio-platform-native/platform/native_window" @win,
+  "Milky2018/mgstudio-platform-native/platform/native_image" @img,
+  "Milky2018/mgstudio/platform/source_spec" @rtcore,
+  "Milky2018/moon_accesskit",
+  "moonbitlang/core/math" @coremath,
+  "moonbitlang/core/strconv",
+  "moonbitlang/core/json",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/ref",
+  "moonbitlang/x/path",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/sys",
+}
+
+options(
+  implement: "Milky2018/mgstudio/platform",
+  "native-stub": [ "time_native.c" ],
+  targets: {
+    "platform_native.mbt": [ "native" ],
+    "wgpu_backend.mbt": [ "native" ],
+  },
+)

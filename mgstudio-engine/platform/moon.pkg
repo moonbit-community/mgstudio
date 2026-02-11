@@ -1,0 +1,4 @@
+options(
+  targets: { "default_stub.mbt": [ "native", "js" ] },
+  virtual: { "has-default": true },
+)

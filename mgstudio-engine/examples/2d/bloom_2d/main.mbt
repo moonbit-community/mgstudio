@@ -35,7 +35,7 @@ fn compose_layers() -> @render2d.RenderLayers {
 }
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -216,4 +216,9 @@ fn safe_positive_int(value : Int, fallback : Int) -> Int {
   } else {
     value
   }
+}
+
+///|
+fn main {
+  app_main()
 }

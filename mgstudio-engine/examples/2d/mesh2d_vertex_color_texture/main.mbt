@@ -19,7 +19,7 @@ const PANEL_SCALE : Float = 128.0F
 const PANEL_OFFSET : Float = 96.0F
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -86,4 +86,9 @@ fn spawn_colored_panel(
     @math.Vec2::new(PANEL_SCALE, PANEL_SCALE),
   )
   @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+}
+
+///|
+fn main {
+  app_main()
 }

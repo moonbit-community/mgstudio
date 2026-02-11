@@ -49,7 +49,7 @@ let cpu_draw_state : Ref[CpuDrawState] = Ref::new(CpuDrawState::{
 })
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -196,4 +196,9 @@ fn clamp_float(value : Float, lower : Float, upper : Float) -> Float {
   } else {
     value
   }
+}
+
+///|
+fn main {
+  app_main()
 }

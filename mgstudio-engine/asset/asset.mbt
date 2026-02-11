@@ -154,7 +154,9 @@ pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int {
 }
 
 ///|
-fn host_asset_load_texture_id(path_id : Int, nearest : Bool) -> Int = "mgstudio_host" "asset_load_texture"
+fn host_asset_load_texture_id(path_id : Int, nearest : Bool) -> Int {
+  @platform.asset_load_texture(path_id, nearest)
+}
 
 ///|
 pub fn host_asset_load_wgsl(path : String) -> Int {
@@ -164,14 +166,18 @@ pub fn host_asset_load_wgsl(path : String) -> Int {
 }
 
 ///|
-fn host_asset_load_wgsl_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_wgsl"
+fn host_asset_load_wgsl_id(path_id : Int) -> Int {
+  @platform.asset_load_wgsl(path_id)
+}
 
 ///|
 pub fn host_asset_create_dynamic_texture(
   width : Int,
   height : Int,
   nearest : Bool,
-) -> Int = "mgstudio_host" "asset_create_dynamic_texture"
+) -> Int {
+  @platform.asset_create_dynamic_texture(width, height, nearest)
+}
 
 ///|
 pub fn host_asset_update_texture_region(
@@ -181,7 +187,11 @@ pub fn host_asset_update_texture_region(
   width : Int,
   height : Int,
   glyph_id : Int,
-) -> Unit = "mgstudio_host" "asset_update_texture_region"
+) -> Unit {
+  @platform.asset_update_texture_region(
+    texture_id, x, y, width, height, glyph_id,
+  )
+}
 
 ///|
 pub fn host_asset_update_texture_region_bytes(
@@ -191,16 +201,26 @@ pub fn host_asset_update_texture_region_bytes(
   width : Int,
   height : Int,
   bytes_id : Int,
-) -> Unit = "mgstudio_host" "asset_update_texture_region_bytes"
+) -> Unit {
+  @platform.asset_update_texture_region_bytes(
+    texture_id, x, y, width, height, bytes_id,
+  )
+}
 
 ///|
-pub fn host_asset_texture_width(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_width"
+pub fn host_asset_texture_width(texture_id : Int) -> Int {
+  @platform.asset_texture_width(texture_id)
+}
 
 ///|
-pub fn host_asset_texture_height(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_height"
+pub fn host_asset_texture_height(texture_id : Int) -> Int {
+  @platform.asset_texture_height(texture_id)
+}
 
 ///|
-pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool = "mgstudio_host" "asset_is_texture_loaded"
+pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool {
+  @platform.asset_is_texture_loaded(texture_id)
+}
 
 ///|
 pub fn host_asset_copy_texture_to_texture(
@@ -208,7 +228,11 @@ pub fn host_asset_copy_texture_to_texture(
   dst_x : Int,
   dst_y : Int,
   src_texture_id : Int,
-) -> Unit = "mgstudio_host" "asset_copy_texture_to_texture"
+) -> Unit {
+  @platform.asset_copy_texture_to_texture(
+    dst_texture_id, dst_x, dst_y, src_texture_id,
+  )
+}
 
 ///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {

@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/platform" @platform,
   "moonbitlang/core/ref",
 }

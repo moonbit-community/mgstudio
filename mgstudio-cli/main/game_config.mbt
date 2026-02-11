@@ -22,8 +22,10 @@ struct GameConfig {
   mgstudio : String
   /// Absolute path to the SDK root directory (required).
   sdk_root : String
-  /// Absolute path to the game wasm file.
-  cart_path : String
+  /// Absolute module root containing moon.mod.json.
+  module_root : String
+  /// Package entry path for moon build/run (module-relative).
+  entry : String
   /// Assets source spec (e.g. "dir:/abs/path/assets" or "https://.../assets/").
   assets_spec : String
   /// Whether game assets may override SDK-provided engine assets.
@@ -104,6 +106,7 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
     path_join(@fs.realpath("."), file_path)
   }
   let cfg_dir = path_dirname(abs_path)
+  let module_root = find_module_root(cfg_dir, abs_path)
   let src_opt = read_file_text(abs_path)
   guard src_opt is Some(src) else { raise RunError::MissingFile(abs_path) }
   let json = @json5.parse(src) catch {
@@ -131,11 +134,8 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
         abs_path + ": sdkroot does not exist: " + sdk_root_path,
       )
   }
-  let cart_raw = get_required_string(root, "cart", abs_path)
-  let cart_path = resolve_path_relative(cfg_dir, cart_raw, abs_path)
-  if !@fs.exists(cart_path) {
-    raise RunError::MissingFile(cart_path)
-  }
+  let entry_raw = get_required_string(root, "entry", abs_path)
+  let entry = normalize_entry_package(entry_raw, cfg_dir, module_root, abs_path)
 
   // assets/data are optional; defaults are chosen to keep the config small.
   let assets_raw : String? = get_optional_string(root, "assets", abs_path)
@@ -192,7 +192,8 @@ async fn load_game_config(file_path : String) -> GameConfig raise Error {
     dir: cfg_dir,
     mgstudio,
     sdk_root,
-    cart_path,
+    module_root,
+    entry,
     assets_spec,
     assets_allow_sdk_override,
     data_spec_native,
@@ -303,6 +304,90 @@ fn resolve_path_relative(
   } else {
     path_join(base_dir, v)
   }
+}
+
+///|
+async fn find_module_root(
+  start_dir : String,
+  path : String,
+) -> String raise Error {
+  let mut dir = @fs.realpath(start_dir) catch { _ => start_dir }
+  while dir != "" {
+    let marker = path_join(dir, "moon.mod.json")
+    if @fs.exists(marker) {
+      return @fs.realpath(dir) catch { _ => dir }
+    }
+    let parent = path_dirname(dir)
+    if parent == dir {
+      break
+    }
+    dir = parent
+  }
+  raise RunError::InvalidArgs(
+    path + ": cannot find moon.mod.json from config directory",
+  )
+}
+
+///|
+async fn normalize_entry_package(
+  raw : String,
+  cfg_dir : String,
+  module_root : String,
+  path : String,
+) -> String raise Error {
+  async fn package_path_from_abs(
+    abs_dir : String,
+    module_root : String,
+    path : String,
+  ) -> String raise Error {
+    let canonical = @fs.realpath(abs_dir) catch {
+      _ => raise RunError::MissingFile(abs_dir)
+    }
+    let pkg_file = path_join(canonical, "moon.pkg")
+    if !@fs.exists(pkg_file) {
+      raise RunError::InvalidArgs(
+        path + ": entry package missing moon.pkg: " + canonical,
+      )
+    }
+    if canonical == module_root {
+      return "."
+    }
+    let prefix = module_root + "/"
+    if !canonical.has_prefix(prefix) {
+      raise RunError::InvalidArgs(
+        path +
+        ": entry path must be under module root (" +
+        module_root +
+        "): " +
+        canonical,
+      )
+    }
+    (try! canonical[prefix.length():]).to_string()
+  }
+
+  let v = raw.trim().to_string()
+  if v == "" {
+    raise RunError::InvalidArgs(path + ": entry must not be empty")
+  }
+  if is_absolute_path(v) ||
+    v == "." ||
+    v.has_prefix("./") ||
+    v.has_prefix("../") {
+    let abs_dir = if is_absolute_path(v) { v } else { path_join(cfg_dir, v) }
+    return package_path_from_abs(abs_dir, module_root, path)
+  }
+  let from_cfg = path_join(cfg_dir, v)
+  if @fs.exists(path_join(from_cfg, "moon.pkg")) {
+    return package_path_from_abs(from_cfg, module_root, path)
+  }
+  let module_rel = if v.has_prefix("./") { (try! v[2:]).to_string() } else { v }
+  let from_module = path_join(module_root, module_rel)
+  if !@fs.exists(path_join(from_module, "moon.pkg")) {
+    raise RunError::InvalidArgs(
+      path + ": entry package not found: " + module_rel,
+    )
+  }
+  module_rel
 }
 
 ///|

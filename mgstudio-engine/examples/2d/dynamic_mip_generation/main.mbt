@@ -39,7 +39,7 @@ let dynamic_mip_state : Ref[DynamicMipState] = Ref::new(DynamicMipState::{
 })
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -200,4 +200,9 @@ fn clamp_to_byte(value : Int) -> Byte {
   } else {
     value.to_byte()
   }
+}
+
+///|
+fn main {
+  app_main()
 }

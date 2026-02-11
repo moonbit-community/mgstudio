@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -182,4 +182,9 @@ fn ui_scene_setup(world : @ecs_world.World) -> Unit {
   .get_ui_text_store()
   .insert(editable, @ui.UiText::new(editable_text), tick)
   world.get_label_store().insert(editable, @ui.Label::default(), tick)
+}
+
+///|
+fn main {
+  app_main()
 }

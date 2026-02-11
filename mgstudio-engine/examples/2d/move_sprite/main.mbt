@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -85,4 +85,9 @@ fn move_sprite_movement(world : @ecs_world.World) -> Unit {
       move_state.val.direction = Direction::Right
     }
   }
+}
+
+///|
+fn main {
+  app_main()
 }

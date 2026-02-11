@@ -2,5 +2,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/platform" @platform,
   "Milky2018/mgstudio/window",
 }

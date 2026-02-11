@@ -33,22 +33,32 @@ pub fn host_asset_load_folder(path : String) -> Int {
 }
 
 ///|
-fn host_asset_load_folder_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_folder"
+fn host_asset_load_folder_id(path_id : Int) -> Int {
+  @platform.asset_load_folder(path_id)
+}
 
 ///|
-pub fn host_asset_poll_loaded_folder_event_kind() -> Int = "mgstudio_host" "asset_poll_loaded_folder_event_kind"
+pub fn host_asset_poll_loaded_folder_event_kind() -> Int {
+  @platform.asset_poll_loaded_folder_event_kind()
+}
 
 ///|
-pub fn host_asset_poll_loaded_folder_event_id() -> Int = "mgstudio_host" "asset_poll_loaded_folder_event_id"
+pub fn host_asset_poll_loaded_folder_event_id() -> Int {
+  @platform.asset_poll_loaded_folder_event_id()
+}
 
 ///|
-pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int = "mgstudio_host" "asset_loaded_folder_handles_len"
+pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int {
+  @platform.asset_loaded_folder_handles_len(folder_id)
+}
 
 ///|
 pub fn host_asset_loaded_folder_handles_get(
   folder_id : Int,
   index : Int,
-) -> Int = "mgstudio_host" "asset_loaded_folder_handles_get"
+) -> Int {
+  @platform.asset_loaded_folder_handles_get(folder_id, index)
+}
 
 ///|
 let loaded_folder_assets : Ref[Assets[LoadedFolder]] = Ref::new(Assets::new())

@@ -148,6 +148,40 @@ limitations under the License.
         applyState(false);
       })();
     </script>
-    <script type="module" src="./mgstudio-runtime-web.js"></script>
+    <script type="module">
+      const menu = document.getElementById("mgstudio-menu");
+      const gameButtons = Array.from(menu?.querySelectorAll("button[data-game]") ?? []);
+      if (gameButtons.length === 0) {
+        throw new Error("No examples available in page menu");
+      }
+      const params = new URLSearchParams(window.location.search);
+      const requestedGame = params.get("game");
+      const selectedButton =
+        gameButtons.find((button) => button.dataset.game === requestedGame) ?? gameButtons[0];
+      const selectedGame = selectedButton.dataset.game;
+      for (const button of gameButtons) {
+        button.disabled = button === selectedButton;
+        button.addEventListener("click", () => {
+          const game = button.dataset.game;
+          if (!game || game === selectedGame) {
+            return;
+          }
+          const next = new URL(window.location.href);
+          next.searchParams.set("game", game);
+          window.location.replace(next.toString());
+        });
+      }
+      const normalized = new URL(window.location.href);
+      if (selectedGame && normalized.searchParams.get("game") !== selectedGame) {
+        normalized.searchParams.set("game", selectedGame);
+        window.history.replaceState(null, "", normalized.toString());
+      }
+      window.__MGSTUDIO_CONFIG = {
+        assets_source: "./assets/",
+        data_source: "idb:mgstudio-page",
+        canvas_id: "mgstudio-canvas",
+      };
+      await import(selectedGame);
+    </script>
   </body>
 </html>

@@ -13,8 +13,7 @@
 // limitations under the License.
 
 ///|
-#external
-pub type HostWindow
+pub type HostWindow = Int
 
 ///|
 priv struct WindowState {
@@ -97,28 +96,44 @@ fn host_window_create_id(
   width : Int,
   height : Int,
   title_id : Int,
-) -> HostWindow = "mgstudio_host" "window_create"
+) -> HostWindow {
+  @platform.window_create(width, height, title_id)
+}
 
 ///|
-pub fn host_window_poll_events(window : HostWindow) -> Unit = "mgstudio_host" "window_poll_events"
+pub fn host_window_poll_events(window : HostWindow) -> Unit {
+  @platform.window_poll_events(window)
+}
 
 ///|
-pub fn host_window_get_width(window : HostWindow) -> Int = "mgstudio_host" "window_get_width"
+pub fn host_window_get_width(window : HostWindow) -> Int {
+  @platform.window_get_width(window)
+}
 
 ///|
-pub fn host_window_get_height(window : HostWindow) -> Int = "mgstudio_host" "window_get_height"
+pub fn host_window_get_height(window : HostWindow) -> Int {
+  @platform.window_get_height(window)
+}
 
 ///|
-pub fn host_window_get_scale_factor(window : HostWindow) -> Float = "mgstudio_host" "window_get_scale_factor"
+pub fn host_window_get_scale_factor(window : HostWindow) -> Float {
+  @platform.window_get_scale_factor(window)
+}
 
 ///|
-pub fn host_window_should_close(window : HostWindow) -> Bool = "mgstudio_host" "window_should_close"
+pub fn host_window_should_close(window : HostWindow) -> Bool {
+  @platform.window_should_close(window)
+}
 
 ///|
-pub fn host_window_request_close(window : HostWindow) -> Unit = "mgstudio_host" "window_request_close"
+pub fn host_window_request_close(window : HostWindow) -> Unit {
+  @platform.window_request_close(window)
+}
 
 ///|
-pub fn host_window_run_loop(step : FuncRef[() -> Unit]) -> Unit = "mgstudio_host" "window_run_loop"
+pub fn host_window_run_loop(step : FuncRef[() -> Unit]) -> Unit {
+  @platform.window_run_loop(step)
+}
 
 ///|
 pub fn window_set_handle(window : HostWindow) -> Unit {
@@ -153,29 +168,31 @@ pub fn window_scale_factor() -> Float {
 }
 
 ///|
-#external
-pub type HostGpuDevice
+pub type HostGpuDevice = Int
 
 ///|
-#external
-pub type HostGpuQueue
+pub type HostGpuQueue = Int
 
 ///|
-#external
-pub type HostGpuSurface
+pub type HostGpuSurface = Int
 
 ///|
-#external
-pub type HostGpuFrame
+pub type HostGpuFrame = Int
 
 ///|
-pub fn host_gpu_request_device() -> HostGpuDevice = "mgstudio_host" "gpu_request_device"
+pub fn host_gpu_request_device() -> HostGpuDevice {
+  @platform.gpu_request_device()
+}
 
 ///|
-pub fn host_gpu_get_queue(device : HostGpuDevice) -> HostGpuQueue = "mgstudio_host" "gpu_get_queue"
+pub fn host_gpu_get_queue(device : HostGpuDevice) -> HostGpuQueue {
+  @platform.gpu_get_queue(device)
+}
 
 ///|
-pub fn host_gpu_create_surface(window : HostWindow) -> HostGpuSurface = "mgstudio_host" "gpu_create_surface"
+pub fn host_gpu_create_surface(window : HostWindow) -> HostGpuSurface {
+  @platform.gpu_create_surface(window)
+}
 
 ///|
 pub fn host_gpu_configure_surface(
@@ -183,13 +200,19 @@ pub fn host_gpu_configure_surface(
   surface : HostGpuSurface,
   width : Int,
   height : Int,
-) -> Unit = "mgstudio_host" "gpu_configure_surface"
+) -> Unit {
+  @platform.gpu_configure_surface(device, surface, width, height)
+}
 
 ///|
-pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> HostGpuFrame = "mgstudio_host" "gpu_begin_frame"
+pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> HostGpuFrame {
+  @platform.gpu_begin_frame(surface)
+}
 
 ///|
-pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit = "mgstudio_host" "gpu_end_frame"
+pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit {
+  @platform.gpu_end_frame(frame)
+}
 
 ///|
 pub fn host_gpu_begin_pass(
@@ -208,7 +231,12 @@ pub fn host_gpu_begin_pass(
   viewport_y : Int,
   viewport_width : Int,
   viewport_height : Int,
-) -> Unit = "mgstudio_host" "gpu_begin_pass"
+) -> Unit {
+  @platform.gpu_begin_pass(
+    target_id, width, height, clear_r, clear_g, clear_b, clear_a, camera_x, camera_y,
+    camera_rotation, camera_scale, viewport_x, viewport_y, viewport_width, viewport_height,
+  )
+}
 
 ///|
 pub fn host_gpu_begin_pass_3d(
@@ -265,7 +293,19 @@ pub fn host_gpu_begin_pass_3d(
   spot_range : Float,
   spot_inner_angle : Float,
   spot_outer_angle : Float,
-) -> Unit = "mgstudio_host" "gpu_begin_pass_3d"
+) -> Unit {
+  @platform.gpu_begin_pass_3d(
+    target_id, width, height, clear_r, clear_g, clear_b, clear_a, camera_x, camera_y,
+    camera_z, camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w, camera_fov_y,
+    camera_near, camera_far, viewport_x, viewport_y, viewport_width, viewport_height,
+    ambient_r, ambient_g, ambient_b, ambient_brightness, directional_dir_x, directional_dir_y,
+    directional_dir_z, directional_color_r, directional_color_g, directional_color_b,
+    directional_illuminance, point_pos_x, point_pos_y, point_pos_z, point_color_r,
+    point_color_g, point_color_b, point_intensity, point_range, spot_pos_x, spot_pos_y,
+    spot_pos_z, spot_dir_x, spot_dir_y, spot_dir_z, spot_color_r, spot_color_g, spot_color_b,
+    spot_intensity, spot_range, spot_inner_angle, spot_outer_angle,
+  )
+}
 
 ///|
 pub fn host_gpu_set_scissor(
@@ -273,10 +313,14 @@ pub fn host_gpu_set_scissor(
   y : Int,
   width : Int,
   height : Int,
-) -> Unit = "mgstudio_host" "gpu_set_scissor"
+) -> Unit {
+  @platform.gpu_set_scissor(x, y, width, height)
+}
 
 ///|
-pub fn host_gpu_clear_scissor() -> Unit = "mgstudio_host" "gpu_clear_scissor"
+pub fn host_gpu_clear_scissor() -> Unit {
+  @platform.gpu_clear_scissor()
+}
 
 ///|
 pub fn host_gpu_draw_sprite(
@@ -290,7 +334,11 @@ pub fn host_gpu_draw_sprite(
   color_g : Float,
   color_b : Float,
   color_a : Float,
-) -> Unit = "mgstudio_host" "gpu_draw_sprite"
+) -> Unit {
+  @platform.gpu_draw_sprite(
+    texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+  )
+}
 
 ///|
 pub fn host_gpu_draw_sprite_uv(
@@ -308,7 +356,12 @@ pub fn host_gpu_draw_sprite_uv(
   uv_min_y : Float,
   uv_max_x : Float,
   uv_max_y : Float,
-) -> Unit = "mgstudio_host" "gpu_draw_sprite_uv"
+) -> Unit {
+  @platform.gpu_draw_sprite_uv(
+    texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+    uv_min_x, uv_min_y, uv_max_x, uv_max_y,
+  )
+}
 
 ///|
 /// Draw a UI rectangle (background or border) using the dedicated UI pipeline.
@@ -342,7 +395,13 @@ pub fn host_gpu_draw_ui_rect(
   border_top : Float,
   border_right : Float,
   border_bottom : Float,
-) -> Unit = "mgstudio_host" "gpu_draw_ui_rect"
+) -> Unit {
+  @platform.gpu_draw_ui_rect(
+    texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+    uv_min_x, uv_min_y, uv_max_x, uv_max_y, flags, radius_tl, radius_tr, radius_br,
+    radius_bl, border_left, border_top, border_right, border_bottom,
+  )
+}
 
 ///|
 /// Draw a UI box shadow using a dedicated pipeline adapted from Bevy's `box_shadow.wgsl`.
@@ -373,7 +432,12 @@ pub fn host_gpu_draw_ui_box_shadow(
   radius_bl : Float,
   blur : Float,
   samples : Int,
-) -> Unit = "mgstudio_host" "gpu_draw_ui_box_shadow"
+) -> Unit {
+  @platform.gpu_draw_ui_box_shadow(
+    texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+    size_x, size_y, radius_tl, radius_tr, radius_br, radius_bl, blur, samples,
+  )
+}
 
 ///|
 /// Draw a UI texture slice (9-slice / tiled) using the Bevy-aligned texture
@@ -412,7 +476,14 @@ pub fn host_gpu_draw_ui_texture_slice(
   atlas_t : Float,
   atlas_r : Float,
   atlas_b : Float,
-) -> Unit = "mgstudio_host" "gpu_draw_ui_texture_slice"
+) -> Unit {
+  @platform.gpu_draw_ui_texture_slice(
+    texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+    texture_slice_l, texture_slice_t, texture_slice_r, texture_slice_b, target_slice_l,
+    target_slice_t, target_slice_r, target_slice_b, repeat_side_x, repeat_side_y,
+    repeat_center_x, repeat_center_y, atlas_l, atlas_t, atlas_r, atlas_b,
+  )
+}
 
 ///|
 pub fn host_gpu_draw_mesh(
@@ -431,7 +502,12 @@ pub fn host_gpu_draw_mesh(
   uv_offset_y : Float,
   uv_scale_x : Float,
   uv_scale_y : Float,
-) -> Unit = "mgstudio_host" "gpu_draw_mesh"
+) -> Unit {
+  @platform.gpu_draw_mesh(
+    mesh_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+    texture_id, uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y,
+  )
+}
 
 ///|
 pub fn host_gpu_draw_mesh3d(
@@ -466,7 +542,15 @@ pub fn host_gpu_draw_mesh3d(
   metallic : Float,
   roughness : Float,
   reflectance : Float,
-) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
+) -> Unit {
+  @platform.gpu_draw_mesh3d(
+    mesh_id, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
+    scale_z, color_r, color_g, color_b, color_a, texture_id, uv_offset_x, uv_offset_y,
+    uv_scale_x, uv_scale_y, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
+    occlusion_texture_id, emissive_r, emissive_g, emissive_b, unlit, metallic, roughness,
+    reflectance,
+  )
+}
 
 ///|
 pub fn host_gpu_draw_gizmo_line(
@@ -486,27 +570,40 @@ pub fn host_gpu_draw_gizmo_line(
   style_kind : Int,
   gap_scale : Float,
   line_scale : Float,
-) -> Unit = "mgstudio_host" "gpu_draw_gizmo_line"
+) -> Unit {
+  @platform.gpu_draw_gizmo_line(
+    start_x, start_y, start_r, start_g, start_b, start_a, end_x, end_y, end_r, end_g,
+    end_b, end_a, line_width, style_kind, gap_scale, line_scale,
+  )
+}
 
 ///|
-pub fn host_gpu_end_pass() -> Unit = "mgstudio_host" "gpu_end_pass"
+pub fn host_gpu_end_pass() -> Unit {
+  @platform.gpu_end_pass()
+}
 
 ///|
 pub fn host_gpu_create_render_target(
   width : Int,
   height : Int,
   nearest : Bool,
-) -> Int = "mgstudio_host" "gpu_create_render_target"
+) -> Int {
+  @platform.gpu_create_render_target(width, height, nearest)
+}
 
 ///|
 pub fn host_gpu_create_mesh_capsule(
   radius : Float,
   half_length : Float,
   segments : Int,
-) -> Int = "mgstudio_host" "gpu_create_mesh_capsule"
+) -> Int {
+  @platform.gpu_create_mesh_capsule(radius, half_length, segments)
+}
 
 ///|
-pub fn host_gpu_create_mesh_rectangle(width : Float, height : Float) -> Int = "mgstudio_host" "gpu_create_mesh_rectangle"
+pub fn host_gpu_create_mesh_rectangle(width : Float, height : Float) -> Int {
+  @platform.gpu_create_mesh_rectangle(width, height)
+}
 
 ///|
 pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int {
@@ -516,7 +613,9 @@ pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int {
 }
 
 ///|
-fn host_gpu_create_mesh_triangles_id(vertices_xy_csv_id : Int) -> Int = "mgstudio_host" "gpu_create_mesh_triangles"
+fn host_gpu_create_mesh_triangles_id(vertices_xy_csv_id : Int) -> Int {
+  @platform.gpu_create_mesh_triangles(vertices_xy_csv_id)
+}
 
 ///|
 pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv : String) -> Int {
@@ -526,7 +625,9 @@ pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv : String) -> Int 
 }
 
 ///|
-fn host_gpu_create_mesh_triangles3d_id(vertices_xyzuvrgba_csv_id : Int) -> Int = "mgstudio_host" "gpu_create_mesh_triangles3d"
+fn host_gpu_create_mesh_triangles3d_id(vertices_xyzuvrgba_csv_id : Int) -> Int {
+  @platform.gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv_id)
+}
 
 ///|
 pub fn host_debug_string(value : String) -> Unit {
@@ -534,7 +635,9 @@ pub fn host_debug_string(value : String) -> Unit {
 }
 
 ///|
-fn host_debug_string_id(value_id : Int) -> Unit = "mgstudio_host" "debug_string"
+fn host_debug_string_id(value_id : Int) -> Unit {
+  @platform.debug_string(value_id)
+}
 
 ///|
 priv struct RunnerState {

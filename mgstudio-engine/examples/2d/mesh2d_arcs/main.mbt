@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -89,4 +89,9 @@ fn mesh2d_arcs_setup(world : @ecs_world.World) -> Unit {
       segment_rotation,
     )
   }
+}
+
+///|
+fn main {
+  app_main()
 }

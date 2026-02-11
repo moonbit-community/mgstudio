@@ -25,7 +25,7 @@ let lighting_state : Ref[LightingState] = Ref::new({
 })
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -198,4 +198,9 @@ fn lighting_animate_system(world : @ecs_world.World) -> Unit {
     let next = transform.with_translation(@math.Vec3::new(x, 220.0F, z))
     transform_store.set(point, next, tick) |> ignore
   }
+}
+
+///|
+fn main {
+  app_main()
 }

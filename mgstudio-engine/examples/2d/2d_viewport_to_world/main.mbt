@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -286,4 +286,9 @@ fn viewport_default(width : Int, height : Int) -> @render2d.Viewport {
     @math.IVec2::new(pos_x, pos_y),
     @math.IVec2::new(size_x, size_y),
   )
+}
+
+///|
+fn main {
+  app_main()
 }

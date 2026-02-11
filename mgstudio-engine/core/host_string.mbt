@@ -20,16 +20,24 @@
 /// `Int` handle (string id) to other host calls.
 
 ///|
-fn host_string_sink_reset() -> Unit = "mgstudio_host" "string_sink_reset"
+fn host_string_sink_reset() -> Unit {
+  @platform.string_sink_reset()
+}
 
 ///|
-fn host_string_sink_push(code_unit : Int) -> Unit = "mgstudio_host" "string_sink_push"
+fn host_string_sink_push(code_unit : Int) -> Unit {
+  @platform.string_sink_push(code_unit)
+}
 
 ///|
-fn host_string_sink_take() -> Int = "mgstudio_host" "string_sink_take"
+fn host_string_sink_take() -> Int {
+  @platform.string_sink_take()
+}
 
 ///|
-fn host_string_drop(id : Int) -> Unit = "mgstudio_host" "string_drop"
+fn host_string_drop(id : Int) -> Unit {
+  @platform.string_drop(id)
+}
 
 ///|
 pub fn[T] with_host_string_id(text : String, f : (Int) -> T) -> T {

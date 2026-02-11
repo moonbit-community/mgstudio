@@ -17,8 +17,8 @@
 ///
 /// Currently supported:
 /// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component` / `#ecs.resource`.
-/// - `mgstudio run`: run a game config in native runtime (calls `game_app`).
-/// - `mgstudio serve`: serve the web runtime and run a game config in browser (calls `game_app`).
+/// - `mgstudio run`: build + run a game config in native mode (`entry` package `main`).
+/// - `mgstudio serve`: build + serve a game config in web mode.
 /// - `mgstudio new`: create a new game project template.
 async fn main {
   let argv = @sys.get_cli_args()

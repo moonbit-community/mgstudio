@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -165,4 +165,9 @@ fn shapes_rotate(world : @ecs_world.World) -> Unit {
     )
     transform_store.set(entity, next_transform, tick) |> ignore
   }
+}
+
+///|
+fn main {
+  app_main()
 }

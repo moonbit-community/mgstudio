@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -57,4 +57,9 @@ fn sprite_scale_update(world : @ecs_world.World) -> Unit {
     )
     transform_store.set(entry.0, next_transform, tick) |> ignore
   }
+}
+
+///|
+fn main {
+  app_main()
 }

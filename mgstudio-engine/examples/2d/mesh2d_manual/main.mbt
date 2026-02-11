@@ -22,7 +22,7 @@ const STAR_OUTER_RADIUS : Float = 200.0F
 const STAR_INNER_RADIUS : Float = 100.0F
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -88,4 +88,9 @@ fn build_star_mesh() -> @render2d.Mesh2d {
 
   let geometry = @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
   @render2d.Mesh2d::from_geometry(geometry)
+}
+
+///|
+fn main {
+  app_main()
 }

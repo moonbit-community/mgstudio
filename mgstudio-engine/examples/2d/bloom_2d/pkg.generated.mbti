@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/2d/bloom_2d"
 
 // Values
-pub fn game_app() -> Unit
+pub fn app_main() -> Unit
 
 // Errors
 

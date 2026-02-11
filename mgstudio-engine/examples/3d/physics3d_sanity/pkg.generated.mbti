@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/3d/physics3d_sanity"
 
 // Values
-pub fn game_app() -> Unit
+pub fn app_main() -> Unit
 
 // Errors
 

@@ -11,9 +11,6 @@
     "TheWaWaR/clap": "0.2.6",
     "Yoorkin/trie": {
       "path": "./vendor/Yoorkin/trie"
-    },
-    "Milky2018/mgstudio-runtime-native": {
-      "path": "../mgstudio-runtime/native"
     }
   },
   "readme": "README.mbt.md",

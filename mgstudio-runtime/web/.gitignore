@@ -1,9 +1,0 @@
-assets/
-dist/
-node_modules/
-*.tsbuildinfo
-.DS_Store
-/.mooncakes
-/_build
-/target
-/.moonagent

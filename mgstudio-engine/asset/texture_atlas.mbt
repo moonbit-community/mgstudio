@@ -343,7 +343,9 @@ pub(all) enum ImageSampler {
 }
 
 ///|
-pub fn host_asset_set_texture_sampler(texture_id : Int, sampler : Int) -> Unit = "mgstudio_host" "asset_set_texture_sampler"
+pub fn host_asset_set_texture_sampler(texture_id : Int, sampler : Int) -> Unit {
+  @platform.asset_set_texture_sampler(texture_id, sampler)
+}
 
 ///|
 pub fn asset_set_texture_sampler(

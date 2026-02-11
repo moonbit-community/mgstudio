@@ -18,24 +18,17 @@
 /// The SDK root path is configured by `moon.game.json` (field: `sdkroot`).
 /// The CLI uses it to locate:
 /// - SDK assets (engine-default assets, including shaders)
-/// - web runtime bundle (`mgstudio-runtime-web.js`)
 /// - native `libwgpu_native` dynamic library
 
 ///|
 struct SdkLayout {
   assets_dir : String
-  web_runtime_js : String
   native_wgpu_lib : String
 }
 
 ///|
 fn sdk_assets_dir(sdk_root : String) -> String {
   path_join(sdk_root, "share/mgstudio/assets")
-}
-
-///|
-fn sdk_web_runtime_js_path(sdk_root : String) -> String {
-  path_join(sdk_root, "share/mgstudio/web/mgstudio-runtime-web.js")
 }
 
 ///|
@@ -47,19 +40,15 @@ fn sdk_native_wgpu_lib_path(sdk_root : String) -> String {
 ///|
 async fn resolve_sdk_layout(cfg : GameConfig) -> SdkLayout raise Error {
   let assets_dir = sdk_assets_dir(cfg.sdk_root)
-  let web_runtime_js = sdk_web_runtime_js_path(cfg.sdk_root)
   let native_wgpu_lib = sdk_native_wgpu_lib_path(cfg.sdk_root)
   if !@fs.exists(assets_dir) {
     raise RunError::MissingFile(assets_dir)
-  }
-  if !@fs.exists(web_runtime_js) {
-    raise RunError::MissingFile(web_runtime_js)
   }
   // Native wgpu lib is required for native run.
   if !@fs.exists(native_wgpu_lib) {
     raise RunError::MissingFile(native_wgpu_lib)
   }
-  { assets_dir, web_runtime_js, native_wgpu_lib }
+  { assets_dir, native_wgpu_lib }
 }
 
 ///|

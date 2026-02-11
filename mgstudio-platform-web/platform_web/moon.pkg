@@ -1,0 +1,11 @@
+import {
+  "mizchi/js",
+  "mizchi/js/browser/dom",
+  "moonbitlang/core/ref",
+  "Milky2018/mgstudio-platform-web/platform_web/host" @host,
+}
+
+options(
+  implement: "Milky2018/mgstudio/platform",
+  targets: { "platform_web.mbt": [ "js" ] },
+)

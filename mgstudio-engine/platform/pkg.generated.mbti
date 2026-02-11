@@ -1,0 +1,416 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/platform"
+
+import {
+  "Milky2018/mgstudio/platform/native_window",
+  "Milky2018/wgpu_mbt",
+}
+
+// Values
+pub fn a11y_action_kind(Int) -> Int
+
+pub fn a11y_action_target(Int) -> Int
+
+pub fn a11y_action_value_code_unit(Int, Int) -> Int
+
+pub fn a11y_action_value_len(Int) -> Int
+
+pub fn a11y_actions_clear() -> Unit
+
+pub fn a11y_actions_len() -> Int
+
+pub fn a11y_apply_update(Int) -> Unit
+
+pub fn a11y_begin_update(Int) -> Unit
+
+pub fn a11y_end_update() -> Unit
+
+pub fn a11y_push_node(Int, Int, Int, Float, Float, Float, Float, Int, Int) -> Unit
+
+pub fn asset_copy_texture_to_texture(Int, Int, Int, Int) -> Unit
+
+pub fn asset_create_dynamic_texture(Int, Int, Bool) -> Int
+
+pub fn asset_font_bytes_get(Int, Int) -> Int
+
+pub fn asset_font_bytes_get_u32(Int, Int) -> Int
+
+pub fn asset_font_bytes_len(Int) -> Int
+
+pub fn asset_is_texture_loaded(Int) -> Bool
+
+pub fn asset_load_folder(Int) -> Int
+
+pub fn asset_load_font(Int) -> Int
+
+pub fn asset_load_texture(Int, Bool) -> Int
+
+pub fn asset_load_wgsl(Int) -> Int
+
+pub fn asset_loaded_folder_handles_get(Int, Int) -> Int
+
+pub fn asset_loaded_folder_handles_len(Int) -> Int
+
+pub fn asset_poll_loaded_folder_event_id() -> Int
+
+pub fn asset_poll_loaded_folder_event_kind() -> Int
+
+pub fn asset_set_texture_sampler(Int, Int) -> Unit
+
+pub fn asset_texture_height(Int) -> Int
+
+pub fn asset_texture_width(Int) -> Int
+
+pub fn asset_update_texture_region(Int, Int, Int, Int, Int, Int) -> Unit
+
+pub fn asset_update_texture_region_bytes(Int, Int, Int, Int, Int, Int) -> Unit
+
+pub fn bytes_drop(Int) -> Unit
+
+pub fn bytes_sink_push(Int) -> Unit
+
+pub fn bytes_sink_push_u32(Int) -> Unit
+
+pub fn bytes_sink_reset() -> Unit
+
+pub fn bytes_sink_take() -> Int
+
+pub fn debug_string(Int) -> Unit
+
+pub fn font_glyph_height(Int) -> Int
+
+pub fn font_glyph_offset_x(Int) -> Int
+
+pub fn font_glyph_offset_y(Int) -> Int
+
+pub fn font_glyph_width(Int) -> Int
+
+pub fn font_measure_advance(Int, Float, Int) -> Float
+
+pub fn font_rasterize_glyph(Int, Float, Int, Int) -> Int
+
+pub fn gpu_begin_frame(Int) -> Int
+
+pub fn gpu_begin_pass(Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit
+
+pub fn gpu_begin_pass_3d(Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+
+pub fn gpu_clear_scissor() -> Unit
+
+pub fn gpu_configure_surface(Int, Int, Int, Int) -> Unit
+
+pub fn gpu_create_mesh_capsule(Float, Float, Int) -> Int
+
+pub fn gpu_create_mesh_rectangle(Float, Float) -> Int
+
+pub fn gpu_create_mesh_triangles(Int) -> Int
+
+pub fn gpu_create_mesh_triangles3d(Int) -> Int
+
+pub fn gpu_create_render_target(Int, Int, Bool) -> Int
+
+pub fn gpu_create_surface(Int) -> Int
+
+pub fn gpu_draw_gizmo_line(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit
+
+pub fn gpu_draw_mesh(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit
+
+pub fn gpu_draw_mesh3d(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float) -> Unit
+
+pub fn gpu_draw_sprite(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+
+pub fn gpu_draw_sprite_uv(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+
+pub fn gpu_draw_ui_box_shadow(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit
+
+pub fn gpu_draw_ui_rect(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+
+pub fn gpu_draw_ui_texture_slice(Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+
+pub fn gpu_end_frame(Int) -> Unit
+
+pub fn gpu_end_pass() -> Unit
+
+pub fn gpu_get_queue(Int) -> Int
+
+pub fn gpu_request_device() -> Int
+
+pub fn gpu_set_scissor(Int, Int, Int, Int) -> Unit
+
+pub fn input_finish_frame() -> Unit
+
+pub fn input_has_cursor() -> Bool
+
+pub fn input_is_key_down(Int) -> Bool
+
+pub fn input_is_key_just_pressed(Int) -> Bool
+
+pub fn input_is_key_just_released(Int) -> Bool
+
+pub fn input_is_mouse_button_down(Int) -> Bool
+
+pub fn input_is_mouse_button_just_pressed(Int) -> Bool
+
+pub fn input_is_mouse_button_just_released(Int) -> Bool
+
+pub fn input_mouse_x() -> Float
+
+pub fn input_mouse_y() -> Float
+
+pub fn input_wheel_x() -> Float
+
+pub fn input_wheel_y() -> Float
+
+pub fn string_drop(Int) -> Unit
+
+pub fn string_sink_push(Int) -> Unit
+
+pub fn string_sink_reset() -> Unit
+
+pub fn string_sink_take() -> Int
+
+pub fn time_now() -> Float
+
+pub fn window_create(Int, Int, Int) -> Int
+
+pub fn window_get_height(Int) -> Int
+
+pub fn window_get_scale_factor(Int) -> Float
+
+pub fn window_get_width(Int) -> Int
+
+pub fn window_poll_events(Int) -> Unit
+
+pub fn window_request_close(Int) -> Unit
+
+pub fn window_run_loop(FuncRef[() -> Unit]) -> Unit
+
+pub fn window_should_close(Int) -> Bool
+
+// Errors
+pub(all) suberror GpuBackendError {
+  Fatal(String)
+}
+pub impl Show for GpuBackendError
+
+pub(all) suberror PlatformError {
+  InitFailed(String)
+  GpuFailed(String)
+}
+
+// Types and methods
+pub struct GpuBackend {
+  instance : @wgpu_mbt.Instance
+  adapter : @wgpu_mbt.Adapter
+  device : @wgpu_mbt.Device
+  queue : @wgpu_mbt.Queue
+  assets_base : String
+  mut surface : @wgpu_mbt.Surface?
+  mut surface_format : @wgpu_mbt.TextureFormat?
+  mut configured_width : Int
+  mut configured_height : Int
+  mut frame : GpuFrameState?
+  mut pass_state : GpuPassState?
+  mut depth_texture : @wgpu_mbt.Texture?
+  mut depth_view : @wgpu_mbt.TextureView?
+  mut depth_target_id : Int
+  mut depth_width : Int
+  mut depth_height : Int
+  mut sprite_bgl_tex : @wgpu_mbt.BindGroupLayout?
+  mut sprite_bgl_globals : @wgpu_mbt.BindGroupLayout?
+  mut sprite_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut sprite_pipeline : @wgpu_mbt.RenderPipeline?
+  mut sprite_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut sprite_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut sprite_globals_buf : @wgpu_mbt.Buffer?
+  mut sprite_instance_buf : @wgpu_mbt.Buffer?
+  mut sprite_instance_capacity : UInt64
+  mut sprite_globals_bg : @wgpu_mbt.BindGroup?
+  sprite_instance_data : Array[Float]
+  sprite_batches : Array[SpriteBatch]
+  mut sprite_instance_count : UInt
+  mut ui_pipeline : @wgpu_mbt.RenderPipeline?
+  mut ui_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut ui_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut ui_instance_buf : @wgpu_mbt.Buffer?
+  mut ui_instance_capacity : UInt64
+  mut ui_globals_bg : @wgpu_mbt.BindGroup?
+  ui_instance_data : Array[Float]
+  ui_batches : Array[UiBatch]
+  mut ui_instance_count : UInt
+  mut ui_shadow_pipeline : @wgpu_mbt.RenderPipeline?
+  mut ui_shadow_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut ui_shadow_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut ui_shadow_instance_buf : @wgpu_mbt.Buffer?
+  mut ui_shadow_instance_capacity : UInt64
+  mut ui_shadow_globals_bg : @wgpu_mbt.BindGroup?
+  ui_shadow_instance_data : Array[Float]
+  ui_shadow_batches : Array[UiBatch]
+  mut ui_shadow_instance_count : UInt
+  mut ui_slice_pipeline : @wgpu_mbt.RenderPipeline?
+  mut ui_slice_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut ui_slice_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut ui_slice_instance_buf : @wgpu_mbt.Buffer?
+  mut ui_slice_instance_capacity : UInt64
+  mut ui_slice_globals_bg : @wgpu_mbt.BindGroup?
+  ui_slice_instance_data : Array[Float]
+  ui_slice_batches : Array[UiBatch]
+  mut ui_slice_instance_count : UInt
+  mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
+  mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut mesh_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut mesh_uniform_buf : @wgpu_mbt.Buffer?
+  mut mesh_uniform_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut mesh3d_uniform_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_uniform_bg : @wgpu_mbt.BindGroup?
+  mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
+  next_id : Ref[Int]
+  textures : Ref[Array[GpuTextureInfo]]
+  meshes : Ref[Array[GpuMeshInfo]]
+}
+pub fn GpuBackend::begin_frame(Self) -> Unit
+pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
+pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
+pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
+pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
+pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
+pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
+pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(Self, Array[Float]) -> Int
+pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::create_surface(Self, @native_window.Window) -> Unit
+pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_ui_texture_slice(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
+pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
+pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
+pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
+pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
+pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::texture_height(Self, Int) -> Int
+pub fn GpuBackend::texture_width(Self, Int) -> Int
+pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit
+
+pub struct GpuFrameState {
+  surface_tex : @wgpu_mbt.SurfaceTexture
+  surface_view : @wgpu_mbt.TextureView
+  encoder : @wgpu_mbt.CommandEncoder
+  mut pass : @wgpu_mbt.RenderPass?
+}
+
+pub struct GpuMeshInfo {
+  id : Int
+  index_count : UInt
+  vertex_count : UInt
+  vertex_stride_bytes : UInt64
+  vertex_buf : @wgpu_mbt.Buffer
+  index_buf : @wgpu_mbt.Buffer
+}
+
+pub struct GpuPassState {
+  target_id : Int
+  width_logical : Float
+  height_logical : Float
+  is_3d : Bool
+  camera_x : Float
+  camera_y : Float
+  camera_rot : Float
+  camera_scale : Float
+  camera_z : Float
+  camera_rot_x : Float
+  camera_rot_y : Float
+  camera_rot_z : Float
+  camera_rot_w : Float
+  camera_fov_y : Float
+  camera_near : Float
+  camera_far : Float
+  viewport_x : UInt
+  viewport_y : UInt
+  viewport_w : UInt
+  viewport_h : UInt
+  ambient_r : Float
+  ambient_g : Float
+  ambient_b : Float
+  ambient_brightness : Float
+  directional_dir_x : Float
+  directional_dir_y : Float
+  directional_dir_z : Float
+  directional_color_r : Float
+  directional_color_g : Float
+  directional_color_b : Float
+  directional_illuminance : Float
+  point_pos_x : Float
+  point_pos_y : Float
+  point_pos_z : Float
+  point_color_r : Float
+  point_color_g : Float
+  point_color_b : Float
+  point_intensity : Float
+  point_range : Float
+  spot_pos_x : Float
+  spot_pos_y : Float
+  spot_pos_z : Float
+  spot_dir_x : Float
+  spot_dir_y : Float
+  spot_dir_z : Float
+  spot_color_r : Float
+  spot_color_g : Float
+  spot_color_b : Float
+  spot_intensity : Float
+  spot_range : Float
+  spot_inner_angle : Float
+  spot_outer_angle : Float
+}
+
+pub struct GpuTextureInfo {
+  id : Int
+  width : Int
+  height : Int
+  texture : @wgpu_mbt.Texture
+  view : @wgpu_mbt.TextureView
+  sampler : @wgpu_mbt.Sampler
+  bind_group : @wgpu_mbt.BindGroup
+}
+
+pub struct Mesh3dMaterialBindGroupCacheEntry {
+  base_texture_id : Int
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  bind_group : @wgpu_mbt.BindGroup
+}
+
+type PlatformContext
+
+pub struct SpriteBatch {
+  texture_id : Int
+  first_instance : UInt
+  mut instance_count : UInt
+}
+
+pub struct UiBatch {
+  texture_id : Int
+  first_instance : UInt
+  mut instance_count : UInt
+}
+
+// Type aliases
+
+// Traits
+

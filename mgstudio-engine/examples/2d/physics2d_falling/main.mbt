@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn game_app() -> Unit {
+pub fn app_main() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
@@ -118,4 +118,9 @@ fn physics2d_print_events(world : @ecs_world.World) -> Unit {
     }
     None => ()
   }
+}
+
+///|
+fn main {
+  app_main()
 }
