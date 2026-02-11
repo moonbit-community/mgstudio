@@ -10,6 +10,8 @@ use winit::window::Window;
 // host contract used by mgstudio-engine (begin_frame/begin_pass/draw/end_pass/end_frame)
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
+const MESH_UNIFORM_MAX_BYTES: u64 = 80 * 4;
+
 pub struct GpuBackend {
     assets_base: String,
 
@@ -21,6 +23,9 @@ pub struct GpuBackend {
     surface: Option<wgpu::Surface<'static>>,
     surface_format: Option<wgpu::TextureFormat>,
     configured_size: (u32, u32),
+    surface_acquire_error_streak: u32,
+    last_surface_acquire_error: Option<wgpu::SurfaceError>,
+    skipped_surface_draw_streak: u32,
 
     frame: Option<GpuFrame>,
     pass: Option<GpuPassRecorder>,
@@ -83,6 +88,7 @@ struct GpuPassRecorder {
     st: GpuPassState,
     commands: Vec<DrawCmd>,
     cur_sprites: SpriteSegmentBuilder,
+    current_scissor: Option<ScissorRect>,
 }
 
 enum DrawCmd {
@@ -100,12 +106,22 @@ struct SpriteSegmentBuilder {
     instance_data: Vec<f32>,
     batches: Vec<SpriteBatch>,
     instance_count: u32,
+    scissor: Option<ScissorRect>,
 }
 
 struct SpriteSegment {
     instance_data: Vec<f32>,
     batches: Vec<SpriteBatch>,
     instance_count: u32,
+    scissor: Option<ScissorRect>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct ScissorRect {
+    x: u32,
+    y: u32,
+    w: u32,
+    h: u32,
 }
 
 struct MeshDraw {
@@ -135,6 +151,7 @@ struct MeshDraw {
     reflectance: f32,
     normal_map_flag: f32,
     ubo_offset: u32, // computed during encoding
+    scissor: Option<ScissorRect>,
 }
 
 struct GpuTexture {
@@ -191,6 +208,7 @@ struct MeshRenderer {
     uniform_buf: Option<wgpu::Buffer>,
     uniform_bg: Option<wgpu::BindGroup>,
     uniform_capacity: u64,
+    uniform_binding_size: u64,
 }
 
 impl GpuBackend {
@@ -221,6 +239,9 @@ impl GpuBackend {
             surface: None,
             surface_format: None,
             configured_size: (0, 0),
+            surface_acquire_error_streak: 0,
+            last_surface_acquire_error: None,
+            skipped_surface_draw_streak: 0,
             frame: None,
             pass: None,
             textures: HashMap::new(),
@@ -268,11 +289,7 @@ impl GpuBackend {
 
         let caps = surface.get_capabilities(&self.adapter);
         let format = pick_surface_format(&caps);
-        let present_mode = caps
-            .present_modes
-            .first()
-            .copied()
-            .unwrap_or(wgpu::PresentMode::Fifo);
+        let present_mode = pick_present_mode(&caps);
         let alpha_mode = caps
             .alpha_modes
             .first()
@@ -326,17 +343,24 @@ impl GpuBackend {
             encoder,
         };
 
-        let surface = self.surface.as_ref().unwrap();
-        match surface.get_current_texture() {
-            Ok(st) => {
+        match self.try_acquire_surface_texture()? {
+            Some(st) => {
                 let view = st
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
                 frame.surface_view = Some(view);
                 frame.surface_tex = Some(st);
+                if self.surface_acquire_error_streak > 0 {
+                    eprintln!(
+                        "[wasmtime-runtime] wgpu surface recovered after {} acquire failure(s).",
+                        self.surface_acquire_error_streak
+                    );
+                }
+                self.surface_acquire_error_streak = 0;
+                self.last_surface_acquire_error = None;
+                self.skipped_surface_draw_streak = 0;
             }
-            Err(_) => {
-                // Surface might be out-of-date; try a best-effort reconfigure on next configure call.
+            None => {
                 frame.surface_tex = None;
                 frame.surface_view = None;
             }
@@ -366,6 +390,58 @@ impl GpuBackend {
         let _ = self.device.poll(wgpu::PollType::Poll);
 
         Ok(())
+    }
+
+    fn try_acquire_surface_texture(&mut self) -> anyhow::Result<Option<wgpu::SurfaceTexture>> {
+        let Some(surface) = self.surface.as_ref() else {
+            return Ok(None);
+        };
+        match surface.get_current_texture() {
+            Ok(st) => Ok(Some(st)),
+            Err(err) => {
+                self.note_surface_acquire_error(&err, "initial acquire");
+                match err {
+                    wgpu::SurfaceError::Outdated | wgpu::SurfaceError::Lost => {
+                        let (width, height) = self.recovery_surface_size();
+                        if let Err(config_err) = self.configure_surface(width, height) {
+                            eprintln!(
+                                "[wasmtime-runtime] failed to reconfigure surface after acquire error: {config_err:?}"
+                            );
+                            return Err(config_err)
+                                .context("wgpu: surface reconfigure after acquire failure");
+                        }
+                        match self.surface.as_ref().unwrap().get_current_texture() {
+                            Ok(st) => Ok(Some(st)),
+                            Err(retry_err) => {
+                                self.note_surface_acquire_error(&retry_err, "retry after reconfigure");
+                                Ok(None)
+                            }
+                        }
+                    }
+                    wgpu::SurfaceError::Timeout | wgpu::SurfaceError::Other => Ok(None),
+                    wgpu::SurfaceError::OutOfMemory => {
+                        Err(anyhow!("wgpu: out of memory while acquiring surface texture"))
+                    }
+                }
+            }
+        }
+    }
+
+    fn note_surface_acquire_error(&mut self, err: &wgpu::SurfaceError, stage: &str) {
+        self.surface_acquire_error_streak = self.surface_acquire_error_streak.saturating_add(1);
+        let changed = self.last_surface_acquire_error.as_ref() != Some(err);
+        if changed || self.surface_acquire_error_streak == 1 || self.surface_acquire_error_streak % 120 == 0 {
+            eprintln!(
+                "[wasmtime-runtime] wgpu surface acquire failed: {err:?} (stage={stage}, streak={})",
+                self.surface_acquire_error_streak
+            );
+        }
+        self.last_surface_acquire_error = Some(err.clone());
+    }
+
+    fn recovery_surface_size(&self) -> (u32, u32) {
+        let (width, height) = self.configured_size;
+        (width.max(1), height.max(1))
     }
 
     pub fn begin_pass(
@@ -446,7 +522,9 @@ impl GpuBackend {
                 instance_data: Vec::new(),
                 batches: Vec::new(),
                 instance_count: 0,
+                scissor: None,
             },
+            current_scissor: None,
         });
         Ok(())
     }
@@ -534,6 +612,7 @@ impl GpuBackend {
         }
 
         // Prepare sprite instance storage + bind groups.
+        let has_sprites = !sprite_segments.is_empty();
         let sprite_segment_bgs = self.prepare_sprite_segments(&pass.st, &sprite_segments)?;
 
         // Prepare mesh pipelines + uniforms only if needed.
@@ -546,18 +625,24 @@ impl GpuBackend {
         self.prepare_mesh_uniforms(&mut pass)?;
 
         // Clone wgpu handles so we don't hold long-lived borrows across the encoding phase.
-        let sprite_pipeline = if pass.st.target_format == wgpu::TextureFormat::Rgba8Unorm {
-            self.sprite
-                .pipeline_rgba8
-                .as_ref()
-                .expect("sprite rgba8 pipeline")
-                .clone()
+        let sprite_pipeline = if !has_sprites {
+            None
+        } else if pass.st.target_format == wgpu::TextureFormat::Rgba8Unorm {
+            Some(
+                self.sprite
+                    .pipeline_rgba8
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("wgpu: sprite rgba8 pipeline missing"))?
+                    .clone(),
+            )
         } else {
-            self.sprite
-                .pipeline_surface
-                .as_ref()
-                .expect("sprite surface pipeline")
-                .clone()
+            Some(
+                self.sprite
+                    .pipeline_surface
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("wgpu: sprite surface pipeline missing"))?
+                    .clone(),
+            )
         };
         let mesh_pipeline_2d = self.mesh.pipelines.get(&pass.st.target_format).cloned();
         let mesh_pipeline_3d = self.mesh.pipelines_3d.get(&pass.st.target_format).cloned();
@@ -574,6 +659,16 @@ impl GpuBackend {
                         (v, w.max(1), h.max(1))
                     }
                     None => {
+                        self.skipped_surface_draw_streak =
+                            self.skipped_surface_draw_streak.saturating_add(1);
+                        if self.skipped_surface_draw_streak == 1
+                            || self.skipped_surface_draw_streak % 120 == 0
+                        {
+                            eprintln!(
+                                "[wasmtime-runtime] skip surface render pass: no acquired surface texture view (streak={})",
+                                self.skipped_surface_draw_streak
+                            );
+                        }
                         self.frame = Some(frame);
                         return Ok(());
                     }
@@ -653,12 +748,6 @@ impl GpuBackend {
                 0.0,
                 1.0,
             );
-            rp.set_scissor_rect(
-                pass.st.viewport_x,
-                pass.st.viewport_y,
-                pass.st.viewport_w,
-                pass.st.viewport_h,
-            );
 
             let mut seg_i: usize = 0;
             for cmd in pass.commands {
@@ -670,9 +759,21 @@ impl GpuBackend {
                         let Some(bg) = sprite_segment_bgs.get(seg_i) else {
                             break;
                         };
+                        let Some(pipeline) = sprite_pipeline.as_ref() else {
+                            continue;
+                        };
                         seg_i += 1;
+                        let Some((sx, sy, sw, sh)) = resolve_scissor_rect(
+                            &pass.st,
+                            seg.scissor,
+                            target_width,
+                            target_height,
+                        ) else {
+                            continue;
+                        };
 
-                        rp.set_pipeline(&sprite_pipeline);
+                        rp.set_pipeline(pipeline);
+                        rp.set_scissor_rect(sx, sy, sw, sh);
                         rp.set_bind_group(1, bg, &[]);
                         for batch in &seg.batches {
                             let Some(tex) = self.textures.get(&batch.texture_id) else {
@@ -703,8 +804,27 @@ impl GpuBackend {
                         if !draw.is_3d && mesh.layout != MeshVertexLayout::XyUvRgba {
                             continue;
                         }
+                        let Some((sx, sy, sw, sh)) = resolve_scissor_rect(
+                            &pass.st,
+                            draw.scissor,
+                            target_width,
+                            target_height,
+                        ) else {
+                            continue;
+                        };
                         rp.set_pipeline(pipeline);
-                        rp.set_bind_group(0, bg, &[draw.ubo_offset]);
+                        rp.set_scissor_rect(sx, sy, sw, sh);
+                        if draw.is_3d {
+                            if let Some(ubo) = self.mesh.uniform_buf.as_ref() {
+                                let bytes = mesh_uniform_bytes(&pass.st, &draw);
+                                self.queue.write_buffer(ubo, 0, bytes.as_slice());
+                            } else {
+                                continue;
+                            }
+                            rp.set_bind_group(0, bg, &[0]);
+                        } else {
+                            rp.set_bind_group(0, bg, &[draw.ubo_offset]);
+                        }
                         if draw.is_3d {
                             let Some(base_tex) = self.textures.get(&draw.texture_id) else {
                                 continue;
@@ -818,6 +938,12 @@ impl GpuBackend {
         let Some(pass) = self.pass.as_mut() else {
             return Ok(());
         };
+        if pass.cur_sprites.instance_count == 0 {
+            pass.cur_sprites.scissor = pass.current_scissor;
+        } else if pass.cur_sprites.scissor != pass.current_scissor {
+            pass.flush_sprites();
+            pass.cur_sprites.scissor = pass.current_scissor;
+        }
 
         // Match native runtime's sprite sizing convention (base quad is 128x128).
         let raw_uv_scale_x = uv_max.0 - uv_min.0;
@@ -948,6 +1074,7 @@ impl GpuBackend {
             reflectance: 0.5,
             normal_map_flag: 0.0,
             ubo_offset: 0,
+            scissor: pass.current_scissor,
         }));
         Ok(())
     }
@@ -1067,8 +1194,39 @@ impl GpuBackend {
             reflectance,
             normal_map_flag: if normal_textured { 1.0 } else { 0.0 },
             ubo_offset: 0,
+            scissor: pass.current_scissor,
         }));
         Ok(())
+    }
+
+    pub fn set_scissor(&mut self, x: i32, y: i32, width: i32, height: i32) {
+        let Some(pass) = self.pass.as_mut() else {
+            return;
+        };
+        let next = if width <= 0 || height <= 0 {
+            None
+        } else {
+            Some(ScissorRect {
+                x: x.max(0) as u32,
+                y: y.max(0) as u32,
+                w: width.max(0) as u32,
+                h: height.max(0) as u32,
+            })
+        };
+        if pass.current_scissor != next {
+            pass.flush_sprites();
+            pass.current_scissor = next;
+        }
+    }
+
+    pub fn clear_scissor(&mut self) {
+        let Some(pass) = self.pass.as_mut() else {
+            return;
+        };
+        if pass.current_scissor.is_some() {
+            pass.flush_sprites();
+            pass.current_scissor = None;
+        }
     }
 
     pub fn create_mesh_rectangle(&mut self, width: f32, height: f32) -> i32 {
@@ -1111,6 +1269,38 @@ impl GpuBackend {
             },
         );
         id
+    }
+
+    pub fn create_mesh_capsule(&mut self, radius: f32, half_length: f32, segments: i32) -> i32 {
+        let r = radius.max(0.5);
+        let hl = half_length.max(0.0);
+        let seg = segments.max(4);
+        let mut boundary: Vec<(f32, f32)> = Vec::with_capacity((seg as usize + 1) * 2);
+        for i in 0..=seg {
+            let t = -std::f32::consts::FRAC_PI_2 + (i as f32 / seg as f32) * std::f32::consts::PI;
+            boundary.push((hl + r * t.cos(), r * t.sin()));
+        }
+        for i in 0..=seg {
+            let t = std::f32::consts::FRAC_PI_2 + (i as f32 / seg as f32) * std::f32::consts::PI;
+            boundary.push((-hl + r * t.cos(), r * t.sin()));
+        }
+        if boundary.len() < 3 {
+            return self.create_mesh_rectangle((hl + r) * 2.0, r * 2.0);
+        }
+        let total_w = ((hl + r) * 2.0).max(1e-6);
+        let total_h = (r * 2.0).max(1e-6);
+        let mut verts: Vec<f32> = Vec::with_capacity((boundary.len() - 1) * 3 * 8);
+        for i in 0..(boundary.len() - 1) {
+            let p0 = (0.0f32, 0.0f32);
+            let p1 = boundary[i];
+            let p2 = boundary[i + 1];
+            for (x, y) in [p0, p1, p2] {
+                let u = (x + hl + r) / total_w;
+                let v = (y + r) / total_h;
+                verts.extend_from_slice(&[x, y, u, v, 1.0, 1.0, 1.0, 1.0]);
+            }
+        }
+        self.create_mesh_triangles_xyuvrgba(verts.as_slice())
     }
 
     pub fn create_mesh_triangles_xyuvrgba(&mut self, vertices: &[f32]) -> i32 {
@@ -2013,7 +2203,13 @@ impl GpuBackend {
                 bind_group_layouts: &[&bgl_uniform, &bgl_material_3d],
                 immediate_size: 0,
             });
-        let cap = 256u64; // will grow on demand (alignment is at least 256 on Metal)
+        let align = self
+            .device
+            .limits()
+            .min_uniform_buffer_offset_alignment
+            .max(256) as u64;
+        let uniform_binding_size = align_up(MESH_UNIFORM_MAX_BYTES, align);
+        let cap = uniform_binding_size.max(256u64);
         let uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("mgstudio_mesh_uniform_buf"),
             size: cap,
@@ -2028,7 +2224,10 @@ impl GpuBackend {
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                     buffer: &uniform_buf,
                     offset: 0,
-                    size: None,
+                    size: Some(
+                        std::num::NonZeroU64::new(uniform_binding_size)
+                            .ok_or_else(|| anyhow!("wgpu: mesh uniform binding size is zero"))?,
+                    ),
                 }),
             }],
         });
@@ -2039,6 +2238,7 @@ impl GpuBackend {
         self.mesh.uniform_buf = Some(uniform_buf);
         self.mesh.uniform_bg = Some(bg);
         self.mesh.uniform_capacity = cap;
+        self.mesh.uniform_binding_size = uniform_binding_size;
         Ok(())
     }
 
@@ -2199,20 +2399,28 @@ impl GpuBackend {
             .limits()
             .min_uniform_buffer_offset_alignment
             .max(256) as u64;
+        let stride = align_up(MESH_UNIFORM_MAX_BYTES, align);
         let mut buf: Vec<u8> = Vec::new();
 
         for cmd in &mut pass.commands {
             if let DrawCmd::Mesh(draw) = cmd {
-                let offset = align_up(buf.len() as u64, align);
+                let offset = align_up(buf.len() as u64, stride);
                 if offset as usize > buf.len() {
                     buf.resize(offset as usize, 0);
                 }
                 let bytes = mesh_uniform_bytes(&pass.st, draw);
+                if bytes.len() as u64 > stride {
+                    return Err(anyhow!(
+                        "wgpu: mesh uniform payload too large: {} > {}",
+                        bytes.len(),
+                        stride
+                    ));
+                }
                 draw.ubo_offset = offset as u32;
                 buf.extend_from_slice(bytes.as_slice());
 
                 // Pad to alignment for the next entry.
-                let padded = align_up(buf.len() as u64, align) as usize;
+                let padded = align_up(buf.len() as u64, stride) as usize;
                 if padded > buf.len() {
                     buf.resize(padded, 0);
                 }
@@ -2241,7 +2449,10 @@ impl GpuBackend {
                     resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                         buffer: &new_buf,
                         offset: 0,
-                        size: None,
+                        size: Some(
+                            std::num::NonZeroU64::new(self.mesh.uniform_binding_size)
+                                .ok_or_else(|| anyhow!("wgpu: mesh uniform binding size is zero"))?,
+                        ),
                     }),
                 }],
             });
@@ -2294,7 +2505,9 @@ impl GpuPassRecorder {
             instance_data: std::mem::take(&mut self.cur_sprites.instance_data),
             batches: std::mem::take(&mut self.cur_sprites.batches),
             instance_count: std::mem::take(&mut self.cur_sprites.instance_count),
+            scissor: self.cur_sprites.scissor,
         };
+        self.cur_sprites.scissor = self.current_scissor;
         self.commands.push(DrawCmd::Sprites(seg));
     }
 }
@@ -2313,6 +2526,47 @@ fn pick_surface_format(caps: &wgpu::SurfaceCapabilities) -> wgpu::TextureFormat 
         .first()
         .copied()
         .unwrap_or(wgpu::TextureFormat::Bgra8UnormSrgb)
+}
+
+fn pick_present_mode(caps: &wgpu::SurfaceCapabilities) -> wgpu::PresentMode {
+    if caps.present_modes.contains(&wgpu::PresentMode::Fifo) {
+        return wgpu::PresentMode::Fifo;
+    }
+    caps.present_modes
+        .first()
+        .copied()
+        .unwrap_or(wgpu::PresentMode::Fifo)
+}
+
+fn resolve_scissor_rect(
+    pass: &GpuPassState,
+    requested: Option<ScissorRect>,
+    target_width: u32,
+    target_height: u32,
+) -> Option<(u32, u32, u32, u32)> {
+    let default = ScissorRect {
+        x: pass.viewport_x,
+        y: pass.viewport_y,
+        w: pass.viewport_w,
+        h: pass.viewport_h,
+    };
+    let mut scissor = requested.unwrap_or(default);
+    if scissor.w == 0 || scissor.h == 0 || target_width == 0 || target_height == 0 {
+        return None;
+    }
+    if scissor.x >= target_width || scissor.y >= target_height {
+        return None;
+    }
+    if scissor.x.saturating_add(scissor.w) > target_width {
+        scissor.w = target_width.saturating_sub(scissor.x);
+    }
+    if scissor.y.saturating_add(scissor.h) > target_height {
+        scissor.h = target_height.saturating_sub(scissor.y);
+    }
+    if scissor.w == 0 || scissor.h == 0 {
+        return None;
+    }
+    Some((scissor.x, scissor.y, scissor.w, scissor.h))
 }
 
 fn load_wgsl_required(assets_base: &str, rel: &str) -> anyhow::Result<String> {

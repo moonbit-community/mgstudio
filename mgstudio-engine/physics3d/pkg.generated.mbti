@@ -114,6 +114,7 @@ pub struct Velocity3d {
   linvel : @math.Vec3
   angvel : @math.Vec3
 }
+pub fn Velocity3d::new(@math.Vec3, @math.Vec3) -> Self
 pub fn Velocity3d::zero() -> Self
 
 // Type aliases

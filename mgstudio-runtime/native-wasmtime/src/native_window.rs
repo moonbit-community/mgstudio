@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use winit::event::{ElementState, MouseButton, WindowEvent};
+use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::platform::pump_events::EventLoopExtPumpEvents;
@@ -29,6 +29,8 @@ pub struct NativeWindowInput {
     pub has_cursor: bool,
     pub mouse_x: f32,
     pub mouse_y: f32,
+    pub wheel_x: f32,
+    pub wheel_y: f32,
 
     pub key_down: HashSet<KeyCode>,
     pub key_just_pressed: HashSet<KeyCode>,
@@ -60,6 +62,7 @@ impl NativeWindow {
                 .with_title(title.to_string())
                 .with_inner_size(LogicalSize::new(width.max(1) as f64, height.max(1) as f64)),
         )?;
+        window.focus_window();
 
         Ok(Self {
             event_loop,
@@ -86,7 +89,7 @@ impl NativeWindow {
         // Non-blocking pump: process pending events and return immediately.
         let _ = self
             .event_loop
-            .pump_app_events(Some(Duration::from_millis(0)), &mut handler);
+            .pump_app_events(Some(Duration::from_millis(1)), &mut handler);
     }
 
     pub fn inner_size(&self) -> PhysicalSize<u32> {
@@ -106,6 +109,8 @@ impl NativeWindow {
         self.input.key_just_released.clear();
         self.input.mouse_just_pressed.clear();
         self.input.mouse_just_released.clear();
+        self.input.wheel_x = 0.0;
+        self.input.wheel_y = 0.0;
     }
 }
 
@@ -141,6 +146,17 @@ fn handle_window_event(
                 }
             }
         },
+        WindowEvent::MouseWheel { delta, .. } => {
+            let (dx, dy) = match delta {
+                MouseScrollDelta::LineDelta(x, y) => (x, y),
+                MouseScrollDelta::PixelDelta(pos) => {
+                    let logical: LogicalPosition<f64> = pos.to_logical(*scale_factor);
+                    (logical.x as f32, logical.y as f32)
+                }
+            };
+            input.wheel_x += dx;
+            input.wheel_y += dy;
+        }
         WindowEvent::KeyboardInput { event, .. } => {
             if let PhysicalKey::Code(code) = event.physical_key {
                 match event.state {

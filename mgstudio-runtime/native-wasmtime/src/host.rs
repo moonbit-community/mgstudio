@@ -30,6 +30,27 @@ pub struct HostState {
     next_bytes_id: i32,
     bytes: HashMap<i32, Vec<u8>>,
 
+    // Shader source table (for host_asset_load_wgsl handle identity).
+    next_shader_id: i32,
+    shaders: HashMap<i32, String>,
+
+    // Font bytes table.
+    next_font_id: i32,
+    fonts: HashMap<i32, Vec<u8>>,
+
+    // Legacy glyph raster table (used by `asset_update_texture_region` path).
+    next_glyph_id: i32,
+    glyphs: HashMap<i32, GlyphBitmap>,
+
+    // Folder loading table/events.
+    next_folder_id: i32,
+    folders: HashMap<i32, Vec<i32>>,
+    folder_events: Vec<(i32, i32)>,
+    folder_event_pos: usize,
+
+    // Shared unit rectangle mesh id for UI fallback and gizmo lines.
+    unit_rect_mesh_id: Option<i32>,
+
     // Closures.
     next_closure_id: i32,
     closures: HashMap<i32, ClosureEntry>,
@@ -37,6 +58,14 @@ pub struct HostState {
     window: Option<NativeWindow>,
 
     gpu: Option<GpuBackend>,
+}
+
+struct GlyphBitmap {
+    width: u32,
+    height: u32,
+    offset_x: i32,
+    offset_y: i32,
+    rgba8: Vec<u8>,
 }
 
 struct ClosureEntry {
@@ -59,6 +88,17 @@ impl HostState {
             bytes_sink: Vec::new(),
             next_bytes_id: 1,
             bytes: HashMap::new(),
+            next_shader_id: 1,
+            shaders: HashMap::new(),
+            next_font_id: 1,
+            fonts: HashMap::new(),
+            next_glyph_id: 1,
+            glyphs: HashMap::new(),
+            next_folder_id: 1,
+            folders: HashMap::new(),
+            folder_events: Vec::new(),
+            folder_event_pos: 0,
+            unit_rect_mesh_id: None,
             next_closure_id: 1,
             closures: HashMap::new(),
             window: None,
@@ -118,6 +158,85 @@ impl HostState {
         }
     }
 
+    fn shader_table_put(&mut self, source: String) -> i32 {
+        if source.is_empty() {
+            return -1;
+        }
+        let id = self.next_shader_id;
+        self.next_shader_id += 1;
+        self.shaders.insert(id, source);
+        id
+    }
+
+    fn font_table_put(&mut self, bytes: Vec<u8>) -> i32 {
+        if bytes.is_empty() {
+            return -1;
+        }
+        let id = self.next_font_id;
+        self.next_font_id += 1;
+        self.fonts.insert(id, bytes);
+        id
+    }
+
+    fn font_table_get(&self, id: i32) -> Option<&[u8]> {
+        if id <= 0 {
+            return None;
+        }
+        self.fonts.get(&id).map(|v| v.as_slice())
+    }
+
+    fn glyph_table_put(&mut self, glyph: GlyphBitmap) -> i32 {
+        if glyph.width == 0 || glyph.height == 0 || glyph.rgba8.is_empty() {
+            return -1;
+        }
+        let id = self.next_glyph_id;
+        self.next_glyph_id += 1;
+        self.glyphs.insert(id, glyph);
+        id
+    }
+
+    fn glyph_table_get(&self, id: i32) -> Option<&GlyphBitmap> {
+        if id <= 0 {
+            return None;
+        }
+        self.glyphs.get(&id)
+    }
+
+    fn folder_table_set(&mut self, folder_id: i32, handles: Vec<i32>) {
+        self.folders.insert(folder_id, handles);
+    }
+
+    fn folder_table_get(&self, folder_id: i32) -> Option<&[i32]> {
+        self.folders.get(&folder_id).map(|v| v.as_slice())
+    }
+
+    fn folder_events_push(&mut self, kind: i32, folder_id: i32) {
+        self.folder_events.push((kind, folder_id));
+    }
+
+    fn folder_events_poll_kind(&self) -> i32 {
+        if self.folder_event_pos >= self.folder_events.len() {
+            -1
+        } else {
+            self.folder_events[self.folder_event_pos].0
+        }
+    }
+
+    fn folder_events_poll_id(&mut self) -> i32 {
+        if self.folder_event_pos >= self.folder_events.len() {
+            self.folder_events.clear();
+            self.folder_event_pos = 0;
+            return -1;
+        }
+        let id = self.folder_events[self.folder_event_pos].1;
+        self.folder_event_pos += 1;
+        if self.folder_event_pos >= self.folder_events.len() {
+            self.folder_events.clear();
+            self.folder_event_pos = 0;
+        }
+        id
+    }
+
     fn now_millis_f32(&self) -> f32 {
         let dt: Duration = self.start_time.elapsed();
         dt.as_secs_f32() * 1000.0
@@ -128,6 +247,18 @@ impl HostState {
             self.gpu = Some(GpuBackend::new(self.assets.base.clone())?);
         }
         Ok(self.gpu.as_mut().unwrap())
+    }
+
+    fn ensure_unit_rect_mesh(&mut self) -> anyhow::Result<i32> {
+        if let Some(mesh_id) = self.unit_rect_mesh_id {
+            return Ok(mesh_id);
+        }
+        let mesh_id = {
+            let gpu = self.ensure_gpu()?;
+            gpu.create_mesh_rectangle(1.0, 1.0)
+        };
+        self.unit_rect_mesh_id = Some(mesh_id);
+        Ok(mesh_id)
     }
 }
 
@@ -178,6 +309,39 @@ fn parse_mouse_button(btn: &str) -> Option<MouseButton> {
         "Middle" => Some(MouseButton::Middle),
         _ => None,
     }
+}
+
+fn strip_leading_slashes(path: &str) -> &str {
+    path.trim_start_matches('/')
+}
+
+fn split_trimmed_lines(text: &str) -> impl Iterator<Item = &str> {
+    text.lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+}
+
+fn load_texture_from_assets(
+    state: &mut HostState,
+    relative_path: &str,
+    nearest: bool,
+) -> anyhow::Result<i32> {
+    let rel = relative_path.trim();
+    if rel.is_empty() {
+        let gpu = state.ensure_gpu()?;
+        return gpu.create_texture_rgba8(1, 1, &[255, 255, 255, 255], nearest);
+    }
+    let full_path = join_dir_best_effort(&state.assets.base, strip_leading_slashes(rel));
+    let file_bytes = std::fs::read(&full_path).unwrap_or_default();
+    let (w, h, pixels) = match image::load_from_memory(&file_bytes) {
+        Ok(img) => {
+            let rgba = img.to_rgba8();
+            (rgba.width(), rgba.height(), rgba.into_raw())
+        }
+        Err(_) => (1u32, 1u32, vec![255u8, 255u8, 255u8, 255u8]),
+    };
+    let gpu = state.ensure_gpu()?;
+    gpu.create_texture_rgba8(w, h, &pixels, nearest)
 }
 
 fn ok_i32(out: &mut [Val], value: i32) {
@@ -405,7 +569,8 @@ fn define_mgstudio_host_imports(
         "a11y_begin_update",
         &[ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_begin_update");
             ok_i32(out, 0);
             Ok(())
         },
@@ -427,7 +592,8 @@ fn define_mgstudio_host_imports(
             ValType::I32,
         ],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_push_node");
             ok_i32(out, 0);
             Ok(())
         },
@@ -439,7 +605,8 @@ fn define_mgstudio_host_imports(
         "a11y_end_update",
         &[],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_end_update");
             ok_i32(out, 0);
             Ok(())
         },
@@ -451,7 +618,8 @@ fn define_mgstudio_host_imports(
         "a11y_apply_update",
         &[ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_apply_update");
             ok_i32(out, 0);
             Ok(())
         },
@@ -463,7 +631,8 @@ fn define_mgstudio_host_imports(
         "a11y_actions_len",
         &[],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_actions_len");
             ok_i32(out, 0);
             Ok(())
         },
@@ -475,7 +644,8 @@ fn define_mgstudio_host_imports(
         "a11y_action_target",
         &[ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_action_target");
             ok_i32(out, -1);
             Ok(())
         },
@@ -487,7 +657,8 @@ fn define_mgstudio_host_imports(
         "a11y_action_kind",
         &[ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_action_kind");
             ok_i32(out, 0);
             Ok(())
         },
@@ -499,7 +670,8 @@ fn define_mgstudio_host_imports(
         "a11y_action_value_len",
         &[ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_action_value_len");
             ok_i32(out, 0);
             Ok(())
         },
@@ -511,7 +683,8 @@ fn define_mgstudio_host_imports(
         "a11y_action_value_code_unit",
         &[ValType::I32, ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_action_value_code_unit");
             ok_i32(out, 0);
             Ok(())
         },
@@ -523,7 +696,8 @@ fn define_mgstudio_host_imports(
         "a11y_actions_clear",
         &[],
         &[ValType::I32],
-        |_caller, _args, out| {
+        |caller, _args, out| {
+            caller.data().host_trace("host: a11y_actions_clear");
             ok_i32(out, 0);
             Ok(())
         },
@@ -932,8 +1106,14 @@ fn define_mgstudio_host_imports(
         "input_wheel_x",
         &[],
         &[ValType::F32],
-        |_caller, _args, out| {
-            ok_f32(out, 0.0);
+        |caller, _args, out| {
+            let x = caller
+                .data()
+                .window
+                .as_ref()
+                .map(|win| win.input.wheel_x)
+                .unwrap_or(0.0);
+            ok_f32(out, x);
             Ok(())
         },
     )?;
@@ -945,8 +1125,14 @@ fn define_mgstudio_host_imports(
         "input_wheel_y",
         &[],
         &[ValType::F32],
-        |_caller, _args, out| {
-            ok_f32(out, 0.0);
+        |caller, _args, out| {
+            let y = caller
+                .data()
+                .window
+                .as_ref()
+                .map(|win| win.input.wheel_y)
+                .unwrap_or(0.0);
+            ok_f32(out, y);
             Ok(())
         },
     )?;
@@ -1049,30 +1235,227 @@ fn define_mgstudio_host_imports(
                 .string_table_get(path_id)
                 .unwrap_or("")
                 .to_string();
-            let assets_base = caller.data().assets.base.clone();
             if caller.data().trace_host {
-                let full = join_dir_best_effort(&assets_base, &rel);
+                let full = join_dir_best_effort(&caller.data().assets.base, &rel);
                 eprintln!("asset_load_texture: {rel} -> {full}");
             }
-            // Empty path = fallback 1x1 white.
+            let id = load_texture_from_assets(caller.data_mut(), &rel, nearest)?;
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_load_wgsl",
+        &[ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let path_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let rel = caller
+                .data()
+                .string_table_get(path_id)
+                .unwrap_or("")
+                .to_string();
             if rel.trim().is_empty() {
-                let gpu = caller.data_mut().ensure_gpu()?;
-                let id = gpu.create_texture_rgba8(1, 1, &[255, 255, 255, 255], nearest)?;
-                ok_i32(out, id);
+                ok_i32(out, -1);
                 return Ok(());
             }
-            let full_path = join_dir_best_effort(&assets_base, rel.trim_start_matches('/'));
-            let file_bytes = std::fs::read(&full_path).unwrap_or_default();
-            let (w, h, pixels) = match image::load_from_memory(&file_bytes) {
-                Ok(img) => {
-                    let rgba = img.to_rgba8();
-                    (rgba.width(), rgba.height(), rgba.into_raw())
+            let full_path =
+                join_dir_best_effort(&caller.data().assets.base, strip_leading_slashes(&rel));
+            let source = std::fs::read_to_string(&full_path).unwrap_or_default();
+            let shader_id = caller.data_mut().shader_table_put(source);
+            ok_i32(out, shader_id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_load_font",
+        &[ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let path_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let rel = caller
+                .data()
+                .string_table_get(path_id)
+                .unwrap_or("")
+                .to_string();
+            if rel.trim().is_empty() {
+                ok_i32(out, -1);
+                return Ok(());
+            }
+            let full_path =
+                join_dir_best_effort(&caller.data().assets.base, strip_leading_slashes(&rel));
+            let bytes = std::fs::read(&full_path).unwrap_or_default();
+            let font_id = caller.data_mut().font_table_put(bytes);
+            ok_i32(out, font_id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_font_bytes_len",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let font_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let len = caller
+                .data()
+                .font_table_get(font_id)
+                .map(|b| b.len() as i32)
+                .unwrap_or(0);
+            ok_i32(out, len);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_font_bytes_get",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let font_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let index = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let value = caller
+                .data()
+                .font_table_get(font_id)
+                .and_then(|b| b.get(index.max(0) as usize).copied())
+                .map(|v| v as i32)
+                .unwrap_or(0);
+            ok_i32(out, value);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_font_bytes_get_u32",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let font_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let index = args.get(1).and_then(|v| v.i32()).unwrap_or(-1).max(0) as usize;
+            let mut word: u32 = 0;
+            if let Some(bytes) = caller.data().font_table_get(font_id) {
+                for j in 0..4usize {
+                    if let Some(v) = bytes.get(index + j) {
+                        word |= (*v as u32) << (j * 8);
+                    }
                 }
-                Err(_) => (1u32, 1u32, vec![255u8, 255u8, 255u8, 255u8]),
+            }
+            ok_i32(out, word as i32);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "font_rasterize_glyph",
+        &[ValType::I32, ValType::F32, ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let font_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let font_size = match args.get(1) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
             };
-            let gpu = caller.data_mut().ensure_gpu()?;
-            let id = gpu.create_texture_rgba8(w, h, &pixels, nearest)?;
-            ok_i32(out, id);
+            let glyph_code = args.get(2).and_then(|v| v.i32()).unwrap_or(0);
+            let _smoothing = args.get(3).and_then(|v| v.i32()).unwrap_or(1);
+            if caller.data().font_table_get(font_id).is_none() || font_size <= 0.0 {
+                ok_i32(out, -1);
+                return Ok(());
+            }
+            let width = ((font_size * 0.6).round() as i32).max(1) as u32;
+            let height = (font_size.round() as i32).max(1) as u32;
+            let alpha = if glyph_code <= 0 { 0u8 } else { 255u8 };
+            let mut rgba8 = vec![0u8; (width * height * 4) as usize];
+            for idx in 0..(width * height) as usize {
+                let base = idx * 4;
+                rgba8[base] = 255;
+                rgba8[base + 1] = 255;
+                rgba8[base + 2] = 255;
+                rgba8[base + 3] = alpha;
+            }
+            let glyph_id = caller.data_mut().glyph_table_put(GlyphBitmap {
+                width,
+                height,
+                offset_x: 0,
+                offset_y: 0,
+                rgba8,
+            });
+            ok_i32(out, glyph_id);
+            Ok(())
+        },
+    )?;
+
+    for (name, selector) in [
+        ("font_glyph_width", 0),
+        ("font_glyph_height", 1),
+        ("font_glyph_offset_x", 2),
+        ("font_glyph_offset_y", 3),
+    ] {
+        define_func(
+            store,
+            linker,
+            "mgstudio_host",
+            name,
+            &[ValType::I32],
+            &[ValType::I32],
+            move |caller, args, out| {
+                let glyph_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+                let value = caller
+                    .data()
+                    .glyph_table_get(glyph_id)
+                    .map(|g| match selector {
+                        0 => g.width as i32,
+                        1 => g.height as i32,
+                        2 => g.offset_x,
+                        3 => g.offset_y,
+                        _ => 0,
+                    })
+                    .unwrap_or(0);
+                ok_i32(out, value);
+                Ok(())
+            },
+        )?;
+    }
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "font_measure_advance",
+        &[ValType::I32, ValType::F32, ValType::I32],
+        &[ValType::F32],
+        |caller, args, out| {
+            let font_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let font_size = match args.get(1) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let codepoint = args.get(2).and_then(|v| v.i32()).unwrap_or(0);
+            let base = if caller.data().font_table_get(font_id).is_some() && codepoint > 0 {
+                (font_size * 0.6).max(0.0)
+            } else {
+                0.0
+            };
+            ok_f32(out, base);
             Ok(())
         },
     )?;
@@ -1092,6 +1475,59 @@ fn define_mgstudio_host_imports(
             let pixels = vec![0u8; (w * h * 4) as usize];
             let id = gpu.create_texture_rgba8(w, h, &pixels, nearest)?;
             ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_update_texture_region",
+        &[
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let x = args.get(1).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let y = args.get(2).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let w = args.get(3).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let h = args.get(4).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let glyph_id = args.get(5).and_then(|v| v.i32()).unwrap_or(0);
+            if w == 0 || h == 0 {
+                ok_i32(out, 0);
+                return Ok(());
+            }
+            let Some(glyph) = caller.data().glyph_table_get(glyph_id) else {
+                ok_i32(out, 0);
+                return Ok(());
+            };
+            let glyph_width = glyph.width;
+            let glyph_height = glyph.height;
+            let glyph_pixels = glyph.rgba8.clone();
+            let write_width = w.min(glyph_width);
+            let write_height = h.min(glyph_height);
+            if write_width == 0 || write_height == 0 {
+                ok_i32(out, 0);
+                return Ok(());
+            }
+            let mut pixels = vec![0u8; (write_width * write_height * 4) as usize];
+            for row in 0..write_height as usize {
+                let src_start = row * glyph_width as usize * 4;
+                let src_end = src_start + write_width as usize * 4;
+                let dst_start = row * write_width as usize * 4;
+                pixels[dst_start..(dst_start + write_width as usize * 4)]
+                    .copy_from_slice(&glyph_pixels[src_start..src_end]);
+            }
+            let gpu = caller.data_mut().ensure_gpu()?;
+            gpu.write_texture_region_rgba8(texture_id, x, y, write_width, write_height, &pixels)?;
+            ok_i32(out, 0);
             Ok(())
         },
     )?;
@@ -1231,6 +1667,116 @@ fn define_mgstudio_host_imports(
         },
     )?;
 
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_load_folder",
+        &[ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let path_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let base_rel = caller
+                .data()
+                .string_table_get(path_id)
+                .unwrap_or("")
+                .to_string();
+            if base_rel.trim().is_empty() {
+                ok_i32(out, -1);
+                return Ok(());
+            }
+            let folder_id = caller.data().next_folder_id;
+            caller.data_mut().next_folder_id += 1;
+            let manifest_rel = format!("{}/folder.txt", base_rel.trim_end_matches('/'));
+            let manifest_full =
+                join_dir_best_effort(&caller.data().assets.base, strip_leading_slashes(&manifest_rel));
+            let manifest = std::fs::read_to_string(&manifest_full).unwrap_or_default();
+            let mut handles: Vec<i32> = Vec::new();
+            for entry in split_trimmed_lines(&manifest) {
+                let asset_rel = if base_rel.trim().is_empty() {
+                    entry.to_string()
+                } else {
+                    format!(
+                        "{}/{}",
+                        base_rel.trim_end_matches('/'),
+                        entry.trim_start_matches('/')
+                    )
+                };
+                let texture_id = load_texture_from_assets(caller.data_mut(), &asset_rel, false)?;
+                handles.push(texture_id);
+            }
+            caller.data_mut().folder_table_set(folder_id, handles);
+            caller.data_mut().folder_events_push(3, folder_id);
+            ok_i32(out, folder_id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_poll_loaded_folder_event_kind",
+        &[],
+        &[ValType::I32],
+        |caller, _args, out| {
+            ok_i32(out, caller.data().folder_events_poll_kind());
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_poll_loaded_folder_event_id",
+        &[],
+        &[ValType::I32],
+        |mut caller, _args, out| {
+            ok_i32(out, caller.data_mut().folder_events_poll_id());
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_loaded_folder_handles_len",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let folder_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let len = caller
+                .data()
+                .folder_table_get(folder_id)
+                .map(|v| v.len() as i32)
+                .unwrap_or(0);
+            ok_i32(out, len);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_loaded_folder_handles_get",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let folder_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let index = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let handle = caller
+                .data()
+                .folder_table_get(folder_id)
+                .and_then(|v| v.get(index.max(0) as usize).copied())
+                .unwrap_or(-1);
+            ok_i32(out, handle);
+            Ok(())
+        },
+    )?;
+
     // GPU: wgpu-backed implementations matching the mgstudio_host contract.
     define_func(
         store,
@@ -1256,7 +1802,7 @@ fn define_mgstudio_host_imports(
         &[ValType::EXTERNREF],
         |mut caller, _args, out| {
             let _ = caller.data_mut().ensure_gpu()?;
-            ok_externref_i32(&mut caller, out, 10_020)?;
+            ok_externref_i32(&mut caller, out, 10_013)?;
             Ok(())
         },
     )?;
@@ -1561,6 +2107,40 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "gpu_set_scissor",
+        &[ValType::I32, ValType::I32, ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let x = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let y = args.get(1).and_then(|v| v.i32()).unwrap_or(0);
+            let width = args.get(2).and_then(|v| v.i32()).unwrap_or(0);
+            let height = args.get(3).and_then(|v| v.i32()).unwrap_or(0);
+            let gpu = caller.data_mut().ensure_gpu()?;
+            gpu.set_scissor(x, y, width, height);
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_clear_scissor",
+        &[],
+        &[ValType::I32],
+        |mut caller, _args, out| {
+            let gpu = caller.data_mut().ensure_gpu()?;
+            gpu.clear_scissor();
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "gpu_end_pass",
         &[],
         &[ValType::I32],
@@ -1660,6 +2240,273 @@ fn define_mgstudio_host_imports(
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_sprite_uv(
                     texture_id, x, y, rotation, scale_x, scale_y, color, uv_min, uv_max,
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_ui_rect",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let f = |i: usize| match args.get(i) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let x = f(1);
+            let y = f(2);
+            let rotation = f(3);
+            let scale_x = f(4);
+            let scale_y = f(5);
+            let color = [f(6), f(7), f(8), f(9)];
+            let uv_min = (f(10), f(11));
+            let raw_uv_scale_x = f(12) - f(10);
+            let raw_uv_scale_y = f(13) - f(11);
+            let uv_scale = (
+                if raw_uv_scale_x <= 0.0 {
+                    1.0
+                } else {
+                    raw_uv_scale_x
+                },
+                if raw_uv_scale_y <= 0.0 {
+                    1.0
+                } else {
+                    raw_uv_scale_y
+                },
+            );
+            let mesh_id = caller.data_mut().ensure_unit_rect_mesh()?;
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_mesh(
+                    mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_min,
+                    uv_scale,
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_ui_texture_slice",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let f = |i: usize| match args.get(i) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let x = f(1);
+            let y = f(2);
+            let rotation = f(3);
+            let scale_x = f(4);
+            let scale_y = f(5);
+            let color = [f(6), f(7), f(8), f(9)];
+            let mut uv_min = (f(22), f(23));
+            let mut uv_scale = (f(24) - f(22), f(25) - f(23));
+            if uv_scale.0 <= 0.0 {
+                uv_min.0 = 0.0;
+                uv_scale.0 = 1.0;
+            }
+            if uv_scale.1 <= 0.0 {
+                uv_min.1 = 0.0;
+                uv_scale.1 = 1.0;
+            }
+            let mesh_id = caller.data_mut().ensure_unit_rect_mesh()?;
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_mesh(
+                    mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_min,
+                    uv_scale,
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_ui_box_shadow",
+        &[
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let f = |i: usize| match args.get(i) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let x = f(1);
+            let y = f(2);
+            let rotation = f(3);
+            let scale_x = f(4);
+            let scale_y = f(5);
+            let color = [f(6), f(7), f(8), f(9)];
+            let mesh_id = caller.data_mut().ensure_unit_rect_mesh()?;
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_mesh(
+                    mesh_id,
+                    x,
+                    y,
+                    rotation,
+                    scale_x,
+                    scale_y,
+                    color,
+                    texture_id,
+                    (0.0, 0.0),
+                    (1.0, 1.0),
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_gizmo_line",
+        &[
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let f = |i: usize| match args.get(i) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let start_x = f(0);
+            let start_y = f(1);
+            let end_x = f(6);
+            let end_y = f(7);
+            let line_width = f(12).max(1.0);
+            let line_scale = f(15).max(0.01);
+            let dx = end_x - start_x;
+            let dy = end_y - start_y;
+            let length = (dx * dx + dy * dy).sqrt() * line_scale;
+            if length <= 0.0 {
+                ok_i32(out, 0);
+                return Ok(());
+            }
+            let center_x = (start_x + end_x) * 0.5;
+            let center_y = (start_y + end_y) * 0.5;
+            let rotation = dy.atan2(dx);
+            let color = [
+                (f(2) + f(8)) * 0.5,
+                (f(3) + f(9)) * 0.5,
+                (f(4) + f(10)) * 0.5,
+                (f(5) + f(11)) * 0.5,
+            ];
+            let mesh_id = caller.data_mut().ensure_unit_rect_mesh()?;
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_mesh(
+                    mesh_id,
+                    center_x,
+                    center_y,
+                    rotation,
+                    length,
+                    line_width,
+                    color,
+                    -1,
+                    (0.0, 0.0),
+                    (1.0, 1.0),
                 )?;
             }
             ok_i32(out, 0);
@@ -1839,6 +2686,30 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "gpu_create_mesh_capsule",
+        &[ValType::F32, ValType::F32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let radius = match args.get(0) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let half_length = match args.get(1) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let segments = args.get(2).and_then(|v| v.i32()).unwrap_or(8);
+            let gpu = caller.data_mut().ensure_gpu()?;
+            let id = gpu.create_mesh_capsule(radius, half_length, segments);
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "gpu_create_mesh_rectangle",
         &[ValType::F32, ValType::F32],
         &[ValType::I32],
@@ -1924,168 +2795,6 @@ fn define_mgstudio_host_imports(
         },
     )?;
 
-    // Remaining imports: keep as no-ops for now (fonts, folders, capsule mesh, gizmo lines, etc).
-    for (name, params, results, default_i32) in [
-        (
-            "asset_load_wgsl",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "asset_load_font",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "asset_font_bytes_len",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "asset_font_bytes_get",
-            vec![ValType::I32, ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "asset_font_bytes_get_u32",
-            vec![ValType::I32, ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "font_rasterize_glyph",
-            vec![ValType::I32, ValType::F32, ValType::I32, ValType::I32],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "font_glyph_width",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "font_glyph_height",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "font_glyph_offset_x",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "font_glyph_offset_y",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "font_measure_advance",
-            vec![ValType::I32, ValType::F32, ValType::I32],
-            vec![ValType::F32],
-            0,
-        ),
-        (
-            "asset_update_texture_region",
-            vec![
-                ValType::I32,
-                ValType::I32,
-                ValType::I32,
-                ValType::I32,
-                ValType::I32,
-                ValType::I32,
-            ],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "asset_load_folder",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "asset_poll_loaded_folder_event_kind",
-            vec![],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "asset_poll_loaded_folder_event_id",
-            vec![],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "asset_loaded_folder_handles_len",
-            vec![ValType::I32],
-            vec![ValType::I32],
-            0,
-        ),
-        (
-            "asset_loaded_folder_handles_get",
-            vec![ValType::I32, ValType::I32],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "gpu_create_mesh_capsule",
-            vec![ValType::F32, ValType::F32, ValType::I32],
-            vec![ValType::I32],
-            -1,
-        ),
-        (
-            "gpu_draw_gizmo_line",
-            vec![
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::F32,
-                ValType::I32,
-                ValType::F32,
-                ValType::F32,
-            ],
-            vec![ValType::I32],
-            0,
-        ),
-    ] {
-        let default0 = default_i32;
-        let result0 = results[0].clone();
-        define_func(
-            store,
-            linker,
-            "mgstudio_host",
-            name,
-            &params,
-            &results,
-            move |_caller, _args, out| {
-                match &result0 {
-                    ValType::I32 => ok_i32(out, default0),
-                    ValType::F32 => ok_f32(out, 0.0),
-                    ValType::Ref(_) => ok_externref_null(out),
-                    _ => ok_i32(out, default0),
-                }
-                Ok(())
-            },
-        )?;
-    }
-
     Ok(())
 }
 
@@ -2165,13 +2874,34 @@ fn define_func(
         + Sync
         + 'static,
 ) -> anyhow::Result<()> {
+    let module_name = module.to_string();
+    let func_name = name.to_string();
     let ty = FuncType::new(
         store.engine(),
         params.iter().cloned(),
         results.iter().cloned(),
     );
     let func = Func::new(&mut *store, ty, move |caller, args, out| {
-        f(caller, args, out)
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(caller, args, out)));
+        match result {
+            Ok(res) => res,
+            Err(payload) => {
+                let panic_msg = if let Some(msg) = payload.downcast_ref::<&str>() {
+                    (*msg).to_string()
+                } else if let Some(msg) = payload.downcast_ref::<String>() {
+                    msg.clone()
+                } else {
+                    "<non-string panic payload>".to_string()
+                };
+                Err(anyhow::anyhow!(
+                    "panic in host import {}.{}: {}",
+                    module_name,
+                    func_name,
+                    panic_msg
+                ))
+            }
+        }
     });
     linker.define(&mut *store, module, name, func)?;
     Ok(())

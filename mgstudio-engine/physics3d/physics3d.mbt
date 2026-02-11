@@ -97,6 +97,11 @@ pub struct Velocity3d {
 }
 
 ///|
+pub fn Velocity3d::new(linvel : @math.Vec3, angvel : @math.Vec3) -> Velocity3d {
+  { linvel, angvel }
+}
+
+///|
 pub fn Velocity3d::zero() -> Velocity3d {
   { linvel: @math.Vec3::zero(), angvel: @math.Vec3::zero() }
 }

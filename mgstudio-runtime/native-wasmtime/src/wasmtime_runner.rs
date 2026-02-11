@@ -28,20 +28,23 @@ pub fn run_cart(opts: RunCartOpts) -> anyhow::Result<()> {
 
     let engine = Engine::new(&config).context("failed to create wasmtime engine")?;
     // Wasmtime compilation panics can be quite noisy (default panic hook prints to stderr).
-    // Silence the hook while probing module compilation so we can report a clean error.
-    let _panic_hook_guard = PanicHookGuard::silence();
-    let module = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        Module::from_file(&engine, &opts.cart_path)
-    })) {
-        Ok(res) => res
-            .with_context(|| format!("failed to load wasm module: {}", opts.cart_path.display()))?,
-        Err(_) => {
-            // Known issue: Cranelift AArch64 can panic during veneer/island fixups when compiling
-            // very large functions in some wasm-gc modules. Convert the panic into a normal
-            // error so `mgstudio` can report it cleanly.
-            return Err(anyhow!(
-                "wasmtime/cranelift panicked while compiling this wasm module (AArch64 island/veneer fixup bug?)"
-            ));
+    // Silence only during module compilation so runtime panics remain visible.
+    let module = {
+        let _panic_hook_guard = PanicHookGuard::silence();
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            Module::from_file(&engine, &opts.cart_path)
+        })) {
+            Ok(res) => res.with_context(|| {
+                format!("failed to load wasm module: {}", opts.cart_path.display())
+            })?,
+            Err(_) => {
+                // Known issue: Cranelift AArch64 can panic during veneer/island fixups when
+                // compiling very large functions in some wasm-gc modules. Convert the panic into
+                // a normal error so `mgstudio` can report it cleanly.
+                return Err(anyhow!(
+                    "wasmtime/cranelift panicked while compiling this wasm module (AArch64 island/veneer fixup bug?)"
+                ));
+            }
         }
     };
 
