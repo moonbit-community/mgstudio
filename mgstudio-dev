@@ -30,6 +30,146 @@ SDKROOT="${MGSTUDIO_SDKROOT:-${HOME}/.local/share/mgstudio/current}"
 SDK_WEB_DIR="${SDKROOT}/share/mgstudio/web"
 SDK_ASSETS_DIR="${SDKROOT}/share/mgstudio/assets"
 
+find_nearest_game_config() {
+  local dir
+  dir="${PWD}"
+  while true; do
+    if [[ -f "${dir}/moon.game.json" ]]; then
+      printf '%s\n' "${dir}/moon.game.json"
+      return 0
+    fi
+    if [[ "${dir}" == "/" ]]; then
+      return 1
+    fi
+    dir="$(dirname "${dir}")"
+  done
+}
+
+resolve_game_config_path() {
+  local cmd="$1"
+  shift || true
+  if [[ "${cmd}" != "run" && "${cmd}" != "serve" ]]; then
+    return 1
+  fi
+
+  local args=("$@")
+  local game_path=""
+  for ((i = 0; i < ${#args[@]}; i++)); do
+    local arg="${args[i]}"
+    if [[ "${arg}" == "--game" ]]; then
+      if (( i + 1 < ${#args[@]} )); then
+        game_path="${args[i + 1]}"
+      fi
+      break
+    fi
+    if [[ "${arg}" == --game=* ]]; then
+      game_path="${arg#--game=}"
+      break
+    fi
+  done
+
+  if [[ -z "${game_path}" ]]; then
+    find_nearest_game_config
+    return $?
+  fi
+
+  python3 - "${game_path}" <<'PY'
+import pathlib
+import sys
+
+print(pathlib.Path(sys.argv[1]).expanduser().resolve())
+PY
+}
+
+auto_build_game_cart() {
+  local cmd="${1:-}"
+  shift || true
+  if [[ "${cmd}" != "run" && "${cmd}" != "serve" ]]; then
+    return 0
+  fi
+  for arg in "$@"; do
+    if [[ "${arg}" == "-h" || "${arg}" == "--help" ]]; then
+      return 0
+    fi
+  done
+
+  local game_cfg
+  if ! game_cfg="$(resolve_game_config_path "${cmd}" "$@")"; then
+    return 0
+  fi
+
+  local meta=()
+  if ! mapfile -t meta < <(python3 - "${game_cfg}" <<'PY'
+import json
+import os
+import pathlib
+import sys
+
+cfg = pathlib.Path(sys.argv[1]).expanduser().resolve()
+root = json.loads(cfg.read_text(encoding="utf-8"))
+cart = root.get("cart")
+if not isinstance(cart, str) or cart.strip() == "":
+    raise SystemExit(2)
+
+if os.path.isabs(cart):
+    cart_path = pathlib.Path(cart).expanduser().resolve()
+else:
+    cart_path = (cfg.parent / cart).resolve()
+
+module_root = cfg.parent
+while True:
+    if (module_root / "moon.mod.json").is_file():
+        break
+    if module_root.parent == module_root:
+        raise SystemExit(3)
+    module_root = module_root.parent
+
+pkg_path = os.path.relpath(cfg.parent, module_root)
+if pkg_path == ".":
+    pkg_path = ""
+
+target = "wasm-gc"
+marker = "/_build/"
+cart_posix = cart_path.as_posix()
+if marker in cart_posix:
+    suffix = cart_posix.split(marker, 1)[1]
+    pieces = suffix.split("/")
+    if len(pieces) > 0 and pieces[0] != "":
+        target = pieces[0]
+
+print(module_root.as_posix())
+print(target)
+print(pkg_path)
+print(cart_path.as_posix())
+PY
+  ); then
+    echo "mgstudio-dev: skip auto-build (cannot parse game config: ${game_cfg})" >&2
+    return 0
+  fi
+
+  if (( ${#meta[@]} < 4 )); then
+    echo "mgstudio-dev: skip auto-build (incomplete game config metadata: ${game_cfg})" >&2
+    return 0
+  fi
+
+  local module_root="${meta[0]}"
+  local target="${meta[1]}"
+  local pkg_path="${meta[2]}"
+  local cart_path="${meta[3]}"
+
+  if [[ -n "${pkg_path}" ]]; then
+    echo "mgstudio-dev: auto-build ${pkg_path} (--target ${target})" >&2
+    (cd "${ROOT}" && moon -C "${module_root}" build --release --target "${target}" "${pkg_path}")
+  else
+    echo "mgstudio-dev: auto-build module root (--target ${target})" >&2
+    (cd "${ROOT}" && moon -C "${module_root}" build --release --target "${target}")
+  fi
+
+  if [[ ! -f "${cart_path}" ]]; then
+    echo "mgstudio-dev: warning: cart not found after build: ${cart_path}" >&2
+  fi
+}
+
 sync_sdk() {
   mkdir -p "${SDK_WEB_DIR}"
   (
@@ -47,7 +187,7 @@ if [[ ! -x "${BIN}" ]]; then
   NEED_BUILD=1
 else
   # Rebuild when CLI sources changed since last build.
-  if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
+  if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
   if [[ "${ROOT}/mgstudio-cli/moon.mod.json" -nt "${BIN}" ]]; then
@@ -60,6 +200,7 @@ if [[ "${NEED_BUILD}" -eq 1 ]]; then
 fi
 
 sync_sdk
+auto_build_game_cart "$@"
 
 # Repo dev convenience:
 # - If user runs `mgstudio run --backend wasmtime` and does not provide
