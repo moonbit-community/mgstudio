@@ -74,6 +74,10 @@ pub struct World {
   sleeping2d : @core.ComponentStore[@physics2d.Sleeping2d]
   velocity2d : @core.ComponentStore[@physics2d.Velocity2d]
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
+  active_collision_types3d : @core.ComponentStore[@physics3d.ActiveCollisionTypes3d]
+  active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
+  contact_force_event_threshold3d : @core.ComponentStore[@physics3d.ContactForceEventThreshold3d]
+  active_hooks3d : @core.ComponentStore[@physics3d.ActiveHooks3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
@@ -191,7 +195,11 @@ pub impl @physics2d.Has_Velocity2d for World
 pub impl @physics3d.HasRes_Physics3dConfig for World
 pub impl @physics3d.HasRes_Physics3dContext for World
 pub impl @physics3d.HasRes_Physics3dEvents for World
+pub impl @physics3d.Has_ActiveCollisionTypes3d for World
+pub impl @physics3d.Has_ActiveEvents3d for World
+pub impl @physics3d.Has_ActiveHooks3d for World
 pub impl @physics3d.Has_Collider3d for World
+pub impl @physics3d.Has_ContactForceEventThreshold3d for World
 pub impl @physics3d.Has_RapierBodyHandle3d for World
 pub impl @physics3d.Has_RapierColliderHandle3d for World
 pub impl @physics3d.Has_RigidBody3d for World

@@ -5,7 +5,8 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Collider3d", "Velocity3d", "RigidBody3d", "RapierBodyHandle3d", "RapierColliderHandle3d",
+  "Collider3d", "ActiveCollisionTypes3d", "ActiveEvents3d", "ContactForceEventThreshold3d",
+  "ActiveHooks3d", "Velocity3d", "RigidBody3d", "RapierBodyHandle3d", "RapierColliderHandle3d",
 ]
 
 ///|
@@ -17,6 +18,30 @@ pub let ecs_resources : Array[String] = [
 ///|
 pub(open) trait Has_Collider3d {
   get_collider3d_store(self : Self) -> @core.ComponentStore[Collider3d]
+}
+
+///|
+pub(open) trait Has_ActiveCollisionTypes3d {
+  get_active_collision_types3d_store(self : Self) -> @core.ComponentStore[
+    ActiveCollisionTypes3d,
+  ]
+}
+
+///|
+pub(open) trait Has_ActiveEvents3d {
+  get_active_events3d_store(self : Self) -> @core.ComponentStore[ActiveEvents3d]
+}
+
+///|
+pub(open) trait Has_ContactForceEventThreshold3d {
+  get_contact_force_event_threshold3d_store(self : Self) -> @core.ComponentStore[
+    ContactForceEventThreshold3d,
+  ]
+}
+
+///|
+pub(open) trait Has_ActiveHooks3d {
+  get_active_hooks3d_store(self : Self) -> @core.ComponentStore[ActiveHooks3d]
 }
 
 ///|

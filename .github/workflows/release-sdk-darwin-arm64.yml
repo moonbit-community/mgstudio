@@ -101,7 +101,7 @@ jobs:
           mkdir -p "${sdk_dir}/bin" "${sdk_dir}/lib" "${sdk_dir}/share/mgstudio"
 
           echo "Building mgstudio-cli (native release)..."
-          moon build --release -C "./mgstudio-cli"
+          moon -C "./mgstudio-cli" build --release
           cli_bin="./mgstudio-cli/_build/native/release/build/main/main.exe"
           test -x "${cli_bin}"
           cp "${cli_bin}" "${sdk_dir}/bin/mgstudio"

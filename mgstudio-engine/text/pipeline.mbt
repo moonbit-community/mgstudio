@@ -190,6 +190,9 @@ let text_warned_missing_font_ids : Ref[Array[Int]] = Ref::new([])
 let text_warned_missing_glyph_ids : Ref[Array[Int]] = Ref::new([])
 
 ///|
+let text_warned_missing_font_mapping_ids : Ref[Array[Int]] = Ref::new([])
+
+///|
 fn text_warn_missing_font_once(text_id : Int, font_handle : Int) -> Unit {
   if int_array_contains(text_warned_missing_font_ids.val, text_id) {
     return
@@ -210,9 +213,33 @@ fn text_warn_missing_glyph_once(text_id : Int) -> Unit {
   }
   text_warned_missing_glyph_ids.val.push(text_id)
   @window.host_debug_string(
-    "Text2d warning: glyph rasterization or atlas upload not ready, text_id=" +
+    "Text2d notice: glyph image unavailable, glyph skipped, text_id=" +
     text_id.to_string(),
   )
+}
+
+///|
+fn text_warn_missing_font_mapping_once(text_id : Int, font_id : Int) -> Unit {
+  if int_array_contains(text_warned_missing_font_mapping_ids.val, text_id) {
+    return
+  }
+  text_warned_missing_font_mapping_ids.val.push(text_id)
+  @window.host_debug_string(
+    "Text2d warning: font mapping unavailable, text_id=" +
+    text_id.to_string() +
+    ", font_id=" +
+    font_id.to_string(),
+  )
+}
+
+///|
+fn text_abort_layout_error(text_id : Int, detail : String) -> Unit {
+  let message = "Text2d fatal: inconsistent atlas state, text_id=" +
+    text_id.to_string() +
+    ", detail=" +
+    detail
+  @window.host_debug_string(message)
+  abort(message)
 }
 
 ///|
@@ -400,14 +427,19 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   // `cosmic_get_or_load_font_id` returns None and the layout phase may produce
   // zero glyphs. We must keep `needs_rerender=true` in that case so the text
   // retries once assets become available.
-  let mut missing_glyph = false
+  // Retry only for async font-byte loading paths.
+  //
+  // Other glyph failures:
+  // - missing glyph image keeps partial layout and retries next frame.
+  // - atlas state mismatches are treated as fatal runtime errors.
+  let mut needs_retry = false
   if cosmic_get_or_load_font_id(instance.font.font) is None {
-    missing_glyph = true
+    needs_retry = true
     text_warn_missing_font_once(instance.id, instance.font.font.id())
   }
   for span in instance.spans {
     if cosmic_get_or_load_font_id(span.font.font) is None {
-      missing_glyph = true
+      needs_retry = true
       text_warn_missing_font_once(instance.id, span.font.font.id())
     }
   }
@@ -554,7 +586,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         layout_glyph.font_id,
       )
       if font_handle_id_opt is None {
-        missing_glyph = true
+        needs_retry = true
+        text_warn_missing_font_mapping_once(instance.id, layout_glyph.font_id)
         continue
       }
       let font_handle_id = if font_handle_id_opt is Some(v) {
@@ -567,8 +600,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         font_system, physical_key, font_smoothing,
       )
       if raster_opt is None {
-        missing_glyph = true
         text_warn_missing_glyph_once(instance.id)
+        needs_retry = true
         continue
       }
       let raster = if raster_opt is Some(v) { v } else { continue }
@@ -589,22 +622,22 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         atlases, cache_key, raster, font_smoothing,
       )
       if atlas_info_opt is None {
-        missing_glyph = true
-        continue
+        text_abort_layout_error(instance.id, "failed to add glyph to atlas")
       }
       let atlas_info = if atlas_info_opt is Some(v) { v } else { continue }
       let layout_opt = @asset.asset_get_texture_atlas_layout(
         atlas_info.texture_atlas,
       )
       if layout_opt is None {
-        missing_glyph = true
-        continue
+        text_abort_layout_error(instance.id, "missing texture atlas layout")
       }
       let atlas_layout = if layout_opt is Some(v) { v } else { continue }
       let rect_opt = atlas_layout.textures.get(atlas_info.location.glyph_index)
       if rect_opt is None {
-        missing_glyph = true
-        continue
+        text_abort_layout_error(
+          instance.id,
+          "missing glyph rect in atlas layout",
+        )
       }
       let rect = if rect_opt is Some(v) { v } else { continue }
       let glyph_size_u = rect.size()
@@ -686,7 +719,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     computed: ComputedTextBlock::{
       buffer,
       entities,
-      needs_rerender: missing_glyph,
+      needs_rerender: needs_retry,
     },
   }
 }

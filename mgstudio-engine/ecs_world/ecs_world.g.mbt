@@ -53,6 +53,14 @@ pub struct World {
   sleeping2d : @core.ComponentStore[@physics2d.Sleeping2d]
   velocity2d : @core.ComponentStore[@physics2d.Velocity2d]
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
+  active_collision_types3d : @core.ComponentStore[
+    @physics3d.ActiveCollisionTypes3d,
+  ]
+  active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
+  contact_force_event_threshold3d : @core.ComponentStore[
+    @physics3d.ContactForceEventThreshold3d,
+  ]
+  active_hooks3d : @core.ComponentStore[@physics3d.ActiveHooks3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
@@ -197,6 +205,10 @@ pub fn World::new() -> World {
     sleeping2d: @core.ComponentStore::new(),
     velocity2d: @core.ComponentStore::new(),
     collider3d: @core.ComponentStore::new(),
+    active_collision_types3d: @core.ComponentStore::new(),
+    active_events3d: @core.ComponentStore::new(),
+    contact_force_event_threshold3d: @core.ComponentStore::new(),
+    active_hooks3d: @core.ComponentStore::new(),
     velocity3d: @core.ComponentStore::new(),
     scissor_rect: @core.ComponentStore::new(),
     dominance2d: @core.ComponentStore::new(),
@@ -321,6 +333,10 @@ pub fn World::despawn(
   self.sleeping2d.remove(entity) |> ignore
   self.velocity2d.remove(entity) |> ignore
   self.collider3d.remove(entity) |> ignore
+  self.active_collision_types3d.remove(entity) |> ignore
+  self.active_events3d.remove(entity) |> ignore
+  self.contact_force_event_threshold3d.remove(entity) |> ignore
+  self.active_hooks3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
@@ -425,6 +441,10 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.sleeping2d.remove(entity) |> ignore
   self.velocity2d.remove(entity) |> ignore
   self.collider3d.remove(entity) |> ignore
+  self.active_collision_types3d.remove(entity) |> ignore
+  self.active_events3d.remove(entity) |> ignore
+  self.contact_force_event_threshold3d.remove(entity) |> ignore
+  self.active_hooks3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
@@ -738,6 +758,34 @@ pub impl @physics2d.Has_Velocity2d for World with get_velocity2d_store(self) {
 ///|
 pub impl @physics3d.Has_Collider3d for World with get_collider3d_store(self) {
   self.collider3d
+}
+
+///|
+pub impl @physics3d.Has_ActiveCollisionTypes3d for World with get_active_collision_types3d_store(
+  self,
+) {
+  self.active_collision_types3d
+}
+
+///|
+pub impl @physics3d.Has_ActiveEvents3d for World with get_active_events3d_store(
+  self,
+) {
+  self.active_events3d
+}
+
+///|
+pub impl @physics3d.Has_ContactForceEventThreshold3d for World with get_contact_force_event_threshold3d_store(
+  self,
+) {
+  self.contact_force_event_threshold3d
+}
+
+///|
+pub impl @physics3d.Has_ActiveHooks3d for World with get_active_hooks3d_store(
+  self,
+) {
+  self.active_hooks3d
 }
 
 ///|

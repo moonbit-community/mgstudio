@@ -56,11 +56,11 @@ else
 fi
 
 if [[ "${NEED_BUILD}" -eq 1 ]]; then
-  (cd "${ROOT}/mgstudio-cli" && moon build --release)
+  moon -C "${ROOT}/mgstudio-cli" build --release
 fi
 
 sync_sdk
-(cd "${ROOT}" && moon -C mgstudio-engine build)
+(cd "${ROOT}" && moon -C mgstudio-engine build --release --target wasm)
 
 # Repo dev convenience:
 # - If user runs `mgstudio run --backend wasmtime` and does not provide

@@ -544,7 +544,7 @@ fn host_trace(msg : String) -> Unit {
 }
 
 ///|
-extern "C" fn c_time_now_seconds() -> Float = "mgstudio_time_now"
+extern "C" fn c_time_now_millis() -> Float = "mgstudio_time_now"
 
 ///|
 extern "C" fn c_spectest_print_char(ch : Int) -> Unit = "mgstudio_spectest_print_char"
@@ -791,7 +791,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "a11y_apply_update",
-    fn(args) raise @runtime.RuntimeError {
+    fn(args) {
       try {
         guard ctx.window is Some(win) else { return ok_i32(0) }
         guard args.length() >= 1 && args[0] is @types.Value::I32(payload_id) else {
@@ -922,8 +922,10 @@ pub fn add_mgstudio_host_imports(
         ok_i32(0)
       } catch {
         _ => {
-          @debug.debug("a11y_apply_update failed")
-          host_fail("a11y_apply_update", "<error>")
+          if host_trace_enabled() {
+            @debug.debug("a11y_apply_update failed (ignored)")
+          }
+          ok_i32(0)
         }
       }
     },
@@ -1090,6 +1092,7 @@ pub fn add_mgstudio_host_imports(
     "mgstudio_host",
     "window_run_loop",
     fn(args) raise @runtime.RuntimeError {
+      host_trace("host: window_run_loop args_len=\{args.length()}")
       if args.length() == 0 {
         return ok_i32(0)
       }
@@ -1143,6 +1146,8 @@ pub fn add_mgstudio_host_imports(
             host_trace("tick: should_close false")
           }
         }
+      } else {
+        host_trace("host: window_run_loop arg0 is not funcref")
       }
       ok_i32(0)
     },
@@ -1219,7 +1224,7 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "time_now",
-    fn(_args) { ok_f32(c_time_now_seconds()) },
+    fn(_args) { ok_f32(c_time_now_millis()) },
     func_type=ft([], [@types.ValueType::F32]),
   )
 
@@ -2851,7 +2856,9 @@ pub fn add_mgstudio_host_imports(
           args[9] is @types.Value::F32(a) {
           ctx.gpu
           .unwrap()
-          .draw_sprite_uv(texture_id, x, y, rot, sx, sy, r, g, b, a, 0.0, 0.0, 1.0, 1.0)
+          .draw_sprite_uv(
+            texture_id, x, y, rot, sx, sy, r, g, b, a, 0.0, 0.0, 1.0, 1.0,
+          )
         }
         ok_i32(0)
       } catch {

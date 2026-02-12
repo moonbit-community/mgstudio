@@ -51,11 +51,11 @@ pub(open) trait Physics3dCleanupWorld: @core.ChangeTickWorld + Has_RigidBody3d +
 }
 
 ///|
-pub(open) trait Physics3dSyncInsertionsWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+pub(open) trait Physics3dSyncInsertionsWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_ActiveCollisionTypes3d + Has_ActiveEvents3d + Has_ContactForceEventThreshold3d + Has_ActiveHooks3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
 }
 
 ///|
-pub(open) trait Physics3dSyncWorldToRapierWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
+pub(open) trait Physics3dSyncWorldToRapierWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_ActiveCollisionTypes3d + Has_ActiveEvents3d + Has_ContactForceEventThreshold3d + Has_ActiveHooks3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
 }
 
 ///|
@@ -197,6 +197,10 @@ pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(
   let vel_store = world.get_velocity3d_store()
   let rb_store = world.get_rigid_body3d_store()
   let col_store = world.get_collider3d_store()
+  let active_collision_types_store = world.get_active_collision_types3d_store()
+  let active_events_store = world.get_active_events3d_store()
+  let contact_force_threshold_store = world.get_contact_force_event_threshold3d_store()
+  let active_hooks_store = world.get_active_hooks3d_store()
   let body_handle_store = world.get_rapier_body_handle3d_store()
   let collider_handle_store = world.get_rapier_collider_handle3d_store()
 
@@ -240,10 +244,31 @@ pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(
     }
     let handle = match body_handle_store.get(entity) {
       Some(bodyh) => {
-        let collider = make_collider_builder(col3d.shape)
-          .sensor(col3d.sensor)
-          .active_events(@collision.ActiveEvents::collision_events())
-          .build()
+        let mut builder = make_collider_builder(col3d.shape).sensor(
+          col3d.sensor,
+        )
+        if active_collision_types_store.get(entity) is Some(active_types) {
+          builder = builder.active_collision_types(active_types.types)
+        }
+        let active_events = match active_events_store.get(entity) {
+          Some(active_events) => active_events.events
+          None =>
+            if contact_force_threshold_store.get(entity) is Some(_) {
+              @collision.ActiveEvents::collision_events().insert(
+                @collision.ActiveEvents::contact_force_events(),
+              )
+            } else {
+              @collision.ActiveEvents::collision_events()
+            }
+        }
+        builder = builder.active_events(active_events)
+        if active_hooks_store.get(entity) is Some(active_hooks) {
+          builder = builder.active_hooks(active_hooks.hooks)
+        }
+        if contact_force_threshold_store.get(entity) is Some(threshold) {
+          builder = builder.contact_force_event_threshold(threshold.threshold)
+        }
+        let collider = builder.build()
         ctx.colliders.insert_with_parent(
           collider,
           bodyh.handle,
@@ -254,11 +279,31 @@ pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(
         let transform = transform_store
           .get(entity)
           .unwrap_or(@math.Transform::identity())
-        let collider = make_collider_builder(col3d.shape)
+        let mut builder = make_collider_builder(col3d.shape)
           .sensor(col3d.sensor)
-          .active_events(@collision.ActiveEvents::collision_events())
           .position(mg_transform_to_iso3(transform))
-          .build()
+        if active_collision_types_store.get(entity) is Some(active_types) {
+          builder = builder.active_collision_types(active_types.types)
+        }
+        let active_events = match active_events_store.get(entity) {
+          Some(active_events) => active_events.events
+          None =>
+            if contact_force_threshold_store.get(entity) is Some(_) {
+              @collision.ActiveEvents::collision_events().insert(
+                @collision.ActiveEvents::contact_force_events(),
+              )
+            } else {
+              @collision.ActiveEvents::collision_events()
+            }
+        }
+        builder = builder.active_events(active_events)
+        if active_hooks_store.get(entity) is Some(active_hooks) {
+          builder = builder.active_hooks(active_hooks.hooks)
+        }
+        if contact_force_threshold_store.get(entity) is Some(threshold) {
+          builder = builder.contact_force_event_threshold(threshold.threshold)
+        }
+        let collider = builder.build()
         ctx.colliders.insert(collider)
       }
     }
@@ -284,8 +329,37 @@ pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_syste
   ctx.integration = ctx.integration.set_dt(dt)
   let transform_store = world.get_transform_store()
   let rb3d_store = world.get_rigid_body3d_store()
+  let active_collision_types_store = world.get_active_collision_types3d_store()
+  let active_events_store = world.get_active_events3d_store()
+  let contact_force_threshold_store = world.get_contact_force_event_threshold3d_store()
+  let active_hooks_store = world.get_active_hooks3d_store()
   let vel_store = world.get_velocity3d_store()
   let body_handle_store = world.get_rapier_body_handle3d_store()
+  let collider_handle_store = world.get_rapier_collider_handle3d_store()
+  collider_handle_store.for_each(fn(entity, ch) {
+    guard ctx.colliders.get_mut(ch.handle) is Some(collider) else { return }
+    if active_collision_types_store.get(entity) is Some(active_types) {
+      collider.set_active_collision_types(active_types.types) |> ignore
+    }
+    let active_events = match active_events_store.get(entity) {
+      Some(active_events) => active_events.events
+      None =>
+        if contact_force_threshold_store.get(entity) is Some(_) {
+          @collision.ActiveEvents::collision_events().insert(
+            @collision.ActiveEvents::contact_force_events(),
+          )
+        } else {
+          @collision.ActiveEvents::collision_events()
+        }
+    }
+    collider.set_active_events(active_events) |> ignore
+    if active_hooks_store.get(entity) is Some(active_hooks) {
+      collider.set_active_hooks(active_hooks.hooks) |> ignore
+    }
+    if contact_force_threshold_store.get(entity) is Some(threshold) {
+      collider.set_contact_force_event_threshold(threshold.threshold) |> ignore
+    }
+  })
   body_handle_store.for_each(fn(entity, bh) {
     guard rb3d_store.get(entity) is Some(rb3d) else { return }
     guard ctx.rigid_bodies.get_mut(bh.handle) is Some(body) else { return }
@@ -350,6 +424,25 @@ pub fn[W : Physics3dResourcesWorld] physics3d_step_system(world : W) -> Unit {
           events.collisions.push(CollisionEvent3d::Stopped(a, b, sensor))
         }
       }
+      _ => ()
+    }
+  }
+  let rapier_contact_force_events = ctx.event_handler.take_contact_force_events()
+  for ev in rapier_contact_force_events {
+    let h1 = ev.collider1()
+    let h2 = ev.collider2()
+    let e1 = ctx.collider_to_entity.get(h1.into_raw_parts())
+    let e2 = ctx.collider_to_entity.get(h2.into_raw_parts())
+    match (e1, e2) {
+      (Some(a), Some(b)) =>
+        events.contact_forces.push(ContactForceEvent3d::{
+          entity1: a,
+          entity2: b,
+          total_force: rapier_vec3_to_mg(ev.total_force()),
+          total_force_magnitude: ev.total_force_magnitude(),
+          max_force_direction: rapier_vec3_to_mg(ev.max_force_direction()),
+          max_force_magnitude: ev.max_force_magnitude(),
+        })
       _ => ()
     }
   }

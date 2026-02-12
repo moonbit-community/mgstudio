@@ -22,18 +22,30 @@ pub enum CollisionEvent3d {
 }
 
 ///|
+pub struct ContactForceEvent3d {
+  entity1 : @core.Entity
+  entity2 : @core.Entity
+  total_force : @math.Vec3
+  total_force_magnitude : Float
+  max_force_direction : @math.Vec3
+  max_force_magnitude : Float
+}
+
+///|
 // ECS resource marker for codegen (`mgstudio gen`).
 #ecs.resource
 pub struct Physics3dEvents {
   mut collisions : Array[CollisionEvent3d]
+  mut contact_forces : Array[ContactForceEvent3d]
 }
 
 ///|
 pub fn Physics3dEvents::new() -> Physics3dEvents {
-  { collisions: [] }
+  { collisions: [], contact_forces: [] }
 }
 
 ///|
 pub fn Physics3dEvents::clear(self : Physics3dEvents) -> Unit {
   self.collisions.clear()
+  self.contact_forces.clear()
 }

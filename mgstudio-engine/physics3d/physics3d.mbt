@@ -89,6 +89,68 @@ pub fn Collider3d::sensor(self : Collider3d, sensor : Bool) -> Collider3d {
 }
 
 ///|
+/// Per-collider active event mask (collision/contact-force/intersection events).
+#ecs.component
+pub struct ActiveEvents3d {
+  events : @collision.ActiveEvents
+}
+
+///|
+pub fn ActiveEvents3d::new(events : @collision.ActiveEvents) -> ActiveEvents3d {
+  { events, }
+}
+
+///|
+pub fn ActiveEvents3d::empty() -> ActiveEvents3d {
+  { events: @collision.ActiveEvents::empty() }
+}
+
+///|
+pub fn ActiveEvents3d::collision_events() -> ActiveEvents3d {
+  { events: @collision.ActiveEvents::collision_events() }
+}
+
+///|
+/// Per-collider contact-force event threshold.
+#ecs.component
+pub struct ContactForceEventThreshold3d {
+  threshold : Float
+}
+
+///|
+pub fn ContactForceEventThreshold3d::new(
+  threshold : Float,
+) -> ContactForceEventThreshold3d {
+  { threshold, }
+}
+
+///|
+/// Per-collider active collision type mask.
+#ecs.component
+pub struct ActiveCollisionTypes3d {
+  types : @collision.ActiveCollisionTypes
+}
+
+///|
+pub fn ActiveCollisionTypes3d::new(
+  types : @collision.ActiveCollisionTypes,
+) -> ActiveCollisionTypes3d {
+  { types, }
+}
+
+///|
+/// Per-collider active hook mask.
+#ecs.component
+pub struct ActiveHooks3d {
+  hooks : @collision.ActiveHooks
+}
+
+///|
+pub fn ActiveHooks3d::new(hooks : @collision.ActiveHooks) -> ActiveHooks3d {
+  { hooks, }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Velocity3d {
@@ -193,15 +255,77 @@ pub(open) trait Physics3dPluginWorld: Physics3dResourcesWorld + Physics3dCleanup
 }
 
 ///|
+pub let physics3d_set_clear_events : @app.SystemSet = @app.system_set(
+  "mgstudio.physics3d.clear_events",
+)
+
+///|
+pub let physics3d_set_cleanup : @app.SystemSet = @app.system_set(
+  "mgstudio.physics3d.cleanup",
+)
+
+///|
+pub let physics3d_set_sync_insertions : @app.SystemSet = @app.system_set(
+  "mgstudio.physics3d.sync_insertions",
+)
+
+///|
+pub let physics3d_set_sync_world_to_rapier : @app.SystemSet = @app.system_set(
+  "mgstudio.physics3d.sync_world_to_rapier",
+)
+
+///|
+pub let physics3d_set_step : @app.SystemSet = @app.system_set(
+  "mgstudio.physics3d.step",
+)
+
+///|
+pub let physics3d_set_writeback : @app.SystemSet = @app.system_set(
+  "mgstudio.physics3d.writeback",
+)
+
+///|
 pub fn[W : Physics3dPluginWorld] physics3d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app
   .add_startup_system(physics3d_init_resources_system)
-  .add_pre_update_system(physics3d_clear_events_system)
-  .add_pre_update_system(physics3d_cleanup_despawned_system)
-  .add_fixed_update_system(physics3d_sync_insertions_system)
-  .add_fixed_update_system(physics3d_sync_world_to_rapier_system)
-  .add_fixed_update_system(physics3d_step_system)
-  .add_fixed_update_system(physics3d_writeback_system)
+  .add_pre_update_system_config(
+    @app.system(physics3d_clear_events_system).in_set(
+      physics3d_set_clear_events,
+    ),
+  )
+  .add_pre_update_system_config(
+    @app.system(physics3d_cleanup_despawned_system).in_set(
+      physics3d_set_cleanup,
+    ),
+  )
+  .configure_set(@app.PreUpdate, physics3d_set_clear_events, before=[
+    physics3d_set_cleanup,
+  ])
+  .add_fixed_update_system_config(
+    @app.system(physics3d_sync_insertions_system).in_set(
+      physics3d_set_sync_insertions,
+    ),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics3d_sync_world_to_rapier_system).in_set(
+      physics3d_set_sync_world_to_rapier,
+    ),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics3d_step_system).in_set(physics3d_set_step),
+  )
+  .add_fixed_update_system_config(
+    @app.system(physics3d_writeback_system).in_set(physics3d_set_writeback),
+  )
+  .configure_set(@app.FixedUpdate, physics3d_set_sync_insertions, before=[
+    physics3d_set_sync_world_to_rapier,
+  ])
+  .configure_set(@app.FixedUpdate, physics3d_set_sync_world_to_rapier, before=[
+    physics3d_set_step,
+  ])
+  .configure_set(@app.FixedUpdate, physics3d_set_step, before=[
+    physics3d_set_writeback,
+  ])
 }

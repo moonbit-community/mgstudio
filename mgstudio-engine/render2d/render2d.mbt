@@ -1070,6 +1070,24 @@ let mesh_assets : Ref[@asset.Assets[@mesh.Mesh]] = Ref::new(
 )
 
 ///|
+let mesh_upload_cache : Ref[@hashmap.HashMap[Int, Int]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+fn mesh_upload_cache_sync_with_asset_events() -> Unit {
+  for event in mesh_assets.val.drain_events() {
+    match event {
+      @asset.AssetEvent::Modified(handle) =>
+        mesh_upload_cache.val.remove(handle.id())
+      @asset.AssetEvent::Removed(handle) =>
+        mesh_upload_cache.val.remove(handle.id())
+      _ => ()
+    }
+  }
+}
+
+///|
 fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
   mesh_assets.val.add(mesh)
 }
@@ -1086,7 +1104,12 @@ fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
 
 ///|
 pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
-  match mesh_asset_get(mesh) {
+  mesh_upload_cache_sync_with_asset_events()
+  let mesh_handle_id = mesh.id()
+  if mesh_upload_cache.val.get(mesh_handle_id) is Some(mesh_id) {
+    return mesh_id
+  }
+  let uploaded_mesh_id = match mesh_asset_get(mesh) {
     Some(mesh_asset) =>
       match mesh_asset.geometry {
         @mesh.MeshGeometry::Geometry2d(geometry2d) =>
@@ -1123,6 +1146,10 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
       0
     }
   }
+  if uploaded_mesh_id > 0 {
+    mesh_upload_cache.val.set(mesh_handle_id, uploaded_mesh_id)
+  }
+  uploaded_mesh_id
 }
 
 ///|

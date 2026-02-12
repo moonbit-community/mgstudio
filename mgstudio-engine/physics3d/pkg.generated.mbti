@@ -31,6 +31,18 @@ pub fn[W : Physics3dResourcesWorld] physics3d_init_resources_system(W) -> Unit
 
 pub fn[W : Physics3dPluginWorld] physics3d_plugin(@app.App[W]) -> @app.App[W]
 
+pub let physics3d_set_cleanup : String
+
+pub let physics3d_set_clear_events : String
+
+pub let physics3d_set_step : String
+
+pub let physics3d_set_sync_insertions : String
+
+pub let physics3d_set_sync_world_to_rapier : String
+
+pub let physics3d_set_writeback : String
+
 pub fn[W : Physics3dResourcesWorld] physics3d_step_system(W) -> Unit
 
 pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(W) -> Unit
@@ -46,6 +58,23 @@ pub fn rapier_vec3_to_mg(@Milky2018/moon_rapier/core.Vec3) -> @math.Vec3
 // Errors
 
 // Types and methods
+pub struct ActiveCollisionTypes3d {
+  types : @collision.ActiveCollisionTypes
+}
+pub fn ActiveCollisionTypes3d::new(@collision.ActiveCollisionTypes) -> Self
+
+pub struct ActiveEvents3d {
+  events : @collision.ActiveEvents
+}
+pub fn ActiveEvents3d::collision_events() -> Self
+pub fn ActiveEvents3d::empty() -> Self
+pub fn ActiveEvents3d::new(@collision.ActiveEvents) -> Self
+
+pub struct ActiveHooks3d {
+  hooks : @collision.ActiveHooks
+}
+pub fn ActiveHooks3d::new(@collision.ActiveHooks) -> Self
+
 pub struct Collider3d {
   shape : ColliderShape3d
   sensor : Bool
@@ -64,6 +93,20 @@ pub enum CollisionEvent3d {
   Started(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
   Stopped(@Milky2018/mgstudio/core.Entity, @Milky2018/mgstudio/core.Entity, Bool)
 }
+
+pub struct ContactForceEvent3d {
+  entity1 : @Milky2018/mgstudio/core.Entity
+  entity2 : @Milky2018/mgstudio/core.Entity
+  total_force : @math.Vec3
+  total_force_magnitude : Float
+  max_force_direction : @math.Vec3
+  max_force_magnitude : Float
+}
+
+pub struct ContactForceEventThreshold3d {
+  threshold : Float
+}
+pub fn ContactForceEventThreshold3d::new(Float) -> Self
 
 pub struct Physics3dConfig {
   gravity : @math.Vec3
@@ -88,6 +131,7 @@ pub fn Physics3dContext::new() -> Self
 
 pub struct Physics3dEvents {
   mut collisions : Array[CollisionEvent3d]
+  mut contact_forces : Array[ContactForceEvent3d]
 }
 pub fn Physics3dEvents::clear(Self) -> Unit
 pub fn Physics3dEvents::new() -> Self
@@ -132,8 +176,24 @@ pub(open) trait HasRes_Physics3dEvents {
   get_physics3d_events_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics3dEvents]
 }
 
+pub(open) trait Has_ActiveCollisionTypes3d {
+  get_active_collision_types3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ActiveCollisionTypes3d]
+}
+
+pub(open) trait Has_ActiveEvents3d {
+  get_active_events3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ActiveEvents3d]
+}
+
+pub(open) trait Has_ActiveHooks3d {
+  get_active_hooks3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ActiveHooks3d]
+}
+
 pub(open) trait Has_Collider3d {
   get_collider3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Collider3d]
+}
+
+pub(open) trait Has_ContactForceEventThreshold3d {
+  get_contact_force_event_threshold3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold3d]
 }
 
 pub(open) trait Has_RapierBodyHandle3d {
@@ -161,10 +221,10 @@ pub(open) trait Physics3dPluginWorld : Physics3dResourcesWorld + Physics3dCleanu
 pub(open) trait Physics3dResourcesWorld : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents {
 }
 
-pub(open) trait Physics3dSyncInsertionsWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+pub(open) trait Physics3dSyncInsertionsWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_ActiveCollisionTypes3d + Has_ActiveEvents3d + Has_ContactForceEventThreshold3d + Has_ActiveHooks3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
 }
 
-pub(open) trait Physics3dSyncWorldToRapierWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
+pub(open) trait Physics3dSyncWorldToRapierWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_ActiveCollisionTypes3d + Has_ActiveEvents3d + Has_ContactForceEventThreshold3d + Has_ActiveHooks3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
 }
 
 pub(open) trait Physics3dWritebackWorld : @Milky2018/mgstudio/core.ChangeTickWorld + @math.Has_Transform + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
