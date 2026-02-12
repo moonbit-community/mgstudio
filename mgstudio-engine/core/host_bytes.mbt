@@ -16,7 +16,7 @@
 /// Host bytes interop helpers.
 ///
 /// Similar to `with_host_string_id`, but for raw bytes (e.g. RGBA8 uploads).
-/// We avoid passing wasm-gc `Bytes` across the host boundary directly.
+/// We avoid passing wasm `Bytes` across the host boundary directly.
 
 ///|
 fn host_bytes_sink_reset() -> Unit = "mgstudio_host" "bytes_sink_reset"

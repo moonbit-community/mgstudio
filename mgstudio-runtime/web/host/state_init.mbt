@@ -120,6 +120,17 @@ priv struct AssetsState {
 }
 
 ///|
+priv struct GamepadSnapshot {
+  id : Int
+  name : String
+  vendor_id : Int?
+  product_id : Int?
+  button_values : Array[Double]
+  button_pressed : Array[Bool]
+  axis_values : Array[Double]
+}
+
+///|
 priv struct InputState {
   pressed : @js.Any
   just_pressed : @js.Any
@@ -134,6 +145,7 @@ priv struct InputState {
   mut has_cursor : Bool
   mut pointer_bound : Bool
   mut initialized : Bool
+  mut gamepads : Array[GamepadSnapshot]
 }
 
 ///|
@@ -270,6 +282,7 @@ fn new_state(
       has_cursor: false,
       pointer_bound: false,
       initialized: false,
+      gamepads: [],
     },
     gpu: GpuState::{
       device: None,
@@ -526,6 +539,68 @@ fn init_input(state : State) -> Unit {
       set_clear(state.input.just_released)
     }),
   )
+}
+
+///|
+fn poll_gamepads(state : State) -> Unit {
+  let raw_gamepads = poll_gamepads_snapshot_js()
+  let raw_len = array_len(raw_gamepads)
+  let gamepads : Array[GamepadSnapshot] = []
+  for i in 0..<raw_len {
+    let raw = array_get(raw_gamepads, i)
+    if host_is_nullish(raw) {
+      continue
+    }
+
+    let id = to_int(number_or(raw._get("id"), -1))
+    if id < 0 {
+      continue
+    }
+
+    let raw_button_values = raw._get("button_values")
+    let raw_button_values_len = array_len(raw_button_values)
+    let button_values : Array[Double] = []
+    for j in 0..<raw_button_values_len {
+      button_values.push(number_or(array_get(raw_button_values, j), 0.0 / 0.0))
+    }
+
+    let raw_button_pressed = raw._get("button_pressed")
+    let raw_button_pressed_len = array_len(raw_button_pressed)
+    let button_pressed : Array[Bool] = []
+    for j in 0..<raw_button_pressed_len {
+      let pressed : Bool = array_get(raw_button_pressed, j).cast()
+      button_pressed.push(pressed)
+    }
+
+    let raw_axis_values = raw._get("axis_values")
+    let raw_axis_values_len = array_len(raw_axis_values)
+    let axis_values : Array[Double] = []
+    for j in 0..<raw_axis_values_len {
+      axis_values.push(number_or(array_get(raw_axis_values, j), 0.0 / 0.0))
+    }
+
+    let vendor_id = to_int(number_or(raw._get("vendor_id"), -1))
+    let product_id = to_int(number_or(raw._get("product_id"), -1))
+
+    gamepads.push(GamepadSnapshot::{
+      id,
+      name: any_to_string(raw._get("name")),
+      vendor_id: if vendor_id >= 0 {
+        Some(vendor_id)
+      } else {
+        None
+      },
+      product_id: if product_id >= 0 {
+        Some(product_id)
+      } else {
+        None
+      },
+      button_values,
+      button_pressed,
+      axis_values,
+    })
+  }
+  state.input.gamepads = gamepads
 }
 
 ///|

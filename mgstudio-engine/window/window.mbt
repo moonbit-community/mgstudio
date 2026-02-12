@@ -585,5 +585,5 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_build
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
-  @app.App::set_runner(app, window_runner_builder)
+  app.set_runner(window_runner_builder)
 }

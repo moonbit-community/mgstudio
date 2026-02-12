@@ -92,7 +92,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   }
   write_file_bytes(icon_dst, icon_bytes)
 
-  // Update moon.mod.json to depend on mgstudio and prefer wasm-gc.
+  // Update moon.mod.json to depend on mgstudio and prefer wasm.
   let mod_json_path = path_join(project_dir, "moon.mod.json")
   let mod_src_opt = read_file_text(mod_json_path)
   let module_name = match mod_src_opt {
@@ -118,7 +118,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     "  \"license\": \"Apache-2.0\",\n" +
     "  \"keywords\": [],\n" +
     "  \"description\": \"\",\n" +
-    "  \"preferred-target\": \"wasm-gc\"\n" +
+    "  \"preferred-target\": \"wasm\"\n" +
     "}\n"
   write_file_text(mod_json_path, mod_json)
   if !use_local_engine {
@@ -140,7 +140,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     "    \"Milky2018/mgstudio/time\"\n" +
     "  ],\n" +
     "  \"link\": {\n" +
-    "    \"wasm-gc\": {\n" +
+    "    \"wasm\": {\n" +
     "      \"exports\": [\n" +
     "        \"game_app\"\n" +
     "      ]\n" +
@@ -159,7 +159,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
   }
 
   // Game config: minimal; assets/data default to ./assets and ./tmp/data.
-  let cart = "./_build/wasm-gc/release/build/" + project_name + ".wasm"
+  let cart = "./_build/wasm/release/build/" + project_name + ".wasm"
   // sdkroot is required. Default to a conventional user install location.
   //
   // We intentionally construct a structured Json object (instead of
@@ -188,7 +188,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     "A minimal MoonBit + mgstudio game.\n\n" +
     "## Build\n\n" +
     "```bash\n" +
-    "moon build --release --target wasm-gc\n" +
+    "moon build --release --target wasm\n" +
     "```\n\n" +
     "## Run (Native)\n\n" +
     "```bash\n" +

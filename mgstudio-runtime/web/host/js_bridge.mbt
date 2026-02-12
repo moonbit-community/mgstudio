@@ -45,7 +45,7 @@ extern "js" fn string_sink_take_js() -> String =
 ///
 /// We mirror the existing `string_sink_*` protocol but for raw bytes. This is
 /// used for uploading RGBA8 data (e.g. glyph atlas updates) without passing
-/// wasm-gc `Bytes` across the boundary.
+/// wasm `Bytes` across the boundary.
 extern "js" fn bytes_sink_push_js(byte : Int) -> Unit =
   #| (byte) => {
   #|   const b = Number(byte) & 0xff
@@ -95,7 +95,7 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|     } catch {
   #|     }
   #|   }
-  #|   // Decode MoonBit wasm-gc `String` (typically an array of UTF-16 i16 code units).
+  #|   // Decode MoonBit wasm `String` (typically an array of UTF-16 i16 code units).
   #|   // NOTE: some engines expose `length` as BigInt or via a getter; avoid strict typeof checks.
   #|   try {
   #|     let current = value
@@ -103,7 +103,7 @@ extern "js" fn any_to_string(value : @js.Any) -> String =
   #|       if (typeof current !== "object" || current == null) {
   #|         break
   #|       }
-  #|       // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
+  #|       // Unwrap common wrapper shapes (defensive, for wasm reference objects).
   #|       try {
   #|         if ("value" in current && current.value !== current) {
   #|           current = current.value
@@ -334,7 +334,7 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|     if (typeof current === "string") {
   #|       return current
   #|     }
-  #|     // Unwrap common wrapper shapes (defensive, for wasm-gc reference objects).
+  #|     // Unwrap common wrapper shapes (defensive, for wasm reference objects).
   #|     if (typeof current === "object" && current != null) {
   #|       try {
   #|         if ("value" in current && current.value !== current) {
@@ -356,7 +356,7 @@ extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #|       } catch {
   #|       }
   #|     }
-  #|     // MoonBit wasm-gc String is typically `array (mut i16)`.
+  #|     // MoonBit wasm String is typically `array (mut i16)`.
   #|     // Different engines may expose the `get` method on the instance or prototype.
   #|     if (typeof current === "object" && current != null) {
   #|       let getFn = null
@@ -479,6 +479,55 @@ extern "js" fn split_trimmed_lines(text : String) -> Array[String] =
   #|   .filter((line) => line.length > 0 && !line.startsWith("#"))
 
 ///|
+extern "js" fn poll_gamepads_snapshot_js() -> @js.Any =
+  #| () => {
+  #|   const nav = typeof navigator === "object" && navigator ? navigator : null
+  #|   if (!nav || typeof nav.getGamepads !== "function") {
+  #|     return []
+  #|   }
+  #|   let pads = []
+  #|   try {
+  #|     pads = nav.getGamepads() || []
+  #|   } catch {
+  #|     pads = []
+  #|   }
+  #|   const out = []
+  #|   for (let i = 0; i < pads.length; i += 1) {
+  #|     const gp = pads[i]
+  #|     if (!gp || gp.connected === false) {
+  #|       continue
+  #|     }
+  #|     const idText = String(gp.id || "")
+  #|     const idMatch = /^([0-9a-fA-F]{4})-([0-9a-fA-F]{4})/.exec(idText)
+  #|     const vendorId = idMatch ? parseInt(idMatch[1], 16) : -1
+  #|     const productId = idMatch ? parseInt(idMatch[2], 16) : -1
+  #|     const buttonValues = []
+  #|     const buttonPressed = []
+  #|     const buttons = gp.buttons || []
+  #|     for (let b = 0; b < buttons.length; b += 1) {
+  #|       const bt = buttons[b]
+  #|       buttonValues.push(Number(bt && bt.value != null ? bt.value : NaN))
+  #|       buttonPressed.push(!!(bt && bt.pressed))
+  #|     }
+  #|     const axisValues = []
+  #|     const axes = gp.axes || []
+  #|     for (let a = 0; a < axes.length; a += 1) {
+  #|       axisValues.push(Number(axes[a]))
+  #|     }
+  #|     out.push({
+  #|       id: Number(gp.index) | 0,
+  #|       name: idText,
+  #|       vendor_id: Number.isFinite(vendorId) ? (vendorId | 0) : -1,
+  #|       product_id: Number.isFinite(productId) ? (productId | 0) : -1,
+  #|       button_values: buttonValues,
+  #|       button_pressed: buttonPressed,
+  #|       axis_values: axisValues,
+  #|     })
+  #|   }
+  #|   return out
+  #| }
+
+///|
 extern "js" fn new_map() -> @js.Any =
   #| () => new Map()
 
@@ -489,6 +538,25 @@ extern "js" fn new_set() -> @js.Any =
 ///|
 extern "js" fn new_array() -> @js.Any =
   #| () => []
+
+///|
+extern "js" fn array_len(arr : @js.Any) -> Int =
+  #| (arr) => {
+  #|   if (!arr || typeof arr.length !== "number") {
+  #|     return 0
+  #|   }
+  #|   return Number(arr.length) | 0
+  #| }
+
+///|
+extern "js" fn array_get(arr : @js.Any, index : Int) -> @js.Any =
+  #| (arr, index) => {
+  #|   const i = Number(index) | 0
+  #|   if (!arr || i < 0 || i >= arr.length) {
+  #|     return null
+  #|   }
+  #|   return arr[i]
+  #| }
 
 ///|
 extern "js" fn map_set(map : @js.Any, key : @js.Any, value : @js.Any) -> Unit =

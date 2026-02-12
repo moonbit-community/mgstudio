@@ -1,4 +1,5 @@
 import {
+  "Milky2018/gamepad" @gamepad,
   "Milky2018/wgpu_mbt" @wgpu,
   "Milky2018/wgpu_mbt/c" @wgpu_c,
   "Milky2018/mgstudio-runtime-native/window" @win,

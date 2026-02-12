@@ -8,6 +8,10 @@ import {
 }
 
 // Values
+pub fn gamepad_events() -> Array[GamepadEvent]
+
+pub fn gamepads() -> Array[Gamepad]
+
 pub fn host_input_finish_frame() -> Unit
 
 pub fn host_input_has_cursor() -> Bool
@@ -22,7 +26,11 @@ pub fn host_input_wheel_y() -> Float
 
 pub fn[W] input_finish_system(W) -> Unit
 
+pub fn input_gamepad_finish_frame() -> Unit
+
 pub fn[W] input_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn[W] input_poll_gamepad_system(W) -> Unit
 
 pub fn key_just_pressed(@window.KeyCode) -> Bool
 
@@ -45,6 +53,97 @@ pub fn mouse_wheel_delta_opt() -> @math.Vec2?
 // Errors
 
 // Types and methods
+pub struct Gamepad {
+  id : Int
+}
+pub fn Gamepad::connected(Self) -> Bool
+pub fn Gamepad::dpad(Self) -> @math.Vec2
+pub fn Gamepad::get(Self, GamepadInput) -> Float?
+pub fn Gamepad::id(Self) -> Int
+pub fn Gamepad::just_pressed(Self, GamepadButton) -> Bool
+pub fn Gamepad::just_released(Self, GamepadButton) -> Bool
+pub fn Gamepad::left_stick(Self) -> @math.Vec2
+pub fn Gamepad::name(Self) -> String
+pub fn Gamepad::pressed(Self, GamepadButton) -> Bool
+pub fn Gamepad::product_id(Self) -> Int?
+pub fn Gamepad::right_stick(Self) -> @math.Vec2
+pub fn Gamepad::vendor_id(Self) -> Int?
+
+pub(all) enum GamepadAxis {
+  LeftStickX
+  LeftStickY
+  LeftZ
+  RightStickX
+  RightStickY
+  RightZ
+  DPadX
+  DPadY
+  Unknown
+}
+pub fn GamepadAxis::to_index(Self) -> Int
+
+pub struct GamepadAxisChangedEvent {
+  gamepad_id : Int
+  axis : GamepadAxis
+  value : Float
+}
+
+pub(all) enum GamepadButton {
+  South
+  East
+  C
+  North
+  West
+  Z
+  LeftTrigger
+  RightTrigger
+  LeftTrigger2
+  RightTrigger2
+  Select
+  Start
+  Mode
+  LeftThumb
+  RightThumb
+  DPadUp
+  DPadDown
+  DPadLeft
+  DPadRight
+  Unknown
+}
+pub fn GamepadButton::to_index(Self) -> Int
+
+pub struct GamepadButtonChangedEvent {
+  gamepad_id : Int
+  button : GamepadButton
+  value : Float
+}
+
+pub(all) enum GamepadConnection {
+  Connected(GamepadConnectionInfo)
+  Disconnected
+}
+
+pub struct GamepadConnectionEvent {
+  gamepad_id : Int
+  connection : GamepadConnection
+}
+
+pub struct GamepadConnectionInfo {
+  name : String
+  vendor_id : Int?
+  product_id : Int?
+}
+
+pub(all) enum GamepadEvent {
+  Connection(GamepadConnectionEvent)
+  Button(GamepadButtonChangedEvent)
+  Axis(GamepadAxisChangedEvent)
+}
+
+pub(all) enum GamepadInput {
+  Button(GamepadButton)
+  Axis(GamepadAxis)
+}
 
 // Type aliases
 

@@ -167,10 +167,13 @@ pub fn mouse_wheel_delta_opt() -> @math.Vec2? {
 
 ///|
 pub fn[W] input_finish_system(_world : W) -> Unit {
+  input_gamepad_finish_frame()
   host_input_finish_frame()
 }
 
 ///|
 pub fn[W] input_plugin(app : @app.App[W]) -> @app.App[W] {
-  app.add_post_update_system(input_finish_system)
+  app
+  .add_pre_update_system(input_poll_gamepad_system)
+  .add_post_update_system(input_finish_system)
 }

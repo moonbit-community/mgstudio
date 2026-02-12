@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use anyhow::Context;
+use gilrs::{Axis as GilrsAxis, Button as GilrsButton, Gilrs};
 use wasmtime::{AnyRef, Caller, ExternRef, Func, FuncType, Linker, Store, Val, ValType};
 
 use winit::event::MouseButton;
@@ -11,6 +12,93 @@ use crate::gpu_backend::GpuBackend;
 use crate::native_window::NativeWindow;
 
 use crate::source_spec::{join_dir_best_effort, DirSourceSpec};
+
+const GAMEPAD_BUTTON_COUNT: usize = 20;
+const GAMEPAD_AXIS_COUNT: usize = 9;
+
+struct GamepadSnapshot {
+    id: i32,
+    name: String,
+    vendor_id: Option<i32>,
+    product_id: Option<i32>,
+    button_values: [f32; GAMEPAD_BUTTON_COUNT],
+    button_pressed: [bool; GAMEPAD_BUTTON_COUNT],
+    axis_values: [f32; GAMEPAD_AXIS_COUNT],
+}
+
+impl GamepadSnapshot {
+    fn new(id: i32) -> Self {
+        Self {
+            id,
+            name: String::new(),
+            vendor_id: None,
+            product_id: None,
+            button_values: [f32::NAN; GAMEPAD_BUTTON_COUNT],
+            button_pressed: [false; GAMEPAD_BUTTON_COUNT],
+            axis_values: [f32::NAN; GAMEPAD_AXIS_COUNT],
+        }
+    }
+}
+
+struct GamepadHostState {
+    gilrs: Option<Gilrs>,
+    snapshots: Vec<GamepadSnapshot>,
+}
+
+impl GamepadHostState {
+    fn new() -> Self {
+        Self {
+            gilrs: Gilrs::new().ok(),
+            snapshots: Vec::new(),
+        }
+    }
+
+    fn poll(&mut self) {
+        self.snapshots.clear();
+        let Some(gilrs) = self.gilrs.as_mut() else {
+            return;
+        };
+
+        while gilrs.next_event().is_some() {}
+
+        for (id, gamepad) in gilrs.gamepads() {
+            if !gamepad.is_connected() {
+                continue;
+            }
+            let mut snapshot = GamepadSnapshot::new(usize::from(id) as i32);
+            snapshot.name = gamepad.name().to_string();
+            snapshot.vendor_id = gamepad.vendor_id().map(i32::from);
+            snapshot.product_id = gamepad.product_id().map(i32::from);
+
+            for button_index in 0..GAMEPAD_BUTTON_COUNT {
+                if let Some(button) = gamepad_button_from_index(button_index as i32) {
+                    if gamepad.button_code(button).is_some() {
+                        snapshot.button_values[button_index] = gamepad
+                            .button_data(button)
+                            .map(|data| data.value())
+                            .unwrap_or(f32::NAN);
+                        snapshot.button_pressed[button_index] = gamepad.is_pressed(button);
+                    }
+                }
+            }
+            for axis_index in 0..GAMEPAD_AXIS_COUNT {
+                if let Some(axis) = gamepad_axis_from_index(axis_index as i32) {
+                    if gamepad.axis_code(axis).is_some() {
+                        snapshot.axis_values[axis_index] = gamepad.value(axis);
+                    }
+                }
+            }
+
+            self.snapshots.push(snapshot);
+        }
+    }
+
+    fn find(&self, gamepad_id: i32) -> Option<&GamepadSnapshot> {
+        self.snapshots
+            .iter()
+            .find(|snapshot| snapshot.id == gamepad_id)
+    }
+}
 
 pub struct HostState {
     pub trace_host: bool,
@@ -57,6 +145,8 @@ pub struct HostState {
 
     window: Option<NativeWindow>,
 
+    gamepads: GamepadHostState,
+
     gpu: Option<GpuBackend>,
 }
 
@@ -102,6 +192,7 @@ impl HostState {
             next_closure_id: 1,
             closures: HashMap::new(),
             window: None,
+            gamepads: GamepadHostState::new(),
             gpu: None,
         }
     }
@@ -307,6 +398,45 @@ fn parse_mouse_button(btn: &str) -> Option<MouseButton> {
         "Left" => Some(MouseButton::Left),
         "Right" => Some(MouseButton::Right),
         "Middle" => Some(MouseButton::Middle),
+        _ => None,
+    }
+}
+
+fn gamepad_button_from_index(index: i32) -> Option<GilrsButton> {
+    match index {
+        0 => Some(GilrsButton::South),
+        1 => Some(GilrsButton::East),
+        2 => Some(GilrsButton::C),
+        3 => Some(GilrsButton::North),
+        4 => Some(GilrsButton::West),
+        5 => Some(GilrsButton::Z),
+        6 => Some(GilrsButton::LeftTrigger),
+        7 => Some(GilrsButton::RightTrigger),
+        8 => Some(GilrsButton::LeftTrigger2),
+        9 => Some(GilrsButton::RightTrigger2),
+        10 => Some(GilrsButton::Select),
+        11 => Some(GilrsButton::Start),
+        12 => Some(GilrsButton::Mode),
+        13 => Some(GilrsButton::LeftThumb),
+        14 => Some(GilrsButton::RightThumb),
+        15 => Some(GilrsButton::DPadUp),
+        16 => Some(GilrsButton::DPadDown),
+        17 => Some(GilrsButton::DPadLeft),
+        18 => Some(GilrsButton::DPadRight),
+        _ => None,
+    }
+}
+
+fn gamepad_axis_from_index(index: i32) -> Option<GilrsAxis> {
+    match index {
+        0 => Some(GilrsAxis::LeftStickX),
+        1 => Some(GilrsAxis::LeftStickY),
+        2 => Some(GilrsAxis::LeftZ),
+        3 => Some(GilrsAxis::RightStickX),
+        4 => Some(GilrsAxis::RightStickY),
+        5 => Some(GilrsAxis::RightZ),
+        6 => Some(GilrsAxis::DPadX),
+        7 => Some(GilrsAxis::DPadY),
         _ => None,
     }
 }
@@ -684,7 +814,9 @@ fn define_mgstudio_host_imports(
         &[ValType::I32, ValType::I32],
         &[ValType::I32],
         |caller, _args, out| {
-            caller.data().host_trace("host: a11y_action_value_code_unit");
+            caller
+                .data()
+                .host_trace("host: a11y_action_value_code_unit");
             ok_i32(out, 0);
             Ok(())
         },
@@ -891,6 +1023,237 @@ fn define_mgstudio_host_imports(
     )?;
 
     // Input.
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_poll",
+        &[],
+        &[ValType::I32],
+        |mut caller, _args, out| {
+            caller.data_mut().gamepads.poll();
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_count",
+        &[],
+        &[ValType::I32],
+        |caller, _args, out| {
+            ok_i32(out, caller.data().gamepads.snapshots.len() as i32);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_id",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let id = if index >= 0 {
+                caller
+                    .data()
+                    .gamepads
+                    .snapshots
+                    .get(index as usize)
+                    .map(|snapshot| snapshot.id)
+                    .unwrap_or(-1)
+            } else {
+                -1
+            };
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_connected",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let connected = caller.data().gamepads.find(gamepad_id).is_some();
+            ok_i32(out, if connected { 1 } else { 0 });
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_name_len",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let len = caller
+                .data()
+                .gamepads
+                .find(gamepad_id)
+                .map(|snapshot| snapshot.name.encode_utf16().count() as i32)
+                .unwrap_or(0);
+            ok_i32(out, len);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_name_code_unit",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let offset = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let code_unit = if offset >= 0 {
+                caller
+                    .data()
+                    .gamepads
+                    .find(gamepad_id)
+                    .and_then(|snapshot| snapshot.name.encode_utf16().nth(offset as usize))
+                    .map(|v| v as i32)
+                    .unwrap_or(0)
+            } else {
+                0
+            };
+            ok_i32(out, code_unit);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_vendor_id",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let vendor_id = caller
+                .data()
+                .gamepads
+                .find(gamepad_id)
+                .and_then(|snapshot| snapshot.vendor_id)
+                .unwrap_or(-1);
+            ok_i32(out, vendor_id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_product_id",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let product_id = caller
+                .data()
+                .gamepads
+                .find(gamepad_id)
+                .and_then(|snapshot| snapshot.product_id)
+                .unwrap_or(-1);
+            ok_i32(out, product_id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_button_value",
+        &[ValType::I32, ValType::I32],
+        &[ValType::F32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let button_index = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let value = if button_index >= 0 {
+                caller
+                    .data()
+                    .gamepads
+                    .find(gamepad_id)
+                    .and_then(|snapshot| snapshot.button_values.get(button_index as usize))
+                    .copied()
+                    .unwrap_or(f32::NAN)
+            } else {
+                f32::NAN
+            };
+            ok_f32(out, value);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_button_pressed",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let button_index = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let pressed = if button_index >= 0 {
+                caller
+                    .data()
+                    .gamepads
+                    .find(gamepad_id)
+                    .and_then(|snapshot| snapshot.button_pressed.get(button_index as usize))
+                    .copied()
+                    .unwrap_or(false)
+            } else {
+                false
+            };
+            ok_i32(out, if pressed { 1 } else { 0 });
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_gamepad_axis_value",
+        &[ValType::I32, ValType::I32],
+        &[ValType::F32],
+        |caller, args, out| {
+            let gamepad_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let axis_index = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let value = if axis_index >= 0 {
+                caller
+                    .data()
+                    .gamepads
+                    .find(gamepad_id)
+                    .and_then(|snapshot| snapshot.axis_values.get(axis_index as usize))
+                    .copied()
+                    .unwrap_or(f32::NAN)
+            } else {
+                f32::NAN
+            };
+            ok_f32(out, value);
+            Ok(())
+        },
+    )?;
+
     define_func(
         store,
         linker,
@@ -1553,8 +1916,10 @@ fn define_mgstudio_host_imports(
             let folder_id = caller.data().next_folder_id;
             caller.data_mut().next_folder_id += 1;
             let manifest_rel = format!("{}/folder.txt", base_rel.trim_end_matches('/'));
-            let manifest_full =
-                join_dir_best_effort(&caller.data().assets.base, strip_leading_slashes(&manifest_rel));
+            let manifest_full = join_dir_best_effort(
+                &caller.data().assets.base,
+                strip_leading_slashes(&manifest_rel),
+            );
             let manifest = std::fs::read_to_string(&manifest_full).unwrap_or_default();
             let mut handles: Vec<i32> = Vec::new();
             for entry in split_trimmed_lines(&manifest) {
@@ -2173,8 +2538,7 @@ fn define_mgstudio_host_imports(
             let mesh_id = caller.data_mut().ensure_unit_rect_mesh()?;
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh(
-                    mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_min,
-                    uv_scale,
+                    mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_min, uv_scale,
                 )?;
             }
             ok_i32(out, 0);
@@ -2241,8 +2605,7 @@ fn define_mgstudio_host_imports(
             let mesh_id = caller.data_mut().ensure_unit_rect_mesh()?;
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh(
-                    mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_min,
-                    uv_scale,
+                    mesh_id, x, y, rotation, scale_x, scale_y, color, texture_id, uv_min, uv_scale,
                 )?;
             }
             ok_i32(out, 0);

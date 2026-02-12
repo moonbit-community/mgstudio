@@ -112,6 +112,188 @@ pub fn create_host(
     request_animation_frame(@js.from_fn0(fn() { tick() }))
   })
   let time_now = @js.from_fn0(fn() { performance_now() })
+  fn find_gamepad(gamepad_id : Int) -> GamepadSnapshot? {
+    for gamepad in state.input.gamepads {
+      if gamepad.id == gamepad_id {
+        return Some(gamepad)
+      }
+    }
+    None
+  }
+  fn value_or_nan(values : Array[Double], index : Int) -> Double {
+    if index >= 0 && index < values.length() {
+      values[index]
+    } else {
+      0.0 / 0.0
+    }
+  }
+  fn value_or_zero(value : Double) -> Double {
+    if value != value {
+      0.0
+    } else {
+      value
+    }
+  }
+  fn pressed_or_false(values : Array[Bool], index : Int) -> Bool {
+    if index >= 0 && index < values.length() {
+      values[index]
+    } else {
+      false
+    }
+  }
+  fn gamepad_button_value(gamepad : GamepadSnapshot, button : Int) -> Double {
+    match button {
+      0 => value_or_nan(gamepad.button_values, 0)
+      1 => value_or_nan(gamepad.button_values, 1)
+      3 => value_or_nan(gamepad.button_values, 3)
+      4 => value_or_nan(gamepad.button_values, 2)
+      6 => value_or_nan(gamepad.button_values, 4)
+      7 => value_or_nan(gamepad.button_values, 5)
+      8 => value_or_nan(gamepad.button_values, 6)
+      9 => value_or_nan(gamepad.button_values, 7)
+      10 => value_or_nan(gamepad.button_values, 8)
+      11 => value_or_nan(gamepad.button_values, 9)
+      12 => value_or_nan(gamepad.button_values, 16)
+      13 => value_or_nan(gamepad.button_values, 10)
+      14 => value_or_nan(gamepad.button_values, 11)
+      15 => value_or_nan(gamepad.button_values, 12)
+      16 => value_or_nan(gamepad.button_values, 13)
+      17 => value_or_nan(gamepad.button_values, 14)
+      18 => value_or_nan(gamepad.button_values, 15)
+      _ => 0.0 / 0.0
+    }
+  }
+  fn gamepad_button_pressed(gamepad : GamepadSnapshot, button : Int) -> Bool {
+    match button {
+      0 => pressed_or_false(gamepad.button_pressed, 0)
+      1 => pressed_or_false(gamepad.button_pressed, 1)
+      3 => pressed_or_false(gamepad.button_pressed, 3)
+      4 => pressed_or_false(gamepad.button_pressed, 2)
+      6 => pressed_or_false(gamepad.button_pressed, 4)
+      7 => pressed_or_false(gamepad.button_pressed, 5)
+      8 => pressed_or_false(gamepad.button_pressed, 6)
+      9 => pressed_or_false(gamepad.button_pressed, 7)
+      10 => pressed_or_false(gamepad.button_pressed, 8)
+      11 => pressed_or_false(gamepad.button_pressed, 9)
+      12 => pressed_or_false(gamepad.button_pressed, 16)
+      13 => pressed_or_false(gamepad.button_pressed, 10)
+      14 => pressed_or_false(gamepad.button_pressed, 11)
+      15 => pressed_or_false(gamepad.button_pressed, 12)
+      16 => pressed_or_false(gamepad.button_pressed, 13)
+      17 => pressed_or_false(gamepad.button_pressed, 14)
+      18 => pressed_or_false(gamepad.button_pressed, 15)
+      _ => false
+    }
+  }
+  fn gamepad_axis_value(gamepad : GamepadSnapshot, axis : Int) -> Double {
+    match axis {
+      0 => value_or_nan(gamepad.axis_values, 0)
+      1 => value_or_nan(gamepad.axis_values, 1)
+      2 => gamepad_button_value(gamepad, 8)
+      3 => value_or_nan(gamepad.axis_values, 2)
+      4 => value_or_nan(gamepad.axis_values, 3)
+      5 => gamepad_button_value(gamepad, 9)
+      6 => {
+        let right = value_or_zero(gamepad_button_value(gamepad, 18))
+        let left = value_or_zero(gamepad_button_value(gamepad, 17))
+        right - left
+      }
+      7 => {
+        let up = value_or_zero(gamepad_button_value(gamepad, 15))
+        let down = value_or_zero(gamepad_button_value(gamepad, 16))
+        up - down
+      }
+      _ => 0.0 / 0.0
+    }
+  }
+  let input_gamepad_poll = @js.from_fn0(fn() { poll_gamepads(state) })
+  let input_gamepad_count = @js.from_fn0(fn() { state.input.gamepads.length() })
+  let input_gamepad_id = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.gamepads.length() {
+      state.input.gamepads[index].id
+    } else {
+      -1
+    }
+  })
+  let input_gamepad_connected = @js.from_fn1(fn(gamepad_id_any : @js.Any) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    find_gamepad(gamepad_id) is Some(_)
+  })
+  let input_gamepad_name_len = @js.from_fn1(fn(gamepad_id_any : @js.Any) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    if find_gamepad(gamepad_id) is Some(gamepad) {
+      gamepad.name.length()
+    } else {
+      0
+    }
+  })
+  let input_gamepad_name_code_unit = @js.from_fn2(fn(
+    gamepad_id_any : @js.Any,
+    offset_any : @js.Any,
+  ) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    let offset = to_int(number_or(offset_any, -1))
+    if find_gamepad(gamepad_id) is Some(gamepad) &&
+      offset >= 0 &&
+      offset < gamepad.name.length() {
+      gamepad.name.code_unit_at(offset).to_int()
+    } else {
+      0
+    }
+  })
+  let input_gamepad_vendor_id = @js.from_fn1(fn(gamepad_id_any : @js.Any) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    if find_gamepad(gamepad_id) is Some(gamepad) {
+      gamepad.vendor_id.unwrap_or(-1)
+    } else {
+      -1
+    }
+  })
+  let input_gamepad_product_id = @js.from_fn1(fn(gamepad_id_any : @js.Any) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    if find_gamepad(gamepad_id) is Some(gamepad) {
+      gamepad.product_id.unwrap_or(-1)
+    } else {
+      -1
+    }
+  })
+  let input_gamepad_button_value = @js.from_fn2(fn(
+    gamepad_id_any : @js.Any,
+    button_any : @js.Any,
+  ) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    let button = to_int(number_or(button_any, -1))
+    if find_gamepad(gamepad_id) is Some(gamepad) {
+      gamepad_button_value(gamepad, button)
+    } else {
+      0.0 / 0.0
+    }
+  })
+  let input_gamepad_button_pressed = @js.from_fn2(fn(
+    gamepad_id_any : @js.Any,
+    button_any : @js.Any,
+  ) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    let button = to_int(number_or(button_any, -1))
+    if find_gamepad(gamepad_id) is Some(gamepad) {
+      gamepad_button_pressed(gamepad, button)
+    } else {
+      false
+    }
+  })
+  let input_gamepad_axis_value = @js.from_fn2(fn(
+    gamepad_id_any : @js.Any,
+    axis_any : @js.Any,
+  ) {
+    let gamepad_id = to_int(number_or(gamepad_id_any, -1))
+    let axis = to_int(number_or(axis_any, -1))
+    if find_gamepad(gamepad_id) is Some(gamepad) {
+      gamepad_axis_value(gamepad, axis)
+    } else {
+      0.0 / 0.0
+    }
+  })
   let input_is_key_down = @js.from_fn1(fn(code) {
     let text = string_from_id_required(state, code, "input_is_key_down")
     set_has(state.input.pressed, @js.any(text))
@@ -443,7 +625,7 @@ pub fn create_host(
     }
     let nearest_value = number_or(nearest, 0) != 0
     @js.run_async(async fn() noraise {
-      // Always pass the coerced JS string to avoid relying on wasm-gc string interop here.
+      // Always pass the coerced JS string to avoid relying on wasm string interop here.
       let result = load_texture_from_path(
         state,
         id,
@@ -1780,6 +1962,17 @@ pub fn create_host(
     ("window_request_close", window_request_close),
     ("window_run_loop", window_run_loop),
     ("time_now", time_now),
+    ("input_gamepad_poll", input_gamepad_poll),
+    ("input_gamepad_count", input_gamepad_count),
+    ("input_gamepad_id", input_gamepad_id),
+    ("input_gamepad_connected", input_gamepad_connected),
+    ("input_gamepad_name_len", input_gamepad_name_len),
+    ("input_gamepad_name_code_unit", input_gamepad_name_code_unit),
+    ("input_gamepad_vendor_id", input_gamepad_vendor_id),
+    ("input_gamepad_product_id", input_gamepad_product_id),
+    ("input_gamepad_button_value", input_gamepad_button_value),
+    ("input_gamepad_button_pressed", input_gamepad_button_pressed),
+    ("input_gamepad_axis_value", input_gamepad_axis_value),
     ("input_is_key_down", input_is_key_down),
     ("input_is_key_just_pressed", input_is_key_just_pressed),
     ("input_is_key_just_released", input_is_key_just_released),

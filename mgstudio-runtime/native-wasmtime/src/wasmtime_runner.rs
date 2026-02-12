@@ -16,11 +16,11 @@ pub struct RunCartOpts {
 
 pub fn run_cart(opts: RunCartOpts) -> anyhow::Result<()> {
     let mut config = Config::new();
-    // MoonBit wasm-gc output currently relies on reference types + function references + GC.
+    // MoonBit wasm output currently relies on reference types + function references + GC.
     config.wasm_reference_types(true);
     config.wasm_function_references(true);
     config.wasm_gc(true);
-    // Cranelift AArch64 can hit assertion panics on some large wasm-gc modules.
+    // Cranelift AArch64 can hit assertion panics on some large wasm modules.
     // Disable parallel compilation so any failure is easier to attribute and
     // to avoid panics originating from background threads.
     config.parallel_compilation(false);
@@ -39,7 +39,7 @@ pub fn run_cart(opts: RunCartOpts) -> anyhow::Result<()> {
             })?,
             Err(_) => {
                 // Known issue: Cranelift AArch64 can panic during veneer/island fixups when
-                // compiling very large functions in some wasm-gc modules. Convert the panic into
+                // compiling very large functions in some wasm modules. Convert the panic into
                 // a normal error so `mgstudio` can report it cleanly.
                 return Err(anyhow!(
                     "wasmtime/cranelift panicked while compiling this wasm module (AArch64 island/veneer fixup bug?)"

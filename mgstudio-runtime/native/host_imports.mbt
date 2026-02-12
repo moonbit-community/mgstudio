@@ -16,7 +16,7 @@
 /// Native host stubs for `mgstudio_host` and `moonbit:ffi`.
 ///
 /// This is a "bring-up" implementation: enough to instantiate and start running
-/// the wasm-gc build. Real window/GPU/input implementations will be added later.
+/// the wasm build. Real window/GPU/input implementations will be added later.
 ///
 /// Important: the wasm imports' signatures must match the game's wasm import
 /// section; otherwise instantiation fails.
@@ -31,6 +31,7 @@ pub struct HostContext {
   mut jit_globals_ptr : Int64
   mut gpu : GpuBackend?
   mut window : @win.Window?
+  gamepad : Ref[@gamepad.Gilrs]
   assets_source : @rtcore.SourceSpec
   data_source : @rtcore.SourceSpec
   string_sink : Ref[Array[Char]]
@@ -86,6 +87,7 @@ pub fn HostContext::new(
     jit_globals_ptr: 0L,
     gpu: None,
     window: None,
+    gamepad: Ref::new(@gamepad.Gilrs::new()),
     assets_source,
     data_source,
     string_sink: Ref::new([]),
@@ -348,6 +350,148 @@ fn mouse_button_from_string(button : String) -> Int? {
     "Middle" => Some(2)
     _ => None
   }
+}
+
+///|
+fn gamepad_button_from_index(index : Int) -> @gamepad.Button? {
+  match index {
+    0 => Some(@gamepad.Button::South)
+    1 => Some(@gamepad.Button::East)
+    2 => Some(@gamepad.Button::C)
+    3 => Some(@gamepad.Button::North)
+    4 => Some(@gamepad.Button::West)
+    5 => Some(@gamepad.Button::Z)
+    6 => Some(@gamepad.Button::LeftTrigger)
+    7 => Some(@gamepad.Button::RightTrigger)
+    8 => Some(@gamepad.Button::LeftTrigger2)
+    9 => Some(@gamepad.Button::RightTrigger2)
+    10 => Some(@gamepad.Button::Select)
+    11 => Some(@gamepad.Button::Start)
+    12 => Some(@gamepad.Button::Mode)
+    13 => Some(@gamepad.Button::LeftThumb)
+    14 => Some(@gamepad.Button::RightThumb)
+    15 => Some(@gamepad.Button::DPadUp)
+    16 => Some(@gamepad.Button::DPadDown)
+    17 => Some(@gamepad.Button::DPadLeft)
+    18 => Some(@gamepad.Button::DPadRight)
+    _ => None
+  }
+}
+
+///|
+fn gamepad_axis_from_index(index : Int) -> @gamepad.Axis? {
+  match index {
+    0 => Some(@gamepad.Axis::LeftStickX)
+    1 => Some(@gamepad.Axis::LeftStickY)
+    2 => Some(@gamepad.Axis::LeftZ)
+    3 => Some(@gamepad.Axis::RightStickX)
+    4 => Some(@gamepad.Axis::RightStickY)
+    5 => Some(@gamepad.Axis::RightZ)
+    6 => Some(@gamepad.Axis::DPadX)
+    7 => Some(@gamepad.Axis::DPadY)
+    _ => None
+  }
+}
+
+///|
+fn gamepad_count(ctx : HostContext) -> Int {
+  let mut count = 0
+  for _pair in ctx.gamepad.val.gamepads() {
+    count = count + 1
+  }
+  count
+}
+
+///|
+fn gamepad_id_at(ctx : HostContext, index : Int) -> Int? {
+  if index < 0 {
+    return None
+  }
+  let mut i = 0
+  for pair in ctx.gamepad.val.gamepads() {
+    let (id, _) = pair
+    if i == index {
+      return Some(id.value())
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
+fn gamepad_by_id(ctx : HostContext, gamepad_id : Int) -> @gamepad.Gamepad? {
+  ctx.gamepad.val.gamepad(@gamepad.GamepadId::new(gamepad_id))
+}
+
+///|
+fn gamepad_name(ctx : HostContext, gamepad_id : Int) -> String {
+  if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) {
+    gamepad.name()
+  } else {
+    ""
+  }
+}
+
+///|
+fn gamepad_vendor_id(ctx : HostContext, gamepad_id : Int) -> Int {
+  if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
+    gamepad.vendor_id() is Some(vendor_id) {
+    vendor_id
+  } else {
+    -1
+  }
+}
+
+///|
+fn gamepad_product_id(ctx : HostContext, gamepad_id : Int) -> Int {
+  if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
+    gamepad.product_id() is Some(product_id) {
+    product_id
+  } else {
+    -1
+  }
+}
+
+///|
+fn gamepad_button_value(
+  ctx : HostContext,
+  gamepad_id : Int,
+  button_index : Int,
+) -> Float {
+  if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
+    gamepad_button_from_index(button_index) is Some(button) &&
+    gamepad.button_code(button) is Some(code) {
+    return Float::from_double(gamepad.value(code))
+  }
+  Float::from_double(0.0 / 0.0)
+}
+
+///|
+fn gamepad_button_pressed(
+  ctx : HostContext,
+  gamepad_id : Int,
+  button_index : Int,
+) -> Bool {
+  if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
+    gamepad_button_from_index(button_index) is Some(button) &&
+    gamepad.button_code(button) is Some(code) {
+    return gamepad.is_pressed(code)
+  }
+  false
+}
+
+///|
+fn gamepad_axis_value(
+  ctx : HostContext,
+  gamepad_id : Int,
+  axis_index : Int,
+) -> Float {
+  if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
+    gamepad_axis_from_index(axis_index) is Some(axis) &&
+    gamepad.axis_code(axis) is Some(code) {
+    return Float::from_double(gamepad.value(code))
+  }
+  Float::from_double(0.0 / 0.0)
 }
 
 ///|
@@ -1229,6 +1373,159 @@ pub fn add_mgstudio_host_imports(
   )
 
   // Input.
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_poll",
+    fn(_args) {
+      ctx.gamepad.val.poll()
+      while true {
+        if ctx.gamepad.val.next_event() is Some(_) {
+          continue
+        }
+        break
+      }
+      ctx.gamepad.val.inc()
+      ok_i32(0)
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_count",
+    fn(_args) { ok_i32(gamepad_count(ctx)) },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_id",
+    fn(args) {
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(index) &&
+        gamepad_id_at(ctx, index) is Some(gamepad_id) {
+        ok_i32(gamepad_id)
+      } else {
+        ok_i32(-1)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_connected",
+    fn(args) {
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(gamepad_id) &&
+        ctx.gamepad.val.is_connected(@gamepad.GamepadId::new(gamepad_id)) {
+        ok_i32(1)
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_name_len",
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(gamepad_id) {
+        ok_i32(gamepad_name(ctx, gamepad_id).length())
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_name_code_unit",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(gamepad_id) &&
+        args[1] is @types.Value::I32(offset) {
+        let name = gamepad_name(ctx, gamepad_id)
+        if offset >= 0 && offset < name.length() {
+          return ok_i32(name.code_unit_at(offset).to_int())
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_vendor_id",
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(gamepad_id) {
+        ok_i32(gamepad_vendor_id(ctx, gamepad_id))
+      } else {
+        ok_i32(-1)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_product_id",
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(gamepad_id) {
+        ok_i32(gamepad_product_id(ctx, gamepad_id))
+      } else {
+        ok_i32(-1)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_button_value",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(gamepad_id) &&
+        args[1] is @types.Value::I32(button_index) {
+        ok_f32(gamepad_button_value(ctx, gamepad_id, button_index))
+      } else {
+        ok_f32(Float::from_double(0.0 / 0.0))
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::F32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_button_pressed",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(gamepad_id) &&
+        args[1] is @types.Value::I32(button_index) &&
+        gamepad_button_pressed(ctx, gamepad_id, button_index) {
+        ok_i32(1)
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_gamepad_axis_value",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(gamepad_id) &&
+        args[1] is @types.Value::I32(axis_index) {
+        ok_f32(gamepad_axis_value(ctx, gamepad_id, axis_index))
+      } else {
+        ok_f32(Float::from_double(0.0 / 0.0))
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::F32,
+    ]),
+  )
   linker.add_host_func(
     "mgstudio_host",
     "input_finish_frame",
