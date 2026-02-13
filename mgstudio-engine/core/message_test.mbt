@@ -52,3 +52,15 @@ test "messages: clear resets history" {
   let r = messages.reader(SystemTicks::new(0, 10)).read()
   inspect(r.length(), content="0")
 }
+
+///|
+test "messages: reader.read is consuming" {
+  let messages = Messages::new()
+  messages.send(2, "a")
+  let reader = messages.reader(SystemTicks::new(0, 2))
+  let first = reader.read()
+  inspect(first.length(), content="1")
+  inspect(first[0] == "a", content="true")
+  let second = reader.read()
+  inspect(second.length(), content="0")
+}

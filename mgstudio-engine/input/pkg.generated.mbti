@@ -96,6 +96,7 @@ pub struct GamepadAxisChangedEvent {
   axis : GamepadAxis
   value : Float
 }
+pub impl @core.Message for GamepadAxisChangedEvent
 
 pub(all) enum GamepadButton {
   South
@@ -126,12 +127,14 @@ pub struct GamepadButtonChangedEvent {
   button : GamepadButton
   value : Float
 }
+pub impl @core.Message for GamepadButtonChangedEvent
 
 pub struct GamepadButtonStateChangedEvent {
   gamepad_id : Int
   button : GamepadButton
   pressed : Bool
 }
+pub impl @core.Message for GamepadButtonStateChangedEvent
 
 pub(all) enum GamepadConnection {
   Connected(GamepadConnectionInfo)
@@ -142,6 +145,7 @@ pub struct GamepadConnectionEvent {
   gamepad_id : Int
   connection : GamepadConnection
 }
+pub impl @core.Message for GamepadConnectionEvent
 
 pub struct GamepadConnectionInfo {
   name : String
@@ -154,6 +158,7 @@ pub(all) enum GamepadEvent {
   Button(GamepadButtonChangedEvent)
   Axis(GamepadAxisChangedEvent)
 }
+pub impl @core.Message for GamepadEvent
 
 pub(all) enum GamepadInput {
   Button(GamepadButton)

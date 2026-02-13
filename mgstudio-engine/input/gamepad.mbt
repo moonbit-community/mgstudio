@@ -636,43 +636,105 @@ pub fn Gamepad::dpad(self : Gamepad) -> @math.Vec2 {
 }
 
 ///|
-fn[W : @core.SystemContextWorld] system_ticks(world : W) -> @core.SystemTicks {
+fn[W : @core.SystemContextWorld] world_system_ticks(
+  world : W,
+) -> @core.SystemTicks {
   world.get_system_context().ticks()
+}
+
+///|
+fn gamepad_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[GamepadEvent] {
+  gamepad_events_ref.val.reader(ticks)
+}
+
+///|
+fn gamepad_connection_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[GamepadConnectionEvent] {
+  gamepad_connection_events_ref.val.reader(ticks)
+}
+
+///|
+fn gamepad_axis_changed_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[GamepadAxisChangedEvent] {
+  gamepad_axis_changed_events_ref.val.reader(ticks)
+}
+
+///|
+fn gamepad_button_changed_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[GamepadButtonChangedEvent] {
+  gamepad_button_changed_events_ref.val.reader(ticks)
+}
+
+///|
+fn gamepad_button_state_changed_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[GamepadButtonStateChangedEvent] {
+  gamepad_button_state_changed_events_ref.val.reader(ticks)
 }
 
 ///|
 pub fn[W : @core.SystemContextWorld] gamepad_events(
   world : W,
 ) -> @core.MessageReader[GamepadEvent] {
-  gamepad_events_ref.val.reader(system_ticks(world))
+  gamepad_events_reader(world_system_ticks(world))
 }
 
 ///|
 pub fn[W : @core.SystemContextWorld] gamepad_connection_events(
   world : W,
 ) -> @core.MessageReader[GamepadConnectionEvent] {
-  gamepad_connection_events_ref.val.reader(system_ticks(world))
+  gamepad_connection_events_reader(world_system_ticks(world))
 }
 
 ///|
 pub fn[W : @core.SystemContextWorld] gamepad_axis_changed_events(
   world : W,
 ) -> @core.MessageReader[GamepadAxisChangedEvent] {
-  gamepad_axis_changed_events_ref.val.reader(system_ticks(world))
+  gamepad_axis_changed_events_reader(world_system_ticks(world))
 }
 
 ///|
 pub fn[W : @core.SystemContextWorld] gamepad_button_changed_events(
   world : W,
 ) -> @core.MessageReader[GamepadButtonChangedEvent] {
-  gamepad_button_changed_events_ref.val.reader(system_ticks(world))
+  gamepad_button_changed_events_reader(world_system_ticks(world))
 }
 
 ///|
 pub fn[W : @core.SystemContextWorld] gamepad_button_state_changed_events(
   world : W,
 ) -> @core.MessageReader[GamepadButtonStateChangedEvent] {
-  gamepad_button_state_changed_events_ref.val.reader(system_ticks(world))
+  gamepad_button_state_changed_events_reader(world_system_ticks(world))
+}
+
+///|
+pub impl @core.Message for GamepadEvent with reader(ticks) {
+  gamepad_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for GamepadConnectionEvent with reader(ticks) {
+  gamepad_connection_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for GamepadAxisChangedEvent with reader(ticks) {
+  gamepad_axis_changed_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for GamepadButtonChangedEvent with reader(ticks) {
+  gamepad_button_changed_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for GamepadButtonStateChangedEvent with reader(ticks) {
+  gamepad_button_state_changed_events_reader(ticks)
 }
 
 ///|

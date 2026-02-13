@@ -8,6 +8,8 @@ import {
 // Values
 pub fn clear_delta_seconds_provider() -> Unit
 
+pub fn current_system_ticks() -> @core.SystemTicks
+
 pub fn fixed_time_did_run_this_frame() -> Bool
 
 pub fn fixed_time_elapsed_seconds() -> Float
@@ -32,6 +34,12 @@ pub fn[W] system((W) -> Unit) -> SystemConfig[W]
 
 pub fn[W, P : SystemParam] system_param((P) -> Unit) -> (W) -> Unit
 
+pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2((P1, P2) -> Unit) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3((P1, P2, P3) -> Unit) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_param4((P1, P2, P3, P4) -> Unit) -> (W) -> Unit
+
 pub fn system_set(String) -> String
 
 // Errors
@@ -45,19 +53,34 @@ pub struct App[W] {
 pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_fixed_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
 pub fn[W] App::add_post_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_post_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_post_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_post_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_pre_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_pre_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_pre_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pre_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_startup_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_startup_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_startup_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_startup_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] App::new(W) -> Self[W]
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run(Self[W]) -> Unit
@@ -120,4 +143,5 @@ pub type SystemSet = String
 pub(open) trait SystemParam {
   get() -> Self
 }
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 

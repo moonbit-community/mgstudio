@@ -52,6 +52,64 @@ pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
 }
 
 ///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
+  system : (P1, P2) -> Unit,
+) -> SystemFn[W] {
+  fn(_world : W) {
+    let p1 : P1 = SystemParam::get()
+    let p2 : P2 = SystemParam::get()
+    system(p1, p2)
+  }
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
+  system : (P1, P2, P3) -> Unit,
+) -> SystemFn[W] {
+  fn(_world : W) {
+    let p1 : P1 = SystemParam::get()
+    let p2 : P2 = SystemParam::get()
+    let p3 : P3 = SystemParam::get()
+    system(p1, p2, p3)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] system_param4(
+  system : (P1, P2, P3, P4) -> Unit,
+) -> SystemFn[W] {
+  fn(_world : W) {
+    let p1 : P1 = SystemParam::get()
+    let p2 : P2 = SystemParam::get()
+    let p3 : P3 = SystemParam::get()
+    let p4 : P4 = SystemParam::get()
+    system(p1, p2, p3, p4)
+  }
+}
+
+///|
+let current_system_ticks_ref : Ref[@core.SystemTicks?] = Ref::new(None)
+
+///|
+pub fn current_system_ticks() -> @core.SystemTicks {
+  match current_system_ticks_ref.val {
+    Some(ticks) => ticks
+    None => @core.SystemTicks::new(0, 0)
+  }
+}
+
+///|
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get() {
+  @core.Message::reader(current_system_ticks())
+}
+
+///|
 pub struct SystemConfig[W] {
   system : SystemFn[W]
   run_if : RunConditionFn[W]?
@@ -194,6 +252,39 @@ pub fn[W, P : SystemParam] App::add_startup_system_param(
 }
 
 ///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_startup_system_param2(
+  self : App[W],
+  startup_system : (P1, P2) -> Unit,
+) -> App[W] {
+  self.schedule.startup.push(system(system_param2(startup_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_startup_system_param3(
+  self : App[W],
+  startup_system : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.schedule.startup.push(system(system_param3(startup_system)))
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_startup_system_param4(
+  self : App[W],
+  startup_system : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.schedule.startup.push(system(system_param4(startup_system)))
+  self
+}
+
+///|
 pub fn[W] App::add_pre_update_system_config(
   self : App[W],
   config : SystemConfig[W],
@@ -217,6 +308,39 @@ pub fn[W, P : SystemParam] App::add_pre_update_system_param(
   pre_update_system : (P) -> Unit,
 ) -> App[W] {
   self.schedule.pre_update.push(system(system_param(pre_update_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_update_system_param2(
+  self : App[W],
+  pre_update_system : (P1, P2) -> Unit,
+) -> App[W] {
+  self.schedule.pre_update.push(system(system_param2(pre_update_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_update_system_param3(
+  self : App[W],
+  pre_update_system : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.schedule.pre_update.push(system(system_param3(pre_update_system)))
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_pre_update_system_param4(
+  self : App[W],
+  pre_update_system : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.schedule.pre_update.push(system(system_param4(pre_update_system)))
   self
 }
 
@@ -248,6 +372,39 @@ pub fn[W, P : SystemParam] App::add_fixed_update_system_param(
 }
 
 ///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_update_system_param2(
+  self : App[W],
+  fixed_update_system : (P1, P2) -> Unit,
+) -> App[W] {
+  self.schedule.fixed_update.push(system(system_param2(fixed_update_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_update_system_param3(
+  self : App[W],
+  fixed_update_system : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.schedule.fixed_update.push(system(system_param3(fixed_update_system)))
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_fixed_update_system_param4(
+  self : App[W],
+  fixed_update_system : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.schedule.fixed_update.push(system(system_param4(fixed_update_system)))
+  self
+}
+
+///|
 pub fn[W] App::add_system_config(
   self : App[W],
   config : SystemConfig[W],
@@ -268,6 +425,39 @@ pub fn[W, P : SystemParam] App::add_system_param(
   update_system : (P) -> Unit,
 ) -> App[W] {
   self.schedule.update.push(system(system_param(update_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(
+  self : App[W],
+  update_system : (P1, P2) -> Unit,
+) -> App[W] {
+  self.schedule.update.push(system(system_param2(update_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_param3(
+  self : App[W],
+  update_system : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.schedule.update.push(system(system_param3(update_system)))
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_system_param4(
+  self : App[W],
+  update_system : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.schedule.update.push(system(system_param4(update_system)))
   self
 }
 
@@ -295,6 +485,39 @@ pub fn[W, P : SystemParam] App::add_post_update_system_param(
   post_update_system : (P) -> Unit,
 ) -> App[W] {
   self.schedule.post_update.push(system(system_param(post_update_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_update_system_param2(
+  self : App[W],
+  post_update_system : (P1, P2) -> Unit,
+) -> App[W] {
+  self.schedule.post_update.push(system(system_param2(post_update_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_update_system_param3(
+  self : App[W],
+  post_update_system : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.schedule.post_update.push(system(system_param3(post_update_system)))
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_post_update_system_param4(
+  self : App[W],
+  post_update_system : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.schedule.post_update.push(system(system_param4(post_update_system)))
   self
 }
 
@@ -446,6 +669,7 @@ fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_systems(
   systems : Array[SystemConfig[W]],
   set_edges : Array[(SystemSet, SystemSet)],
 ) -> Unit {
+  current_system_ticks_ref.val = None
   let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
   let set_order : Array[SystemSet] = []
   fn push_unique(
@@ -580,7 +804,9 @@ fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_systems(
       let ctx = world.get_system_context()
       ctx.set(sys_ticks)
       world.set_system_context(ctx)
+      current_system_ticks_ref.val = Some(sys_ticks)
       (cfg.system)(world)
+      current_system_ticks_ref.val = None
       systems[system_i].last_run_tick = this_run
     }
   }

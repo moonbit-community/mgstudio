@@ -27,6 +27,12 @@ pub struct MessageReader[T] {
   current_tick : Tick?
   current_messages : Array[T]
   system : SystemTicks
+  mut has_read : Bool
+}
+
+///|
+pub(open) trait Message {
+  reader(SystemTicks) -> MessageReader[Self]
 }
 
 ///|
@@ -76,6 +82,7 @@ pub fn[T] Messages::reader(
     current_tick: self.current_tick,
     current_messages: self.current_messages.copy(),
     system,
+    has_read: false,
   }
 }
 
@@ -89,6 +96,10 @@ pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
 
 ///|
 pub fn[T] MessageReader::read(self : MessageReader[T]) -> Array[T] {
+  if self.has_read {
+    return []
+  }
+  self.has_read = true
   let out : Array[T] = []
   if self.previous_tick is Some(tick) &&
     message_tick_in_range(tick, self.system) {

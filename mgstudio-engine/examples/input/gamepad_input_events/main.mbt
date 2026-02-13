@@ -18,18 +18,20 @@ pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_system(gamepad_events)
-  .add_system(gamepad_ordered_events)
+  .add_system_param4(gamepad_events)
+  .add_system_param(gamepad_ordered_events)
   .run()
 }
 
 ///|
-fn gamepad_events(world : @ecs_world.World) -> Unit {
-  let connection_events = @input.gamepad_connection_events(world)
-  let axis_changed_events = @input.gamepad_axis_changed_events(world)
-  let button_changed_events = @input.gamepad_button_changed_events(world)
-  let button_input_events = @input.gamepad_button_state_changed_events(world)
-
+fn gamepad_events(
+  connection_events : @core.MessageReader[@input.GamepadConnectionEvent],
+  axis_changed_events : @core.MessageReader[@input.GamepadAxisChangedEvent],
+  button_changed_events : @core.MessageReader[@input.GamepadButtonChangedEvent],
+  button_input_events : @core.MessageReader[
+    @input.GamepadButtonStateChangedEvent,
+  ],
+) -> Unit {
   for connection_event in connection_events.read() {
     log_line(format_connection_event(connection_event))
   }
@@ -51,8 +53,10 @@ fn gamepad_events(world : @ecs_world.World) -> Unit {
 ///|
 // If you require in-frame relative event ordering, you can also read the
 // `GamepadEvent` stream directly.
-fn gamepad_ordered_events(world : @ecs_world.World) -> Unit {
-  for gamepad_event in @input.gamepad_events(world).read() {
+fn gamepad_ordered_events(
+  gamepad_events : @core.MessageReader[@input.GamepadEvent],
+) -> Unit {
+  for gamepad_event in gamepad_events.read() {
     match gamepad_event {
       Connection(connection_event) =>
         log_line(format_connection_event(connection_event))

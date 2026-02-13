@@ -64,6 +64,7 @@ pub struct MessageReader[T] {
   current_tick : Int?
   current_messages : Array[T]
   system : SystemTicks
+  mut has_read : Bool
 }
 pub fn[T] MessageReader::read(Self[T]) -> Array[T]
 
@@ -131,6 +132,10 @@ pub type Tick = Int
 pub(open) trait ChangeTickWorld {
   read_change_tick(Self) -> Int
   increment_change_tick(Self) -> Int
+}
+
+pub(open) trait Message {
+  reader(SystemTicks) -> MessageReader[Self]
 }
 
 pub(open) trait SpawnWorld {
