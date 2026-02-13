@@ -13,10 +13,25 @@
 // limitations under the License.
 
 ///|
-const PANEL_SIDE : Float = 200.0F
+const RECTANGLE_OFFSET : Float = 250.0F
 
 ///|
-const PANEL_OFFSET : Float = 250.0F
+const RECTANGLE_SIDE : Float = 200.0F
+
+///|
+const LABEL_OFFSET : Float = 125.0F
+
+///|
+priv struct ExampleState {
+  mut label_font : @asset.Handle[@asset.Font]?
+  mut labels_spawned : Bool
+}
+
+///|
+let example_state : Ref[ExampleState] = Ref::new(ExampleState::{
+  label_font: None,
+  labels_spawned: false,
+})
 
 ///|
 fn spawn_panel(
@@ -25,48 +40,94 @@ fn spawn_panel(
   texture : @asset.Handle[@asset.Image],
   uv_scale : @math.Vec2,
 ) -> Unit {
-  let mesh = @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::default())
+  let mesh = @render2d.Mesh2d::from_rectangle(
+    @render2d.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+  )
   let material = @render2d.ColorMaterial::from_image(texture).with_uv_scale(
     uv_scale,
   )
-  let transform = @math.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(x, 0.0F),
-    0.0F,
-    @math.Vec2::new(PANEL_SIDE, PANEL_SIDE),
+  @render2d.Mesh2dBundle::new(
+    mesh,
+    material,
+    @math.Transform::from_xyz(x, 0.0F, 0.0F),
+  ).spawn(world)
+  |> ignore
+}
+
+///|
+fn spawn_label(
+  content : String,
+  x : Float,
+  font : @asset.Handle[@asset.Font],
+) -> Unit {
+  let style = @text.TextFont::default().with_font(font)
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    style,
+    @math.Transform::from_xyz(x, LABEL_OFFSET, 0.0F),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  .with_bounds(@text.TextBounds::new_horizontal(RECTANGLE_SIDE))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+  .spawn()
+  |> ignore
+}
+
+///|
+fn ensure_labels_system(_world : @ecs_world.World) -> Unit {
+  if example_state.val.labels_spawned {
+    return
+  }
+  guard example_state.val.label_font is Some(font) else { return }
+  guard @asset.asset_font_read_bytes(font) is Some(_) else { return }
+
+  spawn_label("Control", 0.0F, font)
+  spawn_label("Repeat On", -RECTANGLE_OFFSET, font)
+  spawn_label("Repeat Off", RECTANGLE_OFFSET, font)
+  example_state.val.labels_spawned = true
 }
 
 ///|
 fn mesh2d_repeated_texture_setup(world : @ecs_world.World) -> Unit {
+  // Port of `bevy/examples/2d/mesh2d_repeated_texture.rs`.
   let asset_server = @asset.AssetServer::new()
   let default_texture = asset_server.load(
-    "textures/rpg/ui/generic-rpg-ui-text-box.png",
+    "textures/fantasy_ui_borders/panel-border-010.png",
   )
   let repeated_texture = asset_server.load(
-    "textures/rpg/ui/generic-rpg-ui-text-box-repeated.png",
+    "textures/fantasy_ui_borders/panel-border-010-repeated.png",
   )
   @asset.asset_set_texture_sampler(default_texture, @asset.ImageSampler::Linear)
   @asset.asset_set_texture_sampler(
     repeated_texture,
     @asset.ImageSampler::LinearRepeat,
   )
+  example_state.val.label_font = Some(
+    asset_server.load_font("fonts/FiraSans-Bold.ttf"),
+  )
+  example_state.val.labels_spawned = false
 
-  // Left: repeated sampling with scaled UVs.
+  // Center rectangle with default sampler.
+  spawn_panel(world, 0.0F, default_texture, @math.Vec2::new(1.0F, 1.0F))
+  // Left rectangle with repeated sampler and scaled UV.
   spawn_panel(
     world,
-    -PANEL_OFFSET,
+    -RECTANGLE_OFFSET,
     repeated_texture,
     @math.Vec2::new(2.0F, 3.0F),
   )
-  // Center: baseline UVs.
-  spawn_panel(world, 0.0F, default_texture, @math.Vec2::new(1.0F, 1.0F))
-  // Right: scaled UVs with clamp sampler (repeat off).
-  spawn_panel(world, PANEL_OFFSET, default_texture, @math.Vec2::new(2.0F, 3.0F))
-  let camera = @render2d.Camera::new(
-    @render2d.Color::new(0.09F, 0.09F, 0.11F, 1.0F),
+  // Right rectangle with default sampler and scaled UV.
+  spawn_panel(
+    world,
+    RECTANGLE_OFFSET,
+    default_texture,
+    @math.Vec2::new(2.0F, 3.0F),
   )
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+
+  let camera_transform = @math.Transform::identity().looking_at(
+    @math.Vec3::zero(),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  @render2d.Camera2dBundle::new(@render2d.Camera::default(), camera_transform).spawn(
     world,
   )
   |> ignore
@@ -78,5 +139,6 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_repeated_texture_setup)
+  .add_system(ensure_labels_system)
   .run()
 }
