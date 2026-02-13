@@ -52,6 +52,13 @@ pub(all) enum KeyCode {
   KeyX
   KeyY
   KeyZ
+  Digit1
+  Digit2
+  Digit3
+  Digit4
+  Digit5
+  Digit6
+  Tab
   ArrowUp
   ArrowDown
   ArrowLeft

@@ -13,15 +13,41 @@
 // limitations under the License.
 
 ///|
+/// Port of `bevy/examples/3d/lighting.rs`.
+
+///|
+const PI : Float = 3.141592653589793F
+
+///|
+const MOVE_SPEED : Float = 2.0F
+
+///|
+priv struct LightingParameters {
+  aperture_f_stops : Float
+  shutter_speed_s : Float
+  sensitivity_iso : Float
+}
+
+///|
 priv struct LightingState {
-  mut angle : Float
-  mut point_light : @core.Entity?
+  mut parameters : LightingParameters
+  mut ambient_enabled : Bool
+  movables : Array[@core.Entity]
+  mut directional_light : @core.Entity?
+  mut ui_text : @text.TextHandle?
 }
 
 ///|
 let lighting_state : Ref[LightingState] = Ref::new({
-  angle: 0.0F,
-  point_light: None,
+  parameters: {
+    aperture_f_stops: 1.0F,
+    shutter_speed_s: 1.0F / 125.0F,
+    sensitivity_iso: 100.0F,
+  },
+  ambient_enabled: true,
+  movables: [],
+  directional_light: None,
+  ui_text: None,
 })
 
 ///|
@@ -29,152 +55,381 @@ pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(lighting_setup)
-  .add_system(lighting_animate_system)
+  .add_startup_system(setup)
+  .add_system(update_exposure)
+  .add_system(toggle_ambient_light)
+  .add_system(movement)
+  .add_system(animate_light_direction)
   .run()
 }
 
 ///|
-fn lighting_setup(world : @ecs_world.World) -> Unit {
-  let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
-  if ambient.get_ref_mut(tick) is Some(a) {
-    a.val = @render3d.GlobalAmbientLight::new(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-      0.2F,
-    )
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn round_to_int(value : Float) -> Int {
+  if value >= 0.0F {
+    (value + 0.5F).to_int()
+  } else {
+    (value - 0.5F).to_int()
+  }
+}
+
+///|
+fn uv_sphere_mesh(
+  radius : Float,
+  stacks : Int,
+  sectors : Int,
+) -> @render3d.Mesh3d {
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+
+  let stacks_f = float_from_int(stacks)
+  let sectors_f = float_from_int(sectors)
+  let stack_step = PI / stacks_f
+  let sector_step = 2.0F * PI / sectors_f
+
+  for i in 0..<(stacks + 1) {
+    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
+    let ring_radius = radius * @math.cos(stack_angle)
+    let y = radius * @math.sin(stack_angle)
+    for j in 0..<(sectors + 1) {
+      let sector_angle = float_from_int(j) * sector_step
+      let x = ring_radius * @math.cos(sector_angle)
+      let z = ring_radius * @math.sin(sector_angle)
+      positions.push(@math.Vec3::new(x, y, z))
+      uvs.push(
+        @math.Vec2::new(
+          float_from_int(j) / sectors_f,
+          float_from_int(i) / stacks_f,
+        ),
+      )
+    }
   }
 
-  let floor_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.82F, 0.82F, 0.85F, 1.0F),
-    ),
+  let row = sectors + 1
+  for i in 0..<stacks {
+    let k1 = i * row
+    let k2 = k1 + row
+    for j in 0..<sectors {
+      if i != 0 {
+        indices.push(k1 + j)
+        indices.push(k2 + j)
+        indices.push(k1 + j + 1)
+      }
+      if i != stacks - 1 {
+        indices.push(k1 + j + 1)
+        indices.push(k2 + j)
+        indices.push(k2 + j + 1)
+      }
+    }
+  }
+
+  @render3d.Mesh3d::from_geometry(
+    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
+}
+
+///|
+fn rectangle_mesh(width : Float, height : Float) -> @render3d.Mesh3d {
+  let hw = width / 2.0F
+  let hh = height / 2.0F
+  let positions = [
+    @math.Vec3::new(-hw, -hh, 0.0F),
+    @math.Vec3::new(hw, -hh, 0.0F),
+    @math.Vec3::new(hw, hh, 0.0F),
+    @math.Vec3::new(-hw, hh, 0.0F),
+  ]
+  let uvs = [
+    @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  ]
+  let indices = [0, 1, 2, 0, 2, 3]
+  @render3d.Mesh3d::from_geometry(
+    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  )
+}
+
+///|
+fn lighting_overlay_text() -> String {
+  let params = lighting_state.val.parameters
+  let ambient_state = if lighting_state.val.ambient_enabled {
+    "on"
+  } else {
+    "off"
+  }
+  let shutter_denominator = if params.shutter_speed_s <= 0.0F {
+    0
+  } else {
+    round_to_int(1.0F / params.shutter_speed_s)
+  }
+  "Ambient light is \{ambient_state}\nAperture: f/\{round_to_int(params.aperture_f_stops)}\nShutter speed: 1/\{shutter_denominator}s\nSensitivity: ISO \{round_to_int(params.sensitivity_iso)}\n\nControls\n---------------\nArrow keys - Move objects\nSpace - Toggle ambient light\n1/2 - Decrease/Increase aperture\n3/4 - Decrease/Increase shutter speed\n5/6 - Decrease/Increase sensitivity\nR - Reset exposure"
+}
+
+///|
+fn lighting_update_overlay_text() -> Unit {
+  if lighting_state.val.ui_text is Some(handle) {
+    @text.text_set_content(handle, lighting_overlay_text())
+  }
+}
+
+///|
+fn spawn_mesh(
+  world : @ecs_world.World,
+  mesh : @render3d.Mesh3d,
+  material : @asset.Handle[@render3d.StandardMaterial],
+  transform : @math.Transform,
+) -> @core.Entity {
   @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(800.0F, 800.0F),
-    @render3d.MeshMaterial3d::new(floor_material),
-    @math.Transform::from_xyz(0.0F, -150.0F, 0.0F),
+    mesh,
+    @render3d.MeshMaterial3d::new(material),
+    transform,
   ).spawn(world)
+}
+
+///|
+fn setup(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let asset_server = @asset.AssetServer::new()
+  let logo_texture = asset_server.load("branding/bevy_logo_light.png")
+
+  // Ground plane.
+  let ground_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+  )
+  spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_plane(10.0F, 10.0F),
+    ground_material,
+    @math.Transform::identity(),
+  )
   |> ignore
 
+  // Left and back walls.
   let wall_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.3F, 0.3F, 0.45F, 1.0F),
+      @render2d.Color::new(0.294F, 0.0F, 0.51F, 1.0F),
     ),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(800.0F, 260.0F, 16.0F),
-    @render3d.MeshMaterial3d::new(wall_material),
-    @math.Transform::from_xyz(0.0F, -20.0F, -380.0F),
-  ).spawn(world)
+  spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
+    wall_material,
+    @math.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
+      @math.Quat::from_rotation_z(PI / 2.0F),
+    ),
+  )
+  |> ignore
+  spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
+    wall_material,
+    @math.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
+      @math.Quat::from_rotation_x(PI / 2.0F),
+    ),
+  )
   |> ignore
 
-  let red_mat = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.95F, 0.35F, 0.35F, 1.0F),
+  // Bevy logo alpha-mask quad.
+  let logo_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    .with_base_color_texture(Some(logo_texture))
+    .with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F)),
+  )
+  let logo = spawn_mesh(
+    world,
+    rectangle_mesh(2.0F, 0.5F),
+    logo_material,
+    @math.Transform::from_xyz(-2.2F, 0.5F, 1.0F).with_rotation(
+      @math.Quat::from_rotation_y(PI / 8.0F),
     ),
   )
-  let green_mat = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.35F, 0.95F, 0.45F, 1.0F),
-    ),
-  )
-  let blue_mat = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.35F, 0.45F, 0.95F, 1.0F),
-    ),
-  )
+  lighting_state.val.movables.push(logo)
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(120.0F, 120.0F, 120.0F),
-    @render3d.MeshMaterial3d::new(red_mat),
-    @math.Transform::from_xyz(-170.0F, -90.0F, -40.0F),
-  ).spawn(world)
-  |> ignore
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_tetrahedron(180.0F),
-    @render3d.MeshMaterial3d::new(green_mat),
-    @math.Transform::from_xyz(120.0F, -60.0F, 80.0F),
-  ).spawn(world)
-  |> ignore
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(60.0F, 220.0F, 60.0F),
-    @render3d.MeshMaterial3d::new(blue_mat),
-    @math.Transform::from_xyz(250.0F, -40.0F, -160.0F),
-  ).spawn(world)
+  let cube = spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
+      ),
+    ),
+    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+  )
+  lighting_state.val.movables.push(cube)
+
+  let sphere_mesh = uv_sphere_mesh(0.5F, 18, 32)
+  let sphere = spawn_mesh(
+    world,
+    sphere_mesh,
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
+      ),
+    ),
+    @math.Transform::from_xyz(1.5F, 1.0F, 1.5F),
+  )
+  lighting_state.val.movables.push(sphere)
+
+  // Ambient light.
+  let ambient = world.get_global_ambient_light_resource()
+  if ambient.get_ref_mut(tick) is Some(v) {
+    v.val = @render3d.GlobalAmbientLight::new(
+      @render2d.Color::new(1.0F, 0.27F, 0.0F, 1.0F),
+      200.0F,
+    )
+  }
+  lighting_state.val.ambient_enabled = true
+
+  // Red point light + emissive marker.
+  let red_light = world.spawn_empty()
+  world
+  .get_point_light_store()
+  .insert(
+    red_light,
+    @render3d.PointLight::new(
+      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      100_000.0F,
+      20.0F,
+      true,
+    ),
+    tick,
+  )
+  world
+  .get_transform_store()
+  .insert(red_light, @math.Transform::from_xyz(1.0F, 2.0F, 0.0F), tick)
+  spawn_mesh(
+    world,
+    uv_sphere_mesh(0.1F, 12, 20),
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      ).with_emissive(@render2d.Color::new(4.0F, 0.0F, 0.0F, 1.0F)),
+    ),
+    @math.Transform::from_xyz(1.0F, 2.0F, 0.0F),
+  )
   |> ignore
 
+  // Green spot light + emissive marker.
+  let green_light = world.spawn_empty()
+  world
+  .get_spot_light_store()
+  .insert(
+    green_light,
+    @render3d.SpotLight::new(
+      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      100_000.0F,
+      20.0F,
+      0.6F,
+      0.8F,
+      true,
+    ),
+    tick,
+  )
+  world
+  .get_transform_store()
+  .insert(
+    green_light,
+    @math.Transform::from_xyz(-1.0F, 2.0F, 0.0F).looking_at(
+      @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    ),
+    tick,
+  )
+  spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(0.1F, 0.125F, 0.1F),
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      ).with_emissive(@render2d.Color::new(0.0F, 4.0F, 0.0F, 1.0F)),
+    ),
+    @math.Transform::from_xyz(-1.0F, 2.0F, 0.0F).with_rotation(
+      @math.Quat::from_rotation_x(PI / 2.0F),
+    ),
+  )
+  |> ignore
+
+  // Blue point light + emissive marker.
+  let blue_light = world.spawn_empty()
+  world
+  .get_point_light_store()
+  .insert(
+    blue_light,
+    @render3d.PointLight::new(
+      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      100_000.0F,
+      20.0F,
+      true,
+    ),
+    tick,
+  )
+  world
+  .get_transform_store()
+  .insert(blue_light, @math.Transform::from_xyz(0.0F, 4.0F, 0.0F), tick)
+  spawn_mesh(
+    world,
+    uv_sphere_mesh(0.1F, 12, 20),
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      ).with_emissive(@render2d.Color::new(0.0F, 0.0F, 713.0F, 1.0F)),
+    ),
+    @math.Transform::from_xyz(0.0F, 4.0F, 0.0F),
+  )
+  |> ignore
+
+  // Directional light.
   let directional = world.spawn_empty()
   world
   .get_directional_light_store()
   .insert(
     directional,
-    @render3d.DirectionalLight::new(
-      @render2d.Color::new(1.0F, 1.0F, 0.95F, 1.0F),
-      12000.0F,
-      false,
-    ),
+    @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
     tick,
   )
   world
   .get_transform_store()
   .insert(
     directional,
-    @math.Transform::from_xyz(0.0F, 200.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_x(-0.8F),
+    @math.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
+      @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
     tick,
   )
+  lighting_state.val.directional_light = Some(directional)
 
-  let spot = world.spawn_empty()
-  world
-  .get_spot_light_store()
-  .insert(
-    spot,
-    @render3d.SpotLight::new(
-      @render2d.Color::new(0.45F, 1.0F, 0.45F, 1.0F),
-      140000.0F,
-      2000.0F,
-      0.55F,
-      0.8F,
-      false,
-    ),
-    tick,
-  )
-  world
-  .get_transform_store()
-  .insert(
-    spot,
-    @math.Transform::from_xyz(-280.0F, 210.0F, 180.0F).looking_at(
-      @math.Vec3::new(-100.0F, -80.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
-  )
+  let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let overlay = @text.Text2dBundle::new(
+      @text.Text2d::new(lighting_overlay_text()),
+      @text.TextFont::default().with_font(overlay_font).with_font_size(18.0F),
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-390.0F, 300.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=50.0F,
+      ),
+    )
+    .with_anchor(@render2d.Anchor::top_left())
+    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_color(
+      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    )
+    .with_shadow(Some(@text.Text2dShadow::default()))
+    .spawn()
+  lighting_state.val.ui_text = Some(overlay)
 
-  let point = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
-    point,
-    @render3d.PointLight::new(
-      @render2d.Color::new(0.45F, 0.6F, 1.0F, 1.0F),
-      200000.0F,
-      2400.0F,
-      false,
-    ),
-    tick,
-  )
-  world
-  .get_transform_store()
-  .insert(point, @math.Transform::from_xyz(280.0F, 220.0F, 0.0F), tick)
-  lighting_state.val.point_light = Some(point)
-
-  let camera = @render2d.Camera::default()
+  // Camera.
   @render3d.Camera3dBundle::new(
-    camera,
-    @math.Transform::from_xyz(0.0F, 160.0F, 760.0F).looking_at(
-      @math.Vec3::new(0.0F, -70.0F, -40.0F),
+    @render2d.Camera::default(),
+    @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
@@ -182,20 +437,111 @@ fn lighting_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn lighting_animate_system(world : @ecs_world.World) -> Unit {
-  lighting_state.val.angle = lighting_state.val.angle +
-    @time.time_delta_seconds() * 0.8F
-  if lighting_state.val.point_light is None {
+fn update_exposure(_world : @ecs_world.World) -> Unit {
+  let mut changed = false
+  let mut next = lighting_state.val.parameters
+  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+    next = { ..next, aperture_f_stops: next.aperture_f_stops * 2.0F }
+    changed = true
+  } else if @input.key_just_pressed(@window.KeyCode::Digit1) {
+    next = { ..next, aperture_f_stops: next.aperture_f_stops * 0.5F }
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit4) {
+    next = { ..next, shutter_speed_s: next.shutter_speed_s * 2.0F }
+    changed = true
+  } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
+    next = { ..next, shutter_speed_s: next.shutter_speed_s * 0.5F }
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit6) {
+    next = { ..next, sensitivity_iso: next.sensitivity_iso + 100.0F }
+    changed = true
+  } else if @input.key_just_pressed(@window.KeyCode::Digit5) {
+    next = { ..next, sensitivity_iso: next.sensitivity_iso - 100.0F }
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::KeyR) {
+    next = {
+      aperture_f_stops: 1.0F,
+      shutter_speed_s: 1.0F / 125.0F,
+      sensitivity_iso: 100.0F,
+    }
+    changed = true
+  }
+  if changed {
+    lighting_state.val.parameters = next
+    lighting_update_overlay_text()
+  }
+}
+
+///|
+fn toggle_ambient_light(world : @ecs_world.World) -> Unit {
+  if !@input.key_just_pressed(@window.KeyCode::Space) {
+    return
+  }
+  let tick = world.read_change_tick()
+  let ambient = world.get_global_ambient_light_resource()
+  if ambient.get_ref_mut(tick) is Some(v) {
+    if v.val.brightness > 1.0F {
+      v.val = @render3d.GlobalAmbientLight::new(v.val.color, 0.0F)
+      lighting_state.val.ambient_enabled = false
+    } else {
+      v.val = @render3d.GlobalAmbientLight::new(v.val.color, 200.0F)
+      lighting_state.val.ambient_enabled = true
+    }
+    lighting_update_overlay_text()
+  }
+}
+
+///|
+fn animate_light_direction(world : @ecs_world.World) -> Unit {
+  guard lighting_state.val.directional_light is Some(light_entity) else {
     return
   }
   let tick = world.read_change_tick()
   let transform_store = world.get_transform_store()
-  let angle = lighting_state.val.angle
-  let x = @math.cos(angle) * 320.0F
-  let z = @math.sin(angle) * 220.0F
-  let point = lighting_state.val.point_light.unwrap()
-  if transform_store.get(point) is Some(transform) {
-    let next = transform.with_translation(@math.Vec3::new(x, 220.0F, z))
-    transform_store.set(point, next, tick) |> ignore
+  if transform_store.get(light_entity) is Some(transform) {
+    let delta = @time.time_delta_seconds() * 0.5F
+    let spin = @math.Quat::from_rotation_y(delta)
+    let next = transform.with_rotation(transform.rotation.mul(spin).normalize())
+    transform_store.set(light_entity, next, tick) |> ignore
+  }
+}
+
+///|
+fn movement(world : @ecs_world.World) -> Unit {
+  let mut dx = 0.0F
+  let mut dy = 0.0F
+  if @input.key_pressed(@window.KeyCode::ArrowUp) {
+    dy = dy + 1.0F
+  }
+  if @input.key_pressed(@window.KeyCode::ArrowDown) {
+    dy = dy - 1.0F
+  }
+  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+    dx = dx - 1.0F
+  }
+  if @input.key_pressed(@window.KeyCode::ArrowRight) {
+    dx = dx + 1.0F
+  }
+  if dx == 0.0F && dy == 0.0F {
+    return
+  }
+
+  let tick = world.read_change_tick()
+  let delta = @time.time_delta_seconds() * MOVE_SPEED
+  let transform_store = world.get_transform_store()
+  for entity in lighting_state.val.movables {
+    if transform_store.get(entity) is Some(transform) {
+      let next = transform.with_translation(
+        @math.Vec3::new(
+          transform.translation.x + delta * dx,
+          transform.translation.y + delta * dy,
+          transform.translation.z,
+        ),
+      )
+      transform_store.set(entity, next, tick) |> ignore
+    }
   }
 }
