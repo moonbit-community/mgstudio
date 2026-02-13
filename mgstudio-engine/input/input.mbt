@@ -172,7 +172,9 @@ pub fn[W] input_finish_system(_world : W) -> Unit {
 }
 
 ///|
-pub fn[W] input_plugin(app : @app.App[W]) -> @app.App[W] {
+pub fn[W : @core.ChangeTickWorld] input_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
   app
   .add_pre_update_system(input_poll_gamepad_system)
   .add_post_update_system(input_finish_system)

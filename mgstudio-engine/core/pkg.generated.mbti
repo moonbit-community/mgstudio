@@ -58,6 +58,26 @@ pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
 
+pub struct MessageReader[T] {
+  previous_tick : Int?
+  previous_messages : Array[T]
+  current_tick : Int?
+  current_messages : Array[T]
+  system : SystemTicks
+}
+pub fn[T] MessageReader::read(Self[T]) -> Array[T]
+
+pub struct Messages[T] {
+  mut previous_tick : Int?
+  mut previous_messages : Array[T]
+  mut current_tick : Int?
+  mut current_messages : Array[T]
+}
+pub fn[T] Messages::clear(Self[T]) -> Unit
+pub fn[T] Messages::new() -> Self[T]
+pub fn[T] Messages::reader(Self[T], SystemTicks) -> MessageReader[T]
+pub fn[T] Messages::send(Self[T], Int, T) -> Unit
+
 pub struct Resource[T] {
   mut cell : Ref[T]?
   ticks : ComponentTicks

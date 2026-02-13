@@ -3,12 +3,21 @@ package "Milky2018/mgstudio/input"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/window",
 }
 
 // Values
-pub fn gamepad_events() -> Array[GamepadEvent]
+pub fn[W : @core.SystemContextWorld] gamepad_axis_changed_events(W) -> @core.MessageReader[GamepadAxisChangedEvent]
+
+pub fn[W : @core.SystemContextWorld] gamepad_button_changed_events(W) -> @core.MessageReader[GamepadButtonChangedEvent]
+
+pub fn[W : @core.SystemContextWorld] gamepad_button_state_changed_events(W) -> @core.MessageReader[GamepadButtonStateChangedEvent]
+
+pub fn[W : @core.SystemContextWorld] gamepad_connection_events(W) -> @core.MessageReader[GamepadConnectionEvent]
+
+pub fn[W : @core.SystemContextWorld] gamepad_events(W) -> @core.MessageReader[GamepadEvent]
 
 pub fn gamepads() -> Array[Gamepad]
 
@@ -28,9 +37,9 @@ pub fn[W] input_finish_system(W) -> Unit
 
 pub fn input_gamepad_finish_frame() -> Unit
 
-pub fn[W] input_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : @core.ChangeTickWorld] input_plugin(@app.App[W]) -> @app.App[W]
 
-pub fn[W] input_poll_gamepad_system(W) -> Unit
+pub fn[W : @core.ChangeTickWorld] input_poll_gamepad_system(W) -> Unit
 
 pub fn key_just_pressed(@window.KeyCode) -> Bool
 
@@ -116,6 +125,12 @@ pub struct GamepadButtonChangedEvent {
   gamepad_id : Int
   button : GamepadButton
   value : Float
+}
+
+pub struct GamepadButtonStateChangedEvent {
+  gamepad_id : Int
+  button : GamepadButton
+  pressed : Bool
 }
 
 pub(all) enum GamepadConnection {
