@@ -85,6 +85,7 @@ pub struct World {
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  bloom2d : @core.ComponentStore[@render2d.Bloom2d]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -210,6 +211,7 @@ pub impl @picking.HasRes_PickingState for World
 pub impl @picking.HasRes_PointerInputs for World
 pub impl @render2d.HasRes_RenderState for World
 pub impl @render2d.Has_Anchor for World
+pub impl @render2d.Has_Bloom2d for World
 pub impl @render2d.Has_Camera for World
 pub impl @render2d.Has_Camera2d for World
 pub impl @render2d.Has_ColorMaterial for World

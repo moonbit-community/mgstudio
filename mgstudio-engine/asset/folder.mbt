@@ -26,7 +26,7 @@ pub(all) enum AssetEvent[T] {
 }
 
 ///|
-pub fn host_asset_load_folder(path : String) -> Int {
+pub fn host_asset_load_folder(path~ : String) -> Int {
   @core.with_host_string_id(path, fn(path_id) {
     host_asset_load_folder_id(path_id)
   })
@@ -46,8 +46,8 @@ pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int = "mgstudio_
 
 ///|
 pub fn host_asset_loaded_folder_handles_get(
-  folder_id : Int,
-  index : Int,
+  folder_id~ : Int,
+  index~ : Int,
 ) -> Int = "mgstudio_host" "asset_loaded_folder_handles_get"
 
 ///|
@@ -61,7 +61,7 @@ pub fn AssetServer::load_folder(
   self : AssetServer,
   path : String,
 ) -> Handle[LoadedFolder] {
-  let host_id = host_asset_load_folder(path)
+  let host_id = host_asset_load_folder(path~)
   self.paths.push(path)
   Handle::new(host_id)
 }
@@ -97,7 +97,9 @@ pub fn asset_update_loaded_folders() -> Unit {
       let handles : Array[Handle[Image]] = []
       for j in 0..<n {
         handles.push(
-          Handle::new(host_asset_loaded_folder_handles_get(host_id, j)),
+          Handle::new(
+            host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
+          ),
         )
       }
       loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })
@@ -117,7 +119,9 @@ pub fn asset_update_loaded_folders() -> Unit {
       let handles : Array[Handle[Image]] = []
       for j in 0..<n {
         handles.push(
-          Handle::new(host_asset_loaded_folder_handles_get(host_id, j)),
+          Handle::new(
+            host_asset_loaded_folder_handles_get(folder_id=host_id, index=j),
+          ),
         )
       }
       loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })

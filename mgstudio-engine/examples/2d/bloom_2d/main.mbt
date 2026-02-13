@@ -14,13 +14,13 @@
 
 ///|
 priv struct BloomExampleState {
-  mut scene_target : @asset.Handle[@asset.Image]?
+  mut compose_camera : @core.Entity
   mut bloom : @render2d.Bloom2dSettings
 }
 
 ///|
 let bloom_example_state : Ref[BloomExampleState] = Ref::new(BloomExampleState::{
-  scene_target: None,
+  compose_camera: @core.Entity::placeholder(),
   bloom: @render2d.Bloom2dSettings::default(),
 })
 
@@ -60,13 +60,19 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render2d.Camera2dBundle::new_with_layers(
-    @render2d.Camera::new(@render2d.Color::black()).with_order(1),
-    @math.Transform::identity(),
-    @render2d.RenderTarget::Screen,
-    compose_layers(),
-  ).spawn(world)
-  |> ignore
+  let compose_camera = @render2d.Camera2dBundle::new_with_layers(
+      @render2d.Camera::new(@render2d.Color::black()).with_order(1),
+      @math.Transform::identity(),
+      @render2d.RenderTarget::Screen,
+      compose_layers(),
+    )
+    .with_bloom2d(
+      @render2d.Bloom2d::new(scene_target).with_settings(
+        bloom_example_state.val.bloom,
+      ),
+    )
+    .spawn(world)
+  bloom_example_state.val.compose_camera = compose_camera
 
   let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
@@ -105,44 +111,22 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  bloom_example_state.val.scene_target = Some(scene_target)
   bloom_example_state.val.bloom = @render2d.Bloom2dSettings::default()
 }
 
 ///|
 fn bloom_update(world : @ecs_world.World) -> Unit {
-  guard bloom_example_state.val.scene_target is Some(scene_target) else {
+  if bloom_example_state.val.compose_camera.is_placeholder() {
     return
   }
   handle_input_settings()
-  let width = safe_positive_int(@window.window_width(), 1280)
-  let height = safe_positive_int(@window.window_height(), 720)
-  let compose_transform = @math.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(0.0F, 0.0F),
-    0.0F,
-    @math.Vec2::new(
-      Float::from_double(width.to_double()),
-      Float::from_double(height.to_double()),
-    ),
-  )
-
-  @render2d.render2d_push_sprite_uv(
-    world,
-    scene_target,
-    compose_transform,
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-    @render2d.Color::white(),
-    compose_layers(),
-  )
-
-  @render2d.render2d_draw_bloom_overlay(
-    world,
-    scene_target,
-    compose_transform,
-    bloom_example_state.val.bloom,
-    compose_layers(),
-  )
+  let tick = world.read_change_tick()
+  let bloom_store = world.get_bloom2d_store()
+  let camera = bloom_example_state.val.compose_camera
+  if bloom_store.get(camera) is Some(current) {
+    let next = current.with_settings(bloom_example_state.val.bloom)
+    bloom_store.set(camera, next, tick) |> ignore
+  }
 }
 
 ///|

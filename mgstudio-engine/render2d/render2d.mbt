@@ -1115,34 +1115,40 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
         @mesh.MeshGeometry::Geometry2d(geometry2d) =>
           match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
             Some(vertices_csv) =>
-              @window.host_gpu_create_mesh_triangles(vertices_csv)
+              @window.host_gpu_create_mesh_triangles(
+                vertices_xy_csv=vertices_csv,
+              )
             None => {
               let message = match geometry2d.validate() {
                 Some(err) =>
                   "Mesh2dGeometry validation failed: " + err.to_string()
                 None => "Mesh2dGeometry flatten failed"
               }
-              @window.host_debug_string(message)
+              @window.host_debug_string(value=message)
               0
             }
           }
         @mesh.MeshGeometry::Geometry3d(geometry3d) =>
           match geometry3d.encode_triangle_interleaved_xyz_uv_rgba_csv() {
             Some(vertices_csv) =>
-              @window.host_gpu_create_mesh_triangles3d(vertices_csv)
+              @window.host_gpu_create_mesh_triangles3d(
+                vertices_xyzuvrgba_csv=vertices_csv,
+              )
             None => {
               let message = match geometry3d.validate() {
                 Some(err) =>
                   "Mesh3dGeometry validation failed: " + err.to_string()
                 None => "Mesh3dGeometry flatten failed"
               }
-              @window.host_debug_string(message)
+              @window.host_debug_string(value=message)
               0
             }
           }
       }
     None => {
-      @window.host_debug_string("Mesh2d upload failed: mesh handle not found")
+      @window.host_debug_string(
+        value="Mesh2d upload failed: mesh handle not found",
+      )
       0
     }
   }
@@ -1808,6 +1814,7 @@ pub struct Camera2dBundle {
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
+  bloom2d : Bloom2d?
 }
 
 ///|
@@ -1822,6 +1829,7 @@ pub fn Camera2dBundle::new(
     transform,
     target: RenderTarget::Screen,
     layers: RenderLayers::default(),
+    bloom2d: None,
   }
 }
 
@@ -1838,6 +1846,7 @@ pub fn Camera2dBundle::new_with_projection(
     transform,
     target: RenderTarget::Screen,
     layers: RenderLayers::default(),
+    bloom2d: None,
   }
 }
 
@@ -1854,6 +1863,7 @@ pub fn Camera2dBundle::new_with_target(
     transform,
     target,
     layers: RenderLayers::default(),
+    bloom2d: None,
   }
 }
 
@@ -1871,7 +1881,16 @@ pub fn Camera2dBundle::new_with_layers(
     transform,
     target,
     layers,
+    bloom2d: None,
   }
+}
+
+///|
+pub fn Camera2dBundle::with_bloom2d(
+  self : Camera2dBundle,
+  bloom2d : Bloom2d,
+) -> Camera2dBundle {
+  Camera2dBundle::{ ..self, bloom2d: Some(bloom2d) }
 }
 
 ///|
@@ -2192,6 +2211,27 @@ pub fn Bloom2dSettings::default() -> Bloom2dSettings {
 }
 
 ///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct Bloom2d {
+  source : @asset.Handle[@asset.Image]
+  settings : Bloom2dSettings
+}
+
+///|
+pub fn Bloom2d::new(source : @asset.Handle[@asset.Image]) -> Bloom2d {
+  Bloom2d::{ source, settings: Bloom2dSettings::default() }
+}
+
+///|
+pub fn Bloom2d::with_settings(
+  self : Bloom2d,
+  settings : Bloom2dSettings,
+) -> Bloom2d {
+  Bloom2d::{ ..self, settings, }
+}
+
+///|
 fn bloom2d_clamp_pass_count(value : Int) -> Int {
   if value < 1 {
     1
@@ -2255,6 +2295,105 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
         settings.tint.a * alpha_weight,
       ),
       layers,
+    )
+  }
+}
+
+///|
+fn render2d_draw_camera_bloom(
+  camera : CameraInstance,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  guard camera.bloom2d is Some(bloom) else { return }
+  if view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let source_width_raw = @asset.host_asset_texture_width(bloom.source.id())
+  let source_height_raw = @asset.host_asset_texture_height(bloom.source.id())
+  let source_width = if source_width_raw <= 0 {
+    view_width_logical
+  } else {
+    source_width_raw
+  }
+  let source_height = if source_height_raw <= 0 {
+    view_height_logical
+  } else {
+    source_height_raw
+  }
+  let base_scale = @math.Vec2::new(
+    Float::from_int(view_width_logical) / Float::from_int(source_width),
+    Float::from_int(view_height_logical) / Float::from_int(source_height),
+  )
+  let base_transform = @math.Transform::from_xy_rotation_scale(
+    @math.Vec2::new(0.0F, 0.0F),
+    0.0F,
+    base_scale,
+  )
+  @window.host_gpu_draw_sprite_uv(
+    texture_id=bloom.source.id(),
+    x=base_transform.translation.x,
+    y=base_transform.translation.y,
+    rotation=base_transform.rotation_z(),
+    scale_x=base_transform.scale.x,
+    scale_y=base_transform.scale.y,
+    color_r=1.0F,
+    color_g=1.0F,
+    color_b=1.0F,
+    color_a=1.0F,
+    uv_min_x=0.0F,
+    uv_min_y=0.0F,
+    uv_max_x=1.0F,
+    uv_max_y=1.0F,
+  )
+  let settings = bloom.settings
+  if !settings.enabled {
+    return
+  }
+  let pass_count = bloom2d_clamp_pass_count(settings.pass_count)
+  let intensity = if settings.intensity < 0.0F {
+    0.0F
+  } else {
+    settings.intensity
+  }
+  let spread = if settings.spread < 0.0F { 0.0F } else { settings.spread }
+  let pass_count_f = Float::from_int(pass_count)
+  for i in 0..<pass_count {
+    let idx = i + 1
+    let idx_f = Float::from_int(idx)
+    let t = idx_f / pass_count_f
+    let alpha_weight = (1.0F - t * 0.7F) * (intensity / pass_count_f)
+    if alpha_weight <= 0.0F {
+      continue
+    }
+    let scale_factor = 1.0F + spread * idx_f
+    let pass_transform = @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(
+        base_transform.translation.x,
+        base_transform.translation.y,
+      ),
+      base_transform.rotation_z(),
+      @math.Vec2::new(
+        base_transform.scale.x * scale_factor,
+        base_transform.scale.y * scale_factor,
+      ),
+      z=base_transform.translation.z + idx_f * 0.001F,
+    )
+    @window.host_gpu_draw_sprite_uv(
+      texture_id=bloom.source.id(),
+      x=pass_transform.translation.x,
+      y=pass_transform.translation.y,
+      rotation=pass_transform.rotation_z(),
+      scale_x=pass_transform.scale.x,
+      scale_y=pass_transform.scale.y,
+      color_r=settings.tint.r,
+      color_g=settings.tint.g,
+      color_b=settings.tint.b,
+      color_a=settings.tint.a * alpha_weight,
+      uv_min_x=0.0F,
+      uv_min_y=0.0F,
+      uv_max_x=1.0F,
+      uv_max_y=1.0F,
     )
   }
 }
@@ -2356,6 +2495,7 @@ priv struct CameraInstance {
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
+  bloom2d : Bloom2d?
   computed : CameraComputed
 }
 
@@ -2769,7 +2909,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
-  let id = @window.host_gpu_create_render_target(width, height, nearest)
+  let id = @window.host_gpu_create_render_target(width~, height~, nearest~)
   let rs = render_state_ref_mut(world).unwrap()
   rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
   @asset.Handle::new(id)
@@ -2780,7 +2920,7 @@ pub(open) trait SpriteBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld
 }
 
 ///|
-pub(open) trait Camera2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + @math.Has_Transform {
 }
 
 ///|
@@ -2788,7 +2928,7 @@ pub(open) trait Mesh2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld
 }
 
 ///|
-pub(open) trait RenderExtractWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+pub(open) trait RenderExtractWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
 }
 
 ///|
@@ -2822,6 +2962,9 @@ pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(
   world.get_projection_store().insert(e, self.projection, tick)
   world.get_render_target_store().insert(e, self.target, tick)
   world.get_render_layers_store().insert(e, self.layers, tick)
+  if self.bloom2d is Some(bloom2d) {
+    world.get_bloom2d_store().insert(e, bloom2d, tick)
+  }
   world.get_transform_store().insert(e, self.transform, tick)
   e
 }
@@ -3188,6 +3331,7 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
   let projection_store = world.get_projection_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
+  let bloom2d_store = world.get_bloom2d_store()
   let view_visibility_store = world.get_view_visibility_store()
   let transform_store = world.get_transform_store()
   let global_store = world.get_global_transform_store()
@@ -3200,6 +3344,7 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       Some(v) => v
       None => RenderLayers::default()
     }
+    let bloom2d = bloom2d_store.get(entity)
     let camera = match camera_store.get(entity) {
       Some(v) => v
       None => Camera::default()
@@ -3242,6 +3387,7 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       transform,
       target,
       layers,
+      bloom2d,
       computed,
     })
   })
@@ -4012,21 +4158,21 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     }
     let clear = camera.camera.clear_color
     @window.host_gpu_begin_pass(
-      target_id,
-      view_width_logical,
-      view_height_logical,
-      clear.r,
-      clear.g,
-      clear.b,
-      clear.a,
-      camera.transform.translation.x,
-      camera.transform.translation.y,
-      camera.transform.rotation_z(),
-      camera.projection.scale,
-      viewport_x,
-      viewport_y,
-      viewport_width,
-      viewport_height,
+      target_id~,
+      width=view_width_logical,
+      height=view_height_logical,
+      clear_r=clear.r,
+      clear_g=clear.g,
+      clear_b=clear.b,
+      clear_a=clear.a,
+      camera_x=camera.transform.translation.x,
+      camera_y=camera.transform.translation.y,
+      camera_rotation=camera.transform.rotation_z(),
+      camera_scale=camera.projection.scale,
+      viewport_x~,
+      viewport_y~,
+      viewport_width~,
+      viewport_height~,
     )
     let draw_items = draw_items_for_layers(
       sprites,
@@ -4059,7 +4205,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             sy != scissor_y ||
             sw != scissor_w ||
             sh != scissor_h {
-            @window.host_gpu_set_scissor(sx, sy, sw, sh)
+            @window.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
             scissor_active = true
             scissor_x = sx
             scissor_y = sy
@@ -4081,20 +4227,20 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             transform.translation.y + sprite.anchor_offset.y,
           )
           @window.host_gpu_draw_sprite_uv(
-            sprite.texture.id(),
-            pos.x,
-            pos.y,
-            transform.rotation_z(),
-            sprite.draw_scale.x,
-            sprite.draw_scale.y,
-            sprite.color.r,
-            sprite.color.g,
-            sprite.color.b,
-            sprite.color.a,
-            sprite.uv_min.x,
-            sprite.uv_min.y,
-            sprite.uv_max.x,
-            sprite.uv_max.y,
+            texture_id=sprite.texture.id(),
+            x=pos.x,
+            y=pos.y,
+            rotation=transform.rotation_z(),
+            scale_x=sprite.draw_scale.x,
+            scale_y=sprite.draw_scale.y,
+            color_r=sprite.color.r,
+            color_g=sprite.color.g,
+            color_b=sprite.color.b,
+            color_a=sprite.color.a,
+            uv_min_x=sprite.uv_min.x,
+            uv_min_y=sprite.uv_min.y,
+            uv_max_x=sprite.uv_max.x,
+            uv_max_y=sprite.uv_max.y,
           )
         }
         SpriteExtra(i) => {
@@ -4106,20 +4252,20 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             transform.translation.y + sprite.anchor_offset.y,
           )
           @window.host_gpu_draw_sprite_uv(
-            sprite.texture.id(),
-            pos.x,
-            pos.y,
-            transform.rotation_z(),
-            sprite.draw_scale.x,
-            sprite.draw_scale.y,
-            sprite.color.r,
-            sprite.color.g,
-            sprite.color.b,
-            sprite.color.a,
-            sprite.uv_min.x,
-            sprite.uv_min.y,
-            sprite.uv_max.x,
-            sprite.uv_max.y,
+            texture_id=sprite.texture.id(),
+            x=pos.x,
+            y=pos.y,
+            rotation=transform.rotation_z(),
+            scale_x=sprite.draw_scale.x,
+            scale_y=sprite.draw_scale.y,
+            color_r=sprite.color.r,
+            color_g=sprite.color.g,
+            color_b=sprite.color.b,
+            color_a=sprite.color.a,
+            uv_min_x=sprite.uv_min.x,
+            uv_min_y=sprite.uv_min.y,
+            uv_max_x=sprite.uv_max.x,
+            uv_max_y=sprite.uv_max.y,
           )
         }
         SpriteTextureSliceExtra(i) => {
@@ -4131,32 +4277,32 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             transform.translation.y + slice.anchor_offset.y,
           )
           @window.host_gpu_draw_ui_texture_slice(
-            slice.texture.id(),
-            pos.x,
-            pos.y,
-            transform.rotation_z(),
-            slice.draw_scale.x,
-            slice.draw_scale.y,
-            slice.color.r,
-            slice.color.g,
-            slice.color.b,
-            slice.color.a,
-            slice.texture_slices.x,
-            slice.texture_slices.y,
-            slice.texture_slices.z,
-            slice.texture_slices.w,
-            slice.target_slices.x,
-            slice.target_slices.y,
-            slice.target_slices.z,
-            slice.target_slices.w,
-            slice.repeat.x,
-            slice.repeat.y,
-            slice.repeat.z,
-            slice.repeat.w,
-            slice.atlas_rect.x,
-            slice.atlas_rect.y,
-            slice.atlas_rect.z,
-            slice.atlas_rect.w,
+            texture_id=slice.texture.id(),
+            x=pos.x,
+            y=pos.y,
+            rotation=transform.rotation_z(),
+            scale_x=slice.draw_scale.x,
+            scale_y=slice.draw_scale.y,
+            color_r=slice.color.r,
+            color_g=slice.color.g,
+            color_b=slice.color.b,
+            color_a=slice.color.a,
+            texture_slice_l=slice.texture_slices.x,
+            texture_slice_t=slice.texture_slices.y,
+            texture_slice_r=slice.texture_slices.z,
+            texture_slice_b=slice.texture_slices.w,
+            target_slice_l=slice.target_slices.x,
+            target_slice_t=slice.target_slices.y,
+            target_slice_r=slice.target_slices.z,
+            target_slice_b=slice.target_slices.w,
+            repeat_side_x=slice.repeat.x,
+            repeat_side_y=slice.repeat.y,
+            repeat_center_x=slice.repeat.z,
+            repeat_center_y=slice.repeat.w,
+            atlas_l=slice.atlas_rect.x,
+            atlas_t=slice.atlas_rect.y,
+            atlas_r=slice.atlas_rect.z,
+            atlas_b=slice.atlas_rect.w,
           )
         }
         Mesh(i) => {
@@ -4172,21 +4318,21 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             None => -1
           }
           @window.host_gpu_draw_mesh(
-            mesh.mesh_id,
-            transform.translation.x,
-            transform.translation.y,
-            transform.rotation_z(),
-            transform.scale.x,
-            transform.scale.y,
-            mesh.color.r,
-            mesh.color.g,
-            mesh.color.b,
-            draw_alpha,
-            texture_id,
-            mesh.uv_offset.x,
-            mesh.uv_offset.y,
-            mesh.uv_scale.x,
-            mesh.uv_scale.y,
+            mesh_id=mesh.mesh_id,
+            x=transform.translation.x,
+            y=transform.translation.y,
+            rotation=transform.rotation_z(),
+            scale_x=transform.scale.x,
+            scale_y=transform.scale.y,
+            color_r=mesh.color.r,
+            color_g=mesh.color.g,
+            color_b=mesh.color.b,
+            color_a=draw_alpha,
+            texture_id~,
+            uv_offset_x=mesh.uv_offset.x,
+            uv_offset_y=mesh.uv_offset.y,
+            uv_scale_x=mesh.uv_scale.x,
+            uv_scale_y=mesh.uv_scale.y,
           )
         }
         UiRectExtra(i) => {
@@ -4198,29 +4344,29 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             transform.translation.y + rect.anchor_offset.y,
           )
           @window.host_gpu_draw_ui_rect(
-            rect.texture.id(),
-            pos.x,
-            pos.y,
-            transform.rotation_z(),
-            rect.draw_scale.x,
-            rect.draw_scale.y,
-            rect.color.r,
-            rect.color.g,
-            rect.color.b,
-            rect.color.a,
-            rect.uv_min.x,
-            rect.uv_min.y,
-            rect.uv_max.x,
-            rect.uv_max.y,
-            rect.flags,
-            rect.radius.top_left,
-            rect.radius.top_right,
-            rect.radius.bottom_right,
-            rect.radius.bottom_left,
-            rect.border.left,
-            rect.border.top,
-            rect.border.right,
-            rect.border.bottom,
+            texture_id=rect.texture.id(),
+            x=pos.x,
+            y=pos.y,
+            rotation=transform.rotation_z(),
+            scale_x=rect.draw_scale.x,
+            scale_y=rect.draw_scale.y,
+            color_r=rect.color.r,
+            color_g=rect.color.g,
+            color_b=rect.color.b,
+            color_a=rect.color.a,
+            uv_min_x=rect.uv_min.x,
+            uv_min_y=rect.uv_min.y,
+            uv_max_x=rect.uv_max.x,
+            uv_max_y=rect.uv_max.y,
+            flags=rect.flags,
+            radius_tl=rect.radius.top_left,
+            radius_tr=rect.radius.top_right,
+            radius_br=rect.radius.bottom_right,
+            radius_bl=rect.radius.bottom_left,
+            border_left=rect.border.left,
+            border_top=rect.border.top,
+            border_right=rect.border.right,
+            border_bottom=rect.border.bottom,
           )
         }
         UiBoxShadowExtra(i) => {
@@ -4232,24 +4378,24 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             transform.translation.y + shadow.anchor_offset.y,
           )
           @window.host_gpu_draw_ui_box_shadow(
-            shadow.texture.id(),
-            pos.x,
-            pos.y,
-            transform.rotation_z(),
-            shadow.draw_scale.x,
-            shadow.draw_scale.y,
-            shadow.color.r,
-            shadow.color.g,
-            shadow.color.b,
-            shadow.color.a,
-            shadow.size.x,
-            shadow.size.y,
-            shadow.radius.top_left,
-            shadow.radius.top_right,
-            shadow.radius.bottom_right,
-            shadow.radius.bottom_left,
-            shadow.blur,
-            shadow.samples,
+            texture_id=shadow.texture.id(),
+            x=pos.x,
+            y=pos.y,
+            rotation=transform.rotation_z(),
+            scale_x=shadow.draw_scale.x,
+            scale_y=shadow.draw_scale.y,
+            color_r=shadow.color.r,
+            color_g=shadow.color.g,
+            color_b=shadow.color.b,
+            color_a=shadow.color.a,
+            size_x=shadow.size.x,
+            size_y=shadow.size.y,
+            radius_tl=shadow.radius.top_left,
+            radius_tr=shadow.radius.top_right,
+            radius_br=shadow.radius.bottom_right,
+            radius_bl=shadow.radius.bottom_left,
+            blur=shadow.blur,
+            samples=shadow.samples,
           )
         }
         UiTextureSliceExtra(i) => {
@@ -4261,36 +4407,37 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
             transform.translation.y + slice.anchor_offset.y,
           )
           @window.host_gpu_draw_ui_texture_slice(
-            slice.texture.id(),
-            pos.x,
-            pos.y,
-            transform.rotation_z(),
-            slice.draw_scale.x,
-            slice.draw_scale.y,
-            slice.color.r,
-            slice.color.g,
-            slice.color.b,
-            slice.color.a,
-            slice.texture_slices.x,
-            slice.texture_slices.y,
-            slice.texture_slices.z,
-            slice.texture_slices.w,
-            slice.target_slices.x,
-            slice.target_slices.y,
-            slice.target_slices.z,
-            slice.target_slices.w,
-            slice.repeat.x,
-            slice.repeat.y,
-            slice.repeat.z,
-            slice.repeat.w,
-            slice.atlas_rect.x,
-            slice.atlas_rect.y,
-            slice.atlas_rect.z,
-            slice.atlas_rect.w,
+            texture_id=slice.texture.id(),
+            x=pos.x,
+            y=pos.y,
+            rotation=transform.rotation_z(),
+            scale_x=slice.draw_scale.x,
+            scale_y=slice.draw_scale.y,
+            color_r=slice.color.r,
+            color_g=slice.color.g,
+            color_b=slice.color.b,
+            color_a=slice.color.a,
+            texture_slice_l=slice.texture_slices.x,
+            texture_slice_t=slice.texture_slices.y,
+            texture_slice_r=slice.texture_slices.z,
+            texture_slice_b=slice.texture_slices.w,
+            target_slice_l=slice.target_slices.x,
+            target_slice_t=slice.target_slices.y,
+            target_slice_r=slice.target_slices.z,
+            target_slice_b=slice.target_slices.w,
+            repeat_side_x=slice.repeat.x,
+            repeat_side_y=slice.repeat.y,
+            repeat_center_x=slice.repeat.z,
+            repeat_center_y=slice.repeat.w,
+            atlas_l=slice.atlas_rect.x,
+            atlas_t=slice.atlas_rect.y,
+            atlas_r=slice.atlas_rect.z,
+            atlas_b=slice.atlas_rect.w,
           )
         }
       }
     }
+    render2d_draw_camera_bloom(camera, view_width_logical, view_height_logical)
     gizmos_draw_lines(camera.layers)
     @window.host_gpu_end_pass()
   }
@@ -4535,7 +4682,7 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
         proj_scale.to_string() +
         " viewport=" +
         viewport_text
-      @window.host_debug_string(message)
+      @window.host_debug_string(value=message)
       return
     }
   }

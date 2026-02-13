@@ -68,6 +68,7 @@ pub struct World {
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  bloom2d : @core.ComponentStore[@render2d.Bloom2d]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -216,6 +217,7 @@ pub fn World::new() -> World {
     rigid_body3d: @core.ComponentStore::new(),
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
+    bloom2d: @core.ComponentStore::new(),
     accessibility_label: @core.ComponentStore::new(),
     ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
@@ -821,6 +823,11 @@ pub impl @render2d.Has_RenderLayers for World with get_render_layers_store(self)
 ///|
 pub impl @render2d.Has_RenderTarget for World with get_render_target_store(self) {
   self.render_target
+}
+
+///|
+pub impl @render2d.Has_Bloom2d for World with get_bloom2d_store(self) {
+  self.bloom2d
 }
 
 ///|

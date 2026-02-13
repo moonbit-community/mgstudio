@@ -83,20 +83,20 @@ pub(all) enum HostEvent {
 
 ///|
 pub fn host_window_create(
-  width : Int,
-  height : Int,
-  title : String,
+  width~ : Int,
+  height~ : Int,
+  title~ : String,
 ) -> HostWindow {
   @core.with_host_string_id(title, fn(title_id) {
-    host_window_create_id(width, height, title_id)
+    host_window_create_id(width~, height~, title_id~)
   })
 }
 
 ///|
 fn host_window_create_id(
-  width : Int,
-  height : Int,
-  title_id : Int,
+  width~ : Int,
+  height~ : Int,
+  title_id~ : Int,
 ) -> HostWindow = "mgstudio_host" "window_create"
 
 ///|
@@ -179,10 +179,10 @@ pub fn host_gpu_create_surface(window : HostWindow) -> HostGpuSurface = "mgstudi
 
 ///|
 pub fn host_gpu_configure_surface(
-  device : HostGpuDevice,
-  surface : HostGpuSurface,
-  width : Int,
-  height : Int,
+  device~ : HostGpuDevice,
+  surface~ : HostGpuSurface,
+  width~ : Int,
+  height~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_configure_surface"
 
 ///|
@@ -193,86 +193,86 @@ pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit = "mgstudio_host" "gpu_e
 
 ///|
 pub fn host_gpu_begin_pass(
-  target_id : Int,
-  width : Int,
-  height : Int,
-  clear_r : Float,
-  clear_g : Float,
-  clear_b : Float,
-  clear_a : Float,
-  camera_x : Float,
-  camera_y : Float,
-  camera_rotation : Float,
-  camera_scale : Float,
-  viewport_x : Int,
-  viewport_y : Int,
-  viewport_width : Int,
-  viewport_height : Int,
+  target_id~ : Int,
+  width~ : Int,
+  height~ : Int,
+  clear_r~ : Float,
+  clear_g~ : Float,
+  clear_b~ : Float,
+  clear_a~ : Float,
+  camera_x~ : Float,
+  camera_y~ : Float,
+  camera_rotation~ : Float,
+  camera_scale~ : Float,
+  viewport_x~ : Int,
+  viewport_y~ : Int,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass"
 
 ///|
 pub fn host_gpu_begin_pass_3d(
-  target_id : Int,
-  width : Int,
-  height : Int,
-  clear_r : Float,
-  clear_g : Float,
-  clear_b : Float,
-  clear_a : Float,
-  camera_x : Float,
-  camera_y : Float,
-  camera_z : Float,
-  camera_rot_x : Float,
-  camera_rot_y : Float,
-  camera_rot_z : Float,
-  camera_rot_w : Float,
-  camera_fov_y : Float,
-  camera_near : Float,
-  camera_far : Float,
-  viewport_x : Int,
-  viewport_y : Int,
-  viewport_width : Int,
-  viewport_height : Int,
-  ambient_r : Float,
-  ambient_g : Float,
-  ambient_b : Float,
-  ambient_brightness : Float,
-  directional_dir_x : Float,
-  directional_dir_y : Float,
-  directional_dir_z : Float,
-  directional_color_r : Float,
-  directional_color_g : Float,
-  directional_color_b : Float,
-  directional_illuminance : Float,
-  point_pos_x : Float,
-  point_pos_y : Float,
-  point_pos_z : Float,
-  point_color_r : Float,
-  point_color_g : Float,
-  point_color_b : Float,
-  point_intensity : Float,
-  point_range : Float,
-  spot_pos_x : Float,
-  spot_pos_y : Float,
-  spot_pos_z : Float,
-  spot_dir_x : Float,
-  spot_dir_y : Float,
-  spot_dir_z : Float,
-  spot_color_r : Float,
-  spot_color_g : Float,
-  spot_color_b : Float,
-  spot_intensity : Float,
-  spot_range : Float,
-  spot_inner_angle : Float,
-  spot_outer_angle : Float,
+  target_id~ : Int,
+  width~ : Int,
+  height~ : Int,
+  clear_r~ : Float,
+  clear_g~ : Float,
+  clear_b~ : Float,
+  clear_a~ : Float,
+  camera_x~ : Float,
+  camera_y~ : Float,
+  camera_z~ : Float,
+  camera_rot_x~ : Float,
+  camera_rot_y~ : Float,
+  camera_rot_z~ : Float,
+  camera_rot_w~ : Float,
+  camera_fov_y~ : Float,
+  camera_near~ : Float,
+  camera_far~ : Float,
+  viewport_x~ : Int,
+  viewport_y~ : Int,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  ambient_r~ : Float,
+  ambient_g~ : Float,
+  ambient_b~ : Float,
+  ambient_brightness~ : Float,
+  directional_dir_x~ : Float,
+  directional_dir_y~ : Float,
+  directional_dir_z~ : Float,
+  directional_color_r~ : Float,
+  directional_color_g~ : Float,
+  directional_color_b~ : Float,
+  directional_illuminance~ : Float,
+  point_pos_x~ : Float,
+  point_pos_y~ : Float,
+  point_pos_z~ : Float,
+  point_color_r~ : Float,
+  point_color_g~ : Float,
+  point_color_b~ : Float,
+  point_intensity~ : Float,
+  point_range~ : Float,
+  spot_pos_x~ : Float,
+  spot_pos_y~ : Float,
+  spot_pos_z~ : Float,
+  spot_dir_x~ : Float,
+  spot_dir_y~ : Float,
+  spot_dir_z~ : Float,
+  spot_color_r~ : Float,
+  spot_color_g~ : Float,
+  spot_color_b~ : Float,
+  spot_intensity~ : Float,
+  spot_range~ : Float,
+  spot_inner_angle~ : Float,
+  spot_outer_angle~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass_3d"
 
 ///|
 pub fn host_gpu_set_scissor(
-  x : Int,
-  y : Int,
-  width : Int,
-  height : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_set_scissor"
 
 ///|
@@ -280,34 +280,34 @@ pub fn host_gpu_clear_scissor() -> Unit = "mgstudio_host" "gpu_clear_scissor"
 
 ///|
 pub fn host_gpu_draw_sprite(
-  texture_id : Int,
-  x : Float,
-  y : Float,
-  rotation : Float,
-  scale_x : Float,
-  scale_y : Float,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_sprite"
 
 ///|
 pub fn host_gpu_draw_sprite_uv(
-  texture_id : Int,
-  x : Float,
-  y : Float,
-  rotation : Float,
-  scale_x : Float,
-  scale_y : Float,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  uv_min_x : Float,
-  uv_min_y : Float,
-  uv_max_x : Float,
-  uv_max_y : Float,
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  uv_min_x~ : Float,
+  uv_min_y~ : Float,
+  uv_max_x~ : Float,
+  uv_max_y~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_sprite_uv"
 
 ///|
@@ -319,29 +319,29 @@ pub fn host_gpu_draw_sprite_uv(
 /// - `radius_*`: corner radii in logical pixels (top-left, top-right, bottom-right, bottom-left).
 /// - `border_*`: border thickness in logical pixels (left, top, right, bottom).
 pub fn host_gpu_draw_ui_rect(
-  texture_id : Int,
-  x : Float,
-  y : Float,
-  rotation : Float,
-  scale_x : Float,
-  scale_y : Float,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  uv_min_x : Float,
-  uv_min_y : Float,
-  uv_max_x : Float,
-  uv_max_y : Float,
-  flags : Int,
-  radius_tl : Float,
-  radius_tr : Float,
-  radius_br : Float,
-  radius_bl : Float,
-  border_left : Float,
-  border_top : Float,
-  border_right : Float,
-  border_bottom : Float,
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  uv_min_x~ : Float,
+  uv_min_y~ : Float,
+  uv_max_x~ : Float,
+  uv_max_y~ : Float,
+  flags~ : Int,
+  radius_tl~ : Float,
+  radius_tr~ : Float,
+  radius_br~ : Float,
+  radius_bl~ : Float,
+  border_left~ : Float,
+  border_top~ : Float,
+  border_right~ : Float,
+  border_bottom~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_ui_rect"
 
 ///|
@@ -355,24 +355,24 @@ pub fn host_gpu_draw_ui_rect(
 /// - `blur`: blur radius in world units.
 /// - `samples`: integration steps for the gaussian approximation (>= 1 recommended).
 pub fn host_gpu_draw_ui_box_shadow(
-  texture_id : Int,
-  x : Float,
-  y : Float,
-  rotation : Float,
-  scale_x : Float,
-  scale_y : Float,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  size_x : Float,
-  size_y : Float,
-  radius_tl : Float,
-  radius_tr : Float,
-  radius_br : Float,
-  radius_bl : Float,
-  blur : Float,
-  samples : Int,
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  size_x~ : Float,
+  size_y~ : Float,
+  radius_tl~ : Float,
+  radius_tr~ : Float,
+  radius_br~ : Float,
+  radius_bl~ : Float,
+  blur~ : Float,
+  samples~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_draw_ui_box_shadow"
 
 ///|
@@ -386,106 +386,106 @@ pub fn host_gpu_draw_ui_box_shadow(
 /// - `repeat`: repeat factors (side_x, side_y, center_x, center_y).
 /// - `atlas_rect`: normalized atlas rect (left, top, right, bottom).
 pub fn host_gpu_draw_ui_texture_slice(
-  texture_id : Int,
-  x : Float,
-  y : Float,
-  rotation : Float,
-  scale_x : Float,
-  scale_y : Float,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  texture_slice_l : Float,
-  texture_slice_t : Float,
-  texture_slice_r : Float,
-  texture_slice_b : Float,
-  target_slice_l : Float,
-  target_slice_t : Float,
-  target_slice_r : Float,
-  target_slice_b : Float,
-  repeat_side_x : Float,
-  repeat_side_y : Float,
-  repeat_center_x : Float,
-  repeat_center_y : Float,
-  atlas_l : Float,
-  atlas_t : Float,
-  atlas_r : Float,
-  atlas_b : Float,
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_slice_l~ : Float,
+  texture_slice_t~ : Float,
+  texture_slice_r~ : Float,
+  texture_slice_b~ : Float,
+  target_slice_l~ : Float,
+  target_slice_t~ : Float,
+  target_slice_r~ : Float,
+  target_slice_b~ : Float,
+  repeat_side_x~ : Float,
+  repeat_side_y~ : Float,
+  repeat_center_x~ : Float,
+  repeat_center_y~ : Float,
+  atlas_l~ : Float,
+  atlas_t~ : Float,
+  atlas_r~ : Float,
+  atlas_b~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_ui_texture_slice"
 
 ///|
 pub fn host_gpu_draw_mesh(
-  mesh_id : Int,
-  x : Float,
-  y : Float,
-  rotation : Float,
-  scale_x : Float,
-  scale_y : Float,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  texture_id : Int,
-  uv_offset_x : Float,
-  uv_offset_y : Float,
-  uv_scale_x : Float,
-  uv_scale_y : Float,
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_id~ : Int,
+  uv_offset_x~ : Float,
+  uv_offset_y~ : Float,
+  uv_scale_x~ : Float,
+  uv_scale_y~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh"
 
 ///|
 pub fn host_gpu_draw_mesh3d(
-  mesh_id : Int,
-  x : Float,
-  y : Float,
-  z : Float,
-  rotation_x : Float,
-  rotation_y : Float,
-  rotation_z : Float,
-  rotation_w : Float,
-  scale_x : Float,
-  scale_y : Float,
-  scale_z : Float,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  texture_id : Int,
-  uv_offset_x : Float,
-  uv_offset_y : Float,
-  uv_scale_x : Float,
-  uv_scale_y : Float,
-  normal_texture_id : Int,
-  emissive_texture_id : Int,
-  metallic_roughness_texture_id : Int,
-  occlusion_texture_id : Int,
-  emissive_r : Float,
-  emissive_g : Float,
-  emissive_b : Float,
-  unlit : Float,
-  metallic : Float,
-  roughness : Float,
-  reflectance : Float,
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  z~ : Float,
+  rotation_x~ : Float,
+  rotation_y~ : Float,
+  rotation_z~ : Float,
+  rotation_w~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  scale_z~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_id~ : Int,
+  uv_offset_x~ : Float,
+  uv_offset_y~ : Float,
+  uv_scale_x~ : Float,
+  uv_scale_y~ : Float,
+  normal_texture_id~ : Int,
+  emissive_texture_id~ : Int,
+  metallic_roughness_texture_id~ : Int,
+  occlusion_texture_id~ : Int,
+  emissive_r~ : Float,
+  emissive_g~ : Float,
+  emissive_b~ : Float,
+  unlit~ : Float,
+  metallic~ : Float,
+  roughness~ : Float,
+  reflectance~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
 
 ///|
 pub fn host_gpu_draw_gizmo_line(
-  start_x : Float,
-  start_y : Float,
-  start_r : Float,
-  start_g : Float,
-  start_b : Float,
-  start_a : Float,
-  end_x : Float,
-  end_y : Float,
-  end_r : Float,
-  end_g : Float,
-  end_b : Float,
-  end_a : Float,
-  line_width : Float,
-  style_kind : Int,
-  gap_scale : Float,
-  line_scale : Float,
+  start_x~ : Float,
+  start_y~ : Float,
+  start_r~ : Float,
+  start_g~ : Float,
+  start_b~ : Float,
+  start_a~ : Float,
+  end_x~ : Float,
+  end_y~ : Float,
+  end_r~ : Float,
+  end_g~ : Float,
+  end_b~ : Float,
+  end_a~ : Float,
+  line_width~ : Float,
+  style_kind~ : Int,
+  gap_scale~ : Float,
+  line_scale~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_gizmo_line"
 
 ///|
@@ -493,23 +493,23 @@ pub fn host_gpu_end_pass() -> Unit = "mgstudio_host" "gpu_end_pass"
 
 ///|
 pub fn host_gpu_create_render_target(
-  width : Int,
-  height : Int,
-  nearest : Bool,
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
 ) -> Int = "mgstudio_host" "gpu_create_render_target"
 
 ///|
 pub fn host_gpu_create_mesh_capsule(
-  radius : Float,
-  half_length : Float,
-  segments : Int,
+  radius~ : Float,
+  half_length~ : Float,
+  segments~ : Int,
 ) -> Int = "mgstudio_host" "gpu_create_mesh_capsule"
 
 ///|
-pub fn host_gpu_create_mesh_rectangle(width : Float, height : Float) -> Int = "mgstudio_host" "gpu_create_mesh_rectangle"
+pub fn host_gpu_create_mesh_rectangle(width~ : Float, height~ : Float) -> Int = "mgstudio_host" "gpu_create_mesh_rectangle"
 
 ///|
-pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int {
+pub fn host_gpu_create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
   @core.with_host_string_id(vertices_xy_csv, fn(text_id) {
     host_gpu_create_mesh_triangles_id(text_id)
   })
@@ -519,7 +519,9 @@ pub fn host_gpu_create_mesh_triangles(vertices_xy_csv : String) -> Int {
 fn host_gpu_create_mesh_triangles_id(vertices_xy_csv_id : Int) -> Int = "mgstudio_host" "gpu_create_mesh_triangles"
 
 ///|
-pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv : String) -> Int {
+pub fn host_gpu_create_mesh_triangles3d(
+  vertices_xyzuvrgba_csv~ : String,
+) -> Int {
   @core.with_host_string_id(vertices_xyzuvrgba_csv, fn(text_id) {
     host_gpu_create_mesh_triangles3d_id(text_id)
   })
@@ -529,7 +531,7 @@ pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv : String) -> Int 
 fn host_gpu_create_mesh_triangles3d_id(vertices_xyzuvrgba_csv_id : Int) -> Int = "mgstudio_host" "gpu_create_mesh_triangles3d"
 
 ///|
-pub fn host_debug_string(value : String) -> Unit {
+pub fn host_debug_string(value~ : String) -> Unit {
   @core.with_host_string_id(value, fn(text_id) { host_debug_string_id(text_id) })
 }
 
@@ -556,13 +558,17 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_build
   app : @app.App[W],
 ) -> @app.RunnerFn {
   fn() {
-    let window = host_window_create(800, 600, "Moon Game Studio")
+    let window = host_window_create(
+      width=800,
+      height=600,
+      title="Moon Game Studio",
+    )
     window_set_handle(window)
     let device = host_gpu_request_device()
     let surface = host_gpu_create_surface(window)
     let width = host_window_get_width(window)
     let height = host_window_get_height(window)
-    host_gpu_configure_surface(device, surface, width, height)
+    host_gpu_configure_surface(device~, surface~, width~, height~)
     let app_ref : Ref[@app.App[W]] = Ref::new(app.run_startup())
     runner_state.val.tick = Some(fn() {
       host_window_poll_events(window)

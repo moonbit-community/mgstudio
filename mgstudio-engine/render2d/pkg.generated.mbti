@@ -117,6 +117,13 @@ pub struct ArrowBuilder {
 pub fn ArrowBuilder::with_double_end(Self) -> Self
 pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
 
+pub struct Bloom2d {
+  source : @asset.Handle[@asset.Image]
+  settings : Bloom2dSettings
+}
+pub fn Bloom2d::new(@asset.Handle[@asset.Image]) -> Self
+pub fn Bloom2d::with_settings(Self, Bloom2dSettings) -> Self
+
 pub(all) struct Bloom2dSettings {
   enabled : Bool
   intensity : Float
@@ -158,12 +165,14 @@ pub struct Camera2dBundle {
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
+  bloom2d : Bloom2d?
 }
 pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
 pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
 pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(Self, W) -> @core.Entity
+pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
 
 pub struct Capsule2d {
   radius : Float
@@ -573,7 +582,7 @@ pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 // Type aliases
 
 // Traits
-pub(open) trait Camera2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + @math.Has_Transform {
 }
 
 pub(open) trait HasRes_RenderState {
@@ -582,6 +591,10 @@ pub(open) trait HasRes_RenderState {
 
 pub(open) trait Has_Anchor {
   get_anchor_store(Self) -> @core.ComponentStore[Anchor]
+}
+
+pub(open) trait Has_Bloom2d {
+  get_bloom2d_store(Self) -> @core.ComponentStore[Bloom2d]
 }
 
 pub(open) trait Has_Camera {
@@ -627,7 +640,7 @@ pub(open) trait Has_Sprite {
 pub(open) trait Mesh2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait RenderExtractWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+pub(open) trait RenderExtractWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
 }
 
 pub(open) trait SpriteBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {

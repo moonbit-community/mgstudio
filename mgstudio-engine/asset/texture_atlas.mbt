@@ -343,7 +343,10 @@ pub(all) enum ImageSampler {
 }
 
 ///|
-pub fn host_asset_set_texture_sampler(texture_id : Int, sampler : Int) -> Unit = "mgstudio_host" "asset_set_texture_sampler"
+pub fn host_asset_set_texture_sampler(
+  texture_id~ : Int,
+  sampler~ : Int,
+) -> Unit = "mgstudio_host" "asset_set_texture_sampler"
 
 ///|
 pub fn asset_set_texture_sampler(
@@ -356,7 +359,7 @@ pub fn asset_set_texture_sampler(
     LinearRepeat => 2
     NearestRepeat => 3
   }
-  host_asset_set_texture_sampler(texture.id(), sampler_id)
+  host_asset_set_texture_sampler(texture_id=texture.id(), sampler=sampler_id)
 }
 
 ///|

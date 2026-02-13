@@ -56,27 +56,27 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
-pub fn host_asset_copy_texture_to_texture(Int, Int, Int, Int) -> Unit
+pub fn host_asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
-pub fn host_asset_create_dynamic_texture(Int, Int, Bool) -> Int
+pub fn host_asset_create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
 
-pub fn host_asset_font_bytes_get(Int, Int) -> Int
+pub fn host_asset_font_bytes_get(font_id~ : Int, index~ : Int) -> Int
 
-pub fn host_asset_font_bytes_get_u32(Int, Int) -> Int
+pub fn host_asset_font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int
 
 pub fn host_asset_font_bytes_len(Int) -> Int
 
 pub fn host_asset_is_texture_loaded(Int) -> Bool
 
-pub fn host_asset_load_folder(String) -> Int
+pub fn host_asset_load_folder(path~ : String) -> Int
 
-pub fn host_asset_load_font(String) -> Int
+pub fn host_asset_load_font(path~ : String) -> Int
 
-pub fn host_asset_load_texture(String, Bool) -> Int
+pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int
 
-pub fn host_asset_load_wgsl(String) -> Int
+pub fn host_asset_load_wgsl(path~ : String) -> Int
 
-pub fn host_asset_loaded_folder_handles_get(Int, Int) -> Int
+pub fn host_asset_loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int
 
 pub fn host_asset_loaded_folder_handles_len(Int) -> Int
 
@@ -84,15 +84,15 @@ pub fn host_asset_poll_loaded_folder_event_id() -> Int
 
 pub fn host_asset_poll_loaded_folder_event_kind() -> Int
 
-pub fn host_asset_set_texture_sampler(Int, Int) -> Unit
+pub fn host_asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit
 
 pub fn host_asset_texture_height(Int) -> Int
 
 pub fn host_asset_texture_width(Int) -> Int
 
-pub fn host_asset_update_texture_region(Int, Int, Int, Int, Int, Int) -> Unit
+pub fn host_asset_update_texture_region(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, glyph_id~ : Int) -> Unit
 
-pub fn host_asset_update_texture_region_bytes(Int, Int, Int, Int, Int, Int) -> Unit
+pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, bytes_id~ : Int) -> Unit
 
 // Errors
 

@@ -147,17 +147,17 @@ pub fn asset_transparent_texture() -> Handle[Image] {
 }
 
 ///|
-pub fn host_asset_load_texture(path : String, nearest : Bool) -> Int {
+pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int {
   @core.with_host_string_id(path, fn(path_id) {
-    host_asset_load_texture_id(path_id, nearest)
+    host_asset_load_texture_id(path_id~, nearest~)
   })
 }
 
 ///|
-fn host_asset_load_texture_id(path_id : Int, nearest : Bool) -> Int = "mgstudio_host" "asset_load_texture"
+fn host_asset_load_texture_id(path_id~ : Int, nearest~ : Bool) -> Int = "mgstudio_host" "asset_load_texture"
 
 ///|
-pub fn host_asset_load_wgsl(path : String) -> Int {
+pub fn host_asset_load_wgsl(path~ : String) -> Int {
   @core.with_host_string_id(path, fn(path_id) {
     host_asset_load_wgsl_id(path_id)
   })
@@ -168,29 +168,29 @@ fn host_asset_load_wgsl_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_w
 
 ///|
 pub fn host_asset_create_dynamic_texture(
-  width : Int,
-  height : Int,
-  nearest : Bool,
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
 ) -> Int = "mgstudio_host" "asset_create_dynamic_texture"
 
 ///|
 pub fn host_asset_update_texture_region(
-  texture_id : Int,
-  x : Int,
-  y : Int,
-  width : Int,
-  height : Int,
-  glyph_id : Int,
+  texture_id~ : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+  glyph_id~ : Int,
 ) -> Unit = "mgstudio_host" "asset_update_texture_region"
 
 ///|
 pub fn host_asset_update_texture_region_bytes(
-  texture_id : Int,
-  x : Int,
-  y : Int,
-  width : Int,
-  height : Int,
-  bytes_id : Int,
+  texture_id~ : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+  bytes_id~ : Int,
 ) -> Unit = "mgstudio_host" "asset_update_texture_region_bytes"
 
 ///|
@@ -204,15 +204,15 @@ pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool = "mgstudio_host" 
 
 ///|
 pub fn host_asset_copy_texture_to_texture(
-  dst_texture_id : Int,
-  dst_x : Int,
-  dst_y : Int,
-  src_texture_id : Int,
+  dst_texture_id~ : Int,
+  dst_x~ : Int,
+  dst_y~ : Int,
+  src_texture_id~ : Int,
 ) -> Unit = "mgstudio_host" "asset_copy_texture_to_texture"
 
 ///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
-  let id = host_asset_load_texture(path, asset_default_nearest.val)
+  let id = host_asset_load_texture(path~, nearest=asset_default_nearest.val)
   self.paths.push(path)
   let handle = Handle::new(id)
   asset_register_image_path(path, handle)
@@ -224,7 +224,7 @@ pub fn AssetServer::load_nearest(
   self : AssetServer,
   path : String,
 ) -> Handle[Image] {
-  let id = host_asset_load_texture(path, true)
+  let id = host_asset_load_texture(path~, nearest=true)
   self.paths.push(path)
   let handle = Handle::new(id)
   asset_register_image_path(path, handle)
@@ -236,7 +236,7 @@ pub fn AssetServer::load_wgsl(
   self : AssetServer,
   path : String,
 ) -> Handle[Shader] {
-  let id = host_asset_load_wgsl(path)
+  let id = host_asset_load_wgsl(path~)
   self.paths.push(path)
   Handle::new(id)
 }
@@ -246,7 +246,11 @@ pub fn asset_create_dynamic_texture(
   size : @math.UVec2,
   nearest : Bool,
 ) -> Handle[Image] {
-  let id = host_asset_create_dynamic_texture(size.x, size.y, nearest)
+  let id = host_asset_create_dynamic_texture(
+    width=size.x,
+    height=size.y,
+    nearest~,
+  )
   Handle::new(id)
 }
 
@@ -258,12 +262,12 @@ pub fn asset_update_texture_region(
 ) -> Unit {
   let size = rect.size()
   host_asset_update_texture_region(
-    texture.id(),
-    rect.min.x,
-    rect.min.y,
-    size.x,
-    size.y,
-    glyph_id,
+    texture_id=texture.id(),
+    x=rect.min.x,
+    y=rect.min.y,
+    width=size.x,
+    height=size.y,
+    glyph_id~,
   )
 }
 
@@ -276,12 +280,12 @@ pub fn asset_update_texture_region_rgba8(
   let size = rect.size()
   @core.with_host_bytes_id(pixels_rgba8, fn(bytes_id) {
     host_asset_update_texture_region_bytes(
-      texture.id(),
-      rect.min.x,
-      rect.min.y,
-      size.x,
-      size.y,
-      bytes_id,
+      texture_id=texture.id(),
+      x=rect.min.x,
+      y=rect.min.y,
+      width=size.x,
+      height=size.y,
+      bytes_id~,
     )
   })
   |> ignore
@@ -308,7 +312,12 @@ pub fn asset_copy_texture_to_texture(
   dst_pos : @math.UVec2,
   src : Handle[Image],
 ) -> Unit {
-  host_asset_copy_texture_to_texture(dst.id(), dst_pos.x, dst_pos.y, src.id())
+  host_asset_copy_texture_to_texture(
+    dst_texture_id=dst.id(),
+    dst_x=dst_pos.x,
+    dst_y=dst_pos.y,
+    src_texture_id=src.id(),
+  )
 }
 
 ///|

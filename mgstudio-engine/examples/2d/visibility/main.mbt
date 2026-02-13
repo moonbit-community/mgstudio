@@ -59,7 +59,7 @@ fn visibility_setup(world : @ecs_world.World) -> Unit {
   )
   |> ignore
   @window.host_debug_string(
-    "Press H to toggle parent Visibility (Hidden/Visible).",
+    value="Press H to toggle parent Visibility (Hidden/Visible).",
   )
 }
 
@@ -87,5 +87,5 @@ fn visibility_toggle_system(world : @ecs_world.World) -> Unit {
     @vis.Visibility::Visible => "Parent Visibility: Visible"
     @vis.Visibility::Inherited => "Parent Visibility: Inherited"
   }
-  @window.host_debug_string(msg)
+  @window.host_debug_string(value=msg)
 }

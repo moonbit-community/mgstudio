@@ -167,10 +167,10 @@ fn update_tilemap_data(chunk : @render2d.TilemapChunk) -> Unit {
   }
   if chunk.tile_capacity() != tile_count {
     @window.host_debug_string(
-      "tilemap_chunk: tile_data length mismatch, expected=" +
-      chunk.tile_capacity().to_string() +
-      ", actual=" +
-      tile_count.to_string(),
+      value="tilemap_chunk: tile_data length mismatch, expected=" +
+        chunk.tile_capacity().to_string() +
+        ", actual=" +
+        tile_count.to_string(),
     )
   }
 }
@@ -191,7 +191,7 @@ fn log_probe_tile(chunk : @render2d.TilemapChunk) -> Unit {
   }
   tilemap_chunk_state.val.last_logged_tile_value = current
   let text = if current < 0 { "none" } else { current.to_string() }
-  @window.host_debug_string("tilemap_chunk tile(3,4)=" + text)
+  @window.host_debug_string(value="tilemap_chunk tile(3,4)=" + text)
 }
 
 ///|

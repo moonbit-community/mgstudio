@@ -82,15 +82,15 @@ fn host_a11y_begin_update(root_id : Int) -> Unit = "mgstudio_host" "a11y_begin_u
 
 ///|
 fn host_a11y_push_node(
-  node_id : Int,
-  parent_id : Int,
-  role_id : Int,
-  x : Float,
-  y : Float,
-  width : Float,
-  height : Float,
-  name_id : Int,
-  actions_mask : Int,
+  node_id~ : Int,
+  parent_id~ : Int,
+  role_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  width~ : Float,
+  height~ : Float,
+  name_id~ : Int,
+  actions_mask~ : Int,
 ) -> Unit = "mgstudio_host" "a11y_push_node"
 
 ///|
@@ -109,7 +109,7 @@ fn host_a11y_action_kind(index : Int) -> Int = "mgstudio_host" "a11y_action_kind
 fn host_a11y_action_value_len(index : Int) -> Int = "mgstudio_host" "a11y_action_value_len"
 
 ///|
-fn host_a11y_action_value_code_unit(index : Int, offset : Int) -> Int = "mgstudio_host" "a11y_action_value_code_unit"
+fn host_a11y_action_value_code_unit(index~ : Int, offset~ : Int) -> Int = "mgstudio_host" "a11y_action_value_code_unit"
 
 ///|
 fn host_a11y_actions_clear() -> Unit = "mgstudio_host" "a11y_actions_clear"
@@ -160,7 +160,7 @@ fn host_action_value(index : Int) -> String? {
   }
   let chars : Array[Char] = []
   for i in 0..<len {
-    let cu = host_a11y_action_value_code_unit(index, i)
+    let cu = host_a11y_action_value_code_unit(index~, offset=i)
     if cu.to_char() is Some(ch) {
       chars.push(ch)
     } else {
@@ -190,7 +190,15 @@ pub fn a11y_host_push_node(
   actions_mask : Int,
 ) -> Unit {
   host_a11y_push_node(
-    node_id, parent_id, role_id, x, y, width, height, name_id, actions_mask,
+    node_id~,
+    parent_id~,
+    role_id~,
+    x~,
+    y~,
+    width~,
+    height~,
+    name_id~,
+    actions_mask~,
   )
 }
 

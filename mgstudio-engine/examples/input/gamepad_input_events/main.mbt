@@ -66,7 +66,7 @@ fn gamepad_setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn log_line(text : String) -> Unit {
-  @window.host_debug_string("[gamepad_input_events] " + text)
+  @window.host_debug_string(value="[gamepad_input_events] " + text)
 }
 
 ///|

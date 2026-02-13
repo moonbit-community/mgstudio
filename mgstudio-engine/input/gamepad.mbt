@@ -216,7 +216,7 @@ fn host_input_gamepad_connected(gamepad_id : Int) -> Bool = "mgstudio_host" "inp
 fn host_input_gamepad_name_len(gamepad_id : Int) -> Int = "mgstudio_host" "input_gamepad_name_len"
 
 ///|
-fn host_input_gamepad_name_code_unit(gamepad_id : Int, offset : Int) -> Int = "mgstudio_host" "input_gamepad_name_code_unit"
+fn host_input_gamepad_name_code_unit(gamepad_id~ : Int, offset~ : Int) -> Int = "mgstudio_host" "input_gamepad_name_code_unit"
 
 ///|
 fn host_input_gamepad_vendor_id(gamepad_id : Int) -> Int = "mgstudio_host" "input_gamepad_vendor_id"
@@ -225,13 +225,13 @@ fn host_input_gamepad_vendor_id(gamepad_id : Int) -> Int = "mgstudio_host" "inpu
 fn host_input_gamepad_product_id(gamepad_id : Int) -> Int = "mgstudio_host" "input_gamepad_product_id"
 
 ///|
-fn host_input_gamepad_button_value(gamepad_id : Int, button : Int) -> Float = "mgstudio_host" "input_gamepad_button_value"
+fn host_input_gamepad_button_value(gamepad_id~ : Int, button~ : Int) -> Float = "mgstudio_host" "input_gamepad_button_value"
 
 ///|
-fn host_input_gamepad_button_pressed(gamepad_id : Int, button : Int) -> Bool = "mgstudio_host" "input_gamepad_button_pressed"
+fn host_input_gamepad_button_pressed(gamepad_id~ : Int, button~ : Int) -> Bool = "mgstudio_host" "input_gamepad_button_pressed"
 
 ///|
-fn host_input_gamepad_axis_value(gamepad_id : Int, axis : Int) -> Float = "mgstudio_host" "input_gamepad_axis_value"
+fn host_input_gamepad_axis_value(gamepad_id~ : Int, axis~ : Int) -> Float = "mgstudio_host" "input_gamepad_axis_value"
 
 ///|
 let current_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref::new([])
@@ -269,7 +269,7 @@ fn host_gamepad_name(gamepad_id : Int) -> String {
   }
   let chars : Array[Char] = []
   for i in 0..<len {
-    let code_unit = host_input_gamepad_name_code_unit(gamepad_id, i)
+    let code_unit = host_input_gamepad_name_code_unit(gamepad_id~, offset=i)
     if code_unit.to_char() is Some(ch) {
       chars.push(ch)
     } else {
@@ -285,11 +285,13 @@ fn read_gamepad_snapshot(gamepad_id : Int) -> GamepadSnapshot {
   let button_pressed : Array[Bool] = []
   let axis_values : Array[Float] = []
   for i in 0..<GAMEPAD_BUTTON_COUNT {
-    button_values.push(host_input_gamepad_button_value(gamepad_id, i))
-    button_pressed.push(host_input_gamepad_button_pressed(gamepad_id, i))
+    button_values.push(host_input_gamepad_button_value(gamepad_id~, button=i))
+    button_pressed.push(
+      host_input_gamepad_button_pressed(gamepad_id~, button=i),
+    )
   }
   for i in 0..<GAMEPAD_AXIS_COUNT {
-    axis_values.push(host_input_gamepad_axis_value(gamepad_id, i))
+    axis_values.push(host_input_gamepad_axis_value(gamepad_id~, axis=i))
   }
   GamepadSnapshot::{
     id: gamepad_id,

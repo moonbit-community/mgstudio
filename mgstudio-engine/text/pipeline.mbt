@@ -199,10 +199,10 @@ fn text_warn_missing_font_once(text_id : Int, font_handle : Int) -> Unit {
   }
   text_warned_missing_font_ids.val.push(text_id)
   @window.host_debug_string(
-    "Text2d warning: font bytes unavailable, text_id=" +
-    text_id.to_string() +
-    ", font_handle=" +
-    font_handle.to_string(),
+    value="Text2d warning: font bytes unavailable, text_id=" +
+      text_id.to_string() +
+      ", font_handle=" +
+      font_handle.to_string(),
   )
 }
 
@@ -213,8 +213,8 @@ fn text_warn_missing_glyph_once(text_id : Int) -> Unit {
   }
   text_warned_missing_glyph_ids.val.push(text_id)
   @window.host_debug_string(
-    "Text2d notice: glyph image unavailable, glyph skipped, text_id=" +
-    text_id.to_string(),
+    value="Text2d notice: glyph image unavailable, glyph skipped, text_id=" +
+      text_id.to_string(),
   )
 }
 
@@ -225,10 +225,10 @@ fn text_warn_missing_font_mapping_once(text_id : Int, font_id : Int) -> Unit {
   }
   text_warned_missing_font_mapping_ids.val.push(text_id)
   @window.host_debug_string(
-    "Text2d warning: font mapping unavailable, text_id=" +
-    text_id.to_string() +
-    ", font_id=" +
-    font_id.to_string(),
+    value="Text2d warning: font mapping unavailable, text_id=" +
+      text_id.to_string() +
+      ", font_id=" +
+      font_id.to_string(),
   )
 }
 
@@ -238,7 +238,7 @@ fn text_abort_layout_error(text_id : Int, detail : String) -> Unit {
     text_id.to_string() +
     ", detail=" +
     detail
-  @window.host_debug_string(message)
+  @window.host_debug_string(value=message)
   abort(message)
 }
 
