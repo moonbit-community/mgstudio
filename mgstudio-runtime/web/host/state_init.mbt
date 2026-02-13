@@ -102,6 +102,7 @@ priv struct AssetsState {
   reported_errors : @js.Any
   loading_textures : @js.Any
   texture_paths : @js.Any
+  mut texture_sampler_overrides : @js.Any
   shader_sources : @js.Any
   shader_paths : @js.Any
   loading_shaders : @js.Any
@@ -157,9 +158,7 @@ priv struct GpuState {
   mut pipeline : @webgpu.GPURenderPipeline?
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
-  mut mesh_bind_group : @webgpu.GPUBindGroup?
   mut mesh3d_pipeline : @webgpu.GPURenderPipeline?
-  mut mesh3d_bind_group : @webgpu.GPUBindGroup?
   mut mesh3d_uniform_layout : @webgpu.GPUBindGroupLayout?
   mut mesh3d_material_layout : @webgpu.GPUBindGroupLayout?
   mut depth_texture : @webgpu.GPUTexture?
@@ -252,6 +251,7 @@ fn new_state(
       reported_errors: new_set(),
       loading_textures: new_set(),
       texture_paths: new_map(),
+      texture_sampler_overrides: new_map(),
       shader_sources: new_map(),
       shader_paths: new_map(),
       loading_shaders: new_set(),
@@ -292,9 +292,7 @@ fn new_state(
       pipeline: None,
       vertex_count: 0,
       mesh_pipeline: None,
-      mesh_bind_group: None,
       mesh3d_pipeline: None,
-      mesh3d_bind_group: None,
       mesh3d_uniform_layout: None,
       mesh3d_material_layout: None,
       depth_texture: None,
@@ -736,9 +734,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.pipeline = None
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
-  state.gpu.mesh_bind_group = None
   state.gpu.mesh3d_pipeline = None
-  state.gpu.mesh3d_bind_group = None
   state.gpu.mesh3d_uniform_layout = None
   state.gpu.mesh3d_material_layout = None
   state.gpu.depth_texture = None
@@ -750,6 +746,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.gizmo_vertex_capacity = 0
   state.gpu.gizmo_lines = new_array()
   state.gpu.meshes = new_map()
+  state.assets.texture_sampler_overrides = new_map()
   state.gpu.next_mesh_id = 1
   state.gpu.uniform_buffer = None
   state.gpu.sprite_uniform_buffer = None

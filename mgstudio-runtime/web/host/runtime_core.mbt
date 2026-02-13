@@ -868,27 +868,6 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
       }
     })
     state.gpu.mesh_pipeline = Some(pipeline)
-    if state.gpu.uniform_buffer is Some(uniform_buffer) {
-      let layout = pipeline.get_bind_group_layout(0)
-      let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
-      let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
-      device.push_error_scope("validation")
-      let bind_group = device.create_bind_group(bind_group_desc.to_js())
-      let bind_group_error_promise = device.pop_error_scope()
-      @js.run_async(async fn() noraise {
-        let err_any : @js.Any = bind_group_error_promise.wait() catch {
-          _ => js_null()
-        }
-        if !host_is_nullish(err_any) {
-          report_asset_error_once(
-            state,
-            "mesh_bind_group_validation_error",
-            "Mesh bind group validation error: " + any_to_string(err_any),
-          )
-        }
-      })
-      state.gpu.mesh_bind_group = Some(bind_group)
-    }
   }
 }
 
@@ -1141,32 +1120,9 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
           "Mesh3d pipeline validation error: " + any_to_string(err_any),
         )
         state.gpu.mesh3d_pipeline = None
-        state.gpu.mesh3d_bind_group = None
       }
     })
     state.gpu.mesh3d_pipeline = Some(pipeline)
-    if state.gpu.uniform_buffer is Some(uniform_buffer) &&
-      state.gpu.mesh3d_uniform_layout is Some(layout) {
-      let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
-      let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
-      device.push_error_scope("validation")
-      let bind_group = device.create_bind_group(bind_group_desc.to_js())
-      let bind_group_error_promise = device.pop_error_scope()
-      @js.run_async(async fn() noraise {
-        let err_any : @js.Any = bind_group_error_promise.wait() catch {
-          _ => js_null()
-        }
-        if !host_is_nullish(err_any) {
-          report_asset_error_once(
-            state,
-            "mesh3d_bind_group_validation_error",
-            "Mesh3d bind group validation error: " + any_to_string(err_any),
-          )
-          state.gpu.mesh3d_bind_group = None
-        }
-      })
-      state.gpu.mesh3d_bind_group = Some(bind_group)
-    }
   }
 }
 
@@ -1315,6 +1271,23 @@ fn get_texture_entry(state : State, id : Int) -> @js.Any? {
 }
 
 ///|
+fn resolved_texture_sampler_kind(
+  state : State,
+  texture_id : Int,
+  default_kind : Int,
+) -> Int {
+  let override_any = map_get(
+    state.assets.texture_sampler_overrides,
+    @js.any(texture_id),
+  )
+  if host_is_nullish(override_any) {
+    default_kind
+  } else {
+    to_int(number_or(override_any, default_kind.to_double()))
+  }
+}
+
+///|
 async fn load_texture_from_path(
   state : State,
   id : Int,
@@ -1365,7 +1338,11 @@ async fn load_texture_from_path(
       width,
       height,
     )
-    let sampler = create_sampler(state, sampler_kind_from_nearest(nearest))
+    let default_sampler_kind = sampler_kind_from_nearest(nearest)
+    let sampler_kind = resolved_texture_sampler_kind(
+      state, id, default_sampler_kind,
+    )
+    let sampler = create_sampler(state, sampler_kind)
     if sampler is Some(sampler_value) {
       let entry = @js.from_entries([
         ("id", @js.any(id)),
@@ -1443,12 +1420,29 @@ fn ensure_pass_ready(state : State) -> Bool {
 }
 
 ///|
-fn update_uniform_buffer(state : State, values : Array[Double]) -> Unit {
-  if state.gpu.queue is Some(queue) &&
-    state.gpu.uniform_buffer is Some(uniform_buffer) {
-    let data = make_uniform_data(values)
-    queue.write_buffer(uniform_buffer, 0, data)
+fn create_transient_uniform_bind_group(
+  state : State,
+  pipeline : @webgpu.GPURenderPipeline,
+  values : Array[Double],
+) -> @webgpu.GPUBindGroup? {
+  guard state.gpu.device is Some(device) else { return None }
+  guard state.gpu.queue is Some(queue) else { return None }
+  let data = make_uniform_data(values)
+  let byte_length_raw : Int = data._get("byteLength").cast()
+  if byte_length_raw <= 0 {
+    return None
   }
+  let uniform_usage = @webgpu.combine_flags(
+    @webgpu.buffer_usage_uniform(),
+    @webgpu.buffer_usage_copy_dst(),
+  )
+  let uniform_desc = @webgpu.buffer_descriptor(byte_length_raw, uniform_usage)
+  let uniform_buffer = device.create_buffer(uniform_desc.to_js())
+  queue.write_buffer(uniform_buffer, 0, data)
+  let layout = pipeline.get_bind_group_layout(0)
+  let entries = [@webgpu.bind_group_entry_buffer(0, uniform_buffer)]
+  let bind_group_desc = @webgpu.bind_group_descriptor(layout, entries)
+  Some(device.create_bind_group(bind_group_desc.to_js()))
 }
 
 ///|
@@ -2563,7 +2557,7 @@ fn draw_mesh(
   flush_ui_batches(state)
   flush_sprite_batches(state)
   ensure_mesh_pipeline(state)
-  if state.gpu.mesh_pipeline is None || state.gpu.mesh_bind_group is None {
+  if state.gpu.mesh_pipeline is None {
     report_asset_error_once(
       state, "mesh_draw_pipeline_not_ready", "Mesh draw skipped: mesh pipeline not ready",
     )
@@ -2601,6 +2595,7 @@ fn draw_mesh(
   }
   if state.gpu.current_pass is Some(pass) &&
     state.gpu.current_pass_info is Some(info) &&
+    state.gpu.mesh_pipeline is Some(mesh_pipeline) &&
     texture_entry is Some(texture_entry_value) {
     let safe_scale = if info.cam_scale == 0 { 1.0 } else { info.cam_scale }
     let scale_x_base = if info.width > 0 {
@@ -2630,7 +2625,7 @@ fn draw_mesh(
     let uv0_y = if textured { uv_offset_y } else { 0.0 }
     let uvs_x = if textured { uv_scale_x } else { -1.0 }
     let uvs_y = if textured { uv_scale_y } else { -1.0 }
-    update_uniform_buffer(state, [
+    let uniform_values = [
       x,
       y,
       cos_value,
@@ -2651,38 +2646,41 @@ fn draw_mesh(
       uv0_y,
       uvs_x,
       uvs_y,
-    ])
+    ]
+    guard create_transient_uniform_bind_group(
+        state, mesh_pipeline, uniform_values,
+      )
+      is Some(mesh_bind_group) else {
+      return
+    }
     ensure_mesh_bind_group_for_texture(state, texture_entry_value)
     let texture_bind_group_any = texture_entry_value._get("meshBindGroup")
     if host_is_nullish(texture_bind_group_any) {
       return
     }
     let texture_bind_group : @webgpu.GPUBindGroup = texture_bind_group_any.cast()
-    if state.gpu.mesh_pipeline is Some(mesh_pipeline) &&
-      state.gpu.mesh_bind_group is Some(mesh_bind_group) {
-      pass.set_pipeline(mesh_pipeline)
-      pass.set_bind_group(0, mesh_bind_group)
-      pass.set_bind_group(1, texture_bind_group)
-      let vertex_buffer : @webgpu.GPUBuffer = mesh_entry
-        ._get("vertexBuffer")
-        .cast()
-      let vertex_count : Int = mesh_entry._get("vertexCount").cast()
-      report_debug_once(
+    pass.set_pipeline(mesh_pipeline)
+    pass.set_bind_group(0, mesh_bind_group)
+    pass.set_bind_group(1, texture_bind_group)
+    let vertex_buffer : @webgpu.GPUBuffer = mesh_entry
+      ._get("vertexBuffer")
+      .cast()
+    let vertex_count : Int = mesh_entry._get("vertexCount").cast()
+    report_debug_once(
+      state,
+      "mesh_vertex_count",
+      "draw_mesh vertex_count=" + vertex_count.to_string(),
+    )
+    if vertex_count <= 0 {
+      report_asset_error_once(
         state,
-        "mesh_vertex_count",
-        "draw_mesh vertex_count=" + vertex_count.to_string(),
+        "mesh_draw_empty_vertices_" + mesh_id.to_string(),
+        "Mesh draw skipped: empty vertex buffer (" + mesh_id.to_string() + ")",
       )
-      if vertex_count <= 0 {
-        report_asset_error_once(
-          state,
-          "mesh_draw_empty_vertices_" + mesh_id.to_string(),
-          "Mesh draw skipped: empty vertex buffer (" + mesh_id.to_string() + ")",
-        )
-        return
-      }
-      pass.set_vertex_buffer(0, vertex_buffer)
-      pass.draw(vertex_count, 1, 0, 0)
+      return
     }
+    pass.set_vertex_buffer(0, vertex_buffer)
+    pass.draw(vertex_count, 1, 0, 0)
   }
 }
 
@@ -2729,7 +2727,7 @@ fn draw_mesh3d(
   flush_ui_batches(state)
   flush_sprite_batches(state)
   ensure_mesh3d_pipeline(state)
-  if state.gpu.mesh3d_pipeline is None || state.gpu.mesh3d_bind_group is None {
+  if state.gpu.mesh3d_pipeline is None {
     report_asset_error_once(
       state, "mesh3d_draw_pipeline_not_ready", "Mesh3d draw skipped: mesh3d pipeline not ready",
     )
@@ -2807,6 +2805,7 @@ fn draw_mesh3d(
   }
   if state.gpu.current_pass is Some(pass) &&
     state.gpu.current_pass_info is Some(info) &&
+    state.gpu.mesh3d_pipeline is Some(mesh3d_pipeline) &&
     base_texture_entry is Some(base_texture_entry_value) &&
     normal_texture_entry is Some(normal_texture_entry_value) &&
     emissive_texture_entry is Some(emissive_texture_entry_value) &&
@@ -2818,7 +2817,7 @@ fn draw_mesh3d(
     let uv0_y = if textured { uv_offset_y } else { 0.0 }
     let uvs_x = if textured { uv_scale_x } else { -1.0 }
     let uvs_y = if textured { uv_scale_y } else { -1.0 }
-    update_uniform_buffer(state, [
+    let uniform_values = [
       x,
       y,
       z,
@@ -2919,10 +2918,14 @@ fn draw_mesh3d(
       } else {
         0.0
       },
-    ])
-    if state.gpu.mesh3d_pipeline is Some(mesh3d_pipeline) &&
-      state.gpu.mesh3d_bind_group is Some(mesh3d_bind_group) &&
-      state.gpu.device is Some(device) {
+    ]
+    guard create_transient_uniform_bind_group(
+        state, mesh3d_pipeline, uniform_values,
+      )
+      is Some(mesh3d_bind_group) else {
+      return
+    }
+    if state.gpu.device is Some(device) {
       let base_sampler : @webgpu.GPUSampler = base_texture_entry_value
         ._get("sampler")
         .cast()

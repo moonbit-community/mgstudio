@@ -928,11 +928,12 @@ pub fn create_host(
   })
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
+    let kind = to_int(number_or(sampler_kind, 0))
+    map_set(state.assets.texture_sampler_overrides, @js.any(id), @js.any(kind))
     let entry = map_get(state.gpu.textures, @js.any(id))
     if host_is_nullish(entry) {
       return
     }
-    let kind = to_int(number_or(sampler_kind, 0))
     let sampler = create_sampler(state, kind)
     if sampler is Some(sampler_value) {
       entry._set("sampler", sampler_value.as_any()) |> ignore
