@@ -5,16 +5,11 @@
     "moonbitlang/async": "0.16.1",
     "moonbitlang/x": "0.4.40",
     "moonbitlang/parser": "0.1.15",
-    "moonbitlang/ulex-runtime": {
-      "path": "./vendor/moonbitlang/ulex-runtime"
-    },
     "TheWaWaR/clap": "0.2.6",
-    "Yoorkin/trie": {
-      "path": "./vendor/Yoorkin/trie"
-    },
     "Milky2018/mgstudio-runtime-native": {
       "path": "../mgstudio-runtime/native"
-    }
+    },
+    "moonbitlang/ulex-runtime": "0.4.3"
   },
   "readme": "README.mbt.md",
   "license": "Apache-2.0",
