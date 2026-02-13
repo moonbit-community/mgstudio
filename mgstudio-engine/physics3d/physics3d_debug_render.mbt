@@ -17,7 +17,7 @@
 /// visualize physics colliders directly from the physics world.
 ///
 /// Notes:
-/// - Current mgstudio implementation renders unlit translucent meshes.
+/// - Lines are rendered as thin unlit cuboid meshes.
 /// - Collider shape coverage matches current `ColliderShape3d` support
 ///   (`Ball` and `Cuboid`).
 
@@ -33,13 +33,13 @@ pub fn Physics3dDebugRenderContext::default() -> Physics3dDebugRenderContext {
 
 ///|
 priv struct Physics3dDebugRenderState {
-  mut unit_cuboid_mesh : @render3d.Mesh3d?
+  mut line_mesh : @render3d.Mesh3d?
   mut dynamic_material : @render3d.MeshMaterial3d?
   mut fixed_material : @render3d.MeshMaterial3d?
   mut kinematic_material : @render3d.MeshMaterial3d?
   mut parentless_material : @render3d.MeshMaterial3d?
   mut sensor_material : @render3d.MeshMaterial3d?
-  collider_to_debug_entity : @hashmap.HashMap[(Int, Int), @core.Entity]
+  line_entities : Array[@core.Entity]
 }
 
 ///|
@@ -49,19 +49,17 @@ let physics3d_debug_render_context : Ref[Physics3dDebugRenderContext] = Ref::new
 
 ///|
 let physics3d_debug_render_state : Ref[Physics3dDebugRenderState] = Ref::new({
-  unit_cuboid_mesh: None,
+  line_mesh: None,
   dynamic_material: None,
   fixed_material: None,
   kinematic_material: None,
   parentless_material: None,
   sensor_material: None,
-  collider_to_debug_entity: @hashmap.HashMap::new(),
+  line_entities: [],
 })
 
 ///|
-fn physics3d_debug_entity_key(entity : @core.Entity) -> (Int, Int) {
-  (entity.id, entity.generation)
-}
+const DEBUG_LINE_THICKNESS : Float = 0.04F
 
 ///|
 fn physics3d_debug_make_material(
@@ -79,22 +77,6 @@ fn physics3d_debug_min_extent(value : Float) -> Float {
     value
   } else {
     0.01F
-  }
-}
-
-///|
-fn physics3d_debug_shape_scale(shape : ColliderShape3d) -> @math.Vec3 {
-  match shape {
-    Ball(radius) => {
-      let diameter = physics3d_debug_min_extent(radius * 2.0F)
-      @math.Vec3::new(diameter, diameter, diameter)
-    }
-    Cuboid(hx, hy, hz) =>
-      @math.Vec3::new(
-        physics3d_debug_min_extent(hx * 2.0F),
-        physics3d_debug_min_extent(hy * 2.0F),
-        physics3d_debug_min_extent(hz * 2.0F),
-      )
   }
 }
 
@@ -124,33 +106,33 @@ fn physics3d_debug_material_for(
 ///|
 fn physics3d_debug_ensure_assets() -> Unit {
   let state = physics3d_debug_render_state.val
-  if state.unit_cuboid_mesh is Some(_) {
+  if state.line_mesh is Some(_) {
     return
   }
-  state.unit_cuboid_mesh = Some(@render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F))
+  state.line_mesh = Some(@render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F))
   state.dynamic_material = Some(
     physics3d_debug_make_material(
-      @render2d.Color::new(0.94F, 0.22F, 0.34F, 0.24F),
+      @render2d.Color::new(0.94F, 0.22F, 0.34F, 0.9F),
     ),
   )
   state.fixed_material = Some(
     physics3d_debug_make_material(
-      @render2d.Color::new(0.98F, 0.56F, 0.18F, 0.20F),
+      @render2d.Color::new(0.98F, 0.56F, 0.18F, 0.9F),
     ),
   )
   state.kinematic_material = Some(
     physics3d_debug_make_material(
-      @render2d.Color::new(0.98F, 0.34F, 0.20F, 0.22F),
+      @render2d.Color::new(0.98F, 0.34F, 0.20F, 0.9F),
     ),
   )
   state.parentless_material = Some(
     physics3d_debug_make_material(
-      @render2d.Color::new(0.82F, 0.82F, 0.84F, 0.18F),
+      @render2d.Color::new(0.82F, 0.82F, 0.84F, 0.9F),
     ),
   )
   state.sensor_material = Some(
     physics3d_debug_make_material(
-      @render2d.Color::new(0.22F, 0.82F, 0.98F, 0.22F),
+      @render2d.Color::new(0.22F, 0.82F, 0.98F, 0.9F),
     ),
   )
 }
@@ -170,46 +152,205 @@ pub(open) trait Physics3dDebugRenderPluginWorld: @render3d.MeshMaterial3dBundleS
 }
 
 ///|
-fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_clear_entities(
+fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_clear_lines(
   world : W,
 ) -> Unit {
   let state = physics3d_debug_render_state.val
-  let transform_store = world.get_transform_store()
-  let keys_to_remove : Array[(Int, Int)] = []
-  state.collider_to_debug_entity.each(fn(key, debug_entity) {
-    if transform_store.contains(debug_entity) {
-      try! (world.despawn(debug_entity) |> ignore)
-    }
-    keys_to_remove.push(key)
-  })
-  for key in keys_to_remove {
-    state.collider_to_debug_entity.remove(key)
+  while state.line_entities.length() > 0 {
+    let entity = state.line_entities.pop().unwrap()
+    try! (world.despawn(entity) |> ignore)
   }
 }
 
 ///|
-fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_ensure_entity(
-  world : W,
-  source_entity : @core.Entity,
-  material : @render3d.MeshMaterial3d,
-) -> @core.Entity? {
-  let state = physics3d_debug_render_state.val
-  let transform_store = world.get_transform_store()
-  let key = physics3d_debug_entity_key(source_entity)
-  if state.collider_to_debug_entity.get(key) is Some(debug_entity) {
-    if transform_store.contains(debug_entity) {
-      return Some(debug_entity)
-    }
-    state.collider_to_debug_entity.remove(key)
+priv struct DebugLine3d {
+  start : @math.Vec3
+  end : @math.Vec3
+  material : @render3d.MeshMaterial3d
+}
+
+///|
+fn physics3d_debug_quat_rotate_vec3(
+  q : @math.Quat,
+  v : @math.Vec3,
+) -> @math.Vec3 {
+  let qv = @math.Vec3::new(q.x, q.y, q.z)
+  let t = qv.cross(v).mul_scalar(2.0F)
+  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
+}
+
+///|
+fn physics3d_debug_transform_point(
+  transform : @math.Transform,
+  point_local : @math.Vec3,
+) -> @math.Vec3 {
+  transform.translation.add(
+    physics3d_debug_quat_rotate_vec3(transform.rotation, point_local),
+  )
+}
+
+///|
+fn physics3d_debug_quat_from_x_axis_to(direction : @math.Vec3) -> @math.Quat {
+  let dir = direction.normalize_or_zero()
+  let dot = dir.x
+  if dot > 0.9999F {
+    return @math.Quat::identity()
   }
-  guard state.unit_cuboid_mesh is Some(mesh) else { return None }
-  let debug_entity = @render3d.MeshMaterial3dBundle::new(
-    mesh,
-    material,
-    @math.Transform::identity(),
-  ).spawn(world)
-  state.collider_to_debug_entity.set(key, debug_entity)
-  Some(debug_entity)
+  if dot < -0.9999F {
+    return @math.Quat::from_axis_angle(
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      3.141592653589793F,
+    )
+  }
+  let axis = @math.Vec3::new(0.0F, -dir.z, dir.y)
+  let s = @math.sqrt((1.0F + dot) * 2.0F)
+  let inv = 1.0F / s
+  @math.Quat::new(s * 0.5F, axis.x * inv, axis.y * inv, axis.z * inv).normalize()
+}
+
+///|
+fn physics3d_debug_line_transform(
+  start : @math.Vec3,
+  end : @math.Vec3,
+) -> @math.Transform {
+  let delta = end.sub(start)
+  let length = delta.length()
+  let center = start.add(delta.mul_scalar(0.5F))
+  @math.Transform::new(
+    center,
+    physics3d_debug_quat_from_x_axis_to(delta),
+    @math.Vec3::new(length, DEBUG_LINE_THICKNESS, DEBUG_LINE_THICKNESS),
+  )
+}
+
+///|
+fn physics3d_debug_add_line(
+  lines : Array[DebugLine3d],
+  start : @math.Vec3,
+  end : @math.Vec3,
+  material : @render3d.MeshMaterial3d,
+) -> Unit {
+  if end.sub(start).length() <= 0.0001F {
+    return
+  }
+  lines.push(DebugLine3d::{ start, end, material })
+}
+
+///|
+fn physics3d_debug_emit_cuboid_lines(
+  lines : Array[DebugLine3d],
+  transform : @math.Transform,
+  hx : Float,
+  hy : Float,
+  hz : Float,
+  material : @render3d.MeshMaterial3d,
+) -> Unit {
+  let x = physics3d_debug_min_extent(hx)
+  let y = physics3d_debug_min_extent(hy)
+  let z = physics3d_debug_min_extent(hz)
+  let corners = [
+    @math.Vec3::new(-x, -y, -z),
+    @math.Vec3::new(x, -y, -z),
+    @math.Vec3::new(x, y, -z),
+    @math.Vec3::new(-x, y, -z),
+    @math.Vec3::new(-x, -y, z),
+    @math.Vec3::new(x, -y, z),
+    @math.Vec3::new(x, y, z),
+    @math.Vec3::new(-x, y, z),
+  ]
+  let world_corners : Array[@math.Vec3] = []
+  for corner in corners {
+    world_corners.push(physics3d_debug_transform_point(transform, corner))
+  }
+  let edges : Array[(Int, Int)] = [
+    (0, 1),
+    (1, 2),
+    (2, 3),
+    (3, 0),
+    (4, 5),
+    (5, 6),
+    (6, 7),
+    (7, 4),
+    (0, 4),
+    (1, 5),
+    (2, 6),
+    (3, 7),
+  ]
+  for edge in edges {
+    let i0 = edge.0
+    let i1 = edge.1
+    physics3d_debug_add_line(
+      lines,
+      world_corners[i0],
+      world_corners[i1],
+      material,
+    )
+  }
+}
+
+///|
+fn physics3d_debug_emit_ball_lines(
+  lines : Array[DebugLine3d],
+  transform : @math.Transform,
+  radius : Float,
+  material : @render3d.MeshMaterial3d,
+) -> Unit {
+  let r = physics3d_debug_min_extent(radius)
+  let segments = 24
+  let tau = 6.283185307179586F
+  let segf = Float::from_int(segments)
+  for i in 0..<segments {
+    let i0 = Float::from_int(i)
+    let i1 = Float::from_int(i + 1)
+    let a0 = tau * i0 / segf
+    let a1 = tau * i1 / segf
+    let xy0 = @math.Vec3::new(@math.cos(a0) * r, @math.sin(a0) * r, 0.0F)
+    let xy1 = @math.Vec3::new(@math.cos(a1) * r, @math.sin(a1) * r, 0.0F)
+    let yz0 = @math.Vec3::new(0.0F, @math.cos(a0) * r, @math.sin(a0) * r)
+    let yz1 = @math.Vec3::new(0.0F, @math.cos(a1) * r, @math.sin(a1) * r)
+    let xz0 = @math.Vec3::new(@math.cos(a0) * r, 0.0F, @math.sin(a0) * r)
+    let xz1 = @math.Vec3::new(@math.cos(a1) * r, 0.0F, @math.sin(a1) * r)
+    physics3d_debug_add_line(
+      lines,
+      physics3d_debug_transform_point(transform, xy0),
+      physics3d_debug_transform_point(transform, xy1),
+      material,
+    )
+    physics3d_debug_add_line(
+      lines,
+      physics3d_debug_transform_point(transform, yz0),
+      physics3d_debug_transform_point(transform, yz1),
+      material,
+    )
+    physics3d_debug_add_line(
+      lines,
+      physics3d_debug_transform_point(transform, xz0),
+      physics3d_debug_transform_point(transform, xz1),
+      material,
+    )
+  }
+}
+
+///|
+fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_ensure_line_pool(
+  world : W,
+  desired_count : Int,
+) -> Unit {
+  let state = physics3d_debug_render_state.val
+  guard state.line_mesh is Some(mesh) else { return }
+  guard state.dynamic_material is Some(default_material) else { return }
+  while state.line_entities.length() < desired_count {
+    let entity = @render3d.MeshMaterial3dBundle::new(
+      mesh,
+      default_material,
+      @math.Transform::identity(),
+    ).spawn(world)
+    state.line_entities.push(entity)
+  }
+  while state.line_entities.length() > desired_count {
+    let entity = state.line_entities.pop().unwrap()
+    try! (world.despawn(entity) |> ignore)
+  }
 }
 
 ///|
@@ -219,8 +360,8 @@ pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_sync_system(
   physics3d_debug_ensure_assets()
   let state = physics3d_debug_render_state.val
   if !physics3d_debug_render_context.val.enabled {
-    if !state.collider_to_debug_entity.is_empty() {
-      physics3d_debug_clear_entities(world)
+    if state.line_entities.length() > 0 {
+      physics3d_debug_clear_lines(world)
     }
     return
   }
@@ -230,21 +371,7 @@ pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_sync_system(
   let collider_store = world.get_collider3d_store()
   let rigid_body_store = world.get_rigid_body3d_store()
   let mesh_material_store = world.get_mesh_material3d_store()
-
-  let stale_keys : Array[(Int, Int)] = []
-  state.collider_to_debug_entity.each(fn(key, debug_entity) {
-    let source_entity = @core.Entity::new(key.0, key.1)
-    if !collider_store.contains(source_entity) ||
-      !transform_store.contains(debug_entity) {
-      if transform_store.contains(debug_entity) {
-        try! (world.despawn(debug_entity) |> ignore)
-      }
-      stale_keys.push(key)
-    }
-  })
-  for key in stale_keys {
-    state.collider_to_debug_entity.remove(key)
-  }
+  let lines : Array[DebugLine3d] = []
 
   collider_store.for_each(fn(entity, collider) {
     guard physics3d_debug_material_for(
@@ -254,22 +381,33 @@ pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_sync_system(
       is Some(material) else {
       return
     }
-    guard physics3d_debug_ensure_entity(world, entity, material)
-      is Some(debug_entity) else {
-      return
-    }
-
     let source_transform = transform_store
       .get(entity)
       .unwrap_or(@math.Transform::identity())
-    let next_transform = @math.Transform::new(
-      source_transform.translation,
-      source_transform.rotation,
-      physics3d_debug_shape_scale(collider.shape),
-    )
-    transform_store.set(debug_entity, next_transform, tick) |> ignore
-    mesh_material_store.set(debug_entity, material, tick) |> ignore
+    match collider.shape {
+      Ball(radius) =>
+        physics3d_debug_emit_ball_lines(
+          lines, source_transform, radius, material,
+        )
+      Cuboid(hx, hy, hz) =>
+        physics3d_debug_emit_cuboid_lines(
+          lines, source_transform, hx, hy, hz, material,
+        )
+    }
   })
+
+  physics3d_debug_ensure_line_pool(world, lines.length())
+  for i in 0..<lines.length() {
+    let line = lines[i]
+    let entity = state.line_entities[i]
+    transform_store.set(
+      entity,
+      physics3d_debug_line_transform(line.start, line.end),
+      tick,
+    )
+    |> ignore
+    mesh_material_store.set(entity, line.material, tick) |> ignore
+  }
 }
 
 ///|
