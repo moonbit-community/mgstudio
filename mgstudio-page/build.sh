@@ -18,8 +18,6 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 
-TARGET=${TARGET:-wasm}
-
 ENGINE_DIR="$REPO_DIR/mgstudio-engine"
 RUNTIME_WEB_DIR="$REPO_DIR/mgstudio-runtime/web"
 
@@ -77,11 +75,8 @@ generate_examples_menu() {
   printf '%s\n' "      </div>" "    </section>" >> "$menu_html"
 }
 
-echo "Building engine examples..."
-while IFS= read -r pkg; do
-  pkg_dir=$(dirname "$pkg")
-  moon -C "$ENGINE_DIR" build --release --target "$TARGET" "$pkg_dir"
-done < <(find "$ENGINE_DIR/examples" -name moon.pkg -print | sort)
+echo "Building engine examples (single parallel build)..."
+moon -C "$ENGINE_DIR" build --release
 
 echo "Building web runtime JS bundle..."
 moon -C "$RUNTIME_WEB_DIR" build --release --target js
@@ -92,7 +87,7 @@ if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
   exit 1
 fi
 
-EXAMPLES_DIR="$ENGINE_DIR/_build/$TARGET/release/build/examples"
+EXAMPLES_DIR="$ENGINE_DIR/_build/wasm/release/build/examples"
 if [[ ! -d "$EXAMPLES_DIR" ]]; then
   echo "Examples output directory not found at $EXAMPLES_DIR" >&2
   exit 1

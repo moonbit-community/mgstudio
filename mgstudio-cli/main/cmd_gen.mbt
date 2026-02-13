@@ -96,12 +96,12 @@ async fn run_gen(opts : GenOptions) -> Unit {
 
     // `ecs.g.mbt` defines access traits that reference `@core.ComponentStore`
     // and `@core.Resource`, so tagged packages must import mgstudio core.
-    let pkg_json_path = path_join(pkg_dir, "moon.pkg.json")
-    match read_file_text(pkg_json_path) {
+    let pkg_path = path_join(pkg_dir, "moon.pkg")
+    match read_file_text(pkg_path) {
       Some(pkg_src) => {
         let updated = ensure_moon_pkg_import(pkg_src, "Milky2018/mgstudio/core")
         let ok_pkg = write_or_check(
-          pkg_json_path,
+          pkg_path,
           updated,
           check~,
           verbose=opts.verbose,
@@ -114,7 +114,7 @@ async fn run_gen(opts : GenOptions) -> Unit {
     }
     let sources : Array[String] = sources_by_pkg.get(pkg_dir).unwrap_or([])
     let out_path = path_join(pkg_dir, "ecs.g.mbt")
-    let content = render_ecs_generated_file(pkg_dir, comps, resources, sources)
+    let content = render_ecs_generated_file(comps, resources, sources)
     let ok = write_or_check(out_path, content, check~, verbose=opts.verbose)
     if ok.changed {
       gen_mbt_paths.push(out_path)
@@ -424,11 +424,11 @@ fn render_world_file(
 }
 
 ///|
-fn render_world_pkg_json(imports : Array[String]) -> String {
+fn render_world_pkg(imports : Array[String]) -> String {
   let items = imports.copy()
   items.sort()
-  let body = items.map(fn(s) { "    \"\{s}\"" }).join(",\n")
-  "{\n  \"import\": [\n\{body}\n  ]\n}\n"
+  let body = items.map(fn(s) { "  \"\{s}\"," }).join("\n")
+  "import {\n\{body}\n}\n"
 }
 
 ///|
@@ -499,9 +499,9 @@ async fn generate_ecs_world(
       imports.push(pkg_import)
     }
   }
-  let pkg_json = render_world_pkg_json(imports)
-  let pkg_path = path_join(world_pkg, "moon.pkg.json")
-  let ok_pkg = write_or_check(pkg_path, pkg_json, check~, verbose~)
+  let pkg_src = render_world_pkg(imports)
+  let pkg_path = path_join(world_pkg, "moon.pkg")
+  let ok_pkg = write_or_check(pkg_path, pkg_src, check~, verbose~)
   ok_world.ok && ok_pkg.ok
 }
 
@@ -518,7 +518,7 @@ async fn collect_ecs_components_for_module(
     max_concurrency=64,
     async fn(dir_path, files) {
       // Only generate into real MoonBit packages.
-      guard files.contains("moon.pkg.json") else { return }
+      guard files.contains("moon.pkg") else { return }
       for file in files {
         guard file.has_suffix(".mbt") else { continue }
         guard !file.has_suffix("_test.mbt") else { continue }
@@ -623,7 +623,6 @@ async fn parse_ecs_tags_from_file(path : String) -> EcsTags {
 
 ///|
 fn render_ecs_generated_file(
-  pkg_dir : String,
   components : Array[String],
   resources : Array[String],
   sources : Array[String],
@@ -639,7 +638,6 @@ fn render_ecs_generated_file(
     #|
   let sources_joined = srcs.join(", ")
   let header = static_header +
-    "// Package dir: \{pkg_dir}\n" +
     "// Sources: \{sources_joined}\n" +
     "\n"
   // `const` cannot hold arrays in MoonBit, and `let` names must be lowercase.
@@ -760,21 +758,6 @@ fn find_char_forward(s : String, start : Int, ch : Char) -> Int? {
   None
 }
 
-///|
-fn find_char_backward(s : String, ch : Char) -> Int? {
-  let v = s.view()
-  let target = ch.to_int()
-  let mut i = v.length() - 1
-  while i >= 0 {
-    if v.code_unit_at(i).to_int() == target {
-      return Some(i)
-    }
-    i = i - 1
-  }
-  None
-}
-
-///|
 fn is_all_whitespace(s : String, start : Int, end_ : Int) -> Bool {
   let v = s.view()
   let mut i = start
@@ -810,49 +793,104 @@ fn rstrip_index(s : String, end_ : Int) -> Int {
 }
 
 ///|
+fn skip_whitespace_forward(s : String, start : Int) -> Int {
+  let v = s.view()
+  let mut i = if start < 0 { 0 } else { start }
+  while i < v.length() {
+    let c = v.code_unit_at(i).to_int()
+    if c == ' '.to_int() ||
+      c == '\n'.to_int() ||
+      c == '\r'.to_int() ||
+      c == '\t'.to_int() {
+      i = i + 1
+    } else {
+      break
+    }
+  }
+  i
+}
+
+///|
+fn starts_with_at(s : String, start : Int, prefix : String) -> Bool {
+  let sv = s.view()
+  let pv = prefix.view()
+  let sl = sv.length()
+  let pl = pv.length()
+  if start < 0 || start + pl > sl {
+    return false
+  }
+  (try! sv[start:start + pl]) == pv
+}
+
+///|
+struct ImportBlock {
+  open_brace : Int
+  close_brace : Int
+}
+
+///|
+fn find_main_import_block(src : String) -> ImportBlock? {
+  let mut search = 0
+  while true {
+    match find_substring(src, "import", search) {
+      None => return None
+      Some(import_i) => {
+        let open_i = find_char_forward(src, import_i, '{').unwrap_or(-1)
+        let close_i = if open_i >= 0 {
+          find_char_forward(src, open_i + 1, '}').unwrap_or(-1)
+        } else {
+          -1
+        }
+        if open_i < 0 || close_i < 0 {
+          return None
+        }
+        let after_i = skip_whitespace_forward(src, close_i + 1)
+        if starts_with_at(src, after_i, "for") {
+          search = after_i + 3
+          continue
+        }
+        return Some({ open_brace: open_i, close_brace: close_i })
+      }
+    }
+  }
+  None
+}
+
+///|
 fn ensure_moon_pkg_import(src : String, import_path : String) -> String {
   let quoted = "\"\{import_path}\""
-  if contains_substring(src, quoted) {
-    return src
-  }
-  let trimmed = src.trim()
-  if trimmed == "{}" {
-    return "{\n  \"import\": [\n    \{quoted}\n  ]\n}\n"
-  }
-  let key = "\"import\""
-  match find_substring(src, key, 0) {
+  match find_main_import_block(src) {
     None => {
-      // Insert a new import key before the last '}'.
-      let close_i = find_char_backward(src, '}').unwrap_or(src.length())
-      let prefix = try! src.view()[0:close_i].to_string()
-      let suffix = try! src.view()[close_i:src.length()].to_string()
-      let needs_comma = contains_substring(prefix, ":")
-      let insert = (if needs_comma { ",\n" } else { "\n" }) +
-        "  \"import\": [\n    \{quoted}\n  ]\n"
-      prefix + insert + suffix
+      let block = "import {\n  \{quoted},\n}\n"
+      if src.trim().length() == 0 {
+        block
+      } else {
+        block + "\n" + src
+      }
     }
-    Some(key_i) => {
-      // Find the '[' and matching ']'. This is a pragmatic edit for the repo's
-      // simple moon.pkg.json formatting (no nested arrays in import items).
-      let open_i = find_char_forward(src, key_i, '[').unwrap_or(src.length())
-      let close_i = find_char_forward(src, open_i, ']').unwrap_or(src.length())
-      if open_i >= close_i {
+    Some(block) => {
+      let inner_start = block.open_brace + 1
+      let inner_end = block.close_brace
+      let inner = try! src.view()[inner_start:inner_end].to_string()
+      if contains_substring(inner, quoted) {
         return src
       }
-      let inner_start = open_i + 1
-      let inner_end = close_i
-      let inner_ws = is_all_whitespace(src, inner_start, inner_end)
-      if inner_ws {
-        // Empty import array: replace with a single line item.
+      if is_all_whitespace(src, inner_start, inner_end) {
         let prefix = try! src.view()[0:inner_start].to_string()
-        let suffix = try! src.view()[inner_start:src.length()].to_string()
-        prefix + "\n    \{quoted}\n  " + suffix
+        let suffix = try! src.view()[block.close_brace:src.length()].to_string()
+        prefix + "\n  \{quoted},\n" + suffix
       } else {
-        // Append before ']' (but after the last non-whitespace item).
-        let insert_i = rstrip_index(src, close_i)
+        let insert_i = rstrip_index(src, block.close_brace)
         let before = try! src.view()[0:insert_i].to_string()
         let after = try! src.view()[insert_i:src.length()].to_string()
-        before + ",\n    \{quoted}\n  " + after
+        let before_v = before.view()
+        let has_trailing_comma = before_v.length() > 0 &&
+          before_v.code_unit_at(before_v.length() - 1).to_int() == ','.to_int()
+        if has_trailing_comma {
+          before + "\n  \{quoted},\n" + after
+        } else {
+          before + ",\n  \{quoted},\n" + after
+        }
       }
     }
   }

@@ -150,7 +150,7 @@ moon -C mgstudio-cli build --release
 
 ## Generated Output
 
-For each MoonBit package directory containing `moon.pkg.json`, `mgstudio gen`:
+For each MoonBit package directory containing `moon.pkg`, `mgstudio gen`:
 
 - scans `.mbt` sources (skipping `_test.mbt`, `_wbtest.mbt`, and `*.g.mbt`)
 - finds `#ecs.component` / `#ecs.resource` on type declarations

@@ -127,26 +127,21 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
 
   // Root package: export `game_app` (no `main` function needed).
   write_file_text(
-    path_join(project_dir, "moon.pkg.json"),
-    "{\n" +
-    "  \"import\": [\n" +
-    "    \"Milky2018/mgstudio/app\",\n" +
-    "    \"Milky2018/mgstudio/asset\",\n" +
-    "    \"Milky2018/mgstudio/core\",\n" +
-    "    \"Milky2018/mgstudio/ecs_world\",\n" +
-    "    \"Milky2018/mgstudio/math\",\n" +
-    "    \"Milky2018/mgstudio\",\n" +
-    "    \"Milky2018/mgstudio/render2d\",\n" +
-    "    \"Milky2018/mgstudio/time\"\n" +
-    "  ],\n" +
-    "  \"link\": {\n" +
-    "    \"wasm\": {\n" +
-    "      \"exports\": [\n" +
-    "        \"game_app\"\n" +
-    "      ]\n" +
-    "    }\n" +
-    "  }\n" +
-    "}\n",
+    path_join(project_dir, "moon.pkg"),
+    "import {\n" +
+    "  \"Milky2018/mgstudio/app\",\n" +
+    "  \"Milky2018/mgstudio/asset\",\n" +
+    "  \"Milky2018/mgstudio/core\",\n" +
+    "  \"Milky2018/mgstudio/ecs_world\",\n" +
+    "  \"Milky2018/mgstudio/math\",\n" +
+    "  \"Milky2018/mgstudio\",\n" +
+    "  \"Milky2018/mgstudio/render2d\",\n" +
+    "  \"Milky2018/mgstudio/time\",\n" +
+    "}\n" +
+    "\n" +
+    "options(\n" +
+    "  link: { \"wasm\": { \"exports\": [ \"game_app\" ] } },\n" +
+    ")\n",
   )
 
   // Replace the root demo with a minimal rotating sprite example.

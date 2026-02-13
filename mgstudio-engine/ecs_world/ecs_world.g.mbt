@@ -27,40 +27,30 @@ pub struct World {
   camera : @core.ComponentStore[@render2d.Camera]
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
+  mesh3d : @core.ComponentStore[@render3d.Mesh3d]
   border_radius : @core.ComponentStore[@ui.BorderRadius]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
   parent : @core.ComponentStore[@hierarchy.Parent]
+  bloom2d : @core.ComponentStore[@render2d.Bloom2d]
   image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   camera3d : @core.ComponentStore[@render3d.Camera3d]
-  camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
-  mesh3d : @core.ComponentStore[@render3d.Mesh3d]
-  mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
-  point_light : @core.ComponentStore[@render3d.PointLight]
-  directional_light : @core.ComponentStore[@render3d.DirectionalLight]
   spot_light : @core.ComponentStore[@render3d.SpotLight]
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
+  point_light : @core.ComponentStore[@render3d.PointLight]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
   friction2d : @core.ComponentStore[@physics2d.Friction2d]
   sleeping2d : @core.ComponentStore[@physics2d.Sleeping2d]
   velocity2d : @core.ComponentStore[@physics2d.Velocity2d]
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
-  active_collision_types3d : @core.ComponentStore[
-    @physics3d.ActiveCollisionTypes3d,
-  ]
-  active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
-  contact_force_event_threshold3d : @core.ComponentStore[
-    @physics3d.ContactForceEventThreshold3d,
-  ]
-  active_hooks3d : @core.ComponentStore[@physics3d.ActiveHooks3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
@@ -68,7 +58,6 @@ pub struct World {
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
-  bloom2d : @core.ComponentStore[@render2d.Bloom2d]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -77,11 +66,15 @@ pub struct World {
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
   contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
   restitution2d : @core.ComponentStore[@physics2d.Restitution2d]
+  active_hooks3d : @core.ComponentStore[@physics3d.ActiveHooks3d]
+  mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
   active_events2d : @core.ComponentStore[@physics2d.ActiveEvents2d]
   gravity_scale2d : @core.ComponentStore[@physics2d.GravityScale2d]
   impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
+  active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
+  directional_light : @core.ComponentStore[@render3d.DirectionalLight]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
@@ -91,6 +84,7 @@ pub struct World {
   collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
+  camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
@@ -103,6 +97,9 @@ pub struct World {
   ]
   rapier_collider_handle2d : @core.ComponentStore[
     @physics2d.RapierColliderHandle2d,
+  ]
+  active_collision_types3d : @core.ComponentStore[
+    @physics3d.ActiveCollisionTypes3d,
   ]
   rapier_collider_handle3d : @core.ComponentStore[
     @physics3d.RapierColliderHandle3d,
@@ -128,6 +125,9 @@ pub struct World {
   rapier_multibody_joint_handle2d : @core.ComponentStore[
     @physics2d.RapierMultibodyJointHandle2d,
   ]
+  contact_force_event_threshold3d : @core.ComponentStore[
+    @physics3d.ContactForceEventThreshold3d,
+  ]
   kinematic_character_controller2d : @core.ComponentStore[
     @physics2d.KinematicCharacterController2d,
   ]
@@ -141,7 +141,6 @@ pub struct World {
   res_picking_hits : @core.Resource[@picking.PickingHits]
   res_picking_state : @core.Resource[@picking.PickingState]
   res_render_state : @core.Resource[@render2d.RenderState]
-  res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
   res_picking_events : @core.Resource[@picking.PickingEvents]
   res_pointer_inputs : @core.Resource[@picking.PointerInputs]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
@@ -150,6 +149,7 @@ pub struct World {
   res_physics3d_events : @core.Resource[@physics3d.Physics3dEvents]
   res_physics2d_context : @core.Resource[@physics2d.Physics2dContext]
   res_physics3d_context : @core.Resource[@physics3d.Physics3dContext]
+  res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
 }
 
 ///|
@@ -180,36 +180,30 @@ pub fn World::new() -> World {
     camera: @core.ComponentStore::new(),
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
+    mesh3d: @core.ComponentStore::new(),
     border_radius: @core.ComponentStore::new(),
     button_colors: @core.ComponentStore::new(),
     global_z_index: @core.ComponentStore::new(),
     parent: @core.ComponentStore::new(),
+    bloom2d: @core.ComponentStore::new(),
     image_node_size: @core.ComponentStore::new(),
     camera2d: @core.ComponentStore::new(),
     camera3d: @core.ComponentStore::new(),
-    camera_projection3d: @core.ComponentStore::new(),
     calculated_clip: @core.ComponentStore::new(),
     scroll_position: @core.ComponentStore::new(),
     texture_atlas: @core.ComponentStore::new(),
     children: @core.ComponentStore::new(),
     gpu_mesh2d: @core.ComponentStore::new(),
-    mesh3d: @core.ComponentStore::new(),
-    mesh_material3d: @core.ComponentStore::new(),
-    point_light: @core.ComponentStore::new(),
-    directional_light: @core.ComponentStore::new(),
     spot_light: @core.ComponentStore::new(),
     background_color: @core.ComponentStore::new(),
     damping2d: @core.ComponentStore::new(),
     projection: @core.ComponentStore::new(),
+    point_light: @core.ComponentStore::new(),
     collider2d: @core.ComponentStore::new(),
     friction2d: @core.ComponentStore::new(),
     sleeping2d: @core.ComponentStore::new(),
     velocity2d: @core.ComponentStore::new(),
     collider3d: @core.ComponentStore::new(),
-    active_collision_types3d: @core.ComponentStore::new(),
-    active_events3d: @core.ComponentStore::new(),
-    contact_force_event_threshold3d: @core.ComponentStore::new(),
-    active_hooks3d: @core.ComponentStore::new(),
     velocity3d: @core.ComponentStore::new(),
     scissor_rect: @core.ComponentStore::new(),
     dominance2d: @core.ComponentStore::new(),
@@ -217,7 +211,6 @@ pub fn World::new() -> World {
     rigid_body3d: @core.ComponentStore::new(),
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
-    bloom2d: @core.ComponentStore::new(),
     accessibility_label: @core.ComponentStore::new(),
     ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
@@ -226,11 +219,15 @@ pub fn World::new() -> World {
     active_hooks2d: @core.ComponentStore::new(),
     contact_skin2d: @core.ComponentStore::new(),
     restitution2d: @core.ComponentStore::new(),
+    active_hooks3d: @core.ComponentStore::new(),
+    mesh_material3d: @core.ComponentStore::new(),
     active_events2d: @core.ComponentStore::new(),
     gravity_scale2d: @core.ComponentStore::new(),
     impulse_joint2d: @core.ComponentStore::new(),
     solver_groups2d: @core.ComponentStore::new(),
+    active_events3d: @core.ComponentStore::new(),
     external_force2d: @core.ComponentStore::new(),
+    directional_light: @core.ComponentStore::new(),
     global_transform: @core.ComponentStore::new(),
     relative_cursor_position: @core.ComponentStore::new(),
     view_visibility: @core.ComponentStore::new(),
@@ -240,6 +237,7 @@ pub fn World::new() -> World {
     collider_enabled2d: @core.ComponentStore::new(),
     collision_groups2d: @core.ComponentStore::new(),
     external_impulse2d: @core.ComponentStore::new(),
+    camera_projection3d: @core.ComponentStore::new(),
     rapier_body_handle2d: @core.ComponentStore::new(),
     rigid_body_enabled2d: @core.ComponentStore::new(),
     rapier_body_handle3d: @core.ComponentStore::new(),
@@ -247,6 +245,7 @@ pub fn World::new() -> World {
     friction_combine_rule2d: @core.ComponentStore::new(),
     active_collision_types2d: @core.ComponentStore::new(),
     rapier_collider_handle2d: @core.ComponentStore::new(),
+    active_collision_types3d: @core.ComponentStore::new(),
     rapier_collider_handle3d: @core.ComponentStore::new(),
     collider_mass_properties2d: @core.ComponentStore::new(),
     restitution_combine_rule2d: @core.ComponentStore::new(),
@@ -255,6 +254,7 @@ pub fn World::new() -> World {
     additional_solver_iterations2d: @core.ComponentStore::new(),
     contact_force_event_threshold2d: @core.ComponentStore::new(),
     rapier_multibody_joint_handle2d: @core.ComponentStore::new(),
+    contact_force_event_threshold3d: @core.ComponentStore::new(),
     kinematic_character_controller2d: @core.ComponentStore::new(),
     kinematic_character_controller_output2d: @core.ComponentStore::new(),
     res_ui_scale: @core.Resource::new(),
@@ -264,7 +264,6 @@ pub fn World::new() -> World {
     res_picking_hits: @core.Resource::new(),
     res_picking_state: @core.Resource::new(),
     res_render_state: @core.Resource::new(),
-    res_global_ambient_light: @core.Resource::new(),
     res_picking_events: @core.Resource::new(),
     res_pointer_inputs: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
@@ -273,6 +272,7 @@ pub fn World::new() -> World {
     res_physics3d_events: @core.Resource::new(),
     res_physics2d_context: @core.Resource::new(),
     res_physics3d_context: @core.Resource::new(),
+    res_global_ambient_light: @core.Resource::new(),
   }
 }
 
@@ -309,36 +309,30 @@ pub fn World::despawn(
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
+  self.mesh3d.remove(entity) |> ignore
   self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
+  self.bloom2d.remove(entity) |> ignore
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.camera3d.remove(entity) |> ignore
-  self.camera_projection3d.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
-  self.mesh3d.remove(entity) |> ignore
-  self.mesh_material3d.remove(entity) |> ignore
-  self.point_light.remove(entity) |> ignore
-  self.directional_light.remove(entity) |> ignore
   self.spot_light.remove(entity) |> ignore
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.point_light.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
   self.friction2d.remove(entity) |> ignore
   self.sleeping2d.remove(entity) |> ignore
   self.velocity2d.remove(entity) |> ignore
   self.collider3d.remove(entity) |> ignore
-  self.active_collision_types3d.remove(entity) |> ignore
-  self.active_events3d.remove(entity) |> ignore
-  self.contact_force_event_threshold3d.remove(entity) |> ignore
-  self.active_hooks3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
@@ -354,11 +348,15 @@ pub fn World::despawn(
   self.active_hooks2d.remove(entity) |> ignore
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
+  self.active_hooks3d.remove(entity) |> ignore
+  self.mesh_material3d.remove(entity) |> ignore
   self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
   self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
+  self.active_events3d.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
+  self.directional_light.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
@@ -368,6 +366,7 @@ pub fn World::despawn(
   self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
+  self.camera_projection3d.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
@@ -375,6 +374,7 @@ pub fn World::despawn(
   self.friction_combine_rule2d.remove(entity) |> ignore
   self.active_collision_types2d.remove(entity) |> ignore
   self.rapier_collider_handle2d.remove(entity) |> ignore
+  self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
@@ -383,6 +383,7 @@ pub fn World::despawn(
   self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
+  self.contact_force_event_threshold3d.remove(entity) |> ignore
   self.kinematic_character_controller2d.remove(entity) |> ignore
   self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
@@ -417,36 +418,30 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.camera.remove(entity) |> ignore
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
+  self.mesh3d.remove(entity) |> ignore
   self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
   self.parent.remove(entity) |> ignore
+  self.bloom2d.remove(entity) |> ignore
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.camera3d.remove(entity) |> ignore
-  self.camera_projection3d.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
-  self.mesh3d.remove(entity) |> ignore
-  self.mesh_material3d.remove(entity) |> ignore
-  self.point_light.remove(entity) |> ignore
-  self.directional_light.remove(entity) |> ignore
   self.spot_light.remove(entity) |> ignore
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.point_light.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
   self.friction2d.remove(entity) |> ignore
   self.sleeping2d.remove(entity) |> ignore
   self.velocity2d.remove(entity) |> ignore
   self.collider3d.remove(entity) |> ignore
-  self.active_collision_types3d.remove(entity) |> ignore
-  self.active_events3d.remove(entity) |> ignore
-  self.contact_force_event_threshold3d.remove(entity) |> ignore
-  self.active_hooks3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
@@ -462,11 +457,15 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.active_hooks2d.remove(entity) |> ignore
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
+  self.active_hooks3d.remove(entity) |> ignore
+  self.mesh_material3d.remove(entity) |> ignore
   self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
   self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
+  self.active_events3d.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
+  self.directional_light.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
@@ -476,6 +475,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
+  self.camera_projection3d.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
@@ -483,6 +483,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.friction_combine_rule2d.remove(entity) |> ignore
   self.active_collision_types2d.remove(entity) |> ignore
   self.rapier_collider_handle2d.remove(entity) |> ignore
+  self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
@@ -491,6 +492,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
+  self.contact_force_event_threshold3d.remove(entity) |> ignore
   self.kinematic_character_controller2d.remove(entity) |> ignore
   self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
@@ -627,6 +629,11 @@ pub impl @render2d.Has_Sprite for World with get_sprite_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_Mesh3d for World with get_mesh3d_store(self) {
+  self.mesh3d
+}
+
+///|
 pub impl @ui.Has_BorderRadius for World with get_border_radius_store(self) {
   self.border_radius
 }
@@ -647,6 +654,11 @@ pub impl @hierarchy.Has_Parent for World with get_parent_store(self) {
 }
 
 ///|
+pub impl @render2d.Has_Bloom2d for World with get_bloom2d_store(self) {
+  self.bloom2d
+}
+
+///|
 pub impl @ui.Has_ImageNodeSize for World with get_image_node_size_store(self) {
   self.image_node_size
 }
@@ -659,13 +671,6 @@ pub impl @render2d.Has_Camera2d for World with get_camera2d_store(self) {
 ///|
 pub impl @render3d.Has_Camera3d for World with get_camera3d_store(self) {
   self.camera3d
-}
-
-///|
-pub impl @render3d.Has_CameraProjection3d for World with get_camera_projection3d_store(
-  self,
-) {
-  self.camera_projection3d
 }
 
 ///|
@@ -694,30 +699,6 @@ pub impl @render2d.Has_GpuMesh2d for World with get_gpu_mesh2d_store(self) {
 }
 
 ///|
-pub impl @render3d.Has_Mesh3d for World with get_mesh3d_store(self) {
-  self.mesh3d
-}
-
-///|
-pub impl @render3d.Has_MeshMaterial3d for World with get_mesh_material3d_store(
-  self,
-) {
-  self.mesh_material3d
-}
-
-///|
-pub impl @render3d.Has_PointLight for World with get_point_light_store(self) {
-  self.point_light
-}
-
-///|
-pub impl @render3d.Has_DirectionalLight for World with get_directional_light_store(
-  self,
-) {
-  self.directional_light
-}
-
-///|
 pub impl @render3d.Has_SpotLight for World with get_spot_light_store(self) {
   self.spot_light
 }
@@ -735,6 +716,11 @@ pub impl @physics2d.Has_Damping2d for World with get_damping2d_store(self) {
 ///|
 pub impl @render2d.Has_Projection for World with get_projection_store(self) {
   self.projection
+}
+
+///|
+pub impl @render3d.Has_PointLight for World with get_point_light_store(self) {
+  self.point_light
 }
 
 ///|
@@ -760,34 +746,6 @@ pub impl @physics2d.Has_Velocity2d for World with get_velocity2d_store(self) {
 ///|
 pub impl @physics3d.Has_Collider3d for World with get_collider3d_store(self) {
   self.collider3d
-}
-
-///|
-pub impl @physics3d.Has_ActiveCollisionTypes3d for World with get_active_collision_types3d_store(
-  self,
-) {
-  self.active_collision_types3d
-}
-
-///|
-pub impl @physics3d.Has_ActiveEvents3d for World with get_active_events3d_store(
-  self,
-) {
-  self.active_events3d
-}
-
-///|
-pub impl @physics3d.Has_ContactForceEventThreshold3d for World with get_contact_force_event_threshold3d_store(
-  self,
-) {
-  self.contact_force_event_threshold3d
-}
-
-///|
-pub impl @physics3d.Has_ActiveHooks3d for World with get_active_hooks3d_store(
-  self,
-) {
-  self.active_hooks3d
 }
 
 ///|
@@ -823,11 +781,6 @@ pub impl @render2d.Has_RenderLayers for World with get_render_layers_store(self)
 ///|
 pub impl @render2d.Has_RenderTarget for World with get_render_target_store(self) {
   self.render_target
-}
-
-///|
-pub impl @render2d.Has_Bloom2d for World with get_bloom2d_store(self) {
-  self.bloom2d
 }
 
 ///|
@@ -885,6 +838,20 @@ pub impl @physics2d.Has_Restitution2d for World with get_restitution2d_store(
 }
 
 ///|
+pub impl @physics3d.Has_ActiveHooks3d for World with get_active_hooks3d_store(
+  self,
+) {
+  self.active_hooks3d
+}
+
+///|
+pub impl @render3d.Has_MeshMaterial3d for World with get_mesh_material3d_store(
+  self,
+) {
+  self.mesh_material3d
+}
+
+///|
 pub impl @physics2d.Has_ActiveEvents2d for World with get_active_events2d_store(
   self,
 ) {
@@ -913,10 +880,24 @@ pub impl @physics2d.Has_SolverGroups2d for World with get_solver_groups2d_store(
 }
 
 ///|
+pub impl @physics3d.Has_ActiveEvents3d for World with get_active_events3d_store(
+  self,
+) {
+  self.active_events3d
+}
+
+///|
 pub impl @physics2d.Has_ExternalForce2d for World with get_external_force2d_store(
   self,
 ) {
   self.external_force2d
+}
+
+///|
+pub impl @render3d.Has_DirectionalLight for World with get_directional_light_store(
+  self,
+) {
+  self.directional_light
 }
 
 ///|
@@ -983,6 +964,13 @@ pub impl @physics2d.Has_ExternalImpulse2d for World with get_external_impulse2d_
 }
 
 ///|
+pub impl @render3d.Has_CameraProjection3d for World with get_camera_projection3d_store(
+  self,
+) {
+  self.camera_projection3d
+}
+
+///|
 pub impl @physics2d.Has_RapierBodyHandle2d for World with get_rapier_body_handle2d_store(
   self,
 ) {
@@ -1029,6 +1017,13 @@ pub impl @physics2d.Has_RapierColliderHandle2d for World with get_rapier_collide
   self,
 ) {
   self.rapier_collider_handle2d
+}
+
+///|
+pub impl @physics3d.Has_ActiveCollisionTypes3d for World with get_active_collision_types3d_store(
+  self,
+) {
+  self.active_collision_types3d
 }
 
 ///|
@@ -1088,6 +1083,13 @@ pub impl @physics2d.Has_RapierMultibodyJointHandle2d for World with get_rapier_m
 }
 
 ///|
+pub impl @physics3d.Has_ContactForceEventThreshold3d for World with get_contact_force_event_threshold3d_store(
+  self,
+) {
+  self.contact_force_event_threshold3d
+}
+
+///|
 pub impl @physics2d.Has_KinematicCharacterController2d for World with get_kinematic_character_controller2d_store(
   self,
 ) {
@@ -1140,13 +1142,6 @@ pub impl @render2d.HasRes_RenderState for World with get_render_state_resource(
   self,
 ) {
   self.res_render_state
-}
-
-///|
-pub impl @render3d.HasRes_GlobalAmbientLight for World with get_global_ambient_light_resource(
-  self,
-) {
-  self.res_global_ambient_light
 }
 
 ///|
@@ -1203,4 +1198,11 @@ pub impl @physics3d.HasRes_Physics3dContext for World with get_physics3d_context
   self,
 ) {
   self.res_physics3d_context
+}
+
+///|
+pub impl @render3d.HasRes_GlobalAmbientLight for World with get_global_ambient_light_resource(
+  self,
+) {
+  self.res_global_ambient_light
 }
