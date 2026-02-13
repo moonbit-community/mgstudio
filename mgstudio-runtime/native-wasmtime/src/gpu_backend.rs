@@ -1234,11 +1234,9 @@ impl GpuBackend {
         self.next_mesh_id += 1;
         let hw = width * 0.5;
         let hh = height * 0.5;
-        let vertices: [f32; 48] = [
+        let vertices: [f32; 32] = [
             -hw, -hh, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, //
             hw, -hh, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, //
-            hw, hh, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, //
-            -hw, -hh, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, //
             hw, hh, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, //
             -hw, hh, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, //
         ];
@@ -1261,7 +1259,7 @@ impl GpuBackend {
         self.meshes.insert(
             id,
             GpuMesh {
-                vertex_count: 6,
+                vertex_count: 4,
                 index_count: 6,
                 layout: MeshVertexLayout::XyUvRgba,
                 vertex_buf: vb,
@@ -2260,21 +2258,21 @@ impl GpuBackend {
                 source: wgpu::ShaderSource::Wgsl(wgsl.into()),
             });
         let vb_layout = wgpu::VertexBufferLayout {
-            array_stride: 36,
+            array_stride: 32,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
                     offset: 0,
                     shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
+                    format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
-                    offset: 12,
+                    offset: 8,
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
-                    offset: 20,
+                    offset: 16,
                     shader_location: 2,
                     format: wgpu::VertexFormat::Float32x4,
                 },
