@@ -13,8 +13,17 @@
 // limitations under the License.
 
 ///|
+/// Port of `bevy/examples/3d/transparency_3d.rs`.
+
+///|
+const PI : Float = 3.141592653589793F
+
+///|
+const TAU : Float = 6.283185307179586F
+
+///|
 priv struct TransparencyState {
-  materials : Array[@asset.Handle[@render3d.StandardMaterial]]
+  mut materials : Array[@asset.Handle[@render3d.StandardMaterial]]
 }
 
 ///|
@@ -25,13 +34,74 @@ pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_startup_system(transparency_setup)
-  .add_system(transparency_fade_system)
+  .add_startup_system(setup)
+  .add_system(fade_transparency)
   .run()
 }
 
 ///|
-fn spawn_transparency_mesh(
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn uv_sphere_mesh(
+  radius : Float,
+  stacks : Int,
+  sectors : Int,
+) -> @render3d.Mesh3d {
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let indices : Array[Int] = []
+
+  let stacks_f = float_from_int(stacks)
+  let sectors_f = float_from_int(sectors)
+  let stack_step = PI / stacks_f
+  let sector_step = TAU / sectors_f
+
+  for i in 0..<(stacks + 1) {
+    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
+    let ring_radius = radius * @math.cos(stack_angle)
+    let y = radius * @math.sin(stack_angle)
+
+    for j in 0..<(sectors + 1) {
+      let sector_angle = float_from_int(j) * sector_step
+      let x = ring_radius * @math.cos(sector_angle)
+      let z = ring_radius * @math.sin(sector_angle)
+      positions.push(@math.Vec3::new(x, y, z))
+      uvs.push(
+        @math.Vec2::new(
+          float_from_int(j) / sectors_f,
+          float_from_int(i) / stacks_f,
+        ),
+      )
+    }
+  }
+
+  let row = sectors + 1
+  for i in 0..<stacks {
+    let k1 = i * row
+    let k2 = k1 + row
+    for j in 0..<sectors {
+      if i != 0 {
+        indices.push(k1 + j)
+        indices.push(k2 + j)
+        indices.push(k1 + j + 1)
+      }
+      if i != stacks - 1 {
+        indices.push(k1 + j + 1)
+        indices.push(k2 + j)
+        indices.push(k2 + j + 1)
+      }
+    }
+  }
+
+  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
+  @render3d.Mesh3d::from_geometry(geometry)
+}
+
+///|
+fn spawn_mesh(
   world : @ecs_world.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
@@ -43,50 +113,28 @@ fn spawn_transparency_mesh(
     transform,
   ).spawn(world)
   |> ignore
-  transparency_state.val.materials.push(material)
 }
 
 ///|
-fn transparency_setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
-  if ambient.get_ref_mut(tick) is Some(a) {
-    a.val = @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.45F)
-  }
-
-  let point = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
-    point,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      180000.0F,
-      2000.0F,
-      false,
-    ),
-    tick,
-  )
-  world
-  .get_transform_store()
-  .insert(point, @math.Transform::from_xyz(260.0F, 320.0F, 260.0F), tick)
 
   let floor_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.32F, 0.48F, 0.32F, 1.0F),
+      @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
     ),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(900.0F, 900.0F),
-    @render3d.MeshMaterial3d::new(floor_material),
-    @math.Transform::from_xyz(0.0F, -150.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
   let mask_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.2F, 0.8F, 0.2F, 0.0F),
+      @render2d.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
     ).with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F)),
+  )
+  let mask_unlit_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
+    )
+    .with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F))
+    .with_unlit(true),
   )
   let blend_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -98,54 +146,87 @@ fn transparency_setup(world : @ecs_world.World) -> Unit {
       @render2d.Color::new(0.5F, 1.0F, 0.5F, 0.0F),
     ).with_alpha_mode(@render3d.AlphaMode3d::AlphaToCoverage),
   )
-  let additive_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.6F, 0.2F, 0.0F),
-    ).with_alpha_mode(@render3d.AlphaMode3d::Add),
-  )
-
-  spawn_transparency_mesh(
-    world,
-    @render3d.Mesh3d::from_tetrahedron(140.0F),
-    mask_material,
-    @math.Transform::from_xyz(-240.0F, -40.0F, -120.0F),
-  )
-  spawn_transparency_mesh(
-    world,
-    @render3d.Mesh3d::from_cuboid(120.0F, 120.0F, 120.0F),
-    blend_material,
-    @math.Transform::from_xyz(-70.0F, -40.0F, 0.0F),
-  )
-  spawn_transparency_mesh(
-    world,
-    @render3d.Mesh3d::from_cuboid(120.0F, 120.0F, 120.0F),
-    alpha_to_coverage_material,
-    @math.Transform::from_xyz(100.0F, -40.0F, 120.0F),
-  )
-  spawn_transparency_mesh(
-    world,
-    @render3d.Mesh3d::from_tetrahedron(150.0F),
-    additive_material,
-    @math.Transform::from_xyz(270.0F, -40.0F, -20.0F),
-  )
-
   let opaque_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.8F, 0.2F, 0.2F, 1.0F),
+      @render2d.Color::new(0.7F, 0.2F, 0.1F, 1.0F),
     ),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(110.0F, 110.0F, 110.0F),
-    @render3d.MeshMaterial3d::new(opaque_material),
-    @math.Transform::from_xyz(0.0F, -40.0F, -210.0F),
-  ).spawn(world)
-  |> ignore
 
-  let camera = @render2d.Camera::default()
+  transparency_state.val.materials = [
+    floor_material, mask_material, mask_unlit_material, blend_material, alpha_to_coverage_material,
+    opaque_material,
+  ]
+
+  let sphere_mesh = uv_sphere_mesh(0.5F, 16, 24)
+  let cube_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+
+  // Opaque plane.
+  spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_plane(6.0F, 6.0F),
+    floor_material,
+    @math.Transform::identity(),
+  )
+
+  // Transparent mask spheres.
+  spawn_mesh(
+    world,
+    sphere_mesh,
+    mask_material,
+    @math.Transform::from_xyz(1.0F, 0.5F, -1.5F),
+  )
+  spawn_mesh(
+    world,
+    sphere_mesh,
+    mask_unlit_material,
+    @math.Transform::from_xyz(-1.0F, 0.5F, -1.5F),
+  )
+
+  // Transparent blend cube.
+  spawn_mesh(
+    world,
+    cube_mesh,
+    blend_material,
+    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+  )
+
+  // Transparent alpha-to-coverage cube.
+  spawn_mesh(
+    world,
+    cube_mesh,
+    alpha_to_coverage_material,
+    @math.Transform::from_xyz(-1.5F, 0.5F, 0.0F),
+  )
+
+  // Opaque sphere.
+  spawn_mesh(
+    world,
+    sphere_mesh,
+    opaque_material,
+    @math.Transform::from_xyz(0.0F, 0.5F, -1.5F),
+  )
+
+  let point = world.spawn_empty()
+  world
+  .get_point_light_store()
+  .insert(
+    point,
+    @render3d.PointLight::new(
+      @render2d.Color::white(),
+      1_000_000.0F,
+      20.0F,
+      true,
+    ),
+    tick,
+  )
+  world
+  .get_transform_store()
+  .insert(point, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+
   @render3d.Camera3dBundle::new(
-    camera,
-    @math.Transform::from_xyz(-60.0F, 180.0F, 760.0F).looking_at(
-      @math.Vec3::new(20.0F, -40.0F, -60.0F),
+    @render2d.Camera::default(),
+    @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
@@ -153,8 +234,8 @@ fn transparency_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn transparency_fade_system(_world : @ecs_world.World) -> Unit {
-  let alpha = 0.5F + 0.5F * @math.sin(@time.time_elapsed_seconds())
+fn fade_transparency(_world : @ecs_world.World) -> Unit {
+  let alpha = @math.sin(@time.time_elapsed_seconds()) / 2.0F + 0.5F
   for handle in transparency_state.val.materials {
     if @render3d.standard_material_get(handle) is Some(material) {
       let next_color = @render2d.Color::new(
