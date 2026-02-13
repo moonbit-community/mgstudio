@@ -2,6 +2,8 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/render3d",
   "Milky2018/moon_rapier/core" @rapier_core,
   "Milky2018/moon_rapier/dynamics",
   "Milky2018/moon_rapier/collision",

@@ -4,6 +4,9 @@ package "Milky2018/mgstudio/physics3d"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/visibility",
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/dynamics",
   "Milky2018/moon_rapier/pipeline",
@@ -27,6 +30,14 @@ pub fn[W : Physics3dCleanupWorld] physics3d_cleanup_despawned_system(W) -> Unit
 
 pub fn[W : @Milky2018/mgstudio/core.ChangeTickWorld + HasRes_Physics3dEvents] physics3d_clear_events_system(W) -> Unit
 
+pub fn physics3d_debug_render_enabled() -> Bool
+
+pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn physics3d_debug_render_set_enabled(Bool) -> Unit
+
+pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_sync_system(W) -> Unit
+
 pub fn[W : Physics3dResourcesWorld] physics3d_init_resources_system(W) -> Unit
 
 pub fn[W : Physics3dPluginWorld] physics3d_plugin(@app.App[W]) -> @app.App[W]
@@ -34,6 +45,8 @@ pub fn[W : Physics3dPluginWorld] physics3d_plugin(@app.App[W]) -> @app.App[W]
 pub let physics3d_set_cleanup : String
 
 pub let physics3d_set_clear_events : String
+
+pub let physics3d_set_debug_render_sync : String
 
 pub let physics3d_set_step : String
 
@@ -129,6 +142,11 @@ pub struct Physics3dContext {
 }
 pub fn Physics3dContext::new() -> Self
 
+pub struct Physics3dDebugRenderContext {
+  mut enabled : Bool
+}
+pub fn Physics3dDebugRenderContext::default() -> Self
+
 pub struct Physics3dEvents {
   mut collisions : Array[CollisionEvent3d]
   mut contact_forces : Array[ContactForceEvent3d]
@@ -213,6 +231,9 @@ pub(open) trait Has_Velocity3d {
 }
 
 pub(open) trait Physics3dCleanupWorld : @Milky2018/mgstudio/core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+}
+
+pub(open) trait Physics3dDebugRenderPluginWorld : @render3d.MeshMaterial3dBundleSpawnWorld + Has_Collider3d + Has_RigidBody3d {
 }
 
 pub(open) trait Physics3dPluginWorld : Physics3dResourcesWorld + Physics3dCleanupWorld + Physics3dSyncInsertionsWorld + Physics3dSyncWorldToRapierWorld + Physics3dWritebackWorld {

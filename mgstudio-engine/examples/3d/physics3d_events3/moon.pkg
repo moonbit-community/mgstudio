@@ -1,6 +1,5 @@
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs_world",
   "Milky2018/mgstudio/math",
   "Milky2018/moon_rapier/collision",
@@ -8,7 +7,6 @@ import {
   "Milky2018/mgstudio/physics3d",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/render3d",
-  "Milky2018/mgstudio/text",
 }
 
 options(
