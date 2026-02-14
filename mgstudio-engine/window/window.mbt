@@ -59,6 +59,8 @@ pub(all) enum KeyCode {
   Digit5
   Digit6
   Tab
+  Enter
+  Backspace
   ShiftLeft
   ShiftRight
   ControlLeft
