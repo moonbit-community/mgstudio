@@ -219,7 +219,7 @@ bevy/examples/gltf/update_gltf_scene.rs,gltf,update_gltf_scene,,Blocked,team-ass
 bevy/examples/hello_world.rs,hello_world.rs,hello_world,,Blocked,team-parity,
 bevy/examples/helpers/widgets.rs,helpers,widgets,,Blocked,team-ops,
 bevy/examples/input/char_input_events.rs,input,char_input_events,,Blocked,team-input_window,
-bevy/examples/input/gamepad_input.rs,input,gamepad_input,,Blocked,team-input_window,
+bevy/examples/input/gamepad_input.rs,input,gamepad_input,mgstudio-engine/examples/input/gamepad_input,Adapted,team-input_window,
 bevy/examples/input/gamepad_input_events.rs,input,gamepad_input_events,mgstudio-engine/examples/input/gamepad_input_events,Exact,team-input_window,
 bevy/examples/input/gamepad_rumble.rs,input,gamepad_rumble,,Blocked,team-input_window,
 bevy/examples/input/keyboard_input.rs,input,keyboard_input,mgstudio-engine/examples/input/keyboard_input,Adapted,team-input_window,
