@@ -12,6 +12,10 @@ import {
 }
 
 // Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
 pub fn[W : Render3dExecuteWorld] render3d_execute_system(W) -> Unit
 
 pub fn[W : Render3dPluginWorld] render3d_plugin(@app.App[W]) -> @app.App[W]
@@ -110,6 +114,7 @@ pub struct OrthographicProjection3d {
   far : Float
 }
 pub fn OrthographicProjection3d::default() -> Self
+pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 
 pub struct PerspectiveProjection3d {
   fov : Float
@@ -169,9 +174,11 @@ pub fn StandardMaterial::with_base_color(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_emissive(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_metallic(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 
 // Type aliases

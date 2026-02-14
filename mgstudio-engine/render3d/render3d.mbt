@@ -67,6 +67,19 @@ pub fn OrthographicProjection3d::default() -> OrthographicProjection3d {
 }
 
 ///|
+pub fn OrthographicProjection3d::with_scale(
+  self : OrthographicProjection3d,
+  scale : Float,
+) -> OrthographicProjection3d {
+  let safe_scale = if scale <= 0.0F { 1.0F } else { scale }
+  OrthographicProjection3d::{
+    scale: safe_scale,
+    near: self.near,
+    far: self.far,
+  }
+}
+
+///|
 pub(all) enum Projection3d {
   Perspective(PerspectiveProjection3d)
   Orthographic(OrthographicProjection3d)
@@ -220,6 +233,36 @@ pub fn StandardMaterial::with_emissive_texture(
   emissive_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, emissive_texture, }
+}
+
+///|
+pub fn StandardMaterial::with_metallic(
+  self : StandardMaterial,
+  metallic : Float,
+) -> StandardMaterial {
+  let safe_metallic = if metallic < 0.0F {
+    0.0F
+  } else if metallic > 1.0F {
+    1.0F
+  } else {
+    metallic
+  }
+  StandardMaterial::{ ..self, metallic: safe_metallic }
+}
+
+///|
+pub fn StandardMaterial::with_perceptual_roughness(
+  self : StandardMaterial,
+  perceptual_roughness : Float,
+) -> StandardMaterial {
+  let safe_perceptual_roughness = if perceptual_roughness < 0.0F {
+    0.0F
+  } else if perceptual_roughness > 1.0F {
+    1.0F
+  } else {
+    perceptual_roughness
+  }
+  StandardMaterial::{ ..self, perceptual_roughness: safe_perceptual_roughness }
 }
 
 ///|
@@ -1027,7 +1070,8 @@ fn render3d_mesh_view_depth(
     mesh_transform.translation.z - camera_transform.translation.z,
   )
   let camera_forward = render3d_transform_forward(camera_transform)
-  to_mesh.x * camera_forward.x + to_mesh.y * camera_forward.y +
+  to_mesh.x * camera_forward.x +
+  to_mesh.y * camera_forward.y +
   to_mesh.z * camera_forward.z
 }
 
