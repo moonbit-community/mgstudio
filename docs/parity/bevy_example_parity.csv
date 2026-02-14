@@ -223,7 +223,7 @@ bevy/examples/input/gamepad_input.rs,input,gamepad_input,,Blocked,team-input_win
 bevy/examples/input/gamepad_input_events.rs,input,gamepad_input_events,mgstudio-engine/examples/input/gamepad_input_events,Exact,team-input_window,
 bevy/examples/input/gamepad_rumble.rs,input,gamepad_rumble,,Blocked,team-input_window,
 bevy/examples/input/keyboard_input.rs,input,keyboard_input,,Blocked,team-input_window,
-bevy/examples/input/keyboard_input_events.rs,input,keyboard_input_events,,Blocked,team-input_window,
+bevy/examples/input/keyboard_input_events.rs,input,keyboard_input_events,mgstudio-engine/examples/input/keyboard_input_events,Adapted,team-input_window,
 bevy/examples/input/keyboard_modifiers.rs,input,keyboard_modifiers,,Blocked,team-input_window,
 bevy/examples/input/mouse_grab.rs,input,mouse_grab,,Blocked,team-input_window,
 bevy/examples/input/mouse_input.rs,input,mouse_input,,Blocked,team-input_window,

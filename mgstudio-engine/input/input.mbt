@@ -60,6 +60,69 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
 }
 
 ///|
+let keyboard_event_keycodes : Array[@window.KeyCode] = [
+  KeyA,
+  KeyB,
+  KeyC,
+  KeyD,
+  KeyE,
+  KeyF,
+  KeyG,
+  KeyH,
+  KeyI,
+  KeyJ,
+  KeyK,
+  KeyL,
+  KeyM,
+  KeyN,
+  KeyO,
+  KeyP,
+  KeyQ,
+  KeyR,
+  KeyS,
+  KeyT,
+  KeyU,
+  KeyV,
+  KeyW,
+  KeyX,
+  KeyY,
+  KeyZ,
+  Digit1,
+  Digit2,
+  Digit3,
+  Digit4,
+  Digit5,
+  Digit6,
+  Tab,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Space,
+  Escape,
+  Comma,
+  Period,
+]
+
+///|
+pub(all) enum ButtonState {
+  Pressed
+  Released
+}
+
+///|
+pub struct KeyboardInput {
+  key_code : @window.KeyCode
+  state : ButtonState
+  repeat : Bool
+}
+
+///|
+let keyboard_input_events_ref : Ref[@core.Messages[KeyboardInput]] = Ref::new(
+  @core.Messages::new(),
+)
+
+///|
 fn host_input_is_key_down_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_down"
 
 ///|
@@ -173,6 +236,53 @@ pub fn mouse_wheel_delta_opt() -> @math.Vec2? {
 }
 
 ///|
+pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(world : W) -> Unit {
+  let tick = world.read_change_tick()
+  for code in keyboard_event_keycodes {
+    if key_just_pressed(code) {
+      keyboard_input_events_ref.val.send(tick, KeyboardInput::{
+        key_code: code,
+        state: ButtonState::Pressed,
+        repeat: false,
+      })
+    }
+    if key_just_released(code) {
+      keyboard_input_events_ref.val.send(tick, KeyboardInput::{
+        key_code: code,
+        state: ButtonState::Released,
+        repeat: false,
+      })
+    }
+  }
+}
+
+///|
+fn[W : @core.SystemContextWorld] input_world_system_ticks(
+  world : W,
+) -> @core.SystemTicks {
+  world.get_system_context().ticks()
+}
+
+///|
+fn keyboard_input_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[KeyboardInput] {
+  keyboard_input_events_ref.val.reader(ticks)
+}
+
+///|
+pub fn[W : @core.SystemContextWorld] keyboard_input_events(
+  world : W,
+) -> @core.MessageReader[KeyboardInput] {
+  keyboard_input_events_reader(input_world_system_ticks(world))
+}
+
+///|
+pub impl @core.Message for KeyboardInput with reader(ticks) {
+  keyboard_input_events_reader(ticks)
+}
+
+///|
 pub fn[W] input_finish_system(_world : W) -> Unit {
   input_gamepad_finish_frame()
   host_input_finish_frame()
@@ -183,6 +293,7 @@ pub fn[W : @core.ChangeTickWorld] input_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app
+  .add_pre_update_system(input_poll_keyboard_system)
   .add_pre_update_system(input_poll_gamepad_system)
   .add_post_update_system(input_finish_system)
 }

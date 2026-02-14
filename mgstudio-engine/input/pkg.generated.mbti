@@ -41,11 +41,15 @@ pub fn[W : @core.ChangeTickWorld] input_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : @core.ChangeTickWorld] input_poll_gamepad_system(W) -> Unit
 
+pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(W) -> Unit
+
 pub fn key_just_pressed(@window.KeyCode) -> Bool
 
 pub fn key_just_released(@window.KeyCode) -> Bool
 
 pub fn key_pressed(@window.KeyCode) -> Bool
+
+pub fn[W : @core.SystemContextWorld] keyboard_input_events(W) -> @core.MessageReader[KeyboardInput]
 
 pub fn mouse_button_just_pressed(@window.MouseButton) -> Bool
 
@@ -62,6 +66,11 @@ pub fn mouse_wheel_delta_opt() -> @math.Vec2?
 // Errors
 
 // Types and methods
+pub(all) enum ButtonState {
+  Pressed
+  Released
+}
+
 pub struct Gamepad {
   id : Int
 }
@@ -164,6 +173,13 @@ pub(all) enum GamepadInput {
   Button(GamepadButton)
   Axis(GamepadAxis)
 }
+
+pub struct KeyboardInput {
+  key_code : @window.KeyCode
+  state : ButtonState
+  repeat : Bool
+}
+pub impl @core.Message for KeyboardInput
 
 // Type aliases
 

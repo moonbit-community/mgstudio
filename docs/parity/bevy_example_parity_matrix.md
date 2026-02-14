@@ -33,7 +33,7 @@ Notes:
 | `gltf` | 9 | 0 | 0 | 9 | 0 |
 | `hello_world.rs` | 1 | 0 | 0 | 1 | 0 |
 | `helpers` | 1 | 0 | 0 | 1 | 0 |
-| `input` | 13 | 1 | 0 | 12 | 0 |
+| `input` | 13 | 1 | 1 | 11 | 0 |
 | `large_scenes` | 6 | 0 | 0 | 6 | 0 |
 | `math` | 6 | 0 | 0 | 6 | 0 |
 | `mobile` | 2 | 0 | 0 | 0 | 2 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 0 | 12 | 0 |
-| **Total** | **402** | **42** | **2** | **355** | **3** |
+| **Total** | **402** | **42** | **3** | **354** | **3** |
 
 ## Example Inventory
 
@@ -284,7 +284,7 @@ Notes:
 | `bevy/examples/input/gamepad_input_events.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input_events` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/gamepad_rumble.rs` | `input` |  | `Blocked` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_input.rs` | `input` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/input/keyboard_input_events.rs` | `input` |  | `Blocked` | `team-input_window` |  |
+| `bevy/examples/input/keyboard_input_events.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input_events` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_modifiers.rs` | `input` |  | `Blocked` | `team-input_window` |  |
 | `bevy/examples/input/mouse_grab.rs` | `input` |  | `Blocked` | `team-input_window` |  |
 | `bevy/examples/input/mouse_input.rs` | `input` |  | `Blocked` | `team-input_window` |  |
