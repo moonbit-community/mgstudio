@@ -30,4 +30,10 @@ import {
 
 options(
   "native-stub": [ "time_native.c", "spectest_native.c" ],
+  "link": {
+    "native": {
+      "cc": "./moon_cc.sh",
+      "cc-link-flags": "-framework IOKit -framework CoreFoundation",
+    },
+  },
 )

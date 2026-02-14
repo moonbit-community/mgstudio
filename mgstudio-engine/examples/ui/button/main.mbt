@@ -89,12 +89,14 @@ fn button_system(world : @ecs_world.World) -> Unit {
       }
     }
     if background_store.contains(entity) {
-      background_store.set(entity, @ui.BackgroundColor::new(bg_color), tick) |> ignore
+      background_store.set(entity, @ui.BackgroundColor::new(bg_color), tick)
+      |> ignore
     } else {
       background_store.insert(entity, @ui.BackgroundColor::new(bg_color), tick)
     }
     if border_store.contains(entity) {
-      border_store.set(entity, @ui.BorderColor::new(border_color), tick) |> ignore
+      border_store.set(entity, @ui.BorderColor::new(border_color), tick)
+      |> ignore
     } else {
       border_store.insert(entity, @ui.BorderColor::new(border_color), tick)
     }
@@ -170,7 +172,9 @@ fn setup(world : @ecs_world.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(33.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::new(0.9F, 0.9F, 0.9F, 1.0F)))
+    .with_color(
+      @text.TextColor::new(@render2d.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
+    )
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
     .spawn()
   let label = world.spawn_empty()
