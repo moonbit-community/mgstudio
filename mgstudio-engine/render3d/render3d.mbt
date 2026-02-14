@@ -108,6 +108,49 @@ pub fn CameraProjection3d::default() -> CameraProjection3d {
 }
 
 ///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct SubCameraView3d {
+  full_size : @math.IVec2
+  offset : @math.Vec2
+  size : @math.IVec2
+}
+
+///|
+fn sub_camera_view3d_sanitize(
+  full_size : @math.IVec2,
+  offset : @math.Vec2,
+  size : @math.IVec2,
+) -> SubCameraView3d {
+  let safe_full_width = if full_size.x <= 0 { 1 } else { full_size.x }
+  let safe_full_height = if full_size.y <= 0 { 1 } else { full_size.y }
+  let safe_size_width = if size.x <= 0 { 1 } else { size.x }
+  let safe_size_height = if size.y <= 0 { 1 } else { size.y }
+  SubCameraView3d::{
+    full_size: @math.IVec2::new(safe_full_width, safe_full_height),
+    offset,
+    size: @math.IVec2::new(safe_size_width, safe_size_height),
+  }
+}
+
+///|
+pub fn SubCameraView3d::new(
+  full_size : @math.IVec2,
+  offset : @math.Vec2,
+  size : @math.IVec2,
+) -> SubCameraView3d {
+  sub_camera_view3d_sanitize(full_size, offset, size)
+}
+
+///|
+pub fn SubCameraView3d::with_offset(
+  self : SubCameraView3d,
+  offset : @math.Vec2,
+) -> SubCameraView3d {
+  sub_camera_view3d_sanitize(self.full_size, offset, self.size)
+}
+
+///|
 pub(all) enum AlphaMode3d {
   Opaque
   Mask(Float)
@@ -605,6 +648,7 @@ pub fn GlobalAmbientLight::new(
 pub struct Camera3dBundle {
   camera : @render2d.Camera
   projection : CameraProjection3d
+  sub_camera_view : SubCameraView3d?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -619,6 +663,7 @@ pub fn Camera3dBundle::new(
   Camera3dBundle::{
     camera,
     projection: CameraProjection3d::default(),
+    sub_camera_view: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -635,11 +680,20 @@ pub fn Camera3dBundle::new_with_projection(
   Camera3dBundle::{
     camera,
     projection: CameraProjection3d::{ projection, },
+    sub_camera_view: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
     layers: @render2d.RenderLayers::default(),
   }
+}
+
+///|
+pub fn Camera3dBundle::with_sub_camera_view(
+  self : Camera3dBundle,
+  sub_camera_view : SubCameraView3d?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, sub_camera_view, }
 }
 
 ///|
@@ -671,7 +725,7 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 ///|
@@ -687,6 +741,9 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
   let entity = world.spawn_empty()
   world.get_camera3d_store().insert(entity, self.camera3d, tick)
   world.get_camera_projection3d_store().insert(entity, self.projection, tick)
+  if self.sub_camera_view is Some(sub_camera_view) {
+    world.get_sub_camera_view3d_store().insert(entity, sub_camera_view, tick)
+  }
   world.get_camera_store().insert(entity, self.camera, tick)
   world.get_render_target_store().insert(entity, self.target, tick)
   world.get_render_layers_store().insert(entity, self.layers, tick)
@@ -722,6 +779,7 @@ priv struct Camera3dInstance {
   entity : @core.Entity
   camera : @render2d.Camera
   projection : CameraProjection3d
+  sub_camera_view : SubCameraView3d?
   transform : @math.Transform
   target_id : Int
   target_size : @math.IVec2
@@ -1060,6 +1118,41 @@ fn render3d_projection_params(
 }
 
 ///|
+fn render3d_sub_camera_projection_params(
+  sub_camera_view : SubCameraView3d?,
+  view_width : Int,
+  view_height : Int,
+) -> (Float, Float, Float, Float, Float) {
+  let width_f = Float::from_double(view_width.to_double())
+  let height_f = Float::from_double(view_height.to_double())
+  let default_aspect = if width_f > 0.0F && height_f > 0.0F {
+    width_f / height_f
+  } else {
+    1.0F
+  }
+  guard sub_camera_view is Some(sub_view) else {
+    return (default_aspect, 1.0F, 1.0F, 0.0F, 0.0F)
+  }
+  let full_width = Float::from_double(sub_view.full_size.x.to_double())
+  let full_height = Float::from_double(sub_view.full_size.y.to_double())
+  let size_width = Float::from_double(sub_view.size.x.to_double())
+  let size_height = Float::from_double(sub_view.size.y.to_double())
+  if full_width <= 0.0F ||
+    full_height <= 0.0F ||
+    size_width <= 0.0F ||
+    size_height <= 0.0F {
+    return (default_aspect, 1.0F, 1.0F, 0.0F, 0.0F)
+  }
+  let scale_x = full_width / size_width
+  let scale_y = full_height / size_height
+  let bias_x = (full_width - 2.0F * sub_view.offset.x - size_width) / size_width
+  let bias_y = (2.0F * sub_view.offset.y + size_height - full_height) /
+    size_height
+  let aspect_ratio = full_width / full_height
+  (aspect_ratio, scale_x, scale_y, bias_x, bias_y)
+}
+
+///|
 fn render3d_mesh_view_depth(
   mesh_transform : @math.Transform,
   camera_transform : @math.Transform,
@@ -1163,7 +1256,7 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
 }
 
 ///|
@@ -1173,6 +1266,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let camera3d_store = world.get_camera3d_store()
   let camera_store = world.get_camera_store()
   let projection_store = world.get_camera_projection3d_store()
+  let sub_camera_view_store = world.get_sub_camera_view3d_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
   let transform_store = world.get_transform_store()
@@ -1186,6 +1280,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       Some(v) => v
       None => CameraProjection3d::default()
     }
+    let sub_camera_view = sub_camera_view_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
       None => @render2d.RenderTarget::Screen
@@ -1212,6 +1307,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           entity,
           camera: camera_clamped,
           projection,
+          sub_camera_view,
           transform,
           target_id: target_info.target_id,
           target_size: target_info.target_size,
@@ -1291,7 +1387,17 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     if view_width_logical <= 0 || view_height_logical <= 0 {
       continue
     }
-    let aspect_ratio = view_width_f / view_height_f
+    let (
+      aspect_ratio,
+      sub_camera_view_scale_x,
+      sub_camera_view_scale_y,
+      sub_camera_view_bias_x,
+      sub_camera_view_bias_y,
+    ) = render3d_sub_camera_projection_params(
+      camera.sub_camera_view,
+      view_width,
+      view_height,
+    )
     let (camera_fov_y, camera_near, camera_far) = render3d_projection_params(
       camera.projection,
       aspect_ratio,
@@ -1351,6 +1457,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       spot_range=lighting.spot_range,
       spot_inner_angle=lighting.spot_inner_angle,
       spot_outer_angle=lighting.spot_outer_angle,
+      sub_camera_view_scale_x~,
+      sub_camera_view_scale_y~,
+      sub_camera_view_bias_x~,
+      sub_camera_view_bias_y~,
     )
     let draw_order = render3d_sorted_mesh_indices(
       meshes,

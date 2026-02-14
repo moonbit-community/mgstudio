@@ -10,7 +10,7 @@ use winit::window::Window;
 // host contract used by mgstudio-engine (begin_frame/begin_pass/draw/end_pass/end_frame)
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
-const MESH_UNIFORM_MAX_BYTES: u64 = 80 * 4;
+const MESH_UNIFORM_MAX_BYTES: u64 = 84 * 4;
 
 pub struct GpuBackend {
     assets_base: String,
@@ -76,6 +76,7 @@ struct GpuPassState {
     spot_dir_inner: [f32; 4],
     spot_color_intensity: [f32; 4],
     spot_outer_angle: f32,
+    sub_camera_view: [f32; 4], // (scale_x, scale_y, bias_x, bias_y)
 
     // Physical (pixels) viewport/scissor.
     viewport_x: u32,
@@ -512,6 +513,7 @@ impl GpuBackend {
             spot_dir_inner: [0.0, -1.0, 0.0, 0.6],
             spot_color_intensity: [1.0, 1.0, 1.0, 0.0],
             spot_outer_angle: 0.8,
+            sub_camera_view: [1.0, 1.0, 0.0, 0.0],
             viewport_x: vx,
             viewport_y: vy,
             viewport_w: vw,
@@ -562,6 +564,7 @@ impl GpuBackend {
         spot_dir_inner: [f32; 4],
         spot_color_intensity: [f32; 4],
         spot_outer_angle: f32,
+        sub_camera_view: [f32; 4],
     ) -> anyhow::Result<()> {
         let camera_rot = quat_to_z_rotation(camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w);
         self.begin_pass(
@@ -591,6 +594,7 @@ impl GpuBackend {
             pass.st.spot_dir_inner = spot_dir_inner;
             pass.st.spot_color_intensity = spot_color_intensity;
             pass.st.spot_outer_angle = spot_outer_angle;
+            pass.st.sub_camera_view = sub_camera_view;
         }
         Ok(())
     }
@@ -2729,7 +2733,7 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     } else {
         1.0
     };
-    let floats: [f32; 80] = [
+    let floats: [f32; 84] = [
         draw.x,
         draw.y,
         draw.z,
@@ -2754,6 +2758,10 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
         aspect_ratio,
         pass.camera_near,
         pass.camera_far,
+        pass.sub_camera_view[0],
+        pass.sub_camera_view[1],
+        pass.sub_camera_view[2],
+        pass.sub_camera_view[3],
         draw.color[0],
         draw.color[1],
         draw.color[2],

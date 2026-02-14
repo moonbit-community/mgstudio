@@ -2234,6 +2234,10 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -2291,6 +2295,10 @@ fn define_mgstudio_host_imports(
             let spot_range = f(50);
             let spot_inner_angle = f(51);
             let spot_outer_angle = f(52);
+            let sub_camera_view_scale_x = f(53);
+            let sub_camera_view_scale_y = f(54);
+            let sub_camera_view_bias_x = f(55);
+            let sub_camera_view_bias_y = f(56);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.begin_pass_3d(
                     target_id,
@@ -2326,6 +2334,12 @@ fn define_mgstudio_host_imports(
                     [spot_dir_x, spot_dir_y, spot_dir_z, spot_inner_angle],
                     [spot_color_r, spot_color_g, spot_color_b, spot_intensity],
                     spot_outer_angle,
+                    [
+                        sub_camera_view_scale_x,
+                        sub_camera_view_scale_y,
+                        sub_camera_view_bias_x,
+                        sub_camera_view_bias_y,
+                    ],
                 )?;
             }
             ok_i32(out, 0);

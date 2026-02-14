@@ -272,6 +272,10 @@ pub fn host_gpu_begin_pass_3d(
   spot_range~ : Float,
   spot_inner_angle~ : Float,
   spot_outer_angle~ : Float,
+  sub_camera_view_scale_x~ : Float,
+  sub_camera_view_scale_y~ : Float,
+  sub_camera_view_bias_x~ : Float,
+  sub_camera_view_bias_y~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass_3d"
 
 ///|

@@ -1582,6 +1582,10 @@ pub fn create_host(
         1.0,
         0.6,
         0.8,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
       )
     }),
   )
@@ -1653,6 +1657,10 @@ pub fn create_host(
         arg_number(args, 50, 1),
         arg_number(args, 51, 0.6),
         arg_number(args, 52, 0.8),
+        arg_number(args, 53, 1.0),
+        arg_number(args, 54, 1.0),
+        arg_number(args, 55, 0.0),
+        arg_number(args, 56, 0.0),
       )
     }),
   )

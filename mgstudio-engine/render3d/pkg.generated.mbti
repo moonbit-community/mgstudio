@@ -48,6 +48,7 @@ pub fn Camera3d::default() -> Self
 pub struct Camera3dBundle {
   camera : @render2d.Camera
   projection : CameraProjection3d
+  sub_camera_view : SubCameraView3d?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -56,6 +57,7 @@ pub struct Camera3dBundle {
 pub fn Camera3dBundle::new(@render2d.Camera, @math.Transform) -> Self
 pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection3d, @math.Transform) -> Self
 pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(Self, W) -> @core.Entity
+pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
 
 pub struct CameraProjection3d {
   projection : Projection3d
@@ -181,10 +183,18 @@ pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@asset.Image
 pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 
+pub struct SubCameraView3d {
+  full_size : @math.IVec2
+  offset : @math.Vec2
+  size : @math.IVec2
+}
+pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
+pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
+
 // Type aliases
 
 // Traits
-pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 pub(open) trait HasRes_GlobalAmbientLight {
@@ -219,10 +229,14 @@ pub(open) trait Has_SpotLight {
   get_spot_light_store(Self) -> @core.ComponentStore[SpotLight]
 }
 
+pub(open) trait Has_SubCameraView3d {
+  get_sub_camera_view3d_store(Self) -> @core.ComponentStore[SubCameraView3d]
+}
+
 pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
 }
 
 pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {

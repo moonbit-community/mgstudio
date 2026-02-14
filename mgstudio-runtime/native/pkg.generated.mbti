@@ -120,7 +120,9 @@ pub struct GpuBackend {
   mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_transparent : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface_transparent : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut mesh3d_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh3d_uniform_bg : @wgpu_mbt.BindGroup?
@@ -131,7 +133,7 @@ pub struct GpuBackend {
 }
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
@@ -228,6 +230,10 @@ pub struct GpuPassState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+  sub_camera_view_scale_x : Float
+  sub_camera_view_scale_y : Float
+  sub_camera_view_bias_x : Float
+  sub_camera_view_bias_y : Float
 }
 
 pub struct GpuTextureInfo {

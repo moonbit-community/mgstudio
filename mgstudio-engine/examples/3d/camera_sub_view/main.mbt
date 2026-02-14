@@ -14,10 +14,6 @@
 
 ///|
 /// Port of `bevy/examples/3d/camera_sub_view.rs`.
-///
-/// Baseline parity: mgstudio currently has no `SubCameraView`, so moving sub-view
-/// offset is approximated by moving dedicated cameras while preserving viewport
-/// layout parity.
 
 ///|
 pub(all) enum ExampleViewport {
@@ -58,12 +54,15 @@ fn spawn_perspective_camera(
   world : @ecs_world.World,
   kind : ExampleViewport,
   order : Int,
-  moving~ : Bool = false,
+  sub_camera_view? : @render3d.SubCameraView3d? = None,
+  moving? : Bool = false,
 ) -> Unit {
   let entity = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default().with_order(order),
-    camera_sub_view_state.val.base_transform,
-  ).spawn(world)
+      @render2d.Camera::default().with_order(order),
+      camera_sub_view_state.val.base_transform,
+    )
+    .with_sub_camera_view(sub_camera_view)
+    .spawn(world)
   camera_sub_view_state.val.cameras.push((entity, kind))
   if moving {
     camera_sub_view_state.val.moving_cameras.push(entity)
@@ -75,13 +74,16 @@ fn spawn_orthographic_camera(
   world : @ecs_world.World,
   kind : ExampleViewport,
   order : Int,
-  moving~ : Bool = false,
+  sub_camera_view? : @render3d.SubCameraView3d? = None,
+  moving? : Bool = false,
 ) -> Unit {
   let entity = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default().with_order(order),
-    @render3d.Projection3d::orthographic_default(),
-    camera_sub_view_state.val.base_transform,
-  ).spawn(world)
+      @render2d.Camera::default().with_order(order),
+      @render3d.Projection3d::orthographic_default(),
+      camera_sub_view_state.val.base_transform,
+    )
+    .with_sub_camera_view(sub_camera_view)
+    .spawn(world)
   camera_sub_view_state.val.cameras.push((entity, kind))
   if moving {
     camera_sub_view_state.val.moving_cameras.push(entity)
@@ -126,32 +128,94 @@ fn setup(world : @ecs_world.World) -> Unit {
   let light = world.spawn_empty()
   world
   .get_point_light_store()
-  .insert(light, @render3d.PointLight::new(@render2d.Color::white(), 1_000_000.0F, 30.0F, true), tick)
+  .insert(
+    light,
+    @render3d.PointLight::new(
+      @render2d.Color::white(),
+      1_000_000.0F,
+      30.0F,
+      true,
+    ),
+    tick,
+  )
   world
   .get_transform_store()
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
+  let perspective_stretched_sub_view = @render3d.SubCameraView3d::new(
+    @math.IVec2::new(10, 10),
+    @math.Vec2::new(5.0F, 0.0F),
+    @math.IVec2::new(5, 10),
+  )
+  let perspective_moving_sub_view = @render3d.SubCameraView3d::new(
+    @math.IVec2::new(500, 500),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.IVec2::new(100, 100),
+  )
+  let perspective_control_sub_view = @render3d.SubCameraView3d::new(
+    @math.IVec2::new(800, 800),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.IVec2::new(800, 400),
+  )
+  let orthographic_stretched_sub_view = @render3d.SubCameraView3d::new(
+    @math.IVec2::new(2, 2),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.IVec2::new(1, 2),
+  )
+  let orthographic_moving_sub_view = @render3d.SubCameraView3d::new(
+    @math.IVec2::new(500, 500),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.IVec2::new(100, 100),
+  )
+  let orthographic_control_sub_view = @render3d.SubCameraView3d::new(
+    @math.IVec2::new(200, 200),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.IVec2::new(200, 100),
+  )
+
   // Perspective cameras
   spawn_perspective_camera(world, ExampleViewport::PerspectiveMain, 0)
-  spawn_perspective_camera(world, ExampleViewport::PerspectiveStretched, 1)
+  spawn_perspective_camera(
+    world,
+    ExampleViewport::PerspectiveStretched,
+    1,
+    sub_camera_view=Some(perspective_stretched_sub_view),
+  )
   spawn_perspective_camera(
     world,
     ExampleViewport::PerspectiveMoving,
     2,
+    sub_camera_view=Some(perspective_moving_sub_view),
     moving=true,
   )
-  spawn_perspective_camera(world, ExampleViewport::PerspectiveControl, 3)
+  spawn_perspective_camera(
+    world,
+    ExampleViewport::PerspectiveControl,
+    3,
+    sub_camera_view=Some(perspective_control_sub_view),
+  )
 
   // Orthographic cameras
   spawn_orthographic_camera(world, ExampleViewport::OrthographicMain, 4)
-  spawn_orthographic_camera(world, ExampleViewport::OrthographicStretched, 5)
+  spawn_orthographic_camera(
+    world,
+    ExampleViewport::OrthographicStretched,
+    5,
+    sub_camera_view=Some(orthographic_stretched_sub_view),
+  )
   spawn_orthographic_camera(
     world,
     ExampleViewport::OrthographicMoving,
     6,
+    sub_camera_view=Some(orthographic_moving_sub_view),
     moving=true,
   )
-  spawn_orthographic_camera(world, ExampleViewport::OrthographicControl, 7)
+  spawn_orthographic_camera(
+    world,
+    ExampleViewport::OrthographicControl,
+    7,
+    sub_camera_view=Some(orthographic_control_sub_view),
+  )
 }
 
 ///|
@@ -161,19 +225,14 @@ fn move_camera_view(world : @ecs_world.World) -> Unit {
   let cycle = 450.0F
   let wrapped = sweep - float_from_int((sweep / cycle).to_int()) * cycle
   let offset = wrapped - 50.0F
-  let world_offset = offset / 250.0F
-
-  let base = camera_sub_view_state.val.base_transform.translation
-  let next = @math.Transform::from_xyz(
-    base.x + world_offset,
-    base.y,
-    base.z + world_offset,
-  ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let sub_camera_view_store = world.get_sub_camera_view3d_store()
   for entity in camera_sub_view_state.val.moving_cameras {
-    transform_store.set(entity, next, tick) |> ignore
+    if sub_camera_view_store.get(entity) is Some(sub_camera_view) {
+      let next = sub_camera_view.with_offset(@math.Vec2::new(offset, offset))
+      sub_camera_view_store.set(entity, next, tick) |> ignore
+    }
   }
 }
 
@@ -218,26 +277,15 @@ fn resize_viewports(world : @ecs_world.World) -> Unit {
       PerspectiveMain => (large_size, @math.IVec2::new(0, small_height))
       PerspectiveStretched => (small_size, @math.IVec2::new(0, 0))
       PerspectiveMoving => (small_size, @math.IVec2::new(small_width, 0))
-      PerspectiveControl => (
-        small_wide_size,
-        @math.IVec2::new(small_width * 2, 0),
-      )
-      OrthographicMain => (
-        large_size,
-        @math.IVec2::new(large_width, small_height),
-      )
-      OrthographicStretched => (
-        small_size,
-        @math.IVec2::new(small_width * 4, 0),
-      )
-      OrthographicMoving => (
-        small_size,
-        @math.IVec2::new(small_width * 5, 0),
-      )
-      OrthographicControl => (
-        small_wide_size,
-        @math.IVec2::new(small_width * 6, 0),
-      )
+      PerspectiveControl =>
+        (small_wide_size, @math.IVec2::new(small_width * 2, 0))
+      OrthographicMain =>
+        (large_size, @math.IVec2::new(large_width, small_height))
+      OrthographicStretched =>
+        (small_size, @math.IVec2::new(small_width * 4, 0))
+      OrthographicMoving => (small_size, @math.IVec2::new(small_width * 5, 0))
+      OrthographicControl =>
+        (small_wide_size, @math.IVec2::new(small_width * 6, 0))
     }
     if camera_store.get(entity) is Some(camera) {
       camera_store.set(

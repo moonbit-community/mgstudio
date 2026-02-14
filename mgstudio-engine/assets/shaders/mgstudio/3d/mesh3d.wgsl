@@ -26,6 +26,7 @@ struct Mesh3dUniform {
   camera_pos : vec4<f32>,
   camera_rot : vec4<f32>,
   projection : vec4<f32>, // (fov_y, aspect, near, far)
+  subview : vec4<f32>, // (scale_x, scale_y, bias_x, bias_y)
   color : vec4<f32>,
   uv : vec4<f32>,
   ambient : vec4<f32>, // (r, g, b, brightness)
@@ -89,11 +90,13 @@ fn vs_main(
   let far_z = max(u_mesh.projection.w, near_z + 0.0001);
   let f = 1.0 / tan(0.5 * fov_y);
 
-  let clip_x = camera_space.x * f / aspect;
-  let clip_y = camera_space.y * f;
+  let clip_x_full = camera_space.x * f / aspect;
+  let clip_y_full = camera_space.y * f;
   let clip_z = camera_space.z * (far_z / (near_z - far_z)) +
     (near_z * far_z) / (near_z - far_z);
   let clip_w = -camera_space.z;
+  let clip_x = clip_x_full * u_mesh.subview.x + u_mesh.subview.z * clip_w;
+  let clip_y = clip_y_full * u_mesh.subview.y + u_mesh.subview.w * clip_w;
 
   out.position = vec4<f32>(clip_x, clip_y, clip_z, clip_w);
   out.uv = vec2<f32>(

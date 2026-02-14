@@ -125,6 +125,10 @@ pub struct GpuPassState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
+  sub_camera_view_scale_x : Float
+  sub_camera_view_scale_y : Float
+  sub_camera_view_bias_x : Float
+  sub_camera_view_bias_y : Float
 }
 
 ///|
@@ -1998,6 +2002,10 @@ pub fn GpuBackend::begin_pass(
     spot_range: 1.0F,
     spot_inner_angle: 0.6F,
     spot_outer_angle: 0.8F,
+    sub_camera_view_scale_x: 1.0F,
+    sub_camera_view_scale_y: 1.0F,
+    sub_camera_view_bias_x: 0.0F,
+    sub_camera_view_bias_y: 0.0F,
   })
 
   // Reset sprite batching state and update sprite globals for this pass.
@@ -2086,6 +2094,10 @@ pub fn GpuBackend::begin_pass_3d(
   spot_range : Float,
   spot_inner_angle : Float,
   spot_outer_angle : Float,
+  sub_camera_view_scale_x : Float,
+  sub_camera_view_scale_y : Float,
+  sub_camera_view_bias_x : Float,
+  sub_camera_view_bias_y : Float,
 ) -> Unit raise GpuBackendError {
   let camera_rot = quat_to_z_rotation(
     camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
@@ -2185,6 +2197,10 @@ pub fn GpuBackend::begin_pass_3d(
     spot_range,
     spot_inner_angle,
     spot_outer_angle,
+    sub_camera_view_scale_x,
+    sub_camera_view_scale_y,
+    sub_camera_view_bias_x,
+    sub_camera_view_bias_y,
   })
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
@@ -3329,6 +3345,10 @@ pub fn GpuBackend::draw_mesh3d(
     aspect_ratio,
     ps.camera_near,
     ps.camera_far,
+    ps.sub_camera_view_scale_x,
+    ps.sub_camera_view_scale_y,
+    ps.sub_camera_view_bias_x,
+    ps.sub_camera_view_bias_y,
     color_r,
     color_g,
     color_b,

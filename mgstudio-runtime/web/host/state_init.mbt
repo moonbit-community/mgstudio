@@ -35,6 +35,10 @@ priv struct PassInfo {
   cam_fov_y : Double
   cam_near : Double
   cam_far : Double
+  sub_camera_view_scale_x : Double
+  sub_camera_view_scale_y : Double
+  sub_camera_view_bias_x : Double
+  sub_camera_view_bias_y : Double
   viewport_x : Double
   viewport_y : Double
   viewport_width : Double
