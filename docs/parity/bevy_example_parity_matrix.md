@@ -33,7 +33,7 @@ Notes:
 | `gltf` | 9 | 0 | 0 | 9 | 0 |
 | `hello_world.rs` | 1 | 0 | 0 | 1 | 0 |
 | `helpers` | 1 | 0 | 0 | 1 | 0 |
-| `input` | 13 | 2 | 8 | 3 | 0 |
+| `input` | 13 | 2 | 11 | 0 | 0 |
 | `large_scenes` | 6 | 0 | 0 | 6 | 0 |
 | `math` | 6 | 0 | 0 | 6 | 0 |
 | `mobile` | 2 | 0 | 0 | 0 | 2 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 0 | 12 | 0 |
-| **Total** | **402** | **43** | **10** | **346** | **3** |
+| **Total** | **402** | **43** | **13** | **343** | **3** |
 
 ## Example Inventory
 
@@ -282,16 +282,16 @@ Notes:
 | `bevy/examples/input/char_input_events.rs` | `input` | `mgstudio-engine/examples/input/char_input_events` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/gamepad_input.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/gamepad_input_events.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input_events` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/gamepad_rumble.rs` | `input` |  | `Blocked` | `team-input_window` |  |
+| `bevy/examples/input/gamepad_rumble.rs` | `input` | `mgstudio-engine/examples/input/gamepad_rumble` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_input.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_input_events.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input_events` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_modifiers.rs` | `input` | `mgstudio-engine/examples/input/keyboard_modifiers` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/mouse_grab.rs` | `input` |  | `Blocked` | `team-input_window` |  |
+| `bevy/examples/input/mouse_grab.rs` | `input` | `mgstudio-engine/examples/input/mouse_grab` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/mouse_input.rs` | `input` | `mgstudio-engine/examples/input/mouse_input` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/mouse_input_events.rs` | `input` | `mgstudio-engine/examples/input/mouse_input_events` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/text_input.rs` | `input` | `mgstudio-engine/examples/input/text_input` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/input/touch_input.rs` | `input` | `mgstudio-engine/examples/input/touch_input` | `Adapted` | `team-input_window` |  |
-| `bevy/examples/input/touch_input_events.rs` | `input` |  | `Blocked` | `team-input_window` |  |
+| `bevy/examples/input/touch_input_events.rs` | `input` | `mgstudio-engine/examples/input/touch_input_events` | `Adapted` | `team-input_window` |  |
 | `bevy/examples/large_scenes/bistro/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/caldera_hotel/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/load_gltf.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
