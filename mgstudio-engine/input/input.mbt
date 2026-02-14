@@ -48,6 +48,10 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
     Digit5 => "Digit5"
     Digit6 => "Digit6"
     Tab => "Tab"
+    ShiftLeft => "ShiftLeft"
+    ShiftRight => "ShiftRight"
+    ControlLeft => "ControlLeft"
+    ControlRight => "ControlRight"
     ArrowUp => "ArrowUp"
     ArrowDown => "ArrowDown"
     ArrowLeft => "ArrowLeft"
@@ -94,6 +98,10 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
   Digit5,
   Digit6,
   Tab,
+  ShiftLeft,
+  ShiftRight,
+  ControlLeft,
+  ControlRight,
   ArrowUp,
   ArrowDown,
   ArrowLeft,

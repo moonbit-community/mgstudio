@@ -59,6 +59,10 @@ pub(all) enum KeyCode {
   Digit5
   Digit6
   Tab
+  ShiftLeft
+  ShiftRight
+  ControlLeft
+  ControlRight
   ArrowUp
   ArrowDown
   ArrowLeft
