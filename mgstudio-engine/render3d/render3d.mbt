@@ -1598,6 +1598,186 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
 }
 
 ///|
+fn render3d_camera_viewport_rect_logical(
+  camera : @render2d.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (Float, Float, Float, Float)? {
+  let target_width = target_size.x
+  let target_height = target_size.y
+  if target_width <= 0 || target_height <= 0 {
+    return None
+  }
+  let mut viewport_x = 0
+  let mut viewport_y = 0
+  let mut viewport_width = target_width
+  let mut viewport_height = target_height
+  if camera.viewport is Some(viewport) {
+    viewport_x = if viewport.physical_position.x < 0 {
+      0
+    } else {
+      viewport.physical_position.x
+    }
+    viewport_y = if viewport.physical_position.y < 0 {
+      0
+    } else {
+      viewport.physical_position.y
+    }
+    viewport_width = if viewport.physical_size.x < 0 {
+      0
+    } else {
+      viewport.physical_size.x
+    }
+    viewport_height = if viewport.physical_size.y < 0 {
+      0
+    } else {
+      viewport.physical_size.y
+    }
+    let max_width = if target_width - viewport_x < 0 {
+      0
+    } else {
+      target_width - viewport_x
+    }
+    let max_height = if target_height - viewport_y < 0 {
+      0
+    } else {
+      target_height - viewport_y
+    }
+    if viewport_width > max_width {
+      viewport_width = max_width
+    }
+    if viewport_height > max_height {
+      viewport_height = max_height
+    }
+  }
+  if viewport_width <= 0 || viewport_height <= 0 {
+    return None
+  }
+  let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+  let logical_x = Float::from_double(viewport_x.to_double()) / sf
+  let logical_y = Float::from_double(viewport_y.to_double()) / sf
+  let logical_width = Float::from_double(viewport_width.to_double()) / sf
+  let logical_height = Float::from_double(viewport_height.to_double()) / sf
+  if logical_width <= 0.0F || logical_height <= 0.0F {
+    return None
+  }
+  Some((logical_x, logical_y, logical_width, logical_height))
+}
+
+///|
+fn render3d_projection_fov_for_aspect(
+  projection : CameraProjection3d,
+  aspect_ratio : Float,
+) -> Float {
+  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
+  match projection.projection {
+    Perspective(perspective) => perspective.with_aspect_ratio(safe_aspect).fov
+    Orthographic(_) => @math.pi_half()
+  }
+}
+
+///|
+fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
+  @math.Quat::new(-value.x, -value.y, -value.z, value.w)
+}
+
+///|
+pub fn render3d_camera_viewport_to_world_ray(
+  screen : @math.Vec2,
+  camera : @render2d.Camera,
+  projection : CameraProjection3d,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (@math.Vec3, @math.Vec3)? {
+  guard render3d_camera_viewport_rect_logical(camera, target_size, scale_factor)
+    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
+    return None
+  }
+  if screen.x < viewport_x ||
+    screen.y < viewport_y ||
+    screen.x > viewport_x + viewport_width ||
+    screen.y > viewport_y + viewport_height {
+    return None
+  }
+  let viewport_local_x = (screen.x - viewport_x) / viewport_width
+  let viewport_local_y = (screen.y - viewport_y) / viewport_height
+  let ndc_x = viewport_local_x * 2.0F - 1.0F
+  let ndc_y = 1.0F - viewport_local_y * 2.0F
+  let aspect_ratio = viewport_width / viewport_height
+  let fov = render3d_projection_fov_for_aspect(projection, aspect_ratio)
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  if cos_half_fov == 0.0F {
+    return None
+  }
+  let tan_half_fov = @math.sin(half_fov) / cos_half_fov
+  let ray_camera = @math.Vec3::new(
+    ndc_x * tan_half_fov * aspect_ratio,
+    ndc_y * tan_half_fov,
+    -1.0F,
+  ).normalize_or_zero()
+  if ray_camera.length_squared() <= 1.0e-12F {
+    return None
+  }
+  let ray_world = quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero()
+  if ray_world.length_squared() <= 1.0e-12F {
+    return None
+  }
+  Some((camera_transform.translation, ray_world))
+}
+
+///|
+pub fn render3d_camera_world_to_viewport(
+  world : @math.Vec3,
+  camera : @render2d.Camera,
+  projection : CameraProjection3d,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> @math.Vec2? {
+  guard render3d_camera_viewport_rect_logical(camera, target_size, scale_factor)
+    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
+    return None
+  }
+  let to_world = world.sub(camera_transform.translation)
+  let inv_rotation = render3d_quat_conjugate(camera_transform.rotation).normalize()
+  let view_pos = quat_rotate_vec3(inv_rotation, to_world)
+  let view_depth = -view_pos.z
+  if view_depth <= 0.0F {
+    return None
+  }
+  let aspect_ratio = viewport_width / viewport_height
+  let fov = render3d_projection_fov_for_aspect(projection, aspect_ratio)
+  let (_, near, far) = render3d_projection_params(projection, aspect_ratio)
+  if view_depth < near || view_depth > far {
+    return None
+  }
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  if cos_half_fov == 0.0F {
+    return None
+  }
+  let tan_half_fov = @math.sin(half_fov) / cos_half_fov
+  let denom_x = view_depth * tan_half_fov * aspect_ratio
+  let denom_y = view_depth * tan_half_fov
+  if denom_x == 0.0F || denom_y == 0.0F {
+    return None
+  }
+  let ndc_x = view_pos.x / denom_x
+  let ndc_y = view_pos.y / denom_y
+  let local_x = (ndc_x + 1.0F) * 0.5F * viewport_width
+  let local_y = (1.0F - ndc_y) * 0.5F * viewport_height
+  if local_x < 0.0F ||
+    local_y < 0.0F ||
+    local_x > viewport_width ||
+    local_y > viewport_height {
+    return None
+  }
+  Some(@math.Vec2::new(local_x + viewport_x, local_y + viewport_y))
+}
+
+///|
 fn[W : HasRes_GlobalAmbientLight + @core.ChangeTickWorld] init_render3d_resources(
   world : W,
 ) -> Unit {

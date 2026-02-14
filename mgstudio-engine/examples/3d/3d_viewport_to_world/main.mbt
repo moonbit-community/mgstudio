@@ -14,9 +14,6 @@
 
 ///|
 /// Port of `bevy/examples/3d/3d_viewport_to_world.rs`.
-///
-/// Baseline parity: mgstudio currently computes the viewport ray in this
-/// example directly (no public render3d viewport_to_world API yet).
 
 ///|
 priv struct ViewportToWorld3dState {
@@ -31,53 +28,12 @@ let viewport_to_world_3d_state : Ref[ViewportToWorld3dState] = Ref::new({
 })
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
-
-///|
 fn absf(value : Float) -> Float {
   if value < 0.0F {
     -value
   } else {
     value
   }
-}
-
-///|
-fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
-  let qv = @math.Vec3::new(q.x, q.y, q.z)
-  let t = qv.cross(v).mul_scalar(2.0F)
-  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
-}
-
-///|
-fn camera_ray_direction(
-  screen : @math.Vec2,
-  viewport_width : Float,
-  viewport_height : Float,
-  camera_transform : @math.Transform,
-) -> @math.Vec3? {
-  if viewport_width <= 0.0F || viewport_height <= 0.0F {
-    return None
-  }
-  let ndc_x = screen.x / viewport_width * 2.0F - 1.0F
-  let ndc_y = 1.0F - screen.y / viewport_height * 2.0F
-
-  let aspect = viewport_width / viewport_height
-  let fov = @math.pi_half()
-  let tan_half_fov = @math.sin(fov / 2.0F) / @math.cos(fov / 2.0F)
-  let ray_camera = @math.Vec3::new(
-    ndc_x * tan_half_fov * aspect,
-    ndc_y * tan_half_fov,
-    -1.0F,
-  ).normalize_or_zero()
-  if ray_camera.length_squared() <= 1.0e-12F {
-    return None
-  }
-  Some(
-    quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero(),
-  )
 }
 
 ///|
@@ -158,23 +114,27 @@ fn draw_cursor(world : @ecs_world.World) -> Unit {
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  let width = float_from_int(@window.window_width())
-  let height = float_from_int(@window.window_height())
-  if width <= 0.0F || height <= 0.0F {
-    return
-  }
-
   let transform_store = world.get_transform_store()
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
+  let camera_store = world.get_camera_store()
+  guard camera_store.get(camera_entity) is Some(camera) else { return }
+  let projection_store = world.get_camera_projection3d_store()
+  guard projection_store.get(camera_entity) is Some(projection) else { return }
+  let target_size = @math.IVec2::new(
+    @window.window_width(),
+    @window.window_height(),
+  )
+  let scale_factor = @window.window_scale_factor()
 
-  guard camera_ray_direction(screen_pos, width, height, camera_transform)
-    is Some(ray_dir) else {
+  guard @render3d.render3d_camera_viewport_to_world_ray(
+      screen_pos, camera, projection, camera_transform, target_size, scale_factor,
+    )
+    is Some((ray_origin, ray_dir)) else {
     return
   }
-  guard ray_plane_intersection_ground(camera_transform.translation, ray_dir)
-    is Some(point) else {
+  guard ray_plane_intersection_ground(ray_origin, ray_dir) is Some(point) else {
     return
   }
 
