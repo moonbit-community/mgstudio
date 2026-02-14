@@ -53,8 +53,8 @@ Notes:
 | `transforms` | 5 | 0 | 0 | 5 | 0 |
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
-| `window` | 12 | 0 | 0 | 12 | 0 |
-| **Total** | **402** | **43** | **13** | **343** | **3** |
+| `window` | 12 | 0 | 12 | 0 | 0 |
+| **Total** | **402** | **43** | **25** | **331** | **3** |
 
 ## Example Inventory
 
@@ -450,15 +450,15 @@ Notes:
 | `bevy/examples/ui/window_fallthrough.rs` | `ui` |  | `Blocked` | `team-ui_text` |  |
 | `bevy/examples/usage/context_menu.rs` | `usage` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/usage/cooldown.rs` | `usage` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/window/clear_color.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/custom_cursor_image.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/low_power.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/monitor_info.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/multi_window_text.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/scale_factor_override.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/screenshot.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/transparent_window.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/window_drag_move.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/window_resizing.rs` | `window` |  | `Blocked` | `team-input_window` |  |
-| `bevy/examples/window/window_settings.rs` | `window` |  | `Blocked` | `team-input_window` |  |
+| `bevy/examples/window/clear_color.rs` | `window` | `mgstudio-engine/examples/window/clear_color` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/custom_cursor_image.rs` | `window` | `mgstudio-engine/examples/window/custom_cursor_image` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/low_power.rs` | `window` | `mgstudio-engine/examples/window/low_power` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/monitor_info.rs` | `window` | `mgstudio-engine/examples/window/monitor_info` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/multi_window_text.rs` | `window` | `mgstudio-engine/examples/window/multi_window_text` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/multiple_windows.rs` | `window` | `mgstudio-engine/examples/window/multiple_windows` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/scale_factor_override.rs` | `window` | `mgstudio-engine/examples/window/scale_factor_override` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/window_drag_move.rs` | `window` | `mgstudio-engine/examples/window/window_drag_move` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/window_resizing.rs` | `window` | `mgstudio-engine/examples/window/window_resizing` | `Adapted` | `team-input_window` |  |
+| `bevy/examples/window/window_settings.rs` | `window` | `mgstudio-engine/examples/window/window_settings` | `Adapted` | `team-input_window` |  |

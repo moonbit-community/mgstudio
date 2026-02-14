@@ -1,0 +1,10 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs_world",
+  "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio",
+}
+
+options(
+  link: { "wasm": { "exports": [ "game_app" ] } },
+)
