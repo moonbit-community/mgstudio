@@ -902,7 +902,8 @@ fn ensure_depth_texture(state : State, width : Int, height : Int) -> Unit {
 
 ///|
 fn ensure_mesh3d_pipeline(state : State) -> Unit {
-  if state.gpu.mesh3d_pipeline is Some(_) {
+  if state.gpu.mesh3d_pipeline is Some(_) &&
+    state.gpu.mesh3d_pipeline_transparent is Some(_) {
     return
   }
   if state.gpu.device is None {
@@ -1094,23 +1095,23 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
       ),
     ])
     let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
-    let depth_state = @js.from_entries([
+    let depth_state_opaque = @js.from_entries([
       ("format", @js.any("depth24plus")),
       ("depthWriteEnabled", @js.any(true)),
       ("depthCompare", @js.any("less-equal")),
     ])
-    let pipeline_desc = @js.from_entries([
+    let pipeline_desc_opaque = @js.from_entries([
       ("layout", pipeline_layout.as_any()),
       ("vertex", vertex_state.to_js()),
       ("fragment", fragment_state.to_js()),
       ("primitive", primitive_state.to_js()),
-      ("depthStencil", depth_state),
+      ("depthStencil", depth_state_opaque),
     ])
     device.push_error_scope("validation")
-    let pipeline = device.create_render_pipeline(pipeline_desc)
-    let pipeline_error_promise = device.pop_error_scope()
+    let pipeline_opaque = device.create_render_pipeline(pipeline_desc_opaque)
+    let pipeline_error_promise_opaque = device.pop_error_scope()
     @js.run_async(async fn() noraise {
-      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+      let err_any : @js.Any = pipeline_error_promise_opaque.wait() catch {
         _ => js_null()
       }
       if !host_is_nullish(err_any) {
@@ -1122,7 +1123,40 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
         state.gpu.mesh3d_pipeline = None
       }
     })
-    state.gpu.mesh3d_pipeline = Some(pipeline)
+    state.gpu.mesh3d_pipeline = Some(pipeline_opaque)
+
+    let depth_state_transparent = @js.from_entries([
+      ("format", @js.any("depth24plus")),
+      ("depthWriteEnabled", @js.any(false)),
+      ("depthCompare", @js.any("less-equal")),
+    ])
+    let pipeline_desc_transparent = @js.from_entries([
+      ("layout", pipeline_layout.as_any()),
+      ("vertex", vertex_state.to_js()),
+      ("fragment", fragment_state.to_js()),
+      ("primitive", primitive_state.to_js()),
+      ("depthStencil", depth_state_transparent),
+    ])
+    device.push_error_scope("validation")
+    let pipeline_transparent = device.create_render_pipeline(
+      pipeline_desc_transparent,
+    )
+    let pipeline_error_promise_transparent = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise_transparent.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "mesh3d_pipeline_transparent_validation_error",
+          "Mesh3d transparent pipeline validation error: " +
+          any_to_string(err_any),
+        )
+        state.gpu.mesh3d_pipeline_transparent = None
+      }
+    })
+    state.gpu.mesh3d_pipeline_transparent = Some(pipeline_transparent)
   }
 }
 
@@ -2727,7 +2761,13 @@ fn draw_mesh3d(
   flush_ui_batches(state)
   flush_sprite_batches(state)
   ensure_mesh3d_pipeline(state)
-  if state.gpu.mesh3d_pipeline is None {
+  let use_transparent_pipeline = a < 0.999
+  let mesh3d_pipeline_opt = if use_transparent_pipeline {
+    state.gpu.mesh3d_pipeline_transparent
+  } else {
+    state.gpu.mesh3d_pipeline
+  }
+  if mesh3d_pipeline_opt is None {
     report_asset_error_once(
       state, "mesh3d_draw_pipeline_not_ready", "Mesh3d draw skipped: mesh3d pipeline not ready",
     )
@@ -2805,7 +2845,7 @@ fn draw_mesh3d(
   }
   if state.gpu.current_pass is Some(pass) &&
     state.gpu.current_pass_info is Some(info) &&
-    state.gpu.mesh3d_pipeline is Some(mesh3d_pipeline) &&
+    mesh3d_pipeline_opt is Some(mesh3d_pipeline) &&
     base_texture_entry is Some(base_texture_entry_value) &&
     normal_texture_entry is Some(normal_texture_entry_value) &&
     emissive_texture_entry is Some(emissive_texture_entry_value) &&

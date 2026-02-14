@@ -159,6 +159,7 @@ priv struct GpuState {
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
   mut mesh3d_pipeline : @webgpu.GPURenderPipeline?
+  mut mesh3d_pipeline_transparent : @webgpu.GPURenderPipeline?
   mut mesh3d_uniform_layout : @webgpu.GPUBindGroupLayout?
   mut mesh3d_material_layout : @webgpu.GPUBindGroupLayout?
   mut depth_texture : @webgpu.GPUTexture?
@@ -293,6 +294,7 @@ fn new_state(
       vertex_count: 0,
       mesh_pipeline: None,
       mesh3d_pipeline: None,
+      mesh3d_pipeline_transparent: None,
       mesh3d_uniform_layout: None,
       mesh3d_material_layout: None,
       depth_texture: None,
@@ -735,6 +737,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
   state.gpu.mesh3d_pipeline = None
+  state.gpu.mesh3d_pipeline_transparent = None
   state.gpu.mesh3d_uniform_layout = None
   state.gpu.mesh3d_material_layout = None
   state.gpu.depth_texture = None

@@ -214,7 +214,9 @@ pub struct GpuBackend {
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_pipeline : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_transparent : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_surface : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_surface_transparent : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
   mut mesh3d_uniform_buf : @wgpu.Buffer?
   mut mesh3d_uniform_bg : @wgpu.BindGroup?
@@ -307,7 +309,9 @@ pub fn GpuBackend::new(
     mesh3d_bgl_material: None,
     mesh3d_pipeline_layout: None,
     mesh3d_pipeline: None,
+    mesh3d_pipeline_transparent: None,
     mesh3d_pipeline_surface: None,
+    mesh3d_pipeline_surface_transparent: None,
     mesh3d_pipeline_surface_format: None,
     mesh3d_uniform_buf: None,
     mesh3d_uniform_bg: None,
@@ -1013,6 +1017,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   shader : @wgpu.ShaderModule,
   format : UInt,
   with_depth? : Bool = false,
+  depth_write_enabled? : Bool = true,
   position3d? : Bool = false,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
@@ -1076,7 +1081,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     let set_depth_ok = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
       builder,
       @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
-      true,
+      depth_write_enabled,
       @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
     )
     if set_depth_ok == 0U {
@@ -1257,25 +1262,47 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend.mesh3d_uniform_buf = Some(uniform_buf)
     backend.mesh3d_uniform_bg = Some(uniform_bg)
   }
-  if backend.mesh3d_pipeline is Some(_) {
+  if backend.mesh3d_pipeline is Some(_) &&
+    backend.mesh3d_pipeline_transparent is Some(_) {
     return
+  }
+  if backend.mesh3d_pipeline is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_transparent is Some(old) {
+    old.release()
   }
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/3d/mesh3d.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+  let desc_opaque = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
     sm,
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
     with_depth=true,
+    depth_write_enabled=true,
     position3d=true,
   )
-  let pipeline = backend.device.create_render_pipeline_ptr(desc)
-  @wgpu_c.render_pipeline_descriptor_free(desc)
-  pipeline.set_label("mgstudio_mesh3d_rgba8")
-  backend.mesh3d_pipeline = Some(pipeline)
+  let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
+  @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
+  pipeline_opaque.set_label("mgstudio_mesh3d_rgba8_opaque")
+  backend.mesh3d_pipeline = Some(pipeline_opaque)
+  let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    with_depth=true,
+    depth_write_enabled=false,
+    position3d=true,
+  )
+  let pipeline_transparent = backend.device.create_render_pipeline_ptr(
+    desc_transparent,
+  )
+  @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
+  pipeline_transparent.set_label("mgstudio_mesh3d_rgba8_transparent")
+  backend.mesh3d_pipeline_transparent = Some(pipeline_transparent)
   sm.release()
 }
 
@@ -1290,10 +1317,14 @@ fn ensure_mesh3d_pipeline_surface(
   }
   if backend.mesh3d_pipeline_surface_format is Some(prev) &&
     prev == format &&
-    backend.mesh3d_pipeline_surface is Some(_) {
+    backend.mesh3d_pipeline_surface is Some(_) &&
+    backend.mesh3d_pipeline_surface_transparent is Some(_) {
     return
   }
   if backend.mesh3d_pipeline_surface is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_surface_transparent is Some(old) {
     old.release()
   }
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
@@ -1301,17 +1332,32 @@ fn ensure_mesh3d_pipeline_surface(
     backend, "shaders/mgstudio/3d/mesh3d.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+  let desc_opaque = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
     sm,
     format.to_u32(),
     with_depth=true,
+    depth_write_enabled=true,
     position3d=true,
   )
-  let pipeline = backend.device.create_render_pipeline_ptr(desc)
-  @wgpu_c.render_pipeline_descriptor_free(desc)
-  pipeline.set_label("mgstudio_mesh3d_surface")
-  backend.mesh3d_pipeline_surface = Some(pipeline)
+  let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
+  @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
+  pipeline_opaque.set_label("mgstudio_mesh3d_surface_opaque")
+  backend.mesh3d_pipeline_surface = Some(pipeline_opaque)
+  let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    format.to_u32(),
+    with_depth=true,
+    depth_write_enabled=false,
+    position3d=true,
+  )
+  let pipeline_transparent = backend.device.create_render_pipeline_ptr(
+    desc_transparent,
+  )
+  @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
+  pipeline_transparent.set_label("mgstudio_mesh3d_surface_transparent")
+  backend.mesh3d_pipeline_surface_transparent = Some(pipeline_transparent)
   backend.mesh3d_pipeline_surface_format = Some(format)
   sm.release()
 }
@@ -1319,6 +1365,7 @@ fn ensure_mesh3d_pipeline_surface(
 ///|
 fn mesh3d_pipeline_for_current_pass(
   backend : GpuBackend,
+  transparent : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let target_is_surface = match backend.pass_state {
     Some(ps) => ps.target_id == -1
@@ -1328,13 +1375,21 @@ fn mesh3d_pipeline_for_current_pass(
     match backend.surface_format {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
         ensure_mesh3d_pipeline_surface(backend)
-        return backend.mesh3d_pipeline_surface
+        if transparent {
+          return backend.mesh3d_pipeline_surface_transparent
+        } else {
+          return backend.mesh3d_pipeline_surface
+        }
       }
       _ => ()
     }
   }
   ensure_mesh3d_pipeline_rgba8(backend)
-  backend.mesh3d_pipeline
+  if transparent {
+    backend.mesh3d_pipeline_transparent
+  } else {
+    backend.mesh3d_pipeline
+  }
 }
 
 ///|
@@ -3196,7 +3251,10 @@ pub fn GpuBackend::draw_mesh3d(
   if mesh.vertex_stride_bytes != 36UL {
     return
   }
-  guard mesh3d_pipeline_for_current_pass(self) is Some(pipeline) else { return }
+  let transparent = color_a < 0.999F
+  guard mesh3d_pipeline_for_current_pass(self, transparent) is Some(pipeline) else {
+    return
+  }
   guard self.mesh3d_uniform_buf is Some(uniform_buf) else { return }
   guard self.mesh3d_uniform_bg is Some(uniform_bg) else { return }
   let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }

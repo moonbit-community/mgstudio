@@ -1017,9 +1017,25 @@ fn render3d_projection_params(
 }
 
 ///|
+fn render3d_mesh_view_depth(
+  mesh_transform : @math.Transform,
+  camera_transform : @math.Transform,
+) -> Float {
+  let to_mesh = @math.Vec3::new(
+    mesh_transform.translation.x - camera_transform.translation.x,
+    mesh_transform.translation.y - camera_transform.translation.y,
+    mesh_transform.translation.z - camera_transform.translation.z,
+  )
+  let camera_forward = render3d_transform_forward(camera_transform)
+  to_mesh.x * camera_forward.x + to_mesh.y * camera_forward.y +
+  to_mesh.z * camera_forward.z
+}
+
+///|
 fn render3d_sorted_mesh_indices(
   meshes : Array[Mesh3dInstance],
   layers : @render2d.RenderLayers,
+  camera_transform : @math.Transform,
 ) -> Array[Int] {
   let order : Array[Int] = []
   for i in 0..<meshes.length() {
@@ -1050,6 +1066,8 @@ fn render3d_sorted_mesh_indices(
     if phase_cmp != 0 {
       return phase_cmp
     }
+    let depth_a = render3d_mesh_view_depth(ma.transform, camera_transform)
+    let depth_b = render3d_mesh_view_depth(mb.transform, camera_transform)
     if phase_a == 0 {
       let texture_a = match ma.material.base_color_texture {
         Some(texture) => texture.id()
@@ -1063,20 +1081,14 @@ fn render3d_sorted_mesh_indices(
       if texture_cmp != 0 {
         return texture_cmp
       }
-      let z_cmp = cmp_float(
-        ma.transform.translation.z,
-        mb.transform.translation.z,
-      )
-      if z_cmp != 0 {
-        return z_cmp
+      let depth_cmp = cmp_float(depth_a, depth_b)
+      if depth_cmp != 0 {
+        return depth_cmp
       }
     } else {
-      let z_cmp = cmp_float(
-        mb.transform.translation.z,
-        ma.transform.translation.z,
-      )
-      if z_cmp != 0 {
-        return z_cmp
+      let depth_cmp = cmp_float(depth_b, depth_a)
+      if depth_cmp != 0 {
+        return depth_cmp
       }
     }
     let id_cmp = cmp_int(ma.entity.id, mb.entity.id)
@@ -1296,7 +1308,11 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       spot_inner_angle=lighting.spot_inner_angle,
       spot_outer_angle=lighting.spot_outer_angle,
     )
-    let draw_order = render3d_sorted_mesh_indices(meshes, camera.layers)
+    let draw_order = render3d_sorted_mesh_indices(
+      meshes,
+      camera.layers,
+      camera.transform,
+    )
     for draw_index in draw_order {
       let mesh = meshes[draw_index]
       guard render3d_mesh_draw_alpha(

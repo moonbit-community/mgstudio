@@ -204,6 +204,7 @@ struct MeshRenderer {
     pipeline_layout_3d: Option<wgpu::PipelineLayout>,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
     pipelines_3d: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
+    pipelines_3d_transparent: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
 
     uniform_buf: Option<wgpu::Buffer>,
     uniform_bg: Option<wgpu::BindGroup>,
@@ -413,15 +414,18 @@ impl GpuBackend {
                         match self.surface.as_ref().unwrap().get_current_texture() {
                             Ok(st) => Ok(Some(st)),
                             Err(retry_err) => {
-                                self.note_surface_acquire_error(&retry_err, "retry after reconfigure");
+                                self.note_surface_acquire_error(
+                                    &retry_err,
+                                    "retry after reconfigure",
+                                );
                                 Ok(None)
                             }
                         }
                     }
                     wgpu::SurfaceError::Timeout | wgpu::SurfaceError::Other => Ok(None),
-                    wgpu::SurfaceError::OutOfMemory => {
-                        Err(anyhow!("wgpu: out of memory while acquiring surface texture"))
-                    }
+                    wgpu::SurfaceError::OutOfMemory => Err(anyhow!(
+                        "wgpu: out of memory while acquiring surface texture"
+                    )),
                 }
             }
         }
@@ -430,7 +434,10 @@ impl GpuBackend {
     fn note_surface_acquire_error(&mut self, err: &wgpu::SurfaceError, stage: &str) {
         self.surface_acquire_error_streak = self.surface_acquire_error_streak.saturating_add(1);
         let changed = self.last_surface_acquire_error.as_ref() != Some(err);
-        if changed || self.surface_acquire_error_streak == 1 || self.surface_acquire_error_streak % 120 == 0 {
+        if changed
+            || self.surface_acquire_error_streak == 1
+            || self.surface_acquire_error_streak % 120 == 0
+        {
             eprintln!(
                 "[wasmtime-runtime] wgpu surface acquire failed: {err:?} (stage={stage}, streak={})",
                 self.surface_acquire_error_streak
@@ -646,42 +653,50 @@ impl GpuBackend {
         };
         let mesh_pipeline_2d = self.mesh.pipelines.get(&pass.st.target_format).cloned();
         let mesh_pipeline_3d = self.mesh.pipelines_3d.get(&pass.st.target_format).cloned();
+        let mesh_pipeline_3d_transparent = self
+            .mesh
+            .pipelines_3d_transparent
+            .get(&pass.st.target_format)
+            .cloned();
         let mesh_bg = self.mesh.uniform_bg.as_ref().cloned();
 
         let Some(mut frame) = self.frame.take() else {
             return Ok(());
         };
-        let (target_view, target_width, target_height): (&wgpu::TextureView, u32, u32) =
-            if pass.st.target_id == -1 {
-                match frame.surface_view.as_ref() {
-                    Some(v) => {
-                        let (w, h) = self.configured_size;
-                        (v, w.max(1), h.max(1))
-                    }
-                    None => {
-                        self.skipped_surface_draw_streak =
-                            self.skipped_surface_draw_streak.saturating_add(1);
-                        if self.skipped_surface_draw_streak == 1
-                            || self.skipped_surface_draw_streak % 120 == 0
-                        {
-                            eprintln!(
+        let (target_view, target_width, target_height): (&wgpu::TextureView, u32, u32) = if pass
+            .st
+            .target_id
+            == -1
+        {
+            match frame.surface_view.as_ref() {
+                Some(v) => {
+                    let (w, h) = self.configured_size;
+                    (v, w.max(1), h.max(1))
+                }
+                None => {
+                    self.skipped_surface_draw_streak =
+                        self.skipped_surface_draw_streak.saturating_add(1);
+                    if self.skipped_surface_draw_streak == 1
+                        || self.skipped_surface_draw_streak % 120 == 0
+                    {
+                        eprintln!(
                                 "[wasmtime-runtime] skip surface render pass: no acquired surface texture view (streak={})",
                                 self.skipped_surface_draw_streak
                             );
-                        }
-                        self.frame = Some(frame);
-                        return Ok(());
                     }
+                    self.frame = Some(frame);
+                    return Ok(());
                 }
-            } else {
-                match self.textures.get(&pass.st.target_id) {
-                    Some(t) => (&t.view, t.width.max(1), t.height.max(1)),
-                    None => {
-                        self.frame = Some(frame);
-                        return Ok(());
-                    }
+            }
+        } else {
+            match self.textures.get(&pass.st.target_id) {
+                Some(t) => (&t.view, t.width.max(1), t.height.max(1)),
+                None => {
+                    self.frame = Some(frame);
+                    return Ok(());
                 }
-            };
+            }
+        };
         let mut depth_texture: Option<wgpu::Texture> = None;
         let mut depth_view: Option<wgpu::TextureView> = None;
         if pass.st.is_3d {
@@ -788,7 +803,11 @@ impl GpuBackend {
                     }
                     DrawCmd::Mesh(draw) => {
                         let pipeline = if draw.is_3d {
-                            mesh_pipeline_3d.as_ref()
+                            if draw.color[3] < 0.999 {
+                                mesh_pipeline_3d_transparent.as_ref()
+                            } else {
+                                mesh_pipeline_3d.as_ref()
+                            }
                         } else {
                             mesh_pipeline_2d.as_ref()
                         };
@@ -2314,7 +2333,9 @@ impl GpuBackend {
 
     fn ensure_mesh3d_pipeline(&mut self, format: wgpu::TextureFormat) -> anyhow::Result<()> {
         self.ensure_mesh_resources()?;
-        if self.mesh.pipelines_3d.contains_key(&format) {
+        if self.mesh.pipelines_3d.contains_key(&format)
+            && self.mesh.pipelines_3d_transparent.contains_key(&format)
+        {
             return Ok(());
         }
         let pl = self
@@ -2350,10 +2371,10 @@ impl GpuBackend {
                 },
             ],
         };
-        let pipeline = self
+        let pipeline_opaque = self
             .device
             .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("mgstudio_mesh3d_pipeline"),
+                label: Some("mgstudio_mesh3d_pipeline_opaque"),
                 layout: Some(pl),
                 vertex: wgpu::VertexState {
                     module: &sm,
@@ -2386,7 +2407,67 @@ impl GpuBackend {
                 multiview_mask: None,
                 cache: None,
             });
-        self.mesh.pipelines_3d.insert(format, pipeline);
+        let vb_layout_transparent = wgpu::VertexBufferLayout {
+            array_stride: 36,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute {
+                    offset: 12,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: 20,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x4,
+                },
+            ],
+        };
+        let pipeline_transparent =
+            self.device
+                .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some("mgstudio_mesh3d_pipeline_transparent"),
+                    layout: Some(pl),
+                    vertex: wgpu::VertexState {
+                        module: &sm,
+                        entry_point: Some("vs_main"),
+                        compilation_options: Default::default(),
+                        buffers: &[vb_layout_transparent],
+                    },
+                    fragment: Some(wgpu::FragmentState {
+                        module: &sm,
+                        entry_point: Some("fs_main"),
+                        compilation_options: Default::default(),
+                        targets: &[Some(wgpu::ColorTargetState {
+                            format,
+                            blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                            write_mask: wgpu::ColorWrites::ALL,
+                        })],
+                    }),
+                    primitive: wgpu::PrimitiveState {
+                        topology: wgpu::PrimitiveTopology::TriangleList,
+                        ..Default::default()
+                    },
+                    depth_stencil: Some(wgpu::DepthStencilState {
+                        format: wgpu::TextureFormat::Depth24Plus,
+                        depth_write_enabled: false,
+                        depth_compare: wgpu::CompareFunction::LessEqual,
+                        stencil: wgpu::StencilState::default(),
+                        bias: wgpu::DepthBiasState::default(),
+                    }),
+                    multisample: wgpu::MultisampleState::default(),
+                    multiview_mask: None,
+                    cache: None,
+                });
+        self.mesh.pipelines_3d.insert(format, pipeline_opaque);
+        self.mesh
+            .pipelines_3d_transparent
+            .insert(format, pipeline_transparent);
         Ok(())
     }
 
@@ -2448,8 +2529,9 @@ impl GpuBackend {
                         buffer: &new_buf,
                         offset: 0,
                         size: Some(
-                            std::num::NonZeroU64::new(self.mesh.uniform_binding_size)
-                                .ok_or_else(|| anyhow!("wgpu: mesh uniform binding size is zero"))?,
+                            std::num::NonZeroU64::new(self.mesh.uniform_binding_size).ok_or_else(
+                                || anyhow!("wgpu: mesh uniform binding size is zero"),
+                            )?,
                         ),
                     }),
                 }],
