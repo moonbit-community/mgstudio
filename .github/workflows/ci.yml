@@ -14,6 +14,25 @@ env:
   MOON_IGNORE_POSTADD: "1"
 
 jobs:
+  bevy-parity-artifacts:
+    name: bevy parity artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch pinned Bevy baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/fetch_bevy.sh
+
+      - name: Check parity matrix artifacts and ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/generate_bevy_example_parity.py --check
+
   host-abi:
     name: host ABI consistency
     runs-on: ubuntu-latest
@@ -63,6 +82,36 @@ jobs:
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
           moon -C mgstudio-engine test
+
+  engine-examples-smoke:
+    name: engine examples (build + smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Update MoonBit registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon update
+
+      - name: Smoke gate for representative Bevy parity examples
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          ./scripts/smoke_bevy_examples.sh
 
   runtime-native:
     name: runtime/native (moon check/test)

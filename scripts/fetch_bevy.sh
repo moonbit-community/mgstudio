@@ -5,8 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BEVY_DIR="${ROOT_DIR}/bevy"
 
 BEVY_REPO="https://github.com/bevyengine/bevy.git"
-BEVY_TAG="v0.15.3"
-BEVY_COMMIT="75f04a743bc3da77d3d1fac9d9322920d56ed05b"
+BEVY_COMMIT="48ec375a3a3cdc904476ef1d13f9d71c9f2820d3"
+BEVY_DESCRIBE="v0.16.0-rc.4-1998-g48ec375a3"
 
 if [[ -d "${BEVY_DIR}/.git" ]]; then
   echo "bevy/: found existing git repo"
@@ -23,9 +23,10 @@ cd "${BEVY_DIR}"
 
 echo "Fetching tags..."
 git fetch --tags --force --prune origin
+git fetch --force --prune origin
 
-echo "Checking out tag: ${BEVY_TAG}"
-git checkout -f "${BEVY_TAG}"
+echo "Checking out commit: ${BEVY_COMMIT}"
+git checkout -f "${BEVY_COMMIT}"
 
 actual_commit="$(git rev-parse HEAD)"
 if [[ "${actual_commit}" != "${BEVY_COMMIT}" ]]; then
@@ -35,5 +36,11 @@ if [[ "${actual_commit}" != "${BEVY_COMMIT}" ]]; then
   exit 1
 fi
 
-echo "OK: Bevy baseline is ready at ${BEVY_TAG} (${actual_commit})"
+actual_describe="$(git describe --tags --always || true)"
+if [[ -n "${actual_describe}" && "${actual_describe}" != "${BEVY_DESCRIBE}" ]]; then
+  echo "WARNING: baseline describe mismatch (non-fatal)." >&2
+  echo "  expected: ${BEVY_DESCRIBE}" >&2
+  echo "  actual:   ${actual_describe}" >&2
+fi
 
+echo "OK: Bevy baseline is ready at ${actual_commit} (${actual_describe})"

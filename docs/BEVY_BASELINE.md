@@ -3,14 +3,18 @@
 This repository is **Bevy-aligned**: some engine/runtime semantics and APIs are
 implemented to mirror Bevy concepts for easier migration and parity checks.
 
-To make this reproducible, we pin a concrete Bevy version as the reference for
+To make this reproducible, we pin a concrete Bevy snapshot as the reference for
 ported behavior.
 
 ## Baseline
 
 - Repository: `bevyengine/bevy`
-- Tag: `v0.15.3`
-- Commit: `75f04a743bc3da77d3d1fac9d9322920d56ed05b`
+- Workspace source: local `./bevy` git checkout (not committed)
+- Commit: `48ec375a3a3cdc904476ef1d13f9d71c9f2820d3`
+- Describe: `v0.16.0-rc.4-1998-g48ec375a3`
+- Cargo package version (`bevy/Cargo.toml`): `0.19.0-dev`
+
+This baseline supersedes the historical `v0.15.3` reference.
 
 ## What "Bevy-aligned" means (UI MVP)
 
@@ -35,12 +39,11 @@ For the UI MVP port (`Milky2018/mgstudio/ui`), "aligned" means:
 ## Fetching Bevy Sources Locally
 
 The Bevy source tree is **not** checked into this repo (the `bevy/` directory
-is gitignored). Use the helper script to fetch a local copy pinned to the
-baseline:
+is gitignored). Use the helper script to fetch a local copy pinned to this
+baseline commit:
 
 ```bash
 ./scripts/fetch_bevy.sh
 ```
 
-This creates `./bevy` at the pinned tag and validates the commit hash.
-
+This creates `./bevy` at the pinned commit and validates the commit hash.
