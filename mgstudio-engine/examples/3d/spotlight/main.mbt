@@ -144,8 +144,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   let red_emissive = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F))
-    .with_emissive(@render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)),
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    ).with_emissive(@render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)),
   )
   let maroon_emissive = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -272,16 +273,18 @@ fn light_sway(world : @ecs_world.World) -> Unit {
 
   let rotation_x = -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F
   let rotation_y = @math.sin(elapsed * 3.0F) * 0.5F
-  let rotation = @math.Quat::from_rotation_x(rotation_x).mul(
-    @math.Quat::from_rotation_y(rotation_y),
-  ).normalize()
+  let rotation = @math.Quat::from_rotation_x(rotation_x)
+    .mul(@math.Quat::from_rotation_y(rotation_y))
+    .normalize()
 
-  let angle = (@math.sin(elapsed * 1.2F) + 1.0F) * (@math.pi_half() / 2.0F - 0.1F)
+  let angle = (@math.sin(elapsed * 1.2F) + 1.0F) *
+    (@math.pi_half() / 2.0F - 0.1F)
   let inner = angle * 0.8F
 
   for entity in spotlight_state.val.spotlights {
     if transform_store.get(entity) is Some(transform) {
-      transform_store.set(entity, transform.with_rotation(rotation), tick) |> ignore
+      transform_store.set(entity, transform.with_rotation(rotation), tick)
+      |> ignore
     }
     if spot_light_store.get(entity) is Some(light) {
       spot_light_store.set(

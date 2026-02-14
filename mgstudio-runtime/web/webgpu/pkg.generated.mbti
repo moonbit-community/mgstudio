@@ -32,6 +32,8 @@ pub fn color(Double, Double, Double, Double) -> Color
 
 pub fn color_attachment_clear(GPUTextureView, Color) -> ColorAttachment
 
+pub fn color_attachment_load(GPUTextureView) -> ColorAttachment
+
 pub fn color_target_state(TextureFormat, BlendState) -> ColorTargetState
 
 pub fn combine_flags(Int, Int) -> Int
@@ -270,6 +272,7 @@ pub type GPUTextureView
 pub fn GPUTextureView::as_any(Self) -> @core.Any
 
 pub(all) enum LoadOp {
+  Load
   Clear
 }
 pub fn LoadOp::to_js_string(Self) -> String

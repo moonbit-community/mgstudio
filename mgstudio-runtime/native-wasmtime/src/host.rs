@@ -2138,6 +2138,7 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -2157,6 +2158,7 @@ fn define_mgstudio_host_imports(
             let vy = args.get(12).and_then(|v| v.i32()).unwrap_or(0);
             let vw = args.get(13).and_then(|v| v.i32()).unwrap_or(0);
             let vh = args.get(14).and_then(|v| v.i32()).unwrap_or(0);
+            let clear_enabled = args.get(15).and_then(|v| v.i32()).unwrap_or(1) != 0;
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.begin_pass(
                     target_id,
@@ -2168,6 +2170,7 @@ fn define_mgstudio_host_imports(
                     camera_rot,
                     camera_scale,
                     (vx, vy, vw, vh),
+                    clear_enabled,
                 )?;
             }
             ok_i32(out, 0);
@@ -2238,6 +2241,7 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -2299,6 +2303,7 @@ fn define_mgstudio_host_imports(
             let sub_camera_view_scale_y = f(54);
             let sub_camera_view_bias_x = f(55);
             let sub_camera_view_bias_y = f(56);
+            let clear_enabled = args.get(57).and_then(|v| v.i32()).unwrap_or(1) != 0;
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.begin_pass_3d(
                     target_id,
@@ -2340,6 +2345,7 @@ fn define_mgstudio_host_imports(
                         sub_camera_view_bias_x,
                         sub_camera_view_bias_y,
                     ],
+                    clear_enabled,
                 )?;
             }
             ok_i32(out, 0);

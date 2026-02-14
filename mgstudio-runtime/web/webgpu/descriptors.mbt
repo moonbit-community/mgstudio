@@ -17,12 +17,14 @@
 
 ///|
 pub(all) enum LoadOp {
+  Load
   Clear
 }
 
 ///|
 pub fn LoadOp::to_js_string(self : LoadOp) -> String {
   match self {
+    Load => "load"
     Clear => "clear"
   }
 }
@@ -199,6 +201,16 @@ pub fn color_attachment_clear(
   clear : Color,
 ) -> ColorAttachment {
   ColorAttachment::{ view, clear, load_op: Clear, store_op: Store }
+}
+
+///|
+pub fn color_attachment_load(view : GPUTextureView) -> ColorAttachment {
+  ColorAttachment::{
+    view,
+    clear: color(0.0, 0.0, 0.0, 0.0),
+    load_op: Load,
+    store_op: Store,
+  }
 }
 
 ///|

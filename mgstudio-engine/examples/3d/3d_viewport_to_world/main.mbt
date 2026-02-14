@@ -75,7 +75,9 @@ fn camera_ray_direction(
   if ray_camera.length_squared() <= 1.0e-12F {
     return None
   }
-  Some(quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero())
+  Some(
+    quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero(),
+  )
 }
 
 ///|

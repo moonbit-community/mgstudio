@@ -63,6 +63,8 @@ pub struct CameraProjection3d {
   projection : Projection3d
 }
 pub fn CameraProjection3d::default() -> Self
+pub fn CameraProjection3d::new(Projection3d) -> Self
+pub fn CameraProjection3d::with_projection(Self, Projection3d) -> Self
 
 pub struct DirectionalLight {
   color : @render2d.Color
@@ -126,6 +128,9 @@ pub struct PerspectiveProjection3d {
 }
 pub fn PerspectiveProjection3d::default() -> Self
 pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
 
 pub struct PointLight {
   color : @render2d.Color

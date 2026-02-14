@@ -6,7 +6,6 @@ import {
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/render3d",
-  "Milky2018/mgstudio/window",
 }
 
 options(

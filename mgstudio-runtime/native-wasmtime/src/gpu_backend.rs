@@ -56,6 +56,7 @@ struct GpuPassState {
     height_logical: f32,
 
     clear: [f32; 4],
+    clear_enabled: bool,
 
     is_3d: bool,
     camera_x: f32,
@@ -463,6 +464,7 @@ impl GpuBackend {
         camera_rot: f32,
         camera_scale: f32,
         viewport: (i32, i32, i32, i32),
+        clear_enabled: bool,
     ) -> anyhow::Result<()> {
         let Some(_frame) = self.frame.as_ref() else {
             return Ok(());
@@ -494,6 +496,7 @@ impl GpuBackend {
             width_logical,
             height_logical,
             clear,
+            clear_enabled,
             is_3d: false,
             camera_x,
             camera_y,
@@ -565,6 +568,7 @@ impl GpuBackend {
         spot_color_intensity: [f32; 4],
         spot_outer_angle: f32,
         sub_camera_view: [f32; 4],
+        clear_enabled: bool,
     ) -> anyhow::Result<()> {
         let camera_rot = quat_to_z_rotation(camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w);
         self.begin_pass(
@@ -577,6 +581,7 @@ impl GpuBackend {
             camera_rot,
             1.0,
             viewport,
+            clear_enabled,
         )?;
         if let Some(pass) = self.pass.as_mut() {
             pass.st.is_3d = true;
@@ -744,12 +749,16 @@ impl GpuBackend {
                         depth_slice: None,
                         resolve_target: None,
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: pass.st.clear[0] as f64,
-                                g: pass.st.clear[1] as f64,
-                                b: pass.st.clear[2] as f64,
-                                a: pass.st.clear[3] as f64,
-                            }),
+                            load: if pass.st.clear_enabled {
+                                wgpu::LoadOp::Clear(wgpu::Color {
+                                    r: pass.st.clear[0] as f64,
+                                    g: pass.st.clear[1] as f64,
+                                    b: pass.st.clear[2] as f64,
+                                    a: pass.st.clear[3] as f64,
+                                })
+                            } else {
+                                wgpu::LoadOp::Load
+                            },
                             store: wgpu::StoreOp::Store,
                         },
                     })],

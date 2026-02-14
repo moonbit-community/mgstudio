@@ -55,6 +55,53 @@ pub fn PerspectiveProjection3d::with_aspect_ratio(
 }
 
 ///|
+pub fn PerspectiveProjection3d::with_fov(
+  self : PerspectiveProjection3d,
+  fov : Float,
+) -> PerspectiveProjection3d {
+  let safe_fov = if fov <= 0.0F { @math.pi_half() } else { fov }
+  PerspectiveProjection3d::{
+    fov: safe_fov,
+    near: self.near,
+    far: self.far,
+    aspect_ratio: self.aspect_ratio,
+  }
+}
+
+///|
+pub fn PerspectiveProjection3d::with_near(
+  self : PerspectiveProjection3d,
+  near : Float,
+) -> PerspectiveProjection3d {
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  let safe_far = if self.far <= safe_near {
+    safe_near + 0.0001F
+  } else {
+    self.far
+  }
+  PerspectiveProjection3d::{
+    fov: self.fov,
+    near: safe_near,
+    far: safe_far,
+    aspect_ratio: self.aspect_ratio,
+  }
+}
+
+///|
+pub fn PerspectiveProjection3d::with_far(
+  self : PerspectiveProjection3d,
+  far : Float,
+) -> PerspectiveProjection3d {
+  let safe_far = if far <= self.near { self.near + 0.0001F } else { far }
+  PerspectiveProjection3d::{
+    fov: self.fov,
+    near: self.near,
+    far: safe_far,
+    aspect_ratio: self.aspect_ratio,
+  }
+}
+
+///|
 pub struct OrthographicProjection3d {
   scale : Float
   near : Float
@@ -105,6 +152,20 @@ pub struct CameraProjection3d {
 ///|
 pub fn CameraProjection3d::default() -> CameraProjection3d {
   CameraProjection3d::{ projection: Projection3d::perspective_default() }
+}
+
+///|
+pub fn CameraProjection3d::new(projection : Projection3d) -> CameraProjection3d {
+  CameraProjection3d::{ projection, }
+}
+
+///|
+pub fn CameraProjection3d::with_projection(
+  self : CameraProjection3d,
+  projection : Projection3d,
+) -> CameraProjection3d {
+  self |> ignore
+  CameraProjection3d::{ projection, }
 }
 
 ///|
@@ -1402,7 +1463,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.projection,
       aspect_ratio,
     )
-    let clear_color = camera.camera.clear_color
+    let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
     @window.host_gpu_begin_pass_3d(
       target_id=camera.target_id,
       width=view_width_logical,
@@ -1461,6 +1522,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       sub_camera_view_scale_y~,
       sub_camera_view_bias_x~,
       sub_camera_view_bias_y~,
+      clear_enabled=if clear_enabled { 1 } else { 0 },
     )
     let draw_order = render3d_sorted_mesh_indices(
       meshes,

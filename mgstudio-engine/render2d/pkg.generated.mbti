@@ -146,11 +146,14 @@ pub fn BorderRect::square(Float) -> Self
 pub struct Camera {
   viewport : Viewport?
   order : Int
-  clear_color : Color
+  clear_color : ClearColorConfig
 }
 pub fn Camera::clear_viewport(Self) -> Self
 pub fn Camera::default() -> Self
 pub fn Camera::new(Color) -> Self
+pub fn Camera::with_clear_color(Self, Color) -> Self
+pub fn Camera::with_clear_color_config(Self, ClearColorConfig) -> Self
+pub fn Camera::with_clear_color_none(Self) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, Viewport) -> Self
 
@@ -213,6 +216,14 @@ pub fn CircularSegment::from_turns(Float, Float) -> Self
 pub fn CircularSegment::half_angle(Self) -> Float
 pub fn CircularSegment::new(Float, Float) -> Self
 pub fn CircularSegment::with_vertices(Self, Int) -> Self
+
+pub(all) enum ClearColorConfig {
+  Default
+  Custom(Color)
+  None
+}
+pub fn ClearColorConfig::default() -> Self
+pub fn ClearColorConfig::resolve(Self) -> (Bool, Color)
 
 pub struct Color {
   r : Float

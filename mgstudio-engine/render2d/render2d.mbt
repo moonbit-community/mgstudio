@@ -453,22 +453,46 @@ pub fn Anchor::default() -> Anchor {
 ///|
 
 ///|
+/// Mirrors Bevy's `ClearColorConfig` for per-camera clear behavior.
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub(all) enum ClearColorConfig {
+  Default
+  Custom(Color)
+  None
+}
+
+///|
+pub fn ClearColorConfig::default() -> ClearColorConfig {
+  Default
+}
+
+///|
+pub fn ClearColorConfig::resolve(self : ClearColorConfig) -> (Bool, Color) {
+  match self {
+    Default => (true, Color::new(0.5F, 0.5F, 0.5F, 1.0F))
+    Custom(color) => (true, color)
+    None => (false, Color::new(0.0F, 0.0F, 0.0F, 0.0F))
+  }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Camera {
   viewport : Viewport?
   order : Int
-  clear_color : Color
+  clear_color : ClearColorConfig
 }
 
 ///|
 pub fn Camera::new(clear_color : Color) -> Camera {
-  Camera::{ viewport: None, order: 0, clear_color }
+  Camera::{ viewport: None, order: 0, clear_color: Custom(clear_color) }
 }
 
 ///|
 pub fn Camera::default() -> Camera {
-  Camera::new(Color::new(0.5F, 0.5F, 0.5F, 1.0F))
+  Camera::{ viewport: None, order: 0, clear_color: ClearColorConfig::default() }
 }
 
 ///|
@@ -484,6 +508,24 @@ pub fn Camera::with_viewport(self : Camera, viewport : Viewport) -> Camera {
 ///|
 pub fn Camera::clear_viewport(self : Camera) -> Camera {
   Camera::{ ..self, viewport: None }
+}
+
+///|
+pub fn Camera::with_clear_color(self : Camera, clear_color : Color) -> Camera {
+  Camera::{ ..self, clear_color: Custom(clear_color) }
+}
+
+///|
+pub fn Camera::with_clear_color_config(
+  self : Camera,
+  clear_color : ClearColorConfig,
+) -> Camera {
+  Camera::{ ..self, clear_color, }
+}
+
+///|
+pub fn Camera::with_clear_color_none(self : Camera) -> Camera {
+  Camera::{ ..self, clear_color: None }
 }
 
 ///|
@@ -4156,7 +4198,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     if view_width_logical <= 0 || view_height_logical <= 0 {
       continue
     }
-    let clear = camera.camera.clear_color
+    let (clear_enabled, clear) = camera.camera.clear_color.resolve()
     @window.host_gpu_begin_pass(
       target_id~,
       width=view_width_logical,
@@ -4173,6 +4215,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       viewport_y~,
       viewport_width~,
       viewport_height~,
+      clear_enabled=if clear_enabled { 1 } else { 0 },
     )
     let draw_items = draw_items_for_layers(
       sprites,

@@ -215,6 +215,7 @@ pub fn host_gpu_begin_pass(
   viewport_y~ : Int,
   viewport_width~ : Int,
   viewport_height~ : Int,
+  clear_enabled~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass"
 
 ///|
@@ -276,6 +277,7 @@ pub fn host_gpu_begin_pass_3d(
   sub_camera_view_scale_y~ : Float,
   sub_camera_view_bias_x~ : Float,
   sub_camera_view_bias_y~ : Float,
+  clear_enabled~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass_3d"
 
 ///|

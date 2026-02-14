@@ -1920,6 +1920,7 @@ pub fn GpuBackend::begin_pass(
   viewport_y : Int,
   viewport_w : Int,
   viewport_h : Int,
+  clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
@@ -1928,9 +1929,13 @@ pub fn GpuBackend::begin_pass(
     frame.pass = None
   }
   guard target_view(self, target_id) is Some(view) else { return }
-  let pass = frame.encoder.begin_render_pass_color_clear(
-    view, clear_r, clear_g, clear_b, clear_a,
-  )
+  let pass = if clear_enabled == 0 {
+    frame.encoder.begin_render_pass_color_load(view)
+  } else {
+    frame.encoder.begin_render_pass_color_clear(
+      view, clear_r, clear_g, clear_b, clear_a,
+    )
+  }
   let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
   let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }
   let vw = if viewport_w < 0 { 0U } else { viewport_w.reinterpret_as_uint() }
@@ -2098,6 +2103,7 @@ pub fn GpuBackend::begin_pass_3d(
   sub_camera_view_scale_y : Float,
   sub_camera_view_bias_x : Float,
   sub_camera_view_bias_y : Float,
+  clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
   let camera_rot = quat_to_z_rotation(
     camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
@@ -2112,10 +2118,15 @@ pub fn GpuBackend::begin_pass_3d(
   guard ensure_depth_view_for_target(self, target_id) is Some(depth_view) else {
     return
   }
+  let color_load_op_u32 = if clear_enabled == 0 {
+    @wgpu.LOAD_OP_LOAD
+  } else {
+    @wgpu.LOAD_OP_CLEAR
+  }
   let pass = frame.encoder.begin_render_pass_color_depth_u32(
     view,
     depth_view,
-    color_load_op_u32=@wgpu.LOAD_OP_CLEAR,
+    color_load_op_u32~,
     color_store_op_u32=@wgpu.STORE_OP_STORE,
     color_clear_r_f32=clear_r,
     color_clear_g_f32=clear_g,

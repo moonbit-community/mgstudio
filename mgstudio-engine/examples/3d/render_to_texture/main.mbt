@@ -81,8 +81,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white())
-        .with_base_color_texture(Some(image)),
+        @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_base_color_texture(
+          Some(image),
+        ),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(
@@ -112,9 +113,9 @@ fn rotator_system(world : @ecs_world.World) -> Unit {
     is Some(transform) {
     let delta = @time.time_delta_seconds()
     let rotation = transform.rotation
-    .mul(@math.Quat::from_rotation_x(1.5F * delta))
-    .mul(@math.Quat::from_rotation_z(1.3F * delta))
-    .normalize()
+      .mul(@math.Quat::from_rotation_x(1.5F * delta))
+      .mul(@math.Quat::from_rotation_z(1.3F * delta))
+      .normalize()
     transform_store.set(
       render_to_texture_state.val.first_pass_cube,
       transform.with_rotation(rotation),
@@ -135,9 +136,9 @@ fn cube_rotator_system(world : @ecs_world.World) -> Unit {
     is Some(transform) {
     let delta = @time.time_delta_seconds()
     let rotation = transform.rotation
-    .mul(@math.Quat::from_rotation_x(1.0F * delta))
-    .mul(@math.Quat::from_rotation_y(0.7F * delta))
-    .normalize()
+      .mul(@math.Quat::from_rotation_x(1.0F * delta))
+      .mul(@math.Quat::from_rotation_y(0.7F * delta))
+      .normalize()
     transform_store.set(
       render_to_texture_state.val.main_pass_cube,
       transform.with_rotation(rotation),

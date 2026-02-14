@@ -1562,6 +1562,7 @@ fn begin_pass(
   sub_camera_view_scale_y : Double,
   sub_camera_view_bias_x : Double,
   sub_camera_view_bias_y : Double,
+  clear_enabled : Double,
 ) -> Unit {
   report_debug_once(
     state,
@@ -1614,8 +1615,12 @@ fn begin_pass(
       return
     }
     if view is Some(view_value) {
-      let clear_color = @webgpu.color(clear_r, clear_g, clear_b, clear_a)
-      let attachment = @webgpu.color_attachment_clear(view_value, clear_color)
+      let attachment = if clear_enabled == 0.0 {
+        @webgpu.color_attachment_load(view_value)
+      } else {
+        let clear_color = @webgpu.color(clear_r, clear_g, clear_b, clear_a)
+        @webgpu.color_attachment_clear(view_value, clear_color)
+      }
       let vp_width = if viewport_width > 0 { viewport_width } else { width }
       let vp_height = if viewport_height > 0 { viewport_height } else { height }
       let vp_x = if viewport_width > 0 { viewport_x } else { 0 }

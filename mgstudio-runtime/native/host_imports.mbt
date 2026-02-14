@@ -2345,11 +2345,18 @@ pub fn add_mgstudio_host_imports(
           args[12] is @types.Value::I32(vy) &&
           args[13] is @types.Value::I32(vw) &&
           args[14] is @types.Value::I32(vh) {
+          let clear_enabled = if args.length() > 15 &&
+            args[15] is @types.Value::I32(v) {
+            v
+          } else {
+            1
+          }
           ctx.gpu
           .unwrap()
           .begin_pass(
             target_id, width_logical, height_logical, clear_r, clear_g, clear_b,
             clear_a, camera_x, camera_y, camera_rot, camera_scale, vx, vy, vw, vh,
+            clear_enabled,
           )
         }
         ok_i32(0)
@@ -2373,6 +2380,7 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
@@ -2628,6 +2636,12 @@ pub fn add_mgstudio_host_imports(
           } else {
             0.0F
           }
+          let clear_enabled = if args.length() > 57 &&
+            args[57] is @types.Value::I32(v) {
+            v
+          } else {
+            1
+          }
           ctx.gpu
           .unwrap()
           .begin_pass_3d(
@@ -2642,6 +2656,7 @@ pub fn add_mgstudio_host_imports(
             spot_dir_z, spot_color_r, spot_color_g, spot_color_b, spot_intensity,
             spot_range, spot_inner_angle, spot_outer_angle, sub_camera_view_scale_x,
             sub_camera_view_scale_y, sub_camera_view_bias_x, sub_camera_view_bias_y,
+            clear_enabled,
           )
         }
         ok_i32(0)
@@ -2711,6 +2726,7 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::I32,
       ],
       [@types.ValueType::I32],
     ),
