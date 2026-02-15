@@ -91,7 +91,7 @@ bevy/examples/3d/two_passes.rs,3d,two_passes,mgstudio-engine/examples/3d/two_pas
 bevy/examples/3d/vertex_colors.rs,3d,vertex_colors,mgstudio-engine/examples/3d/vertex_colors,Exact,team-render,
 bevy/examples/3d/visibility_range.rs,3d,visibility_range,,Blocked,team-render,
 bevy/examples/3d/volumetric_fog.rs,3d,volumetric_fog,,Blocked,team-render,
-bevy/examples/3d/wireframe.rs,3d,wireframe,,Blocked,team-render,
+bevy/examples/3d/wireframe.rs,3d,wireframe,mgstudio-engine/examples/3d/wireframe,Adapted,team-render,
 bevy/examples/animation/animated_mesh.rs,animation,animated_mesh,,Blocked,team-asset_scene,
 bevy/examples/animation/animated_mesh_control.rs,animation,animated_mesh_control,,Blocked,team-asset_scene,
 bevy/examples/animation/animated_mesh_events.rs,animation,animated_mesh_events,,Blocked,team-asset_scene,
