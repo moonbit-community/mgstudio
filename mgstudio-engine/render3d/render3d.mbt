@@ -1166,15 +1166,35 @@ fn render3d_mesh_draw_alpha(alpha_mode : AlphaMode3d, alpha : Float) -> Float? {
 fn render3d_projection_params(
   projection : CameraProjection3d,
   aspect_ratio : Float,
+  viewport_height_logical : Float,
 ) -> (Float, Float, Float) {
   let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
+  let safe_view_height = if viewport_height_logical <= 0.0F {
+    1.0F
+  } else {
+    viewport_height_logical
+  }
   match projection.projection {
     Perspective(perspective) => {
       let p = perspective.with_aspect_ratio(safe_aspect)
       (p.fov, p.near, p.far)
     }
-    Orthographic(orthographic) =>
-      (@math.pi_half(), orthographic.near, orthographic.far)
+    Orthographic(orthographic) => {
+      let safe_scale = if orthographic.scale <= 0.0F {
+        1.0F
+      } else {
+        orthographic.scale
+      }
+      // Encode orthographic mode via negative `camera_fov_y` and pass world-space
+      // half-height through its magnitude. Runtime shaders decode this sentinel.
+      let half_height = 0.5F * safe_view_height * safe_scale
+      let safe_half_height = if half_height <= 0.0F {
+        0.5F
+      } else {
+        half_height
+      }
+      (-safe_half_height, orthographic.near, orthographic.far)
+    }
   }
 }
 
@@ -1462,6 +1482,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let (camera_fov_y, camera_near, camera_far) = render3d_projection_params(
       camera.projection,
       aspect_ratio,
+      Float::from_double(view_height_logical.to_double()),
     )
     let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
     @window.host_gpu_begin_pass_3d(
@@ -1665,14 +1686,25 @@ fn render3d_camera_viewport_rect_logical(
 }
 
 ///|
-fn render3d_projection_fov_for_aspect(
-  projection : CameraProjection3d,
-  aspect_ratio : Float,
+fn render3d_orthographic_half_height(
+  orthographic : OrthographicProjection3d,
+  viewport_height : Float,
 ) -> Float {
-  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
-  match projection.projection {
-    Perspective(perspective) => perspective.with_aspect_ratio(safe_aspect).fov
-    Orthographic(_) => @math.pi_half()
+  let safe_scale = if orthographic.scale <= 0.0F {
+    1.0F
+  } else {
+    orthographic.scale
+  }
+  let safe_viewport_height = if viewport_height <= 0.0F {
+    1.0F
+  } else {
+    viewport_height
+  }
+  let half_height = 0.5F * safe_viewport_height * safe_scale
+  if half_height <= 0.0F {
+    0.5F
+  } else {
+    half_height
   }
 }
 
@@ -1705,26 +1737,55 @@ pub fn render3d_camera_viewport_to_world_ray(
   let ndc_x = viewport_local_x * 2.0F - 1.0F
   let ndc_y = 1.0F - viewport_local_y * 2.0F
   let aspect_ratio = viewport_width / viewport_height
-  let fov = render3d_projection_fov_for_aspect(projection, aspect_ratio)
-  let half_fov = fov * 0.5F
-  let cos_half_fov = @math.cos(half_fov)
-  if cos_half_fov == 0.0F {
-    return None
+  match projection.projection {
+    Perspective(perspective) => {
+      let fov = perspective.with_aspect_ratio(aspect_ratio).fov
+      let half_fov = fov * 0.5F
+      let cos_half_fov = @math.cos(half_fov)
+      if cos_half_fov == 0.0F {
+        return None
+      }
+      let tan_half_fov = @math.sin(half_fov) / cos_half_fov
+      let ray_camera = @math.Vec3::new(
+        ndc_x * tan_half_fov * aspect_ratio,
+        ndc_y * tan_half_fov,
+        -1.0F,
+      ).normalize_or_zero()
+      if ray_camera.length_squared() <= 1.0e-12F {
+        return None
+      }
+      let ray_world = quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero()
+      if ray_world.length_squared() <= 1.0e-12F {
+        return None
+      }
+      Some((camera_transform.translation, ray_world))
+    }
+    Orthographic(orthographic) => {
+      let half_height = render3d_orthographic_half_height(
+        orthographic, viewport_height,
+      )
+      let half_width = half_height * aspect_ratio
+      if half_width == 0.0F {
+        return None
+      }
+      let ray_origin_camera = @math.Vec3::new(
+        ndc_x * half_width,
+        ndc_y * half_height,
+        0.0F,
+      )
+      let ray_origin_world = camera_transform.translation.add(
+        quat_rotate_vec3(camera_transform.rotation, ray_origin_camera),
+      )
+      let ray_world = quat_rotate_vec3(
+        camera_transform.rotation,
+        @math.Vec3::new(0.0F, 0.0F, -1.0F),
+      ).normalize_or_zero()
+      if ray_world.length_squared() <= 1.0e-12F {
+        return None
+      }
+      Some((ray_origin_world, ray_world))
+    }
   }
-  let tan_half_fov = @math.sin(half_fov) / cos_half_fov
-  let ray_camera = @math.Vec3::new(
-    ndc_x * tan_half_fov * aspect_ratio,
-    ndc_y * tan_half_fov,
-    -1.0F,
-  ).normalize_or_zero()
-  if ray_camera.length_squared() <= 1.0e-12F {
-    return None
-  }
-  let ray_world = quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero()
-  if ray_world.length_squared() <= 1.0e-12F {
-    return None
-  }
-  Some((camera_transform.translation, ray_world))
 }
 
 ///|
@@ -1743,29 +1804,57 @@ pub fn render3d_camera_world_to_viewport(
   let to_world = world.sub(camera_transform.translation)
   let inv_rotation = render3d_quat_conjugate(camera_transform.rotation).normalize()
   let view_pos = quat_rotate_vec3(inv_rotation, to_world)
-  let view_depth = -view_pos.z
-  if view_depth <= 0.0F {
-    return None
-  }
   let aspect_ratio = viewport_width / viewport_height
-  let fov = render3d_projection_fov_for_aspect(projection, aspect_ratio)
-  let (_, near, far) = render3d_projection_params(projection, aspect_ratio)
-  if view_depth < near || view_depth > far {
-    return None
+  let (ndc_x, ndc_y) = match projection.projection {
+    Perspective(perspective) => {
+      let view_depth = -view_pos.z
+      if view_depth <= 0.0F {
+        return None
+      }
+      let (_, near, far) = render3d_projection_params(
+        projection, aspect_ratio, viewport_height,
+      )
+      if view_depth < near || view_depth > far {
+        return None
+      }
+      let fov = perspective.with_aspect_ratio(aspect_ratio).fov
+      let half_fov = fov * 0.5F
+      let cos_half_fov = @math.cos(half_fov)
+      if cos_half_fov == 0.0F {
+        return None
+      }
+      let tan_half_fov = @math.sin(half_fov) / cos_half_fov
+      let denom_x = view_depth * tan_half_fov * aspect_ratio
+      let denom_y = view_depth * tan_half_fov
+      if denom_x == 0.0F || denom_y == 0.0F {
+        return None
+      }
+      (view_pos.x / denom_x, view_pos.y / denom_y)
+    }
+    Orthographic(orthographic) => {
+      let z_min = if orthographic.near < orthographic.far {
+        orthographic.near
+      } else {
+        orthographic.far
+      }
+      let z_max = if orthographic.near > orthographic.far {
+        orthographic.near
+      } else {
+        orthographic.far
+      }
+      if view_pos.z < z_min || view_pos.z > z_max {
+        return None
+      }
+      let half_height = render3d_orthographic_half_height(
+        orthographic, viewport_height,
+      )
+      let half_width = half_height * aspect_ratio
+      if half_width == 0.0F || half_height == 0.0F {
+        return None
+      }
+      (view_pos.x / half_width, view_pos.y / half_height)
+    }
   }
-  let half_fov = fov * 0.5F
-  let cos_half_fov = @math.cos(half_fov)
-  if cos_half_fov == 0.0F {
-    return None
-  }
-  let tan_half_fov = @math.sin(half_fov) / cos_half_fov
-  let denom_x = view_depth * tan_half_fov * aspect_ratio
-  let denom_y = view_depth * tan_half_fov
-  if denom_x == 0.0F || denom_y == 0.0F {
-    return None
-  }
-  let ndc_x = view_pos.x / denom_x
-  let ndc_y = view_pos.y / denom_y
   let local_x = (ndc_x + 1.0F) * 0.5F * viewport_width
   let local_y = (1.0F - ndc_y) * 0.5F * viewport_height
   if local_x < 0.0F ||

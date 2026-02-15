@@ -84,17 +84,38 @@ fn vs_main(
     world_pos - u_mesh.camera_pos.xyz,
   );
 
-  let fov_y = max(u_mesh.projection.x, 0.001);
   let aspect = max(u_mesh.projection.y, 0.001);
-  let near_z = max(u_mesh.projection.z, 0.0001);
-  let far_z = max(u_mesh.projection.w, near_z + 0.0001);
-  let f = 1.0 / tan(0.5 * fov_y);
-
-  let clip_x_full = camera_space.x * f / aspect;
-  let clip_y_full = camera_space.y * f;
-  let clip_z = camera_space.z * (far_z / (near_z - far_z)) +
-    (near_z * far_z) / (near_z - far_z);
-  let clip_w = -camera_space.z;
+  var clip_x_full = 0.0;
+  var clip_y_full = 0.0;
+  var clip_z = 0.0;
+  var clip_w = 1.0;
+  if (u_mesh.projection.x > 0.0) {
+    // Perspective projection: projection.x = vertical fov radians.
+    let fov_y = max(u_mesh.projection.x, 0.001);
+    let near_z = max(u_mesh.projection.z, 0.0001);
+    let far_z = max(u_mesh.projection.w, near_z + 0.0001);
+    let f = 1.0 / tan(0.5 * fov_y);
+    clip_x_full = camera_space.x * f / aspect;
+    clip_y_full = camera_space.y * f;
+    clip_z = camera_space.z * (far_z / (near_z - far_z)) +
+      (near_z * far_z) / (near_z - far_z);
+    clip_w = -camera_space.z;
+  } else {
+    // Orthographic projection: projection.x = -half_height(world units).
+    let half_height = max(-u_mesh.projection.x, 1e-5);
+    let half_width = max(half_height * aspect, 1e-5);
+    let near_z = u_mesh.projection.z;
+    let far_z = select(
+      near_z + 0.0001,
+      u_mesh.projection.w,
+      u_mesh.projection.w > near_z + 0.0001,
+    );
+    clip_x_full = camera_space.x / half_width;
+    clip_y_full = camera_space.y / half_height;
+    let z01 = (camera_space.z - near_z) / (far_z - near_z);
+    clip_z = z01 * 2.0 - 1.0;
+    clip_w = 1.0;
+  }
   let clip_x = clip_x_full * u_mesh.subview.x + u_mesh.subview.z * clip_w;
   let clip_y = clip_y_full * u_mesh.subview.y + u_mesh.subview.w * clip_w;
 
