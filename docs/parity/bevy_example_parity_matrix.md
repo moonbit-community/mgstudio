@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 8 | 43 | 0 |
+| `3d` | 66 | 15 | 9 | 42 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **31** | **323** | **3** |
+| **Total** | **402** | **45** | **32** | **322** | **3** |
 
 ## Example Inventory
 
@@ -150,7 +150,7 @@ Notes:
 | `bevy/examples/3d/transparency_3d.rs` | `3d` | `mgstudio-engine/examples/3d/transparency_3d` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/two_passes.rs` | `3d` | `mgstudio-engine/examples/3d/two_passes` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/vertex_colors.rs` | `3d` | `mgstudio-engine/examples/3d/vertex_colors` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/visibility_range.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/visibility_range.rs` | `3d` | `mgstudio-engine/examples/3d/visibility_range` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/volumetric_fog.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/wireframe.rs` | `3d` | `mgstudio-engine/examples/3d/wireframe` | `Adapted` | `team-render` |  |
 | `bevy/examples/animation/animated_mesh.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
