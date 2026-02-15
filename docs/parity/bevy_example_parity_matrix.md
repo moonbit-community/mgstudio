@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 6 | 45 | 0 |
+| `3d` | 66 | 15 | 7 | 44 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **29** | **325** | **3** |
+| **Total** | **402** | **45** | **30** | **324** | **3** |
 
 ## Example Inventory
 
@@ -135,7 +135,7 @@ Notes:
 | `bevy/examples/3d/rotate_environment_map.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/scrolling_fog.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/shadow_biases.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/shadow_caster_receiver.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/shadow_caster_receiver.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_caster_receiver` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/skybox.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/solari.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/specular_tint.rs` | `3d` |  | `Blocked` | `team-render` |  |
