@@ -1287,6 +1287,11 @@ fn get_texture_entry(state : State, id : Int) -> @js.Any? {
       return Some(entry)
     }
   }
+  if set_has(state.assets.loading_textures, @js.any(id)) {
+    // Skip drawing while the texture is still loading to avoid transient
+    // fallback flashes (especially visible for atlas/rect sprites).
+    return None
+  }
   let reason = if host_is_nullish(entry) {
     "texture id not found"
   } else {
