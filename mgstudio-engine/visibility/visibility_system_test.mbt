@@ -97,3 +97,16 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
   let iv = world.get_inherited_visibility_store().get(child)
   inspect(iv.unwrap().is_visible(), content="true")
 }
+
+///|
+test "visibility: VisibilityRange constructors" {
+  let always = @visibility.VisibilityRange::always_visible()
+  inspect(always.start_margin_min, content="0")
+  inspect(always.end_margin_max, content="1000000")
+  inspect(always.use_aabb, content="false")
+
+  let invisible = @visibility.VisibilityRange::invisible()
+  inspect(invisible.start_margin_max, content="0")
+  inspect(invisible.end_margin_min, content="0")
+  inspect(invisible.use_aabb, content="false")
+}

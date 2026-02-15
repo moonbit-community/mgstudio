@@ -65,3 +65,46 @@ pub fn ViewVisibility::new(visible : Bool) -> ViewVisibility {
 pub fn ViewVisibility::is_visible(self : ViewVisibility) -> Bool {
   self.visible
 }
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+//
+// Mirrors Bevy's `VisibilityRange` shape:
+// - `start_margin_*` defines the near-side visible threshold range.
+// - `end_margin_*` defines the far-side visible threshold range.
+// - `use_aabb` is reserved for future bounds-aware distance checks.
+#ecs.component
+pub struct VisibilityRange {
+  start_margin_min : Float
+  start_margin_max : Float
+  end_margin_min : Float
+  end_margin_max : Float
+  use_aabb : Bool
+}
+
+///|
+pub fn VisibilityRange::new(
+  start_margin_min : Float,
+  start_margin_max : Float,
+  end_margin_min : Float,
+  end_margin_max : Float,
+  use_aabb : Bool,
+) -> VisibilityRange {
+  VisibilityRange::{
+    start_margin_min,
+    start_margin_max,
+    end_margin_min,
+    end_margin_max,
+    use_aabb,
+  }
+}
+
+///|
+pub fn VisibilityRange::always_visible() -> VisibilityRange {
+  VisibilityRange::new(0.0F, 0.0F, 1_000_000.0F, 1_000_000.0F, false)
+}
+
+///|
+pub fn VisibilityRange::invisible() -> VisibilityRange {
+  VisibilityRange::new(0.0F, 0.0F, 0.0F, 0.0F, false)
+}

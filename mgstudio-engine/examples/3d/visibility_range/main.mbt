@@ -138,6 +138,26 @@ fn uv_sphere_mesh(
 }
 
 ///|
+fn range_normal_high() -> @visibility.VisibilityRange {
+  @visibility.VisibilityRange::new(0.0F, 0.0F, 3.0F, 4.0F, false)
+}
+
+///|
+fn range_normal_low() -> @visibility.VisibilityRange {
+  @visibility.VisibilityRange::new(3.0F, 4.0F, 8.0F, 9.0F, false)
+}
+
+///|
+fn range_single_model() -> @visibility.VisibilityRange {
+  @visibility.VisibilityRange::new(0.0F, 0.0F, 8.0F, 9.0F, false)
+}
+
+///|
+fn range_invisible() -> @visibility.VisibilityRange {
+  @visibility.VisibilityRange::invisible()
+}
+
+///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   visibility_range_state.val.camera = None
@@ -170,6 +190,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
   ).spawn(world)
   visibility_range_state.val.high_model = Some(high_model)
+  world
+  .get_visibility_range_store()
+  .insert(high_model, range_normal_high(), tick)
 
   let low_model = @render3d.MeshMaterial3dBundle::new(
     uv_sphere_mesh(0.35F, 8, 12),
@@ -183,6 +206,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
   ).spawn(world)
   visibility_range_state.val.low_model = Some(low_model)
+  world.get_visibility_range_store().insert(low_model, range_normal_low(), tick)
 
   let directional = world.spawn_empty()
   world
@@ -277,53 +301,23 @@ fn update_mode(_world : @ecs_world.World) -> Unit {
 ///|
 fn update_visibility(world : @ecs_world.World) -> Unit {
   let state = visibility_range_state.val
-  guard state.camera is Some(camera_entity) else { return }
   guard state.high_model is Some(high_entity) else { return }
   guard state.low_model is Some(low_entity) else { return }
 
-  let transform_store = world.get_transform_store()
-  guard transform_store.get(camera_entity) is Some(camera_transform) else {
-    return
-  }
-
-  let focal = @math.Vec3::new(CAMERA_FOCAL_X, CAMERA_FOCAL_Y, CAMERA_FOCAL_Z)
-  let camera_distance = camera_transform.translation.sub(focal).length()
-
-  let mut high_visible = false
-  let mut low_visible = false
+  let mut high_range = range_normal_high()
+  let mut low_range = range_normal_low()
   if state.show_mode == 1 {
-    high_visible = camera_distance <= 9.0F
-    low_visible = false
+    high_range = range_single_model()
+    low_range = range_invisible()
   } else if state.show_mode == 2 {
-    high_visible = false
-    low_visible = camera_distance <= 9.0F
-  } else {
-    high_visible = camera_distance <= 4.0F
-    low_visible = camera_distance >= 3.0F && camera_distance <= 9.0F
+    high_range = range_invisible()
+    low_range = range_single_model()
   }
 
   let tick = world.read_change_tick()
-  let visibility_store = world.get_visibility_store()
-  visibility_store.set(
-    high_entity,
-    if high_visible {
-      @visibility.Visibility::Inherited
-    } else {
-      @visibility.Visibility::Hidden
-    },
-    tick,
-  )
-  |> ignore
-  visibility_store.set(
-    low_entity,
-    if low_visible {
-      @visibility.Visibility::Inherited
-    } else {
-      @visibility.Visibility::Hidden
-    },
-    tick,
-  )
-  |> ignore
+  let range_store = world.get_visibility_range_store()
+  range_store.set(high_entity, high_range, tick) |> ignore
+  range_store.set(low_entity, low_range, tick) |> ignore
 }
 
 ///|

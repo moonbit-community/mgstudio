@@ -853,6 +853,7 @@ priv struct Mesh3dInstance {
   entity : @core.Entity
   mesh_id : Int
   transform : @math.Transform
+  visibility_range : @visibility.VisibilityRange?
   material : StandardMaterial
   layers : @render2d.RenderLayers
 }
@@ -1250,6 +1251,46 @@ fn render3d_mesh_view_depth(
 }
 
 ///|
+fn minf(a : Float, b : Float) -> Float {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn maxf(a : Float, b : Float) -> Float {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn render3d_visibility_range_visible(
+  visibility_range : @visibility.VisibilityRange,
+  camera_transform : @math.Transform,
+  mesh_transform : @math.Transform,
+) -> Bool {
+  let to_mesh = mesh_transform.translation.sub(camera_transform.translation)
+  let distance = to_mesh.length()
+  let near_bound = minf(
+    visibility_range.start_margin_min,
+    visibility_range.start_margin_max,
+  )
+  let far_bound = maxf(
+    visibility_range.end_margin_min,
+    visibility_range.end_margin_max,
+  )
+  if far_bound < near_bound {
+    return false
+  }
+  distance >= near_bound && distance <= far_bound
+}
+
+///|
 fn render3d_sorted_mesh_indices(
   meshes : Array[Mesh3dInstance],
   layers : @render2d.RenderLayers,
@@ -1262,6 +1303,14 @@ fn render3d_sorted_mesh_indices(
       continue
     }
     if !mesh.layers.matches(layers) {
+      continue
+    }
+    if mesh.visibility_range is Some(visibility_range) &&
+      !render3d_visibility_range_visible(
+        visibility_range,
+        camera_transform,
+        mesh.transform,
+      ) {
       continue
     }
     if render3d_mesh_alpha_phase(
@@ -1337,7 +1386,7 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -1405,6 +1454,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let mesh_store = world.get_mesh3d_store()
   let material_store = world.get_mesh_material3d_store()
   let gpu_mesh_store = world.get_gpu_mesh2d_store()
+  let visibility_range_store = world.get_visibility_range_store()
   mesh_store.for_each(fn(entity, _mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
       !view_visibility.is_visible() {
@@ -1427,6 +1477,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       entity,
       mesh_id: gpu_mesh.mesh_id,
       transform,
+      visibility_range: visibility_range_store.get(entity),
       material,
       layers,
     })

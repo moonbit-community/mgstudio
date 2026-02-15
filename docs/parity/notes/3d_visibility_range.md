@@ -25,9 +25,11 @@
 
 - Baseline parity: Bevy uses glTF `FlightHelmet` assets with `VisibilityRange`
   components and optional prepass toggling.
-- mgstudio currently does not expose the same `VisibilityRange` component path.
-- This port uses two procedural mesh stand-ins (high-poly sphere and low-poly
-  sphere) and drives visibility manually per frame via `Visibility`.
+- This port now uses engine-level `VisibilityRange` components for distance
+  gating in 3D render execution.
+- mgstudio still lacks Bevy's glTF `FlightHelmet` scene path in this example,
+  so two procedural mesh stand-ins (high-poly sphere and low-poly sphere) are
+  used instead.
 - Baseline parity: Bevy's `Space` prepass toggle is not included in this port.
 
 ## Runtime Constraints

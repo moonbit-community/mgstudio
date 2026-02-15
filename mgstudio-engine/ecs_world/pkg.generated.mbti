@@ -82,6 +82,7 @@ pub struct World {
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
+  visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
@@ -265,6 +266,7 @@ pub impl @ui.Has_ZIndex for World
 pub impl @visibility.Has_InheritedVisibility for World
 pub impl @visibility.Has_ViewVisibility for World
 pub impl @visibility.Has_Visibility for World
+pub impl @visibility.Has_VisibilityRange for World
 
 // Type aliases
 

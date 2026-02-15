@@ -44,6 +44,17 @@ pub fn Visibility::is_visible(Self) -> Bool
 pub impl Eq for Visibility
 pub impl Show for Visibility
 
+pub struct VisibilityRange {
+  start_margin_min : Float
+  start_margin_max : Float
+  end_margin_min : Float
+  end_margin_max : Float
+  use_aabb : Bool
+}
+pub fn VisibilityRange::always_visible() -> Self
+pub fn VisibilityRange::invisible() -> Self
+pub fn VisibilityRange::new(Float, Float, Float, Float, Bool) -> Self
+
 // Type aliases
 
 // Traits
@@ -57,6 +68,10 @@ pub(open) trait Has_ViewVisibility {
 
 pub(open) trait Has_Visibility {
   get_visibility_store(Self) -> @core.ComponentStore[Visibility]
+}
+
+pub(open) trait Has_VisibilityRange {
+  get_visibility_range_store(Self) -> @core.ComponentStore[VisibilityRange]
 }
 
 pub(open) trait VisibilityPropagationWorld : Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld {

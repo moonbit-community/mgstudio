@@ -4,7 +4,7 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Visibility", "ViewVisibility", "InheritedVisibility",
+  "Visibility", "ViewVisibility", "InheritedVisibility", "VisibilityRange",
 ]
 
 ///|
@@ -25,5 +25,12 @@ pub(open) trait Has_ViewVisibility {
 pub(open) trait Has_InheritedVisibility {
   get_inherited_visibility_store(self : Self) -> @core.ComponentStore[
     InheritedVisibility,
+  ]
+}
+
+///|
+pub(open) trait Has_VisibilityRange {
+  get_visibility_range_store(self : Self) -> @core.ComponentStore[
+    VisibilityRange,
   ]
 }

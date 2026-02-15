@@ -61,6 +61,7 @@ pub struct World {
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
+  visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
@@ -215,6 +216,7 @@ pub fn World::new() -> World {
     accessibility_label: @core.ComponentStore::new(),
     ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
+    visibility_range: @core.ComponentStore::new(),
     locked_axes2d: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
     active_hooks2d: @core.ComponentStore::new(),
@@ -345,6 +347,7 @@ pub fn World::despawn(
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
+  self.visibility_range.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
@@ -455,6 +458,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
+  self.visibility_range.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
@@ -804,6 +808,13 @@ pub impl @ui.Has_UiBoxShadowSamples for World with get_ui_box_shadow_samples_sto
 ///|
 pub impl @visibility.Has_Visibility for World with get_visibility_store(self) {
   self.visibility
+}
+
+///|
+pub impl @visibility.Has_VisibilityRange for World with get_visibility_range_store(
+  self,
+) {
+  self.visibility_range
 }
 
 ///|
