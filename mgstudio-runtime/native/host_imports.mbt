@@ -1936,6 +1936,85 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "asset_load_bytes",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        if args.length() >= 1 && args[0] is @types.Value::I32(path_id) {
+          let rel = string_table_get(ctx, path_id).unwrap_or("")
+          let bytes = if rel == "" {
+            Bytes::makei(0, _ => (0).to_byte())
+          } else {
+            let full_path = @rtcore.join_dir(
+              ctx.assets_source.base,
+              strip_leading_slashes(rel),
+            ) catch {
+              _ => join_fs_path(ctx.assets_source.base, rel)
+            }
+            @fs.read_file_to_bytes(full_path) catch {
+              _ => Bytes::makei(0, _ => (0).to_byte())
+            }
+          }
+          ok_i32(bytes_table_put(ctx, bytes))
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        _ => {
+          @debug.debug("asset_load_bytes failed")
+          host_fail("asset_load_bytes", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_bytes_len",
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(blob_id) {
+        match bytes_table_get(ctx, blob_id) {
+          None => ok_i32(0)
+          Some(b) => ok_i32(b.length())
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_bytes_get_u32",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(blob_id) &&
+        args[1] is @types.Value::I32(index) &&
+        index >= 0 {
+        match bytes_table_get(ctx, blob_id) {
+          None => ok_i32(0)
+          Some(b) => {
+            let mut out : UInt = 0U
+            for j in 0..<4 {
+              match b.get(index + j) {
+                None => ()
+                Some(v) =>
+                  out = out |
+                    ((v.to_int().reinterpret_as_uint() & 0xFFU) << (j * 8))
+              }
+            }
+            ok_i32(out.reinterpret_as_int())
+          }
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "asset_font_bytes_len",
     fn(args) {
       if args.length() >= 1 && args[0] is @types.Value::I32(font_id) {

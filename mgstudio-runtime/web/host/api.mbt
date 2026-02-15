@@ -1034,6 +1034,89 @@ pub fn create_host(
       }
     }
   })
+  let asset_load_bytes = @js.from_fn1(fn(path_any) {
+    let id = state.assets.next_blob_id
+    state.assets.next_blob_id = id + 1
+    map_set(state.assets.blobs, @js.any(id), js_null())
+    let path_text = string_from_id_required(state, path_any, "asset_load_bytes")
+    @js.run_async(async fn() noraise {
+      if path_text == "" {
+        return
+      }
+      let url = resolve_asset_url(state, @js.any(path_text)) catch {
+        err => {
+          let message = "Bytes load error: " + err.to_string()
+          console_error(@js.any(message))
+          dispatch_asset_error(message)
+          ""
+        }
+      }
+      if url == "" {
+        return
+      }
+      let response_opt : @http.Response? = Some(
+        @http.fetch(url, method_="GET"),
+      ) catch {
+        err => {
+          let message = "Bytes load error: " + err.to_string()
+          console_error(@js.any(message))
+          dispatch_asset_error(message)
+          None
+        }
+      }
+      if response_opt is Some(response) {
+        if response.ok {
+          let promise : @js.Promise[@arraybuffer.ArrayBuffer] = response_array_buffer(
+            response.as_any(),
+          )
+          let buffer_opt : @arraybuffer.ArrayBuffer? = Some(promise.wait()) catch {
+            err => {
+              let message = "Bytes load error: " + err.to_string()
+              console_error(@js.any(message))
+              dispatch_asset_error(message)
+              None
+            }
+          }
+          if buffer_opt is Some(buffer) {
+            let bytes = uint8array_from_array_buffer(buffer)
+            map_set(state.assets.blobs, @js.any(id), bytes)
+          }
+        } else {
+          dispatch_asset_error(
+            "Bytes load error: fetch failed (" +
+            response.status.to_string() +
+            ") (path: " +
+            path_text +
+            ")",
+          )
+        }
+      }
+    })
+    id
+  })
+  let asset_bytes_len = @js.from_fn1(fn(blob_id_any) {
+    let blob_id = to_int(number_or(blob_id_any, -1))
+    let blob = map_get(state.assets.blobs, @js.any(blob_id))
+    if host_is_nullish(blob) {
+      0
+    } else {
+      to_int(number_or(blob._get("length"), 0))
+    }
+  })
+  let asset_bytes_get_u32 = @js.from_fn2(fn(blob_id_any, index_any) {
+    let blob_id = to_int(number_or(blob_id_any, -1))
+    let index = to_int(number_or(index_any, -1))
+    let blob = map_get(state.assets.blobs, @js.any(blob_id))
+    if host_is_nullish(blob) || index < 0 {
+      0
+    } else {
+      let b0 = uint8array_get_u8(blob, index)
+      let b1 = uint8array_get_u8(blob, index + 1)
+      let b2 = uint8array_get_u8(blob, index + 2)
+      let b3 = uint8array_get_u8(blob, index + 3)
+      b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+    }
+  })
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
     let kind = to_int(number_or(sampler_kind, 0))
@@ -2160,9 +2243,12 @@ pub fn create_host(
     ("asset_load_texture", asset_load_texture),
     ("asset_load_wgsl", asset_load_wgsl),
     ("asset_load_font", asset_load_font),
+    ("asset_load_bytes", asset_load_bytes),
     ("asset_font_bytes_len", asset_font_bytes_len),
     ("asset_font_bytes_get", asset_font_bytes_get),
     ("asset_font_bytes_get_u32", asset_font_bytes_get_u32),
+    ("asset_bytes_len", asset_bytes_len),
+    ("asset_bytes_get_u32", asset_bytes_get_u32),
     ("font_rasterize_glyph", font_rasterize_glyph),
     ("font_glyph_width", font_glyph_width),
     ("font_glyph_height", font_glyph_height),

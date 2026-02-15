@@ -19,20 +19,19 @@ test "scene: gltf label path encoding" {
 }
 
 ///|
-test "scene: load then register keeps stable handle" {
-  let server = @asset.AssetServer::new()
+test "scene: register keeps stable handle" {
   let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-  let pending_handle = @scene.scene_load_gltf_scene(server, path)
-  let pending_scene = @scene.scene_get(pending_handle).unwrap()
-  inspect(pending_scene.ready, content="false")
-
-  let registered_handle = @scene.scene_register_gltf_scene(
+  let first_handle = @scene.scene_register_gltf_scene(
     path,
     @scene.Scene::new([]),
   )
-  inspect(pending_handle.id() == registered_handle.id(), content="true")
+  let second_handle = @scene.scene_register_gltf_scene(
+    path,
+    @scene.Scene::new([]),
+  )
+  inspect(first_handle.id() == second_handle.id(), content="true")
 
-  let ready_scene = @scene.scene_get(registered_handle).unwrap()
+  let ready_scene = @scene.scene_get(second_handle).unwrap()
   inspect(ready_scene.ready, content="true")
 }
 

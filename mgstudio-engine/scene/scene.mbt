@@ -18,7 +18,8 @@
 /// Current scope:
 /// - Bevy-like `SceneRoot` component and spawn-once runtime behavior.
 /// - glTF scene key path (`GltfAssetLabel::Scene(..).from_asset(..)`).
-/// - Registry-backed scene loading; runtime glTF parsing is a follow-up task.
+/// - Runtime glTF loading path for `.gltf + .bin + textures` (subset used by
+///   current 3D parity examples).
 
 ///|
 pub(all) enum GltfAssetLabel {
@@ -116,17 +117,19 @@ pub fn scene_register_gltf_scene(
   scene : Scene,
 ) -> @asset.Handle[Scene] {
   if scene_registry_get(asset_path) is Some(handle) {
+    scene_pending_remove_handle(handle)
     scene_assets.val.set(handle, scene) |> ignore
     return handle
   }
   let handle = scene_assets.val.add(scene)
   gltf_scene_registry.val.push((asset_path, handle))
+  scene_pending_remove_handle(handle)
   handle
 }
 
 ///|
 pub fn scene_load_gltf_scene(
-  _asset_server : @asset.AssetServer,
+  asset_server : @asset.AssetServer,
   asset_path : String,
 ) -> @asset.Handle[Scene] {
   if scene_registry_get(asset_path) is Some(handle) {
@@ -134,12 +137,18 @@ pub fn scene_load_gltf_scene(
   }
   let handle = scene_assets.val.add(scene_pending())
   gltf_scene_registry.val.push((asset_path, handle))
+  scene_queue_gltf_request(asset_server, handle, asset_path)
   handle
 }
 
 ///|
 pub fn scene_get(handle : @asset.Handle[Scene]) -> Scene? {
   scene_assets.val.get(handle)
+}
+
+///|
+pub fn[W] scene_load_pending_system(_world : W) -> Unit {
+  scene_process_pending_requests(@asset.AssetServer::new())
 }
 
 ///|
@@ -196,5 +205,7 @@ pub(open) trait ScenePluginWorld: SceneSpawnWorld {}
 
 ///|
 pub fn[W : ScenePluginWorld] scene_plugin(app : @app.App[W]) -> @app.App[W] {
-  app.add_pre_update_system(scene_spawn_roots_system)
+  app
+  .add_pre_update_system(scene_load_pending_system)
+  .add_pre_update_system(scene_spawn_roots_system)
 }

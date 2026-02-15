@@ -20,10 +20,6 @@
 /// This example follows Bevy's scene-root-based HLOD flow.
 
 ///|
-/// Runtime gap: glTF parsing/loading is still pending in runtime; scene content
-/// is currently registered in code using procedural stand-ins.
-
-///|
 const CAMERA_FOCAL_X : Float = 0.0F
 
 ///|
@@ -61,11 +57,6 @@ let visibility_range_state : Ref[VisibilityRangeState] = Ref::new({
 })
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
-
-///|
 fn maxf(a : Float, b : Float) -> Float {
   if a > b {
     a
@@ -79,62 +70,6 @@ fn rotate_y(v : @math.Vec3, angle : Float) -> @math.Vec3 {
   let s = @math.sin(angle)
   let c = @math.cos(angle)
   @math.Vec3::new(v.x * c + v.z * s, v.y, -v.x * s + v.z * c)
-}
-
-///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = 3.141592653589793F / stacks_f
-  let sector_step = 6.283185307179586F / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = 1.5707963267948966F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @render3d.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-  )
 }
 
 ///|
@@ -155,44 +90,6 @@ fn range_single_model() -> @visibility.VisibilityRange {
 ///|
 fn range_invisible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::invisible()
-}
-
-///|
-fn high_poly_scene() -> @scene.Scene {
-  let material = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.8F, 0.8F, 0.9F, 1.0F),
-      ),
-    ),
-  )
-  @scene.Scene::new([
-    @scene.SceneNode3d::new(
-      uv_sphere_mesh(0.35F, 28, 48),
-      material,
-      @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
-      None,
-    ),
-  ])
-}
-
-///|
-fn low_poly_scene() -> @scene.Scene {
-  let material = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.65F, 0.75F, 1.0F, 1.0F),
-      ),
-    ),
-  )
-  @scene.Scene::new([
-    @scene.SceneNode3d::new(
-      uv_sphere_mesh(0.35F, 8, 12),
-      material,
-      @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
-      None,
-    ),
-  ])
 }
 
 ///|
@@ -264,8 +161,6 @@ fn setup(world : @ecs_world.World) -> Unit {
   let low_poly_path = @scene.GltfAssetLabel::Scene(0).from_asset(
     "models/FlightHelmetLowPoly/FlightHelmetLowPoly.gltf",
   )
-  @scene.scene_register_gltf_scene(high_poly_path, high_poly_scene()) |> ignore
-  @scene.scene_register_gltf_scene(low_poly_path, low_poly_scene()) |> ignore
 
   let high_scene_root = world.spawn_empty()
   world

@@ -10,6 +10,10 @@ import {
 // Values
 pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
 
+pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
+
+pub fn asset_blob_read_text(Handle[Blob]) -> String?
+
 pub fn asset_copy_texture_to_texture(Handle[Image], @math.UVec2, Handle[Image]) -> Unit
 
 pub fn asset_create_dynamic_texture(@math.UVec2, Bool) -> Handle[Image]
@@ -56,6 +60,10 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int
+
+pub fn host_asset_bytes_len(Int) -> Int
+
 pub fn host_asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn host_asset_create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
@@ -67,6 +75,8 @@ pub fn host_asset_font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int
 pub fn host_asset_font_bytes_len(Int) -> Int
 
 pub fn host_asset_is_texture_loaded(Int) -> Bool
+
+pub fn host_asset_load_bytes(path~ : String) -> Int
 
 pub fn host_asset_load_folder(path~ : String) -> Int
 
@@ -118,6 +128,7 @@ pub struct AssetServer {
 }
 pub fn AssetServer::get_handle(Self, String) -> Handle[Image]?
 pub fn AssetServer::load(Self, String) -> Handle[Image]
+pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
 pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
@@ -139,6 +150,9 @@ pub fn[T] Assets::len(Self[T]) -> Int
 pub fn[T] Assets::new() -> Self[T]
 pub fn[T] Assets::remove(Self[T], Handle[T]) -> T?
 pub fn[T] Assets::set(Self[T], Handle[T], T) -> Bool
+
+pub struct Blob {
+}
 
 pub struct DynamicTextureAtlasBuilder {
   size : @math.UVec2

@@ -77,6 +77,9 @@ pub fn Shader::new(source : String) -> Shader {
 }
 
 ///|
+pub struct Blob {}
+
+///|
 pub struct AssetServer {
   paths : Array[String]
 }
@@ -167,6 +170,22 @@ pub fn host_asset_load_wgsl(path~ : String) -> Int {
 fn host_asset_load_wgsl_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_wgsl"
 
 ///|
+pub fn host_asset_load_bytes(path~ : String) -> Int {
+  @core.with_host_string_id(path, fn(path_id) {
+    host_asset_load_bytes_id(path_id)
+  })
+}
+
+///|
+fn host_asset_load_bytes_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_bytes"
+
+///|
+pub fn host_asset_bytes_len(blob_id : Int) -> Int = "mgstudio_host" "asset_bytes_len"
+
+///|
+pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int = "mgstudio_host" "asset_bytes_get_u32"
+
+///|
 pub fn host_asset_create_dynamic_texture(
   width~ : Int,
   height~ : Int,
@@ -239,6 +258,57 @@ pub fn AssetServer::load_wgsl(
   let id = host_asset_load_wgsl(path~)
   self.paths.push(path)
   Handle::new(id)
+}
+
+///|
+pub fn AssetServer::load_bytes(
+  self : AssetServer,
+  path : String,
+) -> Handle[Blob] {
+  let id = host_asset_load_bytes(path~)
+  self.paths.push(path)
+  Blob::{  } |> ignore
+  Handle::new(id)
+}
+
+///|
+pub fn asset_blob_read_bytes(blob : Handle[Blob]) -> Bytes? {
+  let len = host_asset_bytes_len(blob.id())
+  if len <= 0 {
+    return None
+  }
+  let bytes : Array[Byte] = []
+  let mut i = 0
+  while i < len {
+    let u = host_asset_bytes_get_u32(blob_id=blob.id(), index=i).reinterpret_as_uint()
+    bytes.push((u & 0xFFU).reinterpret_as_int().to_byte())
+    if i + 1 < len {
+      bytes.push(((u >> 8) & 0xFFU).reinterpret_as_int().to_byte())
+    }
+    if i + 2 < len {
+      bytes.push(((u >> 16) & 0xFFU).reinterpret_as_int().to_byte())
+    }
+    if i + 3 < len {
+      bytes.push(((u >> 24) & 0xFFU).reinterpret_as_int().to_byte())
+    }
+    i = i + 4
+  }
+  Some(Bytes::from_array(bytes))
+}
+
+///|
+pub fn asset_blob_read_text(blob : Handle[Blob]) -> String? {
+  guard asset_blob_read_bytes(blob) is Some(bytes) else { return None }
+  let chars : Array[Char] = []
+  for byte in bytes {
+    let code = byte.to_int() & 0xFF
+    if code.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
+  }
+  Some(String::from_array(chars))
 }
 
 ///|

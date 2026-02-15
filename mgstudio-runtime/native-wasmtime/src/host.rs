@@ -1719,6 +1719,78 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "asset_load_bytes",
+        &[ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let path_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let rel = caller
+                .data()
+                .string_table_get(path_id)
+                .unwrap_or("")
+                .to_string();
+            if rel.trim().is_empty() {
+                ok_i32(out, -1);
+                return Ok(());
+            }
+            let full_path =
+                join_dir_best_effort(&caller.data().assets.base, strip_leading_slashes(&rel));
+            let bytes = std::fs::read(&full_path).unwrap_or_default();
+            let blob_id = caller.data_mut().bytes_table_put(bytes);
+            ok_i32(out, blob_id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_bytes_len",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let blob_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let len = caller
+                .data()
+                .bytes_table_get(blob_id)
+                .map(|b| b.len() as i32)
+                .unwrap_or(0);
+            ok_i32(out, len);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_bytes_get_u32",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let blob_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let index = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            if index < 0 {
+                ok_i32(out, 0);
+                return Ok(());
+            }
+            let mut packed: u32 = 0;
+            if let Some(bytes) = caller.data().bytes_table_get(blob_id) {
+                for j in 0..4 {
+                    let value = bytes.get(index as usize + j).copied().unwrap_or(0) as u32;
+                    packed |= value << (j * 8);
+                }
+            }
+            ok_i32(out, packed as i32);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "asset_font_bytes_len",
         &[ValType::I32],
         &[ValType::I32],

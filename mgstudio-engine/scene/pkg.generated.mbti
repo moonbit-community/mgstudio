@@ -20,6 +20,8 @@ pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
+pub fn[W] scene_load_pending_system(W) -> Unit
+
 pub fn[W : ScenePluginWorld] scene_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn scene_register_gltf_scene(String, Scene) -> @asset.Handle[Scene]
