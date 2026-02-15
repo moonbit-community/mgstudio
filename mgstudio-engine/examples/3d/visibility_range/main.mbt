@@ -16,12 +16,12 @@
 /// Port of `bevy/examples/3d/visibility_range.rs`.
 
 ///|
-/// Baseline parity: Bevy's `VisibilityRange` component and glTF scene HLOD path
-/// are not available in current mgstudio runtime surfaces.
+/// Baseline parity: mgstudio now exposes `VisibilityRange` and `SceneRoot`.
+/// This example follows Bevy's scene-root-based HLOD flow.
 
 ///|
-/// Baseline parity: this port uses manual distance-based visibility switching
-/// between high-poly and low-poly stand-ins.
+/// Runtime gap: glTF parsing/loading is still pending in runtime; scene content
+/// is currently registered in code using procedural stand-ins.
 
 ///|
 const CAMERA_FOCAL_X : Float = 0.0F
@@ -47,16 +47,16 @@ const MIN_ZOOM_DISTANCE : Float = 0.5F
 ///|
 priv struct VisibilityRangeState {
   mut camera : @core.Entity?
-  mut high_model : @core.Entity?
-  mut low_model : @core.Entity?
+  mut high_scene_root : @core.Entity?
+  mut low_scene_root : @core.Entity?
   mut show_mode : Int
 }
 
 ///|
 let visibility_range_state : Ref[VisibilityRangeState] = Ref::new({
   camera: None,
-  high_model: None,
-  low_model: None,
+  high_scene_root: None,
+  low_scene_root: None,
   show_mode: 0,
 })
 
@@ -158,11 +158,90 @@ fn range_invisible() -> @visibility.VisibilityRange {
 }
 
 ///|
+fn high_poly_scene() -> @scene.Scene {
+  let material = @render3d.MeshMaterial3d::new(
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(0.8F, 0.8F, 0.9F, 1.0F),
+      ),
+    ),
+  )
+  @scene.Scene::new([
+    @scene.SceneNode3d::new(
+      uv_sphere_mesh(0.35F, 28, 48),
+      material,
+      @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
+      None,
+    ),
+  ])
+}
+
+///|
+fn low_poly_scene() -> @scene.Scene {
+  let material = @render3d.MeshMaterial3d::new(
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(0.65F, 0.75F, 1.0F, 1.0F),
+      ),
+    ),
+  )
+  @scene.Scene::new([
+    @scene.SceneNode3d::new(
+      uv_sphere_mesh(0.35F, 8, 12),
+      material,
+      @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
+      None,
+    ),
+  ])
+}
+
+///|
+fn entity_is_descendant_of(
+  parent_store : @core.ComponentStore[@hierarchy.Parent],
+  entity : @core.Entity,
+  root : @core.Entity,
+) -> Bool {
+  let mut current = entity
+  while true {
+    if current.id == root.id {
+      return true
+    }
+    if parent_store.get(current) is Some(parent) {
+      current = parent.entity()
+    } else {
+      return false
+    }
+  }
+  false
+}
+
+///|
+fn apply_visibility_range_for_scene_root(
+  world : @ecs_world.World,
+  scene_root : @core.Entity,
+  visibility_range : @visibility.VisibilityRange,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let parent_store = world.get_parent_store()
+  let mesh_store = world.get_mesh3d_store()
+  let visibility_range_store = world.get_visibility_range_store()
+  mesh_store.for_each(fn(entity, _mesh) {
+    if entity_is_descendant_of(parent_store, entity, scene_root) {
+      if visibility_range_store.contains(entity) {
+        visibility_range_store.set(entity, visibility_range, tick) |> ignore
+      } else {
+        visibility_range_store.insert(entity, visibility_range, tick)
+      }
+    }
+  })
+}
+
+///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   visibility_range_state.val.camera = None
-  visibility_range_state.val.high_model = None
-  visibility_range_state.val.low_model = None
+  visibility_range_state.val.high_scene_root = None
+  visibility_range_state.val.low_scene_root = None
   visibility_range_state.val.show_mode = 0
 
   @render3d.MeshMaterial3dBundle::new(
@@ -178,35 +257,39 @@ fn setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let high_model = @render3d.MeshMaterial3dBundle::new(
-    uv_sphere_mesh(0.35F, 28, 48),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.8F, 0.8F, 0.9F, 1.0F),
-        ),
-      ),
-    ),
-    @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
-  ).spawn(world)
-  visibility_range_state.val.high_model = Some(high_model)
-  world
-  .get_visibility_range_store()
-  .insert(high_model, range_normal_high(), tick)
+  let asset_server = @asset.AssetServer::new()
+  let high_poly_path = @scene.GltfAssetLabel::Scene(0).from_asset(
+    "models/FlightHelmet/FlightHelmet.gltf",
+  )
+  let low_poly_path = @scene.GltfAssetLabel::Scene(0).from_asset(
+    "models/FlightHelmetLowPoly/FlightHelmetLowPoly.gltf",
+  )
+  @scene.scene_register_gltf_scene(high_poly_path, high_poly_scene()) |> ignore
+  @scene.scene_register_gltf_scene(low_poly_path, low_poly_scene()) |> ignore
 
-  let low_model = @render3d.MeshMaterial3dBundle::new(
-    uv_sphere_mesh(0.35F, 8, 12),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.65F, 0.75F, 1.0F, 1.0F),
-        ),
-      ),
+  let high_scene_root = world.spawn_empty()
+  world
+  .get_scene_root_store()
+  .insert(
+    high_scene_root,
+    @scene.SceneRoot::new(
+      @scene.scene_load_gltf_scene(asset_server, high_poly_path),
     ),
-    @math.Transform::from_xyz(0.0F, 0.35F, 0.0F),
-  ).spawn(world)
-  visibility_range_state.val.low_model = Some(low_model)
-  world.get_visibility_range_store().insert(low_model, range_normal_low(), tick)
+    tick,
+  )
+  visibility_range_state.val.high_scene_root = Some(high_scene_root)
+
+  let low_scene_root = world.spawn_empty()
+  world
+  .get_scene_root_store()
+  .insert(
+    low_scene_root,
+    @scene.SceneRoot::new(
+      @scene.scene_load_gltf_scene(asset_server, low_poly_path),
+    ),
+    tick,
+  )
+  visibility_range_state.val.low_scene_root = Some(low_scene_root)
 
   let directional = world.spawn_empty()
   world
@@ -301,8 +384,8 @@ fn update_mode(_world : @ecs_world.World) -> Unit {
 ///|
 fn update_visibility(world : @ecs_world.World) -> Unit {
   let state = visibility_range_state.val
-  guard state.high_model is Some(high_entity) else { return }
-  guard state.low_model is Some(low_entity) else { return }
+  guard state.high_scene_root is Some(high_scene_root) else { return }
+  guard state.low_scene_root is Some(low_scene_root) else { return }
 
   let mut high_range = range_normal_high()
   let mut low_range = range_normal_low()
@@ -314,10 +397,8 @@ fn update_visibility(world : @ecs_world.World) -> Unit {
     low_range = range_single_model()
   }
 
-  let tick = world.read_change_tick()
-  let range_store = world.get_visibility_range_store()
-  range_store.set(high_entity, high_range, tick) |> ignore
-  range_store.set(low_entity, low_range, tick) |> ignore
+  apply_visibility_range_for_scene_root(world, high_scene_root, high_range)
+  apply_visibility_range_for_scene_root(world, low_scene_root, low_range)
 }
 
 ///|

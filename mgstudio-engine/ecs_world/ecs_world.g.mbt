@@ -62,6 +62,8 @@ pub struct World {
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
+  scene_root : @core.ComponentStore[@scene.SceneRoot]
+  scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
@@ -217,6 +219,8 @@ pub fn World::new() -> World {
     ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
     visibility_range: @core.ComponentStore::new(),
+    scene_root: @core.ComponentStore::new(),
+    scene_instance_ready: @core.ComponentStore::new(),
     locked_axes2d: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
     active_hooks2d: @core.ComponentStore::new(),
@@ -348,6 +352,8 @@ pub fn World::despawn(
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
+  self.scene_root.remove(entity) |> ignore
+  self.scene_instance_ready.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
@@ -459,6 +465,8 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
+  self.scene_root.remove(entity) |> ignore
+  self.scene_instance_ready.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
@@ -815,6 +823,18 @@ pub impl @visibility.Has_VisibilityRange for World with get_visibility_range_sto
   self,
 ) {
   self.visibility_range
+}
+
+///|
+pub impl @scene.Has_SceneRoot for World with get_scene_root_store(self) {
+  self.scene_root
+}
+
+///|
+pub impl @scene.Has_SceneInstanceReady for World with get_scene_instance_ready_store(
+  self,
+) {
+  self.scene_instance_ready
 }
 
 ///|

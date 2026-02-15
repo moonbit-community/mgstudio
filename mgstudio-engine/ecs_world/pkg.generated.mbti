@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/scene",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/visibility",
@@ -83,6 +84,8 @@ pub struct World {
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
+  scene_root : @core.ComponentStore[@scene.SceneRoot]
+  scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
@@ -233,6 +236,8 @@ pub impl @render3d.Has_MeshMaterial3d for World
 pub impl @render3d.Has_PointLight for World
 pub impl @render3d.Has_SpotLight for World
 pub impl @render3d.Has_SubCameraView3d for World
+pub impl @scene.Has_SceneInstanceReady for World
+pub impl @scene.Has_SceneRoot for World
 pub impl @transform.Has_GlobalTransform for World
 pub impl @ui.HasRes_UiContext for World
 pub impl @ui.HasRes_UiScale for World

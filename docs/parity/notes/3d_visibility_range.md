@@ -27,9 +27,11 @@
   components and optional prepass toggling.
 - This port now uses engine-level `VisibilityRange` components for distance
   gating in 3D render execution.
-- mgstudio still lacks Bevy's glTF `FlightHelmet` scene path in this example,
-  so two procedural mesh stand-ins (high-poly sphere and low-poly sphere) are
-  used instead.
+- This port now follows Bevy's `SceneRoot + GltfAssetLabel::Scene(0)` flow, but
+  runtime glTF parsing/loading is still pending.
+- Scene content is currently registered in code, so two procedural mesh
+  stand-ins (high-poly sphere and low-poly sphere) are still used instead of
+  actual `FlightHelmet` glTF scenes.
 - Baseline parity: Bevy's `Space` prepass toggle is not included in this port.
 
 ## Runtime Constraints
@@ -44,4 +46,5 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.11.54`
+- `bd issue`: `moon-game-studio-p71.11.57`
+- `bd issue`: `moon-game-studio-p71.5.5`

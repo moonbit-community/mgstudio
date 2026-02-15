@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/scene",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",
   "Milky2018/mgstudio/visibility",
@@ -30,7 +31,7 @@ pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[(@app.App[W])
 // Type aliases
 
 // Traits
-pub(open) trait DefaultPluginsWorld : @core.ChangeTickWorld + @core.SystemContextWorld + @transform.TransformPropagationWorld + @visibility.VisibilityPropagationWorld + @picking.PickingPluginWorld + @a11y.HasRes_A11yState + @ui.UiPluginWorld + @render2d.RenderExtractWorld + @render3d.Render3dPluginWorld + @physics2d.Physics2dPluginWorld + @physics3d.Physics3dPluginWorld {
+pub(open) trait DefaultPluginsWorld : @core.ChangeTickWorld + @core.SystemContextWorld + @scene.ScenePluginWorld + @transform.TransformPropagationWorld + @visibility.VisibilityPropagationWorld + @picking.PickingPluginWorld + @a11y.HasRes_A11yState + @ui.UiPluginWorld + @render2d.RenderExtractWorld + @render3d.Render3dPluginWorld + @physics2d.Physics2dPluginWorld + @physics3d.Physics3dPluginWorld {
 }
 pub impl DefaultPluginsWorld for @ecs_world.World
 

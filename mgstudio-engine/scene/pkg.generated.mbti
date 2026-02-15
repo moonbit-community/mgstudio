@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/scene"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/visibility",
+}
+
+// Values
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+pub fn scene_get(@asset.Handle[Scene]) -> Scene?
+
+pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
+
+pub fn[W : ScenePluginWorld] scene_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn scene_register_gltf_scene(String, Scene) -> @asset.Handle[Scene]
+
+pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(W) -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum GltfAssetLabel {
+  Scene(Int)
+}
+pub fn GltfAssetLabel::from_asset(Self, String) -> String
+
+pub struct Scene {
+  nodes3d : Array[SceneNode3d]
+  ready : Bool
+}
+pub fn Scene::new(Array[SceneNode3d]) -> Self
+
+pub struct SceneInstanceReady {
+  spawned_entities : Int
+}
+pub fn SceneInstanceReady::new(Int) -> Self
+
+pub struct SceneNode3d {
+  mesh : @render3d.Mesh3d
+  material : @render3d.MeshMaterial3d
+  transform : @math.Transform
+  visibility_range : @visibility.VisibilityRange?
+}
+pub fn SceneNode3d::new(@render3d.Mesh3d, @render3d.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?) -> Self
+
+pub struct SceneRoot {
+  scene : @asset.Handle[Scene]
+}
+pub fn SceneRoot::new(@asset.Handle[Scene]) -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait Has_SceneInstanceReady {
+  get_scene_instance_ready_store(Self) -> @core.ComponentStore[SceneInstanceReady]
+}
+
+pub(open) trait Has_SceneRoot {
+  get_scene_root_store(Self) -> @core.ComponentStore[SceneRoot]
+}
+
+pub(open) trait ScenePluginWorld : SceneSpawnWorld {
+}
+
+pub(open) trait SceneSpawnWorld : Has_SceneRoot + Has_SceneInstanceReady + @core.SpawnWorld + @core.ChangeTickWorld + @hierarchy.Has_Parent + @math.Has_Transform + @render3d.Has_Mesh3d + @render3d.Has_MeshMaterial3d + @visibility.Has_VisibilityRange {
+}
+
