@@ -316,6 +316,122 @@ extern "js" fn get_canvas_pixel_size(canvas : @js.Any) -> @js.Any =
   #| }
 
 ///|
+extern "js" fn set_canvas_target_pixel_size(
+  canvas : @js.Any,
+  pixel_width : Int,
+  pixel_height : Int,
+) -> Unit =
+  #| (canvas, pixelWidth, pixelHeight) => {
+  #|   if (!canvas) return
+  #|   const dpr = window.devicePixelRatio || 1
+  #|   const pw = Math.max(1, Number(pixelWidth) | 0)
+  #|   const ph = Math.max(1, Number(pixelHeight) | 0)
+  #|   const cssW = Math.max(1, Math.round(pw / Math.max(1e-6, dpr)))
+  #|   const cssH = Math.max(1, Math.round(ph / Math.max(1e-6, dpr)))
+  #|   if (canvas.style) {
+  #|     canvas.style.width = `${cssW}px`
+  #|     canvas.style.height = `${cssH}px`
+  #|   }
+  #|   canvas.width = pw
+  #|   canvas.height = ph
+  #| }
+
+///|
+extern "js" fn set_document_title_js(title : String) -> Unit =
+  #| (title) => {
+  #|   if (typeof document === "object" && document) {
+  #|     document.title = String(title ?? "")
+  #|   }
+  #| }
+
+///|
+extern "js" fn set_canvas_cursor_visible_js(
+  canvas : @js.Any,
+  visible : Bool,
+) -> Unit =
+  #| (canvas, visible) => {
+  #|   if (!canvas || !canvas.style) return
+  #|   canvas.style.cursor = visible ? "" : "none"
+  #| }
+
+///|
+extern "js" fn set_canvas_cursor_grab_mode_js(
+  canvas : @js.Any,
+  mode : Int,
+) -> Unit =
+  #| (canvas, mode) => {
+  #|   if (!canvas) return
+  #|   const m = Number(mode) | 0
+  #|   if (m === 1 || m === 2) {
+  #|     if (typeof canvas.requestPointerLock === "function") {
+  #|       try {
+  #|         canvas.requestPointerLock()
+  #|       } catch (_) {}
+  #|     }
+  #|     return
+  #|   }
+  #|   if (
+  #|     typeof document === "object" &&
+  #|     document &&
+  #|     document.pointerLockElement === canvas &&
+  #|     typeof document.exitPointerLock === "function"
+  #|   ) {
+  #|     try {
+  #|       document.exitPointerLock()
+  #|     } catch (_) {}
+  #|   }
+  #| }
+
+///|
+extern "js" fn set_window_mode_js(canvas : @js.Any, mode : Int) -> Unit =
+  #| (canvas, mode) => {
+  #|   const m = Number(mode) | 0
+  #|   const doc = typeof document === "object" ? document : null
+  #|   if (!doc) return
+  #|   if (m === 0) {
+  #|     if (doc.fullscreenElement && typeof doc.exitFullscreen === "function") {
+  #|       const p = doc.exitFullscreen()
+  #|       if (p && typeof p.catch === "function") p.catch(() => {})
+  #|     }
+  #|     return
+  #|   }
+  #|   const target =
+  #|     canvas && typeof canvas.requestFullscreen === "function"
+  #|       ? canvas
+  #|       : doc.documentElement
+  #|   if (target && typeof target.requestFullscreen === "function") {
+  #|     const p = target.requestFullscreen()
+  #|     if (p && typeof p.catch === "function") p.catch(() => {})
+  #|   }
+  #| }
+
+///|
+extern "js" fn window_move_to_js(x : Int, y : Int) -> Unit =
+  #| (x, y) => {
+  #|   if (typeof window !== "object" || !window) return
+  #|   if (typeof window.moveTo !== "function") return
+  #|   try {
+  #|     window.moveTo(Number(x) | 0, Number(y) | 0)
+  #|   } catch (_) {}
+  #| }
+
+///|
+extern "js" fn window_screen_x_js() -> Int =
+  #| () => {
+  #|   if (typeof window !== "object" || !window) return 0
+  #|   const x = typeof window.screenX === "number" ? window.screenX : 0
+  #|   return x | 0
+  #| }
+
+///|
+extern "js" fn window_screen_y_js() -> Int =
+  #| () => {
+  #|   if (typeof window !== "object" || !window) return 0
+  #|   const y = typeof window.screenY === "number" ? window.screenY : 0
+  #|   return y | 0
+  #| }
+
+///|
 extern "js" fn get_bounding_rect(canvas : @js.Any) -> @js.Any =
   #| (canvas) => canvas.getBoundingClientRect()
 

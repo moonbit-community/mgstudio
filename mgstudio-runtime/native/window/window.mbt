@@ -68,6 +68,52 @@ pub fn Window::request_close(self : Window) -> Unit {
 }
 
 ///|
+pub fn Window::set_title(self : Window, title : String) -> Unit {
+  let title_cstr = string_to_utf8_cstr(title)
+  c_window_set_title(self.raw, title_cstr)
+}
+
+///|
+pub fn Window::set_size(self : Window, width : Int, height : Int) -> Unit {
+  c_window_set_size(self.raw, width, height)
+}
+
+///|
+pub fn Window::set_resizable(self : Window, resizable : Bool) -> Unit {
+  c_window_set_resizable(self.raw, resizable)
+}
+
+///|
+pub fn Window::set_cursor_visible(self : Window, visible : Bool) -> Unit {
+  c_window_set_cursor_visible(self.raw, visible)
+}
+
+///|
+pub fn Window::set_cursor_grab_mode(self : Window, mode : Int) -> Unit {
+  c_window_set_cursor_grab_mode(self.raw, mode)
+}
+
+///|
+pub fn Window::set_mode(self : Window, mode : Int) -> Unit {
+  c_window_set_mode(self.raw, mode)
+}
+
+///|
+pub fn Window::set_position(self : Window, x : Int, y : Int) -> Unit {
+  c_window_set_position(self.raw, x, y)
+}
+
+///|
+pub fn Window::position_x(self : Window) -> Int {
+  c_window_get_position_x(self.raw)
+}
+
+///|
+pub fn Window::position_y(self : Window) -> Int {
+  c_window_get_position_y(self.raw)
+}
+
+///|
 pub fn Window::attach_metal_layer(
   self : Window,
   layer : @wgpu_c.OpaquePtr,
@@ -265,6 +311,54 @@ extern "C" fn c_window_should_close(win : @wgpu_c.OpaquePtr) -> Bool = "mgw_wind
 
 ///|
 extern "C" fn c_window_request_close(win : @wgpu_c.OpaquePtr) -> Unit = "mgw_window_request_close"
+
+///|
+#borrow(_title)
+extern "C" fn c_window_set_title(
+  win : @wgpu_c.OpaquePtr,
+  _title : Bytes,
+) -> Unit = "mgw_window_set_title"
+
+///|
+extern "C" fn c_window_set_size(
+  win : @wgpu_c.OpaquePtr,
+  width : Int,
+  height : Int,
+) -> Unit = "mgw_window_set_size"
+
+///|
+extern "C" fn c_window_set_resizable(
+  win : @wgpu_c.OpaquePtr,
+  resizable : Bool,
+) -> Unit = "mgw_window_set_resizable"
+
+///|
+extern "C" fn c_window_set_cursor_visible(
+  win : @wgpu_c.OpaquePtr,
+  visible : Bool,
+) -> Unit = "mgw_window_set_cursor_visible"
+
+///|
+extern "C" fn c_window_set_cursor_grab_mode(
+  win : @wgpu_c.OpaquePtr,
+  mode : Int,
+) -> Unit = "mgw_window_set_cursor_grab_mode"
+
+///|
+extern "C" fn c_window_set_mode(win : @wgpu_c.OpaquePtr, mode : Int) -> Unit = "mgw_window_set_mode"
+
+///|
+extern "C" fn c_window_set_position(
+  win : @wgpu_c.OpaquePtr,
+  x : Int,
+  y : Int,
+) -> Unit = "mgw_window_set_position"
+
+///|
+extern "C" fn c_window_get_position_x(win : @wgpu_c.OpaquePtr) -> Int = "mgw_window_get_position_x"
+
+///|
+extern "C" fn c_window_get_position_y(win : @wgpu_c.OpaquePtr) -> Int = "mgw_window_get_position_y"
 
 ///|
 extern "C" fn c_window_attach_metal_layer(

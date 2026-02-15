@@ -1021,6 +1021,181 @@ fn define_mgstudio_host_imports(
         },
     )?;
 
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_title",
+        &[ValType::EXTERNREF, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(title_id)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+            ) {
+                if let Some(title) = caller.data().string_table_get(title_id) {
+                    win.set_title(title);
+                }
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_size",
+        &[ValType::EXTERNREF, ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(width), Some(height)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+                args.get(2).and_then(|v| v.i32()),
+            ) {
+                win.set_size(width, height);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_resizable",
+        &[ValType::EXTERNREF, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(resizable_i32)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+            ) {
+                win.set_resizable(resizable_i32 != 0);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_cursor_visible",
+        &[ValType::EXTERNREF, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(visible_i32)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+            ) {
+                win.set_cursor_visible(visible_i32 != 0);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_cursor_grab_mode",
+        &[ValType::EXTERNREF, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(mode)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+            ) {
+                win.set_cursor_grab_mode(mode);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_mode",
+        &[ValType::EXTERNREF, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(mode)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+            ) {
+                win.set_mode(mode);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_position",
+        &[ValType::EXTERNREF, ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(x), Some(y)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+                args.get(2).and_then(|v| v.i32()),
+            ) {
+                win.set_position(x, y);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_get_position_x",
+        &[ValType::EXTERNREF],
+        &[ValType::I32],
+        |caller, _args, out| {
+            let x = caller
+                .data()
+                .window
+                .as_ref()
+                .map(|win| win.position_x())
+                .unwrap_or(0);
+            ok_i32(out, x);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_get_position_y",
+        &[ValType::EXTERNREF],
+        &[ValType::I32],
+        |caller, _args, out| {
+            let y = caller
+                .data()
+                .window
+                .as_ref()
+                .map(|win| win.position_y())
+                .unwrap_or(0);
+            ok_i32(out, y);
+            Ok(())
+        },
+    )?;
+
     // time_now() -> f32
     define_func(
         store,

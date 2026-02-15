@@ -52,23 +52,23 @@ pub fn create_host(
     target._set("width", @js.any(width_num)) |> ignore
     target._set("height", @js.any(height_num)) |> ignore
     let text = string_from_id_optional(state, title)
-    if text != "" {
-      @dom.document().setTitle(text)
-    }
+    set_document_title_js(text)
     let size = get_canvas_pixel_size(target)
     let pixel_width : Int = size._get("width").cast()
     let pixel_height : Int = size._get("height").cast()
     let scale_factor = get_device_pixel_ratio()
-    target._set("width", @js.any(pixel_width)) |> ignore
-    target._set("height", @js.any(pixel_height)) |> ignore
+    set_canvas_target_pixel_size(target, pixel_width, pixel_height)
     state.window = Some(WindowState::{
       canvas: target,
       width: pixel_width,
       height: pixel_height,
       scale_factor,
+      position_x: window_screen_x_js(),
+      position_y: window_screen_y_js(),
     })
     init_input(state)
     bind_pointer_events(state, target)
+    set_canvas_cursor_visible_js(target, true)
     1
   })
   let window_poll_events = @js.from_fn1(fn(_ : @js.Any) { () })
@@ -110,6 +110,114 @@ pub fn create_host(
     }
 
     request_animation_frame(@js.from_fn0(fn() { tick() }))
+  })
+  let window_set_title = @js.from_fn2(fn(_ : @js.Any, title_any : @js.Any) {
+    let text = string_from_id_optional(state, title_any)
+    set_document_title_js(text)
+    0
+  })
+  let window_set_size = @js.from_fn3(fn(
+    _ : @js.Any,
+    width_any : @js.Any,
+    height_any : @js.Any,
+  ) {
+    if state.window is Some(window_state) {
+      let width_int = to_int(
+        number_or(width_any, window_state.width.to_double()),
+      )
+      let height_int = to_int(
+        number_or(height_any, window_state.height.to_double()),
+      )
+      let target_width = if width_int > 0 { width_int } else { 1 }
+      let target_height = if height_int > 0 { height_int } else { 1 }
+      set_canvas_target_pixel_size(
+        window_state.canvas,
+        target_width,
+        target_height,
+      )
+      update_window_size(state)
+    }
+    0
+  })
+  let window_set_resizable = @js.from_fn2(fn(
+    _ : @js.Any,
+    _resizable_any : @js.Any,
+  ) {
+    // Browser canvases are intrinsically "resizable" with layout/CSS; keep this
+    // import as a no-op for ABI parity.
+    state.window |> ignore
+    0
+  })
+  let window_set_cursor_visible = @js.from_fn2(fn(
+    _ : @js.Any,
+    visible_any : @js.Any,
+  ) {
+    if state.window is Some(window_state) {
+      let visible = number_or(visible_any, 0) != 0
+      set_canvas_cursor_visible_js(window_state.canvas, visible)
+    }
+    0
+  })
+  let window_set_cursor_grab_mode = @js.from_fn2(fn(
+    _ : @js.Any,
+    mode_any : @js.Any,
+  ) {
+    if state.window is Some(window_state) {
+      let mut mode = to_int(number_or(mode_any, 0))
+      if mode < 0 {
+        mode = 0
+      }
+      if mode > 2 {
+        mode = 2
+      }
+      set_canvas_cursor_grab_mode_js(window_state.canvas, mode)
+    }
+    0
+  })
+  let window_set_mode = @js.from_fn2(fn(_ : @js.Any, mode_any : @js.Any) {
+    if state.window is Some(window_state) {
+      let mut mode = to_int(number_or(mode_any, 0))
+      if mode < 0 {
+        mode = 0
+      }
+      if mode > 2 {
+        mode = 2
+      }
+      set_window_mode_js(window_state.canvas, mode)
+    }
+    0
+  })
+  let window_set_position = @js.from_fn3(fn(
+    _ : @js.Any,
+    x_any : @js.Any,
+    y_any : @js.Any,
+  ) {
+    if state.window is Some(window_state) {
+      let x = to_int(number_or(x_any, window_state.position_x.to_double()))
+      let y = to_int(number_or(y_any, window_state.position_y.to_double()))
+      window_state.position_x = x
+      window_state.position_y = y
+      window_move_to_js(x, y)
+    }
+    0
+  })
+  let window_get_position_x = @js.from_fn1(fn(_ : @js.Any) {
+    if state.window is Some(window_state) {
+      let x = window_screen_x_js()
+      window_state.position_x = x
+      x
+    } else {
+      0
+    }
+  })
+  let window_get_position_y = @js.from_fn1(fn(_ : @js.Any) {
+    if state.window is Some(window_state) {
+      let y = window_screen_y_js()
+      window_state.position_y = y
+      y
+    } else {
+      0
+    }
   })
   let time_now = @js.from_fn0(fn() { performance_now() })
   fn find_gamepad(gamepad_id : Int) -> GamepadSnapshot? {
@@ -1972,6 +2080,15 @@ pub fn create_host(
     ("window_should_close", window_should_close),
     ("window_request_close", window_request_close),
     ("window_run_loop", window_run_loop),
+    ("window_set_title", window_set_title),
+    ("window_set_size", window_set_size),
+    ("window_set_resizable", window_set_resizable),
+    ("window_set_cursor_visible", window_set_cursor_visible),
+    ("window_set_cursor_grab_mode", window_set_cursor_grab_mode),
+    ("window_set_mode", window_set_mode),
+    ("window_set_position", window_set_position),
+    ("window_get_position_x", window_get_position_x),
+    ("window_get_position_y", window_get_position_y),
     ("time_now", time_now),
     ("input_gamepad_poll", input_gamepad_poll),
     ("input_gamepad_count", input_gamepad_count),

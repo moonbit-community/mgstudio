@@ -41,8 +41,17 @@ pub fn Window::input_wheel_x(Self) -> Float
 pub fn Window::input_wheel_y(Self) -> Float
 pub fn Window::is_null(Self) -> Bool
 pub fn Window::poll_events(Self) -> Unit
+pub fn Window::position_x(Self) -> Int
+pub fn Window::position_y(Self) -> Int
 pub fn Window::request_close(Self) -> Unit
 pub fn Window::scale_factor(Self) -> Float
+pub fn Window::set_cursor_grab_mode(Self, Int) -> Unit
+pub fn Window::set_cursor_visible(Self, Bool) -> Unit
+pub fn Window::set_mode(Self, Int) -> Unit
+pub fn Window::set_position(Self, Int, Int) -> Unit
+pub fn Window::set_resizable(Self, Bool) -> Unit
+pub fn Window::set_size(Self, Int, Int) -> Unit
+pub fn Window::set_title(Self, String) -> Unit
 pub fn Window::should_close(Self) -> Bool
 pub fn Window::width(Self) -> Int
 

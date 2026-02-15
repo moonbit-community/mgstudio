@@ -61,6 +61,10 @@ pub fn host_window_create(width~ : Int, height~ : Int, title~ : String) -> HostW
 
 pub fn host_window_get_height(HostWindow) -> Int
 
+pub fn host_window_get_position_x(HostWindow) -> Int
+
+pub fn host_window_get_position_y(HostWindow) -> Int
+
 pub fn host_window_get_scale_factor(HostWindow) -> Float
 
 pub fn host_window_get_width(HostWindow) -> Int
@@ -71,23 +75,61 @@ pub fn host_window_request_close(HostWindow) -> Unit
 
 pub fn host_window_run_loop(FuncRef[() -> Unit]) -> Unit
 
+pub fn host_window_set_cursor_grab_mode(HostWindow, mode~ : CursorGrabMode) -> Unit
+
+pub fn host_window_set_cursor_visible(HostWindow, visible~ : Bool) -> Unit
+
+pub fn host_window_set_mode(HostWindow, mode~ : WindowMode) -> Unit
+
+pub fn host_window_set_position(HostWindow, x~ : Int, y~ : Int) -> Unit
+
+pub fn host_window_set_resizable(HostWindow, resizable~ : Bool) -> Unit
+
+pub fn host_window_set_size(HostWindow, width~ : Int, height~ : Int) -> Unit
+
+pub fn host_window_set_title(HostWindow, title~ : String) -> Unit
+
 pub fn host_window_should_close(HostWindow) -> Bool
 
 pub fn window_height() -> Int
 
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_plugin(@app.App[W]) -> @app.App[W]
 
+pub fn window_position_x() -> Int
+
+pub fn window_position_y() -> Int
+
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_builder(@app.App[W]) -> () -> Unit
 
 pub fn window_scale_factor() -> Float
 
+pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit
+
+pub fn window_set_cursor_visible(visible~ : Bool) -> Unit
+
 pub fn window_set_handle(HostWindow) -> Unit
+
+pub fn window_set_mode(mode~ : WindowMode) -> Unit
+
+pub fn window_set_position(x~ : Int, y~ : Int) -> Unit
+
+pub fn window_set_resizable(resizable~ : Bool) -> Unit
+
+pub fn window_set_size(width~ : Int, height~ : Int) -> Unit
+
+pub fn window_set_title(title~ : String) -> Unit
 
 pub fn window_width() -> Int
 
 // Errors
 
 // Types and methods
+pub(all) enum CursorGrabMode {
+  GrabNone
+  GrabConfined
+  GrabLocked
+}
+
 pub(all) enum HostEvent {
   KeyDown(KeyCode)
   KeyUp(KeyCode)
@@ -168,6 +210,12 @@ pub(all) enum MouseButton {
   Left
   Right
   Middle
+}
+
+pub(all) enum WindowMode {
+  Windowed
+  BorderlessFullscreen
+  Fullscreen
 }
 
 // Type aliases

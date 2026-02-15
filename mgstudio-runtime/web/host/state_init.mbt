@@ -97,6 +97,8 @@ priv struct WindowState {
   mut width : Int
   mut height : Int
   mut scale_factor : Double
+  mut position_x : Int
+  mut position_y : Int
 }
 
 ///|

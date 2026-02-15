@@ -8,7 +8,7 @@ use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::platform::pump_events::EventLoopExtPumpEvents;
-use winit::window::{Window, WindowAttributes, WindowId};
+use winit::window::{CursorGrabMode, Fullscreen, Window, WindowAttributes, WindowId};
 
 struct PumpHandler<'a> {
     should_close: &'a mut bool,
@@ -102,6 +102,63 @@ impl NativeWindow {
 
     pub fn scale_factor(&self) -> f64 {
         self.scale_factor
+    }
+
+    pub fn set_title(&self, title: &str) {
+        self.window.set_title(title);
+    }
+
+    pub fn set_size(&self, width: i32, height: i32) {
+        let w = width.max(1) as f64;
+        let h = height.max(1) as f64;
+        let _ = self.window.request_inner_size(LogicalSize::new(w, h));
+    }
+
+    pub fn set_resizable(&self, resizable: bool) {
+        self.window.set_resizable(resizable);
+    }
+
+    pub fn set_cursor_visible(&self, visible: bool) {
+        self.window.set_cursor_visible(visible);
+    }
+
+    pub fn set_cursor_grab_mode(&self, mode: i32) {
+        let grab_mode = match mode {
+            1 => CursorGrabMode::Confined,
+            2 => CursorGrabMode::Locked,
+            _ => CursorGrabMode::None,
+        };
+        if self.window.set_cursor_grab(grab_mode).is_err() && mode != 0 {
+            // Fallback for platforms that only support one grab mode.
+            let fallback = if mode == 1 {
+                CursorGrabMode::Locked
+            } else {
+                CursorGrabMode::Confined
+            };
+            let _ = self.window.set_cursor_grab(fallback);
+        }
+    }
+
+    pub fn set_mode(&self, mode: i32) {
+        if mode == 0 {
+            self.window.set_fullscreen(None);
+            return;
+        }
+        self.window
+            .set_fullscreen(Some(Fullscreen::Borderless(None)));
+    }
+
+    pub fn set_position(&self, x: i32, y: i32) {
+        self.window
+            .set_outer_position(LogicalPosition::new(x as f64, y as f64));
+    }
+
+    pub fn position_x(&self) -> i32 {
+        self.window.outer_position().map(|pos| pos.x).unwrap_or(0)
+    }
+
+    pub fn position_y(&self) -> i32 {
+        self.window.outer_position().map(|pos| pos.y).unwrap_or(0)
     }
 
     pub fn input_finish_frame(&mut self) {

@@ -1376,6 +1376,139 @@ pub fn add_mgstudio_host_imports(
     },
     func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
   )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_title",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[1] is @types.Value::I32(title_id) &&
+        string_table_get(ctx, title_id) is Some(title) {
+        ctx.window.map(fn(win) { win.set_title(title) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::ExternRef, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_size",
+    fn(args) {
+      if args.length() >= 3 &&
+        args[1] is @types.Value::I32(width) &&
+        args[2] is @types.Value::I32(height) {
+        ctx.window.map(fn(win) { win.set_size(width, height) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft(
+      [
+        @types.ValueType::ExternRef,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_resizable",
+    fn(args) {
+      if args.length() >= 2 && args[1] is @types.Value::I32(resizable_i32) {
+        let resizable = resizable_i32 != 0
+        ctx.window.map(fn(win) { win.set_resizable(resizable) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::ExternRef, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_cursor_visible",
+    fn(args) {
+      if args.length() >= 2 && args[1] is @types.Value::I32(visible_i32) {
+        let visible = visible_i32 != 0
+        ctx.window.map(fn(win) { win.set_cursor_visible(visible) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::ExternRef, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_cursor_grab_mode",
+    fn(args) {
+      if args.length() >= 2 && args[1] is @types.Value::I32(mode) {
+        ctx.window.map(fn(win) { win.set_cursor_grab_mode(mode) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::ExternRef, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_mode",
+    fn(args) {
+      if args.length() >= 2 && args[1] is @types.Value::I32(mode) {
+        ctx.window.map(fn(win) { win.set_mode(mode) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::ExternRef, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_position",
+    fn(args) {
+      if args.length() >= 3 &&
+        args[1] is @types.Value::I32(x) &&
+        args[2] is @types.Value::I32(y) {
+        ctx.window.map(fn(win) { win.set_position(x, y) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft(
+      [
+        @types.ValueType::ExternRef,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_get_position_x",
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_i32(win.position_x())
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_get_position_y",
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_i32(win.position_y())
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::ExternRef], [@types.ValueType::I32]),
+  )
 
   // Time.
   linker.add_host_func(

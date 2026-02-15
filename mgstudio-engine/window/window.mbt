@@ -83,6 +83,20 @@ pub(all) enum MouseButton {
 }
 
 ///|
+pub(all) enum CursorGrabMode {
+  GrabNone
+  GrabConfined
+  GrabLocked
+}
+
+///|
+pub(all) enum WindowMode {
+  Windowed
+  BorderlessFullscreen
+  Fullscreen
+}
+
+///|
 pub(all) enum HostEvent {
   KeyDown(KeyCode)
   KeyUp(KeyCode)
@@ -134,6 +148,91 @@ pub fn host_window_request_close(window : HostWindow) -> Unit = "mgstudio_host" 
 pub fn host_window_run_loop(step : FuncRef[() -> Unit]) -> Unit = "mgstudio_host" "window_run_loop"
 
 ///|
+pub fn host_window_set_title(window : HostWindow, title~ : String) -> Unit {
+  @core.with_host_string_id(title, fn(title_id) {
+    host_window_set_title_id(window, title_id~)
+  })
+}
+
+///|
+fn host_window_set_title_id(window : HostWindow, title_id~ : Int) -> Unit = "mgstudio_host" "window_set_title"
+
+///|
+pub fn host_window_set_size(
+  window : HostWindow,
+  width~ : Int,
+  height~ : Int,
+) -> Unit = "mgstudio_host" "window_set_size"
+
+///|
+pub fn host_window_set_resizable(
+  window : HostWindow,
+  resizable~ : Bool,
+) -> Unit = "mgstudio_host" "window_set_resizable"
+
+///|
+pub fn host_window_set_cursor_visible(
+  window : HostWindow,
+  visible~ : Bool,
+) -> Unit = "mgstudio_host" "window_set_cursor_visible"
+
+///|
+fn cursor_grab_mode_to_int(mode : CursorGrabMode) -> Int {
+  match mode {
+    GrabNone => 0
+    GrabConfined => 1
+    GrabLocked => 2
+  }
+}
+
+///|
+pub fn host_window_set_cursor_grab_mode(
+  window : HostWindow,
+  mode~ : CursorGrabMode,
+) -> Unit {
+  host_window_set_cursor_grab_mode_raw(
+    window~,
+    mode=cursor_grab_mode_to_int(mode),
+  )
+}
+
+///|
+fn host_window_set_cursor_grab_mode_raw(
+  window~ : HostWindow,
+  mode~ : Int,
+) -> Unit = "mgstudio_host" "window_set_cursor_grab_mode"
+
+///|
+fn window_mode_to_int(mode : WindowMode) -> Int {
+  match mode {
+    Windowed => 0
+    BorderlessFullscreen => 1
+    Fullscreen => 2
+  }
+}
+
+///|
+pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
+  host_window_set_mode_raw(window~, mode=window_mode_to_int(mode))
+}
+
+///|
+fn host_window_set_mode_raw(window~ : HostWindow, mode~ : Int) -> Unit = "mgstudio_host" "window_set_mode"
+
+///|
+pub fn host_window_set_position(
+  window : HostWindow,
+  x~ : Int,
+  y~ : Int,
+) -> Unit = "mgstudio_host" "window_set_position"
+
+///|
+pub fn host_window_get_position_x(window : HostWindow) -> Int = "mgstudio_host" "window_get_position_x"
+
+///|
+pub fn host_window_get_position_y(window : HostWindow) -> Int = "mgstudio_host" "window_get_position_y"
+
+///|
 pub fn window_set_handle(window : HostWindow) -> Unit {
   window_state.val.window = Some(window)
 }
@@ -162,6 +261,73 @@ pub fn window_scale_factor() -> Float {
     host_window_get_scale_factor(window)
   } else {
     1.0F
+  }
+}
+
+///|
+pub fn window_set_title(title~ : String) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_title(window, title~)
+  }
+}
+
+///|
+pub fn window_set_size(width~ : Int, height~ : Int) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_size(window, width~, height~)
+  }
+}
+
+///|
+pub fn window_set_resizable(resizable~ : Bool) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_resizable(window, resizable~)
+  }
+}
+
+///|
+pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_cursor_visible(window, visible~)
+  }
+}
+
+///|
+pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_cursor_grab_mode(window, mode~)
+  }
+}
+
+///|
+pub fn window_set_mode(mode~ : WindowMode) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_mode(window, mode~)
+  }
+}
+
+///|
+pub fn window_set_position(x~ : Int, y~ : Int) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_position(window, x~, y~)
+  }
+}
+
+///|
+pub fn window_position_x() -> Int {
+  if window_state.val.window is Some(window) {
+    host_window_get_position_x(window)
+  } else {
+    0
+  }
+}
+
+///|
+pub fn window_position_y() -> Int {
+  if window_state.val.window is Some(window) {
+    host_window_get_position_y(window)
+  } else {
+    0
   }
 }
 

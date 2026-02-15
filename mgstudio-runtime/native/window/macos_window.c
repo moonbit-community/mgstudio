@@ -52,6 +52,10 @@ typedef struct mgw_window {
   int32_t logical_height;
   int32_t should_close;
   int32_t has_cursor;
+  int32_t cursor_visible;
+  int32_t cursor_hidden_state;
+  int32_t cursor_grab_mode;
+  int32_t window_mode;
   float mouse_x;
   float mouse_y;
   float wheel_x;
@@ -239,6 +243,10 @@ static inline uint64_t mgw_msg_u64(mgw_objc_id obj, mgw_objc_sel sel) {
 
 static inline mgw_point mgw_msg_point(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((mgw_point(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline void mgw_msg_void_point(mgw_objc_id obj, mgw_objc_sel sel, mgw_point point) {
+  ((void (*)(mgw_objc_id, mgw_objc_sel, mgw_point))mgw_objc_msg_send_sym)(obj, sel, point);
 }
 
 static inline double mgw_msg_f64(mgw_objc_id obj, mgw_objc_sel sel) {
@@ -641,6 +649,54 @@ static void mgw_window_sync_metrics(mgw_window_t *w) {
 #endif
 }
 
+static void mgw_window_set_cursor_hidden_state(mgw_window_t *w, int32_t hidden) {
+#ifdef __APPLE__
+  if (!w || !mgw_objc_init()) {
+    return;
+  }
+  int32_t target = hidden ? 1 : 0;
+  if (w->cursor_hidden_state == target) {
+    return;
+  }
+  mgw_objc_class cursor_cls = mgw_cls("NSCursor");
+  if (!cursor_cls) {
+    return;
+  }
+  if (target) {
+    mgw_msg_void((mgw_objc_id)cursor_cls, mgw_sel("hide"));
+  } else {
+    mgw_msg_void((mgw_objc_id)cursor_cls, mgw_sel("unhide"));
+  }
+  w->cursor_hidden_state = target;
+#else
+  (void)w;
+  (void)hidden;
+#endif
+}
+
+static void mgw_window_sync_cursor_state(mgw_window_t *w) {
+  if (!w) {
+    return;
+  }
+  int32_t hide = (!w->cursor_visible) || (w->cursor_grab_mode == 2);
+  mgw_window_set_cursor_hidden_state(w, hide);
+}
+
+static int32_t mgw_window_is_fullscreen(mgw_window_t *w) {
+#ifdef __APPLE__
+  if (!w || !w->ns_window || !mgw_objc_init()) {
+    return 0;
+  }
+  // NSWindowStyleMaskFullScreen.
+  uint64_t fullscreen_bit = 1ull << 14;
+  uint64_t style = mgw_msg_u64(w->ns_window, mgw_sel("styleMask"));
+  return (style & fullscreen_bit) != 0;
+#else
+  (void)w;
+  return 0;
+#endif
+}
+
 static void mgw_input_handle_key(mgw_window_t *w, int32_t down, uint32_t keycode) {
   if (!w) {
     return;
@@ -853,6 +909,10 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   out->logical_height = height;
   out->should_close = 0;
   out->has_cursor = 0;
+  out->cursor_visible = 1;
+  out->cursor_hidden_state = 0;
+  out->cursor_grab_mode = 0;
+  out->window_mode = 0;
   out->mouse_x = 0.0f;
   out->mouse_y = 0.0f;
   out->wheel_x = 0.0f;
@@ -889,6 +949,7 @@ MOONBIT_FFI_EXPORT void mgw_window_destroy(void *win) {
     mgw_autorelease_pool_drain(mgw_a11y_pool);
     mgw_a11y_pool = NULL;
   }
+  mgw_window_set_cursor_hidden_state(w, 0);
   if (w->ns_window) {
     mgw_msg_void(w->ns_window, mgw_sel("close"));
     mgw_msg_void(w->ns_window, mgw_sel("release"));
@@ -1013,6 +1074,189 @@ MOONBIT_FFI_EXPORT void mgw_window_request_close(void *win) {
   mgw_autorelease_pool_drain(pool);
 #else
   (void)win;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_title(void *win, moonbit_bytes_t title) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window) {
+    return;
+  }
+  mgw_objc_id pool = mgw_autorelease_pool_new();
+  const char *title_cstr = title ? (const char *)title : "";
+  mgw_objc_id ns_title = mgw_nsstring_utf8(title_cstr);
+  if (ns_title) {
+    mgw_msg_void_id(w->ns_window, mgw_sel("setTitle:"), ns_title);
+  }
+  mgw_autorelease_pool_drain(pool);
+#else
+  (void)win;
+  (void)title;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_size(void *win, int32_t width, int32_t height) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window) {
+    return;
+  }
+  int32_t logical_w = width > 0 ? width : 1;
+  int32_t logical_h = height > 0 ? height : 1;
+  mgw_objc_id pool = mgw_autorelease_pool_new();
+  mgw_size size = {.w = (double)logical_w, .h = (double)logical_h};
+  mgw_msg_void_size(w->ns_window, mgw_sel("setContentSize:"), size);
+  mgw_window_sync_metrics(w);
+  mgw_autorelease_pool_drain(pool);
+#else
+  (void)win;
+  (void)width;
+  (void)height;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_resizable(void *win, int32_t resizable) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window) {
+    return;
+  }
+  uint64_t style = mgw_msg_u64(w->ns_window, mgw_sel("styleMask"));
+  // NSWindowStyleMaskResizable.
+  uint64_t bit = 1ull << 3;
+  if (resizable) {
+    style |= bit;
+  } else {
+    style &= ~bit;
+  }
+  mgw_objc_id pool = mgw_autorelease_pool_new();
+  mgw_msg_void_i64(w->ns_window, mgw_sel("setStyleMask:"), (int64_t)style);
+  mgw_autorelease_pool_drain(pool);
+#else
+  (void)win;
+  (void)resizable;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_cursor_visible(void *win, int32_t visible) {
+  if (!win) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  w->cursor_visible = visible ? 1 : 0;
+  mgw_window_sync_cursor_state(w);
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_cursor_grab_mode(void *win, int32_t mode) {
+  if (!win) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  int32_t next_mode = mode;
+  if (next_mode < 0) {
+    next_mode = 0;
+  }
+  if (next_mode > 2) {
+    next_mode = 2;
+  }
+  w->cursor_grab_mode = next_mode;
+  // Native C runtime currently exposes visibility + logical grab mode state.
+  // Platform-level confinement/lock is implemented in native-wasmtime (winit).
+  mgw_window_sync_cursor_state(w);
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_mode(void *win, int32_t mode) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window) {
+    return;
+  }
+  int32_t next_mode = mode;
+  if (next_mode < 0) {
+    next_mode = 0;
+  }
+  if (next_mode > 2) {
+    next_mode = 2;
+  }
+  w->window_mode = next_mode;
+  int32_t want_fullscreen = next_mode == 0 ? 0 : 1;
+  int32_t is_fullscreen = mgw_window_is_fullscreen(w);
+  if (want_fullscreen != is_fullscreen) {
+    mgw_objc_id pool = mgw_autorelease_pool_new();
+    mgw_msg_void_id(w->ns_window, mgw_sel("toggleFullScreen:"), NULL);
+    mgw_autorelease_pool_drain(pool);
+  }
+  mgw_window_sync_metrics(w);
+#else
+  (void)win;
+  (void)mode;
+#endif
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_position(void *win, int32_t x, int32_t y) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window) {
+    return;
+  }
+  mgw_objc_id pool = mgw_autorelease_pool_new();
+  mgw_point origin = {.x = (double)x, .y = (double)y};
+  mgw_msg_void_point(w->ns_window, mgw_sel("setFrameOrigin:"), origin);
+  mgw_autorelease_pool_drain(pool);
+#else
+  (void)win;
+  (void)x;
+  (void)y;
+#endif
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_window_get_position_x(void *win) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return 0;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window) {
+    return 0;
+  }
+  mgw_rect frame = mgw_msg_rect(w->ns_window, mgw_sel("frame"));
+  return (int32_t)(frame.origin.x + (frame.origin.x >= 0.0 ? 0.5 : -0.5));
+#else
+  (void)win;
+  return 0;
+#endif
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_window_get_position_y(void *win) {
+#ifdef __APPLE__
+  if (!win || !mgw_objc_init()) {
+    return 0;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (!w->ns_window) {
+    return 0;
+  }
+  mgw_rect frame = mgw_msg_rect(w->ns_window, mgw_sel("frame"));
+  return (int32_t)(frame.origin.y + (frame.origin.y >= 0.0 ? 0.5 : -0.5));
+#else
+  (void)win;
+  return 0;
 #endif
 }
 
