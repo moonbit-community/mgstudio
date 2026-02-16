@@ -1334,7 +1334,12 @@ async fn load_texture_from_path(
   nearest : Bool,
 ) -> Unit {
   if state.gpu.device is None || state.gpu.queue is None {
-    state.assets.pending_textures.push(PendingTexture::{ id, path, nearest })
+    state.assets.pending_textures.push(PendingTexture::{
+      id,
+      path,
+      bytes_id: 0,
+      nearest,
+    })
     return
   }
   let url = resolve_asset_url(state, path)
@@ -1349,6 +1354,40 @@ async fn load_texture_from_path(
     )
   }
   let blob : @js.Any = response_blob(response.as_any()).wait()
+  load_texture_from_blob(state, id, blob, nearest)
+}
+
+///|
+async fn load_texture_from_blob_id(
+  state : State,
+  id : Int,
+  blob_id : Int,
+  nearest : Bool,
+) -> Unit {
+  if state.gpu.device is None || state.gpu.queue is None {
+    state.assets.pending_textures.push(PendingTexture::{
+      id,
+      path: js_null(),
+      bytes_id: blob_id,
+      nearest,
+    })
+    return
+  }
+  let blob_bytes = map_get(state.assets.blobs, @js.any(blob_id))
+  if host_is_nullish(blob_bytes) {
+    fail("Failed to load texture bytes: bytes id not found")
+  }
+  let blob = blob_from_uint8array(blob_bytes)
+  load_texture_from_blob(state, id, blob, nearest)
+}
+
+///|
+async fn load_texture_from_blob(
+  state : State,
+  id : Int,
+  blob : @js.Any,
+  nearest : Bool,
+) -> Unit {
   let image = create_image_bitmap(blob).wait()
   ensure_pipeline_resources(state)
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {

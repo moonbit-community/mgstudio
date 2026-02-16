@@ -120,3 +120,37 @@ test "scene gltf wb: read vec3 from second buffer" {
   inspect(vecs[0].y.to_double(), content="2")
   inspect(vecs[0].z.to_double(), content="3")
 }
+
+///|
+test "scene gltf wb: image bufferView bytes" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[]}]," +
+    "\"nodes\":[]," +
+    "\"meshes\":[]," +
+    "\"buffers\":[{\"byteLength\":4}]," +
+    "\"bufferViews\":[{\"buffer\":0,\"byteOffset\":1,\"byteLength\":2}]," +
+    "\"images\":[{\"bufferView\":0,\"mimeType\":\"image/png\"}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.images.length(), content="1")
+  inspect(doc.images[0].buffer_view, content="Some(0)")
+  inspect(doc.images[0].mime_type, content="Some(\"image/png\")")
+
+  let bytes = gltf_buffer_view_bytes(
+    doc,
+    [
+      Bytes::from_array([
+        (10).to_byte(),
+        (20).to_byte(),
+        (30).to_byte(),
+        (40).to_byte(),
+      ]),
+    ],
+    0,
+  ).unwrap()
+  inspect(bytes.length(), content="2")
+  inspect(bytes[0].to_int() & 0xFF, content="20")
+  inspect(bytes[1].to_int() & 0xFF, content="30")
+}

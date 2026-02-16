@@ -16,6 +16,7 @@
 priv struct PendingTexture {
   id : Int
   path : @js.Any
+  bytes_id : Int
   nearest : Bool
 }
 
@@ -887,21 +888,39 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state.assets.pending_textures.clear()
     for entry in pending {
       @js.run_async(async fn() noraise {
-        let result = load_texture_from_path(
-          state,
-          entry.id,
-          entry.path,
-          entry.nearest,
-        ) catch {
-          err => {
-            let message = "Texture load error: " + err.to_string()
-            console_error(@js.any(message))
-            dispatch_asset_error(message)
-            set_delete(state.assets.loading_textures, @js.any(entry.id))
-            |> ignore
+        if entry.bytes_id > 0 {
+          let result = load_texture_from_blob_id(
+            state,
+            entry.id,
+            entry.bytes_id,
+            entry.nearest,
+          ) catch {
+            err => {
+              let message = "Texture load error: " + err.to_string()
+              console_error(@js.any(message))
+              dispatch_asset_error(message)
+              set_delete(state.assets.loading_textures, @js.any(entry.id))
+              |> ignore
+            }
           }
+          result |> ignore
+        } else {
+          let result = load_texture_from_path(
+            state,
+            entry.id,
+            entry.path,
+            entry.nearest,
+          ) catch {
+            err => {
+              let message = "Texture load error: " + err.to_string()
+              console_error(@js.any(message))
+              dispatch_asset_error(message)
+              set_delete(state.assets.loading_textures, @js.any(entry.id))
+              |> ignore
+            }
+          }
+          result |> ignore
         }
-        result |> ignore
       })
     }
   }

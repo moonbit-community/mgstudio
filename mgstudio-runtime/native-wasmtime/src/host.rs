@@ -470,13 +470,21 @@ fn load_texture_from_assets(
     nearest: bool,
 ) -> anyhow::Result<i32> {
     let rel = relative_path.trim();
-    if rel.is_empty() {
-        let gpu = state.ensure_gpu()?;
-        return gpu.create_texture_rgba8(1, 1, &[255, 255, 255, 255], nearest);
-    }
-    let full_path = join_dir_best_effort(&state.assets.base, strip_leading_slashes(rel));
-    let file_bytes = std::fs::read(&full_path).unwrap_or_default();
-    let (w, h, pixels) = match image::load_from_memory(&file_bytes) {
+    let file_bytes = if rel.is_empty() {
+        vec![]
+    } else {
+        let full_path = join_dir_best_effort(&state.assets.base, strip_leading_slashes(rel));
+        std::fs::read(&full_path).unwrap_or_default()
+    };
+    load_texture_from_bytes(state, &file_bytes, nearest)
+}
+
+fn load_texture_from_bytes(
+    state: &mut HostState,
+    bytes: &[u8],
+    nearest: bool,
+) -> anyhow::Result<i32> {
+    let (w, h, pixels) = match image::load_from_memory(bytes) {
         Ok(img) => {
             let rgba = img.to_rgba8();
             (rgba.width(), rgba.height(), rgba.into_raw())
@@ -1656,6 +1664,27 @@ fn define_mgstudio_host_imports(
                 eprintln!("asset_load_texture: {rel} -> {full}");
             }
             let id = load_texture_from_assets(caller.data_mut(), &rel, nearest)?;
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_load_texture_bytes",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let blob_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let nearest = args.get(1).and_then(|v| v.i32()).unwrap_or(0) != 0;
+            let bytes = caller
+                .data()
+                .bytes_table_get(blob_id)
+                .map(|b| b.to_vec())
+                .unwrap_or_default();
+            let id = load_texture_from_bytes(caller.data_mut(), &bytes, nearest)?;
             ok_i32(out, id);
             Ok(())
         },

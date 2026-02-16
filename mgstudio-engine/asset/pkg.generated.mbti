@@ -84,6 +84,8 @@ pub fn host_asset_load_font(path~ : String) -> Int
 
 pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int
 
+pub fn host_asset_load_texture_bytes(bytes_id~ : Int, nearest~ : Bool) -> Int
+
 pub fn host_asset_load_wgsl(path~ : String) -> Int
 
 pub fn host_asset_loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int
@@ -132,6 +134,7 @@ pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
 pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
+pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[Image]
 pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
 pub fn AssetServer::new() -> Self
 

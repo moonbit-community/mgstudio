@@ -751,6 +751,30 @@ pub fn create_host(
     })
     id
   })
+  let asset_load_texture_bytes = @js.from_fn2(fn(bytes_id_any, nearest_any) {
+    let id = state.gpu.next_texture_id
+    state.gpu.next_texture_id = id + 1
+    set_add(state.assets.loading_textures, @js.any(id))
+    let bytes_id = to_int(number_or(bytes_id_any, -1))
+    let nearest_value = number_or(nearest_any, 0) != 0
+    @js.run_async(async fn() noraise {
+      if bytes_id <= 0 {
+        dispatch_asset_error("Texture load error: bytes id not found")
+        set_delete(state.assets.loading_textures, @js.any(id)) |> ignore
+        return
+      }
+      let result = load_texture_from_blob_id(state, id, bytes_id, nearest_value) catch {
+        err => {
+          let message = "Texture load error: " + err.to_string()
+          console_error(@js.any(message))
+          dispatch_asset_error(message)
+          set_delete(state.assets.loading_textures, @js.any(id)) |> ignore
+        }
+      }
+      result |> ignore
+    })
+    id
+  })
   let asset_load_wgsl = @js.from_fn1(fn(path) {
     let id = next_shader_id(state)
     set_add(state.assets.loading_shaders, @js.any(id))
@@ -1054,9 +1078,7 @@ pub fn create_host(
       if url == "" {
         return
       }
-      let response_opt : @http.Response? = Some(
-        @http.fetch(url, method_="GET"),
-      ) catch {
+      let response_opt : @http.Response? = Some(@http.fetch(url, method_="GET")) catch {
         err => {
           let message = "Bytes load error: " + err.to_string()
           console_error(@js.any(message))
@@ -2241,6 +2263,7 @@ pub fn create_host(
     ("bytes_sink_take", bytes_sink_take),
     ("bytes_drop", bytes_drop),
     ("asset_load_texture", asset_load_texture),
+    ("asset_load_texture_bytes", asset_load_texture_bytes),
     ("asset_load_wgsl", asset_load_wgsl),
     ("asset_load_font", asset_load_font),
     ("asset_load_bytes", asset_load_bytes),

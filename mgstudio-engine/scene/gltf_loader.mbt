@@ -98,6 +98,8 @@ priv struct GltfTextureDef {
 ///|
 priv struct GltfImageDef {
   uri : String?
+  mime_type : String?
+  buffer_view : Int?
 }
 
 ///|
@@ -693,9 +695,13 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   if json_get_array(root, "images") is Some(entries) {
     for entry in entries {
       if json_object(entry) is Some(obj) {
-        images.push({ uri: json_get_string(obj, "uri") })
+        images.push({
+          uri: json_get_string(obj, "uri"),
+          mime_type: json_get_string(obj, "mimeType"),
+          buffer_view: json_get_int(obj, "bufferView"),
+        })
       } else {
-        images.push({ uri: None })
+        images.push({ uri: None, mime_type: None, buffer_view: None })
       }
     }
   }
@@ -1115,12 +1121,35 @@ fn path_join(base_dir : String, relative : String) -> String {
 }
 
 ///|
+fn gltf_buffer_view_bytes(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  buffer_view_index : Int,
+) -> Bytes? {
+  guard buffer_view_index >= 0 && buffer_view_index < doc.buffer_views.length() else {
+    return None
+  }
+  let buffer_view = doc.buffer_views[buffer_view_index]
+  guard buffer_view.buffer >= 0 && buffer_view.buffer < buffer_bytes.length() else {
+    return None
+  }
+  guard buffer_view.byte_offset >= 0 && buffer_view.byte_length >= 0 else {
+    return None
+  }
+  let start = buffer_view.byte_offset
+  let end_ = start + buffer_view.byte_length
+  guard end_ >= start else { return None }
+  bytes_slice(buffer_bytes[buffer_view.buffer], start, end_)
+}
+
+///|
 fn scene_cached_load_texture(
   asset_server : @asset.AssetServer,
   gltf_path : String,
   doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
   texture_index : Int,
-  cache : Array[(String, @asset.Handle[@asset.Image])],
+  cache : Array[@asset.Handle[@asset.Image]?],
 ) -> @asset.Handle[@asset.Image]? {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
     return None
@@ -1130,21 +1159,36 @@ fn scene_cached_load_texture(
   guard image_index >= 0 && image_index < doc.images.length() else {
     return None
   }
-  let image_def = doc.images[image_index]
-  guard image_def.uri is Some(uri) else { return None }
-  if uri.has_prefix("data:") {
-    return None
+  if cache[image_index] is Some(handle) {
+    return Some(handle)
   }
-
-  let resolved_path = path_join(path_dirname(gltf_path), uri)
-  for entry in cache {
-    if entry.0 == resolved_path {
-      return Some(entry.1)
+  let image_def = doc.images[image_index]
+  if image_def.mime_type is Some(_) {
+    ()
+  }
+  let handle = match image_def.uri {
+    Some(uri) =>
+      if uri.has_prefix("data:") {
+        guard data_uri_decode_bytes(uri) is Some(image_blob) else {
+          return None
+        }
+        asset_server.load_texture_bytes(image_blob, false)
+      } else {
+        let resolved_path = path_join(path_dirname(gltf_path), uri)
+        asset_server.load(resolved_path)
+      }
+    None => {
+      guard image_def.buffer_view is Some(buffer_view_index) else {
+        return None
+      }
+      guard gltf_buffer_view_bytes(doc, buffer_bytes, buffer_view_index)
+        is Some(image_blob) else {
+        return None
+      }
+      asset_server.load_texture_bytes(image_blob, false)
     }
   }
-
-  let handle = asset_server.load(resolved_path)
-  cache.push((resolved_path, handle))
+  cache[image_index] = Some(handle)
   Some(handle)
 }
 
@@ -1153,9 +1197,10 @@ fn scene_build_material_component(
   asset_server : @asset.AssetServer,
   gltf_path : String,
   doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
   material_index : Int,
   material_cache : Array[@render3d.MeshMaterial3d?],
-  image_cache : Array[(String, @asset.Handle[@asset.Image])],
+  image_cache : Array[@asset.Handle[@asset.Image]?],
 ) -> @render3d.MeshMaterial3d? {
   guard material_index >= 0 && material_index < doc.materials.length() else {
     return None
@@ -1177,35 +1222,35 @@ fn scene_build_material_component(
   if def.base_color_texture is Some(texture_index) {
     material = material.with_base_color_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
       ),
     )
   }
   if def.normal_texture is Some(texture_index) {
     material = material.with_normal_map_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
       ),
     )
   }
   if def.emissive_texture is Some(texture_index) {
     material = material.with_emissive_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
       ),
     )
   }
   if def.metallic_roughness_texture is Some(texture_index) {
     material = material.with_metallic_roughness_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
       ),
     )
   }
   if def.occlusion_texture is Some(texture_index) {
     material = material.with_occlusion_texture(
       scene_cached_load_texture(
-        asset_server, gltf_path, doc, texture_index, image_cache,
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
       ),
     )
   }
@@ -1266,7 +1311,10 @@ fn scene_build_from_gltf(
   buffer_bytes : Array[Bytes],
 ) -> Scene {
   let nodes : Array[SceneNode3d] = []
-  let image_cache : Array[(String, @asset.Handle[@asset.Image])] = []
+  let image_cache : Array[@asset.Handle[@asset.Image]?] = []
+  for _ in doc.images {
+    image_cache.push(None)
+  }
   let material_cache : Array[@render3d.MeshMaterial3d?] = []
   for _ in doc.materials {
     material_cache.push(None)
@@ -1326,6 +1374,7 @@ fn scene_build_from_gltf(
                   asset_server,
                   request.gltf_path,
                   doc,
+                  buffer_bytes,
                   material_index,
                   material_cache,
                   image_cache,

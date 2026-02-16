@@ -1473,6 +1473,10 @@ extern "js" fn create_image_bitmap(blob : @js.Any) -> @js.Promise[@js.Any] =
   #| (blob) => createImageBitmap(blob, { premultiplyAlpha: "none", colorSpaceConversion: "none" })
 
 ///|
+extern "js" fn blob_from_uint8array(data : @js.Any) -> @js.Any =
+  #| (data) => new Blob([data])
+
+///|
 extern "js" fn response_blob(response : @js.Any) -> @js.Promise[@js.Any] =
   #| (response) => response.blob()
 

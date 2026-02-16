@@ -578,27 +578,30 @@ fn load_texture_from_assets(
   rel : String,
   nearest : Bool,
 ) -> Int raise {
+  let file_bytes = if rel == "" {
+    Bytes::makei(0, _ => (0).to_byte())
+  } else {
+    let full_path = @rtcore.join_dir(
+      ctx.assets_source.base,
+      strip_leading_slashes(rel),
+    ) catch {
+      _ => join_fs_path(ctx.assets_source.base, rel)
+    }
+    @fs.read_file_to_bytes(full_path) catch {
+      _ => Bytes::makei(0, _ => (0).to_byte())
+    }
+  }
+  load_texture_from_bytes(ctx, file_bytes, nearest)
+}
+
+///|
+fn load_texture_from_bytes(
+  ctx : HostContext,
+  bytes : Bytes,
+  nearest : Bool,
+) -> Int raise {
   ensure_gpu_backend(ctx)
-  if rel == "" {
-    return ctx.gpu
-      .unwrap()
-      .create_texture_rgba8(
-        1,
-        1,
-        Bytes::makei(4, _ => (255).to_byte()),
-        nearest,
-      )
-  }
-  let full_path = @rtcore.join_dir(
-    ctx.assets_source.base,
-    strip_leading_slashes(rel),
-  ) catch {
-    _ => join_fs_path(ctx.assets_source.base, rel)
-  }
-  let file_bytes = @fs.read_file_to_bytes(full_path) catch {
-    _ => Bytes::makei(0, _ => (0).to_byte())
-  }
-  let decoded = @img.decode_rgba8(file_bytes)
+  let decoded = @img.decode_rgba8(bytes)
   match decoded {
     Some(img) => {
       let w = img.width()
@@ -1860,6 +1863,36 @@ pub fn add_mgstudio_host_imports(
         _ => {
           @debug.debug("asset_load_texture failed")
           host_fail("asset_load_texture", "<error>")
+        }
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_load_texture_bytes",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        if args.length() >= 2 &&
+          args[0] is @types.Value::I32(bytes_id) &&
+          args[1] is @types.Value::I32(nearest_i32) {
+          let nearest = nearest_i32 != 0
+          let bytes = bytes_table_get(ctx, bytes_id).unwrap_or(
+            Bytes::makei(0, _ => (0).to_byte()),
+          )
+          ok_i32(load_texture_from_bytes(ctx, bytes, nearest))
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        _ => {
+          @debug.debug("asset_load_texture_bytes failed")
+          host_fail("asset_load_texture_bytes", "<error>")
         }
       }
     },

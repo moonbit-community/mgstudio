@@ -160,6 +160,9 @@ pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int {
 fn host_asset_load_texture_id(path_id~ : Int, nearest~ : Bool) -> Int = "mgstudio_host" "asset_load_texture"
 
 ///|
+pub fn host_asset_load_texture_bytes(bytes_id~ : Int, nearest~ : Bool) -> Int = "mgstudio_host" "asset_load_texture_bytes"
+
+///|
 pub fn host_asset_load_wgsl(path~ : String) -> Int {
   @core.with_host_string_id(path, fn(path_id) {
     host_asset_load_wgsl_id(path_id)
@@ -248,6 +251,19 @@ pub fn AssetServer::load_nearest(
   let handle = Handle::new(id)
   asset_register_image_path(path, handle)
   handle
+}
+
+///|
+pub fn AssetServer::load_texture_bytes(
+  self : AssetServer,
+  bytes : Bytes,
+  nearest : Bool,
+) -> Handle[Image] {
+  self |> ignore
+  let id = @core.with_host_bytes_id(bytes, fn(bytes_id) {
+    host_asset_load_texture_bytes(bytes_id~, nearest~)
+  })
+  Handle::new(id)
 }
 
 ///|
