@@ -91,8 +91,15 @@ priv struct GltfMaterialDef {
 }
 
 ///|
+priv struct GltfSamplerDef {
+  nearest : Bool
+  repeat : Bool
+}
+
+///|
 priv struct GltfTextureDef {
   source : Int?
+  sampler : Int?
 }
 
 ///|
@@ -112,6 +119,7 @@ priv struct ParsedGltfDocument {
   nodes : Array[GltfNodeDef]
   scenes : Array[GltfSceneDef]
   materials : Array[GltfMaterialDef]
+  samplers : Array[GltfSamplerDef]
   textures : Array[GltfTextureDef]
   images : Array[GltfImageDef]
 }
@@ -437,6 +445,16 @@ fn gltf_parse_material_unlit(obj : Map[String, Json]) -> Bool {
 }
 
 ///|
+fn gltf_sampler_filter_is_nearest(filter : Int) -> Bool {
+  filter == 9728 || filter == 9984 || filter == 9986
+}
+
+///|
+fn gltf_sampler_wrap_is_repeat(wrap_mode : Int) -> Bool {
+  wrap_mode == 10497 || wrap_mode == 33648
+}
+
+///|
 fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   let root_json = @json.parse(source) catch { _ => return None }
   guard json_object(root_json) is Some(root) else { return None }
@@ -680,13 +698,44 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
     }
   }
 
+  let samplers : Array[GltfSamplerDef] = []
+  if json_get_array(root, "samplers") is Some(entries) {
+    for entry in entries {
+      if json_object(entry) is Some(obj) {
+        let nearest = match json_get_int(obj, "magFilter") {
+          Some(mag_filter) => gltf_sampler_filter_is_nearest(mag_filter)
+          None =>
+            match json_get_int(obj, "minFilter") {
+              Some(min_filter) => gltf_sampler_filter_is_nearest(min_filter)
+              None => false
+            }
+        }
+        let repeat = match
+          (json_get_int(obj, "wrapS"), json_get_int(obj, "wrapT")) {
+          (Some(wrap_s), Some(wrap_t)) =>
+            gltf_sampler_wrap_is_repeat(wrap_s) &&
+            gltf_sampler_wrap_is_repeat(wrap_t)
+          (Some(wrap_s), None) => gltf_sampler_wrap_is_repeat(wrap_s)
+          (None, Some(wrap_t)) => gltf_sampler_wrap_is_repeat(wrap_t)
+          (None, None) => true
+        }
+        samplers.push({ nearest, repeat })
+      } else {
+        samplers.push({ nearest: false, repeat: true })
+      }
+    }
+  }
+
   let textures : Array[GltfTextureDef] = []
   if json_get_array(root, "textures") is Some(entries) {
     for entry in entries {
       if json_object(entry) is Some(obj) {
-        textures.push({ source: json_get_int(obj, "source") })
+        textures.push({
+          source: json_get_int(obj, "source"),
+          sampler: json_get_int(obj, "sampler"),
+        })
       } else {
-        textures.push({ source: None })
+        textures.push({ source: None, sampler: None })
       }
     }
   }
@@ -715,6 +764,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
     nodes,
     scenes,
     materials,
+    samplers,
     textures,
     images,
   })
@@ -1121,6 +1171,38 @@ fn path_join(base_dir : String, relative : String) -> String {
 }
 
 ///|
+fn gltf_texture_image_sampler(
+  doc : ParsedGltfDocument,
+  texture_index : Int,
+) -> @asset.ImageSampler {
+  guard texture_index >= 0 && texture_index < doc.textures.length() else {
+    return @asset.ImageSampler::Linear
+  }
+
+  let mut nearest = false
+  let mut repeat = true
+  if doc.textures[texture_index].sampler is Some(sampler_index) &&
+    sampler_index >= 0 &&
+    sampler_index < doc.samplers.length() {
+    let sampler = doc.samplers[sampler_index]
+    nearest = sampler.nearest
+    repeat = sampler.repeat
+  }
+
+  if nearest {
+    if repeat {
+      @asset.ImageSampler::NearestRepeat
+    } else {
+      @asset.ImageSampler::Nearest
+    }
+  } else if repeat {
+    @asset.ImageSampler::LinearRepeat
+  } else {
+    @asset.ImageSampler::Linear
+  }
+}
+
+///|
 fn gltf_buffer_view_bytes(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
@@ -1188,6 +1270,10 @@ fn scene_cached_load_texture(
       asset_server.load_texture_bytes(image_blob, false)
     }
   }
+  @asset.asset_set_texture_sampler(
+    handle,
+    gltf_texture_image_sampler(doc, texture_index),
+  )
   cache[image_index] = Some(handle)
   Some(handle)
 }

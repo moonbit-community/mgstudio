@@ -35,6 +35,16 @@ fn push_f32_le(out : Array[Byte], value : Float) -> Unit {
 }
 
 ///|
+fn sampler_tag(sampler : @asset.ImageSampler) -> Int {
+  match sampler {
+    @asset.ImageSampler::Linear => 0
+    @asset.ImageSampler::LinearRepeat => 1
+    @asset.ImageSampler::Nearest => 2
+    @asset.ImageSampler::NearestRepeat => 3
+  }
+}
+
+///|
 test "scene gltf wb: decode data uri base64" {
   let decoded = data_uri_decode_bytes(
     "data:application/octet-stream;base64,AAEC/w==",
@@ -153,4 +163,33 @@ test "scene gltf wb: image bufferView bytes" {
   inspect(bytes.length(), content="2")
   inspect(bytes[0].to_int() & 0xFF, content="20")
   inspect(bytes[1].to_int() & 0xFF, content="30")
+}
+
+///|
+test "scene gltf wb: parse sampler and texture mapping" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[]}]," +
+    "\"nodes\":[]," +
+    "\"meshes\":[]," +
+    "\"samplers\":[" +
+    "{\"magFilter\":9728,\"wrapS\":10497,\"wrapT\":10497}," +
+    "{\"minFilter\":9984,\"wrapS\":33071,\"wrapT\":33071}" +
+    "]," +
+    "\"textures\":[" +
+    "{\"sampler\":0}," +
+    "{\"sampler\":1}," +
+    "{}" +
+    "]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.samplers.length(), content="2")
+  inspect(doc.samplers[0].nearest, content="true")
+  inspect(doc.samplers[0].repeat, content="true")
+  inspect(doc.samplers[1].nearest, content="true")
+  inspect(doc.samplers[1].repeat, content="false")
+  inspect(sampler_tag(gltf_texture_image_sampler(doc, 0)), content="3")
+  inspect(sampler_tag(gltf_texture_image_sampler(doc, 1)), content="2")
+  inspect(sampler_tag(gltf_texture_image_sampler(doc, 2)), content="1")
 }
