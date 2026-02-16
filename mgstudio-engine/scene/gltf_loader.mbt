@@ -79,6 +79,8 @@ priv struct GltfSceneDef {
 priv struct GltfMaterialDef {
   base_color : @render2d.Color
   base_color_texture : Int?
+  base_color_uv_offset : @math.Vec2
+  base_color_uv_scale : @math.Vec2
   normal_texture : Int?
   emissive_texture : Int?
   metallic_roughness_texture : Int?
@@ -256,6 +258,15 @@ fn gltf_parse_vec3(value : Json, default_value : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
+fn gltf_parse_vec2(value : Json, default_value : @math.Vec2) -> @math.Vec2 {
+  guard json_array(value) is Some(items) else { return default_value }
+  guard items.length() >= 2 else { return default_value }
+  guard json_array_float(items, 0) is Some(x) else { return default_value }
+  guard json_array_float(items, 1) is Some(y) else { return default_value }
+  @math.Vec2::new(x, y)
+}
+
+///|
 fn gltf_parse_quat(value : Json, default_value : @math.Quat) -> @math.Quat {
   guard json_array(value) is Some(values) else { return default_value }
   guard json_array_float(values, 0) is Some(x) else { return default_value }
@@ -414,6 +425,27 @@ fn gltf_parse_node_transform(obj : Map[String, Json]) -> @math.Transform {
 fn gltf_parse_texture_index(obj : Map[String, Json], key : String) -> Int? {
   guard json_get_object(obj, key) is Some(texture_info) else { return None }
   json_get_int(texture_info, "index")
+}
+
+///|
+fn gltf_parse_texture_transform(
+  texture_info : Map[String, Json],
+) -> (@math.Vec2, @math.Vec2) {
+  let mut uv_offset = @math.Vec2::new(0.0F, 0.0F)
+  let mut uv_scale = @math.Vec2::new(1.0F, 1.0F)
+  guard json_get_object(texture_info, "extensions") is Some(extensions) else {
+    return (uv_offset, uv_scale)
+  }
+  guard json_get_object(extensions, "KHR_texture_transform") is Some(transform) else {
+    return (uv_offset, uv_scale)
+  }
+  if transform.get("offset") is Some(value) {
+    uv_offset = gltf_parse_vec2(value, uv_offset)
+  }
+  if transform.get("scale") is Some(value) {
+    uv_scale = gltf_parse_vec2(value, uv_scale)
+  }
+  (uv_offset, uv_scale)
 }
 
 ///|
@@ -640,6 +672,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         let mut metallic = 1.0F
         let mut roughness = 1.0F
         let mut base_color_texture : Int? = None
+        let mut base_color_uv_offset = @math.Vec2::new(0.0F, 0.0F)
+        let mut base_color_uv_scale = @math.Vec2::new(1.0F, 1.0F)
         let mut metallic_roughness_texture : Int? = None
 
         if json_get_object(obj, "pbrMetallicRoughness") is Some(pbr) {
@@ -652,7 +686,14 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           if json_get_float(pbr, "roughnessFactor") is Some(value) {
             roughness = value
           }
-          base_color_texture = gltf_parse_texture_index(pbr, "baseColorTexture")
+          if json_get_object(pbr, "baseColorTexture") is Some(base_color_tex) {
+            base_color_texture = json_get_int(base_color_tex, "index")
+            let (uv_offset, uv_scale) = gltf_parse_texture_transform(
+              base_color_tex,
+            )
+            base_color_uv_offset = uv_offset
+            base_color_uv_scale = uv_scale
+          }
           metallic_roughness_texture = gltf_parse_texture_index(
             pbr, "metallicRoughnessTexture",
           )
@@ -670,6 +711,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         materials.push({
           base_color,
           base_color_texture,
+          base_color_uv_offset,
+          base_color_uv_scale,
           normal_texture: gltf_parse_texture_index(obj, "normalTexture"),
           emissive_texture: gltf_parse_texture_index(obj, "emissiveTexture"),
           metallic_roughness_texture,
@@ -684,6 +727,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         materials.push({
           base_color: @render2d.Color::white(),
           base_color_texture: None,
+          base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
+          base_color_uv_scale: @math.Vec2::new(1.0F, 1.0F),
           normal_texture: None,
           emissive_texture: None,
           metallic_roughness_texture: None,
@@ -1300,6 +1345,8 @@ fn scene_build_material_component(
   let mut material = @render3d.StandardMaterial::default()
   material = material.with_base_color(def.base_color)
   material = material.with_alpha_mode(def.alpha_mode)
+  material = material.with_uv_offset(def.base_color_uv_offset)
+  material = material.with_uv_scale(def.base_color_uv_scale)
   material = material.with_metallic(def.metallic)
   material = material.with_perceptual_roughness(def.roughness)
   material = material.with_emissive(def.emissive)

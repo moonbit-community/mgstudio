@@ -166,6 +166,8 @@ pub fn SpotLight::new(@render2d.Color, Float, Float, Float, Float, Bool) -> Self
 pub struct StandardMaterial {
   base_color : @render2d.Color
   base_color_texture : @asset.Handle[@asset.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
   normal_map_texture : @asset.Handle[@asset.Image]?
   emissive : @render2d.Color
   emissive_texture : @asset.Handle[@asset.Image]?
@@ -191,6 +193,8 @@ pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@asset.Imag
 pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
+pub fn StandardMaterial::with_uv_offset(Self, @math.Vec2) -> Self
+pub fn StandardMaterial::with_uv_scale(Self, @math.Vec2) -> Self
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2

@@ -193,3 +193,34 @@ test "scene gltf wb: parse sampler and texture mapping" {
   inspect(sampler_tag(gltf_texture_image_sampler(doc, 1)), content="2")
   inspect(sampler_tag(gltf_texture_image_sampler(doc, 2)), content="1")
 }
+
+///|
+test "scene gltf wb: parse KHR_texture_transform on base color texture" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[]}]," +
+    "\"nodes\":[]," +
+    "\"meshes\":[]," +
+    "\"materials\":[{" +
+    "\"pbrMetallicRoughness\":{" +
+    "\"baseColorTexture\":{" +
+    "\"index\":3," +
+    "\"extensions\":{" +
+    "\"KHR_texture_transform\":{" +
+    "\"offset\":[0.25,0.5]," +
+    "\"scale\":[2.0,0.5]" +
+    "}" +
+    "}" +
+    "}" +
+    "}" +
+    "}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.materials.length(), content="1")
+  inspect(doc.materials[0].base_color_texture, content="Some(3)")
+  inspect(doc.materials[0].base_color_uv_offset.x.to_double(), content="0.25")
+  inspect(doc.materials[0].base_color_uv_offset.y.to_double(), content="0.5")
+  inspect(doc.materials[0].base_color_uv_scale.x.to_double(), content="2")
+  inspect(doc.materials[0].base_color_uv_scale.y.to_double(), content="0.5")
+}

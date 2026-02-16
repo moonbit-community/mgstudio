@@ -232,6 +232,8 @@ pub(all) enum Face3d {
 pub struct StandardMaterial {
   base_color : @render2d.Color
   base_color_texture : @asset.Handle[@asset.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
   normal_map_texture : @asset.Handle[@asset.Image]?
   emissive : @render2d.Color
   emissive_texture : @asset.Handle[@asset.Image]?
@@ -250,6 +252,8 @@ pub fn StandardMaterial::default() -> StandardMaterial {
   StandardMaterial::{
     base_color: @render2d.Color::white(),
     base_color_texture: None,
+    uv_offset: @math.Vec2::new(0.0F, 0.0F),
+    uv_scale: @math.Vec2::new(1.0F, 1.0F),
     normal_map_texture: None,
     emissive: @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     emissive_texture: None,
@@ -277,6 +281,8 @@ pub fn StandardMaterial::from_color(
   StandardMaterial::{
     base_color: color,
     base_color_texture: default_value.base_color_texture,
+    uv_offset: default_value.uv_offset,
+    uv_scale: default_value.uv_scale,
     normal_map_texture: default_value.normal_map_texture,
     emissive: default_value.emissive,
     emissive_texture: default_value.emissive_texture,
@@ -313,6 +319,22 @@ pub fn StandardMaterial::with_base_color_texture(
   base_color_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, base_color_texture, }
+}
+
+///|
+pub fn StandardMaterial::with_uv_offset(
+  self : StandardMaterial,
+  uv_offset : @math.Vec2,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, uv_offset, }
+}
+
+///|
+pub fn StandardMaterial::with_uv_scale(
+  self : StandardMaterial,
+  uv_scale : @math.Vec2,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, uv_scale, }
 }
 
 ///|
@@ -1648,10 +1670,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         color_b=mesh.material.base_color.b,
         color_a=draw_alpha,
         texture_id~,
-        uv_offset_x=0.0F,
-        uv_offset_y=0.0F,
-        uv_scale_x=1.0F,
-        uv_scale_y=1.0F,
+        uv_offset_x=mesh.material.uv_offset.x,
+        uv_offset_y=mesh.material.uv_offset.y,
+        uv_scale_x=mesh.material.uv_scale.x,
+        uv_scale_y=mesh.material.uv_scale.y,
         normal_texture_id~,
         emissive_texture_id~,
         metallic_roughness_texture_id~,
