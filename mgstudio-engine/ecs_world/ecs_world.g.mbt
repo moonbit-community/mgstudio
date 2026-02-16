@@ -89,6 +89,9 @@ pub struct World {
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
   camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
+  screen_space_reflections : @core.ComponentStore[
+    @render3d.ScreenSpaceReflections,
+  ]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
@@ -246,6 +249,7 @@ pub fn World::new() -> World {
     external_impulse2d: @core.ComponentStore::new(),
     camera_projection3d: @core.ComponentStore::new(),
     sub_camera_view3d: @core.ComponentStore::new(),
+    screen_space_reflections: @core.ComponentStore::new(),
     rapier_body_handle2d: @core.ComponentStore::new(),
     rigid_body_enabled2d: @core.ComponentStore::new(),
     rapier_body_handle3d: @core.ComponentStore::new(),
@@ -379,6 +383,7 @@ pub fn World::despawn(
   self.external_impulse2d.remove(entity) |> ignore
   self.camera_projection3d.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
+  self.screen_space_reflections.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
@@ -492,6 +497,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.external_impulse2d.remove(entity) |> ignore
   self.camera_projection3d.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
+  self.screen_space_reflections.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
@@ -1010,6 +1016,13 @@ pub impl @render3d.Has_SubCameraView3d for World with get_sub_camera_view3d_stor
   self,
 ) {
   self.sub_camera_view3d
+}
+
+///|
+pub impl @render3d.Has_ScreenSpaceReflections for World with get_screen_space_reflections_store(
+  self,
+) {
+  self.screen_space_reflections
 }
 
 ///|

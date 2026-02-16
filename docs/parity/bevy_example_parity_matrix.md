@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 19 | 32 | 0 |
+| `3d` | 66 | 15 | 20 | 31 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **42** | **312** | **3** |
+| **Total** | **402** | **45** | **43** | **311** | **3** |
 
 ## Example Inventory
 
@@ -143,7 +143,7 @@ Notes:
 | `bevy/examples/3d/split_screen.rs` | `3d` | `mgstudio-engine/examples/3d/split_screen` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/spotlight.rs` | `3d` | `mgstudio-engine/examples/3d/spotlight` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/ssao.rs` | `3d` | `mgstudio-engine/examples/3d/ssao` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/ssr.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/ssr.rs` | `3d` | `mgstudio-engine/examples/3d/ssr` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/texture.rs` | `3d` | `mgstudio-engine/examples/3d/texture` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/tonemapping.rs` | `3d` | `mgstudio-engine/examples/3d/tonemapping` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/transmission.rs` | `3d` | `mgstudio-engine/examples/3d/transmission` | `Adapted` | `team-render` |  |

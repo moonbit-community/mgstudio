@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/ssr"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum DisplayedBase {
+  Water
+  Metallic
+  RedPlane
+}
+
+pub(all) enum DisplayedModel {
+  Cube
+  FlightHelmet
+  Capsules
+}
+
+// Type aliases
+
+// Traits
+

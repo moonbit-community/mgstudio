@@ -82,7 +82,7 @@ bevy/examples/3d/spherical_area_lights.rs,3d,spherical_area_lights,,Blocked,team
 bevy/examples/3d/split_screen.rs,3d,split_screen,mgstudio-engine/examples/3d/split_screen,Adapted,team-render,
 bevy/examples/3d/spotlight.rs,3d,spotlight,mgstudio-engine/examples/3d/spotlight,Exact,team-render,
 bevy/examples/3d/ssao.rs,3d,ssao,mgstudio-engine/examples/3d/ssao,Adapted,team-render,
-bevy/examples/3d/ssr.rs,3d,ssr,,Blocked,team-render,
+bevy/examples/3d/ssr.rs,3d,ssr,mgstudio-engine/examples/3d/ssr,Adapted,team-render,
 bevy/examples/3d/texture.rs,3d,texture,mgstudio-engine/examples/3d/texture,Exact,team-render,
 bevy/examples/3d/tonemapping.rs,3d,tonemapping,mgstudio-engine/examples/3d/tonemapping,Adapted,team-render,
 bevy/examples/3d/transmission.rs,3d,transmission,mgstudio-engine/examples/3d/transmission,Adapted,team-render,

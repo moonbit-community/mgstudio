@@ -212,6 +212,191 @@ pub fn SubCameraView3d::with_offset(
 }
 
 ///|
+fn screen_space_reflections_safe_range(
+  start : Float,
+  end_ : Float,
+) -> (Float, Float) {
+  let safe_start = clamp01(start)
+  let safe_end = clamp01(end_)
+  (minf(safe_start, safe_end), maxf(safe_start, safe_end))
+}
+
+///|
+fn screen_space_reflections_safe_thickness(thickness : Float) -> Float {
+  if thickness < 0.0F {
+    0.0F
+  } else {
+    thickness
+  }
+}
+
+///|
+fn screen_space_reflections_safe_linear_steps(linear_steps : Int) -> Int {
+  if linear_steps <= 0 {
+    1
+  } else {
+    linear_steps
+  }
+}
+
+///|
+fn screen_space_reflections_safe_linear_march_exponent(
+  linear_march_exponent : Float,
+) -> Float {
+  if linear_march_exponent <= 0.0F {
+    1.0F
+  } else {
+    linear_march_exponent
+  }
+}
+
+///|
+fn screen_space_reflections_safe_bisection_steps(bisection_steps : Int) -> Int {
+  if bisection_steps < 0 {
+    0
+  } else {
+    bisection_steps
+  }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct ScreenSpaceReflections {
+  min_perceptual_roughness_start : Float
+  min_perceptual_roughness_end : Float
+  max_perceptual_roughness_start : Float
+  max_perceptual_roughness_end : Float
+  thickness : Float
+  linear_steps : Int
+  linear_march_exponent : Float
+  edge_fadeout_start : Float
+  edge_fadeout_end : Float
+  bisection_steps : Int
+  use_secant : Bool
+}
+
+///|
+pub fn ScreenSpaceReflections::default() -> ScreenSpaceReflections {
+  let (min_start, min_end) = screen_space_reflections_safe_range(0.08F, 0.12F)
+  let (max_start, max_end) = screen_space_reflections_safe_range(0.55F, 0.6F)
+  let (edge_start, edge_end) = screen_space_reflections_safe_range(0.0F, 0.0F)
+  ScreenSpaceReflections::{
+    min_perceptual_roughness_start: min_start,
+    min_perceptual_roughness_end: min_end,
+    max_perceptual_roughness_start: max_start,
+    max_perceptual_roughness_end: max_end,
+    thickness: screen_space_reflections_safe_thickness(0.25F),
+    linear_steps: screen_space_reflections_safe_linear_steps(10),
+    linear_march_exponent: screen_space_reflections_safe_linear_march_exponent(
+      1.0F,
+    ),
+    edge_fadeout_start: edge_start,
+    edge_fadeout_end: edge_end,
+    bisection_steps: screen_space_reflections_safe_bisection_steps(5),
+    use_secant: true,
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_min_perceptual_roughness(
+  self : ScreenSpaceReflections,
+  start : Float,
+  end_ : Float,
+) -> ScreenSpaceReflections {
+  let (safe_start, safe_end) = screen_space_reflections_safe_range(start, end_)
+  ScreenSpaceReflections::{
+    ..self,
+    min_perceptual_roughness_start: safe_start,
+    min_perceptual_roughness_end: safe_end,
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_max_perceptual_roughness(
+  self : ScreenSpaceReflections,
+  start : Float,
+  end_ : Float,
+) -> ScreenSpaceReflections {
+  let (safe_start, safe_end) = screen_space_reflections_safe_range(start, end_)
+  ScreenSpaceReflections::{
+    ..self,
+    max_perceptual_roughness_start: safe_start,
+    max_perceptual_roughness_end: safe_end,
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_edge_fadeout(
+  self : ScreenSpaceReflections,
+  start : Float,
+  end_ : Float,
+) -> ScreenSpaceReflections {
+  let (safe_start, safe_end) = screen_space_reflections_safe_range(start, end_)
+  ScreenSpaceReflections::{
+    ..self,
+    edge_fadeout_start: safe_start,
+    edge_fadeout_end: safe_end,
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_thickness(
+  self : ScreenSpaceReflections,
+  thickness : Float,
+) -> ScreenSpaceReflections {
+  ScreenSpaceReflections::{
+    ..self,
+    thickness: screen_space_reflections_safe_thickness(thickness),
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_linear_steps(
+  self : ScreenSpaceReflections,
+  linear_steps : Int,
+) -> ScreenSpaceReflections {
+  ScreenSpaceReflections::{
+    ..self,
+    linear_steps: screen_space_reflections_safe_linear_steps(linear_steps),
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_linear_march_exponent(
+  self : ScreenSpaceReflections,
+  linear_march_exponent : Float,
+) -> ScreenSpaceReflections {
+  ScreenSpaceReflections::{
+    ..self,
+    linear_march_exponent: screen_space_reflections_safe_linear_march_exponent(
+      linear_march_exponent,
+    ),
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_bisection_steps(
+  self : ScreenSpaceReflections,
+  bisection_steps : Int,
+) -> ScreenSpaceReflections {
+  ScreenSpaceReflections::{
+    ..self,
+    bisection_steps: screen_space_reflections_safe_bisection_steps(
+      bisection_steps,
+    ),
+  }
+}
+
+///|
+pub fn ScreenSpaceReflections::with_use_secant(
+  self : ScreenSpaceReflections,
+  use_secant : Bool,
+) -> ScreenSpaceReflections {
+  ScreenSpaceReflections::{ ..self, use_secant, }
+}
+
+///|
 pub(all) enum AlphaMode3d {
   Opaque
   Mask(Float)
@@ -938,6 +1123,7 @@ pub struct Camera3dBundle {
   camera : @render2d.Camera
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
+  screen_space_reflections : ScreenSpaceReflections?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -953,6 +1139,7 @@ pub fn Camera3dBundle::new(
     camera,
     projection: CameraProjection3d::default(),
     sub_camera_view: None,
+    screen_space_reflections: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -970,6 +1157,7 @@ pub fn Camera3dBundle::new_with_projection(
     camera,
     projection: CameraProjection3d::{ projection, },
     sub_camera_view: None,
+    screen_space_reflections: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -983,6 +1171,14 @@ pub fn Camera3dBundle::with_sub_camera_view(
   sub_camera_view : SubCameraView3d?,
 ) -> Camera3dBundle {
   Camera3dBundle::{ ..self, sub_camera_view, }
+}
+
+///|
+pub fn Camera3dBundle::with_screen_space_reflections(
+  self : Camera3dBundle,
+  screen_space_reflections : ScreenSpaceReflections?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, screen_space_reflections, }
 }
 
 ///|
@@ -1014,7 +1210,7 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 ///|
@@ -1032,6 +1228,11 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
   world.get_camera_projection3d_store().insert(entity, self.projection, tick)
   if self.sub_camera_view is Some(sub_camera_view) {
     world.get_sub_camera_view3d_store().insert(entity, sub_camera_view, tick)
+  }
+  if self.screen_space_reflections is Some(screen_space_reflections) {
+    world
+    .get_screen_space_reflections_store()
+    .insert(entity, screen_space_reflections, tick)
   }
   world.get_camera_store().insert(entity, self.camera, tick)
   world.get_render_target_store().insert(entity, self.target, tick)
@@ -1069,6 +1270,7 @@ priv struct Camera3dInstance {
   camera : @render2d.Camera
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
+  screen_space_reflections : ScreenSpaceReflections?
   transform : @math.Transform
   target_id : Int
   target_size : @math.IVec2
@@ -1508,6 +1710,147 @@ fn clamp01(value : Float) -> Float {
 }
 
 ///|
+fn absf(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_ssr_ramp(value : Float, start : Float, end_ : Float) -> Float {
+  let safe_start = minf(start, end_)
+  let safe_end = maxf(start, end_)
+  if safe_end <= safe_start + 0.000001F {
+    if value >= safe_end {
+      1.0F
+    } else {
+      0.0F
+    }
+  } else if value <= safe_start {
+    0.0F
+  } else if value >= safe_end {
+    1.0F
+  } else {
+    (value - safe_start) / (safe_end - safe_start)
+  }
+}
+
+///|
+fn render3d_ssr_roughness_weight(
+  ssr : ScreenSpaceReflections,
+  roughness : Float,
+) -> Float {
+  let min_weight = render3d_ssr_ramp(
+    roughness,
+    ssr.min_perceptual_roughness_start,
+    ssr.min_perceptual_roughness_end,
+  )
+  let max_fade = render3d_ssr_ramp(
+    roughness,
+    ssr.max_perceptual_roughness_start,
+    ssr.max_perceptual_roughness_end,
+  )
+  clamp01(min_weight * (1.0F - max_fade))
+}
+
+///|
+fn render3d_ssr_edge_weight(
+  ssr : ScreenSpaceReflections,
+  camera_transform : @math.Transform,
+  camera_fov_y : Float,
+  aspect_ratio : Float,
+  mesh_translation : @math.Vec3,
+) -> Float {
+  let safe_fov_y = if camera_fov_y <= 0.0001F { 0.0001F } else { camera_fov_y }
+  let safe_aspect_ratio = if aspect_ratio <= 0.0001F {
+    1.0F
+  } else {
+    aspect_ratio
+  }
+  let half_fov = safe_fov_y * 0.5F
+  let sin_half_fov = @math.sin(half_fov)
+  let cos_half_fov = @math.cos(half_fov)
+  if absf(cos_half_fov) <= 0.000001F {
+    return 1.0F
+  }
+  let tan_half_fov = sin_half_fov / cos_half_fov
+  if tan_half_fov <= 0.0001F {
+    return 1.0F
+  }
+
+  let to_mesh = mesh_translation.sub(camera_transform.translation)
+  let forward = render3d_transform_forward(camera_transform)
+  let depth = to_mesh.dot(forward)
+  if depth <= 0.0001F {
+    return 0.0F
+  }
+
+  let right = quat_rotate_vec3(
+    camera_transform.rotation,
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+  ).normalize_or_zero()
+  let up = quat_rotate_vec3(
+    camera_transform.rotation,
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ).normalize_or_zero()
+
+  let view_x = to_mesh.dot(right)
+  let view_y = to_mesh.dot(up)
+  let ndc_x = absf(view_x) / (depth * tan_half_fov * safe_aspect_ratio)
+  let ndc_y = absf(view_y) / (depth * tan_half_fov)
+  let ndc_max = maxf(ndc_x, ndc_y)
+  let edge_distance = clamp01(1.0F - ndc_max)
+
+  let edge_start = minf(ssr.edge_fadeout_start, ssr.edge_fadeout_end)
+  let edge_end = maxf(ssr.edge_fadeout_start, ssr.edge_fadeout_end)
+  if edge_end <= edge_start + 0.000001F {
+    1.0F
+  } else {
+    render3d_ssr_ramp(edge_distance, edge_start, edge_end)
+  }
+}
+
+///|
+fn render3d_ssr_strength(
+  ssr : ScreenSpaceReflections,
+  roughness : Float,
+  camera_transform : @math.Transform,
+  camera_fov_y : Float,
+  aspect_ratio : Float,
+  mesh_translation : @math.Vec3,
+) -> Float {
+  let roughness_weight = render3d_ssr_roughness_weight(ssr, roughness)
+  if roughness_weight <= 0.0F {
+    return 0.0F
+  }
+
+  let edge_weight = render3d_ssr_edge_weight(
+    ssr, camera_transform, camera_fov_y, aspect_ratio, mesh_translation,
+  )
+  if edge_weight <= 0.0F {
+    return 0.0F
+  }
+
+  let steps = Float::from_double(
+    (ssr.linear_steps + ssr.bisection_steps).to_double(),
+  )
+  let steps_factor = clamp01(steps / 20.0F)
+  let thickness_factor = clamp01(ssr.thickness / 1.5F)
+  let march_factor = clamp01(1.0F / ssr.linear_march_exponent)
+  let secant_factor = if ssr.use_secant { 1.0F } else { 0.9F }
+  clamp01(
+    roughness_weight *
+    edge_weight *
+    clamp01(0.35F + steps_factor * 0.65F) *
+    clamp01(0.4F + thickness_factor * 0.6F) *
+    clamp01(0.75F + march_factor * 0.25F) *
+    secant_factor,
+  )
+}
+
+///|
 fn render3d_pow_e(value : Float) -> Float {
   @math.pow(2.718281828459045F, value)
 }
@@ -1675,7 +2018,7 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -1686,6 +2029,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let camera_store = world.get_camera_store()
   let projection_store = world.get_camera_projection3d_store()
   let sub_camera_view_store = world.get_sub_camera_view3d_store()
+  let screen_space_reflections_store = world.get_screen_space_reflections_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
   let transform_store = world.get_transform_store()
@@ -1700,6 +2044,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       None => CameraProjection3d::default()
     }
     let sub_camera_view = sub_camera_view_store.get(entity)
+    let screen_space_reflections = screen_space_reflections_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
       None => @render2d.RenderTarget::Screen
@@ -1727,6 +2072,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           camera: camera_clamped,
           projection,
           sub_camera_view,
+          screen_space_reflections,
           transform,
           target_id: target_info.target_id,
           target_size: target_info.target_size,
@@ -1960,6 +2306,32 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         0.02F,
         draw_roughness * (1.0F - anisotropy_strength * 0.4F),
       )
+      let mut draw_surface_roughness = if anisotropy_strength > 0.0F {
+        anisotropy_draw_roughness
+      } else {
+        draw_roughness
+      }
+      let mut draw_reflectance = clearcoat_reflectance
+      if camera.screen_space_reflections is Some(ssr) {
+        let ssr_strength = render3d_ssr_strength(
+          ssr,
+          draw_surface_roughness,
+          camera.transform,
+          camera_fov_y,
+          aspect_ratio,
+          mesh.transform.translation,
+        )
+        if ssr_strength > 0.0F {
+          draw_reflectance = clamp01(
+            draw_reflectance +
+            (1.0F - draw_surface_roughness) * ssr_strength * 0.45F,
+          )
+          draw_surface_roughness = maxf(
+            0.02F,
+            draw_surface_roughness * (1.0F - ssr_strength * 0.35F),
+          )
+        }
+      }
       @window.host_gpu_draw_mesh3d(
         mesh_id=mesh.mesh_id,
         x=mesh.transform.translation.x,
@@ -1990,12 +2362,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         emissive_b=mesh.material.emissive.b,
         unlit=if mesh.material.unlit { 1.0F } else { 0.0F },
         metallic=mesh.material.metallic,
-        roughness=if anisotropy_strength > 0.0F {
-          anisotropy_draw_roughness
-        } else {
-          draw_roughness
-        },
-        reflectance=clearcoat_reflectance,
+        roughness=draw_surface_roughness,
+        reflectance=draw_reflectance,
       )
     }
     @window.host_gpu_end_pass()

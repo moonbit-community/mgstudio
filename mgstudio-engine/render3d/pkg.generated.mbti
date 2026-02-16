@@ -57,6 +57,7 @@ pub struct Camera3dBundle {
   camera : @render2d.Camera
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
+  screen_space_reflections : ScreenSpaceReflections?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -65,6 +66,7 @@ pub struct Camera3dBundle {
 pub fn Camera3dBundle::new(@render2d.Camera, @math.Transform) -> Self
 pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection3d, @math.Transform) -> Self
 pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(Self, W) -> @core.Entity
+pub fn Camera3dBundle::with_screen_space_reflections(Self, ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
 
 pub struct CameraProjection3d {
@@ -174,6 +176,29 @@ pub(all) enum Projection3d {
 pub fn Projection3d::orthographic_default() -> Self
 pub fn Projection3d::perspective_default() -> Self
 
+pub struct ScreenSpaceReflections {
+  min_perceptual_roughness_start : Float
+  min_perceptual_roughness_end : Float
+  max_perceptual_roughness_start : Float
+  max_perceptual_roughness_end : Float
+  thickness : Float
+  linear_steps : Int
+  linear_march_exponent : Float
+  edge_fadeout_start : Float
+  edge_fadeout_end : Float
+  bisection_steps : Int
+  use_secant : Bool
+}
+pub fn ScreenSpaceReflections::default() -> Self
+pub fn ScreenSpaceReflections::with_bisection_steps(Self, Int) -> Self
+pub fn ScreenSpaceReflections::with_edge_fadeout(Self, Float, Float) -> Self
+pub fn ScreenSpaceReflections::with_linear_march_exponent(Self, Float) -> Self
+pub fn ScreenSpaceReflections::with_linear_steps(Self, Int) -> Self
+pub fn ScreenSpaceReflections::with_max_perceptual_roughness(Self, Float, Float) -> Self
+pub fn ScreenSpaceReflections::with_min_perceptual_roughness(Self, Float, Float) -> Self
+pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
+pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
+
 pub struct SpotLight {
   color : @render2d.Color
   intensity : Float
@@ -246,7 +271,7 @@ pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 // Type aliases
 
 // Traits
-pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 pub(open) trait HasRes_GlobalAmbientLight {
@@ -277,6 +302,10 @@ pub(open) trait Has_PointLight {
   get_point_light_store(Self) -> @core.ComponentStore[PointLight]
 }
 
+pub(open) trait Has_ScreenSpaceReflections {
+  get_screen_space_reflections_store(Self) -> @core.ComponentStore[ScreenSpaceReflections]
+}
+
 pub(open) trait Has_SpotLight {
   get_spot_light_store(Self) -> @core.ComponentStore[SpotLight]
 }
@@ -288,7 +317,7 @@ pub(open) trait Has_SubCameraView3d {
 pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {
