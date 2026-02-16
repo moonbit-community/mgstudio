@@ -174,6 +174,9 @@ pub struct StandardMaterial {
   clearcoat_texture : @asset.Handle[@asset.Image]?
   clearcoat_roughness_texture : @asset.Handle[@asset.Image]?
   clearcoat_normal_texture : @asset.Handle[@asset.Image]?
+  anisotropy_strength : Float
+  anisotropy_rotation : Float
+  anisotropy_texture : @asset.Handle[@asset.Image]?
   emissive : @render2d.Color
   emissive_texture : @asset.Handle[@asset.Image]?
   metallic : Float
@@ -188,6 +191,9 @@ pub struct StandardMaterial {
 pub fn StandardMaterial::default() -> Self
 pub fn StandardMaterial::from_color(@render2d.Color) -> Self
 pub fn StandardMaterial::with_alpha_mode(Self, AlphaMode3d) -> Self
+pub fn StandardMaterial::with_anisotropy_rotation(Self, Float) -> Self
+pub fn StandardMaterial::with_anisotropy_strength(Self, Float) -> Self
+pub fn StandardMaterial::with_anisotropy_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_base_color(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_clearcoat(Self, Float) -> Self

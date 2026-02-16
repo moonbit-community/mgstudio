@@ -240,6 +240,9 @@ pub struct StandardMaterial {
   clearcoat_texture : @asset.Handle[@asset.Image]?
   clearcoat_roughness_texture : @asset.Handle[@asset.Image]?
   clearcoat_normal_texture : @asset.Handle[@asset.Image]?
+  anisotropy_strength : Float
+  anisotropy_rotation : Float
+  anisotropy_texture : @asset.Handle[@asset.Image]?
   emissive : @render2d.Color
   emissive_texture : @asset.Handle[@asset.Image]?
   metallic : Float
@@ -265,6 +268,9 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     clearcoat_texture: None,
     clearcoat_roughness_texture: None,
     clearcoat_normal_texture: None,
+    anisotropy_strength: 0.0F,
+    anisotropy_rotation: 0.0F,
+    anisotropy_texture: None,
     emissive: @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     emissive_texture: None,
     metallic: 0.0F,
@@ -299,6 +305,9 @@ pub fn StandardMaterial::from_color(
     clearcoat_texture: default_value.clearcoat_texture,
     clearcoat_roughness_texture: default_value.clearcoat_roughness_texture,
     clearcoat_normal_texture: default_value.clearcoat_normal_texture,
+    anisotropy_strength: default_value.anisotropy_strength,
+    anisotropy_rotation: default_value.anisotropy_rotation,
+    anisotropy_texture: default_value.anisotropy_texture,
     emissive: default_value.emissive,
     emissive_texture: default_value.emissive_texture,
     metallic: default_value.metallic,
@@ -416,6 +425,37 @@ pub fn StandardMaterial::with_clearcoat_normal_texture(
   clearcoat_normal_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, clearcoat_normal_texture, }
+}
+
+///|
+pub fn StandardMaterial::with_anisotropy_strength(
+  self : StandardMaterial,
+  anisotropy_strength : Float,
+) -> StandardMaterial {
+  let safe_anisotropy_strength = if anisotropy_strength < 0.0F {
+    0.0F
+  } else if anisotropy_strength > 1.0F {
+    1.0F
+  } else {
+    anisotropy_strength
+  }
+  StandardMaterial::{ ..self, anisotropy_strength: safe_anisotropy_strength }
+}
+
+///|
+pub fn StandardMaterial::with_anisotropy_rotation(
+  self : StandardMaterial,
+  anisotropy_rotation : Float,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, anisotropy_rotation, }
+}
+
+///|
+pub fn StandardMaterial::with_anisotropy_texture(
+  self : StandardMaterial,
+  anisotropy_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, anisotropy_texture, }
 }
 
 ///|
@@ -1759,6 +1799,14 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       } else {
         mesh.material.perceptual_roughness
       }
+      let anisotropy_strength = maxf(
+        0.0F,
+        minf(1.0F, mesh.material.anisotropy_strength),
+      )
+      let anisotropy_draw_roughness = maxf(
+        0.02F,
+        draw_roughness * (1.0F - anisotropy_strength * 0.4F),
+      )
       @window.host_gpu_draw_mesh3d(
         mesh_id=mesh.mesh_id,
         x=mesh.transform.translation.x,
@@ -1789,7 +1837,11 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         emissive_b=mesh.material.emissive.b,
         unlit=if mesh.material.unlit { 1.0F } else { 0.0F },
         metallic=mesh.material.metallic,
-        roughness=draw_roughness,
+        roughness=if anisotropy_strength > 0.0F {
+          anisotropy_draw_roughness
+        } else {
+          draw_roughness
+        },
         reflectance=clearcoat_reflectance,
       )
     }

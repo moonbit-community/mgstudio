@@ -258,6 +258,39 @@ test "scene gltf wb: parse KHR_materials_clearcoat" {
 }
 
 ///|
+test "scene gltf wb: parse KHR_materials_anisotropy" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[]}]," +
+    "\"nodes\":[]," +
+    "\"meshes\":[]," +
+    "\"materials\":[{" +
+    "\"extensions\":{" +
+    "\"KHR_materials_anisotropy\":{" +
+    "\"anisotropyStrength\":0.6," +
+    "\"anisotropyRotation\":1.25," +
+    "\"anisotropyTexture\":{\"index\":7}" +
+    "}" +
+    "}" +
+    "}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.materials.length(), content="1")
+  inspect(
+    doc.materials[0].anisotropy_strength >= 0.59F &&
+    doc.materials[0].anisotropy_strength <= 0.61F,
+    content="true",
+  )
+  inspect(
+    doc.materials[0].anisotropy_rotation >= 1.24F &&
+    doc.materials[0].anisotropy_rotation <= 1.26F,
+    content="true",
+  )
+  inspect(doc.materials[0].anisotropy_texture, content="Some(7)")
+}
+
+///|
 test "scene gltf wb: parse node MSFT_lod ids" {
   let source = "{" +
     "\"asset\":{\"version\":\"2.0\"}," +

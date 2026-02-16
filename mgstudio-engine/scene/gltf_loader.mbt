@@ -87,6 +87,9 @@ priv struct GltfMaterialDef {
   clearcoat_texture : Int?
   clearcoat_roughness_texture : Int?
   clearcoat_normal_texture : Int?
+  anisotropy_strength : Float
+  anisotropy_rotation : Float
+  anisotropy_texture : Int?
   normal_texture : Int?
   emissive_texture : Int?
   metallic_roughness_texture : Int?
@@ -536,6 +539,34 @@ fn gltf_parse_material_clearcoat(
 }
 
 ///|
+fn gltf_parse_material_anisotropy(
+  obj : Map[String, Json],
+) -> (Float, Float, Int?) {
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return (0.0F, 0.0F, None)
+  }
+  guard json_get_object(extensions, "KHR_materials_anisotropy")
+    is Some(anisotropy_ext) else {
+    return (0.0F, 0.0F, None)
+  }
+  let anisotropy_strength = match
+    json_get_float(anisotropy_ext, "anisotropyStrength") {
+    Some(v) => if v < 0.0F { 0.0F } else if v > 1.0F { 1.0F } else { v }
+    None => 0.0F
+  }
+  let anisotropy_rotation = match
+    json_get_float(anisotropy_ext, "anisotropyRotation") {
+    Some(v) => v
+    None => 0.0F
+  }
+  (
+    anisotropy_strength,
+    anisotropy_rotation,
+    gltf_parse_texture_index(anisotropy_ext, "anisotropyTexture"),
+  )
+}
+
+///|
 fn gltf_sampler_filter_is_nearest(filter : Int) -> Bool {
   filter == 9728 || filter == 9984 || filter == 9986
 }
@@ -737,6 +768,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         let mut clearcoat_texture : Int? = None
         let mut clearcoat_roughness_texture : Int? = None
         let mut clearcoat_normal_texture : Int? = None
+        let mut anisotropy_strength = 0.0F
+        let mut anisotropy_rotation = 0.0F
+        let mut anisotropy_texture : Int? = None
         let mut base_color_texture : Int? = None
         let mut base_color_uv_offset = @math.Vec2::new(0.0F, 0.0F)
         let mut base_color_uv_scale = @math.Vec2::new(1.0F, 1.0F)
@@ -776,6 +810,14 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         clearcoat_texture = parsed_clearcoat_texture
         clearcoat_roughness_texture = parsed_clearcoat_roughness_texture
         clearcoat_normal_texture = parsed_clearcoat_normal_texture
+        let (
+          parsed_anisotropy_strength,
+          parsed_anisotropy_rotation,
+          parsed_anisotropy_texture,
+        ) = gltf_parse_material_anisotropy(obj)
+        anisotropy_strength = parsed_anisotropy_strength
+        anisotropy_rotation = parsed_anisotropy_rotation
+        anisotropy_texture = parsed_anisotropy_texture
 
         let emissive = if obj.get("emissiveFactor") is Some(value) {
           gltf_parse_emissive(
@@ -796,6 +838,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           clearcoat_texture,
           clearcoat_roughness_texture,
           clearcoat_normal_texture,
+          anisotropy_strength,
+          anisotropy_rotation,
+          anisotropy_texture,
           normal_texture: gltf_parse_texture_index(obj, "normalTexture"),
           emissive_texture: gltf_parse_texture_index(obj, "emissiveTexture"),
           metallic_roughness_texture,
@@ -817,6 +862,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           clearcoat_texture: None,
           clearcoat_roughness_texture: None,
           clearcoat_normal_texture: None,
+          anisotropy_strength: 0.0F,
+          anisotropy_rotation: 0.0F,
+          anisotropy_texture: None,
           normal_texture: None,
           emissive_texture: None,
           metallic_roughness_texture: None,
@@ -1439,6 +1487,8 @@ fn scene_build_material_component(
   material = material.with_clearcoat_perceptual_roughness(
     def.clearcoat_roughness,
   )
+  material = material.with_anisotropy_strength(def.anisotropy_strength)
+  material = material.with_anisotropy_rotation(def.anisotropy_rotation)
   material = material.with_metallic(def.metallic)
   material = material.with_perceptual_roughness(def.roughness)
   material = material.with_emissive(def.emissive)
@@ -1474,6 +1524,13 @@ fn scene_build_material_component(
   }
   if def.clearcoat_normal_texture is Some(texture_index) {
     material = material.with_clearcoat_normal_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+      ),
+    )
+  }
+  if def.anisotropy_texture is Some(texture_index) {
+    material = material.with_anisotropy_texture(
       scene_cached_load_texture(
         asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
       ),
