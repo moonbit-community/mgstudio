@@ -67,6 +67,7 @@ priv struct GltfMeshDef {
 priv struct GltfNodeDef {
   mesh : Int?
   children : Array[Int]
+  lod_nodes : Array[Int]
   transform : @math.Transform
 }
 
@@ -422,6 +423,29 @@ fn gltf_parse_node_transform(obj : Map[String, Json]) -> @math.Transform {
 }
 
 ///|
+fn gltf_parse_node_lod_ids(obj : Map[String, Json]) -> Array[Int] {
+  let lod_node_ids : Array[Int] = []
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return lod_node_ids
+  }
+  guard json_get_object(extensions, "MSFT_lod") is Some(msft_lod) else {
+    return lod_node_ids
+  }
+  guard json_get_array(msft_lod, "ids") is Some(ids) else {
+    return lod_node_ids
+  }
+  for id_value in ids {
+    if json_number(id_value) is Some(number) {
+      let node_index = number.to_int()
+      if node_index >= 0 {
+        lod_node_ids.push(node_index)
+      }
+    }
+  }
+  lod_node_ids
+}
+
+///|
 fn gltf_parse_texture_index(obj : Map[String, Json], key : String) -> Int? {
   guard json_get_object(obj, key) is Some(texture_info) else { return None }
   json_get_int(texture_info, "index")
@@ -633,12 +657,14 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         nodes.push({
           mesh: json_get_int(obj, "mesh"),
           children,
+          lod_nodes: gltf_parse_node_lod_ids(obj),
           transform: gltf_parse_node_transform(obj),
         })
       } else {
         nodes.push({
           mesh: None,
           children: [],
+          lod_nodes: [],
           transform: @math.Transform::identity(),
         })
       }
@@ -1420,6 +1446,27 @@ fn transform_compose(
 }
 
 ///|
+fn gltf_lod_visibility_range(lod_level : Int) -> @visibility.VisibilityRange {
+  let level = if lod_level < 0 { 0 } else { lod_level }
+  let level_float = Float::from_double(level.to_double())
+  let start_min = if level <= 0 {
+    0.0F
+  } else {
+    3.0F + (level_float - 1.0F) * 5.0F
+  }
+  let start_max = if level <= 0 {
+    0.0F
+  } else {
+    4.0F + (level_float - 1.0F) * 5.0F
+  }
+  let end_min = 3.0F + level_float * 5.0F
+  let end_max = 4.0F + level_float * 5.0F
+  @visibility.VisibilityRange::new(
+    start_min, start_max, end_min, end_max, false,
+  )
+}
+
+///|
 fn gltf_select_scene_index(
   doc : ParsedGltfDocument,
   requested_scene_index : Int,
@@ -1452,15 +1499,39 @@ fn scene_build_from_gltf(
   for _ in doc.materials {
     material_cache.push(None)
   }
+  let visited_nodes : Array[Bool] = []
+  for _ in doc.nodes {
+    visited_nodes.push(false)
+  }
 
   let default_material_component = @render3d.MeshMaterial3d::new(
     @render3d.standard_material_add(@render3d.StandardMaterial::default()),
   )
 
-  fn walk_node(node_index : Int, parent_transform : @math.Transform) -> Unit {
+  fn walk_node(
+    node_index : Int,
+    parent_transform : @math.Transform,
+    lod_level : Int,
+  ) -> Unit {
     guard node_index >= 0 && node_index < doc.nodes.length() else { return }
+    if visited_nodes[node_index] {
+      return
+    }
+    visited_nodes[node_index] = true
     let node = doc.nodes[node_index]
     let world_transform = transform_compose(parent_transform, node.transform)
+    let effective_lod_level = if lod_level >= 0 {
+      lod_level
+    } else if node.lod_nodes.length() > 0 {
+      0
+    } else {
+      -1
+    }
+    let visibility_range = if effective_lod_level >= 0 {
+      Some(gltf_lod_visibility_range(effective_lod_level))
+    } else {
+      None
+    }
 
     if node.mesh is Some(mesh_index) {
       if mesh_index >= 0 && mesh_index < doc.meshes.length() {
@@ -1523,22 +1594,35 @@ fn scene_build_from_gltf(
               @render3d.Mesh3d::from_geometry(geometry),
               material_component,
               world_transform,
-              None,
+              visibility_range,
             ),
           )
         }
       }
     }
 
+    let lod_base_level = if effective_lod_level >= 0 {
+      effective_lod_level
+    } else {
+      0
+    }
+    for lod_index, lod_node_index in node.lod_nodes {
+      walk_node(
+        lod_node_index,
+        parent_transform,
+        lod_base_level + lod_index + 1,
+      )
+    }
+
     for child_index in node.children {
-      walk_node(child_index, world_transform)
+      walk_node(child_index, world_transform, effective_lod_level)
     }
   }
 
   let selected_scene_index = gltf_select_scene_index(doc, request.scene_index)
   if selected_scene_index >= 0 {
     for root_node in doc.scenes[selected_scene_index].nodes {
-      walk_node(root_node, @math.Transform::identity())
+      walk_node(root_node, @math.Transform::identity(), -1)
     }
   }
 

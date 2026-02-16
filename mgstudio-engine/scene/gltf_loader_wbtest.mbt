@@ -224,3 +224,44 @@ test "scene gltf wb: parse KHR_texture_transform on base color texture" {
   inspect(doc.materials[0].base_color_uv_scale.x.to_double(), content="2")
   inspect(doc.materials[0].base_color_uv_scale.y.to_double(), content="0.5")
 }
+
+///|
+test "scene gltf wb: parse node MSFT_lod ids" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[0]}]," +
+    "\"nodes\":[" +
+    "{\"mesh\":0,\"extensions\":{\"MSFT_lod\":{\"ids\":[1,2]}}}," +
+    "{\"mesh\":1}," +
+    "{\"mesh\":2}" +
+    "]," +
+    "\"meshes\":[]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.nodes.length(), content="3")
+  inspect(doc.nodes[0].lod_nodes.length(), content="2")
+  inspect(doc.nodes[0].lod_nodes[0], content="1")
+  inspect(doc.nodes[0].lod_nodes[1], content="2")
+}
+
+///|
+test "scene gltf wb: default visibility ranges for lod levels" {
+  let lod0 = gltf_lod_visibility_range(0)
+  inspect(lod0.start_margin_min.to_double(), content="0")
+  inspect(lod0.start_margin_max.to_double(), content="0")
+  inspect(lod0.end_margin_min.to_double(), content="3")
+  inspect(lod0.end_margin_max.to_double(), content="4")
+
+  let lod1 = gltf_lod_visibility_range(1)
+  inspect(lod1.start_margin_min.to_double(), content="3")
+  inspect(lod1.start_margin_max.to_double(), content="4")
+  inspect(lod1.end_margin_min.to_double(), content="8")
+  inspect(lod1.end_margin_max.to_double(), content="9")
+
+  let lod2 = gltf_lod_visibility_range(2)
+  inspect(lod2.start_margin_min.to_double(), content="8")
+  inspect(lod2.start_margin_max.to_double(), content="9")
+  inspect(lod2.end_margin_min.to_double(), content="13")
+  inspect(lod2.end_margin_max.to_double(), content="14")
+}
