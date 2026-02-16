@@ -82,6 +82,11 @@ priv struct GltfMaterialDef {
   base_color_texture : Int?
   base_color_uv_offset : @math.Vec2
   base_color_uv_scale : @math.Vec2
+  clearcoat : Float
+  clearcoat_roughness : Float
+  clearcoat_texture : Int?
+  clearcoat_roughness_texture : Int?
+  clearcoat_normal_texture : Int?
   normal_texture : Int?
   emissive_texture : Int?
   metallic_roughness_texture : Int?
@@ -501,6 +506,36 @@ fn gltf_parse_material_unlit(obj : Map[String, Json]) -> Bool {
 }
 
 ///|
+fn gltf_parse_material_clearcoat(
+  obj : Map[String, Json],
+) -> (Float, Float, Int?, Int?, Int?) {
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return (0.0F, 0.0F, None, None, None)
+  }
+  guard json_get_object(extensions, "KHR_materials_clearcoat")
+    is Some(clearcoat_ext) else {
+    return (0.0F, 0.0F, None, None, None)
+  }
+  let clearcoat_factor = match
+    json_get_float(clearcoat_ext, "clearcoatFactor") {
+    Some(v) => if v < 0.0F { 0.0F } else if v > 1.0F { 1.0F } else { v }
+    None => 0.0F
+  }
+  let clearcoat_roughness_factor = match
+    json_get_float(clearcoat_ext, "clearcoatRoughnessFactor") {
+    Some(v) => if v < 0.0F { 0.0F } else if v > 1.0F { 1.0F } else { v }
+    None => 0.0F
+  }
+  (
+    clearcoat_factor,
+    clearcoat_roughness_factor,
+    gltf_parse_texture_index(clearcoat_ext, "clearcoatTexture"),
+    gltf_parse_texture_index(clearcoat_ext, "clearcoatRoughnessTexture"),
+    gltf_parse_texture_index(clearcoat_ext, "clearcoatNormalTexture"),
+  )
+}
+
+///|
 fn gltf_sampler_filter_is_nearest(filter : Int) -> Bool {
   filter == 9728 || filter == 9984 || filter == 9986
 }
@@ -697,6 +732,11 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         let mut base_color = @render2d.Color::white()
         let mut metallic = 1.0F
         let mut roughness = 1.0F
+        let mut clearcoat = 0.0F
+        let mut clearcoat_roughness = 0.0F
+        let mut clearcoat_texture : Int? = None
+        let mut clearcoat_roughness_texture : Int? = None
+        let mut clearcoat_normal_texture : Int? = None
         let mut base_color_texture : Int? = None
         let mut base_color_uv_offset = @math.Vec2::new(0.0F, 0.0F)
         let mut base_color_uv_scale = @math.Vec2::new(1.0F, 1.0F)
@@ -724,6 +764,18 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
             pbr, "metallicRoughnessTexture",
           )
         }
+        let (
+          parsed_clearcoat,
+          parsed_clearcoat_roughness,
+          parsed_clearcoat_texture,
+          parsed_clearcoat_roughness_texture,
+          parsed_clearcoat_normal_texture,
+        ) = gltf_parse_material_clearcoat(obj)
+        clearcoat = parsed_clearcoat
+        clearcoat_roughness = parsed_clearcoat_roughness
+        clearcoat_texture = parsed_clearcoat_texture
+        clearcoat_roughness_texture = parsed_clearcoat_roughness_texture
+        clearcoat_normal_texture = parsed_clearcoat_normal_texture
 
         let emissive = if obj.get("emissiveFactor") is Some(value) {
           gltf_parse_emissive(
@@ -739,6 +791,11 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           base_color_texture,
           base_color_uv_offset,
           base_color_uv_scale,
+          clearcoat,
+          clearcoat_roughness,
+          clearcoat_texture,
+          clearcoat_roughness_texture,
+          clearcoat_normal_texture,
           normal_texture: gltf_parse_texture_index(obj, "normalTexture"),
           emissive_texture: gltf_parse_texture_index(obj, "emissiveTexture"),
           metallic_roughness_texture,
@@ -755,6 +812,11 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           base_color_texture: None,
           base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
           base_color_uv_scale: @math.Vec2::new(1.0F, 1.0F),
+          clearcoat: 0.0F,
+          clearcoat_roughness: 0.0F,
+          clearcoat_texture: None,
+          clearcoat_roughness_texture: None,
+          clearcoat_normal_texture: None,
           normal_texture: None,
           emissive_texture: None,
           metallic_roughness_texture: None,
@@ -1373,6 +1435,10 @@ fn scene_build_material_component(
   material = material.with_alpha_mode(def.alpha_mode)
   material = material.with_uv_offset(def.base_color_uv_offset)
   material = material.with_uv_scale(def.base_color_uv_scale)
+  material = material.with_clearcoat(def.clearcoat)
+  material = material.with_clearcoat_perceptual_roughness(
+    def.clearcoat_roughness,
+  )
   material = material.with_metallic(def.metallic)
   material = material.with_perceptual_roughness(def.roughness)
   material = material.with_emissive(def.emissive)
@@ -1387,6 +1453,27 @@ fn scene_build_material_component(
   }
   if def.normal_texture is Some(texture_index) {
     material = material.with_normal_map_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+      ),
+    )
+  }
+  if def.clearcoat_texture is Some(texture_index) {
+    material = material.with_clearcoat_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+      ),
+    )
+  }
+  if def.clearcoat_roughness_texture is Some(texture_index) {
+    material = material.with_clearcoat_roughness_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
+      ),
+    )
+  }
+  if def.clearcoat_normal_texture is Some(texture_index) {
+    material = material.with_clearcoat_normal_texture(
       scene_cached_load_texture(
         asset_server, gltf_path, doc, buffer_bytes, texture_index, image_cache,
       ),

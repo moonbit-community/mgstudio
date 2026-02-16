@@ -235,6 +235,11 @@ pub struct StandardMaterial {
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
   normal_map_texture : @asset.Handle[@asset.Image]?
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
+  clearcoat_texture : @asset.Handle[@asset.Image]?
+  clearcoat_roughness_texture : @asset.Handle[@asset.Image]?
+  clearcoat_normal_texture : @asset.Handle[@asset.Image]?
   emissive : @render2d.Color
   emissive_texture : @asset.Handle[@asset.Image]?
   metallic : Float
@@ -255,6 +260,11 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     uv_offset: @math.Vec2::new(0.0F, 0.0F),
     uv_scale: @math.Vec2::new(1.0F, 1.0F),
     normal_map_texture: None,
+    clearcoat: 0.0F,
+    clearcoat_perceptual_roughness: 0.0F,
+    clearcoat_texture: None,
+    clearcoat_roughness_texture: None,
+    clearcoat_normal_texture: None,
     emissive: @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     emissive_texture: None,
     metallic: 0.0F,
@@ -284,6 +294,11 @@ pub fn StandardMaterial::from_color(
     uv_offset: default_value.uv_offset,
     uv_scale: default_value.uv_scale,
     normal_map_texture: default_value.normal_map_texture,
+    clearcoat: default_value.clearcoat,
+    clearcoat_perceptual_roughness: default_value.clearcoat_perceptual_roughness,
+    clearcoat_texture: default_value.clearcoat_texture,
+    clearcoat_roughness_texture: default_value.clearcoat_roughness_texture,
+    clearcoat_normal_texture: default_value.clearcoat_normal_texture,
     emissive: default_value.emissive,
     emissive_texture: default_value.emissive_texture,
     metallic: default_value.metallic,
@@ -346,6 +361,64 @@ pub fn StandardMaterial::with_normal_map_texture(
 }
 
 ///|
+pub fn StandardMaterial::with_clearcoat(
+  self : StandardMaterial,
+  clearcoat : Float,
+) -> StandardMaterial {
+  let safe_clearcoat = if clearcoat < 0.0F {
+    0.0F
+  } else if clearcoat > 1.0F {
+    1.0F
+  } else {
+    clearcoat
+  }
+  StandardMaterial::{ ..self, clearcoat: safe_clearcoat }
+}
+
+///|
+pub fn StandardMaterial::with_clearcoat_perceptual_roughness(
+  self : StandardMaterial,
+  clearcoat_perceptual_roughness : Float,
+) -> StandardMaterial {
+  let safe_clearcoat_perceptual_roughness = if clearcoat_perceptual_roughness <
+    0.0F {
+    0.0F
+  } else if clearcoat_perceptual_roughness > 1.0F {
+    1.0F
+  } else {
+    clearcoat_perceptual_roughness
+  }
+  StandardMaterial::{
+    ..self,
+    clearcoat_perceptual_roughness: safe_clearcoat_perceptual_roughness,
+  }
+}
+
+///|
+pub fn StandardMaterial::with_clearcoat_texture(
+  self : StandardMaterial,
+  clearcoat_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, clearcoat_texture, }
+}
+
+///|
+pub fn StandardMaterial::with_clearcoat_roughness_texture(
+  self : StandardMaterial,
+  clearcoat_roughness_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, clearcoat_roughness_texture, }
+}
+
+///|
+pub fn StandardMaterial::with_clearcoat_normal_texture(
+  self : StandardMaterial,
+  clearcoat_normal_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, clearcoat_normal_texture, }
+}
+
+///|
 pub fn StandardMaterial::with_emissive(
   self : StandardMaterial,
   emissive : @render2d.Color,
@@ -389,6 +462,21 @@ pub fn StandardMaterial::with_perceptual_roughness(
     perceptual_roughness
   }
   StandardMaterial::{ ..self, perceptual_roughness: safe_perceptual_roughness }
+}
+
+///|
+pub fn StandardMaterial::with_reflectance(
+  self : StandardMaterial,
+  reflectance : Float,
+) -> StandardMaterial {
+  let safe_reflectance = if reflectance < 0.0F {
+    0.0F
+  } else if reflectance > 1.0F {
+    1.0F
+  } else {
+    reflectance
+  }
+  StandardMaterial::{ ..self, reflectance: safe_reflectance }
 }
 
 ///|
@@ -1636,9 +1724,14 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         Some(texture) => texture.id()
         None => -1
       }
-      let normal_texture_id = match mesh.material.normal_map_texture {
-        Some(texture) => texture.id()
-        None => -1
+      let normal_texture_id = match
+        (
+          mesh.material.normal_map_texture,
+          mesh.material.clearcoat_normal_texture,
+        ) {
+        (Some(texture), _) => texture.id()
+        (None, Some(texture)) => texture.id()
+        (None, None) => -1
       }
       let emissive_texture_id = match mesh.material.emissive_texture {
         Some(texture) => texture.id()
@@ -1652,6 +1745,19 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       let occlusion_texture_id = match mesh.material.occlusion_texture {
         Some(texture) => texture.id()
         None => -1
+      }
+      let clearcoat_reflectance = minf(
+        1.0F,
+        maxf(0.0F, mesh.material.reflectance + mesh.material.clearcoat * 0.5F),
+      )
+      let clearcoat_roughness = minf(
+        mesh.material.perceptual_roughness,
+        mesh.material.clearcoat_perceptual_roughness,
+      )
+      let draw_roughness = if mesh.material.clearcoat > 0.0F {
+        clearcoat_roughness
+      } else {
+        mesh.material.perceptual_roughness
       }
       @window.host_gpu_draw_mesh3d(
         mesh_id=mesh.mesh_id,
@@ -1683,8 +1789,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         emissive_b=mesh.material.emissive.b,
         unlit=if mesh.material.unlit { 1.0F } else { 0.0F },
         metallic=mesh.material.metallic,
-        roughness=mesh.material.perceptual_roughness,
-        reflectance=mesh.material.reflectance,
+        roughness=draw_roughness,
+        reflectance=clearcoat_reflectance,
       )
     }
     @window.host_gpu_end_pass()

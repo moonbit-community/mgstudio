@@ -169,6 +169,11 @@ pub struct StandardMaterial {
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
   normal_map_texture : @asset.Handle[@asset.Image]?
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
+  clearcoat_texture : @asset.Handle[@asset.Image]?
+  clearcoat_roughness_texture : @asset.Handle[@asset.Image]?
+  clearcoat_normal_texture : @asset.Handle[@asset.Image]?
   emissive : @render2d.Color
   emissive_texture : @asset.Handle[@asset.Image]?
   metallic : Float
@@ -185,6 +190,11 @@ pub fn StandardMaterial::from_color(@render2d.Color) -> Self
 pub fn StandardMaterial::with_alpha_mode(Self, AlphaMode3d) -> Self
 pub fn StandardMaterial::with_base_color(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat(Self, Float) -> Self
+pub fn StandardMaterial::with_clearcoat_normal_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat_perceptual_roughness(Self, Float) -> Self
+pub fn StandardMaterial::with_clearcoat_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_emissive(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_metallic(Self, Float) -> Self
@@ -192,6 +202,7 @@ pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@as
 pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
+pub fn StandardMaterial::with_reflectance(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn StandardMaterial::with_uv_scale(Self, @math.Vec2) -> Self

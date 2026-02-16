@@ -226,6 +226,38 @@ test "scene gltf wb: parse KHR_texture_transform on base color texture" {
 }
 
 ///|
+test "scene gltf wb: parse KHR_materials_clearcoat" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[]}]," +
+    "\"nodes\":[]," +
+    "\"meshes\":[]," +
+    "\"materials\":[{" +
+    "\"extensions\":{" +
+    "\"KHR_materials_clearcoat\":{" +
+    "\"clearcoatFactor\":0.7," +
+    "\"clearcoatRoughnessFactor\":0.2," +
+    "\"clearcoatTexture\":{\"index\":3}," +
+    "\"clearcoatRoughnessTexture\":{\"index\":4}," +
+    "\"clearcoatNormalTexture\":{\"index\":5}" +
+    "}" +
+    "}" +
+    "}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.materials.length(), content="1")
+  inspect(doc.materials[0].clearcoat.to_double(), content="0.699999988079071")
+  inspect(
+    doc.materials[0].clearcoat_roughness.to_double(),
+    content="0.20000000298023224",
+  )
+  inspect(doc.materials[0].clearcoat_texture, content="Some(3)")
+  inspect(doc.materials[0].clearcoat_roughness_texture, content="Some(4)")
+  inspect(doc.materials[0].clearcoat_normal_texture, content="Some(5)")
+}
+
+///|
 test "scene gltf wb: parse node MSFT_lod ids" {
   let source = "{" +
     "\"asset\":{\"version\":\"2.0\"}," +
