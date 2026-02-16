@@ -229,6 +229,84 @@ pub(all) enum Face3d {
 }
 
 ///|
+pub(all) enum FogFalloff3d {
+  Linear(Float, Float)
+  Exponential(Float)
+  ExponentialSquared(Float)
+}
+
+///|
+pub fn FogFalloff3d::linear(start : Float, end_ : Float) -> FogFalloff3d {
+  let safe_start = if start < 0.0F { 0.0F } else { start }
+  let safe_end = if end_ < safe_start { safe_start } else { end_ }
+  FogFalloff3d::Linear(safe_start, safe_end)
+}
+
+///|
+pub fn FogFalloff3d::exponential(density : Float) -> FogFalloff3d {
+  let safe_density = if density < 0.0F { 0.0F } else { density }
+  FogFalloff3d::Exponential(safe_density)
+}
+
+///|
+pub fn FogFalloff3d::exponential_squared(density : Float) -> FogFalloff3d {
+  let safe_density = if density < 0.0F { 0.0F } else { density }
+  FogFalloff3d::ExponentialSquared(safe_density)
+}
+
+///|
+// Global fog settings (currently global, not per-camera component).
+pub struct DistanceFog {
+  color : @render2d.Color
+  falloff : FogFalloff3d
+}
+
+///|
+pub fn DistanceFog::default() -> DistanceFog {
+  DistanceFog::{
+    color: @render2d.Color::new(0.25F, 0.25F, 0.25F, 0.0F),
+    falloff: FogFalloff3d::linear(5.0F, 20.0F),
+  }
+}
+
+///|
+pub fn DistanceFog::new(
+  color : @render2d.Color,
+  falloff : FogFalloff3d,
+) -> DistanceFog {
+  DistanceFog::{ color, falloff }
+}
+
+///|
+pub fn DistanceFog::with_color(
+  self : DistanceFog,
+  color : @render2d.Color,
+) -> DistanceFog {
+  DistanceFog::{ ..self, color, }
+}
+
+///|
+pub fn DistanceFog::with_falloff(
+  self : DistanceFog,
+  falloff : FogFalloff3d,
+) -> DistanceFog {
+  DistanceFog::{ ..self, falloff, }
+}
+
+///|
+let distance_fog_state : Ref[DistanceFog] = Ref::new(DistanceFog::default())
+
+///|
+pub fn render3d_set_distance_fog(fog : DistanceFog) -> Unit {
+  distance_fog_state.val = fog
+}
+
+///|
+pub fn render3d_distance_fog() -> DistanceFog {
+  distance_fog_state.val
+}
+
+///|
 pub struct StandardMaterial {
   base_color : @render2d.Color
   base_color_texture : @asset.Handle[@asset.Image]?
@@ -1419,6 +1497,67 @@ fn maxf(a : Float, b : Float) -> Float {
 }
 
 ///|
+fn clamp01(value : Float) -> Float {
+  if value <= 0.0F {
+    0.0F
+  } else if value >= 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_pow_e(value : Float) -> Float {
+  @math.pow(2.718281828459045F, value)
+}
+
+///|
+fn render3d_fog_falloff_factor(
+  falloff : FogFalloff3d,
+  distance : Float,
+) -> Float {
+  let safe_distance = if distance < 0.0F { 0.0F } else { distance }
+  match falloff {
+    Linear(start, end_) => {
+      let safe_start = if start < 0.0F { 0.0F } else { start }
+      let safe_end = if end_ < safe_start { safe_start } else { end_ }
+      if safe_end <= safe_start {
+        if safe_distance >= safe_end {
+          1.0F
+        } else {
+          0.0F
+        }
+      } else if safe_distance <= safe_start {
+        0.0F
+      } else if safe_distance >= safe_end {
+        1.0F
+      } else {
+        (safe_distance - safe_start) / (safe_end - safe_start)
+      }
+    }
+    Exponential(density) => {
+      let safe_density = if density < 0.0F { 0.0F } else { density }
+      1.0F - render3d_pow_e(-safe_density * safe_distance)
+    }
+    ExponentialSquared(density) => {
+      let safe_density = if density < 0.0F { 0.0F } else { density }
+      let d = safe_density * safe_distance
+      1.0F - render3d_pow_e(-(d * d))
+    }
+  }
+}
+
+///|
+fn render3d_distance_fog_mix_factor(
+  fog : DistanceFog,
+  distance : Float,
+) -> Float {
+  let falloff_factor = render3d_fog_falloff_factor(fog.falloff, distance)
+  clamp01(falloff_factor * clamp01(fog.color.a))
+}
+
+///|
 fn render3d_visibility_range_visible(
   visibility_range : @visibility.VisibilityRange,
   camera_transform : @math.Transform,
@@ -1751,6 +1890,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.layers,
       camera.transform,
     )
+    let distance_fog = render3d_distance_fog()
     for draw_index in draw_order {
       let mesh = meshes[draw_index]
       guard render3d_mesh_draw_alpha(
@@ -1799,6 +1939,19 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       } else {
         mesh.material.perceptual_roughness
       }
+      let mesh_distance = mesh.transform.translation
+        .sub(camera.transform.translation)
+        .length()
+      let fog_mix = render3d_distance_fog_mix_factor(
+        distance_fog, mesh_distance,
+      )
+      let fog_color = distance_fog.color
+      let draw_color_r = mesh.material.base_color.r * (1.0F - fog_mix) +
+        fog_color.r * fog_mix
+      let draw_color_g = mesh.material.base_color.g * (1.0F - fog_mix) +
+        fog_color.g * fog_mix
+      let draw_color_b = mesh.material.base_color.b * (1.0F - fog_mix) +
+        fog_color.b * fog_mix
       let anisotropy_strength = maxf(
         0.0F,
         minf(1.0F, mesh.material.anisotropy_strength),
@@ -1819,9 +1972,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         scale_x=mesh.transform.scale.x,
         scale_y=mesh.transform.scale.y,
         scale_z=mesh.transform.scale.z,
-        color_r=mesh.material.base_color.r,
-        color_g=mesh.material.base_color.g,
-        color_b=mesh.material.base_color.b,
+        color_r=draw_color_r,
+        color_g=draw_color_g,
+        color_b=draw_color_b,
         color_a=draw_alpha,
         texture_id~,
         uv_offset_x=mesh.material.uv_offset.x,

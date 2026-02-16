@@ -20,11 +20,15 @@ pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, Camer
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
+pub fn render3d_distance_fog() -> DistanceFog
+
 pub fn[W : Render3dExecuteWorld] render3d_execute_system(W) -> Unit
 
 pub fn[W : Render3dPluginWorld] render3d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : Render3dPrepareWorld] render3d_prepare_system(W) -> Unit
+
+pub fn render3d_set_distance_fog(DistanceFog) -> Unit
 
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
@@ -78,10 +82,28 @@ pub struct DirectionalLight {
 pub fn DirectionalLight::default() -> Self
 pub fn DirectionalLight::new(@render2d.Color, Float, Bool) -> Self
 
+pub struct DistanceFog {
+  color : @render2d.Color
+  falloff : FogFalloff3d
+}
+pub fn DistanceFog::default() -> Self
+pub fn DistanceFog::new(@render2d.Color, FogFalloff3d) -> Self
+pub fn DistanceFog::with_color(Self, @render2d.Color) -> Self
+pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
+
 pub(all) enum Face3d {
   Front
   Back
 }
+
+pub(all) enum FogFalloff3d {
+  Linear(Float, Float)
+  Exponential(Float)
+  ExponentialSquared(Float)
+}
+pub fn FogFalloff3d::exponential(Float) -> Self
+pub fn FogFalloff3d::exponential_squared(Float) -> Self
+pub fn FogFalloff3d::linear(Float, Float) -> Self
 
 pub struct GlobalAmbientLight {
   color : @render2d.Color
