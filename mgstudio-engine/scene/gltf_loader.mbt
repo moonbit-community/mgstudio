@@ -18,8 +18,9 @@ priv struct PendingGltfSceneRequest {
   gltf_path : String
   scene_index : Int
   gltf_blob : @asset.Handle[@asset.Blob]
-  mut bin_path : String?
-  mut bin_blob : @asset.Handle[@asset.Blob]?
+  mut doc : ParsedGltfDocument?
+  buffer_blobs : Array[@asset.Handle[@asset.Blob]?]
+  mut buffer_bytes : Array[Bytes?]
 }
 
 ///|
@@ -29,6 +30,7 @@ let pending_gltf_scene_requests : Ref[Array[PendingGltfSceneRequest]] = Ref::new
 ///|
 priv struct GltfBufferDef {
   uri : String?
+  byte_length : Int
 }
 
 ///|
@@ -153,8 +155,9 @@ fn scene_queue_gltf_request(
     gltf_path,
     scene_index,
     gltf_blob: asset_server.load_bytes(gltf_path),
-    bin_path: None,
-    bin_blob: None,
+    doc: None,
+    buffer_blobs: [],
+    buffer_bytes: [],
   })
 }
 
@@ -445,9 +448,15 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   if json_get_array(root, "buffers") is Some(entries) {
     for entry in entries {
       if json_object(entry) is Some(obj) {
-        buffers.push({ uri: json_get_string(obj, "uri") })
+        buffers.push({
+          uri: json_get_string(obj, "uri"),
+          byte_length: match json_get_int(obj, "byteLength") {
+            Some(v) => v
+            None => 0
+          },
+        })
       } else {
-        buffers.push({ uri: None })
+        buffers.push({ uri: None, byte_length: 0 })
       }
     }
   }
@@ -706,6 +715,173 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
 }
 
 ///|
+fn hex_nibble(code : Int) -> Int? {
+  if code >= 48 && code <= 57 {
+    return Some(code - 48)
+  }
+  if code >= 65 && code <= 70 {
+    return Some(code - 55)
+  }
+  if code >= 97 && code <= 102 {
+    return Some(code - 87)
+  }
+  None
+}
+
+///|
+fn uri_percent_decode_bytes(payload : String) -> Bytes? {
+  let out : Array[Byte] = []
+  let mut i = 0
+  let len = payload.length()
+  while i < len {
+    let code = payload.code_unit_at(i).to_int() & 0xFFFF
+    if code == 37 && i + 2 < len {
+      let c1 = payload.code_unit_at(i + 1).to_int() & 0xFFFF
+      let c2 = payload.code_unit_at(i + 2).to_int() & 0xFFFF
+      guard hex_nibble(c1) is Some(h1) else { return None }
+      guard hex_nibble(c2) is Some(h2) else { return None }
+      out.push((h1 * 16 + h2).to_byte())
+      i = i + 3
+      continue
+    }
+    guard code <= 255 else { return None }
+    out.push(code.to_byte())
+    i = i + 1
+  }
+  Some(Bytes::from_array(out))
+}
+
+///|
+fn data_uri_decode_bytes(uri : String) -> Bytes? {
+  guard uri.has_prefix("data:") else { return None }
+  guard uri.find(",") is Some(split) else { return None }
+  let head = (try! uri[0:split]).to_string()
+  let payload = (try! uri[split + 1:uri.length()]).to_string()
+  if head.contains(";base64") {
+    let decoded = @base64.decode(payload[:], ignore_whitespace=true) catch {
+      _ => @base64.decode_lossy(payload[:], ignore_whitespace=true)
+    }
+    return Some(decoded)
+  }
+  uri_percent_decode_bytes(payload)
+}
+
+///|
+fn bytes_slice(bytes : Bytes, start : Int, end_ : Int) -> Bytes? {
+  guard start >= 0 && end_ >= start && end_ <= bytes.length() else {
+    return None
+  }
+  let out : Array[Byte] = []
+  for i in start..<end_ {
+    out.push(bytes[i])
+  }
+  Some(Bytes::from_array(out))
+}
+
+///|
+fn bytes_text(bytes : Bytes) -> String {
+  let chars : Array[Char] = []
+  for byte in bytes {
+    let code = byte.to_int() & 0xFF
+    if code.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
+  }
+  String::from_array(chars)
+}
+
+///|
+fn gltf_parse_glb(blob_bytes : Bytes) -> (String, Bytes?)? {
+  guard bytes_read_u32_le(blob_bytes, 0) is Some(magic) else { return None }
+  guard magic == 0x46546C67U else { return None } // 'glTF'
+  guard bytes_read_u32_le(blob_bytes, 4) is Some(version) else { return None }
+  guard version == 2U else { return None }
+  guard bytes_read_u32_le(blob_bytes, 8) is Some(total_u) else { return None }
+  guard total_u <= 2_147_483_647U else { return None }
+  let total = total_u.reinterpret_as_int()
+  guard total >= 12 && total <= blob_bytes.length() else { return None }
+
+  let mut offset = 12
+  let mut json_chunk : String? = None
+  let mut bin_chunk : Bytes? = None
+  while offset + 8 <= total {
+    guard bytes_read_u32_le(blob_bytes, offset) is Some(chunk_len_u) else {
+      return None
+    }
+    guard bytes_read_u32_le(blob_bytes, offset + 4) is Some(chunk_type) else {
+      return None
+    }
+    guard chunk_len_u <= 2_147_483_647U else { return None }
+    let chunk_len = chunk_len_u.reinterpret_as_int()
+    let start = offset + 8
+    let end_ = start + chunk_len
+    guard chunk_len >= 0 && end_ <= total else { return None }
+    guard bytes_slice(blob_bytes, start, end_) is Some(chunk_data) else {
+      return None
+    }
+
+    if chunk_type == 0x4E4F534AU && json_chunk is None { // JSON
+      json_chunk = Some(bytes_text(chunk_data))
+    } else if chunk_type == 0x004E4942U && bin_chunk is None { // BIN
+      bin_chunk = Some(chunk_data)
+    }
+    offset = end_
+  }
+  guard offset == total else { return None }
+  guard json_chunk is Some(json_text) else { return None }
+  Some((json_text, bin_chunk))
+}
+
+///|
+fn gltf_parse_source(
+  gltf_path : String,
+  blob_bytes : Bytes,
+) -> (ParsedGltfDocument, Array[Bytes?])? {
+  let mut source_json : String? = None
+  let mut embedded_bin : Bytes? = None
+
+  if gltf_path.has_suffix(".glb") {
+    if gltf_parse_glb(blob_bytes) is Some(parsed_glb) {
+      source_json = Some(parsed_glb.0)
+      embedded_bin = parsed_glb.1
+    } else {
+      return None
+    }
+  } else if bytes_read_u32_le(blob_bytes, 0) is Some(magic) &&
+    magic == 0x46546C67U {
+    if gltf_parse_glb(blob_bytes) is Some(parsed_glb) {
+      source_json = Some(parsed_glb.0)
+      embedded_bin = parsed_glb.1
+    } else {
+      return None
+    }
+  } else {
+    source_json = Some(bytes_text(blob_bytes))
+  }
+
+  guard source_json is Some(json_text) else { return None }
+  guard gltf_parse_document(json_text) is Some(doc) else { return None }
+
+  let initial_buffer_bytes : Array[Bytes?] = []
+  for _ in doc.buffers {
+    initial_buffer_bytes.push(None)
+  }
+  if embedded_bin is Some(bin) {
+    let mut assigned = false
+    for i in 0..<doc.buffers.length() {
+      if doc.buffers[i].uri is None && !assigned {
+        initial_buffer_bytes[i] = Some(bin)
+        assigned = true
+      }
+    }
+  }
+
+  Some((doc, initial_buffer_bytes))
+}
+
+///|
 fn gltf_component_count(accessor_type : String) -> Int? {
   match accessor_type {
     "SCALAR" => Some(1)
@@ -731,7 +907,7 @@ fn gltf_component_size(component_type : Int) -> Int? {
 fn gltf_accessor_layout(
   doc : ParsedGltfDocument,
   accessor_index : Int,
-) -> (Int, Int, Int, Int, Int)? {
+) -> (Int, Int, Int, Int, Int, Int)? {
   guard accessor_index >= 0 && accessor_index < doc.accessors.length() else {
     return None
   }
@@ -741,7 +917,8 @@ fn gltf_accessor_layout(
     return None
   }
   let view = doc.buffer_views[buffer_view_index]
-  guard view.buffer == 0 else { return None }
+  let buffer_index = view.buffer
+  guard buffer_index >= 0 else { return None }
   guard gltf_component_size(accessor.component_type) is Some(component_size) else {
     return None
   }
@@ -765,6 +942,7 @@ fn gltf_accessor_layout(
   }
   Some(
     (
+      buffer_index,
       base_offset,
       stride,
       accessor.count,
@@ -810,17 +988,20 @@ fn bytes_read_f32_le(bytes : Bytes, offset : Int) -> Float? {
 ///|
 fn gltf_read_accessor_vec3(
   doc : ParsedGltfDocument,
-  bytes : Bytes,
+  buffer_bytes : Array[Bytes],
   accessor_index : Int,
 ) -> Array[@math.Vec3]? {
   guard gltf_accessor_layout(doc, accessor_index) is Some(layout) else {
     return None
   }
-  let base_offset = layout.0
-  let stride = layout.1
-  let count = layout.2
-  let component_type = layout.3
-  let component_count = layout.4
+  let buffer_index = layout.0
+  let base_offset = layout.1
+  let stride = layout.2
+  let count = layout.3
+  let component_type = layout.4
+  let component_count = layout.5
+  guard buffer_index < buffer_bytes.length() else { return None }
+  let bytes = buffer_bytes[buffer_index]
   guard component_type == 5126 && component_count == 3 else { return None }
   let out : Array[@math.Vec3] = []
   for i in 0..<count {
@@ -836,17 +1017,20 @@ fn gltf_read_accessor_vec3(
 ///|
 fn gltf_read_accessor_vec2(
   doc : ParsedGltfDocument,
-  bytes : Bytes,
+  buffer_bytes : Array[Bytes],
   accessor_index : Int,
 ) -> Array[@math.Vec2]? {
   guard gltf_accessor_layout(doc, accessor_index) is Some(layout) else {
     return None
   }
-  let base_offset = layout.0
-  let stride = layout.1
-  let count = layout.2
-  let component_type = layout.3
-  let component_count = layout.4
+  let buffer_index = layout.0
+  let base_offset = layout.1
+  let stride = layout.2
+  let count = layout.3
+  let component_type = layout.4
+  let component_count = layout.5
+  guard buffer_index < buffer_bytes.length() else { return None }
+  let bytes = buffer_bytes[buffer_index]
   guard component_type == 5126 && component_count == 2 else { return None }
   let out : Array[@math.Vec2] = []
   for i in 0..<count {
@@ -861,17 +1045,20 @@ fn gltf_read_accessor_vec2(
 ///|
 fn gltf_read_accessor_indices(
   doc : ParsedGltfDocument,
-  bytes : Bytes,
+  buffer_bytes : Array[Bytes],
   accessor_index : Int,
 ) -> Array[Int]? {
   guard gltf_accessor_layout(doc, accessor_index) is Some(layout) else {
     return None
   }
-  let base_offset = layout.0
-  let stride = layout.1
-  let count = layout.2
-  let component_type = layout.3
-  let component_count = layout.4
+  let buffer_index = layout.0
+  let base_offset = layout.1
+  let stride = layout.2
+  let count = layout.3
+  let component_type = layout.4
+  let component_count = layout.5
+  guard buffer_index < buffer_bytes.length() else { return None }
+  let bytes = buffer_bytes[buffer_index]
   guard component_count == 1 else { return None }
   let out : Array[Int] = []
   for i in 0..<count {
@@ -945,6 +1132,9 @@ fn scene_cached_load_texture(
   }
   let image_def = doc.images[image_index]
   guard image_def.uri is Some(uri) else { return None }
+  if uri.has_prefix("data:") {
+    return None
+  }
 
   let resolved_path = path_join(path_dirname(gltf_path), uri)
   for entry in cache {
@@ -1073,7 +1263,7 @@ fn scene_build_from_gltf(
   asset_server : @asset.AssetServer,
   request : PendingGltfSceneRequest,
   doc : ParsedGltfDocument,
-  bin_bytes : Bytes,
+  buffer_bytes : Array[Bytes],
 ) -> Scene {
   let nodes : Array[SceneNode3d] = []
   let image_cache : Array[(String, @asset.Handle[@asset.Image])] = []
@@ -1096,7 +1286,7 @@ fn scene_build_from_gltf(
         let mesh = doc.meshes[mesh_index]
         for primitive in mesh.primitives {
           guard primitive.position is Some(position_accessor) else { continue }
-          guard gltf_read_accessor_vec3(doc, bin_bytes, position_accessor)
+          guard gltf_read_accessor_vec3(doc, buffer_bytes, position_accessor)
             is Some(positions) else {
             continue
           }
@@ -1106,7 +1296,7 @@ fn scene_build_from_gltf(
 
           let mut uvs : Array[@math.Vec2] = []
           if primitive.uv0 is Some(uv_accessor) {
-            if gltf_read_accessor_vec2(doc, bin_bytes, uv_accessor)
+            if gltf_read_accessor_vec2(doc, buffer_bytes, uv_accessor)
               is Some(decoded) {
               uvs = decoded
             }
@@ -1120,7 +1310,7 @@ fn scene_build_from_gltf(
 
           let indices = match primitive.indices {
             Some(index_accessor) =>
-              gltf_read_accessor_indices(doc, bin_bytes, index_accessor)
+              gltf_read_accessor_indices(doc, buffer_bytes, index_accessor)
             None => None
           }
 
@@ -1178,35 +1368,88 @@ fn scene_try_resolve_request(
   asset_server : @asset.AssetServer,
   request : PendingGltfSceneRequest,
 ) -> (PendingGltfSceneRequest, Scene?) {
-  guard @asset.asset_blob_read_text(request.gltf_blob) is Some(gltf_text) else {
-    return (request, None)
-  }
-  guard gltf_parse_document(gltf_text) is Some(doc) else {
-    return (request, Some(Scene::new([])))
-  }
-
   let updated = request
-  let mut bin_bytes = Bytes::new(0)
 
-  if doc.buffers.length() > 0 {
-    let first_buffer = doc.buffers[0]
-    guard first_buffer.uri is Some(uri) else {
-      return (updated, Some(Scene::new([])))
-    }
-    let resolved_bin_path = path_join(path_dirname(updated.gltf_path), uri)
-    if updated.bin_path is None ||
-      updated.bin_path.unwrap() != resolved_bin_path {
-      updated.bin_path = Some(resolved_bin_path)
-      updated.bin_blob = Some(asset_server.load_bytes(resolved_bin_path))
-    }
-    guard updated.bin_blob is Some(bin_blob) else { return (updated, None) }
-    guard @asset.asset_blob_read_bytes(bin_blob) is Some(bytes) else {
+  if updated.doc is None {
+    guard @asset.asset_blob_read_bytes(updated.gltf_blob)
+      is Some(gltf_blob_bytes) else {
       return (updated, None)
     }
-    bin_bytes = bytes
+    guard gltf_parse_source(updated.gltf_path, gltf_blob_bytes) is Some(parsed) else {
+      return (updated, Some(Scene::new([])))
+    }
+    updated.doc = Some(parsed.0)
+    updated.buffer_bytes = parsed.1
+    updated.buffer_blobs.clear()
+    for _ in parsed.0.buffers {
+      updated.buffer_blobs.push(None)
+    }
   }
 
-  (updated, Some(scene_build_from_gltf(asset_server, updated, doc, bin_bytes)))
+  guard updated.doc is Some(doc) else { return (updated, Some(Scene::new([]))) }
+
+  if updated.buffer_bytes.length() != doc.buffers.length() {
+    updated.buffer_bytes.clear()
+    for _ in doc.buffers {
+      updated.buffer_bytes.push(None)
+    }
+  }
+  if updated.buffer_blobs.length() != doc.buffers.length() {
+    updated.buffer_blobs.clear()
+    for _ in doc.buffers {
+      updated.buffer_blobs.push(None)
+    }
+  }
+
+  let base_dir = path_dirname(updated.gltf_path)
+  for i in 0..<doc.buffers.length() {
+    if updated.buffer_bytes[i] is Some(_) {
+      continue
+    }
+
+    let buffer = doc.buffers[i]
+    match buffer.uri {
+      Some(uri) =>
+        if uri.has_prefix("data:") {
+          if data_uri_decode_bytes(uri) is Some(decoded) {
+            updated.buffer_bytes[i] = Some(decoded)
+          } else {
+            return (updated, Some(Scene::new([])))
+          }
+        } else {
+          let resolved_path = path_join(base_dir, uri)
+          if updated.buffer_blobs[i] is None {
+            updated.buffer_blobs[i] = Some(
+              asset_server.load_bytes(resolved_path),
+            )
+          }
+          guard updated.buffer_blobs[i] is Some(blob) else {
+            return (updated, None)
+          }
+          guard @asset.asset_blob_read_bytes(blob) is Some(bytes) else {
+            return (updated, None)
+          }
+          updated.buffer_bytes[i] = Some(bytes)
+        }
+      None =>
+        if buffer.byte_length == 0 {
+          updated.buffer_bytes[i] = Some(Bytes::new(0))
+        } else {
+          return (updated, Some(Scene::new([])))
+        }
+    }
+  }
+
+  let resolved_buffers : Array[Bytes] = []
+  for maybe_bytes in updated.buffer_bytes {
+    guard maybe_bytes is Some(bytes) else { return (updated, None) }
+    resolved_buffers.push(bytes)
+  }
+
+  (
+    updated,
+    Some(scene_build_from_gltf(asset_server, updated, doc, resolved_buffers)),
+  )
 }
 
 ///|
