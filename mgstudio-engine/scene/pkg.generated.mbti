@@ -18,6 +18,8 @@ pub let ecs_resources : Array[String]
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
+pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
+
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
 pub fn[W] scene_load_pending_system(W) -> Unit
@@ -25,6 +27,10 @@ pub fn[W] scene_load_pending_system(W) -> Unit
 pub fn[W : ScenePluginWorld] scene_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn scene_register_gltf_scene(String, Scene) -> @asset.Handle[Scene]
+
+pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
+
+pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 
 pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(W) -> Unit
 
@@ -35,6 +41,19 @@ pub(all) enum GltfAssetLabel {
   Scene(Int)
 }
 pub fn GltfAssetLabel::from_asset(Self, String) -> String
+
+pub struct GltfLodVisibilityPolicy {
+  enabled : Bool
+  first_start_margin_min : Float
+  first_start_margin_max : Float
+  first_end_margin_min : Float
+  first_end_margin_max : Float
+  step : Float
+}
+pub fn GltfLodVisibilityPolicy::default() -> Self
+pub fn GltfLodVisibilityPolicy::with_enabled(Self, Bool) -> Self
+pub fn GltfLodVisibilityPolicy::with_first_lod_range(Self, Float, Float, Float, Float) -> Self
+pub fn GltfLodVisibilityPolicy::with_step(Self, Float) -> Self
 
 pub struct Scene {
   nodes3d : Array[SceneNode3d]

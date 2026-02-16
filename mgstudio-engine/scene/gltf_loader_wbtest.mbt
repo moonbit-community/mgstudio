@@ -247,21 +247,52 @@ test "scene gltf wb: parse node MSFT_lod ids" {
 
 ///|
 test "scene gltf wb: default visibility ranges for lod levels" {
-  let lod0 = gltf_lod_visibility_range(0)
+  scene_reset_gltf_lod_visibility_policy()
+  let lod0 = gltf_lod_visibility_range(0).unwrap()
   inspect(lod0.start_margin_min.to_double(), content="0")
   inspect(lod0.start_margin_max.to_double(), content="0")
   inspect(lod0.end_margin_min.to_double(), content="3")
   inspect(lod0.end_margin_max.to_double(), content="4")
 
-  let lod1 = gltf_lod_visibility_range(1)
+  let lod1 = gltf_lod_visibility_range(1).unwrap()
   inspect(lod1.start_margin_min.to_double(), content="3")
   inspect(lod1.start_margin_max.to_double(), content="4")
   inspect(lod1.end_margin_min.to_double(), content="8")
   inspect(lod1.end_margin_max.to_double(), content="9")
 
-  let lod2 = gltf_lod_visibility_range(2)
+  let lod2 = gltf_lod_visibility_range(2).unwrap()
   inspect(lod2.start_margin_min.to_double(), content="8")
   inspect(lod2.start_margin_max.to_double(), content="9")
   inspect(lod2.end_margin_min.to_double(), content="13")
   inspect(lod2.end_margin_max.to_double(), content="14")
+}
+
+///|
+test "scene gltf wb: custom lod visibility policy and disable switch" {
+  scene_set_gltf_lod_visibility_policy(
+    GltfLodVisibilityPolicy::default()
+    .with_first_lod_range(1.0F, 2.0F, 11.0F, 12.0F)
+    .with_step(2.0F),
+  )
+  let lod0 = gltf_lod_visibility_range(0).unwrap()
+  inspect(lod0.start_margin_min.to_double(), content="1")
+  inspect(lod0.start_margin_max.to_double(), content="2")
+  inspect(lod0.end_margin_min.to_double(), content="11")
+  inspect(lod0.end_margin_max.to_double(), content="12")
+
+  let lod2 = gltf_lod_visibility_range(2).unwrap()
+  inspect(lod2.start_margin_min.to_double(), content="13")
+  inspect(lod2.start_margin_max.to_double(), content="14")
+  inspect(lod2.end_margin_min.to_double(), content="15")
+  inspect(lod2.end_margin_max.to_double(), content="16")
+
+  scene_set_gltf_lod_visibility_policy(
+    scene_get_gltf_lod_visibility_policy().with_enabled(false),
+  )
+  let disabled_is_none = match gltf_lod_visibility_range(0) {
+    None => true
+    Some(_) => false
+  }
+  inspect(disabled_is_none, content="true")
+  scene_reset_gltf_lod_visibility_policy()
 }

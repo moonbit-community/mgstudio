@@ -1446,23 +1446,29 @@ fn transform_compose(
 }
 
 ///|
-fn gltf_lod_visibility_range(lod_level : Int) -> @visibility.VisibilityRange {
+fn gltf_lod_visibility_range(lod_level : Int) -> @visibility.VisibilityRange? {
+  let policy = scene_get_gltf_lod_visibility_policy()
+  if !policy.enabled {
+    return None
+  }
   let level = if lod_level < 0 { 0 } else { lod_level }
   let level_float = Float::from_double(level.to_double())
   let start_min = if level <= 0 {
-    0.0F
+    policy.first_start_margin_min
   } else {
-    3.0F + (level_float - 1.0F) * 5.0F
+    policy.first_end_margin_min + (level_float - 1.0F) * policy.step
   }
   let start_max = if level <= 0 {
-    0.0F
+    policy.first_start_margin_max
   } else {
-    4.0F + (level_float - 1.0F) * 5.0F
+    policy.first_end_margin_max + (level_float - 1.0F) * policy.step
   }
-  let end_min = 3.0F + level_float * 5.0F
-  let end_max = 4.0F + level_float * 5.0F
-  @visibility.VisibilityRange::new(
-    start_min, start_max, end_min, end_max, false,
+  let end_min = policy.first_end_margin_min + level_float * policy.step
+  let end_max = policy.first_end_margin_max + level_float * policy.step
+  Some(
+    @visibility.VisibilityRange::new(
+      start_min, start_max, end_min, end_max, false,
+    ),
   )
 }
 
@@ -1528,7 +1534,7 @@ fn scene_build_from_gltf(
       -1
     }
     let visibility_range = if effective_lod_level >= 0 {
-      Some(gltf_lod_visibility_range(effective_lod_level))
+      gltf_lod_visibility_range(effective_lod_level)
     } else {
       None
     }

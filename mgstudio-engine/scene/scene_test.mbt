@@ -36,6 +36,32 @@ test "scene: register keeps stable handle" {
 }
 
 ///|
+test "scene: gltf lod visibility policy set/get/reset" {
+  @scene.scene_reset_gltf_lod_visibility_policy()
+  let default_policy = @scene.scene_get_gltf_lod_visibility_policy()
+  inspect(default_policy.enabled, content="true")
+  inspect(default_policy.step.to_double(), content="5")
+
+  @scene.scene_set_gltf_lod_visibility_policy(
+    default_policy
+    .with_first_lod_range(1.0F, 2.0F, 6.0F, 7.0F)
+    .with_step(3.0F)
+    .with_enabled(false),
+  )
+  let customized = @scene.scene_get_gltf_lod_visibility_policy()
+  inspect(customized.enabled, content="false")
+  inspect(customized.first_start_margin_min.to_double(), content="1")
+  inspect(customized.first_end_margin_max.to_double(), content="7")
+  inspect(customized.step.to_double(), content="3")
+
+  @scene.scene_reset_gltf_lod_visibility_policy()
+  let restored = @scene.scene_get_gltf_lod_visibility_policy()
+  inspect(restored.enabled, content="true")
+  inspect(restored.first_end_margin_min.to_double(), content="3")
+  inspect(restored.step.to_double(), content="5")
+}
+
+///|
 test "scene: SceneRoot spawns children and marks ready" {
   let world = @ecs_world.World::new()
   let tick = world.increment_change_tick()

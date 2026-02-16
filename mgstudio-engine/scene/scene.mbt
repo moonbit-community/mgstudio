@@ -66,6 +66,77 @@ pub fn Scene::new(nodes3d : Array[SceneNode3d]) -> Scene {
 }
 
 ///|
+const GLTF_LOD_DEFAULT_FIRST_START_MARGIN_MIN : Float = 0.0F
+
+///|
+const GLTF_LOD_DEFAULT_FIRST_START_MARGIN_MAX : Float = 0.0F
+
+///|
+const GLTF_LOD_DEFAULT_FIRST_END_MARGIN_MIN : Float = 3.0F
+
+///|
+const GLTF_LOD_DEFAULT_FIRST_END_MARGIN_MAX : Float = 4.0F
+
+///|
+const GLTF_LOD_DEFAULT_STEP : Float = 5.0F
+
+///|
+pub struct GltfLodVisibilityPolicy {
+  enabled : Bool
+  first_start_margin_min : Float
+  first_start_margin_max : Float
+  first_end_margin_min : Float
+  first_end_margin_max : Float
+  step : Float
+}
+
+///|
+pub fn GltfLodVisibilityPolicy::default() -> GltfLodVisibilityPolicy {
+  GltfLodVisibilityPolicy::{
+    enabled: true,
+    first_start_margin_min: GLTF_LOD_DEFAULT_FIRST_START_MARGIN_MIN,
+    first_start_margin_max: GLTF_LOD_DEFAULT_FIRST_START_MARGIN_MAX,
+    first_end_margin_min: GLTF_LOD_DEFAULT_FIRST_END_MARGIN_MIN,
+    first_end_margin_max: GLTF_LOD_DEFAULT_FIRST_END_MARGIN_MAX,
+    step: GLTF_LOD_DEFAULT_STEP,
+  }
+}
+
+///|
+pub fn GltfLodVisibilityPolicy::with_enabled(
+  self : GltfLodVisibilityPolicy,
+  enabled : Bool,
+) -> GltfLodVisibilityPolicy {
+  GltfLodVisibilityPolicy::{ ..self, enabled, }
+}
+
+///|
+pub fn GltfLodVisibilityPolicy::with_first_lod_range(
+  self : GltfLodVisibilityPolicy,
+  start_margin_min : Float,
+  start_margin_max : Float,
+  end_margin_min : Float,
+  end_margin_max : Float,
+) -> GltfLodVisibilityPolicy {
+  GltfLodVisibilityPolicy::{
+    ..self,
+    first_start_margin_min: start_margin_min,
+    first_start_margin_max: start_margin_max,
+    first_end_margin_min: end_margin_min,
+    first_end_margin_max: end_margin_max,
+  }
+}
+
+///|
+pub fn GltfLodVisibilityPolicy::with_step(
+  self : GltfLodVisibilityPolicy,
+  step : Float,
+) -> GltfLodVisibilityPolicy {
+  let safe_step = if step < 0.0F { 0.0F } else { step }
+  GltfLodVisibilityPolicy::{ ..self, step: safe_step }
+}
+
+///|
 fn scene_pending() -> Scene {
   Scene::{ nodes3d: [], ready: false }
 }
@@ -100,6 +171,28 @@ let scene_assets : Ref[@asset.Assets[Scene]] = Ref::new(@asset.Assets::new())
 ///|
 let gltf_scene_registry : Ref[Array[(String, @asset.Handle[Scene])]] = Ref::new([],
 )
+
+///|
+let gltf_lod_visibility_policy : Ref[GltfLodVisibilityPolicy] = Ref::new(
+  GltfLodVisibilityPolicy::default(),
+)
+
+///|
+pub fn scene_set_gltf_lod_visibility_policy(
+  policy : GltfLodVisibilityPolicy,
+) -> Unit {
+  gltf_lod_visibility_policy.val = policy
+}
+
+///|
+pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy {
+  gltf_lod_visibility_policy.val
+}
+
+///|
+pub fn scene_reset_gltf_lod_visibility_policy() -> Unit {
+  gltf_lod_visibility_policy.val = GltfLodVisibilityPolicy::default()
+}
 
 ///|
 fn scene_registry_get(asset_path : String) -> @asset.Handle[Scene]? {
