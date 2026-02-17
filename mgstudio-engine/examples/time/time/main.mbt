@@ -49,9 +49,9 @@ fn help() -> Unit {
 fn print_real_time(_world : @ecs_world.World) -> Unit {
   println(
     "PreUpdate: real time, delta=" +
-    @time.time_real_delta_seconds().to_string() +
+    @my_time.time_real_delta_seconds().to_string() +
     ", elapsed=" +
-    @time.time_real_elapsed_seconds().to_string(),
+    @my_time.time_real_elapsed_seconds().to_string(),
   )
 }
 
@@ -59,9 +59,9 @@ fn print_real_time(_world : @ecs_world.World) -> Unit {
 fn print_fixed_time(_world : @ecs_world.World) -> Unit {
   println(
     "FixedUpdate: generic time in fixed schedule, delta=" +
-    @time.time_delta_seconds().to_string() +
+    @my_time.time_delta_seconds().to_string() +
     ", elapsed=" +
-    @time.time_elapsed_seconds().to_string(),
+    @my_time.time_elapsed_seconds().to_string(),
   )
 }
 
@@ -69,9 +69,9 @@ fn print_fixed_time(_world : @ecs_world.World) -> Unit {
 fn print_time(_world : @ecs_world.World) -> Unit {
   println(
     "Update: generic time clock, delta=" +
-    @time.time_delta_seconds().to_string() +
+    @my_time.time_delta_seconds().to_string() +
     ", elapsed=" +
-    @time.time_elapsed_seconds().to_string(),
+    @my_time.time_elapsed_seconds().to_string(),
   )
 }
 
@@ -84,27 +84,27 @@ fn apply_command(
     "" => (app.run_once(), false)
     "f" => {
       println("FAST: setting relative speed to 2x")
-      @time.time_virtual_set_relative_speed(2.0F)
+      @my_time.time_virtual_set_relative_speed(2.0F)
       (app, false)
     }
     "n" => {
       println("NORMAL: setting relative speed to 1x")
-      @time.time_virtual_set_relative_speed(1.0F)
+      @my_time.time_virtual_set_relative_speed(1.0F)
       (app, false)
     }
     "s" => {
       println("SLOW: setting relative speed to 0.5x")
-      @time.time_virtual_set_relative_speed(0.5F)
+      @my_time.time_virtual_set_relative_speed(0.5F)
       (app, false)
     }
     "p" => {
       println("PAUSE: pausing virtual clock")
-      @time.time_virtual_pause()
+      @my_time.time_virtual_pause()
       (app, false)
     }
     "u" => {
       println("UNPAUSE: resuming virtual clock")
-      @time.time_virtual_unpause()
+      @my_time.time_virtual_unpause()
       (app, false)
     }
     "q" => {
@@ -125,9 +125,9 @@ fn time_runner_builder(app : @app.App[@ecs_world.World]) -> @app.RunnerFn {
     help()
     @app.fixed_time_reset()
     @app.fixed_time_set_timestep_seconds(1.0F)
-    @time.time_virtual_set_max_delta_seconds(5.0F)
-    @time.time_virtual_set_relative_speed(1.0F)
-    @time.time_virtual_unpause()
+    @my_time.time_virtual_set_max_delta_seconds(5.0F)
+    @my_time.time_virtual_set_relative_speed(1.0F)
+    @my_time.time_virtual_unpause()
 
     // `time.rs` is stdin-driven in Bevy. For WASM-first runtimes we replay
     // the same command model using a deterministic script.
@@ -149,7 +149,7 @@ fn time_runner_builder(app : @app.App[@ecs_world.World]) -> @app.RunnerFn {
 ///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = [
-    fn(app : @app.App[@ecs_world.World]) { @time.time_plugin(app) },
+    fn(app : @app.App[@ecs_world.World]) { @my_time.time_plugin(app) },
   ]
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
