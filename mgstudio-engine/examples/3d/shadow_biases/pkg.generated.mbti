@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/shadow_biases"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum ShadowFilteringMethodProxy {
+  Hardware2x2
+  Gaussian
+  Temporal
+}
+
+// Type aliases
+
+// Traits
+

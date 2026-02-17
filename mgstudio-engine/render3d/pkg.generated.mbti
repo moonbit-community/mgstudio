@@ -80,9 +80,13 @@ pub struct DirectionalLight {
   color : @render2d.Color
   illuminance : Float
   shadow_maps_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
 }
 pub fn DirectionalLight::default() -> Self
 pub fn DirectionalLight::new(@render2d.Color, Float, Bool) -> Self
+pub fn DirectionalLight::with_shadow_depth_bias(Self, Float) -> Self
+pub fn DirectionalLight::with_shadow_normal_bias(Self, Float) -> Self
 
 pub struct DistanceFog {
   color : @render2d.Color
@@ -165,9 +169,13 @@ pub struct PointLight {
   intensity : Float
   range : Float
   shadow_maps_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
 }
 pub fn PointLight::default() -> Self
 pub fn PointLight::new(@render2d.Color, Float, Float, Bool) -> Self
+pub fn PointLight::with_shadow_depth_bias(Self, Float) -> Self
+pub fn PointLight::with_shadow_normal_bias(Self, Float) -> Self
 
 pub(all) enum Projection3d {
   Perspective(PerspectiveProjection3d)

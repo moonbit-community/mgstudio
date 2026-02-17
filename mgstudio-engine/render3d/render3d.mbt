@@ -998,6 +998,18 @@ pub fn MeshMaterial3d::new(
 }
 
 ///|
+const POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.08F
+
+///|
+const POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 0.6F
+
+///|
+const DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.02F
+
+///|
+const DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 1.8F
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct PointLight {
@@ -1005,6 +1017,8 @@ pub struct PointLight {
   intensity : Float
   range : Float
   shadow_maps_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
 }
 
 ///|
@@ -1014,6 +1028,8 @@ pub fn PointLight::default() -> PointLight {
     intensity: 1_000_000.0F,
     range: 20.0F,
     shadow_maps_enabled: false,
+    shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
+    shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
 }
 
@@ -1024,7 +1040,44 @@ pub fn PointLight::new(
   range : Float,
   shadow_maps_enabled : Bool,
 ) -> PointLight {
-  PointLight::{ color, intensity, range, shadow_maps_enabled }
+  PointLight::{
+    color,
+    intensity,
+    range,
+    shadow_maps_enabled,
+    shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
+    shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+  }
+}
+
+///|
+pub fn PointLight::with_shadow_depth_bias(
+  self : PointLight,
+  shadow_depth_bias : Float,
+) -> PointLight {
+  PointLight::{
+    ..self,
+    shadow_depth_bias: if shadow_depth_bias < 0.0F {
+      0.0F
+    } else {
+      shadow_depth_bias
+    },
+  }
+}
+
+///|
+pub fn PointLight::with_shadow_normal_bias(
+  self : PointLight,
+  shadow_normal_bias : Float,
+) -> PointLight {
+  PointLight::{
+    ..self,
+    shadow_normal_bias: if shadow_normal_bias < 0.0F {
+      0.0F
+    } else {
+      shadow_normal_bias
+    },
+  }
 }
 
 ///|
@@ -1034,6 +1087,8 @@ pub struct DirectionalLight {
   color : @render2d.Color
   illuminance : Float
   shadow_maps_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
 }
 
 ///|
@@ -1042,6 +1097,8 @@ pub fn DirectionalLight::default() -> DirectionalLight {
     color: @render2d.Color::white(),
     illuminance: 10000.0F,
     shadow_maps_enabled: false,
+    shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
+    shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
 }
 
@@ -1051,7 +1108,43 @@ pub fn DirectionalLight::new(
   illuminance : Float,
   shadow_maps_enabled : Bool,
 ) -> DirectionalLight {
-  DirectionalLight::{ color, illuminance, shadow_maps_enabled }
+  DirectionalLight::{
+    color,
+    illuminance,
+    shadow_maps_enabled,
+    shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
+    shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+  }
+}
+
+///|
+pub fn DirectionalLight::with_shadow_depth_bias(
+  self : DirectionalLight,
+  shadow_depth_bias : Float,
+) -> DirectionalLight {
+  DirectionalLight::{
+    ..self,
+    shadow_depth_bias: if shadow_depth_bias < 0.0F {
+      0.0F
+    } else {
+      shadow_depth_bias
+    },
+  }
+}
+
+///|
+pub fn DirectionalLight::with_shadow_normal_bias(
+  self : DirectionalLight,
+  shadow_normal_bias : Float,
+) -> DirectionalLight {
+  DirectionalLight::{
+    ..self,
+    shadow_normal_bias: if shadow_normal_bias < 0.0F {
+      0.0F
+    } else {
+      shadow_normal_bias
+    },
+  }
 }
 
 ///|
