@@ -20,10 +20,4 @@ options(
   "bin-name": "mgstudio",
   "bin-target": "native",
   "is-main": true,
-  "link": {
-    "native": {
-      "cc": "./moon_cc.sh",
-      "cc-link-flags": "-framework IOKit -framework CoreFoundation",
-    },
-  },
 )

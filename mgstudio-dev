@@ -25,7 +25,7 @@ while [[ -h "${SOURCE}" ]]; do
   [[ "${SOURCE}" != /* ]] && SOURCE="${DIR}/${SOURCE}"
 done
 ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")" && pwd)"
-BIN="${ROOT}/mgstudio-cli/_build/native/release/build/main/main.exe"
+BIN="${ROOT}/mgstudio-cli/_build/native/release/build/cmd/mgstudio/mgstudio.exe"
 SDKROOT="${MGSTUDIO_SDKROOT:-${HOME}/.local/share/mgstudio/current}"
 SDK_WEB_DIR="${SDKROOT}/share/mgstudio/web"
 SDK_ASSETS_DIR="${SDKROOT}/share/mgstudio/assets"
@@ -47,10 +47,13 @@ if [[ ! -x "${BIN}" ]]; then
   NEED_BUILD=1
 else
   # Rebuild when CLI sources changed since last build.
-  if find "${ROOT}/mgstudio-cli/main" -type f \( -name '*.mbt' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
+  if find "${ROOT}/mgstudio-cli/cmd/mgstudio" -type f \( -name '*.mbt' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
   if [[ "${ROOT}/mgstudio-cli/moon.mod.json" -nt "${BIN}" ]]; then
+    NEED_BUILD=1
+  fi
+  if [[ "${ROOT}/mgstudio-cli/build.js" -nt "${BIN}" ]]; then
     NEED_BUILD=1
   fi
 fi

@@ -18,7 +18,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENGINE_DIR="${REPO_DIR}/mgstudio-engine"
-CLI_BIN="${REPO_DIR}/mgstudio-cli/_build/native/release/build/main/main.exe"
+CLI_BIN="${REPO_DIR}/mgstudio-cli/_build/native/release/build/cmd/mgstudio/mgstudio.exe"
 
 build_log="$(mktemp)"
 check_log="$(mktemp)"

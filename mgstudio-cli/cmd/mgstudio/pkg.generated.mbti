@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio-cli/main"
+package "Milky2018/mgstudio-cli/cmd/mgstudio"
 
 // Values
 
@@ -13,6 +13,8 @@ type EcsTags
 type GameConfig
 
 type GenOptions
+
+type ImportBlock
 
 type ModuleInfo
 

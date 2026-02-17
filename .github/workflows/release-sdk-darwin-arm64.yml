@@ -102,7 +102,7 @@ jobs:
 
           echo "Building mgstudio-cli (native release)..."
           moon -C "./mgstudio-cli" build --release
-          cli_bin="./mgstudio-cli/_build/native/release/build/main/main.exe"
+          cli_bin="./mgstudio-cli/_build/native/release/build/cmd/mgstudio/mgstudio.exe"
           test -x "${cli_bin}"
           cp "${cli_bin}" "${sdk_dir}/bin/mgstudio"
           chmod +x "${sdk_dir}/bin/mgstudio"

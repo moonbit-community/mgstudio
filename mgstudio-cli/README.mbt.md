@@ -143,7 +143,7 @@ Or build and run the binary directly:
 
 ```bash
 moon -C mgstudio-cli build --release
-./mgstudio-cli/_build/native/release/build/main/main.exe --help
+./mgstudio-cli/_build/native/release/build/cmd/mgstudio/mgstudio.exe --help
 ```
 
 `mgstudio gen` options are implemented with `TheWaWaR/clap`.
