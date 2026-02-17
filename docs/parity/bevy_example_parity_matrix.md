@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 33 | 18 | 0 |
+| `3d` | 66 | 15 | 36 | 15 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **56** | **298** | **3** |
+| **Total** | **402** | **45** | **59** | **295** | **3** |
 
 ## Example Inventory
 
@@ -106,7 +106,7 @@ Notes:
 | `bevy/examples/3d/contact_shadows.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/decal.rs` | `3d` | `mgstudio-engine/examples/3d/decal` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/deferred_rendering.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/depth_of_field.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/depth_of_field.rs` | `3d` | `mgstudio-engine/examples/3d/depth_of_field` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/fog.rs` | `3d` | `mgstudio-engine/examples/3d/fog` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/fog_volumes.rs` | `3d` | `mgstudio-engine/examples/3d/fog_volumes` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/generate_custom_mesh.rs` | `3d` | `mgstudio-engine/examples/3d/generate_custom_mesh` | `Exact` | `team-render` |  |
@@ -117,7 +117,7 @@ Notes:
 | `bevy/examples/3d/lightmaps.rs` | `3d` | `mgstudio-engine/examples/3d/lightmaps` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/lines.rs` | `3d` | `mgstudio-engine/examples/3d/lines` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/mesh_ray_cast.rs` | `3d` | `mgstudio-engine/examples/3d/mesh_ray_cast` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/meshlet.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/meshlet.rs` | `3d` | `mgstudio-engine/examples/3d/meshlet` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/mirror.rs` | `3d` | `mgstudio-engine/examples/3d/mirror` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/mixed_lighting.rs` | `3d` | `mgstudio-engine/examples/3d/mixed_lighting` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/motion_blur.rs` | `3d` |  | `Blocked` | `team-render` |  |
@@ -127,7 +127,7 @@ Notes:
 | `bevy/examples/3d/parallax_mapping.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/parenting.rs` | `3d` | `mgstudio-engine/examples/3d/parenting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/pbr.rs` | `3d` | `mgstudio-engine/examples/3d/pbr` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/pccm.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/pccm.rs` | `3d` | `mgstudio-engine/examples/3d/pccm` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/pcss.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/post_processing.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/reflection_probes.rs` | `3d` |  | `Blocked` | `team-render` |  |
