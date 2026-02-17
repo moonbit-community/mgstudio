@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/depth_of_field"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum DofMode {
+  Bokeh
+  Gaussian
+  Off
+}
+
+// Type aliases
+
+// Traits
+

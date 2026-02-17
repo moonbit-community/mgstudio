@@ -1,0 +1,52 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/anti_aliasing"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum AAMethod {
+  NoAA
+  MSAA
+  FXAA
+  SMAA
+  TAA
+  DLSS
+}
+
+pub(all) enum DLSSQuality {
+  Auto
+  UltraPerformance
+  Performance
+  Balanced
+  Quality
+  Dlaa
+}
+
+pub(all) enum FXAASensitivity {
+  Low
+  Medium
+  High
+  Ultra
+  Extreme
+}
+
+pub(all) enum MSAASamples {
+  Sample2
+  Sample4
+  Sample8
+}
+
+pub(all) enum SMAAQuality {
+  Low
+  Medium
+  High
+  Ultra
+}
+
+// Type aliases
+
+// Traits
+

@@ -20,6 +20,149 @@ pub struct Time {
 }
 
 ///|
+const MIN_TIMER_DURATION : Float = 0.000001F
+
+///|
+pub(all) enum TimerMode {
+  Once
+  Repeating
+}
+
+///|
+pub struct Timer {
+  duration_seconds : Float
+  elapsed_seconds : Float
+  mode : TimerMode
+  paused : Bool
+  just_finished_flag : Bool
+  finished_flag : Bool
+}
+
+///|
+fn timer_safe_duration(seconds : Float) -> Float {
+  if seconds <= 0.0F {
+    MIN_TIMER_DURATION
+  } else {
+    seconds
+  }
+}
+
+///|
+fn timer_clampf(value : Float, min_value : Float, max_value : Float) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+pub fn Timer::from_seconds(seconds : Float, mode : TimerMode) -> Timer {
+  Timer::{
+    duration_seconds: timer_safe_duration(seconds),
+    elapsed_seconds: 0.0F,
+    mode,
+    paused: false,
+    just_finished_flag: false,
+    finished_flag: false,
+  }
+}
+
+///|
+pub fn Timer::tick(self : Timer, delta_seconds : Float) -> Timer {
+  if self.paused || delta_seconds <= 0.0F {
+    return Timer::{ ..self, just_finished_flag: false }
+  }
+
+  let duration = timer_safe_duration(self.duration_seconds)
+  let total = self.elapsed_seconds + delta_seconds
+
+  match self.mode {
+    Once => {
+      let finished = total >= duration
+      Timer::{
+        ..self,
+        duration_seconds: duration,
+        elapsed_seconds: if finished {
+          duration
+        } else {
+          total
+        },
+        just_finished_flag: !self.finished_flag && finished,
+        finished_flag: finished,
+      }
+    }
+    Repeating =>
+      if total >= duration {
+        let mut wrapped = total
+        while wrapped >= duration {
+          wrapped = wrapped - duration
+        }
+        Timer::{
+          ..self,
+          duration_seconds: duration,
+          elapsed_seconds: wrapped,
+          just_finished_flag: true,
+          finished_flag: true,
+        }
+      } else {
+        Timer::{
+          ..self,
+          duration_seconds: duration,
+          elapsed_seconds: total,
+          just_finished_flag: false,
+          finished_flag: false,
+        }
+      }
+  }
+}
+
+///|
+pub fn Timer::pause(self : Timer) -> Timer {
+  Timer::{ ..self, paused: true, just_finished_flag: false }
+}
+
+///|
+pub fn Timer::unpause(self : Timer) -> Timer {
+  Timer::{ ..self, paused: false }
+}
+
+///|
+pub fn Timer::toggle(self : Timer) -> Timer {
+  if self.paused {
+    self.unpause()
+  } else {
+    self.pause()
+  }
+}
+
+///|
+pub fn Timer::is_paused(self : Timer) -> Bool {
+  self.paused
+}
+
+///|
+pub fn Timer::just_finished(self : Timer) -> Bool {
+  self.just_finished_flag
+}
+
+///|
+pub fn Timer::is_finished(self : Timer) -> Bool {
+  self.finished_flag
+}
+
+///|
+pub fn Timer::fraction(self : Timer) -> Float {
+  timer_clampf(
+    self.elapsed_seconds / timer_safe_duration(self.duration_seconds),
+    0.0F,
+    1.0F,
+  )
+}
+
+///|
 let time_state : Ref[Time] = @ref.new(Time::{
   delta_seconds: 0.0F,
   elapsed_seconds: 0.0F,

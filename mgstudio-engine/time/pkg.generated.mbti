@@ -27,6 +27,29 @@ pub struct Time {
   mut last_ticks : Float
 }
 
+pub struct Timer {
+  duration_seconds : Float
+  elapsed_seconds : Float
+  mode : TimerMode
+  paused : Bool
+  just_finished_flag : Bool
+  finished_flag : Bool
+}
+pub fn Timer::fraction(Self) -> Float
+pub fn Timer::from_seconds(Float, TimerMode) -> Self
+pub fn Timer::is_finished(Self) -> Bool
+pub fn Timer::is_paused(Self) -> Bool
+pub fn Timer::just_finished(Self) -> Bool
+pub fn Timer::pause(Self) -> Self
+pub fn Timer::tick(Self, Float) -> Self
+pub fn Timer::toggle(Self) -> Self
+pub fn Timer::unpause(Self) -> Self
+
+pub(all) enum TimerMode {
+  Once
+  Repeating
+}
+
 // Type aliases
 
 // Traits
