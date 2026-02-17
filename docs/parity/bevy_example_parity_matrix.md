@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 29 | 22 | 0 |
+| `3d` | 66 | 15 | 33 | 18 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **52** | **302** | **3** |
+| **Total** | **402** | **45** | **56** | **298** | **3** |
 
 ## Example Inventory
 
@@ -92,7 +92,7 @@ Notes:
 | `bevy/examples/3d/3d_viewport_to_world.rs` | `3d` | `mgstudio-engine/examples/3d/3d_viewport_to_world` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/animated_material.rs` | `3d` | `mgstudio-engine/examples/3d/animated_material` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/anisotropy.rs` | `3d` | `mgstudio-engine/examples/3d/anisotropy` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/anti_aliasing.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/anti_aliasing.rs` | `3d` | `mgstudio-engine/examples/3d/anti_aliasing` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/atmosphere.rs` | `3d` | `mgstudio-engine/examples/3d/atmosphere` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/atmospheric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/atmospheric_fog` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/auto_exposure.rs` | `3d` | `mgstudio-engine/examples/3d/auto_exposure` | `Adapted` | `team-render` |  |
@@ -104,7 +104,7 @@ Notes:
 | `bevy/examples/3d/clustered_decals.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/color_grading.rs` | `3d` | `mgstudio-engine/examples/3d/color_grading` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/contact_shadows.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/decal.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/decal.rs` | `3d` | `mgstudio-engine/examples/3d/decal` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/deferred_rendering.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/depth_of_field.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/fog.rs` | `3d` | `mgstudio-engine/examples/3d/fog` | `Adapted` | `team-render` |  |
@@ -132,14 +132,14 @@ Notes:
 | `bevy/examples/3d/post_processing.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/reflection_probes.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/render_to_texture.rs` | `3d` | `mgstudio-engine/examples/3d/render_to_texture` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/rotate_environment_map.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/rotate_environment_map.rs` | `3d` | `mgstudio-engine/examples/3d/rotate_environment_map` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/scrolling_fog.rs` | `3d` | `mgstudio-engine/examples/3d/scrolling_fog` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/shadow_biases.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_biases` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/shadow_caster_receiver.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_caster_receiver` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/skybox.rs` | `3d` | `mgstudio-engine/examples/3d/skybox` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/solari.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/specular_tint.rs` | `3d` | `mgstudio-engine/examples/3d/specular_tint` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/spherical_area_lights.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/spherical_area_lights.rs` | `3d` | `mgstudio-engine/examples/3d/spherical_area_lights` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/split_screen.rs` | `3d` | `mgstudio-engine/examples/3d/split_screen` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/spotlight.rs` | `3d` | `mgstudio-engine/examples/3d/spotlight` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/ssao.rs` | `3d` | `mgstudio-engine/examples/3d/ssao` | `Adapted` | `team-render` |  |
