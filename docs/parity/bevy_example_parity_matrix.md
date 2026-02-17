@@ -20,7 +20,7 @@ Notes:
 | `2d` | 27 | 27 | 0 | 0 | 0 |
 | `3d` | 66 | 15 | 36 | 15 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
-| `app` | 17 | 0 | 0 | 17 | 0 |
+| `app` | 17 | 2 | 0 | 15 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
 | `async_tasks` | 3 | 0 | 0 | 3 | 0 |
 | `audio` | 7 | 0 | 0 | 7 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **48** | **59** | **292** | **3** |
+| **Total** | **402** | **50** | **59** | **290** | **3** |
 
 ## Example Inventory
 
@@ -168,8 +168,8 @@ Notes:
 | `bevy/examples/animation/morph_targets.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/app/custom_loop.rs` | `app` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/app/drag_and_drop.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/empty.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/empty_defaults.rs` | `app` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/app/empty.rs` | `app` | `mgstudio-engine/examples/app/empty` | `Exact` | `team-core` |  |
+| `bevy/examples/app/empty_defaults.rs` | `app` | `mgstudio-engine/examples/app/empty_defaults` | `Exact` | `team-core` |  |
 | `bevy/examples/app/externally_driven_headless_renderer.rs` | `app` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/app/headless.rs` | `app` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/app/headless_renderer.rs` | `app` |  | `Blocked` | `team-core` |  |
