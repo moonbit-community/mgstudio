@@ -58,6 +58,8 @@ pub struct Camera3dBundle {
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
   screen_space_reflections : ScreenSpaceReflections?
+  chromatic_aberration : ChromaticAberration?
+  vignette : Vignette?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -66,8 +68,10 @@ pub struct Camera3dBundle {
 pub fn Camera3dBundle::new(@render2d.Camera, @math.Transform) -> Self
 pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection3d, @math.Transform) -> Self
 pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(Self, W) -> @core.Entity
+pub fn Camera3dBundle::with_chromatic_aberration(Self, ChromaticAberration?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
+pub fn Camera3dBundle::with_vignette(Self, Vignette?) -> Self
 
 pub struct CameraProjection3d {
   projection : Projection3d
@@ -75,6 +79,15 @@ pub struct CameraProjection3d {
 pub fn CameraProjection3d::default() -> Self
 pub fn CameraProjection3d::new(Projection3d) -> Self
 pub fn CameraProjection3d::with_projection(Self, Projection3d) -> Self
+
+pub struct ChromaticAberration {
+  intensity : Float
+  max_samples : Int
+}
+pub fn ChromaticAberration::default() -> Self
+pub fn ChromaticAberration::new(Float, Int) -> Self
+pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
+pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
 
 pub struct DirectionalLight {
   color : @render2d.Color
@@ -152,6 +165,16 @@ pub struct OrthographicProjection3d {
 pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 
+pub(all) enum ParallaxMappingMethod {
+  Occlusion
+  Relief(Int)
+}
+pub fn ParallaxMappingMethod::default() -> Self
+pub fn ParallaxMappingMethod::max_steps(Self) -> Int
+pub fn ParallaxMappingMethod::relief_default() -> Self
+pub impl Eq for ParallaxMappingMethod
+pub impl Show for ParallaxMappingMethod
+
 pub struct PerspectiveProjection3d {
   fov : Float
   near : Float
@@ -224,6 +247,10 @@ pub struct StandardMaterial {
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
   normal_map_texture : @asset.Handle[@asset.Image]?
+  depth_map : @asset.Handle[@asset.Image]?
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  parallax_mapping_method : ParallaxMappingMethod
   clearcoat : Float
   clearcoat_perceptual_roughness : Float
   clearcoat_texture : @asset.Handle[@asset.Image]?
@@ -256,12 +283,16 @@ pub fn StandardMaterial::with_clearcoat_normal_texture(Self, @asset.Handle[@asse
 pub fn StandardMaterial::with_clearcoat_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_clearcoat_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_clearcoat_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_depth_map(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_emissive(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_max_parallax_layer_count(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_parallax_depth_scale(Self, Float) -> Self
+pub fn StandardMaterial::with_parallax_mapping_method(Self, ParallaxMappingMethod) -> Self
 pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_reflectance(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
@@ -276,10 +307,29 @@ pub struct SubCameraView3d {
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 
+pub struct Vignette {
+  intensity : Float
+  radius : Float
+  smoothness : Float
+  roundness : Float
+  center : @math.Vec2
+  edge_compensation : Float
+  color : @render2d.Color
+}
+pub fn Vignette::default() -> Self
+pub fn Vignette::new(Float, Float, Float, Float) -> Self
+pub fn Vignette::with_center(Self, @math.Vec2) -> Self
+pub fn Vignette::with_color(Self, @render2d.Color) -> Self
+pub fn Vignette::with_edge_compensation(Self, Float) -> Self
+pub fn Vignette::with_intensity(Self, Float) -> Self
+pub fn Vignette::with_radius(Self, Float) -> Self
+pub fn Vignette::with_roundness(Self, Float) -> Self
+pub fn Vignette::with_smoothness(Self, Float) -> Self
+
 // Type aliases
 
 // Traits
-pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 pub(open) trait HasRes_GlobalAmbientLight {
@@ -292,6 +342,10 @@ pub(open) trait Has_Camera3d {
 
 pub(open) trait Has_CameraProjection3d {
   get_camera_projection3d_store(Self) -> @core.ComponentStore[CameraProjection3d]
+}
+
+pub(open) trait Has_ChromaticAberration {
+  get_chromatic_aberration_store(Self) -> @core.ComponentStore[ChromaticAberration]
 }
 
 pub(open) trait Has_DirectionalLight {
@@ -322,10 +376,14 @@ pub(open) trait Has_SubCameraView3d {
   get_sub_camera_view3d_store(Self) -> @core.ComponentStore[SubCameraView3d]
 }
 
+pub(open) trait Has_Vignette {
+  get_vignette_store(Self) -> @core.ComponentStore[Vignette]
+}
+
 pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {

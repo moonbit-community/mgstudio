@@ -59,6 +59,7 @@ pub struct World {
   image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   camera3d : @core.ComponentStore[@render3d.Camera3d]
+  vignette : @core.ComponentStore[@render3d.Vignette]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
@@ -115,6 +116,7 @@ pub struct World {
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
+  chromatic_aberration : @core.ComponentStore[@render3d.ChromaticAberration]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[@physics2d.FrictionCombineRule2d]
   screen_space_reflections : @core.ComponentStore[@render3d.ScreenSpaceReflections]
@@ -233,6 +235,7 @@ pub impl @render2d.Has_Sprite for World
 pub impl @render3d.HasRes_GlobalAmbientLight for World
 pub impl @render3d.Has_Camera3d for World
 pub impl @render3d.Has_CameraProjection3d for World
+pub impl @render3d.Has_ChromaticAberration for World
 pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_Mesh3d for World
 pub impl @render3d.Has_MeshMaterial3d for World
@@ -240,6 +243,7 @@ pub impl @render3d.Has_PointLight for World
 pub impl @render3d.Has_ScreenSpaceReflections for World
 pub impl @render3d.Has_SpotLight for World
 pub impl @render3d.Has_SubCameraView3d for World
+pub impl @render3d.Has_Vignette for World
 pub impl @scene.Has_SceneInstanceReady for World
 pub impl @scene.Has_SceneRoot for World
 pub impl @transform.Has_GlobalTransform for World

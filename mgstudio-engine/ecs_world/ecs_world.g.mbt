@@ -37,6 +37,7 @@ pub struct World {
   image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   camera3d : @core.ComponentStore[@render3d.Camera3d]
+  vignette : @core.ComponentStore[@render3d.Vignette]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
   texture_atlas : @core.ComponentStore[@asset.TextureAtlas]
@@ -93,6 +94,7 @@ pub struct World {
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
+  chromatic_aberration : @core.ComponentStore[@render3d.ChromaticAberration]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[
     @physics2d.FrictionCombineRule2d,
@@ -198,6 +200,7 @@ pub fn World::new() -> World {
     image_node_size: @core.ComponentStore::new(),
     camera2d: @core.ComponentStore::new(),
     camera3d: @core.ComponentStore::new(),
+    vignette: @core.ComponentStore::new(),
     calculated_clip: @core.ComponentStore::new(),
     scroll_position: @core.ComponentStore::new(),
     texture_atlas: @core.ComponentStore::new(),
@@ -254,6 +257,7 @@ pub fn World::new() -> World {
     rapier_body_handle2d: @core.ComponentStore::new(),
     rigid_body_enabled2d: @core.ComponentStore::new(),
     rapier_body_handle3d: @core.ComponentStore::new(),
+    chromatic_aberration: @core.ComponentStore::new(),
     inherited_visibility: @core.ComponentStore::new(),
     friction_combine_rule2d: @core.ComponentStore::new(),
     screen_space_reflections: @core.ComponentStore::new(),
@@ -333,6 +337,7 @@ pub fn World::despawn(
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.camera3d.remove(entity) |> ignore
+  self.vignette.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
@@ -389,6 +394,7 @@ pub fn World::despawn(
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
+  self.chromatic_aberration.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
   self.screen_space_reflections.remove(entity) |> ignore
@@ -448,6 +454,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.camera3d.remove(entity) |> ignore
+  self.vignette.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
   self.texture_atlas.remove(entity) |> ignore
@@ -504,6 +511,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
+  self.chromatic_aberration.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
   self.screen_space_reflections.remove(entity) |> ignore
@@ -702,6 +710,11 @@ pub impl @render2d.Has_Camera2d for World with get_camera2d_store(self) {
 ///|
 pub impl @render3d.Has_Camera3d for World with get_camera3d_store(self) {
   self.camera3d
+}
+
+///|
+pub impl @render3d.Has_Vignette for World with get_vignette_store(self) {
+  self.vignette
 }
 
 ///|
@@ -1048,6 +1061,13 @@ pub impl @physics3d.Has_RapierBodyHandle3d for World with get_rapier_body_handle
   self,
 ) {
   self.rapier_body_handle3d
+}
+
+///|
+pub impl @render3d.Has_ChromaticAberration for World with get_chromatic_aberration_store(
+  self,
+) {
+  self.chromatic_aberration
 }
 
 ///|

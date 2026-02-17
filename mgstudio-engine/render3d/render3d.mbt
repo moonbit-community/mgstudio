@@ -212,6 +212,172 @@ pub fn SubCameraView3d::with_offset(
 }
 
 ///|
+/// Camera post-process settings aligned with Bevy's `ChromaticAberration`.
+///
+/// This renderer currently applies a lightweight per-object approximation in
+/// the draw phase instead of a full-screen post-process pass.
+#ecs.component
+pub struct ChromaticAberration {
+  intensity : Float
+  max_samples : Int
+}
+
+///|
+pub fn ChromaticAberration::default() -> ChromaticAberration {
+  ChromaticAberration::{ intensity: 0.02F, max_samples: 8 }
+}
+
+///|
+pub fn ChromaticAberration::new(
+  intensity : Float,
+  max_samples : Int,
+) -> ChromaticAberration {
+  let safe_intensity = if intensity < 0.0F { 0.0F } else { intensity }
+  let safe_max_samples = if max_samples <= 0 { 1 } else { max_samples }
+  ChromaticAberration::{
+    intensity: safe_intensity,
+    max_samples: safe_max_samples,
+  }
+}
+
+///|
+pub fn ChromaticAberration::with_intensity(
+  self : ChromaticAberration,
+  intensity : Float,
+) -> ChromaticAberration {
+  ChromaticAberration::new(intensity, self.max_samples)
+}
+
+///|
+pub fn ChromaticAberration::with_max_samples(
+  self : ChromaticAberration,
+  max_samples : Int,
+) -> ChromaticAberration {
+  ChromaticAberration::new(self.intensity, max_samples)
+}
+
+///|
+/// Camera post-process settings aligned with Bevy's `Vignette`.
+///
+/// This renderer currently applies a lightweight per-object approximation in
+/// the draw phase instead of a full-screen post-process pass.
+#ecs.component
+pub struct Vignette {
+  intensity : Float
+  radius : Float
+  smoothness : Float
+  roundness : Float
+  center : @math.Vec2
+  edge_compensation : Float
+  color : @render2d.Color
+}
+
+///|
+pub fn Vignette::default() -> Vignette {
+  Vignette::{
+    intensity: 1.0F,
+    radius: 0.75F,
+    smoothness: 5.0F,
+    roundness: 1.0F,
+    center: @math.Vec2::new(0.5F, 0.5F),
+    edge_compensation: 1.0F,
+    color: @render2d.Color::black(),
+  }
+}
+
+///|
+pub fn Vignette::new(
+  intensity : Float,
+  radius : Float,
+  smoothness : Float,
+  roundness : Float,
+) -> Vignette {
+  let safe_intensity = if intensity < 0.0F { 0.0F } else { intensity }
+  let safe_radius = if radius < 0.0F { 0.0F } else { radius }
+  let safe_smoothness = if smoothness <= 0.01F { 0.01F } else { smoothness }
+  let safe_roundness = if roundness <= 0.01F { 0.01F } else { roundness }
+  Vignette::{
+    ..Vignette::default(),
+    intensity: safe_intensity,
+    radius: safe_radius,
+    smoothness: safe_smoothness,
+    roundness: safe_roundness,
+  }
+}
+
+///|
+pub fn Vignette::with_intensity(self : Vignette, intensity : Float) -> Vignette {
+  Vignette::{
+    ..self,
+    intensity: if intensity < 0.0F {
+      0.0F
+    } else {
+      intensity
+    },
+  }
+}
+
+///|
+pub fn Vignette::with_radius(self : Vignette, radius : Float) -> Vignette {
+  Vignette::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
+}
+
+///|
+pub fn Vignette::with_smoothness(
+  self : Vignette,
+  smoothness : Float,
+) -> Vignette {
+  Vignette::{
+    ..self,
+    smoothness: if smoothness <= 0.01F {
+      0.01F
+    } else {
+      smoothness
+    },
+  }
+}
+
+///|
+pub fn Vignette::with_roundness(self : Vignette, roundness : Float) -> Vignette {
+  Vignette::{
+    ..self,
+    roundness: if roundness <= 0.01F {
+      0.01F
+    } else {
+      roundness
+    },
+  }
+}
+
+///|
+pub fn Vignette::with_center(self : Vignette, center : @math.Vec2) -> Vignette {
+  Vignette::{ ..self, center, }
+}
+
+///|
+pub fn Vignette::with_edge_compensation(
+  self : Vignette,
+  edge_compensation : Float,
+) -> Vignette {
+  let safe = if edge_compensation < 0.0F {
+    0.0F
+  } else if edge_compensation > 1.0F {
+    1.0F
+  } else {
+    edge_compensation
+  }
+  Vignette::{ ..self, edge_compensation: safe }
+}
+
+///|
+pub fn Vignette::with_color(
+  self : Vignette,
+  color : @render2d.Color,
+) -> Vignette {
+  Vignette::{ ..self, color, }
+}
+
+///|
 fn screen_space_reflections_safe_range(
   start : Float,
   end_ : Float,
@@ -492,12 +658,40 @@ pub fn render3d_distance_fog() -> DistanceFog {
 }
 
 ///|
+pub(all) enum ParallaxMappingMethod {
+  Occlusion
+  Relief(Int)
+} derive(Eq, Show)
+
+///|
+pub fn ParallaxMappingMethod::default() -> ParallaxMappingMethod {
+  Occlusion
+}
+
+///|
+pub fn ParallaxMappingMethod::relief_default() -> ParallaxMappingMethod {
+  Relief(5)
+}
+
+///|
+pub fn ParallaxMappingMethod::max_steps(self : ParallaxMappingMethod) -> Int {
+  match self {
+    Occlusion => 0
+    Relief(max_steps) => if max_steps <= 0 { 1 } else { max_steps }
+  }
+}
+
+///|
 pub struct StandardMaterial {
   base_color : @render2d.Color
   base_color_texture : @asset.Handle[@asset.Image]?
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
   normal_map_texture : @asset.Handle[@asset.Image]?
+  depth_map : @asset.Handle[@asset.Image]?
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  parallax_mapping_method : ParallaxMappingMethod
   clearcoat : Float
   clearcoat_perceptual_roughness : Float
   clearcoat_texture : @asset.Handle[@asset.Image]?
@@ -526,6 +720,10 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     uv_offset: @math.Vec2::new(0.0F, 0.0F),
     uv_scale: @math.Vec2::new(1.0F, 1.0F),
     normal_map_texture: None,
+    depth_map: None,
+    parallax_depth_scale: 0.1F,
+    max_parallax_layer_count: 16.0F,
+    parallax_mapping_method: ParallaxMappingMethod::Occlusion,
     clearcoat: 0.0F,
     clearcoat_perceptual_roughness: 0.0F,
     clearcoat_texture: None,
@@ -563,6 +761,10 @@ pub fn StandardMaterial::from_color(
     uv_offset: default_value.uv_offset,
     uv_scale: default_value.uv_scale,
     normal_map_texture: default_value.normal_map_texture,
+    depth_map: default_value.depth_map,
+    parallax_depth_scale: default_value.parallax_depth_scale,
+    max_parallax_layer_count: default_value.max_parallax_layer_count,
+    parallax_mapping_method: default_value.parallax_mapping_method,
     clearcoat: default_value.clearcoat,
     clearcoat_perceptual_roughness: default_value.clearcoat_perceptual_roughness,
     clearcoat_texture: default_value.clearcoat_texture,
@@ -630,6 +832,51 @@ pub fn StandardMaterial::with_normal_map_texture(
   normal_map_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, normal_map_texture, }
+}
+
+///|
+pub fn StandardMaterial::with_depth_map(
+  self : StandardMaterial,
+  depth_map : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, depth_map, }
+}
+
+///|
+pub fn StandardMaterial::with_parallax_depth_scale(
+  self : StandardMaterial,
+  parallax_depth_scale : Float,
+) -> StandardMaterial {
+  let safe_parallax_depth_scale = if parallax_depth_scale < 0.0F {
+    0.0F
+  } else {
+    parallax_depth_scale
+  }
+  StandardMaterial::{ ..self, parallax_depth_scale: safe_parallax_depth_scale }
+}
+
+///|
+pub fn StandardMaterial::with_max_parallax_layer_count(
+  self : StandardMaterial,
+  max_parallax_layer_count : Float,
+) -> StandardMaterial {
+  let safe_max_parallax_layer_count = if max_parallax_layer_count < 0.0F {
+    0.0F
+  } else {
+    max_parallax_layer_count
+  }
+  StandardMaterial::{
+    ..self,
+    max_parallax_layer_count: safe_max_parallax_layer_count,
+  }
+}
+
+///|
+pub fn StandardMaterial::with_parallax_mapping_method(
+  self : StandardMaterial,
+  parallax_mapping_method : ParallaxMappingMethod,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, parallax_mapping_method, }
 }
 
 ///|
@@ -1217,6 +1464,8 @@ pub struct Camera3dBundle {
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
   screen_space_reflections : ScreenSpaceReflections?
+  chromatic_aberration : ChromaticAberration?
+  vignette : Vignette?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -1233,6 +1482,8 @@ pub fn Camera3dBundle::new(
     projection: CameraProjection3d::default(),
     sub_camera_view: None,
     screen_space_reflections: None,
+    chromatic_aberration: None,
+    vignette: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -1251,6 +1502,8 @@ pub fn Camera3dBundle::new_with_projection(
     projection: CameraProjection3d::{ projection, },
     sub_camera_view: None,
     screen_space_reflections: None,
+    chromatic_aberration: None,
+    vignette: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -1272,6 +1525,22 @@ pub fn Camera3dBundle::with_screen_space_reflections(
   screen_space_reflections : ScreenSpaceReflections?,
 ) -> Camera3dBundle {
   Camera3dBundle::{ ..self, screen_space_reflections, }
+}
+
+///|
+pub fn Camera3dBundle::with_chromatic_aberration(
+  self : Camera3dBundle,
+  chromatic_aberration : ChromaticAberration?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, chromatic_aberration, }
+}
+
+///|
+pub fn Camera3dBundle::with_vignette(
+  self : Camera3dBundle,
+  vignette : Vignette?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, vignette, }
 }
 
 ///|
@@ -1303,7 +1572,7 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 ///|
@@ -1326,6 +1595,14 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
     world
     .get_screen_space_reflections_store()
     .insert(entity, screen_space_reflections, tick)
+  }
+  if self.chromatic_aberration is Some(chromatic_aberration) {
+    world
+    .get_chromatic_aberration_store()
+    .insert(entity, chromatic_aberration, tick)
+  }
+  if self.vignette is Some(vignette) {
+    world.get_vignette_store().insert(entity, vignette, tick)
   }
   world.get_camera_store().insert(entity, self.camera, tick)
   world.get_render_target_store().insert(entity, self.target, tick)
@@ -1364,6 +1641,8 @@ priv struct Camera3dInstance {
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
   screen_space_reflections : ScreenSpaceReflections?
+  chromatic_aberration : ChromaticAberration?
+  vignette : Vignette?
   transform : @math.Transform
   target_id : Int
   target_size : @math.IVec2
@@ -1812,6 +2091,109 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
+fn render3d_world_position_uv(
+  camera : Camera3dInstance,
+  viewport_rect : (Float, Float, Float, Float)?,
+  world_position : @math.Vec3,
+) -> @math.Vec2? {
+  guard viewport_rect
+    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
+    return None
+  }
+  if viewport_width <= 0.0F || viewport_height <= 0.0F {
+    return None
+  }
+  guard render3d_camera_world_to_viewport(
+      world_position,
+      camera.camera,
+      camera.projection,
+      camera.transform,
+      camera.target_size,
+      camera.scale_factor,
+    )
+    is Some(screen) else {
+    return None
+  }
+  let uv_x = (screen.x - viewport_x) / viewport_width
+  let uv_y = (screen.y - viewport_y) / viewport_height
+  Some(@math.Vec2::new(clamp01(uv_x), clamp01(uv_y)))
+}
+
+///|
+fn render3d_chromatic_aberration_amount(
+  chromatic_aberration : ChromaticAberration,
+  screen_uv : @math.Vec2,
+) -> Float {
+  let safe_intensity = if chromatic_aberration.intensity < 0.0F {
+    0.0F
+  } else {
+    chromatic_aberration.intensity
+  }
+  if safe_intensity <= 0.0F {
+    return 0.0F
+  }
+  let sample_factor = clamp01(
+    Float::from_double(chromatic_aberration.max_samples.to_double()) / 64.0F,
+  )
+  let edge_x = absf(screen_uv.x - 0.5F) * 2.0F
+  let edge_y = absf(screen_uv.y - 0.5F) * 2.0F
+  let edge_factor = clamp01(maxf(edge_x, edge_y))
+  let intensity_factor = clamp01(safe_intensity / 0.4F)
+  clamp01(sample_factor * edge_factor * intensity_factor)
+}
+
+///|
+fn render3d_vignette_mask(
+  vignette : Vignette,
+  screen_uv : @math.Vec2,
+  aspect_ratio : Float,
+) -> Float {
+  let safe_intensity = if vignette.intensity < 0.0F {
+    0.0F
+  } else {
+    vignette.intensity
+  }
+  if safe_intensity <= 0.0F {
+    return 0.0F
+  }
+  let safe_radius = if vignette.radius < 0.0001F {
+    0.0001F
+  } else {
+    vignette.radius
+  }
+  let safe_smoothness = if vignette.smoothness <= 0.01F {
+    0.01F
+  } else {
+    vignette.smoothness
+  }
+  let safe_roundness = if vignette.roundness <= 0.01F {
+    0.01F
+  } else {
+    vignette.roundness
+  }
+  let safe_aspect_ratio = if aspect_ratio <= 0.0001F {
+    1.0F
+  } else {
+    aspect_ratio
+  }
+  let fit = if vignette.edge_compensation < 0.0F {
+    0.0F
+  } else if vignette.edge_compensation > 1.0F {
+    1.0F
+  } else {
+    vignette.edge_compensation
+  }
+  let aspect_scale_x = 1.0F + (safe_aspect_ratio - 1.0F) * fit
+  let dx = (screen_uv.x - vignette.center.x) * 2.0F * aspect_scale_x
+  let dy = (screen_uv.y - vignette.center.y) * 2.0F
+  let ellipse_distance = @math.sqrt(
+    dx * dx + dy * dy * safe_roundness * safe_roundness,
+  )
+  let edge = clamp01((ellipse_distance - safe_radius) * safe_smoothness)
+  clamp01(edge * safe_intensity)
+}
+
+///|
 fn render3d_ssr_ramp(value : Float, start : Float, end_ : Float) -> Float {
   let safe_start = minf(start, end_)
   let safe_end = maxf(start, end_)
@@ -2111,7 +2493,7 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -2123,6 +2505,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let projection_store = world.get_camera_projection3d_store()
   let sub_camera_view_store = world.get_sub_camera_view3d_store()
   let screen_space_reflections_store = world.get_screen_space_reflections_store()
+  let chromatic_aberration_store = world.get_chromatic_aberration_store()
+  let vignette_store = world.get_vignette_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
   let transform_store = world.get_transform_store()
@@ -2138,6 +2522,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     }
     let sub_camera_view = sub_camera_view_store.get(entity)
     let screen_space_reflections = screen_space_reflections_store.get(entity)
+    let chromatic_aberration = chromatic_aberration_store.get(entity)
+    let vignette = vignette_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
       None => @render2d.RenderTarget::Screen
@@ -2166,6 +2552,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           projection,
           sub_camera_view,
           screen_space_reflections,
+          chromatic_aberration,
+          vignette,
           transform,
           target_id: target_info.target_id,
           target_size: target_info.target_size,
@@ -2262,6 +2650,11 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.projection,
       aspect_ratio,
       Float::from_double(view_height_logical.to_double()),
+    )
+    let viewport_rect = render3d_camera_viewport_rect_logical(
+      camera.camera,
+      camera.target_size,
+      camera.scale_factor,
     )
     let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
     @window.host_gpu_begin_pass_3d(
@@ -2385,12 +2778,46 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         distance_fog, mesh_distance,
       )
       let fog_color = distance_fog.color
-      let draw_color_r = mesh.material.base_color.r * (1.0F - fog_mix) +
+      let mut draw_color_r = mesh.material.base_color.r * (1.0F - fog_mix) +
         fog_color.r * fog_mix
-      let draw_color_g = mesh.material.base_color.g * (1.0F - fog_mix) +
+      let mut draw_color_g = mesh.material.base_color.g * (1.0F - fog_mix) +
         fog_color.g * fog_mix
-      let draw_color_b = mesh.material.base_color.b * (1.0F - fog_mix) +
+      let mut draw_color_b = mesh.material.base_color.b * (1.0F - fog_mix) +
         fog_color.b * fog_mix
+      if render3d_world_position_uv(
+          camera,
+          viewport_rect,
+          mesh.transform.translation,
+        )
+        is Some(screen_uv) {
+        if camera.chromatic_aberration is Some(chromatic_aberration) {
+          let aberration = render3d_chromatic_aberration_amount(
+            chromatic_aberration, screen_uv,
+          )
+          if aberration > 0.0F {
+            draw_color_r = clamp01(draw_color_r + aberration * 0.12F)
+            draw_color_g = clamp01(draw_color_g + aberration * 0.02F)
+            draw_color_b = clamp01(draw_color_b - aberration * 0.12F)
+          }
+        }
+        if camera.vignette is Some(vignette) {
+          let vignette_mask = render3d_vignette_mask(
+            vignette, screen_uv, aspect_ratio,
+          )
+          if vignette_mask > 0.0F {
+            let keep = 1.0F - vignette_mask
+            draw_color_r = clamp01(
+              draw_color_r * keep + vignette.color.r * vignette_mask,
+            )
+            draw_color_g = clamp01(
+              draw_color_g * keep + vignette.color.g * vignette_mask,
+            )
+            draw_color_b = clamp01(
+              draw_color_b * keep + vignette.color.b * vignette_mask,
+            )
+          }
+        }
+      }
       let anisotropy_strength = maxf(
         0.0F,
         minf(1.0F, mesh.material.anisotropy_strength),

@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 36 | 15 | 0 |
+| `3d` | 66 | 15 | 38 | 13 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 3 | 0 | 14 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **51** | **59** | **289** | **3** |
+| **Total** | **402** | **51** | **61** | **287** | **3** |
 
 ## Example Inventory
 
@@ -124,12 +124,12 @@ Notes:
 | `bevy/examples/3d/occlusion_culling.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/order_independent_transparency.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/orthographic.rs` | `3d` | `mgstudio-engine/examples/3d/orthographic` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/parallax_mapping.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/parallax_mapping.rs` | `3d` | `mgstudio-engine/examples/3d/parallax_mapping` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/parenting.rs` | `3d` | `mgstudio-engine/examples/3d/parenting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/pbr.rs` | `3d` | `mgstudio-engine/examples/3d/pbr` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/pccm.rs` | `3d` | `mgstudio-engine/examples/3d/pccm` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/pcss.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/post_processing.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/post_processing.rs` | `3d` | `mgstudio-engine/examples/3d/post_processing` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/reflection_probes.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/render_to_texture.rs` | `3d` | `mgstudio-engine/examples/3d/render_to_texture` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/rotate_environment_map.rs` | `3d` | `mgstudio-engine/examples/3d/rotate_environment_map` | `Adapted` | `team-render` |  |
