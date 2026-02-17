@@ -28,6 +28,7 @@ pub struct World {
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
   mesh3d : @core.ComponentStore[@render3d.Mesh3d]
+  scene_root : @core.ComponentStore[@scene.SceneRoot]
   border_radius : @core.ComponentStore[@ui.BorderRadius]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
@@ -61,9 +62,6 @@ pub struct World {
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
-  visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
-  scene_root : @core.ComponentStore[@scene.SceneRoot]
-  scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
@@ -76,28 +74,31 @@ pub struct World {
   impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
+  sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
+  scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
+  clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
   directional_light : @core.ComponentStore[@render3d.DirectionalLight]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
+  visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
   collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
   camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
-  sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
-  screen_space_reflections : @core.ComponentStore[
-    @render3d.ScreenSpaceReflections,
-  ]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[
     @physics2d.FrictionCombineRule2d,
+  ]
+  screen_space_reflections : @core.ComponentStore[
+    @render3d.ScreenSpaceReflections,
   ]
   active_collision_types2d : @core.ComponentStore[
     @physics2d.ActiveCollisionTypes2d,
@@ -188,6 +189,7 @@ pub fn World::new() -> World {
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
     mesh3d: @core.ComponentStore::new(),
+    scene_root: @core.ComponentStore::new(),
     border_radius: @core.ComponentStore::new(),
     button_colors: @core.ComponentStore::new(),
     global_z_index: @core.ComponentStore::new(),
@@ -221,9 +223,6 @@ pub fn World::new() -> World {
     accessibility_label: @core.ComponentStore::new(),
     ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
-    visibility_range: @core.ComponentStore::new(),
-    scene_root: @core.ComponentStore::new(),
-    scene_instance_ready: @core.ComponentStore::new(),
     locked_axes2d: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
     active_hooks2d: @core.ComponentStore::new(),
@@ -236,25 +235,28 @@ pub fn World::new() -> World {
     impulse_joint2d: @core.ComponentStore::new(),
     solver_groups2d: @core.ComponentStore::new(),
     active_events3d: @core.ComponentStore::new(),
+    sub_camera_view3d: @core.ComponentStore::new(),
+    scene_instance_ready: @core.ComponentStore::new(),
     external_force2d: @core.ComponentStore::new(),
+    clear_color_config: @core.ComponentStore::new(),
     directional_light: @core.ComponentStore::new(),
     global_transform: @core.ComponentStore::new(),
     relative_cursor_position: @core.ComponentStore::new(),
     view_visibility: @core.ComponentStore::new(),
     collider_parent2d: @core.ComponentStore::new(),
     multibody_joint2d: @core.ComponentStore::new(),
+    visibility_range: @core.ComponentStore::new(),
     collider_density2d: @core.ComponentStore::new(),
     collider_enabled2d: @core.ComponentStore::new(),
     collision_groups2d: @core.ComponentStore::new(),
     external_impulse2d: @core.ComponentStore::new(),
     camera_projection3d: @core.ComponentStore::new(),
-    sub_camera_view3d: @core.ComponentStore::new(),
-    screen_space_reflections: @core.ComponentStore::new(),
     rapier_body_handle2d: @core.ComponentStore::new(),
     rigid_body_enabled2d: @core.ComponentStore::new(),
     rapier_body_handle3d: @core.ComponentStore::new(),
     inherited_visibility: @core.ComponentStore::new(),
     friction_combine_rule2d: @core.ComponentStore::new(),
+    screen_space_reflections: @core.ComponentStore::new(),
     active_collision_types2d: @core.ComponentStore::new(),
     rapier_collider_handle2d: @core.ComponentStore::new(),
     active_collision_types3d: @core.ComponentStore::new(),
@@ -322,6 +324,7 @@ pub fn World::despawn(
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.mesh3d.remove(entity) |> ignore
+  self.scene_root.remove(entity) |> ignore
   self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
@@ -355,9 +358,6 @@ pub fn World::despawn(
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
-  self.visibility_range.remove(entity) |> ignore
-  self.scene_root.remove(entity) |> ignore
-  self.scene_instance_ready.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
@@ -370,25 +370,28 @@ pub fn World::despawn(
   self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
+  self.sub_camera_view3d.remove(entity) |> ignore
+  self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
+  self.clear_color_config.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
+  self.visibility_range.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
   self.camera_projection3d.remove(entity) |> ignore
-  self.sub_camera_view3d.remove(entity) |> ignore
-  self.screen_space_reflections.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
+  self.screen_space_reflections.remove(entity) |> ignore
   self.active_collision_types2d.remove(entity) |> ignore
   self.rapier_collider_handle2d.remove(entity) |> ignore
   self.active_collision_types3d.remove(entity) |> ignore
@@ -436,6 +439,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.mesh3d.remove(entity) |> ignore
+  self.scene_root.remove(entity) |> ignore
   self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
   self.global_z_index.remove(entity) |> ignore
@@ -469,9 +473,6 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
-  self.visibility_range.remove(entity) |> ignore
-  self.scene_root.remove(entity) |> ignore
-  self.scene_instance_ready.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
@@ -484,25 +485,28 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
+  self.sub_camera_view3d.remove(entity) |> ignore
+  self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
+  self.clear_color_config.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
+  self.visibility_range.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
   self.camera_projection3d.remove(entity) |> ignore
-  self.sub_camera_view3d.remove(entity) |> ignore
-  self.screen_space_reflections.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
+  self.screen_space_reflections.remove(entity) |> ignore
   self.active_collision_types2d.remove(entity) |> ignore
   self.rapier_collider_handle2d.remove(entity) |> ignore
   self.active_collision_types3d.remove(entity) |> ignore
@@ -653,6 +657,11 @@ pub impl @render2d.Has_Sprite for World with get_sprite_store(self) {
 ///|
 pub impl @render3d.Has_Mesh3d for World with get_mesh3d_store(self) {
   self.mesh3d
+}
+
+///|
+pub impl @scene.Has_SceneRoot for World with get_scene_root_store(self) {
+  self.scene_root
 }
 
 ///|
@@ -825,25 +834,6 @@ pub impl @visibility.Has_Visibility for World with get_visibility_store(self) {
 }
 
 ///|
-pub impl @visibility.Has_VisibilityRange for World with get_visibility_range_store(
-  self,
-) {
-  self.visibility_range
-}
-
-///|
-pub impl @scene.Has_SceneRoot for World with get_scene_root_store(self) {
-  self.scene_root
-}
-
-///|
-pub impl @scene.Has_SceneInstanceReady for World with get_scene_instance_ready_store(
-  self,
-) {
-  self.scene_instance_ready
-}
-
-///|
 pub impl @physics2d.Has_LockedAxes2d for World with get_locked_axes2d_store(
   self,
 ) {
@@ -928,10 +918,31 @@ pub impl @physics3d.Has_ActiveEvents3d for World with get_active_events3d_store(
 }
 
 ///|
+pub impl @render3d.Has_SubCameraView3d for World with get_sub_camera_view3d_store(
+  self,
+) {
+  self.sub_camera_view3d
+}
+
+///|
+pub impl @scene.Has_SceneInstanceReady for World with get_scene_instance_ready_store(
+  self,
+) {
+  self.scene_instance_ready
+}
+
+///|
 pub impl @physics2d.Has_ExternalForce2d for World with get_external_force2d_store(
   self,
 ) {
   self.external_force2d
+}
+
+///|
+pub impl @render2d.Has_ClearColorConfig for World with get_clear_color_config_store(
+  self,
+) {
+  self.clear_color_config
 }
 
 ///|
@@ -977,6 +988,13 @@ pub impl @physics2d.Has_MultibodyJoint2d for World with get_multibody_joint2d_st
 }
 
 ///|
+pub impl @visibility.Has_VisibilityRange for World with get_visibility_range_store(
+  self,
+) {
+  self.visibility_range
+}
+
+///|
 pub impl @physics2d.Has_ColliderDensity2d for World with get_collider_density2d_store(
   self,
 ) {
@@ -1012,20 +1030,6 @@ pub impl @render3d.Has_CameraProjection3d for World with get_camera_projection3d
 }
 
 ///|
-pub impl @render3d.Has_SubCameraView3d for World with get_sub_camera_view3d_store(
-  self,
-) {
-  self.sub_camera_view3d
-}
-
-///|
-pub impl @render3d.Has_ScreenSpaceReflections for World with get_screen_space_reflections_store(
-  self,
-) {
-  self.screen_space_reflections
-}
-
-///|
 pub impl @physics2d.Has_RapierBodyHandle2d for World with get_rapier_body_handle2d_store(
   self,
 ) {
@@ -1058,6 +1062,13 @@ pub impl @physics2d.Has_FrictionCombineRule2d for World with get_friction_combin
   self,
 ) {
   self.friction_combine_rule2d
+}
+
+///|
+pub impl @render3d.Has_ScreenSpaceReflections for World with get_screen_space_reflections_store(
+  self,
+) {
+  self.screen_space_reflections
 }
 
 ///|

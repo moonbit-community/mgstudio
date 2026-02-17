@@ -50,6 +50,7 @@ pub struct World {
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
   mesh3d : @core.ComponentStore[@render3d.Mesh3d]
+  scene_root : @core.ComponentStore[@scene.SceneRoot]
   border_radius : @core.ComponentStore[@ui.BorderRadius]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
@@ -83,9 +84,6 @@ pub struct World {
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
-  visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
-  scene_root : @core.ComponentStore[@scene.SceneRoot]
-  scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
@@ -98,25 +96,28 @@ pub struct World {
   impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
+  sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
+  scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
+  clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
   directional_light : @core.ComponentStore[@render3d.DirectionalLight]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
+  visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
   collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
   camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
-  sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
-  screen_space_reflections : @core.ComponentStore[@render3d.ScreenSpaceReflections]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[@physics2d.FrictionCombineRule2d]
+  screen_space_reflections : @core.ComponentStore[@render3d.ScreenSpaceReflections]
   active_collision_types2d : @core.ComponentStore[@physics2d.ActiveCollisionTypes2d]
   rapier_collider_handle2d : @core.ComponentStore[@physics2d.RapierColliderHandle2d]
   active_collision_types3d : @core.ComponentStore[@physics3d.ActiveCollisionTypes3d]
@@ -220,6 +221,7 @@ pub impl @render2d.Has_Anchor for World
 pub impl @render2d.Has_Bloom2d for World
 pub impl @render2d.Has_Camera for World
 pub impl @render2d.Has_Camera2d for World
+pub impl @render2d.Has_ClearColorConfig for World
 pub impl @render2d.Has_ColorMaterial for World
 pub impl @render2d.Has_GpuMesh2d for World
 pub impl @render2d.Has_Mesh2d for World

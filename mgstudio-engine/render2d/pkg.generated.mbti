@@ -616,6 +616,10 @@ pub(open) trait Has_Camera2d {
   get_camera2d_store(Self) -> @core.ComponentStore[Camera2d]
 }
 
+pub(open) trait Has_ClearColorConfig {
+  get_clear_color_config_store(Self) -> @core.ComponentStore[ClearColorConfig]
+}
+
 pub(open) trait Has_ColorMaterial {
   get_color_material_store(Self) -> @core.ComponentStore[ColorMaterial]
 }

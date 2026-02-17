@@ -5,7 +5,7 @@
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom2d", "Camera2d", "GpuMesh2d", "Projection",
-  "ScissorRect", "RenderLayers", "RenderTarget", "ColorMaterial",
+  "ScissorRect", "RenderLayers", "RenderTarget", "ColorMaterial", "ClearColorConfig",
 ]
 
 ///|
@@ -70,6 +70,13 @@ pub(open) trait Has_RenderTarget {
 ///|
 pub(open) trait Has_ColorMaterial {
   get_color_material_store(self : Self) -> @core.ComponentStore[ColorMaterial]
+}
+
+///|
+pub(open) trait Has_ClearColorConfig {
+  get_clear_color_config_store(self : Self) -> @core.ComponentStore[
+    ClearColorConfig,
+  ]
 }
 
 ///|
