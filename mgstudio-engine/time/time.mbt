@@ -14,8 +14,12 @@
 
 ///|
 pub struct Time {
-  mut delta_seconds : Float
-  mut elapsed_seconds : Float
+  mut real_delta_seconds : Float
+  mut real_elapsed_seconds : Float
+  mut virtual_delta_seconds : Float
+  mut virtual_elapsed_seconds : Float
+  mut virtual_relative_speed : Float
+  mut virtual_paused : Bool
   mut last_ticks : Float
 }
 
@@ -164,8 +168,12 @@ pub fn Timer::fraction(self : Timer) -> Float {
 
 ///|
 let time_state : Ref[Time] = @ref.new(Time::{
-  delta_seconds: 0.0F,
-  elapsed_seconds: 0.0F,
+  real_delta_seconds: 0.0F,
+  real_elapsed_seconds: 0.0F,
+  virtual_delta_seconds: 0.0F,
+  virtual_elapsed_seconds: 0.0F,
+  virtual_relative_speed: 1.0F,
+  virtual_paused: false,
   last_ticks: 0.0F,
 })
 
@@ -177,25 +185,90 @@ pub fn time_update() -> Unit {
   let now = host_time_now()
   if time_state.val.last_ticks == 0.0F {
     time_state.val.last_ticks = now
-    time_state.val.delta_seconds = 0.0F
-    time_state.val.elapsed_seconds = 0.0F
+    time_state.val.real_delta_seconds = 0.0F
+    time_state.val.real_elapsed_seconds = 0.0F
+    time_state.val.virtual_delta_seconds = 0.0F
+    time_state.val.virtual_elapsed_seconds = 0.0F
     return
   }
   let delta_ms = now - time_state.val.last_ticks
-  let delta_secs = if delta_ms > 0.0F { delta_ms / 1000.0F } else { 0.0F }
-  time_state.val.delta_seconds = delta_secs
-  time_state.val.elapsed_seconds = time_state.val.elapsed_seconds + delta_secs
+  let real_delta_secs = if delta_ms > 0.0F { delta_ms / 1000.0F } else { 0.0F }
+  let virtual_delta_secs = if time_state.val.virtual_paused {
+    0.0F
+  } else {
+    real_delta_secs * time_state.val.virtual_relative_speed
+  }
+  time_state.val.real_delta_seconds = real_delta_secs
+  time_state.val.real_elapsed_seconds = time_state.val.real_elapsed_seconds +
+    real_delta_secs
+  time_state.val.virtual_delta_seconds = virtual_delta_secs
+  time_state.val.virtual_elapsed_seconds = time_state.val.virtual_elapsed_seconds +
+    virtual_delta_secs
   time_state.val.last_ticks = now
 }
 
 ///|
 pub fn time_delta_seconds() -> Float {
-  time_state.val.delta_seconds
+  time_state.val.virtual_delta_seconds
 }
 
 ///|
 pub fn time_elapsed_seconds() -> Float {
-  time_state.val.elapsed_seconds
+  time_state.val.virtual_elapsed_seconds
+}
+
+///|
+pub fn time_real_delta_seconds() -> Float {
+  time_state.val.real_delta_seconds
+}
+
+///|
+pub fn time_real_elapsed_seconds() -> Float {
+  time_state.val.real_elapsed_seconds
+}
+
+///|
+pub fn time_virtual_delta_seconds() -> Float {
+  time_state.val.virtual_delta_seconds
+}
+
+///|
+pub fn time_virtual_elapsed_seconds() -> Float {
+  time_state.val.virtual_elapsed_seconds
+}
+
+///|
+pub fn time_virtual_relative_speed() -> Float {
+  time_state.val.virtual_relative_speed
+}
+
+///|
+pub fn time_virtual_set_relative_speed(speed : Float) -> Unit {
+  time_state.val.virtual_relative_speed = if speed < 0.0F {
+    0.0F
+  } else {
+    speed
+  }
+}
+
+///|
+pub fn time_virtual_pause() -> Unit {
+  time_state.val.virtual_paused = true
+}
+
+///|
+pub fn time_virtual_unpause() -> Unit {
+  time_state.val.virtual_paused = false
+}
+
+///|
+pub fn time_virtual_toggle() -> Unit {
+  time_state.val.virtual_paused = !time_state.val.virtual_paused
+}
+
+///|
+pub fn time_virtual_is_paused() -> Bool {
+  time_state.val.virtual_paused
 }
 
 ///|

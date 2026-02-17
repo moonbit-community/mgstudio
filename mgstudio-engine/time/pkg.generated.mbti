@@ -14,16 +14,40 @@ pub fn time_elapsed_seconds() -> Float
 
 pub fn[W] time_plugin(@app.App[W]) -> @app.App[W]
 
+pub fn time_real_delta_seconds() -> Float
+
+pub fn time_real_elapsed_seconds() -> Float
+
 pub fn[W] time_system(W) -> Unit
 
 pub fn time_update() -> Unit
+
+pub fn time_virtual_delta_seconds() -> Float
+
+pub fn time_virtual_elapsed_seconds() -> Float
+
+pub fn time_virtual_is_paused() -> Bool
+
+pub fn time_virtual_pause() -> Unit
+
+pub fn time_virtual_relative_speed() -> Float
+
+pub fn time_virtual_set_relative_speed(Float) -> Unit
+
+pub fn time_virtual_toggle() -> Unit
+
+pub fn time_virtual_unpause() -> Unit
 
 // Errors
 
 // Types and methods
 pub struct Time {
-  mut delta_seconds : Float
-  mut elapsed_seconds : Float
+  mut real_delta_seconds : Float
+  mut real_elapsed_seconds : Float
+  mut virtual_delta_seconds : Float
+  mut virtual_elapsed_seconds : Float
+  mut virtual_relative_speed : Float
+  mut virtual_paused : Bool
   mut last_ticks : Float
 }
 

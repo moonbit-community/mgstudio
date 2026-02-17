@@ -48,13 +48,13 @@ Notes:
 | `state` | 4 | 0 | 0 | 4 | 0 |
 | `stress_tests` | 19 | 0 | 0 | 19 | 0 |
 | `testbed` | 5 | 0 | 0 | 5 | 0 |
-| `time` | 3 | 1 | 0 | 2 | 0 |
+| `time` | 3 | 2 | 0 | 1 | 0 |
 | `tools` | 5 | 0 | 0 | 5 | 0 |
 | `transforms` | 5 | 0 | 0 | 5 | 0 |
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **46** | **59** | **294** | **3** |
+| **Total** | **402** | **47** | **59** | **293** | **3** |
 
 ## Example Inventory
 
@@ -385,7 +385,7 @@ Notes:
 | `bevy/examples/testbed/ui.rs` | `testbed` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/time/time.rs` | `time` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/time/timers.rs` | `time` | `mgstudio-engine/examples/time/timers` | `Exact` | `team-core` |  |
-| `bevy/examples/time/virtual_time.rs` | `time` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/time/virtual_time.rs` | `time` | `mgstudio-engine/examples/time/virtual_time` | `Exact` | `team-core` |  |
 | `bevy/examples/tools/gamepad_viewer.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/tools/scene_viewer/animation_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/tools/scene_viewer/main.rs` | `tools` |  | `Blocked` | `team-ops` |  |
