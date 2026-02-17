@@ -58,7 +58,7 @@ bevy/examples/3d/lines.rs,3d,lines,mgstudio-engine/examples/3d/lines,Adapted,tea
 bevy/examples/3d/mesh_ray_cast.rs,3d,mesh_ray_cast,,Blocked,team-render,
 bevy/examples/3d/meshlet.rs,3d,meshlet,,Blocked,team-render,
 bevy/examples/3d/mirror.rs,3d,mirror,mgstudio-engine/examples/3d/mirror,Exact,team-render,
-bevy/examples/3d/mixed_lighting.rs,3d,mixed_lighting,,Blocked,team-render,
+bevy/examples/3d/mixed_lighting.rs,3d,mixed_lighting,mgstudio-engine/examples/3d/mixed_lighting,Adapted,team-render,
 bevy/examples/3d/motion_blur.rs,3d,motion_blur,,Blocked,team-render,
 bevy/examples/3d/occlusion_culling.rs,3d,occlusion_culling,,Blocked,team-render,
 bevy/examples/3d/order_independent_transparency.rs,3d,order_independent_transparency,,Blocked,team-render,

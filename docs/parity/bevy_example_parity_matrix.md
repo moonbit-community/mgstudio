@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 22 | 29 | 0 |
+| `3d` | 66 | 15 | 23 | 28 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **45** | **309** | **3** |
+| **Total** | **402** | **45** | **46** | **308** | **3** |
 
 ## Example Inventory
 
@@ -119,7 +119,7 @@ Notes:
 | `bevy/examples/3d/mesh_ray_cast.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/meshlet.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/mirror.rs` | `3d` | `mgstudio-engine/examples/3d/mirror` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/mixed_lighting.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/mixed_lighting.rs` | `3d` | `mgstudio-engine/examples/3d/mixed_lighting` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/motion_blur.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/occlusion_culling.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/order_independent_transparency.rs` | `3d` |  | `Blocked` | `team-render` |  |
