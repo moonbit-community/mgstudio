@@ -53,7 +53,7 @@ bevy/examples/3d/irradiance_volumes.rs,3d,irradiance_volumes,,Blocked,team-rende
 bevy/examples/3d/light_probe_blending.rs,3d,light_probe_blending,,Blocked,team-render,
 bevy/examples/3d/light_textures.rs,3d,light_textures,,Blocked,team-render,
 bevy/examples/3d/lighting.rs,3d,lighting,mgstudio-engine/examples/3d/lighting,Exact,team-render,
-bevy/examples/3d/lightmaps.rs,3d,lightmaps,,Blocked,team-render,
+bevy/examples/3d/lightmaps.rs,3d,lightmaps,mgstudio-engine/examples/3d/lightmaps,Adapted,team-render,
 bevy/examples/3d/lines.rs,3d,lines,mgstudio-engine/examples/3d/lines,Adapted,team-render,
 bevy/examples/3d/mesh_ray_cast.rs,3d,mesh_ray_cast,,Blocked,team-render,
 bevy/examples/3d/meshlet.rs,3d,meshlet,,Blocked,team-render,

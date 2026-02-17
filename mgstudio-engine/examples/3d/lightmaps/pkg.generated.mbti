@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/lightmaps"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) struct Args {
+  deferred : Bool
+  bicubic : Bool
+}
+
+// Type aliases
+
+// Traits
+
