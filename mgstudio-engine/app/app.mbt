@@ -105,6 +105,14 @@ pub fn current_system_ticks() -> @core.SystemTicks {
 }
 
 ///|
+let current_schedule_stage_ref : Ref[ScheduleStage?] = Ref::new(None)
+
+///|
+pub fn current_schedule_stage() -> ScheduleStage? {
+  current_schedule_stage_ref.val
+}
+
+///|
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get() {
   @core.Message::reader(current_system_ticks())
 }
@@ -813,14 +821,25 @@ fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_systems(
 }
 
 ///|
+fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_schedule_stage(
+  world : W,
+  schedule : Schedule[W],
+  stage : ScheduleStage,
+) -> Unit {
+  current_schedule_stage_ref.val = Some(stage)
+  run_systems(
+    world,
+    schedule_systems(schedule, stage),
+    schedule_set_edges(schedule, stage),
+  )
+  current_schedule_stage_ref.val = None
+}
+
+///|
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(
   self : App[W],
 ) -> App[W] {
-  run_systems(
-    self.world,
-    schedule_systems(self.schedule, Startup),
-    schedule_set_edges(self.schedule, Startup),
-  )
+  run_schedule_stage(self.world, self.schedule, Startup)
   self
 }
 
@@ -828,11 +847,7 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(
   self : App[W],
 ) -> App[W] {
-  run_systems(
-    self.world,
-    schedule_systems(self.schedule, PreUpdate),
-    schedule_set_edges(self.schedule, PreUpdate),
-  )
+  run_schedule_stage(self.world, self.schedule, PreUpdate)
   fixed_time_state.val.did_run_this_frame = false
   fixed_time_state.val.steps_ran_this_frame = 0
   let delta_raw = match delta_seconds_provider.val {
@@ -853,6 +868,7 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(
     let fixed_systems = schedule_systems(self.schedule, FixedUpdate)
     let fixed_edges = schedule_set_edges(self.schedule, FixedUpdate)
     let eps = 0.0000001F
+    current_schedule_stage_ref.val = Some(FixedUpdate)
     while fixed_time_state.val.overstep_seconds + eps >= timestep {
       fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds -
         timestep
@@ -863,17 +879,10 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(
         1
       run_systems(self.world, fixed_systems, fixed_edges)
     }
+    current_schedule_stage_ref.val = None
   }
-  run_systems(
-    self.world,
-    schedule_systems(self.schedule, Update),
-    schedule_set_edges(self.schedule, Update),
-  )
-  run_systems(
-    self.world,
-    schedule_systems(self.schedule, PostUpdate),
-    schedule_set_edges(self.schedule, PostUpdate),
-  )
+  run_schedule_stage(self.world, self.schedule, Update)
+  run_schedule_stage(self.world, self.schedule, PostUpdate)
   self
 }
 

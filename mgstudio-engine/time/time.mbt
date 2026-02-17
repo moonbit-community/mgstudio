@@ -19,12 +19,16 @@ pub struct Time {
   mut virtual_delta_seconds : Float
   mut virtual_elapsed_seconds : Float
   mut virtual_relative_speed : Float
+  mut virtual_max_delta_seconds : Float
   mut virtual_paused : Bool
   mut last_ticks : Float
 }
 
 ///|
 const MIN_TIMER_DURATION : Float = 0.000001F
+
+///|
+const DEFAULT_VIRTUAL_MAX_DELTA_SECONDS : Float = 0.25F
 
 ///|
 pub(all) enum TimerMode {
@@ -173,6 +177,7 @@ let time_state : Ref[Time] = @ref.new(Time::{
   virtual_delta_seconds: 0.0F,
   virtual_elapsed_seconds: 0.0F,
   virtual_relative_speed: 1.0F,
+  virtual_max_delta_seconds: DEFAULT_VIRTUAL_MAX_DELTA_SECONDS,
   virtual_paused: false,
   last_ticks: 0.0F,
 })
@@ -193,10 +198,16 @@ pub fn time_update() -> Unit {
   }
   let delta_ms = now - time_state.val.last_ticks
   let real_delta_secs = if delta_ms > 0.0F { delta_ms / 1000.0F } else { 0.0F }
+  let clamped_virtual_source_delta = if real_delta_secs >
+    time_state.val.virtual_max_delta_seconds {
+    time_state.val.virtual_max_delta_seconds
+  } else {
+    real_delta_secs
+  }
   let virtual_delta_secs = if time_state.val.virtual_paused {
     0.0F
   } else {
-    real_delta_secs * time_state.val.virtual_relative_speed
+    clamped_virtual_source_delta * time_state.val.virtual_relative_speed
   }
   time_state.val.real_delta_seconds = real_delta_secs
   time_state.val.real_elapsed_seconds = time_state.val.real_elapsed_seconds +
@@ -209,12 +220,18 @@ pub fn time_update() -> Unit {
 
 ///|
 pub fn time_delta_seconds() -> Float {
-  time_state.val.virtual_delta_seconds
+  match @app.current_schedule_stage() {
+    Some(@app.FixedUpdate) => @app.fixed_time_timestep_seconds()
+    _ => time_state.val.virtual_delta_seconds
+  }
 }
 
 ///|
 pub fn time_elapsed_seconds() -> Float {
-  time_state.val.virtual_elapsed_seconds
+  match @app.current_schedule_stage() {
+    Some(@app.FixedUpdate) => @app.fixed_time_elapsed_seconds()
+    _ => time_state.val.virtual_elapsed_seconds
+  }
 }
 
 ///|
@@ -243,11 +260,23 @@ pub fn time_virtual_relative_speed() -> Float {
 }
 
 ///|
+pub fn time_virtual_max_delta_seconds() -> Float {
+  time_state.val.virtual_max_delta_seconds
+}
+
+///|
 pub fn time_virtual_set_relative_speed(speed : Float) -> Unit {
   time_state.val.virtual_relative_speed = if speed < 0.0F {
     0.0F
   } else {
     speed
+  }
+}
+
+///|
+pub fn time_virtual_set_max_delta_seconds(max_delta_seconds : Float) -> Unit {
+  if max_delta_seconds > 0.0F {
+    time_state.val.virtual_max_delta_seconds = max_delta_seconds
   }
 }
 
@@ -272,12 +301,37 @@ pub fn time_virtual_is_paused() -> Bool {
 }
 
 ///|
+pub fn time_fixed_delta_seconds() -> Float {
+  @app.fixed_time_timestep_seconds()
+}
+
+///|
+pub fn time_fixed_elapsed_seconds() -> Float {
+  @app.fixed_time_elapsed_seconds()
+}
+
+///|
+pub fn time_fixed_timestep_seconds() -> Float {
+  @app.fixed_time_timestep_seconds()
+}
+
+///|
+pub fn time_fixed_overstep_seconds() -> Float {
+  @app.fixed_time_overstep_seconds()
+}
+
+///|
+pub fn time_fixed_overstep_fraction() -> Float {
+  @app.fixed_time_overstep_fraction()
+}
+
+///|
 pub fn[W] time_system(_world : W) -> Unit {
   time_update()
 }
 
 ///|
 pub fn[W] time_plugin(app : @app.App[W]) -> @app.App[W] {
-  @app.set_delta_seconds_provider(fn() { time_delta_seconds() })
+  @app.set_delta_seconds_provider(fn() { time_virtual_delta_seconds() })
   app.add_pre_update_system(time_system)
 }

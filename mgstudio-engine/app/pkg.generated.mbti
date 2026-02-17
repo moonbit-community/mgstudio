@@ -8,6 +8,8 @@ import {
 // Values
 pub fn clear_delta_seconds_provider() -> Unit
 
+pub fn current_schedule_stage() -> ScheduleStage?
+
 pub fn current_system_ticks() -> @core.SystemTicks
 
 pub fn fixed_time_did_run_this_frame() -> Bool
