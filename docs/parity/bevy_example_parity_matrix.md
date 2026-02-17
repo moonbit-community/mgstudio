@@ -20,7 +20,7 @@ Notes:
 | `2d` | 27 | 27 | 0 | 0 | 0 |
 | `3d` | 66 | 15 | 36 | 15 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
-| `app` | 17 | 2 | 0 | 15 | 0 |
+| `app` | 17 | 3 | 0 | 14 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
 | `async_tasks` | 3 | 0 | 0 | 3 | 0 |
 | `audio` | 7 | 0 | 0 | 7 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **50** | **59** | **290** | **3** |
+| **Total** | **402** | **51** | **59** | **289** | **3** |
 
 ## Example Inventory
 
@@ -180,7 +180,7 @@ Notes:
 | `bevy/examples/app/plugin.rs` | `app` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/app/plugin_group.rs` | `app` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/app/render_recovery.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/return_after_run.rs` | `app` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/app/return_after_run.rs` | `app` | `mgstudio-engine/examples/app/return_after_run` | `Exact` | `team-core` |  |
 | `bevy/examples/app/thread_pool_resources.rs` | `app` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/app/without_winit.rs` | `app` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/asset/alter_mesh.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
