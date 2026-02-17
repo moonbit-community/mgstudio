@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 26 | 25 | 0 |
+| `3d` | 66 | 15 | 27 | 24 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **49** | **305** | **3** |
+| **Total** | **402** | **45** | **50** | **304** | **3** |
 
 ## Example Inventory
 
@@ -102,7 +102,7 @@ Notes:
 | `bevy/examples/3d/clearcoat.rs` | `3d` | `mgstudio-engine/examples/3d/clearcoat` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/clustered_decal_maps.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/clustered_decals.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/color_grading.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/color_grading.rs` | `3d` | `mgstudio-engine/examples/3d/color_grading` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/contact_shadows.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/decal.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/deferred_rendering.rs` | `3d` |  | `Blocked` | `team-render` |  |

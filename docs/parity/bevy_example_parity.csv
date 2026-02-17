@@ -41,7 +41,7 @@ bevy/examples/3d/camera_sub_view.rs,3d,camera_sub_view,mgstudio-engine/examples/
 bevy/examples/3d/clearcoat.rs,3d,clearcoat,mgstudio-engine/examples/3d/clearcoat,Adapted,team-render,
 bevy/examples/3d/clustered_decal_maps.rs,3d,clustered_decal_maps,,Blocked,team-render,
 bevy/examples/3d/clustered_decals.rs,3d,clustered_decals,,Blocked,team-render,
-bevy/examples/3d/color_grading.rs,3d,color_grading,,Blocked,team-render,
+bevy/examples/3d/color_grading.rs,3d,color_grading,mgstudio-engine/examples/3d/color_grading,Adapted,team-render,
 bevy/examples/3d/contact_shadows.rs,3d,contact_shadows,,Blocked,team-render,
 bevy/examples/3d/decal.rs,3d,decal,,Blocked,team-render,
 bevy/examples/3d/deferred_rendering.rs,3d,deferred_rendering,,Blocked,team-render,
