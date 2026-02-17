@@ -34,7 +34,7 @@ bevy/examples/3d/anisotropy.rs,3d,anisotropy,mgstudio-engine/examples/3d/anisotr
 bevy/examples/3d/anti_aliasing.rs,3d,anti_aliasing,,Blocked,team-render,
 bevy/examples/3d/atmosphere.rs,3d,atmosphere,mgstudio-engine/examples/3d/atmosphere,Adapted,team-render,
 bevy/examples/3d/atmospheric_fog.rs,3d,atmospheric_fog,mgstudio-engine/examples/3d/atmospheric_fog,Adapted,team-render,
-bevy/examples/3d/auto_exposure.rs,3d,auto_exposure,,Blocked,team-render,
+bevy/examples/3d/auto_exposure.rs,3d,auto_exposure,mgstudio-engine/examples/3d/auto_exposure,Adapted,team-render,
 bevy/examples/3d/blend_modes.rs,3d,blend_modes,mgstudio-engine/examples/3d/blend_modes,Adapted,team-render,
 bevy/examples/3d/bloom_3d.rs,3d,bloom_3d,,Blocked,team-render,
 bevy/examples/3d/camera_sub_view.rs,3d,camera_sub_view,mgstudio-engine/examples/3d/camera_sub_view,Exact,team-render,

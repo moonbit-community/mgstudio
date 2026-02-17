@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 24 | 27 | 0 |
+| `3d` | 66 | 15 | 25 | 26 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 0 | 0 | 17 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **45** | **47** | **307** | **3** |
+| **Total** | **402** | **45** | **48** | **306** | **3** |
 
 ## Example Inventory
 
@@ -95,7 +95,7 @@ Notes:
 | `bevy/examples/3d/anti_aliasing.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/atmosphere.rs` | `3d` | `mgstudio-engine/examples/3d/atmosphere` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/atmospheric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/atmospheric_fog` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/auto_exposure.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/auto_exposure.rs` | `3d` | `mgstudio-engine/examples/3d/auto_exposure` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/blend_modes.rs` | `3d` | `mgstudio-engine/examples/3d/blend_modes` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/bloom_3d.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/camera_sub_view.rs` | `3d` | `mgstudio-engine/examples/3d/camera_sub_view` | `Exact` | `team-render` |  |
