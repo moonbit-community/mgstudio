@@ -110,6 +110,7 @@ pub struct World {
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
   deferred_prepass : @core.ComponentStore[@render3d.DeferredPrepass]
+  not_shadow_caster : @core.ComponentStore[@render3d.NotShadowCaster]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
@@ -123,6 +124,7 @@ pub struct World {
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
+  not_shadow_receiver : @core.ComponentStore[@render3d.NotShadowReceiver]
   point_light_texture : @core.ComponentStore[@render3d.PointLightTexture]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
@@ -152,6 +154,7 @@ pub struct World {
   additional_mass_properties2d : @core.ComponentStore[@physics2d.AdditionalMassProperties2d]
   rapier_impulse_joint_handle2d : @core.ComponentStore[@physics2d.RapierImpulseJointHandle2d]
   screen_space_ambient_occlusion : @core.ComponentStore[@render3d.ScreenSpaceAmbientOcclusion]
+  generated_environment_map_light : @core.ComponentStore[@render3d.GeneratedEnvironmentMapLight]
   additional_solver_iterations2d : @core.ComponentStore[@physics2d.AdditionalSolverIterations2d]
   contact_force_event_threshold2d : @core.ComponentStore[@physics2d.ContactForceEventThreshold2d]
   rapier_multibody_joint_handle2d : @core.ComponentStore[@physics2d.RapierMultibodyJointHandle2d]
@@ -271,6 +274,7 @@ pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_DirectionalLightTexture for World
 pub impl @render3d.Has_EnvironmentMapLight for World
 pub impl @render3d.Has_Fxaa for World
+pub impl @render3d.Has_GeneratedEnvironmentMapLight for World
 pub impl @render3d.Has_Hdr for World
 pub impl @render3d.Has_IrradianceVolume for World
 pub impl @render3d.Has_LightProbe for World
@@ -280,6 +284,8 @@ pub impl @render3d.Has_MotionBlur for World
 pub impl @render3d.Has_MotionVectorPrepass for World
 pub impl @render3d.Has_Msaa for World
 pub impl @render3d.Has_NormalPrepass for World
+pub impl @render3d.Has_NotShadowCaster for World
+pub impl @render3d.Has_NotShadowReceiver for World
 pub impl @render3d.Has_OcclusionCulling for World
 pub impl @render3d.Has_OrderIndependentTransparencySettings for World
 pub impl @render3d.Has_ParallaxCorrection for World

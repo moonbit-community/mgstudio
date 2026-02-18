@@ -16,14 +16,6 @@
 /// Port of `bevy/examples/3d/shadow_caster_receiver.rs`.
 
 ///|
-/// Baseline parity: Bevy's per-entity `NotShadowCaster` / `NotShadowReceiver`
-/// components are not exposed in current mgstudio runtime surfaces.
-
-///|
-/// Baseline parity: key `C` toggles light shadow-map evaluation globally, and
-/// key `R` toggles receiver shading through material `unlit` for target planes.
-
-///|
 const PI : Float = 3.141592653589793F
 
 ///|
@@ -37,9 +29,6 @@ priv struct ShadowCasterReceiverState {
   mut directional_light : @core.Entity?
   mut point_light : @core.Entity?
   mut point_light_enabled : Bool
-  mut receiver_enabled : Bool
-  mut shadow_maps_enabled : Bool
-  receiver_handles : Array[@asset.Handle[@render3d.StandardMaterial]]
 }
 
 ///|
@@ -47,9 +36,6 @@ let shadow_caster_receiver_state : Ref[ShadowCasterReceiverState] = Ref::new({
   directional_light: None,
   point_light: None,
   point_light_enabled: false,
-  receiver_enabled: true,
-  shadow_maps_enabled: true,
-  receiver_handles: [],
 })
 
 ///|
@@ -133,7 +119,7 @@ fn update_light_modes(world : @ecs_world.World) -> Unit {
           point_light.color,
           intensity,
           point_light.range,
-          state.shadow_maps_enabled,
+          point_light.shadow_maps_enabled,
         ),
         tick,
       )
@@ -153,7 +139,7 @@ fn update_light_modes(world : @ecs_world.World) -> Unit {
         @render3d.DirectionalLight::new(
           directional_light.color,
           illuminance,
-          state.shadow_maps_enabled,
+          directional_light.shadow_maps_enabled,
         ),
         tick,
       )
@@ -163,16 +149,58 @@ fn update_light_modes(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_receiver_materials() -> Unit {
-  let state = shadow_caster_receiver_state.val
-  for handle in state.receiver_handles {
-    if @render3d.standard_material_get(handle) is Some(material) {
-      @render3d.standard_material_set(
-        handle,
-        material.with_unlit(!state.receiver_enabled),
-      )
-      |> ignore
+fn toggle_shadow_casters(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let mesh_store = world.get_mesh3d_store()
+  let not_shadow_caster_store = world.get_not_shadow_caster_store()
+  let make_shadow_caster : Array[@core.Entity] = []
+  let make_not_shadow_caster : Array[@core.Entity] = []
+
+  mesh_store.for_each(fn(entity, _mesh) {
+    if not_shadow_caster_store.contains(entity) {
+      make_shadow_caster.push(entity)
+    } else {
+      make_not_shadow_caster.push(entity)
     }
+  })
+
+  for entity in make_shadow_caster {
+    not_shadow_caster_store.remove(entity) |> ignore
+  }
+  for entity in make_not_shadow_caster {
+    not_shadow_caster_store.insert(
+      entity,
+      @render3d.NotShadowCaster::default(),
+      tick,
+    )
+  }
+}
+
+///|
+fn toggle_shadow_receivers(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let mesh_store = world.get_mesh3d_store()
+  let not_shadow_receiver_store = world.get_not_shadow_receiver_store()
+  let make_shadow_receiver : Array[@core.Entity] = []
+  let make_not_shadow_receiver : Array[@core.Entity] = []
+
+  mesh_store.for_each(fn(entity, _mesh) {
+    if not_shadow_receiver_store.contains(entity) {
+      make_shadow_receiver.push(entity)
+    } else {
+      make_not_shadow_receiver.push(entity)
+    }
+  })
+
+  for entity in make_shadow_receiver {
+    not_shadow_receiver_store.remove(entity) |> ignore
+  }
+  for entity in make_not_shadow_receiver {
+    not_shadow_receiver_store.insert(
+      entity,
+      @render3d.NotShadowReceiver::default(),
+      tick,
+    )
   }
 }
 
@@ -181,9 +209,6 @@ fn setup(world : @ecs_world.World) -> Unit {
   shadow_caster_receiver_state.val.point_light = None
   shadow_caster_receiver_state.val.directional_light = None
   shadow_caster_receiver_state.val.point_light_enabled = false
-  shadow_caster_receiver_state.val.shadow_maps_enabled = true
-  shadow_caster_receiver_state.val.receiver_enabled = true
-  shadow_caster_receiver_state.val.receiver_handles.clear()
 
   let spawn_height = 2.0F
   let sphere_mesh = uv_sphere_mesh(0.25F, 16, 24)
@@ -205,39 +230,45 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_perceptual_roughness(
+      1.0F,
+    ),
   )
 
-  @render3d.MeshMaterial3dBundle::new(
+  let red_sphere = @render3d.MeshMaterial3dBundle::new(
     sphere_mesh,
     @render3d.MeshMaterial3d::new(red_material),
     @math.Transform::from_xyz(-1.0F, spawn_height, 0.0F),
   ).spawn(world)
-  |> ignore
+  red_sphere |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
+  let blue_sphere = @render3d.MeshMaterial3dBundle::new(
     sphere_mesh,
     @render3d.MeshMaterial3d::new(blue_material),
     @math.Transform::from_xyz(1.0F, spawn_height, 0.0F),
   ).spawn(world)
-  |> ignore
+  world
+  .get_not_shadow_caster_store()
+  .insert(blue_sphere, @render3d.NotShadowCaster::default(), tick)
 
-  @render3d.MeshMaterial3dBundle::new(
+  let floating_plane = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(20.0F, 20.0F),
     @render3d.MeshMaterial3d::new(lime_material),
     @math.Transform::from_xyz(0.0F, 1.0F, -10.0F),
   ).spawn(world)
-  |> ignore
+  world
+  .get_not_shadow_caster_store()
+  .insert(floating_plane, @render3d.NotShadowCaster::default(), tick)
+  world
+  .get_not_shadow_receiver_store()
+  .insert(floating_plane, @render3d.NotShadowReceiver::default(), tick)
 
-  @render3d.MeshMaterial3dBundle::new(
+  let ground_plane = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(20.0F, 20.0F),
     @render3d.MeshMaterial3d::new(white_material),
     @math.Transform::identity(),
   ).spawn(world)
-  |> ignore
-
-  shadow_caster_receiver_state.val.receiver_handles.push(lime_material)
-  shadow_caster_receiver_state.val.receiver_handles.push(white_material)
+  ground_plane |> ignore
 
   let point_light = world.spawn_empty()
   world
@@ -289,29 +320,17 @@ fn setup(world : @ecs_world.World) -> Unit {
 ///|
 fn controls(world : @ecs_world.World) -> Unit {
   let state = shadow_caster_receiver_state.val
-  let mut light_changed = false
-  let mut receiver_changed = false
-
   if @input.key_just_pressed(@window.KeyCode::KeyL) {
     state.point_light_enabled = !state.point_light_enabled
-    light_changed = true
+    update_light_modes(world)
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    state.shadow_maps_enabled = !state.shadow_maps_enabled
-    light_changed = true
+    toggle_shadow_casters(world)
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    state.receiver_enabled = !state.receiver_enabled
-    receiver_changed = true
-  }
-
-  if light_changed {
-    update_light_modes(world)
-  }
-  if receiver_changed {
-    update_receiver_materials()
+    toggle_shadow_receivers(world)
   }
 }
 

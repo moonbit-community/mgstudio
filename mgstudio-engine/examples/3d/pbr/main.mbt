@@ -14,12 +14,25 @@
 
 ///|
 /// Port of `bevy/examples/3d/pbr.rs`.
-///
-/// Baseline parity: environment map loading in Bevy is currently not available in
-/// mgstudio, while metallic/roughness grid behavior is aligned.
 
 ///|
 const PI : Float = 3.141592653589793F
+
+///|
+priv struct PbrState {
+  mut loading_label : @text.TextHandle?
+  mut diffuse_env_map : @asset.Handle[@asset.Image]?
+  mut specular_env_map : @asset.Handle[@asset.Image]?
+  mut env_loaded : Bool
+}
+
+///|
+let pbr_state : Ref[PbrState] = Ref::new({
+  loading_label: None,
+  diffuse_env_map: None,
+  specular_env_map: None,
+  env_loaded: false,
+})
 
 ///|
 fn float_from_int(value : Int) -> Float {
@@ -99,6 +112,10 @@ fn spawn_mesh(
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
+  pbr_state.val.loading_label = None
+  pbr_state.val.diffuse_env_map = None
+  pbr_state.val.specular_env_map = None
+  pbr_state.val.env_loaded = false
   let tick = world.read_change_tick()
   let sphere_mesh = uv_sphere_mesh(0.45F, 18, 32)
   let sphere_color = @render2d.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
@@ -154,6 +171,12 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let diffuse_env_map = asset_server.load(
+    "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2",
+  )
+  let specular_env_map = asset_server.load(
+    "environment_maps/pisa_specular_rgb9e5_zstd.ktx2",
+  )
 
   @text.Text2dBundle::new(
     @text.Text2d::new("Perceptual Roughness"),
@@ -189,10 +212,27 @@ fn setup(world : @ecs_world.World) -> Unit {
   .spawn()
   |> ignore
 
+  let env_loading_label = @text.Text2dBundle::new(
+      @text.Text2d::new("Loading Environment Map..."),
+      @text.TextFont::default().with_font(overlay_font).with_font_size(24.0F),
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(375.0F, -330.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=50.0F,
+      ),
+    )
+    .with_anchor(@render2d.Anchor::bottom_right())
+    .with_color(
+      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    )
+    .spawn()
+  pbr_state.val.loading_label = Some(env_loading_label)
+
   let orthographic = @render3d.OrthographicProjection3d::default().with_scale(
     0.01F,
   )
-  @render3d.Camera3dBundle::new_with_projection(
+  let camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
     @render3d.Projection3d::Orthographic(orthographic),
     @math.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
@@ -200,7 +240,36 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(diffuse_env_map),
+      Some(specular_env_map),
+      900.0F,
+    ),
+    tick,
+  )
+  pbr_state.val.diffuse_env_map = Some(diffuse_env_map)
+  pbr_state.val.specular_env_map = Some(specular_env_map)
+}
+
+///|
+fn environment_map_load_finish(_world : @ecs_world.World) -> Unit {
+  if pbr_state.val.env_loaded {
+    return
+  }
+  guard pbr_state.val.diffuse_env_map is Some(diffuse_map) else { return }
+  guard pbr_state.val.specular_env_map is Some(specular_map) else { return }
+  if @asset.asset_is_texture_loaded(diffuse_map) &&
+    @asset.asset_is_texture_loaded(specular_map) {
+    if pbr_state.val.loading_label is Some(label) {
+      @text.text_set_content(label, "")
+      pbr_state.val.loading_label = None
+    }
+    pbr_state.val.env_loaded = true
+  }
 }
 
 ///|
@@ -209,5 +278,6 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
+  .add_system(environment_map_load_finish)
   .run()
 }

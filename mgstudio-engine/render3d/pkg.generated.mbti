@@ -212,6 +212,19 @@ pub fn Fxaa::default() -> Self
 pub fn Fxaa::new(Bool) -> Self
 pub fn Fxaa::with_enabled(Self, Bool) -> Self
 
+pub struct GeneratedEnvironmentMapLight {
+  environment_map : @asset.Handle[@asset.Image]?
+  intensity : Float
+  rotation : @math.Quat
+  affects_lightmapped_mesh_diffuse : Bool
+}
+pub fn GeneratedEnvironmentMapLight::default() -> Self
+pub fn GeneratedEnvironmentMapLight::new(@asset.Handle[@asset.Image]?, Float) -> Self
+pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
+pub fn GeneratedEnvironmentMapLight::with_environment_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn GeneratedEnvironmentMapLight::with_intensity(Self, Float) -> Self
+pub fn GeneratedEnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
+
 pub struct GlobalAmbientLight {
   color : @render2d.Color
   brightness : Float
@@ -291,6 +304,14 @@ pub impl Show for Msaa
 pub struct NormalPrepass {
 }
 pub fn NormalPrepass::default() -> Self
+
+pub struct NotShadowCaster {
+}
+pub fn NotShadowCaster::default() -> Self
+
+pub struct NotShadowReceiver {
+}
+pub fn NotShadowReceiver::default() -> Self
 
 pub struct OcclusionCulling {
 }
@@ -648,6 +669,10 @@ pub(open) trait Has_Fxaa {
   get_fxaa_store(Self) -> @core.ComponentStore[Fxaa]
 }
 
+pub(open) trait Has_GeneratedEnvironmentMapLight {
+  get_generated_environment_map_light_store(Self) -> @core.ComponentStore[GeneratedEnvironmentMapLight]
+}
+
 pub(open) trait Has_Hdr {
   get_hdr_store(Self) -> @core.ComponentStore[Hdr]
 }
@@ -682,6 +707,14 @@ pub(open) trait Has_Msaa {
 
 pub(open) trait Has_NormalPrepass {
   get_normal_prepass_store(Self) -> @core.ComponentStore[NormalPrepass]
+}
+
+pub(open) trait Has_NotShadowCaster {
+  get_not_shadow_caster_store(Self) -> @core.ComponentStore[NotShadowCaster]
+}
+
+pub(open) trait Has_NotShadowReceiver {
+  get_not_shadow_receiver_store(Self) -> @core.ComponentStore[NotShadowReceiver]
 }
 
 pub(open) trait Has_OcclusionCulling {

@@ -6,12 +6,12 @@
 pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight",
   "LightProbe", "MotionBlur", "PointLight", "Tonemapping", "DepthPrepass", "NormalPrepass",
-  "ContactShadows", "MeshMaterial3d", "TemporalJitter", "DeferredPrepass", "SubCameraView3d",
-  "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "SpotLightTexture",
-  "PointLightTexture", "CameraProjection3d", "ParallaxCorrection", "ChromaticAberration",
-  "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod",
-  "ScreenSpaceReflections", "DirectionalLightTexture", "ScreenSpaceAmbientOcclusion",
-  "OrderIndependentTransparencySettings",
+  "ContactShadows", "MeshMaterial3d", "TemporalJitter", "DeferredPrepass", "NotShadowCaster",
+  "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
+  "SpotLightTexture", "NotShadowReceiver", "PointLightTexture", "CameraProjection3d",
+  "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass",
+  "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
+  "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
 ]
 
 ///|
@@ -118,6 +118,13 @@ pub(open) trait Has_DeferredPrepass {
 }
 
 ///|
+pub(open) trait Has_NotShadowCaster {
+  get_not_shadow_caster_store(self : Self) -> @core.ComponentStore[
+    NotShadowCaster,
+  ]
+}
+
+///|
 pub(open) trait Has_SubCameraView3d {
   get_sub_camera_view3d_store(self : Self) -> @core.ComponentStore[
     SubCameraView3d,
@@ -149,6 +156,13 @@ pub(open) trait Has_OcclusionCulling {
 pub(open) trait Has_SpotLightTexture {
   get_spot_light_texture_store(self : Self) -> @core.ComponentStore[
     SpotLightTexture,
+  ]
+}
+
+///|
+pub(open) trait Has_NotShadowReceiver {
+  get_not_shadow_receiver_store(self : Self) -> @core.ComponentStore[
+    NotShadowReceiver,
   ]
 }
 
@@ -226,6 +240,13 @@ pub(open) trait Has_DirectionalLightTexture {
 pub(open) trait Has_ScreenSpaceAmbientOcclusion {
   get_screen_space_ambient_occlusion_store(self : Self) -> @core.ComponentStore[
     ScreenSpaceAmbientOcclusion,
+  ]
+}
+
+///|
+pub(open) trait Has_GeneratedEnvironmentMapLight {
+  get_generated_environment_map_light_store(self : Self) -> @core.ComponentStore[
+    GeneratedEnvironmentMapLight,
   ]
 }
 

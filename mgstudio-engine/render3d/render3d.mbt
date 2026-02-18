@@ -516,6 +516,26 @@ pub fn OcclusionCulling::default() -> OcclusionCulling {
 }
 
 ///|
+/// Marker component aligned with Bevy's `NotShadowCaster`.
+#ecs.component
+pub struct NotShadowCaster {}
+
+///|
+pub fn NotShadowCaster::default() -> NotShadowCaster {
+  NotShadowCaster::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `NotShadowReceiver`.
+#ecs.component
+pub struct NotShadowReceiver {}
+
+///|
+pub fn NotShadowReceiver::default() -> NotShadowReceiver {
+  NotShadowReceiver::{  }
+}
+
+///|
 /// Marker component aligned with Bevy's
 /// `OrderIndependentTransparencySettings`.
 ///
@@ -2447,6 +2467,79 @@ pub fn EnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
   affects_lightmapped_mesh_diffuse : Bool,
 ) -> EnvironmentMapLight {
   EnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+}
+
+///|
+/// Runtime-generated environment map lighting aligned with Bevy's
+/// `GeneratedEnvironmentMapLight`.
+///
+/// Current runtime note: this backend stores this component for API parity.
+/// Runtime cubemap filtering remains adapted.
+#ecs.component
+pub struct GeneratedEnvironmentMapLight {
+  environment_map : @asset.Handle[@asset.Image]?
+  intensity : Float
+  rotation : @math.Quat
+  affects_lightmapped_mesh_diffuse : Bool
+}
+
+///|
+pub fn GeneratedEnvironmentMapLight::default() -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::{
+    environment_map: None,
+    intensity: 0.0F,
+    rotation: @math.Quat::identity(),
+    affects_lightmapped_mesh_diffuse: true,
+  }
+}
+
+///|
+pub fn GeneratedEnvironmentMapLight::new(
+  environment_map : @asset.Handle[@asset.Image]?,
+  intensity : Float,
+) -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::default()
+  .with_environment_map(environment_map)
+  .with_intensity(intensity)
+}
+
+///|
+pub fn GeneratedEnvironmentMapLight::with_environment_map(
+  self : GeneratedEnvironmentMapLight,
+  environment_map : @asset.Handle[@asset.Image]?,
+) -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::{ ..self, environment_map, }
+}
+
+///|
+pub fn GeneratedEnvironmentMapLight::with_intensity(
+  self : GeneratedEnvironmentMapLight,
+  intensity : Float,
+) -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::{
+    ..self,
+    intensity: if intensity < 0.0F {
+      0.0F
+    } else {
+      intensity
+    },
+  }
+}
+
+///|
+pub fn GeneratedEnvironmentMapLight::with_rotation(
+  self : GeneratedEnvironmentMapLight,
+  rotation : @math.Quat,
+) -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::{ ..self, rotation, }
+}
+
+///|
+pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
+  self : GeneratedEnvironmentMapLight,
+  affects_lightmapped_mesh_diffuse : Bool,
+) -> GeneratedEnvironmentMapLight {
+  GeneratedEnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|

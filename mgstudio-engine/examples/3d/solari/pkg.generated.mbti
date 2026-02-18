@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/solari"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum SolariSceneMode {
+  PicaPica
+  ManyLights
+}
+pub impl Eq for SolariSceneMode
+pub impl Show for SolariSceneMode
+
+// Type aliases
+
+// Traits
+

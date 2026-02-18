@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/reflection_probes"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum ReflectionMode {
+  EnvironmentMap
+  ReflectionProbe
+  GeneratedEnvironmentMap
+}
+pub impl Eq for ReflectionMode
+pub impl Show for ReflectionMode
+
+// Type aliases
+
+// Traits
+

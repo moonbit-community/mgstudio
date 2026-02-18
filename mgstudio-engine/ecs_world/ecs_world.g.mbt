@@ -88,6 +88,7 @@ pub struct World {
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
   deferred_prepass : @core.ComponentStore[@render3d.DeferredPrepass]
+  not_shadow_caster : @core.ComponentStore[@render3d.NotShadowCaster]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
@@ -101,6 +102,7 @@ pub struct World {
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
+  not_shadow_receiver : @core.ComponentStore[@render3d.NotShadowReceiver]
   point_light_texture : @core.ComponentStore[@render3d.PointLightTexture]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
@@ -155,6 +157,9 @@ pub struct World {
   ]
   screen_space_ambient_occlusion : @core.ComponentStore[
     @render3d.ScreenSpaceAmbientOcclusion,
+  ]
+  generated_environment_map_light : @core.ComponentStore[
+    @render3d.GeneratedEnvironmentMapLight,
   ]
   additional_solver_iterations2d : @core.ComponentStore[
     @physics2d.AdditionalSolverIterations2d,
@@ -287,6 +292,7 @@ pub fn World::new() -> World {
     solver_groups2d: @core.ComponentStore::new(),
     active_events3d: @core.ComponentStore::new(),
     deferred_prepass: @core.ComponentStore::new(),
+    not_shadow_caster: @core.ComponentStore::new(),
     sub_camera_view3d: @core.ComponentStore::new(),
     scene_instance_ready: @core.ComponentStore::new(),
     external_force2d: @core.ComponentStore::new(),
@@ -300,6 +306,7 @@ pub fn World::new() -> World {
     view_visibility: @core.ComponentStore::new(),
     collider_parent2d: @core.ComponentStore::new(),
     multibody_joint2d: @core.ComponentStore::new(),
+    not_shadow_receiver: @core.ComponentStore::new(),
     point_light_texture: @core.ComponentStore::new(),
     visibility_range: @core.ComponentStore::new(),
     collider_density2d: @core.ComponentStore::new(),
@@ -329,6 +336,7 @@ pub fn World::new() -> World {
     additional_mass_properties2d: @core.ComponentStore::new(),
     rapier_impulse_joint_handle2d: @core.ComponentStore::new(),
     screen_space_ambient_occlusion: @core.ComponentStore::new(),
+    generated_environment_map_light: @core.ComponentStore::new(),
     additional_solver_iterations2d: @core.ComponentStore::new(),
     contact_force_event_threshold2d: @core.ComponentStore::new(),
     rapier_multibody_joint_handle2d: @core.ComponentStore::new(),
@@ -450,6 +458,7 @@ pub fn World::despawn(
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
   self.deferred_prepass.remove(entity) |> ignore
+  self.not_shadow_caster.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
@@ -463,6 +472,7 @@ pub fn World::despawn(
   self.view_visibility.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
+  self.not_shadow_receiver.remove(entity) |> ignore
   self.point_light_texture.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
@@ -492,6 +502,7 @@ pub fn World::despawn(
   self.additional_mass_properties2d.remove(entity) |> ignore
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
   self.screen_space_ambient_occlusion.remove(entity) |> ignore
+  self.generated_environment_map_light.remove(entity) |> ignore
   self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
@@ -592,6 +603,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
   self.deferred_prepass.remove(entity) |> ignore
+  self.not_shadow_caster.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
@@ -605,6 +617,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.view_visibility.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
+  self.not_shadow_receiver.remove(entity) |> ignore
   self.point_light_texture.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
@@ -634,6 +647,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.additional_mass_properties2d.remove(entity) |> ignore
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
   self.screen_space_ambient_occlusion.remove(entity) |> ignore
+  self.generated_environment_map_light.remove(entity) |> ignore
   self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
@@ -1116,6 +1130,13 @@ pub impl @render3d.Has_DeferredPrepass for World with get_deferred_prepass_store
 }
 
 ///|
+pub impl @render3d.Has_NotShadowCaster for World with get_not_shadow_caster_store(
+  self,
+) {
+  self.not_shadow_caster
+}
+
+///|
 pub impl @render3d.Has_SubCameraView3d for World with get_sub_camera_view3d_store(
   self,
 ) {
@@ -1204,6 +1225,13 @@ pub impl @physics2d.Has_MultibodyJoint2d for World with get_multibody_joint2d_st
   self,
 ) {
   self.multibody_joint2d
+}
+
+///|
+pub impl @render3d.Has_NotShadowReceiver for World with get_not_shadow_receiver_store(
+  self,
+) {
+  self.not_shadow_receiver
 }
 
 ///|
@@ -1407,6 +1435,13 @@ pub impl @render3d.Has_ScreenSpaceAmbientOcclusion for World with get_screen_spa
   self,
 ) {
   self.screen_space_ambient_occlusion
+}
+
+///|
+pub impl @render3d.Has_GeneratedEnvironmentMapLight for World with get_generated_environment_map_light_store(
+  self,
+) {
+  self.generated_environment_map_light
 }
 
 ///|
