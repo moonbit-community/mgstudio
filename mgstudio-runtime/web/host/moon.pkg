@@ -5,6 +5,7 @@ import {
   "mizchi/js/browser/dom",
   "mizchi/js/web/http",
   "Milky2018/moon_accesskit",
+  "moonbitlang/core/math" @coremath,
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "Milky2018/mgstudio-runtime-core" @rtcore,

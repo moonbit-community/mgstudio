@@ -72,7 +72,8 @@ pub fn ViewVisibility::is_visible(self : ViewVisibility) -> Bool {
 // Mirrors Bevy's `VisibilityRange` shape:
 // - `start_margin_*` defines the near-side visible threshold range.
 // - `end_margin_*` defines the far-side visible threshold range.
-// - `use_aabb` is reserved for future bounds-aware distance checks.
+// - `use_aabb` switches distance origin from entity translation to mesh AABB
+//   center when available.
 #ecs.component
 pub struct VisibilityRange {
   start_margin_min : Float

@@ -2103,6 +2103,9 @@ pub fn create_host(
         arg_number(args, 32, 0),
         arg_number(args, 33, 0),
         arg_number(args, 34, 0),
+        to_int(arg_number(args, 35, -1)),
+        arg_number(args, 36, 0),
+        arg_number(args, 37, 0),
       )
     }),
   )

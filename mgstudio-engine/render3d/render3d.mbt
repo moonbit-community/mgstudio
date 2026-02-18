@@ -2856,6 +2856,7 @@ priv struct Mesh3dInstance {
   transform : @math.Transform
   motion_speed : Float
   visibility_range : @visibility.VisibilityRange?
+  aabb_center_world : @math.Vec3?
   material : StandardMaterial
   layers : @render2d.RenderLayers
 }
@@ -3403,6 +3404,55 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
+fn render3d_rotate_by_quat(v : @math.Vec3, q : @math.Quat) -> @math.Vec3 {
+  let q_vec = @math.Vec3::new(q.x, q.y, q.z)
+  let t = q_vec.cross(v).mul_scalar(2.0F)
+  v.add(t.mul_scalar(q.w)).add(q_vec.cross(t))
+}
+
+///|
+fn render3d_transform_point(
+  transform : @math.Transform,
+  local_point : @math.Vec3,
+) -> @math.Vec3 {
+  let scaled = local_point.mul(transform.scale)
+  transform.translation.add(render3d_rotate_by_quat(scaled, transform.rotation))
+}
+
+///|
+fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
+  guard @render2d.render_mesh_asset_get(mesh3d.mesh) is Some(mesh_asset) else {
+    return None
+  }
+  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {
+    return None
+  }
+  guard geometry3d.positions.length() > 0 else { return None }
+  let mut min_x = geometry3d.positions[0].x
+  let mut min_y = geometry3d.positions[0].y
+  let mut min_z = geometry3d.positions[0].z
+  let mut max_x = geometry3d.positions[0].x
+  let mut max_y = geometry3d.positions[0].y
+  let mut max_z = geometry3d.positions[0].z
+  for i in 1..<geometry3d.positions.length() {
+    let p = geometry3d.positions[i]
+    min_x = minf(min_x, p.x)
+    min_y = minf(min_y, p.y)
+    min_z = minf(min_z, p.z)
+    max_x = maxf(max_x, p.x)
+    max_y = maxf(max_y, p.y)
+    max_z = maxf(max_z, p.z)
+  }
+  Some(
+    @math.Vec3::new(
+      (min_x + max_x) * 0.5F,
+      (min_y + max_y) * 0.5F,
+      (min_z + max_z) * 0.5F,
+    ),
+  )
+}
+
+///|
 fn render3d_world_position_uv(
   camera : Camera3dInstance,
   viewport_rect : (Float, Float, Float, Float)?,
@@ -3709,21 +3759,24 @@ fn render3d_visibility_range_visible(
   visibility_range : @visibility.VisibilityRange,
   camera_transform : @math.Transform,
   mesh_transform : @math.Transform,
+  mesh_aabb_center_world : @math.Vec3?,
 ) -> Bool {
-  let to_mesh = mesh_transform.translation.sub(camera_transform.translation)
+  let mesh_position = if visibility_range.use_aabb {
+    match mesh_aabb_center_world {
+      Some(center) => center
+      None => mesh_transform.translation
+    }
+  } else {
+    mesh_transform.translation
+  }
+  let to_mesh = mesh_position.sub(camera_transform.translation)
   let distance = to_mesh.length()
-  let near_bound = minf(
-    visibility_range.start_margin_min,
-    visibility_range.start_margin_max,
-  )
-  let far_bound = maxf(
-    visibility_range.end_margin_min,
-    visibility_range.end_margin_max,
-  )
+  let near_bound = visibility_range.start_margin_min
+  let far_bound = visibility_range.end_margin_max
   if far_bound < near_bound {
     return false
   }
-  distance >= near_bound && distance <= far_bound
+  distance >= near_bound && distance < far_bound
 }
 
 ///|
@@ -3746,6 +3799,7 @@ fn render3d_sorted_mesh_indices(
         visibility_range,
         camera_transform,
         mesh.transform,
+        mesh.aabb_center_world,
       ) {
       continue
     }
@@ -3913,7 +3967,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let material_store = world.get_mesh_material3d_store()
   let gpu_mesh_store = world.get_gpu_mesh2d_store()
   let visibility_range_store = world.get_visibility_range_store()
-  mesh_store.for_each(fn(entity, _mesh3d) {
+  mesh_store.for_each(fn(entity, mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
       !view_visibility.is_visible() {
       return
@@ -3936,12 +3990,23 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       None => transform.translation
     }
     let motion_speed = transform.translation.sub(previous_translation).length()
+    let visibility_range = visibility_range_store.get(entity)
+    let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
+      match render3d_mesh_local_aabb_center(mesh3d) {
+        Some(local_center) =>
+          Some(render3d_transform_point(transform, local_center))
+        None => None
+      }
+    } else {
+      None
+    }
     meshes.push(Mesh3dInstance::{
       entity,
       mesh_id: gpu_mesh.mesh_id,
       transform,
       motion_speed,
-      visibility_range: visibility_range_store.get(entity),
+      visibility_range,
+      aabb_center_world,
       material,
       layers,
     })
@@ -4137,6 +4202,14 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         Some(texture) => texture.id()
         None => -1
       }
+      let anisotropy_texture_id = match mesh.material.anisotropy_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let anisotropy_strength = maxf(
+        0.0F,
+        minf(1.0F, mesh.material.anisotropy_strength),
+      )
       let max_relief_mapping_search_steps = Float::from_double(
         mesh.material.parallax_mapping_method.max_steps().to_double(),
       )
@@ -4218,19 +4291,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           )
         }
       }
-      let anisotropy_strength = maxf(
-        0.0F,
-        minf(1.0F, mesh.material.anisotropy_strength),
-      )
-      let anisotropy_draw_roughness = maxf(
-        0.02F,
-        draw_roughness * (1.0F - anisotropy_strength * 0.4F),
-      )
-      let mut draw_surface_roughness = if anisotropy_strength > 0.0F {
-        anisotropy_draw_roughness
-      } else {
-        draw_roughness
-      }
+      let mut draw_surface_roughness = draw_roughness
       let probe_environment_light = render3d_probe_environment_map_light(
         reflection_probes,
         mesh.transform.translation,
@@ -4308,6 +4369,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         parallax_depth_scale=mesh.material.parallax_depth_scale,
         max_parallax_layer_count=mesh.material.max_parallax_layer_count,
         max_relief_mapping_search_steps~,
+        anisotropy_texture_id~,
+        anisotropy_strength~,
+        anisotropy_rotation=mesh.material.anisotropy_rotation,
       )
     }
     @window.host_gpu_end_pass()

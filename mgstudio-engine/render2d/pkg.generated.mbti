@@ -68,6 +68,8 @@ pub fn[W : RenderExtractWorld] render_extract_system(W) -> Unit
 
 pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
+pub fn render_mesh_asset_get(@asset.Handle[@mesh.Mesh]) -> @mesh.Mesh?
+
 pub fn[W] render_prepare_system(W) -> Unit
 
 pub fn[W] render_queue_system(W) -> Unit

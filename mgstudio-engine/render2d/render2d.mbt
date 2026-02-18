@@ -1145,6 +1145,11 @@ fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
 }
 
 ///|
+pub fn render_mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
+  mesh_asset_get(handle)
+}
+
+///|
 pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
   mesh_upload_cache_sync_with_asset_events()
   let mesh_handle_id = mesh.id()

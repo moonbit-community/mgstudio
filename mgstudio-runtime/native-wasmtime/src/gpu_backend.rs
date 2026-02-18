@@ -10,7 +10,7 @@ use winit::window::Window;
 // host contract used by mgstudio-engine (begin_frame/begin_pass/draw/end_pass/end_frame)
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
-const MESH_UNIFORM_MAX_BYTES: u64 = 88 * 4;
+const MESH_UNIFORM_MAX_BYTES: u64 = 92 * 4;
 
 pub struct GpuBackend {
     assets_base: String,
@@ -144,6 +144,7 @@ struct MeshDraw {
     metallic_roughness_texture_id: i32,
     occlusion_texture_id: i32,
     depth_texture_id: i32,
+    anisotropy_texture_id: i32,
     uv_offset: [f32; 2],
     uv_scale: [f32; 2],
     map_flags: [f32; 4],
@@ -157,6 +158,10 @@ struct MeshDraw {
     max_parallax_layer_count: f32,
     max_relief_mapping_search_steps: f32,
     depth_map_flag: f32,
+    anisotropy_strength: f32,
+    anisotropy_rotation_cos: f32,
+    anisotropy_rotation_sin: f32,
+    anisotropy_map_flag: f32,
     ubo_offset: u32, // computed during encoding
     scissor: Option<ScissorRect>,
 }
@@ -886,6 +891,11 @@ impl GpuBackend {
                             let Some(depth_tex) = self.textures.get(&draw.depth_texture_id) else {
                                 continue;
                             };
+                            let Some(anisotropy_tex) =
+                                self.textures.get(&draw.anisotropy_texture_id)
+                            else {
+                                continue;
+                            };
                             let layout = pipeline.get_bind_group_layout(1);
                             let material_bg =
                                 self.device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -932,6 +942,12 @@ impl GpuBackend {
                                             binding: 6,
                                             resource: wgpu::BindingResource::TextureView(
                                                 &depth_tex.view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 7,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &anisotropy_tex.view,
                                             ),
                                         },
                                     ],
@@ -1111,6 +1127,7 @@ impl GpuBackend {
             metallic_roughness_texture_id: resolved_texture_id,
             occlusion_texture_id: resolved_texture_id,
             depth_texture_id: resolved_texture_id,
+            anisotropy_texture_id: resolved_texture_id,
             uv_offset,
             uv_scale,
             map_flags: [if textured { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
@@ -1124,6 +1141,10 @@ impl GpuBackend {
             max_parallax_layer_count: 0.0,
             max_relief_mapping_search_steps: 0.0,
             depth_map_flag: 0.0,
+            anisotropy_strength: 0.0,
+            anisotropy_rotation_cos: 1.0,
+            anisotropy_rotation_sin: 0.0,
+            anisotropy_map_flag: 0.0,
             ubo_offset: 0,
             scissor: pass.current_scissor,
         }));
@@ -1160,6 +1181,9 @@ impl GpuBackend {
         parallax_depth_scale: f32,
         max_parallax_layer_count: f32,
         max_relief_mapping_search_steps: f32,
+        anisotropy_texture_id: i32,
+        anisotropy_strength: f32,
+        anisotropy_rotation: f32,
     ) -> anyhow::Result<()> {
         if self.frame.is_none() {
             return Ok(());
@@ -1202,6 +1226,14 @@ impl GpuBackend {
         let depth_textured = depth_texture_id >= 0;
         let requested_depth_texture_id = if depth_textured { depth_texture_id } else { -1 };
         let resolved_depth_texture_id = self.ensure_fallback_texture(requested_depth_texture_id)?;
+        let anisotropy_textured = anisotropy_texture_id >= 0;
+        let requested_anisotropy_texture_id = if anisotropy_textured {
+            anisotropy_texture_id
+        } else {
+            -1
+        };
+        let resolved_anisotropy_texture_id =
+            self.ensure_fallback_texture(requested_anisotropy_texture_id)?;
         let uv_offset = if textured {
             [uv_offset.0, uv_offset.1]
         } else {
@@ -1234,6 +1266,7 @@ impl GpuBackend {
             metallic_roughness_texture_id: resolved_metallic_roughness_texture_id,
             occlusion_texture_id: resolved_occlusion_texture_id,
             depth_texture_id: resolved_depth_texture_id,
+            anisotropy_texture_id: resolved_anisotropy_texture_id,
             uv_offset,
             uv_scale,
             map_flags: [
@@ -1256,6 +1289,10 @@ impl GpuBackend {
             max_parallax_layer_count,
             max_relief_mapping_search_steps,
             depth_map_flag: if depth_textured { 1.0 } else { 0.0 },
+            anisotropy_strength,
+            anisotropy_rotation_cos: anisotropy_rotation.cos(),
+            anisotropy_rotation_sin: anisotropy_rotation.sin(),
+            anisotropy_map_flag: if anisotropy_textured { 1.0 } else { 0.0 },
             ubo_offset: 0,
             scissor: pass.current_scissor,
         }));
@@ -2258,6 +2295,16 @@ impl GpuBackend {
                             },
                             count: None,
                         },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 7,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
                     ],
                 });
         let pl = self
@@ -2783,7 +2830,7 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     } else {
         1.0
     };
-    let floats: [f32; 88] = [
+    let floats: [f32; 92] = [
         draw.x,
         draw.y,
         draw.z,
@@ -2872,6 +2919,10 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
         draw.max_parallax_layer_count,
         draw.max_relief_mapping_search_steps,
         draw.depth_map_flag,
+        draw.anisotropy_strength,
+        draw.anisotropy_rotation_cos,
+        draw.anisotropy_rotation_sin,
+        draw.anisotropy_map_flag,
     ];
     bytemuck::cast_slice(&floats).to_vec()
 }

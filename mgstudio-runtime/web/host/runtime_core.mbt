@@ -1051,6 +1051,17 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
                 ]),
               ),
             ]),
+            @js.from_entries([
+              ("binding", @js.any(7)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
           ]),
         ),
       ])
@@ -2824,6 +2835,9 @@ fn draw_mesh3d(
   parallax_depth_scale : Double,
   max_parallax_layer_count : Double,
   max_relief_mapping_search_steps : Double,
+  anisotropy_texture_id : Int,
+  anisotropy_strength : Double,
+  anisotropy_rotation : Double,
 ) -> Unit {
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
@@ -2901,6 +2915,12 @@ fn draw_mesh3d(
   } else {
     state.gpu.fallback_texture_id
   }
+  let anisotropy_textured = anisotropy_texture_id >= 0
+  let resolved_anisotropy_texture_id = if anisotropy_textured {
+    anisotropy_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
   let base_texture_entry = get_texture_entry(state, base_texture_id)
   let normal_texture_entry = get_texture_entry(
     state, resolved_normal_texture_id,
@@ -2915,12 +2935,16 @@ fn draw_mesh3d(
     state, resolved_occlusion_texture_id,
   )
   let depth_texture_entry = get_texture_entry(state, resolved_depth_texture_id)
+  let anisotropy_texture_entry = get_texture_entry(
+    state, resolved_anisotropy_texture_id,
+  )
   if base_texture_entry is None ||
     normal_texture_entry is None ||
     emissive_texture_entry is None ||
     metallic_roughness_texture_entry is None ||
     occlusion_texture_entry is None ||
-    depth_texture_entry is None {
+    depth_texture_entry is None ||
+    anisotropy_texture_entry is None {
     return
   }
   if state.gpu.current_pass is Some(pass) &&
@@ -2932,7 +2956,8 @@ fn draw_mesh3d(
     metallic_roughness_texture_entry
     is Some(metallic_roughness_texture_entry_value) &&
     occlusion_texture_entry is Some(occlusion_texture_entry_value) &&
-    depth_texture_entry is Some(depth_texture_entry_value) {
+    depth_texture_entry is Some(depth_texture_entry_value) &&
+    anisotropy_texture_entry is Some(anisotropy_texture_entry_value) {
     let aspect = if info.height > 0 { info.width / info.height } else { 1.0 }
     let uv0_x = if textured { uv_offset_x } else { 0.0 }
     let uv0_y = if textured { uv_offset_y } else { 0.0 }
@@ -3051,6 +3076,14 @@ fn draw_mesh3d(
       } else {
         0.0
       },
+      anisotropy_strength,
+      @coremath.cos(anisotropy_rotation),
+      @coremath.sin(anisotropy_rotation),
+      if anisotropy_textured {
+        1.0
+      } else {
+        0.0
+      },
     ]
     guard create_transient_uniform_bind_group(
         state, mesh3d_pipeline, uniform_values,
@@ -3080,6 +3113,9 @@ fn draw_mesh3d(
       let depth_view : @webgpu.GPUTextureView = depth_texture_entry_value
         ._get("view")
         .cast()
+      let anisotropy_view : @webgpu.GPUTextureView = anisotropy_texture_entry_value
+        ._get("view")
+        .cast()
       guard state.gpu.mesh3d_material_layout is Some(material_layout) else {
         return
       }
@@ -3091,6 +3127,7 @@ fn draw_mesh3d(
         @webgpu.bind_group_entry_texture(4, metallic_roughness_view),
         @webgpu.bind_group_entry_texture(5, occlusion_view),
         @webgpu.bind_group_entry_texture(6, depth_view),
+        @webgpu.bind_group_entry_texture(7, anisotropy_view),
       ]
       let material_desc = @webgpu.bind_group_descriptor(
         material_layout, material_entries,

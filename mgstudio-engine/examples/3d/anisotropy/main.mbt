@@ -15,8 +15,8 @@
 ///|
 /// Port of `bevy/examples/3d/anisotropy.rs`.
 ///
-/// Baseline parity: `Skybox`/`EnvironmentMapLight` are not exposed in current
-/// mgstudio APIs. Anisotropy shading is approximated in the current render path.
+/// Baseline parity: skybox rendering behavior is still pending exact runtime
+/// support. Anisotropy shading now runs in the 3D shader path.
 
 ///|
 const PI : Float = 3.141592653589793F

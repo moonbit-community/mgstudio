@@ -42,6 +42,7 @@ struct Mesh3dUniform {
   material_params : vec4<f32>, // (metallic, roughness, reflectance, _)
   map_flags : vec4<f32>, // (base, emissive, metallic_roughness, occlusion)
   parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, has_depth_map)
+  anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -52,6 +53,7 @@ struct Mesh3dUniform {
 @group(1) @binding(4) var u_metallic_roughness_texture : texture_2d<f32>;
 @group(1) @binding(5) var u_occlusion_texture : texture_2d<f32>;
 @group(1) @binding(6) var u_depth_texture : texture_2d<f32>;
+@group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -213,7 +215,40 @@ fn parallaxed_uv(
   return mix(uv, previous_uv, weight);
 }
 
-fn specular_blinn(
+fn D_GGX_anisotropic(
+  at : f32,
+  ab : f32,
+  ndoth : f32,
+  tdoth : f32,
+  bdoth : f32,
+) -> f32 {
+  let a2 = at * ab;
+  let f = vec3<f32>(ab * tdoth, at * bdoth, a2 * ndoth);
+  let ff = max(dot(f, f), 1.0e-8);
+  let w2 = a2 / ff;
+  return a2 * w2 * w2 * (1.0 / 3.141592653589793);
+}
+
+fn V_GGX_anisotropic(
+  at : f32,
+  ab : f32,
+  ndotl : f32,
+  ndotv : f32,
+  bdotv : f32,
+  tdotv : f32,
+  tdotl : f32,
+  bdotl : f32,
+) -> f32 {
+  let ggx_v = ndotl * length(vec3<f32>(at * tdotv, ab * bdotv, ndotv));
+  let ggx_l = ndotv * length(vec3<f32>(at * tdotl, ab * bdotl, ndotl));
+  return clamp(0.5 / max(ggx_v + ggx_l, 1.0e-8), 0.0, 1.0);
+}
+
+fn fresnel_schlick_vec(f0 : vec3<f32>, ldoth : f32) -> vec3<f32> {
+  return f0 + (vec3<f32>(1.0, 1.0, 1.0) - f0) * pow(1.0 - ldoth, 5.0);
+}
+
+fn specular_isotropic(
   normal : vec3<f32>,
   light_dir : vec3<f32>,
   view_dir : vec3<f32>,
@@ -225,6 +260,35 @@ fn specular_blinn(
   return pow(ndoth, shininess);
 }
 
+fn specular_anisotropic(
+  normal : vec3<f32>,
+  light_dir : vec3<f32>,
+  view_dir : vec3<f32>,
+  roughness : f32,
+  f0 : vec3<f32>,
+  anisotropy : f32,
+  anisotropy_t : vec3<f32>,
+  anisotropy_b : vec3<f32>,
+) -> vec3<f32> {
+  let half_dir = safe_normalize(light_dir + view_dir);
+  let ndotl = max(dot(normal, light_dir), 0.0);
+  let ndotv = max(dot(normal, view_dir), 1.0e-4);
+  let ndoth = max(dot(normal, half_dir), 0.0);
+  let ldoth = max(dot(light_dir, half_dir), 0.0);
+  let tdotl = dot(anisotropy_t, light_dir);
+  let bdotl = dot(anisotropy_b, light_dir);
+  let tdoth = dot(anisotropy_t, half_dir);
+  let bdoth = dot(anisotropy_b, half_dir);
+  let tdotv = dot(anisotropy_t, view_dir);
+  let bdotv = dot(anisotropy_b, view_dir);
+  let ab = roughness * roughness;
+  let at = mix(ab, 1.0, anisotropy * anisotropy);
+  let d = D_GGX_anisotropic(at, ab, ndoth, tdoth, bdoth);
+  let v = V_GGX_anisotropic(at, ab, ndotl, ndotv, bdotv, tdotv, tdotl, bdotl);
+  let f = fresnel_schlick_vec(f0, ldoth);
+  return d * v * f;
+}
+
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_base_map = u_mesh.map_flags.x > 0.5;
@@ -233,6 +297,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_occlusion_map = u_mesh.map_flags.w > 0.5;
   let has_normal_map = u_mesh.material_params.w > 0.5;
   let has_depth_map = u_mesh.parallax_params.w > 0.5;
+  let has_anisotropy_map = u_mesh.anisotropy_params.w > 0.5;
   let has_uv = u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0;
   let dp1 = dpdx(in.world_pos);
   let dp2 = dpdy(in.world_pos);
@@ -255,6 +320,33 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       u32(max(u_mesh.parallax_params.z, 0.0)),
       uv,
       -view_dir_tangent,
+    );
+  }
+  var anisotropy_strength = clamp(u_mesh.anisotropy_params.x, 0.0, 1.0);
+  var anisotropy_direction = vec2<f32>(
+    u_mesh.anisotropy_params.y,
+    u_mesh.anisotropy_params.z,
+  );
+  if has_anisotropy_map && has_uv {
+    let anisotropy_texel = textureSample(
+      u_anisotropy_texture,
+      u_material_sampler,
+      uv,
+    ).rgb;
+    let tex_dir_raw = anisotropy_texel.rg * 2.0 - vec2<f32>(1.0, 1.0);
+    let tex_dir_len2 = dot(tex_dir_raw, tex_dir_raw);
+    if tex_dir_len2 > 1.0e-8 {
+      let tex_dir = tex_dir_raw * inverseSqrt(tex_dir_len2);
+      let rot = mat2x2<f32>(
+        vec2<f32>(anisotropy_direction.x, anisotropy_direction.y),
+        vec2<f32>(-anisotropy_direction.y, anisotropy_direction.x),
+      );
+      anisotropy_direction = rot * tex_dir;
+    }
+    anisotropy_strength = clamp(
+      anisotropy_strength * anisotropy_texel.b,
+      0.0,
+      1.0,
     );
   }
   var base_color = in.color;
@@ -287,6 +379,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   if dot(normal, view_dir) < 0.0 {
     normal = -normal;
   }
+  let anisotropy_basis = cotangent_frame(geometric_normal, in.world_pos, uv);
+  let anisotropy_t = safe_normalize(
+    anisotropy_basis *
+    vec3<f32>(anisotropy_direction.x, anisotropy_direction.y, 0.0),
+  );
+  let anisotropy_b = safe_normalize(cross(normal, anisotropy_t));
   let emissive = max(u_mesh.emissive_unlit.xyz * emissive_tex, vec3<f32>(0.0));
   let unlit_factor = clamp(u_mesh.emissive_unlit.w, 0.0, 1.0);
   let metallic = clamp(u_mesh.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
@@ -305,10 +403,26 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let directional_term = u_mesh.directional_color.xyz *
     directional_strength *
     directional_diff;
+  let directional_specular = if anisotropy_strength > 0.0 {
+    specular_anisotropic(
+      normal,
+      directional_light_dir,
+      view_dir,
+      roughness,
+      f0,
+      anisotropy_strength,
+      anisotropy_t,
+      anisotropy_b,
+    )
+  } else {
+    vec3<f32>(
+      specular_isotropic(normal, directional_light_dir, view_dir, roughness),
+    )
+  };
   let directional_spec = u_mesh.directional_color.xyz *
     directional_strength *
     directional_diff *
-    specular_blinn(normal, directional_light_dir, view_dir, roughness);
+    directional_specular;
 
   let to_point = u_mesh.point_pos_range.xyz - in.world_pos;
   let point_distance = length(to_point);
@@ -322,12 +436,26 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     point_atten *
     point_atten *
     point_diff;
+  let point_specular = if anisotropy_strength > 0.0 {
+    specular_anisotropic(
+      normal,
+      point_dir,
+      view_dir,
+      roughness,
+      f0,
+      anisotropy_strength,
+      anisotropy_t,
+      anisotropy_b,
+    )
+  } else {
+    vec3<f32>(specular_isotropic(normal, point_dir, view_dir, roughness))
+  };
   let point_spec = u_mesh.point_color_intensity.xyz *
     point_strength *
     point_atten *
     point_atten *
     point_diff *
-    specular_blinn(normal, point_dir, view_dir, roughness);
+    point_specular;
 
   let to_spot = u_mesh.spot_pos_range.xyz - in.world_pos;
   let spot_distance = length(to_spot);
@@ -350,13 +478,29 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     spot_atten_base *
     spot_cone *
     spot_diff;
+  let spot_specular = if anisotropy_strength > 0.0 {
+    specular_anisotropic(
+      normal,
+      spot_light_to_fragment,
+      view_dir,
+      roughness,
+      f0,
+      anisotropy_strength,
+      anisotropy_t,
+      anisotropy_b,
+    )
+  } else {
+    vec3<f32>(
+      specular_isotropic(normal, spot_light_to_fragment, view_dir, roughness),
+    )
+  };
   let spot_spec = u_mesh.spot_color_intensity.xyz *
     spot_strength *
     spot_atten_base *
     spot_atten_base *
     spot_cone *
     spot_diff *
-    specular_blinn(normal, spot_light_to_fragment, view_dir, roughness);
+    spot_specular;
 
   let diffuse_lighting = (ambient_term +
     directional_term +

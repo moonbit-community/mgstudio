@@ -3141,6 +3141,9 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3176,6 +3179,9 @@ fn define_mgstudio_host_imports(
             let parallax_depth_scale = f(32);
             let max_parallax_layer_count = f(33);
             let max_relief_mapping_search_steps = f(34);
+            let anisotropy_texture_id = args.get(35).and_then(|v| v.i32()).unwrap_or(-1);
+            let anisotropy_strength = f(36);
+            let anisotropy_rotation = f(37);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh3d(
                     mesh_id,
@@ -3206,6 +3212,9 @@ fn define_mgstudio_host_imports(
                     parallax_depth_scale,
                     max_parallax_layer_count,
                     max_relief_mapping_search_steps,
+                    anisotropy_texture_id,
+                    anisotropy_strength,
+                    anisotropy_rotation,
                 )?;
             }
             ok_i32(out, 0);

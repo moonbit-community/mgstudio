@@ -3403,6 +3403,24 @@ pub fn add_mgstudio_host_imports(
           } else {
             0.0F
           }
+          let anisotropy_texture_id = if args.length() > 35 &&
+            args[35] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let anisotropy_strength = if args.length() > 36 &&
+            args[36] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let anisotropy_rotation = if args.length() > 37 &&
+            args[37] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
           ctx.gpu
           .unwrap()
           .draw_mesh3d(
@@ -3412,6 +3430,7 @@ pub fn add_mgstudio_host_imports(
             metallic_roughness_texture_id, occlusion_texture_id, depth_texture_id,
             emissive_r, emissive_g, emissive_b, unlit, metallic, roughness, reflectance,
             parallax_depth_scale, max_parallax_layer_count, max_relief_mapping_search_steps,
+            anisotropy_texture_id, anisotropy_strength, anisotropy_rotation,
           )
         }
         ok_i32(0)
@@ -3457,6 +3476,9 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
       ],

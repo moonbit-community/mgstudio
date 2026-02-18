@@ -655,6 +655,9 @@ pub fn host_gpu_draw_mesh3d(
   parallax_depth_scale~ : Float,
   max_parallax_layer_count~ : Float,
   max_relief_mapping_search_steps~ : Float,
+  anisotropy_texture_id~ : Int,
+  anisotropy_strength~ : Float,
+  anisotropy_rotation~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
 
 ///|
