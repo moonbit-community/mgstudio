@@ -2827,11 +2827,26 @@ priv struct Camera3dInstance {
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
   motion_blur : MotionBlur?
+  environment_map_light : EnvironmentMapLight?
+  generated_environment_map_light : GeneratedEnvironmentMapLight?
   transform : @math.Transform
   target_id : Int
   target_size : @math.IVec2
   scale_factor : Float
   layers : @render2d.RenderLayers
+}
+
+///|
+priv struct ReflectionProbeInstance {
+  transform : @math.Transform
+  light_probe : LightProbe
+  environment_map_light : EnvironmentMapLight
+}
+
+///|
+priv struct ResolvedEnvironmentLight {
+  light : EnvironmentMapLight
+  weight : Float
 }
 
 ///|
@@ -3127,6 +3142,89 @@ fn[
     }
   })
   lighting
+}
+
+///|
+fn render3d_generated_environment_map_to_light(
+  generated : GeneratedEnvironmentMapLight,
+) -> EnvironmentMapLight {
+  EnvironmentMapLight::default()
+  .with_diffuse_map(generated.environment_map)
+  .with_specular_map(generated.environment_map)
+  .with_intensity(generated.intensity)
+  .with_rotation(generated.rotation)
+  .with_affects_lightmapped_mesh_diffuse(
+    generated.affects_lightmapped_mesh_diffuse,
+  )
+}
+
+///|
+fn render3d_camera_environment_map_light(
+  camera : Camera3dInstance,
+) -> EnvironmentMapLight? {
+  if camera.generated_environment_map_light is Some(generated) {
+    return Some(render3d_generated_environment_map_to_light(generated))
+  }
+  camera.environment_map_light
+}
+
+///|
+fn render3d_probe_weight(
+  probe : ReflectionProbeInstance,
+  world_position : @math.Vec3,
+) -> Float {
+  let distance = world_position.sub(probe.transform.translation).length()
+  let fx = absf(probe.light_probe.falloff.x)
+  let fy = absf(probe.light_probe.falloff.y)
+  let fz = absf(probe.light_probe.falloff.z)
+  let radius = maxf(0.001F, maxf(fx, maxf(fy, fz)))
+  clamp01(1.0F - distance / radius)
+}
+
+///|
+fn render3d_probe_environment_map_light(
+  probes : Array[ReflectionProbeInstance],
+  world_position : @math.Vec3,
+) -> ResolvedEnvironmentLight? {
+  let mut best : ResolvedEnvironmentLight? = None
+  for probe in probes {
+    let weight = render3d_probe_weight(probe, world_position)
+    if weight <= 0.0F {
+      continue
+    }
+    let weighted_intensity = probe.environment_map_light.intensity * weight
+    if weighted_intensity <= 0.0F {
+      continue
+    }
+    if best is Some(current) && current.weight >= weight {
+      continue
+    }
+    best = Some(ResolvedEnvironmentLight::{
+      light: probe.environment_map_light,
+      weight,
+    })
+  }
+  best
+}
+
+///|
+fn render3d_environment_strength(
+  environment_map_light : EnvironmentMapLight?,
+  probe_light : ResolvedEnvironmentLight?,
+) -> (Float, Bool) {
+  let mut total_intensity = 0.0F
+  let mut affects_diffuse = false
+  if environment_map_light is Some(light) {
+    total_intensity = total_intensity + maxf(0.0F, light.intensity)
+    affects_diffuse = affects_diffuse || light.affects_lightmapped_mesh_diffuse
+  }
+  if probe_light is Some(resolved) {
+    total_intensity = total_intensity +
+      maxf(0.0F, resolved.light.intensity) * resolved.weight
+    affects_diffuse = affects_diffuse ||
+      resolved.light.affects_lightmapped_mesh_diffuse
+  }
+  (clamp01(total_intensity / 5000.0F), affects_diffuse)
 }
 
 ///|
@@ -3724,13 +3822,14 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
 pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let cameras : Array[Camera3dInstance] = []
   let meshes : Array[Mesh3dInstance] = []
+  let reflection_probes : Array[ReflectionProbeInstance] = []
   let camera3d_store = world.get_camera3d_store()
   let camera_store = world.get_camera_store()
   let projection_store = world.get_camera_projection3d_store()
@@ -3739,6 +3838,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let chromatic_aberration_store = world.get_chromatic_aberration_store()
   let vignette_store = world.get_vignette_store()
   let motion_blur_store = world.get_motion_blur_store()
+  let environment_map_light_store = world.get_environment_map_light_store()
+  let generated_environment_map_light_store = world.get_generated_environment_map_light_store()
+  let light_probe_store = world.get_light_probe_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
   let transform_store = world.get_transform_store()
@@ -3757,6 +3859,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let chromatic_aberration = chromatic_aberration_store.get(entity)
     let vignette = vignette_store.get(entity)
     let motion_blur = motion_blur_store.get(entity)
+    let environment_map_light = environment_map_light_store.get(entity)
+    let generated_environment_map_light = generated_environment_map_light_store.get(
+      entity,
+    )
     let target = match target_store.get(entity) {
       Some(v) => v
       None => @render2d.RenderTarget::Screen
@@ -3788,6 +3894,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           chromatic_aberration,
           vignette,
           motion_blur,
+          environment_map_light,
+          generated_environment_map_light,
           transform,
           target_id: target_info.target_id,
           target_size: target_info.target_size,
@@ -3836,6 +3944,20 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       visibility_range: visibility_range_store.get(entity),
       material,
       layers,
+    })
+  })
+  light_probe_store.for_each(fn(entity, light_probe) {
+    guard environment_map_light_store.get(entity) is Some(environment_map_light) else {
+      return
+    }
+    let transform = match transform_store.get(entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    reflection_probes.push(ReflectionProbeInstance::{
+      transform,
+      light_probe,
+      environment_map_light,
     })
   })
   motion_blur_history_sync(meshes)
@@ -3897,6 +4019,18 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.target_size,
       camera.scale_factor,
     )
+    let camera_environment_map_light = render3d_camera_environment_map_light(
+      camera,
+    )
+    let mut pass_lighting = lighting
+    if camera_environment_map_light is Some(environment_map_light) &&
+      environment_map_light.affects_lightmapped_mesh_diffuse {
+      pass_lighting = Render3dLightingState::{
+        ..pass_lighting,
+        ambient_brightness: pass_lighting.ambient_brightness +
+        maxf(0.0F, environment_map_light.intensity) / 10_000.0F,
+      }
+    }
     let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
     @window.host_gpu_begin_pass_3d(
       target_id=camera.target_id,
@@ -3920,38 +4054,38 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       viewport_y~,
       viewport_width~,
       viewport_height~,
-      ambient_r=lighting.ambient_color.r,
-      ambient_g=lighting.ambient_color.g,
-      ambient_b=lighting.ambient_color.b,
-      ambient_brightness=lighting.ambient_brightness,
-      directional_dir_x=lighting.directional_dir.x,
-      directional_dir_y=lighting.directional_dir.y,
-      directional_dir_z=lighting.directional_dir.z,
-      directional_color_r=lighting.directional_color.r,
-      directional_color_g=lighting.directional_color.g,
-      directional_color_b=lighting.directional_color.b,
-      directional_illuminance=lighting.directional_illuminance,
-      point_pos_x=lighting.point_pos.x,
-      point_pos_y=lighting.point_pos.y,
-      point_pos_z=lighting.point_pos.z,
-      point_color_r=lighting.point_color.r,
-      point_color_g=lighting.point_color.g,
-      point_color_b=lighting.point_color.b,
-      point_intensity=lighting.point_intensity,
-      point_range=lighting.point_range,
-      spot_pos_x=lighting.spot_pos.x,
-      spot_pos_y=lighting.spot_pos.y,
-      spot_pos_z=lighting.spot_pos.z,
-      spot_dir_x=lighting.spot_dir.x,
-      spot_dir_y=lighting.spot_dir.y,
-      spot_dir_z=lighting.spot_dir.z,
-      spot_color_r=lighting.spot_color.r,
-      spot_color_g=lighting.spot_color.g,
-      spot_color_b=lighting.spot_color.b,
-      spot_intensity=lighting.spot_intensity,
-      spot_range=lighting.spot_range,
-      spot_inner_angle=lighting.spot_inner_angle,
-      spot_outer_angle=lighting.spot_outer_angle,
+      ambient_r=pass_lighting.ambient_color.r,
+      ambient_g=pass_lighting.ambient_color.g,
+      ambient_b=pass_lighting.ambient_color.b,
+      ambient_brightness=pass_lighting.ambient_brightness,
+      directional_dir_x=pass_lighting.directional_dir.x,
+      directional_dir_y=pass_lighting.directional_dir.y,
+      directional_dir_z=pass_lighting.directional_dir.z,
+      directional_color_r=pass_lighting.directional_color.r,
+      directional_color_g=pass_lighting.directional_color.g,
+      directional_color_b=pass_lighting.directional_color.b,
+      directional_illuminance=pass_lighting.directional_illuminance,
+      point_pos_x=pass_lighting.point_pos.x,
+      point_pos_y=pass_lighting.point_pos.y,
+      point_pos_z=pass_lighting.point_pos.z,
+      point_color_r=pass_lighting.point_color.r,
+      point_color_g=pass_lighting.point_color.g,
+      point_color_b=pass_lighting.point_color.b,
+      point_intensity=pass_lighting.point_intensity,
+      point_range=pass_lighting.point_range,
+      spot_pos_x=pass_lighting.spot_pos.x,
+      spot_pos_y=pass_lighting.spot_pos.y,
+      spot_pos_z=pass_lighting.spot_pos.z,
+      spot_dir_x=pass_lighting.spot_dir.x,
+      spot_dir_y=pass_lighting.spot_dir.y,
+      spot_dir_z=pass_lighting.spot_dir.z,
+      spot_color_r=pass_lighting.spot_color.r,
+      spot_color_g=pass_lighting.spot_color.g,
+      spot_color_b=pass_lighting.spot_color.b,
+      spot_intensity=pass_lighting.spot_intensity,
+      spot_range=pass_lighting.spot_range,
+      spot_inner_angle=pass_lighting.spot_inner_angle,
+      spot_outer_angle=pass_lighting.spot_outer_angle,
       sub_camera_view_scale_x~,
       sub_camera_view_scale_y~,
       sub_camera_view_bias_x~,
@@ -4090,7 +4224,27 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       } else {
         draw_roughness
       }
+      let probe_environment_light = render3d_probe_environment_map_light(
+        reflection_probes,
+        mesh.transform.translation,
+      )
+      let (environment_strength, environment_affects_diffuse) = render3d_environment_strength(
+        camera_environment_map_light, probe_environment_light,
+      )
+      if environment_affects_diffuse && environment_strength > 0.0F {
+        let diffuse_boost = environment_strength *
+          (0.18F + (1.0F - draw_surface_roughness) * 0.12F)
+        draw_color_r = clamp01(draw_color_r + diffuse_boost)
+        draw_color_g = clamp01(draw_color_g + diffuse_boost)
+        draw_color_b = clamp01(draw_color_b + diffuse_boost)
+      }
       let mut draw_reflectance = clearcoat_reflectance
+      if environment_strength > 0.0F {
+        draw_reflectance = clamp01(
+          draw_reflectance +
+          (1.0F - draw_surface_roughness) * environment_strength * 0.6F,
+        )
+      }
       if camera.screen_space_reflections is Some(ssr) {
         let ssr_strength = render3d_ssr_strength(
           ssr,

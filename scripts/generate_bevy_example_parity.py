@@ -174,7 +174,11 @@ def classify_rows(root: pathlib.Path) -> list[ExampleRow]:
             status = "N/A"
             notes = "WASM-first policy: platform-incompatible category."
         elif mgstudio_path:
-            status = "Adapted" if detect_adapted_status(root, mgstudio_path) else "Exact"
+            if detect_adapted_status(root, mgstudio_path):
+                status = "Blocked"
+                notes = "Fallback implementation exists; blocked until exact parity."
+            else:
+                status = "Exact"
         else:
             status = "Blocked"
 
@@ -200,7 +204,6 @@ def summarize(rows: Iterable[ExampleRow]) -> dict[str, dict[str, int]]:
             summary[category] = {
                 "total": 0,
                 "Exact": 0,
-                "Adapted": 0,
                 "Blocked": 0,
                 "N/A": 0,
             }
@@ -228,7 +231,7 @@ def render_markdown(
     lines.append("- `scripts/generate_bevy_example_parity.py`")
     lines.append("Superseded By: N/A")
     lines.append("Notes:")
-    lines.append("- Status vocabulary: `Exact`, `Adapted`, `Blocked`, `N/A`.")
+    lines.append("- Status vocabulary: `Exact`, `Blocked`, `N/A`.")
     if baseline_commit:
         lines.append(f"- Baseline commit: `{baseline_commit}`.")
     if baseline_describe:
@@ -236,19 +239,19 @@ def render_markdown(
     lines.append("")
     lines.append("## Summary by Category")
     lines.append("")
-    lines.append("| Category | Total | Exact | Adapted | Blocked | N/A |")
-    lines.append("| --- | ---: | ---: | ---: | ---: | ---: |")
+    lines.append("| Category | Total | Exact | Blocked | N/A |")
+    lines.append("| --- | ---: | ---: | ---: | ---: |")
 
-    totals = {"total": 0, "Exact": 0, "Adapted": 0, "Blocked": 0, "N/A": 0}
+    totals = {"total": 0, "Exact": 0, "Blocked": 0, "N/A": 0}
     for category, row in summary_table.items():
         lines.append(
-            f"| `{category}` | {row['total']} | {row['Exact']} | {row['Adapted']} | {row['Blocked']} | {row['N/A']} |"
+            f"| `{category}` | {row['total']} | {row['Exact']} | {row['Blocked']} | {row['N/A']} |"
         )
         for key in totals:
             totals[key] += row[key]
 
     lines.append(
-        f"| **Total** | **{totals['total']}** | **{totals['Exact']}** | **{totals['Adapted']}** | **{totals['Blocked']}** | **{totals['N/A']}** |"
+        f"| **Total** | **{totals['total']}** | **{totals['Exact']}** | **{totals['Blocked']}** | **{totals['N/A']}** |"
     )
 
     lines.append("")
