@@ -49,6 +49,13 @@ pub(all) enum AlphaMode3d {
   AlphaToCoverage
 }
 
+pub struct Bloom {
+  intensity : Float
+}
+pub fn Bloom::default() -> Self
+pub fn Bloom::new(Float) -> Self
+pub fn Bloom::with_intensity(Self, Float) -> Self
+
 pub struct Camera3d {
 }
 pub fn Camera3d::default() -> Self
@@ -91,17 +98,36 @@ pub fn ChromaticAberration::new(Float, Int) -> Self
 pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
 pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
 
+pub struct ContactShadows {
+  linear_steps : Int
+  thickness : Float
+  length : Float
+}
+pub fn ContactShadows::default() -> Self
+pub fn ContactShadows::new(Int, Float, Float) -> Self
+pub fn ContactShadows::with_length(Self, Float) -> Self
+pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
+pub fn ContactShadows::with_thickness(Self, Float) -> Self
+
+pub struct DepthPrepass {
+}
+pub fn DepthPrepass::default() -> Self
+
 pub struct DirectionalLight {
   color : @render2d.Color
   illuminance : Float
   shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  soft_shadow_size : Float?
   shadow_depth_bias : Float
   shadow_normal_bias : Float
 }
 pub fn DirectionalLight::default() -> Self
 pub fn DirectionalLight::new(@render2d.Color, Float, Bool) -> Self
+pub fn DirectionalLight::with_contact_shadows_enabled(Self, Bool) -> Self
 pub fn DirectionalLight::with_shadow_depth_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_shadow_normal_bias(Self, Float) -> Self
+pub fn DirectionalLight::with_soft_shadow_size(Self, Float?) -> Self
 
 pub struct DistanceFog {
   color : @render2d.Color
@@ -132,6 +158,10 @@ pub struct GlobalAmbientLight {
 }
 pub fn GlobalAmbientLight::default() -> Self
 pub fn GlobalAmbientLight::new(@render2d.Color, Float) -> Self
+
+pub struct Hdr {
+}
+pub fn Hdr::default() -> Self
 
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
@@ -168,6 +198,10 @@ pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 
+pub struct MotionVectorPrepass {
+}
+pub fn MotionVectorPrepass::default() -> Self
+
 pub struct OrthographicProjection3d {
   scale : Float
   near : Float
@@ -202,14 +236,22 @@ pub struct PointLight {
   color : @render2d.Color
   intensity : Float
   range : Float
+  radius : Float
   shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  soft_shadows_enabled : Bool
   shadow_depth_bias : Float
   shadow_normal_bias : Float
+  shadow_map_near_z : Float
 }
 pub fn PointLight::default() -> Self
 pub fn PointLight::new(@render2d.Color, Float, Float, Bool) -> Self
+pub fn PointLight::with_contact_shadows_enabled(Self, Bool) -> Self
+pub fn PointLight::with_radius(Self, Float) -> Self
 pub fn PointLight::with_shadow_depth_bias(Self, Float) -> Self
+pub fn PointLight::with_shadow_map_near_z(Self, Float) -> Self
 pub fn PointLight::with_shadow_normal_bias(Self, Float) -> Self
+pub fn PointLight::with_soft_shadows_enabled(Self, Bool) -> Self
 
 pub(all) enum Projection3d {
   Perspective(PerspectiveProjection3d)
@@ -217,6 +259,24 @@ pub(all) enum Projection3d {
 }
 pub fn Projection3d::orthographic_default() -> Self
 pub fn Projection3d::perspective_default() -> Self
+
+pub struct ScreenSpaceAmbientOcclusion {
+  quality_level : ScreenSpaceAmbientOcclusionQualityLevel
+  constant_object_thickness : Float
+}
+pub fn ScreenSpaceAmbientOcclusion::default() -> Self
+pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(Self, Float) -> Self
+pub fn ScreenSpaceAmbientOcclusion::with_quality_level(Self, ScreenSpaceAmbientOcclusionQualityLevel) -> Self
+
+pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
+  Low
+  Medium
+  High
+  Ultra
+}
+pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> Self
+pub impl Eq for ScreenSpaceAmbientOcclusionQualityLevel
+pub impl Show for ScreenSpaceAmbientOcclusionQualityLevel
 
 pub struct ScreenSpaceReflections {
   min_perceptual_roughness_start : Float
@@ -241,16 +301,48 @@ pub fn ScreenSpaceReflections::with_min_perceptual_roughness(Self, Float, Float)
 pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
 pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
 
+pub(all) enum ShadowFilteringMethod {
+  Hardware2x2
+  Gaussian
+  Temporal
+}
+pub fn ShadowFilteringMethod::default() -> Self
+pub impl Eq for ShadowFilteringMethod
+pub impl Show for ShadowFilteringMethod
+
+pub struct Skybox {
+  image : @asset.Handle[@asset.Image]?
+  brightness : Float
+  rotation : @math.Quat
+}
+pub fn Skybox::default() -> Self
+pub fn Skybox::new(@asset.Handle[@asset.Image], Float) -> Self
+pub fn Skybox::with_brightness(Self, Float) -> Self
+pub fn Skybox::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
+
 pub struct SpotLight {
   color : @render2d.Color
   intensity : Float
   range : Float
+  radius : Float
   inner_angle : Float
   outer_angle : Float
   shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  soft_shadows_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  shadow_map_near_z : Float
 }
 pub fn SpotLight::default() -> Self
 pub fn SpotLight::new(@render2d.Color, Float, Float, Float, Float, Bool) -> Self
+pub fn SpotLight::with_contact_shadows_enabled(Self, Bool) -> Self
+pub fn SpotLight::with_radius(Self, Float) -> Self
+pub fn SpotLight::with_shadow_depth_bias(Self, Float) -> Self
+pub fn SpotLight::with_shadow_map_near_z(Self, Float) -> Self
+pub fn SpotLight::with_shadow_normal_bias(Self, Float) -> Self
+pub fn SpotLight::with_soft_shadows_enabled(Self, Bool) -> Self
 
 pub struct StandardMaterial {
   base_color : @render2d.Color
@@ -318,6 +410,31 @@ pub struct SubCameraView3d {
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
 
+pub struct TemporalAntiAliasing {
+}
+pub fn TemporalAntiAliasing::default() -> Self
+
+pub struct TemporalJitter {
+  offset : @math.Vec2
+}
+pub fn TemporalJitter::default() -> Self
+pub fn TemporalJitter::new(@math.Vec2) -> Self
+pub fn TemporalJitter::with_offset(Self, @math.Vec2) -> Self
+
+pub(all) enum Tonemapping {
+  None
+  Reinhard
+  ReinhardLuminance
+  AcesFitted
+  AgX
+  SomewhatBoringDisplayTransform
+  TonyMcMapface
+  BlenderFilmic
+}
+pub fn Tonemapping::default() -> Self
+pub impl Eq for Tonemapping
+pub impl Show for Tonemapping
+
 pub struct Vignette {
   intensity : Float
   radius : Float
@@ -347,6 +464,10 @@ pub(open) trait HasRes_GlobalAmbientLight {
   get_global_ambient_light_resource(Self) -> @core.Resource[GlobalAmbientLight]
 }
 
+pub(open) trait Has_Bloom {
+  get_bloom_store(Self) -> @core.ComponentStore[Bloom]
+}
+
 pub(open) trait Has_Camera3d {
   get_camera3d_store(Self) -> @core.ComponentStore[Camera3d]
 }
@@ -359,8 +480,20 @@ pub(open) trait Has_ChromaticAberration {
   get_chromatic_aberration_store(Self) -> @core.ComponentStore[ChromaticAberration]
 }
 
+pub(open) trait Has_ContactShadows {
+  get_contact_shadows_store(Self) -> @core.ComponentStore[ContactShadows]
+}
+
+pub(open) trait Has_DepthPrepass {
+  get_depth_prepass_store(Self) -> @core.ComponentStore[DepthPrepass]
+}
+
 pub(open) trait Has_DirectionalLight {
   get_directional_light_store(Self) -> @core.ComponentStore[DirectionalLight]
+}
+
+pub(open) trait Has_Hdr {
+  get_hdr_store(Self) -> @core.ComponentStore[Hdr]
 }
 
 pub(open) trait Has_Mesh3d {
@@ -375,12 +508,28 @@ pub(open) trait Has_MotionBlur {
   get_motion_blur_store(Self) -> @core.ComponentStore[MotionBlur]
 }
 
+pub(open) trait Has_MotionVectorPrepass {
+  get_motion_vector_prepass_store(Self) -> @core.ComponentStore[MotionVectorPrepass]
+}
+
 pub(open) trait Has_PointLight {
   get_point_light_store(Self) -> @core.ComponentStore[PointLight]
 }
 
+pub(open) trait Has_ScreenSpaceAmbientOcclusion {
+  get_screen_space_ambient_occlusion_store(Self) -> @core.ComponentStore[ScreenSpaceAmbientOcclusion]
+}
+
 pub(open) trait Has_ScreenSpaceReflections {
   get_screen_space_reflections_store(Self) -> @core.ComponentStore[ScreenSpaceReflections]
+}
+
+pub(open) trait Has_ShadowFilteringMethod {
+  get_shadow_filtering_method_store(Self) -> @core.ComponentStore[ShadowFilteringMethod]
+}
+
+pub(open) trait Has_Skybox {
+  get_skybox_store(Self) -> @core.ComponentStore[Skybox]
 }
 
 pub(open) trait Has_SpotLight {
@@ -389,6 +538,18 @@ pub(open) trait Has_SpotLight {
 
 pub(open) trait Has_SubCameraView3d {
   get_sub_camera_view3d_store(Self) -> @core.ComponentStore[SubCameraView3d]
+}
+
+pub(open) trait Has_TemporalAntiAliasing {
+  get_temporal_anti_aliasing_store(Self) -> @core.ComponentStore[TemporalAntiAliasing]
+}
+
+pub(open) trait Has_TemporalJitter {
+  get_temporal_jitter_store(Self) -> @core.ComponentStore[TemporalJitter]
+}
+
+pub(open) trait Has_Tonemapping {
+  get_tonemapping_store(Self) -> @core.ComponentStore[Tonemapping]
 }
 
 pub(open) trait Has_Vignette {

@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/contact_shadows"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum ContactShadowState {
+  Enabled
+  Disabled
+}
+pub impl Eq for ContactShadowState
+pub impl Show for ContactShadowState
+
+pub(all) enum LightRotationState {
+  Rotating
+  Stationary
+}
+pub impl Eq for LightRotationState
+pub impl Show for LightRotationState
+
+pub(all) enum LightType {
+  Directional
+  Point
+  Spot
+}
+pub impl Eq for LightType
+pub impl Show for LightType
+
+pub(all) enum ReceiveShadowsState {
+  Enabled
+  Disabled
+}
+pub impl Eq for ReceiveShadowsState
+pub impl Show for ReceiveShadowsState
+
+pub(all) enum ShadowMapsState {
+  Enabled
+  Disabled
+}
+pub impl Eq for ShadowMapsState
+pub impl Show for ShadowMapsState
+
+// Type aliases
+
+// Traits
+

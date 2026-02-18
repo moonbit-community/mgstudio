@@ -420,6 +420,299 @@ pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur 
 }
 
 ///|
+/// Marker component aligned with Bevy's `DepthPrepass`.
+#ecs.component
+pub struct DepthPrepass {}
+
+///|
+pub fn DepthPrepass::default() -> DepthPrepass {
+  DepthPrepass::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `MotionVectorPrepass`.
+#ecs.component
+pub struct MotionVectorPrepass {}
+
+///|
+pub fn MotionVectorPrepass::default() -> MotionVectorPrepass {
+  MotionVectorPrepass::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `TemporalAntiAliasing`.
+#ecs.component
+pub struct TemporalAntiAliasing {}
+
+///|
+pub fn TemporalAntiAliasing::default() -> TemporalAntiAliasing {
+  TemporalAntiAliasing::{  }
+}
+
+///|
+/// Camera jitter settings aligned with Bevy's `TemporalJitter`.
+#ecs.component
+pub struct TemporalJitter {
+  offset : @math.Vec2
+}
+
+///|
+pub fn TemporalJitter::default() -> TemporalJitter {
+  TemporalJitter::{ offset: @math.Vec2::new(0.0F, 0.0F) }
+}
+
+///|
+pub fn TemporalJitter::new(offset : @math.Vec2) -> TemporalJitter {
+  TemporalJitter::{ offset, }
+}
+
+///|
+pub fn TemporalJitter::with_offset(
+  self : TemporalJitter,
+  offset : @math.Vec2,
+) -> TemporalJitter {
+  self |> ignore
+  TemporalJitter::{ offset, }
+}
+
+///|
+/// Marker component aligned with Bevy's `Hdr`.
+#ecs.component
+pub struct Hdr {}
+
+///|
+pub fn Hdr::default() -> Hdr {
+  Hdr::{  }
+}
+
+///|
+/// Camera tonemapping mode aligned with Bevy's `Tonemapping`.
+#ecs.component
+pub(all) enum Tonemapping {
+  None
+  Reinhard
+  ReinhardLuminance
+  AcesFitted
+  AgX
+  SomewhatBoringDisplayTransform
+  TonyMcMapface
+  BlenderFilmic
+} derive(Eq, Show)
+
+///|
+pub fn Tonemapping::default() -> Tonemapping {
+  Tonemapping::None
+}
+
+///|
+/// Camera bloom settings aligned with Bevy's `Bloom`.
+#ecs.component
+pub struct Bloom {
+  intensity : Float
+}
+
+///|
+pub fn Bloom::default() -> Bloom {
+  Bloom::{ intensity: 0.15F }
+}
+
+///|
+pub fn Bloom::new(intensity : Float) -> Bloom {
+  Bloom::{ intensity: if intensity < 0.0F { 0.0F } else { intensity } }
+}
+
+///|
+pub fn Bloom::with_intensity(self : Bloom, intensity : Float) -> Bloom {
+  self |> ignore
+  Bloom::new(intensity)
+}
+
+///|
+/// Camera skybox settings aligned with Bevy's `Skybox`.
+#ecs.component
+pub struct Skybox {
+  image : @asset.Handle[@asset.Image]?
+  brightness : Float
+  rotation : @math.Quat
+}
+
+///|
+pub fn Skybox::default() -> Skybox {
+  Skybox::{ image: None, brightness: 1.0F, rotation: @math.Quat::identity() }
+}
+
+///|
+pub fn Skybox::new(
+  image : @asset.Handle[@asset.Image],
+  brightness : Float,
+) -> Skybox {
+  Skybox::{
+    ..Skybox::default(),
+    image: Some(image),
+    brightness: if brightness < 0.0F {
+      0.0F
+    } else {
+      brightness
+    },
+  }
+}
+
+///|
+pub fn Skybox::with_image(
+  self : Skybox,
+  image : @asset.Handle[@asset.Image]?,
+) -> Skybox {
+  Skybox::{ ..self, image, }
+}
+
+///|
+pub fn Skybox::with_brightness(self : Skybox, brightness : Float) -> Skybox {
+  Skybox::{
+    ..self,
+    brightness: if brightness < 0.0F {
+      0.0F
+    } else {
+      brightness
+    },
+  }
+}
+
+///|
+pub fn Skybox::with_rotation(self : Skybox, rotation : @math.Quat) -> Skybox {
+  Skybox::{ ..self, rotation, }
+}
+
+///|
+pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
+  Low
+  Medium
+  High
+  Ultra
+} derive(Eq, Show)
+
+///|
+pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> ScreenSpaceAmbientOcclusionQualityLevel {
+  ScreenSpaceAmbientOcclusionQualityLevel::High
+}
+
+///|
+/// Camera ambient occlusion settings aligned with Bevy's
+/// `ScreenSpaceAmbientOcclusion`.
+#ecs.component
+pub struct ScreenSpaceAmbientOcclusion {
+  quality_level : ScreenSpaceAmbientOcclusionQualityLevel
+  constant_object_thickness : Float
+}
+
+///|
+pub fn ScreenSpaceAmbientOcclusion::default() -> ScreenSpaceAmbientOcclusion {
+  ScreenSpaceAmbientOcclusion::{
+    quality_level: ScreenSpaceAmbientOcclusionQualityLevel::default(),
+    constant_object_thickness: 0.25F,
+  }
+}
+
+///|
+pub fn ScreenSpaceAmbientOcclusion::with_quality_level(
+  self : ScreenSpaceAmbientOcclusion,
+  quality_level : ScreenSpaceAmbientOcclusionQualityLevel,
+) -> ScreenSpaceAmbientOcclusion {
+  ScreenSpaceAmbientOcclusion::{ ..self, quality_level, }
+}
+
+///|
+pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(
+  self : ScreenSpaceAmbientOcclusion,
+  constant_object_thickness : Float,
+) -> ScreenSpaceAmbientOcclusion {
+  ScreenSpaceAmbientOcclusion::{
+    ..self,
+    constant_object_thickness: if constant_object_thickness < 0.0F {
+      0.0F
+    } else {
+      constant_object_thickness
+    },
+  }
+}
+
+///|
+/// Camera contact shadow settings aligned with Bevy's `ContactShadows`.
+#ecs.component
+pub struct ContactShadows {
+  linear_steps : Int
+  thickness : Float
+  length : Float
+}
+
+///|
+pub fn ContactShadows::default() -> ContactShadows {
+  ContactShadows::{ linear_steps: 16, thickness: 0.1F, length: 0.3F }
+}
+
+///|
+pub fn ContactShadows::new(
+  linear_steps : Int,
+  thickness : Float,
+  length : Float,
+) -> ContactShadows {
+  ContactShadows::{
+    linear_steps: if linear_steps <= 0 {
+      1
+    } else {
+      linear_steps
+    },
+    thickness: if thickness < 0.0F {
+      0.0F
+    } else {
+      thickness
+    },
+    length: if length < 0.0F {
+      0.0F
+    } else {
+      length
+    },
+  }
+}
+
+///|
+pub fn ContactShadows::with_linear_steps(
+  self : ContactShadows,
+  linear_steps : Int,
+) -> ContactShadows {
+  ContactShadows::new(linear_steps, self.thickness, self.length)
+}
+
+///|
+pub fn ContactShadows::with_thickness(
+  self : ContactShadows,
+  thickness : Float,
+) -> ContactShadows {
+  ContactShadows::new(self.linear_steps, thickness, self.length)
+}
+
+///|
+pub fn ContactShadows::with_length(
+  self : ContactShadows,
+  length : Float,
+) -> ContactShadows {
+  ContactShadows::new(self.linear_steps, self.thickness, length)
+}
+
+///|
+/// Camera shadow filtering mode aligned with Bevy's `ShadowFilteringMethod`.
+#ecs.component
+pub(all) enum ShadowFilteringMethod {
+  Hardware2x2
+  Gaussian
+  Temporal
+} derive(Eq, Show)
+
+///|
+pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
+  ShadowFilteringMethod::Gaussian
+}
+
+///|
 fn screen_space_reflections_safe_range(
   start : Float,
   end_ : Float,
@@ -1293,10 +1586,22 @@ const POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.08F
 const POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 0.6F
 
 ///|
+const POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
+
+///|
 const DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.02F
 
 ///|
 const DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 1.8F
+
+///|
+const SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.02F
+
+///|
+const SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 1.8F
+
+///|
+const SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
 
 ///|
 // ECS component marker for codegen (`mgstudio gen`).
@@ -1305,9 +1610,13 @@ pub struct PointLight {
   color : @render2d.Color
   intensity : Float
   range : Float
+  radius : Float
   shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  soft_shadows_enabled : Bool
   shadow_depth_bias : Float
   shadow_normal_bias : Float
+  shadow_map_near_z : Float
 }
 
 ///|
@@ -1316,9 +1625,13 @@ pub fn PointLight::default() -> PointLight {
     color: @render2d.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
+    radius: 0.0F,
     shadow_maps_enabled: false,
+    contact_shadows_enabled: false,
+    soft_shadows_enabled: false,
     shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+    shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
   }
 }
 
@@ -1333,10 +1646,35 @@ pub fn PointLight::new(
     color,
     intensity,
     range,
+    radius: 0.0F,
     shadow_maps_enabled,
+    contact_shadows_enabled: false,
+    soft_shadows_enabled: false,
     shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+    shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
   }
+}
+
+///|
+pub fn PointLight::with_radius(self : PointLight, radius : Float) -> PointLight {
+  PointLight::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
+}
+
+///|
+pub fn PointLight::with_contact_shadows_enabled(
+  self : PointLight,
+  contact_shadows_enabled : Bool,
+) -> PointLight {
+  PointLight::{ ..self, contact_shadows_enabled, }
+}
+
+///|
+pub fn PointLight::with_soft_shadows_enabled(
+  self : PointLight,
+  soft_shadows_enabled : Bool,
+) -> PointLight {
+  PointLight::{ ..self, soft_shadows_enabled, }
 }
 
 ///|
@@ -1370,12 +1708,29 @@ pub fn PointLight::with_shadow_normal_bias(
 }
 
 ///|
+pub fn PointLight::with_shadow_map_near_z(
+  self : PointLight,
+  shadow_map_near_z : Float,
+) -> PointLight {
+  PointLight::{
+    ..self,
+    shadow_map_near_z: if shadow_map_near_z <= 0.0001F {
+      0.0001F
+    } else {
+      shadow_map_near_z
+    },
+  }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct DirectionalLight {
   color : @render2d.Color
   illuminance : Float
   shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  soft_shadow_size : Float?
   shadow_depth_bias : Float
   shadow_normal_bias : Float
 }
@@ -1386,6 +1741,8 @@ pub fn DirectionalLight::default() -> DirectionalLight {
     color: @render2d.Color::white(),
     illuminance: 10000.0F,
     shadow_maps_enabled: false,
+    contact_shadows_enabled: false,
+    soft_shadow_size: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
@@ -1401,9 +1758,31 @@ pub fn DirectionalLight::new(
     color,
     illuminance,
     shadow_maps_enabled,
+    contact_shadows_enabled: false,
+    soft_shadow_size: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
+}
+
+///|
+pub fn DirectionalLight::with_contact_shadows_enabled(
+  self : DirectionalLight,
+  contact_shadows_enabled : Bool,
+) -> DirectionalLight {
+  DirectionalLight::{ ..self, contact_shadows_enabled, }
+}
+
+///|
+pub fn DirectionalLight::with_soft_shadow_size(
+  self : DirectionalLight,
+  soft_shadow_size : Float?,
+) -> DirectionalLight {
+  let safe_soft_shadow_size = match soft_shadow_size {
+    Some(value) => Some(if value < 0.0F { 0.0F } else { value })
+    None => None
+  }
+  DirectionalLight::{ ..self, soft_shadow_size: safe_soft_shadow_size }
 }
 
 ///|
@@ -1443,9 +1822,15 @@ pub struct SpotLight {
   color : @render2d.Color
   intensity : Float
   range : Float
+  radius : Float
   inner_angle : Float
   outer_angle : Float
   shadow_maps_enabled : Bool
+  contact_shadows_enabled : Bool
+  soft_shadows_enabled : Bool
+  shadow_depth_bias : Float
+  shadow_normal_bias : Float
+  shadow_map_near_z : Float
 }
 
 ///|
@@ -1454,9 +1839,15 @@ pub fn SpotLight::default() -> SpotLight {
     color: @render2d.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
+    radius: 0.0F,
     inner_angle: 0.6F,
     outer_angle: 0.8F,
     shadow_maps_enabled: false,
+    contact_shadows_enabled: false,
+    soft_shadows_enabled: false,
+    shadow_depth_bias: SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
+    shadow_normal_bias: SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+    shadow_map_near_z: SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
   }
 }
 
@@ -1473,9 +1864,81 @@ pub fn SpotLight::new(
     color,
     intensity,
     range,
+    radius: 0.0F,
     inner_angle,
     outer_angle,
     shadow_maps_enabled,
+    contact_shadows_enabled: false,
+    soft_shadows_enabled: false,
+    shadow_depth_bias: SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
+    shadow_normal_bias: SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+    shadow_map_near_z: SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
+  }
+}
+
+///|
+pub fn SpotLight::with_radius(self : SpotLight, radius : Float) -> SpotLight {
+  SpotLight::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
+}
+
+///|
+pub fn SpotLight::with_contact_shadows_enabled(
+  self : SpotLight,
+  contact_shadows_enabled : Bool,
+) -> SpotLight {
+  SpotLight::{ ..self, contact_shadows_enabled, }
+}
+
+///|
+pub fn SpotLight::with_soft_shadows_enabled(
+  self : SpotLight,
+  soft_shadows_enabled : Bool,
+) -> SpotLight {
+  SpotLight::{ ..self, soft_shadows_enabled, }
+}
+
+///|
+pub fn SpotLight::with_shadow_depth_bias(
+  self : SpotLight,
+  shadow_depth_bias : Float,
+) -> SpotLight {
+  SpotLight::{
+    ..self,
+    shadow_depth_bias: if shadow_depth_bias < 0.0F {
+      0.0F
+    } else {
+      shadow_depth_bias
+    },
+  }
+}
+
+///|
+pub fn SpotLight::with_shadow_normal_bias(
+  self : SpotLight,
+  shadow_normal_bias : Float,
+) -> SpotLight {
+  SpotLight::{
+    ..self,
+    shadow_normal_bias: if shadow_normal_bias < 0.0F {
+      0.0F
+    } else {
+      shadow_normal_bias
+    },
+  }
+}
+
+///|
+pub fn SpotLight::with_shadow_map_near_z(
+  self : SpotLight,
+  shadow_map_near_z : Float,
+) -> SpotLight {
+  SpotLight::{
+    ..self,
+    shadow_map_near_z: if shadow_map_near_z <= 0.0001F {
+      0.0001F
+    } else {
+      shadow_map_near_z
+    },
   }
 }
 

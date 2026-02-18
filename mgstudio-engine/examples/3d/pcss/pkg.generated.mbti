@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/pcss"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum LightType {
+  Directional
+  Point
+  Spot
+}
+pub impl Eq for LightType
+pub impl Show for LightType
+
+pub(all) enum ShadowFilter {
+  NonTemporal
+  Temporal
+}
+pub impl Eq for ShadowFilter
+pub impl Show for ShadowFilter
+
+// Type aliases
+
+// Traits
+

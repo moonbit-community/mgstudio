@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 39 | 12 | 0 |
+| `3d` | 66 | 15 | 41 | 10 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 3 | 0 | 14 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **51** | **62** | **286** | **3** |
+| **Total** | **402** | **51** | **64** | **284** | **3** |
 
 ## Example Inventory
 
@@ -103,7 +103,7 @@ Notes:
 | `bevy/examples/3d/clustered_decal_maps.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/clustered_decals.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/color_grading.rs` | `3d` | `mgstudio-engine/examples/3d/color_grading` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/contact_shadows.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/contact_shadows.rs` | `3d` | `mgstudio-engine/examples/3d/contact_shadows` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/decal.rs` | `3d` | `mgstudio-engine/examples/3d/decal` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/deferred_rendering.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/depth_of_field.rs` | `3d` | `mgstudio-engine/examples/3d/depth_of_field` | `Adapted` | `team-render` |  |
@@ -128,7 +128,7 @@ Notes:
 | `bevy/examples/3d/parenting.rs` | `3d` | `mgstudio-engine/examples/3d/parenting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/pbr.rs` | `3d` | `mgstudio-engine/examples/3d/pbr` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/pccm.rs` | `3d` | `mgstudio-engine/examples/3d/pccm` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/pcss.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/pcss.rs` | `3d` | `mgstudio-engine/examples/3d/pcss` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/post_processing.rs` | `3d` | `mgstudio-engine/examples/3d/post_processing` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/reflection_probes.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/render_to_texture.rs` | `3d` | `mgstudio-engine/examples/3d/render_to_texture` | `Exact` | `team-render` |  |

@@ -14,9 +14,11 @@ pub struct World {
   outline : @core.ComponentStore[@ui.Outline]
   ui_image : @core.ComponentStore[@ui.UiImage]
   ui_layout : @core.ComponentStore[@ui.UiLayout]
+  hdr : @core.ComponentStore[@render3d.Hdr]
   box_shadow : @core.ComponentStore[@ui.BoxShadow]
   image_node : @core.ComponentStore[@ui.ImageNode]
   transform : @core.ComponentStore[@math.Transform]
+  bloom : @core.ComponentStore[@render3d.Bloom]
   border_color : @core.ComponentStore[@ui.BorderColor]
   content_size : @core.ComponentStore[@ui.ContentSize]
   focus_policy : @core.ComponentStore[@ui.FocusPolicy]
@@ -28,6 +30,7 @@ pub struct World {
   mesh2d : @core.ComponentStore[@render2d.Mesh2d]
   sprite : @core.ComponentStore[@render2d.Sprite]
   mesh3d : @core.ComponentStore[@render3d.Mesh3d]
+  skybox : @core.ComponentStore[@render3d.Skybox]
   scene_root : @core.ComponentStore[@scene.SceneRoot]
   border_radius : @core.ComponentStore[@ui.BorderRadius]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
@@ -56,11 +59,13 @@ pub struct World {
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
+  tonemapping : @core.ComponentStore[@render3d.Tonemapping]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
   rigid_body2d : @core.ComponentStore[@physics2d.RigidBody2d]
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  depth_prepass : @core.ComponentStore[@render3d.DepthPrepass]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -70,7 +75,9 @@ pub struct World {
   contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
   restitution2d : @core.ComponentStore[@physics2d.Restitution2d]
   active_hooks3d : @core.ComponentStore[@physics3d.ActiveHooks3d]
+  contact_shadows : @core.ComponentStore[@render3d.ContactShadows]
   mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
+  temporal_jitter : @core.ComponentStore[@render3d.TemporalJitter]
   active_events2d : @core.ComponentStore[@physics2d.ActiveEvents2d]
   gravity_scale2d : @core.ComponentStore[@physics2d.GravityScale2d]
   impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
@@ -96,6 +103,11 @@ pub struct World {
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
   chromatic_aberration : @core.ComponentStore[@render3d.ChromaticAberration]
+  motion_vector_prepass : @core.ComponentStore[@render3d.MotionVectorPrepass]
+  temporal_anti_aliasing : @core.ComponentStore[@render3d.TemporalAntiAliasing]
+  shadow_filtering_method : @core.ComponentStore[
+    @render3d.ShadowFilteringMethod,
+  ]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[
     @physics2d.FrictionCombineRule2d,
@@ -126,6 +138,9 @@ pub struct World {
   ]
   rapier_impulse_joint_handle2d : @core.ComponentStore[
     @physics2d.RapierImpulseJointHandle2d,
+  ]
+  screen_space_ambient_occlusion : @core.ComponentStore[
+    @render3d.ScreenSpaceAmbientOcclusion,
   ]
   additional_solver_iterations2d : @core.ComponentStore[
     @physics2d.AdditionalSolverIterations2d,
@@ -178,9 +193,11 @@ pub fn World::new() -> World {
     outline: @core.ComponentStore::new(),
     ui_image: @core.ComponentStore::new(),
     ui_layout: @core.ComponentStore::new(),
+    hdr: @core.ComponentStore::new(),
     box_shadow: @core.ComponentStore::new(),
     image_node: @core.ComponentStore::new(),
     transform: @core.ComponentStore::new(),
+    bloom: @core.ComponentStore::new(),
     border_color: @core.ComponentStore::new(),
     content_size: @core.ComponentStore::new(),
     focus_policy: @core.ComponentStore::new(),
@@ -192,6 +209,7 @@ pub fn World::new() -> World {
     mesh2d: @core.ComponentStore::new(),
     sprite: @core.ComponentStore::new(),
     mesh3d: @core.ComponentStore::new(),
+    skybox: @core.ComponentStore::new(),
     scene_root: @core.ComponentStore::new(),
     border_radius: @core.ComponentStore::new(),
     button_colors: @core.ComponentStore::new(),
@@ -220,11 +238,13 @@ pub fn World::new() -> World {
     collider3d: @core.ComponentStore::new(),
     velocity3d: @core.ComponentStore::new(),
     scissor_rect: @core.ComponentStore::new(),
+    tonemapping: @core.ComponentStore::new(),
     dominance2d: @core.ComponentStore::new(),
     rigid_body2d: @core.ComponentStore::new(),
     rigid_body3d: @core.ComponentStore::new(),
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
+    depth_prepass: @core.ComponentStore::new(),
     accessibility_label: @core.ComponentStore::new(),
     ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
@@ -234,7 +254,9 @@ pub fn World::new() -> World {
     contact_skin2d: @core.ComponentStore::new(),
     restitution2d: @core.ComponentStore::new(),
     active_hooks3d: @core.ComponentStore::new(),
+    contact_shadows: @core.ComponentStore::new(),
     mesh_material3d: @core.ComponentStore::new(),
+    temporal_jitter: @core.ComponentStore::new(),
     active_events2d: @core.ComponentStore::new(),
     gravity_scale2d: @core.ComponentStore::new(),
     impulse_joint2d: @core.ComponentStore::new(),
@@ -260,6 +282,9 @@ pub fn World::new() -> World {
     rigid_body_enabled2d: @core.ComponentStore::new(),
     rapier_body_handle3d: @core.ComponentStore::new(),
     chromatic_aberration: @core.ComponentStore::new(),
+    motion_vector_prepass: @core.ComponentStore::new(),
+    temporal_anti_aliasing: @core.ComponentStore::new(),
+    shadow_filtering_method: @core.ComponentStore::new(),
     inherited_visibility: @core.ComponentStore::new(),
     friction_combine_rule2d: @core.ComponentStore::new(),
     screen_space_reflections: @core.ComponentStore::new(),
@@ -271,6 +296,7 @@ pub fn World::new() -> World {
     restitution_combine_rule2d: @core.ComponentStore::new(),
     additional_mass_properties2d: @core.ComponentStore::new(),
     rapier_impulse_joint_handle2d: @core.ComponentStore::new(),
+    screen_space_ambient_occlusion: @core.ComponentStore::new(),
     additional_solver_iterations2d: @core.ComponentStore::new(),
     contact_force_event_threshold2d: @core.ComponentStore::new(),
     rapier_multibody_joint_handle2d: @core.ComponentStore::new(),
@@ -316,9 +342,11 @@ pub fn World::despawn(
   self.outline.remove(entity) |> ignore
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
+  self.hdr.remove(entity) |> ignore
   self.box_shadow.remove(entity) |> ignore
   self.image_node.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
+  self.bloom.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
   self.content_size.remove(entity) |> ignore
   self.focus_policy.remove(entity) |> ignore
@@ -330,6 +358,7 @@ pub fn World::despawn(
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.mesh3d.remove(entity) |> ignore
+  self.skybox.remove(entity) |> ignore
   self.scene_root.remove(entity) |> ignore
   self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
@@ -358,11 +387,13 @@ pub fn World::despawn(
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
+  self.tonemapping.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
   self.rigid_body2d.remove(entity) |> ignore
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.depth_prepass.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
@@ -372,7 +403,9 @@ pub fn World::despawn(
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
   self.active_hooks3d.remove(entity) |> ignore
+  self.contact_shadows.remove(entity) |> ignore
   self.mesh_material3d.remove(entity) |> ignore
+  self.temporal_jitter.remove(entity) |> ignore
   self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
   self.impulse_joint2d.remove(entity) |> ignore
@@ -398,6 +431,9 @@ pub fn World::despawn(
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.chromatic_aberration.remove(entity) |> ignore
+  self.motion_vector_prepass.remove(entity) |> ignore
+  self.temporal_anti_aliasing.remove(entity) |> ignore
+  self.shadow_filtering_method.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
   self.screen_space_reflections.remove(entity) |> ignore
@@ -409,6 +445,7 @@ pub fn World::despawn(
   self.restitution_combine_rule2d.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
+  self.screen_space_ambient_occlusion.remove(entity) |> ignore
   self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
@@ -434,9 +471,11 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.outline.remove(entity) |> ignore
   self.ui_image.remove(entity) |> ignore
   self.ui_layout.remove(entity) |> ignore
+  self.hdr.remove(entity) |> ignore
   self.box_shadow.remove(entity) |> ignore
   self.image_node.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
+  self.bloom.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
   self.content_size.remove(entity) |> ignore
   self.focus_policy.remove(entity) |> ignore
@@ -448,6 +487,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.mesh2d.remove(entity) |> ignore
   self.sprite.remove(entity) |> ignore
   self.mesh3d.remove(entity) |> ignore
+  self.skybox.remove(entity) |> ignore
   self.scene_root.remove(entity) |> ignore
   self.border_radius.remove(entity) |> ignore
   self.button_colors.remove(entity) |> ignore
@@ -476,11 +516,13 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
+  self.tonemapping.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
   self.rigid_body2d.remove(entity) |> ignore
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.depth_prepass.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
@@ -490,7 +532,9 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
   self.active_hooks3d.remove(entity) |> ignore
+  self.contact_shadows.remove(entity) |> ignore
   self.mesh_material3d.remove(entity) |> ignore
+  self.temporal_jitter.remove(entity) |> ignore
   self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
   self.impulse_joint2d.remove(entity) |> ignore
@@ -516,6 +560,9 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.chromatic_aberration.remove(entity) |> ignore
+  self.motion_vector_prepass.remove(entity) |> ignore
+  self.temporal_anti_aliasing.remove(entity) |> ignore
+  self.shadow_filtering_method.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
   self.screen_space_reflections.remove(entity) |> ignore
@@ -527,6 +574,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.restitution_combine_rule2d.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
+  self.screen_space_ambient_occlusion.remove(entity) |> ignore
   self.additional_solver_iterations2d.remove(entity) |> ignore
   self.contact_force_event_threshold2d.remove(entity) |> ignore
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
@@ -602,6 +650,11 @@ pub impl @ui.Has_UiLayout for World with get_ui_layout_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_Hdr for World with get_hdr_store(self) {
+  self.hdr
+}
+
+///|
 pub impl @ui.Has_BoxShadow for World with get_box_shadow_store(self) {
   self.box_shadow
 }
@@ -614,6 +667,11 @@ pub impl @ui.Has_ImageNode for World with get_image_node_store(self) {
 ///|
 pub impl @math.Has_Transform for World with get_transform_store(self) {
   self.transform
+}
+
+///|
+pub impl @render3d.Has_Bloom for World with get_bloom_store(self) {
+  self.bloom
 }
 
 ///|
@@ -669,6 +727,11 @@ pub impl @render2d.Has_Sprite for World with get_sprite_store(self) {
 ///|
 pub impl @render3d.Has_Mesh3d for World with get_mesh3d_store(self) {
   self.mesh3d
+}
+
+///|
+pub impl @render3d.Has_Skybox for World with get_skybox_store(self) {
+  self.skybox
 }
 
 ///|
@@ -812,6 +875,11 @@ pub impl @render2d.Has_ScissorRect for World with get_scissor_rect_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_Tonemapping for World with get_tonemapping_store(self) {
+  self.tonemapping
+}
+
+///|
 pub impl @physics2d.Has_Dominance2d for World with get_dominance2d_store(self) {
   self.dominance2d
 }
@@ -834,6 +902,11 @@ pub impl @render2d.Has_RenderLayers for World with get_render_layers_store(self)
 ///|
 pub impl @render2d.Has_RenderTarget for World with get_render_target_store(self) {
   self.render_target
+}
+
+///|
+pub impl @render3d.Has_DepthPrepass for World with get_depth_prepass_store(self) {
+  self.depth_prepass
 }
 
 ///|
@@ -898,10 +971,24 @@ pub impl @physics3d.Has_ActiveHooks3d for World with get_active_hooks3d_store(
 }
 
 ///|
+pub impl @render3d.Has_ContactShadows for World with get_contact_shadows_store(
+  self,
+) {
+  self.contact_shadows
+}
+
+///|
 pub impl @render3d.Has_MeshMaterial3d for World with get_mesh_material3d_store(
   self,
 ) {
   self.mesh_material3d
+}
+
+///|
+pub impl @render3d.Has_TemporalJitter for World with get_temporal_jitter_store(
+  self,
+) {
+  self.temporal_jitter
 }
 
 ///|
@@ -1080,6 +1167,27 @@ pub impl @render3d.Has_ChromaticAberration for World with get_chromatic_aberrati
 }
 
 ///|
+pub impl @render3d.Has_MotionVectorPrepass for World with get_motion_vector_prepass_store(
+  self,
+) {
+  self.motion_vector_prepass
+}
+
+///|
+pub impl @render3d.Has_TemporalAntiAliasing for World with get_temporal_anti_aliasing_store(
+  self,
+) {
+  self.temporal_anti_aliasing
+}
+
+///|
+pub impl @render3d.Has_ShadowFilteringMethod for World with get_shadow_filtering_method_store(
+  self,
+) {
+  self.shadow_filtering_method
+}
+
+///|
 pub impl @visibility.Has_InheritedVisibility for World with get_inherited_visibility_store(
   self,
 ) {
@@ -1154,6 +1262,13 @@ pub impl @physics2d.Has_RapierImpulseJointHandle2d for World with get_rapier_imp
   self,
 ) {
   self.rapier_impulse_joint_handle2d
+}
+
+///|
+pub impl @render3d.Has_ScreenSpaceAmbientOcclusion for World with get_screen_space_ambient_occlusion_store(
+  self,
+) {
+  self.screen_space_ambient_occlusion
 }
 
 ///|

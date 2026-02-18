@@ -4,9 +4,11 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Mesh3d", "Camera3d", "Vignette", "SpotLight", "MotionBlur", "PointLight", "MeshMaterial3d",
-  "SubCameraView3d", "DirectionalLight", "CameraProjection3d", "ChromaticAberration",
-  "ScreenSpaceReflections",
+  "Hdr", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight", "MotionBlur",
+  "PointLight", "Tonemapping", "DepthPrepass", "ContactShadows", "MeshMaterial3d",
+  "TemporalJitter", "SubCameraView3d", "DirectionalLight", "CameraProjection3d",
+  "ChromaticAberration", "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod",
+  "ScreenSpaceReflections", "ScreenSpaceAmbientOcclusion",
 ]
 
 ///|
@@ -14,8 +16,23 @@ pub let ecs_components : Array[String] = [
 pub let ecs_resources : Array[String] = ["GlobalAmbientLight"]
 
 ///|
+pub(open) trait Has_Hdr {
+  get_hdr_store(self : Self) -> @core.ComponentStore[Hdr]
+}
+
+///|
+pub(open) trait Has_Bloom {
+  get_bloom_store(self : Self) -> @core.ComponentStore[Bloom]
+}
+
+///|
 pub(open) trait Has_Mesh3d {
   get_mesh3d_store(self : Self) -> @core.ComponentStore[Mesh3d]
+}
+
+///|
+pub(open) trait Has_Skybox {
+  get_skybox_store(self : Self) -> @core.ComponentStore[Skybox]
 }
 
 ///|
@@ -44,8 +61,28 @@ pub(open) trait Has_PointLight {
 }
 
 ///|
+pub(open) trait Has_Tonemapping {
+  get_tonemapping_store(self : Self) -> @core.ComponentStore[Tonemapping]
+}
+
+///|
+pub(open) trait Has_DepthPrepass {
+  get_depth_prepass_store(self : Self) -> @core.ComponentStore[DepthPrepass]
+}
+
+///|
+pub(open) trait Has_ContactShadows {
+  get_contact_shadows_store(self : Self) -> @core.ComponentStore[ContactShadows]
+}
+
+///|
 pub(open) trait Has_MeshMaterial3d {
   get_mesh_material3d_store(self : Self) -> @core.ComponentStore[MeshMaterial3d]
+}
+
+///|
+pub(open) trait Has_TemporalJitter {
+  get_temporal_jitter_store(self : Self) -> @core.ComponentStore[TemporalJitter]
 }
 
 ///|
@@ -77,9 +114,37 @@ pub(open) trait Has_ChromaticAberration {
 }
 
 ///|
+pub(open) trait Has_MotionVectorPrepass {
+  get_motion_vector_prepass_store(self : Self) -> @core.ComponentStore[
+    MotionVectorPrepass,
+  ]
+}
+
+///|
+pub(open) trait Has_TemporalAntiAliasing {
+  get_temporal_anti_aliasing_store(self : Self) -> @core.ComponentStore[
+    TemporalAntiAliasing,
+  ]
+}
+
+///|
+pub(open) trait Has_ShadowFilteringMethod {
+  get_shadow_filtering_method_store(self : Self) -> @core.ComponentStore[
+    ShadowFilteringMethod,
+  ]
+}
+
+///|
 pub(open) trait Has_ScreenSpaceReflections {
   get_screen_space_reflections_store(self : Self) -> @core.ComponentStore[
     ScreenSpaceReflections,
+  ]
+}
+
+///|
+pub(open) trait Has_ScreenSpaceAmbientOcclusion {
+  get_screen_space_ambient_occlusion_store(self : Self) -> @core.ComponentStore[
+    ScreenSpaceAmbientOcclusion,
   ]
 }
 
