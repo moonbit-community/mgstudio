@@ -3199,6 +3199,7 @@ fn render3d_draw_camera_skybox(
   }
   let brightness = maxf(0.0F, skybox.brightness)
   let skybox_extent = maxf(5.0F, minf(camera_far * 0.45F, 20_000.0F))
+  // Negative uv_scale_y marks stacked-vertical cubemap sampling in mesh3d.wgsl.
   @window.host_gpu_draw_mesh3d(
     mesh_id~,
     x=camera.transform.translation.x,
@@ -3219,7 +3220,7 @@ fn render3d_draw_camera_skybox(
     uv_offset_x=0.0F,
     uv_offset_y=0.0F,
     uv_scale_x=1.0F,
-    uv_scale_y=1.0F,
+    uv_scale_y=-1.0F,
     normal_texture_id=-1,
     emissive_texture_id=-1,
     metallic_roughness_texture_id=-1,

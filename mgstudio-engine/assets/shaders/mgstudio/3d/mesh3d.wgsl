@@ -289,6 +289,48 @@ fn specular_anisotropic(
   return d * v * f;
 }
 
+fn cubemap_stacked_vertical_uv(direction : vec3<f32>) -> vec2<f32> {
+  let dir = safe_normalize(direction);
+  let abs_dir = abs(dir);
+  var face = 0.0;
+  var face_uv = vec2<f32>(0.0, 0.0);
+  if abs_dir.x >= abs_dir.y && abs_dir.x >= abs_dir.z {
+    if dir.x > 0.0 {
+      // +X (posx)
+      face = 0.0;
+      face_uv = vec2<f32>(-dir.z, -dir.y) / max(abs_dir.x, 1.0e-8);
+    } else {
+      // -X (negx)
+      face = 1.0;
+      face_uv = vec2<f32>(dir.z, -dir.y) / max(abs_dir.x, 1.0e-8);
+    }
+  } else if abs_dir.y >= abs_dir.x && abs_dir.y >= abs_dir.z {
+    if dir.y > 0.0 {
+      // +Y (posy)
+      face = 2.0;
+      face_uv = vec2<f32>(dir.x, dir.z) / max(abs_dir.y, 1.0e-8);
+    } else {
+      // -Y (negy)
+      face = 3.0;
+      face_uv = vec2<f32>(dir.x, -dir.z) / max(abs_dir.y, 1.0e-8);
+    }
+  } else {
+    if dir.z > 0.0 {
+      // +Z (posz)
+      face = 4.0;
+      face_uv = vec2<f32>(dir.x, -dir.y) / max(abs_dir.z, 1.0e-8);
+    } else {
+      // -Z (negz)
+      face = 5.0;
+      face_uv = vec2<f32>(-dir.x, -dir.y) / max(abs_dir.z, 1.0e-8);
+    }
+  }
+  let u = clamp(face_uv.x * 0.5 + 0.5, 0.0, 1.0);
+  let v_local = clamp(face_uv.y * 0.5 + 0.5, 0.0, 1.0);
+  let v = (face + v_local) / 6.0;
+  return vec2<f32>(u, v);
+}
+
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_base_map = u_mesh.map_flags.x > 0.5;
@@ -298,6 +340,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_normal_map = u_mesh.material_params.w > 0.5;
   let has_depth_map = u_mesh.parallax_params.w > 0.5;
   let has_anisotropy_map = u_mesh.anisotropy_params.w > 0.5;
+  let use_stacked_cubemap = u_mesh.uv.w < 0.0;
   let has_uv = u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0;
   let dp1 = dpdx(in.world_pos);
   let dp2 = dpdy(in.world_pos);
@@ -350,8 +393,17 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     );
   }
   var base_color = in.color;
-  if has_base_map && has_uv {
-    base_color = textureSample(u_base_color_texture, u_material_sampler, uv) * in.color;
+  if has_base_map {
+    if use_stacked_cubemap {
+      let cubemap_uv = cubemap_stacked_vertical_uv(in.world_pos - u_mesh.camera_pos.xyz);
+      base_color = textureSample(
+        u_base_color_texture,
+        u_material_sampler,
+        cubemap_uv,
+      ) * in.color;
+    } else if has_uv {
+      base_color = textureSample(u_base_color_texture, u_material_sampler, uv) * in.color;
+    }
   }
   var emissive_tex = vec3<f32>(1.0, 1.0, 1.0);
   if has_emissive_map && has_uv {

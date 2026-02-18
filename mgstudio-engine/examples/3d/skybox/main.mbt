@@ -164,7 +164,7 @@ fn update_help_text() -> Unit {
       status +
       "\n\n" +
       "Auto-swap interval: 3s\n" +
-      "Adapted runtime note: free-camera plugin and true cubemap texture-view semantics are pending.",
+      "Adapted runtime note: FreeCameraPlugin and native compressed-cubemap texture-view semantics are pending.",
     )
   }
 }
