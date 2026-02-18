@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 41 | 10 | 0 |
+| `3d` | 66 | 15 | 49 | 2 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 3 | 0 | 14 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **51** | **64** | **284** | **3** |
+| **Total** | **402** | **51** | **72** | **276** | **3** |
 
 ## Example Inventory
 
@@ -100,19 +100,19 @@ Notes:
 | `bevy/examples/3d/bloom_3d.rs` | `3d` | `mgstudio-engine/examples/3d/bloom_3d` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/camera_sub_view.rs` | `3d` | `mgstudio-engine/examples/3d/camera_sub_view` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/clearcoat.rs` | `3d` | `mgstudio-engine/examples/3d/clearcoat` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/clustered_decal_maps.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/clustered_decals.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/clustered_decal_maps.rs` | `3d` | `mgstudio-engine/examples/3d/clustered_decal_maps` | `Adapted` | `team-render` |  |
+| `bevy/examples/3d/clustered_decals.rs` | `3d` | `mgstudio-engine/examples/3d/clustered_decals` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/color_grading.rs` | `3d` | `mgstudio-engine/examples/3d/color_grading` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/contact_shadows.rs` | `3d` | `mgstudio-engine/examples/3d/contact_shadows` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/decal.rs` | `3d` | `mgstudio-engine/examples/3d/decal` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/deferred_rendering.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/deferred_rendering.rs` | `3d` | `mgstudio-engine/examples/3d/deferred_rendering` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/depth_of_field.rs` | `3d` | `mgstudio-engine/examples/3d/depth_of_field` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/fog.rs` | `3d` | `mgstudio-engine/examples/3d/fog` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/fog_volumes.rs` | `3d` | `mgstudio-engine/examples/3d/fog_volumes` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/generate_custom_mesh.rs` | `3d` | `mgstudio-engine/examples/3d/generate_custom_mesh` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/irradiance_volumes.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/light_probe_blending.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/light_textures.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/irradiance_volumes.rs` | `3d` | `mgstudio-engine/examples/3d/irradiance_volumes` | `Adapted` | `team-render` |  |
+| `bevy/examples/3d/light_probe_blending.rs` | `3d` | `mgstudio-engine/examples/3d/light_probe_blending` | `Adapted` | `team-render` |  |
+| `bevy/examples/3d/light_textures.rs` | `3d` | `mgstudio-engine/examples/3d/light_textures` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/lighting.rs` | `3d` | `mgstudio-engine/examples/3d/lighting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/lightmaps.rs` | `3d` | `mgstudio-engine/examples/3d/lightmaps` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/lines.rs` | `3d` | `mgstudio-engine/examples/3d/lines` | `Adapted` | `team-render` |  |
@@ -121,8 +121,8 @@ Notes:
 | `bevy/examples/3d/mirror.rs` | `3d` | `mgstudio-engine/examples/3d/mirror` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/mixed_lighting.rs` | `3d` | `mgstudio-engine/examples/3d/mixed_lighting` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/motion_blur.rs` | `3d` | `mgstudio-engine/examples/3d/motion_blur` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/occlusion_culling.rs` | `3d` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/3d/order_independent_transparency.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/occlusion_culling.rs` | `3d` | `mgstudio-engine/examples/3d/occlusion_culling` | `Adapted` | `team-render` |  |
+| `bevy/examples/3d/order_independent_transparency.rs` | `3d` | `mgstudio-engine/examples/3d/order_independent_transparency` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/orthographic.rs` | `3d` | `mgstudio-engine/examples/3d/orthographic` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/parallax_mapping.rs` | `3d` | `mgstudio-engine/examples/3d/parallax_mapping` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/parenting.rs` | `3d` | `mgstudio-engine/examples/3d/parenting` | `Exact` | `team-render` |  |
