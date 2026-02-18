@@ -4,20 +4,34 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Hdr", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight", "MotionBlur",
-  "PointLight", "Tonemapping", "DepthPrepass", "ContactShadows", "MeshMaterial3d",
-  "TemporalJitter", "SubCameraView3d", "DirectionalLight", "CameraProjection3d",
+  "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight",
+  "MotionBlur", "PointLight", "Tonemapping", "DepthPrepass", "NormalPrepass", "ContactShadows",
+  "MeshMaterial3d", "TemporalJitter", "DeferredPrepass", "SubCameraView3d", "DirectionalLight",
+  "OcclusionCulling", "SpotLightTexture", "PointLightTexture", "CameraProjection3d",
   "ChromaticAberration", "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod",
-  "ScreenSpaceReflections", "ScreenSpaceAmbientOcclusion",
+  "ScreenSpaceReflections", "DirectionalLightTexture", "ScreenSpaceAmbientOcclusion",
+  "OrderIndependentTransparencySettings",
 ]
 
 ///|
 /// ECS resource types discovered via `#ecs.resource`.
-pub let ecs_resources : Array[String] = ["GlobalAmbientLight"]
+pub let ecs_resources : Array[String] = [
+  "GlobalAmbientLight", "DefaultOpaqueRendererMethod",
+]
 
 ///|
 pub(open) trait Has_Hdr {
   get_hdr_store(self : Self) -> @core.ComponentStore[Hdr]
+}
+
+///|
+pub(open) trait Has_Fxaa {
+  get_fxaa_store(self : Self) -> @core.ComponentStore[Fxaa]
+}
+
+///|
+pub(open) trait Has_Msaa {
+  get_msaa_store(self : Self) -> @core.ComponentStore[Msaa]
 }
 
 ///|
@@ -71,6 +85,11 @@ pub(open) trait Has_DepthPrepass {
 }
 
 ///|
+pub(open) trait Has_NormalPrepass {
+  get_normal_prepass_store(self : Self) -> @core.ComponentStore[NormalPrepass]
+}
+
+///|
 pub(open) trait Has_ContactShadows {
   get_contact_shadows_store(self : Self) -> @core.ComponentStore[ContactShadows]
 }
@@ -86,6 +105,13 @@ pub(open) trait Has_TemporalJitter {
 }
 
 ///|
+pub(open) trait Has_DeferredPrepass {
+  get_deferred_prepass_store(self : Self) -> @core.ComponentStore[
+    DeferredPrepass,
+  ]
+}
+
+///|
 pub(open) trait Has_SubCameraView3d {
   get_sub_camera_view3d_store(self : Self) -> @core.ComponentStore[
     SubCameraView3d,
@@ -96,6 +122,27 @@ pub(open) trait Has_SubCameraView3d {
 pub(open) trait Has_DirectionalLight {
   get_directional_light_store(self : Self) -> @core.ComponentStore[
     DirectionalLight,
+  ]
+}
+
+///|
+pub(open) trait Has_OcclusionCulling {
+  get_occlusion_culling_store(self : Self) -> @core.ComponentStore[
+    OcclusionCulling,
+  ]
+}
+
+///|
+pub(open) trait Has_SpotLightTexture {
+  get_spot_light_texture_store(self : Self) -> @core.ComponentStore[
+    SpotLightTexture,
+  ]
+}
+
+///|
+pub(open) trait Has_PointLightTexture {
+  get_point_light_texture_store(self : Self) -> @core.ComponentStore[
+    PointLightTexture,
   ]
 }
 
@@ -142,6 +189,13 @@ pub(open) trait Has_ScreenSpaceReflections {
 }
 
 ///|
+pub(open) trait Has_DirectionalLightTexture {
+  get_directional_light_texture_store(self : Self) -> @core.ComponentStore[
+    DirectionalLightTexture,
+  ]
+}
+
+///|
 pub(open) trait Has_ScreenSpaceAmbientOcclusion {
   get_screen_space_ambient_occlusion_store(self : Self) -> @core.ComponentStore[
     ScreenSpaceAmbientOcclusion,
@@ -149,8 +203,22 @@ pub(open) trait Has_ScreenSpaceAmbientOcclusion {
 }
 
 ///|
+pub(open) trait Has_OrderIndependentTransparencySettings {
+  get_order_independent_transparency_settings_store(self : Self) -> @core.ComponentStore[
+    OrderIndependentTransparencySettings,
+  ]
+}
+
+///|
 pub(open) trait HasRes_GlobalAmbientLight {
   get_global_ambient_light_resource(self : Self) -> @core.Resource[
     GlobalAmbientLight,
+  ]
+}
+
+///|
+pub(open) trait HasRes_DefaultOpaqueRendererMethod {
+  get_default_opaque_renderer_method_resource(self : Self) -> @core.Resource[
+    DefaultOpaqueRendererMethod,
   ]
 }

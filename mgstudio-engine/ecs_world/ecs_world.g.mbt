@@ -17,6 +17,8 @@ pub struct World {
   hdr : @core.ComponentStore[@render3d.Hdr]
   box_shadow : @core.ComponentStore[@ui.BoxShadow]
   image_node : @core.ComponentStore[@ui.ImageNode]
+  fxaa : @core.ComponentStore[@render3d.Fxaa]
+  msaa : @core.ComponentStore[@render3d.Msaa]
   transform : @core.ComponentStore[@math.Transform]
   bloom : @core.ComponentStore[@render3d.Bloom]
   border_color : @core.ComponentStore[@ui.BorderColor]
@@ -71,6 +73,7 @@ pub struct World {
   visibility : @core.ComponentStore[@visibility.Visibility]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
+  normal_prepass : @core.ComponentStore[@render3d.NormalPrepass]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
   contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
   restitution2d : @core.ComponentStore[@physics2d.Restitution2d]
@@ -83,16 +86,20 @@ pub struct World {
   impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
+  deferred_prepass : @core.ComponentStore[@render3d.DeferredPrepass]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
   directional_light : @core.ComponentStore[@render3d.DirectionalLight]
+  occlusion_culling : @core.ComponentStore[@render3d.OcclusionCulling]
+  spot_light_texture : @core.ComponentStore[@render3d.SpotLightTexture]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
+  point_light_texture : @core.ComponentStore[@render3d.PointLightTexture]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
   collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
@@ -127,6 +134,9 @@ pub struct World {
   rapier_collider_handle3d : @core.ComponentStore[
     @physics3d.RapierColliderHandle3d,
   ]
+  directional_light_texture : @core.ComponentStore[
+    @render3d.DirectionalLightTexture,
+  ]
   collider_mass_properties2d : @core.ComponentStore[
     @physics2d.ColliderMassProperties2d,
   ]
@@ -157,6 +167,9 @@ pub struct World {
   kinematic_character_controller2d : @core.ComponentStore[
     @physics2d.KinematicCharacterController2d,
   ]
+  order_independent_transparency_settings : @core.ComponentStore[
+    @render3d.OrderIndependentTransparencySettings,
+  ]
   kinematic_character_controller_output2d : @core.ComponentStore[
     @physics2d.KinematicCharacterControllerOutput2d,
   ]
@@ -176,6 +189,9 @@ pub struct World {
   res_physics2d_context : @core.Resource[@physics2d.Physics2dContext]
   res_physics3d_context : @core.Resource[@physics3d.Physics3dContext]
   res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
+  res_default_opaque_renderer_method : @core.Resource[
+    @render3d.DefaultOpaqueRendererMethod,
+  ]
 }
 
 ///|
@@ -196,6 +212,8 @@ pub fn World::new() -> World {
     hdr: @core.ComponentStore::new(),
     box_shadow: @core.ComponentStore::new(),
     image_node: @core.ComponentStore::new(),
+    fxaa: @core.ComponentStore::new(),
+    msaa: @core.ComponentStore::new(),
     transform: @core.ComponentStore::new(),
     bloom: @core.ComponentStore::new(),
     border_color: @core.ComponentStore::new(),
@@ -250,6 +268,7 @@ pub fn World::new() -> World {
     visibility: @core.ComponentStore::new(),
     locked_axes2d: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
+    normal_prepass: @core.ComponentStore::new(),
     active_hooks2d: @core.ComponentStore::new(),
     contact_skin2d: @core.ComponentStore::new(),
     restitution2d: @core.ComponentStore::new(),
@@ -262,16 +281,20 @@ pub fn World::new() -> World {
     impulse_joint2d: @core.ComponentStore::new(),
     solver_groups2d: @core.ComponentStore::new(),
     active_events3d: @core.ComponentStore::new(),
+    deferred_prepass: @core.ComponentStore::new(),
     sub_camera_view3d: @core.ComponentStore::new(),
     scene_instance_ready: @core.ComponentStore::new(),
     external_force2d: @core.ComponentStore::new(),
     clear_color_config: @core.ComponentStore::new(),
     directional_light: @core.ComponentStore::new(),
+    occlusion_culling: @core.ComponentStore::new(),
+    spot_light_texture: @core.ComponentStore::new(),
     global_transform: @core.ComponentStore::new(),
     relative_cursor_position: @core.ComponentStore::new(),
     view_visibility: @core.ComponentStore::new(),
     collider_parent2d: @core.ComponentStore::new(),
     multibody_joint2d: @core.ComponentStore::new(),
+    point_light_texture: @core.ComponentStore::new(),
     visibility_range: @core.ComponentStore::new(),
     collider_density2d: @core.ComponentStore::new(),
     collider_enabled2d: @core.ComponentStore::new(),
@@ -292,6 +315,7 @@ pub fn World::new() -> World {
     rapier_collider_handle2d: @core.ComponentStore::new(),
     active_collision_types3d: @core.ComponentStore::new(),
     rapier_collider_handle3d: @core.ComponentStore::new(),
+    directional_light_texture: @core.ComponentStore::new(),
     collider_mass_properties2d: @core.ComponentStore::new(),
     restitution_combine_rule2d: @core.ComponentStore::new(),
     additional_mass_properties2d: @core.ComponentStore::new(),
@@ -302,6 +326,7 @@ pub fn World::new() -> World {
     rapier_multibody_joint_handle2d: @core.ComponentStore::new(),
     contact_force_event_threshold3d: @core.ComponentStore::new(),
     kinematic_character_controller2d: @core.ComponentStore::new(),
+    order_independent_transparency_settings: @core.ComponentStore::new(),
     kinematic_character_controller_output2d: @core.ComponentStore::new(),
     res_ui_scale: @core.Resource::new(),
     res_ui_stack: @core.Resource::new(),
@@ -319,6 +344,7 @@ pub fn World::new() -> World {
     res_physics2d_context: @core.Resource::new(),
     res_physics3d_context: @core.Resource::new(),
     res_global_ambient_light: @core.Resource::new(),
+    res_default_opaque_renderer_method: @core.Resource::new(),
   }
 }
 
@@ -345,6 +371,8 @@ pub fn World::despawn(
   self.hdr.remove(entity) |> ignore
   self.box_shadow.remove(entity) |> ignore
   self.image_node.remove(entity) |> ignore
+  self.fxaa.remove(entity) |> ignore
+  self.msaa.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
   self.bloom.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
@@ -399,6 +427,7 @@ pub fn World::despawn(
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
+  self.normal_prepass.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
@@ -411,16 +440,20 @@ pub fn World::despawn(
   self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
+  self.deferred_prepass.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
+  self.occlusion_culling.remove(entity) |> ignore
+  self.spot_light_texture.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
+  self.point_light_texture.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collider_enabled2d.remove(entity) |> ignore
@@ -441,6 +474,7 @@ pub fn World::despawn(
   self.rapier_collider_handle2d.remove(entity) |> ignore
   self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
+  self.directional_light_texture.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
@@ -451,6 +485,7 @@ pub fn World::despawn(
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
   self.contact_force_event_threshold3d.remove(entity) |> ignore
   self.kinematic_character_controller2d.remove(entity) |> ignore
+  self.order_independent_transparency_settings.remove(entity) |> ignore
   self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
 
@@ -474,6 +509,8 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.hdr.remove(entity) |> ignore
   self.box_shadow.remove(entity) |> ignore
   self.image_node.remove(entity) |> ignore
+  self.fxaa.remove(entity) |> ignore
+  self.msaa.remove(entity) |> ignore
   self.transform.remove(entity) |> ignore
   self.bloom.remove(entity) |> ignore
   self.border_color.remove(entity) |> ignore
@@ -528,6 +565,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
+  self.normal_prepass.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
@@ -540,16 +578,20 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.impulse_joint2d.remove(entity) |> ignore
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
+  self.deferred_prepass.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
+  self.occlusion_culling.remove(entity) |> ignore
+  self.spot_light_texture.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
+  self.point_light_texture.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collider_enabled2d.remove(entity) |> ignore
@@ -570,6 +612,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.rapier_collider_handle2d.remove(entity) |> ignore
   self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
+  self.directional_light_texture.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
@@ -580,6 +623,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.rapier_multibody_joint_handle2d.remove(entity) |> ignore
   self.contact_force_event_threshold3d.remove(entity) |> ignore
   self.kinematic_character_controller2d.remove(entity) |> ignore
+  self.order_independent_transparency_settings.remove(entity) |> ignore
   self.kinematic_character_controller_output2d.remove(entity) |> ignore
 }
 
@@ -662,6 +706,16 @@ pub impl @ui.Has_BoxShadow for World with get_box_shadow_store(self) {
 ///|
 pub impl @ui.Has_ImageNode for World with get_image_node_store(self) {
   self.image_node
+}
+
+///|
+pub impl @render3d.Has_Fxaa for World with get_fxaa_store(self) {
+  self.fxaa
+}
+
+///|
+pub impl @render3d.Has_Msaa for World with get_msaa_store(self) {
+  self.msaa
 }
 
 ///|
@@ -943,6 +997,13 @@ pub impl @render2d.Has_ColorMaterial for World with get_color_material_store(
 }
 
 ///|
+pub impl @render3d.Has_NormalPrepass for World with get_normal_prepass_store(
+  self,
+) {
+  self.normal_prepass
+}
+
+///|
 pub impl @physics2d.Has_ActiveHooks2d for World with get_active_hooks2d_store(
   self,
 ) {
@@ -1027,6 +1088,13 @@ pub impl @physics3d.Has_ActiveEvents3d for World with get_active_events3d_store(
 }
 
 ///|
+pub impl @render3d.Has_DeferredPrepass for World with get_deferred_prepass_store(
+  self,
+) {
+  self.deferred_prepass
+}
+
+///|
 pub impl @render3d.Has_SubCameraView3d for World with get_sub_camera_view3d_store(
   self,
 ) {
@@ -1062,6 +1130,20 @@ pub impl @render3d.Has_DirectionalLight for World with get_directional_light_sto
 }
 
 ///|
+pub impl @render3d.Has_OcclusionCulling for World with get_occlusion_culling_store(
+  self,
+) {
+  self.occlusion_culling
+}
+
+///|
+pub impl @render3d.Has_SpotLightTexture for World with get_spot_light_texture_store(
+  self,
+) {
+  self.spot_light_texture
+}
+
+///|
 pub impl @transform.Has_GlobalTransform for World with get_global_transform_store(
   self,
 ) {
@@ -1094,6 +1176,13 @@ pub impl @physics2d.Has_MultibodyJoint2d for World with get_multibody_joint2d_st
   self,
 ) {
   self.multibody_joint2d
+}
+
+///|
+pub impl @render3d.Has_PointLightTexture for World with get_point_light_texture_store(
+  self,
+) {
+  self.point_light_texture
 }
 
 ///|
@@ -1237,6 +1326,13 @@ pub impl @physics3d.Has_RapierColliderHandle3d for World with get_rapier_collide
 }
 
 ///|
+pub impl @render3d.Has_DirectionalLightTexture for World with get_directional_light_texture_store(
+  self,
+) {
+  self.directional_light_texture
+}
+
+///|
 pub impl @physics2d.Has_ColliderMassProperties2d for World with get_collider_mass_properties2d_store(
   self,
 ) {
@@ -1304,6 +1400,13 @@ pub impl @physics2d.Has_KinematicCharacterController2d for World with get_kinema
   self,
 ) {
   self.kinematic_character_controller2d
+}
+
+///|
+pub impl @render3d.Has_OrderIndependentTransparencySettings for World with get_order_independent_transparency_settings_store(
+  self,
+) {
+  self.order_independent_transparency_settings
 }
 
 ///|
@@ -1415,4 +1518,11 @@ pub impl @render3d.HasRes_GlobalAmbientLight for World with get_global_ambient_l
   self,
 ) {
   self.res_global_ambient_light
+}
+
+///|
+pub impl @render3d.HasRes_DefaultOpaqueRendererMethod for World with get_default_opaque_renderer_method_resource(
+  self,
+) {
+  self.res_default_opaque_renderer_method
 }

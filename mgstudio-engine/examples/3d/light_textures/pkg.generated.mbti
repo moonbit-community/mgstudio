@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/light_textures"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum DragMode {
+  Move
+  Scale
+  Roll
+}
+pub impl Eq for DragMode
+pub impl Show for DragMode
+
+pub(all) enum Selection {
+  Camera
+  SpotLight
+  PointLight
+  DirectionalLight
+}
+pub impl Eq for Selection
+pub impl Show for Selection
+
+// Type aliases
+
+// Traits
+

@@ -420,6 +420,49 @@ pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur 
 }
 
 ///|
+/// Camera MSAA mode aligned with Bevy's `Msaa`.
+///
+/// Current runtime note: this component is API-compatible but acts as a
+/// render-path hint on top of the existing antialiasing pipeline.
+#ecs.component
+pub(all) enum Msaa {
+  Off
+  Sample2
+  Sample4
+  Sample8
+} derive(Eq, Show)
+
+///|
+pub fn Msaa::default() -> Msaa {
+  Msaa::Sample4
+}
+
+///|
+/// Marker component aligned with Bevy's `Fxaa`.
+///
+/// Current runtime note: this records camera intent as an ECS surface.
+#ecs.component
+pub struct Fxaa {
+  enabled : Bool
+}
+
+///|
+pub fn Fxaa::default() -> Fxaa {
+  Fxaa::{ enabled: true }
+}
+
+///|
+pub fn Fxaa::new(enabled : Bool) -> Fxaa {
+  Fxaa::{ enabled, }
+}
+
+///|
+pub fn Fxaa::with_enabled(self : Fxaa, enabled : Bool) -> Fxaa {
+  self |> ignore
+  Fxaa::{ enabled, }
+}
+
+///|
 /// Marker component aligned with Bevy's `DepthPrepass`.
 #ecs.component
 pub struct DepthPrepass {}
@@ -430,6 +473,16 @@ pub fn DepthPrepass::default() -> DepthPrepass {
 }
 
 ///|
+/// Marker component aligned with Bevy's `NormalPrepass`.
+#ecs.component
+pub struct NormalPrepass {}
+
+///|
+pub fn NormalPrepass::default() -> NormalPrepass {
+  NormalPrepass::{  }
+}
+
+///|
 /// Marker component aligned with Bevy's `MotionVectorPrepass`.
 #ecs.component
 pub struct MotionVectorPrepass {}
@@ -437,6 +490,43 @@ pub struct MotionVectorPrepass {}
 ///|
 pub fn MotionVectorPrepass::default() -> MotionVectorPrepass {
   MotionVectorPrepass::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `DeferredPrepass`.
+#ecs.component
+pub struct DeferredPrepass {}
+
+///|
+pub fn DeferredPrepass::default() -> DeferredPrepass {
+  DeferredPrepass::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `OcclusionCulling`.
+///
+/// Current runtime note: this records per-camera occlusion-culling intent as an
+/// ECS surface for parity and migration sequencing.
+#ecs.component
+pub struct OcclusionCulling {}
+
+///|
+pub fn OcclusionCulling::default() -> OcclusionCulling {
+  OcclusionCulling::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's
+/// `OrderIndependentTransparencySettings`.
+///
+/// Current runtime note: this records camera intent as an ECS surface; the
+/// renderer-side weighted OIT implementation is tracked separately.
+#ecs.component
+pub struct OrderIndependentTransparencySettings {}
+
+///|
+pub fn OrderIndependentTransparencySettings::default() -> OrderIndependentTransparencySettings {
+  OrderIndependentTransparencySettings::{  }
 }
 
 ///|
@@ -1017,6 +1107,85 @@ pub fn ParallaxMappingMethod::max_steps(self : ParallaxMappingMethod) -> Int {
 }
 
 ///|
+/// Opaque render path preference aligned with Bevy's `OpaqueRendererMethod`.
+///
+/// Current runtime note: only the forward backend is active; deferred options
+/// are preserved as API surface for parity and migration sequencing.
+pub(all) enum OpaqueRendererMethod {
+  Auto
+  Forward
+  Deferred
+} derive(Eq, Show)
+
+///|
+pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {
+  OpaqueRendererMethod::Auto
+}
+
+///|
+// ECS resource marker for codegen (`mgstudio gen`).
+#ecs.resource
+pub struct DefaultOpaqueRendererMethod {
+  renderer_method : OpaqueRendererMethod
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::default() -> DefaultOpaqueRendererMethod {
+  DefaultOpaqueRendererMethod::{ renderer_method: OpaqueRendererMethod::Auto }
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::new(
+  renderer_method : OpaqueRendererMethod,
+) -> DefaultOpaqueRendererMethod {
+  DefaultOpaqueRendererMethod::{ renderer_method, }
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::forward() -> DefaultOpaqueRendererMethod {
+  DefaultOpaqueRendererMethod::{
+    renderer_method: OpaqueRendererMethod::Forward,
+  }
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::deferred() -> DefaultOpaqueRendererMethod {
+  DefaultOpaqueRendererMethod::{
+    renderer_method: OpaqueRendererMethod::Deferred,
+  }
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::with_method(
+  self : DefaultOpaqueRendererMethod,
+  renderer_method : OpaqueRendererMethod,
+) -> DefaultOpaqueRendererMethod {
+  self |> ignore
+  DefaultOpaqueRendererMethod::{ renderer_method, }
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::set_to_forward(
+  self : DefaultOpaqueRendererMethod,
+) -> DefaultOpaqueRendererMethod {
+  self.with_method(OpaqueRendererMethod::Forward)
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::set_to_deferred(
+  self : DefaultOpaqueRendererMethod,
+) -> DefaultOpaqueRendererMethod {
+  self.with_method(OpaqueRendererMethod::Deferred)
+}
+
+///|
+pub fn DefaultOpaqueRendererMethod::renderer_method(
+  self : DefaultOpaqueRendererMethod,
+) -> OpaqueRendererMethod {
+  self.renderer_method
+}
+
+///|
 pub struct StandardMaterial {
   base_color : @render2d.Color
   base_color_texture : @asset.Handle[@asset.Image]?
@@ -1043,6 +1212,7 @@ pub struct StandardMaterial {
   reflectance : Float
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
+  opaque_render_method : OpaqueRendererMethod
   unlit : Bool
   cull_mode : Face3d?
 }
@@ -1075,6 +1245,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     reflectance: 0.5F,
     occlusion_texture: None,
     alpha_mode: AlphaMode3d::Opaque,
+    opaque_render_method: OpaqueRendererMethod::Auto,
     unlit: false,
     cull_mode: Some(Face3d::Back),
   }
@@ -1116,6 +1287,7 @@ pub fn StandardMaterial::from_color(
     reflectance: default_value.reflectance,
     occlusion_texture: default_value.occlusion_texture,
     alpha_mode,
+    opaque_render_method: default_value.opaque_render_method,
     unlit: default_value.unlit,
     cull_mode: default_value.cull_mode,
   }
@@ -1135,6 +1307,14 @@ pub fn StandardMaterial::with_alpha_mode(
   alpha_mode : AlphaMode3d,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, alpha_mode, }
+}
+
+///|
+pub fn StandardMaterial::with_opaque_render_method(
+  self : StandardMaterial,
+  opaque_render_method : OpaqueRendererMethod,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, opaque_render_method, }
 }
 
 ///|
@@ -1657,6 +1837,21 @@ pub fn PointLight::new(
 }
 
 ///|
+pub fn PointLight::with_intensity(
+  self : PointLight,
+  intensity : Float,
+) -> PointLight {
+  PointLight::{
+    ..self,
+    intensity: if intensity < 0.0F {
+      0.0F
+    } else {
+      intensity
+    },
+  }
+}
+
+///|
 pub fn PointLight::with_radius(self : PointLight, radius : Float) -> PointLight {
   PointLight::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
 }
@@ -1762,6 +1957,21 @@ pub fn DirectionalLight::new(
     soft_shadow_size: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+  }
+}
+
+///|
+pub fn DirectionalLight::with_illuminance(
+  self : DirectionalLight,
+  illuminance : Float,
+) -> DirectionalLight {
+  DirectionalLight::{
+    ..self,
+    illuminance: if illuminance < 0.0F {
+      0.0F
+    } else {
+      illuminance
+    },
   }
 }
 
@@ -1877,6 +2087,58 @@ pub fn SpotLight::new(
 }
 
 ///|
+pub fn SpotLight::with_intensity(
+  self : SpotLight,
+  intensity : Float,
+) -> SpotLight {
+  SpotLight::{
+    ..self,
+    intensity: if intensity < 0.0F {
+      0.0F
+    } else {
+      intensity
+    },
+  }
+}
+
+///|
+pub fn SpotLight::with_inner_angle(
+  self : SpotLight,
+  inner_angle : Float,
+) -> SpotLight {
+  let safe_inner_angle = if inner_angle < 0.0F {
+    0.0F
+  } else if inner_angle > self.outer_angle {
+    self.outer_angle
+  } else {
+    inner_angle
+  }
+  SpotLight::{ ..self, inner_angle: safe_inner_angle }
+}
+
+///|
+pub fn SpotLight::with_outer_angle(
+  self : SpotLight,
+  outer_angle : Float,
+) -> SpotLight {
+  let safe_outer_angle = if outer_angle <= 0.0001F {
+    0.0001F
+  } else {
+    outer_angle
+  }
+  let safe_inner_angle = if self.inner_angle > safe_outer_angle {
+    safe_outer_angle
+  } else {
+    self.inner_angle
+  }
+  SpotLight::{
+    ..self,
+    outer_angle: safe_outer_angle,
+    inner_angle: safe_inner_angle,
+  }
+}
+
+///|
 pub fn SpotLight::with_radius(self : SpotLight, radius : Float) -> SpotLight {
   SpotLight::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
 }
@@ -1940,6 +2202,137 @@ pub fn SpotLight::with_shadow_map_near_z(
       shadow_map_near_z
     },
   }
+}
+
+///|
+/// Cubemap texture layout aligned with Bevy's `CubemapLayout`.
+pub(all) enum CubemapLayout3d {
+  CrossVertical
+  CrossHorizontal
+  LineVertical
+  LineHorizontal
+  Equirectangular
+  Faces
+} derive(Eq, Show)
+
+///|
+pub fn CubemapLayout3d::default() -> CubemapLayout3d {
+  CubemapLayout3d::CrossVertical
+}
+
+///|
+/// Directional light texture settings aligned with Bevy's
+/// `DirectionalLightTexture`.
+///
+/// Current runtime note: texture projection is not yet applied in this backend;
+/// this component preserves API parity for example migration.
+#ecs.component
+pub struct DirectionalLightTexture {
+  image : @asset.Handle[@asset.Image]?
+  tiled : Bool
+}
+
+///|
+pub fn DirectionalLightTexture::default() -> DirectionalLightTexture {
+  DirectionalLightTexture::{ image: None, tiled: false }
+}
+
+///|
+pub fn DirectionalLightTexture::new(
+  image : @asset.Handle[@asset.Image]?,
+  tiled : Bool,
+) -> DirectionalLightTexture {
+  DirectionalLightTexture::{ image, tiled }
+}
+
+///|
+pub fn DirectionalLightTexture::with_image(
+  self : DirectionalLightTexture,
+  image : @asset.Handle[@asset.Image]?,
+) -> DirectionalLightTexture {
+  DirectionalLightTexture::{ ..self, image, }
+}
+
+///|
+pub fn DirectionalLightTexture::with_tiled(
+  self : DirectionalLightTexture,
+  tiled : Bool,
+) -> DirectionalLightTexture {
+  DirectionalLightTexture::{ ..self, tiled, }
+}
+
+///|
+/// Spot light texture settings aligned with Bevy's `SpotLightTexture`.
+///
+/// Current runtime note: texture projection is not yet applied in this backend;
+/// this component preserves API parity for example migration.
+#ecs.component
+pub struct SpotLightTexture {
+  image : @asset.Handle[@asset.Image]?
+}
+
+///|
+pub fn SpotLightTexture::default() -> SpotLightTexture {
+  SpotLightTexture::{ image: None }
+}
+
+///|
+pub fn SpotLightTexture::new(
+  image : @asset.Handle[@asset.Image]?,
+) -> SpotLightTexture {
+  SpotLightTexture::{ image, }
+}
+
+///|
+pub fn SpotLightTexture::with_image(
+  self : SpotLightTexture,
+  image : @asset.Handle[@asset.Image]?,
+) -> SpotLightTexture {
+  self |> ignore
+  SpotLightTexture::{ image, }
+}
+
+///|
+/// Point light texture settings aligned with Bevy's `PointLightTexture`.
+///
+/// Current runtime note: texture projection is not yet applied in this backend;
+/// this component preserves API parity for example migration.
+#ecs.component
+pub struct PointLightTexture {
+  image : @asset.Handle[@asset.Image]?
+  cubemap_layout : CubemapLayout3d
+}
+
+///|
+pub fn PointLightTexture::default() -> PointLightTexture {
+  PointLightTexture::{
+    image: None,
+    cubemap_layout: CubemapLayout3d::CrossVertical,
+  }
+}
+
+///|
+pub fn PointLightTexture::new(
+  image : @asset.Handle[@asset.Image]?,
+  cubemap_layout : CubemapLayout3d,
+) -> PointLightTexture {
+  PointLightTexture::{ image, cubemap_layout }
+}
+
+///|
+pub fn PointLightTexture::with_image(
+  self : PointLightTexture,
+  image : @asset.Handle[@asset.Image]?,
+) -> PointLightTexture {
+  PointLightTexture::{ ..self, image, }
+}
+
+///|
+pub fn PointLightTexture::with_cubemap_layout(
+  self : PointLightTexture,
+  cubemap_layout : CubemapLayout3d,
+) -> PointLightTexture {
+  PointLightTexture::{ ..self, cubemap_layout, }
 }
 
 ///|

@@ -1,0 +1,457 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Port of `bevy/examples/3d/deferred_rendering.rs`.
+///
+/// Baseline parity: Bevy's native deferred backend (`Opaque3dDeferred`) and
+/// FlightHelmet/environment-map assets are not available in current mgstudio
+/// runtime. This port preserves Bevy's mode-switch controls and prepass API
+/// topology on the current forward path.
+const LIGHT_ROTATION_SPEED : Float = 0.6283185307179586F
+
+///|
+priv enum DefaultRenderMode {
+  Deferred
+  Forward
+  ForwardPrepass
+}
+
+///|
+priv struct SpinTarget {
+  entity : @core.Entity
+  speed : Float
+}
+
+///|
+priv struct DeferredState {
+  mut pause : Bool
+  mut hide_ui : Bool
+  mut mode : DefaultRenderMode
+  mut camera : @core.Entity?
+  mut directional_light : @core.Entity?
+  spin_targets : Array[SpinTarget]
+  mut help_text : @text.TextHandle?
+  mut light_angle : Float
+}
+
+///|
+fn default_state() -> DeferredState {
+  {
+    pause: true,
+    hide_ui: false,
+    mode: DefaultRenderMode::Deferred,
+    camera: None,
+    directional_light: None,
+    spin_targets: [],
+    help_text: None,
+    light_angle: 0.0F,
+  }
+}
+
+///|
+let deferred_state : Ref[DeferredState] = Ref::new(default_state())
+
+///|
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn mode_eq(lhs : DefaultRenderMode, rhs : DefaultRenderMode) -> Bool {
+  if lhs is Deferred {
+    rhs is Deferred
+  } else if lhs is Forward {
+    rhs is Forward
+  } else {
+    rhs is ForwardPrepass
+  }
+}
+
+///|
+fn mode_marker(target : DefaultRenderMode) -> String {
+  if mode_eq(deferred_state.val.mode, target) {
+    ">"
+  } else {
+    ""
+  }
+}
+
+///|
+fn help_text_content() -> String {
+  if deferred_state.val.hide_ui {
+    ""
+  } else {
+    let pause_label = if deferred_state.val.pause {
+      "Paused"
+    } else {
+      "Playing"
+    }
+    "(H) Hide UI\n" +
+    "(Space) Play/Pause (\{pause_label})\n\n" +
+    "Rendering Method:\n" +
+    "(1) \{mode_marker(DefaultRenderMode::Deferred)} Deferred\n" +
+    "(2) \{mode_marker(DefaultRenderMode::Forward)} Forward\n" +
+    "(3) \{mode_marker(DefaultRenderMode::ForwardPrepass)} Forward + Prepass\n\n" +
+    "Note: deferred render path is API-aligned proxy on current forward backend."
+  }
+}
+
+///|
+fn update_help_text() -> Unit {
+  if deferred_state.val.help_text is Some(handle) {
+    @text.text_set_content(handle, help_text_content())
+  }
+}
+
+///|
+fn set_default_opaque_method(
+  world : @ecs_world.World,
+  renderer_method : @render3d.OpaqueRendererMethod,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let resource = world.get_default_opaque_renderer_method_resource()
+  let value = @render3d.DefaultOpaqueRendererMethod::new(renderer_method)
+  if resource.get_ref_mut(tick) is Some(current) {
+    current.val = value
+  } else {
+    resource.insert(value, tick)
+  }
+}
+
+///|
+fn apply_render_mode(world : @ecs_world.World) -> Unit {
+  guard deferred_state.val.camera is Some(camera) else { return }
+  let tick = world.read_change_tick()
+  match deferred_state.val.mode {
+    Deferred => {
+      set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Deferred)
+      world.get_normal_prepass_store().remove(camera) |> ignore
+      world
+      .get_depth_prepass_store()
+      .insert(camera, @render3d.DepthPrepass::default(), tick)
+      world
+      .get_motion_vector_prepass_store()
+      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+      world
+      .get_deferred_prepass_store()
+      .insert(camera, @render3d.DeferredPrepass::default(), tick)
+    }
+    Forward => {
+      set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
+      world.get_normal_prepass_store().remove(camera) |> ignore
+      world.get_depth_prepass_store().remove(camera) |> ignore
+      world.get_motion_vector_prepass_store().remove(camera) |> ignore
+      world.get_deferred_prepass_store().remove(camera) |> ignore
+    }
+    ForwardPrepass => {
+      set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
+      world
+      .get_normal_prepass_store()
+      .insert(camera, @render3d.NormalPrepass::default(), tick)
+      world
+      .get_depth_prepass_store()
+      .insert(camera, @render3d.DepthPrepass::default(), tick)
+      world
+      .get_motion_vector_prepass_store()
+      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+      world.get_deferred_prepass_store().remove(camera) |> ignore
+    }
+  }
+}
+
+///|
+fn spawn_mesh(
+  world : @ecs_world.World,
+  mesh : @render3d.Mesh3d,
+  material : @asset.Handle[@render3d.StandardMaterial],
+  transform : @math.Transform,
+) -> @core.Entity {
+  @render3d.MeshMaterial3dBundle::new(
+    mesh,
+    @render3d.MeshMaterial3d::new(material),
+    transform,
+  ).spawn(world)
+}
+
+///|
+fn track_spin(entity : @core.Entity, speed : Float) -> Unit {
+  deferred_state.val.spin_targets.push({ entity, speed })
+}
+
+///|
+fn setup(world : @ecs_world.World) -> Unit {
+  deferred_state.val = default_state()
+  let tick = world.read_change_tick()
+  let asset_server = @asset.AssetServer::new()
+
+  let camera = @render3d.Camera3dBundle::new(
+    @render2d.Camera::default(),
+    @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+      @math.Vec3::new(0.0F, 0.3F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  ).spawn(world)
+  deferred_state.val.camera = Some(camera)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  world.get_fxaa_store().insert(camera, @render3d.Fxaa::default(), tick)
+
+  let directional_light = world.spawn_empty()
+  deferred_state.val.directional_light = Some(directional_light)
+  world
+  .get_directional_light_store()
+  .insert(
+    directional_light,
+    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    tick,
+  )
+  world
+  .get_transform_store()
+  .insert(
+    directional_light,
+    @math.Transform::from_xyz(8.0F, 8.0F, 4.0F).looking_at(
+      @math.Vec3::zero(),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+    tick,
+  )
+
+  @render3d.render3d_set_distance_fog(
+    @render3d.DistanceFog::new(
+      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @render3d.FogFalloff3d::linear(1.0F, 8.0F),
+    ),
+  )
+
+  let forward_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+    ).with_opaque_render_method(@render3d.OpaqueRendererMethod::Forward),
+  )
+  let plane = spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_plane(50.0F, 50.0F),
+    forward_material,
+    @math.Transform::identity(),
+  )
+  track_spin(plane, 0.0F)
+
+  let cube_mesh = @render3d.Mesh3d::from_cuboid(0.1F, 0.1F, 0.1F)
+  let cube_a = spawn_mesh(
+    world,
+    cube_mesh,
+    forward_material,
+    @math.Transform::from_xyz(-0.3F, 0.5F, -0.2F),
+  )
+  track_spin(cube_a, 0.7F)
+  let cube_b = spawn_mesh(
+    world,
+    cube_mesh,
+    forward_material,
+    @math.Transform::from_xyz(0.2F, 0.5F, 0.2F),
+  )
+  track_spin(cube_b, 0.6F)
+
+  let emissive_color = @render2d.Color::new(1.0F, 0.4F, 0.1F, 1.0F)
+  let emissive_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(emissive_color).with_unlit(true),
+  )
+  let emissive_cube = spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
+    emissive_material,
+    @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
+  )
+  track_spin(emissive_cube, 1.0F)
+
+  let point_light = world.spawn_empty()
+  world
+  .get_point_light_store()
+  .insert(
+    point_light,
+    @render3d.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(
+      0.125F,
+    ),
+    tick,
+  )
+  world
+  .get_transform_store()
+  .insert(point_light, @math.Transform::from_xyz(0.4F, 0.5F, -0.8F), tick)
+
+  for i in 0..<6 {
+    let j = i % 3
+    let s_val = if i < 3 { 0.0F } else { 0.2F }
+    let color = if j == 0 {
+      @render2d.Color::new(s_val, s_val, 1.0F, 1.0F)
+    } else if j == 1 {
+      @render2d.Color::new(s_val, 1.0F, s_val, 1.0F)
+    } else {
+      @render2d.Color::new(1.0F, s_val, s_val, 1.0F)
+    }
+    let material = @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(color)
+      .with_perceptual_roughness(0.089F)
+      .with_metallic(0.0F),
+    )
+    let jf = float_from_int(j)
+    let x = jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) - 0.4F
+    let z = -jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) + 0.4F
+    let entity = spawn_mesh(
+      world,
+      @render3d.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
+      material,
+      @math.Transform::from_xyz(x, 0.125F, z),
+    )
+    track_spin(entity, 0.45F + 0.07F * float_from_int(i))
+  }
+
+  let parallax_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::default()
+    .with_perceptual_roughness(0.4F)
+    .with_base_color_texture(
+      Some(asset_server.load("textures/parallax_example/cube_color.png")),
+    )
+    .with_normal_map_texture(
+      Some(asset_server.load("textures/parallax_example/cube_normal.png")),
+    )
+    .with_depth_map(
+      Some(asset_server.load("textures/parallax_example/cube_depth.png")),
+    )
+    .with_parallax_depth_scale(0.09F)
+    .with_parallax_mapping_method(@render3d.ParallaxMappingMethod::Relief(4))
+    .with_max_parallax_layer_count(32.0F),
+  )
+  let parallax_cube = spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(0.15F, 0.15F, 0.15F),
+    parallax_material,
+    @math.Transform::from_xyz(0.4F, 0.2F, -0.8F),
+  )
+  track_spin(parallax_cube, 0.3F)
+
+  let help_text = @text.Text2dBundle::new(
+      @text.Text2d::new(""),
+      @text.TextFont::default()
+      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
+      .with_font_size(16.0F),
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-380.0F, 320.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=50.0F,
+      ),
+    )
+    .with_anchor(@render2d.Anchor::top_left())
+    .with_bounds(@text.TextBounds::new_horizontal(760.0F))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_shadow(Some(@text.Text2dShadow::default()))
+    .spawn()
+  deferred_state.val.help_text = Some(help_text)
+
+  apply_render_mode(world)
+  update_help_text()
+}
+
+///|
+fn switch_mode(world : @ecs_world.World) -> Unit {
+  let mut changed = false
+  if @input.key_just_pressed(@window.KeyCode::Space) {
+    deferred_state.val.pause = !deferred_state.val.pause
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+    deferred_state.val.mode = DefaultRenderMode::Deferred
+    apply_render_mode(world)
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+    deferred_state.val.mode = DefaultRenderMode::Forward
+    apply_render_mode(world)
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit3) {
+    deferred_state.val.mode = DefaultRenderMode::ForwardPrepass
+    apply_render_mode(world)
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::KeyH) {
+    deferred_state.val.hide_ui = !deferred_state.val.hide_ui
+    changed = true
+  }
+  if changed {
+    update_help_text()
+  }
+}
+
+///|
+fn animate_light_direction(world : @ecs_world.World) -> Unit {
+  if deferred_state.val.pause {
+    return
+  }
+  guard deferred_state.val.directional_light is Some(light) else { return }
+  deferred_state.val.light_angle = deferred_state.val.light_angle +
+    LIGHT_ROTATION_SPEED * @time.time_delta_seconds()
+  let angle = deferred_state.val.light_angle
+  let tick = world.read_change_tick()
+  world
+  .get_transform_store()
+  .set(
+    light,
+    @math.Transform::from_xyz(
+      8.0F * @math.cos(angle),
+      8.0F,
+      4.0F * @math.sin(angle),
+    ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
+    tick,
+  )
+  |> ignore
+}
+
+///|
+fn spin(world : @ecs_world.World) -> Unit {
+  if deferred_state.val.pause {
+    return
+  }
+  let tick = world.read_change_tick()
+  let delta = @time.time_delta_seconds()
+  for i in 0..<deferred_state.val.spin_targets.length() {
+    let target = deferred_state.val.spin_targets[i]
+    guard world.get_transform_store().get(target.entity) is Some(transform) else {
+      continue
+    }
+    let speed = target.speed * delta
+    let rotation = transform.rotation
+      .mul(@math.Quat::from_rotation_y(speed))
+      .mul(@math.Quat::from_rotation_x(speed))
+      .mul(@math.Quat::from_rotation_z(-speed))
+      .normalize()
+    world
+    .get_transform_store()
+    .set(target.entity, transform.with_rotation(rotation), tick)
+    |> ignore
+  }
+}
+
+///|
+pub fn game_app() -> Unit {
+  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
+  @app.App::new(@ecs_world.World::new())
+  .add_plugins(plugins)
+  .add_startup_system(setup)
+  .add_system(switch_mode)
+  .add_system(animate_light_direction)
+  .add_system(spin)
+  .run()
+}
