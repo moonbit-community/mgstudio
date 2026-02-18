@@ -208,6 +208,19 @@ pub struct Hdr {
 }
 pub fn Hdr::default() -> Self
 
+pub struct IrradianceVolume {
+  voxels : @asset.Handle[@asset.Image]?
+  intensity : Float
+}
+pub fn IrradianceVolume::default() -> Self
+pub fn IrradianceVolume::new(@asset.Handle[@asset.Image]?, Float) -> Self
+pub fn IrradianceVolume::with_intensity(Self, Float) -> Self
+pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@asset.Image]?) -> Self
+
+pub struct LightProbe {
+}
+pub fn LightProbe::default() -> Self
+
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
@@ -608,6 +621,14 @@ pub(open) trait Has_Fxaa {
 
 pub(open) trait Has_Hdr {
   get_hdr_store(Self) -> @core.ComponentStore[Hdr]
+}
+
+pub(open) trait Has_IrradianceVolume {
+  get_irradiance_volume_store(Self) -> @core.ComponentStore[IrradianceVolume]
+}
+
+pub(open) trait Has_LightProbe {
+  get_light_probe_store(Self) -> @core.ComponentStore[LightProbe]
 }
 
 pub(open) trait Has_Mesh3d {

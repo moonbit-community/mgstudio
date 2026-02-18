@@ -74,6 +74,7 @@ pub struct World {
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
+  light_probe : @core.ComponentStore[@render3d.LightProbe]
   motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
@@ -114,6 +115,7 @@ pub struct World {
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
   directional_light : @core.ComponentStore[@render3d.DirectionalLight]
+  irradiance_volume : @core.ComponentStore[@render3d.IrradianceVolume]
   occlusion_culling : @core.ComponentStore[@render3d.OcclusionCulling]
   spot_light_texture : @core.ComponentStore[@render3d.SpotLightTexture]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
@@ -267,6 +269,8 @@ pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_DirectionalLightTexture for World
 pub impl @render3d.Has_Fxaa for World
 pub impl @render3d.Has_Hdr for World
+pub impl @render3d.Has_IrradianceVolume for World
+pub impl @render3d.Has_LightProbe for World
 pub impl @render3d.Has_Mesh3d for World
 pub impl @render3d.Has_MeshMaterial3d for World
 pub impl @render3d.Has_MotionBlur for World

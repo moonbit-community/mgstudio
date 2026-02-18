@@ -52,6 +52,7 @@ pub struct World {
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
+  light_probe : @core.ComponentStore[@render3d.LightProbe]
   motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
@@ -92,6 +93,7 @@ pub struct World {
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
   directional_light : @core.ComponentStore[@render3d.DirectionalLight]
+  irradiance_volume : @core.ComponentStore[@render3d.IrradianceVolume]
   occlusion_culling : @core.ComponentStore[@render3d.OcclusionCulling]
   spot_light_texture : @core.ComponentStore[@render3d.SpotLightTexture]
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
@@ -247,6 +249,7 @@ pub fn World::new() -> World {
     background_color: @core.ComponentStore::new(),
     damping2d: @core.ComponentStore::new(),
     projection: @core.ComponentStore::new(),
+    light_probe: @core.ComponentStore::new(),
     motion_blur: @core.ComponentStore::new(),
     point_light: @core.ComponentStore::new(),
     collider2d: @core.ComponentStore::new(),
@@ -287,6 +290,7 @@ pub fn World::new() -> World {
     external_force2d: @core.ComponentStore::new(),
     clear_color_config: @core.ComponentStore::new(),
     directional_light: @core.ComponentStore::new(),
+    irradiance_volume: @core.ComponentStore::new(),
     occlusion_culling: @core.ComponentStore::new(),
     spot_light_texture: @core.ComponentStore::new(),
     global_transform: @core.ComponentStore::new(),
@@ -406,6 +410,7 @@ pub fn World::despawn(
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.light_probe.remove(entity) |> ignore
   self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
@@ -446,6 +451,7 @@ pub fn World::despawn(
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
+  self.irradiance_volume.remove(entity) |> ignore
   self.occlusion_culling.remove(entity) |> ignore
   self.spot_light_texture.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
@@ -544,6 +550,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.light_probe.remove(entity) |> ignore
   self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
@@ -584,6 +591,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
+  self.irradiance_volume.remove(entity) |> ignore
   self.occlusion_culling.remove(entity) |> ignore
   self.spot_light_texture.remove(entity) |> ignore
   self.global_transform.remove(entity) |> ignore
@@ -884,6 +892,11 @@ pub impl @render2d.Has_Projection for World with get_projection_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_LightProbe for World with get_light_probe_store(self) {
+  self.light_probe
+}
+
+///|
 pub impl @render3d.Has_MotionBlur for World with get_motion_blur_store(self) {
   self.motion_blur
 }
@@ -1127,6 +1140,13 @@ pub impl @render3d.Has_DirectionalLight for World with get_directional_light_sto
   self,
 ) {
   self.directional_light
+}
+
+///|
+pub impl @render3d.Has_IrradianceVolume for World with get_irradiance_volume_store(
+  self,
+) {
+  self.irradiance_volume
 }
 
 ///|

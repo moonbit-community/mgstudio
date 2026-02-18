@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/irradiance_volumes"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum ExampleModel {
+  Sphere
+  Fox
+}
+pub impl Eq for ExampleModel
+pub impl Show for ExampleModel
+
+// Type aliases
+
+// Traits
+

@@ -5,12 +5,12 @@
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight",
-  "MotionBlur", "PointLight", "Tonemapping", "DepthPrepass", "NormalPrepass", "ContactShadows",
-  "MeshMaterial3d", "TemporalJitter", "DeferredPrepass", "SubCameraView3d", "DirectionalLight",
-  "OcclusionCulling", "SpotLightTexture", "PointLightTexture", "CameraProjection3d",
-  "ChromaticAberration", "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod",
-  "ScreenSpaceReflections", "DirectionalLightTexture", "ScreenSpaceAmbientOcclusion",
-  "OrderIndependentTransparencySettings",
+  "LightProbe", "MotionBlur", "PointLight", "Tonemapping", "DepthPrepass", "NormalPrepass",
+  "ContactShadows", "MeshMaterial3d", "TemporalJitter", "DeferredPrepass", "SubCameraView3d",
+  "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "SpotLightTexture",
+  "PointLightTexture", "CameraProjection3d", "ChromaticAberration", "MotionVectorPrepass",
+  "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
+  "ScreenSpaceAmbientOcclusion", "OrderIndependentTransparencySettings",
 ]
 
 ///|
@@ -62,6 +62,11 @@ pub(open) trait Has_Vignette {
 ///|
 pub(open) trait Has_SpotLight {
   get_spot_light_store(self : Self) -> @core.ComponentStore[SpotLight]
+}
+
+///|
+pub(open) trait Has_LightProbe {
+  get_light_probe_store(self : Self) -> @core.ComponentStore[LightProbe]
 }
 
 ///|
@@ -122,6 +127,13 @@ pub(open) trait Has_SubCameraView3d {
 pub(open) trait Has_DirectionalLight {
   get_directional_light_store(self : Self) -> @core.ComponentStore[
     DirectionalLight,
+  ]
+}
+
+///|
+pub(open) trait Has_IrradianceVolume {
+  get_irradiance_volume_store(self : Self) -> @core.ComponentStore[
+    IrradianceVolume,
   ]
 }
 

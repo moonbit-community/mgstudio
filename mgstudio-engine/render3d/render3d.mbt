@@ -2336,6 +2336,63 @@ pub fn PointLightTexture::with_cubemap_layout(
 }
 
 ///|
+/// Marker component aligned with Bevy's `LightProbe`.
+#ecs.component
+pub struct LightProbe {}
+
+///|
+pub fn LightProbe::default() -> LightProbe {
+  LightProbe::{  }
+}
+
+///|
+/// Irradiance volume settings aligned with Bevy's `IrradianceVolume`.
+///
+/// Current runtime note: this backend uses this component as API surface and
+/// scene intent metadata; voxel-light transfer remains adapted.
+#ecs.component
+pub struct IrradianceVolume {
+  voxels : @asset.Handle[@asset.Image]?
+  intensity : Float
+}
+
+///|
+pub fn IrradianceVolume::default() -> IrradianceVolume {
+  IrradianceVolume::{ voxels: None, intensity: 1.0F }
+}
+
+///|
+pub fn IrradianceVolume::new(
+  voxels : @asset.Handle[@asset.Image]?,
+  intensity : Float,
+) -> IrradianceVolume {
+  IrradianceVolume::{
+    voxels,
+    intensity: if intensity < 0.0F {
+      0.0F
+    } else {
+      intensity
+    },
+  }
+}
+
+///|
+pub fn IrradianceVolume::with_voxels(
+  self : IrradianceVolume,
+  voxels : @asset.Handle[@asset.Image]?,
+) -> IrradianceVolume {
+  IrradianceVolume::{ ..self, voxels, }
+}
+
+///|
+pub fn IrradianceVolume::with_intensity(
+  self : IrradianceVolume,
+  intensity : Float,
+) -> IrradianceVolume {
+  IrradianceVolume::new(self.voxels, intensity)
+}
+
+///|
 // ECS resource marker for codegen (`mgstudio gen`).
 #ecs.resource
 pub struct GlobalAmbientLight {
