@@ -47,6 +47,7 @@ pub struct World {
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
+  motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
   friction2d : @core.ComponentStore[@physics2d.Friction2d]
@@ -210,6 +211,7 @@ pub fn World::new() -> World {
     background_color: @core.ComponentStore::new(),
     damping2d: @core.ComponentStore::new(),
     projection: @core.ComponentStore::new(),
+    motion_blur: @core.ComponentStore::new(),
     point_light: @core.ComponentStore::new(),
     collider2d: @core.ComponentStore::new(),
     friction2d: @core.ComponentStore::new(),
@@ -347,6 +349,7 @@ pub fn World::despawn(
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
   self.friction2d.remove(entity) |> ignore
@@ -464,6 +467,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
   self.friction2d.remove(entity) |> ignore
@@ -760,6 +764,11 @@ pub impl @physics2d.Has_Damping2d for World with get_damping2d_store(self) {
 ///|
 pub impl @render2d.Has_Projection for World with get_projection_store(self) {
   self.projection
+}
+
+///|
+pub impl @render3d.Has_MotionBlur for World with get_motion_blur_store(self) {
+  self.motion_blur
 }
 
 ///|

@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-02-17
+Last Verified: 2026-02-18
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Adapted | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 | 0 |
-| `3d` | 66 | 15 | 38 | 13 | 0 |
+| `3d` | 66 | 15 | 39 | 12 | 0 |
 | `animation` | 13 | 0 | 0 | 13 | 0 |
 | `app` | 17 | 3 | 0 | 14 | 0 |
 | `asset` | 15 | 0 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 0 | 51 | 0 |
 | `usage` | 2 | 0 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 | 0 |
-| **Total** | **402** | **51** | **61** | **287** | **3** |
+| **Total** | **402** | **51** | **62** | **286** | **3** |
 
 ## Example Inventory
 
@@ -120,7 +120,7 @@ Notes:
 | `bevy/examples/3d/meshlet.rs` | `3d` | `mgstudio-engine/examples/3d/meshlet` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/mirror.rs` | `3d` | `mgstudio-engine/examples/3d/mirror` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/mixed_lighting.rs` | `3d` | `mgstudio-engine/examples/3d/mixed_lighting` | `Adapted` | `team-render` |  |
-| `bevy/examples/3d/motion_blur.rs` | `3d` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/3d/motion_blur.rs` | `3d` | `mgstudio-engine/examples/3d/motion_blur` | `Adapted` | `team-render` |  |
 | `bevy/examples/3d/occlusion_culling.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/order_independent_transparency.rs` | `3d` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/3d/orthographic.rs` | `3d` | `mgstudio-engine/examples/3d/orthographic` | `Exact` | `team-render` |  |

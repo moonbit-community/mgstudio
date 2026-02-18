@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/motion_blur"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum CameraMode {
+  Track
+  Chase
+}
+
+// Type aliases
+
+// Traits
+

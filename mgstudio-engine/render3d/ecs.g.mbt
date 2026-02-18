@@ -4,7 +4,7 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Mesh3d", "Camera3d", "Vignette", "SpotLight", "PointLight", "MeshMaterial3d",
+  "Mesh3d", "Camera3d", "Vignette", "SpotLight", "MotionBlur", "PointLight", "MeshMaterial3d",
   "SubCameraView3d", "DirectionalLight", "CameraProjection3d", "ChromaticAberration",
   "ScreenSpaceReflections",
 ]
@@ -31,6 +31,11 @@ pub(open) trait Has_Vignette {
 ///|
 pub(open) trait Has_SpotLight {
   get_spot_light_store(self : Self) -> @core.ComponentStore[SpotLight]
+}
+
+///|
+pub(open) trait Has_MotionBlur {
+  get_motion_blur_store(self : Self) -> @core.ComponentStore[MotionBlur]
 }
 
 ///|

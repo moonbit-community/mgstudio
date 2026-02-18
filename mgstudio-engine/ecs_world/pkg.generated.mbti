@@ -69,6 +69,7 @@ pub struct World {
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
+  motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
   friction2d : @core.ComponentStore[@physics2d.Friction2d]
@@ -239,6 +240,7 @@ pub impl @render3d.Has_ChromaticAberration for World
 pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_Mesh3d for World
 pub impl @render3d.Has_MeshMaterial3d for World
+pub impl @render3d.Has_MotionBlur for World
 pub impl @render3d.Has_PointLight for World
 pub impl @render3d.Has_ScreenSpaceReflections for World
 pub impl @render3d.Has_SpotLight for World

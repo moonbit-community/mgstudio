@@ -378,6 +378,48 @@ pub fn Vignette::with_color(
 }
 
 ///|
+/// Camera post-process settings aligned with Bevy's `MotionBlur`.
+///
+/// This renderer currently applies a lightweight per-object approximation in
+/// the draw phase instead of Bevy's full-screen motion vector pipeline.
+#ecs.component
+pub struct MotionBlur {
+  shutter_angle : Float
+  samples : Int
+}
+
+///|
+pub fn MotionBlur::default() -> MotionBlur {
+  MotionBlur::{ shutter_angle: 1.0F, samples: 2 }
+}
+
+///|
+pub fn MotionBlur::new(shutter_angle : Float, samples : Int) -> MotionBlur {
+  let safe_shutter_angle = clamp01(shutter_angle)
+  let safe_samples = if samples < 0 {
+    0
+  } else if samples > 64 {
+    64
+  } else {
+    samples
+  }
+  MotionBlur::{ shutter_angle: safe_shutter_angle, samples: safe_samples }
+}
+
+///|
+pub fn MotionBlur::with_shutter_angle(
+  self : MotionBlur,
+  shutter_angle : Float,
+) -> MotionBlur {
+  MotionBlur::new(shutter_angle, self.samples)
+}
+
+///|
+pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur {
+  MotionBlur::new(self.shutter_angle, samples)
+}
+
+///|
 fn screen_space_reflections_safe_range(
   start : Float,
   end_ : Float,
@@ -1466,6 +1508,7 @@ pub struct Camera3dBundle {
   screen_space_reflections : ScreenSpaceReflections?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
+  motion_blur : MotionBlur?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -1484,6 +1527,7 @@ pub fn Camera3dBundle::new(
     screen_space_reflections: None,
     chromatic_aberration: None,
     vignette: None,
+    motion_blur: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -1504,6 +1548,7 @@ pub fn Camera3dBundle::new_with_projection(
     screen_space_reflections: None,
     chromatic_aberration: None,
     vignette: None,
+    motion_blur: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -1544,6 +1589,14 @@ pub fn Camera3dBundle::with_vignette(
 }
 
 ///|
+pub fn Camera3dBundle::with_motion_blur(
+  self : Camera3dBundle,
+  motion_blur : MotionBlur?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, motion_blur, }
+}
+
+///|
 pub struct MeshMaterial3dBundle {
   mesh : Mesh3d
   material : MeshMaterial3d
@@ -1572,7 +1625,7 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 ///|
@@ -1603,6 +1656,9 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
   }
   if self.vignette is Some(vignette) {
     world.get_vignette_store().insert(entity, vignette, tick)
+  }
+  if self.motion_blur is Some(motion_blur) {
+    world.get_motion_blur_store().insert(entity, motion_blur, tick)
   }
   world.get_camera_store().insert(entity, self.camera, tick)
   world.get_render_target_store().insert(entity, self.target, tick)
@@ -1643,6 +1699,7 @@ priv struct Camera3dInstance {
   screen_space_reflections : ScreenSpaceReflections?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
+  motion_blur : MotionBlur?
   transform : @math.Transform
   target_id : Int
   target_size : @math.IVec2
@@ -1655,6 +1712,7 @@ priv struct Mesh3dInstance {
   entity : @core.Entity
   mesh_id : Int
   transform : @math.Transform
+  motion_speed : Float
   visibility_range : @visibility.VisibilityRange?
   material : StandardMaterial
   layers : @render2d.RenderLayers
@@ -1686,6 +1744,15 @@ priv struct Render3dLightingState {
   spot_inner_angle : Float
   spot_outer_angle : Float
 }
+
+///|
+priv struct MotionBlurHistoryEntry {
+  entity : @core.Entity
+  translation : @math.Vec3
+}
+
+///|
+let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
 
 ///|
 fn cmp_int(a : Int, b : Int) -> Int {
@@ -1820,6 +1887,26 @@ fn render3d_default_lighting_state() -> Render3dLightingState {
     spot_inner_angle: 0.6F,
     spot_outer_angle: 0.8F,
   }
+}
+
+///|
+fn motion_blur_history_get(entity : @core.Entity) -> @math.Vec3? {
+  for item in motion_blur_history.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      return Some(item.translation)
+    }
+  }
+  None
+}
+
+///|
+fn motion_blur_history_sync(meshes : Array[Mesh3dInstance]) -> Unit {
+  let next : Array[MotionBlurHistoryEntry] = []
+  for mesh in meshes {
+    next.push({ entity: mesh.entity, translation: mesh.transform.translation })
+  }
+  motion_blur_history.val = next
 }
 
 ///|
@@ -2194,6 +2281,23 @@ fn render3d_vignette_mask(
 }
 
 ///|
+fn render3d_motion_blur_amount(
+  motion_blur : MotionBlur,
+  motion_speed : Float,
+) -> Float {
+  if motion_speed <= 0.0F {
+    return 0.0F
+  }
+  let sample_factor = clamp01(
+    Float::from_double(motion_blur.samples.to_double()) / 64.0F,
+  )
+  let speed_factor = clamp01(motion_speed * 2.5F)
+  clamp01(
+    motion_blur.shutter_angle * (0.35F + sample_factor * 0.65F) * speed_factor,
+  )
+}
+
+///|
 fn render3d_ssr_ramp(value : Float, start : Float, end_ : Float) -> Float {
   let safe_start = minf(start, end_)
   let safe_end = maxf(start, end_)
@@ -2493,7 +2597,7 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -2507,6 +2611,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let screen_space_reflections_store = world.get_screen_space_reflections_store()
   let chromatic_aberration_store = world.get_chromatic_aberration_store()
   let vignette_store = world.get_vignette_store()
+  let motion_blur_store = world.get_motion_blur_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
   let transform_store = world.get_transform_store()
@@ -2524,6 +2629,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let screen_space_reflections = screen_space_reflections_store.get(entity)
     let chromatic_aberration = chromatic_aberration_store.get(entity)
     let vignette = vignette_store.get(entity)
+    let motion_blur = motion_blur_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
       None => @render2d.RenderTarget::Screen
@@ -2554,6 +2660,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           screen_space_reflections,
           chromatic_aberration,
           vignette,
+          motion_blur,
           transform,
           target_id: target_info.target_id,
           target_size: target_info.target_size,
@@ -2589,15 +2696,22 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       Some(v) => v
       None => @math.Transform::identity()
     }
+    let previous_translation = match motion_blur_history_get(entity) {
+      Some(v) => v
+      None => transform.translation
+    }
+    let motion_speed = transform.translation.sub(previous_translation).length()
     meshes.push(Mesh3dInstance::{
       entity,
       mesh_id: gpu_mesh.mesh_id,
       transform,
+      motion_speed,
       visibility_range: visibility_range_store.get(entity),
       material,
       layers,
     })
   })
+  motion_blur_history_sync(meshes)
   let lighting = render3d_collect_lighting(world)
   for camera_index in render3d_sorted_camera_indices(cameras) {
     let camera = cameras[camera_index]
@@ -2816,6 +2930,24 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
               draw_color_b * keep + vignette.color.b * vignette_mask,
             )
           }
+        }
+      }
+      if camera.motion_blur is Some(motion_blur) {
+        let blur_amount = render3d_motion_blur_amount(
+          motion_blur,
+          mesh.motion_speed,
+        )
+        if blur_amount > 0.0F {
+          let gray = (draw_color_r + draw_color_g + draw_color_b) / 3.0F
+          draw_color_r = clamp01(
+            draw_color_r * (1.0F - blur_amount) + gray * blur_amount,
+          )
+          draw_color_g = clamp01(
+            draw_color_g * (1.0F - blur_amount) + gray * blur_amount,
+          )
+          draw_color_b = clamp01(
+            draw_color_b * (1.0F - blur_amount) + gray * blur_amount,
+          )
         }
       }
       let anisotropy_strength = maxf(

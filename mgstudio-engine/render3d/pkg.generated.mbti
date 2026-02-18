@@ -60,6 +60,7 @@ pub struct Camera3dBundle {
   screen_space_reflections : ScreenSpaceReflections?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
+  motion_blur : MotionBlur?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -69,6 +70,7 @@ pub fn Camera3dBundle::new(@render2d.Camera, @math.Transform) -> Self
 pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection3d, @math.Transform) -> Self
 pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(Self, W) -> @core.Entity
 pub fn Camera3dBundle::with_chromatic_aberration(Self, ChromaticAberration?) -> Self
+pub fn Camera3dBundle::with_motion_blur(Self, MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, Vignette?) -> Self
@@ -156,6 +158,15 @@ pub struct MeshMaterial3dBundle {
 }
 pub fn MeshMaterial3dBundle::new(Mesh3d, MeshMaterial3d, @math.Transform) -> Self
 pub fn[W : MeshMaterial3dBundleSpawnWorld] MeshMaterial3dBundle::spawn(Self, W) -> @core.Entity
+
+pub struct MotionBlur {
+  shutter_angle : Float
+  samples : Int
+}
+pub fn MotionBlur::default() -> Self
+pub fn MotionBlur::new(Float, Int) -> Self
+pub fn MotionBlur::with_samples(Self, Int) -> Self
+pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 
 pub struct OrthographicProjection3d {
   scale : Float
@@ -329,7 +340,7 @@ pub fn Vignette::with_smoothness(Self, Float) -> Self
 // Type aliases
 
 // Traits
-pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 pub(open) trait HasRes_GlobalAmbientLight {
@@ -360,6 +371,10 @@ pub(open) trait Has_MeshMaterial3d {
   get_mesh_material3d_store(Self) -> @core.ComponentStore[MeshMaterial3d]
 }
 
+pub(open) trait Has_MotionBlur {
+  get_motion_blur_store(Self) -> @core.ComponentStore[MotionBlur]
+}
+
 pub(open) trait Has_PointLight {
   get_point_light_store(Self) -> @core.ComponentStore[PointLight]
 }
@@ -383,7 +398,7 @@ pub(open) trait Has_Vignette {
 pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {
