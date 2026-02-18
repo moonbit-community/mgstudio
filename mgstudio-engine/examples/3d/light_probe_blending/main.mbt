@@ -19,9 +19,8 @@
 /// - Bevy's light-probe components (`LightProbe`, `EnvironmentMapLight`,
 ///   `ParallaxCorrection`) are mapped with Bevy-shaped APIs.
 /// - UI widgets are adapted to keyboard controls in this runtime.
-/// - The original `two_rooms.glb` and room-specific KTX cubemaps are not
-///   bundled in mgstudio assets, so this example uses an in-repo room proxy and
-///   shared cubemap placeholder textures.
+/// - Bevy asset files for this example are vendored under
+///   `assets/light_probe_blending/`.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -33,13 +32,7 @@ const FRAC_PI_4 : Float = 0.7853981633974483F
 const SPHERE_MOVEMENT_SPEED : Float = 0.3F
 
 ///|
-const ROOM_SIDE_LENGTH : Float = 10.0F
-
-///|
 const ROOM_SEPARATION : Float = 11.0F
-
-///|
-const ROOM_WALL_THICKNESS : Float = 0.18F
 
 ///|
 const LIGHT_PROBE_SIDE_LENGTH : Float = 15.0F
@@ -73,6 +66,21 @@ const CAMERA_FREE_MOVE_SPEED : Float = 3.0F
 
 ///|
 const CAMERA_FREE_PITCH_LIMIT : Float = 1.50F
+
+///|
+const LIGHT_PROBE_SCENE_ASSET : String = "light_probe_blending/two_rooms.glb"
+
+///|
+const DIFFUSE_ROOM1_ASSET : String = "light_probe_blending/diffuse_room1.ktx2"
+
+///|
+const SPECULAR_ROOM1_ASSET : String = "light_probe_blending/specular_room1.ktx2"
+
+///|
+const DIFFUSE_ROOM2_ASSET : String = "light_probe_blending/diffuse_room2.ktx2"
+
+///|
+const SPECULAR_ROOM2_ASSET : String = "light_probe_blending/specular_room2.ktx2"
 
 ///|
 pub(all) enum GizmosEnabled {
@@ -342,97 +350,6 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn spawn_box(
-  world : @ecs_world.World,
-  material : @asset.Handle[@render3d.StandardMaterial],
-  width : Float,
-  height : Float,
-  depth : Float,
-  translation : @math.Vec3,
-) -> @core.Entity {
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(width, height, depth),
-    @render3d.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(translation.x, translation.y, translation.z),
-  ).spawn(world)
-}
-
-///|
-fn spawn_room_shell(
-  world : @ecs_world.World,
-  material : @asset.Handle[@render3d.StandardMaterial],
-  center_z : Float,
-  with_back_wall : Bool,
-  with_front_wall : Bool,
-) -> Unit {
-  let half_side = ROOM_SIDE_LENGTH * 0.5F
-
-  spawn_box(
-    world,
-    material,
-    ROOM_SIDE_LENGTH,
-    ROOM_WALL_THICKNESS,
-    ROOM_SIDE_LENGTH,
-    @math.Vec3::new(0.0F, -half_side, center_z),
-  )
-  |> ignore
-
-  spawn_box(
-    world,
-    material,
-    ROOM_SIDE_LENGTH,
-    ROOM_WALL_THICKNESS,
-    ROOM_SIDE_LENGTH,
-    @math.Vec3::new(0.0F, half_side, center_z),
-  )
-  |> ignore
-
-  spawn_box(
-    world,
-    material,
-    ROOM_WALL_THICKNESS,
-    ROOM_SIDE_LENGTH,
-    ROOM_SIDE_LENGTH,
-    @math.Vec3::new(-half_side, 0.0F, center_z),
-  )
-  |> ignore
-
-  spawn_box(
-    world,
-    material,
-    ROOM_WALL_THICKNESS,
-    ROOM_SIDE_LENGTH,
-    ROOM_SIDE_LENGTH,
-    @math.Vec3::new(half_side, 0.0F, center_z),
-  )
-  |> ignore
-
-  if with_back_wall {
-    spawn_box(
-      world,
-      material,
-      ROOM_SIDE_LENGTH,
-      ROOM_SIDE_LENGTH,
-      ROOM_WALL_THICKNESS,
-      @math.Vec3::new(0.0F, 0.0F, center_z - half_side),
-    )
-    |> ignore
-  }
-
-  if with_front_wall {
-    spawn_box(
-      world,
-      material,
-      ROOM_SIDE_LENGTH,
-      ROOM_SIDE_LENGTH,
-      ROOM_WALL_THICKNESS,
-      @math.Vec3::new(0.0F, 0.0F, center_z + half_side),
-    )
-    |> ignore
-  }
-}
-
-///|
 fn spawn_probe_gizmo_box(
   world : @ecs_world.World,
   material : @asset.Handle[@render3d.StandardMaterial],
@@ -575,23 +492,14 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
 
   set_global_ambient_light(world, @render2d.Color::white(), 0.06F)
 
-  let room_1_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.17F, 0.21F, 0.27F, 1.0F),
-    )
-    .with_perceptual_roughness(0.96F)
-    .with_metallic(0.0F),
+  let room_scene = @scene.scene_load_gltf_scene(
+    asset_server,
+    @scene.GltfAssetLabel::Scene(0).from_asset(LIGHT_PROBE_SCENE_ASSET),
   )
-  let room_2_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.23F, 0.17F, 0.18F, 1.0F),
-    )
-    .with_perceptual_roughness(0.96F)
-    .with_metallic(0.0F),
-  )
-
-  spawn_room_shell(world, room_1_material, 0.0F, true, false)
-  spawn_room_shell(world, room_2_material, -ROOM_SEPARATION, false, true)
+  let room_scene_entity = world.spawn_empty()
+  world
+  .get_scene_root_store()
+  .insert(room_scene_entity, @scene.SceneRoot::new(room_scene), tick)
 
   let reflective_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white())
@@ -639,7 +547,10 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
     tick,
   )
 
-  let cubemap = Some(asset_server.load("textures/Ryfjallet_cubemap.png"))
+  let diffuse_room1 = Some(asset_server.load(DIFFUSE_ROOM1_ASSET))
+  let specular_room1 = Some(asset_server.load(SPECULAR_ROOM1_ASSET))
+  let diffuse_room2 = Some(asset_server.load(DIFFUSE_ROOM2_ASSET))
+  let specular_room2 = Some(asset_server.load(SPECULAR_ROOM2_ASSET))
 
   let probe_1 = world.spawn_empty()
   world
@@ -655,7 +566,11 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
   .get_environment_map_light_store()
   .insert(
     probe_1,
-    @render3d.EnvironmentMapLight::new(cubemap, cubemap, LIGHT_PROBE_INTENSITY),
+    @render3d.EnvironmentMapLight::new(
+      diffuse_room1,
+      specular_room1,
+      LIGHT_PROBE_INTENSITY,
+    ),
     tick,
   )
   world
@@ -693,7 +608,11 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
   .get_environment_map_light_store()
   .insert(
     probe_2,
-    @render3d.EnvironmentMapLight::new(cubemap, cubemap, LIGHT_PROBE_INTENSITY),
+    @render3d.EnvironmentMapLight::new(
+      diffuse_room2,
+      specular_room2,
+      LIGHT_PROBE_INTENSITY,
+    ),
     tick,
   )
   world
