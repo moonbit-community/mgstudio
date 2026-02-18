@@ -9,12 +9,15 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/visibility",
+  "Milky2018/mgstudio/window",
 }
 
 // Values
 pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
+
+pub fn[W : FreeCameraControllerWorld] free_camera_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
@@ -29,6 +32,8 @@ pub fn[W : Render3dPluginWorld] render3d_plugin(@app.App[W]) -> @app.App[W]
 pub fn[W : Render3dPrepareWorld] render3d_prepare_system(W) -> Unit
 
 pub fn render3d_set_distance_fog(DistanceFog) -> Unit
+
+pub fn[W : FreeCameraControllerWorld] run_freecamera_controller(W) -> Unit
 
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
@@ -204,6 +209,34 @@ pub(all) enum FogFalloff3d {
 pub fn FogFalloff3d::exponential(Float) -> Self
 pub fn FogFalloff3d::exponential_squared(Float) -> Self
 pub fn FogFalloff3d::linear(Float, Float) -> Self
+
+pub struct FreeCamera {
+  sensitivity : Float
+  key_forward : @window.KeyCode
+  key_back : @window.KeyCode
+  key_left : @window.KeyCode
+  key_right : @window.KeyCode
+  key_up : @window.KeyCode
+  key_down : @window.KeyCode
+  key_run : @window.KeyCode
+  mouse_key_cursor_grab : @window.MouseButton
+  keyboard_key_toggle_cursor_grab : @window.KeyCode
+  walk_speed : Float
+  run_speed : Float
+  scroll_factor : Float
+  friction : Float
+}
+pub fn FreeCamera::default() -> Self
+
+pub struct FreeCameraState {
+  enabled : Bool
+  initialized : Bool
+  pitch : Float
+  yaw : Float
+  speed_multiplier : Float
+  velocity : @math.Vec3
+}
+pub fn FreeCameraState::default() -> Self
 
 pub struct Fxaa {
   enabled : Bool
@@ -617,6 +650,9 @@ pub fn Vignette::with_smoothness(Self, Float) -> Self
 pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
+pub(open) trait FreeCameraControllerWorld : Has_FreeCamera + Has_FreeCameraState + @render2d.Has_Camera + @math.Has_Transform + @core.ChangeTickWorld {
+}
+
 pub(open) trait HasRes_DefaultOpaqueRendererMethod {
   get_default_opaque_renderer_method_resource(Self) -> @core.Resource[DefaultOpaqueRendererMethod]
 }
@@ -663,6 +699,14 @@ pub(open) trait Has_DirectionalLightTexture {
 
 pub(open) trait Has_EnvironmentMapLight {
   get_environment_map_light_store(Self) -> @core.ComponentStore[EnvironmentMapLight]
+}
+
+pub(open) trait Has_FreeCamera {
+  get_free_camera_store(Self) -> @core.ComponentStore[FreeCamera]
+}
+
+pub(open) trait Has_FreeCameraState {
+  get_free_camera_state_store(Self) -> @core.ComponentStore[FreeCameraState]
 }
 
 pub(open) trait Has_Fxaa {

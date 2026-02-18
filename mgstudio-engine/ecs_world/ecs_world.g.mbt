@@ -52,6 +52,7 @@ pub struct World {
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
+  free_camera : @core.ComponentStore[@render3d.FreeCamera]
   light_probe : @core.ComponentStore[@render3d.LightProbe]
   motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
@@ -88,6 +89,7 @@ pub struct World {
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
   deferred_prepass : @core.ComponentStore[@render3d.DeferredPrepass]
+  free_camera_state : @core.ComponentStore[@render3d.FreeCameraState]
   not_shadow_caster : @core.ComponentStore[@render3d.NotShadowCaster]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
@@ -256,6 +258,7 @@ pub fn World::new() -> World {
     background_color: @core.ComponentStore::new(),
     damping2d: @core.ComponentStore::new(),
     projection: @core.ComponentStore::new(),
+    free_camera: @core.ComponentStore::new(),
     light_probe: @core.ComponentStore::new(),
     motion_blur: @core.ComponentStore::new(),
     point_light: @core.ComponentStore::new(),
@@ -292,6 +295,7 @@ pub fn World::new() -> World {
     solver_groups2d: @core.ComponentStore::new(),
     active_events3d: @core.ComponentStore::new(),
     deferred_prepass: @core.ComponentStore::new(),
+    free_camera_state: @core.ComponentStore::new(),
     not_shadow_caster: @core.ComponentStore::new(),
     sub_camera_view3d: @core.ComponentStore::new(),
     scene_instance_ready: @core.ComponentStore::new(),
@@ -422,6 +426,7 @@ pub fn World::despawn(
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.free_camera.remove(entity) |> ignore
   self.light_probe.remove(entity) |> ignore
   self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
@@ -458,6 +463,7 @@ pub fn World::despawn(
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
   self.deferred_prepass.remove(entity) |> ignore
+  self.free_camera_state.remove(entity) |> ignore
   self.not_shadow_caster.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
@@ -567,6 +573,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
+  self.free_camera.remove(entity) |> ignore
   self.light_probe.remove(entity) |> ignore
   self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
@@ -603,6 +610,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.solver_groups2d.remove(entity) |> ignore
   self.active_events3d.remove(entity) |> ignore
   self.deferred_prepass.remove(entity) |> ignore
+  self.free_camera_state.remove(entity) |> ignore
   self.not_shadow_caster.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
@@ -914,6 +922,11 @@ pub impl @render2d.Has_Projection for World with get_projection_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_FreeCamera for World with get_free_camera_store(self) {
+  self.free_camera
+}
+
+///|
 pub impl @render3d.Has_LightProbe for World with get_light_probe_store(self) {
   self.light_probe
 }
@@ -1127,6 +1140,13 @@ pub impl @render3d.Has_DeferredPrepass for World with get_deferred_prepass_store
   self,
 ) {
   self.deferred_prepass
+}
+
+///|
+pub impl @render3d.Has_FreeCameraState for World with get_free_camera_state_store(
+  self,
+) {
+  self.free_camera_state
 }
 
 ///|

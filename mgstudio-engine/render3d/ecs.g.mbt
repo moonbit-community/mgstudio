@@ -5,13 +5,14 @@
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight",
-  "LightProbe", "MotionBlur", "PointLight", "Tonemapping", "DepthPrepass", "NormalPrepass",
-  "ContactShadows", "MeshMaterial3d", "TemporalJitter", "DeferredPrepass", "NotShadowCaster",
-  "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
-  "SpotLightTexture", "NotShadowReceiver", "PointLightTexture", "CameraProjection3d",
-  "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass",
-  "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
-  "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
+  "FreeCamera", "LightProbe", "MotionBlur", "PointLight", "Tonemapping", "DepthPrepass",
+  "NormalPrepass", "ContactShadows", "MeshMaterial3d", "TemporalJitter", "DeferredPrepass",
+  "FreeCameraState", "NotShadowCaster", "SubCameraView3d", "DirectionalLight", "IrradianceVolume",
+  "OcclusionCulling", "SpotLightTexture", "NotShadowReceiver", "PointLightTexture",
+  "CameraProjection3d", "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight",
+  "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections",
+  "DirectionalLightTexture", "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight",
+  "OrderIndependentTransparencySettings",
 ]
 
 ///|
@@ -66,6 +67,11 @@ pub(open) trait Has_SpotLight {
 }
 
 ///|
+pub(open) trait Has_FreeCamera {
+  get_free_camera_store(self : Self) -> @core.ComponentStore[FreeCamera]
+}
+
+///|
 pub(open) trait Has_LightProbe {
   get_light_probe_store(self : Self) -> @core.ComponentStore[LightProbe]
 }
@@ -114,6 +120,13 @@ pub(open) trait Has_TemporalJitter {
 pub(open) trait Has_DeferredPrepass {
   get_deferred_prepass_store(self : Self) -> @core.ComponentStore[
     DeferredPrepass,
+  ]
+}
+
+///|
+pub(open) trait Has_FreeCameraState {
+  get_free_camera_state_store(self : Self) -> @core.ComponentStore[
+    FreeCameraState,
   ]
 }
 

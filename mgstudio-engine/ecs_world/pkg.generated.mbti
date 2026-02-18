@@ -74,6 +74,7 @@ pub struct World {
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
+  free_camera : @core.ComponentStore[@render3d.FreeCamera]
   light_probe : @core.ComponentStore[@render3d.LightProbe]
   motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
@@ -110,6 +111,7 @@ pub struct World {
   solver_groups2d : @core.ComponentStore[@physics2d.SolverGroups2d]
   active_events3d : @core.ComponentStore[@physics3d.ActiveEvents3d]
   deferred_prepass : @core.ComponentStore[@render3d.DeferredPrepass]
+  free_camera_state : @core.ComponentStore[@render3d.FreeCameraState]
   not_shadow_caster : @core.ComponentStore[@render3d.NotShadowCaster]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
@@ -273,6 +275,8 @@ pub impl @render3d.Has_DepthPrepass for World
 pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_DirectionalLightTexture for World
 pub impl @render3d.Has_EnvironmentMapLight for World
+pub impl @render3d.Has_FreeCamera for World
+pub impl @render3d.Has_FreeCameraState for World
 pub impl @render3d.Has_Fxaa for World
 pub impl @render3d.Has_GeneratedEnvironmentMapLight for World
 pub impl @render3d.Has_Hdr for World

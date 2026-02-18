@@ -164,7 +164,13 @@ fn update_help_text() -> Unit {
       status +
       "\n\n" +
       "Auto-swap interval: 3s\n" +
-      "Adapted runtime note: FreeCameraPlugin and native compressed-cubemap texture-view semantics are pending.",
+      "Controls:\n" +
+      "  Hold left mouse: grab cursor and look around\n" +
+      "  M: toggle cursor grab\n" +
+      "  WASD/E/Q: move camera\n" +
+      "  Shift: run\n" +
+      "  Mouse wheel: adjust movement speed\n" +
+      "Adapted runtime note: compressed-cubemap texture-view semantics may differ by runtime format support.",
     )
   }
 }
@@ -221,6 +227,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render2d.Camera::default(),
     camera_transform,
   ).spawn(world)
+  world
+  .get_free_camera_store()
+  .insert(camera, @render3d.FreeCamera::default(), tick)
   cubemap_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -348,6 +357,7 @@ pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
+  .add_plugins([@render3d.free_camera_plugin])
   .add_startup_system(setup)
   .add_system(update)
   .run()
