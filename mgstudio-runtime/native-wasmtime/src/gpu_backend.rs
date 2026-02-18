@@ -1536,6 +1536,21 @@ impl GpuBackend {
         self.textures.contains_key(&texture_id)
     }
 
+    pub fn supported_compressed_image_formats_mask(&self) -> i32 {
+        let mut mask = 0;
+        let features = self.device.features();
+        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_ASTC) {
+            mask |= 1;
+        }
+        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC) {
+            mask |= 2;
+        }
+        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_ETC2) {
+            mask |= 4;
+        }
+        mask
+    }
+
     pub fn write_texture_region_rgba8(
         &mut self,
         texture_id: i32,

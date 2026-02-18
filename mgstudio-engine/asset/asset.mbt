@@ -85,6 +85,18 @@ pub struct AssetServer {
 }
 
 ///|
+pub const COMPRESSED_IMAGE_FORMAT_NONE : Int = 0
+
+///|
+pub const COMPRESSED_IMAGE_FORMAT_ASTC_LDR : Int = 1
+
+///|
+pub const COMPRESSED_IMAGE_FORMAT_BC : Int = 2
+
+///|
+pub const COMPRESSED_IMAGE_FORMAT_ETC2 : Int = 4
+
+///|
 pub fn AssetServer::new() -> AssetServer {
   AssetServer::{ paths: [] }
 }
@@ -225,6 +237,9 @@ pub fn host_asset_texture_height(texture_id : Int) -> Int = "mgstudio_host" "ass
 pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool = "mgstudio_host" "asset_is_texture_loaded"
 
 ///|
+pub fn host_asset_supported_compressed_image_formats() -> Int = "mgstudio_host" "asset_supported_compressed_image_formats"
+
+///|
 pub fn host_asset_copy_texture_to_texture(
   dst_texture_id~ : Int,
   dst_x~ : Int,
@@ -264,6 +279,24 @@ pub fn AssetServer::load_texture_bytes(
     host_asset_load_texture_bytes(bytes_id~, nearest~)
   })
   Handle::new(id)
+}
+
+///|
+pub fn asset_supported_compressed_image_formats() -> Int {
+  host_asset_supported_compressed_image_formats()
+}
+
+///|
+pub fn asset_compressed_image_formats_contains(
+  supported_formats : Int,
+  required_format : Int,
+) -> Bool {
+  let required = required_format.reinterpret_as_uint()
+  if required == COMPRESSED_IMAGE_FORMAT_NONE.reinterpret_as_uint() {
+    return true
+  }
+  let supported = supported_formats.reinterpret_as_uint()
+  (supported & required) == required
 }
 
 ///|

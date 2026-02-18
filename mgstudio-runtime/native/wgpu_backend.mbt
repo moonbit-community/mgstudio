@@ -1783,6 +1783,29 @@ pub fn GpuBackend::is_texture_loaded(
 }
 
 ///|
+pub fn GpuBackend::supported_compressed_image_formats_mask(
+  self : GpuBackend,
+) -> Int {
+  let mut mask = 0
+  if self.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ASTC,
+    ) {
+    mask = mask + 1
+  }
+  if self.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_BC,
+    ) {
+    mask = mask + 2
+  }
+  if self.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ETC2,
+    ) {
+    mask = mask + 4
+  }
+  mask
+}
+
+///|
 pub fn GpuBackend::set_texture_sampler(
   self : GpuBackend,
   texture_id : Int,

@@ -157,6 +157,7 @@ pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::supported_compressed_image_formats_mask(Self) -> Int
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
 pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit

@@ -2334,6 +2334,28 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "asset_supported_compressed_image_formats",
+    fn(_args) raise @runtime.RuntimeError {
+      try {
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        if ctx.gpu is Some(gpu) {
+          ok_i32(gpu.supported_compressed_image_formats_mask())
+        } else {
+          ok_i32(0)
+        }
+      } catch {
+        _ => {
+          @debug.debug("asset_supported_compressed_image_formats failed")
+          host_fail("asset_supported_compressed_image_formats", "<error>")
+        }
+      }
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "asset_copy_texture_to_texture",
     fn(_args) { ok_i32(0) },
     func_type=ft(

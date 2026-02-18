@@ -15,10 +15,9 @@
 ///|
 /// Port of `bevy/examples/3d/skybox.rs`.
 ///
-/// Baseline parity: Bevy's native compressed-format capability filtering via
-/// render-device features and `FreeCameraPlugin` are not currently exposed in
-/// mgstudio APIs. This port now uses camera-attached `Skybox` with timed
-/// cubemap swapping and animated directional light.
+/// Baseline parity: this port aligns Bevy's compressed-format capability
+/// filtering behavior for cubemap swapping. `FreeCameraPlugin` and true
+/// cubemap texture-view semantics are still pending.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -34,6 +33,7 @@ priv struct CubemapState {
   mut is_loaded : Bool
   mut index : Int
   mut image_handle : @asset.Handle[@asset.Image]?
+  mut supported_formats : Int
   mut camera : @core.Entity?
   mut next_swap_time : Float
   mut light_angle : Float
@@ -46,6 +46,7 @@ let cubemap_state : Ref[CubemapState] = Ref::new({
   is_loaded: false,
   index: 0,
   image_handle: None,
+  supported_formats: 0,
   camera: None,
   next_swap_time: 0.0F,
   light_angle: 0.0F,
@@ -77,6 +78,50 @@ fn cubemap_format_name(index : Int) -> String {
   } else {
     "ETC2 (KTX2)".to_string()
   }
+}
+
+///|
+fn cubemap_required_format(index : Int) -> Int {
+  if index == 0 {
+    @asset.COMPRESSED_IMAGE_FORMAT_NONE
+  } else if index == 1 {
+    @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR
+  } else if index == 2 {
+    @asset.COMPRESSED_IMAGE_FORMAT_BC
+  } else {
+    @asset.COMPRESSED_IMAGE_FORMAT_ETC2
+  }
+}
+
+///|
+fn supported_format_tags(supported_formats : Int) -> String {
+  let tags : Array[String] = ["PNG"]
+  if @asset.asset_compressed_image_formats_contains(
+      supported_formats,
+      @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR,
+    ) {
+    tags.push("ASTC")
+  }
+  if @asset.asset_compressed_image_formats_contains(
+      supported_formats,
+      @asset.COMPRESSED_IMAGE_FORMAT_BC,
+    ) {
+    tags.push("BC")
+  }
+  if @asset.asset_compressed_image_formats_contains(
+      supported_formats,
+      @asset.COMPRESSED_IMAGE_FORMAT_ETC2,
+    ) {
+    tags.push("ETC2")
+  }
+  let mut out = ""
+  for i in 0..<tags.length() {
+    if i > 0 {
+      out = out + ","
+    }
+    out = out + tags[i]
+  }
+  out
 }
 
 ///|
@@ -112,11 +157,14 @@ fn update_help_text() -> Unit {
       "Format: " +
       cubemap_format_name(cubemap_state.val.index) +
       "\n" +
+      "Runtime supported formats: " +
+      supported_format_tags(cubemap_state.val.supported_formats) +
+      "\n" +
       "Status: " +
       status +
       "\n\n" +
       "Auto-swap interval: 3s\n" +
-      "Adapted runtime note: compressed-format capability filtering and free-camera plugin are pending.",
+      "Adapted runtime note: free-camera plugin and true cubemap texture-view semantics are pending.",
     )
   }
 }
@@ -126,6 +174,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   cubemap_state.val.is_loaded = false
   cubemap_state.val.index = 0
   cubemap_state.val.image_handle = None
+  cubemap_state.val.supported_formats = @asset.asset_supported_compressed_image_formats()
   cubemap_state.val.camera = None
   cubemap_state.val.next_swap_time = 0.0F
   cubemap_state.val.light_angle = 0.0F
@@ -217,7 +266,18 @@ fn cycle_cubemap_asset() -> Unit {
   cubemap_state.val.next_swap_time = cubemap_state.val.next_swap_time +
     CUBEMAP_SWAP_DELAY
 
-  let new_index = (cubemap_state.val.index + 1) % CUBEMAP_COUNT
+  cubemap_state.val.supported_formats = @asset.asset_supported_compressed_image_formats()
+  let supported_formats = cubemap_state.val.supported_formats
+  let mut new_index = cubemap_state.val.index
+  for _ in 0..<CUBEMAP_COUNT {
+    new_index = (new_index + 1) % CUBEMAP_COUNT
+    if @asset.asset_compressed_image_formats_contains(
+        supported_formats,
+        cubemap_required_format(new_index),
+      ) {
+      break
+    }
+  }
   if new_index == cubemap_state.val.index {
     return
   }

@@ -8,11 +8,21 @@ import {
 }
 
 // Values
+pub const COMPRESSED_IMAGE_FORMAT_ASTC_LDR : Int = 1
+
+pub const COMPRESSED_IMAGE_FORMAT_BC : Int = 2
+
+pub const COMPRESSED_IMAGE_FORMAT_ETC2 : Int = 4
+
+pub const COMPRESSED_IMAGE_FORMAT_NONE : Int = 0
+
 pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
 
 pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
 
 pub fn asset_blob_read_text(Handle[Blob]) -> String?
+
+pub fn asset_compressed_image_formats_contains(Int, Int) -> Bool
 
 pub fn asset_copy_texture_to_texture(Handle[Image], @math.UVec2, Handle[Image]) -> Unit
 
@@ -41,6 +51,8 @@ pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 pub fn asset_set_texture_atlas_layout(Handle[TextureAtlasLayout], TextureAtlasLayout) -> Bool
 
 pub fn asset_set_texture_sampler(Handle[Image], ImageSampler) -> Unit
+
+pub fn asset_supported_compressed_image_formats() -> Int
 
 pub fn[W] asset_system(W) -> Unit
 
@@ -97,6 +109,8 @@ pub fn host_asset_poll_loaded_folder_event_id() -> Int
 pub fn host_asset_poll_loaded_folder_event_kind() -> Int
 
 pub fn host_asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit
+
+pub fn host_asset_supported_compressed_image_formats() -> Int
 
 pub fn host_asset_texture_height(Int) -> Int
 

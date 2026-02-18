@@ -887,6 +887,20 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "asset_supported_compressed_image_formats",
+        &[],
+        &[ValType::I32],
+        |mut caller, _args, out| {
+            let gpu = caller.data_mut().ensure_gpu()?;
+            ok_i32(out, gpu.supported_compressed_image_formats_mask());
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "window_run_loop",
         &[ValType::FUNCREF],
         &[ValType::I32],

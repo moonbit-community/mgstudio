@@ -1355,6 +1355,27 @@ pub fn create_host(
     let entry = map_get(state.gpu.textures, @js.any(id))
     !host_is_nullish(entry)
   })
+  let asset_supported_compressed_image_formats = @js.from_fn0(fn() {
+    if state.gpu.device is Some(device) {
+      let features = device.as_any()._get("features")
+      if host_is_nullish(features) {
+        return 0
+      }
+      let mut mask = 0
+      if set_has(features, @js.any("texture-compression-astc")) {
+        mask = mask + 1
+      }
+      if set_has(features, @js.any("texture-compression-bc")) {
+        mask = mask + 2
+      }
+      if set_has(features, @js.any("texture-compression-etc2")) {
+        mask = mask + 4
+      }
+      mask
+    } else {
+      0
+    }
+  })
   let asset_copy_texture_to_texture = wrap_variadic(
     @js.from_fn1(fn(args) {
       if state.gpu.device is None || state.gpu.queue is None {
@@ -2292,6 +2313,7 @@ pub fn create_host(
     ("asset_texture_width", asset_texture_width),
     ("asset_texture_height", asset_texture_height),
     ("asset_is_texture_loaded", asset_is_texture_loaded),
+    ("asset_supported_compressed_image_formats", asset_supported_compressed_image_formats),
     ("asset_copy_texture_to_texture", asset_copy_texture_to_texture),
     ("asset_load_folder", asset_load_folder),
     ("asset_poll_loaded_folder_event_kind", asset_poll_loaded_folder_event_kind),
