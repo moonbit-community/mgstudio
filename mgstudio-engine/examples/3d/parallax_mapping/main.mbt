@@ -14,12 +14,6 @@
 
 ///|
 /// Port of `bevy/examples/3d/parallax_mapping.rs`.
-///
-/// Baseline parity: mgstudio now exposes Bevy-like parallax material fields
-/// (`depth_map`, `parallax_depth_scale`, `max_parallax_layer_count`,
-/// `parallax_mapping_method`) and interaction flow. Current renderer keeps this
-/// as an API-level migration and does not yet execute full Bevy parallax shader
-/// logic in the draw pipeline.
 
 ///|
 const DEPTH_CHANGE_RATE : Float = 0.1F

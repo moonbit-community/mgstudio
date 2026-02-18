@@ -41,6 +41,7 @@ struct Mesh3dUniform {
   emissive_unlit : vec4<f32>, // (emissive.rgb, unlit)
   material_params : vec4<f32>, // (metallic, roughness, reflectance, _)
   map_flags : vec4<f32>, // (base, emissive, metallic_roughness, occlusion)
+  parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, has_depth_map)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -50,6 +51,7 @@ struct Mesh3dUniform {
 @group(1) @binding(3) var u_emissive_texture : texture_2d<f32>;
 @group(1) @binding(4) var u_metallic_roughness_texture : texture_2d<f32>;
 @group(1) @binding(5) var u_occlusion_texture : texture_2d<f32>;
+@group(1) @binding(6) var u_depth_texture : texture_2d<f32>;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -157,6 +159,60 @@ fn cotangent_frame(
   return mat3x3<f32>(tangent * scale, bitangent * scale, normal);
 }
 
+fn sample_depth_map(uv : vec2<f32>) -> f32 {
+  return textureSampleLevel(u_depth_texture, u_material_sampler, uv, 0.0).r;
+}
+
+fn parallaxed_uv(
+  depth_scale : f32,
+  max_layer_count : f32,
+  max_steps : u32,
+  original_uv : vec2<f32>,
+  view_dir_tangent : vec3<f32>,
+) -> vec2<f32> {
+  if max_layer_count < 1.0 {
+    return original_uv;
+  }
+  let view_steepness = max(abs(view_dir_tangent.z), 1.0e-4);
+  var uv = original_uv;
+  let layer_count = mix(max_layer_count, 1.0, view_steepness);
+  let layer_depth = 1.0 / layer_count;
+  var delta_uv = depth_scale * layer_depth * view_dir_tangent.xy *
+    vec2<f32>(1.0, -1.0) / view_steepness;
+  var current_layer_depth = 0.0;
+  var texture_depth = sample_depth_map(uv);
+  for (var i: i32 = 0; texture_depth > current_layer_depth && i <= i32(layer_count); i++) {
+    current_layer_depth += layer_depth;
+    uv += delta_uv;
+    texture_depth = sample_depth_map(uv);
+  }
+  if max_steps > 0u {
+    delta_uv *= 0.5;
+    var delta_depth = 0.5 * layer_depth;
+    uv -= delta_uv;
+    current_layer_depth -= delta_depth;
+    for (var i: u32 = 0u; i < max_steps; i++) {
+      texture_depth = sample_depth_map(uv);
+      delta_uv *= 0.5;
+      delta_depth *= 0.5;
+      if texture_depth > current_layer_depth {
+        uv += delta_uv;
+        current_layer_depth += delta_depth;
+      } else {
+        uv -= delta_uv;
+        current_layer_depth -= delta_depth;
+      }
+    }
+    return uv;
+  }
+  let previous_uv = uv - delta_uv;
+  let next_depth = texture_depth - current_layer_depth;
+  let previous_depth = sample_depth_map(previous_uv) - current_layer_depth +
+    layer_depth;
+  let weight = next_depth / (next_depth - previous_depth);
+  return mix(uv, previous_uv, weight);
+}
+
 fn specular_blinn(
   normal : vec3<f32>,
   light_dir : vec3<f32>,
@@ -176,37 +232,58 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_metallic_roughness_map = u_mesh.map_flags.z > 0.5;
   let has_occlusion_map = u_mesh.map_flags.w > 0.5;
   let has_normal_map = u_mesh.material_params.w > 0.5;
+  let has_depth_map = u_mesh.parallax_params.w > 0.5;
+  let has_uv = u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0;
+  let dp1 = dpdx(in.world_pos);
+  let dp2 = dpdy(in.world_pos);
+  let geometric_normal = safe_normalize(cross(dp1, dp2));
+  let view_dir = safe_normalize(u_mesh.camera_pos.xyz - in.world_pos);
+  var uv = in.uv;
+  if has_depth_map && has_uv && u_mesh.parallax_params.x > 0.0 {
+    let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
+    let tangent = tbn[0];
+    let bitangent = tbn[1];
+    let basis_normal = tbn[2];
+    let view_dir_tangent = vec3<f32>(
+      dot(view_dir, tangent),
+      dot(view_dir, bitangent),
+      dot(view_dir, basis_normal),
+    );
+    uv = parallaxed_uv(
+      u_mesh.parallax_params.x,
+      u_mesh.parallax_params.y,
+      u32(max(u_mesh.parallax_params.z, 0.0)),
+      uv,
+      -view_dir_tangent,
+    );
+  }
   var base_color = in.color;
-  if has_base_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
-    base_color = textureSample(u_base_color_texture, u_material_sampler, in.uv) *
-      in.color;
+  if has_base_map && has_uv {
+    base_color = textureSample(u_base_color_texture, u_material_sampler, uv) * in.color;
   }
   var emissive_tex = vec3<f32>(1.0, 1.0, 1.0);
-  if has_emissive_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
-    emissive_tex = textureSample(u_emissive_texture, u_material_sampler, in.uv).xyz;
+  if has_emissive_map && has_uv {
+    emissive_tex = textureSample(u_emissive_texture, u_material_sampler, uv).xyz;
   }
   var metallic_roughness_tex = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-  if has_metallic_roughness_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
+  if has_metallic_roughness_map && has_uv {
     metallic_roughness_tex = textureSample(
       u_metallic_roughness_texture,
       u_material_sampler,
-      in.uv,
+      uv,
     );
   }
   var occlusion_tex = 1.0;
-  if has_occlusion_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
-    occlusion_tex = textureSample(u_occlusion_texture, u_material_sampler, in.uv).r;
+  if has_occlusion_map && has_uv {
+    occlusion_tex = textureSample(u_occlusion_texture, u_material_sampler, uv).r;
   }
-  let dp1 = dpdx(in.world_pos);
-  let dp2 = dpdy(in.world_pos);
-  var normal = safe_normalize(cross(dp1, dp2));
-  if has_normal_map && u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0 {
-    let normal_texel = textureSample(u_normal_texture, u_material_sampler, in.uv).xyz;
+  var normal = geometric_normal;
+  if has_normal_map && has_uv {
+    let normal_texel = textureSample(u_normal_texture, u_material_sampler, uv).xyz;
     let tangent_space_normal = normal_texel * 2.0 - vec3<f32>(1.0, 1.0, 1.0);
-    let tbn = cotangent_frame(normal, in.world_pos, in.uv);
+    let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
     normal = safe_normalize(tbn * tangent_space_normal);
   }
-  let view_dir = safe_normalize(u_mesh.camera_pos.xyz - in.world_pos);
   if dot(normal, view_dir) < 0.0 {
     normal = -normal;
   }

@@ -4133,6 +4133,13 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         Some(texture) => texture.id()
         None => -1
       }
+      let depth_texture_id = match mesh.material.depth_map {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let max_relief_mapping_search_steps = Float::from_double(
+        mesh.material.parallax_mapping_method.max_steps().to_double(),
+      )
       let clearcoat_reflectance = minf(
         1.0F,
         maxf(0.0F, mesh.material.reflectance + mesh.material.clearcoat * 0.5F),
@@ -4290,6 +4297,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         emissive_texture_id~,
         metallic_roughness_texture_id~,
         occlusion_texture_id~,
+        depth_texture_id~,
         emissive_r=mesh.material.emissive.r,
         emissive_g=mesh.material.emissive.g,
         emissive_b=mesh.material.emissive.b,
@@ -4297,6 +4305,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         metallic=mesh.material.metallic,
         roughness=draw_surface_roughness,
         reflectance=draw_reflectance,
+        parallax_depth_scale=mesh.material.parallax_depth_scale,
+        max_parallax_layer_count=mesh.material.max_parallax_layer_count,
+        max_relief_mapping_search_steps~,
       )
     }
     @window.host_gpu_end_pass()

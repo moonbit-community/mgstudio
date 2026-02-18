@@ -68,6 +68,7 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   emissive_texture_id : Int
   metallic_roughness_texture_id : Int
   occlusion_texture_id : Int
+  depth_texture_id : Int
   bind_group : @wgpu.BindGroup
 }
 
@@ -1206,7 +1207,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   if backend.mesh3d_pipeline_layout is None {
     let bgl = backend.device.create_bind_group_layout_uniform_buffer()
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=6UL)
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=7UL)
     let material_ok = material_builder.add_sampler(
         0U,
         frag,
@@ -1238,6 +1239,12 @@ fn ensure_mesh3d_pipeline_rgba8(
       ) &&
       material_builder.add_texture(
         5U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_texture(
+        6U,
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
@@ -1527,13 +1534,15 @@ fn mesh3d_material_cache_get_or_create(
   emissive_texture : GpuTextureInfo,
   metallic_roughness_texture : GpuTextureInfo,
   occlusion_texture : GpuTextureInfo,
+  depth_texture : GpuTextureInfo,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   for entry in backend.mesh3d_material_bg_cache.val {
     if entry.base_texture_id == base_texture.id &&
       entry.normal_texture_id == normal_texture.id &&
       entry.emissive_texture_id == emissive_texture.id &&
       entry.metallic_roughness_texture_id == metallic_roughness_texture.id &&
-      entry.occlusion_texture_id == occlusion_texture.id {
+      entry.occlusion_texture_id == occlusion_texture.id &&
+      entry.depth_texture_id == depth_texture.id {
       return entry.bind_group
     }
   }
@@ -1541,13 +1550,14 @@ fn mesh3d_material_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d material bind group layout")
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=7UL)
   let ok = builder.add_sampler(0U, base_texture.sampler) &&
     builder.add_texture_view(1U, base_texture.view) &&
     builder.add_texture_view(2U, normal_texture.view) &&
     builder.add_texture_view(3U, emissive_texture.view) &&
     builder.add_texture_view(4U, metallic_roughness_texture.view) &&
-    builder.add_texture_view(5U, occlusion_texture.view)
+    builder.add_texture_view(5U, occlusion_texture.view) &&
+    builder.add_texture_view(6U, depth_texture.view)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d material bind group")
@@ -1563,6 +1573,7 @@ fn mesh3d_material_cache_get_or_create(
     emissive_texture_id: emissive_texture.id,
     metallic_roughness_texture_id: metallic_roughness_texture.id,
     occlusion_texture_id: occlusion_texture.id,
+    depth_texture_id: depth_texture.id,
     bind_group,
   })
   bind_group
@@ -3259,6 +3270,7 @@ pub fn GpuBackend::draw_mesh3d(
   emissive_texture_id : Int,
   metallic_roughness_texture_id : Int,
   occlusion_texture_id : Int,
+  depth_texture_id : Int,
   emissive_r : Float,
   emissive_g : Float,
   emissive_b : Float,
@@ -3266,6 +3278,9 @@ pub fn GpuBackend::draw_mesh3d(
   metallic : Float,
   roughness : Float,
   reflectance : Float,
+  parallax_depth_scale : Float,
+  max_parallax_layer_count : Float,
+  max_relief_mapping_search_steps : Float,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -3306,6 +3321,11 @@ pub fn GpuBackend::draw_mesh3d(
   } else {
     occlusion_texture_id
   }
+  let resolved_depth_texture_id = if depth_texture_id < 0 {
+    -1
+  } else {
+    depth_texture_id
+  }
   let base_texture = ensure_fallback_texture(self, resolved_base_texture_id)
   let normal_texture = ensure_fallback_texture(self, resolved_normal_texture_id)
   let emissive_texture = ensure_fallback_texture(
@@ -3317,11 +3337,13 @@ pub fn GpuBackend::draw_mesh3d(
   let occlusion_texture = ensure_fallback_texture(
     self, resolved_occlusion_texture_id,
   )
+  let depth_texture = ensure_fallback_texture(self, resolved_depth_texture_id)
   let textured = texture_id >= 0
   let normal_textured = normal_texture_id >= 0
   let emissive_textured = emissive_texture_id >= 0
   let metallic_roughness_textured = metallic_roughness_texture_id >= 0
   let occlusion_textured = occlusion_texture_id >= 0
+  let depth_textured = depth_texture_id >= 0
   let aspect_ratio = if ps.height_logical > 0.0F {
     ps.width_logical / ps.height_logical
   } else {
@@ -3436,11 +3458,19 @@ pub fn GpuBackend::draw_mesh3d(
     } else {
       0.0F
     },
+    parallax_depth_scale,
+    max_parallax_layer_count,
+    max_relief_mapping_search_steps,
+    if depth_textured {
+      1.0F
+    } else {
+      0.0F
+    },
   ])
   self.queue.write_buffer(uniform_buf, 0UL, bytes)
   let material_bg = mesh3d_material_cache_get_or_create(
     self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
-    occlusion_texture,
+    occlusion_texture, depth_texture,
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, uniform_bg, [])

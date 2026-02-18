@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
-| `3d` | 66 | 17 | 49 | 0 |
+| `3d` | 66 | 18 | 48 | 0 |
 | `animation` | 13 | 0 | 13 | 0 |
 | `app` | 17 | 3 | 14 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 |
-| **Total** | **402** | **53** | **346** | **3** |
+| **Total** | **402** | **54** | **345** | **3** |
 
 ## Example Inventory
 
@@ -124,7 +124,7 @@ Notes:
 | `bevy/examples/3d/occlusion_culling.rs` | `3d` | `mgstudio-engine/examples/3d/occlusion_culling` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/order_independent_transparency.rs` | `3d` | `mgstudio-engine/examples/3d/order_independent_transparency` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/orthographic.rs` | `3d` | `mgstudio-engine/examples/3d/orthographic` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/parallax_mapping.rs` | `3d` | `mgstudio-engine/examples/3d/parallax_mapping` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/parallax_mapping.rs` | `3d` | `mgstudio-engine/examples/3d/parallax_mapping` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/parenting.rs` | `3d` | `mgstudio-engine/examples/3d/parenting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/pbr.rs` | `3d` | `mgstudio-engine/examples/3d/pbr` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/pccm.rs` | `3d` | `mgstudio-engine/examples/3d/pccm` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |

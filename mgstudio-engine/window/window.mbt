@@ -644,6 +644,7 @@ pub fn host_gpu_draw_mesh3d(
   emissive_texture_id~ : Int,
   metallic_roughness_texture_id~ : Int,
   occlusion_texture_id~ : Int,
+  depth_texture_id~ : Int,
   emissive_r~ : Float,
   emissive_g~ : Float,
   emissive_b~ : Float,
@@ -651,6 +652,9 @@ pub fn host_gpu_draw_mesh3d(
   metallic~ : Float,
   roughness~ : Float,
   reflectance~ : Float,
+  parallax_depth_scale~ : Float,
+  max_parallax_layer_count~ : Float,
+  max_relief_mapping_search_steps~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
 
 ///|

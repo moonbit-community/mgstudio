@@ -3130,6 +3130,10 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
             ValType::F32,
             ValType::F32,
             ValType::F32,
@@ -3163,11 +3167,15 @@ fn define_mgstudio_host_imports(
             let emissive_texture_id = args.get(21).and_then(|v| v.i32()).unwrap_or(-1);
             let metallic_roughness_texture_id = args.get(22).and_then(|v| v.i32()).unwrap_or(-1);
             let occlusion_texture_id = args.get(23).and_then(|v| v.i32()).unwrap_or(-1);
-            let emissive = [f(24), f(25), f(26)];
-            let unlit = f(27);
-            let metallic = f(28);
-            let roughness = f(29);
-            let reflectance = f(30);
+            let depth_texture_id = args.get(24).and_then(|v| v.i32()).unwrap_or(-1);
+            let emissive = [f(25), f(26), f(27)];
+            let unlit = f(28);
+            let metallic = f(29);
+            let roughness = f(30);
+            let reflectance = f(31);
+            let parallax_depth_scale = f(32);
+            let max_parallax_layer_count = f(33);
+            let max_relief_mapping_search_steps = f(34);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh3d(
                     mesh_id,
@@ -3189,11 +3197,15 @@ fn define_mgstudio_host_imports(
                     emissive_texture_id,
                     metallic_roughness_texture_id,
                     occlusion_texture_id,
+                    depth_texture_id,
                     emissive,
                     unlit,
                     metallic,
                     roughness,
                     reflectance,
+                    parallax_depth_scale,
+                    max_parallax_layer_count,
+                    max_relief_mapping_search_steps,
                 )?;
             }
             ok_i32(out, 0);

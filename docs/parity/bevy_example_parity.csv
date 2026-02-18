@@ -63,7 +63,7 @@ bevy/examples/3d/motion_blur.rs,3d,motion_blur,mgstudio-engine/examples/3d/motio
 bevy/examples/3d/occlusion_culling.rs,3d,occlusion_culling,mgstudio-engine/examples/3d/occlusion_culling,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/order_independent_transparency.rs,3d,order_independent_transparency,mgstudio-engine/examples/3d/order_independent_transparency,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/orthographic.rs,3d,orthographic,mgstudio-engine/examples/3d/orthographic,Exact,team-render,
-bevy/examples/3d/parallax_mapping.rs,3d,parallax_mapping,mgstudio-engine/examples/3d/parallax_mapping,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
+bevy/examples/3d/parallax_mapping.rs,3d,parallax_mapping,mgstudio-engine/examples/3d/parallax_mapping,Exact,team-render,
 bevy/examples/3d/parenting.rs,3d,parenting,mgstudio-engine/examples/3d/parenting,Exact,team-render,
 bevy/examples/3d/pbr.rs,3d,pbr,mgstudio-engine/examples/3d/pbr,Exact,team-render,
 bevy/examples/3d/pccm.rs,3d,pccm,mgstudio-engine/examples/3d/pccm,Blocked,team-render,Fallback implementation exists; blocked until exact parity.

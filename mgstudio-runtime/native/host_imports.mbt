@@ -3338,46 +3338,70 @@ pub fn add_mgstudio_host_imports(
           } else {
             -1
           }
-          let emissive_r = if args.length() > 24 &&
-            args[24] is @types.Value::F32(v) {
+          let depth_texture_id = if args.length() > 24 &&
+            args[24] is @types.Value::I32(v) {
             v
           } else {
-            0.0F
+            -1
           }
-          let emissive_g = if args.length() > 25 &&
+          let emissive_r = if args.length() > 25 &&
             args[25] is @types.Value::F32(v) {
             v
           } else {
             0.0F
           }
-          let emissive_b = if args.length() > 26 &&
+          let emissive_g = if args.length() > 26 &&
             args[26] is @types.Value::F32(v) {
             v
           } else {
             0.0F
           }
-          let unlit = if args.length() > 27 && args[27] is @types.Value::F32(v) {
+          let emissive_b = if args.length() > 27 &&
+            args[27] is @types.Value::F32(v) {
             v
           } else {
             0.0F
           }
-          let metallic = if args.length() > 28 &&
-            args[28] is @types.Value::F32(v) {
+          let unlit = if args.length() > 28 && args[28] is @types.Value::F32(v) {
             v
           } else {
             0.0F
           }
-          let roughness = if args.length() > 29 &&
+          let metallic = if args.length() > 29 &&
             args[29] is @types.Value::F32(v) {
             v
           } else {
-            0.5F
+            0.0F
           }
-          let reflectance = if args.length() > 30 &&
+          let roughness = if args.length() > 30 &&
             args[30] is @types.Value::F32(v) {
             v
           } else {
             0.5F
+          }
+          let reflectance = if args.length() > 31 &&
+            args[31] is @types.Value::F32(v) {
+            v
+          } else {
+            0.5F
+          }
+          let parallax_depth_scale = if args.length() > 32 &&
+            args[32] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let max_parallax_layer_count = if args.length() > 33 &&
+            args[33] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let max_relief_mapping_search_steps = if args.length() > 34 &&
+            args[34] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
           }
           ctx.gpu
           .unwrap()
@@ -3385,8 +3409,9 @@ pub fn add_mgstudio_host_imports(
             mesh_id, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
             scale_y, scale_z, color_r, color_g, color_b, color_a, texture_id, uv_offset_x,
             uv_offset_y, uv_scale_x, uv_scale_y, normal_texture_id, emissive_texture_id,
-            metallic_roughness_texture_id, occlusion_texture_id, emissive_r, emissive_g,
-            emissive_b, unlit, metallic, roughness, reflectance,
+            metallic_roughness_texture_id, occlusion_texture_id, depth_texture_id,
+            emissive_r, emissive_g, emissive_b, unlit, metallic, roughness, reflectance,
+            parallax_depth_scale, max_parallax_layer_count, max_relief_mapping_search_steps,
           )
         }
         ok_i32(0)
@@ -3423,6 +3448,10 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
