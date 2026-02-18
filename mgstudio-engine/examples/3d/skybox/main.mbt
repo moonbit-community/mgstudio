@@ -15,11 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/skybox.rs`.
 ///
-/// Baseline parity: Bevy's native `Skybox` cubemap component, compressed-format
-/// capability filtering via render-device features, and `FreeCameraPlugin` are
-/// not currently exposed in mgstudio APIs. This port preserves the same startup
-/// scene setup, timed cubemap rotation flow, and animated directional light,
-/// while using a large textured-unlit cube as the skybox proxy.
+/// Baseline parity: Bevy's native compressed-format capability filtering via
+/// render-device features and `FreeCameraPlugin` are not currently exposed in
+/// mgstudio APIs. This port now uses camera-attached `Skybox` with timed
+/// cubemap swapping and animated directional light.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -35,7 +34,7 @@ priv struct CubemapState {
   mut is_loaded : Bool
   mut index : Int
   mut image_handle : @asset.Handle[@asset.Image]?
-  mut sky_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut camera : @core.Entity?
   mut next_swap_time : Float
   mut light_angle : Float
   mut directional_light : @core.Entity?
@@ -47,7 +46,7 @@ let cubemap_state : Ref[CubemapState] = Ref::new({
   is_loaded: false,
   index: 0,
   image_handle: None,
-  sky_material: None,
+  camera: None,
   next_swap_time: 0.0F,
   light_angle: 0.0F,
   directional_light: None,
@@ -117,7 +116,7 @@ fn update_help_text() -> Unit {
       status +
       "\n\n" +
       "Auto-swap interval: 3s\n" +
-      "Adapted runtime note: native Skybox + free camera path is replaced by a skybox proxy mesh.",
+      "Adapted runtime note: compressed-format capability filtering and free-camera plugin are pending.",
     )
   }
 }
@@ -127,7 +126,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   cubemap_state.val.is_loaded = false
   cubemap_state.val.index = 0
   cubemap_state.val.image_handle = None
-  cubemap_state.val.sky_material = None
+  cubemap_state.val.camera = None
   cubemap_state.val.next_swap_time = 0.0F
   cubemap_state.val.light_angle = 0.0F
   cubemap_state.val.directional_light = None
@@ -169,31 +168,18 @@ fn setup(world : @ecs_world.World) -> Unit {
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  @render3d.Camera3dBundle::new(@render2d.Camera::default(), camera_transform).spawn(
-    world,
-  )
-  |> ignore
+  let camera = @render3d.Camera3dBundle::new(
+    @render2d.Camera::default(),
+    camera_transform,
+  ).spawn(world)
+  cubemap_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
   let initial_image = asset_server.load(cubemap_path(0))
   cubemap_state.val.image_handle = Some(initial_image)
-
-  let sky_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
-    .with_base_color_texture(Some(initial_image))
-    .with_unlit(true)
-    .with_emissive(@render2d.Color::new(4.0F, 4.0F, 4.0F, 1.0F))
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F),
-  )
-  cubemap_state.val.sky_material = Some(sky_material)
-
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(200.0F, 200.0F, 200.0F),
-    @render3d.MeshMaterial3d::new(sky_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 8.0F),
-  ).spawn(world)
-  |> ignore
+  world
+  .get_skybox_store()
+  .insert(camera, @render3d.Skybox::new(initial_image, 1000.0F), tick)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let help_text = @text.Text2dBundle::new(
@@ -246,7 +232,7 @@ fn cycle_cubemap_asset() -> Unit {
 }
 
 ///|
-fn asset_loaded() -> Unit {
+fn asset_loaded(world : @ecs_world.World) -> Unit {
   if cubemap_state.val.is_loaded {
     return
   }
@@ -254,16 +240,14 @@ fn asset_loaded() -> Unit {
   if !@asset.asset_is_texture_loaded(handle) {
     return
   }
-  guard cubemap_state.val.sky_material is Some(material_handle) else { return }
-  guard @render3d.standard_material_get(material_handle) is Some(material) else {
-    return
+  guard cubemap_state.val.camera is Some(camera_entity) else { return }
+  let tick = world.read_change_tick()
+  if world.get_skybox_store().get(camera_entity) is Some(skybox) {
+    world
+    .get_skybox_store()
+    .set(camera_entity, skybox.with_image(Some(handle)), tick)
+    |> ignore
   }
-
-  @render3d.standard_material_set(
-    material_handle,
-    material.with_base_color_texture(Some(handle)),
-  )
-  |> ignore
 
   cubemap_state.val.is_loaded = true
   update_help_text()
@@ -295,7 +279,7 @@ fn animate_light_direction(world : @ecs_world.World) -> Unit {
 ///|
 fn update(world : @ecs_world.World) -> Unit {
   cycle_cubemap_asset()
-  asset_loaded()
+  asset_loaded(world)
   animate_light_direction(world)
 }
 

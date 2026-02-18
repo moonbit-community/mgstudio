@@ -1766,6 +1766,22 @@ pub fn Mesh3d::from_tetrahedron(edge : Float) -> Mesh3d {
 }
 
 ///|
+let skybox_proxy_mesh : Ref[@asset.Handle[@mesh.Mesh]?] = Ref::new(None)
+
+///|
+fn render3d_skybox_proxy_mesh_id() -> Int {
+  let handle = match skybox_proxy_mesh.val {
+    Some(handle) => handle
+    None => {
+      let mesh = Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F)
+      skybox_proxy_mesh.val = Some(mesh.mesh)
+      mesh.mesh
+    }
+  }
+  @render2d.render2d_upload_mesh_handle(handle)
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct MeshMaterial3d {
@@ -2827,6 +2843,7 @@ priv struct Camera3dInstance {
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
   motion_blur : MotionBlur?
+  skybox : Skybox?
   environment_map_light : EnvironmentMapLight?
   generated_environment_map_light : GeneratedEnvironmentMapLight?
   transform : @math.Transform
@@ -3167,6 +3184,61 @@ fn render3d_camera_environment_map_light(
     return Some(render3d_generated_environment_map_to_light(generated))
   }
   camera.environment_map_light
+}
+
+///|
+fn render3d_draw_camera_skybox(
+  camera : Camera3dInstance,
+  camera_far : Float,
+) -> Unit {
+  guard camera.skybox is Some(skybox) else { return }
+  guard skybox.image is Some(image) else { return }
+  let mesh_id = render3d_skybox_proxy_mesh_id()
+  if mesh_id <= 0 {
+    return
+  }
+  let brightness = maxf(0.0F, skybox.brightness)
+  let skybox_extent = maxf(5.0F, minf(camera_far * 0.45F, 20_000.0F))
+  @window.host_gpu_draw_mesh3d(
+    mesh_id~,
+    x=camera.transform.translation.x,
+    y=camera.transform.translation.y,
+    z=camera.transform.translation.z,
+    rotation_x=skybox.rotation.x,
+    rotation_y=skybox.rotation.y,
+    rotation_z=skybox.rotation.z,
+    rotation_w=skybox.rotation.w,
+    scale_x=skybox_extent,
+    scale_y=skybox_extent,
+    scale_z=skybox_extent,
+    color_r=brightness,
+    color_g=brightness,
+    color_b=brightness,
+    color_a=1.0F,
+    texture_id=image.id(),
+    uv_offset_x=0.0F,
+    uv_offset_y=0.0F,
+    uv_scale_x=1.0F,
+    uv_scale_y=1.0F,
+    normal_texture_id=-1,
+    emissive_texture_id=-1,
+    metallic_roughness_texture_id=-1,
+    occlusion_texture_id=-1,
+    depth_texture_id=-1,
+    emissive_r=0.0F,
+    emissive_g=0.0F,
+    emissive_b=0.0F,
+    unlit=1.0F,
+    metallic=0.0F,
+    roughness=1.0F,
+    reflectance=0.0F,
+    parallax_depth_scale=0.0F,
+    max_parallax_layer_count=0.0F,
+    max_relief_mapping_search_steps=0.0F,
+    anisotropy_texture_id=-1,
+    anisotropy_strength=0.0F,
+    anisotropy_rotation=0.0F,
+  )
 }
 
 ///|
@@ -3876,7 +3948,7 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -3892,6 +3964,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let chromatic_aberration_store = world.get_chromatic_aberration_store()
   let vignette_store = world.get_vignette_store()
   let motion_blur_store = world.get_motion_blur_store()
+  let skybox_store = world.get_skybox_store()
   let environment_map_light_store = world.get_environment_map_light_store()
   let generated_environment_map_light_store = world.get_generated_environment_map_light_store()
   let light_probe_store = world.get_light_probe_store()
@@ -3913,6 +3986,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let chromatic_aberration = chromatic_aberration_store.get(entity)
     let vignette = vignette_store.get(entity)
     let motion_blur = motion_blur_store.get(entity)
+    let skybox = skybox_store.get(entity)
     let environment_map_light = environment_map_light_store.get(entity)
     let generated_environment_map_light = generated_environment_map_light_store.get(
       entity,
@@ -3948,6 +4022,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           chromatic_aberration,
           vignette,
           motion_blur,
+          skybox,
           environment_map_light,
           generated_environment_map_light,
           transform,
@@ -4157,6 +4232,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       sub_camera_view_bias_y~,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
+    render3d_draw_camera_skybox(camera, camera_far)
     let draw_order = render3d_sorted_mesh_indices(
       meshes,
       camera.layers,
