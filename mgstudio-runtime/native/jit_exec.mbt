@@ -749,6 +749,7 @@ pub fn prepare_jit_for_instance(
         heap,
         store.module_types,
         canonical,
+        ctx_ptr=jm.get_context_ptr(),
         func_type_indices=instance.func_type_indices,
         func_table_ptr=jm.get_func_table_ptr(),
         num_funcs=jm.get_func_count(),
