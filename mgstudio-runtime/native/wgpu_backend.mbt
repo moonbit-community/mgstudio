@@ -1786,23 +1786,11 @@ pub fn GpuBackend::is_texture_loaded(
 pub fn GpuBackend::supported_compressed_image_formats_mask(
   self : GpuBackend,
 ) -> Int {
-  let mut mask = 0
-  if self.device.supported_features_contains_u32(
-      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ASTC,
-    ) {
-    mask = mask + 1
-  }
-  if self.device.supported_features_contains_u32(
-      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_BC,
-    ) {
-    mask = mask + 2
-  }
-  if self.device.supported_features_contains_u32(
-      @wgpu.FEATURE_NAME_TEXTURE_COMPRESSION_ETC2,
-    ) {
-    mask = mask + 4
-  }
-  mask
+  self |> ignore
+  // Runtime note: native host currently decodes textures through RGBA8 image
+  // decode path and does not upload compressed KTX2 textures yet. Report 0 to
+  // block compressed-format selection until decoder/upload support lands.
+  0
 }
 
 ///|

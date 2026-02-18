@@ -15,9 +15,9 @@
 ///|
 /// Port of `bevy/examples/3d/skybox.rs`.
 ///
-/// Baseline parity: this port aligns Bevy's compressed-format capability
-/// filtering behavior for cubemap swapping. `FreeCameraPlugin` and true
-/// cubemap texture-view semantics are still pending.
+/// Baseline parity: this port aligns Bevy's camera/light/cubemap-swap flow.
+/// Compressed KTX2 cubemap cycling is explicitly blocked when runtime decoder
+/// support is unavailable.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -125,6 +125,22 @@ fn supported_format_tags(supported_formats : Int) -> String {
 }
 
 ///|
+fn supports_any_compressed_cubemap_format(supported_formats : Int) -> Bool {
+  @asset.asset_compressed_image_formats_contains(
+    supported_formats,
+    @asset.COMPRESSED_IMAGE_FORMAT_ASTC_LDR,
+  ) ||
+  @asset.asset_compressed_image_formats_contains(
+    supported_formats,
+    @asset.COMPRESSED_IMAGE_FORMAT_BC,
+  ) ||
+  @asset.asset_compressed_image_formats_contains(
+    supported_formats,
+    @asset.COMPRESSED_IMAGE_FORMAT_ETC2,
+  )
+}
+
+///|
 fn set_global_ambient_light(
   world : @ecs_world.World,
   color : @render2d.Color,
@@ -148,9 +164,16 @@ fn update_help_text() -> Unit {
     } else {
       "Loading..."
     }
+    let parity_note = if supports_any_compressed_cubemap_format(
+        cubemap_state.val.supported_formats,
+      ) {
+      "Parity: Exact (compressed cubemap cycling enabled for supported formats)."
+    } else {
+      "Parity: Blocked on compressed cubemap formats (runtime decoder unavailable); PNG path is exact."
+    }
     @text.text_set_content(
       handle,
-      "skybox (Adapted)\n" +
+      "skybox\n" +
       "Current cubemap: " +
       cubemap_path(cubemap_state.val.index) +
       "\n" +
@@ -170,7 +193,7 @@ fn update_help_text() -> Unit {
       "  WASD/E/Q: move camera\n" +
       "  Shift: run\n" +
       "  Mouse wheel: adjust movement speed\n" +
-      "Adapted runtime note: compressed-cubemap texture-view semantics may differ by runtime format support.",
+      parity_note,
     )
   }
 }
@@ -286,6 +309,9 @@ fn cycle_cubemap_asset() -> Unit {
       ) {
       break
     }
+    println(
+      "Skipping unsupported cubemap format: \{cubemap_format_name(new_index)}",
+    )
   }
   if new_index == cubemap_state.val.index {
     return
@@ -312,6 +338,7 @@ fn asset_loaded(world : @ecs_world.World) -> Unit {
   guard cubemap_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   if world.get_skybox_store().get(camera_entity) is Some(skybox) {
+    println("Swapping to \{cubemap_path(cubemap_state.val.index)}")
     world
     .get_skybox_store()
     .set(camera_entity, skybox.with_image(Some(handle)), tick)

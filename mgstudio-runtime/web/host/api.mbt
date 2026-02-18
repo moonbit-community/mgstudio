@@ -1355,23 +1355,28 @@ pub fn create_host(
     let entry = map_get(state.gpu.textures, @js.any(id))
     !host_is_nullish(entry)
   })
-  let asset_supported_compressed_image_formats = @js.from_fn0(fn() {
+  let asset_supported_formats = @js.from_fn0(fn() {
     if state.gpu.device is Some(device) {
       let features = device.as_any()._get("features")
       if host_is_nullish(features) {
         return 0
       }
-      let mut mask = 0
+      let mut gpu_feature_mask = 0
       if set_has(features, @js.any("texture-compression-astc")) {
-        mask = mask + 1
+        gpu_feature_mask = gpu_feature_mask + 1
       }
       if set_has(features, @js.any("texture-compression-bc")) {
-        mask = mask + 2
+        gpu_feature_mask = gpu_feature_mask + 2
       }
       if set_has(features, @js.any("texture-compression-etc2")) {
-        mask = mask + 4
+        gpu_feature_mask = gpu_feature_mask + 4
       }
-      mask
+      // Runtime note: web host currently uploads textures via bitmap decode
+      // (`createImageBitmap`) and does not decode compressed KTX2 payloads
+      // into GPU-compressed textures yet. Report only the intersection between
+      // GPU features and runtime decoder capability to avoid false positives.
+      let runtime_decoder_mask = 0
+      gpu_feature_mask & runtime_decoder_mask
     } else {
       0
     }
@@ -2313,7 +2318,7 @@ pub fn create_host(
     ("asset_texture_width", asset_texture_width),
     ("asset_texture_height", asset_texture_height),
     ("asset_is_texture_loaded", asset_is_texture_loaded),
-    ("asset_supported_compressed_image_formats", asset_supported_compressed_image_formats),
+    ("asset_supported_compressed_image_formats", asset_supported_formats),
     ("asset_copy_texture_to_texture", asset_copy_texture_to_texture),
     ("asset_load_folder", asset_load_folder),
     ("asset_poll_loaded_folder_event_kind", asset_poll_loaded_folder_event_kind),

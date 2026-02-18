@@ -1537,18 +1537,12 @@ impl GpuBackend {
     }
 
     pub fn supported_compressed_image_formats_mask(&self) -> i32 {
-        let mut mask = 0;
-        let features = self.device.features();
-        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_ASTC) {
-            mask |= 1;
-        }
-        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC) {
-            mask |= 2;
-        }
-        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_ETC2) {
-            mask |= 4;
-        }
-        mask
+        let _ = &self.device;
+        // Runtime note: native-wasmtime currently loads textures through an
+        // RGBA8 decode path and does not upload compressed KTX2 payloads as
+        // GPU-compressed textures yet. Report 0 to block compressed-format
+        // selection until decoder/upload support lands.
+        0
     }
 
     pub fn write_texture_region_rgba8(
