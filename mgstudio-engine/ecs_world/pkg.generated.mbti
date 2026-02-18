@@ -130,10 +130,12 @@ pub struct World {
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
   camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
+  parallax_correction : @core.ComponentStore[@render3d.ParallaxCorrection]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
   chromatic_aberration : @core.ComponentStore[@render3d.ChromaticAberration]
+  environment_map_light : @core.ComponentStore[@render3d.EnvironmentMapLight]
   motion_vector_prepass : @core.ComponentStore[@render3d.MotionVectorPrepass]
   temporal_anti_aliasing : @core.ComponentStore[@render3d.TemporalAntiAliasing]
   shadow_filtering_method : @core.ComponentStore[@render3d.ShadowFilteringMethod]
@@ -267,6 +269,7 @@ pub impl @render3d.Has_DeferredPrepass for World
 pub impl @render3d.Has_DepthPrepass for World
 pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_DirectionalLightTexture for World
+pub impl @render3d.Has_EnvironmentMapLight for World
 pub impl @render3d.Has_Fxaa for World
 pub impl @render3d.Has_Hdr for World
 pub impl @render3d.Has_IrradianceVolume for World
@@ -279,6 +282,7 @@ pub impl @render3d.Has_Msaa for World
 pub impl @render3d.Has_NormalPrepass for World
 pub impl @render3d.Has_OcclusionCulling for World
 pub impl @render3d.Has_OrderIndependentTransparencySettings for World
+pub impl @render3d.Has_ParallaxCorrection for World
 pub impl @render3d.Has_PointLight for World
 pub impl @render3d.Has_PointLightTexture for World
 pub impl @render3d.Has_ScreenSpaceAmbientOcclusion for World

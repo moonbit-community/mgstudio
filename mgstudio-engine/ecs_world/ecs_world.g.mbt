@@ -108,10 +108,12 @@ pub struct World {
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
   external_impulse2d : @core.ComponentStore[@physics2d.ExternalImpulse2d]
   camera_projection3d : @core.ComponentStore[@render3d.CameraProjection3d]
+  parallax_correction : @core.ComponentStore[@render3d.ParallaxCorrection]
   rapier_body_handle2d : @core.ComponentStore[@physics2d.RapierBodyHandle2d]
   rigid_body_enabled2d : @core.ComponentStore[@physics2d.RigidBodyEnabled2d]
   rapier_body_handle3d : @core.ComponentStore[@physics3d.RapierBodyHandle3d]
   chromatic_aberration : @core.ComponentStore[@render3d.ChromaticAberration]
+  environment_map_light : @core.ComponentStore[@render3d.EnvironmentMapLight]
   motion_vector_prepass : @core.ComponentStore[@render3d.MotionVectorPrepass]
   temporal_anti_aliasing : @core.ComponentStore[@render3d.TemporalAntiAliasing]
   shadow_filtering_method : @core.ComponentStore[
@@ -305,10 +307,12 @@ pub fn World::new() -> World {
     collision_groups2d: @core.ComponentStore::new(),
     external_impulse2d: @core.ComponentStore::new(),
     camera_projection3d: @core.ComponentStore::new(),
+    parallax_correction: @core.ComponentStore::new(),
     rapier_body_handle2d: @core.ComponentStore::new(),
     rigid_body_enabled2d: @core.ComponentStore::new(),
     rapier_body_handle3d: @core.ComponentStore::new(),
     chromatic_aberration: @core.ComponentStore::new(),
+    environment_map_light: @core.ComponentStore::new(),
     motion_vector_prepass: @core.ComponentStore::new(),
     temporal_anti_aliasing: @core.ComponentStore::new(),
     shadow_filtering_method: @core.ComponentStore::new(),
@@ -466,10 +470,12 @@ pub fn World::despawn(
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
   self.camera_projection3d.remove(entity) |> ignore
+  self.parallax_correction.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.chromatic_aberration.remove(entity) |> ignore
+  self.environment_map_light.remove(entity) |> ignore
   self.motion_vector_prepass.remove(entity) |> ignore
   self.temporal_anti_aliasing.remove(entity) |> ignore
   self.shadow_filtering_method.remove(entity) |> ignore
@@ -606,10 +612,12 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.collision_groups2d.remove(entity) |> ignore
   self.external_impulse2d.remove(entity) |> ignore
   self.camera_projection3d.remove(entity) |> ignore
+  self.parallax_correction.remove(entity) |> ignore
   self.rapier_body_handle2d.remove(entity) |> ignore
   self.rigid_body_enabled2d.remove(entity) |> ignore
   self.rapier_body_handle3d.remove(entity) |> ignore
   self.chromatic_aberration.remove(entity) |> ignore
+  self.environment_map_light.remove(entity) |> ignore
   self.motion_vector_prepass.remove(entity) |> ignore
   self.temporal_anti_aliasing.remove(entity) |> ignore
   self.shadow_filtering_method.remove(entity) |> ignore
@@ -1248,6 +1256,13 @@ pub impl @render3d.Has_CameraProjection3d for World with get_camera_projection3d
 }
 
 ///|
+pub impl @render3d.Has_ParallaxCorrection for World with get_parallax_correction_store(
+  self,
+) {
+  self.parallax_correction
+}
+
+///|
 pub impl @physics2d.Has_RapierBodyHandle2d for World with get_rapier_body_handle2d_store(
   self,
 ) {
@@ -1273,6 +1288,13 @@ pub impl @render3d.Has_ChromaticAberration for World with get_chromatic_aberrati
   self,
 ) {
   self.chromatic_aberration
+}
+
+///|
+pub impl @render3d.Has_EnvironmentMapLight for World with get_environment_map_light_store(
+  self,
+) {
+  self.environment_map_light
 }
 
 ///|

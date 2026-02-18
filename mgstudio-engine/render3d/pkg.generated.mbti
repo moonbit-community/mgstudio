@@ -176,6 +176,21 @@ pub fn DistanceFog::new(@render2d.Color, FogFalloff3d) -> Self
 pub fn DistanceFog::with_color(Self, @render2d.Color) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
 
+pub struct EnvironmentMapLight {
+  diffuse_map : @asset.Handle[@asset.Image]?
+  specular_map : @asset.Handle[@asset.Image]?
+  intensity : Float
+  rotation : @math.Quat
+  affects_lightmapped_mesh_diffuse : Bool
+}
+pub fn EnvironmentMapLight::default() -> Self
+pub fn EnvironmentMapLight::new(@asset.Handle[@asset.Image]?, @asset.Handle[@asset.Image]?, Float) -> Self
+pub fn EnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
+pub fn EnvironmentMapLight::with_diffuse_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn EnvironmentMapLight::with_intensity(Self, Float) -> Self
+pub fn EnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
+pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@asset.Image]?) -> Self
+
 pub(all) enum Face3d {
   Front
   Back
@@ -218,8 +233,11 @@ pub fn IrradianceVolume::with_intensity(Self, Float) -> Self
 pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@asset.Image]?) -> Self
 
 pub struct LightProbe {
+  falloff : @math.Vec3
 }
 pub fn LightProbe::default() -> Self
+pub fn LightProbe::new() -> Self
+pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
 
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
@@ -298,6 +316,13 @@ pub struct OrthographicProjection3d {
 }
 pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
+
+pub(all) enum ParallaxCorrection {
+  None
+  Auto
+  Custom(@math.Vec3)
+}
+pub fn ParallaxCorrection::default() -> Self
 
 pub(all) enum ParallaxMappingMethod {
   Occlusion
@@ -615,6 +640,10 @@ pub(open) trait Has_DirectionalLightTexture {
   get_directional_light_texture_store(Self) -> @core.ComponentStore[DirectionalLightTexture]
 }
 
+pub(open) trait Has_EnvironmentMapLight {
+  get_environment_map_light_store(Self) -> @core.ComponentStore[EnvironmentMapLight]
+}
+
 pub(open) trait Has_Fxaa {
   get_fxaa_store(Self) -> @core.ComponentStore[Fxaa]
 }
@@ -661,6 +690,10 @@ pub(open) trait Has_OcclusionCulling {
 
 pub(open) trait Has_OrderIndependentTransparencySettings {
   get_order_independent_transparency_settings_store(Self) -> @core.ComponentStore[OrderIndependentTransparencySettings]
+}
+
+pub(open) trait Has_ParallaxCorrection {
+  get_parallax_correction_store(Self) -> @core.ComponentStore[ParallaxCorrection]
 }
 
 pub(open) trait Has_PointLight {

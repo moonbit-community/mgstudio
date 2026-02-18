@@ -1,0 +1,34 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/3d/light_probe_blending"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum CameraMode {
+  Orbit
+  Free
+}
+pub impl Eq for CameraMode
+pub impl Show for CameraMode
+
+pub(all) enum GizmosEnabled {
+  On
+  Off
+}
+pub impl Eq for GizmosEnabled
+pub impl Show for GizmosEnabled
+
+pub(all) enum ObjectToShow {
+  Sphere
+  Prism
+}
+pub impl Eq for ObjectToShow
+pub impl Show for ObjectToShow
+
+// Type aliases
+
+// Traits
+

@@ -8,9 +8,10 @@ pub let ecs_components : Array[String] = [
   "LightProbe", "MotionBlur", "PointLight", "Tonemapping", "DepthPrepass", "NormalPrepass",
   "ContactShadows", "MeshMaterial3d", "TemporalJitter", "DeferredPrepass", "SubCameraView3d",
   "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "SpotLightTexture",
-  "PointLightTexture", "CameraProjection3d", "ChromaticAberration", "MotionVectorPrepass",
-  "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
-  "ScreenSpaceAmbientOcclusion", "OrderIndependentTransparencySettings",
+  "PointLightTexture", "CameraProjection3d", "ParallaxCorrection", "ChromaticAberration",
+  "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod",
+  "ScreenSpaceReflections", "DirectionalLightTexture", "ScreenSpaceAmbientOcclusion",
+  "OrderIndependentTransparencySettings",
 ]
 
 ///|
@@ -166,9 +167,23 @@ pub(open) trait Has_CameraProjection3d {
 }
 
 ///|
+pub(open) trait Has_ParallaxCorrection {
+  get_parallax_correction_store(self : Self) -> @core.ComponentStore[
+    ParallaxCorrection,
+  ]
+}
+
+///|
 pub(open) trait Has_ChromaticAberration {
   get_chromatic_aberration_store(self : Self) -> @core.ComponentStore[
     ChromaticAberration,
+  ]
+}
+
+///|
+pub(open) trait Has_EnvironmentMapLight {
+  get_environment_map_light_store(self : Self) -> @core.ComponentStore[
+    EnvironmentMapLight,
   ]
 }
 

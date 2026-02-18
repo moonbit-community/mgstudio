@@ -2336,13 +2336,134 @@ pub fn PointLightTexture::with_cubemap_layout(
 }
 
 ///|
-/// Marker component aligned with Bevy's `LightProbe`.
+/// Light probe component aligned with Bevy's `LightProbe`.
+///
+/// The probe influence volume is a unit cube transformed by the entity
+/// transform. `falloff` controls the attenuation region inside this cube.
 #ecs.component
-pub struct LightProbe {}
+pub struct LightProbe {
+  falloff : @math.Vec3
+}
 
 ///|
 pub fn LightProbe::default() -> LightProbe {
-  LightProbe::{  }
+  LightProbe::{ falloff: @math.Vec3::zero() }
+}
+
+///|
+pub fn LightProbe::new() -> LightProbe {
+  LightProbe::default()
+}
+
+///|
+pub fn LightProbe::with_falloff(
+  self : LightProbe,
+  falloff : @math.Vec3,
+) -> LightProbe {
+  self |> ignore
+  LightProbe::{ falloff, }
+}
+
+///|
+/// Environment map lighting component aligned with Bevy's
+/// `EnvironmentMapLight`.
+///
+/// Current runtime note: this backend stores and exposes the Bevy-aligned
+/// component surface; reflection probe shading remains adapted.
+#ecs.component
+pub struct EnvironmentMapLight {
+  diffuse_map : @asset.Handle[@asset.Image]?
+  specular_map : @asset.Handle[@asset.Image]?
+  intensity : Float
+  rotation : @math.Quat
+  affects_lightmapped_mesh_diffuse : Bool
+}
+
+///|
+pub fn EnvironmentMapLight::default() -> EnvironmentMapLight {
+  EnvironmentMapLight::{
+    diffuse_map: None,
+    specular_map: None,
+    intensity: 0.0F,
+    rotation: @math.Quat::identity(),
+    affects_lightmapped_mesh_diffuse: true,
+  }
+}
+
+///|
+pub fn EnvironmentMapLight::new(
+  diffuse_map : @asset.Handle[@asset.Image]?,
+  specular_map : @asset.Handle[@asset.Image]?,
+  intensity : Float,
+) -> EnvironmentMapLight {
+  EnvironmentMapLight::default()
+  .with_diffuse_map(diffuse_map)
+  .with_specular_map(specular_map)
+  .with_intensity(intensity)
+}
+
+///|
+pub fn EnvironmentMapLight::with_diffuse_map(
+  self : EnvironmentMapLight,
+  diffuse_map : @asset.Handle[@asset.Image]?,
+) -> EnvironmentMapLight {
+  EnvironmentMapLight::{ ..self, diffuse_map, }
+}
+
+///|
+pub fn EnvironmentMapLight::with_specular_map(
+  self : EnvironmentMapLight,
+  specular_map : @asset.Handle[@asset.Image]?,
+) -> EnvironmentMapLight {
+  EnvironmentMapLight::{ ..self, specular_map, }
+}
+
+///|
+pub fn EnvironmentMapLight::with_intensity(
+  self : EnvironmentMapLight,
+  intensity : Float,
+) -> EnvironmentMapLight {
+  EnvironmentMapLight::{
+    ..self,
+    intensity: if intensity < 0.0F {
+      0.0F
+    } else {
+      intensity
+    },
+  }
+}
+
+///|
+pub fn EnvironmentMapLight::with_rotation(
+  self : EnvironmentMapLight,
+  rotation : @math.Quat,
+) -> EnvironmentMapLight {
+  EnvironmentMapLight::{ ..self, rotation, }
+}
+
+///|
+pub fn EnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
+  self : EnvironmentMapLight,
+  affects_lightmapped_mesh_diffuse : Bool,
+) -> EnvironmentMapLight {
+  EnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+}
+
+///|
+/// Parallax correction mode aligned with Bevy's `ParallaxCorrection`.
+///
+/// Current runtime note: this backend stores this component for parity and
+/// example behavior; probe-space correction is currently adapted.
+#ecs.component
+pub(all) enum ParallaxCorrection {
+  None
+  Auto
+  Custom(@math.Vec3)
+}
+
+///|
+pub fn ParallaxCorrection::default() -> ParallaxCorrection {
+  ParallaxCorrection::Auto
 }
 
 ///|
