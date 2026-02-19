@@ -480,8 +480,8 @@ fn gamepad_button_value(
 ) -> Float {
   if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
     gamepad_button_from_index(button_index) is Some(button) &&
-    gamepad.button_code(button) is Some(code) {
-    return Float::from_double(gamepad.value(code))
+    gamepad.button_data(button) is Some(data) {
+    return Float::from_double(data.value())
   }
   Float::from_double(0.0 / 0.0)
 }
@@ -493,9 +493,8 @@ fn gamepad_button_pressed(
   button_index : Int,
 ) -> Bool {
   if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
-    gamepad_button_from_index(button_index) is Some(button) &&
-    gamepad.button_code(button) is Some(code) {
-    return gamepad.is_pressed(code)
+    gamepad_button_from_index(button_index) is Some(button) {
+    return gamepad.is_pressed(button)
   }
   false
 }
@@ -507,9 +506,8 @@ fn gamepad_axis_value(
   axis_index : Int,
 ) -> Float {
   if gamepad_by_id(ctx, gamepad_id) is Some(gamepad) &&
-    gamepad_axis_from_index(axis_index) is Some(axis) &&
-    gamepad.axis_code(axis) is Some(code) {
-    return Float::from_double(gamepad.value(code))
+    gamepad_axis_from_index(axis_index) is Some(axis) {
+    return Float::from_double(gamepad.value(axis))
   }
   Float::from_double(0.0 / 0.0)
 }
