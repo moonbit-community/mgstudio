@@ -43,6 +43,7 @@ struct Mesh3dUniform {
   map_flags : vec4<f32>, // (base, emissive, metallic_roughness, occlusion)
   parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, has_depth_map)
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
+  specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -54,6 +55,7 @@ struct Mesh3dUniform {
 @group(1) @binding(5) var u_occlusion_texture : texture_2d<f32>;
 @group(1) @binding(6) var u_depth_texture : texture_2d<f32>;
 @group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
+@group(1) @binding(8) var u_specular_tint_texture : texture_2d<f32>;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -340,6 +342,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_normal_map = u_mesh.material_params.w > 0.5;
   let has_depth_map = u_mesh.parallax_params.w > 0.5;
   let has_anisotropy_map = u_mesh.anisotropy_params.w > 0.5;
+  let has_specular_tint_map = u_mesh.specular_tint.w > 0.5;
   let use_stacked_cubemap = u_mesh.uv.w < 0.0;
   let has_uv = u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0;
   let dp1 = dpdx(in.world_pos);
@@ -417,6 +420,14 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       uv,
     );
   }
+  var specular_tint = max(u_mesh.specular_tint.xyz, vec3<f32>(0.0, 0.0, 0.0));
+  if has_specular_tint_map && has_uv {
+    specular_tint = specular_tint * textureSample(
+      u_specular_tint_texture,
+      u_material_sampler,
+      uv,
+    ).xyz;
+  }
   var occlusion_tex = 1.0;
   if has_occlusion_map && has_uv {
     occlusion_tex = textureSample(u_occlusion_texture, u_material_sampler, uv).r;
@@ -441,10 +452,14 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let unlit_factor = clamp(u_mesh.emissive_unlit.w, 0.0, 1.0);
   let metallic = clamp(u_mesh.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
   let roughness = clamp(u_mesh.material_params.y * metallic_roughness_tex.g, 0.045, 1.0);
-  let reflectance = clamp(u_mesh.material_params.z, 0.0, 1.0);
+  let reflectance = max(u_mesh.material_params.z, 0.0);
+  let reflectance_rgb = max(
+    specular_tint * reflectance,
+    vec3<f32>(0.0, 0.0, 0.0),
+  );
   let diffuse_color = base_color.xyz * (1.0 - metallic);
-  let f0_scalar = clamp(0.04 + reflectance * 0.16, 0.0, 1.0);
-  let f0 = mix(vec3<f32>(f0_scalar), base_color.xyz, metallic);
+  let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
+    base_color.xyz * metallic;
 
   let ambient_term = u_mesh.ambient.xyz * max(u_mesh.ambient.w, 0.0);
 

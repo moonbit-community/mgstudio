@@ -71,6 +71,7 @@ pub struct World {
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
   spot_light : @core.ComponentStore[@render3d.SpotLight]
+  wireframe : @core.ComponentStore[@render3d.Wireframe]
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
@@ -85,6 +86,7 @@ pub struct World {
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
+  no_wireframe : @core.ComponentStore[@render3d.NoWireframe]
   tonemapping : @core.ComponentStore[@render3d.Tonemapping]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
   rigid_body2d : @core.ComponentStore[@physics2d.RigidBody2d]
@@ -105,6 +107,7 @@ pub struct World {
   contact_shadows : @core.ComponentStore[@render3d.ContactShadows]
   mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
   temporal_jitter : @core.ComponentStore[@render3d.TemporalJitter]
+  wireframe_color : @core.ComponentStore[@render3d.WireframeColor]
   active_events2d : @core.ComponentStore[@physics2d.ActiveEvents2d]
   gravity_scale2d : @core.ComponentStore[@physics2d.GravityScale2d]
   impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
@@ -173,6 +176,7 @@ pub struct World {
   res_render_state : @core.Resource[@render2d.RenderState]
   res_picking_events : @core.Resource[@picking.PickingEvents]
   res_pointer_inputs : @core.Resource[@picking.PointerInputs]
+  res_wireframe_config : @core.Resource[@render3d.WireframeConfig]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -265,6 +269,7 @@ pub impl @render2d.Has_ScissorRect for World
 pub impl @render2d.Has_Sprite for World
 pub impl @render3d.HasRes_DefaultOpaqueRendererMethod for World
 pub impl @render3d.HasRes_GlobalAmbientLight for World
+pub impl @render3d.HasRes_WireframeConfig for World
 pub impl @render3d.Has_Bloom for World
 pub impl @render3d.Has_Camera3d for World
 pub impl @render3d.Has_CameraProjection3d for World
@@ -287,6 +292,7 @@ pub impl @render3d.Has_MeshMaterial3d for World
 pub impl @render3d.Has_MotionBlur for World
 pub impl @render3d.Has_MotionVectorPrepass for World
 pub impl @render3d.Has_Msaa for World
+pub impl @render3d.Has_NoWireframe for World
 pub impl @render3d.Has_NormalPrepass for World
 pub impl @render3d.Has_NotShadowCaster for World
 pub impl @render3d.Has_NotShadowReceiver for World
@@ -306,6 +312,8 @@ pub impl @render3d.Has_TemporalAntiAliasing for World
 pub impl @render3d.Has_TemporalJitter for World
 pub impl @render3d.Has_Tonemapping for World
 pub impl @render3d.Has_Vignette for World
+pub impl @render3d.Has_Wireframe for World
+pub impl @render3d.Has_WireframeColor for World
 pub impl @scene.Has_SceneInstanceReady for World
 pub impl @scene.Has_SceneRoot for World
 pub impl @transform.Has_GlobalTransform for World

@@ -19,6 +19,8 @@ pub fn host_gpu_clear_scissor() -> Unit
 
 pub fn host_gpu_configure_surface(device~ : HostGpuDevice, surface~ : HostGpuSurface, width~ : Int, height~ : Int) -> Unit
 
+pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
+
 pub fn host_gpu_create_mesh_capsule(radius~ : Float, half_length~ : Float, segments~ : Int) -> Int
 
 pub fn host_gpu_create_mesh_rectangle(width~ : Float, height~ : Float) -> Int
@@ -35,7 +37,7 @@ pub fn host_gpu_draw_gizmo_line(start_x~ : Float, start_y~ : Float, start_r~ : F
 
 pub fn host_gpu_draw_mesh(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_offset_x~ : Float, uv_offset_y~ : Float, uv_scale_x~ : Float, uv_scale_y~ : Float) -> Unit
 
-pub fn host_gpu_draw_mesh3d(mesh_id~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_offset_x~ : Float, uv_offset_y~ : Float, uv_scale_x~ : Float, uv_scale_y~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, unlit~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float) -> Unit
+pub fn host_gpu_draw_mesh3d(mesh_id~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_offset_x~ : Float, uv_offset_y~ : Float, uv_scale_x~ : Float, uv_scale_y~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, unlit~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float) -> Unit
 
 pub fn host_gpu_draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
 

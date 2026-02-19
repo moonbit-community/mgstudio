@@ -1176,10 +1176,11 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
             }
           }
         @mesh.MeshGeometry::Geometry3d(geometry3d) =>
-          match geometry3d.encode_triangle_interleaved_xyz_uv_rgba_csv() {
+          match geometry3d.encode_interleaved_xyz_uv_rgba_csv() {
             Some(vertices_csv) =>
-              @window.host_gpu_create_mesh_triangles3d(
+              @window.host_gpu_create_mesh3d(
                 vertices_xyzuvrgba_csv=vertices_csv,
+                primitive_topology=geometry3d.primitive_topology().to_int(),
               )
             None => {
               let message = match geometry3d.validate() {

@@ -127,12 +127,16 @@ pub fn BlendOperation::to_js_string(self : BlendOperation) -> String {
 ///|
 pub(all) enum PrimitiveTopology {
   TriangleList
+  LineList
+  LineStrip
 }
 
 ///|
 pub fn PrimitiveTopology::to_js_string(self : PrimitiveTopology) -> String {
   match self {
     TriangleList => "triangle-list"
+    LineList => "line-list"
+    LineStrip => "line-strip"
   }
 }
 

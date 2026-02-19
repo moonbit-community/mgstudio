@@ -16,92 +16,100 @@
 /// Port of `bevy/examples/3d/lines.rs`.
 
 ///|
-/// Baseline parity: custom line-list/line-strip mesh topology and custom line
-/// material shader are not available in current mgstudio runtime surfaces.
+fn color_green() -> @render2d.Color {
+  @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+}
 
 ///|
-/// Baseline parity: this port draws equivalent line segments with thin unlit
-/// cuboids to preserve layout and camera behavior.
+fn color_blue() -> @render2d.Color {
+  @render2d.Color::new(0.2F, 0.5F, 1.0F, 1.0F)
+}
 
 ///|
-const LINE_THICKNESS : Float = 0.03F
+priv struct LineList {
+  lines : Array[(@math.Vec3, @math.Vec3)]
+}
 
 ///|
-fn spawn_line_segment(
-  world : @ecs_world.World,
-  start : @math.Vec3,
-  end_ : @math.Vec3,
-  offset : @math.Vec3,
-  material : @asset.Handle[@render3d.StandardMaterial],
-) -> Unit {
-  let dx = end_.x - start.x
-  let dy = end_.y - start.y
-  let dz = end_.z - start.z
-  let length = @math.sqrt(dx * dx + dy * dy + dz * dz)
-  let angle_z = @math.atan2(dy, dx)
+priv struct LineStrip {
+  points : Array[@math.Vec3]
+}
 
-  let center = @math.Vec3::new(
-    (start.x + end_.x) * 0.5F + offset.x,
-    (start.y + end_.y) * 0.5F + offset.y,
-    (start.z + end_.z) * 0.5F + offset.z,
+///|
+fn line_mesh_from_line_list(line_list : LineList) -> @render3d.Mesh3d {
+  let positions : Array[@math.Vec3] = []
+  for i in 0..<line_list.lines.length() {
+    let (start, end_) = line_list.lines[i]
+    positions.push(start)
+    positions.push(end_)
+  }
+  let uvs : Array[@math.Vec2] = []
+  for _ in 0..<positions.length() {
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
+  }
+  @render3d.Mesh3d::from_geometry(
+    @mesh.Mesh3dGeometry::new_with_topology(
+      positions,
+      uvs,
+      None,
+      @mesh.Mesh3dPrimitiveTopology::LineList,
+    ),
   )
+}
 
-  let transform = @math.Transform::from_xyz(center.x, center.y, center.z).with_rotation(
-    @math.Quat::from_rotation_z(angle_z),
+///|
+fn line_mesh_from_line_strip(line_strip : LineStrip) -> @render3d.Mesh3d {
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  for point in line_strip.points {
+    positions.push(point)
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
+  }
+  @render3d.Mesh3d::from_geometry(
+    @mesh.Mesh3dGeometry::new_with_topology(
+      positions,
+      uvs,
+      None,
+      @mesh.Mesh3dPrimitiveTopology::LineStrip,
+    ),
   )
+}
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(length, LINE_THICKNESS, LINE_THICKNESS),
-    @render3d.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-  |> ignore
+///|
+fn line_material(
+  color : @render2d.Color,
+) -> @asset.Handle[@render3d.StandardMaterial] {
+  @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(color).with_unlit(true),
+  )
 }
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
-  let green_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    ).with_unlit(true),
-  )
-  let blue_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.2F, 0.5F, 1.0F, 1.0F),
-    ).with_unlit(true),
-  )
+  @render3d.MeshMaterial3dBundle::new(
+    line_mesh_from_line_list(LineList::{
+      lines: [
+        (@math.Vec3::zero(), @math.Vec3::new(1.0F, 1.0F, 0.0F)),
+        (@math.Vec3::new(1.0F, 1.0F, 0.0F), @math.Vec3::new(1.0F, 0.0F, 0.0F)),
+      ],
+    }),
+    @render3d.MeshMaterial3d::new(line_material(color_green())),
+    @math.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
+  ).spawn(world)
+  |> ignore
 
-  let list_offset = @math.Vec3::new(-1.5F, 0.0F, 0.0F)
-  spawn_line_segment(
-    world,
-    @math.Vec3::zero(),
-    @math.Vec3::new(1.0F, 1.0F, 0.0F),
-    list_offset,
-    green_material,
-  )
-  spawn_line_segment(
-    world,
-    @math.Vec3::new(1.0F, 1.0F, 0.0F),
-    @math.Vec3::new(1.0F, 0.0F, 0.0F),
-    list_offset,
-    green_material,
-  )
-
-  let strip_offset = @math.Vec3::new(0.5F, 0.0F, 0.0F)
-  spawn_line_segment(
-    world,
-    @math.Vec3::zero(),
-    @math.Vec3::new(1.0F, 1.0F, 0.0F),
-    strip_offset,
-    blue_material,
-  )
-  spawn_line_segment(
-    world,
-    @math.Vec3::new(1.0F, 1.0F, 0.0F),
-    @math.Vec3::new(1.0F, 0.0F, 0.0F),
-    strip_offset,
-    blue_material,
-  )
+  @render3d.MeshMaterial3dBundle::new(
+    line_mesh_from_line_strip(LineStrip::{
+      points: [
+        @math.Vec3::zero(),
+        @math.Vec3::new(1.0F, 1.0F, 0.0F),
+        @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      ],
+    }),
+    @render3d.MeshMaterial3d::new(line_material(color_blue())),
+    @math.Transform::from_xyz(0.5F, 0.0F, 0.0F),
+  ).spawn(world)
+  |> ignore
 
   @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),

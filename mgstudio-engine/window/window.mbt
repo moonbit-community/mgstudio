@@ -676,6 +676,10 @@ pub fn host_gpu_draw_mesh3d(
   anisotropy_texture_id~ : Int,
   anisotropy_strength~ : Float,
   anisotropy_rotation~ : Float,
+  specular_tint_texture_id~ : Int,
+  specular_tint_r~ : Float,
+  specular_tint_g~ : Float,
+  specular_tint_b~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
 
 ///|
@@ -740,13 +744,24 @@ fn host_gpu_create_mesh_triangles_id(vertices_xy_csv_id : Int) -> Int = "mgstudi
 pub fn host_gpu_create_mesh_triangles3d(
   vertices_xyzuvrgba_csv~ : String,
 ) -> Int {
+  host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology=0)
+}
+
+///|
+pub fn host_gpu_create_mesh3d(
+  vertices_xyzuvrgba_csv~ : String,
+  primitive_topology~ : Int,
+) -> Int {
   @core.with_host_string_id(vertices_xyzuvrgba_csv, fn(text_id) {
-    host_gpu_create_mesh_triangles3d_id(text_id)
+    host_gpu_create_mesh3d_id(text_id, primitive_topology~)
   })
 }
 
 ///|
-fn host_gpu_create_mesh_triangles3d_id(vertices_xyzuvrgba_csv_id : Int) -> Int = "mgstudio_host" "gpu_create_mesh_triangles3d"
+fn host_gpu_create_mesh3d_id(
+  vertices_xyzuvrgba_csv_id : Int,
+  primitive_topology~ : Int,
+) -> Int = "mgstudio_host" "gpu_create_mesh3d"
 
 ///|
 pub fn host_debug_string(value~ : String) -> Unit {

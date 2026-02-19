@@ -904,9 +904,94 @@ fn ensure_depth_texture(state : State, width : Int, height : Int) -> Unit {
 }
 
 ///|
-fn ensure_mesh3d_pipeline(state : State) -> Unit {
-  if state.gpu.mesh3d_pipeline is Some(_) &&
-    state.gpu.mesh3d_pipeline_transparent is Some(_) {
+fn mesh3d_topology_kind_from_entry(mesh_entry : @js.Any) -> Int {
+  let topology_any = mesh_entry._get("primitiveTopologyKind")
+  if host_is_nullish(topology_any) {
+    0
+  } else {
+    to_int(number_or(topology_any, 0))
+  }
+}
+
+///|
+fn mesh3d_webgpu_topology(kind : Int) -> @webgpu.PrimitiveTopology {
+  match kind {
+    1 => @webgpu.PrimitiveTopology::LineList
+    2 => @webgpu.PrimitiveTopology::LineStrip
+    _ => @webgpu.PrimitiveTopology::TriangleList
+  }
+}
+
+///|
+fn mesh3d_pipeline_get(
+  state : State,
+  topology_kind : Int,
+  transparent : Bool,
+) -> @webgpu.GPURenderPipeline? {
+  match topology_kind {
+    1 =>
+      if transparent {
+        state.gpu.mesh3d_pipeline_line_list_transparent
+      } else {
+        state.gpu.mesh3d_pipeline_line_list
+      }
+    2 =>
+      if transparent {
+        state.gpu.mesh3d_pipeline_line_strip_transparent
+      } else {
+        state.gpu.mesh3d_pipeline_line_strip
+      }
+    _ =>
+      if transparent {
+        state.gpu.mesh3d_pipeline_transparent
+      } else {
+        state.gpu.mesh3d_pipeline
+      }
+  }
+}
+
+///|
+fn mesh3d_pipeline_set(
+  state : State,
+  topology_kind : Int,
+  transparent : Bool,
+  pipeline : @webgpu.GPURenderPipeline?,
+) -> Unit {
+  match topology_kind {
+    1 =>
+      if transparent {
+        state.gpu.mesh3d_pipeline_line_list_transparent = pipeline
+      } else {
+        state.gpu.mesh3d_pipeline_line_list = pipeline
+      }
+    2 =>
+      if transparent {
+        state.gpu.mesh3d_pipeline_line_strip_transparent = pipeline
+      } else {
+        state.gpu.mesh3d_pipeline_line_strip = pipeline
+      }
+    _ =>
+      if transparent {
+        state.gpu.mesh3d_pipeline_transparent = pipeline
+      } else {
+        state.gpu.mesh3d_pipeline = pipeline
+      }
+  }
+}
+
+///|
+fn mesh3d_topology_key_suffix(topology_kind : Int) -> String {
+  match topology_kind {
+    1 => "_line_list"
+    2 => "_line_strip"
+    _ => "_triangle_list"
+  }
+}
+
+///|
+fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
+  if mesh3d_pipeline_get(state, topology_kind, false) is Some(_) &&
+    mesh3d_pipeline_get(state, topology_kind, true) is Some(_) {
     return
   }
   if state.gpu.device is None {
@@ -1065,6 +1150,17 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
                 ]),
               ),
             ]),
+            @js.from_entries([
+              ("binding", @js.any(8)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
           ]),
         ),
       ])
@@ -1105,7 +1201,7 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
       color_target,
     ])
     let primitive_state = @webgpu.primitive_state(
-      @webgpu.PrimitiveTopology::TriangleList,
+      mesh3d_webgpu_topology(topology_kind),
     )
     guard state.gpu.mesh3d_uniform_layout is Some(uniform_layout) else {
       return
@@ -1135,6 +1231,7 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
     device.push_error_scope("validation")
     let pipeline_opaque = device.create_render_pipeline(pipeline_desc_opaque)
     let pipeline_error_promise_opaque = device.pop_error_scope()
+    let topology_suffix = mesh3d_topology_key_suffix(topology_kind)
     @js.run_async(async fn() noraise {
       let err_any : @js.Any = pipeline_error_promise_opaque.wait() catch {
         _ => js_null()
@@ -1142,13 +1239,13 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
       if !host_is_nullish(err_any) {
         report_asset_error_once(
           state,
-          "mesh3d_pipeline_validation_error",
+          "mesh3d_pipeline_validation_error" + topology_suffix,
           "Mesh3d pipeline validation error: " + any_to_string(err_any),
         )
-        state.gpu.mesh3d_pipeline = None
+        mesh3d_pipeline_set(state, topology_kind, false, None)
       }
     })
-    state.gpu.mesh3d_pipeline = Some(pipeline_opaque)
+    mesh3d_pipeline_set(state, topology_kind, false, Some(pipeline_opaque))
 
     let depth_state_transparent = @js.from_entries([
       ("format", @js.any("depth24plus")),
@@ -1174,14 +1271,14 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
       if !host_is_nullish(err_any) {
         report_asset_error_once(
           state,
-          "mesh3d_pipeline_transparent_validation_error",
+          "mesh3d_pipeline_transparent_validation_error" + topology_suffix,
           "Mesh3d transparent pipeline validation error: " +
           any_to_string(err_any),
         )
-        state.gpu.mesh3d_pipeline_transparent = None
+        mesh3d_pipeline_set(state, topology_kind, true, None)
       }
     })
-    state.gpu.mesh3d_pipeline_transparent = Some(pipeline_transparent)
+    mesh3d_pipeline_set(state, topology_kind, true, Some(pipeline_transparent))
   }
 }
 
@@ -3310,6 +3407,10 @@ fn draw_mesh3d(
   anisotropy_texture_id : Int,
   anisotropy_strength : Double,
   anisotropy_rotation : Double,
+  specular_tint_texture_id : Int,
+  specular_tint_r : Double,
+  specular_tint_g : Double,
+  specular_tint_b : Double,
 ) -> Unit {
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
@@ -3324,25 +3425,6 @@ fn draw_mesh3d(
     0
   }
   let use_motion_vector_pipeline = pass_kind_value == 1
-  if use_motion_vector_pipeline {
-    ensure_motion_vector_pipeline(state)
-  } else {
-    ensure_mesh3d_pipeline(state)
-  }
-  let use_transparent_pipeline = a < 0.999
-  let mesh3d_pipeline_opt = if use_motion_vector_pipeline {
-    None
-  } else if use_transparent_pipeline {
-    state.gpu.mesh3d_pipeline_transparent
-  } else {
-    state.gpu.mesh3d_pipeline
-  }
-  if !use_motion_vector_pipeline && mesh3d_pipeline_opt is None {
-    report_asset_error_once(
-      state, "mesh3d_draw_pipeline_not_ready", "Mesh3d draw skipped: mesh3d pipeline not ready",
-    )
-    return
-  }
   let mesh_entry = map_get(state.gpu.meshes, @js.any(mesh_id))
   if host_is_nullish(mesh_entry) {
     report_asset_error_once(
@@ -3363,7 +3445,30 @@ fn draw_mesh3d(
     )
     return
   }
+  let primitive_topology_kind = mesh3d_topology_kind_from_entry(mesh_entry)
+  let use_transparent_pipeline = a < 0.999
   if use_motion_vector_pipeline {
+    ensure_motion_vector_pipeline(state)
+  } else {
+    ensure_mesh3d_pipeline(state, primitive_topology_kind)
+  }
+  let mesh3d_pipeline_opt = if use_motion_vector_pipeline {
+    None
+  } else {
+    mesh3d_pipeline_get(
+      state, primitive_topology_kind, use_transparent_pipeline,
+    )
+  }
+  if !use_motion_vector_pipeline && mesh3d_pipeline_opt is None {
+    report_asset_error_once(
+      state, "mesh3d_draw_pipeline_not_ready", "Mesh3d draw skipped: mesh3d pipeline not ready",
+    )
+    return
+  }
+  if use_motion_vector_pipeline {
+    if primitive_topology_kind != 0 {
+      return
+    }
     if a < 0.999 {
       return
     }
@@ -3496,6 +3601,12 @@ fn draw_mesh3d(
   } else {
     state.gpu.fallback_texture_id
   }
+  let specular_tint_textured = specular_tint_texture_id >= 0
+  let resolved_specular_tint_texture_id = if specular_tint_textured {
+    specular_tint_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
   let base_texture_entry = get_texture_entry(state, base_texture_id)
   let normal_texture_entry = get_texture_entry(
     state, resolved_normal_texture_id,
@@ -3513,13 +3624,17 @@ fn draw_mesh3d(
   let anisotropy_texture_entry = get_texture_entry(
     state, resolved_anisotropy_texture_id,
   )
+  let specular_tint_texture_entry = get_texture_entry(
+    state, resolved_specular_tint_texture_id,
+  )
   if base_texture_entry is None ||
     normal_texture_entry is None ||
     emissive_texture_entry is None ||
     metallic_roughness_texture_entry is None ||
     occlusion_texture_entry is None ||
     depth_texture_entry is None ||
-    anisotropy_texture_entry is None {
+    anisotropy_texture_entry is None ||
+    specular_tint_texture_entry is None {
     return
   }
   if state.gpu.current_pass is Some(pass) &&
@@ -3532,7 +3647,8 @@ fn draw_mesh3d(
     is Some(metallic_roughness_texture_entry_value) &&
     occlusion_texture_entry is Some(occlusion_texture_entry_value) &&
     depth_texture_entry is Some(depth_texture_entry_value) &&
-    anisotropy_texture_entry is Some(anisotropy_texture_entry_value) {
+    anisotropy_texture_entry is Some(anisotropy_texture_entry_value) &&
+    specular_tint_texture_entry is Some(specular_tint_texture_entry_value) {
     let aspect = if info.height > 0 { info.width / info.height } else { 1.0 }
     let uv0_x = if textured { uv_offset_x } else { 0.0 }
     let uv0_y = if textured { uv_offset_y } else { 0.0 }
@@ -3659,6 +3775,14 @@ fn draw_mesh3d(
       } else {
         0.0
       },
+      specular_tint_r,
+      specular_tint_g,
+      specular_tint_b,
+      if specular_tint_textured {
+        1.0
+      } else {
+        0.0
+      },
     ]
     guard create_transient_uniform_bind_group(
         state, mesh3d_pipeline, uniform_values,
@@ -3691,6 +3815,9 @@ fn draw_mesh3d(
       let anisotropy_view : @webgpu.GPUTextureView = anisotropy_texture_entry_value
         ._get("view")
         .cast()
+      let specular_tint_view : @webgpu.GPUTextureView = specular_tint_texture_entry_value
+        ._get("view")
+        .cast()
       guard state.gpu.mesh3d_material_layout is Some(material_layout) else {
         return
       }
@@ -3703,6 +3830,7 @@ fn draw_mesh3d(
         @webgpu.bind_group_entry_texture(5, occlusion_view),
         @webgpu.bind_group_entry_texture(6, depth_view),
         @webgpu.bind_group_entry_texture(7, anisotropy_view),
+        @webgpu.bind_group_entry_texture(8, specular_tint_view),
       ]
       let material_desc = @webgpu.bind_group_descriptor(
         material_layout, material_entries,

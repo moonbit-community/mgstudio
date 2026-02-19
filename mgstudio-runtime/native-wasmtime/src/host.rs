@@ -3514,6 +3514,10 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3562,6 +3566,10 @@ fn define_mgstudio_host_imports(
             let anisotropy_texture_id = args.get(45).and_then(|v| v.i32()).unwrap_or(-1);
             let anisotropy_strength = f(46);
             let anisotropy_rotation = f(47);
+            let specular_tint_texture_id = args.get(48).and_then(|v| v.i32()).unwrap_or(-1);
+            let specular_tint_r = if args.len() > 49 { f(49) } else { 1.0 };
+            let specular_tint_g = if args.len() > 50 { f(50) } else { 1.0 };
+            let specular_tint_b = if args.len() > 51 { f(51) } else { 1.0 };
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh3d(
                     mesh_id,
@@ -3605,6 +3613,8 @@ fn define_mgstudio_host_imports(
                     anisotropy_texture_id,
                     anisotropy_strength,
                     anisotropy_rotation,
+                    specular_tint_texture_id,
+                    [specular_tint_r, specular_tint_g, specular_tint_b],
                 )?;
             }
             ok_i32(out, 0);
@@ -3742,6 +3752,40 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "gpu_create_mesh3d",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let text_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let primitive_topology_kind = args.get(1).and_then(|v| v.i32()).unwrap_or(0);
+            let csv = caller.data().string_table_get(text_id).unwrap_or("");
+            let mut floats: Vec<f32> = Vec::new();
+            for line in csv.lines() {
+                let t = line.trim();
+                if t.is_empty() || t.starts_with('#') {
+                    continue;
+                }
+                for part in t.split(|c: char| c == ',' || c.is_whitespace()) {
+                    let p = part.trim();
+                    if p.is_empty() {
+                        continue;
+                    }
+                    if let Ok(v) = p.parse::<f32>() {
+                        floats.push(v);
+                    }
+                }
+            }
+            let gpu = caller.data_mut().ensure_gpu()?;
+            let id = gpu.create_mesh3d_xyzuvrgba(&floats, primitive_topology_kind);
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "gpu_create_mesh_triangles3d",
         &[ValType::I32],
         &[ValType::I32],
@@ -3765,7 +3809,7 @@ fn define_mgstudio_host_imports(
                 }
             }
             let gpu = caller.data_mut().ensure_gpu()?;
-            let id = gpu.create_mesh_triangles_xyzuvrgba(&floats);
+            let id = gpu.create_mesh3d_xyzuvrgba(&floats, 0);
             ok_i32(out, id);
             Ok(())
         },

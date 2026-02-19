@@ -10,7 +10,7 @@ use winit::window::Window;
 // host contract used by mgstudio-engine (begin_frame/begin_pass/draw/end_pass/end_frame)
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
-const MESH_UNIFORM_MAX_BYTES: u64 = 92 * 4;
+const MESH_UNIFORM_MAX_BYTES: u64 = 96 * 4;
 const COMPRESSED_IMAGE_FORMAT_ASTC_LDR: i32 = 1;
 const COMPRESSED_IMAGE_FORMAT_BC: i32 = 2;
 const COMPRESSED_IMAGE_FORMAT_ETC2: i32 = 4;
@@ -164,6 +164,7 @@ struct MeshDraw {
     occlusion_texture_id: i32,
     depth_texture_id: i32,
     anisotropy_texture_id: i32,
+    specular_tint_texture_id: i32,
     uv_offset: [f32; 2],
     uv_scale: [f32; 2],
     map_flags: [f32; 4],
@@ -181,6 +182,8 @@ struct MeshDraw {
     anisotropy_rotation_cos: f32,
     anisotropy_rotation_sin: f32,
     anisotropy_map_flag: f32,
+    specular_tint: [f32; 3],
+    specular_tint_map_flag: f32,
     ubo_offset: u32, // computed during encoding
     scissor: Option<ScissorRect>,
 }
@@ -210,6 +213,7 @@ struct GpuMesh {
     vertex_count: u32,
     index_count: u32,
     layout: MeshVertexLayout,
+    primitive_topology: wgpu::PrimitiveTopology,
     vertex_buf: wgpu::Buffer,
     index_buf: wgpu::Buffer,
 }
@@ -218,6 +222,14 @@ struct GpuMesh {
 enum MeshVertexLayout {
     XyUvRgba,
     XyzUvRgba,
+}
+
+fn mesh3d_topology_from_kind(kind: i32) -> wgpu::PrimitiveTopology {
+    match kind {
+        1 => wgpu::PrimitiveTopology::LineList,
+        2 => wgpu::PrimitiveTopology::LineStrip,
+        _ => wgpu::PrimitiveTopology::TriangleList,
+    }
 }
 
 #[derive(Default)]
@@ -242,8 +254,9 @@ struct MeshRenderer {
     pipeline_layout: Option<wgpu::PipelineLayout>,
     pipeline_layout_3d: Option<wgpu::PipelineLayout>,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
-    pipelines_3d: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
-    pipelines_3d_transparent: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
+    pipelines_3d: HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology), wgpu::RenderPipeline>,
+    pipelines_3d_transparent:
+        HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology), wgpu::RenderPipeline>,
 
     uniform_buf: Option<wgpu::Buffer>,
     uniform_bg: Option<wgpu::BindGroup>,
@@ -703,6 +716,9 @@ impl GpuBackend {
         let mut sprite_segments: Vec<&SpriteSegment> = Vec::new();
         let mut has_mesh_2d = false;
         let mut has_mesh_3d = false;
+        let mut has_mesh_3d_triangles = false;
+        let mut has_mesh_3d_line_list = false;
+        let mut has_mesh_3d_line_strip = false;
         let mut has_motion_blur = false;
         for cmd in &pass.commands {
             match cmd {
@@ -710,6 +726,19 @@ impl GpuBackend {
                 DrawCmd::Mesh(draw) => {
                     if draw.is_3d {
                         has_mesh_3d = true;
+                        if let Some(mesh) = self.meshes.get(&draw.mesh_id) {
+                            match mesh.primitive_topology {
+                                wgpu::PrimitiveTopology::LineList => {
+                                    has_mesh_3d_line_list = true;
+                                }
+                                wgpu::PrimitiveTopology::LineStrip => {
+                                    has_mesh_3d_line_strip = true;
+                                }
+                                _ => {
+                                    has_mesh_3d_triangles = true;
+                                }
+                            }
+                        }
                     } else {
                         has_mesh_2d = true;
                     }
@@ -732,7 +761,24 @@ impl GpuBackend {
             if pass.st.pass_kind == 1 {
                 self.ensure_mesh3d_motion_vector_pipeline()?;
             } else {
-                self.ensure_mesh3d_pipeline(pass.st.target_format)?;
+                if has_mesh_3d_triangles {
+                    self.ensure_mesh3d_pipeline(
+                        pass.st.target_format,
+                        wgpu::PrimitiveTopology::TriangleList,
+                    )?;
+                }
+                if has_mesh_3d_line_list {
+                    self.ensure_mesh3d_pipeline(
+                        pass.st.target_format,
+                        wgpu::PrimitiveTopology::LineList,
+                    )?;
+                }
+                if has_mesh_3d_line_strip {
+                    self.ensure_mesh3d_pipeline(
+                        pass.st.target_format,
+                        wgpu::PrimitiveTopology::LineStrip,
+                    )?;
+                }
             }
         }
         if has_motion_blur {
@@ -761,12 +807,8 @@ impl GpuBackend {
             )
         };
         let mesh_pipeline_2d = self.mesh.pipelines.get(&pass.st.target_format).cloned();
-        let mesh_pipeline_3d = self.mesh.pipelines_3d.get(&pass.st.target_format).cloned();
-        let mesh_pipeline_3d_transparent = self
-            .mesh
-            .pipelines_3d_transparent
-            .get(&pass.st.target_format)
-            .cloned();
+        let mesh_pipelines_3d = self.mesh.pipelines_3d.clone();
+        let mesh_pipelines_3d_transparent = self.mesh.pipelines_3d_transparent.clone();
         let mesh_pipeline_motion_vector = self.mesh.motion_vector_pipeline.as_ref().cloned();
         let mesh_bg = self.mesh.uniform_bg.as_ref().cloned();
         let mesh_motion_vector_bg = self.mesh.motion_vector_uniform_bg.as_ref().cloned();
@@ -952,6 +994,9 @@ impl GpuBackend {
 
                         // Motion-vector prepass: opaque-only and separate uniform/pipeline.
                         if draw.is_3d && pass.st.pass_kind == 1 {
+                            if mesh.primitive_topology != wgpu::PrimitiveTopology::TriangleList {
+                                continue;
+                            }
                             if draw.color[3] < 0.999 {
                                 continue;
                             }
@@ -980,10 +1025,11 @@ impl GpuBackend {
                         }
 
                         let pipeline = if draw.is_3d {
+                            let key = (pass.st.target_format, mesh.primitive_topology);
                             if draw.color[3] < 0.999 {
-                                mesh_pipeline_3d_transparent.as_ref()
+                                mesh_pipelines_3d_transparent.get(&key)
                             } else {
-                                mesh_pipeline_3d.as_ref()
+                                mesh_pipelines_3d.get(&key)
                             }
                         } else {
                             mesh_pipeline_2d.as_ref()
@@ -1030,6 +1076,11 @@ impl GpuBackend {
                             };
                             let Some(anisotropy_tex) =
                                 self.textures.get(&draw.anisotropy_texture_id)
+                            else {
+                                continue;
+                            };
+                            let Some(specular_tint_tex) =
+                                self.textures.get(&draw.specular_tint_texture_id)
                             else {
                                 continue;
                             };
@@ -1089,6 +1140,12 @@ impl GpuBackend {
                                                 &anisotropy_tex.view,
                                             ),
                                         },
+                                        wgpu::BindGroupEntry {
+                                            binding: 8,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &specular_tint_tex.view,
+                                            ),
+                                        },
                                     ],
                                 });
                             rp.set_bind_group(1, &material_bg, &[]);
@@ -1134,9 +1191,13 @@ impl GpuBackend {
                             0,
                             bytemuck::cast_slice(&settings_words),
                         );
-                        let globals_words: [u32; 4] = [0f32.to_bits(), 0f32.to_bits(), self.frame_count, 0];
-                        self.queue
-                            .write_buffer(&globals_buf, 0, bytemuck::cast_slice(&globals_words));
+                        let globals_words: [u32; 4] =
+                            [0f32.to_bits(), 0f32.to_bits(), self.frame_count, 0];
+                        self.queue.write_buffer(
+                            &globals_buf,
+                            0,
+                            bytemuck::cast_slice(&globals_words),
+                        );
 
                         if self.mesh.motion_blur_fallback_depth_view.is_none()
                             || self.mesh.motion_blur_fallback_depth_texture.is_none()
@@ -1157,8 +1218,8 @@ impl GpuBackend {
                                         | wgpu::TextureUsages::TEXTURE_BINDING,
                                     view_formats: &[],
                                 });
-                            let fallback_depth_view = fallback_depth
-                                .create_view(&wgpu::TextureViewDescriptor::default());
+                            let fallback_depth_view =
+                                fallback_depth.create_view(&wgpu::TextureViewDescriptor::default());
                             self.mesh.motion_blur_fallback_depth_texture = Some(fallback_depth);
                             self.mesh.motion_blur_fallback_depth_view = Some(fallback_depth_view);
                         }
@@ -1177,11 +1238,15 @@ impl GpuBackend {
                                 entries: &[
                                     wgpu::BindGroupEntry {
                                         binding: 0,
-                                        resource: wgpu::BindingResource::TextureView(&scene_tex.view),
+                                        resource: wgpu::BindingResource::TextureView(
+                                            &scene_tex.view,
+                                        ),
                                     },
                                     wgpu::BindGroupEntry {
                                         binding: 1,
-                                        resource: wgpu::BindingResource::TextureView(&velocity_tex.view),
+                                        resource: wgpu::BindingResource::TextureView(
+                                            &velocity_tex.view,
+                                        ),
                                     },
                                     wgpu::BindGroupEntry {
                                         binding: 2,
@@ -1189,7 +1254,9 @@ impl GpuBackend {
                                     },
                                     wgpu::BindGroupEntry {
                                         binding: 3,
-                                        resource: wgpu::BindingResource::Sampler(&scene_tex.sampler),
+                                        resource: wgpu::BindingResource::Sampler(
+                                            &scene_tex.sampler,
+                                        ),
                                     },
                                     wgpu::BindGroupEntry {
                                         binding: 4,
@@ -1377,6 +1444,7 @@ impl GpuBackend {
             occlusion_texture_id: resolved_texture_id,
             depth_texture_id: resolved_texture_id,
             anisotropy_texture_id: resolved_texture_id,
+            specular_tint_texture_id: resolved_texture_id,
             uv_offset,
             uv_scale,
             map_flags: [if textured { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
@@ -1394,6 +1462,8 @@ impl GpuBackend {
             anisotropy_rotation_cos: 1.0,
             anisotropy_rotation_sin: 0.0,
             anisotropy_map_flag: 0.0,
+            specular_tint: [1.0, 1.0, 1.0],
+            specular_tint_map_flag: 0.0,
             ubo_offset: 0,
             scissor: pass.current_scissor,
         }));
@@ -1443,6 +1513,8 @@ impl GpuBackend {
         anisotropy_texture_id: i32,
         anisotropy_strength: f32,
         anisotropy_rotation: f32,
+        specular_tint_texture_id: i32,
+        specular_tint: [f32; 3],
     ) -> anyhow::Result<()> {
         if self.frame.is_none() {
             return Ok(());
@@ -1493,6 +1565,14 @@ impl GpuBackend {
         };
         let resolved_anisotropy_texture_id =
             self.ensure_fallback_texture(requested_anisotropy_texture_id)?;
+        let specular_tint_textured = specular_tint_texture_id >= 0;
+        let requested_specular_tint_texture_id = if specular_tint_textured {
+            specular_tint_texture_id
+        } else {
+            -1
+        };
+        let resolved_specular_tint_texture_id =
+            self.ensure_fallback_texture(requested_specular_tint_texture_id)?;
         let uv_offset = if textured {
             [uv_offset.0, uv_offset.1]
         } else {
@@ -1538,6 +1618,7 @@ impl GpuBackend {
             occlusion_texture_id: resolved_occlusion_texture_id,
             depth_texture_id: resolved_depth_texture_id,
             anisotropy_texture_id: resolved_anisotropy_texture_id,
+            specular_tint_texture_id: resolved_specular_tint_texture_id,
             uv_offset,
             uv_scale,
             map_flags: [
@@ -1564,6 +1645,8 @@ impl GpuBackend {
             anisotropy_rotation_cos: anisotropy_rotation.cos(),
             anisotropy_rotation_sin: anisotropy_rotation.sin(),
             anisotropy_map_flag: if anisotropy_textured { 1.0 } else { 0.0 },
+            specular_tint,
+            specular_tint_map_flag: if specular_tint_textured { 1.0 } else { 0.0 },
             ubo_offset: 0,
             scissor: pass.current_scissor,
         }));
@@ -1659,6 +1742,7 @@ impl GpuBackend {
                 vertex_count: 4,
                 index_count: 6,
                 layout: MeshVertexLayout::XyUvRgba,
+                primitive_topology: wgpu::PrimitiveTopology::TriangleList,
                 vertex_buf: vb,
                 index_buf: ib,
             },
@@ -1734,6 +1818,7 @@ impl GpuBackend {
                 vertex_count: usable_vcount as u32,
                 index_count: usable_vcount as u32,
                 layout: MeshVertexLayout::XyUvRgba,
+                primitive_topology: wgpu::PrimitiveTopology::TriangleList,
                 vertex_buf: vb,
                 index_buf: ib,
             },
@@ -1741,12 +1826,25 @@ impl GpuBackend {
         id
     }
 
-    pub fn create_mesh_triangles_xyzuvrgba(&mut self, vertices: &[f32]) -> i32 {
+    pub fn create_mesh3d_xyzuvrgba(
+        &mut self,
+        vertices: &[f32],
+        primitive_topology_kind: i32,
+    ) -> i32 {
+        let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind);
         let vcount = vertices.len() / 9;
         if vcount == 0 {
             return 0;
         }
-        let usable_vcount = vcount - (vcount % 3);
+        let usable_vcount = if primitive_topology == wgpu::PrimitiveTopology::TriangleList {
+            vcount - (vcount % 3)
+        } else if primitive_topology == wgpu::PrimitiveTopology::LineList {
+            vcount - (vcount % 2)
+        } else if vcount < 2 {
+            0
+        } else {
+            vcount
+        };
         if usable_vcount == 0 || usable_vcount > 65535 {
             return 0;
         }
@@ -1777,6 +1875,7 @@ impl GpuBackend {
                 vertex_count: usable_vcount as u32,
                 index_count: usable_vcount as u32,
                 layout: MeshVertexLayout::XyzUvRgba,
+                primitive_topology,
                 vertex_buf: vb,
                 index_buf: ib,
             },
@@ -2760,6 +2859,16 @@ impl GpuBackend {
                             },
                             count: None,
                         },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 8,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
                     ],
                 });
         let pl = self
@@ -2887,10 +2996,15 @@ impl GpuBackend {
         Ok(())
     }
 
-    fn ensure_mesh3d_pipeline(&mut self, format: wgpu::TextureFormat) -> anyhow::Result<()> {
+    fn ensure_mesh3d_pipeline(
+        &mut self,
+        format: wgpu::TextureFormat,
+        topology: wgpu::PrimitiveTopology,
+    ) -> anyhow::Result<()> {
         self.ensure_mesh_resources()?;
-        if self.mesh.pipelines_3d.contains_key(&format)
-            && self.mesh.pipelines_3d_transparent.contains_key(&format)
+        let key = (format, topology);
+        if self.mesh.pipelines_3d.contains_key(&key)
+            && self.mesh.pipelines_3d_transparent.contains_key(&key)
         {
             return Ok(());
         }
@@ -2949,7 +3063,7 @@ impl GpuBackend {
                     })],
                 }),
                 primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    topology,
                     ..Default::default()
                 },
                 depth_stencil: Some(wgpu::DepthStencilState {
@@ -3006,7 +3120,7 @@ impl GpuBackend {
                         })],
                     }),
                     primitive: wgpu::PrimitiveState {
-                        topology: wgpu::PrimitiveTopology::TriangleList,
+                        topology,
                         ..Default::default()
                     },
                     depth_stencil: Some(wgpu::DepthStencilState {
@@ -3020,10 +3134,10 @@ impl GpuBackend {
                     multiview_mask: None,
                     cache: None,
                 });
-        self.mesh.pipelines_3d.insert(format, pipeline_opaque);
+        self.mesh.pipelines_3d.insert(key, pipeline_opaque);
         self.mesh
             .pipelines_3d_transparent
-            .insert(format, pipeline_transparent);
+            .insert(key, pipeline_transparent);
         Ok(())
     }
 
@@ -3166,75 +3280,69 @@ impl GpuBackend {
     fn ensure_motion_blur_pipeline_rgba8(&mut self) -> anyhow::Result<()> {
         self.ensure_sprite_resources()?;
         if self.mesh.motion_blur_pipeline_layout.is_none() {
-            let bgl =
-                self.device
-                    .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                        label: Some("mgstudio_motion_blur_bgl"),
-                        entries: &[
-                            wgpu::BindGroupLayoutEntry {
-                                binding: 0,
-                                visibility: wgpu::ShaderStages::FRAGMENT,
-                                ty: wgpu::BindingType::Texture {
-                                    sample_type: wgpu::TextureSampleType::Float {
-                                        filterable: true,
-                                    },
-                                    view_dimension: wgpu::TextureViewDimension::D2,
-                                    multisampled: false,
-                                },
-                                count: None,
+            let bgl = self
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("mgstudio_motion_blur_bgl"),
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
                             },
-                            wgpu::BindGroupLayoutEntry {
-                                binding: 1,
-                                visibility: wgpu::ShaderStages::FRAGMENT,
-                                ty: wgpu::BindingType::Texture {
-                                    sample_type: wgpu::TextureSampleType::Float {
-                                        filterable: true,
-                                    },
-                                    view_dimension: wgpu::TextureViewDimension::D2,
-                                    multisampled: false,
-                                },
-                                count: None,
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
                             },
-                            wgpu::BindGroupLayoutEntry {
-                                binding: 2,
-                                visibility: wgpu::ShaderStages::FRAGMENT,
-                                ty: wgpu::BindingType::Texture {
-                                    sample_type: wgpu::TextureSampleType::Depth,
-                                    view_dimension: wgpu::TextureViewDimension::D2,
-                                    multisampled: false,
-                                },
-                                count: None,
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Depth,
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
                             },
-                            wgpu::BindGroupLayoutEntry {
-                                binding: 3,
-                                visibility: wgpu::ShaderStages::FRAGMENT,
-                                ty: wgpu::BindingType::Sampler(
-                                    wgpu::SamplerBindingType::Filtering,
-                                ),
-                                count: None,
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 3,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 4,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
                             },
-                            wgpu::BindGroupLayoutEntry {
-                                binding: 4,
-                                visibility: wgpu::ShaderStages::FRAGMENT,
-                                ty: wgpu::BindingType::Buffer {
-                                    ty: wgpu::BufferBindingType::Uniform,
-                                    has_dynamic_offset: false,
-                                    min_binding_size: None,
-                                },
-                                count: None,
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 5,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
                             },
-                            wgpu::BindGroupLayoutEntry {
-                                binding: 5,
-                                visibility: wgpu::ShaderStages::FRAGMENT,
-                                ty: wgpu::BindingType::Buffer {
-                                    ty: wgpu::BufferBindingType::Uniform,
-                                    has_dynamic_offset: false,
-                                    min_binding_size: None,
-                                },
-                                count: None,
-                            },
-                        ],
-                    });
+                            count: None,
+                        },
+                    ],
+                });
             let pl = self
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -3821,7 +3929,7 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     } else {
         1.0
     };
-    let floats: [f32; 92] = [
+    let floats: [f32; 96] = [
         draw.x,
         draw.y,
         draw.z,
@@ -3914,6 +4022,10 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
         draw.anisotropy_rotation_cos,
         draw.anisotropy_rotation_sin,
         draw.anisotropy_map_flag,
+        draw.specular_tint[0],
+        draw.specular_tint[1],
+        draw.specular_tint[2],
+        draw.specular_tint_map_flag,
     ];
     bytemuck::cast_slice(&floats).to_vec()
 }

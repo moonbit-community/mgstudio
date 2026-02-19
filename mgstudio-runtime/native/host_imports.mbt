@@ -3276,6 +3276,41 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_create_mesh3d",
+    fn(args) raise @runtime.RuntimeError {
+      if ctx.gpu is None {
+        ensure_gpu_backend(ctx)
+      }
+      if args.length() >= 1 && args[0] is @types.Value::I32(text_id) {
+        let primitive_topology_kind = if args.length() >= 2 &&
+          args[1] is @types.Value::I32(v) {
+          v
+        } else {
+          0
+        }
+        match string_table_get(ctx, text_id) {
+          Some(csv) =>
+            match parse_f32_csv_list(csv) {
+              Some(verts) =>
+                ok_i32(
+                  ctx.gpu
+                  .unwrap()
+                  .create_mesh3d_xyzuvrgba(verts, primitive_topology_kind),
+                )
+              None => ok_i32(0)
+            }
+          None => ok_i32(0)
+        }
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_create_mesh_triangles3d",
     fn(args) raise @runtime.RuntimeError {
       if ctx.gpu is None {
@@ -3286,7 +3321,7 @@ pub fn add_mgstudio_host_imports(
           Some(csv) =>
             match parse_f32_csv_list(csv) {
               Some(verts) =>
-                ok_i32(ctx.gpu.unwrap().create_mesh_triangles_xyzuvrgba(verts))
+                ok_i32(ctx.gpu.unwrap().create_mesh3d_xyzuvrgba(verts, 0))
               None => ok_i32(0)
             }
           None => ok_i32(0)
@@ -3530,6 +3565,30 @@ pub fn add_mgstudio_host_imports(
           } else {
             0.0F
           }
+          let specular_tint_texture_id = if args.length() > 48 &&
+            args[48] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let specular_tint_r = if args.length() > 49 &&
+            args[49] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let specular_tint_g = if args.length() > 50 &&
+            args[50] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
+          let specular_tint_b = if args.length() > 51 &&
+            args[51] is @types.Value::F32(v) {
+            v
+          } else {
+            1.0F
+          }
           ctx.gpu
           .unwrap()
           .draw_mesh3d(
@@ -3542,7 +3601,8 @@ pub fn add_mgstudio_host_imports(
             depth_texture_id, emissive_r, emissive_g, emissive_b, unlit, metallic,
             roughness, reflectance, parallax_depth_scale, max_parallax_layer_count,
             max_relief_mapping_search_steps, anisotropy_texture_id, anisotropy_strength,
-            anisotropy_rotation,
+            anisotropy_rotation, specular_tint_texture_id, specular_tint_r, specular_tint_g,
+            specular_tint_b,
           )
         }
         ok_i32(0)
@@ -3601,6 +3661,10 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
       ],

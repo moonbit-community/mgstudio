@@ -175,6 +175,10 @@ priv struct GpuState {
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
   mut mesh3d_pipeline : @webgpu.GPURenderPipeline?
   mut mesh3d_pipeline_transparent : @webgpu.GPURenderPipeline?
+  mut mesh3d_pipeline_line_list : @webgpu.GPURenderPipeline?
+  mut mesh3d_pipeline_line_list_transparent : @webgpu.GPURenderPipeline?
+  mut mesh3d_pipeline_line_strip : @webgpu.GPURenderPipeline?
+  mut mesh3d_pipeline_line_strip_transparent : @webgpu.GPURenderPipeline?
   mut motion_vector_pipeline : @webgpu.GPURenderPipeline?
   mut motion_blur_pipeline : @webgpu.GPURenderPipeline?
   mut mesh3d_uniform_layout : @webgpu.GPUBindGroupLayout?
@@ -320,6 +324,10 @@ fn new_state(
       mesh_pipeline: None,
       mesh3d_pipeline: None,
       mesh3d_pipeline_transparent: None,
+      mesh3d_pipeline_line_list: None,
+      mesh3d_pipeline_line_list_transparent: None,
+      mesh3d_pipeline_line_strip: None,
+      mesh3d_pipeline_line_strip_transparent: None,
       motion_vector_pipeline: None,
       motion_blur_pipeline: None,
       mesh3d_uniform_layout: None,
@@ -773,6 +781,10 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.mesh_pipeline = None
   state.gpu.mesh3d_pipeline = None
   state.gpu.mesh3d_pipeline_transparent = None
+  state.gpu.mesh3d_pipeline_line_list = None
+  state.gpu.mesh3d_pipeline_line_list_transparent = None
+  state.gpu.mesh3d_pipeline_line_strip = None
+  state.gpu.mesh3d_pipeline_line_strip_transparent = None
   state.gpu.motion_vector_pipeline = None
   state.gpu.motion_blur_pipeline = None
   state.gpu.mesh3d_uniform_layout = None

@@ -52,14 +52,31 @@ pub struct Mesh3dGeometry {
   uvs : Array[@math.Vec2]
   colors : Array[@math.Vec4]?
   indices : Array[Int]?
+  topology : Mesh3dPrimitiveTopology
 }
+pub fn Mesh3dGeometry::encode_interleaved_xyz_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::encode_triangle_interleaved_xyz_uv_rgba_csv(Self) -> String?
+pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::new(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
+pub fn Mesh3dGeometry::new_with_colors_and_topology(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
+pub fn Mesh3dGeometry::new_with_topology(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
+pub fn Mesh3dGeometry::primitive_topology(Self) -> Mesh3dPrimitiveTopology
+pub fn Mesh3dGeometry::to_wireframe_line_list(Self) -> Self?
 pub fn Mesh3dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh3dGeometry::validate(Self) -> Mesh3dValidationError?
 pub fn Mesh3dGeometry::vertex_count(Self) -> Int
+pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
+
+pub(all) enum Mesh3dPrimitiveTopology {
+  TriangleList
+  LineList
+  LineStrip
+}
+pub fn Mesh3dPrimitiveTopology::to_int(Self) -> Int
+pub impl Eq for Mesh3dPrimitiveTopology
+pub impl Show for Mesh3dPrimitiveTopology
 
 pub(all) enum Mesh3dValidationError {
   EmptyGeometry
@@ -67,6 +84,10 @@ pub(all) enum Mesh3dValidationError {
   ColorLengthMismatch(Int, Int)
   NonTriangleVertexCount(Int)
   NonTriangleIndexCount(Int)
+  NonLineListVertexCount(Int)
+  NonLineListIndexCount(Int)
+  NonLineStripVertexCount(Int)
+  NonLineStripIndexCount(Int)
   IndexOutOfBounds(Int, Int)
 }
 pub impl Eq for Mesh3dValidationError

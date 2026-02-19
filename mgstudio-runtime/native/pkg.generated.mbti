@@ -122,8 +122,16 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_pipeline : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_transparent : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_line_list : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_line_list_transparent : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_line_strip : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_line_strip_transparent : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_surface_transparent : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_list : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_list_transparent : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_strip : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_strip_transparent : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut mesh3d_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh3d_uniform_bg : @wgpu_mbt.BindGroup?
@@ -150,6 +158,7 @@ pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, F
 pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
+pub fn GpuBackend::create_mesh3d_xyzuvrgba(Self, Array[Float], Int) -> Int
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
@@ -160,7 +169,7 @@ pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
@@ -189,6 +198,7 @@ pub struct GpuMeshInfo {
   id : Int
   index_count : UInt
   vertex_count : UInt
+  primitive_topology : UInt
   vertex_stride_bytes : UInt64
   vertex_buf : @wgpu_mbt.Buffer
   index_buf : @wgpu_mbt.Buffer
@@ -308,6 +318,7 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   occlusion_texture_id : Int
   depth_texture_id : Int
   anisotropy_texture_id : Int
+  specular_tint_texture_id : Int
   bind_group : @wgpu_mbt.BindGroup
 }
 

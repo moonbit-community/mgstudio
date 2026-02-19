@@ -49,6 +49,7 @@ pub struct World {
   children : @core.ComponentStore[@hierarchy.Children]
   gpu_mesh2d : @core.ComponentStore[@render2d.GpuMesh2d]
   spot_light : @core.ComponentStore[@render3d.SpotLight]
+  wireframe : @core.ComponentStore[@render3d.Wireframe]
   background_color : @core.ComponentStore[@ui.BackgroundColor]
   damping2d : @core.ComponentStore[@physics2d.Damping2d]
   projection : @core.ComponentStore[@render2d.Projection]
@@ -63,6 +64,7 @@ pub struct World {
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
+  no_wireframe : @core.ComponentStore[@render3d.NoWireframe]
   tonemapping : @core.ComponentStore[@render3d.Tonemapping]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
   rigid_body2d : @core.ComponentStore[@physics2d.RigidBody2d]
@@ -83,6 +85,7 @@ pub struct World {
   contact_shadows : @core.ComponentStore[@render3d.ContactShadows]
   mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
   temporal_jitter : @core.ComponentStore[@render3d.TemporalJitter]
+  wireframe_color : @core.ComponentStore[@render3d.WireframeColor]
   active_events2d : @core.ComponentStore[@physics2d.ActiveEvents2d]
   gravity_scale2d : @core.ComponentStore[@physics2d.GravityScale2d]
   impulse_joint2d : @core.ComponentStore[@physics2d.ImpulseJoint2d]
@@ -193,6 +196,7 @@ pub struct World {
   res_render_state : @core.Resource[@render2d.RenderState]
   res_picking_events : @core.Resource[@picking.PickingEvents]
   res_pointer_inputs : @core.Resource[@picking.PointerInputs]
+  res_wireframe_config : @core.Resource[@render3d.WireframeConfig]
   res_physics2d_config : @core.Resource[@physics2d.Physics2dConfig]
   res_physics2d_events : @core.Resource[@physics2d.Physics2dEvents]
   res_physics3d_config : @core.Resource[@physics3d.Physics3dConfig]
@@ -255,6 +259,7 @@ pub fn World::new() -> World {
     children: @core.ComponentStore::new(),
     gpu_mesh2d: @core.ComponentStore::new(),
     spot_light: @core.ComponentStore::new(),
+    wireframe: @core.ComponentStore::new(),
     background_color: @core.ComponentStore::new(),
     damping2d: @core.ComponentStore::new(),
     projection: @core.ComponentStore::new(),
@@ -269,6 +274,7 @@ pub fn World::new() -> World {
     collider3d: @core.ComponentStore::new(),
     velocity3d: @core.ComponentStore::new(),
     scissor_rect: @core.ComponentStore::new(),
+    no_wireframe: @core.ComponentStore::new(),
     tonemapping: @core.ComponentStore::new(),
     dominance2d: @core.ComponentStore::new(),
     rigid_body2d: @core.ComponentStore::new(),
@@ -289,6 +295,7 @@ pub fn World::new() -> World {
     contact_shadows: @core.ComponentStore::new(),
     mesh_material3d: @core.ComponentStore::new(),
     temporal_jitter: @core.ComponentStore::new(),
+    wireframe_color: @core.ComponentStore::new(),
     active_events2d: @core.ComponentStore::new(),
     gravity_scale2d: @core.ComponentStore::new(),
     impulse_joint2d: @core.ComponentStore::new(),
@@ -357,6 +364,7 @@ pub fn World::new() -> World {
     res_render_state: @core.Resource::new(),
     res_picking_events: @core.Resource::new(),
     res_pointer_inputs: @core.Resource::new(),
+    res_wireframe_config: @core.Resource::new(),
     res_physics2d_config: @core.Resource::new(),
     res_physics2d_events: @core.Resource::new(),
     res_physics3d_config: @core.Resource::new(),
@@ -423,6 +431,7 @@ pub fn World::despawn(
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
   self.spot_light.remove(entity) |> ignore
+  self.wireframe.remove(entity) |> ignore
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
@@ -437,6 +446,7 @@ pub fn World::despawn(
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
+  self.no_wireframe.remove(entity) |> ignore
   self.tonemapping.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
   self.rigid_body2d.remove(entity) |> ignore
@@ -457,6 +467,7 @@ pub fn World::despawn(
   self.contact_shadows.remove(entity) |> ignore
   self.mesh_material3d.remove(entity) |> ignore
   self.temporal_jitter.remove(entity) |> ignore
+  self.wireframe_color.remove(entity) |> ignore
   self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
   self.impulse_joint2d.remove(entity) |> ignore
@@ -570,6 +581,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.children.remove(entity) |> ignore
   self.gpu_mesh2d.remove(entity) |> ignore
   self.spot_light.remove(entity) |> ignore
+  self.wireframe.remove(entity) |> ignore
   self.background_color.remove(entity) |> ignore
   self.damping2d.remove(entity) |> ignore
   self.projection.remove(entity) |> ignore
@@ -584,6 +596,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
+  self.no_wireframe.remove(entity) |> ignore
   self.tonemapping.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
   self.rigid_body2d.remove(entity) |> ignore
@@ -604,6 +617,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.contact_shadows.remove(entity) |> ignore
   self.mesh_material3d.remove(entity) |> ignore
   self.temporal_jitter.remove(entity) |> ignore
+  self.wireframe_color.remove(entity) |> ignore
   self.active_events2d.remove(entity) |> ignore
   self.gravity_scale2d.remove(entity) |> ignore
   self.impulse_joint2d.remove(entity) |> ignore
@@ -907,6 +921,11 @@ pub impl @render3d.Has_SpotLight for World with get_spot_light_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_Wireframe for World with get_wireframe_store(self) {
+  self.wireframe
+}
+
+///|
 pub impl @ui.Has_BackgroundColor for World with get_background_color_store(self) {
   self.background_color
 }
@@ -974,6 +993,11 @@ pub impl @physics3d.Has_Velocity3d for World with get_velocity3d_store(self) {
 ///|
 pub impl @render2d.Has_ScissorRect for World with get_scissor_rect_store(self) {
   self.scissor_rect
+}
+
+///|
+pub impl @render3d.Has_NoWireframe for World with get_no_wireframe_store(self) {
+  self.no_wireframe
 }
 
 ///|
@@ -1098,6 +1122,13 @@ pub impl @render3d.Has_TemporalJitter for World with get_temporal_jitter_store(
   self,
 ) {
   self.temporal_jitter
+}
+
+///|
+pub impl @render3d.Has_WireframeColor for World with get_wireframe_color_store(
+  self,
+) {
+  self.wireframe_color
 }
 
 ///|
@@ -1566,6 +1597,13 @@ pub impl @picking.HasRes_PointerInputs for World with get_pointer_inputs_resourc
   self,
 ) {
   self.res_pointer_inputs
+}
+
+///|
+pub impl @render3d.HasRes_WireframeConfig for World with get_wireframe_config_resource(
+  self,
+) {
+  self.res_wireframe_config
 }
 
 ///|

@@ -41,6 +41,8 @@ pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMateria
 
 pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) -> Bool
 
+pub fn[W : WireframePluginWorld] wireframe_plugin(@app.App[W]) -> @app.App[W]
+
 // Errors
 
 // Types and methods
@@ -334,6 +336,10 @@ pub fn Msaa::default() -> Self
 pub impl Eq for Msaa
 pub impl Show for Msaa
 
+pub struct NoWireframe {
+}
+pub fn NoWireframe::default() -> Self
+
 pub struct NormalPrepass {
 }
 pub fn NormalPrepass::default() -> Self
@@ -556,6 +562,8 @@ pub struct StandardMaterial {
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
   perceptual_roughness : Float
   reflectance : Float
+  specular_tint : @render2d.Color
+  specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
   opaque_render_method : OpaqueRendererMethod
@@ -588,6 +596,8 @@ pub fn StandardMaterial::with_parallax_depth_scale(Self, Float) -> Self
 pub fn StandardMaterial::with_parallax_mapping_method(Self, ParallaxMappingMethod) -> Self
 pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_reflectance(Self, Float) -> Self
+pub fn StandardMaterial::with_specular_tint(Self, @render2d.Color) -> Self
+pub fn StandardMaterial::with_specular_tint_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn StandardMaterial::with_uv_scale(Self, @math.Vec2) -> Self
@@ -644,6 +654,26 @@ pub fn Vignette::with_radius(Self, Float) -> Self
 pub fn Vignette::with_roundness(Self, Float) -> Self
 pub fn Vignette::with_smoothness(Self, Float) -> Self
 
+pub struct Wireframe {
+}
+pub fn Wireframe::default() -> Self
+
+pub struct WireframeColor {
+  color : @render2d.Color
+}
+pub fn WireframeColor::default() -> Self
+pub fn WireframeColor::new(@render2d.Color) -> Self
+pub fn WireframeColor::with_color(Self, @render2d.Color) -> Self
+
+pub struct WireframeConfig {
+  global : Bool
+  default_color : @render2d.Color
+}
+pub fn WireframeConfig::default() -> Self
+pub fn WireframeConfig::new(Bool, @render2d.Color) -> Self
+pub fn WireframeConfig::with_default_color(Self, @render2d.Color) -> Self
+pub fn WireframeConfig::with_global(Self, Bool) -> Self
+
 // Type aliases
 
 // Traits
@@ -659,6 +689,10 @@ pub(open) trait HasRes_DefaultOpaqueRendererMethod {
 
 pub(open) trait HasRes_GlobalAmbientLight {
   get_global_ambient_light_resource(Self) -> @core.Resource[GlobalAmbientLight]
+}
+
+pub(open) trait HasRes_WireframeConfig {
+  get_wireframe_config_resource(Self) -> @core.Resource[WireframeConfig]
 }
 
 pub(open) trait Has_Bloom {
@@ -749,6 +783,10 @@ pub(open) trait Has_Msaa {
   get_msaa_store(Self) -> @core.ComponentStore[Msaa]
 }
 
+pub(open) trait Has_NoWireframe {
+  get_no_wireframe_store(Self) -> @core.ComponentStore[NoWireframe]
+}
+
 pub(open) trait Has_NormalPrepass {
   get_normal_prepass_store(Self) -> @core.ComponentStore[NormalPrepass]
 }
@@ -825,15 +863,26 @@ pub(open) trait Has_Vignette {
   get_vignette_store(Self) -> @core.ComponentStore[Vignette]
 }
 
+pub(open) trait Has_Wireframe {
+  get_wireframe_store(Self) -> @core.ComponentStore[Wireframe]
+}
+
+pub(open) trait Has_WireframeColor {
+  get_wireframe_color_store(Self) -> @core.ComponentStore[WireframeColor]
+}
+
 pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {
 }
 
 pub(open) trait Render3dPrepareWorld : Has_Mesh3d + @render2d.Has_GpuMesh2d + @core.ChangeTickWorld {
+}
+
+pub(open) trait WireframePluginWorld : HasRes_WireframeConfig + @core.ChangeTickWorld {
 }
 

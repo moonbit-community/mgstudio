@@ -3,7 +3,7 @@
 - Bevy source: `bevy/examples/3d/lines.rs`
 - mgstudio target: `mgstudio-engine/examples/3d/lines/`
 - Baseline commit: `48ec375a3a3cdc904476ef1d13f9d71c9f2820d3`
-- Status: `Adapted`
+- Status: `Exact`
 - Owner: `team-render`
 
 ## Behavioral Comparison
@@ -14,12 +14,9 @@
   - camera at `(-2.0, 2.5, 5.0)` looking at origin.
 - Color intent is aligned:
   - left group in green, right group in blue.
-
-## Known Differences
-
-- Baseline parity: Bevy uses custom `LineMaterial` + `LineList/LineStrip` mesh primitive topology and shader pipeline specialization.
-- mgstudio currently has no public runtime surface for custom line topology/material specialization in this example path.
-- This port renders equivalent segments using thin unlit cuboids.
+- Primitive topology semantics are aligned:
+  - line-list mesh is uploaded and drawn with line-list topology.
+  - line-strip mesh is uploaded and drawn with line-strip topology.
 
 ## Runtime Constraints
 
@@ -29,7 +26,12 @@
 ## Validation Evidence
 
 - Build command: `moon -C mgstudio-engine build --release --target wasm examples/3d/lines`
-- Check command: `moon -C mgstudio-engine check`
+- Check commands:
+  - `moon -C mgstudio-engine check`
+  - `moon -C mgstudio-runtime/web check`
+  - `moon -C mgstudio-runtime/native check`
+  - `cargo check -q` (in `mgstudio-runtime/native-wasmtime`)
+  - `python3 scripts/check_host_abi.py`
 
 ## Follow-up Tasks
 

@@ -1714,18 +1714,18 @@ pub fn create_host(
     }
     id
   })
-  let gpu_create_mesh_triangles3d = @js.from_fn1(fn(vertices_xyzuvrgba) {
+  let gpu_create_mesh3d_impl = fn(
+    vertices_xyzuvrgba : @js.Any,
+    primitive_topology : Int,
+  ) -> Int {
     if state.gpu.device is None {
       throw_error("GPU device not ready")
       return 0
     }
-    ensure_mesh3d_pipeline(state)
     let id = state.gpu.next_mesh_id
     state.gpu.next_mesh_id = id + 1
     let vertices = float32array_from_csv(
-      string_from_id_required(
-        state, vertices_xyzuvrgba, "gpu_create_mesh_triangles3d",
-      ),
+      string_from_id_required(state, vertices_xyzuvrgba, "gpu_create_mesh3d"),
     )
     if state.gpu.device is Some(device) {
       let vertex_size : Int = vertices._get("byteLength").cast()
@@ -1752,10 +1752,23 @@ pub fn create_host(
         ("vertexBuffer", vertex_buffer.as_any()),
         ("vertexCount", @js.any(vertex_count)),
         ("vertexLayoutKind", @js.any(2)),
+        ("primitiveTopologyKind", @js.any(primitive_topology)),
       ])
       map_set(state.gpu.meshes, @js.any(id), entry)
     }
     id
+  }
+  let gpu_create_mesh3d = @js.from_fn2(fn(
+    vertices_xyzuvrgba,
+    primitive_topology_any,
+  ) {
+    gpu_create_mesh3d_impl(
+      vertices_xyzuvrgba,
+      to_int(number_or(primitive_topology_any, 0)),
+    )
+  })
+  let gpu_create_mesh_triangles3d = @js.from_fn1(fn(vertices_xyzuvrgba) {
+    gpu_create_mesh3d_impl(vertices_xyzuvrgba, 0)
   })
   let gpu_begin_frame = @js.from_fn1(fn(_ : @js.Any) { begin_frame(state) })
   let gpu_begin_pass = wrap_variadic(
@@ -2155,6 +2168,10 @@ pub fn create_host(
         to_int(arg_number(args, 45, -1)),
         arg_number(args, 46, 0),
         arg_number(args, 47, 0),
+        to_int(arg_number(args, 48, -1)),
+        arg_number(args, 49, 1),
+        arg_number(args, 50, 1),
+        arg_number(args, 51, 1),
       )
     }),
   )
@@ -2363,6 +2380,7 @@ pub fn create_host(
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),
     ("gpu_create_mesh_triangles", gpu_create_mesh_triangles),
+    ("gpu_create_mesh3d", gpu_create_mesh3d),
     ("gpu_create_mesh_triangles3d", gpu_create_mesh_triangles3d),
     ("gpu_begin_frame", gpu_begin_frame),
     ("gpu_begin_pass", gpu_begin_pass),

@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
-| `3d` | 66 | 25 | 41 | 0 |
+| `3d` | 66 | 28 | 38 | 0 |
 | `animation` | 13 | 0 | 13 | 0 |
 | `app` | 17 | 3 | 14 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 |
-| **Total** | **402** | **61** | **338** | **3** |
+| **Total** | **402** | **64** | **335** | **3** |
 
 ## Example Inventory
 
@@ -115,7 +115,7 @@ Notes:
 | `bevy/examples/3d/light_textures.rs` | `3d` | `mgstudio-engine/examples/3d/light_textures` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/lighting.rs` | `3d` | `mgstudio-engine/examples/3d/lighting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/lightmaps.rs` | `3d` | `mgstudio-engine/examples/3d/lightmaps` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/lines.rs` | `3d` | `mgstudio-engine/examples/3d/lines` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/lines.rs` | `3d` | `mgstudio-engine/examples/3d/lines` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/mesh_ray_cast.rs` | `3d` | `mgstudio-engine/examples/3d/mesh_ray_cast` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/meshlet.rs` | `3d` | `mgstudio-engine/examples/3d/meshlet` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/mirror.rs` | `3d` | `mgstudio-engine/examples/3d/mirror` | `Exact` | `team-render` |  |
@@ -138,7 +138,7 @@ Notes:
 | `bevy/examples/3d/shadow_caster_receiver.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_caster_receiver` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/skybox.rs` | `3d` | `mgstudio-engine/examples/3d/skybox` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/solari.rs` | `3d` | `mgstudio-engine/examples/3d/solari` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/specular_tint.rs` | `3d` | `mgstudio-engine/examples/3d/specular_tint` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/specular_tint.rs` | `3d` | `mgstudio-engine/examples/3d/specular_tint` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/spherical_area_lights.rs` | `3d` | `mgstudio-engine/examples/3d/spherical_area_lights` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/split_screen.rs` | `3d` | `mgstudio-engine/examples/3d/split_screen` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/spotlight.rs` | `3d` | `mgstudio-engine/examples/3d/spotlight` | `Exact` | `team-render` |  |
@@ -152,7 +152,7 @@ Notes:
 | `bevy/examples/3d/vertex_colors.rs` | `3d` | `mgstudio-engine/examples/3d/vertex_colors` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/visibility_range.rs` | `3d` | `mgstudio-engine/examples/3d/visibility_range` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/volumetric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/volumetric_fog` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/wireframe.rs` | `3d` | `mgstudio-engine/examples/3d/wireframe` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/wireframe.rs` | `3d` | `mgstudio-engine/examples/3d/wireframe` | `Exact` | `team-render` |  |
 | `bevy/examples/animation/animated_mesh.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/animation/animated_mesh_control.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/animation/animated_mesh_events.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |

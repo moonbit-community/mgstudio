@@ -16,54 +16,75 @@
 /// Port of `bevy/examples/3d/specular_tint.rs`.
 
 ///|
-/// Baseline parity: Bevy's `Skybox`, `EnvironmentMapLight`, `Hdr`,
-/// `specular_tint`, and `specular_tint_texture` surfaces are not available in
-/// current mgstudio runtime APIs.
+const PI : Float = 3.141592653589793F
 
 ///|
-/// Baseline parity: this port preserves the interaction pattern by alternating
-/// between animated solid tint and texture-driven tint on `base_color`.
+const DEG_TO_RAD : Float = 0.017453292519943295F
 
 ///|
-const CAMERA_ROTATION_SPEED : Float = 0.8F
+const ROTATION_SPEED : Float = 0.005F
 
 ///|
-const CAMERA_RADIUS : Float = 4.031128874149275F
+const HUE_SHIFT_SPEED : Float = 0.2F
 
 ///|
-const CAMERA_START_ANGLE : Float = -0.5191461142465229F
+const SWITCH_TO_MAP_HELP_TEXT : String = "Press Space to switch to a specular map"
 
 ///|
-const HUE_SHIFT_SPEED : Float = 1.2F
-
-///|
-const TWO_PI : Float = 6.283185307179586F
+const SWITCH_TO_SOLID_TINT_HELP_TEXT : String = "Press Space to switch to a solid specular tint"
 
 ///|
 const TWO_PI_OVER_THREE : Float = 2.0943951023931953F
 
 ///|
+const TWO_PI : Float = 6.283185307179586F
+
+///|
+priv enum TintType {
+  Solid
+  Map
+}
+
+///|
 priv struct SpecularTintState {
+  mut tint_type : TintType
+  mut hue_deg : Float
   mut camera : @core.Entity?
-  mut camera_angle : Float
-  mut hue : Float
-  mut use_map : Bool
   mut material : @asset.Handle[@render3d.StandardMaterial]?
   mut noise_texture : @asset.Handle[@asset.Image]?
+  mut help_text : @text.TextHandle?
 }
 
 ///|
 let specular_tint_state : Ref[SpecularTintState] = Ref::new({
+  tint_type: TintType::Solid,
+  hue_deg: 0.0F,
   camera: None,
-  camera_angle: CAMERA_START_ANGLE,
-  hue: 0.0F,
-  use_map: false,
   material: None,
   noise_texture: None,
+  help_text: None,
 })
 
 ///|
-fn tint_from_hue(hue : Float) -> @render2d.Color {
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
+
+///|
+fn wrap_hue_deg(value : Float) -> Float {
+  let mut hue = value
+  while hue >= 360.0F {
+    hue = hue - 360.0F
+  }
+  while hue < 0.0F {
+    hue = hue + 360.0F
+  }
+  hue
+}
+
+///|
+fn tint_from_hue_deg(hue_deg : Float) -> @render2d.Color {
+  let hue = wrap_hue_deg(hue_deg) * DEG_TO_RAD
   let r = @math.sin(hue) * 0.5F + 0.5F
   let g = @math.sin(hue + TWO_PI_OVER_THREE) * 0.5F + 0.5F
   let b = @math.sin(hue + TWO_PI_OVER_THREE + TWO_PI_OVER_THREE) * 0.5F + 0.5F
@@ -71,8 +92,28 @@ fn tint_from_hue(hue : Float) -> @render2d.Color {
 }
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+fn app_status_help_text(tint_type : TintType) -> String {
+  match tint_type {
+    Solid => SWITCH_TO_MAP_HELP_TEXT
+    Map => SWITCH_TO_SOLID_TINT_HELP_TEXT
+  }
+}
+
+///|
+fn spawn_ui_text_handle(
+  content : String,
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  color : @render2d.Color,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @math.Transform::identity(),
+  )
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
 }
 
 ///|
@@ -87,11 +128,11 @@ fn uv_sphere_mesh(
 
   let stacks_f = float_from_int(stacks)
   let sectors_f = float_from_int(sectors)
-  let stack_step = 3.141592653589793F / stacks_f
+  let stack_step = PI / stacks_f
   let sector_step = TWO_PI / sectors_f
 
   for i in 0..<(stacks + 1) {
-    let stack_angle = 3.141592653589793F / 2.0F - float_from_int(i) * stack_step
+    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
     let ring_radius = radius * @math.cos(stack_angle)
     let y = radius * @math.sin(stack_angle)
     for j in 0..<(sectors + 1) {
@@ -134,46 +175,46 @@ fn uv_sphere_mesh(
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
-  specular_tint_state.val.camera = None
-  specular_tint_state.val.camera_angle = CAMERA_START_ANGLE
-  specular_tint_state.val.hue = 0.0F
-  specular_tint_state.val.use_map = false
-  specular_tint_state.val.material = None
+  let state = specular_tint_state.val
+  state.tint_type = TintType::Solid
+  state.hue_deg = 0.0F
+  state.camera = None
+  state.material = None
+  state.noise_texture = None
+  state.help_text = None
 
   let asset_server = @asset.AssetServer::new()
-  let noise_texture = asset_server.load("textures/AlphaNoise.png")
-  specular_tint_state.val.noise_texture = Some(noise_texture)
+  let diffuse_env_map : @asset.Handle[@asset.Image] = asset_server.load(
+    "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2",
+  )
+  let specular_env_map : @asset.Handle[@asset.Image] = asset_server.load(
+    "environment_maps/pisa_specular_rgb9e5_zstd.ktx2",
+  )
+  let noise_texture : @asset.Handle[@asset.Image] = asset_server.load(
+    "textures/AlphaNoise.png",
+  )
+  let ui_font : @asset.Handle[@asset.Font] = asset_server.load_font(
+    "fonts/FiraSans-Bold.ttf",
+  )
+  state.noise_texture = Some(noise_texture)
 
-  let material = @render3d.standard_material_add(
+  let sphere_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::black())
+    .with_reflectance(1.0F)
+    .with_specular_tint(tint_from_hue_deg(state.hue_deg))
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.0F),
   )
-  specular_tint_state.val.material = Some(material)
+  state.material = Some(sphere_material)
 
   @render3d.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 18, 32),
-    @render3d.MeshMaterial3d::new(material),
-    @math.Transform::identity(),
+    @render3d.MeshMaterial3d::new(sphere_material),
+    @math.Transform::identity().with_rotation(
+      @math.Quat::from_rotation_x(PI * 0.5F),
+    ),
   ).spawn(world)
   |> ignore
-
-  let point_light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
-    point_light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      30.0F,
-      true,
-    ),
-    tick,
-  )
-  world
-  .get_transform_store()
-  .insert(point_light, @math.Transform::from_xyz(4.0F, 4.0F, 4.0F), tick)
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -182,22 +223,85 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  specular_tint_state.val.camera = Some(camera)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_skybox_store()
+  .insert(camera, @render3d.Skybox::new(specular_env_map, 3000.0F), tick)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(diffuse_env_map),
+      Some(specular_env_map),
+      25000.0F,
+    ),
+    tick,
+  )
+  state.camera = Some(camera)
+
+  @render2d.Camera2dBundle::new(
+    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+  let root = world.spawn_empty()
+  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
+  world
+  .get_node_store()
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+    tick,
+  )
+  let help_text_handle = spawn_ui_text_handle(
+    app_status_help_text(state.tint_type),
+    ui_font,
+    18.0F,
+    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+  )
+  let help_entity = world.spawn_empty()
+  world
+  .get_parent_store()
+  .insert(help_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
+    help_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_bottom(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .get_ui_text_store()
+  .insert(help_entity, @ui.UiText::new(help_text_handle), tick)
+  state.help_text = Some(help_text_handle)
 }
 
 ///|
 fn rotate_camera(world : @ecs_world.World) -> Unit {
   let state = specular_tint_state.val
   guard state.camera is Some(camera_entity) else { return }
-  let delta = @time.time_delta_seconds()
-  state.camera_angle = state.camera_angle + CAMERA_ROTATION_SPEED * delta
-  let x = @math.sin(state.camera_angle) * CAMERA_RADIUS
-  let z = @math.cos(state.camera_angle) * CAMERA_RADIUS
+  guard world.get_transform_store().get(camera_entity) is Some(transform) else {
+    return
+  }
+
+  let cos_v = @math.cos(ROTATION_SPEED)
+  let sin_v = @math.sin(ROTATION_SPEED)
+  let x = transform.translation.x
+  let z = transform.translation.z
+  let rotated_x = cos_v * x - sin_v * z
+  let rotated_z = sin_v * x + cos_v * z
+
   world
   .get_transform_store()
   .set(
     camera_entity,
-    @math.Transform::from_xyz(x, 0.0F, z).looking_at(
+    @math.Transform::from_xyz(rotated_x, transform.translation.y, rotated_z).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -207,35 +311,58 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_material(_world : @ecs_world.World) -> Unit {
+fn toggle_specular_map(_world : @ecs_world.World) -> Unit {
+  if !@input.key_just_pressed(@window.KeyCode::Space) {
+    return
+  }
+
   let state = specular_tint_state.val
+  state.tint_type = match state.tint_type {
+    Solid => TintType::Map
+    Map => TintType::Solid
+  }
+
   guard state.material is Some(material_handle) else { return }
   guard @render3d.standard_material_get(material_handle) is Some(material) else {
     return
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    state.use_map = !state.use_map
+  let next_material = match state.tint_type {
+    Solid => material.with_reflectance(1.0F).with_specular_tint_texture(None)
+    Map => {
+      guard state.noise_texture is Some(noise_texture) else { return }
+      material
+      .with_reflectance(2.0F)
+      .with_specular_tint(@render2d.Color::white())
+      .with_specular_tint_texture(Some(noise_texture))
+    }
+  }
+  @render3d.standard_material_set(material_handle, next_material) |> ignore
+}
+
+///|
+fn shift_hue(_world : @ecs_world.World) -> Unit {
+  let state = specular_tint_state.val
+  if state.tint_type is Map {
+    return
+  }
+  guard state.material is Some(material_handle) else { return }
+  guard @render3d.standard_material_get(material_handle) is Some(material) else {
+    return
   }
 
-  if state.use_map {
-    guard state.noise_texture is Some(texture) else { return }
-    let next_material = material
-      .with_base_color(@render2d.Color::white())
-      .with_base_color_texture(Some(texture))
-      .with_perceptual_roughness(0.1F)
-    @render3d.standard_material_set(material_handle, next_material) |> ignore
-  } else {
-    state.hue = state.hue + HUE_SHIFT_SPEED * @time.time_delta_seconds()
-    if state.hue >= TWO_PI {
-      state.hue = state.hue - TWO_PI
-    }
-    let next_material = material
-      .with_base_color(tint_from_hue(state.hue))
-      .with_base_color_texture(None)
-      .with_perceptual_roughness(0.0F)
-    @render3d.standard_material_set(material_handle, next_material) |> ignore
-  }
+  state.hue_deg = wrap_hue_deg(state.hue_deg + HUE_SHIFT_SPEED)
+  let next_material = material.with_specular_tint(
+    tint_from_hue_deg(state.hue_deg),
+  )
+  @render3d.standard_material_set(material_handle, next_material) |> ignore
+}
+
+///|
+fn update_help_text(_world : @ecs_world.World) -> Unit {
+  let state = specular_tint_state.val
+  guard state.help_text is Some(help_text) else { return }
+  @text.text_set_content(help_text, app_status_help_text(state.tint_type))
 }
 
 ///|
@@ -245,6 +372,8 @@ pub fn game_app() -> Unit {
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(rotate_camera)
-  .add_system(update_material)
+  .add_system(toggle_specular_map)
+  .add_system(update_help_text)
+  .add_system(shift_hue)
   .run()
 }

@@ -1311,6 +1311,8 @@ pub struct StandardMaterial {
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
   perceptual_roughness : Float
   reflectance : Float
+  specular_tint : @render2d.Color
+  specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
   opaque_render_method : OpaqueRendererMethod
@@ -1344,6 +1346,8 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     metallic_roughness_texture: None,
     perceptual_roughness: 0.5F,
     reflectance: 0.5F,
+    specular_tint: @render2d.Color::white(),
+    specular_tint_texture: None,
     occlusion_texture: None,
     alpha_mode: AlphaMode3d::Opaque,
     opaque_render_method: OpaqueRendererMethod::Auto,
@@ -1386,6 +1390,8 @@ pub fn StandardMaterial::from_color(
     metallic_roughness_texture: default_value.metallic_roughness_texture,
     perceptual_roughness: default_value.perceptual_roughness,
     reflectance: default_value.reflectance,
+    specular_tint: default_value.specular_tint,
+    specular_tint_texture: default_value.specular_tint_texture,
     occlusion_texture: default_value.occlusion_texture,
     alpha_mode,
     opaque_render_method: default_value.opaque_render_method,
@@ -1635,14 +1641,24 @@ pub fn StandardMaterial::with_reflectance(
   self : StandardMaterial,
   reflectance : Float,
 ) -> StandardMaterial {
-  let safe_reflectance = if reflectance < 0.0F {
-    0.0F
-  } else if reflectance > 1.0F {
-    1.0F
-  } else {
-    reflectance
-  }
+  let safe_reflectance = if reflectance < 0.0F { 0.0F } else { reflectance }
   StandardMaterial::{ ..self, reflectance: safe_reflectance }
+}
+
+///|
+pub fn StandardMaterial::with_specular_tint(
+  self : StandardMaterial,
+  specular_tint : @render2d.Color,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, specular_tint, }
+}
+
+///|
+pub fn StandardMaterial::with_specular_tint_texture(
+  self : StandardMaterial,
+  specular_tint_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, specular_tint_texture, }
 }
 
 ///|
@@ -2951,6 +2967,7 @@ priv struct ResolvedEnvironmentLight {
 ///|
 priv struct Mesh3dInstance {
   entity : @core.Entity
+  mesh_handle : @asset.Handle[@mesh.Mesh]
   mesh_id : Int
   transform : @math.Transform
   previous_transform : @math.Transform
@@ -2958,6 +2975,9 @@ priv struct Mesh3dInstance {
   aabb_center_world : @math.Vec3?
   material : StandardMaterial
   layers : @render2d.RenderLayers
+  has_wireframe : Bool
+  has_no_wireframe : Bool
+  wireframe_color : WireframeColor?
 }
 
 ///|
@@ -3017,6 +3037,15 @@ let camera_motion_blur_history : Ref[Array[CameraMotionBlurHistoryEntry]] = Ref:
 
 ///|
 let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
+
+///|
+priv struct WireframeMeshCacheEntry {
+  source_mesh_handle_id : Int
+  wireframe_mesh_id : Int
+}
+
+///|
+let wireframe_mesh_cache : Ref[Array[WireframeMeshCacheEntry]] = Ref::new([])
 
 ///|
 fn cmp_int(a : Int, b : Int) -> Int {
@@ -3238,6 +3267,112 @@ fn render3d_motion_blur_targets_get_or_create(
 }
 
 ///|
+fn render3d_wireframe_mesh_cache_get(source_mesh_handle_id : Int) -> Int? {
+  for item in wireframe_mesh_cache.val {
+    if item.source_mesh_handle_id == source_mesh_handle_id {
+      return Some(item.wireframe_mesh_id)
+    }
+  }
+  None
+}
+
+///|
+fn render3d_wireframe_mesh_cache_set(
+  source_mesh_handle_id : Int,
+  wireframe_mesh_id : Int,
+) -> Unit {
+  let next : Array[WireframeMeshCacheEntry] = []
+  let mut replaced = false
+  for item in wireframe_mesh_cache.val {
+    if item.source_mesh_handle_id == source_mesh_handle_id {
+      if !replaced {
+        next.push({ source_mesh_handle_id, wireframe_mesh_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ source_mesh_handle_id, wireframe_mesh_id })
+  }
+  wireframe_mesh_cache.val = next
+}
+
+///|
+fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
+  let source_mesh_handle_id = mesh_handle.id()
+  if render3d_wireframe_mesh_cache_get(source_mesh_handle_id) is Some(mesh_id) {
+    return Some(mesh_id)
+  }
+  let source_mesh = match @render2d.render_mesh_asset_get(mesh_handle) {
+    Some(mesh_asset) => mesh_asset
+    None => return None
+  }
+  match source_mesh.geometry {
+    @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+      match geometry3d.primitive_topology() {
+        @mesh.Mesh3dPrimitiveTopology::TriangleList =>
+          match geometry3d.to_wireframe_line_list() {
+            Some(wireframe_geometry) => {
+              let wireframe_handle = @render2d.render_mesh_asset_add(
+                @mesh.Mesh::from_3d_geometry(wireframe_geometry),
+              )
+              let wireframe_mesh_id = @render2d.render2d_upload_mesh_handle(
+                wireframe_handle,
+              )
+              render3d_wireframe_mesh_cache_set(
+                source_mesh_handle_id, wireframe_mesh_id,
+              )
+              Some(wireframe_mesh_id)
+            }
+            None => return None
+          }
+        @mesh.Mesh3dPrimitiveTopology::LineList => {
+          let mesh_id = @render2d.render2d_upload_mesh_handle(mesh_handle)
+          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
+          Some(mesh_id)
+        }
+        @mesh.Mesh3dPrimitiveTopology::LineStrip => {
+          let mesh_id = @render2d.render2d_upload_mesh_handle(mesh_handle)
+          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
+          Some(mesh_id)
+        }
+      }
+    _ => return None
+  }
+}
+
+///|
+fn render3d_mesh_should_draw_wireframe(
+  mesh : Mesh3dInstance,
+  wireframe_config : WireframeConfig?,
+) -> Bool {
+  guard wireframe_config is Some(config) else { return false }
+  if mesh.has_no_wireframe {
+    false
+  } else if mesh.has_wireframe {
+    true
+  } else {
+    config.global
+  }
+}
+
+///|
+fn render3d_mesh_wireframe_color(
+  mesh : Mesh3dInstance,
+  wireframe_config : WireframeConfig?,
+) -> @render2d.Color {
+  if mesh.wireframe_color is Some(color_component) {
+    color_component.color
+  } else if wireframe_config is Some(config) {
+    config.default_color
+  } else {
+    @render2d.Color::white()
+  }
+}
+
+///|
 fn[
   W : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + @math.Has_Transform,
 ] render3d_collect_lighting(
@@ -3417,6 +3552,10 @@ fn render3d_draw_camera_skybox(
     anisotropy_texture_id=-1,
     anisotropy_strength=0.0F,
     anisotropy_rotation=0.0F,
+    specular_tint_texture_id=-1,
+    specular_tint_r=1.0F,
+    specular_tint_g=1.0F,
+    specular_tint_b=1.0F,
   )
 }
 
@@ -4370,8 +4509,10 @@ fn render3d_draw_mesh_instance(
   occlusion_texture_id : Int,
   depth_texture_id : Int,
   anisotropy_texture_id : Int,
+  specular_tint_texture_id : Int,
   draw_surface_roughness : Float,
   draw_reflectance : Float,
+  specular_tint : @render2d.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
 ) -> Unit {
@@ -4424,11 +4565,15 @@ fn render3d_draw_mesh_instance(
     anisotropy_texture_id~,
     anisotropy_strength~,
     anisotropy_rotation=mesh.material.anisotropy_rotation,
+    specular_tint_texture_id~,
+    specular_tint_r=specular_tint.r,
+    specular_tint_g=specular_tint.g,
+    specular_tint_b=specular_tint.b,
   )
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -4527,6 +4672,15 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let material_store = world.get_mesh_material3d_store()
   let gpu_mesh_store = world.get_gpu_mesh2d_store()
   let visibility_range_store = world.get_visibility_range_store()
+  let wireframe_store = world.get_wireframe_store()
+  let no_wireframe_store = world.get_no_wireframe_store()
+  let wireframe_color_store = world.get_wireframe_color_store()
+  let wireframe_config = if world.get_wireframe_config_resource().get_ref()
+    is Some(config) {
+    Some(config.val)
+  } else {
+    None
+  }
   mesh_store.for_each(fn(entity, mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
       !view_visibility.is_visible() {
@@ -4561,6 +4715,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     }
     meshes.push(Mesh3dInstance::{
       entity,
+      mesh_handle: mesh3d.mesh,
       mesh_id: gpu_mesh.mesh_id,
       transform,
       previous_transform,
@@ -4568,6 +4723,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       aabb_center_world,
       material,
       layers,
+      has_wireframe: wireframe_store.get(entity) is Some(_),
+      has_no_wireframe: no_wireframe_store.get(entity) is Some(_),
+      wireframe_color: wireframe_color_store.get(entity),
     })
   })
   light_probe_store.for_each(fn(entity, light_probe) {
@@ -4772,8 +4930,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           -1,
           -1,
           -1,
+          -1,
           0.5F,
           0.5F,
+          @render2d.Color::white(),
           0.0F,
           0.0F,
         )
@@ -4898,6 +5058,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         Some(texture) => texture.id()
         None => -1
       }
+      let specular_tint_texture_id = match mesh.material.specular_tint_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
       let anisotropy_strength = maxf(
         0.0F,
         minf(1.0F, mesh.material.anisotropy_strength),
@@ -4905,9 +5069,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       let max_relief_mapping_search_steps = Float::from_double(
         mesh.material.parallax_mapping_method.max_steps().to_double(),
       )
-      let clearcoat_reflectance = minf(
-        1.0F,
-        maxf(0.0F, mesh.material.reflectance + mesh.material.clearcoat * 0.5F),
+      let clearcoat_reflectance = maxf(
+        0.0F,
+        mesh.material.reflectance + mesh.material.clearcoat * 0.5F,
       )
       let clearcoat_roughness = minf(
         mesh.material.perceptual_roughness,
@@ -4982,7 +5146,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       }
       let mut draw_reflectance = clearcoat_reflectance
       if environment_strength > 0.0F {
-        draw_reflectance = clamp01(
+        draw_reflectance = maxf(
+          0.0F,
           draw_reflectance +
           (1.0F - draw_surface_roughness) * environment_strength * 0.6F,
         )
@@ -4997,7 +5162,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           mesh.transform.translation,
         )
         if ssr_strength > 0.0F {
-          draw_reflectance = clamp01(
+          draw_reflectance = maxf(
+            0.0F,
             draw_reflectance +
             (1.0F - draw_surface_roughness) * ssr_strength * 0.45F,
           )
@@ -5022,10 +5188,62 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         occlusion_texture_id,
         depth_texture_id,
         anisotropy_texture_id,
+        specular_tint_texture_id,
         draw_surface_roughness,
         draw_reflectance,
+        mesh.material.specular_tint,
         anisotropy_strength,
         max_relief_mapping_search_steps,
+      )
+    }
+    for draw_index in draw_order {
+      let mesh = meshes[draw_index]
+      if !render3d_mesh_should_draw_wireframe(mesh, wireframe_config) {
+        continue
+      }
+      guard render3d_wireframe_mesh_id(mesh.mesh_handle)
+        is Some(wireframe_mesh_id) else {
+        continue
+      }
+      let wireframe_color = render3d_mesh_wireframe_color(
+        mesh, wireframe_config,
+      )
+      let wireframe_material = StandardMaterial::{
+        ..StandardMaterial::from_color(wireframe_color).with_unlit(true),
+        cull_mode: mesh.material.cull_mode,
+      }
+      guard render3d_mesh_draw_alpha(
+          wireframe_material.alpha_mode,
+          wireframe_material.base_color.a,
+        )
+        is Some(wireframe_draw_alpha) else {
+        continue
+      }
+      render3d_draw_mesh_instance(
+        Mesh3dInstance::{
+          ..mesh,
+          mesh_id: wireframe_mesh_id,
+          material: wireframe_material,
+        },
+        mesh.transform,
+        mesh.previous_transform,
+        wireframe_material.base_color.r,
+        wireframe_material.base_color.g,
+        wireframe_material.base_color.b,
+        wireframe_draw_alpha,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0.5F,
+        0.5F,
+        @render2d.Color::white(),
+        0.0F,
+        0.0F,
       )
     }
     @window.host_gpu_end_pass()
@@ -5318,6 +5536,28 @@ fn[W : HasRes_GlobalAmbientLight + @core.ChangeTickWorld] init_render3d_resource
   if !ambient.is_present() {
     ambient.insert(GlobalAmbientLight::default(), tick)
   }
+}
+
+///|
+fn[W : HasRes_WireframeConfig + @core.ChangeTickWorld] init_wireframe_resources(
+  world : W,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let wireframe_config = world.get_wireframe_config_resource()
+  if !wireframe_config.is_present() {
+    wireframe_config.insert(WireframeConfig::default(), tick)
+  }
+}
+
+///|
+pub(open) trait WireframePluginWorld: HasRes_WireframeConfig + @core.ChangeTickWorld {
+}
+
+///|
+pub fn[W : WireframePluginWorld] wireframe_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
+  app.add_startup_system(init_wireframe_resources)
 }
 
 ///|

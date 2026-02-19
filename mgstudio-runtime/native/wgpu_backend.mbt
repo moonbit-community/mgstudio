@@ -42,6 +42,7 @@ pub struct GpuMeshInfo {
   id : Int
   index_count : UInt
   vertex_count : UInt
+  primitive_topology : UInt
   vertex_stride_bytes : UInt64
   vertex_buf : @wgpu.Buffer
   index_buf : @wgpu.Buffer
@@ -70,6 +71,7 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   occlusion_texture_id : Int
   depth_texture_id : Int
   anisotropy_texture_id : Int
+  specular_tint_texture_id : Int
   bind_group : @wgpu.BindGroup
 }
 
@@ -230,8 +232,16 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_pipeline : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_transparent : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_line_list : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_line_list_transparent : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_line_strip : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_line_strip_transparent : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_surface : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_surface_transparent : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_list : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_list_transparent : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_strip : @wgpu.RenderPipeline?
+  mut mesh3d_pipeline_surface_line_strip_transparent : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
   mut mesh3d_uniform_buf : @wgpu.Buffer?
   mut mesh3d_uniform_bg : @wgpu.BindGroup?
@@ -262,6 +272,35 @@ const COMPRESSED_IMAGE_FORMAT_BC : Int = 2
 
 ///|
 const COMPRESSED_IMAGE_FORMAT_ETC2 : Int = 4
+
+///|
+const MESH3D_TOPOLOGY_TRIANGLE_LIST : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+
+///|
+const MESH3D_TOPOLOGY_LINE_LIST : UInt = @wgpu.PRIMITIVE_TOPOLOGY_LINE_LIST
+
+///|
+const MESH3D_TOPOLOGY_LINE_STRIP : UInt = @wgpu.PRIMITIVE_TOPOLOGY_LINE_STRIP
+
+///|
+fn mesh3d_topology_from_kind(kind : Int) -> UInt {
+  match kind {
+    1 => MESH3D_TOPOLOGY_LINE_LIST
+    2 => MESH3D_TOPOLOGY_LINE_STRIP
+    _ => MESH3D_TOPOLOGY_TRIANGLE_LIST
+  }
+}
+
+///|
+fn mesh3d_topology_suffix(topology : UInt) -> String {
+  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+    "line_list"
+  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    "line_strip"
+  } else {
+    "triangle_list"
+  }
+}
 
 ///|
 pub fn GpuBackend::new(
@@ -360,8 +399,16 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_layout: None,
     mesh3d_pipeline: None,
     mesh3d_pipeline_transparent: None,
+    mesh3d_pipeline_line_list: None,
+    mesh3d_pipeline_line_list_transparent: None,
+    mesh3d_pipeline_line_strip: None,
+    mesh3d_pipeline_line_strip_transparent: None,
     mesh3d_pipeline_surface: None,
     mesh3d_pipeline_surface_transparent: None,
+    mesh3d_pipeline_surface_line_list: None,
+    mesh3d_pipeline_surface_line_list_transparent: None,
+    mesh3d_pipeline_surface_line_strip: None,
+    mesh3d_pipeline_surface_line_strip_transparent: None,
     mesh3d_pipeline_surface_format: None,
     mesh3d_uniform_buf: None,
     mesh3d_uniform_bg: None,
@@ -1380,6 +1427,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   depth_write_enabled? : Bool = true,
   position3d? : Bool = false,
   alpha_blend? : Bool = true,
+  topology? : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
@@ -1433,8 +1481,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     )
   }
   let set_topology_ok = @wgpu_c.render_pipeline_desc_builder_set_topology(
-    builder,
-    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    builder, topology,
   )
   if set_topology_ok == 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
@@ -1558,14 +1605,145 @@ fn mesh_pipeline_for_current_pass(
 }
 
 ///|
+fn mesh3d_pipeline_get_rgba8(
+  backend : GpuBackend,
+  topology : UInt,
+  transparent : Bool,
+) -> @wgpu.RenderPipeline? {
+  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+    if transparent {
+      backend.mesh3d_pipeline_line_list_transparent
+    } else {
+      backend.mesh3d_pipeline_line_list
+    }
+  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    if transparent {
+      backend.mesh3d_pipeline_line_strip_transparent
+    } else {
+      backend.mesh3d_pipeline_line_strip
+    }
+  } else if transparent {
+    backend.mesh3d_pipeline_transparent
+  } else {
+    backend.mesh3d_pipeline
+  }
+}
+
+///|
+fn mesh3d_pipeline_set_rgba8(
+  backend : GpuBackend,
+  topology : UInt,
+  transparent : Bool,
+  pipeline : @wgpu.RenderPipeline?,
+) -> Unit {
+  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+    if transparent {
+      backend.mesh3d_pipeline_line_list_transparent = pipeline
+    } else {
+      backend.mesh3d_pipeline_line_list = pipeline
+    }
+  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    if transparent {
+      backend.mesh3d_pipeline_line_strip_transparent = pipeline
+    } else {
+      backend.mesh3d_pipeline_line_strip = pipeline
+    }
+  } else if transparent {
+    backend.mesh3d_pipeline_transparent = pipeline
+  } else {
+    backend.mesh3d_pipeline = pipeline
+  }
+}
+
+///|
+fn mesh3d_pipeline_get_surface(
+  backend : GpuBackend,
+  topology : UInt,
+  transparent : Bool,
+) -> @wgpu.RenderPipeline? {
+  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+    if transparent {
+      backend.mesh3d_pipeline_surface_line_list_transparent
+    } else {
+      backend.mesh3d_pipeline_surface_line_list
+    }
+  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    if transparent {
+      backend.mesh3d_pipeline_surface_line_strip_transparent
+    } else {
+      backend.mesh3d_pipeline_surface_line_strip
+    }
+  } else if transparent {
+    backend.mesh3d_pipeline_surface_transparent
+  } else {
+    backend.mesh3d_pipeline_surface
+  }
+}
+
+///|
+fn mesh3d_pipeline_set_surface(
+  backend : GpuBackend,
+  topology : UInt,
+  transparent : Bool,
+  pipeline : @wgpu.RenderPipeline?,
+) -> Unit {
+  if topology == MESH3D_TOPOLOGY_LINE_LIST {
+    if transparent {
+      backend.mesh3d_pipeline_surface_line_list_transparent = pipeline
+    } else {
+      backend.mesh3d_pipeline_surface_line_list = pipeline
+    }
+  } else if topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    if transparent {
+      backend.mesh3d_pipeline_surface_line_strip_transparent = pipeline
+    } else {
+      backend.mesh3d_pipeline_surface_line_strip = pipeline
+    }
+  } else if transparent {
+    backend.mesh3d_pipeline_surface_transparent = pipeline
+  } else {
+    backend.mesh3d_pipeline_surface = pipeline
+  }
+}
+
+///|
+fn mesh3d_surface_pipeline_cache_clear(backend : GpuBackend) -> Unit {
+  if backend.mesh3d_pipeline_surface is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_surface_transparent is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_surface_line_list is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_surface_line_list_transparent is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_surface_line_strip is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_surface_line_strip_transparent is Some(old) {
+    old.release()
+  }
+  backend.mesh3d_pipeline_surface = None
+  backend.mesh3d_pipeline_surface_transparent = None
+  backend.mesh3d_pipeline_surface_line_list = None
+  backend.mesh3d_pipeline_surface_line_list_transparent = None
+  backend.mesh3d_pipeline_surface_line_strip = None
+  backend.mesh3d_pipeline_surface_line_strip_transparent = None
+}
+
+///|
 fn ensure_mesh3d_pipeline_rgba8(
   backend : GpuBackend,
+  topology : UInt,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   if backend.mesh3d_pipeline_layout is None {
     let bgl = backend.device.create_bind_group_layout_uniform_buffer()
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=8UL)
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=9UL)
     let material_ok = material_builder.add_sampler(
         0U,
         frag,
@@ -1612,6 +1790,12 @@ fn ensure_mesh3d_pipeline_rgba8(
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_texture(
+        8U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       )
     if !material_ok {
       material_builder.free()
@@ -1637,14 +1821,14 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend.mesh3d_uniform_buf = Some(uniform_buf)
     backend.mesh3d_uniform_bg = Some(uniform_bg)
   }
-  if backend.mesh3d_pipeline is Some(_) &&
-    backend.mesh3d_pipeline_transparent is Some(_) {
+  if mesh3d_pipeline_get_rgba8(backend, topology, false) is Some(_) &&
+    mesh3d_pipeline_get_rgba8(backend, topology, true) is Some(_) {
     return
   }
-  if backend.mesh3d_pipeline is Some(old) {
+  if mesh3d_pipeline_get_rgba8(backend, topology, false) is Some(old) {
     old.release()
   }
-  if backend.mesh3d_pipeline_transparent is Some(old) {
+  if mesh3d_pipeline_get_rgba8(backend, topology, true) is Some(old) {
     old.release()
   }
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
@@ -1659,11 +1843,14 @@ fn ensure_mesh3d_pipeline_rgba8(
     with_depth=true,
     depth_write_enabled=true,
     position3d=true,
+    topology~,
   )
   let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
   @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
-  pipeline_opaque.set_label("mgstudio_mesh3d_rgba8_opaque")
-  backend.mesh3d_pipeline = Some(pipeline_opaque)
+  pipeline_opaque.set_label(
+    "mgstudio_mesh3d_rgba8_opaque_" + mesh3d_topology_suffix(topology),
+  )
+  mesh3d_pipeline_set_rgba8(backend, topology, false, Some(pipeline_opaque))
   let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
     sm,
@@ -1671,35 +1858,42 @@ fn ensure_mesh3d_pipeline_rgba8(
     with_depth=true,
     depth_write_enabled=false,
     position3d=true,
+    topology~,
   )
   let pipeline_transparent = backend.device.create_render_pipeline_ptr(
     desc_transparent,
   )
   @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
-  pipeline_transparent.set_label("mgstudio_mesh3d_rgba8_transparent")
-  backend.mesh3d_pipeline_transparent = Some(pipeline_transparent)
+  pipeline_transparent.set_label(
+    "mgstudio_mesh3d_rgba8_transparent_" + mesh3d_topology_suffix(topology),
+  )
+  mesh3d_pipeline_set_rgba8(backend, topology, true, Some(pipeline_transparent))
   sm.release()
 }
 
 ///|
 fn ensure_mesh3d_pipeline_surface(
   backend : GpuBackend,
+  topology : UInt,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
+  if backend.mesh3d_pipeline_surface_format is Some(prev) && prev != format {
+    mesh3d_surface_pipeline_cache_clear(backend)
+  }
   if backend.mesh3d_pipeline_surface_format is Some(prev) &&
     prev == format &&
-    backend.mesh3d_pipeline_surface is Some(_) &&
-    backend.mesh3d_pipeline_surface_transparent is Some(_) {
+    mesh3d_pipeline_get_surface(backend, topology, false) is Some(_) &&
+    mesh3d_pipeline_get_surface(backend, topology, true) is Some(_) {
     return
   }
-  if backend.mesh3d_pipeline_surface is Some(old) {
+  if mesh3d_pipeline_get_surface(backend, topology, false) is Some(old) {
     old.release()
   }
-  if backend.mesh3d_pipeline_surface_transparent is Some(old) {
+  if mesh3d_pipeline_get_surface(backend, topology, true) is Some(old) {
     old.release()
   }
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
@@ -1714,11 +1908,14 @@ fn ensure_mesh3d_pipeline_surface(
     with_depth=true,
     depth_write_enabled=true,
     position3d=true,
+    topology~,
   )
   let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
   @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
-  pipeline_opaque.set_label("mgstudio_mesh3d_surface_opaque")
-  backend.mesh3d_pipeline_surface = Some(pipeline_opaque)
+  pipeline_opaque.set_label(
+    "mgstudio_mesh3d_surface_opaque_" + mesh3d_topology_suffix(topology),
+  )
+  mesh3d_pipeline_set_surface(backend, topology, false, Some(pipeline_opaque))
   let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
     sm,
@@ -1726,13 +1923,21 @@ fn ensure_mesh3d_pipeline_surface(
     with_depth=true,
     depth_write_enabled=false,
     position3d=true,
+    topology~,
   )
   let pipeline_transparent = backend.device.create_render_pipeline_ptr(
     desc_transparent,
   )
   @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
-  pipeline_transparent.set_label("mgstudio_mesh3d_surface_transparent")
-  backend.mesh3d_pipeline_surface_transparent = Some(pipeline_transparent)
+  pipeline_transparent.set_label(
+    "mgstudio_mesh3d_surface_transparent_" + mesh3d_topology_suffix(topology),
+  )
+  mesh3d_pipeline_set_surface(
+    backend,
+    topology,
+    true,
+    Some(pipeline_transparent),
+  )
   backend.mesh3d_pipeline_surface_format = Some(format)
   sm.release()
 }
@@ -1741,6 +1946,7 @@ fn ensure_mesh3d_pipeline_surface(
 fn mesh3d_pipeline_for_current_pass(
   backend : GpuBackend,
   transparent : Bool,
+  topology : UInt,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let target_is_surface = match backend.pass_state {
     Some(ps) => ps.target_id == -1
@@ -1749,22 +1955,14 @@ fn mesh3d_pipeline_for_current_pass(
   if target_is_surface {
     match backend.surface_format {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_mesh3d_pipeline_surface(backend)
-        if transparent {
-          return backend.mesh3d_pipeline_surface_transparent
-        } else {
-          return backend.mesh3d_pipeline_surface
-        }
+        ensure_mesh3d_pipeline_surface(backend, topology)
+        return mesh3d_pipeline_get_surface(backend, topology, transparent)
       }
       _ => ()
     }
   }
-  ensure_mesh3d_pipeline_rgba8(backend)
-  if transparent {
-    backend.mesh3d_pipeline_transparent
-  } else {
-    backend.mesh3d_pipeline
-  }
+  ensure_mesh3d_pipeline_rgba8(backend, topology)
+  mesh3d_pipeline_get_rgba8(backend, topology, transparent)
 }
 
 ///|
@@ -2044,6 +2242,7 @@ fn mesh3d_material_cache_get_or_create(
   occlusion_texture : GpuTextureInfo,
   depth_texture : GpuTextureInfo,
   anisotropy_texture : GpuTextureInfo,
+  specular_tint_texture : GpuTextureInfo,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   for entry in backend.mesh3d_material_bg_cache.val {
     if entry.base_texture_id == base_texture.id &&
@@ -2052,7 +2251,8 @@ fn mesh3d_material_cache_get_or_create(
       entry.metallic_roughness_texture_id == metallic_roughness_texture.id &&
       entry.occlusion_texture_id == occlusion_texture.id &&
       entry.depth_texture_id == depth_texture.id &&
-      entry.anisotropy_texture_id == anisotropy_texture.id {
+      entry.anisotropy_texture_id == anisotropy_texture.id &&
+      entry.specular_tint_texture_id == specular_tint_texture.id {
       return entry.bind_group
     }
   }
@@ -2060,7 +2260,7 @@ fn mesh3d_material_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d material bind group layout")
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
   let ok = builder.add_sampler(0U, base_texture.sampler) &&
     builder.add_texture_view(1U, base_texture.view) &&
     builder.add_texture_view(2U, normal_texture.view) &&
@@ -2068,7 +2268,8 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_texture_view(4U, metallic_roughness_texture.view) &&
     builder.add_texture_view(5U, occlusion_texture.view) &&
     builder.add_texture_view(6U, depth_texture.view) &&
-    builder.add_texture_view(7U, anisotropy_texture.view)
+    builder.add_texture_view(7U, anisotropy_texture.view) &&
+    builder.add_texture_view(8U, specular_tint_texture.view)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d material bind group")
@@ -2086,6 +2287,7 @@ fn mesh3d_material_cache_get_or_create(
     occlusion_texture_id: occlusion_texture.id,
     depth_texture_id: depth_texture.id,
     anisotropy_texture_id: anisotropy_texture.id,
+    specular_tint_texture_id: specular_tint_texture.id,
     bind_group,
   })
   bind_group
@@ -3603,6 +3805,7 @@ pub fn GpuBackend::create_mesh_rectangle(
     id,
     index_count: 6U,
     vertex_count: 4U,
+    primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: 32UL,
     vertex_buf: vb,
     index_buf: ib,
@@ -3685,6 +3888,7 @@ pub fn GpuBackend::create_mesh_capsule(
     id,
     index_count: inds.length().reinterpret_as_uint(),
     vertex_count: (verts.length() / 8).reinterpret_as_uint(),
+    primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: 32UL,
     vertex_buf: vb,
     index_buf: ib,
@@ -3789,6 +3993,7 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     id,
     index_count: indices_u16.length().reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
+    primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: 32UL,
     vertex_buf: vb,
     index_buf: ib,
@@ -3798,15 +4003,25 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
 }
 
 ///|
-pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(
+pub fn GpuBackend::create_mesh3d_xyzuvrgba(
   self : GpuBackend,
   vertices : Array[Float],
+  primitive_topology_kind : Int,
 ) -> Int {
+  let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
   let vcount = vertices.length() / 9
   if vcount <= 0 {
     return 0
   }
-  let usable_vcount = vcount - vcount % 3
+  let usable_vcount = if primitive_topology == MESH3D_TOPOLOGY_TRIANGLE_LIST {
+    vcount - vcount % 3
+  } else if primitive_topology == MESH3D_TOPOLOGY_LINE_LIST {
+    vcount - vcount % 2
+  } else if vcount < 2 {
+    0
+  } else {
+    vcount
+  }
   if usable_vcount <= 0 || usable_vcount > 65535 {
     return 0
   }
@@ -3838,12 +4053,21 @@ pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(
     id,
     index_count: indices_u16.length().reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
+    primitive_topology,
     vertex_stride_bytes: 36UL,
     vertex_buf: vb,
     index_buf: ib,
   }
   self.meshes.val.push(info)
   id
+}
+
+///|
+pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(
+  self : GpuBackend,
+  vertices : Array[Float],
+) -> Int {
+  self.create_mesh3d_xyzuvrgba(vertices, 0)
 }
 
 ///|
@@ -4100,6 +4324,10 @@ pub fn GpuBackend::draw_mesh3d(
   anisotropy_texture_id : Int,
   anisotropy_strength : Float,
   anisotropy_rotation : Float,
+  specular_tint_texture_id : Int,
+  specular_tint_r : Float,
+  specular_tint_g : Float,
+  specular_tint_b : Float,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -4114,6 +4342,9 @@ pub fn GpuBackend::draw_mesh3d(
   }
   let transparent = color_a < 0.999F
   if ps.pass_kind == 1 {
+    if mesh.primitive_topology != MESH3D_TOPOLOGY_TRIANGLE_LIST {
+      return
+    }
     if transparent {
       return
     }
@@ -4191,7 +4422,12 @@ pub fn GpuBackend::draw_mesh3d(
     pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
     return
   }
-  guard mesh3d_pipeline_for_current_pass(self, transparent) is Some(pipeline) else {
+  guard mesh3d_pipeline_for_current_pass(
+      self,
+      transparent,
+      mesh.primitive_topology,
+    )
+    is Some(pipeline) else {
     return
   }
   guard self.mesh3d_uniform_buf is Some(uniform_buf) else { return }
@@ -4228,6 +4464,11 @@ pub fn GpuBackend::draw_mesh3d(
   } else {
     anisotropy_texture_id
   }
+  let resolved_specular_tint_texture_id = if specular_tint_texture_id < 0 {
+    -1
+  } else {
+    specular_tint_texture_id
+  }
   let base_texture = ensure_fallback_texture(self, resolved_base_texture_id)
   let normal_texture = ensure_fallback_texture(self, resolved_normal_texture_id)
   let emissive_texture = ensure_fallback_texture(
@@ -4243,6 +4484,9 @@ pub fn GpuBackend::draw_mesh3d(
   let anisotropy_texture = ensure_fallback_texture(
     self, resolved_anisotropy_texture_id,
   )
+  let specular_tint_texture = ensure_fallback_texture(
+    self, resolved_specular_tint_texture_id,
+  )
   let textured = texture_id >= 0
   let normal_textured = normal_texture_id >= 0
   let emissive_textured = emissive_texture_id >= 0
@@ -4250,6 +4494,7 @@ pub fn GpuBackend::draw_mesh3d(
   let occlusion_textured = occlusion_texture_id >= 0
   let depth_textured = depth_texture_id >= 0
   let anisotropy_textured = anisotropy_texture_id >= 0
+  let specular_tint_textured = specular_tint_texture_id >= 0
   let aspect_ratio = if ps.height_logical > 0.0F {
     ps.width_logical / ps.height_logical
   } else {
@@ -4380,11 +4625,19 @@ pub fn GpuBackend::draw_mesh3d(
     } else {
       0.0F
     },
+    specular_tint_r,
+    specular_tint_g,
+    specular_tint_b,
+    if specular_tint_textured {
+      1.0F
+    } else {
+      0.0F
+    },
   ])
   self.queue.write_buffer(uniform_buf, 0UL, bytes)
   let material_bg = mesh3d_material_cache_get_or_create(
     self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
-    occlusion_texture, depth_texture, anisotropy_texture,
+    occlusion_texture, depth_texture, anisotropy_texture, specular_tint_texture,
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, uniform_bg, [])
