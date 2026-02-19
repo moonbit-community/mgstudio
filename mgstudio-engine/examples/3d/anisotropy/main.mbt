@@ -15,8 +15,8 @@
 ///|
 /// Port of `bevy/examples/3d/anisotropy.rs`.
 ///
-/// Baseline parity: skybox rendering behavior is still pending exact runtime
-/// support. Anisotropy shading now runs in the 3D shader path.
+/// Exact parity target: anisotropy material toggle and light-mode switching,
+/// including environment map + skybox mode.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -31,6 +31,12 @@ const CAMERA_INITIAL_Y : Float = 0.0F
 const CAMERA_INITIAL_Z : Float = 0.0F
 
 ///|
+const SKYBOX_BRIGHTNESS : Float = 5000.0F
+
+///|
+const ENVIRONMENT_MAP_INTENSITY : Float = 2500.0F
+
+///|
 priv struct AnisotropyState {
   mut light_mode : Int
   mut anisotropy_enabled : Bool
@@ -43,6 +49,8 @@ priv struct AnisotropyState {
   mut sphere_scene : @core.Entity?
   mut sphere_anisotropic_material : @asset.Handle[@render3d.StandardMaterial]?
   mut sphere_isotropic_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut environment_diffuse_map : @asset.Handle[@asset.Image]?
+  mut environment_specular_map : @asset.Handle[@asset.Image]?
 }
 
 ///|
@@ -58,6 +66,8 @@ let anisotropy_state : Ref[AnisotropyState] = Ref::new({
   sphere_scene: None,
   sphere_anisotropic_material: None,
   sphere_isotropic_material: None,
+  environment_diffuse_map: None,
+  environment_specular_map: None,
 })
 
 ///|
@@ -208,6 +218,37 @@ fn apply_light_mode(world : @ecs_world.World) -> Unit {
     )
     |> ignore
   }
+
+  if anisotropy_state.val.camera is Some(camera_entity) {
+    if anisotropy_state.val.light_mode == 2 {
+      if anisotropy_state.val.environment_specular_map is Some(specular_map) {
+        world
+        .get_skybox_store()
+        .insert(
+          camera_entity,
+          @render3d.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
+          tick,
+        )
+      }
+      if anisotropy_state.val.environment_diffuse_map is Some(diffuse_map) &&
+        anisotropy_state.val.environment_specular_map is Some(specular_map) {
+        world
+        .get_environment_map_light_store()
+        .insert(
+          camera_entity,
+          @render3d.EnvironmentMapLight::new(
+            Some(diffuse_map),
+            Some(specular_map),
+            ENVIRONMENT_MAP_INTENSITY,
+          ),
+          tick,
+        )
+      }
+    } else {
+      world.get_skybox_store().remove(camera_entity) |> ignore
+      world.get_environment_map_light_store().remove(camera_entity) |> ignore
+    }
+  }
 }
 
 ///|
@@ -224,8 +265,16 @@ fn setup(world : @ecs_world.World) -> Unit {
   anisotropy_state.val.sphere_scene = None
   anisotropy_state.val.sphere_anisotropic_material = None
   anisotropy_state.val.sphere_isotropic_material = None
+  anisotropy_state.val.environment_diffuse_map = None
+  anisotropy_state.val.environment_specular_map = None
 
   let asset_server = @asset.AssetServer::new()
+  anisotropy_state.val.environment_diffuse_map = Some(
+    asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+  )
+  anisotropy_state.val.environment_specular_map = Some(
+    asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+  )
 
   let camera_entity = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),

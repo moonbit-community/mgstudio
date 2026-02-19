@@ -449,6 +449,14 @@ pub fn host_gpu_begin_pass_3d(
   sub_camera_view_scale_y~ : Float,
   sub_camera_view_bias_x~ : Float,
   sub_camera_view_bias_y~ : Float,
+  previous_camera_x~ : Float,
+  previous_camera_y~ : Float,
+  previous_camera_z~ : Float,
+  previous_camera_rot_x~ : Float,
+  previous_camera_rot_y~ : Float,
+  previous_camera_rot_z~ : Float,
+  previous_camera_rot_w~ : Float,
+  pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass_3d"
 
@@ -631,6 +639,16 @@ pub fn host_gpu_draw_mesh3d(
   scale_x~ : Float,
   scale_y~ : Float,
   scale_z~ : Float,
+  previous_x~ : Float,
+  previous_y~ : Float,
+  previous_z~ : Float,
+  previous_rotation_x~ : Float,
+  previous_rotation_y~ : Float,
+  previous_rotation_z~ : Float,
+  previous_rotation_w~ : Float,
+  previous_scale_x~ : Float,
+  previous_scale_y~ : Float,
+  previous_scale_z~ : Float,
   color_r~ : Float,
   color_g~ : Float,
   color_b~ : Float,
@@ -659,6 +677,14 @@ pub fn host_gpu_draw_mesh3d(
   anisotropy_strength~ : Float,
   anisotropy_rotation~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
+
+///|
+pub fn host_gpu_draw_motion_blur(
+  scene_texture_id~ : Int,
+  velocity_texture_id~ : Int,
+  shutter_angle~ : Float,
+  samples~ : Int,
+) -> Unit = "mgstudio_host" "gpu_draw_motion_blur"
 
 ///|
 pub fn host_gpu_draw_gizmo_line(

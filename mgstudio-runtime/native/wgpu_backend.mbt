@@ -88,9 +88,17 @@ pub struct GpuPassState {
   camera_rot_y : Float
   camera_rot_z : Float
   camera_rot_w : Float
+  previous_camera_x : Float
+  previous_camera_y : Float
+  previous_camera_z : Float
+  previous_camera_rot_x : Float
+  previous_camera_rot_y : Float
+  previous_camera_rot_z : Float
+  previous_camera_rot_w : Float
   camera_fov_y : Float
   camera_near : Float
   camera_far : Float
+  pass_kind : Int
   viewport_x : UInt
   viewport_y : UInt
   viewport_w : UInt
@@ -154,6 +162,7 @@ pub struct GpuBackend {
   mut configured_height : Int
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
+  mut frame_count : UInt
   mut depth_texture : @wgpu.Texture?
   mut depth_view : @wgpu.TextureView?
   mut depth_target_id : Int
@@ -226,11 +235,33 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
   mut mesh3d_uniform_buf : @wgpu.Buffer?
   mut mesh3d_uniform_bg : @wgpu.BindGroup?
+  mut mesh3d_motion_vector_bgl_uniform : @wgpu.BindGroupLayout?
+  mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
+  mut mesh3d_motion_vector_uniform_buf : @wgpu.Buffer?
+  mut mesh3d_motion_vector_uniform_bg : @wgpu.BindGroup?
+  mut motion_blur_bgl : @wgpu.BindGroupLayout?
+  mut motion_blur_pipeline : @wgpu.RenderPipeline?
+  mut motion_blur_pipeline_surface : @wgpu.RenderPipeline?
+  mut motion_blur_pipeline_surface_format : @wgpu.TextureFormat?
+  mut motion_blur_settings_buf : @wgpu.Buffer?
+  mut motion_blur_globals_buf : @wgpu.Buffer?
+  mut motion_blur_fallback_depth_texture : @wgpu.Texture?
+  mut motion_blur_fallback_depth_view : @wgpu.TextureView?
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
   meshes : Ref[Array[GpuMeshInfo]]
 }
+
+///|
+const COMPRESSED_IMAGE_FORMAT_ASTC_LDR : Int = 1
+
+///|
+const COMPRESSED_IMAGE_FORMAT_BC : Int = 2
+
+///|
+const COMPRESSED_IMAGE_FORMAT_ETC2 : Int = 4
 
 ///|
 pub fn GpuBackend::new(
@@ -243,7 +274,19 @@ pub fn GpuBackend::new(
     err =>
       fatal("wgpu: Instance::request_adapter_sync failed: " + err.message())
   }
-  let device = adapter.request_device_sync(instance) catch {
+  let required_features : Array[UInt] = []
+  if adapter.supported_features_contains_u32(0x00000007U) {
+    required_features.push(0x00000007U)
+  }
+  if adapter.supported_features_contains_u32(0x00000004U) {
+    required_features.push(0x00000004U)
+  }
+  if adapter.supported_features_contains_u32(0x00000006U) {
+    required_features.push(0x00000006U)
+  }
+  let device = adapter.request_device_sync_with_features(
+    instance, required_features,
+  ) catch {
     err => fatal("wgpu: Adapter::request_device_sync failed: " + err.message())
   }
   let queue = device.queue()
@@ -259,6 +302,7 @@ pub fn GpuBackend::new(
     configured_height: 0,
     frame: None,
     pass_state: None,
+    frame_count: 0U,
     depth_texture: None,
     depth_view: None,
     depth_target_id: -2,
@@ -321,6 +365,19 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_surface_format: None,
     mesh3d_uniform_buf: None,
     mesh3d_uniform_bg: None,
+    mesh3d_motion_vector_bgl_uniform: None,
+    mesh3d_motion_vector_pipeline_layout: None,
+    mesh3d_motion_vector_pipeline: None,
+    mesh3d_motion_vector_uniform_buf: None,
+    mesh3d_motion_vector_uniform_bg: None,
+    motion_blur_bgl: None,
+    motion_blur_pipeline: None,
+    motion_blur_pipeline_surface: None,
+    motion_blur_pipeline_surface_format: None,
+    motion_blur_settings_buf: None,
+    motion_blur_globals_buf: None,
+    motion_blur_fallback_depth_texture: None,
+    motion_blur_fallback_depth_view: None,
     mesh3d_material_bg_cache: Ref::new([]),
     next_id: Ref::new(1),
     textures: Ref::new([]),
@@ -379,6 +436,88 @@ fn tf(raw : UInt) -> @wgpu.TextureFormat {
 }
 
 ///|
+priv struct TextureBlockInfo {
+  block_width : Int
+  block_height : Int
+  block_bytes : Int
+}
+
+///|
+fn texture_block_info(format_raw : UInt) -> TextureBlockInfo? {
+  if format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM ||
+    format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB {
+    return Some(TextureBlockInfo::{
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 4,
+    })
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT {
+    return Some(TextureBlockInfo::{
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 4,
+    })
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT {
+    return Some(TextureBlockInfo::{
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 8,
+    })
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM ||
+    format_raw == @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB {
+    return Some(TextureBlockInfo::{
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM ||
+    format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB {
+    return Some(TextureBlockInfo::{
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM ||
+    format_raw == @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB {
+    return Some(TextureBlockInfo::{
+      block_width: 4,
+      block_height: 4,
+      block_bytes: 16,
+    })
+  }
+  None
+}
+
+///|
+fn texture_layout_for_level(
+  info : TextureBlockInfo,
+  width : Int,
+  height : Int,
+) -> (Int, Int, Int)? {
+  let w = if width <= 0 { 1 } else { width }
+  let h = if height <= 0 { 1 } else { height }
+  let blocks_w = (w + info.block_width - 1) / info.block_width
+  let blocks_h = (h + info.block_height - 1) / info.block_height
+  if blocks_w <= 0 || blocks_h <= 0 {
+    return None
+  }
+  let bytes_per_row = blocks_w * info.block_bytes
+  if bytes_per_row <= 0 {
+    return None
+  }
+  let total = bytes_per_row * blocks_h
+  if total <= 0 {
+    return None
+  }
+  Some((bytes_per_row, blocks_h, total))
+}
+
+///|
 fn alloc_id(backend : GpuBackend) -> Int {
   let id = backend.next_id.val
   backend.next_id.val = id + 1
@@ -434,6 +573,225 @@ fn join_asset_path(base : String, rel : String) -> String {
 }
 
 ///|
+fn normalize_shader_rel_path(rel : String) -> String {
+  let text = rel.trim().to_string()
+  let n = text.length()
+  let mut i = 0
+  while i < n && text.code_unit_at(i).to_int() == 47 { // '/'
+    i = i + 1
+  }
+  if i == 0 {
+    text
+  } else {
+    (try! text[i:n]).to_string()
+  }
+}
+
+///|
+fn starts_with_text(text : String, prefix : String) -> Bool {
+  let p = prefix.length()
+  if text.length() < p {
+    return false
+  }
+  try! (text[:p].to_string() == prefix)
+}
+
+///|
+fn trim_trailing_semicolons(text : String) -> String {
+  let mut end = text.length()
+  while end > 0 && text.code_unit_at(end - 1).to_int() == 59 { // ';'
+    end = end - 1
+  }
+  if end == text.length() {
+    text
+  } else {
+    try! text[:end].to_string()
+  }
+}
+
+///|
+fn parse_wgsl_import_module_path(spec : String) -> String {
+  let mut path = spec.trim().to_string()
+  for part in path.split(" as ") {
+    path = part.to_string().trim().to_string()
+    break
+  }
+  for part in path.split("::{") {
+    path = part.to_string().trim().to_string()
+    break
+  }
+  path = trim_trailing_semicolons(path.trim().to_string())
+  if path == "" {
+    return ""
+  }
+  let segments_raw = path.split("::")
+  let segments : Array[String] = []
+  for seg in segments_raw {
+    let text = seg.to_string()
+    if text != "" {
+      segments.push(text)
+    }
+  }
+  if segments.length() == 0 {
+    return ""
+  }
+  let last = segments[segments.length() - 1]
+  if last.length() > 0 {
+    let first = last.code_unit_at(0).to_int()
+    if first >= 65 && first <= 90 {
+      segments.pop() |> ignore
+    }
+  }
+  if segments.length() == 0 {
+    return ""
+  }
+  let mut out = segments[0]
+  for i in 1..<segments.length() {
+    out = out + "::" + segments[i]
+  }
+  out
+}
+
+///|
+fn wgsl_module_path_to_rel_path(module_path : String) -> String {
+  let mut rel = "shaders/bevy/"
+  let mut first = true
+  for seg in module_path.split("::") {
+    let text = seg.to_string()
+    if text == "" {
+      continue
+    }
+    if first {
+      first = false
+    } else {
+      rel = rel + "/"
+    }
+    rel = rel + text
+  }
+  rel + ".wgsl"
+}
+
+///|
+fn apply_wgsl_ifdefs(
+  source : String,
+  defines : @hashmap.HashMap[String, Bool],
+) -> String {
+  let mut out = ""
+  let active_stack : Array[Bool] = [true]
+  let cond_stack : Array[Bool] = []
+  for line_item in source.split("\n") {
+    let line = line_item.to_string()
+    let trimmed = line.trim().to_string()
+    if starts_with_text(trimmed, "#ifdef ") {
+      let name = try! trimmed[7:trimmed.length()].to_string().trim().to_string()
+      let enabled = defines.get(name).unwrap_or(false)
+      let parent = active_stack[active_stack.length() - 1]
+      active_stack.push(parent && enabled)
+      cond_stack.push(enabled)
+      continue
+    }
+    if starts_with_text(trimmed, "#ifndef ") {
+      let name = try! trimmed[8:trimmed.length()].to_string().trim().to_string()
+      let enabled = !defines.get(name).unwrap_or(false)
+      let parent = active_stack[active_stack.length() - 1]
+      active_stack.push(parent && enabled)
+      cond_stack.push(enabled)
+      continue
+    }
+    if trimmed == "#else" {
+      if cond_stack.length() > 0 {
+        let idx = cond_stack.length() - 1
+        let flipped = !cond_stack[idx]
+        cond_stack[idx] = flipped
+        let parent = if active_stack.length() >= 2 {
+          active_stack[active_stack.length() - 2]
+        } else {
+          true
+        }
+        active_stack[active_stack.length() - 1] = parent && flipped
+      }
+      continue
+    }
+    if trimmed == "#endif" {
+      if active_stack.length() > 1 {
+        active_stack.pop() |> ignore
+      }
+      if cond_stack.length() > 0 {
+        cond_stack.pop() |> ignore
+      }
+      continue
+    }
+    if active_stack[active_stack.length() - 1] {
+      out = out + line + "\n"
+    }
+  }
+  out
+}
+
+///|
+fn preprocess_wgsl_source(
+  assets_base : String,
+  source : String,
+  defines : @hashmap.HashMap[String, Bool],
+  visited : @hashmap.HashMap[String, Bool],
+) -> String raise GpuBackendError {
+  let mut merged = ""
+  for line_item in source.split("\n") {
+    let line = line_item.to_string()
+    let trimmed = line.trim().to_string()
+    if starts_with_text(trimmed, "#define_import_path") {
+      continue
+    }
+    if starts_with_text(trimmed, "#import ") {
+      let spec = try! trimmed[8:trimmed.length()].to_string()
+      let module_path = parse_wgsl_import_module_path(spec)
+      if module_path == "" {
+        continue
+      }
+      let module_rel = wgsl_module_path_to_rel_path(module_path)
+      let module_source = load_wgsl_preprocessed(
+        assets_base, module_rel, defines, visited,
+      )
+      if module_source != "" {
+        merged = merged + module_source
+        let merged_len = merged.length()
+        if merged_len == 0 || merged.code_unit_at(merged_len - 1).to_int() != 10 {
+          merged = merged + "\n"
+        }
+      }
+      continue
+    }
+    merged = merged + line + "\n"
+  }
+  apply_wgsl_ifdefs(merged, defines)
+}
+
+///|
+fn load_wgsl_preprocessed(
+  assets_base : String,
+  rel : String,
+  defines : @hashmap.HashMap[String, Bool],
+  visited : @hashmap.HashMap[String, Bool],
+) -> String raise GpuBackendError {
+  let normalized_rel = normalize_shader_rel_path(rel)
+  if normalized_rel == "" {
+    return ""
+  }
+  if visited.contains(normalized_rel) {
+    return ""
+  }
+  visited.set(normalized_rel, true)
+  let full_path = join_asset_path(assets_base, normalized_rel)
+  let source = @fs.read_file_to_string(full_path) catch {
+    err =>
+      fatal(
+        "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
+      )
+  }
+  preprocess_wgsl_source(assets_base, source, defines, visited)
+}
+
+///|
 fn load_wgsl_from_assets_required(
   backend : GpuBackend,
   rel : String,
@@ -442,13 +800,9 @@ fn load_wgsl_from_assets_required(
   if base == "" {
     fatal("wgpu: assets_base is empty; cannot load shader: " + rel)
   }
-  let full_path = join_asset_path(base, rel)
-  @fs.read_file_to_string(full_path) catch {
-    err =>
-      fatal(
-        "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
-      )
-  }
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  load_wgsl_preprocessed(base, rel, defines, visited)
 }
 
 ///|
@@ -1025,6 +1379,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   with_depth? : Bool = false,
   depth_write_enabled? : Bool = true,
   position3d? : Bool = false,
+  alpha_blend? : Bool = true,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
@@ -1033,9 +1388,11 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_format_ok = @wgpu_c.render_pipeline_desc_builder_set_color_target_format(
     builder, format,
   )
-  let set_blend_ok = @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(
-    builder,
-  )
+  let set_blend_ok = if alpha_blend {
+    @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(builder)
+  } else {
+    1U
+  }
   let vertex_stride = if position3d { 36UL } else { 32UL }
   let pos_format = if position3d {
     @wgpu.VERTEX_FORMAT_FLOAT32X3
@@ -1411,6 +1768,145 @@ fn mesh3d_pipeline_for_current_pass(
 }
 
 ///|
+fn ensure_mesh3d_motion_vector_pipeline(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_sprite_resources(backend)
+  if backend.mesh3d_motion_vector_pipeline_layout is None {
+    let bgl = backend.device.create_bind_group_layout_uniform_buffer()
+    let pl = backend.device.create_pipeline_layout_1(bgl)
+    backend.mesh3d_motion_vector_bgl_uniform = Some(bgl)
+    backend.mesh3d_motion_vector_pipeline_layout = Some(pl)
+  }
+  if backend.mesh3d_motion_vector_uniform_buf is None ||
+    backend.mesh3d_motion_vector_uniform_bg is None {
+    guard backend.mesh3d_motion_vector_bgl_uniform is Some(bgl) else { return }
+    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    let uniform_buf = backend.device.create_buffer(size=256UL, usage~)
+    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
+      bgl, uniform_buf,
+    )
+    backend.mesh3d_motion_vector_uniform_buf = Some(uniform_buf)
+    backend.mesh3d_motion_vector_uniform_bg = Some(uniform_bg)
+  }
+  if backend.mesh3d_motion_vector_pipeline is Some(_) {
+    return
+  }
+  guard backend.mesh3d_motion_vector_pipeline_layout is Some(pl) else { return }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/3d/motion_vector.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
+    pl,
+    sm,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    with_depth=true,
+    depth_write_enabled=true,
+    position3d=true,
+    alpha_blend=false,
+  )
+  let pipeline = backend.device.create_render_pipeline_ptr(desc)
+  @wgpu_c.render_pipeline_descriptor_free(desc)
+  pipeline.set_label("mgstudio_motion_vector_rgba8")
+  backend.mesh3d_motion_vector_pipeline = Some(pipeline)
+  sm.release()
+}
+
+///|
+fn ensure_motion_blur_pipeline_rgba8(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  if backend.motion_blur_settings_buf is None {
+    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    backend.motion_blur_settings_buf = Some(
+      backend.device.create_buffer(size=16UL, usage~),
+    )
+  }
+  if backend.motion_blur_globals_buf is None {
+    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    backend.motion_blur_globals_buf = Some(
+      backend.device.create_buffer(size=16UL, usage~),
+    )
+  }
+  if backend.motion_blur_pipeline is Some(_) {
+    return
+  }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/3d/motion_blur.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_render_pipeline_color_format_entries(
+    sm,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    vs_entry="fullscreen_vertex_shader",
+    fs_entry="fragment",
+    alpha_blend=false,
+    depth=false,
+  )
+  pipeline.set_label("mgstudio_motion_blur_rgba8")
+  backend.motion_blur_bgl = Some(pipeline.get_bind_group_layout(0U))
+  backend.motion_blur_pipeline = Some(pipeline)
+  sm.release()
+}
+
+///|
+fn ensure_motion_blur_pipeline_surface(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_motion_blur_pipeline_rgba8(backend)
+  guard backend.surface_format is Some(format) else { return }
+  if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
+    return
+  }
+  if backend.motion_blur_pipeline_surface_format is Some(prev) &&
+    prev == format &&
+    backend.motion_blur_pipeline_surface is Some(_) {
+    return
+  }
+  if backend.motion_blur_pipeline_surface is Some(old) {
+    old.release()
+  }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/3d/motion_blur.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_render_pipeline_color_format_entries(
+    sm,
+    format,
+    vs_entry="fullscreen_vertex_shader",
+    fs_entry="fragment",
+    alpha_blend=false,
+    depth=false,
+  )
+  pipeline.set_label("mgstudio_motion_blur_surface")
+  backend.motion_blur_pipeline_surface = Some(pipeline)
+  backend.motion_blur_pipeline_surface_format = Some(format)
+  sm.release()
+}
+
+///|
+fn motion_blur_pipeline_for_current_pass(
+  backend : GpuBackend,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let target_is_surface = match backend.pass_state {
+    Some(ps) => ps.target_id == -1
+    None => false
+  }
+  if target_is_surface {
+    match backend.surface_format {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+        ensure_motion_blur_pipeline_surface(backend)
+        return backend.motion_blur_pipeline_surface
+      }
+      _ => ()
+    }
+  }
+  ensure_motion_blur_pipeline_rgba8(backend)
+  backend.motion_blur_pipeline
+}
+
+///|
 pub fn GpuBackend::create_surface(
   self : GpuBackend,
   window : @win.Window,
@@ -1471,6 +1967,11 @@ pub fn GpuBackend::ensure_surface_configured(
 ///|
 pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
   guard self.surface is Some(surface) else { return }
+  if self.frame_count == 4294967295U {
+    self.frame_count = 0U
+  } else {
+    self.frame_count = self.frame_count + 1U
+  }
   let st = surface.get_current_texture()
   let tex = st.take_texture()
   let view = tex.create_view()
@@ -1682,6 +2183,145 @@ pub fn GpuBackend::create_texture_rgba8(
 }
 
 ///|
+pub fn GpuBackend::create_texture_stacked_2d_with_format(
+  self : GpuBackend,
+  width : Int,
+  height_per_slice : Int,
+  slice_count : Int,
+  format_raw : UInt,
+  levels : Array[Bytes],
+  nearest : Bool,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  if levels.length() == 0 {
+    fatal("wgpu: no mip levels provided for texture upload")
+  }
+  guard texture_block_info(format_raw) is Some(block_info) else {
+    fatal(
+      "wgpu: unsupported texture format for upload: " +
+      format_raw.reinterpret_as_int().to_string(),
+    )
+  }
+
+  let id = alloc_id(self)
+  let w = if width <= 0 { 1 } else { width }
+  let h_per_slice = if height_per_slice <= 0 { 1 } else { height_per_slice }
+  let slices = if slice_count <= 0 { 1 } else { slice_count }
+  let total_height = h_per_slice * slices
+  if total_height <= 0 {
+    fatal("wgpu: stacked texture height overflow")
+  }
+
+  let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST |
+    @wgpu.TEXTURE_USAGE_COPY_SRC
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let tex = self.device.create_texture_u32(
+    w.reinterpret_as_uint(),
+    total_height.reinterpret_as_uint(),
+    1U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(format_raw),
+    mip_level_count=levels.length().reinterpret_as_uint(),
+  )
+  let view = tex.create_view()
+  let sampler = if nearest {
+    self.device.create_sampler_nearest_clamp()
+  } else {
+    self.device.create_sampler_linear_clamp()
+  }
+  let bg = self.device.create_bind_group_sampler_texture_2d(
+    self.sprite_bgl_tex.unwrap(),
+    sampler,
+    view,
+  )
+
+  for level_index in 0..<levels.length() {
+    let mip_width = {
+      let v = w >> level_index
+      if v <= 0 {
+        1
+      } else {
+        v
+      }
+    }
+    let mip_height_per_slice = {
+      let v = h_per_slice >> level_index
+      if v <= 0 {
+        1
+      } else {
+        v
+      }
+    }
+    let mip_height = mip_height_per_slice * slices
+    if mip_height <= 0 {
+      fatal("wgpu: stacked mip height overflow")
+    }
+    guard texture_layout_for_level(block_info, mip_width, mip_height)
+      is Some((bytes_per_row, rows_per_image, expected_bytes)) else {
+      fatal("wgpu: failed to compute texture upload layout")
+    }
+    let level_data = levels[level_index]
+    if level_data.length() < expected_bytes {
+      fatal(
+        "wgpu: mip upload size mismatch at level " + level_index.to_string(),
+      )
+    }
+    let upload_data = if level_data.length() == expected_bytes {
+      level_data
+    } else {
+      Bytes::makei(expected_bytes, i => {
+        match level_data.get(i) {
+          Some(b) => b
+          None => (0).to_byte()
+        }
+      })
+    }
+    let tex_info = @wgpu_c.texel_copy_texture_info_new(
+      tex.raw,
+      level_index.reinterpret_as_uint(),
+      0U,
+      0U,
+      0U,
+    )
+    let layout = @wgpu_c.texel_copy_buffer_layout_new(
+      0UL,
+      bytes_per_row.reinterpret_as_uint(),
+      rows_per_image.reinterpret_as_uint(),
+    )
+    let extent = @wgpu_c.extent3d_new(
+      mip_width.reinterpret_as_uint(),
+      mip_height.reinterpret_as_uint(),
+      1U,
+    )
+    self.queue.write_texture_ptr(
+      tex_info,
+      upload_data,
+      layout,
+      extent,
+      data_size=expected_bytes.to_uint64(),
+    )
+    @wgpu_c.extent3d_free(extent)
+    @wgpu_c.texel_copy_buffer_layout_free(layout)
+    @wgpu_c.texel_copy_texture_info_free(tex_info)
+  }
+
+  let info = GpuTextureInfo::{
+    id,
+    width: w,
+    height: total_height,
+    texture: tex,
+    view,
+    sampler,
+    bind_group: bg,
+  }
+  self.textures.val.push(info)
+  mesh3d_material_cache_clear(self)
+  id
+}
+
+///|
 pub fn GpuBackend::texture_width(self : GpuBackend, texture_id : Int) -> Int {
   match find_texture(self, texture_id) {
     Some(t) => t.width
@@ -1786,11 +2426,20 @@ pub fn GpuBackend::is_texture_loaded(
 pub fn GpuBackend::supported_compressed_image_formats_mask(
   self : GpuBackend,
 ) -> Int {
-  self |> ignore
-  // Runtime note: native host currently decodes textures through RGBA8 image
-  // decode path and does not upload compressed KTX2 textures yet. Report 0 to
-  // block compressed-format selection until decoder/upload support lands.
-  0
+  let mut gpu_feature_mask = 0
+  if self.device.supported_features_contains_u32(0x00000007U) {
+    gpu_feature_mask = gpu_feature_mask + COMPRESSED_IMAGE_FORMAT_ASTC_LDR
+  }
+  if self.device.supported_features_contains_u32(0x00000004U) {
+    gpu_feature_mask = gpu_feature_mask + COMPRESSED_IMAGE_FORMAT_BC
+  }
+  if self.device.supported_features_contains_u32(0x00000006U) {
+    gpu_feature_mask = gpu_feature_mask + COMPRESSED_IMAGE_FORMAT_ETC2
+  }
+  let runtime_decoder_mask = COMPRESSED_IMAGE_FORMAT_ASTC_LDR |
+    COMPRESSED_IMAGE_FORMAT_BC |
+    COMPRESSED_IMAGE_FORMAT_ETC2
+  gpu_feature_mask & runtime_decoder_mask
 }
 
 ///|
@@ -1922,9 +2571,16 @@ fn ensure_depth_view_for_target(
   if backend.depth_texture is Some(old_tex) {
     old_tex.release()
   }
-  let depth_tex = backend.device.create_texture_depth24plus_2d(
+  let depth_tex = backend.device.create_texture_u32(
     width.reinterpret_as_uint(),
     height.reinterpret_as_uint(),
+    1U,
+    @wgpu.TextureUsage::from_u64(
+      @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+    ),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_DEPTH24_PLUS),
   )
   let depth_view = depth_tex.create_view()
   backend.depth_texture = Some(depth_tex)
@@ -2001,9 +2657,17 @@ pub fn GpuBackend::begin_pass(
     camera_rot_y: 0.0F,
     camera_rot_z: 0.0F,
     camera_rot_w: 1.0F,
+    previous_camera_x: camera_x,
+    previous_camera_y: camera_y,
+    previous_camera_z: 0.0F,
+    previous_camera_rot_x: 0.0F,
+    previous_camera_rot_y: 0.0F,
+    previous_camera_rot_z: 0.0F,
+    previous_camera_rot_w: 1.0F,
     camera_fov_y: PI * 0.5F,
     camera_near: 0.1F,
     camera_far: 1000.0F,
+    pass_kind: 0,
     viewport_x: vx,
     viewport_y: vy,
     viewport_w: vw,
@@ -2136,6 +2800,14 @@ pub fn GpuBackend::begin_pass_3d(
   sub_camera_view_scale_y : Float,
   sub_camera_view_bias_x : Float,
   sub_camera_view_bias_y : Float,
+  previous_camera_x : Float,
+  previous_camera_y : Float,
+  previous_camera_z : Float,
+  previous_camera_rot_x : Float,
+  previous_camera_rot_y : Float,
+  previous_camera_rot_z : Float,
+  previous_camera_rot_w : Float,
+  pass_kind : Int,
   clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
   let camera_rot = quat_to_z_rotation(
@@ -2202,9 +2874,17 @@ pub fn GpuBackend::begin_pass_3d(
     camera_rot_y,
     camera_rot_z,
     camera_rot_w,
+    previous_camera_x,
+    previous_camera_y,
+    previous_camera_z,
+    previous_camera_rot_x,
+    previous_camera_rot_y,
+    previous_camera_rot_z,
+    previous_camera_rot_w,
     camera_fov_y,
     camera_near,
     camera_far,
+    pass_kind,
     viewport_x: vx,
     viewport_y: vy,
     viewport_w: vw,
@@ -3266,6 +3946,110 @@ pub fn GpuBackend::draw_mesh(
 }
 
 ///|
+pub fn GpuBackend::draw_motion_blur(
+  self : GpuBackend,
+  scene_texture_id : Int,
+  velocity_texture_id : Int,
+  shutter_angle : Float,
+  samples : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard frame.pass is Some(pass) else { return }
+  flush_ui_shadow_batches(self)
+  flush_ui_slice_batches(self)
+  flush_ui_batches(self)
+  flush_sprite_batches(self)
+  guard motion_blur_pipeline_for_current_pass(self) is Some(pipeline) else {
+    return
+  }
+  guard self.motion_blur_settings_buf is Some(settings_buf) else { return }
+  guard self.motion_blur_globals_buf is Some(globals_buf) else { return }
+  let scene_texture = ensure_fallback_texture(
+    self,
+    if scene_texture_id < 0 {
+      -1
+    } else {
+      scene_texture_id
+    },
+  )
+  let velocity_texture = ensure_fallback_texture(
+    self,
+    if velocity_texture_id < 0 {
+      -1
+    } else {
+      velocity_texture_id
+    },
+  )
+  let clamped_samples = if samples < 0 {
+    0
+  } else if samples > 64 {
+    64
+  } else {
+    samples
+  }
+  let settings_bytes = u32le_pack([
+    f32_bits(shutter_angle),
+    clamped_samples.reinterpret_as_uint(),
+    0U,
+    0U,
+  ])
+  self.queue.write_buffer(settings_buf, 0UL, settings_bytes)
+  let globals_bytes = u32le_pack([
+    f32_bits(0.0F),
+    f32_bits(0.0F),
+    self.frame_count,
+    0U,
+  ])
+  self.queue.write_buffer(globals_buf, 0UL, globals_bytes)
+
+  if self.motion_blur_fallback_depth_texture is None ||
+    self.motion_blur_fallback_depth_view is None {
+    let fallback_depth = self.device.create_texture_u32(
+      1U,
+      1U,
+      1U,
+      @wgpu.TextureUsage::from_u64(
+        @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+        @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+      ),
+      @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+      tf(@wgpu.TEXTURE_FORMAT_DEPTH24_PLUS),
+    )
+    let fallback_depth_view = fallback_depth.create_view()
+    self.motion_blur_fallback_depth_texture = Some(fallback_depth)
+    self.motion_blur_fallback_depth_view = Some(fallback_depth_view)
+  }
+  let depth_view = match self.depth_view {
+    Some(view) => view
+    None => self.motion_blur_fallback_depth_view.unwrap()
+  }
+
+  let material_bgl = pipeline.get_bind_group_layout(0U)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
+  let ok = builder.add_texture_view(0U, scene_texture.view) &&
+    builder.add_texture_view(1U, velocity_texture.view) &&
+    builder.add_texture_view(2U, depth_view) &&
+    builder.add_sampler(3U, scene_texture.sampler) &&
+    builder.add_buffer(4U, settings_buf) &&
+    builder.add_buffer(5U, globals_buf)
+  if !ok {
+    builder.free()
+    material_bgl.release()
+    return
+  }
+  let material_bg = builder.finish(
+    self.device,
+    material_bgl,
+    label="mgstudio_motion_blur_bg",
+  )
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(0U, material_bg, [])
+  pass.draw(3U, 1U, 0U, 0U)
+  material_bg.release()
+  material_bgl.release()
+}
+
+///|
 pub fn GpuBackend::draw_mesh3d(
   self : GpuBackend,
   mesh_id : Int,
@@ -3279,6 +4063,16 @@ pub fn GpuBackend::draw_mesh3d(
   scale_x : Float,
   scale_y : Float,
   scale_z : Float,
+  previous_x : Float,
+  previous_y : Float,
+  previous_z : Float,
+  previous_rotation_x : Float,
+  previous_rotation_y : Float,
+  previous_rotation_z : Float,
+  previous_rotation_w : Float,
+  previous_scale_x : Float,
+  previous_scale_y : Float,
+  previous_scale_z : Float,
   color_r : Float,
   color_g : Float,
   color_b : Float,
@@ -3319,6 +4113,84 @@ pub fn GpuBackend::draw_mesh3d(
     return
   }
   let transparent = color_a < 0.999F
+  if ps.pass_kind == 1 {
+    if transparent {
+      return
+    }
+    ensure_mesh3d_motion_vector_pipeline(self)
+    guard self.mesh3d_motion_vector_pipeline is Some(pipeline) else { return }
+    guard self.mesh3d_motion_vector_uniform_buf is Some(uniform_buf) else {
+      return
+    }
+    guard self.mesh3d_motion_vector_uniform_bg is Some(uniform_bg) else {
+      return
+    }
+    let aspect_ratio = if ps.height_logical > 0.0F {
+      ps.width_logical / ps.height_logical
+    } else {
+      1.0F
+    }
+    let bytes = f32le_pack([
+      x,
+      y,
+      z,
+      1.0F,
+      rotation_x,
+      rotation_y,
+      rotation_z,
+      rotation_w,
+      scale_x,
+      scale_y,
+      scale_z,
+      1.0F,
+      previous_x,
+      previous_y,
+      previous_z,
+      1.0F,
+      previous_rotation_x,
+      previous_rotation_y,
+      previous_rotation_z,
+      previous_rotation_w,
+      previous_scale_x,
+      previous_scale_y,
+      previous_scale_z,
+      1.0F,
+      ps.camera_x,
+      ps.camera_y,
+      ps.camera_z,
+      1.0F,
+      ps.camera_rot_x,
+      ps.camera_rot_y,
+      ps.camera_rot_z,
+      ps.camera_rot_w,
+      ps.previous_camera_x,
+      ps.previous_camera_y,
+      ps.previous_camera_z,
+      1.0F,
+      ps.previous_camera_rot_x,
+      ps.previous_camera_rot_y,
+      ps.previous_camera_rot_z,
+      ps.previous_camera_rot_w,
+      ps.camera_fov_y,
+      aspect_ratio,
+      ps.camera_near,
+      ps.camera_far,
+      ps.sub_camera_view_scale_x,
+      ps.sub_camera_view_scale_y,
+      ps.sub_camera_view_bias_x,
+      ps.sub_camera_view_bias_y,
+    ])
+    self.queue.write_buffer(uniform_buf, 0UL, bytes)
+    pass.set_pipeline(pipeline)
+    pass.set_bind_group(0U, uniform_bg, [])
+    let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
+      mesh.vertex_stride_bytes
+    pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
+    let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
+    pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+    pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
+    return
+  }
   guard mesh3d_pipeline_for_current_pass(self, transparent) is Some(pipeline) else {
     return
   }

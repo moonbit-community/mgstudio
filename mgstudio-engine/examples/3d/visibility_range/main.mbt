@@ -16,8 +16,7 @@
 /// Port of `bevy/examples/3d/visibility_range.rs`.
 
 ///|
-/// Baseline parity: mgstudio now exposes `VisibilityRange` and `SceneRoot`.
-/// This example follows Bevy's scene-root-based HLOD flow.
+const PI : Float = 3.141592653589793F
 
 ///|
 const CAMERA_FOCAL_X : Float = 0.0F
@@ -41,11 +40,22 @@ const CAMERA_MOUSE_MOVEMENT_SPEED : Float = 0.25F
 const MIN_ZOOM_DISTANCE : Float = 0.5F
 
 ///|
+const SHOW_MODE_AUTO : Int = 0
+
+///|
+const SHOW_MODE_HIGH : Int = 1
+
+///|
+const SHOW_MODE_LOW : Int = 2
+
+///|
 priv struct VisibilityRangeState {
   mut camera : @core.Entity?
   mut high_scene_root : @core.Entity?
   mut low_scene_root : @core.Entity?
   mut show_mode : Int
+  mut prepass_enabled : Bool
+  mut help_text : @text.TextHandle?
 }
 
 ///|
@@ -53,7 +63,9 @@ let visibility_range_state : Ref[VisibilityRangeState] = Ref::new({
   camera: None,
   high_scene_root: None,
   low_scene_root: None,
-  show_mode: 0,
+  show_mode: SHOW_MODE_AUTO,
+  prepass_enabled: false,
+  help_text: None,
 })
 
 ///|
@@ -90,6 +102,49 @@ fn range_single_model() -> @visibility.VisibilityRange {
 ///|
 fn range_invisible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::invisible()
+}
+
+///|
+fn create_help_text() -> String {
+  let marker_auto = if visibility_range_state.val.show_mode == SHOW_MODE_AUTO {
+    ">"
+  } else {
+    " "
+  }
+  let marker_high = if visibility_range_state.val.show_mode == SHOW_MODE_HIGH {
+    ">"
+  } else {
+    " "
+  }
+  let marker_low = if visibility_range_state.val.show_mode == SHOW_MODE_LOW {
+    ">"
+  } else {
+    " "
+  }
+  let prepass_action = if visibility_range_state.val.prepass_enabled {
+    "disable"
+  } else {
+    "enable"
+  }
+
+  marker_auto +
+  " (1) Switch from high-poly to low-poly based on camera distance\n" +
+  marker_high +
+  " (2) Show only the high-poly model\n" +
+  marker_low +
+  " (3) Show only the low-poly model\n" +
+  "Press 1, 2, or 3 to switch which model is shown\n" +
+  "Press WASD or use the mouse wheel to move the camera\n" +
+  "Press Space to " +
+  prepass_action +
+  " the prepass"
+}
+
+///|
+fn update_help_text() -> Unit {
+  if visibility_range_state.val.help_text is Some(handle) {
+    @text.text_set_content(handle, create_help_text())
+  }
 }
 
 ///|
@@ -139,7 +194,9 @@ fn setup(world : @ecs_world.World) -> Unit {
   visibility_range_state.val.camera = None
   visibility_range_state.val.high_scene_root = None
   visibility_range_state.val.low_scene_root = None
-  visibility_range_state.val.show_mode = 0
+  visibility_range_state.val.show_mode = SHOW_MODE_AUTO
+  visibility_range_state.val.prepass_enabled = false
+  visibility_range_state.val.help_text = None
 
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(50.0F, 50.0F),
@@ -191,17 +248,18 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_directional_light_store()
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
+    @render3d.DirectionalLight::new(@render2d.Color::white(), 20_000.0F, true),
     tick,
   )
+  let light_angle = -0.15F * PI
+  let light_rotation = @math.Quat::from_rotation_z(0.0F)
+    .mul(@math.Quat::from_rotation_y(light_angle))
+    .mul(@math.Quat::from_rotation_x(light_angle))
   world
   .get_transform_store()
   .insert(
     directional,
-    @math.Transform::from_xyz(2.0F, 5.0F, 2.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
+    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(light_rotation),
     tick,
   )
 
@@ -213,6 +271,40 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   visibility_range_state.val.camera = Some(camera)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      150.0F,
+    ),
+    tick,
+  )
+
+  let help_text = @text.Text2dBundle::new(
+      @text.Text2d::new(""),
+      @text.TextFont::default()
+      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
+      .with_font_size(16.0F),
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-390.0F, -320.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=50.0F,
+      ),
+    )
+    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_color(
+      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    )
+    .with_shadow(Some(@text.Text2dShadow::default()))
+    .spawn()
+  visibility_range_state.val.help_text = Some(help_text)
+  update_help_text()
 }
 
 ///|
@@ -267,13 +359,43 @@ fn move_camera(world : @ecs_world.World) -> Unit {
 
 ///|
 fn update_mode(_world : @ecs_world.World) -> Unit {
+  let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    visibility_range_state.val.show_mode = 0
+    visibility_range_state.val.show_mode = SHOW_MODE_AUTO
+    changed = true
   } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    visibility_range_state.val.show_mode = 1
+    visibility_range_state.val.show_mode = SHOW_MODE_HIGH
+    changed = true
   } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    visibility_range_state.val.show_mode = 2
+    visibility_range_state.val.show_mode = SHOW_MODE_LOW
+    changed = true
   }
+  if changed {
+    update_help_text()
+  }
+}
+
+///|
+fn toggle_prepass(world : @ecs_world.World) -> Unit {
+  if !@input.key_just_pressed(@window.KeyCode::Space) {
+    return
+  }
+  visibility_range_state.val.prepass_enabled = !visibility_range_state.val.prepass_enabled
+
+  guard visibility_range_state.val.camera is Some(camera) else { return }
+  let tick = world.read_change_tick()
+  if visibility_range_state.val.prepass_enabled {
+    world
+    .get_depth_prepass_store()
+    .insert(camera, @render3d.DepthPrepass::default(), tick)
+    world
+    .get_normal_prepass_store()
+    .insert(camera, @render3d.NormalPrepass::default(), tick)
+  } else {
+    world.get_depth_prepass_store().remove(camera) |> ignore
+    world.get_normal_prepass_store().remove(camera) |> ignore
+  }
+  update_help_text()
 }
 
 ///|
@@ -284,10 +406,10 @@ fn update_visibility(world : @ecs_world.World) -> Unit {
 
   let mut high_range = range_normal_high()
   let mut low_range = range_normal_low()
-  if state.show_mode == 1 {
+  if state.show_mode == SHOW_MODE_HIGH {
     high_range = range_single_model()
     low_range = range_invisible()
-  } else if state.show_mode == 2 {
+  } else if state.show_mode == SHOW_MODE_LOW {
     high_range = range_invisible()
     low_range = range_single_model()
   }
@@ -304,6 +426,7 @@ pub fn game_app() -> Unit {
   .add_startup_system(setup)
   .add_system(move_camera)
   .add_system(update_mode)
+  .add_system(toggle_prepass)
   .add_system(update_visibility)
   .run()
 }

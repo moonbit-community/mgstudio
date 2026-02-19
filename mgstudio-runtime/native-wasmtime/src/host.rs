@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::io::Read;
 use std::time::{Duration, Instant};
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use gilrs::{Axis as GilrsAxis, Button as GilrsButton, Gilrs};
 use wasmtime::{AnyRef, Caller, ExternRef, Func, FuncType, Linker, Store, Val, ValType};
 
@@ -15,6 +16,11 @@ use crate::source_spec::{join_dir_best_effort, DirSourceSpec};
 
 const GAMEPAD_BUTTON_COUNT: usize = 20;
 const GAMEPAD_AXIS_COUNT: usize = 9;
+const KTX2_IDENTIFIER: [u8; 12] = [
+    0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
+];
+const KTX2_SUPERCOMPRESSION_NONE: u32 = 0;
+const KTX2_SUPERCOMPRESSION_ZSTD: u32 = 2;
 
 struct GamepadSnapshot {
     id: i32,
@@ -464,6 +470,291 @@ fn split_trimmed_lines(text: &str) -> impl Iterator<Item = &str> {
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
 }
 
+#[derive(Clone, Copy)]
+struct Ktx2Header {
+    vk_format: u32,
+    pixel_width: u32,
+    pixel_height: u32,
+    pixel_depth: u32,
+    layer_count: u32,
+    face_count: u32,
+    supercompression_scheme: u32,
+}
+
+#[derive(Clone, Copy)]
+struct Ktx2LevelIndex {
+    byte_offset: u64,
+    byte_length: u64,
+    uncompressed_byte_length: u64,
+}
+
+#[derive(Clone, Copy)]
+struct Ktx2BlockLayout {
+    block_width: u32,
+    block_height: u32,
+    block_bytes: u32,
+}
+
+impl Ktx2BlockLayout {
+    fn bytes_for_level(self, width: u32, height: u32) -> anyhow::Result<usize> {
+        let width = width.max(1);
+        let height = height.max(1);
+        let blocks_w = width.div_ceil(self.block_width).max(1);
+        let blocks_h = height.div_ceil(self.block_height).max(1);
+        let bytes_per_row = blocks_w
+            .checked_mul(self.block_bytes)
+            .ok_or_else(|| anyhow!("KTX2: bytes_per_row overflow"))?;
+        let total_bytes_u64 = u64::from(bytes_per_row) * u64::from(blocks_h);
+        usize::try_from(total_bytes_u64)
+            .context("KTX2: texture level data is too large for host usize")
+    }
+}
+
+struct Ktx2UploadTexture {
+    width: u32,
+    height_per_slice: u32,
+    slice_count: u32,
+    format: wgpu::TextureFormat,
+    levels: Vec<Vec<u8>>,
+}
+
+fn is_ktx2(bytes: &[u8]) -> bool {
+    bytes.len() >= KTX2_IDENTIFIER.len() && bytes.starts_with(&KTX2_IDENTIFIER)
+}
+
+fn read_u32_le(bytes: &[u8], offset: usize) -> anyhow::Result<u32> {
+    let end = offset.saturating_add(4);
+    let chunk = bytes
+        .get(offset..end)
+        .ok_or_else(|| anyhow!("KTX2: truncated u32 at offset {offset}"))?;
+    Ok(u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
+}
+
+fn read_u64_le(bytes: &[u8], offset: usize) -> anyhow::Result<u64> {
+    let end = offset.saturating_add(8);
+    let chunk = bytes
+        .get(offset..end)
+        .ok_or_else(|| anyhow!("KTX2: truncated u64 at offset {offset}"))?;
+    Ok(u64::from_le_bytes([
+        chunk[0], chunk[1], chunk[2], chunk[3], chunk[4], chunk[5], chunk[6], chunk[7],
+    ]))
+}
+
+fn parse_ktx2(bytes: &[u8]) -> anyhow::Result<(Ktx2Header, Vec<Ktx2LevelIndex>)> {
+    if !is_ktx2(bytes) {
+        return Err(anyhow!("KTX2: invalid identifier"));
+    }
+    if bytes.len() < 80 {
+        return Err(anyhow!("KTX2: file shorter than header"));
+    }
+    let vk_format = read_u32_le(bytes, 12)?;
+    let pixel_width = read_u32_le(bytes, 20)?;
+    let pixel_height = read_u32_le(bytes, 24)?;
+    let pixel_depth = read_u32_le(bytes, 28)?;
+    let layer_count = read_u32_le(bytes, 32)?;
+    let face_count = read_u32_le(bytes, 36)?;
+    let level_count_raw = read_u32_le(bytes, 40)?;
+    let supercompression_scheme = read_u32_le(bytes, 44)?;
+    let level_count = level_count_raw.max(1);
+    let header = Ktx2Header {
+        vk_format,
+        pixel_width,
+        pixel_height,
+        pixel_depth,
+        layer_count,
+        face_count,
+        supercompression_scheme,
+    };
+    if header.pixel_width == 0 || header.pixel_height == 0 {
+        return Err(anyhow!(
+            "KTX2: zero-sized texture {}x{}",
+            header.pixel_width,
+            header.pixel_height
+        ));
+    }
+    let mut levels = Vec::with_capacity(level_count as usize);
+    let mut offset = 80usize;
+    for _ in 0..level_count {
+        let byte_offset = read_u64_le(bytes, offset)?;
+        let byte_length = read_u64_le(bytes, offset + 8)?;
+        let uncompressed_byte_length = read_u64_le(bytes, offset + 16)?;
+        levels.push(Ktx2LevelIndex {
+            byte_offset,
+            byte_length,
+            uncompressed_byte_length,
+        });
+        offset = offset.saturating_add(24);
+    }
+    Ok((header, levels))
+}
+
+fn ktx2_format_info(vk_format: u32) -> anyhow::Result<(wgpu::TextureFormat, Ktx2BlockLayout)> {
+    match vk_format {
+        // VK_FORMAT_R16G16B16A16_SFLOAT
+        97 => Ok((
+            wgpu::TextureFormat::Rgba16Float,
+            Ktx2BlockLayout {
+                block_width: 1,
+                block_height: 1,
+                block_bytes: 8,
+            },
+        )),
+        // VK_FORMAT_E5B9G9R9_UFLOAT_PACK32
+        123 => Ok((
+            wgpu::TextureFormat::Rgb9e5Ufloat,
+            Ktx2BlockLayout {
+                block_width: 1,
+                block_height: 1,
+                block_bytes: 4,
+            },
+        )),
+        // VK_FORMAT_BC7_UNORM_BLOCK
+        146 => Ok((
+            wgpu::TextureFormat::Bc7RgbaUnorm,
+            Ktx2BlockLayout {
+                block_width: 4,
+                block_height: 4,
+                block_bytes: 16,
+            },
+        )),
+        // VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK
+        148 => Ok((
+            wgpu::TextureFormat::Etc2Rgba8Unorm,
+            Ktx2BlockLayout {
+                block_width: 4,
+                block_height: 4,
+                block_bytes: 16,
+            },
+        )),
+        // VK_FORMAT_ASTC_4x4_UNORM_BLOCK
+        158 => Ok((
+            wgpu::TextureFormat::Astc {
+                block: wgpu::AstcBlock::B4x4,
+                channel: wgpu::AstcChannel::Unorm,
+            },
+            Ktx2BlockLayout {
+                block_width: 4,
+                block_height: 4,
+                block_bytes: 16,
+            },
+        )),
+        _ => Err(anyhow!("KTX2: unsupported vkFormat {}", vk_format)),
+    }
+}
+
+fn ktx2_decode_level(
+    bytes: &[u8],
+    header: Ktx2Header,
+    level_index: usize,
+    level: Ktx2LevelIndex,
+) -> anyhow::Result<Vec<u8>> {
+    let start = usize::try_from(level.byte_offset)
+        .context("KTX2: level offset exceeds host address space")?;
+    let len =
+        usize::try_from(level.byte_length).context("KTX2: level length exceeds host usize")?;
+    let end = start
+        .checked_add(len)
+        .ok_or_else(|| anyhow!("KTX2: level range overflow"))?;
+    let level_data = bytes
+        .get(start..end)
+        .ok_or_else(|| anyhow!("KTX2: level data range out of bounds"))?;
+    match header.supercompression_scheme {
+        KTX2_SUPERCOMPRESSION_NONE => Ok(level_data.to_vec()),
+        KTX2_SUPERCOMPRESSION_ZSTD => {
+            let mut cursor = std::io::Cursor::new(level_data);
+            let mut decoder = ruzstd::decoding::StreamingDecoder::new(&mut cursor)
+                .map_err(|err| anyhow!("KTX2: zstd decoder init failed: {err}"))?;
+            let mut decoded = Vec::new();
+            decoder
+                .read_to_end(&mut decoded)
+                .map_err(|err| anyhow!("KTX2: zstd decode failed at mip {level_index}: {err}"))?;
+            if level.uncompressed_byte_length > 0 {
+                let expected = usize::try_from(level.uncompressed_byte_length)
+                    .context("KTX2: uncompressed level length exceeds host usize")?;
+                if decoded.len() != expected {
+                    return Err(anyhow!(
+                        "KTX2: mip {level_index} decoded size mismatch: got {}, expected {expected}",
+                        decoded.len()
+                    ));
+                }
+            }
+            Ok(decoded)
+        }
+        other => Err(anyhow!("KTX2: unsupported supercompression scheme {other}")),
+    }
+}
+
+fn parse_ktx2_texture(bytes: &[u8]) -> anyhow::Result<Ktx2UploadTexture> {
+    let (header, levels) = parse_ktx2(bytes)?;
+    let (format, block_layout) = ktx2_format_info(header.vk_format)?;
+    let width = header.pixel_width.max(1);
+    let height_per_slice = header.pixel_height.max(1);
+    let depth = header.pixel_depth.max(1);
+    let layers = header.layer_count.max(1);
+    let faces = header.face_count.max(1);
+    let slice_count = layers
+        .checked_mul(faces)
+        .and_then(|v| v.checked_mul(depth))
+        .ok_or_else(|| anyhow!("KTX2: slice count overflow"))?;
+    if slice_count == 0 {
+        return Err(anyhow!("KTX2: invalid slice count"));
+    }
+
+    let mut stacked_levels = Vec::with_capacity(levels.len());
+    for (mip_index, level) in levels.iter().copied().enumerate() {
+        let mip = mip_index as u32;
+        let mip_width = (width >> mip).max(1);
+        let mip_height = (height_per_slice >> mip).max(1);
+        let mip_depth = (depth >> mip).max(1);
+        let mip_slice_count = layers
+            .checked_mul(faces)
+            .and_then(|v| v.checked_mul(mip_depth))
+            .ok_or_else(|| anyhow!("KTX2: mip slice count overflow"))?;
+        if mip_slice_count != slice_count && levels.len() > 1 {
+            return Err(anyhow!(
+                "KTX2: varying slice count across mips is unsupported in stacked upload path"
+            ));
+        }
+        let per_slice_bytes = block_layout.bytes_for_level(mip_width, mip_height)?;
+        let expected_level_bytes = per_slice_bytes
+            .checked_mul(mip_slice_count as usize)
+            .ok_or_else(|| anyhow!("KTX2: mip byte size overflow"))?;
+        let decoded = ktx2_decode_level(bytes, header, mip_index, level)?;
+        if decoded.len() < expected_level_bytes {
+            return Err(anyhow!(
+                "KTX2: mip {mip_index} data too short: got {}, expected at least {expected_level_bytes}",
+                decoded.len()
+            ));
+        }
+        stacked_levels.push(decoded[..expected_level_bytes].to_vec());
+    }
+
+    Ok(Ktx2UploadTexture {
+        width,
+        height_per_slice,
+        slice_count,
+        format,
+        levels: stacked_levels,
+    })
+}
+
+fn load_texture_from_ktx2(
+    state: &mut HostState,
+    bytes: &[u8],
+    nearest: bool,
+) -> anyhow::Result<i32> {
+    let parsed = parse_ktx2_texture(bytes)?;
+    let gpu = state.ensure_gpu()?;
+    gpu.create_texture_stacked_2d_with_format(
+        parsed.width,
+        parsed.height_per_slice,
+        parsed.slice_count,
+        parsed.format,
+        &parsed.levels,
+        nearest,
+    )
+}
+
 fn load_texture_from_assets(
     state: &mut HostState,
     relative_path: &str,
@@ -484,6 +775,16 @@ fn load_texture_from_bytes(
     bytes: &[u8],
     nearest: bool,
 ) -> anyhow::Result<i32> {
+    if is_ktx2(bytes) {
+        match load_texture_from_ktx2(state, bytes, nearest) {
+            Ok(texture_id) => return Ok(texture_id),
+            Err(err) => {
+                eprintln!(
+                    "[wasmtime-runtime] KTX2 upload failed; falling back to rgba8 decode: {err:#}"
+                );
+            }
+        }
+    }
     let (w, h, pixels) = match image::load_from_memory(bytes) {
         Ok(img) => {
             let rgba = img.to_rgba8();
@@ -2544,6 +2845,14 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
             ValType::I32,
         ],
         &[ValType::I32],
@@ -2606,7 +2915,36 @@ fn define_mgstudio_host_imports(
             let sub_camera_view_scale_y = f(54);
             let sub_camera_view_bias_x = f(55);
             let sub_camera_view_bias_y = f(56);
-            let clear_enabled = args.get(57).and_then(|v| v.i32()).unwrap_or(1) != 0;
+            let previous_camera_x = match args.get(57) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => camera_x,
+            };
+            let previous_camera_y = match args.get(58) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => camera_y,
+            };
+            let previous_camera_z = match args.get(59) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => camera_z,
+            };
+            let previous_camera_rot_x = match args.get(60) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => camera_rot_x,
+            };
+            let previous_camera_rot_y = match args.get(61) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => camera_rot_y,
+            };
+            let previous_camera_rot_z = match args.get(62) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => camera_rot_z,
+            };
+            let previous_camera_rot_w = match args.get(63) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => camera_rot_w,
+            };
+            let pass_kind = args.get(64).and_then(|v| v.i32()).unwrap_or(0);
+            let clear_enabled = args.get(65).and_then(|v| v.i32()).unwrap_or(1) != 0;
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.begin_pass_3d(
                     target_id,
@@ -2648,6 +2986,14 @@ fn define_mgstudio_host_imports(
                         sub_camera_view_bias_x,
                         sub_camera_view_bias_y,
                     ],
+                    previous_camera_x,
+                    previous_camera_y,
+                    previous_camera_z,
+                    previous_camera_rot_x,
+                    previous_camera_rot_y,
+                    previous_camera_rot_z,
+                    previous_camera_rot_w,
+                    pass_kind,
                     clear_enabled,
                 )?;
             }
@@ -3135,6 +3481,16 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
             ValType::I32,
             ValType::F32,
             ValType::F32,
@@ -3176,26 +3532,36 @@ fn define_mgstudio_host_imports(
             let scale_x = f(8);
             let scale_y = f(9);
             let scale_z = f(10);
-            let color = [f(11), f(12), f(13), f(14)];
-            let texture_id = args.get(15).and_then(|v| v.i32()).unwrap_or(-1);
-            let uv_offset = (f(16), f(17));
-            let uv_scale = (f(18), f(19));
-            let normal_texture_id = args.get(20).and_then(|v| v.i32()).unwrap_or(-1);
-            let emissive_texture_id = args.get(21).and_then(|v| v.i32()).unwrap_or(-1);
-            let metallic_roughness_texture_id = args.get(22).and_then(|v| v.i32()).unwrap_or(-1);
-            let occlusion_texture_id = args.get(23).and_then(|v| v.i32()).unwrap_or(-1);
-            let depth_texture_id = args.get(24).and_then(|v| v.i32()).unwrap_or(-1);
-            let emissive = [f(25), f(26), f(27)];
-            let unlit = f(28);
-            let metallic = f(29);
-            let roughness = f(30);
-            let reflectance = f(31);
-            let parallax_depth_scale = f(32);
-            let max_parallax_layer_count = f(33);
-            let max_relief_mapping_search_steps = f(34);
-            let anisotropy_texture_id = args.get(35).and_then(|v| v.i32()).unwrap_or(-1);
-            let anisotropy_strength = f(36);
-            let anisotropy_rotation = f(37);
+            let previous_x = f(11);
+            let previous_y = f(12);
+            let previous_z = f(13);
+            let previous_rotation_x = f(14);
+            let previous_rotation_y = f(15);
+            let previous_rotation_z = f(16);
+            let previous_rotation_w = f(17);
+            let previous_scale_x = f(18);
+            let previous_scale_y = f(19);
+            let previous_scale_z = f(20);
+            let color = [f(21), f(22), f(23), f(24)];
+            let texture_id = args.get(25).and_then(|v| v.i32()).unwrap_or(-1);
+            let uv_offset = (f(26), f(27));
+            let uv_scale = (f(28), f(29));
+            let normal_texture_id = args.get(30).and_then(|v| v.i32()).unwrap_or(-1);
+            let emissive_texture_id = args.get(31).and_then(|v| v.i32()).unwrap_or(-1);
+            let metallic_roughness_texture_id = args.get(32).and_then(|v| v.i32()).unwrap_or(-1);
+            let occlusion_texture_id = args.get(33).and_then(|v| v.i32()).unwrap_or(-1);
+            let depth_texture_id = args.get(34).and_then(|v| v.i32()).unwrap_or(-1);
+            let emissive = [f(35), f(36), f(37)];
+            let unlit = f(38);
+            let metallic = f(39);
+            let roughness = f(40);
+            let reflectance = f(41);
+            let parallax_depth_scale = f(42);
+            let max_parallax_layer_count = f(43);
+            let max_relief_mapping_search_steps = f(44);
+            let anisotropy_texture_id = args.get(45).and_then(|v| v.i32()).unwrap_or(-1);
+            let anisotropy_strength = f(46);
+            let anisotropy_rotation = f(47);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh3d(
                     mesh_id,
@@ -3209,6 +3575,16 @@ fn define_mgstudio_host_imports(
                     scale_x,
                     scale_y,
                     scale_z,
+                    previous_x,
+                    previous_y,
+                    previous_z,
+                    previous_rotation_x,
+                    previous_rotation_y,
+                    previous_rotation_z,
+                    previous_rotation_w,
+                    previous_scale_x,
+                    previous_scale_y,
+                    previous_scale_z,
                     color,
                     texture_id,
                     uv_offset,
@@ -3229,6 +3605,34 @@ fn define_mgstudio_host_imports(
                     anisotropy_texture_id,
                     anisotropy_strength,
                     anisotropy_rotation,
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_draw_motion_blur",
+        &[ValType::I32, ValType::I32, ValType::F32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let scene_texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let velocity_texture_id = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let shutter_angle = match args.get(2) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let samples = args.get(3).and_then(|v| v.i32()).unwrap_or(0);
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_motion_blur(
+                    scene_texture_id,
+                    velocity_texture_id,
+                    shutter_angle,
+                    samples,
                 )?;
             }
             ok_i32(out, 0);
@@ -3477,4 +3881,41 @@ fn define_func(
     });
     linker.define(&mut *store, module, name, func)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn repo_path(relative: &str) -> std::path::PathBuf {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(relative)
+    }
+
+    #[test]
+    fn parse_bc7_cubemap_ktx2() {
+        let path = repo_path("bevy/assets/textures/Ryfjallet_cubemap_bc7.ktx2");
+        let bytes = std::fs::read(&path).expect("read ktx2");
+        let parsed = parse_ktx2_texture(&bytes).expect("parse ktx2");
+        assert_eq!(parsed.width, 512);
+        assert_eq!(parsed.height_per_slice, 512);
+        assert_eq!(parsed.slice_count, 6);
+        assert_eq!(parsed.format, wgpu::TextureFormat::Bc7RgbaUnorm);
+        assert_eq!(parsed.levels.len(), 1);
+        assert_eq!(parsed.levels[0].len(), 1_572_864);
+    }
+
+    #[test]
+    fn parse_rgb9e5_zstd_cubemap_ktx2() {
+        let path =
+            repo_path("mgstudio-engine/assets/environment_maps/pisa_specular_rgb9e5_zstd.ktx2");
+        let bytes = std::fs::read(&path).expect("read ktx2");
+        let parsed = parse_ktx2_texture(&bytes).expect("parse ktx2");
+        assert_eq!(parsed.width, 512);
+        assert_eq!(parsed.height_per_slice, 512);
+        assert_eq!(parsed.slice_count, 6);
+        assert_eq!(parsed.format, wgpu::TextureFormat::Rgb9e5Ufloat);
+        assert_eq!(parsed.levels.len(), 9);
+    }
 }

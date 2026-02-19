@@ -15,9 +15,8 @@
 ///|
 /// Port of `bevy/examples/3d/skybox.rs`.
 ///
-/// Baseline parity: this port aligns Bevy's camera/light/cubemap-swap flow.
-/// Compressed KTX2 cubemap cycling is explicitly blocked when runtime decoder
-/// support is unavailable.
+/// Exact parity target: Bevy camera/light/cubemap-swap flow with runtime
+/// compressed-format capability gating.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -164,12 +163,12 @@ fn update_help_text() -> Unit {
     } else {
       "Loading..."
     }
-    let parity_note = if supports_any_compressed_cubemap_format(
+    let capability_note = if supports_any_compressed_cubemap_format(
         cubemap_state.val.supported_formats,
       ) {
-      "Parity: Exact (compressed cubemap cycling enabled for supported formats)."
+      "Compressed cubemap cycling: enabled for runtime/GPU supported formats."
     } else {
-      "Parity: Blocked on compressed cubemap formats (runtime decoder unavailable); PNG path is exact."
+      "Compressed cubemap cycling: no ASTC/BC/ETC2 support reported in this environment."
     }
     @text.text_set_content(
       handle,
@@ -193,7 +192,7 @@ fn update_help_text() -> Unit {
       "  WASD/E/Q: move camera\n" +
       "  Shift: run\n" +
       "  Mouse wheel: adjust movement speed\n" +
-      parity_note,
+      capability_note,
     )
   }
 }

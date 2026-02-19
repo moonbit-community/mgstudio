@@ -15,10 +15,7 @@
 ///|
 /// Port of `bevy/examples/3d/rotate_environment_map.rs`.
 ///
-/// Baseline parity: Bevy's native `Skybox` and `EnvironmentMapLight` components
-/// are not currently exposed in mgstudio. This port preserves startup topology
-/// and per-frame synchronized rotation by mapping environment rotation to a
-/// rotating skybox proxy mesh plus a coupled point-light orbit.
+/// Exact parity target: rotate `Skybox` and `EnvironmentMapLight` together.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -28,15 +25,11 @@ const TWO_PI : Float = 6.283185307179586F
 
 ///|
 priv struct RotateEnvState {
-  mut skybox : @core.Entity?
-  mut light : @core.Entity?
+  mut camera : @core.Entity?
 }
 
 ///|
-let rotate_env_state : Ref[RotateEnvState] = Ref::new({
-  skybox: None,
-  light: None,
-})
+let rotate_env_state : Ref[RotateEnvState] = Ref::new({ camera: None })
 
 ///|
 fn float_from_int(value : Int) -> Float {
@@ -101,8 +94,7 @@ fn uv_sphere_mesh(
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
-  rotate_env_state.val.skybox = None
-  rotate_env_state.val.light = None
+  rotate_env_state.val.camera = None
 
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
@@ -131,76 +123,65 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_point_light_store()
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      100_000.0F,
-      30.0F,
-      false,
+    @render3d.PointLight::default().with_intensity(100_000.0F),
+    tick,
+  )
+  let camera = @render3d.Camera3dBundle::new_with_projection(
+    @render2d.Camera::default(),
+    @render3d.Projection3d::Perspective(
+      @render3d.PerspectiveProjection3d::default().with_fov(27.0F * PI / 180.0F),
+    ),
+    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
+  ).spawn(world)
+  rotate_env_state.val.camera = Some(camera)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_tonemapping_store()
+  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  world
+  .get_skybox_store()
+  .insert(
+    camera,
+    @render3d.Skybox::new(
+      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+      5000.0F,
     ),
     tick,
   )
   world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(0.0F, 0.0F, 2.0F), tick)
-  rotate_env_state.val.light = Some(light)
-
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
-  ).spawn(world)
-  |> ignore
-
-  let sky_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
-    .with_base_color_texture(
-      Some(asset_server.load("textures/Ryfjallet_cubemap.png")),
-    )
-    .with_unlit(true)
-    .with_emissive(@render2d.Color::new(2.0F, 2.0F, 2.0F, 1.0F))
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F),
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      2000.0F,
+    ),
+    tick,
   )
-  let skybox = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(200.0F, 200.0F, 200.0F),
-    @render3d.MeshMaterial3d::new(sky_material),
-    @math.Transform::identity(),
-  ).spawn(world)
-  rotate_env_state.val.skybox = Some(skybox)
 }
 
 ///|
-fn rotate_skybox_and_environment_proxy(world : @ecs_world.World) -> Unit {
+fn rotate_skybox_and_environment_map(world : @ecs_world.World) -> Unit {
   let now = @time.time_elapsed_seconds()
   let angle = 0.2F * now
+  let rotation = @math.Quat::from_rotation_y(angle)
   let tick = world.read_change_tick()
 
-  if rotate_env_state.val.skybox is Some(skybox_entity) {
-    world
-    .get_transform_store()
-    .set(
-      skybox_entity,
-      @math.Transform::identity().with_rotation(
-        @math.Quat::from_rotation_y(angle),
-      ),
-      tick,
-    )
-    |> ignore
-  }
-
-  if rotate_env_state.val.light is Some(light_entity) {
-    let light_pos = @math.Vec3::new(
-      @math.sin(angle) * 2.0F,
-      0.0F,
-      @math.cos(angle) * 2.0F,
-    )
-    world
-    .get_transform_store()
-    .set(
-      light_entity,
-      @math.Transform::from_xyz(light_pos.x, light_pos.y, light_pos.z),
-      tick,
-    )
-    |> ignore
+  if rotate_env_state.val.camera is Some(camera_entity) {
+    if world.get_skybox_store().get(camera_entity) is Some(skybox) {
+      world
+      .get_skybox_store()
+      .set(camera_entity, skybox.with_rotation(rotation), tick)
+      |> ignore
+    }
+    if world.get_environment_map_light_store().get(camera_entity)
+      is Some(environment_map_light) {
+      world
+      .get_environment_map_light_store()
+      .set(camera_entity, environment_map_light.with_rotation(rotation), tick)
+      |> ignore
+    }
   }
 }
 
@@ -210,6 +191,6 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
-  .add_system(rotate_skybox_and_environment_proxy)
+  .add_system(rotate_skybox_and_environment_map)
   .run()
 }

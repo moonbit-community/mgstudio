@@ -455,8 +455,9 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let directional_term = u_mesh.directional_color.xyz *
     directional_strength *
     directional_diff;
-  let directional_specular = if anisotropy_strength > 0.0 {
-    specular_anisotropic(
+  var directional_specular = vec3<f32>(0.0, 0.0, 0.0);
+  if anisotropy_strength > 0.0 {
+    directional_specular = specular_anisotropic(
       normal,
       directional_light_dir,
       view_dir,
@@ -465,12 +466,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       anisotropy_strength,
       anisotropy_t,
       anisotropy_b,
-    )
+    );
   } else {
-    vec3<f32>(
+    directional_specular = vec3<f32>(
       specular_isotropic(normal, directional_light_dir, view_dir, roughness),
-    )
-  };
+    );
+  }
   let directional_spec = u_mesh.directional_color.xyz *
     directional_strength *
     directional_diff *
@@ -488,8 +489,9 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     point_atten *
     point_atten *
     point_diff;
-  let point_specular = if anisotropy_strength > 0.0 {
-    specular_anisotropic(
+  var point_specular = vec3<f32>(0.0, 0.0, 0.0);
+  if anisotropy_strength > 0.0 {
+    point_specular = specular_anisotropic(
       normal,
       point_dir,
       view_dir,
@@ -498,10 +500,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       anisotropy_strength,
       anisotropy_t,
       anisotropy_b,
-    )
+    );
   } else {
-    vec3<f32>(specular_isotropic(normal, point_dir, view_dir, roughness))
-  };
+    point_specular = vec3<f32>(
+      specular_isotropic(normal, point_dir, view_dir, roughness),
+    );
+  }
   let point_spec = u_mesh.point_color_intensity.xyz *
     point_strength *
     point_atten *
@@ -530,8 +534,9 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     spot_atten_base *
     spot_cone *
     spot_diff;
-  let spot_specular = if anisotropy_strength > 0.0 {
-    specular_anisotropic(
+  var spot_specular = vec3<f32>(0.0, 0.0, 0.0);
+  if anisotropy_strength > 0.0 {
+    spot_specular = specular_anisotropic(
       normal,
       spot_light_to_fragment,
       view_dir,
@@ -540,12 +545,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       anisotropy_strength,
       anisotropy_t,
       anisotropy_b,
-    )
+    );
   } else {
-    vec3<f32>(
+    spot_specular = vec3<f32>(
       specular_isotropic(normal, spot_light_to_fragment, view_dir, roughness),
-    )
-  };
+    );
+  }
   let spot_spec = u_mesh.spot_color_intensity.xyz *
     spot_strength *
     spot_atten_base *

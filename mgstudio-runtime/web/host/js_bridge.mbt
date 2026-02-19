@@ -595,6 +595,140 @@ extern "js" fn split_trimmed_lines(text : String) -> Array[String] =
   #|   .filter((line) => line.length > 0 && !line.startsWith("#"))
 
 ///|
+extern "js" fn wgsl_extract_import_specs(source : String) -> Array[String] =
+  #| (source) => {
+  #|   const specs = []
+  #|   const lines = String(source || "").split(/\r?\n/)
+  #|   for (const lineRaw of lines) {
+  #|     const line = String(lineRaw).trim()
+  #|     if (!line.startsWith("#import ")) {
+  #|       continue
+  #|     }
+  #|     const spec = line.slice("#import ".length).trim()
+  #|     if (spec.length > 0) {
+  #|       specs.push(spec)
+  #|     }
+  #|   }
+  #|   return specs
+  #| }
+
+///|
+extern "js" fn wgsl_import_spec_to_rel_path(spec : String) -> String =
+  #| (specRaw) => {
+  #|   let spec = String(specRaw || "").trim()
+  #|   if (spec.length === 0) {
+  #|     return ""
+  #|   }
+  #|   const asIndex = spec.indexOf(" as ")
+  #|   if (asIndex >= 0) {
+  #|     spec = spec.slice(0, asIndex).trim()
+  #|   }
+  #|   const braceIndex = spec.indexOf("::{")
+  #|   if (braceIndex >= 0) {
+  #|     spec = spec.slice(0, braceIndex).trim()
+  #|   }
+  #|   spec = spec.replace(/;+$/, "").trim()
+  #|   if (spec.length === 0) {
+  #|     return ""
+  #|   }
+  #|   const segs = spec.split("::")
+  #|   if (segs.length === 0) {
+  #|     return ""
+  #|   }
+  #|   const last = segs[segs.length - 1] || ""
+  #|   if (/^[A-Z]/.test(last)) {
+  #|     segs.pop()
+  #|   }
+  #|   if (segs.length === 0) {
+  #|     return ""
+  #|   }
+  #|   return "shaders/bevy/" + segs.join("/") + ".wgsl"
+  #| }
+
+///|
+extern "js" fn wgsl_strip_import_define_lines(source : String) -> String =
+  #| (source) => {
+  #|   const out = []
+  #|   const lines = String(source || "").split(/\r?\n/)
+  #|   for (const lineRaw of lines) {
+  #|     const line = String(lineRaw)
+  #|     const trimmed = line.trim()
+  #|     if (trimmed.startsWith("#import ") || trimmed.startsWith("#define_import_path")) {
+  #|       continue
+  #|     }
+  #|     out.push(line)
+  #|   }
+  #|   return out.join("\n")
+  #| }
+
+///|
+extern "js" fn wgsl_apply_ifdefs(
+  source : String,
+  defines : Array[String],
+) -> String =
+  #| (source, defines) => {
+  #|   const defineSet = new Set((defines || []).map((d) => String(d)))
+  #|   const activeStack = [true]
+  #|   const condStack = []
+  #|   const out = []
+  #|   const lines = String(source || "").split(/\r?\n/)
+  #|   for (const lineRaw of lines) {
+  #|     const line = String(lineRaw)
+  #|     const trimmed = line.trim()
+  #|     if (trimmed.startsWith("#ifdef ")) {
+  #|       const name = trimmed.slice("#ifdef ".length).trim()
+  #|       const enabled = defineSet.has(name)
+  #|       const parent = activeStack[activeStack.length - 1]
+  #|       activeStack.push(parent && enabled)
+  #|       condStack.push(enabled)
+  #|       continue
+  #|     }
+  #|     if (trimmed.startsWith("#ifndef ")) {
+  #|       const name = trimmed.slice("#ifndef ".length).trim()
+  #|       const enabled = !defineSet.has(name)
+  #|       const parent = activeStack[activeStack.length - 1]
+  #|       activeStack.push(parent && enabled)
+  #|       condStack.push(enabled)
+  #|       continue
+  #|     }
+  #|     if (trimmed === "#else") {
+  #|       if (condStack.length > 0) {
+  #|         const flipped = !condStack[condStack.length - 1]
+  #|         condStack[condStack.length - 1] = flipped
+  #|         const parent = activeStack.length >= 2 ? activeStack[activeStack.length - 2] : true
+  #|         activeStack[activeStack.length - 1] = parent && flipped
+  #|       }
+  #|       continue
+  #|     }
+  #|     if (trimmed === "#endif") {
+  #|       if (activeStack.length > 1) {
+  #|         activeStack.pop()
+  #|       }
+  #|       if (condStack.length > 0) {
+  #|         condStack.pop()
+  #|       }
+  #|       continue
+  #|     }
+  #|     if (activeStack[activeStack.length - 1]) {
+  #|       out.push(line)
+  #|     }
+  #|   }
+  #|   return out.join("\n")
+  #| }
+
+///|
+extern "js" fn wgsl_prepend_derivative_uniformity_diagnostic(
+  source : String,
+) -> String =
+  #| (source) => {
+  #|   const text = String(source || "")
+  #|   if (/diagnostic\s*\(\s*off\s*,\s*derivative_uniformity\s*\)\s*;/.test(text)) {
+  #|     return text
+  #|   }
+  #|   return "diagnostic(off, derivative_uniformity);\\n" + text
+  #| }
+
+///|
 extern "js" fn poll_gamepads_snapshot_js() -> @js.Any =
   #| () => {
   #|   const nav = typeof navigator === "object" && navigator ? navigator : null
@@ -1172,6 +1306,35 @@ extern "js" fn float32array_from_csv(text : String) -> @js.Any =
   #| }
 
 ///|
+extern "js" fn motion_blur_settings_uniform_bytes(
+  shutter_angle : Double,
+  samples : Int,
+) -> @js.Any =
+  #| (shutterAngle, samples) => {
+  #|   const clamped = Math.max(0, Math.min(64, Number(samples) | 0)) >>> 0
+  #|   const buf = new ArrayBuffer(16)
+  #|   const view = new DataView(buf)
+  #|   view.setFloat32(0, Number(shutterAngle) || 0, true)
+  #|   view.setUint32(4, clamped, true)
+  #|   view.setUint32(8, 0, true)
+  #|   view.setUint32(12, 0, true)
+  #|   return new Uint8Array(buf)
+  #| }
+
+///|
+extern "js" fn motion_blur_globals_uniform_bytes(frame_count : Int) -> @js.Any =
+  #| (frameCount) => {
+  #|   const frame = Number(frameCount) >>> 0
+  #|   const buf = new ArrayBuffer(16)
+  #|   const view = new DataView(buf)
+  #|   view.setFloat32(0, 0, true)
+  #|   view.setFloat32(4, 0, true)
+  #|   view.setUint32(8, frame, true)
+  #|   view.setUint32(12, 0, true)
+  #|   return new Uint8Array(buf)
+  #| }
+
+///|
 extern "js" fn build_gizmo_vertices(
   data : @js.Any,
   cam_x : Double,
@@ -1437,6 +1600,26 @@ extern "js" fn write_texture(
   #| }
 
 ///|
+extern "js" fn write_texture_mip(
+  queue : @js.Any,
+  texture : @js.Any,
+  data : @js.Any,
+  bytes_per_row : Int,
+  rows_per_image : Int,
+  width : Int,
+  height : Int,
+  mip_level : Int,
+) -> Unit =
+  #| (queue, texture, data, bytesPerRow, rowsPerImage, width, height, mipLevel) => {
+  #|   queue.writeTexture(
+  #|     { texture, mipLevel },
+  #|     data,
+  #|     { bytesPerRow, rowsPerImage },
+  #|     [width, height, 1],
+  #|   )
+  #| }
+
+///|
 extern "js" fn write_texture_region(
   queue : @js.Any,
   texture : @js.Any,
@@ -1469,16 +1652,213 @@ extern "js" fn write_texture_region(
   #| }
 
 ///|
+extern "js" fn is_ktx2_uint8array(data : @js.Any) -> Bool =
+  #| (data) => {
+  #|   if (!(data instanceof Uint8Array) || data.length < 12) {
+  #|     return false
+  #|   }
+  #|   return (
+  #|     data[0] === 0xab &&
+  #|     data[1] === 0x4b &&
+  #|     data[2] === 0x54 &&
+  #|     data[3] === 0x58 &&
+  #|     data[4] === 0x20 &&
+  #|     data[5] === 0x32 &&
+  #|     data[6] === 0x30 &&
+  #|     data[7] === 0xbb &&
+  #|     data[8] === 0x0d &&
+  #|     data[9] === 0x0a &&
+  #|     data[10] === 0x1a &&
+  #|     data[11] === 0x0a
+  #|   )
+  #| }
+
+///|
+extern "js" fn parse_ktx2_stacked_upload(
+  data : @js.Any,
+) -> @js.Promise[@js.Any] =
+  #| async (data) => {
+  #|   if (!(data instanceof Uint8Array) || data.length < 80) {
+  #|     return null
+  #|   }
+  #|   const u8 = data
+  #|   const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength)
+  #|   const readU32 = (off) => {
+  #|     if (off < 0 || off + 4 > u8.length) return null
+  #|     return dv.getUint32(off, true)
+  #|   }
+  #|   const readU64AsInt = (off) => {
+  #|     if (off < 0 || off + 8 > u8.length) return null
+  #|     const lo = dv.getUint32(off, true)
+  #|     const hi = dv.getUint32(off + 4, true)
+  #|     if (hi !== 0) return null
+  #|     return lo
+  #|   }
+  #|   const vkFormat = readU32(12)
+  #|   const pixelWidth = readU32(20)
+  #|   const pixelHeight = readU32(24)
+  #|   const pixelDepth = readU32(28)
+  #|   const layerCount = readU32(32)
+  #|   const faceCount = readU32(36)
+  #|   const levelCountRaw = readU32(40)
+  #|   const supercompression = readU32(44)
+  #|   if (
+  #|     vkFormat == null ||
+  #|     pixelWidth == null ||
+  #|     pixelHeight == null ||
+  #|     pixelDepth == null ||
+  #|     layerCount == null ||
+  #|     faceCount == null ||
+  #|     levelCountRaw == null ||
+  #|     supercompression == null
+  #|   ) {
+  #|     return null
+  #|   }
+  #|   const formatInfo = (() => {
+  #|     switch (vkFormat) {
+  #|       case 97:
+  #|         return { format: "rgba16float", blockWidth: 1, blockHeight: 1, blockBytes: 8 }
+  #|       case 123:
+  #|         return { format: "rgb9e5ufloat", blockWidth: 1, blockHeight: 1, blockBytes: 4 }
+  #|       case 146:
+  #|         return { format: "bc7-rgba-unorm", blockWidth: 4, blockHeight: 4, blockBytes: 16 }
+  #|       case 148:
+  #|         return { format: "etc2-rgba8unorm", blockWidth: 4, blockHeight: 4, blockBytes: 16 }
+  #|       case 158:
+  #|         return { format: "astc-4x4-unorm", blockWidth: 4, blockHeight: 4, blockBytes: 16 }
+  #|       default:
+  #|         return null
+  #|     }
+  #|   })()
+  #|   if (!formatInfo) {
+  #|     return null
+  #|   }
+  #|   const width = Math.max(1, pixelWidth | 0)
+  #|   const heightPerSlice = Math.max(1, pixelHeight | 0)
+  #|   const depth = Math.max(1, pixelDepth | 0)
+  #|   const layers = Math.max(1, layerCount | 0)
+  #|   const faces = Math.max(1, faceCount | 0)
+  #|   const sliceCount = layers * faces * depth
+  #|   if (!Number.isFinite(sliceCount) || sliceCount <= 0) {
+  #|     return null
+  #|   }
+  #|   let levelCount = levelCountRaw | 0
+  #|   if (levelCount <= 0) {
+  #|     levelCount = 1
+  #|   }
+  #|   const levelIndices = []
+  #|   let offset = 80
+  #|   for (let i = 0; i < levelCount; i += 1) {
+  #|     const byteOffset = readU64AsInt(offset)
+  #|     const byteLength = readU64AsInt(offset + 8)
+  #|     const uncompressedByteLength = readU64AsInt(offset + 16)
+  #|     if (
+  #|       byteOffset == null ||
+  #|       byteLength == null ||
+  #|       uncompressedByteLength == null
+  #|     ) {
+  #|       return null
+  #|     }
+  #|     levelIndices.push({ byteOffset, byteLength, uncompressedByteLength })
+  #|     offset += 24
+  #|   }
+  #|
+  #|   const ceilDiv = (v, d) => Math.floor((v + d - 1) / d)
+  #|   const levelLayout = (mipWidth, mipHeight) => {
+  #|     const blocksW = Math.max(1, ceilDiv(mipWidth, formatInfo.blockWidth))
+  #|     const blocksH = Math.max(1, ceilDiv(mipHeight, formatInfo.blockHeight))
+  #|     const bytesPerRow = blocksW * formatInfo.blockBytes
+  #|     const rowsPerImage = blocksH
+  #|     const expectedBytes = bytesPerRow * rowsPerImage
+  #|     if (bytesPerRow <= 0 || rowsPerImage <= 0 || expectedBytes <= 0) {
+  #|       return null
+  #|     }
+  #|     return { bytesPerRow, rowsPerImage, expectedBytes }
+  #|   }
+  #|   const decodeZstd = async (compressed, expectedSize) => {
+  #|     if (typeof DecompressionStream !== "function") {
+  #|       return null
+  #|     }
+  #|     try {
+  #|       const ds = new DecompressionStream("zstd")
+  #|       const stream = new Blob([compressed]).stream().pipeThrough(ds)
+  #|       const out = new Uint8Array(await new Response(stream).arrayBuffer())
+  #|       if (expectedSize > 0 && out.length !== expectedSize) {
+  #|         return null
+  #|       }
+  #|       return out
+  #|     } catch (_) {
+  #|       return null
+  #|     }
+  #|   }
+  #|
+  #|   const widths = []
+  #|   const heights = []
+  #|   const bytesPerRows = []
+  #|   const rowsPerImages = []
+  #|   const levels = []
+  #|
+  #|   for (let mip = 0; mip < levelIndices.length; mip += 1) {
+  #|     const mipWidth = Math.max(1, width >> mip)
+  #|     const mipHeightPerSlice = Math.max(1, heightPerSlice >> mip)
+  #|     const mipDepth = Math.max(1, depth >> mip)
+  #|     const mipSliceCount = layers * faces * mipDepth
+  #|     if (levelIndices.length > 1 && mipSliceCount !== sliceCount) {
+  #|       return null
+  #|     }
+  #|     const mipHeight = mipHeightPerSlice * sliceCount
+  #|     const layout = levelLayout(mipWidth, mipHeight)
+  #|     if (!layout) {
+  #|       return null
+  #|     }
+  #|     const level = levelIndices[mip]
+  #|     const start = level.byteOffset | 0
+  #|     const end = start + (level.byteLength | 0)
+  #|     if (start < 0 || end < start || end > u8.length) {
+  #|       return null
+  #|     }
+  #|     const levelBytes = u8.subarray(start, end)
+  #|     let decoded = null
+  #|     if (supercompression === 0) {
+  #|       decoded = levelBytes
+  #|     } else if (supercompression === 2) {
+  #|       const expectedUncompressed = level.uncompressedByteLength > 0
+  #|         ? level.uncompressedByteLength
+  #|         : layout.expectedBytes
+  #|       decoded = await decodeZstd(levelBytes, expectedUncompressed)
+  #|     } else {
+  #|       return null
+  #|     }
+  #|     if (!(decoded instanceof Uint8Array) || decoded.length < layout.expectedBytes) {
+  #|       return null
+  #|     }
+  #|     levels.push(decoded.slice(0, layout.expectedBytes))
+  #|     widths.push(mipWidth)
+  #|     heights.push(mipHeight)
+  #|     bytesPerRows.push(layout.bytesPerRow)
+  #|     rowsPerImages.push(layout.rowsPerImage)
+  #|   }
+  #|
+  #|   return {
+  #|     width,
+  #|     heightPerSlice,
+  #|     sliceCount,
+  #|     format: formatInfo.format,
+  #|     levels,
+  #|     widths,
+  #|     heights,
+  #|     bytesPerRows,
+  #|     rowsPerImages,
+  #|   }
+  #| }
+
+///|
 extern "js" fn create_image_bitmap(blob : @js.Any) -> @js.Promise[@js.Any] =
   #| (blob) => createImageBitmap(blob, { premultiplyAlpha: "none", colorSpaceConversion: "none" })
 
 ///|
 extern "js" fn blob_from_uint8array(data : @js.Any) -> @js.Any =
   #| (data) => new Blob([data])
-
-///|
-extern "js" fn response_blob(response : @js.Any) -> @js.Promise[@js.Any] =
-  #| (response) => response.blob()
 
 ///|
 extern "js" fn response_array_buffer(

@@ -15,8 +15,8 @@
 ///|
 /// Port of `bevy/examples/3d/animated_material.rs`.
 ///
-/// Baseline parity: Bevy's `EnvironmentMapLight` setup is not available yet;
-/// this example uses a point light while keeping per-frame material animation.
+/// Exact parity target: Bevy camera + environment-map setup with per-frame
+/// material hue animation.
 
 ///|
 const GOLDEN_ANGLE_DEG : Float = 137.50777F
@@ -75,23 +75,26 @@ fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   animated_material_state.val.materials.clear()
   animated_material_state.val.hues_deg.clear()
+  let asset_server = @asset.AssetServer::new()
 
-  @render3d.Camera3dBundle::new(
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -0.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
   world
-  .get_point_light_store()
-  .insert(light, @render3d.PointLight::default(), tick)
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(3.0F, 6.0F, 3.0F), tick)
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      2_000.0F,
+    ),
+    tick,
+  )
 
   let cube = @render3d.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
 

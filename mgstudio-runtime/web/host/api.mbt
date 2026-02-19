@@ -1371,11 +1371,8 @@ pub fn create_host(
       if set_has(features, @js.any("texture-compression-etc2")) {
         gpu_feature_mask = gpu_feature_mask + 4
       }
-      // Runtime note: web host currently uploads textures via bitmap decode
-      // (`createImageBitmap`) and does not decode compressed KTX2 payloads
-      // into GPU-compressed textures yet. Report only the intersection between
-      // GPU features and runtime decoder capability to avoid false positives.
-      let runtime_decoder_mask = 0
+      // Runtime decoder supports direct KTX2 upload for ASTC/BC/ETC2 payloads.
+      let runtime_decoder_mask = 1 | 2 | 4
       gpu_feature_mask & runtime_decoder_mask
     } else {
       0
@@ -1825,6 +1822,14 @@ pub fn create_host(
         1.0,
         0.0,
         0.0,
+        arg_number(args, 7, 0.0),
+        arg_number(args, 8, 0.0),
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
         arg_number(args, 15, 1),
       )
     }),
@@ -1901,7 +1906,15 @@ pub fn create_host(
         arg_number(args, 54, 1.0),
         arg_number(args, 55, 0.0),
         arg_number(args, 56, 0.0),
-        arg_number(args, 57, 1),
+        arg_number(args, 57, arg_number(args, 7, 0.0)),
+        arg_number(args, 58, arg_number(args, 8, 0.0)),
+        arg_number(args, 59, arg_number(args, 9, 0.0)),
+        arg_number(args, 60, camera_rot_x),
+        arg_number(args, 61, camera_rot_y),
+        arg_number(args, 62, camera_rot_z),
+        arg_number(args, 63, camera_rot_w),
+        arg_number(args, 64, 0.0),
+        arg_number(args, 65, 1),
       )
     }),
   )
@@ -2105,33 +2118,54 @@ pub fn create_host(
         arg_number(args, 8, 1),
         arg_number(args, 9, 1),
         arg_number(args, 10, 1),
-        arg_number(args, 11, 1),
-        arg_number(args, 12, 1),
-        arg_number(args, 13, 1),
-        arg_number(args, 14, 1),
-        to_int(arg_number(args, 15, -1)),
-        arg_number(args, 16, 0),
-        arg_number(args, 17, 0),
-        arg_number(args, 18, 1),
-        arg_number(args, 19, 1),
-        to_int(arg_number(args, 20, -1)),
-        to_int(arg_number(args, 21, -1)),
-        to_int(arg_number(args, 22, -1)),
-        to_int(arg_number(args, 23, -1)),
-        to_int(arg_number(args, 24, -1)),
-        arg_number(args, 25, 0),
+        arg_number(args, 11, arg_number(args, 1, 0.0)),
+        arg_number(args, 12, arg_number(args, 2, 0.0)),
+        arg_number(args, 13, arg_number(args, 3, 0.0)),
+        arg_number(args, 14, arg_number(args, 4, 0.0)),
+        arg_number(args, 15, arg_number(args, 5, 0.0)),
+        arg_number(args, 16, arg_number(args, 6, 0.0)),
+        arg_number(args, 17, arg_number(args, 7, 1.0)),
+        arg_number(args, 18, arg_number(args, 8, 1.0)),
+        arg_number(args, 19, arg_number(args, 9, 1.0)),
+        arg_number(args, 20, arg_number(args, 10, 1.0)),
+        arg_number(args, 21, 1),
+        arg_number(args, 22, 1),
+        arg_number(args, 23, 1),
+        arg_number(args, 24, 1),
+        to_int(arg_number(args, 25, -1)),
         arg_number(args, 26, 0),
         arg_number(args, 27, 0),
-        arg_number(args, 28, 0),
-        arg_number(args, 29, 0),
-        arg_number(args, 30, 0.5),
-        arg_number(args, 31, 0.5),
-        arg_number(args, 32, 0),
-        arg_number(args, 33, 0),
-        arg_number(args, 34, 0),
-        to_int(arg_number(args, 35, -1)),
+        arg_number(args, 28, 1),
+        arg_number(args, 29, 1),
+        to_int(arg_number(args, 30, -1)),
+        to_int(arg_number(args, 31, -1)),
+        to_int(arg_number(args, 32, -1)),
+        to_int(arg_number(args, 33, -1)),
+        to_int(arg_number(args, 34, -1)),
+        arg_number(args, 35, 0),
         arg_number(args, 36, 0),
         arg_number(args, 37, 0),
+        arg_number(args, 38, 0),
+        arg_number(args, 39, 0),
+        arg_number(args, 40, 0.5),
+        arg_number(args, 41, 0.5),
+        arg_number(args, 42, 0),
+        arg_number(args, 43, 0),
+        arg_number(args, 44, 0),
+        to_int(arg_number(args, 45, -1)),
+        arg_number(args, 46, 0),
+        arg_number(args, 47, 0),
+      )
+    }),
+  )
+  let gpu_draw_motion_blur = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_motion_blur(
+        state,
+        to_int(arg_number(args, 0, -1)),
+        to_int(arg_number(args, 1, -1)),
+        arg_number(args, 2, 0.0),
+        to_int(arg_number(args, 3, 0)),
       )
     }),
   )
@@ -2340,6 +2374,7 @@ pub fn create_host(
     ("gpu_draw_ui_box_shadow", gpu_draw_ui_box_shadow),
     ("gpu_draw_mesh", gpu_draw_mesh),
     ("gpu_draw_mesh3d", gpu_draw_mesh3d),
+    ("gpu_draw_motion_blur", gpu_draw_motion_blur),
     ("gpu_draw_gizmo_line", gpu_draw_gizmo_line),
     ("gpu_end_pass", gpu_end_pass),
     ("gpu_end_frame", gpu_end_frame),

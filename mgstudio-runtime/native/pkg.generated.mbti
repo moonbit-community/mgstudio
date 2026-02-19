@@ -64,6 +64,7 @@ pub struct GpuBackend {
   mut configured_height : Int
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
+  mut frame_count : UInt
   mut depth_texture : @wgpu_mbt.Texture?
   mut depth_view : @wgpu_mbt.TextureView?
   mut depth_target_id : Int
@@ -126,6 +127,19 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut mesh3d_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh3d_uniform_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_motion_vector_bgl_uniform : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_motion_vector_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_motion_vector_pipeline : @wgpu_mbt.RenderPipeline?
+  mut mesh3d_motion_vector_uniform_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_motion_vector_uniform_bg : @wgpu_mbt.BindGroup?
+  mut motion_blur_bgl : @wgpu_mbt.BindGroupLayout?
+  mut motion_blur_pipeline : @wgpu_mbt.RenderPipeline?
+  mut motion_blur_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut motion_blur_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut motion_blur_settings_buf : @wgpu_mbt.Buffer?
+  mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
+  mut motion_blur_fallback_depth_texture : @wgpu_mbt.Texture?
+  mut motion_blur_fallback_depth_view : @wgpu_mbt.TextureView?
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
@@ -133,7 +147,7 @@ pub struct GpuBackend {
 }
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
@@ -144,8 +158,10 @@ pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
@@ -192,9 +208,17 @@ pub struct GpuPassState {
   camera_rot_y : Float
   camera_rot_z : Float
   camera_rot_w : Float
+  previous_camera_x : Float
+  previous_camera_y : Float
+  previous_camera_z : Float
+  previous_camera_rot_x : Float
+  previous_camera_rot_y : Float
+  previous_camera_rot_z : Float
+  previous_camera_rot_w : Float
   camera_fov_y : Float
   camera_near : Float
   camera_far : Float
+  pass_kind : Int
   viewport_x : UInt
   viewport_y : UInt
   viewport_w : UInt

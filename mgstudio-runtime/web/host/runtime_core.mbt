@@ -885,7 +885,10 @@ fn ensure_depth_texture(state : State, width : Int, height : Int) -> Unit {
     return
   }
   if state.gpu.device is Some(device) {
-    let usage = @webgpu.texture_usage_render_attachment()
+    let usage = @webgpu.combine_flags(
+      @webgpu.texture_usage_render_attachment(),
+      @webgpu.texture_usage_texture_binding(),
+    )
     let descriptor = @webgpu.texture_descriptor(
       @webgpu.texture_size(safe_width, safe_height),
       @webgpu.TextureFormat::Other("depth24plus"),
@@ -1183,6 +1186,273 @@ fn ensure_mesh3d_pipeline(state : State) -> Unit {
 }
 
 ///|
+fn ensure_motion_vector_pipeline(state : State) -> Unit {
+  if state.gpu.motion_vector_pipeline is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.motion_vector_shader_id <= 0 {
+    report_asset_error_once(
+      state, "motion_vector_pipeline_missing_shader_id", "Motion-vector pipeline error: shader id not initialized",
+    )
+    return
+  }
+  let shader_source = get_shader_source(
+    state,
+    state.gpu.motion_vector_shader_id,
+  )
+  if shader_source is None {
+    report_asset_error_once(
+      state, "motion_vector_pipeline_missing_shader_source", "Motion-vector pipeline error: shader source not loaded",
+    )
+    return
+  }
+  if state.gpu.device is Some(device) {
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let vertex_stage = @webgpu.shader_stage_vertex()
+    let uniform_layout_desc = @js.from_entries([
+      (
+        "entries",
+        @js.any([
+          @js.from_entries([
+            ("binding", @js.any(0)),
+            ("visibility", @js.any(vertex_stage)),
+            ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
+          ]),
+        ]),
+      ),
+    ])
+    let uniform_layout = device.create_bind_group_layout(uniform_layout_desc)
+    let pipeline_layout_desc = @js.from_entries([
+      ("bindGroupLayouts", @js.any([uniform_layout.as_any()])),
+    ])
+    let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
+    let position_attr = @webgpu.vertex_attribute(
+      shader_location=0,
+      offset=0,
+      format=@webgpu.VertexFormat::Float32x3,
+    )
+    let uv_attr = @webgpu.vertex_attribute(
+      shader_location=1,
+      offset=12,
+      format=@webgpu.VertexFormat::Float32x2,
+    )
+    let color_attr = @webgpu.vertex_attribute(
+      shader_location=2,
+      offset=20,
+      format=@webgpu.VertexFormat::Float32x4,
+    )
+    let vertex_layout = @webgpu.vertex_buffer_layout(36, [
+      position_attr, uv_attr, color_attr,
+    ])
+    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
+      vertex_layout,
+    ])
+    let color_target = @js.from_entries([
+      ("format", @js.any(format.to_js_string())),
+    ])
+    let fragment_state = @js.from_entries([
+      ("module", shader_module.as_any()),
+      ("entryPoint", @js.any("fs_main")),
+      ("targets", @js.any([color_target])),
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let depth_state = @js.from_entries([
+      ("format", @js.any("depth24plus")),
+      ("depthWriteEnabled", @js.any(true)),
+      ("depthCompare", @js.any("less-equal")),
+    ])
+    let pipeline_desc = @js.from_entries([
+      ("layout", pipeline_layout.as_any()),
+      ("vertex", vertex_state.to_js()),
+      ("fragment", fragment_state),
+      ("primitive", primitive_state.to_js()),
+      ("depthStencil", depth_state),
+    ])
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc)
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "motion_vector_pipeline_validation_error",
+          "Motion-vector pipeline validation error: " + any_to_string(err_any),
+        )
+        state.gpu.motion_vector_pipeline = None
+      }
+    })
+    state.gpu.motion_vector_pipeline = Some(pipeline)
+  }
+}
+
+///|
+fn ensure_motion_blur_pipeline(state : State) -> Unit {
+  if state.gpu.motion_blur_pipeline is Some(_) &&
+    state.gpu.motion_blur_bind_layout is Some(_) &&
+    state.gpu.motion_blur_settings_buffer is Some(_) &&
+    state.gpu.motion_blur_globals_buffer is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.motion_blur_shader_id <= 0 {
+    report_asset_error_once(
+      state, "motion_blur_pipeline_missing_shader_id", "Motion-blur pipeline error: shader id not initialized",
+    )
+    return
+  }
+  let shader_source = get_shader_source(state, state.gpu.motion_blur_shader_id)
+  if shader_source is None {
+    report_asset_error_once(
+      state, "motion_blur_pipeline_missing_shader_source", "Motion-blur pipeline error: shader source not loaded",
+    )
+    return
+  }
+  if state.gpu.device is Some(device) {
+    let fragment_stage = @webgpu.shader_stage_fragment()
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    if state.gpu.motion_blur_bind_layout is None {
+      let bind_layout_desc = @js.from_entries([
+        (
+          "entries",
+          @js.any([
+            @js.from_entries([
+              ("binding", @js.any(0)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                  ("multisampled", @js.any(false)),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(1)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                  ("multisampled", @js.any(false)),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(2)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("depth")),
+                  ("viewDimension", @js.any("2d")),
+                  ("multisampled", @js.any(false)),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(3)),
+              ("visibility", @js.any(fragment_stage)),
+              ("sampler", @js.from_entries([("type", @js.any("filtering"))])),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(4)),
+              ("visibility", @js.any(fragment_stage)),
+              ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(5)),
+              ("visibility", @js.any(fragment_stage)),
+              ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
+            ]),
+          ]),
+        ),
+      ])
+      state.gpu.motion_blur_bind_layout = Some(
+        device.create_bind_group_layout(bind_layout_desc),
+      )
+    }
+    let uniform_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_uniform(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    if state.gpu.motion_blur_settings_buffer is None {
+      let settings_desc = @webgpu.buffer_descriptor(16, uniform_usage)
+      state.gpu.motion_blur_settings_buffer = Some(
+        device.create_buffer(settings_desc.to_js()),
+      )
+    }
+    if state.gpu.motion_blur_globals_buffer is None {
+      let globals_desc = @webgpu.buffer_descriptor(16, uniform_usage)
+      state.gpu.motion_blur_globals_buffer = Some(
+        device.create_buffer(globals_desc.to_js()),
+      )
+    }
+    guard state.gpu.motion_blur_bind_layout is Some(bind_layout) else { return }
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let pipeline_layout_desc = @js.from_entries([
+      ("bindGroupLayouts", @js.any([bind_layout.as_any()])),
+    ])
+    let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
+    let vertex_state = @webgpu.vertex_state(
+      shader_module,
+      "fullscreen_vertex_shader",
+      [],
+    )
+    let color_target = @js.from_entries([
+      ("format", @js.any(format.to_js_string())),
+    ])
+    let fragment_state = @js.from_entries([
+      ("module", shader_module.as_any()),
+      ("entryPoint", @js.any("fragment")),
+      ("targets", @js.any([color_target])),
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @js.from_entries([
+      ("layout", pipeline_layout.as_any()),
+      ("vertex", vertex_state.to_js()),
+      ("fragment", fragment_state),
+      ("primitive", primitive_state.to_js()),
+    ])
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc)
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "motion_blur_pipeline_validation_error",
+          "Motion-blur pipeline validation error: " + any_to_string(err_any),
+        )
+        state.gpu.motion_blur_pipeline = None
+      }
+    })
+    state.gpu.motion_blur_pipeline = Some(pipeline)
+  }
+}
+
+///|
 fn ensure_gizmo_pipeline(state : State) -> Unit {
   if state.gpu.gizmo_pipeline is Some(_) {
     return
@@ -1349,6 +1619,157 @@ fn resolved_texture_sampler_kind(
 }
 
 ///|
+fn insert_texture_entry(
+  state : State,
+  id : Int,
+  texture : @webgpu.GPUTexture,
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> Unit {
+  let default_sampler_kind = sampler_kind_from_nearest(nearest)
+  let sampler_kind = resolved_texture_sampler_kind(
+    state, id, default_sampler_kind,
+  )
+  let sampler = create_sampler(state, sampler_kind)
+  if sampler is Some(sampler_value) {
+    let entry = @js.from_entries([
+      ("id", @js.any(id)),
+      ("texture", texture.as_any()),
+      ("view", texture.create_view().as_any()),
+      ("sampler", sampler_value.as_any()),
+      ("bindGroup", js_null()),
+      ("meshBindGroup", js_null()),
+      ("mesh3dBindGroup", js_null()),
+      ("uiBindGroup", js_null()),
+      ("width", @js.any(width)),
+      ("height", @js.any(height)),
+    ])
+    map_set(state.gpu.textures, @js.any(id), entry)
+    ensure_bind_group_for_texture(state, entry)
+  }
+}
+
+///|
+async fn load_texture_from_ktx2_bytes(
+  state : State,
+  id : Int,
+  bytes_data : @js.Any,
+  nearest : Bool,
+) -> Unit {
+  ensure_pipeline_resources(state)
+  if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
+    let parsed = parse_ktx2_stacked_upload(bytes_data).wait()
+    if host_is_nullish(parsed) {
+      report_asset_error_once(
+        state,
+        "texture_ktx2_parse_" + id.to_string(),
+        "Failed to parse KTX2 texture bytes",
+      )
+      return
+    }
+    let width = to_int(number_or(parsed._get("width"), 0))
+    let height_per_slice = to_int(number_or(parsed._get("heightPerSlice"), 0))
+    let slice_count = to_int(number_or(parsed._get("sliceCount"), 0))
+    if width <= 0 || height_per_slice <= 0 || slice_count <= 0 {
+      report_asset_error_once(
+        state,
+        "texture_ktx2_invalid_size_" + id.to_string(),
+        "Invalid KTX2 texture dimensions",
+      )
+      return
+    }
+    let stacked_height = height_per_slice * slice_count
+    if stacked_height <= 0 {
+      report_asset_error_once(
+        state,
+        "texture_ktx2_stacked_height_" + id.to_string(),
+        "Invalid stacked KTX2 texture height",
+      )
+      return
+    }
+    let levels = parsed._get("levels")
+    let widths = parsed._get("widths")
+    let heights = parsed._get("heights")
+    let bytes_per_rows = parsed._get("bytesPerRows")
+    let rows_per_images = parsed._get("rowsPerImages")
+    let mip_count = array_len(levels)
+    if mip_count <= 0 {
+      report_asset_error_once(
+        state,
+        "texture_ktx2_mips_" + id.to_string(),
+        "KTX2 texture has no mip levels",
+      )
+      return
+    }
+    let texture_usage = @webgpu.combine_flags(
+      @webgpu.combine_flags(
+        @webgpu.combine_flags(
+          @webgpu.texture_usage_texture_binding(),
+          @webgpu.texture_usage_copy_dst(),
+        ),
+        @webgpu.texture_usage_copy_src(),
+      ),
+      @webgpu.texture_usage_render_attachment(),
+    )
+    let texture_desc = @js.from_entries([
+      ("size", @js.any([width, stacked_height, 1])),
+      ("format", parsed._get("format")),
+      ("usage", @js.any(texture_usage)),
+      ("mipLevelCount", @js.any(mip_count)),
+      ("dimension", @js.any("2d")),
+    ])
+    let texture = device.create_texture(texture_desc)
+    for mip in 0..<mip_count {
+      let level_data = array_get(levels, mip)
+      let mip_width = to_int(number_or(array_get(widths, mip), 0))
+      let mip_height = to_int(number_or(array_get(heights, mip), 0))
+      let bytes_per_row = to_int(number_or(array_get(bytes_per_rows, mip), 0))
+      let rows_per_image = to_int(number_or(array_get(rows_per_images, mip), 0))
+      if mip_width <= 0 ||
+        mip_height <= 0 ||
+        bytes_per_row <= 0 ||
+        rows_per_image <= 0 {
+        report_asset_error_once(
+          state,
+          "texture_ktx2_layout_" + id.to_string(),
+          "Invalid KTX2 mip upload layout",
+        )
+        return
+      }
+      write_texture_mip(
+        queue.as_any(),
+        texture.as_any(),
+        level_data,
+        bytes_per_row,
+        rows_per_image,
+        mip_width,
+        mip_height,
+        mip,
+      )
+    }
+    insert_texture_entry(state, id, texture, width, stacked_height, nearest)
+    return
+  }
+}
+
+///|
+async fn load_texture_from_uint8array(
+  state : State,
+  id : Int,
+  bytes_data : @js.Any,
+  nearest : Bool,
+) -> Unit {
+  if is_ktx2_uint8array(bytes_data) {
+    load_texture_from_ktx2_bytes(state, id, bytes_data, nearest)
+    set_delete(state.assets.loading_textures, @js.any(id)) |> ignore
+    return
+  }
+  let blob = blob_from_uint8array(bytes_data)
+  load_texture_from_blob(state, id, blob, nearest)
+}
+
+///|
 async fn load_texture_from_path(
   state : State,
   id : Int,
@@ -1375,8 +1796,10 @@ async fn load_texture_from_path(
       ")",
     )
   }
-  let blob : @js.Any = response_blob(response.as_any()).wait()
-  load_texture_from_blob(state, id, blob, nearest)
+  let bytes_data = uint8array_from_array_buffer(
+    response_array_buffer(response.as_any()).wait(),
+  )
+  load_texture_from_uint8array(state, id, bytes_data, nearest)
 }
 
 ///|
@@ -1399,8 +1822,7 @@ async fn load_texture_from_blob_id(
   if host_is_nullish(blob_bytes) {
     fail("Failed to load texture bytes: bytes id not found")
   }
-  let blob = blob_from_uint8array(blob_bytes)
-  load_texture_from_blob(state, id, blob, nearest)
+  load_texture_from_uint8array(state, id, blob_bytes, nearest)
 }
 
 ///|
@@ -1438,41 +1860,58 @@ async fn load_texture_from_blob(
       width,
       height,
     )
-    let default_sampler_kind = sampler_kind_from_nearest(nearest)
-    let sampler_kind = resolved_texture_sampler_kind(
-      state, id, default_sampler_kind,
-    )
-    let sampler = create_sampler(state, sampler_kind)
-    if sampler is Some(sampler_value) {
-      let entry = @js.from_entries([
-        ("id", @js.any(id)),
-        ("texture", texture.as_any()),
-        ("view", texture.create_view().as_any()),
-        ("sampler", sampler_value.as_any()),
-        ("bindGroup", js_null()),
-        ("meshBindGroup", js_null()),
-        ("mesh3dBindGroup", js_null()),
-        ("uiBindGroup", js_null()),
-        ("width", @js.any(width)),
-        ("height", @js.any(height)),
-      ])
-      map_set(state.gpu.textures, @js.any(id), entry)
-      ensure_bind_group_for_texture(state, entry)
-    }
+    insert_texture_entry(state, id, texture, width, height, nearest)
   }
   set_delete(state.assets.loading_textures, @js.any(id)) |> ignore
 }
 
 ///|
-async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
-  let url = resolve_asset_url(state, @js.any(path))
-  let response = @http.fetch(url, method_="GET")
-  if !response.ok {
-    fail(
-      "Failed to load shader: " + url + " (" + response.status.to_string() + ")",
-    )
+async fn load_wgsl_preprocessed(
+  state : State,
+  rel_path : String,
+  defines : Array[String],
+  visited : @js.Any,
+) -> String {
+  let normalized = strip_leading_slashes(rel_path.trim().to_string())
+  if normalized == "" {
+    return ""
   }
-  let source = response_text(response.as_any()).wait()
+  if set_has(visited, @js.any(normalized)) {
+    return ""
+  }
+  set_add(visited, @js.any(normalized))
+  let source = fetch_text_from_url(
+    resolve_asset_url(state, @js.any(normalized)),
+  )
+  let import_specs = wgsl_extract_import_specs(source)
+  let mut expanded = ""
+  for spec in import_specs {
+    let module_rel = wgsl_import_spec_to_rel_path(spec).trim().to_string()
+    if module_rel == "" {
+      continue
+    }
+    let module_source = load_wgsl_preprocessed(
+      state, module_rel, defines, visited,
+    )
+    if module_source != "" {
+      expanded = expanded + module_source + "\n"
+    }
+  }
+  let stripped = wgsl_strip_import_define_lines(source)
+  wgsl_apply_ifdefs(expanded + stripped, defines)
+}
+
+///|
+async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
+  let visited = new_set()
+  let defines : Array[String] = []
+  let normalized = strip_leading_slashes(path.trim().to_string())
+  let source_raw = load_wgsl_preprocessed(state, normalized, defines, visited)
+  let source = if normalized == "shaders/mgstudio/3d/motion_blur.wgsl" {
+    wgsl_prepend_derivative_uniformity_diagnostic(source_raw)
+  } else {
+    source_raw
+  }
   map_set(state.assets.shader_sources, @js.any(id), @js.any(source))
   source
 }
@@ -1551,6 +1990,13 @@ fn begin_frame(state : State) -> Int {
     return 0
   }
   if state.gpu.context is Some(context) && state.gpu.device is Some(device) {
+    let next_frame = state.gpu.frame_count + 1
+    let max_counter : Int = 2147483647
+    state.gpu.frame_count = if next_frame < 0 || next_frame > max_counter {
+      0
+    } else {
+      next_frame
+    }
     update_window_size(state)
     ensure_pipeline_resources(state)
     // Capture per-frame validation errors (including draw command issues) that
@@ -1628,6 +2074,14 @@ fn begin_pass(
   sub_camera_view_scale_y : Double,
   sub_camera_view_bias_x : Double,
   sub_camera_view_bias_y : Double,
+  previous_camera_x : Double,
+  previous_camera_y : Double,
+  previous_camera_z : Double,
+  previous_camera_rot_x : Double,
+  previous_camera_rot_y : Double,
+  previous_camera_rot_z : Double,
+  previous_camera_rot_w : Double,
+  pass_kind : Double,
   clear_enabled : Double,
 ) -> Unit {
   report_debug_once(
@@ -1748,6 +2202,14 @@ fn begin_pass(
         sub_camera_view_scale_y,
         sub_camera_view_bias_x,
         sub_camera_view_bias_y,
+        previous_camera_x,
+        previous_camera_y,
+        previous_camera_z,
+        previous_camera_rot_x,
+        previous_camera_rot_y,
+        previous_camera_rot_z,
+        previous_camera_rot_w,
+        pass_kind,
         viewport_x: vp_x,
         viewport_y: vp_y,
         viewport_width: vp_width,
@@ -2811,6 +3273,16 @@ fn draw_mesh3d(
   scale_x : Double,
   scale_y : Double,
   scale_z : Double,
+  previous_x : Double,
+  previous_y : Double,
+  previous_z : Double,
+  previous_rotation_x : Double,
+  previous_rotation_y : Double,
+  previous_rotation_z : Double,
+  previous_rotation_w : Double,
+  previous_scale_x : Double,
+  previous_scale_y : Double,
+  previous_scale_z : Double,
   r : Double,
   g : Double,
   b : Double,
@@ -2846,14 +3318,26 @@ fn draw_mesh3d(
   flush_ui_slice_batches(state)
   flush_ui_batches(state)
   flush_sprite_batches(state)
-  ensure_mesh3d_pipeline(state)
+  let pass_kind_value = if state.gpu.current_pass_info is Some(info) {
+    to_int(info.pass_kind)
+  } else {
+    0
+  }
+  let use_motion_vector_pipeline = pass_kind_value == 1
+  if use_motion_vector_pipeline {
+    ensure_motion_vector_pipeline(state)
+  } else {
+    ensure_mesh3d_pipeline(state)
+  }
   let use_transparent_pipeline = a < 0.999
-  let mesh3d_pipeline_opt = if use_transparent_pipeline {
+  let mesh3d_pipeline_opt = if use_motion_vector_pipeline {
+    None
+  } else if use_transparent_pipeline {
     state.gpu.mesh3d_pipeline_transparent
   } else {
     state.gpu.mesh3d_pipeline
   }
-  if mesh3d_pipeline_opt is None {
+  if !use_motion_vector_pipeline && mesh3d_pipeline_opt is None {
     report_asset_error_once(
       state, "mesh3d_draw_pipeline_not_ready", "Mesh3d draw skipped: mesh3d pipeline not ready",
     )
@@ -2877,6 +3361,97 @@ fn draw_mesh3d(
       mesh_id.to_string() +
       ")",
     )
+    return
+  }
+  if use_motion_vector_pipeline {
+    if a < 0.999 {
+      return
+    }
+    if state.gpu.motion_vector_pipeline is None {
+      report_asset_error_once(
+        state, "motion_vector_draw_pipeline_not_ready", "Motion-vector draw skipped: pipeline not ready",
+      )
+      return
+    }
+    if state.gpu.current_pass is Some(pass) &&
+      state.gpu.current_pass_info is Some(info) &&
+      state.gpu.motion_vector_pipeline is Some(motion_vector_pipeline) {
+      let aspect = if info.height > 0 { info.width / info.height } else { 1.0 }
+      let uniform_values = [
+        x,
+        y,
+        z,
+        1.0,
+        rotation_x,
+        rotation_y,
+        rotation_z,
+        rotation_w,
+        scale_x,
+        scale_y,
+        scale_z,
+        1.0,
+        previous_x,
+        previous_y,
+        previous_z,
+        1.0,
+        previous_rotation_x,
+        previous_rotation_y,
+        previous_rotation_z,
+        previous_rotation_w,
+        previous_scale_x,
+        previous_scale_y,
+        previous_scale_z,
+        1.0,
+        info.cam_x,
+        info.cam_y,
+        info.cam_z,
+        1.0,
+        info.cam_rot_x,
+        info.cam_rot_y,
+        info.cam_rot_z,
+        info.cam_rot_w,
+        info.previous_camera_x,
+        info.previous_camera_y,
+        info.previous_camera_z,
+        1.0,
+        info.previous_camera_rot_x,
+        info.previous_camera_rot_y,
+        info.previous_camera_rot_z,
+        info.previous_camera_rot_w,
+        info.cam_fov_y,
+        aspect,
+        info.cam_near,
+        info.cam_far,
+        info.sub_camera_view_scale_x,
+        info.sub_camera_view_scale_y,
+        info.sub_camera_view_bias_x,
+        info.sub_camera_view_bias_y,
+      ]
+      guard create_transient_uniform_bind_group(
+          state, motion_vector_pipeline, uniform_values,
+        )
+        is Some(motion_vector_bind_group) else {
+        return
+      }
+      let vertex_buffer : @webgpu.GPUBuffer = mesh_entry
+        ._get("vertexBuffer")
+        .cast()
+      let vertex_count : Int = mesh_entry._get("vertexCount").cast()
+      if vertex_count <= 0 {
+        report_asset_error_once(
+          state,
+          "motion_vector_draw_empty_vertices_" + mesh_id.to_string(),
+          "Motion-vector draw skipped: empty vertex buffer (" +
+          mesh_id.to_string() +
+          ")",
+        )
+        return
+      }
+      pass.set_pipeline(motion_vector_pipeline)
+      pass.set_bind_group(0, motion_vector_bind_group)
+      pass.set_vertex_buffer(0, vertex_buffer)
+      pass.draw(vertex_count, 1, 0, 0)
+    }
     return
   }
   let textured = texture_id >= 0
@@ -3154,6 +3729,128 @@ fn draw_mesh3d(
       pass.draw(vertex_count, 1, 0, 0)
     }
   }
+}
+
+///|
+fn draw_motion_blur(
+  state : State,
+  scene_texture_id : Int,
+  velocity_texture_id : Int,
+  shutter_angle : Double,
+  samples : Int,
+) -> Unit {
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  flush_ui_shadow_batches(state)
+  flush_ui_slice_batches(state)
+  flush_ui_batches(state)
+  flush_sprite_batches(state)
+  ensure_motion_blur_pipeline(state)
+  if state.gpu.motion_blur_pipeline is None {
+    report_asset_error_once(
+      state, "motion_blur_draw_pipeline_not_ready", "Motion-blur draw skipped: pipeline not ready",
+    )
+    return
+  }
+  let resolved_scene_texture_id = if scene_texture_id >= 0 {
+    scene_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let resolved_velocity_texture_id = if velocity_texture_id >= 0 {
+    velocity_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  guard get_texture_entry(state, resolved_scene_texture_id)
+    is Some(scene_texture_entry) else {
+    return
+  }
+  guard get_texture_entry(state, resolved_velocity_texture_id)
+    is Some(velocity_texture_entry) else {
+    return
+  }
+  let clamped_samples = if samples < 0 {
+    0
+  } else if samples > 64 {
+    64
+  } else {
+    samples
+  }
+  guard state.gpu.current_pass is Some(pass) else { return }
+  guard state.gpu.motion_blur_pipeline is Some(motion_blur_pipeline) else {
+    return
+  }
+  guard state.gpu.motion_blur_bind_layout is Some(bind_layout) else { return }
+  guard state.gpu.motion_blur_settings_buffer is Some(settings_buffer) else {
+    return
+  }
+  guard state.gpu.motion_blur_globals_buffer is Some(globals_buffer) else {
+    return
+  }
+  guard state.gpu.device is Some(device) else { return }
+  guard state.gpu.queue is Some(queue) else { return }
+  let settings_data = motion_blur_settings_uniform_bytes(
+    shutter_angle, clamped_samples,
+  )
+  let globals_data = motion_blur_globals_uniform_bytes(state.gpu.frame_count)
+  queue.write_buffer(settings_buffer, 0, settings_data)
+  queue.write_buffer(globals_buffer, 0, globals_data)
+  if state.gpu.motion_blur_fallback_depth_texture is None ||
+    state.gpu.motion_blur_fallback_depth_view is None {
+    let usage = @webgpu.combine_flags(
+      @webgpu.texture_usage_render_attachment(),
+      @webgpu.texture_usage_texture_binding(),
+    )
+    let depth_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size(1, 1),
+      @webgpu.TextureFormat::Other("depth24plus"),
+      usage,
+    )
+    let depth_texture = device.create_texture(depth_desc.to_js())
+    let depth_view = depth_texture.create_view()
+    state.gpu.motion_blur_fallback_depth_texture = Some(depth_texture)
+    state.gpu.motion_blur_fallback_depth_view = Some(depth_view)
+  }
+  let depth_view_opt = if state.gpu.depth_view is Some(depth_view) {
+    Some(depth_view)
+  } else {
+    state.gpu.motion_blur_fallback_depth_view
+  }
+  guard depth_view_opt is Some(depth_view) else { return }
+  let scene_sampler : @webgpu.GPUSampler = scene_texture_entry
+    ._get("sampler")
+    .cast()
+  let scene_view : @webgpu.GPUTextureView = scene_texture_entry
+    ._get("view")
+    .cast()
+  let velocity_view : @webgpu.GPUTextureView = velocity_texture_entry
+    ._get("view")
+    .cast()
+  let material_entries = [
+    @webgpu.bind_group_entry_texture(0, scene_view),
+    @webgpu.bind_group_entry_texture(1, velocity_view),
+    @webgpu.bind_group_entry_texture(2, depth_view),
+    @webgpu.bind_group_entry_sampler(3, scene_sampler),
+    @webgpu.bind_group_entry_buffer(4, settings_buffer),
+    @webgpu.bind_group_entry_buffer(5, globals_buffer),
+  ]
+  let material_desc = @webgpu.bind_group_descriptor(
+    bind_layout, material_entries,
+  )
+  let material_bind_group = device.create_bind_group(material_desc.to_js())
+  if state.gpu.current_pass_info is Some(info) {
+    pass.set_scissor_rect(
+      to_int(info.viewport_x),
+      to_int(info.viewport_y),
+      to_int(info.viewport_width),
+      to_int(info.viewport_height),
+    )
+  }
+  pass.set_pipeline(motion_blur_pipeline)
+  pass.set_bind_group(0, material_bind_group)
+  pass.draw(3, 1, 0, 0)
 }
 
 ///|

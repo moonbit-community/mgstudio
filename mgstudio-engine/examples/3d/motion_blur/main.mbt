@@ -15,10 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/motion_blur.rs`.
 ///
-/// Baseline parity: mgstudio now exposes camera-attached `MotionBlur` with the
-/// same control surface (`shutter_angle`, `samples`), while current runtime
-/// evaluates a lightweight per-object approximation instead of Bevy's full
-/// motion-vector post-process path.
+/// Baseline parity: current mgstudio path renders transform-history-based blur
+/// trails (camera-relative translation + transform interpolation) controlled by
+/// `MotionBlur.shutter_angle/samples`; Bevy's full motion-vector post-process
+/// pipeline is not yet mirrored.
 
 ///|
 const TWO_PI : Float = 6.283185307179586F

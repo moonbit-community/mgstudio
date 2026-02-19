@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
@@ -11,6 +11,9 @@ use winit::window::Window;
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
 const MESH_UNIFORM_MAX_BYTES: u64 = 92 * 4;
+const COMPRESSED_IMAGE_FORMAT_ASTC_LDR: i32 = 1;
+const COMPRESSED_IMAGE_FORMAT_BC: i32 = 2;
+const COMPRESSED_IMAGE_FORMAT_ETC2: i32 = 4;
 
 pub struct GpuBackend {
     assets_base: String,
@@ -38,6 +41,11 @@ pub struct GpuBackend {
 
     sprite: SpriteRenderer,
     mesh: MeshRenderer,
+    frame_count: u32,
+    last_depth_target_id: i32,
+    last_depth_size: (u32, u32),
+    last_depth_texture: Option<wgpu::Texture>,
+    last_depth_view: Option<wgpu::TextureView>,
 }
 
 struct GpuFrame {
@@ -65,9 +73,12 @@ struct GpuPassState {
     camera_scale: f32,
     camera_z: f32,
     camera_rot_quat: [f32; 4],
+    previous_camera: [f32; 3],
+    previous_camera_rot_quat: [f32; 4],
     camera_fov_y: f32,
     camera_near: f32,
     camera_far: f32,
+    pass_kind: i32,
     ambient: [f32; 4],
     directional_dir_illum: [f32; 4],
     directional_color: [f32; 3],
@@ -96,6 +107,7 @@ struct GpuPassRecorder {
 enum DrawCmd {
     Sprites(SpriteSegment),
     Mesh(MeshDraw),
+    MotionBlur(MotionBlurDraw),
 }
 
 struct SpriteBatch {
@@ -137,6 +149,13 @@ struct MeshDraw {
     scale_x: f32,
     scale_y: f32,
     scale_z: f32,
+    previous_x: f32,
+    previous_y: f32,
+    previous_z: f32,
+    previous_rotation_quat: [f32; 4],
+    previous_scale_x: f32,
+    previous_scale_y: f32,
+    previous_scale_z: f32,
     color: [f32; 4],
     texture_id: i32,
     normal_texture_id: i32,
@@ -163,6 +182,14 @@ struct MeshDraw {
     anisotropy_rotation_sin: f32,
     anisotropy_map_flag: f32,
     ubo_offset: u32, // computed during encoding
+    scissor: Option<ScissorRect>,
+}
+
+struct MotionBlurDraw {
+    scene_texture_id: i32,
+    velocity_texture_id: i32,
+    shutter_angle: f32,
+    samples: i32,
     scissor: Option<ScissorRect>,
 }
 
@@ -222,6 +249,22 @@ struct MeshRenderer {
     uniform_bg: Option<wgpu::BindGroup>,
     uniform_capacity: u64,
     uniform_binding_size: u64,
+
+    motion_vector_bgl_uniform: Option<wgpu::BindGroupLayout>,
+    motion_vector_pipeline_layout: Option<wgpu::PipelineLayout>,
+    motion_vector_pipeline: Option<wgpu::RenderPipeline>,
+    motion_vector_uniform_buf: Option<wgpu::Buffer>,
+    motion_vector_uniform_bg: Option<wgpu::BindGroup>,
+
+    motion_blur_bgl: Option<wgpu::BindGroupLayout>,
+    motion_blur_pipeline_layout: Option<wgpu::PipelineLayout>,
+    motion_blur_pipeline_rgba8: Option<wgpu::RenderPipeline>,
+    motion_blur_pipeline_surface: Option<wgpu::RenderPipeline>,
+    motion_blur_pipeline_surface_format: Option<wgpu::TextureFormat>,
+    motion_blur_settings_buf: Option<wgpu::Buffer>,
+    motion_blur_globals_buf: Option<wgpu::Buffer>,
+    motion_blur_fallback_depth_texture: Option<wgpu::Texture>,
+    motion_blur_fallback_depth_view: Option<wgpu::TextureView>,
 }
 
 impl GpuBackend {
@@ -233,10 +276,21 @@ impl GpuBackend {
             force_fallback_adapter: false,
         }))
         .context("wgpu: request_adapter failed")?;
+        let adapter_features = adapter.features();
+        let mut required_features = wgpu::Features::empty();
+        if adapter_features.contains(wgpu::Features::TEXTURE_COMPRESSION_ASTC) {
+            required_features |= wgpu::Features::TEXTURE_COMPRESSION_ASTC;
+        }
+        if adapter_features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC) {
+            required_features |= wgpu::Features::TEXTURE_COMPRESSION_BC;
+        }
+        if adapter_features.contains(wgpu::Features::TEXTURE_COMPRESSION_ETC2) {
+            required_features |= wgpu::Features::TEXTURE_COMPRESSION_ETC2;
+        }
 
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             label: Some("mgstudio-device"),
-            required_features: wgpu::Features::empty(),
+            required_features,
             required_limits: wgpu::Limits::default(),
             memory_hints: wgpu::MemoryHints::Performance,
             ..Default::default()
@@ -263,6 +317,11 @@ impl GpuBackend {
             next_mesh_id: 1,
             sprite: SpriteRenderer::default(),
             mesh: MeshRenderer::default(),
+            frame_count: 0,
+            last_depth_target_id: i32::MIN,
+            last_depth_size: (0, 0),
+            last_depth_texture: None,
+            last_depth_view: None,
         })
     }
 
@@ -401,6 +460,7 @@ impl GpuBackend {
         }
         // Keep the device progressing (similar intent to wgpu-native's process_events()).
         let _ = self.device.poll(wgpu::PollType::Poll);
+        self.frame_count = self.frame_count.wrapping_add(1);
 
         Ok(())
     }
@@ -514,9 +574,12 @@ impl GpuBackend {
             camera_scale,
             camera_z: 0.0,
             camera_rot_quat: [0.0, 0.0, 0.0, 1.0],
+            previous_camera: [camera_x, camera_y, 0.0],
+            previous_camera_rot_quat: [0.0, 0.0, 0.0, 1.0],
             camera_fov_y: std::f32::consts::FRAC_PI_2,
             camera_near: 0.1,
             camera_far: 1000.0,
+            pass_kind: 0,
             ambient: [1.0, 1.0, 1.0, 0.0],
             directional_dir_illum: [0.0, -1.0, 0.0, 0.0],
             directional_color: [1.0, 1.0, 1.0],
@@ -578,6 +641,14 @@ impl GpuBackend {
         spot_color_intensity: [f32; 4],
         spot_outer_angle: f32,
         sub_camera_view: [f32; 4],
+        previous_camera_x: f32,
+        previous_camera_y: f32,
+        previous_camera_z: f32,
+        previous_camera_rot_x: f32,
+        previous_camera_rot_y: f32,
+        previous_camera_rot_z: f32,
+        previous_camera_rot_w: f32,
+        pass_kind: i32,
         clear_enabled: bool,
     ) -> anyhow::Result<()> {
         let camera_rot = quat_to_z_rotation(camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w);
@@ -597,9 +668,17 @@ impl GpuBackend {
             pass.st.is_3d = true;
             pass.st.camera_z = camera_z;
             pass.st.camera_rot_quat = [camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w];
+            pass.st.previous_camera = [previous_camera_x, previous_camera_y, previous_camera_z];
+            pass.st.previous_camera_rot_quat = [
+                previous_camera_rot_x,
+                previous_camera_rot_y,
+                previous_camera_rot_z,
+                previous_camera_rot_w,
+            ];
             pass.st.camera_fov_y = camera_fov_y;
             pass.st.camera_near = camera_near;
             pass.st.camera_far = camera_far;
+            pass.st.pass_kind = pass_kind;
             pass.st.ambient = ambient;
             pass.st.directional_dir_illum = directional_dir_illum;
             pass.st.directional_color = directional_color;
@@ -624,6 +703,7 @@ impl GpuBackend {
         let mut sprite_segments: Vec<&SpriteSegment> = Vec::new();
         let mut has_mesh_2d = false;
         let mut has_mesh_3d = false;
+        let mut has_motion_blur = false;
         for cmd in &pass.commands {
             match cmd {
                 DrawCmd::Sprites(seg) => sprite_segments.push(seg),
@@ -633,6 +713,9 @@ impl GpuBackend {
                     } else {
                         has_mesh_2d = true;
                     }
+                }
+                DrawCmd::MotionBlur(_) => {
+                    has_motion_blur = true;
                 }
             }
         }
@@ -646,7 +729,14 @@ impl GpuBackend {
             self.ensure_mesh_pipeline(pass.st.target_format)?;
         }
         if has_mesh_3d {
-            self.ensure_mesh3d_pipeline(pass.st.target_format)?;
+            if pass.st.pass_kind == 1 {
+                self.ensure_mesh3d_motion_vector_pipeline()?;
+            } else {
+                self.ensure_mesh3d_pipeline(pass.st.target_format)?;
+            }
+        }
+        if has_motion_blur {
+            self.ensure_motion_blur_pipeline_for_format(pass.st.target_format)?;
         }
         self.prepare_mesh_uniforms(&mut pass)?;
 
@@ -677,7 +767,15 @@ impl GpuBackend {
             .pipelines_3d_transparent
             .get(&pass.st.target_format)
             .cloned();
+        let mesh_pipeline_motion_vector = self.mesh.motion_vector_pipeline.as_ref().cloned();
         let mesh_bg = self.mesh.uniform_bg.as_ref().cloned();
+        let mesh_motion_vector_bg = self.mesh.motion_vector_uniform_bg.as_ref().cloned();
+        let motion_blur_pipeline = if pass.st.target_format == wgpu::TextureFormat::Rgba8Unorm {
+            self.mesh.motion_blur_pipeline_rgba8.as_ref().cloned()
+        } else {
+            self.mesh.motion_blur_pipeline_surface.as_ref().cloned()
+        };
+        let motion_blur_bgl = self.mesh.motion_blur_bgl.as_ref().cloned();
 
         let Some(mut frame) = self.frame.take() else {
             return Ok(());
@@ -716,27 +814,36 @@ impl GpuBackend {
                 }
             }
         };
-        let mut depth_texture: Option<wgpu::Texture> = None;
         let mut depth_view: Option<wgpu::TextureView> = None;
         if pass.st.is_3d {
-            let depth_tex = self.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("mgstudio-pass-depth"),
-                size: wgpu::Extent3d {
-                    width: target_width,
-                    height: target_height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Depth24Plus,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                view_formats: &[],
-            });
-            let view = depth_tex.create_view(&wgpu::TextureViewDescriptor::default());
-            depth_texture = Some(depth_tex);
-            depth_view = Some(view);
-        };
+            let target_size = (target_width.max(1), target_height.max(1));
+            if self.last_depth_view.is_none()
+                || self.last_depth_target_id != pass.st.target_id
+                || self.last_depth_size != target_size
+            {
+                let depth_tex = self.device.create_texture(&wgpu::TextureDescriptor {
+                    label: Some("mgstudio-pass-depth"),
+                    size: wgpu::Extent3d {
+                        width: target_size.0,
+                        height: target_size.1,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format: wgpu::TextureFormat::Depth24Plus,
+                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                        | wgpu::TextureUsages::TEXTURE_BINDING,
+                    view_formats: &[],
+                });
+                let view = depth_tex.create_view(&wgpu::TextureViewDescriptor::default());
+                self.last_depth_texture = Some(depth_tex);
+                self.last_depth_view = Some(view);
+                self.last_depth_target_id = pass.st.target_id;
+                self.last_depth_size = target_size;
+            }
+            depth_view = self.last_depth_view.as_ref().cloned();
+        }
 
         {
             let depth_attachment =
@@ -825,18 +932,6 @@ impl GpuBackend {
                         }
                     }
                     DrawCmd::Mesh(draw) => {
-                        let pipeline = if draw.is_3d {
-                            if draw.color[3] < 0.999 {
-                                mesh_pipeline_3d_transparent.as_ref()
-                            } else {
-                                mesh_pipeline_3d.as_ref()
-                            }
-                        } else {
-                            mesh_pipeline_2d.as_ref()
-                        };
-                        let (Some(pipeline), Some(bg)) = (pipeline, mesh_bg.as_ref()) else {
-                            continue;
-                        };
                         let Some(mesh) = self.meshes.get(&draw.mesh_id) else {
                             continue;
                         };
@@ -854,11 +949,53 @@ impl GpuBackend {
                         ) else {
                             continue;
                         };
+
+                        // Motion-vector prepass: opaque-only and separate uniform/pipeline.
+                        if draw.is_3d && pass.st.pass_kind == 1 {
+                            if draw.color[3] < 0.999 {
+                                continue;
+                            }
+                            let (Some(pipeline), Some(bg)) = (
+                                mesh_pipeline_motion_vector.as_ref(),
+                                mesh_motion_vector_bg.as_ref(),
+                            ) else {
+                                continue;
+                            };
+                            let Some(ubo) = self.mesh.motion_vector_uniform_buf.as_ref() else {
+                                continue;
+                            };
+                            let bytes = mesh3d_motion_vector_uniform_bytes(&pass.st, &draw);
+                            self.queue.write_buffer(ubo, 0, bytes.as_slice());
+
+                            rp.set_pipeline(pipeline);
+                            rp.set_scissor_rect(sx, sy, sw, sh);
+                            rp.set_bind_group(0, bg, &[]);
+                            rp.set_vertex_buffer(0, mesh.vertex_buf.slice(..));
+                            rp.set_index_buffer(
+                                mesh.index_buf.slice(..),
+                                wgpu::IndexFormat::Uint16,
+                            );
+                            rp.draw_indexed(0..mesh.index_count, 0, 0..1);
+                            continue;
+                        }
+
+                        let pipeline = if draw.is_3d {
+                            if draw.color[3] < 0.999 {
+                                mesh_pipeline_3d_transparent.as_ref()
+                            } else {
+                                mesh_pipeline_3d.as_ref()
+                            }
+                        } else {
+                            mesh_pipeline_2d.as_ref()
+                        };
+                        let (Some(pipeline), Some(bg)) = (pipeline, mesh_bg.as_ref()) else {
+                            continue;
+                        };
                         rp.set_pipeline(pipeline);
                         rp.set_scissor_rect(sx, sy, sw, sh);
                         if draw.is_3d {
                             if let Some(ubo) = self.mesh.uniform_buf.as_ref() {
-                                let bytes = mesh_uniform_bytes(&pass.st, &draw);
+                                let bytes = mesh3d_uniform_bytes(&pass.st, &draw);
                                 self.queue.write_buffer(ubo, 0, bytes.as_slice());
                             } else {
                                 continue;
@@ -896,11 +1033,13 @@ impl GpuBackend {
                             else {
                                 continue;
                             };
-                            let layout = pipeline.get_bind_group_layout(1);
+                            let Some(layout) = self.mesh.bgl_material_3d.as_ref() else {
+                                continue;
+                            };
                             let material_bg =
                                 self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                                     label: Some("mgstudio-mesh3d-material-bg"),
-                                    layout: &layout,
+                                    layout,
                                     entries: &[
                                         wgpu::BindGroupEntry {
                                             binding: 0,
@@ -963,12 +1102,115 @@ impl GpuBackend {
                         rp.set_index_buffer(mesh.index_buf.slice(..), wgpu::IndexFormat::Uint16);
                         rp.draw_indexed(0..mesh.index_count, 0, 0..1);
                     }
+                    DrawCmd::MotionBlur(draw) => {
+                        let (Some(pipeline), Some(layout), Some(settings_buf), Some(globals_buf)) = (
+                            motion_blur_pipeline.as_ref(),
+                            motion_blur_bgl.as_ref(),
+                            self.mesh.motion_blur_settings_buf.as_ref().cloned(),
+                            self.mesh.motion_blur_globals_buf.as_ref().cloned(),
+                        ) else {
+                            continue;
+                        };
+                        let Some(scene_tex) = self.textures.get(&draw.scene_texture_id) else {
+                            continue;
+                        };
+                        let Some(velocity_tex) = self.textures.get(&draw.velocity_texture_id)
+                        else {
+                            continue;
+                        };
+                        let Some((sx, sy, sw, sh)) = resolve_scissor_rect(
+                            &pass.st,
+                            draw.scissor,
+                            target_width,
+                            target_height,
+                        ) else {
+                            continue;
+                        };
+                        let clamped_samples = draw.samples.clamp(0, 64);
+                        let settings_words: [u32; 4] =
+                            [draw.shutter_angle.to_bits(), clamped_samples as u32, 0, 0];
+                        self.queue.write_buffer(
+                            &settings_buf,
+                            0,
+                            bytemuck::cast_slice(&settings_words),
+                        );
+                        let globals_words: [u32; 4] = [0f32.to_bits(), 0f32.to_bits(), self.frame_count, 0];
+                        self.queue
+                            .write_buffer(&globals_buf, 0, bytemuck::cast_slice(&globals_words));
+
+                        if self.mesh.motion_blur_fallback_depth_view.is_none()
+                            || self.mesh.motion_blur_fallback_depth_texture.is_none()
+                        {
+                            let fallback_depth =
+                                self.device.create_texture(&wgpu::TextureDescriptor {
+                                    label: Some("mgstudio-motion-blur-fallback-depth"),
+                                    size: wgpu::Extent3d {
+                                        width: 1,
+                                        height: 1,
+                                        depth_or_array_layers: 1,
+                                    },
+                                    mip_level_count: 1,
+                                    sample_count: 1,
+                                    dimension: wgpu::TextureDimension::D2,
+                                    format: wgpu::TextureFormat::Depth24Plus,
+                                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                                        | wgpu::TextureUsages::TEXTURE_BINDING,
+                                    view_formats: &[],
+                                });
+                            let fallback_depth_view = fallback_depth
+                                .create_view(&wgpu::TextureViewDescriptor::default());
+                            self.mesh.motion_blur_fallback_depth_texture = Some(fallback_depth);
+                            self.mesh.motion_blur_fallback_depth_view = Some(fallback_depth_view);
+                        }
+                        let Some(depth_view) = self
+                            .last_depth_view
+                            .as_ref()
+                            .or(self.mesh.motion_blur_fallback_depth_view.as_ref())
+                        else {
+                            continue;
+                        };
+
+                        let bind_group =
+                            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                                label: Some("mgstudio-motion-blur-bg"),
+                                layout,
+                                entries: &[
+                                    wgpu::BindGroupEntry {
+                                        binding: 0,
+                                        resource: wgpu::BindingResource::TextureView(&scene_tex.view),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 1,
+                                        resource: wgpu::BindingResource::TextureView(&velocity_tex.view),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 2,
+                                        resource: wgpu::BindingResource::TextureView(depth_view),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 3,
+                                        resource: wgpu::BindingResource::Sampler(&scene_tex.sampler),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 4,
+                                        resource: settings_buf.as_entire_binding(),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 5,
+                                        resource: globals_buf.as_entire_binding(),
+                                    },
+                                ],
+                            });
+                        rp.set_pipeline(pipeline);
+                        rp.set_scissor_rect(sx, sy, sw, sh);
+                        rp.set_bind_group(0, &bind_group, &[]);
+                        rp.draw(0..3, 0..1);
+                    }
                 }
             }
         }
 
-        // Keep depth resources alive until encoding is finished.
-        let _ = depth_texture;
+        // Keep depth view alive until encoding is finished.
         let _ = depth_view;
 
         self.frame = Some(frame);
@@ -1120,6 +1362,13 @@ impl GpuBackend {
             scale_x,
             scale_y,
             scale_z: 1.0,
+            previous_x: x,
+            previous_y: y,
+            previous_z: 0.0,
+            previous_rotation_quat: [0.0, 0.0, 0.0, 1.0],
+            previous_scale_x: scale_x,
+            previous_scale_y: scale_y,
+            previous_scale_z: 1.0,
             color,
             texture_id: resolved_texture_id,
             normal_texture_id: resolved_texture_id,
@@ -1164,6 +1413,16 @@ impl GpuBackend {
         scale_x: f32,
         scale_y: f32,
         scale_z: f32,
+        previous_x: f32,
+        previous_y: f32,
+        previous_z: f32,
+        previous_rotation_x: f32,
+        previous_rotation_y: f32,
+        previous_rotation_z: f32,
+        previous_rotation_w: f32,
+        previous_scale_x: f32,
+        previous_scale_y: f32,
+        previous_scale_z: f32,
         color: [f32; 4],
         texture_id: i32,
         uv_offset: (f32, f32),
@@ -1259,6 +1518,18 @@ impl GpuBackend {
             scale_x,
             scale_y,
             scale_z,
+            previous_x,
+            previous_y,
+            previous_z,
+            previous_rotation_quat: [
+                previous_rotation_x,
+                previous_rotation_y,
+                previous_rotation_z,
+                previous_rotation_w,
+            ],
+            previous_scale_x,
+            previous_scale_y,
+            previous_scale_z,
             color,
             texture_id: resolved_texture_id,
             normal_texture_id: resolved_normal_texture_id,
@@ -1294,6 +1565,32 @@ impl GpuBackend {
             anisotropy_rotation_sin: anisotropy_rotation.sin(),
             anisotropy_map_flag: if anisotropy_textured { 1.0 } else { 0.0 },
             ubo_offset: 0,
+            scissor: pass.current_scissor,
+        }));
+        Ok(())
+    }
+
+    pub fn draw_motion_blur(
+        &mut self,
+        scene_texture_id: i32,
+        velocity_texture_id: i32,
+        shutter_angle: f32,
+        samples: i32,
+    ) -> anyhow::Result<()> {
+        if self.frame.is_none() {
+            return Ok(());
+        }
+        let scene_texture_id = self.ensure_fallback_texture(scene_texture_id)?;
+        let velocity_texture_id = self.ensure_fallback_texture(velocity_texture_id)?;
+        let Some(pass) = self.pass.as_mut() else {
+            return Ok(());
+        };
+        pass.flush_sprites();
+        pass.commands.push(DrawCmd::MotionBlur(MotionBlurDraw {
+            scene_texture_id,
+            velocity_texture_id,
+            shutter_angle,
+            samples,
             scissor: pass.current_scissor,
         }));
         Ok(())
@@ -1501,6 +1798,144 @@ impl GpuBackend {
         Ok(id)
     }
 
+    pub fn create_texture_stacked_2d_with_format(
+        &mut self,
+        width: u32,
+        height_per_slice: u32,
+        slice_count: u32,
+        format: wgpu::TextureFormat,
+        levels: &[Vec<u8>],
+        nearest: bool,
+    ) -> anyhow::Result<i32> {
+        self.ensure_sprite_resources()?;
+        if levels.is_empty() {
+            return Err(anyhow!("wgpu: no mip levels provided for texture upload"));
+        }
+        let block_info = texture_block_info(format)
+            .ok_or_else(|| anyhow!("wgpu: unsupported texture format for upload: {format:?}"))?;
+
+        let id = self.next_texture_id;
+        self.next_texture_id += 1;
+        let width = width.max(1);
+        let height_per_slice = height_per_slice.max(1);
+        let slice_count = slice_count.max(1);
+        let height = height_per_slice
+            .checked_mul(slice_count)
+            .ok_or_else(|| anyhow!("wgpu: stacked texture height overflow"))?;
+        let usage = wgpu::TextureUsages::TEXTURE_BINDING
+            | wgpu::TextureUsages::COPY_DST
+            | wgpu::TextureUsages::COPY_SRC;
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio-texture-stacked"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: levels.len() as u32,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = if nearest {
+            self.device.create_sampler(&wgpu::SamplerDescriptor {
+                label: Some("mgstudio-sampler-nearest"),
+                mag_filter: wgpu::FilterMode::Nearest,
+                min_filter: wgpu::FilterMode::Nearest,
+                mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                ..Default::default()
+            })
+        } else {
+            self.device.create_sampler(&wgpu::SamplerDescriptor {
+                label: Some("mgstudio-sampler-linear"),
+                mag_filter: wgpu::FilterMode::Linear,
+                min_filter: wgpu::FilterMode::Linear,
+                mipmap_filter: wgpu::MipmapFilterMode::Linear,
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                ..Default::default()
+            })
+        };
+
+        let bgl_tex = self
+            .sprite
+            .bgl_tex
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: sprite texture bind group layout not initialized"))?;
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio-sprite-tex"),
+            layout: bgl_tex,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+            ],
+        });
+
+        for (level_index, level_data) in levels.iter().enumerate() {
+            let mip = level_index as u32;
+            let level_width = (width >> mip).max(1);
+            let level_slice_height = (height_per_slice >> mip).max(1);
+            let level_height = level_slice_height
+                .checked_mul(slice_count)
+                .ok_or_else(|| anyhow!("wgpu: stacked mip height overflow"))?;
+            let (bytes_per_row, rows_per_image, expected_bytes) =
+                block_info.layout(level_width, level_height)?;
+            if level_data.len() < expected_bytes {
+                return Err(anyhow!(
+                    "wgpu: mip {mip} upload size mismatch: got {}, need at least {expected_bytes}",
+                    level_data.len()
+                ));
+            }
+            self.queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &texture,
+                    mip_level: mip,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                &level_data[..expected_bytes],
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(bytes_per_row),
+                    rows_per_image: Some(rows_per_image),
+                },
+                wgpu::Extent3d {
+                    width: level_width,
+                    height: level_height,
+                    depth_or_array_layers: 1,
+                },
+            );
+        }
+
+        self.textures.insert(
+            id,
+            GpuTexture {
+                width,
+                height,
+                format,
+                texture,
+                view,
+                sampler,
+                bind_group,
+                is_render_target: false,
+            },
+        );
+        Ok(id)
+    }
+
     pub fn create_render_target(
         &mut self,
         width: u32,
@@ -1537,12 +1972,23 @@ impl GpuBackend {
     }
 
     pub fn supported_compressed_image_formats_mask(&self) -> i32 {
-        let _ = &self.device;
-        // Runtime note: native-wasmtime currently loads textures through an
-        // RGBA8 decode path and does not upload compressed KTX2 payloads as
-        // GPU-compressed textures yet. Report 0 to block compressed-format
-        // selection until decoder/upload support lands.
-        0
+        let features = self.device.features();
+        let mut gpu_feature_mask = 0;
+        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_ASTC) {
+            gpu_feature_mask |= COMPRESSED_IMAGE_FORMAT_ASTC_LDR;
+        }
+        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC) {
+            gpu_feature_mask |= COMPRESSED_IMAGE_FORMAT_BC;
+        }
+        if features.contains(wgpu::Features::TEXTURE_COMPRESSION_ETC2) {
+            gpu_feature_mask |= COMPRESSED_IMAGE_FORMAT_ETC2;
+        }
+        // Runtime decoder path supports KTX2 direct-upload formats required by
+        // current Bevy parity assets (ASTC/BC/ETC2 + non-compressed formats).
+        let runtime_decoder_mask = COMPRESSED_IMAGE_FORMAT_ASTC_LDR
+            | COMPRESSED_IMAGE_FORMAT_BC
+            | COMPRESSED_IMAGE_FORMAT_ETC2;
+        gpu_feature_mask & runtime_decoder_mask
     }
 
     pub fn write_texture_region_rgba8(
@@ -1988,7 +2434,7 @@ impl GpuBackend {
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: wgpu::TextureFormat::Rgba8Unorm,
-                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                        blend: None,
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
                 }),
@@ -2581,6 +3027,351 @@ impl GpuBackend {
         Ok(())
     }
 
+    fn ensure_mesh3d_motion_vector_pipeline(&mut self) -> anyhow::Result<()> {
+        self.ensure_sprite_resources()?;
+        if self.mesh.motion_vector_pipeline_layout.is_none() {
+            let bgl = self
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("mgstudio_motion_vector_uniform_bgl"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
+            let pl = self
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("mgstudio_motion_vector_pl"),
+                    bind_group_layouts: &[&bgl],
+                    immediate_size: 0,
+                });
+            self.mesh.motion_vector_bgl_uniform = Some(bgl);
+            self.mesh.motion_vector_pipeline_layout = Some(pl);
+        }
+        if self.mesh.motion_vector_uniform_buf.is_none()
+            || self.mesh.motion_vector_uniform_bg.is_none()
+        {
+            let bgl = self
+                .mesh
+                .motion_vector_bgl_uniform
+                .as_ref()
+                .ok_or_else(|| anyhow!("wgpu: motion-vector uniform layout missing"))?;
+            let uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("mgstudio_motion_vector_uniform_buf"),
+                size: 256,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let uniform_bg =
+                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("mgstudio_motion_vector_uniform_bg"),
+                    layout: bgl,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: &uniform_buf,
+                            offset: 0,
+                            size: Some(std::num::NonZeroU64::new(256).ok_or_else(|| {
+                                anyhow!("wgpu: invalid motion-vector uniform size")
+                            })?),
+                        }),
+                    }],
+                });
+            self.mesh.motion_vector_uniform_buf = Some(uniform_buf);
+            self.mesh.motion_vector_uniform_bg = Some(uniform_bg);
+        }
+        if self.mesh.motion_vector_pipeline.is_some() {
+            return Ok(());
+        }
+        let pl = self
+            .mesh
+            .motion_vector_pipeline_layout
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: motion-vector pipeline layout missing"))?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/3d/motion_vector.wgsl")?;
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_motion_vector_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let vb_layout = wgpu::VertexBufferLayout {
+            array_stride: 36,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute {
+                    offset: 12,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: 20,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x4,
+                },
+            ],
+        };
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_motion_vector_rgba8"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[vb_layout],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fs_main"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: wgpu::TextureFormat::Depth24Plus,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::LessEqual,
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
+                }),
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        self.mesh.motion_vector_pipeline = Some(pipeline);
+        Ok(())
+    }
+
+    fn ensure_motion_blur_pipeline_rgba8(&mut self) -> anyhow::Result<()> {
+        self.ensure_sprite_resources()?;
+        if self.mesh.motion_blur_pipeline_layout.is_none() {
+            let bgl =
+                self.device
+                    .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                        label: Some("mgstudio_motion_blur_bgl"),
+                        entries: &[
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 0,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Texture {
+                                    sample_type: wgpu::TextureSampleType::Float {
+                                        filterable: true,
+                                    },
+                                    view_dimension: wgpu::TextureViewDimension::D2,
+                                    multisampled: false,
+                                },
+                                count: None,
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 1,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Texture {
+                                    sample_type: wgpu::TextureSampleType::Float {
+                                        filterable: true,
+                                    },
+                                    view_dimension: wgpu::TextureViewDimension::D2,
+                                    multisampled: false,
+                                },
+                                count: None,
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 2,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Texture {
+                                    sample_type: wgpu::TextureSampleType::Depth,
+                                    view_dimension: wgpu::TextureViewDimension::D2,
+                                    multisampled: false,
+                                },
+                                count: None,
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 3,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Sampler(
+                                    wgpu::SamplerBindingType::Filtering,
+                                ),
+                                count: None,
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 4,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Buffer {
+                                    ty: wgpu::BufferBindingType::Uniform,
+                                    has_dynamic_offset: false,
+                                    min_binding_size: None,
+                                },
+                                count: None,
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 5,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Buffer {
+                                    ty: wgpu::BufferBindingType::Uniform,
+                                    has_dynamic_offset: false,
+                                    min_binding_size: None,
+                                },
+                                count: None,
+                            },
+                        ],
+                    });
+            let pl = self
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("mgstudio_motion_blur_pl"),
+                    bind_group_layouts: &[&bgl],
+                    immediate_size: 0,
+                });
+            self.mesh.motion_blur_bgl = Some(bgl);
+            self.mesh.motion_blur_pipeline_layout = Some(pl);
+        }
+        if self.mesh.motion_blur_settings_buf.is_none() {
+            let settings_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("mgstudio_motion_blur_settings_buf"),
+                size: 16,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            self.mesh.motion_blur_settings_buf = Some(settings_buf);
+        }
+        if self.mesh.motion_blur_globals_buf.is_none() {
+            let globals_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("mgstudio_motion_blur_globals_buf"),
+                size: 16,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            self.mesh.motion_blur_globals_buf = Some(globals_buf);
+        }
+        if self.mesh.motion_blur_pipeline_rgba8.is_some() {
+            return Ok(());
+        }
+        let pl = self
+            .mesh
+            .motion_blur_pipeline_layout
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: motion-blur pipeline layout missing"))?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/3d/motion_blur.wgsl")?;
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_motion_blur_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_motion_blur_rgba8"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("fullscreen_vertex_shader"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fragment"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        self.mesh.motion_blur_pipeline_rgba8 = Some(pipeline);
+        Ok(())
+    }
+
+    fn ensure_motion_blur_pipeline_for_format(
+        &mut self,
+        format: wgpu::TextureFormat,
+    ) -> anyhow::Result<()> {
+        self.ensure_motion_blur_pipeline_rgba8()?;
+        if format == wgpu::TextureFormat::Rgba8Unorm {
+            return Ok(());
+        }
+        if self.mesh.motion_blur_pipeline_surface_format == Some(format)
+            && self.mesh.motion_blur_pipeline_surface.is_some()
+        {
+            return Ok(());
+        }
+        let pl = self
+            .mesh
+            .motion_blur_pipeline_layout
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: motion-blur pipeline layout missing"))?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/3d/motion_blur.wgsl")?;
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_motion_blur_wgsl_surface"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_motion_blur_surface"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("fullscreen_vertex_shader"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fragment"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        self.mesh.motion_blur_pipeline_surface = Some(pipeline);
+        self.mesh.motion_blur_pipeline_surface_format = Some(format);
+        Ok(())
+    }
+
     fn prepare_mesh_uniforms(&mut self, pass: &mut GpuPassRecorder) -> anyhow::Result<()> {
         // Assign dynamic offsets for each mesh draw (alignment is backend-limited).
         let align = self
@@ -2766,9 +3557,129 @@ fn load_wgsl_required(assets_base: &str, rel: &str) -> anyhow::Result<String> {
             "wgpu: assets_base is empty; cannot load shader: {rel}"
         ));
     }
-    let full = std::path::Path::new(base).join(rel.trim_start_matches('/'));
-    std::fs::read_to_string(&full)
-        .with_context(|| format!("wgpu: failed to read shader: {}", full.display()))
+    let mut visited = HashSet::<String>::new();
+    let defines = HashSet::<String>::new();
+    load_wgsl_preprocessed(base, rel, &defines, &mut visited)
+}
+
+fn load_wgsl_preprocessed(
+    assets_base: &str,
+    rel: &str,
+    defines: &HashSet<String>,
+    visited: &mut HashSet<String>,
+) -> anyhow::Result<String> {
+    let normalized_rel = rel.trim_start_matches('/').to_string();
+    if !visited.insert(normalized_rel.clone()) {
+        return Ok(String::new());
+    }
+    let full = std::path::Path::new(assets_base).join(&normalized_rel);
+    let source = std::fs::read_to_string(&full)
+        .with_context(|| format!("wgpu: failed to read shader: {}", full.display()))?;
+    preprocess_wgsl_source(assets_base, &source, defines, visited)
+}
+
+fn preprocess_wgsl_source(
+    assets_base: &str,
+    source: &str,
+    defines: &HashSet<String>,
+    visited: &mut HashSet<String>,
+) -> anyhow::Result<String> {
+    let mut imported = String::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("#define_import_path") {
+            continue;
+        }
+        if let Some(spec) = trimmed.strip_prefix("#import ") {
+            let module_path = parse_wgsl_import_module_path(spec);
+            if module_path.is_empty() {
+                continue;
+            }
+            let module_rel = format!("shaders/bevy/{}.wgsl", module_path.replace("::", "/"));
+            let module_source = load_wgsl_preprocessed(assets_base, &module_rel, defines, visited)?;
+            if !module_source.is_empty() {
+                imported.push_str(&module_source);
+                if !module_source.ends_with('\n') {
+                    imported.push('\n');
+                }
+            }
+            continue;
+        }
+        imported.push_str(line);
+        imported.push('\n');
+    }
+    Ok(apply_wgsl_ifdefs(&imported, defines))
+}
+
+fn parse_wgsl_import_module_path(spec: &str) -> String {
+    let mut path = spec.trim();
+    if let Some(idx) = path.find(" as ") {
+        path = &path[..idx];
+    }
+    if let Some(idx) = path.find("::{") {
+        path = &path[..idx];
+    }
+    let mut module = path.trim().trim_end_matches(';');
+    if let Some(last) = module.rsplit("::").next() {
+        let first = last.chars().next().unwrap_or('_');
+        if first.is_ascii_uppercase() {
+            if let Some(idx) = module.rfind("::") {
+                module = &module[..idx];
+            }
+        }
+    }
+    module.to_string()
+}
+
+fn apply_wgsl_ifdefs(source: &str, defines: &HashSet<String>) -> String {
+    let mut out = String::new();
+    let mut active_stack = vec![true];
+    let mut cond_stack: Vec<bool> = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(name) = trimmed.strip_prefix("#ifdef ") {
+            let enabled = defines.contains(name.trim());
+            let parent = *active_stack.last().unwrap_or(&true);
+            active_stack.push(parent && enabled);
+            cond_stack.push(enabled);
+            continue;
+        }
+        if let Some(name) = trimmed.strip_prefix("#ifndef ") {
+            let enabled = !defines.contains(name.trim());
+            let parent = *active_stack.last().unwrap_or(&true);
+            active_stack.push(parent && enabled);
+            cond_stack.push(enabled);
+            continue;
+        }
+        if trimmed == "#else" {
+            if let Some(cur) = cond_stack.last_mut() {
+                *cur = !*cur;
+                let parent = if active_stack.len() >= 2 {
+                    active_stack[active_stack.len() - 2]
+                } else {
+                    true
+                };
+                if let Some(active) = active_stack.last_mut() {
+                    *active = parent && *cur;
+                }
+            }
+            continue;
+        }
+        if trimmed == "#endif" {
+            if active_stack.len() > 1 {
+                active_stack.pop();
+            }
+            if !cond_stack.is_empty() {
+                cond_stack.pop();
+            }
+            continue;
+        }
+        if *active_stack.last().unwrap_or(&true) {
+            out.push_str(line);
+            out.push('\n');
+        }
+    }
+    out
 }
 
 fn align_up(v: u64, align: u64) -> u64 {
@@ -2776,6 +3687,74 @@ fn align_up(v: u64, align: u64) -> u64 {
         return v;
     }
     ((v + align - 1) / align) * align
+}
+
+#[derive(Clone, Copy)]
+struct TextureBlockInfo {
+    block_width: u32,
+    block_height: u32,
+    block_bytes: u32,
+}
+
+impl TextureBlockInfo {
+    fn layout(self, width: u32, height: u32) -> anyhow::Result<(u32, u32, usize)> {
+        let width = width.max(1);
+        let height = height.max(1);
+        let blocks_w = width.div_ceil(self.block_width).max(1);
+        let blocks_h = height.div_ceil(self.block_height).max(1);
+        let bytes_per_row = blocks_w
+            .checked_mul(self.block_bytes)
+            .ok_or_else(|| anyhow!("wgpu: bytes_per_row overflow"))?;
+        let total_bytes_u64 = u64::from(bytes_per_row) * u64::from(blocks_h);
+        let total_bytes = usize::try_from(total_bytes_u64)
+            .context("wgpu: texture upload size exceeds host usize")?;
+        Ok((bytes_per_row, blocks_h, total_bytes))
+    }
+}
+
+fn texture_block_info(format: wgpu::TextureFormat) -> Option<TextureBlockInfo> {
+    match format {
+        wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Rgba8UnormSrgb => {
+            Some(TextureBlockInfo {
+                block_width: 1,
+                block_height: 1,
+                block_bytes: 4,
+            })
+        }
+        wgpu::TextureFormat::Rgb9e5Ufloat => Some(TextureBlockInfo {
+            block_width: 1,
+            block_height: 1,
+            block_bytes: 4,
+        }),
+        wgpu::TextureFormat::Rgba16Float => Some(TextureBlockInfo {
+            block_width: 1,
+            block_height: 1,
+            block_bytes: 8,
+        }),
+        wgpu::TextureFormat::Bc7RgbaUnorm | wgpu::TextureFormat::Bc7RgbaUnormSrgb => {
+            Some(TextureBlockInfo {
+                block_width: 4,
+                block_height: 4,
+                block_bytes: 16,
+            })
+        }
+        wgpu::TextureFormat::Etc2Rgba8Unorm | wgpu::TextureFormat::Etc2Rgba8UnormSrgb => {
+            Some(TextureBlockInfo {
+                block_width: 4,
+                block_height: 4,
+                block_bytes: 16,
+            })
+        }
+        wgpu::TextureFormat::Astc {
+            block: wgpu::AstcBlock::B4x4,
+            channel: wgpu::AstcChannel::Unorm | wgpu::AstcChannel::UnormSrgb,
+        } => Some(TextureBlockInfo {
+            block_width: 4,
+            block_height: 4,
+            block_bytes: 16,
+        }),
+        _ => None,
+    }
 }
 
 fn quat_to_z_rotation(x: f32, y: f32, z: f32, w: f32) -> f32 {
@@ -2786,6 +3765,9 @@ fn quat_to_z_rotation(x: f32, y: f32, z: f32, w: f32) -> f32 {
 
 fn mesh_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     if draw.is_3d {
+        if pass.pass_kind == 1 {
+            return mesh3d_motion_vector_uniform_bytes(pass, draw);
+        }
         return mesh3d_uniform_bytes(pass, draw);
     }
     mesh2d_uniform_bytes(pass, draw)
@@ -2932,6 +3914,65 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
         draw.anisotropy_rotation_cos,
         draw.anisotropy_rotation_sin,
         draw.anisotropy_map_flag,
+    ];
+    bytemuck::cast_slice(&floats).to_vec()
+}
+
+fn mesh3d_motion_vector_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
+    let aspect_ratio = if pass.height_logical > 0.0 {
+        pass.width_logical / pass.height_logical
+    } else {
+        1.0
+    };
+    let floats: [f32; 48] = [
+        draw.x,
+        draw.y,
+        draw.z,
+        1.0,
+        draw.rotation_quat[0],
+        draw.rotation_quat[1],
+        draw.rotation_quat[2],
+        draw.rotation_quat[3],
+        draw.scale_x,
+        draw.scale_y,
+        draw.scale_z,
+        1.0,
+        draw.previous_x,
+        draw.previous_y,
+        draw.previous_z,
+        1.0,
+        draw.previous_rotation_quat[0],
+        draw.previous_rotation_quat[1],
+        draw.previous_rotation_quat[2],
+        draw.previous_rotation_quat[3],
+        draw.previous_scale_x,
+        draw.previous_scale_y,
+        draw.previous_scale_z,
+        1.0,
+        pass.camera_x,
+        pass.camera_y,
+        pass.camera_z,
+        1.0,
+        pass.camera_rot_quat[0],
+        pass.camera_rot_quat[1],
+        pass.camera_rot_quat[2],
+        pass.camera_rot_quat[3],
+        pass.previous_camera[0],
+        pass.previous_camera[1],
+        pass.previous_camera[2],
+        1.0,
+        pass.previous_camera_rot_quat[0],
+        pass.previous_camera_rot_quat[1],
+        pass.previous_camera_rot_quat[2],
+        pass.previous_camera_rot_quat[3],
+        pass.camera_fov_y,
+        aspect_ratio,
+        pass.camera_near,
+        pass.camera_far,
+        pass.sub_camera_view[0],
+        pass.sub_camera_view[1],
+        pass.sub_camera_view[2],
+        pass.sub_camera_view[3],
     ];
     bytemuck::cast_slice(&floats).to_vec()
 }

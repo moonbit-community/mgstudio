@@ -79,6 +79,13 @@ pub fn HostContext::new(
     Some(data_source_spec),
     ".",
   )
+  // Default to mock gamepad backend to avoid platform-specific native backend
+  // crashes (notably macOS CoreFoundation/IOKit watcher initialization).
+  // Set MGSTUDIO_NATIVE_ENABLE_GAMEPAD=1 to opt back into native gamepad.
+  let gamepad = match @sys.get_env_var("MGSTUDIO_NATIVE_ENABLE_GAMEPAD") {
+    Some(v) if v.trim() != "" => @gamepad.Gilrs::new()
+    _ => @gamepad.Gilrs::new_mock(0, update_state=false, default_filters=false)
+  }
   ensure_dir_all(data_source.base)
   HostContext::{
     store: None,
@@ -87,7 +94,7 @@ pub fn HostContext::new(
     jit_globals_ptr: 0L,
     gpu: None,
     window: None,
-    gamepad: Ref::new(@gamepad.Gilrs::new()),
+    gamepad: Ref::new(gamepad),
     assets_source,
     data_source,
     string_sink: Ref::new([]),
@@ -601,6 +608,20 @@ fn load_texture_from_bytes(
   nearest : Bool,
 ) -> Int raise {
   ensure_gpu_backend(ctx)
+  if @img.is_ktx2(bytes) {
+    if @img.parse_ktx2_texture_for_stacked_upload(bytes) is Some(parsed) {
+      return ctx.gpu
+        .unwrap()
+        .create_texture_stacked_2d_with_format(
+          parsed.width,
+          parsed.height_per_slice,
+          parsed.slice_count,
+          parsed.format_raw,
+          parsed.levels,
+          nearest,
+        )
+    }
+  }
   let decoded = @img.decode_rgba8(bytes)
   match decoded {
     Some(img) => {
@@ -2916,8 +2937,56 @@ pub fn add_mgstudio_host_imports(
           } else {
             0.0F
           }
-          let clear_enabled = if args.length() > 57 &&
-            args[57] is @types.Value::I32(v) {
+          let previous_camera_x = if args.length() > 57 &&
+            args[57] is @types.Value::F32(v) {
+            v
+          } else {
+            camera_x
+          }
+          let previous_camera_y = if args.length() > 58 &&
+            args[58] is @types.Value::F32(v) {
+            v
+          } else {
+            camera_y
+          }
+          let previous_camera_z = if args.length() > 59 &&
+            args[59] is @types.Value::F32(v) {
+            v
+          } else {
+            camera_z
+          }
+          let previous_camera_rot_x = if args.length() > 60 &&
+            args[60] is @types.Value::F32(v) {
+            v
+          } else {
+            camera_rot_x
+          }
+          let previous_camera_rot_y = if args.length() > 61 &&
+            args[61] is @types.Value::F32(v) {
+            v
+          } else {
+            camera_rot_y
+          }
+          let previous_camera_rot_z = if args.length() > 62 &&
+            args[62] is @types.Value::F32(v) {
+            v
+          } else {
+            camera_rot_z
+          }
+          let previous_camera_rot_w = if args.length() > 63 &&
+            args[63] is @types.Value::F32(v) {
+            v
+          } else {
+            camera_rot_w
+          }
+          let pass_kind = if args.length() > 64 &&
+            args[64] is @types.Value::I32(v) {
+            v
+          } else {
+            0
+          }
+          let clear_enabled = if args.length() > 65 &&
+            args[65] is @types.Value::I32(v) {
             v
           } else {
             1
@@ -2936,7 +3005,9 @@ pub fn add_mgstudio_host_imports(
             spot_dir_z, spot_color_r, spot_color_g, spot_color_b, spot_intensity,
             spot_range, spot_inner_angle, spot_outer_angle, sub_camera_view_scale_x,
             sub_camera_view_scale_y, sub_camera_view_bias_x, sub_camera_view_bias_y,
-            clear_enabled,
+            previous_camera_x, previous_camera_y, previous_camera_z, previous_camera_rot_x,
+            previous_camera_rot_y, previous_camera_rot_z, previous_camera_rot_w,
+            pass_kind, clear_enabled,
           )
         }
         ok_i32(0)
@@ -3006,6 +3077,14 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
         @types.ValueType::I32,
       ],
       [@types.ValueType::I32],
@@ -3315,7 +3394,7 @@ pub fn add_mgstudio_host_imports(
         if ctx.gpu is None {
           ensure_gpu_backend(ctx)
         }
-        if args.length() >= 20 &&
+        if args.length() >= 48 &&
           args[0] is @types.Value::I32(mesh_id) &&
           args[1] is @types.Value::F32(x) &&
           args[2] is @types.Value::F32(y) &&
@@ -3327,118 +3406,128 @@ pub fn add_mgstudio_host_imports(
           args[8] is @types.Value::F32(scale_x) &&
           args[9] is @types.Value::F32(scale_y) &&
           args[10] is @types.Value::F32(scale_z) &&
-          args[11] is @types.Value::F32(color_r) &&
-          args[12] is @types.Value::F32(color_g) &&
-          args[13] is @types.Value::F32(color_b) &&
-          args[14] is @types.Value::F32(color_a) &&
-          args[15] is @types.Value::I32(texture_id) &&
-          args[16] is @types.Value::F32(uv_offset_x) &&
-          args[17] is @types.Value::F32(uv_offset_y) &&
-          args[18] is @types.Value::F32(uv_scale_x) &&
-          args[19] is @types.Value::F32(uv_scale_y) {
-          let normal_texture_id = if args.length() > 20 &&
-            args[20] is @types.Value::I32(v) {
+          args[11] is @types.Value::F32(previous_x) &&
+          args[12] is @types.Value::F32(previous_y) &&
+          args[13] is @types.Value::F32(previous_z) &&
+          args[14] is @types.Value::F32(previous_rotation_x) &&
+          args[15] is @types.Value::F32(previous_rotation_y) &&
+          args[16] is @types.Value::F32(previous_rotation_z) &&
+          args[17] is @types.Value::F32(previous_rotation_w) &&
+          args[18] is @types.Value::F32(previous_scale_x) &&
+          args[19] is @types.Value::F32(previous_scale_y) &&
+          args[20] is @types.Value::F32(previous_scale_z) &&
+          args[21] is @types.Value::F32(color_r) &&
+          args[22] is @types.Value::F32(color_g) &&
+          args[23] is @types.Value::F32(color_b) &&
+          args[24] is @types.Value::F32(color_a) &&
+          args[25] is @types.Value::I32(texture_id) &&
+          args[26] is @types.Value::F32(uv_offset_x) &&
+          args[27] is @types.Value::F32(uv_offset_y) &&
+          args[28] is @types.Value::F32(uv_scale_x) &&
+          args[29] is @types.Value::F32(uv_scale_y) {
+          let normal_texture_id = if args.length() > 30 &&
+            args[30] is @types.Value::I32(v) {
             v
           } else {
             -1
           }
-          let emissive_texture_id = if args.length() > 21 &&
-            args[21] is @types.Value::I32(v) {
+          let emissive_texture_id = if args.length() > 31 &&
+            args[31] is @types.Value::I32(v) {
             v
           } else {
             -1
           }
-          let metallic_roughness_texture_id = if args.length() > 22 &&
-            args[22] is @types.Value::I32(v) {
+          let metallic_roughness_texture_id = if args.length() > 32 &&
+            args[32] is @types.Value::I32(v) {
             v
           } else {
             -1
           }
-          let occlusion_texture_id = if args.length() > 23 &&
-            args[23] is @types.Value::I32(v) {
+          let occlusion_texture_id = if args.length() > 33 &&
+            args[33] is @types.Value::I32(v) {
             v
           } else {
             -1
           }
-          let depth_texture_id = if args.length() > 24 &&
-            args[24] is @types.Value::I32(v) {
+          let depth_texture_id = if args.length() > 34 &&
+            args[34] is @types.Value::I32(v) {
             v
           } else {
             -1
           }
-          let emissive_r = if args.length() > 25 &&
-            args[25] is @types.Value::F32(v) {
+          let emissive_r = if args.length() > 35 &&
+            args[35] is @types.Value::F32(v) {
             v
           } else {
             0.0F
           }
-          let emissive_g = if args.length() > 26 &&
-            args[26] is @types.Value::F32(v) {
-            v
-          } else {
-            0.0F
-          }
-          let emissive_b = if args.length() > 27 &&
-            args[27] is @types.Value::F32(v) {
-            v
-          } else {
-            0.0F
-          }
-          let unlit = if args.length() > 28 && args[28] is @types.Value::F32(v) {
-            v
-          } else {
-            0.0F
-          }
-          let metallic = if args.length() > 29 &&
-            args[29] is @types.Value::F32(v) {
-            v
-          } else {
-            0.0F
-          }
-          let roughness = if args.length() > 30 &&
-            args[30] is @types.Value::F32(v) {
-            v
-          } else {
-            0.5F
-          }
-          let reflectance = if args.length() > 31 &&
-            args[31] is @types.Value::F32(v) {
-            v
-          } else {
-            0.5F
-          }
-          let parallax_depth_scale = if args.length() > 32 &&
-            args[32] is @types.Value::F32(v) {
-            v
-          } else {
-            0.0F
-          }
-          let max_parallax_layer_count = if args.length() > 33 &&
-            args[33] is @types.Value::F32(v) {
-            v
-          } else {
-            0.0F
-          }
-          let max_relief_mapping_search_steps = if args.length() > 34 &&
-            args[34] is @types.Value::F32(v) {
-            v
-          } else {
-            0.0F
-          }
-          let anisotropy_texture_id = if args.length() > 35 &&
-            args[35] is @types.Value::I32(v) {
-            v
-          } else {
-            -1
-          }
-          let anisotropy_strength = if args.length() > 36 &&
+          let emissive_g = if args.length() > 36 &&
             args[36] is @types.Value::F32(v) {
             v
           } else {
             0.0F
           }
-          let anisotropy_rotation = if args.length() > 37 &&
+          let emissive_b = if args.length() > 37 &&
             args[37] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let unlit = if args.length() > 38 && args[38] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let metallic = if args.length() > 39 &&
+            args[39] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let roughness = if args.length() > 40 &&
+            args[40] is @types.Value::F32(v) {
+            v
+          } else {
+            0.5F
+          }
+          let reflectance = if args.length() > 41 &&
+            args[41] is @types.Value::F32(v) {
+            v
+          } else {
+            0.5F
+          }
+          let parallax_depth_scale = if args.length() > 42 &&
+            args[42] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let max_parallax_layer_count = if args.length() > 43 &&
+            args[43] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let max_relief_mapping_search_steps = if args.length() > 44 &&
+            args[44] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let anisotropy_texture_id = if args.length() > 45 &&
+            args[45] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let anisotropy_strength = if args.length() > 46 &&
+            args[46] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let anisotropy_rotation = if args.length() > 47 &&
+            args[47] is @types.Value::F32(v) {
             v
           } else {
             0.0F
@@ -3447,12 +3536,15 @@ pub fn add_mgstudio_host_imports(
           .unwrap()
           .draw_mesh3d(
             mesh_id, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
-            scale_y, scale_z, color_r, color_g, color_b, color_a, texture_id, uv_offset_x,
-            uv_offset_y, uv_scale_x, uv_scale_y, normal_texture_id, emissive_texture_id,
-            metallic_roughness_texture_id, occlusion_texture_id, depth_texture_id,
-            emissive_r, emissive_g, emissive_b, unlit, metallic, roughness, reflectance,
-            parallax_depth_scale, max_parallax_layer_count, max_relief_mapping_search_steps,
-            anisotropy_texture_id, anisotropy_strength, anisotropy_rotation,
+            scale_y, scale_z, previous_x, previous_y, previous_z, previous_rotation_x,
+            previous_rotation_y, previous_rotation_z, previous_rotation_w, previous_scale_x,
+            previous_scale_y, previous_scale_z, color_r, color_g, color_b, color_a,
+            texture_id, uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y, normal_texture_id,
+            emissive_texture_id, metallic_roughness_texture_id, occlusion_texture_id,
+            depth_texture_id, emissive_r, emissive_g, emissive_b, unlit, metallic,
+            roughness, reflectance, parallax_depth_scale, max_parallax_layer_count,
+            max_relief_mapping_search_steps, anisotropy_texture_id, anisotropy_strength,
+            anisotropy_rotation,
           )
         }
         ok_i32(0)
@@ -3480,21 +3572,6 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
-        @types.ValueType::I32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::I32,
-        @types.ValueType::I32,
-        @types.ValueType::I32,
-        @types.ValueType::I32,
-        @types.ValueType::I32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
-        @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
         @types.ValueType::F32,
@@ -3503,6 +3580,86 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "gpu_draw_motion_blur",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        host_trace("host: gpu_draw_motion_blur")
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        let scene_texture_id = if args.length() > 0 &&
+          args[0] is @types.Value::I32(v) {
+          v
+        } else {
+          -1
+        }
+        let velocity_texture_id = if args.length() > 1 &&
+          args[1] is @types.Value::I32(v) {
+          v
+        } else {
+          -1
+        }
+        let shutter_angle = if args.length() > 2 &&
+          args[2] is @types.Value::F32(v) {
+          v
+        } else {
+          0.0F
+        }
+        let samples = if args.length() > 3 && args[3] is @types.Value::I32(v) {
+          v
+        } else {
+          0
+        }
+        ctx.gpu
+        .unwrap()
+        .draw_motion_blur(
+          scene_texture_id, velocity_texture_id, shutter_angle, samples,
+        )
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_motion_blur failed")
+          host_fail("gpu_draw_motion_blur", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
       ],
       [@types.ValueType::I32],
     ),

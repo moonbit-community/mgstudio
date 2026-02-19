@@ -14,9 +14,6 @@
 
 ///|
 /// Port of `bevy/examples/3d/clearcoat.rs`.
-///
-/// Baseline parity: `Hdr`, `Skybox`, `EnvironmentMapLight`, and image load
-/// color-space settings are not exposed in current mgstudio APIs.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -28,21 +25,27 @@ const SPHERE_SCALE : Float = 0.9F
 const SPHERE_ROTATION_SPEED : Float = 0.8F
 
 ///|
+const LIGHT_MODE_POINT : Int = 0
+
+///|
+const LIGHT_MODE_DIRECTIONAL : Int = 1
+
+///|
 priv struct ClearcoatState {
   sphere_entities : Array[@core.Entity]
   sphere_positions : Array[@math.Vec3]
   mut light_mode : Int
-  mut point_light : @core.Entity?
-  mut directional_light : @core.Entity?
+  mut light : @core.Entity?
+  mut help_text : @text.TextHandle?
 }
 
 ///|
 let clearcoat_state : Ref[ClearcoatState] = Ref::new({
   sphere_entities: [],
   sphere_positions: [],
-  light_mode: 0,
-  point_light: None,
-  directional_light: None,
+  light_mode: LIGHT_MODE_POINT,
+  light: None,
+  help_text: None,
 })
 
 ///|
@@ -107,42 +110,47 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn apply_light_mode(world : @ecs_world.World) -> Unit {
-  let state = clearcoat_state.val
-  let tick = world.read_change_tick()
+fn create_point_light() -> @render3d.PointLight {
+  @render3d.PointLight::new(@render2d.Color::white(), 100_000.0F, 20.0F, false)
+}
 
-  if state.point_light is Some(entity) {
-    let intensity = if state.light_mode == 0 { 80_000.0F } else { 0.0F }
-    world
-    .get_point_light_store()
-    .set(
-      entity,
-      @render3d.PointLight::new(
-        @render2d.Color::white(),
-        intensity,
-        30.0F,
-        true,
-      ),
-      tick,
-    )
-    |> ignore
+///|
+fn create_directional_light() -> @render3d.DirectionalLight {
+  @render3d.DirectionalLight::new(@render2d.Color::white(), 1000.0F, false)
+}
+
+///|
+fn create_help_text() -> String {
+  if clearcoat_state.val.light_mode == LIGHT_MODE_POINT {
+    "Press Space to switch to a directional light"
+  } else {
+    "Press Space to switch to a point light"
   }
+}
 
-  if state.directional_light is Some(entity) {
-    let illuminance = if state.light_mode == 1 { 12_000.0F } else { 0.0F }
+///|
+fn update_help_text() -> Unit {
+  if clearcoat_state.val.help_text is Some(handle) {
+    @text.text_set_content(handle, create_help_text())
+  }
+}
+
+///|
+fn apply_light_mode(world : @ecs_world.World) -> Unit {
+  guard clearcoat_state.val.light is Some(light) else { return }
+  let tick = world.read_change_tick()
+  world.get_point_light_store().remove(light) |> ignore
+  world.get_directional_light_store().remove(light) |> ignore
+
+  if clearcoat_state.val.light_mode == LIGHT_MODE_POINT {
+    world.get_point_light_store().insert(light, create_point_light(), tick)
+  } else {
     world
     .get_directional_light_store()
-    .set(
-      entity,
-      @render3d.DirectionalLight::new(
-        @render2d.Color::white(),
-        illuminance,
-        true,
-      ),
-      tick,
-    )
-    |> ignore
+    .insert(light, create_directional_light(), tick)
   }
+
+  update_help_text()
 }
 
 ///|
@@ -168,9 +176,9 @@ fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   clearcoat_state.val.sphere_entities.clear()
   clearcoat_state.val.sphere_positions.clear()
-  clearcoat_state.val.light_mode = 0
-  clearcoat_state.val.point_light = None
-  clearcoat_state.val.directional_light = None
+  clearcoat_state.val.light_mode = LIGHT_MODE_POINT
+  clearcoat_state.val.light = None
+  clearcoat_state.val.help_text = None
 
   let asset_server = @asset.AssetServer::new()
   let sphere = uv_sphere_mesh(1.0F, 24, 48)
@@ -180,7 +188,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let car_paint = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.12F, 0.32F, 0.9F, 1.0F),
+      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.1F)
@@ -246,42 +254,76 @@ fn setup(world : @ecs_world.World) -> Unit {
   clearcoat_state.val.sphere_entities.push(golf_ball_root)
   clearcoat_state.val.sphere_positions.push(@math.Vec3::new(1.0F, 1.0F, 0.0F))
 
-  let point_light = world.spawn_empty()
+  let light = world.spawn_empty()
   world
   .get_transform_store()
   .insert(
-    point_light,
-    @math.Transform::from_xyz(3.0F, 4.0F, 3.0F).looking_at(
+    light,
+    @math.Transform::from_xyz(0.0F, 4.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
     tick,
   )
-  clearcoat_state.val.point_light = Some(point_light)
-
-  let directional_light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
-    directional_light,
-    @math.Transform::from_xyz(3.0F, 4.0F, 3.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
-  )
-  clearcoat_state.val.directional_light = Some(directional_light)
+  clearcoat_state.val.light = Some(light)
 
   apply_light_mode(world)
 
-  @render3d.Camera3dBundle::new(
+  let camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @render3d.Projection3d::Perspective(
+      @render3d.PerspectiveProjection3d::default().with_fov(27.0F * PI / 180.0F),
     ),
+    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
-  |> ignore
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_tonemapping_store()
+  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  world
+  .get_skybox_store()
+  .insert(
+    camera,
+    @render3d.Skybox::new(
+      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+      5000.0F,
+    ),
+    tick,
+  )
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      2000.0F,
+    ),
+    tick,
+  )
+
+  let help_text = @text.Text2dBundle::new(
+      @text.Text2d::new(""),
+      @text.TextFont::default()
+      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
+      .with_font_size(16.0F),
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-390.0F, -320.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=50.0F,
+      ),
+    )
+    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_color(
+      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    )
+    .with_shadow(Some(@text.Text2dShadow::default()))
+    .spawn()
+  clearcoat_state.val.help_text = Some(help_text)
+  update_help_text()
 }
 
 ///|
@@ -296,20 +338,7 @@ fn animate_light(world : @ecs_world.World) -> Unit {
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   let tick = world.read_change_tick()
 
-  if clearcoat_state.val.point_light is Some(entity) {
-    world
-    .get_transform_store()
-    .set(
-      entity,
-      @math.Transform::from_xyz(light_pos.x, light_pos.y, light_pos.z).looking_at(
-        target, up,
-      ),
-      tick,
-    )
-    |> ignore
-  }
-
-  if clearcoat_state.val.directional_light is Some(entity) {
+  if clearcoat_state.val.light is Some(entity) {
     world
     .get_transform_store()
     .set(
@@ -350,10 +379,10 @@ fn handle_input(world : @ecs_world.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
-  if clearcoat_state.val.light_mode == 0 {
-    clearcoat_state.val.light_mode = 1
+  if clearcoat_state.val.light_mode == LIGHT_MODE_POINT {
+    clearcoat_state.val.light_mode = LIGHT_MODE_DIRECTIONAL
   } else {
-    clearcoat_state.val.light_mode = 0
+    clearcoat_state.val.light_mode = LIGHT_MODE_POINT
   }
   apply_light_mode(world)
 }

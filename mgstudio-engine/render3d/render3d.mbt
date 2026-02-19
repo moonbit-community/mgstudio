@@ -2928,6 +2928,7 @@ priv struct Camera3dInstance {
   environment_map_light : EnvironmentMapLight?
   generated_environment_map_light : GeneratedEnvironmentMapLight?
   transform : @math.Transform
+  previous_transform : @math.Transform
   target_id : Int
   target_size : @math.IVec2
   scale_factor : Float
@@ -2952,7 +2953,7 @@ priv struct Mesh3dInstance {
   entity : @core.Entity
   mesh_id : Int
   transform : @math.Transform
-  motion_speed : Float
+  previous_transform : @math.Transform
   visibility_range : @visibility.VisibilityRange?
   aabb_center_world : @math.Vec3?
   material : StandardMaterial
@@ -2989,11 +2990,33 @@ priv struct Render3dLightingState {
 ///|
 priv struct MotionBlurHistoryEntry {
   entity : @core.Entity
-  translation : @math.Vec3
+  transform : @math.Transform
+}
+
+///|
+priv struct CameraMotionBlurHistoryEntry {
+  entity : @core.Entity
+  transform : @math.Transform
+}
+
+///|
+priv struct MotionBlurTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  scene_target_id : Int
+  velocity_target_id : Int
 }
 
 ///|
 let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
+
+///|
+let camera_motion_blur_history : Ref[Array[CameraMotionBlurHistoryEntry]] = Ref::new([],
+)
+
+///|
+let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
 
 ///|
 fn cmp_int(a : Int, b : Int) -> Int {
@@ -3131,11 +3154,11 @@ fn render3d_default_lighting_state() -> Render3dLightingState {
 }
 
 ///|
-fn motion_blur_history_get(entity : @core.Entity) -> @math.Vec3? {
+fn motion_blur_history_get(entity : @core.Entity) -> @math.Transform? {
   for item in motion_blur_history.val {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
-      return Some(item.translation)
+      return Some(item.transform)
     }
   }
   None
@@ -3145,9 +3168,85 @@ fn motion_blur_history_get(entity : @core.Entity) -> @math.Vec3? {
 fn motion_blur_history_sync(meshes : Array[Mesh3dInstance]) -> Unit {
   let next : Array[MotionBlurHistoryEntry] = []
   for mesh in meshes {
-    next.push({ entity: mesh.entity, translation: mesh.transform.translation })
+    next.push({ entity: mesh.entity, transform: mesh.transform })
   }
   motion_blur_history.val = next
+}
+
+///|
+fn camera_motion_blur_history_get(entity : @core.Entity) -> @math.Transform? {
+  for item in camera_motion_blur_history.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      return Some(item.transform)
+    }
+  }
+  None
+}
+
+///|
+fn camera_motion_blur_history_sync(cameras : Array[Camera3dInstance]) -> Unit {
+  let next : Array[CameraMotionBlurHistoryEntry] = []
+  for camera in cameras {
+    next.push({ entity: camera.entity, transform: camera.transform })
+  }
+  camera_motion_blur_history.val = next
+}
+
+///|
+fn render3d_motion_blur_targets_get_or_create(
+  entity : @core.Entity,
+  width : Int,
+  height : Int,
+) -> (Int, Int) {
+  for item in motion_blur_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.width == width &&
+      item.height == height {
+      return (item.scene_target_id, item.velocity_target_id)
+    }
+  }
+  let scene_target_id = @window.host_gpu_create_render_target(
+    width~,
+    height~,
+    nearest=false,
+  )
+  let velocity_target_id = @window.host_gpu_create_render_target(
+    width~,
+    height~,
+    nearest=false,
+  )
+  let next : Array[MotionBlurTargetsEntry] = []
+  let mut replaced = false
+  for item in motion_blur_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({
+          entity,
+          width,
+          height,
+          scene_target_id,
+          velocity_target_id,
+        })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({
+      entity,
+      width,
+      height,
+      scene_target_id,
+      velocity_target_id,
+    })
+  }
+  motion_blur_targets.val = next
+  (scene_target_id, velocity_target_id)
 }
 
 ///|
@@ -3293,6 +3392,16 @@ fn render3d_draw_camera_skybox(
     scale_x=skybox_extent,
     scale_y=skybox_extent,
     scale_z=skybox_extent,
+    previous_x=camera.previous_transform.translation.x,
+    previous_y=camera.previous_transform.translation.y,
+    previous_z=camera.previous_transform.translation.z,
+    previous_rotation_x=camera.previous_transform.rotation.x,
+    previous_rotation_y=camera.previous_transform.rotation.y,
+    previous_rotation_z=camera.previous_transform.rotation.z,
+    previous_rotation_w=camera.previous_transform.rotation.w,
+    previous_scale_x=camera.previous_transform.scale.x,
+    previous_scale_y=camera.previous_transform.scale.y,
+    previous_scale_z=camera.previous_transform.scale.z,
     color_r=brightness,
     color_g=brightness,
     color_b=brightness,
@@ -3710,22 +3819,6 @@ fn render3d_vignette_mask(
 }
 
 ///|
-fn render3d_motion_blur_amount(
-  motion_blur : MotionBlur,
-  motion_speed : Float,
-) -> Float {
-  if motion_speed <= 0.0F {
-    return 0.0F
-  }
-  let sample_factor = clamp01(
-    Float::from_double(motion_blur.samples.to_double()) / 64.0F,
-  )
-  let speed_factor = clamp01(motion_speed * 2.5F)
-  clamp01(
-    motion_blur.shutter_angle * (0.35F + sample_factor * 0.65F) * speed_factor,
-  )
-}
-
 ///|
 fn render3d_ssr_ramp(value : Float, start : Float, end_ : Float) -> Float {
   let safe_start = minf(start, end_)
@@ -4273,6 +4366,79 @@ pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
 }
 
 ///|
+fn render3d_draw_mesh_instance(
+  mesh : Mesh3dInstance,
+  transform : @math.Transform,
+  previous_transform : @math.Transform,
+  draw_color_r : Float,
+  draw_color_g : Float,
+  draw_color_b : Float,
+  draw_alpha : Float,
+  texture_id : Int,
+  normal_texture_id : Int,
+  emissive_texture_id : Int,
+  metallic_roughness_texture_id : Int,
+  occlusion_texture_id : Int,
+  depth_texture_id : Int,
+  anisotropy_texture_id : Int,
+  draw_surface_roughness : Float,
+  draw_reflectance : Float,
+  anisotropy_strength : Float,
+  max_relief_mapping_search_steps : Float,
+) -> Unit {
+  @window.host_gpu_draw_mesh3d(
+    mesh_id=mesh.mesh_id,
+    x=transform.translation.x,
+    y=transform.translation.y,
+    z=transform.translation.z,
+    rotation_x=transform.rotation.x,
+    rotation_y=transform.rotation.y,
+    rotation_z=transform.rotation.z,
+    rotation_w=transform.rotation.w,
+    scale_x=transform.scale.x,
+    scale_y=transform.scale.y,
+    scale_z=transform.scale.z,
+    previous_x=previous_transform.translation.x,
+    previous_y=previous_transform.translation.y,
+    previous_z=previous_transform.translation.z,
+    previous_rotation_x=previous_transform.rotation.x,
+    previous_rotation_y=previous_transform.rotation.y,
+    previous_rotation_z=previous_transform.rotation.z,
+    previous_rotation_w=previous_transform.rotation.w,
+    previous_scale_x=previous_transform.scale.x,
+    previous_scale_y=previous_transform.scale.y,
+    previous_scale_z=previous_transform.scale.z,
+    color_r=draw_color_r,
+    color_g=draw_color_g,
+    color_b=draw_color_b,
+    color_a=draw_alpha,
+    texture_id~,
+    uv_offset_x=mesh.material.uv_offset.x,
+    uv_offset_y=mesh.material.uv_offset.y,
+    uv_scale_x=mesh.material.uv_scale.x,
+    uv_scale_y=mesh.material.uv_scale.y,
+    normal_texture_id~,
+    emissive_texture_id~,
+    metallic_roughness_texture_id~,
+    occlusion_texture_id~,
+    depth_texture_id~,
+    emissive_r=mesh.material.emissive.r,
+    emissive_g=mesh.material.emissive.g,
+    emissive_b=mesh.material.emissive.b,
+    unlit=if mesh.material.unlit { 1.0F } else { 0.0F },
+    metallic=mesh.material.metallic,
+    roughness=draw_surface_roughness,
+    reflectance=draw_reflectance,
+    parallax_depth_scale=mesh.material.parallax_depth_scale,
+    max_parallax_layer_count=mesh.material.max_parallax_layer_count,
+    max_relief_mapping_search_steps~,
+    anisotropy_texture_id~,
+    anisotropy_strength~,
+    anisotropy_rotation=mesh.material.anisotropy_rotation,
+  )
+}
+
+///|
 pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
@@ -4328,6 +4494,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       Some(v) => v
       None => @math.Transform::identity()
     }
+    let previous_transform = match camera_motion_blur_history_get(entity) {
+      Some(v) => v
+      None => transform
+    }
     match render3d_target_info(target) {
       Some(target_info) => {
         let mut camera_clamped = camera
@@ -4351,6 +4521,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           environment_map_light,
           generated_environment_map_light,
           transform,
+          previous_transform,
           target_id: target_info.target_id,
           target_size: target_info.target_size,
           scale_factor: target_info.scale_factor,
@@ -4385,11 +4556,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       Some(v) => v
       None => @math.Transform::identity()
     }
-    let previous_translation = match motion_blur_history_get(entity) {
+    let previous_transform = match motion_blur_history_get(entity) {
       Some(v) => v
-      None => transform.translation
+      None => transform
     }
-    let motion_speed = transform.translation.sub(previous_translation).length()
     let visibility_range = visibility_range_store.get(entity)
     let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
       match render3d_mesh_local_aabb_center(mesh3d) {
@@ -4404,7 +4574,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       entity,
       mesh_id: gpu_mesh.mesh_id,
       transform,
-      motion_speed,
+      previous_transform,
       visibility_range,
       aabb_center_world,
       material,
@@ -4426,6 +4596,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     })
   })
   motion_blur_history_sync(meshes)
+  camera_motion_blur_history_sync(cameras)
   let lighting = render3d_collect_lighting(world)
   for camera_index in render3d_sorted_camera_indices(cameras) {
     let camera = cameras[camera_index]
@@ -4497,8 +4668,131 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       }
     }
     let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
+    let motion_blur_active = if camera.motion_blur is Some(motion_blur) {
+      motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F
+    } else {
+      false
+    }
+    let mut scene_target_id = camera.target_id
+    let mut velocity_target_id = -1
+    if motion_blur_active {
+      let (scene_id, velocity_id) = render3d_motion_blur_targets_get_or_create(
+        camera.entity,
+        view_width,
+        view_height,
+      )
+      scene_target_id = scene_id
+      velocity_target_id = velocity_id
+      @window.host_gpu_begin_pass_3d(
+        target_id=velocity_target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=0.5F,
+        clear_g=0.5F,
+        clear_b=0.0F,
+        clear_a=1.0F,
+        camera_x=camera.transform.translation.x,
+        camera_y=camera.transform.translation.y,
+        camera_z=camera.transform.translation.z,
+        camera_rot_x=camera.transform.rotation.x,
+        camera_rot_y=camera.transform.rotation.y,
+        camera_rot_z=camera.transform.rotation.z,
+        camera_rot_w=camera.transform.rotation.w,
+        camera_fov_y~,
+        camera_near~,
+        camera_far~,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        ambient_r=pass_lighting.ambient_color.r,
+        ambient_g=pass_lighting.ambient_color.g,
+        ambient_b=pass_lighting.ambient_color.b,
+        ambient_brightness=pass_lighting.ambient_brightness,
+        directional_dir_x=pass_lighting.directional_dir.x,
+        directional_dir_y=pass_lighting.directional_dir.y,
+        directional_dir_z=pass_lighting.directional_dir.z,
+        directional_color_r=pass_lighting.directional_color.r,
+        directional_color_g=pass_lighting.directional_color.g,
+        directional_color_b=pass_lighting.directional_color.b,
+        directional_illuminance=pass_lighting.directional_illuminance,
+        point_pos_x=pass_lighting.point_pos.x,
+        point_pos_y=pass_lighting.point_pos.y,
+        point_pos_z=pass_lighting.point_pos.z,
+        point_color_r=pass_lighting.point_color.r,
+        point_color_g=pass_lighting.point_color.g,
+        point_color_b=pass_lighting.point_color.b,
+        point_intensity=pass_lighting.point_intensity,
+        point_range=pass_lighting.point_range,
+        spot_pos_x=pass_lighting.spot_pos.x,
+        spot_pos_y=pass_lighting.spot_pos.y,
+        spot_pos_z=pass_lighting.spot_pos.z,
+        spot_dir_x=pass_lighting.spot_dir.x,
+        spot_dir_y=pass_lighting.spot_dir.y,
+        spot_dir_z=pass_lighting.spot_dir.z,
+        spot_color_r=pass_lighting.spot_color.r,
+        spot_color_g=pass_lighting.spot_color.g,
+        spot_color_b=pass_lighting.spot_color.b,
+        spot_intensity=pass_lighting.spot_intensity,
+        spot_range=pass_lighting.spot_range,
+        spot_inner_angle=pass_lighting.spot_inner_angle,
+        spot_outer_angle=pass_lighting.spot_outer_angle,
+        sub_camera_view_scale_x~,
+        sub_camera_view_scale_y~,
+        sub_camera_view_bias_x~,
+        sub_camera_view_bias_y~,
+        previous_camera_x=camera.previous_transform.translation.x,
+        previous_camera_y=camera.previous_transform.translation.y,
+        previous_camera_z=camera.previous_transform.translation.z,
+        previous_camera_rot_x=camera.previous_transform.rotation.x,
+        previous_camera_rot_y=camera.previous_transform.rotation.y,
+        previous_camera_rot_z=camera.previous_transform.rotation.z,
+        previous_camera_rot_w=camera.previous_transform.rotation.w,
+        pass_kind=1,
+        clear_enabled=1,
+      )
+      let velocity_draw_order = render3d_sorted_mesh_indices(
+        meshes,
+        camera.layers,
+        camera.transform,
+      )
+      for draw_index in velocity_draw_order {
+        let mesh = meshes[draw_index]
+        guard render3d_mesh_draw_alpha(
+            mesh.material.alpha_mode,
+            mesh.material.base_color.a,
+          )
+          is Some(draw_alpha) else {
+          continue
+        }
+        if draw_alpha < 0.999F {
+          continue
+        }
+        render3d_draw_mesh_instance(
+          mesh,
+          mesh.transform,
+          mesh.previous_transform,
+          1.0F,
+          1.0F,
+          1.0F,
+          1.0F,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0.5F,
+          0.5F,
+          0.0F,
+          0.0F,
+        )
+      }
+      @window.host_gpu_end_pass()
+    }
     @window.host_gpu_begin_pass_3d(
-      target_id=camera.target_id,
+      target_id=scene_target_id,
       width=view_width_logical,
       height=view_height_logical,
       clear_r=clear_color.r,
@@ -4555,6 +4849,14 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       sub_camera_view_scale_y~,
       sub_camera_view_bias_x~,
       sub_camera_view_bias_y~,
+      previous_camera_x=camera.previous_transform.translation.x,
+      previous_camera_y=camera.previous_transform.translation.y,
+      previous_camera_z=camera.previous_transform.translation.z,
+      previous_camera_rot_x=camera.previous_transform.rotation.x,
+      previous_camera_rot_y=camera.previous_transform.rotation.y,
+      previous_camera_rot_z=camera.previous_transform.rotation.z,
+      previous_camera_rot_w=camera.previous_transform.rotation.w,
+      pass_kind=0,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
     render3d_draw_camera_skybox(camera, camera_far)
@@ -4674,24 +4976,6 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           }
         }
       }
-      if camera.motion_blur is Some(motion_blur) {
-        let blur_amount = render3d_motion_blur_amount(
-          motion_blur,
-          mesh.motion_speed,
-        )
-        if blur_amount > 0.0F {
-          let gray = (draw_color_r + draw_color_g + draw_color_b) / 3.0F
-          draw_color_r = clamp01(
-            draw_color_r * (1.0F - blur_amount) + gray * blur_amount,
-          )
-          draw_color_g = clamp01(
-            draw_color_g * (1.0F - blur_amount) + gray * blur_amount,
-          )
-          draw_color_b = clamp01(
-            draw_color_b * (1.0F - blur_amount) + gray * blur_amount,
-          )
-        }
-      }
       let mut draw_surface_roughness = draw_roughness
       let probe_environment_light = render3d_probe_environment_map_light(
         reflection_probes,
@@ -4734,48 +5018,57 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           )
         }
       }
-      @window.host_gpu_draw_mesh3d(
-        mesh_id=mesh.mesh_id,
-        x=mesh.transform.translation.x,
-        y=mesh.transform.translation.y,
-        z=mesh.transform.translation.z,
-        rotation_x=mesh.transform.rotation.x,
-        rotation_y=mesh.transform.rotation.y,
-        rotation_z=mesh.transform.rotation.z,
-        rotation_w=mesh.transform.rotation.w,
-        scale_x=mesh.transform.scale.x,
-        scale_y=mesh.transform.scale.y,
-        scale_z=mesh.transform.scale.z,
-        color_r=draw_color_r,
-        color_g=draw_color_g,
-        color_b=draw_color_b,
-        color_a=draw_alpha,
-        texture_id~,
-        uv_offset_x=mesh.material.uv_offset.x,
-        uv_offset_y=mesh.material.uv_offset.y,
-        uv_scale_x=mesh.material.uv_scale.x,
-        uv_scale_y=mesh.material.uv_scale.y,
-        normal_texture_id~,
-        emissive_texture_id~,
-        metallic_roughness_texture_id~,
-        occlusion_texture_id~,
-        depth_texture_id~,
-        emissive_r=mesh.material.emissive.r,
-        emissive_g=mesh.material.emissive.g,
-        emissive_b=mesh.material.emissive.b,
-        unlit=if mesh.material.unlit { 1.0F } else { 0.0F },
-        metallic=mesh.material.metallic,
-        roughness=draw_surface_roughness,
-        reflectance=draw_reflectance,
-        parallax_depth_scale=mesh.material.parallax_depth_scale,
-        max_parallax_layer_count=mesh.material.max_parallax_layer_count,
-        max_relief_mapping_search_steps~,
-        anisotropy_texture_id~,
-        anisotropy_strength~,
-        anisotropy_rotation=mesh.material.anisotropy_rotation,
+      render3d_draw_mesh_instance(
+        mesh,
+        mesh.transform,
+        mesh.previous_transform,
+        draw_color_r,
+        draw_color_g,
+        draw_color_b,
+        draw_alpha,
+        texture_id,
+        normal_texture_id,
+        emissive_texture_id,
+        metallic_roughness_texture_id,
+        occlusion_texture_id,
+        depth_texture_id,
+        anisotropy_texture_id,
+        draw_surface_roughness,
+        draw_reflectance,
+        anisotropy_strength,
+        max_relief_mapping_search_steps,
       )
     }
     @window.host_gpu_end_pass()
+    if motion_blur_active &&
+      camera.motion_blur is Some(motion_blur) &&
+      velocity_target_id >= 0 {
+      @window.host_gpu_begin_pass(
+        target_id=camera.target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear_color.r,
+        clear_g=clear_color.g,
+        clear_b=clear_color.b,
+        clear_a=clear_color.a,
+        camera_x=0.0F,
+        camera_y=0.0F,
+        camera_rotation=0.0F,
+        camera_scale=1.0F,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        clear_enabled=if clear_enabled { 1 } else { 0 },
+      )
+      @window.host_gpu_draw_motion_blur(
+        scene_texture_id=scene_target_id,
+        velocity_texture_id=velocity_target_id,
+        shutter_angle=motion_blur.shutter_angle,
+        samples=motion_blur.samples,
+      )
+      @window.host_gpu_end_pass()
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-02-18
+Last Verified: 2026-02-19
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
-| `3d` | 66 | 18 | 48 | 0 |
+| `3d` | 66 | 24 | 42 | 0 |
 | `animation` | 13 | 0 | 13 | 0 |
 | `app` | 17 | 3 | 14 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 |
-| **Total** | **402** | **54** | **345** | **3** |
+| **Total** | **402** | **60** | **339** | **3** |
 
 ## Example Inventory
 
@@ -90,8 +90,8 @@ Notes:
 | `bevy/examples/3d/3d_scene.rs` | `3d` | `mgstudio-engine/examples/3d/3d_scene` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/3d_shapes.rs` | `3d` | `mgstudio-engine/examples/3d/3d_shapes` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/3d_viewport_to_world.rs` | `3d` | `mgstudio-engine/examples/3d/3d_viewport_to_world` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/animated_material.rs` | `3d` | `mgstudio-engine/examples/3d/animated_material` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/anisotropy.rs` | `3d` | `mgstudio-engine/examples/3d/anisotropy` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/animated_material.rs` | `3d` | `mgstudio-engine/examples/3d/animated_material` | `Exact` | `team-render` |  |
+| `bevy/examples/3d/anisotropy.rs` | `3d` | `mgstudio-engine/examples/3d/anisotropy` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/anti_aliasing.rs` | `3d` | `mgstudio-engine/examples/3d/anti_aliasing` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/atmosphere.rs` | `3d` | `mgstudio-engine/examples/3d/atmosphere` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/atmospheric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/atmospheric_fog` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
@@ -99,7 +99,7 @@ Notes:
 | `bevy/examples/3d/blend_modes.rs` | `3d` | `mgstudio-engine/examples/3d/blend_modes` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/bloom_3d.rs` | `3d` | `mgstudio-engine/examples/3d/bloom_3d` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/camera_sub_view.rs` | `3d` | `mgstudio-engine/examples/3d/camera_sub_view` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/clearcoat.rs` | `3d` | `mgstudio-engine/examples/3d/clearcoat` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/clearcoat.rs` | `3d` | `mgstudio-engine/examples/3d/clearcoat` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/clustered_decal_maps.rs` | `3d` | `mgstudio-engine/examples/3d/clustered_decal_maps` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/clustered_decals.rs` | `3d` | `mgstudio-engine/examples/3d/clustered_decals` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/color_grading.rs` | `3d` | `mgstudio-engine/examples/3d/color_grading` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
@@ -132,11 +132,11 @@ Notes:
 | `bevy/examples/3d/post_processing.rs` | `3d` | `mgstudio-engine/examples/3d/post_processing` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/reflection_probes.rs` | `3d` | `mgstudio-engine/examples/3d/reflection_probes` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/render_to_texture.rs` | `3d` | `mgstudio-engine/examples/3d/render_to_texture` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/rotate_environment_map.rs` | `3d` | `mgstudio-engine/examples/3d/rotate_environment_map` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/rotate_environment_map.rs` | `3d` | `mgstudio-engine/examples/3d/rotate_environment_map` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/scrolling_fog.rs` | `3d` | `mgstudio-engine/examples/3d/scrolling_fog` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/shadow_biases.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_biases` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/shadow_caster_receiver.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_caster_receiver` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/skybox.rs` | `3d` | `mgstudio-engine/examples/3d/skybox` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/skybox.rs` | `3d` | `mgstudio-engine/examples/3d/skybox` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/solari.rs` | `3d` | `mgstudio-engine/examples/3d/solari` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/specular_tint.rs` | `3d` | `mgstudio-engine/examples/3d/specular_tint` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/spherical_area_lights.rs` | `3d` | `mgstudio-engine/examples/3d/spherical_area_lights` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
@@ -150,7 +150,7 @@ Notes:
 | `bevy/examples/3d/transparency_3d.rs` | `3d` | `mgstudio-engine/examples/3d/transparency_3d` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/two_passes.rs` | `3d` | `mgstudio-engine/examples/3d/two_passes` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/vertex_colors.rs` | `3d` | `mgstudio-engine/examples/3d/vertex_colors` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/visibility_range.rs` | `3d` | `mgstudio-engine/examples/3d/visibility_range` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/visibility_range.rs` | `3d` | `mgstudio-engine/examples/3d/visibility_range` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/volumetric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/volumetric_fog` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/wireframe.rs` | `3d` | `mgstudio-engine/examples/3d/wireframe` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/animation/animated_mesh.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
