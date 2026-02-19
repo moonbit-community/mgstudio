@@ -35,7 +35,7 @@ bevy/examples/3d/anti_aliasing.rs,3d,anti_aliasing,mgstudio-engine/examples/3d/a
 bevy/examples/3d/atmosphere.rs,3d,atmosphere,mgstudio-engine/examples/3d/atmosphere,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/atmospheric_fog.rs,3d,atmospheric_fog,mgstudio-engine/examples/3d/atmospheric_fog,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/auto_exposure.rs,3d,auto_exposure,mgstudio-engine/examples/3d/auto_exposure,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
-bevy/examples/3d/blend_modes.rs,3d,blend_modes,mgstudio-engine/examples/3d/blend_modes,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
+bevy/examples/3d/blend_modes.rs,3d,blend_modes,mgstudio-engine/examples/3d/blend_modes,Exact,team-render,
 bevy/examples/3d/bloom_3d.rs,3d,bloom_3d,mgstudio-engine/examples/3d/bloom_3d,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/camera_sub_view.rs,3d,camera_sub_view,mgstudio-engine/examples/3d/camera_sub_view,Exact,team-render,
 bevy/examples/3d/clearcoat.rs,3d,clearcoat,mgstudio-engine/examples/3d/clearcoat,Exact,team-render,

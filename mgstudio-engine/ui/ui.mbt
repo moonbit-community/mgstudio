@@ -766,8 +766,18 @@ pub fn Node::with_left(self : Node, left : Val) -> Node {
 }
 
 ///|
+pub fn Node::with_right(self : Node, right : Val) -> Node {
+  Node::{ ..self, right, }
+}
+
+///|
 pub fn Node::with_top(self : Node, top : Val) -> Node {
   Node::{ ..self, top, }
+}
+
+///|
+pub fn Node::with_bottom(self : Node, bottom : Val) -> Node {
+  Node::{ ..self, bottom, }
 }
 
 ///|

@@ -374,6 +374,7 @@ pub struct Node {
 pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
 pub fn Node::with_border(Self, UiRect) -> Self
+pub fn Node::with_bottom(Self, Val) -> Self
 pub fn Node::with_display(Self, Display) -> Self
 pub fn Node::with_flex_direction(Self, FlexDirection) -> Self
 pub fn Node::with_grid_template_columns(Self, Array[RepeatedGridTrack]) -> Self
@@ -385,6 +386,7 @@ pub fn Node::with_overflow(Self, Overflow) -> Self
 pub fn Node::with_overflow_clip_margin(Self, OverflowClipMargin) -> Self
 pub fn Node::with_padding(Self, UiRect) -> Self
 pub fn Node::with_position_type(Self, PositionType) -> Self
+pub fn Node::with_right(Self, Val) -> Self
 pub fn Node::with_row_gap(Self, Val) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self

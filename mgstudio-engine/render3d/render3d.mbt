@@ -3223,13 +3223,7 @@ fn render3d_motion_blur_targets_get_or_create(
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
       if !replaced {
-        next.push({
-          entity,
-          width,
-          height,
-          scene_target_id,
-          velocity_target_id,
-        })
+        next.push({ entity, width, height, scene_target_id, velocity_target_id })
         replaced = true
       }
     } else {
@@ -3237,13 +3231,7 @@ fn render3d_motion_blur_targets_get_or_create(
     }
   }
   if !replaced {
-    next.push({
-      entity,
-      width,
-      height,
-      scene_target_id,
-      velocity_target_id,
-    })
+    next.push({ entity, width, height, scene_target_id, velocity_target_id })
   }
   motion_blur_targets.val = next
   (scene_target_id, velocity_target_id)
@@ -3819,6 +3807,7 @@ fn render3d_vignette_mask(
 }
 
 ///|
+
 ///|
 fn render3d_ssr_ramp(value : Float, start : Float, end_ : Float) -> Float {
   let safe_start = minf(start, end_)

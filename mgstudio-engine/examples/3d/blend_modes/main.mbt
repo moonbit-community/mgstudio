@@ -16,18 +16,22 @@
 /// Port of `bevy/examples/3d/blend_modes.rs`.
 
 ///|
-/// Baseline parity: camera HDR toggle and on-screen UI labels are not available
-/// in current mgstudio runtime surfaces for this example.
-
-///|
-/// Baseline parity: color randomization is implemented as deterministic palette
-/// stepping when pressing `C`.
-
-///|
 const PI : Float = 3.141592653589793F
 
 ///|
 const TAU : Float = 6.283185307179586F
+
+///|
+const LCG_MOD : Int = 2147483647
+
+///|
+const CAMERA_RADIUS : Float = 10.0F
+
+///|
+const LABEL_HEIGHT_OFFSET : Float = 1.0F
+
+///|
+const CONTROL_TEXT : String = "Up / Down - Increase / Decrease Alpha\nLeft / Right - Rotate Camera\nH - Toggle HDR\nSpacebar - Toggle Unlit\nC - Randomize Colors"
 
 ///|
 priv struct ControlledMaterial {
@@ -37,12 +41,20 @@ priv struct ControlledMaterial {
 }
 
 ///|
+priv struct ExampleLabel {
+  node : @core.Entity
+  target : @core.Entity
+}
+
+///|
 priv struct BlendModesState {
   mut alpha : Float
   mut camera : @core.Entity?
   mut camera_angle : Float
-  mut color_seed : Int
+  mut random_seed : Int
   materials : Array[ControlledMaterial]
+  labels : Array[ExampleLabel]
+  mut display_text : @text.TextHandle?
   mut unlit : Bool
 }
 
@@ -51,8 +63,10 @@ let blend_modes_state : Ref[BlendModesState] = Ref::new({
   alpha: 0.9F,
   camera: None,
   camera_angle: 0.0F,
-  color_seed: 0,
+  random_seed: 1367130551,
   materials: [],
+  labels: [],
+  display_text: None,
   unlit: false,
 })
 
@@ -73,24 +87,169 @@ fn clamp01(value : Float) -> Float {
 }
 
 ///|
-fn palette_color(index : Int, alpha : Float) -> @render2d.Color {
-  let slot = index % 8
-  if slot == 0 {
-    @render2d.Color::new(0.9F, 0.2F, 0.3F, alpha)
-  } else if slot == 1 {
-    @render2d.Color::new(0.2F, 0.8F, 0.5F, alpha)
-  } else if slot == 2 {
-    @render2d.Color::new(0.3F, 0.5F, 1.0F, alpha)
-  } else if slot == 3 {
-    @render2d.Color::new(1.0F, 0.7F, 0.2F, alpha)
-  } else if slot == 4 {
-    @render2d.Color::new(0.8F, 0.3F, 0.9F, alpha)
-  } else if slot == 5 {
-    @render2d.Color::new(0.1F, 0.9F, 0.9F, alpha)
-  } else if slot == 6 {
-    @render2d.Color::new(0.95F, 0.95F, 0.3F, alpha)
-  } else {
-    @render2d.Color::new(0.95F, 0.4F, 0.4F, alpha)
+fn lcg_next(seed : Int) -> Int {
+  let mut next = (seed * 1103515245 + 12345) % LCG_MOD
+  if next < 0 {
+    next = next + LCG_MOD
+  }
+  next
+}
+
+///|
+fn next_random_unit() -> Float {
+  blend_modes_state.val.random_seed = lcg_next(
+    blend_modes_state.val.random_seed,
+  )
+  float_from_int(blend_modes_state.val.random_seed) / float_from_int(LCG_MOD)
+}
+
+///|
+fn random_color(alpha : Float) -> @render2d.Color {
+  @render2d.Color::new(
+    next_random_unit(),
+    next_random_unit(),
+    next_random_unit(),
+    alpha,
+  )
+}
+
+///|
+fn spawn_ui_text_handle(
+  content : String,
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  color : @render2d.Color,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @math.Transform::identity(),
+  )
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
+}
+
+///|
+fn blend_modes_display_text(
+  camera_entity : @core.Entity,
+  world : @ecs_world.World,
+) -> String {
+  let alpha_text = ((blend_modes_state.val.alpha * 100.0F).round() / 100.0F).to_string()
+  let hdr_on = world.get_hdr_store().contains(camera_entity)
+  "  HDR: " + (if hdr_on { "ON " } else { "OFF" }) + "\nAlpha: " + alpha_text
+}
+
+///|
+fn setup_ui_overlay(
+  world : @ecs_world.World,
+  font : @asset.Handle[@asset.Font],
+  opaque_entity : @core.Entity,
+  blend_entity : @core.Entity,
+  premultiplied_entity : @core.Entity,
+  add_entity : @core.Entity,
+  multiply_entity : @core.Entity,
+) -> Unit {
+  let tick = world.read_change_tick()
+  @render2d.Camera2dBundle::new(
+    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+
+  let root = world.spawn_empty()
+  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
+  world
+  .get_node_store()
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+    tick,
+  )
+
+  let controls_text = spawn_ui_text_handle(
+    CONTROL_TEXT,
+    font,
+    14.0F,
+    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+  )
+  let controls_entity = world.spawn_empty()
+  world
+  .get_parent_store()
+  .insert(controls_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
+    controls_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .get_ui_text_store()
+  .insert(controls_entity, @ui.UiText::new(controls_text), tick)
+
+  guard blend_modes_state.val.camera is Some(camera_entity) else { return }
+  let display_text = spawn_ui_text_handle(
+    blend_modes_display_text(camera_entity, world),
+    font,
+    14.0F,
+    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+  )
+  let display_entity = world.spawn_empty()
+  world
+  .get_parent_store()
+  .insert(display_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
+    display_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_right(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .get_ui_text_store()
+  .insert(display_entity, @ui.UiText::new(display_text), tick)
+  blend_modes_state.val.display_text = Some(display_text)
+
+  let label_color = @render2d.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
+  let labels : Array[(@core.Entity, String)] = [
+    (opaque_entity, "┌─ Opaque\n│\n│\n│\n│"),
+    (blend_entity, "┌─ Blend\n│\n│\n│"),
+    (premultiplied_entity, "┌─ Premultiplied\n│\n│"),
+    (add_entity, "┌─ Add\n│"),
+    (multiply_entity, "┌─ Multiply"),
+  ]
+
+  for pair in labels {
+    let target = pair.0
+    let text = pair.1
+    let label_text = spawn_ui_text_handle(text, font, 16.0F, label_color)
+    let label_node = world.spawn_empty()
+    world
+    .get_parent_store()
+    .insert(label_node, @hierarchy.Parent::new(root), tick)
+    world
+    .get_node_store()
+    .insert(
+      label_node,
+      @ui.Node::default()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_left(@ui.Val::Px(0.0F))
+      .with_top(@ui.Val::Px(0.0F)),
+      tick,
+    )
+    world
+    .get_ui_text_store()
+    .insert(label_node, @ui.UiText::new(label_text), tick)
+    blend_modes_state.val.labels.push({ node: label_node, target })
   }
 }
 
@@ -165,18 +324,80 @@ fn spawn_mesh(
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
-) -> Unit {
+) -> @core.Entity {
   @render3d.MeshMaterial3dBundle::new(
     mesh,
     @render3d.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  |> ignore
+}
+
+///|
+fn update_ui_overlay(world : @ecs_world.World) -> Unit {
+  let state = blend_modes_state.val
+  guard state.camera is Some(camera_entity) else { return }
+  guard state.display_text is Some(display_text) else { return }
+
+  @text.text_set_content(
+    display_text,
+    blend_modes_display_text(camera_entity, world),
+  )
+
+  let camera_store = world.get_camera_store()
+  guard camera_store.get(camera_entity) is Some(camera) else { return }
+  let projection_store = world.get_camera_projection3d_store()
+  guard projection_store.get(camera_entity) is Some(projection) else { return }
+  let transform_store = world.get_transform_store()
+  guard transform_store.get(camera_entity) is Some(camera_transform) else {
+    return
+  }
+
+  let target_size = @math.IVec2::new(
+    @window.window_width(),
+    @window.window_height(),
+  )
+  let scale_factor = @window.window_scale_factor()
+  let tick = world.read_change_tick()
+  let node_store = world.get_node_store()
+
+  for label in state.labels {
+    guard transform_store.get(label.target) is Some(target_transform) else {
+      continue
+    }
+    let world_position = target_transform.translation.add(
+      @math.Vec3::new(0.0F, LABEL_HEIGHT_OFFSET, 0.0F),
+    )
+    guard @render3d.render3d_camera_world_to_viewport(
+        world_position, camera, projection, camera_transform, target_size, scale_factor,
+      )
+      is Some(screen_position) else {
+      continue
+    }
+    if node_store.get(label.node) is Some(node) {
+      node_store.set(
+        label.node,
+        node
+        .with_left(@ui.Val::Px(screen_position.x))
+        .with_top(@ui.Val::Px(screen_position.y)),
+        tick,
+      )
+      |> ignore
+    }
+  }
 }
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
+  blend_modes_state.val.alpha = 0.9F
+  blend_modes_state.val.unlit = false
+  blend_modes_state.val.camera = None
+  blend_modes_state.val.camera_angle = 0.0F
+  blend_modes_state.val.random_seed = 1367130551
+  blend_modes_state.val.materials.clear()
+  blend_modes_state.val.labels.clear()
+  blend_modes_state.val.display_text = None
+
   let base_color = @render2d.Color::new(
     0.9F,
     0.2F,
@@ -191,7 +412,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   register_material(opaque_material, true, true)
-  spawn_mesh(
+  let opaque_entity = spawn_mesh(
     world,
     sphere_mesh,
     opaque_material,
@@ -204,7 +425,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   register_material(blend_material, true, true)
-  spawn_mesh(
+  let blend_entity = spawn_mesh(
     world,
     sphere_mesh,
     blend_material,
@@ -217,7 +438,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   register_material(premultiplied_material, true, true)
-  spawn_mesh(
+  let premultiplied_entity = spawn_mesh(
     world,
     sphere_mesh,
     premultiplied_material,
@@ -230,7 +451,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   register_material(add_material, true, true)
-  spawn_mesh(
+  let add_entity = spawn_mesh(
     world,
     sphere_mesh,
     add_material,
@@ -243,7 +464,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   register_material(multiply_material, true, true)
-  spawn_mesh(
+  let multiply_entity = spawn_mesh(
     world,
     sphere_mesh,
     multiply_material,
@@ -278,6 +499,7 @@ fn setup(world : @ecs_world.World) -> Unit {
           float_from_int(z) * 2.0F,
         ),
       )
+      |> ignore
     }
   }
 
@@ -305,7 +527,16 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
   blend_modes_state.val.camera = Some(camera)
+
+  let asset_server = @asset.AssetServer::new()
+  let label_font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
+  setup_ui_overlay(
+    world, label_font, opaque_entity, blend_entity, premultiplied_entity, add_entity,
+    multiply_entity,
+  )
+  update_ui_overlay(world)
 }
 
 ///|
@@ -324,9 +555,6 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
   }
 
   let randomize_colors = @input.key_just_pressed(@window.KeyCode::KeyC)
-  if randomize_colors {
-    state.color_seed = state.color_seed + 1
-  }
 
   let rotation = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     delta
@@ -338,10 +566,17 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
   state.camera_angle = state.camera_angle + rotation
 
   guard state.camera is Some(camera_entity) else { return }
-  let radius = 10.0F
-  let camera_x = @math.sin(state.camera_angle) * radius
-  let camera_z = @math.cos(state.camera_angle) * radius
   let tick = world.read_change_tick()
+  if @input.key_just_pressed(@window.KeyCode::KeyH) {
+    let hdr_store = world.get_hdr_store()
+    if hdr_store.contains(camera_entity) {
+      hdr_store.remove(camera_entity) |> ignore
+    } else {
+      hdr_store.insert(camera_entity, @render3d.Hdr::default(), tick)
+    }
+  }
+  let camera_x = @math.sin(state.camera_angle) * CAMERA_RADIUS
+  let camera_z = @math.cos(state.camera_angle) * CAMERA_RADIUS
   world
   .get_transform_store()
   .set(
@@ -354,7 +589,6 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
   )
   |> ignore
 
-  let mut color_index = state.color_seed
   for controlled in state.materials {
     if @render3d.standard_material_get(controlled.handle) is Some(material) {
       let mut next_material = material.with_base_color(
@@ -366,10 +600,7 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
         ),
       )
       if controlled.allow_color && randomize_colors {
-        next_material = next_material.with_base_color(
-          palette_color(color_index, state.alpha),
-        )
-        color_index = color_index + 1
+        next_material = next_material.with_base_color(random_color(state.alpha))
       }
       if controlled.allow_unlit {
         next_material = next_material.with_unlit(state.unlit)
@@ -378,6 +609,8 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
       |> ignore
     }
   }
+
+  update_ui_overlay(world)
 }
 
 ///|
