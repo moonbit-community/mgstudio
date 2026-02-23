@@ -41,6 +41,11 @@ pub fn Window::input_mouse_y(Self) -> Float
 pub fn Window::input_text_event_code_unit(Self, Int, Int) -> Int
 pub fn Window::input_text_event_count(Self) -> Int
 pub fn Window::input_text_event_len(Self, Int) -> Int
+pub fn Window::input_touch_event_count(Self) -> Int
+pub fn Window::input_touch_event_id(Self, Int) -> Int
+pub fn Window::input_touch_event_phase(Self, Int) -> Int
+pub fn Window::input_touch_event_x(Self, Int) -> Float
+pub fn Window::input_touch_event_y(Self, Int) -> Float
 pub fn Window::input_wheel_x(Self) -> Float
 pub fn Window::input_wheel_y(Self) -> Float
 pub fn Window::is_null(Self) -> Bool

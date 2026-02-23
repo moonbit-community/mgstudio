@@ -12,6 +12,8 @@ import {
 }
 
 // Values
+pub let camera_update_systems : String
+
 pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
@@ -20,7 +22,7 @@ pub fn gizmo_config() -> GizmoConfig
 
 pub fn gizmo_set_config(GizmoConfig) -> Unit
 
-pub fn[W] render2d_camera_system(W) -> Unit
+pub fn[W : CameraSystemWorld] render2d_camera_system(W) -> Unit
 
 pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
@@ -55,6 +57,16 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shad
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+
+pub let render2d_set_execute : String
+
+pub let render2d_set_extract : String
+
+pub let render2d_set_prepare : String
+
+pub let render2d_set_queue : String
+
+pub let render2d_set_render : String
 
 pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
 
@@ -148,14 +160,23 @@ pub fn BorderRect::square(Float) -> Self
 pub struct Camera {
   viewport : Viewport?
   order : Int
+  is_active : Bool
+  computed : CameraComputedValues
   clear_color : ClearColorConfig
 }
 pub fn Camera::clear_viewport(Self) -> Self
 pub fn Camera::default() -> Self
+pub fn Camera::logical_target_size(Self) -> @math.Vec2?
+pub fn Camera::logical_viewport_size(Self) -> @math.Vec2?
 pub fn Camera::new(Color) -> Self
+pub fn Camera::physical_target_size(Self) -> @math.IVec2?
+pub fn Camera::physical_viewport_size(Self) -> @math.IVec2?
+pub fn Camera::target_scaling_factor(Self) -> Float?
+pub fn Camera::to_logical(Self, @math.IVec2) -> @math.Vec2?
 pub fn Camera::with_clear_color(Self, Color) -> Self
 pub fn Camera::with_clear_color_config(Self, ClearColorConfig) -> Self
 pub fn Camera::with_clear_color_none(Self) -> Self
+pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, Viewport) -> Self
 
@@ -178,6 +199,19 @@ pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) 
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
 pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(Self, W) -> @core.Entity
 pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
+
+pub struct CameraComputedValues {
+  target_info : CameraTargetInfo?
+  old_viewport_size : @math.IVec2?
+}
+pub fn CameraComputedValues::default() -> Self
+
+pub struct CameraTargetInfo {
+  physical_size : @math.IVec2
+  scale_factor : Float
+}
+pub fn CameraTargetInfo::default() -> Self
+pub fn CameraTargetInfo::new(@math.IVec2, Float) -> Self
 
 pub struct Capsule2d {
   radius : Float
@@ -652,13 +686,21 @@ pub fn UiCornerRadii::zero() -> Self
 pub struct Viewport {
   physical_position : @math.IVec2
   physical_size : @math.IVec2
+  depth_min : Float
+  depth_max : Float
 }
+pub fn Viewport::default() -> Self
 pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
+pub fn Viewport::new_with_depth(@math.IVec2, @math.IVec2, Float, Float) -> Self
+pub fn Viewport::with_depth(Self, Float, Float) -> Self
 
 // Type aliases
 
 // Traits
 pub(open) trait Camera2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + @math.Has_Transform {
+}
+
+pub(open) trait CameraSystemWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 
 pub(open) trait HasRes_RenderState {
@@ -720,7 +762,7 @@ pub(open) trait Has_Sprite {
 pub(open) trait Mesh2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait RenderExtractWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+pub(open) trait RenderExtractWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 
 pub(open) trait SpriteBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {

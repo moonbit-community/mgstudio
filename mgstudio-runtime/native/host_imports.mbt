@@ -2776,18 +2776,29 @@ pub fn add_mgstudio_host_imports(
           args[12] is @types.Value::I32(vy) &&
           args[13] is @types.Value::I32(vw) &&
           args[14] is @types.Value::I32(vh) {
-          let clear_enabled = if args.length() > 15 &&
-            args[15] is @types.Value::I32(v) {
-            v
-          } else {
-            1
+          let mut viewport_depth_min = 0.0F
+          let mut viewport_depth_max = 1.0F
+          let mut clear_enabled = 1
+          if args.length() > 15 {
+            if args[15] is @types.Value::F32(v) {
+              viewport_depth_min = v
+              if args.length() > 16 && args[16] is @types.Value::F32(depth_max) {
+                viewport_depth_max = depth_max
+              }
+              if args.length() > 17 &&
+                args[17] is @types.Value::I32(v_clear_enabled) {
+                clear_enabled = v_clear_enabled
+              }
+            } else if args[15] is @types.Value::I32(v) {
+              clear_enabled = v
+            }
           }
           ctx.gpu
           .unwrap()
           .begin_pass(
             target_id, width_logical, height_logical, clear_r, clear_g, clear_b,
             clear_a, camera_x, camera_y, camera_rot, camera_scale, vx, vy, vw, vh,
-            clear_enabled,
+            viewport_depth_min, viewport_depth_max, clear_enabled,
           )
         }
         ok_i32(0)
@@ -2815,6 +2826,8 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
         @types.ValueType::I32,
       ],
       [@types.ValueType::I32],

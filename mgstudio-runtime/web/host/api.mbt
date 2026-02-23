@@ -1928,6 +1928,8 @@ pub fn create_host(
         arg_number(args, 12, 0),
         arg_number(args, 13, 0),
         arg_number(args, 14, 0),
+        arg_number(args, 15, 0),
+        arg_number(args, 16, 1),
         1.0,
         1.0,
         1.0,
@@ -1972,7 +1974,7 @@ pub fn create_host(
         0.0,
         1.0,
         0.0,
-        arg_number(args, 15, 1),
+        arg_number(args, 17, 1),
       )
     }),
   )
@@ -2012,6 +2014,8 @@ pub fn create_host(
         arg_number(args, 18, 0),
         arg_number(args, 19, 0),
         arg_number(args, 20, 0),
+        0.0,
+        1.0,
         arg_number(args, 21, 1),
         arg_number(args, 22, 1),
         arg_number(args, 23, 1),

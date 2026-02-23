@@ -2185,6 +2185,8 @@ fn begin_pass(
   viewport_y : Double,
   viewport_width : Double,
   viewport_height : Double,
+  viewport_depth_min : Double,
+  viewport_depth_max : Double,
   ambient_r : Double,
   ambient_g : Double,
   ambient_b : Double,
@@ -2314,7 +2316,9 @@ fn begin_pass(
         @webgpu.render_pass_descriptor([attachment]).to_js()
       }
       let pass = encoder.begin_render_pass(descriptor_any)
-      pass.set_viewport(vp_x, vp_y, vp_width, vp_height, 0, 1)
+      pass.set_viewport(
+        vp_x, vp_y, vp_width, vp_height, viewport_depth_min, viewport_depth_max,
+      )
       pass.set_scissor_rect(
         to_int(vp_x),
         to_int(vp_y),

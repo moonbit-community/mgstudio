@@ -95,6 +95,8 @@ struct GpuPassState {
     viewport_y: u32,
     viewport_w: u32,
     viewport_h: u32,
+    viewport_depth_min: f32,
+    viewport_depth_max: f32,
 }
 
 struct GpuPassRecorder {
@@ -563,6 +565,7 @@ impl GpuBackend {
         camera_rot: f32,
         camera_scale: f32,
         viewport: (i32, i32, i32, i32),
+        viewport_depth_range: (f32, f32),
         clear_enabled: bool,
     ) -> anyhow::Result<()> {
         let Some(_frame) = self.frame.as_ref() else {
@@ -579,6 +582,7 @@ impl GpuBackend {
         let vy = vy.max(0) as u32;
         let vw = vw.max(0) as u32;
         let vh = vh.max(0) as u32;
+        let (viewport_depth_min, viewport_depth_max) = viewport_depth_range;
 
         let width_logical = width_logical.max(1) as f32;
         let height_logical = height_logical.max(1) as f32;
@@ -623,6 +627,8 @@ impl GpuBackend {
             viewport_y: vy,
             viewport_w: vw,
             viewport_h: vh,
+            viewport_depth_min,
+            viewport_depth_max,
         };
 
         // Update sprite globals for this pass (view + ndc scale).
@@ -691,6 +697,7 @@ impl GpuBackend {
             camera_rot,
             1.0,
             viewport,
+            (0.0, 1.0),
             clear_enabled,
         )?;
         if let Some(pass) = self.pass.as_mut() {
@@ -948,8 +955,8 @@ impl GpuBackend {
                 pass.st.viewport_y as f32,
                 pass.st.viewport_w as f32,
                 pass.st.viewport_h as f32,
-                0.0,
-                1.0,
+                pass.st.viewport_depth_min,
+                pass.st.viewport_depth_max,
             );
 
             let mut seg_i: usize = 0;

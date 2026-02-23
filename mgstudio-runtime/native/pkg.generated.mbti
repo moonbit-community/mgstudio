@@ -152,7 +152,7 @@ pub struct GpuBackend {
   meshes : Ref[Array[GpuMeshInfo]]
 }
 pub fn GpuBackend::begin_frame(Self) -> Unit
-pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
@@ -232,6 +232,8 @@ pub struct GpuPassState {
   viewport_y : UInt
   viewport_w : UInt
   viewport_h : UInt
+  viewport_depth_min : Float
+  viewport_depth_max : Float
   ambient_r : Float
   ambient_g : Float
   ambient_b : Float

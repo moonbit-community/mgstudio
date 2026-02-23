@@ -106,6 +106,8 @@ pub struct GpuPassState {
   viewport_y : UInt
   viewport_w : UInt
   viewport_h : UInt
+  viewport_depth_min : Float
+  viewport_depth_max : Float
   ambient_r : Float
   ambient_g : Float
   ambient_b : Float
@@ -3021,6 +3023,8 @@ pub fn GpuBackend::begin_pass(
   viewport_y : Int,
   viewport_w : Int,
   viewport_h : Int,
+  viewport_depth_min : Float,
+  viewport_depth_max : Float,
   clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
@@ -3046,8 +3050,8 @@ pub fn GpuBackend::begin_pass(
     Float::from_double(vy.to_double()),
     Float::from_double(vw.to_double()),
     Float::from_double(vh.to_double()),
-    0.0F,
-    1.0F,
+    viewport_depth_min,
+    viewport_depth_max,
   )
   pass.set_scissor_rect(vx, vy, vw, vh)
   frame.pass = Some(pass)
@@ -3084,6 +3088,8 @@ pub fn GpuBackend::begin_pass(
     viewport_y: vy,
     viewport_w: vw,
     viewport_h: vh,
+    viewport_depth_min,
+    viewport_depth_max,
     ambient_r: 1.0F,
     ambient_g: 1.0F,
     ambient_b: 1.0F,
@@ -3301,6 +3307,8 @@ pub fn GpuBackend::begin_pass_3d(
     viewport_y: vy,
     viewport_w: vw,
     viewport_h: vh,
+    viewport_depth_min: 0.0F,
+    viewport_depth_max: 1.0F,
     ambient_r,
     ambient_g,
     ambient_b,

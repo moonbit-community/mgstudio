@@ -2949,6 +2949,8 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
+            ValType::F32,
+            ValType::F32,
             ValType::I32,
         ],
         &[ValType::I32],
@@ -2969,7 +2971,15 @@ fn define_mgstudio_host_imports(
             let vy = args.get(12).and_then(|v| v.i32()).unwrap_or(0);
             let vw = args.get(13).and_then(|v| v.i32()).unwrap_or(0);
             let vh = args.get(14).and_then(|v| v.i32()).unwrap_or(0);
-            let clear_enabled = args.get(15).and_then(|v| v.i32()).unwrap_or(1) != 0;
+            let viewport_depth_min = match args.get(15) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let viewport_depth_max = match args.get(16) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 1.0,
+            };
+            let clear_enabled = args.get(17).and_then(|v| v.i32()).unwrap_or(1) != 0;
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.begin_pass(
                     target_id,
@@ -2981,6 +2991,7 @@ fn define_mgstudio_host_imports(
                     camera_rot,
                     camera_scale,
                     (vx, vy, vw, vh),
+                    (viewport_depth_min, viewport_depth_max),
                     clear_enabled,
                 )?;
             }

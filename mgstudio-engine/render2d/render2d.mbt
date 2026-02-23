@@ -64,6 +64,8 @@ pub fn RenderLayers::matches(self : RenderLayers, other : RenderLayers) -> Bool 
 pub struct Viewport {
   physical_position : @math.IVec2
   physical_size : @math.IVec2
+  depth_min : Float
+  depth_max : Float
 }
 
 ///|
@@ -71,7 +73,60 @@ pub fn Viewport::new(
   physical_position : @math.IVec2,
   physical_size : @math.IVec2,
 ) -> Viewport {
-  Viewport::{ physical_position, physical_size }
+  Viewport::{
+    physical_position,
+    physical_size,
+    depth_min: 0.0F,
+    depth_max: 1.0F,
+  }
+}
+
+///|
+pub fn Viewport::new_with_depth(
+  physical_position : @math.IVec2,
+  physical_size : @math.IVec2,
+  depth_min : Float,
+  depth_max : Float,
+) -> Viewport {
+  let mut min_depth = depth_min
+  let mut max_depth = depth_max
+  if min_depth < 0.0F {
+    min_depth = 0.0F
+  }
+  if min_depth > 1.0F {
+    min_depth = 1.0F
+  }
+  if max_depth < min_depth {
+    max_depth = min_depth
+  }
+  if max_depth > 1.0F {
+    max_depth = 1.0F
+  }
+  Viewport::{
+    physical_position,
+    physical_size,
+    depth_min: min_depth,
+    depth_max: max_depth,
+  }
+}
+
+///|
+pub fn Viewport::with_depth(
+  self : Viewport,
+  depth_min : Float,
+  depth_max : Float,
+) -> Viewport {
+  Viewport::new_with_depth(
+    self.physical_position,
+    self.physical_size,
+    depth_min,
+    depth_max,
+  )
+}
+
+///|
+pub fn Viewport::default() -> Viewport {
+  Viewport::new(@math.IVec2::new(0, 0), @math.IVec2::new(1, 1))
 }
 
 ///|
@@ -477,22 +532,69 @@ pub fn ClearColorConfig::resolve(self : ClearColorConfig) -> (Bool, Color) {
 }
 
 ///|
+pub struct CameraTargetInfo {
+  physical_size : @math.IVec2
+  scale_factor : Float
+}
+
+///|
+pub fn CameraTargetInfo::new(
+  physical_size : @math.IVec2,
+  scale_factor : Float,
+) -> CameraTargetInfo {
+  CameraTargetInfo::{ physical_size, scale_factor }
+}
+
+///|
+pub fn CameraTargetInfo::default() -> CameraTargetInfo {
+  CameraTargetInfo::{
+    physical_size: @math.IVec2::new(0, 0),
+    scale_factor: 1.0F,
+  }
+}
+
+///|
+pub struct CameraComputedValues {
+  target_info : CameraTargetInfo?
+  old_viewport_size : @math.IVec2?
+}
+
+///|
+pub fn CameraComputedValues::default() -> CameraComputedValues {
+  CameraComputedValues::{ target_info: None, old_viewport_size: None }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Camera {
   viewport : Viewport?
   order : Int
+  is_active : Bool
+  computed : CameraComputedValues
   clear_color : ClearColorConfig
 }
 
 ///|
 pub fn Camera::new(clear_color : Color) -> Camera {
-  Camera::{ viewport: None, order: 0, clear_color: Custom(clear_color) }
+  Camera::{
+    viewport: None,
+    order: 0,
+    is_active: true,
+    computed: CameraComputedValues::default(),
+    clear_color: Custom(clear_color),
+  }
 }
 
 ///|
 pub fn Camera::default() -> Camera {
-  Camera::{ viewport: None, order: 0, clear_color: ClearColorConfig::default() }
+  Camera::{
+    viewport: None,
+    order: 0,
+    is_active: true,
+    computed: CameraComputedValues::default(),
+    clear_color: ClearColorConfig::default(),
+  }
 }
 
 ///|
@@ -526,6 +628,63 @@ pub fn Camera::with_clear_color_config(
 ///|
 pub fn Camera::with_clear_color_none(self : Camera) -> Camera {
   Camera::{ ..self, clear_color: None }
+}
+
+///|
+pub fn Camera::with_is_active(self : Camera, is_active : Bool) -> Camera {
+  Camera::{ ..self, is_active, }
+}
+
+///|
+pub fn Camera::to_logical(
+  self : Camera,
+  physical_size : @math.IVec2,
+) -> @math.Vec2? {
+  guard self.computed.target_info is Some(target_info) else { return None }
+  let mut scale = target_info.scale_factor
+  if scale <= 0.0F {
+    scale = 1.0F
+  }
+  Some(
+    @math.Vec2::new(
+      Float::from_double(physical_size.x.to_double()) / scale,
+      Float::from_double(physical_size.y.to_double()) / scale,
+    ),
+  )
+}
+
+///|
+pub fn Camera::physical_target_size(self : Camera) -> @math.IVec2? {
+  self.computed.target_info.map(fn(target_info) { target_info.physical_size })
+}
+
+///|
+pub fn Camera::logical_target_size(self : Camera) -> @math.Vec2? {
+  match self.physical_target_size() {
+    Some(size) => self.to_logical(size)
+    None => None
+  }
+}
+
+///|
+pub fn Camera::physical_viewport_size(self : Camera) -> @math.IVec2? {
+  match self.viewport {
+    Some(viewport) => Some(viewport.physical_size)
+    None => self.physical_target_size()
+  }
+}
+
+///|
+pub fn Camera::logical_viewport_size(self : Camera) -> @math.Vec2? {
+  match self.viewport {
+    Some(viewport) => self.to_logical(viewport.physical_size)
+    None => self.logical_target_size()
+  }
+}
+
+///|
+pub fn Camera::target_scaling_factor(self : Camera) -> Float? {
+  self.computed.target_info.map(fn(target_info) { target_info.scale_factor })
 }
 
 ///|
@@ -3976,46 +4135,55 @@ fn render2d_clamp_viewport(
   Viewport::new(
     @math.IVec2::new(position_x, position_y),
     @math.IVec2::new(size_x, size_y),
-  )
+  ).with_depth(viewport.depth_min, viewport.depth_max)
 }
 
 ///|
-priv struct CameraSystemEntry {
-  entity : @core.Entity
-  target : RenderTarget
-  target_size : @math.IVec2?
-  scale_factor : Float
-  old_viewport_size : @math.IVec2?
-}
-
-///|
-priv struct CameraSystemState {
-  mut window_scale_factor : Float
-  mut entries : Array[CameraSystemEntry]
-}
-
-///|
-fn CameraSystemState::new() -> CameraSystemState {
-  CameraSystemState::{ window_scale_factor: 1.0F, entries: [] }
-}
-
-///|
-let camera_system_state_ref : Ref[CameraSystemState] = Ref::new(
-  CameraSystemState::new(),
-)
-
-///|
-fn render2d_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
-  a.id == b.id && a.generation == b.generation
-}
-
-///|
-fn render2d_target_eq(a : RenderTarget, b : RenderTarget) -> Bool {
+fn render2d_camera_target_info_eq(
+  a : CameraTargetInfo?,
+  b : CameraTargetInfo?,
+) -> Bool {
   match (a, b) {
-    (RenderTarget::Screen, RenderTarget::Screen) => true
-    (RenderTarget::Image(ah), RenderTarget::Image(bh)) => ah.id() == bh.id()
+    (Some(ta), Some(tb)) =>
+      render2d_ivec2_eq(ta.physical_size, tb.physical_size) &&
+      ta.scale_factor == tb.scale_factor
+    (None, None) => true
     _ => false
   }
+}
+
+///|
+fn render2d_camera_target_info_from_render_target(
+  value : RenderTargetComputed?,
+) -> CameraTargetInfo? {
+  match value {
+    Some(info) => Some(CameraTargetInfo::new(info.size, info.scale_factor))
+    None => None
+  }
+}
+
+///|
+fn render2d_target_component_changed(
+  target_store : @core.ComponentStore[RenderTarget],
+  entity : @core.Entity,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  if !target_store.contains(entity) {
+    return false
+  }
+  match target_store.get_ticks(entity) {
+    Some(ticks) =>
+      ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
+    None => false
+  }
+}
+
+///|
+fn render2d_viewport_size_changed(camera : Camera) -> Bool {
+  !render2d_opt_ivec2_eq(
+    camera.computed.old_viewport_size,
+    render2d_camera_viewport_size(camera),
+  )
 }
 
 ///|
@@ -4030,19 +4198,6 @@ fn render2d_opt_ivec2_eq(a : @math.IVec2?, b : @math.IVec2?) -> Bool {
     (None, None) => true
     _ => false
   }
-}
-
-///|
-fn render2d_find_camera_system_entry(
-  entries : Array[CameraSystemEntry],
-  entity : @core.Entity,
-) -> CameraSystemEntry? {
-  for entry in entries {
-    if render2d_entity_eq(entry.entity, entity) {
-      return Some(entry)
-    }
-  }
-  None
 }
 
 ///|
@@ -4067,7 +4222,10 @@ fn render2d_scale_viewport(viewport : Viewport, scale : Float) -> Viewport {
     render2d_scale_viewport_axis(viewport.physical_size.x, scale),
     render2d_scale_viewport_axis(viewport.physical_size.y, scale),
   )
-  Viewport::new(position, size)
+  Viewport::new(position, size).with_depth(
+    viewport.depth_min,
+    viewport.depth_max,
+  )
 }
 
 ///|
@@ -4084,10 +4242,13 @@ fn render2d_projection_changed(
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
+  if !projection_store.contains(entity) {
+    return false
+  }
   match projection_store.get_ticks(entity) {
     Some(ticks) =>
       ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
-    None => true
+    None => false
   }
 }
 
@@ -4097,23 +4258,13 @@ fn render2d_camera_changed(
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
+  if !camera_store.contains(entity) {
+    return false
+  }
   match camera_store.get_ticks(entity) {
     Some(ticks) =>
       ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
-    None => true
-  }
-}
-
-///|
-fn render2d_camera_entry_computed(entry : CameraSystemEntry) -> CameraComputed {
-  match entry.target_size {
-    Some(target_size) =>
-      CameraComputed::{ target_size, scale_factor: entry.scale_factor }
-    None =>
-      CameraComputed::{
-        target_size: @math.IVec2::new(0, 0),
-        scale_factor: 1.0F,
-      }
+    None => false
   }
 }
 
@@ -4131,17 +4282,6 @@ pub fn[W : CameraSystemWorld] render2d_camera_system(world : W) -> Unit {
   let projection_store = world.get_projection_store()
   let target_store = world.get_render_target_store()
   let render_state = render_state_ref_value.val
-  let state = camera_system_state_ref.val
-  let mut window_scale_factor = @window.window_scale_factor()
-  if window_scale_factor <= 0.0F {
-    window_scale_factor = 1.0F
-  }
-  let window_scale_factor_changed = window_scale_factor !=
-    state.window_scale_factor
-  state.window_scale_factor = window_scale_factor
-
-  let previous_entries = state.entries
-  let next_entries : Array[CameraSystemEntry] = []
   camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
       Some(value) => value
@@ -4151,59 +4291,35 @@ pub fn[W : CameraSystemWorld] render2d_camera_system(world : W) -> Unit {
       Some(value) => value
       None => Camera::default()
     }
-    let projection_value = match projection_store.get(entity) {
-      Some(value) => value
-      None => Projection::orthographic_2d()
-    }
-
-    let previous_entry = render2d_find_camera_system_entry(
-      previous_entries, entity,
-    )
-    let previous_target = match previous_entry {
-      Some(entry) => entry.target
-      None => target
-    }
-    let previous_target_size : @math.IVec2? = match previous_entry {
-      Some(entry) => entry.target_size
-      None => None
-    }
-    let previous_scale_factor = previous_entry
-      .map(fn(entry) {
-        let scale_factor = entry.scale_factor
-        if scale_factor <= 0.0F {
-          1.0F
-        } else {
-          scale_factor
-        }
-      })
-      .unwrap_or(1.0F)
-    let previous_viewport_size = previous_entry
-      .map(fn(entry) { entry.old_viewport_size })
-      .unwrap_or(None)
+    projection_store.get(entity).unwrap_or(Projection::orthographic_2d())
+    |> ignore
 
     let target_info = render2d_target_info(render_state, target)
-    let next_target_size : @math.IVec2? = match target_info {
-      Some(info) => Some(info.size)
-      None => None
-    }
-    let next_scale_factor = target_info
-      .map(fn(info) { info.scale_factor })
-      .unwrap_or(1.0F)
-
-    let target_changed = !render2d_target_eq(previous_target, target) ||
-      !render2d_opt_ivec2_eq(previous_target_size, next_target_size)
-    let viewport_size = render2d_camera_viewport_size(camera)
-    let viewport_changed = !render2d_opt_ivec2_eq(
-      previous_viewport_size, viewport_size,
+    let next_target_info = render2d_camera_target_info_from_render_target(
+      target_info,
     )
+    let target_changed = render2d_target_component_changed(
+        target_store, entity, system_ticks,
+      ) ||
+      !render2d_camera_target_info_eq(
+        camera.computed.target_info,
+        next_target_info,
+      )
+    let viewport_changed = render2d_viewport_size_changed(camera)
     let camera_changed = render2d_camera_changed(
       camera_store, entity, system_ticks,
     )
     let projection_changed = render2d_projection_changed(
       projection_store, entity, system_ticks,
     )
-    let scale_factor_changed = target is RenderTarget::Screen &&
-      window_scale_factor_changed
+    let mut scale_factor_changed = false
+    if target is RenderTarget::Screen &&
+      camera.computed.target_info is Some(old_target_info) &&
+      next_target_info is Some(new_target_info) &&
+      old_target_info.scale_factor > 0.0F &&
+      new_target_info.scale_factor != old_target_info.scale_factor {
+      scale_factor_changed = true
+    }
     let should_update = target_changed ||
       viewport_changed ||
       camera_changed ||
@@ -4213,46 +4329,29 @@ pub fn[W : CameraSystemWorld] render2d_camera_system(world : W) -> Unit {
     let mut camera_value = camera
     if should_update {
       if scale_factor_changed &&
-        previous_scale_factor > 0.0F &&
+        camera.computed.target_info is Some(old_target_info) &&
+        old_target_info.scale_factor > 0.0F &&
         camera_value.viewport is Some(viewport) &&
-        target_info is Some(info) {
-        let resize_factor = info.scale_factor / previous_scale_factor
+        next_target_info is Some(new_target_info) {
+        let resize_factor = new_target_info.scale_factor /
+          old_target_info.scale_factor
         let resized = render2d_scale_viewport(viewport, resize_factor)
-        camera_value = Camera::{
-          viewport: Some(resized),
-          order: camera_value.order,
-          clear_color: camera_value.clear_color,
-        }
+        camera_value = camera_value.with_viewport(resized)
       }
       if target_info is Some(info) && camera_value.viewport is Some(viewport) {
         let clamped = render2d_clamp_viewport(viewport, info.size)
-        camera_value = Camera::{
-          viewport: Some(clamped),
-          order: camera_value.order,
-          clear_color: camera_value.clear_color,
-        }
+        camera_value = camera_value.with_viewport(clamped)
       }
-      if camera_store.contains(entity) {
-        camera_store.set(entity, camera_value, tick) |> ignore
-      } else {
-        camera_store.insert(entity, camera_value, tick)
+      camera_value = Camera::{
+        ..camera_value,
+        computed: CameraComputedValues::{
+          target_info: next_target_info,
+          old_viewport_size: render2d_camera_viewport_size(camera_value),
+        },
       }
-      if projection_store.contains(entity) {
-        projection_store.set(entity, projection_value, tick) |> ignore
-      } else {
-        projection_store.insert(entity, projection_value, tick)
-      }
+      camera_store.set(entity, camera_value, tick) |> ignore
     }
-
-    next_entries.push(CameraSystemEntry::{
-      entity,
-      target,
-      target_size: next_target_size,
-      scale_factor: next_scale_factor,
-      old_viewport_size: render2d_camera_viewport_size(camera_value),
-    })
   })
-  state.entries = next_entries
 }
 
 ///|
@@ -4305,7 +4404,6 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
   let view_visibility_store = world.get_view_visibility_store()
   let transform_store = world.get_transform_store()
   let global_store = world.get_global_transform_store()
-  let camera_system_state = camera_system_state_ref.val
   camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
       Some(t) => t
@@ -4336,15 +4434,23 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       target_size: @math.IVec2::new(0, 0),
       scale_factor: 1.0F,
     }
-    if render2d_find_camera_system_entry(camera_system_state.entries, entity)
-      is Some(entry) &&
-      render2d_target_eq(entry.target, target) {
-      computed = render2d_camera_entry_computed(entry)
-    } else if render2d_target_info(rs.val, target) is Some(info) {
-      computed = CameraComputed::{
-        target_size: info.size,
-        scale_factor: info.scale_factor,
+    if camera.computed.target_info is Some(target_info) {
+      let scale_factor = if target_info.scale_factor <= 0.0F {
+        1.0F
+      } else {
+        target_info.scale_factor
       }
+      computed = CameraComputed::{
+        target_size: target_info.physical_size,
+        scale_factor,
+      }
+    } else if render2d_target_info(rs.val, target) is Some(info) {
+      let scale_factor = if info.scale_factor <= 0.0F {
+        1.0F
+      } else {
+        info.scale_factor
+      }
+      computed = CameraComputed::{ target_size: info.size, scale_factor }
     }
     rs.val.cameras.push(CameraInstance::{
       entity,
@@ -5123,6 +5229,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
     let mut viewport_y = 0
     let mut viewport_width = target_width
     let mut viewport_height = target_height
+    let mut viewport_depth_min = 0.0F
+    let mut viewport_depth_max = 1.0F
     let mut view_width = target_width
     let mut view_height = target_height
     if camera.camera.viewport is Some(viewport) {
@@ -5165,6 +5273,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       if viewport_width <= 0 || viewport_height <= 0 {
         continue
       }
+      viewport_depth_min = viewport.depth_min
+      viewport_depth_max = viewport.depth_max
       view_width = viewport_width
       view_height = viewport_height
     }
@@ -5193,6 +5303,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       viewport_y~,
       viewport_width~,
       viewport_height~,
+      viewport_depth_min~,
+      viewport_depth_max~,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
     let draw_items = draw_items_for_layers(

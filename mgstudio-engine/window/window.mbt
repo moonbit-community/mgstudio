@@ -393,6 +393,8 @@ pub fn host_gpu_begin_pass(
   viewport_y~ : Int,
   viewport_width~ : Int,
   viewport_height~ : Int,
+  viewport_depth_min~ : Float,
+  viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_begin_pass"
 

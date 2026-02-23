@@ -46,13 +46,23 @@ pub let ui_set_a11y_apply : String
 
 pub let ui_set_clip : String
 
+pub let ui_set_content : String
+
 pub let ui_set_context : String
+
+pub let ui_set_focus : String
 
 pub let ui_set_interaction : String
 
 pub let ui_set_layout : String
 
 pub let ui_set_measure : String
+
+pub let ui_set_post_layout : String
+
+pub let ui_set_prepare : String
+
+pub let ui_set_propagate : String
 
 pub let ui_set_render_extract : String
 

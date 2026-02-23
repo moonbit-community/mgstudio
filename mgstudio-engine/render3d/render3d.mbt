@@ -3378,7 +3378,7 @@ fn render3d_clamp_viewport(
   @render2d.Viewport::new(
     @math.IVec2::new(position_x, position_y),
     @math.IVec2::new(size_x, size_y),
-  )
+  ).with_depth(viewport.depth_min, viewport.depth_max)
 }
 
 ///|
@@ -3569,6 +3569,8 @@ fn render3d_blit_texture_to_target(
     viewport_y=0,
     viewport_width=width_logical,
     viewport_height=height_logical,
+    viewport_depth_min=0.0F,
+    viewport_depth_max=1.0F,
     clear_enabled=1,
   )
   @window.host_gpu_draw_sprite_uv(
@@ -5096,6 +5098,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let mut viewport_y = 0
     let mut viewport_width = target_width
     let mut viewport_height = target_height
+    let mut viewport_depth_min = 0.0F
+    let mut viewport_depth_max = 1.0F
     let mut view_width = target_width
     let mut view_height = target_height
     if camera.camera.viewport is Some(viewport) {
@@ -5106,6 +5110,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       if viewport_width <= 0 || viewport_height <= 0 {
         continue
       }
+      viewport_depth_min = viewport.depth_min
+      viewport_depth_max = viewport.depth_max
       view_width = viewport_width
       view_height = viewport_height
     }
@@ -5796,6 +5802,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         viewport_y~,
         viewport_width~,
         viewport_height~,
+        viewport_depth_min~,
+        viewport_depth_max~,
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
       @window.host_gpu_draw_motion_blur(
@@ -5822,6 +5830,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         viewport_y~,
         viewport_width~,
         viewport_height~,
+        viewport_depth_min~,
+        viewport_depth_max~,
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
       @window.host_gpu_draw_sprite_uv(
