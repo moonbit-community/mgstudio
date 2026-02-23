@@ -3977,6 +3977,11 @@ pub fn[W] render2d_camera_system(_world : W) -> Unit {
 }
 
 ///|
+pub let camera_update_systems : @app.SystemSet = @app.system_set(
+  "bevy.camera.update_systems",
+)
+
+///|
 fn render2d_sorted_camera_indices(
   cameras : Array[CameraInstance],
 ) -> Array[Int] {
@@ -5432,6 +5437,9 @@ pub fn[W : RenderExtractWorld] render2d_plugin(
   app
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
+    @app.system(render2d_camera_system).in_set(camera_update_systems),
+  )
+  .add_post_update_system_config(
     @app.system(render_extract_system).in_set(render2d_set_extract),
   )
   .add_post_update_system_config(
@@ -5443,6 +5451,9 @@ pub fn[W : RenderExtractWorld] render2d_plugin(
   .add_post_update_system_config(
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
+  .configure_set(@app.PostUpdate, camera_update_systems, before=[
+    render2d_set_extract,
+  ])
   .configure_set(@app.PostUpdate, render2d_set_extract, before=[
     render2d_set_prepare,
   ])

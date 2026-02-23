@@ -4526,7 +4526,12 @@ pub fn[W : UiPluginWorld] ui_plugin(app : @app.App[W]) -> @app.App[W] {
     @app.system(ui_render_extract_system).in_set(ui_set_stack),
   )
   .configure_set(@app.PreUpdate, ui_set_focus)
-  .configure_set(@app.PostUpdate, ui_set_prepare, before=[ui_set_propagate])
+  .configure_set(
+    @app.PostUpdate,
+    ui_set_prepare,
+    after=[@render2d.camera_update_systems],
+    before=[ui_set_propagate],
+  )
   .configure_set(@app.PostUpdate, ui_set_propagate, after=[ui_set_prepare], before=[
     ui_set_content,
   ])
