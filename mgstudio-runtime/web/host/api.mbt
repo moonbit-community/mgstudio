@@ -36,6 +36,12 @@ pub fn create_host(
     _ => @rtcore.idb_source("mgstudio")
   }
   let state = new_state(assets_source, data_source)
+  state.gpu.profile_enabled = url_search_param_enabled("mg_profile")
+  if state.gpu.profile_enabled {
+    console_error(
+      @js.any("mgstudio-runtime-web profile enabled (mg_profile=1)"),
+    )
+  }
   @js.log(
     @js.any(
       "mgstudio-runtime-web assets-source=" +
@@ -1902,6 +1908,11 @@ pub fn create_host(
   let gpu_begin_frame = @js.from_fn1(fn(_ : @js.Any) { begin_frame(state) })
   let gpu_begin_pass = wrap_variadic(
     @js.from_fn1(fn(args) {
+      let start_ms = if state.gpu.profile_enabled {
+        performance_now()
+      } else {
+        0.0
+      }
       begin_pass(
         state,
         to_int(arg_number(args, 0, -1)),
@@ -1976,6 +1987,11 @@ pub fn create_host(
         0.0,
         arg_number(args, 17, 1),
       )
+      if state.gpu.profile_enabled {
+        let elapsed_ms = performance_now() - start_ms
+        state.gpu.profile_api_begin_pass_ms_accum = state.gpu.profile_api_begin_pass_ms_accum +
+          elapsed_ms
+      }
     }),
   )
   let gpu_begin_pass_3d = wrap_variadic(
@@ -2066,6 +2082,10 @@ pub fn create_host(
   )
   let gpu_set_scissor = wrap_variadic(
     @js.from_fn1(fn(args) {
+      if state.gpu.profile_enabled {
+        state.gpu.profile_scissor_set_calls_accum = state.gpu.profile_scissor_set_calls_accum +
+          1
+      }
       if state.gpu.current_pass is None {
         return
       }
@@ -2084,6 +2104,10 @@ pub fn create_host(
     }),
   )
   let gpu_clear_scissor = @js.from_fn0(fn() {
+    if state.gpu.profile_enabled {
+      state.gpu.profile_scissor_clear_calls_accum = state.gpu.profile_scissor_clear_calls_accum +
+        1
+    }
     if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
       return
     }
@@ -2120,6 +2144,11 @@ pub fn create_host(
   )
   let gpu_draw_sprite_uv = wrap_variadic(
     @js.from_fn1(fn(args) {
+      let start_ms = if state.gpu.profile_enabled {
+        performance_now()
+      } else {
+        0.0
+      }
       draw_sprite_uv(
         state,
         to_int(arg_number(args, 0, 0)),
@@ -2137,6 +2166,11 @@ pub fn create_host(
         arg_number(args, 12, 1),
         arg_number(args, 13, 1),
       )
+      if state.gpu.profile_enabled {
+        let elapsed_ms = performance_now() - start_ms
+        state.gpu.profile_api_draw_sprite_uv_ms_accum = state.gpu.profile_api_draw_sprite_uv_ms_accum +
+          elapsed_ms
+      }
     }),
   )
   let gpu_draw_ui_rect = wrap_variadic(
@@ -2350,6 +2384,11 @@ pub fn create_host(
     }),
   )
   let gpu_end_pass = @js.from_fn0(fn() {
+    let start_ms = if state.gpu.profile_enabled {
+      performance_now()
+    } else {
+      0.0
+    }
     if state.gpu.current_pass is Some(_) {
       flush_ui_shadow_batches(state)
       flush_ui_slice_batches(state)
@@ -2363,11 +2402,26 @@ pub fn create_host(
     state.gpu.current_pass = None
     state.gpu.current_pass_info = None
     state.gpu.gizmo_lines = new_array()
+    if state.gpu.profile_enabled {
+      let elapsed_ms = performance_now() - start_ms
+      state.gpu.profile_api_end_pass_ms_accum = state.gpu.profile_api_end_pass_ms_accum +
+        elapsed_ms
+    }
   })
   let gpu_end_frame = @js.from_fn1(fn(_ : @js.Any) {
+    let start_ms = if state.gpu.profile_enabled {
+      performance_now()
+    } else {
+      0.0
+    }
     if state.gpu.device is None ||
       state.gpu.queue is None ||
       state.gpu.encoder is None {
+      if state.gpu.profile_enabled {
+        let elapsed_ms = performance_now() - start_ms
+        state.gpu.profile_api_end_frame_ms_accum = state.gpu.profile_api_end_frame_ms_accum +
+          elapsed_ms
+      }
       return
     }
     if state.gpu.current_pass is Some(pass) {
@@ -2395,10 +2449,25 @@ pub fn create_host(
         }
       })
     }
+    if state.gpu.profile_enabled {
+      let frame_end_ms = performance_now()
+      state.gpu.profile_frames_accum = state.gpu.profile_frames_accum + 1
+      if state.gpu.profile_frame_begin_ms > 0.0 &&
+        frame_end_ms >= state.gpu.profile_frame_begin_ms {
+        state.gpu.profile_frame_cpu_ms_accum = state.gpu.profile_frame_cpu_ms_accum +
+          (frame_end_ms - state.gpu.profile_frame_begin_ms)
+      }
+      profile_log_if_needed(state)
+    }
     state.gpu.encoder = None
     state.gpu.current_texture = None
     state.gpu.current_pass = None
     state.gpu.current_pass_info = None
+    if state.gpu.profile_enabled {
+      let elapsed_ms = performance_now() - start_ms
+      state.gpu.profile_api_end_frame_ms_accum = state.gpu.profile_api_end_frame_ms_accum +
+        elapsed_ms
+    }
   })
   let mgstudio_host = @js.from_entries([
     ("window_create", window_create),

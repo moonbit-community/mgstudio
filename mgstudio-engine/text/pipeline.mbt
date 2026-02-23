@@ -184,39 +184,7 @@ fn int_array_contains(xs : Array[Int], value : Int) -> Bool {
 }
 
 ///|
-let text_warned_missing_font_ids : Ref[Array[Int]] = Ref::new([])
-
-///|
-let text_warned_missing_glyph_ids : Ref[Array[Int]] = Ref::new([])
-
-///|
 let text_warned_missing_font_mapping_ids : Ref[Array[Int]] = Ref::new([])
-
-///|
-fn text_warn_missing_font_once(text_id : Int, font_handle : Int) -> Unit {
-  if int_array_contains(text_warned_missing_font_ids.val, text_id) {
-    return
-  }
-  text_warned_missing_font_ids.val.push(text_id)
-  @window.host_debug_string(
-    value="Text2d warning: font bytes unavailable, text_id=" +
-      text_id.to_string() +
-      ", font_handle=" +
-      font_handle.to_string(),
-  )
-}
-
-///|
-fn text_warn_missing_glyph_once(text_id : Int) -> Unit {
-  if int_array_contains(text_warned_missing_glyph_ids.val, text_id) {
-    return
-  }
-  text_warned_missing_glyph_ids.val.push(text_id)
-  @window.host_debug_string(
-    value="Text2d notice: glyph image unavailable, glyph skipped, text_id=" +
-      text_id.to_string(),
-  )
-}
 
 ///|
 fn text_warn_missing_font_mapping_once(text_id : Int, font_id : Int) -> Unit {
@@ -240,6 +208,32 @@ fn text_abort_layout_error(text_id : Int, detail : String) -> Unit {
     detail
   @window.host_debug_string(value=message)
   abort(message)
+}
+
+///|
+fn text_range_is_non_renderable_whitespace(
+  text : String,
+  start : Int,
+  end_ : Int,
+) -> Bool {
+  if start < 0 || end_ < start || end_ > text.length() {
+    return false
+  }
+  if end_ == start {
+    return true
+  }
+  let mut i = start
+  while i < end_ {
+    let code = text.code_unit_at(i).to_int() & 0xFFFF
+    // Bevy parity:
+    // positioned glyph iteration skips layout-only whitespace/control segments.
+    // Treat ASCII control + whitespace ranges as non-renderable here.
+    if code > 32 && code != 127 {
+      return false
+    }
+    i = i + 1
+  }
+  true
 }
 
 ///|
@@ -435,12 +429,10 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let mut needs_retry = false
   if cosmic_get_or_load_font_id(instance.font.font) is None {
     needs_retry = true
-    text_warn_missing_font_once(instance.id, instance.font.font.id())
   }
   for span in instance.spans {
     if cosmic_get_or_load_font_id(span.font.font) is None {
       needs_retry = true
-      text_warn_missing_font_once(instance.id, span.font.font.id())
     }
   }
   let font_system = cosmic_font_system_state.val.font_system
@@ -579,6 +571,15 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         )
         maybe_run_geom = Some(RunGeometry::{ ..rg0, bounds, })
       }
+      let glyph_byte_start = layout_glyph0.start
+      let glyph_byte_end = layout_glyph0.end
+      if text_range_is_non_renderable_whitespace(
+          buffer.text,
+          glyph_byte_start,
+          glyph_byte_end,
+        ) {
+        continue
+      }
       let (physical_key, phys_x_i, phys_y_i, subpixel_x, subpixel_y) = cosmic_physical_xy(
         layout_glyph, font_smoothing,
       )
@@ -600,8 +601,11 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         font_system, physical_key, font_smoothing,
       )
       if raster_opt is None {
-        text_warn_missing_glyph_once(instance.id)
-        needs_retry = true
+        // Bevy parity intent:
+        // layout extraction should skip non-renderable spacing/cluster glyphs.
+        // `moon_cosmic` can emit such glyphs with no raster image even when
+        // byte ranges do not map cleanly to visible whitespace.
+        // Treat them as non-renderable and continue without forcing rerender.
         continue
       }
       let raster = if raster_opt is Some(v) { v } else { continue }
@@ -640,6 +644,20 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         )
       }
       let rect = if rect_opt is Some(v) { v } else { continue }
+      let atlas_size = atlas_layout.size
+      if atlas_size.x <= 0 || atlas_size.y <= 0 {
+        continue
+      }
+      let atlas_width = Float::from_double(atlas_size.x.to_double())
+      let atlas_height = Float::from_double(atlas_size.y.to_double())
+      let uv_min = @math.Vec2::new(
+        Float::from_double(rect.min.x.to_double()) / atlas_width,
+        Float::from_double(rect.min.y.to_double()) / atlas_height,
+      )
+      let uv_max = @math.Vec2::new(
+        Float::from_double(rect.max.x.to_double()) / atlas_width,
+        Float::from_double(rect.max.y.to_double()) / atlas_height,
+      )
       let glyph_size_u = rect.size()
       let glyph_size_x = Float::from_double(glyph_size_u.x.to_double())
       let glyph_size_y = Float::from_double(glyph_size_u.y.to_double())
@@ -665,10 +683,12 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         position: @math.Vec2::new(x, y),
         size: @math.Vec2::new(glyph_size_x, glyph_size_y),
         atlas_info,
+        uv_min,
+        uv_max,
         span_index,
         line_index: run.line_i,
-        byte_index: layout_glyph0.start,
-        byte_length: layout_glyph0.end - layout_glyph0.start,
+        byte_index: glyph_byte_start,
+        byte_length: glyph_byte_end - glyph_byte_start,
       })
     }
     if instance.y_axis == YAxisOrientation::TopToBottom &&
@@ -738,12 +758,12 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
 ) -> Unit {
   @render2d.render2d_clear_overlay_sprites(world)
   text_debug_clear_frame()
+  let debug_capture_enabled = text_debug_capture_enabled()
+  let overlay_sprites : Array[@render2d.OverlaySpriteUvScissor] = []
   let texts = text_state.val.texts
   for instance in texts {
     let layout_info = instance.layout_info
-    fn rotate_vec2(v : @math.Vec2, rot : Float) -> @math.Vec2 {
-      let cosv = @math.cos(rot)
-      let sinv = @math.sin(rot)
+    fn rotate_vec2(v : @math.Vec2, cosv : Float, sinv : Float) -> @math.Vec2 {
       @math.Vec2::new(v.x * cosv - v.y * sinv, v.x * sinv + v.y * cosv)
     }
 
@@ -768,17 +788,32 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
       scale : @math.Vec2,
       rotation : Float,
     ) -> @math.Rect {
+      let rotation_cos = @math.cos(rotation)
+      let rotation_sin = @math.sin(rotation)
       let half = @math.Vec2::new(
         glyph_size.x * absf(scale.x) / 2.0F,
         glyph_size.y * absf(scale.y) / 2.0F,
       )
       let p0 = rotate_vec2(
         @math.Vec2::new(0.0F - half.x, 0.0F - half.y),
-        rotation,
+        rotation_cos,
+        rotation_sin,
       )
-      let p1 = rotate_vec2(@math.Vec2::new(half.x, 0.0F - half.y), rotation)
-      let p2 = rotate_vec2(@math.Vec2::new(half.x, half.y), rotation)
-      let p3 = rotate_vec2(@math.Vec2::new(0.0F - half.x, half.y), rotation)
+      let p1 = rotate_vec2(
+        @math.Vec2::new(half.x, 0.0F - half.y),
+        rotation_cos,
+        rotation_sin,
+      )
+      let p2 = rotate_vec2(
+        @math.Vec2::new(half.x, half.y),
+        rotation_cos,
+        rotation_sin,
+      )
+      let p3 = rotate_vec2(
+        @math.Vec2::new(0.0F - half.x, half.y),
+        rotation_cos,
+        rotation_sin,
+      )
       let x0 = center.x + p0.x
       let y0 = center.y + p0.y
       let x1 = center.x + p1.x
@@ -834,6 +869,8 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
     }
 
     let rot = instance.transform.rotation_z()
+    let rot_cos = @math.cos(rot)
+    let rot_sin = @math.sin(rot)
     let scale = @math.Vec2::new(
       instance.transform.scale.x,
       instance.transform.scale.y,
@@ -873,7 +910,7 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
       origin_offset.x * scale.x,
       origin_offset.y * scale.y,
     )
-    let origin_rotated = rotate_vec2(origin_scaled, rot)
+    let origin_rotated = rotate_vec2(origin_scaled, rot_cos, rot_sin)
     let text_origin = @math.Vec2::new(
       base.x + origin_rotated.x,
       base.y + origin_rotated.y,
@@ -883,38 +920,14 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
     // viewport/scale changes dynamically (e.g. 2d_viewport_to_world).
     for glyph in layout_info.glyphs {
       let atlas_info = glyph.atlas_info
-      let layout_opt = @asset.asset_get_texture_atlas_layout(
-        atlas_info.texture_atlas,
-      )
-      if layout_opt is None {
-        continue
-      }
-      let layout = if layout_opt is Some(value) { value } else { continue }
-      let index = atlas_info.location.glyph_index
-      if index < 0 || index >= layout.textures.length() {
-        continue
-      }
-      let rect = layout.textures[index]
-      let atlas_size = layout.size
-      if atlas_size.x <= 0 || atlas_size.y <= 0 {
-        continue
-      }
-      let atlas_width = Float::from_double(atlas_size.x.to_double())
-      let atlas_height = Float::from_double(atlas_size.y.to_double())
-      let uv_min = @math.Vec2::new(
-        Float::from_double(rect.min.x.to_double()) / atlas_width,
-        Float::from_double(rect.min.y.to_double()) / atlas_height,
-      )
-      let uv_max = @math.Vec2::new(
-        Float::from_double(rect.max.x.to_double()) / atlas_width,
-        Float::from_double(rect.max.y.to_double()) / atlas_height,
-      )
+      let uv_min = glyph.uv_min
+      let uv_max = glyph.uv_max
       let glyph_pos = to_y_up(instance.y_axis, glyph.position)
       let local_scaled = @math.Vec2::new(
         glyph_pos.x * scale.x,
         glyph_pos.y * scale.y,
       )
-      let offset = rotate_vec2(local_scaled, rot)
+      let offset = rotate_vec2(local_scaled, rot_cos, rot_sin)
       let translation = @math.Vec2::new(
         text_origin.x + offset.x,
         text_origin.y + offset.y,
@@ -925,7 +938,6 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
         scale,
         z=instance.transform.translation.z,
       )
-      let glyph_bounds = glyph_world_bounds(translation, glyph.size, scale, rot)
       let color = text_span_color(instance, glyph.span_index).color
       if instance.shadow is Some(shadow) {
         let shadow_translation = @math.Vec2::new(
@@ -938,37 +950,44 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
           scale,
           z=instance.transform.translation.z,
         )
-        @render2d.render2d_push_sprite_uv_scissor(
-          world,
-          atlas_info.texture,
-          shadow_transform,
+        overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+          texture: atlas_info.texture,
+          transform: shadow_transform,
           uv_min,
           uv_max,
-          shadow.color,
-          instance.layers,
-          instance.ui_scissor,
-        )
+          color: shadow.color,
+          layers: instance.layers,
+          scissor: instance.ui_scissor,
+        })
       }
-      @render2d.render2d_push_sprite_uv_scissor(
-        world,
-        atlas_info.texture,
+      overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+        texture: atlas_info.texture,
         transform,
         uv_min,
         uv_max,
         color,
-        instance.layers,
-        instance.ui_scissor,
-      )
-      text_debug_push_glyph(
-        instance.id,
-        glyph_bounds,
-        instance.ui_scissor,
-        atlas_info.texture.id(),
-        uv_min,
-        uv_max,
-      )
+        layers: instance.layers,
+        scissor: instance.ui_scissor,
+      })
+      if debug_capture_enabled {
+        let glyph_bounds = glyph_world_bounds(
+          translation,
+          glyph.size,
+          scale,
+          rot,
+        )
+        text_debug_push_glyph(
+          instance.id,
+          glyph_bounds,
+          instance.ui_scissor,
+          atlas_info.texture.id(),
+          uv_min,
+          uv_max,
+        )
+      }
     }
   }
+  @render2d.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
 }
 
 ///|

@@ -3909,6 +3909,47 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_s
 }
 
 ///|
+pub(all) struct OverlaySpriteUvScissor {
+  texture : @asset.Handle[@asset.Image]
+  transform : @math.Transform
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+  color : Color
+  layers : RenderLayers
+  scissor : @math.Rect?
+}
+
+///|
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor_batch(
+  world : W,
+  sprites : Array[OverlaySpriteUvScissor],
+) -> Unit {
+  if sprites.length() == 0 {
+    return
+  }
+  render_state_ref_mut(world).map(fn(rs) {
+    for sprite in sprites {
+      rs.val.extra_sprites.push(SpriteInstance::{
+        entity: @core.Entity::placeholder(),
+        transform: sprite.transform,
+        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+        draw_scale: @math.Vec2::new(
+          sprite.transform.scale.x,
+          sprite.transform.scale.y,
+        ),
+        color: sprite.color,
+        texture: sprite.texture,
+        layers: sprite.layers,
+        uv_min: sprite.uv_min,
+        uv_max: sprite.uv_max,
+        scissor: sprite.scissor,
+      })
+    }
+  })
+  |> ignore
+}
+
+///|
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_rects(
   world : W,
 ) -> Unit {

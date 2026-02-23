@@ -290,6 +290,22 @@ extern "js" fn performance_now() -> Double =
   #| () => performance.now()
 
 ///|
+extern "js" fn url_search_param_enabled(name : String) -> Bool =
+  #| (name) => {
+  #|   try {
+  #|     const raw = new URLSearchParams(window.location.search).get(name)
+  #|     if (raw === null) return false
+  #|     const value = String(raw).trim().toLowerCase()
+  #|     if (value === "" || value === "1" || value === "true" || value === "on" || value === "yes") {
+  #|       return true
+  #|     }
+  #|     return false
+  #|   } catch (_e) {
+  #|     return false
+  #|   }
+  #| }
+
+///|
 extern "js" fn get_device_pixel_ratio() -> Double =
   #| () => window.devicePixelRatio || 1
 

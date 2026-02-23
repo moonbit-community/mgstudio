@@ -27,6 +27,8 @@ pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
 pub fn text_debug_all_draws() -> Array[TextDebugGlyphDraw]
 
+pub fn text_debug_capture_enabled() -> Bool
+
 pub fn text_debug_clear_frame() -> Unit
 
 pub fn text_debug_draw_count(TextHandle) -> Int
@@ -36,6 +38,8 @@ pub fn text_debug_draws(TextHandle) -> Array[TextDebugGlyphDraw]
 pub fn text_debug_overlap_count(TextHandle, TextHandle) -> Int
 
 pub fn text_debug_push_glyph(Int, @math.Rect, @math.Rect?, Int, @math.Vec2, @math.Vec2) -> Unit
+
+pub fn text_debug_set_capture_enabled(Bool) -> Unit
 
 pub fn text_debug_text_infos() -> Array[TextDebugTextInfo]
 
@@ -192,6 +196,8 @@ pub struct PositionedGlyph {
   position : @math.Vec2
   size : @math.Vec2
   atlas_info : GlyphAtlasInfo
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
   span_index : Int
   line_index : Int
   byte_index : Int

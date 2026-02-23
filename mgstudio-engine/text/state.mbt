@@ -259,7 +259,29 @@ let text_debug_frame_state : Ref[TextDebugFrameState] = Ref::new(TextDebugFrameS
 })
 
 ///|
+let text_debug_capture_enabled_state : Ref[Bool] = Ref::new(false)
+
+///|
+pub fn text_debug_capture_enabled() -> Bool {
+  text_debug_capture_enabled_state.val
+}
+
+///|
+pub fn text_debug_set_capture_enabled(enabled : Bool) -> Unit {
+  text_debug_capture_enabled_state.val = enabled
+  if !enabled {
+    text_debug_frame_state.val.draws.clear()
+  }
+}
+
+///|
 pub fn text_debug_clear_frame() -> Unit {
+  if !text_debug_capture_enabled_state.val {
+    if text_debug_frame_state.val.draws.length() > 0 {
+      text_debug_frame_state.val.draws.clear()
+    }
+    return
+  }
   text_debug_frame_state.val.draws.clear()
 }
 
@@ -272,6 +294,9 @@ pub fn text_debug_push_glyph(
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
 ) -> Unit {
+  if !text_debug_capture_enabled_state.val {
+    return
+  }
   text_debug_frame_state.val.draws.push(TextDebugGlyphDraw::{
     text_id,
     bounds,

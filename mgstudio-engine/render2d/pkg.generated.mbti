@@ -52,6 +52,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?) -> Unit
 
+pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor_batch(W, Array[OverlaySpriteUvScissor]) -> Unit
+
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shadow_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
@@ -462,6 +464,16 @@ pub struct OrthographicProjection {
 pub fn OrthographicProjection::default_2d() -> Self
 pub fn OrthographicProjection::new(Float) -> Self
 pub fn OrthographicProjection::with_scale(Self, Float) -> Self
+
+pub(all) struct OverlaySpriteUvScissor {
+  texture : @asset.Handle[@asset.Image]
+  transform : @math.Transform
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
+  color : Color
+  layers : RenderLayers
+  scissor : @math.Rect?
+}
 
 pub struct Polyline2d {
   points : Array[@math.Vec2]

@@ -30,6 +30,8 @@ pub struct PositionedGlyph {
   position : @math.Vec2
   size : @math.Vec2
   atlas_info : GlyphAtlasInfo
+  uv_min : @math.Vec2
+  uv_max : @math.Vec2
   span_index : Int
   line_index : Int
   byte_index : Int

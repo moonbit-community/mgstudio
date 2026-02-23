@@ -1670,6 +1670,207 @@ fn report_debug_once(state : State, key : String, message : String) -> Unit {
 }
 
 ///|
+fn profile_div_safe(total : Double, count : Int) -> Double {
+  if count <= 0 {
+    0.0
+  } else {
+    total / Float::from_int(count).to_double()
+  }
+}
+
+///|
+fn profile_div_int_safe(total : Int, count : Int) -> Double {
+  if count <= 0 {
+    0.0
+  } else {
+    Float::from_int(total).to_double() / Float::from_int(count).to_double()
+  }
+}
+
+///|
+fn profile_reset_window(state : State, now_ms : Double) -> Unit {
+  state.gpu.profile_last_log_ms = now_ms
+  state.gpu.profile_frames_accum = 0
+  state.gpu.profile_frame_cpu_ms_accum = 0.0
+  state.gpu.profile_pass_calls_accum = 0
+  state.gpu.profile_draw_sprite_uv_calls_accum = 0
+  state.gpu.profile_api_draw_sprite_uv_ms_accum = 0.0
+  state.gpu.profile_api_begin_pass_ms_accum = 0.0
+  state.gpu.profile_api_end_pass_ms_accum = 0.0
+  state.gpu.profile_api_end_frame_ms_accum = 0.0
+  state.gpu.profile_draw_ui_rect_calls_accum = 0
+  state.gpu.profile_draw_ui_texture_slice_calls_accum = 0
+  state.gpu.profile_draw_ui_box_shadow_calls_accum = 0
+  state.gpu.profile_draw_mesh_calls_accum = 0
+  state.gpu.profile_draw_mesh3d_calls_accum = 0
+  state.gpu.profile_draw_motion_blur_calls_accum = 0
+  state.gpu.profile_scissor_set_calls_accum = 0
+  state.gpu.profile_scissor_clear_calls_accum = 0
+  state.gpu.profile_sprite_instances_accum = 0
+  state.gpu.profile_sprite_batches_accum = 0
+  state.gpu.profile_ui_instances_accum = 0
+  state.gpu.profile_ui_batches_accum = 0
+}
+
+///|
+fn profile_log_if_needed(state : State) -> Unit {
+  if !state.gpu.profile_enabled {
+    return
+  }
+  let now_ms = performance_now()
+  if state.gpu.profile_last_log_ms <= 0.0 {
+    profile_reset_window(state, now_ms)
+    return
+  }
+  if now_ms - state.gpu.profile_last_log_ms < 1000.0 {
+    return
+  }
+  let frames = state.gpu.profile_frames_accum
+  let avg_frame_ms = profile_div_safe(
+    state.gpu.profile_frame_cpu_ms_accum,
+    frames,
+  )
+  let avg_fps = if avg_frame_ms > 0.0 { 1000.0 / avg_frame_ms } else { 0.0 }
+  let avg_passes = profile_div_int_safe(
+    state.gpu.profile_pass_calls_accum,
+    frames,
+  )
+  let avg_sprite_calls = profile_div_int_safe(
+    state.gpu.profile_draw_sprite_uv_calls_accum,
+    frames,
+  )
+  let avg_sprite_api_ms = profile_div_safe(
+    state.gpu.profile_api_draw_sprite_uv_ms_accum,
+    frames,
+  )
+  let avg_sprite_api_ms_per_call = profile_div_safe(
+    state.gpu.profile_api_draw_sprite_uv_ms_accum,
+    state.gpu.profile_draw_sprite_uv_calls_accum,
+  )
+  let avg_begin_pass_api_ms = profile_div_safe(
+    state.gpu.profile_api_begin_pass_ms_accum,
+    frames,
+  )
+  let avg_end_pass_api_ms = profile_div_safe(
+    state.gpu.profile_api_end_pass_ms_accum,
+    frames,
+  )
+  let avg_end_frame_api_ms = profile_div_safe(
+    state.gpu.profile_api_end_frame_ms_accum,
+    frames,
+  )
+  let avg_ui_rect_calls = profile_div_int_safe(
+    state.gpu.profile_draw_ui_rect_calls_accum,
+    frames,
+  )
+  let avg_ui_slice_calls = profile_div_int_safe(
+    state.gpu.profile_draw_ui_texture_slice_calls_accum,
+    frames,
+  )
+  let avg_ui_shadow_calls = profile_div_int_safe(
+    state.gpu.profile_draw_ui_box_shadow_calls_accum,
+    frames,
+  )
+  let avg_mesh_calls = profile_div_int_safe(
+    state.gpu.profile_draw_mesh_calls_accum,
+    frames,
+  )
+  let avg_mesh3d_calls = profile_div_int_safe(
+    state.gpu.profile_draw_mesh3d_calls_accum,
+    frames,
+  )
+  let avg_motion_blur_calls = profile_div_int_safe(
+    state.gpu.profile_draw_motion_blur_calls_accum,
+    frames,
+  )
+  let avg_scissor_set = profile_div_int_safe(
+    state.gpu.profile_scissor_set_calls_accum,
+    frames,
+  )
+  let avg_scissor_clear = profile_div_int_safe(
+    state.gpu.profile_scissor_clear_calls_accum,
+    frames,
+  )
+  let avg_sprite_instances = profile_div_int_safe(
+    state.gpu.profile_sprite_instances_accum,
+    frames,
+  )
+  let avg_sprite_batches = profile_div_int_safe(
+    state.gpu.profile_sprite_batches_accum,
+    frames,
+  )
+  let avg_ui_instances = profile_div_int_safe(
+    state.gpu.profile_ui_instances_accum,
+    frames,
+  )
+  let avg_ui_batches = profile_div_int_safe(
+    state.gpu.profile_ui_batches_accum,
+    frames,
+  )
+  let sprite_batch_eff = if avg_sprite_batches > 0.0 {
+    avg_sprite_instances / avg_sprite_batches
+  } else {
+    0.0
+  }
+  let ui_batch_eff = if avg_ui_batches > 0.0 {
+    avg_ui_instances / avg_ui_batches
+  } else {
+    0.0
+  }
+  console_error(
+    @js.any(
+      "[mg_profile] fps=" +
+      avg_fps.to_string() +
+      " frame_ms=" +
+      avg_frame_ms.to_string() +
+      " passes/frame=" +
+      avg_passes.to_string() +
+      " sprite_calls/frame=" +
+      avg_sprite_calls.to_string() +
+      " sprite_api_ms/frame=" +
+      avg_sprite_api_ms.to_string() +
+      " sprite_api_ms/call=" +
+      avg_sprite_api_ms_per_call.to_string() +
+      " begin_pass_api_ms/frame=" +
+      avg_begin_pass_api_ms.to_string() +
+      " end_pass_api_ms/frame=" +
+      avg_end_pass_api_ms.to_string() +
+      " end_frame_api_ms/frame=" +
+      avg_end_frame_api_ms.to_string() +
+      " mesh_calls/frame=" +
+      avg_mesh_calls.to_string() +
+      " mesh3d_calls/frame=" +
+      avg_mesh3d_calls.to_string() +
+      " motion_blur_calls/frame=" +
+      avg_motion_blur_calls.to_string() +
+      " ui_rect_calls/frame=" +
+      avg_ui_rect_calls.to_string() +
+      " ui_slice_calls/frame=" +
+      avg_ui_slice_calls.to_string() +
+      " ui_shadow_calls/frame=" +
+      avg_ui_shadow_calls.to_string() +
+      " scissor_set/frame=" +
+      avg_scissor_set.to_string() +
+      " scissor_clear/frame=" +
+      avg_scissor_clear.to_string() +
+      " sprite_instances/frame=" +
+      avg_sprite_instances.to_string() +
+      " sprite_batches/frame=" +
+      avg_sprite_batches.to_string() +
+      " sprite_inst_per_batch=" +
+      sprite_batch_eff.to_string() +
+      " ui_instances/frame=" +
+      avg_ui_instances.to_string() +
+      " ui_batches/frame=" +
+      avg_ui_batches.to_string() +
+      " ui_inst_per_batch=" +
+      ui_batch_eff.to_string(),
+    ),
+  )
+  profile_reset_window(state, now_ms)
+}
+
+///|
 fn get_shader_source(state : State, id : Int) -> String? {
   let entry = map_get(state.assets.shader_sources, @js.any(id))
   if host_is_nullish(entry) {
@@ -2137,6 +2338,13 @@ fn begin_frame(state : State) -> Int {
     return 0
   }
   if state.gpu.context is Some(context) && state.gpu.device is Some(device) {
+    if state.gpu.profile_enabled {
+      let now_ms = performance_now()
+      if state.gpu.profile_last_log_ms <= 0.0 {
+        profile_reset_window(state, now_ms)
+      }
+      state.gpu.profile_frame_begin_ms = now_ms
+    }
     let next_frame = state.gpu.frame_count + 1
     let max_counter : Int = 2147483647
     state.gpu.frame_count = if next_frame < 0 || next_frame > max_counter {
@@ -2233,6 +2441,9 @@ fn begin_pass(
   pass_kind : Double,
   clear_enabled : Double,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_pass_calls_accum = state.gpu.profile_pass_calls_accum + 1
+  }
   report_debug_once(
     state,
     "begin_pass_clear",
@@ -2478,6 +2689,12 @@ fn flush_sprite_batches(state : State) -> Unit {
       state.gpu.sprite_globals_bind_group is Some(globals_bind_group) &&
       state.gpu.pipeline is Some(pipeline) &&
       state.gpu.current_pass is Some(pass) {
+      if state.gpu.profile_enabled {
+        state.gpu.profile_sprite_instances_accum = state.gpu.profile_sprite_instances_accum +
+          state.gpu.sprite_instance_count
+        state.gpu.profile_sprite_batches_accum = state.gpu.profile_sprite_batches_accum +
+          state.gpu.sprite_batches.length()
+      }
       let instance_data = float32array_from_array(
         state.gpu.sprite_instance_data,
       )
@@ -2558,6 +2775,12 @@ fn flush_ui_batches(state : State) -> Unit {
       state.gpu.ui_globals_bind_group is Some(globals_bind_group) &&
       state.gpu.ui_pipeline is Some(pipeline) &&
       state.gpu.current_pass is Some(pass) {
+      if state.gpu.profile_enabled {
+        state.gpu.profile_ui_instances_accum = state.gpu.profile_ui_instances_accum +
+          state.gpu.ui_instance_count
+        state.gpu.profile_ui_batches_accum = state.gpu.profile_ui_batches_accum +
+          state.gpu.ui_batches.length()
+      }
       let instance_data = float32array_from_array(state.gpu.ui_instance_data)
       queue.write_buffer(instance_buffer, 0, instance_data)
       pass.set_pipeline(pipeline)
@@ -2636,6 +2859,12 @@ fn flush_ui_shadow_batches(state : State) -> Unit {
       state.gpu.ui_shadow_globals_bind_group is Some(globals_bind_group) &&
       state.gpu.ui_shadow_pipeline is Some(pipeline) &&
       state.gpu.current_pass is Some(pass) {
+      if state.gpu.profile_enabled {
+        state.gpu.profile_ui_instances_accum = state.gpu.profile_ui_instances_accum +
+          state.gpu.ui_shadow_instance_count
+        state.gpu.profile_ui_batches_accum = state.gpu.profile_ui_batches_accum +
+          state.gpu.ui_shadow_batches.length()
+      }
       let instance_data = float32array_from_array(
         state.gpu.ui_shadow_instance_data,
       )
@@ -2716,6 +2945,12 @@ fn flush_ui_slice_batches(state : State) -> Unit {
       state.gpu.ui_slice_globals_bind_group is Some(globals_bind_group) &&
       state.gpu.ui_slice_pipeline is Some(pipeline) &&
       state.gpu.current_pass is Some(pass) {
+      if state.gpu.profile_enabled {
+        state.gpu.profile_ui_instances_accum = state.gpu.profile_ui_instances_accum +
+          state.gpu.ui_slice_instance_count
+        state.gpu.profile_ui_batches_accum = state.gpu.profile_ui_batches_accum +
+          state.gpu.ui_slice_batches.length()
+      }
       let instance_data = float32array_from_array(
         state.gpu.ui_slice_instance_data,
       )
@@ -2787,6 +3022,10 @@ fn draw_sprite_uv(
   uv_max_x : Double,
   uv_max_y : Double,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_sprite_uv_calls_accum = state.gpu.profile_draw_sprite_uv_calls_accum +
+      1
+  }
   report_debug_once(
     state,
     "draw_sprite_uv_called",
@@ -2919,6 +3158,10 @@ fn draw_ui_rect(
   border_right : Double,
   border_bottom : Double,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_ui_rect_calls_accum = state.gpu.profile_draw_ui_rect_calls_accum +
+      1
+  }
   report_debug_once(
     state,
     "draw_ui_rect_called",
@@ -3036,6 +3279,10 @@ fn draw_ui_texture_slice(
   atlas_r : Double,
   atlas_b : Double,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_ui_texture_slice_calls_accum = state.gpu.profile_draw_ui_texture_slice_calls_accum +
+      1
+  }
   report_debug_once(
     state,
     "draw_ui_texture_slice_called",
@@ -3141,6 +3388,10 @@ fn draw_ui_box_shadow(
   blur : Double,
   samples : Double,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_ui_box_shadow_calls_accum = state.gpu.profile_draw_ui_box_shadow_calls_accum +
+      1
+  }
   report_debug_once(
     state,
     "draw_ui_box_shadow_called",
@@ -3242,6 +3493,10 @@ fn draw_mesh(
   uv_scale_x : Double,
   uv_scale_y : Double,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_mesh_calls_accum = state.gpu.profile_draw_mesh_calls_accum +
+      1
+  }
   report_debug_once(
     state,
     "draw_mesh_called",
@@ -3473,6 +3728,10 @@ fn draw_mesh3d(
   transmission_blur_taps : Double,
   transmission_steps : Double,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_mesh3d_calls_accum = state.gpu.profile_draw_mesh3d_calls_accum +
+      1
+  }
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
@@ -3950,6 +4209,10 @@ fn draw_motion_blur(
   shutter_angle : Double,
   samples : Int,
 ) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_motion_blur_calls_accum = state.gpu.profile_draw_motion_blur_calls_accum +
+      1
+  }
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }

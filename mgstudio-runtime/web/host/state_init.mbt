@@ -253,6 +253,29 @@ priv struct GpuState {
   mut motion_vector_shader_id : Int
   mut motion_blur_shader_id : Int
   mut gizmo_shader_id : Int
+  mut profile_enabled : Bool
+  mut profile_last_log_ms : Double
+  mut profile_frame_begin_ms : Double
+  mut profile_frames_accum : Int
+  mut profile_frame_cpu_ms_accum : Double
+  mut profile_pass_calls_accum : Int
+  mut profile_draw_sprite_uv_calls_accum : Int
+  mut profile_api_draw_sprite_uv_ms_accum : Double
+  mut profile_api_begin_pass_ms_accum : Double
+  mut profile_api_end_pass_ms_accum : Double
+  mut profile_api_end_frame_ms_accum : Double
+  mut profile_draw_ui_rect_calls_accum : Int
+  mut profile_draw_ui_texture_slice_calls_accum : Int
+  mut profile_draw_ui_box_shadow_calls_accum : Int
+  mut profile_draw_mesh_calls_accum : Int
+  mut profile_draw_mesh3d_calls_accum : Int
+  mut profile_draw_motion_blur_calls_accum : Int
+  mut profile_scissor_set_calls_accum : Int
+  mut profile_scissor_clear_calls_accum : Int
+  mut profile_sprite_instances_accum : Int
+  mut profile_sprite_batches_accum : Int
+  mut profile_ui_instances_accum : Int
+  mut profile_ui_batches_accum : Int
 }
 
 ///|
@@ -403,6 +426,29 @@ fn new_state(
       motion_vector_shader_id: 0,
       motion_blur_shader_id: 0,
       gizmo_shader_id: 0,
+      profile_enabled: false,
+      profile_last_log_ms: 0.0,
+      profile_frame_begin_ms: 0.0,
+      profile_frames_accum: 0,
+      profile_frame_cpu_ms_accum: 0.0,
+      profile_pass_calls_accum: 0,
+      profile_draw_sprite_uv_calls_accum: 0,
+      profile_api_draw_sprite_uv_ms_accum: 0.0,
+      profile_api_begin_pass_ms_accum: 0.0,
+      profile_api_end_pass_ms_accum: 0.0,
+      profile_api_end_frame_ms_accum: 0.0,
+      profile_draw_ui_rect_calls_accum: 0,
+      profile_draw_ui_texture_slice_calls_accum: 0,
+      profile_draw_ui_box_shadow_calls_accum: 0,
+      profile_draw_mesh_calls_accum: 0,
+      profile_draw_mesh3d_calls_accum: 0,
+      profile_draw_motion_blur_calls_accum: 0,
+      profile_scissor_set_calls_accum: 0,
+      profile_scissor_clear_calls_accum: 0,
+      profile_sprite_instances_accum: 0,
+      profile_sprite_batches_accum: 0,
+      profile_ui_instances_accum: 0,
+      profile_ui_batches_accum: 0,
     },
     a11y_container: None,
     a11y_focused_node: 0,
