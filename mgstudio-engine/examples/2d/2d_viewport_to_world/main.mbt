@@ -303,6 +303,16 @@ fn update_camera_viewport(
   let max_size = window_size.saturating_sub(position)
   size = size.min(max_size).max(min_size)
   viewport = @render2d.Viewport::new(position, size)
+  let old_viewport = viewport_state.val.viewport
+  let position_changed = viewport.physical_position.x !=
+    old_viewport.physical_position.x ||
+    viewport.physical_position.y != old_viewport.physical_position.y
+  let size_changed = viewport.physical_size.x != old_viewport.physical_size.x ||
+    viewport.physical_size.y != old_viewport.physical_size.y
+  let viewport_changed = position_changed || size_changed
+  if !viewport_changed {
+    return
+  }
   viewport_state.val.viewport = viewport
   let tick = world.read_change_tick()
   let camera_store = world.get_camera_store()

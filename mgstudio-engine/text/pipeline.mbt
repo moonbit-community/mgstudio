@@ -972,8 +972,23 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
 }
 
 ///|
+pub let text_set_render_extract : @app.SystemSet = @app.system_set(
+  "bevy.text.render_extract",
+)
+
+///|
 pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
-  app.add_system(text_update_system).add_system(text_render_system)
+  app
+  .add_system(text_update_system)
+  .add_post_update_system_config(
+    @app.system(text_render_system).in_set(text_set_render_extract),
+  )
+  .configure_set(
+    @app.PostUpdate,
+    text_set_render_extract,
+    after=[@app.system_set("bevy.ui.stack")],
+    before=[@render2d.render2d_set_extract],
+  )
 }
