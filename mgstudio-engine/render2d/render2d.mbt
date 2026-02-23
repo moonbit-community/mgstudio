@@ -5402,12 +5402,19 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 }
 
 ///|
+pub let render2d_set_extract : @app.SystemSet = @app.system_set(
+  "mgstudio.render2d.extract",
+)
+
+///|
 pub fn[W : RenderExtractWorld] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app
   .add_startup_system(init_render_state_system)
-  .add_system(render_extract_system)
+  .add_system_config(
+    @app.system(render_extract_system).in_set(render2d_set_extract),
+  )
   .add_post_update_system(render_prepare_system)
   .add_post_update_system(render_queue_system)
   .add_post_update_system(render_execute_system)

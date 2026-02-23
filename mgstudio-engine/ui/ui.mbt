@@ -4507,6 +4507,20 @@ pub fn[W : UiPluginWorld] ui_plugin(app : @app.App[W]) -> @app.App[W] {
   .add_pre_update_system_config(
     @app.system(ui_render_extract_system).in_set(ui_set_render_extract),
   )
+  // Late UI refresh in Update keeps camera-dependent UI transforms in sync with
+  // cameras modified during FixedUpdate (e.g. viewport/zoom controls).
+  .add_system_config(
+    @app.system(ui_update_context_system).in_set(ui_set_context),
+  )
+  .add_system_config(
+    @app.system(ui_image_content_size_system).in_set(ui_set_measure),
+  )
+  .add_system_config(@app.system(ui_layout_system).in_set(ui_set_layout))
+  .add_system_config(@app.system(ui_clip_system).in_set(ui_set_clip))
+  .add_system_config(@app.system(ui_stack_system).in_set(ui_set_stack))
+  .add_system_config(
+    @app.system(ui_render_extract_system).in_set(ui_set_render_extract),
+  )
   .configure_set(@app.PreUpdate, ui_set_context, before=[ui_set_scroll])
   .configure_set(@app.PreUpdate, ui_set_scroll, after=[ui_set_context], before=[
     ui_set_measure,
@@ -4532,5 +4546,21 @@ pub fn[W : UiPluginWorld] ui_plugin(app : @app.App[W]) -> @app.App[W] {
   .configure_set(@app.PreUpdate, ui_set_interaction, after=[ui_set_a11y])
   .configure_set(@app.PreUpdate, ui_set_render_extract, after=[
     ui_set_interaction,
+  ])
+  .configure_set(@app.Update, ui_set_context, before=[ui_set_measure])
+  .configure_set(@app.Update, ui_set_measure, after=[ui_set_context], before=[
+    ui_set_layout,
+  ])
+  .configure_set(@app.Update, ui_set_layout, after=[ui_set_measure], before=[
+    ui_set_clip,
+  ])
+  .configure_set(@app.Update, ui_set_clip, after=[ui_set_layout], before=[
+    ui_set_stack,
+  ])
+  .configure_set(@app.Update, ui_set_stack, after=[ui_set_clip], before=[
+    ui_set_render_extract,
+  ])
+  .configure_set(@app.Update, ui_set_render_extract, after=[ui_set_stack], before=[
+    @render2d.render2d_set_extract,
   ])
 }
