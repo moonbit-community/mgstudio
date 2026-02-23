@@ -10,21 +10,22 @@
 
 - Rendering: Not applicable (console logging only).
 - Input:
-  - Event-style logs are produced with `Started`, `Moved`, and `Ended` phases.
-  - Event stream shape follows the Bevy touch-input-events example intent.
-- Timing/Update model: Polling in update system per frame.
+  - Uses `MessageReader<TouchInput>` and logs each incoming touch event.
+  - Event stream supports `Started`, `Moved`, `Ended`, and `Canceled` phases.
+- Timing/Update model: MessageReader iteration in update system.
 - Asset path/loading: Not applicable.
 
 ## Known Differences
 
-- Bevy uses `MessageReader<TouchInput>` from real touch input events.
-- mgstudio currently has no touch event/message API in engine input surface; this port maps left mouse to synthetic touch id `0`.
-- Touch cancel and multi-touch semantics are not represented.
+- `WASM/Web` and `native-wasmtime` now provide host touch events (id/phase/position) to `MessageReader<TouchInput>`.
+- Bevy-level extended touch metadata is not implemented yet.
+- `native` (wasmoon + Cocoa window backend) currently has no touch source wired, so the stream is empty there.
 
 ## Runtime Constraints
 
-- WASM/Web: Uses mouse fallback path.
-- Native runtime: Uses mouse fallback path.
+- WASM/Web: Pointer touch events are forwarded to `input_touch_event_*`.
+- Native runtime (wasmtime): `winit::WindowEvent::Touch` is forwarded to `input_touch_event_*`.
+- Native runtime (wasmoon/Cocoa backend): touch input path is currently unavailable.
 
 ## Validation Evidence
 
@@ -35,4 +36,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.13`
-- Remaining blockers: Add native touch message API and full multi-touch lifecycle parity.
+- Remaining blockers: Add touch source for wasmoon/Cocoa backend and full Bevy touch metadata/lifecycle parity.
