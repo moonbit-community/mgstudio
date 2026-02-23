@@ -807,6 +807,20 @@ pub fn Capsule2d::default() -> Capsule2d {
 }
 
 ///|
+pub struct Capsule2dRing {
+  outer_shape : Capsule2d
+  inner_shape : Capsule2d
+}
+
+///|
+pub fn Capsule2dRing::new(
+  outer_shape : Capsule2d,
+  inner_shape : Capsule2d,
+) -> Capsule2dRing {
+  Capsule2dRing::{ outer_shape, inner_shape }
+}
+
+///|
 pub struct Rectangle {
   half_size : @math.Vec2
 }
@@ -824,6 +838,20 @@ pub fn Rectangle::from_size(size : @math.Vec2) -> Rectangle {
 ///|
 pub fn Rectangle::default() -> Rectangle {
   Rectangle::{ half_size: @math.Vec2::new(0.5F, 0.5F) }
+}
+
+///|
+pub struct RectangleRing {
+  outer_shape : Rectangle
+  inner_shape : Rectangle
+}
+
+///|
+pub fn RectangleRing::new(
+  outer_shape : Rectangle,
+  inner_shape : Rectangle,
+) -> RectangleRing {
+  RectangleRing::{ outer_shape, inner_shape }
 }
 
 ///|
@@ -866,6 +894,20 @@ pub fn Ellipse::with_vertices(self : Ellipse, vertices : Int) -> Ellipse {
 ///|
 pub fn Ellipse::default() -> Ellipse {
   Ellipse::new(0.5F, 0.25F)
+}
+
+///|
+pub struct EllipseRing {
+  outer_shape : Ellipse
+  inner_shape : Ellipse
+}
+
+///|
+pub fn EllipseRing::new(
+  outer_shape : Ellipse,
+  inner_shape : Ellipse,
+) -> EllipseRing {
+  EllipseRing::{ outer_shape, inner_shape }
 }
 
 ///|
@@ -928,6 +970,20 @@ pub fn Rhombus::default() -> Rhombus {
 }
 
 ///|
+pub struct RhombusRing {
+  outer_shape : Rhombus
+  inner_shape : Rhombus
+}
+
+///|
+pub fn RhombusRing::new(
+  outer_shape : Rhombus,
+  inner_shape : Rhombus,
+) -> RhombusRing {
+  RhombusRing::{ outer_shape, inner_shape }
+}
+
+///|
 pub struct RegularPolygon {
   radius : Float
   sides : Int
@@ -941,6 +997,20 @@ pub fn RegularPolygon::new(radius : Float, sides : Int) -> RegularPolygon {
 ///|
 pub fn RegularPolygon::default() -> RegularPolygon {
   RegularPolygon::new(0.5F, 6)
+}
+
+///|
+pub struct RegularPolygonRing {
+  outer_shape : RegularPolygon
+  inner_shape : RegularPolygon
+}
+
+///|
+pub fn RegularPolygonRing::new(
+  outer_shape : RegularPolygon,
+  inner_shape : RegularPolygon,
+) -> RegularPolygonRing {
+  RegularPolygonRing::{ outer_shape, inner_shape }
 }
 
 ///|
@@ -966,6 +1036,20 @@ pub fn Triangle2d::default() -> Triangle2d {
     b: @math.Vec2::new(-0.5F, -0.5F),
     c: @math.Vec2::new(0.5F, -0.5F),
   }
+}
+
+///|
+pub struct Triangle2dRing {
+  outer_shape : Triangle2d
+  inner_shape : Triangle2d
+}
+
+///|
+pub fn Triangle2dRing::new(
+  outer_shape : Triangle2d,
+  inner_shape : Triangle2d,
+) -> Triangle2dRing {
+  Triangle2dRing::{ outer_shape, inner_shape }
 }
 
 ///|
@@ -1054,6 +1138,20 @@ pub fn CircularSector::default() -> CircularSector {
 }
 
 ///|
+pub struct CircularSectorRing {
+  outer_shape : CircularSector
+  inner_shape : CircularSector
+}
+
+///|
+pub fn CircularSectorRing::new(
+  outer_shape : CircularSector,
+  inner_shape : CircularSector,
+) -> CircularSectorRing {
+  CircularSectorRing::{ outer_shape, inner_shape }
+}
+
+///|
 pub struct CircularSegment {
   radius : Float
   half_angle : Float
@@ -1097,6 +1195,177 @@ pub fn CircularSegment::angle(self : CircularSegment) -> Float {
 ///|
 pub fn CircularSegment::default() -> CircularSegment {
   CircularSegment::new(0.5F, @math.pi_half() * 2.0F / 3.0F)
+}
+
+///|
+pub struct CircularSegmentRing {
+  outer_shape : CircularSegment
+  inner_shape : CircularSegment
+}
+
+///|
+pub fn CircularSegmentRing::new(
+  outer_shape : CircularSegment,
+  inner_shape : CircularSegment,
+) -> CircularSegmentRing {
+  CircularSegmentRing::{ outer_shape, inner_shape }
+}
+
+///|
+fn ring_vec2_add(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
+  @math.Vec2::new(a.x + b.x, a.y + b.y)
+}
+
+///|
+fn ring_vec2_sub(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
+  @math.Vec2::new(a.x - b.x, a.y - b.y)
+}
+
+///|
+fn ring_vec2_mul_scalar(v : @math.Vec2, scalar : Float) -> @math.Vec2 {
+  @math.Vec2::new(v.x * scalar, v.y * scalar)
+}
+
+///|
+fn ring_vec2_dot(a : @math.Vec2, b : @math.Vec2) -> Float {
+  a.x * b.x + a.y * b.y
+}
+
+///|
+fn ring_vec2_normalize_or_zero(v : @math.Vec2) -> @math.Vec2 {
+  let len_sq = ring_vec2_dot(v, v)
+  if len_sq <= 1.0e-12F {
+    return @math.Vec2::new(0.0F, 0.0F)
+  }
+  let inv_len = 1.0F / @math.sqrt(len_sq)
+  ring_vec2_mul_scalar(v, inv_len)
+}
+
+///|
+fn ring_safe_acos(value : Float) -> Float {
+  let clamped = shape_clamp_float(value, -1.0F, 1.0F)
+  let y_sq = 1.0F - clamped * clamped
+  let y = if y_sq <= 0.0F { 0.0F } else { @math.sqrt(y_sq) }
+  @math.atan2(y, clamped)
+}
+
+///|
+fn triangle_inset_point(
+  a : @math.Vec2,
+  b : @math.Vec2,
+  c : @math.Vec2,
+  distance : Float,
+) -> @math.Vec2 {
+  let unit_ab = ring_vec2_normalize_or_zero(ring_vec2_sub(b, a))
+  let unit_ac = ring_vec2_normalize_or_zero(ring_vec2_sub(c, a))
+  let half_angle = ring_safe_acos(ring_vec2_dot(unit_ab, unit_ac)) / 2.0F
+  let direction = ring_vec2_normalize_or_zero(
+    ring_vec2_mul_scalar(ring_vec2_add(unit_ab, unit_ac), 0.5F),
+  )
+  let sin_half_angle = @math.sin(half_angle)
+  if shape_abs_float(sin_half_angle) <= 1.0e-6F {
+    return a
+  }
+  ring_vec2_add(a, ring_vec2_mul_scalar(direction, distance / sin_half_angle))
+}
+
+///|
+pub fn Circle::to_ring(self : Circle, thickness : Float) -> Ring2d {
+  Ring2d::new(self.radius, self.radius - thickness).with_vertices(self.vertices)
+}
+
+///|
+pub fn CircularSegment::to_ring(
+  self : CircularSegment,
+  distance : Float,
+) -> CircularSegmentRing {
+  let old_radius = shape_safe_positive(shape_abs_float(self.radius), 0.5F)
+  let old_half_angle = arc_safe_half_angle(self.half_angle)
+  let old_apothem = circular_segment_apothem(old_radius, old_half_angle)
+  let radius = old_radius - distance
+  let apothem = old_apothem + distance
+  let safe_radius = if radius <= 1.0e-6F { 1.0e-6F } else { radius }
+  let half_angle = ring_safe_acos(apothem / safe_radius)
+  let inner = CircularSegment::new(safe_radius, half_angle).with_vertices(
+    self.vertices,
+  )
+  CircularSegmentRing::new(self, inner)
+}
+
+///|
+pub fn Capsule2d::to_ring(self : Capsule2d, distance : Float) -> Capsule2dRing {
+  let inner = Capsule2d::{
+    radius: self.radius - distance,
+    half_length: self.half_length,
+    segments: self.segments,
+  }
+  Capsule2dRing::new(self, inner)
+}
+
+///|
+pub fn Rhombus::to_ring(self : Rhombus, distance : Float) -> RhombusRing {
+  let half_width = self.half_diagonal.x
+  let half_height = self.half_diagonal.y
+  let angle = @math.atan2(half_height, half_width)
+  let sin_angle = @math.sin(angle)
+  let cos_angle = @math.cos(angle)
+  let x_offset = if shape_abs_float(sin_angle) <= 1.0e-6F {
+    0.0F
+  } else {
+    distance / sin_angle
+  }
+  let y_offset = if shape_abs_float(cos_angle) <= 1.0e-6F {
+    0.0F
+  } else {
+    distance / cos_angle
+  }
+  let inner = Rhombus::new(
+    half_width * 2.0F - x_offset * 2.0F,
+    half_height * 2.0F - y_offset * 2.0F,
+  )
+  RhombusRing::new(self, inner)
+}
+
+///|
+pub fn Rectangle::to_ring(self : Rectangle, distance : Float) -> RectangleRing {
+  let inner = Rectangle::new(
+    self.half_size.x * 2.0F - distance * 2.0F,
+    self.half_size.y * 2.0F - distance * 2.0F,
+  )
+  RectangleRing::new(self, inner)
+}
+
+///|
+pub fn RegularPolygon::to_ring(
+  self : RegularPolygon,
+  distance : Float,
+) -> RegularPolygonRing {
+  let sides = if self.sides < 3 { 3 } else { self.sides }
+  let pi = @math.pi_half() * 2.0F
+  let half_angle = pi *
+    Float::from_double((sides - 2).to_double()) /
+    Float::from_double((2 * sides).to_double())
+  let sin_half_angle = @math.sin(half_angle)
+  let offset = if shape_abs_float(sin_half_angle) <= 1.0e-6F {
+    0.0F
+  } else {
+    distance / sin_half_angle
+  }
+  let inner = RegularPolygon::new(self.radius - offset, self.sides)
+  RegularPolygonRing::new(self, inner)
+}
+
+///|
+pub fn Triangle2d::to_ring(
+  self : Triangle2d,
+  distance : Float,
+) -> Triangle2dRing {
+  let inner = Triangle2d::new(
+    triangle_inset_point(self.a, self.b, self.c, distance),
+    triangle_inset_point(self.b, self.c, self.a, distance),
+    triangle_inset_point(self.c, self.a, self.b, distance),
+  )
+  Triangle2dRing::new(self, inner)
 }
 
 ///|
@@ -1213,14 +1482,9 @@ pub fn Mesh2d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh2d {
 
 ///|
 fn rectangle_to_mesh2d_geometry(rectangle : Rectangle) -> @mesh.Mesh2dGeometry {
-  let hx = rectangle.half_size.x
-  let hy = rectangle.half_size.y
-  let positions = [
-    @math.Vec2::new(-hx, -hy),
-    @math.Vec2::new(hx, -hy),
-    @math.Vec2::new(hx, hy),
-    @math.Vec2::new(-hx, hy),
-  ]
+  let hx = shape_safe_positive(shape_abs_float(rectangle.half_size.x), 0.5F)
+  let hy = shape_safe_positive(shape_abs_float(rectangle.half_size.y), 0.5F)
+  let positions = shape_perimeter_rectangle(@math.Vec2::new(hx, hy))
   let uvs = [
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(1.0F, 0.0F),
@@ -1229,6 +1493,37 @@ fn rectangle_to_mesh2d_geometry(rectangle : Rectangle) -> @mesh.Mesh2dGeometry {
   ]
   let indices = [0, 1, 2, 0, 2, 3]
   @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
+}
+
+///|
+fn rectangle_ring_to_mesh2d_geometry(
+  ring : RectangleRing,
+) -> @mesh.Mesh2dGeometry {
+  let outer_hx = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.half_size.x),
+    0.5F,
+  )
+  let outer_hy = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.half_size.y),
+    0.5F,
+  )
+  let mut inner_hx = shape_abs_float(ring.inner_shape.half_size.x)
+  let mut inner_hy = shape_abs_float(ring.inner_shape.half_size.y)
+  if inner_hx >= outer_hx {
+    inner_hx = outer_hx * 0.5F
+  }
+  if inner_hy >= outer_hy {
+    inner_hy = outer_hy * 0.5F
+  }
+  shape_ring_geometry_from_closed_loops(
+    shape_perimeter_rectangle(@math.Vec2::new(outer_hx, outer_hy)),
+    shape_perimeter_rectangle(
+      @math.Vec2::new(
+        shape_safe_positive(inner_hx, outer_hx * 0.5F),
+        shape_safe_positive(inner_hy, outer_hy * 0.5F),
+      ),
+    ),
+  )
 }
 
 ///|
@@ -1368,6 +1663,141 @@ fn shape_perimeter_ellipse(
 }
 
 ///|
+fn shape_perimeter_rectangle(half_size : @math.Vec2) -> Array[@math.Vec2] {
+  [
+    @math.Vec2::new(-half_size.x, -half_size.y),
+    @math.Vec2::new(half_size.x, -half_size.y),
+    @math.Vec2::new(half_size.x, half_size.y),
+    @math.Vec2::new(-half_size.x, half_size.y),
+  ]
+}
+
+///|
+fn shape_perimeter_rhombus(half_diagonal : @math.Vec2) -> Array[@math.Vec2] {
+  [
+    @math.Vec2::new(0.0F, half_diagonal.y),
+    @math.Vec2::new(half_diagonal.x, 0.0F),
+    @math.Vec2::new(0.0F, -half_diagonal.y),
+    @math.Vec2::new(-half_diagonal.x, 0.0F),
+  ]
+}
+
+///|
+fn shape_perimeter_triangle(triangle : Triangle2d) -> Array[@math.Vec2] {
+  [triangle.a, triangle.b, triangle.c]
+}
+
+///|
+fn shape_perimeter_capsule(
+  radius : Float,
+  half_length : Float,
+  segments : Int,
+) -> Array[@math.Vec2] {
+  let mut safe_segments = segments
+  if safe_segments < 4 {
+    safe_segments = 4
+  }
+  let pi = @math.pi_half() * 2.0F
+  let perimeter : Array[@math.Vec2] = []
+  // Top arc: right -> left.
+  for i in 0..<(safe_segments + 1) {
+    let t = Float::from_double(i.to_double()) /
+      Float::from_double(safe_segments.to_double())
+    let theta = t * pi
+    perimeter.push(
+      @math.Vec2::new(
+        @math.cos(theta) * radius,
+        @math.sin(theta) * radius + half_length,
+      ),
+    )
+  }
+  // Left side down to bottom-left.
+  perimeter.push(@math.Vec2::new(-radius, -half_length))
+  // Bottom arc: left -> right, skipping duplicated first point.
+  for i in 1..<(safe_segments + 1) {
+    let t = Float::from_double(i.to_double()) /
+      Float::from_double(safe_segments.to_double())
+    let theta = pi + t * pi
+    perimeter.push(
+      @math.Vec2::new(
+        @math.cos(theta) * radius,
+        @math.sin(theta) * radius - half_length,
+      ),
+    )
+  }
+  perimeter
+}
+
+///|
+fn shape_arc_points(
+  radius : Float,
+  half_angle : Float,
+  count : Int,
+) -> Array[@math.Vec2] {
+  let points : Array[@math.Vec2] = []
+  let first_angle = @math.pi_half() - half_angle
+  let last_angle = @math.pi_half() + half_angle
+  for i in 0..<count {
+    let angle = arc_angle_from_index(first_angle, last_angle, i, count)
+    points.push(
+      @math.Vec2::new(@math.cos(angle) * radius, @math.sin(angle) * radius),
+    )
+  }
+  points
+}
+
+///|
+fn shape_ring_geometry_from_closed_loops(
+  outer_loop : Array[@math.Vec2],
+  inner_loop : Array[@math.Vec2],
+) -> @mesh.Mesh2dGeometry {
+  let n = outer_loop.length()
+  if n < 3 || inner_loop.length() != n {
+    return shape_geometry_from_nonindexed_positions([])
+  }
+  let triangles : Array[@math.Vec2] = []
+  for i in 0..<n {
+    let j = (i + 1) % n
+    let o0 = outer_loop[i]
+    let o1 = outer_loop[j]
+    let i0 = inner_loop[i]
+    let i1 = inner_loop[j]
+    triangles.push(o0)
+    triangles.push(o1)
+    triangles.push(i1)
+    triangles.push(o0)
+    triangles.push(i1)
+    triangles.push(i0)
+  }
+  shape_geometry_from_nonindexed_positions(triangles)
+}
+
+///|
+fn shape_ring_geometry_from_open_loops(
+  outer_loop : Array[@math.Vec2],
+  inner_loop : Array[@math.Vec2],
+) -> @mesh.Mesh2dGeometry {
+  let n = outer_loop.length()
+  if n < 2 || inner_loop.length() != n {
+    return shape_geometry_from_nonindexed_positions([])
+  }
+  let triangles : Array[@math.Vec2] = []
+  for i in 0..<(n - 1) {
+    let o0 = outer_loop[i]
+    let o1 = outer_loop[i + 1]
+    let i0 = inner_loop[i]
+    let i1 = inner_loop[i + 1]
+    triangles.push(o0)
+    triangles.push(o1)
+    triangles.push(i1)
+    triangles.push(o0)
+    triangles.push(i1)
+    triangles.push(i0)
+  }
+  shape_geometry_from_nonindexed_positions(triangles)
+}
+
+///|
 fn circle_to_mesh2d_geometry(circle : Circle) -> @mesh.Mesh2dGeometry {
   let radius = shape_safe_positive(shape_abs_float(circle.radius), 0.5F)
   let segments = shape_safe_segments(circle.vertices, 3)
@@ -1447,24 +1877,138 @@ fn ring_to_mesh2d_geometry(ring : Ring2d) -> @mesh.Mesh2dGeometry {
 }
 
 ///|
+fn circular_sector_ring_to_mesh2d_geometry(
+  ring : CircularSectorRing,
+) -> @mesh.Mesh2dGeometry {
+  let outer_radius = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.radius),
+    0.5F,
+  )
+  let inner_radius = shape_abs_float(ring.inner_shape.radius)
+  let safe_inner_radius = if inner_radius >= outer_radius {
+    outer_radius * 0.5F
+  } else {
+    inner_radius
+  }
+  let outer_half_angle = arc_safe_half_angle(ring.outer_shape.half_angle)
+  let inner_half_angle = arc_safe_half_angle(ring.inner_shape.half_angle)
+  let outer_count = shape_safe_segments(ring.outer_shape.vertices, 2)
+  let inner_count = shape_safe_segments(ring.inner_shape.vertices, 2)
+  let count = if outer_count < inner_count { outer_count } else { inner_count }
+  shape_ring_geometry_from_open_loops(
+    shape_arc_points(outer_radius, outer_half_angle, count),
+    shape_arc_points(
+      shape_safe_positive(safe_inner_radius, outer_radius * 0.5F),
+      inner_half_angle,
+      count,
+    ),
+  )
+}
+
+///|
+fn circular_segment_ring_to_mesh2d_geometry(
+  ring : CircularSegmentRing,
+) -> @mesh.Mesh2dGeometry {
+  let outer_radius = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.radius),
+    0.5F,
+  )
+  let inner_radius = shape_abs_float(ring.inner_shape.radius)
+  let safe_inner_radius = if inner_radius >= outer_radius {
+    outer_radius * 0.5F
+  } else {
+    inner_radius
+  }
+  let outer_half_angle = arc_safe_half_angle(ring.outer_shape.half_angle)
+  let inner_half_angle = arc_safe_half_angle(ring.inner_shape.half_angle)
+  let outer_count = shape_safe_segments(ring.outer_shape.vertices, 2)
+  let inner_count = shape_safe_segments(ring.inner_shape.vertices, 2)
+  let count = if outer_count < inner_count { outer_count } else { inner_count }
+  shape_ring_geometry_from_closed_loops(
+    shape_arc_points(outer_radius, outer_half_angle, count),
+    shape_arc_points(
+      shape_safe_positive(safe_inner_radius, outer_radius * 0.5F),
+      inner_half_angle,
+      count,
+    ),
+  )
+}
+
+///|
+fn ellipse_ring_to_mesh2d_geometry(ring : EllipseRing) -> @mesh.Mesh2dGeometry {
+  let outer_hx = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.half_size.x),
+    0.5F,
+  )
+  let outer_hy = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.half_size.y),
+    0.5F,
+  )
+  let mut inner_hx = shape_abs_float(ring.inner_shape.half_size.x)
+  let mut inner_hy = shape_abs_float(ring.inner_shape.half_size.y)
+  if inner_hx >= outer_hx {
+    inner_hx = outer_hx * 0.5F
+  }
+  if inner_hy >= outer_hy {
+    inner_hy = outer_hy * 0.5F
+  }
+  let outer_count = shape_safe_segments(ring.outer_shape.vertices, 3)
+  let inner_count = shape_safe_segments(ring.inner_shape.vertices, 3)
+  let count = if outer_count < inner_count { outer_count } else { inner_count }
+  shape_ring_geometry_from_closed_loops(
+    shape_perimeter_ellipse(@math.Vec2::new(outer_hx, outer_hy), count),
+    shape_perimeter_ellipse(
+      @math.Vec2::new(
+        shape_safe_positive(inner_hx, outer_hx * 0.5F),
+        shape_safe_positive(inner_hy, outer_hy * 0.5F),
+      ),
+      count,
+    ),
+  )
+}
+
+///|
 fn rhombus_to_mesh2d_geometry(rhombus : Rhombus) -> @mesh.Mesh2dGeometry {
   let hx = shape_safe_positive(shape_abs_float(rhombus.half_diagonal.x), 0.5F)
   let hy = shape_safe_positive(shape_abs_float(rhombus.half_diagonal.y), 0.5F)
-  let perimeter = [
-    @math.Vec2::new(0.0F, hy),
-    @math.Vec2::new(hx, 0.0F),
-    @math.Vec2::new(0.0F, -hy),
-    @math.Vec2::new(-hx, 0.0F),
-  ]
+  let perimeter = shape_perimeter_rhombus(@math.Vec2::new(hx, hy))
   shape_geometry_from_nonindexed_positions(shape_triangulate_fan(perimeter))
 }
 
 ///|
-fn regular_polygon_to_mesh2d_geometry(
-  polygon : RegularPolygon,
-) -> @mesh.Mesh2dGeometry {
-  let radius = shape_safe_positive(shape_abs_float(polygon.radius), 0.5F)
-  let sides = shape_safe_segments(polygon.sides, 3)
+fn rhombus_ring_to_mesh2d_geometry(ring : RhombusRing) -> @mesh.Mesh2dGeometry {
+  let outer_hx = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.half_diagonal.x),
+    0.5F,
+  )
+  let outer_hy = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.half_diagonal.y),
+    0.5F,
+  )
+  let mut inner_hx = shape_abs_float(ring.inner_shape.half_diagonal.x)
+  let mut inner_hy = shape_abs_float(ring.inner_shape.half_diagonal.y)
+  if inner_hx >= outer_hx {
+    inner_hx = outer_hx * 0.5F
+  }
+  if inner_hy >= outer_hy {
+    inner_hy = outer_hy * 0.5F
+  }
+  shape_ring_geometry_from_closed_loops(
+    shape_perimeter_rhombus(@math.Vec2::new(outer_hx, outer_hy)),
+    shape_perimeter_rhombus(
+      @math.Vec2::new(
+        shape_safe_positive(inner_hx, outer_hx * 0.5F),
+        shape_safe_positive(inner_hy, outer_hy * 0.5F),
+      ),
+    ),
+  )
+}
+
+///|
+fn shape_perimeter_regular_polygon(
+  radius : Float,
+  sides : Int,
+) -> Array[@math.Vec2] {
   let perimeter : Array[@math.Vec2] = []
   let tau = shape_tau()
   for i in 0..<sides {
@@ -1475,12 +2019,59 @@ fn regular_polygon_to_mesh2d_geometry(
       @math.Vec2::new(@math.cos(theta) * radius, @math.sin(theta) * radius),
     )
   }
-  shape_geometry_from_nonindexed_positions(shape_triangulate_fan(perimeter))
+  perimeter
+}
+
+///|
+fn regular_polygon_to_mesh2d_geometry(
+  polygon : RegularPolygon,
+) -> @mesh.Mesh2dGeometry {
+  let radius = shape_safe_positive(shape_abs_float(polygon.radius), 0.5F)
+  let sides = shape_safe_segments(polygon.sides, 3)
+  shape_geometry_from_nonindexed_positions(
+    shape_triangulate_fan(shape_perimeter_regular_polygon(radius, sides)),
+  )
+}
+
+///|
+fn regular_polygon_ring_to_mesh2d_geometry(
+  ring : RegularPolygonRing,
+) -> @mesh.Mesh2dGeometry {
+  let outer_radius = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.radius),
+    0.5F,
+  )
+  let inner_radius = shape_abs_float(ring.inner_shape.radius)
+  let safe_inner_radius = if inner_radius >= outer_radius {
+    outer_radius * 0.5F
+  } else {
+    inner_radius
+  }
+  let outer_sides = shape_safe_segments(ring.outer_shape.sides, 3)
+  let inner_sides = shape_safe_segments(ring.inner_shape.sides, 3)
+  let sides = if outer_sides < inner_sides { outer_sides } else { inner_sides }
+  shape_ring_geometry_from_closed_loops(
+    shape_perimeter_regular_polygon(outer_radius, sides),
+    shape_perimeter_regular_polygon(
+      shape_safe_positive(safe_inner_radius, outer_radius * 0.5F),
+      sides,
+    ),
+  )
 }
 
 ///|
 fn triangle_to_mesh2d_geometry(triangle : Triangle2d) -> @mesh.Mesh2dGeometry {
-  shape_geometry_from_nonindexed_positions([triangle.a, triangle.b, triangle.c])
+  shape_geometry_from_nonindexed_positions(shape_perimeter_triangle(triangle))
+}
+
+///|
+fn triangle_ring_to_mesh2d_geometry(
+  ring : Triangle2dRing,
+) -> @mesh.Mesh2dGeometry {
+  shape_ring_geometry_from_closed_loops(
+    shape_perimeter_triangle(ring.outer_shape),
+    shape_perimeter_triangle(ring.inner_shape),
+  )
 }
 
 ///|
@@ -1669,36 +2260,10 @@ fn circular_segment_to_mesh2d_geometry(
 
 ///|
 fn capsule_to_mesh2d_geometry(capsule : Capsule2d) -> @mesh.Mesh2dGeometry {
-  let r = capsule.radius
-  let half = capsule.half_length
-  let mut segments = capsule.segments
-  if segments < 4 {
-    segments = 4
-  }
-  let pi = @math.pi_half() * 2.0F
-  // Build a convex polygon perimeter (CCW), then triangulate as an indexed fan.
-  let perimeter : Array[@math.Vec2] = []
-  // Top arc: theta 0..pi (includes endpoints).
-  for i in 0..<(segments + 1) {
-    let t = Float::from_double(i.to_double()) /
-      Float::from_double(segments.to_double())
-    let theta = t * pi
-    // theta in [0, pi]
-    let x = @math.cos(theta) * r
-    let y = @math.sin(theta) * r + half
-    perimeter.push(@math.Vec2::new(x, y))
-  }
-  // Left side down to bottom arc start.
-  perimeter.push(@math.Vec2::new(-r, -half))
-  // Bottom arc: theta pi..2pi (skip first point to avoid dup).
-  for i in 1..<(segments + 1) {
-    let t = Float::from_double(i.to_double()) /
-      Float::from_double(segments.to_double())
-    let theta = pi + t * pi
-    let x = @math.cos(theta) * r
-    let y = @math.sin(theta) * r - half
-    perimeter.push(@math.Vec2::new(x, y))
-  }
+  let r = shape_safe_positive(shape_abs_float(capsule.radius), 0.5F)
+  let half = shape_abs_float(capsule.half_length)
+  let segments = shape_safe_segments(capsule.segments, 4)
+  let perimeter = shape_perimeter_capsule(r, half, segments)
   // Right side back to start is implicit.
   let positions : Array[@math.Vec2] = []
   positions.push(@math.Vec2::new(0.0F, 0.0F)) // center
@@ -1725,6 +2290,39 @@ fn capsule_to_mesh2d_geometry(capsule : Capsule2d) -> @mesh.Mesh2dGeometry {
     indices.push(c)
   }
   @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
+}
+
+///|
+fn capsule_ring_to_mesh2d_geometry(
+  ring : Capsule2dRing,
+) -> @mesh.Mesh2dGeometry {
+  let outer_radius = shape_safe_positive(
+    shape_abs_float(ring.outer_shape.radius),
+    0.5F,
+  )
+  let inner_radius = shape_abs_float(ring.inner_shape.radius)
+  let safe_inner_radius = if inner_radius >= outer_radius {
+    outer_radius * 0.5F
+  } else {
+    inner_radius
+  }
+  let outer_half = shape_abs_float(ring.outer_shape.half_length)
+  let inner_half = shape_abs_float(ring.inner_shape.half_length)
+  let outer_segments = shape_safe_segments(ring.outer_shape.segments, 4)
+  let inner_segments = shape_safe_segments(ring.inner_shape.segments, 4)
+  let segments = if outer_segments < inner_segments {
+    outer_segments
+  } else {
+    inner_segments
+  }
+  shape_ring_geometry_from_closed_loops(
+    shape_perimeter_capsule(outer_radius, outer_half, segments),
+    shape_perimeter_capsule(
+      shape_safe_positive(safe_inner_radius, outer_radius * 0.5F),
+      inner_half,
+      segments,
+    ),
+  )
 }
 
 ///|
@@ -1760,6 +2358,46 @@ pub fn Mesh2d::from_annulus(annulus : Annulus) -> Mesh2d {
 ///|
 pub fn Mesh2d::from_ring(ring : Ring2d) -> Mesh2d {
   Mesh2d::from_geometry(ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_circular_sector_ring(ring : CircularSectorRing) -> Mesh2d {
+  Mesh2d::from_geometry(circular_sector_ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_circular_segment_ring(ring : CircularSegmentRing) -> Mesh2d {
+  Mesh2d::from_geometry(circular_segment_ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_ellipse_ring(ring : EllipseRing) -> Mesh2d {
+  Mesh2d::from_geometry(ellipse_ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_capsule_ring(ring : Capsule2dRing) -> Mesh2d {
+  Mesh2d::from_geometry(capsule_ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_rhombus_ring(ring : RhombusRing) -> Mesh2d {
+  Mesh2d::from_geometry(rhombus_ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_rectangle_ring(ring : RectangleRing) -> Mesh2d {
+  Mesh2d::from_geometry(rectangle_ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_regular_polygon_ring(ring : RegularPolygonRing) -> Mesh2d {
+  Mesh2d::from_geometry(regular_polygon_ring_to_mesh2d_geometry(ring))
+}
+
+///|
+pub fn Mesh2d::from_triangle_ring(ring : Triangle2dRing) -> Mesh2d {
+  Mesh2d::from_geometry(triangle_ring_to_mesh2d_geometry(ring))
 }
 
 ///|
@@ -4012,15 +4650,35 @@ test "render2d: shape geometry builders validate" {
     ellipse_to_mesh2d_geometry(Ellipse::new(8.0F, 12.0F).with_vertices(24)),
     annulus_to_mesh2d_geometry(Annulus::new(4.0F, 10.0F).with_vertices(24)),
     ring_to_mesh2d_geometry(Ring2d::new(10.0F, 7.0F).with_vertices(24)),
+    circular_sector_ring_to_mesh2d_geometry(
+      CircularSectorRing::new(
+        CircularSector::new(10.0F, 1.0F).with_vertices(24),
+        CircularSector::new(7.0F, 1.0F).with_vertices(24),
+      ),
+    ),
     circular_sector_to_mesh2d_geometry(
       CircularSector::from_turns(10.0F, 0.35F).with_vertices(24),
+    ),
+    circular_segment_ring_to_mesh2d_geometry(
+      CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24).to_ring(2.0F),
     ),
     circular_segment_to_mesh2d_geometry(
       CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24),
     ),
+    ellipse_ring_to_mesh2d_geometry(
+      EllipseRing::new(
+        Ellipse::new(8.0F, 12.0F).with_vertices(24),
+        Ellipse::new(6.0F, 10.0F).with_vertices(24),
+      ),
+    ),
     rhombus_to_mesh2d_geometry(Rhombus::new(12.0F, 20.0F)),
+    rhombus_ring_to_mesh2d_geometry(Rhombus::new(12.0F, 20.0F).to_ring(1.5F)),
     regular_polygon_to_mesh2d_geometry(RegularPolygon::new(10.0F, 6)),
+    regular_polygon_ring_to_mesh2d_geometry(
+      RegularPolygon::new(10.0F, 6).to_ring(1.0F),
+    ),
     triangle_to_mesh2d_geometry(Triangle2d::default()),
+    triangle_ring_to_mesh2d_geometry(Triangle2d::default().to_ring(0.1F)),
     segment_to_mesh2d_geometry(
       Segment2d::new(
         @math.Vec2::new(-30.0F, 30.0F),
@@ -4029,7 +4687,13 @@ test "render2d: shape geometry builders validate" {
     ),
     polyline_to_mesh2d_geometry(polyline),
     capsule_to_mesh2d_geometry(Capsule2d::new(5.0F, 10.0F, 16)),
+    capsule_ring_to_mesh2d_geometry(
+      Capsule2d::new(5.0F, 10.0F, 16).to_ring(1.0F),
+    ),
     rectangle_to_mesh2d_geometry(Rectangle::new(10.0F, 20.0F)),
+    rectangle_ring_to_mesh2d_geometry(
+      Rectangle::new(10.0F, 20.0F).to_ring(1.0F),
+    ),
   ]
   let mut ok = true
   for geometry in geometries {

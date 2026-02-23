@@ -186,6 +186,13 @@ pub struct Capsule2d {
 }
 pub fn Capsule2d::default() -> Self
 pub fn Capsule2d::new(Float, Float, Int) -> Self
+pub fn Capsule2d::to_ring(Self, Float) -> Capsule2dRing
+
+pub struct Capsule2dRing {
+  outer_shape : Capsule2d
+  inner_shape : Capsule2d
+}
+pub fn Capsule2dRing::new(Capsule2d, Capsule2d) -> Self
 
 pub struct Circle {
   radius : Float
@@ -193,6 +200,7 @@ pub struct Circle {
 }
 pub fn Circle::default() -> Self
 pub fn Circle::new(Float) -> Self
+pub fn Circle::to_ring(Self, Float) -> Ring2d
 pub fn Circle::with_vertices(Self, Int) -> Self
 
 pub struct CircularSector {
@@ -207,6 +215,12 @@ pub fn CircularSector::half_angle(Self) -> Float
 pub fn CircularSector::new(Float, Float) -> Self
 pub fn CircularSector::with_vertices(Self, Int) -> Self
 
+pub struct CircularSectorRing {
+  outer_shape : CircularSector
+  inner_shape : CircularSector
+}
+pub fn CircularSectorRing::new(CircularSector, CircularSector) -> Self
+
 pub struct CircularSegment {
   radius : Float
   half_angle : Float
@@ -217,7 +231,14 @@ pub fn CircularSegment::default() -> Self
 pub fn CircularSegment::from_turns(Float, Float) -> Self
 pub fn CircularSegment::half_angle(Self) -> Float
 pub fn CircularSegment::new(Float, Float) -> Self
+pub fn CircularSegment::to_ring(Self, Float) -> CircularSegmentRing
 pub fn CircularSegment::with_vertices(Self, Int) -> Self
+
+pub struct CircularSegmentRing {
+  outer_shape : CircularSegment
+  inner_shape : CircularSegment
+}
+pub fn CircularSegmentRing::new(CircularSegment, CircularSegment) -> Self
 
 pub(all) enum ClearColorConfig {
   Default
@@ -274,6 +295,12 @@ pub struct Ellipse2dBuilder {
   id : Int
 }
 pub fn Ellipse2dBuilder::resolution(Self, Int) -> Self
+
+pub struct EllipseRing {
+  outer_shape : Ellipse
+  inner_shape : Ellipse
+}
+pub fn EllipseRing::new(Ellipse, Ellipse) -> Self
 
 pub(all) struct GizmoConfig {
   enabled : Bool
@@ -360,18 +387,26 @@ pub struct Mesh2d {
 }
 pub fn Mesh2d::from_annulus(Annulus) -> Self
 pub fn Mesh2d::from_capsule(Capsule2d) -> Self
+pub fn Mesh2d::from_capsule_ring(Capsule2dRing) -> Self
 pub fn Mesh2d::from_circle(Circle) -> Self
 pub fn Mesh2d::from_circular_sector(CircularSector) -> Self
+pub fn Mesh2d::from_circular_sector_ring(CircularSectorRing) -> Self
 pub fn Mesh2d::from_circular_segment(CircularSegment) -> Self
+pub fn Mesh2d::from_circular_segment_ring(CircularSegmentRing) -> Self
 pub fn Mesh2d::from_ellipse(Ellipse) -> Self
+pub fn Mesh2d::from_ellipse_ring(EllipseRing) -> Self
 pub fn Mesh2d::from_geometry(@mesh.Mesh2dGeometry) -> Self
 pub fn Mesh2d::from_polyline(Polyline2d) -> Self
 pub fn Mesh2d::from_rectangle(Rectangle) -> Self
+pub fn Mesh2d::from_rectangle_ring(RectangleRing) -> Self
 pub fn Mesh2d::from_regular_polygon(RegularPolygon) -> Self
+pub fn Mesh2d::from_regular_polygon_ring(RegularPolygonRing) -> Self
 pub fn Mesh2d::from_rhombus(Rhombus) -> Self
+pub fn Mesh2d::from_rhombus_ring(RhombusRing) -> Self
 pub fn Mesh2d::from_ring(Ring2d) -> Self
 pub fn Mesh2d::from_segment(Segment2d) -> Self
 pub fn Mesh2d::from_triangle(Triangle2d) -> Self
+pub fn Mesh2d::from_triangle_ring(Triangle2dRing) -> Self
 pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
 
 pub struct Mesh2dBundle {
@@ -412,6 +447,13 @@ pub struct Rectangle {
 pub fn Rectangle::default() -> Self
 pub fn Rectangle::from_size(@math.Vec2) -> Self
 pub fn Rectangle::new(Float, Float) -> Self
+pub fn Rectangle::to_ring(Self, Float) -> RectangleRing
+
+pub struct RectangleRing {
+  outer_shape : Rectangle
+  inner_shape : Rectangle
+}
+pub fn RectangleRing::new(Rectangle, Rectangle) -> Self
 
 pub struct RegularPolygon {
   radius : Float
@@ -419,6 +461,13 @@ pub struct RegularPolygon {
 }
 pub fn RegularPolygon::default() -> Self
 pub fn RegularPolygon::new(Float, Int) -> Self
+pub fn RegularPolygon::to_ring(Self, Float) -> RegularPolygonRing
+
+pub struct RegularPolygonRing {
+  outer_shape : RegularPolygon
+  inner_shape : RegularPolygon
+}
+pub fn RegularPolygonRing::new(RegularPolygon, RegularPolygon) -> Self
 
 pub struct RenderLayers {
   mask : Int
@@ -439,6 +488,13 @@ pub struct Rhombus {
 }
 pub fn Rhombus::default() -> Self
 pub fn Rhombus::new(Float, Float) -> Self
+pub fn Rhombus::to_ring(Self, Float) -> RhombusRing
+
+pub struct RhombusRing {
+  outer_shape : Rhombus
+  inner_shape : Rhombus
+}
+pub fn RhombusRing::new(Rhombus, Rhombus) -> Self
 
 pub struct Ring2d {
   outer_radius : Float
@@ -567,6 +623,13 @@ pub struct Triangle2d {
 }
 pub fn Triangle2d::default() -> Self
 pub fn Triangle2d::new(@math.Vec2, @math.Vec2, @math.Vec2) -> Self
+pub fn Triangle2d::to_ring(Self, Float) -> Triangle2dRing
+
+pub struct Triangle2dRing {
+  outer_shape : Triangle2d
+  inner_shape : Triangle2d
+}
+pub fn Triangle2dRing::new(Triangle2d, Triangle2d) -> Self
 
 pub struct UiBorderRect {
   left : Float
