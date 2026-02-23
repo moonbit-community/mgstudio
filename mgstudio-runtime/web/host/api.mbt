@@ -416,9 +416,43 @@ pub fn create_host(
     )
     set_has(state.input.just_released, @js.any(text))
   })
+  let input_is_key_repeated = @js.from_fn1(fn(code) {
+    let text = string_from_id_required(state, code, "input_is_key_repeated")
+    set_has(state.input.repeated, @js.any(text))
+  })
+  let input_text_event_count = @js.from_fn0(fn() {
+    state.input.text_events.length()
+  })
+  let input_text_event_len = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.text_events.length() {
+      state.input.text_events[index].length()
+    } else {
+      0
+    }
+  })
+  let input_text_event_code_unit = @js.from_fn2(fn(
+    index_any : @js.Any,
+    offset_any : @js.Any,
+  ) {
+    let index = to_int(number_or(index_any, -1))
+    let offset = to_int(number_or(offset_any, -1))
+    if index >= 0 && index < state.input.text_events.length() {
+      let text = state.input.text_events[index]
+      if offset >= 0 && offset < text.length() {
+        text.code_unit_at(offset).to_int()
+      } else {
+        0
+      }
+    } else {
+      0
+    }
+  })
   let input_finish_frame = @js.from_fn0(fn() {
     set_clear(state.input.just_pressed)
     set_clear(state.input.just_released)
+    set_clear(state.input.repeated)
+    state.input.text_events.clear()
     set_clear(state.input.mouse_just_pressed)
     set_clear(state.input.mouse_just_released)
     state.input.wheel_x = 0.0
@@ -447,6 +481,11 @@ pub fn create_host(
   let input_wheel_x = @js.from_fn0(fn() { state.input.wheel_x })
   let input_wheel_y = @js.from_fn0(fn() { state.input.wheel_y })
   let input_has_cursor = @js.from_fn0(fn() { state.input.has_cursor })
+  let input_touch_event_count = @js.from_fn0(fn() { 0 })
+  let input_touch_event_id = @js.from_fn1(fn(_index_any : @js.Any) { 0 })
+  let input_touch_event_phase = @js.from_fn1(fn(_index_any : @js.Any) { 0 })
+  let input_touch_event_x = @js.from_fn1(fn(_index_any : @js.Any) { 0.0 })
+  let input_touch_event_y = @js.from_fn1(fn(_index_any : @js.Any) { 0.0 })
   let debug_string = @js.from_fn1(fn(value) {
     console_error(@js.any(string_from_id_optional(state, value)))
     0
@@ -1606,6 +1645,65 @@ pub fn create_host(
     }
     id
   })
+  let gpu_create_render_target_rgba16f = @js.from_fn3(fn(
+    width,
+    height,
+    nearest,
+  ) {
+    if state.gpu.device is None {
+      throw_error("GPU device not ready")
+      return 0
+    }
+    ensure_pipeline_resources(state)
+    let id = state.gpu.next_texture_id
+    state.gpu.next_texture_id = id + 1
+    map_set(
+      state.assets.texture_paths,
+      @js.any(id),
+      @js.any("<render-target-rgba16f>"),
+    )
+    let width_value = number_or(width, 1)
+    let height_value = number_or(height, 1)
+    let safe_width = if width_value > 0 { to_int(width_value) } else { 1 }
+    let safe_height = if height_value > 0 { to_int(height_value) } else { 1 }
+    if state.gpu.device is Some(device) {
+      let format = @webgpu.TextureFormat::Other("rgba16float")
+      let texture_usage = @webgpu.combine_flags(
+        @webgpu.combine_flags(
+          @webgpu.texture_usage_texture_binding(),
+          @webgpu.texture_usage_render_attachment(),
+        ),
+        @webgpu.texture_usage_copy_dst(),
+      )
+      let texture_desc = @webgpu.texture_descriptor(
+        @webgpu.texture_size(safe_width, safe_height),
+        format,
+        texture_usage,
+      )
+      let texture = device.create_texture(texture_desc.to_js())
+      let sampler = create_sampler(
+        state,
+        sampler_kind_from_nearest(number_or(nearest, 0) != 0),
+      )
+      if sampler is Some(sampler_value) {
+        let entry = @js.from_entries([
+          ("id", @js.any(id)),
+          ("texture", texture.as_any()),
+          ("view", texture.create_view().as_any()),
+          ("sampler", sampler_value.as_any()),
+          ("bindGroup", js_null()),
+          ("meshBindGroup", js_null()),
+          ("mesh3dBindGroup", js_null()),
+          ("uiBindGroup", js_null()),
+          ("width", @js.any(safe_width)),
+          ("height", @js.any(safe_height)),
+        ])
+        map_set(state.gpu.textures, @js.any(id), entry)
+        ensure_bind_group_for_texture(state, entry)
+      }
+    }
+    id
+  })
   let gpu_create_mesh_capsule = @js.from_fn3(fn(radius, half_length, segments) {
     if state.gpu.device is None {
       throw_error("GPU device not ready")
@@ -2172,6 +2270,13 @@ pub fn create_host(
         arg_number(args, 49, 1),
         arg_number(args, 50, 1),
         arg_number(args, 51, 1),
+        arg_number(args, 52, 0),
+        arg_number(args, 53, 0),
+        arg_number(args, 54, 0),
+        arg_number(args, 55, 1.5),
+        to_int(arg_number(args, 56, -1)),
+        arg_number(args, 57, 0),
+        arg_number(args, 58, 0),
       )
     }),
   )
@@ -2293,6 +2398,10 @@ pub fn create_host(
     ("input_is_key_down", input_is_key_down),
     ("input_is_key_just_pressed", input_is_key_just_pressed),
     ("input_is_key_just_released", input_is_key_just_released),
+    ("input_is_key_repeated", input_is_key_repeated),
+    ("input_text_event_count", input_text_event_count),
+    ("input_text_event_len", input_text_event_len),
+    ("input_text_event_code_unit", input_text_event_code_unit),
     ("input_finish_frame", input_finish_frame),
     ("input_is_mouse_button_down", input_is_mouse_button_down),
     ("input_is_mouse_button_just_pressed", input_is_mouse_button_just_pressed),
@@ -2302,6 +2411,11 @@ pub fn create_host(
     ("input_wheel_x", input_wheel_x),
     ("input_wheel_y", input_wheel_y),
     ("input_has_cursor", input_has_cursor),
+    ("input_touch_event_count", input_touch_event_count),
+    ("input_touch_event_id", input_touch_event_id),
+    ("input_touch_event_phase", input_touch_event_phase),
+    ("input_touch_event_x", input_touch_event_x),
+    ("input_touch_event_y", input_touch_event_y),
     ("debug_string", debug_string),
     ("a11y_begin_update", a11y_begin_update),
     ("a11y_push_node", a11y_push_node),
@@ -2377,6 +2491,7 @@ pub fn create_host(
     ("asset_loaded_folder_handles_len", asset_loaded_folder_handles_len),
     ("asset_loaded_folder_handles_get", asset_loaded_folder_handles_get),
     ("gpu_create_render_target", gpu_create_render_target),
+    ("gpu_create_render_target_rgba16f", gpu_create_render_target_rgba16f),
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),
     ("gpu_create_mesh_triangles", gpu_create_mesh_triangles),

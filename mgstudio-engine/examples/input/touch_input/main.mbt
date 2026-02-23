@@ -16,67 +16,39 @@
 /// Port of `bevy/examples/input/touch_input.rs`.
 ///
 /// Baseline parity:
-/// - `just_pressed` / `just_released` / `active` logging follows the Bevy flow.
-/// - Current runtime has no native touch resource, so left mouse is mapped to a
-///   single touch id (`0`) as an adaptation.
-/// - Touch cancel events are not available in this runtime path.
-let simulated_touch_active_ref : Ref[Bool] = Ref::new(false)
-
-///|
-let touch_capability_logged_ref : Ref[Bool] = Ref::new(false)
-
-///|
-let last_touch_position_ref : Ref[@math.Vec2?] = Ref::new(None)
+/// - Uses `Res<Touches>` and follows Bevy's iteration flow.
+/// - Runtime touch host events are not wired yet, so no touch events are emitted.
 
 ///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_system(touch_system)
+  .add_system(@app.system_param(touch_system))
   .run()
 }
 
 ///|
-fn touch_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-  if !touch_capability_logged_ref.val {
-    touch_capability_logged_ref.val = true
+fn touch_system(touches_res : @app.Res[@input.Touches]) -> Unit {
+  let touches = touches_res.get()
+  for touch in touches.iter_just_pressed() {
     log_line(
-      "touch cancel events are unavailable; using left mouse as touch id 0",
+      "just pressed touch with id: \{touch.id()}, at: \{format_vec2(touch.position())}",
     )
   }
-
-  let just_pressed = @input.mouse_button_just_pressed(Left)
-  let just_released = @input.mouse_button_just_released(Left)
-  let position_opt = @input.mouse_position()
-
-  if just_pressed {
-    simulated_touch_active_ref.val = true
-    if position_opt is Some(position) {
-      last_touch_position_ref.val = Some(position)
-      log_line("just pressed touch with id: 0, at: \{format_vec2(position)}")
-    }
+  for touch in touches.iter_just_released() {
+    log_line(
+      "just released touch with id: \{touch.id()}, at: \{format_vec2(touch.position())}",
+    )
   }
-
-  if just_released {
-    simulated_touch_active_ref.val = false
-    if position_opt is Some(position) {
-      last_touch_position_ref.val = Some(position)
-      log_line("just released touch with id: 0, at: \{format_vec2(position)}")
-    } else {
-      log_line("just released touch with id: 0")
-    }
+  for touch in touches.iter_just_canceled() {
+    log_line("canceled touch with id: \{touch.id()}")
   }
-
-  if simulated_touch_active_ref.val {
-    if position_opt is Some(position) {
-      last_touch_position_ref.val = Some(position)
-      log_line(
-        "active touch: Touch { id: 0, position: \{format_vec2(position)} }",
-      )
-      log_line("  just_pressed: \{just_pressed}")
-    }
+  for touch in touches.iter() {
+    log_line(
+      "active touch: Touch { id: \{touch.id()}, position: \{format_vec2(touch.position())} }",
+    )
+    log_line("  just_pressed: \{touches.just_pressed(touch.id())}")
   }
 }
 

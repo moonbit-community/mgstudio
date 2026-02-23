@@ -334,6 +334,8 @@ fn macos_keycode_from_string(code : String) -> Int? {
     "Digit4" => Some(21)
     "Digit6" => Some(22)
     "Digit5" => Some(23)
+    "Digit7" => Some(26)
+    "Digit8" => Some(28)
     "KeyM" => Some(46)
     "KeyN" => Some(45)
     "KeyJ" => Some(38)
@@ -354,10 +356,14 @@ fn macos_keycode_from_string(code : String) -> Int? {
     "ArrowRight" => Some(124)
     "ArrowDown" => Some(125)
     "ArrowUp" => Some(126)
+    "PageUp" => Some(116)
+    "PageDown" => Some(121)
     "Space" => Some(49)
     "Escape" => Some(53)
+    "Semicolon" => Some(41)
     "Comma" => Some(43)
     "Period" => Some(47)
+    "Slash" => Some(44)
     _ => None
   }
 }
@@ -1717,6 +1723,36 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "input_touch_event_count",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_touch_event_id",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_touch_event_phase",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_touch_event_x",
+    fn(_args) { ok_f32(0.0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::F32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_touch_event_y",
+    fn(_args) { ok_f32(0.0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::F32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "input_mouse_x",
     fn(_args) {
       if ctx.window is Some(win) {
@@ -1810,6 +1846,65 @@ pub fn add_mgstudio_host_imports(
       ok_i32(0)
     },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_is_key_repeated",
+    fn(args) {
+      if args.length() >= 1 && ctx.window is Some(win) {
+        if args[0] is @types.Value::I32(id) &&
+          string_table_get(ctx, id) is Some(code) &&
+          macos_keycode_from_string(code) is Some(keycode) &&
+          win.input_is_key_repeated(keycode) {
+          return ok_i32(1)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_text_event_count",
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_i32(win.input_text_event_count())
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_text_event_len",
+    fn(args) {
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(index) &&
+        ctx.window is Some(win) {
+        ok_i32(win.input_text_event_len(index))
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_text_event_code_unit",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(index) &&
+        args[1] is @types.Value::I32(offset) &&
+        ctx.window is Some(win) {
+        ok_i32(win.input_text_event_code_unit(index, offset))
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
   )
   linker.add_host_func(
     "mgstudio_host",
@@ -1929,13 +2024,12 @@ pub fn add_mgstudio_host_imports(
           if rel == "" {
             return ok_i32(-1)
           }
-          let full_path = @rtcore.join_dir(
+          let source = load_wgsl_from_assets_base_required(
             ctx.assets_source.base,
-            strip_leading_slashes(rel),
+            rel,
           ) catch {
-            _ => join_fs_path(ctx.assets_source.base, rel)
+            _ => ""
           }
-          let source = @fs.read_file_to_string(full_path) catch { _ => "" }
           if source == "" {
             ok_i32(-1)
           } else {
@@ -3213,6 +3307,38 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_create_render_target_rgba16f",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        host_trace("host: gpu_create_render_target_rgba16f")
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        if args.length() >= 3 &&
+          args[0] is @types.Value::I32(w) &&
+          args[1] is @types.Value::I32(h) &&
+          args[2] is @types.Value::I32(nearest_i32) {
+          let id = ctx.gpu
+            .unwrap()
+            .create_render_target_rgba16f(w, h, nearest_i32 != 0)
+          ok_i32(id)
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        _ => {
+          @debug.debug("gpu_create_render_target_rgba16f failed")
+          host_fail("gpu_create_render_target_rgba16f", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [@types.ValueType::I32, @types.ValueType::I32, @types.ValueType::I32],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_create_mesh_capsule",
     fn(args) raise @runtime.RuntimeError {
       if ctx.gpu is None {
@@ -3589,6 +3715,47 @@ pub fn add_mgstudio_host_imports(
           } else {
             1.0F
           }
+          let diffuse_transmission = if args.length() > 52 &&
+            args[52] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let specular_transmission = if args.length() > 53 &&
+            args[53] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let thickness = if args.length() > 54 &&
+            args[54] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let ior = if args.length() > 55 && args[55] is @types.Value::F32(v) {
+            v
+          } else {
+            1.5F
+          }
+          let transmission_source_texture_id = if args.length() > 56 &&
+            args[56] is @types.Value::I32(v) {
+            v
+          } else {
+            -1
+          }
+          let transmission_blur_taps = if args.length() > 57 &&
+            args[57] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
+          let transmission_steps = if args.length() > 58 &&
+            args[58] is @types.Value::F32(v) {
+            v
+          } else {
+            0.0F
+          }
           ctx.gpu
           .unwrap()
           .draw_mesh3d(
@@ -3602,7 +3769,8 @@ pub fn add_mgstudio_host_imports(
             roughness, reflectance, parallax_depth_scale, max_parallax_layer_count,
             max_relief_mapping_search_steps, anisotropy_texture_id, anisotropy_strength,
             anisotropy_rotation, specular_tint_texture_id, specular_tint_r, specular_tint_g,
-            specular_tint_b,
+            specular_tint_b, diffuse_transmission, specular_transmission, thickness,
+            ior, transmission_source_texture_id, transmission_blur_taps, transmission_steps,
           )
         }
         ok_i32(0)
@@ -3665,6 +3833,13 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::I32,
         @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
       ],

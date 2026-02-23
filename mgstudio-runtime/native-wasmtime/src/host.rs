@@ -9,7 +9,7 @@ use wasmtime::{AnyRef, Caller, ExternRef, Func, FuncType, Linker, Store, Val, Va
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-use crate::gpu_backend::GpuBackend;
+use crate::gpu_backend::{load_wgsl_from_assets_required, GpuBackend};
 use crate::native_window::NativeWindow;
 
 use crate::source_spec::{join_dir_best_effort, DirSourceSpec};
@@ -393,6 +393,8 @@ fn parse_keycode(code: &str) -> Option<KeyCode> {
         "Digit4" => Some(KeyCode::Digit4),
         "Digit5" => Some(KeyCode::Digit5),
         "Digit6" => Some(KeyCode::Digit6),
+        "Digit7" => Some(KeyCode::Digit7),
+        "Digit8" => Some(KeyCode::Digit8),
         "Tab" => Some(KeyCode::Tab),
         "Enter" => Some(KeyCode::Enter),
         "Backspace" => Some(KeyCode::Backspace),
@@ -404,10 +406,14 @@ fn parse_keycode(code: &str) -> Option<KeyCode> {
         "ArrowDown" => Some(KeyCode::ArrowDown),
         "ArrowLeft" => Some(KeyCode::ArrowLeft),
         "ArrowRight" => Some(KeyCode::ArrowRight),
+        "PageUp" => Some(KeyCode::PageUp),
+        "PageDown" => Some(KeyCode::PageDown),
         "Space" => Some(KeyCode::Space),
         "Escape" => Some(KeyCode::Escape),
+        "Semicolon" => Some(KeyCode::Semicolon),
         "Comma" => Some(KeyCode::Comma),
         "Period" => Some(KeyCode::Period),
+        "Slash" => Some(KeyCode::Slash),
         _ => None,
     }
 }
@@ -1804,6 +1810,71 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "input_touch_event_count",
+        &[],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_touch_event_id",
+        &[ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_touch_event_phase",
+        &[ValType::I32],
+        &[ValType::I32],
+        |_caller, _args, out| {
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_touch_event_x",
+        &[ValType::I32],
+        &[ValType::F32],
+        |_caller, _args, out| {
+            ok_f32(out, 0.0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_touch_event_y",
+        &[ValType::I32],
+        &[ValType::F32],
+        |_caller, _args, out| {
+            ok_f32(out, 0.0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "input_mouse_x",
         &[],
         &[ValType::F32],
@@ -1880,6 +1951,7 @@ fn define_mgstudio_host_imports(
         ("input_is_key_down", 0),
         ("input_is_key_just_pressed", 1),
         ("input_is_key_just_released", 2),
+        ("input_is_key_repeated", 3),
     ] {
         let name0 = name;
         define_func(
@@ -1900,6 +1972,7 @@ fn define_mgstudio_host_imports(
                                 0 => win.input.key_down.contains(&kc),
                                 1 => win.input.key_just_pressed.contains(&kc),
                                 2 => win.input.key_just_released.contains(&kc),
+                                3 => win.input.key_repeated.contains(&kc),
                                 _ => false,
                             }
                         } else {
@@ -1916,6 +1989,87 @@ fn define_mgstudio_host_imports(
             },
         )?;
     }
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_text_event_count",
+        &[],
+        &[ValType::I32],
+        |caller, _args, out| {
+            let count = caller
+                .data()
+                .window
+                .as_ref()
+                .map(|win| win.input.text_events.len() as i32)
+                .unwrap_or(0);
+            ok_i32(out, count);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_text_event_len",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let len = caller
+                .data()
+                .window
+                .as_ref()
+                .and_then(|win| {
+                    if index < 0 {
+                        None
+                    } else {
+                        win.input.text_events.get(index as usize)
+                    }
+                })
+                .map(|text| text.encode_utf16().count() as i32)
+                .unwrap_or(0);
+            ok_i32(out, len);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_text_event_code_unit",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let offset = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let code_unit = caller
+                .data()
+                .window
+                .as_ref()
+                .and_then(|win| {
+                    if index < 0 {
+                        None
+                    } else {
+                        win.input.text_events.get(index as usize)
+                    }
+                })
+                .and_then(|text| {
+                    if offset < 0 {
+                        None
+                    } else {
+                        text.encode_utf16().nth(offset as usize)
+                    }
+                })
+                .map(i32::from)
+                .unwrap_or(0);
+            ok_i32(out, code_unit);
+            Ok(())
+        },
+    )?;
 
     for (name, which) in [
         ("input_is_mouse_button_down", 0),
@@ -2023,9 +2177,8 @@ fn define_mgstudio_host_imports(
                 ok_i32(out, -1);
                 return Ok(());
             }
-            let full_path =
-                join_dir_best_effort(&caller.data().assets.base, strip_leading_slashes(&rel));
-            let source = std::fs::read_to_string(&full_path).unwrap_or_default();
+            let source = load_wgsl_from_assets_required(&caller.data().assets.base, &rel)
+                .unwrap_or_default();
             let shader_id = caller.data_mut().shader_table_put(source);
             ok_i32(out, shader_id);
             Ok(())
@@ -3518,6 +3671,13 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3570,6 +3730,13 @@ fn define_mgstudio_host_imports(
             let specular_tint_r = if args.len() > 49 { f(49) } else { 1.0 };
             let specular_tint_g = if args.len() > 50 { f(50) } else { 1.0 };
             let specular_tint_b = if args.len() > 51 { f(51) } else { 1.0 };
+            let diffuse_transmission = if args.len() > 52 { f(52) } else { 0.0 };
+            let specular_transmission = if args.len() > 53 { f(53) } else { 0.0 };
+            let thickness = if args.len() > 54 { f(54) } else { 0.0 };
+            let ior = if args.len() > 55 { f(55) } else { 1.5 };
+            let transmission_source_texture_id = args.get(56).and_then(|v| v.i32()).unwrap_or(-1);
+            let transmission_blur_taps = if args.len() > 57 { f(57) } else { 0.0 };
+            let transmission_steps = if args.len() > 58 { f(58) } else { 0.0 };
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh3d(
                     mesh_id,
@@ -3615,6 +3782,13 @@ fn define_mgstudio_host_imports(
                     anisotropy_rotation,
                     specular_tint_texture_id,
                     [specular_tint_r, specular_tint_g, specular_tint_b],
+                    diffuse_transmission,
+                    specular_transmission,
+                    thickness,
+                    ior,
+                    transmission_source_texture_id,
+                    transmission_blur_taps,
+                    transmission_steps,
                 )?;
             }
             ok_i32(out, 0);
@@ -3663,6 +3837,24 @@ fn define_mgstudio_host_imports(
             let nearest = args.get(2).and_then(|v| v.i32()).unwrap_or(0) != 0;
             let gpu = caller.data_mut().ensure_gpu()?;
             let id = gpu.create_render_target(w, h, nearest)?;
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_create_render_target_rgba16f",
+        &[ValType::I32, ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let w = args.get(0).and_then(|v| v.i32()).unwrap_or(1).max(1) as u32;
+            let h = args.get(1).and_then(|v| v.i32()).unwrap_or(1).max(1) as u32;
+            let nearest = args.get(2).and_then(|v| v.i32()).unwrap_or(0) != 0;
+            let gpu = caller.data_mut().ensure_gpu()?;
+            let id = gpu.create_render_target_rgba16f(w, h, nearest)?;
             ok_i32(out, id);
             Ok(())
         },
