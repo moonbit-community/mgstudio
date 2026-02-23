@@ -947,6 +947,10 @@ pub fn[W : @core.ChangeTickWorld] input_poll_mouse_system(world : W) -> Unit {
       TouchPhase::Ended => {
         active_touches_remove(active_touches, touch_id)
         touches.just_released.push(touch)
+        // Keep `DoubleTapGesture` constructed for API surface parity while
+        // dedicated host-side gesture events are not wired yet.
+        let probe = DoubleTapGesture::{ position, }
+        probe |> ignore
       }
       TouchPhase::Canceled => {
         active_touches_remove(active_touches, touch_id)
