@@ -40,6 +40,38 @@ typedef struct {
   mgw_size size;
 } mgw_rect;
 
+#define MGW_TEXT_EVENT_CAP 256
+#define MGW_TEXT_UNIT_CAP 2048
+#define MGW_TOUCH_ACTIVE_CAP 32
+#define MGW_TOUCH_EVENT_CAP 256
+
+typedef struct {
+  int32_t id;
+  float x;
+  float y;
+} mgw_touch_state_t;
+
+typedef struct {
+  int32_t id;
+  int32_t phase;
+  float x;
+  float y;
+} mgw_touch_event_t;
+
+enum {
+  MGW_TOUCH_PHASE_STARTED = 0,
+  MGW_TOUCH_PHASE_MOVED = 1,
+  MGW_TOUCH_PHASE_ENDED = 2,
+  MGW_TOUCH_PHASE_CANCELED = 3,
+};
+
+enum {
+  MGW_NS_TOUCH_PHASE_BEGAN = 1ull << 0,
+  MGW_NS_TOUCH_PHASE_MOVED = 1ull << 1,
+  MGW_NS_TOUCH_PHASE_ENDED = 1ull << 3,
+  MGW_NS_TOUCH_PHASE_CANCELLED = 1ull << 4,
+};
+
 typedef struct mgw_window {
   mgw_objc_id ns_window;
   mgw_objc_id content_view;
@@ -63,9 +95,19 @@ typedef struct mgw_window {
   uint8_t key_down[256];
   uint8_t key_pressed[256];
   uint8_t key_released[256];
+  uint8_t key_repeated[256];
   uint8_t mouse_down[8];
   uint8_t mouse_pressed[8];
   uint8_t mouse_released[8];
+  uint16_t text_units[MGW_TEXT_UNIT_CAP];
+  int32_t text_event_starts[MGW_TEXT_EVENT_CAP];
+  int32_t text_event_lens[MGW_TEXT_EVENT_CAP];
+  int32_t text_event_count;
+  int32_t text_units_count;
+  mgw_touch_state_t active_touches[MGW_TOUCH_ACTIVE_CAP];
+  int32_t active_touch_count;
+  mgw_touch_event_t touch_events[MGW_TOUCH_EVENT_CAP];
+  int32_t touch_event_count;
 } mgw_window_t;
 
 // -----------------------------------------------------------------------------
@@ -174,6 +216,12 @@ static inline mgw_objc_sel mgw_sel(const char *name) {
 
 static inline mgw_objc_id mgw_msg_id(mgw_objc_id obj, mgw_objc_sel sel) {
   return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel))mgw_objc_msg_send_sym)(obj, sel);
+}
+
+static inline mgw_objc_id mgw_msg_id_u64_id(
+    mgw_objc_id obj, mgw_objc_sel sel, uint64_t arg0, mgw_objc_id arg1) {
+  return ((mgw_objc_id(*)(mgw_objc_id, mgw_objc_sel, uint64_t, mgw_objc_id))
+              mgw_objc_msg_send_sym)(obj, sel, arg0, arg1);
 }
 
 static inline const char *mgw_msg_cstr(mgw_objc_id obj, mgw_objc_sel sel) {
@@ -720,6 +768,16 @@ static void mgw_input_handle_key(mgw_window_t *w, int32_t down, uint32_t keycode
   }
 }
 
+static void mgw_input_handle_key_repeat(mgw_window_t *w, uint32_t keycode) {
+  if (!w) {
+    return;
+  }
+  if (keycode >= 256u) {
+    return;
+  }
+  w->key_repeated[keycode] = 1;
+}
+
 static void mgw_input_handle_mouse_button(mgw_window_t *w, int32_t down, uint32_t btn) {
   if (!w) {
     return;
@@ -741,6 +799,236 @@ static void mgw_input_handle_mouse_button(mgw_window_t *w, int32_t down, uint32_
     }
     bd[btn] = 0;
   }
+}
+
+static int32_t mgw_touch_find_active_index(mgw_window_t *w, int32_t touch_id) {
+  if (!w || touch_id < 0) {
+    return -1;
+  }
+  for (int32_t i = 0; i < w->active_touch_count; i += 1) {
+    if (w->active_touches[i].id == touch_id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+static void mgw_touch_active_upsert(mgw_window_t *w, int32_t touch_id, float x, float y) {
+  if (!w || touch_id < 0) {
+    return;
+  }
+  int32_t index = mgw_touch_find_active_index(w, touch_id);
+  if (index >= 0) {
+    w->active_touches[index].x = x;
+    w->active_touches[index].y = y;
+    return;
+  }
+  if (w->active_touch_count >= MGW_TOUCH_ACTIVE_CAP) {
+    return;
+  }
+  int32_t next = w->active_touch_count;
+  w->active_touches[next].id = touch_id;
+  w->active_touches[next].x = x;
+  w->active_touches[next].y = y;
+  w->active_touch_count += 1;
+}
+
+static void mgw_touch_active_remove(mgw_window_t *w, int32_t touch_id) {
+  if (!w || touch_id < 0) {
+    return;
+  }
+  int32_t index = mgw_touch_find_active_index(w, touch_id);
+  if (index < 0) {
+    return;
+  }
+  int32_t last = w->active_touch_count - 1;
+  if (index != last) {
+    w->active_touches[index] = w->active_touches[last];
+  }
+  w->active_touch_count = last;
+}
+
+static void mgw_touch_push_event(
+    mgw_window_t *w, int32_t touch_id, int32_t phase, float x, float y) {
+  if (!w || touch_id < 0) {
+    return;
+  }
+  if (w->touch_event_count >= MGW_TOUCH_EVENT_CAP) {
+    return;
+  }
+  int32_t index = w->touch_event_count;
+  w->touch_events[index].id = touch_id;
+  w->touch_events[index].phase = phase;
+  w->touch_events[index].x = x;
+  w->touch_events[index].y = y;
+  w->touch_event_count += 1;
+}
+
+static int32_t mgw_touch_id_from_identity(mgw_objc_id identity) {
+#ifdef __APPLE__
+  if (!identity || !mgw_objc_init()) {
+    return -1;
+  }
+  uint64_t hash = mgw_msg_u64(identity, mgw_sel("hash"));
+  return (int32_t)(hash & 0x7fffffffULL);
+#else
+  (void)identity;
+  return -1;
+#endif
+}
+
+static int32_t mgw_touch_id_from_touch(mgw_objc_id touch) {
+#ifdef __APPLE__
+  if (!touch || !mgw_objc_init()) {
+    return -1;
+  }
+  mgw_objc_id identity = mgw_msg_id(touch, mgw_sel("identity"));
+  return mgw_touch_id_from_identity(identity);
+#else
+  (void)touch;
+  return -1;
+#endif
+}
+
+static mgw_point mgw_touch_position_in_window(mgw_window_t *w, mgw_objc_id touch) {
+  mgw_point out = {.x = 0.0, .y = 0.0};
+#ifdef __APPLE__
+  if (!w || !touch || !mgw_objc_init()) {
+    return out;
+  }
+  mgw_point normalized = mgw_msg_point(touch, mgw_sel("normalizedPosition"));
+  double width = (double)(w->logical_width > 0 ? w->logical_width : 1);
+  double height = (double)(w->logical_height > 0 ? w->logical_height : 1);
+  double x = normalized.x * width;
+  double y = (1.0 - normalized.y) * height;
+  if (x < 0.0) {
+    x = 0.0;
+  } else if (x > width) {
+    x = width;
+  }
+  if (y < 0.0) {
+    y = 0.0;
+  } else if (y > height) {
+    y = height;
+  }
+  out.x = x;
+  out.y = y;
+#else
+  (void)w;
+  (void)touch;
+#endif
+  return out;
+}
+
+static void mgw_touch_collect_from_event(
+    mgw_window_t *w, mgw_objc_id ev, uint64_t phase_mask, int32_t phase_kind) {
+#ifdef __APPLE__
+  if (!w || !ev || !w->content_view || !mgw_objc_init()) {
+    return;
+  }
+  mgw_objc_sel touches_sel = mgw_sel("touchesMatchingPhase:inView:");
+  if (!mgw_msg_bool_sel(ev, mgw_sel("respondsToSelector:"), touches_sel)) {
+    return;
+  }
+  mgw_objc_id touches = mgw_msg_id_u64_id(ev, touches_sel, phase_mask, w->content_view);
+  if (!touches) {
+    return;
+  }
+  mgw_objc_id enumerator = mgw_msg_id(touches, mgw_sel("objectEnumerator"));
+  if (!enumerator) {
+    return;
+  }
+  while (true) {
+    mgw_objc_id touch = mgw_msg_id(enumerator, mgw_sel("nextObject"));
+    if (!touch) {
+      break;
+    }
+    int32_t touch_id = mgw_touch_id_from_touch(touch);
+    if (touch_id < 0) {
+      continue;
+    }
+    mgw_point pos = mgw_touch_position_in_window(w, touch);
+    float x = (float)pos.x;
+    float y = (float)pos.y;
+    if (phase_kind == MGW_TOUCH_PHASE_STARTED || phase_kind == MGW_TOUCH_PHASE_MOVED) {
+      mgw_touch_active_upsert(w, touch_id, x, y);
+    } else {
+      mgw_touch_active_remove(w, touch_id);
+    }
+    mgw_touch_push_event(w, touch_id, phase_kind, x, y);
+  }
+#else
+  (void)w;
+  (void)ev;
+  (void)phase_mask;
+  (void)phase_kind;
+#endif
+}
+
+static void mgw_input_handle_touch_event(mgw_window_t *w, mgw_objc_id ev) {
+#ifdef __APPLE__
+  if (!w || !ev || !mgw_objc_init()) {
+    return;
+  }
+  mgw_touch_collect_from_event(
+      w, ev, MGW_NS_TOUCH_PHASE_BEGAN, MGW_TOUCH_PHASE_STARTED);
+  mgw_touch_collect_from_event(
+      w, ev, MGW_NS_TOUCH_PHASE_MOVED, MGW_TOUCH_PHASE_MOVED);
+  mgw_touch_collect_from_event(
+      w, ev, MGW_NS_TOUCH_PHASE_ENDED, MGW_TOUCH_PHASE_ENDED);
+  mgw_touch_collect_from_event(
+      w, ev, MGW_NS_TOUCH_PHASE_CANCELLED, MGW_TOUCH_PHASE_CANCELED);
+#else
+  (void)w;
+  (void)ev;
+#endif
+}
+
+static void mgw_input_push_text_event(mgw_window_t *w, mgw_objc_id text) {
+#ifdef __APPLE__
+  if (!w || !text || !mgw_objc_init()) {
+    return;
+  }
+  if (w->text_event_count >= MGW_TEXT_EVENT_CAP) {
+    return;
+  }
+  int32_t available_units = MGW_TEXT_UNIT_CAP - w->text_units_count;
+  if (available_units <= 0) {
+    return;
+  }
+  int64_t len_i64 = mgw_msg_i64(text, mgw_sel("length"));
+  if (len_i64 <= 0) {
+    return;
+  }
+  int32_t len = (int32_t)len_i64;
+  if (len > available_units) {
+    len = available_units;
+  }
+  int32_t start = w->text_units_count;
+  int32_t written = 0;
+  mgw_objc_sel char_at_sel = mgw_sel("characterAtIndex:");
+  for (int32_t i = 0; i < len; i += 1) {
+    uint16_t cu = mgw_msg_u16_u64(text, char_at_sel, (uint64_t)i);
+    // Skip control keys like Enter/Tab/Escape; Bevy `Key::Character` only
+    // reports textual input.
+    if ((cu < 0x20u) || cu == 0x7Fu) {
+      continue;
+    }
+    w->text_units[w->text_units_count] = cu;
+    w->text_units_count += 1;
+    written += 1;
+  }
+  if (written <= 0) {
+    w->text_units_count = start;
+    return;
+  }
+  w->text_event_starts[w->text_event_count] = start;
+  w->text_event_lens[w->text_event_count] = written;
+  w->text_event_count += 1;
+#else
+  (void)w;
+  (void)text;
+#endif
 }
 
 static void mgw_input_update_mouse_location(mgw_window_t *w, mgw_objc_id ev) {
@@ -770,9 +1058,16 @@ static void mgw_input_handle_event(mgw_window_t *w, mgw_objc_id ev) {
   // NSEventType values (stable across modern macOS).
   // https://developer.apple.com/documentation/appkit/nseventtype
   const int64_t ty = mgw_msg_i64(ev, mgw_sel("type"));
+  mgw_input_handle_touch_event(w, ev);
   switch (ty) {
   case 10: { // KeyDown
     uint32_t keycode = (uint32_t)mgw_msg_u64(ev, mgw_sel("keyCode"));
+    bool is_repeat = mgw_msg_bool(ev, mgw_sel("isARepeat"));
+    if (is_repeat) {
+      mgw_input_handle_key_repeat(w, keycode);
+    }
+    mgw_objc_id characters = mgw_msg_id(ev, mgw_sel("characters"));
+    mgw_input_push_text_event(w, characters);
     mgw_input_handle_key(w, 1, keycode);
     break;
   }
@@ -897,6 +1192,22 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   mgw_msg_void_id(win, mgw_sel("makeKeyAndOrderFront:"), NULL);
 
   mgw_objc_id content_view = mgw_msg_id(win, mgw_sel("contentView"));
+  if (content_view) {
+    mgw_objc_sel responds_sel = mgw_sel("respondsToSelector:");
+    mgw_objc_sel set_allowed_touch_types_sel = mgw_sel("setAllowedTouchTypes:");
+    mgw_objc_sel set_accepts_touch_events_sel = mgw_sel("setAcceptsTouchEvents:");
+    mgw_objc_sel set_wants_resting_touches_sel = mgw_sel("setWantsRestingTouches:");
+    if (mgw_msg_bool_sel(content_view, responds_sel, set_allowed_touch_types_sel)) {
+      // NSTouchTypeMaskDirect | NSTouchTypeMaskIndirect
+      mgw_msg_void_i64(content_view, set_allowed_touch_types_sel, 0x3);
+    }
+    if (mgw_msg_bool_sel(content_view, responds_sel, set_accepts_touch_events_sel)) {
+      mgw_msg_void_bool(content_view, set_accepts_touch_events_sel, true);
+    }
+    if (mgw_msg_bool_sel(content_view, responds_sel, set_wants_resting_touches_sel)) {
+      mgw_msg_void_bool(content_view, set_wants_resting_touches_sel, true);
+    }
+  }
 
   mgw_window_t *out = (mgw_window_t *)calloc(1, sizeof(mgw_window_t));
   out->ns_window = win;
@@ -920,9 +1231,14 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   memset(out->key_down, 0, sizeof(out->key_down));
   memset(out->key_pressed, 0, sizeof(out->key_pressed));
   memset(out->key_released, 0, sizeof(out->key_released));
+  memset(out->key_repeated, 0, sizeof(out->key_repeated));
   memset(out->mouse_down, 0, sizeof(out->mouse_down));
   memset(out->mouse_pressed, 0, sizeof(out->mouse_pressed));
   memset(out->mouse_released, 0, sizeof(out->mouse_released));
+  out->text_event_count = 0;
+  out->text_units_count = 0;
+  out->active_touch_count = 0;
+  out->touch_event_count = 0;
 
   // Sync actual content view size (and later Metal layer) to avoid drift.
   mgw_window_sync_metrics(out);
@@ -1295,10 +1611,14 @@ MOONBIT_FFI_EXPORT void mgw_input_finish_frame(void *win) {
   mgw_window_t *w = (mgw_window_t *)win;
   memset(w->key_pressed, 0, sizeof(w->key_pressed));
   memset(w->key_released, 0, sizeof(w->key_released));
+  memset(w->key_repeated, 0, sizeof(w->key_repeated));
   memset(w->mouse_pressed, 0, sizeof(w->mouse_pressed));
   memset(w->mouse_released, 0, sizeof(w->mouse_released));
+  w->text_event_count = 0;
+  w->text_units_count = 0;
   w->wheel_x = 0.0f;
   w->wheel_y = 0.0f;
+  w->touch_event_count = 0;
 }
 
 MOONBIT_FFI_EXPORT int32_t mgw_input_has_cursor(void *win) {
@@ -1379,6 +1699,55 @@ MOONBIT_FFI_EXPORT int32_t mgw_input_is_key_just_released(void *win, int32_t cod
   return ((mgw_window_t *)win)->key_released[idx] != 0;
 }
 
+MOONBIT_FFI_EXPORT int32_t mgw_input_is_key_repeated(void *win, int32_t code) {
+  if (!win) {
+    return 0;
+  }
+  int32_t idx = mgw_clamp_index_i32(code, 256);
+  if (idx < 0) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->key_repeated[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_text_event_count(void *win) {
+  if (!win) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->text_event_count;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_text_event_len(void *win, int32_t index) {
+  if (!win) {
+    return 0;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (index < 0 || index >= w->text_event_count) {
+    return 0;
+  }
+  return w->text_event_lens[index];
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_text_event_code_unit(void *win, int32_t index, int32_t offset) {
+  if (!win) {
+    return 0;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (index < 0 || index >= w->text_event_count) {
+    return 0;
+  }
+  int32_t start = w->text_event_starts[index];
+  int32_t len = w->text_event_lens[index];
+  if (offset < 0 || offset >= len) {
+    return 0;
+  }
+  int32_t pos = start + offset;
+  if (pos < 0 || pos >= w->text_units_count) {
+    return 0;
+  }
+  return (int32_t)w->text_units[pos];
+}
+
 MOONBIT_FFI_EXPORT int32_t mgw_input_is_mouse_button_down(void *win, int32_t button) {
   if (!win) {
     return 0;
@@ -1410,6 +1779,57 @@ MOONBIT_FFI_EXPORT int32_t mgw_input_is_mouse_button_just_released(void *win, in
     return 0;
   }
   return ((mgw_window_t *)win)->mouse_released[idx] != 0;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_touch_event_count(void *win) {
+  if (!win) {
+    return 0;
+  }
+  return ((mgw_window_t *)win)->touch_event_count;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_touch_event_id(void *win, int32_t index) {
+  if (!win) {
+    return -1;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (index < 0 || index >= w->touch_event_count) {
+    return -1;
+  }
+  return w->touch_events[index].id;
+}
+
+MOONBIT_FFI_EXPORT int32_t mgw_input_touch_event_phase(void *win, int32_t index) {
+  if (!win) {
+    return MGW_TOUCH_PHASE_CANCELED;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (index < 0 || index >= w->touch_event_count) {
+    return MGW_TOUCH_PHASE_CANCELED;
+  }
+  return w->touch_events[index].phase;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_touch_event_x(void *win, int32_t index) {
+  if (!win) {
+    return 0.0f;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (index < 0 || index >= w->touch_event_count) {
+    return 0.0f;
+  }
+  return w->touch_events[index].x;
+}
+
+MOONBIT_FFI_EXPORT float mgw_input_touch_event_y(void *win, int32_t index) {
+  if (!win) {
+    return 0.0f;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  if (index < 0 || index >= w->touch_event_count) {
+    return 0.0f;
+  }
+  return w->touch_events[index].y;
 }
 
 MOONBIT_FFI_EXPORT void mgw_a11y_begin_update(void *win, int32_t root_id) {

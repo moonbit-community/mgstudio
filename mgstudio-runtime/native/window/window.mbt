@@ -173,6 +173,30 @@ pub fn Window::input_is_key_just_released(self : Window, code : Int) -> Bool {
 }
 
 ///|
+pub fn Window::input_is_key_repeated(self : Window, code : Int) -> Bool {
+  c_input_is_key_repeated(self.raw, code)
+}
+
+///|
+pub fn Window::input_text_event_count(self : Window) -> Int {
+  c_input_text_event_count(self.raw)
+}
+
+///|
+pub fn Window::input_text_event_len(self : Window, index : Int) -> Int {
+  c_input_text_event_len(self.raw, index)
+}
+
+///|
+pub fn Window::input_text_event_code_unit(
+  self : Window,
+  index : Int,
+  offset : Int,
+) -> Int {
+  c_input_text_event_code_unit(self.raw, index, offset)
+}
+
+///|
 pub fn Window::input_is_mouse_button_down(self : Window, button : Int) -> Bool {
   c_input_is_mouse_button_down(self.raw, button)
 }
@@ -191,6 +215,31 @@ pub fn Window::input_is_mouse_button_just_released(
   button : Int,
 ) -> Bool {
   c_input_is_mouse_button_just_released(self.raw, button)
+}
+
+///|
+pub fn Window::input_touch_event_count(self : Window) -> Int {
+  c_input_touch_event_count(self.raw)
+}
+
+///|
+pub fn Window::input_touch_event_id(self : Window, index : Int) -> Int {
+  c_input_touch_event_id(self.raw, index)
+}
+
+///|
+pub fn Window::input_touch_event_phase(self : Window, index : Int) -> Int {
+  c_input_touch_event_phase(self.raw, index)
+}
+
+///|
+pub fn Window::input_touch_event_x(self : Window, index : Int) -> Float {
+  c_input_touch_event_x(self.raw, index)
+}
+
+///|
+pub fn Window::input_touch_event_y(self : Window, index : Int) -> Float {
+  c_input_touch_event_y(self.raw, index)
 }
 
 ///|
@@ -400,6 +449,28 @@ extern "C" fn c_input_is_key_just_released(
 ) -> Bool = "mgw_input_is_key_just_released"
 
 ///|
+extern "C" fn c_input_is_key_repeated(
+  win : @wgpu_c.OpaquePtr,
+  code : Int,
+) -> Bool = "mgw_input_is_key_repeated"
+
+///|
+extern "C" fn c_input_text_event_count(win : @wgpu_c.OpaquePtr) -> Int = "mgw_input_text_event_count"
+
+///|
+extern "C" fn c_input_text_event_len(
+  win : @wgpu_c.OpaquePtr,
+  index : Int,
+) -> Int = "mgw_input_text_event_len"
+
+///|
+extern "C" fn c_input_text_event_code_unit(
+  win : @wgpu_c.OpaquePtr,
+  index : Int,
+  offset : Int,
+) -> Int = "mgw_input_text_event_code_unit"
+
+///|
 extern "C" fn c_input_is_mouse_button_down(
   win : @wgpu_c.OpaquePtr,
   button : Int,
@@ -416,6 +487,33 @@ extern "C" fn c_input_is_mouse_button_just_released(
   win : @wgpu_c.OpaquePtr,
   button : Int,
 ) -> Bool = "mgw_input_is_mouse_button_just_released"
+
+///|
+extern "C" fn c_input_touch_event_count(win : @wgpu_c.OpaquePtr) -> Int = "mgw_input_touch_event_count"
+
+///|
+extern "C" fn c_input_touch_event_id(
+  win : @wgpu_c.OpaquePtr,
+  index : Int,
+) -> Int = "mgw_input_touch_event_id"
+
+///|
+extern "C" fn c_input_touch_event_phase(
+  win : @wgpu_c.OpaquePtr,
+  index : Int,
+) -> Int = "mgw_input_touch_event_phase"
+
+///|
+extern "C" fn c_input_touch_event_x(
+  win : @wgpu_c.OpaquePtr,
+  index : Int,
+) -> Float = "mgw_input_touch_event_x"
+
+///|
+extern "C" fn c_input_touch_event_y(
+  win : @wgpu_c.OpaquePtr,
+  index : Int,
+) -> Float = "mgw_input_touch_event_y"
 
 ///|
 extern "C" fn c_a11y_begin_update(

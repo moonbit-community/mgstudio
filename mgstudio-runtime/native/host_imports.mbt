@@ -1724,31 +1724,69 @@ pub fn add_mgstudio_host_imports(
   linker.add_host_func(
     "mgstudio_host",
     "input_touch_event_count",
-    fn(_args) { ok_i32(0) },
+    fn(_args) {
+      if ctx.window is Some(win) {
+        ok_i32(win.input_touch_event_count())
+      } else {
+        ok_i32(0)
+      }
+    },
     func_type=ft([], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_touch_event_id",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(index) &&
+        ctx.window is Some(win) {
+        ok_i32(win.input_touch_event_id(index))
+      } else {
+        ok_i32(-1)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_touch_event_phase",
-    fn(_args) { ok_i32(0) },
+    fn(args) {
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(index) &&
+        ctx.window is Some(win) {
+        ok_i32(win.input_touch_event_phase(index))
+      } else {
+        ok_i32(3)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_touch_event_x",
-    fn(_args) { ok_f32(0.0) },
+    fn(args) {
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(index) &&
+        ctx.window is Some(win) {
+        ok_f32(win.input_touch_event_x(index))
+      } else {
+        ok_f32(0.0)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::F32]),
   )
   linker.add_host_func(
     "mgstudio_host",
     "input_touch_event_y",
-    fn(_args) { ok_f32(0.0) },
+    fn(args) {
+      if args.length() >= 1 &&
+        args[0] is @types.Value::I32(index) &&
+        ctx.window is Some(win) {
+        ok_f32(win.input_touch_event_y(index))
+      } else {
+        ok_f32(0.0)
+      }
+    },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::F32]),
   )
   linker.add_host_func(
