@@ -1091,6 +1091,6 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
-  .add_system_config(@app.system(update_system).after(@ui.ui_set_interaction))
+  .add_system_config(@app.system(update_system).after(@ui.ui_set_focus))
   .run()
 }

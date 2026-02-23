@@ -1421,40 +1421,53 @@ pub fn UiContext::new(
 }
 
 ///|
-pub let ui_set_context : @app.SystemSet = @app.system_set("mgstudio.ui.context")
+/// Bevy-aligned UI system sets (`UiSystems::{Focus, Prepare, Propagate, Content, Layout, PostLayout, Stack}`).
+pub let ui_set_focus : @app.SystemSet = @app.system_set("bevy.ui.focus")
 
 ///|
-pub let ui_set_layout : @app.SystemSet = @app.system_set("mgstudio.ui.layout")
+pub let ui_set_prepare : @app.SystemSet = @app.system_set("bevy.ui.prepare")
 
 ///|
-pub let ui_set_interaction : @app.SystemSet = @app.system_set(
-  "mgstudio.ui.interaction",
+pub let ui_set_propagate : @app.SystemSet = @app.system_set("bevy.ui.propagate")
+
+///|
+pub let ui_set_content : @app.SystemSet = @app.system_set("bevy.ui.content")
+
+///|
+pub let ui_set_layout : @app.SystemSet = @app.system_set("bevy.ui.layout")
+
+///|
+pub let ui_set_post_layout : @app.SystemSet = @app.system_set(
+  "bevy.ui.post_layout",
 )
 
 ///|
-pub let ui_set_scroll : @app.SystemSet = @app.system_set("mgstudio.ui.scroll")
+pub let ui_set_stack : @app.SystemSet = @app.system_set("bevy.ui.stack")
 
 ///|
-pub let ui_set_measure : @app.SystemSet = @app.system_set("mgstudio.ui.measure")
+/// Legacy aliases kept for source compatibility.
+pub let ui_set_context : @app.SystemSet = ui_set_prepare
 
 ///|
-pub let ui_set_clip : @app.SystemSet = @app.system_set("mgstudio.ui.clip")
+pub let ui_set_interaction : @app.SystemSet = ui_set_focus
 
 ///|
-pub let ui_set_stack : @app.SystemSet = @app.system_set("mgstudio.ui.stack")
+pub let ui_set_scroll : @app.SystemSet = ui_set_propagate
 
 ///|
-pub let ui_set_a11y : @app.SystemSet = @app.system_set("mgstudio.ui.a11y")
+pub let ui_set_measure : @app.SystemSet = ui_set_content
 
 ///|
-pub let ui_set_a11y_apply : @app.SystemSet = @app.system_set(
-  "mgstudio.ui.a11y_apply",
-)
+pub let ui_set_clip : @app.SystemSet = ui_set_post_layout
 
 ///|
-pub let ui_set_render_extract : @app.SystemSet = @app.system_set(
-  "mgstudio.ui.render_extract",
-)
+pub let ui_set_a11y : @app.SystemSet = ui_set_post_layout
+
+///|
+pub let ui_set_a11y_apply : @app.SystemSet = ui_set_post_layout
+
+///|
+pub let ui_set_render_extract : @app.SystemSet = ui_set_stack
 
 ///|
 const UI_DRAW_FLAG_TEXTURED : Int = 1
@@ -4483,56 +4496,50 @@ pub fn[W : UiRenderExtractWorld] ui_render_extract_system(world : W) -> Unit {
 pub fn[W : UiPluginWorld] ui_plugin(app : @app.App[W]) -> @app.App[W] {
   app
   .add_pre_update_system_config(
-    @app.system(ui_update_context_system).in_set(ui_set_context),
+    @app.system(ui_update_context_system).in_set(ui_set_focus),
   )
   .add_pre_update_system_config(
-    @app.system(ui_interaction_system).in_set(ui_set_interaction),
+    @app.system(ui_interaction_system).in_set(ui_set_focus),
   )
   .add_post_update_system_config(
-    @app.system(ui_update_context_system).in_set(ui_set_context),
+    @app.system(ui_update_context_system).in_set(ui_set_prepare),
   )
   .add_post_update_system_config(
-    @app.system(ui_scroll_system).in_set(ui_set_scroll),
+    @app.system(ui_scroll_system).in_set(ui_set_propagate),
   )
   .add_post_update_system_config(
-    @app.system(ui_image_content_size_system).in_set(ui_set_measure),
+    @app.system(ui_image_content_size_system).in_set(ui_set_content),
   )
   .add_post_update_system_config(
     @app.system(ui_layout_system).in_set(ui_set_layout),
   )
   .add_post_update_system_config(
-    @app.system(ui_clip_system).in_set(ui_set_clip),
+    @app.system(ui_clip_system).in_set(ui_set_post_layout),
   )
   .add_post_update_system_config(
     @app.system(ui_stack_system).in_set(ui_set_stack),
   )
   .add_post_update_system_config(
-    @app.system(ui_a11y_update_system).in_set(ui_set_a11y),
+    @app.system(ui_a11y_update_system).in_set(ui_set_post_layout),
   )
   .add_post_update_system_config(
-    @app.system(ui_render_extract_system).in_set(ui_set_render_extract),
+    @app.system(ui_render_extract_system).in_set(ui_set_stack),
   )
-  .configure_set(@app.PreUpdate, ui_set_context, before=[ui_set_interaction])
-  .configure_set(@app.PostUpdate, ui_set_context, before=[ui_set_scroll])
-  .configure_set(@app.PostUpdate, ui_set_scroll, after=[ui_set_context], before=[
-    ui_set_measure,
+  .configure_set(@app.PreUpdate, ui_set_focus)
+  .configure_set(@app.PostUpdate, ui_set_prepare, before=[ui_set_propagate])
+  .configure_set(@app.PostUpdate, ui_set_propagate, after=[ui_set_prepare], before=[
+    ui_set_content,
   ])
-  .configure_set(@app.PostUpdate, ui_set_measure, after=[ui_set_scroll], before=[
+  .configure_set(@app.PostUpdate, ui_set_content, after=[ui_set_propagate], before=[
     ui_set_layout,
   ])
-  .configure_set(@app.PostUpdate, ui_set_layout, after=[ui_set_measure], before=[
-    ui_set_clip,
+  .configure_set(@app.PostUpdate, ui_set_layout, after=[ui_set_content], before=[
+    ui_set_post_layout,
   ])
-  .configure_set(@app.PostUpdate, ui_set_clip, after=[ui_set_layout], before=[
+  .configure_set(@app.PostUpdate, ui_set_post_layout, after=[ui_set_layout], before=[
     ui_set_stack,
   ])
-  .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_clip], before=[
-    ui_set_a11y,
-  ])
-  .configure_set(@app.PostUpdate, ui_set_a11y, after=[ui_set_stack], before=[
-    ui_set_render_extract,
-  ])
-  .configure_set(@app.PostUpdate, ui_set_render_extract, after=[ui_set_a11y], before=[
+  .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_post_layout], before=[
     @render2d.render2d_set_extract,
   ])
 }

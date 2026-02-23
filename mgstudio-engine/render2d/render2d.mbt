@@ -5403,23 +5403,27 @@ pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
 
 ///|
 pub let render2d_set_extract : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.extract",
+  "bevy.render2d.extract",
 )
 
 ///|
 pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.prepare",
+  "bevy.render2d.prepare",
 )
 
 ///|
 pub let render2d_set_queue : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.queue",
+  "bevy.render2d.queue",
 )
 
 ///|
-pub let render2d_set_execute : @app.SystemSet = @app.system_set(
-  "mgstudio.render2d.execute",
+pub let render2d_set_render : @app.SystemSet = @app.system_set(
+  "bevy.render2d.render",
 )
+
+///|
+/// Legacy alias kept for source compatibility.
+pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
 pub fn[W : RenderExtractWorld] render2d_plugin(
@@ -5437,7 +5441,7 @@ pub fn[W : RenderExtractWorld] render2d_plugin(
     @app.system(render_queue_system).in_set(render2d_set_queue),
   )
   .add_post_update_system_config(
-    @app.system(render_execute_system).in_set(render2d_set_execute),
+    @app.system(render_execute_system).in_set(render2d_set_render),
   )
   .configure_set(@app.PostUpdate, render2d_set_extract, before=[
     render2d_set_prepare,
@@ -5446,6 +5450,6 @@ pub fn[W : RenderExtractWorld] render2d_plugin(
     render2d_set_queue,
   ])
   .configure_set(@app.PostUpdate, render2d_set_queue, before=[
-    render2d_set_execute,
+    render2d_set_render,
   ])
 }

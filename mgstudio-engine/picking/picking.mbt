@@ -1065,12 +1065,10 @@ pub fn[W : PickingPluginWorld] picking_plugin(app : @app.App[W]) -> @app.App[W] 
   .configure_set(
     @app.PreUpdate,
     picking_set_hits,
-    after=[
-      picking_set_input, @ui.ui_set_stack, @transform.transform_set_propagate,
-    ],
+    after=[picking_set_input, @transform.transform_set_propagate],
     before=[picking_set_events],
   )
   .configure_set(@app.PreUpdate, picking_set_events, after=[
-    picking_set_hits, @a11y.a11y_set, @ui.ui_set_interaction,
+    picking_set_hits, @a11y.a11y_set, @ui.ui_set_focus,
   ])
 }
