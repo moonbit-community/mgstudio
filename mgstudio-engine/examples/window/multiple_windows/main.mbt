@@ -37,7 +37,7 @@ fn multiple_windows_system(world : @ecs_world.World) -> Unit {
   }
   logged_ref.val = true
   log_line(
-    "secondary window creation is not available; using single-window fallback",
+    "secondary window creation is not available in current mgstudio runtime",
   )
 }
 

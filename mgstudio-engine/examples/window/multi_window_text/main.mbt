@@ -37,7 +37,7 @@ fn multi_window_text_system(world : @ecs_world.World) -> Unit {
   }
   logged_ref.val = true
   log_line(
-    "single-window fallback active; multi-window text routing unavailable",
+    "multi-window text routing is not available in current mgstudio runtime",
   )
 }
 
