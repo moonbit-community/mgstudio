@@ -151,6 +151,8 @@ priv struct InputState {
   pressed : @js.Any
   just_pressed : @js.Any
   just_released : @js.Any
+  repeated : @js.Any
+  text_events : Array[String]
   mouse_buttons : @js.Any
   mouse_just_pressed : @js.Any
   mouse_just_released : @js.Any
@@ -186,8 +188,6 @@ priv struct GpuState {
   mut motion_blur_bind_layout : @webgpu.GPUBindGroupLayout?
   mut motion_blur_settings_buffer : @webgpu.GPUBuffer?
   mut motion_blur_globals_buffer : @webgpu.GPUBuffer?
-  mut motion_blur_fallback_depth_texture : @webgpu.GPUTexture?
-  mut motion_blur_fallback_depth_view : @webgpu.GPUTextureView?
   mut depth_texture : @webgpu.GPUTexture?
   mut depth_view : @webgpu.GPUTextureView?
   mut depth_width : Int
@@ -302,6 +302,8 @@ fn new_state(
       pressed: new_set(),
       just_pressed: new_set(),
       just_released: new_set(),
+      repeated: new_set(),
+      text_events: [],
       mouse_buttons: new_set(),
       mouse_just_pressed: new_set(),
       mouse_just_released: new_set(),
@@ -335,8 +337,6 @@ fn new_state(
       motion_blur_bind_layout: None,
       motion_blur_settings_buffer: None,
       motion_blur_globals_buffer: None,
-      motion_blur_fallback_depth_texture: None,
-      motion_blur_fallback_depth_view: None,
       depth_texture: None,
       depth_view: None,
       depth_width: 0,
@@ -552,8 +552,14 @@ fn init_input(state : State) -> Unit {
     win,
     "keydown",
     @js.from_fn1(fn(event : @js.Any) {
+      let text = keyboard_event_character(event)
+      if text != "" {
+        state.input.text_events.push(text)
+      }
       let repeat_value : Bool = event._get("repeat").cast()
       if repeat_value {
+        let code_repeat = any_to_string(event._get("code").cast())
+        set_add(state.input.repeated, @js.any(code_repeat))
         return
       }
       let code = any_to_string(event._get("code").cast())
@@ -580,6 +586,8 @@ fn init_input(state : State) -> Unit {
       set_clear(state.input.pressed)
       set_clear(state.input.just_pressed)
       set_clear(state.input.just_released)
+      set_clear(state.input.repeated)
+      state.input.text_events.clear()
     }),
   )
 }
@@ -792,8 +800,6 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.motion_blur_bind_layout = None
   state.gpu.motion_blur_settings_buffer = None
   state.gpu.motion_blur_globals_buffer = None
-  state.gpu.motion_blur_fallback_depth_texture = None
-  state.gpu.motion_blur_fallback_depth_view = None
   state.gpu.depth_texture = None
   state.gpu.depth_view = None
   state.gpu.depth_width = 0

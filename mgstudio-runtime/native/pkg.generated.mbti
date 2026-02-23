@@ -146,8 +146,6 @@ pub struct GpuBackend {
   mut motion_blur_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut motion_blur_settings_buf : @wgpu_mbt.Buffer?
   mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
-  mut motion_blur_fallback_depth_texture : @wgpu_mbt.Texture?
-  mut motion_blur_fallback_depth_view : @wgpu_mbt.TextureView?
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
@@ -165,11 +163,12 @@ pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
@@ -319,6 +318,7 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   depth_texture_id : Int
   anisotropy_texture_id : Int
   specular_tint_texture_id : Int
+  transmission_source_texture_id : Int
   bind_group : @wgpu_mbt.BindGroup
 }
 

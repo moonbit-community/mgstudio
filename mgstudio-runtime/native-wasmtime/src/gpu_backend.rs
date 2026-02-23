@@ -10,7 +10,7 @@ use winit::window::Window;
 // host contract used by mgstudio-engine (begin_frame/begin_pass/draw/end_pass/end_frame)
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
-const MESH_UNIFORM_MAX_BYTES: u64 = 96 * 4;
+const MESH_UNIFORM_MAX_BYTES: u64 = 100 * 4;
 const COMPRESSED_IMAGE_FORMAT_ASTC_LDR: i32 = 1;
 const COMPRESSED_IMAGE_FORMAT_BC: i32 = 2;
 const COMPRESSED_IMAGE_FORMAT_ETC2: i32 = 4;
@@ -184,6 +184,13 @@ struct MeshDraw {
     anisotropy_map_flag: f32,
     specular_tint: [f32; 3],
     specular_tint_map_flag: f32,
+    diffuse_transmission: f32,
+    specular_transmission: f32,
+    thickness: f32,
+    ior: f32,
+    transmission_source_texture_id: i32,
+    transmission_blur_taps: f32,
+    transmission_steps: f32,
     ubo_offset: u32, // computed during encoding
     scissor: Option<ScissorRect>,
 }
@@ -276,11 +283,20 @@ struct MeshRenderer {
     motion_blur_pipeline_surface_format: Option<wgpu::TextureFormat>,
     motion_blur_settings_buf: Option<wgpu::Buffer>,
     motion_blur_globals_buf: Option<wgpu::Buffer>,
-    motion_blur_fallback_depth_texture: Option<wgpu::Texture>,
-    motion_blur_fallback_depth_view: Option<wgpu::TextureView>,
 }
 
 impl GpuBackend {
+    fn resolve_draw_texture_id(&mut self, id: i32) -> anyhow::Result<Option<i32>> {
+        if id < 0 {
+            return Ok(Some(self.ensure_fallback_texture(-1)?));
+        }
+        if self.textures.contains_key(&id) {
+            Ok(Some(id))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub fn new(assets_base: String) -> anyhow::Result<Self> {
         let instance = wgpu::Instance::default();
         let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -1084,6 +1100,11 @@ impl GpuBackend {
                             else {
                                 continue;
                             };
+                            let Some(transmission_source_tex) =
+                                self.textures.get(&draw.transmission_source_texture_id)
+                            else {
+                                continue;
+                            };
                             let Some(layout) = self.mesh.bgl_material_3d.as_ref() else {
                                 continue;
                             };
@@ -1146,6 +1167,12 @@ impl GpuBackend {
                                                 &specular_tint_tex.view,
                                             ),
                                         },
+                                        wgpu::BindGroupEntry {
+                                            binding: 9,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                &transmission_source_tex.view,
+                                            ),
+                                        },
                                     ],
                                 });
                             rp.set_bind_group(1, &material_bg, &[]);
@@ -1199,35 +1226,7 @@ impl GpuBackend {
                             bytemuck::cast_slice(&globals_words),
                         );
 
-                        if self.mesh.motion_blur_fallback_depth_view.is_none()
-                            || self.mesh.motion_blur_fallback_depth_texture.is_none()
-                        {
-                            let fallback_depth =
-                                self.device.create_texture(&wgpu::TextureDescriptor {
-                                    label: Some("mgstudio-motion-blur-fallback-depth"),
-                                    size: wgpu::Extent3d {
-                                        width: 1,
-                                        height: 1,
-                                        depth_or_array_layers: 1,
-                                    },
-                                    mip_level_count: 1,
-                                    sample_count: 1,
-                                    dimension: wgpu::TextureDimension::D2,
-                                    format: wgpu::TextureFormat::Depth24Plus,
-                                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                                        | wgpu::TextureUsages::TEXTURE_BINDING,
-                                    view_formats: &[],
-                                });
-                            let fallback_depth_view =
-                                fallback_depth.create_view(&wgpu::TextureViewDescriptor::default());
-                            self.mesh.motion_blur_fallback_depth_texture = Some(fallback_depth);
-                            self.mesh.motion_blur_fallback_depth_view = Some(fallback_depth_view);
-                        }
-                        let Some(depth_view) = self
-                            .last_depth_view
-                            .as_ref()
-                            .or(self.mesh.motion_blur_fallback_depth_view.as_ref())
-                        else {
+                        let Some(depth_view) = self.last_depth_view.as_ref() else {
                             continue;
                         };
 
@@ -1300,7 +1299,9 @@ impl GpuBackend {
             return Ok(());
         }
 
-        let tex_id = self.ensure_fallback_texture(texture_id)?;
+        let Some(tex_id) = self.resolve_draw_texture_id(texture_id)? else {
+            return Ok(());
+        };
         let (tex_w, tex_h) = match self.textures.get(&tex_id) {
             Some(t) => (t.width, t.height),
             None => return Ok(()),
@@ -1403,7 +1404,9 @@ impl GpuBackend {
         }
         let textured = texture_id >= 0;
         let requested_texture_id = if textured { texture_id } else { -1 };
-        let resolved_texture_id = self.ensure_fallback_texture(requested_texture_id)?;
+        let Some(resolved_texture_id) = self.resolve_draw_texture_id(requested_texture_id)? else {
+            return Ok(());
+        };
         let uv_offset = if textured {
             [uv_offset.0, uv_offset.1]
         } else {
@@ -1413,6 +1416,10 @@ impl GpuBackend {
             [uv_scale.0, uv_scale.1]
         } else {
             [-1.0, -1.0]
+        };
+        let Some(resolved_transmission_source_texture_id) = self.resolve_draw_texture_id(-1)?
+        else {
+            return Ok(());
         };
         let Some(pass) = self.pass.as_mut() else {
             return Ok(());
@@ -1464,6 +1471,13 @@ impl GpuBackend {
             anisotropy_map_flag: 0.0,
             specular_tint: [1.0, 1.0, 1.0],
             specular_tint_map_flag: 0.0,
+            diffuse_transmission: 0.0,
+            specular_transmission: 0.0,
+            thickness: 0.0,
+            ior: 1.5,
+            transmission_source_texture_id: resolved_transmission_source_texture_id,
+            transmission_blur_taps: 0.0,
+            transmission_steps: 0.0,
             ubo_offset: 0,
             scissor: pass.current_scissor,
         }));
@@ -1515,64 +1529,67 @@ impl GpuBackend {
         anisotropy_rotation: f32,
         specular_tint_texture_id: i32,
         specular_tint: [f32; 3],
+        diffuse_transmission: f32,
+        specular_transmission: f32,
+        thickness: f32,
+        ior: f32,
+        transmission_source_texture_id: i32,
+        transmission_blur_taps: f32,
+        transmission_steps: f32,
     ) -> anyhow::Result<()> {
         if self.frame.is_none() {
             return Ok(());
         }
         let textured = texture_id >= 0;
-        let requested_texture_id = if textured { texture_id } else { -1 };
-        let resolved_texture_id = self.ensure_fallback_texture(requested_texture_id)?;
+        let Some(resolved_texture_id) = self.resolve_draw_texture_id(texture_id)? else {
+            return Ok(());
+        };
         let normal_textured = normal_texture_id >= 0;
-        let requested_normal_texture_id = if normal_textured {
-            normal_texture_id
-        } else {
-            -1
+        let Some(resolved_normal_texture_id) = self.resolve_draw_texture_id(normal_texture_id)?
+        else {
+            return Ok(());
         };
-        let resolved_normal_texture_id =
-            self.ensure_fallback_texture(requested_normal_texture_id)?;
         let emissive_textured = emissive_texture_id >= 0;
-        let requested_emissive_texture_id = if emissive_textured {
-            emissive_texture_id
-        } else {
-            -1
+        let Some(resolved_emissive_texture_id) =
+            self.resolve_draw_texture_id(emissive_texture_id)?
+        else {
+            return Ok(());
         };
-        let resolved_emissive_texture_id =
-            self.ensure_fallback_texture(requested_emissive_texture_id)?;
         let metallic_roughness_textured = metallic_roughness_texture_id >= 0;
-        let requested_metallic_roughness_texture_id = if metallic_roughness_textured {
-            metallic_roughness_texture_id
-        } else {
-            -1
+        let Some(resolved_metallic_roughness_texture_id) =
+            self.resolve_draw_texture_id(metallic_roughness_texture_id)?
+        else {
+            return Ok(());
         };
-        let resolved_metallic_roughness_texture_id =
-            self.ensure_fallback_texture(requested_metallic_roughness_texture_id)?;
         let occlusion_textured = occlusion_texture_id >= 0;
-        let requested_occlusion_texture_id = if occlusion_textured {
-            occlusion_texture_id
-        } else {
-            -1
+        let Some(resolved_occlusion_texture_id) =
+            self.resolve_draw_texture_id(occlusion_texture_id)?
+        else {
+            return Ok(());
         };
-        let resolved_occlusion_texture_id =
-            self.ensure_fallback_texture(requested_occlusion_texture_id)?;
         let depth_textured = depth_texture_id >= 0;
-        let requested_depth_texture_id = if depth_textured { depth_texture_id } else { -1 };
-        let resolved_depth_texture_id = self.ensure_fallback_texture(requested_depth_texture_id)?;
+        let Some(resolved_depth_texture_id) = self.resolve_draw_texture_id(depth_texture_id)?
+        else {
+            return Ok(());
+        };
         let anisotropy_textured = anisotropy_texture_id >= 0;
-        let requested_anisotropy_texture_id = if anisotropy_textured {
-            anisotropy_texture_id
-        } else {
-            -1
+        let Some(resolved_anisotropy_texture_id) =
+            self.resolve_draw_texture_id(anisotropy_texture_id)?
+        else {
+            return Ok(());
         };
-        let resolved_anisotropy_texture_id =
-            self.ensure_fallback_texture(requested_anisotropy_texture_id)?;
         let specular_tint_textured = specular_tint_texture_id >= 0;
-        let requested_specular_tint_texture_id = if specular_tint_textured {
-            specular_tint_texture_id
-        } else {
-            -1
+        let Some(resolved_specular_tint_texture_id) =
+            self.resolve_draw_texture_id(specular_tint_texture_id)?
+        else {
+            return Ok(());
         };
-        let resolved_specular_tint_texture_id =
-            self.ensure_fallback_texture(requested_specular_tint_texture_id)?;
+        let transmission_source_textured = transmission_source_texture_id >= 0;
+        let Some(resolved_transmission_source_texture_id) =
+            self.resolve_draw_texture_id(transmission_source_texture_id)?
+        else {
+            return Ok(());
+        };
         let uv_offset = if textured {
             [uv_offset.0, uv_offset.1]
         } else {
@@ -1647,6 +1664,21 @@ impl GpuBackend {
             anisotropy_map_flag: if anisotropy_textured { 1.0 } else { 0.0 },
             specular_tint,
             specular_tint_map_flag: if specular_tint_textured { 1.0 } else { 0.0 },
+            diffuse_transmission,
+            specular_transmission,
+            thickness,
+            ior,
+            transmission_source_texture_id: resolved_transmission_source_texture_id,
+            transmission_blur_taps: if transmission_source_textured {
+                transmission_blur_taps
+            } else {
+                0.0
+            },
+            transmission_steps: if transmission_source_textured {
+                transmission_steps
+            } else {
+                0.0
+            },
             ubo_offset: 0,
             scissor: pass.current_scissor,
         }));
@@ -1663,8 +1695,9 @@ impl GpuBackend {
         if self.frame.is_none() {
             return Ok(());
         }
-        let scene_texture_id = self.ensure_fallback_texture(scene_texture_id)?;
-        let velocity_texture_id = self.ensure_fallback_texture(velocity_texture_id)?;
+        if scene_texture_id < 0 || velocity_texture_id < 0 {
+            return Ok(());
+        }
         let Some(pass) = self.pass.as_mut() else {
             return Ok(());
         };
@@ -2041,18 +2074,26 @@ impl GpuBackend {
         height: u32,
         nearest: bool,
     ) -> anyhow::Result<i32> {
-        self.ensure_sprite_resources()?;
-        let id = self.next_texture_id;
-        self.next_texture_id += 1;
-        self.create_texture_rgba8_with_id(
-            id,
+        self.create_render_target_with_format(
             width,
             height,
-            &vec![0u8; (width.max(1) * height.max(1) * 4) as usize],
             nearest,
-            true,
-        )?;
-        Ok(id)
+            wgpu::TextureFormat::Rgba8Unorm,
+        )
+    }
+
+    pub fn create_render_target_rgba16f(
+        &mut self,
+        width: u32,
+        height: u32,
+        nearest: bool,
+    ) -> anyhow::Result<i32> {
+        self.create_render_target_with_format(
+            width,
+            height,
+            nearest,
+            wgpu::TextureFormat::Rgba16Float,
+        )
     }
 
     pub fn texture_width(&self, texture_id: i32) -> u32 {
@@ -2359,6 +2400,95 @@ impl GpuBackend {
             },
         );
         Ok(())
+    }
+
+    fn create_render_target_with_format(
+        &mut self,
+        width: u32,
+        height: u32,
+        nearest: bool,
+        format: wgpu::TextureFormat,
+    ) -> anyhow::Result<i32> {
+        self.ensure_sprite_resources()?;
+        let id = self.next_texture_id;
+        self.next_texture_id += 1;
+        let width = width.max(1);
+        let height = height.max(1);
+        let usage = wgpu::TextureUsages::TEXTURE_BINDING
+            | wgpu::TextureUsages::COPY_DST
+            | wgpu::TextureUsages::COPY_SRC
+            | wgpu::TextureUsages::RENDER_ATTACHMENT;
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio-render-target"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = if nearest {
+            self.device.create_sampler(&wgpu::SamplerDescriptor {
+                label: Some("mgstudio-sampler-nearest"),
+                mag_filter: wgpu::FilterMode::Nearest,
+                min_filter: wgpu::FilterMode::Nearest,
+                mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                ..Default::default()
+            })
+        } else {
+            self.device.create_sampler(&wgpu::SamplerDescriptor {
+                label: Some("mgstudio-sampler-linear"),
+                mag_filter: wgpu::FilterMode::Linear,
+                min_filter: wgpu::FilterMode::Linear,
+                mipmap_filter: wgpu::MipmapFilterMode::Linear,
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                ..Default::default()
+            })
+        };
+        let bgl_tex = self
+            .sprite
+            .bgl_tex
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: sprite texture bind group layout not initialized"))?;
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio-sprite-tex"),
+            layout: bgl_tex,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+            ],
+        });
+        self.textures.insert(
+            id,
+            GpuTexture {
+                width,
+                height,
+                format,
+                texture,
+                view,
+                sampler,
+                bind_group,
+                is_render_target: true,
+            },
+        );
+        Ok(id)
     }
 
     fn target_format_for_id(&self, target_id: i32) -> anyhow::Result<wgpu::TextureFormat> {
@@ -2740,7 +2870,9 @@ impl GpuBackend {
         rp.set_bind_group(1, &globals_bg, &[]);
 
         for batch in &seg.batches {
-            let id = self.ensure_fallback_texture(batch.texture_id)?;
+            let Some(id) = self.resolve_draw_texture_id(batch.texture_id)? else {
+                continue;
+            };
             let Some(tg) = self.textures.get(&id) else {
                 continue;
             };
@@ -2861,6 +2993,16 @@ impl GpuBackend {
                         },
                         wgpu::BindGroupLayoutEntry {
                             binding: 8,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 9,
                             visibility: wgpu::ShaderStages::FRAGMENT,
                             ty: wgpu::BindingType::Texture {
                                 sample_type: wgpu::TextureSampleType::Float { filterable: true },
@@ -3240,7 +3382,7 @@ impl GpuBackend {
         let pipeline = self
             .device
             .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("mgstudio_motion_vector_rgba8"),
+                label: Some("mgstudio_motion_vector_rgba16f"),
                 layout: Some(pl),
                 vertex: wgpu::VertexState {
                     module: &sm,
@@ -3253,7 +3395,7 @@ impl GpuBackend {
                     entry_point: Some("fs_main"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
-                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        format: wgpu::TextureFormat::Rgba16Float,
                         blend: None,
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
@@ -3658,6 +3800,13 @@ fn resolve_scissor_rect(
     Some((scissor.x, scissor.y, scissor.w, scissor.h))
 }
 
+pub(crate) fn load_wgsl_from_assets_required(
+    assets_base: &str,
+    rel: &str,
+) -> anyhow::Result<String> {
+    load_wgsl_required(assets_base, rel)
+}
+
 fn load_wgsl_required(assets_base: &str, rel: &str) -> anyhow::Result<String> {
     let base = assets_base.trim();
     if base.is_empty() {
@@ -3665,9 +3814,15 @@ fn load_wgsl_required(assets_base: &str, rel: &str) -> anyhow::Result<String> {
             "wgpu: assets_base is empty; cannot load shader: {rel}"
         ));
     }
+    let normalized_rel = normalize_shader_rel_path(rel);
     let mut visited = HashSet::<String>::new();
     let defines = HashSet::<String>::new();
-    load_wgsl_preprocessed(base, rel, &defines, &mut visited)
+    let source = load_wgsl_preprocessed(base, &normalized_rel, &defines, &mut visited)?;
+    if is_motion_blur_shader_path(&normalized_rel) {
+        Ok(lower_motion_blur_texture_samples_for_runtime(source))
+    } else {
+        Ok(source)
+    }
 }
 
 fn load_wgsl_preprocessed(
@@ -3676,7 +3831,7 @@ fn load_wgsl_preprocessed(
     defines: &HashSet<String>,
     visited: &mut HashSet<String>,
 ) -> anyhow::Result<String> {
-    let normalized_rel = rel.trim_start_matches('/').to_string();
+    let normalized_rel = normalize_shader_rel_path(rel);
     if !visited.insert(normalized_rel.clone()) {
         return Ok(String::new());
     }
@@ -3693,6 +3848,7 @@ fn preprocess_wgsl_source(
     visited: &mut HashSet<String>,
 ) -> anyhow::Result<String> {
     let mut imported = String::new();
+    let mut aliases: Vec<String> = Vec::new();
     for line in source.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with("#define_import_path") {
@@ -3702,6 +3858,10 @@ fn preprocess_wgsl_source(
             let module_path = parse_wgsl_import_module_path(spec);
             if module_path.is_empty() {
                 continue;
+            }
+            let alias = parse_wgsl_import_alias(spec, &module_path);
+            if !alias.is_empty() {
+                aliases.push(alias);
             }
             let module_rel = format!("shaders/bevy/{}.wgsl", module_path.replace("::", "/"));
             let module_source = load_wgsl_preprocessed(assets_base, &module_rel, defines, visited)?;
@@ -3716,7 +3876,28 @@ fn preprocess_wgsl_source(
         imported.push_str(line);
         imported.push('\n');
     }
-    Ok(apply_wgsl_ifdefs(&imported, defines))
+    let mut out = apply_wgsl_ifdefs(&imported, defines);
+    for alias in aliases {
+        if !alias.is_empty() {
+            out = out.replace(&format!("{alias}::"), "");
+        }
+    }
+    Ok(out)
+}
+
+fn normalize_shader_rel_path(rel: &str) -> String {
+    let mut text = rel.trim().trim_start_matches('/').to_string();
+    while let Some(rest) = text.strip_prefix("./") {
+        text = rest.to_string();
+    }
+    if let Some(rest) = text.strip_prefix("assets/") {
+        text = rest.to_string();
+    }
+    text
+}
+
+fn is_motion_blur_shader_path(rel: &str) -> bool {
+    normalize_shader_rel_path(rel) == "shaders/mgstudio/3d/motion_blur.wgsl"
 }
 
 fn parse_wgsl_import_module_path(spec: &str) -> String {
@@ -3737,6 +3918,25 @@ fn parse_wgsl_import_module_path(spec: &str) -> String {
         }
     }
     module.to_string()
+}
+
+fn parse_wgsl_import_alias(spec: &str, module_path: &str) -> String {
+    let text = spec.trim().trim_end_matches(';');
+    if text.is_empty() {
+        return String::new();
+    }
+    if let Some(idx) = text.rfind(" as ") {
+        let alias = text[idx + 4..].trim().trim_end_matches(';').trim();
+        if !alias.is_empty() {
+            return alias.to_string();
+        }
+    }
+    module_path
+        .rsplit("::")
+        .find(|seg| !seg.trim().is_empty())
+        .unwrap_or("")
+        .trim()
+        .to_string()
 }
 
 fn apply_wgsl_ifdefs(source: &str, defines: &HashSet<String>) -> String {
@@ -3786,6 +3986,40 @@ fn apply_wgsl_ifdefs(source: &str, defines: &HashSet<String>) -> String {
             out.push_str(line);
             out.push('\n');
         }
+    }
+    out
+}
+
+fn lower_motion_blur_texture_samples_for_runtime(source: String) -> String {
+    let mut out = source;
+    let replacements = [
+        (
+            "textureSample(screen_texture, texture_sampler, in.uv)",
+            "textureSampleLevel(screen_texture, texture_sampler, in.uv, 0.0)",
+        ),
+        (
+            "textureSample(motion_vectors, texture_sampler, in.uv).rg",
+            "textureSampleLevel(motion_vectors, texture_sampler, in.uv, 0.0).rg",
+        ),
+        (
+            "textureSample(depth, texture_sampler, in.uv)",
+            "textureLoad(depth, frag_coords, 0)",
+        ),
+        (
+            "textureSample(screen_texture, texture_sampler, sample_uv)",
+            "textureSampleLevel(screen_texture, texture_sampler, sample_uv, 0.0)",
+        ),
+        (
+            "textureSample(motion_vectors, texture_sampler, sample_uv).rg",
+            "textureSampleLevel(motion_vectors, texture_sampler, sample_uv, 0.0).rg",
+        ),
+        (
+            "textureSample(depth, texture_sampler, sample_uv)",
+            "textureLoad(depth, sample_coords, 0)",
+        ),
+    ];
+    for (from, to) in replacements {
+        out = out.replace(from, to);
     }
     out
 }
@@ -3929,7 +4163,7 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     } else {
         1.0
     };
-    let floats: [f32; 96] = [
+    let floats: [f32; 100] = [
         draw.x,
         draw.y,
         draw.z,
@@ -3999,8 +4233,8 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
         pass.spot_color_intensity[2],
         pass.spot_color_intensity[3],
         pass.spot_outer_angle,
-        0.0,
-        0.0,
+        draw.transmission_blur_taps,
+        draw.transmission_steps,
         0.0,
         draw.emissive[0],
         draw.emissive[1],
@@ -4026,6 +4260,10 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
         draw.specular_tint[1],
         draw.specular_tint[2],
         draw.specular_tint_map_flag,
+        draw.diffuse_transmission,
+        draw.specular_transmission,
+        draw.thickness,
+        draw.ior,
     ];
     bytemuck::cast_slice(&floats).to_vec()
 }

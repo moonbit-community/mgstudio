@@ -1161,6 +1161,17 @@ fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
                 ]),
               ),
             ]),
+            @js.from_entries([
+              ("binding", @js.any(9)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                ]),
+              ),
+            ]),
           ]),
         ),
       ])
@@ -1308,7 +1319,7 @@ fn ensure_motion_vector_pipeline(state : State) -> Unit {
     return
   }
   if state.gpu.device is Some(device) {
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let format = @webgpu.TextureFormat::Other("rgba16float")
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     let vertex_stage = @webgpu.shader_stage_vertex()
@@ -1623,7 +1634,7 @@ fn report_fallback_usage(state : State, id : Int, reason : String) -> Unit {
   } else {
     " (path: " + path_hint.cast() + ")"
   }
-  let message = "Fallback texture used for id " +
+  let message = "Texture skipped for id " +
     id.to_string() +
     ": " +
     reason +
@@ -1687,14 +1698,21 @@ fn get_texture_entry(state : State, id : Int) -> @js.Any? {
     "texture not ready"
   }
   report_fallback_usage(state, id, reason)
-  let fallback_entry = map_get(
-    state.gpu.textures,
-    @js.any(state.gpu.fallback_texture_id),
-  )
-  if host_is_nullish(fallback_entry) {
+  None
+}
+
+///|
+fn get_texture_entry_strict(state : State, id : Int) -> @js.Any? {
+  let entry = map_get(state.gpu.textures, @js.any(id))
+  if host_is_nullish(entry) {
+    return None
+  }
+  let view = entry._get("view")
+  let sampler = entry._get("sampler")
+  if host_is_nullish(view) || host_is_nullish(sampler) {
     None
   } else {
-    Some(fallback_entry)
+    Some(entry)
   }
 }
 
@@ -1969,7 +1987,7 @@ async fn load_wgsl_preprocessed(
   defines : Array[String],
   visited : @js.Any,
 ) -> String {
-  let normalized = strip_leading_slashes(rel_path.trim().to_string())
+  let normalized = normalize_shader_rel_path_for_runtime(rel_path)
   if normalized == "" {
     return ""
   }
@@ -1982,8 +2000,13 @@ async fn load_wgsl_preprocessed(
   )
   let import_specs = wgsl_extract_import_specs(source)
   let mut expanded = ""
+  let aliases : Array[String] = []
   for spec in import_specs {
     let module_rel = wgsl_import_spec_to_rel_path(spec).trim().to_string()
+    let module_alias = wgsl_import_spec_to_alias(spec).trim().to_string()
+    if module_alias != "" {
+      aliases.push(module_alias)
+    }
     if module_rel == "" {
       continue
     }
@@ -1995,17 +2018,38 @@ async fn load_wgsl_preprocessed(
     }
   }
   let stripped = wgsl_strip_import_define_lines(source)
-  wgsl_apply_ifdefs(expanded + stripped, defines)
+  wgsl_strip_module_aliases(
+    wgsl_apply_ifdefs(expanded + stripped, defines),
+    aliases,
+  )
+}
+
+///|
+fn normalize_shader_rel_path_for_runtime(path : String) -> String {
+  let mut normalized = strip_leading_slashes(path.trim().to_string())
+  while normalized.length() >= 2 && (try! normalized[:2].to_string()) == "./" {
+    normalized = try! normalized[2:normalized.length()].to_string()
+  }
+  if normalized.length() >= 7 && (try! normalized[:7].to_string()) == "assets/" {
+    normalized = try! normalized[7:normalized.length()].to_string()
+  }
+  normalized
+}
+
+///|
+fn is_motion_blur_shader_path(path : String) -> Bool {
+  normalize_shader_rel_path_for_runtime(path) ==
+  "shaders/mgstudio/3d/motion_blur.wgsl"
 }
 
 ///|
 async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
   let visited = new_set()
   let defines : Array[String] = []
-  let normalized = strip_leading_slashes(path.trim().to_string())
+  let normalized = normalize_shader_rel_path_for_runtime(path)
   let source_raw = load_wgsl_preprocessed(state, normalized, defines, visited)
-  let source = if normalized == "shaders/mgstudio/3d/motion_blur.wgsl" {
-    wgsl_prepend_derivative_uniformity_diagnostic(source_raw)
+  let source = if is_motion_blur_shader_path(normalized) {
+    wgsl_lower_motion_blur_texture_samples_for_webgpu(source_raw)
   } else {
     source_raw
   }
@@ -2015,7 +2059,7 @@ async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
 
 ///|
 async fn fetch_text_from_url(url : String) -> String {
-  let response = @http.fetch(url, method_="GET")
+  let response = @http.fetch(url, method_="GET", cache="no-store")
   if !response.ok {
     fail("Failed to fetch: " + url + " (" + response.status.to_string() + ")")
   }
@@ -3411,6 +3455,13 @@ fn draw_mesh3d(
   specular_tint_r : Double,
   specular_tint_g : Double,
   specular_tint_b : Double,
+  diffuse_transmission : Double,
+  specular_transmission : Double,
+  thickness : Double,
+  ior : Double,
+  transmission_source_texture_id : Int,
+  transmission_blur_taps : Double,
+  transmission_steps : Double,
 ) -> Unit {
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
@@ -3607,25 +3658,36 @@ fn draw_mesh3d(
   } else {
     state.gpu.fallback_texture_id
   }
-  let base_texture_entry = get_texture_entry(state, base_texture_id)
-  let normal_texture_entry = get_texture_entry(
+  let base_texture_entry = get_texture_entry_strict(state, base_texture_id)
+  let normal_texture_entry = get_texture_entry_strict(
     state, resolved_normal_texture_id,
   )
-  let emissive_texture_entry = get_texture_entry(
+  let emissive_texture_entry = get_texture_entry_strict(
     state, resolved_emissive_texture_id,
   )
-  let metallic_roughness_texture_entry = get_texture_entry(
+  let metallic_roughness_texture_entry = get_texture_entry_strict(
     state, resolved_metallic_roughness_texture_id,
   )
-  let occlusion_texture_entry = get_texture_entry(
+  let occlusion_texture_entry = get_texture_entry_strict(
     state, resolved_occlusion_texture_id,
   )
-  let depth_texture_entry = get_texture_entry(state, resolved_depth_texture_id)
-  let anisotropy_texture_entry = get_texture_entry(
+  let depth_texture_entry = get_texture_entry_strict(
+    state, resolved_depth_texture_id,
+  )
+  let anisotropy_texture_entry = get_texture_entry_strict(
     state, resolved_anisotropy_texture_id,
   )
-  let specular_tint_texture_entry = get_texture_entry(
+  let specular_tint_texture_entry = get_texture_entry_strict(
     state, resolved_specular_tint_texture_id,
+  )
+  let resolved_transmission_source_texture_id = if transmission_source_texture_id >=
+    0 {
+    transmission_source_texture_id
+  } else {
+    state.gpu.fallback_texture_id
+  }
+  let transmission_source_texture_entry = get_texture_entry_strict(
+    state, resolved_transmission_source_texture_id,
   )
   if base_texture_entry is None ||
     normal_texture_entry is None ||
@@ -3634,7 +3696,8 @@ fn draw_mesh3d(
     occlusion_texture_entry is None ||
     depth_texture_entry is None ||
     anisotropy_texture_entry is None ||
-    specular_tint_texture_entry is None {
+    specular_tint_texture_entry is None ||
+    transmission_source_texture_entry is None {
     return
   }
   if state.gpu.current_pass is Some(pass) &&
@@ -3648,7 +3711,9 @@ fn draw_mesh3d(
     occlusion_texture_entry is Some(occlusion_texture_entry_value) &&
     depth_texture_entry is Some(depth_texture_entry_value) &&
     anisotropy_texture_entry is Some(anisotropy_texture_entry_value) &&
-    specular_tint_texture_entry is Some(specular_tint_texture_entry_value) {
+    specular_tint_texture_entry is Some(specular_tint_texture_entry_value) &&
+    transmission_source_texture_entry
+    is Some(transmission_source_texture_entry_value) {
     let aspect = if info.height > 0 { info.width / info.height } else { 1.0 }
     let uv0_x = if textured { uv_offset_x } else { 0.0 }
     let uv0_y = if textured { uv_offset_y } else { 0.0 }
@@ -3724,8 +3789,8 @@ fn draw_mesh3d(
       info.spot_color_b,
       info.spot_intensity,
       info.spot_outer_angle,
-      0.0,
-      0.0,
+      transmission_blur_taps,
+      transmission_steps,
       0.0,
       emissive_r,
       emissive_g,
@@ -3783,6 +3848,10 @@ fn draw_mesh3d(
       } else {
         0.0
       },
+      diffuse_transmission,
+      specular_transmission,
+      thickness,
+      ior,
     ]
     guard create_transient_uniform_bind_group(
         state, mesh3d_pipeline, uniform_values,
@@ -3818,6 +3887,9 @@ fn draw_mesh3d(
       let specular_tint_view : @webgpu.GPUTextureView = specular_tint_texture_entry_value
         ._get("view")
         .cast()
+      let transmission_source_view : @webgpu.GPUTextureView = transmission_source_texture_entry_value
+        ._get("view")
+        .cast()
       guard state.gpu.mesh3d_material_layout is Some(material_layout) else {
         return
       }
@@ -3831,6 +3903,7 @@ fn draw_mesh3d(
         @webgpu.bind_group_entry_texture(6, depth_view),
         @webgpu.bind_group_entry_texture(7, anisotropy_view),
         @webgpu.bind_group_entry_texture(8, specular_tint_view),
+        @webgpu.bind_group_entry_texture(9, transmission_source_view),
       ]
       let material_desc = @webgpu.bind_group_descriptor(
         material_layout, material_entries,
@@ -3881,22 +3954,30 @@ fn draw_motion_blur(
     )
     return
   }
-  let resolved_scene_texture_id = if scene_texture_id >= 0 {
-    scene_texture_id
-  } else {
-    state.gpu.fallback_texture_id
-  }
-  let resolved_velocity_texture_id = if velocity_texture_id >= 0 {
-    velocity_texture_id
-  } else {
-    state.gpu.fallback_texture_id
-  }
-  guard get_texture_entry(state, resolved_scene_texture_id)
-    is Some(scene_texture_entry) else {
+  if scene_texture_id < 0 {
+    report_asset_error_once(
+      state, "motion_blur_draw_invalid_scene_texture", "Motion-blur draw skipped: scene texture id is invalid",
+    )
     return
   }
-  guard get_texture_entry(state, resolved_velocity_texture_id)
+  if velocity_texture_id < 0 {
+    report_asset_error_once(
+      state, "motion_blur_draw_invalid_velocity_texture", "Motion-blur draw skipped: velocity texture id is invalid",
+    )
+    return
+  }
+  guard get_texture_entry_strict(state, scene_texture_id)
+    is Some(scene_texture_entry) else {
+    report_asset_error_once(
+      state, "motion_blur_draw_scene_texture_not_ready", "Motion-blur draw skipped: scene texture is not ready",
+    )
+    return
+  }
+  guard get_texture_entry_strict(state, velocity_texture_id)
     is Some(velocity_texture_entry) else {
+    report_asset_error_once(
+      state, "motion_blur_draw_velocity_texture_not_ready", "Motion-blur draw skipped: velocity texture is not ready",
+    )
     return
   }
   let clamped_samples = if samples < 0 {
@@ -3925,28 +4006,12 @@ fn draw_motion_blur(
   let globals_data = motion_blur_globals_uniform_bytes(state.gpu.frame_count)
   queue.write_buffer(settings_buffer, 0, settings_data)
   queue.write_buffer(globals_buffer, 0, globals_data)
-  if state.gpu.motion_blur_fallback_depth_texture is None ||
-    state.gpu.motion_blur_fallback_depth_view is None {
-    let usage = @webgpu.combine_flags(
-      @webgpu.texture_usage_render_attachment(),
-      @webgpu.texture_usage_texture_binding(),
+  guard state.gpu.depth_view is Some(depth_view) else {
+    report_asset_error_once(
+      state, "motion_blur_draw_depth_not_ready", "Motion-blur draw skipped: depth texture is not ready",
     )
-    let depth_desc = @webgpu.texture_descriptor(
-      @webgpu.texture_size(1, 1),
-      @webgpu.TextureFormat::Other("depth24plus"),
-      usage,
-    )
-    let depth_texture = device.create_texture(depth_desc.to_js())
-    let depth_view = depth_texture.create_view()
-    state.gpu.motion_blur_fallback_depth_texture = Some(depth_texture)
-    state.gpu.motion_blur_fallback_depth_view = Some(depth_view)
+    return
   }
-  let depth_view_opt = if state.gpu.depth_view is Some(depth_view) {
-    Some(depth_view)
-  } else {
-    state.gpu.motion_blur_fallback_depth_view
-  }
-  guard depth_view_opt is Some(depth_view) else { return }
   let scene_sampler : @webgpu.GPUSampler = scene_texture_entry
     ._get("sampler")
     .cast()
