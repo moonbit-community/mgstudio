@@ -105,33 +105,32 @@ extern "js" fn join_strings(values : Array[String], sep : String) -> String =
 ///|
 /// Ensure required A11y imports are callable before wasm instantiation.
 ///
-/// This protects startup from stale/non-callable host bindings (for example,
-/// when the runtime page and engine wasm are temporarily out of sync).
+/// We intentionally fail-fast on missing bindings to avoid silent fallback
+/// behavior that can hide ABI drift between runtime and engine wasm.
 extern "js" fn ensure_a11y_import_callables(imports : @js.Any) -> Unit =
   #| (imports) => {
-  #|   if (!imports || typeof imports !== "object") return
-  #|   let host = imports.mgstudio_host
-  #|   if (!host || typeof host !== "object") {
-  #|     host = {}
-  #|     imports.mgstudio_host = host
+  #|   if (!imports || typeof imports !== "object") {
+  #|     throw new Error("Invalid wasm imports object")
   #|   }
-  #|   const fallbackI32 = () => 0
-  #|   const fallbackVoid = () => {}
+  #|   const host = imports.mgstudio_host
+  #|   if (!host || typeof host !== "object") {
+  #|     throw new Error("Missing mgstudio_host imports object")
+  #|   }
   #|   const required = {
-  #|     a11y_begin_update: fallbackVoid,
-  #|     a11y_push_node: fallbackVoid,
-  #|     a11y_end_update: fallbackVoid,
-  #|     a11y_apply_update: fallbackI32,
-  #|     a11y_actions_len: fallbackI32,
-  #|     a11y_action_target: fallbackI32,
-  #|     a11y_action_kind: fallbackI32,
-  #|     a11y_action_value_len: fallbackI32,
-  #|     a11y_action_value_code_unit: fallbackI32,
-  #|     a11y_actions_clear: fallbackI32,
+  #|     a11y_begin_update: true,
+  #|     a11y_push_node: true,
+  #|     a11y_end_update: true,
+  #|     a11y_apply_update: true,
+  #|     a11y_actions_len: true,
+  #|     a11y_action_target: true,
+  #|     a11y_action_kind: true,
+  #|     a11y_action_value_len: true,
+  #|     a11y_action_value_code_unit: true,
+  #|     a11y_actions_clear: true,
   #|   }
   #|   for (const key of Object.keys(required)) {
   #|     if (typeof host[key] !== "function") {
-  #|       host[key] = required[key]
+  #|       throw new Error(`Missing required mgstudio_host import: ${key}`)
   #|     }
   #|   }
   #| }
