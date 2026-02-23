@@ -5407,15 +5407,45 @@ pub let render2d_set_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
+  "mgstudio.render2d.prepare",
+)
+
+///|
+pub let render2d_set_queue : @app.SystemSet = @app.system_set(
+  "mgstudio.render2d.queue",
+)
+
+///|
+pub let render2d_set_execute : @app.SystemSet = @app.system_set(
+  "mgstudio.render2d.execute",
+)
+
+///|
 pub fn[W : RenderExtractWorld] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app
   .add_startup_system(init_render_state_system)
-  .add_system_config(
+  .add_post_update_system_config(
     @app.system(render_extract_system).in_set(render2d_set_extract),
   )
-  .add_post_update_system(render_prepare_system)
-  .add_post_update_system(render_queue_system)
-  .add_post_update_system(render_execute_system)
+  .add_post_update_system_config(
+    @app.system(render_prepare_system).in_set(render2d_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(render_queue_system).in_set(render2d_set_queue),
+  )
+  .add_post_update_system_config(
+    @app.system(render_execute_system).in_set(render2d_set_execute),
+  )
+  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+    render2d_set_prepare,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
+    render2d_set_queue,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
+    render2d_set_execute,
+  ])
 }
