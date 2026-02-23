@@ -31,10 +31,12 @@ pub struct NativeWindowInput {
     pub mouse_y: f32,
     pub wheel_x: f32,
     pub wheel_y: f32,
+    pub text_events: Vec<String>,
 
     pub key_down: HashSet<KeyCode>,
     pub key_just_pressed: HashSet<KeyCode>,
     pub key_just_released: HashSet<KeyCode>,
+    pub key_repeated: HashSet<KeyCode>,
 
     pub mouse_down: HashSet<MouseButton>,
     pub mouse_just_pressed: HashSet<MouseButton>,
@@ -128,15 +130,7 @@ impl NativeWindow {
             2 => CursorGrabMode::Locked,
             _ => CursorGrabMode::None,
         };
-        if self.window.set_cursor_grab(grab_mode).is_err() && mode != 0 {
-            // Fallback for platforms that only support one grab mode.
-            let fallback = if mode == 1 {
-                CursorGrabMode::Locked
-            } else {
-                CursorGrabMode::Confined
-            };
-            let _ = self.window.set_cursor_grab(fallback);
-        }
+        let _ = self.window.set_cursor_grab(grab_mode);
     }
 
     pub fn set_mode(&self, mode: i32) {
@@ -164,6 +158,8 @@ impl NativeWindow {
     pub fn input_finish_frame(&mut self) {
         self.input.key_just_pressed.clear();
         self.input.key_just_released.clear();
+        self.input.key_repeated.clear();
+        self.input.text_events.clear();
         self.input.mouse_just_pressed.clear();
         self.input.mouse_just_released.clear();
         self.input.wheel_x = 0.0;
@@ -218,6 +214,12 @@ fn handle_window_event(
             if let PhysicalKey::Code(code) = event.physical_key {
                 match event.state {
                     ElementState::Pressed => {
+                        if event.repeat {
+                            input.key_repeated.insert(code);
+                        }
+                        if let Some(text) = event.text.as_ref() {
+                            push_text_event(input, text.as_str());
+                        }
                         if input.key_down.insert(code) {
                             input.key_just_pressed.insert(code);
                         }
@@ -247,4 +249,11 @@ fn set_cursor_position(
     let logical: LogicalPosition<f64> = pos.to_logical(scale_factor);
     input.mouse_x = logical.x as f32;
     input.mouse_y = logical.y as f32;
+}
+
+fn push_text_event(input: &mut NativeWindowInput, text: &str) {
+    if text.is_empty() || text.chars().all(|ch| ch.is_control()) {
+        return;
+    }
+    input.text_events.push(text.to_string());
 }
