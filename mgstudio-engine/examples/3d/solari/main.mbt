@@ -19,7 +19,7 @@
 /// - Keeps Bevy's scene intent and controls (`Space`, `1`, `2`) plus dynamic
 ///   robot patrol and many-lights stress scene switching.
 /// - Solari/pathtracer/DLSS runtime pipeline is not available in mgstudio yet;
-///   this example uses a raster fallback while preserving control flow.
+///   this example keeps a raster-only adapted path.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -160,7 +160,7 @@ fn control_text_content() -> String {
   "(M): Switch scene mode (PicaPica/ManyLights)\n" +
   pathtracer_text +
   "\n\n" +
-  "Runtime note: Solari/pathtracer/DLSS are not available; using raster fallback."
+  "Runtime note: Solari/pathtracer/DLSS are not available in current mgstudio runtime."
 }
 
 ///|
@@ -171,7 +171,7 @@ fn performance_text_content() -> String {
   "FPS (CPU est): " +
   solari_state.val.perf_fps.to_string() +
   "\n" +
-  "GPU Solari diagnostics: unavailable in fallback mode"
+  "GPU Solari diagnostics: unavailable in current raster path"
 }
 
 ///|
