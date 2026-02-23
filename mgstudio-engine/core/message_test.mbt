@@ -74,3 +74,15 @@ test "messages: writer appends at writer tick" {
   inspect(read.length(), content="1")
   inspect(read[0] == "value", content="true")
 }
+
+///|
+test "messages: writer.write_batch appends all messages at writer tick" {
+  let messages = Messages::new()
+  let writer = messages.writer(7)
+  writer.write_batch(["first", "second", "third"])
+  let read = messages.reader(SystemTicks::new(0, 7)).read()
+  inspect(read.length(), content="3")
+  inspect(read[0] == "first", content="true")
+  inspect(read[1] == "second", content="true")
+  inspect(read[2] == "third", content="true")
+}

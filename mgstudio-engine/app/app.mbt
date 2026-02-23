@@ -331,6 +331,22 @@ pub fn[W, T : Resource] App::insert_resource(
 }
 
 ///|
+pub fn[W, T] App::contains_resource(
+  _self : App[W],
+  resource : @core.Resource[T],
+) -> Bool {
+  resource.is_present()
+}
+
+///|
+pub fn[W, T] App::remove_resource(
+  _self : App[W],
+  resource : @core.Resource[T],
+) -> T? {
+  resource.remove()
+}
+
+///|
 pub fn[W] App::add_startup_system_config(
   self : App[W],
   config : SystemConfig[W],

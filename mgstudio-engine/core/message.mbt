@@ -79,6 +79,17 @@ pub fn[T] Messages::send(self : Messages[T], tick : Tick, message : T) -> Unit {
 }
 
 ///|
+pub fn[T] Messages::send_batch(
+  self : Messages[T],
+  tick : Tick,
+  messages : Array[T],
+) -> Unit {
+  for message in messages {
+    self.send(tick, message)
+  }
+}
+
+///|
 pub fn[T] Messages::reader(
   self : Messages[T],
   system : SystemTicks,
@@ -130,4 +141,12 @@ pub fn[T] MessageReader::read(self : MessageReader[T]) -> Array[T] {
 ///|
 pub fn[T] MessageWriter::write(self : MessageWriter[T], message : T) -> Unit {
   self.messages.send(self.tick, message)
+}
+
+///|
+pub fn[T] MessageWriter::write_batch(
+  self : MessageWriter[T],
+  messages : Array[T],
+) -> Unit {
+  self.messages.send_batch(self.tick, messages)
 }

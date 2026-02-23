@@ -66,9 +66,13 @@ test "app: Res parameter reads inserted resource value" {
 ///|
 test "app: resource_remove clears custom resource" {
   reset_counter_resource()
-  App::new(TestWorld::new()).insert_resource(CounterResource::{ value: 9 })
-  |> ignore
-  inspect(counter_resource_storage.val.is_present(), content="true")
-  inspect(counter_resource_storage.val.remove() is Some(_), content="true")
-  inspect(counter_resource_storage.val.get() is None, content="true")
+  let app = App::new(TestWorld::new()).insert_resource(CounterResource::{
+    value: 9,
+  })
+  inspect(app.contains_resource(CounterResource::resource()), content="true")
+  inspect(
+    app.remove_resource(CounterResource::resource()) is Some(_),
+    content="true",
+  )
+  inspect(app.contains_resource(CounterResource::resource()), content="false")
 }

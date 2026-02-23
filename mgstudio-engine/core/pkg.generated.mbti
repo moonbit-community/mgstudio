@@ -73,6 +73,7 @@ pub struct MessageWriter[T] {
   tick : Int
 }
 pub fn[T] MessageWriter::write(Self[T], T) -> Unit
+pub fn[T] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
 
 pub struct Messages[T] {
   mut previous_tick : Int?
@@ -84,6 +85,7 @@ pub fn[T] Messages::clear(Self[T]) -> Unit
 pub fn[T] Messages::new() -> Self[T]
 pub fn[T] Messages::reader(Self[T], SystemTicks) -> MessageReader[T]
 pub fn[T] Messages::send(Self[T], Int, T) -> Unit
+pub fn[T] Messages::send_batch(Self[T], Int, Array[T]) -> Unit
 pub fn[T] Messages::writer(Self[T], Int) -> MessageWriter[T]
 
 pub struct Resource[T] {
