@@ -18,7 +18,8 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(viewport_to_world_setup)
-  .add_system(viewport_to_world_update)
+  .add_fixed_update_system(viewport_to_world_controls)
+  .add_post_update_system(viewport_to_world_draw_cursor)
   .run()
 }
 
@@ -42,23 +43,83 @@ let viewport_state : Ref[ViewportToWorldState] = Ref::new(ViewportToWorldState::
 })
 
 ///|
-fn viewport_to_world_setup(world : @ecs_world.World) -> Unit {
+fn viewport_default(width : Int, height : Int) -> @render2d.Viewport {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  let size_x = safe_width * 3 / 4
+  let size_y = safe_height * 3 / 4
+  let pos_x = safe_width / 8
+  let pos_y = safe_height / 8
+  @render2d.Viewport::new(
+    @math.IVec2::new(pos_x, pos_y),
+    @math.IVec2::new(size_x, size_y),
+  )
+}
+
+///|
+fn spawn_ui_text_handle(
+  content : String,
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  color : @render2d.Color,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @math.Transform::identity(),
+  )
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
+}
+
+///|
+fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let anchor_texture = asset_server.load("branding/bevy_bird_dark.png")
-  let anchor_sprite = @render2d.Sprite::from_image(anchor_texture)
-  let anchor_transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(anchor_sprite, anchor_transform).spawn(world)
-  |> ignore
-  let green = @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
-  let marker_mesh = @render2d.Mesh2d::from_rectangle(
-    @render2d.Rectangle::new(40.0F, 20.0F),
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let text_handle = spawn_ui_text_handle(
+    "Move the mouse to see the circle follow your cursor.\n" +
+    "Use the arrow keys to move the camera.\n" +
+    "Use the comma and period keys to zoom in and out.\n" +
+    "Use the WASD keys to move the viewport.\n" +
+    "Use the IJKL keys to resize the viewport.",
+    font,
+    18.0F,
+    @render2d.Color::white(),
   )
-  let marker_material = @render2d.ColorMaterial::new(green)
-  let marker_transform = @math.Transform::identity()
-  @render2d.Mesh2dBundle::new(marker_mesh, marker_material, marker_transform).spawn(
-    world,
+  let tick = world.read_change_tick()
+  let root = world.spawn_empty()
+  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
+  world
+  .get_node_store()
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+    tick,
   )
-  |> ignore
+  let text_entity = world.spawn_empty()
+  world
+  .get_parent_store()
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
+    text_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .get_ui_text_store()
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+}
+
+///|
+fn viewport_to_world_setup(world : @ecs_world.World) -> Unit {
   let width = @window.window_width()
   let height = @window.window_height()
   let viewport = viewport_default(width, height)
@@ -71,26 +132,41 @@ fn viewport_to_world_setup(world : @ecs_world.World) -> Unit {
   viewport_state.val.camera_transform = camera_transform
   viewport_state.val.camera_scale = 1.0F
   viewport_state.val.viewport = viewport
+
+  spawn_help_overlay(world)
+
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(40.0F, 20.0F)),
+    @render2d.ColorMaterial::new(
+      @render2d.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
+    ),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(
+      @render2d.Rectangle::new(50000.0F, 50000.0F),
+    ),
+    @render2d.ColorMaterial::new(
+      @render2d.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
+    ),
+    @math.Transform::from_xyz(0.0F, 0.0F, -200.0F),
+  ).spawn(world)
+  |> ignore
 }
 
 ///|
-fn viewport_to_world_update(world : @ecs_world.World) -> Unit {
+fn viewport_to_world_draw_cursor(world : @ecs_world.World) -> Unit {
   if viewport_state.val.camera.is_placeholder() {
     return
   }
   let gizmos = @render2d.Gizmos::new()
-  let delta = @time.time_delta_seconds()
-  let speed = 600.0F * delta
-  let speed_i = speed.to_int()
-  update_camera_transform(world, speed)
-  update_camera_scale(world, delta)
-  update_camera_viewport(world, speed_i)
-  draw_viewport_outline(world, gizmos)
   if @input.mouse_position() is Some(screen_pos) {
     if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
       is Some(world_pos) {
       let white = @render2d.Color::white()
-      let red = @render2d.Color::new(1.0F, 0.2F, 0.2F, 1.0F)
+      let red = @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
       let cursor_iso = @render2d.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
       if @render2d.render2d_world_to_viewport(world, world_pos)
@@ -106,21 +182,39 @@ fn viewport_to_world_update(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_camera_transform(world : @ecs_world.World, speed : Float) -> Unit {
+fn viewport_to_world_controls(world : @ecs_world.World) -> Unit {
+  if viewport_state.val.camera.is_placeholder() {
+    return
+  }
+  let fspeed = 600.0F * @time.time_fixed_delta_seconds()
+  let uspeed = fspeed.to_int()
+  let width = @window.window_width()
+  let height = @window.window_height()
+  if width <= 0 || height <= 0 {
+    return
+  }
+
+  update_camera_transform(world, fspeed)
+  update_camera_scale(world, @time.time_fixed_delta_seconds())
+  update_camera_viewport(world, width, height, uspeed)
+}
+
+///|
+fn update_camera_transform(world : @ecs_world.World, fspeed : Float) -> Unit {
   let camera_transform = viewport_state.val.camera_transform
   let mut x = camera_transform.translation.x
   let mut y = camera_transform.translation.y
   if @input.key_pressed(@window.KeyCode::ArrowUp) {
-    y = y + speed
+    y = y + fspeed
   }
   if @input.key_pressed(@window.KeyCode::ArrowDown) {
-    y = y - speed
+    y = y - fspeed
   }
   if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    x = x - speed
+    x = x - fspeed
   }
   if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    x = x + speed
+    x = x + fspeed
   }
   if x != camera_transform.translation.x || y != camera_transform.translation.y {
     let next_camera = @math.Transform::from_xy_rotation_scale(
@@ -163,50 +257,52 @@ fn update_camera_scale(world : @ecs_world.World, delta : Float) -> Unit {
 }
 
 ///|
-fn update_camera_viewport(world : @ecs_world.World, speed_i : Int) -> Unit {
-  let width = @window.window_width()
-  let height = @window.window_height()
-  if width <= 0 || height <= 0 {
-    return
-  }
+fn update_camera_viewport(
+  world : @ecs_world.World,
+  width : Int,
+  height : Int,
+  uspeed : Int,
+) -> Unit {
   let window_size = @math.IVec2::new(width, height)
   let mut viewport = viewport_state.val.viewport
   if viewport.physical_size.x > width || viewport.physical_size.y > height {
-    viewport = viewport_default(width, height)
-  } else {
-    let mut position = viewport.physical_position
-    let mut size = viewport.physical_size
-    if @input.key_pressed(@window.KeyCode::KeyW) {
-      position = position.saturating_sub(@math.IVec2::new(0, speed_i))
-    }
-    if @input.key_pressed(@window.KeyCode::KeyS) {
-      position = position.add(@math.IVec2::new(0, speed_i))
-    }
-    if @input.key_pressed(@window.KeyCode::KeyA) {
-      position = position.saturating_sub(@math.IVec2::new(speed_i, 0))
-    }
-    if @input.key_pressed(@window.KeyCode::KeyD) {
-      position = position.add(@math.IVec2::new(speed_i, 0))
-    }
-    let max_position = window_size.saturating_sub(size)
-    position = position.min(max_position)
-    if @input.key_pressed(@window.KeyCode::KeyI) {
-      size = size.saturating_sub(@math.IVec2::new(0, speed_i))
-    }
-    if @input.key_pressed(@window.KeyCode::KeyK) {
-      size = size.add(@math.IVec2::new(0, speed_i))
-    }
-    if @input.key_pressed(@window.KeyCode::KeyJ) {
-      size = size.saturating_sub(@math.IVec2::new(speed_i, 0))
-    }
-    if @input.key_pressed(@window.KeyCode::KeyL) {
-      size = size.add(@math.IVec2::new(speed_i, 0))
-    }
-    let min_size = @math.IVec2::new(20, 20)
-    let max_size = window_size.saturating_sub(position)
-    size = size.min(max_size).max(min_size)
-    viewport = @render2d.Viewport::new(position, size)
+    viewport = @render2d.Viewport::new(
+      viewport.physical_position,
+      @math.IVec2::new(width * 3 / 4, height * 3 / 4),
+    )
   }
+  let mut position = viewport.physical_position
+  let mut size = viewport.physical_size
+  if @input.key_pressed(@window.KeyCode::KeyW) {
+    position = position.saturating_sub(@math.IVec2::new(0, uspeed))
+  }
+  if @input.key_pressed(@window.KeyCode::KeyS) {
+    position = position.add(@math.IVec2::new(0, uspeed))
+  }
+  if @input.key_pressed(@window.KeyCode::KeyA) {
+    position = position.saturating_sub(@math.IVec2::new(uspeed, 0))
+  }
+  if @input.key_pressed(@window.KeyCode::KeyD) {
+    position = position.add(@math.IVec2::new(uspeed, 0))
+  }
+  let max_position = window_size.saturating_sub(size)
+  position = position.min(max_position)
+  if @input.key_pressed(@window.KeyCode::KeyI) {
+    size = size.saturating_sub(@math.IVec2::new(0, uspeed))
+  }
+  if @input.key_pressed(@window.KeyCode::KeyK) {
+    size = size.add(@math.IVec2::new(0, uspeed))
+  }
+  if @input.key_pressed(@window.KeyCode::KeyJ) {
+    size = size.saturating_sub(@math.IVec2::new(uspeed, 0))
+  }
+  if @input.key_pressed(@window.KeyCode::KeyL) {
+    size = size.add(@math.IVec2::new(uspeed, 0))
+  }
+  let min_size = @math.IVec2::new(20, 20)
+  let max_size = window_size.saturating_sub(position)
+  size = size.min(max_size).max(min_size)
+  viewport = @render2d.Viewport::new(position, size)
   viewport_state.val.viewport = viewport
   let tick = world.read_change_tick()
   let camera_store = world.get_camera_store()
@@ -218,72 +314,4 @@ fn update_camera_viewport(world : @ecs_world.World, speed_i : Int) -> Unit {
     )
     |> ignore
   }
-}
-
-///|
-fn draw_viewport_outline(
-  world : @ecs_world.World,
-  gizmos : @render2d.Gizmos,
-) -> Unit {
-  let viewport = viewport_state.val.viewport
-  let width = viewport.physical_size.x
-  let height = viewport.physical_size.y
-  if width <= 0 || height <= 0 {
-    return
-  }
-  let scale_factor = @window.window_scale_factor()
-  let scale = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
-  let pos_x = Float::from_double(viewport.physical_position.x.to_double()) /
-    scale
-  let pos_y = Float::from_double(viewport.physical_position.y.to_double()) /
-    scale
-  let size_x = Float::from_double(width.to_double()) / scale
-  let size_y = Float::from_double(height.to_double()) / scale
-  let top_left = @math.Vec2::new(pos_x, pos_y)
-  let top_right = @math.Vec2::new(pos_x + size_x, pos_y)
-  let bottom_right = @math.Vec2::new(pos_x + size_x, pos_y + size_y)
-  let bottom_left = @math.Vec2::new(pos_x, pos_y + size_y)
-  if @render2d.render2d_viewport_to_world_2d(world, top_left) is Some(world_tl) {
-    if @render2d.render2d_viewport_to_world_2d(world, top_right)
-      is Some(world_tr) {
-      if @render2d.render2d_viewport_to_world_2d(world, bottom_right)
-        is Some(world_br) {
-        if @render2d.render2d_viewport_to_world_2d(world, bottom_left)
-          is Some(world_bl) {
-          let base_config = @render2d.gizmo_config()
-          let dashed_line = @render2d.GizmoLineConfig::{
-            ..base_config.line,
-            style: @render2d.GizmoLineStyle::Dashed(
-              gap_scale=1.0F,
-              line_scale=2.0F,
-            ),
-          }
-          @render2d.gizmo_set_config(@render2d.GizmoConfig::{
-            ..base_config,
-            line: dashed_line,
-          })
-          let outline_color = @render2d.Color::new(0.8F, 0.8F, 0.8F, 1.0F)
-          gizmos.line_2d(world_tl, world_tr, outline_color)
-          gizmos.line_2d(world_tr, world_br, outline_color)
-          gizmos.line_2d(world_br, world_bl, outline_color)
-          gizmos.line_2d(world_bl, world_tl, outline_color)
-          @render2d.gizmo_set_config(base_config)
-        }
-      }
-    }
-  }
-}
-
-///|
-fn viewport_default(width : Int, height : Int) -> @render2d.Viewport {
-  let safe_width = if width <= 0 { 1 } else { width }
-  let safe_height = if height <= 0 { 1 } else { height }
-  let size_x = safe_width * 3 / 4
-  let size_y = safe_height * 3 / 4
-  let pos_x = safe_width / 8
-  let pos_y = safe_height / 8
-  @render2d.Viewport::new(
-    @math.IVec2::new(pos_x, pos_y),
-    @math.IVec2::new(size_x, size_y),
-  )
 }
