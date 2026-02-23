@@ -86,6 +86,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W, T] App::contains_resource(Self[W], @core.Resource[T]) -> Bool
+pub fn[W, T : Resource] App::init_resource(Self[W], () -> T) -> Self[W]
 pub fn[W, T : Resource] App::insert_resource(Self[W], T) -> Self[W]
 pub fn[W] App::new(W) -> Self[W]
 pub fn[W, T] App::remove_resource(Self[W], @core.Resource[T]) -> T?

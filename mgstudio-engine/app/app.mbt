@@ -331,6 +331,18 @@ pub fn[W, T : Resource] App::insert_resource(
 }
 
 ///|
+pub fn[W, T : Resource] App::init_resource(
+  self : App[W],
+  init : () -> T,
+) -> App[W] {
+  let resource : @core.Resource[T] = Resource::resource()
+  if !resource.is_present() {
+    resource.insert(init(), current_system_ticks().this_run)
+  }
+  self
+}
+
+///|
 pub fn[W, T] App::contains_resource(
   _self : App[W],
   resource : @core.Resource[T],

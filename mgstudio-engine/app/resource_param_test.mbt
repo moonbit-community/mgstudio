@@ -64,6 +64,31 @@ test "app: Res parameter reads inserted resource value" {
 }
 
 ///|
+test "app: init_resource inserts only when missing" {
+  reset_counter_resource()
+  let app = App::new(TestWorld::new()).init_resource(fn() {
+    CounterResource::{ value: 11 }
+  })
+  inspect(app.contains_resource(CounterResource::resource()), content="true")
+  let inserted_value = match counter_resource_storage.val.get() {
+    Some(resource) => resource.value
+    None => -1
+  }
+  inspect(inserted_value, content="11")
+
+  app
+  .insert_resource(CounterResource::{ value: 4 })
+  .init_resource(fn() { CounterResource::{ value: 99 } })
+  |> ignore
+
+  let kept_value = match counter_resource_storage.val.get() {
+    Some(resource) => resource.value
+    None => -1
+  }
+  inspect(kept_value, content="4")
+}
+
+///|
 test "app: resource_remove clears custom resource" {
   reset_counter_resource()
   let app = App::new(TestWorld::new()).insert_resource(CounterResource::{
