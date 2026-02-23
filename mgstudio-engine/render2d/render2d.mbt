@@ -3614,7 +3614,7 @@ pub(open) trait Mesh2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld
 }
 
 ///|
-pub(open) trait RenderExtractWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
+pub(open) trait RenderExtractWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 
 ///|
@@ -3933,47 +3933,326 @@ fn render2d_clamp_viewport(
   viewport : Viewport,
   target_size : @math.IVec2,
 ) -> Viewport {
-  let mut position = viewport.physical_position
-  let mut size = viewport.physical_size
-  if position.x < 0 || position.y < 0 {
-    position = @math.IVec2::new(
-      if position.x < 0 {
-        0
-      } else {
-        position.x
-      },
-      if position.y < 0 {
-        0
-      } else {
-        position.y
-      },
-    )
+  let mut position_x = viewport.physical_position.x
+  let mut position_y = viewport.physical_position.y
+  let mut size_x = viewport.physical_size.x
+  let mut size_y = viewport.physical_size.y
+  let target_x = if target_size.x < 0 { 0 } else { target_size.x }
+  let target_y = if target_size.y < 0 { 0 } else { target_size.y }
+  if position_x < 0 {
+    position_x = 0
   }
-  if size.x < 0 || size.y < 0 {
-    size = @math.IVec2::new(
-      if size.x < 0 {
-        0
-      } else {
-        size.x
-      },
-      if size.y < 0 {
-        0
-      } else {
-        size.y
-      },
-    )
+  if position_y < 0 {
+    position_y = 0
   }
-  let max_position = target_size.saturating_sub(size)
-  position = position.min(max_position)
-  let max_size = target_size.saturating_sub(position)
-  size = size.min(max_size)
+  if size_x < 0 {
+    size_x = 0
+  }
+  if size_y < 0 {
+    size_y = 0
+  }
+  if size_x + position_x > target_x {
+    if position_x < target_x {
+      size_x = target_x - position_x
+    } else if target_x > 0 {
+      position_x = target_x - 1
+      size_x = 1
+    } else {
+      position_x = 0
+      size_x = 0
+    }
+  }
+  if size_y + position_y > target_y {
+    if position_y < target_y {
+      size_y = target_y - position_y
+    } else if target_y > 0 {
+      position_y = target_y - 1
+      size_y = 1
+    } else {
+      position_y = 0
+      size_y = 0
+    }
+  }
+  Viewport::new(
+    @math.IVec2::new(position_x, position_y),
+    @math.IVec2::new(size_x, size_y),
+  )
+}
+
+///|
+priv struct CameraSystemEntry {
+  entity : @core.Entity
+  target : RenderTarget
+  target_size : @math.IVec2?
+  scale_factor : Float
+  old_viewport_size : @math.IVec2?
+}
+
+///|
+priv struct CameraSystemState {
+  mut window_scale_factor : Float
+  mut entries : Array[CameraSystemEntry]
+}
+
+///|
+fn CameraSystemState::new() -> CameraSystemState {
+  CameraSystemState::{ window_scale_factor: 1.0F, entries: [] }
+}
+
+///|
+let camera_system_state_ref : Ref[CameraSystemState] = Ref::new(
+  CameraSystemState::new(),
+)
+
+///|
+fn render2d_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
+  a.id == b.id && a.generation == b.generation
+}
+
+///|
+fn render2d_target_eq(a : RenderTarget, b : RenderTarget) -> Bool {
+  match (a, b) {
+    (RenderTarget::Screen, RenderTarget::Screen) => true
+    (RenderTarget::Image(ah), RenderTarget::Image(bh)) => ah.id() == bh.id()
+    _ => false
+  }
+}
+
+///|
+fn render2d_ivec2_eq(a : @math.IVec2, b : @math.IVec2) -> Bool {
+  a.x == b.x && a.y == b.y
+}
+
+///|
+fn render2d_opt_ivec2_eq(a : @math.IVec2?, b : @math.IVec2?) -> Bool {
+  match (a, b) {
+    (Some(va), Some(vb)) => render2d_ivec2_eq(va, vb)
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
+fn render2d_find_camera_system_entry(
+  entries : Array[CameraSystemEntry],
+  entity : @core.Entity,
+) -> CameraSystemEntry? {
+  for entry in entries {
+    if render2d_entity_eq(entry.entity, entity) {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+fn render2d_scale_viewport_axis(value : Int, scale : Float) -> Int {
+  if value <= 0 || scale <= 0.0F {
+    return 0
+  }
+  let scaled = Float::from_double(value.to_double()) * scale
+  if scaled <= 0.0F {
+    return 0
+  }
+  scaled.to_int()
+}
+
+///|
+fn render2d_scale_viewport(viewport : Viewport, scale : Float) -> Viewport {
+  let position = @math.IVec2::new(
+    render2d_scale_viewport_axis(viewport.physical_position.x, scale),
+    render2d_scale_viewport_axis(viewport.physical_position.y, scale),
+  )
+  let size = @math.IVec2::new(
+    render2d_scale_viewport_axis(viewport.physical_size.x, scale),
+    render2d_scale_viewport_axis(viewport.physical_size.y, scale),
+  )
   Viewport::new(position, size)
 }
 
 ///|
-pub fn[W] render2d_camera_system(_world : W) -> Unit {
-  // Legacy system retained for API compatibility; camera extraction computes
-  // derived values each frame in `render_extract_system`.
+fn render2d_camera_viewport_size(camera : Camera) -> @math.IVec2? {
+  match camera.viewport {
+    Some(viewport) => Some(viewport.physical_size)
+    None => None
+  }
+}
+
+///|
+fn render2d_projection_changed(
+  projection_store : @core.ComponentStore[Projection],
+  entity : @core.Entity,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  match projection_store.get_ticks(entity) {
+    Some(ticks) =>
+      ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
+    None => true
+  }
+}
+
+///|
+fn render2d_camera_changed(
+  camera_store : @core.ComponentStore[Camera],
+  entity : @core.Entity,
+  system_ticks : @core.SystemTicks,
+) -> Bool {
+  match camera_store.get_ticks(entity) {
+    Some(ticks) =>
+      ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
+    None => true
+  }
+}
+
+///|
+fn render2d_camera_entry_computed(entry : CameraSystemEntry) -> CameraComputed {
+  match entry.target_size {
+    Some(target_size) =>
+      CameraComputed::{ target_size, scale_factor: entry.scale_factor }
+    None =>
+      CameraComputed::{
+        target_size: @math.IVec2::new(0, 0),
+        scale_factor: 1.0F,
+      }
+  }
+}
+
+///|
+pub(open) trait CameraSystemWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + @core.ChangeTickWorld + @core.SystemContextWorld {
+}
+
+///|
+pub fn[W : CameraSystemWorld] render2d_camera_system(world : W) -> Unit {
+  guard render_state_ref(world) is Some(render_state_ref_value) else { return }
+  let tick = world.read_change_tick()
+  let system_ticks = world.get_system_context().ticks()
+  let camera2d_store = world.get_camera2d_store()
+  let camera_store = world.get_camera_store()
+  let projection_store = world.get_projection_store()
+  let target_store = world.get_render_target_store()
+  let render_state = render_state_ref_value.val
+  let state = camera_system_state_ref.val
+  let mut window_scale_factor = @window.window_scale_factor()
+  if window_scale_factor <= 0.0F {
+    window_scale_factor = 1.0F
+  }
+  let window_scale_factor_changed = window_scale_factor !=
+    state.window_scale_factor
+  state.window_scale_factor = window_scale_factor
+
+  let previous_entries = state.entries
+  let next_entries : Array[CameraSystemEntry] = []
+  camera2d_store.for_each(fn(entity, _marker) {
+    let target = match target_store.get(entity) {
+      Some(value) => value
+      None => RenderTarget::Screen
+    }
+    let camera = match camera_store.get(entity) {
+      Some(value) => value
+      None => Camera::default()
+    }
+    let projection_value = match projection_store.get(entity) {
+      Some(value) => value
+      None => Projection::orthographic_2d()
+    }
+
+    let previous_entry = render2d_find_camera_system_entry(
+      previous_entries, entity,
+    )
+    let previous_target = match previous_entry {
+      Some(entry) => entry.target
+      None => target
+    }
+    let previous_target_size : @math.IVec2? = match previous_entry {
+      Some(entry) => entry.target_size
+      None => None
+    }
+    let previous_scale_factor = previous_entry
+      .map(fn(entry) {
+        let scale_factor = entry.scale_factor
+        if scale_factor <= 0.0F {
+          1.0F
+        } else {
+          scale_factor
+        }
+      })
+      .unwrap_or(1.0F)
+    let previous_viewport_size = previous_entry
+      .map(fn(entry) { entry.old_viewport_size })
+      .unwrap_or(None)
+
+    let target_info = render2d_target_info(render_state, target)
+    let next_target_size : @math.IVec2? = match target_info {
+      Some(info) => Some(info.size)
+      None => None
+    }
+    let next_scale_factor = target_info
+      .map(fn(info) { info.scale_factor })
+      .unwrap_or(1.0F)
+
+    let target_changed = !render2d_target_eq(previous_target, target) ||
+      !render2d_opt_ivec2_eq(previous_target_size, next_target_size)
+    let viewport_size = render2d_camera_viewport_size(camera)
+    let viewport_changed = !render2d_opt_ivec2_eq(
+      previous_viewport_size, viewport_size,
+    )
+    let camera_changed = render2d_camera_changed(
+      camera_store, entity, system_ticks,
+    )
+    let projection_changed = render2d_projection_changed(
+      projection_store, entity, system_ticks,
+    )
+    let scale_factor_changed = target is RenderTarget::Screen &&
+      window_scale_factor_changed
+    let should_update = target_changed ||
+      viewport_changed ||
+      camera_changed ||
+      projection_changed ||
+      scale_factor_changed
+
+    let mut camera_value = camera
+    if should_update {
+      if scale_factor_changed &&
+        previous_scale_factor > 0.0F &&
+        camera_value.viewport is Some(viewport) &&
+        target_info is Some(info) {
+        let resize_factor = info.scale_factor / previous_scale_factor
+        let resized = render2d_scale_viewport(viewport, resize_factor)
+        camera_value = Camera::{
+          viewport: Some(resized),
+          order: camera_value.order,
+          clear_color: camera_value.clear_color,
+        }
+      }
+      if target_info is Some(info) && camera_value.viewport is Some(viewport) {
+        let clamped = render2d_clamp_viewport(viewport, info.size)
+        camera_value = Camera::{
+          viewport: Some(clamped),
+          order: camera_value.order,
+          clear_color: camera_value.clear_color,
+        }
+      }
+      if camera_store.contains(entity) {
+        camera_store.set(entity, camera_value, tick) |> ignore
+      } else {
+        camera_store.insert(entity, camera_value, tick)
+      }
+      if projection_store.contains(entity) {
+        projection_store.set(entity, projection_value, tick) |> ignore
+      } else {
+        projection_store.insert(entity, projection_value, tick)
+      }
+    }
+
+    next_entries.push(CameraSystemEntry::{
+      entity,
+      target,
+      target_size: next_target_size,
+      scale_factor: next_scale_factor,
+      old_viewport_size: render2d_camera_viewport_size(camera_value),
+    })
+  })
+  state.entries = next_entries
 }
 
 ///|
@@ -4026,6 +4305,7 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
   let view_visibility_store = world.get_view_visibility_store()
   let transform_store = world.get_transform_store()
   let global_store = world.get_global_transform_store()
+  let camera_system_state = camera_system_state_ref.val
   camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
       Some(t) => t
@@ -4056,24 +4336,19 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       target_size: @math.IVec2::new(0, 0),
       scale_factor: 1.0F,
     }
-    let mut camera_value = camera
-    if render2d_target_info(rs.val, target) is Some(info) {
+    if render2d_find_camera_system_entry(camera_system_state.entries, entity)
+      is Some(entry) &&
+      render2d_target_eq(entry.target, target) {
+      computed = render2d_camera_entry_computed(entry)
+    } else if render2d_target_info(rs.val, target) is Some(info) {
       computed = CameraComputed::{
         target_size: info.size,
         scale_factor: info.scale_factor,
       }
-      if camera_value.viewport is Some(viewport) {
-        let clamped = render2d_clamp_viewport(viewport, info.size)
-        camera_value = Camera::{
-          viewport: Some(clamped),
-          order: camera_value.order,
-          clear_color: camera_value.clear_color,
-        }
-      }
     }
     rs.val.cameras.push(CameraInstance::{
       entity,
-      camera: camera_value,
+      camera,
       projection,
       transform,
       target,
@@ -4709,6 +4984,34 @@ test "render2d: shape geometry builders validate" {
       ok = false
     }
   }
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: camera viewport clamp matches bevy edge behavior" {
+  let viewport = Viewport::new(
+    @math.IVec2::new(260, 120),
+    @math.IVec2::new(50, 20),
+  )
+  let clamped = render2d_clamp_viewport(viewport, @math.IVec2::new(200, 100))
+  let ok = clamped.physical_position.x == 199 &&
+    clamped.physical_position.y == 99 &&
+    clamped.physical_size.x == 1 &&
+    clamped.physical_size.y == 1
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: camera viewport scales with dpi resize factor" {
+  let viewport = Viewport::new(
+    @math.IVec2::new(10, 20),
+    @math.IVec2::new(40, 30),
+  )
+  let scaled = render2d_scale_viewport(viewport, 1.5F)
+  let ok = scaled.physical_position.x == 15 &&
+    scaled.physical_position.y == 30 &&
+    scaled.physical_size.x == 60 &&
+    scaled.physical_size.y == 45
   inspect(ok, content="true")
 }
 
