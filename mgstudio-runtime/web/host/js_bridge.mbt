@@ -440,6 +440,35 @@ extern "js" fn prevent_default(event : @js.Any) -> Unit =
   #| (event) => event.preventDefault()
 
 ///|
+extern "js" fn keyboard_event_character(event : @js.Any) -> String =
+  #| (event) => {
+  #|   if (!event || typeof event !== "object") {
+  #|     return ""
+  #|   }
+  #|   if (event.ctrlKey || event.metaKey) {
+  #|     return ""
+  #|   }
+  #|   const key = typeof event.key === "string" ? event.key : ""
+  #|   if (!key || key === "Dead" || key === "Unidentified") {
+  #|     return ""
+  #|   }
+  #|   const nonTextKeys = new Set([
+  #|     "Alt", "AltGraph", "CapsLock", "Control", "Fn", "FnLock", "Meta",
+  #|     "NumLock", "ScrollLock", "Shift", "Super", "Hyper", "Symbol",
+  #|     "SymbolLock", "Tab", "Enter", "Escape", "Backspace", "Delete", "Insert",
+  #|     "Home", "End", "PageUp", "PageDown", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+  #|     "PrintScreen", "Pause", "ContextMenu",
+  #|   ])
+  #|   if (nonTextKeys.has(key)) {
+  #|     return ""
+  #|   }
+  #|   if (/^F\\d{1,2}$/.test(key)) {
+  #|     return ""
+  #|   }
+  #|   return key
+  #| }
+
+///|
 extern "js" fn coerce_asset_path(path : @js.Any) -> String =
   #| (path) => {
   #|   if (path == null) {
@@ -646,6 +675,49 @@ extern "js" fn wgsl_import_spec_to_rel_path(spec : String) -> String =
   #| }
 
 ///|
+extern "js" fn wgsl_import_spec_to_alias(specRaw : String) -> String =
+  #| (specRaw) => {
+  #|   let spec = String(specRaw || "").trim().replace(/;+$/, "")
+  #|   if (spec.length === 0) {
+  #|     return ""
+  #|   }
+  #|   const asMatch = /\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*$/.exec(spec)
+  #|   if (asMatch && asMatch[1]) {
+  #|     return asMatch[1]
+  #|   }
+  #|   const braceIndex = spec.indexOf("::{")
+  #|   if (braceIndex >= 0) {
+  #|     spec = spec.slice(0, braceIndex).trim()
+  #|   }
+  #|   const segs = spec.split("::").filter((s) => s.length > 0)
+  #|   if (segs.length === 0) {
+  #|     return ""
+  #|   }
+  #|   return segs[segs.length - 1]
+  #| }
+
+///|
+extern "js" fn wgsl_strip_module_aliases(
+  source : String,
+  aliases : Array[String],
+) -> String =
+  #| (source, aliases) => {
+  #|   const text = String(source || "")
+  #|   const list = Array.isArray(aliases) ? aliases : []
+  #|   const dedup = Array.from(new Set(list.map((a) => String(a || "").trim()).filter((a) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(a))))
+  #|   if (dedup.length === 0) {
+  #|     return text
+  #|   }
+  #|   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  #|   let out = text
+  #|   for (const alias of dedup) {
+  #|     const pattern = new RegExp("\\b" + escapeRegExp(alias) + "\\s*::\\s*", "g")
+  #|     out = out.replace(pattern, "")
+  #|   }
+  #|   return out
+  #| }
+
+///|
 extern "js" fn wgsl_strip_import_define_lines(source : String) -> String =
   #| (source) => {
   #|   const out = []
@@ -669,7 +741,7 @@ extern "js" fn wgsl_apply_ifdefs(
   #| (source, defines) => {
   #|   const defineSet = new Set((defines || []).map((d) => String(d)))
   #|   const activeStack = [true]
-  #|   const condStack = []
+  #|   const frameStack = []
   #|   const out = []
   #|   const lines = String(source || "").split(/\r?\n/)
   #|   for (const lineRaw of lines) {
@@ -677,26 +749,49 @@ extern "js" fn wgsl_apply_ifdefs(
   #|     const trimmed = line.trim()
   #|     if (trimmed.startsWith("#ifdef ")) {
   #|       const name = trimmed.slice("#ifdef ".length).trim()
-  #|       const enabled = defineSet.has(name)
+  #|       const cond = defineSet.has(name)
   #|       const parent = activeStack[activeStack.length - 1]
-  #|       activeStack.push(parent && enabled)
-  #|       condStack.push(enabled)
+  #|       activeStack.push(parent && cond)
+  #|       frameStack.push({ parent, branchTaken: cond })
   #|       continue
   #|     }
   #|     if (trimmed.startsWith("#ifndef ")) {
   #|       const name = trimmed.slice("#ifndef ".length).trim()
-  #|       const enabled = !defineSet.has(name)
+  #|       const cond = !defineSet.has(name)
   #|       const parent = activeStack[activeStack.length - 1]
-  #|       activeStack.push(parent && enabled)
-  #|       condStack.push(enabled)
+  #|       activeStack.push(parent && cond)
+  #|       frameStack.push({ parent, branchTaken: cond })
+  #|       continue
+  #|     }
+  #|     if (trimmed.startsWith("#else ifdef ")) {
+  #|       if (frameStack.length > 0) {
+  #|         const idx = frameStack.length - 1
+  #|         const frame = frameStack[idx]
+  #|         const name = trimmed.slice("#else ifdef ".length).trim()
+  #|         const cond = !frame.branchTaken && defineSet.has(name)
+  #|         activeStack[activeStack.length - 1] = frame.parent && cond
+  #|         frame.branchTaken = frame.branchTaken || cond
+  #|       }
+  #|       continue
+  #|     }
+  #|     if (trimmed.startsWith("#else ifndef ")) {
+  #|       if (frameStack.length > 0) {
+  #|         const idx = frameStack.length - 1
+  #|         const frame = frameStack[idx]
+  #|         const name = trimmed.slice("#else ifndef ".length).trim()
+  #|         const cond = !frame.branchTaken && !defineSet.has(name)
+  #|         activeStack[activeStack.length - 1] = frame.parent && cond
+  #|         frame.branchTaken = frame.branchTaken || cond
+  #|       }
   #|       continue
   #|     }
   #|     if (trimmed === "#else") {
-  #|       if (condStack.length > 0) {
-  #|         const flipped = !condStack[condStack.length - 1]
-  #|         condStack[condStack.length - 1] = flipped
-  #|         const parent = activeStack.length >= 2 ? activeStack[activeStack.length - 2] : true
-  #|         activeStack[activeStack.length - 1] = parent && flipped
+  #|       if (frameStack.length > 0) {
+  #|         const idx = frameStack.length - 1
+  #|         const frame = frameStack[idx]
+  #|         const cond = !frame.branchTaken
+  #|         activeStack[activeStack.length - 1] = frame.parent && cond
+  #|         frame.branchTaken = frame.branchTaken || cond
   #|       }
   #|       continue
   #|     }
@@ -704,8 +799,8 @@ extern "js" fn wgsl_apply_ifdefs(
   #|       if (activeStack.length > 1) {
   #|         activeStack.pop()
   #|       }
-  #|       if (condStack.length > 0) {
-  #|         condStack.pop()
+  #|       if (frameStack.length > 0) {
+  #|         frameStack.pop()
   #|       }
   #|       continue
   #|     }
@@ -717,15 +812,45 @@ extern "js" fn wgsl_apply_ifdefs(
   #| }
 
 ///|
-extern "js" fn wgsl_prepend_derivative_uniformity_diagnostic(
+/// WebGPU backend lowering for Bevy motion-blur WGSL:
+/// Browsers currently reject some `textureSample` calls in non-uniform control
+/// flow. Bevy's native `wgpu` path lowers these internally; this mirrors that
+/// behavior on the web runtime while keeping source WGSL unchanged.
+extern "js" fn wgsl_lower_motion_blur_texture_samples_for_webgpu(
   source : String,
 ) -> String =
   #| (source) => {
-  #|   const text = String(source || "")
-  #|   if (/diagnostic\s*\(\s*off\s*,\s*derivative_uniformity\s*\)\s*;/.test(text)) {
-  #|     return text
+  #|   let out = String(source || "")
+  #|   const replacements = [
+  #|     [
+  #|       /\btextureSample\s*\(\s*screen_texture\s*,\s*texture_sampler\s*,\s*in\.uv\s*\)/g,
+  #|       "textureSampleLevel(screen_texture, texture_sampler, in.uv, 0.0)",
+  #|     ],
+  #|     [
+  #|       /\btextureSample\s*\(\s*motion_vectors\s*,\s*texture_sampler\s*,\s*in\.uv\s*\)\s*\.rg/g,
+  #|       "textureSampleLevel(motion_vectors, texture_sampler, in.uv, 0.0).rg",
+  #|     ],
+  #|     [
+  #|       /\btextureSample\s*\(\s*depth\s*,\s*texture_sampler\s*,\s*in\.uv\s*\)/g,
+  #|       "textureLoad(depth, frag_coords, 0)",
+  #|     ],
+  #|     [
+  #|       /\btextureSample\s*\(\s*screen_texture\s*,\s*texture_sampler\s*,\s*sample_uv\s*\)/g,
+  #|       "textureSampleLevel(screen_texture, texture_sampler, sample_uv, 0.0)",
+  #|     ],
+  #|     [
+  #|       /\btextureSample\s*\(\s*motion_vectors\s*,\s*texture_sampler\s*,\s*sample_uv\s*\)\s*\.rg/g,
+  #|       "textureSampleLevel(motion_vectors, texture_sampler, sample_uv, 0.0).rg",
+  #|     ],
+  #|     [
+  #|       /\btextureSample\s*\(\s*depth\s*,\s*texture_sampler\s*,\s*sample_uv\s*\)/g,
+  #|       "textureLoad(depth, sample_coords, 0)",
+  #|     ],
+  #|   ]
+  #|   for (const [pattern, replacement] of replacements) {
+  #|     out = out.replace(pattern, replacement)
   #|   }
-  #|   return "diagnostic(off, derivative_uniformity);\\n" + text
+  #|   return out
   #| }
 
 ///|
@@ -1186,19 +1311,27 @@ extern "js" fn a11y_focus_node_js(node_id : Int) -> Unit =
   #| }
 
 ///|
-extern "js" fn create_checkerboard_data(size : Int) -> @js.Any =
-  #| (size) => {
-  #|   const data = new Uint8Array(size * size * 4)
-  #|   for (let y = 0; y < size; y += 1) {
-  #|     for (let x = 0; x < size; x += 1) {
-  #|       const offset = (y * size + x) * 4
-  #|       const checker = ((x >> 3) ^ (y >> 3)) & 1
-  #|       const base = checker ? 220 : 40
-  #|       data[offset] = base
-  #|       data[offset + 1] = 120
-  #|       data[offset + 2] = 255 - base
-  #|       data[offset + 3] = 255
-  #|     }
+extern "js" fn create_solid_rgba_data(
+  width : Int,
+  height : Int,
+  r : Int,
+  g : Int,
+  b : Int,
+  a : Int,
+) -> @js.Any =
+  #| (width, height, r, g, b, a) => {
+  #|   const w = Math.max(1, Number(width) | 0)
+  #|   const h = Math.max(1, Number(height) | 0)
+  #|   const rr = Number(r) | 0
+  #|   const gg = Number(g) | 0
+  #|   const bb = Number(b) | 0
+  #|   const aa = Number(a) | 0
+  #|   const data = new Uint8Array(w * h * 4)
+  #|   for (let i = 0; i < data.length; i += 4) {
+  #|     data[i] = rr
+  #|     data[i + 1] = gg
+  #|     data[i + 2] = bb
+  #|     data[i + 3] = aa
   #|   }
   #|   return data
   #| }

@@ -121,7 +121,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
       instance_capacity, instance_usage,
     )
     let sprite_instance_buffer = device.create_buffer(instance_desc.to_js())
-    let fallback_size = 64
+    let default_size = 1
     let texture_usage = @webgpu.combine_flags(
       @webgpu.combine_flags(
         @webgpu.texture_usage_texture_binding(),
@@ -130,24 +130,26 @@ fn ensure_pipeline_resources(state : State) -> Unit {
       @webgpu.texture_usage_render_attachment(),
     )
     let texture_desc = @webgpu.texture_descriptor(
-      @webgpu.texture_size(fallback_size, fallback_size),
+      @webgpu.texture_size(default_size, default_size),
       @webgpu.TextureFormat::Rgba8Unorm,
       texture_usage,
     )
     let texture = device.create_texture(texture_desc.to_js())
-    let pixel_data = create_checkerboard_data(fallback_size)
+    let pixel_data = create_solid_rgba_data(
+      default_size, default_size, 255, 255, 255, 255,
+    )
     write_texture(
       device.queue().as_any(),
       texture.as_any(),
       pixel_data,
-      fallback_size * 4,
-      fallback_size,
-      fallback_size,
+      default_size * 4,
+      default_size,
+      default_size,
     )
     let sampler = create_sampler(state, sampler_kind_from_nearest(true))
     if sampler is Some(sampler_value) {
       let entry = @js.from_entries([
-        ("id", @js.any(state.gpu.fallback_texture_id)),
+        ("id", @js.any(state.gpu.default_texture_id)),
         ("texture", texture.as_any()),
         ("view", texture.create_view().as_any()),
         ("sampler", sampler_value.as_any()),
@@ -155,10 +157,10 @@ fn ensure_pipeline_resources(state : State) -> Unit {
         ("meshBindGroup", js_null()),
         ("mesh3dBindGroup", js_null()),
         ("uiBindGroup", js_null()),
-        ("width", @js.any(fallback_size)),
-        ("height", @js.any(fallback_size)),
+        ("width", @js.any(default_size)),
+        ("height", @js.any(default_size)),
       ])
-      map_set(state.gpu.textures, @js.any(state.gpu.fallback_texture_id), entry)
+      map_set(state.gpu.textures, @js.any(state.gpu.default_texture_id), entry)
     }
     state.gpu.pipeline = Some(pipeline)
     state.gpu.vertex_count = 6
@@ -1620,14 +1622,14 @@ fn ensure_gizmo_pipeline(state : State) -> Unit {
 }
 
 ///|
-fn report_fallback_usage(state : State, id : Int, reason : String) -> Unit {
+fn report_missing_texture(state : State, id : Int, reason : String) -> Unit {
   if set_has(state.assets.loading_textures, @js.any(id)) {
     return
   }
-  if set_has(state.assets.fallback_reported, @js.any(id)) {
+  if set_has(state.assets.missing_texture_reported, @js.any(id)) {
     return
   }
-  set_add(state.assets.fallback_reported, @js.any(id))
+  set_add(state.assets.missing_texture_reported, @js.any(id))
   let path_hint = map_get(state.assets.texture_paths, @js.any(id))
   let suffix = if host_is_nullish(path_hint) {
     ""
@@ -1689,7 +1691,7 @@ fn get_texture_entry(state : State, id : Int) -> @js.Any? {
   }
   if set_has(state.assets.loading_textures, @js.any(id)) {
     // Skip drawing while the texture is still loading to avoid transient
-    // fallback flashes (especially visible for atlas/rect sprites).
+    // missing-texture flashes (especially visible for atlas/rect sprites).
     return None
   }
   let reason = if host_is_nullish(entry) {
@@ -1697,7 +1699,7 @@ fn get_texture_entry(state : State, id : Int) -> @js.Any? {
   } else {
     "texture not ready"
   }
-  report_fallback_usage(state, id, reason)
+  report_missing_texture(state, id, reason)
   None
 }
 
@@ -3303,7 +3305,7 @@ fn draw_mesh(
   let mesh_texture_id = if textured {
     texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let texture_entry = get_texture_entry(state, mesh_texture_id)
   if texture_entry is None {
@@ -3614,49 +3616,49 @@ fn draw_mesh3d(
   let base_texture_id = if textured {
     texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let emissive_textured = emissive_texture_id >= 0
   let normal_textured = normal_texture_id >= 0
   let resolved_normal_texture_id = if normal_textured {
     normal_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let resolved_emissive_texture_id = if emissive_textured {
     emissive_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let metallic_roughness_textured = metallic_roughness_texture_id >= 0
   let resolved_metallic_roughness_texture_id = if metallic_roughness_textured {
     metallic_roughness_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let occlusion_textured = occlusion_texture_id >= 0
   let resolved_occlusion_texture_id = if occlusion_textured {
     occlusion_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let depth_textured = depth_texture_id >= 0
   let resolved_depth_texture_id = if depth_textured {
     depth_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let anisotropy_textured = anisotropy_texture_id >= 0
   let resolved_anisotropy_texture_id = if anisotropy_textured {
     anisotropy_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let specular_tint_textured = specular_tint_texture_id >= 0
   let resolved_specular_tint_texture_id = if specular_tint_textured {
     specular_tint_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let base_texture_entry = get_texture_entry_strict(state, base_texture_id)
   let normal_texture_entry = get_texture_entry_strict(
@@ -3684,7 +3686,7 @@ fn draw_mesh3d(
     0 {
     transmission_source_texture_id
   } else {
-    state.gpu.fallback_texture_id
+    state.gpu.default_texture_id
   }
   let transmission_source_texture_entry = get_texture_entry_strict(
     state, resolved_transmission_source_texture_id,

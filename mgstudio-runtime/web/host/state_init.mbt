@@ -113,7 +113,7 @@ priv struct WindowState {
 ///|
 priv struct AssetsState {
   pending_textures : Array[PendingTexture]
-  fallback_reported : @js.Any
+  missing_texture_reported : @js.Any
   reported_errors : @js.Any
   loading_textures : @js.Any
   texture_paths : @js.Any
@@ -234,7 +234,7 @@ priv struct GpuState {
   mut current_pass_info : PassInfo?
   mut textures : @js.Any
   mut next_texture_id : Int
-  mut fallback_texture_id : Int
+  mut default_texture_id : Int
   mut sprite_shader_id : Int
   mut ui_shader_id : Int
   mut ui_shadow_shader_id : Int
@@ -277,7 +277,7 @@ fn new_state(
     next_string_id: 1,
     assets: AssetsState::{
       pending_textures: [],
-      fallback_reported: new_set(),
+      missing_texture_reported: new_set(),
       reported_errors: new_set(),
       loading_textures: new_set(),
       texture_paths: new_map(),
@@ -383,7 +383,7 @@ fn new_state(
       current_pass_info: None,
       textures: new_map(),
       next_texture_id: 1,
-      fallback_texture_id: 0,
+      default_texture_id: 0,
       sprite_shader_id: 0,
       ui_shader_id: 0,
       ui_shadow_shader_id: 0,
@@ -847,7 +847,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.current_pass_info = None
   state.gpu.textures = new_map()
   state.gpu.next_texture_id = 1
-  state.gpu.fallback_texture_id = 0
+  state.gpu.default_texture_id = 0
   state.gpu.sprite_shader_id = 0
   state.gpu.ui_shader_id = 0
   state.gpu.ui_shadow_shader_id = 0
