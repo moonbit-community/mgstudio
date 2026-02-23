@@ -288,7 +288,7 @@ struct MeshRenderer {
 impl GpuBackend {
     fn resolve_draw_texture_id(&mut self, id: i32) -> anyhow::Result<Option<i32>> {
         if id < 0 {
-            return Ok(Some(self.ensure_fallback_texture(-1)?));
+            return Ok(Some(self.ensure_default_texture()?));
         }
         if self.textures.contains_key(&id) {
             Ok(Some(id))
@@ -2522,18 +2522,16 @@ impl GpuBackend {
         }
     }
 
-    fn ensure_fallback_texture(&mut self, id: i32) -> anyhow::Result<i32> {
-        if self.textures.contains_key(&id) {
-            return Ok(id);
+    fn ensure_default_texture(&mut self) -> anyhow::Result<i32> {
+        const DEFAULT_TEXTURE_ID: i32 = -1;
+        if self.textures.contains_key(&DEFAULT_TEXTURE_ID) {
+            return Ok(DEFAULT_TEXTURE_ID);
         }
-        // Create a 1x1 white texture for invalid IDs (matches native runtime behavior).
+        // Create a 1x1 white texture used by default material bindings.
         let white = [255u8, 255u8, 255u8, 255u8];
-        let tid = if id > 0 { id } else { 1 };
-        if !self.textures.contains_key(&tid) {
-            self.ensure_sprite_resources()?;
-            self.create_texture_rgba8_with_id(tid, 1, 1, &white, false, false)?;
-        }
-        Ok(tid)
+        self.ensure_sprite_resources()?;
+        self.create_texture_rgba8_with_id(DEFAULT_TEXTURE_ID, 1, 1, &white, false, false)?;
+        Ok(DEFAULT_TEXTURE_ID)
     }
 
     fn ensure_sprite_resources(&mut self) -> anyhow::Result<()> {

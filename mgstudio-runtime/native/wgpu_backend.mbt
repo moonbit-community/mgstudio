@@ -2446,10 +2446,10 @@ fn mesh3d_material_cache_get_or_create(
 }
 
 ///|
-fn ensure_fallback_texture(
+fn ensure_default_texture(
   backend : GpuBackend,
-  id : Int,
 ) -> GpuTextureInfo raise GpuBackendError {
+  let id = -1
   if find_texture(backend, id) is Some(t) {
     t
   } else {
@@ -2492,7 +2492,7 @@ fn resolve_draw_texture(
   id : Int,
 ) -> GpuTextureInfo? raise GpuBackendError {
   if id < 0 {
-    Some(ensure_fallback_texture(backend, -1))
+    Some(ensure_default_texture(backend))
   } else {
     find_texture(backend, id)
   }
