@@ -2083,8 +2083,12 @@ fn arg_any(args : Array[@js.Any], index : Int) -> @js.Any {
 }
 
 ///|
-fn arg_number(args : Array[@js.Any], index : Int, fallback : Double) -> Double {
-  number_or(arg_any(args, index), fallback)
+fn arg_number(
+  args : Array[@js.Any],
+  index : Int,
+  default_value : Double,
+) -> Double {
+  number_or(arg_any(args, index), default_value)
 }
 
 ///|
@@ -2825,7 +2829,7 @@ fn draw_sprite_uv(
     let tex_height : Double = entry_value._get("height").cast()
     let raw_uv_scale_x = uv_max_x - uv_min_x
     let raw_uv_scale_y = uv_max_y - uv_min_y
-    // Preserve negative uv_scale for sprite flipping; only treat "zero-sized" as fallback.
+    // Preserve negative uv_scale for sprite flipping; only treat zero-sized ranges as invalid.
     let uv_scale_x = if raw_uv_scale_x == 0 { 1.0 } else { raw_uv_scale_x }
     let uv_scale_y = if raw_uv_scale_y == 0 { 1.0 } else { raw_uv_scale_y }
     let uv_scale_abs_x = if uv_scale_x < 0 { -uv_scale_x } else { uv_scale_x }
