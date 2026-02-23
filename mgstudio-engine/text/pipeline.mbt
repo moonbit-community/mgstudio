@@ -762,13 +762,6 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
       }
     }
 
-    fn round_to_pixel(v : Float, pixel_scale : Float) -> Float {
-      let sf = if pixel_scale <= 0.0F { 1.0F } else { pixel_scale }
-      Float::from_double(
-        (v.to_double() * sf.to_double()).round() / sf.to_double(),
-      )
-    }
-
     fn glyph_world_bounds(
       center : @math.Vec2,
       glyph_size : @math.Vec2,
@@ -881,20 +874,13 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
       origin_offset.y * scale.y,
     )
     let origin_rotated = rotate_vec2(origin_scaled, rot)
-    let mut text_origin = @math.Vec2::new(
+    let text_origin = @math.Vec2::new(
       base.x + origin_rotated.x,
       base.y + origin_rotated.y,
     )
-    // Bevy parity for UI text extraction: snap the node's top-left origin to
-    // physical pixels (DPR aware) before adding per-glyph offsets.
-    // before adding per-glyph offsets.
-    if instance.ui_node_size is Some(_) {
-      let pixel_scale = @window.window_scale_factor()
-      text_origin = @math.Vec2::new(
-        round_to_pixel(text_origin.x, pixel_scale),
-        round_to_pixel(text_origin.y, pixel_scale),
-      )
-    }
+    // Keep UI text origin in continuous space.
+    // Snapping world-space origins introduces visible jitter when camera
+    // viewport/scale changes dynamically (e.g. 2d_viewport_to_world).
     for glyph in layout_info.glyphs {
       let atlas_info = glyph.atlas_info
       let layout_opt = @asset.asset_get_texture_atlas_layout(
