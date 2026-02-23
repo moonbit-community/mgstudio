@@ -9,7 +9,7 @@ Code References:
 - `scripts/generate_bevy_example_parity.py`
 Superseded By: N/A
 Notes:
-- Status vocabulary: `Exact`, `Adapted`, `Blocked`, `N/A`.
+- Status vocabulary: `Exact`, `Blocked`, `N/A`.
 - Baseline commit: `48ec375a3a3cdc904476ef1d13f9d71c9f2820d3`.
 - Baseline describe: `v0.16.0-rc.4-1998-g48ec375a3`.
 
@@ -20,7 +20,7 @@ Notes:
 | `2d` | 27 | 27 | 0 | 0 |
 | `3d` | 66 | 28 | 38 | 0 |
 | `animation` | 13 | 0 | 13 | 0 |
-| `app` | 17 | 4 | 13 | 0 |
+| `app` | 17 | 5 | 12 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
 | `audio` | 7 | 0 | 7 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 0 | 12 | 0 |
-| **Total** | **402** | **65** | **334** | **3** |
+| **Total** | **402** | **66** | **333** | **3** |
 
 ## Example Inventory
 
@@ -141,7 +141,7 @@ Notes:
 | `bevy/examples/3d/specular_tint.rs` | `3d` | `mgstudio-engine/examples/3d/specular_tint` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/spherical_area_lights.rs` | `3d` | `mgstudio-engine/examples/3d/spherical_area_lights` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/split_screen.rs` | `3d` | `mgstudio-engine/examples/3d/split_screen` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/spotlight.rs` | `3d` | `mgstudio-engine/examples/3d/spotlight` | `Adapted` | `team-render` | RNG/UI path differs from Bevy. |
+| `bevy/examples/3d/spotlight.rs` | `3d` | `mgstudio-engine/examples/3d/spotlight` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/ssao.rs` | `3d` | `mgstudio-engine/examples/3d/ssao` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/ssr.rs` | `3d` | `mgstudio-engine/examples/3d/ssr` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/texture.rs` | `3d` | `mgstudio-engine/examples/3d/texture` | `Exact` | `team-render` |  |
@@ -279,19 +279,19 @@ Notes:
 | `bevy/examples/gltf/update_gltf_scene.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/hello_world.rs` | `hello_world.rs` |  | `Blocked` | `team-parity` |  |
 | `bevy/examples/helpers/widgets.rs` | `helpers` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/input/char_input_events.rs` | `input` | `mgstudio-engine/examples/input/char_input_events` | `Adapted` | `team-input_window` | Uses `MessageReader<KeyboardInput>` with `logical_key` character filtering; IME/layout-complete semantics are pending. |
-| `bevy/examples/input/gamepad_input.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input` | `Adapted` | `team-input_window` | Uses runtime `gamepad_id` iteration instead of Bevy ECS query entity semantics. |
+| `bevy/examples/input/char_input_events.rs` | `input` | `mgstudio-engine/examples/input/char_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/gamepad_input.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/input/gamepad_input_events.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input_events` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/gamepad_rumble.rs` | `input` | `mgstudio-engine/examples/input/gamepad_rumble` | `Adapted` | `team-input_window` | Rumble request flow is mirrored, but runtime force-feedback backend is not implemented. |
-| `bevy/examples/input/keyboard_input.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input` | `Adapted` | `team-input_window` | Uses `ButtonInput<KeyCode>` + `ButtonInput<Key>`; remaining gap is full Bevy logical-key model coverage. |
-| `bevy/examples/input/keyboard_input_events.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input_events` | `Adapted` | `team-input_window` | `KeyboardInput` now includes `logical_key`; remaining gaps are full Bevy payload completeness. |
+| `bevy/examples/input/gamepad_rumble.rs` | `input` | `mgstudio-engine/examples/input/gamepad_rumble` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/keyboard_input.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/keyboard_input_events.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/input/keyboard_modifiers.rs` | `input` | `mgstudio-engine/examples/input/keyboard_modifiers` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/mouse_grab.rs` | `input` | `mgstudio-engine/examples/input/mouse_grab` | `Adapted` | `team-input_window` | Uses `ButtonInput` params and applies cursor visibility/grab through window API; still differs from Bevy `CursorOptions` component model. |
-| `bevy/examples/input/mouse_input.rs` | `input` | `mgstudio-engine/examples/input/mouse_input` | `Adapted` | `team-input_window` | Uses `ButtonInput<MouseButton>`; accumulated motion/scroll resources are still host-polling derived. |
-| `bevy/examples/input/mouse_input_events.rs` | `input` | `mgstudio-engine/examples/input/mouse_input_events` | `Adapted` | `team-input_window` | Uses MessageReader-based mouse/touch event streams; gesture sources remain runtime-limited. |
-| `bevy/examples/input/text_input.rs` | `input` | `mgstudio-engine/examples/input/text_input` | `Adapted` | `team-input_window` | Uses `KeyboardInput.logical_key` + character events; UI bubble/IME parity with Bevy remains incomplete. |
-| `bevy/examples/input/touch_input.rs` | `input` | `mgstudio-engine/examples/input/touch_input` | `Adapted` | `team-input_window` | Uses `Res<Touches>` API shape; runtime touch source is currently single-touch fallback. |
-| `bevy/examples/input/touch_input_events.rs` | `input` | `mgstudio-engine/examples/input/touch_input_events` | `Adapted` | `team-input_window` | Uses `MessageReader<TouchInput>`; runtime touch source is currently single-touch fallback. |
+| `bevy/examples/input/mouse_grab.rs` | `input` | `mgstudio-engine/examples/input/mouse_grab` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/mouse_input.rs` | `input` | `mgstudio-engine/examples/input/mouse_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/mouse_input_events.rs` | `input` | `mgstudio-engine/examples/input/mouse_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/text_input.rs` | `input` | `mgstudio-engine/examples/input/text_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/touch_input.rs` | `input` | `mgstudio-engine/examples/input/touch_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/touch_input_events.rs` | `input` | `mgstudio-engine/examples/input/touch_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/large_scenes/bistro/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/caldera_hotel/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/load_gltf.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
