@@ -147,6 +147,14 @@ priv struct GamepadSnapshot {
 }
 
 ///|
+priv struct TouchEventSnapshot {
+  id : Int
+  phase : Int
+  x : Double
+  y : Double
+}
+
+///|
 priv struct InputState {
   pressed : @js.Any
   just_pressed : @js.Any
@@ -162,6 +170,7 @@ priv struct InputState {
   mut wheel_y : Double
   mut has_cursor : Bool
   mut pointer_bound : Bool
+  touch_events : Array[TouchEventSnapshot]
   mut initialized : Bool
   mut gamepads : Array[GamepadSnapshot]
 }
@@ -313,6 +322,7 @@ fn new_state(
       wheel_y: 0,
       has_cursor: false,
       pointer_bound: false,
+      touch_events: [],
       initialized: false,
       gamepads: [],
     },
@@ -684,6 +694,47 @@ fn update_mouse_position(
 }
 
 ///|
+const TOUCH_PHASE_STARTED : Int = 0
+
+///|
+const TOUCH_PHASE_MOVED : Int = 1
+
+///|
+const TOUCH_PHASE_ENDED : Int = 2
+
+///|
+const TOUCH_PHASE_CANCELED : Int = 3
+
+///|
+fn pointer_is_touch(event : @js.Any) -> Bool {
+  any_to_string(event._get("pointerType")) == "touch"
+}
+
+///|
+fn push_touch_event(
+  state : State,
+  target : @js.Any,
+  event : @js.Any,
+  phase : Int,
+) -> Unit {
+  let id = to_int(number_or(event._get("pointerId"), -1))
+  if id < 0 {
+    return
+  }
+  let rect = get_bounding_rect(target)
+  let client_x = number_or(event._get("clientX"), 0)
+  let client_y = number_or(event._get("clientY"), 0)
+  let left = number_or(rect._get("left"), 0)
+  let top = number_or(rect._get("top"), 0)
+  state.input.touch_events.push(TouchEventSnapshot::{
+    id,
+    phase,
+    x: client_x - left,
+    y: client_y - top,
+  })
+}
+
+///|
 fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
   if state.input.pointer_bound {
     return
@@ -693,6 +744,11 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
     target,
     "pointermove",
     @js.from_fn1(fn(event : @js.Any) {
+      if pointer_is_touch(event) {
+        push_touch_event(state, target, event, TOUCH_PHASE_MOVED)
+        prevent_default(event)
+        return
+      }
       update_mouse_position(state, target, event)
     }),
   )
@@ -700,6 +756,11 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
     target,
     "pointerdown",
     @js.from_fn1(fn(event : @js.Any) {
+      if pointer_is_touch(event) {
+        push_touch_event(state, target, event, TOUCH_PHASE_STARTED)
+        prevent_default(event)
+        return
+      }
       let button : Int = event._get("button").cast()
       let name = mouse_button_name(button)
       if name is Some(label) {
@@ -715,6 +776,11 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
     target,
     "pointerup",
     @js.from_fn1(fn(event : @js.Any) {
+      if pointer_is_touch(event) {
+        push_touch_event(state, target, event, TOUCH_PHASE_ENDED)
+        prevent_default(event)
+        return
+      }
       let button : Int = event._get("button").cast()
       let name = mouse_button_name(button)
       if name is Some(label) {
@@ -729,6 +795,16 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
     target,
     "pointerleave",
     @js.from_fn1(fn(_ : @js.Any) { state.input.has_cursor = false }),
+  )
+  add_event_listener(
+    target,
+    "pointercancel",
+    @js.from_fn1(fn(event : @js.Any) {
+      if pointer_is_touch(event) {
+        push_touch_event(state, target, event, TOUCH_PHASE_CANCELED)
+        prevent_default(event)
+      }
+    }),
   )
   add_event_listener(
     target,

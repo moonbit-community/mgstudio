@@ -41,6 +41,14 @@ pub struct NativeWindowInput {
     pub mouse_down: HashSet<MouseButton>,
     pub mouse_just_pressed: HashSet<MouseButton>,
     pub mouse_just_released: HashSet<MouseButton>,
+    pub touch_events: Vec<TouchEvent>,
+}
+
+pub struct TouchEvent {
+    pub id: i32,
+    pub phase: i32,
+    pub x: f32,
+    pub y: f32,
 }
 
 pub struct NativeWindow {
@@ -164,6 +172,7 @@ impl NativeWindow {
         self.input.mouse_just_released.clear();
         self.input.wheel_x = 0.0;
         self.input.wheel_y = 0.0;
+        self.input.touch_events.clear();
     }
 }
 
@@ -209,6 +218,21 @@ fn handle_window_event(
             };
             input.wheel_x += dx;
             input.wheel_y += dy;
+        }
+        WindowEvent::Touch(touch) => {
+            let logical: LogicalPosition<f64> = touch.location.to_logical(*scale_factor);
+            let phase = match touch.phase {
+                winit::event::TouchPhase::Started => 0,
+                winit::event::TouchPhase::Moved => 1,
+                winit::event::TouchPhase::Ended => 2,
+                winit::event::TouchPhase::Cancelled => 3,
+            };
+            input.touch_events.push(TouchEvent {
+                id: i32::try_from(touch.id).unwrap_or(-1),
+                phase,
+                x: logical.x as f32,
+                y: logical.y as f32,
+            });
         }
         WindowEvent::KeyboardInput { event, .. } => {
             if let PhysicalKey::Code(code) = event.physical_key {

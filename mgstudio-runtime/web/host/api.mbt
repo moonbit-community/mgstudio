@@ -457,6 +457,7 @@ pub fn create_host(
     set_clear(state.input.mouse_just_released)
     state.input.wheel_x = 0.0
     state.input.wheel_y = 0.0
+    state.input.touch_events.clear()
   })
   let input_is_mouse_button_down = @js.from_fn1(fn(name) {
     let text = string_from_id_required(
@@ -481,11 +482,41 @@ pub fn create_host(
   let input_wheel_x = @js.from_fn0(fn() { state.input.wheel_x })
   let input_wheel_y = @js.from_fn0(fn() { state.input.wheel_y })
   let input_has_cursor = @js.from_fn0(fn() { state.input.has_cursor })
-  let input_touch_event_count = @js.from_fn0(fn() { 0 })
-  let input_touch_event_id = @js.from_fn1(fn(_index_any : @js.Any) { 0 })
-  let input_touch_event_phase = @js.from_fn1(fn(_index_any : @js.Any) { 0 })
-  let input_touch_event_x = @js.from_fn1(fn(_index_any : @js.Any) { 0.0 })
-  let input_touch_event_y = @js.from_fn1(fn(_index_any : @js.Any) { 0.0 })
+  let input_touch_event_count = @js.from_fn0(fn() {
+    state.input.touch_events.length()
+  })
+  let input_touch_event_id = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.touch_events.length() {
+      state.input.touch_events[index].id
+    } else {
+      -1
+    }
+  })
+  let input_touch_event_phase = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.touch_events.length() {
+      state.input.touch_events[index].phase
+    } else {
+      3
+    }
+  })
+  let input_touch_event_x = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.touch_events.length() {
+      state.input.touch_events[index].x
+    } else {
+      0.0
+    }
+  })
+  let input_touch_event_y = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.touch_events.length() {
+      state.input.touch_events[index].y
+    } else {
+      0.0
+    }
+  })
   let debug_string = @js.from_fn1(fn(value) {
     console_error(@js.any(string_from_id_optional(state, value)))
     0

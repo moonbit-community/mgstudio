@@ -1813,8 +1813,14 @@ fn define_mgstudio_host_imports(
         "input_touch_event_count",
         &[],
         &[ValType::I32],
-        |_caller, _args, out| {
-            ok_i32(out, 0);
+        |caller, _args, out| {
+            let count = caller
+                .data()
+                .window
+                .as_ref()
+                .map(|win| win.input.touch_events.len() as i32)
+                .unwrap_or(0);
+            ok_i32(out, count);
             Ok(())
         },
     )?;
@@ -1826,8 +1832,20 @@ fn define_mgstudio_host_imports(
         "input_touch_event_id",
         &[ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
-            ok_i32(out, 0);
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let id = if index >= 0 {
+                caller
+                    .data()
+                    .window
+                    .as_ref()
+                    .and_then(|win| win.input.touch_events.get(index as usize))
+                    .map(|touch| touch.id)
+                    .unwrap_or(-1)
+            } else {
+                -1
+            };
+            ok_i32(out, id);
             Ok(())
         },
     )?;
@@ -1839,8 +1857,20 @@ fn define_mgstudio_host_imports(
         "input_touch_event_phase",
         &[ValType::I32],
         &[ValType::I32],
-        |_caller, _args, out| {
-            ok_i32(out, 0);
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let phase = if index >= 0 {
+                caller
+                    .data()
+                    .window
+                    .as_ref()
+                    .and_then(|win| win.input.touch_events.get(index as usize))
+                    .map(|touch| touch.phase)
+                    .unwrap_or(3)
+            } else {
+                3
+            };
+            ok_i32(out, phase);
             Ok(())
         },
     )?;
@@ -1852,8 +1882,20 @@ fn define_mgstudio_host_imports(
         "input_touch_event_x",
         &[ValType::I32],
         &[ValType::F32],
-        |_caller, _args, out| {
-            ok_f32(out, 0.0);
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let x = if index >= 0 {
+                caller
+                    .data()
+                    .window
+                    .as_ref()
+                    .and_then(|win| win.input.touch_events.get(index as usize))
+                    .map(|touch| touch.x)
+                    .unwrap_or(0.0)
+            } else {
+                0.0
+            };
+            ok_f32(out, x);
             Ok(())
         },
     )?;
@@ -1865,8 +1907,20 @@ fn define_mgstudio_host_imports(
         "input_touch_event_y",
         &[ValType::I32],
         &[ValType::F32],
-        |_caller, _args, out| {
-            ok_f32(out, 0.0);
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let y = if index >= 0 {
+                caller
+                    .data()
+                    .window
+                    .as_ref()
+                    .and_then(|win| win.input.touch_events.get(index as usize))
+                    .map(|touch| touch.y)
+                    .unwrap_or(0.0)
+            } else {
+                0.0
+            };
+            ok_f32(out, y);
             Ok(())
         },
     )?;
