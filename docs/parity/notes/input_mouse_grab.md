@@ -10,21 +10,21 @@
 
 - Rendering: Not applicable (console logging only).
 - Input:
-  - Left mouse click switches to a grabbed intent state.
-  - `Escape` switches back to a released intent state.
-  - Visibility/grab mode state transitions are logged with Bevy-like semantics.
+  - Left mouse click switches to grabbed mode (`GrabLocked`) and hides cursor.
+  - `Escape` releases grab mode (`GrabNone`) and shows cursor.
+  - State transitions are logged with Bevy-like semantics.
 - Timing/Update model: Polling in update system per frame.
 - Asset path/loading: Not applicable.
 
 ## Known Differences
 
 - Bevy mutates `CursorOptions` (`visible`, `grab_mode`) directly on window.
-- mgstudio currently does not expose host cursor lock/visibility controls in public API; this port tracks simulated state only.
+- mgstudio applies equivalent behavior through direct window cursor APIs, not Bevy `CursorOptions` component.
 
 ## Runtime Constraints
 
-- WASM/Web: No exported cursor lock API in current runtime path.
-- Native runtime: No exported cursor lock API in current runtime path.
+- WASM/Web: Depends on browser/runtime support for cursor lock and pointer constraints.
+- Native runtime: Supported through runtime window backend cursor APIs.
 
 ## Validation Evidence
 
@@ -35,4 +35,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.8`
-- Remaining blockers: Expose host cursor visibility/grab controls aligned with Bevy `CursorOptions`.
+- Remaining blockers: Align with Bevy `CursorOptions` component-level API surface.

@@ -15,10 +15,8 @@
 ///|
 /// Port of `bevy/examples/3d/motion_blur.rs`.
 ///
-/// Baseline parity: current mgstudio path renders transform-history-based blur
-/// trails (camera-relative translation + transform interpolation) controlled by
-/// `MotionBlur.shutter_angle/samples`; Bevy's full motion-vector post-process
-/// pipeline is not yet mirrored.
+/// Baseline parity: blocked until full runtime parity validation across WebGPU
+/// and native motion-vector resolve paths (no fallback behavior allowed).
 
 ///|
 const TWO_PI : Float = 6.283185307179586F

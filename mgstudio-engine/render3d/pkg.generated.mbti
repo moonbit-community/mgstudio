@@ -71,6 +71,7 @@ pub struct Camera3dBundle {
   camera : @render2d.Camera
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
+  screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
@@ -86,6 +87,7 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(Self, W) -> @core.Ent
 pub fn Camera3dBundle::with_chromatic_aberration(Self, ChromaticAberration?) -> Self
 pub fn Camera3dBundle::with_motion_blur(Self, MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, ScreenSpaceReflections?) -> Self
+pub fn Camera3dBundle::with_screen_space_transmission(Self, ScreenSpaceTransmission?) -> Self
 pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, Vignette?) -> Self
 
@@ -373,9 +375,16 @@ pub struct OrthographicProjection3d {
   scale : Float
   near : Float
   far : Float
+  scaling_mode : OrthographicScalingMode3d
 }
 pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
+
+pub(all) enum OrthographicScalingMode3d {
+  Scale
+  FixedVertical(Float)
+}
 
 pub(all) enum ParallaxCorrection {
   None
@@ -485,6 +494,25 @@ pub fn ScreenSpaceReflections::with_min_perceptual_roughness(Self, Float, Float)
 pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
 pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
 
+pub struct ScreenSpaceTransmission {
+  quality : ScreenSpaceTransmissionQuality
+  steps : Int
+}
+pub fn ScreenSpaceTransmission::default() -> Self
+pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
+pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
+pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
+
+pub(all) enum ScreenSpaceTransmissionQuality {
+  Low
+  Medium
+  High
+  Ultra
+}
+pub fn ScreenSpaceTransmissionQuality::default() -> Self
+pub impl Eq for ScreenSpaceTransmissionQuality
+pub impl Show for ScreenSpaceTransmissionQuality
+
 pub(all) enum ShadowFilteringMethod {
   Hardware2x2
   Gaussian
@@ -562,6 +590,10 @@ pub struct StandardMaterial {
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
   perceptual_roughness : Float
   reflectance : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
   specular_tint : @render2d.Color
   specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
@@ -584,8 +616,10 @@ pub fn StandardMaterial::with_clearcoat_perceptual_roughness(Self, Float) -> Sel
 pub fn StandardMaterial::with_clearcoat_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_clearcoat_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn StandardMaterial::with_depth_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_diffuse_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_emissive(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_ior(Self, Float) -> Self
 pub fn StandardMaterial::with_max_parallax_layer_count(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
@@ -598,6 +632,8 @@ pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_reflectance(Self, Float) -> Self
 pub fn StandardMaterial::with_specular_tint(Self, @render2d.Color) -> Self
 pub fn StandardMaterial::with_specular_tint_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_specular_transmission(Self, Float) -> Self
+pub fn StandardMaterial::with_thickness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn StandardMaterial::with_uv_scale(Self, @math.Vec2) -> Self
@@ -677,7 +713,7 @@ pub fn WireframeConfig::with_global(Self, Bool) -> Self
 // Type aliases
 
 // Traits
-pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 pub(open) trait FreeCameraControllerWorld : Has_FreeCamera + Has_FreeCameraState + @render2d.Has_Camera + @math.Has_Transform + @core.ChangeTickWorld {
@@ -827,6 +863,10 @@ pub(open) trait Has_ScreenSpaceReflections {
   get_screen_space_reflections_store(Self) -> @core.ComponentStore[ScreenSpaceReflections]
 }
 
+pub(open) trait Has_ScreenSpaceTransmission {
+  get_screen_space_transmission_store(Self) -> @core.ComponentStore[ScreenSpaceTransmission]
+}
+
 pub(open) trait Has_ShadowFilteringMethod {
   get_shadow_filtering_method_store(Self) -> @core.ComponentStore[ShadowFilteringMethod]
 }
@@ -874,7 +914,7 @@ pub(open) trait Has_WireframeColor {
 pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {

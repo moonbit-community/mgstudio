@@ -31,8 +31,15 @@ pub struct MessageReader[T] {
 }
 
 ///|
+pub struct MessageWriter[T] {
+  messages : Messages[T]
+  tick : Tick
+}
+
+///|
 pub(open) trait Message {
   reader(SystemTicks) -> MessageReader[Self]
+  writer(Tick) -> MessageWriter[Self]
 }
 
 ///|
@@ -95,6 +102,11 @@ pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
 }
 
 ///|
+pub fn[T] Messages::writer(self : Messages[T], tick : Tick) -> MessageWriter[T] {
+  MessageWriter::{ messages: self, tick }
+}
+
+///|
 pub fn[T] MessageReader::read(self : MessageReader[T]) -> Array[T] {
   if self.has_read {
     return []
@@ -113,4 +125,9 @@ pub fn[T] MessageReader::read(self : MessageReader[T]) -> Array[T] {
     }
   }
   out
+}
+
+///|
+pub fn[T] MessageWriter::write(self : MessageWriter[T], message : T) -> Unit {
+  self.messages.send(self.tick, message)
 }

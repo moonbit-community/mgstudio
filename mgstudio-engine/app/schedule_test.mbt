@@ -27,6 +27,23 @@ test "app: run_if skips system execution" {
 }
 
 ///|
+test "app: add_plugin_group registers grouped plugins" {
+  let log : Array[Int] = []
+  fn plugin_1(app : App[TestWorld]) -> App[TestWorld] {
+    app.add_system(fn(_world : TestWorld) { log.push(1) })
+  }
+  fn plugin_2(app : App[TestWorld]) -> App[TestWorld] {
+    app.add_system(fn(_world : TestWorld) { log.push(2) })
+  }
+  fn group() -> PluginGroupBuilder[TestWorld] {
+    PluginGroupBuilder::start().add(plugin_1).add(plugin_2)
+  }
+  let app = App::new(TestWorld::new()).add_plugin_group(group)
+  app.run_once() |> ignore
+  inspect(log.length() == 2 && log[0] == 1 && log[1] == 2, content="true")
+}
+
+///|
 test "app: schedule sets order and preserve insertion within a set" {
   let log : Array[Int] = []
   let set_a = system_set("A")
@@ -102,6 +119,26 @@ impl SystemParam for TickParam with get() {
 }
 
 ///|
+struct TestMessage {
+  value : Int
+}
+
+///|
+let test_messages_ref : Ref[@core.Messages[TestMessage]] = Ref::new(
+  @core.Messages::new(),
+)
+
+///|
+impl @core.Message for TestMessage with reader(ticks) {
+  test_messages_ref.val.reader(ticks)
+}
+
+///|
+impl @core.Message for TestMessage with writer(tick) {
+  test_messages_ref.val.writer(tick)
+}
+
+///|
 test "app: add_system_param4 injects parameters in order" {
   let log : Array[Int] = []
   let app = App::new(TestWorld::new()).add_system_param4(fn(
@@ -142,4 +179,22 @@ test "app: system param can read current system ticks" {
   inspect(log.length(), content="2")
   inspect(log[0].0 == 0 && log[0].1 == 1, content="true")
   inspect(log[1].0 == 0 && log[1].1 == 2, content="true")
+}
+
+///|
+test "app: MessageWriter system param writes messages for MessageReader" {
+  test_messages_ref.val.clear()
+  let observed : Ref[Int] = Ref::new(-1)
+  let app = App::new(TestWorld::new())
+    .add_system_param(fn(writer : @core.MessageWriter[TestMessage]) {
+      writer.write({ value: 42 })
+    })
+    .add_system_param(fn(reader : @core.MessageReader[TestMessage]) {
+      let messages = reader.read()
+      if messages.length() > 0 {
+        observed.val = messages[0].value
+      }
+    })
+  app.run_once() |> ignore
+  inspect(observed.val, content="42")
 }

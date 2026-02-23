@@ -13,15 +13,15 @@
   - Left mouse click toggles an `IME Enabled` flag.
   - `Enter` commits current edit buffer as a bubble line.
   - `Backspace` removes the last buffered character.
-  - Printable key input appends mapped text to the edit buffer.
+  - Printable character input appends text to the edit buffer.
 - Timing/Update model: MessageReader iteration for keyboard events per frame.
 - Asset path/loading: Not applicable.
 
 ## Known Differences
 
 - Bevy UI layout (`Text`, `Node`, `Text2d`) and bubbling animation are not implemented in this example path.
-- Bevy `Ime` message stream and `KeyboardInput.logical_key/text` fields are not available in mgstudio runtime; input text is synthesized from keycode mapping.
-- Character composition and layout-aware IME behavior are not yet represented.
+- Bevy `Ime` message stream is not available in current mgstudio runtime.
+- `KeyboardInput.logical_key` is available, but full composition and layout-aware IME behavior are not yet parity-complete.
 
 ## Runtime Constraints
 
@@ -37,4 +37,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.11`
-- Remaining blockers: Add Bevy-like IME message model and text/logical-key payloads.
+- Remaining blockers: Add Bevy-like IME message model and complete composition/layout behavior.

@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/time"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
 }
 
 // Values
@@ -65,6 +66,9 @@ pub struct Time {
   mut virtual_paused : Bool
   mut last_ticks : Float
 }
+pub fn Time::delta_seconds(Self) -> Float
+pub fn Time::elapsed_seconds(Self) -> Float
+pub impl @app.Resource for Time
 
 pub struct Timer {
   duration_seconds : Float

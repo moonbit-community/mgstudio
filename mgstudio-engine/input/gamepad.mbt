@@ -678,6 +678,41 @@ fn gamepad_button_state_changed_events_reader(
 }
 
 ///|
+fn gamepad_events_writer(
+  tick : @core.Tick,
+) -> @core.MessageWriter[GamepadEvent] {
+  gamepad_events_ref.val.writer(tick)
+}
+
+///|
+fn gamepad_connection_events_writer(
+  tick : @core.Tick,
+) -> @core.MessageWriter[GamepadConnectionEvent] {
+  gamepad_connection_events_ref.val.writer(tick)
+}
+
+///|
+fn gamepad_axis_changed_events_writer(
+  tick : @core.Tick,
+) -> @core.MessageWriter[GamepadAxisChangedEvent] {
+  gamepad_axis_changed_events_ref.val.writer(tick)
+}
+
+///|
+fn gamepad_button_changed_events_writer(
+  tick : @core.Tick,
+) -> @core.MessageWriter[GamepadButtonChangedEvent] {
+  gamepad_button_changed_events_ref.val.writer(tick)
+}
+
+///|
+fn gamepad_button_state_changed_events_writer(
+  tick : @core.Tick,
+) -> @core.MessageWriter[GamepadButtonStateChangedEvent] {
+  gamepad_button_state_changed_events_ref.val.writer(tick)
+}
+
+///|
 pub fn[W : @core.SystemContextWorld] gamepad_events(
   world : W,
 ) -> @core.MessageReader[GamepadEvent] {
@@ -718,8 +753,18 @@ pub impl @core.Message for GamepadEvent with reader(ticks) {
 }
 
 ///|
+pub impl @core.Message for GamepadEvent with writer(tick) {
+  gamepad_events_writer(tick)
+}
+
+///|
 pub impl @core.Message for GamepadConnectionEvent with reader(ticks) {
   gamepad_connection_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for GamepadConnectionEvent with writer(tick) {
+  gamepad_connection_events_writer(tick)
 }
 
 ///|
@@ -728,13 +773,28 @@ pub impl @core.Message for GamepadAxisChangedEvent with reader(ticks) {
 }
 
 ///|
+pub impl @core.Message for GamepadAxisChangedEvent with writer(tick) {
+  gamepad_axis_changed_events_writer(tick)
+}
+
+///|
 pub impl @core.Message for GamepadButtonChangedEvent with reader(ticks) {
   gamepad_button_changed_events_reader(ticks)
 }
 
 ///|
+pub impl @core.Message for GamepadButtonChangedEvent with writer(tick) {
+  gamepad_button_changed_events_writer(tick)
+}
+
+///|
 pub impl @core.Message for GamepadButtonStateChangedEvent with reader(ticks) {
   gamepad_button_state_changed_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for GamepadButtonStateChangedEvent with writer(tick) {
+  gamepad_button_state_changed_events_writer(tick)
 }
 
 ///|

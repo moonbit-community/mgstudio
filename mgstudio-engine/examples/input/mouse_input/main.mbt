@@ -17,51 +17,43 @@
 ///
 /// Baseline parity:
 /// - Left mouse button pressed/just-pressed/just-released semantics are preserved.
-/// - Mouse motion delta is reconstructed from current and previous cursor position.
-/// - Mouse wheel delta uses host per-frame wheel delta.
-let last_mouse_position_ref : Ref[@math.Vec2?] = Ref::new(None)
+/// - Mouse motion and wheel deltas are read from accumulated per-frame resources.
 
 ///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_system(mouse_click_system)
-  .add_system(mouse_move_system)
+  .add_system(@app.system_param(mouse_click_system))
+  .add_system(@app.system_param2(mouse_move_system))
   .run()
 }
 
 ///|
-fn mouse_click_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-  if @input.mouse_button_pressed(Left) {
+fn mouse_click_system(mouse : @input.ButtonInput[@window.MouseButton]) -> Unit {
+  if mouse.pressed(Left) {
     log_line("left mouse currently pressed")
   }
-  if @input.mouse_button_just_pressed(Left) {
+  if mouse.just_pressed(Left) {
     log_line("left mouse just pressed")
   }
-  if @input.mouse_button_just_released(Left) {
+  if mouse.just_released(Left) {
     log_line("left mouse just released")
   }
 }
 
 ///|
-fn mouse_move_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-
-  let current_position_opt = @input.mouse_position()
-  if current_position_opt is Some(current_position) {
-    if last_mouse_position_ref.val is Some(last_position) {
-      let delta = @math.Vec2::sub(current_position, last_position)
-      if !is_zero_vec2(delta) {
-        log_line("mouse moved \{format_vec2(delta)}")
-      }
-    }
+fn mouse_move_system(
+  accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
+  accumulated_mouse_scroll : @app.Res[@input.AccumulatedMouseScroll],
+) -> Unit {
+  let motion = accumulated_mouse_motion.get().delta
+  if !is_zero_vec2(motion) {
+    log_line("mouse moved \{format_vec2(motion)}")
   }
-  last_mouse_position_ref.val = current_position_opt
-
-  if @input.mouse_wheel_delta_opt() is Some(delta) {
-    log_line("mouse scrolled \{format_vec2(delta)}")
+  let scroll = accumulated_mouse_scroll.get().delta
+  if !is_zero_vec2(scroll) {
+    log_line("mouse scrolled \{format_vec2(scroll)}")
   }
 }
 

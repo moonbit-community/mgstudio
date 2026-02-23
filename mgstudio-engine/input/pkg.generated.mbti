@@ -9,6 +9,10 @@ import {
 }
 
 // Values
+pub fn[W : @core.SystemContextWorld] cursor_moved_events(W) -> @core.MessageReader[CursorMoved]
+
+pub fn[W : @core.SystemContextWorld] double_tap_gesture_events(W) -> @core.MessageReader[DoubleTapGesture]
+
 pub fn[W : @core.SystemContextWorld] gamepad_axis_changed_events(W) -> @core.MessageReader[GamepadAxisChangedEvent]
 
 pub fn[W : @core.SystemContextWorld] gamepad_button_changed_events(W) -> @core.MessageReader[GamepadButtonChangedEvent]
@@ -43,13 +47,21 @@ pub fn[W : @core.ChangeTickWorld] input_poll_gamepad_system(W) -> Unit
 
 pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(W) -> Unit
 
+pub fn[W : @core.ChangeTickWorld] input_poll_mouse_system(W) -> Unit
+
 pub fn key_just_pressed(@window.KeyCode) -> Bool
 
 pub fn key_just_released(@window.KeyCode) -> Bool
 
 pub fn key_pressed(@window.KeyCode) -> Bool
 
+pub fn key_repeated(@window.KeyCode) -> Bool
+
+pub fn[W : @core.SystemContextWorld] keyboard_character_events(W) -> @core.MessageReader[KeyboardCharacter]
+
 pub fn[W : @core.SystemContextWorld] keyboard_input_events(W) -> @core.MessageReader[KeyboardInput]
+
+pub fn[W : @core.SystemContextWorld] mouse_button_input_events(W) -> @core.MessageReader[MouseButtonInput]
 
 pub fn mouse_button_just_pressed(@window.MouseButton) -> Bool
 
@@ -57,19 +69,66 @@ pub fn mouse_button_just_released(@window.MouseButton) -> Bool
 
 pub fn mouse_button_pressed(@window.MouseButton) -> Bool
 
+pub fn[W : @core.SystemContextWorld] mouse_motion_events(W) -> @core.MessageReader[MouseMotion]
+
 pub fn mouse_position() -> @math.Vec2?
 
 pub fn mouse_wheel_delta() -> @math.Vec2
 
 pub fn mouse_wheel_delta_opt() -> @math.Vec2?
 
+pub fn[W : @core.SystemContextWorld] mouse_wheel_events(W) -> @core.MessageReader[MouseWheel]
+
+pub fn[W : @core.SystemContextWorld] pinch_gesture_events(W) -> @core.MessageReader[PinchGesture]
+
+pub fn[W : @core.SystemContextWorld] rotation_gesture_events(W) -> @core.MessageReader[RotationGesture]
+
+pub fn[W : @core.SystemContextWorld] touch_input_events(W) -> @core.MessageReader[TouchInput]
+
 // Errors
 
 // Types and methods
+pub struct AccumulatedMouseMotion {
+  delta : @math.Vec2
+}
+pub fn AccumulatedMouseMotion::new() -> Self
+pub impl @app.Resource for AccumulatedMouseMotion
+
+pub struct AccumulatedMouseScroll {
+  delta : @math.Vec2
+}
+pub fn AccumulatedMouseScroll::new() -> Self
+pub impl @app.Resource for AccumulatedMouseScroll
+
+pub struct ButtonInput[T] {
+  pressed_ids : Array[String]
+  just_pressed_ids : Array[String]
+  just_released_ids : Array[String]
+  marker : T?
+}
+pub fn[T : ButtonInputButton] ButtonInput::any_pressed(Self[T], Array[T]) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::just_pressed(Self[T], T) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::just_released(Self[T], T) -> Bool
+pub fn[T] ButtonInput::new() -> Self[T]
+pub fn[T : ButtonInputButton] ButtonInput::pressed(Self[T], T) -> Bool
+pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T]
+
 pub(all) enum ButtonState {
   Pressed
   Released
 }
+pub fn ButtonState::is_pressed(Self) -> Bool
+
+pub struct CursorMoved {
+  position : @math.Vec2
+  delta : @math.Vec2?
+}
+pub impl @core.Message for CursorMoved
+
+pub struct DoubleTapGesture {
+  position : @math.Vec2
+}
+pub impl @core.Message for DoubleTapGesture
 
 pub struct Gamepad {
   id : Int
@@ -174,14 +233,118 @@ pub(all) enum GamepadInput {
   Axis(GamepadAxis)
 }
 
+pub(all) enum Key {
+  Character(String)
+  Enter
+  Backspace
+  Tab
+  Shift
+  Control
+  ArrowUp
+  ArrowDown
+  ArrowLeft
+  ArrowRight
+  PageUp
+  PageDown
+  Space
+  Escape
+}
+pub impl ButtonInputButton for Key
+pub impl ButtonInputSnapshotProvider for Key
+
+pub struct KeyboardCharacter {
+  character : String
+}
+pub impl @core.Message for KeyboardCharacter
+
 pub struct KeyboardInput {
   key_code : @window.KeyCode
+  logical_key : Key
   state : ButtonState
   repeat : Bool
 }
 pub impl @core.Message for KeyboardInput
 
+pub struct MouseButtonInput {
+  button : @window.MouseButton
+  state : ButtonState
+}
+pub impl @core.Message for MouseButtonInput
+
+pub struct MouseMotion {
+  delta : @math.Vec2
+}
+pub impl @core.Message for MouseMotion
+
+pub(all) enum MouseScrollUnit {
+  Line
+  Pixel
+}
+
+pub struct MouseWheel {
+  unit : MouseScrollUnit
+  x : Float
+  y : Float
+}
+pub impl @core.Message for MouseWheel
+
+pub struct PinchGesture {
+  delta : Float
+}
+pub impl @core.Message for PinchGesture
+
+pub struct RotationGesture {
+  delta : Float
+}
+pub impl @core.Message for RotationGesture
+
+pub struct Touch {
+  id : Int
+  position : @math.Vec2
+}
+pub fn Touch::id(Self) -> Int
+pub fn Touch::position(Self) -> @math.Vec2
+
+pub struct TouchInput {
+  id : Int
+  phase : TouchPhase
+  position : @math.Vec2
+}
+pub impl @core.Message for TouchInput
+
+pub(all) enum TouchPhase {
+  Started
+  Moved
+  Ended
+  Canceled
+}
+
+pub struct Touches {
+  active : Array[Touch]
+  just_pressed : Array[Touch]
+  just_released : Array[Touch]
+  just_canceled : Array[Touch]
+}
+pub fn Touches::iter(Self) -> Array[Touch]
+pub fn Touches::iter_just_canceled(Self) -> Array[Touch]
+pub fn Touches::iter_just_pressed(Self) -> Array[Touch]
+pub fn Touches::iter_just_released(Self) -> Array[Touch]
+pub fn Touches::just_pressed(Self, Int) -> Bool
+pub fn Touches::new() -> Self
+pub impl @app.Resource for Touches
+
 // Type aliases
 
 // Traits
+pub(open) trait ButtonInputButton {
+  button_id(Self) -> String
+}
+pub impl ButtonInputButton for @window.KeyCode
+pub impl ButtonInputButton for @window.MouseButton
+
+pub(open) trait ButtonInputSnapshotProvider {
+  read_button_input() -> ButtonInput[Self]
+}
+pub impl ButtonInputSnapshotProvider for @window.KeyCode
+pub impl ButtonInputSnapshotProvider for @window.MouseButton
 

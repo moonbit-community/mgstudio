@@ -154,6 +154,7 @@ pub struct World {
   active_collision_types3d : @core.ComponentStore[@physics3d.ActiveCollisionTypes3d]
   rapier_collider_handle3d : @core.ComponentStore[@physics3d.RapierColliderHandle3d]
   directional_light_texture : @core.ComponentStore[@render3d.DirectionalLightTexture]
+  screen_space_transmission : @core.ComponentStore[@render3d.ScreenSpaceTransmission]
   collider_mass_properties2d : @core.ComponentStore[@physics2d.ColliderMassProperties2d]
   restitution_combine_rule2d : @core.ComponentStore[@physics2d.RestitutionCombineRule2d]
   additional_mass_properties2d : @core.ComponentStore[@physics2d.AdditionalMassProperties2d]
@@ -303,6 +304,7 @@ pub impl @render3d.Has_PointLight for World
 pub impl @render3d.Has_PointLightTexture for World
 pub impl @render3d.Has_ScreenSpaceAmbientOcclusion for World
 pub impl @render3d.Has_ScreenSpaceReflections for World
+pub impl @render3d.Has_ScreenSpaceTransmission for World
 pub impl @render3d.Has_ShadowFilteringMethod for World
 pub impl @render3d.Has_Skybox for World
 pub impl @render3d.Has_SpotLight for World

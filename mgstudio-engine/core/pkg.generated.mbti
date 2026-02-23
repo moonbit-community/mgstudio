@@ -68,6 +68,12 @@ pub struct MessageReader[T] {
 }
 pub fn[T] MessageReader::read(Self[T]) -> Array[T]
 
+pub struct MessageWriter[T] {
+  messages : Messages[T]
+  tick : Int
+}
+pub fn[T] MessageWriter::write(Self[T], T) -> Unit
+
 pub struct Messages[T] {
   mut previous_tick : Int?
   mut previous_messages : Array[T]
@@ -78,6 +84,7 @@ pub fn[T] Messages::clear(Self[T]) -> Unit
 pub fn[T] Messages::new() -> Self[T]
 pub fn[T] Messages::reader(Self[T], SystemTicks) -> MessageReader[T]
 pub fn[T] Messages::send(Self[T], Int, T) -> Unit
+pub fn[T] Messages::writer(Self[T], Int) -> MessageWriter[T]
 
 pub struct Resource[T] {
   mut cell : Ref[T]?
@@ -136,6 +143,7 @@ pub(open) trait ChangeTickWorld {
 
 pub(open) trait Message {
   reader(SystemTicks) -> MessageReader[Self]
+  writer(Int) -> MessageWriter[Self]
 }
 
 pub(open) trait SpawnWorld {

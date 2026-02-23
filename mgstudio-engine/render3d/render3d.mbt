@@ -106,11 +106,40 @@ pub struct OrthographicProjection3d {
   scale : Float
   near : Float
   far : Float
+  scaling_mode : OrthographicScalingMode3d
+}
+
+///|
+pub(all) enum OrthographicScalingMode3d {
+  Scale
+  FixedVertical(Float)
+}
+
+///|
+fn orthographic_scaling_mode_sanitize(
+  mode : OrthographicScalingMode3d,
+) -> OrthographicScalingMode3d {
+  match mode {
+    Scale => Scale
+    FixedVertical(viewport_height) =>
+      FixedVertical(
+        if viewport_height <= 0.0F {
+          1.0F
+        } else {
+          viewport_height
+        },
+      )
+  }
 }
 
 ///|
 pub fn OrthographicProjection3d::default() -> OrthographicProjection3d {
-  OrthographicProjection3d::{ scale: 1.0F, near: -1000.0F, far: 1000.0F }
+  OrthographicProjection3d::{
+    scale: 1.0F,
+    near: -1000.0F,
+    far: 1000.0F,
+    scaling_mode: Scale,
+  }
 }
 
 ///|
@@ -123,6 +152,20 @@ pub fn OrthographicProjection3d::with_scale(
     scale: safe_scale,
     near: self.near,
     far: self.far,
+    scaling_mode: Scale,
+  }
+}
+
+///|
+pub fn OrthographicProjection3d::with_scaling_mode(
+  self : OrthographicProjection3d,
+  scaling_mode : OrthographicScalingMode3d,
+) -> OrthographicProjection3d {
+  OrthographicProjection3d::{
+    scale: self.scale,
+    near: self.near,
+    far: self.far,
+    scaling_mode: orthographic_scaling_mode_sanitize(scaling_mode),
   }
 }
 
@@ -460,9 +503,6 @@ pub fn Vignette::with_color(
 
 ///|
 /// Camera post-process settings aligned with Bevy's `MotionBlur`.
-///
-/// This renderer currently applies a lightweight per-object approximation in
-/// the draw phase instead of Bevy's full-screen motion vector pipeline.
 #ecs.component
 pub struct MotionBlur {
   shutter_angle : Float
@@ -471,19 +511,17 @@ pub struct MotionBlur {
 
 ///|
 pub fn MotionBlur::default() -> MotionBlur {
-  MotionBlur::{ shutter_angle: 1.0F, samples: 2 }
+  MotionBlur::{ shutter_angle: 0.5F, samples: 1 }
 }
 
 ///|
 pub fn MotionBlur::new(shutter_angle : Float, samples : Int) -> MotionBlur {
-  let safe_shutter_angle = clamp01(shutter_angle)
-  let safe_samples = if samples < 0 {
-    0
-  } else if samples > 64 {
-    64
+  let safe_shutter_angle = if shutter_angle < 0.0F {
+    0.0F
   } else {
-    samples
+    shutter_angle
   }
+  let safe_samples = if samples < 0 { 0 } else { samples }
   MotionBlur::{ shutter_angle: safe_shutter_angle, samples: safe_samples }
 }
 
@@ -904,6 +942,83 @@ pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
 }
 
 ///|
+/// Camera screen-space transmission quality aligned with Bevy's
+/// `ScreenSpaceTransmissionQuality`.
+pub(all) enum ScreenSpaceTransmissionQuality {
+  Low
+  Medium
+  High
+  Ultra
+} derive(Eq, Show)
+
+///|
+pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {
+  ScreenSpaceTransmissionQuality::High
+}
+
+///|
+/// Camera screen-space transmission settings aligned with Bevy's
+/// `ScreenSpaceTransmission`.
+#ecs.component
+pub struct ScreenSpaceTransmission {
+  quality : ScreenSpaceTransmissionQuality
+  steps : Int
+}
+
+///|
+pub fn ScreenSpaceTransmission::default() -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::{
+    quality: ScreenSpaceTransmissionQuality::default(),
+    steps: 2,
+  }
+}
+
+///|
+pub fn ScreenSpaceTransmission::new(
+  quality : ScreenSpaceTransmissionQuality,
+  steps : Int,
+) -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::{
+    quality,
+    steps: if steps < 0 {
+      0
+    } else if steps > 4 {
+      4
+    } else {
+      steps
+    },
+  }
+}
+
+///|
+pub fn ScreenSpaceTransmission::with_quality(
+  self : ScreenSpaceTransmission,
+  quality : ScreenSpaceTransmissionQuality,
+) -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::{ ..self, quality, }
+}
+
+///|
+pub fn ScreenSpaceTransmission::with_steps(
+  self : ScreenSpaceTransmission,
+  steps : Int,
+) -> ScreenSpaceTransmission {
+  ScreenSpaceTransmission::new(self.quality, steps)
+}
+
+///|
+fn screen_space_transmission_blur_taps(
+  quality : ScreenSpaceTransmissionQuality,
+) -> Int {
+  match quality {
+    Low => 4
+    Medium => 8
+    High => 16
+    Ultra => 32
+  }
+}
+
+///|
 fn screen_space_reflections_safe_range(
   start : Float,
   end_ : Float,
@@ -1311,6 +1426,10 @@ pub struct StandardMaterial {
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
   perceptual_roughness : Float
   reflectance : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
   specular_tint : @render2d.Color
   specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
@@ -1346,6 +1465,10 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     metallic_roughness_texture: None,
     perceptual_roughness: 0.5F,
     reflectance: 0.5F,
+    diffuse_transmission: 0.0F,
+    specular_transmission: 0.0F,
+    thickness: 0.0F,
+    ior: 1.5F,
     specular_tint: @render2d.Color::white(),
     specular_tint_texture: None,
     occlusion_texture: None,
@@ -1390,6 +1513,10 @@ pub fn StandardMaterial::from_color(
     metallic_roughness_texture: default_value.metallic_roughness_texture,
     perceptual_roughness: default_value.perceptual_roughness,
     reflectance: default_value.reflectance,
+    diffuse_transmission: default_value.diffuse_transmission,
+    specular_transmission: default_value.specular_transmission,
+    thickness: default_value.thickness,
+    ior: default_value.ior,
     specular_tint: default_value.specular_tint,
     specular_tint_texture: default_value.specular_tint_texture,
     occlusion_texture: default_value.occlusion_texture,
@@ -1643,6 +1770,57 @@ pub fn StandardMaterial::with_reflectance(
 ) -> StandardMaterial {
   let safe_reflectance = if reflectance < 0.0F { 0.0F } else { reflectance }
   StandardMaterial::{ ..self, reflectance: safe_reflectance }
+}
+
+///|
+pub fn StandardMaterial::with_diffuse_transmission(
+  self : StandardMaterial,
+  diffuse_transmission : Float,
+) -> StandardMaterial {
+  let safe_diffuse_transmission = if diffuse_transmission < 0.0F {
+    0.0F
+  } else if diffuse_transmission > 1.0F {
+    1.0F
+  } else {
+    diffuse_transmission
+  }
+  StandardMaterial::{ ..self, diffuse_transmission: safe_diffuse_transmission }
+}
+
+///|
+pub fn StandardMaterial::with_specular_transmission(
+  self : StandardMaterial,
+  specular_transmission : Float,
+) -> StandardMaterial {
+  let safe_specular_transmission = if specular_transmission < 0.0F {
+    0.0F
+  } else if specular_transmission > 1.0F {
+    1.0F
+  } else {
+    specular_transmission
+  }
+  StandardMaterial::{
+    ..self,
+    specular_transmission: safe_specular_transmission,
+  }
+}
+
+///|
+pub fn StandardMaterial::with_thickness(
+  self : StandardMaterial,
+  thickness : Float,
+) -> StandardMaterial {
+  let safe_thickness = if thickness < 0.0F { 0.0F } else { thickness }
+  StandardMaterial::{ ..self, thickness: safe_thickness }
+}
+
+///|
+pub fn StandardMaterial::with_ior(
+  self : StandardMaterial,
+  ior : Float,
+) -> StandardMaterial {
+  let safe_ior = if ior < 1.0F { 1.0F } else { ior }
+  StandardMaterial::{ ..self, ior: safe_ior }
 }
 
 ///|
@@ -2745,6 +2923,7 @@ pub struct Camera3dBundle {
   camera : @render2d.Camera
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
+  screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
@@ -2764,6 +2943,7 @@ pub fn Camera3dBundle::new(
     camera,
     projection: CameraProjection3d::default(),
     sub_camera_view: None,
+    screen_space_transmission: None,
     screen_space_reflections: None,
     chromatic_aberration: None,
     vignette: None,
@@ -2785,6 +2965,7 @@ pub fn Camera3dBundle::new_with_projection(
     camera,
     projection: CameraProjection3d::{ projection, },
     sub_camera_view: None,
+    screen_space_transmission: None,
     screen_space_reflections: None,
     chromatic_aberration: None,
     vignette: None,
@@ -2802,6 +2983,14 @@ pub fn Camera3dBundle::with_sub_camera_view(
   sub_camera_view : SubCameraView3d?,
 ) -> Camera3dBundle {
   Camera3dBundle::{ ..self, sub_camera_view, }
+}
+
+///|
+pub fn Camera3dBundle::with_screen_space_transmission(
+  self : Camera3dBundle,
+  screen_space_transmission : ScreenSpaceTransmission?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, screen_space_transmission, }
 }
 
 ///|
@@ -2865,7 +3054,7 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 ///|
@@ -2883,6 +3072,11 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
   world.get_camera_projection3d_store().insert(entity, self.projection, tick)
   if self.sub_camera_view is Some(sub_camera_view) {
     world.get_sub_camera_view3d_store().insert(entity, sub_camera_view, tick)
+  }
+  if self.screen_space_transmission is Some(screen_space_transmission) {
+    world
+    .get_screen_space_transmission_store()
+    .insert(entity, screen_space_transmission, tick)
   }
   if self.screen_space_reflections is Some(screen_space_reflections) {
     world
@@ -2936,6 +3130,7 @@ priv struct Camera3dInstance {
   camera : @render2d.Camera
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
+  screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
@@ -2978,6 +3173,32 @@ priv struct Mesh3dInstance {
   has_wireframe : Bool
   has_no_wireframe : Bool
   wireframe_color : WireframeColor?
+}
+
+///|
+priv struct TransmissionMeshDraw {
+  mesh : Mesh3dInstance
+  draw_color_r : Float
+  draw_color_g : Float
+  draw_color_b : Float
+  draw_alpha : Float
+  texture_id : Int
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  depth_texture_id : Int
+  anisotropy_texture_id : Int
+  specular_tint_texture_id : Int
+  draw_surface_roughness : Float
+  draw_reflectance : Float
+  draw_diffuse_transmission : Float
+  draw_specular_transmission : Float
+  draw_thickness : Float
+  draw_ior : Float
+  specular_tint : @render2d.Color
+  anisotropy_strength : Float
+  max_relief_mapping_search_steps : Float
 }
 
 ///|
@@ -3029,6 +3250,14 @@ priv struct MotionBlurTargetsEntry {
 }
 
 ///|
+priv struct TransmissionSourceTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  source_target_id : Int
+}
+
+///|
 let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
 
 ///|
@@ -3037,6 +3266,10 @@ let camera_motion_blur_history : Ref[Array[CameraMotionBlurHistoryEntry]] = Ref:
 
 ///|
 let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
+
+///|
+let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = Ref::new([],
+)
 
 ///|
 priv struct WireframeMeshCacheEntry {
@@ -3241,7 +3474,7 @@ fn render3d_motion_blur_targets_get_or_create(
     height~,
     nearest=false,
   )
-  let velocity_target_id = @window.host_gpu_create_render_target(
+  let velocity_target_id = @window.host_gpu_create_render_target_rgba16f(
     width~,
     height~,
     nearest=false,
@@ -3264,6 +3497,97 @@ fn render3d_motion_blur_targets_get_or_create(
   }
   motion_blur_targets.val = next
   (scene_target_id, velocity_target_id)
+}
+
+///|
+fn render3d_transmission_source_target_get_or_create(
+  entity : @core.Entity,
+  width : Int,
+  height : Int,
+) -> Int {
+  for item in transmission_source_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.width == width &&
+      item.height == height {
+      return item.source_target_id
+    }
+  }
+  let source_target_id = @window.host_gpu_create_render_target(
+    width~,
+    height~,
+    nearest=false,
+  )
+  let next : Array[TransmissionSourceTargetsEntry] = []
+  let mut replaced = false
+  for item in transmission_source_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, width, height, source_target_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, width, height, source_target_id })
+  }
+  transmission_source_targets.val = next
+  source_target_id
+}
+
+///|
+fn render3d_blit_texture_to_target(
+  source_texture_id : Int,
+  target_id : Int,
+  width_logical : Int,
+  height_logical : Int,
+) -> Unit {
+  if source_texture_id < 0 ||
+    target_id < 0 ||
+    width_logical <= 0 ||
+    height_logical <= 0 {
+    return
+  }
+  let sx = Float::from_double(width_logical.to_double()) / 128.0F
+  let sy = Float::from_double(height_logical.to_double()) / 128.0F
+  @window.host_gpu_begin_pass(
+    target_id~,
+    width=width_logical,
+    height=height_logical,
+    clear_r=0.0F,
+    clear_g=0.0F,
+    clear_b=0.0F,
+    clear_a=0.0F,
+    camera_x=0.0F,
+    camera_y=0.0F,
+    camera_rotation=0.0F,
+    camera_scale=1.0F,
+    viewport_x=0,
+    viewport_y=0,
+    viewport_width=width_logical,
+    viewport_height=height_logical,
+    clear_enabled=1,
+  )
+  @window.host_gpu_draw_sprite_uv(
+    texture_id=source_texture_id,
+    x=0.0F,
+    y=0.0F,
+    rotation=0.0F,
+    scale_x=sx,
+    scale_y=sy,
+    color_r=1.0F,
+    color_g=1.0F,
+    color_b=1.0F,
+    color_a=1.0F,
+    uv_min_x=0.0F,
+    uv_min_y=0.0F,
+    uv_max_x=1.0F,
+    uv_max_y=1.0F,
+  )
+  @window.host_gpu_end_pass()
 }
 
 ///|
@@ -3556,6 +3880,13 @@ fn render3d_draw_camera_skybox(
     specular_tint_r=1.0F,
     specular_tint_g=1.0F,
     specular_tint_b=1.0F,
+    diffuse_transmission=0.0F,
+    specular_transmission=0.0F,
+    thickness=0.0F,
+    ior=1.5F,
+    transmission_source_texture_id=-1,
+    transmission_blur_taps=0.0F,
+    transmission_steps=0.0F,
   )
 }
 
@@ -3686,19 +4017,11 @@ fn render3d_projection_params(
       (p.fov, p.near, p.far)
     }
     Orthographic(orthographic) => {
-      let safe_scale = if orthographic.scale <= 0.0F {
-        1.0F
-      } else {
-        orthographic.scale
-      }
       // Encode orthographic mode via negative `camera_fov_y` and pass world-space
       // half-height through its magnitude. Runtime shaders decode this sentinel.
-      let half_height = 0.5F * safe_view_height * safe_scale
-      let safe_half_height = if half_height <= 0.0F {
-        0.5F
-      } else {
-        half_height
-      }
+      let safe_half_height = render3d_orthographic_half_height(
+        orthographic, safe_view_height,
+      )
       (-safe_half_height, orthographic.near, orthographic.far)
     }
   }
@@ -4512,6 +4835,13 @@ fn render3d_draw_mesh_instance(
   specular_tint_texture_id : Int,
   draw_surface_roughness : Float,
   draw_reflectance : Float,
+  draw_diffuse_transmission : Float,
+  draw_specular_transmission : Float,
+  draw_thickness : Float,
+  draw_ior : Float,
+  transmission_source_texture_id : Int,
+  transmission_blur_taps : Float,
+  transmission_steps : Float,
   specular_tint : @render2d.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
@@ -4569,11 +4899,18 @@ fn render3d_draw_mesh_instance(
     specular_tint_r=specular_tint.r,
     specular_tint_g=specular_tint.g,
     specular_tint_b=specular_tint.b,
+    diffuse_transmission=draw_diffuse_transmission,
+    specular_transmission=draw_specular_transmission,
+    thickness=draw_thickness,
+    ior=draw_ior,
+    transmission_source_texture_id~,
+    transmission_blur_taps~,
+    transmission_steps~,
   )
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -4585,6 +4922,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let camera_store = world.get_camera_store()
   let projection_store = world.get_camera_projection3d_store()
   let sub_camera_view_store = world.get_sub_camera_view3d_store()
+  let screen_space_transmission_store = world.get_screen_space_transmission_store()
   let screen_space_reflections_store = world.get_screen_space_reflections_store()
   let chromatic_aberration_store = world.get_chromatic_aberration_store()
   let vignette_store = world.get_vignette_store()
@@ -4607,6 +4945,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       None => CameraProjection3d::default()
     }
     let sub_camera_view = sub_camera_view_store.get(entity)
+    let screen_space_transmission = screen_space_transmission_store.get(entity)
     let screen_space_reflections = screen_space_reflections_store.get(entity)
     let chromatic_aberration = chromatic_aberration_store.get(entity)
     let vignette = vignette_store.get(entity)
@@ -4647,6 +4986,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           camera: camera_clamped,
           projection,
           sub_camera_view,
+          screen_space_transmission,
           screen_space_reflections,
           chromatic_aberration,
           vignette,
@@ -4820,6 +5160,20 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     } else {
       false
     }
+    let transmission_blur_taps = if camera.screen_space_transmission
+      is Some(transmission) &&
+      transmission.steps > 0 {
+      screen_space_transmission_blur_taps(transmission.quality)
+    } else {
+      0
+    }
+    let transmission_steps = if camera.screen_space_transmission
+      is Some(transmission) {
+      transmission.steps
+    } else {
+      0
+    }
+    let transmission_enabled = transmission_blur_taps > 0
     let mut scene_target_id = camera.target_id
     let mut velocity_target_id = -1
     if motion_blur_active {
@@ -4834,10 +5188,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         target_id=velocity_target_id,
         width=view_width_logical,
         height=view_height_logical,
-        clear_r=0.5F,
-        clear_g=0.5F,
+        clear_r=0.0F,
+        clear_g=0.0F,
         clear_b=0.0F,
-        clear_a=1.0F,
+        clear_a=0.0F,
         camera_x=camera.transform.translation.x,
         camera_y=camera.transform.translation.y,
         camera_z=camera.transform.translation.z,
@@ -4933,6 +5287,13 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           -1,
           0.5F,
           0.5F,
+          0.0F,
+          0.0F,
+          0.0F,
+          1.5F,
+          -1,
+          0.0F,
+          0.0F,
           @render2d.Color::white(),
           0.0F,
           0.0F,
@@ -4940,6 +5301,15 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       }
       @window.host_gpu_end_pass()
     }
+    if !motion_blur_active && transmission_enabled && camera.target_id < 0 {
+      let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
+        camera.entity,
+        view_width,
+        view_height,
+      )
+      scene_target_id = scene_id
+    }
+    let mut transmission_source_target_id = -1
     @window.host_gpu_begin_pass_3d(
       target_id=scene_target_id,
       width=view_width_logical,
@@ -5015,6 +5385,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.transform,
     )
     let distance_fog = render3d_distance_fog()
+    let transmissive_draws : Array[TransmissionMeshDraw] = []
     for draw_index in draw_order {
       let mesh = meshes[draw_index]
       guard render3d_mesh_draw_alpha(
@@ -5173,6 +5544,41 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           )
         }
       }
+      let draw_diffuse_transmission = clamp01(
+        mesh.material.diffuse_transmission,
+      )
+      let draw_specular_transmission = clamp01(
+        mesh.material.specular_transmission,
+      )
+      let draw_thickness = maxf(0.0F, mesh.material.thickness)
+      let draw_ior = maxf(1.0F, mesh.material.ior)
+      if transmission_enabled && draw_specular_transmission > 0.0F {
+        transmissive_draws.push(TransmissionMeshDraw::{
+          mesh,
+          draw_color_r,
+          draw_color_g,
+          draw_color_b,
+          draw_alpha,
+          texture_id,
+          normal_texture_id,
+          emissive_texture_id,
+          metallic_roughness_texture_id,
+          occlusion_texture_id,
+          depth_texture_id,
+          anisotropy_texture_id,
+          specular_tint_texture_id,
+          draw_surface_roughness,
+          draw_reflectance,
+          draw_diffuse_transmission,
+          draw_specular_transmission,
+          draw_thickness,
+          draw_ior,
+          specular_tint: mesh.material.specular_tint,
+          anisotropy_strength,
+          max_relief_mapping_search_steps,
+        })
+        continue
+      }
       render3d_draw_mesh_instance(
         mesh,
         mesh.transform,
@@ -5191,10 +5597,127 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         specular_tint_texture_id,
         draw_surface_roughness,
         draw_reflectance,
+        draw_diffuse_transmission,
+        draw_specular_transmission,
+        draw_thickness,
+        draw_ior,
+        -1,
+        0.0F,
+        0.0F,
         mesh.material.specular_tint,
         anisotropy_strength,
         max_relief_mapping_search_steps,
       )
+    }
+    if transmissive_draws.length() > 0 {
+      @window.host_gpu_end_pass()
+      transmission_source_target_id = render3d_transmission_source_target_get_or_create(
+        camera.entity,
+        view_width,
+        view_height,
+      )
+      render3d_blit_texture_to_target(
+        scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
+      )
+      @window.host_gpu_begin_pass_3d(
+        target_id=scene_target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear_color.r,
+        clear_g=clear_color.g,
+        clear_b=clear_color.b,
+        clear_a=clear_color.a,
+        camera_x=camera.transform.translation.x,
+        camera_y=camera.transform.translation.y,
+        camera_z=camera.transform.translation.z,
+        camera_rot_x=camera.transform.rotation.x,
+        camera_rot_y=camera.transform.rotation.y,
+        camera_rot_z=camera.transform.rotation.z,
+        camera_rot_w=camera.transform.rotation.w,
+        camera_fov_y~,
+        camera_near~,
+        camera_far~,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        ambient_r=pass_lighting.ambient_color.r,
+        ambient_g=pass_lighting.ambient_color.g,
+        ambient_b=pass_lighting.ambient_color.b,
+        ambient_brightness=pass_lighting.ambient_brightness,
+        directional_dir_x=pass_lighting.directional_dir.x,
+        directional_dir_y=pass_lighting.directional_dir.y,
+        directional_dir_z=pass_lighting.directional_dir.z,
+        directional_color_r=pass_lighting.directional_color.r,
+        directional_color_g=pass_lighting.directional_color.g,
+        directional_color_b=pass_lighting.directional_color.b,
+        directional_illuminance=pass_lighting.directional_illuminance,
+        point_pos_x=pass_lighting.point_pos.x,
+        point_pos_y=pass_lighting.point_pos.y,
+        point_pos_z=pass_lighting.point_pos.z,
+        point_color_r=pass_lighting.point_color.r,
+        point_color_g=pass_lighting.point_color.g,
+        point_color_b=pass_lighting.point_color.b,
+        point_intensity=pass_lighting.point_intensity,
+        point_range=pass_lighting.point_range,
+        spot_pos_x=pass_lighting.spot_pos.x,
+        spot_pos_y=pass_lighting.spot_pos.y,
+        spot_pos_z=pass_lighting.spot_pos.z,
+        spot_dir_x=pass_lighting.spot_dir.x,
+        spot_dir_y=pass_lighting.spot_dir.y,
+        spot_dir_z=pass_lighting.spot_dir.z,
+        spot_color_r=pass_lighting.spot_color.r,
+        spot_color_g=pass_lighting.spot_color.g,
+        spot_color_b=pass_lighting.spot_color.b,
+        spot_intensity=pass_lighting.spot_intensity,
+        spot_range=pass_lighting.spot_range,
+        spot_inner_angle=pass_lighting.spot_inner_angle,
+        spot_outer_angle=pass_lighting.spot_outer_angle,
+        sub_camera_view_scale_x~,
+        sub_camera_view_scale_y~,
+        sub_camera_view_bias_x~,
+        sub_camera_view_bias_y~,
+        previous_camera_x=camera.previous_transform.translation.x,
+        previous_camera_y=camera.previous_transform.translation.y,
+        previous_camera_z=camera.previous_transform.translation.z,
+        previous_camera_rot_x=camera.previous_transform.rotation.x,
+        previous_camera_rot_y=camera.previous_transform.rotation.y,
+        previous_camera_rot_z=camera.previous_transform.rotation.z,
+        previous_camera_rot_w=camera.previous_transform.rotation.w,
+        pass_kind=0,
+        clear_enabled=0,
+      )
+      for transmissive_draw in transmissive_draws {
+        render3d_draw_mesh_instance(
+          transmissive_draw.mesh,
+          transmissive_draw.mesh.transform,
+          transmissive_draw.mesh.previous_transform,
+          transmissive_draw.draw_color_r,
+          transmissive_draw.draw_color_g,
+          transmissive_draw.draw_color_b,
+          transmissive_draw.draw_alpha,
+          transmissive_draw.texture_id,
+          transmissive_draw.normal_texture_id,
+          transmissive_draw.emissive_texture_id,
+          transmissive_draw.metallic_roughness_texture_id,
+          transmissive_draw.occlusion_texture_id,
+          transmissive_draw.depth_texture_id,
+          transmissive_draw.anisotropy_texture_id,
+          transmissive_draw.specular_tint_texture_id,
+          transmissive_draw.draw_surface_roughness,
+          transmissive_draw.draw_reflectance,
+          transmissive_draw.draw_diffuse_transmission,
+          transmissive_draw.draw_specular_transmission,
+          transmissive_draw.draw_thickness,
+          transmissive_draw.draw_ior,
+          transmission_source_target_id,
+          Float::from_double(transmission_blur_taps.to_double()),
+          Float::from_double(transmission_steps.to_double()),
+          transmissive_draw.specular_tint,
+          transmissive_draw.anisotropy_strength,
+          transmissive_draw.max_relief_mapping_search_steps,
+        )
+      }
     }
     for draw_index in draw_order {
       let mesh = meshes[draw_index]
@@ -5241,6 +5764,13 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         -1,
         0.5F,
         0.5F,
+        0.0F,
+        0.0F,
+        0.0F,
+        1.5F,
+        -1,
+        0.0F,
+        0.0F,
         @render2d.Color::white(),
         0.0F,
         0.0F,
@@ -5273,6 +5803,42 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         velocity_texture_id=velocity_target_id,
         shutter_angle=motion_blur.shutter_angle,
         samples=motion_blur.samples,
+      )
+      @window.host_gpu_end_pass()
+    } else if scene_target_id != camera.target_id {
+      @window.host_gpu_begin_pass(
+        target_id=camera.target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear_color.r,
+        clear_g=clear_color.g,
+        clear_b=clear_color.b,
+        clear_a=clear_color.a,
+        camera_x=0.0F,
+        camera_y=0.0F,
+        camera_rotation=0.0F,
+        camera_scale=1.0F,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        clear_enabled=if clear_enabled { 1 } else { 0 },
+      )
+      @window.host_gpu_draw_sprite_uv(
+        texture_id=scene_target_id,
+        x=0.0F,
+        y=0.0F,
+        rotation=0.0F,
+        scale_x=Float::from_double(view_width_logical.to_double()) / 128.0F,
+        scale_y=Float::from_double(view_height_logical.to_double()) / 128.0F,
+        color_r=1.0F,
+        color_g=1.0F,
+        color_b=1.0F,
+        color_a=1.0F,
+        uv_min_x=0.0F,
+        uv_min_y=0.0F,
+        uv_max_x=1.0F,
+        uv_max_y=1.0F,
       )
       @window.host_gpu_end_pass()
     }
@@ -5351,17 +5917,29 @@ fn render3d_orthographic_half_height(
   orthographic : OrthographicProjection3d,
   viewport_height : Float,
 ) -> Float {
-  let safe_scale = if orthographic.scale <= 0.0F {
-    1.0F
-  } else {
-    orthographic.scale
+  let half_height = match orthographic.scaling_mode {
+    Scale => {
+      let safe_scale = if orthographic.scale <= 0.0F {
+        1.0F
+      } else {
+        orthographic.scale
+      }
+      let safe_viewport_height = if viewport_height <= 0.0F {
+        1.0F
+      } else {
+        viewport_height
+      }
+      0.5F * safe_viewport_height * safe_scale
+    }
+    FixedVertical(viewport_height_world) => {
+      let safe_viewport_height_world = if viewport_height_world <= 0.0F {
+        1.0F
+      } else {
+        viewport_height_world
+      }
+      0.5F * safe_viewport_height_world
+    }
   }
-  let safe_viewport_height = if viewport_height <= 0.0F {
-    1.0F
-  } else {
-    viewport_height
-  }
-  let half_height = 0.5F * safe_viewport_height * safe_scale
   if half_height <= 0.0F {
     0.5F
   } else {

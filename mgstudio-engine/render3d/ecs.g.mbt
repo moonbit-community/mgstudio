@@ -12,7 +12,8 @@ pub let ecs_components : Array[String] = [
   "SpotLightTexture", "NotShadowReceiver", "PointLightTexture", "CameraProjection3d",
   "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass",
   "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
-  "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
+  "ScreenSpaceTransmission", "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight",
+  "OrderIndependentTransparencySettings",
 ]
 
 ///|
@@ -261,6 +262,13 @@ pub(open) trait Has_ScreenSpaceReflections {
 pub(open) trait Has_DirectionalLightTexture {
   get_directional_light_texture_store(self : Self) -> @core.ComponentStore[
     DirectionalLightTexture,
+  ]
+}
+
+///|
+pub(open) trait Has_ScreenSpaceTransmission {
+  get_screen_space_transmission_store(self : Self) -> @core.ComponentStore[
+    ScreenSpaceTransmission,
   ]
 }
 

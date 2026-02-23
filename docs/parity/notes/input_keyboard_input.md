@@ -9,14 +9,13 @@
 ## Behavioral Comparison
 
 - Rendering: Not applicable (console logging only).
-- Input: `KeyCode::KeyA` press/just_press/just_release semantics are aligned.
+- Input: `ButtonInput<KeyCode>` (`KeyA`) and `ButtonInput<Key>` (`Key::Character("?")`) press/just_press/just_release semantics are aligned for this example path.
 - Timing/Update model: Polling in update system per frame.
 - Asset path/loading: Not applicable.
 
 ## Known Differences
 
-- Bevy `ButtonInput<Key>` (`Key::Character("?")`) is not implemented in mgstudio.
-- `?` logical-key path is temporarily mapped to `KeyCode::Period` for demonstration.
+- Logical-key model is still a subset and currently backed by host key polling mapping.
 
 ## Runtime Constraints
 
@@ -32,4 +31,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.5`
-- Remaining blockers: Add Bevy-like logical key model (`ButtonInput<Key>` / text key mapping).
+- Remaining blockers: Add full Bevy-equivalent `Key` model.

@@ -19,6 +19,35 @@ pub type SystemFn[W] = (W) -> Unit
 pub type Plugin[W] = (App[W]) -> App[W]
 
 ///|
+pub struct PluginGroupBuilder[W] {
+  plugins : Array[Plugin[W]]
+}
+
+///|
+pub fn[W] PluginGroupBuilder::start() -> PluginGroupBuilder[W] {
+  { plugins: [] }
+}
+
+///|
+pub fn[W] PluginGroupBuilder::add(
+  self : PluginGroupBuilder[W],
+  plugin : Plugin[W],
+) -> PluginGroupBuilder[W] {
+  self.plugins.push(plugin)
+  self
+}
+
+///|
+pub fn[W] PluginGroupBuilder::build(
+  self : PluginGroupBuilder[W],
+) -> Array[Plugin[W]] {
+  self.plugins
+}
+
+///|
+pub type PluginGroup[W] = () -> PluginGroupBuilder[W]
+
+///|
 pub type RunConditionFn[W] = (W) -> Bool
 
 ///|
@@ -41,6 +70,36 @@ pub(all) enum ScheduleStage {
 ///|
 pub(open) trait SystemParam {
   get() -> Self
+}
+
+///|
+pub(open) trait Resource {
+  resource() -> @core.Resource[Self]
+}
+
+///|
+pub struct Res[T] {
+  value : T
+}
+
+///|
+pub fn[T] Res::get(self : Res[T]) -> T {
+  self.value
+}
+
+///|
+pub struct ResMut[T] {
+  value : Ref[T]
+}
+
+///|
+pub fn[T] ResMut::get_ref(self : ResMut[T]) -> Ref[T] {
+  self.value
+}
+
+///|
+fn[T] system_param_abort_missing_resource() -> T {
+  abort("Missing resource for system parameter")
 }
 
 ///|
@@ -115,6 +174,28 @@ pub fn current_schedule_stage() -> ScheduleStage? {
 ///|
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get() {
   @core.Message::reader(current_system_ticks())
+}
+
+///|
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with get() {
+  @core.Message::writer(current_system_ticks().this_run)
+}
+
+///|
+pub impl[T : Resource] SystemParam for Res[T] with get() {
+  match Resource::resource().get() {
+    Some(value) => Res::{ value, }
+    None => system_param_abort_missing_resource()
+  }
+}
+
+///|
+pub impl[T : Resource] SystemParam for ResMut[T] with get() {
+  let tick = current_system_ticks().this_run
+  match Resource::resource().get_ref_mut(tick) {
+    Some(value) => ResMut::{ value, }
+    None => system_param_abort_missing_resource()
+  }
 }
 
 ///|
@@ -230,6 +311,23 @@ pub fn[W] App::add_plugins(self : App[W], plugins : Array[Plugin[W]]) -> App[W] 
     app = plugin(app)
   }
   app
+}
+
+///|
+pub fn[W] App::add_plugin_group(
+  self : App[W],
+  group : PluginGroup[W],
+) -> App[W] {
+  self.add_plugins(group().build())
+}
+
+///|
+pub fn[W, T : Resource] App::insert_resource(
+  self : App[W],
+  value : T,
+) -> App[W] {
+  Resource::resource().insert(value, current_system_ticks().this_run)
+  self
 }
 
 ///|

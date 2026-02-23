@@ -44,6 +44,7 @@ struct Mesh3dUniform {
   parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, has_depth_map)
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
   specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
+  transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -56,6 +57,7 @@ struct Mesh3dUniform {
 @group(1) @binding(6) var u_depth_texture : texture_2d<f32>;
 @group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
 @group(1) @binding(8) var u_specular_tint_texture : texture_2d<f32>;
+@group(1) @binding(9) var u_transmission_source_texture : texture_2d<f32>;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -333,6 +335,55 @@ fn cubemap_stacked_vertical_uv(direction : vec3<f32>) -> vec2<f32> {
   return vec2<f32>(u, v);
 }
 
+fn sample_transmission_source(
+  base_uv : vec2<f32>,
+  blur_taps : i32,
+  roughness : f32,
+  thickness : f32,
+) -> vec3<f32> {
+  let texture_size = vec2<f32>(textureDimensions(u_transmission_source_texture));
+  let safe_height = max(texture_size.y, 1.0);
+  let aspect = max(texture_size.x / safe_height, 1.0e-4);
+  let blur_intensity = roughness * roughness * (0.002 + thickness * 0.02);
+  let clamped_taps = clamp(blur_taps, 1, 32);
+  var sum = vec3<f32>(0.0, 0.0, 0.0);
+  var weight_sum = 0.0;
+  for (var i: i32 = 0; i < 32; i = i + 1) {
+    if i >= clamped_taps {
+      break;
+    }
+    let fi = f32(i);
+    let taps_f = max(f32(clamped_taps), 1.0);
+    let angle = 6.283185307179586 * (fi / taps_f);
+    let radius = (fi + 0.5) / taps_f;
+    let dir = vec2<f32>(cos(angle), sin(angle));
+    let offset = dir * radius * blur_intensity * vec2<f32>(1.0 / aspect, 1.0);
+    let sample_uv = clamp(
+      base_uv + offset,
+      vec2<f32>(0.0, 0.0),
+      vec2<f32>(1.0, 1.0),
+    );
+    let weight = 1.0 - radius * 0.8;
+    let sample_color = textureSampleLevel(
+      u_transmission_source_texture,
+      u_material_sampler,
+      sample_uv,
+      0.0,
+    ).rgb;
+    sum += sample_color * weight;
+    weight_sum += weight;
+  }
+  if weight_sum <= 0.0 {
+    return textureSampleLevel(
+      u_transmission_source_texture,
+      u_material_sampler,
+      clamp(base_uv, vec2<f32>(0.0, 0.0), vec2<f32>(1.0, 1.0)),
+      0.0,
+    ).rgb;
+  }
+  return sum / weight_sum;
+}
+
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_base_map = u_mesh.map_flags.x > 0.5;
@@ -453,11 +504,22 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let metallic = clamp(u_mesh.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
   let roughness = clamp(u_mesh.material_params.y * metallic_roughness_tex.g, 0.045, 1.0);
   let reflectance = max(u_mesh.material_params.z, 0.0);
+  let diffuse_transmission = clamp(u_mesh.transmission_params.x, 0.0, 1.0);
+  let specular_transmission = clamp(u_mesh.transmission_params.y, 0.0, 1.0);
+  let thickness = max(u_mesh.transmission_params.z, 0.0);
+  let ior = max(u_mesh.transmission_params.w, 1.0);
+  let transmission_blur_taps = i32(max(u_mesh.spot_outer.y, 0.0));
+  let transmission_steps = max(u_mesh.spot_outer.z, 0.0);
   let reflectance_rgb = max(
     specular_tint * reflectance,
     vec3<f32>(0.0, 0.0, 0.0),
   );
-  let diffuse_color = base_color.xyz * (1.0 - metallic);
+  let diffuse_color = base_color.xyz * (1.0 - metallic) *
+    (1.0 - specular_transmission) *
+    (1.0 - diffuse_transmission);
+  let diffuse_transmissive_color = base_color.xyz * (1.0 - metallic) *
+    (1.0 - specular_transmission) * diffuse_transmission;
+  let specular_transmissive_color = base_color.xyz * specular_transmission;
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
 
@@ -467,9 +529,13 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let directional_strength = max(u_mesh.directional_dir_illum.w, 0.0) / 10000.0;
   let directional_light_dir = -directional_dir;
   let directional_diff = lambert(normal, directional_light_dir);
+  let directional_back_diff = lambert(-normal, directional_light_dir);
   let directional_term = u_mesh.directional_color.xyz *
     directional_strength *
     directional_diff;
+  let directional_transmitted_term = u_mesh.directional_color.xyz *
+    directional_strength *
+    directional_back_diff;
   var directional_specular = vec3<f32>(0.0, 0.0, 0.0);
   if anisotropy_strength > 0.0 {
     directional_specular = specular_anisotropic(
@@ -499,11 +565,17 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let point_atten = clamp(1.0 - point_distance / point_range, 0.0, 1.0);
   let point_strength = max(u_mesh.point_color_intensity.w, 0.0) / 100000.0;
   let point_diff = lambert(normal, point_dir);
+  let point_back_diff = lambert(-normal, point_dir);
   let point_term = u_mesh.point_color_intensity.xyz *
     point_strength *
     point_atten *
     point_atten *
     point_diff;
+  let point_transmitted_term = u_mesh.point_color_intensity.xyz *
+    point_strength *
+    point_atten *
+    point_atten *
+    point_back_diff;
   var point_specular = vec3<f32>(0.0, 0.0, 0.0);
   if anisotropy_strength > 0.0 {
     point_specular = specular_anisotropic(
@@ -543,12 +615,19 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let spot_strength = max(u_mesh.spot_color_intensity.w, 0.0) / 100000.0;
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
+  let spot_back_diff = lambert(-normal, spot_light_to_fragment);
   let spot_term = u_mesh.spot_color_intensity.xyz *
     spot_strength *
     spot_atten_base *
     spot_atten_base *
     spot_cone *
     spot_diff;
+  let spot_transmitted_term = u_mesh.spot_color_intensity.xyz *
+    spot_strength *
+    spot_atten_base *
+    spot_atten_base *
+    spot_cone *
+    spot_back_diff;
   var spot_specular = vec3<f32>(0.0, 0.0, 0.0);
   if anisotropy_strength > 0.0 {
     spot_specular = specular_anisotropic(
@@ -579,8 +658,57 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     point_term +
     spot_term +
     vec3<f32>(0.02, 0.02, 0.02)) * occlusion_tex;
+  let diffuse_transmitted_lighting = (ambient_term +
+    directional_transmitted_term +
+    point_transmitted_term +
+    spot_transmitted_term) * occlusion_tex;
   let specular_lighting = directional_spec + point_spec + spot_spec;
-  let lit_rgb = diffuse_color * diffuse_lighting + f0 * specular_lighting + emissive;
+  let ior_f0 = pow((ior - 1.0) / max(ior + 1.0, 1.0e-4), 2.0);
+  let thickness_factor = clamp(thickness / 5.0, 0.0, 1.0);
+  var specular_transmitted_lighting = (ambient_term +
+    directional_term +
+    point_term +
+    spot_term) *
+    (0.35 + 0.65 * (1.0 - roughness * roughness)) *
+    (1.0 - 0.4 * thickness_factor) *
+    (0.2 + 0.8 * (1.0 - ior_f0));
+  if specular_transmission > 0.0 &&
+    transmission_blur_taps > 0 &&
+    transmission_steps > 0.0 {
+    let texture_size = vec2<f32>(textureDimensions(u_transmission_source_texture));
+    var screen_uv = in.position.xy / max(texture_size, vec2<f32>(1.0, 1.0));
+    let eta = 1.0 / ior;
+    let incident = -view_dir;
+    let ndoti = dot(normal, incident);
+    let k = 1.0 - eta * eta * (1.0 - ndoti * ndoti);
+    if k > 0.0 {
+      let refracted = eta * incident - (eta * ndoti + sqrt(k)) * normal;
+      let refraction_scale = transmission_steps * thickness * 0.0025;
+      screen_uv += refracted.xy * refraction_scale;
+    }
+    let transmission_scene = sample_transmission_source(
+      screen_uv,
+      transmission_blur_taps,
+      roughness,
+      thickness,
+    );
+    let transmission_scene_weight = clamp(
+      0.25 + 0.75 * (1.0 - ior_f0),
+      0.0,
+      1.0,
+    );
+    specular_transmitted_lighting = mix(
+      specular_transmitted_lighting,
+      transmission_scene,
+      transmission_scene_weight,
+    );
+  }
+  let transmitted_light = diffuse_transmissive_color * diffuse_transmitted_lighting +
+    specular_transmissive_color * specular_transmitted_lighting;
+  let lit_rgb = diffuse_color * diffuse_lighting +
+    f0 * specular_lighting +
+    emissive +
+    transmitted_light;
   let unlit_rgb = base_color.xyz + emissive;
   let final_rgb = mix(lit_rgb, unlit_rgb, unlit_factor);
   return vec4<f32>(final_rgb, base_color.w);

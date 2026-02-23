@@ -16,8 +16,8 @@
 /// Port of `bevy/examples/input/keyboard_input_events.rs`.
 ///
 /// Baseline parity:
-/// - Keyboard events are synthesized from just-pressed / just-released states.
-/// - `repeat` is always `false` in this runtime path.
+/// - Keyboard events are synthesized from host input states.
+/// - Repeated keydown events are surfaced as `Pressed` with `repeat=true`.
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
@@ -37,7 +37,27 @@ fn print_keyboard_event_system(
 
 ///|
 fn format_keyboard_input(event : @input.KeyboardInput) -> String {
-  "KeyboardInput { key_code: \{format_keycode(event.key_code)}, state: \{format_button_state(event.state)}, repeat: \{event.repeat} }"
+  "KeyboardInput { key_code: \{format_keycode(event.key_code)}, logical_key: \{format_logical_key(event.logical_key)}, state: \{format_button_state(event.state)}, repeat: \{event.repeat} }"
+}
+
+///|
+fn format_logical_key(key : @input.Key) -> String {
+  match key {
+    Character(text) => "Character(\"\{text}\")"
+    Enter => "Enter"
+    Backspace => "Backspace"
+    Tab => "Tab"
+    Shift => "Shift"
+    Control => "Control"
+    ArrowUp => "ArrowUp"
+    ArrowDown => "ArrowDown"
+    ArrowLeft => "ArrowLeft"
+    ArrowRight => "ArrowRight"
+    PageUp => "PageUp"
+    PageDown => "PageDown"
+    Space => "Space"
+    Escape => "Escape"
+  }
 }
 
 ///|
@@ -83,6 +103,8 @@ fn format_keycode(code : @window.KeyCode) -> String {
     Digit4 => "Digit4"
     Digit5 => "Digit5"
     Digit6 => "Digit6"
+    Digit7 => "Digit7"
+    Digit8 => "Digit8"
     Tab => "Tab"
     Enter => "Enter"
     Backspace => "Backspace"
@@ -94,10 +116,14 @@ fn format_keycode(code : @window.KeyCode) -> String {
     ArrowDown => "ArrowDown"
     ArrowLeft => "ArrowLeft"
     ArrowRight => "ArrowRight"
+    PageUp => "PageUp"
+    PageDown => "PageDown"
     Space => "Space"
     Escape => "Escape"
+    Semicolon => "Semicolon"
     Comma => "Comma"
     Period => "Period"
+    Slash => "Slash"
   }
 }
 

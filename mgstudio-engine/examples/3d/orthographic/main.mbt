@@ -19,30 +19,17 @@
 const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 
 ///|
-fn fixed_vertical_orthographic_projection() -> @render3d.Projection3d {
-  let scale_factor = @window.window_scale_factor()
-  let safe_scale_factor = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
-  let logical_height = Float::from_double(@window.window_height().to_double()) /
-    safe_scale_factor
-  let safe_logical_height = if logical_height <= 0.0F {
-    // Keep startup behavior deterministic before first resize callback.
-    720.0F
-  } else {
-    logical_height
-  }
-  let projection_scale = FIXED_VIEWPORT_HEIGHT / safe_logical_height
-  @render3d.Projection3d::Orthographic(
-    @render3d.OrthographicProjection3d::default().with_scale(projection_scale),
-  )
-}
-
-///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
+  let projection = @render3d.Projection3d::Orthographic(
+    @render3d.OrthographicProjection3d::default().with_scaling_mode(
+      @render3d.OrthographicScalingMode3d::FixedVertical(FIXED_VIEWPORT_HEIGHT),
+    ),
+  )
 
   @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
-    fixed_vertical_orthographic_projection(),
+    projection,
     @math.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -107,24 +94,10 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn sync_fixed_vertical_projection(world : @ecs_world.World) -> Unit {
-  let projection = fixed_vertical_orthographic_projection()
-  let tick = world.read_change_tick()
-  let camera3d_store = world.get_camera3d_store()
-  let projection_store = world.get_camera_projection3d_store()
-  camera3d_store.for_each(fn(entity, _camera3d) {
-    if projection_store.get(entity) is Some(current) {
-      projection_store.insert(entity, current.with_projection(projection), tick)
-    }
-  })
-}
-
-///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
-  .add_system(sync_fixed_vertical_projection)
   .run()
 }

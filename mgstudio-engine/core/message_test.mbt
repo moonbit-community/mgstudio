@@ -64,3 +64,13 @@ test "messages: reader.read is consuming" {
   let second = reader.read()
   inspect(second.length(), content="0")
 }
+
+///|
+test "messages: writer appends at writer tick" {
+  let messages = Messages::new()
+  let writer = messages.writer(5)
+  writer.write("value")
+  let read = messages.reader(SystemTicks::new(0, 5)).read()
+  inspect(read.length(), content="1")
+  inspect(read[0] == "value", content="true")
+}

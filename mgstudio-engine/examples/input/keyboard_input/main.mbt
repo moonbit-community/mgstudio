@@ -16,34 +16,41 @@
 /// Port of `bevy/examples/input/keyboard_input.rs`.
 ///
 /// Baseline parity:
-/// - KeyCode path (`KeyA`) is preserved.
-/// - Bevy `ButtonInput<Key>` logical-key API is not available yet.
-/// - `Key::Character("?")` is adapted to `KeyCode::Period` as a temporary proxy.
+/// - Uses Bevy-style `ButtonInput<KeyCode>` and `ButtonInput<Key>` resources.
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_system(keyboard_input_system)
+  .add_system(@app.system_param2(keyboard_input_system))
   .run()
 }
 
 ///|
-fn keyboard_input_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-  log_key_activity("A", KeyA)
-  log_key_activity("? (mapped to Period)", Period)
-}
+fn keyboard_input_system(
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+  key_input : @input.ButtonInput[@input.Key],
+) -> Unit {
+  let keyboard = keyboard_input
+  if keyboard.pressed(KeyA) {
+    log_line("'A' currently pressed")
+  }
+  if keyboard.just_pressed(KeyA) {
+    log_line("'A' just pressed")
+  }
+  if keyboard.just_released(KeyA) {
+    log_line("'A' just released")
+  }
 
-///|
-fn log_key_activity(label : String, key_code : @window.KeyCode) -> Unit {
-  if @input.key_pressed(key_code) {
-    log_line("'\{label}' currently pressed")
+  let key_input = key_input
+  let key = @input.Key::Character("?")
+  if key_input.pressed(key) {
+    log_line("'?' currently pressed")
   }
-  if @input.key_just_pressed(key_code) {
-    log_line("'\{label}' just pressed")
+  if key_input.just_pressed(key) {
+    log_line("'?' just pressed")
   }
-  if @input.key_just_released(key_code) {
-    log_line("'\{label}' just released")
+  if key_input.just_released(key) {
+    log_line("'?' just released")
   }
 }
 

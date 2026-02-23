@@ -568,12 +568,12 @@ fn ui_text_content() -> String {
     "(6) " +
     selected_marker(5, state.tonemap_mode) +
     "SomewhatBoringDisplayTransform\n" +
-    "(Y) " +
+    "(7) " +
     selected_marker(6, state.tonemap_mode) +
-    "TonyMcMapface (Digit7 proxy)\n" +
-    "(U) " +
+    "TonyMcMapface\n" +
+    "(8) " +
     selected_marker(7, state.tonemap_mode) +
-    "Blender Filmic (Digit8 proxy)\n\n" +
+    "Blender Filmic\n\n" +
     "Color Grading (Arrow Up/Down select, Left/Right adjust):\n" +
     selected_marker(0, state.selected_parameter) +
     "Exposure: \{settings.exposure}\n" +
@@ -920,10 +920,10 @@ fn update_system(world : @ecs_world.World) -> Unit {
   } else if @input.key_just_pressed(@window.KeyCode::Digit6) {
     set_tonemap_mode(5, world)
     ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::KeyY) {
+  } else if @input.key_just_pressed(@window.KeyCode::Digit7) {
     set_tonemap_mode(6, world)
     ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::KeyU) {
+  } else if @input.key_just_pressed(@window.KeyCode::Digit8) {
     set_tonemap_mode(7, world)
     ui_changed = true
   }

@@ -18,18 +18,17 @@ pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_system(keyboard_input_system)
+  .add_system(@app.system_param(keyboard_input_system))
   .run()
 }
 
 ///|
 /// Prints when `Ctrl + Shift + A` is pressed.
-fn keyboard_input_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-  let shift = @input.key_pressed(ShiftLeft) || @input.key_pressed(ShiftRight)
-  let ctrl = @input.key_pressed(ControlLeft) || @input.key_pressed(ControlRight)
+fn keyboard_input_system(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
+  let shift = input.any_pressed([ShiftLeft, ShiftRight])
+  let ctrl = input.any_pressed([ControlLeft, ControlRight])
 
-  if ctrl && shift && @input.key_just_pressed(KeyA) {
+  if ctrl && shift && input.just_pressed(KeyA) {
     log_line("Just pressed Ctrl + Shift + A!")
   }
 }

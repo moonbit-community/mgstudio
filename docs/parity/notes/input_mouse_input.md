@@ -10,7 +10,7 @@
 
 - Rendering: Not applicable (console logging only).
 - Input:
-  - Left mouse button `pressed` / `just_pressed` / `just_released` behavior is aligned.
+  - Left mouse button `pressed` / `just_pressed` / `just_released` behavior is aligned via `ButtonInput<MouseButton>`.
   - Mouse movement logging is derived from frame-to-frame cursor position delta.
   - Mouse wheel logging uses per-frame host wheel delta.
 - Timing/Update model: Polling in update systems per frame.
@@ -18,8 +18,7 @@
 
 ## Known Differences
 
-- Bevy uses `AccumulatedMouseMotion` and `AccumulatedMouseScroll` resources.
-- mgstudio currently does not expose accumulated motion resources directly; this port reconstructs motion from current and previous cursor position.
+- `AccumulatedMouseMotion` / `AccumulatedMouseScroll` are available, but values are synthesized from host polling each frame.
 
 ## Runtime Constraints
 
@@ -35,4 +34,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.9`
-- Remaining blockers: Add Bevy-equivalent accumulated mouse motion/scroll resources.
+- Remaining blockers: Move accumulated mouse motion/scroll from host polling synthesis to backend event accumulation parity.

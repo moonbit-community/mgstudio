@@ -145,7 +145,5 @@ fn vs_main(
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let motion = (in.current_clip - in.previous_clip) * vec2<f32>(0.5, -0.5);
-  let encoded_motion = clamp(motion * 0.5 + vec2<f32>(0.5, 0.5), vec2<f32>(0.0), vec2<f32>(1.0));
-  let depth = clamp(in.position.z, 0.0, 1.0);
-  return vec4<f32>(encoded_motion, depth, 1.0);
+  return vec4<f32>(motion, 0.0, 1.0);
 }

@@ -58,6 +58,8 @@ pub(all) enum KeyCode {
   Digit4
   Digit5
   Digit6
+  Digit7
+  Digit8
   Tab
   Enter
   Backspace
@@ -69,10 +71,14 @@ pub(all) enum KeyCode {
   ArrowDown
   ArrowLeft
   ArrowRight
+  PageUp
+  PageDown
   Space
   Escape
+  Semicolon
   Comma
   Period
+  Slash
 }
 
 ///|
@@ -680,6 +686,13 @@ pub fn host_gpu_draw_mesh3d(
   specular_tint_r~ : Float,
   specular_tint_g~ : Float,
   specular_tint_b~ : Float,
+  diffuse_transmission~ : Float,
+  specular_transmission~ : Float,
+  thickness~ : Float,
+  ior~ : Float,
+  transmission_source_texture_id~ : Int,
+  transmission_blur_taps~ : Float,
+  transmission_steps~ : Float,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
 
 ///|
@@ -719,6 +732,13 @@ pub fn host_gpu_create_render_target(
   height~ : Int,
   nearest~ : Bool,
 ) -> Int = "mgstudio_host" "gpu_create_render_target"
+
+///|
+pub fn host_gpu_create_render_target_rgba16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int = "mgstudio_host" "gpu_create_render_target_rgba16f"
 
 ///|
 pub fn host_gpu_create_mesh_capsule(

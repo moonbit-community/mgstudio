@@ -17,41 +17,32 @@
 ///
 /// Baseline parity:
 /// - Left click enters grabbed state; Escape exits grabbed state.
-/// - Bevy `CursorOptions` / `CursorGrabMode` are not exposed in mgstudio yet.
-/// - This port logs and tracks intended grab/visibility state only.
+/// - Behavior is applied through mgstudio window cursor APIs.
 let cursor_grabbed_ref : Ref[Bool] = Ref::new(false)
-
-///|
-let cursor_visible_ref : Ref[Bool] = Ref::new(true)
-
-///|
-let capability_logged_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_system(grab_mouse_system)
+  .add_system(@app.system_param2(grab_mouse_system))
   .run()
 }
 
 ///|
-fn grab_mouse_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-  if !capability_logged_ref.val {
-    capability_logged_ref.val = true
-    log_line(
-      "Host cursor visibility/grab control is not exposed; using simulated state.",
-    )
-  }
-  if @input.mouse_button_just_pressed(Left) {
-    cursor_visible_ref.val = false
+fn grab_mouse_system(
+  mouse : @input.ButtonInput[@window.MouseButton],
+  key : @input.ButtonInput[@window.KeyCode],
+) -> Unit {
+  if mouse.just_pressed(Left) {
+    @window.window_set_cursor_visible(visible=false)
+    @window.window_set_cursor_grab_mode(mode=GrabLocked)
     cursor_grabbed_ref.val = true
     log_state("Locked")
   }
-  if @input.key_just_pressed(Escape) {
-    cursor_visible_ref.val = true
+  if key.just_pressed(Escape) {
+    @window.window_set_cursor_visible(visible=true)
+    @window.window_set_cursor_grab_mode(mode=GrabNone)
     cursor_grabbed_ref.val = false
     log_state("None")
   }
@@ -59,9 +50,8 @@ fn grab_mouse_system(world : @ecs_world.World) -> Unit {
 
 ///|
 fn log_state(grab_mode : String) -> Unit {
-  log_line(
-    "cursor_options { visible: \{cursor_visible_ref.val}, grab_mode: \{grab_mode}, grabbed: \{cursor_grabbed_ref.val} }",
-  )
+  let visible = !cursor_grabbed_ref.val
+  log_line("cursor_options { visible: \{visible}, grab_mode: \{grab_mode} }")
 }
 
 ///|

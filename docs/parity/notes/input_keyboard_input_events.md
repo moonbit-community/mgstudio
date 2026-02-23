@@ -16,8 +16,7 @@
 ## Known Differences
 
 - Events are synthesized from per-frame `just_pressed` / `just_released` polling.
-- `repeat` is currently always `false`.
-- Event payload is a reduced subset of Bevy's `KeyboardInput` details.
+- Event payload includes `logical_key`, but still remains a reduced subset of Bevy's full keyboard payload surface.
 
 ## Runtime Constraints
 
@@ -33,4 +32,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.6`
-- Remaining blockers: Add richer keyboard event payload parity (`logical_key`, text, repeat semantics).
+- Remaining blockers: Close remaining keyboard payload parity gaps (layout/IME-complete logical key and text semantics).

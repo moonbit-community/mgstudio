@@ -11,15 +11,14 @@
 - Rendering: Not applicable (console logging only).
 - Input:
   - Keyboard message stream is read each frame and only `Pressed` events are considered.
-  - Character logs are emitted in response to mapped keycodes.
+  - Character logs are emitted from `KeyboardInput.logical_key` when it is `Key::Character`.
 - Timing/Update model: MessageReader-based event iteration per frame.
 - Asset path/loading: Not applicable.
 
 ## Known Differences
 
-- Bevy uses `logical_key: Key::Character`, which is layout-aware.
-- mgstudio currently has no logical-key/IME character event model; this port maps a subset of `KeyCode` values to ASCII characters.
-- Shift/layout-dependent characters are not represented.
+- mgstudio logical-key mapping is currently a subset and host-polling based.
+- Full IME composition / layout-aware behavior is not yet parity-complete.
 
 ## Runtime Constraints
 
@@ -35,4 +34,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.1`
-- Remaining blockers: Add Bevy-like logical key / IME character input API.
+- Remaining blockers: Complete Bevy-equivalent logical-key and IME character semantics.

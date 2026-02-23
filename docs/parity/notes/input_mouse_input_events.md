@@ -10,16 +10,15 @@
 
 - Rendering: Not applicable (console logging only).
 - Input:
-  - Mouse button events are logged from `just_pressed` / `just_released` transitions.
-  - Mouse motion and cursor moved logs are synthesized from frame-to-frame cursor position changes.
-  - Mouse wheel logs are emitted from host per-frame wheel delta.
-- Timing/Update model: Polling in update system per frame.
+  - `MouseButtonInput`, `MouseMotion`, `CursorMoved`, and `MouseWheel` are consumed via `MessageReader`.
+  - Gesture readers (`PinchGesture`, `RotationGesture`, `DoubleTapGesture`) are present in API shape.
+- Timing/Update model: Event readers consumed in update systems.
 - Asset path/loading: Not applicable.
 
 ## Known Differences
 
-- Bevy `MessageReader<MouseButtonInput/MouseMotion/CursorMoved/MouseWheel>` APIs are not available in mgstudio yet.
-- Bevy gesture events (`PinchGesture`, `RotationGesture`, `DoubleTapGesture`) are platform-specific and currently not available in mgstudio runtime.
+- Event data is currently synthesized from host polling each frame rather than native event callbacks.
+- Gesture sources (`PinchGesture`, `RotationGesture`, `DoubleTapGesture`) are runtime-limited and typically absent.
 - `window` entity metadata in Bevy input events is not represented in this port.
 
 ## Runtime Constraints
@@ -36,4 +35,4 @@
 ## Follow-up Tasks
 
 - `bd issue`: `moon-game-studio-p71.26.10`
-- Remaining blockers: Add Bevy-like mouse/gesture message event surfaces and reader semantics.
+- Remaining blockers: Add native gesture sources and full Bevy event payload parity.

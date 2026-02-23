@@ -16,9 +16,7 @@
 /// Port of `bevy/examples/input/char_input_events.rs`.
 ///
 /// Baseline parity:
-/// - Reads keyboard input events per frame and logs pressed character events.
-/// - Bevy `logical_key: Key::Character` is not available in mgstudio.
-/// - Character output is synthesized from current `KeyCode` mapping.
+/// - Reads `KeyboardInput` events and logs pressed character keys.
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
@@ -32,109 +30,12 @@ fn print_char_event_system(
   keyboard_inputs : @core.MessageReader[@input.KeyboardInput],
 ) -> Unit {
   for event in keyboard_inputs.read() {
-    if event.state is Released {
+    if !event.state.is_pressed() {
       continue
     }
-    if keycode_to_character(event.key_code) is Some(character) {
-      log_line(
-        "KeyboardInput { key_code: \{format_keycode(event.key_code)}, state: Pressed, repeat: \{event.repeat} }: '\{character}'",
-      )
+    if event.logical_key is Character(character) {
+      log_line("KeyboardInput: '\{character}'")
     }
-  }
-}
-
-///|
-fn keycode_to_character(code : @window.KeyCode) -> String? {
-  match code {
-    KeyA => Some("a")
-    KeyB => Some("b")
-    KeyC => Some("c")
-    KeyD => Some("d")
-    KeyE => Some("e")
-    KeyF => Some("f")
-    KeyG => Some("g")
-    KeyH => Some("h")
-    KeyI => Some("i")
-    KeyJ => Some("j")
-    KeyK => Some("k")
-    KeyL => Some("l")
-    KeyM => Some("m")
-    KeyN => Some("n")
-    KeyO => Some("o")
-    KeyP => Some("p")
-    KeyQ => Some("q")
-    KeyR => Some("r")
-    KeyS => Some("s")
-    KeyT => Some("t")
-    KeyU => Some("u")
-    KeyV => Some("v")
-    KeyW => Some("w")
-    KeyX => Some("x")
-    KeyY => Some("y")
-    KeyZ => Some("z")
-    Digit1 => Some("1")
-    Digit2 => Some("2")
-    Digit3 => Some("3")
-    Digit4 => Some("4")
-    Digit5 => Some("5")
-    Digit6 => Some("6")
-    Space => Some(" ")
-    Comma => Some(",")
-    Period => Some(".")
-    _ => None
-  }
-}
-
-///|
-fn format_keycode(code : @window.KeyCode) -> String {
-  match code {
-    KeyA => "KeyA"
-    KeyB => "KeyB"
-    KeyC => "KeyC"
-    KeyD => "KeyD"
-    KeyE => "KeyE"
-    KeyF => "KeyF"
-    KeyG => "KeyG"
-    KeyH => "KeyH"
-    KeyI => "KeyI"
-    KeyJ => "KeyJ"
-    KeyK => "KeyK"
-    KeyL => "KeyL"
-    KeyM => "KeyM"
-    KeyN => "KeyN"
-    KeyO => "KeyO"
-    KeyP => "KeyP"
-    KeyQ => "KeyQ"
-    KeyR => "KeyR"
-    KeyS => "KeyS"
-    KeyT => "KeyT"
-    KeyU => "KeyU"
-    KeyV => "KeyV"
-    KeyW => "KeyW"
-    KeyX => "KeyX"
-    KeyY => "KeyY"
-    KeyZ => "KeyZ"
-    Digit1 => "Digit1"
-    Digit2 => "Digit2"
-    Digit3 => "Digit3"
-    Digit4 => "Digit4"
-    Digit5 => "Digit5"
-    Digit6 => "Digit6"
-    Tab => "Tab"
-    Enter => "Enter"
-    Backspace => "Backspace"
-    ShiftLeft => "ShiftLeft"
-    ShiftRight => "ShiftRight"
-    ControlLeft => "ControlLeft"
-    ControlRight => "ControlRight"
-    ArrowUp => "ArrowUp"
-    ArrowDown => "ArrowDown"
-    ArrowLeft => "ArrowLeft"
-    ArrowRight => "ArrowRight"
-    Space => "Space"
-    Escape => "Escape"
-    Comma => "Comma"
-    Period => "Period"
   }
 }
 

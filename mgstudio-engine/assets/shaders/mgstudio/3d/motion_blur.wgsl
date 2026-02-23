@@ -37,7 +37,7 @@ fn fragment(
 #ifdef MULTISAMPLED
     let base_color = textureLoad(screen_texture, frag_coords, i32(sample_index));
 #else
-    let base_color = textureSampleLevel(screen_texture, texture_sampler, in.uv, 0.0);
+    let base_color = textureSample(screen_texture, texture_sampler, in.uv);
 #endif
 
     let shutter_angle = settings.shutter_angle;
@@ -45,12 +45,7 @@ fn fragment(
 #ifdef MULTISAMPLED
     let this_motion_vector = textureLoad(motion_vectors, frag_coords, i32(sample_index)).rg;
 #else
-    let this_motion_vector = textureSampleLevel(
-        motion_vectors,
-        texture_sampler,
-        in.uv,
-        0.0,
-    ).rg;
+    let this_motion_vector = textureSample(motion_vectors, texture_sampler, in.uv).rg;
 #endif
 
 #ifdef NO_DEPTH_TEXTURE_SUPPORT
@@ -61,7 +56,7 @@ fn fragment(
 #ifdef MULTISAMPLED
     let this_depth = textureLoad(depth, frag_coords, i32(sample_index));
 #else
-    let this_depth = textureLoad(depth, frag_coords, 0);
+    let this_depth = textureSample(depth, texture_sampler, in.uv);
 #endif
 #endif
     
@@ -75,9 +70,9 @@ fn fragment(
     // larger than 1.0 because it may be desired for artistic reasons.
     let exposure_vector = shutter_angle * this_motion_vector;
 
-    var accumulator = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+    var accumulator: vec4<f32>;
     var weight_total = 0.0;
-    let n_samples = max(i32(settings.samples), 1);
+    let n_samples = i32(settings.samples);
     let noise = utils::interleaved_gradient_noise(vec2<f32>(frag_coords), globals.frame_count); // 0 to 1
        
     for (var i = -n_samples; i < n_samples; i++) {
@@ -86,7 +81,7 @@ fn fragment(
         var sample_uv = in.uv + step_vector;
 
         // If the sample is off screen, skip it.
-        if sample_uv.x < 0.0 || sample_uv.x >= 1.0 || sample_uv.y < 0.0 || sample_uv.y >= 1.0 {
+        if sample_uv.x < 0.0 || sample_uv.x > 1.0 || sample_uv.y < 0.0 || sample_uv.y > 1.0 {
             continue;
         }
 
@@ -95,22 +90,12 @@ fn fragment(
     #ifdef MULTISAMPLED
         let sample_color = textureLoad(screen_texture, sample_coords, i32(sample_index));
     #else
-        let sample_color = textureSampleLevel(
-            screen_texture,
-            texture_sampler,
-            sample_uv,
-            0.0,
-        );
+        let sample_color = textureSample(screen_texture, texture_sampler, sample_uv);
     #endif
     #ifdef MULTISAMPLED
         let sample_motion = textureLoad(motion_vectors, sample_coords, i32(sample_index)).rg;
     #else
-        let sample_motion = textureSampleLevel(
-            motion_vectors,
-            texture_sampler,
-            sample_uv,
-            0.0,
-        ).rg;
+        let sample_motion = textureSample(motion_vectors, texture_sampler, sample_uv).rg;
     #endif
     #ifdef NO_DEPTH_TEXTURE_SUPPORT
         let sample_depth = 0.0;
@@ -118,7 +103,7 @@ fn fragment(
     #ifdef MULTISAMPLED
         let sample_depth = textureLoad(depth, sample_coords, i32(sample_index));
     #else
-        let sample_depth = textureLoad(depth, sample_coords, 0);
+        let sample_depth = textureSample(depth, texture_sampler, sample_uv);
     #endif
     #endif
 
@@ -148,11 +133,7 @@ fn fragment(
             // blur for regressions.
             let frag_speed = length(step_vector);
             let sample_speed = length(sample_motion) / 2.0; // Halved because the sample is centered
-            let denom = frag_speed * sample_speed * 2.0;
-            var cos_angle = 1.0;
-            if denom > 1.0e-6 {
-                cos_angle = dot(step_vector, sample_motion) / denom;
-            }
+            let cos_angle = dot(step_vector, sample_motion) / (frag_speed * sample_speed * 2.0);
             let motion_similarity = clamp(abs(cos_angle), 0.0, 1.0);
             if sample_speed * motion_similarity < frag_speed {
                 // Project the sample's motion onto the frag's motion vector. If the sample did not

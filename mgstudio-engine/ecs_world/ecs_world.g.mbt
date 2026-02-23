@@ -148,6 +148,9 @@ pub struct World {
   directional_light_texture : @core.ComponentStore[
     @render3d.DirectionalLightTexture,
   ]
+  screen_space_transmission : @core.ComponentStore[
+    @render3d.ScreenSpaceTransmission,
+  ]
   collider_mass_properties2d : @core.ComponentStore[
     @physics2d.ColliderMassProperties2d,
   ]
@@ -342,6 +345,7 @@ pub fn World::new() -> World {
     active_collision_types3d: @core.ComponentStore::new(),
     rapier_collider_handle3d: @core.ComponentStore::new(),
     directional_light_texture: @core.ComponentStore::new(),
+    screen_space_transmission: @core.ComponentStore::new(),
     collider_mass_properties2d: @core.ComponentStore::new(),
     restitution_combine_rule2d: @core.ComponentStore::new(),
     additional_mass_properties2d: @core.ComponentStore::new(),
@@ -514,6 +518,7 @@ pub fn World::despawn(
   self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
   self.directional_light_texture.remove(entity) |> ignore
+  self.screen_space_transmission.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
@@ -664,6 +669,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
   self.directional_light_texture.remove(entity) |> ignore
+  self.screen_space_transmission.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
@@ -1451,6 +1457,13 @@ pub impl @render3d.Has_DirectionalLightTexture for World with get_directional_li
   self,
 ) {
   self.directional_light_texture
+}
+
+///|
+pub impl @render3d.Has_ScreenSpaceTransmission for World with get_screen_space_transmission_store(
+  self,
+) {
+  self.screen_space_transmission
 }
 
 ///|

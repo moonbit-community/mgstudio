@@ -25,7 +25,7 @@ const MOVE_SPEED : Float = 2.0F
 const LCG_MOD : Int = 2147483647
 
 ///|
-const INSTRUCTIONS : String = "Controls\n--------\nHorizontal Movement: WASD\nVertical Movement: Q and Space\nRotate Camera: Left and Right Arrows"
+const INSTRUCTIONS : String = "Controls\n--------\nHorizontal Movement: WASD\nVertical Movement: Space and Shift\nRotate Camera: Left and Right Arrows"
 
 ///|
 priv struct SpotlightState {
@@ -229,6 +229,9 @@ fn setup(world : @ecs_world.World) -> Unit {
       world
       .get_parent_store()
       .insert(direction_marker, @hierarchy.Parent::new(spotlight), tick)
+      world
+      .get_not_shadow_caster_store()
+      .insert(direction_marker, @render3d.NotShadowCaster::default(), tick)
     }
   }
 
@@ -239,6 +242,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
   spotlight_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -319,7 +323,7 @@ fn movement(world : @ecs_world.World) -> Unit {
     translation = translation.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyQ) {
+  if @input.key_pressed(@window.KeyCode::ShiftLeft) {
     translation = translation.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
   } else if @input.key_pressed(@window.KeyCode::Space) {
     translation = translation.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))

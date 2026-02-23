@@ -58,6 +58,7 @@ pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Un
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
 pub fn[W] App::add_post_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_post_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
@@ -84,11 +85,31 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(Self[W], (P
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[W, T : Resource] App::insert_resource(Self[W], T) -> Self[W]
 pub fn[W] App::new(W) -> Self[W]
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run(Self[W]) -> Unit
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(Self[W]) -> Self[W]
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(Self[W]) -> Self[W]
 pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
+
+pub struct PluginGroupBuilder[W] {
+  plugins : Array[(App[W]) -> App[W]]
+}
+pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
+pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
+pub fn[W] PluginGroupBuilder::start() -> Self[W]
+
+pub struct Res[T] {
+  value : T
+}
+pub fn[T] Res::get(Self[T]) -> T
+pub impl[T : Resource] SystemParam for Res[T]
+
+pub struct ResMut[T] {
+  value : Ref[T]
+}
+pub fn[T] ResMut::get_ref(Self[T]) -> Ref[T]
+pub impl[T : Resource] SystemParam for ResMut[T]
 
 pub struct Schedule[W] {
   startup : Array[SystemConfig[W]]
@@ -131,6 +152,8 @@ pub type DeltaSecondsFn = () -> Float
 
 pub type Plugin[W] = (App[W]) -> App[W]
 
+pub type PluginGroup[W] = () -> PluginGroupBuilder[W]
+
 pub type RunConditionFn[W] = (W) -> Bool
 
 pub type RunnerBuilder[W] = (App[W]) -> () -> Unit
@@ -142,8 +165,13 @@ pub type SystemFn[W] = (W) -> Unit
 pub type SystemSet = String
 
 // Traits
+pub(open) trait Resource {
+  resource() -> @core.Resource[Self]
+}
+
 pub(open) trait SystemParam {
   get() -> Self
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]
 

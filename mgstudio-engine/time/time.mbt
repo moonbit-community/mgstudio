@@ -25,6 +25,22 @@ pub struct Time {
 }
 
 ///|
+pub fn Time::delta_seconds(self : Time) -> Float {
+  match @app.current_schedule_stage() {
+    Some(@app.FixedUpdate) => @app.fixed_time_timestep_seconds()
+    _ => self.virtual_delta_seconds
+  }
+}
+
+///|
+pub fn Time::elapsed_seconds(self : Time) -> Float {
+  match @app.current_schedule_stage() {
+    Some(@app.FixedUpdate) => @app.fixed_time_elapsed_seconds()
+    _ => self.virtual_elapsed_seconds
+  }
+}
+
+///|
 const MIN_TIMER_DURATION : Float = 0.000001F
 
 ///|
@@ -183,6 +199,14 @@ let time_state : Ref[Time] = @ref.new(Time::{
 })
 
 ///|
+let time_resource : Ref[@core.Resource[Time]] = Ref::new(@core.Resource::new())
+
+///|
+pub impl @app.Resource for Time with resource() {
+  time_resource.val
+}
+
+///|
 pub fn host_time_now() -> Float = "mgstudio_host" "time_now"
 
 ///|
@@ -331,7 +355,15 @@ pub fn[W] time_system(_world : W) -> Unit {
 }
 
 ///|
+fn time_update_resource_system(time : @app.ResMut[Time]) -> Unit {
+  time_update()
+  time.get_ref().val = time_state.val
+}
+
+///|
 pub fn[W] time_plugin(app : @app.App[W]) -> @app.App[W] {
   @app.set_delta_seconds_provider(fn() { time_virtual_delta_seconds() })
-  app.add_pre_update_system(time_system)
+  app
+  .insert_resource(time_state.val)
+  .add_pre_update_system_param(time_update_resource_system)
 }

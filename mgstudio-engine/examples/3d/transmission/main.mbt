@@ -15,11 +15,9 @@
 ///|
 /// Port of `bevy/examples/3d/transmission.rs`.
 ///
-/// Baseline parity: Bevy's dedicated transmission stack
-/// (`specular_transmission`, `diffuse_transmission`, `thickness`, `ior`,
-/// `ScreenSpaceTransmission`, HDR/bloom/depth-prepass/TAA toggles) is
-/// approximated with current mgstudio PBR controls, alpha blending,
-/// distance-fog response, and camera/material control parity.
+/// Baseline parity: control flow and material field updates follow Bevy's
+/// transmission example. Runtime resolve quality is tracked separately in the
+/// parity matrix.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -53,11 +51,6 @@ priv struct TransmissionState {
   mut ior : Float
   mut perceptual_roughness : Float
   mut reflectance : Float
-  mut quality : Int
-  mut steps : Int
-  mut hdr_bloom : Bool
-  mut depth_prepass : Bool
-  mut taa : Bool
   mut auto_camera : Bool
   mut camera_angle : Float
   mut camera_radius : Float
@@ -79,11 +72,6 @@ let transmission_state : Ref[TransmissionState] = Ref::new({
   ior: 1.5F,
   perceptual_roughness: 0.12F,
   reflectance: 0.5F,
-  quality: 2,
-  steps: 2,
-  hdr_bloom: true,
-  depth_prepass: false,
-  taa: true,
   auto_camera: true,
   camera_angle: 0.1418970546F,
   camera_radius: 7.0710678119F,
@@ -136,43 +124,143 @@ fn next_random_unit() -> Float {
 }
 
 ///|
-fn quality_label(quality : Int) -> String {
-  if quality == 0 {
-    "Low"
-  } else if quality == 1 {
-    "Medium"
-  } else if quality == 2 {
-    "High"
-  } else {
-    "Ultra"
+fn quality_label(quality : @render3d.ScreenSpaceTransmissionQuality) -> String {
+  match quality {
+    Low => "Low"
+    Medium => "Medium"
+    High => "High"
+    Ultra => "Ultra"
   }
 }
 
 ///|
-fn quality_factor(quality : Int) -> Float {
-  if quality == 0 {
-    0.25F
-  } else if quality == 1 {
-    0.5F
-  } else if quality == 2 {
-    0.75F
+fn camera_screen_space_transmission(
+  world : @ecs_world.World,
+) -> @render3d.ScreenSpaceTransmission {
+  if transmission_state.val.camera is Some(camera_entity) {
+    match world.get_screen_space_transmission_store().get(camera_entity) {
+      Some(value) => value
+      None => @render3d.ScreenSpaceTransmission::default()
+    }
   } else {
-    1.0F
+    @render3d.ScreenSpaceTransmission::default()
   }
 }
 
 ///|
-fn transmission_hud_text() -> String {
-  let hdr_text = if transmission_state.val.hdr_bloom { "ON" } else { "OFF" }
-  let depth_text = if transmission_state.val.depth_prepass {
-    "ON"
+fn camera_set_screen_space_transmission(
+  world : @ecs_world.World,
+  value : @render3d.ScreenSpaceTransmission,
+) -> Unit {
+  if transmission_state.val.camera is Some(camera_entity) {
+    let tick = world.read_change_tick()
+    let store = world.get_screen_space_transmission_store()
+    if store.contains(camera_entity) {
+      store.set(camera_entity, value, tick) |> ignore
+    } else {
+      store.insert(camera_entity, value, tick)
+    }
+  }
+}
+
+///|
+fn camera_hdr_enabled(world : @ecs_world.World) -> Bool {
+  if transmission_state.val.camera is Some(camera_entity) {
+    world.get_hdr_store().contains(camera_entity)
+  } else {
+    false
+  }
+}
+
+///|
+fn camera_depth_prepass_enabled(world : @ecs_world.World) -> Bool {
+  if transmission_state.val.camera is Some(camera_entity) {
+    world.get_depth_prepass_store().contains(camera_entity)
+  } else {
+    false
+  }
+}
+
+///|
+fn camera_taa_enabled(world : @ecs_world.World) -> Bool {
+  if transmission_state.val.camera is Some(camera_entity) {
+    world.get_temporal_jitter_store().contains(camera_entity)
+  } else {
+    false
+  }
+}
+
+///|
+fn camera_toggle_hdr(world : @ecs_world.World) -> Unit {
+  if transmission_state.val.camera is Some(camera_entity) {
+    let tick = world.read_change_tick()
+    let store = world.get_hdr_store()
+    if store.contains(camera_entity) {
+      store.remove(camera_entity) |> ignore
+    } else {
+      store.insert(camera_entity, @render3d.Hdr::default(), tick)
+    }
+  }
+}
+
+///|
+fn camera_toggle_depth_prepass(world : @ecs_world.World) -> Unit {
+  if transmission_state.val.camera is Some(camera_entity) {
+    let tick = world.read_change_tick()
+    let store = world.get_depth_prepass_store()
+    if store.contains(camera_entity) {
+      store.remove(camera_entity) |> ignore
+    } else {
+      store.insert(camera_entity, @render3d.DepthPrepass::default(), tick)
+    }
+  }
+}
+
+///|
+fn camera_toggle_taa(world : @ecs_world.World) -> Unit {
+  if transmission_state.val.camera is Some(camera_entity) {
+    let tick = world.read_change_tick()
+    let jitter_store = world.get_temporal_jitter_store()
+    let taa_store = world.get_temporal_anti_aliasing_store()
+    if jitter_store.contains(camera_entity) {
+      jitter_store.remove(camera_entity) |> ignore
+      taa_store.remove(camera_entity) |> ignore
+    } else {
+      jitter_store.insert(
+        camera_entity,
+        @render3d.TemporalJitter::default(),
+        tick,
+      )
+      taa_store.insert(
+        camera_entity,
+        @render3d.TemporalAntiAliasing::default(),
+        tick,
+      )
+    }
+  }
+}
+
+///|
+fn transmission_hud_text(world : @ecs_world.World) -> String {
+  let transmission = camera_screen_space_transmission(world)
+  let hdr_text = if camera_hdr_enabled(world) { "ON " } else { "OFF" }
+  let depth_text = if camera_depth_prepass_enabled(world) {
+    "ON "
   } else {
     "OFF"
   }
-  let taa_text = if transmission_state.val.taa { "ON" } else { "OFF" }
+  let taa_text = if camera_taa_enabled(world) {
+    if camera_depth_prepass_enabled(world) {
+      "ON "
+    } else {
+      "N/A (Needs Depth Prepass)"
+    }
+  } else {
+    "OFF"
+  }
 
-  " J / K / L / .  Screen Space Specular Transmissive Quality: \{quality_label(transmission_state.val.quality)}\n" +
-  "         O / P  Screen Space Specular Transmissive Steps: \{transmission_state.val.steps}\n" +
+  " J / K / L / ;  Screen Space Specular Transmissive Quality: \{quality_label(transmission.quality)}\n" +
+  "         O / P  Screen Space Specular Transmissive Steps: \{transmission.steps}\n" +
   "         1 / 2  Diffuse Transmission: \{transmission_state.val.diffuse_transmission}\n" +
   "         Q / W  Specular Transmission: \{transmission_state.val.specular_transmission}\n" +
   "         A / S  Thickness: \{transmission_state.val.thickness}\n" +
@@ -181,9 +269,9 @@ fn transmission_hud_text() -> String {
   "         U / I  Reflectance: \{transmission_state.val.reflectance}\n" +
   "    Arrow Keys  Control Camera\n" +
   "             C  Randomize Colors\n" +
-  "             H  HDR + Bloom (Proxy): \{hdr_text}\n" +
-  "             D  Depth Prepass (Proxy): \{depth_text}\n" +
-  "             T  TAA (Proxy): \{taa_text}\n"
+  "             H  HDR + Bloom: \{hdr_text}\n" +
+  "             D  Depth Prepass: \{depth_text}\n" +
+  "             T  TAA: \{taa_text}\n"
 }
 
 ///|
@@ -335,8 +423,9 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
     @render3d.StandardMaterial::from_color(
       @render2d.Color::new(0.9F, 0.2F, 0.3F, 1.0F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_diffuse_transmission(0.7F)
     .with_perceptual_roughness(0.32F)
+    .with_thickness(0.2F)
     .with_reflectance(0.35F),
   )
   register_material(candle_material, true, false, true)
@@ -351,10 +440,10 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 
   let flame_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.88F, 0.65F, 0.9F),
+      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_emissive(@render2d.Color::new(2.2F, 1.2F, 0.1F, 1.0F))
+    .with_diffuse_transmission(1.0F)
     .with_perceptual_roughness(0.15F),
   )
   let flame_mesh_entity = @render3d.MeshMaterial3dBundle::new(
@@ -368,9 +457,12 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 
   let white_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 0.2F),
+      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_specular_transmission(0.9F)
+    .with_diffuse_transmission(1.0F)
+    .with_thickness(1.8F)
+    .with_ior(1.5F)
     .with_reflectance(0.6F)
     .with_perceptual_roughness(0.12F),
   )
@@ -384,9 +476,12 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 
   let red_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.0F, 0.0F, 0.2F),
+      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_specular_transmission(0.9F)
+    .with_diffuse_transmission(1.0F)
+    .with_thickness(1.8F)
+    .with_ior(1.5F)
     .with_reflectance(0.6F)
     .with_perceptual_roughness(0.12F),
   )
@@ -402,9 +497,12 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 
   let green_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 0.2F),
+      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_specular_transmission(0.9F)
+    .with_diffuse_transmission(1.0F)
+    .with_thickness(1.8F)
+    .with_ior(1.5F)
     .with_reflectance(0.6F)
     .with_perceptual_roughness(0.12F),
   )
@@ -420,9 +518,12 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 
   let blue_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 0.2F),
+      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_specular_transmission(0.9F)
+    .with_diffuse_transmission(1.0F)
+    .with_thickness(1.8F)
+    .with_ior(1.5F)
     .with_reflectance(0.6F)
     .with_perceptual_roughness(0.12F),
   )
@@ -471,9 +572,9 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 
   let paper_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 0.58F),
+      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_diffuse_transmission(0.6F)
     .with_perceptual_roughness(0.8F)
     .with_reflectance(1.0F),
   )
@@ -526,22 +627,35 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs_world.World) -> Unit {
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
-    @math.Transform::from_xyz(1.0F, CAMERA_HEIGHT, 7.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
+      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+      @math.Transform::from_xyz(1.0F, CAMERA_HEIGHT, 7.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_screen_space_transmission(
+      Some(@render3d.ScreenSpaceTransmission::default()),
+    )
+    .spawn(world)
+  let tick = world.read_change_tick()
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
+  world
+  .get_temporal_jitter_store()
+  .insert(camera, @render3d.TemporalJitter::default(), tick)
+  world
+  .get_temporal_anti_aliasing_store()
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
   transmission_state.val.camera = Some(camera)
 }
 
 ///|
-fn setup_text(_world : @ecs_world.World) -> Unit {
+fn setup_text(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(transmission_hud_text()),
+      @text.Text2d::new(transmission_hud_text(world)),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
@@ -562,9 +676,9 @@ fn setup_text(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn set_hud_text() -> Unit {
+fn set_hud_text(world : @ecs_world.World) -> Unit {
   if transmission_state.val.display_text is Some(handle) {
-    @text.text_set_content(handle, transmission_hud_text())
+    @text.text_set_content(handle, transmission_hud_text(world))
   }
 }
 
@@ -595,60 +709,6 @@ fn apply_camera_transform(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_transmission_proxy(world : @ecs_world.World) -> Unit {
-  let quality = quality_factor(transmission_state.val.quality)
-  let steps = float_from_int(transmission_state.val.steps) / 4.0F
-  let hdr_boost = if transmission_state.val.hdr_bloom { 0.18F } else { 0.0F }
-
-  let transmission_strength = clampf(
-    transmission_state.val.specular_transmission * 0.65F +
-    transmission_state.val.diffuse_transmission * 0.35F,
-    0.0F,
-    1.0F,
-  )
-
-  let brightness = clampf(
-    0.10F +
-    quality * 0.2F +
-    steps * 0.12F +
-    hdr_boost +
-    transmission_strength * 0.18F,
-    0.08F,
-    0.95F,
-  )
-
-  let density = clampf(
-    0.27F -
-    quality * 0.08F +
-    (1.0F - steps) * 0.08F +
-    (1.0F - transmission_strength) * 0.05F,
-    0.06F,
-    0.34F,
-  )
-
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(
-        clamp01(0.04F + brightness * 0.35F),
-        clamp01(0.03F + brightness * 0.28F),
-        clamp01(0.05F + brightness * 0.30F),
-        1.0F,
-      ),
-      @render3d.FogFalloff3d::exponential_squared(density),
-    ),
-  )
-
-  let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
-  if ambient.get_ref_mut(tick) is Some(value) {
-    value.val = @render3d.GlobalAmbientLight::new(
-      @render2d.Color::white(),
-      clampf(0.005F + brightness * 0.03F, 0.0F, 0.06F),
-    )
-  }
-}
-
-///|
 fn apply_material_controls(randomize_colors : Bool) -> Unit {
   if randomize_colors {
     for handle in transmission_state.val.color_materials {
@@ -671,37 +731,14 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
 
   for handle in transmission_state.val.specular_materials {
     if @render3d.standard_material_get(handle) is Some(material) {
-      let color = material.base_color
-      let alpha = clampf(
-        1.0F -
-        transmission_state.val.specular_transmission * 0.78F +
-        transmission_state.val.thickness * 0.05F +
-        (transmission_state.val.ior - 1.0F) * 0.08F,
-        0.08F,
-        1.0F,
-      )
-      let roughness = clampf(
-        transmission_state.val.perceptual_roughness +
-        (1.0F - transmission_state.val.specular_transmission) * 0.25F,
-        0.0F,
-        1.0F,
-      )
-      let reflectance = clampf(
-        transmission_state.val.reflectance * 0.7F +
-        transmission_state.val.specular_transmission * 0.3F,
-        0.0F,
-        1.0F,
-      )
-      let metallic = clamp01(
-        transmission_state.val.specular_transmission * 0.25F,
-      )
-
       let updated = material
-        .with_alpha_mode(@render3d.AlphaMode3d::Blend)
-        .with_base_color(@render2d.Color::new(color.r, color.g, color.b, alpha))
-        .with_perceptual_roughness(roughness)
-        .with_reflectance(reflectance)
-        .with_metallic(metallic)
+        .with_specular_transmission(
+          transmission_state.val.specular_transmission,
+        )
+        .with_thickness(transmission_state.val.thickness)
+        .with_ior(transmission_state.val.ior)
+        .with_perceptual_roughness(transmission_state.val.perceptual_roughness)
+        .with_reflectance(transmission_state.val.reflectance)
 
       @render3d.standard_material_set(handle, updated) |> ignore
     }
@@ -709,32 +746,9 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
 
   for handle in transmission_state.val.diffuse_materials {
     if @render3d.standard_material_get(handle) is Some(material) {
-      let color = material.base_color
-      let alpha = clampf(
-        1.0F - transmission_state.val.diffuse_transmission * 0.72F,
-        0.18F,
-        1.0F,
+      let updated = material.with_diffuse_transmission(
+        transmission_state.val.diffuse_transmission,
       )
-      let roughness = clampf(
-        0.28F + (1.0F - transmission_state.val.diffuse_transmission) * 0.7F,
-        0.0F,
-        1.0F,
-      )
-      let emissive_strength = transmission_state.val.diffuse_transmission *
-        0.25F
-
-      let updated = material
-        .with_alpha_mode(@render3d.AlphaMode3d::Blend)
-        .with_base_color(@render2d.Color::new(color.r, color.g, color.b, alpha))
-        .with_perceptual_roughness(roughness)
-        .with_emissive(
-          @render2d.Color::new(
-            color.r * emissive_strength,
-            color.g * emissive_strength,
-            color.b * emissive_strength,
-            1.0F,
-          ),
-        )
 
       @render3d.standard_material_set(handle, updated) |> ignore
     }
@@ -745,21 +759,23 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
 fn example_control_system(world : @ecs_world.World) -> Unit {
   let delta = @time.time_delta_seconds()
   let mut materials_changed = false
-  let mut transmission_proxy_changed = false
   let mut randomize_colors = false
+  let mut transmission_settings = camera_screen_space_transmission(world)
+  let mut transmission_settings_changed = false
+  let toggle_hdr = @input.key_just_pressed(@window.KeyCode::KeyH)
+  let toggle_depth_prepass = @input.key_just_pressed(@window.KeyCode::KeyD)
+  let toggle_taa = @input.key_just_pressed(@window.KeyCode::KeyT)
 
   if @input.key_pressed(@window.KeyCode::Digit2) {
     transmission_state.val.diffuse_transmission = clamp01(
       transmission_state.val.diffuse_transmission + delta,
     )
     materials_changed = true
-    transmission_proxy_changed = true
   } else if @input.key_pressed(@window.KeyCode::Digit1) {
     transmission_state.val.diffuse_transmission = clamp01(
       transmission_state.val.diffuse_transmission - delta,
     )
     materials_changed = true
-    transmission_proxy_changed = true
   }
 
   if @input.key_pressed(@window.KeyCode::KeyW) {
@@ -767,13 +783,11 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
       transmission_state.val.specular_transmission + delta,
     )
     materials_changed = true
-    transmission_proxy_changed = true
   } else if @input.key_pressed(@window.KeyCode::KeyQ) {
     transmission_state.val.specular_transmission = clamp01(
       transmission_state.val.specular_transmission - delta,
     )
     materials_changed = true
-    transmission_proxy_changed = true
   }
 
   if @input.key_pressed(@window.KeyCode::KeyS) {
@@ -833,42 +847,45 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
-    transmission_state.val.steps = if transmission_state.val.steps > 0 {
-      transmission_state.val.steps - 1
-    } else {
-      0
-    }
-    transmission_proxy_changed = true
+    transmission_settings = transmission_settings.with_steps(
+      transmission_settings.steps - 1,
+    )
+    transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyP) {
-    transmission_state.val.steps = if transmission_state.val.steps < 4 {
-      transmission_state.val.steps + 1
-    } else {
-      4
-    }
-    transmission_proxy_changed = true
+    transmission_settings = transmission_settings.with_steps(
+      transmission_settings.steps + 1,
+    )
+    transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyJ) {
-    transmission_state.val.quality = 0
-    transmission_proxy_changed = true
+    transmission_settings = transmission_settings.with_quality(
+      @render3d.ScreenSpaceTransmissionQuality::Low,
+    )
+    transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyK) {
-    transmission_state.val.quality = 1
-    transmission_proxy_changed = true
+    transmission_settings = transmission_settings.with_quality(
+      @render3d.ScreenSpaceTransmissionQuality::Medium,
+    )
+    transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyL) {
-    transmission_state.val.quality = 2
-    transmission_proxy_changed = true
+    transmission_settings = transmission_settings.with_quality(
+      @render3d.ScreenSpaceTransmissionQuality::High,
+    )
+    transmission_settings_changed = true
   }
 
-  // Use Period as the Semicolon equivalent in current KeyCode set.
-  if @input.key_just_pressed(@window.KeyCode::Period) {
-    transmission_state.val.quality = 3
-    transmission_proxy_changed = true
+  if @input.key_just_pressed(@window.KeyCode::Semicolon) {
+    transmission_settings = transmission_settings.with_quality(
+      @render3d.ScreenSpaceTransmissionQuality::Ultra,
+    )
+    transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
@@ -876,17 +893,16 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
     materials_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyH) {
-    transmission_state.val.hdr_bloom = !transmission_state.val.hdr_bloom
-    transmission_proxy_changed = true
+  if toggle_hdr {
+    camera_toggle_hdr(world)
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyD) {
-    transmission_state.val.depth_prepass = !transmission_state.val.depth_prepass
+  if toggle_depth_prepass {
+    camera_toggle_depth_prepass(world)
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyT) {
-    transmission_state.val.taa = !transmission_state.val.taa
+  if toggle_taa {
+    camera_toggle_taa(world)
   }
 
   let mut rotation_delta = 0.0F
@@ -927,16 +943,16 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
     apply_material_controls(randomize_colors)
   }
 
-  if transmission_proxy_changed {
-    apply_transmission_proxy(world)
+  if transmission_settings_changed {
+    camera_set_screen_space_transmission(world, transmission_settings)
   }
 
   if materials_changed ||
-    transmission_proxy_changed ||
     randomize_colors ||
-    @input.key_just_pressed(@window.KeyCode::KeyD) ||
-    @input.key_just_pressed(@window.KeyCode::KeyT) {
-    set_hud_text()
+    toggle_hdr ||
+    toggle_depth_prepass ||
+    toggle_taa {
+    set_hud_text(world)
   }
 }
 
@@ -1009,11 +1025,6 @@ fn setup(world : @ecs_world.World) -> Unit {
     ior: 1.5F,
     perceptual_roughness: 0.12F,
     reflectance: 0.5F,
-    quality: 2,
-    steps: 2,
-    hdr_bloom: true,
-    depth_prepass: false,
-    taa: true,
     auto_camera: true,
     camera_angle: 0.1418970546F,
     camera_radius: 7.0710678119F,
@@ -1032,8 +1043,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   setup_text(world)
   apply_camera_transform(world)
   apply_material_controls(false)
-  apply_transmission_proxy(world)
-  set_hud_text()
+  set_hud_text(world)
 }
 
 ///|

@@ -16,75 +16,83 @@
 /// Port of `bevy/examples/input/mouse_input_events.rs`.
 ///
 /// Baseline parity:
-/// - Mouse button, movement and wheel logs are emitted in an event-like format.
-/// - Bevy MessageReader-based mouse/gesture events are not available in mgstudio yet.
-/// - Pinch/rotation/double-tap gestures are not available in this runtime path.
-let last_mouse_position_ref : Ref[@math.Vec2?] = Ref::new(None)
+/// - Uses MessageReader-based mouse/gesture event streams.
+/// - Pinch/rotation/double-tap are defined for parity surface; emission depends on runtime support.
 
 ///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
-  .add_system(print_mouse_events_system)
+  .add_system(@app.system_param4(print_mouse_events_system))
+  .add_system(@app.system_param3(print_mouse_gesture_events_system))
   .run()
 }
 
 ///|
-fn print_mouse_events_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-  log_mouse_button_input_events()
-  log_mouse_motion_and_cursor_events()
-  log_mouse_wheel_events()
-}
-
-///|
-fn log_mouse_button_input_events() -> Unit {
-  let buttons : Array[@window.MouseButton] = [Left, Middle, Right]
-  for button in buttons {
-    if @input.mouse_button_just_pressed(button) {
-      log_line(
-        "MouseButtonInput { button: \{format_mouse_button(button)}, state: Pressed }",
-      )
-    }
-    if @input.mouse_button_just_released(button) {
-      log_line(
-        "MouseButtonInput { button: \{format_mouse_button(button)}, state: Released }",
-      )
-    }
+fn print_mouse_events_system(
+  mouse_button_input_reader : @core.MessageReader[@input.MouseButtonInput],
+  mouse_motion_reader : @core.MessageReader[@input.MouseMotion],
+  cursor_moved_reader : @core.MessageReader[@input.CursorMoved],
+  mouse_wheel_reader : @core.MessageReader[@input.MouseWheel],
+) -> Unit {
+  for event in mouse_button_input_reader.read() {
+    log_line(format_mouse_button_input(event))
+  }
+  for event in mouse_motion_reader.read() {
+    log_line(format_mouse_motion(event))
+  }
+  for event in cursor_moved_reader.read() {
+    log_line(format_cursor_moved(event))
+  }
+  for event in mouse_wheel_reader.read() {
+    log_line(format_mouse_wheel(event))
   }
 }
 
 ///|
-fn log_mouse_motion_and_cursor_events() -> Unit {
-  let current_position_opt = @input.mouse_position()
-  if current_position_opt is Some(current_position) {
-    let delta_opt = match last_mouse_position_ref.val {
-      Some(last_position) => {
-        let delta = @math.Vec2::sub(current_position, last_position)
-        if is_zero_vec2(delta) {
-          None
-        } else {
-          Some(delta)
-        }
-      }
-      None => None
-    }
-    if delta_opt is Some(delta) {
-      log_line("MouseMotion { delta: \{format_vec2(delta)} }")
-      log_line(
-        "CursorMoved { position: \{format_vec2(current_position)}, delta: Some(\{format_vec2(delta)}) }",
-      )
-    }
+fn print_mouse_gesture_events_system(
+  pinch_gesture_reader : @core.MessageReader[@input.PinchGesture],
+  rotation_gesture_reader : @core.MessageReader[@input.RotationGesture],
+  double_tap_gesture_reader : @core.MessageReader[@input.DoubleTapGesture],
+) -> Unit {
+  for event in pinch_gesture_reader.read() {
+    log_line("PinchGesture { delta: \{event.delta} }")
   }
-  last_mouse_position_ref.val = current_position_opt
+  for event in rotation_gesture_reader.read() {
+    log_line("RotationGesture { delta: \{event.delta} }")
+  }
+  for event in double_tap_gesture_reader.read() {
+    log_line("DoubleTapGesture { position: \{format_vec2(event.position)} }")
+  }
 }
 
 ///|
-fn log_mouse_wheel_events() -> Unit {
-  if @input.mouse_wheel_delta_opt() is Some(delta) {
-    log_line("MouseWheel { unit: Line, x: \{delta.x}, y: \{delta.y} }")
+fn format_mouse_button_input(event : @input.MouseButtonInput) -> String {
+  "MouseButtonInput { button: \{format_mouse_button(event.button)}, state: \{format_button_state(event.state)} }"
+}
+
+///|
+fn format_mouse_motion(event : @input.MouseMotion) -> String {
+  "MouseMotion { delta: \{format_vec2(event.delta)} }"
+}
+
+///|
+fn format_cursor_moved(event : @input.CursorMoved) -> String {
+  let delta_text = match event.delta {
+    Some(delta) => "Some(\{format_vec2(delta)})"
+    None => "None"
   }
+  "CursorMoved { position: \{format_vec2(event.position)}, delta: \{delta_text} }"
+}
+
+///|
+fn format_mouse_wheel(event : @input.MouseWheel) -> String {
+  let unit = match event.unit {
+    @input.MouseScrollUnit::Line => "Line"
+    @input.MouseScrollUnit::Pixel => "Pixel"
+  }
+  "MouseWheel { unit: \{unit}, x: \{event.x}, y: \{event.y} }"
 }
 
 ///|
@@ -97,8 +105,11 @@ fn format_mouse_button(button : @window.MouseButton) -> String {
 }
 
 ///|
-fn is_zero_vec2(v : @math.Vec2) -> Bool {
-  v.x == 0.0F && v.y == 0.0F
+fn format_button_state(state : @input.ButtonState) -> String {
+  match state {
+    Pressed => "Pressed"
+    Released => "Released"
+  }
 }
 
 ///|
