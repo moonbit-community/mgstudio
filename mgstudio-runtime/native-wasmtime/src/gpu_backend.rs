@@ -2145,7 +2145,10 @@ impl GpuBackend {
         };
         let expected = (width * height * 4) as usize;
         if pixels_rgba8.len() < expected {
-            return Ok(());
+            return Err(anyhow!(
+                "wgpu: invalid texture region byte length for id {texture_id}, expected at least {expected}, got {}",
+                pixels_rgba8.len()
+            ));
         }
         self.queue.write_texture(
             wgpu::TexelCopyTextureInfo {
@@ -2364,27 +2367,31 @@ impl GpuBackend {
         });
 
         let expected = (width * height * 4) as usize;
-        if pixels_rgba8.len() >= expected {
-            self.queue.write_texture(
-                wgpu::TexelCopyTextureInfo {
-                    texture: &texture,
-                    mip_level: 0,
-                    origin: wgpu::Origin3d::ZERO,
-                    aspect: wgpu::TextureAspect::All,
-                },
-                &pixels_rgba8[..expected],
-                wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(4 * width),
-                    rows_per_image: Some(height),
-                },
-                wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-            );
+        if pixels_rgba8.len() < expected {
+            return Err(anyhow!(
+                "wgpu: invalid RGBA8 texture byte length for id {id}, expected at least {expected}, got {}",
+                pixels_rgba8.len()
+            ));
         }
+        self.queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &pixels_rgba8[..expected],
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * width),
+                rows_per_image: Some(height),
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
 
         self.textures.insert(
             id,

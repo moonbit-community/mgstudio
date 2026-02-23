@@ -2535,13 +2535,15 @@ pub fn GpuBackend::create_texture_rgba8(
     view,
   )
   let expected_len = w.reinterpret_as_int() * h.reinterpret_as_int() * 4
-  let data = if pixels_rgba8.length() == expected_len {
-    pixels_rgba8
-  } else {
-    // Defensive fallback: avoid crashing if decode output is malformed.
-    Bytes::makei(expected_len, _ => (255).to_byte())
+  if pixels_rgba8.length() != expected_len {
+    fatal(
+      "wgpu: invalid RGBA8 texture byte length, expected " +
+      expected_len.to_string() +
+      ", got " +
+      pixels_rgba8.length().to_string(),
+    )
   }
-  self.queue.write_texture_rgba8_2d(tex, w, h, data)
+  self.queue.write_texture_rgba8_2d(tex, w, h, pixels_rgba8)
   let info = GpuTextureInfo::{
     id,
     width: w.reinterpret_as_int(),
@@ -2744,12 +2746,10 @@ pub fn GpuBackend::write_texture_region_rgba8(
         aligned = (aligned / 256 + 1) * 256
       }
       let expected = bytes_per_row * height
-      let src = if pixels_rgba8.length() == expected {
-        pixels_rgba8
-      } else {
-        // Defensive: malformed input. Fill with transparent pixels.
-        Bytes::makei(expected, _ => (0).to_byte())
+      if pixels_rgba8.length() != expected {
+        return
       }
+      let src = pixels_rgba8
       let upload = if aligned == bytes_per_row {
         src
       } else {
