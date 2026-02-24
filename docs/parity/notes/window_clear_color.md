@@ -3,20 +3,19 @@
 - Bevy source: bevy/examples/window/clear_color.rs
 - mgstudio target: mgstudio-engine/examples/window/clear_color/
 - Baseline commit: 48ec375a3a3cdc904476ef1d13f9d71c9f2820d3
-- Status: Adapted
+- Status: Exact
 - Owner: team-input_window
 
 ## Behavioral Comparison
 
-- Rendering: Adapted with runtime logging for parity visibility.
-- Window/Input: Captures the Bevy example intent under current API constraints.
+- Rendering: Startup camera uses default clear color from `render2d.ClearColor` resource.
+- Window/Input: Press `Space` updates clear color to purple (`0.5, 0.0, 0.5`), matching Bevy flow.
 - Timing/Update model: Update system per frame.
 - Asset path/loading: Not applicable.
 
 ## Known Differences
 
-- Per-window clear-color configuration surface is not exposed in current API.
-- This port keeps behavior traceability through window.host_debug_string logs.
+- No intentional behavior differences.
 
 ## Runtime Constraints
 
@@ -26,9 +25,8 @@
 ## Validation Evidence
 
 - Build command: moon -C mgstudio-engine build --release --target wasm examples/window/clear_color
-- Smoke command: moon -C mgstudio-engine check
-- Logs: window.host_debug_string with [clear_color] prefix.
+- Engine checks: moon -C mgstudio-engine info && moon -C mgstudio-engine fmt && moon -C mgstudio-engine check
 
 ## Follow-up Tasks
 
-- Remaining blockers: Per-window clear-color configuration surface is not exposed in current API.
+- Remaining blockers: None for this example.

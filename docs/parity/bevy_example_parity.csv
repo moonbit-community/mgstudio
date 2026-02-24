@@ -389,7 +389,7 @@ bevy/examples/ui/widgets/virtual_keyboard.rs,ui,virtual_keyboard,,Blocked,team-u
 bevy/examples/ui/window_fallthrough.rs,ui,window_fallthrough,,Blocked,team-ui_text,
 bevy/examples/usage/context_menu.rs,usage,context_menu,,Blocked,team-core,
 bevy/examples/usage/cooldown.rs,usage,cooldown,,Blocked,team-core,
-bevy/examples/window/clear_color.rs,window,clear_color,mgstudio-engine/examples/window/clear_color,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
+bevy/examples/window/clear_color.rs,window,clear_color,mgstudio-engine/examples/window/clear_color,Exact,team-input_window,
 bevy/examples/window/custom_cursor_image.rs,window,custom_cursor_image,mgstudio-engine/examples/window/custom_cursor_image,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/low_power.rs,window,low_power,mgstudio-engine/examples/window/low_power,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/monitor_info.rs,window,monitor_info,mgstudio-engine/examples/window/monitor_info,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.

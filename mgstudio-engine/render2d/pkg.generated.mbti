@@ -276,6 +276,13 @@ pub struct CircularSegmentRing {
 }
 pub fn CircularSegmentRing::new(CircularSegment, CircularSegment) -> Self
 
+pub struct ClearColor {
+  color : Color
+}
+pub fn ClearColor::default() -> Self
+pub fn ClearColor::new(Color) -> Self
+pub impl @app.Resource for ClearColor
+
 pub(all) enum ClearColorConfig {
   Default
   Custom(Color)

@@ -450,7 +450,7 @@ Notes:
 | `bevy/examples/ui/window_fallthrough.rs` | `ui` |  | `Blocked` | `team-ui_text` |  |
 | `bevy/examples/usage/context_menu.rs` | `usage` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/usage/cooldown.rs` | `usage` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/window/clear_color.rs` | `window` | `mgstudio-engine/examples/window/clear_color` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/window/clear_color.rs` | `window` | `mgstudio-engine/examples/window/clear_color` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/custom_cursor_image.rs` | `window` | `mgstudio-engine/examples/window/custom_cursor_image` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/low_power.rs` | `window` | `mgstudio-engine/examples/window/low_power` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/monitor_info.rs` | `window` | `mgstudio-engine/examples/window/monitor_info` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |

@@ -14,35 +14,37 @@
 
 ///|
 /// Port of `bevy/examples/window/clear_color.rs`.
-///
-/// Baseline parity:
-/// - Demonstrates window clear-color behavior by runtime logging.
-/// - Bevy per-window clear-color API is not available in this mgstudio path.
-let logged_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
+  .insert_resource(
+    @render2d.ClearColor::new(@render2d.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
+  )
   .add_plugins(plugins)
-  .add_system(clear_color_system)
+  .add_startup_system(setup)
+  .add_system(@app.system_param2(change_clear_color_system))
   .run()
 }
 
 ///|
-fn clear_color_system(world : @ecs_world.World) -> Unit {
-  world |> ignore
-  if logged_ref.val {
-    return
-  }
-  logged_ref.val = true
-  log_line(
-    "clear color remains runtime-default; window=" +
-    "\{@window.window_width()}x\{@window.window_height()}, scale=\{@window.window_scale_factor()}",
-  )
+fn setup(world : @ecs_world.World) -> Unit {
+  @render2d.Camera2dBundle::new(
+    @render2d.Camera::default(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
 }
 
 ///|
-fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[clear_color] " + text)
+fn change_clear_color_system(
+  input : @input.ButtonInput[@window.KeyCode],
+  clear_color : @app.ResMut[@render2d.ClearColor],
+) -> Unit {
+  if input.just_pressed(Space) {
+    clear_color.get_ref().val = @render2d.ClearColor::new(
+      @render2d.Color::new(0.5F, 0.0F, 0.5F, 1.0F),
+    )
+  }
 }

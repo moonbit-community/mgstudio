@@ -508,6 +508,45 @@ pub fn Anchor::default() -> Anchor {
 ///|
 
 ///|
+pub struct ClearColor {
+  color : Color
+}
+
+///|
+pub fn ClearColor::new(color : Color) -> ClearColor {
+  ClearColor::{ color, }
+}
+
+///|
+pub fn ClearColor::default() -> ClearColor {
+  ClearColor::{ color: Color::new(0.5F, 0.5F, 0.5F, 1.0F) }
+}
+
+///|
+fn clear_color_default_value() -> Color {
+  ClearColor::default().color
+}
+
+///|
+let clear_color_resource : Ref[@core.Resource[ClearColor]] = Ref::new(
+  @core.Resource::new(),
+)
+
+///|
+pub impl @app.Resource for ClearColor with resource() {
+  clear_color_resource.val
+}
+
+///|
+fn clear_color_current_value() -> Color {
+  if clear_color_resource.val.get() is Some(clear_color) {
+    clear_color.color
+  } else {
+    clear_color_default_value()
+  }
+}
+
+///|
 /// Mirrors Bevy's `ClearColorConfig` for per-camera clear behavior.
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
@@ -525,7 +564,7 @@ pub fn ClearColorConfig::default() -> ClearColorConfig {
 ///|
 pub fn ClearColorConfig::resolve(self : ClearColorConfig) -> (Bool, Color) {
   match self {
-    Default => (true, Color::new(0.5F, 0.5F, 0.5F, 1.0F))
+    Default => (true, clear_color_current_value())
     Custom(color) => (true, color)
     None => (false, Color::new(0.0F, 0.0F, 0.0F, 0.0F))
   }
@@ -5891,6 +5930,7 @@ pub fn[W : RenderExtractWorld] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app
+  .init_resource(fn() { ClearColor::default() })
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system).in_set(camera_update_systems),
