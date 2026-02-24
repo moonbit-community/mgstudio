@@ -86,6 +86,7 @@ typedef struct mgw_window {
   int32_t has_cursor;
   int32_t cursor_visible;
   int32_t cursor_hidden_state;
+  int32_t cursor_associated_state;
   int32_t cursor_grab_mode;
   int32_t window_mode;
   float mouse_x;
@@ -163,12 +164,14 @@ static mgw_objc_id mgw_a11y_retained_tree = NULL;
 
 static void *mgw_objc_dylib = NULL;
 static void *mgw_cocoa = NULL;
+static void *mgw_app_services = NULL;
 static void *mgw_objc_get_class_sym = NULL;
 static void *mgw_sel_register_name_sym = NULL;
 static void *mgw_objc_msg_send_sym = NULL;
 static void *mgw_objc_allocate_class_pair_sym = NULL;
 static void *mgw_objc_register_class_pair_sym = NULL;
 static void *mgw_class_add_method_sym = NULL;
+static void *mgw_cg_associate_mouse_cursor_pos_sym = NULL;
 
 static bool mgw_objc_init(void) {
   if (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym &&
@@ -201,6 +204,26 @@ static bool mgw_objc_init(void) {
   return (mgw_objc_get_class_sym && mgw_sel_register_name_sym && mgw_objc_msg_send_sym &&
           mgw_objc_allocate_class_pair_sym && mgw_objc_register_class_pair_sym &&
           mgw_class_add_method_sym);
+#else
+  return false;
+#endif
+}
+
+static bool mgw_core_graphics_init(void) {
+  if (mgw_cg_associate_mouse_cursor_pos_sym) {
+    return true;
+  }
+#ifdef __APPLE__
+  if (!mgw_app_services) {
+    mgw_app_services = dlopen("/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices",
+                              RTLD_LAZY | RTLD_LOCAL);
+  }
+  if (!mgw_app_services) {
+    return false;
+  }
+  mgw_cg_associate_mouse_cursor_pos_sym =
+      dlsym(mgw_app_services, "CGAssociateMouseAndMouseCursorPosition");
+  return mgw_cg_associate_mouse_cursor_pos_sym != NULL;
 #else
   return false;
 #endif
@@ -722,11 +745,33 @@ static void mgw_window_set_cursor_hidden_state(mgw_window_t *w, int32_t hidden) 
 #endif
 }
 
+static void mgw_window_set_cursor_associated_state(mgw_window_t *w, int32_t associated) {
+#ifdef __APPLE__
+  if (!w) {
+    return;
+  }
+  int32_t target = associated ? 1 : 0;
+  if (w->cursor_associated_state == target) {
+    return;
+  }
+  if (!mgw_core_graphics_init()) {
+    return;
+  }
+  ((int32_t(*)(bool))mgw_cg_associate_mouse_cursor_pos_sym)(target != 0);
+  w->cursor_associated_state = target;
+#else
+  (void)w;
+  (void)associated;
+#endif
+}
+
 static void mgw_window_sync_cursor_state(mgw_window_t *w) {
   if (!w) {
     return;
   }
-  int32_t hide = (!w->cursor_visible) || (w->cursor_grab_mode == 2);
+  int32_t locked = (w->cursor_grab_mode == 2);
+  mgw_window_set_cursor_associated_state(w, locked ? 0 : 1);
+  int32_t hide = (!w->cursor_visible) || locked;
   mgw_window_set_cursor_hidden_state(w, hide);
 }
 
@@ -1222,6 +1267,7 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   out->has_cursor = 0;
   out->cursor_visible = 1;
   out->cursor_hidden_state = 0;
+  out->cursor_associated_state = 1;
   out->cursor_grab_mode = 0;
   out->window_mode = 0;
   out->mouse_x = 0.0f;
@@ -1265,6 +1311,7 @@ MOONBIT_FFI_EXPORT void mgw_window_destroy(void *win) {
     mgw_autorelease_pool_drain(mgw_a11y_pool);
     mgw_a11y_pool = NULL;
   }
+  mgw_window_set_cursor_associated_state(w, 1);
   mgw_window_set_cursor_hidden_state(w, 0);
   if (w->ns_window) {
     mgw_msg_void(w->ns_window, mgw_sel("close"));
