@@ -3080,27 +3080,27 @@ pub(all) struct Bloom2dSettings {
   low_frequency_boost : Float
   low_frequency_boost_curvature : Float
   high_pass_frequency : Float
-  prefilter : Bloom2dPrefilter
-  composite_mode : Bloom2dCompositeMode
+  prefilter : BloomPrefilter
+  composite_mode : BloomCompositeMode
   max_mip_dimension : Int
   scale : @math.Vec2
 }
 
 ///|
-pub(all) struct Bloom2dPrefilter {
+pub(all) struct BloomPrefilter {
   threshold : Float
   threshold_softness : Float
 }
 
 ///|
-pub(all) enum Bloom2dCompositeMode {
+pub(all) enum BloomCompositeMode {
   EnergyConserving
   Additive
 }
 
 ///|
-pub fn Bloom2dPrefilter::default() -> Bloom2dPrefilter {
-  Bloom2dPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
+pub fn BloomPrefilter::default() -> BloomPrefilter {
+  BloomPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
 }
 
 ///|
@@ -3110,7 +3110,7 @@ pub fn Bloom2dSettings::default() -> Bloom2dSettings {
     low_frequency_boost: 0.7F,
     low_frequency_boost_curvature: 0.95F,
     high_pass_frequency: 1.0F,
-    prefilter: Bloom2dPrefilter::default(),
+    prefilter: BloomPrefilter::default(),
     composite_mode: EnergyConserving,
     max_mip_dimension: 512,
     scale: @math.Vec2::new(1.0F, 1.0F),
@@ -3191,7 +3191,7 @@ fn bloom2d_sanitize_settings(settings : Bloom2dSettings) -> Bloom2dSettings {
       settings.low_frequency_boost_curvature,
     ),
     high_pass_frequency: bloom2d_clamp_unit(settings.high_pass_frequency),
-    prefilter: Bloom2dPrefilter::{
+    prefilter: BloomPrefilter::{
       threshold: bloom2d_clamp_non_negative(settings.prefilter.threshold),
       threshold_softness: bloom2d_clamp_unit(
         settings.prefilter.threshold_softness,

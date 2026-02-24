@@ -142,28 +142,28 @@ pub fn Bloom2d::new(@asset.Handle[@asset.Image]) -> Self
 pub fn Bloom2d::with_enabled(Self, Bool) -> Self
 pub fn Bloom2d::with_settings(Self, Bloom2dSettings) -> Self
 
-pub(all) enum Bloom2dCompositeMode {
-  EnergyConserving
-  Additive
-}
-
-pub(all) struct Bloom2dPrefilter {
-  threshold : Float
-  threshold_softness : Float
-}
-pub fn Bloom2dPrefilter::default() -> Self
-
 pub(all) struct Bloom2dSettings {
   intensity : Float
   low_frequency_boost : Float
   low_frequency_boost_curvature : Float
   high_pass_frequency : Float
-  prefilter : Bloom2dPrefilter
-  composite_mode : Bloom2dCompositeMode
+  prefilter : BloomPrefilter
+  composite_mode : BloomCompositeMode
   max_mip_dimension : Int
   scale : @math.Vec2
 }
 pub fn Bloom2dSettings::default() -> Self
+
+pub(all) enum BloomCompositeMode {
+  EnergyConserving
+  Additive
+}
+
+pub(all) struct BloomPrefilter {
+  threshold : Float
+  threshold_softness : Float
+}
+pub fn BloomPrefilter::default() -> Self
 
 pub struct BorderRect {
   left : Float

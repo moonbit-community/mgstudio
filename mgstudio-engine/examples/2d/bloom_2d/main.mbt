@@ -68,7 +68,7 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn bloom_mode_text(mode : @render2d.Bloom2dCompositeMode) -> String {
+fn bloom_mode_text(mode : @render2d.BloomCompositeMode) -> String {
   match mode {
     EnergyConserving => "Energy-conserving"
     Additive => "Additive"
@@ -382,7 +382,7 @@ fn bloom_update(world : @ecs_world.World) -> Unit {
         low_frequency_boost,
         low_frequency_boost_curvature,
         high_pass_frequency,
-        prefilter: @render2d.Bloom2dPrefilter::{ threshold, threshold_softness },
+        prefilter: @render2d.BloomPrefilter::{ threshold, threshold_softness },
         composite_mode,
         max_mip_dimension: bloom.max_mip_dimension,
         scale: @math.Vec2::new(scale_x, bloom.scale.y),
