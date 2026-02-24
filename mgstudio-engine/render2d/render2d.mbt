@@ -3076,21 +3076,44 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chu
 
 ///|
 pub(all) struct Bloom2dSettings {
-  enabled : Bool
   intensity : Float
-  spread : Float
-  pass_count : Int
-  tint : Color
+  low_frequency_boost : Float
+  low_frequency_boost_curvature : Float
+  high_pass_frequency : Float
+  prefilter : Bloom2dPrefilter
+  composite_mode : Bloom2dCompositeMode
+  max_mip_dimension : Int
+  scale : @math.Vec2
+}
+
+///|
+pub(all) struct Bloom2dPrefilter {
+  threshold : Float
+  threshold_softness : Float
+}
+
+///|
+pub(all) enum Bloom2dCompositeMode {
+  EnergyConserving
+  Additive
+}
+
+///|
+pub fn Bloom2dPrefilter::default() -> Bloom2dPrefilter {
+  Bloom2dPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
 }
 
 ///|
 pub fn Bloom2dSettings::default() -> Bloom2dSettings {
   Bloom2dSettings::{
-    enabled: true,
-    intensity: 0.6F,
-    spread: 0.08F,
-    pass_count: 6,
-    tint: Color::white(),
+    intensity: 0.15F,
+    low_frequency_boost: 0.7F,
+    low_frequency_boost_curvature: 0.95F,
+    high_pass_frequency: 1.0F,
+    prefilter: Bloom2dPrefilter::default(),
+    composite_mode: EnergyConserving,
+    max_mip_dimension: 512,
+    scale: @math.Vec2::new(1.0F, 1.0F),
   }
 }
 
@@ -3099,12 +3122,13 @@ pub fn Bloom2dSettings::default() -> Bloom2dSettings {
 #ecs.component
 pub struct Bloom2d {
   source : @asset.Handle[@asset.Image]
+  enabled : Bool
   settings : Bloom2dSettings
 }
 
 ///|
 pub fn Bloom2d::new(source : @asset.Handle[@asset.Image]) -> Bloom2d {
-  Bloom2d::{ source, settings: Bloom2dSettings::default() }
+  Bloom2d::{ source, enabled: true, settings: Bloom2dSettings::default() }
 }
 
 ///|
@@ -3116,14 +3140,162 @@ pub fn Bloom2d::with_settings(
 }
 
 ///|
-fn bloom2d_clamp_pass_count(value : Int) -> Int {
-  if value < 1 {
-    1
-  } else if value > 24 {
-    24
+pub fn Bloom2d::with_enabled(self : Bloom2d, enabled : Bool) -> Bloom2d {
+  Bloom2d::{ ..self, enabled, }
+}
+
+///|
+fn bloom2d_clamp_unit(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
   } else {
     value
   }
+}
+
+///|
+fn bloom2d_clamp_non_negative(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn bloom2d_safe_max_mip_dimension(value : Int) -> Int {
+  if value < 4 {
+    4
+  } else {
+    value
+  }
+}
+
+///|
+fn bloom2d_safe_scale_axis(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn bloom2d_sanitize_settings(settings : Bloom2dSettings) -> Bloom2dSettings {
+  Bloom2dSettings::{
+    intensity: bloom2d_clamp_non_negative(settings.intensity),
+    low_frequency_boost: bloom2d_clamp_unit(settings.low_frequency_boost),
+    low_frequency_boost_curvature: bloom2d_clamp_unit(
+      settings.low_frequency_boost_curvature,
+    ),
+    high_pass_frequency: bloom2d_clamp_unit(settings.high_pass_frequency),
+    prefilter: Bloom2dPrefilter::{
+      threshold: bloom2d_clamp_non_negative(settings.prefilter.threshold),
+      threshold_softness: bloom2d_clamp_unit(
+        settings.prefilter.threshold_softness,
+      ),
+    },
+    composite_mode: settings.composite_mode,
+    max_mip_dimension: bloom2d_safe_max_mip_dimension(
+      settings.max_mip_dimension,
+    ),
+    scale: @math.Vec2::new(
+      bloom2d_safe_scale_axis(settings.scale.x),
+      bloom2d_safe_scale_axis(settings.scale.y),
+    ),
+  }
+}
+
+///|
+fn bloom2d_log2_floor(value : Int) -> Int {
+  let mut current = value
+  let mut power = 0
+  while current > 1 {
+    current = current / 2
+    power = power + 1
+  }
+  power
+}
+
+///|
+fn bloom2d_mip_count(settings : Bloom2dSettings) -> Int {
+  let logv = bloom2d_log2_floor(
+    bloom2d_safe_max_mip_dimension(settings.max_mip_dimension),
+  )
+  let mip_count = if logv < 2 { 1 } else { logv - 1 }
+  if mip_count < 1 {
+    1
+  } else {
+    mip_count
+  }
+}
+
+///|
+fn bloom2d_prefilter_weight(settings : Bloom2dSettings) -> Float {
+  let threshold = bloom2d_clamp_non_negative(settings.prefilter.threshold)
+  let softness = bloom2d_clamp_unit(settings.prefilter.threshold_softness)
+  // Approximate prefilter attenuation in sprite-overlay bloom path.
+  let attenuation = 1.0F + threshold * (1.0F - softness * 0.5F)
+  if attenuation <= 0.0F {
+    1.0F
+  } else {
+    1.0F / attenuation
+  }
+}
+
+///|
+fn bloom2d_compute_blend_factor(
+  settings : Bloom2dSettings,
+  mip : Float,
+  max_mip : Float,
+) -> Float {
+  if max_mip <= 0.0F {
+    return settings.intensity
+  }
+  let mip_ratio = bloom2d_clamp_unit(mip / max_mip)
+  let curvature = bloom2d_clamp_unit(settings.low_frequency_boost_curvature)
+  let exponent = if curvature >= 0.9999F {
+    10_000.0F
+  } else {
+    1.0F / (1.0F - curvature)
+  }
+  let mut lf_boost = (1.0F - @math.pow(1.0F - mip_ratio, exponent)) *
+    settings.low_frequency_boost
+  let high_pass = bloom2d_clamp_unit(settings.high_pass_frequency)
+  let high_pass_lq = if high_pass <= 1.0e-6F {
+    if mip_ratio <= 0.0F {
+      1.0F
+    } else {
+      0.0F
+    }
+  } else {
+    1.0F - bloom2d_clamp_unit((mip_ratio - high_pass) / high_pass)
+  }
+  let mode_factor = match settings.composite_mode {
+    EnergyConserving => 1.0F - settings.intensity
+    Additive => 1.0F
+  }
+  lf_boost = lf_boost * mode_factor
+  (settings.intensity + lf_boost) * high_pass_lq
+}
+
+///|
+fn bloom2d_pass_scale_factor(
+  settings : Bloom2dSettings,
+  pass_index : Int,
+  max_mip : Int,
+) -> @math.Vec2 {
+  let max_mip_float = if max_mip <= 0 { 1.0F } else { Float::from_int(max_mip) }
+  let pass_ratio = bloom2d_clamp_unit(
+    Float::from_int(pass_index) / max_mip_float,
+  )
+  let blur_scale = 0.35F * (0.2F + pass_ratio * 0.8F)
+  @math.Vec2::new(
+    1.0F + blur_scale * settings.scale.x,
+    1.0F + blur_scale * settings.scale.y,
+  )
 }
 
 ///|
@@ -3134,26 +3306,19 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
   settings : Bloom2dSettings,
   layers : RenderLayers,
 ) -> Unit {
-  if !settings.enabled {
-    return
-  }
-  let pass_count = bloom2d_clamp_pass_count(settings.pass_count)
-  let intensity = if settings.intensity < 0.0F {
-    0.0F
-  } else {
-    settings.intensity
-  }
-  let spread = if settings.spread < 0.0F { 0.0F } else { settings.spread }
-  let pass_count_f = Float::from_double(pass_count.to_double())
-  for i in 0..<pass_count {
-    let idx = i + 1
-    let idx_f = Float::from_double(idx.to_double())
-    let t = idx_f / pass_count_f
-    let alpha_weight = (1.0F - t * 0.7F) * (intensity / pass_count_f)
+  let bloom = bloom2d_sanitize_settings(settings)
+  let mip_count = bloom2d_mip_count(bloom)
+  let max_mip = mip_count - 1
+  let max_mip_f = if max_mip <= 0 { 1.0F } else { Float::from_int(max_mip) }
+  let prefilter_weight = bloom2d_prefilter_weight(bloom)
+  for pass in 0..<mip_count {
+    let pass_f = Float::from_int(pass)
+    let blend = bloom2d_compute_blend_factor(bloom, pass_f, max_mip_f)
+    let alpha_weight = blend * prefilter_weight / Float::from_int(mip_count)
     if alpha_weight <= 0.0F {
       continue
     }
-    let scale_factor = 1.0F + spread * idx_f
+    let scale_factor = bloom2d_pass_scale_factor(bloom, pass, max_mip)
     let pass_transform = @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(
         base_transform.translation.x,
@@ -3161,10 +3326,10 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
       ),
       base_transform.rotation_z(),
       @math.Vec2::new(
-        base_transform.scale.x * scale_factor,
-        base_transform.scale.y * scale_factor,
+        base_transform.scale.x * scale_factor.x,
+        base_transform.scale.y * scale_factor.y,
       ),
-      z=base_transform.translation.z + idx_f * 0.001F,
+      z=base_transform.translation.z + pass_f * 0.001F,
     )
     render2d_push_sprite_uv(
       world,
@@ -3172,12 +3337,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
       pass_transform,
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
-      Color::new(
-        settings.tint.r,
-        settings.tint.g,
-        settings.tint.b,
-        settings.tint.a * alpha_weight,
-      ),
+      Color::new(1.0F, 1.0F, 1.0F, alpha_weight),
       layers,
     )
   }
@@ -3230,27 +3390,22 @@ fn render2d_draw_camera_bloom(
     uv_max_x=1.0F,
     uv_max_y=1.0F,
   )
-  let settings = bloom.settings
-  if !settings.enabled {
+  if !bloom.enabled {
     return
   }
-  let pass_count = bloom2d_clamp_pass_count(settings.pass_count)
-  let intensity = if settings.intensity < 0.0F {
-    0.0F
-  } else {
-    settings.intensity
-  }
-  let spread = if settings.spread < 0.0F { 0.0F } else { settings.spread }
-  let pass_count_f = Float::from_int(pass_count)
-  for i in 0..<pass_count {
-    let idx = i + 1
-    let idx_f = Float::from_int(idx)
-    let t = idx_f / pass_count_f
-    let alpha_weight = (1.0F - t * 0.7F) * (intensity / pass_count_f)
+  let settings = bloom2d_sanitize_settings(bloom.settings)
+  let mip_count = bloom2d_mip_count(settings)
+  let max_mip = mip_count - 1
+  let max_mip_f = if max_mip <= 0 { 1.0F } else { Float::from_int(max_mip) }
+  let prefilter_weight = bloom2d_prefilter_weight(settings)
+  for pass in 0..<mip_count {
+    let pass_f = Float::from_int(pass)
+    let blend = bloom2d_compute_blend_factor(settings, pass_f, max_mip_f)
+    let alpha_weight = blend * prefilter_weight / Float::from_int(mip_count)
     if alpha_weight <= 0.0F {
       continue
     }
-    let scale_factor = 1.0F + spread * idx_f
+    let scale_factor = bloom2d_pass_scale_factor(settings, pass, max_mip)
     let pass_transform = @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(
         base_transform.translation.x,
@@ -3258,10 +3413,10 @@ fn render2d_draw_camera_bloom(
       ),
       base_transform.rotation_z(),
       @math.Vec2::new(
-        base_transform.scale.x * scale_factor,
-        base_transform.scale.y * scale_factor,
+        base_transform.scale.x * scale_factor.x,
+        base_transform.scale.y * scale_factor.y,
       ),
-      z=base_transform.translation.z + idx_f * 0.001F,
+      z=base_transform.translation.z + pass_f * 0.001F,
     )
     @window.host_gpu_draw_sprite_uv(
       texture_id=bloom.source.id(),
@@ -3270,10 +3425,10 @@ fn render2d_draw_camera_bloom(
       rotation=pass_transform.rotation_z(),
       scale_x=pass_transform.scale.x,
       scale_y=pass_transform.scale.y,
-      color_r=settings.tint.r,
-      color_g=settings.tint.g,
-      color_b=settings.tint.b,
-      color_a=settings.tint.a * alpha_weight,
+      color_r=1.0F,
+      color_g=1.0F,
+      color_b=1.0F,
+      color_a=alpha_weight,
       uv_min_x=0.0F,
       uv_min_y=0.0F,
       uv_max_x=1.0F,
