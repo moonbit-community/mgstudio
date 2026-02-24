@@ -7,6 +7,7 @@ use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::monitor::{MonitorHandle, VideoModeHandle};
 use winit::platform::pump_events::EventLoopExtPumpEvents;
 use winit::window::{CursorGrabMode, Fullscreen, Window, WindowAttributes, WindowId};
 
@@ -133,21 +134,61 @@ impl NativeWindow {
     }
 
     pub fn set_cursor_grab_mode(&self, mode: i32) {
-        let grab_mode = match mode {
+        let requested = match mode {
             1 => CursorGrabMode::Confined,
             2 => CursorGrabMode::Locked,
             _ => CursorGrabMode::None,
         };
-        let _ = self.window.set_cursor_grab(grab_mode);
+        let result = match requested {
+            CursorGrabMode::None => self.window.set_cursor_grab(CursorGrabMode::None),
+            // Bevy/winit parity: macOS doesn't support Confined, so try Locked.
+            CursorGrabMode::Confined => self
+                .window
+                .set_cursor_grab(CursorGrabMode::Confined)
+                .or_else(|_| self.window.set_cursor_grab(CursorGrabMode::Locked)),
+            // Bevy/winit parity: X11 doesn't support Locked, so try Confined.
+            CursorGrabMode::Locked => self
+                .window
+                .set_cursor_grab(CursorGrabMode::Locked)
+                .or_else(|_| self.window.set_cursor_grab(CursorGrabMode::Confined)),
+        };
+        if let Err(err) = result {
+            let action = match requested {
+                CursorGrabMode::None => "ungrab",
+                CursorGrabMode::Confined | CursorGrabMode::Locked => "grab",
+            };
+            eprintln!("Unable to {action} cursor: {err}");
+        }
     }
 
     pub fn set_mode(&self, mode: i32) {
-        if mode == 0 {
-            self.window.set_fullscreen(None);
-            return;
+        match mode {
+            0 => {
+                self.window.set_fullscreen(None);
+            }
+            1 => {
+                let monitor = self
+                    .window
+                    .current_monitor()
+                    .or_else(|| self.window.primary_monitor());
+                self.window
+                    .set_fullscreen(Some(Fullscreen::Borderless(monitor)));
+            }
+            2 => {
+                let monitor = self
+                    .window
+                    .current_monitor()
+                    .or_else(|| self.window.primary_monitor());
+                let maybe_video_mode = monitor.as_ref().and_then(|mon| get_current_videomode(mon));
+                if let Some(video_mode) = maybe_video_mode {
+                    self.window
+                        .set_fullscreen(Some(Fullscreen::Exclusive(video_mode)));
+                } else {
+                    eprintln!("Unable to enter exclusive fullscreen: no current video mode");
+                }
+            }
+            _ => {}
         }
-        self.window
-            .set_fullscreen(Some(Fullscreen::Borderless(None)));
     }
 
     pub fn set_position(&self, x: i32, y: i32) {
@@ -174,6 +215,16 @@ impl NativeWindow {
         self.input.wheel_y = 0.0;
         self.input.touch_events.clear();
     }
+}
+
+fn get_current_videomode(monitor: &MonitorHandle) -> Option<VideoModeHandle> {
+    monitor
+        .video_modes()
+        .filter(|mode| {
+            mode.size() == monitor.size()
+                && Some(mode.refresh_rate_millihertz()) == monitor.refresh_rate_millihertz()
+        })
+        .max_by_key(VideoModeHandle::bit_depth)
 }
 
 fn handle_window_event(

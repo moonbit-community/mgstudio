@@ -1485,6 +1485,10 @@ MOONBIT_FFI_EXPORT void mgw_window_set_cursor_grab_mode(void *win, int32_t mode)
   if (next_mode > 2) {
     next_mode = 2;
   }
+  // Bevy parity: macOS backend has no confined cursor mode; prefer locked.
+  if (next_mode == 1) {
+    next_mode = 2;
+  }
   w->cursor_grab_mode = next_mode;
   // Native C runtime currently exposes visibility + logical grab mode state.
   // Platform-level confinement/lock is implemented in native-wasmtime (winit).
@@ -1507,6 +1511,8 @@ MOONBIT_FFI_EXPORT void mgw_window_set_mode(void *win, int32_t mode) {
   if (next_mode > 2) {
     next_mode = 2;
   }
+  // This Cocoa backend currently exposes a single fullscreen path.
+  // Keep mode intent for API parity, but both fullscreen variants use toggle.
   w->window_mode = next_mode;
   int32_t want_fullscreen = next_mode == 0 ? 0 : 1;
   int32_t is_fullscreen = mgw_window_is_fullscreen(w);

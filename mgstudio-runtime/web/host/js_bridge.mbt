@@ -378,22 +378,24 @@ extern "js" fn set_canvas_cursor_grab_mode_js(
   #| (canvas, mode) => {
   #|   if (!canvas) return
   #|   const m = Number(mode) | 0
+  #|   const doc = typeof document === "object" ? document : null
+  #|   if (!doc) return
+  #|   const hasPointerLockApi =
+  #|     typeof doc.exitPointerLock === "function" &&
+  #|     typeof canvas.requestPointerLock === "function"
+  #|   if (!hasPointerLockApi) return
   #|   if (m === 1 || m === 2) {
-  #|     if (typeof canvas.requestPointerLock === "function") {
-  #|       try {
-  #|         canvas.requestPointerLock()
-  #|       } catch (_) {}
-  #|     }
+  #|     // Web has pointer lock, but no separate "confined" mode.
+  #|     if (doc.pointerLockElement === canvas) return
+  #|     try {
+  #|       const p = canvas.requestPointerLock()
+  #|       if (p && typeof p.catch === "function") p.catch(() => {})
+  #|     } catch (_) {}
   #|     return
   #|   }
-  #|   if (
-  #|     typeof document === "object" &&
-  #|     document &&
-  #|     document.pointerLockElement === canvas &&
-  #|     typeof document.exitPointerLock === "function"
-  #|   ) {
+  #|   if (doc.pointerLockElement === canvas) {
   #|     try {
-  #|       document.exitPointerLock()
+  #|       doc.exitPointerLock()
   #|     } catch (_) {}
   #|   }
   #| }
@@ -403,7 +405,7 @@ extern "js" fn set_window_mode_js(canvas : @js.Any, mode : Int) -> Unit =
   #| (canvas, mode) => {
   #|   const m = Number(mode) | 0
   #|   const doc = typeof document === "object" ? document : null
-  #|   if (!doc) return
+  #|   if (!doc || !canvas) return
   #|   if (m === 0) {
   #|     if (doc.fullscreenElement && typeof doc.exitFullscreen === "function") {
   #|       const p = doc.exitFullscreen()
@@ -411,12 +413,11 @@ extern "js" fn set_window_mode_js(canvas : @js.Any, mode : Int) -> Unit =
   #|     }
   #|     return
   #|   }
-  #|   const target =
-  #|     canvas && typeof canvas.requestFullscreen === "function"
-  #|       ? canvas
-  #|       : doc.documentElement
-  #|   if (target && typeof target.requestFullscreen === "function") {
-  #|     const p = target.requestFullscreen()
+  #|   if (doc.fullscreenElement === canvas) return
+  #|   // Web cannot provide native-exclusive fullscreen; mode=2 maps to the
+  #|   // same fullscreen request path as borderless mode.
+  #|   if (typeof canvas.requestFullscreen === "function") {
+  #|     const p = canvas.requestFullscreen()
   #|     if (p && typeof p.catch === "function") p.catch(() => {})
   #|   }
   #| }
