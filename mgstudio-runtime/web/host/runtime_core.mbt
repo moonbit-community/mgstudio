@@ -1563,6 +1563,126 @@ fn ensure_motion_blur_pipeline(state : State) -> Unit {
 }
 
 ///|
+fn ensure_bloom2d_pipeline(state : State) -> Unit {
+  if state.gpu.bloom2d_pipeline is Some(_) &&
+    state.gpu.bloom2d_bind_layout is Some(_) &&
+    state.gpu.bloom2d_settings_buffer is Some(_) {
+    return
+  }
+  if state.gpu.device is None {
+    return
+  }
+  ensure_pipeline_resources(state)
+  if state.gpu.bloom2d_shader_id <= 0 {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_shader_id", "Bloom2d pipeline error: shader id not initialized",
+    )
+    return
+  }
+  let shader_source = get_shader_source(state, state.gpu.bloom2d_shader_id)
+  if shader_source is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_shader_source", "Bloom2d pipeline error: shader source not loaded",
+    )
+    return
+  }
+  if state.gpu.device is Some(device) {
+    let fragment_stage = @webgpu.shader_stage_fragment()
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    if state.gpu.bloom2d_bind_layout is None {
+      let bind_layout_desc = @js.from_entries([
+        (
+          "entries",
+          @js.any([
+            @js.from_entries([
+              ("binding", @js.any(0)),
+              ("visibility", @js.any(fragment_stage)),
+              (
+                "texture",
+                @js.from_entries([
+                  ("sampleType", @js.any("float")),
+                  ("viewDimension", @js.any("2d")),
+                  ("multisampled", @js.any(false)),
+                ]),
+              ),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(1)),
+              ("visibility", @js.any(fragment_stage)),
+              ("sampler", @js.from_entries([("type", @js.any("filtering"))])),
+            ]),
+            @js.from_entries([
+              ("binding", @js.any(2)),
+              ("visibility", @js.any(fragment_stage)),
+              ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
+            ]),
+          ]),
+        ),
+      ])
+      state.gpu.bloom2d_bind_layout = Some(
+        device.create_bind_group_layout(bind_layout_desc),
+      )
+    }
+    let uniform_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_uniform(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    if state.gpu.bloom2d_settings_buffer is None {
+      let settings_desc = @webgpu.buffer_descriptor(64, uniform_usage)
+      state.gpu.bloom2d_settings_buffer = Some(
+        device.create_buffer(settings_desc.to_js()),
+      )
+    }
+    guard state.gpu.bloom2d_bind_layout is Some(bind_layout) else { return }
+    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
+    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let pipeline_layout_desc = @js.from_entries([
+      ("bindGroupLayouts", @js.any([bind_layout.as_any()])),
+    ])
+    let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
+    let vertex_state = @webgpu.vertex_state(
+      shader_module,
+      "fullscreen_vertex_shader",
+      [],
+    )
+    let color_target = @js.from_entries([
+      ("format", @js.any(format.to_js_string())),
+    ])
+    let fragment_state = @js.from_entries([
+      ("module", shader_module.as_any()),
+      ("entryPoint", @js.any("fragment")),
+      ("targets", @js.any([color_target])),
+    ])
+    let primitive_state = @webgpu.primitive_state(
+      @webgpu.PrimitiveTopology::TriangleList,
+    )
+    let pipeline_desc = @js.from_entries([
+      ("layout", pipeline_layout.as_any()),
+      ("vertex", vertex_state.to_js()),
+      ("fragment", fragment_state),
+      ("primitive", primitive_state.to_js()),
+    ])
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc)
+    let pipeline_error_promise = device.pop_error_scope()
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "bloom2d_pipeline_validation_error",
+          "Bloom2d pipeline validation error: " + any_to_string(err_any),
+        )
+        state.gpu.bloom2d_pipeline = None
+      }
+    })
+    state.gpu.bloom2d_pipeline = Some(pipeline)
+  }
+}
+
+///|
 fn ensure_gizmo_pipeline(state : State) -> Unit {
   if state.gpu.gizmo_pipeline is Some(_) {
     return
@@ -1704,6 +1824,7 @@ fn profile_reset_window(state : State, now_ms : Double) -> Unit {
   state.gpu.profile_draw_mesh_calls_accum = 0
   state.gpu.profile_draw_mesh3d_calls_accum = 0
   state.gpu.profile_draw_motion_blur_calls_accum = 0
+  state.gpu.profile_draw_bloom2d_calls_accum = 0
   state.gpu.profile_scissor_set_calls_accum = 0
   state.gpu.profile_scissor_clear_calls_accum = 0
   state.gpu.profile_sprite_instances_accum = 0
@@ -1783,6 +1904,10 @@ fn profile_log_if_needed(state : State) -> Unit {
     state.gpu.profile_draw_motion_blur_calls_accum,
     frames,
   )
+  let avg_bloom2d_calls = profile_div_int_safe(
+    state.gpu.profile_draw_bloom2d_calls_accum,
+    frames,
+  )
   let avg_scissor_set = profile_div_int_safe(
     state.gpu.profile_scissor_set_calls_accum,
     frames,
@@ -1843,6 +1968,8 @@ fn profile_log_if_needed(state : State) -> Unit {
       avg_mesh3d_calls.to_string() +
       " motion_blur_calls/frame=" +
       avg_motion_blur_calls.to_string() +
+      " bloom2d_calls/frame=" +
+      avg_bloom2d_calls.to_string() +
       " ui_rect_calls/frame=" +
       avg_ui_rect_calls.to_string() +
       " ui_slice_calls/frame=" +
@@ -4315,6 +4442,97 @@ fn draw_motion_blur(
     )
   }
   pass.set_pipeline(motion_blur_pipeline)
+  pass.set_bind_group(0, material_bind_group)
+  pass.draw(3, 1, 0, 0)
+}
+
+///|
+fn draw_bloom2d(
+  state : State,
+  scene_texture_id : Int,
+  enabled : Int,
+  intensity : Double,
+  low_frequency_boost : Double,
+  low_frequency_boost_curvature : Double,
+  high_pass_frequency : Double,
+  threshold : Double,
+  threshold_softness : Double,
+  composite_mode : Int,
+  max_mip_dimension : Int,
+  scale_x : Double,
+  scale_y : Double,
+  view_width : Int,
+  view_height : Int,
+) -> Unit {
+  if state.gpu.profile_enabled {
+    state.gpu.profile_draw_bloom2d_calls_accum = state.gpu.profile_draw_bloom2d_calls_accum +
+      1
+  }
+  if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
+    return
+  }
+  flush_ui_shadow_batches(state)
+  flush_ui_slice_batches(state)
+  flush_ui_batches(state)
+  flush_sprite_batches(state)
+  ensure_bloom2d_pipeline(state)
+  if state.gpu.bloom2d_pipeline is None {
+    report_asset_error_once(
+      state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: pipeline not ready",
+    )
+    return
+  }
+  if scene_texture_id < 0 {
+    report_asset_error_once(
+      state, "bloom2d_draw_invalid_scene_texture", "Bloom2d draw skipped: scene texture id is invalid",
+    )
+    return
+  }
+  guard get_texture_entry_strict(state, scene_texture_id)
+    is Some(scene_texture_entry) else {
+    report_asset_error_once(
+      state, "bloom2d_draw_scene_texture_not_ready", "Bloom2d draw skipped: scene texture is not ready",
+    )
+    return
+  }
+  guard state.gpu.current_pass is Some(pass) else { return }
+  guard state.gpu.bloom2d_pipeline is Some(bloom2d_pipeline) else { return }
+  guard state.gpu.bloom2d_bind_layout is Some(bind_layout) else { return }
+  guard state.gpu.bloom2d_settings_buffer is Some(settings_buffer) else {
+    return
+  }
+  guard state.gpu.device is Some(device) else { return }
+  guard state.gpu.queue is Some(queue) else { return }
+  let settings_data = bloom2d_uniform_bytes(
+    enabled, intensity, low_frequency_boost, low_frequency_boost_curvature, high_pass_frequency,
+    threshold, threshold_softness, composite_mode, max_mip_dimension, scale_x, scale_y,
+    view_width, view_height,
+  )
+  queue.write_buffer(settings_buffer, 0, settings_data)
+  let scene_sampler : @webgpu.GPUSampler = scene_texture_entry
+    ._get("sampler")
+    .cast()
+  let scene_view : @webgpu.GPUTextureView = scene_texture_entry
+    ._get("view")
+    .cast()
+  let material_entries = [
+    @webgpu.bind_group_entry_texture(0, scene_view),
+    @webgpu.bind_group_entry_sampler(1, scene_sampler),
+    @webgpu.bind_group_entry_buffer(2, settings_buffer),
+  ]
+  let material_desc = @webgpu.bind_group_descriptor(
+    bind_layout, material_entries,
+  )
+  let material_bind_group = device.create_bind_group(material_desc.to_js())
+  if state.gpu.current_pass_info is Some(info) {
+    pass.set_scissor_rect(
+      to_int(info.viewport_x),
+      to_int(info.viewport_y),
+      to_int(info.viewport_width),
+      to_int(info.viewport_height),
+    )
+  }
+  pass.set_pipeline(bloom2d_pipeline)
   pass.set_bind_group(0, material_bind_group)
   pass.draw(3, 1, 0, 0)
 }

@@ -706,6 +706,24 @@ pub fn host_gpu_draw_motion_blur(
 ) -> Unit = "mgstudio_host" "gpu_draw_motion_blur"
 
 ///|
+pub fn host_gpu_draw_bloom2d(
+  scene_texture_id~ : Int,
+  enabled~ : Int,
+  intensity~ : Float,
+  low_frequency_boost~ : Float,
+  low_frequency_boost_curvature~ : Float,
+  high_pass_frequency~ : Float,
+  threshold~ : Float,
+  threshold_softness~ : Float,
+  composite_mode~ : Int,
+  max_mip_dimension~ : Int,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  view_width~ : Int,
+  view_height~ : Int,
+) -> Unit = "mgstudio_host" "gpu_draw_bloom2d"
+
+///|
 pub fn host_gpu_draw_gizmo_line(
   start_x~ : Float,
   start_y~ : Float,

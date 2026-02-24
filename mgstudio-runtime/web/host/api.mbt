@@ -2360,6 +2360,27 @@ pub fn create_host(
       )
     }),
   )
+  let gpu_draw_bloom2d = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      draw_bloom2d(
+        state,
+        to_int(arg_number(args, 0, -1)),
+        to_int(arg_number(args, 1, 1)),
+        arg_number(args, 2, 0.15),
+        arg_number(args, 3, 0.7),
+        arg_number(args, 4, 0.95),
+        arg_number(args, 5, 1.0),
+        arg_number(args, 6, 0.0),
+        arg_number(args, 7, 0.0),
+        to_int(arg_number(args, 8, 0)),
+        to_int(arg_number(args, 9, 512)),
+        arg_number(args, 10, 1.0),
+        arg_number(args, 11, 1.0),
+        to_int(arg_number(args, 12, 1)),
+        to_int(arg_number(args, 13, 1)),
+      )
+    }),
+  )
   let gpu_draw_gizmo_line = wrap_variadic(
     @js.from_fn1(fn(args) {
       push_gizmo_line(
@@ -2612,6 +2633,7 @@ pub fn create_host(
     ("gpu_draw_mesh", gpu_draw_mesh),
     ("gpu_draw_mesh3d", gpu_draw_mesh3d),
     ("gpu_draw_motion_blur", gpu_draw_motion_blur),
+    ("gpu_draw_bloom2d", gpu_draw_bloom2d),
     ("gpu_draw_gizmo_line", gpu_draw_gizmo_line),
     ("gpu_end_pass", gpu_end_pass),
     ("gpu_end_frame", gpu_end_frame),

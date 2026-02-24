@@ -259,6 +259,11 @@ pub struct GpuBackend {
   mut motion_blur_pipeline_surface_format : @wgpu.TextureFormat?
   mut motion_blur_settings_buf : @wgpu.Buffer?
   mut motion_blur_globals_buf : @wgpu.Buffer?
+  mut bloom2d_bgl : @wgpu.BindGroupLayout?
+  mut bloom2d_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_pipeline_surface : @wgpu.RenderPipeline?
+  mut bloom2d_pipeline_surface_format : @wgpu.TextureFormat?
+  mut bloom2d_settings_buf : @wgpu.Buffer?
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
@@ -424,6 +429,11 @@ pub fn GpuBackend::new(
     motion_blur_pipeline_surface_format: None,
     motion_blur_settings_buf: None,
     motion_blur_globals_buf: None,
+    bloom2d_bgl: None,
+    bloom2d_pipeline: None,
+    bloom2d_pipeline_surface: None,
+    bloom2d_pipeline_surface_format: None,
+    bloom2d_settings_buf: None,
     mesh3d_material_bg_cache: Ref::new([]),
     next_id: Ref::new(1),
     textures: Ref::new([]),
@@ -2252,6 +2262,93 @@ fn motion_blur_pipeline_for_current_pass(
   }
   ensure_motion_blur_pipeline_rgba8(backend)
   backend.motion_blur_pipeline
+}
+
+///|
+fn ensure_bloom2d_pipeline_rgba8(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  if backend.bloom2d_settings_buf is None {
+    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    backend.bloom2d_settings_buf = Some(
+      backend.device.create_buffer(size=64UL, usage~),
+    )
+  }
+  if backend.bloom2d_pipeline is Some(_) {
+    return
+  }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/2d/bloom.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_render_pipeline_color_format_entries(
+    sm,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    vs_entry="fullscreen_vertex_shader",
+    fs_entry="fragment",
+    alpha_blend=false,
+    depth=false,
+  )
+  pipeline.set_label("mgstudio_bloom2d_rgba8")
+  backend.bloom2d_bgl = Some(pipeline.get_bind_group_layout(0U))
+  backend.bloom2d_pipeline = Some(pipeline)
+  sm.release()
+}
+
+///|
+fn ensure_bloom2d_pipeline_surface(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  ensure_bloom2d_pipeline_rgba8(backend)
+  guard backend.surface_format is Some(format) else { return }
+  if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
+    return
+  }
+  if backend.bloom2d_pipeline_surface_format is Some(prev) &&
+    prev == format &&
+    backend.bloom2d_pipeline_surface is Some(_) {
+    return
+  }
+  if backend.bloom2d_pipeline_surface is Some(old) {
+    old.release()
+  }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/mgstudio/2d/bloom.wgsl",
+  )
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = backend.device.create_render_pipeline_color_format_entries(
+    sm,
+    format,
+    vs_entry="fullscreen_vertex_shader",
+    fs_entry="fragment",
+    alpha_blend=false,
+    depth=false,
+  )
+  pipeline.set_label("mgstudio_bloom2d_surface")
+  backend.bloom2d_pipeline_surface = Some(pipeline)
+  backend.bloom2d_pipeline_surface_format = Some(format)
+  sm.release()
+}
+
+///|
+fn bloom2d_pipeline_for_current_pass(
+  backend : GpuBackend,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  let target_is_surface = match backend.pass_state {
+    Some(ps) => ps.target_id == -1
+    None => false
+  }
+  if target_is_surface {
+    match backend.surface_format {
+      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+        ensure_bloom2d_pipeline_surface(backend)
+        return backend.bloom2d_pipeline_surface
+      }
+      _ => ()
+    }
+  }
+  ensure_bloom2d_pipeline_rgba8(backend)
+  backend.bloom2d_pipeline
 }
 
 ///|
@@ -4465,6 +4562,126 @@ pub fn GpuBackend::draw_motion_blur(
     self.device,
     material_bgl,
     label="mgstudio_motion_blur_bg",
+  )
+  pass.set_pipeline(pipeline)
+  pass.set_bind_group(0U, material_bg, [])
+  pass.draw(3U, 1U, 0U, 0U)
+  material_bg.release()
+  material_bgl.release()
+}
+
+///|
+pub fn GpuBackend::draw_bloom2d(
+  self : GpuBackend,
+  scene_texture_id : Int,
+  enabled : Int,
+  intensity : Float,
+  low_frequency_boost : Float,
+  low_frequency_boost_curvature : Float,
+  high_pass_frequency : Float,
+  threshold : Float,
+  threshold_softness : Float,
+  composite_mode : Int,
+  max_mip_dimension : Int,
+  scale_x : Float,
+  scale_y : Float,
+  view_width : Int,
+  view_height : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard frame.pass is Some(pass) else { return }
+  flush_ui_shadow_batches(self)
+  flush_ui_slice_batches(self)
+  flush_ui_batches(self)
+  flush_sprite_batches(self)
+  guard bloom2d_pipeline_for_current_pass(self) is Some(pipeline) else {
+    return
+  }
+  guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
+  if scene_texture_id < 0 {
+    return
+  }
+  guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
+    return
+  }
+  let intensity_value = if intensity < 0.0F { 0.0F } else { intensity }
+  let low_frequency_boost_value = if low_frequency_boost < 0.0F {
+    0.0F
+  } else if low_frequency_boost > 1.0F {
+    1.0F
+  } else {
+    low_frequency_boost
+  }
+  let low_frequency_boost_curvature_value = if low_frequency_boost_curvature <
+    0.0F {
+    0.0F
+  } else if low_frequency_boost_curvature > 1.0F {
+    1.0F
+  } else {
+    low_frequency_boost_curvature
+  }
+  let high_pass_frequency_value = if high_pass_frequency < 0.0F {
+    0.0F
+  } else if high_pass_frequency > 1.0F {
+    1.0F
+  } else {
+    high_pass_frequency
+  }
+  let threshold_value = if threshold < 0.0F { 0.0F } else { threshold }
+  let threshold_softness_value = if threshold_softness < 0.0F {
+    0.0F
+  } else if threshold_softness > 1.0F {
+    1.0F
+  } else {
+    threshold_softness
+  }
+  let composite_mode_value = if composite_mode == 0 { 0.0F } else { 1.0F }
+  let enabled_value = if enabled == 0 { 0.0F } else { 1.0F }
+  let max_mip_dimension_value = Float::from_int(
+    if max_mip_dimension < 4 {
+      4
+    } else {
+      max_mip_dimension
+    },
+  )
+  let scale_x_value = if scale_x < 0.0F { 0.0F } else { scale_x }
+  let scale_y_value = if scale_y < 0.0F { 0.0F } else { scale_y }
+  let view_width_value = Float::from_int(
+    if view_width < 1 {
+      1
+    } else {
+      view_width
+    },
+  )
+  let view_height_value = Float::from_int(
+    if view_height < 1 {
+      1
+    } else {
+      view_height
+    },
+  )
+  let settings_bytes = f32le_pack([
+    intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
+    high_pass_frequency_value, threshold_value, threshold_softness_value, composite_mode_value,
+    enabled_value, scale_x_value, scale_y_value, max_mip_dimension_value, 0.0F, view_width_value,
+    view_height_value, 0.0F, 0.0F,
+  ])
+  self.queue.write_buffer(settings_buf, 0UL, settings_bytes)
+
+  let material_bgl = pipeline.get_bind_group_layout(0U)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let ok = builder.add_texture_view(0U, scene_texture.view) &&
+    builder.add_sampler(1U, scene_texture.sampler) &&
+    builder.add_buffer(2U, settings_buf)
+  if !ok {
+    builder.free()
+    material_bgl.release()
+    return
+  }
+  let material_bg = builder.finish(
+    self.device,
+    material_bgl,
+    label="mgstudio_bloom2d_bg",
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, material_bg, [])

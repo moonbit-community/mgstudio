@@ -3954,6 +3954,129 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "gpu_draw_bloom2d",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        host_trace("host: gpu_draw_bloom2d")
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        let scene_texture_id = if args.length() > 0 &&
+          args[0] is @types.Value::I32(v) {
+          v
+        } else {
+          -1
+        }
+        let enabled = if args.length() > 1 && args[1] is @types.Value::I32(v) {
+          v
+        } else {
+          1
+        }
+        let intensity = if args.length() > 2 && args[2] is @types.Value::F32(v) {
+          v
+        } else {
+          0.15F
+        }
+        let low_frequency_boost = if args.length() > 3 &&
+          args[3] is @types.Value::F32(v) {
+          v
+        } else {
+          0.7F
+        }
+        let low_frequency_boost_curvature = if args.length() > 4 &&
+          args[4] is @types.Value::F32(v) {
+          v
+        } else {
+          0.95F
+        }
+        let high_pass_frequency = if args.length() > 5 &&
+          args[5] is @types.Value::F32(v) {
+          v
+        } else {
+          1.0F
+        }
+        let threshold = if args.length() > 6 && args[6] is @types.Value::F32(v) {
+          v
+        } else {
+          0.0F
+        }
+        let threshold_softness = if args.length() > 7 &&
+          args[7] is @types.Value::F32(v) {
+          v
+        } else {
+          0.0F
+        }
+        let composite_mode = if args.length() > 8 &&
+          args[8] is @types.Value::I32(v) {
+          v
+        } else {
+          0
+        }
+        let max_mip_dimension = if args.length() > 9 &&
+          args[9] is @types.Value::I32(v) {
+          v
+        } else {
+          512
+        }
+        let scale_x = if args.length() > 10 && args[10] is @types.Value::F32(v) {
+          v
+        } else {
+          1.0F
+        }
+        let scale_y = if args.length() > 11 && args[11] is @types.Value::F32(v) {
+          v
+        } else {
+          1.0F
+        }
+        let view_width = if args.length() > 12 &&
+          args[12] is @types.Value::I32(v) {
+          v
+        } else {
+          1
+        }
+        let view_height = if args.length() > 13 &&
+          args[13] is @types.Value::I32(v) {
+          v
+        } else {
+          1
+        }
+        ctx.gpu
+        .unwrap()
+        .draw_bloom2d(
+          scene_texture_id, enabled, intensity, low_frequency_boost, low_frequency_boost_curvature,
+          high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
+          scale_x, scale_y, view_width, view_height,
+        )
+        ok_i32(0)
+      } catch {
+        _ => {
+          @debug.debug("gpu_draw_bloom2d failed")
+          host_fail("gpu_draw_bloom2d", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "gpu_draw_sprite",
     fn(args) raise @runtime.RuntimeError {
       try {

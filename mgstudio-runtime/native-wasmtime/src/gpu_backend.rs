@@ -110,6 +110,7 @@ enum DrawCmd {
     Sprites(SpriteSegment),
     Mesh(MeshDraw),
     MotionBlur(MotionBlurDraw),
+    Bloom2d(Bloom2dDraw),
 }
 
 struct SpriteBatch {
@@ -205,6 +206,24 @@ struct MotionBlurDraw {
     scissor: Option<ScissorRect>,
 }
 
+struct Bloom2dDraw {
+    scene_texture_id: i32,
+    enabled: i32,
+    intensity: f32,
+    low_frequency_boost: f32,
+    low_frequency_boost_curvature: f32,
+    high_pass_frequency: f32,
+    threshold: f32,
+    threshold_softness: f32,
+    composite_mode: i32,
+    max_mip_dimension: i32,
+    scale_x: f32,
+    scale_y: f32,
+    view_width: i32,
+    view_height: i32,
+    scissor: Option<ScissorRect>,
+}
+
 struct GpuTexture {
     width: u32,
     height: u32,
@@ -285,6 +304,13 @@ struct MeshRenderer {
     motion_blur_pipeline_surface_format: Option<wgpu::TextureFormat>,
     motion_blur_settings_buf: Option<wgpu::Buffer>,
     motion_blur_globals_buf: Option<wgpu::Buffer>,
+
+    bloom2d_bgl: Option<wgpu::BindGroupLayout>,
+    bloom2d_pipeline_layout: Option<wgpu::PipelineLayout>,
+    bloom2d_pipeline_rgba8: Option<wgpu::RenderPipeline>,
+    bloom2d_pipeline_surface: Option<wgpu::RenderPipeline>,
+    bloom2d_pipeline_surface_format: Option<wgpu::TextureFormat>,
+    bloom2d_settings_buf: Option<wgpu::Buffer>,
 }
 
 impl GpuBackend {
@@ -743,6 +769,7 @@ impl GpuBackend {
         let mut has_mesh_3d_line_list = false;
         let mut has_mesh_3d_line_strip = false;
         let mut has_motion_blur = false;
+        let mut has_bloom2d = false;
         for cmd in &pass.commands {
             match cmd {
                 DrawCmd::Sprites(seg) => sprite_segments.push(seg),
@@ -768,6 +795,9 @@ impl GpuBackend {
                 }
                 DrawCmd::MotionBlur(_) => {
                     has_motion_blur = true;
+                }
+                DrawCmd::Bloom2d(_) => {
+                    has_bloom2d = true;
                 }
             }
         }
@@ -807,6 +837,9 @@ impl GpuBackend {
         if has_motion_blur {
             self.ensure_motion_blur_pipeline_for_format(pass.st.target_format)?;
         }
+        if has_bloom2d {
+            self.ensure_bloom2d_pipeline_for_format(pass.st.target_format)?;
+        }
         self.prepare_mesh_uniforms(&mut pass)?;
 
         // Clone wgpu handles so we don't hold long-lived borrows across the encoding phase.
@@ -841,6 +874,12 @@ impl GpuBackend {
             self.mesh.motion_blur_pipeline_surface.as_ref().cloned()
         };
         let motion_blur_bgl = self.mesh.motion_blur_bgl.as_ref().cloned();
+        let bloom2d_pipeline = if pass.st.target_format == wgpu::TextureFormat::Rgba8Unorm {
+            self.mesh.bloom2d_pipeline_rgba8.as_ref().cloned()
+        } else {
+            self.mesh.bloom2d_pipeline_surface.as_ref().cloned()
+        };
+        let bloom2d_bgl = self.mesh.bloom2d_bgl.as_ref().cloned();
 
         let Some(mut frame) = self.frame.take() else {
             return Ok(());
@@ -1271,6 +1310,92 @@ impl GpuBackend {
                                     wgpu::BindGroupEntry {
                                         binding: 5,
                                         resource: globals_buf.as_entire_binding(),
+                                    },
+                                ],
+                            });
+                        rp.set_pipeline(pipeline);
+                        rp.set_scissor_rect(sx, sy, sw, sh);
+                        rp.set_bind_group(0, &bind_group, &[]);
+                        rp.draw(0..3, 0..1);
+                    }
+                    DrawCmd::Bloom2d(draw) => {
+                        let (Some(pipeline), Some(layout), Some(settings_buf)) = (
+                            bloom2d_pipeline.as_ref(),
+                            bloom2d_bgl.as_ref(),
+                            self.mesh.bloom2d_settings_buf.as_ref().cloned(),
+                        ) else {
+                            continue;
+                        };
+                        let Some(scene_tex) = self.textures.get(&draw.scene_texture_id) else {
+                            continue;
+                        };
+                        let Some((sx, sy, sw, sh)) = resolve_scissor_rect(
+                            &pass.st,
+                            draw.scissor,
+                            target_width,
+                            target_height,
+                        ) else {
+                            continue;
+                        };
+
+                        let intensity = draw.intensity.max(0.0);
+                        let low_frequency_boost = draw.low_frequency_boost.clamp(0.0, 1.0);
+                        let low_frequency_boost_curvature =
+                            draw.low_frequency_boost_curvature.clamp(0.0, 1.0);
+                        let high_pass_frequency = draw.high_pass_frequency.clamp(0.0, 1.0);
+                        let threshold = draw.threshold.max(0.0);
+                        let threshold_softness = draw.threshold_softness.clamp(0.0, 1.0);
+                        let composite_mode: f32 = if draw.composite_mode == 0 { 0.0 } else { 1.0 };
+                        let enabled: f32 = if draw.enabled == 0 { 0.0 } else { 1.0 };
+                        let max_mip_dimension = draw.max_mip_dimension.max(4) as f32;
+                        let scale_x = draw.scale_x.max(0.0);
+                        let scale_y = draw.scale_y.max(0.0);
+                        let view_width = draw.view_width.max(1) as f32;
+                        let view_height = draw.view_height.max(1) as f32;
+                        let settings_words: [u32; 16] = [
+                            intensity.to_bits(),
+                            low_frequency_boost.to_bits(),
+                            low_frequency_boost_curvature.to_bits(),
+                            high_pass_frequency.to_bits(),
+                            threshold.to_bits(),
+                            threshold_softness.to_bits(),
+                            composite_mode.to_bits(),
+                            enabled.to_bits(),
+                            scale_x.to_bits(),
+                            scale_y.to_bits(),
+                            max_mip_dimension.to_bits(),
+                            0f32.to_bits(),
+                            view_width.to_bits(),
+                            view_height.to_bits(),
+                            0f32.to_bits(),
+                            0f32.to_bits(),
+                        ];
+                        self.queue.write_buffer(
+                            &settings_buf,
+                            0,
+                            bytemuck::cast_slice(&settings_words),
+                        );
+
+                        let bind_group =
+                            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                                label: Some("mgstudio-bloom2d-bg"),
+                                layout,
+                                entries: &[
+                                    wgpu::BindGroupEntry {
+                                        binding: 0,
+                                        resource: wgpu::BindingResource::TextureView(
+                                            &scene_tex.view,
+                                        ),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 1,
+                                        resource: wgpu::BindingResource::Sampler(
+                                            &scene_tex.sampler,
+                                        ),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 2,
+                                        resource: settings_buf.as_entire_binding(),
                                     },
                                 ],
                             });
@@ -1714,6 +1839,53 @@ impl GpuBackend {
             velocity_texture_id,
             shutter_angle,
             samples,
+            scissor: pass.current_scissor,
+        }));
+        Ok(())
+    }
+
+    pub fn draw_bloom2d(
+        &mut self,
+        scene_texture_id: i32,
+        enabled: i32,
+        intensity: f32,
+        low_frequency_boost: f32,
+        low_frequency_boost_curvature: f32,
+        high_pass_frequency: f32,
+        threshold: f32,
+        threshold_softness: f32,
+        composite_mode: i32,
+        max_mip_dimension: i32,
+        scale_x: f32,
+        scale_y: f32,
+        view_width: i32,
+        view_height: i32,
+    ) -> anyhow::Result<()> {
+        if self.frame.is_none() {
+            return Ok(());
+        }
+        if scene_texture_id < 0 {
+            return Ok(());
+        }
+        let Some(pass) = self.pass.as_mut() else {
+            return Ok(());
+        };
+        pass.flush_sprites();
+        pass.commands.push(DrawCmd::Bloom2d(Bloom2dDraw {
+            scene_texture_id,
+            enabled,
+            intensity,
+            low_frequency_boost,
+            low_frequency_boost_curvature,
+            high_pass_frequency,
+            threshold,
+            threshold_softness,
+            composite_mode,
+            max_mip_dimension,
+            scale_x,
+            scale_y,
+            view_width,
+            view_height,
             scissor: pass.current_scissor,
         }));
         Ok(())
@@ -3631,6 +3803,170 @@ impl GpuBackend {
             });
         self.mesh.motion_blur_pipeline_surface = Some(pipeline);
         self.mesh.motion_blur_pipeline_surface_format = Some(format);
+        Ok(())
+    }
+
+    fn ensure_bloom2d_pipeline_rgba8(&mut self) -> anyhow::Result<()> {
+        self.ensure_sprite_resources()?;
+        if self.mesh.bloom2d_pipeline_layout.is_none() {
+            let bgl = self
+                .device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("mgstudio_bloom2d_bgl"),
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        },
+                    ],
+                });
+            let pl = self
+                .device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("mgstudio_bloom2d_pl"),
+                    bind_group_layouts: &[&bgl],
+                    immediate_size: 0,
+                });
+            self.mesh.bloom2d_bgl = Some(bgl);
+            self.mesh.bloom2d_pipeline_layout = Some(pl);
+        }
+        if self.mesh.bloom2d_settings_buf.is_none() {
+            let settings_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("mgstudio_bloom2d_settings_buf"),
+                size: 64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            self.mesh.bloom2d_settings_buf = Some(settings_buf);
+        }
+        if self.mesh.bloom2d_pipeline_rgba8.is_some() {
+            return Ok(());
+        }
+        let pl = self
+            .mesh
+            .bloom2d_pipeline_layout
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: bloom2d pipeline layout missing"))?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/bloom.wgsl")?;
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_bloom2d_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_bloom2d_rgba8"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("fullscreen_vertex_shader"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fragment"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        self.mesh.bloom2d_pipeline_rgba8 = Some(pipeline);
+        Ok(())
+    }
+
+    fn ensure_bloom2d_pipeline_for_format(
+        &mut self,
+        format: wgpu::TextureFormat,
+    ) -> anyhow::Result<()> {
+        self.ensure_bloom2d_pipeline_rgba8()?;
+        if format == wgpu::TextureFormat::Rgba8Unorm {
+            return Ok(());
+        }
+        if self.mesh.bloom2d_pipeline_surface_format == Some(format)
+            && self.mesh.bloom2d_pipeline_surface.is_some()
+        {
+            return Ok(());
+        }
+        let pl = self
+            .mesh
+            .bloom2d_pipeline_layout
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: bloom2d pipeline layout missing"))?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/bloom.wgsl")?;
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_bloom2d_wgsl_surface"),
+                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+            });
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_bloom2d_surface"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("fullscreen_vertex_shader"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some("fragment"),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        self.mesh.bloom2d_pipeline_surface = Some(pipeline);
+        self.mesh.bloom2d_pipeline_surface_format = Some(format);
         Ok(())
     }
 

@@ -3353,88 +3353,26 @@ fn render2d_draw_camera_bloom(
   if view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
-  let source_width_raw = @asset.host_asset_texture_width(bloom.source.id())
-  let source_height_raw = @asset.host_asset_texture_height(bloom.source.id())
-  let source_width = if source_width_raw <= 0 {
-    view_width_logical
-  } else {
-    source_width_raw
-  }
-  let source_height = if source_height_raw <= 0 {
-    view_height_logical
-  } else {
-    source_height_raw
-  }
-  let base_scale = @math.Vec2::new(
-    Float::from_int(view_width_logical) / Float::from_int(source_width),
-    Float::from_int(view_height_logical) / Float::from_int(source_height),
-  )
-  let base_transform = @math.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(0.0F, 0.0F),
-    0.0F,
-    base_scale,
-  )
-  @window.host_gpu_draw_sprite_uv(
-    texture_id=bloom.source.id(),
-    x=base_transform.translation.x,
-    y=base_transform.translation.y,
-    rotation=base_transform.rotation_z(),
-    scale_x=base_transform.scale.x,
-    scale_y=base_transform.scale.y,
-    color_r=1.0F,
-    color_g=1.0F,
-    color_b=1.0F,
-    color_a=1.0F,
-    uv_min_x=0.0F,
-    uv_min_y=0.0F,
-    uv_max_x=1.0F,
-    uv_max_y=1.0F,
-  )
-  if !bloom.enabled {
-    return
-  }
   let settings = bloom2d_sanitize_settings(bloom.settings)
-  let mip_count = bloom2d_mip_count(settings)
-  let max_mip = mip_count - 1
-  let max_mip_f = if max_mip <= 0 { 1.0F } else { Float::from_int(max_mip) }
-  let prefilter_weight = bloom2d_prefilter_weight(settings)
-  for pass in 0..<mip_count {
-    let pass_f = Float::from_int(pass)
-    let blend = bloom2d_compute_blend_factor(settings, pass_f, max_mip_f)
-    let alpha_weight = blend * prefilter_weight / Float::from_int(mip_count)
-    if alpha_weight <= 0.0F {
-      continue
-    }
-    let scale_factor = bloom2d_pass_scale_factor(settings, pass, max_mip)
-    let pass_transform = @math.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(
-        base_transform.translation.x,
-        base_transform.translation.y,
-      ),
-      base_transform.rotation_z(),
-      @math.Vec2::new(
-        base_transform.scale.x * scale_factor.x,
-        base_transform.scale.y * scale_factor.y,
-      ),
-      z=base_transform.translation.z + pass_f * 0.001F,
-    )
-    @window.host_gpu_draw_sprite_uv(
-      texture_id=bloom.source.id(),
-      x=pass_transform.translation.x,
-      y=pass_transform.translation.y,
-      rotation=pass_transform.rotation_z(),
-      scale_x=pass_transform.scale.x,
-      scale_y=pass_transform.scale.y,
-      color_r=1.0F,
-      color_g=1.0F,
-      color_b=1.0F,
-      color_a=alpha_weight,
-      uv_min_x=0.0F,
-      uv_min_y=0.0F,
-      uv_max_x=1.0F,
-      uv_max_y=1.0F,
-    )
-  }
+  @window.host_gpu_draw_bloom2d(
+    scene_texture_id=bloom.source.id(),
+    enabled=if bloom.enabled { 1 } else { 0 },
+    intensity=settings.intensity,
+    low_frequency_boost=settings.low_frequency_boost,
+    low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
+    high_pass_frequency=settings.high_pass_frequency,
+    threshold=settings.prefilter.threshold,
+    threshold_softness=settings.prefilter.threshold_softness,
+    composite_mode=match settings.composite_mode {
+      EnergyConserving => 0
+      Additive => 1
+    },
+    max_mip_dimension=settings.max_mip_dimension,
+    scale_x=settings.scale.x,
+    scale_y=settings.scale.y,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+  )
 }
 
 ///|

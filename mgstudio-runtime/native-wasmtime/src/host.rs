@@ -3893,6 +3893,90 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "gpu_draw_bloom2d",
+        &[
+            ValType::I32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::I32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let scene_texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let enabled = args.get(1).and_then(|v| v.i32()).unwrap_or(1);
+            let intensity = match args.get(2) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.15,
+            };
+            let low_frequency_boost = match args.get(3) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.7,
+            };
+            let low_frequency_boost_curvature = match args.get(4) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.95,
+            };
+            let high_pass_frequency = match args.get(5) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 1.0,
+            };
+            let threshold = match args.get(6) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let threshold_softness = match args.get(7) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let composite_mode = args.get(8).and_then(|v| v.i32()).unwrap_or(0);
+            let max_mip_dimension = args.get(9).and_then(|v| v.i32()).unwrap_or(512);
+            let scale_x = match args.get(10) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 1.0,
+            };
+            let scale_y = match args.get(11) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 1.0,
+            };
+            let view_width = args.get(12).and_then(|v| v.i32()).unwrap_or(1);
+            let view_height = args.get(13).and_then(|v| v.i32()).unwrap_or(1);
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.draw_bloom2d(
+                    scene_texture_id,
+                    enabled,
+                    intensity,
+                    low_frequency_boost,
+                    low_frequency_boost_curvature,
+                    high_pass_frequency,
+                    threshold,
+                    threshold_softness,
+                    composite_mode,
+                    max_mip_dimension,
+                    scale_x,
+                    scale_y,
+                    view_width,
+                    view_height,
+                )?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "gpu_create_render_target",
         &[ValType::I32, ValType::I32, ValType::I32],
         &[ValType::I32],

@@ -192,11 +192,14 @@ priv struct GpuState {
   mut mesh3d_pipeline_line_strip_transparent : @webgpu.GPURenderPipeline?
   mut motion_vector_pipeline : @webgpu.GPURenderPipeline?
   mut motion_blur_pipeline : @webgpu.GPURenderPipeline?
+  mut bloom2d_pipeline : @webgpu.GPURenderPipeline?
   mut mesh3d_uniform_layout : @webgpu.GPUBindGroupLayout?
   mut mesh3d_material_layout : @webgpu.GPUBindGroupLayout?
   mut motion_blur_bind_layout : @webgpu.GPUBindGroupLayout?
   mut motion_blur_settings_buffer : @webgpu.GPUBuffer?
   mut motion_blur_globals_buffer : @webgpu.GPUBuffer?
+  mut bloom2d_bind_layout : @webgpu.GPUBindGroupLayout?
+  mut bloom2d_settings_buffer : @webgpu.GPUBuffer?
   mut depth_texture : @webgpu.GPUTexture?
   mut depth_view : @webgpu.GPUTextureView?
   mut depth_width : Int
@@ -252,6 +255,7 @@ priv struct GpuState {
   mut mesh3d_shader_id : Int
   mut motion_vector_shader_id : Int
   mut motion_blur_shader_id : Int
+  mut bloom2d_shader_id : Int
   mut gizmo_shader_id : Int
   mut profile_enabled : Bool
   mut profile_last_log_ms : Double
@@ -270,6 +274,7 @@ priv struct GpuState {
   mut profile_draw_mesh_calls_accum : Int
   mut profile_draw_mesh3d_calls_accum : Int
   mut profile_draw_motion_blur_calls_accum : Int
+  mut profile_draw_bloom2d_calls_accum : Int
   mut profile_scissor_set_calls_accum : Int
   mut profile_scissor_clear_calls_accum : Int
   mut profile_sprite_instances_accum : Int
@@ -365,11 +370,14 @@ fn new_state(
       mesh3d_pipeline_line_strip_transparent: None,
       motion_vector_pipeline: None,
       motion_blur_pipeline: None,
+      bloom2d_pipeline: None,
       mesh3d_uniform_layout: None,
       mesh3d_material_layout: None,
       motion_blur_bind_layout: None,
       motion_blur_settings_buffer: None,
       motion_blur_globals_buffer: None,
+      bloom2d_bind_layout: None,
+      bloom2d_settings_buffer: None,
       depth_texture: None,
       depth_view: None,
       depth_width: 0,
@@ -425,6 +433,7 @@ fn new_state(
       mesh3d_shader_id: 0,
       motion_vector_shader_id: 0,
       motion_blur_shader_id: 0,
+      bloom2d_shader_id: 0,
       gizmo_shader_id: 0,
       profile_enabled: false,
       profile_last_log_ms: 0.0,
@@ -443,6 +452,7 @@ fn new_state(
       profile_draw_mesh_calls_accum: 0,
       profile_draw_mesh3d_calls_accum: 0,
       profile_draw_motion_blur_calls_accum: 0,
+      profile_draw_bloom2d_calls_accum: 0,
       profile_scissor_set_calls_accum: 0,
       profile_scissor_clear_calls_accum: 0,
       profile_sprite_instances_accum: 0,
@@ -917,11 +927,14 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.mesh3d_pipeline_line_strip_transparent = None
   state.gpu.motion_vector_pipeline = None
   state.gpu.motion_blur_pipeline = None
+  state.gpu.bloom2d_pipeline = None
   state.gpu.mesh3d_uniform_layout = None
   state.gpu.mesh3d_material_layout = None
   state.gpu.motion_blur_bind_layout = None
   state.gpu.motion_blur_settings_buffer = None
   state.gpu.motion_blur_globals_buffer = None
+  state.gpu.bloom2d_bind_layout = None
+  state.gpu.bloom2d_settings_buffer = None
   state.gpu.depth_texture = None
   state.gpu.depth_view = None
   state.gpu.depth_width = 0
@@ -978,6 +991,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.mesh3d_shader_id = 0
   state.gpu.motion_vector_shader_id = 0
   state.gpu.motion_blur_shader_id = 0
+  state.gpu.bloom2d_shader_id = 0
   state.gpu.gizmo_shader_id = 0
   let sprite_id = next_shader_id(state)
   let ui_id = next_shader_id(state)
@@ -987,6 +1001,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   let mesh3d_id = next_shader_id(state)
   let motion_vector_id = next_shader_id(state)
   let motion_blur_id = next_shader_id(state)
+  let bloom2d_id = next_shader_id(state)
   let gizmo_id = next_shader_id(state)
   state.gpu.sprite_shader_id = sprite_id
   state.gpu.ui_shader_id = ui_id
@@ -996,6 +1011,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.mesh3d_shader_id = mesh3d_id
   state.gpu.motion_vector_shader_id = motion_vector_id
   state.gpu.motion_blur_shader_id = motion_blur_id
+  state.gpu.bloom2d_shader_id = bloom2d_id
   state.gpu.gizmo_shader_id = gizmo_id
   set_add(state.assets.loading_shaders, @js.any(sprite_id))
   set_add(state.assets.loading_shaders, @js.any(ui_id))
@@ -1005,6 +1021,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   set_add(state.assets.loading_shaders, @js.any(mesh3d_id))
   set_add(state.assets.loading_shaders, @js.any(motion_vector_id))
   set_add(state.assets.loading_shaders, @js.any(motion_blur_id))
+  set_add(state.assets.loading_shaders, @js.any(bloom2d_id))
   set_add(state.assets.loading_shaders, @js.any(gizmo_id))
   map_set(
     state.assets.shader_paths,
@@ -1048,6 +1065,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   map_set(
     state.assets.shader_paths,
+    @js.any(bloom2d_id),
+    @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
     @js.any(gizmo_id),
     @js.any("shaders/mgstudio/gizmo/lines.wgsl"),
   )
@@ -1081,6 +1103,9 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(motion_blur_id)) |> ignore
+  load_wgsl_from_path(state, bloom2d_id, "shaders/mgstudio/2d/bloom.wgsl")
+  |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(bloom2d_id)) |> ignore
   load_wgsl_from_path(state, gizmo_id, "shaders/mgstudio/gizmo/lines.wgsl")
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(gizmo_id)) |> ignore
