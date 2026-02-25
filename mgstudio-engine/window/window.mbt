@@ -719,6 +719,8 @@ pub fn host_gpu_draw_bloom2d(
   max_mip_dimension~ : Int,
   scale_x~ : Float,
   scale_y~ : Float,
+  tonemapping_mode~ : Int,
+  deband_dither_enabled~ : Int,
   view_width~ : Int,
   view_height~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_draw_bloom2d"

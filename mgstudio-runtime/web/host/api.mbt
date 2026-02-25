@@ -2378,8 +2378,10 @@ pub fn create_host(
         to_int(arg_number(args, 9, 512)),
         arg_number(args, 10, 1.0),
         arg_number(args, 11, 1.0),
-        to_int(arg_number(args, 12, 1)),
-        to_int(arg_number(args, 13, 1)),
+        to_int(arg_number(args, 12, 0)),
+        to_int(arg_number(args, 13, 0)),
+        to_int(arg_number(args, 14, 1)),
+        to_int(arg_number(args, 15, 1)),
       )
     }),
   )

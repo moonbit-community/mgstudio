@@ -3121,14 +3121,22 @@ pub fn Bloom2dSettings::default() -> Bloom2dSettings {
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Bloom2d {
-  source : @asset.Handle[@asset.Image]
+  source : @asset.Handle[@asset.Image]?
   enabled : Bool
   settings : Bloom2dSettings
 }
 
 ///|
-pub fn Bloom2d::new(source : @asset.Handle[@asset.Image]) -> Bloom2d {
-  Bloom2d::{ source, enabled: true, settings: Bloom2dSettings::default() }
+pub fn Bloom2d::new() -> Bloom2d {
+  Bloom2d::{ source: None, enabled: true, settings: Bloom2dSettings::default() }
+}
+
+///|
+pub fn Bloom2d::with_source(
+  self : Bloom2d,
+  source : @asset.Handle[@asset.Image],
+) -> Bloom2d {
+  Bloom2d::{ ..self, source: Some(source) }
 }
 
 ///|
@@ -3346,6 +3354,9 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
 ///|
 fn render2d_draw_camera_bloom(
   camera : CameraInstance,
+  source : @asset.Handle[@asset.Image],
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
@@ -3355,7 +3366,7 @@ fn render2d_draw_camera_bloom(
   }
   let settings = bloom2d_sanitize_settings(bloom.settings)
   @window.host_gpu_draw_bloom2d(
-    scene_texture_id=bloom.source.id(),
+    scene_texture_id=source.id(),
     enabled=if bloom.enabled { 1 } else { 0 },
     intensity=settings.intensity,
     low_frequency_boost=settings.low_frequency_boost,
@@ -3370,8 +3381,45 @@ fn render2d_draw_camera_bloom(
     max_mip_dimension=settings.max_mip_dimension,
     scale_x=settings.scale.x,
     scale_y=settings.scale.y,
+    tonemapping_mode~,
+    deband_dither_enabled=if deband_dither_enabled { 1 } else { 0 },
     view_width=view_width_logical,
     view_height=view_height_logical,
+  )
+}
+
+///|
+fn render2d_draw_camera_target_to_screen(
+  source : @asset.Handle[@asset.Image],
+  camera : CameraInstance,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  let width = Float::from_double(view_width_logical.to_double())
+  let height = Float::from_double(view_height_logical.to_double())
+  if width <= 0.0F || height <= 0.0F {
+    return
+  }
+  let projection_scale = if camera.projection.scale <= 0.0F {
+    1.0F
+  } else {
+    camera.projection.scale
+  }
+  @window.host_gpu_draw_sprite_uv(
+    texture_id=source.id(),
+    x=camera.transform.translation.x,
+    y=camera.transform.translation.y,
+    rotation=-camera.transform.rotation_z(),
+    scale_x=width * projection_scale / 128.0F,
+    scale_y=height * projection_scale / 128.0F,
+    color_r=1.0F,
+    color_g=1.0F,
+    color_b=1.0F,
+    color_a=1.0F,
+    uv_min_x=0.0F,
+    uv_min_y=0.0F,
+    uv_max_x=1.0F,
+    uv_max_y=1.0F,
   )
 }
 
@@ -3503,6 +3551,14 @@ priv struct RenderTargetInfo {
 }
 
 ///|
+priv struct Bloom2dAutoTargetInfo {
+  camera : @core.Entity
+  width : Int
+  height : Int
+  target : @asset.Handle[@asset.Image]
+}
+
+///|
 
 ///|
 // ECS resource marker for codegen (`mgstudio gen`).
@@ -3519,6 +3575,7 @@ struct RenderState {
   cameras : Array[CameraInstance]
   meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
+  bloom2d_auto_targets : Array[Bloom2dAutoTargetInfo]
 }
 
 ///|
@@ -3535,6 +3592,7 @@ fn RenderState::new() -> RenderState {
     cameras: [],
     meshes: [],
     render_targets: [],
+    bloom2d_auto_targets: [],
   }
 }
 
@@ -4261,6 +4319,80 @@ fn render2d_target_info(
 }
 
 ///|
+fn render2d_same_entity(a : @core.Entity, b : @core.Entity) -> Bool {
+  a.id == b.id && a.generation == b.generation
+}
+
+///|
+fn render2d_prune_bloom2d_auto_targets(state : RenderState) -> Unit {
+  let kept : Array[Bloom2dAutoTargetInfo] = []
+  for entry in state.bloom2d_auto_targets {
+    let mut active = false
+    for camera in state.cameras {
+      if render2d_same_entity(entry.camera, camera.entity) {
+        active = true
+        break
+      }
+    }
+    if active {
+      kept.push(entry)
+    }
+  }
+  state.bloom2d_auto_targets.clear()
+  for entry in kept {
+    state.bloom2d_auto_targets.push(entry)
+  }
+}
+
+///|
+fn render2d_get_or_create_bloom2d_auto_target(
+  state : RenderState,
+  camera : @core.Entity,
+  width : Int,
+  height : Int,
+) -> @asset.Handle[@asset.Image] {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  for entry in state.bloom2d_auto_targets {
+    if render2d_same_entity(entry.camera, camera) &&
+      entry.width == safe_width &&
+      entry.height == safe_height {
+      return entry.target
+    }
+  }
+  let id = @window.host_gpu_create_render_target_rgba16f(
+    width=safe_width,
+    height=safe_height,
+    nearest=false,
+  )
+  let handle : @asset.Handle[@asset.Image] = @asset.Handle::new(id)
+  state.render_targets.push(RenderTargetInfo::{
+    id,
+    width: safe_width,
+    height: safe_height,
+  })
+  for i in 0..<state.bloom2d_auto_targets.length() {
+    let entry = state.bloom2d_auto_targets[i]
+    if render2d_same_entity(entry.camera, camera) {
+      state.bloom2d_auto_targets[i] = Bloom2dAutoTargetInfo::{
+        camera,
+        width: safe_width,
+        height: safe_height,
+        target: handle,
+      }
+      return handle
+    }
+  }
+  state.bloom2d_auto_targets.push(Bloom2dAutoTargetInfo::{
+    camera,
+    width: safe_width,
+    height: safe_height,
+    target: handle,
+  })
+  handle
+}
+
+///|
 fn render2d_clamp_viewport(
   viewport : Viewport,
   target_size : @math.IVec2,
@@ -4443,6 +4575,12 @@ fn render2d_camera_changed(
 
 ///|
 pub(open) trait CameraSystemWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + @core.ChangeTickWorld + @core.SystemContextWorld {
+}
+
+///|
+pub(open) trait CameraPostProcessWorld {
+  camera_tonemapping_mode(self : Self, camera : @core.Entity) -> Int
+  camera_deband_dither_enabled(self : Self, camera : @core.Entity) -> Bool
 }
 
 ///|
@@ -4642,6 +4780,7 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       rs.val.primary_camera = rs.val.cameras[order[0]].entity
     }
   }
+  render2d_prune_bloom2d_auto_targets(rs.val)
   let sprite_store = world.get_sprite_store()
   let anchor_store = world.get_anchor_store()
   let scissor_store = world.get_scissor_rect_store()
@@ -5295,7 +5434,7 @@ test "render2d: camera viewport scales with dpi resize factor" {
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
+pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] render_execute_system(
   world : W,
 ) -> Unit {
   guard render_state_ref_mut(world) is Some(rs) else { return }
@@ -5460,6 +5599,353 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       continue
     }
     let (clear_enabled, clear) = camera.camera.clear_color.resolve()
+    let draw_items = draw_items_for_layers(
+      sprites,
+      extra_sprites,
+      extra_sprite_texture_slices,
+      extra_ui_rects,
+      extra_ui_box_shadows,
+      extra_ui_texture_slices,
+      meshes,
+      camera.layers,
+    )
+    fn draw_camera_items(
+      draw_viewport_x : Int,
+      draw_viewport_y : Int,
+      draw_viewport_width : Int,
+      draw_viewport_height : Int,
+      draw_scale_factor : Float,
+    ) -> Unit {
+      let mut scissor_active = false
+      let mut scissor_x = 0
+      let mut scissor_y = 0
+      let mut scissor_w = 0
+      let mut scissor_h = 0
+      fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
+        match rect_opt {
+          None =>
+            if scissor_active {
+              @window.host_gpu_clear_scissor()
+              scissor_active = false
+            }
+          Some(rect) => {
+            let (sx, sy, sw, sh) = physical_scissor_for_camera(
+              rect, draw_viewport_x, draw_viewport_y, draw_viewport_width, draw_viewport_height,
+              draw_scale_factor,
+            )
+            if !scissor_active ||
+              sx != scissor_x ||
+              sy != scissor_y ||
+              sw != scissor_w ||
+              sh != scissor_h {
+              @window.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
+              scissor_active = true
+              scissor_x = sx
+              scissor_y = sy
+              scissor_w = sw
+              scissor_h = sh
+            }
+          }
+        }
+      }
+
+      for item in draw_items {
+        match item.kind {
+          SpriteMain(i) => {
+            let sprite = sprites[i]
+            apply_scissor(sprite.scissor)
+            let transform = sprite.transform
+            let pos = @math.Vec2::new(
+              transform.translation.x + sprite.anchor_offset.x,
+              transform.translation.y + sprite.anchor_offset.y,
+            )
+            @window.host_gpu_draw_sprite_uv(
+              texture_id=sprite.texture.id(),
+              x=pos.x,
+              y=pos.y,
+              rotation=transform.rotation_z(),
+              scale_x=sprite.draw_scale.x,
+              scale_y=sprite.draw_scale.y,
+              color_r=sprite.color.r,
+              color_g=sprite.color.g,
+              color_b=sprite.color.b,
+              color_a=sprite.color.a,
+              uv_min_x=sprite.uv_min.x,
+              uv_min_y=sprite.uv_min.y,
+              uv_max_x=sprite.uv_max.x,
+              uv_max_y=sprite.uv_max.y,
+            )
+          }
+          SpriteExtra(i) => {
+            let sprite = extra_sprites[i]
+            apply_scissor(sprite.scissor)
+            let transform = sprite.transform
+            let pos = @math.Vec2::new(
+              transform.translation.x + sprite.anchor_offset.x,
+              transform.translation.y + sprite.anchor_offset.y,
+            )
+            @window.host_gpu_draw_sprite_uv(
+              texture_id=sprite.texture.id(),
+              x=pos.x,
+              y=pos.y,
+              rotation=transform.rotation_z(),
+              scale_x=sprite.draw_scale.x,
+              scale_y=sprite.draw_scale.y,
+              color_r=sprite.color.r,
+              color_g=sprite.color.g,
+              color_b=sprite.color.b,
+              color_a=sprite.color.a,
+              uv_min_x=sprite.uv_min.x,
+              uv_min_y=sprite.uv_min.y,
+              uv_max_x=sprite.uv_max.x,
+              uv_max_y=sprite.uv_max.y,
+            )
+          }
+          SpriteTextureSliceExtra(i) => {
+            let slice = extra_sprite_texture_slices[i]
+            apply_scissor(slice.scissor)
+            let transform = slice.transform
+            let pos = @math.Vec2::new(
+              transform.translation.x + slice.anchor_offset.x,
+              transform.translation.y + slice.anchor_offset.y,
+            )
+            @window.host_gpu_draw_ui_texture_slice(
+              texture_id=slice.texture.id(),
+              x=pos.x,
+              y=pos.y,
+              rotation=transform.rotation_z(),
+              scale_x=slice.draw_scale.x,
+              scale_y=slice.draw_scale.y,
+              color_r=slice.color.r,
+              color_g=slice.color.g,
+              color_b=slice.color.b,
+              color_a=slice.color.a,
+              texture_slice_l=slice.texture_slices.x,
+              texture_slice_t=slice.texture_slices.y,
+              texture_slice_r=slice.texture_slices.z,
+              texture_slice_b=slice.texture_slices.w,
+              target_slice_l=slice.target_slices.x,
+              target_slice_t=slice.target_slices.y,
+              target_slice_r=slice.target_slices.z,
+              target_slice_b=slice.target_slices.w,
+              repeat_side_x=slice.repeat.x,
+              repeat_side_y=slice.repeat.y,
+              repeat_center_x=slice.repeat.z,
+              repeat_center_y=slice.repeat.w,
+              atlas_l=slice.atlas_rect.x,
+              atlas_t=slice.atlas_rect.y,
+              atlas_r=slice.atlas_rect.z,
+              atlas_b=slice.atlas_rect.w,
+            )
+          }
+          Mesh(i) => {
+            apply_scissor(None)
+            let mesh = meshes[i]
+            guard mesh_draw_alpha(mesh.alpha_mode, mesh.color.a)
+              is Some(draw_alpha) else {
+              continue
+            }
+            let transform = mesh.transform
+            let texture_id = match mesh.texture {
+              Some(texture) => texture.id()
+              None => -1
+            }
+            @window.host_gpu_draw_mesh(
+              mesh_id=mesh.mesh_id,
+              x=transform.translation.x,
+              y=transform.translation.y,
+              rotation=transform.rotation_z(),
+              scale_x=transform.scale.x,
+              scale_y=transform.scale.y,
+              color_r=mesh.color.r,
+              color_g=mesh.color.g,
+              color_b=mesh.color.b,
+              color_a=draw_alpha,
+              texture_id~,
+              uv_offset_x=mesh.uv_offset.x,
+              uv_offset_y=mesh.uv_offset.y,
+              uv_scale_x=mesh.uv_scale.x,
+              uv_scale_y=mesh.uv_scale.y,
+            )
+          }
+          UiRectExtra(i) => {
+            let rect = extra_ui_rects[i]
+            apply_scissor(rect.scissor)
+            let transform = rect.transform
+            let pos = @math.Vec2::new(
+              transform.translation.x + rect.anchor_offset.x,
+              transform.translation.y + rect.anchor_offset.y,
+            )
+            @window.host_gpu_draw_ui_rect(
+              texture_id=rect.texture.id(),
+              x=pos.x,
+              y=pos.y,
+              rotation=transform.rotation_z(),
+              scale_x=rect.draw_scale.x,
+              scale_y=rect.draw_scale.y,
+              color_r=rect.color.r,
+              color_g=rect.color.g,
+              color_b=rect.color.b,
+              color_a=rect.color.a,
+              uv_min_x=rect.uv_min.x,
+              uv_min_y=rect.uv_min.y,
+              uv_max_x=rect.uv_max.x,
+              uv_max_y=rect.uv_max.y,
+              flags=rect.flags,
+              radius_tl=rect.radius.top_left,
+              radius_tr=rect.radius.top_right,
+              radius_br=rect.radius.bottom_right,
+              radius_bl=rect.radius.bottom_left,
+              border_left=rect.border.left,
+              border_top=rect.border.top,
+              border_right=rect.border.right,
+              border_bottom=rect.border.bottom,
+            )
+          }
+          UiBoxShadowExtra(i) => {
+            let shadow = extra_ui_box_shadows[i]
+            apply_scissor(shadow.scissor)
+            let transform = shadow.transform
+            let pos = @math.Vec2::new(
+              transform.translation.x + shadow.anchor_offset.x,
+              transform.translation.y + shadow.anchor_offset.y,
+            )
+            @window.host_gpu_draw_ui_box_shadow(
+              texture_id=shadow.texture.id(),
+              x=pos.x,
+              y=pos.y,
+              rotation=transform.rotation_z(),
+              scale_x=shadow.draw_scale.x,
+              scale_y=shadow.draw_scale.y,
+              color_r=shadow.color.r,
+              color_g=shadow.color.g,
+              color_b=shadow.color.b,
+              color_a=shadow.color.a,
+              size_x=shadow.size.x,
+              size_y=shadow.size.y,
+              radius_tl=shadow.radius.top_left,
+              radius_tr=shadow.radius.top_right,
+              radius_br=shadow.radius.bottom_right,
+              radius_bl=shadow.radius.bottom_left,
+              blur=shadow.blur,
+              samples=shadow.samples,
+            )
+          }
+          UiTextureSliceExtra(i) => {
+            let slice = extra_ui_texture_slices[i]
+            apply_scissor(slice.scissor)
+            let transform = slice.transform
+            let pos = @math.Vec2::new(
+              transform.translation.x + slice.anchor_offset.x,
+              transform.translation.y + slice.anchor_offset.y,
+            )
+            @window.host_gpu_draw_ui_texture_slice(
+              texture_id=slice.texture.id(),
+              x=pos.x,
+              y=pos.y,
+              rotation=transform.rotation_z(),
+              scale_x=slice.draw_scale.x,
+              scale_y=slice.draw_scale.y,
+              color_r=slice.color.r,
+              color_g=slice.color.g,
+              color_b=slice.color.b,
+              color_a=slice.color.a,
+              texture_slice_l=slice.texture_slices.x,
+              texture_slice_t=slice.texture_slices.y,
+              texture_slice_r=slice.texture_slices.z,
+              texture_slice_b=slice.texture_slices.w,
+              target_slice_l=slice.target_slices.x,
+              target_slice_t=slice.target_slices.y,
+              target_slice_r=slice.target_slices.z,
+              target_slice_b=slice.target_slices.w,
+              repeat_side_x=slice.repeat.x,
+              repeat_side_y=slice.repeat.y,
+              repeat_center_x=slice.repeat.z,
+              repeat_center_y=slice.repeat.w,
+              atlas_l=slice.atlas_rect.x,
+              atlas_t=slice.atlas_rect.y,
+              atlas_r=slice.atlas_rect.z,
+              atlas_b=slice.atlas_rect.w,
+            )
+          }
+        }
+      }
+    }
+
+    let tonemapping_mode = world.camera_tonemapping_mode(camera.entity)
+    let deband_dither_enabled = world.camera_deband_dither_enabled(
+      camera.entity,
+    )
+    let mut auto_bloom_source : @asset.Handle[@asset.Image]? = None
+    if camera.bloom2d is Some(bloom) {
+      if bloom.source is None && camera.target is Screen {
+        auto_bloom_source = Some(
+          render2d_get_or_create_bloom2d_auto_target(
+            rs.val,
+            camera.entity,
+            view_width_logical,
+            view_height_logical,
+          ),
+        )
+      }
+    }
+
+    if auto_bloom_source is Some(source) {
+      @window.host_gpu_begin_pass(
+        target_id=source.id(),
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear.r,
+        clear_g=clear.g,
+        clear_b=clear.b,
+        clear_a=clear.a,
+        camera_x=camera.transform.translation.x,
+        camera_y=camera.transform.translation.y,
+        camera_rotation=camera.transform.rotation_z(),
+        camera_scale=camera.projection.scale,
+        viewport_x=0,
+        viewport_y=0,
+        viewport_width=view_width_logical,
+        viewport_height=view_height_logical,
+        viewport_depth_min~,
+        viewport_depth_max~,
+        clear_enabled=if clear_enabled { 1 } else { 0 },
+      )
+      draw_camera_items(0, 0, view_width_logical, view_height_logical, 1.0F)
+      @window.host_gpu_end_pass()
+
+      @window.host_gpu_begin_pass(
+        target_id~,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear.r,
+        clear_g=clear.g,
+        clear_b=clear.b,
+        clear_a=clear.a,
+        camera_x=camera.transform.translation.x,
+        camera_y=camera.transform.translation.y,
+        camera_rotation=camera.transform.rotation_z(),
+        camera_scale=camera.projection.scale,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        viewport_depth_min~,
+        viewport_depth_max~,
+        clear_enabled=if clear_enabled { 1 } else { 0 },
+      )
+      render2d_draw_camera_target_to_screen(
+        source, camera, view_width_logical, view_height_logical,
+      )
+      render2d_draw_camera_bloom(
+        camera, source, tonemapping_mode, deband_dither_enabled, view_width_logical,
+        view_height_logical,
+      )
+      gizmos_draw_lines(camera.layers)
+      @window.host_gpu_end_pass()
+      continue
+    }
+
     @window.host_gpu_begin_pass(
       target_id~,
       width=view_width_logical,
@@ -5480,270 +5966,15 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(
       viewport_depth_max~,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
-    let draw_items = draw_items_for_layers(
-      sprites,
-      extra_sprites,
-      extra_sprite_texture_slices,
-      extra_ui_rects,
-      extra_ui_box_shadows,
-      extra_ui_texture_slices,
-      meshes,
-      camera.layers,
+    draw_camera_items(
+      viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
     )
-    let mut scissor_active = false
-    let mut scissor_x = 0
-    let mut scissor_y = 0
-    let mut scissor_w = 0
-    let mut scissor_h = 0
-    fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
-      match rect_opt {
-        None =>
-          if scissor_active {
-            @window.host_gpu_clear_scissor()
-            scissor_active = false
-          }
-        Some(rect) => {
-          let (sx, sy, sw, sh) = physical_scissor_for_camera(
-            rect, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
-          )
-          if !scissor_active ||
-            sx != scissor_x ||
-            sy != scissor_y ||
-            sw != scissor_w ||
-            sh != scissor_h {
-            @window.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
-            scissor_active = true
-            scissor_x = sx
-            scissor_y = sy
-            scissor_w = sw
-            scissor_h = sh
-          }
-        }
-      }
+    if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
+      render2d_draw_camera_bloom(
+        camera, source, tonemapping_mode, deband_dither_enabled, view_width_logical,
+        view_height_logical,
+      )
     }
-
-    for item in draw_items {
-      match item.kind {
-        SpriteMain(i) => {
-          let sprite = sprites[i]
-          apply_scissor(sprite.scissor)
-          let transform = sprite.transform
-          let pos = @math.Vec2::new(
-            transform.translation.x + sprite.anchor_offset.x,
-            transform.translation.y + sprite.anchor_offset.y,
-          )
-          @window.host_gpu_draw_sprite_uv(
-            texture_id=sprite.texture.id(),
-            x=pos.x,
-            y=pos.y,
-            rotation=transform.rotation_z(),
-            scale_x=sprite.draw_scale.x,
-            scale_y=sprite.draw_scale.y,
-            color_r=sprite.color.r,
-            color_g=sprite.color.g,
-            color_b=sprite.color.b,
-            color_a=sprite.color.a,
-            uv_min_x=sprite.uv_min.x,
-            uv_min_y=sprite.uv_min.y,
-            uv_max_x=sprite.uv_max.x,
-            uv_max_y=sprite.uv_max.y,
-          )
-        }
-        SpriteExtra(i) => {
-          let sprite = extra_sprites[i]
-          apply_scissor(sprite.scissor)
-          let transform = sprite.transform
-          let pos = @math.Vec2::new(
-            transform.translation.x + sprite.anchor_offset.x,
-            transform.translation.y + sprite.anchor_offset.y,
-          )
-          @window.host_gpu_draw_sprite_uv(
-            texture_id=sprite.texture.id(),
-            x=pos.x,
-            y=pos.y,
-            rotation=transform.rotation_z(),
-            scale_x=sprite.draw_scale.x,
-            scale_y=sprite.draw_scale.y,
-            color_r=sprite.color.r,
-            color_g=sprite.color.g,
-            color_b=sprite.color.b,
-            color_a=sprite.color.a,
-            uv_min_x=sprite.uv_min.x,
-            uv_min_y=sprite.uv_min.y,
-            uv_max_x=sprite.uv_max.x,
-            uv_max_y=sprite.uv_max.y,
-          )
-        }
-        SpriteTextureSliceExtra(i) => {
-          let slice = extra_sprite_texture_slices[i]
-          apply_scissor(slice.scissor)
-          let transform = slice.transform
-          let pos = @math.Vec2::new(
-            transform.translation.x + slice.anchor_offset.x,
-            transform.translation.y + slice.anchor_offset.y,
-          )
-          @window.host_gpu_draw_ui_texture_slice(
-            texture_id=slice.texture.id(),
-            x=pos.x,
-            y=pos.y,
-            rotation=transform.rotation_z(),
-            scale_x=slice.draw_scale.x,
-            scale_y=slice.draw_scale.y,
-            color_r=slice.color.r,
-            color_g=slice.color.g,
-            color_b=slice.color.b,
-            color_a=slice.color.a,
-            texture_slice_l=slice.texture_slices.x,
-            texture_slice_t=slice.texture_slices.y,
-            texture_slice_r=slice.texture_slices.z,
-            texture_slice_b=slice.texture_slices.w,
-            target_slice_l=slice.target_slices.x,
-            target_slice_t=slice.target_slices.y,
-            target_slice_r=slice.target_slices.z,
-            target_slice_b=slice.target_slices.w,
-            repeat_side_x=slice.repeat.x,
-            repeat_side_y=slice.repeat.y,
-            repeat_center_x=slice.repeat.z,
-            repeat_center_y=slice.repeat.w,
-            atlas_l=slice.atlas_rect.x,
-            atlas_t=slice.atlas_rect.y,
-            atlas_r=slice.atlas_rect.z,
-            atlas_b=slice.atlas_rect.w,
-          )
-        }
-        Mesh(i) => {
-          apply_scissor(None)
-          let mesh = meshes[i]
-          guard mesh_draw_alpha(mesh.alpha_mode, mesh.color.a)
-            is Some(draw_alpha) else {
-            continue
-          }
-          let transform = mesh.transform
-          let texture_id = match mesh.texture {
-            Some(texture) => texture.id()
-            None => -1
-          }
-          @window.host_gpu_draw_mesh(
-            mesh_id=mesh.mesh_id,
-            x=transform.translation.x,
-            y=transform.translation.y,
-            rotation=transform.rotation_z(),
-            scale_x=transform.scale.x,
-            scale_y=transform.scale.y,
-            color_r=mesh.color.r,
-            color_g=mesh.color.g,
-            color_b=mesh.color.b,
-            color_a=draw_alpha,
-            texture_id~,
-            uv_offset_x=mesh.uv_offset.x,
-            uv_offset_y=mesh.uv_offset.y,
-            uv_scale_x=mesh.uv_scale.x,
-            uv_scale_y=mesh.uv_scale.y,
-          )
-        }
-        UiRectExtra(i) => {
-          let rect = extra_ui_rects[i]
-          apply_scissor(rect.scissor)
-          let transform = rect.transform
-          let pos = @math.Vec2::new(
-            transform.translation.x + rect.anchor_offset.x,
-            transform.translation.y + rect.anchor_offset.y,
-          )
-          @window.host_gpu_draw_ui_rect(
-            texture_id=rect.texture.id(),
-            x=pos.x,
-            y=pos.y,
-            rotation=transform.rotation_z(),
-            scale_x=rect.draw_scale.x,
-            scale_y=rect.draw_scale.y,
-            color_r=rect.color.r,
-            color_g=rect.color.g,
-            color_b=rect.color.b,
-            color_a=rect.color.a,
-            uv_min_x=rect.uv_min.x,
-            uv_min_y=rect.uv_min.y,
-            uv_max_x=rect.uv_max.x,
-            uv_max_y=rect.uv_max.y,
-            flags=rect.flags,
-            radius_tl=rect.radius.top_left,
-            radius_tr=rect.radius.top_right,
-            radius_br=rect.radius.bottom_right,
-            radius_bl=rect.radius.bottom_left,
-            border_left=rect.border.left,
-            border_top=rect.border.top,
-            border_right=rect.border.right,
-            border_bottom=rect.border.bottom,
-          )
-        }
-        UiBoxShadowExtra(i) => {
-          let shadow = extra_ui_box_shadows[i]
-          apply_scissor(shadow.scissor)
-          let transform = shadow.transform
-          let pos = @math.Vec2::new(
-            transform.translation.x + shadow.anchor_offset.x,
-            transform.translation.y + shadow.anchor_offset.y,
-          )
-          @window.host_gpu_draw_ui_box_shadow(
-            texture_id=shadow.texture.id(),
-            x=pos.x,
-            y=pos.y,
-            rotation=transform.rotation_z(),
-            scale_x=shadow.draw_scale.x,
-            scale_y=shadow.draw_scale.y,
-            color_r=shadow.color.r,
-            color_g=shadow.color.g,
-            color_b=shadow.color.b,
-            color_a=shadow.color.a,
-            size_x=shadow.size.x,
-            size_y=shadow.size.y,
-            radius_tl=shadow.radius.top_left,
-            radius_tr=shadow.radius.top_right,
-            radius_br=shadow.radius.bottom_right,
-            radius_bl=shadow.radius.bottom_left,
-            blur=shadow.blur,
-            samples=shadow.samples,
-          )
-        }
-        UiTextureSliceExtra(i) => {
-          let slice = extra_ui_texture_slices[i]
-          apply_scissor(slice.scissor)
-          let transform = slice.transform
-          let pos = @math.Vec2::new(
-            transform.translation.x + slice.anchor_offset.x,
-            transform.translation.y + slice.anchor_offset.y,
-          )
-          @window.host_gpu_draw_ui_texture_slice(
-            texture_id=slice.texture.id(),
-            x=pos.x,
-            y=pos.y,
-            rotation=transform.rotation_z(),
-            scale_x=slice.draw_scale.x,
-            scale_y=slice.draw_scale.y,
-            color_r=slice.color.r,
-            color_g=slice.color.g,
-            color_b=slice.color.b,
-            color_a=slice.color.a,
-            texture_slice_l=slice.texture_slices.x,
-            texture_slice_t=slice.texture_slices.y,
-            texture_slice_r=slice.texture_slices.z,
-            texture_slice_b=slice.texture_slices.w,
-            target_slice_l=slice.target_slices.x,
-            target_slice_t=slice.target_slices.y,
-            target_slice_r=slice.target_slices.z,
-            target_slice_b=slice.target_slices.w,
-            repeat_side_x=slice.repeat.x,
-            repeat_side_y=slice.repeat.y,
-            repeat_center_x=slice.repeat.z,
-            repeat_center_y=slice.repeat.w,
-            atlas_l=slice.atlas_rect.x,
-            atlas_t=slice.atlas_rect.y,
-            atlas_r=slice.atlas_rect.z,
-            atlas_b=slice.atlas_rect.w,
-          )
-        }
-      }
-    }
-    render2d_draw_camera_bloom(camera, view_width_logical, view_height_logical)
     gizmos_draw_lines(camera.layers)
     @window.host_gpu_end_pass()
   }
@@ -6019,7 +6250,7 @@ pub let render2d_set_render : @app.SystemSet = @app.system_set(
 pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
-pub fn[W : RenderExtractWorld] render2d_plugin(
+pub fn[W : RenderExtractWorld + CameraPostProcessWorld] render2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app

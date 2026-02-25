@@ -46,7 +46,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(W, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
 
-pub fn[W : RenderExtractWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn[W : RenderExtractWorld + CameraPostProcessWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -76,7 +76,7 @@ pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(W, @math.Vec2) -> @
 
 pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @math.Vec2?
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_execute_system(W) -> Unit
+pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
 pub fn[W : RenderExtractWorld] render_extract_system(W) -> Unit
 
@@ -134,13 +134,14 @@ pub fn ArrowBuilder::with_double_end(Self) -> Self
 pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
 
 pub struct Bloom2d {
-  source : @asset.Handle[@asset.Image]
+  source : @asset.Handle[@asset.Image]?
   enabled : Bool
   settings : Bloom2dSettings
 }
-pub fn Bloom2d::new(@asset.Handle[@asset.Image]) -> Self
+pub fn Bloom2d::new() -> Self
 pub fn Bloom2d::with_enabled(Self, Bool) -> Self
 pub fn Bloom2d::with_settings(Self, Bloom2dSettings) -> Self
+pub fn Bloom2d::with_source(Self, @asset.Handle[@asset.Image]) -> Self
 
 pub(all) struct Bloom2dSettings {
   intensity : Float
@@ -733,6 +734,11 @@ pub fn Viewport::with_depth(Self, Float, Float) -> Self
 
 // Traits
 pub(open) trait Camera2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + @math.Has_Transform {
+}
+
+pub(open) trait CameraPostProcessWorld {
+  camera_tonemapping_mode(Self, @core.Entity) -> Int
+  camera_deband_dither_enabled(Self, @core.Entity) -> Bool
 }
 
 pub(open) trait CameraSystemWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + @core.ChangeTickWorld + @core.SystemContextWorld {

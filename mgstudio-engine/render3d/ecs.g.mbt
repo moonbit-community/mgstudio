@@ -6,9 +6,9 @@
 pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight",
   "Wireframe", "FreeCamera", "LightProbe", "MotionBlur", "PointLight", "NoWireframe",
-  "Tonemapping", "DepthPrepass", "NormalPrepass", "ContactShadows", "MeshMaterial3d",
-  "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState", "NotShadowCaster",
-  "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
+  "Tonemapping", "DebandDither", "DepthPrepass", "NormalPrepass", "ContactShadows",
+  "MeshMaterial3d", "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState",
+  "NotShadowCaster", "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
   "SpotLightTexture", "NotShadowReceiver", "PointLightTexture", "CameraProjection3d",
   "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass",
   "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
@@ -100,6 +100,11 @@ pub(open) trait Has_NoWireframe {
 ///|
 pub(open) trait Has_Tonemapping {
   get_tonemapping_store(self : Self) -> @core.ComponentStore[Tonemapping]
+}
+
+///|
+pub(open) trait Has_DebandDither {
+  get_deband_dither_store(self : Self) -> @core.ComponentStore[DebandDither]
 }
 
 ///|

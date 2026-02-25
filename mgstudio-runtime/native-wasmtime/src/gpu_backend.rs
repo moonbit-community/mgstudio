@@ -219,6 +219,8 @@ struct Bloom2dDraw {
     max_mip_dimension: i32,
     scale_x: f32,
     scale_y: f32,
+    tonemapping_mode: i32,
+    deband_dither_enabled: i32,
     view_width: i32,
     view_height: i32,
     scissor: Option<ScissorRect>,
@@ -1338,6 +1340,9 @@ impl GpuBackend {
                             continue;
                         };
 
+                        if draw.enabled == 0 {
+                            continue;
+                        }
                         let intensity = draw.intensity.max(0.0);
                         let low_frequency_boost = draw.low_frequency_boost.clamp(0.0, 1.0);
                         let low_frequency_boost_curvature =
@@ -1346,29 +1351,60 @@ impl GpuBackend {
                         let threshold = draw.threshold.max(0.0);
                         let threshold_softness = draw.threshold_softness.clamp(0.0, 1.0);
                         let composite_mode: f32 = if draw.composite_mode == 0 { 0.0 } else { 1.0 };
-                        let enabled: f32 = if draw.enabled == 0 { 0.0 } else { 1.0 };
                         let max_mip_dimension = draw.max_mip_dimension.max(4) as f32;
                         let scale_x = draw.scale_x.max(0.0);
                         let scale_y = draw.scale_y.max(0.0);
                         let view_width = draw.view_width.max(1) as f32;
                         let view_height = draw.view_height.max(1) as f32;
+                        let tonemapping_mode = draw.tonemapping_mode.clamp(0, 7) as f32;
+                        let deband_dither_enabled: f32 = if draw.deband_dither_enabled == 0 {
+                            0.0
+                        } else {
+                            1.0
+                        };
+                        let softness = threshold_softness;
+                        let knee = threshold * softness;
+                        let target_w = view_width.max(1.0);
+                        let target_h = view_height.max(1.0);
+                        let viewport_x = pass.st.viewport_x as f32;
+                        let viewport_y = pass.st.viewport_y as f32;
+                        let viewport_w = if pass.st.viewport_w > 0 {
+                            pass.st.viewport_w as f32
+                        } else {
+                            target_w
+                        };
+                        let viewport_h = if pass.st.viewport_h > 0 {
+                            pass.st.viewport_h as f32
+                        } else {
+                            target_h
+                        };
+                        let aspect = if target_h > 0.0 {
+                            target_w / target_h
+                        } else {
+                            1.0
+                        };
+                        let reserved_tail = low_frequency_boost
+                            + low_frequency_boost_curvature
+                            + high_pass_frequency
+                            + max_mip_dimension
+                            + composite_mode;
                         let settings_words: [u32; 16] = [
-                            intensity.to_bits(),
-                            low_frequency_boost.to_bits(),
-                            low_frequency_boost_curvature.to_bits(),
-                            high_pass_frequency.to_bits(),
                             threshold.to_bits(),
-                            threshold_softness.to_bits(),
-                            composite_mode.to_bits(),
-                            enabled.to_bits(),
+                            (threshold - knee).to_bits(),
+                            (2.0 * knee).to_bits(),
+                            (0.25 / (knee + 0.00001)).to_bits(),
+                            (viewport_x / target_w).to_bits(),
+                            (viewport_y / target_h).to_bits(),
+                            (viewport_w / target_w).to_bits(),
+                            (viewport_h / target_h).to_bits(),
                             scale_x.to_bits(),
                             scale_y.to_bits(),
-                            max_mip_dimension.to_bits(),
-                            0f32.to_bits(),
-                            view_width.to_bits(),
-                            view_height.to_bits(),
-                            0f32.to_bits(),
-                            0f32.to_bits(),
+                            aspect.to_bits(),
+                            0.0f32.to_bits(),
+                            tonemapping_mode.to_bits(),
+                            deband_dither_enabled.to_bits(),
+                            intensity.to_bits(),
+                            reserved_tail.to_bits(),
                         ];
                         self.queue.write_buffer(
                             &settings_buf,
@@ -1396,6 +1432,12 @@ impl GpuBackend {
                                     wgpu::BindGroupEntry {
                                         binding: 2,
                                         resource: settings_buf.as_entire_binding(),
+                                    },
+                                    wgpu::BindGroupEntry {
+                                        binding: 3,
+                                        resource: wgpu::BindingResource::TextureView(
+                                            &scene_tex.view,
+                                        ),
                                     },
                                 ],
                             });
@@ -1858,6 +1900,8 @@ impl GpuBackend {
         max_mip_dimension: i32,
         scale_x: f32,
         scale_y: f32,
+        tonemapping_mode: i32,
+        deband_dither_enabled: i32,
         view_width: i32,
         view_height: i32,
     ) -> anyhow::Result<()> {
@@ -1884,6 +1928,8 @@ impl GpuBackend {
             max_mip_dimension,
             scale_x,
             scale_y,
+            tonemapping_mode,
+            deband_dither_enabled,
             view_width,
             view_height,
             scissor: pass.current_scissor,
@@ -3725,7 +3771,7 @@ impl GpuBackend {
                 },
                 fragment: Some(wgpu::FragmentState {
                     module: &sm,
-                    entry_point: Some("fragment"),
+                    entry_point: Some("final_fragment"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: wgpu::TextureFormat::Rgba8Unorm,
@@ -3784,7 +3830,7 @@ impl GpuBackend {
                 },
                 fragment: Some(wgpu::FragmentState {
                     module: &sm,
-                    entry_point: Some("fragment"),
+                    entry_point: Some("final_fragment"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format,
@@ -3837,6 +3883,16 @@ impl GpuBackend {
                                 ty: wgpu::BufferBindingType::Uniform,
                                 has_dynamic_offset: false,
                                 min_binding_size: None,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 3,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
                             },
                             count: None,
                         },

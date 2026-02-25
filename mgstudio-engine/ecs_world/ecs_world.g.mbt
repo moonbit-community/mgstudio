@@ -71,6 +71,7 @@ pub struct World {
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  deband_dither : @core.ComponentStore[@render3d.DebandDither]
   depth_prepass : @core.ComponentStore[@render3d.DepthPrepass]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
@@ -284,6 +285,7 @@ pub fn World::new() -> World {
     rigid_body3d: @core.ComponentStore::new(),
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
+    deband_dither: @core.ComponentStore::new(),
     depth_prepass: @core.ComponentStore::new(),
     accessibility_label: @core.ComponentStore::new(),
     ui_box_shadow_samples: @core.ComponentStore::new(),
@@ -457,6 +459,7 @@ pub fn World::despawn(
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.deband_dither.remove(entity) |> ignore
   self.depth_prepass.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
@@ -608,6 +611,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.deband_dither.remove(entity) |> ignore
   self.depth_prepass.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
@@ -1034,6 +1038,11 @@ pub impl @render2d.Has_RenderLayers for World with get_render_layers_store(self)
 ///|
 pub impl @render2d.Has_RenderTarget for World with get_render_target_store(self) {
   self.render_target
+}
+
+///|
+pub impl @render3d.Has_DebandDither for World with get_deband_dither_store(self) {
+  self.deband_dither
 }
 
 ///|

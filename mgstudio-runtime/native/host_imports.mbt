@@ -4028,14 +4028,26 @@ pub fn add_mgstudio_host_imports(
         } else {
           1.0F
         }
-        let view_width = if args.length() > 12 &&
+        let tonemapping_mode = if args.length() > 12 &&
           args[12] is @types.Value::I32(v) {
+          v
+        } else {
+          0
+        }
+        let deband_dither_enabled = if args.length() > 13 &&
+          args[13] is @types.Value::I32(v) {
+          v
+        } else {
+          0
+        }
+        let view_width = if args.length() > 14 &&
+          args[14] is @types.Value::I32(v) {
           v
         } else {
           1
         }
-        let view_height = if args.length() > 13 &&
-          args[13] is @types.Value::I32(v) {
+        let view_height = if args.length() > 15 &&
+          args[15] is @types.Value::I32(v) {
           v
         } else {
           1
@@ -4045,7 +4057,8 @@ pub fn add_mgstudio_host_imports(
         .draw_bloom2d(
           scene_texture_id, enabled, intensity, low_frequency_boost, low_frequency_boost_curvature,
           high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
-          scale_x, scale_y, view_width, view_height,
+          scale_x, scale_y, tonemapping_mode, deband_dither_enabled, view_width,
+          view_height,
         )
         ok_i32(0)
       } catch {
@@ -4069,6 +4082,8 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
       ],

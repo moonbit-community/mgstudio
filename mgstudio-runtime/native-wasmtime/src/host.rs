@@ -3072,6 +3072,8 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::I32,
             ValType::I32,
+            ValType::I32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3948,8 +3950,10 @@ fn define_mgstudio_host_imports(
                 Some(Val::F32(bits)) => f32::from_bits(*bits),
                 _ => 1.0,
             };
-            let view_width = args.get(12).and_then(|v| v.i32()).unwrap_or(1);
-            let view_height = args.get(13).and_then(|v| v.i32()).unwrap_or(1);
+            let tonemapping_mode = args.get(12).and_then(|v| v.i32()).unwrap_or(0);
+            let deband_dither_enabled = args.get(13).and_then(|v| v.i32()).unwrap_or(0);
+            let view_width = args.get(14).and_then(|v| v.i32()).unwrap_or(1);
+            let view_height = args.get(15).and_then(|v| v.i32()).unwrap_or(1);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_bloom2d(
                     scene_texture_id,
@@ -3964,6 +3968,8 @@ fn define_mgstudio_host_imports(
                     max_mip_dimension,
                     scale_x,
                     scale_y,
+                    tonemapping_mode,
+                    deband_dither_enabled,
                     view_width,
                     view_height,
                 )?;

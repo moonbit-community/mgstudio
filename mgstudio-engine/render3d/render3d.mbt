@@ -734,6 +734,19 @@ pub fn Tonemapping::default() -> Tonemapping {
 }
 
 ///|
+/// Enables / disables screen-space deband dithering in the tonemapping pass.
+#ecs.component
+pub(all) enum DebandDither {
+  Disabled
+  Enabled
+} derive(Eq, Show)
+
+///|
+pub fn DebandDither::default() -> DebandDither {
+  DebandDither::Disabled
+}
+
+///|
 /// Camera bloom settings aligned with Bevy's `Bloom`.
 #ecs.component
 pub struct Bloom {

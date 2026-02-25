@@ -1648,6 +1648,8 @@ fn bloom2d_make_uniform_data(
   threshold_softness : Double,
   scale_x : Double,
   scale_y : Double,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Int,
 ) -> @js.Any {
   let softness = threshold_softness
   let knee = threshold * softness
@@ -1680,6 +1682,15 @@ fn bloom2d_make_uniform_data(
     scale_x,
     scale_y,
     aspect,
+    0.0,
+    tonemapping_mode.to_double(),
+    if deband_dither_enabled != 0 {
+      1.0
+    } else {
+      0.0
+    },
+    0.0,
+    0.0,
     0.0,
   ])
 }
@@ -1848,6 +1859,18 @@ fn ensure_bloom2d_pipeline(
             ("visibility", @js.any(fragment_stage)),
             ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
           ]),
+          @js.from_entries([
+            ("binding", @js.any(3)),
+            ("visibility", @js.any(fragment_stage)),
+            (
+              "texture",
+              @js.from_entries([
+                ("sampleType", @js.any("float")),
+                ("viewDimension", @js.any("2d")),
+                ("multisampled", @js.any(false)),
+              ]),
+            ),
+          ]),
         ]),
       ),
     ])
@@ -2010,10 +2033,10 @@ fn ensure_bloom2d_pipeline(
     state, upsample_source, bind_layout, "upsample", bloom_mip_format, 2,
   )
   state.gpu.bloom2d_final_pipeline_energy = bloom2d_create_pipeline(
-    state, upsample_source, bind_layout, "upsample", format, 1,
+    state, upsample_source, bind_layout, "final_fragment", format, 0,
   )
   state.gpu.bloom2d_final_pipeline_additive = bloom2d_create_pipeline(
-    state, upsample_source, bind_layout, "upsample", format, 2,
+    state, upsample_source, bind_layout, "final_fragment", format, 0,
   )
   state.gpu.bloom2d_mip_format = bloom_mip_format_key
   state.gpu.bloom2d_final_pipeline_format = format_key
@@ -4803,6 +4826,8 @@ fn draw_bloom2d(
   max_mip_dimension : Int,
   scale_x : Double,
   scale_y : Double,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Int,
   view_width : Int,
   view_height : Int,
 ) -> Unit {
@@ -5074,8 +5099,11 @@ fn draw_bloom2d(
   let high_pass_frequency_value = high_pass_frequency
   let threshold_value = threshold
   let threshold_softness_value = threshold_softness
+  let tonemapping_mode_value = tonemapping_mode
+  let deband_dither_enabled_value = deband_dither_enabled
   let settings_data = bloom2d_make_uniform_data(
     info, threshold_value, threshold_softness_value, scale_x_value, scale_y_value,
+    tonemapping_mode_value, deband_dither_enabled_value,
   )
   queue.write_buffer(settings_buffer, 0, settings_data)
   let scene_view : @webgpu.GPUTextureView = scene_texture_entry
@@ -5085,6 +5113,7 @@ fn draw_bloom2d(
     @webgpu.bind_group_entry_texture(0, scene_view),
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
+    @webgpu.bind_group_entry_texture(3, scene_view),
   ]
   let material_desc = @webgpu.bind_group_descriptor(
     bind_layout, material_entries,
@@ -5119,6 +5148,7 @@ fn draw_bloom2d(
       @webgpu.bind_group_entry_texture(0, src_view),
       @webgpu.bind_group_entry_sampler(1, bloom_sampler),
       @webgpu.bind_group_entry_buffer(2, settings_buffer),
+      @webgpu.bind_group_entry_texture(3, scene_view),
     ]
     let bind_group = device.create_bind_group(
       @webgpu.bind_group_descriptor(bind_layout, entries).to_js(),
@@ -5151,6 +5181,7 @@ fn draw_bloom2d(
       @webgpu.bind_group_entry_texture(0, src_view),
       @webgpu.bind_group_entry_sampler(1, bloom_sampler),
       @webgpu.bind_group_entry_buffer(2, settings_buffer),
+      @webgpu.bind_group_entry_texture(3, scene_view),
     ]
     let bind_group = device.create_bind_group(
       @webgpu.bind_group_descriptor(bind_layout, entries).to_js(),
@@ -5193,6 +5224,7 @@ fn draw_bloom2d(
     @webgpu.bind_group_entry_texture(0, state.gpu.bloom2d_mip_views[0]),
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
+    @webgpu.bind_group_entry_texture(3, scene_view),
   ]
   let final_bind_group = device.create_bind_group(
     @webgpu.bind_group_descriptor(bind_layout, final_entries).to_js(),

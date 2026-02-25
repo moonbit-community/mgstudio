@@ -130,6 +130,14 @@ pub fn CubemapLayout3d::default() -> Self
 pub impl Eq for CubemapLayout3d
 pub impl Show for CubemapLayout3d
 
+pub(all) enum DebandDither {
+  Disabled
+  Enabled
+}
+pub fn DebandDither::default() -> Self
+pub impl Eq for DebandDither
+pub impl Show for DebandDither
+
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 }
@@ -749,6 +757,10 @@ pub(open) trait Has_ChromaticAberration {
 
 pub(open) trait Has_ContactShadows {
   get_contact_shadows_store(Self) -> @core.ComponentStore[ContactShadows]
+}
+
+pub(open) trait Has_DebandDither {
+  get_deband_dither_store(Self) -> @core.ComponentStore[DebandDither]
 }
 
 pub(open) trait Has_DeferredPrepass {

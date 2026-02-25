@@ -2198,7 +2198,7 @@ fn ensure_motion_blur_pipeline_rgba8(
     sm,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     vs_entry="fullscreen_vertex_shader",
-    fs_entry="fragment",
+    fs_entry="final_fragment",
     alpha_blend=false,
     depth=false,
   )
@@ -2233,7 +2233,7 @@ fn ensure_motion_blur_pipeline_surface(
     sm,
     format,
     vs_entry="fullscreen_vertex_shader",
-    fs_entry="fragment",
+    fs_entry="final_fragment",
     alpha_blend=false,
     depth=false,
   )
@@ -4585,6 +4585,8 @@ pub fn GpuBackend::draw_bloom2d(
   max_mip_dimension : Int,
   scale_x : Float,
   scale_y : Float,
+  tonemapping_mode : Int,
+  deband_dither_enabled : Int,
   view_width : Int,
   view_height : Int,
 ) -> Unit raise GpuBackendError {
@@ -4598,13 +4600,15 @@ pub fn GpuBackend::draw_bloom2d(
     return
   }
   guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
+  if enabled == 0 {
+    return
+  }
   if scene_texture_id < 0 {
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return
   }
-  let intensity_value = if intensity < 0.0F { 0.0F } else { intensity }
   let low_frequency_boost_value = if low_frequency_boost < 0.0F {
     0.0F
   } else if low_frequency_boost > 1.0F {
@@ -4627,6 +4631,7 @@ pub fn GpuBackend::draw_bloom2d(
   } else {
     high_pass_frequency
   }
+  let intensity_value = if intensity < 0.0F { 0.0F } else { intensity }
   let threshold_value = if threshold < 0.0F { 0.0F } else { threshold }
   let threshold_softness_value = if threshold_softness < 0.0F {
     0.0F
@@ -4636,7 +4641,6 @@ pub fn GpuBackend::draw_bloom2d(
     threshold_softness
   }
   let composite_mode_value = if composite_mode == 0 { 0.0F } else { 1.0F }
-  let enabled_value = if enabled == 0 { 0.0F } else { 1.0F }
   let max_mip_dimension_value = Float::from_int(
     if max_mip_dimension < 4 {
       4
@@ -4660,19 +4664,86 @@ pub fn GpuBackend::draw_bloom2d(
       view_height
     },
   )
+  let tonemapping_mode_value = Float::from_int(
+    if tonemapping_mode < 0 {
+      0
+    } else if tonemapping_mode > 7 {
+      7
+    } else {
+      tonemapping_mode
+    },
+  )
+  let deband_dither_enabled_value = if deband_dither_enabled == 0 {
+    0.0F
+  } else {
+    1.0F
+  }
+  let softness = threshold_softness_value
+  let knee = threshold_value * softness
+  let mut viewport_x_norm = 0.0F
+  let mut viewport_y_norm = 0.0F
+  let mut viewport_w_norm = 1.0F
+  let mut viewport_h_norm = 1.0F
+  if self.pass_state is Some(pass_state) {
+    let target_w = if view_width_value > 0.0F { view_width_value } else { 1.0F }
+    let target_h = if view_height_value > 0.0F {
+      view_height_value
+    } else {
+      1.0F
+    }
+    let viewport_x = Float::from_double(pass_state.viewport_x.to_double())
+    let viewport_y = Float::from_double(pass_state.viewport_y.to_double())
+    let viewport_w = Float::from_double(pass_state.viewport_w.to_double())
+    let viewport_h = Float::from_double(pass_state.viewport_h.to_double())
+    viewport_x_norm = viewport_x / target_w
+    viewport_y_norm = viewport_y / target_h
+    viewport_w_norm = if viewport_w > 0.0F {
+      viewport_w / target_w
+    } else {
+      1.0F
+    }
+    viewport_h_norm = if viewport_h > 0.0F {
+      viewport_h / target_h
+    } else {
+      1.0F
+    }
+  }
+  let aspect_value = if view_height_value > 0.0F {
+    view_width_value / view_height_value
+  } else {
+    1.0F
+  }
+  let reserved_tail = low_frequency_boost_value +
+    low_frequency_boost_curvature_value +
+    high_pass_frequency_value +
+    max_mip_dimension_value +
+    composite_mode_value
   let settings_bytes = f32le_pack([
-    intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
-    high_pass_frequency_value, threshold_value, threshold_softness_value, composite_mode_value,
-    enabled_value, scale_x_value, scale_y_value, max_mip_dimension_value, 0.0F, view_width_value,
-    view_height_value, 0.0F, 0.0F,
+    threshold_value,
+    threshold_value - knee,
+    2.0F * knee,
+    0.25F / (knee + 0.00001F),
+    viewport_x_norm,
+    viewport_y_norm,
+    viewport_w_norm,
+    viewport_h_norm,
+    scale_x_value,
+    scale_y_value,
+    aspect_value,
+    0.0F,
+    tonemapping_mode_value,
+    deband_dither_enabled_value,
+    intensity_value,
+    reserved_tail,
   ])
   self.queue.write_buffer(settings_buf, 0UL, settings_bytes)
 
   let material_bgl = pipeline.get_bind_group_layout(0U)
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=4UL)
   let ok = builder.add_texture_view(0U, scene_texture.view) &&
     builder.add_sampler(1U, scene_texture.sampler) &&
-    builder.add_buffer(2U, settings_buf)
+    builder.add_buffer(2U, settings_buf) &&
+    builder.add_texture_view(3U, scene_texture.view)
   if !ok {
     builder.free()
     material_bgl.release()

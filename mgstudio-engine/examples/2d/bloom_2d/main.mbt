@@ -14,7 +14,7 @@
 
 ///|
 priv struct BloomExampleState {
-  mut compose_camera : @core.Entity
+  mut camera : @core.Entity
   mut help_text : @text.TextHandle?
   mut bloom_enabled : Bool
   mut bloom : @render2d.Bloom2dSettings
@@ -23,22 +23,12 @@ priv struct BloomExampleState {
 
 ///|
 let bloom_example_state : Ref[BloomExampleState] = Ref::new(BloomExampleState::{
-  compose_camera: @core.Entity::placeholder(),
+  camera: @core.Entity::placeholder(),
   help_text: None,
   bloom_enabled: true,
   bloom: @render2d.Bloom2dSettings::default(),
   tonemapping: @render3d.Tonemapping::TonyMcMapface,
 })
-
-///|
-fn scene_layers() -> @render2d.RenderLayers {
-  @render2d.RenderLayers::layer(0)
-}
-
-///|
-fn compose_layers() -> @render2d.RenderLayers {
-  @render2d.RenderLayers::layer(1)
-}
 
 ///|
 pub fn game_app() -> Unit {
@@ -211,52 +201,40 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
 
 ///|
 fn bloom_setup(world : @ecs_world.World) -> Unit {
-  bloom_example_state.val.compose_camera = @core.Entity::placeholder()
+  bloom_example_state.val.camera = @core.Entity::placeholder()
   bloom_example_state.val.help_text = None
   bloom_example_state.val.bloom_enabled = true
   bloom_example_state.val.bloom = @render2d.Bloom2dSettings::default()
   bloom_example_state.val.tonemapping = @render3d.Tonemapping::TonyMcMapface
 
-  let width = safe_positive_int(@window.window_width(), 1280)
-  let height = safe_positive_int(@window.window_height(), 720)
-  let scene_target = @render2d.render2d_create_render_target(
-    world, width, height, false,
-  )
-
-  @render2d.Camera2dBundle::new_with_layers(
-    @render2d.Camera::new(@render2d.Color::black()).with_order(0),
-    @math.Transform::identity(),
-    @render2d.RenderTarget::Image(scene_target),
-    scene_layers(),
-  ).spawn(world)
-  |> ignore
-
-  let compose_camera = @render2d.Camera2dBundle::new_with_layers(
-      @render2d.Camera::new(@render2d.Color::black()).with_order(1),
+  let camera = @render2d.Camera2dBundle::new(
+      @render2d.Camera::new(@render2d.Color::black()),
       @math.Transform::identity(),
-      @render2d.RenderTarget::Screen,
-      compose_layers(),
     )
     .with_bloom2d(
-      @render2d.Bloom2d::new(scene_target).with_settings(
-        bloom_example_state.val.bloom,
-      ),
+      @render2d.Bloom2d::new().with_settings(bloom_example_state.val.bloom),
     )
     .spawn(world)
-  bloom_example_state.val.compose_camera = compose_camera
+  bloom_example_state.val.camera = camera
+  let tick = world.read_change_tick()
+  world
+  .get_tonemapping_store()
+  .insert(camera, bloom_example_state.val.tonemapping, tick)
+  world
+  .get_deband_dither_store()
+  .insert(camera, @render3d.DebandDither::Enabled, tick)
 
   let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
-  @render2d.SpriteBundle::new_with_layers(
+  @render2d.SpriteBundle::new(
     @render2d.Sprite::from_image(bird)
     .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F)))
     .with_color(@render2d.Color::new(5.0F, 5.0F, 5.0F, 1.0F)),
     @math.Transform::identity(),
-    scene_layers(),
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new_with_layers(
+  @render2d.Mesh2dBundle::new(
     @render2d.Mesh2d::from_circle(@render2d.Circle::new(100.0F)),
     @render2d.ColorMaterial::new(@render2d.Color::new(7.5F, 0.0F, 7.5F, 1.0F)),
     @math.Transform::from_xy_rotation_scale(
@@ -264,11 +242,10 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
-    scene_layers(),
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new_with_layers(
+  @render2d.Mesh2dBundle::new(
     @render2d.Mesh2d::from_regular_polygon(
       @render2d.RegularPolygon::new(100.0F, 6),
     ),
@@ -278,7 +255,6 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
-    scene_layers(),
   ).spawn(world)
   |> ignore
 
@@ -287,7 +263,7 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn bloom_update(world : @ecs_world.World) -> Unit {
-  if bloom_example_state.val.compose_camera.is_placeholder() {
+  if bloom_example_state.val.camera.is_placeholder() {
     return
   }
 
@@ -295,6 +271,7 @@ fn bloom_update(world : @ecs_world.World) -> Unit {
   let mut bloom_enabled = bloom_example_state.val.bloom_enabled
   let mut tonemapping = bloom_example_state.val.tonemapping
   let dt = @time.time_delta_seconds()
+  let tick = world.read_change_tick()
 
   if bloom_enabled {
     if @input.key_just_pressed(@window.KeyCode::Space) {
@@ -395,28 +372,22 @@ fn bloom_update(world : @ecs_world.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
     tonemapping = next_tonemap(tonemapping)
+    world
+    .get_tonemapping_store()
+    .set(bloom_example_state.val.camera, tonemapping, tick)
+    |> ignore
   }
 
   bloom_example_state.val.bloom = bloom
   bloom_example_state.val.bloom_enabled = bloom_enabled
   bloom_example_state.val.tonemapping = tonemapping
 
-  let tick = world.read_change_tick()
   let bloom_store = world.get_bloom2d_store()
-  let camera = bloom_example_state.val.compose_camera
+  let camera = bloom_example_state.val.camera
   if bloom_store.get(camera) is Some(current) {
     let next = current.with_settings(bloom).with_enabled(bloom_enabled)
     bloom_store.set(camera, next, tick) |> ignore
   }
 
   update_help_text()
-}
-
-///|
-fn safe_positive_int(value : Int, fallback : Int) -> Int {
-  if value <= 0 {
-    fallback
-  } else {
-    value
-  }
 }

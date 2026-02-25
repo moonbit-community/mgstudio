@@ -93,6 +93,7 @@ pub struct World {
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  deband_dither : @core.ComponentStore[@render3d.DebandDither]
   depth_prepass : @core.ComponentStore[@render3d.DepthPrepass]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
@@ -254,6 +255,7 @@ pub impl @picking.HasRes_PickingEvents for World
 pub impl @picking.HasRes_PickingHits for World
 pub impl @picking.HasRes_PickingState for World
 pub impl @picking.HasRes_PointerInputs for World
+pub impl @render2d.CameraPostProcessWorld for World
 pub impl @render2d.HasRes_RenderState for World
 pub impl @render2d.Has_Anchor for World
 pub impl @render2d.Has_Bloom2d for World
@@ -276,6 +278,7 @@ pub impl @render3d.Has_Camera3d for World
 pub impl @render3d.Has_CameraProjection3d for World
 pub impl @render3d.Has_ChromaticAberration for World
 pub impl @render3d.Has_ContactShadows for World
+pub impl @render3d.Has_DebandDither for World
 pub impl @render3d.Has_DeferredPrepass for World
 pub impl @render3d.Has_DepthPrepass for World
 pub impl @render3d.Has_DirectionalLight for World
