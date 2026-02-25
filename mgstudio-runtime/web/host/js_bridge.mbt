@@ -1485,63 +1485,6 @@ extern "js" fn motion_blur_globals_uniform_bytes(frame_count : Int) -> @js.Any =
   #| }
 
 ///|
-extern "js" fn bloom2d_uniform_bytes(
-  enabled : Int,
-  intensity : Double,
-  low_frequency_boost : Double,
-  low_frequency_boost_curvature : Double,
-  high_pass_frequency : Double,
-  threshold : Double,
-  threshold_softness : Double,
-  composite_mode : Int,
-  max_mip_dimension : Int,
-  scale_x : Double,
-  scale_y : Double,
-  view_width : Int,
-  view_height : Int,
-) -> @js.Any =
-  #| (
-  #|   enabled,
-  #|   intensity,
-  #|   lowFrequencyBoost,
-  #|   lowFrequencyBoostCurvature,
-  #|   highPassFrequency,
-  #|   threshold,
-  #|   thresholdSoftness,
-  #|   compositeMode,
-  #|   maxMipDimension,
-  #|   scaleX,
-  #|   scaleY,
-  #|   viewWidth,
-  #|   viewHeight
-  #| ) => {
-  #|   const buf = new ArrayBuffer(64)
-  #|   const view = new DataView(buf)
-  #|   const f = (x) => Number.isFinite(Number(x)) ? Number(x) : 0
-  #|   // params0
-  #|   view.setFloat32(0, Math.max(0, f(intensity)), true)
-  #|   view.setFloat32(4, Math.max(0, Math.min(1, f(lowFrequencyBoost))), true)
-  #|   view.setFloat32(8, Math.max(0, Math.min(1, f(lowFrequencyBoostCurvature))), true)
-  #|   view.setFloat32(12, Math.max(0, Math.min(1, f(highPassFrequency))), true)
-  #|   // params1
-  #|   view.setFloat32(16, Math.max(0, f(threshold)), true)
-  #|   view.setFloat32(20, Math.max(0, Math.min(1, f(thresholdSoftness))), true)
-  #|   view.setFloat32(24, (Number(compositeMode) | 0) === 0 ? 0 : 1, true)
-  #|   view.setFloat32(28, (Number(enabled) | 0) !== 0 ? 1 : 0, true)
-  #|   // params2
-  #|   view.setFloat32(32, Math.max(0, f(scaleX)), true)
-  #|   view.setFloat32(36, Math.max(0, f(scaleY)), true)
-  #|   view.setFloat32(40, Math.max(4, Number(maxMipDimension) | 0), true)
-  #|   view.setFloat32(44, 0, true)
-  #|   // params3
-  #|   view.setFloat32(48, Math.max(1, Number(viewWidth) | 0), true)
-  #|   view.setFloat32(52, Math.max(1, Number(viewHeight) | 0), true)
-  #|   view.setFloat32(56, 0, true)
-  #|   view.setFloat32(60, 0, true)
-  #|   return new Uint8Array(buf)
-  #| }
-
-///|
 extern "js" fn build_gizmo_vertices(
   data : @js.Any,
   cam_x : Double,
@@ -1751,6 +1694,10 @@ extern "js" fn math_sin(value : Double) -> Double =
 ///|
 extern "js" fn math_atan2(y : Double, x : Double) -> Double =
   #| (y, x) => Math.atan2(y, x)
+
+///|
+extern "js" fn math_pow(base : Double, exponent : Double) -> Double =
+  #| (base, exponent) => Math.pow(base, exponent)
 
 ///|
 extern "js" fn request_adapter_any() -> @js.Promise[@js.Any] =

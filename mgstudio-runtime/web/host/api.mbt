@@ -1297,6 +1297,7 @@ pub fn create_host(
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
+          ("format", @js.any(@webgpu.TextureFormat::Rgba8Unorm.to_js_string())),
         ])
         map_set(state.gpu.textures, @js.any(id), entry)
         ensure_bind_group_for_texture(state, entry)
@@ -1675,6 +1676,7 @@ pub fn create_host(
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
+          ("format", @js.any(format.to_js_string())),
         ])
         map_set(state.gpu.textures, @js.any(id), entry)
         ensure_bind_group_for_texture(state, entry)

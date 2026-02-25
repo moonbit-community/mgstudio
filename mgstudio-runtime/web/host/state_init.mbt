@@ -22,6 +22,7 @@ priv struct PendingTexture {
 
 ///|
 priv struct PassInfo {
+  target_id : Int
   width : Double
   height : Double
   cam_x : Double
@@ -52,6 +53,8 @@ priv struct PassInfo {
   viewport_y : Double
   viewport_width : Double
   viewport_height : Double
+  viewport_depth_min : Double
+  viewport_depth_max : Double
   ambient_r : Double
   ambient_g : Double
   ambient_b : Double
@@ -200,6 +203,20 @@ priv struct GpuState {
   mut motion_blur_globals_buffer : @webgpu.GPUBuffer?
   mut bloom2d_bind_layout : @webgpu.GPUBindGroupLayout?
   mut bloom2d_settings_buffer : @webgpu.GPUBuffer?
+  mut bloom2d_downsample_first_pipeline : @webgpu.GPURenderPipeline?
+  mut bloom2d_downsample_pipeline : @webgpu.GPURenderPipeline?
+  mut bloom2d_upsample_pipeline_energy : @webgpu.GPURenderPipeline?
+  mut bloom2d_upsample_pipeline_additive : @webgpu.GPURenderPipeline?
+  mut bloom2d_final_pipeline_energy : @webgpu.GPURenderPipeline?
+  mut bloom2d_final_pipeline_additive : @webgpu.GPURenderPipeline?
+  mut bloom2d_final_pipeline_format : String
+  mut bloom2d_sampler : @webgpu.GPUSampler?
+  mut bloom2d_mip_texture : @webgpu.GPUTexture?
+  bloom2d_mip_views : Array[@webgpu.GPUTextureView]
+  mut bloom2d_mip_width : Int
+  mut bloom2d_mip_height : Int
+  mut bloom2d_mip_count : Int
+  mut bloom2d_mip_format : String
   mut depth_texture : @webgpu.GPUTexture?
   mut depth_view : @webgpu.GPUTextureView?
   mut depth_width : Int
@@ -378,6 +395,20 @@ fn new_state(
       motion_blur_globals_buffer: None,
       bloom2d_bind_layout: None,
       bloom2d_settings_buffer: None,
+      bloom2d_downsample_first_pipeline: None,
+      bloom2d_downsample_pipeline: None,
+      bloom2d_upsample_pipeline_energy: None,
+      bloom2d_upsample_pipeline_additive: None,
+      bloom2d_final_pipeline_energy: None,
+      bloom2d_final_pipeline_additive: None,
+      bloom2d_final_pipeline_format: "",
+      bloom2d_sampler: None,
+      bloom2d_mip_texture: None,
+      bloom2d_mip_views: [],
+      bloom2d_mip_width: 0,
+      bloom2d_mip_height: 0,
+      bloom2d_mip_count: 0,
+      bloom2d_mip_format: "",
       depth_texture: None,
       depth_view: None,
       depth_width: 0,
@@ -935,6 +966,20 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.motion_blur_globals_buffer = None
   state.gpu.bloom2d_bind_layout = None
   state.gpu.bloom2d_settings_buffer = None
+  state.gpu.bloom2d_downsample_first_pipeline = None
+  state.gpu.bloom2d_downsample_pipeline = None
+  state.gpu.bloom2d_upsample_pipeline_energy = None
+  state.gpu.bloom2d_upsample_pipeline_additive = None
+  state.gpu.bloom2d_final_pipeline_energy = None
+  state.gpu.bloom2d_final_pipeline_additive = None
+  state.gpu.bloom2d_final_pipeline_format = ""
+  state.gpu.bloom2d_sampler = None
+  state.gpu.bloom2d_mip_texture = None
+  state.gpu.bloom2d_mip_views.clear()
+  state.gpu.bloom2d_mip_width = 0
+  state.gpu.bloom2d_mip_height = 0
+  state.gpu.bloom2d_mip_count = 0
+  state.gpu.bloom2d_mip_format = ""
   state.gpu.depth_texture = None
   state.gpu.depth_view = None
   state.gpu.depth_width = 0

@@ -17,185 +17,135 @@
 
 #import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput
 
-struct Bloom2dUniforms {
-  // intensity, low_frequency_boost, low_frequency_boost_curvature, high_pass_frequency
-  params0 : vec4<f32>,
-  // threshold, threshold_softness, composite_mode(0 energy / 1 additive), enabled
-  params1 : vec4<f32>,
-  // scale_x, scale_y, max_mip_dimension, reserved
-  params2 : vec4<f32>,
-  // view_width, view_height, reserved, reserved
-  params3 : vec4<f32>,
+struct BloomUniforms {
+    threshold_precomputations: vec4<f32>,
+    viewport: vec4<f32>,
+    scale: vec2<f32>,
+    aspect: f32,
 };
 
-@group(0) @binding(0) var input_texture : texture_2d<f32>;
-@group(0) @binding(1) var input_sampler : sampler;
-@group(0) @binding(2) var<uniform> uniforms : Bloom2dUniforms;
+@group(0) @binding(0) var input_texture: texture_2d<f32>;
+@group(0) @binding(1) var s: sampler;
+@group(0) @binding(2) var<uniform> uniforms: BloomUniforms;
 
-const MAX_MIPS : i32 = 8;
-
-fn tonemapping_luminance(v : vec3<f32>) -> f32 {
-  return dot(v, vec3<f32>(0.2126, 0.7152, 0.0722));
+// https://catlikecoding.com/unity/tutorials/advanced-rendering/bloom/#3.4
+fn soft_threshold(color: vec3<f32>) -> vec3<f32> {
+    let brightness = max(color.r, max(color.g, color.b));
+    var softness = brightness - uniforms.threshold_precomputations.y;
+    softness = clamp(softness, 0.0, uniforms.threshold_precomputations.z);
+    softness = softness * softness * uniforms.threshold_precomputations.w;
+    var contribution = max(brightness - uniforms.threshold_precomputations.x, softness);
+    contribution /= max(brightness, 0.00001);
+    return color * contribution;
 }
 
-fn karis_average(color : vec3<f32>) -> f32 {
-  let luma = tonemapping_luminance(color) / 4.0;
-  return 1.0 / (1.0 + luma);
+fn tonemapping_luminance(v: vec3<f32>) -> f32 {
+    return dot(v, vec3<f32>(0.2126, 0.7152, 0.0722));
 }
 
-fn soft_threshold(color : vec3<f32>, threshold : f32, softness_raw : f32) -> vec3<f32> {
-  let softness = clamp(softness_raw, 0.0, 1.0);
-  let knee = threshold * softness;
-  let brightness = max(color.r, max(color.g, color.b));
-  var soft = brightness - (threshold - knee);
-  soft = clamp(soft, 0.0, 2.0 * knee);
-  soft = soft * soft * (0.25 / (knee + 0.00001));
-  var contribution = max(brightness - threshold, soft);
-  contribution /= max(brightness, 0.00001);
-  return color * contribution;
+fn karis_average(color: vec3<f32>) -> f32 {
+    let luma = tonemapping_luminance(color) / 4.0;
+    return 1.0 / (1.0 + luma);
 }
 
-fn sample_input_13_tap_scaled(uv : vec2<f32>, sample_scale : vec2<f32>) -> vec3<f32> {
-  let dims = vec2<f32>(textureDimensions(input_texture));
-  let safe_dims = vec2<f32>(max(dims.x, 1.0), max(dims.y, 1.0));
-  let ps = sample_scale / safe_dims;
-  let pl = 2.0 * ps;
-  let ns = -1.0 * ps;
-  let nl = -2.0 * ps;
-  let a = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(nl.x, pl.y), 0.0).rgb;
-  let b = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(0.0, pl.y), 0.0).rgb;
-  let c = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(pl.x, pl.y), 0.0).rgb;
-  let d = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(nl.x, 0.0), 0.0).rgb;
-  let e = textureSampleLevel(input_texture, input_sampler, uv, 0.0).rgb;
-  let f = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(pl.x, 0.0), 0.0).rgb;
-  let g = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(nl.x, nl.y), 0.0).rgb;
-  let h = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(0.0, nl.y), 0.0).rgb;
-  let i = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(pl.x, nl.y), 0.0).rgb;
-  let j = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(ns.x, ps.y), 0.0).rgb;
-  let k = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(ps.x, ps.y), 0.0).rgb;
-  let l = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(ns.x, ns.y), 0.0).rgb;
-  let m = textureSampleLevel(input_texture, input_sampler, uv + vec2<f32>(ps.x, ns.y), 0.0).rgb;
+fn sample_input_13_tap_core(uv: vec2<f32>) -> vec3<f32> {
+    let scale = uniforms.scale;
+    let ps = scale / vec2<f32>(textureDimensions(input_texture));
+    let pl = 2.0 * ps;
+    let ns = -1.0 * ps;
+    let nl = -2.0 * ps;
+    let a = textureSample(input_texture, s, uv + vec2<f32>(nl.x, pl.y)).rgb;
+    let b = textureSample(input_texture, s, uv + vec2<f32>(0.00, pl.y)).rgb;
+    let c = textureSample(input_texture, s, uv + vec2<f32>(pl.x, pl.y)).rgb;
+    let d = textureSample(input_texture, s, uv + vec2<f32>(nl.x, 0.00)).rgb;
+    let e = textureSample(input_texture, s, uv).rgb;
+    let f = textureSample(input_texture, s, uv + vec2<f32>(pl.x, 0.00)).rgb;
+    let g = textureSample(input_texture, s, uv + vec2<f32>(nl.x, nl.y)).rgb;
+    let h = textureSample(input_texture, s, uv + vec2<f32>(0.00, nl.y)).rgb;
+    let i = textureSample(input_texture, s, uv + vec2<f32>(pl.x, nl.y)).rgb;
+    let j = textureSample(input_texture, s, uv + vec2<f32>(ns.x, ps.y)).rgb;
+    let k = textureSample(input_texture, s, uv + vec2<f32>(ps.x, ps.y)).rgb;
+    let l = textureSample(input_texture, s, uv + vec2<f32>(ns.x, ns.y)).rgb;
+    let m = textureSample(input_texture, s, uv + vec2<f32>(ps.x, ns.y)).rgb;
 
-  // Matches Bevy first-downsample weighted sampling and firefly reduction.
-  var group0 = (a + b + d + e) * (0.125 / 4.0);
-  var group1 = (b + c + e + f) * (0.125 / 4.0);
-  var group2 = (d + e + g + h) * (0.125 / 4.0);
-  var group3 = (e + f + h + i) * (0.125 / 4.0);
-  var group4 = (j + k + l + m) * (0.5 / 4.0);
-  group0 *= karis_average(group0);
-  group1 *= karis_average(group1);
-  group2 *= karis_average(group2);
-  group3 *= karis_average(group3);
-  group4 *= karis_average(group4);
-  return group0 + group1 + group2 + group3 + group4;
+    // [COD] slide 168
+    var group0 = (a + b + d + e) * (0.125f / 4.0f);
+    var group1 = (b + c + e + f) * (0.125f / 4.0f);
+    var group2 = (d + e + g + h) * (0.125f / 4.0f);
+    var group3 = (e + f + h + i) * (0.125f / 4.0f);
+    var group4 = (j + k + l + m) * (0.5f / 4.0f);
+    group0 *= karis_average(group0);
+    group1 *= karis_average(group1);
+    group2 *= karis_average(group2);
+    group3 *= karis_average(group3);
+    group4 *= karis_average(group4);
+    return group0 + group1 + group2 + group3 + group4;
 }
 
-fn compute_blend_factor(
-  mip : f32,
-  max_mip : f32,
-  intensity : f32,
-  low_frequency_boost : f32,
-  low_frequency_boost_curvature : f32,
-  high_pass_frequency : f32,
-  composite_mode : f32,
-) -> f32 {
-  if max_mip <= 0.0 {
-    return intensity;
-  }
-  let mip_ratio = clamp(mip / max_mip, 0.0, 1.0);
-  let curvature = clamp(low_frequency_boost_curvature, 0.0, 0.9999);
-  let exponent = 1.0 / max(1.0 - curvature, 0.0001);
-  var lf_boost = (1.0 - pow(1.0 - mip_ratio, exponent)) * low_frequency_boost;
-  let hp = clamp(high_pass_frequency, 0.0, 1.0);
-  let high_pass_lq = if hp <= 0.000001 {
-    if mip_ratio <= 0.0 {
-      1.0
-    } else {
-      0.0
-    }
-  } else {
-    1.0 - clamp((mip_ratio - hp) / hp, 0.0, 1.0)
-  };
-  let mode_factor = if composite_mode < 0.5 {
-    1.0 - intensity
-  } else {
-    1.0
-  };
-  lf_boost *= mode_factor;
-  return max((intensity + lf_boost) * high_pass_lq, 0.0);
+fn sample_input_13_tap(uv: vec2<f32>) -> vec3<f32> {
+    let scale = uniforms.scale;
+    let ps = scale / vec2<f32>(textureDimensions(input_texture));
+    let pl = 2.0 * ps;
+    let ns = -1.0 * ps;
+    let nl = -2.0 * ps;
+    let a = textureSample(input_texture, s, uv + vec2<f32>(nl.x, pl.y)).rgb;
+    let b = textureSample(input_texture, s, uv + vec2<f32>(0.00, pl.y)).rgb;
+    let c = textureSample(input_texture, s, uv + vec2<f32>(pl.x, pl.y)).rgb;
+    let d = textureSample(input_texture, s, uv + vec2<f32>(nl.x, 0.00)).rgb;
+    let e = textureSample(input_texture, s, uv).rgb;
+    let f = textureSample(input_texture, s, uv + vec2<f32>(pl.x, 0.00)).rgb;
+    let g = textureSample(input_texture, s, uv + vec2<f32>(nl.x, nl.y)).rgb;
+    let h = textureSample(input_texture, s, uv + vec2<f32>(0.00, nl.y)).rgb;
+    let i = textureSample(input_texture, s, uv + vec2<f32>(pl.x, nl.y)).rgb;
+    let j = textureSample(input_texture, s, uv + vec2<f32>(ns.x, ps.y)).rgb;
+    let k = textureSample(input_texture, s, uv + vec2<f32>(ps.x, ps.y)).rgb;
+    let l = textureSample(input_texture, s, uv + vec2<f32>(ns.x, ns.y)).rgb;
+    let m = textureSample(input_texture, s, uv + vec2<f32>(ps.x, ns.y)).rgb;
+
+    var sample = (a + c + g + i) * 0.03125;
+    sample += (b + d + f + h) * 0.0625;
+    sample += (e + j + k + l + m) * 0.125;
+    return sample;
+}
+
+fn sample_input_3x3_tent(uv: vec2<f32>) -> vec3<f32> {
+    let frag_size = uniforms.scale / vec2<f32>(textureDimensions(input_texture));
+    let x = frag_size.x;
+    let y = frag_size.y;
+
+    let a = textureSample(input_texture, s, vec2<f32>(uv.x - x, uv.y + y)).rgb;
+    let b = textureSample(input_texture, s, vec2<f32>(uv.x, uv.y + y)).rgb;
+    let c = textureSample(input_texture, s, vec2<f32>(uv.x + x, uv.y + y)).rgb;
+
+    let d = textureSample(input_texture, s, vec2<f32>(uv.x - x, uv.y)).rgb;
+    let e = textureSample(input_texture, s, vec2<f32>(uv.x, uv.y)).rgb;
+    let f = textureSample(input_texture, s, vec2<f32>(uv.x + x, uv.y)).rgb;
+
+    let g = textureSample(input_texture, s, vec2<f32>(uv.x - x, uv.y - y)).rgb;
+    let h = textureSample(input_texture, s, vec2<f32>(uv.x, uv.y - y)).rgb;
+    let i = textureSample(input_texture, s, vec2<f32>(uv.x + x, uv.y - y)).rgb;
+
+    var sample = e * 0.25;
+    sample += (b + d + f + h) * 0.125;
+    sample += (a + c + g + i) * 0.0625;
+    return sample;
 }
 
 @fragment
-fn fragment(in : FullscreenVertexOutput) -> @location(0) vec4<f32> {
-  let base_color = textureSampleLevel(input_texture, input_sampler, in.uv, 0.0).rgb;
-  let enabled = uniforms.params1.w;
-  let intensity = max(uniforms.params0.x, 0.0);
-  if enabled < 0.5 || intensity <= 0.00001 {
-    return vec4<f32>(base_color, 1.0);
-  }
+fn downsample_first(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
+    let sample_uv = uniforms.viewport.xy + in.uv * uniforms.viewport.zw;
+    var sample = sample_input_13_tap_core(sample_uv);
+    sample = clamp(sample, vec3<f32>(0.0001), vec3<f32>(3.40282347E+37));
+    sample = soft_threshold(sample);
+    return vec4<f32>(sample, 1.0);
+}
 
-  let threshold = max(uniforms.params1.x, 0.0);
-  let threshold_softness = clamp(uniforms.params1.y, 0.0, 1.0);
-  let composite_mode = if uniforms.params1.z >= 0.5 { 1.0 } else { 0.0 };
-  let scale_xy = vec2<f32>(
-    max(uniforms.params2.x, 0.0),
-    max(uniforms.params2.y, 0.0),
-  );
-  let view_size = vec2<f32>(
-    max(uniforms.params3.x, 1.0),
-    max(uniforms.params3.y, 1.0),
-  );
-  let max_mip_dimension = max(uniforms.params2.z, 4.0);
-  let dimension_limited = min(max(view_size.x, view_size.y), max_mip_dimension);
-  let mip_count = max(floor(log2(dimension_limited)) - 1.0, 1.0);
-  let max_mip = max(mip_count - 1.0, 1.0);
+@fragment
+fn downsample(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(sample_input_13_tap(in.uv), 1.0);
+}
 
-  var bloom_accum = vec3<f32>(0.0, 0.0, 0.0);
-  var bloom_weight_total = 0.0;
-  for (var mip_i = 0; mip_i < MAX_MIPS; mip_i = mip_i + 1) {
-    let mip = f32(mip_i);
-    if mip >= mip_count {
-      continue;
-    }
-    let radius = exp2(mip);
-    let sample_scale = vec2<f32>(
-      max(scale_xy.x * radius, 0.0001),
-      max(scale_xy.y * radius, 0.0001),
-    );
-    var sample = sample_input_13_tap_scaled(in.uv, sample_scale);
-    if mip_i == 0 {
-      sample = soft_threshold(sample, threshold, threshold_softness);
-    }
-    let blend = compute_blend_factor(
-      mip,
-      max_mip,
-      intensity,
-      clamp(uniforms.params0.y, 0.0, 1.0),
-      clamp(uniforms.params0.z, 0.0, 1.0),
-      clamp(uniforms.params0.w, 0.0, 1.0),
-      composite_mode,
-    );
-    bloom_accum += sample * blend;
-    bloom_weight_total += blend;
-  }
-
-  if bloom_weight_total <= 0.00001 {
-    return vec4<f32>(base_color, 1.0);
-  }
-  let bloom_color = bloom_accum / bloom_weight_total;
-  let final_blend = compute_blend_factor(
-    0.0,
-    max_mip,
-    intensity,
-    clamp(uniforms.params0.y, 0.0, 1.0),
-    clamp(uniforms.params0.z, 0.0, 1.0),
-    clamp(uniforms.params0.w, 0.0, 1.0),
-    composite_mode,
-  );
-  let out_color = if composite_mode < 0.5 {
-    mix(base_color, bloom_color, clamp(final_blend, 0.0, 1.0))
-  } else {
-    base_color + bloom_color * max(final_blend, 0.0)
-  };
-  return vec4<f32>(out_color, 1.0);
+@fragment
+fn upsample(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(sample_input_3x3_tent(in.uv), 1.0);
 }

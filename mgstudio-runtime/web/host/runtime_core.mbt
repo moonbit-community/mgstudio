@@ -159,6 +159,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
         ("uiBindGroup", js_null()),
         ("width", @js.any(default_size)),
         ("height", @js.any(default_size)),
+        ("format", @js.any(@webgpu.TextureFormat::Rgba8Unorm.to_js_string())),
       ])
       map_set(state.gpu.textures, @js.any(state.gpu.default_texture_id), entry)
     }
@@ -1563,123 +1564,371 @@ fn ensure_motion_blur_pipeline(state : State) -> Unit {
 }
 
 ///|
-fn ensure_bloom2d_pipeline(state : State) -> Unit {
-  if state.gpu.bloom2d_pipeline is Some(_) &&
-    state.gpu.bloom2d_bind_layout is Some(_) &&
-    state.gpu.bloom2d_settings_buffer is Some(_) {
+fn clamp_double(
+  value : Double,
+  min_value : Double,
+  max_value : Double,
+) -> Double {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn bloom2d_ilog2_floor(value : Int) -> Int {
+  let mut v = if value < 1 { 1 } else { value }
+  let mut power = 0
+  while v > 1 {
+    v = v / 2
+    power = power + 1
+  }
+  power
+}
+
+///|
+fn bloom2d_effective_mip_count(max_mip_dimension : Int) -> Int {
+  let safe_dimension = if max_mip_dimension < 4 { 4 } else { max_mip_dimension }
+  let ilog2 = bloom2d_ilog2_floor(safe_dimension)
+  let count = if ilog2 < 2 { 1 } else { ilog2 - 1 }
+  if count < 1 {
+    1
+  } else {
+    count
+  }
+}
+
+///|
+fn bloom2d_mip_dimension(base : Int, mip : Int) -> Int {
+  let mut value = if base < 1 { 1 } else { base }
+  for _ in 0..<mip {
+    value = if value > 1 { value / 2 } else { 1 }
+  }
+  if value < 1 {
+    1
+  } else {
+    value
+  }
+}
+
+///|
+fn bloom2d_compute_blend_factor(
+  intensity : Double,
+  low_frequency_boost : Double,
+  low_frequency_boost_curvature : Double,
+  high_pass_frequency : Double,
+  composite_mode : Int,
+  mip : Double,
+  max_mip : Double,
+) -> Double {
+  if max_mip <= 0.0 {
+    return intensity
+  }
+  let mip_ratio = clamp_double(mip / max_mip, 0.0, 1.0)
+  let curvature = clamp_double(low_frequency_boost_curvature, 0.0, 0.9999)
+  let exponent = 1.0 / (1.0 - curvature)
+  let mut lf_boost = (1.0 - math_pow(1.0 - mip_ratio, exponent)) *
+    low_frequency_boost
+  let hp = clamp_double(high_pass_frequency, 0.0, 1.0)
+  let high_pass_lq = if hp <= 0.000001 {
+    if mip_ratio <= 0.0 {
+      1.0
+    } else {
+      0.0
+    }
+  } else {
+    1.0 - clamp_double((mip_ratio - hp) / hp, 0.0, 1.0)
+  }
+  let mode_factor = if composite_mode == 0 { 1.0 - intensity } else { 1.0 }
+  lf_boost = lf_boost * mode_factor
+  let blend = (intensity + lf_boost) * high_pass_lq
+  if blend < 0.0 {
+    0.0
+  } else {
+    blend
+  }
+}
+
+///|
+fn bloom2d_make_uniform_data(
+  info : PassInfo,
+  threshold : Double,
+  threshold_softness : Double,
+  scale_x : Double,
+  scale_y : Double,
+) -> @js.Any {
+  let softness = clamp_double(threshold_softness, 0.0, 1.0)
+  let knee = threshold * softness
+  let target_width = if info.width > 0.0 { info.width } else { 1.0 }
+  let target_height = if info.height > 0.0 { info.height } else { 1.0 }
+  let viewport_width = if info.viewport_width > 0.0 {
+    info.viewport_width
+  } else {
+    target_width
+  }
+  let viewport_height = if info.viewport_height > 0.0 {
+    info.viewport_height
+  } else {
+    target_height
+  }
+  let aspect = if viewport_height > 0.0 {
+    viewport_width / viewport_height
+  } else {
+    1.0
+  }
+  make_uniform_data([
+    threshold,
+    threshold - knee,
+    2.0 * knee,
+    0.25 / (knee + 0.00001),
+    info.viewport_x / target_width,
+    info.viewport_y / target_height,
+    viewport_width / target_width,
+    viewport_height / target_height,
+    scale_x,
+    scale_y,
+    aspect,
+    0.0,
+  ])
+}
+
+///|
+fn bloom2d_create_pipeline(
+  state : State,
+  shader_source : String,
+  bind_layout : @webgpu.GPUBindGroupLayout,
+  entry_point : String,
+  format : @webgpu.TextureFormat,
+  blend_mode : Int,
+) -> @webgpu.GPURenderPipeline? {
+  guard state.gpu.device is Some(device) else { return None }
+  let shader_desc = @webgpu.shader_module_descriptor(shader_source)
+  let shader_module = device.create_shader_module(shader_desc.to_js())
+  let pipeline_layout_desc = @js.from_entries([
+    ("bindGroupLayouts", @js.any([bind_layout.as_any()])),
+  ])
+  let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
+  let vertex_state = @webgpu.vertex_state(
+    shader_module,
+    "fullscreen_vertex_shader",
+    [],
+  )
+  let color_target = if blend_mode == 1 {
+    @js.from_entries([
+      ("format", @js.any(format.to_js_string())),
+      (
+        "blend",
+        @js.from_entries([
+          (
+            "color",
+            @js.from_entries([
+              ("srcFactor", @js.any("constant")),
+              ("dstFactor", @js.any("one-minus-constant")),
+              ("operation", @js.any("add")),
+            ]),
+          ),
+          (
+            "alpha",
+            @js.from_entries([
+              ("srcFactor", @js.any("zero")),
+              ("dstFactor", @js.any("one")),
+              ("operation", @js.any("add")),
+            ]),
+          ),
+        ]),
+      ),
+    ])
+  } else if blend_mode == 2 {
+    @js.from_entries([
+      ("format", @js.any(format.to_js_string())),
+      (
+        "blend",
+        @js.from_entries([
+          (
+            "color",
+            @js.from_entries([
+              ("srcFactor", @js.any("constant")),
+              ("dstFactor", @js.any("one")),
+              ("operation", @js.any("add")),
+            ]),
+          ),
+          (
+            "alpha",
+            @js.from_entries([
+              ("srcFactor", @js.any("zero")),
+              ("dstFactor", @js.any("one")),
+              ("operation", @js.any("add")),
+            ]),
+          ),
+        ]),
+      ),
+    ])
+  } else {
+    @js.from_entries([("format", @js.any(format.to_js_string()))])
+  }
+  let fragment_state = @js.from_entries([
+    ("module", shader_module.as_any()),
+    ("entryPoint", @js.any(entry_point)),
+    ("targets", @js.any([color_target])),
+  ])
+  let primitive_state = @webgpu.primitive_state(
+    @webgpu.PrimitiveTopology::TriangleList,
+  )
+  let pipeline_desc = @js.from_entries([
+    ("layout", pipeline_layout.as_any()),
+    ("vertex", vertex_state.to_js()),
+    ("fragment", fragment_state),
+    ("primitive", primitive_state.to_js()),
+  ])
+  let pipeline = device.create_render_pipeline(pipeline_desc)
+  Some(pipeline)
+}
+
+///|
+fn bloom2d_begin_pass_clear(
+  encoder : @webgpu.GPUCommandEncoder,
+  view : @webgpu.GPUTextureView,
+) -> @webgpu.GPURenderPassEncoder {
+  let attachment = @webgpu.color_attachment_clear(
+    view,
+    @webgpu.color(0.0, 0.0, 0.0, 1.0),
+  )
+  let descriptor = @webgpu.render_pass_descriptor([attachment]).to_js()
+  encoder.begin_render_pass(descriptor)
+}
+
+///|
+fn bloom2d_begin_pass_load(
+  encoder : @webgpu.GPUCommandEncoder,
+  view : @webgpu.GPUTextureView,
+) -> @webgpu.GPURenderPassEncoder {
+  let attachment = @webgpu.color_attachment_load(view)
+  let descriptor = @webgpu.render_pass_descriptor([attachment]).to_js()
+  encoder.begin_render_pass(descriptor)
+}
+
+///|
+fn bloom2d_create_mip_view(
+  texture : @webgpu.GPUTexture,
+  mip : Int,
+) -> @webgpu.GPUTextureView {
+  let descriptor = @js.from_entries([
+    ("baseMipLevel", @js.any(mip)),
+    ("mipLevelCount", @js.any(1)),
+  ])
+  texture.create_view(descriptor~)
+}
+
+///|
+fn ensure_bloom2d_pipeline(
+  state : State,
+  format : @webgpu.TextureFormat,
+) -> Unit {
+  guard state.gpu.device is Some(device) else { return }
+  let fragment_stage = @webgpu.shader_stage_fragment()
+  let format_key = format.to_js_string()
+  if state.gpu.bloom2d_bind_layout is None {
+    let bind_layout_desc = @js.from_entries([
+      (
+        "entries",
+        @js.any([
+          @js.from_entries([
+            ("binding", @js.any(0)),
+            ("visibility", @js.any(fragment_stage)),
+            (
+              "texture",
+              @js.from_entries([
+                ("sampleType", @js.any("float")),
+                ("viewDimension", @js.any("2d")),
+                ("multisampled", @js.any(false)),
+              ]),
+            ),
+          ]),
+          @js.from_entries([
+            ("binding", @js.any(1)),
+            ("visibility", @js.any(fragment_stage)),
+            ("sampler", @js.from_entries([("type", @js.any("filtering"))])),
+          ]),
+          @js.from_entries([
+            ("binding", @js.any(2)),
+            ("visibility", @js.any(fragment_stage)),
+            ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
+          ]),
+        ]),
+      ),
+    ])
+    state.gpu.bloom2d_bind_layout = Some(
+      device.create_bind_group_layout(bind_layout_desc),
+    )
+  }
+  let uniform_usage = @webgpu.combine_flags(
+    @webgpu.buffer_usage_uniform(),
+    @webgpu.buffer_usage_copy_dst(),
+  )
+  if state.gpu.bloom2d_settings_buffer is None {
+    let settings_desc = @webgpu.buffer_descriptor(64, uniform_usage)
+    state.gpu.bloom2d_settings_buffer = Some(
+      device.create_buffer(settings_desc.to_js()),
+    )
+  }
+  if state.gpu.bloom2d_sampler is None {
+    state.gpu.bloom2d_sampler = create_sampler(
+      state,
+      sampler_kind_from_nearest(false),
+    )
+  }
+  if state.gpu.bloom2d_downsample_first_pipeline is Some(_) &&
+    state.gpu.bloom2d_downsample_pipeline is Some(_) &&
+    state.gpu.bloom2d_upsample_pipeline_energy is Some(_) &&
+    state.gpu.bloom2d_upsample_pipeline_additive is Some(_) &&
+    state.gpu.bloom2d_final_pipeline_energy is Some(_) &&
+    state.gpu.bloom2d_final_pipeline_additive is Some(_) &&
+    state.gpu.bloom2d_mip_format == format_key &&
+    state.gpu.bloom2d_final_pipeline_format == format_key {
+    if state.gpu.bloom2d_pipeline is Some(_) {
+      ()
+    }
     return
   }
-  if state.gpu.device is None {
-    return
-  }
-  ensure_pipeline_resources(state)
+  guard state.gpu.bloom2d_bind_layout is Some(bind_layout) else { return }
   if state.gpu.bloom2d_shader_id <= 0 {
     report_asset_error_once(
       state, "bloom2d_pipeline_missing_shader_id", "Bloom2d pipeline error: shader id not initialized",
     )
     return
   }
-  let shader_source = get_shader_source(state, state.gpu.bloom2d_shader_id)
-  if shader_source is None {
+  let shader_source_opt = get_shader_source(state, state.gpu.bloom2d_shader_id)
+  if shader_source_opt is None {
     report_asset_error_once(
       state, "bloom2d_pipeline_missing_shader_source", "Bloom2d pipeline error: shader source not loaded",
     )
     return
   }
-  if state.gpu.device is Some(device) {
-    let fragment_stage = @webgpu.shader_stage_fragment()
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
-    if state.gpu.bloom2d_bind_layout is None {
-      let bind_layout_desc = @js.from_entries([
-        (
-          "entries",
-          @js.any([
-            @js.from_entries([
-              ("binding", @js.any(0)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                  ("multisampled", @js.any(false)),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(1)),
-              ("visibility", @js.any(fragment_stage)),
-              ("sampler", @js.from_entries([("type", @js.any("filtering"))])),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(2)),
-              ("visibility", @js.any(fragment_stage)),
-              ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
-            ]),
-          ]),
-        ),
-      ])
-      state.gpu.bloom2d_bind_layout = Some(
-        device.create_bind_group_layout(bind_layout_desc),
-      )
-    }
-    let uniform_usage = @webgpu.combine_flags(
-      @webgpu.buffer_usage_uniform(),
-      @webgpu.buffer_usage_copy_dst(),
-    )
-    if state.gpu.bloom2d_settings_buffer is None {
-      let settings_desc = @webgpu.buffer_descriptor(64, uniform_usage)
-      state.gpu.bloom2d_settings_buffer = Some(
-        device.create_buffer(settings_desc.to_js()),
-      )
-    }
-    guard state.gpu.bloom2d_bind_layout is Some(bind_layout) else { return }
-    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
-    let shader_module = device.create_shader_module(shader_desc.to_js())
-    let pipeline_layout_desc = @js.from_entries([
-      ("bindGroupLayouts", @js.any([bind_layout.as_any()])),
-    ])
-    let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
-    let vertex_state = @webgpu.vertex_state(
-      shader_module,
-      "fullscreen_vertex_shader",
-      [],
-    )
-    let color_target = @js.from_entries([
-      ("format", @js.any(format.to_js_string())),
-    ])
-    let fragment_state = @js.from_entries([
-      ("module", shader_module.as_any()),
-      ("entryPoint", @js.any("fragment")),
-      ("targets", @js.any([color_target])),
-    ])
-    let primitive_state = @webgpu.primitive_state(
-      @webgpu.PrimitiveTopology::TriangleList,
-    )
-    let pipeline_desc = @js.from_entries([
-      ("layout", pipeline_layout.as_any()),
-      ("vertex", vertex_state.to_js()),
-      ("fragment", fragment_state),
-      ("primitive", primitive_state.to_js()),
-    ])
-    device.push_error_scope("validation")
-    let pipeline = device.create_render_pipeline(pipeline_desc)
-    let pipeline_error_promise = device.pop_error_scope()
-    @js.run_async(async fn() noraise {
-      let err_any : @js.Any = pipeline_error_promise.wait() catch {
-        _ => js_null()
-      }
-      if !host_is_nullish(err_any) {
-        report_asset_error_once(
-          state,
-          "bloom2d_pipeline_validation_error",
-          "Bloom2d pipeline validation error: " + any_to_string(err_any),
-        )
-        state.gpu.bloom2d_pipeline = None
-      }
-    })
-    state.gpu.bloom2d_pipeline = Some(pipeline)
-  }
+  let shader_source = shader_source_opt.unwrap()
+  state.gpu.bloom2d_downsample_first_pipeline = bloom2d_create_pipeline(
+    state, shader_source, bind_layout, "downsample_first", format, 0,
+  )
+  state.gpu.bloom2d_downsample_pipeline = bloom2d_create_pipeline(
+    state, shader_source, bind_layout, "downsample", format, 0,
+  )
+  state.gpu.bloom2d_upsample_pipeline_energy = bloom2d_create_pipeline(
+    state, shader_source, bind_layout, "upsample", format, 1,
+  )
+  state.gpu.bloom2d_upsample_pipeline_additive = bloom2d_create_pipeline(
+    state, shader_source, bind_layout, "upsample", format, 2,
+  )
+  state.gpu.bloom2d_final_pipeline_energy = bloom2d_create_pipeline(
+    state, shader_source, bind_layout, "upsample", format, 1,
+  )
+  state.gpu.bloom2d_final_pipeline_additive = bloom2d_create_pipeline(
+    state, shader_source, bind_layout, "upsample", format, 2,
+  )
+  state.gpu.bloom2d_mip_format = format_key
+  state.gpu.bloom2d_final_pipeline_format = format_key
+  state.gpu.bloom2d_pipeline = state.gpu.bloom2d_final_pipeline_energy
 }
 
 ///|
@@ -2089,6 +2338,7 @@ fn insert_texture_entry(
       ("uiBindGroup", js_null()),
       ("width", @js.any(width)),
       ("height", @js.any(height)),
+      ("format", @js.any(@webgpu.TextureFormat::Rgba8Unorm.to_js_string())),
     ])
     map_set(state.gpu.textures, @js.any(id), entry)
     ensure_bind_group_for_texture(state, entry)
@@ -2665,6 +2915,7 @@ fn begin_pass(
       )
       state.gpu.current_pass = Some(pass)
       state.gpu.current_pass_info = Some(PassInfo::{
+        target_id,
         width: if width > 0 {
           width
         } else {
@@ -2703,6 +2954,8 @@ fn begin_pass(
         viewport_y: vp_y,
         viewport_width: vp_width,
         viewport_height: vp_height,
+        viewport_depth_min,
+        viewport_depth_max,
         ambient_r,
         ambient_g,
         ambient_b,
@@ -4471,17 +4724,13 @@ fn draw_bloom2d(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
+  if enabled == 0 || intensity <= 0.0 {
+    return
+  }
   flush_ui_shadow_batches(state)
   flush_ui_slice_batches(state)
   flush_ui_batches(state)
   flush_sprite_batches(state)
-  ensure_bloom2d_pipeline(state)
-  if state.gpu.bloom2d_pipeline is None {
-    report_asset_error_once(
-      state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: pipeline not ready",
-    )
-    return
-  }
   if scene_texture_id < 0 {
     report_asset_error_once(
       state, "bloom2d_draw_invalid_scene_texture", "Bloom2d draw skipped: scene texture id is invalid",
@@ -4495,18 +4744,206 @@ fn draw_bloom2d(
     )
     return
   }
-  guard state.gpu.current_pass is Some(pass) else { return }
-  guard state.gpu.bloom2d_pipeline is Some(bloom2d_pipeline) else { return }
+  guard state.gpu.current_pass_info is Some(info) else { return }
+  guard state.gpu.current_pass is Some(active_pass) else { return }
+  guard state.gpu.encoder is Some(encoder) else { return }
+  guard state.gpu.device is Some(device) else { return }
+  guard state.gpu.queue is Some(queue) else { return }
+  let mut target_format = state.gpu.format.unwrap_or(
+    @webgpu.TextureFormat::Bgra8Unorm,
+  )
+  let mut target_width = if info.width > 0.0 { to_int(info.width) } else { 1 }
+  let mut target_height = if info.height > 0.0 {
+    to_int(info.height)
+  } else {
+    1
+  }
+  let target_view = if info.target_id < 0 {
+    guard state.gpu.current_texture is Some(current_texture) else { return }
+    current_texture.create_view()
+  } else {
+    let target_entry = map_get(state.gpu.textures, @js.any(info.target_id))
+    if host_is_nullish(target_entry) {
+      report_asset_error_once(
+        state, "bloom2d_draw_target_texture_not_ready", "Bloom2d draw skipped: target texture is not ready",
+      )
+      return
+    }
+    let target_width_any = target_entry._get("width")
+    let target_height_any = target_entry._get("height")
+    target_width = if host_is_nullish(target_width_any) {
+      target_width
+    } else {
+      to_int(number_or(target_width_any, target_width.to_double()))
+    }
+    target_height = if host_is_nullish(target_height_any) {
+      target_height
+    } else {
+      to_int(number_or(target_height_any, target_height.to_double()))
+    }
+    let target_format_any = target_entry._get("format")
+    if !host_is_nullish(target_format_any) {
+      target_format = @webgpu.texture_format_from_string(
+        any_to_string(target_format_any),
+      )
+    }
+    let target_view_any = target_entry._get("view")
+    if host_is_nullish(target_view_any) {
+      report_asset_error_once(
+        state, "bloom2d_draw_target_view_not_ready", "Bloom2d draw skipped: target texture view is not ready",
+      )
+      return
+    }
+    target_view_any.cast()
+  }
+  ensure_bloom2d_pipeline(state, target_format)
+  guard state.gpu.bloom2d_downsample_first_pipeline
+    is Some(downsample_first_pipeline) else {
+    report_asset_error_once(
+      state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample-first pipeline not ready",
+    )
+    return
+  }
+  guard state.gpu.bloom2d_downsample_pipeline is Some(downsample_pipeline) else {
+    report_asset_error_once(
+      state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample pipeline not ready",
+    )
+    return
+  }
+  let upsample_pipeline = if composite_mode == 0 {
+    guard state.gpu.bloom2d_upsample_pipeline_energy is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: upsample pipeline not ready",
+      )
+      return
+    }
+    pipeline
+  } else {
+    guard state.gpu.bloom2d_upsample_pipeline_additive is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: upsample pipeline not ready",
+      )
+      return
+    }
+    pipeline
+  }
+  let final_pipeline = if composite_mode == 0 {
+    guard state.gpu.bloom2d_final_pipeline_energy is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: final pipeline not ready",
+      )
+      return
+    }
+    pipeline
+  } else {
+    guard state.gpu.bloom2d_final_pipeline_additive is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: final pipeline not ready",
+      )
+      return
+    }
+    pipeline
+  }
   guard state.gpu.bloom2d_bind_layout is Some(bind_layout) else { return }
   guard state.gpu.bloom2d_settings_buffer is Some(settings_buffer) else {
     return
   }
-  guard state.gpu.device is Some(device) else { return }
-  guard state.gpu.queue is Some(queue) else { return }
-  let settings_data = bloom2d_uniform_bytes(
-    enabled, intensity, low_frequency_boost, low_frequency_boost_curvature, high_pass_frequency,
-    threshold, threshold_softness, composite_mode, max_mip_dimension, scale_x, scale_y,
-    view_width, view_height,
+  guard state.gpu.bloom2d_sampler is Some(bloom_sampler) else { return }
+  let viewport_width = if info.viewport_width > 0.0 {
+    to_int(info.viewport_width)
+  } else if view_width > 0 {
+    view_width
+  } else {
+    target_width
+  }
+  let viewport_height = if info.viewport_height > 0.0 {
+    to_int(info.viewport_height)
+  } else if view_height > 0 {
+    view_height
+  } else {
+    target_height
+  }
+  let safe_viewport_width = if viewport_width > 0 { viewport_width } else { 1 }
+  let safe_viewport_height = if viewport_height > 0 {
+    viewport_height
+  } else {
+    1
+  }
+  let safe_max_mip_dimension = if max_mip_dimension < 4 {
+    4
+  } else {
+    max_mip_dimension
+  }
+  let mip_count = bloom2d_effective_mip_count(safe_max_mip_dimension)
+  let mip_height_ratio = safe_max_mip_dimension.to_double() /
+    safe_viewport_height.to_double()
+  let bloom_width_est = safe_viewport_width.to_double() * mip_height_ratio + 0.5
+  let bloom_height_est = safe_viewport_height.to_double() * mip_height_ratio +
+    0.5
+  let bloom_width = {
+    let raw = to_int(bloom_width_est)
+    if raw < 1 {
+      1
+    } else {
+      raw
+    }
+  }
+  let bloom_height = {
+    let raw = to_int(bloom_height_est)
+    if raw < 1 {
+      1
+    } else {
+      raw
+    }
+  }
+  let format_key = target_format.to_js_string()
+  let rebuild_mips = state.gpu.bloom2d_mip_texture is None ||
+    state.gpu.bloom2d_mip_count != mip_count ||
+    state.gpu.bloom2d_mip_width != bloom_width ||
+    state.gpu.bloom2d_mip_height != bloom_height ||
+    state.gpu.bloom2d_mip_format != format_key
+  if rebuild_mips {
+    let usage = @webgpu.combine_flags(
+      @webgpu.texture_usage_texture_binding(),
+      @webgpu.texture_usage_render_attachment(),
+    )
+    let texture_desc = @js.from_entries([
+      ("size", @webgpu.texture_size(bloom_width, bloom_height).to_js()),
+      ("mipLevelCount", @js.any(mip_count)),
+      ("sampleCount", @js.any(1)),
+      ("dimension", @js.any("2d")),
+      ("format", @js.any(format_key)),
+      ("usage", @js.any(usage)),
+    ])
+    let texture = device.create_texture(texture_desc)
+    state.gpu.bloom2d_mip_texture = Some(texture)
+    state.gpu.bloom2d_mip_views.clear()
+    for mip in 0..<mip_count {
+      state.gpu.bloom2d_mip_views.push(bloom2d_create_mip_view(texture, mip))
+    }
+    state.gpu.bloom2d_mip_count = mip_count
+    state.gpu.bloom2d_mip_width = bloom_width
+    state.gpu.bloom2d_mip_height = bloom_height
+    state.gpu.bloom2d_mip_format = format_key
+  }
+  if state.gpu.bloom2d_mip_views.length() < mip_count {
+    report_asset_error_once(
+      state, "bloom2d_draw_mip_views_not_ready", "Bloom2d draw skipped: bloom mip views are not ready",
+    )
+    return
+  }
+  let intensity_value = if intensity < 0.0 { 0.0 } else { intensity }
+  let low_frequency_boost_value = clamp_double(low_frequency_boost, 0.0, 1.0)
+  let low_frequency_boost_curvature_value = clamp_double(
+    low_frequency_boost_curvature, 0.0, 1.0,
+  )
+  let high_pass_frequency_value = clamp_double(high_pass_frequency, 0.0, 1.0)
+  let threshold_value = if threshold < 0.0 { 0.0 } else { threshold }
+  let threshold_softness_value = clamp_double(threshold_softness, 0.0, 1.0)
+  let scale_x_value = if scale_x < 0.0 { 0.0 } else { scale_x }
+  let scale_y_value = if scale_y < 0.0 { 0.0 } else { scale_y }
+  let settings_data = bloom2d_make_uniform_data(
+    info, threshold_value, threshold_softness_value, scale_x_value, scale_y_value,
   )
   queue.write_buffer(settings_buffer, 0, settings_data)
   let scene_sampler : @webgpu.GPUSampler = scene_texture_entry
@@ -4523,18 +4960,220 @@ fn draw_bloom2d(
   let material_desc = @webgpu.bind_group_descriptor(
     bind_layout, material_entries,
   )
-  let material_bind_group = device.create_bind_group(material_desc.to_js())
-  if state.gpu.current_pass_info is Some(info) {
+  let first_bind_group = device.create_bind_group(material_desc.to_js())
+  active_pass.end()
+  state.gpu.current_pass = None
+
+  let mut mip_size_w = bloom_width
+  let mut mip_size_h = bloom_height
+  {
+    let pass = bloom2d_begin_pass_clear(encoder, state.gpu.bloom2d_mip_views[0])
+    pass.set_viewport(
+      0.0,
+      0.0,
+      mip_size_w.to_double(),
+      mip_size_h.to_double(),
+      0.0,
+      1.0,
+    )
+    pass.set_scissor_rect(0, 0, mip_size_w, mip_size_h)
+    pass.set_pipeline(downsample_first_pipeline)
+    pass.set_bind_group(0, first_bind_group)
+    pass.draw(3, 1, 0, 0)
+    pass.end()
+  }
+
+  for mip in 1..<mip_count {
+    let src_view = state.gpu.bloom2d_mip_views[mip - 1]
+    let dst_view = state.gpu.bloom2d_mip_views[mip]
+    let entries = [
+      @webgpu.bind_group_entry_texture(0, src_view),
+      @webgpu.bind_group_entry_sampler(1, bloom_sampler),
+      @webgpu.bind_group_entry_buffer(2, settings_buffer),
+    ]
+    let bind_group = device.create_bind_group(
+      @webgpu.bind_group_descriptor(bind_layout, entries).to_js(),
+    )
+    mip_size_w = if mip_size_w > 1 { mip_size_w / 2 } else { 1 }
+    mip_size_h = if mip_size_h > 1 { mip_size_h / 2 } else { 1 }
+    let pass = bloom2d_begin_pass_clear(encoder, dst_view)
+    pass.set_viewport(
+      0.0,
+      0.0,
+      mip_size_w.to_double(),
+      mip_size_h.to_double(),
+      0.0,
+      1.0,
+    )
+    pass.set_scissor_rect(0, 0, mip_size_w, mip_size_h)
+    pass.set_pipeline(downsample_pipeline)
+    pass.set_bind_group(0, bind_group)
+    pass.draw(3, 1, 0, 0)
+    pass.end()
+  }
+
+  let max_mip = if mip_count > 1 { mip_count - 1 } else { 1 }
+  let max_mip_f = max_mip.to_double()
+  let mut upsample_mip = mip_count - 1
+  while upsample_mip >= 1 {
+    let src_view = state.gpu.bloom2d_mip_views[upsample_mip]
+    let dst_view = state.gpu.bloom2d_mip_views[upsample_mip - 1]
+    let entries = [
+      @webgpu.bind_group_entry_texture(0, src_view),
+      @webgpu.bind_group_entry_sampler(1, bloom_sampler),
+      @webgpu.bind_group_entry_buffer(2, settings_buffer),
+    ]
+    let bind_group = device.create_bind_group(
+      @webgpu.bind_group_descriptor(bind_layout, entries).to_js(),
+    )
+    let blend = bloom2d_compute_blend_factor(
+      intensity_value,
+      low_frequency_boost_value,
+      low_frequency_boost_curvature_value,
+      high_pass_frequency_value,
+      composite_mode,
+      upsample_mip.to_double(),
+      max_mip_f,
+    )
+    let size_w = bloom2d_mip_dimension(bloom_width, upsample_mip - 1)
+    let size_h = bloom2d_mip_dimension(bloom_height, upsample_mip - 1)
+    let pass = bloom2d_begin_pass_load(encoder, dst_view)
+    pass.set_viewport(
+      0.0,
+      0.0,
+      size_w.to_double(),
+      size_h.to_double(),
+      0.0,
+      1.0,
+    )
+    pass.set_scissor_rect(0, 0, size_w, size_h)
+    pass.set_pipeline(upsample_pipeline)
+    pass
+    .as_any()
+    ._call("setBlendConstant", [
+      @webgpu.color(blend, blend, blend, blend).to_js(),
+    ])
+    |> ignore
+    pass.set_bind_group(0, bind_group)
+    pass.draw(3, 1, 0, 0)
+    pass.end()
+    upsample_mip = upsample_mip - 1
+  }
+
+  let final_entries = [
+    @webgpu.bind_group_entry_texture(0, state.gpu.bloom2d_mip_views[0]),
+    @webgpu.bind_group_entry_sampler(1, bloom_sampler),
+    @webgpu.bind_group_entry_buffer(2, settings_buffer),
+  ]
+  let final_bind_group = device.create_bind_group(
+    @webgpu.bind_group_descriptor(bind_layout, final_entries).to_js(),
+  )
+  let final_blend = bloom2d_compute_blend_factor(
+    intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
+    high_pass_frequency_value, composite_mode, 0.0, max_mip_f,
+  )
+  {
+    let pass = bloom2d_begin_pass_load(encoder, target_view)
+    pass.set_viewport(
+      info.viewport_x,
+      info.viewport_y,
+      info.viewport_width,
+      info.viewport_height,
+      info.viewport_depth_min,
+      info.viewport_depth_max,
+    )
     pass.set_scissor_rect(
       to_int(info.viewport_x),
       to_int(info.viewport_y),
       to_int(info.viewport_width),
       to_int(info.viewport_height),
     )
+    pass.set_pipeline(final_pipeline)
+    pass
+    .as_any()
+    ._call("setBlendConstant", [
+      @webgpu.color(final_blend, final_blend, final_blend, final_blend).to_js(),
+    ])
+    |> ignore
+    pass.set_bind_group(0, final_bind_group)
+    pass.draw(3, 1, 0, 0)
+    pass.end()
   }
-  pass.set_pipeline(bloom2d_pipeline)
-  pass.set_bind_group(0, material_bind_group)
-  pass.draw(3, 1, 0, 0)
+
+  begin_pass(
+    state,
+    info.target_id,
+    info.width,
+    info.height,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    info.cam_x,
+    info.cam_y,
+    info.cam_rotation,
+    info.cam_scale,
+    false,
+    info.cam_z,
+    info.cam_rot_x,
+    info.cam_rot_y,
+    info.cam_rot_z,
+    info.cam_rot_w,
+    info.cam_fov_y,
+    info.cam_near,
+    info.cam_far,
+    info.viewport_x,
+    info.viewport_y,
+    info.viewport_width,
+    info.viewport_height,
+    info.viewport_depth_min,
+    info.viewport_depth_max,
+    info.ambient_r,
+    info.ambient_g,
+    info.ambient_b,
+    info.ambient_brightness,
+    info.directional_dir_x,
+    info.directional_dir_y,
+    info.directional_dir_z,
+    info.directional_color_r,
+    info.directional_color_g,
+    info.directional_color_b,
+    info.directional_illuminance,
+    info.point_pos_x,
+    info.point_pos_y,
+    info.point_pos_z,
+    info.point_color_r,
+    info.point_color_g,
+    info.point_color_b,
+    info.point_intensity,
+    info.point_range,
+    info.spot_pos_x,
+    info.spot_pos_y,
+    info.spot_pos_z,
+    info.spot_dir_x,
+    info.spot_dir_y,
+    info.spot_dir_z,
+    info.spot_color_r,
+    info.spot_color_g,
+    info.spot_color_b,
+    info.spot_intensity,
+    info.spot_range,
+    info.spot_inner_angle,
+    info.spot_outer_angle,
+    info.sub_camera_view_scale_x,
+    info.sub_camera_view_scale_y,
+    info.sub_camera_view_bias_x,
+    info.sub_camera_view_bias_y,
+    info.previous_camera_x,
+    info.previous_camera_y,
+    info.previous_camera_z,
+    info.previous_camera_rot_x,
+    info.previous_camera_rot_y,
+    info.previous_camera_rot_z,
+    info.previous_camera_rot_w,
+    info.pass_kind,
+    0.0,
+  )
 }
 
 ///|
