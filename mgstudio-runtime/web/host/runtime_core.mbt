@@ -1624,32 +1624,21 @@ fn bloom2d_compute_blend_factor(
   mip : Double,
   max_mip : Double,
 ) -> Double {
-  if max_mip <= 0.0 {
-    return intensity
-  }
-  let mip_ratio = clamp_double(mip / max_mip, 0.0, 1.0)
-  let curvature = clamp_double(low_frequency_boost_curvature, 0.0, 0.9999)
-  let exponent = 1.0 / (1.0 - curvature)
-  let mut lf_boost = (1.0 - math_pow(1.0 - mip_ratio, exponent)) *
+  let mip_ratio = mip / max_mip
+  let mut lf_boost = (
+      1.0 -
+      math_pow(1.0 - mip_ratio, 1.0 / (1.0 - low_frequency_boost_curvature))
+    ) *
     low_frequency_boost
-  let hp = clamp_double(high_pass_frequency, 0.0, 1.0)
-  let high_pass_lq = if hp <= 0.000001 {
-    if mip_ratio <= 0.0 {
-      1.0
-    } else {
-      0.0
-    }
-  } else {
-    1.0 - clamp_double((mip_ratio - hp) / hp, 0.0, 1.0)
-  }
+  let high_pass_lq = 1.0 -
+    clamp_double(
+      (mip_ratio - high_pass_frequency) / high_pass_frequency,
+      0.0,
+      1.0,
+    )
   let mode_factor = if composite_mode == 0 { 1.0 - intensity } else { 1.0 }
   lf_boost = lf_boost * mode_factor
-  let blend = (intensity + lf_boost) * high_pass_lq
-  if blend < 0.0 {
-    0.0
-  } else {
-    blend
-  }
+  (intensity + lf_boost) * high_pass_lq
 }
 
 ///|
@@ -4824,7 +4813,7 @@ fn draw_bloom2d(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
-  if enabled == 0 || intensity <= 0.0 {
+  if enabled == 0 {
     return
   }
   flush_ui_shadow_batches(state)
@@ -4896,8 +4885,8 @@ fn draw_bloom2d(
     }
     target_view_any.cast()
   }
-  let scale_x_value = if scale_x < 0.0 { 0.0 } else { scale_x }
-  let scale_y_value = if scale_y < 0.0 { 0.0 } else { scale_y }
+  let scale_x_value = scale_x
+  let scale_y_value = scale_y
   let use_uniform_scale = scale_x_value == 1.0 && scale_y_value == 1.0
   let use_prefilter = threshold > 0.0
   ensure_bloom2d_pipeline(state, target_format)
@@ -5079,14 +5068,12 @@ fn draw_bloom2d(
     )
     return
   }
-  let intensity_value = if intensity < 0.0 { 0.0 } else { intensity }
-  let low_frequency_boost_value = clamp_double(low_frequency_boost, 0.0, 1.0)
-  let low_frequency_boost_curvature_value = clamp_double(
-    low_frequency_boost_curvature, 0.0, 1.0,
-  )
-  let high_pass_frequency_value = clamp_double(high_pass_frequency, 0.0, 1.0)
-  let threshold_value = if threshold < 0.0 { 0.0 } else { threshold }
-  let threshold_softness_value = clamp_double(threshold_softness, 0.0, 1.0)
+  let intensity_value = intensity
+  let low_frequency_boost_value = low_frequency_boost
+  let low_frequency_boost_curvature_value = low_frequency_boost_curvature
+  let high_pass_frequency_value = high_pass_frequency
+  let threshold_value = threshold
+  let threshold_softness_value = threshold_softness
   let settings_data = bloom2d_make_uniform_data(
     info, threshold_value, threshold_softness_value, scale_x_value, scale_y_value,
   )
