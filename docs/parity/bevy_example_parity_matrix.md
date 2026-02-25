@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-02-23
+Last Verified: 2026-02-25
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -53,8 +53,8 @@ Notes:
 | `transforms` | 5 | 0 | 5 | 0 |
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
-| `window` | 12 | 0 | 12 | 0 |
-| **Total** | **402** | **66** | **333** | **3** |
+| `window` | 12 | 1 | 11 | 0 |
+| **Total** | **402** | **67** | **332** | **3** |
 
 ## Example Inventory
 
