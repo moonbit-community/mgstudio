@@ -1819,7 +1819,7 @@ fn ensure_bloom2d_pipeline(
   guard state.gpu.device is Some(device) else { return }
   let fragment_stage = @webgpu.shader_stage_fragment()
   let format_key = format.to_js_string()
-  let bloom_mip_format = @webgpu.TextureFormat::Other("rg11b10ufloat")
+  let bloom_mip_format = @webgpu.TextureFormat::Other("rgba16float")
   let bloom_mip_format_key = bloom_mip_format.to_js_string()
   if state.gpu.bloom2d_bind_layout is None {
     let bind_layout_desc = @js.from_entries([
@@ -5031,7 +5031,7 @@ fn draw_bloom2d(
       raw
     }
   }
-  let bloom_mip_format = @webgpu.TextureFormat::Other("rg11b10ufloat")
+  let bloom_mip_format = @webgpu.TextureFormat::Other("rgba16float")
   let bloom_mip_format_key = bloom_mip_format.to_js_string()
   let rebuild_mips = state.gpu.bloom2d_mip_texture is None ||
     state.gpu.bloom2d_mip_count != mip_count ||
