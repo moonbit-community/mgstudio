@@ -5091,15 +5091,12 @@ fn draw_bloom2d(
     info, threshold_value, threshold_softness_value, scale_x_value, scale_y_value,
   )
   queue.write_buffer(settings_buffer, 0, settings_data)
-  let scene_sampler : @webgpu.GPUSampler = scene_texture_entry
-    ._get("sampler")
-    .cast()
   let scene_view : @webgpu.GPUTextureView = scene_texture_entry
     ._get("view")
     .cast()
   let material_entries = [
     @webgpu.bind_group_entry_texture(0, scene_view),
-    @webgpu.bind_group_entry_sampler(1, scene_sampler),
+    @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
   ]
   let material_desc = @webgpu.bind_group_descriptor(
