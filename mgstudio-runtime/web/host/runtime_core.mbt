@@ -1649,7 +1649,7 @@ fn bloom2d_make_uniform_data(
   scale_x : Double,
   scale_y : Double,
 ) -> @js.Any {
-  let softness = clamp_double(threshold_softness, 0.0, 1.0)
+  let softness = threshold_softness
   let knee = threshold * softness
   let target_width = if info.width > 0.0 { info.width } else { 1.0 }
   let target_height = if info.height > 0.0 { info.height } else { 1.0 }
