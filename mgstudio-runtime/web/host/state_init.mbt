@@ -204,7 +204,11 @@ priv struct GpuState {
   mut bloom2d_bind_layout : @webgpu.GPUBindGroupLayout?
   mut bloom2d_settings_buffer : @webgpu.GPUBuffer?
   mut bloom2d_downsample_first_pipeline : @webgpu.GPURenderPipeline?
+  mut bloom2d_downsample_first_no_threshold_pipeline : @webgpu.GPURenderPipeline?
+  mut bloom2d_downsample_first_uniform_pipeline : @webgpu.GPURenderPipeline?
+  mut bloom2d_downsample_first_no_threshold_uniform_pipeline : @webgpu.GPURenderPipeline?
   mut bloom2d_downsample_pipeline : @webgpu.GPURenderPipeline?
+  mut bloom2d_downsample_uniform_pipeline : @webgpu.GPURenderPipeline?
   mut bloom2d_upsample_pipeline_energy : @webgpu.GPURenderPipeline?
   mut bloom2d_upsample_pipeline_additive : @webgpu.GPURenderPipeline?
   mut bloom2d_final_pipeline_energy : @webgpu.GPURenderPipeline?
@@ -272,6 +276,12 @@ priv struct GpuState {
   mut mesh3d_shader_id : Int
   mut motion_vector_shader_id : Int
   mut motion_blur_shader_id : Int
+  mut bloom2d_downsample_first_shader_id : Int
+  mut bloom2d_downsample_first_no_threshold_shader_id : Int
+  mut bloom2d_downsample_first_uniform_shader_id : Int
+  mut bloom2d_downsample_first_no_threshold_uniform_shader_id : Int
+  mut bloom2d_downsample_shader_id : Int
+  mut bloom2d_downsample_uniform_shader_id : Int
   mut bloom2d_shader_id : Int
   mut gizmo_shader_id : Int
   mut profile_enabled : Bool
@@ -396,7 +406,11 @@ fn new_state(
       bloom2d_bind_layout: None,
       bloom2d_settings_buffer: None,
       bloom2d_downsample_first_pipeline: None,
+      bloom2d_downsample_first_no_threshold_pipeline: None,
+      bloom2d_downsample_first_uniform_pipeline: None,
+      bloom2d_downsample_first_no_threshold_uniform_pipeline: None,
       bloom2d_downsample_pipeline: None,
+      bloom2d_downsample_uniform_pipeline: None,
       bloom2d_upsample_pipeline_energy: None,
       bloom2d_upsample_pipeline_additive: None,
       bloom2d_final_pipeline_energy: None,
@@ -464,6 +478,12 @@ fn new_state(
       mesh3d_shader_id: 0,
       motion_vector_shader_id: 0,
       motion_blur_shader_id: 0,
+      bloom2d_downsample_first_shader_id: 0,
+      bloom2d_downsample_first_no_threshold_shader_id: 0,
+      bloom2d_downsample_first_uniform_shader_id: 0,
+      bloom2d_downsample_first_no_threshold_uniform_shader_id: 0,
+      bloom2d_downsample_shader_id: 0,
+      bloom2d_downsample_uniform_shader_id: 0,
       bloom2d_shader_id: 0,
       gizmo_shader_id: 0,
       profile_enabled: false,
@@ -967,7 +987,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.bloom2d_bind_layout = None
   state.gpu.bloom2d_settings_buffer = None
   state.gpu.bloom2d_downsample_first_pipeline = None
+  state.gpu.bloom2d_downsample_first_no_threshold_pipeline = None
+  state.gpu.bloom2d_downsample_first_uniform_pipeline = None
+  state.gpu.bloom2d_downsample_first_no_threshold_uniform_pipeline = None
   state.gpu.bloom2d_downsample_pipeline = None
+  state.gpu.bloom2d_downsample_uniform_pipeline = None
   state.gpu.bloom2d_upsample_pipeline_energy = None
   state.gpu.bloom2d_upsample_pipeline_additive = None
   state.gpu.bloom2d_final_pipeline_energy = None
@@ -1036,6 +1060,12 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.mesh3d_shader_id = 0
   state.gpu.motion_vector_shader_id = 0
   state.gpu.motion_blur_shader_id = 0
+  state.gpu.bloom2d_downsample_first_shader_id = 0
+  state.gpu.bloom2d_downsample_first_no_threshold_shader_id = 0
+  state.gpu.bloom2d_downsample_first_uniform_shader_id = 0
+  state.gpu.bloom2d_downsample_first_no_threshold_uniform_shader_id = 0
+  state.gpu.bloom2d_downsample_shader_id = 0
+  state.gpu.bloom2d_downsample_uniform_shader_id = 0
   state.gpu.bloom2d_shader_id = 0
   state.gpu.gizmo_shader_id = 0
   let sprite_id = next_shader_id(state)
@@ -1046,6 +1076,12 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   let mesh3d_id = next_shader_id(state)
   let motion_vector_id = next_shader_id(state)
   let motion_blur_id = next_shader_id(state)
+  let bloom2d_downsample_first_id = next_shader_id(state)
+  let bloom2d_downsample_first_no_threshold_id = next_shader_id(state)
+  let bloom2d_downsample_first_uniform_id = next_shader_id(state)
+  let bloom2d_downsample_first_no_threshold_uniform_id = next_shader_id(state)
+  let bloom2d_downsample_id = next_shader_id(state)
+  let bloom2d_downsample_uniform_id = next_shader_id(state)
   let bloom2d_id = next_shader_id(state)
   let gizmo_id = next_shader_id(state)
   state.gpu.sprite_shader_id = sprite_id
@@ -1056,6 +1092,12 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.mesh3d_shader_id = mesh3d_id
   state.gpu.motion_vector_shader_id = motion_vector_id
   state.gpu.motion_blur_shader_id = motion_blur_id
+  state.gpu.bloom2d_downsample_first_shader_id = bloom2d_downsample_first_id
+  state.gpu.bloom2d_downsample_first_no_threshold_shader_id = bloom2d_downsample_first_no_threshold_id
+  state.gpu.bloom2d_downsample_first_uniform_shader_id = bloom2d_downsample_first_uniform_id
+  state.gpu.bloom2d_downsample_first_no_threshold_uniform_shader_id = bloom2d_downsample_first_no_threshold_uniform_id
+  state.gpu.bloom2d_downsample_shader_id = bloom2d_downsample_id
+  state.gpu.bloom2d_downsample_uniform_shader_id = bloom2d_downsample_uniform_id
   state.gpu.bloom2d_shader_id = bloom2d_id
   state.gpu.gizmo_shader_id = gizmo_id
   set_add(state.assets.loading_shaders, @js.any(sprite_id))
@@ -1066,6 +1108,21 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   set_add(state.assets.loading_shaders, @js.any(mesh3d_id))
   set_add(state.assets.loading_shaders, @js.any(motion_vector_id))
   set_add(state.assets.loading_shaders, @js.any(motion_blur_id))
+  set_add(state.assets.loading_shaders, @js.any(bloom2d_downsample_first_id))
+  set_add(
+    state.assets.loading_shaders,
+    @js.any(bloom2d_downsample_first_no_threshold_id),
+  )
+  set_add(
+    state.assets.loading_shaders,
+    @js.any(bloom2d_downsample_first_uniform_id),
+  )
+  set_add(
+    state.assets.loading_shaders,
+    @js.any(bloom2d_downsample_first_no_threshold_uniform_id),
+  )
+  set_add(state.assets.loading_shaders, @js.any(bloom2d_downsample_id))
+  set_add(state.assets.loading_shaders, @js.any(bloom2d_downsample_uniform_id))
   set_add(state.assets.loading_shaders, @js.any(bloom2d_id))
   set_add(state.assets.loading_shaders, @js.any(gizmo_id))
   map_set(
@@ -1110,6 +1167,36 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   map_set(
     state.assets.shader_paths,
+    @js.any(bloom2d_downsample_first_id),
+    @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(bloom2d_downsample_first_no_threshold_id),
+    @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(bloom2d_downsample_first_uniform_id),
+    @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(bloom2d_downsample_first_no_threshold_uniform_id),
+    @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(bloom2d_downsample_id),
+    @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(bloom2d_downsample_uniform_id),
+    @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
     @js.any(bloom2d_id),
     @js.any("shaders/mgstudio/2d/bloom.wgsl"),
   )
@@ -1148,6 +1235,96 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   )
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(motion_blur_id)) |> ignore
+  let bloom2d_first_source = load_wgsl_preprocessed(
+    state,
+    "shaders/mgstudio/2d/bloom.wgsl",
+    ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
+    new_set(),
+  )
+  map_set(
+    state.assets.shader_sources,
+    @js.any(bloom2d_downsample_first_id),
+    @js.any(bloom2d_first_source),
+  )
+  set_delete(state.assets.loading_shaders, @js.any(bloom2d_downsample_first_id))
+  |> ignore
+  let bloom2d_first_no_threshold_source = load_wgsl_preprocessed(
+    state,
+    "shaders/mgstudio/2d/bloom.wgsl",
+    ["FIRST_DOWNSAMPLE"],
+    new_set(),
+  )
+  map_set(
+    state.assets.shader_sources,
+    @js.any(bloom2d_downsample_first_no_threshold_id),
+    @js.any(bloom2d_first_no_threshold_source),
+  )
+  set_delete(
+    state.assets.loading_shaders,
+    @js.any(bloom2d_downsample_first_no_threshold_id),
+  )
+  |> ignore
+  let bloom2d_first_uniform_source = load_wgsl_preprocessed(
+    state,
+    "shaders/mgstudio/2d/bloom.wgsl",
+    ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
+    new_set(),
+  )
+  map_set(
+    state.assets.shader_sources,
+    @js.any(bloom2d_downsample_first_uniform_id),
+    @js.any(bloom2d_first_uniform_source),
+  )
+  set_delete(
+    state.assets.loading_shaders,
+    @js.any(bloom2d_downsample_first_uniform_id),
+  )
+  |> ignore
+  let bloom2d_first_no_threshold_uniform_source = load_wgsl_preprocessed(
+    state,
+    "shaders/mgstudio/2d/bloom.wgsl",
+    ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
+    new_set(),
+  )
+  map_set(
+    state.assets.shader_sources,
+    @js.any(bloom2d_downsample_first_no_threshold_uniform_id),
+    @js.any(bloom2d_first_no_threshold_uniform_source),
+  )
+  set_delete(
+    state.assets.loading_shaders,
+    @js.any(bloom2d_downsample_first_no_threshold_uniform_id),
+  )
+  |> ignore
+  let bloom2d_downsample_source = load_wgsl_preprocessed(
+    state,
+    "shaders/mgstudio/2d/bloom.wgsl",
+    [],
+    new_set(),
+  )
+  map_set(
+    state.assets.shader_sources,
+    @js.any(bloom2d_downsample_id),
+    @js.any(bloom2d_downsample_source),
+  )
+  set_delete(state.assets.loading_shaders, @js.any(bloom2d_downsample_id))
+  |> ignore
+  let bloom2d_downsample_uniform_source = load_wgsl_preprocessed(
+    state,
+    "shaders/mgstudio/2d/bloom.wgsl",
+    ["UNIFORM_SCALE"],
+    new_set(),
+  )
+  map_set(
+    state.assets.shader_sources,
+    @js.any(bloom2d_downsample_uniform_id),
+    @js.any(bloom2d_downsample_uniform_source),
+  )
+  set_delete(
+    state.assets.loading_shaders,
+    @js.any(bloom2d_downsample_uniform_id),
+  )
+  |> ignore
   load_wgsl_from_path(state, bloom2d_id, "shaders/mgstudio/2d/bloom.wgsl")
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(bloom2d_id)) |> ignore

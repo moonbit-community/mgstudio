@@ -1830,6 +1830,8 @@ fn ensure_bloom2d_pipeline(
   guard state.gpu.device is Some(device) else { return }
   let fragment_stage = @webgpu.shader_stage_fragment()
   let format_key = format.to_js_string()
+  let bloom_mip_format = @webgpu.TextureFormat::Other("rg11b10ufloat")
+  let bloom_mip_format_key = bloom_mip_format.to_js_string()
   if state.gpu.bloom2d_bind_layout is None {
     let bind_layout_desc = @js.from_entries([
       (
@@ -1881,12 +1883,16 @@ fn ensure_bloom2d_pipeline(
     )
   }
   if state.gpu.bloom2d_downsample_first_pipeline is Some(_) &&
+    state.gpu.bloom2d_downsample_first_no_threshold_pipeline is Some(_) &&
+    state.gpu.bloom2d_downsample_first_uniform_pipeline is Some(_) &&
+    state.gpu.bloom2d_downsample_first_no_threshold_uniform_pipeline is Some(_) &&
     state.gpu.bloom2d_downsample_pipeline is Some(_) &&
+    state.gpu.bloom2d_downsample_uniform_pipeline is Some(_) &&
     state.gpu.bloom2d_upsample_pipeline_energy is Some(_) &&
     state.gpu.bloom2d_upsample_pipeline_additive is Some(_) &&
     state.gpu.bloom2d_final_pipeline_energy is Some(_) &&
     state.gpu.bloom2d_final_pipeline_additive is Some(_) &&
-    state.gpu.bloom2d_mip_format == format_key &&
+    state.gpu.bloom2d_mip_format == bloom_mip_format_key &&
     state.gpu.bloom2d_final_pipeline_format == format_key {
     if state.gpu.bloom2d_pipeline is Some(_) {
       ()
@@ -1894,39 +1900,133 @@ fn ensure_bloom2d_pipeline(
     return
   }
   guard state.gpu.bloom2d_bind_layout is Some(bind_layout) else { return }
-  if state.gpu.bloom2d_shader_id <= 0 {
+  if state.gpu.bloom2d_downsample_first_shader_id <= 0 ||
+    state.gpu.bloom2d_downsample_first_no_threshold_shader_id <= 0 ||
+    state.gpu.bloom2d_downsample_first_uniform_shader_id <= 0 ||
+    state.gpu.bloom2d_downsample_first_no_threshold_uniform_shader_id <= 0 ||
+    state.gpu.bloom2d_downsample_shader_id <= 0 ||
+    state.gpu.bloom2d_downsample_uniform_shader_id <= 0 ||
+    state.gpu.bloom2d_shader_id <= 0 {
     report_asset_error_once(
       state, "bloom2d_pipeline_missing_shader_id", "Bloom2d pipeline error: shader id not initialized",
     )
     return
   }
-  let shader_source_opt = get_shader_source(state, state.gpu.bloom2d_shader_id)
-  if shader_source_opt is None {
+  let downsample_first_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_downsample_first_shader_id,
+  )
+  if downsample_first_source_opt is None {
     report_asset_error_once(
-      state, "bloom2d_pipeline_missing_shader_source", "Bloom2d pipeline error: shader source not loaded",
+      state, "bloom2d_pipeline_missing_downsample_first_shader_source", "Bloom2d pipeline error: downsample-first shader source not loaded",
     )
     return
   }
-  let shader_source = shader_source_opt.unwrap()
+  let downsample_first_no_threshold_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_downsample_first_no_threshold_shader_id,
+  )
+  if downsample_first_no_threshold_source_opt is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_downsample_first_no_threshold_shader_source",
+      "Bloom2d pipeline error: downsample-first-no-threshold shader source not loaded",
+    )
+    return
+  }
+  let downsample_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_downsample_shader_id,
+  )
+  if downsample_source_opt is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_downsample_shader_source", "Bloom2d pipeline error: downsample shader source not loaded",
+    )
+    return
+  }
+  let upsample_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_shader_id,
+  )
+  if upsample_source_opt is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_upsample_shader_source", "Bloom2d pipeline error: upsample shader source not loaded",
+    )
+    return
+  }
+  let downsample_first_uniform_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_downsample_first_uniform_shader_id,
+  )
+  if downsample_first_uniform_source_opt is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_downsample_first_uniform_shader_source", "Bloom2d pipeline error: downsample-first-uniform shader source not loaded",
+    )
+    return
+  }
+  let downsample_first_no_threshold_uniform_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_downsample_first_no_threshold_uniform_shader_id,
+  )
+  if downsample_first_no_threshold_uniform_source_opt is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_downsample_first_no_threshold_uniform_shader_source",
+      "Bloom2d pipeline error: downsample-first-no-threshold-uniform shader source not loaded",
+    )
+    return
+  }
+  let downsample_uniform_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_downsample_uniform_shader_id,
+  )
+  if downsample_uniform_source_opt is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_downsample_uniform_shader_source", "Bloom2d pipeline error: downsample-uniform shader source not loaded",
+    )
+    return
+  }
+  let downsample_first_source = downsample_first_source_opt.unwrap()
+  let downsample_first_no_threshold_source = downsample_first_no_threshold_source_opt.unwrap()
+  let downsample_source = downsample_source_opt.unwrap()
+  let downsample_first_uniform_source = downsample_first_uniform_source_opt.unwrap()
+  let downsample_first_no_threshold_uniform_source = downsample_first_no_threshold_uniform_source_opt.unwrap()
+  let downsample_uniform_source = downsample_uniform_source_opt.unwrap()
+  let upsample_source = upsample_source_opt.unwrap()
   state.gpu.bloom2d_downsample_first_pipeline = bloom2d_create_pipeline(
-    state, shader_source, bind_layout, "downsample_first", format, 0,
+    state, downsample_first_source, bind_layout, "downsample_first", bloom_mip_format,
+    0,
+  )
+  state.gpu.bloom2d_downsample_first_no_threshold_pipeline = bloom2d_create_pipeline(
+    state, downsample_first_no_threshold_source, bind_layout, "downsample_first",
+    bloom_mip_format, 0,
   )
   state.gpu.bloom2d_downsample_pipeline = bloom2d_create_pipeline(
-    state, shader_source, bind_layout, "downsample", format, 0,
+    state, downsample_source, bind_layout, "downsample", bloom_mip_format, 0,
+  )
+  state.gpu.bloom2d_downsample_first_uniform_pipeline = bloom2d_create_pipeline(
+    state, downsample_first_uniform_source, bind_layout, "downsample_first", bloom_mip_format,
+    0,
+  )
+  state.gpu.bloom2d_downsample_first_no_threshold_uniform_pipeline = bloom2d_create_pipeline(
+    state, downsample_first_no_threshold_uniform_source, bind_layout, "downsample_first",
+    bloom_mip_format, 0,
+  )
+  state.gpu.bloom2d_downsample_uniform_pipeline = bloom2d_create_pipeline(
+    state, downsample_uniform_source, bind_layout, "downsample", bloom_mip_format,
+    0,
   )
   state.gpu.bloom2d_upsample_pipeline_energy = bloom2d_create_pipeline(
-    state, shader_source, bind_layout, "upsample", format, 1,
+    state, upsample_source, bind_layout, "upsample", bloom_mip_format, 1,
   )
   state.gpu.bloom2d_upsample_pipeline_additive = bloom2d_create_pipeline(
-    state, shader_source, bind_layout, "upsample", format, 2,
+    state, upsample_source, bind_layout, "upsample", bloom_mip_format, 2,
   )
   state.gpu.bloom2d_final_pipeline_energy = bloom2d_create_pipeline(
-    state, shader_source, bind_layout, "upsample", format, 1,
+    state, upsample_source, bind_layout, "upsample", format, 1,
   )
   state.gpu.bloom2d_final_pipeline_additive = bloom2d_create_pipeline(
-    state, shader_source, bind_layout, "upsample", format, 2,
+    state, upsample_source, bind_layout, "upsample", format, 2,
   )
-  state.gpu.bloom2d_mip_format = format_key
+  state.gpu.bloom2d_mip_format = bloom_mip_format_key
   state.gpu.bloom2d_final_pipeline_format = format_key
   state.gpu.bloom2d_pipeline = state.gpu.bloom2d_final_pipeline_energy
 }
@@ -4796,19 +4896,65 @@ fn draw_bloom2d(
     }
     target_view_any.cast()
   }
+  let scale_x_value = if scale_x < 0.0 { 0.0 } else { scale_x }
+  let scale_y_value = if scale_y < 0.0 { 0.0 } else { scale_y }
+  let use_uniform_scale = scale_x_value == 1.0 && scale_y_value == 1.0
+  let use_prefilter = threshold > 0.0
   ensure_bloom2d_pipeline(state, target_format)
-  guard state.gpu.bloom2d_downsample_first_pipeline
-    is Some(downsample_first_pipeline) else {
-    report_asset_error_once(
-      state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample-first pipeline not ready",
-    )
-    return
+  let downsample_first_pipeline = if use_uniform_scale {
+    if use_prefilter {
+      guard state.gpu.bloom2d_downsample_first_uniform_pipeline
+        is Some(pipeline) else {
+        report_asset_error_once(
+          state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample-first-uniform pipeline not ready",
+        )
+        return
+      }
+      pipeline
+    } else {
+      guard state.gpu.bloom2d_downsample_first_no_threshold_uniform_pipeline
+        is Some(pipeline) else {
+        report_asset_error_once(
+          state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample-first-no-threshold-uniform pipeline not ready",
+        )
+        return
+      }
+      pipeline
+    }
+  } else if use_prefilter {
+    guard state.gpu.bloom2d_downsample_first_pipeline is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample-first pipeline not ready",
+      )
+      return
+    }
+    pipeline
+  } else {
+    guard state.gpu.bloom2d_downsample_first_no_threshold_pipeline
+      is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample-first-no-threshold pipeline not ready",
+      )
+      return
+    }
+    pipeline
   }
-  guard state.gpu.bloom2d_downsample_pipeline is Some(downsample_pipeline) else {
-    report_asset_error_once(
-      state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample pipeline not ready",
-    )
-    return
+  let downsample_pipeline = if use_uniform_scale {
+    guard state.gpu.bloom2d_downsample_uniform_pipeline is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample-uniform pipeline not ready",
+      )
+      return
+    }
+    pipeline
+  } else {
+    guard state.gpu.bloom2d_downsample_pipeline is Some(pipeline) else {
+      report_asset_error_once(
+        state, "bloom2d_draw_pipeline_not_ready", "Bloom2d draw skipped: downsample pipeline not ready",
+      )
+      return
+    }
+    pipeline
   }
   let upsample_pipeline = if composite_mode == 0 {
     guard state.gpu.bloom2d_upsample_pipeline_energy is Some(pipeline) else {
@@ -4896,12 +5042,13 @@ fn draw_bloom2d(
       raw
     }
   }
-  let format_key = target_format.to_js_string()
+  let bloom_mip_format = @webgpu.TextureFormat::Other("rg11b10ufloat")
+  let bloom_mip_format_key = bloom_mip_format.to_js_string()
   let rebuild_mips = state.gpu.bloom2d_mip_texture is None ||
     state.gpu.bloom2d_mip_count != mip_count ||
     state.gpu.bloom2d_mip_width != bloom_width ||
     state.gpu.bloom2d_mip_height != bloom_height ||
-    state.gpu.bloom2d_mip_format != format_key
+    state.gpu.bloom2d_mip_format != bloom_mip_format_key
   if rebuild_mips {
     let usage = @webgpu.combine_flags(
       @webgpu.texture_usage_texture_binding(),
@@ -4912,7 +5059,7 @@ fn draw_bloom2d(
       ("mipLevelCount", @js.any(mip_count)),
       ("sampleCount", @js.any(1)),
       ("dimension", @js.any("2d")),
-      ("format", @js.any(format_key)),
+      ("format", @js.any(bloom_mip_format_key)),
       ("usage", @js.any(usage)),
     ])
     let texture = device.create_texture(texture_desc)
@@ -4924,7 +5071,7 @@ fn draw_bloom2d(
     state.gpu.bloom2d_mip_count = mip_count
     state.gpu.bloom2d_mip_width = bloom_width
     state.gpu.bloom2d_mip_height = bloom_height
-    state.gpu.bloom2d_mip_format = format_key
+    state.gpu.bloom2d_mip_format = bloom_mip_format_key
   }
   if state.gpu.bloom2d_mip_views.length() < mip_count {
     report_asset_error_once(
@@ -4940,8 +5087,6 @@ fn draw_bloom2d(
   let high_pass_frequency_value = clamp_double(high_pass_frequency, 0.0, 1.0)
   let threshold_value = if threshold < 0.0 { 0.0 } else { threshold }
   let threshold_softness_value = clamp_double(threshold_softness, 0.0, 1.0)
-  let scale_x_value = if scale_x < 0.0 { 0.0 } else { scale_x }
-  let scale_y_value = if scale_y < 0.0 { 0.0 } else { scale_y }
   let settings_data = bloom2d_make_uniform_data(
     info, threshold_value, threshold_softness_value, scale_x_value, scale_y_value,
   )
