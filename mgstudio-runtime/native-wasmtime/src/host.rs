@@ -3072,8 +3072,6 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::I32,
             ValType::I32,
-            ValType::I32,
-            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3909,6 +3907,8 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
+            ValType::I32,
             ValType::I32,
             ValType::I32,
         ],

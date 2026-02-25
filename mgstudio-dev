@@ -50,6 +50,13 @@ else
   if find "${ROOT}/mgstudio-cli/cmd/mgstudio" -type f \( -name '*.mbt' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
+  # Rebuild when local native runtime dependencies changed.
+  if find "${ROOT}/mgstudio-runtime/native" -type f \( -name '*.mbt' -o -name '*.c' -o -name '*.h' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
+    NEED_BUILD=1
+  fi
+  if find "${ROOT}/mgstudio-runtime/core" -type f \( -name '*.mbt' -o -name '*.c' -o -name '*.h' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
+    NEED_BUILD=1
+  fi
   if [[ "${ROOT}/mgstudio-cli/moon.mod.json" -nt "${BIN}" ]]; then
     NEED_BUILD=1
   fi

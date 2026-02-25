@@ -262,6 +262,13 @@ fn mesh3d_topology_from_kind(kind: i32) -> wgpu::PrimitiveTopology {
     }
 }
 
+fn align_up_u64(value: u64, align: u64) -> u64 {
+    if align <= 1 {
+        return value;
+    }
+    value.div_ceil(align) * align
+}
+
 #[derive(Default)]
 struct SpriteRenderer {
     bgl_tex: Option<wgpu::BindGroupLayout>,
@@ -3024,13 +3031,24 @@ impl GpuBackend {
             .ok_or_else(|| anyhow!("wgpu: sprite globals layout missing"))?;
 
         // Concatenate all instance data into one storage buffer upload.
+        // Each storage binding offset must satisfy device alignment constraints.
+        let storage_align = self
+            .device
+            .limits()
+            .min_storage_buffer_offset_alignment
+            .max(1) as u64;
         let mut offsets_bytes: Vec<u64> = Vec::with_capacity(segments.len());
         let mut all_f32: Vec<f32> = Vec::new();
         let mut cur_bytes: u64 = 0;
         for seg in segments {
+            cur_bytes = align_up_u64(cur_bytes, storage_align);
             offsets_bytes.push(cur_bytes);
+            let padded_words = (cur_bytes / 4) as usize;
+            if all_f32.len() < padded_words {
+                all_f32.resize(padded_words, 0.0);
+            }
             all_f32.extend_from_slice(&seg.instance_data);
-            cur_bytes += (seg.instance_data.len() * 4) as u64;
+            cur_bytes = (all_f32.len() * 4) as u64;
         }
 
         let required_bytes = cur_bytes.max(1);
