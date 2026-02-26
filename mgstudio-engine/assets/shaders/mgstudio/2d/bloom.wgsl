@@ -253,7 +253,8 @@ fn screen_space_dither(frag_coord: vec2<f32>) -> vec3<f32> {
 
 fn tonemap_color(color: vec3<f32>, mode: f32) -> vec3<f32> {
     // Bevy's AgX/TonyMcMapface/BlenderFilmic require 3D LUTs.
-    // Until LUT path is wired for this bloom final pass, we keep these mapped to ACES.
+    // Until LUT path is wired for this bloom final pass, fall back to the non-LUT
+    // display transform that better matches highlight desaturation than ACES.
     if mode < 0.5 {
         return max(color, vec3<f32>(0.0));
     }
@@ -267,15 +268,15 @@ fn tonemap_color(color: vec3<f32>, mode: f32) -> vec3<f32> {
         return aces_fitted(max(color, vec3<f32>(0.0)));
     }
     if mode < 4.5 {
-        return aces_fitted(max(color, vec3<f32>(0.0)));
+        return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
     }
     if mode < 5.5 {
         return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
     }
     if mode < 6.5 {
-        return aces_fitted(max(color, vec3<f32>(0.0)));
+        return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
     }
-    return aces_fitted(max(color, vec3<f32>(0.0)));
+    return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
 }
 
 #ifdef FIRST_DOWNSAMPLE

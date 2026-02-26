@@ -42,8 +42,17 @@ pub fn game_app() -> Unit {
 
 ///|
 fn float_text_2(value : Float) -> String {
-  let rounded = (value * 100.0F).round() / 100.0F
-  "\{rounded}"
+  let scaled = (value * 100.0F).round().to_int()
+  let sign = if scaled < 0 { "-" } else { "" }
+  let abs_scaled = if scaled < 0 { -scaled } else { scaled }
+  let whole = abs_scaled / 100
+  let fraction = abs_scaled % 100
+  let fraction_text = if fraction < 10 {
+    "0" + fraction.to_string()
+  } else {
+    fraction.to_string()
+  }
+  sign + whole.to_string() + "." + fraction_text
 }
 
 ///|
@@ -388,9 +397,19 @@ fn bloom_update(world : @ecs_world.World) -> Unit {
 
   let bloom_store = world.get_bloom2d_store()
   let camera = bloom_example_state.val.camera
-  if bloom_store.get(camera) is Some(current) {
-    let next = current.with_settings(bloom).with_enabled(bloom_enabled)
-    bloom_store.set(camera, next, tick) |> ignore
+  if bloom_enabled {
+    if bloom_store.get(camera) is Some(current) {
+      let next = current.with_settings(bloom).with_enabled(true)
+      bloom_store.set(camera, next, tick) |> ignore
+    } else {
+      bloom_store.insert(
+        camera,
+        @render2d.Bloom2d::new().with_settings(bloom).with_enabled(true),
+        tick,
+      )
+    }
+  } else {
+    bloom_store.remove(camera) |> ignore
   }
 
   update_help_text()

@@ -316,6 +316,8 @@ pub struct Color {
 }
 pub fn Color::black() -> Self
 pub fn Color::new(Float, Float, Float, Float) -> Self
+pub fn Color::srgb(Float, Float, Float) -> Self
+pub fn Color::srgba(Float, Float, Float, Float) -> Self
 pub fn Color::white() -> Self
 
 pub struct ColorMaterial {
