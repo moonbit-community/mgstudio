@@ -1723,7 +1723,7 @@ fn bloom2d_make_uniform_data(
   threshold_softness : Double,
   scale_x : Double,
   scale_y : Double,
-  bloom_enabled : Int,
+  bloom_weight : Double,
   tonemapping_mode : Int,
   deband_dither_enabled : Int,
 ) -> @js.Any {
@@ -1765,11 +1765,7 @@ fn bloom2d_make_uniform_data(
     } else {
       0.0
     },
-    if bloom_enabled != 0 {
-      1.0
-    } else {
-      0.0
-    },
+    bloom_weight,
     0.0,
   ])
 }
@@ -3697,7 +3693,10 @@ fn draw_sprite_uv(
     let cos_value : Double = math_cos(rotation)
     let sin_value : Double = math_sin(rotation)
     let actual_texture_id : Int = entry_value._get("id").cast()
-    let path_any = map_get(state.assets.texture_paths, @js.any(actual_texture_id))
+    let path_any = map_get(
+      state.assets.texture_paths,
+      @js.any(actual_texture_id),
+    )
     let path_text = if host_is_nullish(path_any) {
       "<unknown>"
     } else {
@@ -5200,7 +5199,7 @@ fn draw_bloom2d(
   let high_pass_frequency_value = high_pass_frequency
   let threshold_value = threshold
   let threshold_softness_value = threshold_softness
-  let bloom_enabled_value = if bloom_enabled { 1 } else { 0 }
+  let final_bloom_weight = if bloom_enabled { intensity_value } else { 0.0 }
   let tonemapping_mode_value = tonemapping_mode
   let deband_dither_enabled_value = deband_dither_enabled
   let settings_data = bloom2d_make_uniform_data(
@@ -5214,7 +5213,7 @@ fn draw_bloom2d(
     threshold_softness_value,
     scale_x_value,
     scale_y_value,
-    bloom_enabled_value,
+    final_bloom_weight,
     tonemapping_mode_value,
     deband_dither_enabled_value,
   )
@@ -5342,10 +5341,6 @@ fn draw_bloom2d(
   let final_bind_group = device.create_bind_group(
     @webgpu.bind_group_descriptor(bind_layout, final_entries).to_js(),
   )
-  let final_blend = bloom2d_compute_blend_factor(
-    intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
-    high_pass_frequency_value, composite_mode, 0.0, max_mip_f,
-  )
   {
     let pass = bloom2d_begin_pass_load(encoder, target_view)
     pass.set_viewport(
@@ -5363,12 +5358,6 @@ fn draw_bloom2d(
       to_int(info.viewport_height),
     )
     pass.set_pipeline(final_pipeline)
-    pass
-    .as_any()
-    ._call("setBlendConstant", [
-      @webgpu.color(final_blend, final_blend, final_blend, final_blend).to_js(),
-    ])
-    |> ignore
     pass.set_bind_group(0, final_bind_group)
     pass.draw(3, 1, 0, 0)
     pass.end()

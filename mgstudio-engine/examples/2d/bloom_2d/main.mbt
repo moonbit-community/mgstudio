@@ -231,9 +231,7 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
   @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(
-      bird,
-    )
+    @render2d.Sprite::from_image(bird)
     .with_color(@render2d.Color::srgb(5.0F, 5.0F, 5.0F))
     .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
     @math.Transform::identity(),

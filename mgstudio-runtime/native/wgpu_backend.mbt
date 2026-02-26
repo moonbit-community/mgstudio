@@ -2285,7 +2285,7 @@ fn ensure_bloom2d_pipeline_rgba8(
     sm,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     vs_entry="fullscreen_vertex_shader",
-    fs_entry="fragment",
+    fs_entry="final_fragment",
     alpha_blend=false,
     depth=false,
   )
@@ -2320,7 +2320,7 @@ fn ensure_bloom2d_pipeline_surface(
     sm,
     format,
     vs_entry="fullscreen_vertex_shader",
-    fs_entry="fragment",
+    fs_entry="final_fragment",
     alpha_blend=false,
     depth=false,
   )

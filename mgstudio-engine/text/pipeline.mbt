@@ -574,7 +574,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let glyph_byte_start = layout_glyph0.start
       let glyph_byte_end = layout_glyph0.end
       if text_range_is_non_renderable_whitespace(
-          buffer.text,
+          run.text,
           glyph_byte_start,
           glyph_byte_end,
         ) {
