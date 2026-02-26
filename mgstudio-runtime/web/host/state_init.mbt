@@ -222,6 +222,11 @@ priv struct GpuState {
   mut bloom2d_mip_height : Int
   mut bloom2d_mip_count : Int
   mut bloom2d_mip_format : String
+  mut bloom2d_compose_texture : @webgpu.GPUTexture?
+  mut bloom2d_compose_view : @webgpu.GPUTextureView?
+  mut bloom2d_compose_width : Int
+  mut bloom2d_compose_height : Int
+  mut bloom2d_compose_format : String
   mut depth_texture : @webgpu.GPUTexture?
   mut depth_view : @webgpu.GPUTextureView?
   mut depth_width : Int
@@ -285,6 +290,7 @@ priv struct GpuState {
   mut bloom2d_downsample_shader_id : Int
   mut bloom2d_downsample_uniform_shader_id : Int
   mut bloom2d_shader_id : Int
+  mut bloom2d_final_shader_id : Int
   mut gizmo_shader_id : Int
   mut profile_enabled : Bool
   mut profile_last_log_ms : Double
@@ -426,6 +432,11 @@ fn new_state(
       bloom2d_mip_height: 0,
       bloom2d_mip_count: 0,
       bloom2d_mip_format: "",
+      bloom2d_compose_texture: None,
+      bloom2d_compose_view: None,
+      bloom2d_compose_width: 0,
+      bloom2d_compose_height: 0,
+      bloom2d_compose_format: "",
       depth_texture: None,
       depth_view: None,
       depth_width: 0,
@@ -489,6 +500,7 @@ fn new_state(
       bloom2d_downsample_shader_id: 0,
       bloom2d_downsample_uniform_shader_id: 0,
       bloom2d_shader_id: 0,
+      bloom2d_final_shader_id: 0,
       gizmo_shader_id: 0,
       profile_enabled: false,
       profile_last_log_ms: 0.0,
@@ -1009,6 +1021,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.bloom2d_mip_height = 0
   state.gpu.bloom2d_mip_count = 0
   state.gpu.bloom2d_mip_format = ""
+  state.gpu.bloom2d_compose_texture = None
+  state.gpu.bloom2d_compose_view = None
+  state.gpu.bloom2d_compose_width = 0
+  state.gpu.bloom2d_compose_height = 0
+  state.gpu.bloom2d_compose_format = ""
   state.gpu.depth_texture = None
   state.gpu.depth_view = None
   state.gpu.depth_width = 0
@@ -1073,6 +1090,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.bloom2d_downsample_shader_id = 0
   state.gpu.bloom2d_downsample_uniform_shader_id = 0
   state.gpu.bloom2d_shader_id = 0
+  state.gpu.bloom2d_final_shader_id = 0
   state.gpu.gizmo_shader_id = 0
   let sprite_id = next_shader_id(state)
   let ui_id = next_shader_id(state)
@@ -1089,6 +1107,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   let bloom2d_downsample_id = next_shader_id(state)
   let bloom2d_downsample_uniform_id = next_shader_id(state)
   let bloom2d_id = next_shader_id(state)
+  let bloom2d_final_id = next_shader_id(state)
   let gizmo_id = next_shader_id(state)
   state.gpu.sprite_shader_id = sprite_id
   state.gpu.ui_shader_id = ui_id
@@ -1105,6 +1124,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.bloom2d_downsample_shader_id = bloom2d_downsample_id
   state.gpu.bloom2d_downsample_uniform_shader_id = bloom2d_downsample_uniform_id
   state.gpu.bloom2d_shader_id = bloom2d_id
+  state.gpu.bloom2d_final_shader_id = bloom2d_final_id
   state.gpu.gizmo_shader_id = gizmo_id
   set_add(state.assets.loading_shaders, @js.any(sprite_id))
   set_add(state.assets.loading_shaders, @js.any(ui_id))
@@ -1130,6 +1150,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   set_add(state.assets.loading_shaders, @js.any(bloom2d_downsample_id))
   set_add(state.assets.loading_shaders, @js.any(bloom2d_downsample_uniform_id))
   set_add(state.assets.loading_shaders, @js.any(bloom2d_id))
+  set_add(state.assets.loading_shaders, @js.any(bloom2d_final_id))
   set_add(state.assets.loading_shaders, @js.any(gizmo_id))
   map_set(
     state.assets.shader_paths,
@@ -1205,6 +1226,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state.assets.shader_paths,
     @js.any(bloom2d_id),
     @js.any("shaders/mgstudio/2d/bloom.wgsl"),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(bloom2d_final_id),
+    @js.any("shaders/mgstudio/2d/tonemapping.wgsl"),
   )
   map_set(
     state.assets.shader_paths,
@@ -1334,6 +1360,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   load_wgsl_from_path(state, bloom2d_id, "shaders/mgstudio/2d/bloom.wgsl")
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(bloom2d_id)) |> ignore
+  load_wgsl_from_path(
+    state, bloom2d_final_id, "shaders/mgstudio/2d/tonemapping.wgsl",
+  )
+  |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(bloom2d_final_id)) |> ignore
   load_wgsl_from_path(state, gizmo_id, "shaders/mgstudio/gizmo/lines.wgsl")
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(gizmo_id)) |> ignore

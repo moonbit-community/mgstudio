@@ -1898,6 +1898,49 @@ fn bloom2d_create_mip_view(
 }
 
 ///|
+fn bloom2d_ensure_compose_view(
+  state : State,
+  width : Int,
+  height : Int,
+) -> @webgpu.GPUTextureView? {
+  guard state.gpu.device is Some(device) else { return None }
+  let safe_width = if width < 1 { 1 } else { width }
+  let safe_height = if height < 1 { 1 } else { height }
+  let compose_format = @webgpu.TextureFormat::Other("rgba16float")
+  let compose_format_key = compose_format.to_js_string()
+  let rebuild = state.gpu.bloom2d_compose_texture is None ||
+    state.gpu.bloom2d_compose_view is None ||
+    state.gpu.bloom2d_compose_width != safe_width ||
+    state.gpu.bloom2d_compose_height != safe_height ||
+    state.gpu.bloom2d_compose_format != compose_format_key
+  if rebuild {
+    let usage = @webgpu.combine_flags(
+      @webgpu.combine_flags(
+        @webgpu.texture_usage_texture_binding(),
+        @webgpu.texture_usage_render_attachment(),
+      ),
+      @webgpu.texture_usage_copy_dst(),
+    )
+    let descriptor = @js.from_entries([
+      ("size", @webgpu.texture_size(safe_width, safe_height).to_js()),
+      ("mipLevelCount", @js.any(1)),
+      ("sampleCount", @js.any(1)),
+      ("dimension", @js.any("2d")),
+      ("format", @js.any(compose_format_key)),
+      ("usage", @js.any(usage)),
+    ])
+    let texture = device.create_texture(descriptor)
+    let view = texture.create_view()
+    state.gpu.bloom2d_compose_texture = Some(texture)
+    state.gpu.bloom2d_compose_view = Some(view)
+    state.gpu.bloom2d_compose_width = safe_width
+    state.gpu.bloom2d_compose_height = safe_height
+    state.gpu.bloom2d_compose_format = compose_format_key
+  }
+  state.gpu.bloom2d_compose_view
+}
+
+///|
 fn ensure_bloom2d_pipeline(
   state : State,
   format : @webgpu.TextureFormat,
@@ -1993,7 +2036,8 @@ fn ensure_bloom2d_pipeline(
     state.gpu.bloom2d_downsample_first_no_threshold_uniform_shader_id <= 0 ||
     state.gpu.bloom2d_downsample_shader_id <= 0 ||
     state.gpu.bloom2d_downsample_uniform_shader_id <= 0 ||
-    state.gpu.bloom2d_shader_id <= 0 {
+    state.gpu.bloom2d_shader_id <= 0 ||
+    state.gpu.bloom2d_final_shader_id <= 0 {
     report_asset_error_once(
       state, "bloom2d_pipeline_missing_shader_id", "Bloom2d pipeline error: shader id not initialized",
     )
@@ -2040,6 +2084,16 @@ fn ensure_bloom2d_pipeline(
     )
     return
   }
+  let final_source_opt = get_shader_source(
+    state,
+    state.gpu.bloom2d_final_shader_id,
+  )
+  if final_source_opt is None {
+    report_asset_error_once(
+      state, "bloom2d_pipeline_missing_final_shader_source", "Bloom2d pipeline error: final shader source not loaded",
+    )
+    return
+  }
   let downsample_first_uniform_source_opt = get_shader_source(
     state,
     state.gpu.bloom2d_downsample_first_uniform_shader_id,
@@ -2078,6 +2132,7 @@ fn ensure_bloom2d_pipeline(
   let downsample_first_no_threshold_uniform_source = downsample_first_no_threshold_uniform_source_opt.unwrap()
   let downsample_uniform_source = downsample_uniform_source_opt.unwrap()
   let upsample_source = upsample_source_opt.unwrap()
+  let final_source = final_source_opt.unwrap()
   state.gpu.bloom2d_downsample_first_pipeline = bloom2d_create_pipeline(
     state, downsample_first_source, bind_layout, "downsample_first", bloom_mip_format,
     0,
@@ -2108,10 +2163,10 @@ fn ensure_bloom2d_pipeline(
     state, upsample_source, bind_layout, "upsample", bloom_mip_format, 2,
   )
   state.gpu.bloom2d_final_pipeline_energy = bloom2d_create_pipeline(
-    state, upsample_source, bind_layout, "final_fragment", format, 0,
+    state, final_source, bind_layout, "final_fragment", format, 0,
   )
   state.gpu.bloom2d_final_pipeline_additive = bloom2d_create_pipeline(
-    state, upsample_source, bind_layout, "final_fragment", format, 0,
+    state, final_source, bind_layout, "final_fragment", format, 0,
   )
   state.gpu.bloom2d_mip_format = bloom_mip_format_key
   state.gpu.bloom2d_final_pipeline_format = format_key
@@ -5199,10 +5254,10 @@ fn draw_bloom2d(
   let high_pass_frequency_value = high_pass_frequency
   let threshold_value = threshold
   let threshold_softness_value = threshold_softness
-  let final_bloom_weight = if bloom_enabled { intensity_value } else { 0.0 }
+  let bloom_weight_value = if bloom_enabled { intensity_value } else { 0.0 }
   let tonemapping_mode_value = tonemapping_mode
   let deband_dither_enabled_value = deband_dither_enabled
-  let settings_data = bloom2d_make_uniform_data(
+  let bloom_settings_data = bloom2d_make_uniform_data(
     safe_scene_width.to_double(),
     safe_scene_height.to_double(),
     0.0,
@@ -5213,14 +5268,21 @@ fn draw_bloom2d(
     threshold_softness_value,
     scale_x_value,
     scale_y_value,
-    final_bloom_weight,
+    bloom_weight_value,
     tonemapping_mode_value,
     deband_dither_enabled_value,
   )
-  queue.write_buffer(settings_buffer, 0, settings_data)
+  queue.write_buffer(settings_buffer, 0, bloom_settings_data)
   let scene_view : @webgpu.GPUTextureView = scene_texture_entry
     ._get("view")
     .cast()
+  let scene_texture_raw = scene_texture_entry._get("texture")
+  if host_is_nullish(scene_texture_raw) {
+    report_asset_error_once(
+      state, "bloom2d_draw_scene_texture_object_not_ready", "Bloom2d draw skipped: scene texture object is not ready",
+    )
+    return
+  }
   let material_entries = [
     @webgpu.bind_group_entry_texture(0, scene_view),
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
@@ -5332,14 +5394,86 @@ fn draw_bloom2d(
     upsample_mip = upsample_mip - 1
   }
 
-  let final_entries = [
+  let final_blend = bloom2d_compute_blend_factor(
+    intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
+    high_pass_frequency_value, composite_mode, 0.0, max_mip_f,
+  )
+  guard bloom2d_ensure_compose_view(state, safe_scene_width, safe_scene_height)
+    is Some(compose_view) else {
+    report_asset_error_once(
+      state, "bloom2d_draw_compose_texture_not_ready", "Bloom2d draw skipped: compose texture is not ready",
+    )
+    return
+  }
+  guard state.gpu.bloom2d_compose_texture is Some(compose_texture) else {
+    return
+  }
+  copy_texture_to_texture_region_on_encoder(
+    encoder.as_any(),
+    scene_texture_raw,
+    compose_texture.as_any(),
+    source_viewport_width,
+    source_viewport_height,
+    0,
+    0,
+  )
+
+  let compose_entries = [
     @webgpu.bind_group_entry_texture(0, state.gpu.bloom2d_mip_views[0]),
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
     @webgpu.bind_group_entry_texture(3, scene_view),
   ]
-  let final_bind_group = device.create_bind_group(
-    @webgpu.bind_group_descriptor(bind_layout, final_entries).to_js(),
+  let compose_bind_group = device.create_bind_group(
+    @webgpu.bind_group_descriptor(bind_layout, compose_entries).to_js(),
+  )
+  {
+    let pass = bloom2d_begin_pass_load(encoder, compose_view)
+    pass.set_viewport(
+      0.0,
+      0.0,
+      source_viewport_width.to_double(),
+      source_viewport_height.to_double(),
+      0.0,
+      1.0,
+    )
+    pass.set_scissor_rect(0, 0, source_viewport_width, source_viewport_height)
+    pass.set_pipeline(upsample_pipeline)
+    pass
+    .as_any()
+    ._call("setBlendConstant", [
+      @webgpu.color(final_blend, final_blend, final_blend, final_blend).to_js(),
+    ])
+    |> ignore
+    pass.set_bind_group(0, compose_bind_group)
+    pass.draw(3, 1, 0, 0)
+    pass.end()
+  }
+
+  let tonemap_settings_data = bloom2d_make_uniform_data(
+    safe_scene_width.to_double(),
+    safe_scene_height.to_double(),
+    0.0,
+    0.0,
+    source_viewport_width.to_double(),
+    source_viewport_height.to_double(),
+    0.0,
+    0.0,
+    1.0,
+    1.0,
+    0.0,
+    tonemapping_mode_value,
+    deband_dither_enabled_value,
+  )
+  queue.write_buffer(settings_buffer, 0, tonemap_settings_data)
+  let tonemap_entries = [
+    @webgpu.bind_group_entry_texture(0, compose_view),
+    @webgpu.bind_group_entry_sampler(1, bloom_sampler),
+    @webgpu.bind_group_entry_buffer(2, settings_buffer),
+    @webgpu.bind_group_entry_texture(3, compose_view),
+  ]
+  let tonemap_bind_group = device.create_bind_group(
+    @webgpu.bind_group_descriptor(bind_layout, tonemap_entries).to_js(),
   )
   {
     let pass = bloom2d_begin_pass_load(encoder, target_view)
@@ -5358,7 +5492,7 @@ fn draw_bloom2d(
       to_int(info.viewport_height),
     )
     pass.set_pipeline(final_pipeline)
-    pass.set_bind_group(0, final_bind_group)
+    pass.set_bind_group(0, tonemap_bind_group)
     pass.draw(3, 1, 0, 0)
     pass.end()
   }

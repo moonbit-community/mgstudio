@@ -2278,7 +2278,7 @@ fn ensure_bloom2d_pipeline_rgba8(
     return
   }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/bloom.wgsl",
+    backend, "shaders/mgstudio/2d/tonemapping.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = backend.device.create_render_pipeline_color_format_entries(
@@ -2313,7 +2313,7 @@ fn ensure_bloom2d_pipeline_surface(
     old.release()
   }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/bloom.wgsl",
+    backend, "shaders/mgstudio/2d/tonemapping.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = backend.device.create_render_pipeline_color_format_entries(

@@ -1745,6 +1745,24 @@ extern "js" fn copy_texture_to_texture_region(
   #| }
 
 ///|
+extern "js" fn copy_texture_to_texture_region_on_encoder(
+  encoder : @js.Any,
+  src_texture : @js.Any,
+  dst_texture : @js.Any,
+  width : Int,
+  height : Int,
+  x : Int,
+  y : Int,
+) -> Unit =
+  #| (encoder, srcTexture, dstTexture, width, height, x, y) => {
+  #|   encoder.copyTextureToTexture(
+  #|     { texture: srcTexture },
+  #|     { texture: dstTexture, origin: { x, y } },
+  #|     [width, height, 1],
+  #|   )
+  #| }
+
+///|
 extern "js" fn write_texture(
   queue : @js.Any,
   texture : @js.Any,

@@ -3941,7 +3941,7 @@ impl GpuBackend {
             .bloom2d_pipeline_layout
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: bloom2d pipeline layout missing"))?;
-        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/bloom.wgsl")?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/tonemapping.wgsl")?;
         let sm = self
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -4000,7 +4000,7 @@ impl GpuBackend {
             .bloom2d_pipeline_layout
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: bloom2d pipeline layout missing"))?;
-        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/bloom.wgsl")?;
+        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/tonemapping.wgsl")?;
         let sm = self
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
