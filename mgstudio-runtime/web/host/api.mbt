@@ -1266,7 +1266,7 @@ pub fn create_host(
       )
       let texture_desc = @webgpu.texture_descriptor(
         @webgpu.texture_size(safe_width, safe_height),
-        @webgpu.TextureFormat::Rgba8UnormSrgb,
+        @webgpu.TextureFormat::Rgba8Unorm,
         texture_usage,
       )
       let texture = device.create_texture(texture_desc.to_js())
@@ -1297,7 +1297,10 @@ pub fn create_host(
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
-          ("format", @js.any(@webgpu.TextureFormat::Rgba8Unorm.to_js_string())),
+          (
+            "format",
+            @js.any(@webgpu.TextureFormat::Rgba8Unorm.to_js_string()),
+          ),
         ])
         map_set(state.gpu.textures, @js.any(id), entry)
         ensure_bind_group_for_texture(state, entry)
@@ -1736,6 +1739,7 @@ pub fn create_host(
           ("uiBindGroup", js_null()),
           ("width", @js.any(safe_width)),
           ("height", @js.any(safe_height)),
+          ("format", @js.any(format.to_js_string())),
         ])
         map_set(state.gpu.textures, @js.any(id), entry)
         ensure_bind_group_for_texture(state, entry)

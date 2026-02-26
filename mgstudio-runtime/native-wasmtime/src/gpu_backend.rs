@@ -1347,9 +1347,6 @@ impl GpuBackend {
                             continue;
                         };
 
-                        if draw.enabled == 0 {
-                            continue;
-                        }
                         let intensity = draw.intensity.max(0.0);
                         let low_frequency_boost = draw.low_frequency_boost.clamp(0.0, 1.0);
                         let low_frequency_boost_curvature =
@@ -1395,6 +1392,7 @@ impl GpuBackend {
                             + high_pass_frequency
                             + max_mip_dimension
                             + composite_mode;
+                        let bloom_weight = if draw.enabled == 0 { 0.0 } else { intensity };
                         let settings_words: [u32; 16] = [
                             threshold.to_bits(),
                             (threshold - knee).to_bits(),
@@ -1410,7 +1408,7 @@ impl GpuBackend {
                             0.0f32.to_bits(),
                             tonemapping_mode.to_bits(),
                             deband_dither_enabled.to_bits(),
-                            intensity.to_bits(),
+                            bloom_weight.to_bits(),
                             reserved_tail.to_bits(),
                         ];
                         self.queue.write_buffer(
@@ -3963,7 +3961,7 @@ impl GpuBackend {
                 },
                 fragment: Some(wgpu::FragmentState {
                     module: &sm,
-                    entry_point: Some("fragment"),
+                    entry_point: Some("final_fragment"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: wgpu::TextureFormat::Rgba8Unorm,
@@ -4022,7 +4020,7 @@ impl GpuBackend {
                 },
                 fragment: Some(wgpu::FragmentState {
                     module: &sm,
-                    entry_point: Some("fragment"),
+                    entry_point: Some("final_fragment"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format,

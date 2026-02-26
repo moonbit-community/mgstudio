@@ -62,7 +62,72 @@ fn create_sampler(state : State, sampler_kind : Int) -> @webgpu.GPUSampler? {
 }
 
 ///|
+fn active_color_pipeline_format(state : State) -> @webgpu.TextureFormat {
+  let default_format = state.gpu.format.unwrap_or(
+    @webgpu.TextureFormat::Bgra8Unorm,
+  )
+  let format = if state.gpu.current_pass_info is Some(info) &&
+    info.target_id >= 0 {
+    let target_entry = map_get(state.gpu.textures, @js.any(info.target_id))
+    if host_is_nullish(target_entry) {
+      default_format
+    } else {
+      let target_format_any = target_entry._get("format")
+      if host_is_nullish(target_format_any) {
+        default_format
+      } else {
+        @webgpu.texture_format_from_string(any_to_string(target_format_any))
+      }
+    }
+  } else {
+    default_format
+  }
+  let format_key = format.to_js_string()
+  if state.gpu.pipeline_color_format != format_key {
+    let previous_format = state.gpu.pipeline_color_format
+    state.gpu.pipeline = None
+    state.gpu.mesh_pipeline = None
+    state.gpu.ui_pipeline = None
+    state.gpu.ui_shadow_pipeline = None
+    state.gpu.ui_slice_pipeline = None
+    state.gpu.gizmo_pipeline = None
+    state.gpu.sprite_globals_bind_group = None
+    state.gpu.ui_globals_bind_group = None
+    state.gpu.ui_shadow_globals_bind_group = None
+    state.gpu.ui_slice_globals_bind_group = None
+    let texture_entries = map_values(state.gpu.textures)
+    for i in 0..<array_len(texture_entries) {
+      let entry = array_get(texture_entries, i)
+      if !host_is_nullish(entry) {
+        entry._set("bindGroup", js_null()) |> ignore
+        entry._set("meshBindGroup", js_null()) |> ignore
+        entry._set("uiBindGroup", js_null()) |> ignore
+        entry._set("uiShadowBindGroup", js_null()) |> ignore
+        entry._set("uiSliceBindGroup", js_null()) |> ignore
+      }
+    }
+    state.gpu.pipeline_color_format = format_key
+    let pass_target_text = match state.gpu.current_pass_info {
+      Some(pass_info) => pass_info.target_id.to_string()
+      None => "<none>"
+    }
+    report_debug_once(
+      state,
+      "pipeline_color_format_" + format_key,
+      "pipeline format switch: " +
+      previous_format +
+      " -> " +
+      format_key +
+      " target_id=" +
+      pass_target_text,
+    )
+  }
+  format
+}
+
+///|
 fn ensure_pipeline_resources(state : State) -> Unit {
+  active_color_pipeline_format(state) |> ignore
   if state.gpu.pipeline is Some(_) {
     return
   }
@@ -77,7 +142,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
     if shader_source is None {
       return
     }
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let format = active_color_pipeline_format(state)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     // Sprite vertices are generated from @builtin(vertex_index) in WGSL.
@@ -173,6 +238,7 @@ fn ensure_pipeline_resources(state : State) -> Unit {
     state.gpu.sprite_instance_data.clear()
     state.gpu.sprite_batches.clear()
     state.gpu.sprite_instance_count = 0
+    state.gpu.sprite_instance_buffer_write_offset = 0
   }
 }
 
@@ -270,6 +336,7 @@ fn ensure_sprite_globals_bind_group(state : State) -> Unit {
 
 ///|
 fn ensure_ui_pipeline_resources(state : State) -> Unit {
+  active_color_pipeline_format(state) |> ignore
   if state.gpu.ui_pipeline is Some(_) {
     return
   }
@@ -305,7 +372,7 @@ fn ensure_ui_pipeline_resources(state : State) -> Unit {
       )
       return
     }
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let format = active_color_pipeline_format(state)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     // UI vertices are generated from @builtin(vertex_index) in WGSL.
@@ -435,6 +502,7 @@ fn ensure_ui_globals_bind_group(state : State) -> Unit {
 
 ///|
 fn ensure_ui_shadow_pipeline_resources(state : State) -> Unit {
+  active_color_pipeline_format(state) |> ignore
   if state.gpu.ui_shadow_pipeline is Some(_) {
     return
   }
@@ -470,7 +538,7 @@ fn ensure_ui_shadow_pipeline_resources(state : State) -> Unit {
       )
       return
     }
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let format = active_color_pipeline_format(state)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [])
@@ -605,6 +673,7 @@ fn ensure_ui_shadow_globals_bind_group(state : State) -> Unit {
 
 ///|
 fn ensure_ui_slice_pipeline_resources(state : State) -> Unit {
+  active_color_pipeline_format(state) |> ignore
   if state.gpu.ui_slice_pipeline is Some(_) {
     return
   }
@@ -640,7 +709,7 @@ fn ensure_ui_slice_pipeline_resources(state : State) -> Unit {
       )
       return
     }
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let format = active_color_pipeline_format(state)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     // UI slice vertices are generated from @builtin(vertex_index) in WGSL.
@@ -777,6 +846,7 @@ fn ensure_ui_slice_globals_bind_group(state : State) -> Unit {
 
 ///|
 fn ensure_mesh_pipeline(state : State) -> Unit {
+  active_color_pipeline_format(state) |> ignore
   if state.gpu.mesh_pipeline is Some(_) {
     return
   }
@@ -812,7 +882,7 @@ fn ensure_mesh_pipeline(state : State) -> Unit {
       )
       return
     }
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let format = active_color_pipeline_format(state)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     let position_attr = @webgpu.vertex_attribute(
@@ -1643,30 +1713,36 @@ fn bloom2d_compute_blend_factor(
 
 ///|
 fn bloom2d_make_uniform_data(
-  info : PassInfo,
+  source_width : Double,
+  source_height : Double,
+  source_viewport_x : Double,
+  source_viewport_y : Double,
+  source_viewport_width : Double,
+  source_viewport_height : Double,
   threshold : Double,
   threshold_softness : Double,
   scale_x : Double,
   scale_y : Double,
+  bloom_enabled : Int,
   tonemapping_mode : Int,
   deband_dither_enabled : Int,
 ) -> @js.Any {
   let softness = threshold_softness
   let knee = threshold * softness
-  let target_width = if info.width > 0.0 { info.width } else { 1.0 }
-  let target_height = if info.height > 0.0 { info.height } else { 1.0 }
-  let viewport_width = if info.viewport_width > 0.0 {
-    info.viewport_width
+  let safe_source_width = if source_width > 0.0 { source_width } else { 1.0 }
+  let safe_source_height = if source_height > 0.0 { source_height } else { 1.0 }
+  let safe_viewport_width = if source_viewport_width > 0.0 {
+    source_viewport_width
   } else {
-    target_width
+    safe_source_width
   }
-  let viewport_height = if info.viewport_height > 0.0 {
-    info.viewport_height
+  let safe_viewport_height = if source_viewport_height > 0.0 {
+    source_viewport_height
   } else {
-    target_height
+    safe_source_height
   }
-  let aspect = if viewport_height > 0.0 {
-    viewport_width / viewport_height
+  let aspect = if safe_viewport_height > 0.0 {
+    safe_viewport_width / safe_viewport_height
   } else {
     1.0
   }
@@ -1675,10 +1751,10 @@ fn bloom2d_make_uniform_data(
     threshold - knee,
     2.0 * knee,
     0.25 / (knee + 0.00001),
-    info.viewport_x / target_width,
-    info.viewport_y / target_height,
-    viewport_width / target_width,
-    viewport_height / target_height,
+    source_viewport_x / safe_source_width,
+    source_viewport_y / safe_source_height,
+    safe_viewport_width / safe_source_width,
+    safe_viewport_height / safe_source_height,
     scale_x,
     scale_y,
     aspect,
@@ -1689,8 +1765,11 @@ fn bloom2d_make_uniform_data(
     } else {
       0.0
     },
-    0.0,
-    0.0,
+    if bloom_enabled != 0 {
+      1.0
+    } else {
+      0.0
+    },
     0.0,
   ])
 }
@@ -2045,6 +2124,7 @@ fn ensure_bloom2d_pipeline(
 
 ///|
 fn ensure_gizmo_pipeline(state : State) -> Unit {
+  active_color_pipeline_format(state) |> ignore
   if state.gpu.gizmo_pipeline is Some(_) {
     return
   }
@@ -2059,7 +2139,7 @@ fn ensure_gizmo_pipeline(state : State) -> Unit {
     if shader_source is None {
       return
     }
-    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let format = active_color_pipeline_format(state)
     let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
     let shader_module = device.create_shader_module(shader_desc.to_js())
     let position_attr = @webgpu.vertex_attribute(
@@ -2450,9 +2530,27 @@ fn insert_texture_entry(
       ("uiBindGroup", js_null()),
       ("width", @js.any(width)),
       ("height", @js.any(height)),
-      ("format", @js.any(@webgpu.TextureFormat::Rgba8Unorm.to_js_string())),
+      ("format", @js.any(@webgpu.TextureFormat::Rgba8UnormSrgb.to_js_string())),
     ])
     map_set(state.gpu.textures, @js.any(id), entry)
+    let path_any = map_get(state.assets.texture_paths, @js.any(id))
+    let path_text = if host_is_nullish(path_any) {
+      "<unknown>"
+    } else {
+      any_to_string(path_any)
+    }
+    report_debug_once(
+      state,
+      "texture_loaded_" + id.to_string(),
+      "texture loaded: id=" +
+      id.to_string() +
+      " size=" +
+      width.to_string() +
+      "x" +
+      height.to_string() +
+      " path=" +
+      path_text,
+    )
     ensure_bind_group_for_texture(state, entry)
   }
 }
@@ -2656,7 +2754,7 @@ async fn load_texture_from_blob(
     )
     let texture_desc = @webgpu.texture_descriptor(
       @webgpu.texture_size(width, height),
-      @webgpu.TextureFormat::Rgba8Unorm,
+      @webgpu.TextureFormat::Rgba8UnormSrgb,
       texture_usage,
     )
     let texture = device.create_texture(texture_desc.to_js())
@@ -2933,27 +3031,6 @@ fn begin_pass(
   if state.gpu.profile_enabled {
     state.gpu.profile_pass_calls_accum = state.gpu.profile_pass_calls_accum + 1
   }
-  report_debug_once(
-    state,
-    "begin_pass_clear",
-    "begin_pass clear=(" +
-    clear_r.to_string() +
-    "," +
-    clear_g.to_string() +
-    "," +
-    clear_b.to_string() +
-    "," +
-    clear_a.to_string() +
-    ") size=(" +
-    width.to_string() +
-    "," +
-    height.to_string() +
-    ") viewport=(" +
-    viewport_width.to_string() +
-    "," +
-    viewport_height.to_string() +
-    ")",
-  )
   if state.gpu.encoder is None {
     return
   }
@@ -3105,6 +3182,7 @@ fn begin_pass(
       state.gpu.sprite_instance_data.clear()
       state.gpu.sprite_batches.clear()
       state.gpu.sprite_instance_count = 0
+      state.gpu.sprite_instance_buffer_write_offset = 0
       state.gpu.ui_instance_data.clear()
       state.gpu.ui_batches.clear()
       state.gpu.ui_instance_count = 0
@@ -3151,19 +3229,14 @@ fn flush_sprite_batches(state : State) -> Unit {
     state.gpu.sprite_uniform_buffer is None {
     return
   }
-  report_debug_once(
-    state,
-    "flush_sprite_batches",
-    "flush_sprite_batches: instances=" +
-    state.gpu.sprite_instance_count.to_string() +
-    " batches=" +
-    state.gpu.sprite_batches.length().to_string(),
-  )
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
-    let required_bytes = state.gpu.sprite_instance_data.length() * 4
-    if required_bytes <= 0 {
+    let write_offset_floats = state.gpu.sprite_instance_buffer_write_offset
+    let write_offset_bytes = write_offset_floats * 4
+    let write_bytes = state.gpu.sprite_instance_data.length() * 4
+    if write_bytes <= 0 {
       return
     }
+    let required_bytes = write_offset_bytes + write_bytes
     if required_bytes > state.gpu.sprite_instance_capacity {
       let capacity = if required_bytes < 256 { 256 } else { required_bytes }
       let usage = @webgpu.combine_flags(
@@ -3181,27 +3254,101 @@ fn flush_sprite_batches(state : State) -> Unit {
       state.gpu.sprite_globals_bind_group is Some(globals_bind_group) &&
       state.gpu.pipeline is Some(pipeline) &&
       state.gpu.current_pass is Some(pass) {
+      let mut batch_summary = ""
+      for batch in state.gpu.sprite_batches {
+        let entry_opt = get_texture_entry(state, batch.texture_id)
+        let mut status = "missing-entry"
+        let mut path_text = "<unknown>"
+        if entry_opt is Some(entry_value) {
+          let bind_group_any = entry_value._get("bindGroup")
+          let path_any = map_get(
+            state.assets.texture_paths,
+            @js.any(batch.texture_id),
+          )
+          path_text = if host_is_nullish(path_any) {
+            "<unknown>"
+          } else {
+            any_to_string(path_any)
+          }
+          status = if host_is_nullish(bind_group_any) {
+            "missing-bind-group"
+          } else {
+            "ready"
+          }
+        }
+        batch_summary = batch_summary +
+          " [tex=" +
+          batch.texture_id.to_string() +
+          " first=" +
+          batch.first_instance.to_string() +
+          " count=" +
+          batch.instance_count.to_string() +
+          " status=" +
+          status +
+          " path=" +
+          path_text +
+          "]"
+      }
+      let pass_target_text = match state.gpu.current_pass_info {
+        Some(info) => info.target_id.to_string()
+        None => "<none>"
+      }
+      report_debug_once(
+        state,
+        "flush_sprite_batches_summary",
+        "flush_sprite_batches: instances=" +
+        state.gpu.sprite_instance_count.to_string() +
+        " batches=" +
+        state.gpu.sprite_batches.length().to_string() +
+        " target_id=" +
+        pass_target_text +
+        batch_summary,
+      )
       if state.gpu.profile_enabled {
         state.gpu.profile_sprite_instances_accum = state.gpu.profile_sprite_instances_accum +
           state.gpu.sprite_instance_count
         state.gpu.profile_sprite_batches_accum = state.gpu.profile_sprite_batches_accum +
           state.gpu.sprite_batches.length()
       }
+      let instance_base = write_offset_floats / 16
       let instance_data = float32array_from_array(
         state.gpu.sprite_instance_data,
       )
-      queue.write_buffer(instance_buffer, 0, instance_data)
+      queue.write_buffer(instance_buffer, write_offset_bytes, instance_data)
       pass.set_pipeline(pipeline)
       pass.set_bind_group(1, globals_bind_group)
       for batch in state.gpu.sprite_batches {
         let entry = get_texture_entry(state, batch.texture_id)
         if entry is None {
+          report_asset_error_once(
+            state,
+            "sprite_batch_missing_entry_" + batch.texture_id.to_string(),
+            "sprite batch skipped: missing texture entry for tex=" +
+            batch.texture_id.to_string(),
+          )
           continue
         }
         if entry is Some(entry_value) {
           ensure_bind_group_for_texture(state, entry_value)
           let bind_group_any = entry_value._get("bindGroup")
           if host_is_nullish(bind_group_any) {
+            let path_any = map_get(
+              state.assets.texture_paths,
+              @js.any(batch.texture_id),
+            )
+            let path_text = if host_is_nullish(path_any) {
+              "<unknown>"
+            } else {
+              any_to_string(path_any)
+            }
+            report_asset_error_once(
+              state,
+              "sprite_batch_missing_bind_group_" + batch.texture_id.to_string(),
+              "sprite batch skipped: missing bind group for tex=" +
+              batch.texture_id.to_string() +
+              " path=" +
+              path_text,
+            )
             continue
           }
           pass.set_bind_group(0, bind_group_any.cast())
@@ -3209,10 +3356,28 @@ fn flush_sprite_batches(state : State) -> Unit {
             state.gpu.vertex_count,
             batch.instance_count,
             0,
-            batch.first_instance,
+            batch.first_instance + instance_base,
+          )
+          let pass_target_text = match state.gpu.current_pass_info {
+            Some(info) => info.target_id.to_string()
+            None => "<none>"
+          }
+          report_debug_once(
+            state,
+            "sprite_batch_drawn_tex_" + batch.texture_id.to_string(),
+            "sprite batch drawn: tex=" +
+            batch.texture_id.to_string() +
+            " first=" +
+            (batch.first_instance + instance_base).to_string() +
+            " count=" +
+            batch.instance_count.to_string() +
+            " target_id=" +
+            pass_target_text,
           )
         }
       }
+      state.gpu.sprite_instance_buffer_write_offset = write_offset_floats +
+        state.gpu.sprite_instance_data.length()
       state.gpu.sprite_instance_data.clear()
       state.gpu.sprite_batches.clear()
       state.gpu.sprite_instance_count = 0
@@ -3237,14 +3402,6 @@ fn flush_ui_batches(state : State) -> Unit {
     state.gpu.sprite_uniform_buffer is None {
     return
   }
-  report_debug_once(
-    state,
-    "flush_ui_batches",
-    "flush_ui_batches: instances=" +
-    state.gpu.ui_instance_count.to_string() +
-    " batches=" +
-    state.gpu.ui_batches.length().to_string(),
-  )
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
     let required_bytes = state.gpu.ui_instance_data.length() * 4
     if required_bytes <= 0 {
@@ -3321,14 +3478,6 @@ fn flush_ui_shadow_batches(state : State) -> Unit {
     state.gpu.sprite_uniform_buffer is None {
     return
   }
-  report_debug_once(
-    state,
-    "flush_ui_shadow_batches",
-    "flush_ui_shadow_batches: instances=" +
-    state.gpu.ui_shadow_instance_count.to_string() +
-    " batches=" +
-    state.gpu.ui_shadow_batches.length().to_string(),
-  )
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
     let required_bytes = state.gpu.ui_shadow_instance_data.length() * 4
     if required_bytes <= 0 {
@@ -3407,14 +3556,6 @@ fn flush_ui_slice_batches(state : State) -> Unit {
     state.gpu.sprite_uniform_buffer is None {
     return
   }
-  report_debug_once(
-    state,
-    "flush_ui_slice_batches",
-    "flush_ui_slice_batches: instances=" +
-    state.gpu.ui_slice_instance_count.to_string() +
-    " batches=" +
-    state.gpu.ui_slice_batches.length().to_string(),
-  )
   if state.gpu.device is Some(device) && state.gpu.queue is Some(queue) {
     let required_bytes = state.gpu.ui_slice_instance_data.length() * 4
     if required_bytes <= 0 {
@@ -3518,37 +3659,6 @@ fn draw_sprite_uv(
     state.gpu.profile_draw_sprite_uv_calls_accum = state.gpu.profile_draw_sprite_uv_calls_accum +
       1
   }
-  report_debug_once(
-    state,
-    "draw_sprite_uv_called",
-    "draw_sprite_uv called: tex_id=" +
-    texture_id.to_string() +
-    " pos=(" +
-    x.to_string() +
-    "," +
-    y.to_string() +
-    ") scale=(" +
-    scale_x.to_string() +
-    "," +
-    scale_y.to_string() +
-    ") color=(" +
-    r.to_string() +
-    "," +
-    g.to_string() +
-    "," +
-    b.to_string() +
-    "," +
-    a.to_string() +
-    ") uv=(" +
-    uv_min_x.to_string() +
-    "," +
-    uv_min_y.to_string() +
-    ")-(" +
-    uv_max_x.to_string() +
-    "," +
-    uv_max_y.to_string() +
-    ")",
-  )
   if !ensure_pass_ready(state) {
     return
   }
@@ -3587,6 +3697,51 @@ fn draw_sprite_uv(
     let cos_value : Double = math_cos(rotation)
     let sin_value : Double = math_sin(rotation)
     let actual_texture_id : Int = entry_value._get("id").cast()
+    let path_any = map_get(state.assets.texture_paths, @js.any(actual_texture_id))
+    let path_text = if host_is_nullish(path_any) {
+      "<unknown>"
+    } else {
+      any_to_string(path_any)
+    }
+    report_debug_once(
+      state,
+      "sprite_draw_tex_" + actual_texture_id.to_string(),
+      "draw_sprite_uv: requested_tex=" +
+      texture_id.to_string() +
+      " actual_tex=" +
+      actual_texture_id.to_string() +
+      " tex_size=" +
+      to_int(number_or(entry_value._get("width"), 0)).to_string() +
+      "x" +
+      to_int(number_or(entry_value._get("height"), 0)).to_string() +
+      " path=" +
+      path_text +
+      " pos=" +
+      x.to_string() +
+      "," +
+      y.to_string() +
+      " scale=" +
+      scale_x.to_string() +
+      "," +
+      scale_y.to_string() +
+      " color=" +
+      r.to_string() +
+      "," +
+      g.to_string() +
+      "," +
+      b.to_string() +
+      "," +
+      a.to_string() +
+      " uv=[" +
+      uv_min_x.to_string() +
+      "," +
+      uv_min_y.to_string() +
+      " -> " +
+      uv_max_x.to_string() +
+      "," +
+      uv_max_y.to_string() +
+      "]",
+    )
     let first_instance = state.gpu.sprite_instance_count
     state.gpu.sprite_instance_count = first_instance + 1
 
@@ -3654,22 +3809,6 @@ fn draw_ui_rect(
     state.gpu.profile_draw_ui_rect_calls_accum = state.gpu.profile_draw_ui_rect_calls_accum +
       1
   }
-  report_debug_once(
-    state,
-    "draw_ui_rect_called",
-    "draw_ui_rect called: tex_id=" +
-    texture_id.to_string() +
-    " pos=(" +
-    x.to_string() +
-    "," +
-    y.to_string() +
-    ") scale=(" +
-    scale_x.to_string() +
-    "," +
-    scale_y.to_string() +
-    ") flags=" +
-    flags.to_string(),
-  )
   if !ensure_pass_ready(state) {
     return
   }
@@ -3775,21 +3914,6 @@ fn draw_ui_texture_slice(
     state.gpu.profile_draw_ui_texture_slice_calls_accum = state.gpu.profile_draw_ui_texture_slice_calls_accum +
       1
   }
-  report_debug_once(
-    state,
-    "draw_ui_texture_slice_called",
-    "draw_ui_texture_slice called: tex_id=" +
-    texture_id.to_string() +
-    " pos=(" +
-    x.to_string() +
-    "," +
-    y.to_string() +
-    ") scale=(" +
-    scale_x.to_string() +
-    "," +
-    scale_y.to_string() +
-    ")",
-  )
   if !ensure_pass_ready(state) {
     return
   }
@@ -3884,28 +4008,6 @@ fn draw_ui_box_shadow(
     state.gpu.profile_draw_ui_box_shadow_calls_accum = state.gpu.profile_draw_ui_box_shadow_calls_accum +
       1
   }
-  report_debug_once(
-    state,
-    "draw_ui_box_shadow_called",
-    "draw_ui_box_shadow called: tex_id=" +
-    texture_id.to_string() +
-    " pos=(" +
-    x.to_string() +
-    "," +
-    y.to_string() +
-    ") scale=(" +
-    scale_x.to_string() +
-    "," +
-    scale_y.to_string() +
-    ") size=(" +
-    size_x.to_string() +
-    "," +
-    size_y.to_string() +
-    ") blur=" +
-    blur.to_string() +
-    " samples=" +
-    samples.to_string(),
-  )
   if !ensure_pass_ready(state) {
     return
   }
@@ -3989,39 +4091,6 @@ fn draw_mesh(
     state.gpu.profile_draw_mesh_calls_accum = state.gpu.profile_draw_mesh_calls_accum +
       1
   }
-  report_debug_once(
-    state,
-    "draw_mesh_called",
-    "draw_mesh called: mesh_id=" +
-    mesh_id.to_string() +
-    " pos=(" +
-    x.to_string() +
-    "," +
-    y.to_string() +
-    ") scale=(" +
-    scale_x.to_string() +
-    "," +
-    scale_y.to_string() +
-    ") color=(" +
-    r.to_string() +
-    "," +
-    g.to_string() +
-    "," +
-    b.to_string() +
-    "," +
-    a.to_string() +
-    ") texture=" +
-    texture_id.to_string() +
-    " uv_offset=(" +
-    uv_offset_x.to_string() +
-    "," +
-    uv_offset_y.to_string() +
-    ") uv_scale=(" +
-    uv_scale_x.to_string() +
-    "," +
-    uv_scale_y.to_string() +
-    ")",
-  )
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
@@ -4081,15 +4150,6 @@ fn draw_mesh(
     } else {
       0.0
     }
-    report_debug_once(
-      state,
-      "mesh_ndc_scale",
-      "mesh ndc_scale=(" +
-      scale_x_base.to_string() +
-      "," +
-      scale_y_base.to_string() +
-      ")",
-    )
     let cos_value : Double = math_cos(rotation)
     let sin_value : Double = math_sin(rotation)
     let cam_cos : Double = math_cos(-info.cam_rotation)
@@ -4139,11 +4199,6 @@ fn draw_mesh(
       ._get("vertexBuffer")
       .cast()
     let vertex_count : Int = mesh_entry._get("vertexCount").cast()
-    report_debug_once(
-      state,
-      "mesh_vertex_count",
-      "draw_mesh vertex_count=" + vertex_count.to_string(),
-    )
     if vertex_count <= 0 {
       report_asset_error_once(
         state,
@@ -4838,9 +4893,7 @@ fn draw_bloom2d(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
-  if enabled == 0 {
-    return
-  }
+  let bloom_enabled = enabled != 0
   flush_ui_shadow_batches(state)
   flush_ui_slice_batches(state)
   flush_ui_batches(state)
@@ -5029,6 +5082,54 @@ fn draw_bloom2d(
   } else {
     1
   }
+  let scene_width = to_int(number_or(scene_texture_entry._get("width"), 0.0))
+  let scene_height = to_int(number_or(scene_texture_entry._get("height"), 0.0))
+  let scene_format_text = {
+    let scene_format_any = scene_texture_entry._get("format")
+    if host_is_nullish(scene_format_any) {
+      "<unknown>"
+    } else {
+      any_to_string(scene_format_any)
+    }
+  }
+  report_debug_once(
+    state,
+    "bloom2d_scene_target",
+    "bloom2d pass: scene_tex=" +
+    scene_texture_id.to_string() +
+    " scene_format=" +
+    scene_format_text +
+    " scene_size=" +
+    scene_width.to_string() +
+    "x" +
+    scene_height.to_string() +
+    " target_id=" +
+    info.target_id.to_string() +
+    " target_format=" +
+    target_format.to_js_string() +
+    " target_size=" +
+    target_width.to_string() +
+    "x" +
+    target_height.to_string(),
+  )
+  let safe_scene_width = if scene_width > 0 { scene_width } else { 1 }
+  let safe_scene_height = if scene_height > 0 { scene_height } else { 1 }
+  let source_viewport_width = {
+    let raw = if view_width > 0 { view_width } else { safe_scene_width }
+    if raw > safe_scene_width {
+      safe_scene_width
+    } else {
+      raw
+    }
+  }
+  let source_viewport_height = {
+    let raw = if view_height > 0 { view_height } else { safe_scene_height }
+    if raw > safe_scene_height {
+      safe_scene_height
+    } else {
+      raw
+    }
+  }
   let safe_max_mip_dimension = if max_mip_dimension < 4 {
     4
   } else {
@@ -5099,11 +5200,23 @@ fn draw_bloom2d(
   let high_pass_frequency_value = high_pass_frequency
   let threshold_value = threshold
   let threshold_softness_value = threshold_softness
+  let bloom_enabled_value = if bloom_enabled { 1 } else { 0 }
   let tonemapping_mode_value = tonemapping_mode
   let deband_dither_enabled_value = deband_dither_enabled
   let settings_data = bloom2d_make_uniform_data(
-    info, threshold_value, threshold_softness_value, scale_x_value, scale_y_value,
-    tonemapping_mode_value, deband_dither_enabled_value,
+    safe_scene_width.to_double(),
+    safe_scene_height.to_double(),
+    0.0,
+    0.0,
+    source_viewport_width.to_double(),
+    source_viewport_height.to_double(),
+    threshold_value,
+    threshold_softness_value,
+    scale_x_value,
+    scale_y_value,
+    bloom_enabled_value,
+    tonemapping_mode_value,
+    deband_dither_enabled_value,
   )
   queue.write_buffer(settings_buffer, 0, settings_data)
   let scene_view : @webgpu.GPUTextureView = scene_texture_entry

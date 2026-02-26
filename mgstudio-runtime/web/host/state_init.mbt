@@ -184,6 +184,7 @@ priv struct GpuState {
   mut queue : @webgpu.GPUQueue?
   mut context : @webgpu.GPUCanvasContext?
   mut format : @webgpu.TextureFormat?
+  mut pipeline_color_format : String
   mut pipeline : @webgpu.GPURenderPipeline?
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
@@ -240,6 +241,7 @@ priv struct GpuState {
   sprite_instance_data : Array[Double]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : Int
+  mut sprite_instance_buffer_write_offset : Int
   mut ui_pipeline : @webgpu.GPURenderPipeline?
   mut ui_instance_buffer : @webgpu.GPUBuffer?
   mut ui_instance_capacity : Int
@@ -386,6 +388,7 @@ fn new_state(
       queue: None,
       context: None,
       format: None,
+      pipeline_color_format: "",
       pipeline: None,
       vertex_count: 0,
       mesh_pipeline: None,
@@ -442,6 +445,7 @@ fn new_state(
       sprite_instance_data: [],
       sprite_batches: [],
       sprite_instance_count: 0,
+      sprite_instance_buffer_write_offset: 0,
       ui_pipeline: None,
       ui_instance_buffer: None,
       ui_instance_capacity: 0,
@@ -967,6 +971,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.queue = Some(device.queue())
   state.gpu.context = Some(context)
   state.gpu.format = Some(format)
+  state.gpu.pipeline_color_format = ""
   state.gpu.pipeline = None
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
@@ -1024,6 +1029,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.sprite_instance_data.clear()
   state.gpu.sprite_batches.clear()
   state.gpu.sprite_instance_count = 0
+  state.gpu.sprite_instance_buffer_write_offset = 0
   state.gpu.ui_pipeline = None
   state.gpu.ui_instance_buffer = None
   state.gpu.ui_instance_capacity = 0

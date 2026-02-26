@@ -31,7 +31,7 @@ struct BloomUniforms {
     scale: vec2<f32>,
     aspect: f32,
     _padding: f32,
-    options: vec4<f32>, // x: tonemapping mode, y: deband dither enabled
+    options: vec4<f32>, // x: tonemapping mode, y: deband dither enabled, z: bloom enabled
 };
 
 @group(0) @binding(0) var input_texture: texture_2d<f32>;
@@ -317,7 +317,7 @@ fn final_fragment(
     @location(0) uv: vec2<f32>,
     @builtin(position) position: vec4<f32>,
 ) -> @location(0) vec4<f32> {
-    let bloom_color = sample_input_3x3_tent(uv);
+    let bloom_color = sample_input_3x3_tent(uv) * uniforms.options.z;
     let scene_color = textureSample(scene_texture, s, uv).rgb;
     var output_rgb = tonemap_color(scene_color + bloom_color, uniforms.options.x);
     if uniforms.options.y > 0.5 {

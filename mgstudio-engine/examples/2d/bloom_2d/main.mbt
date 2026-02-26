@@ -149,7 +149,11 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 220.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -227,16 +231,18 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
   @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(bird)
-    .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F)))
-    .with_color(@render2d.Color::new(5.0F, 5.0F, 5.0F, 1.0F)),
+    @render2d.Sprite::from_image(
+      bird,
+    )
+    .with_color(@render2d.Color::srgb(5.0F, 5.0F, 5.0F))
+    .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   @render2d.Mesh2dBundle::new(
     @render2d.Mesh2d::from_circle(@render2d.Circle::new(100.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::new(7.5F, 0.0F, 7.5F, 1.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(7.5F, 0.0F, 7.5F)),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-200.0F, 0.0F),
       0.0F,
@@ -249,7 +255,7 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
     @render2d.Mesh2d::from_regular_polygon(
       @render2d.RegularPolygon::new(100.0F, 6),
     ),
-    @render2d.ColorMaterial::new(@render2d.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(6.25F, 9.4F, 9.1F)),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(200.0F, 0.0F),
       0.0F,

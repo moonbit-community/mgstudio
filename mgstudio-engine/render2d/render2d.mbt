@@ -26,6 +26,37 @@ pub fn Color::new(r : Float, g : Float, b : Float, a : Float) -> Color {
 }
 
 ///|
+fn color_srgb_to_linear(value : Float) -> Float {
+  if value <= 0.0F {
+    value
+  } else if value <= 0.04045F {
+    value / 12.92F
+  } else {
+    @math.pow((value + 0.055F) / 1.055F, 2.4F)
+  }
+}
+
+///|
+pub fn Color::srgb(r : Float, g : Float, b : Float) -> Color {
+  Color::{
+    r: color_srgb_to_linear(r),
+    g: color_srgb_to_linear(g),
+    b: color_srgb_to_linear(b),
+    a: 1.0F,
+  }
+}
+
+///|
+pub fn Color::srgba(r : Float, g : Float, b : Float, a : Float) -> Color {
+  Color::{
+    r: color_srgb_to_linear(r),
+    g: color_srgb_to_linear(g),
+    b: color_srgb_to_linear(b),
+    a,
+  }
+}
+
+///|
 pub fn Color::white() -> Color {
   Color::new(1.0F, 1.0F, 1.0F, 1.0F)
 }
@@ -3389,41 +3420,6 @@ fn render2d_draw_camera_bloom(
 }
 
 ///|
-fn render2d_draw_camera_target_to_screen(
-  source : @asset.Handle[@asset.Image],
-  camera : CameraInstance,
-  view_width_logical : Int,
-  view_height_logical : Int,
-) -> Unit {
-  let width = Float::from_double(view_width_logical.to_double())
-  let height = Float::from_double(view_height_logical.to_double())
-  if width <= 0.0F || height <= 0.0F {
-    return
-  }
-  let projection_scale = if camera.projection.scale <= 0.0F {
-    1.0F
-  } else {
-    camera.projection.scale
-  }
-  @window.host_gpu_draw_sprite_uv(
-    texture_id=source.id(),
-    x=camera.transform.translation.x,
-    y=camera.transform.translation.y,
-    rotation=-camera.transform.rotation_z(),
-    scale_x=width * projection_scale / 128.0F,
-    scale_y=height * projection_scale / 128.0F,
-    color_r=1.0F,
-    color_g=1.0F,
-    color_b=1.0F,
-    color_a=1.0F,
-    uv_min_x=0.0F,
-    uv_min_y=0.0F,
-    uv_max_x=1.0F,
-    uv_max_y=1.0F,
-  )
-}
-
-///|
 priv struct SpriteInstance {
   entity : @core.Entity
   transform : @math.Transform
@@ -5883,8 +5879,8 @@ pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] 
           render2d_get_or_create_bloom2d_auto_target(
             rs.val,
             camera.entity,
-            view_width_logical,
-            view_height_logical,
+            viewport_width,
+            viewport_height,
           ),
         )
       }
@@ -5905,13 +5901,13 @@ pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] 
         camera_scale=camera.projection.scale,
         viewport_x=0,
         viewport_y=0,
-        viewport_width=view_width_logical,
-        viewport_height=view_height_logical,
+        viewport_width=viewport_width,
+        viewport_height=viewport_height,
         viewport_depth_min~,
         viewport_depth_max~,
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
-      draw_camera_items(0, 0, view_width_logical, view_height_logical, 1.0F)
+      draw_camera_items(0, 0, viewport_width, viewport_height, scale_factor)
       @window.host_gpu_end_pass()
 
       @window.host_gpu_begin_pass(
@@ -5934,12 +5930,9 @@ pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] 
         viewport_depth_max~,
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
-      render2d_draw_camera_target_to_screen(
-        source, camera, view_width_logical, view_height_logical,
-      )
       render2d_draw_camera_bloom(
-        camera, source, tonemapping_mode, deband_dither_enabled, view_width_logical,
-        view_height_logical,
+        camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+        viewport_height,
       )
       gizmos_draw_lines(camera.layers)
       @window.host_gpu_end_pass()
@@ -5971,8 +5964,8 @@ pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] 
     )
     if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
       render2d_draw_camera_bloom(
-        camera, source, tonemapping_mode, deband_dither_enabled, view_width_logical,
-        view_height_logical,
+        camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+        viewport_height,
       )
     }
     gizmos_draw_lines(camera.layers)

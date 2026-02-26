@@ -963,6 +963,10 @@ extern "js" fn map_delete(map : @js.Any, key : @js.Any) -> Bool =
   #| (map, key) => map.delete(key)
 
 ///|
+extern "js" fn map_values(map : @js.Any) -> @js.Any =
+  #| (map) => Array.from(map.values())
+
+///|
 extern "js" fn set_add(set : @js.Any, value : @js.Any) -> Unit =
   #| (set, value) => set.add(value)
 
