@@ -342,9 +342,12 @@ extern "js" fn set_canvas_target_pixel_size(
   #|   const dpr = window.devicePixelRatio || 1
   #|   const pw = Math.max(1, Number(pixelWidth) | 0)
   #|   const ph = Math.max(1, Number(pixelHeight) | 0)
-  #|   const cssW = Math.max(1, Math.round(pw / Math.max(1e-6, dpr)))
-  #|   const cssH = Math.max(1, Math.round(ph / Math.max(1e-6, dpr)))
-  #|   if (canvas.style) {
+  #|   const responsive =
+  #|     canvas.dataset &&
+  #|     String(canvas.dataset.mgstudioSizeMode || "").toLowerCase() === "responsive"
+  #|   if (canvas.style && !responsive) {
+  #|     const cssW = Math.max(1, Math.round(pw / Math.max(1e-6, dpr)))
+  #|     const cssH = Math.max(1, Math.round(ph / Math.max(1e-6, dpr)))
   #|     canvas.style.width = `${cssW}px`
   #|     canvas.style.height = `${cssH}px`
   #|   }
