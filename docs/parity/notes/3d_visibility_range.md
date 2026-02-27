@@ -46,5 +46,3 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.11.57`
-- `bd issue`: `moon-game-studio-p71.5.5`

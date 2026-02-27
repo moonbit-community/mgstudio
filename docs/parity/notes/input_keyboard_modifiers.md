@@ -32,5 +32,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.7`
 - Remaining blockers: None for this example path.

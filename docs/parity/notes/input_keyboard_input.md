@@ -30,5 +30,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.5`
 - Remaining blockers: Add full Bevy-equivalent `Key` model.

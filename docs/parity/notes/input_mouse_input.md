@@ -33,5 +33,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.9`
 - Remaining blockers: Move accumulated mouse motion/scroll from host polling synthesis to backend event accumulation parity.

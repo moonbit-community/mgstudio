@@ -40,4 +40,3 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.11.56`

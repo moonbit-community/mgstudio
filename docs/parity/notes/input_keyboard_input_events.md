@@ -31,5 +31,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.6`
 - Remaining blockers: Close remaining keyboard payload parity gaps (layout/IME-complete logical key and text semantics).

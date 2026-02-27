@@ -33,5 +33,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.2`
 - Remaining blockers: Bevy-style ECS gamepad entity parity (if strict entity-level semantics are required).

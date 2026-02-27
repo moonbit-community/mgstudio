@@ -34,5 +34,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.4`
 - Remaining blockers: Add host/gamepad rumble capability and Bevy-like request dispatch.

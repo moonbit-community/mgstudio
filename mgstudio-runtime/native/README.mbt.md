@@ -43,5 +43,5 @@ If you hit `failed to dlopen libwgpu_native`, verify your SDK installation:
 - `<sdkroot>/share/mgstudio/assets/` exists
 - `<sdkroot>/share/mgstudio/web/mgstudio-runtime-web.js` exists
 
-If you hit build errors beyond the above, please capture the full log and update
-bd issue `moon-game-studio-izv`.
+If you hit build errors beyond the above, please capture the full log and open
+an issue in this repository.

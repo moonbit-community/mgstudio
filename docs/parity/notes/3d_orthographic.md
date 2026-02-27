@@ -33,5 +33,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.11.33`
 - Related API track: `moon-game-studio-p71.6.1`

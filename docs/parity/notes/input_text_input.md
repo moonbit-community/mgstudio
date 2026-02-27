@@ -36,5 +36,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.11`
 - Remaining blockers: Add Bevy-like IME message model and complete composition/layout behavior.

@@ -33,5 +33,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.1`
 - Remaining blockers: Complete Bevy-equivalent logical-key and IME character semantics.

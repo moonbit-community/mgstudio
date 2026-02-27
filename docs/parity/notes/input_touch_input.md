@@ -35,5 +35,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.12`
 - Remaining blockers: Add touch source for wasmoon/Cocoa backend and implement full Bevy touch metadata parity.

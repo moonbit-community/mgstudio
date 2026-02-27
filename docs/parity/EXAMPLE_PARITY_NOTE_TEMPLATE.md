@@ -31,5 +31,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: 
 - Remaining blockers:

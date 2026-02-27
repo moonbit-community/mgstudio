@@ -67,4 +67,3 @@ The CLI uses `sdkroot` to locate:
 ### Notes
 
 - Planning artifacts live under `.private/` and should not be committed.
-- Use `bd` for task tracking.

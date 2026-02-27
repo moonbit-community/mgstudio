@@ -34,5 +34,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.10`
 - Remaining blockers: Add native gesture sources and full Bevy event payload parity.

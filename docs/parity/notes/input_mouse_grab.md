@@ -34,5 +34,4 @@
 
 ## Follow-up Tasks
 
-- `bd issue`: `moon-game-studio-p71.26.8`
 - Remaining blockers: Align with Bevy `CursorOptions` component-level API surface.

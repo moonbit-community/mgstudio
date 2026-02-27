@@ -20,7 +20,7 @@
 /// - supports textured sprite quads (alpha blending)
 /// - supports solid-color mesh draw for rectangle/capsule meshes
 ///
-/// Missing capabilities are tracked in bd and should be reported upstream.
+/// Missing capabilities should be tracked in project issues and reported upstream.
 
 ///|
 /// Use wgpu_mbt's "alpha blend + arbitrary format" render pipeline descriptor
