@@ -13,6 +13,7 @@
 // limitations under the License.
 
 ///|
+/// Port of `bevy/examples/2d/move_sprite.rs`.
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
@@ -30,13 +31,46 @@ pub(all) enum Direction {
 
 ///|
 priv struct MoveSpriteState {
-  mut direction : Direction
+  mut directions : Array[(@core.Entity, Direction)]
 }
 
 ///|
 let move_state : Ref[MoveSpriteState] = Ref::new(MoveSpriteState::{
-  direction: Direction::Right,
+  directions: [],
 })
+
+///|
+fn entity_is_same(a : @core.Entity, b : @core.Entity) -> Bool {
+  a.id == b.id && a.generation == b.generation
+}
+
+///|
+fn direction_get(entity : @core.Entity) -> Direction {
+  for entry in move_state.val.directions {
+    if entity_is_same(entry.0, entity) {
+      return entry.1
+    }
+  }
+  Direction::Right
+}
+
+///|
+fn direction_set(entity : @core.Entity, direction : Direction) -> Unit {
+  let mut updated = false
+  let next : Array[(@core.Entity, Direction)] = []
+  for entry in move_state.val.directions {
+    if entity_is_same(entry.0, entity) {
+      next.push((entity, direction))
+      updated = true
+    } else {
+      next.push(entry)
+    }
+  }
+  if !updated {
+    next.push((entity, direction))
+  }
+  move_state.val.directions = next
+}
 
 ///|
 fn move_sprite_setup(world : @ecs_world.World) -> Unit {
@@ -44,21 +78,22 @@ fn move_sprite_setup(world : @ecs_world.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
   let sprite = @render2d.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  let sprite_entity = @render2d.SpriteBundle::new(sprite, transform).spawn(
+    world,
+  )
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
-  move_state.val.direction = Direction::Right
+  move_state.val.directions = []
+  direction_set(sprite_entity, Direction::Right)
 }
 
 ///|
 fn move_sprite_movement(world : @ecs_world.World) -> Unit {
   let delta_secs = @time.time_delta_seconds()
   let speed = 150.0F
-  let delta = speed * delta_secs
-  let move_x = if move_state.val.direction is Right { delta } else { -delta }
   let tick = world.read_change_tick()
   let sprite_store = world.get_sprite_store()
   let transform_store = world.get_transform_store()
@@ -67,6 +102,10 @@ fn move_sprite_movement(world : @ecs_world.World) -> Unit {
     entities.push((entity, transform))
   })
   for entry in entities {
+    let entity = entry.0
+    let direction = direction_get(entity)
+    let delta = speed * delta_secs
+    let move_x = if direction is Right { delta } else { -delta }
     let transform = entry.1
     let translation = @math.Vec2::new(
       transform.translation.x + move_x,
@@ -78,11 +117,11 @@ fn move_sprite_movement(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(transform.scale.x, transform.scale.y),
       z=transform.translation.z,
     )
-    transform_store.set(entry.0, next_transform, tick) |> ignore
+    transform_store.set(entity, next_transform, tick) |> ignore
     if translation.x > 200.0F {
-      move_state.val.direction = Direction::Left
+      direction_set(entity, Direction::Left)
     } else if translation.x < -200.0F {
-      move_state.val.direction = Direction::Right
+      direction_set(entity, Direction::Right)
     }
   }
 }
