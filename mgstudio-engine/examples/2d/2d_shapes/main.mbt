@@ -136,6 +136,64 @@ fn spawn_shape(
 }
 
 ///|
+fn spawn_ui_text_handle(
+  content : String,
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  color : @render2d.Color,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @math.Transform::identity(),
+  )
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
+}
+
+///|
+fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let text_handle = spawn_ui_text_handle(
+    "Press 'R' to pause/resume rotation\nPress 'Space' to toggle wireframes",
+    font,
+    20.0F,
+    @render2d.Color::white(),
+  )
+  let tick = world.read_change_tick()
+  let root = world.spawn_empty()
+  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
+  world
+  .get_node_store()
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+    tick,
+  )
+  let text_entity = world.spawn_empty()
+  world
+  .get_parent_store()
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
+    text_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .get_ui_text_store()
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+}
+
+///|
 fn shapes_setup(world : @ecs_world.World) -> Unit {
   rotation_enabled.val = true
   wireframe_enabled.val = false
@@ -240,29 +298,7 @@ fn shapes_setup(world : @ecs_world.World) -> Unit {
   )
   |> ignore
 
-  let asset_server = @asset.AssetServer::new()
-  let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  @text.Text2dBundle::new(
-    @text.Text2d::new(
-      "Press 'R' to pause/resume rotation\nPress 'Space' to toggle wireframes",
-    ),
-    @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
-    @math.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-390.0F, 300.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=50.0F,
-    ),
-  )
-  .with_anchor(@render2d.Anchor::top_left())
-  .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-  )
-  .with_shadow(Some(@text.Text2dShadow::default()))
-  .spawn()
-  |> ignore
+  spawn_help_overlay(world)
 }
 
 ///|

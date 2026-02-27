@@ -550,7 +550,11 @@ pub fn ClearColor::new(color : Color) -> ClearColor {
 
 ///|
 pub fn ClearColor::default() -> ClearColor {
-  ClearColor::{ color: Color::new(0.5F, 0.5F, 0.5F, 1.0F) }
+  // Match Bevy's default `ClearColor` (`bevy_camera::clear_color`):
+  // Color::srgb_u8(43, 44, 47)
+  ClearColor::{
+    color: Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
+  }
 }
 
 ///|
