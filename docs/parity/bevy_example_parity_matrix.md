@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-02-25
+Last Verified: 2026-02-27
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
