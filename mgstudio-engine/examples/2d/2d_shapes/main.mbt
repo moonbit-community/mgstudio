@@ -13,6 +13,11 @@
 // limitations under the License.
 
 ///|
+/// Port of `bevy/examples/2d/2d_shapes.rs`.
+///
+/// Notes:
+/// - Bevy uses GPU polygon line mode for wireframe toggling.
+/// - mgstudio currently maps this to a gizmo-based wireframe overlay path.
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
@@ -33,6 +38,9 @@ const THICKNESS : Float = 5.0F
 
 ///|
 let rotation_enabled : Ref[Bool] = Ref::new(true)
+
+///|
+let wireframe_enabled : Ref[Bool] = Ref::new(false)
 
 ///|
 fn absf(value : Float) -> Float {
@@ -130,6 +138,7 @@ fn spawn_shape(
 ///|
 fn shapes_setup(world : @ecs_world.World) -> Unit {
   rotation_enabled.val = true
+  wireframe_enabled.val = false
 
   let top_shapes : Array[@render2d.Mesh2d] = [
     @render2d.Mesh2d::from_circle(@render2d.Circle::new(50.0F)),
@@ -234,7 +243,9 @@ fn shapes_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
-    @text.Text2d::new("Press 'R' to pause/resume rotation"),
+    @text.Text2d::new(
+      "Press 'R' to pause/resume rotation\nPress 'Space' to toggle wireframes",
+    ),
     @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 300.0F),
@@ -256,9 +267,32 @@ fn shapes_setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn shapes_rotate(world : @ecs_world.World) -> Unit {
+  if @input.key_just_pressed(@window.KeyCode::Space) {
+    wireframe_enabled.val = !wireframe_enabled.val
+  }
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
     rotation_enabled.val = !rotation_enabled.val
   }
+
+  if wireframe_enabled.val {
+    let gizmos = @render2d.Gizmos::new()
+    let transform_store = world.get_transform_store()
+    let mesh_store = world.get_mesh2d_store()
+    @core.query2(transform_store, mesh_store, fn(_entity, transform, mesh2d) {
+      if @render2d.render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) {
+        match mesh_asset.geometry {
+          @mesh.MeshGeometry::Geometry2d(geometry2d) =>
+            gizmos.mesh_wireframe_2d(
+              geometry2d,
+              transform,
+              @render2d.Color::white(),
+            )
+          _ => ()
+        }
+      }
+    })
+  }
+
   if !rotation_enabled.val {
     return
   }
