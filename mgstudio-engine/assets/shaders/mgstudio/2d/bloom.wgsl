@@ -13,12 +13,17 @@ struct BloomUniforms {
     viewport: vec4<f32>,
     scale: vec2<f32>,
     aspect: f32,
+    _padding: f32,
+    // x: tonemapping mode, y: deband dither enabled, z: bloom weight, w: upsample blend factor
+    options: vec4<f32>,
 };
 
 @group(0) @binding(0) var input_texture: texture_2d<f32>;
 @group(0) @binding(1) var s: sampler;
 
 @group(0) @binding(2) var<uniform> uniforms: BloomUniforms;
+// Kept to align bind-group layout with final tonemapping pass.
+@group(0) @binding(4) var dt_lut_texture: texture_2d<f32>;
 
 #ifdef FIRST_DOWNSAMPLE
 // https://catlikecoding.com/unity/tutorials/advanced-rendering/bloom/#3.4
@@ -181,5 +186,6 @@ fn downsample(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
 
 @fragment
 fn upsample(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-    return vec4<f32>(sample_input_3x3_tent(uv), 1.0);
+    let blend = clamp(uniforms.options.w, 0.0, 1.0);
+    return vec4<f32>(sample_input_3x3_tent(uv), blend);
 }

@@ -183,7 +183,9 @@ priv struct GpuState {
   mut device : @webgpu.GPUDevice?
   mut queue : @webgpu.GPUQueue?
   mut context : @webgpu.GPUCanvasContext?
+  mut surface_format : @webgpu.TextureFormat?
   mut format : @webgpu.TextureFormat?
+  mut surface_view_format_enabled : Bool
   mut pipeline_color_format : String
   mut pipeline : @webgpu.GPURenderPipeline?
   mut vertex_count : Int
@@ -393,7 +395,9 @@ fn new_state(
       device: None,
       queue: None,
       context: None,
+      surface_format: None,
       format: None,
+      surface_view_format_enabled: false,
       pipeline_color_format: "",
       pipeline: None,
       vertex_count: 0,
@@ -638,6 +642,71 @@ fn ensure_canvas(canvas_opt : @dom.Element?) -> @js.Any {
 }
 
 ///|
+fn surface_view_format_from_surface_format(
+  format : @webgpu.TextureFormat,
+) -> @webgpu.TextureFormat {
+  match format {
+    Bgra8Unorm => @webgpu.TextureFormat::Other("bgra8unorm-srgb")
+    Rgba8Unorm => @webgpu.TextureFormat::Rgba8UnormSrgb
+    _ => format
+  }
+}
+
+///|
+extern "js" fn configure_canvas_context_with_view_format_js(
+  context : @js.Any,
+  config : @js.Any,
+  view_format : String,
+) -> Bool =
+  #| (context, config, viewFormat) => {
+  #|   if (!context || !config) return false;
+  #|   try {
+  #|     context.configure({ ...config, viewFormats: [viewFormat] });
+  #|     return true;
+  #|   } catch (_err) {
+  #|     return false;
+  #|   }
+  #| }
+
+///|
+fn configure_surface_context(state : State, width : Int, height : Int) -> Unit {
+  guard state.gpu.context is Some(context) && state.gpu.device is Some(device) else {
+    return
+  }
+  let usage = @webgpu.texture_usage_render_attachment()
+  let surface_format = state.gpu.surface_format.unwrap_or(
+    state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm),
+  )
+  let view_format = state.gpu.format.unwrap_or(surface_format)
+  let config = @webgpu.surface_configuration(
+    device,
+    surface_format,
+    @webgpu.AlphaMode::Premultiplied,
+    usage,
+    @webgpu.surface_size(width, height),
+  )
+  let config_js = config.to_js()
+  let use_view_format = state.gpu.surface_view_format_enabled &&
+    view_format.to_js_string() != surface_format.to_js_string()
+  if use_view_format {
+    let configured = configure_canvas_context_with_view_format_js(
+      context.as_any(),
+      config_js,
+      view_format.to_js_string(),
+    )
+    if configured {
+      return
+    }
+    state.gpu.surface_view_format_enabled = false
+    state.gpu.format = Some(surface_format)
+    state.gpu.pipeline_color_format = ""
+    context.configure(config_js)
+    return
+  }
+  context.configure(config_js)
+}
+
+///|
 fn update_window_size(state : State) -> Unit {
   if state.window is None {
     return
@@ -658,17 +727,7 @@ fn update_window_size(state : State) -> Unit {
     window_state.scale_factor = scale_factor
     target._set("width", @js.any(width)) |> ignore
     target._set("height", @js.any(height)) |> ignore
-    if state.gpu.context is Some(context) && state.gpu.device is Some(device) {
-      let usage = @webgpu.texture_usage_render_attachment()
-      let config = @webgpu.surface_configuration(
-        device,
-        state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm),
-        @webgpu.AlphaMode::Premultiplied,
-        usage,
-        @webgpu.surface_size(width, height),
-      )
-      context.configure(config.to_js())
-    }
+    configure_surface_context(state, width, height)
   }
 }
 
@@ -976,13 +1035,17 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     }),
   )
   let context = @webgpu.get_canvas_context(target)
-  let format = @webgpu.texture_format_from_string(
+  let surface_format = @webgpu.texture_format_from_string(
     @webgpu.preferred_canvas_format(),
   )
+  let format = surface_view_format_from_surface_format(surface_format)
   state.gpu.device = Some(device)
   state.gpu.queue = Some(device.queue())
   state.gpu.context = Some(context)
+  state.gpu.surface_format = Some(surface_format)
   state.gpu.format = Some(format)
+  state.gpu.surface_view_format_enabled = format.to_js_string() !=
+    surface_format.to_js_string()
   state.gpu.pipeline_color_format = ""
   state.gpu.pipeline = None
   state.gpu.vertex_count = 0

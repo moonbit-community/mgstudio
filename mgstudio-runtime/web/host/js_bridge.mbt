@@ -1979,8 +1979,15 @@ extern "js" fn parse_ktx2_stacked_upload(
   #|     const mipHeightPerSlice = Math.max(1, heightPerSlice >> mip)
   #|     const mipDepth = Math.max(1, depth >> mip)
   #|     const mipSliceCount = layers * faces * mipDepth
-  #|     if (levelIndices.length > 1 && mipSliceCount !== sliceCount) {
-  #|       return null
+  #|     // Stacked-2D upload path requires a stable slice count across mips.
+  #|     // True 3D KTX2 textures can reduce depth per mip (slice count shrinks),
+  #|     // which can't be represented by a regular 2D mip chain. In that case,
+  #|     // keep mip 0 only; that's sufficient for tonemapping LUT usage.
+  #|     if (mipSliceCount !== sliceCount) {
+  #|       if (mip === 0) {
+  #|         return null
+  #|       }
+  #|       break
   #|     }
   #|     const mipHeight = mipHeightPerSlice * sliceCount
   #|     const layout = levelLayout(mipWidth, mipHeight)

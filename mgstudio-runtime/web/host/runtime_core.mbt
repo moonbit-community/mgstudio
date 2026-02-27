@@ -1726,6 +1726,7 @@ fn bloom2d_make_uniform_data(
   bloom_weight : Double,
   tonemapping_mode : Int,
   deband_dither_enabled : Int,
+  upsample_blend : Double,
 ) -> @js.Any {
   let softness = threshold_softness
   let knee = threshold * softness
@@ -1766,7 +1767,7 @@ fn bloom2d_make_uniform_data(
       0.0
     },
     bloom_weight,
-    0.0,
+    upsample_blend,
   ])
 }
 
@@ -1979,6 +1980,18 @@ fn ensure_bloom2d_pipeline(
           ]),
           @js.from_entries([
             ("binding", @js.any(3)),
+            ("visibility", @js.any(fragment_stage)),
+            (
+              "texture",
+              @js.from_entries([
+                ("sampleType", @js.any("float")),
+                ("viewDimension", @js.any("2d")),
+                ("multisampled", @js.any(false)),
+              ]),
+            ),
+          ]),
+          @js.from_entries([
+            ("binding", @js.any(4)),
             ("visibility", @js.any(fragment_stage)),
             (
               "texture",
@@ -2659,14 +2672,8 @@ async fn load_texture_from_ktx2_bytes(
       return
     }
     let texture_usage = @webgpu.combine_flags(
-      @webgpu.combine_flags(
-        @webgpu.combine_flags(
-          @webgpu.texture_usage_texture_binding(),
-          @webgpu.texture_usage_copy_dst(),
-        ),
-        @webgpu.texture_usage_copy_src(),
-      ),
-      @webgpu.texture_usage_render_attachment(),
+      @webgpu.texture_usage_texture_binding(),
+      @webgpu.texture_usage_copy_dst(),
     )
     let texture_desc = @js.from_entries([
       ("size", @js.any([width, stacked_height, 1])),
@@ -3005,6 +3012,20 @@ fn begin_frame(state : State) -> Int {
 }
 
 ///|
+fn current_surface_view_descriptor(state : State) -> @js.Any? {
+  let surface_format = state.gpu.surface_format.unwrap_or(
+    state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm),
+  )
+  let view_format = state.gpu.format.unwrap_or(surface_format)
+  if state.gpu.surface_view_format_enabled &&
+    view_format.to_js_string() != surface_format.to_js_string() {
+    Some(@js.from_entries([("format", @js.any(view_format.to_js_string()))]))
+  } else {
+    None
+  }
+}
+
+///|
 fn begin_pass(
   state : State,
   target_id : Int,
@@ -3091,7 +3112,12 @@ fn begin_pass(
     let mut target_height = if height > 0 { to_int(height) } else { 1 }
     if target_id < 0 {
       if state.gpu.current_texture is Some(current_texture) {
-        view = Some(current_texture.create_view())
+        view = Some(
+          match current_surface_view_descriptor(state) {
+            Some(descriptor) => current_texture.create_view(descriptor~)
+            None => current_texture.create_view()
+          },
+        )
       }
       if state.window is Some(window_state) {
         target_width = window_state.width
@@ -4939,6 +4965,9 @@ fn draw_bloom2d(
   deband_dither_enabled : Int,
   view_width : Int,
   view_height : Int,
+  agx_lut_texture_id : Int,
+  tony_lut_texture_id : Int,
+  blender_lut_texture_id : Int,
 ) -> Unit {
   if state.gpu.profile_enabled {
     state.gpu.profile_draw_bloom2d_calls_accum = state.gpu.profile_draw_bloom2d_calls_accum +
@@ -4981,7 +5010,10 @@ fn draw_bloom2d(
   }
   let target_view = if info.target_id < 0 {
     guard state.gpu.current_texture is Some(current_texture) else { return }
-    current_texture.create_view()
+    match current_surface_view_descriptor(state) {
+      Some(descriptor) => current_texture.create_view(descriptor~)
+      None => current_texture.create_view()
+    }
   } else {
     let target_entry = map_get(state.gpu.textures, @js.any(info.target_id))
     if host_is_nullish(target_entry) {
@@ -5271,11 +5303,29 @@ fn draw_bloom2d(
     bloom_weight_value,
     tonemapping_mode_value,
     deband_dither_enabled_value,
+    0.0,
   )
   queue.write_buffer(settings_buffer, 0, bloom_settings_data)
   let scene_view : @webgpu.GPUTextureView = scene_texture_entry
     ._get("view")
     .cast()
+  let selected_lut_texture_id = if tonemapping_mode == 4 {
+    agx_lut_texture_id
+  } else if tonemapping_mode == 6 {
+    tony_lut_texture_id
+  } else if tonemapping_mode == 7 {
+    blender_lut_texture_id
+  } else {
+    -1
+  }
+  let lut_view = if selected_lut_texture_id >= 0 {
+    match get_texture_entry(state, selected_lut_texture_id) {
+      Some(lut_entry) => lut_entry._get("view").cast()
+      None => scene_view
+    }
+  } else {
+    scene_view
+  }
   let scene_texture_raw = scene_texture_entry._get("texture")
   if host_is_nullish(scene_texture_raw) {
     report_asset_error_once(
@@ -5288,6 +5338,7 @@ fn draw_bloom2d(
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
     @webgpu.bind_group_entry_texture(3, scene_view),
+    @webgpu.bind_group_entry_texture(4, lut_view),
   ]
   let material_desc = @webgpu.bind_group_descriptor(
     bind_layout, material_entries,
@@ -5323,6 +5374,7 @@ fn draw_bloom2d(
       @webgpu.bind_group_entry_sampler(1, bloom_sampler),
       @webgpu.bind_group_entry_buffer(2, settings_buffer),
       @webgpu.bind_group_entry_texture(3, scene_view),
+      @webgpu.bind_group_entry_texture(4, lut_view),
     ]
     let bind_group = device.create_bind_group(
       @webgpu.bind_group_descriptor(bind_layout, entries).to_js(),
@@ -5351,15 +5403,6 @@ fn draw_bloom2d(
   while upsample_mip >= 1 {
     let src_view = state.gpu.bloom2d_mip_views[upsample_mip]
     let dst_view = state.gpu.bloom2d_mip_views[upsample_mip - 1]
-    let entries = [
-      @webgpu.bind_group_entry_texture(0, src_view),
-      @webgpu.bind_group_entry_sampler(1, bloom_sampler),
-      @webgpu.bind_group_entry_buffer(2, settings_buffer),
-      @webgpu.bind_group_entry_texture(3, scene_view),
-    ]
-    let bind_group = device.create_bind_group(
-      @webgpu.bind_group_descriptor(bind_layout, entries).to_js(),
-    )
     let blend = bloom2d_compute_blend_factor(
       intensity_value,
       low_frequency_boost_value,
@@ -5368,6 +5411,33 @@ fn draw_bloom2d(
       composite_mode,
       upsample_mip.to_double(),
       max_mip_f,
+    )
+    let upsample_settings_data = bloom2d_make_uniform_data(
+      safe_scene_width.to_double(),
+      safe_scene_height.to_double(),
+      0.0,
+      0.0,
+      source_viewport_width.to_double(),
+      source_viewport_height.to_double(),
+      threshold_value,
+      threshold_softness_value,
+      scale_x_value,
+      scale_y_value,
+      bloom_weight_value,
+      tonemapping_mode_value,
+      deband_dither_enabled_value,
+      blend,
+    )
+    queue.write_buffer(settings_buffer, 0, upsample_settings_data)
+    let entries = [
+      @webgpu.bind_group_entry_texture(0, src_view),
+      @webgpu.bind_group_entry_sampler(1, bloom_sampler),
+      @webgpu.bind_group_entry_buffer(2, settings_buffer),
+      @webgpu.bind_group_entry_texture(3, scene_view),
+      @webgpu.bind_group_entry_texture(4, lut_view),
+    ]
+    let bind_group = device.create_bind_group(
+      @webgpu.bind_group_descriptor(bind_layout, entries).to_js(),
     )
     let size_w = bloom2d_mip_dimension(bloom_width, upsample_mip - 1)
     let size_h = bloom2d_mip_dimension(bloom_height, upsample_mip - 1)
@@ -5423,7 +5493,25 @@ fn draw_bloom2d(
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
     @webgpu.bind_group_entry_texture(3, scene_view),
+    @webgpu.bind_group_entry_texture(4, lut_view),
   ]
+  let compose_settings_data = bloom2d_make_uniform_data(
+    safe_scene_width.to_double(),
+    safe_scene_height.to_double(),
+    0.0,
+    0.0,
+    source_viewport_width.to_double(),
+    source_viewport_height.to_double(),
+    threshold_value,
+    threshold_softness_value,
+    scale_x_value,
+    scale_y_value,
+    bloom_weight_value,
+    tonemapping_mode_value,
+    deband_dither_enabled_value,
+    final_blend,
+  )
+  queue.write_buffer(settings_buffer, 0, compose_settings_data)
   let compose_bind_group = device.create_bind_group(
     @webgpu.bind_group_descriptor(bind_layout, compose_entries).to_js(),
   )
@@ -5464,6 +5552,7 @@ fn draw_bloom2d(
     0.0,
     tonemapping_mode_value,
     deband_dither_enabled_value,
+    0.0,
   )
   queue.write_buffer(settings_buffer, 0, tonemap_settings_data)
   let tonemap_entries = [
@@ -5471,6 +5560,7 @@ fn draw_bloom2d(
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
     @webgpu.bind_group_entry_texture(3, compose_view),
+    @webgpu.bind_group_entry_texture(4, lut_view),
   ]
   let tonemap_bind_group = device.create_bind_group(
     @webgpu.bind_group_descriptor(bind_layout, tonemap_entries).to_js(),

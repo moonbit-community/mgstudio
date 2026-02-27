@@ -3383,6 +3383,40 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
 }
 
 ///|
+const TONEMAPPING_LUT_AGX_PATH : String = "textures/tonemapping/AgX-default_contrast.ktx2"
+
+///|
+const TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface.ktx2"
+
+///|
+const TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
+
+///|
+priv struct TonemappingLutHandles {
+  agx : @asset.Handle[@asset.Image]
+  tony : @asset.Handle[@asset.Image]
+  blender : @asset.Handle[@asset.Image]
+}
+
+///|
+let tonemapping_lut_handles_ref : Ref[TonemappingLutHandles?] = Ref::new(None)
+
+///|
+fn render2d_tonemapping_lut_handles() -> TonemappingLutHandles {
+  if tonemapping_lut_handles_ref.val is Some(handles) {
+    return handles
+  }
+  let asset_server = @asset.AssetServer::new()
+  let handles = TonemappingLutHandles::{
+    agx: asset_server.load(TONEMAPPING_LUT_AGX_PATH),
+    tony: asset_server.load(TONEMAPPING_LUT_TONY_PATH),
+    blender: asset_server.load(TONEMAPPING_LUT_BLENDER_PATH),
+  }
+  tonemapping_lut_handles_ref.val = Some(handles)
+  handles
+}
+
+///|
 fn render2d_draw_camera_bloom(
   camera : CameraInstance,
   source : @asset.Handle[@asset.Image],
@@ -3395,6 +3429,7 @@ fn render2d_draw_camera_bloom(
   if view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
+  let luts = render2d_tonemapping_lut_handles()
   let settings = bloom2d_sanitize_settings(bloom.settings)
   @window.host_gpu_draw_bloom2d(
     scene_texture_id=source.id(),
@@ -3416,6 +3451,9 @@ fn render2d_draw_camera_bloom(
     deband_dither_enabled=if deband_dither_enabled { 1 } else { 0 },
     view_width=view_width_logical,
     view_height=view_height_logical,
+    agx_lut_texture_id=luts.agx.id(),
+    tony_lut_texture_id=luts.tony.id(),
+    blender_lut_texture_id=luts.blender.id(),
   )
 }
 

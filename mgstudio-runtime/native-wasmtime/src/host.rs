@@ -716,10 +716,13 @@ fn parse_ktx2_texture(bytes: &[u8]) -> anyhow::Result<Ktx2UploadTexture> {
             .checked_mul(faces)
             .and_then(|v| v.checked_mul(mip_depth))
             .ok_or_else(|| anyhow!("KTX2: mip slice count overflow"))?;
-        if mip_slice_count != slice_count && levels.len() > 1 {
-            return Err(anyhow!(
-                "KTX2: varying slice count across mips is unsupported in stacked upload path"
-            ));
+        if mip_slice_count != slice_count {
+            if mip_index == 0 {
+                return Err(anyhow!("KTX2: invalid slice count at mip 0"));
+            }
+            // Stacked-2D upload cannot represent depth-shrinking mips from true
+            // 3D textures. Keep mip 0 only (enough for LUT sampling paths).
+            break;
         }
         let per_slice_bytes = block_layout.bytes_for_level(mip_width, mip_height)?;
         let expected_level_bytes = per_slice_bytes
@@ -2530,6 +2533,9 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3911,6 +3917,9 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3954,6 +3963,9 @@ fn define_mgstudio_host_imports(
             let deband_dither_enabled = args.get(13).and_then(|v| v.i32()).unwrap_or(0);
             let view_width = args.get(14).and_then(|v| v.i32()).unwrap_or(1);
             let view_height = args.get(15).and_then(|v| v.i32()).unwrap_or(1);
+            let agx_lut_texture_id = args.get(16).and_then(|v| v.i32()).unwrap_or(-1);
+            let tony_lut_texture_id = args.get(17).and_then(|v| v.i32()).unwrap_or(-1);
+            let blender_lut_texture_id = args.get(18).and_then(|v| v.i32()).unwrap_or(-1);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_bloom2d(
                     scene_texture_id,
@@ -3972,6 +3984,9 @@ fn define_mgstudio_host_imports(
                     deband_dither_enabled,
                     view_width,
                     view_height,
+                    agx_lut_texture_id,
+                    tony_lut_texture_id,
+                    blender_lut_texture_id,
                 )?;
             }
             ok_i32(out, 0);

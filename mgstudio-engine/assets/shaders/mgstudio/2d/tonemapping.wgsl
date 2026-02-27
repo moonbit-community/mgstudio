@@ -32,6 +32,8 @@ struct BloomUniforms {
 @group(0) @binding(1) var hdr_sampler: sampler;
 @group(0) @binding(2) var<uniform> uniforms: BloomUniforms;
 @group(0) @binding(3) var scene_texture: texture_2d<f32>;
+// KTX2 LUTs are uploaded as vertically stacked 2D slices.
+@group(0) @binding(4) var dt_lut_texture: texture_2d<f32>;
 
 fn tonemapping_luminance(v: vec3<f32>) -> f32 {
     return dot(v, vec3<f32>(0.2126, 0.7152, 0.0722));
@@ -107,6 +109,86 @@ fn somewhat_boring_display_transform(col: vec3<f32>) -> vec3<f32> {
     return boring_color * 0.97;
 }
 
+fn convert_open_domain_to_normalized_log2(
+    color: vec3<f32>,
+    minimum_ev: f32,
+    maximum_ev: f32,
+) -> vec3<f32> {
+    let in_midgray = 0.18;
+    var normalized = max(vec3<f32>(0.0), color);
+    normalized = select(
+        normalized,
+        0.00001525878 + normalized,
+        normalized < vec3<f32>(0.00003051757),
+    );
+    normalized = clamp(
+        log2(normalized / in_midgray),
+        vec3<f32>(minimum_ev),
+        vec3<f32>(maximum_ev),
+    );
+    let total_exposure = maximum_ev - minimum_ev;
+    return (normalized - minimum_ev) / total_exposure;
+}
+
+fn apply_agx_log(image: vec3<f32>) -> vec3<f32> {
+    var prepared_image = max(vec3<f32>(0.0), image);
+    let r = dot(prepared_image, vec3<f32>(0.84247906, 0.0784336, 0.07922375));
+    let g = dot(prepared_image, vec3<f32>(0.04232824, 0.87846864, 0.07916613));
+    let b = dot(prepared_image, vec3<f32>(0.04237565, 0.0784336, 0.87914297));
+    prepared_image = vec3<f32>(r, g, b);
+    prepared_image = convert_open_domain_to_normalized_log2(prepared_image, -10.0, 6.5);
+    return clamp(prepared_image, vec3<f32>(0.0), vec3<f32>(1.0));
+}
+
+fn lut_is_ready() -> bool {
+    let dims = textureDimensions(dt_lut_texture);
+    return dims.x > 1u && dims.y > dims.x;
+}
+
+fn sample_current_lut(p: vec3<f32>) -> vec3<f32> {
+    let dims = textureDimensions(dt_lut_texture);
+    if dims.x <= 1u || dims.y <= dims.x {
+        return p;
+    }
+    let lut_size = f32(dims.x);
+    let slice_count = f32(dims.y) / lut_size;
+    let uv_xy = clamp(p.xy, vec2<f32>(0.0), vec2<f32>(1.0))
+        * ((lut_size - 1.0) / lut_size)
+        + vec2<f32>(0.5 / lut_size);
+    let z = clamp(p.z, 0.0, 1.0) * (slice_count - 1.0);
+    let z0 = floor(z);
+    let z1 = min(z0 + 1.0, slice_count - 1.0);
+    let zf = z - z0;
+    let uv0 = vec2<f32>(uv_xy.x, (uv_xy.y + z0) / slice_count);
+    let uv1 = vec2<f32>(uv_xy.x, (uv_xy.y + z1) / slice_count);
+    let c0 = textureSampleLevel(dt_lut_texture, hdr_sampler, uv0, 0.0).rgb;
+    let c1 = textureSampleLevel(dt_lut_texture, hdr_sampler, uv1, 0.0).rgb;
+    return mix(c0, c1, vec3<f32>(zf));
+}
+
+fn apply_lut3d(image: vec3<f32>, block_size: f32) -> vec3<f32> {
+    let encoded = image * ((block_size - 1.0) / block_size) + vec3<f32>(0.5 / block_size);
+    return sample_current_lut(encoded);
+}
+
+const TONY_MC_MAPFACE_LUT_DIMS: f32 = 48.0;
+
+fn sample_tony_mc_mapface_lut(stimulus: vec3<f32>) -> vec3<f32> {
+    let uv = (stimulus / (stimulus + vec3<f32>(1.0)))
+        * ((TONY_MC_MAPFACE_LUT_DIMS - 1.0) / TONY_MC_MAPFACE_LUT_DIMS)
+        + vec3<f32>(0.5 / TONY_MC_MAPFACE_LUT_DIMS);
+    return sample_current_lut(clamp(uv, vec3<f32>(0.0), vec3<f32>(1.0)));
+}
+
+fn sample_blender_filmic_lut(stimulus: vec3<f32>) -> vec3<f32> {
+    let normalized = clamp(
+        convert_open_domain_to_normalized_log2(stimulus, -11.0, 12.0),
+        vec3<f32>(0.0),
+        vec3<f32>(1.0),
+    );
+    return apply_lut3d(normalized, 64.0);
+}
+
 fn screen_space_dither(frag_coord: vec2<f32>) -> vec3<f32> {
     var dither = vec3<f32>(dot(vec2<f32>(171.0, 231.0), frag_coord)).xxx;
     dither = fract(dither.rgb / vec3<f32>(103.0, 71.0, 97.0));
@@ -114,30 +196,38 @@ fn screen_space_dither(frag_coord: vec2<f32>) -> vec3<f32> {
 }
 
 fn tonemap_color(color: vec3<f32>, mode: f32) -> vec3<f32> {
-    // Bevy's AgX/TonyMcMapface/BlenderFilmic paths require LUT textures.
-    // Current runtime falls back to Bevy's SBDT branch until LUT bindings are wired.
+    let hdr = max(color, vec3<f32>(0.0));
     if mode < 0.5 {
-        return max(color, vec3<f32>(0.0));
+        return hdr;
     }
     if mode < 1.5 {
-        return tonemapping_reinhard(max(color, vec3<f32>(0.0)));
+        return tonemapping_reinhard(hdr);
     }
     if mode < 2.5 {
-        return tonemapping_reinhard_luminance(max(color, vec3<f32>(0.0)));
+        return tonemapping_reinhard_luminance(hdr);
     }
     if mode < 3.5 {
-        return aces_fitted(max(color, vec3<f32>(0.0)));
+        return aces_fitted(hdr);
     }
     if mode < 4.5 {
-        return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
+        if !lut_is_ready() {
+            return somewhat_boring_display_transform(hdr);
+        }
+        return apply_lut3d(apply_agx_log(hdr), 32.0);
     }
     if mode < 5.5 {
-        return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
+        return somewhat_boring_display_transform(hdr);
     }
     if mode < 6.5 {
-        return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
+        if !lut_is_ready() {
+            return somewhat_boring_display_transform(hdr);
+        }
+        return sample_tony_mc_mapface_lut(hdr);
     }
-    return somewhat_boring_display_transform(max(color, vec3<f32>(0.0)));
+    if !lut_is_ready() {
+        return somewhat_boring_display_transform(hdr);
+    }
+    return sample_blender_filmic_lut(hdr);
 }
 
 fn sample_input_3x3_tent(uv: vec2<f32>) -> vec3<f32> {

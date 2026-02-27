@@ -4052,13 +4052,31 @@ pub fn add_mgstudio_host_imports(
         } else {
           1
         }
+        let agx_lut_texture_id = if args.length() > 16 &&
+          args[16] is @types.Value::I32(v) {
+          v
+        } else {
+          -1
+        }
+        let tony_lut_texture_id = if args.length() > 17 &&
+          args[17] is @types.Value::I32(v) {
+          v
+        } else {
+          -1
+        }
+        let blender_lut_texture_id = if args.length() > 18 &&
+          args[18] is @types.Value::I32(v) {
+          v
+        } else {
+          -1
+        }
         ctx.gpu
         .unwrap()
         .draw_bloom2d(
           scene_texture_id, enabled, intensity, low_frequency_boost, low_frequency_boost_curvature,
           high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
           scale_x, scale_y, tonemapping_mode, deband_dither_enabled, view_width,
-          view_height,
+          view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
         )
         ok_i32(0)
       } catch {
@@ -4082,6 +4100,9 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,

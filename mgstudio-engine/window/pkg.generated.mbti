@@ -35,7 +35,7 @@ pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, neares
 
 pub fn host_gpu_create_surface(HostWindow) -> HostGpuSurface
 
-pub fn host_gpu_draw_bloom2d(scene_texture_id~ : Int, enabled~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int) -> Unit
+pub fn host_gpu_draw_bloom2d(scene_texture_id~ : Int, enabled~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int) -> Unit
 
 pub fn host_gpu_draw_gizmo_line(start_x~ : Float, start_y~ : Float, start_r~ : Float, start_g~ : Float, start_b~ : Float, start_a~ : Float, end_x~ : Float, end_y~ : Float, end_r~ : Float, end_g~ : Float, end_b~ : Float, end_a~ : Float, line_width~ : Float, style_kind~ : Int, gap_scale~ : Float, line_scale~ : Float) -> Unit
 
@@ -235,4 +235,3 @@ pub(all) enum WindowMode {
 // Type aliases
 
 // Traits
-

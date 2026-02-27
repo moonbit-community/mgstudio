@@ -260,10 +260,24 @@ pub struct GpuBackend {
   mut motion_blur_settings_buf : @wgpu.Buffer?
   mut motion_blur_globals_buf : @wgpu.Buffer?
   mut bloom2d_bgl : @wgpu.BindGroupLayout?
-  mut bloom2d_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_pipeline_surface : @wgpu.RenderPipeline?
-  mut bloom2d_pipeline_surface_format : @wgpu.TextureFormat?
+  mut bloom2d_downsample_first_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_downsample_first_no_threshold_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_downsample_first_uniform_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_downsample_first_no_threshold_uniform_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_downsample_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_downsample_uniform_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_upsample_pipeline_energy : @wgpu.RenderPipeline?
+  mut bloom2d_upsample_pipeline_additive : @wgpu.RenderPipeline?
+  mut bloom2d_final_pipeline : @wgpu.RenderPipeline?
+  mut bloom2d_final_pipeline_surface : @wgpu.RenderPipeline?
+  mut bloom2d_final_pipeline_surface_format : @wgpu.TextureFormat?
   mut bloom2d_settings_buf : @wgpu.Buffer?
+  mut bloom2d_sampler : @wgpu.Sampler?
+  mut bloom2d_mip_texture : @wgpu.Texture?
+  bloom2d_mip_views : Array[@wgpu.TextureView]
+  mut bloom2d_mip_count : Int
+  mut bloom2d_mip_width : Int
+  mut bloom2d_mip_height : Int
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
@@ -430,10 +444,24 @@ pub fn GpuBackend::new(
     motion_blur_settings_buf: None,
     motion_blur_globals_buf: None,
     bloom2d_bgl: None,
-    bloom2d_pipeline: None,
-    bloom2d_pipeline_surface: None,
-    bloom2d_pipeline_surface_format: None,
+    bloom2d_downsample_first_pipeline: None,
+    bloom2d_downsample_first_no_threshold_pipeline: None,
+    bloom2d_downsample_first_uniform_pipeline: None,
+    bloom2d_downsample_first_no_threshold_uniform_pipeline: None,
+    bloom2d_downsample_pipeline: None,
+    bloom2d_downsample_uniform_pipeline: None,
+    bloom2d_upsample_pipeline_energy: None,
+    bloom2d_upsample_pipeline_additive: None,
+    bloom2d_final_pipeline: None,
+    bloom2d_final_pipeline_surface: None,
+    bloom2d_final_pipeline_surface_format: None,
     bloom2d_settings_buf: None,
+    bloom2d_sampler: None,
+    bloom2d_mip_texture: None,
+    bloom2d_mip_views: [],
+    bloom2d_mip_count: 0,
+    bloom2d_mip_width: 0,
+    bloom2d_mip_height: 0,
     mesh3d_material_bg_cache: Ref::new([]),
     next_id: Ref::new(1),
     textures: Ref::new([]),
@@ -2265,6 +2293,260 @@ fn motion_blur_pipeline_for_current_pass(
 }
 
 ///|
+fn clamp01(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn bloom2d_ilog2_floor(value : Int) -> Int {
+  let mut v = if value < 1 { 1 } else { value }
+  let mut power = 0
+  while v > 1 {
+    v = v / 2
+    power = power + 1
+  }
+  power
+}
+
+///|
+fn bloom2d_effective_mip_count(max_mip_dimension : Int) -> Int {
+  let safe_dimension = if max_mip_dimension < 4 { 4 } else { max_mip_dimension }
+  let ilog2 = bloom2d_ilog2_floor(safe_dimension)
+  let count = if ilog2 < 2 { 1 } else { ilog2 - 1 }
+  if count < 1 {
+    1
+  } else {
+    count
+  }
+}
+
+///|
+fn bloom2d_mip_dimension(base : Int, mip : Int) -> Int {
+  let mut value = if base < 1 { 1 } else { base }
+  for _ in 0..<mip {
+    value = if value > 1 { value / 2 } else { 1 }
+  }
+  if value < 1 {
+    1
+  } else {
+    value
+  }
+}
+
+///|
+fn bloom2d_compute_blend_factor(
+  intensity : Float,
+  low_frequency_boost : Float,
+  low_frequency_boost_curvature : Float,
+  high_pass_frequency : Float,
+  composite_mode : Int,
+  mip : Float,
+  max_mip : Float,
+) -> Float {
+  let safe_max_mip = if max_mip <= 0.0F { 1.0F } else { max_mip }
+  let mip_ratio = clamp01(mip / safe_max_mip)
+  let safe_curvature = if low_frequency_boost_curvature >= 0.999F {
+    0.999F
+  } else {
+    low_frequency_boost_curvature
+  }
+  let curvature_factor = 1.0F / (1.0F - safe_curvature)
+  let one_minus_mip = 1.0F - mip_ratio
+  let lf_pow = Float::from_double(
+    @coremath.pow(one_minus_mip.to_double(), curvature_factor.to_double()),
+  )
+  let mut low_freq = (1.0F - lf_pow) * low_frequency_boost
+  let safe_high_pass = if high_pass_frequency <= 0.0001F {
+    0.0001F
+  } else {
+    high_pass_frequency
+  }
+  let high_pass_lq = 1.0F -
+    clamp01((mip_ratio - high_pass_frequency) / safe_high_pass)
+  let mode_factor = if composite_mode == 0 { 1.0F - intensity } else { 1.0F }
+  low_freq = low_freq * mode_factor
+  (intensity + low_freq) * high_pass_lq
+}
+
+///|
+fn bloom2d_uniform_bytes(
+  source_width : Float,
+  source_height : Float,
+  source_viewport_x : Float,
+  source_viewport_y : Float,
+  source_viewport_width : Float,
+  source_viewport_height : Float,
+  threshold : Float,
+  threshold_softness : Float,
+  scale_x : Float,
+  scale_y : Float,
+  tonemapping_mode : Float,
+  deband_dither_enabled : Float,
+  bloom_weight : Float,
+  upsample_blend : Float,
+) -> Bytes {
+  let softness = threshold_softness
+  let knee = threshold * softness
+  let safe_source_width = if source_width > 0.0F { source_width } else { 1.0F }
+  let safe_source_height = if source_height > 0.0F {
+    source_height
+  } else {
+    1.0F
+  }
+  let safe_viewport_width = if source_viewport_width > 0.0F {
+    source_viewport_width
+  } else {
+    safe_source_width
+  }
+  let safe_viewport_height = if source_viewport_height > 0.0F {
+    source_viewport_height
+  } else {
+    safe_source_height
+  }
+  let aspect = if safe_viewport_height > 0.0F {
+    safe_viewport_width / safe_viewport_height
+  } else {
+    1.0F
+  }
+  f32le_pack([
+    threshold,
+    threshold - knee,
+    2.0F * knee,
+    0.25F / (knee + 0.00001F),
+    source_viewport_x / safe_source_width,
+    source_viewport_y / safe_source_height,
+    safe_viewport_width / safe_source_width,
+    safe_viewport_height / safe_source_height,
+    scale_x,
+    scale_y,
+    aspect,
+    0.0F,
+    tonemapping_mode,
+    deband_dither_enabled,
+    bloom_weight,
+    upsample_blend,
+  ])
+}
+
+///|
+fn load_wgsl_with_defines_required(
+  backend : GpuBackend,
+  rel : String,
+  define_keys : Array[String],
+) -> String raise GpuBackendError {
+  let base = backend.assets_base.trim().to_string()
+  if base == "" {
+    fatal("wgpu: assets_base is empty; cannot load shader: " + rel)
+  }
+  let normalized_rel = normalize_shader_rel_path(rel)
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  for key in define_keys {
+    defines.set(key, true)
+  }
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  load_wgsl_preprocessed(base, normalized_rel, defines, visited)
+}
+
+///|
+fn bloom2d_create_pipeline(
+  backend : GpuBackend,
+  source : String,
+  format : @wgpu.TextureFormat,
+  fs_entry : String,
+  alpha_blend : Bool,
+  label : String,
+) -> @wgpu.RenderPipeline {
+  let sm = backend.device.create_shader_module_wgsl(source)
+  let pipeline = backend.device.create_render_pipeline_color_format_entries(
+    sm,
+    format,
+    vs_entry="fullscreen_vertex_shader",
+    fs_entry~,
+    alpha_blend~,
+    depth=false,
+  )
+  pipeline.set_label(label)
+  sm.release()
+  pipeline
+}
+
+///|
+fn ensure_bloom2d_mip_texture(
+  backend : GpuBackend,
+  mip_count : Int,
+  width : Int,
+  height : Int,
+) -> Unit {
+  let safe_mip_count = if mip_count < 1 { 1 } else { mip_count }
+  let safe_width = if width < 1 { 1 } else { width }
+  let safe_height = if height < 1 { 1 } else { height }
+  if backend.bloom2d_mip_texture is Some(_) &&
+    backend.bloom2d_mip_count == safe_mip_count &&
+    backend.bloom2d_mip_width == safe_width &&
+    backend.bloom2d_mip_height == safe_height &&
+    backend.bloom2d_mip_views.length() == safe_mip_count {
+    return
+  }
+  for view in backend.bloom2d_mip_views {
+    view.release()
+  }
+  backend.bloom2d_mip_views.clear()
+  if backend.bloom2d_mip_texture is Some(old_tex) {
+    old_tex.release()
+  }
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
+  let texture = backend.device.create_texture_u32(
+    safe_width.reinterpret_as_uint(),
+    safe_height.reinterpret_as_uint(),
+    1U,
+    @wgpu.TextureUsage::from_u64(usage_bits),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    mip_level_count=safe_mip_count.reinterpret_as_uint(),
+  )
+  for mip in 0..<safe_mip_count {
+    backend.bloom2d_mip_views.push(
+      texture.create_view_2d(mip.reinterpret_as_uint(), 1U),
+    )
+  }
+  backend.bloom2d_mip_texture = Some(texture)
+  backend.bloom2d_mip_count = safe_mip_count
+  backend.bloom2d_mip_width = safe_width
+  backend.bloom2d_mip_height = safe_height
+}
+
+///|
+fn create_bloom2d_bind_group(
+  backend : GpuBackend,
+  bind_layout : @wgpu.BindGroupLayout,
+  input_view : @wgpu.TextureView,
+  sampler : @wgpu.Sampler,
+  settings_buf : @wgpu.Buffer,
+  scene_view : @wgpu.TextureView,
+  lut_view : @wgpu.TextureView,
+  label : String,
+) -> @wgpu.BindGroup? {
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+  let ok = builder.add_texture_view(0U, input_view) &&
+    builder.add_sampler(1U, sampler) &&
+    builder.add_buffer(2U, settings_buf) &&
+    builder.add_texture_view(3U, scene_view) &&
+    builder.add_texture_view(4U, lut_view)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(builder.finish(backend.device, bind_layout, label~))
+}
+
+///|
 fn ensure_bloom2d_pipeline_rgba8(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -2274,25 +2556,122 @@ fn ensure_bloom2d_pipeline_rgba8(
       backend.device.create_buffer(size=64UL, usage~),
     )
   }
-  if backend.bloom2d_pipeline is Some(_) {
+  if backend.bloom2d_sampler is None {
+    backend.bloom2d_sampler = Some(backend.device.create_sampler_linear_clamp())
+  }
+  let mip_format = tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+  if backend.bloom2d_downsample_first_pipeline is None ||
+    backend.bloom2d_downsample_first_no_threshold_pipeline is None ||
+    backend.bloom2d_downsample_first_uniform_pipeline is None ||
+    backend.bloom2d_downsample_first_no_threshold_uniform_pipeline is None ||
+    backend.bloom2d_downsample_pipeline is None ||
+    backend.bloom2d_downsample_uniform_pipeline is None ||
+    backend.bloom2d_upsample_pipeline_energy is None ||
+    backend.bloom2d_upsample_pipeline_additive is None {
+    let downsample_first_source = load_wgsl_with_defines_required(
+      backend,
+      "shaders/mgstudio/2d/bloom.wgsl",
+      ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
+    )
+    let downsample_first_no_threshold_source = load_wgsl_with_defines_required(
+      backend,
+      "shaders/mgstudio/2d/bloom.wgsl",
+      ["FIRST_DOWNSAMPLE"],
+    )
+    let downsample_first_uniform_source = load_wgsl_with_defines_required(
+      backend,
+      "shaders/mgstudio/2d/bloom.wgsl",
+      ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
+    )
+    let downsample_first_no_threshold_uniform_source = load_wgsl_with_defines_required(
+      backend,
+      "shaders/mgstudio/2d/bloom.wgsl",
+      ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
+    )
+    let downsample_source = load_wgsl_with_defines_required(
+      backend,
+      "shaders/mgstudio/2d/bloom.wgsl",
+      [],
+    )
+    let downsample_uniform_source = load_wgsl_with_defines_required(
+      backend,
+      "shaders/mgstudio/2d/bloom.wgsl",
+      ["UNIFORM_SCALE"],
+    )
+    let upsample_source = load_wgsl_with_defines_required(
+      backend,
+      "shaders/mgstudio/2d/bloom.wgsl",
+      [],
+    )
+    let downsample_first_pipeline = bloom2d_create_pipeline(
+      backend, downsample_first_source, mip_format, "downsample_first", false, "mgstudio_bloom2d_downsample_first",
+    )
+    let downsample_first_no_threshold_pipeline = bloom2d_create_pipeline(
+      backend, downsample_first_no_threshold_source, mip_format, "downsample_first",
+      false, "mgstudio_bloom2d_downsample_first_no_threshold",
+    )
+    let downsample_first_uniform_pipeline = bloom2d_create_pipeline(
+      backend, downsample_first_uniform_source, mip_format, "downsample_first", false,
+      "mgstudio_bloom2d_downsample_first_uniform",
+    )
+    let downsample_first_no_threshold_uniform_pipeline = bloom2d_create_pipeline(
+      backend, downsample_first_no_threshold_uniform_source, mip_format, "downsample_first",
+      false, "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
+    )
+    let downsample_pipeline = bloom2d_create_pipeline(
+      backend, downsample_source, mip_format, "downsample", false, "mgstudio_bloom2d_downsample",
+    )
+    let downsample_uniform_pipeline = bloom2d_create_pipeline(
+      backend, downsample_uniform_source, mip_format, "downsample", false, "mgstudio_bloom2d_downsample_uniform",
+    )
+    let upsample_pipeline_energy = bloom2d_create_pipeline(
+      backend, upsample_source, mip_format, "upsample", true, "mgstudio_bloom2d_upsample_energy",
+    )
+    let upsample_pipeline_additive = bloom2d_create_pipeline(
+      backend, upsample_source, mip_format, "upsample", true, "mgstudio_bloom2d_upsample_additive",
+    )
+    if backend.bloom2d_bgl is None {
+      backend.bloom2d_bgl = Some(
+        downsample_first_pipeline.get_bind_group_layout(0U),
+      )
+    }
+    backend.bloom2d_downsample_first_pipeline = Some(downsample_first_pipeline)
+    backend.bloom2d_downsample_first_no_threshold_pipeline = Some(
+      downsample_first_no_threshold_pipeline,
+    )
+    backend.bloom2d_downsample_first_uniform_pipeline = Some(
+      downsample_first_uniform_pipeline,
+    )
+    backend.bloom2d_downsample_first_no_threshold_uniform_pipeline = Some(
+      downsample_first_no_threshold_uniform_pipeline,
+    )
+    backend.bloom2d_downsample_pipeline = Some(downsample_pipeline)
+    backend.bloom2d_downsample_uniform_pipeline = Some(
+      downsample_uniform_pipeline,
+    )
+    backend.bloom2d_upsample_pipeline_energy = Some(upsample_pipeline_energy)
+    backend.bloom2d_upsample_pipeline_additive = Some(
+      upsample_pipeline_additive,
+    )
+  }
+  if backend.bloom2d_final_pipeline is Some(_) {
     return
   }
-  let wgsl = load_wgsl_from_assets_required(
+  let final_source = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/2d/tonemapping.wgsl",
   )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let pipeline = backend.device.create_render_pipeline_color_format_entries(
-    sm,
+  let final_pipeline = bloom2d_create_pipeline(
+    backend,
+    final_source,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-    vs_entry="fullscreen_vertex_shader",
-    fs_entry="final_fragment",
-    alpha_blend=false,
-    depth=false,
+    "final_fragment",
+    false,
+    "mgstudio_bloom2d_final_rgba8",
   )
-  pipeline.set_label("mgstudio_bloom2d_rgba8")
-  backend.bloom2d_bgl = Some(pipeline.get_bind_group_layout(0U))
-  backend.bloom2d_pipeline = Some(pipeline)
-  sm.release()
+  if backend.bloom2d_bgl is None {
+    backend.bloom2d_bgl = Some(final_pipeline.get_bind_group_layout(0U))
+  }
+  backend.bloom2d_final_pipeline = Some(final_pipeline)
 }
 
 ///|
@@ -2304,30 +2683,25 @@ fn ensure_bloom2d_pipeline_surface(
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
-  if backend.bloom2d_pipeline_surface_format is Some(prev) &&
+  if backend.bloom2d_final_pipeline_surface_format is Some(prev) &&
     prev == format &&
-    backend.bloom2d_pipeline_surface is Some(_) {
+    backend.bloom2d_final_pipeline_surface is Some(_) {
     return
   }
-  if backend.bloom2d_pipeline_surface is Some(old) {
+  if backend.bloom2d_final_pipeline_surface is Some(old) {
     old.release()
   }
-  let wgsl = load_wgsl_from_assets_required(
+  let final_source = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/2d/tonemapping.wgsl",
   )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let pipeline = backend.device.create_render_pipeline_color_format_entries(
-    sm,
-    format,
-    vs_entry="fullscreen_vertex_shader",
-    fs_entry="final_fragment",
-    alpha_blend=false,
-    depth=false,
+  let final_pipeline = bloom2d_create_pipeline(
+    backend, final_source, format, "final_fragment", false, "mgstudio_bloom2d_final_surface",
   )
-  pipeline.set_label("mgstudio_bloom2d_surface")
-  backend.bloom2d_pipeline_surface = Some(pipeline)
-  backend.bloom2d_pipeline_surface_format = Some(format)
-  sm.release()
+  if backend.bloom2d_bgl is None {
+    backend.bloom2d_bgl = Some(final_pipeline.get_bind_group_layout(0U))
+  }
+  backend.bloom2d_final_pipeline_surface = Some(final_pipeline)
+  backend.bloom2d_final_pipeline_surface_format = Some(format)
 }
 
 ///|
@@ -2342,13 +2716,117 @@ fn bloom2d_pipeline_for_current_pass(
     match backend.surface_format {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
         ensure_bloom2d_pipeline_surface(backend)
-        return backend.bloom2d_pipeline_surface
+        return backend.bloom2d_final_pipeline_surface
       }
       _ => ()
     }
   }
   ensure_bloom2d_pipeline_rgba8(backend)
-  backend.bloom2d_pipeline
+  backend.bloom2d_final_pipeline
+}
+
+///|
+fn reopen_saved_pass(
+  backend : GpuBackend,
+  pass_state : GpuPassState,
+) -> Unit raise GpuBackendError {
+  let width_logical = pass_state.width_logical.to_double().to_int()
+  let height_logical = pass_state.height_logical.to_double().to_int()
+  let viewport_x = pass_state.viewport_x.reinterpret_as_int()
+  let viewport_y = pass_state.viewport_y.reinterpret_as_int()
+  let viewport_w = pass_state.viewport_w.reinterpret_as_int()
+  let viewport_h = pass_state.viewport_h.reinterpret_as_int()
+  if pass_state.is_3d {
+    backend.begin_pass_3d(
+      pass_state.target_id,
+      width_logical,
+      height_logical,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      pass_state.camera_x,
+      pass_state.camera_y,
+      pass_state.camera_z,
+      pass_state.camera_rot_x,
+      pass_state.camera_rot_y,
+      pass_state.camera_rot_z,
+      pass_state.camera_rot_w,
+      pass_state.camera_fov_y,
+      pass_state.camera_near,
+      pass_state.camera_far,
+      viewport_x,
+      viewport_y,
+      viewport_w,
+      viewport_h,
+      pass_state.ambient_r,
+      pass_state.ambient_g,
+      pass_state.ambient_b,
+      pass_state.ambient_brightness,
+      pass_state.directional_dir_x,
+      pass_state.directional_dir_y,
+      pass_state.directional_dir_z,
+      pass_state.directional_color_r,
+      pass_state.directional_color_g,
+      pass_state.directional_color_b,
+      pass_state.directional_illuminance,
+      pass_state.point_pos_x,
+      pass_state.point_pos_y,
+      pass_state.point_pos_z,
+      pass_state.point_color_r,
+      pass_state.point_color_g,
+      pass_state.point_color_b,
+      pass_state.point_intensity,
+      pass_state.point_range,
+      pass_state.spot_pos_x,
+      pass_state.spot_pos_y,
+      pass_state.spot_pos_z,
+      pass_state.spot_dir_x,
+      pass_state.spot_dir_y,
+      pass_state.spot_dir_z,
+      pass_state.spot_color_r,
+      pass_state.spot_color_g,
+      pass_state.spot_color_b,
+      pass_state.spot_intensity,
+      pass_state.spot_range,
+      pass_state.spot_inner_angle,
+      pass_state.spot_outer_angle,
+      pass_state.sub_camera_view_scale_x,
+      pass_state.sub_camera_view_scale_y,
+      pass_state.sub_camera_view_bias_x,
+      pass_state.sub_camera_view_bias_y,
+      pass_state.previous_camera_x,
+      pass_state.previous_camera_y,
+      pass_state.previous_camera_z,
+      pass_state.previous_camera_rot_x,
+      pass_state.previous_camera_rot_y,
+      pass_state.previous_camera_rot_z,
+      pass_state.previous_camera_rot_w,
+      pass_state.pass_kind,
+      0,
+    )
+  } else {
+    backend.begin_pass(
+      pass_state.target_id,
+      width_logical,
+      height_logical,
+      0.0F,
+      0.0F,
+      0.0F,
+      0.0F,
+      pass_state.camera_x,
+      pass_state.camera_y,
+      pass_state.camera_rot,
+      pass_state.camera_scale,
+      viewport_x,
+      viewport_y,
+      viewport_w,
+      viewport_h,
+      pass_state.viewport_depth_min,
+      pass_state.viewport_depth_max,
+      0,
+    )
+  }
 }
 
 ///|
@@ -2618,8 +3096,7 @@ pub fn GpuBackend::create_texture_rgba8(
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
-    @wgpu.TEXTURE_USAGE_COPY_DST |
-    @wgpu.TEXTURE_USAGE_COPY_SRC
+    @wgpu.TEXTURE_USAGE_COPY_DST
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
@@ -4589,25 +5066,46 @@ pub fn GpuBackend::draw_bloom2d(
   deband_dither_enabled : Int,
   view_width : Int,
   view_height : Int,
+  agx_lut_texture_id : Int,
+  tony_lut_texture_id : Int,
+  blender_lut_texture_id : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
-  guard frame.pass is Some(pass) else { return }
+  guard frame.pass is Some(active_pass) else { return }
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
-  guard bloom2d_pipeline_for_current_pass(self) is Some(pipeline) else {
+  guard self.pass_state is Some(pass_state) else { return }
+  guard bloom2d_pipeline_for_current_pass(self) is Some(final_pipeline) else {
     return
   }
+  guard self.bloom2d_bgl is Some(bind_layout) else { return }
   guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
-  if enabled == 0 {
-    return
-  }
+  guard self.bloom2d_sampler is Some(bloom_sampler) else { return }
   if scene_texture_id < 0 {
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return
+  }
+  let selected_lut_texture_id = if tonemapping_mode == 4 {
+    agx_lut_texture_id
+  } else if tonemapping_mode == 6 {
+    tony_lut_texture_id
+  } else if tonemapping_mode == 7 {
+    blender_lut_texture_id
+  } else {
+    -1
+  }
+  let selected_lut_view = if selected_lut_texture_id >= 0 {
+    if find_texture(self, selected_lut_texture_id) is Some(lut_texture) {
+      lut_texture.view
+    } else {
+      scene_texture.view
+    }
+  } else {
+    scene_texture.view
   }
   let low_frequency_boost_value = if low_frequency_boost < 0.0F {
     0.0F
@@ -4640,30 +5138,8 @@ pub fn GpuBackend::draw_bloom2d(
   } else {
     threshold_softness
   }
-  let composite_mode_value = if composite_mode == 0 { 0.0F } else { 1.0F }
-  let max_mip_dimension_value = Float::from_int(
-    if max_mip_dimension < 4 {
-      4
-    } else {
-      max_mip_dimension
-    },
-  )
   let scale_x_value = if scale_x < 0.0F { 0.0F } else { scale_x }
   let scale_y_value = if scale_y < 0.0F { 0.0F } else { scale_y }
-  let view_width_value = Float::from_int(
-    if view_width < 1 {
-      1
-    } else {
-      view_width
-    },
-  )
-  let view_height_value = Float::from_int(
-    if view_height < 1 {
-      1
-    } else {
-      view_height
-    },
-  )
   let tonemapping_mode_value = Float::from_int(
     if tonemapping_mode < 0 {
       0
@@ -4678,87 +5154,374 @@ pub fn GpuBackend::draw_bloom2d(
   } else {
     1.0F
   }
-  let softness = threshold_softness_value
-  let knee = threshold_value * softness
-  let mut viewport_x_norm = 0.0F
-  let mut viewport_y_norm = 0.0F
-  let mut viewport_w_norm = 1.0F
-  let mut viewport_h_norm = 1.0F
-  if self.pass_state is Some(pass_state) {
-    let target_w = if view_width_value > 0.0F { view_width_value } else { 1.0F }
-    let target_h = if view_height_value > 0.0F {
-      view_height_value
-    } else {
-      1.0F
-    }
-    let viewport_x = Float::from_double(pass_state.viewport_x.to_double())
-    let viewport_y = Float::from_double(pass_state.viewport_y.to_double())
-    let viewport_w = Float::from_double(pass_state.viewport_w.to_double())
-    let viewport_h = Float::from_double(pass_state.viewport_h.to_double())
-    viewport_x_norm = viewport_x / target_w
-    viewport_y_norm = viewport_y / target_h
-    viewport_w_norm = if viewport_w > 0.0F {
-      viewport_w / target_w
-    } else {
-      1.0F
-    }
-    viewport_h_norm = if viewport_h > 0.0F {
-      viewport_h / target_h
-    } else {
-      1.0F
-    }
-  }
-  let aspect_value = if view_height_value > 0.0F {
-    view_width_value / view_height_value
+  let use_uniform_scale = scale_x_value == 1.0F && scale_y_value == 1.0F
+  let use_prefilter = threshold_value > 0.0F
+  let bloom_enabled = enabled != 0
+  let bloom_weight = if bloom_enabled { intensity_value } else { 0.0F }
+  let safe_scene_width = if scene_texture.width > 0 {
+    scene_texture.width
   } else {
-    1.0F
+    1
   }
-  let reserved_tail = low_frequency_boost_value +
-    low_frequency_boost_curvature_value +
-    high_pass_frequency_value +
-    max_mip_dimension_value +
-    composite_mode_value
-  let settings_bytes = f32le_pack([
-    threshold_value,
-    threshold_value - knee,
-    2.0F * knee,
-    0.25F / (knee + 0.00001F),
-    viewport_x_norm,
-    viewport_y_norm,
-    viewport_w_norm,
-    viewport_h_norm,
-    scale_x_value,
-    scale_y_value,
-    aspect_value,
+  let safe_scene_height = if scene_texture.height > 0 {
+    scene_texture.height
+  } else {
+    1
+  }
+  let viewport_width = if pass_state.viewport_w > 0U {
+    pass_state.viewport_w.reinterpret_as_int()
+  } else if view_width > 0 {
+    view_width
+  } else {
+    safe_scene_width
+  }
+  let viewport_height = if pass_state.viewport_h > 0U {
+    pass_state.viewport_h.reinterpret_as_int()
+  } else if view_height > 0 {
+    view_height
+  } else {
+    safe_scene_height
+  }
+  let safe_viewport_width = if viewport_width > 0 { viewport_width } else { 1 }
+  let safe_viewport_height = if viewport_height > 0 {
+    viewport_height
+  } else {
+    1
+  }
+  let source_viewport_width = {
+    let raw = if view_width > 0 { view_width } else { safe_scene_width }
+    if raw > safe_scene_width {
+      safe_scene_width
+    } else {
+      raw
+    }
+  }
+  let source_viewport_height = {
+    let raw = if view_height > 0 { view_height } else { safe_scene_height }
+    if raw > safe_scene_height {
+      safe_scene_height
+    } else {
+      raw
+    }
+  }
+  let safe_max_mip_dimension = if max_mip_dimension < 4 {
+    4
+  } else {
+    max_mip_dimension
+  }
+  let mip_count = bloom2d_effective_mip_count(safe_max_mip_dimension)
+  let downsample_first_pipeline : @wgpu.RenderPipeline? = if use_uniform_scale {
+    if use_prefilter {
+      self.bloom2d_downsample_first_uniform_pipeline
+    } else {
+      self.bloom2d_downsample_first_no_threshold_uniform_pipeline
+    }
+  } else if use_prefilter {
+    self.bloom2d_downsample_first_pipeline
+  } else {
+    self.bloom2d_downsample_first_no_threshold_pipeline
+  }
+  let downsample_pipeline : @wgpu.RenderPipeline? = if use_uniform_scale {
+    self.bloom2d_downsample_uniform_pipeline
+  } else {
+    self.bloom2d_downsample_pipeline
+  }
+  let upsample_pipeline : @wgpu.RenderPipeline? = if composite_mode == 0 {
+    self.bloom2d_upsample_pipeline_energy
+  } else {
+    self.bloom2d_upsample_pipeline_additive
+  }
+
+  active_pass.end()
+  active_pass.release()
+  frame.pass = None
+
+  let mut bloom_ready = bloom_enabled &&
+    intensity_value > 0.0F &&
+    downsample_first_pipeline is Some(_) &&
+    downsample_pipeline is Some(_) &&
+    upsample_pipeline is Some(_)
+  let mut bloom_width = 1
+  let mut bloom_height = 1
+  let mut max_mip_f = 1.0F
+  if bloom_ready {
+    let mip_height_ratio = safe_max_mip_dimension.to_double() /
+      safe_viewport_height.to_double()
+    let bloom_width_est = safe_viewport_width.to_double() * mip_height_ratio +
+      0.5
+    let bloom_height_est = safe_viewport_height.to_double() * mip_height_ratio +
+      0.5
+    bloom_width = {
+      let raw = bloom_width_est.to_int()
+      if raw < 1 {
+        1
+      } else {
+        raw
+      }
+    }
+    bloom_height = {
+      let raw = bloom_height_est.to_int()
+      if raw < 1 {
+        1
+      } else {
+        raw
+      }
+    }
+    ensure_bloom2d_mip_texture(self, mip_count, bloom_width, bloom_height)
+    if self.bloom2d_mip_views.length() < mip_count {
+      bloom_ready = false
+    } else {
+      let bloom_uniform = bloom2d_uniform_bytes(
+        Float::from_double(safe_scene_width.to_double()),
+        Float::from_double(safe_scene_height.to_double()),
+        0.0F,
+        0.0F,
+        Float::from_double(source_viewport_width.to_double()),
+        Float::from_double(source_viewport_height.to_double()),
+        threshold_value,
+        threshold_softness_value,
+        scale_x_value,
+        scale_y_value,
+        tonemapping_mode_value,
+        deband_dither_enabled_value,
+        bloom_weight,
+        0.0F,
+      )
+      self.queue.write_buffer(settings_buf, 0UL, bloom_uniform)
+      if create_bloom2d_bind_group(
+          self,
+          bind_layout,
+          scene_texture.view,
+          bloom_sampler,
+          settings_buf,
+          scene_texture.view,
+          selected_lut_view,
+          "mgstudio_bloom2d_downsample_first_bg",
+        )
+        is Some(first_bg) {
+        let first_pass = frame.encoder.begin_render_pass_color_clear(
+          self.bloom2d_mip_views[0],
+          0.0F,
+          0.0F,
+          0.0F,
+          1.0F,
+        )
+        let mut mip_size_w = bloom_width
+        let mut mip_size_h = bloom_height
+        first_pass.set_viewport(
+          0.0F,
+          0.0F,
+          Float::from_double(mip_size_w.to_double()),
+          Float::from_double(mip_size_h.to_double()),
+          0.0F,
+          1.0F,
+        )
+        first_pass.set_scissor_rect(
+          0U,
+          0U,
+          mip_size_w.reinterpret_as_uint(),
+          mip_size_h.reinterpret_as_uint(),
+        )
+        first_pass.set_pipeline(downsample_first_pipeline.unwrap())
+        first_pass.set_bind_group(0U, first_bg, [])
+        first_pass.draw(3U, 1U, 0U, 0U)
+        first_pass.end()
+        first_pass.release()
+        first_bg.release()
+
+        for mip in 1..<mip_count {
+          if !bloom_ready {
+            break
+          }
+          if create_bloom2d_bind_group(
+              self,
+              bind_layout,
+              self.bloom2d_mip_views[mip - 1],
+              bloom_sampler,
+              settings_buf,
+              scene_texture.view,
+              selected_lut_view,
+              "mgstudio_bloom2d_downsample_bg",
+            )
+            is Some(downsample_bg) {
+            mip_size_w = if mip_size_w > 1 { mip_size_w / 2 } else { 1 }
+            mip_size_h = if mip_size_h > 1 { mip_size_h / 2 } else { 1 }
+            let pass = frame.encoder.begin_render_pass_color_clear(
+              self.bloom2d_mip_views[mip],
+              0.0F,
+              0.0F,
+              0.0F,
+              1.0F,
+            )
+            pass.set_viewport(
+              0.0F,
+              0.0F,
+              Float::from_double(mip_size_w.to_double()),
+              Float::from_double(mip_size_h.to_double()),
+              0.0F,
+              1.0F,
+            )
+            pass.set_scissor_rect(
+              0U,
+              0U,
+              mip_size_w.reinterpret_as_uint(),
+              mip_size_h.reinterpret_as_uint(),
+            )
+            pass.set_pipeline(downsample_pipeline.unwrap())
+            pass.set_bind_group(0U, downsample_bg, [])
+            pass.draw(3U, 1U, 0U, 0U)
+            pass.end()
+            pass.release()
+            downsample_bg.release()
+          } else {
+            bloom_ready = false
+          }
+        }
+
+        let max_mip = if mip_count > 1 { mip_count - 1 } else { 1 }
+        max_mip_f = Float::from_double(max_mip.to_double())
+        let mut upsample_mip = mip_count - 1
+        while bloom_ready && upsample_mip >= 1 {
+          let blend = bloom2d_compute_blend_factor(
+            intensity_value,
+            low_frequency_boost_value,
+            low_frequency_boost_curvature_value,
+            high_pass_frequency_value,
+            composite_mode,
+            Float::from_double(upsample_mip.to_double()),
+            max_mip_f,
+          )
+          let upsample_uniform = bloom2d_uniform_bytes(
+            Float::from_double(safe_scene_width.to_double()),
+            Float::from_double(safe_scene_height.to_double()),
+            0.0F,
+            0.0F,
+            Float::from_double(source_viewport_width.to_double()),
+            Float::from_double(source_viewport_height.to_double()),
+            threshold_value,
+            threshold_softness_value,
+            scale_x_value,
+            scale_y_value,
+            tonemapping_mode_value,
+            deband_dither_enabled_value,
+            bloom_weight,
+            blend,
+          )
+          self.queue.write_buffer(settings_buf, 0UL, upsample_uniform)
+          if create_bloom2d_bind_group(
+              self,
+              bind_layout,
+              self.bloom2d_mip_views[upsample_mip],
+              bloom_sampler,
+              settings_buf,
+              scene_texture.view,
+              selected_lut_view,
+              "mgstudio_bloom2d_upsample_bg",
+            )
+            is Some(upsample_bg) {
+            let size_w = bloom2d_mip_dimension(bloom_width, upsample_mip - 1)
+            let size_h = bloom2d_mip_dimension(bloom_height, upsample_mip - 1)
+            let pass = frame.encoder.begin_render_pass_color_load(
+              self.bloom2d_mip_views[upsample_mip - 1],
+            )
+            pass.set_viewport(
+              0.0F,
+              0.0F,
+              Float::from_double(size_w.to_double()),
+              Float::from_double(size_h.to_double()),
+              0.0F,
+              1.0F,
+            )
+            pass.set_scissor_rect(
+              0U,
+              0U,
+              size_w.reinterpret_as_uint(),
+              size_h.reinterpret_as_uint(),
+            )
+            pass.set_pipeline(upsample_pipeline.unwrap())
+            pass.set_bind_group(0U, upsample_bg, [])
+            pass.draw(3U, 1U, 0U, 0U)
+            pass.end()
+            pass.release()
+            upsample_bg.release()
+          } else {
+            bloom_ready = false
+          }
+          upsample_mip = upsample_mip - 1
+        }
+      } else {
+        bloom_ready = false
+      }
+    }
+  }
+
+  let final_bloom_weight = if bloom_ready {
+    bloom2d_compute_blend_factor(
+      intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
+      high_pass_frequency_value, composite_mode, 0.0F, max_mip_f,
+    )
+  } else {
+    0.0F
+  }
+  let final_uniform = bloom2d_uniform_bytes(
+    Float::from_double(safe_scene_width.to_double()),
+    Float::from_double(safe_scene_height.to_double()),
     0.0F,
+    0.0F,
+    Float::from_double(source_viewport_width.to_double()),
+    Float::from_double(source_viewport_height.to_double()),
+    0.0F,
+    0.0F,
+    1.0F,
+    1.0F,
     tonemapping_mode_value,
     deband_dither_enabled_value,
-    intensity_value,
-    reserved_tail,
-  ])
-  self.queue.write_buffer(settings_buf, 0UL, settings_bytes)
-
-  let material_bgl = pipeline.get_bind_group_layout(0U)
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=4UL)
-  let ok = builder.add_texture_view(0U, scene_texture.view) &&
-    builder.add_sampler(1U, scene_texture.sampler) &&
-    builder.add_buffer(2U, settings_buf) &&
-    builder.add_texture_view(3U, scene_texture.view)
-  if !ok {
-    builder.free()
-    material_bgl.release()
-    return
-  }
-  let material_bg = builder.finish(
-    self.device,
-    material_bgl,
-    label="mgstudio_bloom2d_bg",
+    final_bloom_weight,
+    0.0F,
   )
-  pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, material_bg, [])
-  pass.draw(3U, 1U, 0U, 0U)
-  material_bg.release()
-  material_bgl.release()
+  self.queue.write_buffer(settings_buf, 0UL, final_uniform)
+
+  let hdr_view = if bloom_ready {
+    self.bloom2d_mip_views[0]
+  } else {
+    scene_texture.view
+  }
+  if target_view(self, pass_state.target_id) is Some(dst_view) {
+    if create_bloom2d_bind_group(
+        self,
+        bind_layout,
+        hdr_view,
+        bloom_sampler,
+        settings_buf,
+        scene_texture.view,
+        selected_lut_view,
+        "mgstudio_bloom2d_final_bg",
+      )
+      is Some(final_bg) {
+      let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
+      final_pass.set_viewport(
+        Float::from_double(pass_state.viewport_x.to_double()),
+        Float::from_double(pass_state.viewport_y.to_double()),
+        Float::from_double(pass_state.viewport_w.to_double()),
+        Float::from_double(pass_state.viewport_h.to_double()),
+        pass_state.viewport_depth_min,
+        pass_state.viewport_depth_max,
+      )
+      final_pass.set_scissor_rect(
+        pass_state.viewport_x,
+        pass_state.viewport_y,
+        pass_state.viewport_w,
+        pass_state.viewport_h,
+      )
+      final_pass.set_pipeline(final_pipeline)
+      final_pass.set_bind_group(0U, final_bg, [])
+      final_pass.draw(3U, 1U, 0U, 0U)
+      final_pass.end()
+      final_pass.release()
+      final_bg.release()
+    }
+  }
+  reopen_saved_pass(self, pass_state)
 }
 
 ///|

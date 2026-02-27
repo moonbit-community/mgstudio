@@ -172,7 +172,7 @@ pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool) -> Int rai
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
-pub fn GpuBackend::draw_bloom2d(Self, Int, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_bloom2d(Self, Int, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
@@ -350,4 +350,3 @@ pub struct UiBatch {
 // Type aliases
 
 // Traits
-

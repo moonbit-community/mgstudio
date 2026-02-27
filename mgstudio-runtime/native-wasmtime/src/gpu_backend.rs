@@ -223,6 +223,9 @@ struct Bloom2dDraw {
     deband_dither_enabled: i32,
     view_width: i32,
     view_height: i32,
+    agx_lut_texture_id: i32,
+    tony_lut_texture_id: i32,
+    blender_lut_texture_id: i32,
     scissor: Option<ScissorRect>,
 }
 
@@ -316,10 +319,24 @@ struct MeshRenderer {
 
     bloom2d_bgl: Option<wgpu::BindGroupLayout>,
     bloom2d_pipeline_layout: Option<wgpu::PipelineLayout>,
+    bloom2d_downsample_first_pipeline: Option<wgpu::RenderPipeline>,
+    bloom2d_downsample_first_no_threshold_pipeline: Option<wgpu::RenderPipeline>,
+    bloom2d_downsample_first_uniform_pipeline: Option<wgpu::RenderPipeline>,
+    bloom2d_downsample_first_no_threshold_uniform_pipeline: Option<wgpu::RenderPipeline>,
+    bloom2d_downsample_pipeline: Option<wgpu::RenderPipeline>,
+    bloom2d_downsample_uniform_pipeline: Option<wgpu::RenderPipeline>,
+    bloom2d_upsample_pipeline_energy: Option<wgpu::RenderPipeline>,
+    bloom2d_upsample_pipeline_additive: Option<wgpu::RenderPipeline>,
     bloom2d_pipeline_rgba8: Option<wgpu::RenderPipeline>,
     bloom2d_pipeline_surface: Option<wgpu::RenderPipeline>,
     bloom2d_pipeline_surface_format: Option<wgpu::TextureFormat>,
     bloom2d_settings_buf: Option<wgpu::Buffer>,
+    bloom2d_sampler: Option<wgpu::Sampler>,
+    bloom2d_mip_texture: Option<wgpu::Texture>,
+    bloom2d_mip_views: Vec<wgpu::TextureView>,
+    bloom2d_mip_count: u32,
+    bloom2d_mip_width: u32,
+    bloom2d_mip_height: u32,
 }
 
 impl GpuBackend {
@@ -893,7 +910,7 @@ impl GpuBackend {
         let Some(mut frame) = self.frame.take() else {
             return Ok(());
         };
-        let (target_view, target_width, target_height): (&wgpu::TextureView, u32, u32) = if pass
+        let (target_view, target_width, target_height): (wgpu::TextureView, u32, u32) = if pass
             .st
             .target_id
             == -1
@@ -901,7 +918,7 @@ impl GpuBackend {
             match frame.surface_view.as_ref() {
                 Some(v) => {
                     let (w, h) = self.configured_size;
-                    (v, w.max(1), h.max(1))
+                    (v.clone(), w.max(1), h.max(1))
                 }
                 None => {
                     self.skipped_surface_draw_streak =
@@ -920,7 +937,7 @@ impl GpuBackend {
             }
         } else {
             match self.textures.get(&pass.st.target_id) {
-                Some(t) => (&t.view, t.width.max(1), t.height.max(1)),
+                Some(t) => (t.view.clone(), t.width.max(1), t.height.max(1)),
                 None => {
                     self.frame = Some(frame);
                     return Ok(());
@@ -975,7 +992,7 @@ impl GpuBackend {
                 .begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("mgstudio-pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: target_view,
+                        view: &target_view,
                         depth_slice: None,
                         resolve_target: None,
                         ops: wgpu::Operations {
@@ -1328,128 +1345,86 @@ impl GpuBackend {
                         rp.draw(0..3, 0..1);
                     }
                     DrawCmd::Bloom2d(draw) => {
-                        let (Some(pipeline), Some(layout), Some(settings_buf)) = (
+                        let (Some(pipeline), Some(layout), Some(settings_buf), Some(bloom_sampler)) = (
                             bloom2d_pipeline.as_ref(),
                             bloom2d_bgl.as_ref(),
                             self.mesh.bloom2d_settings_buf.as_ref().cloned(),
+                            self.mesh.bloom2d_sampler.as_ref().cloned(),
                         ) else {
                             continue;
                         };
                         let Some(scene_tex) = self.textures.get(&draw.scene_texture_id) else {
                             continue;
                         };
-                        let Some((sx, sy, sw, sh)) = resolve_scissor_rect(
+                        let scene_width = scene_tex.width;
+                        let scene_height = scene_tex.height;
+                        let scene_view = scene_tex.view.clone();
+                        let selected_lut_texture_id = match draw.tonemapping_mode {
+                            4 => draw.agx_lut_texture_id,
+                            6 => draw.tony_lut_texture_id,
+                            7 => draw.blender_lut_texture_id,
+                            _ => -1,
+                        };
+                        let lut_view = self
+                            .textures
+                            .get(&selected_lut_texture_id)
+                            .map(|tex| tex.view.clone())
+                            .unwrap_or_else(|| scene_view.clone());
+
+                        drop(rp);
+                        self.encode_bloom2d_multipass(
+                            &mut frame.encoder,
                             &pass.st,
-                            draw.scissor,
+                            &target_view,
                             target_width,
                             target_height,
-                        ) else {
-                            continue;
-                        };
-
-                        let intensity = draw.intensity.max(0.0);
-                        let low_frequency_boost = draw.low_frequency_boost.clamp(0.0, 1.0);
-                        let low_frequency_boost_curvature =
-                            draw.low_frequency_boost_curvature.clamp(0.0, 1.0);
-                        let high_pass_frequency = draw.high_pass_frequency.clamp(0.0, 1.0);
-                        let threshold = draw.threshold.max(0.0);
-                        let threshold_softness = draw.threshold_softness.clamp(0.0, 1.0);
-                        let composite_mode: f32 = if draw.composite_mode == 0 { 0.0 } else { 1.0 };
-                        let max_mip_dimension = draw.max_mip_dimension.max(4) as f32;
-                        let scale_x = draw.scale_x.max(0.0);
-                        let scale_y = draw.scale_y.max(0.0);
-                        let view_width = draw.view_width.max(1) as f32;
-                        let view_height = draw.view_height.max(1) as f32;
-                        let tonemapping_mode = draw.tonemapping_mode.clamp(0, 7) as f32;
-                        let deband_dither_enabled: f32 = if draw.deband_dither_enabled == 0 {
-                            0.0
-                        } else {
-                            1.0
-                        };
-                        let softness = threshold_softness;
-                        let knee = threshold * softness;
-                        let target_w = view_width.max(1.0);
-                        let target_h = view_height.max(1.0);
-                        let viewport_x = pass.st.viewport_x as f32;
-                        let viewport_y = pass.st.viewport_y as f32;
-                        let viewport_w = if pass.st.viewport_w > 0 {
-                            pass.st.viewport_w as f32
-                        } else {
-                            target_w
-                        };
-                        let viewport_h = if pass.st.viewport_h > 0 {
-                            pass.st.viewport_h as f32
-                        } else {
-                            target_h
-                        };
-                        let aspect = if target_h > 0.0 {
-                            target_w / target_h
-                        } else {
-                            1.0
-                        };
-                        let reserved_tail = low_frequency_boost
-                            + low_frequency_boost_curvature
-                            + high_pass_frequency
-                            + max_mip_dimension
-                            + composite_mode;
-                        let bloom_weight = if draw.enabled == 0 { 0.0 } else { intensity };
-                        let settings_words: [u32; 16] = [
-                            threshold.to_bits(),
-                            (threshold - knee).to_bits(),
-                            (2.0 * knee).to_bits(),
-                            (0.25 / (knee + 0.00001)).to_bits(),
-                            (viewport_x / target_w).to_bits(),
-                            (viewport_y / target_h).to_bits(),
-                            (viewport_w / target_w).to_bits(),
-                            (viewport_h / target_h).to_bits(),
-                            scale_x.to_bits(),
-                            scale_y.to_bits(),
-                            aspect.to_bits(),
-                            0.0f32.to_bits(),
-                            tonemapping_mode.to_bits(),
-                            deband_dither_enabled.to_bits(),
-                            bloom_weight.to_bits(),
-                            reserved_tail.to_bits(),
-                        ];
-                        self.queue.write_buffer(
+                            &draw,
+                            pipeline,
+                            layout,
                             &settings_buf,
-                            0,
-                            bytemuck::cast_slice(&settings_words),
-                        );
+                            &bloom_sampler,
+                            &scene_view,
+                            &lut_view,
+                            scene_width,
+                            scene_height,
+                        )?;
 
-                        let bind_group =
-                            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                                label: Some("mgstudio-bloom2d-bg"),
-                                layout,
-                                entries: &[
-                                    wgpu::BindGroupEntry {
-                                        binding: 0,
-                                        resource: wgpu::BindingResource::TextureView(
-                                            &scene_tex.view,
-                                        ),
+                        let resumed_depth_attachment = depth_view.as_ref().map(|view| {
+                            wgpu::RenderPassDepthStencilAttachment {
+                                view,
+                                depth_ops: Some(wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(1.0),
+                                    store: wgpu::StoreOp::Store,
+                                }),
+                                stencil_ops: None,
+                            }
+                        });
+                        rp = frame
+                            .encoder
+                            .begin_render_pass(&wgpu::RenderPassDescriptor {
+                                label: Some("mgstudio-pass"),
+                                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                                    view: &target_view,
+                                    depth_slice: None,
+                                    resolve_target: None,
+                                    ops: wgpu::Operations {
+                                        load: wgpu::LoadOp::Load,
+                                        store: wgpu::StoreOp::Store,
                                     },
-                                    wgpu::BindGroupEntry {
-                                        binding: 1,
-                                        resource: wgpu::BindingResource::Sampler(
-                                            &scene_tex.sampler,
-                                        ),
-                                    },
-                                    wgpu::BindGroupEntry {
-                                        binding: 2,
-                                        resource: settings_buf.as_entire_binding(),
-                                    },
-                                    wgpu::BindGroupEntry {
-                                        binding: 3,
-                                        resource: wgpu::BindingResource::TextureView(
-                                            &scene_tex.view,
-                                        ),
-                                    },
-                                ],
+                                })],
+                                depth_stencil_attachment: resumed_depth_attachment,
+                                timestamp_writes: None,
+                                occlusion_query_set: None,
+                                multiview_mask: None,
                             });
-                        rp.set_pipeline(pipeline);
-                        rp.set_scissor_rect(sx, sy, sw, sh);
-                        rp.set_bind_group(0, &bind_group, &[]);
-                        rp.draw(0..3, 0..1);
+                        rp.set_viewport(
+                            pass.st.viewport_x as f32,
+                            pass.st.viewport_y as f32,
+                            pass.st.viewport_w as f32,
+                            pass.st.viewport_h as f32,
+                            pass.st.viewport_depth_min,
+                            pass.st.viewport_depth_max,
+                        );
                     }
                 }
             }
@@ -1909,6 +1884,9 @@ impl GpuBackend {
         deband_dither_enabled: i32,
         view_width: i32,
         view_height: i32,
+        agx_lut_texture_id: i32,
+        tony_lut_texture_id: i32,
+        blender_lut_texture_id: i32,
     ) -> anyhow::Result<()> {
         if self.frame.is_none() {
             return Ok(());
@@ -1937,6 +1915,9 @@ impl GpuBackend {
             deband_dither_enabled,
             view_width,
             view_height,
+            agx_lut_texture_id,
+            tony_lut_texture_id,
+            blender_lut_texture_id,
             scissor: pass.current_scissor,
         }));
         Ok(())
@@ -2184,9 +2165,7 @@ impl GpuBackend {
         let height = height_per_slice
             .checked_mul(slice_count)
             .ok_or_else(|| anyhow!("wgpu: stacked texture height overflow"))?;
-        let usage = wgpu::TextureUsages::TEXTURE_BINDING
-            | wgpu::TextureUsages::COPY_DST
-            | wgpu::TextureUsages::COPY_SRC;
+        let usage = wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST;
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("mgstudio-texture-stacked"),
             size: wgpu::Extent3d {
@@ -3868,6 +3847,72 @@ impl GpuBackend {
         Ok(())
     }
 
+    fn load_wgsl_with_defines_required(
+        &self,
+        rel: &str,
+        define_keys: &[&str],
+    ) -> anyhow::Result<String> {
+        let base = self.assets_base.trim();
+        if base.is_empty() {
+            return Err(anyhow!(
+                "wgpu: assets_base is empty; cannot load shader: {rel}"
+            ));
+        }
+        let normalized_rel = normalize_shader_rel_path(rel);
+        let mut visited = HashSet::<String>::new();
+        let defines = define_keys
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect::<HashSet<_>>();
+        load_wgsl_preprocessed(base, &normalized_rel, &defines, &mut visited)
+    }
+
+    fn create_bloom2d_pipeline(
+        &self,
+        layout: &wgpu::PipelineLayout,
+        shader_source: &str,
+        format: wgpu::TextureFormat,
+        fs_entry: &str,
+        blend: Option<wgpu::BlendState>,
+        label: &'static str,
+    ) -> wgpu::RenderPipeline {
+        let sm = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some(label),
+                source: wgpu::ShaderSource::Wgsl(shader_source.into()),
+            });
+        self.device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some(label),
+                layout: Some(layout),
+                vertex: wgpu::VertexState {
+                    module: &sm,
+                    entry_point: Some("fullscreen_vertex_shader"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm,
+                    entry_point: Some(fs_entry),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            })
+    }
+
     fn ensure_bloom2d_pipeline_rgba8(&mut self) -> anyhow::Result<()> {
         self.ensure_sprite_resources()?;
         if self.mesh.bloom2d_pipeline_layout.is_none() {
@@ -3912,6 +3957,16 @@ impl GpuBackend {
                             },
                             count: None,
                         },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 4,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
                     ],
                 });
             let pl = self
@@ -3933,52 +3988,172 @@ impl GpuBackend {
             });
             self.mesh.bloom2d_settings_buf = Some(settings_buf);
         }
-        if self.mesh.bloom2d_pipeline_rgba8.is_some() {
-            return Ok(());
+        if self.mesh.bloom2d_sampler.is_none() {
+            self.mesh.bloom2d_sampler =
+                Some(self.device.create_sampler(&wgpu::SamplerDescriptor {
+                    label: Some("mgstudio_bloom2d_sampler"),
+                    address_mode_u: wgpu::AddressMode::ClampToEdge,
+                    address_mode_v: wgpu::AddressMode::ClampToEdge,
+                    address_mode_w: wgpu::AddressMode::ClampToEdge,
+                    mag_filter: wgpu::FilterMode::Linear,
+                    min_filter: wgpu::FilterMode::Linear,
+                    mipmap_filter: wgpu::MipmapFilterMode::Linear,
+                    ..Default::default()
+                }));
         }
         let pl = self
             .mesh
             .bloom2d_pipeline_layout
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: bloom2d pipeline layout missing"))?;
-        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/tonemapping.wgsl")?;
-        let sm = self
-            .device
-            .create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("mgstudio_bloom2d_wgsl"),
-                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
-            });
-        let pipeline = self
-            .device
-            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("mgstudio_bloom2d_rgba8"),
-                layout: Some(pl),
-                vertex: wgpu::VertexState {
-                    module: &sm,
-                    entry_point: Some("fullscreen_vertex_shader"),
-                    compilation_options: Default::default(),
-                    buffers: &[],
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &sm,
-                    entry_point: Some("final_fragment"),
-                    compilation_options: Default::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: wgpu::TextureFormat::Rgba8Unorm,
-                        blend: None,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
+        let mip_format = wgpu::TextureFormat::Rgba16Float;
+        if self.mesh.bloom2d_downsample_first_pipeline.is_none()
+            || self
+                .mesh
+                .bloom2d_downsample_first_no_threshold_pipeline
+                .is_none()
+            || self
+                .mesh
+                .bloom2d_downsample_first_uniform_pipeline
+                .is_none()
+            || self
+                .mesh
+                .bloom2d_downsample_first_no_threshold_uniform_pipeline
+                .is_none()
+            || self.mesh.bloom2d_downsample_pipeline.is_none()
+            || self.mesh.bloom2d_downsample_uniform_pipeline.is_none()
+            || self.mesh.bloom2d_upsample_pipeline_energy.is_none()
+            || self.mesh.bloom2d_upsample_pipeline_additive.is_none()
+        {
+            let downsample_first_source = self.load_wgsl_with_defines_required(
+                "shaders/mgstudio/2d/bloom.wgsl",
+                &["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
+            )?;
+            let downsample_first_no_threshold_source = self.load_wgsl_with_defines_required(
+                "shaders/mgstudio/2d/bloom.wgsl",
+                &["FIRST_DOWNSAMPLE"],
+            )?;
+            let downsample_first_uniform_source = self.load_wgsl_with_defines_required(
+                "shaders/mgstudio/2d/bloom.wgsl",
+                &["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
+            )?;
+            let downsample_first_no_threshold_uniform_source = self
+                .load_wgsl_with_defines_required(
+                    "shaders/mgstudio/2d/bloom.wgsl",
+                    &["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
+                )?;
+            let downsample_source =
+                self.load_wgsl_with_defines_required("shaders/mgstudio/2d/bloom.wgsl", &[])?;
+            let downsample_uniform_source = self.load_wgsl_with_defines_required(
+                "shaders/mgstudio/2d/bloom.wgsl",
+                &["UNIFORM_SCALE"],
+            )?;
+            let upsample_source =
+                self.load_wgsl_with_defines_required("shaders/mgstudio/2d/bloom.wgsl", &[])?;
+            self.mesh.bloom2d_downsample_first_pipeline = Some(self.create_bloom2d_pipeline(
+                pl,
+                &downsample_first_source,
+                mip_format,
+                "downsample_first",
+                None,
+                "mgstudio_bloom2d_downsample_first",
+            ));
+            self.mesh.bloom2d_downsample_first_no_threshold_pipeline =
+                Some(self.create_bloom2d_pipeline(
+                    pl,
+                    &downsample_first_no_threshold_source,
+                    mip_format,
+                    "downsample_first",
+                    None,
+                    "mgstudio_bloom2d_downsample_first_no_threshold",
+                ));
+            self.mesh.bloom2d_downsample_first_uniform_pipeline =
+                Some(self.create_bloom2d_pipeline(
+                    pl,
+                    &downsample_first_uniform_source,
+                    mip_format,
+                    "downsample_first",
+                    None,
+                    "mgstudio_bloom2d_downsample_first_uniform",
+                ));
+            self.mesh
+                .bloom2d_downsample_first_no_threshold_uniform_pipeline =
+                Some(self.create_bloom2d_pipeline(
+                    pl,
+                    &downsample_first_no_threshold_uniform_source,
+                    mip_format,
+                    "downsample_first",
+                    None,
+                    "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
+                ));
+            self.mesh.bloom2d_downsample_pipeline = Some(self.create_bloom2d_pipeline(
+                pl,
+                &downsample_source,
+                mip_format,
+                "downsample",
+                None,
+                "mgstudio_bloom2d_downsample",
+            ));
+            self.mesh.bloom2d_downsample_uniform_pipeline = Some(self.create_bloom2d_pipeline(
+                pl,
+                &downsample_uniform_source,
+                mip_format,
+                "downsample",
+                None,
+                "mgstudio_bloom2d_downsample_uniform",
+            ));
+            self.mesh.bloom2d_upsample_pipeline_energy = Some(self.create_bloom2d_pipeline(
+                pl,
+                &upsample_source,
+                mip_format,
+                "upsample",
+                Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::Constant,
+                        dst_factor: wgpu::BlendFactor::OneMinusConstant,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    alpha: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::Zero,
+                        dst_factor: wgpu::BlendFactor::One,
+                        operation: wgpu::BlendOperation::Add,
+                    },
                 }),
-                primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
-                    ..Default::default()
-                },
-                depth_stencil: None,
-                multisample: wgpu::MultisampleState::default(),
-                multiview_mask: None,
-                cache: None,
-            });
-        self.mesh.bloom2d_pipeline_rgba8 = Some(pipeline);
+                "mgstudio_bloom2d_upsample_energy",
+            ));
+            self.mesh.bloom2d_upsample_pipeline_additive = Some(self.create_bloom2d_pipeline(
+                pl,
+                &upsample_source,
+                mip_format,
+                "upsample",
+                Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::Constant,
+                        dst_factor: wgpu::BlendFactor::One,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    alpha: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::Zero,
+                        dst_factor: wgpu::BlendFactor::One,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                }),
+                "mgstudio_bloom2d_upsample_additive",
+            ));
+        }
+        if self.mesh.bloom2d_pipeline_rgba8.is_some() {
+            return Ok(());
+        }
+        let final_source =
+            load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/tonemapping.wgsl")?;
+        self.mesh.bloom2d_pipeline_rgba8 = Some(self.create_bloom2d_pipeline(
+            pl,
+            &final_source,
+            wgpu::TextureFormat::Rgba8Unorm,
+            "final_fragment",
+            None,
+            "mgstudio_bloom2d_rgba8",
+        ));
         Ok(())
     }
 
@@ -4000,45 +4175,497 @@ impl GpuBackend {
             .bloom2d_pipeline_layout
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: bloom2d pipeline layout missing"))?;
-        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/tonemapping.wgsl")?;
-        let sm = self
-            .device
-            .create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("mgstudio_bloom2d_wgsl_surface"),
-                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
-            });
-        let pipeline = self
-            .device
-            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("mgstudio_bloom2d_surface"),
-                layout: Some(pl),
-                vertex: wgpu::VertexState {
-                    module: &sm,
-                    entry_point: Some("fullscreen_vertex_shader"),
-                    compilation_options: Default::default(),
-                    buffers: &[],
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &sm,
-                    entry_point: Some("final_fragment"),
-                    compilation_options: Default::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format,
-                        blend: None,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
-                }),
-                primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
-                    ..Default::default()
-                },
-                depth_stencil: None,
-                multisample: wgpu::MultisampleState::default(),
-                multiview_mask: None,
-                cache: None,
-            });
-        self.mesh.bloom2d_pipeline_surface = Some(pipeline);
+        let final_source =
+            load_wgsl_required(&self.assets_base, "shaders/mgstudio/2d/tonemapping.wgsl")?;
+        self.mesh.bloom2d_pipeline_surface = Some(self.create_bloom2d_pipeline(
+            pl,
+            &final_source,
+            format,
+            "final_fragment",
+            None,
+            "mgstudio_bloom2d_surface",
+        ));
         self.mesh.bloom2d_pipeline_surface_format = Some(format);
+        Ok(())
+    }
+
+    fn ensure_bloom2d_mip_texture(
+        &mut self,
+        mip_count: u32,
+        width: u32,
+        height: u32,
+    ) -> anyhow::Result<()> {
+        let safe_mip_count = mip_count.max(1);
+        let safe_width = width.max(1);
+        let safe_height = height.max(1);
+        if self.mesh.bloom2d_mip_texture.is_some()
+            && self.mesh.bloom2d_mip_count == safe_mip_count
+            && self.mesh.bloom2d_mip_width == safe_width
+            && self.mesh.bloom2d_mip_height == safe_height
+            && self.mesh.bloom2d_mip_views.len() == safe_mip_count as usize
+        {
+            return Ok(());
+        }
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio_bloom2d_mip_texture"),
+            size: wgpu::Extent3d {
+                width: safe_width,
+                height: safe_height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: safe_mip_count,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba16Float,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+        let mut views = Vec::with_capacity(safe_mip_count as usize);
+        for mip in 0..safe_mip_count {
+            views.push(texture.create_view(&wgpu::TextureViewDescriptor {
+                label: Some("mgstudio_bloom2d_mip_view"),
+                format: None,
+                dimension: Some(wgpu::TextureViewDimension::D2),
+                usage: Some(
+                    wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+                ),
+                aspect: wgpu::TextureAspect::All,
+                base_mip_level: mip,
+                mip_level_count: Some(1),
+                base_array_layer: 0,
+                array_layer_count: Some(1),
+            }));
+        }
+        self.mesh.bloom2d_mip_texture = Some(texture);
+        self.mesh.bloom2d_mip_views = views;
+        self.mesh.bloom2d_mip_count = safe_mip_count;
+        self.mesh.bloom2d_mip_width = safe_width;
+        self.mesh.bloom2d_mip_height = safe_height;
+        Ok(())
+    }
+
+    fn create_bloom2d_bind_group(
+        &self,
+        layout: &wgpu::BindGroupLayout,
+        input_view: &wgpu::TextureView,
+        sampler: &wgpu::Sampler,
+        settings_buf: &wgpu::Buffer,
+        scene_view: &wgpu::TextureView,
+        lut_view: &wgpu::TextureView,
+        label: &'static str,
+    ) -> wgpu::BindGroup {
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some(label),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(input_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: settings_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(scene_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(lut_view),
+                },
+            ],
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn encode_bloom2d_multipass(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        pass_state: &GpuPassState,
+        target_view: &wgpu::TextureView,
+        target_width: u32,
+        target_height: u32,
+        draw: &Bloom2dDraw,
+        final_pipeline: &wgpu::RenderPipeline,
+        bind_layout: &wgpu::BindGroupLayout,
+        settings_buf: &wgpu::Buffer,
+        bloom_sampler: &wgpu::Sampler,
+        scene_view: &wgpu::TextureView,
+        lut_view: &wgpu::TextureView,
+        scene_width: u32,
+        scene_height: u32,
+    ) -> anyhow::Result<()> {
+        let Some((sx, sy, sw, sh)) =
+            resolve_scissor_rect(pass_state, draw.scissor, target_width, target_height)
+        else {
+            return Ok(());
+        };
+        let low_frequency_boost = draw.low_frequency_boost.clamp(0.0, 1.0);
+        let low_frequency_boost_curvature = draw.low_frequency_boost_curvature.clamp(0.0, 1.0);
+        let high_pass_frequency = draw.high_pass_frequency.clamp(0.0, 1.0);
+        let intensity = draw.intensity.max(0.0);
+        let threshold = draw.threshold.max(0.0);
+        let threshold_softness = draw.threshold_softness.clamp(0.0, 1.0);
+        let scale_x = draw.scale_x.max(0.0);
+        let scale_y = draw.scale_y.max(0.0);
+        let tonemapping_mode = draw.tonemapping_mode.clamp(0, 7) as f32;
+        let deband_dither_enabled = if draw.deband_dither_enabled == 0 {
+            0.0
+        } else {
+            1.0
+        };
+        let use_uniform_scale = scale_x == 1.0 && scale_y == 1.0;
+        let use_prefilter = threshold > 0.0;
+        let bloom_enabled = draw.enabled != 0;
+        let bloom_weight = if bloom_enabled { intensity } else { 0.0 };
+        let safe_scene_width = scene_width.max(1) as i32;
+        let safe_scene_height = scene_height.max(1) as i32;
+        let viewport_width = if pass_state.viewport_w > 0 {
+            pass_state.viewport_w as i32
+        } else if draw.view_width > 0 {
+            draw.view_width
+        } else {
+            safe_scene_width
+        };
+        let viewport_height = if pass_state.viewport_h > 0 {
+            pass_state.viewport_h as i32
+        } else if draw.view_height > 0 {
+            draw.view_height
+        } else {
+            safe_scene_height
+        };
+        let safe_viewport_width = viewport_width.max(1);
+        let safe_viewport_height = viewport_height.max(1);
+        let source_viewport_width = {
+            let raw = if draw.view_width > 0 {
+                draw.view_width
+            } else {
+                safe_scene_width
+            };
+            raw.min(safe_scene_width)
+        };
+        let source_viewport_height = {
+            let raw = if draw.view_height > 0 {
+                draw.view_height
+            } else {
+                safe_scene_height
+            };
+            raw.min(safe_scene_height)
+        };
+        let safe_max_mip_dimension = draw.max_mip_dimension.max(4);
+        let mip_count = bloom2d_effective_mip_count(safe_max_mip_dimension) as u32;
+        let downsample_first_pipeline = if use_uniform_scale {
+            if use_prefilter {
+                self.mesh
+                    .bloom2d_downsample_first_uniform_pipeline
+                    .as_ref()
+                    .cloned()
+            } else {
+                self.mesh
+                    .bloom2d_downsample_first_no_threshold_uniform_pipeline
+                    .as_ref()
+                    .cloned()
+            }
+        } else if use_prefilter {
+            self.mesh
+                .bloom2d_downsample_first_pipeline
+                .as_ref()
+                .cloned()
+        } else {
+            self.mesh
+                .bloom2d_downsample_first_no_threshold_pipeline
+                .as_ref()
+                .cloned()
+        };
+        let downsample_pipeline = if use_uniform_scale {
+            self.mesh
+                .bloom2d_downsample_uniform_pipeline
+                .as_ref()
+                .cloned()
+        } else {
+            self.mesh.bloom2d_downsample_pipeline.as_ref().cloned()
+        };
+        let upsample_pipeline = if draw.composite_mode == 0 {
+            self.mesh.bloom2d_upsample_pipeline_energy.as_ref().cloned()
+        } else {
+            self.mesh
+                .bloom2d_upsample_pipeline_additive
+                .as_ref()
+                .cloned()
+        };
+        let mut bloom_ready = bloom_enabled
+            && intensity > 0.0
+            && downsample_first_pipeline.is_some()
+            && downsample_pipeline.is_some()
+            && upsample_pipeline.is_some();
+        let mut max_mip_f: f32 = 1.0;
+        if bloom_ready {
+            let mip_height_ratio = safe_max_mip_dimension as f64 / safe_viewport_height as f64;
+            let bloom_width = ((safe_viewport_width as f64 * mip_height_ratio + 0.5) as i32).max(1);
+            let bloom_height =
+                ((safe_viewport_height as f64 * mip_height_ratio + 0.5) as i32).max(1);
+            self.ensure_bloom2d_mip_texture(mip_count, bloom_width as u32, bloom_height as u32)?;
+            if self.mesh.bloom2d_mip_views.len() < mip_count as usize {
+                bloom_ready = false;
+            } else {
+                let bloom_words = bloom2d_uniform_words(
+                    safe_scene_width as f32,
+                    safe_scene_height as f32,
+                    0.0,
+                    0.0,
+                    source_viewport_width as f32,
+                    source_viewport_height as f32,
+                    threshold,
+                    threshold_softness,
+                    scale_x,
+                    scale_y,
+                    tonemapping_mode,
+                    deband_dither_enabled,
+                    bloom_weight,
+                    0.0,
+                );
+                self.queue
+                    .write_buffer(settings_buf, 0, bytemuck::cast_slice(&bloom_words));
+                let first_bg = self.create_bloom2d_bind_group(
+                    bind_layout,
+                    scene_view,
+                    bloom_sampler,
+                    settings_buf,
+                    scene_view,
+                    lut_view,
+                    "mgstudio_bloom2d_downsample_first_bg",
+                );
+                let mut first_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("mgstudio-bloom2d-downsample-first"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &self.mesh.bloom2d_mip_views[0],
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color {
+                                r: 0.0,
+                                g: 0.0,
+                                b: 0.0,
+                                a: 1.0,
+                            }),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                let mut mip_size_w = bloom_width;
+                let mut mip_size_h = bloom_height;
+                first_pass.set_viewport(0.0, 0.0, mip_size_w as f32, mip_size_h as f32, 0.0, 1.0);
+                first_pass.set_scissor_rect(0, 0, mip_size_w as u32, mip_size_h as u32);
+                first_pass.set_pipeline(downsample_first_pipeline.as_ref().unwrap());
+                first_pass.set_bind_group(0, &first_bg, &[]);
+                first_pass.draw(0..3, 0..1);
+                drop(first_pass);
+                for mip in 1..mip_count as usize {
+                    if !bloom_ready {
+                        break;
+                    }
+                    let down_bg = self.create_bloom2d_bind_group(
+                        bind_layout,
+                        &self.mesh.bloom2d_mip_views[mip - 1],
+                        bloom_sampler,
+                        settings_buf,
+                        scene_view,
+                        lut_view,
+                        "mgstudio_bloom2d_downsample_bg",
+                    );
+                    mip_size_w = if mip_size_w > 1 { mip_size_w / 2 } else { 1 };
+                    mip_size_h = if mip_size_h > 1 { mip_size_h / 2 } else { 1 };
+                    let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: Some("mgstudio-bloom2d-downsample"),
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view: &self.mesh.bloom2d_mip_views[mip],
+                            depth_slice: None,
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(wgpu::Color {
+                                    r: 0.0,
+                                    g: 0.0,
+                                    b: 0.0,
+                                    a: 1.0,
+                                }),
+                                store: wgpu::StoreOp::Store,
+                            },
+                        })],
+                        depth_stencil_attachment: None,
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
+                        multiview_mask: None,
+                    });
+                    pass.set_viewport(0.0, 0.0, mip_size_w as f32, mip_size_h as f32, 0.0, 1.0);
+                    pass.set_scissor_rect(0, 0, mip_size_w as u32, mip_size_h as u32);
+                    pass.set_pipeline(downsample_pipeline.as_ref().unwrap());
+                    pass.set_bind_group(0, &down_bg, &[]);
+                    pass.draw(0..3, 0..1);
+                    drop(pass);
+                }
+                let max_mip = if mip_count > 1 { mip_count - 1 } else { 1 };
+                max_mip_f = max_mip as f32;
+                let mut upsample_mip = mip_count as i32 - 1;
+                while bloom_ready && upsample_mip >= 1 {
+                    let blend = bloom2d_compute_blend_factor(
+                        intensity,
+                        low_frequency_boost,
+                        low_frequency_boost_curvature,
+                        high_pass_frequency,
+                        draw.composite_mode,
+                        upsample_mip as f32,
+                        max_mip_f,
+                    );
+                    let up_words = bloom2d_uniform_words(
+                        safe_scene_width as f32,
+                        safe_scene_height as f32,
+                        0.0,
+                        0.0,
+                        source_viewport_width as f32,
+                        source_viewport_height as f32,
+                        threshold,
+                        threshold_softness,
+                        scale_x,
+                        scale_y,
+                        tonemapping_mode,
+                        deband_dither_enabled,
+                        bloom_weight,
+                        blend,
+                    );
+                    self.queue
+                        .write_buffer(settings_buf, 0, bytemuck::cast_slice(&up_words));
+                    let up_bg = self.create_bloom2d_bind_group(
+                        bind_layout,
+                        &self.mesh.bloom2d_mip_views[upsample_mip as usize],
+                        bloom_sampler,
+                        settings_buf,
+                        scene_view,
+                        lut_view,
+                        "mgstudio_bloom2d_upsample_bg",
+                    );
+                    let size_w = bloom2d_mip_dimension(bloom_width, upsample_mip - 1);
+                    let size_h = bloom2d_mip_dimension(bloom_height, upsample_mip - 1);
+                    let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: Some("mgstudio-bloom2d-upsample"),
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view: &self.mesh.bloom2d_mip_views[upsample_mip as usize - 1],
+                            depth_slice: None,
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            },
+                        })],
+                        depth_stencil_attachment: None,
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
+                        multiview_mask: None,
+                    });
+                    pass.set_viewport(0.0, 0.0, size_w as f32, size_h as f32, 0.0, 1.0);
+                    pass.set_scissor_rect(0, 0, size_w as u32, size_h as u32);
+                    pass.set_pipeline(upsample_pipeline.as_ref().unwrap());
+                    pass.set_blend_constant(wgpu::Color {
+                        r: blend as f64,
+                        g: blend as f64,
+                        b: blend as f64,
+                        a: blend as f64,
+                    });
+                    pass.set_bind_group(0, &up_bg, &[]);
+                    pass.draw(0..3, 0..1);
+                    drop(pass);
+                    upsample_mip -= 1;
+                }
+            }
+        }
+        let final_bloom_weight = if bloom_ready {
+            bloom2d_compute_blend_factor(
+                intensity,
+                low_frequency_boost,
+                low_frequency_boost_curvature,
+                high_pass_frequency,
+                draw.composite_mode,
+                0.0,
+                max_mip_f,
+            )
+        } else {
+            0.0
+        };
+        let final_words = bloom2d_uniform_words(
+            safe_scene_width as f32,
+            safe_scene_height as f32,
+            0.0,
+            0.0,
+            source_viewport_width as f32,
+            source_viewport_height as f32,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            tonemapping_mode,
+            deband_dither_enabled,
+            final_bloom_weight,
+            0.0,
+        );
+        self.queue
+            .write_buffer(settings_buf, 0, bytemuck::cast_slice(&final_words));
+        let hdr_view = if bloom_ready {
+            &self.mesh.bloom2d_mip_views[0]
+        } else {
+            scene_view
+        };
+        let final_bg = self.create_bloom2d_bind_group(
+            bind_layout,
+            hdr_view,
+            bloom_sampler,
+            settings_buf,
+            scene_view,
+            lut_view,
+            "mgstudio_bloom2d_final_bg",
+        );
+        let mut final_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("mgstudio-bloom2d-final"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: target_view,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
+        final_pass.set_viewport(
+            pass_state.viewport_x as f32,
+            pass_state.viewport_y as f32,
+            pass_state.viewport_w as f32,
+            pass_state.viewport_h as f32,
+            pass_state.viewport_depth_min,
+            pass_state.viewport_depth_max,
+        );
+        final_pass.set_scissor_rect(sx, sy, sw, sh);
+        final_pass.set_pipeline(final_pipeline);
+        final_pass.set_blend_constant(wgpu::Color {
+            r: final_bloom_weight as f64,
+            g: final_bloom_weight as f64,
+            b: final_bloom_weight as f64,
+            a: final_bloom_weight as f64,
+        });
+        final_pass.set_bind_group(0, &final_bg, &[]);
+        final_pass.draw(0..3, 0..1);
+        drop(final_pass);
         Ok(())
     }
 
@@ -4187,6 +4814,134 @@ fn pick_present_mode(caps: &wgpu::SurfaceCapabilities) -> wgpu::PresentMode {
         .first()
         .copied()
         .unwrap_or(wgpu::PresentMode::Fifo)
+}
+
+fn clamp01(value: f32) -> f32 {
+    value.clamp(0.0, 1.0)
+}
+
+fn bloom2d_ilog2_floor(value: i32) -> i32 {
+    let mut v = value.max(1);
+    let mut power = 0;
+    while v > 1 {
+        v /= 2;
+        power += 1;
+    }
+    power
+}
+
+fn bloom2d_effective_mip_count(max_mip_dimension: i32) -> i32 {
+    let safe_dimension = max_mip_dimension.max(4);
+    let ilog2 = bloom2d_ilog2_floor(safe_dimension);
+    let count = if ilog2 < 2 { 1 } else { ilog2 - 1 };
+    count.max(1)
+}
+
+fn bloom2d_mip_dimension(base: i32, mip: i32) -> i32 {
+    let mut value = base.max(1);
+    for _ in 0..mip.max(0) {
+        value = if value > 1 { value / 2 } else { 1 };
+    }
+    value.max(1)
+}
+
+fn bloom2d_compute_blend_factor(
+    intensity: f32,
+    low_frequency_boost: f32,
+    low_frequency_boost_curvature: f32,
+    high_pass_frequency: f32,
+    composite_mode: i32,
+    mip: f32,
+    max_mip: f32,
+) -> f32 {
+    let safe_max_mip = if max_mip <= 0.0 { 1.0 } else { max_mip };
+    let mip_ratio = clamp01(mip / safe_max_mip);
+    let safe_curvature = if low_frequency_boost_curvature >= 0.999 {
+        0.999
+    } else {
+        low_frequency_boost_curvature
+    };
+    let curvature_factor = 1.0 / (1.0 - safe_curvature);
+    let one_minus_mip = 1.0 - mip_ratio;
+    let lf_pow = one_minus_mip.powf(curvature_factor);
+    let mut low_freq = (1.0 - lf_pow) * low_frequency_boost;
+    let safe_high_pass = if high_pass_frequency <= 0.0001 {
+        0.0001
+    } else {
+        high_pass_frequency
+    };
+    let high_pass_lq = 1.0 - clamp01((mip_ratio - high_pass_frequency) / safe_high_pass);
+    let mode_factor = if composite_mode == 0 {
+        1.0 - intensity
+    } else {
+        1.0
+    };
+    low_freq *= mode_factor;
+    (intensity + low_freq) * high_pass_lq
+}
+
+#[allow(clippy::too_many_arguments)]
+fn bloom2d_uniform_words(
+    source_width: f32,
+    source_height: f32,
+    source_viewport_x: f32,
+    source_viewport_y: f32,
+    source_viewport_width: f32,
+    source_viewport_height: f32,
+    threshold: f32,
+    threshold_softness: f32,
+    scale_x: f32,
+    scale_y: f32,
+    tonemapping_mode: f32,
+    deband_dither_enabled: f32,
+    bloom_weight: f32,
+    upsample_blend: f32,
+) -> [u32; 16] {
+    let softness = threshold_softness;
+    let knee = threshold * softness;
+    let safe_source_width = if source_width > 0.0 {
+        source_width
+    } else {
+        1.0
+    };
+    let safe_source_height = if source_height > 0.0 {
+        source_height
+    } else {
+        1.0
+    };
+    let safe_viewport_width = if source_viewport_width > 0.0 {
+        source_viewport_width
+    } else {
+        safe_source_width
+    };
+    let safe_viewport_height = if source_viewport_height > 0.0 {
+        source_viewport_height
+    } else {
+        safe_source_height
+    };
+    let aspect = if safe_viewport_height > 0.0 {
+        safe_viewport_width / safe_viewport_height
+    } else {
+        1.0
+    };
+    [
+        threshold.to_bits(),
+        (threshold - knee).to_bits(),
+        (2.0 * knee).to_bits(),
+        (0.25 / (knee + 0.00001)).to_bits(),
+        (source_viewport_x / safe_source_width).to_bits(),
+        (source_viewport_y / safe_source_height).to_bits(),
+        (safe_viewport_width / safe_source_width).to_bits(),
+        (safe_viewport_height / safe_source_height).to_bits(),
+        scale_x.to_bits(),
+        scale_y.to_bits(),
+        aspect.to_bits(),
+        0.0f32.to_bits(),
+        tonemapping_mode.to_bits(),
+        deband_dither_enabled.to_bits(),
+        bloom_weight.to_bits(),
+        upsample_blend.to_bits(),
+    ]
 }
 
 fn resolve_scissor_rect(

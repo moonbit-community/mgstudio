@@ -723,6 +723,9 @@ pub fn host_gpu_draw_bloom2d(
   deband_dither_enabled~ : Int,
   view_width~ : Int,
   view_height~ : Int,
+  agx_lut_texture_id~ : Int,
+  tony_lut_texture_id~ : Int,
+  blender_lut_texture_id~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_draw_bloom2d"
 
 ///|

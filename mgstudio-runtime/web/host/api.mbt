@@ -784,18 +784,7 @@ pub fn create_host(
         window_state.height = height_int
         window_state.canvas._set("width", @js.any(width_int)) |> ignore
         window_state.canvas._set("height", @js.any(height_int)) |> ignore
-        if state.gpu.context is Some(context) &&
-          state.gpu.device is Some(device) {
-          let usage = @webgpu.texture_usage_render_attachment()
-          let config = @webgpu.surface_configuration(
-            device,
-            state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm),
-            @webgpu.AlphaMode::Premultiplied,
-            usage,
-            @webgpu.surface_size(width_int, height_int),
-          )
-          context.configure(config.to_js())
-        }
+        configure_surface_context(state, width_int, height_int)
       }
     }),
   )
@@ -2389,6 +2378,9 @@ pub fn create_host(
         to_int(arg_number(args, 13, 0)),
         to_int(arg_number(args, 14, 1)),
         to_int(arg_number(args, 15, 1)),
+        to_int(arg_number(args, 16, -1)),
+        to_int(arg_number(args, 17, -1)),
+        to_int(arg_number(args, 18, -1)),
       )
     }),
   )

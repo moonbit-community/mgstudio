@@ -348,8 +348,13 @@ pub fn parse_ktx2_texture_for_stacked_upload(
     if mip_slice_count <= 0 {
       return None
     }
-    if level_total > 1 && mip_slice_count != slice_count {
-      return None
+    if mip_slice_count != slice_count {
+      if mip_index == 0 {
+        return None
+      }
+      // Stacked-2D upload cannot represent depth-shrinking mips of true 3D
+      // textures; keep only mip 0 for LUT-style usage.
+      break
     }
     guard bytes_for_level(block_layout, mip_width, mip_height)
       is Some(per_slice_bytes) else {
