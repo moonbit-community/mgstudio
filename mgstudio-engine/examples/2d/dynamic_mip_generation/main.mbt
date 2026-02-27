@@ -59,12 +59,11 @@ priv struct DynamicMipState {
   mut help_text : @text.TextHandle?
   view_entities : Array[@core.Entity]
   mut mip_label_handles : Array[@text.TextHandle]
-  mut mip_textures : Array[@asset.Handle[@asset.Image]]
+  mut source_texture : @asset.Handle[@asset.Image]?
+  mut mip_views : Array[@asset.Handle[@asset.Image]]
   mut mip_sizes : Array[@math.UVec2]
   mut current_level : Int
   mut regenerate_requested : Bool
-  mut last_window_width : Int
-  mut last_window_height : Int
 }
 
 ///|
@@ -81,12 +80,11 @@ let dynamic_mip_state : Ref[DynamicMipState] = Ref::new(DynamicMipState::{
   help_text: None,
   view_entities: [],
   mip_label_handles: [],
-  mip_textures: [],
+  source_texture: None,
+  mip_views: [],
   mip_sizes: [],
   current_level: 0,
   regenerate_requested: false,
-  last_window_width: 0,
-  last_window_height: 0,
 })
 
 ///|
@@ -95,6 +93,7 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(dynamic_mip_setup)
+  .add_system_param(dynamic_mip_window_resized_system)
   .add_system(dynamic_mip_update)
   .run()
 }
@@ -110,7 +109,8 @@ fn dynamic_mip_setup(world : @ecs_world.World) -> Unit {
   dynamic_mip_state.val.help_text = None
   dynamic_mip_state.val.view_entities.clear()
   dynamic_mip_state.val.mip_label_handles.clear()
-  dynamic_mip_state.val.mip_textures.clear()
+  dynamic_mip_state.val.source_texture = None
+  dynamic_mip_state.val.mip_views.clear()
   dynamic_mip_state.val.mip_sizes.clear()
   dynamic_mip_state.val.current_level = 0
   dynamic_mip_state.val.regenerate_requested = false
@@ -124,8 +124,6 @@ fn dynamic_mip_setup(world : @ecs_world.World) -> Unit {
   spawn_help_overlay(world)
   spawn_mip_level_labels()
 
-  dynamic_mip_state.val.last_window_width = @window.window_width()
-  dynamic_mip_state.val.last_window_height = @window.window_height()
   dynamic_mip_state.val.regenerate_requested = true
   update_help_text()
 }
@@ -133,7 +131,6 @@ fn dynamic_mip_setup(world : @ecs_world.World) -> Unit {
 ///|
 fn dynamic_mip_update(world : @ecs_world.World) -> Unit {
   handle_app_setting_input()
-  handle_window_resize()
 
   if dynamic_mip_state.val.regenerate_requested {
     regenerate_image(world)
@@ -180,15 +177,10 @@ fn handle_app_setting_input() -> Unit {
 }
 
 ///|
-fn handle_window_resize() -> Unit {
-  let width = @window.window_width()
-  let height = @window.window_height()
-  let resized = width != dynamic_mip_state.val.last_window_width ||
-    height != dynamic_mip_state.val.last_window_height
-
-  if resized {
-    dynamic_mip_state.val.last_window_width = width
-    dynamic_mip_state.val.last_window_height = height
+fn dynamic_mip_window_resized_system(
+  resized_events : @core.MessageReader[@window.WindowResized],
+) -> Unit {
+  for _event in resized_events.read() {
     dynamic_mip_state.val.regenerate_requested = true
   }
 }
@@ -202,27 +194,30 @@ fn regenerate_image(world : @ecs_world.World) -> Unit {
 
   let levels = generate_image_levels()
   if levels.length() == 0 {
-    dynamic_mip_state.val.mip_textures.clear()
+    dynamic_mip_state.val.source_texture = None
+    dynamic_mip_state.val.mip_views.clear()
     dynamic_mip_state.val.mip_sizes.clear()
     dynamic_mip_state.val.animated_entity = None
     dynamic_mip_state.val.current_level = 0
     return
   }
 
-  let (textures, sizes) = create_mip_textures(
+  let (source_texture, mip_views, sizes) = create_mip_textures(
     levels,
     app_status.val.enable_mip_generation,
   )
 
-  if textures.length() == 0 {
-    dynamic_mip_state.val.mip_textures.clear()
+  if mip_views.length() == 0 {
+    dynamic_mip_state.val.source_texture = None
+    dynamic_mip_state.val.mip_views.clear()
     dynamic_mip_state.val.mip_sizes.clear()
     dynamic_mip_state.val.animated_entity = None
     dynamic_mip_state.val.current_level = 0
     return
   }
 
-  dynamic_mip_state.val.mip_textures = textures
+  dynamic_mip_state.val.source_texture = Some(source_texture)
+  dynamic_mip_state.val.mip_views = mip_views
   dynamic_mip_state.val.mip_sizes = sizes
   dynamic_mip_state.val.current_level = 0
 
@@ -237,8 +232,8 @@ fn animate_image_scale(world : @ecs_world.World) -> Unit {
     return
   }
 
-  let mip_textures = dynamic_mip_state.val.mip_textures
-  if mip_textures.length() == 0 {
+  let mip_count = dynamic_mip_state.val.mip_sizes.length()
+  if mip_count == 0 {
     return
   }
 
@@ -260,18 +255,7 @@ fn animate_image_scale(world : @ecs_world.World) -> Unit {
   }
 
   let display_size = max_float(next_scale.x, next_scale.y)
-  let next_level = pick_mip_level(display_size, mip_textures.length())
-
-  if next_level != dynamic_mip_state.val.current_level {
-    let sprite_store = world.get_sprite_store()
-    if sprite_store.get(animated_entity) is Some(_current) {
-      let next_sprite = @render2d.Sprite::from_image(mip_textures[next_level]).with_custom_size(
-        Some(@math.Vec2::new(1.0F, 1.0F)),
-      )
-      sprite_store.set(animated_entity, next_sprite, tick) |> ignore
-      dynamic_mip_state.val.current_level = next_level
-    }
-  }
+  dynamic_mip_state.val.current_level = pick_mip_level(display_size, mip_count)
 }
 
 ///|
@@ -279,15 +263,14 @@ fn spawn_animated_mesh(
   world : @ecs_world.World,
   window_size : @math.Vec2,
 ) -> Unit {
-  let textures = dynamic_mip_state.val.mip_textures
-  if textures.length() == 0 {
+  guard dynamic_mip_state.val.source_texture is Some(source_texture) else {
     return
   }
 
   let area_size = animated_mesh_area_size(window_size)
   let image_size = animated_mesh_size(window_size)
   let entity = @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(textures[0]).with_custom_size(
+    @render2d.Sprite::from_image(source_texture).with_custom_size(
       Some(@math.Vec2::new(1.0F, 1.0F)),
     ),
     @math.Transform::from_xy_rotation_scale(
@@ -306,7 +289,7 @@ fn spawn_mip_level_views(
   world : @ecs_world.World,
   window_size : @math.Vec2,
 ) -> Unit {
-  let textures = dynamic_mip_state.val.mip_textures
+  let textures = dynamic_mip_state.val.mip_views
   let sizes = dynamic_mip_state.val.mip_sizes
   let level_count = sizes.length()
 
@@ -368,34 +351,42 @@ fn generate_image_levels() -> Array[(Int, Int, Bytes)] {
 fn create_mip_textures(
   levels : Array[(Int, Int, Bytes)],
   enable_mip_generation : EnableMipGeneration,
-) -> (Array[@asset.Handle[@asset.Image]], Array[@math.UVec2]) {
-  let textures : Array[@asset.Handle[@asset.Image]] = []
+) -> (
+  @asset.Handle[@asset.Image],
+  Array[@asset.Handle[@asset.Image]],
+  Array[@math.UVec2],
+) {
+  let mip_views : Array[@asset.Handle[@asset.Image]] = []
   let sizes : Array[@math.UVec2] = []
+  let base_level = levels[0]
+  let base_size = @math.UVec2::new(base_level.0, base_level.1)
+  let source_texture = @asset.asset_create_dynamic_texture_with_mips(
+    base_size,
+    levels.length(),
+    false,
+  )
 
   for i in 0..<levels.length() {
     let level = levels[i]
     let width = level.0
     let height = level.1
     let size = @math.UVec2::new(width, height)
-
     let pixels = if i == 0 || is_mip_generation_on(enable_mip_generation) {
       level.2
     } else {
       Bytes::make(width * height * 4, (0).to_byte())
     }
-
-    let texture = @asset.asset_create_dynamic_texture(size, false)
-    @asset.asset_update_texture_region_rgba8(
-      texture,
+    @asset.asset_update_texture_region_rgba8_mip(
+      source_texture,
       @math.URect::new(@math.UVec2::zero(), size),
+      i,
       pixels,
     )
-
-    textures.push(texture)
+    mip_views.push(@asset.asset_create_texture_mip_view(source_texture, i))
     sizes.push(size)
   }
 
-  (textures, sizes)
+  (source_texture, mip_views, sizes)
 }
 
 ///|

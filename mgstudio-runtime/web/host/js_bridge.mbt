@@ -1887,6 +1887,39 @@ extern "js" fn write_texture_region(
   #| }
 
 ///|
+extern "js" fn write_texture_region_mip(
+  queue : @js.Any,
+  texture : @js.Any,
+  data : @js.Any,
+  width : Int,
+  height : Int,
+  x : Int,
+  y : Int,
+  mip_level : Int,
+) -> Unit =
+  #| (queue, texture, data, width, height, x, y, mipLevel) => {
+  #|   const bytesPerRow = width * 4
+  #|   const aligned = bytesPerRow % 256 === 0
+  #|     ? bytesPerRow
+  #|     : Math.ceil(bytesPerRow / 256) * 256
+  #|   let upload = data
+  #|   if (aligned !== bytesPerRow) {
+  #|     upload = new Uint8Array(aligned * height)
+  #|     for (let row = 0; row < height; row += 1) {
+  #|       const srcStart = row * bytesPerRow
+  #|       const dstStart = row * aligned
+  #|       upload.set(data.subarray(srcStart, srcStart + bytesPerRow), dstStart)
+  #|     }
+  #|   }
+  #|   queue.writeTexture(
+  #|     { texture, mipLevel, origin: { x, y } },
+  #|     upload,
+  #|     { bytesPerRow: aligned },
+  #|     [width, height, 1],
+  #|   )
+  #| }
+
+///|
 extern "js" fn is_ktx2_uint8array(data : @js.Any) -> Bool =
   #| (data) => {
   #|   if (!(data instanceof Uint8Array) || data.length < 12) {

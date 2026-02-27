@@ -2525,6 +2525,26 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "asset_create_dynamic_texture_mipped",
+        &[ValType::I32, ValType::I32, ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let w = args.get(0).and_then(|v| v.i32()).unwrap_or(1).max(1) as u32;
+            let h = args.get(1).and_then(|v| v.i32()).unwrap_or(1).max(1) as u32;
+            let mip_level_count = args.get(2).and_then(|v| v.i32()).unwrap_or(1).max(1) as u32;
+            let nearest = args.get(3).and_then(|v| v.i32()).unwrap_or(0) != 0;
+            let gpu = caller.data_mut().ensure_gpu()?;
+            let pixels = vec![0u8; (w * h * 4) as usize];
+            let id = gpu.create_texture_rgba8_mipped(w, h, mip_level_count, &pixels, nearest)?;
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "asset_update_texture_region",
         &[
             ValType::I32,
@@ -2607,6 +2627,62 @@ fn define_mgstudio_host_imports(
             let gpu = caller.data_mut().ensure_gpu()?;
             gpu.write_texture_region_rgba8(texture_id, x, y, w, h, &pixels)?;
             ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_update_texture_region_mip_bytes",
+        &[
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+            ValType::I32,
+        ],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let x = args.get(1).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let y = args.get(2).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let w = args.get(3).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let h = args.get(4).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let mip_level = args.get(5).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let bytes_id = args.get(6).and_then(|v| v.i32()).unwrap_or(0);
+            if w == 0 || h == 0 {
+                ok_i32(out, 0);
+                return Ok(());
+            }
+            let Some(pixels) = caller.data().bytes_table_get(bytes_id) else {
+                ok_i32(out, 0);
+                return Ok(());
+            };
+            let pixels = pixels.to_vec();
+            let gpu = caller.data_mut().ensure_gpu()?;
+            gpu.write_texture_region_rgba8_mip(texture_id, x, y, w, h, mip_level, &pixels)?;
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_create_texture_mip_view",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let mip_level = args.get(1).and_then(|v| v.i32()).unwrap_or(0).max(0) as u32;
+            let gpu = caller.data_mut().ensure_gpu()?;
+            let id = gpu.create_texture_mip_view(texture_id, mip_level)?;
+            ok_i32(out, id);
             Ok(())
         },
     )?;

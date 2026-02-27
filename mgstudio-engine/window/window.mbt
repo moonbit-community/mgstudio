@@ -19,10 +19,18 @@ pub type HostWindow
 ///|
 priv struct WindowState {
   mut window : HostWindow?
+  mut last_width : Int
+  mut last_height : Int
+  mut has_last_size : Bool
 }
 
 ///|
-let window_state : Ref[WindowState] = @ref.new(WindowState::{ window: None })
+let window_state : Ref[WindowState] = @ref.new(WindowState::{
+  window: None,
+  last_width: 0,
+  last_height: 0,
+  has_last_size: false,
+})
 
 ///|
 pub(all) enum KeyCode {
@@ -113,6 +121,17 @@ pub(all) enum HostEvent {
   WindowResized(Int, Int)
   WindowCloseRequested
 }
+
+///|
+pub struct WindowResized {
+  width : Int
+  height : Int
+}
+
+///|
+let window_resized_events_ref : Ref[@core.Messages[WindowResized]] = Ref::new(
+  @core.Messages::new(),
+)
 
 ///|
 pub fn host_window_create(
@@ -241,6 +260,7 @@ pub fn host_window_get_position_y(window : HostWindow) -> Int = "mgstudio_host" 
 ///|
 pub fn window_set_handle(window : HostWindow) -> Unit {
   window_state.val.window = Some(window)
+  window_state.val.has_last_size = false
 }
 
 ///|
@@ -317,6 +337,65 @@ pub fn window_set_position(x~ : Int, y~ : Int) -> Unit {
   if window_state.val.window is Some(window) {
     host_window_set_position(window, x~, y~)
   }
+}
+
+///|
+fn[W : @core.SystemContextWorld] window_world_system_ticks(
+  world : W,
+) -> @core.SystemTicks {
+  world.get_system_context().ticks()
+}
+
+///|
+fn window_resized_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[WindowResized] {
+  window_resized_events_ref.val.reader(ticks)
+}
+
+///|
+fn window_resized_events_writer(
+  tick : @core.Tick,
+) -> @core.MessageWriter[WindowResized] {
+  window_resized_events_ref.val.writer(tick)
+}
+
+///|
+pub fn[W : @core.SystemContextWorld] window_resized_events(
+  world : W,
+) -> @core.MessageReader[WindowResized] {
+  window_resized_events_reader(window_world_system_ticks(world))
+}
+
+///|
+pub impl @core.Message for WindowResized with reader(ticks) {
+  window_resized_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for WindowResized with writer(tick) {
+  window_resized_events_writer(tick)
+}
+
+///|
+pub fn[W : @core.ChangeTickWorld] window_poll_resize_system(world : W) -> Unit {
+  guard window_state.val.window is Some(window) else { return }
+  let width = host_window_get_width(window)
+  let height = host_window_get_height(window)
+  if !window_state.val.has_last_size {
+    window_state.val.last_width = width
+    window_state.val.last_height = height
+    window_state.val.has_last_size = true
+    return
+  }
+  if width == window_state.val.last_width &&
+    height == window_state.val.last_height {
+    return
+  }
+  let tick = world.read_change_tick()
+  window_resized_events_ref.val.send(tick, WindowResized::{ width, height })
+  window_state.val.last_width = width
+  window_state.val.last_height = height
 }
 
 ///|
@@ -869,5 +948,7 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_build
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
-  app.set_runner(window_runner_builder)
+  app
+  .set_runner(window_runner_builder)
+  .add_pre_update_system(window_poll_resize_system)
 }

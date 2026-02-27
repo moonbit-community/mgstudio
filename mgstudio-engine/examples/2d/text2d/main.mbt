@@ -80,6 +80,7 @@ fn text2d_setup(world : @ecs_world.World) -> Unit {
     @math.Vec2::new(300.0F, 200.0F),
     @text.LineBreak::WordBoundary,
     "this text wraps in the box\n(WordBoundary linebreaks)",
+    true,
   )
   spawn_wrapped_text_box(
     world,
@@ -88,6 +89,7 @@ fn text2d_setup(world : @ecs_world.World) -> Unit {
     @math.Vec2::new(300.0F, 200.0F),
     @text.LineBreak::AnyCharacter,
     "this text wraps in the box\n(AnyCharacter linebreaks)",
+    false,
   )
 
   @text.Text2dBundle::new(
@@ -119,28 +121,24 @@ fn text2d_setup(world : @ecs_world.World) -> Unit {
   spawn_anchor_label(
     medium_font,
     @render2d.Anchor::top_left(),
-    " Anchor::TopLeft ",
     @render2d.Color::srgb(1.0F, 0.63F, 0.48F),
     anchor_origin,
   )
   spawn_anchor_label(
     medium_font,
     @render2d.Anchor::top_right(),
-    " Anchor::TopRight ",
     @render2d.Color::srgb(0.67F, 0.90F, 0.60F),
     anchor_origin,
   )
   spawn_anchor_label(
     medium_font,
     @render2d.Anchor::bottom_right(),
-    " Anchor::BottomRight ",
     @render2d.Color::srgb(0.53F, 0.81F, 0.98F),
     anchor_origin,
   )
   spawn_anchor_label(
     medium_font,
     @render2d.Anchor::bottom_left(),
-    " Anchor::BottomLeft ",
     @render2d.Color::srgb(1.0F, 0.93F, 0.55F),
     anchor_origin,
   )
@@ -159,6 +157,13 @@ fn spawn_animated_text(
   transform : @math.Transform,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(@text.Text2d::new(content), font, transform)
+  .with_background_color(
+    Some(
+      @text.TextBackgroundColor::new(
+        @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
+      ),
+    ),
+  )
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()
@@ -172,6 +177,7 @@ fn spawn_wrapped_text_box(
   size : @math.Vec2,
   linebreak : @text.LineBreak,
   content : String,
+  underline : Bool,
 ) -> Unit {
   @render2d.Mesh2dBundle::new(
     @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::from_size(size)),
@@ -197,6 +203,13 @@ fn spawn_wrapped_text_box(
   .with_layout(@text.TextLayout::new(@text.Justify::Left, linebreak))
   .with_bounds(@text.TextBounds::new(size.x, size.y))
   .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_underline(
+    if underline {
+      Some(@text.Underline::default())
+    } else {
+      None
+    },
+  )
   .spawn()
   |> ignore
 }
@@ -205,25 +218,85 @@ fn spawn_wrapped_text_box(
 fn spawn_anchor_label(
   font : @text.TextFont,
   anchor : @render2d.Anchor,
-  content : String,
   color : @render2d.Color,
   position : @math.Vec2,
 ) -> Unit {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    font,
-    @math.Transform::from_xy_rotation_scale(
-      position,
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=1.0F,
+  let label = anchor_name(anchor)
+  let base_handle = @text.Text2dBundle::new(
+      @text.Text2d::new(" Anchor"),
+      font,
+      @math.Transform::from_xy_rotation_scale(
+        position,
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=1.0F,
+      ),
+    )
+    .with_anchor(anchor)
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+    .with_background_color(
+      Some(
+        @text.TextBackgroundColor::new(@render2d.Color::srgb(0.2F, 0.2F, 0.2F)),
+      ),
+    )
+    .spawn()
+  @text.TextSpanBundle::new(@text.TextSpan::new("::"), font)
+  .with_color(@text.TextColor::new(@render2d.Color::srgb(0.83F, 0.83F, 0.83F)))
+  .with_background_color(
+    Some(
+      @text.TextBackgroundColor::new(@render2d.Color::srgb(0.0F, 0.0F, 0.55F)),
     ),
   )
-  .with_anchor(anchor)
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-  .with_color(@text.TextColor::new(color))
-  .spawn()
+  .spawn(base_handle)
   |> ignore
+  @text.TextSpanBundle::new(@text.TextSpan::new(label + " "), font)
+  .with_color(@text.TextColor::new(color))
+  .with_background_color(
+    Some(@text.TextBackgroundColor::new(color_darker(color, 0.3F))),
+  )
+  .spawn(base_handle)
+  |> ignore
+}
+
+///|
+fn color_darker(color : @render2d.Color, factor : Float) -> @render2d.Color {
+  let safe = if factor < 0.0F {
+    0.0F
+  } else if factor > 1.0F {
+    1.0F
+  } else {
+    factor
+  }
+  @render2d.Color::new(
+    color.r * (1.0F - safe),
+    color.g * (1.0F - safe),
+    color.b * (1.0F - safe),
+    color.a,
+  )
+}
+
+///|
+fn anchor_name(anchor : @render2d.Anchor) -> String {
+  let v = anchor.as_vec()
+  if v.x == -0.5F && v.y == 0.5F {
+    "TopLeft"
+  } else if v.x == 0.5F && v.y == 0.5F {
+    "TopRight"
+  } else if v.x == 0.5F && v.y == -0.5F {
+    "BottomRight"
+  } else if v.x == -0.5F && v.y == -0.5F {
+    "BottomLeft"
+  } else if v.x == 0.0F && v.y == 0.5F {
+    "TopCenter"
+  } else if v.x == 0.0F && v.y == -0.5F {
+    "BottomCenter"
+  } else if v.x == -0.5F && v.y == 0.0F {
+    "CenterLeft"
+  } else if v.x == 0.5F && v.y == 0.0F {
+    "CenterRight"
+  } else {
+    "Center"
+  }
 }
 
 ///|

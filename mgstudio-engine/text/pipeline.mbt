@@ -151,6 +151,54 @@ fn text_span_color(instance : TextInstance, span_index : Int) -> TextColor {
 }
 
 ///|
+fn text_span_background_color(
+  instance : TextInstance,
+  span_index : Int,
+) -> TextBackgroundColor? {
+  if span_index == 0 {
+    instance.background_color
+  } else {
+    let index = span_index - 1
+    if index >= 0 && index < instance.spans.length() {
+      instance.spans[index].background_color
+    } else {
+      instance.background_color
+    }
+  }
+}
+
+///|
+fn text_span_has_underline(instance : TextInstance, span_index : Int) -> Bool {
+  if span_index == 0 {
+    instance.underline is Some(_)
+  } else {
+    let index = span_index - 1
+    if index >= 0 && index < instance.spans.length() {
+      instance.spans[index].underline is Some(_)
+    } else {
+      instance.underline is Some(_)
+    }
+  }
+}
+
+///|
+fn text_span_has_strikethrough(
+  instance : TextInstance,
+  span_index : Int,
+) -> Bool {
+  if span_index == 0 {
+    instance.strikethrough is Some(_)
+  } else {
+    let index = span_index - 1
+    if index >= 0 && index < instance.spans.length() {
+      instance.spans[index].strikethrough is Some(_)
+    } else {
+      instance.strikethrough is Some(_)
+    }
+  }
+}
+
+///|
 let font_atlas_set_state : Ref[FontAtlasSet] = Ref::new(FontAtlasSet::default())
 
 ///|
@@ -760,6 +808,7 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
   text_debug_clear_frame()
   let debug_capture_enabled = text_debug_capture_enabled()
   let overlay_sprites : Array[@render2d.OverlaySpriteUvScissor] = []
+  let white_texture = @asset.asset_white_texture()
   let texts = text_state.val.texts
   for instance in texts {
     let layout_info = instance.layout_info
@@ -915,6 +964,122 @@ pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_sys
       base.x + origin_rotated.x,
       base.y + origin_rotated.y,
     )
+
+    for run in layout_info.run_geometry {
+      let run_center_layout = to_y_up(instance.y_axis, run.bounds.center())
+      let run_center_scaled = @math.Vec2::new(
+        run_center_layout.x * scale.x,
+        run_center_layout.y * scale.y,
+      )
+      let run_center_offset = rotate_vec2(run_center_scaled, rot_cos, rot_sin)
+      let run_translation = @math.Vec2::new(
+        text_origin.x + run_center_offset.x,
+        text_origin.y + run_center_offset.y,
+      )
+      let run_size = run.bounds.size()
+      let run_draw_scale = @math.Vec2::new(
+        run_size.x * absf(scale.x),
+        run_size.y * absf(scale.y),
+      )
+      if text_span_background_color(instance, run.span_index)
+        is Some(background) &&
+        run_draw_scale.x > 0.0F &&
+        run_draw_scale.y > 0.0F {
+        let background_transform = @math.Transform::from_xy_rotation_scale(
+          run_translation,
+          rot,
+          run_draw_scale,
+          z=instance.transform.translation.z - 0.001F,
+        )
+        overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+          texture: white_texture,
+          transform: background_transform,
+          uv_min: @math.Vec2::new(0.0F, 0.0F),
+          uv_max: @math.Vec2::new(1.0F, 1.0F),
+          color: background.color,
+          layers: instance.layers,
+          scissor: instance.ui_scissor,
+        })
+      }
+
+      let span_color = text_span_color(instance, run.span_index).color
+      if text_span_has_underline(instance, run.span_index) {
+        let underline_position_layout = to_y_up(
+          instance.y_axis,
+          run.underline_position(),
+        )
+        let underline_scaled = @math.Vec2::new(
+          underline_position_layout.x * scale.x,
+          underline_position_layout.y * scale.y,
+        )
+        let underline_offset = rotate_vec2(underline_scaled, rot_cos, rot_sin)
+        let underline_translation = @math.Vec2::new(
+          text_origin.x + underline_offset.x,
+          text_origin.y + underline_offset.y,
+        )
+        let underline_size = run.underline_size()
+        let underline_draw_scale = @math.Vec2::new(
+          underline_size.x * absf(scale.x),
+          underline_size.y * absf(scale.y),
+        )
+        if underline_draw_scale.x > 0.0F && underline_draw_scale.y > 0.0F {
+          let underline_transform = @math.Transform::from_xy_rotation_scale(
+            underline_translation,
+            rot,
+            underline_draw_scale,
+            z=instance.transform.translation.z + 0.0005F,
+          )
+          overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+            texture: white_texture,
+            transform: underline_transform,
+            uv_min: @math.Vec2::new(0.0F, 0.0F),
+            uv_max: @math.Vec2::new(1.0F, 1.0F),
+            color: span_color,
+            layers: instance.layers,
+            scissor: instance.ui_scissor,
+          })
+        }
+      }
+
+      if text_span_has_strikethrough(instance, run.span_index) {
+        let strike_position_layout = to_y_up(
+          instance.y_axis,
+          run.strikethrough_position(),
+        )
+        let strike_scaled = @math.Vec2::new(
+          strike_position_layout.x * scale.x,
+          strike_position_layout.y * scale.y,
+        )
+        let strike_offset = rotate_vec2(strike_scaled, rot_cos, rot_sin)
+        let strike_translation = @math.Vec2::new(
+          text_origin.x + strike_offset.x,
+          text_origin.y + strike_offset.y,
+        )
+        let strike_size = run.strikethrough_size()
+        let strike_draw_scale = @math.Vec2::new(
+          strike_size.x * absf(scale.x),
+          strike_size.y * absf(scale.y),
+        )
+        if strike_draw_scale.x > 0.0F && strike_draw_scale.y > 0.0F {
+          let strike_transform = @math.Transform::from_xy_rotation_scale(
+            strike_translation,
+            rot,
+            strike_draw_scale,
+            z=instance.transform.translation.z + 0.0005F,
+          )
+          overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+            texture: white_texture,
+            transform: strike_transform,
+            uv_min: @math.Vec2::new(0.0F, 0.0F),
+            uv_max: @math.Vec2::new(1.0F, 1.0F),
+            color: span_color,
+            layers: instance.layers,
+            scissor: instance.ui_scissor,
+          })
+        }
+      }
+    }
+
     // Keep UI text origin in continuous space.
     // Snapping world-space origins introduces visible jitter when camera
     // viewport/scale changes dynamically (e.g. 2d_viewport_to_world).

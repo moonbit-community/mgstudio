@@ -90,16 +90,17 @@ fn ensure_labels_system(_world : @ecs_world.World) -> Unit {
 fn mesh2d_repeated_texture_setup(world : @ecs_world.World) -> Unit {
   // Port of `bevy/examples/2d/mesh2d_repeated_texture.rs`.
   let asset_server = @asset.AssetServer::new()
-  let default_texture = asset_server.load(
+  let default_texture = asset_server.load_with_settings(
     "textures/fantasy_ui_borders/panel-border-010.png",
+    @asset.ImageLoaderSettings::default().with_sampler(
+      @asset.ImageSampler::Linear,
+    ),
   )
-  let repeated_texture = asset_server.load(
+  let repeated_texture = asset_server.load_with_settings(
     "textures/fantasy_ui_borders/panel-border-010-repeated.png",
-  )
-  @asset.asset_set_texture_sampler(default_texture, @asset.ImageSampler::Linear)
-  @asset.asset_set_texture_sampler(
-    repeated_texture,
-    @asset.ImageSampler::LinearRepeat,
+    @asset.ImageLoaderSettings::default().with_sampler(
+      @asset.ImageSampler::LinearRepeat,
+    ),
   )
   example_state.val.label_font = Some(
     asset_server.load_font("fonts/FiraSans-Bold.ttf"),

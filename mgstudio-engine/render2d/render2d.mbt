@@ -177,6 +177,95 @@ pub struct Sprite {
 }
 
 ///|
+/// Marker component aligned with Bevy's `Wireframe2d`.
+///
+/// Meshes with this marker render wireframes regardless of
+/// `Wireframe2dConfig::global`.
+#ecs.component
+pub struct Wireframe2d {}
+
+///|
+pub fn Wireframe2d::default() -> Wireframe2d {
+  Wireframe2d::{  }
+}
+
+///|
+/// Marker component aligned with Bevy's `NoWireframe2d`.
+///
+/// Meshes with this marker never render wireframes regardless of
+/// `Wireframe2dConfig::global`.
+#ecs.component
+pub struct NoWireframe2d {}
+
+///|
+pub fn NoWireframe2d::default() -> NoWireframe2d {
+  NoWireframe2d::{  }
+}
+
+///|
+/// Per-mesh wireframe color aligned with Bevy's `Wireframe2dColor`.
+#ecs.component
+pub struct Wireframe2dColor {
+  color : Color
+}
+
+///|
+pub fn Wireframe2dColor::default() -> Wireframe2dColor {
+  Wireframe2dColor::{ color: Color::white() }
+}
+
+///|
+pub fn Wireframe2dColor::new(color : Color) -> Wireframe2dColor {
+  Wireframe2dColor::{ color, }
+}
+
+///|
+pub fn Wireframe2dColor::with_color(
+  self : Wireframe2dColor,
+  color : Color,
+) -> Wireframe2dColor {
+  self |> ignore
+  Wireframe2dColor::{ color, }
+}
+
+///|
+// ECS resource marker for codegen (`mgstudio gen`).
+#ecs.resource
+pub struct Wireframe2dConfig {
+  global : Bool
+  default_color : Color
+}
+
+///|
+pub fn Wireframe2dConfig::default() -> Wireframe2dConfig {
+  Wireframe2dConfig::{ global: false, default_color: Color::white() }
+}
+
+///|
+pub fn Wireframe2dConfig::new(
+  global : Bool,
+  default_color : Color,
+) -> Wireframe2dConfig {
+  Wireframe2dConfig::{ global, default_color }
+}
+
+///|
+pub fn Wireframe2dConfig::with_global(
+  self : Wireframe2dConfig,
+  global : Bool,
+) -> Wireframe2dConfig {
+  Wireframe2dConfig::{ ..self, global, }
+}
+
+///|
+pub fn Wireframe2dConfig::with_default_color(
+  self : Wireframe2dConfig,
+  default_color : Color,
+) -> Wireframe2dConfig {
+  Wireframe2dConfig::{ ..self, default_color, }
+}
+
+///|
 pub struct BorderRect {
   left : Float
   right : Float
@@ -213,6 +302,21 @@ pub(all) enum SliceScaleMode {
 ///|
 pub fn SliceScaleMode::default() -> SliceScaleMode {
   SliceScaleMode::Stretch
+}
+
+///|
+pub(all) enum SpriteScalingMode {
+  FillCenter
+  FillStart
+  FillEnd
+  FitCenter
+  FitStart
+  FitEnd
+}
+
+///|
+pub fn SpriteScalingMode::default() -> SpriteScalingMode {
+  SpriteScalingMode::FillCenter
 }
 
 ///|
@@ -310,6 +414,7 @@ pub fn TextureSlicer::with_max_corner_scale(
 ///|
 pub(all) enum SpriteImageMode {
   Auto
+  Scale(SpriteScalingMode)
   Sliced(TextureSlicer)
   Tiled(SpriteTiling)
 }
@@ -317,6 +422,13 @@ pub(all) enum SpriteImageMode {
 ///|
 pub fn SpriteImageMode::default() -> SpriteImageMode {
   SpriteImageMode::Auto
+}
+
+///|
+pub fn SpriteImageMode::scale(
+  scaling_mode? : SpriteScalingMode = SpriteScalingMode::FillCenter,
+) -> SpriteImageMode {
+  SpriteImageMode::Scale(scaling_mode)
 }
 
 ///|
@@ -3048,6 +3160,30 @@ fn tilemap_chunk_uv_rect(
 }
 
 ///|
+fn tilemap_chunk_resolve_tileset_grid(chunk : TilemapChunk) -> @math.UVec2 {
+  if @asset.asset_image_array_layout(chunk.tileset) is Some(array_layout) {
+    match array_layout {
+      @asset.ImageArrayLayout::RowCount(rows) => {
+        let safe_rows = if rows <= 0 { 1 } else { rows }
+        return @math.UVec2::new(1, safe_rows)
+      }
+      @asset.ImageArrayLayout::RowHeight(row_height) => {
+        let safe_row_height = if row_height <= 0 { 1 } else { row_height }
+        let texture_height = @asset.asset_texture_height(chunk.tileset)
+        let rows = if texture_height <= 0 {
+          1
+        } else {
+          texture_height / safe_row_height
+        }
+        let safe_rows = if rows <= 0 { 1 } else { rows }
+        return @math.UVec2::new(1, safe_rows)
+      }
+    }
+  }
+  tilemap_chunk_safe_uvec2(chunk.tileset_grid, @math.UVec2::new(1, 1))
+}
+
+///|
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(
   world : W,
   chunk : TilemapChunk,
@@ -3063,6 +3199,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chu
     chunk.tile_display_size,
     @math.UVec2::new(1, 1),
   )
+  let resolved_tileset_grid = tilemap_chunk_resolve_tileset_grid(chunk)
   let tile_scale = @math.Vec2::new(
     Float::from_double(safe_tile_size.x.to_double()) * transform.scale.x,
     Float::from_double(safe_tile_size.y.to_double()) * transform.scale.y,
@@ -3074,7 +3211,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chu
         is Some(tile) else {
         continue
       }
-      guard tilemap_chunk_uv_rect(tile.tileset_index, chunk.tileset_grid)
+      guard tilemap_chunk_uv_rect(tile.tileset_index, resolved_tileset_grid)
         is Some((uv_min, uv_max)) else {
         continue
       }
@@ -3085,7 +3222,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chu
             chunk_size: safe_chunk_size,
             tile_display_size: safe_tile_size,
             tileset: chunk.tileset,
-            tileset_grid: chunk.tileset_grid,
+            tileset_grid: resolved_tileset_grid,
           },
           tile_pos,
         ),
@@ -3660,6 +3797,28 @@ fn[W : HasRes_RenderState + @core.ChangeTickWorld] init_render_state_system(
 }
 
 ///|
+fn[W : HasRes_Wireframe2dConfig + @core.ChangeTickWorld] init_wireframe2d_resources(
+  world : W,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let wireframe_config = world.get_wireframe2d_config_resource()
+  if !wireframe_config.is_present() {
+    wireframe_config.insert(Wireframe2dConfig::default(), tick)
+  }
+}
+
+///|
+pub(open) trait Wireframe2dPluginWorld: HasRes_Wireframe2dConfig + @core.ChangeTickWorld {
+}
+
+///|
+pub fn[W : Wireframe2dPluginWorld] wireframe2d_plugin(
+  app : @app.App[W],
+) -> @app.App[W] {
+  app.add_startup_system(init_wireframe2d_resources)
+}
+
+///|
 fn default_uv_min() -> @math.Vec2 {
   @math.Vec2::new(0.0F, 0.0F)
 }
@@ -3718,9 +3877,13 @@ fn sprite_anchor_offset(
   anchor : Anchor,
   rotation : Float,
   draw_scale : @math.Vec2,
+  local_offset : @math.Vec2,
 ) -> @math.Vec2 {
   let a = anchor.as_vec()
-  let offset_local = @math.Vec2::new(-a.x * draw_scale.x, -a.y * draw_scale.y)
+  let offset_local = @math.Vec2::new(
+    -a.x * draw_scale.x + local_offset.x,
+    -a.y * draw_scale.y + local_offset.y,
+  )
   let cosv = @math.cos(rotation)
   let sinv = @math.sin(rotation)
   @math.Vec2::new(
@@ -3868,7 +4031,7 @@ fn apply_tiled_sprite_image_mode(
   uv_max : @math.Vec2,
   draw_scale : @math.Vec2,
   image_mode : SpriteImageMode,
-) -> (@math.Vec2, @math.Vec2, @math.Vec2, Bool) {
+) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool) {
   match image_mode {
     SpriteImageMode::Tiled(tiling) => {
       let repeat_x = if tiling.tile_x {
@@ -3899,9 +4062,237 @@ fn apply_tiled_sprite_image_mode(
           draw_scale.y
         },
       )
-      (uv_min, next_uv_max, next_draw_scale, true)
+      (uv_min, next_uv_max, next_draw_scale, @math.Vec2::new(0.0F, 0.0F), true)
     }
-    _ => (uv_min, uv_max, draw_scale, false)
+    _ => (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
+  }
+}
+
+///|
+fn apply_scale_sprite_image_mode(
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  draw_scale : @math.Vec2,
+  region_size : @math.Vec2,
+  scaling_mode : SpriteScalingMode,
+) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2) {
+  let region_w = sprite_abs_float(region_size.x)
+  let region_h = sprite_abs_float(region_size.y)
+  if region_w <= 0.0F || region_h <= 0.0F {
+    return (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F))
+  }
+  let draw_sign_x = if draw_scale.x < 0.0F { -1.0F } else { 1.0F }
+  let draw_sign_y = if draw_scale.y < 0.0F { -1.0F } else { 1.0F }
+  let mut target_size = @math.Vec2::new(
+    sprite_abs_float(draw_scale.x) * region_w,
+    sprite_abs_float(draw_scale.y) * region_h,
+  )
+  if target_size.x <= 0.0F || target_size.y <= 0.0F {
+    return (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F))
+  }
+
+  let texture_ratio = region_w / region_h
+  let quad_ratio = target_size.x / target_size.y
+  if texture_ratio <= 0.0F || quad_ratio <= 0.0F {
+    return (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F))
+  }
+
+  let tex_quad_scale = texture_ratio / quad_ratio
+  let quad_tex_scale = quad_ratio / texture_ratio
+  let mut uv_offset_scale = @math.Vec4::new(
+    uv_min.x,
+    uv_min.y,
+    uv_max.x - uv_min.x,
+    uv_max.y - uv_min.y,
+  )
+  let mut local_offset_target = @math.Vec2::new(0.0F, 0.0F)
+
+  match scaling_mode {
+    FillCenter =>
+      if quad_ratio > texture_ratio {
+        uv_offset_scale = @math.Vec4::new(
+          uv_offset_scale.x,
+          uv_offset_scale.y +
+          (uv_offset_scale.w - uv_offset_scale.w * tex_quad_scale) * 0.5F,
+          uv_offset_scale.z,
+          uv_offset_scale.w * tex_quad_scale,
+        )
+      } else {
+        uv_offset_scale = @math.Vec4::new(
+          uv_offset_scale.x +
+          (uv_offset_scale.z - uv_offset_scale.z * quad_tex_scale) * 0.5F,
+          uv_offset_scale.y,
+          uv_offset_scale.z * quad_tex_scale,
+          uv_offset_scale.w,
+        )
+      }
+    FillStart =>
+      if quad_ratio > texture_ratio {
+        uv_offset_scale = @math.Vec4::new(
+          uv_offset_scale.x,
+          uv_offset_scale.y +
+          uv_offset_scale.w -
+          uv_offset_scale.w * tex_quad_scale,
+          uv_offset_scale.z,
+          uv_offset_scale.w * tex_quad_scale,
+        )
+      } else {
+        uv_offset_scale = @math.Vec4::new(
+          uv_offset_scale.x,
+          uv_offset_scale.y,
+          uv_offset_scale.z * quad_tex_scale,
+          uv_offset_scale.w,
+        )
+      }
+    FillEnd =>
+      if quad_ratio > texture_ratio {
+        uv_offset_scale = @math.Vec4::new(
+          uv_offset_scale.x,
+          uv_offset_scale.y,
+          uv_offset_scale.z,
+          uv_offset_scale.w * tex_quad_scale,
+        )
+      } else {
+        uv_offset_scale = @math.Vec4::new(
+          uv_offset_scale.x +
+          uv_offset_scale.z -
+          uv_offset_scale.z * quad_tex_scale,
+          uv_offset_scale.y,
+          uv_offset_scale.z * quad_tex_scale,
+          uv_offset_scale.w,
+        )
+      }
+    FitCenter =>
+      if texture_ratio > quad_ratio {
+        target_size = @math.Vec2::new(
+          target_size.x,
+          target_size.x / texture_ratio,
+        )
+      } else {
+        target_size = @math.Vec2::new(
+          target_size.y * texture_ratio,
+          target_size.y,
+        )
+      }
+    FitStart =>
+      if texture_ratio > quad_ratio {
+        let new_quad = @math.Vec2::new(
+          target_size.x,
+          target_size.x / texture_ratio,
+        )
+        let offset = @math.Vec2::new(
+          target_size.x - new_quad.x,
+          target_size.y - new_quad.y,
+        )
+        local_offset_target = @math.Vec2::new(0.0F, -offset.y)
+        target_size = new_quad
+      } else {
+        let new_quad = @math.Vec2::new(
+          target_size.y * texture_ratio,
+          target_size.y,
+        )
+        let offset = @math.Vec2::new(
+          target_size.x - new_quad.x,
+          target_size.y - new_quad.y,
+        )
+        local_offset_target = @math.Vec2::new(offset.x, 0.0F)
+        target_size = new_quad
+      }
+    FitEnd =>
+      if texture_ratio > quad_ratio {
+        let new_quad = @math.Vec2::new(
+          target_size.x,
+          target_size.x / texture_ratio,
+        )
+        let offset = @math.Vec2::new(
+          target_size.x - new_quad.x,
+          target_size.y - new_quad.y,
+        )
+        local_offset_target = @math.Vec2::new(0.0F, offset.y)
+        target_size = new_quad
+      } else {
+        let new_quad = @math.Vec2::new(
+          target_size.y * texture_ratio,
+          target_size.y,
+        )
+        let offset = @math.Vec2::new(
+          target_size.x - new_quad.x,
+          target_size.y - new_quad.y,
+        )
+        local_offset_target = @math.Vec2::new(-offset.x, 0.0F)
+        target_size = new_quad
+      }
+  }
+
+  let next_draw_scale = @math.Vec2::new(
+    draw_sign_x * target_size.x / region_w,
+    draw_sign_y * target_size.y / region_h,
+  )
+  let local_offset = @math.Vec2::new(
+    local_offset_target.x / region_w,
+    local_offset_target.y / region_h,
+  )
+  (
+    @math.Vec2::new(uv_offset_scale.x, uv_offset_scale.y),
+    @math.Vec2::new(
+      uv_offset_scale.x + uv_offset_scale.z,
+      uv_offset_scale.y + uv_offset_scale.w,
+    ),
+    next_draw_scale,
+    local_offset,
+  )
+}
+
+///|
+fn apply_sprite_image_mode(
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  draw_scale : @math.Vec2,
+  region_size : @math.Vec2,
+  image_mode : SpriteImageMode,
+  has_custom_size : Bool,
+) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool) {
+  match image_mode {
+    SpriteImageMode::Scale(scaling_mode) =>
+      if has_custom_size {
+        let (scaled_uv_min, scaled_uv_max, scaled_draw_scale, local_offset) = apply_scale_sprite_image_mode(
+          uv_min, uv_max, draw_scale, region_size, scaling_mode,
+        )
+        (scaled_uv_min, scaled_uv_max, scaled_draw_scale, local_offset, false)
+      } else {
+        (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
+      }
+    _ => apply_tiled_sprite_image_mode(uv_min, uv_max, draw_scale, image_mode)
+  }
+}
+
+///|
+fn render2d_mesh_should_draw_wireframe(
+  has_wireframe : Bool,
+  has_no_wireframe : Bool,
+  wireframe_config : Wireframe2dConfig?,
+) -> Bool {
+  guard wireframe_config is Some(config) else { return false }
+  if has_no_wireframe {
+    false
+  } else if has_wireframe {
+    true
+  } else {
+    config.global
+  }
+}
+
+///|
+fn render2d_mesh_wireframe_color(
+  mesh_color : Wireframe2dColor?,
+  wireframe_config : Wireframe2dConfig?,
+) -> Color {
+  if mesh_color is Some(component) {
+    component.color
+  } else if wireframe_config is Some(config) {
+    config.default_color
+  } else {
+    Color::white()
   }
 }
 
@@ -4001,7 +4392,7 @@ pub(open) trait Mesh2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld
 }
 
 ///|
-pub(open) trait RenderExtractWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
+pub(open) trait RenderExtractWorld: HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 
 ///|
@@ -4855,20 +5246,33 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       @math.Vec2::new(transform.scale.x, transform.scale.y),
       region_size,
     )
-    let anchor_offset = sprite_anchor_offset(
-      anchor,
-      transform.rotation_z(),
-      draw_scale,
-    )
     let scissor = match scissor_store.get(entity) {
       Some(v) => Some(v.rect)
       None => None
     }
-    let (uv_draw_min, uv_draw_max, draw_scale_for_host, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
+    let has_custom_size = match sprite.custom_size {
+      Some(_) => true
+      None => false
+    }
+    let (
+      uv_draw_min,
+      uv_draw_max,
+      draw_scale_for_host,
+      local_offset,
+      needs_repeat_sampler,
+    ) = apply_sprite_image_mode(
       uv_min,
       uv_max,
       draw_scale,
+      region_size,
       sprite.image_mode,
+      has_custom_size,
+    )
+    let anchor_offset = sprite_anchor_offset(
+      anchor,
+      transform.rotation_z(),
+      draw_scale_for_host,
+      local_offset,
     )
     if needs_repeat_sampler {
       @asset.asset_set_texture_sampler(
@@ -4918,7 +5322,16 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
   let mesh_store = world.get_mesh2d_store()
   let gpu_mesh_store = world.get_gpu_mesh2d_store()
   let material_store = world.get_color_material_store()
-  mesh_store.for_each(fn(entity, _mesh) {
+  let wireframe_store = world.get_wireframe2d_store()
+  let no_wireframe_store = world.get_no_wireframe2d_store()
+  let wireframe_color_store = world.get_wireframe2d_color_store()
+  let wireframe_config = if world.get_wireframe2d_config_resource().get_ref()
+    is Some(config_ref) {
+    Some(config_ref.val)
+  } else {
+    None
+  }
+  mesh_store.for_each(fn(entity, mesh2d) {
     if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
       return
     }
@@ -4947,6 +5360,26 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       uv_scale: mat.uv_scale(),
       layers,
     })
+
+    if !render2d_mesh_should_draw_wireframe(
+        wireframe_store.get(entity) is Some(_),
+        no_wireframe_store.get(entity) is Some(_),
+        wireframe_config,
+      ) {
+      return
+    }
+    guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else { return }
+    let wireframe_color = render2d_mesh_wireframe_color(
+      wireframe_color_store.get(entity),
+      wireframe_config,
+    )
+    match mesh_asset.geometry {
+      @mesh.MeshGeometry::Geometry2d(geometry) =>
+        Gizmos::new()
+        .with_layers(layers)
+        .mesh_wireframe_2d(geometry, transform, wireframe_color)
+      _ => ()
+    }
   })
 }
 
@@ -5335,7 +5768,7 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
 ///|
 test "render2d: tiled sprite mode adjusts uv and draw scale" {
   let mode = SpriteImageMode::tiled(stretch_value=0.5F)
-  let (uv_min, uv_max, draw_scale, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
+  let (uv_min, uv_max, draw_scale, local_offset, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(1.0F, 1.0F),
     @math.Vec2::new(0.5F, 1.0F),
@@ -5347,6 +5780,8 @@ test "render2d: tiled sprite mode adjusts uv and draw scale" {
     uv_max.y == 2.0F &&
     draw_scale.x == 0.5F &&
     draw_scale.y == 0.5F &&
+    local_offset.x == 0.0F &&
+    local_offset.y == 0.0F &&
     needs_repeat_sampler
   inspect(ok, content="true")
 }
@@ -5358,7 +5793,7 @@ test "render2d: tiled sprite mode keeps non-tiled axis unchanged" {
     tile_y=true,
     stretch_value=0.25F,
   )
-  let (uv_min, uv_max, draw_scale, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
+  let (uv_min, uv_max, draw_scale, local_offset, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
     @math.Vec2::new(0.2F, 0.3F),
     @math.Vec2::new(0.6F, 0.9F),
     @math.Vec2::new(1.0F, 0.5F),
@@ -5370,6 +5805,8 @@ test "render2d: tiled sprite mode keeps non-tiled axis unchanged" {
     uv_max.y == 1.5F &&
     draw_scale.x == 1.0F &&
     draw_scale.y == 0.25F &&
+    local_offset.x == 0.0F &&
+    local_offset.y == 0.0F &&
     needs_repeat_sampler
   inspect(ok, content="true")
 }

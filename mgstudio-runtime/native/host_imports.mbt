@@ -2386,6 +2386,50 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "asset_create_dynamic_texture_mipped",
+    fn(args) raise @runtime.RuntimeError {
+      try {
+        if ctx.gpu is None {
+          ensure_gpu_backend(ctx)
+        }
+        if args.length() >= 4 &&
+          args[0] is @types.Value::I32(w) &&
+          args[1] is @types.Value::I32(h) &&
+          args[2] is @types.Value::I32(_mip_count) &&
+          args[3] is @types.Value::I32(nearest_i32) {
+          let nearest = nearest_i32 != 0
+          let width = if w <= 0 { 1 } else { w }
+          let height = if h <= 0 { 1 } else { h }
+          // Native MoonBit runtime fallback: create a regular RGBA8 texture.
+          let byte_len = width * height * 4
+          let pixels = Bytes::makei(byte_len, _ => (0).to_byte())
+          ok_i32(
+            ctx.gpu
+            .unwrap()
+            .create_texture_rgba8(width, height, pixels, nearest),
+          )
+        } else {
+          ok_i32(-1)
+        }
+      } catch {
+        _ => {
+          @debug.debug("asset_create_dynamic_texture_mipped failed")
+          host_fail("asset_create_dynamic_texture_mipped", "<error>")
+        }
+      }
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "asset_update_texture_region",
     fn(_args) { ok_i32(0) },
     func_type=ft(
@@ -2433,6 +2477,62 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::I32,
       ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_update_texture_region_mip_bytes",
+    fn(args) raise @runtime.RuntimeError {
+      if ctx.gpu is None {
+        ensure_gpu_backend(ctx)
+      }
+      if args.length() >= 7 &&
+        args[0] is @types.Value::I32(texture_id) &&
+        args[1] is @types.Value::I32(x) &&
+        args[2] is @types.Value::I32(y) &&
+        args[3] is @types.Value::I32(w) &&
+        args[4] is @types.Value::I32(h) &&
+        args[5] is @types.Value::I32(_mip_level) &&
+        args[6] is @types.Value::I32(bytes_id) {
+        match bytes_table_get(ctx, bytes_id) {
+          None => ()
+          Some(pixels) =>
+            ctx.gpu
+            .unwrap()
+            .write_texture_region_rgba8(texture_id, x, y, w, h, pixels)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft(
+      [
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::I32,
+      ],
+      [@types.ValueType::I32],
+    ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_create_texture_mip_view",
+    fn(args) {
+      if args.length() >= 2 &&
+        args[0] is @types.Value::I32(texture_id) &&
+        args[1] is @types.Value::I32(_mip_level) {
+        // Native MoonBit runtime fallback: reuse the base texture handle.
+        ok_i32(texture_id)
+      } else {
+        ok_i32(0)
+      }
+    },
+    func_type=ft(
+      [@types.ValueType::I32, @types.ValueType::I32],
       [@types.ValueType::I32],
     ),
   )

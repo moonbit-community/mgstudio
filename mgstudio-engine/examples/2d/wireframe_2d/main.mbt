@@ -13,33 +13,15 @@
 // limitations under the License.
 
 ///|
-const CIRCLE_SEGMENTS : Int = 48
-
-///|
-const TAU : Float = 6.283185307179586F
-
-///|
 priv struct WireframeSceneState {
-  mut rectangle_entity : @core.Entity
   mut circle_entity : @core.Entity
-  mut rectangle_geometry : @mesh.Mesh2dGeometry?
-  mut circle_geometry : @mesh.Mesh2dGeometry?
   mut overlay_text_handle : @text.TextHandle?
-  mut global_enabled : Bool
-  mut global_color_is_red : Bool
-  mut circle_color_is_red : Bool
 }
 
 ///|
 let wireframe_scene_state : Ref[WireframeSceneState] = Ref::new(WireframeSceneState::{
-  rectangle_entity: @core.Entity::placeholder(),
   circle_entity: @core.Entity::placeholder(),
-  rectangle_geometry: None,
-  circle_geometry: None,
   overlay_text_handle: None,
-  global_enabled: true,
-  global_color_is_red: false,
-  circle_color_is_red: false,
 })
 
 ///|
@@ -47,27 +29,61 @@ pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
+  .add_plugins([@render2d.wireframe2d_plugin])
   .add_startup_system(wireframe_setup)
+  .add_startup_system(setup_wireframe2d_config)
   .add_system(wireframe_update)
   .run()
 }
 
 ///|
-fn wireframe_overlay_text() -> String {
-  let global_value = if wireframe_scene_state.val.global_enabled {
-    "true"
+fn absf(value : Float) -> Float {
+  if value < 0.0F {
+    -value
   } else {
-    "false"
+    value
   }
-  let default_color = if wireframe_scene_state.val.global_color_is_red {
+}
+
+///|
+fn color_close(a : @render2d.Color, b : @render2d.Color) -> Bool {
+  absf(a.r - b.r) < 0.0001F &&
+  absf(a.g - b.g) < 0.0001F &&
+  absf(a.b - b.b) < 0.0001F &&
+  absf(a.a - b.a) < 0.0001F
+}
+
+///|
+fn color_red() -> @render2d.Color {
+  @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+}
+
+///|
+fn color_green() -> @render2d.Color {
+  @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+}
+
+///|
+fn color_default_white() -> @render2d.Color {
+  @render2d.Color::white()
+}
+
+///|
+fn wireframe_color_text(color : @render2d.Color) -> String {
+  if color_close(color, color_red()) {
     "Srgba { red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0 }"
   } else {
     "Srgba { red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0 }"
   }
+}
+
+///|
+fn wireframe_overlay_text(config : @render2d.Wireframe2dConfig) -> String {
+  let global_value = if config.global { "true" } else { "false" }
   "Controls\n---------------\nZ - Toggle global\nX - Change global color\nC - Change color of the circle wireframe\n\nWireframe2dConfig\n-------------\nGlobal: " +
   global_value +
   "\nColor: " +
-  default_color
+  wireframe_color_text(config.default_color)
 }
 
 ///|
@@ -88,11 +104,14 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn spawn_wireframe_overlay(world : @ecs_world.World) -> @text.TextHandle {
+fn spawn_wireframe_overlay(
+  world : @ecs_world.World,
+  config : @render2d.Wireframe2dConfig,
+) -> @text.TextHandle {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = spawn_ui_text_handle(
-    wireframe_overlay_text(),
+    wireframe_overlay_text(config),
     font,
     20.0F,
     @render2d.Color::white(),
@@ -130,14 +149,31 @@ fn spawn_wireframe_overlay(world : @ecs_world.World) -> @text.TextHandle {
 }
 
 ///|
+fn setup_wireframe2d_config(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let config = @render2d.Wireframe2dConfig::new(true, color_default_white())
+  if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+    is Some(config_ref) {
+    config_ref.val = config
+  } else {
+    world.get_wireframe2d_config_resource().insert(config, tick)
+  }
+}
+
+///|
 fn wireframe_setup(world : @ecs_world.World) -> Unit {
   let black = @render2d.Color::black()
-  let triangle_geometry = build_triangle_geometry()
-  let rectangle_geometry = build_rectangle_geometry()
-  let circle_geometry = build_circle_geometry(50.0F, CIRCLE_SEGMENTS)
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_geometry(triangle_geometry),
+  let tick = world.read_change_tick()
+
+  let triangle_entity = @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_triangle(
+      @render2d.Triangle2d::new(
+        @math.Vec2::new(0.0F, 50.0F),
+        @math.Vec2::new(-50.0F, -50.0F),
+        @math.Vec2::new(50.0F, -50.0F),
+      ),
+    ),
     @render2d.ColorMaterial::new(black),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-150.0F, 0.0F),
@@ -145,9 +181,12 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   ).spawn(world)
-  |> ignore
-  let rectangle_entity = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_geometry(rectangle_geometry),
+  world
+  .get_no_wireframe2d_store()
+  .insert(triangle_entity, @render2d.NoWireframe2d::default(), tick)
+
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(100.0F, 100.0F)),
     @render2d.ColorMaterial::new(black),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
@@ -155,8 +194,10 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   ).spawn(world)
+  |> ignore
+
   let circle_entity = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_geometry(circle_geometry),
+    @render2d.Mesh2d::from_circle(@render2d.Circle::new(50.0F)),
     @render2d.ColorMaterial::new(black),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(150.0F, 0.0F),
@@ -164,6 +205,12 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   ).spawn(world)
+  world
+  .get_wireframe2d_store()
+  .insert(circle_entity, @render2d.Wireframe2d::default(), tick)
+  world
+  .get_wireframe2d_color_store()
+  .insert(circle_entity, @render2d.Wireframe2dColor::new(color_green()), tick)
 
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
@@ -171,125 +218,66 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  wireframe_scene_state.val.rectangle_entity = rectangle_entity
   wireframe_scene_state.val.circle_entity = circle_entity
-  wireframe_scene_state.val.rectangle_geometry = Some(rectangle_geometry)
-  wireframe_scene_state.val.circle_geometry = Some(circle_geometry)
+
+  let config = if world.get_wireframe2d_config_resource().get_ref()
+    is Some(config_ref) {
+    config_ref.val
+  } else {
+    @render2d.Wireframe2dConfig::default()
+  }
   wireframe_scene_state.val.overlay_text_handle = Some(
-    spawn_wireframe_overlay(world),
+    spawn_wireframe_overlay(world, config),
   )
 }
 
 ///|
 fn wireframe_update(world : @ecs_world.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::KeyZ) {
-    wireframe_scene_state.val.global_enabled = !wireframe_scene_state.val.global_enabled
+  let tick = world.read_change_tick()
+
+  if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+    is Some(config_ref) {
+    if @input.key_just_pressed(@window.KeyCode::KeyZ) {
+      config_ref.val = config_ref.val.with_global(!config_ref.val.global)
+    }
+    if @input.key_just_pressed(@window.KeyCode::KeyX) {
+      let next_color = if color_close(
+          config_ref.val.default_color,
+          color_default_white(),
+        ) {
+        color_red()
+      } else {
+        color_default_white()
+      }
+      config_ref.val = config_ref.val.with_default_color(next_color)
+    }
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyX) {
-    wireframe_scene_state.val.global_color_is_red = !wireframe_scene_state.val.global_color_is_red
-  }
+
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    wireframe_scene_state.val.circle_color_is_red = !wireframe_scene_state.val.circle_color_is_red
+    let store = world.get_wireframe2d_color_store()
+    if store.get(wireframe_scene_state.val.circle_entity)
+      is Some(color_component) {
+      let next = if color_close(color_component.color, color_green()) {
+        color_red()
+      } else {
+        color_green()
+      }
+      store.set(
+        wireframe_scene_state.val.circle_entity,
+        @render2d.Wireframe2dColor::new(next),
+        tick,
+      )
+      |> ignore
+    }
   }
+
   if wireframe_scene_state.val.overlay_text_handle is Some(text_handle) {
-    @text.text_set_content(text_handle, wireframe_overlay_text())
-  }
-
-  let global_color = if wireframe_scene_state.val.global_color_is_red {
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-  } else {
-    @render2d.Color::white()
-  }
-  let circle_color = if wireframe_scene_state.val.circle_color_is_red {
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-  } else {
-    @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
-  }
-
-  let gizmos = @render2d.Gizmos::new()
-  let transform_store = world.get_transform_store()
-
-  if wireframe_scene_state.val.global_enabled {
-    guard wireframe_scene_state.val.rectangle_geometry is Some(rect_geometry) else {
-      return
+    let config = if world.get_wireframe2d_config_resource().get_ref()
+      is Some(config_ref) {
+      config_ref.val
+    } else {
+      @render2d.Wireframe2dConfig::default()
     }
-    if transform_store.get(wireframe_scene_state.val.rectangle_entity)
-      is Some(rect_transform) {
-      gizmos.mesh_wireframe_2d(rect_geometry, rect_transform, global_color)
-    }
+    @text.text_set_content(text_handle, wireframe_overlay_text(config))
   }
-
-  guard wireframe_scene_state.val.circle_geometry is Some(circle_geometry) else {
-    return
-  }
-  if transform_store.get(wireframe_scene_state.val.circle_entity)
-    is Some(circle_transform) {
-    gizmos.mesh_wireframe_2d(circle_geometry, circle_transform, circle_color)
-  }
-}
-
-///|
-fn build_triangle_geometry() -> @mesh.Mesh2dGeometry {
-  let positions = [
-    @math.Vec2::new(0.0F, 50.0F),
-    @math.Vec2::new(-50.0F, -50.0F),
-    @math.Vec2::new(50.0F, -50.0F),
-  ]
-  let uvs = [
-    @math.Vec2::new(0.5F, 1.0F),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 0.0F),
-  ]
-  @mesh.Mesh2dGeometry::new(positions, uvs, None)
-}
-
-///|
-fn build_rectangle_geometry() -> @mesh.Mesh2dGeometry {
-  let positions = [
-    @math.Vec2::new(-50.0F, -50.0F),
-    @math.Vec2::new(50.0F, -50.0F),
-    @math.Vec2::new(50.0F, 50.0F),
-    @math.Vec2::new(-50.0F, 50.0F),
-  ]
-  let uvs = [
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-    @math.Vec2::new(0.0F, 1.0F),
-  ]
-  let indices = [0, 1, 2, 0, 2, 3]
-  @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
-}
-
-///|
-fn build_circle_geometry(
-  radius : Float,
-  segments : Int,
-) -> @mesh.Mesh2dGeometry {
-  let safe_segments = if segments < 3 { 3 } else { segments }
-  let positions : Array[@math.Vec2] = [@math.Vec2::new(0.0F, 0.0F)]
-  let uvs : Array[@math.Vec2] = [@math.Vec2::new(0.5F, 0.5F)]
-  let indices : Array[Int] = []
-  let safe_radius = if radius < 0.0F { -radius } else { radius }
-
-  for i in 0..<safe_segments {
-    let t = Float::from_double(i.to_double()) /
-      Float::from_double(safe_segments.to_double())
-    let angle = t * TAU
-    let x = @math.cos(angle) * safe_radius
-    let y = @math.sin(angle) * safe_radius
-    positions.push(@math.Vec2::new(x, y))
-    let uvx = 0.5F + x / (safe_radius * 2.0F)
-    let uvy = 0.5F + y / (safe_radius * 2.0F)
-    uvs.push(@math.Vec2::new(uvx, uvy))
-  }
-
-  for i in 0..<safe_segments {
-    let next = if i + 1 < safe_segments { i + 1 } else { 0 }
-    indices.push(0)
-    indices.push(i + 1)
-    indices.push(next + 1)
-  }
-
-  @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
 }

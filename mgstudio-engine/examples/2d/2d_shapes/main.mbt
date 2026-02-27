@@ -14,15 +14,13 @@
 
 ///|
 /// Port of `bevy/examples/2d/2d_shapes.rs`.
-///
-/// Notes:
-/// - Bevy uses GPU polygon line mode for wireframe toggling.
-/// - mgstudio currently maps this to a gizmo-based wireframe overlay path.
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
+  .add_plugins([@render2d.wireframe2d_plugin])
   .add_startup_system(shapes_setup)
+  .add_startup_system(setup_wireframe2d_config)
   .add_system(shapes_rotate)
   .run()
 }
@@ -38,9 +36,6 @@ const THICKNESS : Float = 5.0F
 
 ///|
 let rotation_enabled : Ref[Bool] = Ref::new(false)
-
-///|
-let wireframe_enabled : Ref[Bool] = Ref::new(false)
 
 ///|
 fn absf(value : Float) -> Float {
@@ -196,7 +191,6 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
 ///|
 fn shapes_setup(world : @ecs_world.World) -> Unit {
   rotation_enabled.val = false
-  wireframe_enabled.val = false
 
   let top_shapes : Array[@render2d.Mesh2d] = [
     @render2d.Mesh2d::from_circle(@render2d.Circle::new(50.0F)),
@@ -302,31 +296,28 @@ fn shapes_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
+fn setup_wireframe2d_config(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let config = @render2d.Wireframe2dConfig::new(false, @render2d.Color::white())
+  if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+    is Some(config_ref) {
+    config_ref.val = config
+  } else {
+    world.get_wireframe2d_config_resource().insert(config, tick)
+  }
+}
+
+///|
 fn shapes_rotate(world : @ecs_world.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
-    wireframe_enabled.val = !wireframe_enabled.val
+    let tick = world.read_change_tick()
+    if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+      is Some(config_ref) {
+      config_ref.val = config_ref.val.with_global(!config_ref.val.global)
+    }
   }
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
     rotation_enabled.val = !rotation_enabled.val
-  }
-
-  if wireframe_enabled.val {
-    let gizmos = @render2d.Gizmos::new()
-    let transform_store = world.get_transform_store()
-    let mesh_store = world.get_mesh2d_store()
-    @core.query2(transform_store, mesh_store, fn(_entity, transform, mesh2d) {
-      if @render2d.render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) {
-        match mesh_asset.geometry {
-          @mesh.MeshGeometry::Geometry2d(geometry2d) =>
-            gizmos.mesh_wireframe_2d(
-              geometry2d,
-              transform,
-              @render2d.Color::white(),
-            )
-          _ => ()
-        }
-      }
-    })
   }
 
   if !rotation_enabled.val {

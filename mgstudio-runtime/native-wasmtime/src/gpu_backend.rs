@@ -237,6 +237,8 @@ struct GpuTexture {
     view: wgpu::TextureView,
     sampler: wgpu::Sampler,
     bind_group: wgpu::BindGroup,
+    mip_level_count: u32,
+    base_mip_level: u32,
     #[allow(dead_code)]
     is_render_target: bool,
 }
@@ -270,6 +272,11 @@ fn align_up_u64(value: u64, align: u64) -> u64 {
         return value;
     }
     value.div_ceil(align) * align
+}
+
+fn max_mip_level_count_for_size(width: u32, height: u32) -> u32 {
+    let max_dim = width.max(height).max(1);
+    u32::BITS - max_dim.leading_zeros()
 }
 
 #[derive(Default)]
@@ -2134,10 +2141,29 @@ impl GpuBackend {
         pixels_rgba8: &[u8],
         nearest: bool,
     ) -> anyhow::Result<i32> {
+        self.create_texture_rgba8_mipped(width, height, 1, pixels_rgba8, nearest)
+    }
+
+    pub fn create_texture_rgba8_mipped(
+        &mut self,
+        width: u32,
+        height: u32,
+        mip_level_count: u32,
+        pixels_rgba8: &[u8],
+        nearest: bool,
+    ) -> anyhow::Result<i32> {
         self.ensure_sprite_resources()?;
         let id = self.next_texture_id;
         self.next_texture_id += 1;
-        self.create_texture_rgba8_with_id(id, width, height, pixels_rgba8, nearest, false)?;
+        self.create_texture_rgba8_with_id(
+            id,
+            width,
+            height,
+            mip_level_count,
+            pixels_rgba8,
+            nearest,
+            false,
+        )?;
         Ok(id)
     }
 
@@ -2271,6 +2297,8 @@ impl GpuBackend {
                 view,
                 sampler,
                 bind_group,
+                mip_level_count: levels.len() as u32,
+                base_mip_level: 0,
                 is_render_target: false,
             },
         );
@@ -2349,10 +2377,39 @@ impl GpuBackend {
         height: u32,
         pixels_rgba8: &[u8],
     ) -> anyhow::Result<()> {
+        self.write_texture_region_rgba8_mip(texture_id, x, y, width, height, 0, pixels_rgba8)
+    }
+
+    pub fn write_texture_region_rgba8_mip(
+        &mut self,
+        texture_id: i32,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+        mip_level: u32,
+        pixels_rgba8: &[u8],
+    ) -> anyhow::Result<()> {
         let Some(tex) = self.textures.get(&texture_id) else {
             return Ok(());
         };
-        let expected = (width * height * 4) as usize;
+        if mip_level >= tex.mip_level_count {
+            return Ok(());
+        }
+
+        let target_width = (tex.width >> mip_level).max(1);
+        let target_height = (tex.height >> mip_level).max(1);
+        if x >= target_width || y >= target_height {
+            return Ok(());
+        }
+        let write_width = width.min(target_width.saturating_sub(x));
+        let write_height = height.min(target_height.saturating_sub(y));
+        if write_width == 0 || write_height == 0 {
+            return Ok(());
+        }
+
+        let absolute_mip = tex.base_mip_level + mip_level;
+        let expected = (write_width * write_height * 4) as usize;
         if pixels_rgba8.len() < expected {
             return Err(anyhow!(
                 "wgpu: invalid texture region byte length for id {texture_id}, expected at least {expected}, got {}",
@@ -2362,19 +2419,19 @@ impl GpuBackend {
         self.queue.write_texture(
             wgpu::TexelCopyTextureInfo {
                 texture: &tex.texture,
-                mip_level: 0,
+                mip_level: absolute_mip,
                 origin: wgpu::Origin3d { x, y, z: 0 },
                 aspect: wgpu::TextureAspect::All,
             },
             &pixels_rgba8[..expected],
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(4 * width),
-                rows_per_image: Some(height),
+                bytes_per_row: Some(4 * write_width),
+                rows_per_image: Some(write_height),
             },
             wgpu::Extent3d {
-                width,
-                height,
+                width: write_width,
+                height: write_height,
                 depth_or_array_layers: 1,
             },
         );
@@ -2407,13 +2464,13 @@ impl GpuBackend {
         encoder.copy_texture_to_texture(
             wgpu::TexelCopyTextureInfo {
                 texture: &src.texture,
-                mip_level: 0,
+                mip_level: src.base_mip_level,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
             wgpu::TexelCopyTextureInfo {
                 texture: &dst.texture,
-                mip_level: 0,
+                mip_level: dst.base_mip_level,
                 origin: wgpu::Origin3d {
                     x: dst_x,
                     y: dst_y,
@@ -2495,17 +2552,92 @@ impl GpuBackend {
         Ok(())
     }
 
+    pub fn create_texture_mip_view(
+        &mut self,
+        texture_id: i32,
+        mip_level: u32,
+    ) -> anyhow::Result<i32> {
+        self.ensure_sprite_resources()?;
+        let Some(source) = self.textures.get(&texture_id) else {
+            return Ok(0);
+        };
+        if mip_level >= source.mip_level_count {
+            return Ok(0);
+        }
+
+        let absolute_base_mip = source.base_mip_level + mip_level;
+        let width = (source.width >> mip_level).max(1);
+        let height = (source.height >> mip_level).max(1);
+        let format = source.format;
+        let texture = source.texture.clone();
+        let sampler = source.sampler.clone();
+        let is_render_target = source.is_render_target;
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("mgstudio-texture-mip-view"),
+            format: None,
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            usage: None,
+            aspect: wgpu::TextureAspect::All,
+            base_mip_level: absolute_base_mip,
+            mip_level_count: Some(1),
+            base_array_layer: 0,
+            array_layer_count: Some(1),
+        });
+        let bgl_tex = self
+            .sprite
+            .bgl_tex
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: sprite texture bind group layout not initialized"))?;
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio-sprite-tex"),
+            layout: bgl_tex,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+            ],
+        });
+
+        let id = self.next_texture_id;
+        self.next_texture_id += 1;
+        self.textures.insert(
+            id,
+            GpuTexture {
+                width,
+                height,
+                format,
+                texture,
+                view,
+                sampler,
+                bind_group,
+                mip_level_count: 1,
+                base_mip_level: absolute_base_mip,
+                is_render_target,
+            },
+        );
+        Ok(id)
+    }
+
     fn create_texture_rgba8_with_id(
         &mut self,
         id: i32,
         width: u32,
         height: u32,
+        mip_level_count: u32,
         pixels_rgba8: &[u8],
         nearest: bool,
         is_render_target: bool,
     ) -> anyhow::Result<()> {
         let width = width.max(1);
         let height = height.max(1);
+        let max_mip_count = max_mip_level_count_for_size(width, height);
+        let mip_level_count = mip_level_count.max(1).min(max_mip_count);
         let usage = if is_render_target {
             wgpu::TextureUsages::TEXTURE_BINDING
                 | wgpu::TextureUsages::COPY_DST
@@ -2523,7 +2655,7 @@ impl GpuBackend {
                 height,
                 depth_or_array_layers: 1,
             },
-            mip_level_count: 1,
+            mip_level_count,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
@@ -2612,6 +2744,8 @@ impl GpuBackend {
                 view,
                 sampler,
                 bind_group,
+                mip_level_count,
+                base_mip_level: 0,
                 is_render_target,
             },
         );
@@ -2701,6 +2835,8 @@ impl GpuBackend {
                 view,
                 sampler,
                 bind_group,
+                mip_level_count: 1,
+                base_mip_level: 0,
                 is_render_target: true,
             },
         );
@@ -2746,7 +2882,7 @@ impl GpuBackend {
         // Create a 1x1 white texture used by default material bindings.
         let white = [255u8, 255u8, 255u8, 255u8];
         self.ensure_sprite_resources()?;
-        self.create_texture_rgba8_with_id(DEFAULT_TEXTURE_ID, 1, 1, &white, false, false)?;
+        self.create_texture_rgba8_with_id(DEFAULT_TEXTURE_ID, 1, 1, 1, &white, false, false)?;
         Ok(DEFAULT_TEXTURE_ID)
     }
 

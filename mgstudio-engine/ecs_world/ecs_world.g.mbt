@@ -64,6 +64,7 @@ pub struct World {
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
+  wireframe2d : @core.ComponentStore[@render2d.Wireframe2d]
   no_wireframe : @core.ComponentStore[@render3d.NoWireframe]
   tonemapping : @core.ComponentStore[@render3d.Tonemapping]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
@@ -78,6 +79,7 @@ pub struct World {
   visibility : @core.ComponentStore[@visibility.Visibility]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
+  no_wireframe2d : @core.ComponentStore[@render2d.NoWireframe2d]
   normal_prepass : @core.ComponentStore[@render3d.NormalPrepass]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
   contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
@@ -99,6 +101,7 @@ pub struct World {
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
+  wireframe2d_color : @core.ComponentStore[@render2d.Wireframe2dColor]
   directional_light : @core.ComponentStore[@render3d.DirectionalLight]
   irradiance_volume : @core.ComponentStore[@render3d.IrradianceVolume]
   occlusion_culling : @core.ComponentStore[@render3d.OcclusionCulling]
@@ -207,6 +210,7 @@ pub struct World {
   res_physics3d_events : @core.Resource[@physics3d.Physics3dEvents]
   res_physics2d_context : @core.Resource[@physics2d.Physics2dContext]
   res_physics3d_context : @core.Resource[@physics3d.Physics3dContext]
+  res_wireframe2d_config : @core.Resource[@render2d.Wireframe2dConfig]
   res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
   res_default_opaque_renderer_method : @core.Resource[
     @render3d.DefaultOpaqueRendererMethod,
@@ -278,6 +282,7 @@ pub fn World::new() -> World {
     collider3d: @core.ComponentStore::new(),
     velocity3d: @core.ComponentStore::new(),
     scissor_rect: @core.ComponentStore::new(),
+    wireframe2d: @core.ComponentStore::new(),
     no_wireframe: @core.ComponentStore::new(),
     tonemapping: @core.ComponentStore::new(),
     dominance2d: @core.ComponentStore::new(),
@@ -292,6 +297,7 @@ pub fn World::new() -> World {
     visibility: @core.ComponentStore::new(),
     locked_axes2d: @core.ComponentStore::new(),
     color_material: @core.ComponentStore::new(),
+    no_wireframe2d: @core.ComponentStore::new(),
     normal_prepass: @core.ComponentStore::new(),
     active_hooks2d: @core.ComponentStore::new(),
     contact_skin2d: @core.ComponentStore::new(),
@@ -313,6 +319,7 @@ pub fn World::new() -> World {
     scene_instance_ready: @core.ComponentStore::new(),
     external_force2d: @core.ComponentStore::new(),
     clear_color_config: @core.ComponentStore::new(),
+    wireframe2d_color: @core.ComponentStore::new(),
     directional_light: @core.ComponentStore::new(),
     irradiance_volume: @core.ComponentStore::new(),
     occlusion_culling: @core.ComponentStore::new(),
@@ -377,6 +384,7 @@ pub fn World::new() -> World {
     res_physics3d_events: @core.Resource::new(),
     res_physics2d_context: @core.Resource::new(),
     res_physics3d_context: @core.Resource::new(),
+    res_wireframe2d_config: @core.Resource::new(),
     res_global_ambient_light: @core.Resource::new(),
     res_default_opaque_renderer_method: @core.Resource::new(),
   }
@@ -452,6 +460,7 @@ pub fn World::despawn(
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
+  self.wireframe2d.remove(entity) |> ignore
   self.no_wireframe.remove(entity) |> ignore
   self.tonemapping.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
@@ -466,6 +475,7 @@ pub fn World::despawn(
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
+  self.no_wireframe2d.remove(entity) |> ignore
   self.normal_prepass.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
   self.contact_skin2d.remove(entity) |> ignore
@@ -487,6 +497,7 @@ pub fn World::despawn(
   self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
+  self.wireframe2d_color.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
   self.irradiance_volume.remove(entity) |> ignore
   self.occlusion_culling.remove(entity) |> ignore
@@ -604,6 +615,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.collider3d.remove(entity) |> ignore
   self.velocity3d.remove(entity) |> ignore
   self.scissor_rect.remove(entity) |> ignore
+  self.wireframe2d.remove(entity) |> ignore
   self.no_wireframe.remove(entity) |> ignore
   self.tonemapping.remove(entity) |> ignore
   self.dominance2d.remove(entity) |> ignore
@@ -618,6 +630,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.visibility.remove(entity) |> ignore
   self.locked_axes2d.remove(entity) |> ignore
   self.color_material.remove(entity) |> ignore
+  self.no_wireframe2d.remove(entity) |> ignore
   self.normal_prepass.remove(entity) |> ignore
   self.active_hooks2d.remove(entity) |> ignore
   self.contact_skin2d.remove(entity) |> ignore
@@ -639,6 +652,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.scene_instance_ready.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
+  self.wireframe2d_color.remove(entity) |> ignore
   self.directional_light.remove(entity) |> ignore
   self.irradiance_volume.remove(entity) |> ignore
   self.occlusion_culling.remove(entity) |> ignore
@@ -1006,6 +1020,11 @@ pub impl @render2d.Has_ScissorRect for World with get_scissor_rect_store(self) {
 }
 
 ///|
+pub impl @render2d.Has_Wireframe2d for World with get_wireframe2d_store(self) {
+  self.wireframe2d
+}
+
+///|
 pub impl @render3d.Has_NoWireframe for World with get_no_wireframe_store(self) {
   self.no_wireframe
 }
@@ -1081,6 +1100,13 @@ pub impl @render2d.Has_ColorMaterial for World with get_color_material_store(
   self,
 ) {
   self.color_material
+}
+
+///|
+pub impl @render2d.Has_NoWireframe2d for World with get_no_wireframe2d_store(
+  self,
+) {
+  self.no_wireframe2d
 }
 
 ///|
@@ -1228,6 +1254,13 @@ pub impl @render2d.Has_ClearColorConfig for World with get_clear_color_config_st
   self,
 ) {
   self.clear_color_config
+}
+
+///|
+pub impl @render2d.Has_Wireframe2dColor for World with get_wireframe2d_color_store(
+  self,
+) {
+  self.wireframe2d_color
 }
 
 ///|
@@ -1668,6 +1701,13 @@ pub impl @physics3d.HasRes_Physics3dContext for World with get_physics3d_context
   self,
 ) {
   self.res_physics3d_context
+}
+
+///|
+pub impl @render2d.HasRes_Wireframe2dConfig for World with get_wireframe2d_config_resource(
+  self,
+) {
+  self.res_wireframe2d_config
 }
 
 ///|

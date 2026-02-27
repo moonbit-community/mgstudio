@@ -172,6 +172,32 @@ pub fn TextColor::default() -> TextColor {
 }
 
 ///|
+pub struct TextBackgroundColor {
+  color : @render2d.Color
+}
+
+///|
+pub fn TextBackgroundColor::new(color : @render2d.Color) -> TextBackgroundColor {
+  TextBackgroundColor::{ color, }
+}
+
+///|
+pub struct Underline {}
+
+///|
+pub fn Underline::default() -> Underline {
+  Underline::{  }
+}
+
+///|
+pub struct Strikethrough {}
+
+///|
+pub fn Strikethrough::default() -> Strikethrough {
+  Strikethrough::{  }
+}
+
+///|
 pub(all) enum LineHeight {
   Px(Float)
   RelativeToFont(Float)

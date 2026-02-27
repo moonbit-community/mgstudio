@@ -298,8 +298,21 @@ fn spawn_scaled_atlas_sprite(
 
 ///|
 fn resolve_scale_mode(_intended_mode : String) -> @render2d.SpriteImageMode {
-  // BLOCKER: SpriteImageMode::Scale(SpriteScalingMode::...) is not implemented.
-  @render2d.SpriteImageMode::Auto
+  match _intended_mode {
+    "FillCenter" =>
+      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FillCenter)
+    "FillStart" =>
+      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FillStart)
+    "FillEnd" =>
+      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FillEnd)
+    "FitCenter" =>
+      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FitCenter)
+    "FitStart" =>
+      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FitStart)
+    "FitEnd" =>
+      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FitEnd)
+    _ => @render2d.SpriteImageMode::Auto
+  }
 }
 
 ///|

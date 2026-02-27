@@ -1205,6 +1205,30 @@ pub fn create_host(
       b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
     }
   })
+  fn texture_mip_dimension(size : Int, mip_level : Int) -> Int {
+    let mut dim = if size > 0 { size } else { 1 }
+    let mut level = if mip_level > 0 { mip_level } else { 0 }
+    while level > 0 && dim > 1 {
+      dim = dim / 2
+      if dim < 1 {
+        dim = 1
+      }
+      level = level - 1
+    }
+    dim
+  }
+  fn texture_max_mip_level_count(width : Int, height : Int) -> Int {
+    let mut max_dim = if width > height { width } else { height }
+    if max_dim < 1 {
+      max_dim = 1
+    }
+    let mut count = 1
+    while max_dim > 1 {
+      max_dim = max_dim / 2
+      count = count + 1
+    }
+    count
+  }
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
     let kind = to_int(number_or(sampler_kind, 0))
@@ -1295,6 +1319,102 @@ pub fn create_host(
     }
     id
   })
+  let asset_create_dynamic_texture_mipped = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let width_value = arg_number(args, 0, 1)
+      let height_value = arg_number(args, 1, 1)
+      let mip_level_count_value = arg_number(args, 2, 1)
+      let nearest_value = arg_number(args, 3, 0)
+      if state.gpu.device is None {
+        throw_error("GPU device not ready")
+        return 0
+      }
+      ensure_pipeline_resources(state)
+      let id = state.gpu.next_texture_id
+      state.gpu.next_texture_id = id + 1
+      map_set(
+        state.assets.texture_paths,
+        @js.any(id),
+        @js.any("<dynamic-texture-mipped>"),
+      )
+      let safe_width = if width_value > 0 { to_int(width_value) } else { 1 }
+      let safe_height = if height_value > 0 { to_int(height_value) } else { 1 }
+      let requested_mips = to_int(mip_level_count_value)
+      let mut safe_mip_level_count = if requested_mips > 0 {
+        requested_mips
+      } else {
+        1
+      }
+      let max_mip_level_count = texture_max_mip_level_count(
+        safe_width, safe_height,
+      )
+      if safe_mip_level_count > max_mip_level_count {
+        safe_mip_level_count = max_mip_level_count
+      }
+      if state.gpu.device is Some(device) {
+        let texture_usage = @webgpu.combine_flags(
+          @webgpu.combine_flags(
+            @webgpu.combine_flags(
+              @webgpu.texture_usage_texture_binding(),
+              @webgpu.texture_usage_copy_dst(),
+            ),
+            @webgpu.texture_usage_copy_src(),
+          ),
+          @webgpu.texture_usage_render_attachment(),
+        )
+        let texture_desc = @webgpu.texture_descriptor(
+          @webgpu.texture_size(safe_width, safe_height),
+          @webgpu.TextureFormat::Rgba8Unorm,
+          texture_usage,
+        ).to_js()
+        texture_desc._set("mipLevelCount", @js.any(safe_mip_level_count))
+        |> ignore
+        let texture = device.create_texture(texture_desc)
+        let queue = device.queue().as_any()
+        for mip_level in 0..<safe_mip_level_count {
+          let mip_width = texture_mip_dimension(safe_width, mip_level)
+          let mip_height = texture_mip_dimension(safe_height, mip_level)
+          let clear_data = create_zero_rgba_data(mip_width, mip_height)
+          write_texture_region_mip(
+            queue,
+            texture.as_any(),
+            clear_data,
+            mip_width,
+            mip_height,
+            0,
+            0,
+            mip_level,
+          )
+        }
+        let sampler = create_sampler(
+          state,
+          sampler_kind_from_nearest(nearest_value != 0),
+        )
+        if sampler is Some(sampler_value) {
+          let entry = @js.from_entries([
+            ("id", @js.any(id)),
+            ("texture", texture.as_any()),
+            ("view", texture.create_view().as_any()),
+            ("sampler", sampler_value.as_any()),
+            ("bindGroup", js_null()),
+            ("meshBindGroup", js_null()),
+            ("mesh3dBindGroup", js_null()),
+            ("uiBindGroup", js_null()),
+            ("width", @js.any(safe_width)),
+            ("height", @js.any(safe_height)),
+            (
+              "format",
+              @js.any(@webgpu.TextureFormat::Rgba8Unorm.to_js_string()),
+            ),
+            ("mipLevelCount", @js.any(safe_mip_level_count)),
+          ])
+          map_set(state.gpu.textures, @js.any(id), entry)
+          ensure_bind_group_for_texture(state, entry)
+        }
+      }
+      id
+    }),
+  )
   let asset_update_texture_region = wrap_variadic(
     @js.from_fn1(fn(args) {
       let texture_id = to_int(arg_number(args, 0, -1))
@@ -1393,6 +1513,101 @@ pub fn create_host(
       }
     }),
   )
+  let asset_update_texture_region_mip_bytes = wrap_variadic(
+    @js.from_fn1(fn(args) {
+      let texture_id = to_int(arg_number(args, 0, -1))
+      let x = to_int(arg_number(args, 1, 0))
+      let y = to_int(arg_number(args, 2, 0))
+      let width = to_int(arg_number(args, 3, 0))
+      let height = to_int(arg_number(args, 4, 0))
+      let mip_level = to_int(arg_number(args, 5, 0))
+      let bytes_id = to_int(arg_number(args, 6, -1))
+      if width <= 0 || height <= 0 || mip_level < 0 {
+        return
+      }
+      let texture_entry = map_get(state.gpu.textures, @js.any(texture_id))
+      if host_is_nullish(texture_entry) {
+        dispatch_asset_error("Texture update error: texture id not found")
+        return
+      }
+      let blob = map_get(state.assets.blobs, @js.any(bytes_id))
+      if host_is_nullish(blob) {
+        dispatch_asset_error("Texture update error: bytes id not found")
+        return
+      }
+      if state.gpu.queue is Some(queue) && state.gpu.device is Some(device) {
+        device.push_error_scope("validation")
+        write_texture_region_mip(
+          queue.as_any(),
+          texture_entry._get("texture"),
+          blob,
+          width,
+          height,
+          x,
+          y,
+          mip_level,
+        )
+        let promise = device.pop_error_scope()
+        @js.run_async(async fn() noraise {
+          let err_any : @js.Any = promise.wait() catch { _ => js_null() }
+          if !host_is_nullish(err_any) {
+            report_asset_error_once(
+              state,
+              "texture_update_mip_validation_error",
+              "Texture mip update validation error: " + any_to_string(err_any),
+            )
+          }
+        })
+      }
+    }),
+  )
+  let asset_create_texture_mip_view = @js.from_fn2(fn(
+    texture_id_any : @js.Any,
+    mip_level_any : @js.Any,
+  ) {
+    let texture_id = to_int(number_or(texture_id_any, -1))
+    let mip_level = to_int(number_or(mip_level_any, 0))
+    if texture_id < 0 || mip_level < 0 {
+      return 0
+    }
+    let source_entry = map_get(state.gpu.textures, @js.any(texture_id))
+    if host_is_nullish(source_entry) {
+      dispatch_asset_error("Texture mip view error: texture id not found")
+      return 0
+    }
+    let source_width = to_int(number_or(source_entry._get("width"), 1))
+    let source_height = to_int(number_or(source_entry._get("height"), 1))
+    let mip_width = texture_mip_dimension(source_width, mip_level)
+    let mip_height = texture_mip_dimension(source_height, mip_level)
+    let descriptor = @js.from_entries([
+      ("baseMipLevel", @js.any(mip_level)),
+      ("mipLevelCount", @js.any(1)),
+    ])
+    let texture : @webgpu.GPUTexture = source_entry._get("texture").cast()
+    let id = state.gpu.next_texture_id
+    state.gpu.next_texture_id = id + 1
+    let entry = @js.from_entries([
+      ("id", @js.any(id)),
+      ("texture", texture.as_any()),
+      ("view", texture.create_view(descriptor~).as_any()),
+      ("sampler", source_entry._get("sampler")),
+      ("bindGroup", js_null()),
+      ("meshBindGroup", js_null()),
+      ("mesh3dBindGroup", js_null()),
+      ("uiBindGroup", js_null()),
+      ("width", @js.any(mip_width)),
+      ("height", @js.any(mip_height)),
+      ("format", source_entry._get("format")),
+      ("mipLevelCount", @js.any(1)),
+    ])
+    map_set(state.gpu.textures, @js.any(id), entry)
+    let path_entry = map_get(state.assets.texture_paths, @js.any(texture_id))
+    if !host_is_nullish(path_entry) {
+      map_set(state.assets.texture_paths, @js.any(id), path_entry)
+    }
+    ensure_bind_group_for_texture(state, entry)
+    id
+  })
   let asset_texture_width = @js.from_fn1(fn(texture_id) {
     let id = to_int(number_or(texture_id, -1))
     let entry = map_get(state.gpu.textures, @js.any(id))
@@ -2607,8 +2822,13 @@ pub fn create_host(
     ("font_measure_advance", font_measure_advance),
     ("asset_set_texture_sampler", asset_set_texture_sampler),
     ("asset_create_dynamic_texture", asset_create_dynamic_texture),
+    ("asset_create_dynamic_texture_mipped", asset_create_dynamic_texture_mipped),
     ("asset_update_texture_region", asset_update_texture_region),
     ("asset_update_texture_region_bytes", asset_update_texture_region_bytes),
+    (
+      "asset_update_texture_region_mip_bytes", asset_update_texture_region_mip_bytes,
+    ),
+    ("asset_create_texture_mip_view", asset_create_texture_mip_view),
     ("asset_texture_width", asset_texture_width),
     ("asset_texture_height", asset_texture_height),
     ("asset_is_texture_loaded", asset_is_texture_loaded),

@@ -5,12 +5,13 @@
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom2d", "Camera2d", "GpuMesh2d", "Projection",
-  "ScissorRect", "RenderLayers", "RenderTarget", "ColorMaterial", "ClearColorConfig",
+  "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
+  "NoWireframe2d", "ClearColorConfig", "Wireframe2dColor",
 ]
 
 ///|
 /// ECS resource types discovered via `#ecs.resource`.
-pub let ecs_resources : Array[String] = ["RenderState"]
+pub let ecs_resources : Array[String] = ["RenderState", "Wireframe2dConfig"]
 
 ///|
 pub(open) trait Has_Anchor {
@@ -58,6 +59,11 @@ pub(open) trait Has_ScissorRect {
 }
 
 ///|
+pub(open) trait Has_Wireframe2d {
+  get_wireframe2d_store(self : Self) -> @core.ComponentStore[Wireframe2d]
+}
+
+///|
 pub(open) trait Has_RenderLayers {
   get_render_layers_store(self : Self) -> @core.ComponentStore[RenderLayers]
 }
@@ -73,6 +79,11 @@ pub(open) trait Has_ColorMaterial {
 }
 
 ///|
+pub(open) trait Has_NoWireframe2d {
+  get_no_wireframe2d_store(self : Self) -> @core.ComponentStore[NoWireframe2d]
+}
+
+///|
 pub(open) trait Has_ClearColorConfig {
   get_clear_color_config_store(self : Self) -> @core.ComponentStore[
     ClearColorConfig,
@@ -80,6 +91,20 @@ pub(open) trait Has_ClearColorConfig {
 }
 
 ///|
+pub(open) trait Has_Wireframe2dColor {
+  get_wireframe2d_color_store(self : Self) -> @core.ComponentStore[
+    Wireframe2dColor,
+  ]
+}
+
+///|
 pub(open) trait HasRes_RenderState {
   get_render_state_resource(self : Self) -> @core.Resource[RenderState]
+}
+
+///|
+pub(open) trait HasRes_Wireframe2dConfig {
+  get_wireframe2d_config_resource(self : Self) -> @core.Resource[
+    Wireframe2dConfig,
+  ]
 }

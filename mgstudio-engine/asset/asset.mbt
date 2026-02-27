@@ -85,6 +85,39 @@ pub struct AssetServer {
 }
 
 ///|
+pub(all) enum ImageArrayLayout {
+  RowCount(Int)
+  RowHeight(Int)
+}
+
+///|
+pub struct ImageLoaderSettings {
+  sampler : ImageSampler
+  array_layout : ImageArrayLayout?
+}
+
+///|
+pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
+  ImageLoaderSettings::{ sampler: ImageSampler::Linear, array_layout: None }
+}
+
+///|
+pub fn ImageLoaderSettings::with_sampler(
+  self : ImageLoaderSettings,
+  sampler : ImageSampler,
+) -> ImageLoaderSettings {
+  ImageLoaderSettings::{ ..self, sampler, }
+}
+
+///|
+pub fn ImageLoaderSettings::with_array_layout(
+  self : ImageLoaderSettings,
+  array_layout : ImageArrayLayout?,
+) -> ImageLoaderSettings {
+  ImageLoaderSettings::{ ..self, array_layout, }
+}
+
+///|
 pub const COMPRESSED_IMAGE_FORMAT_NONE : Int = 0
 
 ///|
@@ -105,8 +138,38 @@ pub fn AssetServer::new() -> AssetServer {
 let asset_image_paths : Ref[Array[(String, Handle[Image])]] = Ref::new([])
 
 ///|
+let asset_image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]] = Ref::new([])
+
+///|
 fn asset_register_image_path(path : String, handle : Handle[Image]) -> Unit {
   asset_image_paths.val.push((path, handle))
+}
+
+///|
+fn asset_set_image_array_layout(
+  image : Handle[Image],
+  array_layout : ImageArrayLayout?,
+) -> Unit {
+  let next : Array[(Int, ImageArrayLayout)] = []
+  for pair in asset_image_array_layouts.val {
+    if pair.0 != image.id() {
+      next.push(pair)
+    }
+  }
+  if array_layout is Some(layout) {
+    next.push((image.id(), layout))
+  }
+  asset_image_array_layouts.val = next
+}
+
+///|
+pub fn asset_image_array_layout(image : Handle[Image]) -> ImageArrayLayout? {
+  for pair in asset_image_array_layouts.val {
+    if pair.0 == image.id() {
+      return Some(pair.1)
+    }
+  }
+  None
 }
 
 ///|
@@ -162,6 +225,31 @@ pub fn asset_transparent_texture() -> Handle[Image] {
 }
 
 ///|
+let asset_white_texture_handle : Ref[Handle[Image]?] = Ref::new(None)
+
+///|
+/// Returns a lazily-created 1x1 opaque white texture handle.
+pub fn asset_white_texture() -> Handle[Image] {
+  match asset_white_texture_handle.val {
+    Some(h) => h
+    None => {
+      let size = @math.UVec2::new(1, 1)
+      let handle = asset_create_dynamic_texture(size, false)
+      let rect = @math.URect::new(
+        @math.UVec2::new(0, 0),
+        @math.UVec2::new(1, 1),
+      )
+      let white_u : Int = 255
+      let white_b : Byte = white_u.to_byte()
+      let bytes = Bytes::from_array([white_b, white_b, white_b, white_b])
+      asset_update_texture_region_rgba8(handle, rect, bytes)
+      asset_white_texture_handle.val = Some(handle)
+      handle
+    }
+  }
+}
+
+///|
 pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int {
   @core.with_host_string_id(path, fn(path_id) {
     host_asset_load_texture_id(path_id~, nearest~)
@@ -208,6 +296,14 @@ pub fn host_asset_create_dynamic_texture(
 ) -> Int = "mgstudio_host" "asset_create_dynamic_texture"
 
 ///|
+pub fn host_asset_create_dynamic_texture_mipped(
+  width~ : Int,
+  height~ : Int,
+  mip_level_count~ : Int,
+  nearest~ : Bool,
+) -> Int = "mgstudio_host" "asset_create_dynamic_texture_mipped"
+
+///|
 pub fn host_asset_update_texture_region(
   texture_id~ : Int,
   x~ : Int,
@@ -226,6 +322,23 @@ pub fn host_asset_update_texture_region_bytes(
   height~ : Int,
   bytes_id~ : Int,
 ) -> Unit = "mgstudio_host" "asset_update_texture_region_bytes"
+
+///|
+pub fn host_asset_update_texture_region_mip_bytes(
+  texture_id~ : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+  mip_level~ : Int,
+  bytes_id~ : Int,
+) -> Unit = "mgstudio_host" "asset_update_texture_region_mip_bytes"
+
+///|
+pub fn host_asset_create_texture_mip_view(
+  texture_id~ : Int,
+  mip_level~ : Int,
+) -> Int = "mgstudio_host" "asset_create_texture_mip_view"
 
 ///|
 pub fn host_asset_texture_width(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_width"
@@ -253,6 +366,7 @@ pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
   self.paths.push(path)
   let handle = Handle::new(id)
   asset_register_image_path(path, handle)
+  asset_set_image_array_layout(handle, None)
   handle
 }
 
@@ -265,6 +379,34 @@ pub fn AssetServer::load_nearest(
   self.paths.push(path)
   let handle = Handle::new(id)
   asset_register_image_path(path, handle)
+  asset_set_image_array_layout(handle, None)
+  handle
+}
+
+///|
+fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
+  match sampler {
+    ImageSampler::Nearest => true
+    ImageSampler::NearestRepeat => true
+    _ => false
+  }
+}
+
+///|
+pub fn AssetServer::load_with_settings(
+  self : AssetServer,
+  path : String,
+  settings : ImageLoaderSettings,
+) -> Handle[Image] {
+  let id = host_asset_load_texture(
+    path~,
+    nearest=image_sampler_is_nearest(settings.sampler),
+  )
+  self.paths.push(path)
+  let handle = Handle::new(id)
+  asset_register_image_path(path, handle)
+  asset_set_texture_sampler(handle, settings.sampler)
+  asset_set_image_array_layout(handle, settings.array_layout)
   handle
 }
 
@@ -365,9 +507,24 @@ pub fn asset_create_dynamic_texture(
   size : @math.UVec2,
   nearest : Bool,
 ) -> Handle[Image] {
-  let id = host_asset_create_dynamic_texture(
+  asset_create_dynamic_texture_with_mips(size, 1, nearest)
+}
+
+///|
+pub fn asset_create_dynamic_texture_with_mips(
+  size : @math.UVec2,
+  mip_level_count : Int,
+  nearest : Bool,
+) -> Handle[Image] {
+  let safe_mip_level_count = if mip_level_count <= 0 {
+    1
+  } else {
+    mip_level_count
+  }
+  let id = host_asset_create_dynamic_texture_mipped(
     width=size.x,
     height=size.y,
+    mip_level_count=safe_mip_level_count,
     nearest~,
   )
   Handle::new(id)
@@ -396,18 +553,43 @@ pub fn asset_update_texture_region_rgba8(
   rect : @math.URect,
   pixels_rgba8 : Bytes,
 ) -> Unit {
+  asset_update_texture_region_rgba8_mip(texture, rect, 0, pixels_rgba8)
+}
+
+///|
+pub fn asset_update_texture_region_rgba8_mip(
+  texture : Handle[Image],
+  rect : @math.URect,
+  mip_level : Int,
+  pixels_rgba8 : Bytes,
+) -> Unit {
   let size = rect.size()
+  let safe_mip_level = if mip_level < 0 { 0 } else { mip_level }
   @core.with_host_bytes_id(pixels_rgba8, fn(bytes_id) {
-    host_asset_update_texture_region_bytes(
+    host_asset_update_texture_region_mip_bytes(
       texture_id=texture.id(),
       x=rect.min.x,
       y=rect.min.y,
       width=size.x,
       height=size.y,
+      mip_level=safe_mip_level,
       bytes_id~,
     )
   })
   |> ignore
+}
+
+///|
+pub fn asset_create_texture_mip_view(
+  texture : Handle[Image],
+  mip_level : Int,
+) -> Handle[Image] {
+  let safe_mip_level = if mip_level < 0 { 0 } else { mip_level }
+  let id = host_asset_create_texture_mip_view(
+    texture_id=texture.id(),
+    mip_level=safe_mip_level,
+  )
+  Handle::new(id)
 }
 
 ///|
