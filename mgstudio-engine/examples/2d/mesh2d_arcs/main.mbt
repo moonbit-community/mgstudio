@@ -118,7 +118,9 @@ fn mesh2d_arcs_setup(world : @ecs_world.World) -> Unit {
     let sector_rotation = -sector.half_angle()
     spawn_arc_shape(
       world,
-      @render2d.Mesh2d::from_circular_sector(sector),
+      @render2d.Mesh2d::from_circular_sector(
+        sector.with_uv_mask_angle(sector_rotation),
+      ),
       material,
       @math.Vec2::new(x, SECTOR_Y),
       sector_rotation,
@@ -137,7 +139,9 @@ fn mesh2d_arcs_setup(world : @ecs_world.World) -> Unit {
     let segment_rotation = -@math.pi_half()
     spawn_arc_shape(
       world,
-      @render2d.Mesh2d::from_circular_segment(segment),
+      @render2d.Mesh2d::from_circular_segment(
+        segment.with_uv_mask_angle(-segment_rotation),
+      ),
       material,
       @math.Vec2::new(x, SEGMENT_Y),
       segment_rotation,

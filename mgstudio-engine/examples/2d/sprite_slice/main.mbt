@@ -16,6 +16,12 @@
 const ROW_GAP : Float = 40.0F
 
 ///|
+const LABEL_FONT_SIZE : Float = 20.0F
+
+///|
+const LABEL_VERTICAL_GAP : Float = 10.0F
+
+///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
@@ -35,11 +41,12 @@ fn sprite_slice_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let handle_1 = asset_server.load("textures/slice_square.png")
   let handle_2 = asset_server.load("textures/slice_square_2.png")
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
-  // BLOCKER: render2d has no Text2d equivalent yet, so labels are omitted.
   spawn_sprite_row(
     world,
     handle_1,
+    font,
     @math.Vec2::new(-600.0F, 150.0F),
     200.0F,
     ROW_GAP,
@@ -47,6 +54,7 @@ fn sprite_slice_setup(world : @ecs_world.World) -> Unit {
   spawn_sprite_row(
     world,
     handle_2,
+    font,
     @math.Vec2::new(-600.0F, -150.0F),
     80.0F,
     ROW_GAP,
@@ -57,19 +65,30 @@ fn sprite_slice_setup(world : @ecs_world.World) -> Unit {
 fn spawn_sprite_row(
   world : @ecs_world.World,
   texture_handle : @asset.Handle[@asset.Image],
+  font : @asset.Handle[@asset.Font],
   start_position : @math.Vec2,
   slice_border : Float,
   gap : Float,
 ) -> Unit {
   let border = @render2d.BorderRect::square(slice_border)
-  let cases : Array[(@math.Vec2, @render2d.SpriteImageMode)] = [
-    (@math.Vec2::new(100.0F, 100.0F), @render2d.SpriteImageMode::Auto),
-    (@math.Vec2::new(100.0F, 200.0F), @render2d.SpriteImageMode::Auto),
+  let cases : Array[(String, @math.Vec2, @render2d.SpriteImageMode)] = [
     (
+      "Original",
+      @math.Vec2::new(100.0F, 100.0F),
+      @render2d.SpriteImageMode::Auto,
+    ),
+    (
+      "Stretched",
+      @math.Vec2::new(100.0F, 200.0F),
+      @render2d.SpriteImageMode::Auto,
+    ),
+    (
+      "With Slicing",
       @math.Vec2::new(100.0F, 200.0F),
       @render2d.SpriteImageMode::Sliced(@render2d.TextureSlicer::new(border)),
     ),
     (
+      "With Tiling",
       @math.Vec2::new(100.0F, 200.0F),
       @render2d.SpriteImageMode::Sliced(
         @render2d.TextureSlicer::new(border)
@@ -78,6 +97,7 @@ fn spawn_sprite_row(
       ),
     ),
     (
+      "With Tiling",
       @math.Vec2::new(300.0F, 200.0F),
       @render2d.SpriteImageMode::Sliced(
         @render2d.TextureSlicer::new(border)
@@ -86,6 +106,7 @@ fn spawn_sprite_row(
       ),
     ),
     (
+      "With Corners Constrained",
       @math.Vec2::new(300.0F, 200.0F),
       @render2d.SpriteImageMode::Sliced(
         @render2d.TextureSlicer::new(border)
@@ -98,8 +119,9 @@ fn spawn_sprite_row(
 
   let mut cursor_x = start_position.x
   for item in cases {
-    let size = item.0
-    let image_mode = item.1
+    let label = item.0
+    let size = item.1
+    let image_mode = item.2
     cursor_x = cursor_x + 0.5F * size.x
     let position = @math.Vec2::new(cursor_x, start_position.y)
     let transform = @math.Transform::from_xy_rotation_scale(
@@ -111,6 +133,34 @@ fn spawn_sprite_row(
       .with_custom_size(Some(size))
       .with_image_mode(image_mode)
     @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+    spawn_slice_label(label, font, position, size)
     cursor_x = cursor_x + 0.5F * size.x + gap
   }
+}
+
+///|
+fn spawn_slice_label(
+  label : String,
+  font : @asset.Handle[@asset.Font],
+  sprite_position : @math.Vec2,
+  sprite_size : @math.Vec2,
+) -> Unit {
+  let label_transform = @math.Transform::from_xy_rotation_scale(
+    @math.Vec2::new(
+      sprite_position.x,
+      sprite_position.y - 0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
+    ),
+    0.0F,
+    @math.Vec2::new(1.0F, 1.0F),
+  )
+  @text.Text2dBundle::new(
+    @text.Text2d::new(label),
+    @text.TextFont::default().with_font(font).with_font_size(LABEL_FONT_SIZE),
+    label_transform,
+  )
+  .with_color(@text.TextColor::new(@render2d.Color::white()))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+  .with_anchor(@render2d.Anchor::top_center())
+  .spawn()
+  |> ignore
 }

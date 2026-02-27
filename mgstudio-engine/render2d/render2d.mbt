@@ -1441,6 +1441,12 @@ pub struct CircularSector {
   radius : Float
   half_angle : Float
   vertices : Int
+  uv_mode : CircularMeshUvMode
+}
+
+///|
+pub(all) enum CircularMeshUvMode {
+  Mask(Float)
 }
 
 ///|
@@ -1448,7 +1454,7 @@ pub fn CircularSector::new(
   radius : Float,
   half_angle : Float,
 ) -> CircularSector {
-  CircularSector::{ radius, half_angle, vertices: 32 }
+  CircularSector::{ radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
 }
 
 ///|
@@ -1465,6 +1471,22 @@ pub fn CircularSector::with_vertices(
   vertices : Int,
 ) -> CircularSector {
   CircularSector::{ ..self, vertices, }
+}
+
+///|
+pub fn CircularSector::with_uv_mode(
+  self : CircularSector,
+  uv_mode : CircularMeshUvMode,
+) -> CircularSector {
+  CircularSector::{ ..self, uv_mode, }
+}
+
+///|
+pub fn CircularSector::with_uv_mask_angle(
+  self : CircularSector,
+  angle : Float,
+) -> CircularSector {
+  self.with_uv_mode(Mask(angle))
 }
 
 ///|
@@ -1501,6 +1523,7 @@ pub struct CircularSegment {
   radius : Float
   half_angle : Float
   vertices : Int
+  uv_mode : CircularMeshUvMode
 }
 
 ///|
@@ -1508,7 +1531,7 @@ pub fn CircularSegment::new(
   radius : Float,
   half_angle : Float,
 ) -> CircularSegment {
-  CircularSegment::{ radius, half_angle, vertices: 32 }
+  CircularSegment::{ radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
 }
 
 ///|
@@ -1525,6 +1548,22 @@ pub fn CircularSegment::with_vertices(
   vertices : Int,
 ) -> CircularSegment {
   CircularSegment::{ ..self, vertices, }
+}
+
+///|
+pub fn CircularSegment::with_uv_mode(
+  self : CircularSegment,
+  uv_mode : CircularMeshUvMode,
+) -> CircularSegment {
+  CircularSegment::{ ..self, uv_mode, }
+}
+
+///|
+pub fn CircularSegment::with_uv_mask_angle(
+  self : CircularSegment,
+  angle : Float,
+) -> CircularSegment {
+  self.with_uv_mode(Mask(angle))
 }
 
 ///|
@@ -1631,9 +1670,9 @@ pub fn CircularSegment::to_ring(
   let apothem = old_apothem + distance
   let safe_radius = if radius <= 1.0e-6F { 1.0e-6F } else { radius }
   let half_angle = ring_safe_acos(apothem / safe_radius)
-  let inner = CircularSegment::new(safe_radius, half_angle).with_vertices(
-    self.vertices,
-  )
+  let inner = CircularSegment::new(safe_radius, half_angle)
+    .with_vertices(self.vertices)
+    .with_uv_mode(self.uv_mode)
   CircularSegmentRing::new(self, inner)
 }
 
@@ -2531,6 +2570,9 @@ fn circular_sector_to_mesh2d_geometry(
 ) -> @mesh.Mesh2dGeometry {
   let radius = shape_safe_positive(shape_abs_float(sector.radius), 0.5F)
   let half_angle = arc_safe_half_angle(sector.half_angle)
+  let uv_angle = match sector.uv_mode {
+    Mask(angle) => angle
+  }
   let resolution = shape_safe_segments(sector.vertices, 2)
   let first_angle = @math.pi_half() - half_angle
   let last_angle = @math.pi_half() + half_angle
@@ -2546,8 +2588,8 @@ fn circular_sector_to_mesh2d_geometry(
     )
     uvs.push(
       @math.Vec2::new(
-        @math.cos(-angle) * 0.5F + 0.5F,
-        @math.sin(-angle) * 0.5F + 0.5F,
+        @math.cos(-(angle + uv_angle)) * 0.5F + 0.5F,
+        @math.sin(-(angle + uv_angle)) * 0.5F + 0.5F,
       ),
     )
   }
@@ -2574,6 +2616,9 @@ fn circular_segment_to_mesh2d_geometry(
 ) -> @mesh.Mesh2dGeometry {
   let radius = shape_safe_positive(shape_abs_float(segment.radius), 0.5F)
   let half_angle = arc_safe_half_angle(segment.half_angle)
+  let uv_angle = match segment.uv_mode {
+    Mask(angle) => angle
+  }
   let resolution = shape_safe_segments(segment.vertices, 2)
   let first_angle = @math.pi_half() - half_angle
   let last_angle = @math.pi_half() + half_angle
@@ -2581,8 +2626,14 @@ fn circular_segment_to_mesh2d_geometry(
   let positions : Array[@math.Vec2] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
+  let midpoint_uv_scale = 0.5F * midpoint_y / radius
   positions.push(@math.Vec2::new(0.0F, midpoint_y))
-  uvs.push(@math.Vec2::new(0.5F, 0.5F - 0.5F * midpoint_y / radius))
+  uvs.push(
+    @math.Vec2::new(
+      @math.cos(-uv_angle - @math.pi_half()) * midpoint_uv_scale + 0.5F,
+      @math.sin(-uv_angle - @math.pi_half()) * midpoint_uv_scale + 0.5F,
+    ),
+  )
   for i in 0..<resolution {
     let angle = arc_angle_from_index(first_angle, last_angle, i, resolution)
     positions.push(
@@ -2590,8 +2641,8 @@ fn circular_segment_to_mesh2d_geometry(
     )
     uvs.push(
       @math.Vec2::new(
-        @math.cos(-angle) * 0.5F + 0.5F,
-        @math.sin(-angle) * 0.5F + 0.5F,
+        @math.cos(-(angle + uv_angle)) * 0.5F + 0.5F,
+        @math.sin(-(angle + uv_angle)) * 0.5F + 0.5F,
       ),
     )
   }
