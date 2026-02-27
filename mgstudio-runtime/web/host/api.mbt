@@ -1649,8 +1649,11 @@ pub fn create_host(
       let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
       let texture_usage = @webgpu.combine_flags(
         @webgpu.combine_flags(
-          @webgpu.texture_usage_texture_binding(),
-          @webgpu.texture_usage_render_attachment(),
+          @webgpu.combine_flags(
+            @webgpu.texture_usage_texture_binding(),
+            @webgpu.texture_usage_render_attachment(),
+          ),
+          @webgpu.texture_usage_copy_src(),
         ),
         @webgpu.texture_usage_copy_dst(),
       )
@@ -1709,8 +1712,11 @@ pub fn create_host(
       let format = @webgpu.TextureFormat::Other("rgba16float")
       let texture_usage = @webgpu.combine_flags(
         @webgpu.combine_flags(
-          @webgpu.texture_usage_texture_binding(),
-          @webgpu.texture_usage_render_attachment(),
+          @webgpu.combine_flags(
+            @webgpu.texture_usage_texture_binding(),
+            @webgpu.texture_usage_render_attachment(),
+          ),
+          @webgpu.texture_usage_copy_src(),
         ),
         @webgpu.texture_usage_copy_dst(),
       )
