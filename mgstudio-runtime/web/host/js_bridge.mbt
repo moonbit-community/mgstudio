@@ -279,7 +279,14 @@ extern "js" fn add_event_listener(
   event_name : String,
   handler : @js.Any,
 ) -> Unit =
-  #| (target, eventName, handler) => target.addEventListener(eventName, handler)
+  #| (target, eventName, handler) => {
+  #|   if (!target || typeof target.addEventListener !== "function") return
+  #|   if (eventName === "wheel" || eventName === "touchstart" || eventName === "touchmove") {
+  #|     target.addEventListener(eventName, handler, { passive: false })
+  #|     return
+  #|   }
+  #|   target.addEventListener(eventName, handler)
+  #| }
 
 ///|
 extern "js" fn wrap_variadic(func : @js.Any) -> @js.Any =
@@ -458,6 +465,55 @@ extern "js" fn get_bounding_rect(canvas : @js.Any) -> @js.Any =
 ///|
 extern "js" fn prevent_default(event : @js.Any) -> Unit =
   #| (event) => event.preventDefault()
+
+///|
+extern "js" fn prepare_canvas_for_input(canvas : @js.Any) -> Unit =
+  #| (canvas) => {
+  #|   if (!canvas || typeof canvas !== "object") return
+  #|   if (!canvas.hasAttribute("tabindex")) {
+  #|     canvas.setAttribute("tabindex", "0")
+  #|   }
+  #|   if (canvas.style) {
+  #|     canvas.style.outline = "none"
+  #|   }
+  #|   const focusCanvas = () => {
+  #|     if (typeof canvas.focus !== "function") return
+  #|     try {
+  #|       canvas.focus({ preventScroll: true })
+  #|     } catch (_err) {
+  #|       try { canvas.focus() } catch (_e) {}
+  #|     }
+  #|   }
+  #|   if (!canvas.__mgstudioInputFocusBound) {
+  #|     canvas.addEventListener("pointerdown", focusCanvas)
+  #|     canvas.addEventListener("mousedown", focusCanvas)
+  #|     canvas.__mgstudioInputFocusBound = true
+  #|   }
+  #| }
+
+///|
+extern "js" fn should_capture_keyboard_event(
+  event : @js.Any,
+  canvas : @js.Any,
+) -> Bool =
+  #| (event, canvas) => {
+  #|   if (!event || !canvas) return false
+  #|   const target = event.target
+  #|   if (target && typeof target === "object") {
+  #|     const tag = String(target.tagName || "").toUpperCase()
+  #|     if (target.isContentEditable || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+  #|       return false
+  #|     }
+  #|   }
+  #|   const doc =
+  #|     (typeof document === "object" && document) ||
+  #|     canvas.ownerDocument ||
+  #|     null
+  #|   if (!doc) return false
+  #|   if (doc.activeElement === canvas) return true
+  #|   if (doc.pointerLockElement === canvas) return true
+  #|   return false
+  #| }
 
 ///|
 extern "js" fn keyboard_event_character(event : @js.Any) -> String =

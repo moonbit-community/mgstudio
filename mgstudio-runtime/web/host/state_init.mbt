@@ -744,6 +744,10 @@ fn init_input(state : State) -> Unit {
     win,
     "keydown",
     @js.from_fn1(fn(event : @js.Any) {
+      if state.window is Some(window_state) &&
+        !should_capture_keyboard_event(event, window_state.canvas) {
+        return
+      }
       let text = keyboard_event_character(event)
       if text != "" {
         state.input.text_events.push(text)
@@ -752,6 +756,7 @@ fn init_input(state : State) -> Unit {
       if repeat_value {
         let code_repeat = any_to_string(event._get("code").cast())
         set_add(state.input.repeated, @js.any(code_repeat))
+        prevent_default(event)
         return
       }
       let code = any_to_string(event._get("code").cast())
@@ -759,16 +764,22 @@ fn init_input(state : State) -> Unit {
         set_add(state.input.pressed, @js.any(code))
         set_add(state.input.just_pressed, @js.any(code))
       }
+      prevent_default(event)
     }),
   )
   add_event_listener(
     win,
     "keyup",
     @js.from_fn1(fn(event : @js.Any) {
+      if state.window is Some(window_state) &&
+        !should_capture_keyboard_event(event, window_state.canvas) {
+        return
+      }
       let code = any_to_string(event._get("code").cast())
       if set_delete(state.input.pressed, @js.any(code)) {
         set_add(state.input.just_released, @js.any(code))
       }
+      prevent_default(event)
     }),
   )
   add_event_listener(

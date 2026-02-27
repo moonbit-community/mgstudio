@@ -53,6 +53,7 @@ pub fn create_host(
   let default_canvas = ensure_canvas(canvas_opt)
   let window_create = @js.from_fn3(fn(width, height, title) {
     let target = default_canvas
+    prepare_canvas_for_input(target)
     let width_num = to_int(number_or(width, 800))
     let height_num = to_int(number_or(height, 600))
     target._set("width", @js.any(width_num)) |> ignore
