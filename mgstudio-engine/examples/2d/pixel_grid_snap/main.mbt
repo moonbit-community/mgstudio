@@ -35,6 +35,8 @@ priv struct PixelGridState {
   mut pixel_mesh : @core.Entity
   mut outer_camera : @core.Entity
   mut rotation : Float
+  mut last_window_width : Int
+  mut last_window_height : Int
 }
 
 ///|
@@ -44,6 +46,8 @@ let pixel_state : Ref[PixelGridState] = Ref::new(PixelGridState::{
   pixel_mesh: @core.Entity::placeholder(),
   outer_camera: @core.Entity::placeholder(),
   rotation: 0.0F,
+  last_window_width: 0,
+  last_window_height: 0,
 })
 
 ///|
@@ -96,7 +100,9 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
     ),
     pixel_layers,
   ).spawn(world)
-  let in_game_camera = @render2d.Camera::default().with_order(-1)
+  let in_game_camera = @render2d.Camera::default()
+    .with_order(-1)
+    .with_clear_color(@render2d.Color::srgb(0.5F, 0.5F, 0.5F))
   @render2d.Camera2dBundle::new_with_layers(
     in_game_camera,
     @math.Transform::identity(),
@@ -116,6 +122,8 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
   pixel_state.val.pixel_mesh = mesh_handle
   pixel_state.val.outer_camera = outer_handle
   pixel_state.val.rotation = 0.0F
+  pixel_state.val.last_window_width = 0
+  pixel_state.val.last_window_height = 0
 }
 
 ///|
@@ -157,6 +165,12 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
   if width <= 0 || height <= 0 {
     return
   }
+  if width == pixel_state.val.last_window_width &&
+    height == pixel_state.val.last_window_height {
+    return
+  }
+  pixel_state.val.last_window_width = width
+  pixel_state.val.last_window_height = height
   let scale_factor = @window.window_scale_factor()
   let safe_scale = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
   let width_f = Float::from_double(width.to_double()) / safe_scale
@@ -165,8 +179,7 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
   let v_scale = height_f / Float::from_double(RES_HEIGHT.to_double())
   let min_scale = if h_scale < v_scale { h_scale } else { v_scale }
   let rounded = pixel_grid_round_scale(min_scale)
-  let scale_int = if rounded < 1 { 1 } else { rounded }
-  let scale = 1.0F / Float::from_double(scale_int.to_double())
+  let scale = 1.0F / Float::from_double(rounded.to_double())
   let projection_store = world.get_projection_store()
   projection_store.set(
     pixel_state.val.outer_camera,

@@ -45,7 +45,13 @@ fn sprite_tile_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let sprite = @render2d.Sprite::from_image(texture)
-    .with_image_mode(@render2d.SpriteImageMode::tiled(stretch_value=0.5F))
+    .with_image_mode(
+      @render2d.SpriteImageMode::tiled(
+        tile_x=true,
+        tile_y=true,
+        stretch_value=0.5F,
+      ),
+    )
     .with_custom_size(Some(@math.Vec2::new(128.0F, 128.0F)))
   let entity = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
     world,

@@ -24,18 +24,20 @@ pub fn game_app() -> Unit {
 ///|
 fn spawn_quad(
   world : @ecs_world.World,
+  mesh : @render2d.Mesh2d,
+  texture : @asset.Handle[@asset.Image],
   position : @math.Vec2,
-  scale : @math.Vec2,
   color : @render2d.Color,
   alpha_mode : @render2d.AlphaMode2d,
   z : Float,
 ) -> Unit {
-  let mesh = @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::default())
-  let material = @render2d.ColorMaterial::new_with_alpha_mode(color, alpha_mode)
+  let material = @render2d.ColorMaterial::new_with_alpha_mode(color, alpha_mode).with_texture(
+    texture,
+  )
   let transform = @math.Transform::from_xy_rotation_scale(
     position,
     0.0F,
-    scale,
+    @math.Vec2::new(1.0F, 1.0F),
     z~,
   )
   @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
@@ -43,55 +45,73 @@ fn spawn_quad(
 
 ///|
 fn mesh2d_alpha_mode_setup(world : @ecs_world.World) -> Unit {
-  // Background board to make alpha-mode differences obvious.
-  spawn_quad(
-    world,
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(760.0F, 280.0F),
-    @render2d.Color::new(0.15F, 0.15F, 0.2F, 1.0F),
-    @render2d.AlphaMode2d::Opaque,
-    -10.0F,
+  let asset_server = @asset.AssetServer::new()
+  let texture = asset_server.load("branding/icon.png")
+  let mesh = @render2d.Mesh2d::from_rectangle(
+    @render2d.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
   )
+  let white = @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
+  let blue = @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
+  let blue_blend = @render2d.Color::new(0.0F, 0.0F, 1.0F, 0.7F)
+  let green = @render2d.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F)
+  let green_blend = @render2d.Color::new(0.0F, 0.5019608F, 0.0F, 0.7F)
 
-  // Opaque: alpha ignored for blending, rendered as solid.
+  // Opaque: black background from icon texture should remain visible.
   spawn_quad(
     world,
-    @math.Vec2::new(-260.0F, 0.0F),
-    @math.Vec2::new(180.0F, 180.0F),
-    @render2d.Color::new(1.0F, 0.2F, 0.2F, 0.25F),
+    mesh,
+    texture,
+    @math.Vec2::new(-400.0F, 0.0F),
+    white,
     @render2d.AlphaMode2d::Opaque,
     0.0F,
   )
-
-  // Mask below cutoff: should not be rendered.
   spawn_quad(
     world,
-    @math.Vec2::new(-80.0F, 0.0F),
-    @math.Vec2::new(180.0F, 180.0F),
-    @render2d.Color::new(0.2F, 0.9F, 0.2F, 0.25F),
+    mesh,
+    texture,
+    @math.Vec2::new(-300.0F, 0.0F),
+    blue,
+    @render2d.AlphaMode2d::Opaque,
+    1.0F,
+  )
+  spawn_quad(
+    world,
+    mesh,
+    texture,
+    @math.Vec2::new(-200.0F, 0.0F),
+    green,
+    @render2d.AlphaMode2d::Opaque,
+    -1.0F,
+  )
+  spawn_quad(
+    world,
+    mesh,
+    texture,
+    @math.Vec2::new(200.0F, 0.0F),
+    white,
     @render2d.AlphaMode2d::Mask(0.5F),
     0.0F,
   )
-
-  // Mask above cutoff: rendered as solid.
   spawn_quad(
     world,
-    @math.Vec2::new(100.0F, 0.0F),
-    @math.Vec2::new(180.0F, 180.0F),
-    @render2d.Color::new(0.2F, 0.9F, 0.2F, 0.8F),
-    @render2d.AlphaMode2d::Mask(0.5F),
-    0.0F,
-  )
-
-  // Blend: alpha participates in blending.
-  spawn_quad(
-    world,
-    @math.Vec2::new(280.0F, 0.0F),
-    @math.Vec2::new(180.0F, 180.0F),
-    @render2d.Color::new(0.2F, 0.6F, 1.0F, 0.25F),
+    mesh,
+    texture,
+    @math.Vec2::new(300.0F, 0.0F),
+    blue_blend,
     @render2d.AlphaMode2d::Blend,
-    0.0F,
+    1.0F,
   )
+  spawn_quad(
+    world,
+    mesh,
+    texture,
+    @math.Vec2::new(400.0F, 0.0F),
+    green_blend,
+    @render2d.AlphaMode2d::Blend,
+    -1.0F,
+  )
+
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,

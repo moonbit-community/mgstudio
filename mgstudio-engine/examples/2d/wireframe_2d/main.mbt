@@ -24,6 +24,7 @@ priv struct WireframeSceneState {
   mut circle_entity : @core.Entity
   mut rectangle_geometry : @mesh.Mesh2dGeometry?
   mut circle_geometry : @mesh.Mesh2dGeometry?
+  mut overlay_text_handle : @text.TextHandle?
   mut global_enabled : Bool
   mut global_color_is_red : Bool
   mut circle_color_is_red : Bool
@@ -35,6 +36,7 @@ let wireframe_scene_state : Ref[WireframeSceneState] = Ref::new(WireframeSceneSt
   circle_entity: @core.Entity::placeholder(),
   rectangle_geometry: None,
   circle_geometry: None,
+  overlay_text_handle: None,
   global_enabled: true,
   global_color_is_red: false,
   circle_color_is_red: false,
@@ -48,6 +50,83 @@ pub fn game_app() -> Unit {
   .add_startup_system(wireframe_setup)
   .add_system(wireframe_update)
   .run()
+}
+
+///|
+fn wireframe_overlay_text() -> String {
+  let global_value = if wireframe_scene_state.val.global_enabled {
+    "true"
+  } else {
+    "false"
+  }
+  let default_color = if wireframe_scene_state.val.global_color_is_red {
+    "Srgba { red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0 }"
+  } else {
+    "Srgba { red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0 }"
+  }
+  "Controls\n---------------\nZ - Toggle global\nX - Change global color\nC - Change color of the circle wireframe\n\nWireframe2dConfig\n-------------\nGlobal: " +
+  global_value +
+  "\nColor: " +
+  default_color
+}
+
+///|
+fn spawn_ui_text_handle(
+  content : String,
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  color : @render2d.Color,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @math.Transform::identity(),
+  )
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
+}
+
+///|
+fn spawn_wireframe_overlay(world : @ecs_world.World) -> @text.TextHandle {
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let text_handle = spawn_ui_text_handle(
+    wireframe_overlay_text(),
+    font,
+    20.0F,
+    @render2d.Color::white(),
+  )
+  let tick = world.read_change_tick()
+  let root = world.spawn_empty()
+  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
+  world
+  .get_node_store()
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+    tick,
+  )
+  let text_entity = world.spawn_empty()
+  world
+  .get_parent_store()
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .get_node_store()
+  .insert(
+    text_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .get_ui_text_store()
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  text_handle
 }
 
 ///|
@@ -96,6 +175,9 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
   wireframe_scene_state.val.circle_entity = circle_entity
   wireframe_scene_state.val.rectangle_geometry = Some(rectangle_geometry)
   wireframe_scene_state.val.circle_geometry = Some(circle_geometry)
+  wireframe_scene_state.val.overlay_text_handle = Some(
+    spawn_wireframe_overlay(world),
+  )
 }
 
 ///|
@@ -108,6 +190,9 @@ fn wireframe_update(world : @ecs_world.World) -> Unit {
   }
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
     wireframe_scene_state.val.circle_color_is_red = !wireframe_scene_state.val.circle_color_is_red
+  }
+  if wireframe_scene_state.val.overlay_text_handle is Some(text_handle) {
+    @text.text_set_content(text_handle, wireframe_overlay_text())
   }
 
   let global_color = if wireframe_scene_state.val.global_color_is_red {

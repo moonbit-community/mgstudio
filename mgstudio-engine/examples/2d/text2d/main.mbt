@@ -13,11 +13,26 @@
 // limitations under the License.
 
 ///|
+priv struct Text2dState {
+  mut translation_text : @text.TextHandle?
+  mut rotation_text : @text.TextHandle?
+  mut scale_text : @text.TextHandle?
+}
+
+///|
+let text2d_state : Ref[Text2dState] = Ref::new(Text2dState::{
+  translation_text: None,
+  rotation_text: None,
+  scale_text: None,
+})
+
+///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(text2d_setup)
+  .add_system(text2d_animate)
   .run()
 }
 
@@ -25,30 +40,230 @@ pub fn game_app() -> Unit {
 fn text2d_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let font_style = @text.TextFont::default()
+  let large_font = @text.TextFont::default()
     .with_font(font)
-    .with_font_size(48.0F)
-  let text = @text.Text2d::new(
-    "Hello, Text2d!\nThis line demonstrates wrapping + centering.",
+    .with_font_size(50.0F)
+  let medium_font = @text.TextFont::default()
+    .with_font(font)
+    .with_font_size(35.0F)
+
+  text2d_state.val.translation_text = Some(
+    spawn_animated_text(
+      " translation ",
+      large_font,
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-400.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+      ),
+    ),
   )
+  text2d_state.val.rotation_text = Some(
+    spawn_animated_text(" rotation ", large_font, @math.Transform::identity()),
+  )
+  text2d_state.val.scale_text = Some(
+    spawn_animated_text(
+      " scale ",
+      large_font,
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(400.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+      ),
+    ),
+  )
+
+  spawn_wrapped_text_box(
+    world,
+    medium_font,
+    @math.Vec2::new(0.0F, -250.0F),
+    @math.Vec2::new(300.0F, 200.0F),
+    @text.LineBreak::WordBoundary,
+    "this text wraps in the box\n(WordBoundary linebreaks)",
+  )
+  spawn_wrapped_text_box(
+    world,
+    medium_font,
+    @math.Vec2::new(320.0F, -250.0F),
+    @math.Vec2::new(300.0F, 200.0F),
+    @text.LineBreak::AnyCharacter,
+    "this text wraps in the box\n(AnyCharacter linebreaks)",
+  )
+
   @text.Text2dBundle::new(
-    text,
-    font_style,
+    @text.Text2d::new("This text has\nFontSmoothing::None\nAnd Justify::Center"),
+    medium_font.with_font_smoothing(@text.FontSmoothing::None),
     @math.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(-400.0F, -250.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  .with_bounds(@text.TextBounds::new_horizontal(520.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
   .with_shadow(Some(@text.Text2dShadow::default()))
-  .with_color(@text.TextColor::new(@render2d.Color::white()))
   .spawn()
   |> ignore
+
+  let anchor_origin = @math.Vec2::new(0.0F, 250.0F)
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(10.0F, 10.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.68F, 0.97F, 0.97F)),
+    @math.Transform::from_xy_rotation_scale(
+      anchor_origin,
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  ).spawn(world)
+  |> ignore
+
+  spawn_anchor_label(
+    medium_font,
+    @render2d.Anchor::top_left(),
+    " Anchor::TopLeft ",
+    @render2d.Color::srgb(1.0F, 0.63F, 0.48F),
+    anchor_origin,
+  )
+  spawn_anchor_label(
+    medium_font,
+    @render2d.Anchor::top_right(),
+    " Anchor::TopRight ",
+    @render2d.Color::srgb(0.67F, 0.90F, 0.60F),
+    anchor_origin,
+  )
+  spawn_anchor_label(
+    medium_font,
+    @render2d.Anchor::bottom_right(),
+    " Anchor::BottomRight ",
+    @render2d.Color::srgb(0.53F, 0.81F, 0.98F),
+    anchor_origin,
+  )
+  spawn_anchor_label(
+    medium_font,
+    @render2d.Anchor::bottom_left(),
+    " Anchor::BottomLeft ",
+    @render2d.Color::srgb(1.0F, 0.93F, 0.55F),
+    anchor_origin,
+  )
+
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
+}
+
+///|
+fn spawn_animated_text(
+  content : String,
+  font : @text.TextFont,
+  transform : @math.Transform,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(@text.Text2d::new(content), font, transform)
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+  .with_shadow(Some(@text.Text2dShadow::default()))
+  .spawn()
+}
+
+///|
+fn spawn_wrapped_text_box(
+  world : @ecs_world.World,
+  font : @text.TextFont,
+  center : @math.Vec2,
+  size : @math.Vec2,
+  linebreak : @text.LineBreak,
+  content : String,
+) -> Unit {
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::from_size(size)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.25F, 0.25F, 0.55F)),
+    @math.Transform::from_xy_rotation_scale(
+      center,
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  ).spawn(world)
+  |> ignore
+
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    font,
+    @math.Transform::from_xy_rotation_scale(
+      center,
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=1.0F,
+    ),
+  )
+  .with_layout(@text.TextLayout::new(@text.Justify::Left, linebreak))
+  .with_bounds(@text.TextBounds::new(size.x, size.y))
+  .with_shadow(Some(@text.Text2dShadow::default()))
+  .spawn()
+  |> ignore
+}
+
+///|
+fn spawn_anchor_label(
+  font : @text.TextFont,
+  anchor : @render2d.Anchor,
+  content : String,
+  color : @render2d.Color,
+  position : @math.Vec2,
+) -> Unit {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    font,
+    @math.Transform::from_xy_rotation_scale(
+      position,
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+      z=1.0F,
+    ),
+  )
+  .with_anchor(anchor)
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+  .with_color(@text.TextColor::new(color))
+  .spawn()
+  |> ignore
+}
+
+///|
+fn text2d_animate(_world : @ecs_world.World) -> Unit {
+  let elapsed = @time.time_elapsed_seconds()
+
+  if text2d_state.val.translation_text is Some(handle) {
+    @text.text_set_transform(
+      handle,
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(
+          100.0F * @math.sin(elapsed) - 400.0F,
+          100.0F * @math.cos(elapsed),
+        ),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+      ),
+    )
+  }
+
+  if text2d_state.val.rotation_text is Some(handle) {
+    @text.text_set_transform(
+      handle,
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.cos(elapsed),
+        @math.Vec2::new(1.0F, 1.0F),
+      ),
+    )
+  }
+
+  if text2d_state.val.scale_text is Some(handle) {
+    let scale = (@math.sin(elapsed) + 1.1F) * 2.0F
+    @text.text_set_transform(
+      handle,
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(400.0F, 0.0F),
+        0.0F,
+        @math.Vec2::new(scale, scale),
+      ),
+    )
+  }
 }

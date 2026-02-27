@@ -33,9 +33,7 @@ pub fn game_app() -> Unit {
 ///|
 fn mesh2d_manual_setup(world : @ecs_world.World) -> Unit {
   let star = build_star_mesh()
-  let material = @render2d.ColorMaterial::new(
-    @render2d.Color::new(1.0F, 0.92F, 0.016F, 1.0F),
-  )
+  let material = @render2d.ColorMaterial::new(@render2d.Color::white())
   let transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 0.0F),
     0.0F,
@@ -55,11 +53,13 @@ fn mesh2d_manual_setup(world : @ecs_world.World) -> Unit {
 fn build_star_mesh() -> @render2d.Mesh2d {
   let positions : Array[@math.Vec2] = []
   let uvs : Array[@math.Vec2] = []
+  let colors : Array[@math.Vec4] = []
   let indices : Array[Int] = []
 
   // center vertex
   positions.push(@math.Vec2::new(0.0F, 0.0F))
   uvs.push(@math.Vec2::new(0.5F, 0.5F))
+  colors.push(@math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F))
 
   // ring vertices (alternating outer/inner radius)
   for i in 0..<10 {
@@ -74,6 +74,7 @@ fn build_star_mesh() -> @render2d.Mesh2d {
         y / (STAR_OUTER_RADIUS * 2.0F) + 0.5F,
       ),
     )
+    colors.push(@math.Vec4::new(1.0F, 0.92F, 0.016F, 1.0F))
   }
 
   // fan triangles around center
@@ -86,6 +87,11 @@ fn build_star_mesh() -> @render2d.Mesh2d {
     indices.push(i - 1)
   }
 
-  let geometry = @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
+  let geometry = @mesh.Mesh2dGeometry::new_with_colors(
+    positions,
+    uvs,
+    colors,
+    Some(indices),
+  )
   @render2d.Mesh2d::from_geometry(geometry)
 }

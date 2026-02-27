@@ -28,6 +28,9 @@ const UPDATE_BATCH_COUNT : Int = 50
 const LCG_MOD : Int = 2147483647
 
 ///|
+const TILESET_RANDOM_RANGE : Int = 5
+
+///|
 priv struct TilemapChunkState {
   mut chunk : @render2d.TilemapChunk?
   mut tiles : Array[@render2d.TileData?]
@@ -59,32 +62,18 @@ pub fn game_app() -> Unit {
 
 ///|
 fn tilemap_chunk_setup(world : @ecs_world.World) -> Unit {
-  let tileset_texture = create_tileset_texture()
+  let asset_server = @asset.AssetServer::new()
+  let tileset_texture = asset_server.load_nearest("textures/array_texture.png")
   let chunk = @render2d.TilemapChunk::new(
-    @math.UVec2::new(CHUNK_SIDE, CHUNK_SIDE),
-    @math.UVec2::new(TILE_SIZE, TILE_SIZE),
+    @math.UVec2::splat(CHUNK_SIDE),
+    @math.UVec2::splat(TILE_SIZE),
     tileset_texture,
-    @math.UVec2::new(2, 2),
+    @math.UVec2::new(1, 4),
   )
-
+  tilemap_chunk_state.val.seed = 42
   let tiles = build_initial_tile_data(chunk.tile_capacity())
-  let start_transform = chunk.calculate_tile_transform(@math.UVec2::new(0, 0))
-  let player_transform = @math.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(
-      start_transform.translation.x,
-      start_transform.translation.y,
-    ),
-    0.0F,
-    @math.Vec2::new(start_transform.scale.x, start_transform.scale.y),
-    z=1.0F,
-  )
-  let player = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::default()),
-    @render2d.ColorMaterial::new(
-      @render2d.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
-    ),
-    player_transform,
-  ).spawn(world)
+  let player = spawn_fake_player(world, chunk, @math.UVec2::new(0, 0))
+  spawn_fake_player(world, chunk, @math.UVec2::new(5, 6)) |> ignore
 
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
@@ -94,7 +83,9 @@ fn tilemap_chunk_setup(world : @ecs_world.World) -> Unit {
 
   tilemap_chunk_state.val.chunk = Some(chunk)
   tilemap_chunk_state.val.tiles = tiles
+  tilemap_chunk_state.val.update_accumulator = 0.0F
   tilemap_chunk_state.val.player = player
+  tilemap_chunk_state.val.last_logged_tile_value = -1
 }
 
 ///|
@@ -155,15 +146,11 @@ fn update_tilemap_data(chunk : @render2d.TilemapChunk) -> Unit {
     return
   }
   for _ in 0..<UPDATE_BATCH_COUNT {
-    tilemap_chunk_state.val.seed = lcg_next(tilemap_chunk_state.val.seed)
-    let index = tilemap_chunk_state.val.seed % tile_count
-    tilemap_chunk_state.val.seed = lcg_next(tilemap_chunk_state.val.seed)
-    let value = tilemap_chunk_state.val.seed % 5
-    tilemap_chunk_state.val.tiles[index] = if value == 0 {
-      None
-    } else {
-      Some(@render2d.TileData::from_tileset_index(value - 1))
-    }
+    let index = seeded_random_range(tile_count)
+    let value = seeded_random_range(TILESET_RANDOM_RANGE)
+    tilemap_chunk_state.val.tiles[index] = Some(
+      @render2d.TileData::from_tileset_index(value),
+    )
   }
   if chunk.tile_capacity() != tile_count {
     @window.host_debug_string(
@@ -195,53 +182,10 @@ fn log_probe_tile(chunk : @render2d.TilemapChunk) -> Unit {
 }
 
 ///|
-fn create_tileset_texture() -> @asset.Handle[@asset.Image] {
-  let tile_size = 16
-  let grid = @math.UVec2::new(2, 2)
-  let size = @math.UVec2::new(tile_size * grid.x, tile_size * grid.y)
-  let handle = @asset.asset_create_dynamic_texture(size, true)
-  let pixels = build_tileset_rgba8(tile_size, grid)
-  @asset.asset_update_texture_region_rgba8(
-    handle,
-    @math.URect::new(@math.UVec2::zero(), size),
-    pixels,
-  )
-  handle
-}
-
-///|
-fn build_tileset_rgba8(tile_size : Int, grid : @math.UVec2) -> Bytes {
-  let width = tile_size * grid.x
-  let height = tile_size * grid.y
-  let bytes : Array[Byte] = []
-  for y in 0..<height {
-    for x in 0..<width {
-      let tile_x = x / tile_size
-      let tile_y = y / tile_size
-      let tile_index = tile_y * grid.x + tile_x
-      let local_x = x % tile_size
-      let local_y = y % tile_size
-      let checker = if (local_x + local_y) % 2 == 0 { 18 } else { 0 }
-      let (r, g, b) = match tile_index {
-        0 => (60 + checker, 180 + checker, 90)
-        1 => (90, 140 + checker, 230)
-        2 => (210 + checker, 170, 70)
-        _ => (170 + checker, 90, 200)
-      }
-      bytes.push(clamp_to_byte(r))
-      bytes.push(clamp_to_byte(g))
-      bytes.push(clamp_to_byte(b))
-      bytes.push((255).to_byte())
-    }
-  }
-  Bytes::from_array(bytes)
-}
-
-///|
 fn build_initial_tile_data(tile_count : Int) -> Array[@render2d.TileData?] {
   let tiles : Array[@render2d.TileData?] = []
-  for i in 0..<tile_count {
-    let value = (i * 37 + i / 11) % 5
+  for _ in 0..<tile_count {
+    let value = seeded_random_range(TILESET_RANDOM_RANGE)
     tiles.push(
       if value == 0 {
         None
@@ -254,21 +198,41 @@ fn build_initial_tile_data(tile_count : Int) -> Array[@render2d.TileData?] {
 }
 
 ///|
+fn spawn_fake_player(
+  world : @ecs_world.World,
+  chunk : @render2d.TilemapChunk,
+  tile_pos : @math.UVec2,
+) -> @core.Entity {
+  let tile_transform = chunk.calculate_tile_transform(tile_pos)
+  let player_transform = @math.Transform::from_xy_rotation_scale(
+    @math.Vec2::new(tile_transform.translation.x, tile_transform.translation.y),
+    0.0F,
+    @math.Vec2::new(1.0F, 1.0F),
+    z=1.0F,
+  )
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(8.0F, 8.0F)),
+    @render2d.ColorMaterial::new(
+      @render2d.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
+    ),
+    player_transform,
+  ).spawn(world)
+}
+
+///|
+fn seeded_random_range(max_exclusive : Int) -> Int {
+  if max_exclusive <= 0 {
+    return 0
+  }
+  tilemap_chunk_state.val.seed = lcg_next(tilemap_chunk_state.val.seed)
+  tilemap_chunk_state.val.seed % max_exclusive
+}
+
+///|
 fn lcg_next(seed : Int) -> Int {
   let mut next = (seed * 1103515245 + 12345) % LCG_MOD
   if next < 0 {
     next = next + LCG_MOD
   }
   next
-}
-
-///|
-fn clamp_to_byte(value : Int) -> Byte {
-  if value < 0 {
-    (0).to_byte()
-  } else if value > 255 {
-    (255).to_byte()
-  } else {
-    value.to_byte()
-  }
 }

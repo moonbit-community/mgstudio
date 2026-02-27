@@ -13,8 +13,6 @@
 // limitations under the License.
 
 ///|
-
-///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
@@ -25,14 +23,15 @@ pub fn game_app() -> Unit {
 
 ///|
 fn sprite_setup(world : @ecs_world.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/bevy_bird_dark.png")
-  let sprite = @render2d.Sprite::from_image(texture)
-  let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
+
+  let asset_server = @asset.AssetServer::new()
+  let texture = asset_server.load("branding/bevy_bird_dark.png")
+  let sprite = @render2d.Sprite::from_image(texture)
+  let transform = @math.Transform::identity()
+  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }

@@ -30,46 +30,26 @@ pub(all) enum Direction {
 }
 
 ///|
+const SPEED : Float = 150.0F
+
+///|
+const EDGE_LIMIT : Float = 200.0F
+
+///|
 priv struct MoveSpriteState {
-  mut directions : Array[(@core.Entity, Direction)]
+  mut sprite : @core.Entity
+  mut direction : Direction
 }
 
 ///|
 let move_state : Ref[MoveSpriteState] = Ref::new(MoveSpriteState::{
-  directions: [],
+  sprite: @core.Entity::placeholder(),
+  direction: Direction::Right,
 })
 
 ///|
 fn entity_is_same(a : @core.Entity, b : @core.Entity) -> Bool {
   a.id == b.id && a.generation == b.generation
-}
-
-///|
-fn direction_get(entity : @core.Entity) -> Direction {
-  for entry in move_state.val.directions {
-    if entity_is_same(entry.0, entity) {
-      return entry.1
-    }
-  }
-  Direction::Right
-}
-
-///|
-fn direction_set(entity : @core.Entity, direction : Direction) -> Unit {
-  let mut updated = false
-  let next : Array[(@core.Entity, Direction)] = []
-  for entry in move_state.val.directions {
-    if entity_is_same(entry.0, entity) {
-      next.push((entity, direction))
-      updated = true
-    } else {
-      next.push(entry)
-    }
-  }
-  if !updated {
-    next.push((entity, direction))
-  }
-  move_state.val.directions = next
 }
 
 ///|
@@ -86,27 +66,26 @@ fn move_sprite_setup(world : @ecs_world.World) -> Unit {
     world,
   )
   |> ignore
-  move_state.val.directions = []
-  direction_set(sprite_entity, Direction::Right)
+  move_state.val.sprite = sprite_entity
+  move_state.val.direction = Direction::Right
 }
 
 ///|
 fn move_sprite_movement(world : @ecs_world.World) -> Unit {
-  let delta_secs = @time.time_delta_seconds()
-  let speed = 150.0F
+  if move_state.val.sprite.is_placeholder() {
+    return
+  }
+  let sprite_entity = move_state.val.sprite
+  let delta = SPEED * @time.time_delta_seconds()
+  let move_x = if move_state.val.direction is Right { delta } else { -delta }
   let tick = world.read_change_tick()
   let sprite_store = world.get_sprite_store()
   let transform_store = world.get_transform_store()
-  let entities : Array[(@core.Entity, @math.Transform)] = []
+  let mut next_direction = move_state.val.direction
   @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {
-    entities.push((entity, transform))
-  })
-  for entry in entities {
-    let entity = entry.0
-    let direction = direction_get(entity)
-    let delta = speed * delta_secs
-    let move_x = if direction is Right { delta } else { -delta }
-    let transform = entry.1
+    if !entity_is_same(entity, sprite_entity) {
+      return
+    }
     let translation = @math.Vec2::new(
       transform.translation.x + move_x,
       transform.translation.y,
@@ -117,11 +96,12 @@ fn move_sprite_movement(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(transform.scale.x, transform.scale.y),
       z=transform.translation.z,
     )
-    transform_store.set(entity, next_transform, tick) |> ignore
-    if translation.x > 200.0F {
-      direction_set(entity, Direction::Left)
-    } else if translation.x < -200.0F {
-      direction_set(entity, Direction::Right)
+    transform_store.set(sprite_entity, next_transform, tick) |> ignore
+    if translation.x > EDGE_LIMIT {
+      next_direction = Direction::Left
+    } else if translation.x < -EDGE_LIMIT {
+      next_direction = Direction::Right
     }
-  }
+  })
+  move_state.val.direction = next_direction
 }

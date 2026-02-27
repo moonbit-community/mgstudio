@@ -161,17 +161,49 @@ fn viewport_to_world_draw_cursor(world : @ecs_world.World) -> Unit {
   if viewport_state.val.camera.is_placeholder() {
     return
   }
+
+  let camera_entity = viewport_state.val.camera
+  let camera_store = world.get_camera_store()
+  let projection_store = world.get_projection_store()
+  let transform_store = world.get_transform_store()
+
+  guard camera_store.get(camera_entity) is Some(camera) else { return }
+  guard projection_store.get(camera_entity) is Some(projection) else { return }
+  guard projection is Orthographic(orthographic_projection) else { return }
+  guard transform_store.get(camera_entity) is Some(camera_transform) else {
+    return
+  }
+
+  let width = @window.window_width()
+  let height = @window.window_height()
+  if width <= 0 || height <= 0 {
+    return
+  }
+
+  let window_size = @math.IVec2::new(width, height)
+  let scale_factor = @window.window_scale_factor()
   let gizmos = @render2d.Gizmos::new()
+
   if @input.mouse_position() is Some(screen_pos) {
-    if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
+    if @render2d.render2d_camera_viewport_to_world_2d(
+        screen_pos, camera, orthographic_projection, camera_transform, window_size,
+        scale_factor,
+      )
       is Some(world_pos) {
       let white = @render2d.Color::white()
       let red = @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
       let cursor_iso = @render2d.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
-      if @render2d.render2d_world_to_viewport(world, world_pos)
+
+      if @render2d.render2d_camera_world_to_viewport_2d(
+          world_pos, camera, orthographic_projection, camera_transform, window_size,
+          scale_factor,
+        )
         is Some(viewport_pos) {
-        if @render2d.render2d_viewport_to_world_2d(world, viewport_pos)
+        if @render2d.render2d_camera_viewport_to_world_2d(
+            viewport_pos, camera, orthographic_projection, camera_transform, window_size,
+            scale_factor,
+          )
           is Some(world_check) {
           let check_iso = @render2d.Isometry2d::new(world_check, 0.0F)
           gizmos.circle_2d(check_iso, 8.0F, red) |> ignore
@@ -188,14 +220,15 @@ fn viewport_to_world_controls(world : @ecs_world.World) -> Unit {
   }
   let fspeed = 600.0F * @time.time_fixed_delta_seconds()
   let uspeed = fspeed.to_int()
+
+  update_camera_transform(world, fspeed)
+  update_camera_scale(world, @time.time_fixed_delta_seconds())
+
   let width = @window.window_width()
   let height = @window.window_height()
   if width <= 0 || height <= 0 {
     return
   }
-
-  update_camera_transform(world, fspeed)
-  update_camera_scale(world, @time.time_fixed_delta_seconds())
   update_camera_viewport(world, width, height, uspeed)
 }
 

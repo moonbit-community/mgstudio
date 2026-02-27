@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+const ROW_GAP : Float = 40.0F
+
+///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
@@ -23,104 +26,91 @@ pub fn game_app() -> Unit {
 
 ///|
 fn sprite_slice_setup(world : @ecs_world.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("textures/rpg/ui/generic-rpg-ui-text-box.png")
-  let border = @render2d.BorderRect::square(8.0F)
-  let border_large = @render2d.BorderRect::square(12.0F)
-  let sliced_stretch = @render2d.SpriteImageMode::Sliced(
-    @render2d.TextureSlicer::new(border),
-  )
-  let sliced_tile = @render2d.SpriteImageMode::Sliced(
-    @render2d.TextureSlicer::new(border)
-    .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.45F))
-    .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.30F)),
-  )
-  let sliced_tile_wide = @render2d.SpriteImageMode::Sliced(
-    @render2d.TextureSlicer::new(border)
-    .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.25F))
-    .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.20F)),
-  )
-  let sliced_corner_limited = @render2d.SpriteImageMode::Sliced(
-    @render2d.TextureSlicer::new(border_large)
-    .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.25F))
-    .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.20F))
-    .with_max_corner_scale(0.65F),
-  )
-  spawn_slice_sprite(
-    world,
-    texture,
-    @math.Vec2::new(-430.0F, 130.0F),
-    None,
-    @render2d.SpriteImageMode::Auto,
-    @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-  )
-  spawn_slice_sprite(
-    world,
-    texture,
-    @math.Vec2::new(-120.0F, 130.0F),
-    Some(@math.Vec2::new(260.0F, 96.0F)),
-    @render2d.SpriteImageMode::Auto,
-    @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-  )
-  spawn_slice_sprite(
-    world,
-    texture,
-    @math.Vec2::new(220.0F, 130.0F),
-    Some(@math.Vec2::new(260.0F, 96.0F)),
-    sliced_stretch,
-    @render2d.Color::new(0.80F, 0.95F, 1.0F, 1.0F),
-  )
-  spawn_slice_sprite(
-    world,
-    texture,
-    @math.Vec2::new(-280.0F, -120.0F),
-    Some(@math.Vec2::new(260.0F, 96.0F)),
-    sliced_tile,
-    @render2d.Color::new(0.85F, 1.0F, 0.85F, 1.0F),
-  )
-  spawn_slice_sprite(
-    world,
-    texture,
-    @math.Vec2::new(80.0F, -120.0F),
-    Some(@math.Vec2::new(260.0F, 96.0F)),
-    sliced_tile_wide,
-    @render2d.Color::new(1.0F, 0.90F, 0.75F, 1.0F),
-  )
-  spawn_slice_sprite(
-    world,
-    texture,
-    @math.Vec2::new(420.0F, -120.0F),
-    Some(@math.Vec2::new(360.0F, 96.0F)),
-    sliced_corner_limited,
-    @render2d.Color::new(1.0F, 0.82F, 0.90F, 1.0F),
-  )
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
+
+  let asset_server = @asset.AssetServer::new()
+  let handle_1 = asset_server.load("textures/slice_square.png")
+  let handle_2 = asset_server.load("textures/slice_square_2.png")
+
+  // BLOCKER: render2d has no Text2d equivalent yet, so labels are omitted.
+  spawn_sprite_row(
+    world,
+    handle_1,
+    @math.Vec2::new(-600.0F, 150.0F),
+    200.0F,
+    ROW_GAP,
+  )
+  spawn_sprite_row(
+    world,
+    handle_2,
+    @math.Vec2::new(-600.0F, -150.0F),
+    80.0F,
+    ROW_GAP,
+  )
 }
 
 ///|
-fn spawn_slice_sprite(
+fn spawn_sprite_row(
   world : @ecs_world.World,
-  texture : @asset.Handle[@asset.Image],
-  position : @math.Vec2,
-  custom_size : @math.Vec2?,
-  image_mode : @render2d.SpriteImageMode,
-  color : @render2d.Color,
+  texture_handle : @asset.Handle[@asset.Image],
+  start_position : @math.Vec2,
+  slice_border : Float,
+  gap : Float,
 ) -> Unit {
-  let base_sprite = @render2d.Sprite::from_image(texture)
-    .with_color(color)
-    .with_image_mode(image_mode)
-  let sprite = match custom_size {
-    Some(size) => base_sprite.with_custom_size(Some(size))
-    None => base_sprite
+  let border = @render2d.BorderRect::square(slice_border)
+  let cases : Array[(@math.Vec2, @render2d.SpriteImageMode)] = [
+    (@math.Vec2::new(100.0F, 100.0F), @render2d.SpriteImageMode::Auto),
+    (@math.Vec2::new(100.0F, 200.0F), @render2d.SpriteImageMode::Auto),
+    (
+      @math.Vec2::new(100.0F, 200.0F),
+      @render2d.SpriteImageMode::Sliced(@render2d.TextureSlicer::new(border)),
+    ),
+    (
+      @math.Vec2::new(100.0F, 200.0F),
+      @render2d.SpriteImageMode::Sliced(
+        @render2d.TextureSlicer::new(border)
+        .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.5F))
+        .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.2F)),
+      ),
+    ),
+    (
+      @math.Vec2::new(300.0F, 200.0F),
+      @render2d.SpriteImageMode::Sliced(
+        @render2d.TextureSlicer::new(border)
+        .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.2F))
+        .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.3F)),
+      ),
+    ),
+    (
+      @math.Vec2::new(300.0F, 200.0F),
+      @render2d.SpriteImageMode::Sliced(
+        @render2d.TextureSlicer::new(border)
+        .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.1F))
+        .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.2F))
+        .with_max_corner_scale(0.2F),
+      ),
+    ),
+  ]
+
+  let mut cursor_x = start_position.x
+  for item in cases {
+    let size = item.0
+    let image_mode = item.1
+    cursor_x = cursor_x + 0.5F * size.x
+    let position = @math.Vec2::new(cursor_x, start_position.y)
+    let transform = @math.Transform::from_xy_rotation_scale(
+      position,
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    )
+    let sprite = @render2d.Sprite::from_image(texture_handle)
+      .with_custom_size(Some(size))
+      .with_image_mode(image_mode)
+    @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+    cursor_x = cursor_x + 0.5F * size.x + gap
   }
-  let transform = @math.Transform::from_xy_rotation_scale(
-    position,
-    0.0F,
-    @math.Vec2::new(1.0F, 1.0F),
-  )
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }

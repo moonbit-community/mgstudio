@@ -13,45 +13,100 @@
 // limitations under the License.
 
 ///|
+const GABE_FRAME_SIZE : Int = 24
+
+///|
+const GABE_FRAME_COLUMNS : Int = 7
+
+///|
+const GABE_FRAME_ROWS : Int = 1
+
+///|
+const GABE_FIRST_FRAME : Int = 1
+
+///|
+const GABE_LAST_FRAME : Int = 6
+
+///|
+const GABE_ANIMATION_STEP_SECONDS : Float = 0.1F
+
+///|
+const GABE_SCALE : Float = 6.0F
+
+///|
+priv struct SpriteSheetState {
+  mut timer_seconds : Float
+}
+
+///|
+let sprite_sheet_state : Ref[SpriteSheetState] = Ref::new(SpriteSheetState::{
+  timer_seconds: 0.0F,
+})
+
+///|
 pub fn game_app() -> Unit {
   let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_sheet_setup)
+  .add_system(sprite_sheet_animate)
   .run()
 }
 
 ///|
 fn sprite_sheet_setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/bevy_bird_dark.png")
+  let texture = asset_server.load("textures/rpg/chars/gabe/gabe-idle-run.png")
   let layout = @asset.TextureAtlasLayout::from_grid(
-    @math.UVec2::new(128, 128),
-    2,
-    2,
+    @math.UVec2::new(GABE_FRAME_SIZE, GABE_FRAME_SIZE),
+    GABE_FRAME_COLUMNS,
+    GABE_FRAME_ROWS,
   )
   let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
-  let mut idx = 0
-  for y in 0..<2 {
-    for x in 0..<2 {
-      let translation = @math.Vec2::new(
-        Float::from_double((x * 160 - 80).to_double()),
-        Float::from_double((80 - y * 160).to_double()),
-      )
-      let transform = @math.Transform::from_xy_rotation_scale(
-        translation,
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-      )
-      let atlas = @asset.TextureAtlas::new(layout_handle, idx)
-      let sprite = @render2d.Sprite::from_atlas_image(texture, atlas)
-      @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
-      idx = idx + 1
-    }
-  }
+  let atlas = @asset.TextureAtlas::new(layout_handle, GABE_FIRST_FRAME)
+  let sprite = @render2d.Sprite::from_atlas_image(texture, atlas)
+  let transform = @math.Transform::identity().with_scale(
+    @math.Vec3::splat(GABE_SCALE),
+  )
+
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
+
+  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  sprite_sheet_state.val.timer_seconds = 0.0F
+}
+
+///|
+fn sprite_sheet_animate(world : @ecs_world.World) -> Unit {
+  sprite_sheet_state.val.timer_seconds = sprite_sheet_state.val.timer_seconds +
+    @time.time_delta_seconds()
+
+  if sprite_sheet_state.val.timer_seconds >= GABE_ANIMATION_STEP_SECONDS {
+    sprite_sheet_state.val.timer_seconds = 0.0F
+    let tick = world.read_change_tick()
+    let sprite_store = world.get_sprite_store()
+    let transform_store = world.get_transform_store()
+    let updates : Array[(@core.Entity, @render2d.Sprite)] = []
+
+    @core.query2(sprite_store, transform_store, fn(entity, sprite, _transform) {
+      if sprite.texture_atlas is Some(atlas) {
+        let next_index = if atlas.index == GABE_LAST_FRAME {
+          GABE_FIRST_FRAME
+        } else {
+          atlas.index + 1
+        }
+        let next_sprite = sprite.with_texture_atlas(
+          Some(atlas.with_index(next_index)),
+        )
+        updates.push((entity, next_sprite))
+      }
+    })
+
+    for entry in updates {
+      sprite_store.set(entry.0, entry.1, tick) |> ignore
+    }
+  }
 }

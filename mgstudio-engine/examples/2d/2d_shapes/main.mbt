@@ -37,7 +37,7 @@ const Y_EXTENT : Float = 150.0F
 const THICKNESS : Float = 5.0F
 
 ///|
-let rotation_enabled : Ref[Bool] = Ref::new(true)
+let rotation_enabled : Ref[Bool] = Ref::new(false)
 
 ///|
 let wireframe_enabled : Ref[Bool] = Ref::new(false)
@@ -195,7 +195,7 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
 
 ///|
 fn shapes_setup(world : @ecs_world.World) -> Unit {
-  rotation_enabled.val = true
+  rotation_enabled.val = false
   wireframe_enabled.val = false
 
   let top_shapes : Array[@render2d.Mesh2d] = [
@@ -225,14 +225,14 @@ fn shapes_setup(world : @ecs_world.World) -> Unit {
       @render2d.Segment2d::new(
         @math.Vec2::new(-50.0F, 50.0F),
         @math.Vec2::new(50.0F, -50.0F),
-      ).with_half_thickness(THICKNESS / 2.0F),
+      ),
     ),
     @render2d.Mesh2d::from_polyline(
       @render2d.Polyline2d::new([
         @math.Vec2::new(-50.0F, 50.0F),
         @math.Vec2::new(0.0F, -50.0F),
         @math.Vec2::new(50.0F, 50.0F),
-      ]).with_half_thickness(THICKNESS / 2.0F),
+      ]),
     ),
   ]
   let rings : Array[@render2d.Mesh2d] = [
