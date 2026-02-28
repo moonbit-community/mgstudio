@@ -28,6 +28,21 @@ let pending_gltf_scene_requests : Ref[Array[PendingGltfSceneRequest]] = Ref::new
 )
 
 ///|
+priv struct PendingGltfAnimationRequest {
+  clip_handle : @asset.Handle[@animation.AnimationClip]
+  gltf_path : String
+  animation_index : Int
+  gltf_blob : @asset.Handle[@asset.Blob]
+  mut doc : ParsedGltfDocument?
+  buffer_blobs : Array[@asset.Handle[@asset.Blob]?]
+  mut buffer_bytes : Array[Bytes?]
+}
+
+///|
+let pending_gltf_animation_requests : Ref[Array[PendingGltfAnimationRequest]] = Ref::new([],
+)
+
+///|
 priv struct GltfBufferDef {
   uri : String?
   byte_length : Int
@@ -65,6 +80,7 @@ priv struct GltfMeshDef {
 
 ///|
 priv struct GltfNodeDef {
+  name : String
   mesh : Int?
   children : Array[Int]
   lod_nodes : Array[Int]
@@ -121,6 +137,26 @@ priv struct GltfImageDef {
 }
 
 ///|
+priv struct GltfAnimationSamplerDef {
+  input : Int?
+  output : Int?
+  is_cubic_spline : Bool
+}
+
+///|
+priv struct GltfAnimationChannelDef {
+  sampler : Int?
+  target_node : Int?
+  target_path : String
+}
+
+///|
+priv struct GltfAnimationDef {
+  samplers : Array[GltfAnimationSamplerDef]
+  channels : Array[GltfAnimationChannelDef]
+}
+
+///|
 priv struct ParsedGltfDocument {
   default_scene : Int
   buffers : Array[GltfBufferDef]
@@ -133,11 +169,21 @@ priv struct ParsedGltfDocument {
   samplers : Array[GltfSamplerDef]
   textures : Array[GltfTextureDef]
   images : Array[GltfImageDef]
+  animations : Array[GltfAnimationDef]
 }
 
 ///|
-fn scene_split_gltf_asset_path(asset_path : String) -> (String, Int) {
-  let marker = "#Scene"
+priv enum GltfResolveBuffersState {
+  Pending
+  Fatal
+  Ready(Array[Bytes])
+}
+
+///|
+fn scene_split_gltf_asset_path(
+  asset_path : String,
+  marker : String,
+) -> (String, Int) {
   if asset_path.rev_find(marker) is Some(index) {
     let start = index + marker.length()
     if start <= asset_path.length() {
@@ -153,7 +199,7 @@ fn scene_split_gltf_asset_path(asset_path : String) -> (String, Int) {
 }
 
 ///|
-fn scene_pending_remove_handle(handle : @asset.Handle[Scene]) -> Unit {
+fn scene_pending_remove_scene_handle(handle : @asset.Handle[Scene]) -> Unit {
   let filtered : Array[PendingGltfSceneRequest] = []
   for req in pending_gltf_scene_requests.val {
     if req.scene_handle.id() != handle.id() {
@@ -164,17 +210,53 @@ fn scene_pending_remove_handle(handle : @asset.Handle[Scene]) -> Unit {
 }
 
 ///|
+fn scene_pending_remove_animation_handle(
+  handle : @asset.Handle[@animation.AnimationClip],
+) -> Unit {
+  let filtered : Array[PendingGltfAnimationRequest] = []
+  for req in pending_gltf_animation_requests.val {
+    if req.clip_handle.id() != handle.id() {
+      filtered.push(req)
+    }
+  }
+  pending_gltf_animation_requests.val = filtered
+}
+
+///|
 fn scene_queue_gltf_request(
   asset_server : @asset.AssetServer,
   scene_handle : @asset.Handle[Scene],
   scene_asset_path : String,
 ) -> Unit {
-  scene_pending_remove_handle(scene_handle)
-  let (gltf_path, scene_index) = scene_split_gltf_asset_path(scene_asset_path)
+  scene_pending_remove_scene_handle(scene_handle)
+  let (gltf_path, scene_index) = scene_split_gltf_asset_path(
+    scene_asset_path, "#Scene",
+  )
   pending_gltf_scene_requests.val.push({
     scene_handle,
     gltf_path,
     scene_index,
+    gltf_blob: asset_server.load_bytes(gltf_path),
+    doc: None,
+    buffer_blobs: [],
+    buffer_bytes: [],
+  })
+}
+
+///|
+fn scene_queue_gltf_animation_request(
+  asset_server : @asset.AssetServer,
+  clip_handle : @asset.Handle[@animation.AnimationClip],
+  animation_asset_path : String,
+) -> Unit {
+  scene_pending_remove_animation_handle(clip_handle)
+  let (gltf_path, animation_index) = scene_split_gltf_asset_path(
+    animation_asset_path, "#Animation",
+  )
+  pending_gltf_animation_requests.val.push({
+    clip_handle,
+    gltf_path,
+    animation_index,
     gltf_blob: asset_server.load_bytes(gltf_path),
     doc: None,
     buffer_blobs: [],
@@ -577,6 +659,14 @@ fn gltf_sampler_wrap_is_repeat(wrap_mode : Int) -> Bool {
 }
 
 ///|
+fn gltf_parse_animation_interpolation(obj : Map[String, Json]) -> Bool {
+  match json_get_string(obj, "interpolation") {
+    Some("CUBICSPLINE") => true
+    _ => false
+  }
+}
+
+///|
 fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   let root_json = @json.parse(source) catch { _ => return None }
   guard json_object(root_json) is Some(root) else { return None }
@@ -721,6 +811,10 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           }
         }
         nodes.push({
+          name: match json_get_string(obj, "name") {
+            Some(value) => value
+            None => ""
+          },
           mesh: json_get_int(obj, "mesh"),
           children,
           lod_nodes: gltf_parse_node_lod_ids(obj),
@@ -728,6 +822,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         })
       } else {
         nodes.push({
+          name: "",
           mesh: None,
           children: [],
           lod_nodes: [],
@@ -936,6 +1031,65 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
     }
   }
 
+  let animations : Array[GltfAnimationDef] = []
+  if json_get_array(root, "animations") is Some(entries) {
+    for entry in entries {
+      if json_object(entry) is Some(obj) {
+        let animation_samplers : Array[GltfAnimationSamplerDef] = []
+        if json_get_array(obj, "samplers") is Some(sampler_entries) {
+          for sampler_entry in sampler_entries {
+            if json_object(sampler_entry) is Some(sampler_obj) {
+              animation_samplers.push({
+                input: json_get_int(sampler_obj, "input"),
+                output: json_get_int(sampler_obj, "output"),
+                is_cubic_spline: gltf_parse_animation_interpolation(sampler_obj),
+              })
+            } else {
+              animation_samplers.push({
+                input: None,
+                output: None,
+                is_cubic_spline: false,
+              })
+            }
+          }
+        }
+
+        let channels : Array[GltfAnimationChannelDef] = []
+        if json_get_array(obj, "channels") is Some(channel_entries) {
+          for channel_entry in channel_entries {
+            if json_object(channel_entry) is Some(channel_obj) {
+              let target = json_get_object(channel_obj, "target")
+              channels.push({
+                sampler: json_get_int(channel_obj, "sampler"),
+                target_node: match target {
+                  Some(target_obj) => json_get_int(target_obj, "node")
+                  None => None
+                },
+                target_path: match target {
+                  Some(target_obj) =>
+                    match json_get_string(target_obj, "path") {
+                      Some(path) => path
+                      None => ""
+                    }
+                  None => ""
+                },
+              })
+            } else {
+              channels.push({
+                sampler: None,
+                target_node: None,
+                target_path: "",
+              })
+            }
+          }
+        }
+        animations.push({ samplers: animation_samplers, channels })
+      } else {
+        animations.push({ samplers: [], channels: [] })
+      }
+    }
+  }
+
   Some({
     default_scene,
     buffers,
@@ -948,6 +1102,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
     samplers,
     textures,
     images,
+    animations,
   })
 }
 
@@ -1325,6 +1480,221 @@ fn gltf_read_accessor_indices(
 }
 
 ///|
+fn gltf_read_accessor_f32_components(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  accessor_index : Int,
+) -> (Int, Array[Float])? {
+  guard gltf_accessor_layout(doc, accessor_index) is Some(layout) else {
+    return None
+  }
+  let buffer_index = layout.0
+  let base_offset = layout.1
+  let stride = layout.2
+  let count = layout.3
+  let component_type = layout.4
+  let component_count = layout.5
+  guard buffer_index < buffer_bytes.length() else { return None }
+  let bytes = buffer_bytes[buffer_index]
+  guard component_type == 5126 else { return None }
+  let out : Array[Float] = []
+  for i in 0..<count {
+    let offset = base_offset + i * stride
+    for c in 0..<component_count {
+      guard bytes_read_f32_le(bytes, offset + c * 4) is Some(value) else {
+        return None
+      }
+      out.push(value)
+    }
+  }
+  Some((component_count, out))
+}
+
+///|
+fn gltf_read_accessor_timestamps(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  accessor_index : Int,
+) -> Array[Float]? {
+  guard gltf_read_accessor_f32_components(doc, buffer_bytes, accessor_index)
+    is Some(decoded) else {
+    return None
+  }
+  guard decoded.0 == 1 else { return None }
+  Some(decoded.1)
+}
+
+///|
+fn gltf_read_accessor_quat(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  accessor_index : Int,
+) -> Array[@math.Quat]? {
+  guard gltf_read_accessor_f32_components(doc, buffer_bytes, accessor_index)
+    is Some(decoded) else {
+    return None
+  }
+  guard decoded.0 == 4 else { return None }
+  guard decoded.1.length() % 4 == 0 else { return None }
+  let out : Array[@math.Quat] = []
+  let quat_count = decoded.1.length() / 4
+  for i in 0..<quat_count {
+    out.push(
+      @math.Quat::new(
+        decoded.1[i * 4],
+        decoded.1[i * 4 + 1],
+        decoded.1[i * 4 + 2],
+        decoded.1[i * 4 + 3],
+      ).normalize(),
+    )
+  }
+  Some(out)
+}
+
+///|
+fn gltf_node_path_name(node : GltfNodeDef, node_index : Int) -> String {
+  if node.name == "" {
+    "GltfNode" + node_index.to_string()
+  } else {
+    node.name
+  }
+}
+
+///|
+fn gltf_collect_node_name_paths(
+  doc : ParsedGltfDocument,
+) -> Array[Array[String]?] {
+  let paths : Array[Array[String]?] = []
+  for _ in doc.nodes {
+    paths.push(None)
+  }
+
+  fn walk_node_paths(
+    node_index : Int,
+    current_path : Array[String],
+    visited : Array[Bool],
+  ) -> Unit {
+    guard node_index >= 0 && node_index < doc.nodes.length() else { return }
+    if visited[node_index] {
+      return
+    }
+    visited[node_index] = true
+    let node = doc.nodes[node_index]
+
+    let next_path : Array[String] = []
+    for part in current_path {
+      next_path.push(part)
+    }
+    next_path.push(gltf_node_path_name(node, node_index))
+
+    for child in node.children {
+      walk_node_paths(child, next_path, visited)
+    }
+
+    paths[node_index] = Some(next_path)
+    visited[node_index] = false
+  }
+
+  for scene in doc.scenes {
+    for root_node in scene.nodes {
+      let visited : Array[Bool] = []
+      for _ in doc.nodes {
+        visited.push(false)
+      }
+      walk_node_paths(root_node, [], visited)
+    }
+  }
+
+  for i in 0..<doc.nodes.length() {
+    if paths[i] is None {
+      paths[i] = Some([gltf_node_path_name(doc.nodes[i], i)])
+    }
+  }
+
+  paths
+}
+
+///|
+fn gltf_animation_select_vec3_samples(
+  samples : Array[@math.Vec3],
+  keyframe_count : Int,
+  is_cubic_spline : Bool,
+) -> Array[@math.Vec3]? {
+  if keyframe_count <= 0 {
+    return None
+  }
+  if samples.length() == keyframe_count {
+    return Some(samples)
+  }
+  if is_cubic_spline && samples.length() == keyframe_count * 3 {
+    let values : Array[@math.Vec3] = []
+    for i in 0..<keyframe_count {
+      values.push(samples[i * 3 + 1])
+    }
+    return Some(values)
+  }
+  None
+}
+
+///|
+fn gltf_animation_select_quat_samples(
+  samples : Array[@math.Quat],
+  keyframe_count : Int,
+  is_cubic_spline : Bool,
+) -> Array[@math.Quat]? {
+  if keyframe_count <= 0 {
+    return None
+  }
+  if samples.length() == keyframe_count {
+    return Some(samples)
+  }
+  if is_cubic_spline && samples.length() == keyframe_count * 3 {
+    let values : Array[@math.Quat] = []
+    for i in 0..<keyframe_count {
+      values.push(samples[i * 3 + 1])
+    }
+    return Some(values)
+  }
+  None
+}
+
+///|
+fn gltf_animation_decode_weight_samples(
+  flat_samples : Array[Float],
+  keyframe_count : Int,
+  is_cubic_spline : Bool,
+) -> Array[Array[Float]]? {
+  guard keyframe_count > 0 else { return None }
+
+  let mut values_per_frame = 0
+  let mut use_cubic_mid_value = false
+
+  if flat_samples.length() % keyframe_count == 0 {
+    values_per_frame = flat_samples.length() / keyframe_count
+  }
+  if is_cubic_spline && flat_samples.length() % (keyframe_count * 3) == 0 {
+    values_per_frame = flat_samples.length() / (keyframe_count * 3)
+    use_cubic_mid_value = true
+  }
+
+  guard values_per_frame > 0 else { return None }
+  let values : Array[Array[Float]] = []
+  for frame in 0..<keyframe_count {
+    let frame_values : Array[Float] = []
+    let base = if use_cubic_mid_value {
+      frame * values_per_frame * 3 + values_per_frame
+    } else {
+      frame * values_per_frame
+    }
+    for i in 0..<values_per_frame {
+      frame_values.push(flat_samples[base + i])
+    }
+    values.push(frame_values)
+  }
+  Some(values)
+}
+
+///|
 fn path_dirname(path : String) -> String {
   if path.rev_find("/") is Some(split) {
     return (try! path[0:split]).to_string()
@@ -1349,6 +1719,73 @@ fn path_join(base_dir : String, relative : String) -> String {
   } else {
     base_dir + "/" + normalized
   }
+}
+
+///|
+fn scene_try_resolve_request_buffers(
+  asset_server : @asset.AssetServer,
+  gltf_path : String,
+  doc : ParsedGltfDocument,
+  buffer_blobs : Array[@asset.Handle[@asset.Blob]?],
+  buffer_bytes : Array[Bytes?],
+) -> GltfResolveBuffersState {
+  if buffer_bytes.length() != doc.buffers.length() {
+    buffer_bytes.clear()
+    for _ in doc.buffers {
+      buffer_bytes.push(None)
+    }
+  }
+  if buffer_blobs.length() != doc.buffers.length() {
+    buffer_blobs.clear()
+    for _ in doc.buffers {
+      buffer_blobs.push(None)
+    }
+  }
+
+  let base_dir = path_dirname(gltf_path)
+  for i in 0..<doc.buffers.length() {
+    if buffer_bytes[i] is Some(_) {
+      continue
+    }
+    let buffer = doc.buffers[i]
+    match buffer.uri {
+      Some(uri) =>
+        if uri.has_prefix("data:") {
+          if data_uri_decode_bytes(uri) is Some(decoded) {
+            buffer_bytes[i] = Some(decoded)
+          } else {
+            return GltfResolveBuffersState::Fatal
+          }
+        } else {
+          let resolved_path = path_join(base_dir, uri)
+          if buffer_blobs[i] is None {
+            buffer_blobs[i] = Some(asset_server.load_bytes(resolved_path))
+          }
+          guard buffer_blobs[i] is Some(blob) else {
+            return GltfResolveBuffersState::Pending
+          }
+          guard @asset.asset_blob_read_bytes(blob) is Some(bytes) else {
+            return GltfResolveBuffersState::Pending
+          }
+          buffer_bytes[i] = Some(bytes)
+        }
+      None =>
+        if buffer.byte_length == 0 {
+          buffer_bytes[i] = Some(Bytes::new(0))
+        } else {
+          return GltfResolveBuffersState::Fatal
+        }
+    }
+  }
+
+  let resolved_buffers : Array[Bytes] = []
+  for maybe_bytes in buffer_bytes {
+    guard maybe_bytes is Some(bytes) else {
+      return GltfResolveBuffersState::Pending
+    }
+    resolved_buffers.push(bytes)
+  }
+  GltfResolveBuffersState::Ready(resolved_buffers)
 }
 
 ///|
@@ -1634,6 +2071,159 @@ fn gltf_select_scene_index(
 }
 
 ///|
+fn gltf_select_animation_index(
+  doc : ParsedGltfDocument,
+  requested_animation_index : Int,
+) -> Int {
+  if doc.animations.length() == 0 {
+    return -1
+  }
+  if requested_animation_index >= 0 &&
+    requested_animation_index < doc.animations.length() {
+    return requested_animation_index
+  }
+  0
+}
+
+///|
+fn scene_build_animation_clip_from_gltf(
+  animation_index : Int,
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+) -> @animation.AnimationClip {
+  let selected_animation_index = gltf_select_animation_index(
+    doc, animation_index,
+  )
+  if selected_animation_index < 0 {
+    return @animation.AnimationClip::new()
+  }
+
+  let animation = doc.animations[selected_animation_index]
+  let node_paths = gltf_collect_node_name_paths(doc)
+  let clip = @animation.AnimationClip::new()
+  let mut duration = 0.0F
+
+  for channel in animation.channels {
+    guard channel.sampler is Some(sampler_index) else { continue }
+    guard sampler_index >= 0 && sampler_index < animation.samplers.length() else {
+      continue
+    }
+    let sampler = animation.samplers[sampler_index]
+    guard sampler.input is Some(input_accessor) else { continue }
+    guard sampler.output is Some(output_accessor) else { continue }
+    guard gltf_read_accessor_timestamps(doc, buffer_bytes, input_accessor)
+      is Some(timestamps) else {
+      continue
+    }
+    if timestamps.length() == 0 {
+      continue
+    }
+
+    let end_time = timestamps[timestamps.length() - 1]
+    if end_time > duration {
+      duration = end_time
+    }
+
+    guard channel.target_node is Some(target_node) else { continue }
+    guard target_node >= 0 && target_node < doc.nodes.length() else { continue }
+    guard node_paths[target_node] is Some(target_path) else { continue }
+    let target_id = @animation.AnimationTargetId::from_names(target_path)
+
+    match channel.target_path {
+      "translation" => {
+        guard gltf_read_accessor_vec3(doc, buffer_bytes, output_accessor)
+          is Some(raw_samples) else {
+          continue
+        }
+        guard gltf_animation_select_vec3_samples(
+            raw_samples,
+            timestamps.length(),
+            sampler.is_cubic_spline,
+          )
+          is Some(values) else {
+          continue
+        }
+        guard values.length() == timestamps.length() else { continue }
+        let keyframes : Array[@animation.KeyframeVec3] = []
+        for i in 0..<timestamps.length() {
+          keyframes.push(@animation.KeyframeVec3::new(timestamps[i], values[i]))
+        }
+        clip.add_translation_curve(target_id, keyframes) |> ignore
+      }
+      "rotation" => {
+        guard gltf_read_accessor_quat(doc, buffer_bytes, output_accessor)
+          is Some(raw_samples) else {
+          continue
+        }
+        guard gltf_animation_select_quat_samples(
+            raw_samples,
+            timestamps.length(),
+            sampler.is_cubic_spline,
+          )
+          is Some(values) else {
+          continue
+        }
+        guard values.length() == timestamps.length() else { continue }
+        let keyframes : Array[@animation.KeyframeQuat] = []
+        for i in 0..<timestamps.length() {
+          keyframes.push(@animation.KeyframeQuat::new(timestamps[i], values[i]))
+        }
+        clip.add_rotation_curve(target_id, keyframes) |> ignore
+      }
+      "scale" => {
+        guard gltf_read_accessor_vec3(doc, buffer_bytes, output_accessor)
+          is Some(raw_samples) else {
+          continue
+        }
+        guard gltf_animation_select_vec3_samples(
+            raw_samples,
+            timestamps.length(),
+            sampler.is_cubic_spline,
+          )
+          is Some(values) else {
+          continue
+        }
+        guard values.length() == timestamps.length() else { continue }
+        let keyframes : Array[@animation.KeyframeVec3] = []
+        for i in 0..<timestamps.length() {
+          keyframes.push(@animation.KeyframeVec3::new(timestamps[i], values[i]))
+        }
+        clip.add_scale_curve(target_id, keyframes) |> ignore
+      }
+      "weights" => {
+        guard gltf_read_accessor_f32_components(
+            doc, buffer_bytes, output_accessor,
+          )
+          is Some(decoded) else {
+          continue
+        }
+        guard decoded.0 == 1 else { continue }
+        guard gltf_animation_decode_weight_samples(
+            decoded.1,
+            timestamps.length(),
+            sampler.is_cubic_spline,
+          )
+          is Some(values) else {
+          continue
+        }
+        guard values.length() == timestamps.length() else { continue }
+        let keyframes : Array[@animation.KeyframeWeights] = []
+        for i in 0..<timestamps.length() {
+          keyframes.push(
+            @animation.KeyframeWeights::new(timestamps[i], values[i]),
+          )
+        }
+        clip.add_weights_curve(target_id, keyframes) |> ignore
+      }
+      _ => continue
+    }
+  }
+
+  clip.set_duration(duration) |> ignore
+  clip
+}
+
+///|
 fn scene_build_from_gltf(
   asset_server : @asset.AssetServer,
   request : PendingGltfSceneRequest,
@@ -1641,6 +2231,7 @@ fn scene_build_from_gltf(
   buffer_bytes : Array[Bytes],
 ) -> Scene {
   let nodes : Array[SceneNode3d] = []
+  let node_paths = gltf_collect_node_name_paths(doc)
   let image_cache : Array[@asset.Handle[@asset.Image]?] = []
   for _ in doc.images {
     image_cache.push(None)
@@ -1681,6 +2272,10 @@ fn scene_build_from_gltf(
       gltf_lod_visibility_range(effective_lod_level)
     } else {
       None
+    }
+    let animation_target = match node_paths[node_index] {
+      Some(path) => Some(@animation.AnimationTargetId::from_names(path))
+      None => None
     }
 
     if node.mesh is Some(mesh_index) {
@@ -1745,6 +2340,7 @@ fn scene_build_from_gltf(
               material_component,
               world_transform,
               visibility_range,
+              animation_target,
             ),
           )
         }
@@ -1780,7 +2376,7 @@ fn scene_build_from_gltf(
 }
 
 ///|
-fn scene_try_resolve_request(
+fn scene_try_resolve_scene_request(
   asset_server : @asset.AssetServer,
   request : PendingGltfSceneRequest,
 ) -> (PendingGltfSceneRequest, Scene?) {
@@ -1803,73 +2399,82 @@ fn scene_try_resolve_request(
   }
 
   guard updated.doc is Some(doc) else { return (updated, Some(Scene::new([]))) }
-
-  if updated.buffer_bytes.length() != doc.buffers.length() {
-    updated.buffer_bytes.clear()
-    for _ in doc.buffers {
-      updated.buffer_bytes.push(None)
-    }
+  match
+    scene_try_resolve_request_buffers(
+      asset_server,
+      updated.gltf_path,
+      doc,
+      updated.buffer_blobs,
+      updated.buffer_bytes,
+    ) {
+    GltfResolveBuffersState::Pending => (updated, None)
+    GltfResolveBuffersState::Fatal => (updated, Some(Scene::new([])))
+    GltfResolveBuffersState::Ready(resolved_buffers) =>
+      (
+        updated,
+        Some(
+          scene_build_from_gltf(asset_server, updated, doc, resolved_buffers),
+        ),
+      )
   }
-  if updated.buffer_blobs.length() != doc.buffers.length() {
+}
+
+///|
+fn scene_try_resolve_animation_request(
+  asset_server : @asset.AssetServer,
+  request : PendingGltfAnimationRequest,
+) -> (PendingGltfAnimationRequest, @animation.AnimationClip?) {
+  let updated = request
+
+  if updated.doc is None {
+    guard @asset.asset_blob_read_bytes(updated.gltf_blob)
+      is Some(gltf_blob_bytes) else {
+      return (updated, None)
+    }
+    guard gltf_parse_source(updated.gltf_path, gltf_blob_bytes) is Some(parsed) else {
+      return (updated, Some(@animation.AnimationClip::new()))
+    }
+    updated.doc = Some(parsed.0)
+    updated.buffer_bytes = parsed.1
     updated.buffer_blobs.clear()
-    for _ in doc.buffers {
+    for _ in parsed.0.buffers {
       updated.buffer_blobs.push(None)
     }
   }
 
-  let base_dir = path_dirname(updated.gltf_path)
-  for i in 0..<doc.buffers.length() {
-    if updated.buffer_bytes[i] is Some(_) {
-      continue
-    }
-
-    let buffer = doc.buffers[i]
-    match buffer.uri {
-      Some(uri) =>
-        if uri.has_prefix("data:") {
-          if data_uri_decode_bytes(uri) is Some(decoded) {
-            updated.buffer_bytes[i] = Some(decoded)
-          } else {
-            return (updated, Some(Scene::new([])))
-          }
-        } else {
-          let resolved_path = path_join(base_dir, uri)
-          if updated.buffer_blobs[i] is None {
-            updated.buffer_blobs[i] = Some(
-              asset_server.load_bytes(resolved_path),
-            )
-          }
-          guard updated.buffer_blobs[i] is Some(blob) else {
-            return (updated, None)
-          }
-          guard @asset.asset_blob_read_bytes(blob) is Some(bytes) else {
-            return (updated, None)
-          }
-          updated.buffer_bytes[i] = Some(bytes)
-        }
-      None =>
-        if buffer.byte_length == 0 {
-          updated.buffer_bytes[i] = Some(Bytes::new(0))
-        } else {
-          return (updated, Some(Scene::new([])))
-        }
-    }
+  guard updated.doc is Some(doc) else {
+    return (updated, Some(@animation.AnimationClip::new()))
   }
 
-  let resolved_buffers : Array[Bytes] = []
-  for maybe_bytes in updated.buffer_bytes {
-    guard maybe_bytes is Some(bytes) else { return (updated, None) }
-    resolved_buffers.push(bytes)
+  match
+    scene_try_resolve_request_buffers(
+      asset_server,
+      updated.gltf_path,
+      doc,
+      updated.buffer_blobs,
+      updated.buffer_bytes,
+    ) {
+    GltfResolveBuffersState::Pending => (updated, None)
+    GltfResolveBuffersState::Fatal =>
+      (updated, Some(@animation.AnimationClip::new()))
+    GltfResolveBuffersState::Ready(resolved_buffers) =>
+      (
+        updated,
+        Some(
+          scene_build_animation_clip_from_gltf(
+            updated.animation_index,
+            doc,
+            resolved_buffers,
+          ),
+        ),
+      )
   }
-
-  (
-    updated,
-    Some(scene_build_from_gltf(asset_server, updated, doc, resolved_buffers)),
-  )
 }
 
 ///|
-fn scene_process_pending_requests(asset_server : @asset.AssetServer) -> Unit {
+fn scene_process_pending_scene_requests(
+  asset_server : @asset.AssetServer,
+) -> Unit {
   let remaining : Array[PendingGltfSceneRequest] = []
 
   for request in pending_gltf_scene_requests.val {
@@ -1878,7 +2483,7 @@ fn scene_process_pending_requests(asset_server : @asset.AssetServer) -> Unit {
       continue
     }
 
-    let (updated_request, resolved_scene) = scene_try_resolve_request(
+    let (updated_request, resolved_scene) = scene_try_resolve_scene_request(
       asset_server, request,
     )
 
@@ -1890,4 +2495,31 @@ fn scene_process_pending_requests(asset_server : @asset.AssetServer) -> Unit {
   }
 
   pending_gltf_scene_requests.val = remaining
+}
+
+///|
+fn scene_process_pending_animation_requests(
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  let remaining : Array[PendingGltfAnimationRequest] = []
+
+  for request in pending_gltf_animation_requests.val {
+    let (updated_request, resolved_clip) = scene_try_resolve_animation_request(
+      asset_server, request,
+    )
+
+    if resolved_clip is Some(clip) {
+      @animation.animation_clip_set(updated_request.clip_handle, clip) |> ignore
+    } else {
+      remaining.push(updated_request)
+    }
+  }
+
+  pending_gltf_animation_requests.val = remaining
+}
+
+///|
+fn scene_process_pending_requests(asset_server : @asset.AssetServer) -> Unit {
+  scene_process_pending_scene_requests(asset_server)
+  scene_process_pending_animation_requests(asset_server)
 }

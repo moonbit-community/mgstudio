@@ -15,11 +15,11 @@
 ///|
 /// Port of `bevy/examples/3d/order_independent_transparency.rs`.
 ///
-/// Baseline parity:
-/// - Bevy weighted OIT resolve is not available in current mgstudio renderer.
-/// - This port keeps Bevy's scene/control topology and camera OIT marker API,
-///   while mapping toggle behavior onto a transparency-mode proxy (`Blend` vs
-///   `AlphaToCoverage`) for visual comparison.
+/// Parity target:
+/// - Keep Bevy's camera OIT component flow and scene controls.
+/// - Expose Bevy OIT settings fields on camera components.
+/// - Preserve a visible fallback comparison (`Blend` vs `AlphaToCoverage`)
+///   until renderer-side weighted OIT resolve parity is complete.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -31,13 +31,22 @@ const TAU : Float = 6.283185307179586F
 const LAYER_INDEX : Int = 1
 
 ///|
+priv struct SpawnedScene {
+  entities : Array[@core.Entity]
+  materials : Array[@asset.Handle[@render3d.StandardMaterial]]
+}
+
+///|
 priv struct OitExampleState {
   mut camera : @core.Entity?
   mut help_text : @text.TextHandle?
   mut scene_index : Int
   mut oit_enabled : Bool
+  mut sorted_fragment_max_count : Int
+  mut fragments_per_pixel_average : Float
+  mut alpha_threshold : Float
   mut scene_entities : Array[Array[@core.Entity]]
-  mut transparent_materials : Array[@asset.Handle[@render3d.StandardMaterial]]
+  mut scene_materials : Array[Array[@asset.Handle[@render3d.StandardMaterial]]]
 }
 
 ///|
@@ -46,13 +55,22 @@ let oit_state : Ref[OitExampleState] = Ref::new({
   help_text: None,
   scene_index: 0,
   oit_enabled: true,
+  sorted_fragment_max_count: 8,
+  fragments_per_pixel_average: 4.0F,
+  alpha_threshold: 0.0F,
   scene_entities: [],
-  transparent_materials: [],
+  scene_materials: [],
 })
 
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
+}
+
+///|
+fn float_text_2(value : Float) -> String {
+  let rounded = (value * 100.0F).round() / 100.0F
+  "\{rounded}"
 }
 
 ///|
@@ -126,13 +144,23 @@ fn scene_name(scene_index : Int) -> String {
 
 ///|
 fn help_text_content() -> String {
-  "Order Independent Transparency (Bevy-aligned controls)\n" +
-  "T: Toggle OIT proxy (" +
-  (if oit_state.val.oit_enabled { "Enabled" } else { "Disabled" }) +
-  ")\n" +
-  "C: Cycle scene (" +
+  "Press T to toggle OIT\n" +
+  "OIT " +
+  (if oit_state.val.oit_enabled { "enabled" } else { "disabled" }) +
+  "\nTransparent fallback mode: " +
+  (if oit_state.val.oit_enabled { "Blend" } else { "AlphaToCoverage" }) +
+  "\n1/2: -/+ sorted_fragment_max_count (" +
+  oit_state.val.sorted_fragment_max_count.to_string() +
+  ")" +
+  "\n3/4: -/+ fragments_per_pixel_average (" +
+  float_text_2(oit_state.val.fragments_per_pixel_average) +
+  ")" +
+  "\n5/6: -/+ alpha_threshold (" +
+  float_text_2(oit_state.val.alpha_threshold) +
+  ")" +
+  "\nPress C to cycle test scenes (" +
   scene_name(oit_state.val.scene_index) +
-  ")\n"
+  ")"
 }
 
 ///|
@@ -143,16 +171,23 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn create_blend_material(
+fn transparent_alpha_mode() -> @render3d.AlphaMode3d {
+  if oit_state.val.oit_enabled {
+    @render3d.AlphaMode3d::Blend
+  } else {
+    @render3d.AlphaMode3d::AlphaToCoverage
+  }
+}
+
+///|
+fn create_transparent_material(
   color : @render2d.Color,
 ) -> @asset.Handle[@render3d.StandardMaterial] {
-  let material = @render3d.standard_material_add(
+  @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(color).with_alpha_mode(
-      @render3d.AlphaMode3d::Blend,
+      transparent_alpha_mode(),
     ),
   )
-  oit_state.val.transparent_materials.push(material)
-  material
 }
 
 ///|
@@ -178,17 +213,17 @@ fn spawn_scene_spheres(
   world : @ecs_world.World,
   layers : @render2d.RenderLayers,
   tick : Int,
-) -> Array[@core.Entity] {
+) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let sphere = uv_sphere_mesh(2.0F, 18, 32)
   let alpha = 0.25F
-  let mat_a = create_blend_material(
+  let mat_a = create_transparent_material(
     @render2d.Color::new(1.0F, 0.0F, 0.0F, alpha),
   )
-  let mat_b = create_blend_material(
+  let mat_b = create_transparent_material(
     @render2d.Color::new(0.0F, 1.0F, 0.0F, alpha),
   )
-  let mat_c = create_blend_material(
+  let mat_c = create_transparent_material(
     @render2d.Color::new(0.0F, 0.0F, 1.0F, alpha),
   )
   entities.push(
@@ -221,7 +256,7 @@ fn spawn_scene_spheres(
       tick,
     ),
   )
-  entities
+  SpawnedScene::{ entities, materials: [mat_a, mat_b, mat_c] }
 }
 
 ///|
@@ -229,15 +264,25 @@ fn spawn_scene_quads(
   world : @ecs_world.World,
   layers : @render2d.RenderLayers,
   tick : Int,
-) -> Array[@core.Entity] {
+) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let quad = @render3d.Mesh3d::from_cuboid(3.0F, 3.0F, 0.05F)
   let rotation = @math.Quat::from_rotation_y(0.5F)
-  let mat0 = create_blend_material(@render2d.Color::new(1.0F, 0.0F, 0.0F, 0.5F))
-  let mat1 = create_blend_material(@render2d.Color::new(0.0F, 0.0F, 1.0F, 0.8F))
-  let mat2 = create_blend_material(@render2d.Color::new(0.0F, 1.0F, 0.0F, 0.5F))
-  let mat3 = create_blend_material(@render2d.Color::new(1.0F, 1.0F, 0.0F, 0.3F))
-  let mat4 = create_blend_material(@render2d.Color::new(0.0F, 0.0F, 1.0F, 0.2F))
+  let mat0 = create_transparent_material(
+    @render2d.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
+  )
+  let mat1 = create_transparent_material(
+    @render2d.Color::new(0.0F, 0.0F, 1.0F, 0.8F),
+  )
+  let mat2 = create_transparent_material(
+    @render2d.Color::new(0.0F, 1.0F, 0.0F, 0.5F),
+  )
+  let mat3 = create_transparent_material(
+    @render2d.Color::new(1.0F, 1.0F, 0.0F, 0.3F),
+  )
+  let mat4 = create_transparent_material(
+    @render2d.Color::new(0.0F, 0.0F, 1.0F, 0.2F),
+  )
   entities.push(
     spawn_mesh_with_layer(
       world,
@@ -288,7 +333,7 @@ fn spawn_scene_quads(
       tick,
     ),
   )
-  entities
+  SpawnedScene::{ entities, materials: [mat0, mat1, mat2, mat3, mat4] }
 }
 
 ///|
@@ -296,7 +341,7 @@ fn spawn_scene_occlusion(
   world : @ecs_world.World,
   layers : @render2d.RenderLayers,
   tick : Int,
-) -> Array[@core.Entity] {
+) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let cube = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
   let sphere = uv_sphere_mesh(1.0F, 16, 24)
@@ -306,67 +351,108 @@ fn spawn_scene_occlusion(
       @render2d.Color::new(0.80F, 0.70F, 0.60F, 1.0F),
     ),
   )
-  let transparent = create_blend_material(
-    @render2d.Color::new(0.30F, 0.60F, 1.00F, 0.30F),
+  let transparent = create_transparent_material(
+    @render2d.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
   )
 
-  for z in [1.0F, 0.0F, -1.0F] {
-    entities.push(
-      spawn_mesh_with_layer(
-        world,
-        cube,
-        solid_material,
-        @math.Transform::from_xyz(0.0F, 0.0F, z),
-        layers,
-        tick,
-      ),
-    )
-  }
+  // Front pair.
+  entities.push(
+    spawn_mesh_with_layer(
+      world,
+      cube,
+      solid_material,
+      @math.Transform::from_xyz(-2.5F, 0.0F, 2.0F),
+      layers,
+      tick,
+    ),
+  )
+  entities.push(
+    spawn_mesh_with_layer(
+      world,
+      sphere,
+      transparent,
+      @math.Transform::from_xyz(-2.5F, 0.0F, 0.0F),
+      layers,
+      tick,
+    ),
+  )
 
-  for x in [-1.5F, 0.0F, 1.5F] {
-    entities.push(
-      spawn_mesh_with_layer(
-        world,
-        sphere,
-        transparent,
-        @math.Transform::from_xyz(x, 0.0F, 0.0F),
-        layers,
-        tick,
-      ),
-    )
-  }
+  // Intersection pair.
+  entities.push(
+    spawn_mesh_with_layer(
+      world,
+      cube,
+      solid_material,
+      @math.Transform::from_xyz(-2.5F, 0.0F, 1.0F),
+      layers,
+      tick,
+    ),
+  )
+  entities.push(
+    spawn_mesh_with_layer(
+      world,
+      sphere,
+      transparent,
+      @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+      layers,
+      tick,
+    ),
+  )
 
-  entities
+  // Back pair.
+  entities.push(
+    spawn_mesh_with_layer(
+      world,
+      cube,
+      solid_material,
+      @math.Transform::from_xyz(2.5F, 0.0F, -2.0F),
+      layers,
+      tick,
+    ),
+  )
+  entities.push(
+    spawn_mesh_with_layer(
+      world,
+      sphere,
+      transparent,
+      @math.Transform::from_xyz(2.5F, 0.0F, 0.0F),
+      layers,
+      tick,
+    ),
+  )
+
+  SpawnedScene::{ entities, materials: [transparent] }
 }
 
 ///|
 fn spawn_scene_instancing(
   world : @ecs_world.World,
   layers : @render2d.RenderLayers,
+  asset_server : @asset.AssetServer,
   tick : Int,
-) -> Array[@core.Entity] {
+) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
-  let sphere = uv_sphere_mesh(0.35F, 12, 20)
-  for zi in 0..<4 {
-    for yi in 0..<4 {
-      for xi in 0..<4 {
-        let x = float_from_int(xi) - 1.5F
-        let y = float_from_int(yi) - 1.5F
-        let z = -float_from_int(zi) * 0.8F
-        let alpha = 0.20F + float_from_int((xi + yi + zi) % 3) * 0.10F
-        let color = @render2d.Color::new(
-          0.25F + float_from_int(xi) * 0.15F,
-          0.20F + float_from_int(yi) * 0.18F,
-          0.30F + float_from_int(zi) * 0.15F,
-          alpha,
-        )
-        let material = create_blend_material(color)
+  let cube = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::default()
+    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_base_color_texture(
+      Some(asset_server.load("textures/slice_square.png")),
+    ),
+  )
+  for z in -1..<2 {
+    for y in -1..<2 {
+      for x in -1..<2 {
         entities.push(
           spawn_mesh_with_layer(
             world,
-            sphere,
+            cube,
             material,
-            @math.Transform::from_xyz(x, y, z),
+            @math.Transform::from_xyz(
+              float_from_int(x) * 2.0F,
+              float_from_int(y) * 2.0F,
+              float_from_int(z) * 2.0F,
+            ),
             layers,
             tick,
           ),
@@ -374,7 +460,7 @@ fn spawn_scene_instancing(
       }
     }
   }
-  entities
+  SpawnedScene::{ entities, materials: [material] }
 }
 
 ///|
@@ -394,29 +480,36 @@ fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_oit_mode(world : @ecs_world.World) -> Unit {
-  let alpha_mode = if oit_state.val.oit_enabled {
-    @render3d.AlphaMode3d::AlphaToCoverage
-  } else {
-    @render3d.AlphaMode3d::Blend
-  }
-  for handle in oit_state.val.transparent_materials {
-    if @render3d.standard_material_get(handle) is Some(material) {
-      @render3d.standard_material_set(
-        handle,
-        material.with_alpha_mode(alpha_mode),
-      )
-      |> ignore
+fn apply_transparency_mode_proxy() -> Unit {
+  let alpha_mode = transparent_alpha_mode()
+  for materials in oit_state.val.scene_materials {
+    for material_handle in materials {
+      if @render3d.standard_material_get(material_handle) is Some(material) {
+        @render3d.standard_material_set(
+          material_handle,
+          material.with_alpha_mode(alpha_mode),
+        )
+        |> ignore
+      }
     }
   }
+}
+
+///|
+fn apply_oit_mode(world : @ecs_world.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
+    world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
     if oit_state.val.oit_enabled {
       world
       .get_order_independent_transparency_settings_store()
       .insert(
         camera,
-        @render3d.OrderIndependentTransparencySettings::default(),
+        @render3d.OrderIndependentTransparencySettings::new(
+          oit_state.val.sorted_fragment_max_count,
+          oit_state.val.fragments_per_pixel_average,
+          oit_state.val.alpha_threshold,
+        ),
         tick,
       )
     } else {
@@ -436,8 +529,11 @@ fn setup(world : @ecs_world.World) -> Unit {
   oit_state.val.help_text = None
   oit_state.val.scene_index = 0
   oit_state.val.oit_enabled = true
+  oit_state.val.sorted_fragment_max_count = 8
+  oit_state.val.fragments_per_pixel_average = 4.0F
+  oit_state.val.alpha_threshold = 0.0F
   oit_state.val.scene_entities = []
-  oit_state.val.transparent_materials = []
+  oit_state.val.scene_materials = []
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -495,11 +591,23 @@ fn setup(world : @ecs_world.World) -> Unit {
   let scene0 = spawn_scene_spheres(world, layer, tick)
   let scene1 = spawn_scene_quads(world, layer, tick)
   let scene2 = spawn_scene_occlusion(world, layer, tick)
-  let scene3 = spawn_scene_instancing(world, layer, tick)
-  oit_state.val.scene_entities = [scene0, scene1, scene2, scene3]
+  let scene3 = spawn_scene_instancing(world, layer, asset_server, tick)
+  oit_state.val.scene_entities = [
+    scene0.entities,
+    scene1.entities,
+    scene2.entities,
+    scene3.entities,
+  ]
+  oit_state.val.scene_materials = [
+    scene0.materials,
+    scene1.materials,
+    scene2.materials,
+    scene3.materials,
+  ]
 
   apply_scene_visibility(world)
   apply_oit_mode(world)
+  apply_transparency_mode_proxy()
   update_help_text()
 }
 
@@ -509,6 +617,57 @@ fn controls(world : @ecs_world.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyT) {
     oit_state.val.oit_enabled = !oit_state.val.oit_enabled
     apply_oit_mode(world)
+    apply_transparency_mode_proxy()
+    updated = true
+  }
+  let mut settings_changed = false
+  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+    oit_state.val.sorted_fragment_max_count = oit_state.val.sorted_fragment_max_count -
+      1
+    settings_changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+    oit_state.val.sorted_fragment_max_count = oit_state.val.sorted_fragment_max_count +
+      1
+    settings_changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit3) {
+    oit_state.val.fragments_per_pixel_average = oit_state.val.fragments_per_pixel_average -
+      0.5F
+    settings_changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit4) {
+    oit_state.val.fragments_per_pixel_average = oit_state.val.fragments_per_pixel_average +
+      0.5F
+    settings_changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit5) {
+    oit_state.val.alpha_threshold = oit_state.val.alpha_threshold - 0.05F
+    settings_changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit6) {
+    oit_state.val.alpha_threshold = oit_state.val.alpha_threshold + 0.05F
+    settings_changed = true
+  }
+  if settings_changed {
+    if oit_state.val.sorted_fragment_max_count < 1 {
+      oit_state.val.sorted_fragment_max_count = 1
+    } else if oit_state.val.sorted_fragment_max_count > 64 {
+      oit_state.val.sorted_fragment_max_count = 64
+    }
+    if oit_state.val.fragments_per_pixel_average < 0.25F {
+      oit_state.val.fragments_per_pixel_average = 0.25F
+    } else if oit_state.val.fragments_per_pixel_average > 16.0F {
+      oit_state.val.fragments_per_pixel_average = 16.0F
+    }
+    if oit_state.val.alpha_threshold < 0.0F {
+      oit_state.val.alpha_threshold = 0.0F
+    } else if oit_state.val.alpha_threshold > 1.0F {
+      oit_state.val.alpha_threshold = 1.0F
+    }
+    if oit_state.val.oit_enabled {
+      apply_oit_mode(world)
+    }
     updated = true
   }
   if @input.key_just_pressed(@window.KeyCode::KeyC) {

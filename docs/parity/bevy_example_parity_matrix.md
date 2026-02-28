@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-02-27
+Last Verified: 2026-02-28
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -19,8 +19,8 @@ Notes:
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
 | `3d` | 66 | 28 | 38 | 0 |
-| `animation` | 13 | 0 | 13 | 0 |
-| `app` | 17 | 5 | 12 | 0 |
+| `animation` | 13 | 1 | 12 | 0 |
+| `app` | 17 | 17 | 0 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
 | `audio` | 7 | 0 | 7 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 1 | 11 | 0 |
-| **Total** | **402** | **67** | **332** | **3** |
+| **Total** | **402** | **80** | **319** | **3** |
 
 ## Example Inventory
 
@@ -161,28 +161,28 @@ Notes:
 | `bevy/examples/animation/animation_events.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/animation/animation_graph.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/animation/animation_masks.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/animation/color_animation.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
+| `bevy/examples/animation/color_animation.rs` | `animation` | `mgstudio-engine/examples/animation/color_animation` | `Exact` | `team-asset_scene` |  |
 | `bevy/examples/animation/custom_skinned_mesh.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/animation/eased_motion.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/animation/easing_functions.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
+| `bevy/examples/animation/easing_functions.rs` | `animation` | `mgstudio-engine/examples/animation/easing_functions` | `Blocked` | `team-asset_scene` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/animation/morph_targets.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/app/custom_loop.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/drag_and_drop.rs` | `app` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/app/custom_loop.rs` | `app` | `mgstudio-engine/examples/app/custom_loop` | `Exact` | `team-core` |  |
+| `bevy/examples/app/drag_and_drop.rs` | `app` | `mgstudio-engine/examples/app/drag_and_drop` | `Exact` | `team-core` |  |
 | `bevy/examples/app/empty.rs` | `app` | `mgstudio-engine/examples/app/empty` | `Exact` | `team-core` |  |
 | `bevy/examples/app/empty_defaults.rs` | `app` | `mgstudio-engine/examples/app/empty_defaults` | `Exact` | `team-core` |  |
-| `bevy/examples/app/externally_driven_headless_renderer.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/headless.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/headless_renderer.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/log_layers.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/log_layers_ecs.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/logs.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/no_renderer.rs` | `app` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/app/externally_driven_headless_renderer.rs` | `app` | `mgstudio-engine/examples/app/externally_driven_headless_renderer` | `Exact` | `team-core` |  |
+| `bevy/examples/app/headless.rs` | `app` | `mgstudio-engine/examples/app/headless` | `Exact` | `team-core` |  |
+| `bevy/examples/app/headless_renderer.rs` | `app` | `mgstudio-engine/examples/app/headless_renderer` | `Exact` | `team-core` |  |
+| `bevy/examples/app/log_layers.rs` | `app` | `mgstudio-engine/examples/app/log_layers` | `Exact` | `team-core` |  |
+| `bevy/examples/app/log_layers_ecs.rs` | `app` | `mgstudio-engine/examples/app/log_layers_ecs` | `Exact` | `team-core` |  |
+| `bevy/examples/app/logs.rs` | `app` | `mgstudio-engine/examples/app/logs` | `Exact` | `team-core` |  |
+| `bevy/examples/app/no_renderer.rs` | `app` | `mgstudio-engine/examples/app/no_renderer` | `Exact` | `team-core` |  |
 | `bevy/examples/app/plugin.rs` | `app` | `mgstudio-engine/examples/app/plugin` | `Exact` | `team-core` |  |
 | `bevy/examples/app/plugin_group.rs` | `app` | `mgstudio-engine/examples/app/plugin_group` | `Exact` | `team-core` |  |
-| `bevy/examples/app/render_recovery.rs` | `app` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/app/render_recovery.rs` | `app` | `mgstudio-engine/examples/app/render_recovery` | `Exact` | `team-core` |  |
 | `bevy/examples/app/return_after_run.rs` | `app` | `mgstudio-engine/examples/app/return_after_run` | `Exact` | `team-core` |  |
-| `bevy/examples/app/thread_pool_resources.rs` | `app` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/app/without_winit.rs` | `app` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/app/thread_pool_resources.rs` | `app` | `mgstudio-engine/examples/app/thread_pool_resources` | `Exact` | `team-core` |  |
+| `bevy/examples/app/without_winit.rs` | `app` | `mgstudio-engine/examples/app/without_winit` | `Exact` | `team-core` |  |
 | `bevy/examples/asset/alter_mesh.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/alter_sprite.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/asset_decompression.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |

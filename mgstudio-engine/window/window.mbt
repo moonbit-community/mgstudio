@@ -87,6 +87,11 @@ pub(all) enum KeyCode {
   Comma
   Period
   Slash
+  Minus
+  Equal
+  BracketLeft
+  BracketRight
+  Quote
 }
 
 ///|
@@ -101,6 +106,12 @@ pub(all) enum CursorGrabMode {
   GrabNone
   GrabConfined
   GrabLocked
+}
+
+///|
+pub(all) enum CursorIcon {
+  Default
+  EwResize
 }
 
 ///|
@@ -211,6 +222,14 @@ fn cursor_grab_mode_to_int(mode : CursorGrabMode) -> Int {
 }
 
 ///|
+fn cursor_icon_to_int(icon : CursorIcon) -> Int {
+  match icon {
+    Default => 0
+    EwResize => 1
+  }
+}
+
+///|
 pub fn host_window_set_cursor_grab_mode(
   window : HostWindow,
   mode~ : CursorGrabMode,
@@ -226,6 +245,17 @@ fn host_window_set_cursor_grab_mode_raw(
   window~ : HostWindow,
   mode~ : Int,
 ) -> Unit = "mgstudio_host" "window_set_cursor_grab_mode"
+
+///|
+pub fn host_window_set_cursor_icon(
+  window : HostWindow,
+  icon~ : CursorIcon,
+) -> Unit {
+  host_window_set_cursor_icon_raw(window~, icon=cursor_icon_to_int(icon))
+}
+
+///|
+fn host_window_set_cursor_icon_raw(window~ : HostWindow, icon~ : Int) -> Unit = "mgstudio_host" "window_set_cursor_icon"
 
 ///|
 fn window_mode_to_int(mode : WindowMode) -> Int {
@@ -322,6 +352,13 @@ pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
 pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit {
   if window_state.val.window is Some(window) {
     host_window_set_cursor_grab_mode(window, mode~)
+  }
+}
+
+///|
+pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit {
+  if window_state.val.window is Some(window) {
+    host_window_set_cursor_icon(window, icon~)
   }
 }
 
@@ -774,6 +811,7 @@ pub fn host_gpu_draw_mesh3d(
   transmission_source_texture_id~ : Int,
   transmission_blur_taps~ : Float,
   transmission_steps~ : Float,
+  cull_mode~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
 
 ///|
@@ -929,9 +967,18 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_build
     let app_ref : Ref[@app.App[W]] = Ref::new(app.run_startup())
     runner_state.val.tick = Some(fn() {
       host_window_poll_events(window)
-      let frame = host_gpu_begin_frame(surface)
-      app_ref.val = app_ref.val.run_once()
-      host_gpu_end_frame(frame)
+      if @app.app_rendering_enabled() {
+        let frame = host_gpu_begin_frame(surface)
+        app_ref.val = app_ref.val.run_once()
+        host_gpu_end_frame(frame)
+      } else {
+        app_ref.val = app_ref.val.run_once()
+      }
+      if app_ref.val.should_exit() is Some(_) {
+        host_window_request_close(window)
+        runner_state.val.tick = None
+        return
+      }
       if host_window_should_close(window) {
         host_window_request_close(window)
         // Web runtimes cannot block in `window_run_loop`, so cleanup must happen

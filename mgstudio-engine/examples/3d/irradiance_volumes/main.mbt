@@ -452,6 +452,7 @@ fn spawn_fox(
 
 ///|
 fn spawn_voxel_cubes(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
   let cube_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
       @render2d.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
@@ -481,6 +482,9 @@ fn spawn_voxel_cubes(world : @ecs_world.World) -> Unit {
             @math.Vec3::splat(VOXEL_CUBE_SCALE),
           ),
         ).spawn(world)
+        world
+        .get_not_shadow_caster_store()
+        .insert(entity, @render3d.NotShadowCaster::default(), tick)
         irradiance_volumes_state.val.voxel_cubes.push(entity)
       }
     }

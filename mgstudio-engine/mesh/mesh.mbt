@@ -24,6 +24,12 @@ pub struct Mesh {
 }
 
 ///|
+pub(all) enum MeshGenerateTangentsError {
+  Not3dGeometry
+  GeometryError(Mesh3dGenerateTangentsError)
+} derive(Eq, Show)
+
+///|
 pub fn Mesh::from_2d_geometry(geometry2d : Mesh2dGeometry) -> Mesh {
   Mesh::{ geometry: MeshGeometry::Geometry2d(geometry2d) }
 }
@@ -31,4 +37,35 @@ pub fn Mesh::from_2d_geometry(geometry2d : Mesh2dGeometry) -> Mesh {
 ///|
 pub fn Mesh::from_3d_geometry(geometry3d : Mesh3dGeometry) -> Mesh {
   Mesh::{ geometry: MeshGeometry::Geometry3d(geometry3d) }
+}
+
+///|
+pub fn Mesh::as_3d_geometry(self : Mesh) -> Mesh3dGeometry? {
+  match self.geometry {
+    MeshGeometry::Geometry3d(geometry3d) => Some(geometry3d)
+    MeshGeometry::Geometry2d(_) => None
+  }
+}
+
+///|
+pub fn Mesh::with_3d_geometry(
+  self : Mesh,
+  geometry3d : Mesh3dGeometry,
+) -> Mesh? {
+  match self.geometry {
+    MeshGeometry::Geometry3d(_) => Some(Mesh::from_3d_geometry(geometry3d))
+    MeshGeometry::Geometry2d(_) => None
+  }
+}
+
+///|
+pub fn Mesh::generate_tangents(self : Mesh) -> MeshGenerateTangentsError? {
+  match self.geometry {
+    MeshGeometry::Geometry2d(_) => Some(MeshGenerateTangentsError::Not3dGeometry)
+    MeshGeometry::Geometry3d(geometry3d) =>
+      match geometry3d.generate_tangents() {
+        Some(err) => Some(MeshGenerateTangentsError::GeometryError(err))
+        None => None
+      }
+  }
 }

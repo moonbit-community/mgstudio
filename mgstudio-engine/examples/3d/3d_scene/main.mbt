@@ -89,12 +89,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_point_light_store()
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      20.0F,
-      true,
-    ),
+    @render3d.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world

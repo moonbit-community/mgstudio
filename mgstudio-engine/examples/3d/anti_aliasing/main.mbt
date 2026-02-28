@@ -15,11 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/anti_aliasing.rs`.
 ///
-/// Baseline parity: Bevy's native AA pipelines (`MSAA/FXAA/SMAA/TAA/DLSS`) and
-/// `ContrastAdaptiveSharpening` post-process are not exposed in current
-/// mgstudio render APIs. This port keeps Bevy's scene topology, control model,
-/// key layout, and menu structure, while mapping method switches onto available
-/// render proxies.
+/// Parity target: keep Bevy's AA control surface and component semantics on the
+/// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers). Renderer
+/// backends that are still unavailable (`SMAA`, `DLSS`, CAS pass quality) are
+/// explicitly represented through visual proxy mapping in this example.
 
 ///|
 const TEXTURE_SIZE : Int = 8
@@ -215,6 +214,104 @@ fn set_camera_projection(world : @ecs_world.World) -> Unit {
   }
   world.get_camera_projection3d_store().set(camera_entity, projection, tick)
   |> ignore
+}
+
+///|
+fn msaa_component_from_selection(samples : MSAASamples) -> @render3d.Msaa {
+  if msaa_samples_eq(samples, MSAASamples::Sample2) {
+    @render3d.Msaa::Sample2
+  } else if msaa_samples_eq(samples, MSAASamples::Sample4) {
+    @render3d.Msaa::Sample4
+  } else {
+    @render3d.Msaa::Sample8
+  }
+}
+
+///|
+fn fxaa_sensitivity_component(
+  sensitivity : FXAASensitivity,
+) -> @render3d.FxaaSensitivity {
+  if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Low) {
+    @render3d.FxaaSensitivity::Low
+  } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Medium) {
+    @render3d.FxaaSensitivity::Medium
+  } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::High) {
+    @render3d.FxaaSensitivity::High
+  } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Ultra) {
+    @render3d.FxaaSensitivity::Ultra
+  } else {
+    @render3d.FxaaSensitivity::Extreme
+  }
+}
+
+///|
+fn clear_temporal_aa_components(
+  world : @ecs_world.World,
+  camera_entity : @core.Entity,
+) -> Unit {
+  world.get_temporal_anti_aliasing_store().remove(camera_entity) |> ignore
+  world.get_temporal_jitter_store().remove(camera_entity) |> ignore
+  world.get_depth_prepass_store().remove(camera_entity) |> ignore
+  world.get_motion_vector_prepass_store().remove(camera_entity) |> ignore
+}
+
+///|
+fn apply_aa_components(world : @ecs_world.World) -> Unit {
+  guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
+  let tick = world.read_change_tick()
+  let aa_method = anti_aliasing_state.val.aa_method
+  if aa_method_eq(aa_method, AAMethod::NoAA) {
+    world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
+    world.get_fxaa_store().remove(camera_entity) |> ignore
+    clear_temporal_aa_components(world, camera_entity)
+    return
+  }
+  if aa_method_eq(aa_method, AAMethod::MSAA) {
+    world
+    .get_msaa_store()
+    .insert(
+      camera_entity,
+      msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
+      tick,
+    )
+    world.get_fxaa_store().remove(camera_entity) |> ignore
+    clear_temporal_aa_components(world, camera_entity)
+    return
+  }
+  if aa_method_eq(aa_method, AAMethod::FXAA) {
+    world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
+    clear_temporal_aa_components(world, camera_entity)
+    world
+    .get_fxaa_store()
+    .insert(
+      camera_entity,
+      @render3d.Fxaa::default().with_sensitivity(
+        fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
+      ),
+      tick,
+    )
+    return
+  }
+  if aa_method_eq(aa_method, AAMethod::TAA) {
+    world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
+    world.get_fxaa_store().remove(camera_entity) |> ignore
+    world
+    .get_temporal_anti_aliasing_store()
+    .insert(camera_entity, @render3d.TemporalAntiAliasing::default(), tick)
+    world
+    .get_temporal_jitter_store()
+    .insert(camera_entity, @render3d.TemporalJitter::default(), tick)
+    world
+    .get_depth_prepass_store()
+    .insert(camera_entity, @render3d.DepthPrepass::default(), tick)
+    world
+    .get_motion_vector_prepass_store()
+    .insert(camera_entity, @render3d.MotionVectorPrepass::default(), tick)
+    return
+  }
+  world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
+  world.get_fxaa_store().remove(camera_entity) |> ignore
+  clear_temporal_aa_components(world, camera_entity)
 }
 
 ///|
@@ -526,11 +623,11 @@ fn update_ui() -> Unit {
   draw_selectable_menu_item(
     ui,
     "Sharpening".to_string(),
-    "P".to_string(),
+    "0".to_string(),
     state.cas.enabled,
   )
   if state.cas.enabled {
-    ui.write_string("(,/.) Strength: " + state.cas.strength.to_string() + "\n")
+    ui.write_string("(-/=) Strength: " + state.cas.strength.to_string() + "\n")
     draw_selectable_menu_item(
       ui,
       "Denoising".to_string(),
@@ -546,7 +643,7 @@ fn update_ui() -> Unit {
     state.use_orthographic,
   )
   ui.write_string(
-    "\nAdapted runtime note: native AA/CAS pipelines are mapped to material/fog proxies.",
+    "\nRuntime note: MSAA/FXAA/TAA camera components follow Bevy semantics; SMAA/DLSS/CAS stay proxy-mapped in current runtime.",
   )
   @text.text_set_content(handle, ui.to_string())
 }
@@ -705,6 +802,17 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   anti_aliasing_state.val.camera = Some(camera_entity)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera_entity,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      150.0F,
+    ),
+    tick,
+  )
 
   @render3d.render3d_set_distance_fog(
     @render3d.DistanceFog::new(
@@ -736,12 +844,38 @@ fn setup(world : @ecs_world.World) -> Unit {
   anti_aliasing_state.val.help_text = Some(help_text)
 
   set_camera_projection(world)
+  apply_aa_components(world)
   apply_aa_proxy()
   update_ui()
 }
 
 ///|
+fn read_cas_character_shortcuts(world : @ecs_world.World) -> (Bool, Bool, Bool) {
+  let mut toggle = false
+  let mut decrement = false
+  let mut increment = false
+  for event in @input.keyboard_input_events(world).read() {
+    if event.state is Released || event.repeat {
+      continue
+    }
+    if event.logical_key is @input.Key::Character(character) {
+      if character == "0" || character == ")" {
+        toggle = true
+      } else if character == "-" || character == "_" {
+        decrement = true
+      } else if character == "=" || character == "+" {
+        increment = true
+      }
+    }
+  }
+  (toggle, decrement, increment)
+}
+
+///|
 fn modify_aa(world : @ecs_world.World) -> Bool {
+  let (cas_toggle_char, cas_decrease_char, cas_increase_char) = read_cas_character_shortcuts(
+    world,
+  )
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     anti_aliasing_state.val.aa_method = AAMethod::NoAA
@@ -852,7 +986,7 @@ fn modify_aa(world : @ecs_world.World) -> Bool {
     }
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyP) {
+  if @input.key_just_pressed(@window.KeyCode::KeyP) || cas_toggle_char {
     anti_aliasing_state.val.cas = {
       ..anti_aliasing_state.val.cas,
       enabled: !anti_aliasing_state.val.cas.enabled,
@@ -860,7 +994,7 @@ fn modify_aa(world : @ecs_world.World) -> Bool {
     changed = true
   }
   if anti_aliasing_state.val.cas.enabled {
-    if @input.key_just_pressed(@window.KeyCode::Comma) {
+    if @input.key_just_pressed(@window.KeyCode::Comma) || cas_decrease_char {
       anti_aliasing_state.val.cas = {
         ..anti_aliasing_state.val.cas,
         strength: if anti_aliasing_state.val.cas.strength - 0.1F < 0.0F {
@@ -871,7 +1005,7 @@ fn modify_aa(world : @ecs_world.World) -> Bool {
       }
       changed = true
     }
-    if @input.key_just_pressed(@window.KeyCode::Period) {
+    if @input.key_just_pressed(@window.KeyCode::Period) || cas_increase_char {
       anti_aliasing_state.val.cas = {
         ..anti_aliasing_state.val.cas,
         strength: if anti_aliasing_state.val.cas.strength + 0.1F > 1.0F {
@@ -903,6 +1037,7 @@ fn modify_aa(world : @ecs_world.World) -> Bool {
 ///|
 fn update(world : @ecs_world.World) -> Unit {
   if modify_aa(world) {
+    apply_aa_components(world)
     apply_aa_proxy()
     update_ui()
   }

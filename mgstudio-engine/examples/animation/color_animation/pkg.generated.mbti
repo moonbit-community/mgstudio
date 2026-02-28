@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/color_animation"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum ColorAnimationMode {
+  CurveLinearRgba
+  CurveXyza
+  CurveOklaba
+  MixedHsla
+  MixedSrgba
+  MixedOklcha
+}
+
+// Type aliases
+
+// Traits
+

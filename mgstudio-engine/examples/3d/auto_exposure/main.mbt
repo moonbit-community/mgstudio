@@ -15,10 +15,11 @@
 ///|
 /// Port of `bevy/examples/3d/auto_exposure.rs`.
 ///
-/// Baseline parity: Bevy's `AutoExposurePlugin`, `AutoExposure`
-/// component/curve assets, and `Skybox` are not available in current mgstudio
-/// render APIs. This port keeps the same controls and scene topology and
-/// approximates auto-exposure behavior with a time-smoothed ambient-light model.
+/// Baseline parity: Bevy's `AutoExposurePlugin` and camera
+/// `AutoExposure`/compensation-curve assets are not available in current
+/// mgstudio render APIs. This port keeps the same controls and scene topology,
+/// uses a real camera `Skybox`, and approximates auto-exposure behavior with a
+/// time-smoothed ambient-light model.
 
 ///|
 const CAMERA_ORBIT_RADIUS : Float = 1.0F
@@ -168,6 +169,16 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render2d.Camera::default(),
     camera_transform_for_angle(auto_exposure_state.val.camera_angle),
   ).spawn(world)
+  world
+  .get_skybox_store()
+  .insert(
+    camera,
+    @render3d.Skybox::new(
+      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+      100_000.0F,
+    ),
+    world.read_change_tick(),
+  )
   auto_exposure_state.val.camera = Some(camera)
 
   for level in [-1, 0, 1] {
@@ -184,22 +195,6 @@ fn setup(world : @ecs_world.World) -> Unit {
       spawn_wall_panel(world, side, level)
     }
   }
-
-  // Bright sky proxy visible through the slot, replacing Bevy's skybox.
-  let sky_proxy_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-    ).with_emissive(@render2d.Color::new(80.0F, 80.0F, 80.0F, 1.0F)),
-  )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(7.0F, 3.0F, 0.04F),
-    @render3d.MeshMaterial3d::new(sky_proxy_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
 
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
 

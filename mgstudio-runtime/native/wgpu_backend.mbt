@@ -5586,6 +5586,7 @@ pub fn GpuBackend::draw_mesh3d(
   transmission_source_texture_id : Int,
   transmission_blur_taps : Float,
   transmission_steps : Float,
+  _cull_mode : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }

@@ -1,0 +1,369 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/animation"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+pub fn[W : AdvanceAnimationsWorld] advance_animations(W) -> Unit
+
+pub fn[W : AdvanceTransitionsWorld] advance_transitions(W) -> Unit
+
+pub fn[W : AnimateTargetsWorld] animate_targets(W) -> Unit
+
+pub fn animation_clip_add(AnimationClip) -> @asset.Handle[AnimationClip]
+
+pub fn animation_clip_get(@asset.Handle[AnimationClip]) -> AnimationClip?
+
+pub fn animation_clip_set(@asset.Handle[AnimationClip], AnimationClip) -> Bool
+
+pub fn animation_graph_add(AnimationGraph) -> @asset.Handle[AnimationGraph]
+
+pub fn animation_graph_get(@asset.Handle[AnimationGraph]) -> AnimationGraph?
+
+pub fn animation_graph_set(@asset.Handle[AnimationGraph], AnimationGraph) -> Bool
+
+pub fn[W : AnimationPluginWorld] animation_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn animation_register_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
+
+pub let animation_set_advance_animations : String
+
+pub let animation_set_advance_transitions : String
+
+pub let animation_set_animate_targets : String
+
+pub let animation_set_expire_transitions : String
+
+pub let animation_set_thread : String
+
+pub let animation_set_trigger_events : String
+
+pub let ecs_components : Array[String]
+
+pub let ecs_resources : Array[String]
+
+pub fn[W : ExpireTransitionsWorld] expire_transitions(W) -> Unit
+
+pub fn[W] thread_animation_graphs(W) -> Unit
+
+pub fn[W : TriggerEventsWorld] trigger_events(W) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct ActiveAnimation {
+  mut weight : Float
+  mut repeat : RepeatAnimation
+  mut speed : Float
+  mut elapsed : Float
+  mut seek_time : Float
+  mut last_seek_time : Float?
+  mut completions : Int
+  mut just_completed : Bool
+  mut paused : Bool
+}
+pub fn ActiveAnimation::completions(Self) -> Int
+pub fn ActiveAnimation::default() -> Self
+pub fn ActiveAnimation::elapsed(Self) -> Float
+pub fn ActiveAnimation::is_finished(Self) -> Bool
+pub fn ActiveAnimation::is_paused(Self) -> Bool
+pub fn ActiveAnimation::is_playback_reversed(Self) -> Bool
+pub fn ActiveAnimation::just_completed(Self) -> Bool
+pub fn ActiveAnimation::pause(Self) -> Self
+pub fn ActiveAnimation::repeat(Self) -> Self
+pub fn ActiveAnimation::repeat_forever(Self) -> Self
+pub fn ActiveAnimation::repeat_mode(Self) -> RepeatAnimation
+pub fn ActiveAnimation::replay(Self) -> Self
+pub fn ActiveAnimation::resume_playback(Self) -> Self
+pub fn ActiveAnimation::rewind(Self) -> Self
+pub fn ActiveAnimation::seek_time(Self) -> Float
+pub fn ActiveAnimation::seek_to(Self, Float) -> Self
+pub fn ActiveAnimation::set_repeat(Self, RepeatAnimation) -> Self
+pub fn ActiveAnimation::set_seek_time(Self, Float) -> Self
+pub fn ActiveAnimation::set_speed(Self, Float) -> Self
+pub fn ActiveAnimation::set_weight(Self, Float) -> Self
+pub fn ActiveAnimation::speed(Self) -> Float
+pub fn ActiveAnimation::unpause(Self) -> Self
+pub fn ActiveAnimation::update(Self, Float, Float) -> Self
+pub fn ActiveAnimation::weight(Self) -> Float
+
+pub struct AnimatedBy {
+  player : @core.Entity
+}
+pub fn AnimatedBy::new(@core.Entity) -> Self
+pub fn AnimatedBy::player(Self) -> @core.Entity
+
+pub struct AnimationClip {
+  mut duration_seconds : Float
+  targets : Array[AnimationTargetBinding]
+  events_root : Array[AnimationClipEvent]
+  events_targets : Array[(AnimationTargetId, Array[AnimationClipEvent])]
+}
+pub fn AnimationClip::add_event(Self, Float, String, String) -> Self
+pub fn AnimationClip::add_event_fn(Self, Float, Int) -> Self
+pub fn AnimationClip::add_event_fn_to_target(Self, AnimationTargetId, Float, Int) -> Self
+pub fn AnimationClip::add_event_to_target(Self, AnimationTargetId, Float, String, String) -> Self
+pub fn AnimationClip::add_rotation_curve(Self, AnimationTargetId, Array[KeyframeQuat]) -> Self
+pub fn AnimationClip::add_scale_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
+pub fn AnimationClip::add_translation_curve(Self, AnimationTargetId, Array[KeyframeVec3]) -> Self
+pub fn AnimationClip::add_weights_curve(Self, AnimationTargetId, Array[KeyframeWeights]) -> Self
+pub fn AnimationClip::duration(Self) -> Float
+pub fn AnimationClip::events(Self) -> Array[AnimationClipEvent]
+pub fn AnimationClip::events_for_target(Self, AnimationTargetId) -> Array[AnimationClipEvent]?
+pub fn AnimationClip::new() -> Self
+pub fn AnimationClip::sample_target(Self, AnimationTargetId, Float) -> AnimationSample?
+pub fn AnimationClip::set_duration(Self, Float) -> Self
+pub fn AnimationClip::triggered_root_events(Self, ActiveAnimation) -> Array[AnimationClipEvent]
+pub fn AnimationClip::triggered_target_events(Self, AnimationTargetId, ActiveAnimation) -> Array[AnimationClipEvent]
+
+pub struct AnimationClipEvent {
+  time : Float
+  label : String
+  payload : String
+  callback_id : Int?
+}
+pub fn AnimationClipEvent::callback_id(Self) -> Int?
+pub fn AnimationClipEvent::label(Self) -> String
+pub fn AnimationClipEvent::new(Float, String, String) -> Self
+pub fn AnimationClipEvent::new_callback(Float, Int) -> Self
+pub fn AnimationClipEvent::payload(Self) -> String
+pub fn AnimationClipEvent::time(Self) -> Float
+
+pub(all) enum AnimationEventTarget {
+  Root
+  Node(AnimationTargetId)
+}
+
+pub struct AnimationGraph {
+  root : AnimationNodeIndex
+  nodes : Array[AnimationGraphNode]
+  mask_groups : Array[(AnimationTargetId, UInt)]
+}
+pub fn AnimationGraph::add(Self, AnimationNodeType, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_add(Self, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_add_with_mask(Self, UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_additive_blend(Self, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_additive_blend_with_mask(Self, UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_blend(Self, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_blend_with_mask(Self, UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_clip(Self, @asset.Handle[AnimationClip], Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_clip_with_mask(Self, @asset.Handle[AnimationClip], UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_node_mask(Self, AnimationNodeIndex, UInt) -> Bool
+pub fn AnimationGraph::add_node_mask_group(Self, AnimationNodeIndex, Int) -> Bool
+pub fn AnimationGraph::add_target_to_mask_group(Self, AnimationTargetId, Int) -> Self
+pub fn AnimationGraph::add_with_mask(Self, AnimationNodeType, UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::computed_mask(Self, AnimationNodeIndex) -> UInt
+pub fn AnimationGraph::effective_weight(Self, AnimationNodeIndex) -> Float
+pub fn AnimationGraph::from_clip(@asset.Handle[AnimationClip]) -> (Self, AnimationNodeIndex)
+pub fn AnimationGraph::from_clips(Array[@asset.Handle[AnimationClip]]) -> (Self, Array[AnimationNodeIndex])
+pub fn AnimationGraph::get(Self, AnimationNodeIndex) -> AnimationGraphNode?
+pub fn AnimationGraph::new() -> Self
+pub fn AnimationGraph::remove_node_mask(Self, AnimationNodeIndex, UInt) -> Bool
+pub fn AnimationGraph::remove_node_mask_group(Self, AnimationNodeIndex, Int) -> Bool
+pub fn AnimationGraph::root(Self) -> AnimationNodeIndex
+pub fn AnimationGraph::set(Self, AnimationNodeIndex, AnimationGraphNode) -> Bool
+pub fn AnimationGraph::target_mask(Self, AnimationTargetId) -> UInt
+
+pub struct AnimationGraphHandle {
+  graph : @asset.Handle[AnimationGraph]
+}
+pub fn AnimationGraphHandle::graph(Self) -> @asset.Handle[AnimationGraph]
+pub fn AnimationGraphHandle::new(@asset.Handle[AnimationGraph]) -> Self
+
+pub struct AnimationGraphNode {
+  node_type : AnimationNodeType
+  mut mask : UInt
+  mut weight : Float
+  parent : AnimationNodeIndex?
+  children : Array[AnimationNodeIndex]
+}
+pub fn AnimationGraphNode::add_mask(Self, UInt) -> Self
+pub fn AnimationGraphNode::add_mask_group(Self, Int) -> Self
+pub fn AnimationGraphNode::mask(Self) -> UInt
+pub fn AnimationGraphNode::node_type(Self) -> AnimationNodeType
+pub fn AnimationGraphNode::remove_mask(Self, UInt) -> Self
+pub fn AnimationGraphNode::remove_mask_group(Self, Int) -> Self
+pub fn AnimationGraphNode::set_weight(Self, Float) -> Self
+pub fn AnimationGraphNode::weight(Self) -> Float
+
+pub struct AnimationNodeIndex {
+  index : Int
+}
+pub fn AnimationNodeIndex::index(Self) -> Int
+pub fn AnimationNodeIndex::new(Int) -> Self
+pub impl Eq for AnimationNodeIndex
+pub impl Show for AnimationNodeIndex
+
+pub(all) enum AnimationNodeType {
+  Clip(@asset.Handle[AnimationClip])
+  Blend
+  Add
+}
+
+pub struct AnimationPlayer {
+  active_animations : Array[(AnimationNodeIndex, ActiveAnimation)]
+}
+pub fn AnimationPlayer::all_finished(Self) -> Bool
+pub fn AnimationPlayer::animation(Self, AnimationNodeIndex) -> ActiveAnimation?
+pub fn AnimationPlayer::default() -> Self
+pub fn AnimationPlayer::is_playing_animation(Self, AnimationNodeIndex) -> Bool
+pub fn AnimationPlayer::play(Self, AnimationNodeIndex) -> Self
+pub fn AnimationPlayer::playing_animations(Self) -> Array[(AnimationNodeIndex, ActiveAnimation)]
+pub fn AnimationPlayer::seek_to(Self, AnimationNodeIndex, Float) -> Self
+pub fn AnimationPlayer::set_animation(Self, AnimationNodeIndex, ActiveAnimation) -> Self
+pub fn AnimationPlayer::set_speed(Self, AnimationNodeIndex, Float) -> Self
+pub fn AnimationPlayer::set_weight(Self, AnimationNodeIndex, Float) -> Self
+pub fn AnimationPlayer::start(Self, AnimationNodeIndex) -> Self
+pub fn AnimationPlayer::stop(Self, AnimationNodeIndex) -> Self
+pub fn AnimationPlayer::stop_all(Self) -> Self
+
+type AnimationSample
+pub fn AnimationSample::rotation(Self) -> @math.Quat?
+pub fn AnimationSample::scale(Self) -> @math.Vec3?
+pub fn AnimationSample::translation(Self) -> @math.Vec3?
+pub fn AnimationSample::weights(Self) -> Array[Float]?
+
+pub struct AnimationTargetBinding {
+  target_id : AnimationTargetId
+  curves : AnimationTargetCurves
+}
+
+pub struct AnimationTargetCurves {
+  translation : Array[KeyframeVec3]
+  rotation : Array[KeyframeQuat]
+  scale : Array[KeyframeVec3]
+  weights : Array[KeyframeWeights]
+}
+
+pub struct AnimationTargetId {
+  high : Int
+  low : Int
+}
+pub fn AnimationTargetId::from_name(String) -> Self
+pub fn AnimationTargetId::from_names(Array[String]) -> Self
+pub fn AnimationTargetId::new(Int, Int) -> Self
+pub impl Eq for AnimationTargetId
+pub impl Show for AnimationTargetId
+
+pub struct AnimationTransition {
+  mut current_weight : Float
+  weight_decline_per_sec : Float
+  animation : AnimationNodeIndex
+}
+
+pub struct AnimationTransitions {
+  mut main_animation : AnimationNodeIndex?
+  transitions : Array[AnimationTransition]
+}
+pub fn AnimationTransitions::main_animation(Self) -> AnimationNodeIndex?
+pub fn AnimationTransitions::new() -> Self
+pub fn AnimationTransitions::play(Self, AnimationPlayer, AnimationNodeIndex, Float) -> (Self, AnimationPlayer)
+
+pub struct AnimationTriggeredEvent {
+  player : @core.Entity
+  target : @core.Entity
+  target_id : AnimationTargetId?
+  time : Float
+  weight : Float
+  label : String
+  payload : String
+}
+pub fn AnimationTriggeredEvent::label(Self) -> String
+pub fn AnimationTriggeredEvent::payload(Self) -> String
+pub fn AnimationTriggeredEvent::player(Self) -> @core.Entity
+pub fn AnimationTriggeredEvent::target(Self) -> @core.Entity
+pub fn AnimationTriggeredEvent::target_id(Self) -> AnimationTargetId?
+pub fn AnimationTriggeredEvent::time(Self) -> Float
+pub fn AnimationTriggeredEvent::weight(Self) -> Float
+pub impl @core.Message for AnimationTriggeredEvent
+
+pub(all) enum AnimationTriggeredEventsDirection {
+  Forward
+  Reverse
+  ForwardLooping
+  ReverseLooping
+}
+
+pub struct AnimationWeights {
+  values : Array[Float]
+}
+pub fn AnimationWeights::new(Array[Float]) -> Self
+pub fn AnimationWeights::values(Self) -> Array[Float]
+
+pub struct KeyframeQuat {
+  time : Float
+  value : @math.Quat
+}
+pub fn KeyframeQuat::new(Float, @math.Quat) -> Self
+
+pub struct KeyframeVec3 {
+  time : Float
+  value : @math.Vec3
+}
+pub fn KeyframeVec3::new(Float, @math.Vec3) -> Self
+
+pub struct KeyframeWeights {
+  time : Float
+  value : Array[Float]
+}
+pub fn KeyframeWeights::new(Float, Array[Float]) -> Self
+
+pub(all) enum RepeatAnimation {
+  Never
+  Count(Int)
+  Forever
+}
+
+// Type aliases
+pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
+
+pub type AnimationMask = UInt
+
+// Traits
+pub(open) trait AdvanceAnimationsWorld : Has_AnimationPlayer + Has_AnimationGraphHandle + @core.ChangeTickWorld {
+}
+
+pub(open) trait AdvanceTransitionsWorld : Has_AnimationTransitions + Has_AnimationPlayer + @core.ChangeTickWorld {
+}
+
+pub(open) trait AnimateTargetsWorld : Has_AnimationTargetId + Has_AnimatedBy + Has_AnimationPlayer + Has_AnimationGraphHandle + @math.Has_Transform + Has_AnimationWeights + @core.ChangeTickWorld {
+}
+
+pub(open) trait AnimationPluginWorld : AdvanceTransitionsWorld + AdvanceAnimationsWorld + AnimateTargetsWorld + TriggerEventsWorld + ExpireTransitionsWorld {
+}
+
+pub(open) trait ExpireTransitionsWorld : Has_AnimationTransitions + Has_AnimationPlayer + @core.ChangeTickWorld {
+}
+
+pub(open) trait Has_AnimatedBy {
+  get_animated_by_store(Self) -> @core.ComponentStore[AnimatedBy]
+}
+
+pub(open) trait Has_AnimationGraphHandle {
+  get_animation_graph_handle_store(Self) -> @core.ComponentStore[AnimationGraphHandle]
+}
+
+pub(open) trait Has_AnimationPlayer {
+  get_animation_player_store(Self) -> @core.ComponentStore[AnimationPlayer]
+}
+
+pub(open) trait Has_AnimationTargetId {
+  get_animation_target_id_store(Self) -> @core.ComponentStore[AnimationTargetId]
+}
+
+pub(open) trait Has_AnimationTransitions {
+  get_animation_transitions_store(Self) -> @core.ComponentStore[AnimationTransitions]
+}
+
+pub(open) trait Has_AnimationWeights {
+  get_animation_weights_store(Self) -> @core.ComponentStore[AnimationWeights]
+}
+
+pub(open) trait TriggerEventsWorld : Has_AnimationPlayer + Has_AnimationGraphHandle + Has_AnimationTargetId + Has_AnimatedBy + @core.ChangeTickWorld {
+}
+

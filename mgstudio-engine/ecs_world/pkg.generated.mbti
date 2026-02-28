@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/ecs_world"
 
 import {
   "Milky2018/mgstudio/a11y",
+  "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/hierarchy",
@@ -56,6 +57,12 @@ pub struct World {
   mesh3d : @core.ComponentStore[@render3d.Mesh3d]
   skybox : @core.ComponentStore[@render3d.Skybox]
   scene_root : @core.ComponentStore[@scene.SceneRoot]
+  animation_target_id : @core.ComponentStore[@animation.AnimationTargetId]
+  animated_by : @core.ComponentStore[@animation.AnimatedBy]
+  animation_player : @core.ComponentStore[@animation.AnimationPlayer]
+  animation_transitions : @core.ComponentStore[@animation.AnimationTransitions]
+  animation_graph_handle : @core.ComponentStore[@animation.AnimationGraphHandle]
+  animation_weights : @core.ComponentStore[@animation.AnimationWeights]
   border_radius : @core.ComponentStore[@ui.BorderRadius]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
@@ -64,6 +71,7 @@ pub struct World {
   image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   camera3d : @core.ComponentStore[@render3d.Camera3d]
+  exposure : @core.ComponentStore[@render3d.Exposure]
   vignette : @core.ComponentStore[@render3d.Vignette]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
@@ -86,8 +94,10 @@ pub struct World {
   collider3d : @core.ComponentStore[@physics3d.Collider3d]
   velocity3d : @core.ComponentStore[@physics3d.Velocity3d]
   scissor_rect : @core.ComponentStore[@render2d.ScissorRect]
+  wireframe2d : @core.ComponentStore[@render2d.Wireframe2d]
   no_wireframe : @core.ComponentStore[@render3d.NoWireframe]
   tonemapping : @core.ComponentStore[@render3d.Tonemapping]
+  color_grading : @core.ComponentStore[@render3d.ColorGrading]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
   rigid_body2d : @core.ComponentStore[@physics2d.RigidBody2d]
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
@@ -100,6 +110,7 @@ pub struct World {
   visibility : @core.ComponentStore[@visibility.Visibility]
   locked_axes2d : @core.ComponentStore[@physics2d.LockedAxes2d]
   color_material : @core.ComponentStore[@render2d.ColorMaterial]
+  no_wireframe2d : @core.ComponentStore[@render2d.NoWireframe2d]
   normal_prepass : @core.ComponentStore[@render3d.NormalPrepass]
   active_hooks2d : @core.ComponentStore[@physics2d.ActiveHooks2d]
   contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
@@ -121,6 +132,7 @@ pub struct World {
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
+  wireframe2d_color : @core.ComponentStore[@render2d.Wireframe2dColor]
   directional_light : @core.ComponentStore[@render3d.DirectionalLight]
   irradiance_volume : @core.ComponentStore[@render3d.IrradianceVolume]
   occlusion_culling : @core.ComponentStore[@render3d.OcclusionCulling]
@@ -131,6 +143,7 @@ pub struct World {
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
   not_shadow_receiver : @core.ComponentStore[@render3d.NotShadowReceiver]
+  transmitted_shadow_receiver : @core.ComponentStore[@render3d.TransmittedShadowReceiver]
   point_light_texture : @core.ComponentStore[@render3d.PointLightTexture]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
@@ -185,13 +198,21 @@ pub struct World {
   res_physics3d_events : @core.Resource[@physics3d.Physics3dEvents]
   res_physics2d_context : @core.Resource[@physics2d.Physics2dContext]
   res_physics3d_context : @core.Resource[@physics3d.Physics3dContext]
+  res_wireframe2d_config : @core.Resource[@render2d.Wireframe2dConfig]
   res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
+  res_point_light_shadow_map : @core.Resource[@render3d.PointLightShadowMap]
   res_default_opaque_renderer_method : @core.Resource[@render3d.DefaultOpaqueRendererMethod]
 }
 pub fn World::despawn(Self, @core.Entity) -> Unit raise @core.EntityError
 pub fn World::new() -> Self
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub impl @a11y.HasRes_A11yState for World
+pub impl @animation.Has_AnimatedBy for World
+pub impl @animation.Has_AnimationGraphHandle for World
+pub impl @animation.Has_AnimationPlayer for World
+pub impl @animation.Has_AnimationTargetId for World
+pub impl @animation.Has_AnimationTransitions for World
+pub impl @animation.Has_AnimationWeights for World
 pub impl @asset.Has_TextureAtlas for World
 pub impl @core.ChangeTickWorld for World
 pub impl @core.SpawnWorld for World
@@ -257,6 +278,7 @@ pub impl @picking.HasRes_PickingState for World
 pub impl @picking.HasRes_PointerInputs for World
 pub impl @render2d.CameraPostProcessWorld for World
 pub impl @render2d.HasRes_RenderState for World
+pub impl @render2d.HasRes_Wireframe2dConfig for World
 pub impl @render2d.Has_Anchor for World
 pub impl @render2d.Has_Bloom2d for World
 pub impl @render2d.Has_Camera for World
@@ -265,18 +287,23 @@ pub impl @render2d.Has_ClearColorConfig for World
 pub impl @render2d.Has_ColorMaterial for World
 pub impl @render2d.Has_GpuMesh2d for World
 pub impl @render2d.Has_Mesh2d for World
+pub impl @render2d.Has_NoWireframe2d for World
 pub impl @render2d.Has_Projection for World
 pub impl @render2d.Has_RenderLayers for World
 pub impl @render2d.Has_RenderTarget for World
 pub impl @render2d.Has_ScissorRect for World
 pub impl @render2d.Has_Sprite for World
+pub impl @render2d.Has_Wireframe2d for World
+pub impl @render2d.Has_Wireframe2dColor for World
 pub impl @render3d.HasRes_DefaultOpaqueRendererMethod for World
 pub impl @render3d.HasRes_GlobalAmbientLight for World
+pub impl @render3d.HasRes_PointLightShadowMap for World
 pub impl @render3d.HasRes_WireframeConfig for World
 pub impl @render3d.Has_Bloom for World
 pub impl @render3d.Has_Camera3d for World
 pub impl @render3d.Has_CameraProjection3d for World
 pub impl @render3d.Has_ChromaticAberration for World
+pub impl @render3d.Has_ColorGrading for World
 pub impl @render3d.Has_ContactShadows for World
 pub impl @render3d.Has_DebandDither for World
 pub impl @render3d.Has_DeferredPrepass for World
@@ -284,6 +311,7 @@ pub impl @render3d.Has_DepthPrepass for World
 pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_DirectionalLightTexture for World
 pub impl @render3d.Has_EnvironmentMapLight for World
+pub impl @render3d.Has_Exposure for World
 pub impl @render3d.Has_FreeCamera for World
 pub impl @render3d.Has_FreeCameraState for World
 pub impl @render3d.Has_Fxaa for World
@@ -316,6 +344,7 @@ pub impl @render3d.Has_SubCameraView3d for World
 pub impl @render3d.Has_TemporalAntiAliasing for World
 pub impl @render3d.Has_TemporalJitter for World
 pub impl @render3d.Has_Tonemapping for World
+pub impl @render3d.Has_TransmittedShadowReceiver for World
 pub impl @render3d.Has_Vignette for World
 pub impl @render3d.Has_Wireframe for World
 pub impl @render3d.Has_WireframeColor for World

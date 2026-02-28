@@ -1,0 +1,65 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/easing_functions"
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum EasingFunction {
+  SineIn
+  QuadraticIn
+  CubicIn
+  QuarticIn
+  QuinticIn
+  SmoothStepIn
+  SmootherStepIn
+  CircularIn
+  ExponentialIn
+  ElasticIn
+  BackIn
+  BounceIn
+  SineOut
+  QuadraticOut
+  CubicOut
+  QuarticOut
+  QuinticOut
+  SmoothStepOut
+  SmootherStepOut
+  CircularOut
+  ExponentialOut
+  ElasticOut
+  BackOut
+  BounceOut
+  SineInOut
+  QuadraticInOut
+  CubicInOut
+  QuarticInOut
+  QuinticInOut
+  SmoothStep
+  SmootherStep
+  CircularInOut
+  ExponentialInOut
+  ElasticInOut
+  BackInOut
+  BounceInOut
+  Linear
+  StepsEnd
+  StepsStart
+  StepsBoth
+  StepsNone
+  Elastic50
+}
+
+pub(all) enum StepJump {
+  Start
+  End
+  None
+  Both
+}
+
+// Type aliases
+
+// Traits
+

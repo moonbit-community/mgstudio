@@ -15,9 +15,8 @@
 ///|
 /// Port of `bevy/examples/3d/ssao.rs`.
 ///
-/// Baseline parity: Bevy's native SSAO + temporal jitter render pipeline is
-/// approximated in mgstudio via AO proxy controls (material darkening,
-/// ambient/fog response, temporal stability proxy).
+/// Baseline parity: use mgstudio's exposed SSAO/TemporalJitter components and
+/// keyboard controls aligned with Bevy's sample flow.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -33,10 +32,9 @@ priv struct SsaoState {
   mut quality : Int
   mut thickness : Float
   mut taa_enabled : Bool
+  mut camera : @core.Entity?
   mut sphere : @core.Entity?
   mut help_text : @text.TextHandle?
-  mut base_material : @asset.Handle[@render3d.StandardMaterial]?
-  mut sphere_material : @asset.Handle[@render3d.StandardMaterial]?
 }
 
 ///|
@@ -44,10 +42,9 @@ let ssao_state : Ref[SsaoState] = Ref::new({
   quality: 2,
   thickness: 1.0F,
   taa_enabled: true,
+  camera: None,
   sphere: None,
   help_text: None,
-  base_material: None,
-  sphere_material: None,
 })
 
 ///|
@@ -62,28 +59,8 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn clamp01(value : Float) -> Float {
-  clampf(value, 0.0F, 1.0F)
-}
-
-///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
-}
-
-///|
-fn quality_factor(quality : Int) -> Float {
-  if quality <= 0 {
-    0.0F
-  } else if quality == 1 {
-    0.25F
-  } else if quality == 2 {
-    0.5F
-  } else if quality == 3 {
-    0.75F
-  } else {
-    1.0F
-  }
 }
 
 ///|
@@ -117,13 +94,7 @@ fn ssao_ui_text() -> String {
   text = text + "(5) \{u}Ultra\{u}\n\n"
   text = text + "Temporal Antialiasing:\n"
   text = text +
-    (if state.taa_enabled {
-      "(Space) Enabled (Proxy)"
-    } else {
-      "(Space) Disabled (Proxy)"
-    })
-  text = text +
-    "\n\nSSAO note: render-path approximation in current mgstudio runtime."
+    (if state.taa_enabled { "(Space) Enabled" } else { "(Space) Disabled" })
   text
 }
 
@@ -205,77 +176,54 @@ fn spawn_mesh(
 }
 
 ///|
-fn apply_ssao_proxy(world : @ecs_world.World) -> Unit {
-  let quality = quality_factor(ssao_state.val.quality)
-  let thickness_norm = clamp01(
-    (ssao_state.val.thickness - SSAO_MIN_THICKNESS) /
-    (SSAO_MAX_THICKNESS - SSAO_MIN_THICKNESS),
-  )
-  let ao_strength = quality * (0.5F + 0.5F * thickness_norm)
-
-  let temporal_noise = if ssao_state.val.taa_enabled {
-    0.0F
-  } else {
-    @math.sin(@time.time_elapsed_seconds() * 45.0F) * 0.004F
-  }
-
-  let ambient_brightness = clampf(
-    0.06F - ao_strength * 0.04F + temporal_noise,
-    0.0F,
-    0.08F,
-  )
-
+fn set_global_ambient_light(
+  world : @ecs_world.World,
+  color : @render2d.Color,
+  brightness : Float,
+) -> Unit {
   let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
-  if ambient.get_ref_mut(tick) is Some(value) {
-    value.val = @render3d.GlobalAmbientLight::new(
-      @render2d.Color::white(),
-      ambient_brightness,
-    )
+  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
+  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+    is Some(current) {
+    current.val = ambient
+  } else {
+    world.get_global_ambient_light_resource().insert(ambient, tick)
+  }
+}
+
+///|
+fn ssao_quality_from_index(
+  quality : Int,
+) -> @render3d.ScreenSpaceAmbientOcclusionQualityLevel {
+  if quality <= 1 {
+    @render3d.ScreenSpaceAmbientOcclusionQualityLevel::Low
+  } else if quality == 2 {
+    @render3d.ScreenSpaceAmbientOcclusionQualityLevel::Medium
+  } else if quality == 3 {
+    @render3d.ScreenSpaceAmbientOcclusionQualityLevel::High
+  } else {
+    @render3d.ScreenSpaceAmbientOcclusionQualityLevel::Ultra
+  }
+}
+
+///|
+fn apply_ssao_settings(world : @ecs_world.World) -> Unit {
+  guard ssao_state.val.camera is Some(camera_entity) else { return }
+  let tick = world.read_change_tick()
+  let ssao_store = world.get_screen_space_ambient_occlusion_store()
+
+  if ssao_state.val.quality == 0 {
+    ssao_store.remove(camera_entity) |> ignore
+    return
   }
 
-  let fog_start = clampf(0.8F - quality * 0.35F, 0.25F, 1.0F)
-  let fog_end = clampf(7.5F - quality * 2.0F, 3.0F, 9.0F)
-  let fog_base = clampf(0.18F - ao_strength * 0.08F, 0.08F, 0.22F)
-
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(
-        clamp01(fog_base + temporal_noise),
-        clamp01(fog_base + temporal_noise * 0.7F),
-        clamp01(fog_base + temporal_noise * 0.5F),
-        1.0F,
-      ),
-      @render3d.FogFalloff3d::linear(fog_start, fog_end),
-    ),
-  )
-
-  if ssao_state.val.base_material is Some(handle) {
-    if @render3d.standard_material_get(handle) is Some(material) {
-      let shade = clampf(0.5F - ao_strength * 0.18F, 0.22F, 0.5F)
-      @render3d.standard_material_set(
-        handle,
-        material
-        .with_base_color(@render2d.Color::new(shade, shade, shade, 1.0F))
-        .with_perceptual_roughness(1.0F)
-        .with_reflectance(0.0F),
-      )
-      |> ignore
-    }
-  }
-
-  if ssao_state.val.sphere_material is Some(handle) {
-    if @render3d.standard_material_get(handle) is Some(material) {
-      let shade = clampf(0.4F - ao_strength * 0.17F, 0.16F, 0.4F)
-      @render3d.standard_material_set(
-        handle,
-        material
-        .with_base_color(@render2d.Color::new(shade, shade, shade, 1.0F))
-        .with_perceptual_roughness(1.0F)
-        .with_reflectance(0.0F),
-      )
-      |> ignore
-    }
+  let component = @render3d.ScreenSpaceAmbientOcclusion::default()
+    .with_quality_level(ssao_quality_from_index(ssao_state.val.quality))
+    .with_constant_object_thickness(ssao_state.val.thickness)
+  if ssao_store.contains(camera_entity) {
+    ssao_store.set(camera_entity, component, tick) |> ignore
+  } else {
+    ssao_store.insert(camera_entity, component, tick)
   }
 }
 
@@ -285,22 +233,30 @@ fn setup(world : @ecs_world.World) -> Unit {
     quality: 2,
     thickness: 1.0F,
     taa_enabled: true,
+    camera: None,
     sphere: None,
     help_text: None,
-    base_material: None,
-    sphere_material: None,
   }
 
   let tick = world.read_change_tick()
+  set_global_ambient_light(world, @render2d.Color::white(), 1000.0F)
 
-  @render3d.Camera3dBundle::new(
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.0F, -2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+  ssao_state.val.camera = Some(camera)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .get_temporal_anti_aliasing_store()
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+  world
+  .get_temporal_jitter_store()
+  .insert(camera, @render3d.TemporalJitter::default(), tick)
 
   let base_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -309,7 +265,6 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(1.0F)
     .with_reflectance(0.0F),
   )
-  ssao_state.val.base_material = Some(base_material)
 
   spawn_mesh(
     world,
@@ -342,7 +297,6 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(1.0F)
     .with_reflectance(0.0F),
   )
-  ssao_state.val.sphere_material = Some(sphere_material)
 
   let sphere = spawn_mesh(
     world,
@@ -357,9 +311,10 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_transform_store()
   .insert(
     light,
-    @math.Transform::from_xyz(2.0F, 2.0F, -2.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Transform::identity().with_rotation(
+      @math.Quat::from_rotation_y(-PI * 0.15F).mul(
+        @math.Quat::from_rotation_x(-PI * 0.15F),
+      ),
     ),
     tick,
   )
@@ -392,7 +347,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     .spawn()
   ssao_state.val.help_text = Some(text)
 
-  apply_ssao_proxy(world)
+  apply_ssao_settings(world)
 }
 
 ///|
@@ -456,6 +411,21 @@ fn update(world : @ecs_world.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::Space) {
     ssao_state.val.taa_enabled = !ssao_state.val.taa_enabled
+    if ssao_state.val.camera is Some(camera_entity) {
+      let tick = world.read_change_tick()
+      let temporal_jitter_store = world.get_temporal_jitter_store()
+      if ssao_state.val.taa_enabled {
+        if !temporal_jitter_store.contains(camera_entity) {
+          temporal_jitter_store.insert(
+            camera_entity,
+            @render3d.TemporalJitter::default(),
+            tick,
+          )
+        }
+      } else {
+        temporal_jitter_store.remove(camera_entity) |> ignore
+      }
+    }
     changed = true
   }
 
@@ -463,7 +433,7 @@ fn update(world : @ecs_world.World) -> Unit {
     update_help_text()
   }
 
-  apply_ssao_proxy(world)
+  apply_ssao_settings(world)
 }
 
 ///|

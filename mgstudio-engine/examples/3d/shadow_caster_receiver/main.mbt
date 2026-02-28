@@ -284,6 +284,10 @@ fn setup(world : @ecs_world.World) -> Unit {
   shadow_caster_receiver_state.val.point_light = Some(point_light)
 
   let directional_light = world.spawn_empty()
+  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  .with_first_cascade_far_bound(7.0F)
+  .with_maximum_distance(25.0F)
+  .build()
   world
   .get_directional_light_store()
   .insert(
@@ -292,16 +296,17 @@ fn setup(world : @ecs_world.World) -> Unit {
       @render2d.Color::white(),
       SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE,
       true,
-    ),
+    ).with_cascade_shadow_config(Some(cascade_shadow_config)),
     tick,
   )
   world
   .get_transform_store()
   .insert(
     directional_light,
-    @math.Transform::from_xyz(5.0F, 5.0F, 0.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Transform::identity().with_rotation(
+      @math.Quat::from_rotation_y(PI / 2.0F).mul(
+        @math.Quat::from_rotation_x(-PI / 4.0F),
+      ),
     ),
     tick,
   )

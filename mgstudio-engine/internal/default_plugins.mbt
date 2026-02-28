@@ -24,7 +24,7 @@
 ///   messages stay readable.
 ///
 /// Note: This does not reduce the actual requirements; it only names them.
-pub(open) trait DefaultPluginsWorld: @core.ChangeTickWorld + @core.SystemContextWorld + @scene.ScenePluginWorld + @transform.TransformPropagationWorld + @visibility.VisibilityPropagationWorld + @picking.PickingPluginWorld + @a11y.HasRes_A11yState + @ui.UiPluginWorld + @render2d.RenderExtractWorld + @render2d.CameraPostProcessWorld + @render3d.Render3dPluginWorld + @physics2d.Physics2dPluginWorld + @physics3d.Physics3dPluginWorld {
+pub(open) trait DefaultPluginsWorld: @core.ChangeTickWorld + @core.SystemContextWorld + @scene.ScenePluginWorld + @animation.AnimationPluginWorld + @transform.TransformPropagationWorld + @visibility.VisibilityPropagationWorld + @picking.PickingPluginWorld + @a11y.HasRes_A11yState + @ui.UiPluginWorld + @render2d.RenderExtractWorld + @render2d.CameraPostProcessWorld + @render3d.Render3dPluginWorld + @physics2d.Physics2dPluginWorld + @physics3d.Physics3dPluginWorld {
 }
 
 ///|
@@ -36,10 +36,12 @@ pub impl DefaultPluginsWorld for @ecs_world.World
 /// Default plugin bundle, aligned with Bevy's `DefaultPlugins` concept.
 pub fn[W : DefaultPluginsWorld] default_plugins() -> Array[@app.Plugin[W]] {
   [
+    fn(app : @app.App[W]) -> @app.App[W] { @app.log_plugin_default(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @window.window_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @time.time_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @asset.asset_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @scene.scene_plugin(app) },
+    fn(app : @app.App[W]) -> @app.App[W] { @animation.animation_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @transform.transform_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @visibility.visibility_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @input.input_plugin(app) },
@@ -62,10 +64,12 @@ pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[
   @app.Plugin[W],
 ] {
   [
+    fn(app : @app.App[W]) -> @app.App[W] { @app.log_plugin_default(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @window.window_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @time.time_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @asset.asset_plugin_nearest(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @scene.scene_plugin(app) },
+    fn(app : @app.App[W]) -> @app.App[W] { @animation.animation_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @transform.transform_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @visibility.visibility_plugin(app) },
     fn(app : @app.App[W]) -> @app.App[W] { @input.input_plugin(app) },

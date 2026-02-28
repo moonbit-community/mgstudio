@@ -111,6 +111,8 @@ priv struct WindowState {
   mut scale_factor : Double
   mut position_x : Int
   mut position_y : Int
+  mut cursor_visible : Bool
+  mut cursor_icon : Int
 }
 
 ///|
@@ -158,6 +160,12 @@ priv struct TouchEventSnapshot {
 }
 
 ///|
+priv struct DragAndDropEventSnapshot {
+  kind : Int
+  path : String
+}
+
+///|
 priv struct InputState {
   pressed : @js.Any
   just_pressed : @js.Any
@@ -174,6 +182,7 @@ priv struct InputState {
   mut has_cursor : Bool
   mut pointer_bound : Bool
   touch_events : Array[TouchEventSnapshot]
+  drag_and_drop_events : Array[DragAndDropEventSnapshot]
   mut initialized : Bool
   mut gamepads : Array[GamepadSnapshot]
 }
@@ -190,12 +199,7 @@ priv struct GpuState {
   mut pipeline : @webgpu.GPURenderPipeline?
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
-  mut mesh3d_pipeline : @webgpu.GPURenderPipeline?
-  mut mesh3d_pipeline_transparent : @webgpu.GPURenderPipeline?
-  mut mesh3d_pipeline_line_list : @webgpu.GPURenderPipeline?
-  mut mesh3d_pipeline_line_list_transparent : @webgpu.GPURenderPipeline?
-  mut mesh3d_pipeline_line_strip : @webgpu.GPURenderPipeline?
-  mut mesh3d_pipeline_line_strip_transparent : @webgpu.GPURenderPipeline?
+  mut mesh3d_pipeline_cache : @js.Any
   mut motion_vector_pipeline : @webgpu.GPURenderPipeline?
   mut motion_blur_pipeline : @webgpu.GPURenderPipeline?
   mut bloom2d_pipeline : @webgpu.GPURenderPipeline?
@@ -324,6 +328,7 @@ priv struct GpuState {
 priv struct State {
   mut window : WindowState?
   mut should_close : Bool
+  mut app_stdin_line : String?
   assets_source : @rtcore.SourceSpec
   data_source : @rtcore.SourceSpec
   mut data_db : @js.Any?
@@ -344,6 +349,7 @@ fn new_state(
   State::{
     window: None,
     should_close: false,
+    app_stdin_line: None,
     assets_source,
     data_source,
     data_db: None,
@@ -388,6 +394,7 @@ fn new_state(
       has_cursor: false,
       pointer_bound: false,
       touch_events: [],
+      drag_and_drop_events: [],
       initialized: false,
       gamepads: [],
     },
@@ -402,12 +409,7 @@ fn new_state(
       pipeline: None,
       vertex_count: 0,
       mesh_pipeline: None,
-      mesh3d_pipeline: None,
-      mesh3d_pipeline_transparent: None,
-      mesh3d_pipeline_line_list: None,
-      mesh3d_pipeline_line_list_transparent: None,
-      mesh3d_pipeline_line_strip: None,
-      mesh3d_pipeline_line_strip_transparent: None,
+      mesh3d_pipeline_cache: new_map(),
       motion_vector_pipeline: None,
       motion_blur_pipeline: None,
       bloom2d_pipeline: None,
@@ -899,6 +901,15 @@ const TOUCH_PHASE_ENDED : Int = 2
 const TOUCH_PHASE_CANCELED : Int = 3
 
 ///|
+const DRAG_AND_DROP_DROPPED_FILE : Int = 0
+
+///|
+const DRAG_AND_DROP_HOVERED_FILE : Int = 1
+
+///|
+const DRAG_AND_DROP_HOVERED_FILE_CANCELED : Int = 2
+
+///|
 fn pointer_is_touch(event : @js.Any) -> Bool {
   any_to_string(event._get("pointerType")) == "touch"
 }
@@ -925,6 +936,57 @@ fn push_touch_event(
     x: client_x - left,
     y: client_y - top,
   })
+}
+
+///|
+fn push_drag_and_drop_event(state : State, kind : Int, path : String) -> Unit {
+  state.input.drag_and_drop_events.push(DragAndDropEventSnapshot::{ kind, path })
+}
+
+///|
+fn push_drag_and_drop_hovered_files(state : State, event : @js.Any) -> Unit {
+  let transfer = event._get("dataTransfer")
+  if host_is_nullish(transfer) {
+    return
+  }
+  let files = transfer._get("files")
+  if host_is_nullish(files) {
+    return
+  }
+  let len = array_len(files)
+  for i in 0..<len {
+    let file = array_get(files, i)
+    if host_is_nullish(file) {
+      continue
+    }
+    let name = any_to_string(file._get("name"))
+    if name != "" {
+      push_drag_and_drop_event(state, DRAG_AND_DROP_HOVERED_FILE, name)
+    }
+  }
+}
+
+///|
+fn push_drag_and_drop_dropped_files(state : State, event : @js.Any) -> Unit {
+  let transfer = event._get("dataTransfer")
+  if host_is_nullish(transfer) {
+    return
+  }
+  let files = transfer._get("files")
+  if host_is_nullish(files) {
+    return
+  }
+  let len = array_len(files)
+  for i in 0..<len {
+    let file = array_get(files, i)
+    if host_is_nullish(file) {
+      continue
+    }
+    let name = any_to_string(file._get("name"))
+    if name != "" {
+      push_drag_and_drop_event(state, DRAG_AND_DROP_DROPPED_FILE, name)
+    }
+  }
 }
 
 ///|
@@ -1006,6 +1068,30 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
   )
   add_event_listener(
     target,
+    "dragover",
+    @js.from_fn1(fn(event : @js.Any) {
+      push_drag_and_drop_hovered_files(state, event)
+      prevent_default(event)
+    }),
+  )
+  add_event_listener(
+    target,
+    "drop",
+    @js.from_fn1(fn(event : @js.Any) {
+      push_drag_and_drop_dropped_files(state, event)
+      prevent_default(event)
+    }),
+  )
+  add_event_listener(
+    target,
+    "dragleave",
+    @js.from_fn1(fn(event : @js.Any) {
+      push_drag_and_drop_event(state, DRAG_AND_DROP_HOVERED_FILE_CANCELED, "")
+      prevent_default(event)
+    }),
+  )
+  add_event_listener(
+    target,
     "wheel",
     @js.from_fn1(fn(event : @js.Any) {
       // Keep wheel deltas in logical units (CSS pixels / lines depending on browser).
@@ -1061,12 +1147,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.pipeline = None
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
-  state.gpu.mesh3d_pipeline = None
-  state.gpu.mesh3d_pipeline_transparent = None
-  state.gpu.mesh3d_pipeline_line_list = None
-  state.gpu.mesh3d_pipeline_line_list_transparent = None
-  state.gpu.mesh3d_pipeline_line_strip = None
-  state.gpu.mesh3d_pipeline_line_strip_transparent = None
+  state.gpu.mesh3d_pipeline_cache = new_map()
   state.gpu.motion_vector_pipeline = None
   state.gpu.motion_blur_pipeline = None
   state.gpu.bloom2d_pipeline = None

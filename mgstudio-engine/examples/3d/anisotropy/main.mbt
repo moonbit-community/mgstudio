@@ -14,9 +14,6 @@
 
 ///|
 /// Port of `bevy/examples/3d/anisotropy.rs`.
-///
-/// Exact parity target: anisotropy material toggle and light-mode switching,
-/// including environment map + skybox mode.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -37,37 +34,61 @@ const SKYBOX_BRIGHTNESS : Float = 5000.0F
 const ENVIRONMENT_MAP_INTENSITY : Float = 2500.0F
 
 ///|
+const SPHERE_BASE_R : Float = 0.81960786F
+
+///|
+const SPHERE_BASE_G : Float = 0.8352941F
+
+///|
+const SPHERE_BASE_B : Float = 0.85882354F
+
+///|
+priv enum LightMode {
+  Directional
+  Point
+  EnvironmentMap
+}
+
+///|
+priv enum SceneKind {
+  BarnLamp
+  Sphere
+}
+
+///|
+priv struct MaterialVariants {
+  entity : @core.Entity
+  anisotropic : @asset.Handle[@render3d.StandardMaterial]
+  isotropic : @asset.Handle[@render3d.StandardMaterial]
+  scene : SceneKind?
+}
+
+///|
 priv struct AnisotropyState {
-  mut light_mode : Int
+  mut light_mode : LightMode
   mut anisotropy_enabled : Bool
-  mut visible_scene : Int
+  mut visible_scene : SceneKind
   mut environment_angle : Float
-  mut camera : @core.Entity?
-  mut directional_light : @core.Entity?
-  mut point_light : @core.Entity?
   mut barn_lamp_scene : @core.Entity?
   mut sphere_scene : @core.Entity?
-  mut sphere_anisotropic_material : @asset.Handle[@render3d.StandardMaterial]?
-  mut sphere_isotropic_material : @asset.Handle[@render3d.StandardMaterial]?
   mut environment_diffuse_map : @asset.Handle[@asset.Image]?
   mut environment_specular_map : @asset.Handle[@asset.Image]?
+  mut help_text : @text.TextHandle?
+  material_variants : Array[MaterialVariants]
 }
 
 ///|
 let anisotropy_state : Ref[AnisotropyState] = Ref::new({
-  light_mode: 0,
+  light_mode: LightMode::Directional,
   anisotropy_enabled: true,
-  visible_scene: 0,
+  visible_scene: SceneKind::BarnLamp,
   environment_angle: 0.0F,
-  camera: None,
-  directional_light: None,
-  point_light: None,
   barn_lamp_scene: None,
   sphere_scene: None,
-  sphere_anisotropic_material: None,
-  sphere_isotropic_material: None,
   environment_diffuse_map: None,
   environment_specular_map: None,
+  help_text: None,
+  material_variants: [],
 })
 
 ///|
@@ -85,6 +106,216 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
   let qv = @math.Vec3::new(q.x, q.y, q.z)
   let t = qv.cross(v).mul_scalar(2.0F)
   v.add(t.mul_scalar(q.w)).add(qv.cross(t))
+}
+
+///|
+fn same_entity(lhs : @core.Entity, rhs : @core.Entity) -> Bool {
+  lhs.id == rhs.id && lhs.generation == rhs.generation
+}
+
+///|
+fn scene_is_visible(scene : SceneKind) -> Bool {
+  match scene {
+    SceneKind::BarnLamp =>
+      match anisotropy_state.val.visible_scene {
+        SceneKind::BarnLamp => true
+        SceneKind::Sphere => false
+      }
+    SceneKind::Sphere =>
+      match anisotropy_state.val.visible_scene {
+        SceneKind::BarnLamp => false
+        SceneKind::Sphere => true
+      }
+  }
+}
+
+///|
+fn SceneKind::next(self : SceneKind) -> SceneKind {
+  match self {
+    SceneKind::BarnLamp => SceneKind::Sphere
+    SceneKind::Sphere => SceneKind::BarnLamp
+  }
+}
+
+///|
+fn scene_name(scene : SceneKind) -> String {
+  match scene {
+    SceneKind::BarnLamp => "Barn Lamp"
+    SceneKind::Sphere => "Sphere"
+  }
+}
+
+///|
+fn light_mode_help_text(mode : LightMode) -> String {
+  match mode {
+    LightMode::Directional => "Press Space to switch to a point light"
+    LightMode::Point => "Press Space to switch to an environment map"
+    LightMode::EnvironmentMap => "Press Space to switch to a directional light"
+  }
+}
+
+///|
+fn anisotropy_help_text() -> String {
+  let anisotropy_text = if anisotropy_state.val.anisotropy_enabled {
+    "Press Enter to disable anisotropy"
+  } else {
+    "Press Enter to enable anisotropy"
+  }
+  let scene_text = "Press Q to change to " +
+    scene_name(anisotropy_state.val.visible_scene.next())
+  anisotropy_text +
+  "\n" +
+  light_mode_help_text(anisotropy_state.val.light_mode) +
+  "\n" +
+  scene_text
+}
+
+///|
+fn update_help_text() -> Unit {
+  guard anisotropy_state.val.help_text is Some(handle) else { return }
+  @text.text_set_content(handle, anisotropy_help_text())
+}
+
+///|
+fn set_entity_visibility(
+  world : @ecs_world.World,
+  entity : @core.Entity,
+  visible : Bool,
+) -> Unit {
+  let visibility = if visible {
+    @visibility.Visibility::Inherited
+  } else {
+    @visibility.Visibility::Hidden
+  }
+  let visibility_store = world.get_visibility_store()
+  let tick = world.read_change_tick()
+  if visibility_store.contains(entity) {
+    visibility_store.set(entity, visibility, tick) |> ignore
+  } else {
+    visibility_store.insert(entity, visibility, tick)
+  }
+}
+
+///|
+fn scene_for_mesh_entity(
+  world : @ecs_world.World,
+  entity : @core.Entity,
+) -> SceneKind? {
+  if anisotropy_state.val.sphere_scene is Some(sphere_entity) &&
+    same_entity(entity, sphere_entity) {
+    return Some(SceneKind::Sphere)
+  }
+  if anisotropy_state.val.barn_lamp_scene is Some(root_entity) &&
+    world.get_parent_store().get(entity) is Some(parent) &&
+    same_entity(parent.entity(), root_entity) {
+    return Some(SceneKind::BarnLamp)
+  }
+  None
+}
+
+///|
+fn has_material_variant(entity : @core.Entity) -> Bool {
+  for variants in anisotropy_state.val.material_variants {
+    if same_entity(variants.entity, entity) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
+  if anisotropy_state.val.barn_lamp_scene is Some(entity) {
+    set_entity_visibility(world, entity, scene_is_visible(SceneKind::BarnLamp))
+  }
+
+  if anisotropy_state.val.sphere_scene is Some(entity) {
+    set_entity_visibility(world, entity, scene_is_visible(SceneKind::Sphere))
+  }
+
+  for variants in anisotropy_state.val.material_variants {
+    if variants.scene is Some(scene) {
+      set_entity_visibility(world, variants.entity, scene_is_visible(scene))
+    }
+  }
+}
+
+///|
+fn spawn_directional_light(world : @ecs_world.World) -> Unit {
+  let entity = world.spawn_empty()
+  world
+  .get_directional_light_store()
+  .insert(
+    entity,
+    @render3d.DirectionalLight::default().with_illuminance(3000.0F),
+    world.read_change_tick(),
+  )
+}
+
+///|
+fn spawn_point_light(world : @ecs_world.World) -> Unit {
+  let entity = world.spawn_empty()
+  world
+  .get_point_light_store()
+  .insert(
+    entity,
+    @render3d.PointLight::default().with_intensity(200_000.0F),
+    world.read_change_tick(),
+  )
+}
+
+///|
+fn add_skybox_and_environment_map(
+  world : @ecs_world.World,
+  camera_entity : @core.Entity,
+) -> Unit {
+  let tick = world.read_change_tick()
+  if anisotropy_state.val.environment_specular_map is Some(specular_map) {
+    world
+    .get_skybox_store()
+    .insert(
+      camera_entity,
+      @render3d.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
+      tick,
+    )
+  }
+  if anisotropy_state.val.environment_diffuse_map is Some(diffuse_map) &&
+    anisotropy_state.val.environment_specular_map is Some(specular_map) {
+    world
+    .get_environment_map_light_store()
+    .insert(
+      camera_entity,
+      @render3d.EnvironmentMapLight::new(
+        Some(diffuse_map),
+        Some(specular_map),
+        ENVIRONMENT_MAP_INTENSITY,
+      ),
+      tick,
+    )
+  }
+}
+
+///|
+fn remove_skybox_and_environment_map(
+  world : @ecs_world.World,
+  camera_entity : @core.Entity,
+) -> Unit {
+  world.get_skybox_store().remove(camera_entity) |> ignore
+  world.get_environment_map_light_store().remove(camera_entity) |> ignore
+}
+
+///|
+fn despawn_all_lights(world : @ecs_world.World) -> Unit {
+  let lights : Array[@core.Entity] = []
+  world
+  .get_directional_light_store()
+  .for_each(fn(entity, _light) { lights.push(entity) })
+  world
+  .get_point_light_store()
+  .for_each(fn(entity, _light) { lights.push(entity) })
+  for light in lights {
+    try! (world.despawn(light) |> ignore)
+  }
 }
 
 ///|
@@ -144,129 +375,19 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
-  let tick = world.read_change_tick()
-  let visibility_store = world.get_visibility_store()
-
-  if anisotropy_state.val.barn_lamp_scene is Some(entity) {
-    visibility_store.set(
-      entity,
-      if anisotropy_state.val.visible_scene == 0 {
-        @visibility.Visibility::Inherited
-      } else {
-        @visibility.Visibility::Hidden
-      },
-      tick,
-    )
-    |> ignore
-  }
-
-  if anisotropy_state.val.sphere_scene is Some(entity) {
-    visibility_store.set(
-      entity,
-      if anisotropy_state.val.visible_scene == 1 {
-        @visibility.Visibility::Inherited
-      } else {
-        @visibility.Visibility::Hidden
-      },
-      tick,
-    )
-    |> ignore
-  }
-}
-
-///|
-fn apply_light_mode(world : @ecs_world.World) -> Unit {
-  let tick = world.read_change_tick()
-  if anisotropy_state.val.directional_light is Some(entity) {
-    let illuminance = if anisotropy_state.val.light_mode == 0 {
-      3000.0F
-    } else {
-      0.0F
-    }
-    world
-    .get_directional_light_store()
-    .set(
-      entity,
-      @render3d.DirectionalLight::new(
-        @render2d.Color::white(),
-        illuminance,
-        true,
-      ),
-      tick,
-    )
-    |> ignore
-  }
-
-  if anisotropy_state.val.point_light is Some(entity) {
-    let intensity = if anisotropy_state.val.light_mode == 1 {
-      200_000.0F
-    } else {
-      0.0F
-    }
-    world
-    .get_point_light_store()
-    .set(
-      entity,
-      @render3d.PointLight::new(
-        @render2d.Color::white(),
-        intensity,
-        50.0F,
-        true,
-      ),
-      tick,
-    )
-    |> ignore
-  }
-
-  if anisotropy_state.val.camera is Some(camera_entity) {
-    if anisotropy_state.val.light_mode == 2 {
-      if anisotropy_state.val.environment_specular_map is Some(specular_map) {
-        world
-        .get_skybox_store()
-        .insert(
-          camera_entity,
-          @render3d.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
-          tick,
-        )
-      }
-      if anisotropy_state.val.environment_diffuse_map is Some(diffuse_map) &&
-        anisotropy_state.val.environment_specular_map is Some(specular_map) {
-        world
-        .get_environment_map_light_store()
-        .insert(
-          camera_entity,
-          @render3d.EnvironmentMapLight::new(
-            Some(diffuse_map),
-            Some(specular_map),
-            ENVIRONMENT_MAP_INTENSITY,
-          ),
-          tick,
-        )
-      }
-    } else {
-      world.get_skybox_store().remove(camera_entity) |> ignore
-      world.get_environment_map_light_store().remove(camera_entity) |> ignore
-    }
-  }
-}
-
-///|
 fn setup(world : @ecs_world.World) -> Unit {
-  let tick = world.read_change_tick()
-  anisotropy_state.val.light_mode = 0
+  anisotropy_state.val.light_mode = LightMode::Directional
   anisotropy_state.val.anisotropy_enabled = true
-  anisotropy_state.val.visible_scene = 0
+  anisotropy_state.val.visible_scene = SceneKind::BarnLamp
   anisotropy_state.val.environment_angle = 0.0F
-  anisotropy_state.val.camera = None
-  anisotropy_state.val.directional_light = None
-  anisotropy_state.val.point_light = None
   anisotropy_state.val.barn_lamp_scene = None
   anisotropy_state.val.sphere_scene = None
-  anisotropy_state.val.sphere_anisotropic_material = None
-  anisotropy_state.val.sphere_isotropic_material = None
   anisotropy_state.val.environment_diffuse_map = None
   anisotropy_state.val.environment_specular_map = None
+  anisotropy_state.val.help_text = None
+  anisotropy_state.val.material_variants.clear()
+
+  @window.window_set_title(title="Bevy Anisotropy Example")
 
   let asset_server = @asset.AssetServer::new()
   anisotropy_state.val.environment_diffuse_map = Some(
@@ -276,7 +397,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
   )
 
-  let camera_entity = @render3d.Camera3dBundle::new(
+  @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(
       CAMERA_INITIAL_X,
@@ -284,34 +405,11 @@ fn setup(world : @ecs_world.World) -> Unit {
       CAMERA_INITIAL_Z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
   ).spawn(world)
-  anisotropy_state.val.camera = Some(camera_entity)
+  |> ignore
 
-  let directional_light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
-    directional_light,
-    @math.Transform::from_xyz(3.0F, 4.0F, 3.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
-  )
-  anisotropy_state.val.directional_light = Some(directional_light)
+  spawn_directional_light(world)
 
-  let point_light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
-    point_light,
-    @math.Transform::from_xyz(3.0F, 4.0F, 3.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
-  )
-  anisotropy_state.val.point_light = Some(point_light)
-
+  let tick = world.read_change_tick()
   let barn_lamp = world.spawn_empty()
   world
   .get_scene_root_store()
@@ -330,142 +428,196 @@ fn setup(world : @ecs_world.World) -> Unit {
   world
   .get_transform_store()
   .insert(barn_lamp, @math.Transform::from_xyz(0.0F, 0.07F, -0.13F), tick)
-  world
-  .get_visibility_store()
-  .insert(barn_lamp, @visibility.Visibility::Inherited, tick)
   anisotropy_state.val.barn_lamp_scene = Some(barn_lamp)
 
-  let sphere_material_base = @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.8F, 0.8F, 0.8F, 1.0F),
+  let sphere_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::new(SPHERE_BASE_R, SPHERE_BASE_G, SPHERE_BASE_B, 1.0F),
     )
-    .with_metallic(1.0F)
-    .with_perceptual_roughness(0.5F)
-  let anisotropic_material = @render3d.standard_material_add(
-    sphere_material_base
     .with_anisotropy_rotation(0.5F)
     .with_anisotropy_strength(1.0F),
   )
-  let isotropic_material = @render3d.standard_material_add(
-    sphere_material_base
-    .with_anisotropy_rotation(0.0F)
-    .with_anisotropy_strength(0.0F)
-    .with_anisotropy_texture(None),
-  )
-  anisotropy_state.val.sphere_anisotropic_material = Some(anisotropic_material)
-  anisotropy_state.val.sphere_isotropic_material = Some(isotropic_material)
 
   let sphere = @render3d.MeshMaterial3dBundle::new(
     uv_sphere_mesh(0.1F, 20, 36),
-    @render3d.MeshMaterial3d::new(anisotropic_material),
+    @render3d.MeshMaterial3d::new(sphere_material),
     @math.Transform::identity(),
   ).spawn(world)
-  world
-  .get_visibility_store()
-  .insert(sphere, @visibility.Visibility::Hidden, tick)
   anisotropy_state.val.sphere_scene = Some(sphere)
 
-  apply_light_mode(world)
   apply_scene_visibility(world)
+
+  let help_text = @text.Text2dBundle::new(
+      @text.Text2d::new(anisotropy_help_text()),
+      @text.TextFont::default()
+      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
+      .with_font_size(18.0F),
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-390.0F, -340.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=50.0F,
+      ),
+    )
+    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_color(
+      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    )
+    .with_shadow(Some(@text.Text2dShadow::default()))
+    .spawn()
+  anisotropy_state.val.help_text = Some(help_text)
+  update_help_text()
+}
+
+///|
+fn create_material_variants(world : @ecs_world.World) -> Unit {
+  let mesh_material_store = world.get_mesh_material3d_store()
+  let pending_entities : Array[@core.Entity] = []
+  mesh_material_store.for_each(fn(entity, _material) {
+    if !has_material_variant(entity) {
+      pending_entities.push(entity)
+    }
+  })
+
+  for entity in pending_entities {
+    guard mesh_material_store.get(entity) is Some(anisotropic_component) else {
+      continue
+    }
+    let anisotropic = anisotropic_component.material
+    guard @render3d.standard_material_get(anisotropic) is Some(anisotropic_mat) else {
+      continue
+    }
+    let isotropic = @render3d.standard_material_add(
+      anisotropic_mat
+      .with_anisotropy_texture(None)
+      .with_anisotropy_strength(0.0F)
+      .with_anisotropy_rotation(0.0F),
+    )
+    let scene = scene_for_mesh_entity(world, entity)
+    anisotropy_state.val.material_variants.push({
+      entity,
+      anisotropic,
+      isotropic,
+      scene,
+    })
+    if scene is Some(scene_kind) {
+      set_entity_visibility(world, entity, scene_is_visible(scene_kind))
+    }
+  }
 }
 
 ///|
 fn animate_light(world : @ecs_world.World) -> Unit {
-  if anisotropy_state.val.light_mode == 2 {
-    return
-  }
   let now = @time.time_elapsed_seconds()
-  let light_position = @math.Vec3::new(
+  let next_transform = @math.Transform::from_xyz(
     @math.cos(now) * 3.0F,
     4.0F,
     @math.sin(now) * 3.0F,
-  )
-  let next_transform = @math.Transform::from_xyz(
-    light_position.x,
-    light_position.y,
-    light_position.z,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
   let tick = world.read_change_tick()
-  if anisotropy_state.val.directional_light is Some(entity) {
-    world.get_transform_store().set(entity, next_transform, tick) |> ignore
-  }
-  if anisotropy_state.val.point_light is Some(entity) {
-    world.get_transform_store().set(entity, next_transform, tick) |> ignore
-  }
+  world
+  .get_directional_light_store()
+  .for_each(fn(entity, _light) {
+    world.get_transform_store().insert(entity, next_transform, tick)
+  })
+  world
+  .get_point_light_store()
+  .for_each(fn(entity, _light) {
+    world.get_transform_store().insert(entity, next_transform, tick)
+  })
 }
 
 ///|
 fn rotate_camera(world : @ecs_world.World) -> Unit {
-  if anisotropy_state.val.light_mode == 2 {
-    anisotropy_state.val.environment_angle = anisotropy_state.val.environment_angle +
-      @time.time_delta_seconds()
+  match anisotropy_state.val.light_mode {
+    LightMode::EnvironmentMap =>
+      anisotropy_state.val.environment_angle = anisotropy_state.val.environment_angle +
+        @time.time_delta_seconds()
+    _ => ()
   }
 
-  if anisotropy_state.val.camera is Some(entity) {
-    let rotated_position = quat_rotate_vec3(
-      @math.Quat::from_rotation_y(anisotropy_state.val.environment_angle),
-      camera_initial_position(),
-    )
-    let tick = world.read_change_tick()
-    world
-    .get_transform_store()
-    .set(
-      entity,
-      @math.Transform::from_xyz(
-        rotated_position.x,
-        rotated_position.y,
-        rotated_position.z,
-      ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-      tick,
-    )
-    |> ignore
-  }
+  let rotated_position = quat_rotate_vec3(
+    @math.Quat::from_rotation_y(anisotropy_state.val.environment_angle),
+    camera_initial_position(),
+  )
+  let next_transform = @math.Transform::from_xyz(
+    rotated_position.x,
+    rotated_position.y,
+    rotated_position.z,
+  ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+  let tick = world.read_change_tick()
+  world
+  .get_camera_store()
+  .for_each(fn(entity, _camera) {
+    world.get_transform_store().insert(entity, next_transform, tick)
+  })
 }
 
 ///|
 fn toggle_anisotropy(world : @ecs_world.World) -> Unit {
   anisotropy_state.val.anisotropy_enabled = !anisotropy_state.val.anisotropy_enabled
-
-  guard anisotropy_state.val.sphere_scene is Some(entity) else { return }
-  guard anisotropy_state.val.sphere_anisotropic_material is Some(anisotropic) else {
-    return
+  let tick = world.read_change_tick()
+  for variants in anisotropy_state.val.material_variants {
+    let next_material = if anisotropy_state.val.anisotropy_enabled {
+      variants.anisotropic
+    } else {
+      variants.isotropic
+    }
+    world
+    .get_mesh_material3d_store()
+    .set(variants.entity, @render3d.MeshMaterial3d::new(next_material), tick)
+    |> ignore
   }
-  guard anisotropy_state.val.sphere_isotropic_material is Some(isotropic) else {
-    return
-  }
-
-  let next_material = if anisotropy_state.val.anisotropy_enabled {
-    anisotropic
-  } else {
-    isotropic
-  }
-  world
-  .get_mesh_material3d_store()
-  .set(
-    entity,
-    @render3d.MeshMaterial3d::new(next_material),
-    world.read_change_tick(),
-  )
-  |> ignore
 }
 
 ///|
 fn handle_input(world : @ecs_world.World) -> Unit {
+  let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Space) {
-    anisotropy_state.val.light_mode = (anisotropy_state.val.light_mode + 1) % 3
-    apply_light_mode(world)
+    match anisotropy_state.val.light_mode {
+      LightMode::Directional => {
+        anisotropy_state.val.light_mode = LightMode::Point
+        despawn_all_lights(world)
+        spawn_point_light(world)
+      }
+      LightMode::Point => {
+        anisotropy_state.val.light_mode = LightMode::EnvironmentMap
+        despawn_all_lights(world)
+        world
+        .get_camera_store()
+        .for_each(fn(entity, _camera) {
+          add_skybox_and_environment_map(world, entity)
+        })
+      }
+      LightMode::EnvironmentMap => {
+        anisotropy_state.val.light_mode = LightMode::Directional
+        world
+        .get_camera_store()
+        .for_each(fn(entity, _camera) {
+          remove_skybox_and_environment_map(world, entity)
+        })
+        spawn_directional_light(world)
+      }
+    }
+    changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::Enter) {
     toggle_anisotropy(world)
+    changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-    anisotropy_state.val.visible_scene = (
-        anisotropy_state.val.visible_scene + 1
-      ) %
-      2
+    anisotropy_state.val.visible_scene = anisotropy_state.val.visible_scene.next()
     apply_scene_visibility(world)
+    changed = true
+  }
+
+  if changed {
+    update_help_text()
   }
 }
 
@@ -475,6 +627,7 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
+  .add_system(create_material_variants)
   .add_system(animate_light)
   .add_system(rotate_camera)
   .add_system(handle_input)

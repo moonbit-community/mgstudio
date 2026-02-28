@@ -283,12 +283,10 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 ///|
 fn update_colors(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
-  let mut changed = false
 
   if world.get_wireframe_config_resource().get_ref_mut(tick) is Some(config_ref) {
     if @input.key_just_pressed(@window.KeyCode::KeyZ) {
       config_ref.val = config_ref.val.with_global(!config_ref.val.global)
-      changed = true
     }
     if @input.key_just_pressed(@window.KeyCode::KeyX) {
       let next = if color_approx_eq(config_ref.val.default_color, color_white()) {
@@ -297,7 +295,6 @@ fn update_colors(world : @ecs_world.World) -> Unit {
         color_white()
       }
       config_ref.val = config_ref.val.with_default_color(next)
-      changed = true
     }
   }
 
@@ -321,13 +318,10 @@ fn update_colors(world : @ecs_world.World) -> Unit {
       for pair in updates {
         wireframe_color_store.set(pair.0, pair.1, tick) |> ignore
       }
-      changed = true
     }
   }
 
-  if changed {
-    update_controls_text(world)
-  }
+  update_controls_text(world)
 }
 
 ///|

@@ -229,9 +229,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     .spawn()
   pbr_state.val.loading_label = Some(env_loading_label)
 
-  let orthographic = @render3d.OrthographicProjection3d::default().with_scale(
-    0.01F,
-  )
+  let orthographic = @render3d.OrthographicProjection3d::default()
+    .with_scale(0.01F)
+    .with_window_size_scaling()
   let camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
     @render3d.Projection3d::Orthographic(orthographic),
@@ -265,7 +265,7 @@ fn environment_map_load_finish(_world : @ecs_world.World) -> Unit {
   if @asset.asset_is_texture_loaded(diffuse_map) &&
     @asset.asset_is_texture_loaded(specular_map) {
     if pbr_state.val.loading_label is Some(label) {
-      @text.text_set_content(label, "")
+      @text.text_despawn(label) |> ignore
       pbr_state.val.loading_label = None
     }
     pbr_state.val.env_loaded = true

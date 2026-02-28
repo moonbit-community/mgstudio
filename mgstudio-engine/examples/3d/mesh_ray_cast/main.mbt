@@ -15,11 +15,11 @@
 ///|
 /// Port of `bevy/examples/3d/mesh_ray_cast.rs`.
 ///
-/// Baseline parity: Bevy's `MeshRayCast` system parameter and 3D `Gizmos`
-/// drawing are not available in current mgstudio runtime surfaces. This port
-/// keeps the original scene layout, moving laser model, cursor-ray behavior,
-/// and bounce limits, while using analytic box-plane intersections plus thin
-/// mesh segments for visualization.
+/// Parity notes:
+/// - Uses `@render3d.MeshRayCastSettings` + `@render3d.mesh_ray_cast_first`
+///   shim APIs for Bevy-like ray hit queries.
+/// - 3D `Gizmos` still use mesh-primitive fallback visualization in this
+///   runtime (line segments + hit markers).
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -32,9 +32,6 @@ const MAX_BOUNCES : Int = 64
 
 ///|
 const LASER_SPEED : Float = 0.03F
-
-///|
-const BOX_HALF_EXTENT : Float = 0.5F
 
 ///|
 const RAY_EPSILON : Float = 0.0001F
@@ -65,6 +62,7 @@ priv struct RaycastState {
   mut camera : @render2d.Camera
   mut camera_projection : @render3d.CameraProjection3d
   mut camera_transform : @math.Transform
+  collider_entities : Array[@core.Entity]
   mut red_pool : BeamPool?
   mut green_pool : BeamPool?
   mut origin_marker : BeamPrimitive?
@@ -75,6 +73,7 @@ let raycast_state : Ref[RaycastState] = Ref::new({
   camera: @render2d.Camera::default(),
   camera_projection: @render3d.CameraProjection3d::default(),
   camera_transform: @math.Transform::identity(),
+  collider_entities: [],
   red_pool: None,
   green_pool: None,
   origin_marker: None,
@@ -96,16 +95,6 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
   }
 }
 
-///|
-fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
-  }
-}
-
-///|
 fn set_visibility(
   world : @ecs_world.World,
   entity : @core.Entity,
@@ -194,133 +183,6 @@ fn hide_pool(world : @ecs_world.World, pool : BeamPool) -> Unit {
   }
 }
 
-///|
-fn ray_plane_box_hit(
-  origin : @math.Vec3,
-  direction : @math.Vec3,
-  axis : Int,
-  bound : Float,
-) -> (Float, @math.Vec3, @math.Vec3)? {
-  let denom = if axis == 0 {
-    direction.x
-  } else if axis == 1 {
-    direction.y
-  } else {
-    direction.z
-  }
-  if absf(denom) <= 0.000001F {
-    return None
-  }
-
-  let axis_origin = if axis == 0 {
-    origin.x
-  } else if axis == 1 {
-    origin.y
-  } else {
-    origin.z
-  }
-  let t = (bound - axis_origin) / denom
-  if t <= RAY_EPSILON {
-    return None
-  }
-
-  let point = origin.add(direction.mul_scalar(t))
-  let inside = if axis == 0 {
-    absf(point.y) <= BOX_HALF_EXTENT + 0.0001F &&
-    absf(point.z) <= BOX_HALF_EXTENT + 0.0001F
-  } else if axis == 1 {
-    absf(point.x) <= BOX_HALF_EXTENT + 0.0001F &&
-    absf(point.z) <= BOX_HALF_EXTENT + 0.0001F
-  } else {
-    absf(point.x) <= BOX_HALF_EXTENT + 0.0001F &&
-    absf(point.y) <= BOX_HALF_EXTENT + 0.0001F
-  }
-  if !inside {
-    return None
-  }
-
-  let normal = if axis == 0 {
-    @math.Vec3::new(if bound > 0.0F { 1.0F } else { -1.0F }, 0.0F, 0.0F)
-  } else if axis == 1 {
-    @math.Vec3::new(0.0F, if bound > 0.0F { 1.0F } else { -1.0F }, 0.0F)
-  } else {
-    @math.Vec3::new(0.0F, 0.0F, if bound > 0.0F { 1.0F } else { -1.0F })
-  }
-  Some((t, point, normal))
-}
-
-///|
-fn ray_box_first_hit(
-  origin : @math.Vec3,
-  direction : @math.Vec3,
-) -> (@math.Vec3, @math.Vec3)? {
-  let mut found = false
-  let mut best_t = 1_000_000.0F
-  let mut best_point = @math.Vec3::zero()
-  let mut best_normal = @math.Vec3::new(0.0F, 1.0F, 0.0F)
-
-  if ray_plane_box_hit(origin, direction, 0, BOX_HALF_EXTENT)
-    is Some((t, point, normal)) {
-    if t < best_t {
-      best_t = t
-      best_point = point
-      best_normal = normal
-      found = true
-    }
-  }
-  if ray_plane_box_hit(origin, direction, 0, -BOX_HALF_EXTENT)
-    is Some((t, point, normal)) {
-    if t < best_t {
-      best_t = t
-      best_point = point
-      best_normal = normal
-      found = true
-    }
-  }
-  if ray_plane_box_hit(origin, direction, 1, BOX_HALF_EXTENT)
-    is Some((t, point, normal)) {
-    if t < best_t {
-      best_t = t
-      best_point = point
-      best_normal = normal
-      found = true
-    }
-  }
-  if ray_plane_box_hit(origin, direction, 1, -BOX_HALF_EXTENT)
-    is Some((t, point, normal)) {
-    if t < best_t {
-      best_t = t
-      best_point = point
-      best_normal = normal
-      found = true
-    }
-  }
-  if ray_plane_box_hit(origin, direction, 2, BOX_HALF_EXTENT)
-    is Some((t, point, normal)) {
-    if t < best_t {
-      best_t = t
-      best_point = point
-      best_normal = normal
-      found = true
-    }
-  }
-  if ray_plane_box_hit(origin, direction, 2, -BOX_HALF_EXTENT)
-    is Some((t, point, normal)) {
-    if t < best_t {
-      best_point = point
-      best_normal = normal
-      found = true
-    }
-  }
-
-  if found {
-    Some((best_point, best_normal))
-  } else {
-    None
-  }
-}
-
-///|
 fn reflect_direction(direction : @math.Vec3, normal : @math.Vec3) -> @math.Vec3 {
   direction
   .sub(normal.mul_scalar(2.0F * direction.dot(normal)))
@@ -334,7 +196,7 @@ fn spawn_box_plane(
   plane_material : @asset.Handle[@render3d.StandardMaterial],
   translation : @math.Vec3,
   rotation : @math.Quat,
-) -> Unit {
+) -> @core.Entity {
   @render3d.MeshMaterial3dBundle::new(
     plane_mesh,
     @render3d.MeshMaterial3d::new(plane_material),
@@ -342,7 +204,6 @@ fn spawn_box_plane(
       rotation,
     ),
   ).spawn(world)
-  |> ignore
 }
 
 ///|
@@ -391,6 +252,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   raycast_state.val.camera_transform = @math.Transform::from_xyz(
     1.5F, 1.5F, 1.5F,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+  raycast_state.val.collider_entities.clear()
   raycast_state.val.red_pool = None
   raycast_state.val.green_pool = None
   raycast_state.val.origin_marker = None
@@ -403,48 +265,48 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
 
   // Inward-facing box planes (same topology as Bevy example).
-  spawn_box_plane(
+  raycast_state.val.collider_entities.push(spawn_box_plane(
     world,
     plane_mesh,
     plane_material,
     @math.Vec3::new(0.0F, 0.5F, 0.0F),
     @math.Quat::from_rotation_x(PI),
-  )
-  spawn_box_plane(
+  ))
+  raycast_state.val.collider_entities.push(spawn_box_plane(
     world,
     plane_mesh,
     plane_material,
     @math.Vec3::new(0.0F, -0.5F, 0.0F),
     @math.Quat::identity(),
-  )
-  spawn_box_plane(
+  ))
+  raycast_state.val.collider_entities.push(spawn_box_plane(
     world,
     plane_mesh,
     plane_material,
     @math.Vec3::new(0.5F, 0.0F, 0.0F),
     @math.Quat::from_rotation_z(HALF_PI),
-  )
-  spawn_box_plane(
+  ))
+  raycast_state.val.collider_entities.push(spawn_box_plane(
     world,
     plane_mesh,
     plane_material,
     @math.Vec3::new(-0.5F, 0.0F, 0.0F),
     @math.Quat::from_rotation_z(-HALF_PI),
-  )
-  spawn_box_plane(
+  ))
+  raycast_state.val.collider_entities.push(spawn_box_plane(
     world,
     plane_mesh,
     plane_material,
     @math.Vec3::new(0.0F, 0.0F, 0.5F),
     @math.Quat::from_rotation_x(-HALF_PI),
-  )
-  spawn_box_plane(
+  ))
+  raycast_state.val.collider_entities.push(spawn_box_plane(
     world,
     plane_mesh,
     plane_material,
     @math.Vec3::new(0.0F, 0.0F, -0.5F),
     @math.Quat::from_rotation_x(HALF_PI),
-  )
+  ))
 
   let directional_light = world.spawn_empty()
   let tick = world.read_change_tick()
@@ -543,6 +405,7 @@ fn bounce_ray(
   ray_direction : @math.Vec3,
   pool : BeamPool,
   base_color : @render2d.Color,
+  ray_cast_settings : @render3d.MeshRayCastSettings,
 ) -> Unit {
   let mut current_origin = ray_origin
   let mut current_direction = ray_direction.normalize_or_zero()
@@ -550,10 +413,17 @@ fn bounce_ray(
   let mut used = 0
 
   for i in 0..<MAX_BOUNCES {
-    guard ray_box_first_hit(current_origin, current_direction)
-      is Some((hit_point, hit_normal)) else {
+    guard @render3d.mesh_ray_cast_first(
+        world,
+        current_origin,
+        current_direction,
+        ray_cast_settings,
+      )
+      is Some((_entity, hit)) else {
       break
     }
+    let hit_point = hit.point
+    let hit_normal = hit.normal
 
     let brightness = 1.0F + 10.0F * (1.0F - float_from_int(i) / max_bounces_f)
     let line_color = @render2d.Color::new(
@@ -600,6 +470,9 @@ fn bounce_ray(
 fn bouncing_raycast(world : @ecs_world.World) -> Unit {
   guard raycast_state.val.red_pool is Some(red_pool) else { return }
   guard raycast_state.val.green_pool is Some(green_pool) else { return }
+  let ray_cast_settings = @render3d.MeshRayCastSettings::default()
+  .with_max_hits(1)
+  .with_only_entities(Some(raycast_state.val.collider_entities))
 
   let elapsed = @time.time_elapsed_seconds()
   let phase_time = if elapsed > 4.0F { elapsed - 4.0F } else { 0.0F }
@@ -627,9 +500,10 @@ fn bouncing_raycast(world : @ecs_world.World) -> Unit {
     auto_direction,
     red_pool,
     @render2d.Color::new(1.0F, 0.1F, 0.1F, 1.0F),
+    ray_cast_settings,
   )
 
-  if @input.mouse_position() is Some(cursor) {
+  if @input.primary_pointer_position() is Some(cursor) {
     let target_size = @math.IVec2::new(
       @window.window_width(),
       @window.window_height(),
@@ -650,6 +524,7 @@ fn bouncing_raycast(world : @ecs_world.World) -> Unit {
         cursor_direction.normalize_or_zero(),
         green_pool,
         @render2d.Color::new(0.15F, 1.0F, 0.15F, 1.0F),
+        ray_cast_settings,
       )
     } else {
       hide_pool(world, green_pool)

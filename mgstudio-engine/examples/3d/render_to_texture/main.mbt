@@ -45,7 +45,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
           @render2d.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
-        ),
+        ).with_reflectance(0.02F),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
@@ -62,6 +62,9 @@ fn setup(world : @ecs_world.World) -> Unit {
   world
   .get_transform_store()
   .insert(light, @math.Transform::from_xyz(0.0F, 0.0F, 10.0F), tick)
+  world
+  .get_render_layers_store()
+  .insert(light, @render2d.RenderLayers::layer(0).with_layer(1), tick)
 
   let first_pass_camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::new(@render2d.Color::white()).with_order(-1),
@@ -81,9 +84,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_base_color_texture(
-          Some(image),
-        ),
+        @render3d.StandardMaterial::from_color(@render2d.Color::white())
+        .with_base_color_texture(Some(image))
+        .with_reflectance(0.02F),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(

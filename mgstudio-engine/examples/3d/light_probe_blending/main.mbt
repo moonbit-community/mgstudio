@@ -19,6 +19,8 @@
 /// - Bevy's light-probe components (`LightProbe`, `EnvironmentMapLight`,
 ///   `ParallaxCorrection`) are mapped with Bevy-shaped APIs.
 /// - UI widgets are adapted to keyboard controls in this runtime.
+/// - Camera orbit/free-look consume unified primary-pointer delta APIs for
+///   better behavior consistency across web and wasmtime backends.
 /// - Bevy asset files for this example are vendored under
 ///   `assets/light_probe_blending/`.
 
@@ -115,8 +117,6 @@ priv struct LightProbeBlendingState {
   mut free_position : @math.Vec3
   mut free_pitch : Float
   mut free_yaw : Float
-  mut last_mouse_position : @math.Vec2?
-  mut mouse_delta : @math.Vec2
   gizmo_entities : Array[@core.Entity]
 }
 
@@ -135,8 +135,6 @@ let light_probe_blending_state : Ref[LightProbeBlendingState] = Ref::new({
   free_position: @math.Vec3::new(0.0F, 0.0F, 0.0F),
   free_pitch: 0.0F,
   free_yaw: 0.0F,
-  last_mouse_position: None,
-  mouse_delta: @math.Vec2::new(0.0F, 0.0F),
   gizmo_entities: [],
 })
 
@@ -280,8 +278,8 @@ fn help_text_content() -> String {
   camera_mode_text +
   "\n" +
   "\n" +
-  "Orbit: Hold Left Mouse to orbit, wheel to zoom\n" +
-  "Free: Hold Left Mouse to look, WASDEQ to move\n" +
+  "Orbit: Hold primary pointer to orbit, wheel to zoom\n" +
+  "Free: Hold primary pointer to look, WASDEQ to move\n" +
   "\n" +
   "Gizmo colors: Tan=Probe bounds, Red=Falloff, Blue=Parallax bounds"
 }
@@ -742,8 +740,6 @@ fn setup(world : @ecs_world.World) -> Unit {
   light_probe_blending_state.val.free_position = @math.Vec3::zero()
   light_probe_blending_state.val.free_pitch = 0.0F
   light_probe_blending_state.val.free_yaw = 0.0F
-  light_probe_blending_state.val.last_mouse_position = None
-  light_probe_blending_state.val.mouse_delta = @math.Vec2::new(0.0F, 0.0F)
   light_probe_blending_state.val.gizmo_entities.clear()
 
   spawn_scene(world)
@@ -753,20 +749,6 @@ fn setup(world : @ecs_world.World) -> Unit {
   write_orbit_camera_transform(world)
 }
 
-///|
-fn update_mouse_delta(_world : @ecs_world.World) -> Unit {
-  light_probe_blending_state.val.mouse_delta = @math.Vec2::new(0.0F, 0.0F)
-  if @input.mouse_position() is Some(current) {
-    if light_probe_blending_state.val.last_mouse_position is Some(last) {
-      light_probe_blending_state.val.mouse_delta = current.sub(last)
-    }
-    light_probe_blending_state.val.last_mouse_position = Some(current)
-  } else {
-    light_probe_blending_state.val.last_mouse_position = None
-  }
-}
-
-///|
 fn move_sphere(world : @ecs_world.World) -> Unit {
   guard light_probe_blending_state.val.sphere is Some(entity) else { return }
 
@@ -830,8 +812,8 @@ fn orbit_camera(world : @ecs_world.World) -> Unit {
     return
   }
 
-  if @input.mouse_button_pressed(@window.MouseButton::Left) {
-    let delta = light_probe_blending_state.val.mouse_delta
+  if @input.primary_pointer_pressed() {
+    let delta = @input.primary_pointer_delta()
     light_probe_blending_state.val.orbit_azimuth = light_probe_blending_state.val.orbit_azimuth -
       delta.x * CAMERA_ORBIT_SPEED_AZIMUTH
     light_probe_blending_state.val.orbit_inclination = clampf(
@@ -857,8 +839,8 @@ fn free_camera(world : @ecs_world.World) -> Unit {
     return
   }
 
-  if @input.mouse_button_pressed(@window.MouseButton::Left) {
-    let delta = light_probe_blending_state.val.mouse_delta
+  if @input.primary_pointer_pressed() {
+    let delta = @input.primary_pointer_delta()
     light_probe_blending_state.val.free_yaw = light_probe_blending_state.val.free_yaw -
       delta.x * CAMERA_FREE_LOOK_SPEED_AZIMUTH
     light_probe_blending_state.val.free_pitch = clampf(
@@ -915,7 +897,6 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
-  .add_system(update_mouse_delta)
   .add_system(move_sphere)
   .add_system(handle_keyboard_actions)
   .add_system(orbit_camera)

@@ -35,7 +35,6 @@ priv struct CubemapState {
   mut supported_formats : Int
   mut camera : @core.Entity?
   mut next_swap_time : Float
-  mut light_angle : Float
   mut directional_light : @core.Entity?
   mut help_text : @text.TextHandle?
 }
@@ -48,7 +47,6 @@ let cubemap_state : Ref[CubemapState] = Ref::new({
   supported_formats: 0,
   camera: None,
   next_swap_time: 0.0F,
-  light_angle: 0.0F,
   directional_light: None,
   help_text: None,
 })
@@ -205,7 +203,6 @@ fn setup(world : @ecs_world.World) -> Unit {
   cubemap_state.val.supported_formats = @asset.asset_supported_compressed_image_formats()
   cubemap_state.val.camera = None
   cubemap_state.val.next_swap_time = 0.0F
-  cubemap_state.val.light_angle = 0.0F
   cubemap_state.val.directional_light = None
   cubemap_state.val.help_text = None
 
@@ -249,6 +246,15 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render2d.Camera::default(),
     camera_transform,
   ).spawn(world)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .get_screen_space_ambient_occlusion_store()
+  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
+  // Keep the Bevy TAA component surface for parity; web runtimes may treat it
+  // as a marker/no-op until full backend parity is available.
+  world
+  .get_temporal_anti_aliasing_store()
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
   world
   .get_free_camera_store()
   .insert(camera, @render3d.FreeCamera::default(), tick)
@@ -353,22 +359,16 @@ fn animate_light_direction(world : @ecs_world.World) -> Unit {
   guard cubemap_state.val.directional_light is Some(light_entity) else {
     return
   }
-  cubemap_state.val.light_angle = cubemap_state.val.light_angle +
-    @time.time_delta_seconds() * 0.5F
-  let x = @math.sin(cubemap_state.val.light_angle) * 2.0F
-  let z = @math.cos(cubemap_state.val.light_angle) * 2.0F
-  let tick = world.read_change_tick()
-  world
-  .get_transform_store()
-  .set(
-    light_entity,
-    @math.Transform::from_xyz(x, 2.0F, z).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
-  )
-  |> ignore
+  if world.get_transform_store().get(light_entity) is Some(transform) {
+    let tick = world.read_change_tick()
+    let next_rotation = transform.rotation
+      .mul(@math.Quat::from_rotation_y(@time.time_delta_seconds() * 0.5F))
+      .normalize()
+    world
+    .get_transform_store()
+    .set(light_entity, transform.with_rotation(next_rotation), tick)
+    |> ignore
+  }
 }
 
 ///|

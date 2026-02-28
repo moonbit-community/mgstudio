@@ -9,7 +9,7 @@ use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::monitor::{MonitorHandle, VideoModeHandle};
 use winit::platform::pump_events::EventLoopExtPumpEvents;
-use winit::window::{CursorGrabMode, Fullscreen, Window, WindowAttributes, WindowId};
+use winit::window::{CursorGrabMode, CursorIcon, Fullscreen, Window, WindowAttributes, WindowId};
 
 struct PumpHandler<'a> {
     should_close: &'a mut bool,
@@ -43,6 +43,7 @@ pub struct NativeWindowInput {
     pub mouse_just_pressed: HashSet<MouseButton>,
     pub mouse_just_released: HashSet<MouseButton>,
     pub touch_events: Vec<TouchEvent>,
+    pub drag_and_drop_events: Vec<DragAndDropEvent>,
 }
 
 pub struct TouchEvent {
@@ -50,6 +51,11 @@ pub struct TouchEvent {
     pub phase: i32,
     pub x: f32,
     pub y: f32,
+}
+
+pub struct DragAndDropEvent {
+    pub kind: i32,
+    pub path: String,
 }
 
 pub struct NativeWindow {
@@ -161,6 +167,14 @@ impl NativeWindow {
         }
     }
 
+    pub fn set_cursor_icon(&self, icon: i32) {
+        let cursor_icon = match icon {
+            1 => CursorIcon::EwResize,
+            _ => CursorIcon::Default,
+        };
+        self.window.set_cursor(cursor_icon);
+    }
+
     pub fn set_mode(&self, mode: i32) {
         match mode {
             0 => {
@@ -214,6 +228,7 @@ impl NativeWindow {
         self.input.wheel_x = 0.0;
         self.input.wheel_y = 0.0;
         self.input.touch_events.clear();
+        self.input.drag_and_drop_events.clear();
     }
 }
 
@@ -283,6 +298,24 @@ fn handle_window_event(
                 phase,
                 x: logical.x as f32,
                 y: logical.y as f32,
+            });
+        }
+        WindowEvent::HoveredFile(path) => {
+            input.drag_and_drop_events.push(DragAndDropEvent {
+                kind: 1,
+                path: path.to_string_lossy().to_string(),
+            });
+        }
+        WindowEvent::DroppedFile(path) => {
+            input.drag_and_drop_events.push(DragAndDropEvent {
+                kind: 0,
+                path: path.to_string_lossy().to_string(),
+            });
+        }
+        WindowEvent::HoveredFileCancelled => {
+            input.drag_and_drop_events.push(DragAndDropEvent {
+                kind: 2,
+                path: String::new(),
             });
         }
         WindowEvent::KeyboardInput { event, .. } => {

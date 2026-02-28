@@ -1000,26 +1000,25 @@ fn mesh3d_pipeline_get(
   state : State,
   topology_kind : Int,
   transparent : Bool,
+  cull_mode : Int,
 ) -> @webgpu.GPURenderPipeline? {
-  match topology_kind {
-    1 =>
-      if transparent {
-        state.gpu.mesh3d_pipeline_line_list_transparent
-      } else {
-        state.gpu.mesh3d_pipeline_line_list
-      }
-    2 =>
-      if transparent {
-        state.gpu.mesh3d_pipeline_line_strip_transparent
-      } else {
-        state.gpu.mesh3d_pipeline_line_strip
-      }
-    _ =>
-      if transparent {
-        state.gpu.mesh3d_pipeline_transparent
-      } else {
-        state.gpu.mesh3d_pipeline
-      }
+  let format_key = state.gpu.format
+    .unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    .to_js_string()
+  let transparent_key = if transparent { "1" } else { "0" }
+  let cull_key = mesh3d_cull_mode_sanitize(cull_mode).to_string()
+  let key = format_key +
+    "|" +
+    topology_kind.to_string() +
+    "|" +
+    transparent_key +
+    "|" +
+    cull_key
+  let pipeline_any = map_get(state.gpu.mesh3d_pipeline_cache, @js.any(key))
+  if host_is_nullish(pipeline_any) {
+    None
+  } else {
+    Some(pipeline_any.cast())
   }
 }
 
@@ -1028,27 +1027,25 @@ fn mesh3d_pipeline_set(
   state : State,
   topology_kind : Int,
   transparent : Bool,
+  cull_mode : Int,
   pipeline : @webgpu.GPURenderPipeline?,
 ) -> Unit {
-  match topology_kind {
-    1 =>
-      if transparent {
-        state.gpu.mesh3d_pipeline_line_list_transparent = pipeline
-      } else {
-        state.gpu.mesh3d_pipeline_line_list = pipeline
-      }
-    2 =>
-      if transparent {
-        state.gpu.mesh3d_pipeline_line_strip_transparent = pipeline
-      } else {
-        state.gpu.mesh3d_pipeline_line_strip = pipeline
-      }
-    _ =>
-      if transparent {
-        state.gpu.mesh3d_pipeline_transparent = pipeline
-      } else {
-        state.gpu.mesh3d_pipeline = pipeline
-      }
+  let format_key = state.gpu.format
+    .unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    .to_js_string()
+  let transparent_key = if transparent { "1" } else { "0" }
+  let cull_key = mesh3d_cull_mode_sanitize(cull_mode).to_string()
+  let key = format_key +
+    "|" +
+    topology_kind.to_string() +
+    "|" +
+    transparent_key +
+    "|" +
+    cull_key
+  match pipeline {
+    Some(value) =>
+      map_set(state.gpu.mesh3d_pipeline_cache, @js.any(key), value.as_any())
+    None => map_set(state.gpu.mesh3d_pipeline_cache, @js.any(key), js_null())
   }
 }
 
@@ -1062,9 +1059,40 @@ fn mesh3d_topology_key_suffix(topology_kind : Int) -> String {
 }
 
 ///|
-fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
-  if mesh3d_pipeline_get(state, topology_kind, false) is Some(_) &&
-    mesh3d_pipeline_get(state, topology_kind, true) is Some(_) {
+fn mesh3d_cull_mode_sanitize(cull_mode : Int) -> Int {
+  match cull_mode {
+    1 => 1
+    2 => 2
+    _ => 0
+  }
+}
+
+///|
+fn mesh3d_webgpu_cull_mode(cull_mode : Int) -> String {
+  match mesh3d_cull_mode_sanitize(cull_mode) {
+    1 => "front"
+    2 => "back"
+    _ => "none"
+  }
+}
+
+///|
+fn mesh3d_cull_mode_key_suffix(cull_mode : Int) -> String {
+  match mesh3d_cull_mode_sanitize(cull_mode) {
+    1 => "_cull_front"
+    2 => "_cull_back"
+    _ => "_cull_none"
+  }
+}
+
+///|
+fn ensure_mesh3d_pipeline(
+  state : State,
+  topology_kind : Int,
+  cull_mode : Int,
+) -> Unit {
+  if mesh3d_pipeline_get(state, topology_kind, false, cull_mode) is Some(_) &&
+    mesh3d_pipeline_get(state, topology_kind, true, cull_mode) is Some(_) {
     return
   }
   if state.gpu.device is None {
@@ -1284,8 +1312,12 @@ fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
     let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
       color_target,
     ])
-    let primitive_state = @webgpu.primitive_state(
+    let primitive_state_js = @webgpu.primitive_state(
       mesh3d_webgpu_topology(topology_kind),
+    ).to_js()
+    primitive_state_js._set(
+      "cullMode",
+      @js.any(mesh3d_webgpu_cull_mode(cull_mode)),
     )
     guard state.gpu.mesh3d_uniform_layout is Some(uniform_layout) else {
       return
@@ -1309,13 +1341,14 @@ fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
       ("layout", pipeline_layout.as_any()),
       ("vertex", vertex_state.to_js()),
       ("fragment", fragment_state.to_js()),
-      ("primitive", primitive_state.to_js()),
+      ("primitive", primitive_state_js),
       ("depthStencil", depth_state_opaque),
     ])
     device.push_error_scope("validation")
     let pipeline_opaque = device.create_render_pipeline(pipeline_desc_opaque)
     let pipeline_error_promise_opaque = device.pop_error_scope()
-    let topology_suffix = mesh3d_topology_key_suffix(topology_kind)
+    let topology_suffix = mesh3d_topology_key_suffix(topology_kind) +
+      mesh3d_cull_mode_key_suffix(cull_mode)
     @js.run_async(async fn() noraise {
       let err_any : @js.Any = pipeline_error_promise_opaque.wait() catch {
         _ => js_null()
@@ -1326,10 +1359,16 @@ fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
           "mesh3d_pipeline_validation_error" + topology_suffix,
           "Mesh3d pipeline validation error: " + any_to_string(err_any),
         )
-        mesh3d_pipeline_set(state, topology_kind, false, None)
+        mesh3d_pipeline_set(state, topology_kind, false, cull_mode, None)
       }
     })
-    mesh3d_pipeline_set(state, topology_kind, false, Some(pipeline_opaque))
+    mesh3d_pipeline_set(
+      state,
+      topology_kind,
+      false,
+      cull_mode,
+      Some(pipeline_opaque),
+    )
 
     let depth_state_transparent = @js.from_entries([
       ("format", @js.any("depth24plus")),
@@ -1340,7 +1379,7 @@ fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
       ("layout", pipeline_layout.as_any()),
       ("vertex", vertex_state.to_js()),
       ("fragment", fragment_state.to_js()),
-      ("primitive", primitive_state.to_js()),
+      ("primitive", primitive_state_js),
       ("depthStencil", depth_state_transparent),
     ])
     device.push_error_scope("validation")
@@ -1359,10 +1398,16 @@ fn ensure_mesh3d_pipeline(state : State, topology_kind : Int) -> Unit {
           "Mesh3d transparent pipeline validation error: " +
           any_to_string(err_any),
         )
-        mesh3d_pipeline_set(state, topology_kind, true, None)
+        mesh3d_pipeline_set(state, topology_kind, true, cull_mode, None)
       }
     })
-    mesh3d_pipeline_set(state, topology_kind, true, Some(pipeline_transparent))
+    mesh3d_pipeline_set(
+      state,
+      topology_kind,
+      true,
+      cull_mode,
+      Some(pipeline_transparent),
+    )
   }
 }
 
@@ -4354,6 +4399,7 @@ fn draw_mesh3d(
   transmission_source_texture_id : Int,
   transmission_blur_taps : Double,
   transmission_steps : Double,
+  cull_mode : Int,
 ) -> Unit {
   if state.gpu.profile_enabled {
     state.gpu.profile_draw_mesh3d_calls_accum = state.gpu.profile_draw_mesh3d_calls_accum +
@@ -4393,17 +4439,18 @@ fn draw_mesh3d(
     return
   }
   let primitive_topology_kind = mesh3d_topology_kind_from_entry(mesh_entry)
+  let resolved_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
   let use_transparent_pipeline = a < 0.999
   if use_motion_vector_pipeline {
     ensure_motion_vector_pipeline(state)
   } else {
-    ensure_mesh3d_pipeline(state, primitive_topology_kind)
+    ensure_mesh3d_pipeline(state, primitive_topology_kind, resolved_cull_mode)
   }
   let mesh3d_pipeline_opt = if use_motion_vector_pipeline {
     None
   } else {
     mesh3d_pipeline_get(
-      state, primitive_topology_kind, use_transparent_pipeline,
+      state, primitive_topology_kind, use_transparent_pipeline, resolved_cull_mode,
     )
   }
   if !use_motion_vector_pipeline && mesh3d_pipeline_opt is None {

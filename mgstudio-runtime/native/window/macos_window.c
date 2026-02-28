@@ -88,6 +88,7 @@ typedef struct mgw_window {
   int32_t cursor_hidden_state;
   int32_t cursor_associated_state;
   int32_t cursor_grab_mode;
+  int32_t cursor_icon;
   int32_t window_mode;
   float mouse_x;
   float mouse_y;
@@ -765,6 +766,32 @@ static void mgw_window_set_cursor_associated_state(mgw_window_t *w, int32_t asso
 #endif
 }
 
+static void mgw_window_apply_cursor_icon(mgw_window_t *w) {
+#ifdef __APPLE__
+  if (!w || !mgw_objc_init()) {
+    return;
+  }
+  mgw_objc_class cursor_cls = mgw_cls("NSCursor");
+  if (!cursor_cls) {
+    return;
+  }
+
+  mgw_objc_sel icon_sel = mgw_sel("arrowCursor");
+  if (w->cursor_icon == 1) {
+    mgw_objc_sel ew_resize_sel = mgw_sel("resizeLeftRightCursor");
+    if (mgw_msg_bool_sel((mgw_objc_id)cursor_cls, mgw_sel("respondsToSelector:"), ew_resize_sel)) {
+      icon_sel = ew_resize_sel;
+    }
+  }
+  mgw_objc_id cursor = mgw_msg_id((mgw_objc_id)cursor_cls, icon_sel);
+  if (cursor) {
+    mgw_msg_void(cursor, mgw_sel("set"));
+  }
+#else
+  (void)w;
+#endif
+}
+
 static void mgw_window_sync_cursor_state(mgw_window_t *w) {
   if (!w) {
     return;
@@ -773,6 +800,9 @@ static void mgw_window_sync_cursor_state(mgw_window_t *w) {
   mgw_window_set_cursor_associated_state(w, locked ? 0 : 1);
   int32_t hide = (!w->cursor_visible) || locked;
   mgw_window_set_cursor_hidden_state(w, hide);
+  if (!hide) {
+    mgw_window_apply_cursor_icon(w);
+  }
 }
 
 static int32_t mgw_window_is_fullscreen(mgw_window_t *w) {
@@ -1269,6 +1299,7 @@ MOONBIT_FFI_EXPORT void *mgw_window_create(int32_t width, int32_t height, moonbi
   out->cursor_hidden_state = 0;
   out->cursor_associated_state = 1;
   out->cursor_grab_mode = 0;
+  out->cursor_icon = 0;
   out->window_mode = 0;
   out->mouse_x = 0.0f;
   out->mouse_y = 0.0f;
@@ -1539,6 +1570,22 @@ MOONBIT_FFI_EXPORT void mgw_window_set_cursor_grab_mode(void *win, int32_t mode)
   w->cursor_grab_mode = next_mode;
   // Native C runtime currently exposes visibility + logical grab mode state.
   // Platform-level confinement/lock is implemented in native-wasmtime (winit).
+  mgw_window_sync_cursor_state(w);
+}
+
+MOONBIT_FFI_EXPORT void mgw_window_set_cursor_icon(void *win, int32_t icon) {
+  if (!win) {
+    return;
+  }
+  mgw_window_t *w = (mgw_window_t *)win;
+  int32_t next_icon = icon;
+  if (next_icon < 0) {
+    next_icon = 0;
+  }
+  if (next_icon > 1) {
+    next_icon = 1;
+  }
+  w->cursor_icon = next_icon;
   mgw_window_sync_cursor_state(w);
 }
 

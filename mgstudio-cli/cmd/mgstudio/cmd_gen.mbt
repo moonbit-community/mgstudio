@@ -628,7 +628,150 @@ async fn parse_ecs_tags_from_file(path : String) -> EcsTags {
       _ => ()
     }
   }
+  let fallback_tags = scan_ecs_tags_from_text(src)
+  for c in fallback_tags.components {
+    if !comps.contains(c) {
+      comps.push(c)
+    }
+  }
+  for r in fallback_tags.resources {
+    if !resources.contains(r) {
+      resources.push(r)
+    }
+  }
   { components: comps, resources }
+}
+
+///|
+fn scan_ecs_tags_from_text(src : String) -> EcsTags {
+  let components = collect_tagged_type_names(src, "#ecs.component")
+  let resources = collect_tagged_type_names(src, "#ecs.resource")
+  { components, resources }
+}
+
+///|
+fn collect_tagged_type_names(src : String, marker : String) -> Array[String] {
+  let names : Array[String] = []
+  let mut search = 0
+  let src_len = src.length()
+  while true {
+    match find_substring(src, marker, search) {
+      None => break
+      Some(marker_i) => {
+        let marker_end = marker_i + marker.length()
+        let marker_line_end = find_char_forward(src, marker_end, '\n').unwrap_or(
+          src_len,
+        )
+        let mut line_start = marker_line_end + 1
+        let mut remaining = 8
+        let mut found : String? = None
+        while remaining > 0 && line_start <= src_len {
+          let line_end = find_char_forward(src, line_start, '\n').unwrap_or(
+            src_len,
+          )
+          let line_raw = try! src.view()[line_start:line_end].to_string()
+          let line = line_raw.trim(char_set=" \t\r").to_string()
+          if line.length() == 0 || starts_with_at(line, 0, "//") {
+            if line_end >= src_len {
+              break
+            }
+            line_start = line_end + 1
+            remaining = remaining - 1
+            continue
+          }
+          found = extract_type_name_from_decl_line(line)
+          break
+        }
+        match found {
+          Some(name) => if !names.contains(name) { names.push(name) }
+          None => ()
+        }
+        search = marker_end
+      }
+    }
+  }
+  names
+}
+
+///|
+fn extract_type_name_from_decl_line(line : String) -> String? {
+  match extract_type_name_with_prefix(line, "pub(all) struct ") {
+    Some(name) => Some(name)
+    None => {
+      match extract_type_name_with_prefix(line, "pub struct ") {
+        Some(name) => Some(name)
+        None => {
+          match extract_type_name_with_prefix(line, "struct ") {
+            Some(name) => Some(name)
+            None => {
+              match extract_type_name_with_prefix(line, "pub(all) enum ") {
+                Some(name) => Some(name)
+                None => {
+                  match extract_type_name_with_prefix(line, "pub enum ") {
+                    Some(name) => Some(name)
+                    None => extract_type_name_with_prefix(line, "enum ")
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
+fn extract_type_name_with_prefix(line : String, prefix : String) -> String? {
+  if !starts_with_at(line, 0, prefix) {
+    return None
+  }
+  read_ident_from(line, prefix.length())
+}
+
+///|
+fn read_ident_from(text : String, start : Int) -> String? {
+  let v = text.view()
+  let len = v.length()
+  let mut i = start
+  while i < len {
+    let c = v.code_unit_at(i).to_int()
+    if c == ' '.to_int() || c == '\t'.to_int() {
+      i = i + 1
+    } else {
+      break
+    }
+  }
+  if i >= len {
+    return None
+  }
+  let start_code = v.code_unit_at(i).to_int()
+  if !is_ident_start_code(start_code) {
+    return None
+  }
+  let begin = i
+  i = i + 1
+  while i < len {
+    let c = v.code_unit_at(i).to_int()
+    if is_ident_continue_code(c) {
+      i = i + 1
+    } else {
+      break
+    }
+  }
+  Some((try! v[begin:i]).to_string())
+}
+
+///|
+fn is_ident_start_code(c : Int) -> Bool {
+  (c >= 'a'.to_int() && c <= 'z'.to_int()) ||
+  (c >= 'A'.to_int() && c <= 'Z'.to_int()) ||
+  c == '_'.to_int()
+}
+
+///|
+fn is_ident_continue_code(c : Int) -> Bool {
+  is_ident_start_code(c) || (c >= '0'.to_int() && c <= '9'.to_int())
 }
 
 ///|

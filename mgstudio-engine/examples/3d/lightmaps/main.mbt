@@ -141,11 +141,22 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
   lightmaps_state.val.scene_root = Some(scene_root)
 
-  @render3d.Camera3dBundle::new(
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)
-  |> ignore
+  if lightmaps_state.val.args.deferred {
+    world
+    .get_depth_prepass_store()
+    .insert(camera, @render3d.DepthPrepass::default(), tick)
+    world
+    .get_motion_vector_prepass_store()
+    .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+    world
+    .get_deferred_prepass_store()
+    .insert(camera, @render3d.DeferredPrepass::default(), tick)
+    world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  }
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let help_text = @text.Text2dBundle::new(

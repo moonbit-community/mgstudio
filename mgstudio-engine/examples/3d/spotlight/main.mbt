@@ -124,16 +124,29 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
+fn set_global_ambient_light(
+  world : @ecs_world.World,
+  color : @render2d.Color,
+  brightness : Float,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
+  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+    is Some(current) {
+    current.val = ambient
+  } else {
+    world.get_global_ambient_light_resource().insert(ambient, tick)
+  }
+}
+
+///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   spotlight_state.val.movables.clear()
   spotlight_state.val.spotlights.clear()
   spotlight_state.val.camera = None
 
-  let ambient = world.get_global_ambient_light_resource()
-  if ambient.get_ref_mut(tick) is Some(v) {
-    v.val = @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 20.0F)
-  }
+  set_global_ambient_light(world, @render2d.Color::white(), 20.0F)
 
   let ground_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white()),

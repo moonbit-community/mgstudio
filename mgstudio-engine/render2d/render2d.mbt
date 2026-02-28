@@ -37,6 +37,38 @@ fn color_srgb_to_linear(value : Float) -> Float {
 }
 
 ///|
+fn color_clamp_unit(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn color_abs(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F - value
+  } else {
+    value
+  }
+}
+
+///|
+fn color_wrap_hue(hue : Float) -> Float {
+  let mut wrapped = hue
+  while wrapped < 0.0F {
+    wrapped = wrapped + 360.0F
+  }
+  while wrapped >= 360.0F {
+    wrapped = wrapped - 360.0F
+  }
+  wrapped
+}
+
+///|
 pub fn Color::srgb(r : Float, g : Float, b : Float) -> Color {
   Color::{
     r: color_srgb_to_linear(r),
@@ -54,6 +86,51 @@ pub fn Color::srgba(r : Float, g : Float, b : Float, a : Float) -> Color {
     b: color_srgb_to_linear(b),
     a,
   }
+}
+
+///|
+pub fn Color::hsla(
+  hue : Float,
+  saturation : Float,
+  lightness : Float,
+  alpha : Float,
+) -> Color {
+  let h = color_wrap_hue(hue)
+  let s = color_clamp_unit(saturation)
+  let l = color_clamp_unit(lightness)
+  let a = color_clamp_unit(alpha)
+  let chroma = (1.0F - color_abs(2.0F * l - 1.0F)) * s
+  let m = l - chroma / 2.0F
+  let (r1, g1, b1) = if h < 60.0F {
+    let x = chroma * h / 60.0F
+    (chroma, x, 0.0F)
+  } else if h < 120.0F {
+    let x = chroma * (1.0F - (h - 60.0F) / 60.0F)
+    (x, chroma, 0.0F)
+  } else if h < 180.0F {
+    let x = chroma * (h - 120.0F) / 60.0F
+    (0.0F, chroma, x)
+  } else if h < 240.0F {
+    let x = chroma * (1.0F - (h - 180.0F) / 60.0F)
+    (0.0F, x, chroma)
+  } else if h < 300.0F {
+    let x = chroma * (h - 240.0F) / 60.0F
+    (x, 0.0F, chroma)
+  } else {
+    let x = chroma * (1.0F - (h - 300.0F) / 60.0F)
+    (chroma, 0.0F, x)
+  }
+  Color::srgba(
+    color_clamp_unit(r1 + m),
+    color_clamp_unit(g1 + m),
+    color_clamp_unit(b1 + m),
+    a,
+  )
+}
+
+///|
+pub fn Color::hsl(hue : Float, saturation : Float, lightness : Float) -> Color {
+  Color::hsla(hue, saturation, lightness, 1.0F)
 }
 
 ///|
@@ -76,19 +153,114 @@ pub struct RenderLayers {
 }
 
 ///|
+fn render_layer_clamp_index(index : Int) -> Int {
+  if index < 0 {
+    0
+  } else {
+    index
+  }
+}
+
+///|
+fn render_layer_bit(index : Int) -> Int {
+  1 << render_layer_clamp_index(index)
+}
+
+///|
 pub fn RenderLayers::default() -> RenderLayers {
   RenderLayers::{ mask: 1 }
 }
 
 ///|
+pub fn RenderLayers::none() -> RenderLayers {
+  RenderLayers::{ mask: 0 }
+}
+
+///|
 pub fn RenderLayers::layer(index : Int) -> RenderLayers {
-  let clamped = if index < 0 { 0 } else { index }
-  RenderLayers::{ mask: 1 << clamped }
+  RenderLayers::{ mask: render_layer_bit(index) }
 }
 
 ///|
 pub fn RenderLayers::matches(self : RenderLayers, other : RenderLayers) -> Bool {
+  self.intersects(other)
+}
+
+///|
+pub fn RenderLayers::intersects(
+  self : RenderLayers,
+  other : RenderLayers,
+) -> Bool {
   (self.mask & other.mask) != 0
+}
+
+///|
+pub fn RenderLayers::from_layers(layers : Array[Int]) -> RenderLayers {
+  let mut mask = 0
+  for layer in layers {
+    mask = mask | render_layer_bit(layer)
+  }
+  RenderLayers::{ mask, }
+}
+
+///|
+pub fn RenderLayers::with_layer(
+  self : RenderLayers,
+  index : Int,
+) -> RenderLayers {
+  RenderLayers::{ mask: self.mask | render_layer_bit(index) }
+}
+
+///|
+pub fn RenderLayers::without_layer(
+  self : RenderLayers,
+  index : Int,
+) -> RenderLayers {
+  let bit = render_layer_bit(index)
+  if (self.mask & bit) != 0 {
+    RenderLayers::{ mask: self.mask ^ bit }
+  } else {
+    self
+  }
+}
+
+///|
+pub fn RenderLayers::add(self : RenderLayers, index : Int) -> RenderLayers {
+  self.with_layer(index)
+}
+
+///|
+pub fn RenderLayers::remove(self : RenderLayers, index : Int) -> RenderLayers {
+  self.without_layer(index)
+}
+
+///|
+pub fn RenderLayers::contains(self : RenderLayers, index : Int) -> Bool {
+  (self.mask & render_layer_bit(index)) != 0
+}
+
+///|
+pub fn RenderLayers::union(
+  self : RenderLayers,
+  other : RenderLayers,
+) -> RenderLayers {
+  RenderLayers::{ mask: self.mask | other.mask }
+}
+
+///|
+pub fn RenderLayers::intersection(
+  self : RenderLayers,
+  other : RenderLayers,
+) -> RenderLayers {
+  RenderLayers::{ mask: self.mask & other.mask }
+}
+
+///|
+pub fn RenderLayers::combine(
+  self : RenderLayers,
+  other : RenderLayers,
+) -> RenderLayers {
+  self.union(other)
 }
 
 ///|
@@ -1131,6 +1303,148 @@ pub fn ColorMaterial::with_uv_scale(
 }
 
 ///|
+pub(open) trait Material2d {
+  color(self : Self) -> Color
+  alpha_mode(self : Self) -> AlphaMode2d
+  texture(self : Self) -> @asset.Handle[@asset.Image]?
+  uv_offset(self : Self) -> @math.Vec2
+  uv_scale(self : Self) -> @math.Vec2
+}
+
+///|
+pub impl Material2d for ColorMaterial with color(self) {
+  ColorMaterial::color(self)
+}
+
+///|
+pub impl Material2d for ColorMaterial with alpha_mode(self) {
+  ColorMaterial::alpha_mode(self)
+}
+
+///|
+pub impl Material2d for ColorMaterial with texture(self) {
+  ColorMaterial::texture(self)
+}
+
+///|
+pub impl Material2d for ColorMaterial with uv_offset(self) {
+  ColorMaterial::uv_offset(self)
+}
+
+///|
+pub impl Material2d for ColorMaterial with uv_scale(self) {
+  ColorMaterial::uv_scale(self)
+}
+
+///|
+pub struct Material2dPlugin[M] {
+  marker : M?
+}
+
+///|
+pub fn[M] Material2dPlugin::default() -> Material2dPlugin[M] {
+  Material2dPlugin::{ marker: None }
+}
+
+///|
+pub fn[W, M] material2d_plugin(_plugin : Material2dPlugin[M]) -> @app.Plugin[W] {
+  fn(app : @app.App[W]) -> @app.App[W] { app }
+}
+
+///|
+// ECS component marker for codegen (`mgstudio gen`).
+#ecs.component
+pub struct MeshMaterial2d {
+  handle : @asset.Handle[ColorMaterialAsset]
+}
+
+///|
+pub fn MeshMaterial2d::new(
+  material : @asset.Handle[ColorMaterialAsset],
+) -> MeshMaterial2d {
+  MeshMaterial2d::{ handle: material }
+}
+
+///|
+pub fn MeshMaterial2d::from_color_material(
+  material : ColorMaterial,
+) -> MeshMaterial2d {
+  MeshMaterial2d::{ handle: material.handle }
+}
+
+///|
+pub fn MeshMaterial2d::to_color_material(
+  self : MeshMaterial2d,
+) -> ColorMaterial {
+  ColorMaterial::{ handle: self.handle }
+}
+
+///|
+pub fn MeshMaterial2d::with_alpha_mode(
+  self : MeshMaterial2d,
+  alpha_mode : AlphaMode2d,
+) -> MeshMaterial2d {
+  MeshMaterial2d::from_color_material(
+    self.to_color_material().with_alpha_mode(alpha_mode),
+  )
+}
+
+///|
+pub fn MeshMaterial2d::with_texture(
+  self : MeshMaterial2d,
+  texture : @asset.Handle[@asset.Image],
+) -> MeshMaterial2d {
+  MeshMaterial2d::from_color_material(
+    self.to_color_material().with_texture(texture),
+  )
+}
+
+///|
+pub fn MeshMaterial2d::with_uv_offset(
+  self : MeshMaterial2d,
+  uv_offset : @math.Vec2,
+) -> MeshMaterial2d {
+  MeshMaterial2d::from_color_material(
+    self.to_color_material().with_uv_offset(uv_offset),
+  )
+}
+
+///|
+pub fn MeshMaterial2d::with_uv_scale(
+  self : MeshMaterial2d,
+  uv_scale : @math.Vec2,
+) -> MeshMaterial2d {
+  MeshMaterial2d::from_color_material(
+    self.to_color_material().with_uv_scale(uv_scale),
+  )
+}
+
+///|
+pub impl Material2d for MeshMaterial2d with color(self) {
+  self.to_color_material().color()
+}
+
+///|
+pub impl Material2d for MeshMaterial2d with alpha_mode(self) {
+  self.to_color_material().alpha_mode()
+}
+
+///|
+pub impl Material2d for MeshMaterial2d with texture(self) {
+  self.to_color_material().texture()
+}
+
+///|
+pub impl Material2d for MeshMaterial2d with uv_offset(self) {
+  self.to_color_material().uv_offset()
+}
+
+///|
+pub impl Material2d for MeshMaterial2d with uv_scale(self) {
+  self.to_color_material().uv_scale()
+}
+
+///|
 pub struct Capsule2d {
   radius : Float
   half_length : Float
@@ -1800,6 +2114,22 @@ fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
 ///|
 pub fn render_mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
   mesh_asset_get(handle)
+}
+
+///|
+fn mesh_asset_set(
+  handle : @asset.Handle[@mesh.Mesh],
+  mesh : @mesh.Mesh,
+) -> Bool {
+  mesh_assets.val.set(handle, mesh)
+}
+
+///|
+pub fn render_mesh_asset_set(
+  handle : @asset.Handle[@mesh.Mesh],
+  mesh : @mesh.Mesh,
+) -> Bool {
+  mesh_asset_set(handle, mesh)
 }
 
 ///|
@@ -3004,6 +3334,15 @@ pub fn Mesh2dBundle::new(
 }
 
 ///|
+pub fn Mesh2dBundle::new_with_mesh_material(
+  mesh : Mesh2d,
+  material : MeshMaterial2d,
+  transform : @math.Transform,
+) -> Mesh2dBundle {
+  Mesh2dBundle::new(mesh, material.to_color_material(), transform)
+}
+
+///|
 pub fn Mesh2dBundle::new_with_layers(
   mesh : Mesh2d,
   material : ColorMaterial,
@@ -3019,6 +3358,21 @@ pub fn Mesh2dBundle::new_with_layers(
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
   }
+}
+
+///|
+pub fn Mesh2dBundle::new_with_mesh_material_layers(
+  mesh : Mesh2d,
+  material : MeshMaterial2d,
+  transform : @math.Transform,
+  layers : RenderLayers,
+) -> Mesh2dBundle {
+  Mesh2dBundle::new_with_layers(
+    mesh,
+    material.to_color_material(),
+    transform,
+    layers,
+  )
 }
 
 ///|
@@ -4439,11 +4793,11 @@ pub(open) trait Camera2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWor
 }
 
 ///|
-pub(open) trait Mesh2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+pub(open) trait Mesh2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
 ///|
-pub(open) trait RenderExtractWorld: HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
+pub(open) trait RenderExtractWorld: HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 
 ///|
@@ -4493,6 +4847,9 @@ pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(
   let e = world.spawn_empty()
   world.get_mesh2d_store().insert(e, self.mesh, tick)
   world.get_color_material_store().insert(e, self.material, tick)
+  world
+  .get_mesh_material2d_store()
+  .insert(e, MeshMaterial2d::from_color_material(self.material), tick)
   world.get_render_layers_store().insert(e, self.layers, tick)
   world.get_visibility_store().insert(e, self.visibility, tick)
   world
@@ -5372,7 +5729,8 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
   })
   let mesh_store = world.get_mesh2d_store()
   let gpu_mesh_store = world.get_gpu_mesh2d_store()
-  let material_store = world.get_color_material_store()
+  let color_material_store = world.get_color_material_store()
+  let material_store = world.get_mesh_material2d_store()
   let wireframe_store = world.get_wireframe2d_store()
   let no_wireframe_store = world.get_no_wireframe2d_store()
   let wireframe_color_store = world.get_wireframe2d_color_store()
@@ -5387,7 +5745,14 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       return
     }
     guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
-    guard material_store.get(entity) is Some(mat) else { return }
+    let mat = if material_store.get(entity) is Some(material) {
+      material.to_color_material()
+    } else {
+      match color_material_store.get(entity) {
+        Some(color_material) => color_material
+        None => return
+      }
+    }
     let layers = match layers_store.get(entity) {
       Some(v) => v
       None => RenderLayers::default()

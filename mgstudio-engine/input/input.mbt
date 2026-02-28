@@ -68,6 +68,11 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
     Comma => "Comma"
     Period => "Period"
     Slash => "Slash"
+    Minus => "Minus"
+    Equal => "Equal"
+    BracketLeft => "BracketLeft"
+    BracketRight => "BracketRight"
+    Quote => "Quote"
   }
 }
 
@@ -126,6 +131,11 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
   Comma,
   Period,
   Slash,
+  Minus,
+  Equal,
+  BracketLeft,
+  BracketRight,
+  Quote,
 ]
 
 ///|
@@ -350,6 +360,13 @@ pub struct TouchInput {
 }
 
 ///|
+pub(all) enum FileDragAndDrop {
+  DroppedFile(String)
+  HoveredFile(String)
+  HoveredFileCanceled
+}
+
+///|
 pub struct Touch {
   id : Int
   position : @math.Vec2
@@ -479,6 +496,11 @@ let touch_input_events_ref : Ref[@core.Messages[TouchInput]] = Ref::new(
 )
 
 ///|
+let file_drag_and_drop_events_ref : Ref[@core.Messages[FileDragAndDrop]] = Ref::new(
+  @core.Messages::new(),
+)
+
+///|
 let accumulated_mouse_motion_resource_ref : Ref[
   @core.Resource[AccumulatedMouseMotion],
 ] = Ref::new(@core.Resource::new())
@@ -498,6 +520,14 @@ let input_last_mouse_position_ref : Ref[@math.Vec2?] = Ref::new(None)
 
 ///|
 let input_active_touches_ref : Ref[Array[Touch]] = Ref::new([])
+
+///|
+let input_primary_pointer_position_ref : Ref[@math.Vec2?] = Ref::new(None)
+
+///|
+let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref::new(
+  @math.Vec2::new(0.0F, 0.0F),
+)
 
 ///|
 fn host_input_is_key_down_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_down"
@@ -561,6 +591,21 @@ fn host_input_touch_event_x(index~ : Int) -> Float = "mgstudio_host" "input_touc
 
 ///|
 fn host_input_touch_event_y(index~ : Int) -> Float = "mgstudio_host" "input_touch_event_y"
+
+///|
+fn host_input_drag_and_drop_event_count() -> Int = "mgstudio_host" "input_drag_and_drop_event_count"
+
+///|
+fn host_input_drag_and_drop_event_kind(index~ : Int) -> Int = "mgstudio_host" "input_drag_and_drop_event_kind"
+
+///|
+fn host_input_drag_and_drop_event_len(index~ : Int) -> Int = "mgstudio_host" "input_drag_and_drop_event_len"
+
+///|
+fn host_input_drag_and_drop_event_code_unit(
+  index~ : Int,
+  offset~ : Int,
+) -> Int = "mgstudio_host" "input_drag_and_drop_event_code_unit"
 
 ///|
 pub fn key_pressed(code : @window.KeyCode) -> Bool {
@@ -676,6 +721,11 @@ fn logical_key_from_keycode(code : @window.KeyCode) -> Key {
     Comma => Character(",")
     Period => Character(".")
     Slash => if shifted { Character("?") } else { Character("/") }
+    Minus => if shifted { Character("_") } else { Character("-") }
+    Equal => if shifted { Character("+") } else { Character("=") }
+    BracketLeft => if shifted { Character("{") } else { Character("[") }
+    BracketRight => if shifted { Character("}") } else { Character("]") }
+    Quote => if shifted { Character("\"") } else { Character("'") }
   }
 }
 
@@ -709,6 +759,103 @@ pub fn mouse_position() -> @math.Vec2? {
     Some(@math.Vec2::new(host_input_mouse_x(), host_input_mouse_y()))
   } else {
     None
+  }
+}
+
+///|
+fn input_primary_pointer_from_touches(touches : Touches) -> @math.Vec2? {
+  if touches.active.length() > 0 {
+    Some(touches.active[0].position)
+  } else if touches.just_pressed.length() > 0 {
+    Some(touches.just_pressed[0].position)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn mouse_motion_delta() -> @math.Vec2 {
+  if accumulated_mouse_motion_resource_ref.val.get_ref() is Some(motion_ref) {
+    motion_ref.val.delta
+  } else {
+    @math.Vec2::new(0.0F, 0.0F)
+  }
+}
+
+///|
+pub fn mouse_motion_delta_opt() -> @math.Vec2? {
+  let delta = mouse_motion_delta()
+  if delta.x == 0.0F && delta.y == 0.0F {
+    None
+  } else {
+    Some(delta)
+  }
+}
+
+///|
+pub fn primary_pointer_position() -> @math.Vec2? {
+  match input_primary_pointer_position_ref.val {
+    Some(position) => Some(position)
+    None => {
+      if touches_resource_ref.val.get_ref() is Some(touches_ref) {
+        if input_primary_pointer_from_touches(touches_ref.val) is Some(touch_position) {
+          Some(touch_position)
+        } else {
+          mouse_position()
+        }
+      } else {
+        mouse_position()
+      }
+    }
+  }
+}
+
+///|
+pub fn primary_pointer_pressed() -> Bool {
+  if mouse_button_pressed(@window.MouseButton::Left) {
+    return true
+  }
+  if touches_resource_ref.val.get_ref() is Some(touches_ref) {
+    return touches_ref.val.active.length() > 0
+  }
+  false
+}
+
+///|
+pub fn primary_pointer_just_pressed() -> Bool {
+  if mouse_button_just_pressed(@window.MouseButton::Left) {
+    return true
+  }
+  if touches_resource_ref.val.get_ref() is Some(touches_ref) {
+    return touches_ref.val.just_pressed.length() > 0
+  }
+  false
+}
+
+///|
+pub fn primary_pointer_just_released() -> Bool {
+  if mouse_button_just_released(@window.MouseButton::Left) {
+    return true
+  }
+  if touches_resource_ref.val.get_ref() is Some(touches_ref) {
+    return touches_ref.val.just_released.length() > 0 ||
+      touches_ref.val.just_canceled.length() > 0
+  }
+  false
+}
+
+///|
+pub fn primary_pointer_delta() -> @math.Vec2 {
+  input_primary_pointer_delta_ref.val
+}
+
+///|
+pub fn primary_pointer_delta_opt() -> @math.Vec2? {
+  let delta = primary_pointer_delta()
+  if delta.x == 0.0F && delta.y == 0.0F {
+    None
+  } else {
+    Some(delta)
   }
 }
 
@@ -748,6 +895,45 @@ fn input_text_event_at(index : Int) -> String? {
 }
 
 ///|
+fn input_drag_and_drop_event_text(index : Int) -> String? {
+  let len = host_input_drag_and_drop_event_len(index~)
+  if len <= 0 {
+    return None
+  }
+  let chars : Array[Char] = []
+  for i in 0..<len {
+    let code_unit = host_input_drag_and_drop_event_code_unit(index~, offset=i)
+    if code_unit.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
+  }
+  Some(String::from_array(chars))
+}
+
+///|
+fn input_drag_and_drop_event_at(index : Int) -> FileDragAndDrop? {
+  let kind = host_input_drag_and_drop_event_kind(index~)
+  match kind {
+    0 =>
+      if input_drag_and_drop_event_text(index) is Some(path) {
+        Some(FileDragAndDrop::DroppedFile(path))
+      } else {
+        None
+      }
+    1 =>
+      if input_drag_and_drop_event_text(index) is Some(path) {
+        Some(FileDragAndDrop::HoveredFile(path))
+      } else {
+        None
+      }
+    2 => Some(FileDragAndDrop::HoveredFileCanceled)
+    _ => None
+  }
+}
+
+///|
 pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(world : W) -> Unit {
   let tick = world.read_change_tick()
   for code in keyboard_event_keycodes {
@@ -782,6 +968,19 @@ pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(world : W) -> Unit 
       keyboard_character_events_ref.val.send(tick, KeyboardCharacter::{
         character: text,
       })
+    }
+  }
+}
+
+///|
+pub fn[W : @core.ChangeTickWorld] input_poll_drag_and_drop_system(
+  world : W,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let event_count = host_input_drag_and_drop_event_count()
+  for i in 0..<event_count {
+    if input_drag_and_drop_event_at(i) is Some(event) {
+      file_drag_and_drop_events_ref.val.send(tick, event)
     }
   }
 }
@@ -971,6 +1170,23 @@ pub fn[W : @core.ChangeTickWorld] input_poll_mouse_system(world : W) -> Unit {
   if touches_resource_ref.val.get_ref_mut(tick) is Some(touches_ref) {
     touches_ref.val = touches
   }
+
+  let primary_pointer_position = if current_position_opt is Some(mouse_pos) {
+    Some(mouse_pos)
+  } else {
+    input_primary_pointer_from_touches(touches)
+  }
+  let primary_pointer_delta = match primary_pointer_position {
+    Some(current_position) =>
+      if input_primary_pointer_position_ref.val is Some(last_position) {
+        @math.Vec2::sub(current_position, last_position)
+      } else {
+        @math.Vec2::new(0.0F, 0.0F)
+      }
+    None => @math.Vec2::new(0.0F, 0.0F)
+  }
+  input_primary_pointer_position_ref.val = primary_pointer_position
+  input_primary_pointer_delta_ref.val = primary_pointer_delta
 }
 
 ///|
@@ -1065,6 +1281,13 @@ fn touch_input_events_reader(
 }
 
 ///|
+fn file_drag_and_drop_events_reader(
+  ticks : @core.SystemTicks,
+) -> @core.MessageReader[FileDragAndDrop] {
+  file_drag_and_drop_events_ref.val.reader(ticks)
+}
+
+///|
 fn mouse_button_input_events_writer(
   tick : @core.Tick,
 ) -> @core.MessageWriter[MouseButtonInput] {
@@ -1118,6 +1341,13 @@ fn touch_input_events_writer(
   tick : @core.Tick,
 ) -> @core.MessageWriter[TouchInput] {
   touch_input_events_ref.val.writer(tick)
+}
+
+///|
+fn file_drag_and_drop_events_writer(
+  tick : @core.Tick,
+) -> @core.MessageWriter[FileDragAndDrop] {
+  file_drag_and_drop_events_ref.val.writer(tick)
 }
 
 ///|
@@ -1188,6 +1418,13 @@ pub fn[W : @core.SystemContextWorld] touch_input_events(
   world : W,
 ) -> @core.MessageReader[TouchInput] {
   touch_input_events_reader(input_world_system_ticks(world))
+}
+
+///|
+pub fn[W : @core.SystemContextWorld] file_drag_and_drop_events(
+  world : W,
+) -> @core.MessageReader[FileDragAndDrop] {
+  file_drag_and_drop_events_reader(input_world_system_ticks(world))
 }
 
 ///|
@@ -1288,6 +1525,16 @@ pub impl @core.Message for TouchInput with reader(ticks) {
 ///|
 pub impl @core.Message for TouchInput with writer(tick) {
   touch_input_events_writer(tick)
+}
+
+///|
+pub impl @core.Message for FileDragAndDrop with reader(ticks) {
+  file_drag_and_drop_events_reader(ticks)
+}
+
+///|
+pub impl @core.Message for FileDragAndDrop with writer(tick) {
+  file_drag_and_drop_events_writer(tick)
 }
 
 ///|
@@ -1404,6 +1651,7 @@ pub fn[W : @core.ChangeTickWorld] input_plugin(
 ) -> @app.App[W] {
   app
   .add_pre_update_system(input_poll_keyboard_system)
+  .add_pre_update_system(input_poll_drag_and_drop_system)
   .add_pre_update_system(input_poll_mouse_system)
   .add_pre_update_system(input_poll_gamepad_system)
   .add_post_update_system(input_finish_system)

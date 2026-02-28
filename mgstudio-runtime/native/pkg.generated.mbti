@@ -147,10 +147,24 @@ pub struct GpuBackend {
   mut motion_blur_settings_buf : @wgpu_mbt.Buffer?
   mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
   mut bloom2d_bgl : @wgpu_mbt.BindGroupLayout?
-  mut bloom2d_pipeline : @wgpu_mbt.RenderPipeline?
-  mut bloom2d_pipeline_surface : @wgpu_mbt.RenderPipeline?
-  mut bloom2d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut bloom2d_downsample_first_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_downsample_first_no_threshold_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_downsample_first_uniform_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_downsample_first_no_threshold_uniform_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_downsample_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_downsample_uniform_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_upsample_pipeline_energy : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_upsample_pipeline_additive : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_final_pipeline : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_final_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_final_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut bloom2d_settings_buf : @wgpu_mbt.Buffer?
+  mut bloom2d_sampler : @wgpu_mbt.Sampler?
+  mut bloom2d_mip_texture : @wgpu_mbt.Texture?
+  bloom2d_mip_views : Array[@wgpu_mbt.TextureView]
+  mut bloom2d_mip_count : Int
+  mut bloom2d_mip_width : Int
+  mut bloom2d_mip_height : Int
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   textures : Ref[Array[GpuTextureInfo]]
@@ -174,7 +188,7 @@ pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int rais
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::draw_bloom2d(Self, Int, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
@@ -350,3 +364,4 @@ pub struct UiBatch {
 // Type aliases
 
 // Traits
+

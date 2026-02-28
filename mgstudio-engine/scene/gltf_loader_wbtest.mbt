@@ -361,3 +361,152 @@ test "scene gltf wb: custom lod visibility policy and disable switch" {
   inspect(disabled_is_none, content="true")
   scene_reset_gltf_lod_visibility_policy()
 }
+
+///|
+test "scene gltf wb: parse animation channels and samplers" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[0]}]," +
+    "\"nodes\":[{\"children\":[1]},{}]," +
+    "\"meshes\":[]," +
+    "\"buffers\":[{\"byteLength\":104}]," +
+    "\"bufferViews\":[" +
+    "{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8}," +
+    "{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24}," +
+    "{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32}," +
+    "{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24}," +
+    "{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}" +
+    "]," +
+    "\"accessors\":[" +
+    "{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"}," +
+    "{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
+    "{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"}," +
+    "{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
+    "{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}" +
+    "]," +
+    "\"animations\":[{" +
+    "\"samplers\":[" +
+    "{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"}," +
+    "{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"}," +
+    "{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"}," +
+    "{\"input\":0,\"output\":4}" +
+    "]," +
+    "\"channels\":[" +
+    "{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}}," +
+    "{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}}," +
+    "{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}}," +
+    "{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}" +
+    "]" +
+    "}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.animations.length(), content="1")
+  inspect(doc.animations[0].samplers.length(), content="4")
+  inspect(doc.animations[0].channels.length(), content="4")
+  inspect(doc.animations[0].samplers[1].is_cubic_spline, content="false")
+  inspect(doc.animations[0].samplers[2].is_cubic_spline, content="true")
+  inspect(doc.animations[0].channels[3].target_path, content="\"weights\"")
+}
+
+///|
+test "scene gltf wb: build animation clip tracks and fallback node paths" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[0]}]," +
+    "\"nodes\":[{\"children\":[1]},{}]," +
+    "\"meshes\":[]," +
+    "\"buffers\":[{\"byteLength\":104}]," +
+    "\"bufferViews\":[" +
+    "{\"buffer\":0,\"byteOffset\":0,\"byteLength\":8}," +
+    "{\"buffer\":0,\"byteOffset\":8,\"byteLength\":24}," +
+    "{\"buffer\":0,\"byteOffset\":32,\"byteLength\":32}," +
+    "{\"buffer\":0,\"byteOffset\":64,\"byteLength\":24}," +
+    "{\"buffer\":0,\"byteOffset\":88,\"byteLength\":16}" +
+    "]," +
+    "\"accessors\":[" +
+    "{\"bufferView\":0,\"componentType\":5126,\"count\":2,\"type\":\"SCALAR\"}," +
+    "{\"bufferView\":1,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
+    "{\"bufferView\":2,\"componentType\":5126,\"count\":2,\"type\":\"VEC4\"}," +
+    "{\"bufferView\":3,\"componentType\":5126,\"count\":2,\"type\":\"VEC3\"}," +
+    "{\"bufferView\":4,\"componentType\":5126,\"count\":4,\"type\":\"SCALAR\"}" +
+    "]," +
+    "\"animations\":[{" +
+    "\"samplers\":[" +
+    "{\"input\":0,\"output\":1,\"interpolation\":\"LINEAR\"}," +
+    "{\"input\":0,\"output\":2,\"interpolation\":\"STEP\"}," +
+    "{\"input\":0,\"output\":3,\"interpolation\":\"CUBICSPLINE\"}," +
+    "{\"input\":0,\"output\":4}" +
+    "]," +
+    "\"channels\":[" +
+    "{\"sampler\":0,\"target\":{\"node\":0,\"path\":\"translation\"}}," +
+    "{\"sampler\":1,\"target\":{\"node\":1,\"path\":\"rotation\"}}," +
+    "{\"sampler\":2,\"target\":{\"node\":0,\"path\":\"scale\"}}," +
+    "{\"sampler\":3,\"target\":{\"node\":1,\"path\":\"weights\"}}" +
+    "]" +
+    "}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  let raw : Array[Byte] = []
+  // input timestamps
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 1.0F)
+  // translation values
+  push_f32_le(raw, 1.0F)
+  push_f32_le(raw, 2.0F)
+  push_f32_le(raw, 3.0F)
+  push_f32_le(raw, 4.0F)
+  push_f32_le(raw, 5.0F)
+  push_f32_le(raw, 6.0F)
+  // rotation values
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 1.0F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.70710677F)
+  push_f32_le(raw, 0.0F)
+  push_f32_le(raw, 0.70710677F)
+  // scale values
+  push_f32_le(raw, 1.0F)
+  push_f32_le(raw, 1.0F)
+  push_f32_le(raw, 1.0F)
+  push_f32_le(raw, 2.0F)
+  push_f32_le(raw, 2.0F)
+  push_f32_le(raw, 2.0F)
+  // weights values
+  push_f32_le(raw, 0.1F)
+  push_f32_le(raw, 0.9F)
+  push_f32_le(raw, 0.2F)
+  push_f32_le(raw, 0.8F)
+
+  let clip = scene_build_animation_clip_from_gltf(0, doc, [
+    Bytes::from_array(raw),
+  ])
+  inspect(clip.duration().to_double(), content="1")
+
+  let target0 = @animation.AnimationTargetId::from_names(["GltfNode0"])
+  let target1 = @animation.AnimationTargetId::from_names([
+    "GltfNode0", "GltfNode1",
+  ])
+
+  let sample0 = clip.sample_target(target0, 1.0F).unwrap()
+  let sample1 = clip.sample_target(target1, 1.0F).unwrap()
+
+  let translation = sample0.translation().unwrap()
+  inspect(translation.x.to_double(), content="4")
+  inspect(translation.z.to_double(), content="6")
+
+  let scale = sample0.scale().unwrap()
+  inspect(scale.x.to_double(), content="2")
+  inspect(scale.y.to_double(), content="2")
+
+  let rotation = sample1.rotation().unwrap()
+  inspect(rotation.w >= 0.70F && rotation.w <= 0.71F, content="true")
+
+  let weights = sample1.weights().unwrap()
+  inspect(weights.length(), content="2")
+  inspect(weights[0] >= 0.19F && weights[0] <= 0.21F, content="true")
+  inspect(weights[1] >= 0.79F && weights[1] <= 0.81F, content="true")
+}

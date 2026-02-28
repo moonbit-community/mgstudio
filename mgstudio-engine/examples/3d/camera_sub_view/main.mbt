@@ -45,6 +45,9 @@ let camera_sub_view_state : Ref[CameraSubViewState] = Ref::new({
 })
 
 ///|
+const ORTHOGRAPHIC_VIEWPORT_HEIGHT : Float = 6.0F
+
+///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
 }
@@ -79,7 +82,13 @@ fn spawn_orthographic_camera(
 ) -> Unit {
   let entity = @render3d.Camera3dBundle::new_with_projection(
       @render2d.Camera::default().with_order(order),
-      @render3d.Projection3d::orthographic_default(),
+      @render3d.Projection3d::Orthographic(
+        @render3d.OrthographicProjection3d::default().with_scaling_mode(
+          @render3d.OrthographicScalingMode3d::FixedVertical(
+            ORTHOGRAPHIC_VIEWPORT_HEIGHT,
+          ),
+        ),
+      ),
       camera_sub_view_state.val.base_transform,
     )
     .with_sub_camera_view(sub_camera_view)
@@ -133,7 +142,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render3d.PointLight::new(
       @render2d.Color::white(),
       1_000_000.0F,
-      30.0F,
+      20.0F,
       true,
     ),
     tick,
@@ -249,16 +258,8 @@ fn min_int(a : Int, b : Int) -> Int {
 fn resize_viewports(world : @ecs_world.World) -> Unit {
   let window_width = @window.window_width()
   let window_height = @window.window_height()
-  if window_width <= 0 || window_height <= 0 {
-    return
-  }
-
   let small_height = window_height / 5
   let small_width = window_width / 8
-  if small_height <= 0 || small_width <= 0 {
-    return
-  }
-
   let large_height = small_height * 4
   let large_width = small_width * 4
 
@@ -288,9 +289,20 @@ fn resize_viewports(world : @ecs_world.World) -> Unit {
         (small_wide_size, @math.IVec2::new(small_width * 6, 0))
     }
     if camera_store.get(entity) is Some(camera) {
+      let viewport = match camera.viewport {
+        Some(viewport) => viewport
+        None => @render2d.Viewport::default()
+      }
       camera_store.set(
         entity,
-        camera.with_viewport(@render2d.Viewport::new(position, size)),
+        camera.with_viewport(
+          @render2d.Viewport::new_with_depth(
+            position,
+            size,
+            viewport.depth_min,
+            viewport.depth_max,
+          ),
+        ),
         tick,
       )
       |> ignore

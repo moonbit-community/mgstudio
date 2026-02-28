@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/3d/deferred_rendering.rs`.
 ///
 /// Baseline parity: Bevy's native deferred backend (`Opaque3dDeferred`) and
-/// FlightHelmet/environment-map assets are not available in current mgstudio
+/// full shadow-map resource hookup are not yet active in current mgstudio
 /// runtime. This port preserves Bevy's mode-switch controls and prepass API
 /// topology on the current forward path.
 const LIGHT_ROTATION_SPEED : Float = 0.6283185307179586F
@@ -43,7 +43,6 @@ priv struct DeferredState {
   mut directional_light : @core.Entity?
   spin_targets : Array[SpinTarget]
   mut help_text : @text.TextHandle?
-  mut light_angle : Float
 }
 
 ///|
@@ -56,7 +55,6 @@ fn default_state() -> DeferredState {
     directional_light: None,
     spin_targets: [],
     help_text: None,
-    light_angle: 0.0F,
   }
 }
 
@@ -206,6 +204,17 @@ fn setup(world : @ecs_world.World) -> Unit {
   deferred_state.val.camera = Some(camera)
   world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
   world.get_fxaa_store().insert(camera, @render3d.Fxaa::default(), tick)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      2000.0F,
+    ),
+    tick,
+  )
 
   let directional_light = world.spawn_empty()
   deferred_state.val.directional_light = Some(directional_light)
@@ -233,6 +242,23 @@ fn setup(world : @ecs_world.World) -> Unit {
       @render3d.FogFalloff3d::linear(1.0F, 8.0F),
     ),
   )
+
+  let helmet_scene = @scene.scene_load_gltf_scene(
+    asset_server,
+    @scene.GltfAssetLabel::Scene(0).from_asset("models/FlightHelmet/FlightHelmet.gltf"),
+  )
+  let helmet_a = world.spawn_empty()
+  world
+  .get_scene_root_store()
+  .insert(helmet_a, @scene.SceneRoot::new(helmet_scene), tick)
+
+  let helmet_b = world.spawn_empty()
+  world
+  .get_scene_root_store()
+  .insert(helmet_b, @scene.SceneRoot::new(helmet_scene), tick)
+  world
+  .get_transform_store()
+  .insert(helmet_b, @math.Transform::from_xyz(-4.0F, 0.0F, -3.0F), tick)
 
   let forward_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -315,6 +341,28 @@ fn setup(world : @ecs_world.World) -> Unit {
     )
     track_spin(entity, 0.45F + 0.07F * float_from_int(i))
   }
+
+  let sky_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::new(136.0F / 255.0F, 136.0F / 255.0F, 136.0F / 255.0F, 1.0F),
+    )
+    .with_unlit(true)
+    .with_cull_mode(None),
+  )
+  let sky = spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
+    sky_material,
+    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
+      @math.Vec3::splat(1_000_000.0F),
+    ),
+  )
+  world
+  .get_not_shadow_caster_store()
+  .insert(sky, @render3d.NotShadowCaster::default(), tick)
+  world
+  .get_not_shadow_receiver_store()
+  .insert(sky, @render3d.NotShadowReceiver::default(), tick)
 
   let parallax_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::default()
@@ -401,19 +449,18 @@ fn animate_light_direction(world : @ecs_world.World) -> Unit {
     return
   }
   guard deferred_state.val.directional_light is Some(light) else { return }
-  deferred_state.val.light_angle = deferred_state.val.light_angle +
-    LIGHT_ROTATION_SPEED * @time.time_delta_seconds()
-  let angle = deferred_state.val.light_angle
+  guard world.get_transform_store().get(light) is Some(transform) else {
+    return
+  }
+  let delta_angle = LIGHT_ROTATION_SPEED * @time.time_delta_seconds()
   let tick = world.read_change_tick()
   world
   .get_transform_store()
   .set(
     light,
-    @math.Transform::from_xyz(
-      8.0F * @math.cos(angle),
-      8.0F,
-      4.0F * @math.sin(angle),
-    ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
+    transform.with_rotation(
+      transform.rotation.mul(@math.Quat::from_rotation_y(delta_angle)).normalize(),
+    ),
     tick,
   )
   |> ignore

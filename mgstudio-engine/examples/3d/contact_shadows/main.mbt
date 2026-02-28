@@ -18,6 +18,8 @@
 /// Baseline parity:
 /// - Bevy widget UI + pointer drag interactions are mapped to keyboard
 ///   controls in this runtime.
+/// - Primary-pointer drag now rotates the model as a lightweight fallback for
+///   Bevy `Pointer<Drag>` observers.
 /// - Contact shadow / shadow filter effects are represented through Bevy-shaped
 ///   components, while rendering is currently an approximation in mgstudio.
 
@@ -35,6 +37,9 @@ const SPOT_LIGHT_INTENSITY : Float = 400_000.0F
 
 ///|
 const DIRECTIONAL_ILLUMINANCE : Float = 10_000.0F
+
+///|
+const MODEL_DRAG_ROTATION_SPEED : Float = 0.01F
 
 ///|
 pub(all) enum ContactShadowState {
@@ -74,7 +79,7 @@ priv struct ContactShadowsExampleState {
   mut point_light : @core.Entity?
   mut spot_light : @core.Entity?
   mut model : @core.Entity?
-  mut ground_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut ground : @core.Entity?
   mut help_text : @text.TextHandle?
   mut light_angle : Float
   mut model_angle : Float
@@ -92,7 +97,7 @@ let contact_shadows_state : Ref[ContactShadowsExampleState] = Ref::new({
   point_light: None,
   spot_light: None,
   model: None,
-  ground_material: None,
+  ground: None,
   help_text: None,
   light_angle: 0.0F,
   model_angle: PI,
@@ -156,7 +161,8 @@ fn help_text_content() -> String {
   "A/S: Receive Shadows " +
   on_off_text(state.receive_shadows == ReceiveShadowsState::Enabled) +
   "\n" +
-  "Arrow Left/Right: Rotate model\n"
+  "Arrow Left/Right: Rotate model\n" +
+  "Primary pointer drag: Rotate model\n"
 }
 
 ///|
@@ -209,27 +215,20 @@ fn apply_camera_components(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_ground_receive_shadows(_world : @ecs_world.World) -> Unit {
-  guard contact_shadows_state.val.ground_material is Some(material_handle) else {
-    return
-  }
-  guard @render3d.standard_material_get(material_handle) is Some(material) else {
+fn apply_ground_receive_shadows(world : @ecs_world.World) -> Unit {
+  guard contact_shadows_state.val.ground is Some(ground_entity) else {
     return
   }
   let receiving = contact_shadows_state.val.receive_shadows ==
     ReceiveShadowsState::Enabled
-  let updated = if receiving {
-    material
-    .with_base_color(@render2d.Color::new(0.06F, 0.06F, 0.06F, 1.0F))
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F)
+  let tick = world.read_change_tick()
+  if receiving {
+    world.get_not_shadow_receiver_store().remove(ground_entity) |> ignore
   } else {
-    material
-    .with_base_color(@render2d.Color::new(0.20F, 0.20F, 0.20F, 1.0F))
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F)
+    world
+    .get_not_shadow_receiver_store()
+    .insert(ground_entity, @render3d.NotShadowReceiver::default(), tick)
   }
-  @render3d.standard_material_set(material_handle, updated) |> ignore
 }
 
 ///|
@@ -318,7 +317,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     point_light: None,
     spot_light: None,
     model: None,
-    ground_material: None,
+    ground: None,
     help_text: None,
     light_angle: 0.0F,
     model_angle: PI,
@@ -423,13 +422,12 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
-  contact_shadows_state.val.ground_material = Some(ground_material)
-  @render3d.MeshMaterial3dBundle::new(
+  let ground = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(4.0F, 4.0F),
     @render3d.MeshMaterial3d::new(ground_material),
     @math.Transform::identity(),
   ).spawn(world)
-  |> ignore
+  contact_shadows_state.val.ground = Some(ground)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -532,6 +530,14 @@ fn controls(world : @ecs_world.World) -> Unit {
     contact_shadows_state.val.model_angle = contact_shadows_state.val.model_angle -
       dt
     apply_model_rotation(world)
+  }
+  if @input.primary_pointer_pressed() {
+    let pointer_delta = @input.primary_pointer_delta()
+    if pointer_delta.x != 0.0F {
+      contact_shadows_state.val.model_angle = contact_shadows_state.val.model_angle +
+        pointer_delta.x * MODEL_DRAG_ROTATION_SPEED
+      apply_model_rotation(world)
+    }
   }
 
   if changed {

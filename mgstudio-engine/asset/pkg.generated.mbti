@@ -30,6 +30,10 @@ pub fn asset_create_dynamic_texture(@math.UVec2, Bool) -> Handle[Image]
 
 pub fn asset_create_dynamic_texture_mip_chain_rgba8(Int, Int, Bytes, Bool) -> Array[Handle[Image]]
 
+pub fn asset_create_dynamic_texture_with_mips(@math.UVec2, Int, Bool) -> Handle[Image]
+
+pub fn asset_create_texture_mip_view(Handle[Image], Int) -> Handle[Image]
+
 pub fn asset_font_read_bytes(Handle[Font]) -> Bytes?
 
 pub fn asset_generate_mip_chain_rgba8(Int, Int, Bytes) -> Array[(Int, Int, Bytes)]
@@ -38,6 +42,10 @@ pub fn asset_get_loaded_folder(Handle[LoadedFolder]) -> LoadedFolder?
 
 pub fn asset_get_texture_atlas_layout(Handle[TextureAtlasLayout]) -> TextureAtlasLayout?
 
+pub fn asset_image_array_layout(Handle[Image]) -> ImageArrayLayout?
+
+pub fn asset_image_is_srgb(Handle[Image]) -> Bool
+
 pub fn asset_is_texture_loaded(Handle[Image]) -> Bool
 
 pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]]
@@ -45,6 +53,8 @@ pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]]
 pub fn[W] asset_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W] asset_plugin_nearest(@app.App[W]) -> @app.App[W]
+
+pub fn asset_save_texture_png(Handle[Image], String) -> Unit
 
 pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 
@@ -68,6 +78,10 @@ pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
 
 pub fn asset_update_texture_region_rgba8(Handle[Image], @math.URect, Bytes) -> Unit
 
+pub fn asset_update_texture_region_rgba8_mip(Handle[Image], @math.URect, Int, Bytes) -> Unit
+
+pub fn asset_white_texture() -> Handle[Image]
+
 pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
@@ -79,6 +93,10 @@ pub fn host_asset_bytes_len(Int) -> Int
 pub fn host_asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn host_asset_create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
+
+pub fn host_asset_create_dynamic_texture_mipped(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool) -> Int
+
+pub fn host_asset_create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int
 
 pub fn host_asset_font_bytes_get(font_id~ : Int, index~ : Int) -> Int
 
@@ -120,6 +138,8 @@ pub fn host_asset_update_texture_region(texture_id~ : Int, x~ : Int, y~ : Int, w
 
 pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, bytes_id~ : Int) -> Unit
 
+pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes_id~ : Int) -> Unit
+
 // Errors
 
 // Types and methods
@@ -150,6 +170,7 @@ pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[Image]
 pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
+pub fn AssetServer::load_with_settings(Self, String, ImageLoaderSettings) -> Handle[Image]
 pub fn AssetServer::new() -> Self
 
 pub struct Assets[T] {
@@ -201,6 +222,21 @@ pub struct Image {
   pixels : Bytes
 }
 pub fn Image::new(Int, Int, Bytes) -> Self
+
+pub(all) enum ImageArrayLayout {
+  RowCount(Int)
+  RowHeight(Int)
+}
+
+pub struct ImageLoaderSettings {
+  sampler : ImageSampler
+  is_srgb : Bool
+  array_layout : ImageArrayLayout?
+}
+pub fn ImageLoaderSettings::default() -> Self
+pub fn ImageLoaderSettings::with_array_layout(Self, ImageArrayLayout?) -> Self
+pub fn ImageLoaderSettings::with_is_srgb(Self, Bool) -> Self
+pub fn ImageLoaderSettings::with_sampler(Self, ImageSampler) -> Self
 
 pub(all) enum ImageSampler {
   Linear

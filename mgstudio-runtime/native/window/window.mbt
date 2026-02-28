@@ -94,6 +94,11 @@ pub fn Window::set_cursor_grab_mode(self : Window, mode : Int) -> Unit {
 }
 
 ///|
+pub fn Window::set_cursor_icon(self : Window, icon : Int) -> Unit {
+  c_window_set_cursor_icon(self.raw, icon)
+}
+
+///|
 pub fn Window::set_mode(self : Window, mode : Int) -> Unit {
   c_window_set_mode(self.raw, mode)
 }
@@ -392,6 +397,12 @@ extern "C" fn c_window_set_cursor_grab_mode(
   win : @wgpu_c.OpaquePtr,
   mode : Int,
 ) -> Unit = "mgw_window_set_cursor_grab_mode"
+
+///|
+extern "C" fn c_window_set_cursor_icon(
+  win : @wgpu_c.OpaquePtr,
+  icon : Int,
+) -> Unit = "mgw_window_set_cursor_icon"
 
 ///|
 extern "C" fn c_window_set_mode(win : @wgpu_c.OpaquePtr, mode : Int) -> Unit = "mgw_window_set_mode"

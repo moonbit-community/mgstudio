@@ -6,7 +6,7 @@
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom2d", "Camera2d", "GpuMesh2d", "Projection",
   "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
-  "NoWireframe2d", "ClearColorConfig", "Wireframe2dColor",
+  "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig", "Wireframe2dColor",
 ]
 
 ///|
@@ -81,6 +81,11 @@ pub(open) trait Has_ColorMaterial {
 ///|
 pub(open) trait Has_NoWireframe2d {
   get_no_wireframe2d_store(self : Self) -> @core.ComponentStore[NoWireframe2d]
+}
+
+///|
+pub(open) trait Has_MeshMaterial2d {
+  get_mesh_material2d_store(self : Self) -> @core.ComponentStore[MeshMaterial2d]
 }
 
 ///|

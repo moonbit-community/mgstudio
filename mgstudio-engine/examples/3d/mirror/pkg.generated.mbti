@@ -7,6 +7,12 @@ pub fn game_app() -> Unit
 // Errors
 
 // Types and methods
+pub(all) enum DragAction {
+  MoveCamera
+  MoveFox
+}
+pub impl Eq for DragAction
+pub impl Show for DragAction
 
 // Type aliases
 

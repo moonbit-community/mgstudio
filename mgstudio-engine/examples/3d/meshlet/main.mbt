@@ -28,6 +28,12 @@ const PI : Float = 3.141592653589793F
 const TWO_PI : Float = 6.283185307179586F
 
 ///|
+const DIRECTIONAL_LIGHT_ILLUMINANCE : Float = 100_000.0F
+
+///|
+const ENVIRONMENT_LIGHT_INTENSITY : Float = 150.0F
+
+///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
 }
@@ -123,23 +129,37 @@ fn color_for_row(index : Int) -> @render2d.Color {
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.7F)
-
-  @render3d.Camera3dBundle::new(
+  set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+  world
+  .get_msaa_store()
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::default().with_intensity(
+      ENVIRONMENT_LIGHT_INTENSITY,
+    ),
+    tick,
+  )
 
   let directional = world.spawn_empty()
   world
   .get_directional_light_store()
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 20_000.0F, true),
+    @render3d.DirectionalLight::new(
+      @render2d.Color::white(),
+      DIRECTIONAL_LIGHT_ILLUMINANCE,
+      true,
+    ),
     tick,
   )
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(

@@ -16,6 +16,7 @@
 /// Port of `bevy/examples/3d/rotate_environment_map.rs`.
 ///
 /// Exact parity target: rotate `Skybox` and `EnvironmentMapLight` together.
+/// Tracking note: parity patch pass.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -87,9 +88,9 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-  )
+  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
+  geometry.generate_tangents() |> ignore
+  @render3d.Mesh3d::from_geometry(geometry)
 }
 
 ///|
@@ -106,7 +107,12 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.3F)
     .with_clearcoat_normal_texture(
-      Some(asset_server.load("textures/ScratchedGold-Normal.png")),
+      Some(
+        asset_server.load_with_settings(
+          "textures/ScratchedGold-Normal.png",
+          @asset.ImageLoaderSettings::default().with_is_srgb(false),
+        ),
+      ),
     )
     .with_metallic(0.9F)
     .with_perceptual_roughness(0.1F),

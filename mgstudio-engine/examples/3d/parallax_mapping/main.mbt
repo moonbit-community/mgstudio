@@ -336,15 +336,17 @@ fn spawn_scene(
   ).spawn(world)
   |> ignore
 
+  let normal_texture = asset_server.load_with_settings(
+    "textures/parallax_example/cube_normal.png",
+    @asset.ImageLoaderSettings::default().with_is_srgb(false),
+  )
   let parallax_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::default()
     .with_perceptual_roughness(0.4F)
     .with_base_color_texture(
       Some(asset_server.load("textures/parallax_example/cube_color.png")),
     )
-    .with_normal_map_texture(
-      Some(asset_server.load("textures/parallax_example/cube_normal.png")),
-    )
+    .with_normal_map_texture(Some(normal_texture))
     .with_depth_map(
       Some(asset_server.load("textures/parallax_example/cube_depth.png")),
     )

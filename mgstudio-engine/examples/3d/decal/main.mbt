@@ -15,10 +15,11 @@
 ///|
 /// Port of `bevy/examples/3d/decal.rs`.
 ///
-/// Baseline parity: Bevy's `ForwardDecal`, depth-prepass requirements, and
-/// `Msaa/Fxaa` toggles are not exposed in current mgstudio runtime APIs. This
-/// port preserves the same scene topology and random obstacle layout, and maps
-/// the decal volume to a textured translucent proxy mesh.
+/// Baseline parity: `ForwardDecal`/`ForwardDecalMaterialExt` API surface is
+/// exposed, but projected forward-decal shading is still pending backend
+/// hookup. This port preserves scene topology, camera controller/prepass
+/// setup, and random obstacle layout, and maps the decal volume to a textured
+/// translucent proxy mesh.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -73,14 +74,21 @@ fn setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render3d.Camera3dBundle::new(
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+  world
+  .get_free_camera_store()
+  .insert(camera, @render3d.FreeCamera::default(), tick)
+  world
+  .get_depth_prepass_store()
+  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  world.get_fxaa_store().insert(camera, @render3d.Fxaa::default(), tick)
 
   let white_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white()),

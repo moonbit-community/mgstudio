@@ -506,16 +506,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   let light = world.spawn_empty()
   world
   .get_point_light_store()
-  .insert(
-    light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      30.0F,
-      true,
-    ),
-    tick,
-  )
+  .insert(light, @render3d.PointLight::default(), tick)
   world
   .get_transform_store()
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)

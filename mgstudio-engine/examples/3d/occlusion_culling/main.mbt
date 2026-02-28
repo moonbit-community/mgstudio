@@ -108,12 +108,12 @@ fn approximate_occluded(world_pos : @math.Vec3) -> Bool {
 
 ///|
 fn help_text_content() -> String {
-  let status = if occlusion_state.val.occlusion_enabled { "On" } else { "Off" }
+  let status = if occlusion_state.val.occlusion_enabled { "ON" } else { "OFF" }
   let total = occlusion_state.val.small_cubes.length() + 1
-  "Space: Toggle Occlusion Culling (\{status})\n\n" +
-  "Approx Rendered Meshes: \{occlusion_state.val.rendered_count} / \{total}\n" +
-  "Approx Culled Meshes: \{occlusion_state.val.culled_count}\n\n" +
-  "Note: Bevy GPU indirect-parameter readback is adapted to a runtime heuristic."
+  "Occlusion culling \{status} (Press Space to toggle)\n" +
+  "\{occlusion_state.val.rendered_count}/\{total} meshes rendered\n" +
+  "Approx culled meshes: \{occlusion_state.val.culled_count}\n\n" +
+  "Adapted note: Bevy's GPU indirect-parameter readback APIs are unavailable."
 }
 
 ///|
@@ -220,14 +220,14 @@ fn setup(world : @ecs_world.World) -> Unit {
   world
   .get_directional_light_store()
   .insert(light, @render3d.DirectionalLight::default(), tick)
+  let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
+    @math.Quat::from_rotation_x(-0.15F * PI),
+  )
   world
   .get_transform_store()
   .insert(
     light,
-    @math.Transform::from_xyz(6.0F, 6.0F, 6.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
+    @math.Transform::identity().with_rotation(light_rot),
     tick,
   )
 
@@ -272,9 +272,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn spin_small_cubes(world : @ecs_world.World) -> Unit {
-  let delta_scale = @time.time_delta_seconds() * 60.0F
   occlusion_state.val.sphere_angle = occlusion_state.val.sphere_angle +
-    ROTATION_SPEED * delta_scale
+    ROTATION_SPEED
   let tick = world.read_change_tick()
   for i in 0..<occlusion_state.val.small_cubes.length() {
     let cube = occlusion_state.val.small_cubes[i]
@@ -299,7 +298,7 @@ fn spin_large_cube(world : @ecs_world.World) -> Unit {
   guard world.get_transform_store().get(large_cube) is Some(transform) else {
     return
   }
-  let speed = ROTATION_SPEED * @time.time_delta_seconds() * 60.0F
+  let speed = ROTATION_SPEED
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_x(0.13F * speed))
     .mul(@math.Quat::from_rotation_y(0.29F * speed))

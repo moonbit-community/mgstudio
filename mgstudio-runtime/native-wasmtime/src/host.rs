@@ -150,6 +150,9 @@ pub struct HostState {
     closures: HashMap<i32, ClosureEntry>,
 
     window: Option<NativeWindow>,
+    app_loop_should_close: bool,
+    app_stdin_line_utf16: Vec<u16>,
+    task_pool_num_threads: Option<i32>,
 
     gamepads: GamepadHostState,
 
@@ -198,6 +201,9 @@ impl HostState {
             next_closure_id: 1,
             closures: HashMap::new(),
             window: None,
+            app_loop_should_close: false,
+            app_stdin_line_utf16: Vec::new(),
+            task_pool_num_threads: None,
             gamepads: GamepadHostState::new(),
             gpu: None,
         }
@@ -414,6 +420,11 @@ fn parse_keycode(code: &str) -> Option<KeyCode> {
         "Comma" => Some(KeyCode::Comma),
         "Period" => Some(KeyCode::Period),
         "Slash" => Some(KeyCode::Slash),
+        "Minus" => Some(KeyCode::Minus),
+        "Equal" => Some(KeyCode::Equal),
+        "BracketLeft" => Some(KeyCode::BracketLeft),
+        "BracketRight" => Some(KeyCode::BracketRight),
+        "Quote" => Some(KeyCode::Quote),
         _ => None,
     }
 }
@@ -1197,6 +1208,147 @@ fn define_mgstudio_host_imports(
         store,
         linker,
         "mgstudio_host",
+        "app_run_loop",
+        &[ValType::FUNCREF, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            caller.data().host_trace("host: app_run_loop");
+            let tick = match args.get(0) {
+                Some(Val::FuncRef(Some(f))) => f.clone(),
+                _ => {
+                    ok_i32(out, 0);
+                    return Ok(());
+                }
+            };
+            let interval_ms = args.get(1).and_then(|v| v.i32()).unwrap_or(0);
+            caller.data_mut().app_loop_should_close = false;
+
+            loop {
+                if caller.data().app_loop_should_close {
+                    break;
+                }
+                tick.call(&mut caller, &[], &mut [])
+                    .context("app tick() trapped")?;
+                if caller.data().app_loop_should_close {
+                    break;
+                }
+                if interval_ms > 0 {
+                    std::thread::sleep(Duration::from_millis(interval_ms as u64));
+                } else {
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "app_request_close",
+        &[],
+        &[ValType::I32],
+        |mut caller, _args, out| {
+            caller.data_mut().app_loop_should_close = true;
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "app_reset_close",
+        &[],
+        &[ValType::I32],
+        |mut caller, _args, out| {
+            caller.data_mut().app_loop_should_close = false;
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "task_pool_set_num_threads",
+        &[ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let num_threads = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            if num_threads > 0 {
+                caller.data_mut().task_pool_num_threads = Some(num_threads);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "app_stdin_read_line_len",
+        &[],
+        &[ValType::I32],
+        |mut caller, _args, out| {
+            let mut line = String::new();
+            let result = std::io::stdin().read_line(&mut line);
+            match result {
+                Ok(0) => {
+                    caller.data_mut().app_stdin_line_utf16.clear();
+                    ok_i32(out, -1);
+                }
+                Ok(_) => {
+                    while line.ends_with('\n') || line.ends_with('\r') {
+                        line.pop();
+                    }
+                    let utf16: Vec<u16> = line.encode_utf16().collect();
+                    let len = utf16.len() as i32;
+                    caller.data_mut().app_stdin_line_utf16 = utf16;
+                    ok_i32(out, len);
+                }
+                Err(_) => {
+                    caller.data_mut().app_stdin_line_utf16.clear();
+                    ok_i32(out, -1);
+                }
+            }
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "app_stdin_read_line_code_unit",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let offset = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let code_unit = if offset >= 0 {
+                caller
+                    .data()
+                    .app_stdin_line_utf16
+                    .get(offset as usize)
+                    .copied()
+                    .unwrap_or(0)
+            } else {
+                0
+            };
+            ok_i32(out, code_unit as i32);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
         "asset_supported_compressed_image_formats",
         &[],
         &[ValType::I32],
@@ -1445,6 +1597,25 @@ fn define_mgstudio_host_imports(
                 args.get(1).and_then(|v| v.i32()),
             ) {
                 win.set_cursor_grab_mode(mode);
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "window_set_cursor_icon",
+        &[ValType::EXTERNREF, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            if let (Some(win), Some(icon)) = (
+                caller.data().window.as_ref(),
+                args.get(1).and_then(|v| v.i32()),
+            ) {
+                win.set_cursor_icon(icon);
             }
             ok_i32(out, 0);
             Ok(())
@@ -1924,6 +2095,112 @@ fn define_mgstudio_host_imports(
                 0.0
             };
             ok_f32(out, y);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_drag_and_drop_event_count",
+        &[],
+        &[ValType::I32],
+        |caller, _args, out| {
+            let count = caller
+                .data()
+                .window
+                .as_ref()
+                .map(|win| win.input.drag_and_drop_events.len() as i32)
+                .unwrap_or(0);
+            ok_i32(out, count);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_drag_and_drop_event_kind",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let kind = if index >= 0 {
+                caller
+                    .data()
+                    .window
+                    .as_ref()
+                    .and_then(|win| win.input.drag_and_drop_events.get(index as usize))
+                    .map(|event| event.kind)
+                    .unwrap_or(-1)
+            } else {
+                -1
+            };
+            ok_i32(out, kind);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_drag_and_drop_event_len",
+        &[ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let len = caller
+                .data()
+                .window
+                .as_ref()
+                .and_then(|win| {
+                    if index < 0 {
+                        None
+                    } else {
+                        win.input.drag_and_drop_events.get(index as usize)
+                    }
+                })
+                .map(|event| event.path.encode_utf16().count() as i32)
+                .unwrap_or(0);
+            ok_i32(out, len);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "input_drag_and_drop_event_code_unit",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |caller, args, out| {
+            let index = args.get(0).and_then(|v| v.i32()).unwrap_or(-1);
+            let offset = args.get(1).and_then(|v| v.i32()).unwrap_or(-1);
+            let code_unit = caller
+                .data()
+                .window
+                .as_ref()
+                .and_then(|win| {
+                    if index < 0 {
+                        None
+                    } else {
+                        win.input.drag_and_drop_events.get(index as usize)
+                    }
+                })
+                .and_then(|event| {
+                    if offset < 0 {
+                        None
+                    } else {
+                        event.path.encode_utf16().nth(offset as usize)
+                    }
+                })
+                .map(i32::from)
+                .unwrap_or(0);
+            ok_i32(out, code_unit);
             Ok(())
         },
     )?;
@@ -2761,6 +3038,29 @@ fn define_mgstudio_host_imports(
             let src_id = args.get(3).and_then(|v| v.i32()).unwrap_or(0);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.copy_texture_to_texture(dst_id, dst_x, dst_y, src_id)?;
+            }
+            ok_i32(out, 0);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "asset_save_texture_png",
+        &[ValType::I32, ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let texture_id = args.get(0).and_then(|v| v.i32()).unwrap_or(0);
+            let path_id = args.get(1).and_then(|v| v.i32()).unwrap_or(0);
+            let Some(path) = caller.data().string_table_get(path_id) else {
+                ok_i32(out, 0);
+                return Ok(());
+            };
+            let path = path.to_string();
+            if let Some(gpu) = caller.data_mut().gpu.as_mut() {
+                gpu.save_texture_png(texture_id, &path)?;
             }
             ok_i32(out, 0);
             Ok(())
@@ -3659,6 +3959,7 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -3881,6 +4182,7 @@ fn define_mgstudio_host_imports(
             let transmission_source_texture_id = args.get(56).and_then(|v| v.i32()).unwrap_or(-1);
             let transmission_blur_taps = if args.len() > 57 { f(57) } else { 0.0 };
             let transmission_steps = if args.len() > 58 { f(58) } else { 0.0 };
+            let cull_mode = args.get(59).and_then(|v| v.i32()).unwrap_or(2);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh3d(
                     mesh_id,
@@ -3933,6 +4235,7 @@ fn define_mgstudio_host_imports(
                     transmission_source_texture_id,
                     transmission_blur_taps,
                     transmission_steps,
+                    cull_mode,
                 )?;
             }
             ok_i32(out, 0);

@@ -15,10 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/pcss.rs`.
 ///
-/// Baseline parity:
+/// Parity note:
 /// - Bevy widget radio-buttons are mapped to keyboard controls.
-/// - PCSS/shadow filtering are represented by Bevy-shaped light/camera
-///   components; shading output remains constrained by the current renderer.
+/// - Camera/light component wiring follows Bevy, with runtime rendering quality
+///   still bounded by the current backend.
 
 ///|
 const LIGHT_RADIUS : Float = 10.0F
@@ -242,6 +242,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   world
   .get_shadow_filtering_method_store()
   .insert(camera, @render3d.ShadowFilteringMethod::Gaussian, tick)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
   world
   .get_temporal_jitter_store()
   .insert(camera, @render3d.TemporalJitter::default(), tick)

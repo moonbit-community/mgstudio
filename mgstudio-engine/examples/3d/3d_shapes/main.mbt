@@ -672,31 +672,29 @@ fn capsule_points(
 }
 
 ///|
-fn polyline_segment_points(
-  start : @math.Vec2,
-  end_ : @math.Vec2,
-  half_thickness : Float,
-) -> Array[@math.Vec2] {
-  let dx = end_.x - start.x
-  let dy = end_.y - start.y
-  let len = @math.sqrt(dx * dx + dy * dy)
-  if len <= 0.000001F {
-    return rectangle_points(half_thickness, half_thickness)
+fn line_strip_mesh(points : Array[@math.Vec3]) -> @render3d.Mesh3d {
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  for point in points {
+    positions.push(point)
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  let nx = -dy / len
-  let ny = dx / len
-  [
-    @math.Vec2::new(
-      start.x + nx * half_thickness,
-      start.y + ny * half_thickness,
+  @render3d.Mesh3d::from_geometry(
+    @mesh.Mesh3dGeometry::new_with_topology(
+      positions,
+      uvs,
+      None,
+      @mesh.Mesh3dPrimitiveTopology::LineStrip,
     ),
-    @math.Vec2::new(end_.x + nx * half_thickness, end_.y + ny * half_thickness),
-    @math.Vec2::new(end_.x - nx * half_thickness, end_.y - ny * half_thickness),
-    @math.Vec2::new(
-      start.x - nx * half_thickness,
-      start.y - ny * half_thickness,
-    ),
-  ]
+  )
+}
+
+///|
+fn segment_mesh() -> @render3d.Mesh3d {
+  line_strip_mesh([
+    @math.Vec3::new(-0.5F, 0.0F, 0.0F),
+    @math.Vec3::new(0.5F, 0.0F, 0.0F),
+  ])
 }
 
 ///|
@@ -895,18 +893,11 @@ fn extruded_ring_mesh(
 
 ///|
 fn polyline_mesh() -> @render3d.Mesh3d {
-  let points = [
-    @math.Vec2::new(-0.5F, 0.0F),
-    @math.Vec2::new(0.5F, 0.0F),
-    @math.Vec2::new(0.0F, 0.5F),
-  ]
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  for i in 0..<(points.length() - 1) {
-    let quad = polyline_segment_points(points[i], points[i + 1], 0.04F)
-    append_extruded_polygon(positions, uvs, quad, 0.08F)
-  }
-  mesh_from_soup(positions, uvs)
+  line_strip_mesh([
+    @math.Vec3::new(-0.5F, 0.0F, 0.0F),
+    @math.Vec3::new(0.5F, 0.0F, 0.0F),
+    @math.Vec3::new(0.0F, 0.5F, 0.0F),
+  ])
 }
 
 ///|
@@ -948,7 +939,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     frustum_mesh(0.5F, 0.25F, 1.0F, 28),
     icosphere_mesh(0.5F, 2),
     sphere_uv_mesh(0.5F, 18, 32),
-    @render3d.Mesh3d::from_cuboid(1.0F, 0.06F, 0.06F),
+    segment_mesh(),
     polyline_mesh(),
   ]
 
@@ -1033,7 +1024,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       10_000_000.0F,
       100.0F,
       true,
-    ),
+    ).with_shadow_depth_bias(0.2F),
     tick,
   )
   world
@@ -1066,7 +1057,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
     @text.Text2d::new(
-      "Press 'R' to pause/resume rotation\nPress 'Tab' to cycle through rows",
+      "Press 'R' to pause/resume rotation\nPress 'Tab' to cycle through rows\nPress 'Space' to toggle wireframes",
     ),
     @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
     @math.Transform::from_xy_rotation_scale(
@@ -1139,13 +1130,32 @@ fn advance_rows(world : @ecs_world.World) -> Unit {
 }
 
 ///|
+fn toggle_wireframe(world : @ecs_world.World) -> Unit {
+  if !@input.key_just_pressed(@window.KeyCode::Space) {
+    return
+  }
+  let tick = world.read_change_tick()
+  let wireframe_config = world.get_wireframe_config_resource()
+  if wireframe_config.get_ref_mut(tick) is Some(config_ref) {
+    config_ref.val = config_ref.val.with_global(!config_ref.val.global)
+  } else {
+    wireframe_config.insert(
+      @render3d.WireframeConfig::default().with_global(true),
+      tick,
+    )
+  }
+}
+
+///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
+  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins_nearest()
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
+  .add_plugins([@render3d.wireframe_plugin])
   .add_startup_system(setup)
   .add_system(toggle_rotation)
   .add_system(rotate)
   .add_system(advance_rows)
+  .add_system(toggle_wireframe)
   .run()
 }

@@ -274,6 +274,30 @@ extern "js" fn request_animation_frame(callback : @js.Any) -> Unit =
   #| (callback) => requestAnimationFrame(callback)
 
 ///|
+extern "js" fn window_prompt_line(message : String) -> @js.Any =
+  #| (message) => {
+  #|   if (typeof window === "undefined" || typeof window.prompt !== "function") {
+  #|     return null
+  #|   }
+  #|   return window.prompt(message)
+  #| }
+
+///|
+extern "js" fn download_canvas_png(canvas : @js.Any, filename : String) -> Unit =
+  #| (canvas, filename) => {
+  #|   if (!canvas || typeof canvas.toDataURL !== "function") {
+  #|     return
+  #|   }
+  #|   const dataUrl = canvas.toDataURL("image/png")
+  #|   const a = document.createElement("a")
+  #|   a.href = dataUrl
+  #|   a.download = filename || "screenshot.png"
+  #|   document.body.appendChild(a)
+  #|   a.click()
+  #|   document.body.removeChild(a)
+  #| }
+
+///|
 extern "js" fn add_event_listener(
   target : @js.Any,
   event_name : String,
@@ -378,6 +402,18 @@ extern "js" fn set_canvas_cursor_visible_js(
   #| (canvas, visible) => {
   #|   if (!canvas || !canvas.style) return
   #|   canvas.style.cursor = visible ? "" : "none"
+  #| }
+
+///|
+extern "js" fn set_canvas_cursor_icon_js(canvas : @js.Any, icon : Int) -> Unit =
+  #| (canvas, icon) => {
+  #|   if (!canvas || !canvas.style) return
+  #|   const i = Number(icon) | 0
+  #|   if (i === 1) {
+  #|     canvas.style.cursor = "ew-resize"
+  #|   } else {
+  #|     canvas.style.cursor = ""
+  #|   }
   #| }
 
 ///|

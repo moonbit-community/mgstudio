@@ -14,8 +14,25 @@
 
 ///|
 test "scene: gltf label path encoding" {
-  let path = @scene.GltfAssetLabel::Scene(3).from_asset("models/Foo/Foo.gltf")
-  inspect(path, content="models/Foo/Foo.gltf#Scene3")
+  let scene_path = @scene.GltfAssetLabel::Scene(3).from_asset(
+    "models/Foo/Foo.gltf",
+  )
+  let animation_path = @scene.GltfAssetLabel::Animation(2).from_asset(
+    "models/Foo/Foo.gltf",
+  )
+  inspect(scene_path, content="models/Foo/Foo.gltf#Scene3")
+  inspect(animation_path, content="models/Foo/Foo.gltf#Animation2")
+}
+
+///|
+test "scene: load gltf animation keeps stable handle" {
+  let asset_server = @asset.AssetServer::new()
+  let path = @scene.GltfAssetLabel::Animation(1).from_asset(
+    "models/Foo/Foo.gltf",
+  )
+  let first = @scene.scene_load_gltf_animation(asset_server, path)
+  let second = @scene.scene_load_gltf_animation(asset_server, path)
+  inspect(first.id() == second.id(), content="true")
 }
 
 ///|
@@ -77,6 +94,7 @@ test "scene: SceneRoot spawns children and marks ready" {
     material,
     @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
     Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
+    Some(@animation.AnimationTargetId::from_name("Node")),
   )
   let scene_handle = @scene.scene_register_gltf_scene(
     path,
@@ -108,4 +126,7 @@ test "scene: SceneRoot spawns children and marks ready" {
   inspect(world.get_mesh_material3d_store().contains(child), content="true")
   inspect(world.get_transform_store().contains(child), content="true")
   inspect(world.get_visibility_range_store().contains(child), content="true")
+  inspect(world.get_animation_player_store().contains(root), content="true")
+  inspect(world.get_animation_target_id_store().contains(child), content="true")
+  inspect(world.get_animated_by_store().contains(child), content="true")
 }

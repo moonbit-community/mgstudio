@@ -25,16 +25,16 @@
 const PI : Float = 3.141592653589793F
 
 ///|
-const MANY_LIGHTS_CUBE_COUNT : Int = 120
+const MANY_LIGHTS_CUBE_COUNT : Int = 200
 
 ///|
-const MANY_LIGHTS_EMISSIVE_COUNT : Int = 60
+const MANY_LIGHTS_EMISSIVE_COUNT : Int = 100
 
 ///|
-const PATROL_SPEED : Float = 1.2F
+const PATROL_SPEED : Float = 1.0F
 
 ///|
-const DIRECTIONAL_ILLUMINANCE : Float = 12_000.0F
+const DIRECTIONAL_ILLUMINANCE : Float = 100_000.0F
 
 ///|
 const ROBOT_EMISSIVE_INTENSITY : Float = 35_000.0F
@@ -44,6 +44,12 @@ const PICA_SCENE_ASSET : String = "pica_pica/mini_diorama_01.glb"
 
 ///|
 const ROBOT_SCENE_ASSET : String = "pica_pica/robot_01.glb"
+
+///|
+const RNG_MODULUS : Int = 2_147_483_647
+
+///|
+const RNG_MULTIPLIER : Int = 48_271
 
 ///|
 pub(all) enum SolariSceneMode {
@@ -99,12 +105,15 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
-  }
+fn rng_next01(seed : Ref[Int]) -> Float {
+  let next = (seed.val * RNG_MULTIPLIER) % RNG_MODULUS
+  seed.val = if next <= 0 { next + RNG_MODULUS } else { next }
+  float_from_int(seed.val) / float_from_int(RNG_MODULUS)
+}
+
+///|
+fn rng_range(seed : Ref[Int], min_value : Float, max_value : Float) -> Float {
+  min_value + (max_value - min_value) * rng_next01(seed)
 }
 
 ///|
@@ -147,15 +156,15 @@ fn control_text_content() -> String {
     "(T): Pathtracer request = Off"
   }
 
-  "Solari (Adapted)\n" +
-  "Scene: " +
-  scene_mode_text(solari_state.val.scene_mode) +
-  "\n" +
   pause_text +
   "\n" +
   directional_text +
   "\n" +
   emissive_text +
+  "\n" +
+  "Denoising: App not compiled with DLSS support\n" +
+  "Scene: " +
+  scene_mode_text(solari_state.val.scene_mode) +
   "\n" +
   "(M): Switch scene mode (PicaPica/ManyLights)\n" +
   pathtracer_text +
@@ -165,13 +174,18 @@ fn control_text_content() -> String {
 
 ///|
 fn performance_text_content() -> String {
-  "Frame: " +
+  "Light tiles        N/A\n" +
+  "World cache        N/A\n" +
+  "Direct lighting    N/A\n" +
+  "Diffuse indirect   N/A\n" +
+  "Specular indirect  N/A\n" +
+  "DLSS-RR            N/A\n" +
+  "Total              N/A\n\n" +
+  "Frame (CPU): " +
   (@time.time_delta_seconds() * 1000.0F).to_string() +
   " ms\n" +
   "FPS (CPU est): " +
-  solari_state.val.perf_fps.to_string() +
-  "\n" +
-  "GPU Solari diagnostics: unavailable in current raster path"
+  solari_state.val.perf_fps.to_string()
 }
 
 ///|
@@ -204,13 +218,13 @@ fn despawn_entities(
 fn spawn_camera(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).looking_at(
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+    @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
+      @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
   world.get_bloom_store().insert(camera, @render3d.Bloom::new(0.1F), tick)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
   solari_state.val.camera = Some(camera)
 }
 
@@ -234,9 +248,8 @@ fn spawn_lights(world : @ecs_world.World) -> Unit {
   .get_transform_store()
   .insert(
     directional_light,
-    @math.Transform::from_xyz(5.0F, 10.0F, 3.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Transform::identity().with_rotation(
+      @math.Quat::new(-0.13334629F, -0.86597735F, -0.3586996F, 0.3219264F),
     ),
     tick,
   )
@@ -369,32 +382,41 @@ fn spawn_pica_scene(
 
 ///|
 fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
   let ground = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(40.0F, 40.0F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.28F, 0.30F, 0.34F, 1.0F),
+        @render3d.StandardMaterial::default()
+        .with_base_color_texture(
+          Some(
+            asset_server.load_with_settings(
+              "textures/uv_checker_bw.png",
+              @asset.ImageLoaderSettings::default().with_sampler(
+                @asset.ImageSampler::LinearRepeat,
+              ),
+            ),
+          ),
         )
-        .with_perceptual_roughness(0.85F)
-        .with_metallic(0.0F),
+        .with_perceptual_roughness(0.0F),
       ),
     ),
     @math.Transform::identity(),
   ).spawn(world)
   solari_state.val.many_lights_entities.push(ground)
 
+  let rng_seed : Ref[Int] = Ref::new(42)
   for i in 0..<MANY_LIGHTS_CUBE_COUNT {
-    let fi = float_from_int(i)
-    let x = @math.sin(fi * 1.73F) * 18.0F
-    let z = @math.cos(fi * 1.29F) * 18.0F
-    let sx = 0.3F + (0.5F + 0.5F * @math.sin(fi * 0.77F)) * 1.7F
-    let sy = 0.3F + (0.5F + 0.5F * @math.sin(fi * 1.11F + 0.8F)) * 1.7F
-    let sz = 0.3F + (0.5F + 0.5F * @math.sin(fi * 1.41F + 1.6F)) * 1.7F
+    i |> ignore
+    let x = rng_range(rng_seed, -18.0F, 18.0F)
+    let z = rng_range(rng_seed, -18.0F, 18.0F)
+    let sx = rng_range(rng_seed, 0.2F, 2.0F)
+    let sy = rng_range(rng_seed, 0.2F, 2.0F)
+    let sz = rng_range(rng_seed, 0.2F, 2.0F)
     let color = @render2d.Color::new(
-      0.2F + 0.8F * (0.5F + 0.5F * @math.sin(fi * 0.31F)),
-      0.2F + 0.8F * (0.5F + 0.5F * @math.sin(fi * 0.47F + 1.0F)),
-      0.2F + 0.8F * (0.5F + 0.5F * @math.sin(fi * 0.53F + 2.0F)),
+      rng_next01(rng_seed),
+      rng_next01(rng_seed),
+      rng_next01(rng_seed),
       1.0F,
     )
     let entity = @render3d.MeshMaterial3dBundle::new(
@@ -402,7 +424,7 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
       @render3d.MeshMaterial3d::new(
         @render3d.standard_material_add(
           @render3d.StandardMaterial::from_color(color).with_perceptual_roughness(
-            0.2F + 0.75F * absf(@math.sin(fi * 0.92F)),
+            rng_next01(rng_seed),
           ),
         ),
       ),
@@ -414,25 +436,25 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
   }
 
   for i in 0..<MANY_LIGHTS_EMISSIVE_COUNT {
-    let fi = float_from_int(i)
+    i |> ignore
     let entity = @render3d.MeshMaterial3dBundle::new(
       @render3d.Mesh3d::from_tetrahedron(0.5F),
       @render3d.MeshMaterial3d::new(
         @render3d.standard_material_add(
           @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
             @render2d.Color::new(
-              8.0F + 22.0F * (0.5F + 0.5F * @math.sin(fi * 0.37F + 0.2F)),
-              8.0F + 22.0F * (0.5F + 0.5F * @math.sin(fi * 0.41F + 1.1F)),
-              8.0F + 22.0F * (0.5F + 0.5F * @math.sin(fi * 0.59F + 2.0F)),
+              rng_next01(rng_seed) * 20_000.0F,
+              rng_next01(rng_seed) * 20_000.0F,
+              rng_next01(rng_seed) * 20_000.0F,
               1.0F,
             ),
           ),
         ),
       ),
       @math.Transform::from_xyz(
-        @math.sin(fi * 0.81F) * 17.5F,
-        5.5F + 3.0F * (0.5F + 0.5F * @math.sin(fi * 1.33F)),
-        @math.cos(fi * 0.67F) * 17.5F,
+        rng_range(rng_seed, -18.0F, 18.0F),
+        rng_range(rng_seed, 6.0F, 9.0F),
+        rng_range(rng_seed, -18.0F, 18.0F),
       ),
     ).spawn(world)
     solari_state.val.many_lights_entities.push(entity)
@@ -443,9 +465,13 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
     .get_transform_store()
     .set(
       camera,
-      @math.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).looking_at(
-        @math.Vec3::new(0.0F, 0.0F, 0.0F),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @math.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
+        @math.Quat::new(
+          -0.18394549F,
+          0.0019948867F,
+          0.0003733214F,
+          0.98293436F,
+        ),
       ),
       world.read_change_tick(),
     )
@@ -477,9 +503,8 @@ fn apply_scene_mode(
         .get_transform_store()
         .set(
           camera,
-          @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).looking_at(
-            @math.Vec3::new(0.0F, 1.0F, 0.0F),
-            @math.Vec3::new(0.0F, 1.0F, 0.0F),
+          @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
+            @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
           ),
           world.read_change_tick(),
         )

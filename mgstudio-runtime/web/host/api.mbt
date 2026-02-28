@@ -72,9 +72,12 @@ pub fn create_host(
       scale_factor,
       position_x: window_screen_x_js(),
       position_y: window_screen_y_js(),
+      cursor_visible: true,
+      cursor_icon: 0,
     })
     init_input(state)
     bind_pointer_events(state, target)
+    set_canvas_cursor_icon_js(target, 0)
     set_canvas_cursor_visible_js(target, true)
     1
   })
@@ -117,6 +120,53 @@ pub fn create_host(
     }
 
     request_animation_frame(@js.from_fn0(fn() { tick() }))
+  })
+  let app_run_loop = @js.from_fn2(fn(step : @js.Any, interval_any : @js.Any) {
+    let interval_ms = to_int(number_or(interval_any, 0.0))
+    let mut last_tick_ms = 0.0
+    fn tick() {
+      if state.should_close {
+        return
+      }
+      let now_ms = performance_now()
+      if interval_ms <= 0 || now_ms - last_tick_ms >= interval_ms.to_double() {
+        host_call0_any(step) |> ignore
+        last_tick_ms = now_ms
+      }
+      request_animation_frame(@js.from_fn0(fn() { tick() }))
+    }
+
+    request_animation_frame(@js.from_fn0(fn() { tick() }))
+  })
+  let app_request_close = @js.from_fn0(fn() { state.should_close = true })
+  let app_reset_close = @js.from_fn0(fn() { state.should_close = false })
+  let task_pool_set_num_threads = @js.from_fn1(fn(_num_threads_any : @js.Any) {
+    // Web workers/task pools are configured by the browser/runtime host.
+    // Keep this import for API parity.
+    0
+  })
+  let app_stdin_read_line_len = @js.from_fn0(fn() {
+    let prompt_any = window_prompt_line("Type stuff into the console")
+    if host_is_nullish(prompt_any) {
+      state.app_stdin_line = None
+      -1
+    } else {
+      let line = any_to_string(prompt_any)
+      state.app_stdin_line = Some(line)
+      line.length()
+    }
+  })
+  let app_stdin_read_line_code_unit = @js.from_fn1(fn(offset_any : @js.Any) {
+    let offset = to_int(number_or(offset_any, -1))
+    if state.app_stdin_line is Some(line) {
+      if offset >= 0 && offset < line.length() {
+        line.code_unit_at(offset)
+      } else {
+        0
+      }
+    } else {
+      0
+    }
   })
   let window_set_title = @js.from_fn2(fn(_ : @js.Any, title_any : @js.Any) {
     let text = string_from_id_optional(state, title_any)
@@ -161,7 +211,30 @@ pub fn create_host(
   ) {
     if state.window is Some(window_state) {
       let visible = number_or(visible_any, 0) != 0
+      window_state.cursor_visible = visible
       set_canvas_cursor_visible_js(window_state.canvas, visible)
+      if visible {
+        set_canvas_cursor_icon_js(window_state.canvas, window_state.cursor_icon)
+      }
+    }
+    0
+  })
+  let window_set_cursor_icon = @js.from_fn2(fn(
+    _ : @js.Any,
+    icon_any : @js.Any,
+  ) {
+    if state.window is Some(window_state) {
+      let mut icon = to_int(number_or(icon_any, 0))
+      if icon < 0 {
+        icon = 0
+      }
+      if icon > 1 {
+        icon = 1
+      }
+      window_state.cursor_icon = icon
+      if window_state.cursor_visible {
+        set_canvas_cursor_icon_js(window_state.canvas, icon)
+      }
     }
     0
   })
@@ -465,6 +538,7 @@ pub fn create_host(
     state.input.wheel_x = 0.0
     state.input.wheel_y = 0.0
     state.input.touch_events.clear()
+    state.input.drag_and_drop_events.clear()
   })
   let input_is_mouse_button_down = @js.from_fn1(fn(name) {
     let text = string_from_id_required(
@@ -522,6 +596,42 @@ pub fn create_host(
       state.input.touch_events[index].y
     } else {
       0.0
+    }
+  })
+  let input_drag_and_drop_event_count = @js.from_fn0(fn() {
+    state.input.drag_and_drop_events.length()
+  })
+  let input_drag_and_drop_event_kind = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.drag_and_drop_events.length() {
+      state.input.drag_and_drop_events[index].kind
+    } else {
+      -1
+    }
+  })
+  let input_drag_and_drop_event_len = @js.from_fn1(fn(index_any : @js.Any) {
+    let index = to_int(number_or(index_any, -1))
+    if index >= 0 && index < state.input.drag_and_drop_events.length() {
+      state.input.drag_and_drop_events[index].path.length()
+    } else {
+      0
+    }
+  })
+  let input_drag_and_drop_event_code_unit = @js.from_fn2(fn(
+    index_any : @js.Any,
+    offset_any : @js.Any,
+  ) {
+    let index = to_int(number_or(index_any, -1))
+    let offset = to_int(number_or(offset_any, -1))
+    if index >= 0 && index < state.input.drag_and_drop_events.length() {
+      let text = state.input.drag_and_drop_events[index].path
+      if offset >= 0 && offset < text.length() {
+        text.code_unit_at(offset).to_int()
+      } else {
+        0
+      }
+    } else {
+      0
     }
   })
   let debug_string = @js.from_fn1(fn(value) {
@@ -1716,6 +1826,29 @@ pub fn create_host(
       }
     }),
   )
+  let asset_save_texture_png = @js.from_fn2(fn(
+    texture_id_any : @js.Any,
+    path_any : @js.Any,
+  ) {
+    let texture_id = to_int(number_or(texture_id_any, -1))
+    if texture_id < 0 {
+      return 0
+    }
+    let mut filename = string_from_id_optional(state, path_any)
+    if filename == "" {
+      filename = "screenshot.png"
+    } else if !filename.has_suffix(".png") {
+      filename = filename + ".png"
+    }
+    if state.window is Some(window_state) {
+      download_canvas_png(window_state.canvas, filename)
+    } else {
+      dispatch_asset_error(
+        "asset_save_texture_png requires an active canvas surface in web runtime",
+      )
+    }
+    0
+  })
   let asset_load_folder = @js.from_fn1(fn(_path : @js.Any) {
     let id = state.assets.next_folder_id
     state.assets.next_folder_id = id + 1
@@ -2560,6 +2693,7 @@ pub fn create_host(
         to_int(arg_number(args, 56, -1)),
         arg_number(args, 57, 0),
         arg_number(args, 58, 0),
+        to_int(arg_number(args, 59, 2)),
       )
     }),
   )
@@ -2718,10 +2852,17 @@ pub fn create_host(
     ("window_should_close", window_should_close),
     ("window_request_close", window_request_close),
     ("window_run_loop", window_run_loop),
+    ("app_run_loop", app_run_loop),
+    ("app_request_close", app_request_close),
+    ("app_reset_close", app_reset_close),
+    ("task_pool_set_num_threads", task_pool_set_num_threads),
+    ("app_stdin_read_line_len", app_stdin_read_line_len),
+    ("app_stdin_read_line_code_unit", app_stdin_read_line_code_unit),
     ("window_set_title", window_set_title),
     ("window_set_size", window_set_size),
     ("window_set_resizable", window_set_resizable),
     ("window_set_cursor_visible", window_set_cursor_visible),
+    ("window_set_cursor_icon", window_set_cursor_icon),
     ("window_set_cursor_grab_mode", window_set_cursor_grab_mode),
     ("window_set_mode", window_set_mode),
     ("window_set_position", window_set_position),
@@ -2760,6 +2901,10 @@ pub fn create_host(
     ("input_touch_event_phase", input_touch_event_phase),
     ("input_touch_event_x", input_touch_event_x),
     ("input_touch_event_y", input_touch_event_y),
+    ("input_drag_and_drop_event_count", input_drag_and_drop_event_count),
+    ("input_drag_and_drop_event_kind", input_drag_and_drop_event_kind),
+    ("input_drag_and_drop_event_len", input_drag_and_drop_event_len),
+    ("input_drag_and_drop_event_code_unit", input_drag_and_drop_event_code_unit),
     ("debug_string", debug_string),
     ("a11y_begin_update", a11y_begin_update),
     ("a11y_push_node", a11y_push_node),
@@ -2834,6 +2979,7 @@ pub fn create_host(
     ("asset_is_texture_loaded", asset_is_texture_loaded),
     ("asset_supported_compressed_image_formats", asset_supported_formats),
     ("asset_copy_texture_to_texture", asset_copy_texture_to_texture),
+    ("asset_save_texture_png", asset_save_texture_png),
     ("asset_load_folder", asset_load_folder),
     ("asset_poll_loaded_folder_event_kind", asset_poll_loaded_folder_event_kind),
     ("asset_poll_loaded_folder_event_id", asset_poll_loaded_folder_event_id),

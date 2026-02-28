@@ -3,9 +3,22 @@ package "Milky2018/mgstudio/app"
 
 import {
   "Milky2018/mgstudio/core",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
+pub fn app_label(String) -> AppLabel
+
+pub fn app_rendering_enabled() -> Bool
+
+pub fn app_rendering_resume() -> Unit
+
+pub fn app_rendering_stop() -> Unit
+
+pub fn app_runtime_reset() -> Unit
+
+pub fn app_stdin_read_line() -> String?
+
 pub fn clear_delta_seconds_provider() -> Unit
 
 pub fn current_schedule_stage() -> ScheduleStage?
@@ -30,7 +43,47 @@ pub fn fixed_time_steps_ran_this_frame() -> Int
 
 pub fn fixed_time_timestep_seconds() -> Float
 
+pub fn log_debug(String) -> Unit
+
+pub fn log_debug_once(String, String) -> Unit
+
+pub fn log_error(String) -> Unit
+
+pub fn log_error_once(String, String) -> Unit
+
+pub fn log_info(String) -> Unit
+
+pub fn log_info_once(String, String) -> Unit
+
+pub fn log_once(LogLevel, callsite~ : String, message~ : String, target? : String, name? : String) -> Unit
+
+pub fn log_once_with(LogLevel, callsite~ : String, () -> String, target? : String, name? : String) -> Unit
+
+pub fn[W] log_plugin(LogPlugin) -> (App[W]) -> App[W]
+
+pub fn[W] log_plugin_default(App[W]) -> App[W]
+
+pub fn log_record(LogLevel, message~ : String, target? : String, name? : String) -> Unit
+
+pub fn log_trace(String) -> Unit
+
+pub fn log_trace_once(String, String) -> Unit
+
+pub fn log_warn(String) -> Unit
+
+pub fn log_warn_once(String, String) -> Unit
+
+pub fn render_runtime_error() -> RenderRuntimeError?
+
+pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
+
+pub fn reset_render_error_handler() -> Unit
+
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[W]) -> App[W]
+
 pub fn set_delta_seconds_provider(() -> Float) -> Unit
+
+pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
 
 pub fn[W] system((W) -> Unit) -> SystemConfig[W]
 
@@ -44,13 +97,20 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 
 pub fn system_set(String) -> String
 
+pub fn task_pool_num_threads() -> Int?
+
+pub fn[W] task_pool_plugin(TaskPoolPlugin) -> (App[W]) -> App[W]
+
 // Errors
 
 // Types and methods
 pub struct App[W] {
-  world : W
+  mut world : W
   schedule : Schedule[W]
   runner : (() -> Unit)?
+  sub_apps : @hashmap.HashMap[String, Ref[App[W]]]
+  sub_app_labels : @hashmap.HashMap[String, AppLabel]
+  sub_app_extractors : @hashmap.HashMap[String, (W, W) -> (W, W)]
 }
 pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_fixed_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
@@ -86,14 +146,76 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W, T] App::contains_resource(Self[W], @core.Resource[T]) -> Bool
+pub fn[W] App::get_sub_app(Self[W], AppLabel) -> Self[W]?
+pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]?
 pub fn[W, T : Resource] App::init_resource(Self[W], () -> T) -> Self[W]
 pub fn[W, T : Resource] App::insert_resource(Self[W], T) -> Self[W]
+pub fn[W] App::insert_sub_app(Self[W], AppLabel, Self[W]) -> Self[W]
 pub fn[W] App::new(W) -> Self[W]
 pub fn[W, T] App::remove_resource(Self[W], @core.Resource[T]) -> T?
+pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> Self[W]?
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run(Self[W]) -> Unit
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(Self[W]) -> Self[W]
 pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(Self[W]) -> Self[W]
 pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
+pub fn[W] App::set_sub_app_extract(Self[W], AppLabel, (W, W) -> (W, W)) -> Self[W]
+pub fn[W : @core.ChangeTickWorld] App::should_exit(Self[W]) -> AppExit?
+pub fn[W] App::sub_app(Self[W], AppLabel) -> Self[W]
+pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]
+pub fn[W] App::sub_apps(Self[W]) -> Array[(AppLabel, Self[W])]
+pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, Ref[Self[W]])]
+pub fn[W] App::take_sub_app_extract(Self[W], AppLabel) -> ((W, W) -> (W, W))?
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::update_sub_app_by_label(Self[W], AppLabel) -> Self[W]
+
+pub(all) enum AppExit {
+  Success
+  Error
+}
+pub fn AppExit::error() -> Self
+pub impl @core.Message for AppExit
+pub impl Eq for AppExit
+pub impl Show for AppExit
+
+pub(all) enum AppLabel {
+  MainApp
+  RenderApp
+  Custom(String)
+}
+pub impl Eq for AppLabel
+pub impl Show for AppLabel
+
+pub(all) enum LogLevel {
+  Error
+  Warn
+  Info
+  Debug
+  Trace
+}
+pub impl Eq for LogLevel
+pub impl Show for LogLevel
+
+pub struct LogPlugin {
+  level : LogLevel
+  filter : String
+  custom_layer : ((LogRecord) -> Unit)?
+  fmt_layer : ((LogRecord) -> Unit)?
+}
+pub fn LogPlugin::default() -> Self
+pub fn LogPlugin::with_custom_layer(Self, (LogRecord) -> Unit) -> Self
+pub fn LogPlugin::with_filter(Self, String) -> Self
+pub fn LogPlugin::with_fmt_layer(Self, (LogRecord) -> Unit) -> Self
+pub fn LogPlugin::with_level(Self, LogLevel) -> Self
+
+pub struct LogRecord {
+  level : LogLevel
+  target : String
+  name : String
+  message : String
+}
+pub fn LogRecord::level(Self) -> LogLevel
+pub fn LogRecord::message(Self) -> String
+pub fn LogRecord::name(Self) -> String
+pub fn LogRecord::target(Self) -> String
 
 pub struct PluginGroupBuilder[W] {
   plugins : Array[(App[W]) -> App[W]]
@@ -101,6 +223,26 @@ pub struct PluginGroupBuilder[W] {
 pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
 pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
 pub fn[W] PluginGroupBuilder::start() -> Self[W]
+
+pub(all) enum RenderErrorPolicy {
+  Ignore
+  Panic
+  ExitApp
+  StopRendering
+  Recover
+}
+pub impl Eq for RenderErrorPolicy
+pub impl Show for RenderErrorPolicy
+
+pub(all) enum RenderRuntimeError {
+  OutOfMemory
+  Validation
+  DeviceLost
+  Loop
+  Unknown(String)
+}
+pub impl Eq for RenderRuntimeError
+pub impl Show for RenderRuntimeError
 
 pub struct Res[T] {
   value : T
@@ -127,6 +269,17 @@ pub struct Schedule[W] {
   post_update_set_edges : Array[(String, String)]
 }
 
+pub(all) enum ScheduleRunnerMode {
+  RunOnce
+  RunLoop(Float)
+}
+
+pub struct ScheduleRunnerPlugin {
+  mode : ScheduleRunnerMode
+}
+pub fn ScheduleRunnerPlugin::run_loop(Float) -> Self
+pub fn ScheduleRunnerPlugin::run_once() -> Self
+
 pub(all) enum ScheduleStage {
   Startup
   PreUpdate
@@ -150,18 +303,36 @@ pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
 
+pub struct TaskPoolOptions {
+  num_threads : Int?
+}
+pub fn TaskPoolOptions::default() -> Self
+pub fn TaskPoolOptions::with_num_threads(Int) -> Self
+
+pub struct TaskPoolPlugin {
+  task_pool_options : TaskPoolOptions
+}
+pub fn TaskPoolPlugin::default() -> Self
+pub fn TaskPoolPlugin::new(TaskPoolOptions) -> Self
+
 // Type aliases
 pub type DeltaSecondsFn = () -> Float
+
+pub type LogLayer = (LogRecord) -> Unit
 
 pub type Plugin[W] = (App[W]) -> App[W]
 
 pub type PluginGroup[W] = () -> PluginGroupBuilder[W]
+
+pub type RenderErrorHandler = (RenderRuntimeError) -> RenderErrorPolicy
 
 pub type RunConditionFn[W] = (W) -> Bool
 
 pub type RunnerBuilder[W] = (App[W]) -> () -> Unit
 
 pub type RunnerFn = () -> Unit
+
+pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 
 pub type SystemFn[W] = (W) -> Unit
 

@@ -14,93 +14,77 @@
 
 ///|
 /// Port of `bevy/examples/3d/pccm.rs`.
-///
-/// Baseline parity: Bevy `LightProbe` + `EnvironmentMapLight` +
-/// `ParallaxCorrection` are not exposed in current mgstudio APIs. This port
-/// keeps Bevy's camera and outer/inner-cube scene topology, and maps the PCCM
-/// On/Off toggle to a reflective-material proxy state on the inner cube.
+
+///|
+const ENVIRONMENT_MAP_INTENSITY : Float = 100.0F
+
+///|
+const ENV_DIFFUSE_MAP_ASSET : String = "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"
+
+///|
+const ENV_SPECULAR_MAP_ASSET : String = "environment_maps/cubes_reflection_probe_specular_rgb9e5_zstd.ktx2"
+
+///|
+priv enum PccmEnableStatus {
+  Enabled
+  Disabled
+} derive(Eq)
 
 ///|
 priv struct PccmState {
-  mut enabled : Bool
-  mut inner_cube_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut pccm_enabled : PccmEnableStatus
+  mut light_probe : @core.Entity?
   mut help_text : @text.TextHandle?
 }
 
 ///|
 let pccm_state : Ref[PccmState] = Ref::new({
-  enabled: true,
-  inner_cube_material: None,
+  pccm_enabled: PccmEnableStatus::Enabled,
+  light_probe: None,
   help_text: None,
 })
 
 ///|
-fn set_global_ambient_light(
-  world : @ecs_world.World,
-  color : @render2d.Color,
-  brightness : Float,
-) -> Unit {
-  let tick = world.read_change_tick()
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
-  }
-}
-
-///|
-fn apply_pccm_proxy(world : @ecs_world.World) -> Unit {
-  guard pccm_state.val.inner_cube_material is Some(material_handle) else {
-    return
-  }
-
-  guard @render3d.standard_material_get(material_handle) is Some(current) else {
-    return
-  }
-
-  if pccm_state.val.enabled {
-    @render3d.standard_material_set(
-      material_handle,
-      current
-      .with_base_color(@render2d.Color::white())
-      .with_metallic(1.0F)
-      .with_reflectance(1.0F)
-      .with_perceptual_roughness(0.0F),
-    )
-    |> ignore
-    set_global_ambient_light(world, @render2d.Color::white(), 1.0F)
-  } else {
-    @render3d.standard_material_set(
-      material_handle,
-      current
-      .with_base_color(@render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F))
-      .with_metallic(0.2F)
-      .with_reflectance(0.25F)
-      .with_perceptual_roughness(0.65F),
-    )
-    |> ignore
-    set_global_ambient_light(world, @render2d.Color::white(), 0.45F)
+fn status_text(status : PccmEnableStatus) -> String {
+  match status {
+    PccmEnableStatus::Enabled => "On"
+    PccmEnableStatus::Disabled => "Off"
   }
 }
 
 ///|
 fn update_help_text() -> Unit {
   guard pccm_state.val.help_text is Some(handle) else { return }
-  let status = if pccm_state.val.enabled { "On" } else { "Off" }
   @text.text_set_content(
     handle,
-    "Parallax Correction (Adapted): \{status}\n" +
-    "1: On, 2: Off\n\n" +
-    "Adapted runtime note: LightProbe/EnvironmentMap + ParallaxCorrection are represented by material reflection proxies.",
+    "Parallax Correction: " +
+    status_text(pccm_state.val.pccm_enabled) +
+    "\n" +
+    "1: On, 2: Off",
   )
 }
 
 ///|
+fn apply_pccm_status(world : @ecs_world.World) -> Unit {
+  guard pccm_state.val.light_probe is Some(light_probe_entity) else { return }
+
+  let correction = match pccm_state.val.pccm_enabled {
+    PccmEnableStatus::Enabled => @render3d.ParallaxCorrection::Auto
+    PccmEnableStatus::Disabled => @render3d.ParallaxCorrection::None
+  }
+  let tick = world.read_change_tick()
+  let store = world.get_parallax_correction_store()
+  if store.contains(light_probe_entity) {
+    store.set(light_probe_entity, correction, tick) |> ignore
+  } else {
+    store.insert(light_probe_entity, correction, tick)
+  }
+}
+
+///|
 fn setup(world : @ecs_world.World) -> Unit {
-  pccm_state.val.enabled = true
-  pccm_state.val.inner_cube_material = None
+  pccm_state.val.pccm_enabled = PccmEnableStatus::Enabled
+  pccm_state.val.light_probe = None
   pccm_state.val.help_text = None
 
   let tick = world.read_change_tick()
@@ -114,7 +98,6 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   |> ignore
-
   let room_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
       @render2d.Color::new(0.2F, 0.24F, 0.3F, 1.0F),
@@ -135,7 +118,6 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F),
   )
-  pccm_state.val.inner_cube_material = Some(inner_cube_material)
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(10.0F, 2.0F, 4.0F),
     @render3d.MeshMaterial3d::new(inner_cube_material),
@@ -143,22 +125,29 @@ fn setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let point_light = world.spawn_empty()
+  let light_probe = world.spawn_empty()
   world
-  .get_point_light_store()
+  .get_light_probe_store()
+  .insert(light_probe, @render3d.LightProbe::default(), tick)
+  world
+  .get_environment_map_light_store()
   .insert(
-    point_light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      180_000.0F,
-      20.0F,
-      false,
+    light_probe,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
+      Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
+      ENVIRONMENT_MAP_INTENSITY,
     ),
     tick,
   )
   world
   .get_transform_store()
-  .insert(point_light, @math.Transform::from_xyz(0.0F, 0.0F, 1.5F), tick)
+  .insert(
+    light_probe,
+    @math.Transform::identity().with_scale(@math.Vec3::splat(10.01F)),
+    tick,
+  )
+  pccm_state.val.light_probe = Some(light_probe)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -182,23 +171,25 @@ fn setup(world : @ecs_world.World) -> Unit {
     .spawn()
   pccm_state.val.help_text = Some(help_text)
 
-  apply_pccm_proxy(world)
+  apply_pccm_status(world)
   update_help_text()
 }
 
 ///|
-fn toggle_pccm(world : @ecs_world.World) -> Unit {
+fn handle_keyboard_input(world : @ecs_world.World) -> Unit {
   let mut changed = false
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    pccm_state.val.enabled = true
+  if @input.key_just_pressed(@window.KeyCode::Digit1) &&
+    pccm_state.val.pccm_enabled != PccmEnableStatus::Enabled {
+    pccm_state.val.pccm_enabled = PccmEnableStatus::Enabled
     changed = true
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    pccm_state.val.enabled = false
+  if @input.key_just_pressed(@window.KeyCode::Digit2) &&
+    pccm_state.val.pccm_enabled != PccmEnableStatus::Disabled {
+    pccm_state.val.pccm_enabled = PccmEnableStatus::Disabled
     changed = true
   }
   if changed {
-    apply_pccm_proxy(world)
+    apply_pccm_status(world)
     update_help_text()
   }
 }
@@ -209,6 +200,6 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
-  .add_system(toggle_pccm)
+  .add_system(handle_keyboard_input)
   .run()
 }

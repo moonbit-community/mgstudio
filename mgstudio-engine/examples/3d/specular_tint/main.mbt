@@ -19,9 +19,6 @@
 const PI : Float = 3.141592653589793F
 
 ///|
-const DEG_TO_RAD : Float = 0.017453292519943295F
-
-///|
 const ROTATION_SPEED : Float = 0.005F
 
 ///|
@@ -32,9 +29,6 @@ const SWITCH_TO_MAP_HELP_TEXT : String = "Press Space to switch to a specular ma
 
 ///|
 const SWITCH_TO_SOLID_TINT_HELP_TEXT : String = "Press Space to switch to a solid specular tint"
-
-///|
-const TWO_PI_OVER_THREE : Float = 2.0943951023931953F
 
 ///|
 const TWO_PI : Float = 6.283185307179586F
@@ -84,10 +78,20 @@ fn wrap_hue_deg(value : Float) -> Float {
 
 ///|
 fn tint_from_hue_deg(hue_deg : Float) -> @render2d.Color {
-  let hue = wrap_hue_deg(hue_deg) * DEG_TO_RAD
-  let r = @math.sin(hue) * 0.5F + 0.5F
-  let g = @math.sin(hue + TWO_PI_OVER_THREE) * 0.5F + 0.5F
-  let b = @math.sin(hue + TWO_PI_OVER_THREE + TWO_PI_OVER_THREE) * 0.5F + 0.5F
+  let hue = wrap_hue_deg(hue_deg)
+  let (r, g, b) = if hue < 60.0F {
+    (1.0F, hue / 60.0F, 0.0F)
+  } else if hue < 120.0F {
+    (1.0F - (hue - 60.0F) / 60.0F, 1.0F, 0.0F)
+  } else if hue < 180.0F {
+    (0.0F, 1.0F, (hue - 120.0F) / 60.0F)
+  } else if hue < 240.0F {
+    (0.0F, 1.0F - (hue - 180.0F) / 60.0F, 1.0F)
+  } else if hue < 300.0F {
+    ((hue - 240.0F) / 60.0F, 0.0F, 1.0F)
+  } else {
+    (1.0F, 0.0F, 1.0F - (hue - 300.0F) / 60.0F)
+  }
   @render2d.Color::new(r, g, b, 1.0F)
 }
 
@@ -173,6 +177,22 @@ fn uv_sphere_mesh(
 }
 
 ///|
+fn set_global_ambient_light(
+  world : @ecs_world.World,
+  color : @render2d.Color,
+  brightness : Float,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
+  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+    is Some(current) {
+    current.val = ambient
+  } else {
+    world.get_global_ambient_light_resource().insert(ambient, tick)
+  }
+}
+
+///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   let state = specular_tint_state.val
@@ -182,6 +202,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   state.material = None
   state.noise_texture = None
   state.help_text = None
+  set_global_ambient_light(world, @render2d.Color::black(), 0.0F)
 
   let asset_server = @asset.AssetServer::new()
   let diffuse_env_map : @asset.Handle[@asset.Image] = asset_server.load(

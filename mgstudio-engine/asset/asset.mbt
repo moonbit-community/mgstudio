@@ -93,12 +93,17 @@ pub(all) enum ImageArrayLayout {
 ///|
 pub struct ImageLoaderSettings {
   sampler : ImageSampler
+  is_srgb : Bool
   array_layout : ImageArrayLayout?
 }
 
 ///|
 pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
-  ImageLoaderSettings::{ sampler: ImageSampler::Linear, array_layout: None }
+  ImageLoaderSettings::{
+    sampler: ImageSampler::Linear,
+    is_srgb: true,
+    array_layout: None,
+  }
 }
 
 ///|
@@ -107,6 +112,14 @@ pub fn ImageLoaderSettings::with_sampler(
   sampler : ImageSampler,
 ) -> ImageLoaderSettings {
   ImageLoaderSettings::{ ..self, sampler, }
+}
+
+///|
+pub fn ImageLoaderSettings::with_is_srgb(
+  self : ImageLoaderSettings,
+  is_srgb : Bool,
+) -> ImageLoaderSettings {
+  ImageLoaderSettings::{ ..self, is_srgb, }
 }
 
 ///|
@@ -130,6 +143,27 @@ pub const COMPRESSED_IMAGE_FORMAT_BC : Int = 2
 pub const COMPRESSED_IMAGE_FORMAT_ETC2 : Int = 4
 
 ///|
+pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
+
+///|
+pub const IMAGE_USAGE_COPY_DST : Int = 2
+
+///|
+pub const IMAGE_USAGE_COPY_SRC : Int = 4
+
+///|
+pub const IMAGE_USAGE_RENDER_ATTACHMENT : Int = 8
+
+///|
+const IMAGE_USAGE_ALL_MASK : Int = 15
+
+///|
+const IMAGE_USAGE_DEFAULT_SAMPLED : Int = 3
+
+///|
+const IMAGE_USAGE_DEFAULT_DYNAMIC : Int = 15
+
+///|
 pub fn AssetServer::new() -> AssetServer {
   AssetServer::{ paths: [] }
 }
@@ -139,6 +173,12 @@ let asset_image_paths : Ref[Array[(String, Handle[Image])]] = Ref::new([])
 
 ///|
 let asset_image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]] = Ref::new([])
+
+///|
+let asset_image_srgb_settings : Ref[Array[(Int, Bool)]] = Ref::new([])
+
+///|
+let asset_image_usage_settings : Ref[Array[(Int, Int)]] = Ref::new([])
 
 ///|
 fn asset_register_image_path(path : String, handle : Handle[Image]) -> Unit {
@@ -163,6 +203,38 @@ fn asset_set_image_array_layout(
 }
 
 ///|
+fn asset_set_image_is_srgb(image : Handle[Image], is_srgb : Bool) -> Unit {
+  let next : Array[(Int, Bool)] = []
+  for pair in asset_image_srgb_settings.val {
+    if pair.0 != image.id() {
+      next.push(pair)
+    }
+  }
+  next.push((image.id(), is_srgb))
+  asset_image_srgb_settings.val = next
+}
+
+///|
+fn asset_image_usage_sanitize(usage_bits : Int) -> Int {
+  let usage = usage_bits.reinterpret_as_uint()
+  let mask = IMAGE_USAGE_ALL_MASK.reinterpret_as_uint()
+  (usage & mask).reinterpret_as_int()
+}
+
+///|
+fn asset_set_image_usage_bits(image : Handle[Image], usage_bits : Int) -> Unit {
+  let safe_usage_bits = asset_image_usage_sanitize(usage_bits)
+  let next : Array[(Int, Int)] = []
+  for pair in asset_image_usage_settings.val {
+    if pair.0 != image.id() {
+      next.push(pair)
+    }
+  }
+  next.push((image.id(), safe_usage_bits))
+  asset_image_usage_settings.val = next
+}
+
+///|
 pub fn asset_image_array_layout(image : Handle[Image]) -> ImageArrayLayout? {
   for pair in asset_image_array_layouts.val {
     if pair.0 == image.id() {
@@ -170,6 +242,64 @@ pub fn asset_image_array_layout(image : Handle[Image]) -> ImageArrayLayout? {
     }
   }
   None
+}
+
+///|
+pub fn asset_image_is_srgb(image : Handle[Image]) -> Bool {
+  for pair in asset_image_srgb_settings.val {
+    if pair.0 == image.id() {
+      return pair.1
+    }
+  }
+  true
+}
+
+///|
+pub fn asset_image_usage_bits(image : Handle[Image]) -> Int {
+  for pair in asset_image_usage_settings.val {
+    if pair.0 == image.id() {
+      return pair.1
+    }
+  }
+  IMAGE_USAGE_DEFAULT_SAMPLED
+}
+
+///|
+pub fn asset_image_set_usage_bits(
+  image : Handle[Image],
+  usage_bits : Int,
+) -> Unit {
+  asset_set_image_usage_bits(image, usage_bits)
+}
+
+///|
+pub fn asset_image_add_usage(image : Handle[Image], usage_bits : Int) -> Unit {
+  let current = asset_image_usage_bits(image).reinterpret_as_uint()
+  let add = asset_image_usage_sanitize(usage_bits).reinterpret_as_uint()
+  let next = (current | add).reinterpret_as_int()
+  asset_set_image_usage_bits(image, next)
+}
+
+///|
+pub fn asset_image_remove_usage(
+  image : Handle[Image],
+  usage_bits : Int,
+) -> Unit {
+  let current = asset_image_usage_bits(image).reinterpret_as_uint()
+  let remove = asset_image_usage_sanitize(usage_bits).reinterpret_as_uint()
+  let next = (current & (IMAGE_USAGE_ALL_MASK.reinterpret_as_uint() ^ remove))
+    .reinterpret_as_int()
+  asset_set_image_usage_bits(image, next)
+}
+
+///|
+pub fn asset_image_has_usage(
+  image : Handle[Image],
+  usage_bits : Int,
+) -> Bool {
+  let current = asset_image_usage_bits(image).reinterpret_as_uint()
+  let required = asset_image_usage_sanitize(usage_bits).reinterpret_as_uint()
+  (current & required) == required
 }
 
 ///|
@@ -361,12 +491,17 @@ pub fn host_asset_copy_texture_to_texture(
 ) -> Unit = "mgstudio_host" "asset_copy_texture_to_texture"
 
 ///|
+fn host_asset_save_texture_png_id(texture_id~ : Int, path_id~ : Int) -> Unit = "mgstudio_host" "asset_save_texture_png"
+
+///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
   let id = host_asset_load_texture(path~, nearest=asset_default_nearest.val)
   self.paths.push(path)
   let handle = Handle::new(id)
   asset_register_image_path(path, handle)
   asset_set_image_array_layout(handle, None)
+  asset_set_image_is_srgb(handle, true)
+  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -380,6 +515,8 @@ pub fn AssetServer::load_nearest(
   let handle = Handle::new(id)
   asset_register_image_path(path, handle)
   asset_set_image_array_layout(handle, None)
+  asset_set_image_is_srgb(handle, true)
+  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -407,6 +544,8 @@ pub fn AssetServer::load_with_settings(
   asset_register_image_path(path, handle)
   asset_set_texture_sampler(handle, settings.sampler)
   asset_set_image_array_layout(handle, settings.array_layout)
+  asset_set_image_is_srgb(handle, settings.is_srgb)
+  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -420,7 +559,9 @@ pub fn AssetServer::load_texture_bytes(
   let id = @core.with_host_bytes_id(bytes, fn(bytes_id) {
     host_asset_load_texture_bytes(bytes_id~, nearest~)
   })
-  Handle::new(id)
+  let handle = Handle::new(id)
+  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  handle
 }
 
 ///|
@@ -527,7 +668,9 @@ pub fn asset_create_dynamic_texture_with_mips(
     mip_level_count=safe_mip_level_count,
     nearest~,
   )
-  Handle::new(id)
+  let handle = Handle::new(id)
+  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
+  handle
 }
 
 ///|
@@ -589,7 +732,9 @@ pub fn asset_create_texture_mip_view(
     texture_id=texture.id(),
     mip_level=safe_mip_level,
   )
-  Handle::new(id)
+  let handle = Handle::new(id)
+  asset_set_image_usage_bits(handle, asset_image_usage_bits(texture))
+  handle
 }
 
 ///|
@@ -619,6 +764,13 @@ pub fn asset_copy_texture_to_texture(
     dst_y=dst_pos.y,
     src_texture_id=src.id(),
   )
+}
+
+///|
+pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
+  @core.with_host_string_id(path, fn(path_id) {
+    host_asset_save_texture_png_id(texture_id=texture.id(), path_id~)
+  })
 }
 
 ///|

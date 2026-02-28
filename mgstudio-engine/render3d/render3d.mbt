@@ -111,6 +111,8 @@ pub struct OrthographicProjection3d {
 
 ///|
 pub(all) enum OrthographicScalingMode3d {
+  WindowSize
+  // Legacy alias kept for backward compatibility with earlier mgstudio APIs.
   Scale
   FixedVertical(Float)
 }
@@ -120,6 +122,7 @@ fn orthographic_scaling_mode_sanitize(
   mode : OrthographicScalingMode3d,
 ) -> OrthographicScalingMode3d {
   match mode {
+    WindowSize => WindowSize
     Scale => Scale
     FixedVertical(viewport_height) =>
       FixedVertical(
@@ -138,7 +141,7 @@ pub fn OrthographicProjection3d::default() -> OrthographicProjection3d {
     scale: 1.0F,
     near: -1000.0F,
     far: 1000.0F,
-    scaling_mode: Scale,
+    scaling_mode: WindowSize,
   }
 }
 
@@ -152,7 +155,19 @@ pub fn OrthographicProjection3d::with_scale(
     scale: safe_scale,
     near: self.near,
     far: self.far,
-    scaling_mode: Scale,
+    scaling_mode: WindowSize,
+  }
+}
+
+///|
+pub fn OrthographicProjection3d::with_window_size_scaling(
+  self : OrthographicProjection3d,
+) -> OrthographicProjection3d {
+  OrthographicProjection3d::{
+    scale: self.scale,
+    near: self.near,
+    far: self.far,
+    scaling_mode: WindowSize,
   }
 }
 
@@ -557,28 +572,103 @@ pub fn Msaa::default() -> Msaa {
 }
 
 ///|
-/// Marker component aligned with Bevy's `Fxaa`.
+pub fn Msaa::samples(self : Msaa) -> Int {
+  match self {
+    Off => 1
+    Sample2 => 2
+    Sample4 => 4
+    Sample8 => 8
+  }
+}
+
+///|
+pub fn Msaa::from_samples(samples : Int) -> Msaa {
+  if samples <= 1 {
+    Msaa::Off
+  } else if samples <= 2 {
+    Msaa::Sample2
+  } else if samples <= 4 {
+    Msaa::Sample4
+  } else {
+    Msaa::Sample8
+  }
+}
+
+///|
+pub(all) enum FxaaSensitivity {
+  Low
+  Medium
+  High
+  Ultra
+  Extreme
+} derive(Eq, Show)
+
+///|
+pub fn FxaaSensitivity::default() -> FxaaSensitivity {
+  FxaaSensitivity::High
+}
+
+///|
+/// Camera post-process settings aligned with Bevy's `Fxaa`.
 ///
 /// Current runtime note: this records camera intent as an ECS surface.
 #ecs.component
 pub struct Fxaa {
   enabled : Bool
+  edge_threshold : FxaaSensitivity
+  edge_threshold_min : FxaaSensitivity
 }
 
 ///|
 pub fn Fxaa::default() -> Fxaa {
-  Fxaa::{ enabled: true }
+  Fxaa::{
+    enabled: true,
+    edge_threshold: FxaaSensitivity::High,
+    edge_threshold_min: FxaaSensitivity::High,
+  }
 }
 
 ///|
 pub fn Fxaa::new(enabled : Bool) -> Fxaa {
-  Fxaa::{ enabled, }
+  Fxaa::{ ..Fxaa::default(), enabled, }
+}
+
+///|
+pub fn Fxaa::new_with_sensitivity(
+  enabled : Bool,
+  edge_threshold : FxaaSensitivity,
+  edge_threshold_min : FxaaSensitivity,
+) -> Fxaa {
+  Fxaa::{ enabled, edge_threshold, edge_threshold_min }
 }
 
 ///|
 pub fn Fxaa::with_enabled(self : Fxaa, enabled : Bool) -> Fxaa {
-  self |> ignore
-  Fxaa::{ enabled, }
+  Fxaa::{ ..self, enabled, }
+}
+
+///|
+pub fn Fxaa::with_edge_threshold(
+  self : Fxaa,
+  edge_threshold : FxaaSensitivity,
+) -> Fxaa {
+  Fxaa::{ ..self, edge_threshold, }
+}
+
+///|
+pub fn Fxaa::with_edge_threshold_min(
+  self : Fxaa,
+  edge_threshold_min : FxaaSensitivity,
+) -> Fxaa {
+  Fxaa::{ ..self, edge_threshold_min, }
+}
+
+///|
+pub fn Fxaa::with_sensitivity(
+  self : Fxaa,
+  sensitivity : FxaaSensitivity,
+) -> Fxaa {
+  Fxaa::{ ..self, edge_threshold: sensitivity, edge_threshold_min: sensitivity }
 }
 
 ///|
@@ -655,27 +745,142 @@ pub fn NotShadowReceiver::default() -> NotShadowReceiver {
 }
 
 ///|
-/// Marker component aligned with Bevy's
+/// Marker component aligned with Bevy's `TransmittedShadowReceiver`.
+///
+/// Current runtime note: this backend records transmitted-shadow intent as ECS
+/// API parity; transmitted shadowing itself remains backend-adapted.
+#ecs.component
+pub struct TransmittedShadowReceiver {}
+
+///|
+pub fn TransmittedShadowReceiver::default() -> TransmittedShadowReceiver {
+  TransmittedShadowReceiver::{  }
+}
+
+///|
+/// Camera transparency settings aligned with Bevy's
 /// `OrderIndependentTransparencySettings`.
 ///
 /// Current runtime note: this records camera intent as an ECS surface; the
 /// renderer-side weighted OIT implementation is tracked separately.
 #ecs.component
-pub struct OrderIndependentTransparencySettings {}
-
-///|
-pub fn OrderIndependentTransparencySettings::default() -> OrderIndependentTransparencySettings {
-  OrderIndependentTransparencySettings::{  }
+pub struct OrderIndependentTransparencySettings {
+  sorted_fragment_max_count : Int
+  fragments_per_pixel_average : Float
+  alpha_threshold : Float
 }
 
 ///|
-/// Marker component aligned with Bevy's `TemporalAntiAliasing`.
+fn oit_safe_sorted_fragment_max_count(value : Int) -> Int {
+  if value < 1 { 1 } else { value }
+}
+
+///|
+fn oit_safe_fragments_per_pixel_average(value : Float) -> Float {
+  if value < 0.25F { 0.25F } else { value }
+}
+
+///|
+fn oit_safe_alpha_threshold(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+pub fn OrderIndependentTransparencySettings::default() -> OrderIndependentTransparencySettings {
+  OrderIndependentTransparencySettings::{
+    sorted_fragment_max_count: 8,
+    fragments_per_pixel_average: 4.0F,
+    alpha_threshold: 0.0F,
+  }
+}
+
+///|
+pub fn OrderIndependentTransparencySettings::new(
+  sorted_fragment_max_count : Int,
+  fragments_per_pixel_average : Float,
+  alpha_threshold : Float,
+) -> OrderIndependentTransparencySettings {
+  OrderIndependentTransparencySettings::{
+    sorted_fragment_max_count: oit_safe_sorted_fragment_max_count(
+      sorted_fragment_max_count,
+    ),
+    fragments_per_pixel_average: oit_safe_fragments_per_pixel_average(
+      fragments_per_pixel_average,
+    ),
+    alpha_threshold: oit_safe_alpha_threshold(alpha_threshold),
+  }
+}
+
+///|
+pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(
+  self : OrderIndependentTransparencySettings,
+  sorted_fragment_max_count : Int,
+) -> OrderIndependentTransparencySettings {
+  OrderIndependentTransparencySettings::{
+    ..self,
+    sorted_fragment_max_count: oit_safe_sorted_fragment_max_count(
+      sorted_fragment_max_count,
+    ),
+  }
+}
+
+///|
+pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(
+  self : OrderIndependentTransparencySettings,
+  fragments_per_pixel_average : Float,
+) -> OrderIndependentTransparencySettings {
+  OrderIndependentTransparencySettings::{
+    ..self,
+    fragments_per_pixel_average: oit_safe_fragments_per_pixel_average(
+      fragments_per_pixel_average,
+    ),
+  }
+}
+
+///|
+pub fn OrderIndependentTransparencySettings::with_alpha_threshold(
+  self : OrderIndependentTransparencySettings,
+  alpha_threshold : Float,
+) -> OrderIndependentTransparencySettings {
+  OrderIndependentTransparencySettings::{
+    ..self,
+    alpha_threshold: oit_safe_alpha_threshold(alpha_threshold),
+  }
+}
+
+///|
+/// Camera temporal AA settings aligned with Bevy's `TemporalAntiAliasing`.
 #ecs.component
-pub struct TemporalAntiAliasing {}
+pub struct TemporalAntiAliasing {
+  reset : Bool
+}
 
 ///|
 pub fn TemporalAntiAliasing::default() -> TemporalAntiAliasing {
-  TemporalAntiAliasing::{  }
+  TemporalAntiAliasing::{ reset: true }
+}
+
+///|
+pub fn TemporalAntiAliasing::new(reset : Bool) -> TemporalAntiAliasing {
+  TemporalAntiAliasing::{ reset }
+}
+
+///|
+pub fn TemporalAntiAliasing::with_reset(
+  self : TemporalAntiAliasing,
+  reset : Bool,
+) -> TemporalAntiAliasing {
+  if self.reset == reset {
+    self
+  } else {
+    TemporalAntiAliasing::{ reset }
+  }
 }
 
 ///|
@@ -715,6 +920,429 @@ pub fn Hdr::default() -> Hdr {
 }
 
 ///|
+const EXPOSURE_EV100_SUNLIGHT : Float = 15.0F
+
+///|
+const EXPOSURE_EV100_OVERCAST : Float = 12.0F
+
+///|
+const EXPOSURE_EV100_INDOOR : Float = 7.0F
+
+///|
+const EXPOSURE_EV100_BLENDER : Float = 9.7F
+
+///|
+/// Camera exposure settings aligned with Bevy's `Exposure`.
+#ecs.component
+pub struct Exposure {
+  ev100 : Float
+}
+
+///|
+pub fn Exposure::default() -> Exposure {
+  Exposure::{ ev100: EXPOSURE_EV100_BLENDER }
+}
+
+///|
+pub fn Exposure::new(ev100 : Float) -> Exposure {
+  Exposure::{ ev100, }
+}
+
+///|
+pub fn Exposure::sunlight() -> Exposure {
+  Exposure::{ ev100: EXPOSURE_EV100_SUNLIGHT }
+}
+
+///|
+pub fn Exposure::overcast() -> Exposure {
+  Exposure::{ ev100: EXPOSURE_EV100_OVERCAST }
+}
+
+///|
+pub fn Exposure::indoor() -> Exposure {
+  Exposure::{ ev100: EXPOSURE_EV100_INDOOR }
+}
+
+///|
+pub fn Exposure::blender() -> Exposure {
+  Exposure::{ ev100: EXPOSURE_EV100_BLENDER }
+}
+
+///|
+pub fn Exposure::with_ev100(self : Exposure, ev100 : Float) -> Exposure {
+  self |> ignore
+  Exposure::{ ev100, }
+}
+
+///|
+pub fn Exposure::exposure(self : Exposure) -> Float {
+  @math.pow(2.0F, -self.ev100) / 1.2F
+}
+
+///|
+fn color_grading_midtones_range_sanitize(
+  start : Float,
+  end_ : Float,
+) -> (Float, Float) {
+  let safe_start = if start < 0.0F {
+    0.0F
+  } else if start > 1.0F {
+    1.0F
+  } else {
+    start
+  }
+  let safe_end = if end_ < 0.0F {
+    0.0F
+  } else if end_ > 1.0F {
+    1.0F
+  } else {
+    end_
+  }
+  if safe_start <= safe_end {
+    (safe_start, safe_end)
+  } else {
+    (safe_end, safe_start)
+  }
+}
+
+///|
+/// Global color-grading controls aligned with Bevy's `ColorGradingGlobal`.
+pub struct ColorGradingGlobal {
+  exposure : Float
+  temperature : Float
+  tint : Float
+  hue : Float
+  post_saturation : Float
+  midtones_start : Float
+  midtones_end : Float
+}
+
+///|
+pub fn ColorGradingGlobal::default() -> ColorGradingGlobal {
+  ColorGradingGlobal::{
+    exposure: 0.0F,
+    temperature: 0.0F,
+    tint: 0.0F,
+    hue: 0.0F,
+    post_saturation: 1.0F,
+    midtones_start: 0.2F,
+    midtones_end: 0.7F,
+  }
+}
+
+///|
+pub fn ColorGradingGlobal::new() -> ColorGradingGlobal {
+  ColorGradingGlobal::default()
+}
+
+///|
+pub fn ColorGradingGlobal::with_exposure(
+  self : ColorGradingGlobal,
+  exposure : Float,
+) -> ColorGradingGlobal {
+  ColorGradingGlobal::{ ..self, exposure, }
+}
+
+///|
+pub fn ColorGradingGlobal::with_temperature(
+  self : ColorGradingGlobal,
+  temperature : Float,
+) -> ColorGradingGlobal {
+  ColorGradingGlobal::{ ..self, temperature, }
+}
+
+///|
+pub fn ColorGradingGlobal::with_tint(
+  self : ColorGradingGlobal,
+  tint : Float,
+) -> ColorGradingGlobal {
+  ColorGradingGlobal::{ ..self, tint, }
+}
+
+///|
+pub fn ColorGradingGlobal::with_hue(
+  self : ColorGradingGlobal,
+  hue : Float,
+) -> ColorGradingGlobal {
+  ColorGradingGlobal::{ ..self, hue, }
+}
+
+///|
+pub fn ColorGradingGlobal::with_post_saturation(
+  self : ColorGradingGlobal,
+  post_saturation : Float,
+) -> ColorGradingGlobal {
+  ColorGradingGlobal::{
+    ..self,
+    post_saturation: if post_saturation < 0.0F {
+      0.0F
+    } else {
+      post_saturation
+    },
+  }
+}
+
+///|
+pub fn ColorGradingGlobal::with_midtones_range(
+  self : ColorGradingGlobal,
+  start : Float,
+  end_ : Float,
+) -> ColorGradingGlobal {
+  let (safe_start, safe_end) = color_grading_midtones_range_sanitize(
+    start, end_,
+  )
+  ColorGradingGlobal::{
+    ..self,
+    midtones_start: safe_start,
+    midtones_end: safe_end,
+  }
+}
+
+///|
+pub fn ColorGradingGlobal::midtones_range(
+  self : ColorGradingGlobal,
+) -> (Float, Float) {
+  (self.midtones_start, self.midtones_end)
+}
+
+///|
+/// Sectional color-grading controls aligned with Bevy's `ColorGradingSection`.
+pub struct ColorGradingSection {
+  saturation : Float
+  contrast : Float
+  gamma : Float
+  gain : Float
+  lift : Float
+}
+
+///|
+pub fn ColorGradingSection::default() -> ColorGradingSection {
+  ColorGradingSection::{
+    saturation: 1.0F,
+    contrast: 1.0F,
+    gamma: 1.0F,
+    gain: 1.0F,
+    lift: 0.0F,
+  }
+}
+
+///|
+pub fn ColorGradingSection::new() -> ColorGradingSection {
+  ColorGradingSection::default()
+}
+
+///|
+pub fn ColorGradingSection::with_saturation(
+  self : ColorGradingSection,
+  saturation : Float,
+) -> ColorGradingSection {
+  ColorGradingSection::{
+    ..self,
+    saturation: if saturation < 0.0F {
+      0.0F
+    } else {
+      saturation
+    },
+  }
+}
+
+///|
+pub fn ColorGradingSection::with_contrast(
+  self : ColorGradingSection,
+  contrast : Float,
+) -> ColorGradingSection {
+  ColorGradingSection::{
+    ..self,
+    contrast: if contrast < 0.0F {
+      0.0F
+    } else {
+      contrast
+    },
+  }
+}
+
+///|
+pub fn ColorGradingSection::with_gamma(
+  self : ColorGradingSection,
+  gamma : Float,
+) -> ColorGradingSection {
+  ColorGradingSection::{
+    ..self,
+    gamma: if gamma <= 0.0001F {
+      0.0001F
+    } else {
+      gamma
+    },
+  }
+}
+
+///|
+pub fn ColorGradingSection::with_gain(
+  self : ColorGradingSection,
+  gain : Float,
+) -> ColorGradingSection {
+  ColorGradingSection::{ ..self, gain: if gain < 0.0F { 0.0F } else { gain } }
+}
+
+///|
+pub fn ColorGradingSection::with_lift(
+  self : ColorGradingSection,
+  lift : Float,
+) -> ColorGradingSection {
+  ColorGradingSection::{ ..self, lift, }
+}
+
+///|
+/// Combined color-grading section settings for shadows / midtones / highlights.
+pub struct ColorGradingSettings {
+  shadows : ColorGradingSection
+  midtones : ColorGradingSection
+  highlights : ColorGradingSection
+}
+
+///|
+pub fn ColorGradingSettings::default() -> ColorGradingSettings {
+  ColorGradingSettings::{
+    shadows: ColorGradingSection::default(),
+    midtones: ColorGradingSection::default(),
+    highlights: ColorGradingSection::default(),
+  }
+}
+
+///|
+pub fn ColorGradingSettings::with_identical_sections(
+  section : ColorGradingSection,
+) -> ColorGradingSettings {
+  ColorGradingSettings::{
+    shadows: section,
+    midtones: section,
+    highlights: section,
+  }
+}
+
+///|
+pub fn ColorGradingSettings::with_shadows(
+  self : ColorGradingSettings,
+  shadows : ColorGradingSection,
+) -> ColorGradingSettings {
+  ColorGradingSettings::{ ..self, shadows, }
+}
+
+///|
+pub fn ColorGradingSettings::with_midtones(
+  self : ColorGradingSettings,
+  midtones : ColorGradingSection,
+) -> ColorGradingSettings {
+  ColorGradingSettings::{ ..self, midtones, }
+}
+
+///|
+pub fn ColorGradingSettings::with_highlights(
+  self : ColorGradingSettings,
+  highlights : ColorGradingSection,
+) -> ColorGradingSettings {
+  ColorGradingSettings::{ ..self, highlights, }
+}
+
+///|
+/// Camera color grading settings aligned with Bevy's `ColorGrading`.
+#ecs.component
+pub struct ColorGrading {
+  global : ColorGradingGlobal
+  shadows : ColorGradingSection
+  midtones : ColorGradingSection
+  highlights : ColorGradingSection
+}
+
+///|
+pub fn ColorGrading::default() -> ColorGrading {
+  ColorGrading::{
+    global: ColorGradingGlobal::default(),
+    shadows: ColorGradingSection::default(),
+    midtones: ColorGradingSection::default(),
+    highlights: ColorGradingSection::default(),
+  }
+}
+
+///|
+pub fn ColorGrading::new(
+  global : ColorGradingGlobal,
+  settings : ColorGradingSettings,
+) -> ColorGrading {
+  ColorGrading::{
+    global,
+    shadows: settings.shadows,
+    midtones: settings.midtones,
+    highlights: settings.highlights,
+  }
+}
+
+///|
+pub fn ColorGrading::with_identical_sections(
+  global : ColorGradingGlobal,
+  section : ColorGradingSection,
+) -> ColorGrading {
+  ColorGrading::new(
+    global,
+    ColorGradingSettings::with_identical_sections(section),
+  )
+}
+
+///|
+pub fn ColorGrading::with_global(
+  self : ColorGrading,
+  global : ColorGradingGlobal,
+) -> ColorGrading {
+  ColorGrading::{ ..self, global, }
+}
+
+///|
+pub fn ColorGrading::with_settings(
+  self : ColorGrading,
+  settings : ColorGradingSettings,
+) -> ColorGrading {
+  ColorGrading::{
+    ..self,
+    shadows: settings.shadows,
+    midtones: settings.midtones,
+    highlights: settings.highlights,
+  }
+}
+
+///|
+pub fn ColorGrading::with_shadows(
+  self : ColorGrading,
+  shadows : ColorGradingSection,
+) -> ColorGrading {
+  ColorGrading::{ ..self, shadows, }
+}
+
+///|
+pub fn ColorGrading::with_midtones(
+  self : ColorGrading,
+  midtones : ColorGradingSection,
+) -> ColorGrading {
+  ColorGrading::{ ..self, midtones, }
+}
+
+///|
+pub fn ColorGrading::with_highlights(
+  self : ColorGrading,
+  highlights : ColorGradingSection,
+) -> ColorGrading {
+  ColorGrading::{ ..self, highlights, }
+}
+
+///|
+pub fn ColorGrading::settings(self : ColorGrading) -> ColorGradingSettings {
+  ColorGradingSettings::{
+    shadows: self.shadows,
+    midtones: self.midtones,
+    highlights: self.highlights,
+  }
+}
+
+///|
 /// Camera tonemapping mode aligned with Bevy's `Tonemapping`.
 #ecs.component
 pub(all) enum Tonemapping {
@@ -747,26 +1375,252 @@ pub fn DebandDither::default() -> DebandDither {
 }
 
 ///|
+pub struct BloomPrefilter {
+  threshold : Float
+  threshold_softness : Float
+}
+
+///|
+pub fn BloomPrefilter::default() -> BloomPrefilter {
+  BloomPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
+}
+
+///|
+pub fn BloomPrefilter::new(
+  threshold : Float,
+  threshold_softness : Float,
+) -> BloomPrefilter {
+  BloomPrefilter::{
+    threshold: if threshold < 0.0F { 0.0F } else { threshold },
+    threshold_softness: if threshold_softness < 0.0F {
+      0.0F
+    } else if threshold_softness > 1.0F {
+      1.0F
+    } else {
+      threshold_softness
+    },
+  }
+}
+
+///|
+pub fn BloomPrefilter::with_threshold(
+  self : BloomPrefilter,
+  threshold : Float,
+) -> BloomPrefilter {
+  BloomPrefilter::new(threshold, self.threshold_softness)
+}
+
+///|
+pub fn BloomPrefilter::with_threshold_softness(
+  self : BloomPrefilter,
+  threshold_softness : Float,
+) -> BloomPrefilter {
+  BloomPrefilter::new(self.threshold, threshold_softness)
+}
+
+///|
+pub(all) enum BloomCompositeMode {
+  EnergyConserving
+  Additive
+} derive(Eq, Show)
+
+///|
+pub fn BloomCompositeMode::default() -> BloomCompositeMode {
+  BloomCompositeMode::EnergyConserving
+}
+
+///|
+const BLOOM_DEFAULT_MAX_MIP_DIMENSION : Int = 512
+
+///|
 /// Camera bloom settings aligned with Bevy's `Bloom`.
 #ecs.component
 pub struct Bloom {
   intensity : Float
+  low_frequency_boost : Float
+  low_frequency_boost_curvature : Float
+  high_pass_frequency : Float
+  prefilter : BloomPrefilter
+  composite_mode : BloomCompositeMode
+  max_mip_dimension : Int
+  scale : @math.Vec2
 }
 
 ///|
 pub fn Bloom::default() -> Bloom {
-  Bloom::{ intensity: 0.15F }
+  Bloom::{
+    intensity: 0.15F,
+    low_frequency_boost: 0.7F,
+    low_frequency_boost_curvature: 0.95F,
+    high_pass_frequency: 1.0F,
+    prefilter: BloomPrefilter::default(),
+    composite_mode: BloomCompositeMode::EnergyConserving,
+    max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION,
+    scale: @math.Vec2::new(1.0F, 1.0F),
+  }
+}
+
+///|
+pub fn Bloom::anamorphic() -> Bloom {
+  Bloom::{
+    ..Bloom::default(),
+    max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION * 2,
+    scale: @math.Vec2::new(4.0F, 1.0F),
+  }
+}
+
+///|
+pub fn Bloom::old_school() -> Bloom {
+  Bloom::{
+    ..Bloom::default(),
+    intensity: 0.05F,
+    prefilter: BloomPrefilter::new(0.6F, 0.2F),
+    composite_mode: BloomCompositeMode::Additive,
+  }
+}
+
+///|
+pub fn Bloom::screen_blur() -> Bloom {
+  Bloom::{
+    ..Bloom::default(),
+    intensity: 1.0F,
+    low_frequency_boost: 0.0F,
+    low_frequency_boost_curvature: 0.0F,
+    high_pass_frequency: 1.0F / 3.0F,
+  }
 }
 
 ///|
 pub fn Bloom::new(intensity : Float) -> Bloom {
-  Bloom::{ intensity: if intensity < 0.0F { 0.0F } else { intensity } }
+  Bloom::{
+    ..Bloom::default(),
+    intensity: if intensity < 0.0F { 0.0F } else { intensity },
+  }
 }
 
 ///|
 pub fn Bloom::with_intensity(self : Bloom, intensity : Float) -> Bloom {
-  self |> ignore
-  Bloom::new(intensity)
+  Bloom::{
+    ..self,
+    intensity: if intensity < 0.0F { 0.0F } else { intensity },
+  }
+}
+
+///|
+pub fn Bloom::with_low_frequency_boost(
+  self : Bloom,
+  low_frequency_boost : Float,
+) -> Bloom {
+  Bloom::{
+    ..self,
+    low_frequency_boost: if low_frequency_boost < 0.0F {
+      0.0F
+    } else if low_frequency_boost > 1.0F {
+      1.0F
+    } else {
+      low_frequency_boost
+    },
+  }
+}
+
+///|
+pub fn Bloom::with_low_frequency_boost_curvature(
+  self : Bloom,
+  low_frequency_boost_curvature : Float,
+) -> Bloom {
+  Bloom::{
+    ..self,
+    low_frequency_boost_curvature: if low_frequency_boost_curvature < 0.0F {
+      0.0F
+    } else if low_frequency_boost_curvature > 1.0F {
+      1.0F
+    } else {
+      low_frequency_boost_curvature
+    },
+  }
+}
+
+///|
+pub fn Bloom::with_high_pass_frequency(
+  self : Bloom,
+  high_pass_frequency : Float,
+) -> Bloom {
+  Bloom::{
+    ..self,
+    high_pass_frequency: if high_pass_frequency < 0.0F {
+      0.0F
+    } else if high_pass_frequency > 1.0F {
+      1.0F
+    } else {
+      high_pass_frequency
+    },
+  }
+}
+
+///|
+pub fn Bloom::with_prefilter(
+  self : Bloom,
+  threshold : Float,
+  threshold_softness : Float,
+) -> Bloom {
+  Bloom::{
+    ..self,
+    prefilter: BloomPrefilter::new(threshold, threshold_softness),
+  }
+}
+
+///|
+pub fn Bloom::with_prefilter_settings(
+  self : Bloom,
+  prefilter : BloomPrefilter,
+) -> Bloom {
+  Bloom::{
+    ..self,
+    prefilter: BloomPrefilter::new(
+      prefilter.threshold,
+      prefilter.threshold_softness,
+    ),
+  }
+}
+
+///|
+pub fn Bloom::with_composite_mode(
+  self : Bloom,
+  composite_mode : BloomCompositeMode,
+) -> Bloom {
+  Bloom::{ ..self, composite_mode, }
+}
+
+///|
+pub fn Bloom::with_max_mip_dimension(
+  self : Bloom,
+  max_mip_dimension : Int,
+) -> Bloom {
+  Bloom::{
+    ..self,
+    max_mip_dimension: if max_mip_dimension < 4 { 4 } else { max_mip_dimension },
+  }
+}
+
+///|
+pub fn Bloom::with_scale(self : Bloom, scale : @math.Vec2) -> Bloom {
+  Bloom::{
+    ..self,
+    scale: @math.Vec2::new(
+      if scale.x < 0.0F { 0.0F } else { scale.x },
+      if scale.y < 0.0F { 0.0F } else { scale.y },
+    ),
+  }
+}
+
+///|
+pub fn Bloom::with_scale_x(self : Bloom, scale_x : Float) -> Bloom {
+  self.with_scale(@math.Vec2::new(scale_x, self.scale.y))
+}
+
+///|
+pub fn Bloom::with_scale_y(self : Bloom, scale_y : Float) -> Bloom {
+  self.with_scale(@math.Vec2::new(self.scale.x, scale_y))
 }
 
 ///|
@@ -780,7 +1634,7 @@ pub struct Skybox {
 
 ///|
 pub fn Skybox::default() -> Skybox {
-  Skybox::{ image: None, brightness: 1.0F, rotation: @math.Quat::identity() }
+  Skybox::{ image: None, brightness: 0.0F, rotation: @math.Quat::identity() }
 }
 
 ///|
@@ -1238,6 +2092,146 @@ pub(all) enum FogFalloff3d {
   Linear(Float, Float)
   Exponential(Float)
   ExponentialSquared(Float)
+  Atmospheric(@math.Vec3, @math.Vec3)
+}
+
+///|
+const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05F
+
+///|
+const FOG_FALLOFF_E : Float = 2.718281828459045F
+
+///|
+const FOG_FALLOFF_LN2 : Float = 0.6931471805599453F
+
+///|
+const FOG_FALLOFF_MIN_VISIBILITY : Float = 0.0001F
+
+///|
+const FOG_FALLOFF_MIN_CONTRAST : Float = 0.000001F
+
+///|
+const FOG_FALLOFF_MAX_CONTRAST : Float = 0.999999F
+
+///|
+fn fog_falloff_clamp01(value : Float) -> Float {
+  if value <= 0.0F {
+    0.0F
+  } else if value >= 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn fog_falloff_sanitize_density(value : Float) -> Float {
+  if value < 0.0F { 0.0F } else { value }
+}
+
+///|
+fn fog_falloff_sanitize_visibility(visibility : Float) -> Float {
+  if visibility <= FOG_FALLOFF_MIN_VISIBILITY {
+    FOG_FALLOFF_MIN_VISIBILITY
+  } else {
+    visibility
+  }
+}
+
+///|
+fn fog_falloff_sanitize_contrast(contrast_threshold : Float) -> Float {
+  if contrast_threshold <= FOG_FALLOFF_MIN_CONTRAST {
+    FOG_FALLOFF_MIN_CONTRAST
+  } else if contrast_threshold >= FOG_FALLOFF_MAX_CONTRAST {
+    FOG_FALLOFF_MAX_CONTRAST
+  } else {
+    contrast_threshold
+  }
+}
+
+///|
+fn fog_falloff_ln(value : Float) -> Float {
+  if value <= 0.0F {
+    return -87.3365447505531F
+  }
+  let mut x = value
+  let mut exponent_shift = 0.0F
+  while x > 2.0F {
+    x = x * 0.5F
+    exponent_shift = exponent_shift + FOG_FALLOFF_LN2
+  }
+  while x < 0.5F {
+    x = x * 2.0F
+    exponent_shift = exponent_shift - FOG_FALLOFF_LN2
+  }
+  let y = (x - 1.0F) / (x + 1.0F)
+  let y_squared = y * y
+  let mut series = 0.0F
+  let mut numerator = y
+  let mut denominator = 1.0F
+  for _ in 0..<8 {
+    series = series + numerator / denominator
+    numerator = numerator * y_squared
+    denominator = denominator + 2.0F
+  }
+  exponent_shift + 2.0F * series
+}
+
+///|
+fn fog_falloff_pow_e(value : Float) -> Float {
+  @math.pow(FOG_FALLOFF_E, value)
+}
+
+///|
+fn fog_falloff_koschmieder(
+  visibility : Float,
+  contrast_threshold : Float,
+) -> Float {
+  let safe_visibility = fog_falloff_sanitize_visibility(visibility)
+  let safe_contrast = fog_falloff_sanitize_contrast(contrast_threshold)
+  -fog_falloff_ln(safe_contrast) / safe_visibility
+}
+
+///|
+fn fog_falloff_atmospheric_from_colors(
+  visibility : Float,
+  contrast_threshold : Float,
+  extinction_color : @render2d.Color,
+  inscattering_color : @render2d.Color,
+) -> FogFalloff3d {
+  let beta = fog_falloff_koschmieder(visibility, contrast_threshold)
+
+  let extinction_alpha = fog_falloff_pow_e(
+    fog_falloff_clamp01(extinction_color.a),
+  )
+  let inscattering_alpha = fog_falloff_pow_e(
+    fog_falloff_clamp01(inscattering_color.a),
+  )
+
+  let extinction = @math.Vec3::new(
+    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.r)) *
+    beta * extinction_alpha,
+    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.g)) *
+    beta * extinction_alpha,
+    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.b)) *
+    beta * extinction_alpha,
+  )
+
+  let inscattering = @math.Vec3::new(
+    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.r)) *
+    beta * inscattering_alpha,
+    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.g)) *
+    beta * inscattering_alpha,
+    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.b)) *
+    beta * inscattering_alpha,
+  )
+
+  FogFalloff3d::Atmospheric(extinction, inscattering)
+}
+
+///|
+pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float {
+  FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD
 }
 
 ///|
@@ -1249,28 +2243,145 @@ pub fn FogFalloff3d::linear(start : Float, end_ : Float) -> FogFalloff3d {
 
 ///|
 pub fn FogFalloff3d::exponential(density : Float) -> FogFalloff3d {
-  let safe_density = if density < 0.0F { 0.0F } else { density }
+  let safe_density = fog_falloff_sanitize_density(density)
   FogFalloff3d::Exponential(safe_density)
 }
 
 ///|
 pub fn FogFalloff3d::exponential_squared(density : Float) -> FogFalloff3d {
-  let safe_density = if density < 0.0F { 0.0F } else { density }
+  let safe_density = fog_falloff_sanitize_density(density)
   FogFalloff3d::ExponentialSquared(safe_density)
+}
+
+///|
+pub fn FogFalloff3d::atmospheric(
+  extinction : @math.Vec3,
+  inscattering : @math.Vec3,
+) -> FogFalloff3d {
+  let safe_extinction = @math.Vec3::new(
+    fog_falloff_sanitize_density(extinction.x),
+    fog_falloff_sanitize_density(extinction.y),
+    fog_falloff_sanitize_density(extinction.z),
+  )
+  let safe_inscattering = @math.Vec3::new(
+    fog_falloff_sanitize_density(inscattering.x),
+    fog_falloff_sanitize_density(inscattering.y),
+    fog_falloff_sanitize_density(inscattering.z),
+  )
+  FogFalloff3d::Atmospheric(safe_extinction, safe_inscattering)
+}
+
+///|
+pub fn FogFalloff3d::from_visibility(visibility : Float) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast(
+  visibility : Float,
+  contrast_threshold : Float,
+) -> FogFalloff3d {
+  FogFalloff3d::Exponential(
+    fog_falloff_koschmieder(visibility, contrast_threshold),
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_squared(visibility : Float) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_squared(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast_squared(
+  visibility : Float,
+  contrast_threshold : Float,
+) -> FogFalloff3d {
+  let safe_visibility = fog_falloff_sanitize_visibility(visibility)
+  let density = @math.sqrt(
+    fog_falloff_koschmieder(safe_visibility, contrast_threshold) /
+    safe_visibility,
+  )
+  FogFalloff3d::ExponentialSquared(fog_falloff_sanitize_density(density))
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_color(
+  visibility : Float,
+  extinction_inscattering_color : @render2d.Color,
+) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_colors(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+    extinction_inscattering_color,
+    extinction_inscattering_color,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_colors(
+  visibility : Float,
+  extinction_color : @render2d.Color,
+  inscattering_color : @render2d.Color,
+) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_colors(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+    extinction_color,
+    inscattering_color,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast_color(
+  visibility : Float,
+  contrast_threshold : Float,
+  extinction_inscattering_color : @render2d.Color,
+) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_colors(
+    visibility,
+    contrast_threshold,
+    extinction_inscattering_color,
+    extinction_inscattering_color,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast_colors(
+  visibility : Float,
+  contrast_threshold : Float,
+  extinction_color : @render2d.Color,
+  inscattering_color : @render2d.Color,
+) -> FogFalloff3d {
+  fog_falloff_atmospheric_from_colors(
+    visibility,
+    contrast_threshold,
+    extinction_color,
+    inscattering_color,
+  )
 }
 
 ///|
 // Global fog settings (currently global, not per-camera component).
 pub struct DistanceFog {
   color : @render2d.Color
+  directional_light_color : @render2d.Color
+  directional_light_exponent : Float
   falloff : FogFalloff3d
 }
 
 ///|
 pub fn DistanceFog::default() -> DistanceFog {
   DistanceFog::{
-    color: @render2d.Color::new(0.25F, 0.25F, 0.25F, 0.0F),
-    falloff: FogFalloff3d::linear(5.0F, 20.0F),
+    color: @render2d.Color::white(),
+    directional_light_color: @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    directional_light_exponent: 8.0F,
+    falloff: FogFalloff3d::linear(0.0F, 100.0F),
   }
 }
 
@@ -1279,7 +2390,12 @@ pub fn DistanceFog::new(
   color : @render2d.Color,
   falloff : FogFalloff3d,
 ) -> DistanceFog {
-  DistanceFog::{ color, falloff }
+  DistanceFog::{
+    color,
+    directional_light_color: @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    directional_light_exponent: 8.0F,
+    falloff,
+  }
 }
 
 ///|
@@ -1288,6 +2404,29 @@ pub fn DistanceFog::with_color(
   color : @render2d.Color,
 ) -> DistanceFog {
   DistanceFog::{ ..self, color, }
+}
+
+///|
+pub fn DistanceFog::with_directional_light_color(
+  self : DistanceFog,
+  directional_light_color : @render2d.Color,
+) -> DistanceFog {
+  DistanceFog::{ ..self, directional_light_color, }
+}
+
+///|
+pub fn DistanceFog::with_directional_light_exponent(
+  self : DistanceFog,
+  directional_light_exponent : Float,
+) -> DistanceFog {
+  DistanceFog::{
+    ..self,
+    directional_light_exponent: if directional_light_exponent < 0.0F {
+      0.0F
+    } else {
+      directional_light_exponent
+    },
+  }
 }
 
 ///|
@@ -1309,6 +2448,335 @@ pub fn render3d_set_distance_fog(fog : DistanceFog) -> Unit {
 ///|
 pub fn render3d_distance_fog() -> DistanceFog {
   distance_fog_state.val
+}
+
+///|
+/// API-parity data model stub aligned with Bevy's `VolumetricLight`.
+pub struct VolumetricLight {}
+
+///|
+pub fn VolumetricLight::default() -> VolumetricLight {
+  VolumetricLight::{ }
+}
+
+///|
+/// API-parity data model stub aligned with Bevy's `VolumetricFog`.
+pub struct VolumetricFog {
+  ambient_color : @render2d.Color
+  ambient_intensity : Float
+  jitter : Float
+  step_count : Int
+}
+
+///|
+pub fn VolumetricFog::default() -> VolumetricFog {
+  VolumetricFog::{
+    ambient_color: @render2d.Color::white(),
+    ambient_intensity: 0.1F,
+    jitter: 0.0F,
+    step_count: 64,
+  }
+}
+
+///|
+pub fn VolumetricFog::with_ambient_color(
+  self : VolumetricFog,
+  ambient_color : @render2d.Color,
+) -> VolumetricFog {
+  VolumetricFog::{ ..self, ambient_color, }
+}
+
+///|
+pub fn VolumetricFog::with_ambient_intensity(
+  self : VolumetricFog,
+  ambient_intensity : Float,
+) -> VolumetricFog {
+  VolumetricFog::{
+    ..self,
+    ambient_intensity: if ambient_intensity < 0.0F {
+      0.0F
+    } else {
+      ambient_intensity
+    },
+  }
+}
+
+///|
+pub fn VolumetricFog::with_jitter(
+  self : VolumetricFog,
+  jitter : Float,
+) -> VolumetricFog {
+  VolumetricFog::{ ..self, jitter: if jitter < 0.0F { 0.0F } else { jitter } }
+}
+
+///|
+pub fn VolumetricFog::with_step_count(
+  self : VolumetricFog,
+  step_count : Int,
+) -> VolumetricFog {
+  VolumetricFog::{ ..self, step_count: if step_count <= 0 { 1 } else { step_count } }
+}
+
+///|
+/// API-parity data model stub aligned with Bevy's `FogVolume`.
+pub struct FogVolume {
+  fog_color : @render2d.Color
+  density_factor : Float
+  density_texture : @asset.Handle[@asset.Image]?
+  density_texture_offset : @math.Vec3
+  absorption : Float
+  scattering : Float
+  scattering_asymmetry : Float
+  light_tint : @render2d.Color
+  light_intensity : Float
+}
+
+///|
+pub fn FogVolume::default() -> FogVolume {
+  FogVolume::{
+    fog_color: @render2d.Color::white(),
+    density_factor: 0.1F,
+    density_texture: None,
+    density_texture_offset: @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    absorption: 0.3F,
+    scattering: 0.3F,
+    scattering_asymmetry: 0.5F,
+    light_tint: @render2d.Color::white(),
+    light_intensity: 1.0F,
+  }
+}
+
+///|
+pub fn FogVolume::with_fog_color(
+  self : FogVolume,
+  fog_color : @render2d.Color,
+) -> FogVolume {
+  FogVolume::{ ..self, fog_color, }
+}
+
+///|
+pub fn FogVolume::with_density_factor(
+  self : FogVolume,
+  density_factor : Float,
+) -> FogVolume {
+  FogVolume::{ ..self, density_factor: fog_falloff_sanitize_density(density_factor), }
+}
+
+///|
+pub fn FogVolume::with_density_texture(
+  self : FogVolume,
+  density_texture : @asset.Handle[@asset.Image]?,
+) -> FogVolume {
+  FogVolume::{ ..self, density_texture, }
+}
+
+///|
+pub fn FogVolume::with_density_texture_offset(
+  self : FogVolume,
+  density_texture_offset : @math.Vec3,
+) -> FogVolume {
+  FogVolume::{ ..self, density_texture_offset, }
+}
+
+///|
+pub fn FogVolume::with_absorption(
+  self : FogVolume,
+  absorption : Float,
+) -> FogVolume {
+  FogVolume::{ ..self, absorption: fog_falloff_sanitize_density(absorption), }
+}
+
+///|
+pub fn FogVolume::with_scattering(
+  self : FogVolume,
+  scattering : Float,
+) -> FogVolume {
+  FogVolume::{ ..self, scattering: fog_falloff_sanitize_density(scattering), }
+}
+
+///|
+pub fn FogVolume::with_scattering_asymmetry(
+  self : FogVolume,
+  scattering_asymmetry : Float,
+) -> FogVolume {
+  FogVolume::{
+    ..self,
+    scattering_asymmetry: fog_falloff_clamp01(
+      (scattering_asymmetry + 1.0F) * 0.5F,
+    ) * 2.0F - 1.0F,
+  }
+}
+
+///|
+pub fn FogVolume::with_light_tint(
+  self : FogVolume,
+  light_tint : @render2d.Color,
+) -> FogVolume {
+  FogVolume::{ ..self, light_tint, }
+}
+
+///|
+pub fn FogVolume::with_light_intensity(
+  self : FogVolume,
+  light_intensity : Float,
+) -> FogVolume {
+  FogVolume::{
+    ..self,
+    light_intensity: if light_intensity < 0.0F { 0.0F } else { light_intensity },
+  }
+}
+
+///|
+pub(all) enum AtmosphereMode {
+  LookupTexture
+  Raymarched
+}
+
+///|
+pub fn AtmosphereMode::default() -> AtmosphereMode {
+  AtmosphereMode::LookupTexture
+}
+
+///|
+/// API-parity data model stub aligned with Bevy's `AtmosphereSettings`.
+pub struct AtmosphereSettings {
+  scene_units_to_m : Float
+  sky_max_samples : Int
+  rendering_method : AtmosphereMode
+}
+
+///|
+pub fn AtmosphereSettings::default() -> AtmosphereSettings {
+  AtmosphereSettings::{
+    scene_units_to_m: 1.0F,
+    sky_max_samples: 16,
+    rendering_method: AtmosphereMode::LookupTexture,
+  }
+}
+
+///|
+pub fn AtmosphereSettings::with_scene_units_to_m(
+  self : AtmosphereSettings,
+  scene_units_to_m : Float,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{
+    ..self,
+    scene_units_to_m: if scene_units_to_m <= 0.0F { 0.0001F } else { scene_units_to_m },
+  }
+}
+
+///|
+pub fn AtmosphereSettings::with_sky_max_samples(
+  self : AtmosphereSettings,
+  sky_max_samples : Int,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, sky_max_samples: if sky_max_samples <= 0 { 1 } else { sky_max_samples } }
+}
+
+///|
+pub fn AtmosphereSettings::with_rendering_method(
+  self : AtmosphereSettings,
+  rendering_method : AtmosphereMode,
+) -> AtmosphereSettings {
+  AtmosphereSettings::{ ..self, rendering_method, }
+}
+
+///|
+pub struct ScatteringMedium {
+  density_multiplier : Float
+}
+
+///|
+pub fn ScatteringMedium::default() -> ScatteringMedium {
+  ScatteringMedium::{ density_multiplier: 1.0F }
+}
+
+///|
+pub fn ScatteringMedium::earthlike() -> ScatteringMedium {
+  ScatteringMedium::default()
+}
+
+///|
+pub fn ScatteringMedium::with_density_multiplier(
+  self : ScatteringMedium,
+  density_multiplier : Float,
+) -> ScatteringMedium {
+  self |> ignore
+  ScatteringMedium::{
+    density_multiplier: if density_multiplier < 0.0F {
+      0.0F
+    } else {
+      density_multiplier
+    },
+  }
+}
+
+///|
+/// API-parity data model stub aligned with Bevy's `Atmosphere`.
+pub struct Atmosphere {
+  bottom_radius : Float
+  top_radius : Float
+  ground_albedo : @math.Vec3
+  medium : ScatteringMedium
+}
+
+///|
+pub fn Atmosphere::default() -> Atmosphere {
+  Atmosphere::earthlike(ScatteringMedium::default())
+}
+
+///|
+pub fn Atmosphere::earthlike(medium : ScatteringMedium) -> Atmosphere {
+  Atmosphere::{
+    bottom_radius: 6_360_000.0F,
+    top_radius: 6_460_000.0F,
+    ground_albedo: @math.Vec3::new(0.3F, 0.3F, 0.3F),
+    medium,
+  }
+}
+
+///|
+pub fn Atmosphere::with_radii(
+  self : Atmosphere,
+  bottom_radius : Float,
+  top_radius : Float,
+) -> Atmosphere {
+  let safe_bottom_radius = if bottom_radius <= 0.0F { 0.0001F } else { bottom_radius }
+  let safe_top_radius = if top_radius < safe_bottom_radius {
+    safe_bottom_radius
+  } else {
+    top_radius
+  }
+  Atmosphere::{
+    ..self,
+    bottom_radius: safe_bottom_radius,
+    top_radius: safe_top_radius,
+  }
+}
+
+///|
+pub fn Atmosphere::with_ground_albedo(
+  self : Atmosphere,
+  ground_albedo : @math.Vec3,
+) -> Atmosphere {
+  Atmosphere::{ ..self, ground_albedo, }
+}
+
+///|
+pub fn Atmosphere::with_medium(
+  self : Atmosphere,
+  medium : ScatteringMedium,
+) -> Atmosphere {
+  Atmosphere::{ ..self, medium, }
+}
+
+///|
+/// API-parity data model stub aligned with Bevy's `AtmosphereEnvironmentMapLight`.
+pub struct AtmosphereEnvironmentMapLight {}
+
+///|
+pub fn AtmosphereEnvironmentMapLight::default() -> AtmosphereEnvironmentMapLight {
+  AtmosphereEnvironmentMapLight::{ }
 }
 
 ///|
@@ -1877,6 +3345,23 @@ pub fn StandardMaterial::with_unlit(
 }
 
 ///|
+pub fn StandardMaterial::with_cull_mode(
+  self : StandardMaterial,
+  cull_mode : Face3d?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, cull_mode, }
+}
+
+///|
+pub fn StandardMaterial::with_double_sided(
+  self : StandardMaterial,
+  double_sided : Bool,
+) -> StandardMaterial {
+  let cull_mode : Face3d? = if double_sided { None } else { Some(Face3d::Back) }
+  StandardMaterial::{ ..self, cull_mode, }
+}
+
+///|
 let standard_material_assets : Ref[@asset.Assets[StandardMaterial]] = Ref::new(
   @asset.Assets::new(),
 )
@@ -2084,6 +3569,144 @@ pub fn MeshMaterial3d::new(
 }
 
 ///|
+/// Marker component aligned with Bevy's `ForwardDecal`.
+///
+/// Current runtime note: projected forward-decal shading is not wired in this
+/// backend yet. This component preserves scene/API parity for example
+/// migration and future renderer integration.
+#ecs.component
+pub struct ForwardDecal {}
+
+///|
+pub fn ForwardDecal::default() -> ForwardDecal {
+  ForwardDecal::{  }
+}
+
+///|
+fn forward_decal_depth_fade_factor_safe(depth_fade_factor : Float) -> Float {
+  if depth_fade_factor < 0.001F {
+    0.001F
+  } else {
+    depth_fade_factor
+  }
+}
+
+///|
+/// Forward decal material-extension parameters aligned with Bevy's
+/// `ForwardDecalMaterialExt`.
+///
+/// Current runtime note: values are stored for parity; extension shader
+/// specialization is pending renderer support.
+#ecs.component
+pub struct ForwardDecalMaterialExt {
+  depth_fade_factor : Float
+}
+
+///|
+pub fn ForwardDecalMaterialExt::default() -> ForwardDecalMaterialExt {
+  ForwardDecalMaterialExt::{ depth_fade_factor: 8.0F }
+}
+
+///|
+pub fn ForwardDecalMaterialExt::new(
+  depth_fade_factor : Float,
+) -> ForwardDecalMaterialExt {
+  ForwardDecalMaterialExt::{
+    depth_fade_factor: forward_decal_depth_fade_factor_safe(depth_fade_factor),
+  }
+}
+
+///|
+pub fn ForwardDecalMaterialExt::with_depth_fade_factor(
+  self : ForwardDecalMaterialExt,
+  depth_fade_factor : Float,
+) -> ForwardDecalMaterialExt {
+  self |> ignore
+  ForwardDecalMaterialExt::{
+    depth_fade_factor: forward_decal_depth_fade_factor_safe(depth_fade_factor),
+  }
+}
+
+///|
+fn clustered_decal_tag_safe(tag : Int) -> Int {
+  if tag < 0 {
+    0
+  } else {
+    tag
+  }
+}
+
+///|
+/// Clustered decal parameters aligned with Bevy's `ClusteredDecal`.
+///
+/// The decal volume follows Bevy semantics: a transformed unit cube that
+/// projects textures along local `-Z`.
+///
+/// Current runtime note: clustered projection is not yet active in this
+/// backend; this component currently carries scene intent metadata.
+#ecs.component
+pub struct ClusteredDecal {
+  base_color_texture : @asset.Handle[@asset.Image]?
+  normal_map_texture : @asset.Handle[@asset.Image]?
+  metallic_roughness_texture : @asset.Handle[@asset.Image]?
+  emissive_texture : @asset.Handle[@asset.Image]?
+  tag : Int
+}
+
+///|
+pub fn ClusteredDecal::default() -> ClusteredDecal {
+  ClusteredDecal::{
+    base_color_texture: None,
+    normal_map_texture: None,
+    metallic_roughness_texture: None,
+    emissive_texture: None,
+    tag: 0,
+  }
+}
+
+///|
+pub fn ClusteredDecal::new() -> ClusteredDecal {
+  ClusteredDecal::default()
+}
+
+///|
+pub fn ClusteredDecal::with_base_color_texture(
+  self : ClusteredDecal,
+  base_color_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, base_color_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_normal_map_texture(
+  self : ClusteredDecal,
+  normal_map_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, normal_map_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_metallic_roughness_texture(
+  self : ClusteredDecal,
+  metallic_roughness_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, metallic_roughness_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_emissive_texture(
+  self : ClusteredDecal,
+  emissive_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, emissive_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_tag(self : ClusteredDecal, tag : Int) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, tag: clustered_decal_tag_safe(tag), }
+}
+
+///|
 const POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.08F
 
 ///|
@@ -2118,6 +3741,7 @@ pub struct PointLight {
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
   soft_shadows_enabled : Bool
+  affects_lightmapped_mesh_diffuse : Bool
   shadow_depth_bias : Float
   shadow_normal_bias : Float
   shadow_map_near_z : Float
@@ -2133,6 +3757,7 @@ pub fn PointLight::default() -> PointLight {
     shadow_maps_enabled: false,
     contact_shadows_enabled: false,
     soft_shadows_enabled: false,
+    affects_lightmapped_mesh_diffuse: true,
     shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
     shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
@@ -2154,10 +3779,24 @@ pub fn PointLight::new(
     shadow_maps_enabled,
     contact_shadows_enabled: false,
     soft_shadows_enabled: false,
+    affects_lightmapped_mesh_diffuse: true,
     shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
     shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
   }
+}
+
+///|
+pub fn PointLight::with_color(
+  self : PointLight,
+  color : @render2d.Color,
+) -> PointLight {
+  PointLight::{ ..self, color, }
+}
+
+///|
+pub fn PointLight::with_range(self : PointLight, range : Float) -> PointLight {
+  PointLight::{ ..self, range: if range < 0.0F { 0.0F } else { range } }
 }
 
 ///|
@@ -2194,6 +3833,22 @@ pub fn PointLight::with_soft_shadows_enabled(
   soft_shadows_enabled : Bool,
 ) -> PointLight {
   PointLight::{ ..self, soft_shadows_enabled, }
+}
+
+///|
+pub fn PointLight::with_shadow_maps_enabled(
+  self : PointLight,
+  shadow_maps_enabled : Bool,
+) -> PointLight {
+  PointLight::{ ..self, shadow_maps_enabled, }
+}
+
+///|
+pub fn PointLight::with_affects_lightmapped_mesh_diffuse(
+  self : PointLight,
+  affects_lightmapped_mesh_diffuse : Bool,
+) -> PointLight {
+  PointLight::{ ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -2242,6 +3897,248 @@ pub fn PointLight::with_shadow_map_near_z(
 }
 
 ///|
+/// Point-light shadow map resource aligned with Bevy's `PointLightShadowMap`.
+#ecs.resource
+pub struct PointLightShadowMap {
+  size : Int
+}
+
+///|
+pub fn PointLightShadowMap::default() -> PointLightShadowMap {
+  PointLightShadowMap::{ size: 1024 }
+}
+
+///|
+pub fn PointLightShadowMap::new(size : Int) -> PointLightShadowMap {
+  PointLightShadowMap::{ size: if size <= 0 { 1 } else { size } }
+}
+
+///|
+pub fn PointLightShadowMap::with_size(
+  self : PointLightShadowMap,
+  size : Int,
+) -> PointLightShadowMap {
+  self |> ignore
+  PointLightShadowMap::new(size)
+}
+
+///|
+fn directional_shadow_map_size_safe(size : Int) -> Int {
+  let safe = if size <= 0 { 1 } else { size }
+  let mut pow2 = 1
+  while pow2 < safe {
+    pow2 = pow2 * 2
+  }
+  pow2
+}
+
+///|
+/// Directional/spot-light shadow map resource aligned with Bevy's
+/// `DirectionalLightShadowMap`.
+///
+/// A single `size` value controls the width/height of each shadow map slice.
+#ecs.resource
+pub struct DirectionalLightShadowMap {
+  size : Int
+}
+
+///|
+pub fn DirectionalLightShadowMap::default() -> DirectionalLightShadowMap {
+  DirectionalLightShadowMap::{ size: 2048 }
+}
+
+///|
+pub fn DirectionalLightShadowMap::new(size : Int) -> DirectionalLightShadowMap {
+  DirectionalLightShadowMap::{ size: directional_shadow_map_size_safe(size) }
+}
+
+///|
+pub fn DirectionalLightShadowMap::with_size(
+  self : DirectionalLightShadowMap,
+  size : Int,
+) -> DirectionalLightShadowMap {
+  self |> ignore
+  DirectionalLightShadowMap::new(size)
+}
+
+///|
+pub struct CascadeShadowConfig {
+  bounds : Array[Float]
+  overlap_proportion : Float
+  minimum_distance : Float
+}
+
+///|
+pub struct CascadeShadowConfigBuilder {
+  num_cascades : Int
+  minimum_distance : Float
+  maximum_distance : Float
+  first_cascade_far_bound : Float
+  overlap_proportion : Float
+}
+
+///|
+fn cascade_shadow_config_safe_overlap(overlap : Float) -> Float {
+  if overlap < 0.0F {
+    0.0F
+  } else if overlap >= 1.0F {
+    0.9999F
+  } else {
+    overlap
+  }
+}
+
+///|
+fn cascade_shadow_config_calculate_bounds(
+  num_cascades : Int,
+  nearest_bound : Float,
+  maximum_distance : Float,
+) -> Array[Float] {
+  if num_cascades <= 1 {
+    return [maximum_distance]
+  }
+  let exponent = 1.0F /
+    Float::from_double((num_cascades - 1).to_double())
+  let base = @math.pow(maximum_distance / nearest_bound, exponent)
+  let bounds : Array[Float] = []
+  for i in 0..<num_cascades {
+    bounds.push(
+      nearest_bound * @math.pow(base, Float::from_double(i.to_double())),
+    )
+  }
+  bounds
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::default() -> CascadeShadowConfigBuilder {
+  CascadeShadowConfigBuilder::{
+    num_cascades: 4,
+    minimum_distance: 0.1F,
+    maximum_distance: 150.0F,
+    first_cascade_far_bound: 10.0F,
+    overlap_proportion: 0.2F,
+  }
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::new() -> CascadeShadowConfigBuilder {
+  CascadeShadowConfigBuilder::default()
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::with_num_cascades(
+  self : CascadeShadowConfigBuilder,
+  num_cascades : Int,
+) -> CascadeShadowConfigBuilder {
+  CascadeShadowConfigBuilder::{
+    ..self,
+    num_cascades: if num_cascades <= 0 { 1 } else { num_cascades },
+  }
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::with_minimum_distance(
+  self : CascadeShadowConfigBuilder,
+  minimum_distance : Float,
+) -> CascadeShadowConfigBuilder {
+  CascadeShadowConfigBuilder::{
+    ..self,
+    minimum_distance: if minimum_distance < 0.0F {
+      0.0F
+    } else {
+      minimum_distance
+    },
+  }
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::with_maximum_distance(
+  self : CascadeShadowConfigBuilder,
+  maximum_distance : Float,
+) -> CascadeShadowConfigBuilder {
+  CascadeShadowConfigBuilder::{
+    ..self,
+    maximum_distance: if maximum_distance < 0.0F {
+      0.0F
+    } else {
+      maximum_distance
+    },
+  }
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::with_first_cascade_far_bound(
+  self : CascadeShadowConfigBuilder,
+  first_cascade_far_bound : Float,
+) -> CascadeShadowConfigBuilder {
+  CascadeShadowConfigBuilder::{
+    ..self,
+    first_cascade_far_bound: if first_cascade_far_bound < 0.0F {
+      0.0F
+    } else {
+      first_cascade_far_bound
+    },
+  }
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::with_overlap_proportion(
+  self : CascadeShadowConfigBuilder,
+  overlap_proportion : Float,
+) -> CascadeShadowConfigBuilder {
+  CascadeShadowConfigBuilder::{
+    ..self,
+    overlap_proportion: cascade_shadow_config_safe_overlap(overlap_proportion),
+  }
+}
+
+///|
+pub fn CascadeShadowConfigBuilder::build(
+  self : CascadeShadowConfigBuilder,
+) -> CascadeShadowConfig {
+  let safe_num_cascades = if self.num_cascades <= 0 { 1 } else { self.num_cascades }
+  let safe_minimum_distance = if self.minimum_distance < 0.0F {
+    0.0F
+  } else {
+    self.minimum_distance
+  }
+  let mut safe_maximum_distance = if self.maximum_distance <= safe_minimum_distance {
+    safe_minimum_distance + 0.1F
+  } else {
+    self.maximum_distance
+  }
+  if safe_maximum_distance <= 0.0F {
+    safe_maximum_distance = 0.1F
+  }
+  let mut safe_first_cascade_far_bound = if self.first_cascade_far_bound <=
+      safe_minimum_distance {
+    safe_minimum_distance + 0.1F
+  } else {
+    self.first_cascade_far_bound
+  }
+  if safe_num_cascades == 1 {
+    safe_first_cascade_far_bound = safe_maximum_distance
+  } else if safe_first_cascade_far_bound > safe_maximum_distance {
+    safe_first_cascade_far_bound = safe_maximum_distance
+  }
+
+  CascadeShadowConfig::{
+    bounds: cascade_shadow_config_calculate_bounds(
+      safe_num_cascades,
+      safe_first_cascade_far_bound,
+      safe_maximum_distance,
+    ),
+    overlap_proportion: cascade_shadow_config_safe_overlap(self.overlap_proportion),
+    minimum_distance: safe_minimum_distance,
+  }
+}
+
+///|
+pub fn CascadeShadowConfig::default() -> CascadeShadowConfig {
+  CascadeShadowConfigBuilder::default().build()
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct DirectionalLight {
@@ -2250,6 +4147,7 @@ pub struct DirectionalLight {
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
   soft_shadow_size : Float?
+  cascade_shadow_config : CascadeShadowConfig?
   shadow_depth_bias : Float
   shadow_normal_bias : Float
 }
@@ -2262,6 +4160,7 @@ pub fn DirectionalLight::default() -> DirectionalLight {
     shadow_maps_enabled: false,
     contact_shadows_enabled: false,
     soft_shadow_size: None,
+    cascade_shadow_config: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
@@ -2279,6 +4178,7 @@ pub fn DirectionalLight::new(
     shadow_maps_enabled,
     contact_shadows_enabled: false,
     soft_shadow_size: None,
+    cascade_shadow_config: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
@@ -2317,6 +4217,25 @@ pub fn DirectionalLight::with_soft_shadow_size(
     None => None
   }
   DirectionalLight::{ ..self, soft_shadow_size: safe_soft_shadow_size }
+}
+
+///|
+pub fn DirectionalLight::with_cascade_shadow_config(
+  self : DirectionalLight,
+  cascade_shadow_config : CascadeShadowConfig?,
+) -> DirectionalLight {
+  DirectionalLight::{ ..self, cascade_shadow_config, }
+}
+
+///|
+pub fn DirectionalLight::with_cascade_shadow_config_builder(
+  self : DirectionalLight,
+  cascade_shadow_config_builder : CascadeShadowConfigBuilder,
+) -> DirectionalLight {
+  DirectionalLight::{
+    ..self,
+    cascade_shadow_config: Some(cascade_shadow_config_builder.build()),
+  }
 }
 
 ///|
@@ -2938,9 +4857,14 @@ pub struct Camera3dBundle {
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
+  bloom : Bloom?
+  tonemapping : Tonemapping?
+  deband_dither : DebandDither?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
   motion_blur : MotionBlur?
+  exposure : Exposure?
+  color_grading : ColorGrading?
   camera3d : Camera3d
   transform : @math.Transform
   target : @render2d.RenderTarget
@@ -2958,9 +4882,14 @@ pub fn Camera3dBundle::new(
     sub_camera_view: None,
     screen_space_transmission: None,
     screen_space_reflections: None,
+    bloom: None,
+    tonemapping: None,
+    deband_dither: None,
     chromatic_aberration: None,
     vignette: None,
     motion_blur: None,
+    exposure: None,
+    color_grading: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -2980,9 +4909,14 @@ pub fn Camera3dBundle::new_with_projection(
     sub_camera_view: None,
     screen_space_transmission: None,
     screen_space_reflections: None,
+    bloom: None,
+    tonemapping: None,
+    deband_dither: None,
     chromatic_aberration: None,
     vignette: None,
     motion_blur: None,
+    exposure: None,
+    color_grading: None,
     camera3d: Camera3d::default(),
     transform,
     target: @render2d.RenderTarget::Screen,
@@ -3015,6 +4949,30 @@ pub fn Camera3dBundle::with_screen_space_reflections(
 }
 
 ///|
+pub fn Camera3dBundle::with_bloom(
+  self : Camera3dBundle,
+  bloom : Bloom?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, bloom, }
+}
+
+///|
+pub fn Camera3dBundle::with_tonemapping(
+  self : Camera3dBundle,
+  tonemapping : Tonemapping?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, tonemapping, }
+}
+
+///|
+pub fn Camera3dBundle::with_deband_dither(
+  self : Camera3dBundle,
+  deband_dither : DebandDither?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, deband_dither, }
+}
+
+///|
 pub fn Camera3dBundle::with_chromatic_aberration(
   self : Camera3dBundle,
   chromatic_aberration : ChromaticAberration?,
@@ -3036,6 +4994,22 @@ pub fn Camera3dBundle::with_motion_blur(
   motion_blur : MotionBlur?,
 ) -> Camera3dBundle {
   Camera3dBundle::{ ..self, motion_blur, }
+}
+
+///|
+pub fn Camera3dBundle::with_exposure(
+  self : Camera3dBundle,
+  exposure : Exposure?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, exposure, }
+}
+
+///|
+pub fn Camera3dBundle::with_color_grading(
+  self : Camera3dBundle,
+  color_grading : ColorGrading?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, color_grading, }
 }
 
 ///|
@@ -3067,7 +5041,7 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
 }
 
 ///|
@@ -3096,6 +5070,15 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
     .get_screen_space_reflections_store()
     .insert(entity, screen_space_reflections, tick)
   }
+  if self.bloom is Some(bloom) {
+    world.get_bloom_store().insert(entity, bloom, tick)
+  }
+  if self.tonemapping is Some(tonemapping) {
+    world.get_tonemapping_store().insert(entity, tonemapping, tick)
+  }
+  if self.deband_dither is Some(deband_dither) {
+    world.get_deband_dither_store().insert(entity, deband_dither, tick)
+  }
   if self.chromatic_aberration is Some(chromatic_aberration) {
     world
     .get_chromatic_aberration_store()
@@ -3106,6 +5089,12 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
   }
   if self.motion_blur is Some(motion_blur) {
     world.get_motion_blur_store().insert(entity, motion_blur, tick)
+  }
+  if self.exposure is Some(exposure) {
+    world.get_exposure_store().insert(entity, exposure, tick)
+  }
+  if self.color_grading is Some(color_grading) {
+    world.get_color_grading_store().insert(entity, color_grading, tick)
   }
   world.get_camera_store().insert(entity, self.camera, tick)
   world.get_render_target_store().insert(entity, self.target, tick)
@@ -3145,9 +5134,14 @@ priv struct Camera3dInstance {
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
+  bloom : Bloom?
+  tonemapping : Tonemapping?
+  deband_dither : DebandDither?
   chromatic_aberration : ChromaticAberration?
   vignette : Vignette?
   motion_blur : MotionBlur?
+  exposure : Exposure?
+  color_grading : ColorGrading?
   skybox : Skybox?
   environment_map_light : EnvironmentMapLight?
   generated_environment_map_light : GeneratedEnvironmentMapLight?
@@ -3902,6 +5896,7 @@ fn render3d_draw_camera_skybox(
     transmission_source_texture_id=-1,
     transmission_blur_taps=0.0F,
     transmission_steps=0.0F,
+    cull_mode=1,
   )
 }
 
@@ -4132,6 +6127,422 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
+const RENDER3D_TONEMAPPING_LUT_AGX_PATH : String = "textures/tonemapping/AgX-default_contrast.ktx2"
+
+///|
+const RENDER3D_TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface.ktx2"
+
+///|
+const RENDER3D_TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
+
+///|
+priv struct Render3dTonemappingLutHandles {
+  agx : @asset.Handle[@asset.Image]
+  tony : @asset.Handle[@asset.Image]
+  blender : @asset.Handle[@asset.Image]
+}
+
+///|
+let render3d_tonemapping_lut_handles_ref : Ref[Render3dTonemappingLutHandles?] = Ref::new(
+  None,
+)
+
+///|
+fn render3d_tonemapping_lut_handles() -> Render3dTonemappingLutHandles {
+  if render3d_tonemapping_lut_handles_ref.val is Some(handles) {
+    return handles
+  }
+  let asset_server = @asset.AssetServer::new()
+  let handles = Render3dTonemappingLutHandles::{
+    agx: asset_server.load(RENDER3D_TONEMAPPING_LUT_AGX_PATH),
+    tony: asset_server.load(RENDER3D_TONEMAPPING_LUT_TONY_PATH),
+    blender: asset_server.load(RENDER3D_TONEMAPPING_LUT_BLENDER_PATH),
+  }
+  render3d_tonemapping_lut_handles_ref.val = Some(handles)
+  handles
+}
+
+///|
+fn render3d_bloom_clamp_unit(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_clamp_non_negative(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_safe_max_mip_dimension(value : Int) -> Int {
+  if value < 4 {
+    4
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_safe_scale_axis(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_sanitize(bloom : Bloom) -> Bloom {
+  Bloom::{
+    intensity: render3d_bloom_clamp_non_negative(bloom.intensity),
+    low_frequency_boost: render3d_bloom_clamp_unit(bloom.low_frequency_boost),
+    low_frequency_boost_curvature: render3d_bloom_clamp_unit(
+      bloom.low_frequency_boost_curvature,
+    ),
+    high_pass_frequency: render3d_bloom_clamp_unit(bloom.high_pass_frequency),
+    prefilter: BloomPrefilter::{
+      threshold: render3d_bloom_clamp_non_negative(bloom.prefilter.threshold),
+      threshold_softness: render3d_bloom_clamp_unit(
+        bloom.prefilter.threshold_softness,
+      ),
+    },
+    composite_mode: bloom.composite_mode,
+    max_mip_dimension: render3d_bloom_safe_max_mip_dimension(
+      bloom.max_mip_dimension,
+    ),
+    scale: @math.Vec2::new(
+      render3d_bloom_safe_scale_axis(bloom.scale.x),
+      render3d_bloom_safe_scale_axis(bloom.scale.y),
+    ),
+  }
+}
+
+///|
+fn render3d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
+  match mode {
+    None => 0
+    Reinhard => 1
+    ReinhardLuminance => 2
+    AcesFitted => 3
+    AgX => 4
+    SomewhatBoringDisplayTransform => 5
+    TonyMcMapface => 6
+    BlenderFilmic => 7
+  }
+}
+
+///|
+fn render3d_draw_camera_bloom(
+  scene_texture_id : Int,
+  bloom : Bloom,
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let luts = render3d_tonemapping_lut_handles()
+  let settings = render3d_bloom_sanitize(bloom)
+  @window.host_gpu_draw_bloom2d(
+    scene_texture_id~,
+    enabled=1,
+    intensity=settings.intensity,
+    low_frequency_boost=settings.low_frequency_boost,
+    low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
+    high_pass_frequency=settings.high_pass_frequency,
+    threshold=settings.prefilter.threshold,
+    threshold_softness=settings.prefilter.threshold_softness,
+    composite_mode=match settings.composite_mode {
+      EnergyConserving => 0
+      Additive => 1
+    },
+    max_mip_dimension=settings.max_mip_dimension,
+    scale_x=settings.scale.x,
+    scale_y=settings.scale.y,
+    tonemapping_mode=match tonemapping {
+      Some(mode) => render3d_tonemapping_mode_to_int(mode)
+      None => 0
+    },
+    deband_dither_enabled=match deband_dither {
+      Some(Enabled) => 1
+      _ => 0
+    },
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+    agx_lut_texture_id=luts.agx.id(),
+    tony_lut_texture_id=luts.tony.id(),
+    blender_lut_texture_id=luts.blender.id(),
+  )
+}
+
+///|
+const COLOR_GRADING_TWO_PI : Float = 6.283185307179586F
+
+///|
+const COLOR_GRADING_HUE_SEXTANT : Float = 1.0471975511965976F
+
+///|
+fn render3d_wrap_angle(angle : Float) -> Float {
+  let mut wrapped = angle
+  while wrapped < 0.0F {
+    wrapped = wrapped + COLOR_GRADING_TWO_PI
+  }
+  while wrapped >= COLOR_GRADING_TWO_PI {
+    wrapped = wrapped - COLOR_GRADING_TWO_PI
+  }
+  wrapped
+}
+
+///|
+fn render3d_rgb_to_hsv(
+  r : Float,
+  g : Float,
+  b : Float,
+) -> (Float, Float, Float) {
+  let max_component = maxf(r, maxf(g, b))
+  let min_component = minf(r, minf(g, b))
+  let delta = max_component - min_component
+  let mut hue = 0.0F
+  if delta > 0.000001F {
+    if max_component >= g && max_component >= b {
+      hue = (g - b) / delta
+      if hue < 0.0F {
+        hue = hue + 6.0F
+      }
+    } else if max_component >= b {
+      hue = (b - r) / delta + 2.0F
+    } else {
+      hue = (r - g) / delta + 4.0F
+    }
+    hue = hue * COLOR_GRADING_HUE_SEXTANT
+  }
+  let saturation = if max_component <= 0.000001F {
+    0.0F
+  } else {
+    delta / max_component
+  }
+  (render3d_wrap_angle(hue), saturation, max_component)
+}
+
+///|
+fn render3d_hsv_to_rgb(
+  h : Float,
+  s : Float,
+  v : Float,
+) -> (Float, Float, Float) {
+  let hue = render3d_wrap_angle(h)
+  let safe_saturation = clamp01(s)
+  let c = v * safe_saturation
+  let h_prime = hue / COLOR_GRADING_HUE_SEXTANT
+  let mut h_mod = h_prime
+  while h_mod >= 2.0F {
+    h_mod = h_mod - 2.0F
+  }
+  while h_mod < 0.0F {
+    h_mod = h_mod + 2.0F
+  }
+  let x = c * (1.0F - absf(h_mod - 1.0F))
+  let (r1, g1, b1) = if h_prime < 1.0F {
+    (c, x, 0.0F)
+  } else if h_prime < 2.0F {
+    (x, c, 0.0F)
+  } else if h_prime < 3.0F {
+    (0.0F, c, x)
+  } else if h_prime < 4.0F {
+    (0.0F, x, c)
+  } else if h_prime < 5.0F {
+    (x, 0.0F, c)
+  } else {
+    (c, 0.0F, x)
+  }
+  let m = v - c
+  (r1 + m, g1 + m, b1 + m)
+}
+
+///|
+fn render3d_apply_white_balance(
+  r : Float,
+  g : Float,
+  b : Float,
+  temperature : Float,
+  tint : Float,
+) -> (Float, Float, Float) {
+  if absf(temperature) < 0.000001F && absf(tint) < 0.000001F {
+    return (r, g, b)
+  }
+  let white_point_x = 0.31272F - temperature
+  let white_point_y_unclamped = 0.32903F + tint
+  let white_point_y = if white_point_y_unclamped < 0.0001F {
+    0.0001F
+  } else {
+    white_point_y_unclamped
+  }
+  let white_point_lms_x = 0.701634F +
+    (-0.051461F + 0.452749F * white_point_x) / white_point_y
+  let white_point_lms_y = 1.15856F +
+    (0.045854F - 0.296122F * white_point_x) / white_point_y
+  let white_point_lms_z = -0.904175F +
+    (0.953127F - 0.955206F * white_point_x) / white_point_y
+  let adjust_l = 0.975538F / white_point_lms_x
+  let adjust_m = 1.01648F / white_point_lms_y
+  let adjust_s = 1.08475F / white_point_lms_z
+
+  let l = (0.311692F * r + 0.652085F * g + 0.0362225F * b) * adjust_l
+  let m = (0.0905138F * r + 0.901341F * g + 0.00814478F * b) * adjust_m
+  let s = (0.00764433F * r + 0.0486554F * g + 0.943700F * b) * adjust_s
+
+  let balanced_r = 4.06305F * l + -2.93241F * m + -0.130646F * s
+  let balanced_g = -0.40791F * l + 1.40437F * m + 0.00353630F * s
+  let balanced_b = -0.0118812F * l + -0.0486532F * m + 1.0605344F * s
+  (maxf(0.0F, balanced_r), maxf(0.0F, balanced_g), maxf(0.0F, balanced_b))
+}
+
+///|
+fn render3d_color_luminance(r : Float, g : Float, b : Float) -> Float {
+  clamp01(r * 0.2126F + g * 0.7152F + b * 0.0722F)
+}
+
+///|
+fn render3d_color_apply_saturation(
+  r : Float,
+  g : Float,
+  b : Float,
+  saturation : Float,
+) -> (Float, Float, Float) {
+  let safe_saturation = if saturation < 0.0F { 0.0F } else { saturation }
+  let luminance = render3d_color_luminance(r, g, b)
+  let nr = luminance + (r - luminance) * safe_saturation
+  let ng = luminance + (g - luminance) * safe_saturation
+  let nb = luminance + (b - luminance) * safe_saturation
+  (nr, ng, nb)
+}
+
+///|
+fn render3d_apply_color_grading_section(
+  r : Float,
+  g : Float,
+  b : Float,
+  section : ColorGradingSection,
+) -> (Float, Float, Float) {
+  let mut cr = r
+  let mut cg = g
+  let mut cb = b
+  let (sr, sg, sb) = render3d_color_apply_saturation(
+    cr,
+    cg,
+    cb,
+    section.saturation,
+  )
+  cr = sr
+  cg = sg
+  cb = sb
+  let safe_contrast = if section.contrast < 0.0F {
+    0.0F
+  } else {
+    section.contrast
+  }
+  cr = (cr - 0.5F) * safe_contrast + 0.5F
+  cg = (cg - 0.5F) * safe_contrast + 0.5F
+  cb = (cb - 0.5F) * safe_contrast + 0.5F
+  let safe_gain = if section.gain < 0.0F { 0.0F } else { section.gain }
+  cr = cr * safe_gain + section.lift
+  cg = cg * safe_gain + section.lift
+  cb = cb * safe_gain + section.lift
+  let safe_gamma = if section.gamma <= 0.0001F {
+    0.0001F
+  } else {
+    section.gamma
+  }
+  cr = @math.pow(maxf(0.0F, cr), 1.0F / safe_gamma)
+  cg = @math.pow(maxf(0.0F, cg), 1.0F / safe_gamma)
+  cb = @math.pow(maxf(0.0F, cb), 1.0F / safe_gamma)
+  (cr, cg, cb)
+}
+
+///|
+fn render3d_apply_camera_color_controls(
+  r : Float,
+  g : Float,
+  b : Float,
+  exposure : Exposure?,
+  color_grading : ColorGrading?,
+) -> (Float, Float, Float) {
+  let default_exposure = Exposure::default()
+  let ev100 = match exposure {
+    Some(value) => value.ev100
+    None => default_exposure.ev100
+  }
+  let grading = match color_grading {
+    Some(value) => value
+    None => ColorGrading::default()
+  }
+  let exposure_scale = @math.pow(2.0F, default_exposure.ev100 - ev100) *
+    @math.pow(2.0F, grading.global.exposure)
+  let mut cr = maxf(0.0F, r)
+  let mut cg = maxf(0.0F, g)
+  let mut cb = maxf(0.0F, b)
+
+  if absf(grading.global.hue) > 0.000001F {
+    let (h, s, v) = render3d_rgb_to_hsv(cr, cg, cb)
+    let (rotated_r, rotated_g, rotated_b) = render3d_hsv_to_rgb(
+      h + grading.global.hue,
+      s,
+      v,
+    )
+    cr = rotated_r
+    cg = rotated_g
+    cb = rotated_b
+  }
+
+  let (balanced_r, balanced_g, balanced_b) = render3d_apply_white_balance(
+    cr,
+    cg,
+    cb,
+    grading.global.temperature,
+    grading.global.tint,
+  )
+  cr = balanced_r
+  cg = balanced_g
+  cb = balanced_b
+
+  let luminance = render3d_color_luminance(cr, cg, cb)
+  let section = if luminance < grading.global.midtones_start {
+    grading.shadows
+  } else if luminance > grading.global.midtones_end {
+    grading.highlights
+  } else {
+    grading.midtones
+  }
+  let (section_r, section_g, section_b) = render3d_apply_color_grading_section(
+    cr, cg, cb, section,
+  )
+  cr = section_r
+  cg = section_g
+  cb = section_b
+  cr = maxf(0.0F, cr * exposure_scale)
+  cg = maxf(0.0F, cg * exposure_scale)
+  cb = maxf(0.0F, cb * exposure_scale)
+  let (post_r, post_g, post_b) = render3d_color_apply_saturation(
+    cr,
+    cg,
+    cb,
+    grading.global.post_saturation,
+  )
+  (clamp01(post_r), clamp01(post_g), clamp01(post_b))
+}
+
+///|
 fn render3d_rotate_by_quat(v : @math.Vec3, q : @math.Quat) -> @math.Vec3 {
   let q_vec = @math.Vec3::new(q.x, q.y, q.z)
   let t = q_vec.cross(v).mul_scalar(2.0F)
@@ -4148,7 +6559,146 @@ fn render3d_transform_point(
 }
 
 ///|
-fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
+fn render3d_inverse_transform_point(
+  transform : @math.Transform,
+  world_point : @math.Vec3,
+) -> @math.Vec3? {
+  if absf(transform.scale.x) <= 1.0e-9F ||
+    absf(transform.scale.y) <= 1.0e-9F ||
+    absf(transform.scale.z) <= 1.0e-9F {
+    return None
+  }
+  let translated = world_point.sub(transform.translation)
+  let rotated = render3d_rotate_by_quat(
+    translated,
+    render3d_quat_conjugate(transform.rotation),
+  )
+  Some(
+    @math.Vec3::new(
+      rotated.x / transform.scale.x,
+      rotated.y / transform.scale.y,
+      rotated.z / transform.scale.z,
+    ),
+  )
+}
+
+///|
+fn render3d_inverse_transform_direction(
+  transform : @math.Transform,
+  world_direction : @math.Vec3,
+) -> @math.Vec3? {
+  if absf(transform.scale.x) <= 1.0e-9F ||
+    absf(transform.scale.y) <= 1.0e-9F ||
+    absf(transform.scale.z) <= 1.0e-9F {
+    return None
+  }
+  let rotated = render3d_rotate_by_quat(
+    world_direction,
+    render3d_quat_conjugate(transform.rotation),
+  )
+  Some(
+    @math.Vec3::new(
+      rotated.x / transform.scale.x,
+      rotated.y / transform.scale.y,
+      rotated.z / transform.scale.z,
+    ),
+  )
+}
+
+///|
+fn render3d_transform_local_normal(
+  transform : @math.Transform,
+  local_normal : @math.Vec3,
+) -> @math.Vec3 {
+  if absf(transform.scale.x) <= 1.0e-9F ||
+    absf(transform.scale.y) <= 1.0e-9F ||
+    absf(transform.scale.z) <= 1.0e-9F {
+    return render3d_rotate_by_quat(local_normal, transform.rotation)
+      .normalize_or_zero()
+  }
+  let scaled = @math.Vec3::new(
+    local_normal.x / transform.scale.x,
+    local_normal.y / transform.scale.y,
+    local_normal.z / transform.scale.z,
+  )
+  render3d_rotate_by_quat(scaled, transform.rotation).normalize_or_zero()
+}
+
+///|
+fn render3d_ray_local_aabb_hit(
+  origin : @math.Vec3,
+  direction : @math.Vec3,
+  min_corner : @math.Vec3,
+  max_corner : @math.Vec3,
+  ray_epsilon : Float,
+  max_distance : Float,
+) -> (Float, @math.Vec3)? {
+  let mut t_min = -max_distance
+  let mut t_max = max_distance
+  let mut enter_normal = @math.Vec3::new(1.0F, 0.0F, 0.0F)
+  let mut exit_normal = @math.Vec3::new(-1.0F, 0.0F, 0.0F)
+
+  let axes : Array[(@math.Vec3, Float, Float, Float, Float)] = [
+    (@math.Vec3::new(1.0F, 0.0F, 0.0F), origin.x, direction.x, min_corner.x, max_corner.x),
+    (@math.Vec3::new(0.0F, 1.0F, 0.0F), origin.y, direction.y, min_corner.y, max_corner.y),
+    (@math.Vec3::new(0.0F, 0.0F, 1.0F), origin.z, direction.z, min_corner.z, max_corner.z),
+  ]
+
+  for axis_data in axes {
+    let axis = axis_data.0
+    let o = axis_data.1
+    let d = axis_data.2
+    let slab_min = axis_data.3
+    let slab_max = axis_data.4
+    if absf(d) <= 1.0e-9F {
+      if o < slab_min || o > slab_max {
+        return None
+      }
+      continue
+    }
+
+    let inv_d = 1.0F / d
+    let mut t1 = (slab_min - o) * inv_d
+    let mut t2 = (slab_max - o) * inv_d
+    let mut near_normal = axis.neg()
+    let mut far_normal = axis
+    if t1 > t2 {
+      let t_swap = t1
+      t1 = t2
+      t2 = t_swap
+      let normal_swap = near_normal
+      near_normal = far_normal
+      far_normal = normal_swap
+    }
+    if t1 > t_min {
+      t_min = t1
+      enter_normal = near_normal
+    }
+    if t2 < t_max {
+      t_max = t2
+      exit_normal = far_normal
+    }
+    if t_min > t_max {
+      return None
+    }
+  }
+
+  if t_max < ray_epsilon {
+    return None
+  }
+  let (distance, normal) = if t_min >= ray_epsilon {
+    (t_min, enter_normal)
+  } else {
+    (t_max, exit_normal)
+  }
+  if distance < ray_epsilon || distance > max_distance {
+    return None
+  }
+  Some((distance, normal))
+}
+
+///|
+fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
   guard @render2d.render_mesh_asset_get(mesh3d.mesh) is Some(mesh_asset) else {
     return None
   }
@@ -4171,13 +6721,25 @@ fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
     max_y = maxf(max_y, p.y)
     max_z = maxf(max_z, p.z)
   }
-  Some(
-    @math.Vec3::new(
-      (min_x + max_x) * 0.5F,
-      (min_y + max_y) * 0.5F,
-      (min_z + max_z) * 0.5F,
-    ),
-  )
+  Some((
+    @math.Vec3::new(min_x, min_y, min_z),
+    @math.Vec3::new(max_x, max_y, max_z),
+  ))
+}
+
+///|
+fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
+  if render3d_mesh_local_aabb(mesh3d) is Some((min_corner, max_corner)) {
+    Some(
+      @math.Vec3::new(
+        (min_corner.x + max_corner.x) * 0.5F,
+        (min_corner.y + max_corner.y) * 0.5F,
+        (min_corner.z + max_corner.z) * 0.5F,
+      ),
+    )
+  } else {
+    None
+  }
 }
 
 ///|
@@ -4419,7 +6981,13 @@ fn render3d_ssr_strength(
 
 ///|
 fn render3d_pow_e(value : Float) -> Float {
-  @math.pow(2.718281828459045F, value)
+  @math.pow(FOG_FALLOFF_E, value)
+}
+
+///|
+fn render3d_fog_channel_factor(density : Float, distance : Float) -> Float {
+  let safe_density = if density < 0.0F { 0.0F } else { density }
+  1.0F - render3d_pow_e(-(safe_density * distance))
 }
 
 ///|
@@ -4455,6 +7023,25 @@ fn render3d_fog_falloff_factor(
       let d = safe_density * safe_distance
       1.0F - render3d_pow_e(-(d * d))
     }
+    Atmospheric(extinction, inscattering) => {
+      let extinction_max = maxf(
+        maxf(extinction.x, extinction.y),
+        extinction.z,
+      )
+      let inscattering_max = maxf(
+        maxf(inscattering.x, inscattering.y),
+        inscattering.z,
+      )
+      let extinction_factor = render3d_fog_channel_factor(
+        extinction_max,
+        safe_distance,
+      )
+      let inscattering_factor = render3d_fog_channel_factor(
+        inscattering_max,
+        safe_distance,
+      )
+      clamp01((extinction_factor + inscattering_factor) * 0.5F)
+    }
   }
 }
 
@@ -4465,6 +7052,118 @@ fn render3d_distance_fog_mix_factor(
 ) -> Float {
   let falloff_factor = render3d_fog_falloff_factor(fog.falloff, distance)
   clamp01(falloff_factor * clamp01(fog.color.a))
+}
+
+///|
+fn render3d_distance_fog_directional_mix(
+  fog : DistanceFog,
+  fog_presence : Float,
+  camera_position : @math.Vec3,
+  mesh_position : @math.Vec3,
+  lighting : Render3dLightingState,
+) -> Float {
+  let directional_alpha = clamp01(fog.directional_light_color.a)
+  if directional_alpha <= 0.0F {
+    return 0.0F
+  }
+  if fog.directional_light_exponent <= 0.0F {
+    return 0.0F
+  }
+  if lighting.directional_illuminance <= 0.0F {
+    return 0.0F
+  }
+  let view_direction = mesh_position.sub(camera_position).normalize_or_zero()
+  let light_direction = lighting.directional_dir.neg().normalize_or_zero()
+  let alignment = clamp01(light_direction.dot(view_direction) * 0.5F + 0.5F)
+  let phase = @math.pow(alignment, fog.directional_light_exponent)
+  let illuminance_mix = clamp01(lighting.directional_illuminance / 50_000.0F)
+  clamp01(phase * directional_alpha * illuminance_mix * fog_presence)
+}
+
+///|
+fn render3d_apply_distance_fog(
+  fog : DistanceFog,
+  distance : Float,
+  base_r : Float,
+  base_g : Float,
+  base_b : Float,
+  camera_position : @math.Vec3,
+  mesh_position : @math.Vec3,
+  lighting : Render3dLightingState,
+) -> (Float, Float, Float) {
+  let fog_alpha = clamp01(fog.color.a)
+  let mut fogged_r = base_r
+  let mut fogged_g = base_g
+  let mut fogged_b = base_b
+  let mut fog_presence = 0.0F
+
+  match fog.falloff {
+    Atmospheric(extinction, inscattering) => {
+      let extinction_r = clamp01(
+        render3d_fog_channel_factor(extinction.x, distance) * fog_alpha,
+      )
+      let extinction_g = clamp01(
+        render3d_fog_channel_factor(extinction.y, distance) * fog_alpha,
+      )
+      let extinction_b = clamp01(
+        render3d_fog_channel_factor(extinction.z, distance) * fog_alpha,
+      )
+      let inscattering_r = clamp01(
+        render3d_fog_channel_factor(inscattering.x, distance) * fog_alpha,
+      )
+      let inscattering_g = clamp01(
+        render3d_fog_channel_factor(inscattering.y, distance) * fog_alpha,
+      )
+      let inscattering_b = clamp01(
+        render3d_fog_channel_factor(inscattering.z, distance) * fog_alpha,
+      )
+
+      fogged_r = base_r * (1.0F - extinction_r) + fog.color.r * inscattering_r
+      fogged_g = base_g * (1.0F - extinction_g) + fog.color.g * inscattering_g
+      fogged_b = base_b * (1.0F - extinction_b) + fog.color.b * inscattering_b
+
+      let extinction_peak = maxf(maxf(extinction_r, extinction_g), extinction_b)
+      let inscattering_peak = maxf(
+        maxf(inscattering_r, inscattering_g),
+        inscattering_b,
+      )
+      fog_presence = clamp01((extinction_peak + inscattering_peak) * 0.5F)
+    }
+    _ => {
+      let fog_mix = render3d_distance_fog_mix_factor(fog, distance)
+      fogged_r = base_r * (1.0F - fog_mix) + fog.color.r * fog_mix
+      fogged_g = base_g * (1.0F - fog_mix) + fog.color.g * fog_mix
+      fogged_b = base_b * (1.0F - fog_mix) + fog.color.b * fog_mix
+      fog_presence = fog_mix
+    }
+  }
+
+  let directional_mix = render3d_distance_fog_directional_mix(
+    fog,
+    fog_presence,
+    camera_position,
+    mesh_position,
+    lighting,
+  )
+  if directional_mix > 0.0F {
+    let directional_tint_r = clamp01(
+      fog.directional_light_color.r * lighting.directional_color.r,
+    )
+    let directional_tint_g = clamp01(
+      fog.directional_light_color.g * lighting.directional_color.g,
+    )
+    let directional_tint_b = clamp01(
+      fog.directional_light_color.b * lighting.directional_color.b,
+    )
+    fogged_r = fogged_r * (1.0F - directional_mix) +
+      directional_tint_r * directional_mix
+    fogged_g = fogged_g * (1.0F - directional_mix) +
+      directional_tint_g * directional_mix
+    fogged_b = fogged_b * (1.0F - directional_mix) +
+      directional_tint_b * directional_mix
+  }
+
+  (clamp01(fogged_r), clamp01(fogged_g), clamp01(fogged_b))
 }
 
 ///|
@@ -4861,6 +7560,14 @@ fn render3d_draw_mesh_instance(
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
 ) -> Unit {
+  let draw_cull_mode = match mesh.material.cull_mode {
+    None => 0
+    Some(face) =>
+      match face {
+        Face3d::Front => 1
+        Face3d::Back => 2
+      }
+  }
   @window.host_gpu_draw_mesh3d(
     mesh_id=mesh.mesh_id,
     x=transform.translation.x,
@@ -4921,11 +7628,12 @@ fn render3d_draw_mesh_instance(
     transmission_source_texture_id~,
     transmission_blur_taps~,
     transmission_steps~,
+    cull_mode=draw_cull_mode,
   )
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -4939,9 +7647,14 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let sub_camera_view_store = world.get_sub_camera_view3d_store()
   let screen_space_transmission_store = world.get_screen_space_transmission_store()
   let screen_space_reflections_store = world.get_screen_space_reflections_store()
+  let bloom_store = world.get_bloom_store()
+  let tonemapping_store = world.get_tonemapping_store()
+  let deband_dither_store = world.get_deband_dither_store()
   let chromatic_aberration_store = world.get_chromatic_aberration_store()
   let vignette_store = world.get_vignette_store()
   let motion_blur_store = world.get_motion_blur_store()
+  let exposure_store = world.get_exposure_store()
+  let color_grading_store = world.get_color_grading_store()
   let skybox_store = world.get_skybox_store()
   let environment_map_light_store = world.get_environment_map_light_store()
   let generated_environment_map_light_store = world.get_generated_environment_map_light_store()
@@ -4962,9 +7675,14 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let sub_camera_view = sub_camera_view_store.get(entity)
     let screen_space_transmission = screen_space_transmission_store.get(entity)
     let screen_space_reflections = screen_space_reflections_store.get(entity)
+    let bloom = bloom_store.get(entity)
+    let tonemapping = tonemapping_store.get(entity)
+    let deband_dither = deband_dither_store.get(entity)
     let chromatic_aberration = chromatic_aberration_store.get(entity)
     let vignette = vignette_store.get(entity)
     let motion_blur = motion_blur_store.get(entity)
+    let exposure = exposure_store.get(entity)
+    let color_grading = color_grading_store.get(entity)
     let skybox = skybox_store.get(entity)
     let environment_map_light = environment_map_light_store.get(entity)
     let generated_environment_map_light = generated_environment_map_light_store.get(
@@ -5003,9 +7721,14 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           sub_camera_view,
           screen_space_transmission,
           screen_space_reflections,
+          bloom,
+          tonemapping,
+          deband_dither,
           chromatic_aberration,
           vignette,
           motion_blur,
+          exposure,
+          color_grading,
           skybox,
           environment_map_light,
           generated_environment_map_light,
@@ -5193,6 +7916,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       0
     }
     let transmission_enabled = transmission_blur_taps > 0
+    let bloom_enabled = camera.bloom is Some(_)
     let mut scene_target_id = camera.target_id
     let mut velocity_target_id = -1
     if motion_blur_active {
@@ -5320,7 +8044,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       }
       @window.host_gpu_end_pass()
     }
-    if !motion_blur_active && transmission_enabled && camera.target_id < 0 {
+    if !motion_blur_active && (transmission_enabled || bloom_enabled) &&
+      (camera.target_id < 0 || bloom_enabled) {
       let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera.entity,
         view_width,
@@ -5475,16 +8200,19 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       let mesh_distance = mesh.transform.translation
         .sub(camera.transform.translation)
         .length()
-      let fog_mix = render3d_distance_fog_mix_factor(
-        distance_fog, mesh_distance,
+      let (fogged_r, fogged_g, fogged_b) = render3d_apply_distance_fog(
+        distance_fog,
+        mesh_distance,
+        mesh.material.base_color.r,
+        mesh.material.base_color.g,
+        mesh.material.base_color.b,
+        camera.transform.translation,
+        mesh.transform.translation,
+        pass_lighting,
       )
-      let fog_color = distance_fog.color
-      let mut draw_color_r = mesh.material.base_color.r * (1.0F - fog_mix) +
-        fog_color.r * fog_mix
-      let mut draw_color_g = mesh.material.base_color.g * (1.0F - fog_mix) +
-        fog_color.g * fog_mix
-      let mut draw_color_b = mesh.material.base_color.b * (1.0F - fog_mix) +
-        fog_color.b * fog_mix
+      let mut draw_color_r = fogged_r
+      let mut draw_color_g = fogged_g
+      let mut draw_color_b = fogged_b
       if render3d_world_position_uv(
           camera,
           viewport_rect,
@@ -5563,6 +8291,16 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           )
         }
       }
+      let (graded_color_r, graded_color_g, graded_color_b) = render3d_apply_camera_color_controls(
+        draw_color_r,
+        draw_color_g,
+        draw_color_b,
+        camera.exposure,
+        camera.color_grading,
+      )
+      draw_color_r = graded_color_r
+      draw_color_g = graded_color_g
+      draw_color_b = graded_color_b
       let draw_diffuse_transmission = clamp01(
         mesh.material.diffuse_transmission,
       )
@@ -5796,37 +8534,114 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       )
     }
     @window.host_gpu_end_pass()
+    let mut final_source_texture_id = -1
     if motion_blur_active &&
       camera.motion_blur is Some(motion_blur) &&
       velocity_target_id >= 0 {
-      @window.host_gpu_begin_pass(
-        target_id=camera.target_id,
-        width=view_width_logical,
-        height=view_height_logical,
-        clear_r=clear_color.r,
-        clear_g=clear_color.g,
-        clear_b=clear_color.b,
-        clear_a=clear_color.a,
-        camera_x=0.0F,
-        camera_y=0.0F,
-        camera_rotation=0.0F,
-        camera_scale=1.0F,
-        viewport_x~,
-        viewport_y~,
-        viewport_width~,
-        viewport_height~,
-        viewport_depth_min~,
-        viewport_depth_max~,
-        clear_enabled=if clear_enabled { 1 } else { 0 },
-      )
-      @window.host_gpu_draw_motion_blur(
-        scene_texture_id=scene_target_id,
-        velocity_texture_id=velocity_target_id,
-        shutter_angle=motion_blur.shutter_angle,
-        samples=motion_blur.samples,
-      )
-      @window.host_gpu_end_pass()
+      if bloom_enabled {
+        let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
+          camera.entity,
+          view_width,
+          view_height,
+        )
+        @window.host_gpu_begin_pass(
+          target_id=post_motion_blur_target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        @window.host_gpu_draw_motion_blur(
+          scene_texture_id=scene_target_id,
+          velocity_texture_id=velocity_target_id,
+          shutter_angle=motion_blur.shutter_angle,
+          samples=motion_blur.samples,
+        )
+        @window.host_gpu_end_pass()
+        final_source_texture_id = post_motion_blur_target_id
+      } else {
+        @window.host_gpu_begin_pass(
+          target_id=camera.target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        @window.host_gpu_draw_motion_blur(
+          scene_texture_id=scene_target_id,
+          velocity_texture_id=velocity_target_id,
+          shutter_angle=motion_blur.shutter_angle,
+          samples=motion_blur.samples,
+        )
+        @window.host_gpu_end_pass()
+      }
     } else if scene_target_id != camera.target_id {
+      final_source_texture_id = scene_target_id
+    }
+    if bloom_enabled && camera.bloom is Some(bloom) {
+      let bloom_source_texture_id = if final_source_texture_id >= 0 {
+        final_source_texture_id
+      } else {
+        scene_target_id
+      }
+      if bloom_source_texture_id >= 0 {
+        @window.host_gpu_begin_pass(
+          target_id=camera.target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        render3d_draw_camera_bloom(
+          bloom_source_texture_id,
+          bloom,
+          camera.tonemapping,
+          camera.deband_dither,
+          view_width_logical,
+          view_height_logical,
+        )
+        @window.host_gpu_end_pass()
+      }
+    } else if final_source_texture_id >= 0 {
       @window.host_gpu_begin_pass(
         target_id=camera.target_id,
         width=view_width_logical,
@@ -5848,7 +8663,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
       @window.host_gpu_draw_sprite_uv(
-        texture_id=scene_target_id,
+        texture_id=final_source_texture_id,
         x=0.0F,
         y=0.0F,
         rotation=0.0F,
@@ -5941,6 +8756,19 @@ fn render3d_orthographic_half_height(
   viewport_height : Float,
 ) -> Float {
   let half_height = match orthographic.scaling_mode {
+    WindowSize => {
+      let safe_scale = if orthographic.scale <= 0.0F {
+        1.0F
+      } else {
+        orthographic.scale
+      }
+      let safe_viewport_height = if viewport_height <= 0.0F {
+        1.0F
+      } else {
+        viewport_height
+      }
+      0.5F * safe_viewport_height * safe_scale
+    }
     Scale => {
       let safe_scale = if orthographic.scale <= 0.0F {
         1.0F
@@ -5973,6 +8801,278 @@ fn render3d_orthographic_half_height(
 ///|
 fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
   @math.Quat::new(-value.x, -value.y, -value.z, value.w)
+}
+
+///|
+const MESH_RAY_CAST_DEFAULT_MAX_DISTANCE : Float = 1_000_000.0F
+
+///|
+const MESH_RAY_CAST_DEFAULT_RAY_EPSILON : Float = 0.000001F
+
+///|
+const MESH_RAY_CAST_DEFAULT_MAX_HITS : Int = 64
+
+///|
+pub struct MeshRayCastSettings {
+  max_distance : Float
+  ray_epsilon : Float
+  max_hits : Int
+  include_invisible : Bool
+  only_entities : Array[@core.Entity]?
+}
+
+///|
+pub fn MeshRayCastSettings::default() -> MeshRayCastSettings {
+  {
+    max_distance: MESH_RAY_CAST_DEFAULT_MAX_DISTANCE,
+    ray_epsilon: MESH_RAY_CAST_DEFAULT_RAY_EPSILON,
+    max_hits: MESH_RAY_CAST_DEFAULT_MAX_HITS,
+    include_invisible: false,
+    only_entities: None,
+  }
+}
+
+///|
+pub fn MeshRayCastSettings::with_max_distance(
+  self : MeshRayCastSettings,
+  max_distance : Float,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, max_distance, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_ray_epsilon(
+  self : MeshRayCastSettings,
+  ray_epsilon : Float,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, ray_epsilon, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_max_hits(
+  self : MeshRayCastSettings,
+  max_hits : Int,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, max_hits, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_include_invisible(
+  self : MeshRayCastSettings,
+  include_invisible : Bool,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, include_invisible, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_only_entities(
+  self : MeshRayCastSettings,
+  only_entities : Array[@core.Entity]?,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, only_entities, }
+}
+
+///|
+pub struct MeshRayCastHit {
+  point : @math.Vec3
+  normal : @math.Vec3
+  distance : Float
+}
+
+///|
+pub(open) trait MeshRayCastWorld: Has_Mesh3d + @math.Has_Transform + @visibility.Has_ViewVisibility {
+}
+
+///|
+fn render3d_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
+  a.id == b.id && a.generation == b.generation
+}
+
+///|
+fn render3d_entity_in_list(
+  entity : @core.Entity,
+  entities : Array[@core.Entity],
+) -> Bool {
+  for candidate in entities {
+    if render3d_entity_eq(entity, candidate) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn[W : MeshRayCastWorld] mesh_ray_cast(
+  world : W,
+  origin : @math.Vec3,
+  direction : @math.Vec3,
+  settings : MeshRayCastSettings,
+) -> Array[(@core.Entity, MeshRayCastHit)] {
+  let ray_direction = direction.normalize_or_zero()
+  if ray_direction.length_squared() <= 1.0e-12F {
+    return []
+  }
+  let max_distance = if settings.max_distance <= 0.0F {
+    MESH_RAY_CAST_DEFAULT_MAX_DISTANCE
+  } else {
+    settings.max_distance
+  }
+  let ray_epsilon = if settings.ray_epsilon <= 0.0F {
+    MESH_RAY_CAST_DEFAULT_RAY_EPSILON
+  } else {
+    settings.ray_epsilon
+  }
+  let max_hits = if settings.max_hits <= 0 {
+    1
+  } else {
+    settings.max_hits
+  }
+  let hits : Array[(@core.Entity, MeshRayCastHit)] = []
+  let mesh_store = world.get_mesh3d_store()
+  let transform_store = world.get_transform_store()
+  let view_visibility_store = world.get_view_visibility_store()
+
+  mesh_store.for_each(fn(entity, mesh3d) {
+    if settings.only_entities is Some(only_entities) &&
+      !render3d_entity_in_list(entity, only_entities) {
+      return
+    }
+    if !settings.include_invisible &&
+      view_visibility_store.get(entity) is Some(view_visibility) &&
+      !view_visibility.is_visible() {
+      return
+    }
+    guard render3d_mesh_local_aabb(mesh3d) is Some((min_corner, max_corner)) else {
+      return
+    }
+    let transform = match transform_store.get(entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    guard render3d_inverse_transform_point(transform, origin)
+      is Some(local_origin) else {
+      return
+    }
+    guard render3d_inverse_transform_direction(transform, ray_direction)
+      is Some(local_direction) else {
+      return
+    }
+    guard render3d_ray_local_aabb_hit(
+        local_origin,
+        local_direction,
+        min_corner,
+        max_corner,
+        ray_epsilon,
+        max_distance,
+      )
+      is Some((distance, local_normal)) else {
+      return
+    }
+    let normal = render3d_transform_local_normal(transform, local_normal)
+    if normal.length_squared() <= 1.0e-12F {
+      return
+    }
+    hits.push(
+      (
+        entity,
+        {
+          point: origin.add(ray_direction.mul_scalar(distance)),
+          normal,
+          distance,
+        },
+      ),
+    )
+  })
+
+  hits.sort_by(fn(a, b) {
+    let distance_cmp = cmp_float(a.1.distance, b.1.distance)
+    if distance_cmp != 0 {
+      return distance_cmp
+    }
+    let id_cmp = cmp_int(a.0.id, b.0.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(a.0.generation, b.0.generation)
+  })
+
+  let capped_hits : Array[(@core.Entity, MeshRayCastHit)] = []
+  for i in 0..<hits.length() {
+    if i >= max_hits {
+      break
+    }
+    capped_hits.push(hits[i])
+  }
+  capped_hits
+}
+
+///|
+pub fn[W : MeshRayCastWorld] mesh_ray_cast_first(
+  world : W,
+  origin : @math.Vec3,
+  direction : @math.Vec3,
+  settings : MeshRayCastSettings,
+) -> (@core.Entity, MeshRayCastHit)? {
+  let hits = mesh_ray_cast(world, origin, direction, settings.with_max_hits(1))
+  if hits.length() > 0 {
+    Some(hits[0])
+  } else {
+    None
+  }
+}
+
+///|
+pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera(
+  world : W,
+  screen : @math.Vec2,
+  camera : @render2d.Camera,
+  projection : CameraProjection3d,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+  settings : MeshRayCastSettings,
+) -> Array[(@core.Entity, MeshRayCastHit)] {
+  if render3d_camera_viewport_to_world_ray(
+      screen,
+      camera,
+      projection,
+      camera_transform,
+      target_size,
+      scale_factor,
+    )
+    is Some((origin, direction)) {
+    mesh_ray_cast(world, origin, direction, settings)
+  } else {
+    []
+  }
+}
+
+///|
+pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera_first(
+  world : W,
+  screen : @math.Vec2,
+  camera : @render2d.Camera,
+  projection : CameraProjection3d,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+  settings : MeshRayCastSettings,
+) -> (@core.Entity, MeshRayCastHit)? {
+  let hits = mesh_ray_cast_from_camera(
+    world,
+    screen,
+    camera,
+    projection,
+    camera_transform,
+    target_size,
+    scale_factor,
+    settings.with_max_hits(1),
+  )
+  if hits.length() > 0 {
+    Some(hits[0])
+  } else {
+    None
+  }
 }
 
 ///|
@@ -6129,13 +9229,19 @@ pub fn render3d_camera_world_to_viewport(
 }
 
 ///|
-fn[W : HasRes_GlobalAmbientLight + @core.ChangeTickWorld] init_render3d_resources(
+fn[
+  W : HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + @core.ChangeTickWorld,
+] init_render3d_resources(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = world.get_global_ambient_light_resource()
   if !ambient.is_present() {
     ambient.insert(GlobalAmbientLight::default(), tick)
+  }
+  let point_light_shadow_map = world.get_point_light_shadow_map_resource()
+  if !point_light_shadow_map.is_present() {
+    point_light_shadow_map.insert(PointLightShadowMap::default(), tick)
   }
 }
 
@@ -6162,7 +9268,7 @@ pub fn[W : WireframePluginWorld] wireframe_plugin(
 }
 
 ///|
-pub(open) trait Render3dPluginWorld: HasRes_GlobalAmbientLight + Render3dPrepareWorld + Render3dExecuteWorld {
+pub(open) trait Render3dPluginWorld: HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + Render3dPrepareWorld + Render3dExecuteWorld {
 }
 
 ///|

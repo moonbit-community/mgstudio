@@ -22,6 +22,8 @@ pub fn gizmo_config() -> GizmoConfig
 
 pub fn gizmo_set_config(GizmoConfig) -> Unit
 
+pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
+
 pub fn[W : CameraSystemWorld] render2d_camera_system(W) -> Unit
 
 pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
@@ -84,9 +86,13 @@ pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
 pub fn render_mesh_asset_get(@asset.Handle[@mesh.Mesh]) -> @mesh.Mesh?
 
+pub fn render_mesh_asset_set(@asset.Handle[@mesh.Mesh], @mesh.Mesh) -> Bool
+
 pub fn[W] render_prepare_system(W) -> Unit
 
 pub fn[W] render_queue_system(W) -> Unit
+
+pub fn[W : Wireframe2dPluginWorld] wireframe2d_plugin(@app.App[W]) -> @app.App[W]
 
 // Errors
 
@@ -256,16 +262,23 @@ pub fn Circle::new(Float) -> Self
 pub fn Circle::to_ring(Self, Float) -> Ring2d
 pub fn Circle::with_vertices(Self, Int) -> Self
 
+pub(all) enum CircularMeshUvMode {
+  Mask(Float)
+}
+
 pub struct CircularSector {
   radius : Float
   half_angle : Float
   vertices : Int
+  uv_mode : CircularMeshUvMode
 }
 pub fn CircularSector::angle(Self) -> Float
 pub fn CircularSector::default() -> Self
 pub fn CircularSector::from_turns(Float, Float) -> Self
 pub fn CircularSector::half_angle(Self) -> Float
 pub fn CircularSector::new(Float, Float) -> Self
+pub fn CircularSector::with_uv_mask_angle(Self, Float) -> Self
+pub fn CircularSector::with_uv_mode(Self, CircularMeshUvMode) -> Self
 pub fn CircularSector::with_vertices(Self, Int) -> Self
 
 pub struct CircularSectorRing {
@@ -278,6 +291,7 @@ pub struct CircularSegment {
   radius : Float
   half_angle : Float
   vertices : Int
+  uv_mode : CircularMeshUvMode
 }
 pub fn CircularSegment::angle(Self) -> Float
 pub fn CircularSegment::default() -> Self
@@ -285,6 +299,8 @@ pub fn CircularSegment::from_turns(Float, Float) -> Self
 pub fn CircularSegment::half_angle(Self) -> Float
 pub fn CircularSegment::new(Float, Float) -> Self
 pub fn CircularSegment::to_ring(Self, Float) -> CircularSegmentRing
+pub fn CircularSegment::with_uv_mask_angle(Self, Float) -> Self
+pub fn CircularSegment::with_uv_mode(Self, CircularMeshUvMode) -> Self
 pub fn CircularSegment::with_vertices(Self, Int) -> Self
 
 pub struct CircularSegmentRing {
@@ -315,6 +331,8 @@ pub struct Color {
   a : Float
 }
 pub fn Color::black() -> Self
+pub fn Color::hsl(Float, Float, Float) -> Self
+pub fn Color::hsla(Float, Float, Float, Float) -> Self
 pub fn Color::new(Float, Float, Float, Float) -> Self
 pub fn Color::srgb(Float, Float, Float) -> Self
 pub fn Color::srgba(Float, Float, Float, Float) -> Self
@@ -335,6 +353,7 @@ pub fn ColorMaterial::with_alpha_mode(Self, AlphaMode2d) -> Self
 pub fn ColorMaterial::with_texture(Self, @asset.Handle[@asset.Image]) -> Self
 pub fn ColorMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn ColorMaterial::with_uv_scale(Self, @math.Vec2) -> Self
+pub impl Material2d for ColorMaterial
 
 pub struct ColorMaterialAsset {
   color : Color
@@ -444,6 +463,11 @@ pub fn Isometry2d::identity() -> Self
 pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
+pub struct Material2dPlugin[M] {
+  marker : M?
+}
+pub fn[M] Material2dPlugin::default() -> Self[M]
+
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
@@ -482,7 +506,25 @@ pub struct Mesh2dBundle {
 }
 pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d, @math.Transform) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d, @math.Transform, RenderLayers) -> Self
 pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(Self, W) -> @core.Entity
+
+pub struct MeshMaterial2d {
+  handle : @asset.Handle[ColorMaterialAsset]
+}
+pub fn MeshMaterial2d::from_color_material(ColorMaterial) -> Self
+pub fn MeshMaterial2d::new(@asset.Handle[ColorMaterialAsset]) -> Self
+pub fn MeshMaterial2d::to_color_material(Self) -> ColorMaterial
+pub fn MeshMaterial2d::with_alpha_mode(Self, AlphaMode2d) -> Self
+pub fn MeshMaterial2d::with_texture(Self, @asset.Handle[@asset.Image]) -> Self
+pub fn MeshMaterial2d::with_uv_offset(Self, @math.Vec2) -> Self
+pub fn MeshMaterial2d::with_uv_scale(Self, @math.Vec2) -> Self
+pub impl Material2d for MeshMaterial2d
+
+pub struct NoWireframe2d {
+}
+pub fn NoWireframe2d::default() -> Self
 
 pub struct OrthographicProjection {
   scale : Float
@@ -544,9 +586,20 @@ pub fn RegularPolygonRing::new(RegularPolygon, RegularPolygon) -> Self
 pub struct RenderLayers {
   mask : Int
 }
+pub fn RenderLayers::add(Self, Int) -> Self
+pub fn RenderLayers::combine(Self, Self) -> Self
+pub fn RenderLayers::contains(Self, Int) -> Bool
 pub fn RenderLayers::default() -> Self
+pub fn RenderLayers::from_layers(Array[Int]) -> Self
+pub fn RenderLayers::intersection(Self, Self) -> Self
+pub fn RenderLayers::intersects(Self, Self) -> Bool
 pub fn RenderLayers::layer(Int) -> Self
 pub fn RenderLayers::matches(Self, Self) -> Bool
+pub fn RenderLayers::none() -> Self
+pub fn RenderLayers::remove(Self, Int) -> Self
+pub fn RenderLayers::union(Self, Self) -> Self
+pub fn RenderLayers::with_layer(Self, Int) -> Self
+pub fn RenderLayers::without_layer(Self, Int) -> Self
 
 type RenderState
 
@@ -637,11 +690,23 @@ pub fn[W : SpriteBundleSpawnWorld] SpriteBundle::spawn(Self, W) -> @core.Entity
 
 pub(all) enum SpriteImageMode {
   Auto
+  Scale(SpriteScalingMode)
   Sliced(TextureSlicer)
   Tiled(SpriteTiling)
 }
 pub fn SpriteImageMode::default() -> Self
+pub fn SpriteImageMode::scale(scaling_mode? : SpriteScalingMode) -> Self
 pub fn SpriteImageMode::tiled(tile_x? : Bool, tile_y? : Bool, stretch_value? : Float) -> Self
+
+pub(all) enum SpriteScalingMode {
+  FillCenter
+  FillStart
+  FillEnd
+  FitCenter
+  FitStart
+  FitEnd
+}
+pub fn SpriteScalingMode::default() -> Self
 
 pub struct SpriteTiling {
   tile_x : Bool
@@ -732,6 +797,26 @@ pub fn Viewport::new(@math.IVec2, @math.IVec2) -> Self
 pub fn Viewport::new_with_depth(@math.IVec2, @math.IVec2, Float, Float) -> Self
 pub fn Viewport::with_depth(Self, Float, Float) -> Self
 
+pub struct Wireframe2d {
+}
+pub fn Wireframe2d::default() -> Self
+
+pub struct Wireframe2dColor {
+  color : Color
+}
+pub fn Wireframe2dColor::default() -> Self
+pub fn Wireframe2dColor::new(Color) -> Self
+pub fn Wireframe2dColor::with_color(Self, Color) -> Self
+
+pub struct Wireframe2dConfig {
+  global : Bool
+  default_color : Color
+}
+pub fn Wireframe2dConfig::default() -> Self
+pub fn Wireframe2dConfig::new(Bool, Color) -> Self
+pub fn Wireframe2dConfig::with_default_color(Self, Color) -> Self
+pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self
+
 // Type aliases
 
 // Traits
@@ -748,6 +833,10 @@ pub(open) trait CameraSystemWorld : HasRes_RenderState + Has_Camera2d + Has_Came
 
 pub(open) trait HasRes_RenderState {
   get_render_state_resource(Self) -> @core.Resource[RenderState]
+}
+
+pub(open) trait HasRes_Wireframe2dConfig {
+  get_wireframe2d_config_resource(Self) -> @core.Resource[Wireframe2dConfig]
 }
 
 pub(open) trait Has_Anchor {
@@ -782,6 +871,14 @@ pub(open) trait Has_Mesh2d {
   get_mesh2d_store(Self) -> @core.ComponentStore[Mesh2d]
 }
 
+pub(open) trait Has_MeshMaterial2d {
+  get_mesh_material2d_store(Self) -> @core.ComponentStore[MeshMaterial2d]
+}
+
+pub(open) trait Has_NoWireframe2d {
+  get_no_wireframe2d_store(Self) -> @core.ComponentStore[NoWireframe2d]
+}
+
 pub(open) trait Has_Projection {
   get_projection_store(Self) -> @core.ComponentStore[Projection]
 }
@@ -802,12 +899,31 @@ pub(open) trait Has_Sprite {
   get_sprite_store(Self) -> @core.ComponentStore[Sprite]
 }
 
-pub(open) trait Mesh2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+pub(open) trait Has_Wireframe2d {
+  get_wireframe2d_store(Self) -> @core.ComponentStore[Wireframe2d]
 }
 
-pub(open) trait RenderExtractWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_GpuMesh2d + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
+pub(open) trait Has_Wireframe2dColor {
+  get_wireframe2d_color_store(Self) -> @core.ComponentStore[Wireframe2dColor]
+}
+
+pub(open) trait Material2d {
+  color(Self) -> Color
+  alpha_mode(Self) -> AlphaMode2d
+  texture(Self) -> @asset.Handle[@asset.Image]?
+  uv_offset(Self) -> @math.Vec2
+  uv_scale(Self) -> @math.Vec2
+}
+
+pub(open) trait Mesh2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+}
+
+pub(open) trait RenderExtractWorld : HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 
 pub(open) trait SpriteBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+}
+
+pub(open) trait Wireframe2dPluginWorld : HasRes_Wireframe2dConfig + @core.ChangeTickWorld {
 }
 

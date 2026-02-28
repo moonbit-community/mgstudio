@@ -15,25 +15,14 @@
 ///|
 /// Port of `bevy/examples/3d/bloom_3d.rs`.
 ///
-/// Baseline parity: Bevy's camera `Bloom` post-process and
-/// `Tonemapping::TonyMcMapface` path are not yet exposed in current mgstudio
-/// render APIs. This port keeps Bevy's scene layout, system split, and all key
-/// bindings, while mapping bloom controls onto emissive + ambient proxies.
+/// Baseline parity:
+/// - Camera `Bloom`, `Hdr`, and `Tonemapping::TonyMcMapface` are wired to
+///   mgstudio camera components.
+/// - Bevy bloom controls in this example now map directly to real bloom
+///   component fields.
 
 ///|
 const PI : Float = 3.141592653589793F
-
-///|
-pub(all) enum BloomCompositeMode {
-  EnergyConserving
-  Additive
-}
-
-///|
-priv struct BloomMaterialProxy {
-  handle : @asset.Handle[@render3d.StandardMaterial]
-  emissive : @render2d.Color
-}
 
 ///|
 priv struct BouncingSphere {
@@ -45,6 +34,7 @@ priv struct BouncingSphere {
 
 ///|
 priv struct BloomState {
+  mut camera : @core.Entity?
   mut help_text : @text.TextHandle?
   mut bloom_enabled : Bool
   mut intensity : Float
@@ -53,14 +43,14 @@ priv struct BloomState {
   mut high_pass_frequency : Float
   mut prefilter_threshold : Float
   mut prefilter_threshold_softness : Float
-  mut composite_mode : BloomCompositeMode
+  mut composite_mode : @render3d.BloomCompositeMode
   mut scale_x : Float
-  materials : Array[BloomMaterialProxy]
   spheres : Array[BouncingSphere]
 }
 
 ///|
 let bloom_state : Ref[BloomState] = Ref::new({
+  camera: None,
   help_text: None,
   bloom_enabled: true,
   intensity: 0.15F,
@@ -69,9 +59,8 @@ let bloom_state : Ref[BloomState] = Ref::new({
   high_pass_frequency: 1.0F,
   prefilter_threshold: 0.0F,
   prefilter_threshold_softness: 0.0F,
-  composite_mode: BloomCompositeMode::EnergyConserving,
+  composite_mode: @render3d.BloomCompositeMode::EnergyConserving,
   scale_x: 1.0F,
-  materials: [],
   spheres: [],
 })
 
@@ -99,7 +88,7 @@ fn stable_bucket(x : Int, z : Int) -> Int {
 }
 
 ///|
-fn mode_label(mode : BloomCompositeMode) -> String {
+fn mode_label(mode : @render3d.BloomCompositeMode) -> String {
   match mode {
     EnergyConserving => "Energy-conserving"
     Additive => "Additive"
@@ -107,93 +96,37 @@ fn mode_label(mode : BloomCompositeMode) -> String {
 }
 
 ///|
-fn set_global_ambient_light(
-  world : @ecs_world.World,
-  color : @render2d.Color,
-  brightness : Float,
-) -> Unit {
+fn apply_camera_bloom(world : @ecs_world.World) -> Unit {
+  guard bloom_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
-  }
-}
-
-///|
-fn bloom_proxy_scale() -> Float {
-  if !bloom_state.val.bloom_enabled {
-    return 1.0F
-  }
-
-  let mode_gain = if bloom_state.val.composite_mode is Additive {
-    1.0F + bloom_state.val.intensity * 2.0F
-  } else {
-    1.0F + bloom_state.val.intensity * 1.2F
-  }
-  let low_freq_gain = 1.0F +
-    bloom_state.val.low_frequency_boost *
-    (0.6F + bloom_state.val.low_frequency_boost_curvature * 0.8F)
-  let high_pass_gain = 0.3F + bloom_state.val.high_pass_frequency * 0.7F
-  let threshold_gain = 1.0F /
-    (1.0F + bloom_state.val.prefilter_threshold * 0.35F)
-  let softness_gain = 1.0F + bloom_state.val.prefilter_threshold_softness * 0.5F
-  let stretch_gain = 1.0F + bloom_state.val.scale_x * 0.05F
-
-  clampf(
-    mode_gain *
-    low_freq_gain *
-    high_pass_gain *
-    threshold_gain *
-    softness_gain *
-    stretch_gain,
-    1.0F,
-    8.0F,
-  )
-}
-
-///|
-fn apply_bloom_proxy(world : @ecs_world.World) -> Unit {
-  let scale = bloom_proxy_scale()
-  for material_proxy in bloom_state.val.materials {
-    if @render3d.standard_material_get(material_proxy.handle) is Some(material) {
-      @render3d.standard_material_set(
-        material_proxy.handle,
-        material.with_emissive(
-          @render2d.Color::new(
-            material_proxy.emissive.r * scale,
-            material_proxy.emissive.g * scale,
-            material_proxy.emissive.b * scale,
-            material_proxy.emissive.a,
-          ),
-        ),
-      )
-      |> ignore
-    }
-  }
-
+  let bloom_store = world.get_bloom_store()
   if bloom_state.val.bloom_enabled {
-    let ambient = clampf(
-      0.004F +
-      bloom_state.val.intensity *
-      0.035F *
-      (0.5F + bloom_state.val.low_frequency_boost),
-      0.0F,
-      0.08F,
-    )
-    set_global_ambient_light(world, @render2d.Color::white(), ambient)
+    let bloom = @render3d.Bloom::new(bloom_state.val.intensity)
+      .with_low_frequency_boost(bloom_state.val.low_frequency_boost)
+      .with_low_frequency_boost_curvature(
+        bloom_state.val.low_frequency_boost_curvature,
+      )
+      .with_high_pass_frequency(bloom_state.val.high_pass_frequency)
+      .with_prefilter(
+        bloom_state.val.prefilter_threshold,
+        bloom_state.val.prefilter_threshold_softness,
+      )
+      .with_composite_mode(bloom_state.val.composite_mode)
+      .with_scale(@math.Vec2::new(bloom_state.val.scale_x, 1.0F))
+    if bloom_store.contains(camera_entity) {
+      bloom_store.set(camera_entity, bloom, tick) |> ignore
+    } else {
+      bloom_store.insert(camera_entity, bloom, tick)
+    }
   } else {
-    set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+    bloom_store.remove(camera_entity) |> ignore
   }
 }
 
 ///|
 fn ui_content() -> String {
   if !bloom_state.val.bloom_enabled {
-    return "Bloom: Off (Toggle: Space)\n\n" +
-      "Adapted runtime note: Bevy bloom post-process is mapped to emissive/ambient proxy controls."
+    return "Bloom: Off (Toggle: Space)"
   }
 
   "Bloom (Toggle: Space)\n" +
@@ -206,9 +139,7 @@ fn ui_content() -> String {
   "\n" +
   "(Y/H) Threshold: \{bloom_state.val.prefilter_threshold}\n" +
   "(U/J) Threshold softness: \{bloom_state.val.prefilter_threshold_softness}\n" +
-  "(I/K) Horizontal Scale: \{bloom_state.val.scale_x}\n" +
-  "\n" +
-  "Adapted runtime note: Bevy bloom post-process is mapped to emissive/ambient proxy controls."
+  "(I/K) Horizontal Scale: \{bloom_state.val.scale_x}"
 }
 
 ///|
@@ -276,6 +207,8 @@ fn uv_sphere_mesh(
 
 ///|
 fn setup_scene(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  bloom_state.val.camera = None
   bloom_state.val.help_text = None
   bloom_state.val.bloom_enabled = true
   bloom_state.val.intensity = 0.15F
@@ -284,19 +217,25 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
   bloom_state.val.high_pass_frequency = 1.0F
   bloom_state.val.prefilter_threshold = 0.0F
   bloom_state.val.prefilter_threshold_softness = 0.0F
-  bloom_state.val.composite_mode = BloomCompositeMode::EnergyConserving
+  bloom_state.val.composite_mode = @render3d.BloomCompositeMode::EnergyConserving
   bloom_state.val.scale_x = 1.0F
-  bloom_state.val.materials.clear()
   bloom_state.val.spheres.clear()
 
-  @render3d.Camera3dBundle::new(
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_tonemapping_store()
+  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
+  world
+  .get_bloom_store()
+  .insert(camera, @render3d.Bloom::new(bloom_state.val.intensity), tick)
+  bloom_state.val.camera = Some(camera)
 
   let material_emissive1 = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
@@ -316,19 +255,6 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
   let material_non_emissive = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::black()),
   )
-
-  bloom_state.val.materials.push({
-    handle: material_emissive1,
-    emissive: @render2d.Color::new(0.0F, 0.0F, 150.0F, 1.0F),
-  })
-  bloom_state.val.materials.push({
-    handle: material_emissive2,
-    emissive: @render2d.Color::new(1000.0F, 1000.0F, 1000.0F, 1.0F),
-  })
-  bloom_state.val.materials.push({
-    handle: material_emissive3,
-    emissive: @render2d.Color::new(50.0F, 0.0F, 0.0F, 1.0F),
-  })
 
   let sphere_mesh = uv_sphere_mesh(0.4F, 20, 28)
   for xi in 0..<10 {
@@ -381,7 +307,7 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
     .spawn()
   bloom_state.val.help_text = Some(help_text)
 
-  apply_bloom_proxy(world)
+  apply_camera_bloom(world)
   update_help_text()
 }
 
@@ -455,11 +381,11 @@ fn update_bloom_settings(world : @ecs_world.World) -> Unit {
     )
 
     if @input.key_pressed(@window.KeyCode::KeyG) {
-      bloom_state.val.composite_mode = BloomCompositeMode::Additive
+      bloom_state.val.composite_mode = @render3d.BloomCompositeMode::Additive
       changed = true
     }
     if @input.key_pressed(@window.KeyCode::KeyT) {
-      bloom_state.val.composite_mode = BloomCompositeMode::EnergyConserving
+      bloom_state.val.composite_mode = @render3d.BloomCompositeMode::EnergyConserving
       changed = true
     }
 
@@ -505,7 +431,7 @@ fn update_bloom_settings(world : @ecs_world.World) -> Unit {
   }
 
   if changed {
-    apply_bloom_proxy(world)
+    apply_camera_bloom(world)
   }
   update_help_text()
 }

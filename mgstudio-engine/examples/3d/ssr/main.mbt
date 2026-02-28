@@ -15,9 +15,9 @@
 ///|
 /// Port of `bevy/examples/3d/ssr.rs`.
 ///
-/// Baseline parity: Bevy's deferred SSR post-process and custom water shader are
-/// approximated using mgstudio's current forward PBR path with camera-level
-/// `ScreenSpaceReflections` controls and scene-equivalent interaction flow.
+/// Baseline parity: deferred SSR controls and Bevy scene interaction flow are
+/// mapped to mgstudio APIs. Bevy's custom deferred water material extension is
+/// still represented with closest available standard-material behavior.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -26,13 +26,13 @@ const PI : Float = 3.141592653589793F
 const CAMERA_HEIGHT : Float = 2.25F
 
 ///|
-const CAMERA_KEYBOARD_ZOOM_SPEED : Float = 2.5F
+const CAMERA_KEYBOARD_ZOOM_SPEED : Float = 0.1F
 
 ///|
-const CAMERA_KEYBOARD_ORBIT_SPEED : Float = 0.8F
+const CAMERA_KEYBOARD_ORBIT_SPEED : Float = 0.02F
 
 ///|
-const CAMERA_MOUSE_WHEEL_ZOOM_SPEED : Float = 0.75F
+const CAMERA_MOUSE_WHEEL_ZOOM_SPEED : Float = 0.25F
 
 ///|
 const CAMERA_MIN_RADIUS : Float = 2.0F
@@ -44,13 +44,7 @@ const CAMERA_MAX_RADIUS : Float = 12.0F
 const RANGE_STEP_ROUGHNESS : Float = 0.005F
 
 ///|
-const RANGE_STEP_EDGE : Float = 0.005F
-
-///|
-const RANGE_STEP_THICKNESS : Float = 0.05F
-
-///|
-const RANGE_STEP_EXPONENT : Float = 0.1F
+const RANGE_STEP_EDGE : Float = 0.001F
 
 ///|
 pub(all) enum DisplayedModel {
@@ -100,10 +94,10 @@ let ssr_state : Ref[SsrState] = Ref::new({
   ssr_on: true,
   displayed_model: DisplayedModel::Cube,
   displayed_base: DisplayedBase::Water,
-  min_roughness_start: 0.08F,
-  min_roughness_end: 0.12F,
-  max_roughness_start: 0.55F,
-  max_roughness_end: 0.6F,
+  min_roughness_start: 0.0F,
+  min_roughness_end: 0.01F,
+  max_roughness_start: 0.99F,
+  max_roughness_end: 1.0F,
   edge_fadeout_start: 0.0F,
   edge_fadeout_end: 0.0F,
   thickness: 0.25F,
@@ -217,21 +211,6 @@ fn ssr_ui_text() -> String {
   "\n" +
   "Edge Fadeout End:   F-/G+ = " +
   "\{state.edge_fadeout_end}" +
-  "\n" +
-  "Thickness:          Y-/H+ = " +
-  "\{state.thickness}" +
-  "\n" +
-  "Linear Steps:       C-/V+ = " +
-  "\{state.linear_steps}" +
-  "\n" +
-  "Bisection Steps:    O-/P+ = " +
-  "\{state.bisection_steps}" +
-  "\n" +
-  "March Exponent:     Z-/X+ = " +
-  "\{state.linear_march_exponent}" +
-  "\n" +
-  "Use Secant:         B toggle = " +
-  on_off_label(state.use_secant) +
   "\n"
 }
 
@@ -591,6 +570,7 @@ fn spawn_bases(
 
 ///|
 fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
   let camera = @render3d.Camera3dBundle::new(
       @render2d.Camera::default(),
       @math.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
@@ -603,6 +583,35 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
   ssr_state.val.camera = Some(camera)
 
   let tick = world.read_change_tick()
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .get_temporal_anti_aliasing_store()
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+  world
+  .get_screen_space_ambient_occlusion_store()
+  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      5000.0F,
+    ),
+    tick,
+  )
+  world
+  .get_skybox_store()
+  .insert(
+    camera,
+    @render3d.Skybox::new(
+      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+      5000.0F,
+    ),
+    tick,
+  )
 
   let directional = world.spawn_empty()
   world
@@ -645,6 +654,11 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
     value.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::white(),
       0.03F,
+    )
+  } else {
+    ambient.insert(
+      @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.03F),
+      tick,
     )
   }
 }
@@ -728,12 +742,11 @@ fn animate_water_material(_world : @ecs_world.World) -> Unit {
 
 ///|
 fn adjust_camera_controls(world : @ecs_world.World) -> Bool {
-  let delta = @time.time_delta_seconds()
   let mut changed = false
 
   if @input.key_pressed(@window.KeyCode::KeyW) {
     ssr_state.val.camera_radius = clampf(
-      ssr_state.val.camera_radius - CAMERA_KEYBOARD_ZOOM_SPEED * delta,
+      ssr_state.val.camera_radius - CAMERA_KEYBOARD_ZOOM_SPEED,
       CAMERA_MIN_RADIUS,
       CAMERA_MAX_RADIUS,
     )
@@ -741,7 +754,7 @@ fn adjust_camera_controls(world : @ecs_world.World) -> Bool {
   }
   if @input.key_pressed(@window.KeyCode::KeyS) {
     ssr_state.val.camera_radius = clampf(
-      ssr_state.val.camera_radius + CAMERA_KEYBOARD_ZOOM_SPEED * delta,
+      ssr_state.val.camera_radius + CAMERA_KEYBOARD_ZOOM_SPEED,
       CAMERA_MIN_RADIUS,
       CAMERA_MAX_RADIUS,
     )
@@ -749,12 +762,12 @@ fn adjust_camera_controls(world : @ecs_world.World) -> Bool {
   }
   if @input.key_pressed(@window.KeyCode::KeyA) {
     ssr_state.val.camera_theta = ssr_state.val.camera_theta +
-      CAMERA_KEYBOARD_ORBIT_SPEED * delta
+      CAMERA_KEYBOARD_ORBIT_SPEED
     changed = true
   }
   if @input.key_pressed(@window.KeyCode::KeyD) {
     ssr_state.val.camera_theta = ssr_state.val.camera_theta -
-      CAMERA_KEYBOARD_ORBIT_SPEED * delta
+      CAMERA_KEYBOARD_ORBIT_SPEED
     changed = true
   }
 
@@ -875,49 +888,6 @@ fn control_system(world : @ecs_world.World) -> Unit {
     settings_changed = true
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyH) {
-    ssr_state.val.thickness = ssr_state.val.thickness + RANGE_STEP_THICKNESS
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyY) {
-    ssr_state.val.thickness = ssr_state.val.thickness - RANGE_STEP_THICKNESS
-    settings_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyV) {
-    ssr_state.val.linear_steps = ssr_state.val.linear_steps + 1
-    settings_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    ssr_state.val.linear_steps = ssr_state.val.linear_steps - 1
-    settings_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyP) {
-    ssr_state.val.bisection_steps = ssr_state.val.bisection_steps + 1
-    settings_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyO) {
-    ssr_state.val.bisection_steps = ssr_state.val.bisection_steps - 1
-    settings_changed = true
-  }
-
-  if @input.key_pressed(@window.KeyCode::KeyX) {
-    ssr_state.val.linear_march_exponent = ssr_state.val.linear_march_exponent +
-      RANGE_STEP_EXPONENT
-    settings_changed = true
-  }
-  if @input.key_pressed(@window.KeyCode::KeyZ) {
-    ssr_state.val.linear_march_exponent = ssr_state.val.linear_march_exponent -
-      RANGE_STEP_EXPONENT
-    settings_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyB) {
-    ssr_state.val.use_secant = !ssr_state.val.use_secant
-    settings_changed = true
-  }
-
   let camera_changed = adjust_camera_controls(world)
 
   if settings_changed {
@@ -934,13 +904,24 @@ fn control_system(world : @ecs_world.World) -> Unit {
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let renderer_method = world.get_default_opaque_renderer_method_resource()
+  if renderer_method.get_ref_mut(tick) is Some(current) {
+    current.val = @render3d.DefaultOpaqueRendererMethod::deferred()
+  } else {
+    renderer_method.insert(
+      @render3d.DefaultOpaqueRendererMethod::deferred(),
+      tick,
+    )
+  }
+
   ssr_state.val.ssr_on = true
   ssr_state.val.displayed_model = DisplayedModel::Cube
   ssr_state.val.displayed_base = DisplayedBase::Water
-  ssr_state.val.min_roughness_start = 0.08F
-  ssr_state.val.min_roughness_end = 0.12F
-  ssr_state.val.max_roughness_start = 0.55F
-  ssr_state.val.max_roughness_end = 0.6F
+  ssr_state.val.min_roughness_start = 0.0F
+  ssr_state.val.min_roughness_end = 0.01F
+  ssr_state.val.max_roughness_start = 0.99F
+  ssr_state.val.max_roughness_end = 1.0F
   ssr_state.val.edge_fadeout_start = 0.0F
   ssr_state.val.edge_fadeout_end = 0.0F
   ssr_state.val.thickness = 0.25F

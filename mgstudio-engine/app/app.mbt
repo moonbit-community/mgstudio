@@ -59,6 +59,27 @@ pub fn system_set(name : String) -> SystemSet {
 }
 
 ///|
+pub(all) enum AppLabel {
+  MainApp
+  RenderApp
+  Custom(String)
+} derive(Eq, Show)
+
+///|
+pub fn app_label(name : String) -> AppLabel {
+  Custom(name)
+}
+
+///|
+fn app_label_storage_key(label : AppLabel) -> String {
+  match label {
+    MainApp => "__main__"
+    RenderApp => "__render__"
+    Custom(name) => "__custom__:" + name
+  }
+}
+
+///|
 pub(all) enum ScheduleStage {
   Startup
   PreUpdate
@@ -264,6 +285,9 @@ pub type RunnerFn = () -> Unit
 pub type RunnerBuilder[W] = (App[W]) -> RunnerFn
 
 ///|
+pub type SubAppExtractFn[W] = (W, W) -> (W, W)
+
+///|
 pub struct Schedule[W] {
   startup : Array[SystemConfig[W]]
   pre_update : Array[SystemConfig[W]]
@@ -279,13 +303,17 @@ pub struct Schedule[W] {
 
 ///|
 pub struct App[W] {
-  world : W
+  mut world : W
   schedule : Schedule[W]
   runner : RunnerFn?
+  sub_apps : @hashmap.HashMap[String, Ref[App[W]]]
+  sub_app_labels : @hashmap.HashMap[String, AppLabel]
+  sub_app_extractors : @hashmap.HashMap[String, SubAppExtractFn[W]]
 }
 
 ///|
 pub fn[W] App::new(world : W) -> App[W] {
+  app_runtime_reset()
   App::{
     world,
     schedule: Schedule::{
@@ -301,6 +329,9 @@ pub fn[W] App::new(world : W) -> App[W] {
       post_update_set_edges: [],
     },
     runner: None,
+    sub_apps: @hashmap.HashMap::new(),
+    sub_app_labels: @hashmap.HashMap::new(),
+    sub_app_extractors: @hashmap.HashMap::new(),
   }
 }
 
@@ -319,6 +350,125 @@ pub fn[W] App::add_plugin_group(
   group : PluginGroup[W],
 ) -> App[W] {
   self.add_plugins(group().build())
+}
+
+///|
+pub fn[W] App::insert_sub_app(
+  self : App[W],
+  label : AppLabel,
+  sub_app : App[W],
+) -> App[W] {
+  let key = app_label_storage_key(label)
+  self.sub_apps.set(key, Ref::new(sub_app))
+  self.sub_app_labels.set(key, label)
+  self
+}
+
+///|
+pub fn[W] App::remove_sub_app(self : App[W], label : AppLabel) -> App[W]? {
+  let key = app_label_storage_key(label)
+  let removed = self.sub_apps.get(key)
+  self.sub_apps.remove(key)
+  self.sub_app_labels.remove(key)
+  self.sub_app_extractors.remove(key)
+  removed.map(fn(sub_app_ref) { sub_app_ref.val })
+}
+
+///|
+pub fn[W] App::get_sub_app(self : App[W], label : AppLabel) -> App[W]? {
+  let key = app_label_storage_key(label)
+  self.sub_apps.get(key).map(fn(sub_app_ref) { sub_app_ref.val })
+}
+
+///|
+pub fn[W] App::get_sub_app_mut(self : App[W], label : AppLabel) -> Ref[App[W]]? {
+  let key = app_label_storage_key(label)
+  self.sub_apps.get(key)
+}
+
+///|
+pub fn[W] App::sub_app(self : App[W], label : AppLabel) -> App[W] {
+  match self.get_sub_app(label) {
+    Some(sub_app) => sub_app
+    None => abort("Missing sub app for label: " + label.to_string())
+  }
+}
+
+///|
+pub fn[W] App::sub_app_mut(self : App[W], label : AppLabel) -> Ref[App[W]] {
+  match self.get_sub_app_mut(label) {
+    Some(sub_app_ref) => sub_app_ref
+    None => abort("Missing sub app for label: " + label.to_string())
+  }
+}
+
+///|
+pub fn[W] App::set_sub_app_extract(
+  self : App[W],
+  label : AppLabel,
+  extract : SubAppExtractFn[W],
+) -> App[W] {
+  let key = app_label_storage_key(label)
+  if self.sub_apps.contains(key) {
+    self.sub_app_extractors.set(key, extract)
+  }
+  self
+}
+
+///|
+pub fn[W] App::take_sub_app_extract(
+  self : App[W],
+  label : AppLabel,
+) -> SubAppExtractFn[W]? {
+  let key = app_label_storage_key(label)
+  let extract = self.sub_app_extractors.get(key)
+  self.sub_app_extractors.remove(key)
+  extract
+}
+
+///|
+pub fn[W] App::sub_apps(self : App[W]) -> Array[(AppLabel, App[W])] {
+  let out : Array[(AppLabel, App[W])] = []
+  for entry in self.sub_apps.iter() {
+    let (key, sub_app_ref) = entry
+    let label = match self.sub_app_labels.get(key) {
+      Some(stored) => stored
+      None => Custom(key)
+    }
+    out.push((label, sub_app_ref.val))
+  }
+  out
+}
+
+///|
+pub fn[W] App::sub_apps_mut(self : App[W]) -> Array[(AppLabel, Ref[App[W]])] {
+  let out : Array[(AppLabel, Ref[App[W]])] = []
+  for entry in self.sub_apps.iter() {
+    let (key, sub_app_ref) = entry
+    let label = match self.sub_app_labels.get(key) {
+      Some(stored) => stored
+      None => Custom(key)
+    }
+    out.push((label, sub_app_ref))
+  }
+  out
+}
+
+///|
+pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::update_sub_app_by_label(
+  self : App[W],
+  label : AppLabel,
+) -> App[W] {
+  let key = app_label_storage_key(label)
+  if self.sub_apps.get(key) is Some(sub_app_ref) {
+    if self.sub_app_extractors.get(key) is Some(extract) {
+      let worlds = extract(self.world, sub_app_ref.val.world)
+      self.world = worlds.0
+      sub_app_ref.val = App::{ ..sub_app_ref.val, world: worlds.1 }
+    }
+    sub_app_ref.val = sub_app_ref.val.run_once()
+  }
+  self
 }
 
 ///|
@@ -966,6 +1116,10 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(
   self : App[W],
 ) -> App[W] {
   run_schedule_stage(self.world, self.schedule, Startup)
+  for entry in self.sub_apps.iter() {
+    let (_key, sub_app_ref) = entry
+    sub_app_ref.val = sub_app_ref.val.run_startup()
+  }
   self
 }
 
@@ -1009,6 +1163,15 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(
   }
   run_schedule_stage(self.world, self.schedule, Update)
   run_schedule_stage(self.world, self.schedule, PostUpdate)
+  for entry in self.sub_apps.iter() {
+    let (key, sub_app_ref) = entry
+    if self.sub_app_extractors.get(key) is Some(extract) {
+      let worlds = extract(self.world, sub_app_ref.val.world)
+      self.world = worlds.0
+      sub_app_ref.val = App::{ ..sub_app_ref.val, world: worlds.1 }
+    }
+    sub_app_ref.val = sub_app_ref.val.run_once()
+  }
   self
 }
 

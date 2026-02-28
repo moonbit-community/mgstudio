@@ -15,8 +15,9 @@
 ///|
 /// Port of `bevy/examples/3d/motion_blur.rs`.
 ///
-/// Baseline parity: blocked until full runtime parity validation across WebGPU
-/// and native motion-vector resolve paths (no fallback behavior allowed).
+/// Parity target: keep Bevy camera controls (`shutter_angle`, `samples`,
+/// camera-mode switching) and enforce the same MSAA-off compatibility path used
+/// by Bevy for web constraints.
 
 ///|
 const TWO_PI : Float = 6.283185307179586F
@@ -142,6 +143,7 @@ fn help_text_content() -> String {
   "Shutter angle: \{float_text_2(motion_blur_state.val.shutter_angle)}\n" +
   "Samples: \{motion_blur_state.val.samples}\n" +
   "Camera mode: \{camera_mode_text(motion_blur_state.val.camera_mode)}\n" +
+  "MSAA: Off (Bevy web compatibility path)\n" +
   "1/2: -/+ shutter angle (blur amount)\n" +
   "3/4: -/+ sample count (blur quality)\n" +
   "Spacebar: cycle camera\n"
@@ -226,6 +228,9 @@ fn spawn_camera(world : @ecs_world.World) -> Unit {
       ),
     )
     .spawn(world)
+  world
+  .get_msaa_store()
+  .insert(camera, @render3d.Msaa::Off, world.read_change_tick())
   motion_blur_state.val.camera = Some(camera)
 }
 

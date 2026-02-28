@@ -55,19 +55,7 @@ fn wrap_hue_deg(value : Float) -> Float {
 
 ///|
 fn color_from_hue_deg(hue_deg : Float) -> @render2d.Color {
-  let h = wrap_hue_deg(hue_deg)
-  let h_prime = h / 60.0F
-  let sector = h_prime.to_int()
-  let f = h_prime - float_from_int(sector)
-  let q = 1.0F - f
-  match sector {
-    0 => @render2d.Color::new(1.0F, f, 0.0F, 1.0F)
-    1 => @render2d.Color::new(q, 1.0F, 0.0F, 1.0F)
-    2 => @render2d.Color::new(0.0F, 1.0F, f, 1.0F)
-    3 => @render2d.Color::new(0.0F, q, 1.0F, 1.0F)
-    4 => @render2d.Color::new(f, 0.0F, 1.0F, 1.0F)
-    _ => @render2d.Color::new(1.0F, 0.0F, q, 1.0F)
-  }
+  @render2d.Color::hsla(hue_deg, 1.0F, 0.5F, 1.0F)
 }
 
 ///|

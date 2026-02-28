@@ -15,10 +15,9 @@
 ///|
 /// Port of `bevy/examples/3d/post_processing.rs`.
 ///
-/// Baseline parity: mgstudio now exposes camera-attached
-/// `ChromaticAberration` and `Vignette`, but the current renderer evaluates
-/// them in the object draw phase (approximation) instead of Bevy's full-screen
-/// post-process graph.
+/// Parity note: `ChromaticAberration` and `Vignette` are wired on the camera
+/// in Bevy-compatible shape; current backend still applies them as an adapted
+/// pass approximation.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -31,6 +30,12 @@ const MAX_CHROMATIC_ABERRATION_INTENSITY : Float = 0.4F
 
 ///|
 const SETTING_COUNT : Int = 6
+
+///|
+const ENV_DIFFUSE_MAP_ASSET : String = "environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"
+
+///|
+const ENV_SPECULAR_MAP_ASSET : String = "environment_maps/pisa_specular_rgb9e5_zstd.ktx2"
 
 ///|
 priv struct AppSettings {
@@ -85,8 +90,16 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn float_text(value : Float) -> String {
-  let rounded = (value * 100.0F).round() / 100.0F
-  "\{rounded}"
+  let scaled = (value * 100.0F).round().to_int()
+  let whole = scaled / 100
+  let fraction = scaled - whole * 100
+  let fraction_abs = if fraction < 0 { -fraction } else { fraction }
+  let fraction_text = if fraction_abs < 10 {
+    "0" + fraction_abs.to_string()
+  } else {
+    fraction_abs.to_string()
+  }
+  whole.to_string() + "." + fraction_text
 }
 
 ///|
@@ -157,7 +170,11 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn spawn_camera(world : @ecs_world.World) -> Unit {
+fn spawn_camera(
+  world : @ecs_world.World,
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
       @render2d.Camera::default(),
       @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
@@ -169,6 +186,18 @@ fn spawn_camera(world : @ecs_world.World) -> Unit {
     .with_vignette(Some(@render3d.Vignette::default()))
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
+      Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
+      2000.0F,
+    ),
+    tick,
+  )
 
   @render3d.render3d_set_distance_fog(
     @render3d.DistanceFog::new(
@@ -238,7 +267,7 @@ fn spawn_scene(
   .get_transform_store()
   .insert(
     directional_light,
-    @math.Transform::from_xyz(0.0F, 4.0F, 4.0F).with_rotation(
+    @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI).mul(
         @math.Quat::from_rotation_x(-0.15F * PI),
       ),
@@ -279,7 +308,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   post_processing_state.val.help_text = None
 
   let asset_server = @asset.AssetServer::new()
-  spawn_camera(world)
+  spawn_camera(world, asset_server)
   spawn_scene(world, asset_server)
   spawn_text(asset_server)
   apply_post_process_settings(world)

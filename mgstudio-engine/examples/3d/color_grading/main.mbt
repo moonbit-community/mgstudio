@@ -15,11 +15,11 @@
 ///|
 /// Port of `bevy/examples/3d/color_grading.rs`.
 ///
-/// Baseline parity: Bevy's camera-attached `ColorGrading` + `Hdr` render path
-/// and the exact UI style pipeline are not yet available in current mgstudio
-/// render APIs. This port keeps Bevy's option model, keyboard/mouse interaction
-/// semantics, and scene topology, while mapping grading values to light/fog
-/// proxy controls.
+/// Baseline parity:
+/// - Camera-attached `ColorGrading` + `Hdr` are now wired to real mgstudio
+///   camera components.
+/// - Existing proxy adjustments (light/fog shaping) are retained to keep the
+///   current visual response close to prior example behavior.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -28,7 +28,7 @@ const PI : Float = 3.141592653589793F
 const OPTION_ADJUSTMENT_SPEED : Float = 0.003F
 
 ///|
-const BUTTON_WIDTH : Float = 128.0F
+const BUTTON_WIDTH : Float = 200.0F
 
 ///|
 const BUTTON_HEIGHT : Float = 36.0F
@@ -99,6 +99,7 @@ priv struct ColorGradingOptionWidget {
 priv struct ColorGradingState {
   mut selected_option : SelectedColorGradingOption
   mut color_grading : ColorGradingValues
+  mut camera : @core.Entity?
   mut directional_light : @core.Entity?
   mut help_text : @text.TextHandle?
   widgets : Array[ColorGradingOptionWidget]
@@ -134,6 +135,7 @@ let color_grading_state : Ref[ColorGradingState] = Ref::new({
       lift: 0.0F,
     },
   },
+  camera: None,
   directional_light: None,
   help_text: None,
   widgets: [],
@@ -452,13 +454,43 @@ fn selected_option_set(
 }
 
 ///|
+fn to_render3d_section(
+  section : ColorGradingSection,
+) -> @render3d.ColorGradingSection {
+  @render3d.ColorGradingSection::default()
+  .with_saturation(section.saturation)
+  .with_contrast(section.contrast)
+  .with_gamma(section.gamma)
+  .with_gain(section.gain)
+  .with_lift(section.lift)
+}
+
+///|
+fn to_render3d_color_grading(
+  values : ColorGradingValues,
+) -> @render3d.ColorGrading {
+  let global = @render3d.ColorGradingGlobal::default()
+    .with_exposure(values.global.exposure)
+    .with_temperature(values.global.temperature)
+    .with_tint(values.global.tint)
+    .with_hue(values.global.hue)
+  @render3d.ColorGrading::new(
+    global,
+    @render3d.ColorGradingSettings::default()
+    .with_shadows(to_render3d_section(values.shadows))
+    .with_midtones(to_render3d_section(values.midtones))
+    .with_highlights(to_render3d_section(values.highlights)),
+  )
+}
+
+///|
 fn selected_button_color() -> @render2d.Color {
-  @render2d.Color::new(0.12F, 0.32F, 0.62F, 1.0F)
+  @render2d.Color::white()
 }
 
 ///|
 fn normal_button_color() -> @render2d.Color {
-  @render2d.Color::new(0.08F, 0.08F, 0.08F, 1.0F)
+  @render2d.Color::black()
 }
 
 ///|
@@ -504,6 +536,17 @@ fn global_white_balance(global : ColorGradingGlobal) -> (Float, Float, Float) {
 ///|
 fn apply_color_grading_proxy(world : @ecs_world.World) -> Unit {
   let values = color_grading_state.val.color_grading
+  if color_grading_state.val.camera is Some(camera_entity) {
+    let tick = world.increment_change_tick()
+    let grading = to_render3d_color_grading(values)
+    let store = world.get_color_grading_store()
+    if store.contains(camera_entity) {
+      store.set(camera_entity, grading, tick) |> ignore
+    } else {
+      store.insert(camera_entity, grading, tick)
+    }
+  }
+
   let (white_r, white_g, white_b) = global_white_balance(values.global)
   let exposure_scale = @math.pow(2.0F, values.global.exposure)
 
@@ -798,14 +841,14 @@ fn setup_ui(
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(56.0F))
+    .with_bottom(@ui.Val::Px(12.0F))
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_row_gap(@ui.Val::Px(6.0F)),
     tick,
   )
 
   let global_row = spawn_row(world, panel, tick)
-  spawn_row_label(world, global_row, tick, font, "Global".to_string())
+  spawn_row_label(world, global_row, tick, font, "".to_string())
   for
     option in [
       SelectedGlobalColorGradingOption::Exposure,
@@ -920,14 +963,23 @@ fn add_basic_scene(
 
 ///|
 fn add_camera(world : @ecs_world.World) -> Unit {
-  @render3d.Camera3dBundle::new(
+  let tick = world.read_change_tick()
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_color_grading_store()
+  .insert(
+    camera,
+    to_render3d_color_grading(color_grading_state.val.color_grading),
+    tick,
+  )
+  color_grading_state.val.camera = Some(camera)
 }
 
 ///|
@@ -971,7 +1023,7 @@ fn update_ui_state(world : @ecs_world.World) -> Unit {
         widget.button,
         @ui.BorderColor::new(
           if is_selected {
-            @render2d.Color::new(0.95F, 0.95F, 0.2F, 1.0F)
+            @render2d.Color::black()
           } else {
             @render2d.Color::white()
           },
@@ -984,7 +1036,7 @@ fn update_ui_state(world : @ecs_world.World) -> Unit {
         widget.button,
         @ui.BorderColor::new(
           if is_selected {
-            @render2d.Color::new(0.95F, 0.95F, 0.2F, 1.0F)
+            @render2d.Color::black()
           } else {
             @render2d.Color::white()
           },
@@ -1059,13 +1111,14 @@ fn setup(world : @ecs_world.World) -> Unit {
     SelectedGlobalColorGradingOption::Exposure,
   )
   color_grading_state.val.color_grading = default_color_grading_values()
+  color_grading_state.val.camera = None
   color_grading_state.val.directional_light = None
   color_grading_state.val.help_text = None
   color_grading_state.val.widgets.clear()
   color_grading_state.val.ui_dirty = true
 
   let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
 
   add_basic_scene(world, asset_server)
   add_camera(world)

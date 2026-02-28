@@ -17,8 +17,9 @@
 ///
 /// Baseline parity: Bevy `DepthOfField` post-process modes are not exposed in
 /// current mgstudio APIs. This port preserves Bevy's control model
-/// (focus/aperture/mode cycling and help text semantics), while mapping DOF
-/// adjustments onto camera projection and distance-fog proxies.
+/// (focus/aperture/mode cycling and help text semantics), keeps real camera
+/// `Hdr`/`Tonemapping`/`Bloom` setup, and maps DOF adjustments onto camera
+/// projection and distance-fog proxies.
 
 ///|
 const FOCAL_DISTANCE_SPEED : Float = 0.05F
@@ -228,6 +229,11 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_tonemapping_store()
+  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
+  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
   dof_state.val.camera = Some(camera)
 
   let scene_entity = world.spawn_empty()

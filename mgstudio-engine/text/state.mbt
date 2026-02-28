@@ -587,6 +587,39 @@ pub fn text_spawn_span(
 }
 
 ///|
+pub fn text_despawn(handle : TextHandle) -> Bool {
+  let next_texts : Array[TextInstance] = []
+  let mut removed = false
+  for instance in text_state.val.texts {
+    if instance.id == handle.id {
+      removed = true
+    } else {
+      next_texts.push(instance)
+    }
+  }
+  if !removed {
+    return false
+  }
+  text_state.val.texts.clear()
+  for instance in next_texts {
+    text_state.val.texts.push(instance)
+  }
+  if text_debug_frame_state.val.draws.length() > 0 {
+    let next_draws : Array[TextDebugGlyphDraw] = []
+    for draw in text_debug_frame_state.val.draws {
+      if draw.text_id != handle.id {
+        next_draws.push(draw)
+      }
+    }
+    text_debug_frame_state.val.draws.clear()
+    for draw in next_draws {
+      text_debug_frame_state.val.draws.push(draw)
+    }
+  }
+  true
+}
+
+///|
 fn text_update_instance(
   handle : TextHandle,
   update : (TextInstance) -> TextInstance,

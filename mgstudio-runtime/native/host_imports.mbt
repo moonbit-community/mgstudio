@@ -31,6 +31,8 @@ pub struct HostContext {
   mut jit_globals_ptr : Int64
   mut gpu : GpuBackend?
   mut window : @win.Window?
+  mut app_loop_should_close : Bool
+  mut task_pool_num_threads : Int?
   gamepad : Ref[@gamepad.Gilrs]
   assets_source : @rtcore.SourceSpec
   data_source : @rtcore.SourceSpec
@@ -94,6 +96,8 @@ pub fn HostContext::new(
     jit_globals_ptr: 0L,
     gpu: None,
     window: None,
+    app_loop_should_close: false,
+    task_pool_num_threads: None,
     gamepad: Ref::new(gamepad),
     assets_source,
     data_source,
@@ -364,6 +368,11 @@ fn macos_keycode_from_string(code : String) -> Int? {
     "Comma" => Some(43)
     "Period" => Some(47)
     "Slash" => Some(44)
+    "Minus" => Some(27)
+    "Equal" => Some(24)
+    "BracketLeft" => Some(33)
+    "BracketRight" => Some(30)
+    "Quote" => Some(39)
     _ => None
   }
 }
@@ -1340,6 +1349,99 @@ pub fn add_mgstudio_host_imports(
   )
   linker.add_host_func(
     "mgstudio_host",
+    "app_run_loop",
+    fn(args) raise @runtime.RuntimeError {
+      if args.length() == 0 {
+        return ok_i32(0)
+      }
+      if args[0] is @types.Value::FuncRef(func_idx) {
+        guard ctx.store is Some(store) else { return ok_i32(0) }
+        guard ctx.instance is Some(instance) else { return ok_i32(0) }
+        let tick_idx = funcref_to_func_idx(instance, func_idx).unwrap_or(
+          func_idx,
+        )
+        ctx.app_loop_should_close = false
+        while true {
+          if ctx.app_loop_should_close {
+            break
+          }
+          let _ = match ctx.jit {
+            Some(jm) =>
+              try {
+                if !call_jit_func_by_index(jm, tick_idx) {
+                  raise @runtime.RuntimeError::LinkErrorDetail(
+                    "JIT function not found: \{tick_idx}",
+                  )
+                }
+                0
+              } catch {
+                _ => raise @runtime.RuntimeError::LinkErrorDetail("JIT trapped")
+              }
+            None =>
+              try {
+                @executor.call_func_by_index(store, instance, tick_idx, [])
+                |> ignore
+                0
+              } catch {
+                err => raise err
+              }
+          }
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::FuncRef, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "app_request_close",
+    fn(_args) {
+      ctx.app_loop_should_close = true
+      ok_i32(0)
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "app_reset_close",
+    fn(_args) {
+      ctx.app_loop_should_close = false
+      ok_i32(0)
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "task_pool_set_num_threads",
+    fn(args) {
+      if args.length() >= 1 && args[0] is @types.Value::I32(num_threads) {
+        if num_threads > 0 {
+          ctx.task_pool_num_threads = Some(num_threads)
+        }
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "app_stdin_read_line_len",
+    fn(_args) {
+      // Native-wasmoon path keeps stdin unavailable for now.
+      ok_i32(-1)
+    },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "app_stdin_read_line_code_unit",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
     "window_poll_events",
     fn(_args) {
       ctx.window.map(fn(win) { win.poll_events() }) |> ignore
@@ -1473,6 +1575,19 @@ pub fn add_mgstudio_host_imports(
     fn(args) {
       if args.length() >= 2 && args[1] is @types.Value::I32(mode) {
         ctx.window.map(fn(win) { win.set_cursor_grab_mode(mode) }) |> ignore
+      }
+      ok_i32(0)
+    },
+    func_type=ft([@types.ValueType::ExternRef, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "window_set_cursor_icon",
+    fn(args) {
+      if args.length() >= 2 && args[1] is @types.Value::I32(icon) {
+        ctx.window.map(fn(win) { win.set_cursor_icon(icon) }) |> ignore
       }
       ok_i32(0)
     },
@@ -1788,6 +1903,32 @@ pub fn add_mgstudio_host_imports(
       }
     },
     func_type=ft([@types.ValueType::I32], [@types.ValueType::F32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_drag_and_drop_event_count",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_drag_and_drop_event_kind",
+    fn(_args) { ok_i32(-1) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_drag_and_drop_event_len",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32], [@types.ValueType::I32]),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "input_drag_and_drop_event_code_unit",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
   )
   linker.add_host_func(
     "mgstudio_host",
@@ -2531,10 +2672,9 @@ pub fn add_mgstudio_host_imports(
         ok_i32(0)
       }
     },
-    func_type=ft(
-      [@types.ValueType::I32, @types.ValueType::I32],
-      [@types.ValueType::I32],
-    ),
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
   )
   linker.add_host_func(
     "mgstudio_host",
@@ -2618,6 +2758,14 @@ pub fn add_mgstudio_host_imports(
       ],
       [@types.ValueType::I32],
     ),
+  )
+  linker.add_host_func(
+    "mgstudio_host",
+    "asset_save_texture_png",
+    fn(_args) { ok_i32(0) },
+    func_type=ft([@types.ValueType::I32, @types.ValueType::I32], [
+      @types.ValueType::I32,
+    ]),
   )
   linker.add_host_func(
     "mgstudio_host",
@@ -3907,6 +4055,12 @@ pub fn add_mgstudio_host_imports(
           } else {
             0.0F
           }
+          let cull_mode = if args.length() > 59 &&
+            args[59] is @types.Value::I32(v) {
+            v
+          } else {
+            2
+          }
           ctx.gpu
           .unwrap()
           .draw_mesh3d(
@@ -3922,6 +4076,7 @@ pub fn add_mgstudio_host_imports(
             anisotropy_rotation, specular_tint_texture_id, specular_tint_r, specular_tint_g,
             specular_tint_b, diffuse_transmission, specular_transmission, thickness,
             ior, transmission_source_texture_id, transmission_blur_taps, transmission_steps,
+            cull_mode,
           )
         }
         ok_i32(0)
@@ -3993,6 +4148,7 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::I32,
       ],
       [@types.ValueType::I32],
     ),

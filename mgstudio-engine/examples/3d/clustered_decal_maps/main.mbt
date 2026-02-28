@@ -16,8 +16,8 @@
 /// Port of `bevy/examples/3d/clustered_decal_maps.rs`.
 ///
 /// Baseline parity:
-/// - Bevy `ClusteredDecal` map channels (normal/metallic-roughness/emissive)
-///   and clustered-decal pipeline are not yet exposed in mgstudio.
+/// - Bevy `ClusteredDecal` map-channel API surface is exposed, but clustered
+///   projected-decal rendering is not yet active in this backend.
 /// - This port keeps the same runtime behavior model (continuous spawn,
 ///   animated in/out lifetime, emissive toggle) using textured translucent
 ///   proxy meshes.
@@ -44,7 +44,16 @@ const DECAL_IDLE_DURATION : Float = 10.0F
 const DECAL_ANIMATE_OUT_DURATION : Float = 0.30F
 
 ///|
-const DECAL_SPAWN_INTERVAL : Float = 0.35F
+const DECAL_SPAWN_INTERVAL : Float = 1.0F
+
+///|
+const LCG_MOD : Int = 2147483647
+
+///|
+const LCG_MULTIPLIER : Int = 1103515245
+
+///|
+const LCG_INCREMENT : Int = 12345
 
 ///|
 priv struct ActiveDecal {
@@ -54,20 +63,30 @@ priv struct ActiveDecal {
 }
 
 ///|
+priv struct AppTextures {
+  decal_base_color_texture : @asset.Handle[@asset.Image]
+  decal_normal_map_texture : @asset.Handle[@asset.Image]
+  decal_metallic_roughness_texture : @asset.Handle[@asset.Image]
+  decal_emissive_texture : @asset.Handle[@asset.Image]
+}
+
+///|
 priv struct ClusteredDecalMapsState {
   mut spawn_accumulator : Float
-  mut spawn_index : Int
+  mut random_seed : Int
   mut emissive_decals : Bool
   mut decals : Array[ActiveDecal]
+  mut textures : AppTextures?
   mut help_text : @text.TextHandle?
 }
 
 ///|
 let clustered_decal_maps_state : Ref[ClusteredDecalMapsState] = Ref::new({
   spawn_accumulator: 0.0F,
-  spawn_index: 0,
+  random_seed: 1_987_836_747,
   emissive_decals: true,
   decals: [],
+  textures: None,
   help_text: None,
 })
 
@@ -88,9 +107,32 @@ fn clamp01(value : Float) -> Float {
 }
 
 ///|
+fn lcg_next(seed : Int) -> Int {
+  let mut next = (seed * LCG_MULTIPLIER + LCG_INCREMENT) % LCG_MOD
+  if next < 0 {
+    next = next + LCG_MOD
+  }
+  next
+}
+
+///|
+fn random_unit() -> Float {
+  clustered_decal_maps_state.val.random_seed = lcg_next(
+    clustered_decal_maps_state.val.random_seed,
+  )
+  float_from_int(clustered_decal_maps_state.val.random_seed) /
+  float_from_int(LCG_MOD)
+}
+
+///|
+fn random_range(min_value : Float, max_value : Float) -> Float {
+  min_value + random_unit() * (max_value - min_value)
+}
+
+///|
 fn help_text_content() -> String {
   "Clustered Decal Maps (Bevy-aligned behavior)\n" +
-  "E: Toggle emissive decals (" +
+  "E: Emissive On, R: Emissive Off (" +
   (if clustered_decal_maps_state.val.emissive_decals { "On" } else { "Off" }) +
   ")\n" +
   "Active decals: " +
@@ -168,14 +210,27 @@ fn spawn_camera(world : @ecs_world.World) -> Unit {
 fn setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   clustered_decal_maps_state.val.spawn_accumulator = 0.0F
-  clustered_decal_maps_state.val.spawn_index = 0
+  clustered_decal_maps_state.val.random_seed = 1_987_836_747
   clustered_decal_maps_state.val.emissive_decals = true
   clustered_decal_maps_state.val.decals = []
+  clustered_decal_maps_state.val.textures = None
   clustered_decal_maps_state.val.help_text = None
 
-  let decal_base_color = asset_server.load("branding/bevy_bird_dark.png")
-  let decal_normal_map = asset_server.load("textures/ScratchedGold-Normal.png")
-  spawn_plane(world, decal_base_color, decal_normal_map)
+  let textures : AppTextures = {
+    decal_base_color_texture: asset_server.load("branding/bevy_bird_dark.png"),
+    decal_normal_map_texture: asset_server.load(
+      "textures/ScratchedGold-Normal.png",
+    ),
+    decal_metallic_roughness_texture: asset_server.load("branding/icon.png"),
+    decal_emissive_texture: asset_server.load("branding/icon.png"),
+  }
+  clustered_decal_maps_state.val.textures = Some(textures)
+
+  spawn_plane(
+    world,
+    textures.decal_base_color_texture,
+    textures.decal_normal_map_texture,
+  )
   spawn_light(world)
   spawn_camera(world)
 
@@ -205,42 +260,36 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn spawn_decal(world : @ecs_world.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let index = clustered_decal_maps_state.val.spawn_index
-  clustered_decal_maps_state.val.spawn_index = index + 1
-  let phase = float_from_int(index)
-  let x = @math.sin(phase * 1.91F + 0.37F) * (PLANE_HALF_SIZE - 0.2F)
-  let y = @math.cos(phase * 2.73F + 1.13F) * (PLANE_HALF_SIZE - 0.2F)
-  let size_factor = clamp01(@math.sin(phase * 3.17F + 0.77F) * 0.5F + 0.5F)
-  let size = DECAL_MIN_SIZE + (DECAL_MAX_SIZE - DECAL_MIN_SIZE) * size_factor
-  let color_tint = clamp01(@math.sin(phase * 4.03F + 0.24F) * 0.5F + 0.5F)
-  let base_color = @render2d.Color::new(
-    0.9F,
-    0.8F + color_tint * 0.2F,
-    0.8F + color_tint * 0.2F,
-    0.95F,
-  )
+  guard clustered_decal_maps_state.val.textures is Some(textures) else {
+    return
+  }
 
-  let decal_base_color = asset_server.load("branding/bevy_bird_dark.png")
-  let decal_normal_map = asset_server.load("textures/ScratchedGold-Normal.png")
-  let decal_emissive_map = asset_server.load("branding/icon.png")
-  let mut material = @render3d.StandardMaterial::from_color(base_color)
-    .with_base_color_texture(Some(decal_base_color))
-    .with_normal_map_texture(Some(decal_normal_map))
-    .with_metallic_roughness_texture(Some(decal_base_color))
+  let x = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
+  let y = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
+  let size = random_range(DECAL_MIN_SIZE, DECAL_MAX_SIZE)
+  let theta = random_range(0.0F, PI)
+
+  let mut material = @render3d.StandardMaterial::from_color(
+      @render2d.Color::white(),
+    )
+    .with_base_color_texture(Some(textures.decal_base_color_texture))
+    .with_normal_map_texture(Some(textures.decal_normal_map_texture))
+    .with_metallic_roughness_texture(
+      Some(textures.decal_metallic_roughness_texture),
+    )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_perceptual_roughness(0.25F)
   if clustered_decal_maps_state.val.emissive_decals {
     material = material
-      .with_emissive_texture(Some(decal_emissive_map))
+      .with_emissive_texture(Some(textures.decal_emissive_texture))
       .with_emissive(@render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
   let entity = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 0.02F),
     @render3d.MeshMaterial3d::new(@render3d.standard_material_add(material)),
-    @math.Transform::from_xyz(x, y, -0.01F).with_scale(
-      @math.Vec3::new(0.001F, 0.001F, 0.02F),
-    ),
+    @math.Transform::from_xyz(x, y, -0.01F)
+    .with_rotation(@math.Quat::from_rotation_z(theta))
+    .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
   clustered_decal_maps_state.val.decals.push({
     entity,
@@ -301,8 +350,16 @@ fn animate_decals(world : @ecs_world.World) -> Unit {
 ///|
 fn controls(world : @ecs_world.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyE) {
-    clustered_decal_maps_state.val.emissive_decals = !clustered_decal_maps_state.val.emissive_decals
-    update_help_text()
+    if !clustered_decal_maps_state.val.emissive_decals {
+      clustered_decal_maps_state.val.emissive_decals = true
+      update_help_text()
+    }
+  }
+  if @input.key_just_pressed(@window.KeyCode::KeyR) {
+    if clustered_decal_maps_state.val.emissive_decals {
+      clustered_decal_maps_state.val.emissive_decals = false
+      update_help_text()
+    }
   }
   world |> ignore
 }

@@ -18,7 +18,8 @@
 /// Baseline parity: Bevy's voxel volumetric fog stack (`VolumetricFog`,
 /// `VolumetricLight`, `FogVolume`, bloom/skybox integration) is approximated
 /// using mgstudio's current distance-fog pipeline with light-driven scattering
-/// response and proxy fog volume geometry.
+/// response and proxy fog volume geometry; camera tonemapping/bloom/skybox are
+/// aligned with Bevy setup.
 
 ///|
 const DIRECTIONAL_LIGHT_MOVEMENT_SPEED : Float = 1.2F
@@ -216,6 +217,7 @@ fn setup_scene_geometry(world : @ecs_world.World) -> Unit {
 
 ///|
 fn setup_camera(world : @ecs_world.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
@@ -223,6 +225,21 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  let tick = world.read_change_tick()
+  world
+  .get_tonemapping_store()
+  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
+  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
+  world
+  .get_skybox_store()
+  .insert(
+    camera,
+    @render3d.Skybox::new(
+      asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+      1000.0F,
+    ),
+    tick,
+  )
   volumetric_fog_state.val.camera = Some(camera)
 }
 

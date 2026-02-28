@@ -42,6 +42,7 @@ pub struct World {
   image_node_size : @core.ComponentStore[@ui.ImageNodeSize]
   camera2d : @core.ComponentStore[@render2d.Camera2d]
   camera3d : @core.ComponentStore[@render3d.Camera3d]
+  exposure : @core.ComponentStore[@render3d.Exposure]
   vignette : @core.ComponentStore[@render3d.Vignette]
   calculated_clip : @core.ComponentStore[@ui.CalculatedClip]
   scroll_position : @core.ComponentStore[@ui.ScrollPosition]
@@ -57,6 +58,7 @@ pub struct World {
   light_probe : @core.ComponentStore[@render3d.LightProbe]
   motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
+  animated_by : @core.ComponentStore[@animation.AnimatedBy]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
   friction2d : @core.ComponentStore[@physics2d.Friction2d]
   sleeping2d : @core.ComponentStore[@physics2d.Sleeping2d]
@@ -72,8 +74,10 @@ pub struct World {
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  color_grading : @core.ComponentStore[@render3d.ColorGrading]
   deband_dither : @core.ComponentStore[@render3d.DebandDither]
   depth_prepass : @core.ComponentStore[@render3d.DepthPrepass]
+  forward_decal : @core.ComponentStore[@render3d.ForwardDecal]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -85,6 +89,8 @@ pub struct World {
   contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
   restitution2d : @core.ComponentStore[@physics2d.Restitution2d]
   active_hooks3d : @core.ComponentStore[@physics3d.ActiveHooks3d]
+  mesh_material2d : @core.ComponentStore[@render2d.MeshMaterial2d]
+  clustered_decal : @core.ComponentStore[@render3d.ClusteredDecal]
   contact_shadows : @core.ComponentStore[@render3d.ContactShadows]
   mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
   temporal_jitter : @core.ComponentStore[@render3d.TemporalJitter]
@@ -99,6 +105,7 @@ pub struct World {
   not_shadow_caster : @core.ComponentStore[@render3d.NotShadowCaster]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
+  animation_player : @core.ComponentStore[@animation.AnimationPlayer]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
   wireframe2d_color : @core.ComponentStore[@render2d.Wireframe2dColor]
@@ -109,11 +116,13 @@ pub struct World {
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
+  animation_weights : @core.ComponentStore[@animation.AnimationWeights]
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
   not_shadow_receiver : @core.ComponentStore[@render3d.NotShadowReceiver]
   point_light_texture : @core.ComponentStore[@render3d.PointLightTexture]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
+  animation_target_id : @core.ComponentStore[@animation.AnimationTargetId]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
   collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
@@ -127,6 +136,8 @@ pub struct World {
   environment_map_light : @core.ComponentStore[@render3d.EnvironmentMapLight]
   motion_vector_prepass : @core.ComponentStore[@render3d.MotionVectorPrepass]
   temporal_anti_aliasing : @core.ComponentStore[@render3d.TemporalAntiAliasing]
+  animation_graph_handle : @core.ComponentStore[@animation.AnimationGraphHandle]
+  animation_transitions : @core.ComponentStore[@animation.AnimationTransitions]
   shadow_filtering_method : @core.ComponentStore[
     @render3d.ShadowFilteringMethod,
   ]
@@ -152,6 +163,9 @@ pub struct World {
   directional_light_texture : @core.ComponentStore[
     @render3d.DirectionalLightTexture,
   ]
+  forward_decal_material_ext : @core.ComponentStore[
+    @render3d.ForwardDecalMaterialExt,
+  ]
   screen_space_transmission : @core.ComponentStore[
     @render3d.ScreenSpaceTransmission,
   ]
@@ -160,6 +174,9 @@ pub struct World {
   ]
   restitution_combine_rule2d : @core.ComponentStore[
     @physics2d.RestitutionCombineRule2d,
+  ]
+  transmitted_shadow_receiver : @core.ComponentStore[
+    @render3d.TransmittedShadowReceiver,
   ]
   additional_mass_properties2d : @core.ComponentStore[
     @physics2d.AdditionalMassProperties2d,
@@ -212,6 +229,10 @@ pub struct World {
   res_physics3d_context : @core.Resource[@physics3d.Physics3dContext]
   res_wireframe2d_config : @core.Resource[@render2d.Wireframe2dConfig]
   res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
+  res_point_light_shadow_map : @core.Resource[@render3d.PointLightShadowMap]
+  res_directional_light_shadow_map : @core.Resource[
+    @render3d.DirectionalLightShadowMap,
+  ]
   res_default_opaque_renderer_method : @core.Resource[
     @render3d.DefaultOpaqueRendererMethod,
   ]
@@ -260,6 +281,7 @@ pub fn World::new() -> World {
     image_node_size: @core.ComponentStore::new(),
     camera2d: @core.ComponentStore::new(),
     camera3d: @core.ComponentStore::new(),
+    exposure: @core.ComponentStore::new(),
     vignette: @core.ComponentStore::new(),
     calculated_clip: @core.ComponentStore::new(),
     scroll_position: @core.ComponentStore::new(),
@@ -275,6 +297,7 @@ pub fn World::new() -> World {
     light_probe: @core.ComponentStore::new(),
     motion_blur: @core.ComponentStore::new(),
     point_light: @core.ComponentStore::new(),
+    animated_by: @core.ComponentStore::new(),
     collider2d: @core.ComponentStore::new(),
     friction2d: @core.ComponentStore::new(),
     sleeping2d: @core.ComponentStore::new(),
@@ -290,8 +313,10 @@ pub fn World::new() -> World {
     rigid_body3d: @core.ComponentStore::new(),
     render_layers: @core.ComponentStore::new(),
     render_target: @core.ComponentStore::new(),
+    color_grading: @core.ComponentStore::new(),
     deband_dither: @core.ComponentStore::new(),
     depth_prepass: @core.ComponentStore::new(),
+    forward_decal: @core.ComponentStore::new(),
     accessibility_label: @core.ComponentStore::new(),
     ui_box_shadow_samples: @core.ComponentStore::new(),
     visibility: @core.ComponentStore::new(),
@@ -303,6 +328,8 @@ pub fn World::new() -> World {
     contact_skin2d: @core.ComponentStore::new(),
     restitution2d: @core.ComponentStore::new(),
     active_hooks3d: @core.ComponentStore::new(),
+    mesh_material2d: @core.ComponentStore::new(),
+    clustered_decal: @core.ComponentStore::new(),
     contact_shadows: @core.ComponentStore::new(),
     mesh_material3d: @core.ComponentStore::new(),
     temporal_jitter: @core.ComponentStore::new(),
@@ -317,6 +344,7 @@ pub fn World::new() -> World {
     not_shadow_caster: @core.ComponentStore::new(),
     sub_camera_view3d: @core.ComponentStore::new(),
     scene_instance_ready: @core.ComponentStore::new(),
+    animation_player: @core.ComponentStore::new(),
     external_force2d: @core.ComponentStore::new(),
     clear_color_config: @core.ComponentStore::new(),
     wireframe2d_color: @core.ComponentStore::new(),
@@ -327,11 +355,13 @@ pub fn World::new() -> World {
     global_transform: @core.ComponentStore::new(),
     relative_cursor_position: @core.ComponentStore::new(),
     view_visibility: @core.ComponentStore::new(),
+    animation_weights: @core.ComponentStore::new(),
     collider_parent2d: @core.ComponentStore::new(),
     multibody_joint2d: @core.ComponentStore::new(),
     not_shadow_receiver: @core.ComponentStore::new(),
     point_light_texture: @core.ComponentStore::new(),
     visibility_range: @core.ComponentStore::new(),
+    animation_target_id: @core.ComponentStore::new(),
     collider_density2d: @core.ComponentStore::new(),
     collider_enabled2d: @core.ComponentStore::new(),
     collision_groups2d: @core.ComponentStore::new(),
@@ -345,6 +375,8 @@ pub fn World::new() -> World {
     environment_map_light: @core.ComponentStore::new(),
     motion_vector_prepass: @core.ComponentStore::new(),
     temporal_anti_aliasing: @core.ComponentStore::new(),
+    animation_graph_handle: @core.ComponentStore::new(),
+    animation_transitions: @core.ComponentStore::new(),
     shadow_filtering_method: @core.ComponentStore::new(),
     inherited_visibility: @core.ComponentStore::new(),
     friction_combine_rule2d: @core.ComponentStore::new(),
@@ -354,9 +386,11 @@ pub fn World::new() -> World {
     active_collision_types3d: @core.ComponentStore::new(),
     rapier_collider_handle3d: @core.ComponentStore::new(),
     directional_light_texture: @core.ComponentStore::new(),
+    forward_decal_material_ext: @core.ComponentStore::new(),
     screen_space_transmission: @core.ComponentStore::new(),
     collider_mass_properties2d: @core.ComponentStore::new(),
     restitution_combine_rule2d: @core.ComponentStore::new(),
+    transmitted_shadow_receiver: @core.ComponentStore::new(),
     additional_mass_properties2d: @core.ComponentStore::new(),
     rapier_impulse_joint_handle2d: @core.ComponentStore::new(),
     screen_space_ambient_occlusion: @core.ComponentStore::new(),
@@ -386,6 +420,8 @@ pub fn World::new() -> World {
     res_physics3d_context: @core.Resource::new(),
     res_wireframe2d_config: @core.Resource::new(),
     res_global_ambient_light: @core.Resource::new(),
+    res_point_light_shadow_map: @core.Resource::new(),
+    res_directional_light_shadow_map: @core.Resource::new(),
     res_default_opaque_renderer_method: @core.Resource::new(),
   }
 }
@@ -438,6 +474,7 @@ pub fn World::despawn(
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.camera3d.remove(entity) |> ignore
+  self.exposure.remove(entity) |> ignore
   self.vignette.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
@@ -453,6 +490,7 @@ pub fn World::despawn(
   self.light_probe.remove(entity) |> ignore
   self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
+  self.animated_by.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
   self.friction2d.remove(entity) |> ignore
   self.sleeping2d.remove(entity) |> ignore
@@ -468,8 +506,10 @@ pub fn World::despawn(
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.color_grading.remove(entity) |> ignore
   self.deband_dither.remove(entity) |> ignore
   self.depth_prepass.remove(entity) |> ignore
+  self.forward_decal.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
@@ -481,6 +521,8 @@ pub fn World::despawn(
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
   self.active_hooks3d.remove(entity) |> ignore
+  self.mesh_material2d.remove(entity) |> ignore
+  self.clustered_decal.remove(entity) |> ignore
   self.contact_shadows.remove(entity) |> ignore
   self.mesh_material3d.remove(entity) |> ignore
   self.temporal_jitter.remove(entity) |> ignore
@@ -495,6 +537,7 @@ pub fn World::despawn(
   self.not_shadow_caster.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
+  self.animation_player.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
   self.wireframe2d_color.remove(entity) |> ignore
@@ -505,11 +548,13 @@ pub fn World::despawn(
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
+  self.animation_weights.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
   self.not_shadow_receiver.remove(entity) |> ignore
   self.point_light_texture.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
+  self.animation_target_id.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
@@ -523,6 +568,8 @@ pub fn World::despawn(
   self.environment_map_light.remove(entity) |> ignore
   self.motion_vector_prepass.remove(entity) |> ignore
   self.temporal_anti_aliasing.remove(entity) |> ignore
+  self.animation_graph_handle.remove(entity) |> ignore
+  self.animation_transitions.remove(entity) |> ignore
   self.shadow_filtering_method.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
@@ -532,9 +579,11 @@ pub fn World::despawn(
   self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
   self.directional_light_texture.remove(entity) |> ignore
+  self.forward_decal_material_ext.remove(entity) |> ignore
   self.screen_space_transmission.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
+  self.transmitted_shadow_receiver.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
   self.screen_space_ambient_occlusion.remove(entity) |> ignore
@@ -593,6 +642,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.image_node_size.remove(entity) |> ignore
   self.camera2d.remove(entity) |> ignore
   self.camera3d.remove(entity) |> ignore
+  self.exposure.remove(entity) |> ignore
   self.vignette.remove(entity) |> ignore
   self.calculated_clip.remove(entity) |> ignore
   self.scroll_position.remove(entity) |> ignore
@@ -608,6 +658,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.light_probe.remove(entity) |> ignore
   self.motion_blur.remove(entity) |> ignore
   self.point_light.remove(entity) |> ignore
+  self.animated_by.remove(entity) |> ignore
   self.collider2d.remove(entity) |> ignore
   self.friction2d.remove(entity) |> ignore
   self.sleeping2d.remove(entity) |> ignore
@@ -623,8 +674,10 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.rigid_body3d.remove(entity) |> ignore
   self.render_layers.remove(entity) |> ignore
   self.render_target.remove(entity) |> ignore
+  self.color_grading.remove(entity) |> ignore
   self.deband_dither.remove(entity) |> ignore
   self.depth_prepass.remove(entity) |> ignore
+  self.forward_decal.remove(entity) |> ignore
   self.accessibility_label.remove(entity) |> ignore
   self.ui_box_shadow_samples.remove(entity) |> ignore
   self.visibility.remove(entity) |> ignore
@@ -636,6 +689,8 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.contact_skin2d.remove(entity) |> ignore
   self.restitution2d.remove(entity) |> ignore
   self.active_hooks3d.remove(entity) |> ignore
+  self.mesh_material2d.remove(entity) |> ignore
+  self.clustered_decal.remove(entity) |> ignore
   self.contact_shadows.remove(entity) |> ignore
   self.mesh_material3d.remove(entity) |> ignore
   self.temporal_jitter.remove(entity) |> ignore
@@ -650,6 +705,7 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.not_shadow_caster.remove(entity) |> ignore
   self.sub_camera_view3d.remove(entity) |> ignore
   self.scene_instance_ready.remove(entity) |> ignore
+  self.animation_player.remove(entity) |> ignore
   self.external_force2d.remove(entity) |> ignore
   self.clear_color_config.remove(entity) |> ignore
   self.wireframe2d_color.remove(entity) |> ignore
@@ -660,11 +716,13 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.global_transform.remove(entity) |> ignore
   self.relative_cursor_position.remove(entity) |> ignore
   self.view_visibility.remove(entity) |> ignore
+  self.animation_weights.remove(entity) |> ignore
   self.collider_parent2d.remove(entity) |> ignore
   self.multibody_joint2d.remove(entity) |> ignore
   self.not_shadow_receiver.remove(entity) |> ignore
   self.point_light_texture.remove(entity) |> ignore
   self.visibility_range.remove(entity) |> ignore
+  self.animation_target_id.remove(entity) |> ignore
   self.collider_density2d.remove(entity) |> ignore
   self.collider_enabled2d.remove(entity) |> ignore
   self.collision_groups2d.remove(entity) |> ignore
@@ -678,6 +736,8 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.environment_map_light.remove(entity) |> ignore
   self.motion_vector_prepass.remove(entity) |> ignore
   self.temporal_anti_aliasing.remove(entity) |> ignore
+  self.animation_graph_handle.remove(entity) |> ignore
+  self.animation_transitions.remove(entity) |> ignore
   self.shadow_filtering_method.remove(entity) |> ignore
   self.inherited_visibility.remove(entity) |> ignore
   self.friction_combine_rule2d.remove(entity) |> ignore
@@ -687,9 +747,11 @@ pub impl @core.SpawnWorld for World with despawn(self, entity) {
   self.active_collision_types3d.remove(entity) |> ignore
   self.rapier_collider_handle3d.remove(entity) |> ignore
   self.directional_light_texture.remove(entity) |> ignore
+  self.forward_decal_material_ext.remove(entity) |> ignore
   self.screen_space_transmission.remove(entity) |> ignore
   self.collider_mass_properties2d.remove(entity) |> ignore
   self.restitution_combine_rule2d.remove(entity) |> ignore
+  self.transmitted_shadow_receiver.remove(entity) |> ignore
   self.additional_mass_properties2d.remove(entity) |> ignore
   self.rapier_impulse_joint_handle2d.remove(entity) |> ignore
   self.screen_space_ambient_occlusion.remove(entity) |> ignore
@@ -910,6 +972,11 @@ pub impl @render3d.Has_Camera3d for World with get_camera3d_store(self) {
 }
 
 ///|
+pub impl @render3d.Has_Exposure for World with get_exposure_store(self) {
+  self.exposure
+}
+
+///|
 pub impl @render3d.Has_Vignette for World with get_vignette_store(self) {
   self.vignette
 }
@@ -982,6 +1049,11 @@ pub impl @render3d.Has_MotionBlur for World with get_motion_blur_store(self) {
 ///|
 pub impl @render3d.Has_PointLight for World with get_point_light_store(self) {
   self.point_light
+}
+
+///|
+pub impl @animation.Has_AnimatedBy for World with get_animated_by_store(self) {
+  self.animated_by
 }
 
 ///|
@@ -1060,6 +1132,11 @@ pub impl @render2d.Has_RenderTarget for World with get_render_target_store(self)
 }
 
 ///|
+pub impl @render3d.Has_ColorGrading for World with get_color_grading_store(self) {
+  self.color_grading
+}
+
+///|
 pub impl @render3d.Has_DebandDither for World with get_deband_dither_store(self) {
   self.deband_dither
 }
@@ -1067,6 +1144,11 @@ pub impl @render3d.Has_DebandDither for World with get_deband_dither_store(self)
 ///|
 pub impl @render3d.Has_DepthPrepass for World with get_depth_prepass_store(self) {
   self.depth_prepass
+}
+
+///|
+pub impl @render3d.Has_ForwardDecal for World with get_forward_decal_store(self) {
+  self.forward_decal
 }
 
 ///|
@@ -1142,6 +1224,20 @@ pub impl @physics3d.Has_ActiveHooks3d for World with get_active_hooks3d_store(
   self,
 ) {
   self.active_hooks3d
+}
+
+///|
+pub impl @render2d.Has_MeshMaterial2d for World with get_mesh_material2d_store(
+  self,
+) {
+  self.mesh_material2d
+}
+
+///|
+pub impl @render3d.Has_ClusteredDecal for World with get_clustered_decal_store(
+  self,
+) {
+  self.clustered_decal
 }
 
 ///|
@@ -1243,6 +1339,13 @@ pub impl @scene.Has_SceneInstanceReady for World with get_scene_instance_ready_s
 }
 
 ///|
+pub impl @animation.Has_AnimationPlayer for World with get_animation_player_store(
+  self,
+) {
+  self.animation_player
+}
+
+///|
 pub impl @physics2d.Has_ExternalForce2d for World with get_external_force2d_store(
   self,
 ) {
@@ -1313,6 +1416,13 @@ pub impl @visibility.Has_ViewVisibility for World with get_view_visibility_store
 }
 
 ///|
+pub impl @animation.Has_AnimationWeights for World with get_animation_weights_store(
+  self,
+) {
+  self.animation_weights
+}
+
+///|
 pub impl @physics2d.Has_ColliderParent2d for World with get_collider_parent2d_store(
   self,
 ) {
@@ -1345,6 +1455,13 @@ pub impl @visibility.Has_VisibilityRange for World with get_visibility_range_sto
   self,
 ) {
   self.visibility_range
+}
+
+///|
+pub impl @animation.Has_AnimationTargetId for World with get_animation_target_id_store(
+  self,
+) {
+  self.animation_target_id
 }
 
 ///|
@@ -1439,6 +1556,20 @@ pub impl @render3d.Has_TemporalAntiAliasing for World with get_temporal_anti_ali
 }
 
 ///|
+pub impl @animation.Has_AnimationGraphHandle for World with get_animation_graph_handle_store(
+  self,
+) {
+  self.animation_graph_handle
+}
+
+///|
+pub impl @animation.Has_AnimationTransitions for World with get_animation_transitions_store(
+  self,
+) {
+  self.animation_transitions
+}
+
+///|
 pub impl @render3d.Has_ShadowFilteringMethod for World with get_shadow_filtering_method_store(
   self,
 ) {
@@ -1502,6 +1633,13 @@ pub impl @render3d.Has_DirectionalLightTexture for World with get_directional_li
 }
 
 ///|
+pub impl @render3d.Has_ForwardDecalMaterialExt for World with get_forward_decal_material_ext_store(
+  self,
+) {
+  self.forward_decal_material_ext
+}
+
+///|
 pub impl @render3d.Has_ScreenSpaceTransmission for World with get_screen_space_transmission_store(
   self,
 ) {
@@ -1520,6 +1658,13 @@ pub impl @physics2d.Has_RestitutionCombineRule2d for World with get_restitution_
   self,
 ) {
   self.restitution_combine_rule2d
+}
+
+///|
+pub impl @render3d.Has_TransmittedShadowReceiver for World with get_transmitted_shadow_receiver_store(
+  self,
+) {
+  self.transmitted_shadow_receiver
 }
 
 ///|
@@ -1715,6 +1860,20 @@ pub impl @render3d.HasRes_GlobalAmbientLight for World with get_global_ambient_l
   self,
 ) {
   self.res_global_ambient_light
+}
+
+///|
+pub impl @render3d.HasRes_PointLightShadowMap for World with get_point_light_shadow_map_resource(
+  self,
+) {
+  self.res_point_light_shadow_map
+}
+
+///|
+pub impl @render3d.HasRes_DirectionalLightShadowMap for World with get_directional_light_shadow_map_resource(
+  self,
+) {
+  self.res_directional_light_shadow_map
 }
 
 ///|

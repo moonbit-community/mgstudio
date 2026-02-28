@@ -15,10 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/spherical_area_lights.rs`.
 ///
-/// Baseline parity: Bevy's `PointLight.radius` area-light shading model is not
-/// exposed in mgstudio. This port preserves scene topology and radius sweep by
-/// scaling visible light proxies and mapping light effect to available point
-/// light intensity/range.
+/// Parity target: preserve Bevy's `PointLight.radius` sweep and scene topology.
+/// Current runtime keeps the real `radius` knob and also applies
+/// intensity/range fallback mapping for visible differentiation until full
+/// spherical-light shading parity lands in the renderer.
 
 ///|
 const TWO_PI : Float = 6.283185307179586F
@@ -44,6 +44,29 @@ const RADIUS_MAX : Float = 0.4F
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
+}
+
+///|
+fn clamp01(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn mapped_point_light_range(radius : Float) -> Float {
+  let ratio = clamp01(radius / RADIUS_MAX)
+  4.0F + ratio * 12.0F
+}
+
+///|
+fn mapped_point_light_intensity(radius : Float) -> Float {
+  let ratio = clamp01(radius / RADIUS_MAX)
+  50_000.0F + ratio * 150_000.0F
 }
 
 ///|
@@ -155,7 +178,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     let x = POSITION_MIN + percent * position_len
     let position = @math.Vec3::new(x, 0.3F, 0.0F)
 
-    @render3d.MeshMaterial3dBundle::new(
+    let sphere = @render3d.MeshMaterial3dBundle::new(
       sphere_mesh,
       @render3d.MeshMaterial3d::new(
         @render3d.standard_material_add(
@@ -168,28 +191,26 @@ fn setup(world : @ecs_world.World) -> Unit {
         @math.Vec3::splat(radius),
       ),
     ).spawn(world)
-    |> ignore
 
     let point_light = world.spawn_empty()
     world
     .get_point_light_store()
     .insert(
       point_light,
-      @render3d.PointLight::new(
-        @render2d.Color::new(0.2F, 0.2F, 1.0F, 1.0F),
-        100_000.0F,
-        8.0F,
-        false,
-      ),
+      @render3d.PointLight::default()
+      .with_color(@render2d.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
+      .with_radius(radius)
+      .with_range(mapped_point_light_range(radius))
+      .with_intensity(mapped_point_light_intensity(radius))
+      .with_shadow_maps_enabled(false),
       tick,
     )
     world
+    .get_parent_store()
+    .insert(point_light, @hierarchy.Parent::new(sphere), tick)
+    world
     .get_transform_store()
-    .insert(
-      point_light,
-      @math.Transform::from_xyz(position.x, position.y, position.z),
-      tick,
-    )
+    .insert(point_light, @math.Transform::identity(), tick)
   }
 }
 

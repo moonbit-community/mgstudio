@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/scene"
 
 import {
+  "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
@@ -19,6 +20,8 @@ pub let ecs_resources : Array[String]
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
+
+pub fn scene_load_gltf_animation(@asset.AssetServer, String) -> @asset.Handle[@animation.AnimationClip]
 
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
@@ -39,6 +42,7 @@ pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(W) -> Unit
 // Types and methods
 pub(all) enum GltfAssetLabel {
   Scene(Int)
+  Animation(Int)
 }
 pub fn GltfAssetLabel::from_asset(Self, String) -> String
 
@@ -71,8 +75,9 @@ pub struct SceneNode3d {
   material : @render3d.MeshMaterial3d
   transform : @math.Transform
   visibility_range : @visibility.VisibilityRange?
+  animation_target : @animation.AnimationTargetId?
 }
-pub fn SceneNode3d::new(@render3d.Mesh3d, @render3d.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?) -> Self
+pub fn SceneNode3d::new(@render3d.Mesh3d, @render3d.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
 
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]
@@ -93,6 +98,6 @@ pub(open) trait Has_SceneRoot {
 pub(open) trait ScenePluginWorld : SceneSpawnWorld {
 }
 
-pub(open) trait SceneSpawnWorld : Has_SceneRoot + Has_SceneInstanceReady + @core.SpawnWorld + @core.ChangeTickWorld + @hierarchy.Has_Parent + @math.Has_Transform + @render3d.Has_Mesh3d + @render3d.Has_MeshMaterial3d + @visibility.Has_VisibilityRange {
+pub(open) trait SceneSpawnWorld : Has_SceneRoot + Has_SceneInstanceReady + @core.SpawnWorld + @core.ChangeTickWorld + @hierarchy.Has_Parent + @math.Has_Transform + @render3d.Has_Mesh3d + @render3d.Has_MeshMaterial3d + @visibility.Has_VisibilityRange + @animation.Has_AnimationTargetId + @animation.Has_AnimatedBy + @animation.Has_AnimationPlayer {
 }
 

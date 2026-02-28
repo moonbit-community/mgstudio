@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/app/log_layers_ecs"
+
+import {
+  "Milky2018/mgstudio/core",
+}
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+type LogMessage
+pub impl @core.Message for LogMessage
+
+// Type aliases
+
+// Traits
+

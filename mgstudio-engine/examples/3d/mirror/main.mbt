@@ -15,27 +15,86 @@
 ///|
 /// Port of `bevy/examples/3d/mirror.rs`.
 ///
-/// Parity scope: align mirror camera reflection transform and near-clip
-/// behavior with Bevy's mirror setup.
+/// Parity note:
+/// - Mirror camera transform/projection updates, mirror render target resizing,
+///   drag-to-orbit camera, and drag-to-move-fox controls are mapped.
+/// - Bevy-only features like `ExtendedMaterial`, projection near-plane normal
+///   clipping, and `Camera::invert_culling` are represented by closest runtime
+///   behavior currently available in mgstudio.
 
 ///|
-const PI : Float = 3.141592653589793F
+const FRAC_PI_2 : Float = 1.5707963267948966F
+
+///|
+const CAMERA_ORBIT_DISTANCE : Float = 500.0F
+
+///|
+const CAMERA_PITCH_SPEED : Float = 0.003F
+
+///|
+const CAMERA_YAW_SPEED : Float = 0.004F
+
+///|
+const CAMERA_PITCH_LIMIT : Float = 1.5607963267948965F
+
+///|
+const FOX_ASSET_PATH : String = "models/animated/Fox.glb"
+
+///|
+pub(all) enum DragAction {
+  MoveCamera
+  MoveFox
+} derive(Eq, Show)
 
 ///|
 priv struct MirrorState {
-  mut animated_cube : @core.Entity
   mut main_camera : @core.Entity
   mut mirror_camera : @core.Entity
   mut mirror_plane : @core.Entity
+  mut fox : @core.Entity
+  mut mirror_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut mirror_target_size : @math.IVec2
+  mut drag_action : DragAction
+  mut orbit_yaw : Float
+  mut orbit_pitch : Float
+  mut last_mouse_position : @math.Vec2?
+  mut help_text : @text.TextHandle?
 }
 
 ///|
 let mirror_state : Ref[MirrorState] = Ref::new({
-  animated_cube: @core.Entity::placeholder(),
   main_camera: @core.Entity::placeholder(),
   mirror_camera: @core.Entity::placeholder(),
   mirror_plane: @core.Entity::placeholder(),
+  fox: @core.Entity::placeholder(),
+  mirror_material: None,
+  mirror_target_size: @math.IVec2::new(0, 0),
+  drag_action: DragAction::MoveCamera,
+  orbit_yaw: 0.0F,
+  orbit_pitch: 0.0F,
+  last_mouse_position: None,
+  help_text: None,
 })
+
+///|
+fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn absf(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
 
 ///|
 fn normalize_or(value : @math.Vec3, fallback : @math.Vec3) -> @math.Vec3 {
@@ -113,11 +172,7 @@ fn calculate_mirror_camera_transform_and_projection(
   let signed_distance = mirror_transform.translation
     .sub(main_camera_transform.translation)
     .dot(mirror_normal)
-  let distance_to_mirror = if signed_distance < 0.0F {
-    -signed_distance
-  } else {
-    signed_distance
-  }
+  let distance_to_mirror = absf(signed_distance)
   let mirror_near = if distance_to_mirror > main_camera_projection.near {
     distance_to_mirror
   } else {
@@ -129,72 +184,166 @@ fn calculate_mirror_camera_transform_and_projection(
 }
 
 ///|
+fn orbit_angles_from_translation(translation : @math.Vec3) -> (Float, Float) {
+  let horizontal = @math.sqrt(
+    translation.x * translation.x + translation.z * translation.z,
+  )
+  let yaw = @math.atan2(translation.x, translation.z)
+  let pitch = @math.atan2(translation.y, horizontal)
+  (yaw, pitch)
+}
+
+///|
+fn camera_target() -> @math.Vec3 {
+  @math.Vec3::new(-25.0F, 20.0F, 0.0F)
+}
+
+///|
+fn set_main_camera_transform_from_orbit(world : @ecs_world.World) -> Unit {
+  if mirror_state.val.main_camera.is_placeholder() {
+    return
+  }
+
+  let target = camera_target()
+  let cos_pitch = @math.cos(mirror_state.val.orbit_pitch)
+  let offset_x = @math.sin(mirror_state.val.orbit_yaw) *
+    cos_pitch *
+    CAMERA_ORBIT_DISTANCE
+  let offset_y = @math.sin(mirror_state.val.orbit_pitch) * CAMERA_ORBIT_DISTANCE
+  let offset_z = @math.cos(mirror_state.val.orbit_yaw) *
+    cos_pitch *
+    CAMERA_ORBIT_DISTANCE
+  let position = target.add(@math.Vec3::new(offset_x, offset_y, offset_z))
+
+  let transform = @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
+    target,
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+
+  world
+  .get_transform_store()
+  .set(mirror_state.val.main_camera, transform, world.read_change_tick())
+  |> ignore
+}
+
+///|
+fn create_help_text() -> String {
+  let mode = if mirror_state.val.drag_action == DragAction::MoveCamera {
+    "camera"
+  } else {
+    "fox"
+  }
+  "Click and drag to move the " + mode + "\n1: Move camera\n2: Move fox"
+}
+
+///|
+fn update_help_text() -> Unit {
+  if mirror_state.val.help_text is Some(handle) {
+    @text.text_set_content(handle, create_help_text())
+  }
+}
+
+///|
+fn ray_plane_intersection(
+  ray_origin : @math.Vec3,
+  ray_direction : @math.Vec3,
+  plane_point : @math.Vec3,
+  plane_normal : @math.Vec3,
+) -> @math.Vec3? {
+  let denom = plane_normal.dot(ray_direction)
+  if absf(denom) <= 0.000001F {
+    return None
+  }
+  let t = plane_point.sub(ray_origin).dot(plane_normal) / denom
+  if t < 0.0F {
+    return None
+  }
+  Some(ray_origin.add(ray_direction.mul_scalar(t)))
+}
+
+///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
-  mirror_state.val.animated_cube = @core.Entity::placeholder()
   mirror_state.val.main_camera = @core.Entity::placeholder()
   mirror_state.val.mirror_camera = @core.Entity::placeholder()
   mirror_state.val.mirror_plane = @core.Entity::placeholder()
+  mirror_state.val.fox = @core.Entity::placeholder()
+  mirror_state.val.mirror_material = None
+  mirror_state.val.mirror_target_size = @math.IVec2::new(0, 0)
+  mirror_state.val.drag_action = DragAction::MoveCamera
+  mirror_state.val.orbit_yaw = 0.0F
+  mirror_state.val.orbit_pitch = 0.0F
+  mirror_state.val.last_mouse_position = None
+  mirror_state.val.help_text = None
 
+  let target_width = if @window.window_width() > 1 {
+    @window.window_width()
+  } else {
+    1024
+  }
+  let target_height = if @window.window_height() > 1 {
+    @window.window_height()
+  } else {
+    1024
+  }
   let mirror_target = @render2d.render2d_create_render_target(
-    world, 1024, 1024, true,
+    world, target_width, target_height, true,
+  )
+  mirror_state.val.mirror_target_size = @math.IVec2::new(
+    target_width, target_height,
   )
 
-  // Ground
+  // Ground (Bevy uses a circle mesh; mgstudio currently uses a large plane).
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(400.0F, 400.0F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.23F, 0.34F, 0.23F, 1.0F),
+          @render2d.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @math.Transform::from_xyz(-25.0F, 0.0F, 0.0F).with_rotation(
+      @math.Quat::from_rotation_x(-FRAC_PI_2),
+    ),
   ).spawn(world)
   |> ignore
 
-  // Scene object(s) reflected in mirror.
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.93F, 0.62F, 0.18F, 1.0F),
+  // Fox scene.
+  let asset_server = @asset.AssetServer::new()
+  let fox = world.spawn_empty()
+  world
+  .get_scene_root_store()
+  .insert(
+    fox,
+    @scene.SceneRoot::new(
+      @scene.scene_load_gltf_scene(
+        asset_server,
+        @scene.GltfAssetLabel::Scene(0).from_asset(FOX_ASSET_PATH),
+      ),
     ),
+    tick,
   )
-  let animated_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(30.0F, 30.0F, 30.0F),
-    @render3d.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(-55.0F, 20.0F, -70.0F),
-  ).spawn(world)
-  mirror_state.val.animated_cube = animated_cube
-
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(22.0F, 50.0F, 22.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.33F, 0.56F, 0.87F, 1.0F),
-        ),
-      ),
-    ),
-    @math.Transform::from_xyz(-85.0F, 25.0F, 40.0F),
-  ).spawn(world)
-  |> ignore
+  world
+  .get_transform_store()
+  .insert(fox, @math.Transform::from_xyz(-50.0F, 0.0F, -100.0F), tick)
+  mirror_state.val.fox = fox
 
   // Mirror plane.
   let mirror_transform = @math.Transform::from_xyz(-25.0F, 75.0F, 0.0F).with_rotation(
-    @math.Quat::from_rotation_x(-PI / 2.0F),
+    @math.Quat::from_rotation_x(-FRAC_PI_2),
   )
+  let mirror_material = @render3d.standard_material_add(
+    @render3d.StandardMaterial::from_color(@render2d.Color::black())
+    .with_emissive(@render2d.Color::white())
+    .with_emissive_texture(Some(mirror_target))
+    .with_perceptual_roughness(0.0F)
+    .with_metallic(1.0F),
+  )
+  mirror_state.val.mirror_material = Some(mirror_material)
   let mirror_entity = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(300.0F, 150.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::black())
-        .with_emissive(@render2d.Color::white())
-        .with_emissive_texture(Some(mirror_target))
-        .with_perceptual_roughness(0.0F)
-        .with_metallic(1.0F),
-      ),
-    ),
+    @render3d.MeshMaterial3d::new(mirror_material),
     mirror_transform,
   ).spawn(world)
   mirror_state.val.mirror_plane = mirror_entity
@@ -205,14 +354,14 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_directional_light_store()
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 8_000.0F, true),
+    @render3d.DirectionalLight::new(@render2d.Color::white(), 5000.0F, true),
     tick,
   )
   world
   .get_transform_store()
   .insert(
     light,
-    @math.Transform::from_xyz(-85.0F, 40.0F, -200.0F).looking_at(
+    @math.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
       @math.Vec3::new(-50.0F, 0.0F, 100.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -221,16 +370,25 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   // Main camera.
   let main_camera_projection = @render3d.PerspectiveProjection3d::default()
-  let main_camera_transform = @math.Transform::from_xyz(140.0F, 80.0F, 140.0F).looking_at(
-    @math.Vec3::new(-20.0F, 40.0F, 0.0F),
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
-  )
+  let initial_main_translation = @math.Vec3::new(-2.0F, 1.0F, -2.0F)
+    .normalize_or_zero()
+    .mul_scalar(CAMERA_ORBIT_DISTANCE)
+  let main_camera_transform = @math.Transform::from_xyz(
+    initial_main_translation.x,
+    initial_main_translation.y,
+    initial_main_translation.z,
+  ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let main_camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
     @render3d.Projection3d::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
   mirror_state.val.main_camera = main_camera
+  let (initial_yaw, initial_pitch) = orbit_angles_from_translation(
+    main_camera_transform.translation.sub(camera_target()),
+  )
+  mirror_state.val.orbit_yaw = initial_yaw
+  mirror_state.val.orbit_pitch = initial_pitch
 
   // Mirror camera (renders to texture).
   let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
@@ -245,27 +403,188 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_render_target_store()
   .insert(mirror_camera, @render2d.RenderTarget::Image(mirror_target), tick)
   mirror_state.val.mirror_camera = mirror_camera
+
+  // Help text.
+  let help_text = @text.Text2dBundle::new(
+      @text.Text2d::new(create_help_text()),
+      @text.TextFont::default()
+      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
+      .with_font_size(16.0F),
+      @math.Transform::from_xy_rotation_scale(
+        @math.Vec2::new(-390.0F, 320.0F),
+        0.0F,
+        @math.Vec2::new(1.0F, 1.0F),
+        z=50.0F,
+      ),
+    )
+    .with_anchor(@render2d.Anchor::top_left())
+    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_color(
+      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    )
+    .with_shadow(Some(@text.Text2dShadow::default()))
+    .spawn()
+  mirror_state.val.help_text = Some(help_text)
 }
 
 ///|
-fn rotate_cube(world : @ecs_world.World) -> Unit {
-  if mirror_state.val.animated_cube.is_placeholder() {
+fn handle_drag_action_change(_world : @ecs_world.World) -> Unit {
+  let mut changed = false
+  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+    mirror_state.val.drag_action = DragAction::MoveCamera
+    changed = true
+  }
+  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+    mirror_state.val.drag_action = DragAction::MoveFox
+    changed = true
+  }
+  if changed {
+    mirror_state.val.last_mouse_position = None
+    update_help_text()
+  }
+}
+
+///|
+fn move_camera_on_mouse_down(world : @ecs_world.World) -> Unit {
+  if mirror_state.val.drag_action != DragAction::MoveCamera ||
+    !@input.mouse_button_pressed(@window.MouseButton::Left) {
+    mirror_state.val.last_mouse_position = None
     return
   }
-  let tick = world.read_change_tick()
+  guard @input.mouse_position() is Some(current_mouse_pos) else {
+    mirror_state.val.last_mouse_position = None
+    return
+  }
+
+  let delta = if mirror_state.val.last_mouse_position is Some(last_mouse_pos) {
+    current_mouse_pos.sub(last_mouse_pos)
+  } else {
+    @math.Vec2::new(0.0F, 0.0F)
+  }
+  mirror_state.val.last_mouse_position = Some(current_mouse_pos)
+  if delta.x == 0.0F && delta.y == 0.0F {
+    return
+  }
+
+  mirror_state.val.orbit_pitch = clampf(
+    mirror_state.val.orbit_pitch + delta.y * CAMERA_PITCH_SPEED,
+    -CAMERA_PITCH_LIMIT,
+    CAMERA_PITCH_LIMIT,
+  )
+  mirror_state.val.orbit_yaw = mirror_state.val.orbit_yaw +
+    delta.x * CAMERA_YAW_SPEED
+  set_main_camera_transform_from_orbit(world)
+}
+
+///|
+fn move_fox_on_mouse_down(world : @ecs_world.World) -> Unit {
+  if mirror_state.val.drag_action != DragAction::MoveFox ||
+    !@input.mouse_button_pressed(@window.MouseButton::Left) ||
+    mirror_state.val.fox.is_placeholder() ||
+    mirror_state.val.main_camera.is_placeholder() {
+    return
+  }
+
+  guard @input.mouse_position() is Some(screen_pos) else { return }
   let transform_store = world.get_transform_store()
-  if transform_store.get(mirror_state.val.animated_cube) is Some(transform) {
-    let delta = @time.time_delta_seconds()
-    let next_rotation = transform.rotation
-      .mul(@math.Quat::from_rotation_y(0.9F * delta))
-      .mul(@math.Quat::from_rotation_x(0.4F * delta))
-      .normalize()
+  let camera_store = world.get_camera_store()
+  let projection_store = world.get_camera_projection3d_store()
+
+  guard transform_store.get(mirror_state.val.main_camera)
+    is Some(camera_transform) else {
+    return
+  }
+  guard camera_store.get(mirror_state.val.main_camera) is Some(camera) else {
+    return
+  }
+  guard projection_store.get(mirror_state.val.main_camera) is Some(projection) else {
+    return
+  }
+
+  let target_size = @math.IVec2::new(
+    @window.window_width(),
+    @window.window_height(),
+  )
+  let scale_factor = @window.window_scale_factor()
+  guard @render3d.render3d_camera_viewport_to_world_ray(
+      screen_pos, camera, projection, camera_transform, target_size, scale_factor,
+    )
+    is Some((ray_origin, ray_dir)) else {
+    return
+  }
+
+  guard ray_plane_intersection(
+      ray_origin,
+      ray_dir,
+      @math.Vec3::zero(),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    )
+    is Some(hit) else {
+    return
+  }
+
+  let tick = world.read_change_tick()
+  if transform_store.get(mirror_state.val.fox) is Some(fox_transform) {
     transform_store.set(
-      mirror_state.val.animated_cube,
-      transform.with_rotation(next_rotation),
+      mirror_state.val.fox,
+      fox_transform.with_translation(
+        @math.Vec3::new(hit.x, fox_transform.translation.y, hit.z),
+      ),
       tick,
     )
     |> ignore
+  }
+}
+
+///|
+fn handle_window_resize_messages(world : @ecs_world.World) -> Unit {
+  if mirror_state.val.mirror_camera.is_placeholder() {
+    return
+  }
+
+  let width = @window.window_width()
+  let height = @window.window_height()
+  if width <= 1 || height <= 1 {
+    return
+  }
+
+  let size = @math.IVec2::new(width, height)
+  if size.x == mirror_state.val.mirror_target_size.x &&
+    size.y == mirror_state.val.mirror_target_size.y {
+    return
+  }
+
+  let mirror_target = @render2d.render2d_create_render_target(
+    world, width, height, true,
+  )
+  mirror_state.val.mirror_target_size = size
+
+  let tick = world.read_change_tick()
+  let target_store = world.get_render_target_store()
+  if target_store.contains(mirror_state.val.mirror_camera) {
+    target_store.set(
+      mirror_state.val.mirror_camera,
+      @render2d.RenderTarget::Image(mirror_target),
+      tick,
+    )
+    |> ignore
+  } else {
+    target_store.insert(
+      mirror_state.val.mirror_camera,
+      @render2d.RenderTarget::Image(mirror_target),
+      tick,
+    )
+  }
+
+  if mirror_state.val.mirror_material is Some(material_handle) {
+    if @render3d.standard_material_get(material_handle) is Some(material) {
+      @render3d.standard_material_set(
+        material_handle,
+        material.with_emissive_texture(Some(mirror_target)),
+      )
+      |> ignore
+    }
   }
 }
 
@@ -326,7 +645,10 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
-  .add_system(rotate_cube)
+  .add_system(handle_window_resize_messages)
+  .add_system(handle_drag_action_change)
+  .add_system(move_camera_on_mouse_down)
+  .add_system(move_fox_on_mouse_down)
   .add_system(update_mirror_camera_on_main_camera_transform_change)
   .run()
 }

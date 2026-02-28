@@ -15,10 +15,16 @@
 ///|
 /// Port of `bevy/examples/3d/atmosphere.rs`.
 ///
-/// Baseline parity: Bevy atmosphere rendering (`Atmosphere`, `AtmosphereSettings`,
-/// deferred/SSR/TAA/bloom stack, volumetric medium/material extension shaders)
-/// is approximated here using dynamic distance-fog tinting, sun phase response,
-/// and procedural terrain/water proxies.
+/// Baseline parity: camera controls, sun motion, exposure control, tonemapping,
+/// bloom, TAA, SSR and fog response are aligned where the engine API permits.
+///
+/// Engine blockers for exact parity:
+/// - Missing runtime pipeline and ECS wiring for
+///   `Atmosphere` / `ScatteringMedium` / `AtmosphereSettings`.
+/// - Missing runtime pipeline and ECS wiring for
+///   `FogVolume` / `VolumetricFog` / `VolumetricLight`.
+/// - Missing `ExtendedMaterial` custom deferred shader extension path used by
+///   Bevy's animated water material.
 
 ///|
 const SUN_ROTATION_SPEED : Float = 0.3141592653589793F
@@ -44,6 +50,10 @@ priv struct AtmosphereState {
   mut mode : Int
   mut exposure_ev100 : Float
   mut sun_pitch : Float
+  atmosphere_stub : @render3d.Atmosphere
+  mut atmosphere_settings_stub : @render3d.AtmosphereSettings
+  volumetric_fog_stub : @render3d.VolumetricFog
+  fog_volume_stub : @render3d.FogVolume
   mut camera : @core.Entity?
   mut sun : @core.Entity?
   mut water_material : @asset.Handle[@render3d.StandardMaterial]?
@@ -56,6 +66,16 @@ let atmosphere_state : Ref[AtmosphereState] = Ref::new({
   mode: 0,
   exposure_ev100: BASE_EXPOSURE_EV100,
   sun_pitch: 0.0F,
+  atmosphere_stub: @render3d.Atmosphere::earthlike(
+    @render3d.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
+  ),
+  atmosphere_settings_stub: @render3d.AtmosphereSettings::default(),
+  volumetric_fog_stub: @render3d.VolumetricFog::default()
+  .with_ambient_intensity(0.0F),
+  fog_volume_stub: @render3d.FogVolume::default()
+  .with_density_factor(0.1F)
+  .with_scattering(0.3F)
+  .with_absorption(0.3F),
   camera: None,
   sun: None,
   water_material: None,
@@ -103,27 +123,96 @@ fn scene_focus() -> @math.Vec3 {
 ///|
 fn atmosphere_mode_name(mode : Int) -> String {
   if mode == 0 {
-    "LookupTexture (Adapted)"
+    "LookupTexture"
   } else {
-    "Raymarched (Adapted)"
+    "Raymarched"
   }
 }
 
 ///|
 fn atmosphere_instruction_text() -> String {
   let paused = if atmosphere_state.val.paused { "yes" } else { "no" }
-  "Atmosphere Example Controls\n1 - LookupTexture (Adapted)\n2 - Raymarched (Adapted)\nEnter - Pause/Resume Sun Motion\nArrowUp/ArrowDown - Adjust Exposure\n\nMode: \{atmosphere_mode_name(atmosphere_state.val.mode)}\nPaused: \{paused}\nExposure ev100: \{atmosphere_state.val.exposure_ev100}"
+  "Atmosphere Example Controls\n1 - LookupTexture\n2 - Raymarched\nEnter - Pause/Resume Sun Motion\nArrowUp/ArrowDown - Adjust Exposure\n\nMode: \{atmosphere_mode_name(atmosphere_state.val.mode)}\nPaused: \{paused}\nExposure ev100: \{atmosphere_state.val.exposure_ev100}"
+}
+
+///|
+fn print_controls() -> Unit {
+  println("Atmosphere Example Controls:")
+  println("    1          - Switch to lookup texture rendering method")
+  println("    2          - Switch to raymarched rendering method")
+  println("    Enter      - Pause/Resume sun motion")
+  println("    Up/Down    - Increase/Decrease exposure")
 }
 
 ///|
 fn apply_atmosphere(world : @ecs_world.World) -> Unit {
   let state = atmosphere_state.val
+  let medium_density = clampf(
+    state.atmosphere_stub.medium.density_multiplier,
+    0.1F,
+    10.0F,
+  )
+  let scene_units_to_m = clampf(
+    state.atmosphere_settings_stub.scene_units_to_m,
+    0.1F,
+    10.0F,
+  )
+  let fog_density_factor = clampf(state.fog_volume_stub.density_factor, 0.0F, 2.0F)
+  let ambient_intensity = clampf(
+    state.volumetric_fog_stub.ambient_intensity,
+    0.0F,
+    2.0F,
+  )
 
-  let (base_r, base_g, base_b, sun_r, sun_g, sun_b, base_density) = if state.mode ==
-    0 {
-    (0.35F, 0.48F, 0.66F, 0.80F, 0.84F, 1.00F, 0.10F)
+  let (
+    base_r,
+    base_g,
+    base_b,
+    sun_r,
+    sun_g,
+    sun_b,
+    extinction_r,
+    extinction_g,
+    extinction_b,
+    inscattering_r,
+    inscattering_g,
+    inscattering_b,
+    base_visibility,
+    directional_exponent,
+  ) = if state.mode == 0 {
+    (
+      0.35F,
+      0.48F,
+      0.66F,
+      0.80F,
+      0.84F,
+      1.00F,
+      0.35F,
+      0.50F,
+      0.66F,
+      0.80F,
+      0.844F,
+      1.00F,
+      18.0F,
+      5.0F,
+    )
   } else {
-    (0.30F, 0.42F, 0.60F, 1.00F, 0.92F, 0.80F, 0.16F)
+    (
+      0.30F,
+      0.42F,
+      0.60F,
+      1.00F,
+      0.92F,
+      0.80F,
+      0.30F,
+      0.45F,
+      0.62F,
+      1.00F,
+      0.92F,
+      0.80F,
+      12.0F,
+      8.0F,
+    )
   }
 
   let mut sun_mix = 0.0F
@@ -137,8 +226,7 @@ fn apply_atmosphere(world : @ecs_world.World) -> Unit {
             .sub(camera_transform.translation)
             .normalize_or_zero()
           let phase = clamp01(light_dir.dot(view_dir) * 0.5F + 0.5F)
-          let exponent = if state.mode == 0 { 5.0F } else { 8.0F }
-          sun_mix = clamp01(@math.pow(phase, exponent) * 0.55F)
+          sun_mix = clamp01(@math.pow(phase, directional_exponent) * 0.55F)
         }
       }
     }
@@ -160,13 +248,36 @@ fn apply_atmosphere(world : @ecs_world.World) -> Unit {
   let fog_b = clamp01(
     (base_b * (1.0F - sun_mix) + sun_b * sun_mix) * exposure_scale,
   )
-
-  let density = clampf(base_density * (2.0F - exposure_scale), 0.05F, 0.25F)
+  let ambient_lift = clampf(ambient_intensity * 0.2F, 0.0F, 0.2F)
+  let visibility = clampf(
+    base_visibility /
+    clampf(exposure_scale, 0.55F, 1.8F) /
+    clampf(medium_density * scene_units_to_m * (1.0F + fog_density_factor), 0.2F, 12.0F),
+    6.0F,
+    40.0F,
+  )
+  let directional_alpha = clampf(0.3F + sun_mix * 0.45F, 0.2F, 0.75F)
 
   @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(fog_r, fog_g, fog_b, 1.0F),
-      @render3d.FogFalloff3d::exponential_squared(density),
+    @render3d.DistanceFog::default()
+    .with_color(
+      @render2d.Color::new(
+        clamp01(fog_r + ambient_lift),
+        clamp01(fog_g + ambient_lift),
+        clamp01(fog_b + ambient_lift),
+        1.0F,
+      ),
+    )
+    .with_directional_light_color(
+      @render2d.Color::new(sun_r, sun_g, sun_b, directional_alpha),
+    )
+    .with_directional_light_exponent(directional_exponent)
+    .with_falloff(
+      @render3d.FogFalloff3d::from_visibility_colors(
+        visibility,
+        @render2d.Color::srgb(extinction_r, extinction_g, extinction_b),
+        @render2d.Color::srgb(inscattering_r, inscattering_g, inscattering_b),
+      ),
     ),
   )
 
@@ -198,12 +309,30 @@ fn spawn_mesh(
 ///|
 fn setup_camera(world : @ecs_world.World) -> Unit {
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
-      scene_focus(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
+      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+      @math.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
+        scene_focus(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_screen_space_reflections(
+      Some(@render3d.ScreenSpaceReflections::default()),
+    )
+    .spawn(world)
+
+  let tick = world.read_change_tick()
+  world
+  .get_deferred_prepass_store()
+  .insert(camera, @render3d.DeferredPrepass::default(), tick)
+  world
+  .get_tonemapping_store()
+  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .get_temporal_anti_aliasing_store()
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+
   atmosphere_state.val.camera = Some(camera)
 }
 
@@ -334,11 +463,15 @@ fn atmosphere_controls(world : @ecs_world.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     atmosphere_state.val.mode = 0
+    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub
+    .with_rendering_method(@render3d.AtmosphereMode::LookupTexture)
     changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
     atmosphere_state.val.mode = 1
+    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub
+    .with_rendering_method(@render3d.AtmosphereMode::Raymarched)
     changed = true
   }
 
@@ -424,6 +557,18 @@ fn setup(world : @ecs_world.World) -> Unit {
     mode: 0,
     exposure_ev100: BASE_EXPOSURE_EV100,
     sun_pitch: 0.0F,
+    atmosphere_stub: @render3d.Atmosphere::earthlike(
+      @render3d.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
+    ),
+    atmosphere_settings_stub: @render3d.AtmosphereSettings::default()
+    .with_scene_units_to_m(1.0F)
+    .with_rendering_method(@render3d.AtmosphereMode::LookupTexture),
+    volumetric_fog_stub: @render3d.VolumetricFog::default()
+    .with_ambient_intensity(0.0F),
+    fog_volume_stub: @render3d.FogVolume::default()
+    .with_density_factor(0.1F)
+    .with_scattering(0.3F)
+    .with_absorption(0.3F),
     camera: None,
     sun: None,
     water_material: None,
@@ -434,6 +579,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   setup_scene(world)
   setup_instructions(world)
   apply_atmosphere(world)
+  print_controls()
 }
 
 ///|

@@ -15,7 +15,7 @@
 ///|
 /// Port of `bevy/examples/3d/reflection_probes.rs`.
 ///
-/// Baseline parity:
+/// Parity note:
 /// - Reflection mode switching, roughness control, camera rotation, and probe
 ///   placement follow Bevy's control flow.
 /// - `GeneratedEnvironmentMapLight` is represented by Bevy-shaped API in
@@ -68,6 +68,7 @@ priv struct ReflectionProbesState {
   mut diffuse_environment_map : @asset.Handle[@asset.Image]?
   mut specular_environment_map : @asset.Handle[@asset.Image]?
   mut specular_reflection_probe : @asset.Handle[@asset.Image]?
+  mut environment_map_usage_ready : Bool
 }
 
 ///|
@@ -83,6 +84,7 @@ let reflection_probes_state : Ref[ReflectionProbesState] = Ref::new({
   diffuse_environment_map: None,
   specular_environment_map: None,
   specular_reflection_probe: None,
+  environment_map_usage_ready: false,
 })
 
 ///|
@@ -326,6 +328,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   reflection_probes_state.val.cubes_scene = None
   reflection_probes_state.val.reflection_probe = None
   reflection_probes_state.val.help_text = None
+  reflection_probes_state.val.environment_map_usage_ready = false
 
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
@@ -349,6 +352,9 @@ fn setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   reflection_probes_state.val.camera = Some(camera)
   world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_exposure_store()
+  .insert(camera, @render3d.Exposure::new(11.0F), tick)
   world
   .get_tonemapping_store()
   .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
@@ -415,6 +421,26 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   apply_reflection_mode(world)
   update_help_text()
+}
+
+///|
+fn setup_environment_map_usage(_world : @ecs_world.World) -> Unit {
+  if reflection_probes_state.val.environment_map_usage_ready {
+    return
+  }
+  if reflection_probes_state.val.specular_environment_map
+    is Some(specular_environment_map) {
+    if !@asset.asset_image_has_usage(
+        specular_environment_map,
+        @asset.IMAGE_USAGE_COPY_SRC,
+      ) {
+      @asset.asset_image_add_usage(
+        specular_environment_map,
+        @asset.IMAGE_USAGE_COPY_SRC,
+      )
+    }
+    reflection_probes_state.val.environment_map_usage_ready = true
+  }
 }
 
 ///|
@@ -514,6 +540,7 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
+  .add_system(setup_environment_map_usage)
   .add_system(cycle_reflection_mode)
   .add_system(toggle_rotation)
   .add_system(change_sphere_roughness)

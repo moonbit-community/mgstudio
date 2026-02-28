@@ -152,6 +152,7 @@ struct MeshDraw {
     scale_x: f32,
     scale_y: f32,
     scale_z: f32,
+    cull_mode: i32,
     previous_x: f32,
     previous_y: f32,
     previous_z: f32,
@@ -267,6 +268,21 @@ fn mesh3d_topology_from_kind(kind: i32) -> wgpu::PrimitiveTopology {
     }
 }
 
+fn mesh3d_cull_mode_sanitize(cull_mode: i32) -> i32 {
+    match cull_mode {
+        1 | 2 => cull_mode,
+        _ => 0,
+    }
+}
+
+fn mesh3d_cull_mode_wgpu(cull_mode: i32) -> Option<wgpu::Face> {
+    match mesh3d_cull_mode_sanitize(cull_mode) {
+        1 => Some(wgpu::Face::Front),
+        2 => Some(wgpu::Face::Back),
+        _ => None,
+    }
+}
+
 fn align_up_u64(value: u64, align: u64) -> u64 {
     if align <= 1 {
         return value;
@@ -301,9 +317,10 @@ struct MeshRenderer {
     pipeline_layout: Option<wgpu::PipelineLayout>,
     pipeline_layout_3d: Option<wgpu::PipelineLayout>,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
-    pipelines_3d: HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology), wgpu::RenderPipeline>,
+    pipelines_3d:
+        HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology, i32), wgpu::RenderPipeline>,
     pipelines_3d_transparent:
-        HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology), wgpu::RenderPipeline>,
+        HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology, i32), wgpu::RenderPipeline>,
 
     uniform_buf: Option<wgpu::Buffer>,
     uniform_bg: Option<wgpu::BindGroup>,
@@ -848,22 +865,31 @@ impl GpuBackend {
                 self.ensure_mesh3d_motion_vector_pipeline()?;
             } else {
                 if has_mesh_3d_triangles {
-                    self.ensure_mesh3d_pipeline(
-                        pass.st.target_format,
-                        wgpu::PrimitiveTopology::TriangleList,
-                    )?;
+                    for cull_mode in [0, 1, 2] {
+                        self.ensure_mesh3d_pipeline(
+                            pass.st.target_format,
+                            wgpu::PrimitiveTopology::TriangleList,
+                            cull_mode,
+                        )?;
+                    }
                 }
                 if has_mesh_3d_line_list {
-                    self.ensure_mesh3d_pipeline(
-                        pass.st.target_format,
-                        wgpu::PrimitiveTopology::LineList,
-                    )?;
+                    for cull_mode in [0, 1, 2] {
+                        self.ensure_mesh3d_pipeline(
+                            pass.st.target_format,
+                            wgpu::PrimitiveTopology::LineList,
+                            cull_mode,
+                        )?;
+                    }
                 }
                 if has_mesh_3d_line_strip {
-                    self.ensure_mesh3d_pipeline(
-                        pass.st.target_format,
-                        wgpu::PrimitiveTopology::LineStrip,
-                    )?;
+                    for cull_mode in [0, 1, 2] {
+                        self.ensure_mesh3d_pipeline(
+                            pass.st.target_format,
+                            wgpu::PrimitiveTopology::LineStrip,
+                            cull_mode,
+                        )?;
+                    }
                 }
             }
         }
@@ -1120,7 +1146,11 @@ impl GpuBackend {
                         }
 
                         let pipeline = if draw.is_3d {
-                            let key = (pass.st.target_format, mesh.primitive_topology);
+                            let key = (
+                                pass.st.target_format,
+                                mesh.primitive_topology,
+                                mesh3d_cull_mode_sanitize(draw.cull_mode),
+                            );
                             if draw.color[3] < 0.999 {
                                 mesh_pipelines_3d_transparent.get(&key)
                             } else {
@@ -1597,6 +1627,7 @@ impl GpuBackend {
             scale_x,
             scale_y,
             scale_z: 1.0,
+            cull_mode: 2,
             previous_x: x,
             previous_y: y,
             previous_z: 0.0,
@@ -1697,6 +1728,7 @@ impl GpuBackend {
         transmission_source_texture_id: i32,
         transmission_blur_taps: f32,
         transmission_steps: f32,
+        cull_mode: i32,
     ) -> anyhow::Result<()> {
         if self.frame.is_none() {
             return Ok(());
@@ -1776,6 +1808,7 @@ impl GpuBackend {
             scale_x,
             scale_y,
             scale_z,
+            cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
             previous_x,
             previous_y,
             previous_z,
@@ -2486,6 +2519,117 @@ impl GpuBackend {
         );
         self.queue.submit(Some(encoder.finish()));
         let _ = self.device.poll(wgpu::PollType::Poll);
+        Ok(())
+    }
+
+    pub fn save_texture_png(&mut self, texture_id: i32, path: &str) -> anyhow::Result<()> {
+        let Some(texture) = self.textures.get(&texture_id) else {
+            return Ok(());
+        };
+        let width = texture.width.max(1);
+        let height = texture.height.max(1);
+        match texture.format {
+            wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Rgba8UnormSrgb => {}
+            _ => {
+                return Err(anyhow!(
+                    "wgpu: asset_save_texture_png only supports RGBA8 textures (id={texture_id})"
+                ));
+            }
+        }
+
+        let bytes_per_pixel = 4u32;
+        let unpadded_bytes_per_row = width
+            .checked_mul(bytes_per_pixel)
+            .ok_or_else(|| anyhow!("wgpu: screenshot bytes_per_row overflow"))?;
+        let padded_bytes_per_row = align_up(
+            unpadded_bytes_per_row as u64,
+            wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as u64,
+        ) as u32;
+        let output_size = u64::from(padded_bytes_per_row) * u64::from(height);
+
+        let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio-screenshot-readback"),
+            size: output_size,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("mgstudio-screenshot-encoder"),
+            });
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &texture.texture,
+                mip_level: texture.base_mip_level,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &readback,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(padded_bytes_per_row),
+                    rows_per_image: Some(height),
+                },
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.queue.submit(Some(encoder.finish()));
+
+        let slice = readback.slice(..);
+        let (sender, receiver) = std::sync::mpsc::channel();
+        slice.map_async(wgpu::MapMode::Read, move |result| {
+            let _ = sender.send(result);
+        });
+        loop {
+            let _ = self.device.poll(wgpu::PollType::Poll);
+            match receiver.try_recv() {
+                Ok(result) => {
+                    result.context("wgpu: map_async failed for screenshot readback")?;
+                    break;
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => {
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                }
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    return Err(anyhow!("wgpu: screenshot readback channel disconnected"));
+                }
+            }
+        }
+
+        let mapped = slice.get_mapped_range();
+        let mut rgba = vec![0u8; (unpadded_bytes_per_row as usize) * (height as usize)];
+        for row in 0..height as usize {
+            let src_start = row * (padded_bytes_per_row as usize);
+            let src_end = src_start + (unpadded_bytes_per_row as usize);
+            let dst_start = row * (unpadded_bytes_per_row as usize);
+            let dst_end = dst_start + (unpadded_bytes_per_row as usize);
+            rgba[dst_start..dst_end].copy_from_slice(&mapped[src_start..src_end]);
+        }
+        drop(mapped);
+        readback.unmap();
+
+        if let Some(parent) = std::path::Path::new(path).parent() {
+            if !parent.as_os_str().is_empty() {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("create screenshot dir {}", parent.display()))?;
+            }
+        }
+        image::save_buffer_with_format(
+            path,
+            &rgba,
+            width,
+            height,
+            image::ColorType::Rgba8,
+            image::ImageFormat::Png,
+        )
+        .with_context(|| format!("save screenshot to {path}"))?;
         Ok(())
     }
 
@@ -3503,14 +3647,16 @@ impl GpuBackend {
         &mut self,
         format: wgpu::TextureFormat,
         topology: wgpu::PrimitiveTopology,
+        cull_mode: i32,
     ) -> anyhow::Result<()> {
         self.ensure_mesh_resources()?;
-        let key = (format, topology);
+        let key = (format, topology, mesh3d_cull_mode_sanitize(cull_mode));
         if self.mesh.pipelines_3d.contains_key(&key)
             && self.mesh.pipelines_3d_transparent.contains_key(&key)
         {
             return Ok(());
         }
+        let cull_mode_wgpu = mesh3d_cull_mode_wgpu(cull_mode);
         let pl = self
             .mesh
             .pipeline_layout_3d
@@ -3567,6 +3713,7 @@ impl GpuBackend {
                 }),
                 primitive: wgpu::PrimitiveState {
                     topology,
+                    cull_mode: cull_mode_wgpu,
                     ..Default::default()
                 },
                 depth_stencil: Some(wgpu::DepthStencilState {
@@ -3624,6 +3771,7 @@ impl GpuBackend {
                     }),
                     primitive: wgpu::PrimitiveState {
                         topology,
+                        cull_mode: cull_mode_wgpu,
                         ..Default::default()
                     },
                     depth_stencil: Some(wgpu::DepthStencilState {

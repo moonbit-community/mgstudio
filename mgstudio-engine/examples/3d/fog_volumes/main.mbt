@@ -15,9 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/fog_volumes.rs`.
 ///
-/// Baseline parity: Bevy's voxel fog volume pipeline (`FogVolume`,
-/// `VolumetricFog`, `VolumetricLight`) is approximated here using mgstudio's
-/// current distance-fog interface and a proxy volume mesh setup.
+/// Parity notes:
+/// - Uses Bevy-like proxy volume geometry and camera/light motion.
+/// - Uses `VolumetricFog` / `FogVolume` data-model stubs for scene parameters.
+/// - Backend still approximates voxel fog-volume rendering through distance fog.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -40,23 +41,32 @@ fn fog_center() -> @math.Vec3 {
 priv struct FogVolumesState {
   mut camera : @core.Entity?
   mut light : @core.Entity?
+  mut volumetric_fog_stub : @render3d.VolumetricFog
+  mut fog_volume_stub : @render3d.FogVolume
 }
 
 ///|
 let fog_volumes_state : Ref[FogVolumesState] = Ref::new({
   camera: None,
   light: None,
+  volumetric_fog_stub: @render3d.VolumetricFog::default(),
+  fog_volume_stub: @render3d.FogVolume::default(),
 })
 
 ///|
-fn clamp01(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else if value > 1.0F {
-    1.0F
+fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
   } else {
     value
   }
+}
+
+///|
+fn clamp01(value : Float) -> Float {
+  clampf(value, 0.0F, 1.0F)
 }
 
 ///|
@@ -69,6 +79,38 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 ///|
 fn transform_forward(transform : @math.Transform) -> @math.Vec3 {
   quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
+}
+
+///|
+fn apply_distance_fog_from_stub(phase : Float) -> Unit {
+  let fog_volume_stub = fog_volumes_state.val.fog_volume_stub
+  let volumetric_fog_stub = fog_volumes_state.val.volumetric_fog_stub
+  let visibility = clampf(
+    12.0F / (1.0F + fog_volume_stub.density_factor * 2.5F),
+    2.5F,
+    20.0F,
+  )
+  let brightness = 0.55F + 0.45F * phase
+  let ambient_lift = clampf(volumetric_fog_stub.ambient_intensity * 0.4F, 0.0F, 0.2F)
+  let directional_alpha = clampf(0.25F + phase * 0.55F, 0.2F, 0.9F)
+  let fog_color = fog_volume_stub.fog_color
+
+  @render3d.render3d_set_distance_fog(
+    @render3d.DistanceFog::default()
+    .with_color(
+      @render2d.Color::new(
+        clamp01(fog_color.r * brightness + ambient_lift),
+        clamp01(fog_color.g * brightness + ambient_lift),
+        clamp01(fog_color.b * brightness + ambient_lift),
+        0.9F,
+      ),
+    )
+    .with_directional_light_color(
+      @render2d.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
+    )
+    .with_directional_light_exponent(24.0F)
+    .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility)),
+  )
 }
 
 ///|
@@ -180,6 +222,14 @@ fn spawn_volume_proxy(world : @ecs_world.World) -> Unit {
 fn setup(world : @ecs_world.World) -> Unit {
   fog_volumes_state.val.camera = None
   fog_volumes_state.val.light = None
+  fog_volumes_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
+  .with_step_count(64)
+  .with_ambient_intensity(0.0F)
+  fog_volumes_state.val.fog_volume_stub = @render3d.FogVolume::default()
+  .with_density_factor(1.0F)
+  .with_scattering(1.0F)
+  .with_absorption(0.3F)
+  .with_fog_color(@render2d.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
 
   let tick = world.read_change_tick()
 
@@ -190,13 +240,6 @@ fn setup(world : @ecs_world.World) -> Unit {
       0.0F,
     )
   }
-
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(0.45F, 0.5F, 0.56F, 0.9F),
-      @render3d.FogFalloff3d::exponential_squared(0.32F),
-    ),
-  )
 
   spawn_volume_proxy(world)
 
@@ -227,6 +270,8 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  apply_distance_fog_from_stub(1.0F)
   fog_volumes_state.val.camera = Some(camera)
 }
 
@@ -268,20 +313,11 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
   let phase = clamp01(light_dir.neg().dot(view_dir) * 0.5F + 0.5F)
 
   // Approximate volumetric scattering with dynamic fog color and density.
-  let brightness = 0.55F + 0.45F * phase
   let density = 0.18F + 0.22F * (1.0F - phase)
-
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(
-        clamp01(0.45F * brightness),
-        clamp01(0.5F * brightness),
-        clamp01(0.56F * brightness),
-        0.9F,
-      ),
-      @render3d.FogFalloff3d::exponential_squared(density),
-    ),
-  )
+  fog_volumes_state.val.fog_volume_stub = fog_volumes_state.val.fog_volume_stub
+  .with_density_factor(density)
+  .with_scattering(1.0F)
+  apply_distance_fog_from_stub(phase)
 }
 
 ///|

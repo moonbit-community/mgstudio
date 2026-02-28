@@ -112,13 +112,12 @@ fn spawn_mesh(
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
-) -> Unit {
+) -> @core.Entity {
   @render3d.MeshMaterial3dBundle::new(
     mesh,
     @render3d.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  |> ignore
 }
 
 ///|
@@ -169,6 +168,7 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
       stone_material,
       @math.Transform::from_xyz(position.x, 1.5F, position.y),
     )
+    |> ignore
   }
 
   let orb_material = @render3d.standard_material_add(
@@ -180,7 +180,7 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
     .with_metallic(0.5F)
     .with_alpha_mode(@render3d.AlphaMode3d::Blend),
   )
-  spawn_mesh(
+  let orb = spawn_mesh(
     world,
     uv_sphere_mesh(1.0F, 20, 36),
     orb_material,
@@ -188,6 +188,12 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
       @math.Vec3::splat(1.75F),
     ),
   )
+  world
+  .get_not_shadow_caster_store()
+  .insert(orb, @render3d.NotShadowCaster::default(), tick)
+  world
+  .get_not_shadow_receiver_store()
+  .insert(orb, @render3d.NotShadowReceiver::default(), tick)
 
   for i in 0..<50 {
     let i_f = float_from_int(i)
@@ -199,14 +205,29 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
       stone_material,
       @math.Transform::from_xyz(0.0F, y + 0.25F, 0.0F),
     )
+    |> ignore
   }
+
+  spawn_mesh(
+    world,
+    @render3d.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
+    @render3d.standard_material_add(
+      @render3d.StandardMaterial::from_color(
+        @render2d.Color::new(136.0F / 255.0F, 136.0F / 255.0F, 136.0F / 255.0F, 1.0F),
+      )
+      .with_unlit(true)
+      .with_cull_mode(None),
+    ),
+    @math.Transform::identity().with_scale(@math.Vec3::splat(1_000_000.0F)),
+  )
+  |> ignore
 
   let point_light = world.spawn_empty()
   world
   .get_point_light_store()
   .insert(
     point_light,
-    @render3d.PointLight::new(@render2d.Color::white(), 80_000.0F, 100.0F, true),
+    @render3d.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world
@@ -217,6 +238,7 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
 ///|
 fn fog_mode_label(falloff : @render3d.FogFalloff3d) -> String {
   match falloff {
+    @render3d.FogFalloff3d::Atmospheric(_, _) => "Atmospheric"
     @render3d.FogFalloff3d::Linear(_, _) => "Linear"
     @render3d.FogFalloff3d::Exponential(_) => "Exponential"
     @render3d.FogFalloff3d::ExponentialSquared(_) => "ExponentialSquared"
@@ -226,6 +248,8 @@ fn fog_mode_label(falloff : @render3d.FogFalloff3d) -> String {
 ///|
 fn fog_help_text(fog : @render3d.DistanceFog) -> String {
   let detail = match fog.falloff {
+    @render3d.FogFalloff3d::Atmospheric(extinction, inscattering) =>
+      "Atmospheric extinction: (\{extinction.x}, \{extinction.y}, \{extinction.z})\nAtmospheric inscattering: (\{inscattering.x}, \{inscattering.y}, \{inscattering.z})"
     @render3d.FogFalloff3d::Linear(start, end_) =>
       "Linear start/end: \{start} / \{end_}\nA/S adjust start, Z/X adjust end"
     @render3d.FogFalloff3d::Exponential(density) =>
@@ -233,7 +257,7 @@ fn fog_help_text(fog : @render3d.DistanceFog) -> String {
     @render3d.FogFalloff3d::ExponentialSquared(density) =>
       "ExpSquared density: \{density}\nA/S adjust density"
   }
-  "Fog Falloff: \{fog_mode_label(fog.falloff)}\nFog Color: (\{fog.color.r}, \{fog.color.g}, \{fog.color.b}, \{fog.color.a})\n\n1/2/3 switch falloff mode\n4/5 red -/+\n6/Q green -/+\nW/E blue -/+\nR/T alpha -/+\n\n\{detail}"
+  "Fog Falloff: \{fog_mode_label(fog.falloff)}\nFog Color: (\{fog.color.r}, \{fog.color.g}, \{fog.color.b}, \{fog.color.a})\n\n1/2/3 switch falloff mode\nMinus/Equal red -/+\nBracketLeft/BracketRight green -/+\nSemicolon/Quote blue -/+\nPeriod/Slash alpha -/+\n\n\{detail}"
 }
 
 ///|
@@ -289,6 +313,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
   }
   if @input.key_pressed(@window.KeyCode::Digit2) {
     let density = match fog.falloff {
+      @render3d.FogFalloff3d::Atmospheric(_, _) => 0.07F
       @render3d.FogFalloff3d::Exponential(d) => d
       @render3d.FogFalloff3d::ExponentialSquared(d) => d
       @render3d.FogFalloff3d::Linear(_, _) => 0.07F
@@ -297,6 +322,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
   }
   if @input.key_pressed(@window.KeyCode::Digit3) {
     let density = match fog.falloff {
+      @render3d.FogFalloff3d::Atmospheric(_, _) => 0.07F
       @render3d.FogFalloff3d::Exponential(d) => d
       @render3d.FogFalloff3d::ExponentialSquared(d) => d
       @render3d.FogFalloff3d::Linear(_, _) => 0.07F
@@ -305,6 +331,8 @@ fn update_system(world : @ecs_world.World) -> Unit {
   }
 
   let next_falloff = match fog.falloff {
+    @render3d.FogFalloff3d::Atmospheric(extinction, inscattering) =>
+      @render3d.FogFalloff3d::atmospheric(extinction, inscattering)
     @render3d.FogFalloff3d::Linear(start, end_) => {
       let next_start = if @input.key_pressed(@window.KeyCode::KeyA) {
         start - delta * 3.0F
@@ -346,7 +374,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
   fog = fog.with_falloff(next_falloff)
 
   let mut color = fog.color
-  if @input.key_pressed(@window.KeyCode::Digit4) {
+  if @input.key_pressed(@window.KeyCode::Minus) {
     color = @render2d.Color::new(
       clamp01(color.r - 0.1F * delta),
       color.g,
@@ -354,7 +382,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::Digit5) {
+  if @input.key_pressed(@window.KeyCode::Equal) {
     color = @render2d.Color::new(
       clamp01(color.r + 0.1F * delta),
       color.g,
@@ -362,7 +390,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::Digit6) {
+  if @input.key_pressed(@window.KeyCode::BracketLeft) {
     color = @render2d.Color::new(
       color.r,
       clamp01(color.g - 0.1F * delta),
@@ -370,7 +398,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::KeyQ) {
+  if @input.key_pressed(@window.KeyCode::BracketRight) {
     color = @render2d.Color::new(
       color.r,
       clamp01(color.g + 0.1F * delta),
@@ -378,7 +406,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::KeyW) {
+  if @input.key_pressed(@window.KeyCode::Semicolon) {
     color = @render2d.Color::new(
       color.r,
       color.g,
@@ -386,7 +414,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::KeyE) {
+  if @input.key_pressed(@window.KeyCode::Quote) {
     color = @render2d.Color::new(
       color.r,
       color.g,
@@ -394,7 +422,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::KeyR) {
+  if @input.key_pressed(@window.KeyCode::Period) {
     color = @render2d.Color::new(
       color.r,
       color.g,
@@ -402,7 +430,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
       clamp01(color.a - 0.1F * delta),
     )
   }
-  if @input.key_pressed(@window.KeyCode::KeyT) {
+  if @input.key_pressed(@window.KeyCode::Slash) {
     color = @render2d.Color::new(
       color.r,
       color.g,

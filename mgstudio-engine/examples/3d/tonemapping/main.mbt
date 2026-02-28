@@ -16,10 +16,9 @@
 /// Port of `bevy/examples/3d/tonemapping.rs`.
 ///
 /// Baseline parity: Bevy's native tonemapping/color-grading pipeline
-/// (`Tonemapping`, `ColorGrading`, HDR/exr drag-drop path, custom shader
-/// material) is approximated with the current mgstudio render controls using
-/// material-space mapping proxies, fog/ambient response, and the same runtime
-/// interaction model.
+/// (`Tonemapping`, `ColorGrading`, HDR camera setup) is mapped directly to
+/// mgstudio camera components; drag-drop HDR/EXR loading and custom
+/// shader-material gradient remain adapted.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -42,14 +41,6 @@ priv struct ColorGradeSettings {
 }
 
 ///|
-priv struct ControlledMaterial {
-  handle : @asset.Handle[@render3d.StandardMaterial]
-  base_color : @render2d.Color
-  base_roughness : Float
-  base_reflectance : Float
-}
-
-///|
 priv struct SceneEntity {
   entity : @core.Entity
   scene : Int
@@ -62,9 +53,9 @@ priv struct TonemappingState {
   mut selected_parameter : Int
   mut hide_ui : Bool
   mut ui_text : @text.TextHandle?
+  mut camera : @core.Entity?
   mut directional_light : @core.Entity?
   mut point_light : @core.Entity?
-  materials : Array[ControlledMaterial]
   scene_entities : Array[SceneEntity]
   settings : Array[ColorGradeSettings]
 }
@@ -76,9 +67,9 @@ let tonemapping_state : Ref[TonemappingState] = Ref::new({
   selected_parameter: 0,
   hide_ui: false,
   ui_text: None,
+  camera: None,
   directional_light: None,
   point_light: None,
-  materials: [],
   scene_entities: [],
   settings: [],
 })
@@ -163,91 +154,49 @@ fn method_name(mode : Int) -> String {
 }
 
 ///|
+fn tonemapping_mode(mode : Int) -> @render3d.Tonemapping {
+  if mode == 0 {
+    @render3d.Tonemapping::None
+  } else if mode == 1 {
+    @render3d.Tonemapping::Reinhard
+  } else if mode == 2 {
+    @render3d.Tonemapping::ReinhardLuminance
+  } else if mode == 3 {
+    @render3d.Tonemapping::AcesFitted
+  } else if mode == 4 {
+    @render3d.Tonemapping::AgX
+  } else if mode == 5 {
+    @render3d.Tonemapping::SomewhatBoringDisplayTransform
+  } else if mode == 6 {
+    @render3d.Tonemapping::TonyMcMapface
+  } else {
+    @render3d.Tonemapping::BlenderFilmic
+  }
+}
+
+///|
+fn color_grading_from_settings(
+  settings : ColorGradeSettings,
+) -> @render3d.ColorGrading {
+  let global = @render3d.ColorGradingGlobal::new()
+    .with_exposure(settings.exposure)
+    .with_post_saturation(settings.post_saturation)
+  let section = @render3d.ColorGradingSection::new()
+    .with_gamma(settings.gamma)
+    .with_saturation(settings.pre_saturation)
+  @render3d.ColorGrading::new(
+    global,
+    @render3d.ColorGradingSettings::with_identical_sections(section),
+  )
+}
+
+///|
 fn selected_marker(value : Int, selected : Int) -> String {
   if value == selected {
     "> "
   } else {
     ""
   }
-}
-
-///|
-fn apply_saturation(
-  r : Float,
-  g : Float,
-  b : Float,
-  saturation : Float,
-) -> (Float, Float, Float) {
-  let gray = (r + g + b) / 3.0F
-  (
-    clampf(gray + (r - gray) * saturation, 0.0F, 8.0F),
-    clampf(gray + (g - gray) * saturation, 0.0F, 8.0F),
-    clampf(gray + (b - gray) * saturation, 0.0F, 8.0F),
-  )
-}
-
-///|
-fn method_tint(mode : Int) -> (Float, Float, Float, Float) {
-  if mode == 0 {
-    (1.0F, 1.0F, 1.0F, 1.0F)
-  } else if mode == 1 {
-    (1.03F, 1.0F, 0.96F, 0.95F)
-  } else if mode == 2 {
-    (0.98F, 1.02F, 1.05F, 0.9F)
-  } else if mode == 3 {
-    (1.08F, 1.0F, 0.94F, 1.08F)
-  } else if mode == 4 {
-    (1.02F, 0.98F, 0.90F, 1.04F)
-  } else if mode == 5 {
-    (0.95F, 1.02F, 1.08F, 0.94F)
-  } else if mode == 6 {
-    (1.12F, 1.04F, 0.96F, 1.0F)
-  } else {
-    (0.98F, 1.04F, 1.08F, 0.92F)
-  }
-}
-
-///|
-fn method_curve(value : Float, mode : Int) -> Float {
-  let v = clampf(value, 0.0F, 16.0F)
-  if mode == 0 {
-    clamp01(v)
-  } else if mode == 1 {
-    clamp01(v / (1.0F + v))
-  } else if mode == 2 {
-    clamp01(@math.pow(v / (1.0F + v), 0.92F))
-  } else if mode == 3 {
-    let numerator = v * (2.51F * v + 0.03F)
-    let denominator = v * (2.43F * v + 0.59F) + 0.14F
-    if denominator <= 0.0001F {
-      0.0F
-    } else {
-      clamp01(numerator / denominator)
-    }
-  } else if mode == 4 {
-    clamp01(@math.pow(v / (1.0F + v), 0.82F))
-  } else if mode == 5 {
-    clamp01(v * 0.85F / (1.0F + v * 0.35F))
-  } else if mode == 6 {
-    clamp01(@math.pow(v / (1.0F + v), 1.1F))
-  } else {
-    clamp01(v * (v + 0.15F) / (v * v + 0.5F * v + 0.06F))
-  }
-}
-
-///|
-fn register_material(
-  handle : @asset.Handle[@render3d.StandardMaterial],
-  base_color : @render2d.Color,
-  base_roughness : Float,
-  base_reflectance : Float,
-) -> Unit {
-  tonemapping_state.val.materials.push({
-    handle,
-    base_color,
-    base_roughness,
-    base_reflectance,
-  })
 }
 
 ///|
@@ -297,7 +246,6 @@ fn setup_scene_basic(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(0.85F)
     .with_reflectance(0.3F),
   )
-  register_material(floor_material, floor_color, 0.85F, 0.3F)
   spawn_scene_mesh(
     world,
     scene,
@@ -328,7 +276,6 @@ fn setup_scene_basic(world : @ecs_world.World) -> Unit {
       )
       .with_perceptual_roughness(0.2F),
     )
-    register_material(bar_material, bar_color, 0.2F, 0.5F)
     spawn_scene_mesh(
       world,
       scene,
@@ -345,7 +292,6 @@ fn setup_scene_basic(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(0.15F)
     .with_reflectance(0.7F),
   )
-  register_material(sphere_material, sphere_color, 0.15F, 0.7F)
   spawn_scene_mesh(
     world,
     scene,
@@ -363,7 +309,6 @@ fn setup_scene_basic(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(0.35F)
     .with_reflectance(0.5F),
   )
-  register_material(sphere_2_material, sphere_2_color, 0.35F, 0.5F)
   spawn_scene_mesh(
     world,
     scene,
@@ -395,7 +340,6 @@ fn setup_scene_color_sweep(world : @ecs_world.World) -> Unit {
         .with_unlit(true)
         .with_perceptual_roughness(0.4F),
       )
-      register_material(mat, color, 0.4F, 0.5F)
 
       let x = -0.9F + float_from_int(col) * 0.2F
       let y = -0.04F + float_from_int(row) * 0.12F
@@ -415,7 +359,6 @@ fn setup_scene_color_sweep(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(1.0F)
     .with_reflectance(0.2F),
   )
-  register_material(panel, panel_color, 1.0F, 0.2F)
   spawn_scene_mesh(
     world,
     scene,
@@ -438,7 +381,6 @@ fn setup_scene_image_viewer(world : @ecs_world.World) -> Unit {
     .with_unlit(true)
     .with_alpha_mode(@render3d.AlphaMode3d::Blend),
   )
-  register_material(image_material, image_color, 0.3F, 0.5F)
   spawn_scene_mesh(
     world,
     scene,
@@ -453,7 +395,6 @@ fn setup_scene_image_viewer(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(0.8F)
     .with_reflectance(0.2F),
   )
-  register_material(frame_material, frame_color, 0.8F, 0.2F)
   spawn_scene_mesh(
     world,
     scene,
@@ -468,7 +409,6 @@ fn setup_scene_image_viewer(world : @ecs_world.World) -> Unit {
     .with_perceptual_roughness(0.9F)
     .with_reflectance(0.25F),
   )
-  register_material(floor_material, floor_color, 0.9F, 0.25F)
   spawn_scene_mesh(
     world,
     scene,
@@ -523,14 +463,36 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
 
 ///|
 fn setup_camera(world : @ecs_world.World) -> Unit {
-  @render3d.Camera3dBundle::new(
+  let asset_server = @asset.AssetServer::new()
+  let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::from_xyz(0.7F, CAMERA_HEIGHT, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  |> ignore
+
+  let tick = world.read_change_tick()
+  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .get_environment_map_light_store()
+  .insert(
+    camera,
+    @render3d.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      2000.0F,
+    ),
+    tick,
+  )
+  tonemapping_state.val.camera = Some(camera)
+
+  @render3d.render3d_set_distance_fog(
+    @render3d.DistanceFog::new(
+      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @render3d.FogFalloff3d::linear(1.0F, 8.0F),
+    ),
+  )
 }
 
 ///|
@@ -706,109 +668,24 @@ fn apply_scene_lighting(world : @ecs_world.World) -> Unit {
 ///|
 fn apply_color_grading(world : @ecs_world.World) -> Unit {
   let state = tonemapping_state.val
+  guard state.camera is Some(camera_entity) else { return }
   let settings = state.settings[state.tonemap_mode]
-  let exposure_scale = @math.pow(2.0F, settings.exposure)
-  let gamma = clampf(settings.gamma, 0.2F, 3.0F)
-  let (tint_r, tint_g, tint_b, contrast) = method_tint(state.tonemap_mode)
-
-  for controlled in state.materials {
-    if @render3d.standard_material_get(controlled.handle) is Some(material) {
-      let (pre_r, pre_g, pre_b) = apply_saturation(
-        controlled.base_color.r,
-        controlled.base_color.g,
-        controlled.base_color.b,
-        settings.pre_saturation,
-      )
-
-      let mapped_r = method_curve(
-        pre_r * tint_r * exposure_scale,
-        state.tonemap_mode,
-      )
-      let mapped_g = method_curve(
-        pre_g * tint_g * exposure_scale,
-        state.tonemap_mode,
-      )
-      let mapped_b = method_curve(
-        pre_b * tint_b * exposure_scale,
-        state.tonemap_mode,
-      )
-
-      let gamma_r = @math.pow(clampf(mapped_r, 0.0F, 1.0F), 1.0F / gamma)
-      let gamma_g = @math.pow(clampf(mapped_g, 0.0F, 1.0F), 1.0F / gamma)
-      let gamma_b = @math.pow(clampf(mapped_b, 0.0F, 1.0F), 1.0F / gamma)
-
-      let contrast_r = clamp01((gamma_r - 0.5F) * contrast + 0.5F)
-      let contrast_g = clamp01((gamma_g - 0.5F) * contrast + 0.5F)
-      let contrast_b = clamp01((gamma_b - 0.5F) * contrast + 0.5F)
-
-      let (out_r, out_g, out_b) = apply_saturation(
-        contrast_r,
-        contrast_g,
-        contrast_b,
-        settings.post_saturation,
-      )
-
-      let updated = material
-        .with_base_color(
-          @render2d.Color::new(out_r, out_g, out_b, controlled.base_color.a),
-        )
-        .with_perceptual_roughness(
-          clampf(
-            controlled.base_roughness +
-            (1.0F - settings.post_saturation) * 0.12F,
-            0.0F,
-            1.0F,
-          ),
-        )
-        .with_reflectance(
-          clampf(
-            controlled.base_reflectance +
-            (settings.post_saturation - 1.0F) * 0.08F,
-            0.0F,
-            1.0F,
-          ),
-        )
-
-      @render3d.standard_material_set(controlled.handle, updated) |> ignore
-    }
-  }
-
-  let scene_factor = if state.current_scene == 1 {
-    1.0F
-  } else if state.current_scene == 2 {
-    0.8F
-  } else {
-    0.6F
-  }
-
-  let fog_start = clampf(1.0F - settings.exposure * 0.35F, 0.2F, 2.0F)
-  let fog_end = clampf(8.0F + settings.exposure * 1.6F, 3.0F, 14.0F)
-  let fog_color = @render2d.Color::new(
-    clamp01(0.10F * scene_factor + tint_r * 0.06F),
-    clamp01(0.11F * scene_factor + tint_g * 0.06F),
-    clamp01(0.12F * scene_factor + tint_b * 0.06F),
-    1.0F,
-  )
-
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      fog_color,
-      @render3d.FogFalloff3d::linear(fog_start, fog_end),
-    ),
-  )
-
+  let tonemapping = tonemapping_mode(state.tonemap_mode)
+  let color_grading = color_grading_from_settings(settings)
   let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
-  if ambient.get_ref_mut(tick) is Some(value) {
-    let brightness = clampf(
-      0.01F + exposure_scale * 0.015F * scene_factor,
-      0.0F,
-      0.08F,
-    )
-    value.val = @render3d.GlobalAmbientLight::new(
-      @render2d.Color::white(),
-      brightness,
-    )
+
+  let tonemapping_store = world.get_tonemapping_store()
+  if tonemapping_store.contains(camera_entity) {
+    tonemapping_store.set(camera_entity, tonemapping, tick) |> ignore
+  } else {
+    tonemapping_store.insert(camera_entity, tonemapping, tick)
+  }
+
+  let color_grading_store = world.get_color_grading_store()
+  if color_grading_store.contains(camera_entity) {
+    color_grading_store.set(camera_entity, color_grading, tick) |> ignore
+  } else {
+    color_grading_store.insert(camera_entity, color_grading, tick)
   }
 }
 
@@ -979,9 +856,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     selected_parameter: 0,
     hide_ui: false,
     ui_text: None,
+    camera: None,
     directional_light: None,
     point_light: None,
-    materials: [],
     scene_entities: [],
     settings: build_recommended_settings(),
   }

@@ -4,22 +4,24 @@
 ///|
 /// ECS component types discovered via `#ecs.component`.
 pub let ecs_components : Array[String] = [
-  "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Vignette", "SpotLight",
-  "Wireframe", "FreeCamera", "LightProbe", "MotionBlur", "PointLight", "NoWireframe",
-  "Tonemapping", "DebandDither", "DepthPrepass", "NormalPrepass", "ContactShadows",
-  "MeshMaterial3d", "TemporalJitter", "WireframeColor", "DeferredPrepass", "FreeCameraState",
-  "NotShadowCaster", "SubCameraView3d", "DirectionalLight", "IrradianceVolume", "OcclusionCulling",
-  "SpotLightTexture", "NotShadowReceiver", "PointLightTexture", "CameraProjection3d",
-  "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass",
-  "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
-  "ScreenSpaceTransmission", "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight",
-  "OrderIndependentTransparencySettings",
+  "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Exposure", "Vignette",
+  "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur", "PointLight",
+  "NoWireframe", "Tonemapping", "ColorGrading", "DebandDither", "DepthPrepass", "ForwardDecal",
+  "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d", "TemporalJitter",
+  "WireframeColor", "DeferredPrepass", "FreeCameraState", "NotShadowCaster", "SubCameraView3d",
+  "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "SpotLightTexture",
+  "NotShadowReceiver", "PointLightTexture", "CameraProjection3d", "ParallaxCorrection",
+  "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing",
+  "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture", "ForwardDecalMaterialExt",
+  "ScreenSpaceTransmission", "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion",
+  "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
 ]
 
 ///|
 /// ECS resource types discovered via `#ecs.resource`.
 pub let ecs_resources : Array[String] = [
-  "WireframeConfig", "GlobalAmbientLight", "DefaultOpaqueRendererMethod",
+  "WireframeConfig", "GlobalAmbientLight", "PointLightShadowMap", "DirectionalLightShadowMap",
+  "DefaultOpaqueRendererMethod",
 ]
 
 ///|
@@ -55,6 +57,11 @@ pub(open) trait Has_Skybox {
 ///|
 pub(open) trait Has_Camera3d {
   get_camera3d_store(self : Self) -> @core.ComponentStore[Camera3d]
+}
+
+///|
+pub(open) trait Has_Exposure {
+  get_exposure_store(self : Self) -> @core.ComponentStore[Exposure]
 }
 
 ///|
@@ -103,6 +110,11 @@ pub(open) trait Has_Tonemapping {
 }
 
 ///|
+pub(open) trait Has_ColorGrading {
+  get_color_grading_store(self : Self) -> @core.ComponentStore[ColorGrading]
+}
+
+///|
 pub(open) trait Has_DebandDither {
   get_deband_dither_store(self : Self) -> @core.ComponentStore[DebandDither]
 }
@@ -113,8 +125,18 @@ pub(open) trait Has_DepthPrepass {
 }
 
 ///|
+pub(open) trait Has_ForwardDecal {
+  get_forward_decal_store(self : Self) -> @core.ComponentStore[ForwardDecal]
+}
+
+///|
 pub(open) trait Has_NormalPrepass {
   get_normal_prepass_store(self : Self) -> @core.ComponentStore[NormalPrepass]
+}
+
+///|
+pub(open) trait Has_ClusteredDecal {
+  get_clustered_decal_store(self : Self) -> @core.ComponentStore[ClusteredDecal]
 }
 
 ///|
@@ -271,9 +293,23 @@ pub(open) trait Has_DirectionalLightTexture {
 }
 
 ///|
+pub(open) trait Has_ForwardDecalMaterialExt {
+  get_forward_decal_material_ext_store(self : Self) -> @core.ComponentStore[
+    ForwardDecalMaterialExt,
+  ]
+}
+
+///|
 pub(open) trait Has_ScreenSpaceTransmission {
   get_screen_space_transmission_store(self : Self) -> @core.ComponentStore[
     ScreenSpaceTransmission,
+  ]
+}
+
+///|
+pub(open) trait Has_TransmittedShadowReceiver {
+  get_transmitted_shadow_receiver_store(self : Self) -> @core.ComponentStore[
+    TransmittedShadowReceiver,
   ]
 }
 
@@ -307,6 +343,20 @@ pub(open) trait HasRes_WireframeConfig {
 pub(open) trait HasRes_GlobalAmbientLight {
   get_global_ambient_light_resource(self : Self) -> @core.Resource[
     GlobalAmbientLight,
+  ]
+}
+
+///|
+pub(open) trait HasRes_PointLightShadowMap {
+  get_point_light_shadow_map_resource(self : Self) -> @core.Resource[
+    PointLightShadowMap,
+  ]
+}
+
+///|
+pub(open) trait HasRes_DirectionalLightShadowMap {
+  get_directional_light_shadow_map_resource(self : Self) -> @core.Resource[
+    DirectionalLightShadowMap,
   ]
 }
 

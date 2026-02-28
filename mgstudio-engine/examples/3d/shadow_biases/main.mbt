@@ -15,8 +15,8 @@
 ///|
 /// Port of `bevy/examples/3d/shadow_biases.rs`.
 ///
-/// Baseline parity: blocked until full shadow-map filtering backend parity
-/// (bias + filtering behavior) is completed.
+/// Parity note: controls and component wiring follow Bevy. Visual output still
+/// depends on current backend shadow quality.
 
 ///|
 const SHADOW_BIASES_POINT_INTENSITY : Float = 1_000_000.0F
@@ -68,15 +68,6 @@ let shadow_biases_state : Ref[ShadowBiasesState] = Ref::new({
   directional_normal_bias: @render3d.DirectionalLight::default().shadow_normal_bias,
   help_text: None,
 })
-
-///|
-fn clamp_non_negative(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else {
-    value
-  }
-}
 
 ///|
 fn float_from_int(value : Int) -> Float {
@@ -361,57 +352,43 @@ fn update(world : @ecs_world.World) -> Unit {
   }
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    shadow_biases_state.val.point_depth_bias = clamp_non_negative(
-      shadow_biases_state.val.point_depth_bias - SHADOW_BIASES_POINT_DEPTH_STEP,
-    )
+    shadow_biases_state.val.point_depth_bias = shadow_biases_state.val.point_depth_bias -
+      SHADOW_BIASES_POINT_DEPTH_STEP
     light_changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    shadow_biases_state.val.point_depth_bias = clamp_non_negative(
-      shadow_biases_state.val.point_depth_bias + SHADOW_BIASES_POINT_DEPTH_STEP,
-    )
+    shadow_biases_state.val.point_depth_bias = shadow_biases_state.val.point_depth_bias +
+      SHADOW_BIASES_POINT_DEPTH_STEP
     light_changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    shadow_biases_state.val.point_normal_bias = clamp_non_negative(
-      shadow_biases_state.val.point_normal_bias -
-      SHADOW_BIASES_POINT_NORMAL_STEP,
-    )
+    shadow_biases_state.val.point_normal_bias = shadow_biases_state.val.point_normal_bias -
+      SHADOW_BIASES_POINT_NORMAL_STEP
     light_changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    shadow_biases_state.val.point_normal_bias = clamp_non_negative(
-      shadow_biases_state.val.point_normal_bias +
-      SHADOW_BIASES_POINT_NORMAL_STEP,
-    )
+    shadow_biases_state.val.point_normal_bias = shadow_biases_state.val.point_normal_bias +
+      SHADOW_BIASES_POINT_NORMAL_STEP
     light_changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    shadow_biases_state.val.directional_depth_bias = clamp_non_negative(
-      shadow_biases_state.val.directional_depth_bias -
-      SHADOW_BIASES_DIRECTIONAL_DEPTH_STEP,
-    )
+    shadow_biases_state.val.directional_depth_bias = shadow_biases_state.val.directional_depth_bias -
+      SHADOW_BIASES_DIRECTIONAL_DEPTH_STEP
     light_changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    shadow_biases_state.val.directional_depth_bias = clamp_non_negative(
-      shadow_biases_state.val.directional_depth_bias +
-      SHADOW_BIASES_DIRECTIONAL_DEPTH_STEP,
-    )
+    shadow_biases_state.val.directional_depth_bias = shadow_biases_state.val.directional_depth_bias +
+      SHADOW_BIASES_DIRECTIONAL_DEPTH_STEP
     light_changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit7) {
-    shadow_biases_state.val.directional_normal_bias = clamp_non_negative(
-      shadow_biases_state.val.directional_normal_bias -
-      SHADOW_BIASES_DIRECTIONAL_NORMAL_STEP,
-    )
+    shadow_biases_state.val.directional_normal_bias = shadow_biases_state.val.directional_normal_bias -
+      SHADOW_BIASES_DIRECTIONAL_NORMAL_STEP
     light_changed = true
   }
   if @input.key_just_pressed(@window.KeyCode::Digit8) {
-    shadow_biases_state.val.directional_normal_bias = clamp_non_negative(
-      shadow_biases_state.val.directional_normal_bias +
-      SHADOW_BIASES_DIRECTIONAL_NORMAL_STEP,
-    )
+    shadow_biases_state.val.directional_normal_bias = shadow_biases_state.val.directional_normal_bias +
+      SHADOW_BIASES_DIRECTIONAL_NORMAL_STEP
     light_changed = true
   }
 

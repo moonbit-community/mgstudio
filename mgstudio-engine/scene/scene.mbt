@@ -17,13 +17,15 @@
 ///
 /// Current scope:
 /// - Bevy-like `SceneRoot` component and spawn-once runtime behavior.
-/// - glTF scene key path (`GltfAssetLabel::Scene(..).from_asset(..)`).
+/// - glTF scene/animation key paths
+///   (`GltfAssetLabel::{Scene,Animation}(..).from_asset(..)`).
 /// - Runtime glTF loading path for `.gltf + .bin + textures` (subset used by
 ///   current 3D parity examples).
 
 ///|
 pub(all) enum GltfAssetLabel {
   Scene(Int)
+  Animation(Int)
 }
 
 ///|
@@ -33,6 +35,7 @@ pub fn GltfAssetLabel::from_asset(
 ) -> String {
   match self {
     Scene(index) => asset_path + "#Scene" + index.to_string()
+    Animation(index) => asset_path + "#Animation" + index.to_string()
   }
 }
 
@@ -42,6 +45,7 @@ pub struct SceneNode3d {
   material : @render3d.MeshMaterial3d
   transform : @math.Transform
   visibility_range : @visibility.VisibilityRange?
+  animation_target : @animation.AnimationTargetId?
 }
 
 ///|
@@ -50,8 +54,9 @@ pub fn SceneNode3d::new(
   material : @render3d.MeshMaterial3d,
   transform : @math.Transform,
   visibility_range : @visibility.VisibilityRange?,
+  animation_target : @animation.AnimationTargetId?,
 ) -> SceneNode3d {
-  SceneNode3d::{ mesh, material, transform, visibility_range }
+  SceneNode3d::{ mesh, material, transform, visibility_range, animation_target }
 }
 
 ///|
@@ -173,6 +178,11 @@ let gltf_scene_registry : Ref[Array[(String, @asset.Handle[Scene])]] = Ref::new(
 )
 
 ///|
+let gltf_animation_registry : Ref[
+  Array[(String, @asset.Handle[@animation.AnimationClip])],
+] = Ref::new([])
+
+///|
 let gltf_lod_visibility_policy : Ref[GltfLodVisibilityPolicy] = Ref::new(
   GltfLodVisibilityPolicy::default(),
 )
@@ -205,18 +215,30 @@ fn scene_registry_get(asset_path : String) -> @asset.Handle[Scene]? {
 }
 
 ///|
+fn scene_animation_registry_get(
+  asset_path : String,
+) -> @asset.Handle[@animation.AnimationClip]? {
+  for entry in gltf_animation_registry.val {
+    if entry.0 == asset_path {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
 pub fn scene_register_gltf_scene(
   asset_path : String,
   scene : Scene,
 ) -> @asset.Handle[Scene] {
   if scene_registry_get(asset_path) is Some(handle) {
-    scene_pending_remove_handle(handle)
+    scene_pending_remove_scene_handle(handle)
     scene_assets.val.set(handle, scene) |> ignore
     return handle
   }
   let handle = scene_assets.val.add(scene)
   gltf_scene_registry.val.push((asset_path, handle))
-  scene_pending_remove_handle(handle)
+  scene_pending_remove_scene_handle(handle)
   handle
 }
 
@@ -235,6 +257,20 @@ pub fn scene_load_gltf_scene(
 }
 
 ///|
+pub fn scene_load_gltf_animation(
+  asset_server : @asset.AssetServer,
+  asset_path : String,
+) -> @asset.Handle[@animation.AnimationClip] {
+  if scene_animation_registry_get(asset_path) is Some(handle) {
+    return handle
+  }
+  let handle = @animation.animation_clip_add(@animation.AnimationClip::new())
+  gltf_animation_registry.val.push((asset_path, handle))
+  scene_queue_gltf_animation_request(asset_server, handle, asset_path)
+  handle
+}
+
+///|
 pub fn scene_get(handle : @asset.Handle[Scene]) -> Scene? {
   scene_assets.val.get(handle)
 }
@@ -245,7 +281,7 @@ pub fn[W] scene_load_pending_system(_world : W) -> Unit {
 }
 
 ///|
-pub(open) trait SceneSpawnWorld: Has_SceneRoot + Has_SceneInstanceReady + @core.SpawnWorld + @core.ChangeTickWorld + @hierarchy.Has_Parent + @math.Has_Transform + @render3d.Has_Mesh3d + @render3d.Has_MeshMaterial3d + @visibility.Has_VisibilityRange {
+pub(open) trait SceneSpawnWorld: Has_SceneRoot + Has_SceneInstanceReady + @core.SpawnWorld + @core.ChangeTickWorld + @hierarchy.Has_Parent + @math.Has_Transform + @render3d.Has_Mesh3d + @render3d.Has_MeshMaterial3d + @visibility.Has_VisibilityRange + @animation.Has_AnimationTargetId + @animation.Has_AnimatedBy + @animation.Has_AnimationPlayer {
 }
 
 ///|
@@ -257,6 +293,9 @@ pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(world : W) -> Unit {
   let transform_store = world.get_transform_store()
   let parent_store = world.get_parent_store()
   let visibility_range_store = world.get_visibility_range_store()
+  let animation_target_store = world.get_animation_target_id_store()
+  let animated_by_store = world.get_animated_by_store()
+  let animation_player_store = world.get_animation_player_store()
   let tick = world.read_change_tick()
 
   let pending_roots : Array[(@core.Entity, SceneRoot)] = []
@@ -273,6 +312,13 @@ pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(world : W) -> Unit {
     if !scene.ready {
       continue
     }
+    if !animation_player_store.contains(root_entity) {
+      animation_player_store.insert(
+        root_entity,
+        @animation.AnimationPlayer::default(),
+        tick,
+      )
+    }
     let mut spawned_entities = 0
     for node in scene.nodes3d {
       let child = world.spawn_empty()
@@ -282,6 +328,14 @@ pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(world : W) -> Unit {
       parent_store.insert(child, @hierarchy.Parent::new(root_entity), tick)
       if node.visibility_range is Some(range) {
         visibility_range_store.insert(child, range, tick)
+      }
+      if node.animation_target is Some(target_id) {
+        animation_target_store.insert(child, target_id, tick)
+        animated_by_store.insert(
+          child,
+          @animation.AnimatedBy::new(root_entity),
+          tick,
+        )
       }
       spawned_entities = spawned_entities + 1
     }

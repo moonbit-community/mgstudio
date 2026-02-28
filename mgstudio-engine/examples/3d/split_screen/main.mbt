@@ -15,9 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/split_screen.rs`.
 ///
-/// Baseline parity: camera rotation controls are mapped to keyboard input
-/// (`1~4` select camera, `Left/Right` rotate selected camera), replacing Bevy's
-/// per-viewport UI buttons.
+/// Parity notes:
+/// - Keeps keyboard controls (`1~4`, `Left/Right`) for deterministic fallback.
+/// - Adds primary-pointer click/drag controls as a lightweight fallback for
+///   Bevy's per-viewport `UiTargetCamera` button interactions.
 
 ///|
 priv struct SplitScreenState {
@@ -34,7 +35,18 @@ let split_screen_state : Ref[SplitScreenState] = Ref::new({
 })
 
 ///|
-const INSTRUCTIONS : String = "Split Screen Controls\n---------------------\n1/2/3/4: Select camera\nLeft/Right: Rotate selected camera"
+const INSTRUCTIONS : String = "Split Screen Controls\n---------------------\n1/2/3/4: Select camera\nLeft/Right: Rotate selected camera\nPrimary pointer click: select viewport camera\nPrimary pointer drag: rotate selected camera"
+
+///|
+const FOX_SCENE_ASSET : String = "models/animated/Fox.glb"
+
+///|
+const POINTER_ROTATION_SPEED : Float = 0.005F
+
+///|
+fn float_from_int(value : Int) -> Float {
+  Float::from_double(value.to_double())
+}
 
 ///|
 fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
@@ -64,26 +76,21 @@ fn setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  // Scene content (fox placeholder): a few cubes at different heights.
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.85F, 0.82F, 0.76F, 1.0F),
+  // Bevy parity: use Fox scene as split-screen content.
+  let asset_server = @asset.AssetServer::new()
+  let fox_scene = world.spawn_empty()
+  world
+  .get_scene_root_store()
+  .insert(
+    fox_scene,
+    @scene.SceneRoot::new(
+      @scene.scene_load_gltf_scene(
+        asset_server,
+        @scene.GltfAssetLabel::Scene(0).from_asset(FOX_SCENE_ASSET),
+      ),
     ),
+    tick,
   )
-  let cube_mesh = @render3d.Mesh3d::from_cuboid(20.0F, 20.0F, 20.0F)
-  for x in -2..<3 {
-    for z in -2..<3 {
-      let fx = Float::from_double(x.to_double()) * 28.0F
-      let fz = Float::from_double(z.to_double()) * 28.0F
-      let height = if (x + z) % 2 == 0 { 10.0F } else { 20.0F }
-      @render3d.MeshMaterial3dBundle::new(
-        cube_mesh,
-        @render3d.MeshMaterial3d::new(cube_material),
-        @math.Transform::from_xyz(fx, height, fz),
-      ).spawn(world)
-      |> ignore
-    }
-  }
 
   // Light
   let light = world.spawn_empty()
@@ -129,7 +136,6 @@ fn setup(world : @ecs_world.World) -> Unit {
     )
   }
 
-  let asset_server = @asset.AssetServer::new()
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
     @text.Text2d::new(INSTRUCTIONS),
@@ -205,13 +211,36 @@ fn button_system(world : @ecs_world.World) -> Unit {
     split_screen_state.val.active_camera = 3
   }
 
-  let angle = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if @input.primary_pointer_just_pressed() {
+    if @input.primary_pointer_position() is Some(pointer_position) {
+      let safe_scale = if @window.window_scale_factor() <= 0.0F {
+        1.0F
+      } else {
+        @window.window_scale_factor()
+      }
+      let width = float_from_int(@window.window_width()) / safe_scale
+      let height = float_from_int(@window.window_height()) / safe_scale
+      if width > 0.0F && height > 0.0F {
+        let col = if pointer_position.x < width * 0.5F { 0 } else { 1 }
+        let row = if pointer_position.y < height * 0.5F { 0 } else { 1 }
+        split_screen_state.val.active_camera = row * 2 + col
+      }
+    }
+  }
+
+  let keyboard_angle = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     -0.1F
   } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
     0.1F
   } else {
     0.0F
   }
+  let pointer_angle = if @input.primary_pointer_pressed() {
+    @input.primary_pointer_delta().x * POINTER_ROTATION_SPEED
+  } else {
+    0.0F
+  }
+  let angle = keyboard_angle + pointer_angle
   if angle == 0.0F {
     return
   }

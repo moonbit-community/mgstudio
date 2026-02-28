@@ -200,7 +200,9 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   // Ground plane.
   let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_perceptual_roughness(
+      1.0F,
+    ),
   )
   spawn_mesh(
     world,
@@ -214,7 +216,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   let wall_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
       @render2d.Color::new(0.294F, 0.0F, 0.51F, 1.0F),
-    ),
+    ).with_perceptual_roughness(1.0F),
   )
   spawn_mesh(
     world,
@@ -239,7 +241,9 @@ fn setup(world : @ecs_world.World) -> Unit {
   let logo_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white())
     .with_base_color_texture(Some(logo_texture))
-    .with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F)),
+    .with_perceptual_roughness(1.0F)
+    .with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F))
+    .with_cull_mode(None),
   )
   let logo = spawn_mesh(
     world,
