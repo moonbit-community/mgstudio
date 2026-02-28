@@ -4714,7 +4714,7 @@ mod tests {
 
     #[test]
     fn parse_bc7_cubemap_ktx2() {
-        let path = repo_path("bevy/assets/textures/Ryfjallet_cubemap_bc7.ktx2");
+        let path = repo_path("mgstudio-engine/assets/textures/Ryfjallet_cubemap_bc7.ktx2");
         let bytes = std::fs::read(&path).expect("read ktx2");
         let parsed = parse_ktx2_texture(&bytes).expect("parse ktx2");
         assert_eq!(parsed.width, 512);
