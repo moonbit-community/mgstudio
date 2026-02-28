@@ -5947,6 +5947,11 @@ priv struct Camera3dInstance {
   generated_environment_map_light : GeneratedEnvironmentMapLight?
   depth_prepass_enabled : Bool
   deferred_prepass_enabled : Bool
+  hdr_enabled : Bool
+  fxaa : Fxaa?
+  temporal_jitter : TemporalJitter?
+  temporal_anti_aliasing : TemporalAntiAliasing?
+  motion_vector_prepass_enabled : Bool
   msaa : Msaa?
   transform : @math.Transform
   previous_transform : @math.Transform
@@ -6295,6 +6300,27 @@ fn render3d_float_clamp(
 }
 
 ///|
+fn render3d_fxaa_enabled(fxaa : Fxaa?) -> Bool {
+  match fxaa {
+    Some(value) => value.enabled
+    None => false
+  }
+}
+
+///|
+fn render3d_tonemap_postprocess_enabled(
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  hdr_enabled : Bool,
+  fxaa : Fxaa?,
+) -> Bool {
+  hdr_enabled ||
+  tonemapping is Some(_) ||
+  deband_dither is Some(Enabled) ||
+  render3d_fxaa_enabled(fxaa)
+}
+
+///|
 const RENDER3D_PASS_KIND_BASE_SCENE : Int = 0
 
 ///|
@@ -6351,8 +6377,13 @@ fn render3d_distance_fog_enabled(fog : DistanceFog) -> Bool {
     FogFalloff3d::Exponential(density) => density > 0.0F
     FogFalloff3d::ExponentialSquared(density) => density > 0.0F
     FogFalloff3d::Atmospheric(extinction, inscattering) =>
-      (extinction.x + extinction.y + extinction.z + inscattering.x +
-      inscattering.y + inscattering.z) > 0.0001F
+      extinction.x +
+      extinction.y +
+      extinction.z +
+      inscattering.x +
+      inscattering.y +
+      inscattering.z >
+      0.0001F
   }
 }
 
@@ -7492,6 +7523,51 @@ fn render3d_draw_camera_bloom(
     max_mip_dimension=settings.max_mip_dimension,
     scale_x=settings.scale.x,
     scale_y=settings.scale.y,
+    tonemapping_mode=match tonemapping {
+      Some(mode) => render3d_tonemapping_mode_to_int(mode)
+      None => 0
+    },
+    deband_dither_enabled=match deband_dither {
+      Some(Enabled) => 1
+      _ => 0
+    },
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+    agx_lut_texture_id=luts.agx.id(),
+    tony_lut_texture_id=luts.tony.id(),
+    blender_lut_texture_id=luts.blender.id(),
+  )
+}
+
+///|
+fn render3d_draw_camera_tonemap_only(
+  scene_texture_id : Int,
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let luts = render3d_tonemapping_lut_handles()
+  let bloom_defaults = render3d_bloom_sanitize(Bloom::default())
+  @window.host_gpu_draw_bloom2d(
+    scene_texture_id~,
+    enabled=0,
+    intensity=0.0F,
+    low_frequency_boost=bloom_defaults.low_frequency_boost,
+    low_frequency_boost_curvature=bloom_defaults.low_frequency_boost_curvature,
+    high_pass_frequency=bloom_defaults.high_pass_frequency,
+    threshold=bloom_defaults.prefilter.threshold,
+    threshold_softness=bloom_defaults.prefilter.threshold_softness,
+    composite_mode=match bloom_defaults.composite_mode {
+      EnergyConserving => 0
+      Additive => 1
+    },
+    max_mip_dimension=bloom_defaults.max_mip_dimension,
+    scale_x=bloom_defaults.scale.x,
+    scale_y=bloom_defaults.scale.y,
     tonemapping_mode=match tonemapping {
       Some(mode) => render3d_tonemapping_mode_to_int(mode)
       None => 0
@@ -8864,7 +8940,7 @@ fn render3d_draw_mesh_instance(
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + HasRes_DefaultOpaqueRendererMethod + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + Has_DepthPrepass + Has_DeferredPrepass + Has_Msaa + Has_ForwardDecal + Has_ForwardDecalMaterialExt + Has_ClusteredDecal + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + HasRes_DefaultOpaqueRendererMethod + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Hdr + Has_Fxaa + Has_TemporalJitter + Has_MotionVectorPrepass + Has_TemporalAntiAliasing + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + Has_DepthPrepass + Has_DeferredPrepass + Has_Msaa + Has_ForwardDecal + Has_ForwardDecalMaterialExt + Has_ClusteredDecal + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -8890,6 +8966,11 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let environment_map_light_store = world.get_environment_map_light_store()
   let generated_environment_map_light_store = world.get_generated_environment_map_light_store()
   let light_probe_store = world.get_light_probe_store()
+  let hdr_store = world.get_hdr_store()
+  let fxaa_store = world.get_fxaa_store()
+  let temporal_jitter_store = world.get_temporal_jitter_store()
+  let motion_vector_prepass_store = world.get_motion_vector_prepass_store()
+  let temporal_anti_aliasing_store = world.get_temporal_anti_aliasing_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
   let depth_prepass_store = world.get_depth_prepass_store()
@@ -8930,6 +9011,12 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let generated_environment_map_light = generated_environment_map_light_store.get(
       entity,
     )
+    let hdr_enabled = hdr_store.get(entity) is Some(_)
+    let fxaa = fxaa_store.get(entity)
+    let temporal_jitter = temporal_jitter_store.get(entity)
+    let motion_vector_prepass_enabled = motion_vector_prepass_store.get(entity)
+      is Some(_)
+    let temporal_anti_aliasing = temporal_anti_aliasing_store.get(entity)
     let depth_prepass_enabled = depth_prepass_store.get(entity) is Some(_)
     let deferred_prepass_enabled = deferred_prepass_store.get(entity) is Some(_)
     let msaa = msaa_store.get(entity)
@@ -8980,6 +9067,11 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           generated_environment_map_light,
           depth_prepass_enabled,
           deferred_prepass_enabled,
+          hdr_enabled,
+          fxaa,
+          temporal_jitter,
+          temporal_anti_aliasing,
+          motion_vector_prepass_enabled,
           msaa,
           transform,
           previous_transform,
@@ -9135,6 +9227,18 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       view_width,
       view_height,
     )
+    let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
+    let (sub_camera_view_bias_with_jitter_x, sub_camera_view_bias_with_jitter_y) = if temporal_aa_enabled &&
+      camera.temporal_jitter is Some(temporal_jitter) {
+      (
+        sub_camera_view_bias_x +
+        temporal_jitter.offset.x / Float::from_double(view_width.to_double()),
+        sub_camera_view_bias_y +
+        temporal_jitter.offset.y / Float::from_double(view_height.to_double()),
+      )
+    } else {
+      (sub_camera_view_bias_x, sub_camera_view_bias_y)
+    }
     let (camera_fov_y, camera_near, camera_far) = render3d_projection_params(
       camera.projection,
       aspect_ratio,
@@ -9220,10 +9324,21 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     }
     let transmission_enabled = transmission_blur_taps > 0
     let bloom_enabled = camera.bloom is Some(_)
+    let tonemap_postprocess_enabled = render3d_tonemap_postprocess_enabled(
+      camera.tonemapping,
+      camera.deband_dither,
+      camera.hdr_enabled,
+      camera.fxaa,
+    )
+    let motion_vector_prepass_enabled = motion_blur_active ||
+      camera.motion_vector_prepass_enabled ||
+      temporal_aa_enabled
     let fog_enabled = render3d_distance_fog_enabled(distance_fog)
     let decal_enabled = camera_forward_decal_enabled ||
       camera_clustered_decal_enabled
-    let postprocess_enabled = motion_blur_active || bloom_enabled
+    let postprocess_enabled = motion_blur_active ||
+      bloom_enabled ||
+      tonemap_postprocess_enabled
     let scene_pass_kind = render3d_pass_kind_encode(
       RENDER3D_PASS_KIND_BASE_SCENE,
       postprocess_enabled,
@@ -9238,14 +9353,16 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     )
     let mut scene_target_id = camera.target_id
     let mut velocity_target_id = -1
-    if motion_blur_active {
-      let (scene_id, velocity_id) = render3d_motion_blur_targets_get_or_create(
+    if motion_vector_prepass_enabled {
+      let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera.entity,
         view_width,
         view_height,
       )
-      scene_target_id = scene_id
-      velocity_target_id = velocity_id
+      if motion_blur_active {
+        scene_target_id = shared_scene_id
+      }
+      velocity_target_id = shared_velocity_id
       @window.host_gpu_begin_pass_3d(
         target_id=velocity_target_id,
         width=view_width_logical,
@@ -9302,8 +9419,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         spot_outer_angle=pass_lighting.spot_outer_angle,
         sub_camera_view_scale_x~,
         sub_camera_view_scale_y~,
-        sub_camera_view_bias_x~,
-        sub_camera_view_bias_y~,
+        sub_camera_view_bias_x=sub_camera_view_bias_with_jitter_x,
+        sub_camera_view_bias_y=sub_camera_view_bias_with_jitter_y,
         previous_camera_x=camera.previous_transform.translation.x,
         previous_camera_y=camera.previous_transform.translation.y,
         previous_camera_z=camera.previous_transform.translation.z,
@@ -9365,8 +9482,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       @window.host_gpu_end_pass()
     }
     if !motion_blur_active &&
-      (transmission_enabled || bloom_enabled) &&
-      (camera.target_id < 0 || bloom_enabled) {
+      (transmission_enabled || bloom_enabled || tonemap_postprocess_enabled) &&
+      (camera.target_id < 0 || bloom_enabled || tonemap_postprocess_enabled) {
       let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera.entity,
         view_width,
@@ -9431,8 +9548,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       spot_outer_angle=pass_lighting.spot_outer_angle,
       sub_camera_view_scale_x~,
       sub_camera_view_scale_y~,
-      sub_camera_view_bias_x~,
-      sub_camera_view_bias_y~,
+      sub_camera_view_bias_x=sub_camera_view_bias_with_jitter_x,
+      sub_camera_view_bias_y=sub_camera_view_bias_with_jitter_y,
       previous_camera_x=camera.previous_transform.translation.x,
       previous_camera_y=camera.previous_transform.translation.y,
       previous_camera_z=camera.previous_transform.translation.z,
@@ -9837,8 +9954,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         spot_outer_angle=pass_lighting.spot_outer_angle,
         sub_camera_view_scale_x~,
         sub_camera_view_scale_y~,
-        sub_camera_view_bias_x~,
-        sub_camera_view_bias_y~,
+        sub_camera_view_bias_x=sub_camera_view_bias_with_jitter_x,
+        sub_camera_view_bias_y=sub_camera_view_bias_with_jitter_y,
         previous_camera_x=camera.previous_transform.translation.x,
         previous_camera_y=camera.previous_transform.translation.y,
         previous_camera_z=camera.previous_transform.translation.z,
@@ -9945,7 +10062,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     if motion_blur_active &&
       camera.motion_blur is Some(motion_blur) &&
       velocity_target_id >= 0 {
-      if bloom_enabled {
+      if bloom_enabled || tonemap_postprocess_enabled {
         let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
           camera.entity,
           view_width,
@@ -10041,6 +10158,42 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         render3d_draw_camera_bloom(
           bloom_source_texture_id,
           bloom,
+          camera.tonemapping,
+          camera.deband_dither,
+          view_width_logical,
+          view_height_logical,
+        )
+        @window.host_gpu_end_pass()
+      }
+    } else if tonemap_postprocess_enabled {
+      let tonemap_source_texture_id = if final_source_texture_id >= 0 {
+        final_source_texture_id
+      } else {
+        scene_target_id
+      }
+      if tonemap_source_texture_id >= 0 {
+        @window.host_gpu_begin_pass(
+          target_id=camera.target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        render3d_draw_camera_tonemap_only(
+          tonemap_source_texture_id,
           camera.tonemapping,
           camera.deband_dither,
           view_width_logical,

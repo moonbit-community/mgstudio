@@ -26,12 +26,14 @@ const PI : Float = 3.141592653589793F
 priv struct FogExampleState {
   mut camera : @core.Entity?
   mut help_text : @text.TextHandle?
+  mut fog : @render3d.DistanceFog
 }
 
 ///|
 let fog_example_state : Ref[FogExampleState] = Ref::new({
   camera: None,
   help_text: None,
+  fog: @render3d.DistanceFog::default(),
 })
 
 ///|
@@ -122,20 +124,21 @@ fn spawn_mesh(
 
 ///|
 fn setup_camera_fog(world : @ecs_world.World) -> Unit {
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  fog_example_state.val.camera = Some(camera)
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
-      @render3d.FogFalloff3d::linear(5.0F, 20.0F),
-    ),
+  let initial_fog = @render3d.DistanceFog::new(
+    @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+    @render3d.FogFalloff3d::linear(5.0F, 20.0F),
   )
+  let camera = @render3d.Camera3dBundle::new(
+      @render2d.Camera::default(),
+      @math.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_distance_fog(Some(initial_fog))
+    .spawn(world)
+  fog_example_state.val.camera = Some(camera)
+  fog_example_state.val.fog = initial_fog
 }
 
 ///|
@@ -213,7 +216,12 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
     @render3d.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(136.0F / 255.0F, 136.0F / 255.0F, 136.0F / 255.0F, 1.0F),
+        @render2d.Color::new(
+          136.0F / 255.0F,
+          136.0F / 255.0F,
+          136.0F / 255.0F,
+          1.0F,
+        ),
       )
       .with_unlit(true)
       .with_cull_mode(None),
@@ -284,10 +292,7 @@ fn setup_instructions(_world : @ecs_world.World) -> Unit {
     .spawn()
   fog_example_state.val.help_text = Some(handle)
 
-  @text.text_set_content(
-    handle,
-    fog_help_text(@render3d.render3d_distance_fog()),
-  )
+  @text.text_set_content(handle, fog_help_text(fog_example_state.val.fog))
 }
 
 ///|
@@ -297,8 +302,9 @@ fn update_system(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
 
   guard fog_example_state.val.camera is Some(camera) else { return }
+  let camera3d_store = world.get_camera3d_store()
   let transform_store = world.get_transform_store()
-  let mut fog = @render3d.render3d_distance_fog()
+  let mut fog = fog_example_state.val.fog
 
   let orbit_scale = 8.0F + @math.sin(now / 10.0F) * 7.0F
   let camera_transform = @math.Transform::from_xyz(
@@ -440,7 +446,13 @@ fn update_system(world : @ecs_world.World) -> Unit {
   }
   fog = fog.with_color(color)
 
-  @render3d.render3d_set_distance_fog(fog)
+  let camera3d = match camera3d_store.get(camera) {
+    Some(value) => value
+    None => @render3d.Camera3d::default()
+  }
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
+  |> ignore
+  fog_example_state.val.fog = fog
 
   if fog_example_state.val.help_text is Some(text_handle) {
     @text.text_set_content(text_handle, fog_help_text(fog))
@@ -451,6 +463,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
 fn setup(world : @ecs_world.World) -> Unit {
   fog_example_state.val.camera = None
   fog_example_state.val.help_text = None
+  fog_example_state.val.fog = @render3d.DistanceFog::default()
   setup_camera_fog(world)
   setup_pyramid_scene(world)
   setup_instructions(world)

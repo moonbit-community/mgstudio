@@ -70,6 +70,7 @@ const TERRAIN_ROWS : Int = 28
 
 ///|
 priv struct AtmosphericFogState {
+  mut camera : @core.Entity?
   mut fog_enabled : Bool
   mut directional_influence_enabled : Bool
   mut help_text : @text.TextHandle?
@@ -77,6 +78,7 @@ priv struct AtmosphericFogState {
 
 ///|
 let atmospheric_fog_state : Ref[AtmosphericFogState] = Ref::new({
+  camera: None,
   fog_enabled: true,
   directional_influence_enabled: true,
   help_text: None,
@@ -93,7 +95,7 @@ fn fog_center() -> @math.Vec3 {
 }
 
 ///|
-fn apply_fog() -> Unit {
+fn make_fog() -> @render3d.DistanceFog {
   let fog_alpha = if atmospheric_fog_state.val.fog_enabled {
     1.0F
   } else {
@@ -104,34 +106,38 @@ fn apply_fog() -> Unit {
   } else {
     0.0F
   }
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::default()
-    .with_color(@render2d.Color::srgba(FOG_BASE_R, FOG_BASE_G, FOG_BASE_B, fog_alpha))
-    .with_directional_light_color(
-      @render2d.Color::srgba(
-        FOG_SUN_R,
-        FOG_SUN_G,
-        FOG_SUN_B,
-        directional_alpha,
+  @render3d.DistanceFog::default()
+  .with_color(
+    @render2d.Color::srgba(FOG_BASE_R, FOG_BASE_G, FOG_BASE_B, fog_alpha),
+  )
+  .with_directional_light_color(
+    @render2d.Color::srgba(FOG_SUN_R, FOG_SUN_G, FOG_SUN_B, directional_alpha),
+  )
+  .with_directional_light_exponent(FOG_INSCATTER_EXPONENT)
+  .with_falloff(
+    @render3d.FogFalloff3d::from_visibility_colors(
+      FOG_VISIBILITY,
+      @render2d.Color::srgb(
+        FOG_EXTINCTION_R,
+        FOG_EXTINCTION_G,
+        FOG_EXTINCTION_B,
       ),
-    )
-    .with_directional_light_exponent(FOG_INSCATTER_EXPONENT)
-    .with_falloff(
-      @render3d.FogFalloff3d::from_visibility_colors(
-        FOG_VISIBILITY,
-        @render2d.Color::srgb(
-          FOG_EXTINCTION_R,
-          FOG_EXTINCTION_G,
-          FOG_EXTINCTION_B,
-        ),
-        @render2d.Color::srgb(
-          FOG_INSCATTER_R,
-          FOG_INSCATTER_G,
-          FOG_INSCATTER_B,
-        ),
-      ),
+      @render2d.Color::srgb(FOG_INSCATTER_R, FOG_INSCATTER_G, FOG_INSCATTER_B),
     ),
   )
+}
+
+///|
+fn apply_fog(world : @ecs_world.World) -> Unit {
+  guard atmospheric_fog_state.val.camera is Some(camera) else { return }
+  let tick = world.read_change_tick()
+  let camera3d_store = world.get_camera3d_store()
+  let camera3d = match camera3d_store.get(camera) {
+    Some(value) => value
+    None => @render3d.Camera3d::default()
+  }
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(make_fog())), tick)
+  |> ignore
 }
 
 ///|
@@ -151,15 +157,17 @@ fn instruction_text() -> String {
 
 ///|
 fn setup_camera_fog(world : @ecs_world.World) -> Unit {
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
-      fog_center(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
-  apply_fog()
+  let camera = @render3d.Camera3dBundle::new(
+      @render2d.Camera::default(),
+      @math.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
+        fog_center(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_distance_fog(Some(make_fog()))
+    .spawn(world)
+  atmospheric_fog_state.val.camera = Some(camera)
+  apply_fog(world)
 }
 
 ///|
@@ -181,9 +189,9 @@ fn spawn_mesh(
 fn setup_terrain_scene(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
-  .with_first_cascade_far_bound(0.3F)
-  .with_maximum_distance(3.0F)
-  .build()
+    .with_first_cascade_far_bound(0.3F)
+    .with_maximum_distance(3.0F)
+    .build()
   let sun = world.spawn_empty()
   world
   .get_transform_store()
@@ -273,7 +281,7 @@ fn setup_instructions(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_system(_world : @ecs_world.World) -> Unit {
+fn toggle_system(world : @ecs_world.World) -> Unit {
   let mut changed = false
 
   if @input.key_just_pressed(@window.KeyCode::Space) {
@@ -287,7 +295,7 @@ fn toggle_system(_world : @ecs_world.World) -> Unit {
   }
 
   if changed {
-    apply_fog()
+    apply_fog(world)
     if atmospheric_fog_state.val.help_text is Some(handle) {
       @text.text_set_content(handle, instruction_text())
     }
@@ -296,6 +304,7 @@ fn toggle_system(_world : @ecs_world.World) -> Unit {
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
+  atmospheric_fog_state.val.camera = None
   atmospheric_fog_state.val.fog_enabled = true
   atmospheric_fog_state.val.directional_influence_enabled = true
   atmospheric_fog_state.val.help_text = None
@@ -303,7 +312,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   setup_camera_fog(world)
   setup_terrain_scene(world)
   setup_instructions(world)
-  apply_fog()
+  apply_fog(world)
 }
 
 ///|
