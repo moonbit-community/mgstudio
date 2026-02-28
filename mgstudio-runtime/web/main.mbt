@@ -318,7 +318,7 @@ async fn load_wasm(
     )
   }
   let fallback = response.clone()
-  // Keep Web instantiation options empty to match the Native (wasmoon) ABI.
+  // Keep Web instantiation options empty to match native runtime ABI.
   // In particular, we do NOT enable the JS builtin string mode here.
   let wasm_options = @js.new_object()
   let instance = try {

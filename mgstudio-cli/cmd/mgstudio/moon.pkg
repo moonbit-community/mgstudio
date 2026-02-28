@@ -13,7 +13,6 @@ import {
   "moonbitlang/x/codec/base64",
   "moonbitlang/x/json5",
   "moonbitlang/x/sys",
-  "Milky2018/mgstudio-runtime-native" @native_rt,
 }
 
 options(

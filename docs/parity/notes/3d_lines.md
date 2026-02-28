@@ -29,9 +29,7 @@
 - Check commands:
   - `moon -C mgstudio-engine check`
   - `moon -C mgstudio-runtime/web check`
-  - `moon -C mgstudio-runtime/native check`
   - `cargo check -q` (in `mgstudio-runtime/native-wasmtime`)
   - `python3 scripts/check_host_abi.py`
 
 ## Follow-up Tasks
-

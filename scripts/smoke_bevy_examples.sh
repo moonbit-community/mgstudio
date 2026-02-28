@@ -80,8 +80,8 @@ for pkg in "${RUNTIME_EXAMPLES[@]}"; do
     continue
   fi
 
-  echo "[smoke] timeout 10s mgstudio run --backend wasmtime --game ${game_json}"
-  if ! timeout 10s mgstudio run --backend wasmtime --game "${game_json}"; then
+  echo "[smoke] timeout 10s mgstudio run --game ${game_json}"
+  if ! timeout 10s mgstudio run --game "${game_json}"; then
     rc=$?
     if [[ "${rc}" -eq 124 ]]; then
       echo "[smoke] timeout reached (treated as pass): ${pkg}"

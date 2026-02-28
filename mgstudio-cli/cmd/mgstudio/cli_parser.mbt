@@ -39,10 +39,6 @@ fn make_cli_parser() -> @clap.Parser {
             nargs=@clap.Nargs::AtMost(1U),
             help="Path to game config file. If omitted, search for ./moon.game.json from current directory upwards.",
           ),
-          "backend": @clap.Arg::named(
-            nargs=@clap.Nargs::AtMost(1U),
-            help="Native backend: wasmoon (default) | wasmtime (Rust, experimental).",
-          ),
         },
       ),
       "serve": @clap.SubCommand::new(

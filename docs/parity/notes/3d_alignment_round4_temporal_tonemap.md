@@ -39,7 +39,6 @@ Date: 2026-02-28
 - `moon check -p examples/3d/scrolling_fog`
 - `moon check -p examples/3d/volumetric_fog`
 - `moon check` in `mgstudio-runtime/web`
-- `moon check` in `mgstudio-runtime/native`
 - `cargo build --release` in `mgstudio-runtime/native-wasmtime`
 - `for pkg in $(find examples/3d -mindepth 1 -maxdepth 1 -type d | sort); do moon check -p "$pkg"; done`
 - `./scripts/smoke_bevy_examples.sh`

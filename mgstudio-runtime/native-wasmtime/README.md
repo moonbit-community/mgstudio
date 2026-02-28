@@ -5,9 +5,6 @@ A reference native runtime for **mgstudio** implemented in Rust (Cargo), using:
 - `wasmtime` (Wasm runtime; intended to run `wasm` carts built by MoonBit)
 - `wgpu` + `winit` (windowing + GPU)
 
-This runtime is designed to be a side-by-side comparison with the existing
-MoonBit/wasmoon native runtime (`mgstudio-runtime/native`).
-
 ## Build
 
 ```bash
@@ -27,7 +24,7 @@ During bring-up you can run it directly:
 
 ## Run (via mgstudio CLI)
 
-`mgstudio run --backend wasmtime` is treated as **experimental**.
+`mgstudio run` uses this runtime.
 
 The CLI expects the runtime binary either:
 

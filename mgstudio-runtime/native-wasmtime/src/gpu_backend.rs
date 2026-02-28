@@ -5,8 +5,8 @@ use anyhow::{anyhow, Context};
 use wgpu::util::DeviceExt as _;
 use winit::window::Window;
 
-// This module is a Rust port of the existing MoonBit native runtime's wgpu backend
-// (mgstudio-runtime/native/wgpu_backend.mbt). It implements the same high-level
+// This module is a Rust port of the former MoonBit native runtime wgpu backend.
+// It implements the same high-level
 // host contract used by mgstudio-engine (begin_frame/begin_pass/draw/end_pass/end_frame)
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
@@ -608,7 +608,7 @@ impl GpuBackend {
         if let Some(st) = frame.surface_tex.take() {
             st.present();
         }
-        // Keep the device progressing (similar intent to wgpu-native's process_events()).
+        // Keep the device progressing to flush deferred GPU work.
         let _ = self.device.poll(wgpu::PollType::Poll);
         self.frame_count = self.frame_count.wrapping_add(1);
 

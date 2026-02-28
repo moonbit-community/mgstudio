@@ -19,13 +19,13 @@
 
 - `WASM/Web` and `native-wasmtime` now provide host touch streams (id/phase/position) to `Touches`.
 - Platform-specific touch metadata from Bevy (`force`, advanced gesture/device details) is not implemented yet.
-- `native` (wasmoon + Cocoa window backend) currently has no touch source wired, so the stream is empty there.
+- Legacy MoonBit native runtime (Cocoa backend) had no touch source wired, so the stream was empty there.
 
 ## Runtime Constraints
 
 - WASM/Web: Pointer touch events are forwarded to `input_touch_event_*`.
 - Native runtime (wasmtime): `winit::WindowEvent::Touch` is forwarded to `input_touch_event_*`.
-- Native runtime (wasmoon/Cocoa backend): touch input path is currently unavailable.
+- Legacy native runtime (Cocoa backend): touch input path was unavailable.
 
 ## Validation Evidence
 
@@ -35,4 +35,4 @@
 
 ## Follow-up Tasks
 
-- Remaining blockers: Add touch source for wasmoon/Cocoa backend and implement full Bevy touch metadata parity.
+- Remaining blockers (historical): add touch source for native Cocoa backend and implement full Bevy touch metadata parity.

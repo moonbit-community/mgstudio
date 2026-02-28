@@ -120,43 +120,27 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           ./scripts/smoke_bevy_examples.sh
 
-  runtime-native:
-    name: runtime/native (moon check/test)
+  runtime-native-wasmtime:
+    name: runtime/native-wasmtime (cargo check/test)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install MoonBit
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon version
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Update MoonBit registry
+      - name: cargo check
         shell: bash
         run: |
           set -euo pipefail
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon update
+          cargo check --manifest-path mgstudio-runtime/native-wasmtime/Cargo.toml
 
-      - name: moon check
+      - name: cargo test
         shell: bash
         run: |
           set -euo pipefail
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/native clean
-          moon -C mgstudio-runtime/native check
-
-      - name: moon test
-        shell: bash
-        run: |
-          set -euo pipefail
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/native test
+          cargo test --manifest-path mgstudio-runtime/native-wasmtime/Cargo.toml
 
   runtime-web:
     name: runtime/web (moon check/test)

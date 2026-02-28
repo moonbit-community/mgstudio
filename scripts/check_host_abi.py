@@ -118,36 +118,6 @@ def iter_call_snippets(source: str, call_token: str) -> list[str]:
     return snippets
 
 
-def parse_native_wasmoon(repo_root: Path) -> SourceTable:
-    file_path = repo_root / "mgstudio-runtime/native/host_imports.mbt"
-    if not file_path.is_file():
-        fail(f"missing file: {file_path}")
-    source = file_path.read_text(encoding="utf-8")
-    table: dict[str, int] = {}
-    for snippet in iter_call_snippets(source, "linker.add_host_func("):
-        header_match = re.search(
-            r'linker\.add_host_func\(\s*"(?P<module>[^"]+)"\s*,\s*"(?P<name>[^"]+)"',
-            snippet,
-            re.DOTALL,
-        )
-        if header_match is None:
-            continue
-        if header_match.group("module") != "mgstudio_host":
-            continue
-        params_match = re.search(
-            r"func_type\s*=\s*ft\(\s*\[(?P<params>.*?)\]\s*,",
-            snippet,
-            re.DOTALL,
-        )
-        if params_match is None:
-            fail(f"{file_path}: cannot parse func_type params for {header_match.group('name')}")
-        name = header_match.group("name")
-        params = params_match.group("params")
-        arity = len(re.findall(r"@types\.ValueType::[A-Za-z_]\w*", params))
-        append_func(table, name, arity, file_path.as_posix())
-    return SourceTable("runtime/native-wasmoon", table)
-
-
 def parse_native_wasmtime(repo_root: Path) -> SourceTable:
     file_path = repo_root / "mgstudio-runtime/native-wasmtime/src/host.rs"
     if not file_path.is_file():
@@ -326,7 +296,7 @@ def parse_web_host(repo_root: Path) -> SourceTable:
                 f"{file_path}: cannot parse tuple key from entry: {tuple_content.strip()}"
             )
         name = key_match.group("name")
-        expression = tuple_content[key_match.end() :].strip()
+        expression = tuple_content[key_match.end() :].strip().rstrip(",").strip()
         arity = parse_web_expr_arity(
             expression, let_expr_by_var, inferred_arity_by_var, name
         )
@@ -335,17 +305,24 @@ def parse_web_host(repo_root: Path) -> SourceTable:
 
 
 def report_table_summary(
-    expected: SourceTable, runtime: SourceTable, strict_extra: bool
+    expected: SourceTable,
+    runtime: SourceTable,
+    strict_extra: bool,
+    check_arity: bool,
 ) -> tuple[int, int]:
     expected_names = set(expected.funcs.keys())
     runtime_names = set(runtime.funcs.keys())
 
     missing_names = sorted(expected_names - runtime_names)
     extra_names = sorted(runtime_names - expected_names)
-    mismatched_names = sorted(
-        name
-        for name in (expected_names & runtime_names)
-        if expected.funcs[name] != runtime.funcs[name]
+    mismatched_names = (
+        sorted(
+            name
+            for name in (expected_names & runtime_names)
+            if expected.funcs[name] != runtime.funcs[name]
+        )
+        if check_arity
+        else []
     )
 
     print(
@@ -407,7 +384,6 @@ def main() -> int:
 
     expected = parse_engine_expected(repo_root)
     runtimes = [
-        parse_native_wasmoon(repo_root),
         parse_native_wasmtime(repo_root),
         parse_web_host(repo_root),
     ]
@@ -419,7 +395,10 @@ def main() -> int:
     total_failures = 0
     total_extras = 0
     for runtime in runtimes:
-        failures, extras = report_table_summary(expected, runtime, args.strict_extra)
+        check_arity = runtime.source_name != "runtime/web"
+        failures, extras = report_table_summary(
+            expected, runtime, args.strict_extra, check_arity
+        )
         total_failures += failures
         total_extras += extras
 

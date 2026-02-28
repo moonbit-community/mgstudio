@@ -50,10 +50,6 @@ else
   if find "${ROOT}/mgstudio-cli/cmd/mgstudio" -type f \( -name '*.mbt' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
-  # Rebuild when local native runtime dependencies changed.
-  if find "${ROOT}/mgstudio-runtime/native" -type f \( -name '*.mbt' -o -name '*.c' -o -name '*.h' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
-    NEED_BUILD=1
-  fi
   if find "${ROOT}/mgstudio-runtime/core" -type f \( -name '*.mbt' -o -name '*.c' -o -name '*.h' -o -name 'moon.pkg' -o -name 'moon.pkg.json' \) -newer "${BIN}" | grep -q .; then
     NEED_BUILD=1
   fi
@@ -73,34 +69,16 @@ sync_sdk
 (cd "${ROOT}" && moon -C mgstudio-engine build --release --target wasm)
 
 # Repo dev convenience:
-# - If user runs `mgstudio run --backend wasmtime` and does not provide
+# - If user runs `mgstudio run` and does not provide
 #   MGSTUDIO_WASMTIME_RUNTIME, build/use local Rust runtime automatically.
 USE_LOCAL_WASMTIME=0
 if [[ -z "${MGSTUDIO_WASMTIME_RUNTIME:-}" && "${1:-}" == "run" ]]; then
-  ARGS=("$@")
-  BACKEND=""
-  for ((i = 1; i < ${#ARGS[@]}; i++)); do
-    ARG="${ARGS[i]}"
-    if [[ "${ARG}" == "--backend" ]]; then
-      if (( i + 1 < ${#ARGS[@]} )); then
-        BACKEND="${ARGS[i + 1]}"
-        ((i++))
-      fi
-      continue
-    fi
-    if [[ "${ARG}" == --backend=* ]]; then
-      BACKEND="${ARG#--backend=}"
-      continue
-    fi
-  done
-  if [[ "${BACKEND}" == "wasmtime" ]]; then
-    USE_LOCAL_WASMTIME=1
-  fi
+  USE_LOCAL_WASMTIME=1
 fi
 
 if [[ "${USE_LOCAL_WASMTIME}" -eq 1 ]]; then
   if ! command -v cargo >/dev/null 2>&1; then
-    echo "mgstudio-dev: --backend wasmtime requires cargo in PATH" >&2
+    echo "mgstudio-dev: native runtime requires cargo in PATH" >&2
     exit 2
   fi
   WASMTIME_DIR="${ROOT}/mgstudio-runtime/native-wasmtime"

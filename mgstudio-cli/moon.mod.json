@@ -6,9 +6,6 @@
     "moonbitlang/x": "0.4.40",
     "moonbitlang/parser": "0.1.15",
     "TheWaWaR/clap": "0.2.6",
-    "Milky2018/mgstudio-runtime-native": {
-      "path": "../mgstudio-runtime/native"
-    },
     "moonbitlang/ulex-runtime": "0.4.3"
   },
   "readme": "README.mbt.md",

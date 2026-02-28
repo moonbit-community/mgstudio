@@ -13,6 +13,20 @@
 // limitations under the License.
 
 ///|
+fn has_removed_backend_flag(args : Array[String]) -> Bool {
+  if args.length() == 0 || args[0] != "run" {
+    return false
+  }
+  for i in 1..<args.length() {
+    let arg = args[i]
+    if arg == "--backend" || arg.has_prefix("--backend=") {
+      return true
+    }
+  }
+  false
+}
+
+///|
 /// mgstudio CLI entrypoint.
 ///
 /// Currently supported:
@@ -29,6 +43,13 @@ async fn main {
     args.push(argv[i])
   }
   let normalized_args = args
+
+  if has_removed_backend_flag(normalized_args) {
+    println(
+      "`mgstudio run --backend` has been removed. Native runtime is now wasmtime-only.",
+    )
+    @sys.exit(2)
+  }
 
   // Let clap generate and format help output.
   if normalized_args.length() == 0 {

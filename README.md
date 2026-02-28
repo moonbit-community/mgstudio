@@ -15,7 +15,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
 - `mgstudio-engine/`: engine core (ECS, math, 2D rendering, text, assets, etc.)
 - `mgstudio-cli/`: `mgstudio` developer CLI (`gen`, `new`, `run`, `serve`)
 - `mgstudio-runtime/`: runtime implementations
-  - `mgstudio-runtime/native/`: native runtime (Wasm + host functions, wgpu native)
+  - `mgstudio-runtime/native-wasmtime/`: native runtime (Rust + wasmtime + wgpu)
   - `mgstudio-runtime/web/`: web runtime bundle builder (produces `mgstudio-runtime-web.js`)
   - `mgstudio-runtime/core/`: shared runtime utilities
 - `mgstudio-page/`: web page (examples gallery / future GitHub Pages site)
@@ -44,7 +44,7 @@ curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/downloa
 Repo development wrapper:
 
 - `./mgstudio-dev ...` builds `mgstudio-cli` (release), syncs SDK web runtime + assets to `$HOME/.local/share/mgstudio/current`, then runs it
-- `./mgstudio-dev run --backend wasmtime ...` also auto-builds local `mgstudio-runtime-native-wasmtime` when needed
+- `./mgstudio-dev run ...` auto-builds local `mgstudio-runtime-native-wasmtime` when needed
 
 Project quality gates (per module):
 
@@ -59,10 +59,9 @@ Games are configured via `moon.game.json`. The key field is:
 
 The CLI uses `sdkroot` to locate:
 
-- `bin/mgstudio-runtime-native-wasmtime` (native wasmtime runtime for `run --backend wasmtime`)
+- `bin/mgstudio-runtime-native-wasmtime` (native runtime for `run`)
 - `share/mgstudio/assets/` (engine default assets, including built-in shaders)
 - `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle for `serve`)
-- `lib/libwgpu_native.dylib` (native runtime dependency; current focus is `darwin-arm64`)
 
 ### Notes
 

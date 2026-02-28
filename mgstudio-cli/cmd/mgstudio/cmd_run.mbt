@@ -15,7 +15,6 @@
 ///|
 struct RunOptions {
   game : String?
-  backend : String?
 }
 
 ///|
@@ -36,24 +35,6 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
             "Hint: run in a directory containing moon.game.json, or pass --game <path>.",
           )
         }
-        @native_rt.NativeRuntimeError::MissingExport(name) =>
-          println("mgstudio run failed: Missing wasm export: \{name}")
-        @native_rt.NativeRuntimeError::ExportCallFailed(name, msg) => {
-          println("mgstudio run failed: Export call failed: \{name}")
-          println(msg)
-        }
-        @native_rt.NativeRuntimeError::InstantiateFailed(path, msg) => {
-          println("mgstudio run failed: Wasm instantiate failed: \{path}")
-          println(msg)
-        }
-        @native_rt.NativeRuntimeError::ParseWasmFailed(path, msg) => {
-          println("mgstudio run failed: Wasm parse failed: \{path}")
-          println(msg)
-        }
-        @native_rt.NativeRuntimeError::ReadWasmFailed(path, msg) => {
-          println("mgstudio run failed: Failed to read wasm: \{path}")
-          println(msg)
-        }
         _ => println("mgstudio run failed: \{err}")
       }
       @sys.exit(1)
@@ -63,7 +44,7 @@ async fn cmd_run(cmd : @clap.SimpleValue) -> Unit {
 
 ///|
 fn parse_run_options_defaults(_workspace : String) -> RunOptions {
-  { game: None, backend: None }
+  { game: None }
 }
 
 ///|
@@ -71,8 +52,7 @@ fn parse_run_options(
   cmd : @clap.SimpleValue,
 ) -> RunOptions raise @clap.ParserError {
   let game : String? = cmd.get_option("game")
-  let backend : String? = cmd.get_option("backend")
-  { game, backend }
+  { game, }
 }
 
 ///|
@@ -81,7 +61,6 @@ async fn run_native(opts : RunOptions) -> Unit {
   let cfg = load_game_config(game_cfg_path)
   println("Game config: \{cfg.file_path} (mgstudio=\{cfg.mgstudio})")
   let sdk = resolve_sdk_layout(cfg)
-  let backend = opts.backend.unwrap_or("wasmoon").trim().to_string()
   let assets_source = cfg.assets_spec
   let data_source = cfg.data_spec_native
   if assets_source.has_prefix("http://") || assets_source.has_prefix("https://") {
@@ -128,27 +107,12 @@ async fn run_native(opts : RunOptions) -> Unit {
     cfg.assets_allow_sdk_override,
   )
   let final_assets_source = "dir:" + overlay_assets_dir
-  if backend == "" || backend == "wasmoon" {
-    println("Using SDK libwgpu_native: \{sdk.native_wgpu_lib}")
-    let wgpu_lib : String? = Some(sdk.native_wgpu_lib)
-    @native_rt.run_game(
-      cfg.cart_path,
-      final_assets_source,
-      data_source,
-      wgpu_lib?,
-    )
-  } else if backend == "wasmtime" {
-    run_native_wasmtime(
-      cfg.cart_path,
-      final_assets_source,
-      data_source,
-      cfg.sdk_root,
-    )
-  } else {
-    raise RunError::InvalidArgs(
-      "Unknown --backend: " + backend + " (expected: wasmoon|wasmtime)",
-    )
-  }
+  run_native_wasmtime(
+    cfg.cart_path,
+    final_assets_source,
+    data_source,
+    cfg.sdk_root,
+  )
 }
 
 ///|
@@ -158,7 +122,7 @@ async fn run_native_wasmtime(
   data_source : String,
   sdk_root : String,
 ) -> Unit {
-  // Prefer a runtime shipped in the SDK (optional / experimental).
+  // Prefer a runtime shipped in the SDK.
   let bin_in_sdk = path_join(sdk_root, "bin/mgstudio-runtime-native-wasmtime")
 
   // Allow explicit override for local development.
@@ -168,7 +132,7 @@ async fn run_native_wasmtime(
     _ if @fs.exists(bin_in_sdk) => bin_in_sdk
     _ =>
       raise RunError::InvalidArgs(
-        "Wasmtime backend selected but runtime binary not found.\n" +
+        "Native runtime binary not found.\n" +
         "- Install it into SDK: " +
         bin_in_sdk +
         "\n" +

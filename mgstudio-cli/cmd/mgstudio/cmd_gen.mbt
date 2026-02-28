@@ -54,7 +54,6 @@ fn should_skip_dir(path : String) -> Bool {
   name == "node_modules" ||
   name == "bevy" ||
   // Vendored third-party modules (e.g. local forks of dependencies).
-  name == "wasmoon" ||
   name == "wgpu_mbt"
 }
 
