@@ -15,3 +15,10 @@ pub(open) trait Has_GlobalTransform {
     GlobalTransform,
   ]
 }
+
+///|
+pub fn[W : Has_GlobalTransform] query_get_global_transform_store(
+  world : W,
+) -> @core.ComponentStore[GlobalTransform] {
+  world.get_global_transform_store()
+}

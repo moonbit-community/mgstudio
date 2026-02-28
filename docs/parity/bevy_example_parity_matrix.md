@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
-| `3d` | 66 | 28 | 38 | 0 |
+| `3d` | 66 | 42 | 24 | 0 |
 | `animation` | 13 | 1 | 12 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 1 | 11 | 0 |
-| **Total** | **402** | **80** | **319** | **3** |
+| **Total** | **402** | **94** | **305** | **3** |
 
 ## Example Inventory
 
@@ -92,9 +92,9 @@ Notes:
 | `bevy/examples/3d/3d_viewport_to_world.rs` | `3d` | `mgstudio-engine/examples/3d/3d_viewport_to_world` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/animated_material.rs` | `3d` | `mgstudio-engine/examples/3d/animated_material` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/anisotropy.rs` | `3d` | `mgstudio-engine/examples/3d/anisotropy` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/anti_aliasing.rs` | `3d` | `mgstudio-engine/examples/3d/anti_aliasing` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/anti_aliasing.rs` | `3d` | `mgstudio-engine/examples/3d/anti_aliasing` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/atmosphere.rs` | `3d` | `mgstudio-engine/examples/3d/atmosphere` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/atmospheric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/atmospheric_fog` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/atmospheric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/atmospheric_fog` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/auto_exposure.rs` | `3d` | `mgstudio-engine/examples/3d/auto_exposure` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/blend_modes.rs` | `3d` | `mgstudio-engine/examples/3d/blend_modes` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/bloom_3d.rs` | `3d` | `mgstudio-engine/examples/3d/bloom_3d` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
@@ -108,7 +108,7 @@ Notes:
 | `bevy/examples/3d/deferred_rendering.rs` | `3d` | `mgstudio-engine/examples/3d/deferred_rendering` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/depth_of_field.rs` | `3d` | `mgstudio-engine/examples/3d/depth_of_field` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/fog.rs` | `3d` | `mgstudio-engine/examples/3d/fog` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/fog_volumes.rs` | `3d` | `mgstudio-engine/examples/3d/fog_volumes` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/fog_volumes.rs` | `3d` | `mgstudio-engine/examples/3d/fog_volumes` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/generate_custom_mesh.rs` | `3d` | `mgstudio-engine/examples/3d/generate_custom_mesh` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/irradiance_volumes.rs` | `3d` | `mgstudio-engine/examples/3d/irradiance_volumes` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/light_probe_blending.rs` | `3d` | `mgstudio-engine/examples/3d/light_probe_blending` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
@@ -116,31 +116,31 @@ Notes:
 | `bevy/examples/3d/lighting.rs` | `3d` | `mgstudio-engine/examples/3d/lighting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/lightmaps.rs` | `3d` | `mgstudio-engine/examples/3d/lightmaps` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/lines.rs` | `3d` | `mgstudio-engine/examples/3d/lines` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/mesh_ray_cast.rs` | `3d` | `mgstudio-engine/examples/3d/mesh_ray_cast` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/mesh_ray_cast.rs` | `3d` | `mgstudio-engine/examples/3d/mesh_ray_cast` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/meshlet.rs` | `3d` | `mgstudio-engine/examples/3d/meshlet` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/mirror.rs` | `3d` | `mgstudio-engine/examples/3d/mirror` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/mixed_lighting.rs` | `3d` | `mgstudio-engine/examples/3d/mixed_lighting` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/motion_blur.rs` | `3d` | `mgstudio-engine/examples/3d/motion_blur` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/motion_blur.rs` | `3d` | `mgstudio-engine/examples/3d/motion_blur` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/occlusion_culling.rs` | `3d` | `mgstudio-engine/examples/3d/occlusion_culling` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/order_independent_transparency.rs` | `3d` | `mgstudio-engine/examples/3d/order_independent_transparency` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/order_independent_transparency.rs` | `3d` | `mgstudio-engine/examples/3d/order_independent_transparency` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/orthographic.rs` | `3d` | `mgstudio-engine/examples/3d/orthographic` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/parallax_mapping.rs` | `3d` | `mgstudio-engine/examples/3d/parallax_mapping` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/parenting.rs` | `3d` | `mgstudio-engine/examples/3d/parenting` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/pbr.rs` | `3d` | `mgstudio-engine/examples/3d/pbr` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/pccm.rs` | `3d` | `mgstudio-engine/examples/3d/pccm` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/pcss.rs` | `3d` | `mgstudio-engine/examples/3d/pcss` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/post_processing.rs` | `3d` | `mgstudio-engine/examples/3d/post_processing` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/reflection_probes.rs` | `3d` | `mgstudio-engine/examples/3d/reflection_probes` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/pccm.rs` | `3d` | `mgstudio-engine/examples/3d/pccm` | `Exact` | `team-render` |  |
+| `bevy/examples/3d/pcss.rs` | `3d` | `mgstudio-engine/examples/3d/pcss` | `Exact` | `team-render` |  |
+| `bevy/examples/3d/post_processing.rs` | `3d` | `mgstudio-engine/examples/3d/post_processing` | `Exact` | `team-render` |  |
+| `bevy/examples/3d/reflection_probes.rs` | `3d` | `mgstudio-engine/examples/3d/reflection_probes` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/render_to_texture.rs` | `3d` | `mgstudio-engine/examples/3d/render_to_texture` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/rotate_environment_map.rs` | `3d` | `mgstudio-engine/examples/3d/rotate_environment_map` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/scrolling_fog.rs` | `3d` | `mgstudio-engine/examples/3d/scrolling_fog` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/shadow_biases.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_biases` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/scrolling_fog.rs` | `3d` | `mgstudio-engine/examples/3d/scrolling_fog` | `Exact` | `team-render` |  |
+| `bevy/examples/3d/shadow_biases.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_biases` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/shadow_caster_receiver.rs` | `3d` | `mgstudio-engine/examples/3d/shadow_caster_receiver` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/skybox.rs` | `3d` | `mgstudio-engine/examples/3d/skybox` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/solari.rs` | `3d` | `mgstudio-engine/examples/3d/solari` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/specular_tint.rs` | `3d` | `mgstudio-engine/examples/3d/specular_tint` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/spherical_area_lights.rs` | `3d` | `mgstudio-engine/examples/3d/spherical_area_lights` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/split_screen.rs` | `3d` | `mgstudio-engine/examples/3d/split_screen` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/spherical_area_lights.rs` | `3d` | `mgstudio-engine/examples/3d/spherical_area_lights` | `Exact` | `team-render` |  |
+| `bevy/examples/3d/split_screen.rs` | `3d` | `mgstudio-engine/examples/3d/split_screen` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/spotlight.rs` | `3d` | `mgstudio-engine/examples/3d/spotlight` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/ssao.rs` | `3d` | `mgstudio-engine/examples/3d/ssao` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/ssr.rs` | `3d` | `mgstudio-engine/examples/3d/ssr` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |

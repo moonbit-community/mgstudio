@@ -154,6 +154,188 @@ pub(open) trait Has_RelativeCursorPosition {
 }
 
 ///|
+pub fn[W : Has_Node] query_get_node_store(
+  world : W,
+) -> @core.ComponentStore[Node] {
+  world.get_node_store()
+}
+
+///|
+pub fn[W : Has_Label] query_get_label_store(
+  world : W,
+) -> @core.ComponentStore[Label] {
+  world.get_label_store()
+}
+
+///|
+pub fn[W : Has_Button] query_get_button_store(
+  world : W,
+) -> @core.ComponentStore[Button] {
+  world.get_button_store()
+}
+
+///|
+pub fn[W : Has_UiRoot] query_get_ui_root_store(
+  world : W,
+) -> @core.ComponentStore[UiRoot] {
+  world.get_ui_root_store()
+}
+
+///|
+pub fn[W : Has_UiText] query_get_ui_text_store(
+  world : W,
+) -> @core.ComponentStore[UiText] {
+  world.get_ui_text_store()
+}
+
+///|
+pub fn[W : Has_ZIndex] query_get_z_index_store(
+  world : W,
+) -> @core.ComponentStore[ZIndex] {
+  world.get_z_index_store()
+}
+
+///|
+pub fn[W : Has_Outline] query_get_outline_store(
+  world : W,
+) -> @core.ComponentStore[Outline] {
+  world.get_outline_store()
+}
+
+///|
+pub fn[W : Has_UiImage] query_get_ui_image_store(
+  world : W,
+) -> @core.ComponentStore[UiImage] {
+  world.get_ui_image_store()
+}
+
+///|
+pub fn[W : Has_UiLayout] query_get_ui_layout_store(
+  world : W,
+) -> @core.ComponentStore[UiLayout] {
+  world.get_ui_layout_store()
+}
+
+///|
+pub fn[W : Has_BoxShadow] query_get_box_shadow_store(
+  world : W,
+) -> @core.ComponentStore[BoxShadow] {
+  world.get_box_shadow_store()
+}
+
+///|
+pub fn[W : Has_ImageNode] query_get_image_node_store(
+  world : W,
+) -> @core.ComponentStore[ImageNode] {
+  world.get_image_node_store()
+}
+
+///|
+pub fn[W : Has_BorderColor] query_get_border_color_store(
+  world : W,
+) -> @core.ComponentStore[BorderColor] {
+  world.get_border_color_store()
+}
+
+///|
+pub fn[W : Has_ContentSize] query_get_content_size_store(
+  world : W,
+) -> @core.ComponentStore[ContentSize] {
+  world.get_content_size_store()
+}
+
+///|
+pub fn[W : Has_FocusPolicy] query_get_focus_policy_store(
+  world : W,
+) -> @core.ComponentStore[FocusPolicy] {
+  world.get_focus_policy_store()
+}
+
+///|
+pub fn[W : Has_Interaction] query_get_interaction_store(
+  world : W,
+) -> @core.ComponentStore[Interaction] {
+  world.get_interaction_store()
+}
+
+///|
+pub fn[W : Has_UiAntiAlias] query_get_ui_anti_alias_store(
+  world : W,
+) -> @core.ComponentStore[UiAntiAlias] {
+  world.get_ui_anti_alias_store()
+}
+
+///|
+pub fn[W : Has_BorderRadius] query_get_border_radius_store(
+  world : W,
+) -> @core.ComponentStore[BorderRadius] {
+  world.get_border_radius_store()
+}
+
+///|
+pub fn[W : Has_ButtonColors] query_get_button_colors_store(
+  world : W,
+) -> @core.ComponentStore[ButtonColors] {
+  world.get_button_colors_store()
+}
+
+///|
+pub fn[W : Has_GlobalZIndex] query_get_global_z_index_store(
+  world : W,
+) -> @core.ComponentStore[GlobalZIndex] {
+  world.get_global_z_index_store()
+}
+
+///|
+pub fn[W : Has_ImageNodeSize] query_get_image_node_size_store(
+  world : W,
+) -> @core.ComponentStore[ImageNodeSize] {
+  world.get_image_node_size_store()
+}
+
+///|
+pub fn[W : Has_CalculatedClip] query_get_calculated_clip_store(
+  world : W,
+) -> @core.ComponentStore[CalculatedClip] {
+  world.get_calculated_clip_store()
+}
+
+///|
+pub fn[W : Has_ScrollPosition] query_get_scroll_position_store(
+  world : W,
+) -> @core.ComponentStore[ScrollPosition] {
+  world.get_scroll_position_store()
+}
+
+///|
+pub fn[W : Has_BackgroundColor] query_get_background_color_store(
+  world : W,
+) -> @core.ComponentStore[BackgroundColor] {
+  world.get_background_color_store()
+}
+
+///|
+pub fn[W : Has_AccessibilityLabel] query_get_accessibility_label_store(
+  world : W,
+) -> @core.ComponentStore[AccessibilityLabel] {
+  world.get_accessibility_label_store()
+}
+
+///|
+pub fn[W : Has_UiBoxShadowSamples] query_get_ui_box_shadow_samples_store(
+  world : W,
+) -> @core.ComponentStore[UiBoxShadowSamples] {
+  world.get_ui_box_shadow_samples_store()
+}
+
+///|
+pub fn[W : Has_RelativeCursorPosition] query_get_relative_cursor_position_store(
+  world : W,
+) -> @core.ComponentStore[RelativeCursorPosition] {
+  world.get_relative_cursor_position_store()
+}
+
+///|
 pub(open) trait HasRes_UiScale {
   get_ui_scale_resource(self : Self) -> @core.Resource[UiScale]
 }

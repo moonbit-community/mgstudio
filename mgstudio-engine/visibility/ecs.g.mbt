@@ -34,3 +34,31 @@ pub(open) trait Has_InheritedVisibility {
     InheritedVisibility,
   ]
 }
+
+///|
+pub fn[W : Has_Visibility] query_get_visibility_store(
+  world : W,
+) -> @core.ComponentStore[Visibility] {
+  world.get_visibility_store()
+}
+
+///|
+pub fn[W : Has_ViewVisibility] query_get_view_visibility_store(
+  world : W,
+) -> @core.ComponentStore[ViewVisibility] {
+  world.get_view_visibility_store()
+}
+
+///|
+pub fn[W : Has_VisibilityRange] query_get_visibility_range_store(
+  world : W,
+) -> @core.ComponentStore[VisibilityRange] {
+  world.get_visibility_range_store()
+}
+
+///|
+pub fn[W : Has_InheritedVisibility] query_get_inherited_visibility_store(
+  world : W,
+) -> @core.ComponentStore[InheritedVisibility] {
+  world.get_inherited_visibility_store()
+}

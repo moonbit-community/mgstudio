@@ -18,3 +18,17 @@ pub(open) trait Has_Parent {
 pub(open) trait Has_Children {
   get_children_store(self : Self) -> @core.ComponentStore[Children]
 }
+
+///|
+pub fn[W : Has_Parent] query_get_parent_store(
+  world : W,
+) -> @core.ComponentStore[Parent] {
+  world.get_parent_store()
+}
+
+///|
+pub fn[W : Has_Children] query_get_children_store(
+  world : W,
+) -> @core.ComponentStore[Children] {
+  world.get_children_store()
+}

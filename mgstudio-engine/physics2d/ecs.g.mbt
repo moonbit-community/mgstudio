@@ -249,6 +249,265 @@ pub(open) trait Has_KinematicCharacterControllerOutput2d {
 }
 
 ///|
+pub fn[W : Has_Ccd2d] query_get_ccd2d_store(
+  world : W,
+) -> @core.ComponentStore[Ccd2d] {
+  world.get_ccd2d_store()
+}
+
+///|
+pub fn[W : Has_Damping2d] query_get_damping2d_store(
+  world : W,
+) -> @core.ComponentStore[Damping2d] {
+  world.get_damping2d_store()
+}
+
+///|
+pub fn[W : Has_Collider2d] query_get_collider2d_store(
+  world : W,
+) -> @core.ComponentStore[Collider2d] {
+  world.get_collider2d_store()
+}
+
+///|
+pub fn[W : Has_Friction2d] query_get_friction2d_store(
+  world : W,
+) -> @core.ComponentStore[Friction2d] {
+  world.get_friction2d_store()
+}
+
+///|
+pub fn[W : Has_Sleeping2d] query_get_sleeping2d_store(
+  world : W,
+) -> @core.ComponentStore[Sleeping2d] {
+  world.get_sleeping2d_store()
+}
+
+///|
+pub fn[W : Has_Velocity2d] query_get_velocity2d_store(
+  world : W,
+) -> @core.ComponentStore[Velocity2d] {
+  world.get_velocity2d_store()
+}
+
+///|
+pub fn[W : Has_Dominance2d] query_get_dominance2d_store(
+  world : W,
+) -> @core.ComponentStore[Dominance2d] {
+  world.get_dominance2d_store()
+}
+
+///|
+pub fn[W : Has_RigidBody2d] query_get_rigid_body2d_store(
+  world : W,
+) -> @core.ComponentStore[RigidBody2d] {
+  world.get_rigid_body2d_store()
+}
+
+///|
+pub fn[W : Has_LockedAxes2d] query_get_locked_axes2d_store(
+  world : W,
+) -> @core.ComponentStore[LockedAxes2d] {
+  world.get_locked_axes2d_store()
+}
+
+///|
+pub fn[W : Has_ActiveHooks2d] query_get_active_hooks2d_store(
+  world : W,
+) -> @core.ComponentStore[ActiveHooks2d] {
+  world.get_active_hooks2d_store()
+}
+
+///|
+pub fn[W : Has_ContactSkin2d] query_get_contact_skin2d_store(
+  world : W,
+) -> @core.ComponentStore[ContactSkin2d] {
+  world.get_contact_skin2d_store()
+}
+
+///|
+pub fn[W : Has_Restitution2d] query_get_restitution2d_store(
+  world : W,
+) -> @core.ComponentStore[Restitution2d] {
+  world.get_restitution2d_store()
+}
+
+///|
+pub fn[W : Has_ActiveEvents2d] query_get_active_events2d_store(
+  world : W,
+) -> @core.ComponentStore[ActiveEvents2d] {
+  world.get_active_events2d_store()
+}
+
+///|
+pub fn[W : Has_GravityScale2d] query_get_gravity_scale2d_store(
+  world : W,
+) -> @core.ComponentStore[GravityScale2d] {
+  world.get_gravity_scale2d_store()
+}
+
+///|
+pub fn[W : Has_ImpulseJoint2d] query_get_impulse_joint2d_store(
+  world : W,
+) -> @core.ComponentStore[ImpulseJoint2d] {
+  world.get_impulse_joint2d_store()
+}
+
+///|
+pub fn[W : Has_SolverGroups2d] query_get_solver_groups2d_store(
+  world : W,
+) -> @core.ComponentStore[SolverGroups2d] {
+  world.get_solver_groups2d_store()
+}
+
+///|
+pub fn[W : Has_ExternalForce2d] query_get_external_force2d_store(
+  world : W,
+) -> @core.ComponentStore[ExternalForce2d] {
+  world.get_external_force2d_store()
+}
+
+///|
+pub fn[W : Has_ColliderParent2d] query_get_collider_parent2d_store(
+  world : W,
+) -> @core.ComponentStore[ColliderParent2d] {
+  world.get_collider_parent2d_store()
+}
+
+///|
+pub fn[W : Has_MultibodyJoint2d] query_get_multibody_joint2d_store(
+  world : W,
+) -> @core.ComponentStore[MultibodyJoint2d] {
+  world.get_multibody_joint2d_store()
+}
+
+///|
+pub fn[W : Has_ColliderDensity2d] query_get_collider_density2d_store(
+  world : W,
+) -> @core.ComponentStore[ColliderDensity2d] {
+  world.get_collider_density2d_store()
+}
+
+///|
+pub fn[W : Has_ColliderEnabled2d] query_get_collider_enabled2d_store(
+  world : W,
+) -> @core.ComponentStore[ColliderEnabled2d] {
+  world.get_collider_enabled2d_store()
+}
+
+///|
+pub fn[W : Has_CollisionGroups2d] query_get_collision_groups2d_store(
+  world : W,
+) -> @core.ComponentStore[CollisionGroups2d] {
+  world.get_collision_groups2d_store()
+}
+
+///|
+pub fn[W : Has_ExternalImpulse2d] query_get_external_impulse2d_store(
+  world : W,
+) -> @core.ComponentStore[ExternalImpulse2d] {
+  world.get_external_impulse2d_store()
+}
+
+///|
+pub fn[W : Has_RapierBodyHandle2d] query_get_rapier_body_handle2d_store(
+  world : W,
+) -> @core.ComponentStore[RapierBodyHandle2d] {
+  world.get_rapier_body_handle2d_store()
+}
+
+///|
+pub fn[W : Has_RigidBodyEnabled2d] query_get_rigid_body_enabled2d_store(
+  world : W,
+) -> @core.ComponentStore[RigidBodyEnabled2d] {
+  world.get_rigid_body_enabled2d_store()
+}
+
+///|
+pub fn[W : Has_FrictionCombineRule2d] query_get_friction_combine_rule2d_store(
+  world : W,
+) -> @core.ComponentStore[FrictionCombineRule2d] {
+  world.get_friction_combine_rule2d_store()
+}
+
+///|
+pub fn[W : Has_ActiveCollisionTypes2d] query_get_active_collision_types2d_store(
+  world : W,
+) -> @core.ComponentStore[ActiveCollisionTypes2d] {
+  world.get_active_collision_types2d_store()
+}
+
+///|
+pub fn[W : Has_RapierColliderHandle2d] query_get_rapier_collider_handle2d_store(
+  world : W,
+) -> @core.ComponentStore[RapierColliderHandle2d] {
+  world.get_rapier_collider_handle2d_store()
+}
+
+///|
+pub fn[W : Has_ColliderMassProperties2d] query_get_collider_mass_properties2d_store(
+  world : W,
+) -> @core.ComponentStore[ColliderMassProperties2d] {
+  world.get_collider_mass_properties2d_store()
+}
+
+///|
+pub fn[W : Has_RestitutionCombineRule2d] query_get_restitution_combine_rule2d_store(
+  world : W,
+) -> @core.ComponentStore[RestitutionCombineRule2d] {
+  world.get_restitution_combine_rule2d_store()
+}
+
+///|
+pub fn[W : Has_AdditionalMassProperties2d] query_get_additional_mass_properties2d_store(
+  world : W,
+) -> @core.ComponentStore[AdditionalMassProperties2d] {
+  world.get_additional_mass_properties2d_store()
+}
+
+///|
+pub fn[W : Has_RapierImpulseJointHandle2d] query_get_rapier_impulse_joint_handle2d_store(
+  world : W,
+) -> @core.ComponentStore[RapierImpulseJointHandle2d] {
+  world.get_rapier_impulse_joint_handle2d_store()
+}
+
+///|
+pub fn[W : Has_AdditionalSolverIterations2d] query_get_additional_solver_iterations2d_store(
+  world : W,
+) -> @core.ComponentStore[AdditionalSolverIterations2d] {
+  world.get_additional_solver_iterations2d_store()
+}
+
+///|
+pub fn[W : Has_ContactForceEventThreshold2d] query_get_contact_force_event_threshold2d_store(
+  world : W,
+) -> @core.ComponentStore[ContactForceEventThreshold2d] {
+  world.get_contact_force_event_threshold2d_store()
+}
+
+///|
+pub fn[W : Has_RapierMultibodyJointHandle2d] query_get_rapier_multibody_joint_handle2d_store(
+  world : W,
+) -> @core.ComponentStore[RapierMultibodyJointHandle2d] {
+  world.get_rapier_multibody_joint_handle2d_store()
+}
+
+///|
+pub fn[W : Has_KinematicCharacterController2d] query_get_kinematic_character_controller2d_store(
+  world : W,
+) -> @core.ComponentStore[KinematicCharacterController2d] {
+  world.get_kinematic_character_controller2d_store()
+}
+
+///|
+pub fn[W : Has_KinematicCharacterControllerOutput2d] query_get_kinematic_character_controller_output2d_store(
+  world : W,
+) -> @core.ComponentStore[KinematicCharacterControllerOutput2d] {
+  world.get_kinematic_character_controller_output2d_store()
+}
+
+///|
 pub(open) trait HasRes_Physics2dConfig {
   get_physics2d_config_resource(self : Self) -> @core.Resource[Physics2dConfig]
 }
