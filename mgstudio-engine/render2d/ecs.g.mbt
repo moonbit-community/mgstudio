@@ -29,8 +29,22 @@ pub(open) trait Has_Mesh2d {
 }
 
 ///|
+pub fn[W : Has_Mesh2d] query_get_mesh2d_store(
+  world : W,
+) -> @core.ComponentStore[Mesh2d] {
+  world.get_mesh2d_store()
+}
+
+///|
 pub(open) trait Has_Sprite {
   get_sprite_store(self : Self) -> @core.ComponentStore[Sprite]
+}
+
+///|
+pub fn[W : Has_Sprite] query_get_sprite_store(
+  world : W,
+) -> @core.ComponentStore[Sprite] {
+  world.get_sprite_store()
 }
 
 ///|

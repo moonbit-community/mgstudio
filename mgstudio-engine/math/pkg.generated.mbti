@@ -18,6 +18,8 @@ pub fn pi_half() -> Float
 
 pub fn pow(Float, Float) -> Float
 
+pub fn[W : Has_Transform] query_get_transform_store(W) -> @core.ComponentStore[Transform]
+
 pub fn sin(Float) -> Float
 
 pub fn sqrt(Float) -> Float

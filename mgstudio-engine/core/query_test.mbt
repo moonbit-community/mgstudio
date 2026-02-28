@@ -104,3 +104,32 @@ test "query: query2_update_a rewrites first store in-place style" {
     content="true",
   )
 }
+
+///|
+test "query: query2_update_b rewrites second store in-place style" {
+  let entities = Entities::new()
+  let e = entities.spawn()
+  let a : ComponentStore[Int] = ComponentStore::new()
+  let b : ComponentStore[Int] = ComponentStore::new()
+  a.insert(e, 4, 1)
+  b.insert(e, 5, 1)
+  query2_update_b(a, b, 2, fn(_e, av, bv) { av + bv })
+  inspect(b.get(e) == Some(9), content="true")
+  inspect(
+    b.get_ticks(e) is Some(ticks) && ticks.is_changed(SystemTicks::new(1, 2)),
+    content="true",
+  )
+}
+
+///|
+test "query: query2_update_ab rewrites both stores in one pass" {
+  let entities = Entities::new()
+  let e = entities.spawn()
+  let a : ComponentStore[Int] = ComponentStore::new()
+  let b : ComponentStore[Int] = ComponentStore::new()
+  a.insert(e, 1, 1)
+  b.insert(e, 2, 1)
+  query2_update_ab(a, b, 3, fn(_e, av, bv) { (av + 10, bv + 20) })
+  inspect(a.get(e) == Some(11), content="true")
+  inspect(b.get(e) == Some(22), content="true")
+}

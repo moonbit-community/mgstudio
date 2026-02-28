@@ -697,27 +697,23 @@ fn collect_tagged_type_names(src : String, marker : String) -> Array[String] {
 fn extract_type_name_from_decl_line(line : String) -> String? {
   match extract_type_name_with_prefix(line, "pub(all) struct ") {
     Some(name) => Some(name)
-    None => {
+    None =>
       match extract_type_name_with_prefix(line, "pub struct ") {
         Some(name) => Some(name)
-        None => {
+        None =>
           match extract_type_name_with_prefix(line, "struct ") {
             Some(name) => Some(name)
-            None => {
+            None =>
               match extract_type_name_with_prefix(line, "pub(all) enum ") {
                 Some(name) => Some(name)
-                None => {
+                None =>
                   match extract_type_name_with_prefix(line, "pub enum ") {
                     Some(name) => Some(name)
                     None => extract_type_name_with_prefix(line, "enum ")
                   }
-                }
               }
-            }
           }
-        }
       }
-    }
   }
 }
 
@@ -827,6 +823,15 @@ fn render_ecs_generated_file(
       "}\n"
     })
     .join("\n")
+  let component_query_getters = comps
+    .map(fn(tycon) {
+      let snake = camel_to_snake(tycon)
+      "///|\n" +
+      "pub fn[W : Has_\{tycon}] query_get_\{snake}_store(world : W) -> @core.ComponentStore[\{tycon}] {\n" +
+      "  world.get_\{snake}_store()\n" +
+      "}\n"
+    })
+    .join("\n")
   let resource_traits = res
     .map(fn(tycon) {
       let snake = camel_to_snake(tycon)
@@ -837,17 +842,21 @@ fn render_ecs_generated_file(
     })
     .join("\n")
   let traits_body = if component_traits.length() == 0 &&
+    component_query_getters.length() == 0 &&
     resource_traits.length() == 0 {
     ""
   } else {
-    "\n" +
-    component_traits +
-    (if component_traits.length() > 0 && resource_traits.length() > 0 {
-      "\n\n"
-    } else {
-      ""
-    }) +
-    resource_traits
+    let sections : Array[String] = []
+    if component_traits.length() > 0 {
+      sections.push(component_traits)
+    }
+    if component_query_getters.length() > 0 {
+      sections.push(component_query_getters)
+    }
+    if resource_traits.length() > 0 {
+      sections.push(resource_traits)
+    }
+    "\n" + sections.join("\n\n")
   }
   header + comps_body + res_body + traits_body
 }

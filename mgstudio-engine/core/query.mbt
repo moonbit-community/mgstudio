@@ -121,6 +121,24 @@ pub fn[A, B] Query2::update_a(
 }
 
 ///|
+pub fn[A, B] Query2::update_b(
+  self : Query2[A, B],
+  change_tick : Tick,
+  f : (Entity, A, B) -> B,
+) -> Unit {
+  query2_update_b(self.a, self.b, change_tick, f)
+}
+
+///|
+pub fn[A, B] Query2::update_ab(
+  self : Query2[A, B],
+  change_tick : Tick,
+  f : (Entity, A, B) -> (A, B),
+) -> Unit {
+  query2_update_ab(self.a, self.b, change_tick, f)
+}
+
+///|
 pub struct Query3[A, B, C] {
   a : ComponentStore[A]
   b : ComponentStore[B]
@@ -298,5 +316,37 @@ pub fn[A, B] query2_update_a(
   query2(a, b, fn(e, av, bv) { updates.push((e, f(e, av, bv))) })
   for update in updates {
     a.set(update.0, update.1, change_tick) |> ignore
+  }
+}
+
+///|
+pub fn[A, B] query2_update_b(
+  a : ComponentStore[A],
+  b : ComponentStore[B],
+  change_tick : Tick,
+  f : (Entity, A, B) -> B,
+) -> Unit {
+  let updates : Array[(Entity, B)] = []
+  query2(a, b, fn(e, av, bv) { updates.push((e, f(e, av, bv))) })
+  for update in updates {
+    b.set(update.0, update.1, change_tick) |> ignore
+  }
+}
+
+///|
+pub fn[A, B] query2_update_ab(
+  a : ComponentStore[A],
+  b : ComponentStore[B],
+  change_tick : Tick,
+  f : (Entity, A, B) -> (A, B),
+) -> Unit {
+  let updates : Array[(Entity, A, B)] = []
+  query2(a, b, fn(e, av, bv) {
+    let next = f(e, av, bv)
+    updates.push((e, next.0, next.1))
+  })
+  for update in updates {
+    a.set(update.0, update.1, change_tick) |> ignore
+    b.set(update.0, update.2, change_tick) |> ignore
   }
 }

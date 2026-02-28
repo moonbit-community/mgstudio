@@ -24,6 +24,10 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
 
+pub fn[W : Has_Mesh2d] query_get_mesh2d_store(W) -> @core.ComponentStore[Mesh2d]
+
+pub fn[W : Has_Sprite] query_get_sprite_store(W) -> @core.ComponentStore[Sprite]
+
 pub fn[W : CameraSystemWorld] render2d_camera_system(W) -> Unit
 
 pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?

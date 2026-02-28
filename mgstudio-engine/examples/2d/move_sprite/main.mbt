@@ -19,12 +19,8 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(move_sprite_setup)
-  .add_system(
-    @app.system_query2(
-      fn(world) { world.get_transform_store() },
-      fn(world) { world.get_sprite_store() },
-      move_sprite_movement,
-    ),
+  .add_system_query2(
+    @math.query_get_transform_store, @render2d.query_get_sprite_store, move_sprite_movement,
   )
   .run()
 }
@@ -43,20 +39,13 @@ const EDGE_LIMIT : Float = 200.0F
 
 ///|
 priv struct MoveSpriteState {
-  mut sprite : @core.Entity
   mut direction : Direction
 }
 
 ///|
 let move_state : Ref[MoveSpriteState] = Ref::new(MoveSpriteState::{
-  sprite: @core.Entity::placeholder(),
   direction: Direction::Right,
 })
-
-///|
-fn entity_is_same(a : @core.Entity, b : @core.Entity) -> Bool {
-  a.id == b.id && a.generation == b.generation
-}
 
 ///|
 fn move_sprite_setup(world : @ecs_world.World) -> Unit {
@@ -64,15 +53,12 @@ fn move_sprite_setup(world : @ecs_world.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
   let sprite = @render2d.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  let sprite_entity = @render2d.SpriteBundle::new(sprite, transform).spawn(
-    world,
-  )
+  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
-  move_state.val.sprite = sprite_entity
   move_state.val.direction = Direction::Right
 }
 
@@ -81,34 +67,26 @@ fn move_sprite_movement(
   query : @core.Query2[@math.Transform, @render2d.Sprite],
   world : @ecs_world.World,
 ) -> Unit {
-  if move_state.val.sprite.is_placeholder() {
-    return
-  }
-  let sprite_entity = move_state.val.sprite
   let delta = SPEED * @time.time_delta_seconds()
   let move_x = if move_state.val.direction is Right { delta } else { -delta }
   let tick = world.read_change_tick()
   let mut next_direction = move_state.val.direction
-  query.update_a(tick, fn(entity, transform, _sprite) {
-    if !entity_is_same(entity, sprite_entity) {
-      transform
-    } else {
-      let translation = @math.Vec2::new(
-        transform.translation.x + move_x,
-        transform.translation.y,
-      )
-      if translation.x > EDGE_LIMIT {
-        next_direction = Direction::Left
-      } else if translation.x < -EDGE_LIMIT {
-        next_direction = Direction::Right
-      }
-      @math.Transform::from_xy_rotation_scale(
-        translation,
-        transform.rotation_z(),
-        @math.Vec2::new(transform.scale.x, transform.scale.y),
-        z=transform.translation.z,
-      )
+  query.update_a(tick, fn(_entity, transform, _sprite) {
+    let translation = @math.Vec2::new(
+      transform.translation.x + move_x,
+      transform.translation.y,
+    )
+    if translation.x > EDGE_LIMIT {
+      next_direction = Direction::Left
+    } else if translation.x < -EDGE_LIMIT {
+      next_direction = Direction::Right
     }
+    @math.Transform::from_xy_rotation_scale(
+      translation,
+      transform.rotation_z(),
+      @math.Vec2::new(transform.scale.x, transform.scale.y),
+      z=transform.translation.z,
+    )
   })
   move_state.val.direction = next_direction
 }
