@@ -15,14 +15,19 @@ Date: 2026-02-28
 - Motion-vector prepass can now run without motion blur if camera requests it.
 - Temporal jitter now offsets sub-camera projection bias.
 - `fog` and `atmospheric_fog` examples moved from global fog mutation to camera-scoped fog (`Camera3d.distance_fog`).
+- `fog_volumes`, `scrolling_fog`, and `volumetric_fog` also moved to camera-scoped fog updates (still proxy volumetric behavior, but no longer global fog mutation).
 
 ## Validation
 
 - `moon check -p render3d`
 - `moon check -p examples/3d/fog`
 - `moon check -p examples/3d/atmospheric_fog`
+- `moon check -p examples/3d/fog_volumes`
+- `moon check -p examples/3d/scrolling_fog`
+- `moon check -p examples/3d/volumetric_fog`
 - `moon check` in `mgstudio-runtime/web`
 - `cargo build --release` in `mgstudio-runtime/native-wasmtime`
+- Full 3d smoke: `ALL_3D_PASS_ROUND6`
 
 ## Remaining non-exact gaps (unchanged)
 

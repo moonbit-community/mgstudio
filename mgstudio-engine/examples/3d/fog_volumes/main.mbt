@@ -82,7 +82,7 @@ fn transform_forward(transform : @math.Transform) -> @math.Vec3 {
 }
 
 ///|
-fn apply_distance_fog_from_stub(phase : Float) -> Unit {
+fn apply_distance_fog_from_stub(world : @ecs_world.World, phase : Float) -> Unit {
   let fog_volume_stub = fog_volumes_state.val.fog_volume_stub
   let volumetric_fog_stub = fog_volumes_state.val.volumetric_fog_stub
   let visibility = clampf(
@@ -95,22 +95,29 @@ fn apply_distance_fog_from_stub(phase : Float) -> Unit {
   let directional_alpha = clampf(0.25F + phase * 0.55F, 0.2F, 0.9F)
   let fog_color = fog_volume_stub.fog_color
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::default()
-    .with_color(
-      @render2d.Color::new(
-        clamp01(fog_color.r * brightness + ambient_lift),
-        clamp01(fog_color.g * brightness + ambient_lift),
-        clamp01(fog_color.b * brightness + ambient_lift),
-        0.9F,
-      ),
-    )
-    .with_directional_light_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
-    )
-    .with_directional_light_exponent(24.0F)
-    .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility)),
+  let fog = @render3d.DistanceFog::default()
+  .with_color(
+    @render2d.Color::new(
+      clamp01(fog_color.r * brightness + ambient_lift),
+      clamp01(fog_color.g * brightness + ambient_lift),
+      clamp01(fog_color.b * brightness + ambient_lift),
+      0.9F,
+    ),
   )
+  .with_directional_light_color(
+    @render2d.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
+  )
+  .with_directional_light_exponent(24.0F)
+  .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
+  guard fog_volumes_state.val.camera is Some(camera) else { return }
+  let tick = world.read_change_tick()
+  let camera3d_store = world.get_camera3d_store()
+  let camera3d = match camera3d_store.get(camera) {
+    Some(value) => value
+    None => @render3d.Camera3d::default()
+  }
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
+  |> ignore
 }
 
 ///|
@@ -271,8 +278,8 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  apply_distance_fog_from_stub(1.0F)
   fog_volumes_state.val.camera = Some(camera)
+  apply_distance_fog_from_stub(world, 1.0F)
 }
 
 ///|
@@ -317,7 +324,7 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
   fog_volumes_state.val.fog_volume_stub = fog_volumes_state.val.fog_volume_stub
   .with_density_factor(density)
   .with_scattering(1.0F)
-  apply_distance_fog_from_stub(phase)
+  apply_distance_fog_from_stub(world, phase)
 }
 
 ///|

@@ -52,6 +52,7 @@ const LOOK_TARGET_Z : Float = -6.0F
 
 ///|
 priv struct ScrollingFogState {
+  mut camera : @core.Entity?
   mut fog_volume_outer : @core.Entity?
   mut fog_volume_inner : @core.Entity?
   mut volumetric_fog_stub : @render3d.VolumetricFog
@@ -60,6 +61,7 @@ priv struct ScrollingFogState {
 
 ///|
 let scrolling_fog_state : Ref[ScrollingFogState] = Ref::new({
+  camera: None,
   fog_volume_outer: None,
   fog_volume_inner: None,
   volumetric_fog_stub: @render3d.VolumetricFog::default(),
@@ -106,6 +108,7 @@ fn camera_position() -> @math.Vec3 {
 
 ///|
 fn apply_distance_fog_from_stub(
+  world : @ecs_world.World,
   proxy_density_noise : Float,
   sunlight_phase : Float,
 ) -> Unit {
@@ -120,22 +123,29 @@ fn apply_distance_fog_from_stub(
   let ambient_lift = clampf(volumetric_fog_stub.ambient_intensity * 0.5F, 0.0F, 0.25F)
   let directional_alpha = clampf(0.25F + sunlight_phase * 0.45F, 0.2F, 0.75F)
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::default()
-    .with_color(
-      @render2d.Color::new(
-        clamp01((0.34F + proxy_density_noise * 0.05F) * brightness + ambient_lift),
-        clamp01((0.37F + proxy_density_noise * 0.06F) * brightness + ambient_lift),
-        clamp01((0.42F + proxy_density_noise * 0.08F) * brightness + ambient_lift),
-        0.95F,
-      ),
-    )
-    .with_directional_light_color(
-      @render2d.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
-    )
-    .with_directional_light_exponent(12.0F)
-    .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility)),
+  let fog = @render3d.DistanceFog::default()
+  .with_color(
+    @render2d.Color::new(
+      clamp01((0.34F + proxy_density_noise * 0.05F) * brightness + ambient_lift),
+      clamp01((0.37F + proxy_density_noise * 0.06F) * brightness + ambient_lift),
+      clamp01((0.42F + proxy_density_noise * 0.08F) * brightness + ambient_lift),
+      0.95F,
+    ),
   )
+  .with_directional_light_color(
+    @render2d.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
+  )
+  .with_directional_light_exponent(12.0F)
+  .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
+  guard scrolling_fog_state.val.camera is Some(camera) else { return }
+  let tick = world.read_change_tick()
+  let camera3d_store = world.get_camera3d_store()
+  let camera3d = match camera3d_store.get(camera) {
+    Some(value) => value
+    None => @render3d.Camera3d::default()
+  }
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
+  |> ignore
 }
 
 ///|
@@ -213,6 +223,7 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
   .get_temporal_anti_aliasing_store()
   .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
   world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
+  scrolling_fog_state.val.camera = Some(camera)
 }
 
 ///|
@@ -259,6 +270,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   scrolling_fog_state.val.fog_volume_outer = None
   scrolling_fog_state.val.fog_volume_inner = None
+  scrolling_fog_state.val.camera = None
   scrolling_fog_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
   .with_ambient_intensity(0.0F)
   .with_jitter(0.5F)
@@ -273,7 +285,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   setup_camera(world)
   setup_lighting(world)
 
-  apply_distance_fog_from_stub(0.5F, 1.0F)
+  apply_distance_fog_from_stub(world, 0.5F, 1.0F)
 }
 
 ///|
@@ -322,7 +334,7 @@ fn scroll_fog(world : @ecs_world.World) -> Unit {
   let view_dir = focus_point().sub(camera_position()).normalize_or_zero()
   let light_dir = transform_forward(light_transform)
   let sunlight_phase = clamp01(light_dir.neg().dot(view_dir) * 0.5F + 0.5F)
-  apply_distance_fog_from_stub(proxy_density_noise, sunlight_phase)
+  apply_distance_fog_from_stub(world, proxy_density_noise, sunlight_phase)
 }
 
 ///|

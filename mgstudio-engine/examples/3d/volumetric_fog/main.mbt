@@ -427,17 +427,24 @@ fn apply_fog_proxy(world : @ecs_world.World) -> Unit {
   )
   let density = clampf(0.34F - brightness * 0.22F, 0.10F, 0.32F)
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(
-        clamp01(0.06F + brightness * 0.42F),
-        clamp01(0.06F + brightness * 0.40F),
-        clamp01(0.08F + brightness * 0.50F),
-        1.0F,
-      ),
-      @render3d.FogFalloff3d::exponential_squared(density),
+  let fog = @render3d.DistanceFog::new(
+    @render2d.Color::new(
+      clamp01(0.06F + brightness * 0.42F),
+      clamp01(0.06F + brightness * 0.40F),
+      clamp01(0.08F + brightness * 0.50F),
+      1.0F,
     ),
+    @render3d.FogFalloff3d::exponential_squared(density),
   )
+  guard volumetric_fog_state.val.camera is Some(camera) else { return }
+  let tick = world.read_change_tick()
+  let camera3d_store = world.get_camera3d_store()
+  let camera3d = match camera3d_store.get(camera) {
+    Some(value) => value
+    None => @render3d.Camera3d::default()
+  }
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
+  |> ignore
 }
 
 ///|
