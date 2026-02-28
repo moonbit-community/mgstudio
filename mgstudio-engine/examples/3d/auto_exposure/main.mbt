@@ -34,13 +34,16 @@ const AUTO_EXPOSURE_LERP_RATE : Float = 2.0F
 const MASK_OVERLAY_ALPHA : Float = 0.65F
 
 ///|
+const INITIAL_EXPOSURE_EV100 : Float = 10.0F
+
+///|
 priv struct AutoExposureState {
   mut camera : @core.Entity?
   mut camera_angle : Float
   mut mask_overlay : @core.Entity?
   mut compensation_curve_enabled : Bool
   mut metering_mask_enabled : Bool
-  mut exposure_brightness : Float
+  mut exposure_ev100 : Float
   mut display_text : @text.TextHandle?
 }
 
@@ -51,7 +54,7 @@ let auto_exposure_state : Ref[AutoExposureState] = Ref::new({
   mask_overlay: None,
   compensation_curve_enabled: true,
   metering_mask_enabled: true,
-  exposure_brightness: 0.0F,
+  exposure_ev100: INITIAL_EXPOSURE_EV100,
   display_text: None,
 })
 
@@ -159,16 +162,24 @@ fn setup(world : @ecs_world.World) -> Unit {
   auto_exposure_state.val.mask_overlay = None
   auto_exposure_state.val.compensation_curve_enabled = true
   auto_exposure_state.val.metering_mask_enabled = true
-  auto_exposure_state.val.exposure_brightness = 0.0F
+  auto_exposure_state.val.exposure_ev100 = INITIAL_EXPOSURE_EV100
   auto_exposure_state.val.display_text = None
 
   let asset_server = @asset.AssetServer::new()
   let metering_mask = asset_server.load("textures/basic_metering_mask.png")
 
+  let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
     camera_transform_for_angle(auto_exposure_state.val.camera_angle),
   ).spawn(world)
+  world
+  .get_exposure_store()
+  .insert(
+    camera,
+    @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
+    tick,
+  )
   world
   .get_skybox_store()
   .insert(
@@ -177,7 +188,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       100_000.0F,
     ),
-    world.read_change_tick(),
+    tick,
   )
   auto_exposure_state.val.camera = Some(camera)
 
@@ -198,7 +209,6 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
 
-  let tick = world.read_change_tick()
   let point_light = world.spawn_empty()
   world
   .get_point_light_store()
@@ -357,20 +367,48 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
     view_to_opening
   }
 
-  let mut target_brightness = 80.0F + metering_weight * 1_600.0F
+  let mut target_ev100 = 8.0F + metering_weight * 8.0F
   if auto_exposure_state.val.compensation_curve_enabled {
-    target_brightness = target_brightness + (target_brightness - 600.0F) * 0.2F
+    let curve_input = metering_weight * 8.0F - 4.0F
+    let compensation = if curve_input < 0.0F {
+      curve_input * 0.5F
+    } else if curve_input <= 2.0F {
+      0.0F
+    } else {
+      curve_input - 2.0F
+    }
+    target_ev100 = target_ev100 + compensation
   }
+  target_ev100 = clampf(target_ev100, 4.0F, 20.0F)
 
   let lerp = clampf(AUTO_EXPOSURE_LERP_RATE * delta, 0.0F, 1.0F)
-  auto_exposure_state.val.exposure_brightness = auto_exposure_state.val.exposure_brightness +
-    (target_brightness - auto_exposure_state.val.exposure_brightness) * lerp
-
-  set_global_ambient_light(
-    world,
-    @render2d.Color::white(),
-    auto_exposure_state.val.exposure_brightness,
+  auto_exposure_state.val.exposure_ev100 = auto_exposure_state.val.exposure_ev100 +
+    (target_ev100 - auto_exposure_state.val.exposure_ev100) * lerp
+  auto_exposure_state.val.exposure_ev100 = clampf(
+    auto_exposure_state.val.exposure_ev100,
+    4.0F,
+    20.0F,
   )
+  if auto_exposure_state.val.camera is Some(camera_entity) {
+    if world.get_exposure_store().get(camera_entity) is Some(exposure) {
+      world
+      .get_exposure_store()
+      .set(
+        camera_entity,
+        exposure.with_ev100(auto_exposure_state.val.exposure_ev100),
+        tick,
+      )
+      |> ignore
+    } else {
+      world
+      .get_exposure_store()
+      .insert(
+        camera_entity,
+        @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
+        tick,
+      )
+    }
+  }
 
   update_display_text()
 }

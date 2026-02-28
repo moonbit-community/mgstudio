@@ -223,8 +223,10 @@ fn spawn_camera(world : @ecs_world.World) -> Unit {
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
-  world.get_bloom_store().insert(camera, @render3d.Bloom::new(0.1F), tick)
   world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .get_free_camera_store()
+  .insert(camera, @render3d.FreeCamera::default(), tick)
   solari_state.val.camera = Some(camera)
 }
 
@@ -476,6 +478,13 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
       world.read_change_tick(),
     )
     |> ignore
+    world
+    .get_bloom_store()
+    .insert(
+      camera,
+      @render3d.Bloom::default().with_intensity(0.1F),
+      world.read_change_tick(),
+    )
   }
 }
 
@@ -499,6 +508,7 @@ fn apply_scene_mode(
     SolariSceneMode::PicaPica => {
       spawn_pica_scene(world, asset_server)
       if solari_state.val.camera is Some(camera) {
+        let tick = world.read_change_tick()
         world
         .get_transform_store()
         .set(
@@ -506,9 +516,10 @@ fn apply_scene_mode(
           @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
             @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
           ),
-          world.read_change_tick(),
+          tick,
         )
         |> ignore
+        world.get_bloom_store().remove(camera) |> ignore
       }
     }
     SolariSceneMode::ManyLights => spawn_many_lights_scene(world)

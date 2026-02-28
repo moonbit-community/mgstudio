@@ -553,7 +553,14 @@ fn spawn_bases(
   let water_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::black())
     .with_normal_map_texture(
-      Some(asset_server.load("textures/water_normals.png")),
+      Some(
+        asset_server.load_with_settings(
+          "textures/water_normals.png",
+          @asset.ImageLoaderSettings::default()
+          .with_is_srgb(false)
+          .with_sampler(@asset.ImageSampler::LinearRepeat),
+        ),
+      ),
     )
     .with_perceptual_roughness(0.09F)
     .with_reflectance(0.6F)
@@ -690,9 +697,7 @@ fn setup_text(_world : @ecs_world.World) -> Unit {
 ///|
 fn rotate_models(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
-  let rotation = @math.Quat::from_rotation_y(
-    @time.time_elapsed_seconds() * 0.45F,
-  )
+  let rotation = @math.Quat::from_rotation_y(@time.time_elapsed_seconds())
 
   if ssr_state.val.cube_model is Some(cube) {
     if world.get_transform_store().get(cube) is Some(transform) {

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "moonbit.h"
+#include "webgpu.h"
 
 #include <dlfcn.h>
 #include <stdbool.h>
@@ -39,6 +40,16 @@ typedef struct {
   mgw_point origin;
   mgw_size size;
 } mgw_rect;
+
+MOONBIT_FFI_EXPORT uint32_t
+mgw_render_pipeline_desc_builder_set_cull_mode(void *builder, uint32_t cull_mode_u32) {
+  if (!builder) {
+    return 0u;
+  }
+  WGPURenderPipelineDescriptor *desc = (WGPURenderPipelineDescriptor *)builder;
+  desc->primitive.cullMode = (WGPUCullMode)cull_mode_u32;
+  return 1u;
+}
 
 #define MGW_TEXT_EVENT_CAP 256
 #define MGW_TEXT_UNIT_CAP 2048

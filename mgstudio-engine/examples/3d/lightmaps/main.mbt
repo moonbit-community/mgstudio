@@ -146,6 +146,15 @@ fn setup(world : @ecs_world.World) -> Unit {
     @math.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)
   if lightmaps_state.val.args.deferred {
+    let renderer_method_resource = world.get_default_opaque_renderer_method_resource()
+    if renderer_method_resource.get_ref_mut(tick) is Some(current) {
+      current.val = @render3d.DefaultOpaqueRendererMethod::deferred()
+    } else {
+      renderer_method_resource.insert(
+        @render3d.DefaultOpaqueRendererMethod::deferred(),
+        tick,
+      )
+    }
     world
     .get_depth_prepass_store()
     .insert(camera, @render3d.DepthPrepass::default(), tick)

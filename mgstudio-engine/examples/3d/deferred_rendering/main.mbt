@@ -15,10 +15,9 @@
 ///|
 /// Port of `bevy/examples/3d/deferred_rendering.rs`.
 ///
-/// Baseline parity: Bevy's native deferred backend (`Opaque3dDeferred`) and
-/// full shadow-map resource hookup are not yet active in current mgstudio
-/// runtime. This port preserves Bevy's mode-switch controls and prepass API
-/// topology on the current forward path.
+/// Baseline parity: Bevy's native deferred backend (`Opaque3dDeferred`) is not
+/// yet active in current mgstudio runtime. This port preserves Bevy's mode-
+/// switch controls and prepass API topology on the current forward path.
 const LIGHT_ROTATION_SPEED : Float = 0.6283185307179586F
 
 ///|
@@ -193,6 +192,13 @@ fn setup(world : @ecs_world.World) -> Unit {
   deferred_state.val = default_state()
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
+  let directional_shadow_map_resource = world.get_directional_light_shadow_map_resource()
+  let directional_shadow_map = @render3d.DirectionalLightShadowMap::new(4096)
+  if directional_shadow_map_resource.get_ref_mut(tick) is Some(current) {
+    current.val = directional_shadow_map
+  } else {
+    directional_shadow_map_resource.insert(directional_shadow_map, tick)
+  }
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -222,16 +228,20 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_directional_light_store()
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true)
+    .with_cascade_shadow_config_builder(
+      @render3d.CascadeShadowConfigBuilder::default()
+      .with_num_cascades(3)
+      .with_maximum_distance(10.0F),
+    ),
     tick,
   )
   world
   .get_transform_store()
   .insert(
     directional_light,
-    @math.Transform::from_xyz(8.0F, 8.0F, 4.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Transform::identity().with_rotation(
+      @math.Quat::from_rotation_x(-0.7853981634F),
     ),
     tick,
   )
@@ -271,23 +281,23 @@ fn setup(world : @ecs_world.World) -> Unit {
     forward_material,
     @math.Transform::identity(),
   )
-  track_spin(plane, 0.0F)
+  plane |> ignore
 
   let cube_mesh = @render3d.Mesh3d::from_cuboid(0.1F, 0.1F, 0.1F)
-  let cube_a = spawn_mesh(
+  spawn_mesh(
     world,
     cube_mesh,
     forward_material,
     @math.Transform::from_xyz(-0.3F, 0.5F, -0.2F),
   )
-  track_spin(cube_a, 0.7F)
-  let cube_b = spawn_mesh(
+  |> ignore
+  spawn_mesh(
     world,
     cube_mesh,
     forward_material,
     @math.Transform::from_xyz(0.2F, 0.5F, 0.2F),
   )
-  track_spin(cube_b, 0.6F)
+  |> ignore
 
   let emissive_color = @render2d.Color::new(1.0F, 0.4F, 0.1F, 1.0F)
   let emissive_material = @render3d.standard_material_add(
@@ -299,7 +309,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     emissive_material,
     @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
   )
-  track_spin(emissive_cube, 1.0F)
+  world
+  .get_not_shadow_caster_store()
+  .insert(emissive_cube, @render3d.NotShadowCaster::default(), tick)
 
   let point_light = world.spawn_empty()
   world
@@ -339,7 +351,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       material,
       @math.Transform::from_xyz(x, 0.125F, z),
     )
-    track_spin(entity, 0.45F + 0.07F * float_from_int(i))
+    entity |> ignore
   }
 
   let sky_material = @render3d.standard_material_add(
@@ -371,7 +383,12 @@ fn setup(world : @ecs_world.World) -> Unit {
       Some(asset_server.load("textures/parallax_example/cube_color.png")),
     )
     .with_normal_map_texture(
-      Some(asset_server.load("textures/parallax_example/cube_normal.png")),
+      Some(
+        asset_server.load_with_settings(
+          "textures/parallax_example/cube_normal.png",
+          @asset.ImageLoaderSettings::default().with_is_srgb(false),
+        ),
+      ),
     )
     .with_depth_map(
       Some(asset_server.load("textures/parallax_example/cube_depth.png")),

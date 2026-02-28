@@ -104,6 +104,16 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
+fn read_camera_exposure_ev100(world : @ecs_world.World) -> Float {
+  if atmosphere_state.val.camera is Some(camera_entity) {
+    if world.get_exposure_store().get(camera_entity) is Some(exposure) {
+      return exposure.ev100
+    }
+  }
+  atmosphere_state.val.exposure_ev100
+}
+
+///|
 fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
   let qv = @math.Vec3::new(q.x, q.y, q.z)
   let t = qv.cross(v).mul_scalar(2.0F)
@@ -232,9 +242,12 @@ fn apply_atmosphere(world : @ecs_world.World) -> Unit {
     }
   }
 
+  let exposure_ev100 = read_camera_exposure_ev100(world)
+  atmosphere_state.val.exposure_ev100 = exposure_ev100
+
   // Lower ev100 means brighter scene (roughly).
   let exposure_scale = clampf(
-    @math.pow(2.0F, (BASE_EXPOSURE_EV100 - state.exposure_ev100) / 6.0F),
+    @math.pow(2.0F, (BASE_EXPOSURE_EV100 - exposure_ev100) / 6.0F),
     0.45F,
     1.85F,
   )
@@ -315,6 +328,7 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
+    .with_exposure(Some(@render3d.Exposure::new(BASE_EXPOSURE_EV100)))
     .with_screen_space_reflections(
       Some(@render3d.ScreenSpaceReflections::default()),
     )
@@ -339,6 +353,10 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
 ///|
 fn setup_scene(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
+  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  .with_first_cascade_far_bound(0.3F)
+  .with_maximum_distance(15.0F)
+  .build()
 
   let sun = world.spawn_empty()
   world
@@ -359,7 +377,7 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
       @render2d.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       100_000.0F,
       true,
-    ),
+    ).with_cascade_shadow_config(Some(cascade_shadow_config)),
     tick,
   )
   atmosphere_state.val.sun = Some(sun)
@@ -481,21 +499,41 @@ fn atmosphere_controls(world : @ecs_world.World) -> Unit {
   }
 
   let delta = @time.time_delta_seconds()
-  if @input.key_pressed(@window.KeyCode::ArrowUp) {
-    atmosphere_state.val.exposure_ev100 = atmosphere_state.val.exposure_ev100 -
-      delta * 2.0F
-    changed = true
+  let mut exposure_changed = false
+  let exposure_delta = if @input.key_pressed(@window.KeyCode::ArrowUp) {
+    -delta * 2.0F
+  } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
+    delta * 2.0F
+  } else {
+    0.0F
   }
-  if @input.key_pressed(@window.KeyCode::ArrowDown) {
-    atmosphere_state.val.exposure_ev100 = atmosphere_state.val.exposure_ev100 +
-      delta * 2.0F
-    changed = true
+  if exposure_delta != 0.0F {
+    if atmosphere_state.val.camera is Some(camera_entity) {
+      if world.get_exposure_store().get(camera_entity) is Some(exposure) {
+        let next = clampf(exposure.ev100 + exposure_delta, 6.0F, 20.0F)
+        if next != exposure.ev100 {
+          world
+          .get_exposure_store()
+          .set(
+            camera_entity,
+            exposure.with_ev100(next),
+            world.read_change_tick(),
+          )
+          |> ignore
+          atmosphere_state.val.exposure_ev100 = next
+          exposure_changed = true
+        }
+      }
+    } else {
+      atmosphere_state.val.exposure_ev100 = clampf(
+        atmosphere_state.val.exposure_ev100 + exposure_delta,
+        6.0F,
+        20.0F,
+      )
+      exposure_changed = true
+    }
   }
-  atmosphere_state.val.exposure_ev100 = clampf(
-    atmosphere_state.val.exposure_ev100,
-    6.0F,
-    20.0F,
-  )
+  changed = changed || exposure_changed
 
   if changed {
     if atmosphere_state.val.help_text is Some(handle) {
@@ -552,6 +590,17 @@ fn dynamic_scene(world : @ecs_world.World) -> Unit {
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let renderer_method_resource = world.get_default_opaque_renderer_method_resource()
+  if renderer_method_resource.get_ref_mut(tick) is Some(current) {
+    current.val = @render3d.DefaultOpaqueRendererMethod::deferred()
+  } else {
+    renderer_method_resource.insert(
+      @render3d.DefaultOpaqueRendererMethod::deferred(),
+      tick,
+    )
+  }
+
   atmosphere_state.val = {
     paused: false,
     mode: 0,

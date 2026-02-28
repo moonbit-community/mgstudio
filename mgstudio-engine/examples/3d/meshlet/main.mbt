@@ -128,6 +128,12 @@ fn color_for_row(index : Int) -> @render2d.Color {
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
+  let shadow_map_resource = world.get_directional_light_shadow_map_resource()
+  if shadow_map_resource.get_ref_mut(tick) is Some(current) {
+    current.val = @render3d.DirectionalLightShadowMap::new(4096)
+  } else {
+    shadow_map_resource.insert(@render3d.DirectionalLightShadowMap::new(4096), tick)
+  }
 
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
   let camera = @render3d.Camera3dBundle::new(
@@ -149,8 +155,15 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
+  world
+  .get_free_camera_store()
+  .insert(camera, @render3d.FreeCamera::default(), tick)
 
   let directional = world.spawn_empty()
+  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  .with_num_cascades(1)
+  .with_maximum_distance(15.0F)
+  .build()
   world
   .get_directional_light_store()
   .insert(
@@ -159,7 +172,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @render2d.Color::white(),
       DIRECTIONAL_LIGHT_ILLUMINANCE,
       true,
-    ),
+    ).with_cascade_shadow_config(Some(cascade_shadow_config)),
     tick,
   )
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(

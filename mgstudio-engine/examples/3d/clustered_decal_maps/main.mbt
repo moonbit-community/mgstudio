@@ -16,8 +16,9 @@
 /// Port of `bevy/examples/3d/clustered_decal_maps.rs`.
 ///
 /// Baseline parity:
-/// - Bevy `ClusteredDecal` map-channel API surface is exposed, but clustered
-///   projected-decal rendering is not yet active in this backend.
+/// - This example now attaches `ClusteredDecal` components directly with Bevy-
+///   aligned map channels.
+/// - Clustered projected-decal rendering is not yet active in this backend.
 /// - This port keeps the same runtime behavior model (continuous spawn,
 ///   animated in/out lifetime, emissive toggle) using textured translucent
 ///   proxy meshes.
@@ -218,10 +219,14 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let textures : AppTextures = {
     decal_base_color_texture: asset_server.load("branding/bevy_bird_dark.png"),
-    decal_normal_map_texture: asset_server.load(
+    decal_normal_map_texture: asset_server.load_with_settings(
       "textures/ScratchedGold-Normal.png",
+      @asset.ImageLoaderSettings::default().with_is_srgb(false),
     ),
-    decal_metallic_roughness_texture: asset_server.load("branding/icon.png"),
+    decal_metallic_roughness_texture: asset_server.load_with_settings(
+      "branding/icon.png",
+      @asset.ImageLoaderSettings::default().with_is_srgb(false),
+    ),
     decal_emissive_texture: asset_server.load("branding/icon.png"),
   }
   clustered_decal_maps_state.val.textures = Some(textures)
@@ -263,6 +268,7 @@ fn spawn_decal(world : @ecs_world.World) -> Unit {
   guard clustered_decal_maps_state.val.textures is Some(textures) else {
     return
   }
+  let tick = world.read_change_tick()
 
   let x = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
   let y = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
@@ -284,6 +290,17 @@ fn spawn_decal(world : @ecs_world.World) -> Unit {
       .with_emissive_texture(Some(textures.decal_emissive_texture))
       .with_emissive(@render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
+  let mut clustered_decal = @render3d.ClusteredDecal::default()
+    .with_base_color_texture(Some(textures.decal_base_color_texture))
+    .with_normal_map_texture(Some(textures.decal_normal_map_texture))
+    .with_metallic_roughness_texture(
+      Some(textures.decal_metallic_roughness_texture),
+    )
+  if clustered_decal_maps_state.val.emissive_decals {
+    clustered_decal = clustered_decal.with_emissive_texture(
+      Some(textures.decal_emissive_texture),
+    )
+  }
   let entity = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 0.02F),
     @render3d.MeshMaterial3d::new(@render3d.standard_material_add(material)),
@@ -291,6 +308,7 @@ fn spawn_decal(world : @ecs_world.World) -> Unit {
     .with_rotation(@math.Quat::from_rotation_z(theta))
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
+  world.get_clustered_decal_store().insert(entity, clustered_decal, tick)
   clustered_decal_maps_state.val.decals.push({
     entity,
     base_scale: size,

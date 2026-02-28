@@ -548,7 +548,65 @@ extern "js" fn should_capture_keyboard_event(
   #|   if (!doc) return false
   #|   if (doc.activeElement === canvas) return true
   #|   if (doc.pointerLockElement === canvas) return true
+  #|   if (target === canvas) return true
+  #|   if (typeof event.composedPath === "function") {
+  #|     const path = event.composedPath()
+  #|     if (Array.isArray(path) && path.includes(canvas)) {
+  #|       return true
+  #|     }
+  #|   }
+  #|   const active = doc.activeElement
+  #|   if (active == null || active === doc.body || active === doc.documentElement) {
+  #|     return true
+  #|   }
   #|   return false
+  #| }
+
+///|
+extern "js" fn pointer_lock_active_for_target(target : @js.Any) -> Bool =
+  #| (target) => {
+  #|   if (!target) return false
+  #|   const doc =
+  #|     (typeof document === "object" && document) ||
+  #|     target.ownerDocument ||
+  #|     null
+  #|   if (!doc) return false
+  #|   return doc.pointerLockElement === target
+  #| }
+
+///|
+extern "js" fn pointer_event_set_capture(
+  target : @js.Any,
+  event : @js.Any,
+) -> Unit =
+  #| (target, event) => {
+  #|   if (!target || !event) return
+  #|   if (typeof target.setPointerCapture !== "function") return
+  #|   const pointerId = Number(event.pointerId)
+  #|   if (!Number.isFinite(pointerId)) return
+  #|   try {
+  #|     target.setPointerCapture(pointerId)
+  #|   } catch (_err) {
+  #|   }
+  #| }
+
+///|
+extern "js" fn pointer_event_release_capture(
+  target : @js.Any,
+  event : @js.Any,
+) -> Unit =
+  #| (target, event) => {
+  #|   if (!target || !event) return
+  #|   if (typeof target.releasePointerCapture !== "function") return
+  #|   const pointerId = Number(event.pointerId)
+  #|   if (!Number.isFinite(pointerId)) return
+  #|   try {
+  #|     if (typeof target.hasPointerCapture === "function" && !target.hasPointerCapture(pointerId)) {
+  #|       return
+  #|     }
+  #|     target.releasePointerCapture(pointerId)
+  #|   } catch (_err) {
+  #|   }
   #| }
 
 ///|

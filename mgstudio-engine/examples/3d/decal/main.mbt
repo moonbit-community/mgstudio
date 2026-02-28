@@ -15,11 +15,10 @@
 ///|
 /// Port of `bevy/examples/3d/decal.rs`.
 ///
-/// Baseline parity: `ForwardDecal`/`ForwardDecalMaterialExt` API surface is
-/// exposed, but projected forward-decal shading is still pending backend
-/// hookup. This port preserves scene topology, camera controller/prepass
-/// setup, and random obstacle layout, and maps the decal volume to a textured
-/// translucent proxy mesh.
+/// Baseline parity: this example now attaches
+/// `ForwardDecal`/`ForwardDecalMaterialExt` components directly on the decal
+/// entity. Current backend rendering still does not project forward decals, so
+/// a textured proxy volume is kept for visible behavior parity.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -58,21 +57,22 @@ fn setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let decal_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 0.85F),
-    )
+    @render3d.StandardMaterial::from_color(@render2d.Color::white())
     .with_base_color_texture(
       Some(asset_server.load("textures/uv_checker_bw.png")),
-    )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
-    .with_unlit(true),
+    ),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
+  let decal = @render3d.MeshMaterial3dBundle::new(
+    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @render3d.MeshMaterial3d::new(decal_material),
-    @math.Transform::identity(),
+    @math.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
   ).spawn(world)
-  |> ignore
+  world
+  .get_forward_decal_store()
+  .insert(decal, @render3d.ForwardDecal::default(), tick)
+  world
+  .get_forward_decal_material_ext_store()
+  .insert(decal, @render3d.ForwardDecalMaterialExt::new(1.0F), tick)
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -123,7 +123,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_point_light_store()
   .insert(
     light,
-    @render3d.PointLight::new(@render2d.Color::white(), 300_000.0F, 30.0F, true),
+    @render3d.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world

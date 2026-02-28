@@ -340,6 +340,8 @@ fn macos_keycode_from_string(code : String) -> Int? {
     "Digit5" => Some(23)
     "Digit7" => Some(26)
     "Digit8" => Some(28)
+    "Digit9" => Some(25)
+    "Digit0" => Some(29)
     "KeyM" => Some(46)
     "KeyN" => Some(45)
     "KeyJ" => Some(38)
@@ -373,6 +375,8 @@ fn macos_keycode_from_string(code : String) -> Int? {
     "BracketLeft" => Some(33)
     "BracketRight" => Some(30)
     "Quote" => Some(39)
+    "Backquote" => Some(50)
+    "Backslash" => Some(42)
     _ => None
   }
 }

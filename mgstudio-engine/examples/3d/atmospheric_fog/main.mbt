@@ -180,6 +180,10 @@ fn spawn_mesh(
 ///|
 fn setup_terrain_scene(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
+  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  .with_first_cascade_far_bound(0.3F)
+  .with_maximum_distance(3.0F)
+  .build()
   let sun = world.spawn_empty()
   world
   .get_transform_store()
@@ -199,7 +203,7 @@ fn setup_terrain_scene(world : @ecs_world.World) -> Unit {
       @render2d.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       10_000.0F,
       true,
-    ),
+    ).with_cascade_shadow_config(Some(cascade_shadow_config)),
     tick,
   )
 

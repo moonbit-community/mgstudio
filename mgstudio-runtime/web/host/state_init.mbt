@@ -792,7 +792,12 @@ fn init_input(state : State) -> Unit {
       set_clear(state.input.just_pressed)
       set_clear(state.input.just_released)
       set_clear(state.input.repeated)
+      set_clear(state.input.mouse_buttons)
+      set_clear(state.input.mouse_just_pressed)
+      set_clear(state.input.mouse_just_released)
       state.input.text_events.clear()
+      state.input.touch_events.clear()
+      state.input.has_cursor = false
     }),
   )
 }
@@ -878,13 +883,20 @@ fn update_mouse_position(
   target : @js.Any,
   event : @js.Any,
 ) -> Unit {
-  let rect = get_bounding_rect(target)
-  let client_x : Double = event._get("clientX").cast()
-  let client_y : Double = event._get("clientY").cast()
-  let left : Double = rect._get("left").cast()
-  let top : Double = rect._get("top").cast()
-  state.input.mouse_x = client_x - left
-  state.input.mouse_y = client_y - top
+  if pointer_lock_active_for_target(target) {
+    let dx = number_or(event._get("movementX"), 0)
+    let dy = number_or(event._get("movementY"), 0)
+    state.input.mouse_x = state.input.mouse_x + dx
+    state.input.mouse_y = state.input.mouse_y + dy
+  } else {
+    let rect = get_bounding_rect(target)
+    let client_x : Double = event._get("clientX").cast()
+    let client_y : Double = event._get("clientY").cast()
+    let left : Double = rect._get("left").cast()
+    let top : Double = rect._get("top").cast()
+    state.input.mouse_x = client_x - left
+    state.input.mouse_y = client_y - top
+  }
   state.input.has_cursor = true
 }
 
@@ -1024,6 +1036,7 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
           set_add(state.input.mouse_just_pressed, @js.any(label))
         }
       }
+      pointer_event_set_capture(target, event)
       update_mouse_position(state, target, event)
     }),
   )
@@ -1043,13 +1056,18 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
           set_add(state.input.mouse_just_released, @js.any(label))
         }
       }
+      pointer_event_release_capture(target, event)
       update_mouse_position(state, target, event)
     }),
   )
   add_event_listener(
     target,
     "pointerleave",
-    @js.from_fn1(fn(_ : @js.Any) { state.input.has_cursor = false }),
+    @js.from_fn1(fn(_ : @js.Any) {
+      if !pointer_lock_active_for_target(target) {
+        state.input.has_cursor = false
+      }
+    }),
   )
   add_event_listener(
     target,
@@ -1058,6 +1076,15 @@ fn bind_pointer_events(state : State, target : @js.Any) -> Unit {
       if pointer_is_touch(event) {
         push_touch_event(state, target, event, TOUCH_PHASE_CANCELED)
         prevent_default(event)
+      } else {
+        let button : Int = event._get("button").cast()
+        let name = mouse_button_name(button)
+        if name is Some(label) {
+          if set_delete(state.input.mouse_buttons, @js.any(label)) {
+            set_add(state.input.mouse_just_released, @js.any(label))
+          }
+        }
+        pointer_event_release_capture(target, event)
       }
     }),
   )

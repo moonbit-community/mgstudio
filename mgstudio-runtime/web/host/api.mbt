@@ -2260,6 +2260,16 @@ pub fn create_host(
       } else {
         0.0
       }
+      let mut pass_kind = to_int(arg_number(args, 18, 0))
+      if to_int(arg_number(args, 19, 1)) == 0 {
+        pass_kind = pass_kind | (1 << 8)
+      }
+      if to_int(arg_number(args, 20, 1)) == 0 {
+        pass_kind = pass_kind | (1 << 9)
+      }
+      if to_int(arg_number(args, 21, 1)) == 0 {
+        pass_kind = pass_kind | (1 << 10)
+      }
       begin_pass(
         state,
         to_int(arg_number(args, 0, -1)),
@@ -2331,7 +2341,7 @@ pub fn create_host(
         0.0,
         0.0,
         1.0,
-        0.0,
+        pass_kind.to_double(),
         arg_number(args, 17, 1),
       )
       if state.gpu.profile_enabled {
@@ -2351,6 +2361,16 @@ pub fn create_host(
         (camera_rot_w * camera_rot_z + camera_rot_x * camera_rot_y)
       let cosy_cosp = 1.0 -
         2.0 * (camera_rot_y * camera_rot_y + camera_rot_z * camera_rot_z)
+      let mut pass_kind = to_int(arg_number(args, 64, 0))
+      if to_int(arg_number(args, 66, 1)) == 0 {
+        pass_kind = pass_kind | (1 << 8)
+      }
+      if to_int(arg_number(args, 67, 1)) == 0 {
+        pass_kind = pass_kind | (1 << 9)
+      }
+      if to_int(arg_number(args, 68, 1)) == 0 {
+        pass_kind = pass_kind | (1 << 10)
+      }
       begin_pass(
         state,
         to_int(arg_number(args, 0, -1)),
@@ -2422,7 +2442,7 @@ pub fn create_host(
         arg_number(args, 61, camera_rot_y),
         arg_number(args, 62, camera_rot_z),
         arg_number(args, 63, camera_rot_w),
-        arg_number(args, 64, 0.0),
+        pass_kind.to_double(),
         arg_number(args, 65, 1),
       )
     }),
@@ -2632,6 +2652,16 @@ pub fn create_host(
   )
   let gpu_draw_mesh3d = wrap_variadic(
     @js.from_fn1(fn(args) {
+      let mut cull_mode = to_int(arg_number(args, 59, 2))
+      if to_int(arg_number(args, 60, 0)) != 0 {
+        cull_mode = cull_mode | (1 << 8)
+      }
+      if to_int(arg_number(args, 61, 0)) != 0 {
+        cull_mode = cull_mode | (1 << 9)
+      }
+      if to_int(arg_number(args, 62, 0)) != 0 {
+        cull_mode = cull_mode | (1 << 10)
+      }
       draw_mesh3d(
         state,
         to_int(arg_number(args, 0, 0)),
@@ -2693,18 +2723,29 @@ pub fn create_host(
         to_int(arg_number(args, 56, -1)),
         arg_number(args, 57, 0),
         arg_number(args, 58, 0),
-        to_int(arg_number(args, 59, 2)),
+        cull_mode,
       )
     }),
   )
   let gpu_draw_motion_blur = wrap_variadic(
     @js.from_fn1(fn(args) {
+      let motion_blur_enabled = to_int(arg_number(args, 4, 1)) != 0
+      let shutter_angle = if motion_blur_enabled {
+        arg_number(args, 2, 0.0)
+      } else {
+        0.0
+      }
+      let samples = if motion_blur_enabled {
+        to_int(arg_number(args, 3, 0))
+      } else {
+        0
+      }
       draw_motion_blur(
         state,
         to_int(arg_number(args, 0, -1)),
         to_int(arg_number(args, 1, -1)),
-        arg_number(args, 2, 0.0),
-        to_int(arg_number(args, 3, 0)),
+        shutter_angle,
+        samples,
       )
     }),
   )

@@ -2,7 +2,7 @@
 
 - Date: 2026-02-28
 - Scope: `mgstudio-engine/examples/3d/*` packages
-- Check command: `moon check -p <package>`
+- Check command: `for pkg in $(find examples/3d -mindepth 1 -maxdepth 1 -type d | sort); do moon check -p "$pkg"; done`
 - Build command: not run in this sweep (skipped to avoid long lock waits while concurrent build activity exists)
 - Summary: 68 passed, 0 failed, 68 total
 
@@ -42,7 +42,7 @@
 | mirror | pass | not run | Finished. moon: no work to do |
 | mixed_lighting | pass | not run | Finished. moon: no work to do |
 | motion_blur | pass | not run | Finished. moon: no work to do |
-| occlusion_culling | pass | not run | Finished. moon: no work to do |
+| occlusion_culling | pass | not run | Finished. moon: ran 1 task, now up to date (1 warnings, 0 errors) |
 | order_independent_transparency | pass | not run | Finished. moon: no work to do |
 | orthographic | pass | not run | Finished. moon: no work to do |
 | parallax_mapping | pass | not run | Finished. moon: no work to do |

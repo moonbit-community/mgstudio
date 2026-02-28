@@ -13,13 +13,441 @@
 // limitations under the License.
 
 ///|
-/// Marker component aligned with Bevy's `Camera3d`.
+pub(all) enum DecalRenderMode3d {
+  Disabled
+  ForwardOnly
+  ClusteredOnly
+  ForwardAndClustered
+} derive(Eq, Show)
+
+///|
+pub fn DecalRenderMode3d::default() -> DecalRenderMode3d {
+  DecalRenderMode3d::ForwardAndClustered
+}
+
+///|
+pub struct CameraDecalConfig3d {
+  mode : DecalRenderMode3d
+  requires_depth_prepass : Bool
+  clustered_requires_deferred_prepass : Bool
+}
+
+///|
+pub fn CameraDecalConfig3d::default() -> CameraDecalConfig3d {
+  CameraDecalConfig3d::{
+    mode: DecalRenderMode3d::ForwardAndClustered,
+    requires_depth_prepass: true,
+    clustered_requires_deferred_prepass: false,
+  }
+}
+
+///|
+pub fn CameraDecalConfig3d::with_mode(
+  self : CameraDecalConfig3d,
+  mode : DecalRenderMode3d,
+) -> CameraDecalConfig3d {
+  CameraDecalConfig3d::{ ..self, mode, }
+}
+
+///|
+pub fn CameraDecalConfig3d::with_requires_depth_prepass(
+  self : CameraDecalConfig3d,
+  requires_depth_prepass : Bool,
+) -> CameraDecalConfig3d {
+  CameraDecalConfig3d::{ ..self, requires_depth_prepass, }
+}
+
+///|
+pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(
+  self : CameraDecalConfig3d,
+  clustered_requires_deferred_prepass : Bool,
+) -> CameraDecalConfig3d {
+  CameraDecalConfig3d::{ ..self, clustered_requires_deferred_prepass, }
+}
+
+///|
+pub(all) enum CameraDeferredMode3d {
+  Auto
+  Forward
+  Deferred
+} derive(Eq, Show)
+
+///|
+pub fn CameraDeferredMode3d::default() -> CameraDeferredMode3d {
+  CameraDeferredMode3d::Auto
+}
+
+///|
+pub struct CameraDeferredConfig3d {
+  mode : CameraDeferredMode3d
+  requires_deferred_prepass : Bool
+}
+
+///|
+pub fn CameraDeferredConfig3d::default() -> CameraDeferredConfig3d {
+  CameraDeferredConfig3d::{
+    mode: CameraDeferredMode3d::Auto,
+    requires_deferred_prepass: false,
+  }
+}
+
+///|
+pub fn CameraDeferredConfig3d::with_mode(
+  self : CameraDeferredConfig3d,
+  mode : CameraDeferredMode3d,
+) -> CameraDeferredConfig3d {
+  CameraDeferredConfig3d::{ ..self, mode, }
+}
+
+///|
+pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(
+  self : CameraDeferredConfig3d,
+  requires_deferred_prepass : Bool,
+) -> CameraDeferredConfig3d {
+  CameraDeferredConfig3d::{ ..self, requires_deferred_prepass, }
+}
+
+///|
+/// API-parity data model aligned with Bevy's `AutoExposure` camera component.
+pub struct AutoExposure {
+  min_ev100 : Float
+  max_ev100 : Float
+  low_percent : Float
+  high_percent : Float
+  speed_brighten : Float
+  speed_darken : Float
+  exponential_transition_distance : Float
+  compensation_ev : Float
+  metering_mask : @asset.Handle[@asset.Image]?
+}
+
+///|
+pub fn AutoExposure::default() -> AutoExposure {
+  AutoExposure::{
+    min_ev100: -8.0F,
+    max_ev100: 8.0F,
+    low_percent: 0.10F,
+    high_percent: 0.90F,
+    speed_brighten: 3.0F,
+    speed_darken: 1.0F,
+    exponential_transition_distance: 1.5F,
+    compensation_ev: 0.0F,
+    metering_mask: None,
+  }
+}
+
+///|
+pub fn AutoExposure::new(min_ev100 : Float, max_ev100 : Float) -> AutoExposure {
+  AutoExposure::default().with_range(min_ev100, max_ev100)
+}
+
+///|
+pub fn AutoExposure::with_range(
+  self : AutoExposure,
+  min_ev100 : Float,
+  max_ev100 : Float,
+) -> AutoExposure {
+  let safe_min = if min_ev100 < max_ev100 { min_ev100 } else { max_ev100 }
+  let safe_max = if max_ev100 > safe_min { max_ev100 } else { safe_min + 0.01F }
+  AutoExposure::{ ..self, min_ev100: safe_min, max_ev100: safe_max }
+}
+
+///|
+pub fn AutoExposure::with_filter(
+  self : AutoExposure,
+  low_percent : Float,
+  high_percent : Float,
+) -> AutoExposure {
+  let safe_low = if low_percent < 0.0F {
+    0.0F
+  } else if low_percent > 1.0F {
+    1.0F
+  } else {
+    low_percent
+  }
+  let mut safe_high = if high_percent < 0.0F {
+    0.0F
+  } else if high_percent > 1.0F {
+    1.0F
+  } else {
+    high_percent
+  }
+  if safe_high < safe_low {
+    safe_high = safe_low
+  }
+  AutoExposure::{ ..self, low_percent: safe_low, high_percent: safe_high }
+}
+
+///|
+pub fn AutoExposure::with_speed_brighten(
+  self : AutoExposure,
+  speed_brighten : Float,
+) -> AutoExposure {
+  AutoExposure::{
+    ..self,
+    speed_brighten: if speed_brighten < 0.0F {
+      0.0F
+    } else {
+      speed_brighten
+    },
+  }
+}
+
+///|
+pub fn AutoExposure::with_speed_darken(
+  self : AutoExposure,
+  speed_darken : Float,
+) -> AutoExposure {
+  AutoExposure::{
+    ..self,
+    speed_darken: if speed_darken < 0.0F {
+      0.0F
+    } else {
+      speed_darken
+    },
+  }
+}
+
+///|
+pub fn AutoExposure::with_exponential_transition_distance(
+  self : AutoExposure,
+  exponential_transition_distance : Float,
+) -> AutoExposure {
+  AutoExposure::{
+    ..self,
+    exponential_transition_distance: if exponential_transition_distance <= 0.0F {
+      0.0001F
+    } else {
+      exponential_transition_distance
+    },
+  }
+}
+
+///|
+pub fn AutoExposure::with_compensation_ev(
+  self : AutoExposure,
+  compensation_ev : Float,
+) -> AutoExposure {
+  AutoExposure::{ ..self, compensation_ev, }
+}
+
+///|
+pub fn AutoExposure::with_metering_mask(
+  self : AutoExposure,
+  metering_mask : @asset.Handle[@asset.Image]?,
+) -> AutoExposure {
+  AutoExposure::{ ..self, metering_mask, }
+}
+
+///|
+pub(all) enum DepthOfFieldMode {
+  Bokeh
+  Gaussian
+} derive(Eq, Show)
+
+///|
+pub fn DepthOfFieldMode::default() -> DepthOfFieldMode {
+  DepthOfFieldMode::Gaussian
+}
+
+///|
+/// API-parity data model aligned with Bevy's `DepthOfField` camera component.
+pub struct DepthOfField {
+  mode : DepthOfFieldMode
+  focal_distance : Float
+  sensor_height : Float
+  aperture_f_stops : Float
+  max_circle_of_confusion_diameter : Float
+  max_depth : Float
+}
+
+///|
+pub fn DepthOfField::default() -> DepthOfField {
+  DepthOfField::{
+    mode: DepthOfFieldMode::Gaussian,
+    focal_distance: 10.0F,
+    sensor_height: 0.01866F,
+    aperture_f_stops: 4.0F,
+    max_circle_of_confusion_diameter: 64.0F,
+    max_depth: 1_000_000.0F,
+  }
+}
+
+///|
+pub fn DepthOfField::new(
+  mode : DepthOfFieldMode,
+  focal_distance : Float,
+) -> DepthOfField {
+  DepthOfField::default().with_mode(mode).with_focal_distance(focal_distance)
+}
+
+///|
+pub fn DepthOfField::with_mode(
+  self : DepthOfField,
+  mode : DepthOfFieldMode,
+) -> DepthOfField {
+  DepthOfField::{ ..self, mode, }
+}
+
+///|
+pub fn DepthOfField::with_focal_distance(
+  self : DepthOfField,
+  focal_distance : Float,
+) -> DepthOfField {
+  DepthOfField::{
+    ..self,
+    focal_distance: if focal_distance <= 0.0F {
+      0.0001F
+    } else {
+      focal_distance
+    },
+  }
+}
+
+///|
+pub fn DepthOfField::with_sensor_height(
+  self : DepthOfField,
+  sensor_height : Float,
+) -> DepthOfField {
+  DepthOfField::{
+    ..self,
+    sensor_height: if sensor_height <= 0.0F {
+      0.0001F
+    } else {
+      sensor_height
+    },
+  }
+}
+
+///|
+pub fn DepthOfField::with_aperture_f_stops(
+  self : DepthOfField,
+  aperture_f_stops : Float,
+) -> DepthOfField {
+  DepthOfField::{
+    ..self,
+    aperture_f_stops: if aperture_f_stops <= 0.0F {
+      0.0001F
+    } else {
+      aperture_f_stops
+    },
+  }
+}
+
+///|
+pub fn DepthOfField::with_max_circle_of_confusion_diameter(
+  self : DepthOfField,
+  max_circle_of_confusion_diameter : Float,
+) -> DepthOfField {
+  DepthOfField::{
+    ..self,
+    max_circle_of_confusion_diameter: if max_circle_of_confusion_diameter <=
+      0.0F {
+      1.0F
+    } else {
+      max_circle_of_confusion_diameter
+    },
+  }
+}
+
+///|
+pub fn DepthOfField::with_max_depth(
+  self : DepthOfField,
+  max_depth : Float,
+) -> DepthOfField {
+  DepthOfField::{
+    ..self,
+    max_depth: if max_depth <= 0.0F {
+      0.0001F
+    } else {
+      max_depth
+    },
+  }
+}
+
+///|
+/// Camera component aligned with Bevy's `Camera3d`.
+///
+/// This stores feature toggles and per-camera overrides that influence how the
+/// current renderer approximates deferred/decal/volumetric/post-process APIs.
 #ecs.component
-pub struct Camera3d {}
+pub struct Camera3d {
+  decal_config : CameraDecalConfig3d
+  deferred_config : CameraDeferredConfig3d
+  volumetric_fog : VolumetricFog?
+  atmosphere : Atmosphere?
+  atmosphere_settings : AtmosphereSettings?
+  auto_exposure : AutoExposure?
+  depth_of_field : DepthOfField?
+}
 
 ///|
 pub fn Camera3d::default() -> Camera3d {
-  Camera3d::{  }
+  Camera3d::{
+    decal_config: CameraDecalConfig3d::default(),
+    deferred_config: CameraDeferredConfig3d::default(),
+    volumetric_fog: None,
+    atmosphere: None,
+    atmosphere_settings: None,
+    auto_exposure: None,
+    depth_of_field: None,
+  }
+}
+
+///|
+pub fn Camera3d::with_decal_config(
+  self : Camera3d,
+  decal_config : CameraDecalConfig3d,
+) -> Camera3d {
+  Camera3d::{ ..self, decal_config, }
+}
+
+///|
+pub fn Camera3d::with_deferred_config(
+  self : Camera3d,
+  deferred_config : CameraDeferredConfig3d,
+) -> Camera3d {
+  Camera3d::{ ..self, deferred_config, }
+}
+
+///|
+pub fn Camera3d::with_volumetric_fog(
+  self : Camera3d,
+  volumetric_fog : VolumetricFog?,
+) -> Camera3d {
+  Camera3d::{ ..self, volumetric_fog, }
+}
+
+///|
+pub fn Camera3d::with_atmosphere(
+  self : Camera3d,
+  atmosphere : Atmosphere?,
+) -> Camera3d {
+  Camera3d::{ ..self, atmosphere, }
+}
+
+///|
+pub fn Camera3d::with_atmosphere_settings(
+  self : Camera3d,
+  atmosphere_settings : AtmosphereSettings?,
+) -> Camera3d {
+  Camera3d::{ ..self, atmosphere_settings, }
+}
+
+///|
+pub fn Camera3d::with_auto_exposure(
+  self : Camera3d,
+  auto_exposure : AutoExposure?,
+) -> Camera3d {
+  Camera3d::{ ..self, auto_exposure, }
+}
+
+///|
+pub fn Camera3d::with_depth_of_field(
+  self : Camera3d,
+  depth_of_field : DepthOfField?,
+) -> Camera3d {
+  Camera3d::{ ..self, depth_of_field, }
 }
 
 ///|
@@ -772,12 +1200,20 @@ pub struct OrderIndependentTransparencySettings {
 
 ///|
 fn oit_safe_sorted_fragment_max_count(value : Int) -> Int {
-  if value < 1 { 1 } else { value }
+  if value < 1 {
+    1
+  } else {
+    value
+  }
 }
 
 ///|
 fn oit_safe_fragments_per_pixel_average(value : Float) -> Float {
-  if value < 0.25F { 0.25F } else { value }
+  if value < 0.25F {
+    0.25F
+  } else {
+    value
+  }
 }
 
 ///|
@@ -868,7 +1304,7 @@ pub fn TemporalAntiAliasing::default() -> TemporalAntiAliasing {
 
 ///|
 pub fn TemporalAntiAliasing::new(reset : Bool) -> TemporalAntiAliasing {
-  TemporalAntiAliasing::{ reset }
+  TemporalAntiAliasing::{ reset, }
 }
 
 ///|
@@ -879,7 +1315,7 @@ pub fn TemporalAntiAliasing::with_reset(
   if self.reset == reset {
     self
   } else {
-    TemporalAntiAliasing::{ reset }
+    TemporalAntiAliasing::{ reset, }
   }
 }
 
@@ -1391,7 +1827,11 @@ pub fn BloomPrefilter::new(
   threshold_softness : Float,
 ) -> BloomPrefilter {
   BloomPrefilter::{
-    threshold: if threshold < 0.0F { 0.0F } else { threshold },
+    threshold: if threshold < 0.0F {
+      0.0F
+    } else {
+      threshold
+    },
     threshold_softness: if threshold_softness < 0.0F {
       0.0F
     } else if threshold_softness > 1.0F {
@@ -1494,16 +1934,17 @@ pub fn Bloom::screen_blur() -> Bloom {
 pub fn Bloom::new(intensity : Float) -> Bloom {
   Bloom::{
     ..Bloom::default(),
-    intensity: if intensity < 0.0F { 0.0F } else { intensity },
+    intensity: if intensity < 0.0F {
+      0.0F
+    } else {
+      intensity
+    },
   }
 }
 
 ///|
 pub fn Bloom::with_intensity(self : Bloom, intensity : Float) -> Bloom {
-  Bloom::{
-    ..self,
-    intensity: if intensity < 0.0F { 0.0F } else { intensity },
-  }
+  Bloom::{ ..self, intensity: if intensity < 0.0F { 0.0F } else { intensity } }
 }
 
 ///|
@@ -1598,7 +2039,11 @@ pub fn Bloom::with_max_mip_dimension(
 ) -> Bloom {
   Bloom::{
     ..self,
-    max_mip_dimension: if max_mip_dimension < 4 { 4 } else { max_mip_dimension },
+    max_mip_dimension: if max_mip_dimension < 4 {
+      4
+    } else {
+      max_mip_dimension
+    },
   }
 }
 
@@ -1607,8 +2052,16 @@ pub fn Bloom::with_scale(self : Bloom, scale : @math.Vec2) -> Bloom {
   Bloom::{
     ..self,
     scale: @math.Vec2::new(
-      if scale.x < 0.0F { 0.0F } else { scale.x },
-      if scale.y < 0.0F { 0.0F } else { scale.y },
+      if scale.x < 0.0F {
+        0.0F
+      } else {
+        scale.x
+      },
+      if scale.y < 0.0F {
+        0.0F
+      } else {
+        scale.y
+      },
     ),
   }
 }
@@ -2126,7 +2579,11 @@ fn fog_falloff_clamp01(value : Float) -> Float {
 
 ///|
 fn fog_falloff_sanitize_density(value : Float) -> Float {
-  if value < 0.0F { 0.0F } else { value }
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
 }
 
 ///|
@@ -2210,20 +2667,26 @@ fn fog_falloff_atmospheric_from_colors(
 
   let extinction = @math.Vec3::new(
     fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.r)) *
-    beta * extinction_alpha,
+    beta *
+    extinction_alpha,
     fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.g)) *
-    beta * extinction_alpha,
+    beta *
+    extinction_alpha,
     fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.b)) *
-    beta * extinction_alpha,
+    beta *
+    extinction_alpha,
   )
 
   let inscattering = @math.Vec3::new(
     fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.r)) *
-    beta * inscattering_alpha,
+    beta *
+    inscattering_alpha,
     fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.g)) *
-    beta * inscattering_alpha,
+    beta *
+    inscattering_alpha,
     fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.b)) *
-    beta * inscattering_alpha,
+    beta *
+    inscattering_alpha,
   )
 
   FogFalloff3d::Atmospheric(extinction, inscattering)
@@ -2290,7 +2753,9 @@ pub fn FogFalloff3d::from_visibility_contrast(
 }
 
 ///|
-pub fn FogFalloff3d::from_visibility_squared(visibility : Float) -> FogFalloff3d {
+pub fn FogFalloff3d::from_visibility_squared(
+  visibility : Float,
+) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_squared(
     visibility,
     FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
@@ -2344,10 +2809,7 @@ pub fn FogFalloff3d::from_visibility_contrast_color(
   extinction_inscattering_color : @render2d.Color,
 ) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_colors(
-    visibility,
-    contrast_threshold,
-    extinction_inscattering_color,
-    extinction_inscattering_color,
+    visibility, contrast_threshold, extinction_inscattering_color, extinction_inscattering_color,
   )
 }
 
@@ -2359,15 +2821,13 @@ pub fn FogFalloff3d::from_visibility_contrast_colors(
   inscattering_color : @render2d.Color,
 ) -> FogFalloff3d {
   fog_falloff_atmospheric_from_colors(
-    visibility,
-    contrast_threshold,
-    extinction_color,
-    inscattering_color,
+    visibility, contrast_threshold, extinction_color, inscattering_color,
   )
 }
 
 ///|
-// Global fog settings (currently global, not per-camera component).
+// Global fog defaults. Camera3d can apply per-camera volumetric/atmosphere
+// overrides on top during render execution.
 pub struct DistanceFog {
   color : @render2d.Color
   directional_light_color : @render2d.Color
@@ -2456,7 +2916,7 @@ pub struct VolumetricLight {}
 
 ///|
 pub fn VolumetricLight::default() -> VolumetricLight {
-  VolumetricLight::{ }
+  VolumetricLight::{  }
 }
 
 ///|
@@ -2514,7 +2974,14 @@ pub fn VolumetricFog::with_step_count(
   self : VolumetricFog,
   step_count : Int,
 ) -> VolumetricFog {
-  VolumetricFog::{ ..self, step_count: if step_count <= 0 { 1 } else { step_count } }
+  VolumetricFog::{
+    ..self,
+    step_count: if step_count <= 0 {
+      1
+    } else {
+      step_count
+    },
+  }
 }
 
 ///|
@@ -2559,7 +3026,10 @@ pub fn FogVolume::with_density_factor(
   self : FogVolume,
   density_factor : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, density_factor: fog_falloff_sanitize_density(density_factor), }
+  FogVolume::{
+    ..self,
+    density_factor: fog_falloff_sanitize_density(density_factor),
+  }
 }
 
 ///|
@@ -2583,7 +3053,7 @@ pub fn FogVolume::with_absorption(
   self : FogVolume,
   absorption : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, absorption: fog_falloff_sanitize_density(absorption), }
+  FogVolume::{ ..self, absorption: fog_falloff_sanitize_density(absorption) }
 }
 
 ///|
@@ -2591,7 +3061,7 @@ pub fn FogVolume::with_scattering(
   self : FogVolume,
   scattering : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, scattering: fog_falloff_sanitize_density(scattering), }
+  FogVolume::{ ..self, scattering: fog_falloff_sanitize_density(scattering) }
 }
 
 ///|
@@ -2603,7 +3073,9 @@ pub fn FogVolume::with_scattering_asymmetry(
     ..self,
     scattering_asymmetry: fog_falloff_clamp01(
       (scattering_asymmetry + 1.0F) * 0.5F,
-    ) * 2.0F - 1.0F,
+    ) *
+    2.0F -
+    1.0F,
   }
 }
 
@@ -2622,7 +3094,11 @@ pub fn FogVolume::with_light_intensity(
 ) -> FogVolume {
   FogVolume::{
     ..self,
-    light_intensity: if light_intensity < 0.0F { 0.0F } else { light_intensity },
+    light_intensity: if light_intensity < 0.0F {
+      0.0F
+    } else {
+      light_intensity
+    },
   }
 }
 
@@ -2661,7 +3137,11 @@ pub fn AtmosphereSettings::with_scene_units_to_m(
 ) -> AtmosphereSettings {
   AtmosphereSettings::{
     ..self,
-    scene_units_to_m: if scene_units_to_m <= 0.0F { 0.0001F } else { scene_units_to_m },
+    scene_units_to_m: if scene_units_to_m <= 0.0F {
+      0.0001F
+    } else {
+      scene_units_to_m
+    },
   }
 }
 
@@ -2670,7 +3150,14 @@ pub fn AtmosphereSettings::with_sky_max_samples(
   self : AtmosphereSettings,
   sky_max_samples : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, sky_max_samples: if sky_max_samples <= 0 { 1 } else { sky_max_samples } }
+  AtmosphereSettings::{
+    ..self,
+    sky_max_samples: if sky_max_samples <= 0 {
+      1
+    } else {
+      sky_max_samples
+    },
+  }
 }
 
 ///|
@@ -2741,7 +3228,11 @@ pub fn Atmosphere::with_radii(
   bottom_radius : Float,
   top_radius : Float,
 ) -> Atmosphere {
-  let safe_bottom_radius = if bottom_radius <= 0.0F { 0.0001F } else { bottom_radius }
+  let safe_bottom_radius = if bottom_radius <= 0.0F {
+    0.0001F
+  } else {
+    bottom_radius
+  }
   let safe_top_radius = if top_radius < safe_bottom_radius {
     safe_bottom_radius
   } else {
@@ -2776,7 +3267,7 @@ pub struct AtmosphereEnvironmentMapLight {}
 
 ///|
 pub fn AtmosphereEnvironmentMapLight::default() -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{ }
+  AtmosphereEnvironmentMapLight::{  }
 }
 
 ///|
@@ -3555,17 +4046,208 @@ fn render3d_skybox_proxy_mesh_id() -> Int {
 }
 
 ///|
+/// Metadata-only hook aligned with Bevy's `ExtendedMaterial`.
+///
+/// This does not introduce a shader pipeline on its own; it stores extension
+/// intent so examples and future backends can share a single API surface.
+pub struct ExtendedMaterialMetadata3d {
+  extension_tag : Int
+  alpha_mode_override : AlphaMode3d?
+  opaque_render_method_override : OpaqueRendererMethod?
+  requires_depth_prepass : Bool
+  requires_deferred_prepass : Bool
+  disable_shadows : Bool
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::default() -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{
+    extension_tag: 0,
+    alpha_mode_override: None,
+    opaque_render_method_override: None,
+    requires_depth_prepass: false,
+    requires_deferred_prepass: false,
+    disable_shadows: false,
+  }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::new(
+  extension_tag : Int,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::default().with_extension_tag(extension_tag)
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_extension_tag(
+  self : ExtendedMaterialMetadata3d,
+  extension_tag : Int,
+) -> ExtendedMaterialMetadata3d {
+  let safe_tag = if extension_tag < 0 { 0 } else { extension_tag }
+  ExtendedMaterialMetadata3d::{ ..self, extension_tag: safe_tag }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_alpha_mode_override(
+  self : ExtendedMaterialMetadata3d,
+  alpha_mode_override : AlphaMode3d?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, alpha_mode_override, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_opaque_render_method_override(
+  self : ExtendedMaterialMetadata3d,
+  opaque_render_method_override : OpaqueRendererMethod?,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, opaque_render_method_override, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_requires_depth_prepass(
+  self : ExtendedMaterialMetadata3d,
+  requires_depth_prepass : Bool,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, requires_depth_prepass, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_requires_deferred_prepass(
+  self : ExtendedMaterialMetadata3d,
+  requires_deferred_prepass : Bool,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, requires_deferred_prepass, }
+}
+
+///|
+pub fn ExtendedMaterialMetadata3d::with_disable_shadows(
+  self : ExtendedMaterialMetadata3d,
+  disable_shadows : Bool,
+) -> ExtendedMaterialMetadata3d {
+  ExtendedMaterialMetadata3d::{ ..self, disable_shadows, }
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
+  extended_material : ExtendedMaterialMetadata3d?
 }
 
 ///|
 pub fn MeshMaterial3d::new(
   material : @asset.Handle[StandardMaterial],
 ) -> MeshMaterial3d {
-  MeshMaterial3d::{ material, }
+  MeshMaterial3d::{ material, extended_material: None }
+}
+
+///|
+pub fn MeshMaterial3d::with_extended_material(
+  self : MeshMaterial3d,
+  extended_material : ExtendedMaterialMetadata3d?,
+) -> MeshMaterial3d {
+  MeshMaterial3d::{ ..self, extended_material, }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_tag(
+  self : MeshMaterial3d,
+  extension_tag : Int,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(extension.with_extension_tag(extension_tag)),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_alpha_mode(
+  self : MeshMaterial3d,
+  alpha_mode_override : AlphaMode3d?,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(
+      extension.with_alpha_mode_override(alpha_mode_override),
+    ),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_opaque_renderer_method(
+  self : MeshMaterial3d,
+  opaque_render_method_override : OpaqueRendererMethod?,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(
+      extension.with_opaque_render_method_override(
+        opaque_render_method_override,
+      ),
+    ),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_requires_depth_prepass(
+  self : MeshMaterial3d,
+  requires_depth_prepass : Bool,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(
+      extension.with_requires_depth_prepass(requires_depth_prepass),
+    ),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(
+  self : MeshMaterial3d,
+  requires_deferred_prepass : Bool,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(
+      extension.with_requires_deferred_prepass(requires_deferred_prepass),
+    ),
+  }
+}
+
+///|
+pub fn MeshMaterial3d::with_extension_disable_shadows(
+  self : MeshMaterial3d,
+  disable_shadows : Bool,
+) -> MeshMaterial3d {
+  let extension = match self.extended_material {
+    Some(value) => value
+    None => ExtendedMaterialMetadata3d::default()
+  }
+  MeshMaterial3d::{
+    ..self,
+    extended_material: Some(extension.with_disable_shadows(disable_shadows)),
+  }
 }
 
 ///|
@@ -3702,8 +4384,11 @@ pub fn ClusteredDecal::with_emissive_texture(
 }
 
 ///|
-pub fn ClusteredDecal::with_tag(self : ClusteredDecal, tag : Int) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, tag: clustered_decal_tag_safe(tag), }
+pub fn ClusteredDecal::with_tag(
+  self : ClusteredDecal,
+  tag : Int,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, tag: clustered_decal_tag_safe(tag) }
 }
 
 ///|
@@ -3997,8 +4682,7 @@ fn cascade_shadow_config_calculate_bounds(
   if num_cascades <= 1 {
     return [maximum_distance]
   }
-  let exponent = 1.0F /
-    Float::from_double((num_cascades - 1).to_double())
+  let exponent = 1.0F / Float::from_double((num_cascades - 1).to_double())
   let base = @math.pow(maximum_distance / nearest_bound, exponent)
   let bounds : Array[Float] = []
   for i in 0..<num_cascades {
@@ -4032,7 +4716,11 @@ pub fn CascadeShadowConfigBuilder::with_num_cascades(
 ) -> CascadeShadowConfigBuilder {
   CascadeShadowConfigBuilder::{
     ..self,
-    num_cascades: if num_cascades <= 0 { 1 } else { num_cascades },
+    num_cascades: if num_cascades <= 0 {
+      1
+    } else {
+      num_cascades
+    },
   }
 }
 
@@ -4096,13 +4784,18 @@ pub fn CascadeShadowConfigBuilder::with_overlap_proportion(
 pub fn CascadeShadowConfigBuilder::build(
   self : CascadeShadowConfigBuilder,
 ) -> CascadeShadowConfig {
-  let safe_num_cascades = if self.num_cascades <= 0 { 1 } else { self.num_cascades }
+  let safe_num_cascades = if self.num_cascades <= 0 {
+    1
+  } else {
+    self.num_cascades
+  }
   let safe_minimum_distance = if self.minimum_distance < 0.0F {
     0.0F
   } else {
     self.minimum_distance
   }
-  let mut safe_maximum_distance = if self.maximum_distance <= safe_minimum_distance {
+  let mut safe_maximum_distance = if self.maximum_distance <=
+    safe_minimum_distance {
     safe_minimum_distance + 0.1F
   } else {
     self.maximum_distance
@@ -4111,7 +4804,7 @@ pub fn CascadeShadowConfigBuilder::build(
     safe_maximum_distance = 0.1F
   }
   let mut safe_first_cascade_far_bound = if self.first_cascade_far_bound <=
-      safe_minimum_distance {
+    safe_minimum_distance {
     safe_minimum_distance + 0.1F
   } else {
     self.first_cascade_far_bound
@@ -4124,11 +4817,11 @@ pub fn CascadeShadowConfigBuilder::build(
 
   CascadeShadowConfig::{
     bounds: cascade_shadow_config_calculate_bounds(
-      safe_num_cascades,
-      safe_first_cascade_far_bound,
-      safe_maximum_distance,
+      safe_num_cascades, safe_first_cascade_far_bound, safe_maximum_distance,
     ),
-    overlap_proportion: cascade_shadow_config_safe_overlap(self.overlap_proportion),
+    overlap_proportion: cascade_shadow_config_safe_overlap(
+      self.overlap_proportion,
+    ),
     minimum_distance: safe_minimum_distance,
   }
 }
@@ -5013,6 +5706,91 @@ pub fn Camera3dBundle::with_color_grading(
 }
 
 ///|
+pub fn Camera3dBundle::with_camera3d(
+  self : Camera3dBundle,
+  camera3d : Camera3d,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, camera3d, }
+}
+
+///|
+pub fn Camera3dBundle::with_decal_config(
+  self : Camera3dBundle,
+  decal_config : CameraDecalConfig3d,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_decal_config(decal_config),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_deferred_config(
+  self : Camera3dBundle,
+  deferred_config : CameraDeferredConfig3d,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_deferred_config(deferred_config),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_volumetric_fog(
+  self : Camera3dBundle,
+  volumetric_fog : VolumetricFog?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_volumetric_fog(volumetric_fog),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_atmosphere(
+  self : Camera3dBundle,
+  atmosphere : Atmosphere?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_atmosphere(atmosphere),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_atmosphere_settings(
+  self : Camera3dBundle,
+  atmosphere_settings : AtmosphereSettings?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_atmosphere_settings(atmosphere_settings),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_auto_exposure(
+  self : Camera3dBundle,
+  auto_exposure : AutoExposure?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_auto_exposure(auto_exposure),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_depth_of_field(
+  self : Camera3dBundle,
+  depth_of_field : DepthOfField?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_depth_of_field(depth_of_field),
+  }
+}
+
+///|
 pub struct MeshMaterial3dBundle {
   mesh : Mesh3d
   material : MeshMaterial3d
@@ -5129,6 +5907,7 @@ pub fn[W : MeshMaterial3dBundleSpawnWorld] MeshMaterial3dBundle::spawn(
 ///|
 priv struct Camera3dInstance {
   entity : @core.Entity
+  camera3d : Camera3d
   camera : @render2d.Camera
   projection : CameraProjection3d
   sub_camera_view : SubCameraView3d?
@@ -5145,6 +5924,9 @@ priv struct Camera3dInstance {
   skybox : Skybox?
   environment_map_light : EnvironmentMapLight?
   generated_environment_map_light : GeneratedEnvironmentMapLight?
+  depth_prepass_enabled : Bool
+  deferred_prepass_enabled : Bool
+  msaa : Msaa?
   transform : @math.Transform
   previous_transform : @math.Transform
   target_id : Int
@@ -5176,6 +5958,10 @@ priv struct Mesh3dInstance {
   visibility_range : @visibility.VisibilityRange?
   aabb_center_world : @math.Vec3?
   material : StandardMaterial
+  material_extension : ExtendedMaterialMetadata3d?
+  is_forward_decal : Bool
+  forward_decal_material_ext : ForwardDecalMaterialExt?
+  clustered_decal : ClusteredDecal?
   layers : @render2d.RenderLayers
   has_wireframe : Bool
   has_no_wireframe : Bool
@@ -5265,6 +6051,12 @@ priv struct TransmissionSourceTargetsEntry {
 }
 
 ///|
+priv struct AutoExposureHistoryEntry {
+  entity : @core.Entity
+  ev100 : Float
+}
+
+///|
 let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
 
 ///|
@@ -5277,6 +6069,9 @@ let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
 ///|
 let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = Ref::new([],
 )
+
+///|
+let auto_exposure_history : Ref[Array[AutoExposureHistoryEntry]] = Ref::new([])
 
 ///|
 priv struct WireframeMeshCacheEntry {
@@ -5460,6 +6255,349 @@ fn camera_motion_blur_history_sync(cameras : Array[Camera3dInstance]) -> Unit {
     next.push({ entity: camera.entity, transform: camera.transform })
   }
   camera_motion_blur_history.val = next
+}
+
+///|
+fn render3d_float_clamp(
+  value : Float,
+  min_value : Float,
+  max_value : Float,
+) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_decal_mode_allows_forward(mode : DecalRenderMode3d) -> Bool {
+  match mode {
+    Disabled => false
+    ForwardOnly => true
+    ClusteredOnly => false
+    ForwardAndClustered => true
+  }
+}
+
+///|
+fn render3d_decal_mode_allows_clustered(mode : DecalRenderMode3d) -> Bool {
+  match mode {
+    Disabled => false
+    ForwardOnly => false
+    ClusteredOnly => true
+    ForwardAndClustered => true
+  }
+}
+
+///|
+fn render3d_camera_deferred_mode(
+  config : CameraDeferredConfig3d,
+  default_method : OpaqueRendererMethod,
+) -> OpaqueRendererMethod {
+  match config.mode {
+    CameraDeferredMode3d::Forward => OpaqueRendererMethod::Forward
+    CameraDeferredMode3d::Deferred => OpaqueRendererMethod::Deferred
+    CameraDeferredMode3d::Auto =>
+      match default_method {
+        OpaqueRendererMethod::Forward => OpaqueRendererMethod::Forward
+        OpaqueRendererMethod::Deferred => OpaqueRendererMethod::Deferred
+        OpaqueRendererMethod::Auto => OpaqueRendererMethod::Forward
+      }
+  }
+}
+
+///|
+fn render3d_apply_extended_material_metadata(
+  material : StandardMaterial,
+  extension : ExtendedMaterialMetadata3d?,
+) -> StandardMaterial {
+  guard extension is Some(extension_value) else { return material }
+  let mut out = material
+  if extension_value.alpha_mode_override is Some(alpha_mode_override) {
+    out = StandardMaterial::{ ..out, alpha_mode: alpha_mode_override }
+  }
+  if extension_value.opaque_render_method_override
+    is Some(opaque_render_method_override) {
+    out = StandardMaterial::{
+      ..out,
+      opaque_render_method: opaque_render_method_override,
+    }
+  }
+  out
+}
+
+///|
+fn render3d_auto_exposure_history_get(entity : @core.Entity) -> Float? {
+  for item in auto_exposure_history.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      return Some(item.ev100)
+    }
+  }
+  None
+}
+
+///|
+fn render3d_auto_exposure_history_set(
+  entity : @core.Entity,
+  ev100 : Float,
+) -> Unit {
+  let next : Array[AutoExposureHistoryEntry] = []
+  let mut replaced = false
+  for item in auto_exposure_history.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, ev100 })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, ev100 })
+  }
+  auto_exposure_history.val = next
+}
+
+///|
+fn render3d_auto_exposure_history_sync(
+  cameras : Array[Camera3dInstance],
+) -> Unit {
+  let next : Array[AutoExposureHistoryEntry] = []
+  for camera in cameras {
+    if render3d_auto_exposure_history_get(camera.entity) is Some(ev100) {
+      next.push({ entity: camera.entity, ev100 })
+    }
+  }
+  auto_exposure_history.val = next
+}
+
+///|
+fn render3d_auto_exposure_target_ev100(
+  auto_exposure : AutoExposure,
+  lighting : Render3dLightingState,
+) -> Float {
+  // TODO(render3d-backend): replace this CPU approximation with histogram
+  // metering + compensation-curve sampling when compute post-process exists.
+  let ambient = if lighting.ambient_brightness < 0.0F {
+    0.0F
+  } else {
+    lighting.ambient_brightness
+  }
+  let directional = if lighting.directional_illuminance < 0.0F {
+    0.0F
+  } else {
+    lighting.directional_illuminance / 10_000.0F
+  }
+  let point = if lighting.point_intensity < 0.0F {
+    0.0F
+  } else {
+    lighting.point_intensity / 100_000.0F
+  }
+  let spot = if lighting.spot_intensity < 0.0F {
+    0.0F
+  } else {
+    lighting.spot_intensity / 100_000.0F
+  }
+  let metering_mask_weight = if auto_exposure.metering_mask is Some(_) {
+    0.8F
+  } else {
+    1.0F
+  }
+  let filtered = ambient * (1.0F - auto_exposure.low_percent) +
+    directional * auto_exposure.high_percent +
+    (point + spot) * 0.5F
+  let normalized_brightness = render3d_float_clamp(
+    filtered * metering_mask_weight,
+    0.0F,
+    1.0F,
+  )
+  let span = auto_exposure.max_ev100 - auto_exposure.min_ev100
+  let base_target = auto_exposure.max_ev100 - normalized_brightness * span
+  render3d_float_clamp(
+    base_target + auto_exposure.compensation_ev,
+    auto_exposure.min_ev100,
+    auto_exposure.max_ev100,
+  )
+}
+
+///|
+fn render3d_camera_effective_exposure(
+  camera_entity : @core.Entity,
+  exposure : Exposure?,
+  auto_exposure : AutoExposure?,
+  lighting : Render3dLightingState,
+) -> Exposure? {
+  guard auto_exposure is Some(auto_exposure_value) else { return exposure }
+  let target_ev100 = render3d_auto_exposure_target_ev100(
+    auto_exposure_value, lighting,
+  )
+  let default_ev100 = match exposure {
+    Some(value) => value.ev100
+    None => Exposure::default().ev100
+  }
+  let current_ev100 = match render3d_auto_exposure_history_get(camera_entity) {
+    Some(value) => value
+    None => default_ev100
+  }
+  let delta = @time.time_delta_seconds()
+  let safe_delta = if delta <= 0.0F { 0.0F } else { delta }
+  let diff = target_ev100 - current_ev100
+  let abs_diff = if diff < 0.0F { -diff } else { diff }
+  let transition = if auto_exposure_value.exponential_transition_distance <=
+    0.0F {
+    0.0001F
+  } else {
+    auto_exposure_value.exponential_transition_distance
+  }
+  let speed = if diff < 0.0F {
+    auto_exposure_value.speed_brighten
+  } else {
+    auto_exposure_value.speed_darken
+  }
+  let mut step = speed * safe_delta
+  if abs_diff < transition {
+    step = step * abs_diff / transition
+  }
+  let next_ev100 = if diff > 0.0F {
+    if current_ev100 + step > target_ev100 {
+      target_ev100
+    } else {
+      current_ev100 + step
+    }
+  } else if current_ev100 - step < target_ev100 {
+    target_ev100
+  } else {
+    current_ev100 - step
+  }
+  render3d_auto_exposure_history_set(camera_entity, next_ev100)
+  Some(Exposure::new(next_ev100))
+}
+
+///|
+fn render3d_depth_of_field_weight(
+  depth_of_field : DepthOfField?,
+  mesh_distance : Float,
+) -> Float {
+  guard depth_of_field is Some(depth_of_field_value) else { return 0.0F }
+  let distance = if mesh_distance < 0.0F {
+    0.0F
+  } else if mesh_distance > depth_of_field_value.max_depth {
+    depth_of_field_value.max_depth
+  } else {
+    mesh_distance
+  }
+  let focus_delta = if distance > depth_of_field_value.focal_distance {
+    distance - depth_of_field_value.focal_distance
+  } else {
+    depth_of_field_value.focal_distance - distance
+  }
+  let focus_norm = focus_delta / depth_of_field_value.focal_distance
+  let aperture_term = 1.0F / depth_of_field_value.aperture_f_stops
+  let coc_term = depth_of_field_value.max_circle_of_confusion_diameter / 64.0F
+  let mode_term = if depth_of_field_value.mode is DepthOfFieldMode::Bokeh {
+    1.0F
+  } else {
+    0.7F
+  }
+  render3d_float_clamp(
+    focus_norm * aperture_term * coc_term * mode_term,
+    0.0F,
+    1.0F,
+  )
+}
+
+///|
+fn render3d_color_lerp(
+  from_ : @render2d.Color,
+  to_ : @render2d.Color,
+  t : Float,
+) -> @render2d.Color {
+  @render2d.Color::new(
+    from_.r + (to_.r - from_.r) * t,
+    from_.g + (to_.g - from_.g) * t,
+    from_.b + (to_.b - from_.b) * t,
+    from_.a + (to_.a - from_.a) * t,
+  )
+}
+
+///|
+fn render3d_camera_distance_fog(
+  base_fog : DistanceFog,
+  volumetric_fog : VolumetricFog?,
+  atmosphere : Atmosphere?,
+  atmosphere_settings : AtmosphereSettings?,
+) -> DistanceFog {
+  let mut fog = base_fog
+  if volumetric_fog is Some(volumetric_fog_value) {
+    let ambient_mix = render3d_float_clamp(
+      volumetric_fog_value.ambient_intensity,
+      0.0F,
+      1.0F,
+    )
+    fog = DistanceFog::{
+      ..fog,
+      color: render3d_color_lerp(
+        fog.color,
+        volumetric_fog_value.ambient_color,
+        ambient_mix,
+      ),
+      directional_light_color: render3d_color_lerp(
+        fog.directional_light_color,
+        volumetric_fog_value.ambient_color,
+        ambient_mix * 0.6F,
+      ),
+      directional_light_exponent: fog.directional_light_exponent +
+      Float::from_double(volumetric_fog_value.step_count.to_double()) /
+      64.0F *
+      0.5F,
+    }
+  }
+  if atmosphere is Some(atmosphere_value) {
+    let albedo_color = @render2d.Color::new(
+      render3d_float_clamp(atmosphere_value.ground_albedo.x, 0.0F, 1.0F),
+      render3d_float_clamp(atmosphere_value.ground_albedo.y, 0.0F, 1.0F),
+      render3d_float_clamp(atmosphere_value.ground_albedo.z, 0.0F, 1.0F),
+      1.0F,
+    )
+    fog = DistanceFog::{
+      ..fog,
+      color: render3d_color_lerp(fog.color, albedo_color, 0.15F),
+    }
+  }
+  if atmosphere_settings is Some(atmosphere_settings_value) {
+    let unit_scale = if atmosphere_settings_value.scene_units_to_m <= 0.0F {
+      0.0001F
+    } else {
+      atmosphere_settings_value.scene_units_to_m
+    }
+    let falloff = match fog.falloff {
+      FogFalloff3d::Linear(start, end_) =>
+        FogFalloff3d::linear(start * unit_scale, end_ * unit_scale)
+      FogFalloff3d::Exponential(density) =>
+        FogFalloff3d::exponential(density / unit_scale)
+      FogFalloff3d::ExponentialSquared(density) =>
+        FogFalloff3d::exponential_squared(density / @math.sqrt(unit_scale))
+      FogFalloff3d::Atmospheric(extinction, inscattering) =>
+        FogFalloff3d::atmospheric(
+          extinction.mul_scalar(1.0F / unit_scale),
+          inscattering.mul_scalar(1.0F / unit_scale),
+        )
+    }
+    fog = DistanceFog::{ ..fog, falloff, }
+    if atmosphere_settings_value.rendering_method is AtmosphereMode::Raymarched {
+      fog = DistanceFog::{
+        ..fog,
+        directional_light_exponent: fog.directional_light_exponent + 1.0F,
+      }
+    }
+  }
+  fog
 }
 
 ///|
@@ -6613,8 +7751,7 @@ fn render3d_transform_local_normal(
   if absf(transform.scale.x) <= 1.0e-9F ||
     absf(transform.scale.y) <= 1.0e-9F ||
     absf(transform.scale.z) <= 1.0e-9F {
-    return render3d_rotate_by_quat(local_normal, transform.rotation)
-      .normalize_or_zero()
+    return render3d_rotate_by_quat(local_normal, transform.rotation).normalize_or_zero()
   }
   let scaled = @math.Vec3::new(
     local_normal.x / transform.scale.x,
@@ -6639,9 +7776,27 @@ fn render3d_ray_local_aabb_hit(
   let mut exit_normal = @math.Vec3::new(-1.0F, 0.0F, 0.0F)
 
   let axes : Array[(@math.Vec3, Float, Float, Float, Float)] = [
-    (@math.Vec3::new(1.0F, 0.0F, 0.0F), origin.x, direction.x, min_corner.x, max_corner.x),
-    (@math.Vec3::new(0.0F, 1.0F, 0.0F), origin.y, direction.y, min_corner.y, max_corner.y),
-    (@math.Vec3::new(0.0F, 0.0F, 1.0F), origin.z, direction.z, min_corner.z, max_corner.z),
+    (
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      origin.x,
+      direction.x,
+      min_corner.x,
+      max_corner.x,
+    ),
+    (
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      origin.y,
+      direction.y,
+      min_corner.y,
+      max_corner.y,
+    ),
+    (
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      origin.z,
+      direction.z,
+      min_corner.z,
+      max_corner.z,
+    ),
   ]
 
   for axis_data in axes {
@@ -6721,10 +7876,9 @@ fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
     max_y = maxf(max_y, p.y)
     max_z = maxf(max_z, p.z)
   }
-  Some((
-    @math.Vec3::new(min_x, min_y, min_z),
-    @math.Vec3::new(max_x, max_y, max_z),
-  ))
+  Some(
+    (@math.Vec3::new(min_x, min_y, min_z), @math.Vec3::new(max_x, max_y, max_z)),
+  )
 }
 
 ///|
@@ -7024,21 +8178,16 @@ fn render3d_fog_falloff_factor(
       1.0F - render3d_pow_e(-(d * d))
     }
     Atmospheric(extinction, inscattering) => {
-      let extinction_max = maxf(
-        maxf(extinction.x, extinction.y),
-        extinction.z,
-      )
+      let extinction_max = maxf(maxf(extinction.x, extinction.y), extinction.z)
       let inscattering_max = maxf(
         maxf(inscattering.x, inscattering.y),
         inscattering.z,
       )
       let extinction_factor = render3d_fog_channel_factor(
-        extinction_max,
-        safe_distance,
+        extinction_max, safe_distance,
       )
       let inscattering_factor = render3d_fog_channel_factor(
-        inscattering_max,
-        safe_distance,
+        inscattering_max, safe_distance,
       )
       clamp01((extinction_factor + inscattering_factor) * 0.5F)
     }
@@ -7139,11 +8288,7 @@ fn render3d_apply_distance_fog(
   }
 
   let directional_mix = render3d_distance_fog_directional_mix(
-    fog,
-    fog_presence,
-    camera_position,
-    mesh_position,
-    lighting,
+    fog, fog_presence, camera_position, mesh_position, lighting,
   )
   if directional_mix > 0.0F {
     let directional_tint_r = clamp01(
@@ -7633,7 +8778,7 @@ fn render3d_draw_mesh_instance(
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + HasRes_DefaultOpaqueRendererMethod + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + Has_DepthPrepass + Has_DeferredPrepass + Has_Msaa + Has_ForwardDecal + Has_ForwardDecalMaterialExt + Has_ClusteredDecal + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 ///|
@@ -7661,9 +8806,20 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let light_probe_store = world.get_light_probe_store()
   let target_store = world.get_render_target_store()
   let layers_store = world.get_render_layers_store()
+  let depth_prepass_store = world.get_depth_prepass_store()
+  let deferred_prepass_store = world.get_deferred_prepass_store()
+  let msaa_store = world.get_msaa_store()
   let transform_store = world.get_transform_store()
   let view_visibility_store = world.get_view_visibility_store()
-  camera3d_store.for_each(fn(entity, _marker) {
+  let default_opaque_renderer_method = if world
+    .get_default_opaque_renderer_method_resource()
+    .get_ref()
+    is Some(default_method) {
+    default_method.val.renderer_method()
+  } else {
+    OpaqueRendererMethod::Forward
+  }
+  camera3d_store.for_each(fn(entity, camera3d) {
     let camera = match camera_store.get(entity) {
       Some(v) => v
       None => @render2d.Camera::default()
@@ -7688,6 +8844,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     let generated_environment_map_light = generated_environment_map_light_store.get(
       entity,
     )
+    let depth_prepass_enabled = depth_prepass_store.get(entity) is Some(_)
+    let deferred_prepass_enabled = deferred_prepass_store.get(entity) is Some(_)
+    let msaa = msaa_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
       None => @render2d.RenderTarget::Screen
@@ -7716,6 +8875,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         }
         cameras.push(Camera3dInstance::{
           entity,
+          camera3d,
           camera: camera_clamped,
           projection,
           sub_camera_view,
@@ -7732,6 +8892,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           skybox,
           environment_map_light,
           generated_environment_map_light,
+          depth_prepass_enabled,
+          deferred_prepass_enabled,
+          msaa,
           transform,
           previous_transform,
           target_id: target_info.target_id,
@@ -7753,6 +8916,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   let wireframe_store = world.get_wireframe_store()
   let no_wireframe_store = world.get_no_wireframe_store()
   let wireframe_color_store = world.get_wireframe_color_store()
+  let forward_decal_store = world.get_forward_decal_store()
+  let forward_decal_material_ext_store = world.get_forward_decal_material_ext_store()
+  let clustered_decal_store = world.get_clustered_decal_store()
   let wireframe_config = if world.get_wireframe_config_resource().get_ref()
     is Some(config) {
     Some(config.val)
@@ -7766,9 +8932,13 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     }
     guard gpu_mesh_store.get(entity) is Some(gpu_mesh) else { return }
     guard material_store.get(entity) is Some(material_handle) else { return }
-    guard standard_material_get(material_handle.material) is Some(material) else {
+    guard standard_material_get(material_handle.material) is Some(base_material) else {
       return
     }
+    let material = render3d_apply_extended_material_metadata(
+      base_material,
+      material_handle.extended_material,
+    )
     let layers = match layers_store.get(entity) {
       Some(v) => v
       None => @render2d.RenderLayers::default()
@@ -7800,6 +8970,10 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       visibility_range,
       aabb_center_world,
       material,
+      material_extension: material_handle.extended_material,
+      is_forward_decal: forward_decal_store.get(entity) is Some(_),
+      forward_decal_material_ext: forward_decal_material_ext_store.get(entity),
+      clustered_decal: clustered_decal_store.get(entity),
       layers,
       has_wireframe: wireframe_store.get(entity) is Some(_),
       has_no_wireframe: no_wireframe_store.get(entity) is Some(_),
@@ -7822,6 +8996,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   })
   motion_blur_history_sync(meshes)
   camera_motion_blur_history_sync(cameras)
+  render3d_auto_exposure_history_sync(cameras)
   let lighting = render3d_collect_lighting(world)
   for camera_index in render3d_sorted_camera_indices(cameras) {
     let camera = cameras[camera_index]
@@ -7896,6 +9071,44 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         maxf(0.0F, environment_map_light.intensity) / 10_000.0F,
       }
     }
+    let camera_deferred_mode = render3d_camera_deferred_mode(
+      camera.camera3d.deferred_config,
+      default_opaque_renderer_method,
+    )
+    let camera_deferred_enabled = camera.deferred_prepass_enabled ||
+      camera.camera3d.deferred_config.requires_deferred_prepass ||
+      camera_deferred_mode is OpaqueRendererMethod::Deferred
+    let camera_msaa_allows_forward_decals = match camera.msaa {
+      Some(msaa) => msaa is Msaa::Off
+      None => true
+    }
+    let camera_forward_decal_enabled = render3d_decal_mode_allows_forward(
+        camera.camera3d.decal_config.mode,
+      ) &&
+      camera_msaa_allows_forward_decals &&
+      (
+        !camera.camera3d.decal_config.requires_depth_prepass ||
+        camera.depth_prepass_enabled
+      )
+    let camera_clustered_decal_enabled = render3d_decal_mode_allows_clustered(
+        camera.camera3d.decal_config.mode,
+      ) &&
+      (
+        !camera.camera3d.decal_config.clustered_requires_deferred_prepass ||
+        camera_deferred_enabled
+      )
+    let effective_exposure = render3d_camera_effective_exposure(
+      camera.entity,
+      camera.exposure,
+      camera.camera3d.auto_exposure,
+      pass_lighting,
+    )
+    let distance_fog = render3d_camera_distance_fog(
+      render3d_distance_fog(),
+      camera.camera3d.volumetric_fog,
+      camera.camera3d.atmosphere,
+      camera.camera3d.atmosphere_settings,
+    )
     let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
     let motion_blur_active = if camera.motion_blur is Some(motion_blur) {
       motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F
@@ -8044,7 +9257,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       }
       @window.host_gpu_end_pass()
     }
-    if !motion_blur_active && (transmission_enabled || bloom_enabled) &&
+    if !motion_blur_active &&
+      (transmission_enabled || bloom_enabled) &&
       (camera.target_id < 0 || bloom_enabled) {
       let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera.entity,
@@ -8128,22 +9342,46 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.layers,
       camera.transform,
     )
-    let distance_fog = render3d_distance_fog()
     let transmissive_draws : Array[TransmissionMeshDraw] = []
     for draw_index in draw_order {
       let mesh = meshes[draw_index]
+      if mesh.is_forward_decal && !camera_forward_decal_enabled {
+        continue
+      }
+      if mesh.clustered_decal is Some(_) && !camera_clustered_decal_enabled {
+        continue
+      }
+      if mesh.material_extension is Some(extension) {
+        if extension.requires_depth_prepass && !camera.depth_prepass_enabled {
+          continue
+        }
+        if extension.requires_deferred_prepass && !camera_deferred_enabled {
+          continue
+        }
+      }
+      let mesh_opaque_mode = if mesh.material.opaque_render_method
+        is OpaqueRendererMethod::Auto {
+        camera_deferred_mode
+      } else {
+        mesh.material.opaque_render_method
+      }
+      if mesh_opaque_mode is OpaqueRendererMethod::Deferred &&
+        !camera_deferred_enabled {
+        continue
+      }
       guard render3d_mesh_draw_alpha(
           mesh.material.alpha_mode,
           mesh.material.base_color.a,
         )
-        is Some(draw_alpha) else {
+        is Some(base_draw_alpha) else {
         continue
       }
-      let texture_id = match mesh.material.base_color_texture {
+      let mut draw_alpha = base_draw_alpha
+      let mut texture_id = match mesh.material.base_color_texture {
         Some(texture) => texture.id()
         None => -1
       }
-      let normal_texture_id = match
+      let mut normal_texture_id = match
         (
           mesh.material.normal_map_texture,
           mesh.material.clearcoat_normal_texture,
@@ -8152,11 +9390,11 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         (None, Some(texture)) => texture.id()
         (None, None) => -1
       }
-      let emissive_texture_id = match mesh.material.emissive_texture {
+      let mut emissive_texture_id = match mesh.material.emissive_texture {
         Some(texture) => texture.id()
         None => -1
       }
-      let metallic_roughness_texture_id = match
+      let mut metallic_roughness_texture_id = match
         mesh.material.metallic_roughness_texture {
         Some(texture) => texture.id()
         None => -1
@@ -8177,6 +9415,20 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         Some(texture) => texture.id()
         None => -1
       }
+      if mesh.clustered_decal is Some(clustered_decal) {
+        if clustered_decal.base_color_texture is Some(texture) {
+          texture_id = texture.id()
+        }
+        if clustered_decal.normal_map_texture is Some(texture) {
+          normal_texture_id = texture.id()
+        }
+        if clustered_decal.metallic_roughness_texture is Some(texture) {
+          metallic_roughness_texture_id = texture.id()
+        }
+        if clustered_decal.emissive_texture is Some(texture) {
+          emissive_texture_id = texture.id()
+        }
+      }
       let anisotropy_strength = maxf(
         0.0F,
         minf(1.0F, mesh.material.anisotropy_strength),
@@ -8184,7 +9436,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       let max_relief_mapping_search_steps = Float::from_double(
         mesh.material.parallax_mapping_method.max_steps().to_double(),
       )
-      let clearcoat_reflectance = maxf(
+      let mut clearcoat_reflectance = maxf(
         0.0F,
         mesh.material.reflectance + mesh.material.clearcoat * 0.5F,
       )
@@ -8192,7 +9444,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         mesh.material.perceptual_roughness,
         mesh.material.clearcoat_perceptual_roughness,
       )
-      let draw_roughness = if mesh.material.clearcoat > 0.0F {
+      let mut draw_roughness = if mesh.material.clearcoat > 0.0F {
         clearcoat_roughness
       } else {
         mesh.material.perceptual_roughness
@@ -8200,6 +9452,24 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       let mesh_distance = mesh.transform.translation
         .sub(camera.transform.translation)
         .length()
+      if mesh.is_forward_decal {
+        let depth_fade_factor = if mesh.forward_decal_material_ext
+          is Some(extension) {
+          extension.depth_fade_factor
+        } else {
+          8.0F
+        }
+        let safe_depth_fade_factor = if depth_fade_factor < 0.001F {
+          0.001F
+        } else {
+          depth_fade_factor
+        }
+        let decal_alpha = safe_depth_fade_factor /
+          (safe_depth_fade_factor + maxf(0.0F, mesh_distance - camera_near))
+        draw_alpha = draw_alpha * render3d_float_clamp(decal_alpha, 0.0F, 1.0F)
+        clearcoat_reflectance = 0.0F
+        draw_roughness = maxf(draw_roughness, 0.85F)
+      }
       let (fogged_r, fogged_g, fogged_b) = render3d_apply_distance_fog(
         distance_fog,
         mesh_distance,
@@ -8295,12 +9565,37 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         draw_color_r,
         draw_color_g,
         draw_color_b,
-        camera.exposure,
+        effective_exposure,
         camera.color_grading,
       )
       draw_color_r = graded_color_r
       draw_color_g = graded_color_g
       draw_color_b = graded_color_b
+      let depth_of_field_weight = render3d_depth_of_field_weight(
+        camera.camera3d.depth_of_field,
+        mesh_distance,
+      )
+      if depth_of_field_weight > 0.0F {
+        let luminance = render3d_color_luminance(
+          draw_color_r, draw_color_g, draw_color_b,
+        )
+        draw_color_r = clamp01(
+          draw_color_r * (1.0F - depth_of_field_weight) +
+          luminance * depth_of_field_weight,
+        )
+        draw_color_g = clamp01(
+          draw_color_g * (1.0F - depth_of_field_weight) +
+          luminance * depth_of_field_weight,
+        )
+        draw_color_b = clamp01(
+          draw_color_b * (1.0F - depth_of_field_weight) +
+          luminance * depth_of_field_weight,
+        )
+        draw_surface_roughness = maxf(
+          draw_surface_roughness,
+          depth_of_field_weight * 0.9F,
+        )
+      }
       let draw_diffuse_transmission = clamp01(
         mesh.material.diffuse_transmission,
       )
@@ -8922,11 +10217,7 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast(
   } else {
     settings.ray_epsilon
   }
-  let max_hits = if settings.max_hits <= 0 {
-    1
-  } else {
-    settings.max_hits
-  }
+  let max_hits = if settings.max_hits <= 0 { 1 } else { settings.max_hits }
   let hits : Array[(@core.Entity, MeshRayCastHit)] = []
   let mesh_store = world.get_mesh3d_store()
   let transform_store = world.get_transform_store()
@@ -8958,12 +10249,7 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast(
       return
     }
     guard render3d_ray_local_aabb_hit(
-        local_origin,
-        local_direction,
-        min_corner,
-        max_corner,
-        ray_epsilon,
-        max_distance,
+        local_origin, local_direction, min_corner, max_corner, ray_epsilon, max_distance,
       )
       is Some((distance, local_normal)) else {
       return
@@ -9033,12 +10319,7 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera(
   settings : MeshRayCastSettings,
 ) -> Array[(@core.Entity, MeshRayCastHit)] {
   if render3d_camera_viewport_to_world_ray(
-      screen,
-      camera,
-      projection,
-      camera_transform,
-      target_size,
-      scale_factor,
+      screen, camera, projection, camera_transform, target_size, scale_factor,
     )
     is Some((origin, direction)) {
     mesh_ray_cast(world, origin, direction, settings)
@@ -9230,7 +10511,7 @@ pub fn render3d_camera_world_to_viewport(
 
 ///|
 fn[
-  W : HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + @core.ChangeTickWorld,
+  W : HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + HasRes_DefaultOpaqueRendererMethod + @core.ChangeTickWorld,
 ] init_render3d_resources(
   world : W,
 ) -> Unit {
@@ -9242,6 +10523,13 @@ fn[
   let point_light_shadow_map = world.get_point_light_shadow_map_resource()
   if !point_light_shadow_map.is_present() {
     point_light_shadow_map.insert(PointLightShadowMap::default(), tick)
+  }
+  let default_opaque_renderer_method = world.get_default_opaque_renderer_method_resource()
+  if !default_opaque_renderer_method.is_present() {
+    default_opaque_renderer_method.insert(
+      DefaultOpaqueRendererMethod::forward(),
+      tick,
+    )
   }
 }
 
@@ -9268,7 +10556,7 @@ pub fn[W : WireframePluginWorld] wireframe_plugin(
 }
 
 ///|
-pub(open) trait Render3dPluginWorld: HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + Render3dPrepareWorld + Render3dExecuteWorld {
+pub(open) trait Render3dPluginWorld: HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + HasRes_DefaultOpaqueRendererMethod + Render3dPrepareWorld + Render3dExecuteWorld {
 }
 
 ///|

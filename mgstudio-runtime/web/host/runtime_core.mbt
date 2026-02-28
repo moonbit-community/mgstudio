@@ -32,6 +32,65 @@ fn sampler_kind_is_repeat(sampler_kind : Int) -> Bool {
 }
 
 ///|
+const PASS_KIND_BASE_MASK : Int = 255
+
+///|
+const PASS_KIND_DISABLE_POSTPROCESS_FLAG : Int = 1 << 8
+
+///|
+const PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
+
+///|
+const PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
+
+///|
+const MESH3D_CULL_MODE_MASK : Int = 3
+
+///|
+const MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
+
+///|
+const MESH3D_DRAW_FLAG_FOG : Int = 1 << 9
+
+///|
+const MESH3D_DRAW_FLAG_POSTPROCESS_PROXY : Int = 1 << 10
+
+///|
+fn pass_kind_base_kind(pass_kind : Int) -> Int {
+  pass_kind & PASS_KIND_BASE_MASK
+}
+
+///|
+fn pass_kind_postprocess_enabled(pass_kind : Int) -> Bool {
+  (pass_kind & PASS_KIND_DISABLE_POSTPROCESS_FLAG) == 0
+}
+
+///|
+fn pass_kind_fog_enabled(pass_kind : Int) -> Bool {
+  (pass_kind & PASS_KIND_DISABLE_FOG_FLAG) == 0
+}
+
+///|
+fn pass_kind_decal_enabled(pass_kind : Int) -> Bool {
+  (pass_kind & PASS_KIND_DISABLE_DECAL_FLAG) == 0
+}
+
+///|
+fn mesh3d_draw_is_decal(cull_mode : Int) -> Bool {
+  (cull_mode & MESH3D_DRAW_FLAG_DECAL) != 0
+}
+
+///|
+fn mesh3d_draw_is_fog(cull_mode : Int) -> Bool {
+  (cull_mode & MESH3D_DRAW_FLAG_FOG) != 0
+}
+
+///|
+fn mesh3d_draw_is_postprocess_proxy(cull_mode : Int) -> Bool {
+  (cull_mode & MESH3D_DRAW_FLAG_POSTPROCESS_PROXY) != 0
+}
+
+///|
 fn create_sampler(state : State, sampler_kind : Int) -> @webgpu.GPUSampler? {
   if state.gpu.device is None {
     return None
@@ -1060,7 +1119,7 @@ fn mesh3d_topology_key_suffix(topology_kind : Int) -> String {
 
 ///|
 fn mesh3d_cull_mode_sanitize(cull_mode : Int) -> Int {
-  match cull_mode {
+  match cull_mode & MESH3D_CULL_MODE_MASK {
     1 => 1
     2 => 2
     _ => 0
@@ -4412,12 +4471,28 @@ fn draw_mesh3d(
   flush_ui_slice_batches(state)
   flush_ui_batches(state)
   flush_sprite_batches(state)
-  let pass_kind_value = if state.gpu.current_pass_info is Some(info) {
+  let pass_kind_raw = if state.gpu.current_pass_info is Some(info) {
     to_int(info.pass_kind)
   } else {
     0
   }
+  let pass_kind_value = pass_kind_base_kind(pass_kind_raw)
+  let pass_postprocess_enabled = pass_kind_postprocess_enabled(pass_kind_raw)
+  let pass_fog_enabled = pass_kind_fog_enabled(pass_kind_raw)
+  let pass_decal_enabled = pass_kind_decal_enabled(pass_kind_raw)
   let use_motion_vector_pipeline = pass_kind_value == 1
+  if use_motion_vector_pipeline && !pass_postprocess_enabled {
+    return
+  }
+  if !pass_decal_enabled && mesh3d_draw_is_decal(cull_mode) {
+    return
+  }
+  if !pass_fog_enabled && mesh3d_draw_is_fog(cull_mode) {
+    return
+  }
+  if !pass_postprocess_enabled && mesh3d_draw_is_postprocess_proxy(cull_mode) {
+    return
+  }
   let mesh_entry = map_get(state.gpu.meshes, @js.any(mesh_id))
   if host_is_nullish(mesh_entry) {
     report_asset_error_once(
@@ -4876,6 +4951,46 @@ fn draw_mesh3d(
 }
 
 ///|
+fn blit_scene_texture_to_current_pass(
+  state : State,
+  scene_texture_id : Int,
+) -> Unit {
+  guard state.gpu.current_pass_info is Some(info) else { return }
+  let viewport_width = if info.viewport_width > 0.0 {
+    info.viewport_width
+  } else if info.width > 0.0 {
+    info.width
+  } else {
+    1.0
+  }
+  let viewport_height = if info.viewport_height > 0.0 {
+    info.viewport_height
+  } else if info.height > 0.0 {
+    info.height
+  } else {
+    1.0
+  }
+  draw_sprite_uv(
+    state,
+    scene_texture_id,
+    0.0,
+    0.0,
+    0.0,
+    viewport_width / 128.0,
+    viewport_height / 128.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.0,
+    0.0,
+    1.0,
+    1.0,
+  )
+  flush_sprite_batches(state)
+}
+
+///|
 fn draw_motion_blur(
   state : State,
   scene_texture_id : Int,
@@ -4894,22 +5009,14 @@ fn draw_motion_blur(
   flush_ui_slice_batches(state)
   flush_ui_batches(state)
   flush_sprite_batches(state)
-  ensure_motion_blur_pipeline(state)
-  if state.gpu.motion_blur_pipeline is None {
-    report_asset_error_once(
-      state, "motion_blur_draw_pipeline_not_ready", "Motion-blur draw skipped: pipeline not ready",
-    )
-    return
+  let pass_kind_raw = if state.gpu.current_pass_info is Some(info) {
+    to_int(info.pass_kind)
+  } else {
+    0
   }
   if scene_texture_id < 0 {
     report_asset_error_once(
       state, "motion_blur_draw_invalid_scene_texture", "Motion-blur draw skipped: scene texture id is invalid",
-    )
-    return
-  }
-  if velocity_texture_id < 0 {
-    report_asset_error_once(
-      state, "motion_blur_draw_invalid_velocity_texture", "Motion-blur draw skipped: velocity texture id is invalid",
     )
     return
   }
@@ -4920,10 +5027,30 @@ fn draw_motion_blur(
     )
     return
   }
+  let motion_blur_enabled = pass_kind_postprocess_enabled(pass_kind_raw) &&
+    samples > 0 &&
+    shutter_angle > 0.0
+  if !motion_blur_enabled {
+    blit_scene_texture_to_current_pass(state, scene_texture_id)
+    return
+  }
+  if velocity_texture_id < 0 {
+    report_asset_error_once(
+      state, "motion_blur_draw_invalid_velocity_texture", "Motion-blur draw skipped: velocity texture id is invalid",
+    )
+    return
+  }
   guard get_texture_entry_strict(state, velocity_texture_id)
     is Some(velocity_texture_entry) else {
     report_asset_error_once(
       state, "motion_blur_draw_velocity_texture_not_ready", "Motion-blur draw skipped: velocity texture is not ready",
+    )
+    return
+  }
+  ensure_motion_blur_pipeline(state)
+  if state.gpu.motion_blur_pipeline is None {
+    report_asset_error_once(
+      state, "motion_blur_draw_pipeline_not_ready", "Motion-blur draw skipped: pipeline not ready",
     )
     return
   }
@@ -5042,6 +5169,11 @@ fn draw_bloom2d(
     return
   }
   guard state.gpu.current_pass_info is Some(info) else { return }
+  let pass_kind_raw = to_int(info.pass_kind)
+  if !pass_kind_postprocess_enabled(pass_kind_raw) {
+    blit_scene_texture_to_current_pass(state, scene_texture_id)
+    return
+  }
   guard state.gpu.current_pass is Some(active_pass) else { return }
   guard state.gpu.encoder is Some(encoder) else { return }
   guard state.gpu.device is Some(device) else { return }

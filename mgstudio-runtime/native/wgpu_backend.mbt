@@ -246,6 +246,8 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_line_strip : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_surface_line_strip_transparent : @wgpu.RenderPipeline?
   mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
+  mut mesh3d_pipeline_rgba8_cull_mode : Int
+  mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_uniform_buf : @wgpu.Buffer?
   mut mesh3d_uniform_bg : @wgpu.BindGroup?
   mut mesh3d_motion_vector_bgl_uniform : @wgpu.BindGroupLayout?
@@ -319,6 +321,33 @@ fn mesh3d_topology_suffix(topology : UInt) -> String {
     "line_strip"
   } else {
     "triangle_list"
+  }
+}
+
+///|
+fn mesh3d_cull_mode_sanitize(cull_mode : Int) -> Int {
+  match cull_mode {
+    1 => 1
+    2 => 2
+    _ => 0
+  }
+}
+
+///|
+fn mesh3d_cull_mode_wgpu(cull_mode : Int) -> UInt {
+  match mesh3d_cull_mode_sanitize(cull_mode) {
+    1 => @wgpu.CULL_MODE_FRONT
+    2 => @wgpu.CULL_MODE_BACK
+    _ => @wgpu.CULL_MODE_NONE
+  }
+}
+
+///|
+fn mesh3d_cull_mode_suffix(cull_mode : Int) -> String {
+  match mesh3d_cull_mode_sanitize(cull_mode) {
+    1 => "front"
+    2 => "back"
+    _ => "none"
   }
 }
 
@@ -430,6 +459,8 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_surface_line_strip: None,
     mesh3d_pipeline_surface_line_strip_transparent: None,
     mesh3d_pipeline_surface_format: None,
+    mesh3d_pipeline_rgba8_cull_mode: -1,
+    mesh3d_pipeline_surface_cull_mode: -1,
     mesh3d_uniform_buf: None,
     mesh3d_uniform_bg: None,
     mesh3d_motion_vector_bgl_uniform: None,
@@ -1600,6 +1631,11 @@ fn ensure_ui_slice_globals_bind_group(
   backend.ui_slice_globals_bg = Some(bg)
 }
 
+extern "C" fn c_render_pipeline_desc_builder_set_cull_mode(
+  builder : @wgpu_c.OpaquePtr,
+  cull_mode_u32 : UInt,
+) -> UInt = "mgw_render_pipeline_desc_builder_set_cull_mode"
+
 ///|
 fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   layout : @wgpu.PipelineLayout,
@@ -1610,6 +1646,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   position3d? : Bool = false,
   alpha_blend? : Bool = true,
   topology? : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+  cull_mode? : UInt = @wgpu.CULL_MODE_NONE,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
@@ -1665,9 +1702,17 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_topology_ok = @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder, topology,
   )
+  let set_cull_ok = c_render_pipeline_desc_builder_set_cull_mode(
+    builder,
+    cull_mode,
+  )
   if set_topology_ok == 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal("wgpu: failed to configure mesh pipeline topology")
+  }
+  if set_cull_ok == 0U {
+    @wgpu_c.render_pipeline_desc_builder_free(builder)
+    fatal("wgpu: failed to configure mesh pipeline cull mode")
   }
   if with_depth {
     let set_depth_ok = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
@@ -1838,6 +1883,35 @@ fn mesh3d_pipeline_set_rgba8(
 }
 
 ///|
+fn mesh3d_rgba8_pipeline_cache_clear(backend : GpuBackend) -> Unit {
+  if backend.mesh3d_pipeline is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_transparent is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_line_list is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_line_list_transparent is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_line_strip is Some(old) {
+    old.release()
+  }
+  if backend.mesh3d_pipeline_line_strip_transparent is Some(old) {
+    old.release()
+  }
+  backend.mesh3d_pipeline = None
+  backend.mesh3d_pipeline_transparent = None
+  backend.mesh3d_pipeline_line_list = None
+  backend.mesh3d_pipeline_line_list_transparent = None
+  backend.mesh3d_pipeline_line_strip = None
+  backend.mesh3d_pipeline_line_strip_transparent = None
+  backend.mesh3d_pipeline_rgba8_cull_mode = -1
+}
+
+///|
 fn mesh3d_pipeline_get_surface(
   backend : GpuBackend,
   topology : UInt,
@@ -1914,14 +1988,21 @@ fn mesh3d_surface_pipeline_cache_clear(backend : GpuBackend) -> Unit {
   backend.mesh3d_pipeline_surface_line_list_transparent = None
   backend.mesh3d_pipeline_surface_line_strip = None
   backend.mesh3d_pipeline_surface_line_strip_transparent = None
+  backend.mesh3d_pipeline_surface_cull_mode = -1
 }
 
 ///|
 fn ensure_mesh3d_pipeline_rgba8(
   backend : GpuBackend,
   topology : UInt,
+  cull_mode : Int,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  if backend.mesh3d_pipeline_rgba8_cull_mode != safe_cull_mode {
+    mesh3d_rgba8_pipeline_cache_clear(backend)
+    backend.mesh3d_pipeline_rgba8_cull_mode = safe_cull_mode
+  }
   if backend.mesh3d_pipeline_layout is None {
     let bgl = backend.device.create_bind_group_layout_uniform_buffer()
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
@@ -2019,6 +2100,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   if mesh3d_pipeline_get_rgba8(backend, topology, true) is Some(old) {
     old.release()
   }
+  let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/3d/mesh3d.wgsl",
@@ -2032,11 +2114,13 @@ fn ensure_mesh3d_pipeline_rgba8(
     depth_write_enabled=true,
     position3d=true,
     topology~,
+    cull_mode=cull_mode_wgpu,
   )
   let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
   @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
   pipeline_opaque.set_label(
-    "mgstudio_mesh3d_rgba8_opaque_" + mesh3d_topology_suffix(topology),
+    "mgstudio_mesh3d_rgba8_opaque_" + mesh3d_topology_suffix(topology) + "_cull_" +
+    mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_rgba8(backend, topology, false, Some(pipeline_opaque))
   let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
@@ -2047,13 +2131,15 @@ fn ensure_mesh3d_pipeline_rgba8(
     depth_write_enabled=false,
     position3d=true,
     topology~,
+    cull_mode=cull_mode_wgpu,
   )
   let pipeline_transparent = backend.device.create_render_pipeline_ptr(
     desc_transparent,
   )
   @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
   pipeline_transparent.set_label(
-    "mgstudio_mesh3d_rgba8_transparent_" + mesh3d_topology_suffix(topology),
+    "mgstudio_mesh3d_rgba8_transparent_" + mesh3d_topology_suffix(topology) +
+    "_cull_" + mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_rgba8(backend, topology, true, Some(pipeline_transparent))
   sm.release()
@@ -2063,6 +2149,7 @@ fn ensure_mesh3d_pipeline_rgba8(
 fn ensure_mesh3d_pipeline_surface(
   backend : GpuBackend,
   topology : UInt,
+  cull_mode : Int,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   guard backend.surface_format is Some(format) else { return }
@@ -2071,6 +2158,11 @@ fn ensure_mesh3d_pipeline_surface(
   }
   if backend.mesh3d_pipeline_surface_format is Some(prev) && prev != format {
     mesh3d_surface_pipeline_cache_clear(backend)
+  }
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  if backend.mesh3d_pipeline_surface_cull_mode != safe_cull_mode {
+    mesh3d_surface_pipeline_cache_clear(backend)
+    backend.mesh3d_pipeline_surface_cull_mode = safe_cull_mode
   }
   if backend.mesh3d_pipeline_surface_format is Some(prev) &&
     prev == format &&
@@ -2084,6 +2176,7 @@ fn ensure_mesh3d_pipeline_surface(
   if mesh3d_pipeline_get_surface(backend, topology, true) is Some(old) {
     old.release()
   }
+  let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/3d/mesh3d.wgsl",
@@ -2097,11 +2190,13 @@ fn ensure_mesh3d_pipeline_surface(
     depth_write_enabled=true,
     position3d=true,
     topology~,
+    cull_mode=cull_mode_wgpu,
   )
   let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
   @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
   pipeline_opaque.set_label(
-    "mgstudio_mesh3d_surface_opaque_" + mesh3d_topology_suffix(topology),
+    "mgstudio_mesh3d_surface_opaque_" + mesh3d_topology_suffix(topology) + "_cull_" +
+    mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_surface(backend, topology, false, Some(pipeline_opaque))
   let desc_transparent = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
@@ -2112,13 +2207,15 @@ fn ensure_mesh3d_pipeline_surface(
     depth_write_enabled=false,
     position3d=true,
     topology~,
+    cull_mode=cull_mode_wgpu,
   )
   let pipeline_transparent = backend.device.create_render_pipeline_ptr(
     desc_transparent,
   )
   @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
   pipeline_transparent.set_label(
-    "mgstudio_mesh3d_surface_transparent_" + mesh3d_topology_suffix(topology),
+    "mgstudio_mesh3d_surface_transparent_" + mesh3d_topology_suffix(topology) +
+    "_cull_" + mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_surface(
     backend,
@@ -2135,6 +2232,7 @@ fn mesh3d_pipeline_for_current_pass(
   backend : GpuBackend,
   transparent : Bool,
   topology : UInt,
+  cull_mode : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let target_is_surface = match backend.pass_state {
     Some(ps) => ps.target_id == -1
@@ -2143,13 +2241,13 @@ fn mesh3d_pipeline_for_current_pass(
   if target_is_surface {
     match backend.surface_format {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_mesh3d_pipeline_surface(backend, topology)
+        ensure_mesh3d_pipeline_surface(backend, topology, cull_mode)
         return mesh3d_pipeline_get_surface(backend, topology, transparent)
       }
       _ => ()
     }
   }
-  ensure_mesh3d_pipeline_rgba8(backend, topology)
+  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
   mesh3d_pipeline_get_rgba8(backend, topology, transparent)
 }
 
@@ -5586,7 +5684,7 @@ pub fn GpuBackend::draw_mesh3d(
   transmission_source_texture_id : Int,
   transmission_blur_taps : Float,
   transmission_steps : Float,
-  _cull_mode : Int,
+  cull_mode : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -5685,6 +5783,7 @@ pub fn GpuBackend::draw_mesh3d(
       self,
       transparent,
       mesh.primitive_topology,
+      cull_mode,
     )
     is Some(pipeline) else {
     return

@@ -401,6 +401,8 @@ fn parse_keycode(code: &str) -> Option<KeyCode> {
         "Digit6" => Some(KeyCode::Digit6),
         "Digit7" => Some(KeyCode::Digit7),
         "Digit8" => Some(KeyCode::Digit8),
+        "Digit9" => Some(KeyCode::Digit9),
+        "Digit0" => Some(KeyCode::Digit0),
         "Tab" => Some(KeyCode::Tab),
         "Enter" => Some(KeyCode::Enter),
         "Backspace" => Some(KeyCode::Backspace),
@@ -425,6 +427,8 @@ fn parse_keycode(code: &str) -> Option<KeyCode> {
         "BracketLeft" => Some(KeyCode::BracketLeft),
         "BracketRight" => Some(KeyCode::BracketRight),
         "Quote" => Some(KeyCode::Quote),
+        "Backquote" => Some(KeyCode::Backquote),
+        "Backslash" => Some(KeyCode::Backslash),
         _ => None,
     }
 }
@@ -4123,6 +4127,7 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::F32,
             ValType::F32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {

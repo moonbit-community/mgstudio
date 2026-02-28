@@ -16,9 +16,10 @@
 /// Port of `bevy/examples/3d/clustered_decals.rs`.
 ///
 /// Baseline parity:
-/// - Bevy `ClusteredDecal` API surface is exposed, but clustered projection and
-///   custom decal-extension shader execution are not yet active in this
-///   backend.
+/// - This example now attaches `ClusteredDecal` components directly with Bevy-
+///   aligned texture/tag data.
+/// - Clustered projected decal rendering and custom decal-extension shader
+///   execution are not yet active in this backend.
 /// - This port preserves Bevy's control model (selection + drag mode) and
 ///   scene layout, mapping decals onto textured translucent proxy meshes.
 
@@ -502,11 +503,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   let light = world.spawn_empty()
   world
   .get_directional_light_store()
-  .insert(
-    light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 18_000.0F, true),
-    tick,
-  )
+  .insert(light, @render3d.DirectionalLight::default(), tick)
   world
   .get_transform_store()
   .insert(
@@ -545,6 +542,15 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(1.1F, 1.1F),
     ),
   ).spawn(world)
+  world
+  .get_clustered_decal_store()
+  .insert(
+    decal_a,
+    @render3d.ClusteredDecal::default()
+    .with_base_color_texture(Some(decal_texture))
+    .with_tag(1),
+    tick,
+  )
   clustered_decals_state.val.decal_a = Some(decal_a)
 
   let decal_b = @render3d.MeshMaterial3dBundle::new(
@@ -556,6 +562,15 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(2.0F, 2.0F),
     ),
   ).spawn(world)
+  world
+  .get_clustered_decal_store()
+  .insert(
+    decal_b,
+    @render3d.ClusteredDecal::default()
+    .with_base_color_texture(Some(decal_texture))
+    .with_tag(2),
+    tick,
+  )
   clustered_decals_state.val.decal_b = Some(decal_b)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")

@@ -39,8 +39,8 @@ priv struct SsaoState {
 
 ///|
 let ssao_state : Ref[SsaoState] = Ref::new({
-  quality: 2,
-  thickness: 1.0F,
+  quality: 3,
+  thickness: 0.25F,
   taa_enabled: true,
   camera: None,
   sphere: None,
@@ -230,8 +230,8 @@ fn apply_ssao_settings(world : @ecs_world.World) -> Unit {
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
   ssao_state.val = {
-    quality: 2,
-    thickness: 1.0F,
+    quality: 3,
+    thickness: 0.25F,
     taa_enabled: true,
     camera: None,
     sphere: None,

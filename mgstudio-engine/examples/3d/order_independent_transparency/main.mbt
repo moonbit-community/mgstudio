@@ -17,9 +17,8 @@
 ///
 /// Parity target:
 /// - Keep Bevy's camera OIT component flow and scene controls.
-/// - Expose Bevy OIT settings fields on camera components.
-/// - Preserve a visible fallback comparison (`Blend` vs `AlphaToCoverage`)
-///   until renderer-side weighted OIT resolve parity is complete.
+/// - Keep transparent materials in `Blend` mode to match Bevy's comparison
+///   between OIT and regular alpha blending.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -33,7 +32,6 @@ const LAYER_INDEX : Int = 1
 ///|
 priv struct SpawnedScene {
   entities : Array[@core.Entity]
-  materials : Array[@asset.Handle[@render3d.StandardMaterial]]
 }
 
 ///|
@@ -42,11 +40,7 @@ priv struct OitExampleState {
   mut help_text : @text.TextHandle?
   mut scene_index : Int
   mut oit_enabled : Bool
-  mut sorted_fragment_max_count : Int
-  mut fragments_per_pixel_average : Float
-  mut alpha_threshold : Float
   mut scene_entities : Array[Array[@core.Entity]]
-  mut scene_materials : Array[Array[@asset.Handle[@render3d.StandardMaterial]]]
 }
 
 ///|
@@ -55,22 +49,12 @@ let oit_state : Ref[OitExampleState] = Ref::new({
   help_text: None,
   scene_index: 0,
   oit_enabled: true,
-  sorted_fragment_max_count: 8,
-  fragments_per_pixel_average: 4.0F,
-  alpha_threshold: 0.0F,
   scene_entities: [],
-  scene_materials: [],
 })
 
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
-}
-
-///|
-fn float_text_2(value : Float) -> String {
-  let rounded = (value * 100.0F).round() / 100.0F
-  "\{rounded}"
 }
 
 ///|
@@ -130,37 +114,11 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn scene_name(scene_index : Int) -> String {
-  if scene_index == 0 {
-    "Spheres"
-  } else if scene_index == 1 {
-    "Quads"
-  } else if scene_index == 2 {
-    "Occlusion"
-  } else {
-    "Instancing"
-  }
-}
-
-///|
 fn help_text_content() -> String {
   "Press T to toggle OIT\n" +
   "OIT " +
   (if oit_state.val.oit_enabled { "enabled" } else { "disabled" }) +
-  "\nTransparent fallback mode: " +
-  (if oit_state.val.oit_enabled { "Blend" } else { "AlphaToCoverage" }) +
-  "\n1/2: -/+ sorted_fragment_max_count (" +
-  oit_state.val.sorted_fragment_max_count.to_string() +
-  ")" +
-  "\n3/4: -/+ fragments_per_pixel_average (" +
-  float_text_2(oit_state.val.fragments_per_pixel_average) +
-  ")" +
-  "\n5/6: -/+ alpha_threshold (" +
-  float_text_2(oit_state.val.alpha_threshold) +
-  ")" +
-  "\nPress C to cycle test scenes (" +
-  scene_name(oit_state.val.scene_index) +
-  ")"
+  "\nPress C to cycle test scenes"
 }
 
 ///|
@@ -171,21 +129,12 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn transparent_alpha_mode() -> @render3d.AlphaMode3d {
-  if oit_state.val.oit_enabled {
-    @render3d.AlphaMode3d::Blend
-  } else {
-    @render3d.AlphaMode3d::AlphaToCoverage
-  }
-}
-
-///|
 fn create_transparent_material(
   color : @render2d.Color,
 ) -> @asset.Handle[@render3d.StandardMaterial] {
   @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(color).with_alpha_mode(
-      transparent_alpha_mode(),
+      @render3d.AlphaMode3d::Blend,
     ),
   )
 }
@@ -256,7 +205,7 @@ fn spawn_scene_spheres(
       tick,
     ),
   )
-  SpawnedScene::{ entities, materials: [mat_a, mat_b, mat_c] }
+  SpawnedScene::{ entities }
 }
 
 ///|
@@ -333,7 +282,7 @@ fn spawn_scene_quads(
       tick,
     ),
   )
-  SpawnedScene::{ entities, materials: [mat0, mat1, mat2, mat3, mat4] }
+  SpawnedScene::{ entities }
 }
 
 ///|
@@ -383,7 +332,7 @@ fn spawn_scene_occlusion(
       world,
       cube,
       solid_material,
-      @math.Transform::from_xyz(-2.5F, 0.0F, 1.0F),
+      @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
       layers,
       tick,
     ),
@@ -421,7 +370,7 @@ fn spawn_scene_occlusion(
     ),
   )
 
-  SpawnedScene::{ entities, materials: [transparent] }
+  SpawnedScene::{ entities }
 }
 
 ///|
@@ -460,7 +409,7 @@ fn spawn_scene_instancing(
       }
     }
   }
-  SpawnedScene::{ entities, materials: [material] }
+  SpawnedScene::{ entities }
 }
 
 ///|
@@ -480,22 +429,6 @@ fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_transparency_mode_proxy() -> Unit {
-  let alpha_mode = transparent_alpha_mode()
-  for materials in oit_state.val.scene_materials {
-    for material_handle in materials {
-      if @render3d.standard_material_get(material_handle) is Some(material) {
-        @render3d.standard_material_set(
-          material_handle,
-          material.with_alpha_mode(alpha_mode),
-        )
-        |> ignore
-      }
-    }
-  }
-}
-
-///|
 fn apply_oit_mode(world : @ecs_world.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
@@ -503,15 +436,7 @@ fn apply_oit_mode(world : @ecs_world.World) -> Unit {
     if oit_state.val.oit_enabled {
       world
       .get_order_independent_transparency_settings_store()
-      .insert(
-        camera,
-        @render3d.OrderIndependentTransparencySettings::new(
-          oit_state.val.sorted_fragment_max_count,
-          oit_state.val.fragments_per_pixel_average,
-          oit_state.val.alpha_threshold,
-        ),
-        tick,
-      )
+      .insert(camera, @render3d.OrderIndependentTransparencySettings::default(), tick)
     } else {
       world.get_order_independent_transparency_settings_store().remove(camera)
       |> ignore
@@ -529,11 +454,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   oit_state.val.help_text = None
   oit_state.val.scene_index = 0
   oit_state.val.oit_enabled = true
-  oit_state.val.sorted_fragment_max_count = 8
-  oit_state.val.fragments_per_pixel_average = 4.0F
-  oit_state.val.alpha_threshold = 0.0F
   oit_state.val.scene_entities = []
-  oit_state.val.scene_materials = []
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -553,12 +474,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_point_light_store()
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      900_000.0F,
-      40.0F,
-      false,
-    ),
+    @render3d.PointLight::default().with_shadow_maps_enabled(false),
     tick,
   )
   world
@@ -598,16 +514,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     scene2.entities,
     scene3.entities,
   ]
-  oit_state.val.scene_materials = [
-    scene0.materials,
-    scene1.materials,
-    scene2.materials,
-    scene3.materials,
-  ]
 
   apply_scene_visibility(world)
   apply_oit_mode(world)
-  apply_transparency_mode_proxy()
   update_help_text()
 }
 
@@ -617,57 +526,6 @@ fn controls(world : @ecs_world.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyT) {
     oit_state.val.oit_enabled = !oit_state.val.oit_enabled
     apply_oit_mode(world)
-    apply_transparency_mode_proxy()
-    updated = true
-  }
-  let mut settings_changed = false
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    oit_state.val.sorted_fragment_max_count = oit_state.val.sorted_fragment_max_count -
-      1
-    settings_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    oit_state.val.sorted_fragment_max_count = oit_state.val.sorted_fragment_max_count +
-      1
-    settings_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    oit_state.val.fragments_per_pixel_average = oit_state.val.fragments_per_pixel_average -
-      0.5F
-    settings_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    oit_state.val.fragments_per_pixel_average = oit_state.val.fragments_per_pixel_average +
-      0.5F
-    settings_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    oit_state.val.alpha_threshold = oit_state.val.alpha_threshold - 0.05F
-    settings_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    oit_state.val.alpha_threshold = oit_state.val.alpha_threshold + 0.05F
-    settings_changed = true
-  }
-  if settings_changed {
-    if oit_state.val.sorted_fragment_max_count < 1 {
-      oit_state.val.sorted_fragment_max_count = 1
-    } else if oit_state.val.sorted_fragment_max_count > 64 {
-      oit_state.val.sorted_fragment_max_count = 64
-    }
-    if oit_state.val.fragments_per_pixel_average < 0.25F {
-      oit_state.val.fragments_per_pixel_average = 0.25F
-    } else if oit_state.val.fragments_per_pixel_average > 16.0F {
-      oit_state.val.fragments_per_pixel_average = 16.0F
-    }
-    if oit_state.val.alpha_threshold < 0.0F {
-      oit_state.val.alpha_threshold = 0.0F
-    } else if oit_state.val.alpha_threshold > 1.0F {
-      oit_state.val.alpha_threshold = 1.0F
-    }
-    if oit_state.val.oit_enabled {
-      apply_oit_mode(world)
-    }
     updated = true
   }
   if @input.key_just_pressed(@window.KeyCode::KeyC) {

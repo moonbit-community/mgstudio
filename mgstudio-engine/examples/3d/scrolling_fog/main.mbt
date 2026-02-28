@@ -24,10 +24,7 @@
 const FOG_CENTER_Y : Float = 11.0F
 
 ///|
-const FOG_SCROLL_SPEED : Float = 0.35F
-
-///|
-const FOG_SCROLL_AMPLITUDE : Float = 12.0F
+const FOG_DENSITY_TEXTURE_SCROLL_SPEED : Float = 0.04F
 
 ///|
 const FOG_BASE_DENSITY : Float = 0.03F
@@ -57,7 +54,6 @@ const LOOK_TARGET_Z : Float = -6.0F
 priv struct ScrollingFogState {
   mut fog_volume_outer : @core.Entity?
   mut fog_volume_inner : @core.Entity?
-  mut directional_light : @core.Entity?
   mut volumetric_fog_stub : @render3d.VolumetricFog
   mut fog_volume_stub : @render3d.FogVolume
 }
@@ -66,7 +62,6 @@ priv struct ScrollingFogState {
 let scrolling_fog_state : Ref[ScrollingFogState] = Ref::new({
   fog_volume_outer: None,
   fog_volume_inner: None,
-  directional_light: None,
   volumetric_fog_stub: @render3d.VolumetricFog::default(),
   fog_volume_stub: @render3d.FogVolume::default(),
 })
@@ -250,14 +245,20 @@ fn setup_lighting(world : @ecs_world.World) -> Unit {
     @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
     tick,
   )
-  scrolling_fog_state.val.directional_light = Some(light)
 }
 
 ///|
 fn setup(world : @ecs_world.World) -> Unit {
+  let tick = world.read_change_tick()
+  let shadow_map_resource = world.get_directional_light_shadow_map_resource()
+  if shadow_map_resource.get_ref_mut(tick) is Some(current) {
+    current.val = @render3d.DirectionalLightShadowMap::new(4096)
+  } else {
+    shadow_map_resource.insert(@render3d.DirectionalLightShadowMap::new(4096), tick)
+  }
+
   scrolling_fog_state.val.fog_volume_outer = None
   scrolling_fog_state.val.fog_volume_inner = None
-  scrolling_fog_state.val.directional_light = None
   scrolling_fog_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
   .with_ambient_intensity(0.0F)
   .with_jitter(0.5F)
@@ -278,14 +279,17 @@ fn setup(world : @ecs_world.World) -> Unit {
 ///|
 fn scroll_fog(world : @ecs_world.World) -> Unit {
   let elapsed = @time.time_elapsed_seconds()
-  let wind_phase = elapsed * FOG_SCROLL_SPEED
-  let offset = @math.sin(wind_phase) * FOG_SCROLL_AMPLITUDE
+  let density_texture_offset_z = elapsed * FOG_DENSITY_TEXTURE_SCROLL_SPEED
   let tick = world.read_change_tick()
 
   if scrolling_fog_state.val.fog_volume_outer is Some(fog_outer) {
     world
     .get_transform_store()
-    .set(fog_outer, @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, offset), tick)
+    .set(
+      fog_outer,
+      @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F),
+      tick,
+    )
     |> ignore
   }
 
@@ -294,41 +298,26 @@ fn scroll_fog(world : @ecs_world.World) -> Unit {
     .get_transform_store()
     .set(
       fog_inner,
-      @math.Transform::from_xyz(
-        @math.sin(wind_phase * 0.7F) * 3.0F,
-        FOG_CENTER_Y - 1.0F,
-        -offset * 0.65F,
-      ),
+      @math.Transform::from_xyz(0.0F, FOG_CENTER_Y - 1.0F, 0.0F),
       tick,
     )
     |> ignore
   }
 
-  let mut light_transform = @math.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
+  let light_transform = @math.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
     @math.Vec3::new(0.0F, 0.0F, 0.0F),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  if scrolling_fog_state.val.directional_light is Some(light_entity) {
-    light_transform = @math.Transform::from_xyz(
-      -5.0F + @math.sin(wind_phase * 0.5F) * 0.9F,
-      5.0F,
-      -7.0F + @math.cos(wind_phase * 0.45F) * 0.9F,
-    ).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    )
-    world.get_transform_store().set(light_entity, light_transform, tick)
-    |> ignore
-  }
 
   let proxy_density_noise = clamp01(
-    0.5F +
-    0.5F * @math.sin(wind_phase * 1.7F + @math.sin(wind_phase * 0.23F) * 2.0F),
+    0.5F + 0.5F * @math.sin(density_texture_offset_z * 10.0F),
   )
   let density = FOG_BASE_DENSITY + FOG_DENSITY_SWING * proxy_density_noise
   scrolling_fog_state.val.fog_volume_stub = scrolling_fog_state.val.fog_volume_stub
   .with_density_factor(density)
-  .with_density_texture_offset(@math.Vec3::new(0.0F, 0.0F, wind_phase * 0.04F))
+  .with_density_texture_offset(
+    @math.Vec3::new(0.0F, 0.0F, density_texture_offset_z),
+  )
 
   let view_dir = focus_point().sub(camera_position()).normalize_or_zero()
   let light_dir = transform_forward(light_transform)
