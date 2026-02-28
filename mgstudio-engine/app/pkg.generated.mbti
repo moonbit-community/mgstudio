@@ -95,6 +95,12 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3((P
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_param4((P1, P2, P3, P4) -> Unit) -> (W) -> Unit
 
+pub fn[W, A] system_query1((W) -> @core.ComponentStore[A], (@core.Query1[A], W) -> Unit) -> (W) -> Unit
+
+pub fn[W, A, B] system_query2((W) -> @core.ComponentStore[A], (W) -> @core.ComponentStore[B], (@core.Query2[A, B], W) -> Unit) -> (W) -> Unit
+
+pub fn[W, A, B, C] system_query3((W) -> @core.ComponentStore[A], (W) -> @core.ComponentStore[B], (W) -> @core.ComponentStore[C], (@core.Query3[A, B, C], W) -> Unit) -> (W) -> Unit
+
 pub fn system_set(String) -> String
 
 pub fn task_pool_num_threads() -> Int?
@@ -323,6 +329,8 @@ pub type LogLayer = (LogRecord) -> Unit
 pub type Plugin[W] = (App[W]) -> App[W]
 
 pub type PluginGroup[W] = () -> PluginGroupBuilder[W]
+
+pub type QueryGetter[W, T] = (W) -> @core.ComponentStore[T]
 
 pub type RenderErrorHandler = (RenderRuntimeError) -> RenderErrorPolicy
 

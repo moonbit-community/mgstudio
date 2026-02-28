@@ -174,6 +174,38 @@ pub fn[
 }
 
 ///|
+pub type QueryGetter[W, T] = (W) -> @core.ComponentStore[T]
+
+///|
+pub fn[W, A] system_query1(
+  get_a : QueryGetter[W, A],
+  system : (@core.Query1[A], W) -> Unit,
+) -> SystemFn[W] {
+  fn(world : W) { system(@core.Query1::new(get_a(world)), world) }
+}
+
+///|
+pub fn[W, A, B] system_query2(
+  get_a : QueryGetter[W, A],
+  get_b : QueryGetter[W, B],
+  system : (@core.Query2[A, B], W) -> Unit,
+) -> SystemFn[W] {
+  fn(world : W) { system(@core.Query2::new(get_a(world), get_b(world)), world) }
+}
+
+///|
+pub fn[W, A, B, C] system_query3(
+  get_a : QueryGetter[W, A],
+  get_b : QueryGetter[W, B],
+  get_c : QueryGetter[W, C],
+  system : (@core.Query3[A, B, C], W) -> Unit,
+) -> SystemFn[W] {
+  fn(world : W) {
+    system(@core.Query3::new(get_a(world), get_b(world), get_c(world)), world)
+  }
+}
+
+///|
 let current_system_ticks_ref : Ref[@core.SystemTicks?] = Ref::new(None)
 
 ///|

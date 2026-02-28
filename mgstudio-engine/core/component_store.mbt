@@ -73,6 +73,19 @@ pub fn[T] ComponentStore::set(
 }
 
 ///|
+pub fn[T] ComponentStore::update(
+  self : ComponentStore[T],
+  entity : Entity,
+  change_tick : Tick,
+  update : (T) -> T,
+) -> Bool {
+  match self.get(entity) {
+    Some(value) => self.set(entity, update(value), change_tick)
+    None => false
+  }
+}
+
+///|
 pub fn[T] ComponentStore::insert(
   self : ComponentStore[T],
   entity : Entity,
@@ -93,6 +106,16 @@ pub fn[T] ComponentStore::insert(
       }
     }
   }
+}
+
+///|
+pub fn[T] ComponentStore::upsert(
+  self : ComponentStore[T],
+  entity : Entity,
+  value : T,
+  change_tick : Tick,
+) -> Unit {
+  self.insert(entity, value, change_tick)
 }
 
 ///|

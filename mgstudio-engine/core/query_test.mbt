@@ -53,3 +53,54 @@ test "query: query2_changed_a filters by A changed ticks" {
   })
   inspect(hits2.val == 1, content="true")
 }
+
+///|
+test "query: query3 iterates triple intersection" {
+  let entities = Entities::new()
+  let e1 = entities.spawn()
+  let e2 = entities.spawn()
+  let a : ComponentStore[Int] = ComponentStore::new()
+  let b : ComponentStore[Int] = ComponentStore::new()
+  let c : ComponentStore[Int] = ComponentStore::new()
+  a.insert(e1, 10, 1)
+  a.insert(e2, 20, 1)
+  b.insert(e2, 30, 1)
+  c.insert(e2, 40, 1)
+  let sum : Ref[Int] = Ref::new(0)
+  query3(a, b, c, fn(_e, av, bv, cv) { sum.val = sum.val + av + bv + cv })
+  inspect(sum.val == 90, content="true")
+}
+
+///|
+test "query: query2_single returns only for exactly one result" {
+  let entities = Entities::new()
+  let e1 = entities.spawn()
+  let e2 = entities.spawn()
+  let a : ComponentStore[Int] = ComponentStore::new()
+  let b : ComponentStore[Int] = ComponentStore::new()
+  a.insert(e1, 10, 1)
+  b.insert(e1, 20, 1)
+  inspect(
+    query2_single(a, b) is Some((_e, av, bv)) && av == 10 && bv == 20,
+    content="true",
+  )
+  a.insert(e2, 30, 1)
+  b.insert(e2, 40, 1)
+  inspect(query2_single(a, b) is None, content="true")
+}
+
+///|
+test "query: query2_update_a rewrites first store in-place style" {
+  let entities = Entities::new()
+  let e = entities.spawn()
+  let a : ComponentStore[Int] = ComponentStore::new()
+  let b : ComponentStore[Int] = ComponentStore::new()
+  a.insert(e, 1, 1)
+  b.insert(e, 3, 1)
+  query2_update_a(a, b, 2, fn(_e, av, bv) { av + bv })
+  inspect(a.get(e) == Some(4), content="true")
+  inspect(
+    a.get_ticks(e) is Some(ticks) && ticks.is_changed(SystemTicks::new(1, 2)),
+    content="true",
+  )
+}

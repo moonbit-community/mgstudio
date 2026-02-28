@@ -21,7 +21,13 @@ pub fn game_app() -> Unit {
   .add_plugins([@render2d.wireframe2d_plugin])
   .add_startup_system(shapes_setup)
   .add_startup_system(setup_wireframe2d_config)
-  .add_system(shapes_rotate)
+  .add_system(
+    @app.system_query2(
+      fn(world) { world.get_transform_store() },
+      fn(world) { world.get_mesh2d_store() },
+      shapes_rotate,
+    ),
+  )
   .run()
 }
 
@@ -308,7 +314,10 @@ fn setup_wireframe2d_config(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn shapes_rotate(world : @ecs_world.World) -> Unit {
+fn shapes_rotate(
+  query : @core.Query2[@math.Transform, @render2d.Mesh2d],
+  world : @ecs_world.World,
+) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
     let tick = world.read_change_tick()
     if world.get_wireframe2d_config_resource().get_ref_mut(tick)
@@ -327,22 +336,13 @@ fn shapes_rotate(world : @ecs_world.World) -> Unit {
   let delta_secs = @time.time_delta_seconds()
   let speed = 0.5F
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
-  let mesh_store = world.get_mesh2d_store()
-  let entities : Array[(@core.Entity, @math.Transform)] = []
-  @core.query2(transform_store, mesh_store, fn(entity, transform, _mesh) {
-    entities.push((entity, transform))
-  })
-  for entry in entities {
-    let entity = entry.0
-    let transform = entry.1
+  query.update_a(tick, fn(_entity, transform, _mesh) {
     let next_rotation = transform.rotation_z() + speed * delta_secs
-    let next_transform = @math.Transform::from_xy_rotation_scale(
+    @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(transform.translation.x, transform.translation.y),
       next_rotation,
       @math.Vec2::new(transform.scale.x, transform.scale.y),
       z=transform.translation.z,
     )
-    transform_store.set(entity, next_transform, tick) |> ignore
-  }
+  })
 }

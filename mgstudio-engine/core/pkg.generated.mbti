@@ -2,9 +2,27 @@
 package "Milky2018/mgstudio/core"
 
 // Values
+pub fn[A] query1(ComponentStore[A], (Entity, A) -> Unit) -> Unit
+
+pub fn[A] query1_added(ComponentStore[A], SystemTicks, (Entity, A) -> Unit) -> Unit
+
+pub fn[A] query1_changed(ComponentStore[A], SystemTicks, (Entity, A) -> Unit) -> Unit
+
+pub fn[A] query1_single(ComponentStore[A]) -> (Entity, A)?
+
+pub fn[A] query1_update(ComponentStore[A], Int, (Entity, A) -> A) -> Unit
+
 pub fn[A, B] query2(ComponentStore[A], ComponentStore[B], (Entity, A, B) -> Unit) -> Unit
 
 pub fn[A, B] query2_changed_a(ComponentStore[A], ComponentStore[B], SystemTicks, (Entity, A, B) -> Unit) -> Unit
+
+pub fn[A, B] query2_changed_b(ComponentStore[A], ComponentStore[B], SystemTicks, (Entity, A, B) -> Unit) -> Unit
+
+pub fn[A, B] query2_single(ComponentStore[A], ComponentStore[B]) -> (Entity, A, B)?
+
+pub fn[A, B] query2_update_a(ComponentStore[A], ComponentStore[B], Int, (Entity, A, B) -> A) -> Unit
+
+pub fn[A, B, C] query3(ComponentStore[A], ComponentStore[B], ComponentStore[C], (Entity, A, B, C) -> Unit) -> Unit
 
 pub fn[T] with_host_bytes_id(Bytes, (Int) -> T) -> T
 
@@ -33,6 +51,8 @@ pub fn[T] ComponentStore::len(Self[T]) -> Int
 pub fn[T] ComponentStore::new() -> Self[T]
 pub fn[T] ComponentStore::remove(Self[T], Entity) -> T?
 pub fn[T] ComponentStore::set(Self[T], Entity, T, Int) -> Bool
+pub fn[T] ComponentStore::update(Self[T], Entity, Int, (T) -> T) -> Bool
+pub fn[T] ComponentStore::upsert(Self[T], Entity, T, Int) -> Unit
 
 pub struct ComponentTicks {
   mut added : Int
@@ -87,6 +107,35 @@ pub fn[T] Messages::reader(Self[T], SystemTicks) -> MessageReader[T]
 pub fn[T] Messages::send(Self[T], Int, T) -> Unit
 pub fn[T] Messages::send_batch(Self[T], Int, Array[T]) -> Unit
 pub fn[T] Messages::writer(Self[T], Int) -> MessageWriter[T]
+
+pub struct Query1[A] {
+  a : ComponentStore[A]
+}
+pub fn[A] Query1::for_each(Self[A], (Entity, A) -> Unit) -> Unit
+pub fn[A] Query1::for_each_added(Self[A], SystemTicks, (Entity, A) -> Unit) -> Unit
+pub fn[A] Query1::for_each_changed(Self[A], SystemTicks, (Entity, A) -> Unit) -> Unit
+pub fn[A] Query1::new(ComponentStore[A]) -> Self[A]
+pub fn[A] Query1::single(Self[A]) -> (Entity, A)?
+pub fn[A] Query1::update(Self[A], Int, (Entity, A) -> A) -> Unit
+
+pub struct Query2[A, B] {
+  a : ComponentStore[A]
+  b : ComponentStore[B]
+}
+pub fn[A, B] Query2::for_each(Self[A, B], (Entity, A, B) -> Unit) -> Unit
+pub fn[A, B] Query2::for_each_changed_a(Self[A, B], SystemTicks, (Entity, A, B) -> Unit) -> Unit
+pub fn[A, B] Query2::for_each_changed_b(Self[A, B], SystemTicks, (Entity, A, B) -> Unit) -> Unit
+pub fn[A, B] Query2::new(ComponentStore[A], ComponentStore[B]) -> Self[A, B]
+pub fn[A, B] Query2::single(Self[A, B]) -> (Entity, A, B)?
+pub fn[A, B] Query2::update_a(Self[A, B], Int, (Entity, A, B) -> A) -> Unit
+
+pub struct Query3[A, B, C] {
+  a : ComponentStore[A]
+  b : ComponentStore[B]
+  c : ComponentStore[C]
+}
+pub fn[A, B, C] Query3::for_each(Self[A, B, C], (Entity, A, B, C) -> Unit) -> Unit
+pub fn[A, B, C] Query3::new(ComponentStore[A], ComponentStore[B], ComponentStore[C]) -> Self[A, B, C]
 
 pub struct Resource[T] {
   mut cell : Ref[T]?

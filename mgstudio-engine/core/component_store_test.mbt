@@ -43,3 +43,20 @@ test "component_store: swap-remove keeps other entity accessible" {
   inspect(store.get(e2).unwrap() == 2, content="true")
   inspect(store.len() == 1, content="true")
 }
+
+///|
+test "component_store: update and upsert" {
+  let entities = Entities::new()
+  let e = entities.spawn()
+  let store : ComponentStore[Int] = ComponentStore::new()
+  inspect(!store.update(e, 1, fn(v) { v + 1 }), content="true")
+  store.upsert(e, 10, 2)
+  inspect(store.get(e) == Some(10), content="true")
+  inspect(store.update(e, 3, fn(v) { v + 5 }), content="true")
+  inspect(store.get(e) == Some(15), content="true")
+  inspect(
+    store.get_ticks(e) is Some(ticks) &&
+    ticks.is_changed(SystemTicks::new(2, 3)),
+    content="true",
+  )
+}
