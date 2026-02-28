@@ -602,10 +602,7 @@ fn host_input_drag_and_drop_event_kind(index~ : Int) -> Int = "mgstudio_host" "i
 fn host_input_drag_and_drop_event_len(index~ : Int) -> Int = "mgstudio_host" "input_drag_and_drop_event_len"
 
 ///|
-fn host_input_drag_and_drop_event_code_unit(
-  index~ : Int,
-  offset~ : Int,
-) -> Int = "mgstudio_host" "input_drag_and_drop_event_code_unit"
+fn host_input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int = "mgstudio_host" "input_drag_and_drop_event_code_unit"
 
 ///|
 pub fn key_pressed(code : @window.KeyCode) -> Bool {
@@ -796,9 +793,10 @@ pub fn mouse_motion_delta_opt() -> @math.Vec2? {
 pub fn primary_pointer_position() -> @math.Vec2? {
   match input_primary_pointer_position_ref.val {
     Some(position) => Some(position)
-    None => {
+    None =>
       if touches_resource_ref.val.get_ref() is Some(touches_ref) {
-        if input_primary_pointer_from_touches(touches_ref.val) is Some(touch_position) {
+        if input_primary_pointer_from_touches(touches_ref.val)
+          is Some(touch_position) {
           Some(touch_position)
         } else {
           mouse_position()
@@ -806,7 +804,6 @@ pub fn primary_pointer_position() -> @math.Vec2? {
       } else {
         mouse_position()
       }
-    }
   }
 }
 

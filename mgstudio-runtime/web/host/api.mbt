@@ -2751,6 +2751,29 @@ pub fn create_host(
   )
   let gpu_draw_bloom2d = wrap_variadic(
     @js.from_fn1(fn(args) {
+      let fxaa_enabled = to_int(arg_number(args, 14, arg_number(args, 19, 0)))
+      let fxaa_edge_threshold = arg_number(
+        args,
+        15,
+        arg_number(args, 20, 0.125),
+      )
+      let chromatic_aberration_strength = arg_number(
+        args,
+        17,
+        arg_number(args, 21, 0.0),
+      )
+      let vignette_strength = arg_number(args, 19, arg_number(args, 22, 0.0))
+      let view_width = to_int(arg_number(args, 30, arg_number(args, 14, 1)))
+      let view_height = to_int(arg_number(args, 31, arg_number(args, 15, 1)))
+      let agx_lut_texture_id = to_int(
+        arg_number(args, 32, arg_number(args, 16, -1)),
+      )
+      let tony_lut_texture_id = to_int(
+        arg_number(args, 33, arg_number(args, 17, -1)),
+      )
+      let blender_lut_texture_id = to_int(
+        arg_number(args, 34, arg_number(args, 18, -1)),
+      )
       draw_bloom2d(
         state,
         to_int(arg_number(args, 0, -1)),
@@ -2767,11 +2790,15 @@ pub fn create_host(
         arg_number(args, 11, 1.0),
         to_int(arg_number(args, 12, 0)),
         to_int(arg_number(args, 13, 0)),
-        to_int(arg_number(args, 14, 1)),
-        to_int(arg_number(args, 15, 1)),
-        to_int(arg_number(args, 16, -1)),
-        to_int(arg_number(args, 17, -1)),
-        to_int(arg_number(args, 18, -1)),
+        view_width,
+        view_height,
+        agx_lut_texture_id,
+        tony_lut_texture_id,
+        blender_lut_texture_id,
+        fxaa_enabled,
+        fxaa_edge_threshold,
+        chromatic_aberration_strength,
+        vignette_strength,
       )
     }),
   )

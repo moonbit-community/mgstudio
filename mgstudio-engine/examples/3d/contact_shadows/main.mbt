@@ -216,9 +216,7 @@ fn apply_camera_components(world : @ecs_world.World) -> Unit {
 
 ///|
 fn apply_ground_receive_shadows(world : @ecs_world.World) -> Unit {
-  guard contact_shadows_state.val.ground is Some(ground_entity) else {
-    return
-  }
+  guard contact_shadows_state.val.ground is Some(ground_entity) else { return }
   let receiving = contact_shadows_state.val.receive_shadows ==
     ReceiveShadowsState::Enabled
   let tick = world.read_change_tick()

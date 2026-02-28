@@ -1831,6 +1831,10 @@ fn bloom2d_make_uniform_data(
   tonemapping_mode : Int,
   deband_dither_enabled : Int,
   upsample_blend : Double,
+  fxaa_enabled : Int,
+  fxaa_edge_threshold : Double,
+  chromatic_aberration_strength : Double,
+  vignette_strength : Double,
 ) -> @js.Any {
   let softness = threshold_softness
   let knee = threshold * softness
@@ -1872,6 +1876,14 @@ fn bloom2d_make_uniform_data(
     },
     bloom_weight,
     upsample_blend,
+    if fxaa_enabled != 0 {
+      1.0
+    } else {
+      0.0
+    },
+    fxaa_edge_threshold,
+    chromatic_aberration_strength,
+    vignette_strength,
   ])
 }
 
@@ -2118,7 +2130,7 @@ fn ensure_bloom2d_pipeline(
     @webgpu.buffer_usage_copy_dst(),
   )
   if state.gpu.bloom2d_settings_buffer is None {
-    let settings_desc = @webgpu.buffer_descriptor(64, uniform_usage)
+    let settings_desc = @webgpu.buffer_descriptor(80, uniform_usage)
     state.gpu.bloom2d_settings_buffer = Some(
       device.create_buffer(settings_desc.to_js()),
     )
@@ -5142,6 +5154,10 @@ fn draw_bloom2d(
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
+  fxaa_enabled : Int,
+  fxaa_edge_threshold : Double,
+  chromatic_aberration_strength : Double,
+  vignette_strength : Double,
 ) -> Unit {
   if state.gpu.profile_enabled {
     state.gpu.profile_draw_bloom2d_calls_accum = state.gpu.profile_draw_bloom2d_calls_accum +
@@ -5468,6 +5484,12 @@ fn draw_bloom2d(
   let bloom_weight_value = if bloom_enabled { intensity_value } else { 0.0 }
   let tonemapping_mode_value = tonemapping_mode
   let deband_dither_enabled_value = deband_dither_enabled
+  let fxaa_enabled_value = if fxaa_enabled != 0 { 1 } else { 0 }
+  let fxaa_edge_threshold_value = clamp_double(fxaa_edge_threshold, 0.01, 0.333)
+  let chromatic_aberration_strength_value = clamp_double(
+    chromatic_aberration_strength, 0.0, 2.0,
+  )
+  let vignette_strength_value = clamp_double(vignette_strength, 0.0, 1.0)
   let bloom_settings_data = bloom2d_make_uniform_data(
     safe_scene_width.to_double(),
     safe_scene_height.to_double(),
@@ -5483,6 +5505,10 @@ fn draw_bloom2d(
     tonemapping_mode_value,
     deband_dither_enabled_value,
     0.0,
+    fxaa_enabled_value,
+    fxaa_edge_threshold_value,
+    chromatic_aberration_strength_value,
+    vignette_strength_value,
   )
   queue.write_buffer(settings_buffer, 0, bloom_settings_data)
   let scene_view : @webgpu.GPUTextureView = scene_texture_entry
@@ -5606,6 +5632,10 @@ fn draw_bloom2d(
       tonemapping_mode_value,
       deband_dither_enabled_value,
       blend,
+      fxaa_enabled_value,
+      fxaa_edge_threshold_value,
+      chromatic_aberration_strength_value,
+      vignette_strength_value,
     )
     queue.write_buffer(settings_buffer, 0, upsample_settings_data)
     let entries = [
@@ -5689,6 +5719,10 @@ fn draw_bloom2d(
     tonemapping_mode_value,
     deband_dither_enabled_value,
     final_blend,
+    fxaa_enabled_value,
+    fxaa_edge_threshold_value,
+    chromatic_aberration_strength_value,
+    vignette_strength_value,
   )
   queue.write_buffer(settings_buffer, 0, compose_settings_data)
   let compose_bind_group = device.create_bind_group(
@@ -5732,6 +5766,10 @@ fn draw_bloom2d(
     tonemapping_mode_value,
     deband_dither_enabled_value,
     0.0,
+    fxaa_enabled_value,
+    fxaa_edge_threshold_value,
+    chromatic_aberration_strength_value,
+    vignette_strength_value,
   )
   queue.write_buffer(settings_buffer, 0, tonemap_settings_data)
   let tonemap_entries = [

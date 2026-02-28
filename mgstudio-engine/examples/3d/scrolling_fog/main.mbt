@@ -120,23 +120,33 @@ fn apply_distance_fog_from_stub(
     32.0F,
   )
   let brightness = 0.45F + 0.55F * sunlight_phase
-  let ambient_lift = clampf(volumetric_fog_stub.ambient_intensity * 0.5F, 0.0F, 0.25F)
+  let ambient_lift = clampf(
+    volumetric_fog_stub.ambient_intensity * 0.5F,
+    0.0F,
+    0.25F,
+  )
   let directional_alpha = clampf(0.25F + sunlight_phase * 0.45F, 0.2F, 0.75F)
 
   let fog = @render3d.DistanceFog::default()
-  .with_color(
-    @render2d.Color::new(
-      clamp01((0.34F + proxy_density_noise * 0.05F) * brightness + ambient_lift),
-      clamp01((0.37F + proxy_density_noise * 0.06F) * brightness + ambient_lift),
-      clamp01((0.42F + proxy_density_noise * 0.08F) * brightness + ambient_lift),
-      0.95F,
-    ),
-  )
-  .with_directional_light_color(
-    @render2d.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
-  )
-  .with_directional_light_exponent(12.0F)
-  .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
+    .with_color(
+      @render2d.Color::new(
+        clamp01(
+          (0.34F + proxy_density_noise * 0.05F) * brightness + ambient_lift,
+        ),
+        clamp01(
+          (0.37F + proxy_density_noise * 0.06F) * brightness + ambient_lift,
+        ),
+        clamp01(
+          (0.42F + proxy_density_noise * 0.08F) * brightness + ambient_lift,
+        ),
+        0.95F,
+      ),
+    )
+    .with_directional_light_color(
+      @render2d.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
+    )
+    .with_directional_light_exponent(12.0F)
+    .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
   guard scrolling_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
   let camera3d_store = world.get_camera3d_store()
@@ -265,20 +275,23 @@ fn setup(world : @ecs_world.World) -> Unit {
   if shadow_map_resource.get_ref_mut(tick) is Some(current) {
     current.val = @render3d.DirectionalLightShadowMap::new(4096)
   } else {
-    shadow_map_resource.insert(@render3d.DirectionalLightShadowMap::new(4096), tick)
+    shadow_map_resource.insert(
+      @render3d.DirectionalLightShadowMap::new(4096),
+      tick,
+    )
   }
 
   scrolling_fog_state.val.fog_volume_outer = None
   scrolling_fog_state.val.fog_volume_inner = None
   scrolling_fog_state.val.camera = None
   scrolling_fog_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
-  .with_ambient_intensity(0.0F)
-  .with_jitter(0.5F)
+    .with_ambient_intensity(0.0F)
+    .with_jitter(0.5F)
   scrolling_fog_state.val.fog_volume_stub = @render3d.FogVolume::default()
-  .with_density_factor(FOG_BASE_DENSITY)
-  .with_scattering(0.3F)
-  .with_absorption(0.3F)
-  .with_scattering_asymmetry(0.5F)
+    .with_density_factor(FOG_BASE_DENSITY)
+    .with_scattering(0.3F)
+    .with_absorption(0.3F)
+    .with_scattering_asymmetry(0.5F)
 
   spawn_world_geometry(world)
   spawn_fog_proxy(world)
@@ -297,11 +310,7 @@ fn scroll_fog(world : @ecs_world.World) -> Unit {
   if scrolling_fog_state.val.fog_volume_outer is Some(fog_outer) {
     world
     .get_transform_store()
-    .set(
-      fog_outer,
-      @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F),
-      tick,
-    )
+    .set(fog_outer, @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F), tick)
     |> ignore
   }
 
@@ -326,10 +335,10 @@ fn scroll_fog(world : @ecs_world.World) -> Unit {
   )
   let density = FOG_BASE_DENSITY + FOG_DENSITY_SWING * proxy_density_noise
   scrolling_fog_state.val.fog_volume_stub = scrolling_fog_state.val.fog_volume_stub
-  .with_density_factor(density)
-  .with_density_texture_offset(
-    @math.Vec3::new(0.0F, 0.0F, density_texture_offset_z),
-  )
+    .with_density_factor(density)
+    .with_density_texture_offset(
+      @math.Vec3::new(0.0F, 0.0F, density_texture_offset_z),
+    )
 
   let view_dir = focus_point().sub(camera_position()).normalize_or_zero()
   let light_dir = transform_forward(light_transform)

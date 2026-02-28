@@ -1693,6 +1693,7 @@ fn ensure_ui_slice_globals_bind_group(
   backend.ui_slice_globals_bg = Some(bg)
 }
 
+///|
 extern "C" fn c_render_pipeline_desc_builder_set_cull_mode(
   builder : @wgpu_c.OpaquePtr,
   cull_mode_u32 : UInt,
@@ -1765,8 +1766,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     builder, topology,
   )
   let set_cull_ok = c_render_pipeline_desc_builder_set_cull_mode(
-    builder,
-    cull_mode,
+    builder, cull_mode,
   )
   if set_topology_ok == 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
@@ -2181,7 +2181,9 @@ fn ensure_mesh3d_pipeline_rgba8(
   let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
   @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
   pipeline_opaque.set_label(
-    "mgstudio_mesh3d_rgba8_opaque_" + mesh3d_topology_suffix(topology) + "_cull_" +
+    "mgstudio_mesh3d_rgba8_opaque_" +
+    mesh3d_topology_suffix(topology) +
+    "_cull_" +
     mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_rgba8(backend, topology, false, Some(pipeline_opaque))
@@ -2200,8 +2202,10 @@ fn ensure_mesh3d_pipeline_rgba8(
   )
   @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
   pipeline_transparent.set_label(
-    "mgstudio_mesh3d_rgba8_transparent_" + mesh3d_topology_suffix(topology) +
-    "_cull_" + mesh3d_cull_mode_suffix(safe_cull_mode),
+    "mgstudio_mesh3d_rgba8_transparent_" +
+    mesh3d_topology_suffix(topology) +
+    "_cull_" +
+    mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_rgba8(backend, topology, true, Some(pipeline_transparent))
   sm.release()
@@ -2257,7 +2261,9 @@ fn ensure_mesh3d_pipeline_surface(
   let pipeline_opaque = backend.device.create_render_pipeline_ptr(desc_opaque)
   @wgpu_c.render_pipeline_descriptor_free(desc_opaque)
   pipeline_opaque.set_label(
-    "mgstudio_mesh3d_surface_opaque_" + mesh3d_topology_suffix(topology) + "_cull_" +
+    "mgstudio_mesh3d_surface_opaque_" +
+    mesh3d_topology_suffix(topology) +
+    "_cull_" +
     mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_surface(backend, topology, false, Some(pipeline_opaque))
@@ -2276,8 +2282,10 @@ fn ensure_mesh3d_pipeline_surface(
   )
   @wgpu_c.render_pipeline_descriptor_free(desc_transparent)
   pipeline_transparent.set_label(
-    "mgstudio_mesh3d_surface_transparent_" + mesh3d_topology_suffix(topology) +
-    "_cull_" + mesh3d_cull_mode_suffix(safe_cull_mode),
+    "mgstudio_mesh3d_surface_transparent_" +
+    mesh3d_topology_suffix(topology) +
+    "_cull_" +
+    mesh3d_cull_mode_suffix(safe_cull_mode),
   )
   mesh3d_pipeline_set_surface(
     backend,
@@ -2546,10 +2554,14 @@ fn bloom2d_uniform_bytes(
   threshold_softness : Float,
   scale_x : Float,
   scale_y : Float,
+  fxaa_enabled : Float,
+  fxaa_edge_threshold : Float,
   tonemapping_mode : Float,
   deband_dither_enabled : Float,
   bloom_weight : Float,
   upsample_blend : Float,
+  chromatic_aberration : Float,
+  vignette : Float,
 ) -> Bytes {
   let softness = threshold_softness
   let knee = threshold * softness
@@ -2591,6 +2603,10 @@ fn bloom2d_uniform_bytes(
     deband_dither_enabled,
     bloom_weight,
     upsample_blend,
+    fxaa_enabled,
+    fxaa_edge_threshold,
+    chromatic_aberration,
+    vignette,
   ])
 }
 
@@ -2713,7 +2729,7 @@ fn ensure_bloom2d_pipeline_rgba8(
   if backend.bloom2d_settings_buf is None {
     let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
     backend.bloom2d_settings_buf = Some(
-      backend.device.create_buffer(size=64UL, usage~),
+      backend.device.create_buffer(size=80UL, usage~),
     )
   }
   if backend.bloom2d_sampler is None {
@@ -5229,6 +5245,10 @@ pub fn GpuBackend::draw_bloom2d(
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
+  fxaa_enabled : Int,
+  fxaa_edge_threshold : Float,
+  chromatic_aberration : Float,
+  vignette : Float,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(active_pass) else { return }
@@ -5314,6 +5334,24 @@ pub fn GpuBackend::draw_bloom2d(
   } else {
     1.0F
   }
+  let fxaa_enabled_value = if fxaa_enabled == 0 { 0.0F } else { 1.0F }
+  let fxaa_edge_threshold_value = if fxaa_enabled_value > 0.0F {
+    if fxaa_edge_threshold < 0.01F {
+      0.01F
+    } else if fxaa_edge_threshold > 0.333F {
+      0.333F
+    } else {
+      fxaa_edge_threshold
+    }
+  } else {
+    0.0F
+  }
+  let chromatic_aberration_value = if chromatic_aberration < 0.0F {
+    0.0F
+  } else {
+    chromatic_aberration
+  }
+  let vignette_value = if vignette < 0.0F { 0.0F } else { vignette }
   let use_uniform_scale = scale_x_value == 1.0F && scale_y_value == 1.0F
   let use_prefilter = threshold_value > 0.0F
   let bloom_enabled = enabled != 0
@@ -5442,10 +5480,14 @@ pub fn GpuBackend::draw_bloom2d(
         threshold_softness_value,
         scale_x_value,
         scale_y_value,
+        fxaa_enabled_value,
+        fxaa_edge_threshold_value,
         tonemapping_mode_value,
         deband_dither_enabled_value,
         bloom_weight,
         0.0F,
+        chromatic_aberration_value,
+        vignette_value,
       )
       self.queue.write_buffer(settings_buf, 0UL, bloom_uniform)
       if create_bloom2d_bind_group(
@@ -5562,10 +5604,14 @@ pub fn GpuBackend::draw_bloom2d(
             threshold_softness_value,
             scale_x_value,
             scale_y_value,
+            fxaa_enabled_value,
+            fxaa_edge_threshold_value,
             tonemapping_mode_value,
             deband_dither_enabled_value,
             bloom_weight,
             blend,
+            chromatic_aberration_value,
+            vignette_value,
           )
           self.queue.write_buffer(settings_buf, 0UL, upsample_uniform)
           if create_bloom2d_bind_group(
@@ -5634,10 +5680,14 @@ pub fn GpuBackend::draw_bloom2d(
     0.0F,
     1.0F,
     1.0F,
+    fxaa_enabled_value,
+    fxaa_edge_threshold_value,
     tonemapping_mode_value,
     deband_dither_enabled_value,
     final_bloom_weight,
     0.0F,
+    chromatic_aberration_value,
+    vignette_value,
   )
   self.queue.write_buffer(settings_buf, 0UL, final_uniform)
 

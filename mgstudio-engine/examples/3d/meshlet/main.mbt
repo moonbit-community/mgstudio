@@ -132,7 +132,10 @@ fn setup(world : @ecs_world.World) -> Unit {
   if shadow_map_resource.get_ref_mut(tick) is Some(current) {
     current.val = @render3d.DirectionalLightShadowMap::new(4096)
   } else {
-    shadow_map_resource.insert(@render3d.DirectionalLightShadowMap::new(4096), tick)
+    shadow_map_resource.insert(
+      @render3d.DirectionalLightShadowMap::new(4096),
+      tick,
+    )
   }
 
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
@@ -143,9 +146,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .get_msaa_store()
-  .insert(camera, @render3d.Msaa::Off, tick)
+  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
   world
   .get_environment_map_light_store()
   .insert(
@@ -161,9 +162,9 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let directional = world.spawn_empty()
   let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
-  .with_num_cascades(1)
-  .with_maximum_distance(15.0F)
-  .build()
+    .with_num_cascades(1)
+    .with_maximum_distance(15.0F)
+    .build()
   world
   .get_directional_light_store()
   .insert(

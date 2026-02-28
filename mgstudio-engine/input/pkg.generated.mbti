@@ -13,6 +13,8 @@ pub fn[W : @core.SystemContextWorld] cursor_moved_events(W) -> @core.MessageRead
 
 pub fn[W : @core.SystemContextWorld] double_tap_gesture_events(W) -> @core.MessageReader[DoubleTapGesture]
 
+pub fn[W : @core.SystemContextWorld] file_drag_and_drop_events(W) -> @core.MessageReader[FileDragAndDrop]
+
 pub fn[W : @core.SystemContextWorld] gamepad_axis_changed_events(W) -> @core.MessageReader[GamepadAxisChangedEvent]
 
 pub fn[W : @core.SystemContextWorld] gamepad_button_changed_events(W) -> @core.MessageReader[GamepadButtonChangedEvent]
@@ -43,6 +45,8 @@ pub fn input_gamepad_finish_frame() -> Unit
 
 pub fn[W : @core.ChangeTickWorld] input_plugin(@app.App[W]) -> @app.App[W]
 
+pub fn[W : @core.ChangeTickWorld] input_poll_drag_and_drop_system(W) -> Unit
+
 pub fn[W : @core.ChangeTickWorld] input_poll_gamepad_system(W) -> Unit
 
 pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(W) -> Unit
@@ -69,6 +73,10 @@ pub fn mouse_button_just_released(@window.MouseButton) -> Bool
 
 pub fn mouse_button_pressed(@window.MouseButton) -> Bool
 
+pub fn mouse_motion_delta() -> @math.Vec2
+
+pub fn mouse_motion_delta_opt() -> @math.Vec2?
+
 pub fn[W : @core.SystemContextWorld] mouse_motion_events(W) -> @core.MessageReader[MouseMotion]
 
 pub fn mouse_position() -> @math.Vec2?
@@ -80,6 +88,18 @@ pub fn mouse_wheel_delta_opt() -> @math.Vec2?
 pub fn[W : @core.SystemContextWorld] mouse_wheel_events(W) -> @core.MessageReader[MouseWheel]
 
 pub fn[W : @core.SystemContextWorld] pinch_gesture_events(W) -> @core.MessageReader[PinchGesture]
+
+pub fn primary_pointer_delta() -> @math.Vec2
+
+pub fn primary_pointer_delta_opt() -> @math.Vec2?
+
+pub fn primary_pointer_just_pressed() -> Bool
+
+pub fn primary_pointer_just_released() -> Bool
+
+pub fn primary_pointer_position() -> @math.Vec2?
+
+pub fn primary_pointer_pressed() -> Bool
 
 pub fn[W : @core.SystemContextWorld] rotation_gesture_events(W) -> @core.MessageReader[RotationGesture]
 
@@ -129,6 +149,13 @@ pub struct DoubleTapGesture {
   position : @math.Vec2
 }
 pub impl @core.Message for DoubleTapGesture
+
+pub(all) enum FileDragAndDrop {
+  DroppedFile(String)
+  HoveredFile(String)
+  HoveredFileCanceled
+}
+pub impl @core.Message for FileDragAndDrop
 
 pub struct Gamepad {
   id : Int

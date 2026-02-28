@@ -285,9 +285,9 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
-  .with_first_cascade_far_bound(7.0F)
-  .with_maximum_distance(25.0F)
-  .build()
+    .with_first_cascade_far_bound(7.0F)
+    .with_maximum_distance(25.0F)
+    .build()
   world
   .get_directional_light_store()
   .insert(

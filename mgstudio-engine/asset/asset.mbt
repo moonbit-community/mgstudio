@@ -287,16 +287,12 @@ pub fn asset_image_remove_usage(
 ) -> Unit {
   let current = asset_image_usage_bits(image).reinterpret_as_uint()
   let remove = asset_image_usage_sanitize(usage_bits).reinterpret_as_uint()
-  let next = (current & (IMAGE_USAGE_ALL_MASK.reinterpret_as_uint() ^ remove))
-    .reinterpret_as_int()
+  let next = (current & (IMAGE_USAGE_ALL_MASK.reinterpret_as_uint() ^ remove)).reinterpret_as_int()
   asset_set_image_usage_bits(image, next)
 }
 
 ///|
-pub fn asset_image_has_usage(
-  image : Handle[Image],
-  usage_bits : Int,
-) -> Bool {
+pub fn asset_image_has_usage(image : Handle[Image], usage_bits : Int) -> Bool {
   let current = asset_image_usage_bits(image).reinterpret_as_uint()
   let required = asset_image_usage_sanitize(usage_bits).reinterpret_as_uint()
   (current & required) == required

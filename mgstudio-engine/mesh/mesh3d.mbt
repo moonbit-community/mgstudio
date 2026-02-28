@@ -100,7 +100,14 @@ pub fn Mesh3dGeometry::new_with_topology(
   indices : Array[Int]?,
   topology : Mesh3dPrimitiveTopology,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{ positions, uvs, colors: None, tangents: None, indices, topology }
+  Mesh3dGeometry::{
+    positions,
+    uvs,
+    colors: None,
+    tangents: None,
+    indices,
+    topology,
+  }
 }
 
 ///|
@@ -568,7 +575,9 @@ pub fn Mesh3dGeometry::validate(
     let tangent_count = tangents.length()
     if tangent_count != vertex_count {
       return Some(
-        Mesh3dValidationError::TangentLengthMismatch(vertex_count, tangent_count),
+        Mesh3dValidationError::TangentLengthMismatch(
+          vertex_count, tangent_count,
+        ),
       )
     }
   }
@@ -633,9 +642,7 @@ pub fn Mesh3dGeometry::generate_tangents(
   self : Mesh3dGeometry,
 ) -> Mesh3dGenerateTangentsError? {
   if self.topology != Mesh3dPrimitiveTopology::TriangleList {
-    return Some(
-      Mesh3dGenerateTangentsError::UnsupportedTopology(self.topology),
-    )
+    return Some(Mesh3dGenerateTangentsError::UnsupportedTopology(self.topology))
   }
   if self.validate() is Some(err) {
     return Some(Mesh3dGenerateTangentsError::InvalidGeometry(err))

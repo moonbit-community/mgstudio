@@ -3,6 +3,7 @@ package "Milky2018/mgstudio"
 
 import {
   "Milky2018/mgstudio/a11y",
+  "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/hierarchy",

@@ -225,11 +225,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
   world
   .get_transform_store()
-  .insert(
-    light,
-    @math.Transform::identity().with_rotation(light_rot),
-    tick,
-  )
+  .insert(light, @math.Transform::identity().with_rotation(light_rot), tick)
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),

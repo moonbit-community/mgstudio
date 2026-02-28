@@ -16,6 +16,14 @@ pub const COMPRESSED_IMAGE_FORMAT_ETC2 : Int = 4
 
 pub const COMPRESSED_IMAGE_FORMAT_NONE : Int = 0
 
+pub const IMAGE_USAGE_COPY_DST : Int = 2
+
+pub const IMAGE_USAGE_COPY_SRC : Int = 4
+
+pub const IMAGE_USAGE_RENDER_ATTACHMENT : Int = 8
+
+pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
+
 pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
 
 pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
@@ -42,9 +50,19 @@ pub fn asset_get_loaded_folder(Handle[LoadedFolder]) -> LoadedFolder?
 
 pub fn asset_get_texture_atlas_layout(Handle[TextureAtlasLayout]) -> TextureAtlasLayout?
 
+pub fn asset_image_add_usage(Handle[Image], Int) -> Unit
+
 pub fn asset_image_array_layout(Handle[Image]) -> ImageArrayLayout?
 
+pub fn asset_image_has_usage(Handle[Image], Int) -> Bool
+
 pub fn asset_image_is_srgb(Handle[Image]) -> Bool
+
+pub fn asset_image_remove_usage(Handle[Image], Int) -> Unit
+
+pub fn asset_image_set_usage_bits(Handle[Image], Int) -> Unit
+
+pub fn asset_image_usage_bits(Handle[Image]) -> Int
 
 pub fn asset_is_texture_loaded(Handle[Image]) -> Bool
 

@@ -61,7 +61,8 @@ pub fn Mesh::with_3d_geometry(
 ///|
 pub fn Mesh::generate_tangents(self : Mesh) -> MeshGenerateTangentsError? {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) => Some(MeshGenerateTangentsError::Not3dGeometry)
+    MeshGeometry::Geometry2d(_) =>
+      Some(MeshGenerateTangentsError::Not3dGeometry)
     MeshGeometry::Geometry3d(geometry3d) =>
       match geometry3d.generate_tangents() {
         Some(err) => Some(MeshGenerateTangentsError::GeometryError(err))

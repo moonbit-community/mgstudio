@@ -205,7 +205,7 @@ fn spawn_scene_spheres(
       tick,
     ),
   )
-  SpawnedScene::{ entities }
+  SpawnedScene::{ entities, }
 }
 
 ///|
@@ -282,7 +282,7 @@ fn spawn_scene_quads(
       tick,
     ),
   )
-  SpawnedScene::{ entities }
+  SpawnedScene::{ entities, }
 }
 
 ///|
@@ -370,7 +370,7 @@ fn spawn_scene_occlusion(
     ),
   )
 
-  SpawnedScene::{ entities }
+  SpawnedScene::{ entities, }
 }
 
 ///|
@@ -409,7 +409,7 @@ fn spawn_scene_instancing(
       }
     }
   }
-  SpawnedScene::{ entities }
+  SpawnedScene::{ entities, }
 }
 
 ///|
@@ -436,7 +436,11 @@ fn apply_oit_mode(world : @ecs_world.World) -> Unit {
     if oit_state.val.oit_enabled {
       world
       .get_order_independent_transparency_settings_store()
-      .insert(camera, @render3d.OrderIndependentTransparencySettings::default(), tick)
+      .insert(
+        camera,
+        @render3d.OrderIndependentTransparencySettings::default(),
+        tick,
+      )
     } else {
       world.get_order_independent_transparency_settings_store().remove(camera)
       |> ignore

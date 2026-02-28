@@ -4297,6 +4297,22 @@ fn define_mgstudio_host_imports(
             ValType::I32,
             ValType::I32,
             ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
             ValType::I32,
             ValType::I32,
             ValType::I32,
@@ -4342,11 +4358,24 @@ fn define_mgstudio_host_imports(
             };
             let tonemapping_mode = args.get(12).and_then(|v| v.i32()).unwrap_or(0);
             let deband_dither_enabled = args.get(13).and_then(|v| v.i32()).unwrap_or(0);
-            let view_width = args.get(14).and_then(|v| v.i32()).unwrap_or(1);
-            let view_height = args.get(15).and_then(|v| v.i32()).unwrap_or(1);
-            let agx_lut_texture_id = args.get(16).and_then(|v| v.i32()).unwrap_or(-1);
-            let tony_lut_texture_id = args.get(17).and_then(|v| v.i32()).unwrap_or(-1);
-            let blender_lut_texture_id = args.get(18).and_then(|v| v.i32()).unwrap_or(-1);
+            let fxaa_enabled = args.get(14).and_then(|v| v.i32()).unwrap_or(0);
+            let fxaa_edge_threshold = match args.get(15) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.125,
+            };
+            let chromatic_aberration_strength = match args.get(17) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let vignette_strength = match args.get(19) {
+                Some(Val::F32(bits)) => f32::from_bits(*bits),
+                _ => 0.0,
+            };
+            let view_width = args.get(30).and_then(|v| v.i32()).unwrap_or(1);
+            let view_height = args.get(31).and_then(|v| v.i32()).unwrap_or(1);
+            let agx_lut_texture_id = args.get(32).and_then(|v| v.i32()).unwrap_or(-1);
+            let tony_lut_texture_id = args.get(33).and_then(|v| v.i32()).unwrap_or(-1);
+            let blender_lut_texture_id = args.get(34).and_then(|v| v.i32()).unwrap_or(-1);
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_bloom2d(
                     scene_texture_id,
@@ -4368,6 +4397,10 @@ fn define_mgstudio_host_imports(
                     agx_lut_texture_id,
                     tony_lut_texture_id,
                     blender_lut_texture_id,
+                    fxaa_enabled,
+                    fxaa_edge_threshold,
+                    chromatic_aberration_strength,
+                    vignette_strength,
                 )?;
             }
             ok_i32(out, 0);

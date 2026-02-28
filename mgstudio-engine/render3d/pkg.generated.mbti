@@ -164,6 +164,7 @@ pub fn BloomPrefilter::with_threshold_softness(Self, Float) -> Self
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
   deferred_config : CameraDeferredConfig3d
+  distance_fog : DistanceFog?
   volumetric_fog : VolumetricFog?
   atmosphere : Atmosphere?
   atmosphere_settings : AtmosphereSettings?
@@ -177,6 +178,7 @@ pub fn Camera3d::with_auto_exposure(Self, AutoExposure?) -> Self
 pub fn Camera3d::with_decal_config(Self, CameraDecalConfig3d) -> Self
 pub fn Camera3d::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
 pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
+pub fn Camera3d::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3d::with_volumetric_fog(Self, VolumetricFog?) -> Self
 
 pub struct Camera3dBundle {
@@ -212,6 +214,7 @@ pub fn Camera3dBundle::with_deband_dither(Self, DebandDither?) -> Self
 pub fn Camera3dBundle::with_decal_config(Self, CameraDecalConfig3d) -> Self
 pub fn Camera3dBundle::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
 pub fn Camera3dBundle::with_depth_of_field(Self, DepthOfField?) -> Self
+pub fn Camera3dBundle::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3dBundle::with_exposure(Self, Exposure?) -> Self
 pub fn Camera3dBundle::with_motion_blur(Self, MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, ScreenSpaceReflections?) -> Self
@@ -1439,7 +1442,7 @@ pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.Change
 pub(open) trait MeshRayCastWorld : Has_Mesh3d + @math.Has_Transform + @visibility.Has_ViewVisibility {
 }
 
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + HasRes_WireframeConfig + HasRes_DefaultOpaqueRendererMethod + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + Has_DepthPrepass + Has_DeferredPrepass + Has_Msaa + Has_ForwardDecal + Has_ForwardDecalMaterialExt + Has_ClusteredDecal + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
+pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + HasRes_WireframeConfig + HasRes_DefaultOpaqueRendererMethod + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Hdr + Has_Fxaa + Has_TemporalJitter + Has_MotionVectorPrepass + Has_TemporalAntiAliasing + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + Has_DepthPrepass + Has_DeferredPrepass + Has_Msaa + Has_ForwardDecal + Has_ForwardDecalMaterialExt + Has_ClusteredDecal + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
 }
 
 pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + HasRes_DefaultOpaqueRendererMethod + Render3dPrepareWorld + Render3dExecuteWorld {

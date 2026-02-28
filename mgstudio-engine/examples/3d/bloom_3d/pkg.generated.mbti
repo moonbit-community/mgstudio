@@ -7,10 +7,6 @@ pub fn game_app() -> Unit
 // Errors
 
 // Types and methods
-pub(all) enum BloomCompositeMode {
-  EnergyConserving
-  Additive
-}
 
 // Type aliases
 

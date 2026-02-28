@@ -24,8 +24,10 @@ struct BloomUniforms {
     scale: vec2<f32>,
     aspect: f32,
     _padding: f32,
-    // x: tonemapping mode, y: deband dither enabled, z: bloom weight
+    // x: tonemapping mode, y: deband dither enabled, z: bloom weight, w: upsample blend factor
     options: vec4<f32>,
+    // x: fxaa enabled, y: fxaa edge threshold, z: chromatic aberration strength, w: vignette strength
+    postprocess: vec4<f32>,
 };
 
 @group(0) @binding(0) var hdr_texture: texture_2d<f32>;
@@ -254,14 +256,104 @@ fn sample_input_3x3_tent(uv: vec2<f32>) -> vec3<f32> {
     return sample;
 }
 
+fn sample_scene_with_chromatic(uv: vec2<f32>) -> vec3<f32> {
+    let chromatic_strength = max(uniforms.postprocess.z, 0.0);
+    if chromatic_strength <= 0.00001 {
+        return textureSample(scene_texture, hdr_sampler, uv).rgb;
+    }
+
+    let inv_dims = 1.0
+        / max(vec2<f32>(textureDimensions(scene_texture)), vec2<f32>(1.0));
+    let centered = uv * 2.0 - vec2<f32>(1.0);
+    let radial = dot(centered, centered);
+    let offset = centered * chromatic_strength * radial * inv_dims;
+    let uv_r = clamp(uv + offset, vec2<f32>(0.0), vec2<f32>(1.0));
+    let uv_b = clamp(uv - offset, vec2<f32>(0.0), vec2<f32>(1.0));
+    let red = textureSample(scene_texture, hdr_sampler, uv_r).r;
+    let green = textureSample(scene_texture, hdr_sampler, uv).g;
+    let blue = textureSample(scene_texture, hdr_sampler, uv_b).b;
+    return vec3<f32>(red, green, blue);
+}
+
+fn sample_tonemapped_scene_for_fxaa(uv: vec2<f32>) -> vec3<f32> {
+    let clamped_uv = clamp(uv, vec2<f32>(0.0), vec2<f32>(1.0));
+    let scene_color = textureSample(scene_texture, hdr_sampler, clamped_uv).rgb;
+    return tonemap_color(scene_color, uniforms.options.x);
+}
+
+fn apply_lightweight_fxaa(uv: vec2<f32>, base_color: vec3<f32>) -> vec3<f32> {
+    if uniforms.postprocess.x <= 0.5 {
+        return base_color;
+    }
+
+    let edge_threshold = clamp(uniforms.postprocess.y, 0.01, 0.333);
+    let inv_dims = 1.0
+        / max(vec2<f32>(textureDimensions(scene_texture)), vec2<f32>(1.0));
+    let rgb_nw = sample_tonemapped_scene_for_fxaa(uv + vec2<f32>(-1.0, -1.0) * inv_dims);
+    let rgb_ne = sample_tonemapped_scene_for_fxaa(uv + vec2<f32>(1.0, -1.0) * inv_dims);
+    let rgb_sw = sample_tonemapped_scene_for_fxaa(uv + vec2<f32>(-1.0, 1.0) * inv_dims);
+    let rgb_se = sample_tonemapped_scene_for_fxaa(uv + vec2<f32>(1.0, 1.0) * inv_dims);
+
+    let luma_nw = tonemapping_luminance(rgb_nw);
+    let luma_ne = tonemapping_luminance(rgb_ne);
+    let luma_sw = tonemapping_luminance(rgb_sw);
+    let luma_se = tonemapping_luminance(rgb_se);
+    let luma_m = tonemapping_luminance(base_color);
+    let luma_min = min(luma_m, min(min(luma_nw, luma_ne), min(luma_sw, luma_se)));
+    let luma_max = max(luma_m, max(max(luma_nw, luma_ne), max(luma_sw, luma_se)));
+    let contrast = luma_max - luma_min;
+    if contrast < edge_threshold * max(luma_max, 0.001) {
+        return base_color;
+    }
+
+    var dir = vec2<f32>(
+        -((luma_nw + luma_ne) - (luma_sw + luma_se)),
+        (luma_nw + luma_sw) - (luma_ne + luma_se),
+    );
+    let dir_reduce = max((luma_nw + luma_ne + luma_sw + luma_se) * 0.03125, 1.0 / 128.0);
+    let rcp_dir_min = 1.0 / (min(abs(dir.x), abs(dir.y)) + dir_reduce);
+    dir = clamp(dir * rcp_dir_min, vec2<f32>(-8.0), vec2<f32>(8.0)) * inv_dims;
+
+    let rgb_a = 0.5 * (
+        sample_tonemapped_scene_for_fxaa(uv + dir * (1.0 / 3.0 - 0.5))
+            + sample_tonemapped_scene_for_fxaa(uv + dir * (2.0 / 3.0 - 0.5))
+    );
+    let rgb_b = rgb_a * 0.5 + 0.25 * (
+        sample_tonemapped_scene_for_fxaa(uv + dir * -0.5)
+            + sample_tonemapped_scene_for_fxaa(uv + dir * 0.5)
+    );
+    let luma_b = tonemapping_luminance(rgb_b);
+    if luma_b < luma_min || luma_b > luma_max {
+        return rgb_a;
+    }
+    return rgb_b;
+}
+
+fn apply_vignette(color: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
+    let strength = clamp(uniforms.postprocess.w, 0.0, 1.0);
+    if strength <= 0.00001 {
+        return color;
+    }
+
+    let centered = vec2<f32>(
+        (uv.x - 0.5) * 2.0 * max(uniforms.aspect, 0.00001),
+        (uv.y - 0.5) * 2.0,
+    );
+    let dist = dot(centered, centered);
+    let vignette = 1.0 - smoothstep(0.35, 1.0, dist) * strength;
+    return color * max(vignette, 0.0);
+}
+
 @fragment
 fn final_fragment(
     @location(0) uv: vec2<f32>,
     @builtin(position) position: vec4<f32>,
 ) -> @location(0) vec4<f32> {
     let bloom_color = sample_input_3x3_tent(uv) * uniforms.options.z;
-    let scene_color = textureSample(scene_texture, hdr_sampler, uv).rgb;
+    let scene_color = sample_scene_with_chromatic(uv);
     var output_rgb = tonemap_color(scene_color + bloom_color, uniforms.options.x);
+    output_rgb = apply_lightweight_fxaa(uv, output_rgb);
+    output_rgb = apply_vignette(output_rgb, uv);
 
     if uniforms.options.y > 0.5 {
         var dither_rgb = pow(max(output_rgb, vec3<f32>(0.0)), vec3<f32>(1.0 / 2.2));

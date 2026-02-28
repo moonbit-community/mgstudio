@@ -57,8 +57,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let decal_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
-    .with_base_color_texture(
+    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_base_color_texture(
       Some(asset_server.load("textures/uv_checker_bw.png")),
     ),
   )

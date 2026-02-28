@@ -55,6 +55,7 @@ pub fn Window::position_y(Self) -> Int
 pub fn Window::request_close(Self) -> Unit
 pub fn Window::scale_factor(Self) -> Float
 pub fn Window::set_cursor_grab_mode(Self, Int) -> Unit
+pub fn Window::set_cursor_icon(Self, Int) -> Unit
 pub fn Window::set_cursor_visible(Self, Bool) -> Unit
 pub fn Window::set_mode(Self, Int) -> Unit
 pub fn Window::set_position(Self, Int, Int) -> Unit

@@ -12,6 +12,19 @@ Date: 2026-02-28
   - `MotionVectorPrepass`
 - Added standalone tonemap/deband postprocess path when bloom is absent.
   - Implemented via `host_gpu_draw_bloom2d(enabled=0)` with bloom weight forced to zero.
+- Fullscreen postprocess parameters are now plumbed from camera components into
+  `host_gpu_draw_bloom2d` for both bloom and tonemap-only paths:
+  - `Fxaa` (`enabled`, `edge_threshold`, `edge_threshold_min`)
+  - `ChromaticAberration` (`intensity`, `max_samples`)
+  - `Vignette` (`intensity`, `radius`, `smoothness`, `roundness`, `center`,
+    `edge_compensation`, `color`)
+- Removed object-space chromatic/vignette color approximation from mesh draw to
+  prevent double application once fullscreen pass is active.
+- Reconciled `gpu_draw_bloom2d` ABI across runtimes (web/native/wasmtime) to
+  match the expanded engine host signature and preserve parameter ordering:
+  - `view_width/view_height` + LUT ids now read from the new tail slots.
+  - FXAA/chromatic/vignette uniforms now consume the intended postprocess slots
+    in all runtimes (fixed native uniform layout offset mismatch).
 - Motion-vector prepass can now run without motion blur if camera requests it.
 - Temporal jitter now offsets sub-camera projection bias.
 - `fog` and `atmospheric_fog` examples moved from global fog mutation to camera-scoped fog (`Camera3d.distance_fog`).
@@ -26,12 +39,16 @@ Date: 2026-02-28
 - `moon check -p examples/3d/scrolling_fog`
 - `moon check -p examples/3d/volumetric_fog`
 - `moon check` in `mgstudio-runtime/web`
+- `moon check` in `mgstudio-runtime/native`
 - `cargo build --release` in `mgstudio-runtime/native-wasmtime`
+- `for pkg in $(find examples/3d -mindepth 1 -maxdepth 1 -type d | sort); do moon check -p "$pkg"; done`
+- `./scripts/smoke_bevy_examples.sh`
 - Full 3d smoke: `ALL_3D_PASS_ROUND6`
 
 ## Remaining non-exact gaps (unchanged)
 
 - No true TAA resolve/history accumulation.
 - No true FXAA/SMAA/DLSS/CAS implementation.
-- No full-screen dedicated chromatic/vignette post stack.
+- No dedicated standalone chromatic/vignette pass yet (currently piggybacks on
+  the bloom2d fullscreen composite path).
 - Deferred, volumetrics, decals, shadows, SSR/SSAO, probe/lightmap parity still pending.

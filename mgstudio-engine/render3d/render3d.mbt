@@ -836,8 +836,7 @@ pub fn ChromaticAberration::with_max_samples(
 ///|
 /// Camera post-process settings aligned with Bevy's `Vignette`.
 ///
-/// This renderer currently applies a lightweight per-object approximation in
-/// the draw phase instead of a full-screen post-process pass.
+/// Runtime executes this in the shared full-screen post-process composite pass.
 #ecs.component
 pub struct Vignette {
   intensity : Float
@@ -6313,11 +6312,33 @@ fn render3d_tonemap_postprocess_enabled(
   deband_dither : DebandDither?,
   hdr_enabled : Bool,
   fxaa : Fxaa?,
+  chromatic_aberration : ChromaticAberration?,
+  vignette : Vignette?,
 ) -> Bool {
   hdr_enabled ||
   tonemapping is Some(_) ||
   deband_dither is Some(Enabled) ||
-  render3d_fxaa_enabled(fxaa)
+  render3d_fxaa_enabled(fxaa) ||
+  render3d_chromatic_aberration_enabled(chromatic_aberration) ||
+  render3d_vignette_enabled(vignette)
+}
+
+///|
+fn render3d_chromatic_aberration_enabled(
+  chromatic_aberration : ChromaticAberration?,
+) -> Bool {
+  match chromatic_aberration {
+    Some(value) => value.intensity > 0.0F && value.max_samples > 0
+    None => false
+  }
+}
+
+///|
+fn render3d_vignette_enabled(vignette : Vignette?) -> Bool {
+  match vignette {
+    Some(value) => value.intensity > 0.0F
+    None => false
+  }
 }
 
 ///|
@@ -7494,11 +7515,161 @@ fn render3d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
 }
 
 ///|
+fn render3d_fxaa_sensitivity_edge_threshold(
+  sensitivity : FxaaSensitivity,
+) -> Float {
+  match sensitivity {
+    Low => 0.250F
+    Medium => 0.166F
+    High => 0.125F
+    Ultra => 0.063F
+    Extreme => 0.031F
+  }
+}
+
+///|
+fn render3d_fxaa_sensitivity_edge_threshold_min(
+  sensitivity : FxaaSensitivity,
+) -> Float {
+  match sensitivity {
+    Low => 0.0833F
+    Medium => 0.0625F
+    High => 0.0312F
+    Ultra => 0.0156F
+    Extreme => 0.0078F
+  }
+}
+
+///|
+fn render3d_fxaa_postprocess_values(fxaa : Fxaa?) -> (Int, Float, Float) {
+  match fxaa {
+    Some(value) =>
+      (
+        if value.enabled {
+          1
+        } else {
+          0
+        },
+        render3d_fxaa_sensitivity_edge_threshold(value.edge_threshold),
+        render3d_fxaa_sensitivity_edge_threshold_min(value.edge_threshold_min),
+      )
+    None =>
+      (
+        0,
+        render3d_fxaa_sensitivity_edge_threshold(FxaaSensitivity::default()),
+        render3d_fxaa_sensitivity_edge_threshold_min(FxaaSensitivity::default()),
+      )
+  }
+}
+
+///|
+fn render3d_chromatic_aberration_postprocess_values(
+  chromatic_aberration : ChromaticAberration?,
+) -> (Float, Int) {
+  match chromatic_aberration {
+    Some(value) =>
+      (
+        if value.intensity < 0.0F {
+          0.0F
+        } else {
+          value.intensity
+        },
+        if value.max_samples <= 0 {
+          1
+        } else {
+          value.max_samples
+        },
+      )
+    None => {
+      let defaults = ChromaticAberration::default()
+      (0.0F, defaults.max_samples)
+    }
+  }
+}
+
+///|
+fn render3d_vignette_postprocess_values(
+  vignette : Vignette?,
+) -> (
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+) {
+  match vignette {
+    Some(value) => {
+      let safe_edge_compensation = if value.edge_compensation < 0.0F {
+        0.0F
+      } else if value.edge_compensation > 1.0F {
+        1.0F
+      } else {
+        value.edge_compensation
+      }
+      (
+        if value.intensity < 0.0F {
+          0.0F
+        } else {
+          value.intensity
+        },
+        if value.radius < 0.0F {
+          0.0F
+        } else {
+          value.radius
+        },
+        if value.smoothness <= 0.01F {
+          0.01F
+        } else {
+          value.smoothness
+        },
+        if value.roundness <= 0.01F {
+          0.01F
+        } else {
+          value.roundness
+        },
+        value.center.x,
+        value.center.y,
+        safe_edge_compensation,
+        value.color.r,
+        value.color.g,
+        value.color.b,
+        value.color.a,
+      )
+    }
+    None => {
+      let defaults = Vignette::default()
+      (
+        0.0F,
+        defaults.radius,
+        defaults.smoothness,
+        defaults.roundness,
+        defaults.center.x,
+        defaults.center.y,
+        defaults.edge_compensation,
+        defaults.color.r,
+        defaults.color.g,
+        defaults.color.b,
+        defaults.color.a,
+      )
+    }
+  }
+}
+
+///|
 fn render3d_draw_camera_bloom(
   scene_texture_id : Int,
   bloom : Bloom,
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
+  fxaa : Fxaa?,
+  chromatic_aberration : ChromaticAberration?,
+  vignette : Vignette?,
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
@@ -7507,6 +7678,25 @@ fn render3d_draw_camera_bloom(
   }
   let luts = render3d_tonemapping_lut_handles()
   let settings = render3d_bloom_sanitize(bloom)
+  let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
+    fxaa,
+  )
+  let (chromatic_aberration_intensity, chromatic_aberration_max_samples) = render3d_chromatic_aberration_postprocess_values(
+    chromatic_aberration,
+  )
+  let (
+    vignette_intensity,
+    vignette_radius,
+    vignette_smoothness,
+    vignette_roundness,
+    vignette_center_x,
+    vignette_center_y,
+    vignette_edge_compensation,
+    vignette_color_r,
+    vignette_color_g,
+    vignette_color_b,
+    vignette_color_a,
+  ) = render3d_vignette_postprocess_values(vignette)
   @window.host_gpu_draw_bloom2d(
     scene_texture_id~,
     enabled=1,
@@ -7531,6 +7721,22 @@ fn render3d_draw_camera_bloom(
       Some(Enabled) => 1
       _ => 0
     },
+    fxaa_enabled~,
+    fxaa_edge_threshold~,
+    fxaa_edge_threshold_min~,
+    chromatic_aberration_intensity~,
+    chromatic_aberration_max_samples~,
+    vignette_intensity~,
+    vignette_radius~,
+    vignette_smoothness~,
+    vignette_roundness~,
+    vignette_center_x~,
+    vignette_center_y~,
+    vignette_edge_compensation~,
+    vignette_color_r~,
+    vignette_color_g~,
+    vignette_color_b~,
+    vignette_color_a~,
     view_width=view_width_logical,
     view_height=view_height_logical,
     agx_lut_texture_id=luts.agx.id(),
@@ -7544,6 +7750,9 @@ fn render3d_draw_camera_tonemap_only(
   scene_texture_id : Int,
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
+  fxaa : Fxaa?,
+  chromatic_aberration : ChromaticAberration?,
+  vignette : Vignette?,
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
@@ -7552,6 +7761,25 @@ fn render3d_draw_camera_tonemap_only(
   }
   let luts = render3d_tonemapping_lut_handles()
   let bloom_defaults = render3d_bloom_sanitize(Bloom::default())
+  let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
+    fxaa,
+  )
+  let (chromatic_aberration_intensity, chromatic_aberration_max_samples) = render3d_chromatic_aberration_postprocess_values(
+    chromatic_aberration,
+  )
+  let (
+    vignette_intensity,
+    vignette_radius,
+    vignette_smoothness,
+    vignette_roundness,
+    vignette_center_x,
+    vignette_center_y,
+    vignette_edge_compensation,
+    vignette_color_r,
+    vignette_color_g,
+    vignette_color_b,
+    vignette_color_a,
+  ) = render3d_vignette_postprocess_values(vignette)
   @window.host_gpu_draw_bloom2d(
     scene_texture_id~,
     enabled=0,
@@ -7576,6 +7804,22 @@ fn render3d_draw_camera_tonemap_only(
       Some(Enabled) => 1
       _ => 0
     },
+    fxaa_enabled~,
+    fxaa_edge_threshold~,
+    fxaa_edge_threshold_min~,
+    chromatic_aberration_intensity~,
+    chromatic_aberration_max_samples~,
+    vignette_intensity~,
+    vignette_radius~,
+    vignette_smoothness~,
+    vignette_roundness~,
+    vignette_center_x~,
+    vignette_center_y~,
+    vignette_edge_compensation~,
+    vignette_color_r~,
+    vignette_color_g~,
+    vignette_color_b~,
+    vignette_color_a~,
     view_width=view_width_logical,
     view_height=view_height_logical,
     agx_lut_texture_id=luts.agx.id(),
@@ -8055,111 +8299,6 @@ fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
     None
   }
 }
-
-///|
-fn render3d_world_position_uv(
-  camera : Camera3dInstance,
-  viewport_rect : (Float, Float, Float, Float)?,
-  world_position : @math.Vec3,
-) -> @math.Vec2? {
-  guard viewport_rect
-    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
-    return None
-  }
-  if viewport_width <= 0.0F || viewport_height <= 0.0F {
-    return None
-  }
-  guard render3d_camera_world_to_viewport(
-      world_position,
-      camera.camera,
-      camera.projection,
-      camera.transform,
-      camera.target_size,
-      camera.scale_factor,
-    )
-    is Some(screen) else {
-    return None
-  }
-  let uv_x = (screen.x - viewport_x) / viewport_width
-  let uv_y = (screen.y - viewport_y) / viewport_height
-  Some(@math.Vec2::new(clamp01(uv_x), clamp01(uv_y)))
-}
-
-///|
-fn render3d_chromatic_aberration_amount(
-  chromatic_aberration : ChromaticAberration,
-  screen_uv : @math.Vec2,
-) -> Float {
-  let safe_intensity = if chromatic_aberration.intensity < 0.0F {
-    0.0F
-  } else {
-    chromatic_aberration.intensity
-  }
-  if safe_intensity <= 0.0F {
-    return 0.0F
-  }
-  let sample_factor = clamp01(
-    Float::from_double(chromatic_aberration.max_samples.to_double()) / 64.0F,
-  )
-  let edge_x = absf(screen_uv.x - 0.5F) * 2.0F
-  let edge_y = absf(screen_uv.y - 0.5F) * 2.0F
-  let edge_factor = clamp01(maxf(edge_x, edge_y))
-  let intensity_factor = clamp01(safe_intensity / 0.4F)
-  clamp01(sample_factor * edge_factor * intensity_factor)
-}
-
-///|
-fn render3d_vignette_mask(
-  vignette : Vignette,
-  screen_uv : @math.Vec2,
-  aspect_ratio : Float,
-) -> Float {
-  let safe_intensity = if vignette.intensity < 0.0F {
-    0.0F
-  } else {
-    vignette.intensity
-  }
-  if safe_intensity <= 0.0F {
-    return 0.0F
-  }
-  let safe_radius = if vignette.radius < 0.0001F {
-    0.0001F
-  } else {
-    vignette.radius
-  }
-  let safe_smoothness = if vignette.smoothness <= 0.01F {
-    0.01F
-  } else {
-    vignette.smoothness
-  }
-  let safe_roundness = if vignette.roundness <= 0.01F {
-    0.01F
-  } else {
-    vignette.roundness
-  }
-  let safe_aspect_ratio = if aspect_ratio <= 0.0001F {
-    1.0F
-  } else {
-    aspect_ratio
-  }
-  let fit = if vignette.edge_compensation < 0.0F {
-    0.0F
-  } else if vignette.edge_compensation > 1.0F {
-    1.0F
-  } else {
-    vignette.edge_compensation
-  }
-  let aspect_scale_x = 1.0F + (safe_aspect_ratio - 1.0F) * fit
-  let dx = (screen_uv.x - vignette.center.x) * 2.0F * aspect_scale_x
-  let dy = (screen_uv.y - vignette.center.y) * 2.0F
-  let ellipse_distance = @math.sqrt(
-    dx * dx + dy * dy * safe_roundness * safe_roundness,
-  )
-  let edge = clamp01((ellipse_distance - safe_radius) * safe_smoothness)
-  clamp01(edge * safe_intensity)
-}
-
-///|
 
 ///|
 fn render3d_ssr_ramp(value : Float, start : Float, end_ : Float) -> Float {
@@ -9244,11 +9383,6 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       aspect_ratio,
       Float::from_double(view_height_logical.to_double()),
     )
-    let viewport_rect = render3d_camera_viewport_rect_logical(
-      camera.camera,
-      camera.target_size,
-      camera.scale_factor,
-    )
     let camera_environment_map_light = render3d_camera_environment_map_light(
       camera,
     )
@@ -9329,6 +9463,8 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.deband_dither,
       camera.hdr_enabled,
       camera.fxaa,
+      camera.chromatic_aberration,
+      camera.vignette,
     )
     let motion_vector_prepass_enabled = motion_blur_active ||
       camera.motion_vector_prepass_enabled ||
@@ -9707,40 +9843,6 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       let mut draw_color_r = fogged_r
       let mut draw_color_g = fogged_g
       let mut draw_color_b = fogged_b
-      if render3d_world_position_uv(
-          camera,
-          viewport_rect,
-          mesh.transform.translation,
-        )
-        is Some(screen_uv) {
-        if camera.chromatic_aberration is Some(chromatic_aberration) {
-          let aberration = render3d_chromatic_aberration_amount(
-            chromatic_aberration, screen_uv,
-          )
-          if aberration > 0.0F {
-            draw_color_r = clamp01(draw_color_r + aberration * 0.12F)
-            draw_color_g = clamp01(draw_color_g + aberration * 0.02F)
-            draw_color_b = clamp01(draw_color_b - aberration * 0.12F)
-          }
-        }
-        if camera.vignette is Some(vignette) {
-          let vignette_mask = render3d_vignette_mask(
-            vignette, screen_uv, aspect_ratio,
-          )
-          if vignette_mask > 0.0F {
-            let keep = 1.0F - vignette_mask
-            draw_color_r = clamp01(
-              draw_color_r * keep + vignette.color.r * vignette_mask,
-            )
-            draw_color_g = clamp01(
-              draw_color_g * keep + vignette.color.g * vignette_mask,
-            )
-            draw_color_b = clamp01(
-              draw_color_b * keep + vignette.color.b * vignette_mask,
-            )
-          }
-        }
-      }
       let mut draw_surface_roughness = draw_roughness
       let probe_environment_light = render3d_probe_environment_map_light(
         reflection_probes,
@@ -10160,6 +10262,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           bloom,
           camera.tonemapping,
           camera.deband_dither,
+          camera.fxaa,
+          camera.chromatic_aberration,
+          camera.vignette,
           view_width_logical,
           view_height_logical,
         )
@@ -10196,6 +10301,9 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           tonemap_source_texture_id,
           camera.tonemapping,
           camera.deband_dither,
+          camera.fxaa,
+          camera.chromatic_aberration,
+          camera.vignette,
           view_width_logical,
           view_height_logical,
         )

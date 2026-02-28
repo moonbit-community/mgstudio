@@ -82,7 +82,10 @@ fn transform_forward(transform : @math.Transform) -> @math.Vec3 {
 }
 
 ///|
-fn apply_distance_fog_from_stub(world : @ecs_world.World, phase : Float) -> Unit {
+fn apply_distance_fog_from_stub(
+  world : @ecs_world.World,
+  phase : Float,
+) -> Unit {
   let fog_volume_stub = fog_volumes_state.val.fog_volume_stub
   let volumetric_fog_stub = fog_volumes_state.val.volumetric_fog_stub
   let visibility = clampf(
@@ -91,24 +94,28 @@ fn apply_distance_fog_from_stub(world : @ecs_world.World, phase : Float) -> Unit
     20.0F,
   )
   let brightness = 0.55F + 0.45F * phase
-  let ambient_lift = clampf(volumetric_fog_stub.ambient_intensity * 0.4F, 0.0F, 0.2F)
+  let ambient_lift = clampf(
+    volumetric_fog_stub.ambient_intensity * 0.4F,
+    0.0F,
+    0.2F,
+  )
   let directional_alpha = clampf(0.25F + phase * 0.55F, 0.2F, 0.9F)
   let fog_color = fog_volume_stub.fog_color
 
   let fog = @render3d.DistanceFog::default()
-  .with_color(
-    @render2d.Color::new(
-      clamp01(fog_color.r * brightness + ambient_lift),
-      clamp01(fog_color.g * brightness + ambient_lift),
-      clamp01(fog_color.b * brightness + ambient_lift),
-      0.9F,
-    ),
-  )
-  .with_directional_light_color(
-    @render2d.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
-  )
-  .with_directional_light_exponent(24.0F)
-  .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
+    .with_color(
+      @render2d.Color::new(
+        clamp01(fog_color.r * brightness + ambient_lift),
+        clamp01(fog_color.g * brightness + ambient_lift),
+        clamp01(fog_color.b * brightness + ambient_lift),
+        0.9F,
+      ),
+    )
+    .with_directional_light_color(
+      @render2d.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
+    )
+    .with_directional_light_exponent(24.0F)
+    .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
   guard fog_volumes_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
   let camera3d_store = world.get_camera3d_store()
@@ -230,13 +237,13 @@ fn setup(world : @ecs_world.World) -> Unit {
   fog_volumes_state.val.camera = None
   fog_volumes_state.val.light = None
   fog_volumes_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
-  .with_step_count(64)
-  .with_ambient_intensity(0.0F)
+    .with_step_count(64)
+    .with_ambient_intensity(0.0F)
   fog_volumes_state.val.fog_volume_stub = @render3d.FogVolume::default()
-  .with_density_factor(1.0F)
-  .with_scattering(1.0F)
-  .with_absorption(0.3F)
-  .with_fog_color(@render2d.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
+    .with_density_factor(1.0F)
+    .with_scattering(1.0F)
+    .with_absorption(0.3F)
+    .with_fog_color(@render2d.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
 
   let tick = world.read_change_tick()
 
@@ -322,8 +329,8 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
   // Approximate volumetric scattering with dynamic fog color and density.
   let density = 0.18F + 0.22F * (1.0F - phase)
   fog_volumes_state.val.fog_volume_stub = fog_volumes_state.val.fog_volume_stub
-  .with_density_factor(density)
-  .with_scattering(1.0F)
+    .with_density_factor(density)
+    .with_scattering(1.0F)
   apply_distance_fog_from_stub(world, phase)
 }
 

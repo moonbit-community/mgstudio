@@ -106,7 +106,7 @@ fn float_from_int(value : Int) -> Float {
 
 ///|
 fn rng_next01(seed : Ref[Int]) -> Float {
-  let next = (seed.val * RNG_MULTIPLIER) % RNG_MODULUS
+  let next = seed.val * RNG_MULTIPLIER % RNG_MODULUS
   seed.val = if next <= 0 { next + RNG_MODULUS } else { next }
   float_from_int(seed.val) / float_from_int(RNG_MODULUS)
 }
@@ -468,12 +468,7 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
     .set(
       camera,
       @math.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
-        @math.Quat::new(
-          -0.18394549F,
-          0.0019948867F,
-          0.0003733214F,
-          0.98293436F,
-        ),
+        @math.Quat::new(-0.18394549F, 0.0019948867F, 0.0003733214F, 0.98293436F),
       ),
       world.read_change_tick(),
     )

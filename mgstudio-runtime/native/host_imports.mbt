@@ -4141,6 +4141,7 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
+        @types.ValueType::F32,
         @types.ValueType::I32,
         @types.ValueType::F32,
         @types.ValueType::F32,
@@ -4300,32 +4301,55 @@ pub fn add_mgstudio_host_imports(
         } else {
           0
         }
-        let view_width = if args.length() > 14 &&
+        let fxaa_enabled = if args.length() > 14 &&
           args[14] is @types.Value::I32(v) {
           v
         } else {
-          1
+          0
         }
-        let view_height = if args.length() > 15 &&
-          args[15] is @types.Value::I32(v) {
+        let fxaa_edge_threshold = if args.length() > 15 &&
+          args[15] is @types.Value::F32(v) {
+          v
+        } else {
+          0.125F
+        }
+        let chromatic_aberration = if args.length() > 17 &&
+          args[17] is @types.Value::F32(v) {
+          v
+        } else {
+          0.0F
+        }
+        let vignette = if args.length() > 19 && args[19] is @types.Value::F32(v) {
+          v
+        } else {
+          0.0F
+        }
+        let view_width = if args.length() > 30 &&
+          args[30] is @types.Value::I32(v) {
           v
         } else {
           1
         }
-        let agx_lut_texture_id = if args.length() > 16 &&
-          args[16] is @types.Value::I32(v) {
+        let view_height = if args.length() > 31 &&
+          args[31] is @types.Value::I32(v) {
+          v
+        } else {
+          1
+        }
+        let agx_lut_texture_id = if args.length() > 32 &&
+          args[32] is @types.Value::I32(v) {
           v
         } else {
           -1
         }
-        let tony_lut_texture_id = if args.length() > 17 &&
-          args[17] is @types.Value::I32(v) {
+        let tony_lut_texture_id = if args.length() > 33 &&
+          args[33] is @types.Value::I32(v) {
           v
         } else {
           -1
         }
-        let blender_lut_texture_id = if args.length() > 18 &&
-          args[18] is @types.Value::I32(v) {
+        let blender_lut_texture_id = if args.length() > 34 &&
+          args[34] is @types.Value::I32(v) {
           v
         } else {
           -1
@@ -4337,6 +4361,7 @@ pub fn add_mgstudio_host_imports(
           high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
           scale_x, scale_y, tonemapping_mode, deband_dither_enabled, view_width,
           view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
+          fxaa_enabled, fxaa_edge_threshold, chromatic_aberration, vignette,
         )
         ok_i32(0)
       } catch {
@@ -4362,6 +4387,22 @@ pub fn add_mgstudio_host_imports(
         @types.ValueType::F32,
         @types.ValueType::I32,
         @types.ValueType::I32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::I32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
+        @types.ValueType::F32,
         @types.ValueType::I32,
         @types.ValueType::I32,
         @types.ValueType::I32,

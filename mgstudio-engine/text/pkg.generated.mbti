@@ -47,6 +47,8 @@ pub fn text_debug_visible_draw_count(TextHandle) -> Int
 
 pub fn text_debug_visible_overlap_count(TextHandle, TextHandle) -> Int
 
+pub fn text_despawn(TextHandle) -> Bool
+
 pub fn text_get_content(TextHandle) -> String?
 
 pub fn text_get_layout_size(TextHandle) -> @math.Vec2?
@@ -217,6 +219,10 @@ pub fn RunGeometry::strikethrough_size(Self) -> @math.Vec2
 pub fn RunGeometry::underline_position(Self) -> @math.Vec2
 pub fn RunGeometry::underline_size(Self) -> @math.Vec2
 
+pub struct Strikethrough {
+}
+pub fn Strikethrough::default() -> Self
+
 pub struct Text2d {
   content : String
 }
@@ -226,6 +232,9 @@ pub struct Text2dBundle {
   text : Text2d
   font : TextFont
   color : TextColor
+  background_color : TextBackgroundColor?
+  underline : Underline?
+  strikethrough : Strikethrough?
   layout : TextLayout
   bounds : TextBounds
   line_height : LineHeight
@@ -239,11 +248,14 @@ pub fn Text2dBundle::new(Text2d, TextFont, @math.Transform) -> Self
 pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @math.Transform, @render2d.RenderLayers) -> Self
 pub fn Text2dBundle::spawn(Self) -> TextHandle
 pub fn Text2dBundle::with_anchor(Self, @render2d.Anchor) -> Self
+pub fn Text2dBundle::with_background_color(Self, TextBackgroundColor?) -> Self
 pub fn Text2dBundle::with_bounds(Self, TextBounds) -> Self
 pub fn Text2dBundle::with_color(Self, TextColor) -> Self
 pub fn Text2dBundle::with_layout(Self, TextLayout) -> Self
 pub fn Text2dBundle::with_line_height(Self, LineHeight) -> Self
 pub fn Text2dBundle::with_shadow(Self, Text2dShadow?) -> Self
+pub fn Text2dBundle::with_strikethrough(Self, Strikethrough?) -> Self
+pub fn Text2dBundle::with_underline(Self, Underline?) -> Self
 pub fn Text2dBundle::with_y_axis(Self, YAxisOrientation) -> Self
 
 pub struct Text2dShadow {
@@ -251,6 +263,11 @@ pub struct Text2dShadow {
   color : @render2d.Color
 }
 pub fn Text2dShadow::default() -> Self
+
+pub struct TextBackgroundColor {
+  color : @render2d.Color
+}
+pub fn TextBackgroundColor::new(@render2d.Color) -> Self
 
 pub struct TextBounds {
   width : Float?
@@ -338,10 +355,17 @@ pub struct TextSpanBundle {
   span : TextSpan
   font : TextFont
   color : TextColor
+  background_color : TextBackgroundColor?
+  underline : Underline?
+  strikethrough : Strikethrough?
   line_height : LineHeight
 }
 pub fn TextSpanBundle::new(TextSpan, TextFont) -> Self
 pub fn TextSpanBundle::spawn(Self, TextHandle) -> TextSpanHandle
+pub fn TextSpanBundle::with_background_color(Self, TextBackgroundColor?) -> Self
+pub fn TextSpanBundle::with_color(Self, TextColor) -> Self
+pub fn TextSpanBundle::with_strikethrough(Self, Strikethrough?) -> Self
+pub fn TextSpanBundle::with_underline(Self, Underline?) -> Self
 
 pub struct TextSpanHandle {
   id : Int
@@ -352,6 +376,10 @@ pub struct TextSpanRange {
   start : Int
   length : Int
 }
+
+pub struct Underline {
+}
+pub fn Underline::default() -> Self
 
 pub(all) enum YAxisOrientation {
   TopToBottom

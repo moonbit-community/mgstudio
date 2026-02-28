@@ -57,12 +57,6 @@ pub struct World {
   mesh3d : @core.ComponentStore[@render3d.Mesh3d]
   skybox : @core.ComponentStore[@render3d.Skybox]
   scene_root : @core.ComponentStore[@scene.SceneRoot]
-  animation_target_id : @core.ComponentStore[@animation.AnimationTargetId]
-  animated_by : @core.ComponentStore[@animation.AnimatedBy]
-  animation_player : @core.ComponentStore[@animation.AnimationPlayer]
-  animation_transitions : @core.ComponentStore[@animation.AnimationTransitions]
-  animation_graph_handle : @core.ComponentStore[@animation.AnimationGraphHandle]
-  animation_weights : @core.ComponentStore[@animation.AnimationWeights]
   border_radius : @core.ComponentStore[@ui.BorderRadius]
   button_colors : @core.ComponentStore[@ui.ButtonColors]
   global_z_index : @core.ComponentStore[@ui.GlobalZIndex]
@@ -87,6 +81,7 @@ pub struct World {
   light_probe : @core.ComponentStore[@render3d.LightProbe]
   motion_blur : @core.ComponentStore[@render3d.MotionBlur]
   point_light : @core.ComponentStore[@render3d.PointLight]
+  animated_by : @core.ComponentStore[@animation.AnimatedBy]
   collider2d : @core.ComponentStore[@physics2d.Collider2d]
   friction2d : @core.ComponentStore[@physics2d.Friction2d]
   sleeping2d : @core.ComponentStore[@physics2d.Sleeping2d]
@@ -97,14 +92,15 @@ pub struct World {
   wireframe2d : @core.ComponentStore[@render2d.Wireframe2d]
   no_wireframe : @core.ComponentStore[@render3d.NoWireframe]
   tonemapping : @core.ComponentStore[@render3d.Tonemapping]
-  color_grading : @core.ComponentStore[@render3d.ColorGrading]
   dominance2d : @core.ComponentStore[@physics2d.Dominance2d]
   rigid_body2d : @core.ComponentStore[@physics2d.RigidBody2d]
   rigid_body3d : @core.ComponentStore[@physics3d.RigidBody3d]
   render_layers : @core.ComponentStore[@render2d.RenderLayers]
   render_target : @core.ComponentStore[@render2d.RenderTarget]
+  color_grading : @core.ComponentStore[@render3d.ColorGrading]
   deband_dither : @core.ComponentStore[@render3d.DebandDither]
   depth_prepass : @core.ComponentStore[@render3d.DepthPrepass]
+  forward_decal : @core.ComponentStore[@render3d.ForwardDecal]
   accessibility_label : @core.ComponentStore[@ui.AccessibilityLabel]
   ui_box_shadow_samples : @core.ComponentStore[@ui.UiBoxShadowSamples]
   visibility : @core.ComponentStore[@visibility.Visibility]
@@ -116,6 +112,8 @@ pub struct World {
   contact_skin2d : @core.ComponentStore[@physics2d.ContactSkin2d]
   restitution2d : @core.ComponentStore[@physics2d.Restitution2d]
   active_hooks3d : @core.ComponentStore[@physics3d.ActiveHooks3d]
+  mesh_material2d : @core.ComponentStore[@render2d.MeshMaterial2d]
+  clustered_decal : @core.ComponentStore[@render3d.ClusteredDecal]
   contact_shadows : @core.ComponentStore[@render3d.ContactShadows]
   mesh_material3d : @core.ComponentStore[@render3d.MeshMaterial3d]
   temporal_jitter : @core.ComponentStore[@render3d.TemporalJitter]
@@ -130,6 +128,7 @@ pub struct World {
   not_shadow_caster : @core.ComponentStore[@render3d.NotShadowCaster]
   sub_camera_view3d : @core.ComponentStore[@render3d.SubCameraView3d]
   scene_instance_ready : @core.ComponentStore[@scene.SceneInstanceReady]
+  animation_player : @core.ComponentStore[@animation.AnimationPlayer]
   external_force2d : @core.ComponentStore[@physics2d.ExternalForce2d]
   clear_color_config : @core.ComponentStore[@render2d.ClearColorConfig]
   wireframe2d_color : @core.ComponentStore[@render2d.Wireframe2dColor]
@@ -140,12 +139,13 @@ pub struct World {
   global_transform : @core.ComponentStore[@transform.GlobalTransform]
   relative_cursor_position : @core.ComponentStore[@ui.RelativeCursorPosition]
   view_visibility : @core.ComponentStore[@visibility.ViewVisibility]
+  animation_weights : @core.ComponentStore[@animation.AnimationWeights]
   collider_parent2d : @core.ComponentStore[@physics2d.ColliderParent2d]
   multibody_joint2d : @core.ComponentStore[@physics2d.MultibodyJoint2d]
   not_shadow_receiver : @core.ComponentStore[@render3d.NotShadowReceiver]
-  transmitted_shadow_receiver : @core.ComponentStore[@render3d.TransmittedShadowReceiver]
   point_light_texture : @core.ComponentStore[@render3d.PointLightTexture]
   visibility_range : @core.ComponentStore[@visibility.VisibilityRange]
+  animation_target_id : @core.ComponentStore[@animation.AnimationTargetId]
   collider_density2d : @core.ComponentStore[@physics2d.ColliderDensity2d]
   collider_enabled2d : @core.ComponentStore[@physics2d.ColliderEnabled2d]
   collision_groups2d : @core.ComponentStore[@physics2d.CollisionGroups2d]
@@ -159,6 +159,8 @@ pub struct World {
   environment_map_light : @core.ComponentStore[@render3d.EnvironmentMapLight]
   motion_vector_prepass : @core.ComponentStore[@render3d.MotionVectorPrepass]
   temporal_anti_aliasing : @core.ComponentStore[@render3d.TemporalAntiAliasing]
+  animation_graph_handle : @core.ComponentStore[@animation.AnimationGraphHandle]
+  animation_transitions : @core.ComponentStore[@animation.AnimationTransitions]
   shadow_filtering_method : @core.ComponentStore[@render3d.ShadowFilteringMethod]
   inherited_visibility : @core.ComponentStore[@visibility.InheritedVisibility]
   friction_combine_rule2d : @core.ComponentStore[@physics2d.FrictionCombineRule2d]
@@ -168,9 +170,11 @@ pub struct World {
   active_collision_types3d : @core.ComponentStore[@physics3d.ActiveCollisionTypes3d]
   rapier_collider_handle3d : @core.ComponentStore[@physics3d.RapierColliderHandle3d]
   directional_light_texture : @core.ComponentStore[@render3d.DirectionalLightTexture]
+  forward_decal_material_ext : @core.ComponentStore[@render3d.ForwardDecalMaterialExt]
   screen_space_transmission : @core.ComponentStore[@render3d.ScreenSpaceTransmission]
   collider_mass_properties2d : @core.ComponentStore[@physics2d.ColliderMassProperties2d]
   restitution_combine_rule2d : @core.ComponentStore[@physics2d.RestitutionCombineRule2d]
+  transmitted_shadow_receiver : @core.ComponentStore[@render3d.TransmittedShadowReceiver]
   additional_mass_properties2d : @core.ComponentStore[@physics2d.AdditionalMassProperties2d]
   rapier_impulse_joint_handle2d : @core.ComponentStore[@physics2d.RapierImpulseJointHandle2d]
   screen_space_ambient_occlusion : @core.ComponentStore[@render3d.ScreenSpaceAmbientOcclusion]
@@ -201,6 +205,7 @@ pub struct World {
   res_wireframe2d_config : @core.Resource[@render2d.Wireframe2dConfig]
   res_global_ambient_light : @core.Resource[@render3d.GlobalAmbientLight]
   res_point_light_shadow_map : @core.Resource[@render3d.PointLightShadowMap]
+  res_directional_light_shadow_map : @core.Resource[@render3d.DirectionalLightShadowMap]
   res_default_opaque_renderer_method : @core.Resource[@render3d.DefaultOpaqueRendererMethod]
 }
 pub fn World::despawn(Self, @core.Entity) -> Unit raise @core.EntityError
@@ -287,6 +292,7 @@ pub impl @render2d.Has_ClearColorConfig for World
 pub impl @render2d.Has_ColorMaterial for World
 pub impl @render2d.Has_GpuMesh2d for World
 pub impl @render2d.Has_Mesh2d for World
+pub impl @render2d.Has_MeshMaterial2d for World
 pub impl @render2d.Has_NoWireframe2d for World
 pub impl @render2d.Has_Projection for World
 pub impl @render2d.Has_RenderLayers for World
@@ -296,6 +302,7 @@ pub impl @render2d.Has_Sprite for World
 pub impl @render2d.Has_Wireframe2d for World
 pub impl @render2d.Has_Wireframe2dColor for World
 pub impl @render3d.HasRes_DefaultOpaqueRendererMethod for World
+pub impl @render3d.HasRes_DirectionalLightShadowMap for World
 pub impl @render3d.HasRes_GlobalAmbientLight for World
 pub impl @render3d.HasRes_PointLightShadowMap for World
 pub impl @render3d.HasRes_WireframeConfig for World
@@ -303,6 +310,7 @@ pub impl @render3d.Has_Bloom for World
 pub impl @render3d.Has_Camera3d for World
 pub impl @render3d.Has_CameraProjection3d for World
 pub impl @render3d.Has_ChromaticAberration for World
+pub impl @render3d.Has_ClusteredDecal for World
 pub impl @render3d.Has_ColorGrading for World
 pub impl @render3d.Has_ContactShadows for World
 pub impl @render3d.Has_DebandDither for World
@@ -312,6 +320,8 @@ pub impl @render3d.Has_DirectionalLight for World
 pub impl @render3d.Has_DirectionalLightTexture for World
 pub impl @render3d.Has_EnvironmentMapLight for World
 pub impl @render3d.Has_Exposure for World
+pub impl @render3d.Has_ForwardDecal for World
+pub impl @render3d.Has_ForwardDecalMaterialExt for World
 pub impl @render3d.Has_FreeCamera for World
 pub impl @render3d.Has_FreeCameraState for World
 pub impl @render3d.Has_Fxaa for World

@@ -611,7 +611,11 @@ fn spherical_drag_translation(
   let mut theta = @math.atan2(horizontal, position.y)
   let mut phi = @math.atan2(position.z, position.x)
   phi = phi + phi_factor * delta.x * MOVE_SPEED
-  theta = clampf(theta + theta_factor * delta.y * MOVE_SPEED, 0.001F, PI - 0.001F)
+  theta = clampf(
+    theta + theta_factor * delta.y * MOVE_SPEED,
+    0.001F,
+    PI - 0.001F,
+  )
   let sin_theta = @math.sin(theta)
   @math.Vec3::new(
     safe_radius * sin_theta * @math.cos(phi),
@@ -682,9 +686,7 @@ fn apply_decal_drag(
     return
   }
   match clustered_decals_state.val.drag_mode {
-    DragMode::Move => {
-      apply_drag_translation(world, entity, delta, -1.0F, 1.0F)
-    }
+    DragMode::Move => apply_drag_translation(world, entity, delta, -1.0F, 1.0F)
     DragMode::Scale => {
       let scale_factor = if 1.0F + delta.x * SCALE_SPEED < 0.05F {
         0.05F
@@ -693,7 +695,11 @@ fn apply_decal_drag(
       }
       world
       .get_transform_store()
-      .set(entity, transform.with_scale(transform.scale.mul_scalar(scale_factor)), tick)
+      .set(
+        entity,
+        transform.with_scale(transform.scale.mul_scalar(scale_factor)),
+        tick,
+      )
       |> ignore
     }
     DragMode::Roll => {

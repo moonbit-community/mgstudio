@@ -70,8 +70,9 @@ let atmosphere_state : Ref[AtmosphereState] = Ref::new({
     @render3d.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
   ),
   atmosphere_settings_stub: @render3d.AtmosphereSettings::default(),
-  volumetric_fog_stub: @render3d.VolumetricFog::default()
-  .with_ambient_intensity(0.0F),
+  volumetric_fog_stub: @render3d.VolumetricFog::default().with_ambient_intensity(
+    0.0F,
+  ),
   fog_volume_stub: @render3d.FogVolume::default()
   .with_density_factor(0.1F)
   .with_scattering(0.3F)
@@ -167,7 +168,11 @@ fn apply_atmosphere(world : @ecs_world.World) -> Unit {
     0.1F,
     10.0F,
   )
-  let fog_density_factor = clampf(state.fog_volume_stub.density_factor, 0.0F, 2.0F)
+  let fog_density_factor = clampf(
+    state.fog_volume_stub.density_factor,
+    0.0F,
+    2.0F,
+  )
   let ambient_intensity = clampf(
     state.volumetric_fog_stub.ambient_intensity,
     0.0F,
@@ -191,37 +196,13 @@ fn apply_atmosphere(world : @ecs_world.World) -> Unit {
     directional_exponent,
   ) = if state.mode == 0 {
     (
-      0.35F,
-      0.48F,
-      0.66F,
-      0.80F,
-      0.84F,
-      1.00F,
-      0.35F,
-      0.50F,
-      0.66F,
-      0.80F,
-      0.844F,
-      1.00F,
-      18.0F,
-      5.0F,
+      0.35F, 0.48F, 0.66F, 0.80F, 0.84F, 1.00F, 0.35F, 0.50F, 0.66F, 0.80F, 0.844F,
+      1.00F, 18.0F, 5.0F,
     )
   } else {
     (
-      0.30F,
-      0.42F,
-      0.60F,
-      1.00F,
-      0.92F,
-      0.80F,
-      0.30F,
-      0.45F,
-      0.62F,
-      1.00F,
-      0.92F,
-      0.80F,
-      12.0F,
-      8.0F,
+      0.30F, 0.42F, 0.60F, 1.00F, 0.92F, 0.80F, 0.30F, 0.45F, 0.62F, 1.00F, 0.92F,
+      0.80F, 12.0F, 8.0F,
     )
   }
 
@@ -265,7 +246,11 @@ fn apply_atmosphere(world : @ecs_world.World) -> Unit {
   let visibility = clampf(
     base_visibility /
     clampf(exposure_scale, 0.55F, 1.8F) /
-    clampf(medium_density * scene_units_to_m * (1.0F + fog_density_factor), 0.2F, 12.0F),
+    clampf(
+      medium_density * scene_units_to_m * (1.0F + fog_density_factor),
+      0.2F,
+      12.0F,
+    ),
     6.0F,
     40.0F,
   )
@@ -354,9 +339,9 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
 fn setup_scene(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
   let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
-  .with_first_cascade_far_bound(0.3F)
-  .with_maximum_distance(15.0F)
-  .build()
+    .with_first_cascade_far_bound(0.3F)
+    .with_maximum_distance(15.0F)
+    .build()
 
   let sun = world.spawn_empty()
   world
@@ -481,15 +466,17 @@ fn atmosphere_controls(world : @ecs_world.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     atmosphere_state.val.mode = 0
-    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub
-    .with_rendering_method(@render3d.AtmosphereMode::LookupTexture)
+    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub.with_rendering_method(
+      @render3d.AtmosphereMode::LookupTexture,
+    )
     changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
     atmosphere_state.val.mode = 1
-    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub
-    .with_rendering_method(@render3d.AtmosphereMode::Raymarched)
+    atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub.with_rendering_method(
+      @render3d.AtmosphereMode::Raymarched,
+    )
     changed = true
   }
 
@@ -612,8 +599,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     atmosphere_settings_stub: @render3d.AtmosphereSettings::default()
     .with_scene_units_to_m(1.0F)
     .with_rendering_method(@render3d.AtmosphereMode::LookupTexture),
-    volumetric_fog_stub: @render3d.VolumetricFog::default()
-    .with_ambient_intensity(0.0F),
+    volumetric_fog_stub: @render3d.VolumetricFog::default().with_ambient_intensity(
+      0.0F,
+    ),
     fog_volume_stub: @render3d.FogVolume::default()
     .with_density_factor(0.1F)
     .with_scattering(0.3F)

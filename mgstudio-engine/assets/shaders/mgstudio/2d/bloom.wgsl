@@ -16,6 +16,8 @@ struct BloomUniforms {
     _padding: f32,
     // x: tonemapping mode, y: deband dither enabled, z: bloom weight, w: upsample blend factor
     options: vec4<f32>,
+    // x: fxaa enabled, y: fxaa edge threshold, z: chromatic aberration strength, w: vignette strength
+    postprocess: vec4<f32>,
 };
 
 @group(0) @binding(0) var input_texture: texture_2d<f32>;

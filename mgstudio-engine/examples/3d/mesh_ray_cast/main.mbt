@@ -95,6 +95,7 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
   }
 }
 
+///|
 fn set_visibility(
   world : @ecs_world.World,
   entity : @core.Entity,
@@ -183,6 +184,7 @@ fn hide_pool(world : @ecs_world.World, pool : BeamPool) -> Unit {
   }
 }
 
+///|
 fn reflect_direction(direction : @math.Vec3, normal : @math.Vec3) -> @math.Vec3 {
   direction
   .sub(normal.mul_scalar(2.0F * direction.dot(normal)))
@@ -265,48 +267,60 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
 
   // Inward-facing box planes (same topology as Bevy example).
-  raycast_state.val.collider_entities.push(spawn_box_plane(
-    world,
-    plane_mesh,
-    plane_material,
-    @math.Vec3::new(0.0F, 0.5F, 0.0F),
-    @math.Quat::from_rotation_x(PI),
-  ))
-  raycast_state.val.collider_entities.push(spawn_box_plane(
-    world,
-    plane_mesh,
-    plane_material,
-    @math.Vec3::new(0.0F, -0.5F, 0.0F),
-    @math.Quat::identity(),
-  ))
-  raycast_state.val.collider_entities.push(spawn_box_plane(
-    world,
-    plane_mesh,
-    plane_material,
-    @math.Vec3::new(0.5F, 0.0F, 0.0F),
-    @math.Quat::from_rotation_z(HALF_PI),
-  ))
-  raycast_state.val.collider_entities.push(spawn_box_plane(
-    world,
-    plane_mesh,
-    plane_material,
-    @math.Vec3::new(-0.5F, 0.0F, 0.0F),
-    @math.Quat::from_rotation_z(-HALF_PI),
-  ))
-  raycast_state.val.collider_entities.push(spawn_box_plane(
-    world,
-    plane_mesh,
-    plane_material,
-    @math.Vec3::new(0.0F, 0.0F, 0.5F),
-    @math.Quat::from_rotation_x(-HALF_PI),
-  ))
-  raycast_state.val.collider_entities.push(spawn_box_plane(
-    world,
-    plane_mesh,
-    plane_material,
-    @math.Vec3::new(0.0F, 0.0F, -0.5F),
-    @math.Quat::from_rotation_x(HALF_PI),
-  ))
+  raycast_state.val.collider_entities.push(
+    spawn_box_plane(
+      world,
+      plane_mesh,
+      plane_material,
+      @math.Vec3::new(0.0F, 0.5F, 0.0F),
+      @math.Quat::from_rotation_x(PI),
+    ),
+  )
+  raycast_state.val.collider_entities.push(
+    spawn_box_plane(
+      world,
+      plane_mesh,
+      plane_material,
+      @math.Vec3::new(0.0F, -0.5F, 0.0F),
+      @math.Quat::identity(),
+    ),
+  )
+  raycast_state.val.collider_entities.push(
+    spawn_box_plane(
+      world,
+      plane_mesh,
+      plane_material,
+      @math.Vec3::new(0.5F, 0.0F, 0.0F),
+      @math.Quat::from_rotation_z(HALF_PI),
+    ),
+  )
+  raycast_state.val.collider_entities.push(
+    spawn_box_plane(
+      world,
+      plane_mesh,
+      plane_material,
+      @math.Vec3::new(-0.5F, 0.0F, 0.0F),
+      @math.Quat::from_rotation_z(-HALF_PI),
+    ),
+  )
+  raycast_state.val.collider_entities.push(
+    spawn_box_plane(
+      world,
+      plane_mesh,
+      plane_material,
+      @math.Vec3::new(0.0F, 0.0F, 0.5F),
+      @math.Quat::from_rotation_x(-HALF_PI),
+    ),
+  )
+  raycast_state.val.collider_entities.push(
+    spawn_box_plane(
+      world,
+      plane_mesh,
+      plane_material,
+      @math.Vec3::new(0.0F, 0.0F, -0.5F),
+      @math.Quat::from_rotation_x(HALF_PI),
+    ),
+  )
 
   let directional_light = world.spawn_empty()
   let tick = world.read_change_tick()
@@ -414,10 +428,7 @@ fn bounce_ray(
 
   for i in 0..<MAX_BOUNCES {
     guard @render3d.mesh_ray_cast_first(
-        world,
-        current_origin,
-        current_direction,
-        ray_cast_settings,
+        world, current_origin, current_direction, ray_cast_settings,
       )
       is Some((_entity, hit)) else {
       break
@@ -471,8 +482,8 @@ fn bouncing_raycast(world : @ecs_world.World) -> Unit {
   guard raycast_state.val.red_pool is Some(red_pool) else { return }
   guard raycast_state.val.green_pool is Some(green_pool) else { return }
   let ray_cast_settings = @render3d.MeshRayCastSettings::default()
-  .with_max_hits(1)
-  .with_only_entities(Some(raycast_state.val.collider_entities))
+    .with_max_hits(1)
+    .with_only_entities(Some(raycast_state.val.collider_entities))
 
   let elapsed = @time.time_elapsed_seconds()
   let phase_time = if elapsed > 4.0F { elapsed - 4.0F } else { 0.0F }

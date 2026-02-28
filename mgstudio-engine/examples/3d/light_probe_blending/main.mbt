@@ -749,6 +749,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   write_orbit_camera_transform(world)
 }
 
+///|
 fn move_sphere(world : @ecs_world.World) -> Unit {
   guard light_probe_blending_state.val.sphere is Some(entity) else { return }
 

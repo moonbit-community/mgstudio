@@ -227,6 +227,10 @@ struct Bloom2dDraw {
     agx_lut_texture_id: i32,
     tony_lut_texture_id: i32,
     blender_lut_texture_id: i32,
+    fxaa_enabled: i32,
+    fxaa_edge_threshold: f32,
+    chromatic_aberration_strength: f32,
+    vignette_strength: f32,
     scissor: Option<ScissorRect>,
 }
 
@@ -1980,6 +1984,10 @@ impl GpuBackend {
         agx_lut_texture_id: i32,
         tony_lut_texture_id: i32,
         blender_lut_texture_id: i32,
+        fxaa_enabled: i32,
+        fxaa_edge_threshold: f32,
+        chromatic_aberration_strength: f32,
+        vignette_strength: f32,
     ) -> anyhow::Result<()> {
         if self.frame.is_none() {
             return Ok(());
@@ -2011,6 +2019,10 @@ impl GpuBackend {
             agx_lut_texture_id,
             tony_lut_texture_id,
             blender_lut_texture_id,
+            fxaa_enabled,
+            fxaa_edge_threshold,
+            chromatic_aberration_strength,
+            vignette_strength,
             scissor: pass.current_scissor,
         }));
         Ok(())
@@ -4319,7 +4331,7 @@ impl GpuBackend {
         if self.mesh.bloom2d_settings_buf.is_none() {
             let settings_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("mgstudio_bloom2d_settings_buf"),
-                size: 64,
+                size: 80,
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             });
@@ -4656,6 +4668,14 @@ impl GpuBackend {
         } else {
             1.0
         };
+        let fxaa_enabled = if draw.fxaa_enabled == 0 { 0.0 } else { 1.0 };
+        let fxaa_edge_threshold = if fxaa_enabled > 0.0 {
+            draw.fxaa_edge_threshold.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let chromatic_aberration_strength = draw.chromatic_aberration_strength.clamp(0.0, 1.0);
+        let vignette_strength = draw.vignette_strength.clamp(0.0, 1.0);
         let use_uniform_scale = scale_x == 1.0 && scale_y == 1.0;
         let use_prefilter = threshold > 0.0;
         let bloom_enabled = draw.enabled != 0;
@@ -4765,6 +4785,10 @@ impl GpuBackend {
                     deband_dither_enabled,
                     bloom_weight,
                     0.0,
+                    fxaa_enabled,
+                    fxaa_edge_threshold,
+                    chromatic_aberration_strength,
+                    vignette_strength,
                 );
                 self.queue
                     .write_buffer(settings_buf, 0, bytemuck::cast_slice(&bloom_words));
@@ -4877,6 +4901,10 @@ impl GpuBackend {
                         deband_dither_enabled,
                         bloom_weight,
                         blend,
+                        fxaa_enabled,
+                        fxaa_edge_threshold,
+                        chromatic_aberration_strength,
+                        vignette_strength,
                     );
                     self.queue
                         .write_buffer(settings_buf, 0, bytemuck::cast_slice(&up_words));
@@ -4951,6 +4979,10 @@ impl GpuBackend {
             deband_dither_enabled,
             final_bloom_weight,
             0.0,
+            fxaa_enabled,
+            fxaa_edge_threshold,
+            chromatic_aberration_strength,
+            vignette_strength,
         );
         self.queue
             .write_buffer(settings_buf, 0, bytemuck::cast_slice(&final_words));
@@ -5233,7 +5265,11 @@ fn bloom2d_uniform_words(
     deband_dither_enabled: f32,
     bloom_weight: f32,
     upsample_blend: f32,
-) -> [u32; 16] {
+    fxaa_enabled: f32,
+    fxaa_edge_threshold: f32,
+    chromatic_aberration_strength: f32,
+    vignette_strength: f32,
+) -> [u32; 20] {
     let softness = threshold_softness;
     let knee = threshold * softness;
     let safe_source_width = if source_width > 0.0 {
@@ -5278,6 +5314,10 @@ fn bloom2d_uniform_words(
         deband_dither_enabled.to_bits(),
         bloom_weight.to_bits(),
         upsample_blend.to_bits(),
+        fxaa_enabled.to_bits(),
+        fxaa_edge_threshold.to_bits(),
+        chromatic_aberration_strength.to_bits(),
+        vignette_strength.to_bits(),
     ]
 }
 

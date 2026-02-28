@@ -133,6 +133,8 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_line_strip : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_surface_line_strip_transparent : @wgpu_mbt.RenderPipeline?
   mut mesh3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut mesh3d_pipeline_rgba8_cull_mode : Int
+  mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_uniform_buf : @wgpu_mbt.Buffer?
   mut mesh3d_uniform_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_motion_vector_bgl_uniform : @wgpu_mbt.BindGroupLayout?
@@ -186,7 +188,7 @@ pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool) -> Int rai
 pub fn GpuBackend::create_surface(Self, @window.Window) -> Unit
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
-pub fn GpuBackend::draw_bloom2d(Self, Int, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_bloom2d(Self, Int, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
@@ -309,6 +311,8 @@ pub struct HostContext {
   mut jit_globals_ptr : Int64
   mut gpu : GpuBackend?
   mut window : @window.Window?
+  mut app_loop_should_close : Bool
+  mut task_pool_num_threads : Int?
   gamepad : Ref[@gamepad.Gilrs]
   assets_source : @mgstudio-runtime-core.SourceSpec
   data_source : @mgstudio-runtime-core.SourceSpec

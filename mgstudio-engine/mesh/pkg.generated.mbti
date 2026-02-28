@@ -13,8 +13,11 @@ import {
 pub struct Mesh {
   geometry : MeshGeometry
 }
+pub fn Mesh::as_3d_geometry(Self) -> Mesh3dGeometry?
 pub fn Mesh::from_2d_geometry(Mesh2dGeometry) -> Self
 pub fn Mesh::from_3d_geometry(Mesh3dGeometry) -> Self
+pub fn Mesh::generate_tangents(Self) -> MeshGenerateTangentsError?
+pub fn Mesh::with_3d_geometry(Self, Mesh3dGeometry) -> Self?
 
 pub struct Mesh2dGeometry {
   positions : Array[@math.Vec2]
@@ -47,26 +50,55 @@ pub(all) enum Mesh2dValidationError {
 pub impl Eq for Mesh2dValidationError
 pub impl Show for Mesh2dValidationError
 
+pub(all) enum Mesh3dGenerateTangentsError {
+  InvalidGeometry(Mesh3dValidationError)
+  UnsupportedTopology(Mesh3dPrimitiveTopology)
+  DegenerateUvTriangle(Int, Int, Int)
+}
+pub impl Eq for Mesh3dGenerateTangentsError
+pub impl Show for Mesh3dGenerateTangentsError
+
 pub struct Mesh3dGeometry {
   positions : Array[@math.Vec3]
   uvs : Array[@math.Vec2]
   colors : Array[@math.Vec4]?
+  mut tangents : Array[@math.Vec4]?
   indices : Array[Int]?
   topology : Mesh3dPrimitiveTopology
 }
+pub fn Mesh3dGeometry::circle(Float, Int) -> Self
+pub fn Mesh3dGeometry::circle_line_strip(Float, Int) -> Self
+pub fn Mesh3dGeometry::clear_indices(Self) -> Unit
+pub fn Mesh3dGeometry::clear_tangents(Self) -> Unit
+pub fn Mesh3dGeometry::clear_vertices(Self) -> Unit
 pub fn Mesh3dGeometry::encode_interleaved_xyz_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::encode_triangle_interleaved_xyz_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
+pub fn Mesh3dGeometry::generate_tangents(Self) -> Mesh3dGenerateTangentsError?
+pub fn Mesh3dGeometry::has_tangents(Self) -> Bool
+pub fn Mesh3dGeometry::icosphere(Float, Int) -> Self
 pub fn Mesh3dGeometry::new(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?) -> Self
 pub fn Mesh3dGeometry::new_with_colors_and_topology(Array[@math.Vec3], Array[@math.Vec2], Array[@math.Vec4], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
 pub fn Mesh3dGeometry::new_with_topology(Array[@math.Vec3], Array[@math.Vec2], Array[Int]?, Mesh3dPrimitiveTopology) -> Self
 pub fn Mesh3dGeometry::primitive_topology(Self) -> Mesh3dPrimitiveTopology
+pub fn Mesh3dGeometry::push_index(Self, Int) -> Bool
+pub fn Mesh3dGeometry::push_triangle_indices(Self, Int, Int, Int) -> Bool
+pub fn Mesh3dGeometry::push_vertex(Self, @math.Vec3, @math.Vec2) -> Int
+pub fn Mesh3dGeometry::push_vertex_with_color(Self, @math.Vec3, @math.Vec2, @math.Vec4) -> Bool
+pub fn Mesh3dGeometry::replace_tangents(Self, Array[@math.Vec4]?) -> Bool
+pub fn Mesh3dGeometry::replace_uvs(Self, Array[@math.Vec2]) -> Bool
+pub fn Mesh3dGeometry::set_position(Self, Int, @math.Vec3) -> Bool
+pub fn Mesh3dGeometry::set_uv(Self, Int, @math.Vec2) -> Bool
+pub fn Mesh3dGeometry::tangent(Self, Int) -> @math.Vec4?
 pub fn Mesh3dGeometry::to_wireframe_line_list(Self) -> Self?
 pub fn Mesh3dGeometry::triangle_count(Self) -> Int?
+pub fn Mesh3dGeometry::uv(Self, Int) -> @math.Vec2?
 pub fn Mesh3dGeometry::validate(Self) -> Mesh3dValidationError?
 pub fn Mesh3dGeometry::vertex_count(Self) -> Int
+pub fn Mesh3dGeometry::with_colors(Self, Array[@math.Vec4]?) -> Self
+pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
 
 pub(all) enum Mesh3dPrimitiveTopology {
@@ -82,6 +114,7 @@ pub(all) enum Mesh3dValidationError {
   EmptyGeometry
   AttributeLengthMismatch(Int, Int)
   ColorLengthMismatch(Int, Int)
+  TangentLengthMismatch(Int, Int)
   NonTriangleVertexCount(Int)
   NonTriangleIndexCount(Int)
   NonLineListVertexCount(Int)
@@ -92,6 +125,13 @@ pub(all) enum Mesh3dValidationError {
 }
 pub impl Eq for Mesh3dValidationError
 pub impl Show for Mesh3dValidationError
+
+pub(all) enum MeshGenerateTangentsError {
+  Not3dGeometry
+  GeometryError(Mesh3dGenerateTangentsError)
+}
+pub impl Eq for MeshGenerateTangentsError
+pub impl Show for MeshGenerateTangentsError
 
 pub(all) enum MeshGeometry {
   Geometry2d(Mesh2dGeometry)

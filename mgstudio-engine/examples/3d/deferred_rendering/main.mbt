@@ -228,8 +228,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   .get_directional_light_store()
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true)
-    .with_cascade_shadow_config_builder(
+    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
       @render3d.CascadeShadowConfigBuilder::default()
       .with_num_cascades(3)
       .with_maximum_distance(10.0F),
@@ -255,7 +254,9 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let helmet_scene = @scene.scene_load_gltf_scene(
     asset_server,
-    @scene.GltfAssetLabel::Scene(0).from_asset("models/FlightHelmet/FlightHelmet.gltf"),
+    @scene.GltfAssetLabel::Scene(0).from_asset(
+      "models/FlightHelmet/FlightHelmet.gltf",
+    ),
   )
   let helmet_a = world.spawn_empty()
   world
@@ -356,7 +357,12 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let sky_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(136.0F / 255.0F, 136.0F / 255.0F, 136.0F / 255.0F, 1.0F),
+      @render2d.Color::new(
+        136.0F / 255.0F,
+        136.0F / 255.0F,
+        136.0F / 255.0F,
+        1.0F,
+      ),
     )
     .with_unlit(true)
     .with_cull_mode(None),
@@ -476,7 +482,9 @@ fn animate_light_direction(world : @ecs_world.World) -> Unit {
   .set(
     light,
     transform.with_rotation(
-      transform.rotation.mul(@math.Quat::from_rotation_y(delta_angle)).normalize(),
+      transform.rotation
+      .mul(@math.Quat::from_rotation_y(delta_angle))
+      .normalize(),
     ),
     tick,
   )
