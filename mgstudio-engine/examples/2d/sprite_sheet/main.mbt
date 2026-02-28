@@ -49,7 +49,13 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_sheet_setup)
-  .add_system(sprite_sheet_animate)
+  .add_system(
+    @app.system_query2(
+      fn(world) { world.get_sprite_store() },
+      fn(world) { world.get_transform_store() },
+      sprite_sheet_animate,
+    ),
+  )
   .run()
 }
 
@@ -80,33 +86,27 @@ fn sprite_sheet_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn sprite_sheet_animate(world : @ecs_world.World) -> Unit {
+fn sprite_sheet_animate(
+  query : @core.Query2[@render2d.Sprite, @math.Transform],
+  world : @ecs_world.World,
+) -> Unit {
   sprite_sheet_state.val.timer_seconds = sprite_sheet_state.val.timer_seconds +
     @time.time_delta_seconds()
 
   if sprite_sheet_state.val.timer_seconds >= GABE_ANIMATION_STEP_SECONDS {
     sprite_sheet_state.val.timer_seconds = 0.0F
     let tick = world.read_change_tick()
-    let sprite_store = world.get_sprite_store()
-    let transform_store = world.get_transform_store()
-    let updates : Array[(@core.Entity, @render2d.Sprite)] = []
-
-    @core.query2(sprite_store, transform_store, fn(entity, sprite, _transform) {
+    query.update_a(tick, fn(_entity, sprite, _transform) {
       if sprite.texture_atlas is Some(atlas) {
         let next_index = if atlas.index == GABE_LAST_FRAME {
           GABE_FIRST_FRAME
         } else {
           atlas.index + 1
         }
-        let next_sprite = sprite.with_texture_atlas(
-          Some(atlas.with_index(next_index)),
-        )
-        updates.push((entity, next_sprite))
+        sprite.with_texture_atlas(Some(atlas.with_index(next_index)))
+      } else {
+        sprite
       }
     })
-
-    for entry in updates {
-      sprite_store.set(entry.0, entry.1, tick) |> ignore
-    }
   }
 }

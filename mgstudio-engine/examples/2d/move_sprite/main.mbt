@@ -19,7 +19,13 @@ pub fn game_app() -> Unit {
   @app.App::new(@ecs_world.World::new())
   .add_plugins(plugins)
   .add_startup_system(move_sprite_setup)
-  .add_system(move_sprite_movement)
+  .add_system(
+    @app.system_query2(
+      fn(world) { world.get_transform_store() },
+      fn(world) { world.get_sprite_store() },
+      move_sprite_movement,
+    ),
+  )
   .run()
 }
 
@@ -71,7 +77,10 @@ fn move_sprite_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_sprite_movement(world : @ecs_world.World) -> Unit {
+fn move_sprite_movement(
+  query : @core.Query2[@math.Transform, @render2d.Sprite],
+  world : @ecs_world.World,
+) -> Unit {
   if move_state.val.sprite.is_placeholder() {
     return
   }
@@ -79,28 +88,26 @@ fn move_sprite_movement(world : @ecs_world.World) -> Unit {
   let delta = SPEED * @time.time_delta_seconds()
   let move_x = if move_state.val.direction is Right { delta } else { -delta }
   let tick = world.read_change_tick()
-  let sprite_store = world.get_sprite_store()
-  let transform_store = world.get_transform_store()
   let mut next_direction = move_state.val.direction
-  @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {
+  query.update_a(tick, fn(entity, transform, _sprite) {
     if !entity_is_same(entity, sprite_entity) {
-      return
-    }
-    let translation = @math.Vec2::new(
-      transform.translation.x + move_x,
-      transform.translation.y,
-    )
-    let next_transform = @math.Transform::from_xy_rotation_scale(
-      translation,
-      transform.rotation_z(),
-      @math.Vec2::new(transform.scale.x, transform.scale.y),
-      z=transform.translation.z,
-    )
-    transform_store.set(sprite_entity, next_transform, tick) |> ignore
-    if translation.x > EDGE_LIMIT {
-      next_direction = Direction::Left
-    } else if translation.x < -EDGE_LIMIT {
-      next_direction = Direction::Right
+      transform
+    } else {
+      let translation = @math.Vec2::new(
+        transform.translation.x + move_x,
+        transform.translation.y,
+      )
+      if translation.x > EDGE_LIMIT {
+        next_direction = Direction::Left
+      } else if translation.x < -EDGE_LIMIT {
+        next_direction = Direction::Right
+      }
+      @math.Transform::from_xy_rotation_scale(
+        translation,
+        transform.rotation_z(),
+        @math.Vec2::new(transform.scale.x, transform.scale.y),
+        z=transform.translation.z,
+      )
     }
   })
   move_state.val.direction = next_direction

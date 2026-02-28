@@ -54,7 +54,13 @@ pub fn game_app() -> Unit {
   .add_startup_system(sprite_scale_setup_sprites)
   .add_startup_system(sprite_scale_setup_texture_atlas)
   .add_startup_system(sprite_scale_setup_camera)
-  .add_system(sprite_scale_update)
+  .add_system(
+    @app.system_query2(
+      fn(world) { world.get_sprite_store() },
+      fn(world) { world.get_transform_store() },
+      sprite_scale_update,
+    ),
+  )
   .run()
 }
 
@@ -376,33 +382,27 @@ fn resolve_scale_mode(_intended_mode : String) -> @render2d.SpriteImageMode {
 }
 
 ///|
-fn sprite_scale_update(world : @ecs_world.World) -> Unit {
+fn sprite_scale_update(
+  query : @core.Query2[@render2d.Sprite, @math.Transform],
+  world : @ecs_world.World,
+) -> Unit {
   sprite_scale_state.val.timer_seconds = sprite_scale_state.val.timer_seconds +
     @time.time_delta_seconds()
 
   if sprite_scale_state.val.timer_seconds >= ANIMATION_STEP_SECONDS {
     sprite_scale_state.val.timer_seconds = 0.0F
     let tick = world.read_change_tick()
-    let sprite_store = world.get_sprite_store()
-    let transform_store = world.get_transform_store()
-    let updates : Array[(@core.Entity, @render2d.Sprite)] = []
-
-    @core.query2(sprite_store, transform_store, fn(entity, sprite, _transform) {
+    query.update_a(tick, fn(_entity, sprite, _transform) {
       if sprite.texture_atlas is Some(atlas) {
         let next_index = if atlas.index == ATLAS_LAST_FRAME {
           ATLAS_FIRST_FRAME
         } else {
           atlas.index + 1
         }
-        let next_sprite = sprite.with_texture_atlas(
-          Some(atlas.with_index(next_index)),
-        )
-        updates.push((entity, next_sprite))
+        sprite.with_texture_atlas(Some(atlas.with_index(next_index)))
+      } else {
+        sprite
       }
     })
-
-    for entry in updates {
-      sprite_store.set(entry.0, entry.1, tick) |> ignore
-    }
   }
 }
