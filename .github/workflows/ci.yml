@@ -88,7 +88,9 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-engine test
+          # Build test artifacts in CI. Executing wasm tests here requires a
+          # host import harness (`mgstudio_host`) that is not wired in this job.
+          moon -C mgstudio-engine test --build-only
 
   engine-examples-smoke:
     name: engine examples (build + smoke)
@@ -129,6 +131,13 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev pkg-config
 
       - name: cargo check
         shell: bash
