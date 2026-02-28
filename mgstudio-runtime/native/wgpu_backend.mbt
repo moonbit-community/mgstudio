@@ -325,8 +325,70 @@ fn mesh3d_topology_suffix(topology : UInt) -> String {
 }
 
 ///|
+const PASS_KIND_BASE_MASK : Int = 255
+
+///|
+const PASS_KIND_DISABLE_POSTPROCESS_FLAG : Int = 1 << 8
+
+///|
+const PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
+
+///|
+const PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
+
+///|
+const PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+
+///|
+const MESH3D_CULL_MODE_MASK : Int = 3
+
+///|
+const MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
+
+///|
+const MESH3D_DRAW_FLAG_FOG : Int = 1 << 9
+
+///|
+const MESH3D_DRAW_FLAG_POSTPROCESS_PROXY : Int = 1 << 10
+
+///|
+fn pass_kind_base_kind(pass_kind : Int) -> Int {
+  pass_kind & PASS_KIND_BASE_MASK
+}
+
+///|
+fn pass_kind_postprocess_enabled(pass_kind : Int) -> Bool {
+  (pass_kind & PASS_KIND_DISABLE_POSTPROCESS_FLAG) == 0
+}
+
+///|
+fn pass_kind_fog_enabled(pass_kind : Int) -> Bool {
+  (pass_kind & PASS_KIND_DISABLE_FOG_FLAG) == 0
+}
+
+///|
+fn pass_kind_decal_enabled(pass_kind : Int) -> Bool {
+  (pass_kind & PASS_KIND_DISABLE_DECAL_FLAG) == 0
+}
+
+///|
+fn mesh3d_draw_is_decal(cull_mode : Int) -> Bool {
+  (cull_mode & MESH3D_DRAW_FLAG_DECAL) != 0
+}
+
+///|
+fn mesh3d_draw_is_fog(cull_mode : Int) -> Bool {
+  (cull_mode & MESH3D_DRAW_FLAG_FOG) != 0
+}
+
+///|
+fn mesh3d_draw_is_postprocess_proxy(cull_mode : Int) -> Bool {
+  (cull_mode & MESH3D_DRAW_FLAG_POSTPROCESS_PROXY) != 0
+}
+
+///|
 fn mesh3d_cull_mode_sanitize(cull_mode : Int) -> Int {
-  match cull_mode {
+  match cull_mode & MESH3D_CULL_MODE_MASK {
     1 => 1
     2 => 2
     _ => 0
@@ -5698,7 +5760,19 @@ pub fn GpuBackend::draw_mesh3d(
     return
   }
   let transparent = color_a < 0.999F
-  if ps.pass_kind == 1 {
+  let pass_kind_raw = ps.pass_kind
+  if !pass_kind_decal_enabled(pass_kind_raw) && mesh3d_draw_is_decal(cull_mode) {
+    return
+  }
+  if !pass_kind_fog_enabled(pass_kind_raw) && mesh3d_draw_is_fog(cull_mode) {
+    return
+  }
+  if !pass_kind_postprocess_enabled(pass_kind_raw) &&
+    mesh3d_draw_is_postprocess_proxy(cull_mode) {
+    return
+  }
+  let pass_kind = pass_kind_base_kind(pass_kind_raw)
+  if pass_kind == PASS_KIND_BASE_MOTION_VECTOR {
     if mesh.primitive_topology != MESH3D_TOPOLOGY_TRIANGLE_LIST {
       return
     }

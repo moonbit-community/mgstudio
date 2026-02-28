@@ -268,9 +268,48 @@ fn mesh3d_topology_from_kind(kind: i32) -> wgpu::PrimitiveTopology {
     }
 }
 
+const PASS_KIND_BASE_MASK: i32 = 255;
+const PASS_KIND_DISABLE_POSTPROCESS_FLAG: i32 = 1 << 8;
+const PASS_KIND_DISABLE_FOG_FLAG: i32 = 1 << 9;
+const PASS_KIND_DISABLE_DECAL_FLAG: i32 = 1 << 10;
+const PASS_KIND_BASE_MOTION_VECTOR: i32 = 1;
+const MESH3D_CULL_MODE_MASK: i32 = 3;
+const MESH3D_DRAW_FLAG_DECAL: i32 = 1 << 8;
+const MESH3D_DRAW_FLAG_FOG: i32 = 1 << 9;
+const MESH3D_DRAW_FLAG_POSTPROCESS_PROXY: i32 = 1 << 10;
+
+fn pass_kind_base_kind(pass_kind: i32) -> i32 {
+    pass_kind & PASS_KIND_BASE_MASK
+}
+
+fn pass_kind_postprocess_enabled(pass_kind: i32) -> bool {
+    (pass_kind & PASS_KIND_DISABLE_POSTPROCESS_FLAG) == 0
+}
+
+fn pass_kind_fog_enabled(pass_kind: i32) -> bool {
+    (pass_kind & PASS_KIND_DISABLE_FOG_FLAG) == 0
+}
+
+fn pass_kind_decal_enabled(pass_kind: i32) -> bool {
+    (pass_kind & PASS_KIND_DISABLE_DECAL_FLAG) == 0
+}
+
+fn mesh3d_draw_is_decal(cull_mode: i32) -> bool {
+    (cull_mode & MESH3D_DRAW_FLAG_DECAL) != 0
+}
+
+fn mesh3d_draw_is_fog(cull_mode: i32) -> bool {
+    (cull_mode & MESH3D_DRAW_FLAG_FOG) != 0
+}
+
+fn mesh3d_draw_is_postprocess_proxy(cull_mode: i32) -> bool {
+    (cull_mode & MESH3D_DRAW_FLAG_POSTPROCESS_PROXY) != 0
+}
+
 fn mesh3d_cull_mode_sanitize(cull_mode: i32) -> i32 {
-    match cull_mode {
-        1 | 2 => cull_mode,
+    match cull_mode & MESH3D_CULL_MODE_MASK {
+        1 => 1,
+        2 => 2,
         _ => 0,
     }
 }
@@ -861,7 +900,7 @@ impl GpuBackend {
             self.ensure_mesh_pipeline(pass.st.target_format)?;
         }
         if has_mesh_3d {
-            if pass.st.pass_kind == 1 {
+            if pass_kind_base_kind(pass.st.pass_kind) == PASS_KIND_BASE_MOTION_VECTOR {
                 self.ensure_mesh3d_motion_vector_pipeline()?;
             } else {
                 if has_mesh_3d_triangles {
@@ -1114,7 +1153,10 @@ impl GpuBackend {
                         };
 
                         // Motion-vector prepass: opaque-only and separate uniform/pipeline.
-                        if draw.is_3d && pass.st.pass_kind == 1 {
+                        if draw.is_3d
+                            && pass_kind_base_kind(pass.st.pass_kind)
+                                == PASS_KIND_BASE_MOTION_VECTOR
+                        {
                             if mesh.primitive_topology != wgpu::PrimitiveTopology::TriangleList {
                                 continue;
                             }
@@ -1796,6 +1838,17 @@ impl GpuBackend {
         let Some(pass) = self.pass.as_mut() else {
             return Ok(());
         };
+        if !pass_kind_decal_enabled(pass.st.pass_kind) && mesh3d_draw_is_decal(cull_mode) {
+            return Ok(());
+        }
+        if !pass_kind_fog_enabled(pass.st.pass_kind) && mesh3d_draw_is_fog(cull_mode) {
+            return Ok(());
+        }
+        if !pass_kind_postprocess_enabled(pass.st.pass_kind)
+            && mesh3d_draw_is_postprocess_proxy(cull_mode)
+        {
+            return Ok(());
+        }
         pass.flush_sprites();
         pass.commands.push(DrawCmd::Mesh(MeshDraw {
             mesh_id,
@@ -5566,7 +5619,7 @@ fn quat_to_z_rotation(x: f32, y: f32, z: f32, w: f32) -> f32 {
 
 fn mesh_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     if draw.is_3d {
-        if pass.pass_kind == 1 {
+        if pass_kind_base_kind(pass.pass_kind) == PASS_KIND_BASE_MOTION_VECTOR {
             return mesh3d_motion_vector_uniform_bytes(pass, draw);
         }
         return mesh3d_uniform_bytes(pass, draw);

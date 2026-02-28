@@ -374,6 +374,7 @@ pub fn DepthOfField::with_max_depth(
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
   deferred_config : CameraDeferredConfig3d
+  distance_fog : DistanceFog?
   volumetric_fog : VolumetricFog?
   atmosphere : Atmosphere?
   atmosphere_settings : AtmosphereSettings?
@@ -386,6 +387,7 @@ pub fn Camera3d::default() -> Camera3d {
   Camera3d::{
     decal_config: CameraDecalConfig3d::default(),
     deferred_config: CameraDeferredConfig3d::default(),
+    distance_fog: None,
     volumetric_fog: None,
     atmosphere: None,
     atmosphere_settings: None,
@@ -408,6 +410,14 @@ pub fn Camera3d::with_deferred_config(
   deferred_config : CameraDeferredConfig3d,
 ) -> Camera3d {
   Camera3d::{ ..self, deferred_config, }
+}
+
+///|
+pub fn Camera3d::with_distance_fog(
+  self : Camera3d,
+  distance_fog : DistanceFog?,
+) -> Camera3d {
+  Camera3d::{ ..self, distance_fog, }
 }
 
 ///|
@@ -5736,6 +5746,17 @@ pub fn Camera3dBundle::with_deferred_config(
 }
 
 ///|
+pub fn Camera3dBundle::with_distance_fog(
+  self : Camera3dBundle,
+  distance_fog : DistanceFog?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_distance_fog(distance_fog),
+  }
+}
+
+///|
 pub fn Camera3dBundle::with_volumetric_fog(
   self : Camera3dBundle,
   volumetric_fog : VolumetricFog?,
@@ -5971,6 +5992,7 @@ priv struct Mesh3dInstance {
 ///|
 priv struct TransmissionMeshDraw {
   mesh : Mesh3dInstance
+  draw_flags : Int
   draw_color_r : Float
   draw_color_g : Float
   draw_color_b : Float
@@ -6269,6 +6291,68 @@ fn render3d_float_clamp(
     max_value
   } else {
     value
+  }
+}
+
+///|
+const RENDER3D_PASS_KIND_BASE_SCENE : Int = 0
+
+///|
+const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+
+///|
+const RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG : Int = 1 << 8
+
+///|
+const RENDER3D_PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
+
+///|
+const RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
+
+///|
+const RENDER3D_MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
+
+///|
+fn render3d_pass_kind_encode(
+  base_kind : Int,
+  postprocess_enabled : Bool,
+  fog_enabled : Bool,
+  decal_enabled : Bool,
+) -> Int {
+  let mut value = base_kind
+  if !postprocess_enabled {
+    value = value | RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG
+  }
+  if !fog_enabled {
+    value = value | RENDER3D_PASS_KIND_DISABLE_FOG_FLAG
+  }
+  if !decal_enabled {
+    value = value | RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG
+  }
+  value
+}
+
+///|
+fn render3d_mesh_draw_flags(mesh : Mesh3dInstance) -> Int {
+  let mut flags = 0
+  if mesh.is_forward_decal || mesh.clustered_decal is Some(_) {
+    flags = flags | RENDER3D_MESH3D_DRAW_FLAG_DECAL
+  }
+  flags
+}
+
+///|
+fn render3d_distance_fog_enabled(fog : DistanceFog) -> Bool {
+  if fog.color.a <= 0.0F {
+    return false
+  }
+  match fog.falloff {
+    FogFalloff3d::Linear(start, end_) => end_ > start
+    FogFalloff3d::Exponential(density) => density > 0.0F
+    FogFalloff3d::ExponentialSquared(density) => density > 0.0F
+    FogFalloff3d::Atmospheric(extinction, inscattering) =>
+      (extinction.x + extinction.y + extinction.z + inscattering.x +
+      inscattering.y + inscattering.z) > 0.0001F
   }
 }
 
@@ -8704,8 +8788,9 @@ fn render3d_draw_mesh_instance(
   specular_tint : @render2d.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
+  draw_flags : Int,
 ) -> Unit {
-  let draw_cull_mode = match mesh.material.cull_mode {
+  let draw_cull_mode_base = match mesh.material.cull_mode {
     None => 0
     Some(face) =>
       match face {
@@ -8713,6 +8798,7 @@ fn render3d_draw_mesh_instance(
         Face3d::Back => 2
       }
   }
+  let draw_cull_mode = draw_cull_mode_base | draw_flags
   @window.host_gpu_draw_mesh3d(
     mesh_id=mesh.mesh_id,
     x=transform.translation.x,
@@ -9103,8 +9189,12 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       camera.camera3d.auto_exposure,
       pass_lighting,
     )
+    let camera_base_fog = match camera.camera3d.distance_fog {
+      Some(value) => value
+      None => render3d_distance_fog()
+    }
     let distance_fog = render3d_camera_distance_fog(
-      render3d_distance_fog(),
+      camera_base_fog,
       camera.camera3d.volumetric_fog,
       camera.camera3d.atmosphere,
       camera.camera3d.atmosphere_settings,
@@ -9130,6 +9220,22 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
     }
     let transmission_enabled = transmission_blur_taps > 0
     let bloom_enabled = camera.bloom is Some(_)
+    let fog_enabled = render3d_distance_fog_enabled(distance_fog)
+    let decal_enabled = camera_forward_decal_enabled ||
+      camera_clustered_decal_enabled
+    let postprocess_enabled = motion_blur_active || bloom_enabled
+    let scene_pass_kind = render3d_pass_kind_encode(
+      RENDER3D_PASS_KIND_BASE_SCENE,
+      postprocess_enabled,
+      fog_enabled,
+      decal_enabled,
+    )
+    let motion_vector_pass_kind = render3d_pass_kind_encode(
+      RENDER3D_PASS_KIND_BASE_MOTION_VECTOR,
+      false,
+      false,
+      false,
+    )
     let mut scene_target_id = camera.target_id
     let mut velocity_target_id = -1
     if motion_blur_active {
@@ -9205,7 +9311,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         previous_camera_rot_y=camera.previous_transform.rotation.y,
         previous_camera_rot_z=camera.previous_transform.rotation.z,
         previous_camera_rot_w=camera.previous_transform.rotation.w,
-        pass_kind=1,
+        pass_kind=motion_vector_pass_kind,
         clear_enabled=1,
       )
       let velocity_draw_order = render3d_sorted_mesh_indices(
@@ -9253,6 +9359,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           @render2d.Color::white(),
           0.0F,
           0.0F,
+          render3d_mesh_draw_flags(mesh),
         )
       }
       @window.host_gpu_end_pass()
@@ -9333,7 +9440,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       previous_camera_rot_y=camera.previous_transform.rotation.y,
       previous_camera_rot_z=camera.previous_transform.rotation.z,
       previous_camera_rot_w=camera.previous_transform.rotation.w,
-      pass_kind=0,
+      pass_kind=scene_pass_kind,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
     render3d_draw_camera_skybox(camera, camera_far)
@@ -9604,9 +9711,11 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
       )
       let draw_thickness = maxf(0.0F, mesh.material.thickness)
       let draw_ior = maxf(1.0F, mesh.material.ior)
+      let draw_flags = render3d_mesh_draw_flags(mesh)
       if transmission_enabled && draw_specular_transmission > 0.0F {
         transmissive_draws.push(TransmissionMeshDraw::{
           mesh,
+          draw_flags,
           draw_color_r,
           draw_color_g,
           draw_color_b,
@@ -9659,6 +9768,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         mesh.material.specular_tint,
         anisotropy_strength,
         max_relief_mapping_search_steps,
+        draw_flags,
       )
     }
     if transmissive_draws.length() > 0 {
@@ -9736,7 +9846,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         previous_camera_rot_y=camera.previous_transform.rotation.y,
         previous_camera_rot_z=camera.previous_transform.rotation.z,
         previous_camera_rot_w=camera.previous_transform.rotation.w,
-        pass_kind=0,
+        pass_kind=scene_pass_kind,
         clear_enabled=0,
       )
       for transmissive_draw in transmissive_draws {
@@ -9768,6 +9878,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
           transmissive_draw.specular_tint,
           transmissive_draw.anisotropy_strength,
           transmissive_draw.max_relief_mapping_search_steps,
+          transmissive_draw.draw_flags,
         )
       }
     }
@@ -9826,6 +9937,7 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
         @render2d.Color::white(),
         0.0F,
         0.0F,
+        render3d_mesh_draw_flags(mesh),
       )
     }
     @window.host_gpu_end_pass()
