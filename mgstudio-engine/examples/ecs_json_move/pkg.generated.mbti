@@ -1,0 +1,35 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs_json_move"
+
+import {
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn game_app() -> Unit
+
+// Errors
+
+// Types and methods
+pub struct Position {
+  x : Float
+  y : Float
+}
+pub impl Eq for Position
+pub impl Show for Position
+pub impl ToJson for Position
+pub impl @json.FromJson for Position
+
+pub struct Velocity {
+  x : Float
+  y : Float
+}
+pub impl Eq for Velocity
+pub impl Show for Velocity
+pub impl ToJson for Velocity
+pub impl @json.FromJson for Velocity
+
+// Type aliases
+
+// Traits
+

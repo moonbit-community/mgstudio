@@ -24,9 +24,39 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
 
+pub fn[W : Has_Anchor] query_get_anchor_store(W) -> @core.ComponentStore[Anchor]
+
+pub fn[W : Has_Bloom2d] query_get_bloom2d_store(W) -> @core.ComponentStore[Bloom2d]
+
+pub fn[W : Has_Camera2d] query_get_camera2d_store(W) -> @core.ComponentStore[Camera2d]
+
+pub fn[W : Has_Camera] query_get_camera_store(W) -> @core.ComponentStore[Camera]
+
+pub fn[W : Has_ClearColorConfig] query_get_clear_color_config_store(W) -> @core.ComponentStore[ClearColorConfig]
+
+pub fn[W : Has_ColorMaterial] query_get_color_material_store(W) -> @core.ComponentStore[ColorMaterial]
+
+pub fn[W : Has_GpuMesh2d] query_get_gpu_mesh2d_store(W) -> @core.ComponentStore[GpuMesh2d]
+
 pub fn[W : Has_Mesh2d] query_get_mesh2d_store(W) -> @core.ComponentStore[Mesh2d]
 
+pub fn[W : Has_MeshMaterial2d] query_get_mesh_material2d_store(W) -> @core.ComponentStore[MeshMaterial2d]
+
+pub fn[W : Has_NoWireframe2d] query_get_no_wireframe2d_store(W) -> @core.ComponentStore[NoWireframe2d]
+
+pub fn[W : Has_Projection] query_get_projection_store(W) -> @core.ComponentStore[Projection]
+
+pub fn[W : Has_RenderLayers] query_get_render_layers_store(W) -> @core.ComponentStore[RenderLayers]
+
+pub fn[W : Has_RenderTarget] query_get_render_target_store(W) -> @core.ComponentStore[RenderTarget]
+
+pub fn[W : Has_ScissorRect] query_get_scissor_rect_store(W) -> @core.ComponentStore[ScissorRect]
+
 pub fn[W : Has_Sprite] query_get_sprite_store(W) -> @core.ComponentStore[Sprite]
+
+pub fn[W : Has_Wireframe2dColor] query_get_wireframe2d_color_store(W) -> @core.ComponentStore[Wireframe2dColor]
+
+pub fn[W : Has_Wireframe2d] query_get_wireframe2d_store(W) -> @core.ComponentStore[Wireframe2d]
 
 pub fn[W : CameraSystemWorld] render2d_camera_system(W) -> Unit
 

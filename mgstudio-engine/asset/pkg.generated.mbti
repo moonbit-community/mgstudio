@@ -158,6 +158,8 @@ pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : 
 
 pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes_id~ : Int) -> Unit
 
+pub fn[W : Has_TextureAtlas] query_get_texture_atlas_store(W) -> @core.ComponentStore[TextureAtlas]
+
 // Errors
 
 // Types and methods

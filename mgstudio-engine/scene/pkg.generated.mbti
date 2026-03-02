@@ -17,6 +17,10 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_SceneInstanceReady] query_get_scene_instance_ready_store(W) -> @core.ComponentStore[SceneInstanceReady]
+
+pub fn[W : Has_SceneRoot] query_get_scene_root_store(W) -> @core.ComponentStore[SceneRoot]
+
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy

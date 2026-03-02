@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/app"
 
 import {
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "moonbitlang/core/hashmap",
 }
 
@@ -97,9 +98,15 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 
 pub fn[W, A] system_query1((W) -> @core.ComponentStore[A], (@core.Query1[A], W) -> Unit) -> (W) -> Unit
 
+pub fn[A] system_query1_ecs(@ecs.ComponentKey[A], (@ecs.Query1[A], @ecs.World) -> Unit) -> (@ecs.World) -> Unit
+
 pub fn[W, A, B] system_query2((W) -> @core.ComponentStore[A], (W) -> @core.ComponentStore[B], (@core.Query2[A, B], W) -> Unit) -> (W) -> Unit
 
+pub fn[A, B] system_query2_ecs(@ecs.ComponentKey[A], @ecs.ComponentKey[B], (@ecs.Query2[A, B], @ecs.World) -> Unit) -> (@ecs.World) -> Unit
+
 pub fn[W, A, B, C] system_query3((W) -> @core.ComponentStore[A], (W) -> @core.ComponentStore[B], (W) -> @core.ComponentStore[C], (@core.Query3[A, B, C], W) -> Unit) -> (W) -> Unit
+
+pub fn[A, B, C] system_query3_ecs(@ecs.ComponentKey[A], @ecs.ComponentKey[B], @ecs.ComponentKey[C], (@ecs.Query3[A, B, C], @ecs.World) -> Unit) -> (@ecs.World) -> Unit
 
 pub fn system_set(String) -> String
 
@@ -151,8 +158,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(Self[W], (P
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W, A] App::add_system_query1(Self[W], (W) -> @core.ComponentStore[A], (@core.Query1[A], W) -> Unit) -> Self[W]
+pub fn[A] App::add_system_query1_ecs(Self[@ecs.World], @ecs.ComponentKey[A], (@ecs.Query1[A], @ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[W, A, B] App::add_system_query2(Self[W], (W) -> @core.ComponentStore[A], (W) -> @core.ComponentStore[B], (@core.Query2[A, B], W) -> Unit) -> Self[W]
+pub fn[A, B] App::add_system_query2_ecs(Self[@ecs.World], @ecs.ComponentKey[A], @ecs.ComponentKey[B], (@ecs.Query2[A, B], @ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[W, A, B, C] App::add_system_query3(Self[W], (W) -> @core.ComponentStore[A], (W) -> @core.ComponentStore[B], (W) -> @core.ComponentStore[C], (@core.Query3[A, B, C], W) -> Unit) -> Self[W]
+pub fn[A, B, C] App::add_system_query3_ecs(Self[@ecs.World], @ecs.ComponentKey[A], @ecs.ComponentKey[B], @ecs.ComponentKey[C], (@ecs.Query3[A, B, C], @ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W, T] App::contains_resource(Self[W], @core.Resource[T]) -> Bool
 pub fn[W] App::get_sub_app(Self[W], AppLabel) -> Self[W]?

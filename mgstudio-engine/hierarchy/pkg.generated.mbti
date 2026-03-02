@@ -10,6 +10,10 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_Children] query_get_children_store(W) -> @core.ComponentStore[Children]
+
+pub fn[W : Has_Parent] query_get_parent_store(W) -> @core.ComponentStore[Parent]
+
 // Errors
 
 // Types and methods

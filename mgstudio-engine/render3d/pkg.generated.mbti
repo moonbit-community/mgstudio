@@ -27,6 +27,110 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera(W, @math.Vec2, @render2d.
 
 pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera_first(W, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
+pub fn[W : Has_Bloom] query_get_bloom_store(W) -> @core.ComponentStore[Bloom]
+
+pub fn[W : Has_Camera3d] query_get_camera3d_store(W) -> @core.ComponentStore[Camera3d]
+
+pub fn[W : Has_CameraProjection3d] query_get_camera_projection3d_store(W) -> @core.ComponentStore[CameraProjection3d]
+
+pub fn[W : Has_ChromaticAberration] query_get_chromatic_aberration_store(W) -> @core.ComponentStore[ChromaticAberration]
+
+pub fn[W : Has_ClusteredDecal] query_get_clustered_decal_store(W) -> @core.ComponentStore[ClusteredDecal]
+
+pub fn[W : Has_ColorGrading] query_get_color_grading_store(W) -> @core.ComponentStore[ColorGrading]
+
+pub fn[W : Has_ContactShadows] query_get_contact_shadows_store(W) -> @core.ComponentStore[ContactShadows]
+
+pub fn[W : Has_DebandDither] query_get_deband_dither_store(W) -> @core.ComponentStore[DebandDither]
+
+pub fn[W : Has_DeferredPrepass] query_get_deferred_prepass_store(W) -> @core.ComponentStore[DeferredPrepass]
+
+pub fn[W : Has_DepthPrepass] query_get_depth_prepass_store(W) -> @core.ComponentStore[DepthPrepass]
+
+pub fn[W : Has_DirectionalLight] query_get_directional_light_store(W) -> @core.ComponentStore[DirectionalLight]
+
+pub fn[W : Has_DirectionalLightTexture] query_get_directional_light_texture_store(W) -> @core.ComponentStore[DirectionalLightTexture]
+
+pub fn[W : Has_EnvironmentMapLight] query_get_environment_map_light_store(W) -> @core.ComponentStore[EnvironmentMapLight]
+
+pub fn[W : Has_Exposure] query_get_exposure_store(W) -> @core.ComponentStore[Exposure]
+
+pub fn[W : Has_ForwardDecalMaterialExt] query_get_forward_decal_material_ext_store(W) -> @core.ComponentStore[ForwardDecalMaterialExt]
+
+pub fn[W : Has_ForwardDecal] query_get_forward_decal_store(W) -> @core.ComponentStore[ForwardDecal]
+
+pub fn[W : Has_FreeCameraState] query_get_free_camera_state_store(W) -> @core.ComponentStore[FreeCameraState]
+
+pub fn[W : Has_FreeCamera] query_get_free_camera_store(W) -> @core.ComponentStore[FreeCamera]
+
+pub fn[W : Has_Fxaa] query_get_fxaa_store(W) -> @core.ComponentStore[Fxaa]
+
+pub fn[W : Has_GeneratedEnvironmentMapLight] query_get_generated_environment_map_light_store(W) -> @core.ComponentStore[GeneratedEnvironmentMapLight]
+
+pub fn[W : Has_Hdr] query_get_hdr_store(W) -> @core.ComponentStore[Hdr]
+
+pub fn[W : Has_IrradianceVolume] query_get_irradiance_volume_store(W) -> @core.ComponentStore[IrradianceVolume]
+
+pub fn[W : Has_LightProbe] query_get_light_probe_store(W) -> @core.ComponentStore[LightProbe]
+
+pub fn[W : Has_Mesh3d] query_get_mesh3d_store(W) -> @core.ComponentStore[Mesh3d]
+
+pub fn[W : Has_MeshMaterial3d] query_get_mesh_material3d_store(W) -> @core.ComponentStore[MeshMaterial3d]
+
+pub fn[W : Has_MotionBlur] query_get_motion_blur_store(W) -> @core.ComponentStore[MotionBlur]
+
+pub fn[W : Has_MotionVectorPrepass] query_get_motion_vector_prepass_store(W) -> @core.ComponentStore[MotionVectorPrepass]
+
+pub fn[W : Has_Msaa] query_get_msaa_store(W) -> @core.ComponentStore[Msaa]
+
+pub fn[W : Has_NoWireframe] query_get_no_wireframe_store(W) -> @core.ComponentStore[NoWireframe]
+
+pub fn[W : Has_NormalPrepass] query_get_normal_prepass_store(W) -> @core.ComponentStore[NormalPrepass]
+
+pub fn[W : Has_NotShadowCaster] query_get_not_shadow_caster_store(W) -> @core.ComponentStore[NotShadowCaster]
+
+pub fn[W : Has_NotShadowReceiver] query_get_not_shadow_receiver_store(W) -> @core.ComponentStore[NotShadowReceiver]
+
+pub fn[W : Has_OcclusionCulling] query_get_occlusion_culling_store(W) -> @core.ComponentStore[OcclusionCulling]
+
+pub fn[W : Has_OrderIndependentTransparencySettings] query_get_order_independent_transparency_settings_store(W) -> @core.ComponentStore[OrderIndependentTransparencySettings]
+
+pub fn[W : Has_ParallaxCorrection] query_get_parallax_correction_store(W) -> @core.ComponentStore[ParallaxCorrection]
+
+pub fn[W : Has_PointLight] query_get_point_light_store(W) -> @core.ComponentStore[PointLight]
+
+pub fn[W : Has_PointLightTexture] query_get_point_light_texture_store(W) -> @core.ComponentStore[PointLightTexture]
+
+pub fn[W : Has_ScreenSpaceAmbientOcclusion] query_get_screen_space_ambient_occlusion_store(W) -> @core.ComponentStore[ScreenSpaceAmbientOcclusion]
+
+pub fn[W : Has_ScreenSpaceReflections] query_get_screen_space_reflections_store(W) -> @core.ComponentStore[ScreenSpaceReflections]
+
+pub fn[W : Has_ScreenSpaceTransmission] query_get_screen_space_transmission_store(W) -> @core.ComponentStore[ScreenSpaceTransmission]
+
+pub fn[W : Has_ShadowFilteringMethod] query_get_shadow_filtering_method_store(W) -> @core.ComponentStore[ShadowFilteringMethod]
+
+pub fn[W : Has_Skybox] query_get_skybox_store(W) -> @core.ComponentStore[Skybox]
+
+pub fn[W : Has_SpotLight] query_get_spot_light_store(W) -> @core.ComponentStore[SpotLight]
+
+pub fn[W : Has_SpotLightTexture] query_get_spot_light_texture_store(W) -> @core.ComponentStore[SpotLightTexture]
+
+pub fn[W : Has_SubCameraView3d] query_get_sub_camera_view3d_store(W) -> @core.ComponentStore[SubCameraView3d]
+
+pub fn[W : Has_TemporalAntiAliasing] query_get_temporal_anti_aliasing_store(W) -> @core.ComponentStore[TemporalAntiAliasing]
+
+pub fn[W : Has_TemporalJitter] query_get_temporal_jitter_store(W) -> @core.ComponentStore[TemporalJitter]
+
+pub fn[W : Has_Tonemapping] query_get_tonemapping_store(W) -> @core.ComponentStore[Tonemapping]
+
+pub fn[W : Has_TransmittedShadowReceiver] query_get_transmitted_shadow_receiver_store(W) -> @core.ComponentStore[TransmittedShadowReceiver]
+
+pub fn[W : Has_Vignette] query_get_vignette_store(W) -> @core.ComponentStore[Vignette]
+
+pub fn[W : Has_WireframeColor] query_get_wireframe_color_store(W) -> @core.ComponentStore[WireframeColor]
+
+pub fn[W : Has_Wireframe] query_get_wireframe_store(W) -> @core.ComponentStore[Wireframe]
+
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?

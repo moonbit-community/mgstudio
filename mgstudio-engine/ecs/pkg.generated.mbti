@@ -1,0 +1,137 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ecs"
+
+import {
+  "Milky2018/mgstudio/core",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
+
+pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
+
+pub fn[A : @json.FromJson] query1(World, ComponentKey[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+
+pub fn[A : ToJson + @json.FromJson] query1_update(World, ComponentKey[A], (@core.Entity, A) -> A) -> Unit raise EcsError
+
+pub fn[A : @json.FromJson, B : @json.FromJson] query2(World, ComponentKey[A], ComponentKey[B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_update(World, ComponentKey[A], ComponentKey[B], (@core.Entity, A, B) -> (A, B)) -> Unit raise EcsError
+
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3(World, ComponentKey[A], ComponentKey[B], ComponentKey[C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] query3_update(World, ComponentKey[A], ComponentKey[B], ComponentKey[C], (@core.Entity, A, B, C) -> (A, B, C)) -> Unit raise EcsError
+
+pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
+
+pub fn[T] register_event(debug_name? : String) -> EventKey[T]
+
+pub fn[T] register_resource(debug_name? : String) -> ResourceKey[T]
+
+pub fn[T] resource_key_from_id(Int, debug_name? : String) -> ResourceKey[T]
+
+// Errors
+pub(all) suberror EcsError {
+  EntityStateError(@core.EntityError)
+  EntityNotAlive(@core.Entity)
+  ComponentDecodeFailed(Int, String, @core.Entity, @json.JsonDecodeError)
+  ResourceDecodeFailed(Int, String, @json.JsonDecodeError)
+  EventDecodeFailed(Int, String, Int, @json.JsonDecodeError)
+}
+
+// Types and methods
+pub struct ComponentKey[T] {
+  id : Int
+  debug_name : String
+  marker : T?
+}
+pub fn[U, T] ComponentKey::cast(Self[T]) -> Self[U]
+pub fn[T] ComponentKey::debug_name(Self[T]) -> String
+pub fn[T] ComponentKey::id(Self[T]) -> Int
+
+pub struct EventKey[T] {
+  id : Int
+  debug_name : String
+  marker : T?
+}
+pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
+pub fn[T] EventKey::debug_name(Self[T]) -> String
+pub fn[T] EventKey::id(Self[T]) -> Int
+
+pub struct Query1[A] {
+  world : World
+  key_a : ComponentKey[A]
+}
+pub fn[A : @json.FromJson] Query1::for_each(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson] Query1::update(Self[A], (@core.Entity, A) -> A) -> Unit raise EcsError
+
+pub struct Query2[A, B] {
+  world : World
+  key_a : ComponentKey[A]
+  key_b : ComponentKey[B]
+}
+pub fn[A : @json.FromJson, B : @json.FromJson] Query2::for_each(Self[A, B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::update(Self[A, B], (@core.Entity, A, B) -> (A, B)) -> Unit raise EcsError
+
+pub struct Query3[A, B, C] {
+  world : World
+  key_a : ComponentKey[A]
+  key_b : ComponentKey[B]
+  key_c : ComponentKey[C]
+}
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::for_each(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] Query3::update(Self[A, B, C], (@core.Entity, A, B, C) -> (A, B, C)) -> Unit raise EcsError
+
+pub struct ResourceKey[T] {
+  id : Int
+  debug_name : String
+  marker : T?
+}
+pub fn[U, T] ResourceKey::cast(Self[T]) -> Self[U]
+pub fn[T] ResourceKey::debug_name(Self[T]) -> String
+pub fn[T] ResourceKey::id(Self[T]) -> Int
+
+pub struct World {
+  entities : @core.Entities
+  mut change_tick : Int
+  mut system_context : @core.SystemContext
+  component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
+  resources : Map[Int, Json]
+  mut previous_events : Map[Int, Array[Json]]
+  current_events : Map[Int, Array[Json]]
+}
+pub fn World::advance_event_frame(Self) -> Unit
+pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
+pub fn World::despawn(Self, @core.Entity) -> Unit raise EcsError
+pub fn[T : @json.FromJson] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T : @json.FromJson] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
+pub fn[T : ToJson] World::insert_resource(Self, ResourceKey[T], T) -> Unit
+pub fn World::is_alive(Self, @core.Entity) -> Bool
+pub fn World::new() -> Self
+pub fn[A] World::query1(Self, ComponentKey[A]) -> Query1[A]
+pub fn[A, B] World::query2(Self, ComponentKey[A], ComponentKey[B]) -> Query2[A, B]
+pub fn[A, B, C] World::query3(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C]) -> Query3[A, B, C]
+pub fn[T : @json.FromJson] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
+pub fn[T : ToJson] World::send_event(Self, EventKey[T], T) -> Unit
+pub fn[T : ToJson] World::set(Self, @core.Entity, ComponentKey[T], T) -> Unit raise EcsError
+pub fn World::spawn(Self) -> @core.Entity
+pub fn World::spawn_empty(Self) -> @core.Entity
+pub fn[T : ToJson + @json.FromJson] World::update(Self, @core.Entity, ComponentKey[T], (T) -> T) -> Bool raise EcsError
+pub fn[T : ToJson + @json.FromJson] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool raise EcsError
+pub impl @core.ChangeTickWorld for World
+pub impl @core.SpawnWorld for World
+pub impl @core.SystemContextWorld for World
+
+// Type aliases
+
+// Traits
+pub(open) trait Component : ToJson + @json.FromJson {
+}
+
+pub(open) trait EventData : ToJson + @json.FromJson {
+}
+
+pub(open) trait ResourceData : ToJson + @json.FromJson {
+}
+

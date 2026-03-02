@@ -20,6 +20,58 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_AccessibilityLabel] query_get_accessibility_label_store(W) -> @core.ComponentStore[AccessibilityLabel]
+
+pub fn[W : Has_BackgroundColor] query_get_background_color_store(W) -> @core.ComponentStore[BackgroundColor]
+
+pub fn[W : Has_BorderColor] query_get_border_color_store(W) -> @core.ComponentStore[BorderColor]
+
+pub fn[W : Has_BorderRadius] query_get_border_radius_store(W) -> @core.ComponentStore[BorderRadius]
+
+pub fn[W : Has_BoxShadow] query_get_box_shadow_store(W) -> @core.ComponentStore[BoxShadow]
+
+pub fn[W : Has_ButtonColors] query_get_button_colors_store(W) -> @core.ComponentStore[ButtonColors]
+
+pub fn[W : Has_Button] query_get_button_store(W) -> @core.ComponentStore[Button]
+
+pub fn[W : Has_CalculatedClip] query_get_calculated_clip_store(W) -> @core.ComponentStore[CalculatedClip]
+
+pub fn[W : Has_ContentSize] query_get_content_size_store(W) -> @core.ComponentStore[ContentSize]
+
+pub fn[W : Has_FocusPolicy] query_get_focus_policy_store(W) -> @core.ComponentStore[FocusPolicy]
+
+pub fn[W : Has_GlobalZIndex] query_get_global_z_index_store(W) -> @core.ComponentStore[GlobalZIndex]
+
+pub fn[W : Has_ImageNodeSize] query_get_image_node_size_store(W) -> @core.ComponentStore[ImageNodeSize]
+
+pub fn[W : Has_ImageNode] query_get_image_node_store(W) -> @core.ComponentStore[ImageNode]
+
+pub fn[W : Has_Interaction] query_get_interaction_store(W) -> @core.ComponentStore[Interaction]
+
+pub fn[W : Has_Label] query_get_label_store(W) -> @core.ComponentStore[Label]
+
+pub fn[W : Has_Node] query_get_node_store(W) -> @core.ComponentStore[Node]
+
+pub fn[W : Has_Outline] query_get_outline_store(W) -> @core.ComponentStore[Outline]
+
+pub fn[W : Has_RelativeCursorPosition] query_get_relative_cursor_position_store(W) -> @core.ComponentStore[RelativeCursorPosition]
+
+pub fn[W : Has_ScrollPosition] query_get_scroll_position_store(W) -> @core.ComponentStore[ScrollPosition]
+
+pub fn[W : Has_UiAntiAlias] query_get_ui_anti_alias_store(W) -> @core.ComponentStore[UiAntiAlias]
+
+pub fn[W : Has_UiBoxShadowSamples] query_get_ui_box_shadow_samples_store(W) -> @core.ComponentStore[UiBoxShadowSamples]
+
+pub fn[W : Has_UiImage] query_get_ui_image_store(W) -> @core.ComponentStore[UiImage]
+
+pub fn[W : Has_UiLayout] query_get_ui_layout_store(W) -> @core.ComponentStore[UiLayout]
+
+pub fn[W : Has_UiRoot] query_get_ui_root_store(W) -> @core.ComponentStore[UiRoot]
+
+pub fn[W : Has_UiText] query_get_ui_text_store(W) -> @core.ComponentStore[UiText]
+
+pub fn[W : Has_ZIndex] query_get_z_index_store(W) -> @core.ComponentStore[ZIndex]
+
 pub fn[W : UiA11yWorld] ui_a11y_update_system(W) -> Unit
 
 pub fn[W : UiA11yWorld] ui_build_a11y_tree_update(W) -> @moon_accesskit.TreeUpdate

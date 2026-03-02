@@ -28,17 +28,6 @@ pub struct Velocity {
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
-pub struct MovementKeys {
-  comp_position_id : Int
-  comp_velocity_id : Int
-} derive(Show, Eq, ToJson, FromJson)
-
-///|
-let res_movement_keys : @ecs.ResourceKey[MovementKeys] = @ecs.register_resource(
-  debug_name="examples.ecs_json_move.keys",
-)
-
-///|
 pub fn game_app() -> Unit {
   let comp_position : @ecs.ComponentKey[Position] = @ecs.register_component(
     debug_name="examples.ecs_json_move.position",
@@ -49,37 +38,22 @@ pub fn game_app() -> Unit {
 
   @app.App::new(@ecs.World::new())
   .add_startup_system(fn(world) {
-    world.insert_resource(res_movement_keys, MovementKeys::{
-      comp_position_id: comp_position.id(),
-      comp_velocity_id: comp_velocity.id(),
-    })
     let entity = world.spawn()
     try! world.set(entity, comp_position, Position::{ x: 0.0, y: 0.0 })
     try! world.set(entity, comp_velocity, Velocity::{ x: 1.0, y: 0.5 })
   })
-  .add_system(move_system)
+  .add_system_query2_ecs(comp_position, comp_velocity, move_system)
   .run_startup()
   .run_once()
   |> ignore
 }
 
 ///|
-fn move_system(world : @ecs.World) -> Unit {
-  let movement_keys = try! world.get_resource(res_movement_keys)
-  guard movement_keys is Some(keys) else { return }
-
-  let comp_position : @ecs.ComponentKey[Position] = @ecs.component_key_from_id(
-    keys.comp_position_id,
-    debug_name="examples.ecs_json_move.position",
-  )
-  let comp_velocity : @ecs.ComponentKey[Velocity] = @ecs.component_key_from_id(
-    keys.comp_velocity_id,
-    debug_name="examples.ecs_json_move.velocity",
-  )
-
-  try! world
-  .query2(comp_position, comp_velocity)
-  .update(fn(_entity, position, velocity) {
+fn move_system(
+  query : @ecs.Query2[Position, Velocity],
+  _world : @ecs.World,
+) -> Unit {
+  try! query.update(fn(_entity, position, velocity) {
     (
       Position::{ x: position.x + velocity.x, y: position.y + velocity.y },
       velocity,

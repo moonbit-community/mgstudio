@@ -206,6 +206,33 @@ pub fn[W, A, B, C] system_query3(
 }
 
 ///|
+pub fn[A] system_query1_ecs(
+  key_a : @ecs.ComponentKey[A],
+  system : (@ecs.Query1[A], @ecs.World) -> Unit,
+) -> SystemFn[@ecs.World] {
+  fn(world : @ecs.World) { system(world.query1(key_a), world) }
+}
+
+///|
+pub fn[A, B] system_query2_ecs(
+  key_a : @ecs.ComponentKey[A],
+  key_b : @ecs.ComponentKey[B],
+  system : (@ecs.Query2[A, B], @ecs.World) -> Unit,
+) -> SystemFn[@ecs.World] {
+  fn(world : @ecs.World) { system(world.query2(key_a, key_b), world) }
+}
+
+///|
+pub fn[A, B, C] system_query3_ecs(
+  key_a : @ecs.ComponentKey[A],
+  key_b : @ecs.ComponentKey[B],
+  key_c : @ecs.ComponentKey[C],
+  system : (@ecs.Query3[A, B, C], @ecs.World) -> Unit,
+) -> SystemFn[@ecs.World] {
+  fn(world : @ecs.World) { system(world.query3(key_a, key_b, key_c), world) }
+}
+
+///|
 let current_system_ticks_ref : Ref[@core.SystemTicks?] = Ref::new(None)
 
 ///|
@@ -766,6 +793,43 @@ pub fn[W, A, B, C] App::add_system_query3(
 ) -> App[W] {
   self.schedule.update.push(
     system(system_query3(get_a, get_b, get_c, update_system)),
+  )
+  self
+}
+
+///|
+pub fn[A] App::add_system_query1_ecs(
+  self : App[@ecs.World],
+  key_a : @ecs.ComponentKey[A],
+  update_system : (@ecs.Query1[A], @ecs.World) -> Unit,
+) -> App[@ecs.World] {
+  self.schedule.update.push(system(system_query1_ecs(key_a, update_system)))
+  self
+}
+
+///|
+pub fn[A, B] App::add_system_query2_ecs(
+  self : App[@ecs.World],
+  key_a : @ecs.ComponentKey[A],
+  key_b : @ecs.ComponentKey[B],
+  update_system : (@ecs.Query2[A, B], @ecs.World) -> Unit,
+) -> App[@ecs.World] {
+  self.schedule.update.push(
+    system(system_query2_ecs(key_a, key_b, update_system)),
+  )
+  self
+}
+
+///|
+pub fn[A, B, C] App::add_system_query3_ecs(
+  self : App[@ecs.World],
+  key_a : @ecs.ComponentKey[A],
+  key_b : @ecs.ComponentKey[B],
+  key_c : @ecs.ComponentKey[C],
+  update_system : (@ecs.Query3[A, B, C], @ecs.World) -> Unit,
+) -> App[@ecs.World] {
+  self.schedule.update.push(
+    system(system_query3_ecs(key_a, key_b, key_c, update_system)),
   )
   self
 }

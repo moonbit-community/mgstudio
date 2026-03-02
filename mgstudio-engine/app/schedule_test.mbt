@@ -219,3 +219,48 @@ test "app: add_system_query2 injects stores into update system" {
   app.run_once() |> ignore
   inspect(sum_ref.val, content="42")
 }
+
+///|
+struct EcsPosition {
+  x : Int
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+struct EcsVelocity {
+  x : Int
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+test "app: add_system_query2_ecs injects key-based query into update system" {
+  let world = @ecs.World::new()
+  let comp_position : @ecs.ComponentKey[EcsPosition] = @ecs.register_component(
+    debug_name="tests.app.ecs.position",
+  )
+  let comp_velocity : @ecs.ComponentKey[EcsVelocity] = @ecs.register_component(
+    debug_name="tests.app.ecs.velocity",
+  )
+
+  let app = App::new(world)
+    .add_startup_system(fn(startup_world) {
+      let entity = startup_world.spawn()
+      try! startup_world.set(entity, comp_position, EcsPosition::{ x: 1 })
+      try! startup_world.set(entity, comp_velocity, EcsVelocity::{ x: 41 })
+    })
+    .add_system_query2_ecs(comp_position, comp_velocity, fn(
+      query,
+      _update_world,
+    ) {
+      try! query.update(fn(_entity, position, velocity) {
+        (EcsPosition::{ x: position.x + velocity.x }, velocity)
+      })
+    })
+    .run_startup()
+    .run_once()
+
+  let query_world = app.world
+  let value_ref : Ref[Int] = Ref::new(0)
+  try! query_world
+  .query1(comp_position)
+  .for_each(fn(_entity, position) { value_ref.val = position.x })
+  inspect(value_ref.val, content="42")
+}

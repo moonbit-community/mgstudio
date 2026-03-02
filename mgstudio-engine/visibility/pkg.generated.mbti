@@ -12,6 +12,14 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_InheritedVisibility] query_get_inherited_visibility_store(W) -> @core.ComponentStore[InheritedVisibility]
+
+pub fn[W : Has_ViewVisibility] query_get_view_visibility_store(W) -> @core.ComponentStore[ViewVisibility]
+
+pub fn[W : Has_VisibilityRange] query_get_visibility_range_store(W) -> @core.ComponentStore[VisibilityRange]
+
+pub fn[W : Has_Visibility] query_get_visibility_store(W) -> @core.ComponentStore[Visibility]
+
 pub fn[W : VisibilityPropagationWorld] visibility_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W : VisibilityPropagationWorld] visibility_propagate_system(W) -> Unit
