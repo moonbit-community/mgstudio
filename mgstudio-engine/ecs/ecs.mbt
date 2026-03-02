@@ -250,6 +250,19 @@ pub fn[T : ToJson + @json.FromJson] World::update(
 }
 
 ///|
+pub fn[T] World::remove(
+  self : World,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+) -> Bool raise EcsError {
+  self.ensure_entity_alive(entity)
+  match self.component_columns.get(key.id()) {
+    Some(store_ref) => store_ref.val.remove(entity) is Some(_)
+    None => false
+  }
+}
+
+///|
 fn World::ensure_entity_alive(
   self : World,
   entity : @core.Entity,

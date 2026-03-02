@@ -159,6 +159,17 @@ pub fn SceneRoot::new(scene : @asset.Handle[Scene]) -> SceneRoot {
 }
 
 ///|
+pub impl ToJson for SceneRoot with to_json(self) {
+  self.scene.id().to_json()
+}
+
+///|
+pub impl @json.FromJson for SceneRoot with from_json(json, path) {
+  let scene_id : Int = @json.from_json(json, path~)
+  SceneRoot::new(@asset.Handle::new(scene_id))
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct SceneInstanceReady {
@@ -168,6 +179,17 @@ pub struct SceneInstanceReady {
 ///|
 pub fn SceneInstanceReady::new(spawned_entities : Int) -> SceneInstanceReady {
   SceneInstanceReady::{ spawned_entities, }
+}
+
+///|
+pub impl ToJson for SceneInstanceReady with to_json(self) {
+  self.spawned_entities.to_json()
+}
+
+///|
+pub impl @json.FromJson for SceneInstanceReady with from_json(json, path) {
+  let spawned_entities : Int = @json.from_json(json, path~)
+  SceneInstanceReady::new(spawned_entities)
 }
 
 ///|

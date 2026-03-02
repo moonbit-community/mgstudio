@@ -4,26 +4,36 @@ package "Milky2018/mgstudio/transform"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub let ecs_components : Array[String]
 
+pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform]
+
 pub let ecs_resources : Array[String]
 
 pub fn[W : TransformPropagationWorld] propagate_transforms_system(W) -> Unit
 
+pub fn propagate_transforms_system_ecs(@ecs.World) -> Unit
+
 pub fn[W : Has_GlobalTransform] query_get_global_transform_store(W) -> @core.ComponentStore[GlobalTransform]
 
 pub fn[W : TransformPropagationWorld] transform_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn transform_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let transform_set_propagate : String
 
 pub let transform_set_update_children : String
 
 pub fn[W : @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld] update_children_system(W) -> Unit
+
+pub fn update_children_system_ecs(@ecs.World) -> Unit
 
 // Errors
 
@@ -48,6 +58,8 @@ pub fn GlobalTransform::from_transform(@math.Transform) -> Self
 pub fn GlobalTransform::identity() -> Self
 pub fn GlobalTransform::mul(Self, Self) -> Self
 pub fn GlobalTransform::to_transform_approx(Self) -> @math.Transform
+pub impl ToJson for GlobalTransform
+pub impl @json.FromJson for GlobalTransform
 
 // Type aliases
 

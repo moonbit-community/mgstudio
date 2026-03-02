@@ -101,6 +101,31 @@ pub fn VisibilityRange::new(
 }
 
 ///|
+pub impl ToJson for VisibilityRange with to_json(self) {
+  (
+    self.start_margin_min,
+    self.start_margin_max,
+    self.end_margin_min,
+    self.end_margin_max,
+    self.use_aabb,
+  ).to_json()
+}
+
+///|
+pub impl @json.FromJson for VisibilityRange with from_json(json, path) {
+  let (
+    start_margin_min,
+    start_margin_max,
+    end_margin_min,
+    end_margin_max,
+    use_aabb,
+  ) : (Float, Float, Float, Float, Bool) = @json.from_json(json, path~)
+  VisibilityRange::new(
+    start_margin_min, start_margin_max, end_margin_min, end_margin_max, use_aabb,
+  )
+}
+
+///|
 pub fn VisibilityRange::always_visible() -> VisibilityRange {
   VisibilityRange::new(0.0F, 0.0F, 1_000_000.0F, 1_000_000.0F, false)
 }

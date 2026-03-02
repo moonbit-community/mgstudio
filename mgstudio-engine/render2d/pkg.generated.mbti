@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/transform",
@@ -15,6 +16,44 @@ import {
 pub let camera_update_systems : String
 
 pub let ecs_components : Array[String]
+
+pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
+
+pub let ecs_key_bloom2d : @ecs.ComponentKey[Bloom2d]
+
+pub let ecs_key_camera : @ecs.ComponentKey[Camera]
+
+pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
+
+pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig]
+
+pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
+
+pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d]
+
+pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
+
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d]
+
+pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d]
+
+pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+
+pub let ecs_key_render_layers : @ecs.ComponentKey[RenderLayers]
+
+pub let ecs_key_render_state : @ecs.ResourceKey[RenderState]
+
+pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget]
+
+pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
+
+pub let ecs_key_sprite : @ecs.ComponentKey[Sprite]
+
+pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d]
+
+pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor]
+
+pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
 
 pub let ecs_resources : Array[String]
 
@@ -257,6 +296,7 @@ pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, Re
 pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
 pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(Self, W) -> @core.Entity
+pub fn Camera2dBundle::spawn_ecs(Self, @ecs.World) -> @core.Entity
 pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
 
 pub struct CameraComputedValues {
@@ -543,6 +583,7 @@ pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, Ren
 pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d, @math.Transform, RenderLayers) -> Self
 pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(Self, W) -> @core.Entity
+pub fn Mesh2dBundle::spawn_ecs(Self, @ecs.World) -> @core.Entity
 
 pub struct MeshMaterial2d {
   handle : @asset.Handle[ColorMaterialAsset]
@@ -721,6 +762,7 @@ pub struct SpriteBundle {
 pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
 pub fn[W : SpriteBundleSpawnWorld] SpriteBundle::spawn(Self, W) -> @core.Entity
+pub fn SpriteBundle::spawn_ecs(Self, @ecs.World) -> @core.Entity
 
 pub(all) enum SpriteImageMode {
   Auto

@@ -3901,6 +3901,17 @@ pub fn Mesh3d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh3d {
 }
 
 ///|
+pub impl ToJson for Mesh3d with to_json(self) {
+  self.mesh.id().to_json()
+}
+
+///|
+pub impl @json.FromJson for Mesh3d with from_json(json, path) {
+  let mesh_id : Int = @json.from_json(json, path~)
+  Mesh3d::new(@asset.Handle::new(mesh_id))
+}
+
+///|
 fn mesh3d_append_quad(
   positions : Array[@math.Vec3],
   uvs : Array[@math.Vec2],
@@ -4149,6 +4160,17 @@ pub fn MeshMaterial3d::new(
   material : @asset.Handle[StandardMaterial],
 ) -> MeshMaterial3d {
   MeshMaterial3d::{ material, extended_material: None }
+}
+
+///|
+pub impl ToJson for MeshMaterial3d with to_json(self) {
+  self.material.id().to_json()
+}
+
+///|
+pub impl @json.FromJson for MeshMaterial3d with from_json(json, path) {
+  let material_id : Int = @json.from_json(json, path~)
+  MeshMaterial3d::new(@asset.Handle::new(material_id))
 }
 
 ///|

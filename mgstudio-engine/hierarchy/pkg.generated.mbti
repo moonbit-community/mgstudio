@@ -3,10 +3,16 @@ package "Milky2018/mgstudio/hierarchy"
 
 import {
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub let ecs_components : Array[String]
+
+pub let ecs_key_children : @ecs.ComponentKey[Children]
+
+pub let ecs_key_parent : @ecs.ComponentKey[Parent]
 
 pub let ecs_resources : Array[String]
 
@@ -22,12 +28,16 @@ pub struct Children {
 }
 pub fn Children::entities(Self) -> Array[@core.Entity]
 pub fn Children::new(Array[@core.Entity]) -> Self
+pub impl ToJson for Children
+pub impl @json.FromJson for Children
 
 pub struct Parent {
   entity : @core.Entity
 }
 pub fn Parent::entity(Self) -> @core.Entity
 pub fn Parent::new(@core.Entity) -> Self
+pub impl ToJson for Parent
+pub impl @json.FromJson for Parent
 
 // Type aliases
 

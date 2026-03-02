@@ -5,7 +5,9 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -44,6 +46,12 @@ pub let animation_set_thread : String
 pub let animation_set_trigger_events : String
 
 pub let ecs_components : Array[String]
+
+pub let ecs_key_animated_by : @ecs.ComponentKey[AnimatedBy]
+
+pub let ecs_key_animation_player : @ecs.ComponentKey[AnimationPlayer]
+
+pub let ecs_key_animation_target_id : @ecs.ComponentKey[AnimationTargetId]
 
 pub let ecs_resources : Array[String]
 
@@ -109,6 +117,8 @@ pub struct AnimatedBy {
 }
 pub fn AnimatedBy::new(@core.Entity) -> Self
 pub fn AnimatedBy::player(Self) -> @core.Entity
+pub impl ToJson for AnimatedBy
+pub impl @json.FromJson for AnimatedBy
 
 pub struct AnimationClip {
   mut duration_seconds : Float
@@ -261,6 +271,8 @@ pub fn AnimationTargetId::from_names(Array[String]) -> Self
 pub fn AnimationTargetId::new(Int, Int) -> Self
 pub impl Eq for AnimationTargetId
 pub impl Show for AnimationTargetId
+pub impl ToJson for AnimationTargetId
+pub impl @json.FromJson for AnimationTargetId
 
 pub struct AnimationTransition {
   mut current_weight : Float

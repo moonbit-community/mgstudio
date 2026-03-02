@@ -33,6 +33,17 @@ pub fn Parent::entity(self : Parent) -> @core.Entity {
 }
 
 ///|
+pub impl ToJson for Parent with to_json(self) {
+  (self.entity.id, self.entity.generation).to_json()
+}
+
+///|
+pub impl @json.FromJson for Parent with from_json(json, path) {
+  let (id, generation) : (Int, Int) = @json.from_json(json, path~)
+  Parent::new(@core.Entity::new(id, generation))
+}
+
+///|
 // ECS component marker for codegen (`mgstudio gen`).
 #ecs.component
 pub struct Children {
@@ -47,4 +58,23 @@ pub fn Children::new(entities : Array[@core.Entity]) -> Children {
 ///|
 pub fn Children::entities(self : Children) -> Array[@core.Entity] {
   self.entities
+}
+
+///|
+pub impl ToJson for Children with to_json(self) {
+  let encoded : Array[(Int, Int)] = []
+  for entity in self.entities {
+    encoded.push((entity.id, entity.generation))
+  }
+  encoded.to_json()
+}
+
+///|
+pub impl @json.FromJson for Children with from_json(json, path) {
+  let encoded : Array[(Int, Int)] = @json.from_json(json, path~)
+  let entities : Array[@core.Entity] = []
+  for pair in encoded {
+    entities.push(@core.Entity::new(pair.0, pair.1))
+  }
+  Children::new(entities)
 }

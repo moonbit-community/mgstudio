@@ -97,6 +97,17 @@ pub fn AnimationTargetId::new(high : Int, low : Int) -> AnimationTargetId {
 }
 
 ///|
+pub impl ToJson for AnimationTargetId with to_json(self) {
+  (self.high, self.low).to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimationTargetId with from_json(json, path) {
+  let (high, low) : (Int, Int) = @json.from_json(json, path~)
+  AnimationTargetId::new(high, low)
+}
+
+///|
 pub fn AnimationTargetId::from_names(
   names : Array[String],
 ) -> AnimationTargetId {
@@ -124,6 +135,17 @@ pub fn AnimatedBy::new(player : @core.Entity) -> AnimatedBy {
 ///|
 pub fn AnimatedBy::player(self : AnimatedBy) -> @core.Entity {
   self.player
+}
+
+///|
+pub impl ToJson for AnimatedBy with to_json(self) {
+  (self.player.id, self.player.generation).to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimatedBy with from_json(json, path) {
+  let (id, generation) : (Int, Int) = @json.from_json(json, path~)
+  AnimatedBy::new(@core.Entity::new(id, generation))
 }
 
 ///|

@@ -3,6 +3,8 @@ package "Milky2018/mgstudio/math"
 
 import {
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -11,6 +13,8 @@ pub fn atan2(Float, Float) -> Float
 pub fn cos(Float) -> Float
 
 pub let ecs_components : Array[String]
+
+pub let ecs_key_transform : @ecs.ComponentKey[Transform]
 
 pub let ecs_resources : Array[String]
 
@@ -78,6 +82,8 @@ pub fn Transform::rotation_z(Self) -> Float
 pub fn Transform::with_rotation(Self, Quat) -> Self
 pub fn Transform::with_scale(Self, Vec3) -> Self
 pub fn Transform::with_translation(Self, Vec3) -> Self
+pub impl ToJson for Transform
+pub impl @json.FromJson for Transform
 
 pub struct URect {
   min : UVec2

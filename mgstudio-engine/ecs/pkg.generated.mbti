@@ -113,6 +113,7 @@ pub fn[A] World::query1(Self, ComponentKey[A]) -> Query1[A]
 pub fn[A, B] World::query2(Self, ComponentKey[A], ComponentKey[B]) -> Query2[A, B]
 pub fn[A, B, C] World::query3(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C]) -> Query3[A, B, C]
 pub fn[T : @json.FromJson] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
+pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
 pub fn[T : ToJson] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T : ToJson] World::set(Self, @core.Entity, ComponentKey[T], T) -> Unit raise EcsError
 pub fn World::spawn(Self) -> @core.Entity

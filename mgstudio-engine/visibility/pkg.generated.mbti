@@ -4,11 +4,21 @@ package "Milky2018/mgstudio/visibility"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub let ecs_components : Array[String]
+
+pub let ecs_key_inherited_visibility : @ecs.ComponentKey[InheritedVisibility]
+
+pub let ecs_key_view_visibility : @ecs.ComponentKey[ViewVisibility]
+
+pub let ecs_key_visibility : @ecs.ComponentKey[Visibility]
+
+pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange]
 
 pub let ecs_resources : Array[String]
 
@@ -62,6 +72,8 @@ pub struct VisibilityRange {
 pub fn VisibilityRange::always_visible() -> Self
 pub fn VisibilityRange::invisible() -> Self
 pub fn VisibilityRange::new(Float, Float, Float, Float, Bool) -> Self
+pub impl ToJson for VisibilityRange
+pub impl @json.FromJson for VisibilityRange
 
 // Type aliases
 

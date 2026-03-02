@@ -473,6 +473,43 @@ pub fn Transform::new(
 }
 
 ///|
+pub impl ToJson for Transform with to_json(self) {
+  (
+    self.translation.x,
+    self.translation.y,
+    self.translation.z,
+    self.rotation.x,
+    self.rotation.y,
+    self.rotation.z,
+    self.rotation.w,
+    self.scale.x,
+    self.scale.y,
+    self.scale.z,
+  ).to_json()
+}
+
+///|
+pub impl @json.FromJson for Transform with from_json(json, path) {
+  let (tx, ty, tz, rx, ry, rz, rw, sx, sy, sz) : (
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+  ) = @json.from_json(json, path~)
+  Transform::new(
+    Vec3::new(tx, ty, tz),
+    Quat::new(rx, ry, rz, rw),
+    Vec3::new(sx, sy, sz),
+  )
+}
+
+///|
 pub fn Transform::identity() -> Transform {
   Transform::{
     translation: Vec3::zero(),

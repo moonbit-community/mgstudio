@@ -71,6 +71,33 @@ pub fn GlobalTransform::identity() -> GlobalTransform {
 }
 
 ///|
+pub impl ToJson for GlobalTransform with to_json(self) {
+  (
+    self.affine.a,
+    self.affine.b,
+    self.affine.c,
+    self.affine.d,
+    self.affine.tx,
+    self.affine.ty,
+    self.z,
+  ).to_json()
+}
+
+///|
+pub impl @json.FromJson for GlobalTransform with from_json(json, path) {
+  let (a, b, c, d, tx, ty, z) : (
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+  ) = @json.from_json(json, path~)
+  GlobalTransform::{ affine: Affine2::{ a, b, c, d, tx, ty }, z }
+}
+
+///|
 pub fn GlobalTransform::from_transform(
   transform : @math.Transform,
 ) -> GlobalTransform {

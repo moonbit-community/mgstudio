@@ -6,14 +6,20 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render3d",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub let ecs_components : Array[String]
+
+pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
+
+pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
 pub let ecs_resources : Array[String]
 
@@ -33,6 +39,8 @@ pub fn[W] scene_load_pending_system(W) -> Unit
 
 pub fn[W : ScenePluginWorld] scene_plugin(@app.App[W]) -> @app.App[W]
 
+pub fn scene_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn scene_register_gltf_scene(String, Scene) -> @asset.Handle[Scene]
 
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
@@ -40,6 +48,8 @@ pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
 pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 
 pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(W) -> Unit
+
+pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 
 // Errors
 
@@ -73,6 +83,8 @@ pub struct SceneInstanceReady {
   spawned_entities : Int
 }
 pub fn SceneInstanceReady::new(Int) -> Self
+pub impl ToJson for SceneInstanceReady
+pub impl @json.FromJson for SceneInstanceReady
 
 pub struct SceneNode3d {
   mesh : @render3d.Mesh3d
@@ -87,6 +99,8 @@ pub struct SceneRoot {
   scene : @asset.Handle[Scene]
 }
 pub fn SceneRoot::new(@asset.Handle[Scene]) -> Self
+pub impl ToJson for SceneRoot
+pub impl @json.FromJson for SceneRoot
 
 // Type aliases
 
