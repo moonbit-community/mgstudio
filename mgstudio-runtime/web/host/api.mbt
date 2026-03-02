@@ -1339,6 +1339,16 @@ pub fn create_host(
     }
     count
   }
+  fn texture_entry_mip_level_count(texture_entry : @js.Any) -> Int {
+    let entry_count = to_int(number_or(texture_entry._get("mipLevelCount"), 0))
+    if entry_count > 0 {
+      entry_count
+    } else {
+      let width = to_int(number_or(texture_entry._get("width"), 1))
+      let height = to_int(number_or(texture_entry._get("height"), 1))
+      texture_max_mip_level_count(width, height)
+    }
+  }
   let asset_set_texture_sampler = @js.from_fn2(fn(texture_id, sampler_kind) {
     let id = to_int(number_or(texture_id, -1))
     let kind = to_int(number_or(sampler_kind, 0))
@@ -1632,12 +1642,37 @@ pub fn create_host(
       let height = to_int(arg_number(args, 4, 0))
       let mip_level = to_int(arg_number(args, 5, 0))
       let bytes_id = to_int(arg_number(args, 6, -1))
-      if width <= 0 || height <= 0 || mip_level < 0 {
+      if width <= 0 || height <= 0 || mip_level < 0 || x < 0 || y < 0 {
         return
       }
       let texture_entry = map_get(state.gpu.textures, @js.any(texture_id))
       if host_is_nullish(texture_entry) {
         dispatch_asset_error("Texture update error: texture id not found")
+        return
+      }
+      let source_width = to_int(number_or(texture_entry._get("width"), 1))
+      let source_height = to_int(number_or(texture_entry._get("height"), 1))
+      let source_mip_level_count = texture_entry_mip_level_count(texture_entry)
+      if mip_level >= source_mip_level_count {
+        report_asset_error_once(
+          state,
+          "texture_update_mip_level_out_of_range_" + texture_id.to_string() +
+          "_" +
+          mip_level.to_string(),
+          "Texture mip update error: mip level out of range",
+        )
+        return
+      }
+      let mip_width = texture_mip_dimension(source_width, mip_level)
+      let mip_height = texture_mip_dimension(source_height, mip_level)
+      if x + width > mip_width || y + height > mip_height {
+        report_asset_error_once(
+          state,
+          "texture_update_mip_rect_out_of_range_" + texture_id.to_string() +
+          "_" +
+          mip_level.to_string(),
+          "Texture mip update error: region exceeds mip dimensions",
+        )
         return
       }
       let blob = map_get(state.assets.blobs, @js.any(bytes_id))
@@ -1683,6 +1718,17 @@ pub fn create_host(
     let source_entry = map_get(state.gpu.textures, @js.any(texture_id))
     if host_is_nullish(source_entry) {
       dispatch_asset_error("Texture mip view error: texture id not found")
+      return 0
+    }
+    let source_mip_level_count = texture_entry_mip_level_count(source_entry)
+    if mip_level >= source_mip_level_count {
+      report_asset_error_once(
+        state,
+        "texture_mip_view_level_out_of_range_" + texture_id.to_string() +
+        "_" +
+        mip_level.to_string(),
+        "Texture mip view error: mip level out of range",
+      )
       return 0
     }
     let source_width = to_int(number_or(source_entry._get("width"), 1))

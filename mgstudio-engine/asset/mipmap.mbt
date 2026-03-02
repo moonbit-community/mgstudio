@@ -38,8 +38,9 @@ fn mip_downsample_rgba8(previous : (Int, Int, Bytes)) -> (Int, Int, Bytes) {
   let width = previous.0
   let height = previous.1
   let pixels = previous.2
-  let next_width = if width > 1 { (width + 1) / 2 } else { 1 }
-  let next_height = if height > 1 { (height + 1) / 2 } else { 1 }
+  // Align with GPU mip sizing: floor(size / 2), clamped to >= 1.
+  let next_width = if width > 1 { width / 2 } else { 1 }
+  let next_height = if height > 1 { height / 2 } else { 1 }
   let out : Array[Byte] = []
   for y in 0..<next_height {
     for x in 0..<next_width {
