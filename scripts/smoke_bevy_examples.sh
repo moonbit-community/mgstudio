@@ -18,6 +18,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENGINE_DIR="${REPO_DIR}/mgstudio-engine"
+MGSTUDIO_CMD="${MGSTUDIO_CMD:-${REPO_DIR}/mgstudio-dev}"
 
 # Representative cross-domain smoke set for current port coverage.
 # - 2d: sprite
@@ -55,9 +56,13 @@ if [[ "${run_runtime_smoke}" != "1" ]]; then
   exit 0
 fi
 
-if ! command -v mgstudio >/dev/null 2>&1; then
-  echo "[smoke] mgstudio CLI not found; skip runtime smoke."
-  exit 0
+if [[ ! -x "${MGSTUDIO_CMD}" ]]; then
+  if command -v mgstudio >/dev/null 2>&1; then
+    MGSTUDIO_CMD="$(command -v mgstudio)"
+  else
+    echo "[smoke] mgstudio CLI not found; skip runtime smoke."
+    exit 0
+  fi
 fi
 
 if ! command -v timeout >/dev/null 2>&1; then
@@ -80,8 +85,8 @@ for pkg in "${RUNTIME_EXAMPLES[@]}"; do
     continue
   fi
 
-  echo "[smoke] timeout 10s mgstudio run --game ${game_json}"
-  if ! timeout 10s mgstudio run --game "${game_json}"; then
+  echo "[smoke] timeout 10s ${MGSTUDIO_CMD} run --game ${game_json}"
+  if ! timeout 10s "${MGSTUDIO_CMD}" run --game "${game_json}"; then
     rc=$?
     if [[ "${rc}" -eq 124 ]]; then
       echo "[smoke] timeout reached (treated as pass): ${pkg}"
