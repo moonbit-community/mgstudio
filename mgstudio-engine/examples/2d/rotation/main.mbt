@@ -15,8 +15,8 @@
 ///|
 /// Port of `bevy/examples/2d/rotation.rs`.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(rotation_setup)
   .add_fixed_update_system(player_movement_system)
@@ -127,7 +127,7 @@ fn right_from_rotation(rotation : Float) -> @math.Vec2 {
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
+fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = @text.Text2dBundle::new(
@@ -141,10 +141,8 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -152,12 +150,12 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -165,14 +163,16 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
 }
 
 ///|
 fn spawn_ship(
-  world : @ecs_world.World,
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   translation : @math.Vec2,
 ) -> @core.Entity {
@@ -187,7 +187,7 @@ fn spawn_ship(
 }
 
 ///|
-fn rotation_setup(world : @ecs_world.World) -> Unit {
+fn rotation_setup(world : @ecs.World) -> Unit {
   @app.fixed_time_reset()
   @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
 
@@ -243,13 +243,13 @@ fn rotation_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn player_movement_system(world : @ecs_world.World) -> Unit {
+fn player_movement_system(world : @ecs.World) -> Unit {
   if rotation_state.val.player.is_placeholder() {
     return
   }
   let dt = @time.time_fixed_delta_seconds()
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(rotation_state.val.player) is Some(transform) else {
     return
   }
@@ -286,13 +286,13 @@ fn player_movement_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn snap_to_player_system(world : @ecs_world.World) -> Unit {
+fn snap_to_player_system(world : @ecs.World) -> Unit {
   let player_entity = rotation_state.val.player
   if player_entity.is_placeholder() {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(player_entity) is Some(player_transform) else {
     return
   }
@@ -331,14 +331,14 @@ fn snap_to_player_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn rotate_to_player_system(world : @ecs_world.World) -> Unit {
+fn rotate_to_player_system(world : @ecs.World) -> Unit {
   let player_entity = rotation_state.val.player
   if player_entity.is_placeholder() {
     return
   }
   let dt = @time.time_fixed_delta_seconds()
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(player_entity) is Some(player_transform) else {
     return
   }

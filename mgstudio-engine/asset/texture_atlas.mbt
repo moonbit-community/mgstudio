@@ -96,8 +96,6 @@ pub fn TextureAtlasLayout::is_empty(self : TextureAtlasLayout) -> Bool {
 ///|
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
   index : Int

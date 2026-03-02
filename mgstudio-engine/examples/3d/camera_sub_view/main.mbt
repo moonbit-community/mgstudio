@@ -54,7 +54,7 @@ fn float_from_int(value : Int) -> Float {
 
 ///|
 fn spawn_perspective_camera(
-  world : @ecs_world.World,
+  world : @ecs.World,
   kind : ExampleViewport,
   order : Int,
   sub_camera_view? : @render3d.SubCameraView3d? = None,
@@ -74,7 +74,7 @@ fn spawn_perspective_camera(
 
 ///|
 fn spawn_orthographic_camera(
-  world : @ecs_world.World,
+  world : @ecs.World,
   kind : ExampleViewport,
   order : Int,
   sub_camera_view? : @render3d.SubCameraView3d? = None,
@@ -100,7 +100,7 @@ fn spawn_orthographic_camera(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   camera_sub_view_state.val.cameras.clear()
   camera_sub_view_state.val.moving_cameras.clear()
@@ -135,9 +135,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   // Light
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -147,9 +145,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    light,
+    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+    tick,
+  )
 
   let perspective_stretched_sub_view = @render3d.SubCameraView3d::new(
     @math.IVec2::new(10, 10),
@@ -228,7 +228,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_camera_view(world : @ecs_world.World) -> Unit {
+fn move_camera_view(world : @ecs.World) -> Unit {
   let elapsed = @time.time_elapsed_seconds()
   let sweep = elapsed * 150.0F
   let cycle = 450.0F
@@ -236,7 +236,7 @@ fn move_camera_view(world : @ecs_world.World) -> Unit {
   let offset = wrapped - 50.0F
 
   let tick = world.read_change_tick()
-  let sub_camera_view_store = world.get_sub_camera_view3d_store()
+  let sub_camera_view_store = @render3d.query_get_sub_camera_view3d_store(world)
   for entity in camera_sub_view_state.val.moving_cameras {
     if sub_camera_view_store.get(entity) is Some(sub_camera_view) {
       let next = sub_camera_view.with_offset(@math.Vec2::new(offset, offset))
@@ -255,7 +255,7 @@ fn min_int(a : Int, b : Int) -> Int {
 }
 
 ///|
-fn resize_viewports(world : @ecs_world.World) -> Unit {
+fn resize_viewports(world : @ecs.World) -> Unit {
   let window_width = @window.window_width()
   let window_height = @window.window_height()
   let small_height = window_height / 5
@@ -269,7 +269,7 @@ fn resize_viewports(world : @ecs_world.World) -> Unit {
   let small_wide_size = @math.IVec2::new(small_dim * 2, small_dim)
 
   let tick = world.read_change_tick()
-  let camera_store = world.get_camera_store()
+  let camera_store = @render2d.query_get_camera_store(world)
 
   for pair in camera_sub_view_state.val.cameras {
     let entity = pair.0
@@ -312,8 +312,8 @@ fn resize_viewports(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(move_camera_view)

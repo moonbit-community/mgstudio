@@ -239,7 +239,7 @@ fn mode_sphere_color(mode : LightingMode) -> @render2d.Color {
 }
 
 ///|
-fn apply_lighting_mode(world : @ecs_world.World) -> Unit {
+fn apply_lighting_mode(world : @ecs.World) -> Unit {
   let mode = app_status.val.lighting_mode
   let tick = world.read_change_tick()
 
@@ -250,9 +250,7 @@ fn apply_lighting_mode(world : @ecs_world.World) -> Unit {
     lighting_mode_eq(mode, LightingMode::RealTime)
 
   if app_status.val.directional_light is Some(light_entity) {
-    world
-    .get_directional_light_store()
-    .set(
+    @render3d.query_get_directional_light_store(world).set(
       light_entity,
       @render3d.DirectionalLight::new(
         @render2d.Color::white(),
@@ -268,11 +266,13 @@ fn apply_lighting_mode(world : @ecs_world.World) -> Unit {
     @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     mode_ambient_brightness(mode),
   )
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient_light
   } else {
-    world.get_global_ambient_light_resource().insert(ambient_light, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient_light, tick,
+    )
   }
 
   if app_status.val.sphere_material is Some(handle) {
@@ -287,12 +287,11 @@ fn apply_lighting_mode(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn reset_sphere_position(world : @ecs_world.World) -> Unit {
+fn reset_sphere_position(world : @ecs.World) -> Unit {
   if app_status.val.sphere is Some(sphere_entity) {
-    if world.get_transform_store().get(sphere_entity) is Some(transform) {
-      world
-      .get_transform_store()
-      .set(
+    if @math.query_get_transform_store(world).get(sphere_entity)
+      is Some(transform) {
+      @math.query_get_transform_store(world).set(
         sphere_entity,
         transform.with_translation(initial_sphere_position()),
         world.read_change_tick(),
@@ -318,7 +317,7 @@ fn ray_plane_intersection_ground(
 }
 
 ///|
-fn move_sphere(world : @ecs_world.World) -> Unit {
+fn move_sphere(world : @ecs.World) -> Unit {
   if lighting_mode_eq(app_status.val.lighting_mode, LightingMode::Baked) {
     return
   }
@@ -330,11 +329,11 @@ fn move_sphere(world : @ecs_world.World) -> Unit {
   guard app_status.val.sphere is Some(sphere_entity) else { return }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  let camera_store = world.get_camera_store()
+  let camera_store = @render2d.query_get_camera_store(world)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = world.get_camera_projection3d_store()
+  let projection_store = @render3d.query_get_camera_projection3d_store(world)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
@@ -380,7 +379,7 @@ fn set_lighting_mode(mode : LightingMode) -> Bool {
 }
 
 ///|
-fn update_mode_from_input(world : @ecs_world.World) -> Unit {
+fn update_mode_from_input(world : @ecs.World) -> Unit {
   let mut changed = false
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
@@ -406,7 +405,7 @@ fn update_mode_from_input(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   app_status.val.lighting_mode = LightingMode::MixedIndirect
   app_status.val.camera = None
   app_status.val.sphere = None
@@ -427,9 +426,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   app_status.val.camera = Some(camera)
 
   let scene_root = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -462,16 +459,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   app_status.val.sphere_material = Some(sphere_material)
 
   let directional_light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::from_xyz(1.0F, 1.8F, 0.6F).looking_at(
       @math.Vec3::new(0.0F, 0.2F, 0.0F),
@@ -507,15 +500,15 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update(world : @ecs_world.World) -> Unit {
+fn update(world : @ecs.World) -> Unit {
   update_mode_from_input(world)
   move_sphere(world)
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(update)

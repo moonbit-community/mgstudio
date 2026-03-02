@@ -115,18 +115,21 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn setup_wireframe_config(world : @ecs_world.World) -> Unit {
+fn setup_wireframe_config(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let wireframe_config = @render3d.WireframeConfig::new(true, color_white())
-  if world.get_wireframe_config_resource().get_ref_mut(tick) is Some(config_ref) {
+  if @render3d.query_get_wireframe_config_resource(world).get_ref_mut(tick)
+    is Some(config_ref) {
     config_ref.val = wireframe_config
   } else {
-    world.get_wireframe_config_resource().insert(wireframe_config, tick)
+    @render3d.query_get_wireframe_config_resource(world).insert(
+      wireframe_config, tick,
+    )
   }
 }
 
 ///|
-fn setup_ui(world : @ecs_world.World) -> Unit {
+fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font : @asset.Handle[@asset.Font] = asset_server.load_font(
     "fonts/FiraSans-Bold.ttf",
@@ -140,10 +143,8 @@ fn setup_ui(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -158,12 +159,12 @@ fn setup_ui(world : @ecs_world.World) -> Unit {
     @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let controls_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(controls_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    controls_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     controls_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -171,16 +172,18 @@ fn setup_ui(world : @ecs_world.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(controls_entity, @ui.UiText::new(controls_text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    controls_entity,
+    @ui.UiText::new(controls_text_handle),
+    tick,
+  )
   wireframe_state.val.controls_text = Some(controls_text_handle)
 }
 
 ///|
-fn update_controls_text(world : @ecs_world.World) -> Unit {
+fn update_controls_text(world : @ecs.World) -> Unit {
   guard wireframe_state.val.controls_text is Some(text_handle) else { return }
-  let config = if world.get_wireframe_config_resource().get_ref()
+  let config = if @render3d.query_get_wireframe_config_resource(world).get_ref()
     is Some(config_ref) {
     config_ref.val
   } else {
@@ -201,7 +204,7 @@ fn update_controls_text(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_scene(world : @ecs_world.World) -> Unit {
+fn setup_scene(world : @ecs.World) -> Unit {
   wireframe_state.val.controls_text = None
   setup_wireframe_config(world)
 
@@ -215,9 +218,11 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
     ),
     @math.Transform::from_xyz(-1.0F, 0.5F, -1.0F),
   ).spawn(world)
-  world
-  .get_no_wireframe_store()
-  .insert(red_cube, @render3d.NoWireframe::default(), tick)
+  @render3d.query_get_no_wireframe_store(world).insert(
+    red_cube,
+    @render3d.NoWireframe::default(),
+    tick,
+  )
 
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
@@ -239,12 +244,16 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
     ),
     @math.Transform::from_xyz(1.0F, 0.5F, 1.0F),
   ).spawn(world)
-  world
-  .get_wireframe_store()
-  .insert(green_cube, @render3d.Wireframe::default(), tick)
-  world
-  .get_wireframe_color_store()
-  .insert(green_cube, @render3d.WireframeColor::new(color_lime()), tick)
+  @render3d.query_get_wireframe_store(world).insert(
+    green_cube,
+    @render3d.Wireframe::default(),
+    tick,
+  )
+  @render3d.query_get_wireframe_color_store(world).insert(
+    green_cube,
+    @render3d.WireframeColor::new(color_lime()),
+    tick,
+  )
 
   let plane = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(5.0F, 5.0F),
@@ -255,17 +264,23 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
     ),
     @math.Transform::identity(),
   ).spawn(world)
-  world
-  .get_wireframe_color_store()
-  .insert(plane, @render3d.WireframeColor::new(color_black()), tick)
+  @render3d.query_get_wireframe_color_store(world).insert(
+    plane,
+    @render3d.WireframeColor::new(color_black()),
+    tick,
+  )
 
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(light, @render3d.PointLight::default(), tick)
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(2.0F, 4.0F, 2.0F), tick)
+  @render3d.query_get_point_light_store(world).insert(
+    light,
+    @render3d.PointLight::default(),
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
+    light,
+    @math.Transform::from_xyz(2.0F, 4.0F, 2.0F),
+    tick,
+  )
 
   @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -281,10 +296,11 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_colors(world : @ecs_world.World) -> Unit {
+fn update_colors(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  if world.get_wireframe_config_resource().get_ref_mut(tick) is Some(config_ref) {
+  if @render3d.query_get_wireframe_config_resource(world).get_ref_mut(tick)
+    is Some(config_ref) {
     if @input.key_just_pressed(@window.KeyCode::KeyZ) {
       config_ref.val = config_ref.val.with_global(!config_ref.val.global)
     }
@@ -300,10 +316,11 @@ fn update_colors(world : @ecs_world.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
     let updates : Array[(@core.Entity, @render3d.WireframeColor)] = []
-    let wireframe_store = world.get_wireframe_store()
-    world
-    .get_wireframe_color_store()
-    .for_each(fn(entity, color) {
+    let wireframe_store = @render3d.query_get_wireframe_store(world)
+    @render3d.query_get_wireframe_color_store(world).for_each(fn(
+      entity,
+      color,
+    ) {
       if wireframe_store.get(entity) is Some(_) {
         let next = if color_approx_eq(color.color, color_lime()) {
           color_red()
@@ -314,7 +331,9 @@ fn update_colors(world : @ecs_world.World) -> Unit {
       }
     })
     if updates.length() > 0 {
-      let wireframe_color_store = world.get_wireframe_color_store()
+      let wireframe_color_store = @render3d.query_get_wireframe_color_store(
+        world,
+      )
       for pair in updates {
         wireframe_color_store.set(pair.0, pair.1, tick) |> ignore
       }
@@ -326,8 +345,8 @@ fn update_colors(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render3d.wireframe_plugin])
   .add_startup_system(setup_scene)

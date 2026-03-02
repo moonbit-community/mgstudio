@@ -41,7 +41,7 @@ fn rectangle_mesh(width : Float, height : Float) -> @render3d.Mesh3d {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_logo_dark_big.png")
   let aspect = 0.25F
@@ -108,8 +108,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .run()

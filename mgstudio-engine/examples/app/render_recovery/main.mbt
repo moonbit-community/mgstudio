@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/app/render_recovery.rs`.
 
 ///|
-fn setup(_world : @ecs_world.World) -> Unit {
+fn setup(_world : @ecs.World) -> Unit {
   println("Press O/V/D/L to trigger render runtime errors")
   println(
     "Press 1: Ignore, 2: Panic, 3: Exit app, 4: Stop rendering, 5: Recover",
@@ -53,7 +53,7 @@ fn set_recover_policy(
 }
 
 ///|
-fn input_system(_world : @ecs_world.World) -> Unit {
+fn input_system(_world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     @app.set_render_error_handler(set_ignore_policy)
     println("render policy: Ignore")
@@ -90,7 +90,7 @@ fn input_system(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn report_status(_world : @ecs_world.World) -> Unit {
+fn report_status(_world : @ecs.World) -> Unit {
   if @app.render_runtime_error() is Some(error) {
     println(
       "last render runtime error: " +
@@ -103,8 +103,8 @@ fn report_status(_world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(input_system)

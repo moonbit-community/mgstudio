@@ -2,7 +2,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
-  "Milky2018/mgstudio/ecs_world",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
@@ -14,6 +14,7 @@ import {
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/hierarchy",
 }
 
 options(

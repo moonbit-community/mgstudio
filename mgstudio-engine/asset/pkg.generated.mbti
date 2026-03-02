@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/asset"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
 }
 
@@ -321,4 +322,5 @@ pub fn TextureAtlasSources::texture_index(Self, Handle[Image]) -> Int?
 pub(open) trait Has_TextureAtlas {
   get_texture_atlas_store(Self) -> @core.ComponentStore[TextureAtlas]
 }
+pub impl Has_TextureAtlas for @ecs.World
 

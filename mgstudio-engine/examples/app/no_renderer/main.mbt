@@ -34,9 +34,7 @@ fn runner_tick() -> Unit {
 }
 
 ///|
-fn no_renderer_runner_builder(
-  app : @app.App[@ecs_world.World],
-) -> @app.RunnerFn {
+fn no_renderer_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
     let window = @window.host_window_create(
       width=800,
@@ -44,7 +42,7 @@ fn no_renderer_runner_builder(
       title="Moon Game Studio (No Renderer)",
     )
     @window.window_set_handle(window)
-    let app_ref : Ref[@app.App[@ecs_world.World]] = Ref::new(app.run_startup())
+    let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
     runner_state_ref.val.tick = Some(fn() {
       @window.host_window_poll_events(window)
       app_ref.val = app_ref.val.run_once()
@@ -59,9 +57,7 @@ fn no_renderer_runner_builder(
 }
 
 ///|
-fn no_renderer_plugin(
-  app : @app.App[@ecs_world.World],
-) -> @app.App[@ecs_world.World] {
+fn no_renderer_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .set_runner(no_renderer_runner_builder)
   .add_pre_update_system(@window.window_poll_resize_system)
@@ -69,5 +65,5 @@ fn no_renderer_plugin(
 
 ///|
 pub fn game_app() -> Unit {
-  @app.App::new(@ecs_world.World::new()).add_plugins([no_renderer_plugin]).run()
+  @app.App::new(@ecs.World::new()).add_plugins([no_renderer_plugin]).run()
 }

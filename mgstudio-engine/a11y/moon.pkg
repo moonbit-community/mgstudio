@@ -4,4 +4,5 @@ import {
   "Milky2018/moon_accesskit",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
+  "Milky2018/mgstudio/ecs",
 }

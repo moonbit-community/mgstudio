@@ -147,8 +147,6 @@ fn scene_pending() -> Scene {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]
 }
@@ -170,8 +168,6 @@ pub impl @json.FromJson for SceneRoot with from_json(json, path) {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct SceneInstanceReady {
   spawned_entities : Int
 }

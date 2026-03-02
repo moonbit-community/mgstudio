@@ -76,17 +76,19 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
@@ -100,11 +102,7 @@ fn camera_transform_for_angle(angle : Float) -> @math.Transform {
 }
 
 ///|
-fn spawn_wall_panel(
-  world : @ecs_world.World,
-  side : @math.Vec3,
-  level : Int,
-) -> Unit {
+fn spawn_wall_panel(world : @ecs.World, side : @math.Vec3, level : Int) -> Unit {
   let level_f = float_from_int(level)
   let height = @math.Vec3::new(0.0F, level_f, 0.0F)
   let target = height
@@ -156,7 +154,7 @@ fn update_display_text() -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   auto_exposure_state.val.camera = None
   auto_exposure_state.val.camera_angle = 0.0F
   auto_exposure_state.val.mask_overlay = None
@@ -173,16 +171,12 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render2d.Camera::default(),
     camera_transform_for_angle(auto_exposure_state.val.camera_angle),
   ).spawn(world)
-  world
-  .get_exposure_store()
-  .insert(
+  @render3d.query_get_exposure_store(world).insert(
     camera,
     @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
     tick,
   )
-  world
-  .get_skybox_store()
-  .insert(
+  @render3d.query_get_skybox_store(world).insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -210,16 +204,16 @@ fn setup(world : @ecs_world.World) -> Unit {
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
 
   let point_light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point_light,
     @render3d.PointLight::new(@render2d.Color::white(), 2_000.0F, 20.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point_light, @math.Transform::identity(), tick)
+  @math.query_get_transform_store(world).insert(
+    point_light,
+    @math.Transform::identity(),
+    tick,
+  )
 
   // 2D overlay camera + mask image proxy for Bevy's `ImageNode` visualization.
   @render2d.Camera2dBundle::new(
@@ -238,9 +232,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_color(@render2d.Color::new(1.0F, 1.0F, 1.0F, MASK_OVERLAY_ALPHA)),
     @math.Transform::identity(),
   ).spawn(world)
-  world
-  .get_visibility_store()
-  .insert(mask_overlay, @visibility.Visibility::Hidden, tick)
+  @visibility.query_get_visibility_store(world).insert(
+    mask_overlay,
+    @visibility.Visibility::Hidden,
+    tick,
+  )
   auto_exposure_state.val.mask_overlay = Some(mask_overlay)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -294,7 +290,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn example_control_system(world : @ecs_world.World) -> Unit {
+fn example_control_system(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds()
 
   let rotation = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
@@ -320,9 +316,7 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
   if auto_exposure_state.val.camera is Some(camera_entity) {
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       camera_entity,
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
       tick,
@@ -332,9 +326,7 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
 
   if auto_exposure_state.val.mask_overlay is Some(mask_entity) {
     let show_mask = @input.key_pressed(@window.KeyCode::KeyV)
-    world
-    .get_visibility_store()
-    .set(
+    @visibility.query_get_visibility_store(world).set(
       mask_entity,
       if show_mask {
         @visibility.Visibility::Visible
@@ -348,7 +340,7 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
 
   let camera_transform = if auto_exposure_state.val.camera
     is Some(camera_entity) {
-    world.get_transform_store().get(camera_entity)
+    @math.query_get_transform_store(world).get(camera_entity)
   } else {
     None
   }
@@ -390,19 +382,16 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
     20.0F,
   )
   if auto_exposure_state.val.camera is Some(camera_entity) {
-    if world.get_exposure_store().get(camera_entity) is Some(exposure) {
-      world
-      .get_exposure_store()
-      .set(
+    if @render3d.query_get_exposure_store(world).get(camera_entity)
+      is Some(exposure) {
+      @render3d.query_get_exposure_store(world).set(
         camera_entity,
         exposure.with_ev100(auto_exposure_state.val.exposure_ev100),
         tick,
       )
       |> ignore
     } else {
-      world
-      .get_exposure_store()
-      .insert(
+      @render3d.query_get_exposure_store(world).insert(
         camera_entity,
         @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
         tick,
@@ -415,8 +404,8 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(example_control_system)

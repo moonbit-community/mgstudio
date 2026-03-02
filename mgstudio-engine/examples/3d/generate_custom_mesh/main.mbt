@@ -120,7 +120,7 @@ fn create_cube_mesh(upper_uv : Bool) -> @render3d.Mesh3d {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   custom_mesh_state.val.mesh_entity = None
   custom_mesh_state.val.upper_uv = true
 
@@ -153,12 +153,14 @@ fn setup(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let light_entity = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(light_entity, @render3d.PointLight::default(), tick)
-  world
-  .get_transform_store()
-  .insert(light_entity, camera_and_light_transform, tick)
+  @render3d.query_get_point_light_store(world).insert(
+    light_entity,
+    @render3d.PointLight::default(),
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
+    light_entity, camera_and_light_transform, tick,
+  )
 
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
@@ -185,21 +187,24 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn input_handler(world : @ecs_world.World) -> Unit {
+fn input_handler(world : @ecs.World) -> Unit {
   guard custom_mesh_state.val.mesh_entity is Some(mesh_entity) else { return }
 
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
 
   if @input.key_just_pressed(@window.KeyCode::Space) {
     let next_upper_uv = !custom_mesh_state.val.upper_uv
     custom_mesh_state.val.upper_uv = next_upper_uv
     let next_mesh = create_cube_mesh(next_upper_uv)
     let next_mesh_id = @render2d.render2d_upload_mesh_handle(next_mesh.mesh)
-    world.get_mesh3d_store().set(mesh_entity, next_mesh, tick) |> ignore
-    world
-    .get_gpu_mesh2d_store()
-    .set(mesh_entity, @render2d.GpuMesh2d::new(next_mesh_id), tick)
+    @render3d.query_get_mesh3d_store(world).set(mesh_entity, next_mesh, tick)
+    |> ignore
+    @render2d.query_get_gpu_mesh2d_store(world).set(
+      mesh_entity,
+      @render2d.GpuMesh2d::new(next_mesh_id),
+      tick,
+    )
     |> ignore
   }
 
@@ -240,8 +245,8 @@ fn input_handler(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(input_handler)

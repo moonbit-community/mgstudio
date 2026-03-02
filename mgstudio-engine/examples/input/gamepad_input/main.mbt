@@ -20,15 +20,15 @@
 /// - RightTrigger2 and LeftStickX threshold logging is preserved.
 /// - Bevy ECS `(Entity, &Gamepad)` query is adapted to runtime `input.gamepads()`.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_system(gamepad_system)
   .run()
 }
 
 ///|
-fn gamepad_system(world : @ecs_world.World) -> Unit {
+fn gamepad_system(world : @ecs.World) -> Unit {
   world |> ignore
   for gamepad in @input.gamepads() {
     let gamepad_id = gamepad.id()

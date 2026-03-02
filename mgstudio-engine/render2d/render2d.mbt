@@ -146,8 +146,6 @@ pub fn Color::black() -> Color {
 ///|
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RenderLayers {
   mask : Int
 }
@@ -335,8 +333,6 @@ pub fn Viewport::default() -> Viewport {
 ///|
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Sprite {
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
@@ -353,7 +349,6 @@ pub struct Sprite {
 ///
 /// Meshes with this marker render wireframes regardless of
 /// `Wireframe2dConfig::global`.
-#ecs.component
 pub struct Wireframe2d {}
 
 ///|
@@ -366,7 +361,6 @@ pub fn Wireframe2d::default() -> Wireframe2d {
 ///
 /// Meshes with this marker never render wireframes regardless of
 /// `Wireframe2dConfig::global`.
-#ecs.component
 pub struct NoWireframe2d {}
 
 ///|
@@ -376,7 +370,6 @@ pub fn NoWireframe2d::default() -> NoWireframe2d {
 
 ///|
 /// Per-mesh wireframe color aligned with Bevy's `Wireframe2dColor`.
-#ecs.component
 pub struct Wireframe2dColor {
   color : Color
 }
@@ -401,8 +394,6 @@ pub fn Wireframe2dColor::with_color(
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct Wireframe2dConfig {
   global : Bool
   default_color : Color
@@ -695,7 +686,6 @@ pub fn Sprite::with_image_mode(
 /// `host_gpu_set_scissor`.
 ///
 /// This is primarily used by UI clipping (overflow/scroll).
-#ecs.component
 pub struct ScissorRect {
   rect : @math.Rect
 }
@@ -754,8 +744,6 @@ pub fn UiBorderRect::zero() -> UiBorderRect {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Anchor {
   value : @math.Vec2
 }
@@ -867,8 +855,6 @@ fn clear_color_current_value() -> Color {
 
 ///|
 /// Mirrors Bevy's `ClearColorConfig` for per-camera clear behavior.
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub(all) enum ClearColorConfig {
   Default
   Custom(Color)
@@ -923,8 +909,6 @@ pub fn CameraComputedValues::default() -> CameraComputedValues {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Camera {
   viewport : Viewport?
   order : Int
@@ -1074,8 +1058,6 @@ pub fn OrthographicProjection::with_scale(
 
 ///|
 /// Camera projection type (mirrors Bevy's `Projection` component).
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
@@ -1087,8 +1069,6 @@ pub fn Projection::orthographic_2d() -> Projection {
 
 ///|
 /// Marker component that enables 2D camera semantics (mirrors Bevy's `Camera2d`).
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Camera2d {}
 
 ///|
@@ -1099,8 +1079,6 @@ pub fn Camera2d::default() -> Camera2d {
 ///|
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub(all) enum RenderTarget {
   Screen
   Image(@asset.Handle[@asset.Image])
@@ -1146,8 +1124,6 @@ fn color_material_get(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ColorMaterial {
   handle : @asset.Handle[ColorMaterialAsset]
 }
@@ -1352,8 +1328,6 @@ pub fn[W, M] material2d_plugin(_plugin : Material2dPlugin[M]) -> @app.Plugin[W] 
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct MeshMaterial2d {
   handle : @asset.Handle[ColorMaterialAsset]
 }
@@ -2067,8 +2041,6 @@ pub fn Triangle2d::to_ring(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
@@ -3163,8 +3135,6 @@ pub fn Mesh2d::from_geometry(geometry : @mesh.Mesh2dGeometry) -> Mesh2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct GpuMesh2d {
   mesh_id : Int
 }
@@ -3695,8 +3665,6 @@ pub fn Bloom2dSettings::default() -> Bloom2dSettings {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Bloom2d {
   source : @asset.Handle[@asset.Image]?
   enabled : Bool
@@ -4157,8 +4125,6 @@ priv struct Bloom2dAutoTargetInfo {
 ///|
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 struct RenderState {
   mut draw_enabled : Bool
   mut primary_camera : @core.Entity

@@ -110,17 +110,19 @@ let contact_shadows_state : Ref[ContactShadowsExampleState] = Ref::new({
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
@@ -186,12 +188,10 @@ fn light_transform(angle : Float) -> @math.Transform {
 }
 
 ///|
-fn apply_model_rotation(world : @ecs_world.World) -> Unit {
+fn apply_model_rotation(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.model is Some(model_entity) else { return }
   let tick = world.read_change_tick()
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     model_entity,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(contact_shadows_state.val.model_angle),
@@ -202,35 +202,40 @@ fn apply_model_rotation(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_camera_components(world : @ecs_world.World) -> Unit {
+fn apply_camera_components(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
   if contact_shadows_state.val.contact_shadows == ContactShadowState::Enabled {
-    world
-    .get_contact_shadows_store()
-    .insert(camera, @render3d.ContactShadows::default(), tick)
+    @render3d.query_get_contact_shadows_store(world).insert(
+      camera,
+      @render3d.ContactShadows::default(),
+      tick,
+    )
   } else {
-    world.get_contact_shadows_store().remove(camera) |> ignore
+    @render3d.query_get_contact_shadows_store(world).remove(camera) |> ignore
   }
 }
 
 ///|
-fn apply_ground_receive_shadows(world : @ecs_world.World) -> Unit {
+fn apply_ground_receive_shadows(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.ground is Some(ground_entity) else { return }
   let receiving = contact_shadows_state.val.receive_shadows ==
     ReceiveShadowsState::Enabled
   let tick = world.read_change_tick()
   if receiving {
-    world.get_not_shadow_receiver_store().remove(ground_entity) |> ignore
+    @render3d.query_get_not_shadow_receiver_store(world).remove(ground_entity)
+    |> ignore
   } else {
-    world
-    .get_not_shadow_receiver_store()
-    .insert(ground_entity, @render3d.NotShadowReceiver::default(), tick)
+    @render3d.query_get_not_shadow_receiver_store(world).insert(
+      ground_entity,
+      @render3d.NotShadowReceiver::default(),
+      tick,
+    )
   }
 }
 
 ///|
-fn apply_light_state(world : @ecs_world.World) -> Unit {
+fn apply_light_state(world : @ecs.World) -> Unit {
   let state = contact_shadows_state.val
   let tick = world.read_change_tick()
   let transform = light_transform(state.light_angle)
@@ -239,10 +244,9 @@ fn apply_light_state(world : @ecs_world.World) -> Unit {
     ContactShadowState::Enabled
 
   if state.directional_light is Some(entity) {
-    world.get_transform_store().set(entity, transform, tick) |> ignore
-    world
-    .get_directional_light_store()
-    .set(
+    @math.query_get_transform_store(world).set(entity, transform, tick)
+    |> ignore
+    @render3d.query_get_directional_light_store(world).set(
       entity,
       @render3d.DirectionalLight::new(
         @render2d.Color::white(),
@@ -259,10 +263,9 @@ fn apply_light_state(world : @ecs_world.World) -> Unit {
   }
 
   if state.point_light is Some(entity) {
-    world.get_transform_store().set(entity, transform, tick) |> ignore
-    world
-    .get_point_light_store()
-    .set(
+    @math.query_get_transform_store(world).set(entity, transform, tick)
+    |> ignore
+    @render3d.query_get_point_light_store(world).set(
       entity,
       @render3d.PointLight::new(
         @render2d.Color::white(),
@@ -282,10 +285,9 @@ fn apply_light_state(world : @ecs_world.World) -> Unit {
   }
 
   if state.spot_light is Some(entity) {
-    world.get_transform_store().set(entity, transform, tick) |> ignore
-    world
-    .get_spot_light_store()
-    .set(
+    @math.query_get_transform_store(world).set(entity, transform, tick)
+    |> ignore
+    @render3d.query_get_spot_light_store(world).set(
       entity,
       @render3d.SpotLight::new(
         @render2d.Color::white(),
@@ -308,7 +310,7 @@ fn apply_light_state(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   contact_shadows_state.val = {
     camera: None,
     directional_light: None,
@@ -342,26 +344,42 @@ fn setup(world : @ecs_world.World) -> Unit {
     .spawn(world)
 
   contact_shadows_state.val.camera = Some(camera)
-  world
-  .get_contact_shadows_store()
-  .insert(camera, @render3d.ContactShadows::default(), tick)
-  world
-  .get_screen_space_ambient_occlusion_store()
-  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
-  world
-  .get_temporal_anti_aliasing_store()
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .get_depth_prepass_store()
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
-  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_tonemapping_store()
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
-  world
-  .get_skybox_store()
-  .insert(
+  @render3d.query_get_contact_shadows_store(world).insert(
+    camera,
+    @render3d.ContactShadows::default(),
+    tick,
+  )
+  @render3d.query_get_screen_space_ambient_occlusion_store(world).insert(
+    camera,
+    @render3d.ScreenSpaceAmbientOcclusion::default(),
+    tick,
+  )
+  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+    camera,
+    @render3d.TemporalAntiAliasing::default(),
+    tick,
+  )
+  @render3d.query_get_depth_prepass_store(world).insert(
+    camera,
+    @render3d.DepthPrepass::default(),
+    tick,
+  )
+  @render3d.query_get_bloom_store(world).insert(
+    camera,
+    @render3d.Bloom::default(),
+    tick,
+  )
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    @render3d.Tonemapping::AcesFitted,
+    tick,
+  )
+  @render3d.query_get_skybox_store(world).insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
@@ -377,21 +395,25 @@ fn setup(world : @ecs_world.World) -> Unit {
   contact_shadows_state.val.point_light = Some(point_light)
   contact_shadows_state.val.spot_light = Some(spot_light)
 
-  world
-  .get_directional_light_store()
-  .insert(directional_light, @render3d.DirectionalLight::default(), tick)
-  world
-  .get_point_light_store()
-  .insert(point_light, @render3d.PointLight::default(), tick)
-  world
-  .get_spot_light_store()
-  .insert(spot_light, @render3d.SpotLight::default(), tick)
+  @render3d.query_get_directional_light_store(world).insert(
+    directional_light,
+    @render3d.DirectionalLight::default(),
+    tick,
+  )
+  @render3d.query_get_point_light_store(world).insert(
+    point_light,
+    @render3d.PointLight::default(),
+    tick,
+  )
+  @render3d.query_get_spot_light_store(world).insert(
+    spot_light,
+    @render3d.SpotLight::default(),
+    tick,
+  )
 
   let model = world.spawn_empty()
   contact_shadows_state.val.model = Some(model)
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     model,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -403,9 +425,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     model,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(PI),
@@ -458,7 +478,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn rotate_light(world : @ecs_world.World) -> Unit {
+fn rotate_light(world : @ecs.World) -> Unit {
   if contact_shadows_state.val.light_rotation != LightRotationState::Rotating {
     return
   }
@@ -468,7 +488,7 @@ fn rotate_light(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn controls(world : @ecs_world.World) -> Unit {
+fn controls(world : @ecs.World) -> Unit {
   let mut changed = false
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
@@ -548,8 +568,8 @@ fn controls(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(controls)

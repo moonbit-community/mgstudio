@@ -22,15 +22,15 @@ let logged_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_system(screenshot_system)
   .run()
 }
 
 ///|
-fn screenshot_system(world : @ecs_world.World) -> Unit {
+fn screenshot_system(world : @ecs.World) -> Unit {
   world |> ignore
   if logged_ref.val {
     return

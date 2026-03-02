@@ -17,5 +17,5 @@
 
 ///|
 pub fn game_app() -> Unit {
-  @app.App::new(@ecs_world.World::new()).run()
+  @app.App::new(@ecs.World::new()).run()
 }

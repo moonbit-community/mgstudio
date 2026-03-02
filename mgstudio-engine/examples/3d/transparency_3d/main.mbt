@@ -31,8 +31,8 @@ let transparency_state : Ref[TransparencyState] = Ref::new({ materials: [] })
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(fade_transparency)
@@ -102,7 +102,7 @@ fn uv_sphere_mesh(
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -116,7 +116,7 @@ fn spawn_mesh(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let floor_material = @render3d.standard_material_add(
@@ -207,9 +207,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
 
   let point = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -219,9 +217,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    point,
+    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+    tick,
+  )
 
   @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -234,7 +234,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn fade_transparency(_world : @ecs_world.World) -> Unit {
+fn fade_transparency(_world : @ecs.World) -> Unit {
   let alpha = @math.sin(@time.time_elapsed_seconds()) / 2.0F + 0.5F
   for handle in transparency_state.val.materials {
     if @render3d.standard_material_get(handle) is Some(material) {

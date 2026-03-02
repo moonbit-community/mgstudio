@@ -55,7 +55,7 @@ fn disk_mesh(radius : Float, segments : Int) -> @render3d.Mesh3d {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   @render3d.MeshMaterial3dBundle::new(
@@ -85,16 +85,16 @@ fn setup(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     light,
     @render3d.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    light,
+    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+    tick,
+  )
 
   @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -108,8 +108,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .run()

@@ -14,8 +14,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(physics3d_sanity_setup)
   .add_system(physics3d_sanity_print)
@@ -31,9 +31,9 @@ priv struct SanityState {
 let state : Ref[SanityState] = Ref::new({ ball: None })
 
 ///|
-fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
+fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics3d_config_resource()
+  let cfg_res = @physics3d.query_get_physics3d_config_resource(world)
   match cfg_res.get_ref_mut(tick) {
     Some(r) =>
       r.val = @physics3d.Physics3dConfig::new(
@@ -52,8 +52,8 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
     @math.Transform::from_xyz(0.0F, -200.0F, 0.0F),
   )
   let floor = floor_bundle.spawn(world)
-  let rb_store = world.get_rigid_body3d_store()
-  let col_store = world.get_collider3d_store()
+  let rb_store = @physics3d.query_get_rigid_body3d_store(world)
+  let col_store = @physics3d.query_get_collider3d_store(world)
   rb_store.insert(floor, @physics3d.RigidBody3d::fixed(), tick)
   col_store.insert(
     floor,
@@ -82,7 +82,7 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
   )
   state.val.ball = Some(ball)
 
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = @render3d.query_get_global_ambient_light_resource(world)
   if ambient.get_ref_mut(tick) is Some(a) {
     a.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
@@ -90,9 +90,7 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
     )
   }
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -102,9 +100,11 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(220.0F, 360.0F, 220.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    light,
+    @math.Transform::from_xyz(220.0F, 360.0F, 220.0F),
+    tick,
+  )
 
   let camera = @render2d.Camera::default()
   @render3d.Camera3dBundle::new(
@@ -118,16 +118,16 @@ fn physics3d_sanity_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn physics3d_sanity_print(world : @ecs_world.World) -> Unit {
+fn physics3d_sanity_print(world : @ecs.World) -> Unit {
   match state.val.ball {
     None => ()
     Some(ball) => {
-      let transform_store = world.get_transform_store()
+      let transform_store = @math.query_get_transform_store(world)
       match transform_store.get(ball) {
         None => ()
         Some(t) => println("ball.y=\{t.translation.y}")
       }
-      let ev_res = world.get_physics3d_events_resource()
+      let ev_res = @physics3d.query_get_physics3d_events_resource(world)
       match ev_res.get_ref() {
         Some(r) =>
           for ev in r.val.collisions {

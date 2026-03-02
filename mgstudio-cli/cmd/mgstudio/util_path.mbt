@@ -18,11 +18,6 @@ fn is_absolute_path(path : String) -> Bool {
 }
 
 ///|
-fn path_basename(path : String) -> String {
-  @path.Path(path).basename().to_string()
-}
-
-///|
 fn path_join(dir : String, file : String) -> String {
   @path.Path(dir).join(file).to_string()
 }

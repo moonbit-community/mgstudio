@@ -139,17 +139,19 @@ fn supports_any_compressed_cubemap_format(supported_formats : Int) -> Bool {
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
@@ -196,7 +198,7 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   cubemap_state.val.is_loaded = false
   cubemap_state.val.index = 0
   cubemap_state.val.image_handle = None
@@ -209,16 +211,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
 
   let directional_light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 32_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
@@ -246,26 +244,38 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render2d.Camera::default(),
     camera_transform,
   ).spawn(world)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .get_screen_space_ambient_occlusion_store()
-  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_screen_space_ambient_occlusion_store(world).insert(
+    camera,
+    @render3d.ScreenSpaceAmbientOcclusion::default(),
+    tick,
+  )
   // Keep the Bevy TAA component surface for parity; web runtimes may treat it
   // as a marker/no-op until full backend parity is available.
-  world
-  .get_temporal_anti_aliasing_store()
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .get_free_camera_store()
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+    camera,
+    @render3d.TemporalAntiAliasing::default(),
+    tick,
+  )
+  @render3d.query_get_free_camera_store(world).insert(
+    camera,
+    @render3d.FreeCamera::default(),
+    tick,
+  )
   cubemap_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
   let initial_image = asset_server.load(cubemap_path(0))
   cubemap_state.val.image_handle = Some(initial_image)
-  world
-  .get_skybox_store()
-  .insert(camera, @render3d.Skybox::new(initial_image, 1000.0F), tick)
+  @render3d.query_get_skybox_store(world).insert(
+    camera,
+    @render3d.Skybox::new(initial_image, 1000.0F),
+    tick,
+  )
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let help_text = @text.Text2dBundle::new(
@@ -332,7 +342,7 @@ fn cycle_cubemap_asset() -> Unit {
 }
 
 ///|
-fn asset_loaded(world : @ecs_world.World) -> Unit {
+fn asset_loaded(world : @ecs.World) -> Unit {
   if cubemap_state.val.is_loaded {
     return
   }
@@ -342,11 +352,13 @@ fn asset_loaded(world : @ecs_world.World) -> Unit {
   }
   guard cubemap_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  if world.get_skybox_store().get(camera_entity) is Some(skybox) {
+  if @render3d.query_get_skybox_store(world).get(camera_entity) is Some(skybox) {
     println("Swapping to \{cubemap_path(cubemap_state.val.index)}")
-    world
-    .get_skybox_store()
-    .set(camera_entity, skybox.with_image(Some(handle)), tick)
+    @render3d.query_get_skybox_store(world).set(
+      camera_entity,
+      skybox.with_image(Some(handle)),
+      tick,
+    )
     |> ignore
   }
 
@@ -355,24 +367,26 @@ fn asset_loaded(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn animate_light_direction(world : @ecs_world.World) -> Unit {
+fn animate_light_direction(world : @ecs.World) -> Unit {
   guard cubemap_state.val.directional_light is Some(light_entity) else {
     return
   }
-  if world.get_transform_store().get(light_entity) is Some(transform) {
+  if @math.query_get_transform_store(world).get(light_entity) is Some(transform) {
     let tick = world.read_change_tick()
     let next_rotation = transform.rotation
       .mul(@math.Quat::from_rotation_y(@time.time_delta_seconds() * 0.5F))
       .normalize()
-    world
-    .get_transform_store()
-    .set(light_entity, transform.with_rotation(next_rotation), tick)
+    @math.query_get_transform_store(world).set(
+      light_entity,
+      transform.with_rotation(next_rotation),
+      tick,
+    )
     |> ignore
   }
 }
 
 ///|
-fn update(world : @ecs_world.World) -> Unit {
+fn update(world : @ecs.World) -> Unit {
   cycle_cubemap_asset()
   asset_loaded(world)
   animate_light_direction(world)
@@ -380,8 +394,8 @@ fn update(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render3d.free_camera_plugin])
   .add_startup_system(setup)

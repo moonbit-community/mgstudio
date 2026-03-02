@@ -110,7 +110,7 @@ fn uv_sphere_mesh(
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -123,7 +123,7 @@ fn spawn_mesh(
 }
 
 ///|
-fn setup_camera_fog(world : @ecs_world.World) -> Unit {
+fn setup_camera_fog(world : @ecs.World) -> Unit {
   let initial_fog = @render3d.DistanceFog::new(
     @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     @render3d.FogFalloff3d::linear(5.0F, 20.0F),
@@ -142,9 +142,9 @@ fn setup_camera_fog(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
+fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = @render3d.query_get_global_ambient_light_resource(world)
   if ambient.get_ref_mut(tick) is Some(value) {
     value.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::white(),
@@ -191,12 +191,16 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
       @math.Vec3::splat(1.75F),
     ),
   )
-  world
-  .get_not_shadow_caster_store()
-  .insert(orb, @render3d.NotShadowCaster::default(), tick)
-  world
-  .get_not_shadow_receiver_store()
-  .insert(orb, @render3d.NotShadowReceiver::default(), tick)
+  @render3d.query_get_not_shadow_caster_store(world).insert(
+    orb,
+    @render3d.NotShadowCaster::default(),
+    tick,
+  )
+  @render3d.query_get_not_shadow_receiver_store(world).insert(
+    orb,
+    @render3d.NotShadowReceiver::default(),
+    tick,
+  )
 
   for i in 0..<50 {
     let i_f = float_from_int(i)
@@ -231,16 +235,16 @@ fn setup_pyramid_scene(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let point_light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point_light,
     @render3d.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point_light, @math.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    point_light,
+    @math.Transform::from_xyz(0.0F, 1.0F, 0.0F),
+    tick,
+  )
 }
 
 ///|
@@ -269,7 +273,7 @@ fn fog_help_text(fog : @render3d.DistanceFog) -> String {
 }
 
 ///|
-fn setup_instructions(_world : @ecs_world.World) -> Unit {
+fn setup_instructions(_world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -296,14 +300,14 @@ fn setup_instructions(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_system(world : @ecs_world.World) -> Unit {
+fn update_system(world : @ecs.World) -> Unit {
   let now = @time.time_elapsed_seconds()
   let delta = @time.time_delta_seconds()
   let tick = world.read_change_tick()
 
   guard fog_example_state.val.camera is Some(camera) else { return }
-  let camera3d_store = world.get_camera3d_store()
-  let transform_store = world.get_transform_store()
+  let camera3d_store = @render3d.query_get_camera3d_store(world)
+  let transform_store = @math.query_get_transform_store(world)
   let mut fog = fog_example_state.val.fog
 
   let orbit_scale = 8.0F + @math.sin(now / 10.0F) * 7.0F
@@ -460,7 +464,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   fog_example_state.val.camera = None
   fog_example_state.val.help_text = None
   fog_example_state.val.fog = @render3d.DistanceFog::default()
@@ -471,8 +475,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(update_system)

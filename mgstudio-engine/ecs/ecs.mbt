@@ -100,6 +100,9 @@ let next_resource_id_ref : Ref[Int] = Ref::new(1)
 let next_event_id_ref : Ref[Int] = Ref::new(1)
 
 ///|
+let next_world_id_ref : Ref[Int] = Ref::new(1)
+
+///|
 pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
   let id = next_component_id_ref.val
   next_component_id_ref.val = id + 1
@@ -152,6 +155,7 @@ pub(all) suberror EcsError {
 
 ///|
 pub struct World {
+  world_id : Int
   entities : @core.Entities
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
@@ -163,7 +167,10 @@ pub struct World {
 
 ///|
 pub fn World::new() -> World {
+  let world_id = next_world_id_ref.val
+  next_world_id_ref.val = world_id + 1
   World::{
+    world_id,
     entities: @core.Entities::new(),
     change_tick: 0,
     system_context: @core.SystemContext::new(),
@@ -172,6 +179,11 @@ pub fn World::new() -> World {
     previous_events: {},
     current_events: {},
   }
+}
+
+///|
+pub fn World::world_id(self : World) -> Int {
+  self.world_id
 }
 
 ///|

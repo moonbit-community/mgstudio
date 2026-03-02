@@ -81,18 +81,22 @@ pub impl @json.FromJson for VisibilityRange
 pub(open) trait Has_InheritedVisibility {
   get_inherited_visibility_store(Self) -> @core.ComponentStore[InheritedVisibility]
 }
+pub impl Has_InheritedVisibility for @ecs.World
 
 pub(open) trait Has_ViewVisibility {
   get_view_visibility_store(Self) -> @core.ComponentStore[ViewVisibility]
 }
+pub impl Has_ViewVisibility for @ecs.World
 
 pub(open) trait Has_Visibility {
   get_visibility_store(Self) -> @core.ComponentStore[Visibility]
 }
+pub impl Has_Visibility for @ecs.World
 
 pub(open) trait Has_VisibilityRange {
   get_visibility_range_store(Self) -> @core.ComponentStore[VisibilityRange]
 }
+pub impl Has_VisibilityRange for @ecs.World
 
 pub(open) trait VisibilityPropagationWorld : Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld {
 }

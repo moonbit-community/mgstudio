@@ -114,7 +114,7 @@ fn create_text() -> String {
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -128,7 +128,7 @@ fn spawn_mesh(
 }
 
 ///|
-fn setup_scene_geometry(world : @ecs_world.World) -> Unit {
+fn setup_scene_geometry(world : @ecs.World) -> Unit {
   let corridor_floor_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
       @render2d.Color::new(0.10F, 0.10F, 0.11F, 1.0F),
@@ -216,7 +216,7 @@ fn setup_scene_geometry(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_camera(world : @ecs_world.World) -> Unit {
+fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -226,13 +226,17 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   let tick = world.read_change_tick()
-  world
-  .get_tonemapping_store()
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
-  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
-  world
-  .get_skybox_store()
-  .insert(
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    @render3d.Tonemapping::TonyMcMapface,
+    tick,
+  )
+  @render3d.query_get_bloom_store(world).insert(
+    camera,
+    @render3d.Bloom::default(),
+    tick,
+  )
+  @render3d.query_get_skybox_store(world).insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -244,13 +248,11 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_lights(world : @ecs_world.World) -> Unit {
+fn setup_lights(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let directional_light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::from_xyz(1.0F, 4.3F, -1.5F).looking_at(
       scene_focus(),
@@ -258,9 +260,7 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
@@ -268,12 +268,12 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
   volumetric_fog_state.val.directional_light = Some(directional_light)
 
   let point_light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(point_light, @math.Transform::from_xyz(-0.4F, 1.9F, 1.0F), tick)
-  world
-  .get_point_light_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
+    point_light,
+    @math.Transform::from_xyz(-0.4F, 1.9F, 1.0F),
+    tick,
+  )
+  @render3d.query_get_point_light_store(world).insert(
     point_light,
     @render3d.PointLight::new(
       @render2d.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
@@ -286,9 +286,7 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
   volumetric_fog_state.val.point_light = Some(point_light)
 
   let spot_light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     spot_light,
     @math.Transform::from_xyz(-1.8F, 3.9F, -2.7F).looking_at(
       @math.Vec3::new(-1.5F, 0.7F, 3.5F),
@@ -296,9 +294,7 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_spot_light_store()
-  .insert(
+  @render3d.query_get_spot_light_store(world).insert(
     spot_light,
     @render3d.SpotLight::new(
       @render2d.Color::white(),
@@ -314,7 +310,7 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_instructions(_world : @ecs_world.World) -> Unit {
+fn setup_instructions(_world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -339,14 +335,13 @@ fn setup_instructions(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_light_switches(world : @ecs_world.World) -> Unit {
+fn apply_light_switches(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   if volumetric_fog_state.val.point_light is Some(point_light) {
-    if world.get_point_light_store().get(point_light) is Some(light) {
-      world
-      .get_point_light_store()
-      .set(
+    if @render3d.query_get_point_light_store(world).get(point_light)
+      is Some(light) {
+      @render3d.query_get_point_light_store(world).set(
         point_light,
         @render3d.PointLight::new(
           light.color,
@@ -365,10 +360,9 @@ fn apply_light_switches(world : @ecs_world.World) -> Unit {
   }
 
   if volumetric_fog_state.val.spot_light is Some(spot_light) {
-    if world.get_spot_light_store().get(spot_light) is Some(light) {
-      world
-      .get_spot_light_store()
-      .set(
+    if @render3d.query_get_spot_light_store(world).get(spot_light)
+      is Some(light) {
+      @render3d.query_get_spot_light_store(world).set(
         spot_light,
         @render3d.SpotLight::new(
           light.color,
@@ -390,14 +384,14 @@ fn apply_light_switches(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_fog_proxy(world : @ecs_world.World) -> Unit {
+fn apply_fog_proxy(world : @ecs.World) -> Unit {
   let mut phase = 0.5F
 
   if volumetric_fog_state.val.camera is Some(camera_entity) {
     if volumetric_fog_state.val.directional_light is Some(light_entity) {
-      if world.get_transform_store().get(camera_entity)
+      if @math.query_get_transform_store(world).get(camera_entity)
         is Some(camera_transform) {
-        if world.get_transform_store().get(light_entity)
+        if @math.query_get_transform_store(world).get(light_entity)
           is Some(light_transform) {
           let light_dir = transform_forward(light_transform).neg()
           let view_dir = scene_focus()
@@ -438,7 +432,7 @@ fn apply_fog_proxy(world : @ecs_world.World) -> Unit {
   )
   guard volumetric_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.get_camera3d_store()
+  let camera3d_store = @render3d.query_get_camera3d_store(world)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @render3d.Camera3d::default()
@@ -448,7 +442,7 @@ fn apply_fog_proxy(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_directional_light(world : @ecs_world.World) -> Unit {
+fn move_directional_light(world : @ecs.World) -> Unit {
   let delta_time = @time.time_delta_seconds()
   let mut delta_x = 0.0F
   let mut delta_y = 0.0F
@@ -475,16 +469,19 @@ fn move_directional_light(world : @ecs_world.World) -> Unit {
   }
 
   if volumetric_fog_state.val.directional_light is Some(light_entity) {
-    if world.get_transform_store().get(light_entity) is Some(light_transform) {
+    if @math.query_get_transform_store(world).get(light_entity)
+      is Some(light_transform) {
       let next_rotation = @math.Quat::from_rotation_y(delta_x)
         .mul(@math.Quat::from_rotation_x(delta_y))
         .mul(light_transform.rotation)
         .normalize()
 
       let tick = world.read_change_tick()
-      world
-      .get_transform_store()
-      .set(light_entity, light_transform.with_rotation(next_rotation), tick)
+      @math.query_get_transform_store(world).set(
+        light_entity,
+        light_transform.with_rotation(next_rotation),
+        tick,
+      )
       |> ignore
     }
   }
@@ -493,9 +490,10 @@ fn move_directional_light(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_point_light(world : @ecs_world.World) -> Unit {
+fn move_point_light(world : @ecs.World) -> Unit {
   if volumetric_fog_state.val.point_light is Some(point_entity) {
-    if world.get_transform_store().get(point_entity) is Some(point_transform) {
+    if @math.query_get_transform_store(world).get(point_entity)
+      is Some(point_transform) {
       let mut x = point_transform.translation.x +
         volumetric_fog_state.val.point_light_speed * @time.time_delta_seconds()
 
@@ -508,9 +506,7 @@ fn move_point_light(world : @ecs_world.World) -> Unit {
       }
 
       let tick = world.read_change_tick()
-      world
-      .get_transform_store()
-      .set(
+      @math.query_get_transform_store(world).set(
         point_entity,
         point_transform.with_translation(
           @math.Vec3::new(
@@ -529,7 +525,7 @@ fn move_point_light(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn adjust_app_settings(world : @ecs_world.World) -> Unit {
+fn adjust_app_settings(world : @ecs.World) -> Unit {
   let mut changed = false
 
   if @input.key_just_pressed(@window.KeyCode::KeyP) {
@@ -556,7 +552,7 @@ fn adjust_app_settings(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   volumetric_fog_state.val = {
     volumetric_spotlight: true,
     volumetric_pointlight: true,
@@ -569,7 +565,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = @render3d.query_get_global_ambient_light_resource(world)
   if ambient.get_ref_mut(tick) is Some(value) {
     value.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::white(),
@@ -587,8 +583,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(move_directional_light)

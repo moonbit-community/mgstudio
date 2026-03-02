@@ -20,8 +20,6 @@
 /// - For compound bodies, use `ColliderParent2d` (child colliders) or `ColliderShape2d::compound`.
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RigidBody2d {
   body_type : @dynamics.RigidBodyType
 }
@@ -138,8 +136,6 @@ pub fn ColliderShape2d::raw(shape : @collision.Shape) -> ColliderShape2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Collider2d {
   shape : ColliderShape2d
   sensor : Bool
@@ -164,7 +160,6 @@ pub fn Collider2d::sensor(self : Collider2d, sensor : Bool) -> Collider2d {
 ///
 /// Note: The collider entity's `@math.Transform` is interpreted as the collider
 /// pose relative to the parent body.
-#ecs.component
 pub struct ColliderParent2d {
   parent : @core.Entity
 }
@@ -175,8 +170,6 @@ pub fn ColliderParent2d::new(parent : @core.Entity) -> ColliderParent2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Velocity2d {
   linvel : @math.Vec2
   angvel : Float
@@ -193,8 +186,6 @@ pub fn Velocity2d::new(linvel : @math.Vec2, angvel : Float) -> Velocity2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Damping2d {
   linear : Float
   angular : Float
@@ -206,8 +197,6 @@ pub fn Damping2d::new(linear : Float, angular : Float) -> Damping2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct GravityScale2d {
   scale : Float
 }
@@ -218,8 +207,6 @@ pub fn GravityScale2d::new(scale : Float) -> GravityScale2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct LockedAxes2d {
   lock_translations : Bool
   lock_rotations : Bool
@@ -239,8 +226,6 @@ pub fn LockedAxes2d::locked() -> LockedAxes2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Ccd2d {
   enabled : Bool
   soft_prediction : Float
@@ -257,8 +242,6 @@ pub fn Ccd2d::new(enabled : Bool, soft_prediction : Float) -> Ccd2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Dominance2d {
   group : Int
 }
@@ -269,8 +252,6 @@ pub fn Dominance2d::new(group : Int) -> Dominance2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Sleeping2d {
   sleeping : Bool
 }
@@ -281,8 +262,6 @@ pub fn Sleeping2d::new(sleeping : Bool) -> Sleeping2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ExternalForce2d {
   force : @math.Vec2
   torque : Float
@@ -302,8 +281,6 @@ pub fn ExternalForce2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ExternalImpulse2d {
   impulse : @math.Vec2
   torque_impulse : Float
@@ -323,8 +300,6 @@ pub fn ExternalImpulse2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ContactForceEventThreshold2d {
   threshold : Float
 }
@@ -337,8 +312,6 @@ pub fn ContactForceEventThreshold2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ColliderDensity2d {
   density : Float
 }
@@ -349,8 +322,6 @@ pub fn ColliderDensity2d::new(density : Float) -> ColliderDensity2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Friction2d {
   coefficient : Float
 }
@@ -361,8 +332,6 @@ pub fn Friction2d::new(coefficient : Float) -> Friction2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct FrictionCombineRule2d {
   rule : @dynamics.CoefficientCombineRule
 }
@@ -375,8 +344,6 @@ pub fn FrictionCombineRule2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Restitution2d {
   coefficient : Float
 }
@@ -387,8 +354,6 @@ pub fn Restitution2d::new(coefficient : Float) -> Restitution2d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RestitutionCombineRule2d {
   rule : @dynamics.CoefficientCombineRule
 }
@@ -401,8 +366,6 @@ pub fn RestitutionCombineRule2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct CollisionGroups2d {
   memberships : Int
   filter : Int
@@ -419,8 +382,6 @@ pub fn CollisionGroups2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct SolverGroups2d {
   memberships : Int
   filter : Int
@@ -438,7 +399,6 @@ pub fn SolverGroups2d::new(
 
 ///|
 /// Enable/disable a collider without despawning it.
-#ecs.component
 pub struct ColliderEnabled2d {
   enabled : Bool
 }
@@ -455,7 +415,6 @@ pub fn ColliderEnabled2d::disabled() -> ColliderEnabled2d {
 
 ///|
 /// Per-collider active collision type mask.
-#ecs.component
 pub struct ActiveCollisionTypes2d {
   types : @collision.ActiveCollisionTypes
 }
@@ -469,7 +428,6 @@ pub fn ActiveCollisionTypes2d::new(
 
 ///|
 /// Per-collider active event mask (collision/contact-force events).
-#ecs.component
 pub struct ActiveEvents2d {
   events : @collision.ActiveEvents
 }
@@ -481,7 +439,6 @@ pub fn ActiveEvents2d::new(events : @collision.ActiveEvents) -> ActiveEvents2d {
 
 ///|
 /// Per-collider active hook mask (enables contact/intersection filtering, etc.).
-#ecs.component
 pub struct ActiveHooks2d {
   hooks : @collision.ActiveHooks
 }
@@ -493,7 +450,6 @@ pub fn ActiveHooks2d::new(hooks : @collision.ActiveHooks) -> ActiveHooks2d {
 
 ///|
 /// Per-collider contact skin thickness.
-#ecs.component
 pub struct ContactSkin2d {
   skin : Float
 }
@@ -505,7 +461,6 @@ pub fn ContactSkin2d::new(skin : Float) -> ContactSkin2d {
 
 ///|
 /// Override per-collider mass properties.
-#ecs.component
 pub struct ColliderMassProperties2d {
   mass_properties : @rapier_core.MassProperties
 }
@@ -519,7 +474,6 @@ pub fn ColliderMassProperties2d::new(
 
 ///|
 /// Enable/disable a rigid body without despawning it.
-#ecs.component
 pub struct RigidBodyEnabled2d {
   enabled : Bool
 }
@@ -536,7 +490,6 @@ pub fn RigidBodyEnabled2d::disabled() -> RigidBodyEnabled2d {
 
 ///|
 /// Additional mass-properties applied on top of the collider-derived mass.
-#ecs.component
 pub struct AdditionalMassProperties2d {
   props : @dynamics.RigidBodyAdditionalMassProps
 }
@@ -557,7 +510,6 @@ pub fn AdditionalMassProperties2d::mass_properties(
 
 ///|
 /// Additional solver iterations for a rigid body.
-#ecs.component
 pub struct AdditionalSolverIterations2d {
   iterations : Int
 }
@@ -570,8 +522,6 @@ pub fn AdditionalSolverIterations2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RapierBodyHandle2d {
   handle : @dynamics.RigidBodyHandle
 }
@@ -584,8 +534,6 @@ pub fn RapierBodyHandle2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RapierColliderHandle2d {
   handle : @collision.ColliderHandle
 }
@@ -601,8 +549,6 @@ pub fn RapierColliderHandle2d::new(
 /// Joint authoring components live in `physics2d_joints.mbt`.
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct Physics2dConfig {
   gravity : @math.Vec2
   /// If false, the physics pipeline does not step.
@@ -650,8 +596,6 @@ pub fn Physics2dConfig::with_integration_parameters(
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct Physics2dContext {
   rigid_bodies : @dynamics.RigidBodySet
   colliders : @collision.ColliderSet

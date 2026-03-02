@@ -20,8 +20,6 @@
 /// - One collider per entity is assumed for v1 (use child entities for compound shapes).
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RigidBody3d {
   body_type : @dynamics.RigidBodyType
 }
@@ -71,8 +69,6 @@ pub fn ColliderShape3d::cuboid(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Collider3d {
   shape : ColliderShape3d
   sensor : Bool
@@ -90,7 +86,6 @@ pub fn Collider3d::sensor(self : Collider3d, sensor : Bool) -> Collider3d {
 
 ///|
 /// Per-collider active event mask (collision/contact-force/intersection events).
-#ecs.component
 pub struct ActiveEvents3d {
   events : @collision.ActiveEvents
 }
@@ -112,7 +107,6 @@ pub fn ActiveEvents3d::collision_events() -> ActiveEvents3d {
 
 ///|
 /// Per-collider contact-force event threshold.
-#ecs.component
 pub struct ContactForceEventThreshold3d {
   threshold : Float
 }
@@ -126,7 +120,6 @@ pub fn ContactForceEventThreshold3d::new(
 
 ///|
 /// Per-collider active collision type mask.
-#ecs.component
 pub struct ActiveCollisionTypes3d {
   types : @collision.ActiveCollisionTypes
 }
@@ -140,7 +133,6 @@ pub fn ActiveCollisionTypes3d::new(
 
 ///|
 /// Per-collider active hook mask.
-#ecs.component
 pub struct ActiveHooks3d {
   hooks : @collision.ActiveHooks
 }
@@ -151,8 +143,6 @@ pub fn ActiveHooks3d::new(hooks : @collision.ActiveHooks) -> ActiveHooks3d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Velocity3d {
   linvel : @math.Vec3
   angvel : @math.Vec3
@@ -169,8 +159,6 @@ pub fn Velocity3d::zero() -> Velocity3d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RapierBodyHandle3d {
   handle : @dynamics.RigidBodyHandle
 }
@@ -183,8 +171,6 @@ pub fn RapierBodyHandle3d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RapierColliderHandle3d {
   handle : @collision.ColliderHandle3D
 }
@@ -197,8 +183,6 @@ pub fn RapierColliderHandle3d::new(
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct Physics3dConfig {
   gravity : @math.Vec3
 }
@@ -214,8 +198,6 @@ pub fn Physics3dConfig::new(gravity : @math.Vec3) -> Physics3dConfig {
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct Physics3dContext {
   rigid_bodies : @dynamics.RigidBodySet3D
   colliders : @collision.ColliderSet3D

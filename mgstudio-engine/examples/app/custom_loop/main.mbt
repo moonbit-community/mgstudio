@@ -46,7 +46,7 @@ fn exit_system(
 }
 
 ///|
-fn my_runner_builder(app : @app.App[@ecs_world.World]) -> @app.RunnerFn {
+fn my_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
     let mut runtime_app = app.run_startup()
     println("Type stuff into the console")
@@ -67,7 +67,7 @@ fn my_runner_builder(app : @app.App[@ecs_world.World]) -> @app.RunnerFn {
 
 ///|
 pub fn game_app() -> Unit {
-  @app.App::new(@ecs_world.World::new())
+  @app.App::new(@ecs.World::new())
   .insert_resource(Input::{ value: "" })
   .set_runner(my_runner_builder)
   .add_system_param(print_system)

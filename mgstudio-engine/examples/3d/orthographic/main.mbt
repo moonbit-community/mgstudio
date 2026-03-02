@@ -19,7 +19,7 @@
 const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let projection = @render3d.Projection3d::Orthographic(
     @render3d.OrthographicProjection3d::default().with_scaling_mode(
@@ -85,18 +85,22 @@ fn setup(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(light, @render3d.PointLight::default(), tick)
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
+  @render3d.query_get_point_light_store(world).insert(
+    light,
+    @render3d.PointLight::default(),
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
+    light,
+    @math.Transform::from_xyz(3.0F, 8.0F, 5.0F),
+    tick,
+  )
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .run()

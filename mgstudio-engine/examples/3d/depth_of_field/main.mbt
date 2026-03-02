@@ -98,12 +98,10 @@ fn compute_focal_length_meters(fov : Float) -> Float {
 }
 
 ///|
-fn set_camera_projection(world : @ecs_world.World, fov : Float) -> Unit {
+fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
   guard dof_state.val.camera is Some(camera) else { return }
   let perspective = @render3d.PerspectiveProjection3d::default().with_fov(fov)
-  world
-  .get_camera_projection3d_store()
-  .set(
+  @render3d.query_get_camera_projection3d_store(world).set(
     camera,
     @render3d.CameraProjection3d::new(
       @render3d.Projection3d::Perspective(perspective),
@@ -115,22 +113,24 @@ fn set_camera_projection(world : @ecs_world.World, fov : Float) -> Unit {
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
 ///|
-fn apply_dof_proxy(world : @ecs_world.World) -> Unit {
+fn apply_dof_proxy(world : @ecs.World) -> Unit {
   let mode = dof_state.val.mode
   let focal = dof_state.val.focal_distance
   let aperture = dof_state.val.aperture_f_stops
@@ -211,7 +211,7 @@ fn update_text() -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   dof_state.val = {
     focal_distance: 7.0F,
     aperture_f_stops: 0.125F,
@@ -229,17 +229,25 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_tonemapping_store()
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
-  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    @render3d.Tonemapping::TonyMcMapface,
+    tick,
+  )
+  @render3d.query_get_bloom_store(world).insert(
+    camera,
+    @render3d.Bloom::default(),
+    tick,
+  )
   dof_state.val.camera = Some(camera)
 
   let scene_entity = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     scene_entity,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -290,16 +298,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   }
 
   let directional = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 25_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional,
     @math.Transform::from_xyz(0.0F, 8.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -1.5F, -8.0F),
@@ -309,9 +313,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
 
   let point = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -321,9 +323,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point, @math.Transform::from_xyz(0.0F, 4.5F, 6.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    point,
+    @math.Transform::from_xyz(0.0F, 4.5F, 6.0F),
+    tick,
+  )
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -352,7 +356,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn adjust_focus_and_mode(world : @ecs_world.World) -> Unit {
+fn adjust_focus_and_mode(world : @ecs.World) -> Unit {
   let mut changed = false
 
   let distance_delta = if @input.key_pressed(@window.KeyCode::ArrowDown) {
@@ -401,8 +405,8 @@ fn adjust_focus_and_mode(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(adjust_focus_and_mode)

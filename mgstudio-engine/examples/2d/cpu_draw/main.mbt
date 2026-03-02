@@ -69,8 +69,8 @@ let cpu_draw_state : Ref[CpuDrawState] = Ref::new(CpuDrawState::{
 ///|
 pub fn game_app() -> Unit {
   @app.fixed_time_set_timestep_seconds(FIXED_TIMESTEP_SECONDS)
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(cpu_draw_setup)
   .add_fixed_update_system(cpu_draw_draw)
@@ -78,7 +78,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn cpu_draw_setup(world : @ecs_world.World) -> Unit {
+fn cpu_draw_setup(world : @ecs.World) -> Unit {
   let texture = @asset.asset_create_dynamic_texture(
     @math.UVec2::new(IMAGE_WIDTH, IMAGE_HEIGHT),
     false,
@@ -112,7 +112,7 @@ fn cpu_draw_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn cpu_draw_draw(_world : @ecs_world.World) -> Unit {
+fn cpu_draw_draw(_world : @ecs.World) -> Unit {
   guard cpu_draw_state.val.texture is Some(texture) else { return }
 
   if !cpu_draw_state.val.draw_color_initialized {

@@ -28,8 +28,8 @@ let text2d_state : Ref[Text2dState] = Ref::new(Text2dState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(text2d_setup)
   .add_system(text2d_animate)
@@ -37,7 +37,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn text2d_setup(world : @ecs_world.World) -> Unit {
+fn text2d_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let large_font = @text.TextFont::default()
@@ -171,7 +171,7 @@ fn spawn_animated_text(
 
 ///|
 fn spawn_wrapped_text_box(
-  world : @ecs_world.World,
+  world : @ecs.World,
   font : @text.TextFont,
   center : @math.Vec2,
   size : @math.Vec2,
@@ -300,7 +300,7 @@ fn anchor_name(anchor : @render2d.Anchor) -> String {
 }
 
 ///|
-fn text2d_animate(_world : @ecs_world.World) -> Unit {
+fn text2d_animate(_world : @ecs.World) -> Unit {
   let elapsed = @time.time_elapsed_seconds()
 
   if text2d_state.val.translation_text is Some(handle) {

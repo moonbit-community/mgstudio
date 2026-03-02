@@ -69,7 +69,7 @@ fn transfer_log_messages(writer : @core.MessageWriter[LogMessage]) -> Unit {
 }
 
 ///|
-fn log_system(_world : @ecs_world.World) -> Unit {
+fn log_system(_world : @ecs.World) -> Unit {
   @app.log_error("Something failed")
   @app.log_warn(
     "Something bad happened that isn't a failure, but thats worth calling out",
@@ -88,9 +88,9 @@ fn print_logs(reader : @core.MessageReader[LogMessage]) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
   let log_plugin = @app.LogPlugin::default().with_custom_layer(custom_layer)
-  @app.App::new(@ecs_world.World::new())
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(log_plugin)])
   .add_system(log_system)

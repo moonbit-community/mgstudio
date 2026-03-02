@@ -150,7 +150,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn spawn_plane(
-  world : @ecs_world.World,
+  world : @ecs.World,
   base_color : @asset.Handle[@asset.Image],
   normal_map : @asset.Handle[@asset.Image],
 ) -> Unit {
@@ -174,12 +174,10 @@ fn spawn_plane(
 }
 
 ///|
-fn spawn_light(world : @ecs_world.World) -> Unit {
+fn spawn_light(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let point = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -189,13 +187,15 @@ fn spawn_light(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point, @math.Transform::from_xyz(8.0F, 16.0F, -8.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    point,
+    @math.Transform::from_xyz(8.0F, 16.0F, -8.0F),
+    tick,
+  )
 }
 
 ///|
-fn spawn_camera(world : @ecs_world.World) -> Unit {
+fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -204,11 +204,15 @@ fn spawn_camera(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   clustered_decal_maps_state.val.spawn_accumulator = 0.0F
   clustered_decal_maps_state.val.random_seed = 1_987_836_747
@@ -264,7 +268,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_decal(world : @ecs_world.World) -> Unit {
+fn spawn_decal(world : @ecs.World) -> Unit {
   guard clustered_decal_maps_state.val.textures is Some(textures) else {
     return
   }
@@ -308,7 +312,9 @@ fn spawn_decal(world : @ecs_world.World) -> Unit {
     .with_rotation(@math.Quat::from_rotation_z(theta))
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
-  world.get_clustered_decal_store().insert(entity, clustered_decal, tick)
+  @render3d.query_get_clustered_decal_store(world).insert(
+    entity, clustered_decal, tick,
+  )
   clustered_decal_maps_state.val.decals.push({
     entity,
     base_scale: size,
@@ -317,7 +323,7 @@ fn spawn_decal(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn animate_decals(world : @ecs_world.World) -> Unit {
+fn animate_decals(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds()
   if delta <= 0.0F {
     return
@@ -335,7 +341,8 @@ fn animate_decals(world : @ecs_world.World) -> Unit {
       }
       continue
     }
-    if world.get_transform_store().get(decal.entity) is Some(transform) {
+    if @math.query_get_transform_store(world).get(decal.entity)
+      is Some(transform) {
       let scale_factor = if age < DECAL_ANIMATE_IN_DURATION {
         clamp01(age / DECAL_ANIMATE_IN_DURATION)
       } else if age < DECAL_ANIMATE_IN_DURATION + DECAL_IDLE_DURATION {
@@ -345,9 +352,7 @@ fn animate_decals(world : @ecs_world.World) -> Unit {
           DECAL_ANIMATE_OUT_DURATION
         1.0F - clamp01(t)
       }
-      world
-      .get_transform_store()
-      .set(
+      @math.query_get_transform_store(world).set(
         decal.entity,
         transform.with_scale(
           @math.Vec3::new(
@@ -366,7 +371,7 @@ fn animate_decals(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn controls(world : @ecs_world.World) -> Unit {
+fn controls(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyE) {
     if !clustered_decal_maps_state.val.emissive_decals {
       clustered_decal_maps_state.val.emissive_decals = true
@@ -383,7 +388,7 @@ fn controls(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_loop(world : @ecs_world.World) -> Unit {
+fn spawn_loop(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds()
   if delta <= 0.0F {
     return
@@ -400,8 +405,8 @@ fn spawn_loop(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(controls)

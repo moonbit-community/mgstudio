@@ -26,8 +26,8 @@ let wireframe_scene_state : Ref[WireframeSceneState] = Ref::new(WireframeSceneSt
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render2d.wireframe2d_plugin])
   .add_startup_system(wireframe_setup)
@@ -105,7 +105,7 @@ fn spawn_ui_text_handle(
 
 ///|
 fn spawn_wireframe_overlay(
-  world : @ecs_world.World,
+  world : @ecs.World,
   config : @render2d.Wireframe2dConfig,
 ) -> @text.TextHandle {
   let asset_server = @asset.AssetServer::new()
@@ -118,10 +118,8 @@ fn spawn_wireframe_overlay(
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -129,12 +127,12 @@ fn spawn_wireframe_overlay(
     tick,
   )
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -142,26 +140,28 @@ fn spawn_wireframe_overlay(
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
   text_handle
 }
 
 ///|
-fn setup_wireframe2d_config(world : @ecs_world.World) -> Unit {
+fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let config = @render2d.Wireframe2dConfig::new(true, color_default_white())
-  if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+  if @render2d.query_get_wireframe2d_config_resource(world).get_ref_mut(tick)
     is Some(config_ref) {
     config_ref.val = config
   } else {
-    world.get_wireframe2d_config_resource().insert(config, tick)
+    @render2d.query_get_wireframe2d_config_resource(world).insert(config, tick)
   }
 }
 
 ///|
-fn wireframe_setup(world : @ecs_world.World) -> Unit {
+fn wireframe_setup(world : @ecs.World) -> Unit {
   let black = @render2d.Color::black()
 
   let tick = world.read_change_tick()
@@ -181,9 +181,11 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   ).spawn(world)
-  world
-  .get_no_wireframe2d_store()
-  .insert(triangle_entity, @render2d.NoWireframe2d::default(), tick)
+  @render2d.query_get_no_wireframe2d_store(world).insert(
+    triangle_entity,
+    @render2d.NoWireframe2d::default(),
+    tick,
+  )
 
   @render2d.Mesh2dBundle::new(
     @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(100.0F, 100.0F)),
@@ -205,12 +207,16 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   ).spawn(world)
-  world
-  .get_wireframe2d_store()
-  .insert(circle_entity, @render2d.Wireframe2d::default(), tick)
-  world
-  .get_wireframe2d_color_store()
-  .insert(circle_entity, @render2d.Wireframe2dColor::new(color_green()), tick)
+  @render2d.query_get_wireframe2d_store(world).insert(
+    circle_entity,
+    @render2d.Wireframe2d::default(),
+    tick,
+  )
+  @render2d.query_get_wireframe2d_color_store(world).insert(
+    circle_entity,
+    @render2d.Wireframe2dColor::new(color_green()),
+    tick,
+  )
 
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
@@ -220,7 +226,7 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
 
   wireframe_scene_state.val.circle_entity = circle_entity
 
-  let config = if world.get_wireframe2d_config_resource().get_ref()
+  let config = if @render2d.query_get_wireframe2d_config_resource(world).get_ref()
     is Some(config_ref) {
     config_ref.val
   } else {
@@ -232,10 +238,10 @@ fn wireframe_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn wireframe_update(world : @ecs_world.World) -> Unit {
+fn wireframe_update(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+  if @render2d.query_get_wireframe2d_config_resource(world).get_ref_mut(tick)
     is Some(config_ref) {
     if @input.key_just_pressed(@window.KeyCode::KeyZ) {
       config_ref.val = config_ref.val.with_global(!config_ref.val.global)
@@ -254,7 +260,7 @@ fn wireframe_update(world : @ecs_world.World) -> Unit {
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    let store = world.get_wireframe2d_color_store()
+    let store = @render2d.query_get_wireframe2d_color_store(world)
     if store.get(wireframe_scene_state.val.circle_entity)
       is Some(color_component) {
       let next = if color_close(color_component.color, color_green()) {
@@ -272,7 +278,7 @@ fn wireframe_update(world : @ecs_world.World) -> Unit {
   }
 
   if wireframe_scene_state.val.overlay_text_handle is Some(text_handle) {
-    let config = if world.get_wireframe2d_config_resource().get_ref()
+    let config = if @render2d.query_get_wireframe2d_config_resource(world).get_ref()
       is Some(config_ref) {
       config_ref.val
     } else {

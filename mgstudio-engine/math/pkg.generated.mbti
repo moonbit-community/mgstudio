@@ -146,4 +146,5 @@ pub fn Vec4::splat(Float) -> Self
 pub(open) trait Has_Transform {
   get_transform_store(Self) -> @core.ComponentStore[Transform]
 }
+pub impl Has_Transform for @ecs.World
 

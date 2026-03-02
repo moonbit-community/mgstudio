@@ -17,7 +17,6 @@
 ///
 /// Meshes with this marker render in wireframe regardless of
 /// `WireframeConfig::global`.
-#ecs.component
 pub struct Wireframe {}
 
 ///|
@@ -30,7 +29,6 @@ pub fn Wireframe::default() -> Wireframe {
 ///
 /// Meshes with this marker never render in wireframe regardless of
 /// `WireframeConfig::global`.
-#ecs.component
 pub struct NoWireframe {}
 
 ///|
@@ -40,7 +38,6 @@ pub fn NoWireframe::default() -> NoWireframe {
 
 ///|
 /// Per-mesh wireframe color aligned with Bevy's `WireframeColor`.
-#ecs.component
 pub struct WireframeColor {
   color : @render2d.Color
 }
@@ -65,8 +62,6 @@ pub fn WireframeColor::with_color(
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct WireframeConfig {
   global : Bool
   default_color : @render2d.Color

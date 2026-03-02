@@ -42,7 +42,6 @@ pub fn PointerInput::new(
 
 ///|
 /// Per-frame pointer inputs captured from the runtime/input layer.
-#ecs.resource
 pub struct PointerInputs {
   mut pointers : Array[PointerInput]
 }
@@ -74,7 +73,6 @@ pub fn PointerInputs::push(
 
 ///|
 /// Per-frame hit-test results produced by picking backends.
-#ecs.resource
 pub struct PickingHits {
   mut ui : Array[@core.Entity?]
   mut sprite2d : Array[@core.Entity?]
@@ -191,7 +189,6 @@ pub fn PointerEvent::new(
 
 ///|
 /// Per-frame picking events produced by picking systems and consumed by UI.
-#ecs.resource
 pub struct PickingEvents {
   mut events : Array[PointerEvent]
 }
@@ -218,7 +215,6 @@ pub fn PickingEvents::drain(self : Ref[PickingEvents]) -> Array[PointerEvent] {
 
 ///|
 /// Per-pointer picking state persisted across frames.
-#ecs.resource
 pub struct PickingState {
   mut hovered : Array[@core.Entity?]
   mut pressed : Array[@core.Entity?]

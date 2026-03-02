@@ -84,8 +84,6 @@ fn animation_hash_names(names : Array[String]) -> (UInt, UInt) {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct AnimationTargetId {
   high : Int
   low : Int
@@ -121,8 +119,6 @@ pub fn AnimationTargetId::from_name(name : String) -> AnimationTargetId {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct AnimatedBy {
   player : @core.Entity
 }
@@ -1701,8 +1697,6 @@ fn animation_player_find(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct AnimationPlayer {
   active_animations : Array[(AnimationNodeIndex, ActiveAnimation)]
 }
@@ -1878,8 +1872,6 @@ fn animation_transition_new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct AnimationTransitions {
   mut main_animation : AnimationNodeIndex?
   transitions : Array[AnimationTransition]
@@ -2017,8 +2009,6 @@ fn animation_transitions_expire(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct AnimationGraphHandle {
   graph : @asset.Handle[AnimationGraph]
 }
@@ -2038,8 +2028,6 @@ pub fn AnimationGraphHandle::graph(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct AnimationWeights {
   values : Array[Float]
 }

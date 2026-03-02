@@ -114,11 +114,13 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_default_opaque_method(
-  world : @ecs_world.World,
+  world : @ecs.World,
   renderer_method : @render3d.OpaqueRendererMethod,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let resource = world.get_default_opaque_renderer_method_resource()
+  let resource = @render3d.query_get_default_opaque_renderer_method_resource(
+    world,
+  )
   let value = @render3d.DefaultOpaqueRendererMethod::new(renderer_method)
   if resource.get_ref_mut(tick) is Some(current) {
     current.val = value
@@ -128,49 +130,62 @@ fn set_default_opaque_method(
 }
 
 ///|
-fn apply_render_mode(world : @ecs_world.World) -> Unit {
+fn apply_render_mode(world : @ecs.World) -> Unit {
   guard deferred_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
   match deferred_state.val.mode {
     Deferred => {
       set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Deferred)
-      world.get_normal_prepass_store().remove(camera) |> ignore
-      world
-      .get_depth_prepass_store()
-      .insert(camera, @render3d.DepthPrepass::default(), tick)
-      world
-      .get_motion_vector_prepass_store()
-      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
-      world
-      .get_deferred_prepass_store()
-      .insert(camera, @render3d.DeferredPrepass::default(), tick)
+      @render3d.query_get_normal_prepass_store(world).remove(camera) |> ignore
+      @render3d.query_get_depth_prepass_store(world).insert(
+        camera,
+        @render3d.DepthPrepass::default(),
+        tick,
+      )
+      @render3d.query_get_motion_vector_prepass_store(world).insert(
+        camera,
+        @render3d.MotionVectorPrepass::default(),
+        tick,
+      )
+      @render3d.query_get_deferred_prepass_store(world).insert(
+        camera,
+        @render3d.DeferredPrepass::default(),
+        tick,
+      )
     }
     Forward => {
       set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
-      world.get_normal_prepass_store().remove(camera) |> ignore
-      world.get_depth_prepass_store().remove(camera) |> ignore
-      world.get_motion_vector_prepass_store().remove(camera) |> ignore
-      world.get_deferred_prepass_store().remove(camera) |> ignore
+      @render3d.query_get_normal_prepass_store(world).remove(camera) |> ignore
+      @render3d.query_get_depth_prepass_store(world).remove(camera) |> ignore
+      @render3d.query_get_motion_vector_prepass_store(world).remove(camera)
+      |> ignore
+      @render3d.query_get_deferred_prepass_store(world).remove(camera) |> ignore
     }
     ForwardPrepass => {
       set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
-      world
-      .get_normal_prepass_store()
-      .insert(camera, @render3d.NormalPrepass::default(), tick)
-      world
-      .get_depth_prepass_store()
-      .insert(camera, @render3d.DepthPrepass::default(), tick)
-      world
-      .get_motion_vector_prepass_store()
-      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
-      world.get_deferred_prepass_store().remove(camera) |> ignore
+      @render3d.query_get_normal_prepass_store(world).insert(
+        camera,
+        @render3d.NormalPrepass::default(),
+        tick,
+      )
+      @render3d.query_get_depth_prepass_store(world).insert(
+        camera,
+        @render3d.DepthPrepass::default(),
+        tick,
+      )
+      @render3d.query_get_motion_vector_prepass_store(world).insert(
+        camera,
+        @render3d.MotionVectorPrepass::default(),
+        tick,
+      )
+      @render3d.query_get_deferred_prepass_store(world).remove(camera) |> ignore
     }
   }
 }
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -188,11 +203,13 @@ fn track_spin(entity : @core.Entity, speed : Float) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   deferred_state.val = default_state()
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
-  let directional_shadow_map_resource = world.get_directional_light_shadow_map_resource()
+  let directional_shadow_map_resource = @render3d.query_get_directional_light_shadow_map_resource(
+    world,
+  )
   let directional_shadow_map = @render3d.DirectionalLightShadowMap::new(4096)
   if directional_shadow_map_resource.get_ref_mut(tick) is Some(current) {
     current.val = directional_shadow_map
@@ -208,11 +225,17 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   deferred_state.val.camera = Some(camera)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world.get_fxaa_store().insert(camera, @render3d.Fxaa::default(), tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_fxaa_store(world).insert(
+    camera,
+    @render3d.Fxaa::default(),
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -224,9 +247,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   deferred_state.val.directional_light = Some(directional_light)
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
       @render3d.CascadeShadowConfigBuilder::default()
@@ -235,9 +256,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(-0.7853981634F),
@@ -259,17 +278,23 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   )
   let helmet_a = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(helmet_a, @scene.SceneRoot::new(helmet_scene), tick)
+  @scene.query_get_scene_root_store(world).insert(
+    helmet_a,
+    @scene.SceneRoot::new(helmet_scene),
+    tick,
+  )
 
   let helmet_b = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(helmet_b, @scene.SceneRoot::new(helmet_scene), tick)
-  world
-  .get_transform_store()
-  .insert(helmet_b, @math.Transform::from_xyz(-4.0F, 0.0F, -3.0F), tick)
+  @scene.query_get_scene_root_store(world).insert(
+    helmet_b,
+    @scene.SceneRoot::new(helmet_scene),
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
+    helmet_b,
+    @math.Transform::from_xyz(-4.0F, 0.0F, -3.0F),
+    tick,
+  )
 
   let forward_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -310,23 +335,25 @@ fn setup(world : @ecs_world.World) -> Unit {
     emissive_material,
     @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
   )
-  world
-  .get_not_shadow_caster_store()
-  .insert(emissive_cube, @render3d.NotShadowCaster::default(), tick)
+  @render3d.query_get_not_shadow_caster_store(world).insert(
+    emissive_cube,
+    @render3d.NotShadowCaster::default(),
+    tick,
+  )
 
   let point_light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point_light,
     @render3d.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(
       0.125F,
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point_light, @math.Transform::from_xyz(0.4F, 0.5F, -0.8F), tick)
+  @math.query_get_transform_store(world).insert(
+    point_light,
+    @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
+    tick,
+  )
 
   for i in 0..<6 {
     let j = i % 3
@@ -375,12 +402,16 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::splat(1_000_000.0F),
     ),
   )
-  world
-  .get_not_shadow_caster_store()
-  .insert(sky, @render3d.NotShadowCaster::default(), tick)
-  world
-  .get_not_shadow_receiver_store()
-  .insert(sky, @render3d.NotShadowReceiver::default(), tick)
+  @render3d.query_get_not_shadow_caster_store(world).insert(
+    sky,
+    @render3d.NotShadowCaster::default(),
+    tick,
+  )
+  @render3d.query_get_not_shadow_receiver_store(world).insert(
+    sky,
+    @render3d.NotShadowReceiver::default(),
+    tick,
+  )
 
   let parallax_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::default()
@@ -436,7 +467,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn switch_mode(world : @ecs_world.World) -> Unit {
+fn switch_mode(world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Space) {
     deferred_state.val.pause = !deferred_state.val.pause
@@ -467,19 +498,17 @@ fn switch_mode(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn animate_light_direction(world : @ecs_world.World) -> Unit {
+fn animate_light_direction(world : @ecs.World) -> Unit {
   if deferred_state.val.pause {
     return
   }
   guard deferred_state.val.directional_light is Some(light) else { return }
-  guard world.get_transform_store().get(light) is Some(transform) else {
+  guard @math.query_get_transform_store(world).get(light) is Some(transform) else {
     return
   }
   let delta_angle = LIGHT_ROTATION_SPEED * @time.time_delta_seconds()
   let tick = world.read_change_tick()
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     light,
     transform.with_rotation(
       transform.rotation
@@ -492,7 +521,7 @@ fn animate_light_direction(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spin(world : @ecs_world.World) -> Unit {
+fn spin(world : @ecs.World) -> Unit {
   if deferred_state.val.pause {
     return
   }
@@ -500,7 +529,8 @@ fn spin(world : @ecs_world.World) -> Unit {
   let delta = @time.time_delta_seconds()
   for i in 0..<deferred_state.val.spin_targets.length() {
     let target = deferred_state.val.spin_targets[i]
-    guard world.get_transform_store().get(target.entity) is Some(transform) else {
+    guard @math.query_get_transform_store(world).get(target.entity)
+      is Some(transform) else {
       continue
     }
     let speed = target.speed * delta
@@ -509,17 +539,19 @@ fn spin(world : @ecs_world.World) -> Unit {
       .mul(@math.Quat::from_rotation_x(speed))
       .mul(@math.Quat::from_rotation_z(-speed))
       .normalize()
-    world
-    .get_transform_store()
-    .set(target.entity, transform.with_rotation(rotation), tick)
+    @math.query_get_transform_store(world).set(
+      target.entity,
+      transform.with_rotation(rotation),
+      tick,
+    )
     |> ignore
   }
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(switch_mode)

@@ -14,8 +14,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(viewport_to_world_setup)
   .add_fixed_update_system(viewport_to_world_controls)
@@ -74,7 +74,7 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
+fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = spawn_ui_text_handle(
@@ -89,10 +89,8 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -100,12 +98,12 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -113,13 +111,15 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
 }
 
 ///|
-fn viewport_to_world_setup(world : @ecs_world.World) -> Unit {
+fn viewport_to_world_setup(world : @ecs.World) -> Unit {
   let width = @window.window_width()
   let height = @window.window_height()
   let viewport = viewport_default(width, height)
@@ -157,15 +157,15 @@ fn viewport_to_world_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn viewport_to_world_draw_cursor(world : @ecs_world.World) -> Unit {
+fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
   if viewport_state.val.camera.is_placeholder() {
     return
   }
 
   let camera_entity = viewport_state.val.camera
-  let camera_store = world.get_camera_store()
-  let projection_store = world.get_projection_store()
-  let transform_store = world.get_transform_store()
+  let camera_store = @render2d.query_get_camera_store(world)
+  let projection_store = @render2d.query_get_projection_store(world)
+  let transform_store = @math.query_get_transform_store(world)
 
   guard camera_store.get(camera_entity) is Some(camera) else { return }
   guard projection_store.get(camera_entity) is Some(projection) else { return }
@@ -214,7 +214,7 @@ fn viewport_to_world_draw_cursor(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn viewport_to_world_controls(world : @ecs_world.World) -> Unit {
+fn viewport_to_world_controls(world : @ecs.World) -> Unit {
   if viewport_state.val.camera.is_placeholder() {
     return
   }
@@ -233,7 +233,7 @@ fn viewport_to_world_controls(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_camera_transform(world : @ecs_world.World, fspeed : Float) -> Unit {
+fn update_camera_transform(world : @ecs.World, fspeed : Float) -> Unit {
   let camera_transform = viewport_state.val.camera_transform
   let mut x = camera_transform.translation.x
   let mut y = camera_transform.translation.y
@@ -258,15 +258,17 @@ fn update_camera_transform(world : @ecs_world.World, fspeed : Float) -> Unit {
     )
     viewport_state.val.camera_transform = next_camera
     let tick = world.read_change_tick()
-    world
-    .get_transform_store()
-    .set(viewport_state.val.camera, next_camera, tick)
+    @math.query_get_transform_store(world).set(
+      viewport_state.val.camera,
+      next_camera,
+      tick,
+    )
     |> ignore
   }
 }
 
 ///|
-fn update_camera_scale(world : @ecs_world.World, delta : Float) -> Unit {
+fn update_camera_scale(world : @ecs.World, delta : Float) -> Unit {
   let mut scale = viewport_state.val.camera_scale
   if @input.key_pressed(@window.KeyCode::Comma) {
     scale = scale * @math.pow(4.0F, delta)
@@ -277,7 +279,7 @@ fn update_camera_scale(world : @ecs_world.World, delta : Float) -> Unit {
   if scale != viewport_state.val.camera_scale {
     viewport_state.val.camera_scale = scale
     let tick = world.read_change_tick()
-    let projection_store = world.get_projection_store()
+    let projection_store = @render2d.query_get_projection_store(world)
     projection_store.set(
       viewport_state.val.camera,
       @render2d.Projection::Orthographic(
@@ -291,7 +293,7 @@ fn update_camera_scale(world : @ecs_world.World, delta : Float) -> Unit {
 
 ///|
 fn update_camera_viewport(
-  world : @ecs_world.World,
+  world : @ecs.World,
   width : Int,
   height : Int,
   uspeed : Int,
@@ -348,7 +350,7 @@ fn update_camera_viewport(
   }
   viewport_state.val.viewport = viewport
   let tick = world.read_change_tick()
-  let camera_store = world.get_camera_store()
+  let camera_store = @render2d.query_get_camera_store(world)
   if camera_store.get(viewport_state.val.camera) is Some(camera) {
     camera_store.set(
       viewport_state.val.camera,

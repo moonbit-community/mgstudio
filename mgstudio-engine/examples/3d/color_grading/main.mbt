@@ -501,17 +501,19 @@ fn create_help_text() -> String {
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.increment_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
@@ -534,12 +536,12 @@ fn global_white_balance(global : ColorGradingGlobal) -> (Float, Float, Float) {
 }
 
 ///|
-fn apply_color_grading_proxy(world : @ecs_world.World) -> Unit {
+fn apply_color_grading_proxy(world : @ecs.World) -> Unit {
   let values = color_grading_state.val.color_grading
   if color_grading_state.val.camera is Some(camera_entity) {
     let tick = world.increment_change_tick()
     let grading = to_render3d_color_grading(values)
-    let store = world.get_color_grading_store()
+    let store = @render3d.query_get_color_grading_store(world)
     if store.contains(camera_entity) {
       store.set(camera_entity, grading, tick) |> ignore
     } else {
@@ -584,9 +586,7 @@ fn apply_color_grading_proxy(world : @ecs_world.World) -> Unit {
       0.0F,
       80_000.0F,
     )
-    world
-    .get_directional_light_store()
-    .set(
+    @render3d.query_get_directional_light_store(world).set(
       light_entity,
       @render3d.DirectionalLight::new(light_color, illuminance, true),
       tick,
@@ -672,15 +672,17 @@ fn spawn_ui_text_handle(
 
 ///|
 fn spawn_row(
-  world : @ecs_world.World,
+  world : @ecs.World,
   parent : @core.Entity,
   tick : @core.Tick,
 ) -> @core.Entity {
   let row = world.spawn_empty()
-  world.get_parent_store().insert(row, @hierarchy.Parent::new(parent), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    row,
+    @hierarchy.Parent::new(parent),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     row,
     @ui.Node::default().with_align_items(@ui.AlignItems::Center),
     tick,
@@ -690,7 +692,7 @@ fn spawn_row(
 
 ///|
 fn spawn_row_label(
-  world : @ecs_world.World,
+  world : @ecs.World,
   row : @core.Entity,
   tick : @core.Tick,
   font : @asset.Handle[@asset.Font],
@@ -703,37 +705,41 @@ fn spawn_row_label(
     @render2d.Color::white(),
   )
   let label_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(label_entity, @hierarchy.Parent::new(row), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    label_entity,
+    @hierarchy.Parent::new(row),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     label_entity,
     @ui.Node::default()
     .with_width(@ui.Val::Px(125.0F))
     .with_height(@ui.Val::Auto),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(label_entity, @ui.UiText::new(label_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    label_entity,
+    @ui.UiText::new(label_handle),
+    tick,
+  )
 }
 
 ///|
 fn spawn_option_button(
-  world : @ecs_world.World,
+  world : @ecs.World,
   row : @core.Entity,
   tick : @core.Tick,
   font : @asset.Handle[@asset.Font],
   option : SelectedColorGradingOption,
 ) -> Unit {
   let button = world.spawn_empty()
-  world.get_parent_store().insert(button, @hierarchy.Parent::new(row), tick)
-  world.get_button_store().insert(button, @ui.Button::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    button,
+    @hierarchy.Parent::new(row),
+    tick,
+  )
+  @ui.query_get_button_store(world).insert(button, @ui.Button::default(), tick)
+  @ui.query_get_node_store(world).insert(
     button,
     @ui.Node::default()
     .with_width(@ui.Val::Px(BUTTON_WIDTH))
@@ -744,15 +750,21 @@ fn spawn_option_button(
     .with_align_items(@ui.AlignItems::Center),
     tick,
   )
-  world
-  .get_border_radius_store()
-  .insert(button, @ui.BorderRadius::all(@ui.Val::Px(12.0F)), tick)
-  world
-  .get_background_color_store()
-  .insert(button, @ui.BackgroundColor::new(normal_button_color()), tick)
-  world
-  .get_border_color_store()
-  .insert(button, @ui.BorderColor::new(@render2d.Color::white()), tick)
+  @ui.query_get_border_radius_store(world).insert(
+    button,
+    @ui.BorderRadius::all(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  @ui.query_get_background_color_store(world).insert(
+    button,
+    @ui.BackgroundColor::new(normal_button_color()),
+    tick,
+  )
+  @ui.query_get_border_color_store(world).insert(
+    button,
+    @ui.BorderColor::new(@render2d.Color::white()),
+    tick,
+  )
 
   let option_text = spawn_ui_text_handle(
     option_value_text(option),
@@ -762,28 +774,27 @@ fn spawn_option_button(
   )
 
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(button), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(button),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(option_text), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(option_text),
+    tick,
+  )
 
   color_grading_state.val.widgets.push({ button, text: option_text, option })
 }
 
 ///|
-fn setup_ui(
-  world : @ecs_world.World,
-  font : @asset.Handle[@asset.Font],
-) -> Unit {
+fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   let tick = world.read_change_tick()
 
   // 2D overlay camera for UI.
@@ -794,10 +805,8 @@ fn setup_ui(
   |> ignore
 
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -812,12 +821,12 @@ fn setup_ui(
     @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let help_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(help_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    help_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     help_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -827,16 +836,20 @@ fn setup_ui(
     .with_height(@ui.Val::Auto),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(help_entity, @ui.UiText::new(help_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    help_entity,
+    @ui.UiText::new(help_handle),
+    tick,
+  )
   color_grading_state.val.help_text = Some(help_handle)
 
   let panel = world.spawn_empty()
-  world.get_parent_store().insert(panel, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    panel,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     panel,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -894,15 +907,13 @@ fn setup_ui(
 
 ///|
 fn add_basic_scene(
-  world : @ecs_world.World,
+  world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
   let tick = world.read_change_tick()
 
   let main_scene = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     main_scene,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -916,9 +927,7 @@ fn add_basic_scene(
   )
 
   let helmet_scene = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     helmet_scene,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -930,9 +939,7 @@ fn add_basic_scene(
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     helmet_scene,
     @math.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
@@ -941,16 +948,12 @@ fn add_basic_scene(
   )
 
   let directional_light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::from_xyz(0.0F, 4.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
@@ -962,7 +965,7 @@ fn add_basic_scene(
 }
 
 ///|
-fn add_camera(world : @ecs_world.World) -> Unit {
+fn add_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -971,10 +974,12 @@ fn add_camera(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_color_grading_store()
-  .insert(
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_color_grading_store(world).insert(
     camera,
     to_render3d_color_grading(color_grading_state.val.color_grading),
     tick,
@@ -983,11 +988,11 @@ fn add_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_ui_state(world : @ecs_world.World) -> Unit {
+fn update_ui_state(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   let selected_option = color_grading_state.val.selected_option
-  let background_store = world.get_background_color_store()
-  let border_store = world.get_border_color_store()
+  let background_store = @ui.query_get_background_color_store(world)
+  let border_store = @ui.query_get_border_color_store(world)
 
   for widget in color_grading_state.val.widgets {
     let is_selected = selected_option_eq(widget.option, selected_option)
@@ -1054,10 +1059,10 @@ fn update_ui_state(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn handle_button_presses(world : @ecs_world.World) -> Bool {
+fn handle_button_presses(world : @ecs.World) -> Bool {
   let mut changed = false
   let system_ticks = world.get_system_context().ticks()
-  let interaction_store = world.get_interaction_store()
+  let interaction_store = @ui.query_get_interaction_store(world)
   interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
     if interaction != @ui.Interaction::Pressed {
       return
@@ -1079,7 +1084,7 @@ fn handle_button_presses(world : @ecs_world.World) -> Bool {
 }
 
 ///|
-fn adjust_color_grading_option(world : @ecs_world.World) -> Bool {
+fn adjust_color_grading_option(world : @ecs.World) -> Bool {
   let mut delta = 0.0F
   if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     delta = delta - OPTION_ADJUSTMENT_SPEED
@@ -1106,7 +1111,7 @@ fn adjust_color_grading_option(world : @ecs_world.World) -> Bool {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   color_grading_state.val.selected_option = SelectedColorGradingOption::Global(
     SelectedGlobalColorGradingOption::Exposure,
   )
@@ -1129,7 +1134,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_system(world : @ecs_world.World) -> Unit {
+fn update_system(world : @ecs.World) -> Unit {
   let selection_changed = handle_button_presses(world)
   let value_changed = adjust_color_grading_option(world)
   if selection_changed || value_changed || color_grading_state.val.ui_dirty {
@@ -1140,8 +1145,8 @@ fn update_system(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system_config(@app.system(update_system).after(@ui.ui_set_focus))

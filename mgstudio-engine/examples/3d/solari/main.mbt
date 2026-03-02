@@ -203,10 +203,7 @@ fn update_performance_text() -> Unit {
 }
 
 ///|
-fn despawn_entities(
-  world : @ecs_world.World,
-  entities : Array[@core.Entity],
-) -> Unit {
+fn despawn_entities(world : @ecs.World, entities : Array[@core.Entity]) -> Unit {
   for entity in entities {
     world.despawn(entity) catch {
       _ => ()
@@ -215,7 +212,7 @@ fn despawn_entities(
 }
 
 ///|
-fn spawn_camera(world : @ecs_world.World) -> Unit {
+fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
@@ -223,21 +220,25 @@ fn spawn_camera(world : @ecs_world.World) -> Unit {
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .get_free_camera_store()
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_free_camera_store(world).insert(
+    camera,
+    @render3d.FreeCamera::default(),
+    tick,
+  )
   solari_state.val.camera = Some(camera)
 }
 
 ///|
-fn spawn_lights(world : @ecs_world.World) -> Unit {
+fn spawn_lights(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let directional_light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(
       @render2d.Color::white(),
@@ -246,9 +247,7 @@ fn spawn_lights(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::identity().with_rotation(
       @math.Quat::new(-0.13334629F, -0.86597735F, -0.3586996F, 0.3219264F),
@@ -258,9 +257,7 @@ fn spawn_lights(world : @ecs_world.World) -> Unit {
   solari_state.val.directional_light = Some(directional_light)
 
   let robot_emissive_light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     robot_emissive_light,
     @render3d.PointLight::new(
       @render2d.Color::new(0.94F, 0.71F, 0.04F, 1.0F),
@@ -270,9 +267,7 @@ fn spawn_lights(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     robot_emissive_light,
     @math.Transform::from_xyz(-2.0F, 1.7F, -2.1F),
     tick,
@@ -329,14 +324,12 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
 
 ///|
 fn spawn_pica_scene(
-  world : @ecs_world.World,
+  world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
   let tick = world.read_change_tick()
   let diorama = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     diorama,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -346,9 +339,7 @@ fn spawn_pica_scene(
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     diorama,
     @math.Transform::identity().with_scale(@math.Vec3::splat(10.0F)),
     tick,
@@ -356,9 +347,7 @@ fn spawn_pica_scene(
   solari_state.val.pica_entities.push(diorama)
 
   let robot = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     robot,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -368,9 +357,7 @@ fn spawn_pica_scene(
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     robot,
     @math.Transform::from_xyz(-2.0F, 0.05F, -2.1F)
     .with_scale(@math.Vec3::splat(2.0F))
@@ -383,7 +370,7 @@ fn spawn_pica_scene(
 }
 
 ///|
-fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
+fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let ground = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(40.0F, 40.0F),
@@ -463,9 +450,7 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
   }
 
   if solari_state.val.camera is Some(camera) {
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       camera,
       @math.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
         @math.Quat::new(-0.18394549F, 0.0019948867F, 0.0003733214F, 0.98293436F),
@@ -473,9 +458,7 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
       world.read_change_tick(),
     )
     |> ignore
-    world
-    .get_bloom_store()
-    .insert(
+    @render3d.query_get_bloom_store(world).insert(
       camera,
       @render3d.Bloom::default().with_intensity(0.1F),
       world.read_change_tick(),
@@ -484,7 +467,7 @@ fn spawn_many_lights_scene(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn clear_scene(world : @ecs_world.World) -> Unit {
+fn clear_scene(world : @ecs.World) -> Unit {
   despawn_entities(world, solari_state.val.pica_entities)
   despawn_entities(world, solari_state.val.many_lights_entities)
   solari_state.val.pica_entities.clear()
@@ -495,7 +478,7 @@ fn clear_scene(world : @ecs_world.World) -> Unit {
 
 ///|
 fn apply_scene_mode(
-  world : @ecs_world.World,
+  world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
   clear_scene(world)
@@ -504,9 +487,7 @@ fn apply_scene_mode(
       spawn_pica_scene(world, asset_server)
       if solari_state.val.camera is Some(camera) {
         let tick = world.read_change_tick()
-        world
-        .get_transform_store()
-        .set(
+        @math.query_get_transform_store(world).set(
           camera,
           @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
             @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
@@ -514,7 +495,7 @@ fn apply_scene_mode(
           tick,
         )
         |> ignore
-        world.get_bloom_store().remove(camera) |> ignore
+        @render3d.query_get_bloom_store(world).remove(camera) |> ignore
       }
     }
     SolariSceneMode::ManyLights => spawn_many_lights_scene(world)
@@ -522,10 +503,11 @@ fn apply_scene_mode(
 }
 
 ///|
-fn apply_light_switches(world : @ecs_world.World) -> Unit {
+fn apply_light_switches(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if solari_state.val.directional_light is Some(light) {
-    if world.get_directional_light_store().get(light) is Some(current) {
+    if @render3d.query_get_directional_light_store(world).get(light)
+      is Some(current) {
       let updated = current.with_illuminance(
         if solari_state.val.directional_enabled {
           DIRECTIONAL_ILLUMINANCE
@@ -533,12 +515,15 @@ fn apply_light_switches(world : @ecs_world.World) -> Unit {
           0.0F
         },
       )
-      world.get_directional_light_store().set(light, updated, tick) |> ignore
+      @render3d.query_get_directional_light_store(world).set(
+        light, updated, tick,
+      )
+      |> ignore
     }
   }
 
   if solari_state.val.robot_emissive_light is Some(light) {
-    if world.get_point_light_store().get(light) is Some(current) {
+    if @render3d.query_get_point_light_store(world).get(light) is Some(current) {
       let updated = current.with_intensity(
         if solari_state.val.robot_emissive_enabled {
           ROBOT_EMISSIVE_INTENSITY
@@ -546,13 +531,14 @@ fn apply_light_switches(world : @ecs_world.World) -> Unit {
           0.0F
         },
       )
-      world.get_point_light_store().set(light, updated, tick) |> ignore
+      @render3d.query_get_point_light_store(world).set(light, updated, tick)
+      |> ignore
     }
   }
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   solari_state.val.scene_mode = SolariSceneMode::PicaPica
   solari_state.val.paused = false
   solari_state.val.directional_enabled = true
@@ -582,7 +568,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn pause_scene(_world : @ecs_world.World) -> Unit {
+fn pause_scene(_world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
     solari_state.val.paused = !solari_state.val.paused
     update_control_text()
@@ -590,7 +576,7 @@ fn pause_scene(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_lights(world : @ecs_world.World) -> Unit {
+fn toggle_lights(world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     solari_state.val.directional_enabled = !solari_state.val.directional_enabled
@@ -607,7 +593,7 @@ fn toggle_lights(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_pathtracer_request(_world : @ecs_world.World) -> Unit {
+fn toggle_pathtracer_request(_world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyT) {
     solari_state.val.pathtracer_requested = !solari_state.val.pathtracer_requested
     update_control_text()
@@ -615,7 +601,7 @@ fn toggle_pathtracer_request(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn switch_scene_mode(world : @ecs_world.World) -> Unit {
+fn switch_scene_mode(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::KeyM) {
     return
   }
@@ -631,7 +617,7 @@ fn switch_scene_mode(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn patrol_path(world : @ecs_world.World) -> Unit {
+fn patrol_path(world : @ecs.World) -> Unit {
   if solari_state.val.scene_mode != SolariSceneMode::PicaPica {
     return
   }
@@ -639,7 +625,7 @@ fn patrol_path(world : @ecs_world.World) -> Unit {
     return
   }
   guard solari_state.val.robot_entity is Some(robot) else { return }
-  guard world.get_transform_store().get(robot) is Some(transform) else {
+  guard @math.query_get_transform_store(world).get(robot) is Some(transform) else {
     return
   }
 
@@ -663,9 +649,7 @@ fn patrol_path(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
 
   if distance <= max_step || distance < 0.01F {
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       robot,
       transform.with_translation(target.0).with_rotation(target.1),
       tick,
@@ -674,9 +658,7 @@ fn patrol_path(world : @ecs_world.World) -> Unit {
     solari_state.val.patrol_index = (solari_state.val.patrol_index + 1) %
       path.length()
   } else {
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       robot,
       transform.with_translation(
         transform.translation.add(
@@ -690,16 +672,15 @@ fn patrol_path(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn sync_robot_emissive_light(world : @ecs_world.World) -> Unit {
+fn sync_robot_emissive_light(world : @ecs.World) -> Unit {
   guard solari_state.val.robot_entity is Some(robot) else { return }
   guard solari_state.val.robot_emissive_light is Some(light) else { return }
-  guard world.get_transform_store().get(robot) is Some(robot_transform) else {
+  guard @math.query_get_transform_store(world).get(robot)
+    is Some(robot_transform) else {
     return
   }
 
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     light,
     @math.Transform::from_xyz(
       robot_transform.translation.x,
@@ -712,7 +693,7 @@ fn sync_robot_emissive_light(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_performance(_world : @ecs_world.World) -> Unit {
+fn update_performance(_world : @ecs.World) -> Unit {
   let delta = maxf(@time.time_delta_seconds(), 1.0e-6F)
   solari_state.val.perf_accum = solari_state.val.perf_accum + delta
   solari_state.val.perf_frames = solari_state.val.perf_frames + 1
@@ -727,8 +708,8 @@ fn update_performance(_world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(pause_scene)

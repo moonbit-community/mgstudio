@@ -8,25 +8,13 @@ type RunError
 pub impl Show for RunError
 
 // Types and methods
-type EcsTags
-
 type GameConfig
-
-type GenOptions
-
-type ImportBlock
-
-type ModuleInfo
 
 type RunOptions
 
 type SdkLayout
 
 type ServeOptions
-
-type TypeRef
-
-type WriteOrCheckResult
 
 // Type aliases
 

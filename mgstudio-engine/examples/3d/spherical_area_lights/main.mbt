@@ -127,22 +127,24 @@ fn uv_sphere_mesh(
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   set_global_ambient_light(world, @render2d.Color::white(), 60.0F)
 
@@ -193,9 +195,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ).spawn(world)
 
     let point_light = world.spawn_empty()
-    world
-    .get_point_light_store()
-    .insert(
+    @render3d.query_get_point_light_store(world).insert(
       point_light,
       @render3d.PointLight::default()
       .with_color(@render2d.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
@@ -205,19 +205,23 @@ fn setup(world : @ecs_world.World) -> Unit {
       .with_shadow_maps_enabled(false),
       tick,
     )
-    world
-    .get_parent_store()
-    .insert(point_light, @hierarchy.Parent::new(sphere), tick)
-    world
-    .get_transform_store()
-    .insert(point_light, @math.Transform::identity(), tick)
+    @hierarchy.query_get_parent_store(world).insert(
+      point_light,
+      @hierarchy.Parent::new(sphere),
+      tick,
+    )
+    @math.query_get_transform_store(world).insert(
+      point_light,
+      @math.Transform::identity(),
+      tick,
+    )
   }
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .run()

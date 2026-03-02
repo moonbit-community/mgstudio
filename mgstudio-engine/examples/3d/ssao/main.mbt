@@ -163,7 +163,7 @@ fn uv_sphere_mesh(
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -177,17 +177,19 @@ fn spawn_mesh(
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
@@ -207,10 +209,12 @@ fn ssao_quality_from_index(
 }
 
 ///|
-fn apply_ssao_settings(world : @ecs_world.World) -> Unit {
+fn apply_ssao_settings(world : @ecs.World) -> Unit {
   guard ssao_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  let ssao_store = world.get_screen_space_ambient_occlusion_store()
+  let ssao_store = @render3d.query_get_screen_space_ambient_occlusion_store(
+    world,
+  )
 
   if ssao_state.val.quality == 0 {
     ssao_store.remove(camera_entity) |> ignore
@@ -228,7 +232,7 @@ fn apply_ssao_settings(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   ssao_state.val = {
     quality: 3,
     thickness: 0.25F,
@@ -249,14 +253,26 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   ssao_state.val.camera = Some(camera)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .get_temporal_anti_aliasing_store()
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .get_temporal_jitter_store()
-  .insert(camera, @render3d.TemporalJitter::default(), tick)
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+    camera,
+    @render3d.TemporalAntiAliasing::default(),
+    tick,
+  )
+  @render3d.query_get_temporal_jitter_store(world).insert(
+    camera,
+    @render3d.TemporalJitter::default(),
+    tick,
+  )
 
   let base_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -307,9 +323,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   ssao_state.val.sphere = Some(sphere)
 
   let light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(-PI * 0.15F).mul(
@@ -318,9 +332,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 9_000.0F, true),
     tick,
@@ -351,13 +363,12 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update(world : @ecs_world.World) -> Unit {
+fn update(world : @ecs.World) -> Unit {
   if ssao_state.val.sphere is Some(sphere_entity) {
-    if world.get_transform_store().get(sphere_entity) is Some(transform) {
+    if @math.query_get_transform_store(world).get(sphere_entity)
+      is Some(transform) {
       let next_y = @math.sin(@time.time_elapsed_seconds() / 1.7F) * 0.7F
-      world
-      .get_transform_store()
-      .set(
+      @math.query_get_transform_store(world).set(
         sphere_entity,
         transform.with_translation(
           @math.Vec3::new(
@@ -413,7 +424,9 @@ fn update(world : @ecs_world.World) -> Unit {
     ssao_state.val.taa_enabled = !ssao_state.val.taa_enabled
     if ssao_state.val.camera is Some(camera_entity) {
       let tick = world.read_change_tick()
-      let temporal_jitter_store = world.get_temporal_jitter_store()
+      let temporal_jitter_store = @render3d.query_get_temporal_jitter_store(
+        world,
+      )
       if ssao_state.val.taa_enabled {
         if !temporal_jitter_store.contains(camera_entity) {
           temporal_jitter_store.insert(
@@ -438,8 +451,8 @@ fn update(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(update)

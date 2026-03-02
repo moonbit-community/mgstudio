@@ -199,7 +199,7 @@ fn camera_target() -> @math.Vec3 {
 }
 
 ///|
-fn set_main_camera_transform_from_orbit(world : @ecs_world.World) -> Unit {
+fn set_main_camera_transform_from_orbit(world : @ecs.World) -> Unit {
   if mirror_state.val.main_camera.is_placeholder() {
     return
   }
@@ -220,9 +220,11 @@ fn set_main_camera_transform_from_orbit(world : @ecs_world.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
 
-  world
-  .get_transform_store()
-  .set(mirror_state.val.main_camera, transform, world.read_change_tick())
+  @math.query_get_transform_store(world).set(
+    mirror_state.val.main_camera,
+    transform,
+    world.read_change_tick(),
+  )
   |> ignore
 }
 
@@ -262,7 +264,7 @@ fn ray_plane_intersection(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   mirror_state.val.main_camera = @core.Entity::placeholder()
   mirror_state.val.mirror_camera = @core.Entity::placeholder()
@@ -312,9 +314,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   // Fox scene.
   let asset_server = @asset.AssetServer::new()
   let fox = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     fox,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -324,9 +324,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(fox, @math.Transform::from_xyz(-50.0F, 0.0F, -100.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    fox,
+    @math.Transform::from_xyz(-50.0F, 0.0F, -100.0F),
+    tick,
+  )
   mirror_state.val.fox = fox
 
   // Mirror plane.
@@ -350,16 +352,12 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   // Lighting.
   let light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 5000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
       @math.Vec3::new(-50.0F, 0.0F, 100.0F),
@@ -399,9 +397,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render3d.Projection3d::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
-  world
-  .get_render_target_store()
-  .insert(mirror_camera, @render2d.RenderTarget::Image(mirror_target), tick)
+  @render2d.query_get_render_target_store(world).insert(
+    mirror_camera,
+    @render2d.RenderTarget::Image(mirror_target),
+    tick,
+  )
   mirror_state.val.mirror_camera = mirror_camera
 
   // Help text.
@@ -429,7 +429,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn handle_drag_action_change(_world : @ecs_world.World) -> Unit {
+fn handle_drag_action_change(_world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     mirror_state.val.drag_action = DragAction::MoveCamera
@@ -446,7 +446,7 @@ fn handle_drag_action_change(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_camera_on_mouse_down(world : @ecs_world.World) -> Unit {
+fn move_camera_on_mouse_down(world : @ecs.World) -> Unit {
   if mirror_state.val.drag_action != DragAction::MoveCamera ||
     !@input.mouse_button_pressed(@window.MouseButton::Left) {
     mirror_state.val.last_mouse_position = None
@@ -478,7 +478,7 @@ fn move_camera_on_mouse_down(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_fox_on_mouse_down(world : @ecs_world.World) -> Unit {
+fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
   if mirror_state.val.drag_action != DragAction::MoveFox ||
     !@input.mouse_button_pressed(@window.MouseButton::Left) ||
     mirror_state.val.fox.is_placeholder() ||
@@ -487,9 +487,9 @@ fn move_fox_on_mouse_down(world : @ecs_world.World) -> Unit {
   }
 
   guard @input.mouse_position() is Some(screen_pos) else { return }
-  let transform_store = world.get_transform_store()
-  let camera_store = world.get_camera_store()
-  let projection_store = world.get_camera_projection3d_store()
+  let transform_store = @math.query_get_transform_store(world)
+  let camera_store = @render2d.query_get_camera_store(world)
+  let projection_store = @render3d.query_get_camera_projection3d_store(world)
 
   guard transform_store.get(mirror_state.val.main_camera)
     is Some(camera_transform) else {
@@ -538,7 +538,7 @@ fn move_fox_on_mouse_down(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn handle_window_resize_messages(world : @ecs_world.World) -> Unit {
+fn handle_window_resize_messages(world : @ecs.World) -> Unit {
   if mirror_state.val.mirror_camera.is_placeholder() {
     return
   }
@@ -561,7 +561,7 @@ fn handle_window_resize_messages(world : @ecs_world.World) -> Unit {
   mirror_state.val.mirror_target_size = size
 
   let tick = world.read_change_tick()
-  let target_store = world.get_render_target_store()
+  let target_store = @render2d.query_get_render_target_store(world)
   if target_store.contains(mirror_state.val.mirror_camera) {
     target_store.set(
       mirror_state.val.mirror_camera,
@@ -590,7 +590,7 @@ fn handle_window_resize_messages(world : @ecs_world.World) -> Unit {
 
 ///|
 fn update_mirror_camera_on_main_camera_transform_change(
-  world : @ecs_world.World,
+  world : @ecs.World,
 ) -> Unit {
   if mirror_state.val.main_camera.is_placeholder() ||
     mirror_state.val.mirror_camera.is_placeholder() ||
@@ -598,7 +598,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(mirror_state.val.main_camera)
     is Some(main_camera_transform) else {
     return
@@ -608,7 +608,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let projection_store = world.get_camera_projection3d_store()
+  let projection_store = @render3d.query_get_camera_projection3d_store(world)
   guard projection_store.get(mirror_state.val.main_camera)
     is Some(main_camera_projection_component) else {
     return
@@ -641,8 +641,8 @@ fn update_mirror_camera_on_main_camera_transform_change(
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(handle_window_resize_messages)

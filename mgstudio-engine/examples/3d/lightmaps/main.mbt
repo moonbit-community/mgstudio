@@ -98,22 +98,24 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   lightmaps_state.val.args = default_args()
   lightmaps_state.val.scene_root = None
   lightmaps_state.val.lightmaps_applied = false
@@ -125,9 +127,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
 
   let scene_root = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -146,7 +146,9 @@ fn setup(world : @ecs_world.World) -> Unit {
     @math.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)
   if lightmaps_state.val.args.deferred {
-    let renderer_method_resource = world.get_default_opaque_renderer_method_resource()
+    let renderer_method_resource = @render3d.query_get_default_opaque_renderer_method_resource(
+      world,
+    )
     if renderer_method_resource.get_ref_mut(tick) is Some(current) {
       current.val = @render3d.DefaultOpaqueRendererMethod::deferred()
     } else {
@@ -155,16 +157,26 @@ fn setup(world : @ecs_world.World) -> Unit {
         tick,
       )
     }
-    world
-    .get_depth_prepass_store()
-    .insert(camera, @render3d.DepthPrepass::default(), tick)
-    world
-    .get_motion_vector_prepass_store()
-    .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
-    world
-    .get_deferred_prepass_store()
-    .insert(camera, @render3d.DeferredPrepass::default(), tick)
-    world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+    @render3d.query_get_depth_prepass_store(world).insert(
+      camera,
+      @render3d.DepthPrepass::default(),
+      tick,
+    )
+    @render3d.query_get_motion_vector_prepass_store(world).insert(
+      camera,
+      @render3d.MotionVectorPrepass::default(),
+      tick,
+    )
+    @render3d.query_get_deferred_prepass_store(world).insert(
+      camera,
+      @render3d.DeferredPrepass::default(),
+      tick,
+    )
+    @render3d.query_get_msaa_store(world).insert(
+      camera,
+      @render3d.Msaa::Off,
+      tick,
+    )
   }
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -190,13 +202,13 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn add_lightmaps_to_meshes(world : @ecs_world.World) -> Unit {
+fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
   if lightmaps_state.val.lightmaps_applied {
     return
   }
 
   guard lightmaps_state.val.scene_root is Some(scene_root) else { return }
-  if !world.get_scene_instance_ready_store().contains(scene_root) {
+  if !@scene.query_get_scene_instance_ready_store(world).contains(scene_root) {
     return
   }
 
@@ -213,8 +225,8 @@ fn add_lightmaps_to_meshes(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(add_lightmaps_to_meshes)

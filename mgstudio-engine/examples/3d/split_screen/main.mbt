@@ -56,7 +56,7 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   split_screen_state.val.cameras.clear()
   split_screen_state.val.active_camera = 0
@@ -79,9 +79,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   // Bevy parity: use Fox scene as split-screen content.
   let asset_server = @asset.AssetServer::new()
   let fox_scene = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     fox_scene,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -94,16 +92,12 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   // Light
   let light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(60.0F, 100.0F, 60.0F).looking_at(
       @math.Vec3::zero(),
@@ -161,7 +155,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn set_camera_viewports(world : @ecs_world.World) -> Unit {
+fn set_camera_viewports(world : @ecs.World) -> Unit {
   let width = @window.window_width()
   let height = @window.window_height()
   if width <= 1 || height <= 1 {
@@ -180,7 +174,7 @@ fn set_camera_viewports(world : @ecs_world.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let camera_store = world.get_camera_store()
+  let camera_store = @render2d.query_get_camera_store(world)
   for pair in split_screen_state.val.cameras {
     let entity = pair.0
     let grid_pos = pair.1
@@ -197,7 +191,7 @@ fn set_camera_viewports(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn button_system(world : @ecs_world.World) -> Unit {
+fn button_system(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     split_screen_state.val.active_camera = 0
   }
@@ -259,7 +253,7 @@ fn button_system(world : @ecs_world.World) -> Unit {
   let camera_entity = split_screen_state.val.cameras[index].0
 
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(
       @math.Quat::from_rotation_y(angle),
@@ -276,8 +270,8 @@ fn button_system(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(set_camera_viewports)

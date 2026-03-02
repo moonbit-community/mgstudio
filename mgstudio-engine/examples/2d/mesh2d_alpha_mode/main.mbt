@@ -14,8 +14,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_alpha_mode_setup)
   .run()
@@ -23,7 +23,7 @@ pub fn game_app() -> Unit {
 
 ///|
 fn spawn_quad(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render2d.Mesh2d,
   texture : @asset.Handle[@asset.Image],
   position : @math.Vec2,
@@ -44,7 +44,7 @@ fn spawn_quad(
 }
 
 ///|
-fn mesh2d_alpha_mode_setup(world : @ecs_world.World) -> Unit {
+fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let mesh = @render2d.Mesh2d::from_rectangle(

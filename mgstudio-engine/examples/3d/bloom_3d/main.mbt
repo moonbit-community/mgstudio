@@ -96,10 +96,10 @@ fn mode_label(mode : @render3d.BloomCompositeMode) -> String {
 }
 
 ///|
-fn apply_camera_bloom(world : @ecs_world.World) -> Unit {
+fn apply_camera_bloom(world : @ecs.World) -> Unit {
   guard bloom_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  let bloom_store = world.get_bloom_store()
+  let bloom_store = @render3d.query_get_bloom_store(world)
   if bloom_state.val.bloom_enabled {
     let bloom = @render3d.Bloom::new(bloom_state.val.intensity)
       .with_low_frequency_boost(bloom_state.val.low_frequency_boost)
@@ -206,7 +206,7 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn setup_scene(world : @ecs_world.World) -> Unit {
+fn setup_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   bloom_state.val.camera = None
   bloom_state.val.help_text = None
@@ -228,13 +228,21 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_tonemapping_store()
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
-  world
-  .get_bloom_store()
-  .insert(camera, @render3d.Bloom::new(bloom_state.val.intensity), tick)
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    @render3d.Tonemapping::TonyMcMapface,
+    tick,
+  )
+  @render3d.query_get_bloom_store(world).insert(
+    camera,
+    @render3d.Bloom::new(bloom_state.val.intensity),
+    tick,
+  )
   bloom_state.val.camera = Some(camera)
 
   let material_emissive1 = @render3d.standard_material_add(
@@ -312,7 +320,7 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_bloom_settings(world : @ecs_world.World) -> Unit {
+fn update_bloom_settings(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds()
   let mut changed = false
 
@@ -437,13 +445,11 @@ fn update_bloom_settings(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn bounce_spheres(world : @ecs_world.World) -> Unit {
+fn bounce_spheres(world : @ecs.World) -> Unit {
   let elapsed = @time.time_elapsed_seconds()
   let tick = world.read_change_tick()
   for sphere in bloom_state.val.spheres {
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       sphere.entity,
       @math.Transform::from_xyz(
         sphere.x,
@@ -458,8 +464,8 @@ fn bounce_spheres(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup_scene)
   .add_system(update_bloom_settings)

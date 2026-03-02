@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/physics3d"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/render3d",
@@ -73,6 +74,12 @@ pub fn[W : Has_ActiveHooks3d] query_get_active_hooks3d_store(W) -> @Milky2018/mg
 pub fn[W : Has_Collider3d] query_get_collider3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Collider3d]
 
 pub fn[W : Has_ContactForceEventThreshold3d] query_get_contact_force_event_threshold3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold3d]
+
+pub fn[W : HasRes_Physics3dConfig] query_get_physics3d_config_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dConfig]
+
+pub fn[W : HasRes_Physics3dContext] query_get_physics3d_context_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dContext]
+
+pub fn[W : HasRes_Physics3dEvents] query_get_physics3d_events_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dEvents]
 
 pub fn[W : Has_RapierBodyHandle3d] query_get_rapier_body_handle3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle3d]
 
@@ -203,50 +210,62 @@ pub fn Velocity3d::zero() -> Self
 pub(open) trait HasRes_Physics3dConfig {
   get_physics3d_config_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics3dConfig]
 }
+pub impl HasRes_Physics3dConfig for @ecs.World
 
 pub(open) trait HasRes_Physics3dContext {
   get_physics3d_context_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics3dContext]
 }
+pub impl HasRes_Physics3dContext for @ecs.World
 
 pub(open) trait HasRes_Physics3dEvents {
   get_physics3d_events_resource(Self) -> @Milky2018/mgstudio/core.Resource[Physics3dEvents]
 }
+pub impl HasRes_Physics3dEvents for @ecs.World
 
 pub(open) trait Has_ActiveCollisionTypes3d {
   get_active_collision_types3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ActiveCollisionTypes3d]
 }
+pub impl Has_ActiveCollisionTypes3d for @ecs.World
 
 pub(open) trait Has_ActiveEvents3d {
   get_active_events3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ActiveEvents3d]
 }
+pub impl Has_ActiveEvents3d for @ecs.World
 
 pub(open) trait Has_ActiveHooks3d {
   get_active_hooks3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ActiveHooks3d]
 }
+pub impl Has_ActiveHooks3d for @ecs.World
 
 pub(open) trait Has_Collider3d {
   get_collider3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Collider3d]
 }
+pub impl Has_Collider3d for @ecs.World
 
 pub(open) trait Has_ContactForceEventThreshold3d {
   get_contact_force_event_threshold3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold3d]
 }
+pub impl Has_ContactForceEventThreshold3d for @ecs.World
 
 pub(open) trait Has_RapierBodyHandle3d {
   get_rapier_body_handle3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle3d]
 }
+pub impl Has_RapierBodyHandle3d for @ecs.World
 
 pub(open) trait Has_RapierColliderHandle3d {
   get_rapier_collider_handle3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RapierColliderHandle3d]
 }
+pub impl Has_RapierColliderHandle3d for @ecs.World
 
 pub(open) trait Has_RigidBody3d {
   get_rigid_body3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[RigidBody3d]
 }
+pub impl Has_RigidBody3d for @ecs.World
 
 pub(open) trait Has_Velocity3d {
   get_velocity3d_store(Self) -> @Milky2018/mgstudio/core.ComponentStore[Velocity3d]
 }
+pub impl Has_Velocity3d for @ecs.World
 
 pub(open) trait Physics3dCleanupWorld : @Milky2018/mgstudio/core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
 }

@@ -196,7 +196,7 @@ fn uv_sphere_mesh(
 
 ///|
 fn set_entity_visibility(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity?,
   visible : Bool,
 ) -> Unit {
@@ -207,7 +207,7 @@ fn set_entity_visibility(
     @visibility.Visibility::Hidden
   }
   let tick = world.read_change_tick()
-  let store = world.get_visibility_store()
+  let store = @visibility.query_get_visibility_store(world)
   if store.contains(actual) {
     store.set(actual, value, tick) |> ignore
   } else {
@@ -225,7 +225,7 @@ fn create_camera_environment_map_light() -> @render3d.EnvironmentMapLight {
 }
 
 ///|
-fn remove_reflection_probe(world : @ecs_world.World) -> Unit {
+fn remove_reflection_probe(world : @ecs.World) -> Unit {
   if reflection_probes_state.val.reflection_probe is Some(probe) {
     world.despawn(probe) catch {
       _ => ()
@@ -235,18 +235,18 @@ fn remove_reflection_probe(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_reflection_probe(world : @ecs_world.World) -> Unit {
+fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   remove_reflection_probe(world)
   let tick = world.read_change_tick()
   let probe = world.spawn_empty()
   reflection_probes_state.val.reflection_probe = Some(probe)
 
-  world
-  .get_light_probe_store()
-  .insert(probe, @render3d.LightProbe::default(), tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_light_probe_store(world).insert(
+    probe,
+    @render3d.LightProbe::default(),
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     probe,
     @render3d.EnvironmentMapLight::new(
       reflection_probes_state.val.diffuse_environment_map,
@@ -255,12 +255,12 @@ fn spawn_reflection_probe(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_parallax_correction_store()
-  .insert(probe, @render3d.ParallaxCorrection::None, tick)
-  world
-  .get_transform_store()
-  .insert(
+  @render3d.query_get_parallax_correction_store(world).insert(
+    probe,
+    @render3d.ParallaxCorrection::None,
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
     probe,
     @math.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
     tick,
@@ -268,13 +268,17 @@ fn spawn_reflection_probe(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_reflection_mode(world : @ecs_world.World) -> Unit {
+fn apply_reflection_mode(world : @ecs.World) -> Unit {
   guard reflection_probes_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
 
   remove_reflection_probe(world)
-  world.get_environment_map_light_store().remove(camera) |> ignore
-  world.get_generated_environment_map_light_store().remove(camera) |> ignore
+  @render3d.query_get_environment_map_light_store(world).remove(camera)
+  |> ignore
+  @render3d.query_get_generated_environment_map_light_store(world).remove(
+    camera,
+  )
+  |> ignore
 
   match reflection_probes_state.val.reflection_mode {
     ReflectionMode::EnvironmentMap => {
@@ -283,9 +287,11 @@ fn apply_reflection_mode(world : @ecs_world.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         false,
       )
-      world
-      .get_environment_map_light_store()
-      .insert(camera, create_camera_environment_map_light(), tick)
+      @render3d.query_get_environment_map_light_store(world).insert(
+        camera,
+        create_camera_environment_map_light(),
+        tick,
+      )
     }
     ReflectionMode::ReflectionProbe => {
       set_entity_visibility(
@@ -293,9 +299,11 @@ fn apply_reflection_mode(world : @ecs_world.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         true,
       )
-      world
-      .get_environment_map_light_store()
-      .insert(camera, create_camera_environment_map_light(), tick)
+      @render3d.query_get_environment_map_light_store(world).insert(
+        camera,
+        create_camera_environment_map_light(),
+        tick,
+      )
       spawn_reflection_probe(world)
     }
     ReflectionMode::GeneratedEnvironmentMap => {
@@ -304,9 +312,7 @@ fn apply_reflection_mode(world : @ecs_world.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         false,
       )
-      world
-      .get_generated_environment_map_light_store()
-      .insert(
+      @render3d.query_get_generated_environment_map_light_store(world).insert(
         camera,
         @render3d.GeneratedEnvironmentMapLight::new(
           reflection_probes_state.val.specular_environment_map,
@@ -319,7 +325,7 @@ fn apply_reflection_mode(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   reflection_probes_state.val.reflection_mode = ReflectionMode::ReflectionProbe
   reflection_probes_state.val.rotating = false
   reflection_probes_state.val.sphere_roughness = 0.2F
@@ -351,18 +357,24 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   reflection_probes_state.val.camera = Some(camera)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_exposure_store()
-  .insert(camera, @render3d.Exposure::new(11.0F), tick)
-  world
-  .get_tonemapping_store()
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_exposure_store(world).insert(
+    camera,
+    @render3d.Exposure::new(11.0F),
+    tick,
+  )
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    @render3d.Tonemapping::AcesFitted,
+    tick,
+  )
   if reflection_probes_state.val.specular_environment_map
     is Some(specular_env_map) {
-    world
-    .get_skybox_store()
-    .insert(
+    @render3d.query_get_skybox_store(world).insert(
       camera,
       @render3d.Skybox::new(specular_env_map, ENV_MAP_INTENSITY),
       tick,
@@ -383,9 +395,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let cubes_scene = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     cubes_scene,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -424,7 +434,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_environment_map_usage(_world : @ecs_world.World) -> Unit {
+fn setup_environment_map_usage(_world : @ecs.World) -> Unit {
   if reflection_probes_state.val.environment_map_usage_ready {
     return
   }
@@ -444,7 +454,7 @@ fn setup_environment_map_usage(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn cycle_reflection_mode(world : @ecs_world.World) -> Unit {
+fn cycle_reflection_mode(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
@@ -461,7 +471,7 @@ fn cycle_reflection_mode(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_rotation(_world : @ecs_world.World) -> Unit {
+fn toggle_rotation(_world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Enter) {
     reflection_probes_state.val.rotating = !reflection_probes_state.val.rotating
     update_help_text()
@@ -469,7 +479,7 @@ fn toggle_rotation(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn change_sphere_roughness(_world : @ecs_world.World) -> Unit {
+fn change_sphere_roughness(_world : @ecs.World) -> Unit {
   let roughness_delta = if @input.key_pressed(@window.KeyCode::ArrowUp) {
     0.01F
   } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
@@ -504,12 +514,12 @@ fn change_sphere_roughness(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn rotate_camera(world : @ecs_world.World) -> Unit {
+fn rotate_camera(world : @ecs.World) -> Unit {
   if !reflection_probes_state.val.rotating {
     return
   }
   guard reflection_probes_state.val.camera is Some(camera) else { return }
-  guard world.get_transform_store().get(camera) is Some(transform) else {
+  guard @math.query_get_transform_store(world).get(camera) is Some(transform) else {
     return
   }
 
@@ -521,9 +531,7 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
   let rotated_x = cos_v * x - sin_v * z
   let rotated_z = sin_v * x + cos_v * z
 
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     camera,
     @math.Transform::from_xyz(rotated_x, transform.translation.y, rotated_z).looking_at(
       @math.Vec3::zero(),
@@ -536,8 +544,8 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(setup_environment_map_usage)

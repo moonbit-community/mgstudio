@@ -17,7 +17,7 @@
 
 ///|
 pub fn game_app() -> Unit {
-  @app.App::new(@ecs_world.World::new())
+  @app.App::new(@ecs.World::new())
   .add_plugins([
     @app.task_pool_plugin(
       @app.TaskPoolPlugin::new(@app.TaskPoolOptions::with_num_threads(4)),

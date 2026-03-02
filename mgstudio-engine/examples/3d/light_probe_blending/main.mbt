@@ -165,13 +165,13 @@ fn maxf(a : Float, b : Float) -> Float {
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  let resource = world.get_global_ambient_light_resource()
+  let resource = @render3d.query_get_global_ambient_light_resource(world)
   if resource.get_ref_mut(tick) is Some(current) {
     current.val = ambient
   } else {
@@ -181,7 +181,7 @@ fn set_global_ambient_light(
 
 ///|
 fn set_entity_visibility(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
@@ -191,7 +191,7 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let store = world.get_visibility_store()
+  let store = @visibility.query_get_visibility_store(world)
   if store.contains(entity) {
     store.set(entity, visibility, tick) |> ignore
   } else {
@@ -201,7 +201,7 @@ fn set_entity_visibility(
 
 ///|
 fn set_optional_visibility(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity?,
   visible : Bool,
 ) -> Unit {
@@ -212,7 +212,7 @@ fn set_optional_visibility(
 
 ///|
 fn set_entities_visibility(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entities : Array[@core.Entity],
   visible : Bool,
 ) -> Unit {
@@ -222,7 +222,7 @@ fn set_entities_visibility(
 }
 
 ///|
-fn apply_object_visibility(world : @ecs_world.World) -> Unit {
+fn apply_object_visibility(world : @ecs.World) -> Unit {
   let show_sphere = light_probe_blending_state.val.object_to_show ==
     ObjectToShow::Sphere
   set_optional_visibility(
@@ -238,7 +238,7 @@ fn apply_object_visibility(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_gizmo_visibility(world : @ecs_world.World) -> Unit {
+fn apply_gizmo_visibility(world : @ecs.World) -> Unit {
   set_entities_visibility(
     world,
     light_probe_blending_state.val.gizmo_entities,
@@ -349,7 +349,7 @@ fn uv_sphere_mesh(
 
 ///|
 fn spawn_probe_gizmo_box(
-  world : @ecs_world.World,
+  world : @ecs.World,
   material : @asset.Handle[@render3d.StandardMaterial],
   side : Float,
   center_z : Float,
@@ -362,9 +362,9 @@ fn spawn_probe_gizmo_box(
 }
 
 ///|
-fn sphere_position(world : @ecs_world.World) -> @math.Vec3 {
+fn sphere_position(world : @ecs.World) -> @math.Vec3 {
   if light_probe_blending_state.val.sphere is Some(entity) {
-    if world.get_transform_store().get(entity) is Some(transform) {
+    if @math.query_get_transform_store(world).get(entity) is Some(transform) {
       return transform.translation
     }
   }
@@ -372,7 +372,7 @@ fn sphere_position(world : @ecs_world.World) -> @math.Vec3 {
 }
 
 ///|
-fn write_orbit_camera_transform(world : @ecs_world.World) -> Unit {
+fn write_orbit_camera_transform(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
     return
   }
@@ -388,9 +388,7 @@ fn write_orbit_camera_transform(world : @ecs_world.World) -> Unit {
     radius * @math.sin(inclination) * @math.sin(azimuth),
   ).add(target)
 
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     camera_entity,
     @math.Transform::from_xyz(translation.x, translation.y, translation.z).looking_at(
       target,
@@ -403,7 +401,7 @@ fn write_orbit_camera_transform(world : @ecs_world.World) -> Unit {
 
 ///|
 fn write_free_camera_transform(
-  world : @ecs_world.World,
+  world : @ecs.World,
   forward : @math.Vec3,
 ) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
@@ -411,9 +409,7 @@ fn write_free_camera_transform(
   }
 
   let position = light_probe_blending_state.val.free_position
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     camera_entity,
     @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       position.add(forward),
@@ -425,11 +421,12 @@ fn write_free_camera_transform(
 }
 
 ///|
-fn switch_to_free_camera(world : @ecs_world.World) -> Unit {
+fn switch_to_free_camera(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
     return
   }
-  guard world.get_transform_store().get(camera_entity) is Some(camera_transform) else {
+  guard @math.query_get_transform_store(world).get(camera_entity)
+    is Some(camera_transform) else {
     return
   }
 
@@ -452,11 +449,12 @@ fn switch_to_free_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn switch_to_orbit_camera(world : @ecs_world.World) -> Unit {
+fn switch_to_orbit_camera(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
     return
   }
-  guard world.get_transform_store().get(camera_entity) is Some(camera_transform) else {
+  guard @math.query_get_transform_store(world).get(camera_entity)
+    is Some(camera_transform) else {
     return
   }
 
@@ -482,7 +480,7 @@ fn switch_to_orbit_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_scene(world : @ecs_world.World) -> Unit {
+fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.gizmo_entities.clear()
 
   let tick = world.read_change_tick()
@@ -495,9 +493,11 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
     @scene.GltfAssetLabel::Scene(0).from_asset(LIGHT_PROBE_SCENE_ASSET),
   )
   let room_scene_entity = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(room_scene_entity, @scene.SceneRoot::new(room_scene), tick)
+  @scene.query_get_scene_root_store(world).insert(
+    room_scene_entity,
+    @scene.SceneRoot::new(room_scene),
+    tick,
+  )
 
   let reflective_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white())
@@ -527,16 +527,12 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
   light_probe_blending_state.val.camera = Some(camera)
 
   let directional = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional,
     @math.Transform::from_xyz(3.0F, 6.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, -1.5F, -5.0F),
@@ -551,18 +547,14 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
   let specular_room2 = Some(asset_server.load(SPECULAR_ROOM2_ASSET))
 
   let probe_1 = world.spawn_empty()
-  world
-  .get_light_probe_store()
-  .insert(
+  @render3d.query_get_light_probe_store(world).insert(
     probe_1,
     @render3d.LightProbe::default().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
     tick,
   )
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_environment_map_light_store(world).insert(
     probe_1,
     @render3d.EnvironmentMapLight::new(
       diffuse_room1,
@@ -571,18 +563,14 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_parallax_correction_store()
-  .insert(
+  @render3d.query_get_parallax_correction_store(world).insert(
     probe_1,
     @render3d.ParallaxCorrection::Custom(
       @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     probe_1,
     @math.Transform::identity()
     .with_scale(
@@ -593,18 +581,14 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
   )
 
   let probe_2 = world.spawn_empty()
-  world
-  .get_light_probe_store()
-  .insert(
+  @render3d.query_get_light_probe_store(world).insert(
     probe_2,
     @render3d.LightProbe::default().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
     tick,
   )
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_environment_map_light_store(world).insert(
     probe_2,
     @render3d.EnvironmentMapLight::new(
       diffuse_room2,
@@ -613,18 +597,14 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_parallax_correction_store()
-  .insert(
+  @render3d.query_get_parallax_correction_store(world).insert(
     probe_2,
     @render3d.ParallaxCorrection::Custom(
       @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     probe_2,
     @math.Transform::identity()
     .with_scale(
@@ -726,7 +706,7 @@ fn spawn_scene(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.camera = None
   light_probe_blending_state.val.sphere = None
   light_probe_blending_state.val.prism = None
@@ -750,7 +730,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_sphere(world : @ecs_world.World) -> Unit {
+fn move_sphere(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.sphere is Some(entity) else { return }
 
   let t = (
@@ -758,9 +738,7 @@ fn move_sphere(world : @ecs_world.World) -> Unit {
       1.0F
     ) *
     0.5F
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     entity,
     @math.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t),
     world.read_change_tick(),
@@ -769,7 +747,7 @@ fn move_sphere(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn handle_keyboard_actions(world : @ecs_world.World) -> Unit {
+fn handle_keyboard_actions(world : @ecs.World) -> Unit {
   let mut changed = false
 
   if @input.key_just_pressed(@window.KeyCode::Tab) {
@@ -808,7 +786,7 @@ fn handle_keyboard_actions(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn orbit_camera(world : @ecs_world.World) -> Unit {
+fn orbit_camera(world : @ecs.World) -> Unit {
   if light_probe_blending_state.val.camera_mode != CameraMode::Orbit {
     return
   }
@@ -835,7 +813,7 @@ fn orbit_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn free_camera(world : @ecs_world.World) -> Unit {
+fn free_camera(world : @ecs.World) -> Unit {
   if light_probe_blending_state.val.camera_mode != CameraMode::Free {
     return
   }
@@ -894,8 +872,8 @@ fn free_camera(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(move_sphere)

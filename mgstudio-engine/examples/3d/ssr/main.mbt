@@ -279,15 +279,13 @@ fn uv_sphere_mesh(
 
 ///|
 fn set_entity_visibility(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity?,
   visible : Bool,
   tick : @core.Tick,
 ) -> Unit {
   if entity is Some(value) {
-    world
-    .get_visibility_store()
-    .set(
+    @visibility.query_get_visibility_store(world).set(
       value,
       if visible {
         @visibility.Visibility::Inherited
@@ -301,7 +299,7 @@ fn set_entity_visibility(
 }
 
 ///|
-fn apply_model_and_base_visibility(world : @ecs_world.World) -> Unit {
+fn apply_model_and_base_visibility(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let model = ssr_state.val.displayed_model
   let base = ssr_state.val.displayed_base
@@ -333,14 +331,12 @@ fn apply_model_and_base_visibility(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_camera_transform(world : @ecs_world.World) -> Unit {
+fn apply_camera_transform(world : @ecs.World) -> Unit {
   if ssr_state.val.camera is Some(camera) {
     let x = @math.sin(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
     let z = @math.cos(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
     let tick = world.read_change_tick()
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       camera,
       @math.Transform::from_xyz(x, CAMERA_HEIGHT, z).looking_at(
         @math.Vec3::zero(),
@@ -416,11 +412,11 @@ fn build_ssr_settings() -> @render3d.ScreenSpaceReflections {
 }
 
 ///|
-fn apply_ssr_settings(world : @ecs_world.World) -> Unit {
+fn apply_ssr_settings(world : @ecs.World) -> Unit {
   sanitize_ssr_ranges()
   if ssr_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
-    let store = world.get_screen_space_reflections_store()
+    let store = @render3d.query_get_screen_space_reflections_store(world)
     if ssr_state.val.ssr_on {
       if !store.set(camera, build_ssr_settings(), tick) {
         store.insert(camera, build_ssr_settings(), tick)
@@ -432,10 +428,7 @@ fn apply_ssr_settings(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_cube(
-  world : @ecs_world.World,
-  asset_server : @asset.AssetServer,
-) -> Unit {
+fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white())
     .with_base_color_texture(Some(asset_server.load("branding/icon.png")))
@@ -452,14 +445,12 @@ fn spawn_cube(
 
 ///|
 fn spawn_flight_helmet(
-  world : @ecs_world.World,
+  world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
   let tick = world.read_change_tick()
   let entity = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     entity,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -471,21 +462,21 @@ fn spawn_flight_helmet(
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     entity,
     @math.Transform::identity().with_scale(@math.Vec3::splat(2.5F)),
     tick,
   )
-  world
-  .get_visibility_store()
-  .insert(entity, @visibility.Visibility::Hidden, tick)
+  @visibility.query_get_visibility_store(world).insert(
+    entity,
+    @visibility.Visibility::Hidden,
+    tick,
+  )
   ssr_state.val.flight_helmet_model = Some(entity)
 }
 
 ///|
-fn spawn_capsules(world : @ecs_world.World) -> Unit {
+fn spawn_capsules(world : @ecs.World) -> Unit {
   ssr_state.val.capsule_models.clear()
   for i in 0..<5 {
     let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
@@ -501,19 +492,18 @@ fn spawn_capsules(world : @ecs_world.World) -> Unit {
     ).spawn(world)
 
     let tick = world.read_change_tick()
-    world
-    .get_visibility_store()
-    .set(entity, @visibility.Visibility::Hidden, tick)
+    @visibility.query_get_visibility_store(world).set(
+      entity,
+      @visibility.Visibility::Hidden,
+      tick,
+    )
     |> ignore
     ssr_state.val.capsule_models.push(entity)
   }
 }
 
 ///|
-fn spawn_bases(
-  world : @ecs_world.World,
-  asset_server : @asset.AssetServer,
-) -> Unit {
+fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
 
   let metallic_material = @render3d.standard_material_add(
@@ -528,9 +518,11 @@ fn spawn_bases(
     @render3d.MeshMaterial3d::new(metallic_material),
     @math.Transform::identity(),
   ).spawn(world)
-  world
-  .get_visibility_store()
-  .set(metallic, @visibility.Visibility::Hidden, tick)
+  @visibility.query_get_visibility_store(world).set(
+    metallic,
+    @visibility.Visibility::Hidden,
+    tick,
+  )
   |> ignore
   ssr_state.val.metallic_base = Some(metallic)
 
@@ -546,7 +538,11 @@ fn spawn_bases(
     @render3d.MeshMaterial3d::new(red_material),
     @math.Transform::identity(),
   ).spawn(world)
-  world.get_visibility_store().set(red, @visibility.Visibility::Hidden, tick)
+  @visibility.query_get_visibility_store(world).set(
+    red,
+    @visibility.Visibility::Hidden,
+    tick,
+  )
   |> ignore
   ssr_state.val.red_plane_base = Some(red)
 
@@ -576,7 +572,7 @@ fn spawn_bases(
 }
 
 ///|
-fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
+fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @render3d.Camera3dBundle::new(
       @render2d.Camera::default(),
@@ -590,17 +586,27 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
   ssr_state.val.camera = Some(camera)
 
   let tick = world.read_change_tick()
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .get_temporal_anti_aliasing_store()
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .get_screen_space_ambient_occlusion_store()
-  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+    camera,
+    @render3d.TemporalAntiAliasing::default(),
+    tick,
+  )
+  @render3d.query_get_screen_space_ambient_occlusion_store(world).insert(
+    camera,
+    @render3d.ScreenSpaceAmbientOcclusion::default(),
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -609,9 +615,7 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_skybox_store()
-  .insert(
+  @render3d.query_get_skybox_store(world).insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -621,16 +625,12 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
   )
 
   let directional = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional,
     @math.Transform::from_xyz(2.5F, 5.5F, 2.8F).looking_at(
       @math.Vec3::zero(),
@@ -640,9 +640,7 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
   )
 
   let point = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
@@ -652,11 +650,13 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point, @math.Transform::from_xyz(-3.0F, 3.5F, 2.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    point,
+    @math.Transform::from_xyz(-3.0F, 3.5F, 2.0F),
+    tick,
+  )
 
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = @render3d.query_get_global_ambient_light_resource(world)
   if ambient.get_ref_mut(tick) is Some(value) {
     value.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::white(),
@@ -671,7 +671,7 @@ fn setup_camera_and_lights(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_text(_world : @ecs_world.World) -> Unit {
+fn setup_text(_world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
@@ -695,31 +695,35 @@ fn setup_text(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn rotate_models(world : @ecs_world.World) -> Unit {
+fn rotate_models(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let rotation = @math.Quat::from_rotation_y(@time.time_elapsed_seconds())
 
   if ssr_state.val.cube_model is Some(cube) {
-    if world.get_transform_store().get(cube) is Some(transform) {
-      world
-      .get_transform_store()
-      .set(cube, transform.with_rotation(rotation), tick)
+    if @math.query_get_transform_store(world).get(cube) is Some(transform) {
+      @math.query_get_transform_store(world).set(
+        cube,
+        transform.with_rotation(rotation),
+        tick,
+      )
       |> ignore
     }
   }
 
   if ssr_state.val.flight_helmet_model is Some(helmet) {
-    if world.get_transform_store().get(helmet) is Some(transform) {
-      world
-      .get_transform_store()
-      .set(helmet, transform.with_rotation(rotation), tick)
+    if @math.query_get_transform_store(world).get(helmet) is Some(transform) {
+      @math.query_get_transform_store(world).set(
+        helmet,
+        transform.with_rotation(rotation),
+        tick,
+      )
       |> ignore
     }
   }
 }
 
 ///|
-fn animate_water_material(_world : @ecs_world.World) -> Unit {
+fn animate_water_material(_world : @ecs.World) -> Unit {
   if ssr_state.val.water_material is Some(handle) {
     if @render3d.standard_material_get(handle) is Some(material) {
       let t = @time.time_elapsed_seconds()
@@ -746,7 +750,7 @@ fn animate_water_material(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn adjust_camera_controls(world : @ecs_world.World) -> Bool {
+fn adjust_camera_controls(world : @ecs.World) -> Bool {
   let mut changed = false
 
   if @input.key_pressed(@window.KeyCode::KeyW) {
@@ -792,7 +796,7 @@ fn adjust_camera_controls(world : @ecs_world.World) -> Bool {
 }
 
 ///|
-fn control_system(world : @ecs_world.World) -> Unit {
+fn control_system(world : @ecs.World) -> Unit {
   let mut settings_changed = false
   let mut visibility_changed = false
 
@@ -908,9 +912,11 @@ fn control_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let renderer_method = world.get_default_opaque_renderer_method_resource()
+  let renderer_method = @render3d.query_get_default_opaque_renderer_method_resource(
+    world,
+  )
   if renderer_method.get_ref_mut(tick) is Some(current) {
     current.val = @render3d.DefaultOpaqueRendererMethod::deferred()
   } else {
@@ -963,8 +969,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(control_system)

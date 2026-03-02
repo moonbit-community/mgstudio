@@ -24,7 +24,7 @@ priv struct RotatorState {
 let rotator_state : Ref[RotatorState] = Ref::new({ rotators: [] })
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   rotator_state.val.rotators.clear()
 
@@ -46,15 +46,23 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render3d.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(0.0F, 0.0F, 3.0F),
   ).spawn(world)
-  world.get_parent_store().insert(child, @hierarchy.Parent::new(parent), tick)
+  @hierarchy.query_get_parent_store(world).insert(
+    child,
+    @hierarchy.Parent::new(parent),
+    tick,
+  )
 
   let light_entity = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(light_entity, @render3d.PointLight::default(), tick)
-  world
-  .get_transform_store()
-  .insert(light_entity, @math.Transform::from_xyz(4.0F, 5.0F, -4.0F), tick)
+  @render3d.query_get_point_light_store(world).insert(
+    light_entity,
+    @render3d.PointLight::default(),
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
+    light_entity,
+    @math.Transform::from_xyz(4.0F, 5.0F, -4.0F),
+    tick,
+  )
 
   @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -67,11 +75,11 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn rotator_system(world : @ecs_world.World) -> Unit {
+fn rotator_system(world : @ecs.World) -> Unit {
   let delta = 3.0F * @time.time_delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   for entity in rotator_state.val.rotators {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_rotation(
@@ -84,8 +92,8 @@ fn rotator_system(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(rotator_system)

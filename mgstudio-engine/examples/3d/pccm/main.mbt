@@ -65,7 +65,7 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn apply_pccm_status(world : @ecs_world.World) -> Unit {
+fn apply_pccm_status(world : @ecs.World) -> Unit {
   guard pccm_state.val.light_probe is Some(light_probe_entity) else { return }
 
   let correction = match pccm_state.val.pccm_enabled {
@@ -73,7 +73,7 @@ fn apply_pccm_status(world : @ecs_world.World) -> Unit {
     PccmEnableStatus::Disabled => @render3d.ParallaxCorrection::None
   }
   let tick = world.read_change_tick()
-  let store = world.get_parallax_correction_store()
+  let store = @render3d.query_get_parallax_correction_store(world)
   if store.contains(light_probe_entity) {
     store.set(light_probe_entity, correction, tick) |> ignore
   } else {
@@ -82,7 +82,7 @@ fn apply_pccm_status(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   pccm_state.val.pccm_enabled = PccmEnableStatus::Enabled
   pccm_state.val.light_probe = None
   pccm_state.val.help_text = None
@@ -126,12 +126,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let light_probe = world.spawn_empty()
-  world
-  .get_light_probe_store()
-  .insert(light_probe, @render3d.LightProbe::default(), tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_light_probe_store(world).insert(
+    light_probe,
+    @render3d.LightProbe::default(),
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     light_probe,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
@@ -140,9 +140,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light_probe,
     @math.Transform::identity().with_scale(@math.Vec3::splat(10.01F)),
     tick,
@@ -176,7 +174,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn handle_keyboard_input(world : @ecs_world.World) -> Unit {
+fn handle_keyboard_input(world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) &&
     pccm_state.val.pccm_enabled != PccmEnableStatus::Enabled {
@@ -196,8 +194,8 @@ fn handle_keyboard_input(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(handle_keyboard_input)

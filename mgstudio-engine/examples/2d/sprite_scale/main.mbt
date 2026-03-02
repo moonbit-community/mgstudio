@@ -48,16 +48,16 @@ let sprite_scale_state : Ref[SpriteScaleState] = Ref::new(SpriteScaleState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_scale_setup_sprites)
   .add_startup_system(sprite_scale_setup_texture_atlas)
   .add_startup_system(sprite_scale_setup_camera)
   .add_system(
     @app.system_query2(
-      fn(world) { world.get_sprite_store() },
-      fn(world) { world.get_transform_store() },
+      fn(world) { @render2d.query_get_sprite_store(world) },
+      fn(world) { @math.query_get_transform_store(world) },
       sprite_scale_update,
     ),
   )
@@ -65,7 +65,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn sprite_scale_setup_camera(world : @ecs_world.World) -> Unit {
+fn sprite_scale_setup_camera(world : @ecs.World) -> Unit {
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
@@ -74,7 +74,7 @@ fn sprite_scale_setup_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn sprite_scale_setup_sprites(world : @ecs_world.World) -> Unit {
+fn sprite_scale_setup_sprites(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let square = asset_server.load("textures/slice_square_2.png")
   let banner = asset_server.load("branding/banner.png")
@@ -187,7 +187,7 @@ fn sprite_scale_setup_sprites(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn sprite_scale_setup_texture_atlas(world : @ecs_world.World) -> Unit {
+fn sprite_scale_setup_texture_atlas(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let gabe = asset_server.load("textures/rpg/chars/gabe/gabe-idle-run.png")
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -293,7 +293,7 @@ fn sprite_scale_setup_texture_atlas(world : @ecs_world.World) -> Unit {
 
 ///|
 fn spawn_scaled_sprite(
-  world : @ecs_world.World,
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   font : @asset.Handle[@asset.Font],
   translation : @math.Vec2,
@@ -314,7 +314,7 @@ fn spawn_scaled_sprite(
 
 ///|
 fn spawn_scaled_atlas_sprite(
-  world : @ecs_world.World,
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   font : @asset.Handle[@asset.Font],
   layout_handle : @asset.Handle[@asset.TextureAtlasLayout],
@@ -384,7 +384,7 @@ fn resolve_scale_mode(_intended_mode : String) -> @render2d.SpriteImageMode {
 ///|
 fn sprite_scale_update(
   query : @core.Query2[@render2d.Sprite, @math.Transform],
-  world : @ecs_world.World,
+  world : @ecs.World,
 ) -> Unit {
   sprite_scale_state.val.timer_seconds = sprite_scale_state.val.timer_seconds +
     @time.time_delta_seconds()

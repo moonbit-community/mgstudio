@@ -17,6 +17,6 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new()).add_plugins(plugins).run()
+  let plugins = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new()).add_plugins(plugins).run()
 }

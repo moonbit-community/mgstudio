@@ -141,7 +141,7 @@ fn create_transparent_material(
 
 ///|
 fn spawn_mesh_with_layer(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -153,13 +153,13 @@ fn spawn_mesh_with_layer(
     @render3d.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  world.get_render_layers_store().insert(entity, layers, tick)
+  @render2d.query_get_render_layers_store(world).insert(entity, layers, tick)
   entity
 }
 
 ///|
 fn spawn_scene_spheres(
-  world : @ecs_world.World,
+  world : @ecs.World,
   layers : @render2d.RenderLayers,
   tick : Int,
 ) -> SpawnedScene {
@@ -210,7 +210,7 @@ fn spawn_scene_spheres(
 
 ///|
 fn spawn_scene_quads(
-  world : @ecs_world.World,
+  world : @ecs.World,
   layers : @render2d.RenderLayers,
   tick : Int,
 ) -> SpawnedScene {
@@ -287,7 +287,7 @@ fn spawn_scene_quads(
 
 ///|
 fn spawn_scene_occlusion(
-  world : @ecs_world.World,
+  world : @ecs.World,
   layers : @render2d.RenderLayers,
   tick : Int,
 ) -> SpawnedScene {
@@ -375,7 +375,7 @@ fn spawn_scene_occlusion(
 
 ///|
 fn spawn_scene_instancing(
-  world : @ecs_world.World,
+  world : @ecs.World,
   layers : @render2d.RenderLayers,
   asset_server : @asset.AssetServer,
   tick : Int,
@@ -413,9 +413,9 @@ fn spawn_scene_instancing(
 }
 
 ///|
-fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
+fn apply_scene_visibility(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let visibility_store = world.get_visibility_store()
+  let visibility_store = @visibility.query_get_visibility_store(world)
   for i, entities in oit_state.val.scene_entities {
     let visibility = if i == oit_state.val.scene_index {
       @visibility.Visibility::Inherited
@@ -429,27 +429,31 @@ fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_oit_mode(world : @ecs_world.World) -> Unit {
+fn apply_oit_mode(world : @ecs.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
-    world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
+    @render3d.query_get_msaa_store(world).insert(
+      camera,
+      @render3d.Msaa::Off,
+      tick,
+    )
     if oit_state.val.oit_enabled {
-      world
-      .get_order_independent_transparency_settings_store()
-      .insert(
+      @render3d.query_get_order_independent_transparency_settings_store(world).insert(
         camera,
         @render3d.OrderIndependentTransparencySettings::default(),
         tick,
       )
     } else {
-      world.get_order_independent_transparency_settings_store().remove(camera)
+      @render3d.query_get_order_independent_transparency_settings_store(world).remove(
+        camera,
+      )
       |> ignore
     }
   }
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let layer = @render2d.RenderLayers::layer(LAYER_INDEX)
   let asset_server = @asset.AssetServer::new()
@@ -467,24 +471,26 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_render_layers_store().insert(camera, layer, tick)
-  world
-  .get_depth_prepass_store()
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  @render2d.query_get_render_layers_store(world).insert(camera, layer, tick)
+  @render3d.query_get_depth_prepass_store(world).insert(
+    camera,
+    @render3d.DepthPrepass::default(),
+    tick,
+  )
   oit_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     light,
     @render3d.PointLight::default().with_shadow_maps_enabled(false),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
-  world.get_render_layers_store().insert(light, layer, tick)
+  @math.query_get_transform_store(world).insert(
+    light,
+    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+    tick,
+  )
+  @render2d.query_get_render_layers_store(world).insert(light, layer, tick)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -525,7 +531,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn controls(world : @ecs_world.World) -> Unit {
+fn controls(world : @ecs.World) -> Unit {
   let mut updated = false
   if @input.key_just_pressed(@window.KeyCode::KeyT) {
     oit_state.val.oit_enabled = !oit_state.val.oit_enabled
@@ -547,8 +553,8 @@ fn controls(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(controls)

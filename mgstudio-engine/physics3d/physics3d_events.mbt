@@ -32,8 +32,6 @@ pub struct ContactForceEvent3d {
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct Physics3dEvents {
   mut collisions : Array[CollisionEvent3d]
   mut contact_forces : Array[ContactForceEvent3d]

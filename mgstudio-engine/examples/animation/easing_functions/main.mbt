@@ -145,8 +145,8 @@ let easing_state : Ref[EasingFunctionsState] = Ref::new(EasingFunctionsState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(display_curves)
@@ -154,14 +154,14 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   easing_state.val.plots = []
   easing_state.val.progress_text = None
 
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn(world)
+  ).spawn_ecs(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -225,7 +225,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn display_curves(world : @ecs_world.World) -> Unit {
+fn display_curves(world : @ecs.World) -> Unit {
   if easing_state.val.plots.length() == 0 {
     return
   }
@@ -244,8 +244,6 @@ fn display_curves(world : @ecs_world.World) -> Unit {
   let gizmos = @render2d.Gizmos::get()
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
-  let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
 
   for plot in easing_state.val.plots {
     let center = plot.center
@@ -300,18 +298,16 @@ fn display_curves(world : @ecs_world.World) -> Unit {
       center.y - half_size_y + y_progress,
     )
 
-    transform_store.set(
+    try! world.set(
       plot.value_bar_entity,
+      @math.ecs_key_transform,
       transform_from_position(value_bar_position, MARKER_Z),
-      tick,
     )
-    |> ignore
-    transform_store.set(
+    try! world.set(
       plot.progress_dot_entity,
+      @math.ecs_key_transform,
       transform_from_position(progress_dot_position, MARKER_Z),
-      tick,
     )
-    |> ignore
 
     gizmos.linestrip_2d(
       [
@@ -392,7 +388,7 @@ fn ease_spec(function : EasingFunction, label : String) -> EaseSpec {
 
 ///|
 fn spawn_marker(
-  world : @ecs_world.World,
+  world : @ecs.World,
   size : Float,
   color : @render2d.Color,
   position : @math.Vec2,
@@ -401,7 +397,7 @@ fn spawn_marker(
     @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(size, size)),
     @render2d.ColorMaterial::new(color),
     transform_from_position(position, MARKER_Z),
-  ).spawn(world)
+  ).spawn_ecs(world)
 }
 
 ///|
@@ -423,7 +419,7 @@ fn spawn_label(
 }
 
 ///|
-fn spawn_progress_text(world : @ecs_world.World) -> @text.TextHandle {
+fn spawn_progress_text(_world : @ecs.World) -> @text.TextHandle {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = @text.Text2dBundle::new(
@@ -434,37 +430,6 @@ fn spawn_progress_text(world : @ecs_world.World) -> @text.TextHandle {
     .with_color(@text.TextColor::new(@render2d.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
-
-  let tick = world.read_change_tick()
-  let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
-  )
-
-  let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
-    text_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-    tick,
-  )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
 
   text_handle
 }

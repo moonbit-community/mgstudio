@@ -17,8 +17,8 @@
 /// - Builds a simple scene (floor + ball).
 /// - Periodically raycasts downward and prints the closest hit.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(physics2d_queries_setup)
   .add_system(physics2d_queries_raycast)
@@ -57,9 +57,9 @@ const RAY_LINE_SCALE_Y : Float = 7.8125F
 const RAY_SWEEP_AMPLITUDE : Float = 220.0F
 
 ///|
-fn physics2d_queries_setup(world : @ecs_world.World) -> Unit {
+fn physics2d_queries_setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics2d_config_resource()
+  let cfg_res = @physics2d.query_get_physics2d_config_resource(world)
   match cfg_res.get_ref_mut(tick) {
     Some(r) =>
       r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
@@ -79,8 +79,8 @@ fn physics2d_queries_setup(world : @ecs_world.World) -> Unit {
   let floor = @render2d.SpriteBundle::new(floor_sprite, floor_transform).spawn(
     world,
   )
-  let rb_store = world.get_rigid_body2d_store()
-  let col_store = world.get_collider2d_store()
+  let rb_store = @physics2d.query_get_rigid_body2d_store(world)
+  let col_store = @physics2d.query_get_collider2d_store(world)
   rb_store.insert(floor, @physics2d.RigidBody2d::fixed(), tick)
   col_store.insert(
     floor,
@@ -107,7 +107,11 @@ fn physics2d_queries_setup(world : @ecs_world.World) -> Unit {
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(12.0F)),
     tick,
   )
-  world.get_velocity2d_store().insert(ball, @physics2d.Velocity2d::zero(), tick)
+  @physics2d.query_get_velocity2d_store(world).insert(
+    ball,
+    @physics2d.Velocity2d::zero(),
+    tick,
+  )
 
   // Camera.
   let camera = @render2d.Camera::default()
@@ -150,9 +154,9 @@ fn physics2d_queries_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn physics2d_queries_raycast(world : @ecs_world.World) -> Unit {
+fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   query_state.val.phase = query_state.val.phase +
     @time.time_delta_seconds() * 0.75F
   let ray_x = @math.sin(query_state.val.phase) * RAY_SWEEP_AMPLITUDE
@@ -173,7 +177,7 @@ fn physics2d_queries_raycast(world : @ecs_world.World) -> Unit {
     return
   }
   query_state.val.accumulator = 0.0F
-  let ctx_res = world.get_physics2d_context_resource()
+  let ctx_res = @physics2d.query_get_physics2d_context_resource(world)
   guard ctx_res.get_ref() is Some(r) else { return }
   let ctx = r.val
   let hit = ctx.cast_ray_and_get_normal_entity(

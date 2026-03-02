@@ -14,8 +14,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(transparency_2d_setup)
   .run()
@@ -23,7 +23,7 @@ pub fn game_app() -> Unit {
 
 ///|
 fn spawn_logo_sprite(
-  world : @ecs_world.World,
+  world : @ecs.World,
   image : @asset.Handle[@asset.Image],
   position : @math.Vec2,
   color : @render2d.Color,
@@ -31,15 +31,15 @@ fn spawn_logo_sprite(
 ) -> Unit {
   let sprite = @render2d.Sprite::from_image(image).with_color(color)
   let transform = @math.Transform::from_xyz(position.x, position.y, z)
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(world) |> ignore
 }
 
 ///|
-fn transparency_2d_setup(world : @ecs_world.World) -> Unit {
+fn transparency_2d_setup(world : @ecs.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn(world)
+  ).spawn_ecs(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()

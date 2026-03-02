@@ -94,7 +94,7 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   rotate_env_state.val.camera = None
 
   let tick = world.read_change_tick()
@@ -125,9 +125,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     light,
     @render3d.PointLight::default().with_intensity(100_000.0F),
     tick,
@@ -140,13 +138,17 @@ fn setup(world : @ecs_world.World) -> Unit {
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   rotate_env_state.val.camera = Some(camera)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_tonemapping_store()
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
-  world
-  .get_skybox_store()
-  .insert(
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    @render3d.Tonemapping::AcesFitted,
+    tick,
+  )
+  @render3d.query_get_skybox_store(world).insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -154,9 +156,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -168,24 +168,29 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn rotate_skybox_and_environment_map(world : @ecs_world.World) -> Unit {
+fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
   let now = @time.time_elapsed_seconds()
   let angle = 0.2F * now
   let rotation = @math.Quat::from_rotation_y(angle)
   let tick = world.read_change_tick()
 
   if rotate_env_state.val.camera is Some(camera_entity) {
-    if world.get_skybox_store().get(camera_entity) is Some(skybox) {
-      world
-      .get_skybox_store()
-      .set(camera_entity, skybox.with_rotation(rotation), tick)
+    if @render3d.query_get_skybox_store(world).get(camera_entity)
+      is Some(skybox) {
+      @render3d.query_get_skybox_store(world).set(
+        camera_entity,
+        skybox.with_rotation(rotation),
+        tick,
+      )
       |> ignore
     }
-    if world.get_environment_map_light_store().get(camera_entity)
+    if @render3d.query_get_environment_map_light_store(world).get(camera_entity)
       is Some(environment_map_light) {
-      world
-      .get_environment_map_light_store()
-      .set(camera_entity, environment_map_light.with_rotation(rotation), tick)
+      @render3d.query_get_environment_map_light_store(world).set(
+        camera_entity,
+        environment_map_light.with_rotation(rotation),
+        tick,
+      )
       |> ignore
     }
   }
@@ -193,8 +198,8 @@ fn rotate_skybox_and_environment_map(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(rotate_skybox_and_environment_map)

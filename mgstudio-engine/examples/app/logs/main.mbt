@@ -16,19 +16,19 @@
 /// Port of `bevy/examples/app/logs.rs`.
 
 ///|
-fn setup(_world : @ecs_world.World) -> Unit {
+fn setup(_world : @ecs.World) -> Unit {
   println("Press P to panic")
 }
 
 ///|
-fn panic_on_p(_world : @ecs_world.World) -> Unit {
+fn panic_on_p(_world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyP) {
     abort("P pressed, panicking")
   }
 }
 
 ///|
-fn log_system(_world : @ecs_world.World) -> Unit {
+fn log_system(_world : @ecs.World) -> Unit {
   @app.log_trace("very noisy")
   @app.log_debug("helpful for debugging")
   @app.log_info("helpful information that is worth printing by default")
@@ -39,7 +39,7 @@ fn log_system(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn log_once_system(_world : @ecs_world.World) -> Unit {
+fn log_once_system(_world : @ecs.World) -> Unit {
   @app.log_trace_once("logs::trace_once", "one time noisy message")
   @app.log_debug_once("logs::debug_once", "one time debug message")
   @app.log_info_once("logs::info_once", "some info which is printed only once")
@@ -76,8 +76,8 @@ fn expensive_sum_message() -> String {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(@app.LogPlugin::default())])
   .add_startup_system(setup)

@@ -30,3 +30,9 @@ pub fn[W : @internal.DefaultPluginsWorld] default_plugins_nearest() -> Array[
 ] {
   @internal.default_plugins_nearest()
 }
+
+///|
+/// Minimal plugin bundle for the JSON ECS world (`@ecs.World`).
+pub fn default_plugins_ecs() -> Array[@app.Plugin[@ecs.World]] {
+  @internal.default_plugins_ecs()
+}

@@ -58,8 +58,6 @@ pub fn Affine2::transform_point2(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct GlobalTransform {
   affine : Affine2
   z : Float

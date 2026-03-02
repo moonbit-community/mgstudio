@@ -18,8 +18,8 @@
 /// Baseline parity:
 /// - Uses Bevy-style `ButtonInput<KeyCode>` and `ButtonInput<Key>` resources.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_system(@app.system_param2(keyboard_input_system))
   .run()

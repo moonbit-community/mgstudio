@@ -287,16 +287,11 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
 }
 
 ///|
-fn spawn_scene(
-  world : @ecs_world.World,
-  asset_server : @asset.AssetServer,
-) -> Unit {
+fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
 
   let light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -306,9 +301,11 @@ fn spawn_scene(
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(light, @math.Transform::from_xyz(2.0F, 1.0F, -1.1F), tick)
+  @math.query_get_transform_store(world).insert(
+    light,
+    @math.Transform::from_xyz(2.0F, 1.0F, -1.1F),
+    tick,
+  )
 
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(0.08F, 0.08F, 0.08F),
@@ -395,7 +392,7 @@ fn spawn_scene(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   parallax_state.val.camera = None
   parallax_state.val.help_text = None
   parallax_state.val.spin_targets.clear()
@@ -420,7 +417,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spin(world : @ecs_world.World) -> Unit {
+fn spin(world : @ecs.World) -> Unit {
   if parallax_state.val.spin_targets.length() == 0 {
     return
   }
@@ -429,7 +426,7 @@ fn spin(world : @ecs_world.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   for spin_target in parallax_state.val.spin_targets {
     guard transform_store.get(spin_target.entity) is Some(transform) else {
       continue
@@ -450,13 +447,13 @@ fn spin(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_camera(world : @ecs_world.World) -> Unit {
+fn move_camera(world : @ecs.World) -> Unit {
   if @input.mouse_button_just_pressed(@window.MouseButton::Left) {
     parallax_state.val.current_view = (parallax_state.val.current_view + 1) %
       view_count()
   }
   guard parallax_state.val.camera is Some(camera_entity) else { return }
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(camera_entity) is Some(current_transform) else {
     return
   }
@@ -481,7 +478,7 @@ fn move_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_parallax_controls(_world : @ecs_world.World) -> Unit {
+fn update_parallax_controls(_world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     parallax_state.val.target_depth = clampf(
@@ -532,8 +529,8 @@ fn update_parallax_controls(_world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(spin)

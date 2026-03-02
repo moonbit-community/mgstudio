@@ -17,8 +17,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .insert_resource(
     @render2d.ClearColor::new(@render2d.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
   )
@@ -29,11 +29,11 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn(world)
+  ).spawn_ecs(world)
   |> ignore
 }
 

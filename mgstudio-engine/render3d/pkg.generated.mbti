@@ -49,9 +49,13 @@ pub fn[W : Has_ContactShadows] query_get_contact_shadows_store(W) -> @core.Compo
 
 pub fn[W : Has_DebandDither] query_get_deband_dither_store(W) -> @core.ComponentStore[DebandDither]
 
+pub fn[W : HasRes_DefaultOpaqueRendererMethod] query_get_default_opaque_renderer_method_resource(W) -> @core.Resource[DefaultOpaqueRendererMethod]
+
 pub fn[W : Has_DeferredPrepass] query_get_deferred_prepass_store(W) -> @core.ComponentStore[DeferredPrepass]
 
 pub fn[W : Has_DepthPrepass] query_get_depth_prepass_store(W) -> @core.ComponentStore[DepthPrepass]
+
+pub fn[W : HasRes_DirectionalLightShadowMap] query_get_directional_light_shadow_map_resource(W) -> @core.Resource[DirectionalLightShadowMap]
 
 pub fn[W : Has_DirectionalLight] query_get_directional_light_store(W) -> @core.ComponentStore[DirectionalLight]
 
@@ -72,6 +76,8 @@ pub fn[W : Has_FreeCamera] query_get_free_camera_store(W) -> @core.ComponentStor
 pub fn[W : Has_Fxaa] query_get_fxaa_store(W) -> @core.ComponentStore[Fxaa]
 
 pub fn[W : Has_GeneratedEnvironmentMapLight] query_get_generated_environment_map_light_store(W) -> @core.ComponentStore[GeneratedEnvironmentMapLight]
+
+pub fn[W : HasRes_GlobalAmbientLight] query_get_global_ambient_light_resource(W) -> @core.Resource[GlobalAmbientLight]
 
 pub fn[W : Has_Hdr] query_get_hdr_store(W) -> @core.ComponentStore[Hdr]
 
@@ -102,6 +108,8 @@ pub fn[W : Has_OcclusionCulling] query_get_occlusion_culling_store(W) -> @core.C
 pub fn[W : Has_OrderIndependentTransparencySettings] query_get_order_independent_transparency_settings_store(W) -> @core.ComponentStore[OrderIndependentTransparencySettings]
 
 pub fn[W : Has_ParallaxCorrection] query_get_parallax_correction_store(W) -> @core.ComponentStore[ParallaxCorrection]
+
+pub fn[W : HasRes_PointLightShadowMap] query_get_point_light_shadow_map_resource(W) -> @core.Resource[PointLightShadowMap]
 
 pub fn[W : Has_PointLight] query_get_point_light_store(W) -> @core.ComponentStore[PointLight]
 
@@ -134,6 +142,8 @@ pub fn[W : Has_TransmittedShadowReceiver] query_get_transmitted_shadow_receiver_
 pub fn[W : Has_Vignette] query_get_vignette_store(W) -> @core.ComponentStore[Vignette]
 
 pub fn[W : Has_WireframeColor] query_get_wireframe_color_store(W) -> @core.ComponentStore[WireframeColor]
+
+pub fn[W : HasRes_WireframeConfig] query_get_wireframe_config_resource(W) -> @core.Resource[WireframeConfig]
 
 pub fn[W : Has_Wireframe] query_get_wireframe_store(W) -> @core.ComponentStore[Wireframe]
 
@@ -1325,230 +1335,287 @@ pub(open) trait FreeCameraControllerWorld : Has_FreeCamera + Has_FreeCameraState
 pub(open) trait HasRes_DefaultOpaqueRendererMethod {
   get_default_opaque_renderer_method_resource(Self) -> @core.Resource[DefaultOpaqueRendererMethod]
 }
+pub impl HasRes_DefaultOpaqueRendererMethod for @ecs.World
 
 pub(open) trait HasRes_DirectionalLightShadowMap {
   get_directional_light_shadow_map_resource(Self) -> @core.Resource[DirectionalLightShadowMap]
 }
+pub impl HasRes_DirectionalLightShadowMap for @ecs.World
 
 pub(open) trait HasRes_GlobalAmbientLight {
   get_global_ambient_light_resource(Self) -> @core.Resource[GlobalAmbientLight]
 }
+pub impl HasRes_GlobalAmbientLight for @ecs.World
 
 pub(open) trait HasRes_PointLightShadowMap {
   get_point_light_shadow_map_resource(Self) -> @core.Resource[PointLightShadowMap]
 }
+pub impl HasRes_PointLightShadowMap for @ecs.World
 
 pub(open) trait HasRes_WireframeConfig {
   get_wireframe_config_resource(Self) -> @core.Resource[WireframeConfig]
 }
+pub impl HasRes_WireframeConfig for @ecs.World
 
 pub(open) trait Has_Bloom {
   get_bloom_store(Self) -> @core.ComponentStore[Bloom]
 }
+pub impl Has_Bloom for @ecs.World
 
 pub(open) trait Has_Camera3d {
   get_camera3d_store(Self) -> @core.ComponentStore[Camera3d]
 }
+pub impl Has_Camera3d for @ecs.World
 
 pub(open) trait Has_CameraProjection3d {
   get_camera_projection3d_store(Self) -> @core.ComponentStore[CameraProjection3d]
 }
+pub impl Has_CameraProjection3d for @ecs.World
 
 pub(open) trait Has_ChromaticAberration {
   get_chromatic_aberration_store(Self) -> @core.ComponentStore[ChromaticAberration]
 }
+pub impl Has_ChromaticAberration for @ecs.World
 
 pub(open) trait Has_ClusteredDecal {
   get_clustered_decal_store(Self) -> @core.ComponentStore[ClusteredDecal]
 }
+pub impl Has_ClusteredDecal for @ecs.World
 
 pub(open) trait Has_ColorGrading {
   get_color_grading_store(Self) -> @core.ComponentStore[ColorGrading]
 }
+pub impl Has_ColorGrading for @ecs.World
 
 pub(open) trait Has_ContactShadows {
   get_contact_shadows_store(Self) -> @core.ComponentStore[ContactShadows]
 }
+pub impl Has_ContactShadows for @ecs.World
 
 pub(open) trait Has_DebandDither {
   get_deband_dither_store(Self) -> @core.ComponentStore[DebandDither]
 }
+pub impl Has_DebandDither for @ecs.World
 
 pub(open) trait Has_DeferredPrepass {
   get_deferred_prepass_store(Self) -> @core.ComponentStore[DeferredPrepass]
 }
+pub impl Has_DeferredPrepass for @ecs.World
 
 pub(open) trait Has_DepthPrepass {
   get_depth_prepass_store(Self) -> @core.ComponentStore[DepthPrepass]
 }
+pub impl Has_DepthPrepass for @ecs.World
 
 pub(open) trait Has_DirectionalLight {
   get_directional_light_store(Self) -> @core.ComponentStore[DirectionalLight]
 }
+pub impl Has_DirectionalLight for @ecs.World
 
 pub(open) trait Has_DirectionalLightTexture {
   get_directional_light_texture_store(Self) -> @core.ComponentStore[DirectionalLightTexture]
 }
+pub impl Has_DirectionalLightTexture for @ecs.World
 
 pub(open) trait Has_EnvironmentMapLight {
   get_environment_map_light_store(Self) -> @core.ComponentStore[EnvironmentMapLight]
 }
+pub impl Has_EnvironmentMapLight for @ecs.World
 
 pub(open) trait Has_Exposure {
   get_exposure_store(Self) -> @core.ComponentStore[Exposure]
 }
+pub impl Has_Exposure for @ecs.World
 
 pub(open) trait Has_ForwardDecal {
   get_forward_decal_store(Self) -> @core.ComponentStore[ForwardDecal]
 }
+pub impl Has_ForwardDecal for @ecs.World
 
 pub(open) trait Has_ForwardDecalMaterialExt {
   get_forward_decal_material_ext_store(Self) -> @core.ComponentStore[ForwardDecalMaterialExt]
 }
+pub impl Has_ForwardDecalMaterialExt for @ecs.World
 
 pub(open) trait Has_FreeCamera {
   get_free_camera_store(Self) -> @core.ComponentStore[FreeCamera]
 }
+pub impl Has_FreeCamera for @ecs.World
 
 pub(open) trait Has_FreeCameraState {
   get_free_camera_state_store(Self) -> @core.ComponentStore[FreeCameraState]
 }
+pub impl Has_FreeCameraState for @ecs.World
 
 pub(open) trait Has_Fxaa {
   get_fxaa_store(Self) -> @core.ComponentStore[Fxaa]
 }
+pub impl Has_Fxaa for @ecs.World
 
 pub(open) trait Has_GeneratedEnvironmentMapLight {
   get_generated_environment_map_light_store(Self) -> @core.ComponentStore[GeneratedEnvironmentMapLight]
 }
+pub impl Has_GeneratedEnvironmentMapLight for @ecs.World
 
 pub(open) trait Has_Hdr {
   get_hdr_store(Self) -> @core.ComponentStore[Hdr]
 }
+pub impl Has_Hdr for @ecs.World
 
 pub(open) trait Has_IrradianceVolume {
   get_irradiance_volume_store(Self) -> @core.ComponentStore[IrradianceVolume]
 }
+pub impl Has_IrradianceVolume for @ecs.World
 
 pub(open) trait Has_LightProbe {
   get_light_probe_store(Self) -> @core.ComponentStore[LightProbe]
 }
+pub impl Has_LightProbe for @ecs.World
 
 pub(open) trait Has_Mesh3d {
   get_mesh3d_store(Self) -> @core.ComponentStore[Mesh3d]
 }
+pub impl Has_Mesh3d for @ecs.World
 
 pub(open) trait Has_MeshMaterial3d {
   get_mesh_material3d_store(Self) -> @core.ComponentStore[MeshMaterial3d]
 }
+pub impl Has_MeshMaterial3d for @ecs.World
 
 pub(open) trait Has_MotionBlur {
   get_motion_blur_store(Self) -> @core.ComponentStore[MotionBlur]
 }
+pub impl Has_MotionBlur for @ecs.World
 
 pub(open) trait Has_MotionVectorPrepass {
   get_motion_vector_prepass_store(Self) -> @core.ComponentStore[MotionVectorPrepass]
 }
+pub impl Has_MotionVectorPrepass for @ecs.World
 
 pub(open) trait Has_Msaa {
   get_msaa_store(Self) -> @core.ComponentStore[Msaa]
 }
+pub impl Has_Msaa for @ecs.World
 
 pub(open) trait Has_NoWireframe {
   get_no_wireframe_store(Self) -> @core.ComponentStore[NoWireframe]
 }
+pub impl Has_NoWireframe for @ecs.World
 
 pub(open) trait Has_NormalPrepass {
   get_normal_prepass_store(Self) -> @core.ComponentStore[NormalPrepass]
 }
+pub impl Has_NormalPrepass for @ecs.World
 
 pub(open) trait Has_NotShadowCaster {
   get_not_shadow_caster_store(Self) -> @core.ComponentStore[NotShadowCaster]
 }
+pub impl Has_NotShadowCaster for @ecs.World
 
 pub(open) trait Has_NotShadowReceiver {
   get_not_shadow_receiver_store(Self) -> @core.ComponentStore[NotShadowReceiver]
 }
+pub impl Has_NotShadowReceiver for @ecs.World
 
 pub(open) trait Has_OcclusionCulling {
   get_occlusion_culling_store(Self) -> @core.ComponentStore[OcclusionCulling]
 }
+pub impl Has_OcclusionCulling for @ecs.World
 
 pub(open) trait Has_OrderIndependentTransparencySettings {
   get_order_independent_transparency_settings_store(Self) -> @core.ComponentStore[OrderIndependentTransparencySettings]
 }
+pub impl Has_OrderIndependentTransparencySettings for @ecs.World
 
 pub(open) trait Has_ParallaxCorrection {
   get_parallax_correction_store(Self) -> @core.ComponentStore[ParallaxCorrection]
 }
+pub impl Has_ParallaxCorrection for @ecs.World
 
 pub(open) trait Has_PointLight {
   get_point_light_store(Self) -> @core.ComponentStore[PointLight]
 }
+pub impl Has_PointLight for @ecs.World
 
 pub(open) trait Has_PointLightTexture {
   get_point_light_texture_store(Self) -> @core.ComponentStore[PointLightTexture]
 }
+pub impl Has_PointLightTexture for @ecs.World
 
 pub(open) trait Has_ScreenSpaceAmbientOcclusion {
   get_screen_space_ambient_occlusion_store(Self) -> @core.ComponentStore[ScreenSpaceAmbientOcclusion]
 }
+pub impl Has_ScreenSpaceAmbientOcclusion for @ecs.World
 
 pub(open) trait Has_ScreenSpaceReflections {
   get_screen_space_reflections_store(Self) -> @core.ComponentStore[ScreenSpaceReflections]
 }
+pub impl Has_ScreenSpaceReflections for @ecs.World
 
 pub(open) trait Has_ScreenSpaceTransmission {
   get_screen_space_transmission_store(Self) -> @core.ComponentStore[ScreenSpaceTransmission]
 }
+pub impl Has_ScreenSpaceTransmission for @ecs.World
 
 pub(open) trait Has_ShadowFilteringMethod {
   get_shadow_filtering_method_store(Self) -> @core.ComponentStore[ShadowFilteringMethod]
 }
+pub impl Has_ShadowFilteringMethod for @ecs.World
 
 pub(open) trait Has_Skybox {
   get_skybox_store(Self) -> @core.ComponentStore[Skybox]
 }
+pub impl Has_Skybox for @ecs.World
 
 pub(open) trait Has_SpotLight {
   get_spot_light_store(Self) -> @core.ComponentStore[SpotLight]
 }
+pub impl Has_SpotLight for @ecs.World
 
 pub(open) trait Has_SpotLightTexture {
   get_spot_light_texture_store(Self) -> @core.ComponentStore[SpotLightTexture]
 }
+pub impl Has_SpotLightTexture for @ecs.World
 
 pub(open) trait Has_SubCameraView3d {
   get_sub_camera_view3d_store(Self) -> @core.ComponentStore[SubCameraView3d]
 }
+pub impl Has_SubCameraView3d for @ecs.World
 
 pub(open) trait Has_TemporalAntiAliasing {
   get_temporal_anti_aliasing_store(Self) -> @core.ComponentStore[TemporalAntiAliasing]
 }
+pub impl Has_TemporalAntiAliasing for @ecs.World
 
 pub(open) trait Has_TemporalJitter {
   get_temporal_jitter_store(Self) -> @core.ComponentStore[TemporalJitter]
 }
+pub impl Has_TemporalJitter for @ecs.World
 
 pub(open) trait Has_Tonemapping {
   get_tonemapping_store(Self) -> @core.ComponentStore[Tonemapping]
 }
+pub impl Has_Tonemapping for @ecs.World
 
 pub(open) trait Has_TransmittedShadowReceiver {
   get_transmitted_shadow_receiver_store(Self) -> @core.ComponentStore[TransmittedShadowReceiver]
 }
+pub impl Has_TransmittedShadowReceiver for @ecs.World
 
 pub(open) trait Has_Vignette {
   get_vignette_store(Self) -> @core.ComponentStore[Vignette]
 }
+pub impl Has_Vignette for @ecs.World
 
 pub(open) trait Has_Wireframe {
   get_wireframe_store(Self) -> @core.ComponentStore[Wireframe]
 }
+pub impl Has_Wireframe for @ecs.World
 
 pub(open) trait Has_WireframeColor {
   get_wireframe_color_store(Self) -> @core.ComponentStore[WireframeColor]
 }
+pub impl Has_WireframeColor for @ecs.World
 
 pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }

@@ -19,7 +19,6 @@
 /// UI extraction currently lives in `@ui` (so it can access UI-specific ECS).
 
 ///|
-#ecs.resource
 pub struct A11yState {
   mut last_update : @moon_accesskit.TreeUpdate?
   mut pending_actions : Array[@moon_accesskit.ActionRequest]

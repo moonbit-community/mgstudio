@@ -16,15 +16,13 @@
 /// Port of `bevy/examples/app/without_winit.rs`.
 
 ///|
-fn setup_system(world : @ecs_world.World) -> Unit {
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+fn setup_system(world : @ecs.World) -> Unit {
+  // Minimal placeholder entity for the ECS-json world path.
+  let entity = world.spawn_empty()
+  try! world.set(entity, @math.ecs_key_transform, @math.Transform::identity())
 }
 
 ///|
 pub fn game_app() -> Unit {
-  @app.App::new(@ecs_world.World::new()).add_system(setup_system).run()
+  @app.App::new(@ecs.World::new()).add_system(setup_system).run()
 }

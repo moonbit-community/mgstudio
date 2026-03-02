@@ -16,21 +16,8 @@
 fn make_cli_parser() -> @clap.Parser {
   @clap.Parser::new(
     prog="mgstudio",
-    description="mgstudio developer CLI (codegen/build/run entrypoint).",
+    description="mgstudio developer CLI (build/run entrypoint).",
     subcmds={
-      "gen": @clap.SubCommand::new(
-        help="Generate ecs.g.mbt from #ecs.component / #ecs.resource.",
-        args={
-          "check": @clap.Arg::flag(
-            short='c',
-            help="Verify generated files are up-to-date (do not write).",
-          ),
-          "verbose": @clap.Arg::flag(
-            short='v',
-            help="Print scanned modules and generated paths.",
-          ),
-        },
-      ),
       "run": @clap.SubCommand::new(
         help="Run a game described by a game config file in native runtime (calls export `game_app`).",
         args={

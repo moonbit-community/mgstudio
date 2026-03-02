@@ -198,7 +198,7 @@ fn draw_selectable_menu_item(
 }
 
 ///|
-fn set_camera_projection(world : @ecs_world.World) -> Unit {
+fn set_camera_projection(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   let projection = if anti_aliasing_state.val.use_orthographic {
@@ -212,7 +212,9 @@ fn set_camera_projection(world : @ecs_world.World) -> Unit {
       @render3d.Projection3d::perspective_default(),
     )
   }
-  world.get_camera_projection3d_store().set(camera_entity, projection, tick)
+  @render3d.query_get_camera_projection3d_store(world).set(
+    camera_entity, projection, tick,
+  )
   |> ignore
 }
 
@@ -246,44 +248,51 @@ fn fxaa_sensitivity_component(
 
 ///|
 fn clear_temporal_aa_components(
-  world : @ecs_world.World,
+  world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  world.get_temporal_anti_aliasing_store().remove(camera_entity) |> ignore
-  world.get_temporal_jitter_store().remove(camera_entity) |> ignore
-  world.get_depth_prepass_store().remove(camera_entity) |> ignore
-  world.get_motion_vector_prepass_store().remove(camera_entity) |> ignore
+  @render3d.query_get_temporal_anti_aliasing_store(world).remove(camera_entity)
+  |> ignore
+  @render3d.query_get_temporal_jitter_store(world).remove(camera_entity)
+  |> ignore
+  @render3d.query_get_depth_prepass_store(world).remove(camera_entity) |> ignore
+  @render3d.query_get_motion_vector_prepass_store(world).remove(camera_entity)
+  |> ignore
 }
 
 ///|
-fn apply_aa_components(world : @ecs_world.World) -> Unit {
+fn apply_aa_components(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   let aa_method = anti_aliasing_state.val.aa_method
   if aa_method_eq(aa_method, AAMethod::NoAA) {
-    world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
-    world.get_fxaa_store().remove(camera_entity) |> ignore
+    @render3d.query_get_msaa_store(world).insert(
+      camera_entity,
+      @render3d.Msaa::Off,
+      tick,
+    )
+    @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::MSAA) {
-    world
-    .get_msaa_store()
-    .insert(
+    @render3d.query_get_msaa_store(world).insert(
       camera_entity,
       msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
       tick,
     )
-    world.get_fxaa_store().remove(camera_entity) |> ignore
+    @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::FXAA) {
-    world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
+    @render3d.query_get_msaa_store(world).insert(
+      camera_entity,
+      @render3d.Msaa::Off,
+      tick,
+    )
     clear_temporal_aa_components(world, camera_entity)
-    world
-    .get_fxaa_store()
-    .insert(
+    @render3d.query_get_fxaa_store(world).insert(
       camera_entity,
       @render3d.Fxaa::default().with_sensitivity(
         fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
@@ -293,24 +302,40 @@ fn apply_aa_components(world : @ecs_world.World) -> Unit {
     return
   }
   if aa_method_eq(aa_method, AAMethod::TAA) {
-    world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
-    world.get_fxaa_store().remove(camera_entity) |> ignore
-    world
-    .get_temporal_anti_aliasing_store()
-    .insert(camera_entity, @render3d.TemporalAntiAliasing::default(), tick)
-    world
-    .get_temporal_jitter_store()
-    .insert(camera_entity, @render3d.TemporalJitter::default(), tick)
-    world
-    .get_depth_prepass_store()
-    .insert(camera_entity, @render3d.DepthPrepass::default(), tick)
-    world
-    .get_motion_vector_prepass_store()
-    .insert(camera_entity, @render3d.MotionVectorPrepass::default(), tick)
+    @render3d.query_get_msaa_store(world).insert(
+      camera_entity,
+      @render3d.Msaa::Off,
+      tick,
+    )
+    @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
+    @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+      camera_entity,
+      @render3d.TemporalAntiAliasing::default(),
+      tick,
+    )
+    @render3d.query_get_temporal_jitter_store(world).insert(
+      camera_entity,
+      @render3d.TemporalJitter::default(),
+      tick,
+    )
+    @render3d.query_get_depth_prepass_store(world).insert(
+      camera_entity,
+      @render3d.DepthPrepass::default(),
+      tick,
+    )
+    @render3d.query_get_motion_vector_prepass_store(world).insert(
+      camera_entity,
+      @render3d.MotionVectorPrepass::default(),
+      tick,
+    )
     return
   }
-  world.get_msaa_store().insert(camera_entity, @render3d.Msaa::Off, tick)
-  world.get_fxaa_store().remove(camera_entity) |> ignore
+  @render3d.query_get_msaa_store(world).insert(
+    camera_entity,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
   clear_temporal_aa_components(world, camera_entity)
 }
 
@@ -709,7 +734,7 @@ fn uv_debug_texture() -> @asset.Handle[@asset.Image] {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   anti_aliasing_state.val.aa_method = AAMethod::NoAA
   anti_aliasing_state.val.msaa_samples = MSAASamples::Sample4
   anti_aliasing_state.val.fxaa_sensitivity = FXAASensitivity::Medium
@@ -760,9 +785,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let helmet = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     helmet,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -776,16 +799,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
 
   let light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
@@ -802,9 +821,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
   ).spawn(world)
   anti_aliasing_state.val.camera = Some(camera_entity)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera_entity,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -850,7 +867,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn read_cas_character_shortcuts(world : @ecs_world.World) -> (Bool, Bool, Bool) {
+fn read_cas_character_shortcuts(world : @ecs.World) -> (Bool, Bool, Bool) {
   let mut toggle = false
   let mut decrement = false
   let mut increment = false
@@ -872,7 +889,7 @@ fn read_cas_character_shortcuts(world : @ecs_world.World) -> (Bool, Bool, Bool) 
 }
 
 ///|
-fn modify_aa(world : @ecs_world.World) -> Bool {
+fn modify_aa(world : @ecs.World) -> Bool {
   let (cas_toggle_char, cas_decrease_char, cas_increase_char) = read_cas_character_shortcuts(
     world,
   )
@@ -1035,7 +1052,7 @@ fn modify_aa(world : @ecs_world.World) -> Bool {
 }
 
 ///|
-fn update(world : @ecs_world.World) -> Unit {
+fn update(world : @ecs.World) -> Unit {
   if modify_aa(world) {
     apply_aa_components(world)
     apply_aa_proxy()
@@ -1045,8 +1062,8 @@ fn update(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(update)

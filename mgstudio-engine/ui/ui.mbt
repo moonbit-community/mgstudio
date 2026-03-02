@@ -354,7 +354,6 @@ pub fn GridPlacement::end_span(end : Int, span : Int) -> GridPlacement {
 }
 
 ///|
-#ecs.component
 pub struct ZIndex {
   value : Int
 }
@@ -365,7 +364,6 @@ pub fn ZIndex::new(value : Int) -> ZIndex {
 }
 
 ///|
-#ecs.component
 pub struct GlobalZIndex {
   value : Int
 }
@@ -376,7 +374,6 @@ pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
 }
 
 ///|
-#ecs.resource
 pub struct UiScale {
   value : Float
 }
@@ -387,7 +384,6 @@ pub fn UiScale::new(value : Float) -> UiScale {
 }
 
 ///|
-#ecs.resource
 pub struct UiStack {
   mut uinodes : Array[@core.Entity]
 }
@@ -408,7 +404,6 @@ pub fn UiStack::clear(self : Ref[UiStack]) -> Unit {
 }
 
 ///|
-#ecs.component
 pub struct ScrollPosition {
   offset_x : Float
   offset_y : Float
@@ -437,7 +432,6 @@ pub fn ScrollPosition::with_delta(
 }
 
 ///|
-#ecs.component
 pub struct CalculatedClip {
   clip : @math.Rect
 }
@@ -448,15 +442,12 @@ pub fn CalculatedClip::new(clip : @math.Rect) -> CalculatedClip {
 }
 
 ///|
-#ecs.component
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
   normalized : @math.Vec2?
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub(all) enum FocusPolicy {
   Block
   Pass
@@ -472,15 +463,12 @@ pub fn FocusPolicy::default() -> FocusPolicy {
 ///
 /// This is Bevy-aligned (`UiAntiAlias`) and is currently consumed by the UI
 /// render pipeline (tracked separately).
-#ecs.component
 pub(all) enum UiAntiAlias {
   Off
   On
 } derive(Eq, Show)
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct BorderRadius {
   top_left : Val
   top_right : Val
@@ -549,7 +537,6 @@ pub fn BorderRadius::percent(
 }
 
 ///|
-#ecs.component
 pub struct Outline {
   width : Val
   offset : Val
@@ -575,7 +562,6 @@ pub fn Outline::default() -> Outline {
 }
 
 ///|
-#ecs.component
 pub struct BoxShadow {
   color : @render2d.Color
   x_offset : Val
@@ -608,7 +594,6 @@ pub fn BoxShadow::default() -> BoxShadow {
 }
 
 ///|
-#ecs.component
 pub struct UiBoxShadowSamples {
   samples : Int
 }
@@ -625,7 +610,6 @@ pub fn UiBoxShadowSamples::default() -> UiBoxShadowSamples {
 }
 
 ///|
-#ecs.component
 pub struct BorderColor {
   color : @render2d.Color
 }
@@ -637,8 +621,6 @@ pub fn BorderColor::new(color : @render2d.Color) -> BorderColor {
 
 ///|
 /// The style of a UI node (Bevy v0.15.3-aligned surface).
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Node {
   display : Display
   position_type : PositionType
@@ -833,8 +815,6 @@ pub fn Node::with_grid_template_columns(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct UiRoot {}
 
 ///|
@@ -844,8 +824,6 @@ pub fn UiRoot::default() -> UiRoot {
 
 ///|
 /// Computed layout rectangle in logical pixels, top-left origin (viewport space).
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct UiLayout {
   rect : @math.Rect
 }
@@ -857,8 +835,6 @@ pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
 
 ///|
 /// Intrinsic content size used by the layout engine when width/height are `Auto`.
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ContentSize {
   size : @math.Vec2
 }
@@ -872,8 +848,6 @@ pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
 /// Bevy-aligned image size component (Bevy v0.15.3 `ImageNodeSize`).
 ///
 /// Stores the size of the selected image region in pixels (rect/atlas/texture).
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ImageNodeSize {
   size : @math.UVec2
 }
@@ -889,8 +863,6 @@ pub fn ImageNodeSize::size(self : ImageNodeSize) -> @math.UVec2 {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct BackgroundColor {
   color : @render2d.Color
 }
@@ -901,8 +873,6 @@ pub fn BackgroundColor::new(color : @render2d.Color) -> BackgroundColor {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct UiImage {
   color : @render2d.Color
   image : @asset.Handle[@asset.Image]
@@ -1213,8 +1183,6 @@ fn compute_texture_slices(
 
 ///|
 /// A UI node that renders an image (Bevy v0.15.3 `ImageNode`).
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ImageNode {
   color : @render2d.Color
   image : @asset.Handle[@asset.Image]
@@ -1284,8 +1252,6 @@ pub fn ImageNode::with_mode(
 
 ///|
 /// Bevy-aligned interaction state component.
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub(all) enum Interaction {
   None
   Hovered
@@ -1294,8 +1260,6 @@ pub(all) enum Interaction {
 
 ///|
 /// Bevy-aligned button marker component.
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Button {}
 
 ///|
@@ -1305,8 +1269,6 @@ pub fn Button::default() -> Button {
 
 ///|
 /// Bevy-aligned label marker component (Bevy v0.15.3 `Label` widget marker).
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Label {}
 
 ///|
@@ -1315,8 +1277,6 @@ pub fn Label::default() -> Label {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ButtonColors {
   normal : @render2d.Color
   hovered : @render2d.Color
@@ -1333,8 +1293,6 @@ pub fn ButtonColors::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct UiText {
   handle : @text.TextHandle
 }
@@ -1346,7 +1304,6 @@ pub fn UiText::new(handle : @text.TextHandle) -> UiText {
 
 ///|
 /// Optional accessibility label for UI nodes (used by the host a11y bridge).
-#ecs.component
 pub struct AccessibilityLabel {
   text : String
 }
@@ -1357,8 +1314,6 @@ pub fn AccessibilityLabel::new(text : String) -> AccessibilityLabel {
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct UiContext {
   mut white_texture : @asset.Handle[@asset.Image]
   mut viewport_origin : @math.Vec2

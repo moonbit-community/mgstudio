@@ -16,8 +16,6 @@
 /// Bevy-like visibility components (2D-first).
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub(all) enum Visibility {
   Inherited
   Hidden
@@ -33,8 +31,6 @@ pub fn Visibility::is_visible(self : Visibility) -> Bool {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct InheritedVisibility {
   visible : Bool
 } derive(Eq, Show)
@@ -50,8 +46,6 @@ pub fn InheritedVisibility::is_visible(self : InheritedVisibility) -> Bool {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ViewVisibility {
   visible : Bool
 } derive(Eq, Show)
@@ -67,14 +61,12 @@ pub fn ViewVisibility::is_visible(self : ViewVisibility) -> Bool {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
 //
 // Mirrors Bevy's `VisibilityRange` shape:
 // - `start_margin_*` defines the near-side visible threshold range.
 // - `end_margin_*` defines the far-side visible threshold range.
 // - `use_aabb` switches distance origin from entity translation to mesh AABB
 //   center when available.
-#ecs.component
 pub struct VisibilityRange {
   start_margin_min : Float
   start_margin_max : Float

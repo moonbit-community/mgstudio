@@ -146,10 +146,13 @@ fn quality_label(quality : @render3d.ScreenSpaceTransmissionQuality) -> String {
 
 ///|
 fn camera_screen_space_transmission(
-  world : @ecs_world.World,
+  world : @ecs.World,
 ) -> @render3d.ScreenSpaceTransmission {
   if transmission_state.val.camera is Some(camera_entity) {
-    match world.get_screen_space_transmission_store().get(camera_entity) {
+    match
+      @render3d.query_get_screen_space_transmission_store(world).get(
+        camera_entity,
+      ) {
       Some(value) => value
       None => @render3d.ScreenSpaceTransmission::default()
     }
@@ -160,12 +163,12 @@ fn camera_screen_space_transmission(
 
 ///|
 fn camera_set_screen_space_transmission(
-  world : @ecs_world.World,
+  world : @ecs.World,
   value : @render3d.ScreenSpaceTransmission,
 ) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let store = world.get_screen_space_transmission_store()
+    let store = @render3d.query_get_screen_space_transmission_store(world)
     if store.contains(camera_entity) {
       store.set(camera_entity, value, tick) |> ignore
     } else {
@@ -175,37 +178,37 @@ fn camera_set_screen_space_transmission(
 }
 
 ///|
-fn camera_hdr_enabled(world : @ecs_world.World) -> Bool {
+fn camera_hdr_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.get_hdr_store().contains(camera_entity)
+    @render3d.query_get_hdr_store(world).contains(camera_entity)
   } else {
     false
   }
 }
 
 ///|
-fn camera_depth_prepass_enabled(world : @ecs_world.World) -> Bool {
+fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.get_depth_prepass_store().contains(camera_entity)
+    @render3d.query_get_depth_prepass_store(world).contains(camera_entity)
   } else {
     false
   }
 }
 
 ///|
-fn camera_taa_enabled(world : @ecs_world.World) -> Bool {
+fn camera_taa_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.get_temporal_jitter_store().contains(camera_entity)
+    @render3d.query_get_temporal_jitter_store(world).contains(camera_entity)
   } else {
     false
   }
 }
 
 ///|
-fn camera_toggle_hdr(world : @ecs_world.World) -> Unit {
+fn camera_toggle_hdr(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let store = world.get_hdr_store()
+    let store = @render3d.query_get_hdr_store(world)
     if store.contains(camera_entity) {
       store.remove(camera_entity) |> ignore
     } else {
@@ -215,10 +218,10 @@ fn camera_toggle_hdr(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn camera_toggle_depth_prepass(world : @ecs_world.World) -> Unit {
+fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let store = world.get_depth_prepass_store()
+    let store = @render3d.query_get_depth_prepass_store(world)
     if store.contains(camera_entity) {
       store.remove(camera_entity) |> ignore
     } else {
@@ -228,11 +231,11 @@ fn camera_toggle_depth_prepass(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn camera_toggle_taa(world : @ecs_world.World) -> Unit {
+fn camera_toggle_taa(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let jitter_store = world.get_temporal_jitter_store()
-    let taa_store = world.get_temporal_anti_aliasing_store()
+    let jitter_store = @render3d.query_get_temporal_jitter_store(world)
+    let taa_store = @render3d.query_get_temporal_anti_aliasing_store(world)
     if jitter_store.contains(camera_entity) {
       jitter_store.remove(camera_entity) |> ignore
       taa_store.remove(camera_entity) |> ignore
@@ -252,7 +255,7 @@ fn camera_toggle_taa(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn transmission_hud_text(world : @ecs_world.World) -> String {
+fn transmission_hud_text(world : @ecs.World) -> String {
   let transmission = camera_screen_space_transmission(world)
   let hdr_text = if camera_hdr_enabled(world) { "ON " } else { "OFF" }
   let depth_text = if camera_depth_prepass_enabled(world) {
@@ -431,7 +434,7 @@ fn cylinder_mesh(
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -445,10 +448,12 @@ fn spawn_mesh(
 }
 
 ///|
-fn setup_scene(world : @ecs_world.World) -> Unit {
+fn setup_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  let point_light_shadow_map = world.get_point_light_shadow_map_resource()
+  let point_light_shadow_map = @render3d.query_get_point_light_shadow_map_resource(
+    world,
+  )
   let point_light_shadow_map_value = @render3d.PointLightShadowMap::new(2048)
   if point_light_shadow_map.get_ref_mut(tick) is Some(value) {
     value.val = point_light_shadow_map_value
@@ -456,7 +461,7 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
     point_light_shadow_map.insert(point_light_shadow_map_value, tick)
   }
 
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = @render3d.query_get_global_ambient_light_resource(world)
   if ambient.get_ref_mut(tick) is Some(value) {
     value.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::white(),
@@ -531,9 +536,11 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.1F, 0.2F, 0.1F),
     ),
   ).spawn(world)
-  world
-  .get_not_shadow_caster_store()
-  .insert(flame_mesh_entity, @render3d.NotShadowCaster::default(), tick)
+  @render3d.query_get_not_shadow_caster_store(world).insert(
+    flame_mesh_entity,
+    @render3d.NotShadowCaster::default(),
+    tick,
+  )
   transmission_state.val.flame_mesh = Some(flame_mesh_entity)
 
   let white_glass = @render3d.standard_material_add(
@@ -664,17 +671,19 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
     .with_scale(@math.Vec3::new(2.0F, 1.0F, 1.0F))
     .with_rotation(@math.Quat::from_rotation_x(PI / 2.0F)),
   ).spawn(world)
-  world
-  .get_transmitted_shadow_receiver_store()
-  .insert(paper_entity, @render3d.TransmittedShadowReceiver::default(), tick)
+  @render3d.query_get_transmitted_shadow_receiver_store(world).insert(
+    paper_entity,
+    @render3d.TransmittedShadowReceiver::default(),
+    tick,
+  )
 
   let flame_light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(flame_light, @math.Transform::from_xyz(-1.0F, 1.7F, 0.0F), tick)
-  world
-  .get_point_light_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
+    flame_light,
+    @math.Transform::from_xyz(-1.0F, 1.7F, 0.0F),
+    tick,
+  )
+  @render3d.query_get_point_light_store(world).insert(
     flame_light,
     @render3d.PointLight::new(
       @render2d.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
@@ -688,7 +697,7 @@ fn setup_scene(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_camera(world : @ecs_world.World) -> Unit {
+fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let color_grading = @render3d.ColorGrading::new(
     @render3d.ColorGradingGlobal::new().with_post_saturation(1.2F),
@@ -707,23 +716,45 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
     )
     .spawn(world)
   let tick = world.read_change_tick()
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .get_temporal_jitter_store()
-  .insert(camera, @render3d.TemporalJitter::default(), tick)
-  world
-  .get_temporal_anti_aliasing_store()
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world.get_exposure_store().insert(camera, @render3d.Exposure::new(6.0F), tick)
-  world.get_color_grading_store().insert(camera, color_grading, tick)
-  world
-  .get_tonemapping_store()
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_bloom_store(world).insert(
+    camera,
+    @render3d.Bloom::default(),
+    tick,
+  )
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_temporal_jitter_store(world).insert(
+    camera,
+    @render3d.TemporalJitter::default(),
+    tick,
+  )
+  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+    camera,
+    @render3d.TemporalAntiAliasing::default(),
+    tick,
+  )
+  @render3d.query_get_exposure_store(world).insert(
+    camera,
+    @render3d.Exposure::new(6.0F),
+    tick,
+  )
+  @render3d.query_get_color_grading_store(world).insert(
+    camera, color_grading, tick,
+  )
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    @render3d.Tonemapping::TonyMcMapface,
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -736,7 +767,7 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_text(world : @ecs_world.World) -> Unit {
+fn setup_text(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
@@ -762,20 +793,18 @@ fn setup_text(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn set_hud_text(world : @ecs_world.World) -> Unit {
+fn set_hud_text(world : @ecs.World) -> Unit {
   if transmission_state.val.display_text is Some(handle) {
     @text.text_set_content(handle, transmission_hud_text(world))
   }
 }
 
 ///|
-fn apply_camera_transform(world : @ecs_world.World) -> Unit {
+fn apply_camera_transform(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let camera_pos = transmission_state.val.camera_translation
     let tick = world.read_change_tick()
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       camera_entity,
       @math.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
         @math.Vec3::zero(),
@@ -835,7 +864,7 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
 }
 
 ///|
-fn example_control_system(world : @ecs_world.World) -> Unit {
+fn example_control_system(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds()
   let mut materials_changed = false
   let mut randomize_colors = false
@@ -1041,7 +1070,7 @@ fn example_control_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn flicker_system(world : @ecs_world.World) -> Unit {
+fn flicker_system(world : @ecs.World) -> Unit {
   let s = @time.time_elapsed_seconds()
   let a = @math.cos(s * 6.0F) * 0.0125F + @math.cos(s * 4.0F) * 0.025F
   let b = @math.cos(s * 5.0F) * 0.0125F + @math.cos(s * 3.0F) * 0.025F
@@ -1050,10 +1079,9 @@ fn flicker_system(world : @ecs_world.World) -> Unit {
   let tick = world.read_change_tick()
 
   if transmission_state.val.flame_light is Some(light_entity) {
-    if world.get_point_light_store().get(light_entity) is Some(point_light) {
-      world
-      .get_point_light_store()
-      .set(
+    if @render3d.query_get_point_light_store(world).get(light_entity)
+      is Some(point_light) {
+      @render3d.query_get_point_light_store(world).set(
         light_entity,
         point_light.with_intensity(4_000.0F + 3_000.0F * (a + b + c)),
         tick,
@@ -1061,10 +1089,9 @@ fn flicker_system(world : @ecs_world.World) -> Unit {
       |> ignore
     }
 
-    if world.get_transform_store().get(light_entity) is Some(light_transform) {
-      world
-      .get_transform_store()
-      .set(
+    if @math.query_get_transform_store(world).get(light_entity)
+      is Some(light_transform) {
+      @math.query_get_transform_store(world).set(
         light_entity,
         light_transform.with_translation(@math.Vec3::new(-1.0F - c, 1.7F, -a)),
         tick,
@@ -1074,7 +1101,7 @@ fn flicker_system(world : @ecs_world.World) -> Unit {
   }
 
   if transmission_state.val.flame_mesh is Some(flame_entity) {
-    if world.get_transform_store().contains(flame_entity) {
+    if @math.query_get_transform_store(world).contains(flame_entity) {
       let base_transform = @math.Transform::from_xyz(-1.0F - c, 1.23F, -a).looking_at(
         @math.Vec3::new(-1.0F - c, 1.7F - b, -a),
         @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -1084,9 +1111,7 @@ fn flicker_system(world : @ecs_world.World) -> Unit {
         .mul(@math.Quat::from_rotation_z(PI / 2.0F))
         .normalize(),
       )
-      world
-      .get_transform_store()
-      .set(
+      @math.query_get_transform_store(world).set(
         flame_entity,
         rotated_flame.with_scale(@math.Vec3::new(0.1F, 0.2F, 0.1F)),
         tick,
@@ -1097,7 +1122,7 @@ fn flicker_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   transmission_state.val = {
     diffuse_transmission: 0.5F,
     specular_transmission: 0.9F,
@@ -1131,8 +1156,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(example_control_system)

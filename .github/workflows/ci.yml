@@ -69,13 +69,6 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon update
 
-      - name: mgstudio gen --check (silent)
-        shell: bash
-        run: |
-          set -euo pipefail
-          export PATH="$HOME/.moon/bin:$PATH"
-          ./scripts/check_codegen_clean.sh
-
       - name: moon check
         shell: bash
         run: |

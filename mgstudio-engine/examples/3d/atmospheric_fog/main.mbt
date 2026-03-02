@@ -128,10 +128,10 @@ fn make_fog() -> @render3d.DistanceFog {
 }
 
 ///|
-fn apply_fog(world : @ecs_world.World) -> Unit {
+fn apply_fog(world : @ecs.World) -> Unit {
   guard atmospheric_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.get_camera3d_store()
+  let camera3d_store = @render3d.query_get_camera3d_store(world)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @render3d.Camera3d::default()
@@ -156,7 +156,7 @@ fn instruction_text() -> String {
 }
 
 ///|
-fn setup_camera_fog(world : @ecs_world.World) -> Unit {
+fn setup_camera_fog(world : @ecs.World) -> Unit {
   let camera = @render3d.Camera3dBundle::new(
       @render2d.Camera::default(),
       @math.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
@@ -172,7 +172,7 @@ fn setup_camera_fog(world : @ecs_world.World) -> Unit {
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -186,16 +186,14 @@ fn spawn_mesh(
 }
 
 ///|
-fn setup_terrain_scene(world : @ecs_world.World) -> Unit {
+fn setup_terrain_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(3.0F)
     .build()
   let sun = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     sun,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
       @math.Vec3::new(-0.15F, -0.05F, 0.25F),
@@ -203,9 +201,7 @@ fn setup_terrain_scene(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     sun,
     @render3d.DirectionalLight::new(
       @render2d.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
@@ -250,13 +246,15 @@ fn setup_terrain_scene(world : @ecs_world.World) -> Unit {
     @render3d.MeshMaterial3d::new(sky_material),
     @math.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
   ).spawn(world)
-  world
-  .get_not_shadow_caster_store()
-  .insert(sky, @render3d.NotShadowCaster::default(), tick)
+  @render3d.query_get_not_shadow_caster_store(world).insert(
+    sky,
+    @render3d.NotShadowCaster::default(),
+    tick,
+  )
 }
 
 ///|
-fn setup_instructions(_world : @ecs_world.World) -> Unit {
+fn setup_instructions(_world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -281,7 +279,7 @@ fn setup_instructions(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_system(world : @ecs_world.World) -> Unit {
+fn toggle_system(world : @ecs.World) -> Unit {
   let mut changed = false
 
   if @input.key_just_pressed(@window.KeyCode::Space) {
@@ -303,7 +301,7 @@ fn toggle_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   atmospheric_fog_state.val.camera = None
   atmospheric_fog_state.val.fog_enabled = true
   atmospheric_fog_state.val.directional_influence_enabled = true
@@ -317,8 +315,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(toggle_system)

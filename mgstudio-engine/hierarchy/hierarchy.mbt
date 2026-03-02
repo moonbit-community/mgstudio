@@ -16,8 +16,6 @@
 /// Bevy-like hierarchy components.
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Parent {
   entity : @core.Entity
 }
@@ -44,8 +42,6 @@ pub impl @json.FromJson for Parent with from_json(json, path) {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Children {
   entities : Array[@core.Entity]
 }

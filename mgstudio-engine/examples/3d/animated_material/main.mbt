@@ -59,7 +59,7 @@ fn color_from_hue_deg(hue_deg : Float) -> @render2d.Color {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   animated_material_state.val.materials.clear()
   animated_material_state.val.hues_deg.clear()
@@ -72,9 +72,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -108,7 +106,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn animate_materials(_world : @ecs_world.World) -> Unit {
+fn animate_materials(_world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds()
   if delta <= 0.0F {
     return
@@ -129,8 +127,8 @@ fn animate_materials(_world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(animate_materials)

@@ -15,16 +15,16 @@
 ///|
 /// Port of `bevy/examples/2d/2d_shapes.rs`.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render2d.wireframe2d_plugin])
   .add_startup_system(shapes_setup)
   .add_startup_system(setup_wireframe2d_config)
   .add_system(
     @app.system_query2(
-      fn(world) { world.get_transform_store() },
-      fn(world) { world.get_mesh2d_store() },
+      fn(world) { @math.query_get_transform_store(world) },
+      fn(world) { @render2d.query_get_mesh2d_store(world) },
       shapes_rotate,
     ),
   )
@@ -122,7 +122,7 @@ fn lane_x(index : Int, total : Int, extent : Float) -> Float {
 
 ///|
 fn spawn_shape(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render2d.Mesh2d,
   position : @math.Vec2,
   color : @render2d.Color,
@@ -154,7 +154,7 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
+fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = spawn_ui_text_handle(
@@ -165,10 +165,8 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -176,12 +174,12 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -189,13 +187,15 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
 }
 
 ///|
-fn shapes_setup(world : @ecs_world.World) -> Unit {
+fn shapes_setup(world : @ecs.World) -> Unit {
   rotation_enabled.val = false
 
   let top_shapes : Array[@render2d.Mesh2d] = [
@@ -302,25 +302,25 @@ fn shapes_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_wireframe2d_config(world : @ecs_world.World) -> Unit {
+fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let config = @render2d.Wireframe2dConfig::new(false, @render2d.Color::white())
-  if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+  if @render2d.query_get_wireframe2d_config_resource(world).get_ref_mut(tick)
     is Some(config_ref) {
     config_ref.val = config
   } else {
-    world.get_wireframe2d_config_resource().insert(config, tick)
+    @render2d.query_get_wireframe2d_config_resource(world).insert(config, tick)
   }
 }
 
 ///|
 fn shapes_rotate(
   query : @core.Query2[@math.Transform, @render2d.Mesh2d],
-  world : @ecs_world.World,
+  world : @ecs.World,
 ) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
     let tick = world.read_change_tick()
-    if world.get_wireframe2d_config_resource().get_ref_mut(tick)
+    if @render2d.query_get_wireframe2d_config_resource(world).get_ref_mut(tick)
       is Some(config_ref) {
       config_ref.val = config_ref.val.with_global(!config_ref.val.global)
     }

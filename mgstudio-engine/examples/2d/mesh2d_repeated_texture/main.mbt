@@ -35,7 +35,7 @@ let example_state : Ref[ExampleState] = Ref::new(ExampleState::{
 
 ///|
 fn spawn_panel(
-  world : @ecs_world.World,
+  world : @ecs.World,
   x : Float,
   texture : @asset.Handle[@asset.Image],
   uv_scale : @math.Vec2,
@@ -73,7 +73,7 @@ fn spawn_label(
 }
 
 ///|
-fn ensure_labels_system(_world : @ecs_world.World) -> Unit {
+fn ensure_labels_system(_world : @ecs.World) -> Unit {
   if example_state.val.labels_spawned {
     return
   }
@@ -87,7 +87,7 @@ fn ensure_labels_system(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn mesh2d_repeated_texture_setup(world : @ecs_world.World) -> Unit {
+fn mesh2d_repeated_texture_setup(world : @ecs.World) -> Unit {
   // Port of `bevy/examples/2d/mesh2d_repeated_texture.rs`.
   let asset_server = @asset.AssetServer::new()
   let default_texture = asset_server.load_with_settings(
@@ -136,8 +136,8 @@ fn mesh2d_repeated_texture_setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_repeated_texture_setup)
   .add_system(ensure_labels_system)

@@ -182,18 +182,20 @@ fn same_entity(a : @core.Entity, b : @core.Entity) -> Bool {
 
 ///|
 fn spawn_button(
-  world : @ecs_world.World,
+  world : @ecs.World,
   parent : @core.Entity,
   tick : @core.Tick,
   font : @asset.Handle[@asset.Font],
   label : String,
 ) -> @core.Entity {
   let button = world.spawn_empty()
-  world.get_parent_store().insert(button, @hierarchy.Parent::new(parent), tick)
-  world.get_button_store().insert(button, @ui.Button::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    button,
+    @hierarchy.Parent::new(parent),
+    tick,
+  )
+  @ui.query_get_button_store(world).insert(button, @ui.Button::default(), tick)
+  @ui.query_get_node_store(world).insert(
     button,
     @ui.Node::default()
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
@@ -209,17 +211,21 @@ fn spawn_button(
     .with_align_items(@ui.AlignItems::Center),
     tick,
   )
-  world
-  .get_border_radius_store()
-  .insert(
+  @ui.query_get_border_radius_store(world).insert(
     button,
     @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
     tick,
   )
-  world
-  .get_background_color_store()
-  .insert(button, button_background(false), tick)
-  world.get_border_color_store().insert(button, button_border(false), tick)
+  @ui.query_get_background_color_store(world).insert(
+    button,
+    button_background(false),
+    tick,
+  )
+  @ui.query_get_border_color_store(world).insert(
+    button,
+    button_border(false),
+    tick,
+  )
 
   let label_handle = spawn_ui_text_handle(
     label,
@@ -228,28 +234,27 @@ fn spawn_button(
     @render2d.Color::white(),
   )
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(button), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(button),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(label_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(label_handle),
+    tick,
+  )
 
   button
 }
 
 ///|
-fn setup_ui(
-  world : @ecs_world.World,
-  font : @asset.Handle[@asset.Font],
-) -> Unit {
+fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   let tick = world.read_change_tick()
 
   @render2d.Camera2dBundle::new(
@@ -259,10 +264,8 @@ fn setup_ui(
   |> ignore
 
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -277,12 +280,12 @@ fn setup_ui(
     @render2d.Color::white(),
   )
   let help_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(help_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    help_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     help_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -290,18 +293,20 @@ fn setup_ui(
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(help_entity, @ui.UiText::new(help_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    help_entity,
+    @ui.UiText::new(help_handle),
+    tick,
+  )
   clustered_decals_state.val.help_text = Some(help_handle)
 
   let selection_panel = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(selection_panel, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    selection_panel,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     selection_panel,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -320,21 +325,23 @@ fn setup_ui(
     @render2d.Color::white(),
   )
   let hint_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(hint_entity, @hierarchy.Parent::new(selection_panel), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    hint_entity,
+    @hierarchy.Parent::new(selection_panel),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     hint_entity,
     @ui.Node::default()
     .with_width(@ui.Val::Px(125.0F))
     .with_height(@ui.Val::Auto),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(hint_entity, @ui.UiText::new(hint_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    hint_entity,
+    @ui.UiText::new(hint_handle),
+    tick,
+  )
 
   let camera_button = spawn_button(world, selection_panel, tick, font, "Camera")
   clustered_decals_state.val.selection_widgets.push({
@@ -359,12 +366,12 @@ fn setup_ui(
   })
 
   let drag_mode_panel = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(drag_mode_panel, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    drag_mode_panel,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     drag_mode_panel,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -390,10 +397,10 @@ fn setup_ui(
 }
 
 ///|
-fn update_ui_state(world : @ecs_world.World) -> Unit {
+fn update_ui_state(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let background_store = world.get_background_color_store()
-  let border_store = world.get_border_color_store()
+  let background_store = @ui.query_get_background_color_store(world)
+  let border_store = @ui.query_get_border_color_store(world)
 
   for widget in clustered_decals_state.val.selection_widgets {
     let selected = widget.selection == clustered_decals_state.val.selection
@@ -426,7 +433,7 @@ fn update_ui_state(world : @ecs_world.World) -> Unit {
   }
 
   if clustered_decals_state.val.drag_mode_panel is Some(panel) {
-    let node_store = world.get_node_store()
+    let node_store = @ui.query_get_node_store(world)
     if node_store.get(panel) is Some(node) {
       let show_drag_buttons = clustered_decals_state.val.selection !=
         Selection::Camera
@@ -462,7 +469,7 @@ fn calculate_initial_decal_transform(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
   clustered_decals_state.val.camera = None
@@ -501,12 +508,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   clustered_decals_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(light, @render3d.DirectionalLight::default(), tick)
-  world
-  .get_transform_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
+    light,
+    @render3d.DirectionalLight::default(),
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::zero(),
@@ -542,9 +549,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(1.1F, 1.1F),
     ),
   ).spawn(world)
-  world
-  .get_clustered_decal_store()
-  .insert(
+  @render3d.query_get_clustered_decal_store(world).insert(
     decal_a,
     @render3d.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
@@ -562,9 +567,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec2::new(2.0F, 2.0F),
     ),
   ).spawn(world)
-  world
-  .get_clustered_decal_store()
-  .insert(
+  @render3d.query_get_clustered_decal_store(world).insert(
     decal_b,
     @render3d.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
@@ -640,14 +643,14 @@ fn orient_towards_center_preserve_roll(
 
 ///|
 fn apply_drag_translation(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
   delta : @math.Vec2,
   phi_factor : Float,
   theta_factor : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard world.get_transform_store().get(entity) is Some(transform) else {
+  guard @math.query_get_transform_store(world).get(entity) is Some(transform) else {
     return
   }
   let next_translation = spherical_drag_translation(
@@ -656,9 +659,7 @@ fn apply_drag_translation(
     phi_factor,
     theta_factor,
   )
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     entity,
     orient_towards_center_preserve_roll(transform, next_translation),
     tick,
@@ -668,7 +669,7 @@ fn apply_drag_translation(
 
 ///|
 fn apply_camera_drag(
-  world : @ecs_world.World,
+  world : @ecs.World,
   camera_entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
@@ -677,12 +678,12 @@ fn apply_camera_drag(
 
 ///|
 fn apply_decal_drag(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard world.get_transform_store().get(entity) is Some(transform) else {
+  guard @math.query_get_transform_store(world).get(entity) is Some(transform) else {
     return
   }
   match clustered_decals_state.val.drag_mode {
@@ -693,9 +694,7 @@ fn apply_decal_drag(
       } else {
         1.0F + delta.x * SCALE_SPEED
       }
-      world
-      .get_transform_store()
-      .set(
+      @math.query_get_transform_store(world).set(
         entity,
         transform.with_scale(transform.scale.mul_scalar(scale_factor)),
         tick,
@@ -706,19 +705,21 @@ fn apply_decal_drag(
       let rotation = transform.rotation
         .mul(@math.Quat::from_rotation_z(delta.x * ROLL_SPEED))
         .normalize()
-      world
-      .get_transform_store()
-      .set(entity, transform.with_rotation(rotation), tick)
+      @math.query_get_transform_store(world).set(
+        entity,
+        transform.with_rotation(rotation),
+        tick,
+      )
       |> ignore
     }
   }
 }
 
 ///|
-fn handle_selection_change(world : @ecs_world.World) -> Bool {
+fn handle_selection_change(world : @ecs.World) -> Bool {
   let mut changed = false
   let system_ticks = world.get_system_context().ticks()
-  let interaction_store = world.get_interaction_store()
+  let interaction_store = @ui.query_get_interaction_store(world)
   interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
     if interaction != @ui.Interaction::Pressed {
       return
@@ -736,12 +737,12 @@ fn handle_selection_change(world : @ecs_world.World) -> Bool {
 }
 
 ///|
-fn switch_drag_mode(world : @ecs_world.World) -> Bool {
+fn switch_drag_mode(world : @ecs.World) -> Bool {
   let mut next_mode = DragMode::Move
   let mut hover_resize_cursor = false
   if clustered_decals_state.val.selection != Selection::Camera &&
     !@input.mouse_button_pressed(@window.MouseButton::Left) {
-    let interaction_store = world.get_interaction_store()
+    let interaction_store = @ui.query_get_interaction_store(world)
     for widget in clustered_decals_state.val.drag_mode_widgets {
       if interaction_store.get(widget.button) is Some(interaction) {
         if interaction == @ui.Interaction::Hovered {
@@ -769,7 +770,7 @@ fn switch_drag_mode(world : @ecs_world.World) -> Bool {
 }
 
 ///|
-fn process_ui_controls(world : @ecs_world.World) -> Unit {
+fn process_ui_controls(world : @ecs.World) -> Unit {
   let selection_changed = handle_selection_change(world)
   let drag_mode_changed = switch_drag_mode(world)
   if selection_changed || drag_mode_changed {
@@ -778,7 +779,7 @@ fn process_ui_controls(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn process_drag_input(world : @ecs_world.World) -> Unit {
+fn process_drag_input(world : @ecs.World) -> Unit {
   if @input.mouse_button_just_pressed(@window.MouseButton::Left) {
     clustered_decals_state.val.last_mouse = @input.mouse_position()
   }
@@ -807,27 +808,30 @@ fn process_drag_input(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn rotate_cube(world : @ecs_world.World) -> Unit {
+fn rotate_cube(world : @ecs.World) -> Unit {
   guard clustered_decals_state.val.rotating_cube is Some(cube_entity) else {
     return
   }
-  guard world.get_transform_store().get(cube_entity) is Some(transform) else {
+  guard @math.query_get_transform_store(world).get(cube_entity)
+    is Some(transform) else {
     return
   }
   let tick = world.read_change_tick()
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED))
     .normalize()
-  world
-  .get_transform_store()
-  .set(cube_entity, transform.with_rotation(rotation), tick)
+  @math.query_get_transform_store(world).set(
+    cube_entity,
+    transform.with_rotation(rotation),
+    tick,
+  )
   |> ignore
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(rotate_cube)

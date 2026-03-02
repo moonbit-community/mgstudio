@@ -16,22 +16,22 @@
 /// Port of `bevy/examples/app/return_after_run.rs`.
 
 ///|
-fn set_title(_world : @ecs_world.World) -> Unit {
+fn set_title(_world : @ecs.World) -> Unit {
   @window.window_set_title(
     title="Close the window to return to the main function",
   )
 }
 
 ///|
-fn system(_world : @ecs_world.World) -> Unit {
+fn system(_world : @ecs.World) -> Unit {
   println("Logging from Bevy App")
 }
 
 ///|
 pub fn game_app() -> Unit {
   println("Running Bevy App")
-  let plugins = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(set_title)
   .add_system(system)

@@ -15,8 +15,8 @@
 ///|
 /// Port of `bevy/examples/2d/move_sprite.rs`.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(move_sprite_setup)
   .add_system_query2(
@@ -48,14 +48,14 @@ let move_state : Ref[MoveSpriteState] = Ref::new(MoveSpriteState::{
 })
 
 ///|
-fn move_sprite_setup(world : @ecs_world.World) -> Unit {
+fn move_sprite_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let sprite = @render2d.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(world) |> ignore
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
     world,
   )
   |> ignore
@@ -65,7 +65,7 @@ fn move_sprite_setup(world : @ecs_world.World) -> Unit {
 ///|
 fn move_sprite_movement(
   query : @core.Query2[@math.Transform, @render2d.Sprite],
-  world : @ecs_world.World,
+  world : @ecs.World,
 ) -> Unit {
   let delta = SPEED * @time.time_delta_seconds()
   let move_x = if move_state.val.direction is Right { delta } else { -delta }

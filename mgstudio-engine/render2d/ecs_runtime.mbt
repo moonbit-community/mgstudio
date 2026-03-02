@@ -108,6 +108,17 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @ecs.
 )
 
 ///|
+/// ECS-world variant that does not depend on legacy `RenderState` resource traits.
+pub fn render2d_create_render_target_ecs(
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> @asset.Handle[@asset.Image] {
+  let id = @window.host_gpu_create_render_target(width~, height~, nearest~)
+  @asset.Handle::new(id)
+}
+
+///|
 fn[T] ecs_set_component_json(
   world : @ecs.World,
   entity : @core.Entity,

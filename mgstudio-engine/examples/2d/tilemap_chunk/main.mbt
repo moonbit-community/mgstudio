@@ -52,8 +52,8 @@ let tilemap_chunk_state : Ref[TilemapChunkState] = Ref::new(TilemapChunkState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(tilemap_chunk_setup)
   .add_system(tilemap_chunk_update)
@@ -61,7 +61,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn tilemap_chunk_setup(world : @ecs_world.World) -> Unit {
+fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let tileset_texture = asset_server.load_with_settings(
     "textures/array_texture.png",
@@ -94,7 +94,7 @@ fn tilemap_chunk_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn tilemap_chunk_update(world : @ecs_world.World) -> Unit {
+fn tilemap_chunk_update(world : @ecs.World) -> Unit {
   guard tilemap_chunk_state.val.chunk is Some(chunk) else { return }
 
   @render2d.render2d_draw_tilemap_chunk(
@@ -112,7 +112,7 @@ fn tilemap_chunk_update(world : @ecs_world.World) -> Unit {
 
 ///|
 fn update_fake_player(
-  world : @ecs_world.World,
+  world : @ecs.World,
   chunk : @render2d.TilemapChunk,
 ) -> Unit {
   if tilemap_chunk_state.val.player.is_placeholder() {
@@ -123,7 +123,7 @@ fn update_fake_player(
   let t = (1.0F + @math.sin(@time.time_elapsed_seconds())) * 0.5F
   let next_x = start + (end - start) * t
 
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(tilemap_chunk_state.val.player) is Some(transform) else {
     return
   }
@@ -204,7 +204,7 @@ fn build_initial_tile_data(tile_count : Int) -> Array[@render2d.TileData?] {
 
 ///|
 fn spawn_fake_player(
-  world : @ecs_world.World,
+  world : @ecs.World,
   chunk : @render2d.TilemapChunk,
   tile_pos : @math.UVec2,
 ) -> @core.Entity {

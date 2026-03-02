@@ -30,7 +30,6 @@ fn has_removed_backend_flag(args : Array[String]) -> Bool {
 /// mgstudio CLI entrypoint.
 ///
 /// Currently supported:
-/// - `mgstudio gen`: generate `ecs.g.mbt` per package for `#ecs.component` / `#ecs.resource`.
 /// - `mgstudio run`: run a game config in native runtime (calls `game_app`).
 /// - `mgstudio serve`: serve the web runtime and run a game config in browser (calls `game_app`).
 /// - `mgstudio new`: create a new game project template.
@@ -61,7 +60,7 @@ async fn main {
       println(err)
       if normalized_args.length() > 0 {
         let top = normalized_args[0]
-        if top == "run" || top == "serve" || top == "gen" || top == "new" {
+        if top == "run" || top == "serve" || top == "new" {
           print_subcommand_help(parser, top)
         } else {
           print_cli_help(parser)
@@ -80,7 +79,6 @@ async fn main {
   match value.subcmd {
     Some(cmd) =>
       match cmd.name {
-        "gen" => cmd_gen(cmd)
         "run" => cmd_run(cmd)
         "serve" => cmd_serve(cmd)
         "new" => cmd_new(cmd)

@@ -178,7 +178,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_entity_visibility(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
@@ -187,7 +187,7 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let visibility_store = world.get_visibility_store()
+  let visibility_store = @visibility.query_get_visibility_store(world)
   let tick = world.read_change_tick()
   if visibility_store.contains(entity) {
     visibility_store.set(entity, visibility, tick) |> ignore
@@ -198,7 +198,7 @@ fn set_entity_visibility(
 
 ///|
 fn scene_for_mesh_entity(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
 ) -> SceneKind? {
   if anisotropy_state.val.sphere_scene is Some(sphere_entity) &&
@@ -206,7 +206,7 @@ fn scene_for_mesh_entity(
     return Some(SceneKind::Sphere)
   }
   if anisotropy_state.val.barn_lamp_scene is Some(root_entity) &&
-    world.get_parent_store().get(entity) is Some(parent) &&
+    @hierarchy.query_get_parent_store(world).get(entity) is Some(parent) &&
     same_entity(parent.entity(), root_entity) {
     return Some(SceneKind::BarnLamp)
   }
@@ -224,7 +224,7 @@ fn has_material_variant(entity : @core.Entity) -> Bool {
 }
 
 ///|
-fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
+fn apply_scene_visibility(world : @ecs.World) -> Unit {
   if anisotropy_state.val.barn_lamp_scene is Some(entity) {
     set_entity_visibility(world, entity, scene_is_visible(SceneKind::BarnLamp))
   }
@@ -241,11 +241,9 @@ fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_directional_light(world : @ecs_world.World) -> Unit {
+fn spawn_directional_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     entity,
     @render3d.DirectionalLight::default().with_illuminance(3000.0F),
     world.read_change_tick(),
@@ -253,11 +251,9 @@ fn spawn_directional_light(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_point_light(world : @ecs_world.World) -> Unit {
+fn spawn_point_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     entity,
     @render3d.PointLight::default().with_intensity(200_000.0F),
     world.read_change_tick(),
@@ -266,14 +262,12 @@ fn spawn_point_light(world : @ecs_world.World) -> Unit {
 
 ///|
 fn add_skybox_and_environment_map(
-  world : @ecs_world.World,
+  world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
   let tick = world.read_change_tick()
   if anisotropy_state.val.environment_specular_map is Some(specular_map) {
-    world
-    .get_skybox_store()
-    .insert(
+    @render3d.query_get_skybox_store(world).insert(
       camera_entity,
       @render3d.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
       tick,
@@ -281,9 +275,7 @@ fn add_skybox_and_environment_map(
   }
   if anisotropy_state.val.environment_diffuse_map is Some(diffuse_map) &&
     anisotropy_state.val.environment_specular_map is Some(specular_map) {
-    world
-    .get_environment_map_light_store()
-    .insert(
+    @render3d.query_get_environment_map_light_store(world).insert(
       camera_entity,
       @render3d.EnvironmentMapLight::new(
         Some(diffuse_map),
@@ -297,22 +289,26 @@ fn add_skybox_and_environment_map(
 
 ///|
 fn remove_skybox_and_environment_map(
-  world : @ecs_world.World,
+  world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  world.get_skybox_store().remove(camera_entity) |> ignore
-  world.get_environment_map_light_store().remove(camera_entity) |> ignore
+  @render3d.query_get_skybox_store(world).remove(camera_entity) |> ignore
+  @render3d.query_get_environment_map_light_store(world).remove(camera_entity)
+  |> ignore
 }
 
 ///|
-fn despawn_all_lights(world : @ecs_world.World) -> Unit {
+fn despawn_all_lights(world : @ecs.World) -> Unit {
   let lights : Array[@core.Entity] = []
-  world
-  .get_directional_light_store()
-  .for_each(fn(entity, _light) { lights.push(entity) })
-  world
-  .get_point_light_store()
-  .for_each(fn(entity, _light) { lights.push(entity) })
+  @render3d.query_get_directional_light_store(world).for_each(fn(
+    entity,
+    _light,
+  ) {
+    lights.push(entity)
+  })
+  @render3d.query_get_point_light_store(world).for_each(fn(entity, _light) {
+    lights.push(entity)
+  })
   for light in lights {
     try! (world.despawn(light) |> ignore)
   }
@@ -375,7 +371,7 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   anisotropy_state.val.light_mode = LightMode::Directional
   anisotropy_state.val.anisotropy_enabled = true
   anisotropy_state.val.visible_scene = SceneKind::BarnLamp
@@ -411,9 +407,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
   let barn_lamp = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     barn_lamp,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -425,9 +419,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(barn_lamp, @math.Transform::from_xyz(0.0F, 0.07F, -0.13F), tick)
+  @math.query_get_transform_store(world).insert(
+    barn_lamp,
+    @math.Transform::from_xyz(0.0F, 0.07F, -0.13F),
+    tick,
+  )
   anisotropy_state.val.barn_lamp_scene = Some(barn_lamp)
 
   let sphere_material = @render3d.standard_material_add(
@@ -472,8 +468,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn create_material_variants(world : @ecs_world.World) -> Unit {
-  let mesh_material_store = world.get_mesh_material3d_store()
+fn create_material_variants(world : @ecs.World) -> Unit {
+  let mesh_material_store = @render3d.query_get_mesh_material3d_store(world)
   let pending_entities : Array[@core.Entity] = []
   mesh_material_store.for_each(fn(entity, _material) {
     if !has_material_variant(entity) {
@@ -509,7 +505,7 @@ fn create_material_variants(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn animate_light(world : @ecs_world.World) -> Unit {
+fn animate_light(world : @ecs.World) -> Unit {
   let now = @time.time_elapsed_seconds()
   let next_transform = @math.Transform::from_xyz(
     @math.cos(now) * 3.0F,
@@ -518,20 +514,19 @@ fn animate_light(world : @ecs_world.World) -> Unit {
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
   let tick = world.read_change_tick()
-  world
-  .get_directional_light_store()
-  .for_each(fn(entity, _light) {
-    world.get_transform_store().insert(entity, next_transform, tick)
+  @render3d.query_get_directional_light_store(world).for_each(fn(
+    entity,
+    _light,
+  ) {
+    @math.query_get_transform_store(world).insert(entity, next_transform, tick)
   })
-  world
-  .get_point_light_store()
-  .for_each(fn(entity, _light) {
-    world.get_transform_store().insert(entity, next_transform, tick)
+  @render3d.query_get_point_light_store(world).for_each(fn(entity, _light) {
+    @math.query_get_transform_store(world).insert(entity, next_transform, tick)
   })
 }
 
 ///|
-fn rotate_camera(world : @ecs_world.World) -> Unit {
+fn rotate_camera(world : @ecs.World) -> Unit {
   match anisotropy_state.val.light_mode {
     LightMode::EnvironmentMap =>
       anisotropy_state.val.environment_angle = anisotropy_state.val.environment_angle +
@@ -549,15 +544,13 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
     rotated_position.z,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let tick = world.read_change_tick()
-  world
-  .get_camera_store()
-  .for_each(fn(entity, _camera) {
-    world.get_transform_store().insert(entity, next_transform, tick)
+  @render2d.query_get_camera_store(world).for_each(fn(entity, _camera) {
+    @math.query_get_transform_store(world).insert(entity, next_transform, tick)
   })
 }
 
 ///|
-fn toggle_anisotropy(world : @ecs_world.World) -> Unit {
+fn toggle_anisotropy(world : @ecs.World) -> Unit {
   anisotropy_state.val.anisotropy_enabled = !anisotropy_state.val.anisotropy_enabled
   let tick = world.read_change_tick()
   for variants in anisotropy_state.val.material_variants {
@@ -566,15 +559,17 @@ fn toggle_anisotropy(world : @ecs_world.World) -> Unit {
     } else {
       variants.isotropic
     }
-    world
-    .get_mesh_material3d_store()
-    .set(variants.entity, @render3d.MeshMaterial3d::new(next_material), tick)
+    @render3d.query_get_mesh_material3d_store(world).set(
+      variants.entity,
+      @render3d.MeshMaterial3d::new(next_material),
+      tick,
+    )
     |> ignore
   }
 }
 
 ///|
-fn handle_input(world : @ecs_world.World) -> Unit {
+fn handle_input(world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Space) {
     match anisotropy_state.val.light_mode {
@@ -586,17 +581,13 @@ fn handle_input(world : @ecs_world.World) -> Unit {
       LightMode::Point => {
         anisotropy_state.val.light_mode = LightMode::EnvironmentMap
         despawn_all_lights(world)
-        world
-        .get_camera_store()
-        .for_each(fn(entity, _camera) {
+        @render2d.query_get_camera_store(world).for_each(fn(entity, _camera) {
           add_skybox_and_environment_map(world, entity)
         })
       }
       LightMode::EnvironmentMap => {
         anisotropy_state.val.light_mode = LightMode::Directional
-        world
-        .get_camera_store()
-        .for_each(fn(entity, _camera) {
+        @render2d.query_get_camera_store(world).for_each(fn(entity, _camera) {
           remove_skybox_and_environment_map(world, entity)
         })
         spawn_directional_light(world)
@@ -623,8 +614,8 @@ fn handle_input(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(create_material_variants)

@@ -16,8 +16,8 @@
 /// Adapted line-by-line from:
 /// https://github.com/dimforge/bevy_rapier/blob/master/bevy_rapier3d/examples/events3.rs
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@physics3d.physics3d_debug_render_plugin])
   .add_startup_system(setup_graphics)
@@ -27,7 +27,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn setup_graphics(world : @ecs_world.World) -> Unit {
+fn setup_graphics(world : @ecs.World) -> Unit {
   let clear_color = @render2d.Color::new(0.9764706F, 0.9764706F, 1.0F, 1.0F)
   @render3d.Camera3dBundle::new(
     @render2d.Camera::new(clear_color),
@@ -40,15 +40,15 @@ fn setup_graphics(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_physics(world : @ecs_world.World) -> Unit {
+fn setup_physics(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ground = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(ground, @math.Transform::from_xyz(0.0F, -1.2F, 0.0F), tick)
-  world
-  .get_collider3d_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
+    ground,
+    @math.Transform::from_xyz(0.0F, -1.2F, 0.0F),
+    tick,
+  )
+  @physics3d.query_get_collider3d_store(world).insert(
     ground,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(4.0F, 1.0F, 1.0F),
@@ -57,12 +57,12 @@ fn setup_physics(world : @ecs_world.World) -> Unit {
   )
 
   let sensor = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(sensor, @math.Transform::from_xyz(0.0F, 5.0F, 0.0F), tick)
-  world
-  .get_collider3d_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
+    sensor,
+    @math.Transform::from_xyz(0.0F, 5.0F, 0.0F),
+    tick,
+  )
+  @physics3d.query_get_collider3d_store(world).insert(
     sensor,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(4.0F, 1.5F, 1.0F),
@@ -71,31 +71,29 @@ fn setup_physics(world : @ecs_world.World) -> Unit {
   )
 
   let dynamic_cube = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(dynamic_cube, @math.Transform::from_xyz(0.0F, 13.0F, 0.0F), tick)
-  world
-  .get_rigid_body3d_store()
-  .insert(dynamic_cube, @physics3d.RigidBody3d::dynamic(), tick)
-  world
-  .get_collider3d_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
+    dynamic_cube,
+    @math.Transform::from_xyz(0.0F, 13.0F, 0.0F),
+    tick,
+  )
+  @physics3d.query_get_rigid_body3d_store(world).insert(
+    dynamic_cube,
+    @physics3d.RigidBody3d::dynamic(),
+    tick,
+  )
+  @physics3d.query_get_collider3d_store(world).insert(
     dynamic_cube,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(0.5F, 0.5F, 0.5F),
     ),
     tick,
   )
-  world
-  .get_active_events3d_store()
-  .insert(
+  @physics3d.query_get_active_events3d_store(world).insert(
     dynamic_cube,
     @physics3d.ActiveEvents3d::new(@collision.ActiveEvents::collision_events()),
     tick,
   )
-  world
-  .get_contact_force_event_threshold3d_store()
-  .insert(
+  @physics3d.query_get_contact_force_event_threshold3d_store(world).insert(
     dynamic_cube,
     @physics3d.ContactForceEventThreshold3d::new(30.0F),
     tick,
@@ -103,8 +101,8 @@ fn setup_physics(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn display_events(world : @ecs_world.World) -> Unit {
-  let events_resource = world.get_physics3d_events_resource()
+fn display_events(world : @ecs.World) -> Unit {
+  let events_resource = @physics3d.query_get_physics3d_events_resource(world)
   guard events_resource.get_ref() is Some(events_ref) else { return }
   let events = events_ref.val
 

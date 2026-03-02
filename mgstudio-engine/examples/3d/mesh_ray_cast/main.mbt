@@ -97,7 +97,7 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn set_visibility(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
@@ -107,7 +107,7 @@ fn set_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let visibility_store = world.get_visibility_store()
+  let visibility_store = @visibility.query_get_visibility_store(world)
   if visibility_store.contains(entity) {
     visibility_store.set(entity, value, tick) |> ignore
   } else {
@@ -131,12 +131,13 @@ fn set_primitive_color(
 
 ///|
 fn set_primitive_transform(
-  world : @ecs_world.World,
+  world : @ecs.World,
   primitive : BeamPrimitive,
   transform : @math.Transform,
 ) -> Unit {
   let tick = world.read_change_tick()
-  world.get_transform_store().set(primitive.entity, transform, tick) |> ignore
+  @math.query_get_transform_store(world).set(primitive.entity, transform, tick)
+  |> ignore
 }
 
 ///|
@@ -175,7 +176,7 @@ fn marker_transform(position : @math.Vec3, scale : Float) -> @math.Transform {
 }
 
 ///|
-fn hide_pool(world : @ecs_world.World, pool : BeamPool) -> Unit {
+fn hide_pool(world : @ecs.World, pool : BeamPool) -> Unit {
   for segment in pool.segments {
     set_visibility(world, segment.entity, false)
   }
@@ -193,7 +194,7 @@ fn reflect_direction(direction : @math.Vec3, normal : @math.Vec3) -> @math.Vec3 
 
 ///|
 fn spawn_box_plane(
-  world : @ecs_world.World,
+  world : @ecs.World,
   plane_mesh : @render3d.Mesh3d,
   plane_material : @asset.Handle[@render3d.StandardMaterial],
   translation : @math.Vec3,
@@ -210,7 +211,7 @@ fn spawn_box_plane(
 
 ///|
 fn spawn_beam_pool(
-  world : @ecs_world.World,
+  world : @ecs.World,
   line_mesh : @render3d.Mesh3d,
   marker_mesh : @render3d.Mesh3d,
   base_color : @render2d.Color,
@@ -246,7 +247,7 @@ fn spawn_beam_pool(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.camera = @render2d.Camera::default().with_clear_color(
     @render2d.Color::black(),
   )
@@ -324,16 +325,12 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   let tick = world.read_change_tick()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
@@ -414,7 +411,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn bounce_ray(
-  world : @ecs_world.World,
+  world : @ecs.World,
   ray_origin : @math.Vec3,
   ray_direction : @math.Vec3,
   pool : BeamPool,
@@ -478,7 +475,7 @@ fn bounce_ray(
 }
 
 ///|
-fn bouncing_raycast(world : @ecs_world.World) -> Unit {
+fn bouncing_raycast(world : @ecs.World) -> Unit {
   guard raycast_state.val.red_pool is Some(red_pool) else { return }
   guard raycast_state.val.green_pool is Some(green_pool) else { return }
   let ray_cast_settings = @render3d.MeshRayCastSettings::default()
@@ -547,8 +544,8 @@ fn bouncing_raycast(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(bouncing_raycast)

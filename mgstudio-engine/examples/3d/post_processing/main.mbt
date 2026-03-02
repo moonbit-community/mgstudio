@@ -103,7 +103,7 @@ fn float_text(value : Float) -> String {
 }
 
 ///|
-fn apply_post_process_settings(world : @ecs_world.World) -> Unit {
+fn apply_post_process_settings(world : @ecs.World) -> Unit {
   guard post_processing_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   let settings = post_processing_state.val.settings
@@ -122,14 +122,16 @@ fn apply_post_process_settings(world : @ecs_world.World) -> Unit {
     .with_roundness(settings.vignette_roundness)
     .with_edge_compensation(settings.vignette_edge_compensation)
 
-  let chromatic_aberration_store = world.get_chromatic_aberration_store()
+  let chromatic_aberration_store = @render3d.query_get_chromatic_aberration_store(
+    world,
+  )
   if chromatic_aberration_store.contains(camera_entity) {
     chromatic_aberration_store.set(camera_entity, chromatic_aberration, tick)
     |> ignore
   } else {
     chromatic_aberration_store.insert(camera_entity, chromatic_aberration, tick)
   }
-  let vignette_store = world.get_vignette_store()
+  let vignette_store = @render3d.query_get_vignette_store(world)
   if vignette_store.contains(camera_entity) {
     vignette_store.set(camera_entity, vignette, tick) |> ignore
   } else {
@@ -170,10 +172,7 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn spawn_camera(
-  world : @ecs_world.World,
-  asset_server : @asset.AssetServer,
-) -> Unit {
+fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
       @render2d.Camera::default(),
@@ -186,10 +185,12 @@ fn spawn_camera(
     .with_vignette(Some(@render3d.Vignette::default()))
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
@@ -208,16 +209,11 @@ fn spawn_camera(
 }
 
 ///|
-fn spawn_scene(
-  world : @ecs_world.World,
-  asset_server : @asset.AssetServer,
-) -> Unit {
+fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
 
   let tonemapping_test = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     tonemapping_test,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -231,9 +227,7 @@ fn spawn_scene(
   )
 
   let flight_helmet = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     flight_helmet,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -245,9 +239,7 @@ fn spawn_scene(
     ),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     flight_helmet,
     @math.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
@@ -256,16 +248,12 @@ fn spawn_scene(
   )
 
   let directional_light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI).mul(
@@ -302,7 +290,7 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   post_processing_state.val.settings = default_settings()
   post_processing_state.val.camera = None
   post_processing_state.val.help_text = None
@@ -316,7 +304,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn handle_keyboard_input(world : @ecs_world.World) -> Unit {
+fn handle_keyboard_input(world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::ArrowUp) &&
     post_processing_state.val.settings.selected > 0 {
@@ -393,8 +381,8 @@ fn handle_keyboard_input(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(handle_keyboard_input)

@@ -20,15 +20,15 @@ const PANEL_OFFSET : Float = 96.0F
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_vertex_color_texture_setup)
   .run()
 }
 
 ///|
-fn mesh2d_vertex_color_texture_setup(world : @ecs_world.World) -> Unit {
+fn mesh2d_vertex_color_texture_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/banner.png")
   let mesh = create_colored_quad_mesh()
@@ -39,7 +39,7 @@ fn mesh2d_vertex_color_texture_setup(world : @ecs_world.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn(world)
+  ).spawn_ecs(world)
   |> ignore
 }
 
@@ -75,7 +75,7 @@ fn create_colored_quad_mesh() -> @render2d.Mesh2d {
 
 ///|
 fn spawn_colored_panel(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render2d.Mesh2d,
   material : @render2d.ColorMaterial,
   x : Float,
@@ -85,5 +85,6 @@ fn spawn_colored_panel(
     0.0F,
     @math.Vec2::new(PANEL_SCALE, PANEL_SCALE),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn_ecs(world)
+  |> ignore
 }

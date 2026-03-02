@@ -20,8 +20,6 @@
 /// - Joints are inserted only when both entities have `RapierBodyHandle2d`.
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ImpulseJoint2d {
   other : @core.Entity
   data : @dynamics.GenericJoint
@@ -45,8 +43,6 @@ pub fn ImpulseJoint2d::with_wake_up(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RapierImpulseJointHandle2d {
   handle : @dynamics.ImpulseJointHandle
   other : @core.Entity
@@ -61,8 +57,6 @@ pub fn RapierImpulseJointHandle2d::new(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct MultibodyJoint2d {
   other : @core.Entity
   /// moon_rapier currently models multibody joints as revolute joints.
@@ -97,8 +91,6 @@ pub fn MultibodyJoint2d::with_kinematic(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct RapierMultibodyJointHandle2d {
   handle : @dynamics.MultibodyJointHandle
   other : @core.Entity

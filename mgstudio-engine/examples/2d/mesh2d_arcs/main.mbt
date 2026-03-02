@@ -14,8 +14,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_arcs_setup)
   .add_system(mesh2d_arcs_draw_bounds)
@@ -79,7 +79,7 @@ fn int_to_float(value : Int) -> Float {
 
 ///|
 fn spawn_arc_shape(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render2d.Mesh2d,
   material : @render2d.ColorMaterial,
   position : @math.Vec2,
@@ -94,7 +94,7 @@ fn spawn_arc_shape(
 }
 
 ///|
-fn mesh2d_arcs_setup(world : @ecs_world.World) -> Unit {
+fn mesh2d_arcs_setup(world : @ecs.World) -> Unit {
   let camera = @render2d.Camera::new(
     @render2d.Color::new(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
   )
@@ -237,7 +237,7 @@ fn compute_world_aabb(sample : ArcBoundsSample) -> Aabb2dLite {
 }
 
 ///|
-fn mesh2d_arcs_draw_bounds(_world : @ecs_world.World) -> Unit {
+fn mesh2d_arcs_draw_bounds(_world : @ecs.World) -> Unit {
   let red = @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
   let blue = @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
   let gizmos = @render2d.Gizmos::new()

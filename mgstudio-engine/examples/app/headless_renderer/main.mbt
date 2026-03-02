@@ -33,38 +33,33 @@ impl @app.Resource for CaptureState with resource() {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
-  let target = @render2d.render2d_create_render_target(world, 500, 500, false)
+fn setup(world : @ecs.World) -> Unit {
+  let target = @render2d.render2d_create_render_target_ecs(500, 500, false)
   let tick = world.read_change_tick()
   if capture_state_resource_ref.val.get_ref_mut(tick) is Some(state) {
     state.val.target = Some(target)
   }
 
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.49F, 0.56F, 1.0F, 1.0F),
-    ).with_unlit(true),
-  )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
-    @render3d.MeshMaterial3d::new(material),
+  // Keep minimal scene entities on the ECS world path until render3d ECS
+  // bundle/runtime parity lands.
+  let scene_entity = world.spawn_empty()
+  try! world.set(
+    scene_entity,
+    @math.ecs_key_transform,
     @math.Transform::from_xyz(0.0F, 0.0F, -5.0F),
-  ).spawn(world)
+  )
+
+  @render2d.Camera2dBundle::new(
+    @render2d.Camera::default().with_order(-1),
+    @math.Transform::identity(),
+  ).spawn_ecs(world)
   |> ignore
 
-  let camera_offscreen = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::identity(),
-  ).spawn(world)
-  world
-  .get_render_target_store()
-  .insert(camera_offscreen, @render2d.RenderTarget::Image(target), tick)
-
   // Keep a visible camera on screen for web runtime.
-  @render3d.Camera3dBundle::new(
+  @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn(world)
+  ).spawn_ecs(world)
   |> ignore
 }
 
@@ -88,8 +83,8 @@ fn capture_system(
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .insert_resource(CaptureState::{ target: None, frame: 0, single_image: true })
   .add_startup_system(setup)

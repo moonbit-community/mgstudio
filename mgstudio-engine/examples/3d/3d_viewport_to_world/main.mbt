@@ -171,7 +171,7 @@ fn ray_plane_intersection(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let ground = @render3d.MeshMaterial3dBundle::new(
@@ -188,12 +188,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   viewport_to_world_3d_state.val.ground = Some(ground)
 
   let light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(light, @render3d.DirectionalLight::default(), tick)
-  world
-  .get_transform_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
+    light,
+    @render3d.DirectionalLight::default(),
+    tick,
+  )
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::zero(),
@@ -225,14 +225,16 @@ fn setup(world : @ecs_world.World) -> Unit {
   viewport_to_world_3d_state.val.cursor_marker = Some(cursor_marker)
 
   let tick = world.read_change_tick()
-  world
-  .get_visibility_store()
-  .set(cursor_marker, @visibility.Visibility::Hidden, tick)
+  @visibility.query_get_visibility_store(world).set(
+    cursor_marker,
+    @visibility.Visibility::Hidden,
+    tick,
+  )
   |> ignore
 }
 
 ///|
-fn draw_cursor(world : @ecs_world.World) -> Unit {
+fn draw_cursor(world : @ecs.World) -> Unit {
   guard viewport_to_world_3d_state.val.camera is Some(camera_entity) else {
     return
   }
@@ -243,9 +245,9 @@ fn draw_cursor(world : @ecs_world.World) -> Unit {
     return
   }
 
-  let transform_store = world.get_transform_store()
-  let camera_store = world.get_camera_store()
-  let projection_store = world.get_camera_projection3d_store()
+  let transform_store = @math.query_get_transform_store(world)
+  let camera_store = @render2d.query_get_camera_store(world)
+  let projection_store = @render3d.query_get_camera_projection3d_store(world)
   let mut cursor_hit : (@math.Vec3, @math.Vec3)? = None
   if @input.mouse_position() is Some(screen_pos) {
     if transform_store.get(camera_entity) is Some(camera_transform) {
@@ -290,22 +292,26 @@ fn draw_cursor(world : @ecs_world.World) -> Unit {
       tick,
     )
     |> ignore
-    world
-    .get_visibility_store()
-    .set(cursor_entity, @visibility.Visibility::Visible, tick)
+    @visibility.query_get_visibility_store(world).set(
+      cursor_entity,
+      @visibility.Visibility::Visible,
+      tick,
+    )
     |> ignore
   } else {
-    world
-    .get_visibility_store()
-    .set(cursor_entity, @visibility.Visibility::Hidden, tick)
+    @visibility.query_get_visibility_store(world).set(
+      cursor_entity,
+      @visibility.Visibility::Hidden,
+      tick,
+    )
     |> ignore
   }
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(draw_cursor)

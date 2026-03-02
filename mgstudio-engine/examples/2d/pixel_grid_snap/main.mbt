@@ -20,8 +20,8 @@ const RES_HEIGHT : Int = 90
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins_nearest()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(pixel_grid_snap_setup)
   .add_system(pixel_grid_snap_update)
@@ -51,7 +51,7 @@ let pixel_state : Ref[PixelGridState] = Ref::new(PixelGridState::{
 })
 
 ///|
-fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
+fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
   let pixel_layers = @render2d.RenderLayers::layer(0)
   let high_layers = @render2d.RenderLayers::layer(1)
   let asset_server = @asset.AssetServer::new()
@@ -127,7 +127,7 @@ fn pixel_grid_snap_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
+fn pixel_grid_snap_update(world : @ecs.World) -> Unit {
   if pixel_state.val.outer_camera.is_placeholder() ||
     pixel_state.val.pixel_sprite.is_placeholder() ||
     pixel_state.val.high_sprite.is_placeholder() ||
@@ -153,7 +153,7 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
     @math.Vec2::new(32.0F, 32.0F),
   )
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   transform_store.set(pixel_state.val.pixel_sprite, pixel_transform, tick)
   |> ignore
   transform_store.set(pixel_state.val.high_sprite, high_transform, tick)
@@ -180,7 +180,7 @@ fn pixel_grid_snap_update(world : @ecs_world.World) -> Unit {
   let min_scale = if h_scale < v_scale { h_scale } else { v_scale }
   let rounded = pixel_grid_round_scale(min_scale)
   let scale = 1.0F / Float::from_double(rounded.to_double())
-  let projection_store = world.get_projection_store()
+  let projection_store = @render2d.query_get_projection_store(world)
   projection_store.set(
     pixel_state.val.outer_camera,
     @render2d.Projection::Orthographic(

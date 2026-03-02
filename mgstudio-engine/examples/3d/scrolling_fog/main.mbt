@@ -108,7 +108,7 @@ fn camera_position() -> @math.Vec3 {
 
 ///|
 fn apply_distance_fog_from_stub(
-  world : @ecs_world.World,
+  world : @ecs.World,
   proxy_density_noise : Float,
   sunlight_phase : Float,
 ) -> Unit {
@@ -149,7 +149,7 @@ fn apply_distance_fog_from_stub(
     .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
   guard scrolling_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.get_camera3d_store()
+  let camera3d_store = @render3d.query_get_camera3d_store(world)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @render3d.Camera3d::default()
@@ -159,7 +159,7 @@ fn apply_distance_fog_from_stub(
 }
 
 ///|
-fn spawn_world_geometry(world : @ecs_world.World) -> Unit {
+fn spawn_world_geometry(world : @ecs.World) -> Unit {
   let black_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::black())
     .with_perceptual_roughness(1.0F)
@@ -182,7 +182,7 @@ fn spawn_world_geometry(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_fog_proxy(world : @ecs_world.World) -> Unit {
+fn spawn_fog_proxy(world : @ecs.World) -> Unit {
   let outer_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
       @render2d.Color::new(0.74F, 0.79F, 0.87F, 0.15F),
@@ -219,7 +219,7 @@ fn spawn_fog_proxy(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_camera(world : @ecs_world.World) -> Unit {
+fn setup_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -228,19 +228,29 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .get_temporal_anti_aliasing_store()
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world.get_bloom_store().insert(camera, @render3d.Bloom::default(), tick)
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+    camera,
+    @render3d.TemporalAntiAliasing::default(),
+    tick,
+  )
+  @render3d.query_get_bloom_store(world).insert(
+    camera,
+    @render3d.Bloom::default(),
+    tick,
+  )
   scrolling_fog_state.val.camera = Some(camera)
 }
 
 ///|
-fn setup_lighting(world : @ecs_world.World) -> Unit {
+fn setup_lighting(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = @render3d.query_get_global_ambient_light_resource(world)
   if ambient.get_ref_mut(tick) is Some(value) {
     value.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::white(),
@@ -249,9 +259,7 @@ fn setup_lighting(world : @ecs_world.World) -> Unit {
   }
 
   let light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -259,9 +267,7 @@ fn setup_lighting(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
     tick,
@@ -269,9 +275,11 @@ fn setup_lighting(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let shadow_map_resource = world.get_directional_light_shadow_map_resource()
+  let shadow_map_resource = @render3d.query_get_directional_light_shadow_map_resource(
+    world,
+  )
   if shadow_map_resource.get_ref_mut(tick) is Some(current) {
     current.val = @render3d.DirectionalLightShadowMap::new(4096)
   } else {
@@ -302,22 +310,22 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn scroll_fog(world : @ecs_world.World) -> Unit {
+fn scroll_fog(world : @ecs.World) -> Unit {
   let elapsed = @time.time_elapsed_seconds()
   let density_texture_offset_z = elapsed * FOG_DENSITY_TEXTURE_SCROLL_SPEED
   let tick = world.read_change_tick()
 
   if scrolling_fog_state.val.fog_volume_outer is Some(fog_outer) {
-    world
-    .get_transform_store()
-    .set(fog_outer, @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F), tick)
+    @math.query_get_transform_store(world).set(
+      fog_outer,
+      @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F),
+      tick,
+    )
     |> ignore
   }
 
   if scrolling_fog_state.val.fog_volume_inner is Some(fog_inner) {
-    world
-    .get_transform_store()
-    .set(
+    @math.query_get_transform_store(world).set(
       fog_inner,
       @math.Transform::from_xyz(0.0F, FOG_CENTER_Y - 1.0F, 0.0F),
       tick,
@@ -348,8 +356,8 @@ fn scroll_fog(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(scroll_fog)

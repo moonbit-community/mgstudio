@@ -45,8 +45,6 @@ pub fn CharacterCollision2d::from_rapier(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct KinematicCharacterController2d {
   /// Desired movement (one-shot). The system resets this to zero each fixed step.
   translation : @math.Vec2
@@ -167,8 +165,6 @@ pub fn KinematicCharacterController2d::with_normal_nudge_factor(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct KinematicCharacterControllerOutput2d {
   effective_translation : @math.Vec2
   grounded : Bool

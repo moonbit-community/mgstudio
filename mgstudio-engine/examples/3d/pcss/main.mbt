@@ -73,17 +73,19 @@ let pcss_state : Ref[PcssState] = Ref::new({
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
@@ -179,45 +181,60 @@ fn create_spot_light() -> @render3d.SpotLight {
 }
 
 ///|
-fn apply_camera_shadow_filter(world : @ecs_world.World) -> Unit {
+fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
   guard pcss_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
   let filter_mode = match pcss_state.val.shadow_filter {
     ShadowFilter::NonTemporal => @render3d.ShadowFilteringMethod::Gaussian
     ShadowFilter::Temporal => @render3d.ShadowFilteringMethod::Temporal
   }
-  world.get_shadow_filtering_method_store().insert(camera, filter_mode, tick)
+  @render3d.query_get_shadow_filtering_method_store(world).insert(
+    camera, filter_mode, tick,
+  )
   if pcss_state.val.shadow_filter == ShadowFilter::Temporal {
-    world
-    .get_temporal_anti_aliasing_store()
-    .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+    @render3d.query_get_temporal_anti_aliasing_store(world).insert(
+      camera,
+      @render3d.TemporalAntiAliasing::default(),
+      tick,
+    )
   } else {
-    world.get_temporal_anti_aliasing_store().remove(camera) |> ignore
+    @render3d.query_get_temporal_anti_aliasing_store(world).remove(camera)
+    |> ignore
   }
 }
 
 ///|
-fn apply_light_type(world : @ecs_world.World) -> Unit {
+fn apply_light_type(world : @ecs.World) -> Unit {
   guard pcss_state.val.light is Some(light) else { return }
   let tick = world.read_change_tick()
-  world.get_directional_light_store().remove(light) |> ignore
-  world.get_point_light_store().remove(light) |> ignore
-  world.get_spot_light_store().remove(light) |> ignore
+  @render3d.query_get_directional_light_store(world).remove(light) |> ignore
+  @render3d.query_get_point_light_store(world).remove(light) |> ignore
+  @render3d.query_get_spot_light_store(world).remove(light) |> ignore
 
   match pcss_state.val.light_type {
     LightType::Directional =>
-      world
-      .get_directional_light_store()
-      .insert(light, create_directional_light(), tick)
+      @render3d.query_get_directional_light_store(world).insert(
+        light,
+        create_directional_light(),
+        tick,
+      )
     LightType::Point =>
-      world.get_point_light_store().insert(light, create_point_light(), tick)
+      @render3d.query_get_point_light_store(world).insert(
+        light,
+        create_point_light(),
+        tick,
+      )
     LightType::Spot =>
-      world.get_spot_light_store().insert(light, create_spot_light(), tick)
+      @render3d.query_get_spot_light_store(world).insert(
+        light,
+        create_spot_light(),
+        tick,
+      )
   }
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   pcss_state.val = {
     camera: None,
     light: None,
@@ -239,22 +256,32 @@ fn setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   pcss_state.val.camera = Some(camera)
 
-  world
-  .get_shadow_filtering_method_store()
-  .insert(camera, @render3d.ShadowFilteringMethod::Gaussian, tick)
-  world.get_msaa_store().insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .get_temporal_jitter_store()
-  .insert(camera, @render3d.TemporalJitter::default(), tick)
-  world
-  .get_depth_prepass_store()
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
-  world
-  .get_motion_vector_prepass_store()
-  .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
-  world
-  .get_skybox_store()
-  .insert(
+  @render3d.query_get_shadow_filtering_method_store(world).insert(
+    camera,
+    @render3d.ShadowFilteringMethod::Gaussian,
+    tick,
+  )
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    tick,
+  )
+  @render3d.query_get_temporal_jitter_store(world).insert(
+    camera,
+    @render3d.TemporalJitter::default(),
+    tick,
+  )
+  @render3d.query_get_depth_prepass_store(world).insert(
+    camera,
+    @render3d.DepthPrepass::default(),
+    tick,
+  )
+  @render3d.query_get_motion_vector_prepass_store(world).insert(
+    camera,
+    @render3d.MotionVectorPrepass::default(),
+    tick,
+  )
+  @render3d.query_get_skybox_store(world).insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/sky_skybox.ktx2"),
@@ -265,9 +292,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let light = world.spawn_empty()
   pcss_state.val.light = Some(light)
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(57.693F, 34.334F, -6.422F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -278,9 +303,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   apply_light_type(world)
 
   let scene_entity = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(
+  @scene.query_get_scene_root_store(world).insert(
     scene_entity,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -318,7 +341,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn controls(world : @ecs_world.World) -> Unit {
+fn controls(world : @ecs.World) -> Unit {
   let mut update_light = false
   let mut update_camera = false
 
@@ -366,8 +389,8 @@ fn controls(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(controls)

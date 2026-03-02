@@ -93,6 +93,7 @@ pub fn[T] ResourceKey::debug_name(Self[T]) -> String
 pub fn[T] ResourceKey::id(Self[T]) -> Int
 
 pub struct World {
+  world_id : Int
   entities : @core.Entities
   mut change_tick : Int
   mut system_context : @core.SystemContext
@@ -120,6 +121,7 @@ pub fn World::spawn(Self) -> @core.Entity
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub fn[T : ToJson + @json.FromJson] World::update(Self, @core.Entity, ComponentKey[T], (T) -> T) -> Bool raise EcsError
 pub fn[T : ToJson + @json.FromJson] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool raise EcsError
+pub fn World::world_id(Self) -> Int
 pub impl @core.ChangeTickWorld for World
 pub impl @core.SpawnWorld for World
 pub impl @core.SystemContextWorld for World

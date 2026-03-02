@@ -15,6 +15,7 @@
 ///|
 priv struct SpriteTileAnimationState {
   mut sprite : @core.Entity?
+  mut texture : @asset.Handle[@asset.Image]?
   min : Float
   max : Float
   mut current : Float
@@ -24,6 +25,7 @@ priv struct SpriteTileAnimationState {
 ///|
 let sprite_tile_animation_state : Ref[SpriteTileAnimationState] = Ref::new(SpriteTileAnimationState::{
   sprite: None,
+  texture: None,
   min: 128.0F,
   max: 512.0F,
   current: 128.0F,
@@ -32,8 +34,8 @@ let sprite_tile_animation_state : Ref[SpriteTileAnimationState] = Ref::new(Sprit
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_tile_setup)
   .add_system(sprite_tile_animate)
@@ -41,7 +43,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn sprite_tile_setup(world : @ecs_world.World) -> Unit {
+fn sprite_tile_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let sprite = @render2d.Sprite::from_image(texture)
@@ -53,22 +55,26 @@ fn sprite_tile_setup(world : @ecs_world.World) -> Unit {
       ),
     )
     .with_custom_size(Some(@math.Vec2::new(128.0F, 128.0F)))
-  let entity = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
+  let entity = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn_ecs(
     world,
   )
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
     world,
   )
   |> ignore
   sprite_tile_animation_state.val.sprite = Some(entity)
+  sprite_tile_animation_state.val.texture = Some(texture)
   sprite_tile_animation_state.val.current = 128.0F
   sprite_tile_animation_state.val.speed = 50.0F
 }
 
 ///|
-fn sprite_tile_animate(world : @ecs_world.World) -> Unit {
-  guard sprite_tile_animation_state.val.sprite is Some(entity) else { return }
+fn sprite_tile_animate(world : @ecs.World) -> Unit {
+  if sprite_tile_animation_state.val.sprite is None ||
+    sprite_tile_animation_state.val.texture is None {
+    return
+  }
   if sprite_tile_animation_state.val.current >=
     sprite_tile_animation_state.val.max ||
     sprite_tile_animation_state.val.current <=
@@ -77,21 +83,29 @@ fn sprite_tile_animate(world : @ecs_world.World) -> Unit {
   }
   sprite_tile_animation_state.val.current = sprite_tile_animation_state.val.current +
     sprite_tile_animation_state.val.speed * @time.time_delta_seconds()
-  let sprite_store = world.get_sprite_store()
-  let tick = world.read_change_tick()
-  if sprite_store.get(entity) is Some(sprite) {
-    sprite_store.set(
-      entity,
-      sprite.with_custom_size(
+  if sprite_tile_animation_state.val.sprite is Some(entity) &&
+    sprite_tile_animation_state.val.texture is Some(texture) {
+    try! world.despawn(entity)
+    let sprite = @render2d.Sprite::from_image(texture)
+      .with_image_mode(
+        @render2d.SpriteImageMode::tiled(
+          tile_x=true,
+          tile_y=true,
+          stretch_value=0.5F,
+        ),
+      )
+      .with_custom_size(
         Some(
           @math.Vec2::new(
             sprite_tile_animation_state.val.current,
             sprite_tile_animation_state.val.current,
           ),
         ),
-      ),
-      tick,
-    )
-    |> ignore
+      )
+    let new_entity = @render2d.SpriteBundle::new(
+      sprite,
+      @math.Transform::identity(),
+    ).spawn_ecs(world)
+    sprite_tile_animation_state.val.sprite = Some(new_entity)
   }
 }

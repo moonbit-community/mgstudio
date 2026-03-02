@@ -57,8 +57,8 @@ let animation_state : Ref[SpriteAnimationState] = Ref::new(SpriteAnimationState:
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_animation_setup)
   .add_system(execute_animations)
@@ -72,7 +72,7 @@ fn timer_from_fps(fps : Float) -> @time.Timer {
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
+fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = @text.Text2dBundle::new(
@@ -88,10 +88,8 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -100,12 +98,12 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
   )
 
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -113,14 +111,16 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
 }
 
 ///|
 fn spawn_animated_sprite(
-  world : @ecs_world.World,
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   layout : @asset.Handle[@asset.TextureAtlasLayout],
   x : Float,
@@ -136,7 +136,7 @@ fn spawn_animated_sprite(
 }
 
 ///|
-fn sprite_animation_setup(world : @ecs_world.World) -> Unit {
+fn sprite_animation_setup(world : @ecs.World) -> Unit {
   animation_state.val.left_sprite = @core.Entity::placeholder()
   animation_state.val.right_sprite = @core.Entity::placeholder()
   animation_state.val.left_frame_timer = timer_from_fps(LEFT_FPS)
@@ -177,7 +177,7 @@ fn sprite_animation_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn trigger_animations(_world : @ecs_world.World) -> Unit {
+fn trigger_animations(_world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::ArrowLeft) {
     animation_state.val.left_frame_timer = timer_from_fps(LEFT_FPS)
   }
@@ -189,7 +189,7 @@ fn trigger_animations(_world : @ecs_world.World) -> Unit {
 
 ///|
 fn execute_animation_step(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
   frame_timer : @time.Timer,
   fps : Float,
@@ -204,7 +204,7 @@ fn execute_animation_step(
     return next_timer
   }
 
-  let sprite_store = world.get_sprite_store()
+  let sprite_store = @render2d.query_get_sprite_store(world)
   guard sprite_store.get(entity) is Some(sprite) else { return next_timer }
   guard sprite.texture_atlas is Some(atlas) else { return next_timer }
 
@@ -223,7 +223,7 @@ fn execute_animation_step(
 }
 
 ///|
-fn execute_animations(world : @ecs_world.World) -> Unit {
+fn execute_animations(world : @ecs.World) -> Unit {
   let delta_seconds = @time.time_delta_seconds()
 
   animation_state.val.left_frame_timer = execute_animation_step(

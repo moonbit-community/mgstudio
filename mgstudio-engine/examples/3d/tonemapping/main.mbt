@@ -201,14 +201,12 @@ fn selected_marker(value : Int, selected : Int) -> String {
 
 ///|
 fn register_scene_entity(
-  world : @ecs_world.World,
+  world : @ecs.World,
   entity : @core.Entity,
   scene : Int,
 ) -> Unit {
   let tick = world.read_change_tick()
-  world
-  .get_visibility_store()
-  .insert(
+  @visibility.query_get_visibility_store(world).insert(
     entity,
     if scene == tonemapping_state.val.current_scene {
       @visibility.Visibility::Inherited
@@ -222,7 +220,7 @@ fn register_scene_entity(
 
 ///|
 fn spawn_scene_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   scene : Int,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
@@ -237,7 +235,7 @@ fn spawn_scene_mesh(
 }
 
 ///|
-fn setup_scene_basic(world : @ecs_world.World) -> Unit {
+fn setup_scene_basic(world : @ecs.World) -> Unit {
   let scene = 1
 
   let floor_color = @render2d.Color::new(0.16F, 0.16F, 0.18F, 1.0F)
@@ -321,7 +319,7 @@ fn setup_scene_basic(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_scene_color_sweep(world : @ecs_world.World) -> Unit {
+fn setup_scene_color_sweep(world : @ecs.World) -> Unit {
   let scene = 2
   let rows = 6
   let cols = 10
@@ -369,7 +367,7 @@ fn setup_scene_color_sweep(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_scene_image_viewer(world : @ecs_world.World) -> Unit {
+fn setup_scene_image_viewer(world : @ecs.World) -> Unit {
   let scene = 3
   let asset_server = @asset.AssetServer::new()
   let logo_texture = asset_server.load("branding/bevy_logo_dark_big.png")
@@ -419,13 +417,11 @@ fn setup_scene_image_viewer(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_lights(world : @ecs_world.World) -> Unit {
+fn setup_lights(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let directional = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional,
     @math.Transform::from_xyz(2.5F, 4.0F, 2.5F).looking_at(
       @math.Vec3::new(0.0F, 0.2F, 0.0F),
@@ -433,9 +429,7 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
@@ -443,12 +437,12 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
   tonemapping_state.val.directional_light = Some(directional)
 
   let point = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(point, @math.Transform::from_xyz(-0.6F, 1.3F, 1.2F), tick)
-  world
-  .get_point_light_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
+    point,
+    @math.Transform::from_xyz(-0.6F, 1.3F, 1.2F),
+    tick,
+  )
+  @render3d.query_get_point_light_store(world).insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::new(1.0F, 0.9F, 0.8F, 1.0F),
@@ -462,7 +456,7 @@ fn setup_lights(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup_camera(world : @ecs_world.World) -> Unit {
+fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -473,10 +467,12 @@ fn setup_camera(world : @ecs_world.World) -> Unit {
   ).spawn(world)
 
   let tick = world.read_change_tick()
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -561,7 +557,7 @@ fn ui_text_content() -> String {
 }
 
 ///|
-fn setup_ui(_world : @ecs_world.World) -> Unit {
+fn setup_ui(_world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
@@ -596,12 +592,10 @@ fn update_ui() -> Unit {
 }
 
 ///|
-fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
+fn apply_scene_visibility(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   for entry in tonemapping_state.val.scene_entities {
-    world
-    .get_visibility_store()
-    .set(
+    @visibility.query_get_visibility_store(world).set(
       entry.entity,
       if entry.scene == tonemapping_state.val.current_scene {
         @visibility.Visibility::Inherited
@@ -615,7 +609,7 @@ fn apply_scene_visibility(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_scene_lighting(world : @ecs_world.World) -> Unit {
+fn apply_scene_lighting(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let scene = tonemapping_state.val.current_scene
 
@@ -627,9 +621,7 @@ fn apply_scene_lighting(world : @ecs_world.World) -> Unit {
     } else {
       0.0F
     }
-    world
-    .get_directional_light_store()
-    .set(
+    @render3d.query_get_directional_light_store(world).set(
       light,
       @render3d.DirectionalLight::new(
         @render2d.Color::white(),
@@ -649,9 +641,7 @@ fn apply_scene_lighting(world : @ecs_world.World) -> Unit {
     } else {
       0.0F
     }
-    world
-    .get_point_light_store()
-    .set(
+    @render3d.query_get_point_light_store(world).set(
       light,
       @render3d.PointLight::new(
         @render2d.Color::new(1.0F, 0.9F, 0.8F, 1.0F),
@@ -666,7 +656,7 @@ fn apply_scene_lighting(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn apply_color_grading(world : @ecs_world.World) -> Unit {
+fn apply_color_grading(world : @ecs.World) -> Unit {
   let state = tonemapping_state.val
   guard state.camera is Some(camera_entity) else { return }
   let settings = state.settings[state.tonemap_mode]
@@ -674,14 +664,14 @@ fn apply_color_grading(world : @ecs_world.World) -> Unit {
   let color_grading = color_grading_from_settings(settings)
   let tick = world.read_change_tick()
 
-  let tonemapping_store = world.get_tonemapping_store()
+  let tonemapping_store = @render3d.query_get_tonemapping_store(world)
   if tonemapping_store.contains(camera_entity) {
     tonemapping_store.set(camera_entity, tonemapping, tick) |> ignore
   } else {
     tonemapping_store.insert(camera_entity, tonemapping, tick)
   }
 
-  let color_grading_store = world.get_color_grading_store()
+  let color_grading_store = @render3d.query_get_color_grading_store(world)
   if color_grading_store.contains(camera_entity) {
     color_grading_store.set(camera_entity, color_grading, tick) |> ignore
   } else {
@@ -690,7 +680,7 @@ fn apply_color_grading(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn set_scene(scene : Int, world : @ecs_world.World) -> Unit {
+fn set_scene(scene : Int, world : @ecs.World) -> Unit {
   tonemapping_state.val.current_scene = scene
   apply_scene_visibility(world)
   apply_scene_lighting(world)
@@ -698,13 +688,13 @@ fn set_scene(scene : Int, world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn set_tonemap_mode(mode : Int, world : @ecs_world.World) -> Unit {
+fn set_tonemap_mode(mode : Int, world : @ecs.World) -> Unit {
   tonemapping_state.val.tonemap_mode = mode
   apply_color_grading(world)
 }
 
 ///|
-fn reset_all_methods_to_default(world : @ecs_world.World) -> Unit {
+fn reset_all_methods_to_default(world : @ecs.World) -> Unit {
   for i in 0..<METHOD_COUNT {
     tonemapping_state.val.settings[i] = default_color_grading()
   }
@@ -712,7 +702,7 @@ fn reset_all_methods_to_default(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn reset_all_methods_to_recommendation(world : @ecs_world.World) -> Unit {
+fn reset_all_methods_to_recommendation(world : @ecs.World) -> Unit {
   for i in 0..<METHOD_COUNT {
     tonemapping_state.val.settings[i] = basic_scene_recommendation(i)
   }
@@ -720,7 +710,7 @@ fn reset_all_methods_to_recommendation(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_color_grading_settings(world : @ecs_world.World) -> Unit {
+fn update_color_grading_settings(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds() * 0.25F
   let signed_delta = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     -delta
@@ -765,7 +755,7 @@ fn update_color_grading_settings(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_system(world : @ecs_world.World) -> Unit {
+fn update_system(world : @ecs.World) -> Unit {
   let mut ui_changed = false
 
   if @input.key_just_pressed(@window.KeyCode::KeyQ) {
@@ -849,7 +839,7 @@ fn update_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   tonemapping_state.val = {
     current_scene: 1,
     tonemap_mode: 6,
@@ -878,8 +868,8 @@ fn setup(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(update_system)

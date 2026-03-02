@@ -85,3 +85,28 @@ pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[
     fn(app : @app.App[W]) -> @app.App[W] { @physics3d.physics3d_plugin(app) },
   ]
 }
+
+///|
+/// Minimal default plugins for `@ecs.World` while ECS-json migration is in progress.
+///
+/// This intentionally excludes scene/animation/transform/visibility/render/ui/physics
+/// plugins that still depend on the legacy typed-store world traits.
+pub fn default_plugins_ecs() -> Array[@app.Plugin[@ecs.World]] {
+  [
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.log_plugin_default(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @window.window_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @time.time_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @asset.asset_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @input.input_plugin(app)
+    },
+  ]
+}

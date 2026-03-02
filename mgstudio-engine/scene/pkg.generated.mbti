@@ -108,10 +108,12 @@ pub impl @json.FromJson for SceneRoot
 pub(open) trait Has_SceneInstanceReady {
   get_scene_instance_ready_store(Self) -> @core.ComponentStore[SceneInstanceReady]
 }
+pub impl Has_SceneInstanceReady for @ecs.World
 
 pub(open) trait Has_SceneRoot {
   get_scene_root_store(Self) -> @core.ComponentStore[SceneRoot]
 }
+pub impl Has_SceneRoot for @ecs.World
 
 pub(open) trait ScenePluginWorld : SceneSpawnWorld {
 }

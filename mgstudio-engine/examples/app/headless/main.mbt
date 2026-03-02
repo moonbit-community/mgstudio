@@ -31,7 +31,7 @@ impl @app.Resource for CounterState with resource() {
 }
 
 ///|
-fn hello_world_system(_world : @ecs_world.World) -> Unit {
+fn hello_world_system(_world : @ecs.World) -> Unit {
   println("hello world")
 }
 
@@ -46,7 +46,7 @@ fn counter_system(state : @app.ResMut[CounterState]) -> Unit {
 
 ///|
 fn run_once_app() -> Unit {
-  @app.App::new(@ecs_world.World::new())
+  @app.App::new(@ecs.World::new())
   .add_plugins([
     @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
   ])
@@ -56,7 +56,7 @@ fn run_once_app() -> Unit {
 
 ///|
 fn run_loop_app() -> Unit {
-  @app.App::new(@ecs_world.World::new())
+  @app.App::new(@ecs.World::new())
   .add_plugins([
     @app.schedule_runner_plugin(
       @app.ScheduleRunnerPlugin::run_loop(1.0F / 60.0F),

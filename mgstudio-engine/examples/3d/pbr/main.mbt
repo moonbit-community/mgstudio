@@ -97,7 +97,7 @@ fn uv_sphere_mesh(
 
 ///|
 fn spawn_mesh(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
@@ -111,7 +111,7 @@ fn spawn_mesh(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   pbr_state.val.loading_label = None
   pbr_state.val.diffuse_env_map = None
   pbr_state.val.specular_env_map = None
@@ -151,16 +151,12 @@ fn setup(world : @ecs_world.World) -> Unit {
   )
 
   let directional = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 1_500.0F, false),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional,
     @math.Transform::from_xyz(50.0F, 50.0F, 50.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -240,9 +236,7 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(diffuse_env_map),
@@ -256,7 +250,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn environment_map_load_finish(_world : @ecs_world.World) -> Unit {
+fn environment_map_load_finish(_world : @ecs.World) -> Unit {
   if pbr_state.val.env_loaded {
     return
   }
@@ -274,8 +268,8 @@ fn environment_map_load_finish(_world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(environment_map_load_finish)

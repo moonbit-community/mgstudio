@@ -178,22 +178,24 @@ fn uv_sphere_mesh(
 
 ///|
 fn set_global_ambient_light(
-  world : @ecs_world.World,
+  world : @ecs.World,
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if world.get_global_ambient_light_resource().get_ref_mut(tick)
+  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
     is Some(current) {
     current.val = ambient
   } else {
-    world.get_global_ambient_light_resource().insert(ambient, tick)
+    @render3d.query_get_global_ambient_light_resource(world).insert(
+      ambient, tick,
+    )
   }
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let state = specular_tint_state.val
   state.tint_type = TintType::Solid
@@ -244,13 +246,17 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .get_skybox_store()
-  .insert(camera, @render3d.Skybox::new(specular_env_map, 3000.0F), tick)
-  world
-  .get_environment_map_light_store()
-  .insert(
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
+  @render3d.query_get_skybox_store(world).insert(
+    camera,
+    @render3d.Skybox::new(specular_env_map, 3000.0F),
+    tick,
+  )
+  @render3d.query_get_environment_map_light_store(world).insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(diffuse_env_map),
@@ -267,10 +273,8 @@ fn setup(world : @ecs_world.World) -> Unit {
   ).spawn(world)
   |> ignore
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -284,12 +288,12 @@ fn setup(world : @ecs_world.World) -> Unit {
     @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let help_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(help_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    help_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     help_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -297,17 +301,20 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_bottom(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(help_entity, @ui.UiText::new(help_text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    help_entity,
+    @ui.UiText::new(help_text_handle),
+    tick,
+  )
   state.help_text = Some(help_text_handle)
 }
 
 ///|
-fn rotate_camera(world : @ecs_world.World) -> Unit {
+fn rotate_camera(world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   guard state.camera is Some(camera_entity) else { return }
-  guard world.get_transform_store().get(camera_entity) is Some(transform) else {
+  guard @math.query_get_transform_store(world).get(camera_entity)
+    is Some(transform) else {
     return
   }
 
@@ -318,9 +325,7 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
   let rotated_x = cos_v * x - sin_v * z
   let rotated_z = sin_v * x + cos_v * z
 
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     camera_entity,
     @math.Transform::from_xyz(rotated_x, transform.translation.y, rotated_z).looking_at(
       @math.Vec3::zero(),
@@ -332,7 +337,7 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_specular_map(_world : @ecs_world.World) -> Unit {
+fn toggle_specular_map(_world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
@@ -362,7 +367,7 @@ fn toggle_specular_map(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn shift_hue(_world : @ecs_world.World) -> Unit {
+fn shift_hue(_world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   if state.tint_type is Map {
     return
@@ -380,7 +385,7 @@ fn shift_hue(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_help_text(_world : @ecs_world.World) -> Unit {
+fn update_help_text(_world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   guard state.help_text is Some(help_text) else { return }
   @text.text_set_content(help_text, app_status_help_text(state.tint_type))
@@ -388,8 +393,8 @@ fn update_help_text(_world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(rotate_camera)

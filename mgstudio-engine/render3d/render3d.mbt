@@ -370,7 +370,6 @@ pub fn DepthOfField::with_max_depth(
 ///
 /// This stores feature toggles and per-camera overrides that influence how the
 /// current renderer approximates deferred/decal/volumetric/post-process APIs.
-#ecs.component
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
   deferred_config : CameraDeferredConfig3d
@@ -639,8 +638,6 @@ pub fn Projection3d::orthographic_default() -> Projection3d {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct CameraProjection3d {
   projection : Projection3d
 }
@@ -665,8 +662,6 @@ pub fn CameraProjection3d::with_projection(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct SubCameraView3d {
   full_size : @math.IVec2
   offset : @math.Vec2
@@ -712,7 +707,6 @@ const FREE_CAMERA_RADIANS_PER_DOT : Float = 0.005555555555555556F
 
 ///|
 /// A freecam-style controller configuration aligned with Bevy's `FreeCamera`.
-#ecs.component
 pub struct FreeCamera {
   sensitivity : Float
   key_forward : @window.KeyCode
@@ -752,7 +746,6 @@ pub fn FreeCamera::default() -> FreeCamera {
 
 ///|
 /// Runtime state for `FreeCamera`.
-#ecs.component
 pub struct FreeCameraState {
   enabled : Bool
   initialized : Bool
@@ -793,7 +786,6 @@ let free_camera_system_state : Ref[FreeCameraSystemState] = Ref::new(FreeCameraS
 ///
 /// This renderer currently applies a lightweight per-object approximation in
 /// the draw phase instead of a full-screen post-process pass.
-#ecs.component
 pub struct ChromaticAberration {
   intensity : Float
   max_samples : Int
@@ -837,7 +829,6 @@ pub fn ChromaticAberration::with_max_samples(
 /// Camera post-process settings aligned with Bevy's `Vignette`.
 ///
 /// Runtime executes this in the shared full-screen post-process composite pass.
-#ecs.component
 pub struct Vignette {
   intensity : Float
   radius : Float
@@ -955,7 +946,6 @@ pub fn Vignette::with_color(
 
 ///|
 /// Camera post-process settings aligned with Bevy's `MotionBlur`.
-#ecs.component
 pub struct MotionBlur {
   shutter_angle : Float
   samples : Int
@@ -995,7 +985,6 @@ pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur 
 ///
 /// Current runtime note: this component is API-compatible but acts as a
 /// render-path hint on top of the existing antialiasing pipeline.
-#ecs.component
 pub(all) enum Msaa {
   Off
   Sample2
@@ -1049,7 +1038,6 @@ pub fn FxaaSensitivity::default() -> FxaaSensitivity {
 /// Camera post-process settings aligned with Bevy's `Fxaa`.
 ///
 /// Current runtime note: this records camera intent as an ECS surface.
-#ecs.component
 pub struct Fxaa {
   enabled : Bool
   edge_threshold : FxaaSensitivity
@@ -1110,7 +1098,6 @@ pub fn Fxaa::with_sensitivity(
 
 ///|
 /// Marker component aligned with Bevy's `DepthPrepass`.
-#ecs.component
 pub struct DepthPrepass {}
 
 ///|
@@ -1120,7 +1107,6 @@ pub fn DepthPrepass::default() -> DepthPrepass {
 
 ///|
 /// Marker component aligned with Bevy's `NormalPrepass`.
-#ecs.component
 pub struct NormalPrepass {}
 
 ///|
@@ -1130,7 +1116,6 @@ pub fn NormalPrepass::default() -> NormalPrepass {
 
 ///|
 /// Marker component aligned with Bevy's `MotionVectorPrepass`.
-#ecs.component
 pub struct MotionVectorPrepass {}
 
 ///|
@@ -1140,7 +1125,6 @@ pub fn MotionVectorPrepass::default() -> MotionVectorPrepass {
 
 ///|
 /// Marker component aligned with Bevy's `DeferredPrepass`.
-#ecs.component
 pub struct DeferredPrepass {}
 
 ///|
@@ -1153,7 +1137,6 @@ pub fn DeferredPrepass::default() -> DeferredPrepass {
 ///
 /// Current runtime note: this records per-camera occlusion-culling intent as an
 /// ECS surface for parity and migration sequencing.
-#ecs.component
 pub struct OcclusionCulling {}
 
 ///|
@@ -1163,7 +1146,6 @@ pub fn OcclusionCulling::default() -> OcclusionCulling {
 
 ///|
 /// Marker component aligned with Bevy's `NotShadowCaster`.
-#ecs.component
 pub struct NotShadowCaster {}
 
 ///|
@@ -1173,7 +1155,6 @@ pub fn NotShadowCaster::default() -> NotShadowCaster {
 
 ///|
 /// Marker component aligned with Bevy's `NotShadowReceiver`.
-#ecs.component
 pub struct NotShadowReceiver {}
 
 ///|
@@ -1186,7 +1167,6 @@ pub fn NotShadowReceiver::default() -> NotShadowReceiver {
 ///
 /// Current runtime note: this backend records transmitted-shadow intent as ECS
 /// API parity; transmitted shadowing itself remains backend-adapted.
-#ecs.component
 pub struct TransmittedShadowReceiver {}
 
 ///|
@@ -1200,7 +1180,6 @@ pub fn TransmittedShadowReceiver::default() -> TransmittedShadowReceiver {
 ///
 /// Current runtime note: this records camera intent as an ECS surface; the
 /// renderer-side weighted OIT implementation is tracked separately.
-#ecs.component
 pub struct OrderIndependentTransparencySettings {
   sorted_fragment_max_count : Int
   fragments_per_pixel_average : Float
@@ -1301,7 +1280,6 @@ pub fn OrderIndependentTransparencySettings::with_alpha_threshold(
 
 ///|
 /// Camera temporal AA settings aligned with Bevy's `TemporalAntiAliasing`.
-#ecs.component
 pub struct TemporalAntiAliasing {
   reset : Bool
 }
@@ -1330,7 +1308,6 @@ pub fn TemporalAntiAliasing::with_reset(
 
 ///|
 /// Camera jitter settings aligned with Bevy's `TemporalJitter`.
-#ecs.component
 pub struct TemporalJitter {
   offset : @math.Vec2
 }
@@ -1356,7 +1333,6 @@ pub fn TemporalJitter::with_offset(
 
 ///|
 /// Marker component aligned with Bevy's `Hdr`.
-#ecs.component
 pub struct Hdr {}
 
 ///|
@@ -1378,7 +1354,6 @@ const EXPOSURE_EV100_BLENDER : Float = 9.7F
 
 ///|
 /// Camera exposure settings aligned with Bevy's `Exposure`.
-#ecs.component
 pub struct Exposure {
   ev100 : Float
 }
@@ -1691,7 +1666,6 @@ pub fn ColorGradingSettings::with_highlights(
 
 ///|
 /// Camera color grading settings aligned with Bevy's `ColorGrading`.
-#ecs.component
 pub struct ColorGrading {
   global : ColorGradingGlobal
   shadows : ColorGradingSection
@@ -1789,7 +1763,6 @@ pub fn ColorGrading::settings(self : ColorGrading) -> ColorGradingSettings {
 
 ///|
 /// Camera tonemapping mode aligned with Bevy's `Tonemapping`.
-#ecs.component
 pub(all) enum Tonemapping {
   None
   Reinhard
@@ -1808,7 +1781,6 @@ pub fn Tonemapping::default() -> Tonemapping {
 
 ///|
 /// Enables / disables screen-space deband dithering in the tonemapping pass.
-#ecs.component
 pub(all) enum DebandDither {
   Disabled
   Enabled
@@ -1883,7 +1855,6 @@ const BLOOM_DEFAULT_MAX_MIP_DIMENSION : Int = 512
 
 ///|
 /// Camera bloom settings aligned with Bevy's `Bloom`.
-#ecs.component
 pub struct Bloom {
   intensity : Float
   low_frequency_boost : Float
@@ -2087,7 +2058,6 @@ pub fn Bloom::with_scale_y(self : Bloom, scale_y : Float) -> Bloom {
 
 ///|
 /// Camera skybox settings aligned with Bevy's `Skybox`.
-#ecs.component
 pub struct Skybox {
   image : @asset.Handle[@asset.Image]?
   brightness : Float
@@ -2156,7 +2126,6 @@ pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> ScreenSpaceAmbientO
 ///|
 /// Camera ambient occlusion settings aligned with Bevy's
 /// `ScreenSpaceAmbientOcclusion`.
-#ecs.component
 pub struct ScreenSpaceAmbientOcclusion {
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel
   constant_object_thickness : Float
@@ -2195,7 +2164,6 @@ pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(
 
 ///|
 /// Camera contact shadow settings aligned with Bevy's `ContactShadows`.
-#ecs.component
 pub struct ContactShadows {
   linear_steps : Int
   thickness : Float
@@ -2258,7 +2226,6 @@ pub fn ContactShadows::with_length(
 
 ///|
 /// Camera shadow filtering mode aligned with Bevy's `ShadowFilteringMethod`.
-#ecs.component
 pub(all) enum ShadowFilteringMethod {
   Hardware2x2
   Gaussian
@@ -2288,7 +2255,6 @@ pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuali
 ///|
 /// Camera screen-space transmission settings aligned with Bevy's
 /// `ScreenSpaceTransmission`.
-#ecs.component
 pub struct ScreenSpaceTransmission {
   quality : ScreenSpaceTransmissionQuality
   steps : Int
@@ -2396,8 +2362,6 @@ fn screen_space_reflections_safe_bisection_steps(bisection_steps : Int) -> Int {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct ScreenSpaceReflections {
   min_perceptual_roughness_start : Float
   min_perceptual_roughness_end : Float
@@ -3320,8 +3284,6 @@ pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
 }
@@ -3889,8 +3851,6 @@ pub fn standard_material_set(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
@@ -4148,8 +4108,6 @@ pub fn ExtendedMaterialMetadata3d::with_disable_shadows(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct MeshMaterial3d {
   material : @asset.Handle[StandardMaterial]
   extended_material : ExtendedMaterialMetadata3d?
@@ -4287,7 +4245,6 @@ pub fn MeshMaterial3d::with_extension_disable_shadows(
 /// Current runtime note: projected forward-decal shading is not wired in this
 /// backend yet. This component preserves scene/API parity for example
 /// migration and future renderer integration.
-#ecs.component
 pub struct ForwardDecal {}
 
 ///|
@@ -4310,7 +4267,6 @@ fn forward_decal_depth_fade_factor_safe(depth_fade_factor : Float) -> Float {
 ///
 /// Current runtime note: values are stored for parity; extension shader
 /// specialization is pending renderer support.
-#ecs.component
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
 }
@@ -4357,7 +4313,6 @@ fn clustered_decal_tag_safe(tag : Int) -> Int {
 ///
 /// Current runtime note: clustered projection is not yet active in this
 /// backend; this component currently carries scene intent metadata.
-#ecs.component
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@asset.Image]?
   normal_map_texture : @asset.Handle[@asset.Image]?
@@ -4447,8 +4402,6 @@ const SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 1.8F
 const SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct PointLight {
   color : @render2d.Color
   intensity : Float
@@ -4614,7 +4567,6 @@ pub fn PointLight::with_shadow_map_near_z(
 
 ///|
 /// Point-light shadow map resource aligned with Bevy's `PointLightShadowMap`.
-#ecs.resource
 pub struct PointLightShadowMap {
   size : Int
 }
@@ -4653,7 +4605,6 @@ fn directional_shadow_map_size_safe(size : Int) -> Int {
 /// `DirectionalLightShadowMap`.
 ///
 /// A single `size` value controls the width/height of each shadow map slice.
-#ecs.resource
 pub struct DirectionalLightShadowMap {
   size : Int
 }
@@ -4863,8 +4814,6 @@ pub fn CascadeShadowConfig::default() -> CascadeShadowConfig {
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct DirectionalLight {
   color : @render2d.Color
   illuminance : Float
@@ -4993,8 +4942,6 @@ pub fn DirectionalLight::with_shadow_normal_bias(
 }
 
 ///|
-// ECS component marker for codegen (`mgstudio gen`).
-#ecs.component
 pub struct SpotLight {
   color : @render2d.Color
   intensity : Float
@@ -5193,7 +5140,6 @@ pub fn CubemapLayout3d::default() -> CubemapLayout3d {
 ///
 /// Current runtime note: texture projection is not yet applied in this backend;
 /// this component preserves API parity for example migration.
-#ecs.component
 pub struct DirectionalLightTexture {
   image : @asset.Handle[@asset.Image]?
   tiled : Bool
@@ -5233,7 +5179,6 @@ pub fn DirectionalLightTexture::with_tiled(
 ///
 /// Current runtime note: texture projection is not yet applied in this backend;
 /// this component preserves API parity for example migration.
-#ecs.component
 pub struct SpotLightTexture {
   image : @asset.Handle[@asset.Image]?
 }
@@ -5264,7 +5209,6 @@ pub fn SpotLightTexture::with_image(
 ///
 /// Current runtime note: texture projection is not yet applied in this backend;
 /// this component preserves API parity for example migration.
-#ecs.component
 pub struct PointLightTexture {
   image : @asset.Handle[@asset.Image]?
   cubemap_layout : CubemapLayout3d
@@ -5307,7 +5251,6 @@ pub fn PointLightTexture::with_cubemap_layout(
 ///
 /// The probe influence volume is a unit cube transformed by the entity
 /// transform. `falloff` controls the attenuation region inside this cube.
-#ecs.component
 pub struct LightProbe {
   falloff : @math.Vec3
 }
@@ -5337,7 +5280,6 @@ pub fn LightProbe::with_falloff(
 ///
 /// Current runtime note: this backend stores and exposes the Bevy-aligned
 /// component surface; reflection probe shading remains adapted.
-#ecs.component
 pub struct EnvironmentMapLight {
   diffuse_map : @asset.Handle[@asset.Image]?
   specular_map : @asset.Handle[@asset.Image]?
@@ -5422,7 +5364,6 @@ pub fn EnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
 ///
 /// Current runtime note: this backend stores this component for API parity.
 /// Runtime cubemap filtering remains adapted.
-#ecs.component
 pub struct GeneratedEnvironmentMapLight {
   environment_map : @asset.Handle[@asset.Image]?
   intensity : Float
@@ -5494,7 +5435,6 @@ pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
 ///
 /// Current runtime note: this backend stores this component for parity and
 /// example behavior; probe-space correction is currently adapted.
-#ecs.component
 pub(all) enum ParallaxCorrection {
   None
   Auto
@@ -5511,7 +5451,6 @@ pub fn ParallaxCorrection::default() -> ParallaxCorrection {
 ///
 /// Current runtime note: this backend uses this component as API surface and
 /// scene intent metadata; voxel-light transfer remains adapted.
-#ecs.component
 pub struct IrradianceVolume {
   voxels : @asset.Handle[@asset.Image]?
   intensity : Float
@@ -5554,8 +5493,6 @@ pub fn IrradianceVolume::with_intensity(
 }
 
 ///|
-// ECS resource marker for codegen (`mgstudio gen`).
-#ecs.resource
 pub struct GlobalAmbientLight {
   color : @render2d.Color
   brightness : Float

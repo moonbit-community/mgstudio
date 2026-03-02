@@ -32,8 +32,8 @@ let bloom_example_state : Ref[BloomExampleState] = Ref::new(BloomExampleState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(bloom_setup)
   .add_system(bloom_update)
@@ -170,7 +170,7 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
+fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = spawn_ui_text_handle(
@@ -181,10 +181,8 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -192,12 +190,12 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -205,15 +203,17 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
   bloom_example_state.val.help_text = Some(text_handle)
   update_help_text()
 }
 
 ///|
-fn bloom_setup(world : @ecs_world.World) -> Unit {
+fn bloom_setup(world : @ecs.World) -> Unit {
   bloom_example_state.val.camera = @core.Entity::placeholder()
   bloom_example_state.val.help_text = None
   bloom_example_state.val.bloom_enabled = true
@@ -230,12 +230,16 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
     .spawn(world)
   bloom_example_state.val.camera = camera
   let tick = world.read_change_tick()
-  world
-  .get_tonemapping_store()
-  .insert(camera, bloom_example_state.val.tonemapping, tick)
-  world
-  .get_deband_dither_store()
-  .insert(camera, @render3d.DebandDither::Enabled, tick)
+  @render3d.query_get_tonemapping_store(world).insert(
+    camera,
+    bloom_example_state.val.tonemapping,
+    tick,
+  )
+  @render3d.query_get_deband_dither_store(world).insert(
+    camera,
+    @render3d.DebandDither::Enabled,
+    tick,
+  )
 
   let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
@@ -275,7 +279,7 @@ fn bloom_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn bloom_update(world : @ecs_world.World) -> Unit {
+fn bloom_update(world : @ecs.World) -> Unit {
   if bloom_example_state.val.camera.is_placeholder() {
     return
   }
@@ -385,9 +389,11 @@ fn bloom_update(world : @ecs_world.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
     tonemapping = next_tonemap(tonemapping)
-    world
-    .get_tonemapping_store()
-    .set(bloom_example_state.val.camera, tonemapping, tick)
+    @render3d.query_get_tonemapping_store(world).set(
+      bloom_example_state.val.camera,
+      tonemapping,
+      tick,
+    )
     |> ignore
   }
 
@@ -395,7 +401,7 @@ fn bloom_update(world : @ecs_world.World) -> Unit {
   bloom_example_state.val.bloom_enabled = bloom_enabled
   bloom_example_state.val.tonemapping = tonemapping
 
-  let bloom_store = world.get_bloom2d_store()
+  let bloom_store = @render2d.query_get_bloom2d_store(world)
   let camera = bloom_example_state.val.camera
   if bloom_enabled {
     if bloom_store.get(camera) is Some(current) {

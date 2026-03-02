@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/ecs_world",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
@@ -22,6 +23,8 @@ import {
 
 // Values
 pub fn[W : DefaultPluginsWorld] default_plugins() -> Array[(@app.App[W]) -> @app.App[W]]
+
+pub fn default_plugins_ecs() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
 
 pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[(@app.App[W]) -> @app.App[W]]
 

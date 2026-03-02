@@ -45,8 +45,10 @@ pub impl @json.FromJson for Parent
 pub(open) trait Has_Children {
   get_children_store(Self) -> @core.ComponentStore[Children]
 }
+pub impl Has_Children for @ecs.World
 
 pub(open) trait Has_Parent {
   get_parent_store(Self) -> @core.ComponentStore[Parent]
 }
+pub impl Has_Parent for @ecs.World
 

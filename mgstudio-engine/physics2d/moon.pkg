@@ -9,4 +9,5 @@ import {
   "Milky2018/moon_rapier/control",
   "Milky2018/moon_rapier/pipeline",
   "moonbitlang/core/hashmap",
+  "Milky2018/mgstudio/ecs",
 }

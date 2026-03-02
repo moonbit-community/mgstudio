@@ -156,16 +156,13 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn set_global_ambient_light(
-  world : @ecs_world.World,
-  brightness : Float,
-) -> Unit {
+fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
   let tick = world.read_change_tick()
   let value = @render3d.GlobalAmbientLight::new(
     @render2d.Color::white(),
     brightness,
   )
-  let resource = world.get_global_ambient_light_resource()
+  let resource = @render3d.query_get_global_ambient_light_resource(world)
   if resource.get_ref_mut(tick) is Some(current) {
     current.val = value
   } else {
@@ -175,11 +172,11 @@ fn set_global_ambient_light(
 
 ///|
 fn set_camera_fov(
-  world : @ecs_world.World,
+  world : @ecs.World,
   camera_entity : @core.Entity,
   fov : Float,
 ) -> Unit {
-  let projection_store = world.get_camera_projection3d_store()
+  let projection_store = @render3d.query_get_camera_projection3d_store(world)
   guard projection_store.get(camera_entity) is Some(current) else { return }
   let next_projection = match current.projection {
     Perspective(p) => Some(@render3d.Projection3d::Perspective(p.with_fov(fov)))
@@ -195,14 +192,14 @@ fn set_camera_fov(
 }
 
 ///|
-fn apply_motion_blur_settings(world : @ecs_world.World) -> Unit {
+fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   let motion_blur = @render3d.MotionBlur::new(
     motion_blur_state.val.shutter_angle,
     motion_blur_state.val.samples,
   )
-  let store = world.get_motion_blur_store()
+  let store = @render3d.query_get_motion_blur_store(world)
   if store.contains(camera_entity) {
     store.set(camera_entity, motion_blur, tick) |> ignore
   } else {
@@ -211,7 +208,7 @@ fn apply_motion_blur_settings(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_camera(world : @ecs_world.World) -> Unit {
+fn spawn_camera(world : @ecs.World) -> Unit {
   let camera = @render3d.Camera3dBundle::new(
       @render2d.Camera::default(),
       @math.Transform::from_xyz(15.0F, -0.5F, 0.0F).looking_at(
@@ -228,9 +225,11 @@ fn spawn_camera(world : @ecs_world.World) -> Unit {
       ),
     )
     .spawn(world)
-  world
-  .get_msaa_store()
-  .insert(camera, @render3d.Msaa::Off, world.read_change_tick())
+  @render3d.query_get_msaa_store(world).insert(
+    camera,
+    @render3d.Msaa::Off,
+    world.read_change_tick(),
+  )
   motion_blur_state.val.camera = Some(camera)
 }
 
@@ -261,7 +260,7 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
 
 ///|
 fn spawn_car(
-  world : @ecs_world.World,
+  world : @ecs.World,
   body_mesh : @render3d.Mesh3d,
   wheel_mesh : @render3d.Mesh3d,
   car_material : @asset.Handle[@render3d.StandardMaterial],
@@ -285,7 +284,11 @@ fn spawn_car(
       @math.Vec3::new(1.0F, 1.0F, 0.5F),
     ),
   ).spawn(world)
-  world.get_parent_store().insert(cabin, @hierarchy.Parent::new(body), tick)
+  @hierarchy.query_get_parent_store(world).insert(
+    cabin,
+    @hierarchy.Parent::new(body),
+    tick,
+  )
 
   let wheel_start = motion_blur_state.val.wheels.length()
   let wheel_offsets = [
@@ -302,7 +305,11 @@ fn spawn_car(
       .with_scale(@math.Vec3::new(0.15F, 0.04F, 0.15F))
       .with_rotation(@math.Quat::from_rotation_z(@math.pi_half())),
     ).spawn(world)
-    world.get_parent_store().insert(wheel, @hierarchy.Parent::new(body), tick)
+    @hierarchy.query_get_parent_store(world).insert(
+      wheel,
+      @hierarchy.Parent::new(body),
+      tick,
+    )
     motion_blur_state.val.wheels.push({ entity: wheel, radius: 0.15F })
   }
 
@@ -319,7 +326,7 @@ fn spawn_car(
 
 ///|
 fn spawn_barriers(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
 ) -> Unit {
@@ -344,7 +351,7 @@ fn spawn_barriers(
 
 ///|
 fn spawn_trees(
-  world : @ecs_world.World,
+  world : @ecs.World,
   leaves_mesh : @render3d.Mesh3d,
   trunk_mesh : @render3d.Mesh3d,
   leaves_material : @asset.Handle[@render3d.StandardMaterial],
@@ -378,24 +385,17 @@ fn spawn_trees(
 }
 
 ///|
-fn spawn_scene(
-  world : @ecs_world.World,
-  asset_server : @asset.AssetServer,
-) -> Unit {
+fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
   let tick = world.read_change_tick()
 
   let directional_light = world.spawn_empty()
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 3000.0F, true),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     directional_light,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
       @math.Vec3::new(-1.0F, -0.7F, -1.0F),
@@ -500,7 +500,7 @@ fn spawn_scene(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   motion_blur_state.val.camera = None
   motion_blur_state.val.tracked_car = None
   motion_blur_state.val.help_text = None
@@ -519,7 +519,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn keyboard_inputs(world : @ecs_world.World) -> Unit {
+fn keyboard_inputs(world : @ecs.World) -> Unit {
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     motion_blur_state.val.shutter_angle = motion_blur_state.val.shutter_angle -
@@ -558,12 +558,12 @@ fn keyboard_inputs(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_cars(world : @ecs_world.World) -> Unit {
+fn move_cars(world : @ecs.World) -> Unit {
   if motion_blur_state.val.car_bodies.length() == 0 {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   let now = @time.time_elapsed_seconds() * 0.25F
   for car in motion_blur_state.val.car_bodies {
     guard transform_store.get(car.entity) is Some(current_transform) else {
@@ -612,12 +612,12 @@ fn move_cars(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn move_camera(world : @ecs_world.World) -> Unit {
+fn move_camera(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.camera is Some(camera_entity) else { return }
   guard motion_blur_state.val.tracked_car is Some(tracked_entity) else {
     return
   }
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   guard transform_store.get(tracked_entity) is Some(tracked_transform) else {
     return
   }
@@ -651,8 +651,8 @@ fn move_camera(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(keyboard_inputs)

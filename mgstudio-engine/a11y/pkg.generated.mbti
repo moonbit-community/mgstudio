@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/a11y"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/moon_accesskit",
 }
 
@@ -50,6 +51,8 @@ pub let host_role_window : Int
 
 pub fn node_id_for_entity(@core.Entity) -> @moon_accesskit.NodeId
 
+pub fn[W : HasRes_A11yState] query_get_a11y_state_resource(W) -> @core.Resource[A11yState]
+
 // Errors
 
 // Types and methods
@@ -71,4 +74,5 @@ pub fn A11yState::set_update(Ref[Self], @moon_accesskit.TreeUpdate) -> Unit
 pub(open) trait HasRes_A11yState {
   get_a11y_state_resource(Self) -> @core.Resource[A11yState]
 }
+pub impl HasRes_A11yState for @ecs.World
 

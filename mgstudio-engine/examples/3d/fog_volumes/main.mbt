@@ -82,10 +82,7 @@ fn transform_forward(transform : @math.Transform) -> @math.Vec3 {
 }
 
 ///|
-fn apply_distance_fog_from_stub(
-  world : @ecs_world.World,
-  phase : Float,
-) -> Unit {
+fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
   let fog_volume_stub = fog_volumes_state.val.fog_volume_stub
   let volumetric_fog_stub = fog_volumes_state.val.volumetric_fog_stub
   let visibility = clampf(
@@ -118,7 +115,7 @@ fn apply_distance_fog_from_stub(
     .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
   guard fog_volumes_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.get_camera3d_store()
+  let camera3d_store = @render3d.query_get_camera3d_store(world)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @render3d.Camera3d::default()
@@ -189,7 +186,7 @@ fn uv_sphere_mesh(
 }
 
 ///|
-fn spawn_volume_proxy(world : @ecs_world.World) -> Unit {
+fn spawn_volume_proxy(world : @ecs.World) -> Unit {
   let fog_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
       @render2d.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
@@ -218,7 +215,11 @@ fn spawn_volume_proxy(world : @ecs_world.World) -> Unit {
       fog_center().z,
     ),
   ).spawn(world)
-  world.get_parent_store().insert(ear_left, @hierarchy.Parent::new(head), tick)
+  @hierarchy.query_get_parent_store(world).insert(
+    ear_left,
+    @hierarchy.Parent::new(head),
+    tick,
+  )
 
   let ear_right = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(0.16F, 0.8F, 0.16F),
@@ -229,11 +230,15 @@ fn spawn_volume_proxy(world : @ecs_world.World) -> Unit {
       fog_center().z,
     ),
   ).spawn(world)
-  world.get_parent_store().insert(ear_right, @hierarchy.Parent::new(head), tick)
+  @hierarchy.query_get_parent_store(world).insert(
+    ear_right,
+    @hierarchy.Parent::new(head),
+    tick,
+  )
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   fog_volumes_state.val.camera = None
   fog_volumes_state.val.light = None
   fog_volumes_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
@@ -247,7 +252,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
 
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = @render3d.query_get_global_ambient_light_resource(world)
   if ambient.get_ref_mut(tick) is Some(value) {
     value.val = @render3d.GlobalAmbientLight::new(
       @render2d.Color::white(),
@@ -258,9 +263,7 @@ fn setup(world : @ecs_world.World) -> Unit {
   spawn_volume_proxy(world)
 
   let light = world.spawn_empty()
-  world
-  .get_transform_store()
-  .insert(
+  @math.query_get_transform_store(world).insert(
     light,
     @math.Transform::from_xyz(1.0F, 1.0F, -0.3F).looking_at(
       fog_center(),
@@ -268,9 +271,7 @@ fn setup(world : @ecs_world.World) -> Unit {
     ),
     tick,
   )
-  world
-  .get_directional_light_store()
-  .insert(
+  @render3d.query_get_directional_light_store(world).insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 32_000.0F, true),
     tick,
@@ -284,13 +285,17 @@ fn setup(world : @ecs_world.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.get_hdr_store().insert(camera, @render3d.Hdr::default(), tick)
+  @render3d.query_get_hdr_store(world).insert(
+    camera,
+    @render3d.Hdr::default(),
+    tick,
+  )
   fog_volumes_state.val.camera = Some(camera)
   apply_distance_fog_from_stub(world, 1.0F)
 }
 
 ///|
-fn rotate_camera(world : @ecs_world.World) -> Unit {
+fn rotate_camera(world : @ecs.World) -> Unit {
   guard fog_volumes_state.val.camera is Some(camera_entity) else { return }
 
   let elapsed = @time.time_elapsed_seconds()
@@ -302,9 +307,7 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
   )
 
   let tick = world.read_change_tick()
-  world
-  .get_transform_store()
-  .set(
+  @math.query_get_transform_store(world).set(
     camera_entity,
     @math.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
       fog_center(),
@@ -315,7 +318,8 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
   |> ignore
 
   let light_dir = if fog_volumes_state.val.light is Some(light_entity) {
-    if world.get_transform_store().get(light_entity) is Some(light_transform) {
+    if @math.query_get_transform_store(world).get(light_entity)
+      is Some(light_transform) {
       transform_forward(light_transform)
     } else {
       @math.Vec3::new(0.0F, -1.0F, 0.0F)
@@ -336,8 +340,8 @@ fn rotate_camera(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(rotate_camera)

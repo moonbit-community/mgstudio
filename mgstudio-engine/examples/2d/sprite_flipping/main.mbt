@@ -14,15 +14,15 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_flipping_setup)
   .run()
 }
 
 ///|
-fn sprite_flipping_setup(world : @ecs_world.World) -> Unit {
+fn sprite_flipping_setup(world : @ecs.World) -> Unit {
   let camera = @render2d.Camera::default()
   @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,

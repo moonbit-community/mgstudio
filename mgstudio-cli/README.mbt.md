@@ -4,7 +4,6 @@ Developer CLI for mgstudio (native + web).
 
 ## Commands
 
-- `mgstudio gen`: scan MoonBit source files for mgstudio tags (`#ecs.component`, `#ecs.resource`) and generate per-package `ecs.g.mbt`. Optionally generates a concrete ECS `World` package.
 - `mgstudio run`: run a game described by a game config file in the native runtime (calls export `game_app`).
 - `mgstudio serve`: serve the web runtime and run a game described by a game config file in the browser (calls export `game_app`).
 - `mgstudio new`: create a new MoonBit game project template (`moon new` + `moon.game.json`).
@@ -15,10 +14,6 @@ If you installed mgstudio via the SDK, use the `mgstudio` command:
 
 ```bash
 mgstudio --help
-
-# Run codegen in your game/module directory (must contain moon.mod.json).
-(cd mgstudio-engine && mgstudio gen)
-(cd mgstudio-engine && mgstudio gen --check)
 
 # Build a game wasm (example).
 moon -C mgstudio-engine build --release --target wasm mgstudio-engine/examples/2d/sprite
@@ -140,19 +135,3 @@ Or build and run the binary directly:
 moon -C mgstudio-cli build --release
 ./mgstudio-cli/_build/native/release/build/cmd/mgstudio/mgstudio.exe --help
 ```
-
-`mgstudio gen` options are implemented with `TheWaWaR/clap`.
-
-## Generated Output
-
-For each MoonBit package directory containing `moon.pkg`, `mgstudio gen`:
-
-- scans `.mbt` sources (skipping `_test.mbt`, `_wbtest.mbt`, and `*.g.mbt`)
-- finds `#ecs.component` / `#ecs.resource` on type declarations
-- writes `ecs.g.mbt` into that package directory
-
-The generated file is deterministic. Use `--check` in CI to fail on drift.
-
-## Notes
-
-- Current implementation uses `moonbitlang/parser` to parse source files. If the parser lags behind compiler syntax, `mgstudio gen` may require temporary syntax workarounds until upstream catches up.

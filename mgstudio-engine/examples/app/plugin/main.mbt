@@ -40,8 +40,8 @@ impl @app.Resource for PrintMessageState with resource() {
 ///|
 fn print_message_plugin(
   config : PrintMessagePluginConfig,
-) -> @app.Plugin[@ecs_world.World] {
-  fn(app : @app.App[@ecs_world.World]) -> @app.App[@ecs_world.World] {
+) -> @app.Plugin[@ecs.World] {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     app
     .insert_resource(PrintMessageState::{
       message: config.message,
@@ -69,8 +69,8 @@ fn print_message_system(
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([
     print_message_plugin({

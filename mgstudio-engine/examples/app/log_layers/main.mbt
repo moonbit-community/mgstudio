@@ -34,7 +34,7 @@ fn fmt_layer(record : @app.LogRecord) -> Unit {
 }
 
 ///|
-fn log_system(_world : @ecs_world.World) -> Unit {
+fn log_system(_world : @ecs.World) -> Unit {
   @app.log_error("something failed")
   @app.log_warn(
     "something bad happened that isn't a failure, but thats worth calling out",
@@ -48,11 +48,11 @@ fn log_system(_world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
   let log_plugin = @app.LogPlugin::default()
     .with_custom_layer(custom_layer)
     .with_fmt_layer(fmt_layer)
-  @app.App::new(@ecs_world.World::new())
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(log_plugin)])
   .add_system(log_system)

@@ -902,7 +902,7 @@ fn polyline_mesh() -> @render3d.Mesh3d {
 
 ///|
 fn spawn_shape(
-  world : @ecs_world.World,
+  world : @ecs.World,
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   x : Float,
@@ -919,7 +919,7 @@ fn spawn_shape(
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   shapes_state.val.entries.clear()
   shapes_state.val.rotating = true
 
@@ -1015,9 +1015,7 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
   let point_light = world.spawn_empty()
-  world
-  .get_point_light_store()
-  .insert(
+  @render3d.query_get_point_light_store(world).insert(
     point_light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -1027,9 +1025,11 @@ fn setup(world : @ecs_world.World) -> Unit {
     ).with_shadow_depth_bias(0.2F),
     tick,
   )
-  world
-  .get_transform_store()
-  .insert(point_light, @math.Transform::from_xyz(8.0F, 16.0F, 8.0F), tick)
+  @math.query_get_transform_store(world).insert(
+    point_light,
+    @math.Transform::from_xyz(8.0F, 16.0F, 8.0F),
+    tick,
+  )
 
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(50.0F, 50.0F),
@@ -1079,21 +1079,21 @@ fn setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_rotation(_world : @ecs_world.World) -> Unit {
+fn toggle_rotation(_world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
     shapes_state.val.rotating = !shapes_state.val.rotating
   }
 }
 
 ///|
-fn rotate(world : @ecs_world.World) -> Unit {
+fn rotate(world : @ecs.World) -> Unit {
   if !shapes_state.val.rotating {
     return
   }
   let delta = @time.time_delta_seconds() / 2.0F
   let spin = @math.Quat::from_rotation_y(delta)
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   for entry in shapes_state.val.entries {
     if transform_store.get(entry.entity) is Some(transform) {
       let next = transform.with_rotation(
@@ -1105,12 +1105,12 @@ fn rotate(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn advance_rows(world : @ecs_world.World) -> Unit {
+fn advance_rows(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Tab) {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   let count = shapes_state.val.entries.length()
   for i in 0..<count {
     let entry = shapes_state.val.entries[i]
@@ -1130,12 +1130,12 @@ fn advance_rows(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn toggle_wireframe(world : @ecs_world.World) -> Unit {
+fn toggle_wireframe(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
   let tick = world.read_change_tick()
-  let wireframe_config = world.get_wireframe_config_resource()
+  let wireframe_config = @render3d.query_get_wireframe_config_resource(world)
   if wireframe_config.get_ref_mut(tick) is Some(config_ref) {
     config_ref.val = config_ref.val.with_global(!config_ref.val.global)
   } else {
@@ -1148,8 +1148,8 @@ fn toggle_wireframe(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins_nearest()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render3d.wireframe_plugin])
   .add_startup_system(setup)

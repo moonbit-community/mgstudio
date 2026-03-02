@@ -67,6 +67,7 @@ pub impl @json.FromJson for GlobalTransform
 pub(open) trait Has_GlobalTransform {
   get_global_transform_store(Self) -> @core.ComponentStore[GlobalTransform]
 }
+pub impl Has_GlobalTransform for @ecs.World
 
 pub(open) trait TransformPropagationWorld : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld {
 }

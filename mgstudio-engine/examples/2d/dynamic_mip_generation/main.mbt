@@ -89,8 +89,8 @@ let dynamic_mip_state : Ref[DynamicMipState] = Ref::new(DynamicMipState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(dynamic_mip_setup)
   .add_system_param(dynamic_mip_window_resized_system)
@@ -99,7 +99,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn dynamic_mip_setup(world : @ecs_world.World) -> Unit {
+fn dynamic_mip_setup(world : @ecs.World) -> Unit {
   app_status.val.enable_mip_generation = On
   app_status.val.image_width = Size640
   app_status.val.image_height = Size480
@@ -129,7 +129,7 @@ fn dynamic_mip_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn dynamic_mip_update(world : @ecs_world.World) -> Unit {
+fn dynamic_mip_update(world : @ecs.World) -> Unit {
   handle_app_setting_input()
 
   if dynamic_mip_state.val.regenerate_requested {
@@ -186,7 +186,7 @@ fn dynamic_mip_window_resized_system(
 }
 
 ///|
-fn regenerate_image(world : @ecs_world.World) -> Unit {
+fn regenerate_image(world : @ecs.World) -> Unit {
   dynamic_mip_state.val.regenerate_requested = false
 
   despawn_image_views(world)
@@ -227,7 +227,7 @@ fn regenerate_image(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn animate_image_scale(world : @ecs_world.World) -> Unit {
+fn animate_image_scale(world : @ecs.World) -> Unit {
   guard dynamic_mip_state.val.animated_entity is Some(animated_entity) else {
     return
   }
@@ -242,7 +242,7 @@ fn animate_image_scale(world : @ecs_world.World) -> Unit {
   let wave = triangle_wave(@time.time_elapsed_seconds(), ANIMATION_PERIOD)
   let next_scale = vec2_scale(animated_size, wave)
 
-  let transform_store = world.get_transform_store()
+  let transform_store = @math.query_get_transform_store(world)
   let tick = world.read_change_tick()
   if transform_store.get(animated_entity) is Some(transform) {
     let next_transform = @math.Transform::from_xy_rotation_scale(
@@ -259,10 +259,7 @@ fn animate_image_scale(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn spawn_animated_mesh(
-  world : @ecs_world.World,
-  window_size : @math.Vec2,
-) -> Unit {
+fn spawn_animated_mesh(world : @ecs.World, window_size : @math.Vec2) -> Unit {
   guard dynamic_mip_state.val.source_texture is Some(source_texture) else {
     return
   }
@@ -285,10 +282,7 @@ fn spawn_animated_mesh(
 }
 
 ///|
-fn spawn_mip_level_views(
-  world : @ecs_world.World,
-  window_size : @math.Vec2,
-) -> Unit {
+fn spawn_mip_level_views(world : @ecs.World, window_size : @math.Vec2) -> Unit {
   let textures = dynamic_mip_state.val.mip_views
   let sizes = dynamic_mip_state.val.mip_sizes
   let level_count = sizes.length()
@@ -331,7 +325,7 @@ fn spawn_mip_level_views(
 }
 
 ///|
-fn despawn_image_views(world : @ecs_world.World) -> Unit {
+fn despawn_image_views(world : @ecs.World) -> Unit {
   for entity in dynamic_mip_state.val.view_entities {
     try! world.despawn(entity)
   }
@@ -485,7 +479,7 @@ fn pick_mip_level(display_size : Float, mip_count : Int) -> Int {
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
+fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
@@ -500,10 +494,8 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
+  @ui.query_get_node_store(world).insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -512,12 +504,12 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
   )
 
   let text_entity = world.spawn_empty()
-  world
-  .get_parent_store()
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(
+  @hierarchy.query_get_parent_store(world).insert(
+    text_entity,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  @ui.query_get_node_store(world).insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -525,9 +517,11 @@ fn spawn_help_overlay(world : @ecs_world.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  world
-  .get_ui_text_store()
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  @ui.query_get_ui_text_store(world).insert(
+    text_entity,
+    @ui.UiText::new(text_handle),
+    tick,
+  )
 
   dynamic_mip_state.val.help_text = Some(text_handle)
 }

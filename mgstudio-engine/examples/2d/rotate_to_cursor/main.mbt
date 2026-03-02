@@ -24,8 +24,8 @@ let rotate_to_cursor_state : Ref[RotateToCursorState] = Ref::new(RotateToCursorS
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(rotate_to_cursor_setup)
   .add_fixed_update_system(rotate_to_cursor_update)
@@ -33,25 +33,25 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn rotate_to_cursor_setup(world : @ecs_world.World) -> Unit {
+fn rotate_to_cursor_setup(world : @ecs.World) -> Unit {
   rotate_to_cursor_state.val.player = @core.Entity::placeholder()
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("textures/simplespace/ship_C.png")
   let sprite = @render2d.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  let player = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
+  let player = @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(world)
   rotate_to_cursor_state.val.player = player
 
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
     world,
   )
   |> ignore
 }
 
 ///|
-fn rotate_to_cursor_update(world : @ecs_world.World) -> Unit {
+fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
   let player = rotate_to_cursor_state.val.player
   if player.is_placeholder() {
     return
@@ -60,7 +60,7 @@ fn rotate_to_cursor_update(world : @ecs_world.World) -> Unit {
   if @input.mouse_position() is Some(screen_pos) {
     if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
       is Some(world_pos) {
-      let transform_store = world.get_transform_store()
+      let transform_store = @math.query_get_transform_store(world)
       guard transform_store.get(player) is Some(transform) else { return }
 
       let delta = @math.Vec2::new(

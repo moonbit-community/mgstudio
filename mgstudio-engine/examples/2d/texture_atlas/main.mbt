@@ -35,8 +35,8 @@ let texture_atlas_state : Ref[TextureAtlasExampleState] = Ref::new(TextureAtlasE
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(texture_atlas_setup)
   .add_system(texture_atlas_update)
@@ -44,7 +44,7 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn texture_atlas_setup(world : @ecs_world.World) -> Unit {
+fn texture_atlas_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   texture_atlas_state.val.folder_handle = Some(
     asset_server.load_folder("textures/rpg"),
@@ -58,7 +58,7 @@ fn texture_atlas_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn texture_atlas_update(world : @ecs_world.World) -> Unit {
+fn texture_atlas_update(world : @ecs.World) -> Unit {
   if texture_atlas_state.val.built {
     return
   }
@@ -194,7 +194,7 @@ fn build_texture_atlas(
 
 ///|
 fn spawn_texture_preview(
-  world : @ecs_world.World,
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   x : Float,
   y : Float,
@@ -213,7 +213,7 @@ fn spawn_texture_preview(
 
 ///|
 fn spawn_sampling_variant(
-  world : @ecs_world.World,
+  world : @ecs.World,
   atlas : BuiltAtlas,
   vendor_handle : @asset.Handle[@asset.Image],
   x : Float,

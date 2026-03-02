@@ -16,40 +16,36 @@
 /// Port of `bevy/examples/app/plugin_group.rs`.
 
 ///|
-fn print_hello_plugin(
-  app : @app.App[@ecs_world.World],
-) -> @app.App[@ecs_world.World] {
+fn print_hello_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_system(print_hello_system)
 }
 
 ///|
-fn print_world_plugin(
-  app : @app.App[@ecs_world.World],
-) -> @app.App[@ecs_world.World] {
+fn print_world_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_system(print_world_system)
 }
 
 ///|
-fn hello_world_plugins() -> @app.PluginGroupBuilder[@ecs_world.World] {
+fn hello_world_plugins() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start()
   .add(print_hello_plugin)
   .add(print_world_plugin)
 }
 
 ///|
-fn print_hello_system(_world : @ecs_world.World) -> Unit {
+fn print_hello_system(_world : @ecs.World) -> Unit {
   println("hello")
 }
 
 ///|
-fn print_world_system(_world : @ecs_world.World) -> Unit {
+fn print_world_system(_world : @ecs.World) -> Unit {
   println("world")
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let default_plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let default_plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(default_plugins)
   .add_plugin_group(hello_world_plugins)
   .run()

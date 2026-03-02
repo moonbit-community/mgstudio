@@ -14,8 +14,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(physics2d_falling_setup)
   .add_system(physics2d_print_events)
@@ -23,10 +23,10 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
+fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   // Make gravity visible in "pixel-ish" space.
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics2d_config_resource()
+  let cfg_res = @physics2d.query_get_physics2d_config_resource(world)
   match cfg_res.get_ref_mut(tick) {
     Some(r) =>
       r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
@@ -46,9 +46,11 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
   let floor = @render2d.SpriteBundle::new(floor_sprite, floor_transform).spawn(
     world,
   )
-  let rb_store = world.get_rigid_body2d_store()
-  let col_store = world.get_collider2d_store()
-  let cf_store = world.get_contact_force_event_threshold2d_store()
+  let rb_store = @physics2d.query_get_rigid_body2d_store(world)
+  let col_store = @physics2d.query_get_collider2d_store(world)
+  let cf_store = @physics2d.query_get_contact_force_event_threshold2d_store(
+    world,
+  )
   rb_store.insert(floor, @physics2d.RigidBody2d::fixed(), tick)
   col_store.insert(
     floor,
@@ -75,7 +77,7 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
   let ball = @render2d.SpriteBundle::new(ball_sprite, ball_transform).spawn(
     world,
   )
-  let vel_store = world.get_velocity2d_store()
+  let vel_store = @physics2d.query_get_velocity2d_store(world)
   rb_store.insert(ball, @physics2d.RigidBody2d::dynamic(), tick)
   col_store.insert(
     ball,
@@ -98,8 +100,8 @@ fn physics2d_falling_setup(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn physics2d_print_events(world : @ecs_world.World) -> Unit {
-  let ev_res = world.get_physics2d_events_resource()
+fn physics2d_print_events(world : @ecs.World) -> Unit {
+  let ev_res = @physics2d.query_get_physics2d_events_resource(world)
   match ev_res.get_ref() {
     Some(r) => {
       for ev in r.val.collisions {

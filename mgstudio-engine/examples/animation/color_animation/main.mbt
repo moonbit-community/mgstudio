@@ -106,12 +106,14 @@ pub(all) enum ColorAnimationMode {
 ///|
 priv struct AnimatedSprite {
   entity : @core.Entity
+  y : Float
   mode : ColorAnimationMode
 }
 
 ///|
 priv struct ColorAnimationState {
   sprites : Array[AnimatedSprite]
+  mut texture : @asset.Handle[@asset.Image]?
   mut linear_points : Array[LinearRgba]
   mut xyza_points : Array[Xyza]
   mut oklaba_points : Array[Oklaba]
@@ -123,6 +125,7 @@ priv struct ColorAnimationState {
 ///|
 let color_animation_state : Ref[ColorAnimationState] = Ref::new(ColorAnimationState::{
   sprites: [],
+  texture: None,
   linear_points: [],
   xyza_points: [],
   oklaba_points: [],
@@ -133,8 +136,8 @@ let color_animation_state : Ref[ColorAnimationState] = Ref::new(ColorAnimationSt
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(color_animation_setup)
   .add_system(color_animation_update)
@@ -142,8 +145,9 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn color_animation_setup(world : @ecs_world.World) -> Unit {
+fn color_animation_setup(world : @ecs.World) -> Unit {
   color_animation_state.val.sprites.clear()
+  color_animation_state.val.texture = None
 
   let linear_points = default_linear_control_points()
   color_animation_state.val.linear_points = linear_points
@@ -156,11 +160,12 @@ fn color_animation_setup(world : @ecs_world.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn(world)
+  ).spawn_ecs(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
+  color_animation_state.val.texture = Some(texture)
 
   spawn_mode_sprite(
     world,
@@ -187,7 +192,7 @@ fn color_animation_setup(world : @ecs_world.World) -> Unit {
 
 ///|
 fn spawn_mode_sprite(
-  world : @ecs_world.World,
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   y : Float,
   mode : ColorAnimationMode,
@@ -198,34 +203,39 @@ fn spawn_mode_sprite(
   let entity = @render2d.SpriteBundle::new(
     sprite,
     @math.Transform::from_xyz(0.0F, y, 0.0F),
-  ).spawn(world)
-  color_animation_state.val.sprites.push(AnimatedSprite::{ entity, mode })
+  ).spawn_ecs(world)
+  color_animation_state.val.sprites.push(AnimatedSprite::{ entity, y, mode })
 }
 
 ///|
-fn color_animation_update(world : @ecs_world.World) -> Unit {
+fn color_animation_update(world : @ecs.World) -> Unit {
   if color_animation_state.val.sprites.length() == 0 {
     return
   }
+  guard color_animation_state.val.texture is Some(texture) else { return }
 
   let t = normalized_time(@time.time_elapsed_seconds())
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
-  let tick = world.read_change_tick()
-  let sprite_store = world.get_sprite_store()
-  let transform_store = world.get_transform_store()
-
+  let next_sprites : Array[AnimatedSprite] = []
   for animated in color_animation_state.val.sprites {
-    if sprite_store.get(animated.entity) is Some(sprite) {
-      let color = mode_color(animated.mode, t)
-      sprite_store.set(animated.entity, sprite.with_color(color), tick)
-      |> ignore
-    }
-    if transform_store.get(animated.entity) is Some(transform) {
-      let next_transform = transform.with_translation(
-        @math.Vec3::new(x, transform.translation.y, transform.translation.z),
-      )
-      transform_store.set(animated.entity, next_transform, tick) |> ignore
-    }
+    let color = mode_color(animated.mode, t)
+    let sprite = @render2d.Sprite::from_image(texture)
+      .with_custom_size(Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)))
+      .with_color(color)
+    try! world.despawn(animated.entity)
+    let entity = @render2d.SpriteBundle::new(
+      sprite,
+      @math.Transform::from_xyz(x, animated.y, 0.0F),
+    ).spawn_ecs(world)
+    next_sprites.push(AnimatedSprite::{
+      entity,
+      y: animated.y,
+      mode: animated.mode,
+    })
+  }
+  color_animation_state.val.sprites.clear()
+  for animated in next_sprites {
+    color_animation_state.val.sprites.push(animated)
   }
 }
 

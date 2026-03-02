@@ -14,8 +14,8 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(texture_atlas_builder_setup)
   .add_system(texture_atlas_builder_update)
@@ -37,7 +37,7 @@ let builder_state : Ref[TextureAtlasBuilderState] = Ref::new(TextureAtlasBuilder
 })
 
 ///|
-fn texture_atlas_builder_setup(world : @ecs_world.World) -> Unit {
+fn texture_atlas_builder_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture_a = asset_server.load("branding/bevy_bird_dark.png")
   let texture_b = asset_server.load("textures/simplespace/ship_C.png")
@@ -45,14 +45,14 @@ fn texture_atlas_builder_setup(world : @ecs_world.World) -> Unit {
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
     world,
   )
   |> ignore
 }
 
 ///|
-fn texture_atlas_builder_update(world : @ecs_world.World) -> Unit {
+fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
   if builder_state.val.built {
     return
   }
@@ -88,7 +88,7 @@ fn texture_atlas_builder_update(world : @ecs_world.World) -> Unit {
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
       ),
-    ).spawn(world)
+    ).spawn_ecs(world)
     entity_a |> ignore
     let entity_b = @render2d.SpriteBundle::new(
       @render2d.Sprite::from_atlas_image(
@@ -100,7 +100,7 @@ fn texture_atlas_builder_update(world : @ecs_world.World) -> Unit {
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
       ),
-    ).spawn(world)
+    ).spawn_ecs(world)
     entity_b |> ignore
     builder_state.val.built = true
   }
