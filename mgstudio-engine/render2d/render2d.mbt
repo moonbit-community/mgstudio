@@ -4761,7 +4761,13 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
   let id = @window.host_gpu_create_render_target(width~, height~, nearest~)
-  let rs = render_state_ref_mut(world).unwrap()
+  let tick = world.read_change_tick()
+  let res = world.get_render_state_resource()
+  if !res.is_present() {
+    res.insert(RenderState::new(), tick)
+    gizmos_reset()
+  }
+  let rs = res.get_ref_mut(tick).unwrap()
   rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
   @asset.Handle::new(id)
 }

@@ -87,10 +87,7 @@ pub fn[W : DefaultPluginsWorld] default_plugins_nearest() -> Array[
 }
 
 ///|
-/// Minimal default plugins for `@ecs.World` while ECS-json migration is in progress.
-///
-/// This intentionally excludes scene/animation/transform/visibility/render/ui/physics
-/// plugins that still depend on the legacy typed-store world traits.
+/// Default plugin bundle for `@ecs.World`.
 pub fn default_plugins_ecs() -> Array[@app.Plugin[@ecs.World]] {
   [
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -106,7 +103,43 @@ pub fn default_plugins_ecs() -> Array[@app.Plugin[@ecs.World]] {
       @asset.asset_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @scene.scene_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @animation.animation_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @transform.transform_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @visibility.visibility_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @input.input_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @picking.picking_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @a11y.a11y_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @ui.ui_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @text.text_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @render3d.render3d_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @render2d.render2d_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @physics2d.physics2d_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @physics3d.physics3d_plugin(app)
     },
   ]
 }
