@@ -277,7 +277,8 @@ fn sample_scene_with_chromatic(uv: vec2<f32>) -> vec3<f32> {
 
 fn sample_tonemapped_scene_for_fxaa(uv: vec2<f32>) -> vec3<f32> {
     let clamped_uv = clamp(uv, vec2<f32>(0.0), vec2<f32>(1.0));
-    let scene_color = textureSample(scene_texture, hdr_sampler, clamped_uv).rgb;
+    // Use explicit LOD so this call is valid under non-uniform FXAA control flow.
+    let scene_color = textureSampleLevel(scene_texture, hdr_sampler, clamped_uv, 0.0).rgb;
     return tonemap_color(scene_color, uniforms.options.x);
 }
 
