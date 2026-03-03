@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
+/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Collider3d", "Velocity3d", "RigidBody3d", "ActiveHooks3d", "ActiveEvents3d", "RapierBodyHandle3d",
   "ActiveCollisionTypes3d", "RapierColliderHandle3d", "ContactForceEventThreshold3d",
 ]
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
   "Physics3dConfig", "Physics3dEvents", "Physics3dContext",
 ]
@@ -180,7 +180,7 @@ pub fn[W : HasRes_Physics3dContext] get_physics3d_context_resource(
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
 let bridge_get_collider3d_store_by_world : Map[

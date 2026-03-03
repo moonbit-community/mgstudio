@@ -21,22 +21,24 @@ fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
-pub(open) trait Physics2dSyncJointsWorld: @core.ChangeTickWorld + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext {
-}
+pub(open) trait Physics2dSyncJointsWorld: Physics2dEcsWorld {}
 
 ///|
 pub fn[W : Physics2dSyncJointsWorld] physics2d_sync_joints_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics2d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-  let body_handle_store = world.get_rapier_body_handle2d_store()
-  let impulse_joint_store = world.get_impulse_joint2d_store()
-  let multibody_joint_store = world.get_multibody_joint2d_store()
-  let impulse_handle_store = world.get_rapier_impulse_joint_handle2d_store()
-  let multibody_handle_store = world.get_rapier_multibody_joint_handle2d_store()
+  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
+  let impulse_joint_store = get_impulse_joint2d_store(ecs_world)
+  let multibody_joint_store = get_multibody_joint2d_store(ecs_world)
+  let impulse_handle_store = get_rapier_impulse_joint_handle2d_store(ecs_world)
+  let multibody_handle_store = get_rapier_multibody_joint_handle2d_store(
+    ecs_world,
+  )
 
   // Drop stale handles (e.g. when Rapier removed the joint because a body was removed).
   let drop_impulse : Array[@core.Entity] = []

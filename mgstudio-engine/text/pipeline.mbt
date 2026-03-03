@@ -801,9 +801,7 @@ pub fn[W] text_update_system(_world : W) -> Unit {
 }
 
 ///|
-pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_system(
-  world : W,
-) -> Unit {
+pub fn[W : @render2d.RenderStateMutWorld] text_render_system(world : W) -> Unit {
   @render2d.render2d_clear_overlay_sprites(world)
   text_debug_clear_frame()
   let debug_capture_enabled = text_debug_capture_enabled()
@@ -1161,7 +1159,7 @@ pub let text_set_render_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(
+pub fn[W : @render2d.RenderStateMutWorld] text_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app

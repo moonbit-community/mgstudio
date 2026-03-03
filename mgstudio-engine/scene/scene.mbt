@@ -299,26 +299,12 @@ pub fn[W] scene_load_pending_system(_world : W) -> Unit {
 }
 
 ///|
-pub(open) trait SceneSpawnWorld: Has_SceneRoot + Has_SceneInstanceReady + @core.SpawnWorld + @core.ChangeTickWorld + @hierarchy.Has_Parent + @math.Has_Transform + @render3d.Has_Mesh3d + @render3d.Has_MeshMaterial3d + @visibility.Has_VisibilityRange + @animation.Has_AnimationTargetId + @animation.Has_AnimatedBy + @animation.Has_AnimationPlayer {
-}
-
-///|
-pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(world : W) -> Unit {
-  let scene_root_store = world.get_scene_root_store()
-  let ready_store = world.get_scene_instance_ready_store()
-  let mesh_store = world.get_mesh3d_store()
-  let material_store = world.get_mesh_material3d_store()
-  let transform_store = world.get_transform_store()
-  let parent_store = world.get_parent_store()
-  let visibility_range_store = world.get_visibility_range_store()
-  let animation_target_store = world.get_animation_target_id_store()
-  let animated_by_store = world.get_animated_by_store()
-  let animation_player_store = world.get_animation_player_store()
-  let tick = world.read_change_tick()
-
+pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
   let pending_roots : Array[(@core.Entity, SceneRoot)] = []
-  scene_root_store.for_each(fn(entity, root) {
-    if !ready_store.contains(entity) {
+  try! world
+  .query1(ecs_key_scene_root)
+  .view(fn(entity, root) {
+    if (try! world.get(entity, ecs_key_scene_instance_ready)) is None {
       pending_roots.push((entity, root))
     }
   })
@@ -330,46 +316,50 @@ pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(world : W) -> Unit {
     if !scene.ready {
       continue
     }
-    if !animation_player_store.contains(root_entity) {
-      animation_player_store.insert(
+
+    if (try! world.get(root_entity, @animation.ecs_key_animation_player))
+      is None {
+      try! world.set(
         root_entity,
+        @animation.ecs_key_animation_player,
         @animation.AnimationPlayer::default(),
-        tick,
       )
     }
+
     let mut spawned_entities = 0
     for node in scene.nodes3d {
       let child = world.spawn_empty()
-      mesh_store.insert(child, node.mesh, tick)
-      material_store.insert(child, node.material, tick)
-      transform_store.insert(child, node.transform, tick)
-      parent_store.insert(child, @hierarchy.Parent::new(root_entity), tick)
+      try! world.set(child, @render3d.ecs_key_mesh3d, node.mesh)
+      try! world.set(child, @render3d.ecs_key_mesh_material3d, node.material)
+      try! world.set(child, @math.ecs_key_transform, node.transform)
+      try! world.set(
+        child,
+        @hierarchy.ecs_key_parent,
+        @hierarchy.Parent::new(root_entity),
+      )
       if node.visibility_range is Some(range) {
-        visibility_range_store.insert(child, range, tick)
+        try! world.set(child, @visibility.ecs_key_visibility_range, range)
       }
       if node.animation_target is Some(target_id) {
-        animation_target_store.insert(child, target_id, tick)
-        animated_by_store.insert(
+        try! world.set(child, @animation.ecs_key_animation_target_id, target_id)
+        try! world.set(
           child,
+          @animation.ecs_key_animated_by,
           @animation.AnimatedBy::new(root_entity),
-          tick,
         )
       }
       spawned_entities = spawned_entities + 1
     }
-    ready_store.insert(
+    try! world.set(
       root_entity,
+      ecs_key_scene_instance_ready,
       SceneInstanceReady::new(spawned_entities),
-      tick,
     )
   }
 }
 
 ///|
-pub(open) trait ScenePluginWorld: SceneSpawnWorld {}
-
-///|
-pub fn[W : ScenePluginWorld] scene_plugin(app : @app.App[W]) -> @app.App[W] {
+pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_pre_update_system(scene_load_pending_system)
   .add_pre_update_system(scene_spawn_roots_system)

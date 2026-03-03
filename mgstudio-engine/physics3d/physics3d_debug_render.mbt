@@ -148,17 +148,21 @@ pub fn physics3d_debug_render_enabled() -> Bool {
 }
 
 ///|
-pub(open) trait Physics3dDebugRenderPluginWorld: @render3d.MeshMaterial3dBundleSpawnWorld + Has_Collider3d + Has_RigidBody3d {
+pub(open) trait Physics3dDebugRenderEcsWorld: @render3d.MeshMaterial3dBundleSpawnWorld {
 }
+
+///|
+pub(open) trait Physics3dDebugRenderPluginWorld: Physics3dDebugRenderEcsWorld {}
 
 ///|
 fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_clear_lines(
   world : W,
 ) -> Unit {
+  let ecs_world = world.as_ecs_world()
   let state = physics3d_debug_render_state.val
   while state.line_entities.length() > 0 {
     let entity = state.line_entities.pop().unwrap()
-    try! (world.despawn(entity) |> ignore)
+    try! (ecs_world.despawn(entity) |> ignore)
   }
 }
 
@@ -336,6 +340,7 @@ fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_ensure_line_pool(
   world : W,
   desired_count : Int,
 ) -> Unit {
+  let ecs_world = world.as_ecs_world()
   let state = physics3d_debug_render_state.val
   guard state.line_mesh is Some(mesh) else { return }
   guard state.dynamic_material is Some(default_material) else { return }
@@ -349,7 +354,7 @@ fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_ensure_line_pool(
   }
   while state.line_entities.length() > desired_count {
     let entity = state.line_entities.pop().unwrap()
-    try! (world.despawn(entity) |> ignore)
+    try! (ecs_world.despawn(entity) |> ignore)
   }
 }
 
@@ -367,10 +372,11 @@ pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_sync_system(
   }
 
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
-  let collider_store = world.get_collider3d_store()
-  let rigid_body_store = world.get_rigid_body3d_store()
-  let mesh_material_store = world.get_mesh_material3d_store()
+  let ecs_world = world.as_ecs_world()
+  let transform_store = @math.get_transform_store(ecs_world)
+  let collider_store = get_collider3d_store(ecs_world)
+  let rigid_body_store = get_rigid_body3d_store(ecs_world)
+  let mesh_material_store = @render3d.get_mesh_material3d_store(ecs_world)
   let lines : Array[DebugLine3d] = []
 
   collider_store.for_each(fn(entity, collider) {

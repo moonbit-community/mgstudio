@@ -145,8 +145,8 @@ pub fn World::is_alive(self : World, entity : Entity) -> Bool {
 ///|
 /// Minimal trait for worlds that can spawn/despawn entities.
 ///
-/// This is used by engine helpers that are generic over a generated World type,
-/// without depending on a concrete `ecs_world` package (avoids cycles).
+/// This is used by engine helpers that remain generic over world types,
+/// without depending on a concrete world package.
 pub(open) trait SpawnWorld {
   spawn_empty(self : Self) -> Entity
   despawn(self : Self, entity : Entity) -> Unit raise EntityError

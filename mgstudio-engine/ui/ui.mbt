@@ -1522,11 +1522,9 @@ pub fn ui_pointer_pos_in_viewport(
 }
 
 ///|
-fn[W : HasRes_UiContext + @core.ChangeTickWorld] ensure_ui_context_resource(
-  world : W,
-) -> Ref[UiContext]? {
+fn ensure_ui_context_resource(world : @ecs.World) -> Ref[UiContext]? {
   let tick = world.read_change_tick()
-  let res = world.get_ui_context_resource()
+  let res = get_ui_context_resource(world)
   if !res.is_present() {
     res.insert(UiContext::default(), tick)
   }
@@ -1534,11 +1532,9 @@ fn[W : HasRes_UiContext + @core.ChangeTickWorld] ensure_ui_context_resource(
 }
 
 ///|
-fn[W : HasRes_UiScale + @core.ChangeTickWorld] ensure_ui_scale_resource(
-  world : W,
-) -> Ref[UiScale]? {
+fn ensure_ui_scale_resource(world : @ecs.World) -> Ref[UiScale]? {
   let tick = world.read_change_tick()
-  let res = world.get_ui_scale_resource()
+  let res = get_ui_scale_resource(world)
   if !res.is_present() {
     res.insert(UiScale::new(1.0F), tick)
   }
@@ -1596,51 +1592,7 @@ fn clamp_viewport_to_window(
 }
 
 ///|
-pub(open) trait UiUpdateContextWorld: HasRes_UiContext + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiVisibilityDefaultsWorld: @core.ChangeTickWorld + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
-}
-
-///|
-pub(open) trait UiImageContentSizeWorld: HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiLayoutWorld: HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ScrollPosition + Has_UiLayout + Has_UiImage + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiScrollWorld: HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @hierarchy.Has_Children + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiClipWorld: HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + Has_UiText + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiStackWorld: HasRes_UiStack + Has_UiRoot + Has_UiLayout + Has_ZIndex + Has_GlobalZIndex + Has_UiText + @hierarchy.Has_Children + @hierarchy.Has_Parent + @math.Has_Transform + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiA11yWorld: @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children {
-}
-
-///|
-pub(open) trait UiInteractionWorld: HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiRenderExtractWorld: HasRes_UiContext + HasRes_UiStack + HasRes_UiScale + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait UiPluginWorld: @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-///|
-pub fn[W : UiUpdateContextWorld] ui_update_context_system(world : W) -> Unit {
+pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   guard ensure_ui_context_resource(world) is Some(ctx) else { return }
   create_white_texture_if_needed(ctx)
   let win_w = @window.window_width()
@@ -1648,12 +1600,12 @@ pub fn[W : UiUpdateContextWorld] ui_update_context_system(world : W) -> Unit {
   let sf = safe_scale_factor(@window.window_scale_factor())
 
   // Select a screen Camera2d with the smallest order (Bevy-like).
-  let camera2d_store = world.get_camera2d_store()
-  let camera_store = world.get_camera_store()
-  let projection_store = world.get_projection_store()
-  let target_store = world.get_render_target_store()
-  let transform_store = world.get_transform_store()
-  let global_store = world.get_global_transform_store()
+  let camera2d_store = @render2d.get_camera2d_store(world)
+  let camera_store = @render2d.get_camera_store(world)
+  let projection_store = @render2d.get_projection_store(world)
+  let target_store = @render2d.get_render_target_store(world)
+  let transform_store = @math.get_transform_store(world)
+  let global_store = @transform.get_global_transform_store(world)
   let mut best_entity : @core.Entity? = None
   let mut best_order : Int = 0
   camera2d_store.for_each(fn(entity, _marker) {
@@ -1744,16 +1696,16 @@ pub fn[W : UiUpdateContextWorld] ui_update_context_system(world : W) -> Unit {
 }
 
 ///|
-fn[W : UiVisibilityDefaultsWorld] ensure_visibility_defaults(
-  world : W,
+fn ensure_visibility_defaults(
+  world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let vis_store = world.get_visibility_store()
+  let vis_store = @visibility.get_visibility_store(world)
   if !vis_store.contains(entity) {
     vis_store.insert(entity, @visibility.Visibility::Inherited, tick)
   }
-  let inherited_store = world.get_inherited_visibility_store()
+  let inherited_store = @visibility.get_inherited_visibility_store(world)
   if !inherited_store.contains(entity) {
     inherited_store.insert(
       entity,
@@ -1761,18 +1713,18 @@ fn[W : UiVisibilityDefaultsWorld] ensure_visibility_defaults(
       tick,
     )
   }
-  let view_store = world.get_view_visibility_store()
+  let view_store = @visibility.get_view_visibility_store(world)
   if !view_store.contains(entity) {
     view_store.insert(entity, @visibility.ViewVisibility::new(true), tick)
   }
 }
 
 ///|
-fn[W : @core.ChangeTickWorld + @render2d.Has_RenderLayers] ensure_layers_default(
-  world : W,
+fn ensure_layers_default(
+  world : @ecs.World,
   entity : @core.Entity,
 ) -> @render2d.RenderLayers {
-  let store = world.get_render_layers_store()
+  let store = @render2d.get_render_layers_store(world)
   match store.get(entity) {
     Some(v) => v
     None => {
@@ -1854,18 +1806,16 @@ fn image_measure_size_px(
 ///
 /// This mirrors Bevy's `update_image_content_size_system`, adapted to mgstudio's
 /// logical UI coordinate space.
-pub fn[W : UiImageContentSizeWorld] ui_image_content_size_system(
-  world : W,
-) -> Unit {
-  let res = world.get_ui_context_resource()
+pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
+  let res = get_ui_context_resource(world)
   guard res.get() is Some(_) else { return }
   guard ensure_ui_scale_resource(world) is Some(ui_scale) else { return }
-  let node_store = world.get_node_store()
-  let ui_text_store = world.get_ui_text_store()
-  let ui_image_store = world.get_ui_image_store()
-  let image_node_store = world.get_image_node_store()
-  let image_size_store = world.get_image_node_size_store()
-  let content_size_store = world.get_content_size_store()
+  let node_store = get_node_store(world)
+  let ui_text_store = get_ui_text_store(world)
+  let ui_image_store = get_ui_image_store(world)
+  let image_node_store = get_image_node_store(world)
+  let image_size_store = get_image_node_size_store(world)
+  let content_size_store = get_content_size_store(world)
   let tick = world.read_change_tick()
   let sf = safe_scale_factor(@window.window_scale_factor())
   let ui_scale_value = if ui_scale.val.value <= 0.0F {
@@ -1985,20 +1935,20 @@ pub fn[W : UiImageContentSizeWorld] ui_image_content_size_system(
 }
 
 ///|
-pub fn[W : UiLayoutWorld] ui_layout_system(world : W) -> Unit {
-  let res = world.get_ui_context_resource()
+pub fn ui_layout_system(world : @ecs.World) -> Unit {
+  let res = get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
   guard ctx0.camera_entity is Some(_) else { return }
-  let root_store = world.get_ui_root_store()
-  let node_store = world.get_node_store()
-  let content_size_store = world.get_content_size_store()
-  let scroll_store = world.get_scroll_position_store()
-  let layout_store = world.get_ui_layout_store()
-  let children_store = world.get_children_store()
-  let sprite_store = world.get_sprite_store()
-  let img_store = world.get_ui_image_store()
-  let ui_text_store = world.get_ui_text_store()
-  let transform_store = world.get_transform_store()
+  let root_store = get_ui_root_store(world)
+  let node_store = get_node_store(world)
+  let content_size_store = get_content_size_store(world)
+  let scroll_store = get_scroll_position_store(world)
+  let layout_store = get_ui_layout_store(world)
+  let children_store = @hierarchy.get_children_store(world)
+  let sprite_store = @render2d.get_sprite_store(world)
+  let img_store = get_ui_image_store(world)
+  let ui_text_store = get_ui_text_store(world)
+  let transform_store = @math.get_transform_store(world)
   let tick = world.read_change_tick()
   let root_rect = @math.Rect::new(
     @math.Vec2::new(0.0F, 0.0F),
@@ -2743,20 +2693,20 @@ pub fn[W : UiLayoutWorld] ui_layout_system(world : W) -> Unit {
 /// This is an MVP scroll implementation:
 /// - Picks the topmost scroll container under the pointer by `UiStack`.
 /// - Applies wheel deltas directly to the stored offsets (clamped to >= 0).
-pub fn[W : UiScrollWorld] ui_scroll_system(world : W) -> Unit {
-  let res = world.get_ui_context_resource()
+pub fn ui_scroll_system(world : @ecs.World) -> Unit {
+  let res = get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
-  let stack_res = world.get_ui_stack_resource()
+  let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
   guard ctx0.pointer_pos is Some(pointer) else { return }
   let delta = ctx0.wheel_delta
   if delta.x == 0.0F && delta.y == 0.0F {
     return
   }
-  let node_store = world.get_node_store()
-  let layout_store = world.get_ui_layout_store()
-  let scroll_store = world.get_scroll_position_store()
-  let children_store = world.get_children_store()
+  let node_store = get_node_store(world)
+  let layout_store = get_ui_layout_store(world)
+  let scroll_store = get_scroll_position_store(world)
+  let children_store = @hierarchy.get_children_store(world)
   let mut target : @core.Entity? = None
   for i in 0..<stack0.uinodes.length() {
     let idx = stack0.uinodes.length() - 1 - i
@@ -2905,17 +2855,17 @@ pub fn[W : UiScrollWorld] ui_scroll_system(world : W) -> Unit {
 
 ///|
 /// Compute `CalculatedClip` and attach `@render2d.ScissorRect` for clipped UI.
-pub fn[W : UiClipWorld] ui_clip_system(world : W) -> Unit {
-  let res = world.get_ui_context_resource()
+pub fn ui_clip_system(world : @ecs.World) -> Unit {
+  let res = get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
   guard ctx0.camera_entity is Some(_) else { return }
-  let root_store = world.get_ui_root_store()
-  let node_store = world.get_node_store()
-  let layout_store = world.get_ui_layout_store()
-  let clip_store = world.get_calculated_clip_store()
-  let ui_text_store = world.get_ui_text_store()
-  let scissor_store = world.get_scissor_rect_store()
-  let children_store = world.get_children_store()
+  let root_store = get_ui_root_store(world)
+  let node_store = get_node_store(world)
+  let layout_store = get_ui_layout_store(world)
+  let clip_store = get_calculated_clip_store(world)
+  let ui_text_store = get_ui_text_store(world)
+  let scissor_store = @render2d.get_scissor_rect_store(world)
+  let children_store = @hierarchy.get_children_store(world)
   let tick = world.read_change_tick()
   let viewport_rect = @math.Rect::new(
     @math.Vec2::new(0.0F, 0.0F),
@@ -3115,22 +3065,22 @@ pub fn[W : UiClipWorld] ui_clip_system(world : W) -> Unit {
 ///
 /// Children are visited in depth-first order, sorted by `ZIndex` ascending,
 /// while preserving insertion order for ties.
-pub fn[W : UiStackWorld] ui_stack_system(world : W) -> Unit {
+pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let res = world.get_ui_stack_resource()
+  let res = get_ui_stack_resource(world)
   if !res.is_present() {
     res.insert(UiStack::default(), tick)
   }
   guard res.get_ref_mut(tick) is Some(stack) else { return }
   UiStack::clear(stack)
-  let root_store = world.get_ui_root_store()
-  let layout_store = world.get_ui_layout_store()
-  let z_store = world.get_z_index_store()
-  let gz_store = world.get_global_z_index_store()
-  let children_store = world.get_children_store()
-  let parent_store = world.get_parent_store()
-  let transform_store = world.get_transform_store()
-  let ui_text_store = world.get_ui_text_store()
+  let root_store = get_ui_root_store(world)
+  let layout_store = get_ui_layout_store(world)
+  let z_store = get_z_index_store(world)
+  let gz_store = get_global_z_index_store(world)
+  let children_store = @hierarchy.get_children_store(world)
+  let parent_store = @hierarchy.get_parent_store(world)
+  let transform_store = @math.get_transform_store(world)
+  let ui_text_store = get_ui_text_store(world)
   fn entity_key(e : @core.Entity) -> (Int, Int) {
     (e.id, e.generation)
   }
@@ -3311,10 +3261,10 @@ pub fn[W : UiStackWorld] ui_stack_system(world : W) -> Unit {
 
 ///|
 /// Build an AccessKit `TreeUpdate` for the current UI tree.
-pub fn[W : UiA11yWorld] ui_build_a11y_tree_update(
-  world : W,
+pub fn ui_build_a11y_tree_update(
+  world : @ecs.World,
 ) -> @moon_accesskit.TreeUpdate {
-  let res = world.get_ui_context_resource()
+  let res = get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else {
     let root = @moon_accesskit.NodeId::root()
     let update = @moon_accesskit.TreeUpdate::new(
@@ -3333,7 +3283,7 @@ pub fn[W : UiA11yWorld] ui_build_a11y_tree_update(
     update.set_tree(@moon_accesskit.Tree::new(root))
     update
   }
-  let stack_res = world.get_ui_stack_resource()
+  let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else {
     let root = @moon_accesskit.NodeId::root()
     let update = @moon_accesskit.TreeUpdate::new(
@@ -3343,18 +3293,18 @@ pub fn[W : UiA11yWorld] ui_build_a11y_tree_update(
     update.set_tree(@moon_accesskit.Tree::new(root))
     update
   }
-  let layout_store = world.get_ui_layout_store()
-  let button_store = world.get_button_store()
-  let label_widget_store = world.get_label_store()
-  let image_node_store = world.get_image_node_store()
-  let label_store = world.get_accessibility_label_store()
-  let ui_text_store = world.get_ui_text_store()
-  let scroll_store = world.get_scroll_position_store()
-  let parent_store = world.get_parent_store()
-  let children_store = world.get_children_store()
-  let clip_store = world.get_calculated_clip_store()
-  let view_visibility_store = world.get_view_visibility_store()
-  let a11y_state_res = world.get_a11y_state_resource()
+  let layout_store = get_ui_layout_store(world)
+  let button_store = get_button_store(world)
+  let label_widget_store = get_label_store(world)
+  let image_node_store = get_image_node_store(world)
+  let label_store = get_accessibility_label_store(world)
+  let ui_text_store = get_ui_text_store(world)
+  let scroll_store = get_scroll_position_store(world)
+  let parent_store = @hierarchy.get_parent_store(world)
+  let children_store = @hierarchy.get_children_store(world)
+  let clip_store = get_calculated_clip_store(world)
+  let view_visibility_store = @visibility.get_view_visibility_store(world)
+  let a11y_state_res = @a11y.get_a11y_state_resource(world)
 
   // Build the set of required nodes (focusables + their ancestor chain), so
   // every node's parent always exists in this update.
@@ -3616,24 +3566,24 @@ pub fn[W : UiA11yWorld] ui_build_a11y_tree_update(
 
 ///|
 /// Extract UI accessibility nodes and send them to the host bridge.
-pub fn[W : UiA11yWorld] ui_a11y_update_system(world : W) -> Unit {
+pub fn ui_a11y_update_system(world : @ecs.World) -> Unit {
   let update = ui_build_a11y_tree_update(world)
   @a11y.a11y_host_apply_update(update)
 }
 
 ///|
-pub fn[W : UiInteractionWorld] ui_interaction_system(world : W) -> Unit {
-  let res = world.get_ui_context_resource()
+pub fn ui_interaction_system(world : @ecs.World) -> Unit {
+  let res = get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
-  let stack_res = world.get_ui_stack_resource()
+  let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
-  let layout_store = world.get_ui_layout_store()
-  let button_store = world.get_button_store()
-  let state_store = world.get_interaction_store()
-  let cursor_store = world.get_relative_cursor_position_store()
-  let focus_store = world.get_focus_policy_store()
-  let clip_store = world.get_calculated_clip_store()
-  let vv_store = world.get_view_visibility_store()
+  let layout_store = get_ui_layout_store(world)
+  let button_store = get_button_store(world)
+  let state_store = get_interaction_store(world)
+  let cursor_store = get_relative_cursor_position_store(world)
+  let focus_store = get_focus_policy_store(world)
+  let clip_store = get_calculated_clip_store(world)
+  let vv_store = @visibility.get_view_visibility_store(world)
   let tick = world.read_change_tick()
   let pointer = ctx0.pointer_pos
   let down = ctx0.pointer_down
@@ -3834,31 +3784,31 @@ fn ui_uv_from_image_rects(
 }
 
 ///|
-pub fn[W : UiRenderExtractWorld] ui_render_extract_system(world : W) -> Unit {
-  let res = world.get_ui_context_resource()
+pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
+  let res = get_ui_context_resource(world)
   guard res.get() is Some(ctx0) else { return }
-  let stack_res = world.get_ui_stack_resource()
+  let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
   @render2d.render2d_clear_overlay_ui_rects(world)
   @render2d.render2d_clear_overlay_ui_box_shadows(world)
   @render2d.render2d_clear_overlay_ui_texture_slices(world)
-  let layout_store = world.get_ui_layout_store()
-  let node_store = world.get_node_store()
-  let bg_store = world.get_background_color_store()
-  let img_store = world.get_ui_image_store()
-  let image_node_store = world.get_image_node_store()
-  let button_store = world.get_button_colors_store()
-  let interaction_store = world.get_interaction_store()
-  let outline_store = world.get_outline_store()
-  let shadow_store = world.get_box_shadow_store()
-  let shadow_samples_store = world.get_ui_box_shadow_samples_store()
-  let border_color_store = world.get_border_color_store()
-  let radius_store = world.get_border_radius_store()
-  let aa_store = world.get_ui_anti_alias_store()
-  let layers_store = world.get_render_layers_store()
-  let scissor_store = world.get_scissor_rect_store()
-  let transform_store = world.get_transform_store()
-  let vv_store = world.get_view_visibility_store()
+  let layout_store = get_ui_layout_store(world)
+  let node_store = get_node_store(world)
+  let bg_store = get_background_color_store(world)
+  let img_store = get_ui_image_store(world)
+  let image_node_store = get_image_node_store(world)
+  let button_store = get_button_colors_store(world)
+  let interaction_store = get_interaction_store(world)
+  let outline_store = get_outline_store(world)
+  let shadow_store = get_box_shadow_store(world)
+  let shadow_samples_store = get_ui_box_shadow_samples_store(world)
+  let border_color_store = get_border_color_store(world)
+  let radius_store = get_border_radius_store(world)
+  let aa_store = get_ui_anti_alias_store(world)
+  let layers_store = @render2d.get_render_layers_store(world)
+  let scissor_store = @render2d.get_scissor_rect_store(world)
+  let transform_store = @math.get_transform_store(world)
+  let vv_store = @visibility.get_view_visibility_store(world)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
       0.0F
@@ -4459,7 +4409,7 @@ pub fn[W : UiRenderExtractWorld] ui_render_extract_system(world : W) -> Unit {
 }
 
 ///|
-pub fn[W : UiPluginWorld] ui_plugin(app : @app.App[W]) -> @app.App[W] {
+pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_pre_update_system_config(
     @app.system(ui_update_context_system).in_set(ui_set_focus),

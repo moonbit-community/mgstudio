@@ -150,50 +150,57 @@ fn recompute_body_mass_properties(
 }
 
 ///|
-pub(open) trait Physics2dResourcesWorld: @core.ChangeTickWorld + HasRes_Physics2dConfig + HasRes_Physics2dContext + HasRes_Physics2dEvents {
+pub(open) trait Physics2dEcsWorld: @core.ChangeTickWorld {
+  as_ecs_world(self : Self) -> @ecs.World
 }
 
 ///|
-pub(open) trait Physics2dCleanupWorld: @core.ChangeTickWorld + Has_RigidBody2d + Has_Collider2d + Has_ImpulseJoint2d + Has_MultibodyJoint2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + Has_RapierImpulseJointHandle2d + Has_RapierMultibodyJointHandle2d + HasRes_Physics2dContext {
+pub impl Physics2dEcsWorld for @ecs.World with as_ecs_world(self) {
+  self
 }
 
 ///|
-pub(open) trait Physics2dSyncInsertionsWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dContext {
-}
+pub(open) trait Physics2dResourcesWorld: Physics2dEcsWorld {}
 
 ///|
-pub(open) trait Physics2dSyncWorldToRapierWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody2d + Has_Collider2d + Has_ColliderParent2d + Has_Velocity2d + Has_Damping2d + Has_GravityScale2d + Has_LockedAxes2d + Has_Ccd2d + Has_Dominance2d + Has_Sleeping2d + Has_ExternalForce2d + Has_ExternalImpulse2d + Has_RigidBodyEnabled2d + Has_AdditionalMassProperties2d + Has_AdditionalSolverIterations2d + Has_ContactForceEventThreshold2d + Has_ColliderDensity2d + Has_Friction2d + Has_FrictionCombineRule2d + Has_Restitution2d + Has_RestitutionCombineRule2d + Has_CollisionGroups2d + Has_SolverGroups2d + Has_ColliderEnabled2d + Has_ActiveCollisionTypes2d + Has_ActiveEvents2d + Has_ActiveHooks2d + Has_ContactSkin2d + Has_ColliderMassProperties2d + Has_RapierBodyHandle2d + Has_RapierColliderHandle2d + HasRes_Physics2dConfig + HasRes_Physics2dContext {
-}
+pub(open) trait Physics2dCleanupWorld: Physics2dEcsWorld {}
 
 ///|
-pub(open) trait Physics2dWritebackWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_Velocity2d + Has_RapierBodyHandle2d + HasRes_Physics2dContext {
-}
+pub(open) trait Physics2dSyncInsertionsWorld: Physics2dEcsWorld {}
+
+///|
+pub(open) trait Physics2dSyncWorldToRapierWorld: Physics2dEcsWorld {}
+
+///|
+pub(open) trait Physics2dWritebackWorld: Physics2dEcsWorld {}
 
 ///|
 pub fn[W : Physics2dResourcesWorld] physics2d_init_resources_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics2d_config_resource()
+  let ecs_world = world.as_ecs_world()
+  let cfg_res = get_physics2d_config_resource(ecs_world)
   if !cfg_res.is_present() {
     cfg_res.insert(Physics2dConfig::default(), tick)
   }
-  let ctx_res = world.get_physics2d_context_resource()
+  let ctx_res = get_physics2d_context_resource(ecs_world)
   if !ctx_res.is_present() {
     ctx_res.insert(Physics2dContext::new(), tick)
   }
-  let ev_res = world.get_physics2d_events_resource()
+  let ev_res = get_physics2d_events_resource(ecs_world)
   if !ev_res.is_present() {
     ev_res.insert(Physics2dEvents::new(), tick)
   }
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + HasRes_Physics2dEvents] physics2d_clear_events_system(
+pub fn[W : Physics2dResourcesWorld] physics2d_clear_events_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ev_res = world.get_physics2d_events_resource()
+  let ecs_world = world.as_ecs_world()
+  let ev_res = get_physics2d_events_resource(ecs_world)
   match ev_res.get_ref_mut(tick) {
     Some(r) => r.val.clear()
     None => ()
@@ -205,17 +212,22 @@ pub fn[W : Physics2dCleanupWorld] physics2d_cleanup_despawned_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics2d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-  let rb_store = world.get_rigid_body2d_store()
-  let col_store = world.get_collider2d_store()
-  let impulse_joint_store = world.get_impulse_joint2d_store()
-  let multibody_joint_store = world.get_multibody_joint2d_store()
-  let body_handle_store = world.get_rapier_body_handle2d_store()
-  let collider_handle_store = world.get_rapier_collider_handle2d_store()
-  let impulse_joint_handle_store = world.get_rapier_impulse_joint_handle2d_store()
-  let multibody_joint_handle_store = world.get_rapier_multibody_joint_handle2d_store()
+  let rb_store = get_rigid_body2d_store(ecs_world)
+  let col_store = get_collider2d_store(ecs_world)
+  let impulse_joint_store = get_impulse_joint2d_store(ecs_world)
+  let multibody_joint_store = get_multibody_joint2d_store(ecs_world)
+  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
+  let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
+  let impulse_joint_handle_store = get_rapier_impulse_joint_handle2d_store(
+    ecs_world,
+  )
+  let multibody_joint_handle_store = get_rapier_multibody_joint_handle2d_store(
+    ecs_world,
+  )
 
   // 1) Remove handles/rapier state when the authoring component is removed.
   let remove_bodies : Array[@core.Entity] = []
@@ -414,39 +426,50 @@ pub fn[W : Physics2dSyncInsertionsWorld] physics2d_sync_insertions_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics2d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-  let transform_store = world.get_transform_store()
-  let vel_store = world.get_velocity2d_store()
-  let damping_store = world.get_damping2d_store()
-  let gravity_scale_store = world.get_gravity_scale2d_store()
-  let locked_axes_store = world.get_locked_axes2d_store()
-  let ccd_store = world.get_ccd2d_store()
-  let dominance_store = world.get_dominance2d_store()
-  let sleeping_store = world.get_sleeping2d_store()
-  let rb_enabled_store = world.get_rigid_body_enabled2d_store()
-  let additional_mass_props_store = world.get_additional_mass_properties2d_store()
-  let additional_solver_iter_store = world.get_additional_solver_iterations2d_store()
-  let contact_force_threshold_store = world.get_contact_force_event_threshold2d_store()
-  let density_store = world.get_collider_density2d_store()
-  let friction_store = world.get_friction2d_store()
-  let friction_rule_store = world.get_friction_combine_rule2d_store()
-  let restitution_store = world.get_restitution2d_store()
-  let restitution_rule_store = world.get_restitution_combine_rule2d_store()
-  let collision_groups_store = world.get_collision_groups2d_store()
-  let solver_groups_store = world.get_solver_groups2d_store()
-  let collider_enabled_store = world.get_collider_enabled2d_store()
-  let active_collision_types_store = world.get_active_collision_types2d_store()
-  let active_events_store = world.get_active_events2d_store()
-  let active_hooks_store = world.get_active_hooks2d_store()
-  let contact_skin_store = world.get_contact_skin2d_store()
-  let collider_mass_props_store = world.get_collider_mass_properties2d_store()
-  let rb_store = world.get_rigid_body2d_store()
-  let col_store = world.get_collider2d_store()
-  let col_parent_store = world.get_collider_parent2d_store()
-  let body_handle_store = world.get_rapier_body_handle2d_store()
-  let collider_handle_store = world.get_rapier_collider_handle2d_store()
+  let transform_store = @math.get_transform_store(ecs_world)
+  let vel_store = get_velocity2d_store(ecs_world)
+  let damping_store = get_damping2d_store(ecs_world)
+  let gravity_scale_store = get_gravity_scale2d_store(ecs_world)
+  let locked_axes_store = get_locked_axes2d_store(ecs_world)
+  let ccd_store = get_ccd2d_store(ecs_world)
+  let dominance_store = get_dominance2d_store(ecs_world)
+  let sleeping_store = get_sleeping2d_store(ecs_world)
+  let rb_enabled_store = get_rigid_body_enabled2d_store(ecs_world)
+  let additional_mass_props_store = get_additional_mass_properties2d_store(
+    ecs_world,
+  )
+  let additional_solver_iter_store = get_additional_solver_iterations2d_store(
+    ecs_world,
+  )
+  let contact_force_threshold_store = get_contact_force_event_threshold2d_store(
+    ecs_world,
+  )
+  let density_store = get_collider_density2d_store(ecs_world)
+  let friction_store = get_friction2d_store(ecs_world)
+  let friction_rule_store = get_friction_combine_rule2d_store(ecs_world)
+  let restitution_store = get_restitution2d_store(ecs_world)
+  let restitution_rule_store = get_restitution_combine_rule2d_store(ecs_world)
+  let collision_groups_store = get_collision_groups2d_store(ecs_world)
+  let solver_groups_store = get_solver_groups2d_store(ecs_world)
+  let collider_enabled_store = get_collider_enabled2d_store(ecs_world)
+  let active_collision_types_store = get_active_collision_types2d_store(
+    ecs_world,
+  )
+  let active_events_store = get_active_events2d_store(ecs_world)
+  let active_hooks_store = get_active_hooks2d_store(ecs_world)
+  let contact_skin_store = get_contact_skin2d_store(ecs_world)
+  let collider_mass_props_store = get_collider_mass_properties2d_store(
+    ecs_world,
+  )
+  let rb_store = get_rigid_body2d_store(ecs_world)
+  let col_store = get_collider2d_store(ecs_world)
+  let col_parent_store = get_collider_parent2d_store(ecs_world)
+  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
+  let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
   let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
 
   // Insert rigid bodies.
@@ -664,8 +687,9 @@ pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_syste
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics2d_config_resource()
-  let ctx_res = world.get_physics2d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let cfg_res = get_physics2d_config_resource(ecs_world)
+  let ctx_res = get_physics2d_context_resource(ecs_world)
   guard cfg_res.get_ref() is Some(cfg_ref) else { return }
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let cfg = cfg_ref.val
@@ -673,38 +697,48 @@ pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_syste
   let dt = @app.fixed_time_timestep_seconds()
   ctx.integration = cfg.integration.set_dt(dt)
   physics2d_apply_global_hooks(ctx)
-  let transform_store = world.get_transform_store()
-  let rb2d_store = world.get_rigid_body2d_store()
-  let col2d_store = world.get_collider2d_store()
-  let col_parent_store = world.get_collider_parent2d_store()
-  let vel_store = world.get_velocity2d_store()
-  let damping_store = world.get_damping2d_store()
-  let gravity_scale_store = world.get_gravity_scale2d_store()
-  let locked_axes_store = world.get_locked_axes2d_store()
-  let ccd_store = world.get_ccd2d_store()
-  let dominance_store = world.get_dominance2d_store()
-  let sleeping_store = world.get_sleeping2d_store()
-  let rb_enabled_store = world.get_rigid_body_enabled2d_store()
-  let additional_mass_props_store = world.get_additional_mass_properties2d_store()
-  let additional_solver_iter_store = world.get_additional_solver_iterations2d_store()
-  let external_force_store = world.get_external_force2d_store()
-  let external_impulse_store = world.get_external_impulse2d_store()
-  let contact_force_threshold_store = world.get_contact_force_event_threshold2d_store()
-  let density_store = world.get_collider_density2d_store()
-  let friction_store = world.get_friction2d_store()
-  let friction_rule_store = world.get_friction_combine_rule2d_store()
-  let restitution_store = world.get_restitution2d_store()
-  let restitution_rule_store = world.get_restitution_combine_rule2d_store()
-  let collision_groups_store = world.get_collision_groups2d_store()
-  let solver_groups_store = world.get_solver_groups2d_store()
-  let collider_enabled_store = world.get_collider_enabled2d_store()
-  let active_collision_types_store = world.get_active_collision_types2d_store()
-  let active_events_store = world.get_active_events2d_store()
-  let active_hooks_store = world.get_active_hooks2d_store()
-  let contact_skin_store = world.get_contact_skin2d_store()
-  let collider_mass_props_store = world.get_collider_mass_properties2d_store()
-  let body_handle_store = world.get_rapier_body_handle2d_store()
-  let collider_handle_store = world.get_rapier_collider_handle2d_store()
+  let transform_store = @math.get_transform_store(ecs_world)
+  let rb2d_store = get_rigid_body2d_store(ecs_world)
+  let col2d_store = get_collider2d_store(ecs_world)
+  let col_parent_store = get_collider_parent2d_store(ecs_world)
+  let vel_store = get_velocity2d_store(ecs_world)
+  let damping_store = get_damping2d_store(ecs_world)
+  let gravity_scale_store = get_gravity_scale2d_store(ecs_world)
+  let locked_axes_store = get_locked_axes2d_store(ecs_world)
+  let ccd_store = get_ccd2d_store(ecs_world)
+  let dominance_store = get_dominance2d_store(ecs_world)
+  let sleeping_store = get_sleeping2d_store(ecs_world)
+  let rb_enabled_store = get_rigid_body_enabled2d_store(ecs_world)
+  let additional_mass_props_store = get_additional_mass_properties2d_store(
+    ecs_world,
+  )
+  let additional_solver_iter_store = get_additional_solver_iterations2d_store(
+    ecs_world,
+  )
+  let external_force_store = get_external_force2d_store(ecs_world)
+  let external_impulse_store = get_external_impulse2d_store(ecs_world)
+  let contact_force_threshold_store = get_contact_force_event_threshold2d_store(
+    ecs_world,
+  )
+  let density_store = get_collider_density2d_store(ecs_world)
+  let friction_store = get_friction2d_store(ecs_world)
+  let friction_rule_store = get_friction_combine_rule2d_store(ecs_world)
+  let restitution_store = get_restitution2d_store(ecs_world)
+  let restitution_rule_store = get_restitution_combine_rule2d_store(ecs_world)
+  let collision_groups_store = get_collision_groups2d_store(ecs_world)
+  let solver_groups_store = get_solver_groups2d_store(ecs_world)
+  let collider_enabled_store = get_collider_enabled2d_store(ecs_world)
+  let active_collision_types_store = get_active_collision_types2d_store(
+    ecs_world,
+  )
+  let active_events_store = get_active_events2d_store(ecs_world)
+  let active_hooks_store = get_active_hooks2d_store(ecs_world)
+  let contact_skin_store = get_contact_skin2d_store(ecs_world)
+  let collider_mass_props_store = get_collider_mass_properties2d_store(
+    ecs_world,
+  )
+  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
+  let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
 
   // Colliders: update authoring properties and keep standalone colliders
   // (no parent rigid body) following Transform.
@@ -902,9 +936,10 @@ pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_syste
 ///|
 pub fn[W : Physics2dResourcesWorld] physics2d_step_system(world : W) -> Unit {
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics2d_config_resource()
-  let ctx_res = world.get_physics2d_context_resource()
-  let ev_res = world.get_physics2d_events_resource()
+  let ecs_world = world.as_ecs_world()
+  let cfg_res = get_physics2d_config_resource(ecs_world)
+  let ctx_res = get_physics2d_context_resource(ecs_world)
+  let ev_res = get_physics2d_events_resource(ecs_world)
   guard cfg_res.get_ref() is Some(cfg_ref) else { return }
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   guard ev_res.get_ref_mut(tick) is Some(ev_ref) else { return }
@@ -982,12 +1017,13 @@ pub fn[W : Physics2dWritebackWorld] physics2d_writeback_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics2d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref() is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-  let transform_store = world.get_transform_store()
-  let vel_store = world.get_velocity2d_store()
-  let body_handle_store = world.get_rapier_body_handle2d_store()
+  let transform_store = @math.get_transform_store(ecs_world)
+  let vel_store = get_velocity2d_store(ecs_world)
+  let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
   body_handle_store.for_each(fn(entity, bh) {
     guard ctx.rigid_bodies.get(bh.handle) is Some(body) else { return }
     let pos = body.position()

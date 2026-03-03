@@ -331,52 +331,42 @@ pub let picking_set_events : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn[W : HasRes_PickingEvents + @core.ChangeTickWorld] picking_clear_system(
-  world : W,
-) -> Unit {
+pub fn picking_clear_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  world.get_picking_events_resource().insert(PickingEvents::default(), tick)
+  get_picking_events_resource(world).insert(PickingEvents::default(), tick)
 }
 
 ///|
-pub fn[W : HasRes_PickingState + @core.ChangeTickWorld] ensure_picking_state_system(
-  world : W,
-) -> Unit {
+pub fn ensure_picking_state_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let res = world.get_picking_state_resource()
+  let res = get_picking_state_resource(world)
   if res.get() is None {
     res.insert(PickingState::default(), tick)
   }
 }
 
 ///|
-pub fn[W : HasRes_PickingHits + @core.ChangeTickWorld] ensure_picking_hits_system(
-  world : W,
-) -> Unit {
+pub fn ensure_picking_hits_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let res = world.get_picking_hits_resource()
+  let res = get_picking_hits_resource(world)
   if res.get() is None {
     res.insert(PickingHits::default(), tick)
   }
 }
 
 ///|
-pub fn[W : HasRes_PointerInputs + @core.ChangeTickWorld] ensure_pointer_inputs_system(
-  world : W,
-) -> Unit {
+pub fn ensure_pointer_inputs_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let res = world.get_pointer_inputs_resource()
+  let res = get_pointer_inputs_resource(world)
   if res.get() is None {
     res.insert(PointerInputs::default(), tick)
   }
 }
 
 ///|
-pub fn[W : HasRes_PointerInputs + @core.ChangeTickWorld] picking_collect_mouse_system(
-  world : W,
-) -> Unit {
+pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let res = world.get_pointer_inputs_resource()
+  let res = get_pointer_inputs_resource(world)
   guard res.get_ref_mut(tick) is Some(inputs) else { return }
   PointerInputs::clear(inputs)
   let pointer : PointerId = 0
@@ -481,42 +471,22 @@ fn sprite_region_size(sprite : @render2d.Sprite) -> @math.Vec2 {
 }
 
 ///|
-pub(open) trait PickingSpriteHitTestWorld: HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @render2d.Has_Sprite + @render2d.Has_Anchor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait PickingUiHitTestWorld: HasRes_PointerInputs + HasRes_PickingHits + @ui.HasRes_UiContext + @ui.HasRes_UiStack + @ui.Has_UiLayout + @ui.Has_Button + @ui.Has_Interaction + @ui.Has_FocusPolicy + @ui.Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait PickingApplyA11yActionsWorld: @a11y.HasRes_A11yState + HasRes_PickingEvents + @ui.Has_Interaction + @ui.Has_ScrollPosition + @ui.Has_Node + @ui.Has_UiLayout + @ui.Has_UiText + @hierarchy.Has_Children + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait PickingGenerateEventsWorld: HasRes_PointerInputs + HasRes_PickingHits + HasRes_PickingEvents + HasRes_PickingState + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait PickingPluginWorld: PickingSpriteHitTestWorld + PickingUiHitTestWorld + PickingApplyA11yActionsWorld + PickingGenerateEventsWorld {
-}
 
 ///|
 /// 2D sprite hit testing backend (orthographic camera, clip-agnostic).
-pub fn[W : PickingSpriteHitTestWorld] picking_sprite2d_hit_test_system(
-  world : W,
-) -> Unit {
+pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let inputs_res = world.get_pointer_inputs_resource()
-  let hits_res = world.get_picking_hits_resource()
+  let inputs_res = get_pointer_inputs_resource(world)
+  let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
   guard hits_res.get_ref_mut(tick) is Some(hits) else { return }
-  let ctx_res = world.get_ui_context_resource()
+  let ctx_res = @ui.get_ui_context_resource(world)
   guard ctx_res.get() is Some(ctx0) else { return }
-  let sprite_store = world.get_sprite_store()
-  let anchor_store = world.get_anchor_store()
-  let transform_store = world.get_transform_store()
-  let global_store = world.get_global_transform_store()
-  let vv_store = world.get_view_visibility_store()
+  let sprite_store = @render2d.get_sprite_store(world)
+  let anchor_store = @render2d.get_anchor_store(world)
+  let transform_store = @math.get_transform_store(world)
+  let global_store = @transform.get_global_transform_store(world)
+  let vv_store = @visibility.get_view_visibility_store(world)
   let cam_translation = @math.Vec2::new(
     ctx0.camera_transform.translation.x,
     ctx0.camera_transform.translation.y,
@@ -618,22 +588,22 @@ pub fn[W : PickingSpriteHitTestWorld] picking_sprite2d_hit_test_system(
 
 ///|
 /// UI hit testing backend (front-to-back, clip aware).
-pub fn[W : PickingUiHitTestWorld] picking_ui_hit_test_system(world : W) -> Unit {
+pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let inputs_res = world.get_pointer_inputs_resource()
-  let hits_res = world.get_picking_hits_resource()
+  let inputs_res = get_pointer_inputs_resource(world)
+  let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
   guard hits_res.get_ref_mut(tick) is Some(hits) else { return }
-  let ctx_res = world.get_ui_context_resource()
+  let ctx_res = @ui.get_ui_context_resource(world)
   guard ctx_res.get() is Some(ctx0) else { return }
-  let stack_res = world.get_ui_stack_resource()
+  let stack_res = @ui.get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
-  let layout_store = world.get_ui_layout_store()
-  let button_store = world.get_button_store()
-  let interaction_store = world.get_interaction_store()
-  let focus_store = world.get_focus_policy_store()
-  let clip_store = world.get_calculated_clip_store()
-  let vv_store = world.get_view_visibility_store()
+  let layout_store = @ui.get_ui_layout_store(world)
+  let button_store = @ui.get_button_store(world)
+  let interaction_store = @ui.get_interaction_store(world)
+  let focus_store = @ui.get_focus_policy_store(world)
+  let clip_store = @ui.get_calculated_clip_store(world)
+  let vv_store = @visibility.get_view_visibility_store(world)
   for input in inputs0.pointers {
     let pointer_id = input.pointer
     let pointer_pos = match input.window_position {
@@ -714,26 +684,24 @@ fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
 
 ///|
 /// Apply host-driven accessibility actions to UI state and picking events.
-pub fn[W : PickingApplyA11yActionsWorld] picking_apply_a11y_actions_system(
-  world : W,
-) -> Unit {
+pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  guard world.get_a11y_state_resource().get_ref_mut(tick) is Some(state) else {
+  guard @a11y.get_a11y_state_resource(world).get_ref_mut(tick) is Some(state) else {
     return
   }
   let actions = @a11y.A11yState::drain_actions(state)
   if actions.length() == 0 {
     return
   }
-  guard world.get_picking_events_resource().get_ref_mut(tick) is Some(events) else {
+  guard get_picking_events_resource(world).get_ref_mut(tick) is Some(events) else {
     return
   }
-  let interaction_store = world.get_interaction_store()
-  let scroll_store = world.get_scroll_position_store()
-  let node_store = world.get_node_store()
-  let layout_store = world.get_ui_layout_store()
-  let ui_text_store = world.get_ui_text_store()
-  let children_store = world.get_children_store()
+  let interaction_store = @ui.get_interaction_store(world)
+  let scroll_store = @ui.get_scroll_position_store(world)
+  let node_store = @ui.get_node_store(world)
+  let layout_store = @ui.get_ui_layout_store(world)
+  let ui_text_store = @ui.get_ui_text_store(world)
+  let children_store = @hierarchy.get_children_store(world)
   let scroll_step = 24.0F
   fn apply_scroll_delta(entity : @core.Entity, dx : Float, dy : Float) -> Unit {
     guard node_store.get(entity) is Some(target_node) else { return }
@@ -898,18 +866,16 @@ pub fn[W : PickingApplyA11yActionsWorld] picking_apply_a11y_actions_system(
 
 ///|
 /// Generate pointer enter/leave/down/up/click events from hit-test results.
-pub fn[W : PickingGenerateEventsWorld] picking_generate_events_system(
-  world : W,
-) -> Unit {
+pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let inputs_res = world.get_pointer_inputs_resource()
-  let hits_res = world.get_picking_hits_resource()
+  let inputs_res = get_pointer_inputs_resource(world)
+  let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
   guard hits_res.get() is Some(hits0) else { return }
-  guard world.get_picking_events_resource().get_ref_mut(tick) is Some(events) else {
+  guard get_picking_events_resource(world).get_ref_mut(tick) is Some(events) else {
     return
   }
-  guard world.get_picking_state_resource().get_ref_mut(tick)
+  guard get_picking_state_resource(world).get_ref_mut(tick)
     is Some(picking_state) else {
     return
   }
@@ -1028,7 +994,7 @@ pub fn[W : PickingGenerateEventsWorld] picking_generate_events_system(
 }
 
 ///|
-pub fn[W : PickingPluginWorld] picking_plugin(app : @app.App[W]) -> @app.App[W] {
+pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_pre_update_system_config(
     @app.system(picking_clear_system).in_set(picking_set_input),

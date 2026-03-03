@@ -13,11 +13,11 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
+/// ECS component bridge types.
 pub let ecs_components : Array[String] = []
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
   "PickingHits", "PickingState", "PickingEvents", "PointerInputs",
 ]
@@ -71,7 +71,7 @@ pub fn[W : HasRes_PointerInputs] get_pointer_inputs_resource(
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
 let bridge_get_picking_hits_resource_by_world : Map[

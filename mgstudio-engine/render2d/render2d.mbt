@@ -3559,8 +3559,8 @@ fn tilemap_chunk_resolve_tileset_grid(chunk : TilemapChunk) -> @math.UVec2 {
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(
-  world : W,
+pub fn render2d_draw_tilemap_chunk(
+  world : @ecs.World,
   chunk : TilemapChunk,
   tile_data : TilemapChunkTileData,
   transform : @math.Transform,
@@ -3852,8 +3852,8 @@ fn bloom2d_pass_scale_factor(
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overlay(
-  world : W,
+pub fn render2d_draw_bloom_overlay(
+  world : @ecs.World,
   source : @asset.Handle[@asset.Image],
   base_transform : @math.Transform,
   settings : Bloom2dSettings,
@@ -4159,24 +4159,42 @@ fn RenderState::new() -> RenderState {
 }
 
 ///|
-fn[W : HasRes_RenderState] render_state_ref(world : W) -> Ref[RenderState]? {
-  world.get_render_state_resource().get_ref()
+pub(open) trait Render2dEcsWorld {
+  as_ecs_world(self : Self) -> @ecs.World
 }
 
 ///|
-fn[W : HasRes_RenderState + @core.ChangeTickWorld] render_state_ref_mut(
+pub impl Render2dEcsWorld for @ecs.World with as_ecs_world(self) {
+  self
+}
+
+///|
+pub(open) trait RenderStateWorld: Render2dEcsWorld {}
+
+///|
+pub(open) trait RenderStateMutWorld: RenderStateWorld + @core.ChangeTickWorld {}
+
+///|
+pub(open) trait Wireframe2dConfigWorld: Render2dEcsWorld + @core.ChangeTickWorld {
+}
+
+///|
+fn[W : RenderStateWorld] render_state_ref(world : W) -> Ref[RenderState]? {
+  get_render_state_resource(world.as_ecs_world()).get_ref()
+}
+
+///|
+fn[W : RenderStateMutWorld] render_state_ref_mut(
   world : W,
 ) -> Ref[RenderState]? {
   let tick = world.read_change_tick()
-  world.get_render_state_resource().get_ref_mut(tick)
+  get_render_state_resource(world.as_ecs_world()).get_ref_mut(tick)
 }
 
 ///|
-fn[W : HasRes_RenderState + @core.ChangeTickWorld] init_render_state_system(
-  world : W,
-) -> Unit {
+fn[W : RenderStateMutWorld] ensure_render_state_resource(world : W) -> Unit {
   let tick = world.read_change_tick()
-  let res = world.get_render_state_resource()
+  let res = get_render_state_resource(world.as_ecs_world())
   if !res.is_present() {
     res.insert(RenderState::new(), tick)
     gizmos_reset()
@@ -4184,22 +4202,21 @@ fn[W : HasRes_RenderState + @core.ChangeTickWorld] init_render_state_system(
 }
 
 ///|
-fn[W : HasRes_Wireframe2dConfig + @core.ChangeTickWorld] init_wireframe2d_resources(
-  world : W,
-) -> Unit {
+fn[W : RenderStateMutWorld] init_render_state_system(world : W) -> Unit {
+  ensure_render_state_resource(world)
+}
+
+///|
+fn[W : Wireframe2dConfigWorld] init_wireframe2d_resources(world : W) -> Unit {
   let tick = world.read_change_tick()
-  let wireframe_config = world.get_wireframe2d_config_resource()
+  let wireframe_config = get_wireframe2d_config_resource(world.as_ecs_world())
   if !wireframe_config.is_present() {
     wireframe_config.insert(Wireframe2dConfig::default(), tick)
   }
 }
 
 ///|
-pub(open) trait Wireframe2dPluginWorld: HasRes_Wireframe2dConfig + @core.ChangeTickWorld {
-}
-
-///|
-pub fn[W : Wireframe2dPluginWorld] wireframe2d_plugin(
+pub fn[W : Wireframe2dConfigWorld] wireframe2d_plugin(
   app : @app.App[W],
 ) -> @app.App[W] {
   app.add_startup_system(init_wireframe2d_resources)
@@ -4754,26 +4771,28 @@ fn compute_sprite_texture_slices(
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(
-  world : W,
+pub fn render2d_create_render_target(
+  world : @ecs.World,
   width : Int,
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
   let id = @window.host_gpu_create_render_target(width~, height~, nearest~)
+  ensure_render_state_resource(world)
   let tick = world.read_change_tick()
-  let res = world.get_render_state_resource()
-  if !res.is_present() {
-    res.insert(RenderState::new(), tick)
-    gizmos_reset()
-  }
-  let rs = res.get_ref_mut(tick).unwrap()
+  let rs = get_render_state_resource(world).get_ref_mut(tick).unwrap()
   rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
   @asset.Handle::new(id)
 }
 
 ///|
-pub(open) trait RenderExtractWorld: HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
+pub(open) trait CameraStoreWorld: Render2dEcsWorld {}
+
+///|
+pub(open) trait RenderExtractStoreWorld: CameraStoreWorld {}
+
+///|
+pub(open) trait RenderExtractWorld: RenderStateMutWorld + Wireframe2dConfigWorld + RenderExtractStoreWorld + @core.SystemContextWorld {
 }
 
 ///|
@@ -4847,7 +4866,7 @@ pub fn Mesh2dBundle::spawn(
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(
+pub fn[W : RenderStateMutWorld] render2d_clear_overlay_sprites(
   world : W,
 ) -> Unit {
   render_state_ref_mut(world).map(fn(rs) { rs.val.extra_sprites.clear() })
@@ -4855,7 +4874,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sp
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprite_texture_slices(
+pub fn[W : RenderStateMutWorld] render2d_clear_overlay_sprite_texture_slices(
   world : W,
 ) -> Unit {
   render_state_ref_mut(world).map(fn(rs) {
@@ -4865,7 +4884,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sp
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
+pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv(
   world : W,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
@@ -4892,7 +4911,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor(
+pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv_scissor(
   world : W,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
@@ -4931,7 +4950,7 @@ pub(all) struct OverlaySpriteUvScissor {
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor_batch(
+pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv_scissor_batch(
   world : W,
   sprites : Array[OverlaySpriteUvScissor],
 ) -> Unit {
@@ -4961,7 +4980,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_s
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_rects(
+pub fn[W : RenderStateMutWorld] render2d_clear_overlay_ui_rects(
   world : W,
 ) -> Unit {
   render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_rects.clear() })
@@ -4969,7 +4988,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_box_shadows(
+pub fn[W : RenderStateMutWorld] render2d_clear_overlay_ui_box_shadows(
   world : W,
 ) -> Unit {
   render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_box_shadows.clear() })
@@ -4977,7 +4996,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_texture_slices(
+pub fn[W : RenderStateMutWorld] render2d_clear_overlay_ui_texture_slices(
   world : W,
 ) -> Unit {
   render_state_ref_mut(world).map(fn(rs) {
@@ -4987,7 +5006,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(
+pub fn[W : RenderStateMutWorld] render2d_push_ui_rect_uv_scissor(
   world : W,
   entity : @core.Entity,
   texture : @asset.Handle[@asset.Image],
@@ -5023,7 +5042,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shadow_scissor(
+pub fn[W : RenderStateMutWorld] render2d_push_ui_box_shadow_scissor(
   world : W,
   entity : @core.Entity,
   texture : @asset.Handle[@asset.Image],
@@ -5057,7 +5076,7 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shad
 }
 
 ///|
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(
+pub fn[W : RenderStateMutWorld] render2d_push_ui_texture_slice_scissor(
   world : W,
   entity : @core.Entity,
   texture : @asset.Handle[@asset.Image],
@@ -5395,7 +5414,7 @@ fn render2d_camera_changed(
 }
 
 ///|
-pub(open) trait CameraSystemWorld: HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + @core.ChangeTickWorld + @core.SystemContextWorld {
+pub(open) trait CameraSystemWorld: RenderStateMutWorld + CameraStoreWorld + @core.SystemContextWorld {
 }
 
 ///|
@@ -5409,10 +5428,11 @@ pub fn[W : CameraSystemWorld] render2d_camera_system(world : W) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let tick = world.read_change_tick()
   let system_ticks = world.get_system_context().ticks()
-  let camera2d_store = world.get_camera2d_store()
-  let camera_store = world.get_camera_store()
-  let projection_store = world.get_projection_store()
-  let target_store = world.get_render_target_store()
+  let ecs_world = world.as_ecs_world()
+  let camera2d_store = get_camera2d_store(ecs_world)
+  let camera_store = get_camera_store(ecs_world)
+  let projection_store = get_projection_store(ecs_world)
+  let target_store = get_render_target_store(ecs_world)
   let render_state = render_state_ref_value.val
   camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
@@ -5632,15 +5652,16 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
   rs.val.sprites.clear()
   rs.val.cameras.clear()
   rs.val.meshes.clear()
-  let camera2d_store = world.get_camera2d_store()
-  let camera_store = world.get_camera_store()
-  let projection_store = world.get_projection_store()
-  let target_store = world.get_render_target_store()
-  let layers_store = world.get_render_layers_store()
-  let bloom2d_store = world.get_bloom2d_store()
-  let view_visibility_store = world.get_view_visibility_store()
-  let transform_store = world.get_transform_store()
-  let global_store = world.get_global_transform_store()
+  let ecs_world = world.as_ecs_world()
+  let camera2d_store = get_camera2d_store(ecs_world)
+  let camera_store = get_camera_store(ecs_world)
+  let projection_store = get_projection_store(ecs_world)
+  let target_store = get_render_target_store(ecs_world)
+  let layers_store = get_render_layers_store(ecs_world)
+  let bloom2d_store = get_bloom2d_store(ecs_world)
+  let view_visibility_store = @visibility.get_view_visibility_store(ecs_world)
+  let transform_store = @math.get_transform_store(ecs_world)
+  let global_store = @transform.get_global_transform_store(ecs_world)
   camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
       Some(t) => t
@@ -5707,9 +5728,9 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
     }
   }
   render2d_prune_bloom2d_auto_targets(rs.val)
-  let sprite_store = world.get_sprite_store()
-  let anchor_store = world.get_anchor_store()
-  let scissor_store = world.get_scissor_rect_store()
+  let sprite_store = get_sprite_store(ecs_world)
+  let anchor_store = get_anchor_store(ecs_world)
+  let scissor_store = get_scissor_rect_store(ecs_world)
   sprite_store.for_each(fn(entity, sprite) {
     if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
       return
@@ -5816,14 +5837,14 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
       })
     }
   })
-  let mesh_store = world.get_mesh2d_store()
-  let gpu_mesh_store = world.get_gpu_mesh2d_store()
-  let color_material_store = world.get_color_material_store()
-  let material_store = world.get_mesh_material2d_store()
-  let wireframe_store = world.get_wireframe2d_store()
-  let no_wireframe_store = world.get_no_wireframe2d_store()
-  let wireframe_color_store = world.get_wireframe2d_color_store()
-  let wireframe_config = if world.get_wireframe2d_config_resource().get_ref()
+  let mesh_store = get_mesh2d_store(ecs_world)
+  let gpu_mesh_store = get_gpu_mesh2d_store(ecs_world)
+  let color_material_store = get_color_material_store(ecs_world)
+  let material_store = get_mesh_material2d_store(ecs_world)
+  let wireframe_store = get_wireframe2d_store(ecs_world)
+  let no_wireframe_store = get_no_wireframe2d_store(ecs_world)
+  let wireframe_color_store = get_wireframe2d_color_store(ecs_world)
+  let wireframe_config = if get_wireframe2d_config_resource(ecs_world).get_ref()
     is Some(config_ref) {
     Some(config_ref.val)
   } else {
@@ -6057,9 +6078,9 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     }
   })
 
-  let wireframe_config = if (try? world.get_resource(ecs_key_wireframe2d_config))
-    is Ok(Some(config)) {
-    Some(config)
+  let wireframe_config = if get_wireframe2d_config_resource(world).get_ref()
+    is Some(config_ref) {
+    Some(config_ref.val)
   } else {
     None
   }
@@ -6647,7 +6668,7 @@ test "render2d: camera viewport scales with dpi resize factor" {
 }
 
 ///|
-pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] render_execute_system(
+pub fn[W : RenderStateMutWorld + CameraPostProcessWorld] render_execute_system(
   world : W,
 ) -> Unit {
   guard render_state_ref_mut(world) is Some(rs) else { return }
@@ -7197,7 +7218,7 @@ pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] 
 }
 
 ///|
-pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(
+pub fn[W : RenderStateWorld] render2d_viewport_to_world_2d(
   world : W,
   screen : @math.Vec2,
 ) -> @math.Vec2? {
@@ -7225,7 +7246,7 @@ pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(
 }
 
 ///|
-pub fn[W : HasRes_RenderState] render2d_world_to_viewport(
+pub fn[W : RenderStateWorld] render2d_world_to_viewport(
   world_ : W,
   world : @math.Vec2,
 ) -> @math.Vec2? {
@@ -7392,7 +7413,7 @@ fn camera_viewport_rect_physical(
 }
 
 ///|
-pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(
+pub fn[W : RenderStateWorld] render2d_debug_log_primary_camera(
   world : W,
 ) -> Unit {
   guard render_state_ref(world) is Some(rs) else { return }

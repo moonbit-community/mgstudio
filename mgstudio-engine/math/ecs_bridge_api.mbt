@@ -13,37 +13,37 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
-pub let ecs_components : Array[String] = ["TextureAtlas"]
+/// ECS component bridge types.
+pub let ecs_components : Array[String] = ["Transform"]
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_TextureAtlas {
-  get_texture_atlas_store(self : Self) -> @core.ComponentStore[TextureAtlas]
+pub(open) trait Has_Transform {
+  get_transform_store(self : Self) -> @core.ComponentStore[Transform]
 }
 
 ///|
-pub fn[W : Has_TextureAtlas] get_texture_atlas_store(
+pub fn[W : Has_Transform] get_transform_store(
   world : W,
-) -> @core.ComponentStore[TextureAtlas] {
-  world.get_texture_atlas_store()
+) -> @core.ComponentStore[Transform] {
+  world.get_transform_store()
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_texture_atlas_store_by_world : Map[
+let bridge_get_transform_store_by_world : Map[
   Int,
-  @core.ComponentStore[TextureAtlas],
+  @core.ComponentStore[Transform],
 ] = {}
 
 ///|
-pub impl Has_TextureAtlas for @ecs.World with get_texture_atlas_store(self) {
-  bridge_get_texture_atlas_store_by_world.get_or_init(self.world_id(), fn() {
+pub impl Has_Transform for @ecs.World with get_transform_store(self) {
+  bridge_get_transform_store_by_world.get_or_init(self.world_id(), fn() {
     @core.ComponentStore::new()
   })
 }

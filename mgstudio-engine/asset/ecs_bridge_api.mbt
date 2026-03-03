@@ -13,41 +13,37 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
-pub let ecs_components : Array[String] = ["GlobalTransform"]
+/// ECS component bridge types.
+pub let ecs_components : Array[String] = ["TextureAtlas"]
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_GlobalTransform {
-  get_global_transform_store(self : Self) -> @core.ComponentStore[
-    GlobalTransform,
-  ]
+pub(open) trait Has_TextureAtlas {
+  get_texture_atlas_store(self : Self) -> @core.ComponentStore[TextureAtlas]
 }
 
 ///|
-pub fn[W : Has_GlobalTransform] get_global_transform_store(
+pub fn[W : Has_TextureAtlas] get_texture_atlas_store(
   world : W,
-) -> @core.ComponentStore[GlobalTransform] {
-  world.get_global_transform_store()
+) -> @core.ComponentStore[TextureAtlas] {
+  world.get_texture_atlas_store()
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_global_transform_store_by_world : Map[
+let bridge_get_texture_atlas_store_by_world : Map[
   Int,
-  @core.ComponentStore[GlobalTransform],
+  @core.ComponentStore[TextureAtlas],
 ] = {}
 
 ///|
-pub impl Has_GlobalTransform for @ecs.World with get_global_transform_store(
-  self,
-) {
-  bridge_get_global_transform_store_by_world.get_or_init(self.world_id(), fn() {
+pub impl Has_TextureAtlas for @ecs.World with get_texture_atlas_store(self) {
+  bridge_get_texture_atlas_store_by_world.get_or_init(self.world_id(), fn() {
     @core.ComponentStore::new()
   })
 }

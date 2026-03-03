@@ -5798,65 +5798,74 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Camera3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
+pub(open) trait Render3dEcsWorld: @core.ChangeTickWorld {
+  as_ecs_world(self : Self) -> @ecs.World
 }
 
 ///|
-pub(open) trait MeshMaterial3dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
+pub impl Render3dEcsWorld for @ecs.World with as_ecs_world(self) {
+  self
 }
+
+///|
+pub(open) trait Camera3dBundleSpawnWorld: Render3dEcsWorld {}
+
+///|
+pub(open) trait MeshMaterial3dBundleSpawnWorld: Render3dEcsWorld {}
 
 ///|
 pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
   self : Camera3dBundle,
   world : W,
 ) -> @core.Entity {
+  let ecs_world = world.as_ecs_world()
   let tick = world.read_change_tick()
-  let entity = world.spawn_empty()
-  world.get_camera3d_store().insert(entity, self.camera3d, tick)
-  world.get_camera_projection3d_store().insert(entity, self.projection, tick)
+  let entity = ecs_world.spawn_empty()
+  get_camera3d_store(ecs_world).insert(entity, self.camera3d, tick)
+  get_camera_projection3d_store(ecs_world).insert(entity, self.projection, tick)
   if self.sub_camera_view is Some(sub_camera_view) {
-    world.get_sub_camera_view3d_store().insert(entity, sub_camera_view, tick)
+    get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, tick)
   }
   if self.screen_space_transmission is Some(screen_space_transmission) {
-    world
-    .get_screen_space_transmission_store()
-    .insert(entity, screen_space_transmission, tick)
+    get_screen_space_transmission_store(ecs_world).insert(
+      entity, screen_space_transmission, tick,
+    )
   }
   if self.screen_space_reflections is Some(screen_space_reflections) {
-    world
-    .get_screen_space_reflections_store()
-    .insert(entity, screen_space_reflections, tick)
+    get_screen_space_reflections_store(ecs_world).insert(
+      entity, screen_space_reflections, tick,
+    )
   }
   if self.bloom is Some(bloom) {
-    world.get_bloom_store().insert(entity, bloom, tick)
+    get_bloom_store(ecs_world).insert(entity, bloom, tick)
   }
   if self.tonemapping is Some(tonemapping) {
-    world.get_tonemapping_store().insert(entity, tonemapping, tick)
+    get_tonemapping_store(ecs_world).insert(entity, tonemapping, tick)
   }
   if self.deband_dither is Some(deband_dither) {
-    world.get_deband_dither_store().insert(entity, deband_dither, tick)
+    get_deband_dither_store(ecs_world).insert(entity, deband_dither, tick)
   }
   if self.chromatic_aberration is Some(chromatic_aberration) {
-    world
-    .get_chromatic_aberration_store()
-    .insert(entity, chromatic_aberration, tick)
+    get_chromatic_aberration_store(ecs_world).insert(
+      entity, chromatic_aberration, tick,
+    )
   }
   if self.vignette is Some(vignette) {
-    world.get_vignette_store().insert(entity, vignette, tick)
+    get_vignette_store(ecs_world).insert(entity, vignette, tick)
   }
   if self.motion_blur is Some(motion_blur) {
-    world.get_motion_blur_store().insert(entity, motion_blur, tick)
+    get_motion_blur_store(ecs_world).insert(entity, motion_blur, tick)
   }
   if self.exposure is Some(exposure) {
-    world.get_exposure_store().insert(entity, exposure, tick)
+    get_exposure_store(ecs_world).insert(entity, exposure, tick)
   }
   if self.color_grading is Some(color_grading) {
-    world.get_color_grading_store().insert(entity, color_grading, tick)
+    get_color_grading_store(ecs_world).insert(entity, color_grading, tick)
   }
-  world.get_camera_store().insert(entity, self.camera, tick)
-  world.get_render_target_store().insert(entity, self.target, tick)
-  world.get_render_layers_store().insert(entity, self.layers, tick)
-  world.get_transform_store().insert(entity, self.transform, tick)
+  @render2d.get_camera_store(ecs_world).insert(entity, self.camera, tick)
+  @render2d.get_render_target_store(ecs_world).insert(entity, self.target, tick)
+  @render2d.get_render_layers_store(ecs_world).insert(entity, self.layers, tick)
+  @math.get_transform_store(ecs_world).insert(entity, self.transform, tick)
   entity
 }
 
@@ -5865,21 +5874,34 @@ pub fn[W : MeshMaterial3dBundleSpawnWorld] MeshMaterial3dBundle::spawn(
   self : MeshMaterial3dBundle,
   world : W,
 ) -> @core.Entity {
+  let ecs_world = world.as_ecs_world()
   let tick = world.read_change_tick()
-  let entity = world.spawn_empty()
-  world.get_mesh3d_store().insert(entity, self.mesh, tick)
-  world.get_mesh_material3d_store().insert(entity, self.material, tick)
-  world.get_render_layers_store().insert(entity, self.layers, tick)
-  world.get_visibility_store().insert(entity, self.visibility, tick)
-  world
-  .get_inherited_visibility_store()
-  .insert(entity, self.inherited_visibility, tick)
-  world.get_view_visibility_store().insert(entity, self.view_visibility, tick)
-  world.get_transform_store().insert(entity, self.transform, tick)
+  let entity = ecs_world.spawn_empty()
+  get_mesh3d_store(ecs_world).insert(entity, self.mesh, tick)
+  get_mesh_material3d_store(ecs_world).insert(entity, self.material, tick)
+  @render2d.get_render_layers_store(ecs_world).insert(entity, self.layers, tick)
+  @visibility.get_visibility_store(ecs_world).insert(
+    entity,
+    self.visibility,
+    tick,
+  )
+  @visibility.get_inherited_visibility_store(ecs_world).insert(
+    entity,
+    self.inherited_visibility,
+    tick,
+  )
+  @visibility.get_view_visibility_store(ecs_world).insert(
+    entity,
+    self.view_visibility,
+    tick,
+  )
+  @math.get_transform_store(ecs_world).insert(entity, self.transform, tick)
   let mesh_id = @render2d.render2d_upload_mesh_handle(self.mesh.mesh)
-  world
-  .get_gpu_mesh2d_store()
-  .insert(entity, @render2d.GpuMesh2d::new(mesh_id), tick)
+  @render2d.get_gpu_mesh2d_store(ecs_world).insert(
+    entity,
+    @render2d.GpuMesh2d::new(mesh_id),
+    tick,
+  )
   entity
 }
 
@@ -6939,24 +6961,19 @@ fn render3d_mesh_wireframe_color(
 }
 
 ///|
-fn[
-  W : HasRes_GlobalAmbientLight + Has_PointLight + Has_DirectionalLight + Has_SpotLight + @math.Has_Transform,
-] render3d_collect_lighting(
-  world : W,
-) -> Render3dLightingState {
+fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   let mut lighting = render3d_default_lighting_state()
-  if world.get_global_ambient_light_resource().get_ref() is Some(ambient) {
+  if (try! world.get_resource(ecs_key_global_ambient_light)) is Some(ambient) {
     lighting = Render3dLightingState::{
       ..lighting,
-      ambient_color: ambient.val.color,
-      ambient_brightness: ambient.val.brightness,
+      ambient_color: ambient.color,
+      ambient_brightness: ambient.brightness,
     }
   }
-  let transform_store = world.get_transform_store()
+  let transform_store = world.component(@math.ecs_key_transform)
+  let directional_light_store = world.component(ecs_key_directional_light)
   let mut directional_found = false
-  world
-  .get_directional_light_store()
-  .for_each(fn(entity, light) {
+  directional_light_store.for_each(fn(entity, light) {
     if directional_found {
       return
     }
@@ -6972,10 +6989,9 @@ fn[
       directional_illuminance: light.illuminance,
     }
   })
+  let point_light_store = world.component(ecs_key_point_light)
   let mut point_found = false
-  world
-  .get_point_light_store()
-  .for_each(fn(entity, light) {
+  point_light_store.for_each(fn(entity, light) {
     if point_found {
       return
     }
@@ -6996,10 +7012,9 @@ fn[
       },
     }
   })
+  let spot_light_store = world.component(ecs_key_spot_light)
   let mut spot_found = false
-  world
-  .get_spot_light_store()
-  .for_each(fn(entity, light) {
+  spot_light_store.for_each(fn(entity, light) {
     if spot_found {
       return
     }
@@ -8704,19 +8719,13 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 }
 
 ///|
-pub(open) trait FreeCameraControllerWorld: Has_FreeCamera + Has_FreeCameraState + @render2d.Has_Camera + @math.Has_Transform + @core.ChangeTickWorld {
-}
-
-///|
-pub fn[W : FreeCameraControllerWorld] run_freecamera_controller(
-  world : W,
-) -> Unit {
+pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = @time.time_delta_seconds()
   let tick = world.read_change_tick()
-  let camera_store = world.get_camera_store()
-  let transform_store = world.get_transform_store()
-  let free_camera_store = world.get_free_camera_store()
-  let free_camera_state_store = world.get_free_camera_state_store()
+  let camera_store = world.component(@render2d.ecs_key_camera)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let free_camera_store = world.component(ecs_key_free_camera)
+  let free_camera_state_store = get_free_camera_state_store(world)
   let mut system_state = free_camera_system_state.val
 
   let controlled_entities : Array[@core.Entity] = []
@@ -8909,21 +8918,15 @@ pub fn[W : FreeCameraControllerWorld] run_freecamera_controller(
 }
 
 ///|
-pub fn[W : FreeCameraControllerWorld] free_camera_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_pre_update_system(run_freecamera_controller)
 }
 
 ///|
-pub(open) trait Render3dPrepareWorld: Has_Mesh3d + @render2d.Has_GpuMesh2d + @core.ChangeTickWorld {
-}
-
-///|
-pub fn[W : Render3dPrepareWorld] render3d_prepare_system(world : W) -> Unit {
+pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let mesh_store = world.get_mesh3d_store()
-  let gpu_mesh_store = world.get_gpu_mesh2d_store()
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let gpu_mesh_store = world.component(@render2d.ecs_key_gpu_mesh2d)
   mesh_store.for_each(fn(entity, mesh) {
     if gpu_mesh_store.get(entity) is Some(_) {
       return
@@ -9038,49 +9041,59 @@ fn render3d_draw_mesh_instance(
 }
 
 ///|
-pub(open) trait Render3dExecuteWorld: HasRes_GlobalAmbientLight + HasRes_WireframeConfig + HasRes_DefaultOpaqueRendererMethod + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Hdr + Has_Fxaa + Has_TemporalJitter + Has_MotionVectorPrepass + Has_TemporalAntiAliasing + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + Has_DepthPrepass + Has_DeferredPrepass + Has_Msaa + Has_ForwardDecal + Has_ForwardDecalMaterialExt + Has_ClusteredDecal + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
-}
-
-///|
-pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
+pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let cameras : Array[Camera3dInstance] = []
   let meshes : Array[Mesh3dInstance] = []
   let reflection_probes : Array[ReflectionProbeInstance] = []
-  let camera3d_store = world.get_camera3d_store()
-  let camera_store = world.get_camera_store()
-  let projection_store = world.get_camera_projection3d_store()
-  let sub_camera_view_store = world.get_sub_camera_view3d_store()
-  let screen_space_transmission_store = world.get_screen_space_transmission_store()
-  let screen_space_reflections_store = world.get_screen_space_reflections_store()
-  let bloom_store = world.get_bloom_store()
-  let tonemapping_store = world.get_tonemapping_store()
-  let deband_dither_store = world.get_deband_dither_store()
-  let chromatic_aberration_store = world.get_chromatic_aberration_store()
-  let vignette_store = world.get_vignette_store()
-  let motion_blur_store = world.get_motion_blur_store()
-  let exposure_store = world.get_exposure_store()
-  let color_grading_store = world.get_color_grading_store()
-  let skybox_store = world.get_skybox_store()
-  let environment_map_light_store = world.get_environment_map_light_store()
-  let generated_environment_map_light_store = world.get_generated_environment_map_light_store()
-  let light_probe_store = world.get_light_probe_store()
-  let hdr_store = world.get_hdr_store()
-  let fxaa_store = world.get_fxaa_store()
-  let temporal_jitter_store = world.get_temporal_jitter_store()
-  let motion_vector_prepass_store = world.get_motion_vector_prepass_store()
-  let temporal_anti_aliasing_store = world.get_temporal_anti_aliasing_store()
-  let target_store = world.get_render_target_store()
-  let layers_store = world.get_render_layers_store()
-  let depth_prepass_store = world.get_depth_prepass_store()
-  let deferred_prepass_store = world.get_deferred_prepass_store()
-  let msaa_store = world.get_msaa_store()
-  let transform_store = world.get_transform_store()
-  let view_visibility_store = world.get_view_visibility_store()
-  let default_opaque_renderer_method = if world
-    .get_default_opaque_renderer_method_resource()
-    .get_ref()
+  let camera3d_store = world.component(ecs_key_camera3d)
+  let camera_store = world.component(@render2d.ecs_key_camera)
+  let projection_store = world.component(ecs_key_camera_projection3d)
+  let sub_camera_view_store = world.component(ecs_key_sub_camera_view3d)
+  let screen_space_transmission_store = world.component(
+    ecs_key_screen_space_transmission,
+  )
+  let screen_space_reflections_store = world.component(
+    ecs_key_screen_space_reflections,
+  )
+  let bloom_store = world.component(ecs_key_bloom)
+  let tonemapping_store = world.component(ecs_key_tonemapping)
+  let deband_dither_store = world.component(ecs_key_deband_dither)
+  let chromatic_aberration_store = world.component(ecs_key_chromatic_aberration)
+  let vignette_store = world.component(ecs_key_vignette)
+  let motion_blur_store = world.component(ecs_key_motion_blur)
+  let exposure_store = world.component(ecs_key_exposure)
+  let color_grading_store = world.component(ecs_key_color_grading)
+  let skybox_store = world.component(ecs_key_skybox)
+  let environment_map_light_store = world.component(
+    ecs_key_environment_map_light,
+  )
+  let generated_environment_map_light_store = world.component(
+    ecs_key_generated_environment_map_light,
+  )
+  let light_probe_store = world.component(ecs_key_light_probe)
+  let hdr_store = world.component(ecs_key_hdr)
+  let fxaa_store = world.component(ecs_key_fxaa)
+  let temporal_jitter_store = world.component(ecs_key_temporal_jitter)
+  let motion_vector_prepass_store = world.component(
+    ecs_key_motion_vector_prepass,
+  )
+  let temporal_anti_aliasing_store = world.component(
+    ecs_key_temporal_anti_aliasing,
+  )
+  let target_store = world.component(@render2d.ecs_key_render_target)
+  let layers_store = world.component(@render2d.ecs_key_render_layers)
+  let depth_prepass_store = world.component(ecs_key_depth_prepass)
+  let deferred_prepass_store = world.component(ecs_key_deferred_prepass)
+  let msaa_store = world.component(ecs_key_msaa)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let view_visibility_store = world.component(
+    @visibility.ecs_key_view_visibility,
+  )
+  let default_opaque_renderer_method = if (try! world.get_resource(
+      ecs_key_default_opaque_renderer_method,
+    ))
     is Some(default_method) {
-    default_method.val.renderer_method()
+    default_method.renderer_method()
   } else {
     OpaqueRendererMethod::Forward
   }
@@ -9185,19 +9198,23 @@ pub fn[W : Render3dExecuteWorld] render3d_execute_system(world : W) -> Unit {
   if cameras.length() == 0 {
     return
   }
-  let mesh_store = world.get_mesh3d_store()
-  let material_store = world.get_mesh_material3d_store()
-  let gpu_mesh_store = world.get_gpu_mesh2d_store()
-  let visibility_range_store = world.get_visibility_range_store()
-  let wireframe_store = world.get_wireframe_store()
-  let no_wireframe_store = world.get_no_wireframe_store()
-  let wireframe_color_store = world.get_wireframe_color_store()
-  let forward_decal_store = world.get_forward_decal_store()
-  let forward_decal_material_ext_store = world.get_forward_decal_material_ext_store()
-  let clustered_decal_store = world.get_clustered_decal_store()
-  let wireframe_config = if world.get_wireframe_config_resource().get_ref()
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let material_store = world.component(ecs_key_mesh_material3d)
+  let gpu_mesh_store = world.component(@render2d.ecs_key_gpu_mesh2d)
+  let visibility_range_store = world.component(
+    @visibility.ecs_key_visibility_range,
+  )
+  let wireframe_store = world.component(ecs_key_wireframe)
+  let no_wireframe_store = world.component(ecs_key_no_wireframe)
+  let wireframe_color_store = world.component(ecs_key_wireframe_color)
+  let forward_decal_store = world.component(ecs_key_forward_decal)
+  let forward_decal_material_ext_store = world.component(
+    ecs_key_forward_decal_material_ext,
+  )
+  let clustered_decal_store = world.component(ecs_key_clustered_decal)
+  let wireframe_config = if (try! world.get_resource(ecs_key_wireframe_config))
     is Some(config) {
-    Some(config.val)
+    Some(config)
   } else {
     None
   }
@@ -10507,10 +10524,6 @@ pub struct MeshRayCastHit {
 }
 
 ///|
-pub(open) trait MeshRayCastWorld: Has_Mesh3d + @math.Has_Transform + @visibility.Has_ViewVisibility {
-}
-
-///|
 fn render3d_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
   a.id == b.id && a.generation == b.generation
 }
@@ -10529,8 +10542,8 @@ fn render3d_entity_in_list(
 }
 
 ///|
-pub fn[W : MeshRayCastWorld] mesh_ray_cast(
-  world : W,
+pub fn mesh_ray_cast(
+  world : @ecs.World,
   origin : @math.Vec3,
   direction : @math.Vec3,
   settings : MeshRayCastSettings,
@@ -10551,9 +10564,11 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast(
   }
   let max_hits = if settings.max_hits <= 0 { 1 } else { settings.max_hits }
   let hits : Array[(@core.Entity, MeshRayCastHit)] = []
-  let mesh_store = world.get_mesh3d_store()
-  let transform_store = world.get_transform_store()
-  let view_visibility_store = world.get_view_visibility_store()
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let view_visibility_store = world.component(
+    @visibility.ecs_key_view_visibility,
+  )
 
   mesh_store.for_each(fn(entity, mesh3d) {
     if settings.only_entities is Some(only_entities) &&
@@ -10625,8 +10640,8 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast(
 }
 
 ///|
-pub fn[W : MeshRayCastWorld] mesh_ray_cast_first(
-  world : W,
+pub fn mesh_ray_cast_first(
+  world : @ecs.World,
   origin : @math.Vec3,
   direction : @math.Vec3,
   settings : MeshRayCastSettings,
@@ -10640,8 +10655,8 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast_first(
 }
 
 ///|
-pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera(
-  world : W,
+pub fn mesh_ray_cast_from_camera(
+  world : @ecs.World,
   screen : @math.Vec2,
   camera : @render2d.Camera,
   projection : CameraProjection3d,
@@ -10661,8 +10676,8 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera(
 }
 
 ///|
-pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera_first(
-  world : W,
+pub fn mesh_ray_cast_from_camera_first(
+  world : @ecs.World,
   screen : @math.Vec2,
   camera : @render2d.Camera,
   projection : CameraProjection3d,
@@ -10842,21 +10857,20 @@ pub fn render3d_camera_world_to_viewport(
 }
 
 ///|
-fn[
-  W : HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + HasRes_DefaultOpaqueRendererMethod + @core.ChangeTickWorld,
-] init_render3d_resources(
-  world : W,
-) -> Unit {
+fn[W : Render3dPluginWorld] init_render3d_resources(world : W) -> Unit {
+  let ecs_world = world.as_ecs_world()
   let tick = world.read_change_tick()
-  let ambient = world.get_global_ambient_light_resource()
+  let ambient = get_global_ambient_light_resource(ecs_world)
   if !ambient.is_present() {
     ambient.insert(GlobalAmbientLight::default(), tick)
   }
-  let point_light_shadow_map = world.get_point_light_shadow_map_resource()
+  let point_light_shadow_map = get_point_light_shadow_map_resource(ecs_world)
   if !point_light_shadow_map.is_present() {
     point_light_shadow_map.insert(PointLightShadowMap::default(), tick)
   }
-  let default_opaque_renderer_method = world.get_default_opaque_renderer_method_resource()
+  let default_opaque_renderer_method = get_default_opaque_renderer_method_resource(
+    ecs_world,
+  )
   if !default_opaque_renderer_method.is_present() {
     default_opaque_renderer_method.insert(
       DefaultOpaqueRendererMethod::forward(),
@@ -10866,19 +10880,17 @@ fn[
 }
 
 ///|
-fn[W : HasRes_WireframeConfig + @core.ChangeTickWorld] init_wireframe_resources(
-  world : W,
-) -> Unit {
+fn[W : WireframePluginWorld] init_wireframe_resources(world : W) -> Unit {
+  let ecs_world = world.as_ecs_world()
   let tick = world.read_change_tick()
-  let wireframe_config = world.get_wireframe_config_resource()
+  let wireframe_config = get_wireframe_config_resource(ecs_world)
   if !wireframe_config.is_present() {
     wireframe_config.insert(WireframeConfig::default(), tick)
   }
 }
 
 ///|
-pub(open) trait WireframePluginWorld: HasRes_WireframeConfig + @core.ChangeTickWorld {
-}
+pub(open) trait WireframePluginWorld: Render3dEcsWorld {}
 
 ///|
 pub fn[W : WireframePluginWorld] wireframe_plugin(
@@ -10888,13 +10900,10 @@ pub fn[W : WireframePluginWorld] wireframe_plugin(
 }
 
 ///|
-pub(open) trait Render3dPluginWorld: HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + HasRes_DefaultOpaqueRendererMethod + Render3dPrepareWorld + Render3dExecuteWorld {
-}
+pub(open) trait Render3dPluginWorld: Render3dEcsWorld {}
 
 ///|
-pub fn[W : Render3dPluginWorld] render3d_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_startup_system(init_render3d_resources)
   .add_system(render3d_prepare_system)

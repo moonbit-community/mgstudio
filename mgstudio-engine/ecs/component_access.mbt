@@ -15,7 +15,7 @@
 ///|
 /// Component-key-based accessor that mirrors `ComponentStore` operations.
 ///
-/// This is used to migrate legacy store-style callsites to key-based ECS
+/// This is used to migrate store-style callsites to key-based ECS
 /// without requiring an immediate rewrite to query helpers.
 pub struct ComponentAccess[T] {
   world : World

@@ -919,6 +919,16 @@ pub fn AnimationNodeIndex::index(self : AnimationNodeIndex) -> Int {
 }
 
 ///|
+pub impl ToJson for AnimationNodeIndex with to_json(self) {
+  self.index.to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimationNodeIndex with from_json(json, path) {
+  AnimationNodeIndex::new(@json.from_json(json, path~))
+}
+
+///|
 pub(all) enum AnimationNodeType {
   Clip(@asset.Handle[AnimationClip])
   Blend
@@ -1453,6 +1463,26 @@ pub(all) enum RepeatAnimation {
 }
 
 ///|
+pub impl ToJson for RepeatAnimation with to_json(self) {
+  match self {
+    RepeatAnimation::Never => (0, 0).to_json()
+    RepeatAnimation::Count(count) => (1, count).to_json()
+    RepeatAnimation::Forever => (2, 0).to_json()
+  }
+}
+
+///|
+pub impl @json.FromJson for RepeatAnimation with from_json(json, path) {
+  let (tag, payload) : (Int, Int) = @json.from_json(json, path~)
+  match tag {
+    0 => RepeatAnimation::Never
+    1 => RepeatAnimation::Count(payload)
+    2 => RepeatAnimation::Forever
+    _ => RepeatAnimation::Never
+  }
+}
+
+///|
 pub struct ActiveAnimation {
   mut weight : Float
   mut repeat : RepeatAnimation
@@ -1463,6 +1493,50 @@ pub struct ActiveAnimation {
   mut completions : Int
   mut just_completed : Bool
   mut paused : Bool
+}
+
+///|
+pub impl ToJson for ActiveAnimation with to_json(self) {
+  (
+    self.weight,
+    self.repeat,
+    self.speed,
+    self.elapsed,
+    self.seek_time,
+    self.last_seek_time,
+    self.completions,
+    self.just_completed,
+    self.paused,
+  ).to_json()
+}
+
+///|
+pub impl @json.FromJson for ActiveAnimation with from_json(json, path) {
+  let (
+    weight,
+    repeat,
+    speed,
+    elapsed,
+    seek_time,
+    last_seek_time,
+    completions,
+    just_completed,
+    paused,
+  ) : (Float, RepeatAnimation, Float, Float, Float, Float?, Int, Bool, Bool) = @json.from_json(
+    json,
+    path~,
+  )
+  ActiveAnimation::{
+    weight,
+    repeat,
+    speed,
+    elapsed,
+    seek_time,
+    last_seek_time,
+    completions,
+    just_completed,
+    paused,
+  }
 }
 
 ///|
@@ -1702,6 +1776,20 @@ pub struct AnimationPlayer {
 }
 
 ///|
+pub impl ToJson for AnimationPlayer with to_json(self) {
+  self.active_animations.to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimationPlayer with from_json(json, path) {
+  let active_animations : Array[(AnimationNodeIndex, ActiveAnimation)] = @json.from_json(
+    json,
+    path~,
+  )
+  AnimationPlayer::{ active_animations, }
+}
+
+///|
 pub fn AnimationPlayer::default() -> AnimationPlayer {
   AnimationPlayer::{ active_animations: [] }
 }
@@ -1863,6 +1951,21 @@ pub struct AnimationTransition {
 }
 
 ///|
+pub impl ToJson for AnimationTransition with to_json(self) {
+  (self.current_weight, self.weight_decline_per_sec, self.animation).to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimationTransition with from_json(json, path) {
+  let (current_weight, weight_decline_per_sec, animation) : (
+    Float,
+    Float,
+    AnimationNodeIndex,
+  ) = @json.from_json(json, path~)
+  AnimationTransition::{ current_weight, weight_decline_per_sec, animation }
+}
+
+///|
 fn animation_transition_new(
   current_weight : Float,
   weight_decline_per_sec : Float,
@@ -1875,6 +1978,20 @@ fn animation_transition_new(
 pub struct AnimationTransitions {
   mut main_animation : AnimationNodeIndex?
   transitions : Array[AnimationTransition]
+}
+
+///|
+pub impl ToJson for AnimationTransitions with to_json(self) {
+  (self.main_animation, self.transitions).to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimationTransitions with from_json(json, path) {
+  let (main_animation, transitions) : (
+    AnimationNodeIndex?,
+    Array[AnimationTransition],
+  ) = @json.from_json(json, path~)
+  AnimationTransitions::{ main_animation, transitions }
 }
 
 ///|
@@ -2014,6 +2131,16 @@ pub struct AnimationGraphHandle {
 }
 
 ///|
+pub impl ToJson for AnimationGraphHandle with to_json(self) {
+  self.graph.to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimationGraphHandle with from_json(json, path) {
+  AnimationGraphHandle::new(@json.from_json(json, path~))
+}
+
+///|
 pub fn AnimationGraphHandle::new(
   graph : @asset.Handle[AnimationGraph],
 ) -> AnimationGraphHandle {
@@ -2030,6 +2157,16 @@ pub fn AnimationGraphHandle::graph(
 ///|
 pub struct AnimationWeights {
   values : Array[Float]
+}
+
+///|
+pub impl ToJson for AnimationWeights with to_json(self) {
+  self.values.to_json()
+}
+
+///|
+pub impl @json.FromJson for AnimationWeights with from_json(json, path) {
+  AnimationWeights::new(@json.from_json(json, path~))
 }
 
 ///|
@@ -2366,44 +2503,36 @@ pub let animation_set_expire_transitions : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub(open) trait AdvanceTransitionsWorld: Has_AnimationTransitions + Has_AnimationPlayer + @core.ChangeTickWorld {
-}
+pub let ecs_key_animation_graph_handle : @ecs.ComponentKey[AnimationGraphHandle] = @ecs.register_component(
+  debug_name="animation.animation_graph_handle",
+)
 
 ///|
-pub(open) trait AdvanceAnimationsWorld: Has_AnimationPlayer + Has_AnimationGraphHandle + @core.ChangeTickWorld {
-}
+pub let ecs_key_animation_transitions : @ecs.ComponentKey[AnimationTransitions] = @ecs.register_component(
+  debug_name="animation.animation_transitions",
+)
 
 ///|
-pub(open) trait AnimateTargetsWorld: Has_AnimationTargetId + Has_AnimatedBy + Has_AnimationPlayer + Has_AnimationGraphHandle + @math.Has_Transform + Has_AnimationWeights + @core.ChangeTickWorld {
-}
+pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights] = @ecs.register_component(
+  debug_name="animation.animation_weights",
+)
 
 ///|
-pub(open) trait TriggerEventsWorld: Has_AnimationPlayer + Has_AnimationGraphHandle + Has_AnimationTargetId + Has_AnimatedBy + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait ExpireTransitionsWorld: Has_AnimationTransitions + Has_AnimationPlayer + @core.ChangeTickWorld {
-}
-
-///|
-pub(open) trait AnimationPluginWorld: AdvanceTransitionsWorld + AdvanceAnimationsWorld + AnimateTargetsWorld + TriggerEventsWorld + ExpireTransitionsWorld {
-}
-
-///|
-pub fn[W] thread_animation_graphs(_world : W) -> Unit {
+pub fn thread_animation_graphs(_world : @ecs.World) -> Unit {
   // Stub for future threaded graph acceleration structures.
 }
 
 ///|
-pub fn[W : AdvanceTransitionsWorld] advance_transitions(world : W) -> Unit {
-  let transitions_store = world.get_animation_transitions_store()
-  let player_store = world.get_animation_player_store()
-  let tick = world.read_change_tick()
+pub fn advance_transitions(world : @ecs.World) -> Unit {
   let delta_seconds = @time.time_delta_seconds()
 
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
-  transitions_store.for_each(fn(entity, transitions) {
-    guard player_store.get(entity) is Some(player) else { return }
+  try! world
+  .query1(ecs_key_animation_transitions)
+  .view(fn(entity, transitions) {
+    guard (try! world.get(entity, ecs_key_animation_player)) is Some(player) else {
+      return
+    }
     let (next_transitions, next_player) = animation_transitions_advance(
       transitions, player, delta_seconds,
     )
@@ -2411,21 +2540,23 @@ pub fn[W : AdvanceTransitionsWorld] advance_transitions(world : W) -> Unit {
   })
 
   for update in updates {
-    transitions_store.set(update.0, update.1, tick) |> ignore
-    player_store.set(update.0, update.2, tick) |> ignore
+    try! world.set(update.0, ecs_key_animation_transitions, update.1)
+    try! world.set(update.0, ecs_key_animation_player, update.2)
   }
 }
 
 ///|
-pub fn[W : AdvanceAnimationsWorld] advance_animations(world : W) -> Unit {
-  let player_store = world.get_animation_player_store()
-  let graph_handle_store = world.get_animation_graph_handle_store()
-  let tick = world.read_change_tick()
+pub fn advance_animations(world : @ecs.World) -> Unit {
   let delta_seconds = @time.time_delta_seconds()
 
   let updates : Array[(@core.Entity, AnimationPlayer)] = []
-  player_store.for_each(fn(entity, player) {
-    guard graph_handle_store.get(entity) is Some(graph_handle) else { return }
+  try! world
+  .query1(ecs_key_animation_player)
+  .view(fn(entity, player) {
+    guard (try! world.get(entity, ecs_key_animation_graph_handle))
+      is Some(graph_handle) else {
+      return
+    }
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
@@ -2433,27 +2564,28 @@ pub fn[W : AdvanceAnimationsWorld] advance_animations(world : W) -> Unit {
   })
 
   for update in updates {
-    player_store.set(update.0, update.1, tick) |> ignore
+    try! world.set(update.0, ecs_key_animation_player, update.1)
   }
 }
 
 ///|
-pub fn[W : AnimateTargetsWorld] animate_targets(world : W) -> Unit {
-  let target_id_store = world.get_animation_target_id_store()
-  let animated_by_store = world.get_animated_by_store()
-  let player_store = world.get_animation_player_store()
-  let graph_handle_store = world.get_animation_graph_handle_store()
-  let transform_store = world.get_transform_store()
-  let weights_store = world.get_animation_weights_store()
-  let tick = world.read_change_tick()
-
+pub fn animate_targets(world : @ecs.World) -> Unit {
   let transform_updates : Array[(@core.Entity, @math.Transform)] = []
   let weights_updates : Array[(@core.Entity, AnimationWeights)] = []
 
-  target_id_store.for_each(fn(entity, target_id) {
-    guard animated_by_store.get(entity) is Some(animated_by) else { return }
-    guard player_store.get(animated_by.player()) is Some(player) else { return }
-    guard graph_handle_store.get(animated_by.player()) is Some(graph_handle) else {
+  try! world
+  .query1(ecs_key_animation_target_id)
+  .view(fn(entity, target_id) {
+    guard (try! world.get(entity, ecs_key_animated_by)) is Some(animated_by) else {
+      return
+    }
+    let player_entity = animated_by.player()
+    guard (try! world.get(player_entity, ecs_key_animation_player))
+      is Some(player) else {
+      return
+    }
+    guard (try! world.get(player_entity, ecs_key_animation_graph_handle))
+      is Some(graph_handle) else {
       return
     }
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
@@ -2466,8 +2598,8 @@ pub fn[W : AnimateTargetsWorld] animate_targets(world : W) -> Unit {
       target_mask,
       player,
       graph,
-      transform_store.get(entity),
-      weights_store.get(entity),
+      try! world.get(entity, @math.ecs_key_transform),
+      try! world.get(entity, ecs_key_animation_weights),
     )
 
     if next_transform is Some(transform) {
@@ -2479,36 +2611,27 @@ pub fn[W : AnimateTargetsWorld] animate_targets(world : W) -> Unit {
   })
 
   for update in transform_updates {
-    if transform_store.contains(update.0) {
-      transform_store.set(update.0, update.1, tick) |> ignore
-    } else {
-      transform_store.insert(update.0, update.1, tick)
-    }
+    try! world.set(update.0, @math.ecs_key_transform, update.1)
   }
 
   for update in weights_updates {
-    if weights_store.contains(update.0) {
-      weights_store.set(update.0, update.1, tick) |> ignore
-    } else {
-      weights_store.insert(update.0, update.1, tick)
-    }
+    try! world.set(update.0, ecs_key_animation_weights, update.1)
   }
 }
 
 ///|
-pub fn[W : TriggerEventsWorld] trigger_events(world : W) -> Unit {
-  let player_store = world.get_animation_player_store()
-  let graph_handle_store = world.get_animation_graph_handle_store()
-  let target_id_store = world.get_animation_target_id_store()
-  let animated_by_store = world.get_animated_by_store()
+pub fn trigger_events(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
     tick,
   )
 
   // Root (untargeted) events fire on the player entity.
-  player_store.for_each(fn(player_entity, player) {
-    guard graph_handle_store.get(player_entity) is Some(graph_handle) else {
+  try! world
+  .query1(ecs_key_animation_player)
+  .view(fn(player_entity, player) {
+    guard (try! world.get(player_entity, ecs_key_animation_graph_handle))
+      is Some(graph_handle) else {
       return
     }
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
@@ -2542,13 +2665,20 @@ pub fn[W : TriggerEventsWorld] trigger_events(world : W) -> Unit {
   })
 
   // Targeted events fire on the animated target entity.
-  target_id_store.for_each(fn(target_entity, target_id) {
-    guard animated_by_store.get(target_entity) is Some(animated_by) else {
+  try! world
+  .query1(ecs_key_animation_target_id)
+  .view(fn(target_entity, target_id) {
+    guard (try! world.get(target_entity, ecs_key_animated_by))
+      is Some(animated_by) else {
       return
     }
     let player_entity = animated_by.player()
-    guard player_store.get(player_entity) is Some(player) else { return }
-    guard graph_handle_store.get(player_entity) is Some(graph_handle) else {
+    guard (try! world.get(player_entity, ecs_key_animation_player))
+      is Some(player) else {
+      return
+    }
+    guard (try! world.get(player_entity, ecs_key_animation_graph_handle))
+      is Some(graph_handle) else {
       return
     }
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
@@ -2591,14 +2721,14 @@ pub fn[W : TriggerEventsWorld] trigger_events(world : W) -> Unit {
 }
 
 ///|
-pub fn[W : ExpireTransitionsWorld] expire_transitions(world : W) -> Unit {
-  let transitions_store = world.get_animation_transitions_store()
-  let player_store = world.get_animation_player_store()
-  let tick = world.read_change_tick()
-
+pub fn expire_transitions(world : @ecs.World) -> Unit {
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
-  transitions_store.for_each(fn(entity, transitions) {
-    guard player_store.get(entity) is Some(player) else { return }
+  try! world
+  .query1(ecs_key_animation_transitions)
+  .view(fn(entity, transitions) {
+    guard (try! world.get(entity, ecs_key_animation_player)) is Some(player) else {
+      return
+    }
     let (next_transitions, next_player) = animation_transitions_expire(
       transitions, player,
     )
@@ -2606,15 +2736,13 @@ pub fn[W : ExpireTransitionsWorld] expire_transitions(world : W) -> Unit {
   })
 
   for update in updates {
-    transitions_store.set(update.0, update.1, tick) |> ignore
-    player_store.set(update.0, update.2, tick) |> ignore
+    try! world.set(update.0, ecs_key_animation_transitions, update.1)
+    try! world.set(update.0, ecs_key_animation_player, update.2)
   }
 }
 
 ///|
-pub fn[W : AnimationPluginWorld] animation_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_post_update_system_config(
     @app.system(thread_animation_graphs).in_set(animation_set_thread),

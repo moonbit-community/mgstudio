@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
+/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Hdr", "Fxaa", "Msaa", "Bloom", "Mesh3d", "Skybox", "Camera3d", "Exposure", "Vignette",
   "SpotLight", "Wireframe", "FreeCamera", "LightProbe", "MotionBlur", "PointLight",
@@ -29,7 +29,7 @@ pub let ecs_components : Array[String] = [
 ]
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
   "WireframeConfig", "GlobalAmbientLight", "PointLightShadowMap", "DirectionalLightShadowMap",
   "DefaultOpaqueRendererMethod",
@@ -770,7 +770,7 @@ pub fn[W : HasRes_DefaultOpaqueRendererMethod] get_default_opaque_renderer_metho
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
 let bridge_get_hdr_store_by_world : Map[Int, @core.ComponentStore[Hdr]] = {}

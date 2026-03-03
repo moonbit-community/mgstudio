@@ -43,50 +43,57 @@ fn make_collider_builder(
 }
 
 ///|
-pub(open) trait Physics3dResourcesWorld: @core.ChangeTickWorld + HasRes_Physics3dConfig + HasRes_Physics3dContext + HasRes_Physics3dEvents {
+pub(open) trait Physics3dEcsWorld: @core.ChangeTickWorld {
+  as_ecs_world(self : Self) -> @ecs.World
 }
 
 ///|
-pub(open) trait Physics3dCleanupWorld: @core.ChangeTickWorld + Has_RigidBody3d + Has_Collider3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
+pub impl Physics3dEcsWorld for @ecs.World with as_ecs_world(self) {
+  self
 }
 
 ///|
-pub(open) trait Physics3dSyncInsertionsWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_Collider3d + Has_ActiveCollisionTypes3d + Has_ActiveEvents3d + Has_ContactForceEventThreshold3d + Has_ActiveHooks3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
-}
+pub(open) trait Physics3dResourcesWorld: Physics3dEcsWorld {}
 
 ///|
-pub(open) trait Physics3dSyncWorldToRapierWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_RigidBody3d + Has_ActiveCollisionTypes3d + Has_ActiveEvents3d + Has_ContactForceEventThreshold3d + Has_ActiveHooks3d + Has_Velocity3d + Has_RapierBodyHandle3d + Has_RapierColliderHandle3d + HasRes_Physics3dContext {
-}
+pub(open) trait Physics3dCleanupWorld: Physics3dEcsWorld {}
 
 ///|
-pub(open) trait Physics3dWritebackWorld: @core.ChangeTickWorld + @math.Has_Transform + Has_Velocity3d + Has_RapierBodyHandle3d + HasRes_Physics3dContext {
-}
+pub(open) trait Physics3dSyncInsertionsWorld: Physics3dEcsWorld {}
+
+///|
+pub(open) trait Physics3dSyncWorldToRapierWorld: Physics3dEcsWorld {}
+
+///|
+pub(open) trait Physics3dWritebackWorld: Physics3dEcsWorld {}
 
 ///|
 pub fn[W : Physics3dResourcesWorld] physics3d_init_resources_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics3d_config_resource()
+  let ecs_world = world.as_ecs_world()
+  let cfg_res = get_physics3d_config_resource(ecs_world)
   if !cfg_res.is_present() {
     cfg_res.insert(Physics3dConfig::default(), tick)
   }
-  let ctx_res = world.get_physics3d_context_resource()
+  let ctx_res = get_physics3d_context_resource(ecs_world)
   if !ctx_res.is_present() {
     ctx_res.insert(Physics3dContext::new(), tick)
   }
-  let ev_res = world.get_physics3d_events_resource()
+  let ev_res = get_physics3d_events_resource(ecs_world)
   if !ev_res.is_present() {
     ev_res.insert(Physics3dEvents::new(), tick)
   }
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + HasRes_Physics3dEvents] physics3d_clear_events_system(
+pub fn[W : Physics3dResourcesWorld] physics3d_clear_events_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ev_res = world.get_physics3d_events_resource()
+  let ecs_world = world.as_ecs_world()
+  let ev_res = get_physics3d_events_resource(ecs_world)
   match ev_res.get_ref_mut(tick) {
     Some(r) => r.val.clear()
     None => ()
@@ -98,13 +105,14 @@ pub fn[W : Physics3dCleanupWorld] physics3d_cleanup_despawned_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics3d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-  let rb_store = world.get_rigid_body3d_store()
-  let col_store = world.get_collider3d_store()
-  let body_handle_store = world.get_rapier_body_handle3d_store()
-  let collider_handle_store = world.get_rapier_collider_handle3d_store()
+  let rb_store = get_rigid_body3d_store(ecs_world)
+  let col_store = get_collider3d_store(ecs_world)
+  let body_handle_store = get_rapier_body_handle3d_store(ecs_world)
+  let collider_handle_store = get_rapier_collider_handle3d_store(ecs_world)
 
   // 1) Remove handles/rapier state when the authoring component is removed.
   let remove_bodies : Array[@core.Entity] = []
@@ -190,19 +198,24 @@ pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics3d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-  let transform_store = world.get_transform_store()
-  let vel_store = world.get_velocity3d_store()
-  let rb_store = world.get_rigid_body3d_store()
-  let col_store = world.get_collider3d_store()
-  let active_collision_types_store = world.get_active_collision_types3d_store()
-  let active_events_store = world.get_active_events3d_store()
-  let contact_force_threshold_store = world.get_contact_force_event_threshold3d_store()
-  let active_hooks_store = world.get_active_hooks3d_store()
-  let body_handle_store = world.get_rapier_body_handle3d_store()
-  let collider_handle_store = world.get_rapier_collider_handle3d_store()
+  let transform_store = @math.get_transform_store(ecs_world)
+  let vel_store = get_velocity3d_store(ecs_world)
+  let rb_store = get_rigid_body3d_store(ecs_world)
+  let col_store = get_collider3d_store(ecs_world)
+  let active_collision_types_store = get_active_collision_types3d_store(
+    ecs_world,
+  )
+  let active_events_store = get_active_events3d_store(ecs_world)
+  let contact_force_threshold_store = get_contact_force_event_threshold3d_store(
+    ecs_world,
+  )
+  let active_hooks_store = get_active_hooks3d_store(ecs_world)
+  let body_handle_store = get_rapier_body_handle3d_store(ecs_world)
+  let collider_handle_store = get_rapier_collider_handle3d_store(ecs_world)
 
   // Insert rigid bodies.
   rb_store.for_each(fn(entity, rb3d) {
@@ -322,20 +335,25 @@ pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_syste
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics3d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
   let dt = @app.fixed_time_timestep_seconds()
   ctx.integration = ctx.integration.set_dt(dt)
-  let transform_store = world.get_transform_store()
-  let rb3d_store = world.get_rigid_body3d_store()
-  let active_collision_types_store = world.get_active_collision_types3d_store()
-  let active_events_store = world.get_active_events3d_store()
-  let contact_force_threshold_store = world.get_contact_force_event_threshold3d_store()
-  let active_hooks_store = world.get_active_hooks3d_store()
-  let vel_store = world.get_velocity3d_store()
-  let body_handle_store = world.get_rapier_body_handle3d_store()
-  let collider_handle_store = world.get_rapier_collider_handle3d_store()
+  let transform_store = @math.get_transform_store(ecs_world)
+  let rb3d_store = get_rigid_body3d_store(ecs_world)
+  let active_collision_types_store = get_active_collision_types3d_store(
+    ecs_world,
+  )
+  let active_events_store = get_active_events3d_store(ecs_world)
+  let contact_force_threshold_store = get_contact_force_event_threshold3d_store(
+    ecs_world,
+  )
+  let active_hooks_store = get_active_hooks3d_store(ecs_world)
+  let vel_store = get_velocity3d_store(ecs_world)
+  let body_handle_store = get_rapier_body_handle3d_store(ecs_world)
+  let collider_handle_store = get_rapier_collider_handle3d_store(ecs_world)
   collider_handle_store.for_each(fn(entity, ch) {
     guard ctx.colliders.get_mut(ch.handle) is Some(collider) else { return }
     if active_collision_types_store.get(entity) is Some(active_types) {
@@ -386,9 +404,10 @@ pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_syste
 ///|
 pub fn[W : Physics3dResourcesWorld] physics3d_step_system(world : W) -> Unit {
   let tick = world.read_change_tick()
-  let cfg_res = world.get_physics3d_config_resource()
-  let ctx_res = world.get_physics3d_context_resource()
-  let ev_res = world.get_physics3d_events_resource()
+  let ecs_world = world.as_ecs_world()
+  let cfg_res = get_physics3d_config_resource(ecs_world)
+  let ctx_res = get_physics3d_context_resource(ecs_world)
+  let ev_res = get_physics3d_events_resource(ecs_world)
   guard cfg_res.get_ref() is Some(cfg_ref) else { return }
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   guard ev_res.get_ref_mut(tick) is Some(ev_ref) else { return }
@@ -453,12 +472,13 @@ pub fn[W : Physics3dWritebackWorld] physics3d_writeback_system(
   world : W,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let ctx_res = world.get_physics3d_context_resource()
+  let ecs_world = world.as_ecs_world()
+  let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref() is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
-  let transform_store = world.get_transform_store()
-  let vel_store = world.get_velocity3d_store()
-  let body_handle_store = world.get_rapier_body_handle3d_store()
+  let transform_store = @math.get_transform_store(ecs_world)
+  let vel_store = get_velocity3d_store(ecs_world)
+  let body_handle_store = get_rapier_body_handle3d_store(ecs_world)
   body_handle_store.for_each(fn(entity, bh) {
     guard ctx.rigid_bodies.get(bh.handle) is Some(body) else { return }
     let pos = body.position()

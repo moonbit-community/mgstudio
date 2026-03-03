@@ -202,7 +202,7 @@ fn render_rotation_demo() -> String {
   // (latest registry).
   "///|\n" +
   "pub fn game_app() -> Unit {\n" +
-  "  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()\n" +
+  "  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()\n" +
   "  @app.App::new(@ecs.World::new())\n" +
   "  .add_plugins(plugins)\n" +
   "  .add_startup_system(rotation_setup)\n" +
@@ -230,17 +230,9 @@ fn render_rotation_demo() -> String {
   ") -> Unit {\n" +
   "  let delta_secs = @time.time_delta_seconds()\n" +
   "  let speed = 1.0F\n" +
-  "  try! query.update(fn(_entity, transform, sprite) {\n" +
+  "  try! query.for_each(fn(_entity, transform, _sprite) {\n" +
   "    let next_rotation_z = transform.rotation_z() + speed * delta_secs\n" +
-  "    (\n" +
-  "      @math.Transform::from_xy_rotation_scale(\n" +
-  "      @math.Vec2::new(transform.translation.x, transform.translation.y),\n" +
-  "      next_rotation_z,\n" +
-  "      @math.Vec2::new(transform.scale.x, transform.scale.y),\n" +
-  "      z=transform.translation.z,\n" +
-  "      ),\n" +
-  "      sprite,\n" +
-  "    )\n" +
+  "    transform.rotation = @math.Quat::from_rotation_z(next_rotation_z)\n" +
   "  })\n" +
   "}\n"
 }

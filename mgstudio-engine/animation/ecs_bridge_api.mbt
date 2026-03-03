@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
+/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "AnimatedBy", "AnimationPlayer", "AnimationWeights", "AnimationTargetId", "AnimationGraphHandle",
   "AnimationTransitions",
 ]
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = []
 
 ///|
@@ -106,7 +106,7 @@ pub fn[W : Has_AnimationTransitions] get_animation_transitions_store(
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
 let bridge_get_animated_by_store_by_world : Map[

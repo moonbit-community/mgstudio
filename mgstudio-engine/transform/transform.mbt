@@ -171,23 +171,20 @@ fn sort_by_parent_id(pairs : Array[(@core.Entity, @core.Entity)]) -> Unit {
 }
 
 ///|
-pub fn[
-  W : @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld,
-] update_children_system(
-  world : W,
-) -> Unit {
-  let parent_store = world.get_parent_store()
-  let children_store = world.get_children_store()
-  let change_tick = world.read_change_tick()
-
+pub fn update_children_system(world : @ecs.World) -> Unit {
   // Rebuild from scratch (simple, correct); later we can make this incremental.
   let existing : Array[@core.Entity] = []
-  children_store.for_each(fn(e, _children) { existing.push(e) })
-  for e in existing {
-    children_store.remove(e) |> ignore
+  try! world
+  .query1(@hierarchy.ecs_key_children)
+  .view(fn(entity, _children) { existing.push(entity) })
+  for entity in existing {
+    try! (world.remove(entity, @hierarchy.ecs_key_children) |> ignore)
   }
+
   let pairs : Array[(@core.Entity, @core.Entity)] = []
-  parent_store.for_each(fn(child, parent) { pairs.push((parent.entity, child)) })
+  try! world
+  .query1(@hierarchy.ecs_key_parent)
+  .view(fn(child, parent) { pairs.push((parent.entity(), child)) })
   if pairs.length() == 0 {
     return
   }
@@ -200,56 +197,54 @@ pub fn[
       children.push(pairs[i].1)
       i = i + 1
     }
-    children_store.insert(
+    try! world.set(
       parent,
+      @hierarchy.ecs_key_children,
       @hierarchy.Children::new(children),
-      change_tick,
     )
   }
 }
 
 ///|
-pub(open) trait TransformPropagationWorld: @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld {
-}
-
-///|
-pub fn[W : TransformPropagationWorld] propagate_transforms_system(
-  world : W,
-) -> Unit {
-  let transform_store = world.get_transform_store()
-  let global_store = world.get_global_transform_store()
-  let parent_store = world.get_parent_store()
-  let children_store = world.get_children_store()
+pub fn propagate_transforms_system(world : @ecs.World) -> Unit {
+  let transform_access = world.component(@math.ecs_key_transform)
+  let global_access = world.component(ecs_key_global_transform)
+  let children_access = world.component(@hierarchy.ecs_key_children)
   let change_tick = world.read_change_tick()
   let system_ticks = world.get_system_context().ticks()
   let stack : Array[(@core.Entity, GlobalTransform, Bool)] = []
-  transform_store.for_each(fn(e, _t) {
-    if !parent_store.contains(e) {
-      stack.push((e, GlobalTransform::identity(), false))
+
+  try! world
+  .query1(@math.ecs_key_transform)
+  .view(fn(entity, _transform) {
+    if (try! world.get(entity, @hierarchy.ecs_key_parent)) is None {
+      stack.push((entity, GlobalTransform::identity(), false))
     }
   })
+
   while stack.length() > 0 {
     let (entity, parent_global, parent_changed) = stack.pop().unwrap()
-    guard transform_store.get(entity) is Some(local_transform) else { continue }
+    guard transform_access.get(entity) is Some(local_transform) else {
+      continue
+    }
     let local_gt = GlobalTransform::from_transform(local_transform)
-    let local_ticks = transform_store.get_ticks(entity).unwrap()
+    let local_ticks = transform_access.get_ticks(entity).unwrap()
     let local_changed = local_ticks.is_added(system_ticks) ||
       local_ticks.is_changed(system_ticks)
     let should_update = parent_changed ||
       local_changed ||
-      !global_store.contains(entity)
+      !global_access.contains(entity)
     let global = parent_global.mul(local_gt)
     if should_update {
-      if global_store.contains(entity) {
-        global_store.set(entity, global, change_tick) |> ignore
+      if global_access.contains(entity) {
+        global_access.set(entity, global, change_tick) |> ignore
       } else {
-        global_store.insert(entity, global, change_tick)
+        global_access.insert(entity, global, change_tick)
       }
     }
-    let changed = should_update
-    if children_store.get(entity) is Some(children) {
-      for child in children.entities {
-        stack.push((child, global, changed))
+    if children_access.get(entity) is Some(children) {
+      for child in children.entities() {
+        stack.push((child, global, should_update))
       }
     }
   }
@@ -266,9 +261,7 @@ pub let transform_set_propagate : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn[W : TransformPropagationWorld] transform_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Keep `Children` in sync with `Parent`, then compute `GlobalTransform`.
   app
   .add_pre_update_system_config(
@@ -283,7 +276,7 @@ pub fn[W : TransformPropagationWorld] transform_plugin(
   // If FixedUpdate ran this frame (e.g. physics moved bodies), refresh
   // GlobalTransform again before Update systems like render extraction.
   .add_system_config(
-    @app.system(propagate_transforms_system).run_if(fn(_world : W) {
+    @app.system(propagate_transforms_system).run_if(fn(_world : @ecs.World) {
       @app.fixed_time_did_run_this_frame()
     }),
   )

@@ -24,29 +24,25 @@
 /// (no frustum culling yet).
 
 ///|
-pub(open) trait VisibilityPropagationWorld: Has_Visibility + Has_InheritedVisibility + Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld {
-}
-
-///|
-pub fn[W : VisibilityPropagationWorld] visibility_propagate_system(
-  world : W,
-) -> Unit {
-  let visibility_store = world.get_visibility_store()
-  let inherited_store = world.get_inherited_visibility_store()
-  let view_store = world.get_view_visibility_store()
-  let parent_store = world.get_parent_store()
-  let children_store = world.get_children_store()
+pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
+  let visibility_access = world.component(ecs_key_visibility)
+  let inherited_access = world.component(ecs_key_inherited_visibility)
+  let view_access = world.component(ecs_key_view_visibility)
+  let parent_access = world.component(@hierarchy.ecs_key_parent)
+  let children_access = world.component(@hierarchy.ecs_key_children)
   let change_tick = world.read_change_tick()
 
   // Identify roots: entities that either have no parent, or whose parent lacks
   // the required visibility components (Bevy fallback).
   let roots : Array[@core.Entity] = []
-  visibility_store.for_each(fn(entity, _v) {
-    match parent_store.get(entity) {
+  try! world
+  .query1(ecs_key_visibility)
+  .view(fn(entity, _visibility) {
+    match parent_access.get(entity) {
       None => roots.push(entity)
       Some(parent) => {
         let p = parent.entity()
-        if !visibility_store.contains(p) || !inherited_store.contains(p) {
+        if !visibility_access.contains(p) || !inherited_access.contains(p) {
           roots.push(entity)
         }
       }
@@ -60,7 +56,7 @@ pub fn[W : VisibilityPropagationWorld] visibility_propagate_system(
   }
   while stack.length() > 0 {
     let (entity, parent_visible) = stack.pop().unwrap()
-    guard visibility_store.get(entity) is Some(visibility) else { continue }
+    guard visibility_access.get(entity) is Some(visibility) else { continue }
     let is_visible = match visibility {
       Visibility::Hidden => false
       Visibility::Visible => true
@@ -68,38 +64,38 @@ pub fn[W : VisibilityPropagationWorld] visibility_propagate_system(
     }
 
     // Update InheritedVisibility (insert if missing).
-    let needs_inherited_update = match inherited_store.get(entity) {
+    let needs_inherited_update = match inherited_access.get(entity) {
       Some(v) => v.is_visible() != is_visible
       None => true
     }
     if needs_inherited_update {
       let v = InheritedVisibility::new(is_visible)
-      if inherited_store.contains(entity) {
-        inherited_store.set(entity, v, change_tick) |> ignore
+      if inherited_access.contains(entity) {
+        inherited_access.set(entity, v, change_tick) |> ignore
       } else {
-        inherited_store.insert(entity, v, change_tick)
+        inherited_access.insert(entity, v, change_tick)
       }
     }
 
     // Stage-1: ViewVisibility == InheritedVisibility (no culling yet).
-    let needs_view_update = match view_store.get(entity) {
+    let needs_view_update = match view_access.get(entity) {
       Some(v) => v.is_visible() != is_visible
       None => true
     }
     if needs_view_update {
       let v = ViewVisibility::new(is_visible)
-      if view_store.contains(entity) {
-        view_store.set(entity, v, change_tick) |> ignore
+      if view_access.contains(entity) {
+        view_access.set(entity, v, change_tick) |> ignore
       } else {
-        view_store.insert(entity, v, change_tick)
+        view_access.insert(entity, v, change_tick)
       }
     }
 
     // Recurse to children that participate in visibility (same as Bevy's query
     // constraints: With<Visibility>, With<InheritedVisibility>).
-    if children_store.get(entity) is Some(children) {
+    if children_access.get(entity) is Some(children) {
       for child in children.entities() {
-        if visibility_store.contains(child) {
+        if visibility_access.contains(child) {
           stack.push((child, is_visible))
         }
       }
@@ -108,9 +104,7 @@ pub fn[W : VisibilityPropagationWorld] visibility_propagate_system(
 }
 
 ///|
-pub fn[W : VisibilityPropagationWorld] visibility_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Must run after `transform.update_children_system` so `Children` is in sync.
   app.add_pre_update_system(visibility_propagate_system)
 }

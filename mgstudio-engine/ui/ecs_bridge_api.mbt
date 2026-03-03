@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
+/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Node", "Label", "Button", "UiRoot", "UiText", "ZIndex", "Outline", "UiImage",
   "UiLayout", "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy",
@@ -23,7 +23,7 @@ pub let ecs_components : Array[String] = [
 ]
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = ["UiScale", "UiStack", "UiContext"]
 
 ///|
@@ -379,7 +379,7 @@ pub fn[W : HasRes_UiContext] get_ui_context_resource(
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
 let bridge_get_node_store_by_world : Map[Int, @core.ComponentStore[Node]] = {}

@@ -227,11 +227,9 @@ pub fn a11y_host_apply_update(update : @moon_accesskit.TreeUpdate) -> Unit {
 pub let a11y_set : @app.SystemSet = @app.system_set("mgstudio.a11y")
 
 ///|
-pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] ensure_a11y_state(
-  world : W,
-) -> Unit {
+pub fn ensure_a11y_state(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let res = world.get_a11y_state_resource()
+  let res = get_a11y_state_resource(world)
   if res.get() is None {
     res.insert(A11yState::default(), tick)
   }
@@ -239,11 +237,9 @@ pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] ensure_a11y_state(
 
 ///|
 /// Poll host-side accessibility actions into `A11yState.pending_actions`.
-pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(
-  world : W,
-) -> Unit {
+pub fn a11y_poll_actions_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  guard world.get_a11y_state_resource().get_ref_mut(tick) is Some(state) else {
+  guard get_a11y_state_resource(world).get_ref_mut(tick) is Some(state) else {
     return
   }
   let n = host_a11y_actions_len()
@@ -283,9 +279,7 @@ pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(
 }
 
 ///|
-pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn a11y_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_pre_update_system_config(@app.system(ensure_a11y_state).in_set(a11y_set))
   .add_pre_update_system_config(

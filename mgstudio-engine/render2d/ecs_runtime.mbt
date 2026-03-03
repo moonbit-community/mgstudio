@@ -108,7 +108,7 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @ecs.
 )
 
 ///|
-/// ECS-world variant that does not depend on legacy `RenderState` resource traits.
+/// ECS-world variant that does not depend on `RenderState` resource traits.
 pub fn render2d_create_render_target_ecs(
   width : Int,
   height : Int,

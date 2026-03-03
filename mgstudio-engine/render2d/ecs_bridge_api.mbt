@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Legacy ECS component types.
+/// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom2d", "Camera2d", "GpuMesh2d", "Projection",
   "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
@@ -21,7 +21,7 @@ pub let ecs_components : Array[String] = [
 ]
 
 ///|
-/// Legacy ECS resource types.
+/// ECS resource bridge types.
 pub let ecs_resources : Array[String] = ["RenderState", "Wireframe2dConfig"]
 
 ///|
@@ -259,7 +259,7 @@ pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(
 }
 
 ///|
-/// ECS bridge impls for @ecs.World (auto-generated).
+/// ECS bridge impls for @ecs.World.
 
 ///|
 let bridge_get_anchor_store_by_world : Map[Int, @core.ComponentStore[Anchor]] = {}
