@@ -4,7 +4,7 @@ package "Milky2018/mgstudio/text"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
   "Milky2018/moon_cosmic",
@@ -59,9 +59,9 @@ pub fn text_get_ui_scissor(TextHandle) -> @math.Rect?
 
 pub fn text_get_visual_bounds(TextHandle) -> @math.Rect?
 
-pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_plugin(@app.App[W]) -> @app.App[W]
+pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[W : @render2d.HasRes_RenderState + @core.ChangeTickWorld] text_render_system(W) -> Unit
+pub fn text_render_system(@ecs.World) -> Unit
 
 pub fn text_set_anchor(TextHandle, @render2d.Anchor) -> Unit
 

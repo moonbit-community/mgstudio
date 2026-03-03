@@ -11,11 +11,11 @@ import {
 }
 
 // Values
-pub fn[W : AdvanceAnimationsWorld] advance_animations(W) -> Unit
+pub fn advance_animations(@ecs.World) -> Unit
 
-pub fn[W : AdvanceTransitionsWorld] advance_transitions(W) -> Unit
+pub fn advance_transitions(@ecs.World) -> Unit
 
-pub fn[W : AnimateTargetsWorld] animate_targets(W) -> Unit
+pub fn animate_targets(@ecs.World) -> Unit
 
 pub fn animation_clip_add(AnimationClip) -> @asset.Handle[AnimationClip]
 
@@ -29,7 +29,7 @@ pub fn animation_graph_get(@asset.Handle[AnimationGraph]) -> AnimationGraph?
 
 pub fn animation_graph_set(@asset.Handle[AnimationGraph], AnimationGraph) -> Bool
 
-pub fn[W : AnimationPluginWorld] animation_plugin(@app.App[W]) -> @app.App[W]
+pub fn animation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn animation_register_event_callback((@core.Entity, Float, Float) -> Unit) -> Int
 
@@ -49,13 +49,19 @@ pub let ecs_components : Array[String]
 
 pub let ecs_key_animated_by : @ecs.ComponentKey[AnimatedBy]
 
+pub let ecs_key_animation_graph_handle : @ecs.ComponentKey[AnimationGraphHandle]
+
 pub let ecs_key_animation_player : @ecs.ComponentKey[AnimationPlayer]
 
 pub let ecs_key_animation_target_id : @ecs.ComponentKey[AnimationTargetId]
 
+pub let ecs_key_animation_transitions : @ecs.ComponentKey[AnimationTransitions]
+
+pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights]
+
 pub let ecs_resources : Array[String]
 
-pub fn[W : ExpireTransitionsWorld] expire_transitions(W) -> Unit
+pub fn expire_transitions(@ecs.World) -> Unit
 
 pub fn[W : Has_AnimatedBy] get_animated_by_store(W) -> @core.ComponentStore[AnimatedBy]
 
@@ -69,9 +75,9 @@ pub fn[W : Has_AnimationTransitions] get_animation_transitions_store(W) -> @core
 
 pub fn[W : Has_AnimationWeights] get_animation_weights_store(W) -> @core.ComponentStore[AnimationWeights]
 
-pub fn[W] thread_animation_graphs(W) -> Unit
+pub fn thread_animation_graphs(@ecs.World) -> Unit
 
-pub fn[W : TriggerEventsWorld] trigger_events(W) -> Unit
+pub fn trigger_events(@ecs.World) -> Unit
 
 // Errors
 
@@ -111,6 +117,8 @@ pub fn ActiveAnimation::speed(Self) -> Float
 pub fn ActiveAnimation::unpause(Self) -> Self
 pub fn ActiveAnimation::update(Self, Float, Float) -> Self
 pub fn ActiveAnimation::weight(Self) -> Float
+pub impl ToJson for ActiveAnimation
+pub impl @json.FromJson for ActiveAnimation
 
 pub struct AnimatedBy {
   player : @core.Entity
@@ -196,6 +204,8 @@ pub struct AnimationGraphHandle {
 }
 pub fn AnimationGraphHandle::graph(Self) -> @asset.Handle[AnimationGraph]
 pub fn AnimationGraphHandle::new(@asset.Handle[AnimationGraph]) -> Self
+pub impl ToJson for AnimationGraphHandle
+pub impl @json.FromJson for AnimationGraphHandle
 
 pub struct AnimationGraphNode {
   node_type : AnimationNodeType
@@ -220,6 +230,8 @@ pub fn AnimationNodeIndex::index(Self) -> Int
 pub fn AnimationNodeIndex::new(Int) -> Self
 pub impl Eq for AnimationNodeIndex
 pub impl Show for AnimationNodeIndex
+pub impl ToJson for AnimationNodeIndex
+pub impl @json.FromJson for AnimationNodeIndex
 
 pub(all) enum AnimationNodeType {
   Clip(@asset.Handle[AnimationClip])
@@ -243,6 +255,8 @@ pub fn AnimationPlayer::set_weight(Self, AnimationNodeIndex, Float) -> Self
 pub fn AnimationPlayer::start(Self, AnimationNodeIndex) -> Self
 pub fn AnimationPlayer::stop(Self, AnimationNodeIndex) -> Self
 pub fn AnimationPlayer::stop_all(Self) -> Self
+pub impl ToJson for AnimationPlayer
+pub impl @json.FromJson for AnimationPlayer
 
 type AnimationSample
 pub fn AnimationSample::rotation(Self) -> @math.Quat?
@@ -279,6 +293,8 @@ pub struct AnimationTransition {
   weight_decline_per_sec : Float
   animation : AnimationNodeIndex
 }
+pub impl ToJson for AnimationTransition
+pub impl @json.FromJson for AnimationTransition
 
 pub struct AnimationTransitions {
   mut main_animation : AnimationNodeIndex?
@@ -287,6 +303,8 @@ pub struct AnimationTransitions {
 pub fn AnimationTransitions::main_animation(Self) -> AnimationNodeIndex?
 pub fn AnimationTransitions::new() -> Self
 pub fn AnimationTransitions::play(Self, AnimationPlayer, AnimationNodeIndex, Float) -> (Self, AnimationPlayer)
+pub impl ToJson for AnimationTransitions
+pub impl @json.FromJson for AnimationTransitions
 
 pub struct AnimationTriggeredEvent {
   player : @core.Entity
@@ -318,6 +336,8 @@ pub struct AnimationWeights {
 }
 pub fn AnimationWeights::new(Array[Float]) -> Self
 pub fn AnimationWeights::values(Self) -> Array[Float]
+pub impl ToJson for AnimationWeights
+pub impl @json.FromJson for AnimationWeights
 
 pub struct KeyframeQuat {
   time : Float
@@ -342,6 +362,8 @@ pub(all) enum RepeatAnimation {
   Count(Int)
   Forever
 }
+pub impl ToJson for RepeatAnimation
+pub impl @json.FromJson for RepeatAnimation
 
 // Type aliases
 pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
@@ -349,21 +371,6 @@ pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
 pub type AnimationMask = UInt
 
 // Traits
-pub(open) trait AdvanceAnimationsWorld : Has_AnimationPlayer + Has_AnimationGraphHandle + @core.ChangeTickWorld {
-}
-
-pub(open) trait AdvanceTransitionsWorld : Has_AnimationTransitions + Has_AnimationPlayer + @core.ChangeTickWorld {
-}
-
-pub(open) trait AnimateTargetsWorld : Has_AnimationTargetId + Has_AnimatedBy + Has_AnimationPlayer + Has_AnimationGraphHandle + @math.Has_Transform + Has_AnimationWeights + @core.ChangeTickWorld {
-}
-
-pub(open) trait AnimationPluginWorld : AdvanceTransitionsWorld + AdvanceAnimationsWorld + AnimateTargetsWorld + TriggerEventsWorld + ExpireTransitionsWorld {
-}
-
-pub(open) trait ExpireTransitionsWorld : Has_AnimationTransitions + Has_AnimationPlayer + @core.ChangeTickWorld {
-}
-
 pub(open) trait Has_AnimatedBy {
   get_animated_by_store(Self) -> @core.ComponentStore[AnimatedBy]
 }
@@ -393,7 +400,4 @@ pub(open) trait Has_AnimationWeights {
   get_animation_weights_store(Self) -> @core.ComponentStore[AnimationWeights]
 }
 pub impl Has_AnimationWeights for @ecs.World
-
-pub(open) trait TriggerEventsWorld : Has_AnimationPlayer + Has_AnimationGraphHandle + Has_AnimationTargetId + Has_AnimatedBy + @core.ChangeTickWorld {
-}
 

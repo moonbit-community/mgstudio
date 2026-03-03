@@ -500,20 +500,4 @@ pub impl HasRes_Wireframe2dConfig for @ecs.World with get_wireframe2d_config_res
 }
 
 ///|
-pub impl CameraPostProcessWorld for @ecs.World with camera_tonemapping_mode(
-  _self,
-  _camera,
-) {
-  0
-}
-
-///|
-pub impl CameraPostProcessWorld for @ecs.World with camera_deband_dither_enabled(
-  _self,
-  _camera,
-) {
-  false
-}
-
-///|
 /// End ECS bridge impls.

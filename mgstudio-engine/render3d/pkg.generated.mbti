@@ -133,7 +133,7 @@ pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : FreeCameraControllerWorld] free_camera_plugin(@app.App[W]) -> @app.App[W]
+pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[W : Has_Bloom] get_bloom_store(W) -> @core.ComponentStore[Bloom]
 
@@ -249,13 +249,13 @@ pub fn[W : HasRes_WireframeConfig] get_wireframe_config_resource(W) -> @core.Res
 
 pub fn[W : Has_Wireframe] get_wireframe_store(W) -> @core.ComponentStore[Wireframe]
 
-pub fn[W : MeshRayCastWorld] mesh_ray_cast(W, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
+pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
-pub fn[W : MeshRayCastWorld] mesh_ray_cast_first(W, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
-pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera(W, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
-pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera_first(W, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
@@ -263,15 +263,15 @@ pub fn render3d_camera_world_to_viewport(@math.Vec3, @render2d.Camera, CameraPro
 
 pub fn render3d_distance_fog() -> DistanceFog
 
-pub fn[W : Render3dExecuteWorld] render3d_execute_system(W) -> Unit
+pub fn render3d_execute_system(@ecs.World) -> Unit
 
-pub fn[W : Render3dPluginWorld] render3d_plugin(@app.App[W]) -> @app.App[W]
+pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[W : Render3dPrepareWorld] render3d_prepare_system(W) -> Unit
+pub fn render3d_prepare_system(@ecs.World) -> Unit
 
 pub fn render3d_set_distance_fog(DistanceFog) -> Unit
 
-pub fn[W : FreeCameraControllerWorld] run_freecamera_controller(W) -> Unit
+pub fn run_freecamera_controller(@ecs.World) -> Unit
 
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
@@ -279,7 +279,7 @@ pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMateria
 
 pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) -> Bool
 
-pub fn[W : WireframePluginWorld] wireframe_plugin(@app.App[W]) -> @app.App[W]
+pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -448,7 +448,7 @@ pub struct Camera3dBundle {
 }
 pub fn Camera3dBundle::new(@render2d.Camera, @math.Transform) -> Self
 pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection3d, @math.Transform) -> Self
-pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(Self, W) -> @core.Entity
+pub fn Camera3dBundle::spawn(Self, @ecs.World) -> @core.Entity
 pub fn Camera3dBundle::with_atmosphere(Self, Atmosphere?) -> Self
 pub fn Camera3dBundle::with_atmosphere_settings(Self, AtmosphereSettings?) -> Self
 pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
@@ -1053,7 +1053,7 @@ pub struct MeshMaterial3dBundle {
   view_visibility : @visibility.ViewVisibility
 }
 pub fn MeshMaterial3dBundle::new(Mesh3d, MeshMaterial3d, @math.Transform) -> Self
-pub fn[W : MeshMaterial3dBundleSpawnWorld] MeshMaterial3dBundle::spawn(Self, W) -> @core.Entity
+pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World) -> @core.Entity
 
 pub struct MeshRayCastHit {
   point : @math.Vec3
@@ -1606,12 +1606,6 @@ pub impl @json.FromJson for WireframeConfig
 // Type aliases
 
 // Traits
-pub(open) trait Camera3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @math.Has_Transform {
-}
-
-pub(open) trait FreeCameraControllerWorld : Has_FreeCamera + Has_FreeCameraState + @render2d.Has_Camera + @math.Has_Transform + @core.ChangeTickWorld {
-}
-
 pub(open) trait HasRes_DefaultOpaqueRendererMethod {
   get_default_opaque_renderer_method_resource(Self) -> @core.Resource[DefaultOpaqueRendererMethod]
 }
@@ -1896,22 +1890,4 @@ pub(open) trait Has_WireframeColor {
   get_wireframe_color_store(Self) -> @core.ComponentStore[WireframeColor]
 }
 pub impl Has_WireframeColor for @ecs.World
-
-pub(open) trait MeshMaterial3dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh3d + Has_MeshMaterial3d + @render2d.Has_GpuMesh2d + @render2d.Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
-}
-
-pub(open) trait MeshRayCastWorld : Has_Mesh3d + @math.Has_Transform + @visibility.Has_ViewVisibility {
-}
-
-pub(open) trait Render3dExecuteWorld : HasRes_GlobalAmbientLight + HasRes_WireframeConfig + HasRes_DefaultOpaqueRendererMethod + Has_PointLight + Has_DirectionalLight + Has_SpotLight + Has_Camera3d + Has_CameraProjection3d + Has_SubCameraView3d + Has_ScreenSpaceTransmission + Has_ScreenSpaceReflections + Has_Bloom + Has_Tonemapping + Has_DebandDither + Has_ChromaticAberration + Has_Vignette + Has_MotionBlur + Has_Exposure + Has_ColorGrading + Has_Skybox + Has_EnvironmentMapLight + Has_GeneratedEnvironmentMapLight + Has_LightProbe + Has_Hdr + Has_Fxaa + Has_TemporalJitter + Has_MotionVectorPrepass + Has_TemporalAntiAliasing + Has_Mesh3d + Has_MeshMaterial3d + Has_Wireframe + Has_NoWireframe + Has_WireframeColor + Has_DepthPrepass + Has_DeferredPrepass + Has_Msaa + Has_ForwardDecal + Has_ForwardDecalMaterialExt + Has_ClusteredDecal + @render2d.Has_Camera + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_GpuMesh2d + @math.Has_Transform + @visibility.Has_ViewVisibility + @visibility.Has_VisibilityRange + @core.ChangeTickWorld {
-}
-
-pub(open) trait Render3dPluginWorld : HasRes_GlobalAmbientLight + HasRes_PointLightShadowMap + HasRes_DefaultOpaqueRendererMethod + Render3dPrepareWorld + Render3dExecuteWorld {
-}
-
-pub(open) trait Render3dPrepareWorld : Has_Mesh3d + @render2d.Has_GpuMesh2d + @core.ChangeTickWorld {
-}
-
-pub(open) trait WireframePluginWorld : HasRes_WireframeConfig + @core.ChangeTickWorld {
-}
 

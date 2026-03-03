@@ -8,7 +8,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
 }
@@ -102,7 +101,7 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
 
-pub fn[W : CameraSystemWorld] render2d_camera_system(W) -> Unit
+pub fn render2d_camera_system(@ecs.World) -> Unit
 
 pub fn render2d_camera_system_ecs(@ecs.World) -> Unit
 
@@ -110,41 +109,41 @@ pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProj
 
 pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprite_texture_slices(W) -> Unit
+pub fn render2d_clear_overlay_sprite_texture_slices(@ecs.World) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_sprites(W) -> Unit
+pub fn render2d_clear_overlay_sprites(@ecs.World) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_box_shadows(W) -> Unit
+pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_rects(W) -> Unit
+pub fn render2d_clear_overlay_ui_rects(@ecs.World) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_clear_overlay_ui_texture_slices(W) -> Unit
+pub fn render2d_clear_overlay_ui_texture_slices(@ecs.World) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_target(W, Int, Int, Bool) -> @asset.Handle[@asset.Image]
+pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@asset.Image]
 
 pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@asset.Image]
 
-pub fn[W : HasRes_RenderState] render2d_debug_log_primary_camera(W) -> Unit
+pub fn render2d_debug_log_primary_camera(@ecs.World) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overlay(W, @asset.Handle[@asset.Image], @math.Transform, Bloom2dSettings, RenderLayers) -> Unit
+pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@asset.Image], @math.Transform, Bloom2dSettings, RenderLayers) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(W, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
+pub fn render2d_draw_tilemap_chunk(@ecs.World, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
 
-pub fn[W : RenderExtractWorld + CameraPostProcessWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn render2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
+pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?) -> Unit
+pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv_scissor_batch(W, Array[OverlaySpriteUvScissor]) -> Unit
+pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[OverlaySpriteUvScissor]) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_box_shadow_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
+pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_rect_uv_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
+pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
 
-pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_ui_texture_slice_scissor(W, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub let render2d_set_execute : String
 
@@ -158,13 +157,13 @@ pub let render2d_set_render : String
 
 pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
 
-pub fn[W : HasRes_RenderState] render2d_viewport_to_world_2d(W, @math.Vec2) -> @math.Vec2?
+pub fn render2d_viewport_to_world_2d(@ecs.World, @math.Vec2) -> @math.Vec2?
 
-pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @math.Vec2?
+pub fn render2d_world_to_viewport(@ecs.World, @math.Vec2) -> @math.Vec2?
 
-pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] render_execute_system(W) -> Unit
+pub fn render_execute_system(@ecs.World) -> Unit
 
-pub fn[W : RenderExtractWorld] render_extract_system(W) -> Unit
+pub fn render_extract_system(@ecs.World) -> Unit
 
 pub fn render_extract_system_ecs(@ecs.World) -> Unit
 
@@ -178,7 +177,7 @@ pub fn[W] render_prepare_system(W) -> Unit
 
 pub fn[W] render_queue_system(W) -> Unit
 
-pub fn[W : Wireframe2dPluginWorld] wireframe2d_plugin(@app.App[W]) -> @app.App[W]
+pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -942,15 +941,6 @@ pub impl @json.FromJson for Wireframe2dConfig
 // Type aliases
 
 // Traits
-pub(open) trait CameraPostProcessWorld {
-  camera_tonemapping_mode(Self, @core.Entity) -> Int
-  camera_deband_dither_enabled(Self, @core.Entity) -> Bool
-}
-pub impl CameraPostProcessWorld for @ecs.World
-
-pub(open) trait CameraSystemWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + @core.ChangeTickWorld + @core.SystemContextWorld {
-}
-
 pub(open) trait HasRes_RenderState {
   get_render_state_resource(Self) -> @core.Resource[RenderState]
 }
@@ -1052,11 +1042,5 @@ pub(open) trait Material2d {
   texture(Self) -> @asset.Handle[@asset.Image]?
   uv_offset(Self) -> @math.Vec2
   uv_scale(Self) -> @math.Vec2
-}
-
-pub(open) trait RenderExtractWorld : HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
-}
-
-pub(open) trait Wireframe2dPluginWorld : HasRes_Wireframe2dConfig + @core.ChangeTickWorld {
 }
 

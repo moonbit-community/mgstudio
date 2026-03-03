@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
 }
@@ -19,11 +18,11 @@ pub let ecs_resources : Array[String]
 
 pub fn[W : Has_GlobalTransform] get_global_transform_store(W) -> @core.ComponentStore[GlobalTransform]
 
-pub fn[W : TransformPropagationWorld] propagate_transforms_system(W) -> Unit
+pub fn propagate_transforms_system(@ecs.World) -> Unit
 
 pub fn propagate_transforms_system_ecs(@ecs.World) -> Unit
 
-pub fn[W : TransformPropagationWorld] transform_plugin(@app.App[W]) -> @app.App[W]
+pub fn transform_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn transform_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -31,7 +30,7 @@ pub let transform_set_propagate : String
 
 pub let transform_set_update_children : String
 
-pub fn[W : @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld] update_children_system(W) -> Unit
+pub fn update_children_system(@ecs.World) -> Unit
 
 pub fn update_children_system_ecs(@ecs.World) -> Unit
 
@@ -68,7 +67,4 @@ pub(open) trait Has_GlobalTransform {
   get_global_transform_store(Self) -> @core.ComponentStore[GlobalTransform]
 }
 pub impl Has_GlobalTransform for @ecs.World
-
-pub(open) trait TransformPropagationWorld : @math.Has_Transform + Has_GlobalTransform + @hierarchy.Has_Parent + @hierarchy.Has_Children + @core.ChangeTickWorld + @core.SystemContextWorld {
-}
 

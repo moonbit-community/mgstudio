@@ -80,7 +80,7 @@ pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
 
 pub fn reset_render_error_handler() -> Unit
 
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[W]) -> App[W]
+pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
 
 pub fn set_delta_seconds_provider(() -> Float) -> Unit
 
@@ -164,18 +164,18 @@ pub fn[W] App::insert_sub_app(Self[W], AppLabel, Self[W]) -> Self[W]
 pub fn[W] App::new(W) -> Self[W]
 pub fn[W, T] App::remove_resource(Self[W], @core.Resource[T]) -> T?
 pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> Self[W]?
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run(Self[W]) -> Unit
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(Self[W]) -> Self[W]
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(Self[W]) -> Self[W]
+pub fn App::run(Self[@ecs.World]) -> Unit
+pub fn App::run_once(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn App::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 pub fn[W] App::set_sub_app_extract(Self[W], AppLabel, (W, W) -> (W, W)) -> Self[W]
-pub fn[W : @core.ChangeTickWorld] App::should_exit(Self[W]) -> AppExit?
+pub fn App::should_exit(Self[@ecs.World]) -> AppExit?
 pub fn[W] App::sub_app(Self[W], AppLabel) -> Self[W]
 pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]
 pub fn[W] App::sub_apps(Self[W]) -> Array[(AppLabel, Self[W])]
 pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, Ref[Self[W]])]
 pub fn[W] App::take_sub_app_extract(Self[W], AppLabel) -> ((W, W) -> (W, W))?
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::update_sub_app_by_label(Self[W], AppLabel) -> Self[W]
+pub fn App::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
 
 pub(all) enum AppExit {
   Success

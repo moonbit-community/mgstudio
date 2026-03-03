@@ -482,10 +482,10 @@ pub fn[W] App::sub_apps_mut(self : App[W]) -> Array[(AppLabel, Ref[App[W]])] {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::update_sub_app_by_label(
-  self : App[W],
+pub fn App::update_sub_app_by_label(
+  self : App[@ecs.World],
   label : AppLabel,
-) -> App[W] {
+) -> App[@ecs.World] {
   let key = app_label_storage_key(label)
   if self.sub_apps.get(key) is Some(sub_app_ref) {
     if self.sub_app_extractors.get(key) is Some(extract) {
@@ -1012,9 +1012,9 @@ pub fn fixed_time_steps_ran_this_frame() -> Int {
 }
 
 ///|
-fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_systems(
-  world : W,
-  systems : Array[SystemConfig[W]],
+fn run_systems(
+  world : @ecs.World,
+  systems : Array[SystemConfig[@ecs.World]],
   set_edges : Array[(SystemSet, SystemSet)],
 ) -> Unit {
   current_system_ticks_ref.val = None
@@ -1161,9 +1161,9 @@ fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_systems(
 }
 
 ///|
-fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_schedule_stage(
-  world : W,
-  schedule : Schedule[W],
+fn run_schedule_stage(
+  world : @ecs.World,
+  schedule : Schedule[@ecs.World],
   stage : ScheduleStage,
 ) -> Unit {
   current_schedule_stage_ref.val = Some(stage)
@@ -1176,9 +1176,7 @@ fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] run_schedule_stage(
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(
-  self : App[W],
-) -> App[W] {
+pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
   run_schedule_stage(self.world, self.schedule, Startup)
   for entry in self.sub_apps.iter() {
     let (_key, sub_app_ref) = entry
@@ -1188,9 +1186,7 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_startup(
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(
-  self : App[W],
-) -> App[W] {
+pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
   run_schedule_stage(self.world, self.schedule, PreUpdate)
   fixed_time_state.val.did_run_this_frame = false
   fixed_time_state.val.steps_ran_this_frame = 0
@@ -1240,9 +1236,7 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run_once(
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] App::run(
-  self : App[W],
-) -> Unit {
+pub fn App::run(self : App[@ecs.World]) -> Unit {
   if self.runner is Some(runner) {
     runner()
   } else {

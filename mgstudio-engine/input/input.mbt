@@ -931,7 +931,7 @@ fn input_drag_and_drop_event_at(index : Int) -> FileDragAndDrop? {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(world : W) -> Unit {
+pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   for code in keyboard_event_keycodes {
     if key_repeated(code) {
@@ -970,9 +970,7 @@ pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(world : W) -> Unit 
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld] input_poll_drag_and_drop_system(
-  world : W,
-) -> Unit {
+pub fn input_poll_drag_and_drop_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let event_count = host_input_drag_and_drop_event_count()
   for i in 0..<event_count {
@@ -1041,7 +1039,7 @@ fn active_touches_remove(active : Array[Touch], id : Int) -> Unit {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld] input_poll_mouse_system(world : W) -> Unit {
+pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   ensure_input_resources(tick)
 
@@ -1187,9 +1185,7 @@ pub fn[W : @core.ChangeTickWorld] input_poll_mouse_system(world : W) -> Unit {
 }
 
 ///|
-fn[W : @core.SystemContextWorld] input_world_system_ticks(
-  world : W,
-) -> @core.SystemTicks {
+fn input_world_system_ticks(world : @ecs.World) -> @core.SystemTicks {
   world.get_system_context().ticks()
 }
 
@@ -1348,78 +1344,78 @@ fn file_drag_and_drop_events_writer(
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] keyboard_input_events(
-  world : W,
+pub fn keyboard_input_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[KeyboardInput] {
   keyboard_input_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] keyboard_character_events(
-  world : W,
+pub fn keyboard_character_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[KeyboardCharacter] {
   keyboard_character_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] mouse_button_input_events(
-  world : W,
+pub fn mouse_button_input_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[MouseButtonInput] {
   mouse_button_input_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] mouse_motion_events(
-  world : W,
+pub fn mouse_motion_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[MouseMotion] {
   mouse_motion_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] cursor_moved_events(
-  world : W,
+pub fn cursor_moved_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[CursorMoved] {
   cursor_moved_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] mouse_wheel_events(
-  world : W,
+pub fn mouse_wheel_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[MouseWheel] {
   mouse_wheel_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] pinch_gesture_events(
-  world : W,
+pub fn pinch_gesture_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[PinchGesture] {
   pinch_gesture_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] rotation_gesture_events(
-  world : W,
+pub fn rotation_gesture_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[RotationGesture] {
   rotation_gesture_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] double_tap_gesture_events(
-  world : W,
+pub fn double_tap_gesture_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[DoubleTapGesture] {
   double_tap_gesture_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] touch_input_events(
-  world : W,
+pub fn touch_input_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[TouchInput] {
   touch_input_events_reader(input_world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] file_drag_and_drop_events(
-  world : W,
+pub fn file_drag_and_drop_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[FileDragAndDrop] {
   file_drag_and_drop_events_reader(input_world_system_ticks(world))
 }
@@ -1643,9 +1639,7 @@ pub impl @app.Resource for Touches with resource() {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld] input_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_pre_update_system(input_poll_keyboard_system)
   .add_pre_update_system(input_poll_drag_and_drop_system)

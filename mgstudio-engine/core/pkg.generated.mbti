@@ -136,23 +136,8 @@ pub fn World::spawn_empty(Self) -> Entity
 pub type Tick = Int
 
 // Traits
-pub(open) trait ChangeTickWorld {
-  read_change_tick(Self) -> Int
-  increment_change_tick(Self) -> Int
-}
-
 pub(open) trait Message {
   reader(SystemTicks) -> MessageReader[Self]
   writer(Int) -> MessageWriter[Self]
-}
-
-pub(open) trait SpawnWorld {
-  spawn_empty(Self) -> Entity
-  despawn(Self, Entity) -> Unit raise EntityError
-}
-
-pub(open) trait SystemContextWorld {
-  get_system_context(Self) -> SystemContext
-  set_system_context(Self, SystemContext) -> Unit
 }
 

@@ -27,8 +27,8 @@ test "fixed update: accumulates time and may run multiple ticks per frame" {
     }
   })
   let counter : Ref[Int] = Ref::new(0)
-  let mut app = App::new(TestWorld::new()).add_fixed_update_system(fn(
-    _world : TestWorld,
+  let mut app = App::new(@ecs.World::new()).add_fixed_update_system(fn(
+    _world : @ecs.World,
   ) {
     counter.val = counter.val + 1
   })

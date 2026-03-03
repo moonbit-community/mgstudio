@@ -19,9 +19,9 @@ pub fn a11y_host_end_update() -> Unit
 
 pub fn a11y_host_push_node(Int, Int, Int, Float, Float, Float, Float, Int, Int) -> Unit
 
-pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_plugin(@app.App[W]) -> @app.App[W]
+pub fn a11y_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] a11y_poll_actions_system(W) -> Unit
+pub fn a11y_poll_actions_system(@ecs.World) -> Unit
 
 pub let a11y_set : String
 
@@ -29,7 +29,7 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] ensure_a11y_state(W) -> Unit
+pub fn ensure_a11y_state(@ecs.World) -> Unit
 
 pub fn[W : HasRes_A11yState] get_a11y_state_resource(W) -> @core.Resource[A11yState]
 

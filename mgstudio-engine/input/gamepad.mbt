@@ -636,9 +636,7 @@ pub fn Gamepad::dpad(self : Gamepad) -> @math.Vec2 {
 }
 
 ///|
-fn[W : @core.SystemContextWorld] world_system_ticks(
-  world : W,
-) -> @core.SystemTicks {
+fn world_system_ticks(world : @ecs.World) -> @core.SystemTicks {
   world.get_system_context().ticks()
 }
 
@@ -713,36 +711,34 @@ fn gamepad_button_state_changed_events_writer(
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] gamepad_events(
-  world : W,
-) -> @core.MessageReader[GamepadEvent] {
+pub fn gamepad_events(world : @ecs.World) -> @core.MessageReader[GamepadEvent] {
   gamepad_events_reader(world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] gamepad_connection_events(
-  world : W,
+pub fn gamepad_connection_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[GamepadConnectionEvent] {
   gamepad_connection_events_reader(world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] gamepad_axis_changed_events(
-  world : W,
+pub fn gamepad_axis_changed_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[GamepadAxisChangedEvent] {
   gamepad_axis_changed_events_reader(world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] gamepad_button_changed_events(
-  world : W,
+pub fn gamepad_button_changed_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[GamepadButtonChangedEvent] {
   gamepad_button_changed_events_reader(world_system_ticks(world))
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] gamepad_button_state_changed_events(
-  world : W,
+pub fn gamepad_button_state_changed_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[GamepadButtonStateChangedEvent] {
   gamepad_button_state_changed_events_reader(world_system_ticks(world))
 }
@@ -798,7 +794,7 @@ pub impl @core.Message for GamepadButtonStateChangedEvent with writer(tick) {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld] input_poll_gamepad_system(world : W) -> Unit {
+pub fn input_poll_gamepad_system(world : @ecs.World) -> Unit {
   host_input_gamepad_poll()
 
   previous_gamepads_ref.val = current_gamepads_ref.val

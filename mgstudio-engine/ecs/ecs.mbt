@@ -315,38 +315,25 @@ fn[T : @json.FromJson] World::decode_component_payload(
 }
 
 ///|
-pub impl @core.SpawnWorld for World with spawn_empty(self) {
-  self.spawn_empty()
-}
-
-///|
-pub impl @core.SpawnWorld for World with despawn(self, entity) {
-  self.entities.despawn(entity) catch {
-    _ => ()
-  }
-  for entry in self.component_columns.iter() {
-    let (_key_id, store_ref) = entry
-    store_ref.val.remove(entity) |> ignore
-  }
-}
-
-///|
-pub impl @core.ChangeTickWorld for World with read_change_tick(self) {
+pub fn World::read_change_tick(self : World) -> @core.Tick {
   self.change_tick
 }
 
 ///|
-pub impl @core.ChangeTickWorld for World with increment_change_tick(self) {
+pub fn World::increment_change_tick(self : World) -> @core.Tick {
   self.change_tick = self.change_tick + 1
   self.change_tick
 }
 
 ///|
-pub impl @core.SystemContextWorld for World with get_system_context(self) {
+pub fn World::get_system_context(self : World) -> @core.SystemContext {
   self.system_context
 }
 
 ///|
-pub impl @core.SystemContextWorld for World with set_system_context(self, ctx) {
+pub fn World::set_system_context(
+  self : World,
+  ctx : @core.SystemContext,
+) -> Unit {
   self.system_context = ctx
 }

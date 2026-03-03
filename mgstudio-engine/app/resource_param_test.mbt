@@ -35,7 +35,7 @@ fn reset_counter_resource() -> Unit {
 ///|
 test "app: insert_resource and ResMut parameter updates value" {
   reset_counter_resource()
-  let app = App::new(TestWorld::new())
+  let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_param(fn(resource : ResMut[CounterResource]) {
       let value_ref = resource.get_ref()
@@ -54,7 +54,7 @@ test "app: insert_resource and ResMut parameter updates value" {
 test "app: Res parameter reads inserted resource value" {
   reset_counter_resource()
   let observed : Ref[Int] = Ref::new(-1)
-  let app = App::new(TestWorld::new())
+  let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 7 })
     .add_system_param(fn(resource : Res[CounterResource]) {
       observed.val = resource.get().value
@@ -66,7 +66,7 @@ test "app: Res parameter reads inserted resource value" {
 ///|
 test "app: init_resource inserts only when missing" {
   reset_counter_resource()
-  let app = App::new(TestWorld::new()).init_resource(fn() {
+  let app = App::new(@ecs.World::new()).init_resource(fn() {
     CounterResource::{ value: 11 }
   })
   inspect(app.contains_resource(CounterResource::resource()), content="true")
@@ -91,7 +91,7 @@ test "app: init_resource inserts only when missing" {
 ///|
 test "app: resource_remove clears custom resource" {
   reset_counter_resource()
-  let app = App::new(TestWorld::new()).insert_resource(CounterResource::{
+  let app = App::new(@ecs.World::new()).insert_resource(CounterResource::{
     value: 9,
   })
   inspect(app.contains_resource(CounterResource::resource()), content="true")

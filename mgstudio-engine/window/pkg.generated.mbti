@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/window"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "moonbitlang/core/json",
 }
 
@@ -104,17 +105,17 @@ pub fn host_window_should_close(HostWindow) -> Bool
 
 pub fn window_height() -> Int
 
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_plugin(@app.App[W]) -> @app.App[W]
+pub fn window_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[W : @core.ChangeTickWorld] window_poll_resize_system(W) -> Unit
+pub fn window_poll_resize_system(@ecs.World) -> Unit
 
 pub fn window_position_x() -> Int
 
 pub fn window_position_y() -> Int
 
-pub fn[W : @core.SystemContextWorld] window_resized_events(W) -> @core.MessageReader[WindowResized]
+pub fn window_resized_events(@ecs.World) -> @core.MessageReader[WindowResized]
 
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_builder(@app.App[W]) -> () -> Unit
+pub fn window_runner_builder(@app.App[@ecs.World]) -> () -> Unit
 
 pub fn window_scale_factor() -> Float
 

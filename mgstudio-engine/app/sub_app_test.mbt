@@ -15,11 +15,11 @@
 ///|
 test "app: render sub app runs with main app update" {
   let log : Array[String] = []
-  let app = App::new(TestWorld::new())
-    .add_system(fn(_world : TestWorld) { log.push("main") })
+  let app = App::new(@ecs.World::new())
+    .add_system(fn(_world : @ecs.World) { log.push("main") })
     .insert_sub_app(
       RenderApp,
-      App::new(TestWorld::new()).add_system(fn(_world : TestWorld) {
+      App::new(@ecs.World::new()).add_system(fn(_world : @ecs.World) {
         log.push("render")
       }),
     )
@@ -33,12 +33,12 @@ test "app: render sub app runs with main app update" {
 ///|
 test "app: sub app mut accessor writes back to app" {
   let log : Array[Int] = []
-  let app = App::new(TestWorld::new()).insert_sub_app(
+  let app = App::new(@ecs.World::new()).insert_sub_app(
     RenderApp,
-    App::new(TestWorld::new()),
+    App::new(@ecs.World::new()),
   )
   if app.get_sub_app_mut(RenderApp) is Some(sub_app_ref) {
-    sub_app_ref.val = sub_app_ref.val.add_system(fn(_world : TestWorld) {
+    sub_app_ref.val = sub_app_ref.val.add_system(fn(_world : @ecs.World) {
       log.push(1)
     })
   }
@@ -48,22 +48,26 @@ test "app: sub app mut accessor writes back to app" {
 
 ///|
 test "app: sub app extractor updates both main and render worlds" {
-  let app = App::new(TestWorld::new()).insert_sub_app(
+  let app = App::new(@ecs.World::new()).insert_sub_app(
     RenderApp,
-    App::new(TestWorld::new()),
+    App::new(@ecs.World::new()),
   )
   let app = app.set_sub_app_extract(RenderApp, fn(
-    main_world : TestWorld,
-    sub_world : TestWorld,
+    main_world : @ecs.World,
+    sub_world : @ecs.World,
   ) {
     let next_main = main_world
     let next_sub = sub_world
-    next_main.tick = 7
-    next_sub.tick = 11
+    for _ in 0..<7 {
+      next_main.increment_change_tick() |> ignore
+    }
+    for _ in 0..<11 {
+      next_sub.increment_change_tick() |> ignore
+    }
     (next_main, next_sub)
   })
   let app = app.run_once()
   let sub_app = app.get_sub_app(RenderApp).unwrap()
-  inspect(app.world.tick, content="7")
-  inspect(sub_app.world.tick, content="11")
+  inspect(app.world.read_change_tick(), content="7")
+  inspect(sub_app.world.read_change_tick(), content="11")
 }

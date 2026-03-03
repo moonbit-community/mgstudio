@@ -91,15 +91,3 @@ pub fn SystemContext::set(self : SystemContext, system : SystemTicks) -> Unit {
 pub fn SystemContext::ticks(self : SystemContext) -> SystemTicks {
   { last_run: self.last_run, this_run: self.this_run }
 }
-
-///|
-pub(open) trait ChangeTickWorld {
-  read_change_tick(self : Self) -> Tick
-  increment_change_tick(self : Self) -> Tick
-}
-
-///|
-pub(open) trait SystemContextWorld {
-  get_system_context(self : Self) -> SystemContext
-  set_system_context(self : Self, ctx : SystemContext) -> Unit
-}

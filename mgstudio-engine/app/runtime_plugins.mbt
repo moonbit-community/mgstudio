@@ -166,7 +166,7 @@ pub fn app_runtime_reset() -> Unit {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld] App::should_exit(self : App[W]) -> AppExit? {
+pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
   app_exit_poll_until(self.world.read_change_tick())
 }
 
@@ -230,12 +230,12 @@ fn schedule_runner_tick() -> Unit {
 }
 
 ///|
-fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] schedule_runner_build(
-  app : App[W],
+fn schedule_runner_build(
+  app : App[@ecs.World],
   mode : ScheduleRunnerMode,
 ) -> RunnerFn {
   fn() {
-    let app_ref : Ref[App[W]] = Ref::new(app.run_startup())
+    let app_ref : Ref[App[@ecs.World]] = Ref::new(app.run_startup())
     match mode {
       RunOnce => app_ref.val = app_ref.val.run_once()
       RunLoop(interval_seconds) => {
@@ -261,12 +261,12 @@ fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] schedule_runner_build(
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] schedule_runner_plugin(
+pub fn schedule_runner_plugin(
   plugin : ScheduleRunnerPlugin,
-) -> Plugin[W] {
-  fn(app : App[W]) -> App[W] {
+) -> Plugin[@ecs.World] {
+  fn(app : App[@ecs.World]) -> App[@ecs.World] {
     let mode = plugin.mode
-    app.set_runner(fn(app_with_runner : App[W]) {
+    app.set_runner(fn(app_with_runner : App[@ecs.World]) {
       schedule_runner_build(app_with_runner, mode)
     })
   }

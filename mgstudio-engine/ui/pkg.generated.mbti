@@ -2,17 +2,13 @@
 package "Milky2018/mgstudio/ui"
 
 import {
-  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/text",
-  "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/visibility",
   "Milky2018/moon_accesskit",
   "moonbitlang/core/json",
 }
@@ -138,25 +134,25 @@ pub fn[W : Has_UiText] get_ui_text_store(W) -> @core.ComponentStore[UiText]
 
 pub fn[W : Has_ZIndex] get_z_index_store(W) -> @core.ComponentStore[ZIndex]
 
-pub fn[W : UiA11yWorld] ui_a11y_update_system(W) -> Unit
+pub fn ui_a11y_update_system(@ecs.World) -> Unit
 
-pub fn[W : UiA11yWorld] ui_build_a11y_tree_update(W) -> @moon_accesskit.TreeUpdate
+pub fn ui_build_a11y_tree_update(@ecs.World) -> @moon_accesskit.TreeUpdate
 
-pub fn[W : UiClipWorld] ui_clip_system(W) -> Unit
+pub fn ui_clip_system(@ecs.World) -> Unit
 
-pub fn[W : UiImageContentSizeWorld] ui_image_content_size_system(W) -> Unit
+pub fn ui_image_content_size_system(@ecs.World) -> Unit
 
-pub fn[W : UiInteractionWorld] ui_interaction_system(W) -> Unit
+pub fn ui_interaction_system(@ecs.World) -> Unit
 
-pub fn[W : UiLayoutWorld] ui_layout_system(W) -> Unit
+pub fn ui_layout_system(@ecs.World) -> Unit
 
-pub fn[W : UiPluginWorld] ui_plugin(@app.App[W]) -> @app.App[W]
+pub fn ui_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
 
-pub fn[W : UiRenderExtractWorld] ui_render_extract_system(W) -> Unit
+pub fn ui_render_extract_system(@ecs.World) -> Unit
 
-pub fn[W : UiScrollWorld] ui_scroll_system(W) -> Unit
+pub fn ui_scroll_system(@ecs.World) -> Unit
 
 pub let ui_set_a11y : String
 
@@ -188,9 +184,9 @@ pub let ui_set_scroll : String
 
 pub let ui_set_stack : String
 
-pub fn[W : UiStackWorld] ui_stack_system(W) -> Unit
+pub fn ui_stack_system(@ecs.World) -> Unit
 
-pub fn[W : UiUpdateContextWorld] ui_update_context_system(W) -> Unit
+pub fn ui_update_context_system(@ecs.World) -> Unit
 
 // Errors
 
@@ -933,37 +929,4 @@ pub(open) trait Has_ZIndex {
   get_z_index_store(Self) -> @core.ComponentStore[ZIndex]
 }
 pub impl Has_ZIndex for @ecs.World
-
-pub(open) trait UiA11yWorld : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Label + Has_ImageNode + Has_AccessibilityLabel + Has_UiText + Has_CalculatedClip + Has_ScrollPosition + @visibility.Has_ViewVisibility + @hierarchy.Has_Parent + @hierarchy.Has_Children {
-}
-
-pub(open) trait UiClipWorld : HasRes_UiContext + Has_UiRoot + Has_Node + Has_UiLayout + Has_CalculatedClip + Has_UiText + @render2d.Has_ScissorRect + @hierarchy.Has_Children + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiImageContentSizeWorld : HasRes_UiContext + HasRes_UiScale + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_UiText + Has_UiImage + Has_ImageNode + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiInteractionWorld : HasRes_UiContext + HasRes_UiStack + Has_UiLayout + Has_Button + Has_Interaction + Has_RelativeCursorPosition + Has_FocusPolicy + Has_CalculatedClip + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiLayoutWorld : HasRes_UiContext + Has_UiRoot + Has_Node + Has_ContentSize + Has_ScrollPosition + Has_UiLayout + Has_UiImage + Has_UiText + @hierarchy.Has_Children + @render2d.Has_Sprite + @render2d.Has_RenderLayers + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @math.Has_Transform + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiPluginWorld : @a11y.HasRes_A11yState + HasRes_UiContext + HasRes_UiScale + Has_UiRoot + Has_Node + Has_ContentSize + Has_ImageNodeSize + Has_ZIndex + Has_GlobalZIndex + HasRes_UiStack + Has_ScrollPosition + Has_UiLayout + Has_CalculatedClip + Has_RelativeCursorPosition + Has_FocusPolicy + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Button + Has_Label + Has_Interaction + Has_UiText + Has_AccessibilityLabel + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @hierarchy.Has_Children + @hierarchy.Has_Parent + @render2d.HasRes_RenderState + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @render2d.Has_RenderLayers + @render2d.Has_Sprite + @render2d.Has_ScissorRect + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiRenderExtractWorld : HasRes_UiContext + HasRes_UiStack + HasRes_UiScale + Has_UiLayout + Has_Node + Has_BackgroundColor + Has_UiImage + Has_ImageNode + Has_ButtonColors + Has_Interaction + Has_Outline + Has_BoxShadow + Has_UiBoxShadowSamples + Has_BorderColor + Has_BorderRadius + Has_UiAntiAlias + @render2d.HasRes_RenderState + @render2d.Has_RenderLayers + @render2d.Has_ScissorRect + @math.Has_Transform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiScrollWorld : HasRes_UiContext + HasRes_UiStack + Has_Node + Has_UiLayout + Has_ScrollPosition + @hierarchy.Has_Children + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiStackWorld : HasRes_UiStack + Has_UiRoot + Has_UiLayout + Has_ZIndex + Has_GlobalZIndex + Has_UiText + @hierarchy.Has_Children + @hierarchy.Has_Parent + @math.Has_Transform + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiUpdateContextWorld : HasRes_UiContext + @render2d.Has_Camera2d + @render2d.Has_Camera + @render2d.Has_Projection + @render2d.Has_RenderTarget + @math.Has_Transform + @transform.Has_GlobalTransform + @core.ChangeTickWorld {
-}
-
-pub(open) trait UiVisibilityDefaultsWorld : @core.ChangeTickWorld + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
-}
 

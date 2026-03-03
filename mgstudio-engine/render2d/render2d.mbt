@@ -5370,9 +5370,16 @@ fn render2d_camera_changed(
 }
 
 ///|
-pub(open) trait CameraPostProcessWorld {
-  camera_tonemapping_mode(self : Self, camera : @core.Entity) -> Int
-  camera_deband_dither_enabled(self : Self, camera : @core.Entity) -> Bool
+fn camera_tonemapping_mode(_world : @ecs.World, _camera : @core.Entity) -> Int {
+  0
+}
+
+///|
+fn camera_deband_dither_enabled(
+  _world : @ecs.World,
+  _camera : @core.Entity,
+) -> Bool {
+  false
 }
 
 ///|
@@ -7056,11 +7063,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
     }
 
-    let tonemapping_mode = CameraPostProcessWorld::camera_tonemapping_mode(
-      world,
-      camera.entity,
-    )
-    let deband_dither_enabled = CameraPostProcessWorld::camera_deband_dither_enabled(
+    let tonemapping_mode = camera_tonemapping_mode(world, camera.entity)
+    let deband_dither_enabled = camera_deband_dither_enabled(
       world,
       camera.entity,
     )

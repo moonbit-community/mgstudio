@@ -377,9 +377,7 @@ pub fn window_set_position(x~ : Int, y~ : Int) -> Unit {
 }
 
 ///|
-fn[W : @core.SystemContextWorld] window_world_system_ticks(
-  world : W,
-) -> @core.SystemTicks {
+fn window_world_system_ticks(world : @ecs.World) -> @core.SystemTicks {
   world.get_system_context().ticks()
 }
 
@@ -398,8 +396,8 @@ fn window_resized_events_writer(
 }
 
 ///|
-pub fn[W : @core.SystemContextWorld] window_resized_events(
-  world : W,
+pub fn window_resized_events(
+  world : @ecs.World,
 ) -> @core.MessageReader[WindowResized] {
   window_resized_events_reader(window_world_system_ticks(world))
 }
@@ -415,7 +413,7 @@ pub impl @core.Message for WindowResized with writer(tick) {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld] window_poll_resize_system(world : W) -> Unit {
+pub fn window_poll_resize_system(world : @ecs.World) -> Unit {
   guard window_state.val.window is Some(window) else { return }
   let width = host_window_get_width(window)
   let height = host_window_get_height(window)
@@ -965,9 +963,7 @@ fn runner_tick() -> Unit {
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_builder(
-  app : @app.App[W],
-) -> @app.RunnerFn {
+pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
     let window = host_window_create(
       width=800,
@@ -980,7 +976,7 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_build
     let width = host_window_get_width(window)
     let height = host_window_get_height(window)
     host_gpu_configure_surface(device~, surface~, width~, height~)
-    let app_ref : Ref[@app.App[W]] = Ref::new(app.run_startup())
+    let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
     runner_state.val.tick = Some(fn() {
       host_window_poll_events(window)
       if @app.app_rendering_enabled() {
@@ -1008,9 +1004,7 @@ pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_runner_build
 }
 
 ///|
-pub fn[W : @core.ChangeTickWorld + @core.SystemContextWorld] window_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .set_runner(window_runner_builder)
   .add_pre_update_system(window_poll_resize_system)

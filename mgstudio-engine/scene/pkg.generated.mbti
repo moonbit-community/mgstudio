@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render3d",
   "Milky2018/mgstudio/visibility",
@@ -37,7 +36,7 @@ pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 
 pub fn[W] scene_load_pending_system(W) -> Unit
 
-pub fn[W : ScenePluginWorld] scene_plugin(@app.App[W]) -> @app.App[W]
+pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scene_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -47,7 +46,7 @@ pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
 
 pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit
 
-pub fn[W : SceneSpawnWorld] scene_spawn_roots_system(W) -> Unit
+pub fn scene_spawn_roots_system(@ecs.World) -> Unit
 
 pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 
@@ -114,10 +113,4 @@ pub(open) trait Has_SceneRoot {
   get_scene_root_store(Self) -> @core.ComponentStore[SceneRoot]
 }
 pub impl Has_SceneRoot for @ecs.World
-
-pub(open) trait ScenePluginWorld : SceneSpawnWorld {
-}
-
-pub(open) trait SceneSpawnWorld : Has_SceneRoot + Has_SceneInstanceReady + @core.SpawnWorld + @core.ChangeTickWorld + @hierarchy.Has_Parent + @math.Has_Transform + @render3d.Has_Mesh3d + @render3d.Has_MeshMaterial3d + @visibility.Has_VisibilityRange + @animation.Has_AnimationTargetId + @animation.Has_AnimatedBy + @animation.Has_AnimationPlayer {
-}
 

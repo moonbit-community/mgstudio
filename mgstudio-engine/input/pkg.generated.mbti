@@ -4,26 +4,27 @@ package "Milky2018/mgstudio/input"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/window",
 }
 
 // Values
-pub fn[W : @core.SystemContextWorld] cursor_moved_events(W) -> @core.MessageReader[CursorMoved]
+pub fn cursor_moved_events(@ecs.World) -> @core.MessageReader[CursorMoved]
 
-pub fn[W : @core.SystemContextWorld] double_tap_gesture_events(W) -> @core.MessageReader[DoubleTapGesture]
+pub fn double_tap_gesture_events(@ecs.World) -> @core.MessageReader[DoubleTapGesture]
 
-pub fn[W : @core.SystemContextWorld] file_drag_and_drop_events(W) -> @core.MessageReader[FileDragAndDrop]
+pub fn file_drag_and_drop_events(@ecs.World) -> @core.MessageReader[FileDragAndDrop]
 
-pub fn[W : @core.SystemContextWorld] gamepad_axis_changed_events(W) -> @core.MessageReader[GamepadAxisChangedEvent]
+pub fn gamepad_axis_changed_events(@ecs.World) -> @core.MessageReader[GamepadAxisChangedEvent]
 
-pub fn[W : @core.SystemContextWorld] gamepad_button_changed_events(W) -> @core.MessageReader[GamepadButtonChangedEvent]
+pub fn gamepad_button_changed_events(@ecs.World) -> @core.MessageReader[GamepadButtonChangedEvent]
 
-pub fn[W : @core.SystemContextWorld] gamepad_button_state_changed_events(W) -> @core.MessageReader[GamepadButtonStateChangedEvent]
+pub fn gamepad_button_state_changed_events(@ecs.World) -> @core.MessageReader[GamepadButtonStateChangedEvent]
 
-pub fn[W : @core.SystemContextWorld] gamepad_connection_events(W) -> @core.MessageReader[GamepadConnectionEvent]
+pub fn gamepad_connection_events(@ecs.World) -> @core.MessageReader[GamepadConnectionEvent]
 
-pub fn[W : @core.SystemContextWorld] gamepad_events(W) -> @core.MessageReader[GamepadEvent]
+pub fn gamepad_events(@ecs.World) -> @core.MessageReader[GamepadEvent]
 
 pub fn gamepads() -> Array[Gamepad]
 
@@ -43,15 +44,15 @@ pub fn[W] input_finish_system(W) -> Unit
 
 pub fn input_gamepad_finish_frame() -> Unit
 
-pub fn[W : @core.ChangeTickWorld] input_plugin(@app.App[W]) -> @app.App[W]
+pub fn input_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[W : @core.ChangeTickWorld] input_poll_drag_and_drop_system(W) -> Unit
+pub fn input_poll_drag_and_drop_system(@ecs.World) -> Unit
 
-pub fn[W : @core.ChangeTickWorld] input_poll_gamepad_system(W) -> Unit
+pub fn input_poll_gamepad_system(@ecs.World) -> Unit
 
-pub fn[W : @core.ChangeTickWorld] input_poll_keyboard_system(W) -> Unit
+pub fn input_poll_keyboard_system(@ecs.World) -> Unit
 
-pub fn[W : @core.ChangeTickWorld] input_poll_mouse_system(W) -> Unit
+pub fn input_poll_mouse_system(@ecs.World) -> Unit
 
 pub fn key_just_pressed(@window.KeyCode) -> Bool
 
@@ -61,11 +62,11 @@ pub fn key_pressed(@window.KeyCode) -> Bool
 
 pub fn key_repeated(@window.KeyCode) -> Bool
 
-pub fn[W : @core.SystemContextWorld] keyboard_character_events(W) -> @core.MessageReader[KeyboardCharacter]
+pub fn keyboard_character_events(@ecs.World) -> @core.MessageReader[KeyboardCharacter]
 
-pub fn[W : @core.SystemContextWorld] keyboard_input_events(W) -> @core.MessageReader[KeyboardInput]
+pub fn keyboard_input_events(@ecs.World) -> @core.MessageReader[KeyboardInput]
 
-pub fn[W : @core.SystemContextWorld] mouse_button_input_events(W) -> @core.MessageReader[MouseButtonInput]
+pub fn mouse_button_input_events(@ecs.World) -> @core.MessageReader[MouseButtonInput]
 
 pub fn mouse_button_just_pressed(@window.MouseButton) -> Bool
 
@@ -77,7 +78,7 @@ pub fn mouse_motion_delta() -> @math.Vec2
 
 pub fn mouse_motion_delta_opt() -> @math.Vec2?
 
-pub fn[W : @core.SystemContextWorld] mouse_motion_events(W) -> @core.MessageReader[MouseMotion]
+pub fn mouse_motion_events(@ecs.World) -> @core.MessageReader[MouseMotion]
 
 pub fn mouse_position() -> @math.Vec2?
 
@@ -85,9 +86,9 @@ pub fn mouse_wheel_delta() -> @math.Vec2
 
 pub fn mouse_wheel_delta_opt() -> @math.Vec2?
 
-pub fn[W : @core.SystemContextWorld] mouse_wheel_events(W) -> @core.MessageReader[MouseWheel]
+pub fn mouse_wheel_events(@ecs.World) -> @core.MessageReader[MouseWheel]
 
-pub fn[W : @core.SystemContextWorld] pinch_gesture_events(W) -> @core.MessageReader[PinchGesture]
+pub fn pinch_gesture_events(@ecs.World) -> @core.MessageReader[PinchGesture]
 
 pub fn primary_pointer_delta() -> @math.Vec2
 
@@ -101,9 +102,9 @@ pub fn primary_pointer_position() -> @math.Vec2?
 
 pub fn primary_pointer_pressed() -> Bool
 
-pub fn[W : @core.SystemContextWorld] rotation_gesture_events(W) -> @core.MessageReader[RotationGesture]
+pub fn rotation_gesture_events(@ecs.World) -> @core.MessageReader[RotationGesture]
 
-pub fn[W : @core.SystemContextWorld] touch_input_events(W) -> @core.MessageReader[TouchInput]
+pub fn touch_input_events(@ecs.World) -> @core.MessageReader[TouchInput]
 
 // Errors
 

@@ -15,9 +15,9 @@
 ///|
 test "app: run_if skips system execution" {
   let log : Array[Int] = []
-  let app = App::new(TestWorld::new()).add_system_config(
-    system(fn(_world : TestWorld) { log.push(1) }).run_if(fn(
-      _world : TestWorld,
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { log.push(1) }).run_if(fn(
+      _world : @ecs.World,
     ) {
       false
     }),
@@ -29,16 +29,16 @@ test "app: run_if skips system execution" {
 ///|
 test "app: add_plugin_group registers grouped plugins" {
   let log : Array[Int] = []
-  fn plugin_1(app : App[TestWorld]) -> App[TestWorld] {
-    app.add_system(fn(_world : TestWorld) { log.push(1) })
+  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
+    app.add_system(fn(_world : @ecs.World) { log.push(1) })
   }
-  fn plugin_2(app : App[TestWorld]) -> App[TestWorld] {
-    app.add_system(fn(_world : TestWorld) { log.push(2) })
+  fn plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
+    app.add_system(fn(_world : @ecs.World) { log.push(2) })
   }
-  fn group() -> PluginGroupBuilder[TestWorld] {
+  fn group() -> PluginGroupBuilder[@ecs.World] {
     PluginGroupBuilder::start().add(plugin_1).add(plugin_2)
   }
-  let app = App::new(TestWorld::new()).add_plugin_group(group)
+  let app = App::new(@ecs.World::new()).add_plugin_group(group)
   app.run_once() |> ignore
   inspect(log.length() == 2 && log[0] == 1 && log[1] == 2, content="true")
 }
@@ -48,16 +48,16 @@ test "app: schedule sets order and preserve insertion within a set" {
   let log : Array[Int] = []
   let set_a = system_set("A")
   let set_b = system_set("B")
-  let app = App::new(TestWorld::new())
+  let app = App::new(@ecs.World::new())
   app
   .add_system_config(
-    system(fn(_world : TestWorld) { log.push(1) }).in_set(set_a),
+    system(fn(_world : @ecs.World) { log.push(1) }).in_set(set_a),
   )
   .add_system_config(
-    system(fn(_world : TestWorld) { log.push(2) }).in_set(set_a),
+    system(fn(_world : @ecs.World) { log.push(2) }).in_set(set_a),
   )
   .add_system_config(
-    system(fn(_world : TestWorld) { log.push(3) }).in_set(set_b),
+    system(fn(_world : @ecs.World) { log.push(3) }).in_set(set_b),
   )
   .configure_set(Update, set_a, before=[set_b])
   .run_once()
@@ -141,7 +141,7 @@ impl @core.Message for TestMessage with writer(tick) {
 ///|
 test "app: add_system_param4 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(TestWorld::new()).add_system_param4(fn(
+  let app = App::new(@ecs.World::new()).add_system_param4(fn(
     p1 : Param1,
     p2 : Param2,
     p3 : Param3,
@@ -166,7 +166,7 @@ test "app: add_system_param4 injects parameters in order" {
 ///|
 test "app: system param can read current system ticks" {
   let log : Array[(Int, Int)] = []
-  let app = App::new(TestWorld::new())
+  let app = App::new(@ecs.World::new())
   app
   .add_system_param(fn(param : TickParam) {
     log.push((param.ticks.last_run, param.ticks.this_run))
@@ -185,7 +185,7 @@ test "app: system param can read current system ticks" {
 test "app: MessageWriter system param writes messages for MessageReader" {
   test_messages_ref.val.clear()
   let observed : Ref[Int] = Ref::new(-1)
-  let app = App::new(TestWorld::new())
+  let app = App::new(@ecs.World::new())
     .add_system_param(fn(writer : @core.MessageWriter[TestMessage]) {
       writer.write({ value: 42 })
     })
