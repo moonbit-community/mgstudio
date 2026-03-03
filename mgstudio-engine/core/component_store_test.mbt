@@ -51,9 +51,9 @@ test "component_store: update and upsert" {
   let store : ComponentStore[Int] = ComponentStore::new()
   inspect(!store.update(e, 1, fn(v) { v + 1 }), content="true")
   store.upsert(e, 10, 2)
-  inspect(store.get(e) == Some(10), content="true")
+  assert_true(store.get(e) is Some(10))
   inspect(store.update(e, 3, fn(v) { v + 5 }), content="true")
-  inspect(store.get(e) == Some(15), content="true")
+  assert_true(store.get(e) is Some(15))
   inspect(
     store.get_ticks(e) is Some(ticks) &&
     ticks.is_changed(SystemTicks::new(2, 3)),

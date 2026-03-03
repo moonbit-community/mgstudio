@@ -91,7 +91,13 @@ test "animation transitions: play updates main animation and starts new clip" {
   inspect(player1.animation(node_a) is Some(_), content="true")
 
   let (transitions2, player2) = transitions1.play(player1, node_b, 0.5F)
-  inspect(transitions2.main_animation() == Some(node_b), content="true")
+  assert_true(
+    if transitions2.main_animation() is Some(main_node) {
+      main_node == node_b
+    } else {
+      false
+    },
+  )
   inspect(player2.animation(node_b) is Some(_), content="true")
 }
 
