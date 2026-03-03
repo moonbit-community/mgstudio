@@ -149,7 +149,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn entity_is_descendant_of(
-  parent_store : @core.ComponentStore[@hierarchy.Parent],
+  parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
   entity : @core.Entity,
   root : @core.Entity,
 ) -> Bool {
@@ -174,10 +174,10 @@ fn apply_visibility_range_for_scene_root(
   visibility_range : @visibility.VisibilityRange,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let parent_store = @hierarchy.query_get_parent_store(world)
-  let mesh_store = @render3d.query_get_mesh3d_store(world)
-  let visibility_range_store = @visibility.query_get_visibility_range_store(
-    world,
+  let parent_store = world.component(@hierarchy.ecs_key_parent)
+  let mesh_store = world.component(@render3d.ecs_key_mesh3d)
+  let visibility_range_store = world.component(
+    @visibility.ecs_key_visibility_range,
   )
   mesh_store.for_each(fn(entity, _mesh) {
     if entity_is_descendant_of(parent_store, entity, scene_root) {
@@ -222,7 +222,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let high_scene_root = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     high_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(asset_server, high_poly_path),
@@ -232,7 +234,9 @@ fn setup(world : @ecs.World) -> Unit {
   visibility_range_state.val.high_scene_root = Some(high_scene_root)
 
   let low_scene_root = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     low_scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(asset_server, low_poly_path),
@@ -242,7 +246,9 @@ fn setup(world : @ecs.World) -> Unit {
   visibility_range_state.val.low_scene_root = Some(low_scene_root)
 
   let directional = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 20_000.0F, true),
     tick,
@@ -251,7 +257,9 @@ fn setup(world : @ecs.World) -> Unit {
   let light_rotation = @math.Quat::from_rotation_z(0.0F)
     .mul(@math.Quat::from_rotation_y(light_angle))
     .mul(@math.Quat::from_rotation_x(light_angle))
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(light_rotation),
     tick,
@@ -265,7 +273,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   visibility_range_state.val.camera = Some(camera)
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -302,7 +312,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn move_camera(world : @ecs.World) -> Unit {
   guard visibility_range_state.val.camera is Some(camera_entity) else { return }
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
@@ -377,19 +387,15 @@ fn toggle_prepass(world : @ecs.World) -> Unit {
   guard visibility_range_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
   if visibility_range_state.val.prepass_enabled {
-    @render3d.query_get_depth_prepass_store(world).insert(
-      camera,
-      @render3d.DepthPrepass::default(),
-      tick,
-    )
-    @render3d.query_get_normal_prepass_store(world).insert(
-      camera,
-      @render3d.NormalPrepass::default(),
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_depth_prepass)
+    .insert(camera, @render3d.DepthPrepass::default(), tick)
+    world
+    .component(@render3d.ecs_key_normal_prepass)
+    .insert(camera, @render3d.NormalPrepass::default(), tick)
   } else {
-    @render3d.query_get_depth_prepass_store(world).remove(camera) |> ignore
-    @render3d.query_get_normal_prepass_store(world).remove(camera) |> ignore
+    world.component(@render3d.ecs_key_depth_prepass).remove(camera) |> ignore
+    world.component(@render3d.ecs_key_normal_prepass).remove(camera) |> ignore
   }
   update_help_text()
 }
@@ -416,7 +422,7 @@ fn update_visibility(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

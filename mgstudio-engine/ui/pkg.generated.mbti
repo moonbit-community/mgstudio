@@ -14,70 +14,129 @@ import {
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/moon_accesskit",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub let ecs_components : Array[String]
 
+pub let ecs_key_accessibility_label : @ecs.ComponentKey[AccessibilityLabel]
+
+pub let ecs_key_background_color : @ecs.ComponentKey[BackgroundColor]
+
+pub let ecs_key_border_color : @ecs.ComponentKey[BorderColor]
+
+pub let ecs_key_border_radius : @ecs.ComponentKey[BorderRadius]
+
+pub let ecs_key_box_shadow : @ecs.ComponentKey[BoxShadow]
+
+pub let ecs_key_button : @ecs.ComponentKey[Button]
+
+pub let ecs_key_button_colors : @ecs.ComponentKey[ButtonColors]
+
+pub let ecs_key_calculated_clip : @ecs.ComponentKey[CalculatedClip]
+
+pub let ecs_key_content_size : @ecs.ComponentKey[ContentSize]
+
+pub let ecs_key_focus_policy : @ecs.ComponentKey[FocusPolicy]
+
+pub let ecs_key_global_z_index : @ecs.ComponentKey[GlobalZIndex]
+
+pub let ecs_key_image_node : @ecs.ComponentKey[ImageNode]
+
+pub let ecs_key_image_node_size : @ecs.ComponentKey[ImageNodeSize]
+
+pub let ecs_key_interaction : @ecs.ComponentKey[Interaction]
+
+pub let ecs_key_label : @ecs.ComponentKey[Label]
+
+pub let ecs_key_node : @ecs.ComponentKey[Node]
+
+pub let ecs_key_outline : @ecs.ComponentKey[Outline]
+
+pub let ecs_key_relative_cursor_position : @ecs.ComponentKey[RelativeCursorPosition]
+
+pub let ecs_key_scroll_position : @ecs.ComponentKey[ScrollPosition]
+
+pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias]
+
+pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[UiBoxShadowSamples]
+
+pub let ecs_key_ui_context : @ecs.ResourceKey[UiContext]
+
+pub let ecs_key_ui_image : @ecs.ComponentKey[UiImage]
+
+pub let ecs_key_ui_layout : @ecs.ComponentKey[UiLayout]
+
+pub let ecs_key_ui_root : @ecs.ComponentKey[UiRoot]
+
+pub let ecs_key_ui_scale : @ecs.ResourceKey[UiScale]
+
+pub let ecs_key_ui_stack : @ecs.ResourceKey[UiStack]
+
+pub let ecs_key_ui_text : @ecs.ComponentKey[UiText]
+
+pub let ecs_key_z_index : @ecs.ComponentKey[ZIndex]
+
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_AccessibilityLabel] query_get_accessibility_label_store(W) -> @core.ComponentStore[AccessibilityLabel]
+pub fn[W : Has_AccessibilityLabel] get_accessibility_label_store(W) -> @core.ComponentStore[AccessibilityLabel]
 
-pub fn[W : Has_BackgroundColor] query_get_background_color_store(W) -> @core.ComponentStore[BackgroundColor]
+pub fn[W : Has_BackgroundColor] get_background_color_store(W) -> @core.ComponentStore[BackgroundColor]
 
-pub fn[W : Has_BorderColor] query_get_border_color_store(W) -> @core.ComponentStore[BorderColor]
+pub fn[W : Has_BorderColor] get_border_color_store(W) -> @core.ComponentStore[BorderColor]
 
-pub fn[W : Has_BorderRadius] query_get_border_radius_store(W) -> @core.ComponentStore[BorderRadius]
+pub fn[W : Has_BorderRadius] get_border_radius_store(W) -> @core.ComponentStore[BorderRadius]
 
-pub fn[W : Has_BoxShadow] query_get_box_shadow_store(W) -> @core.ComponentStore[BoxShadow]
+pub fn[W : Has_BoxShadow] get_box_shadow_store(W) -> @core.ComponentStore[BoxShadow]
 
-pub fn[W : Has_ButtonColors] query_get_button_colors_store(W) -> @core.ComponentStore[ButtonColors]
+pub fn[W : Has_ButtonColors] get_button_colors_store(W) -> @core.ComponentStore[ButtonColors]
 
-pub fn[W : Has_Button] query_get_button_store(W) -> @core.ComponentStore[Button]
+pub fn[W : Has_Button] get_button_store(W) -> @core.ComponentStore[Button]
 
-pub fn[W : Has_CalculatedClip] query_get_calculated_clip_store(W) -> @core.ComponentStore[CalculatedClip]
+pub fn[W : Has_CalculatedClip] get_calculated_clip_store(W) -> @core.ComponentStore[CalculatedClip]
 
-pub fn[W : Has_ContentSize] query_get_content_size_store(W) -> @core.ComponentStore[ContentSize]
+pub fn[W : Has_ContentSize] get_content_size_store(W) -> @core.ComponentStore[ContentSize]
 
-pub fn[W : Has_FocusPolicy] query_get_focus_policy_store(W) -> @core.ComponentStore[FocusPolicy]
+pub fn[W : Has_FocusPolicy] get_focus_policy_store(W) -> @core.ComponentStore[FocusPolicy]
 
-pub fn[W : Has_GlobalZIndex] query_get_global_z_index_store(W) -> @core.ComponentStore[GlobalZIndex]
+pub fn[W : Has_GlobalZIndex] get_global_z_index_store(W) -> @core.ComponentStore[GlobalZIndex]
 
-pub fn[W : Has_ImageNodeSize] query_get_image_node_size_store(W) -> @core.ComponentStore[ImageNodeSize]
+pub fn[W : Has_ImageNodeSize] get_image_node_size_store(W) -> @core.ComponentStore[ImageNodeSize]
 
-pub fn[W : Has_ImageNode] query_get_image_node_store(W) -> @core.ComponentStore[ImageNode]
+pub fn[W : Has_ImageNode] get_image_node_store(W) -> @core.ComponentStore[ImageNode]
 
-pub fn[W : Has_Interaction] query_get_interaction_store(W) -> @core.ComponentStore[Interaction]
+pub fn[W : Has_Interaction] get_interaction_store(W) -> @core.ComponentStore[Interaction]
 
-pub fn[W : Has_Label] query_get_label_store(W) -> @core.ComponentStore[Label]
+pub fn[W : Has_Label] get_label_store(W) -> @core.ComponentStore[Label]
 
-pub fn[W : Has_Node] query_get_node_store(W) -> @core.ComponentStore[Node]
+pub fn[W : Has_Node] get_node_store(W) -> @core.ComponentStore[Node]
 
-pub fn[W : Has_Outline] query_get_outline_store(W) -> @core.ComponentStore[Outline]
+pub fn[W : Has_Outline] get_outline_store(W) -> @core.ComponentStore[Outline]
 
-pub fn[W : Has_RelativeCursorPosition] query_get_relative_cursor_position_store(W) -> @core.ComponentStore[RelativeCursorPosition]
+pub fn[W : Has_RelativeCursorPosition] get_relative_cursor_position_store(W) -> @core.ComponentStore[RelativeCursorPosition]
 
-pub fn[W : Has_ScrollPosition] query_get_scroll_position_store(W) -> @core.ComponentStore[ScrollPosition]
+pub fn[W : Has_ScrollPosition] get_scroll_position_store(W) -> @core.ComponentStore[ScrollPosition]
 
-pub fn[W : Has_UiAntiAlias] query_get_ui_anti_alias_store(W) -> @core.ComponentStore[UiAntiAlias]
+pub fn[W : Has_UiAntiAlias] get_ui_anti_alias_store(W) -> @core.ComponentStore[UiAntiAlias]
 
-pub fn[W : Has_UiBoxShadowSamples] query_get_ui_box_shadow_samples_store(W) -> @core.ComponentStore[UiBoxShadowSamples]
+pub fn[W : Has_UiBoxShadowSamples] get_ui_box_shadow_samples_store(W) -> @core.ComponentStore[UiBoxShadowSamples]
 
-pub fn[W : HasRes_UiContext] query_get_ui_context_resource(W) -> @core.Resource[UiContext]
+pub fn[W : HasRes_UiContext] get_ui_context_resource(W) -> @core.Resource[UiContext]
 
-pub fn[W : Has_UiImage] query_get_ui_image_store(W) -> @core.ComponentStore[UiImage]
+pub fn[W : Has_UiImage] get_ui_image_store(W) -> @core.ComponentStore[UiImage]
 
-pub fn[W : Has_UiLayout] query_get_ui_layout_store(W) -> @core.ComponentStore[UiLayout]
+pub fn[W : Has_UiLayout] get_ui_layout_store(W) -> @core.ComponentStore[UiLayout]
 
-pub fn[W : Has_UiRoot] query_get_ui_root_store(W) -> @core.ComponentStore[UiRoot]
+pub fn[W : Has_UiRoot] get_ui_root_store(W) -> @core.ComponentStore[UiRoot]
 
-pub fn[W : HasRes_UiScale] query_get_ui_scale_resource(W) -> @core.Resource[UiScale]
+pub fn[W : HasRes_UiScale] get_ui_scale_resource(W) -> @core.Resource[UiScale]
 
-pub fn[W : HasRes_UiStack] query_get_ui_stack_resource(W) -> @core.Resource[UiStack]
+pub fn[W : HasRes_UiStack] get_ui_stack_resource(W) -> @core.Resource[UiStack]
 
-pub fn[W : Has_UiText] query_get_ui_text_store(W) -> @core.ComponentStore[UiText]
+pub fn[W : Has_UiText] get_ui_text_store(W) -> @core.ComponentStore[UiText]
 
-pub fn[W : Has_ZIndex] query_get_z_index_store(W) -> @core.ComponentStore[ZIndex]
+pub fn[W : Has_ZIndex] get_z_index_store(W) -> @core.ComponentStore[ZIndex]
 
 pub fn[W : UiA11yWorld] ui_a11y_update_system(W) -> Unit
 
@@ -140,6 +199,8 @@ pub struct AccessibilityLabel {
   text : String
 }
 pub fn AccessibilityLabel::new(String) -> Self
+pub impl ToJson for AccessibilityLabel
+pub impl @json.FromJson for AccessibilityLabel
 
 pub(all) enum AlignContent {
   Center
@@ -155,6 +216,8 @@ pub(all) enum AlignContent {
 }
 pub impl Eq for AlignContent
 pub impl Show for AlignContent
+pub impl ToJson for AlignContent
+pub impl @json.FromJson for AlignContent
 
 pub(all) enum AlignItems {
   Baseline
@@ -168,6 +231,8 @@ pub(all) enum AlignItems {
 }
 pub impl Eq for AlignItems
 pub impl Show for AlignItems
+pub impl ToJson for AlignItems
+pub impl @json.FromJson for AlignItems
 
 pub(all) enum AlignSelf {
   Auto
@@ -181,16 +246,22 @@ pub(all) enum AlignSelf {
 }
 pub impl Eq for AlignSelf
 pub impl Show for AlignSelf
+pub impl ToJson for AlignSelf
+pub impl @json.FromJson for AlignSelf
 
 pub struct BackgroundColor {
   color : @render2d.Color
 }
 pub fn BackgroundColor::new(@render2d.Color) -> Self
+pub impl ToJson for BackgroundColor
+pub impl @json.FromJson for BackgroundColor
 
 pub struct BorderColor {
   color : @render2d.Color
 }
 pub fn BorderColor::new(@render2d.Color) -> Self
+pub impl ToJson for BorderColor
+pub impl @json.FromJson for BorderColor
 
 pub struct BorderRadius {
   top_left : Val
@@ -203,6 +274,8 @@ pub fn BorderRadius::default() -> Self
 pub fn BorderRadius::new(Val, Val, Val, Val) -> Self
 pub fn BorderRadius::percent(Float, Float, Float, Float) -> Self
 pub fn BorderRadius::px(Float, Float, Float, Float) -> Self
+pub impl ToJson for BorderRadius
+pub impl @json.FromJson for BorderRadius
 
 pub struct BorderRect {
   left : Float
@@ -224,10 +297,14 @@ pub struct BoxShadow {
 }
 pub fn BoxShadow::default() -> Self
 pub fn BoxShadow::new(@render2d.Color, Val, Val, Val, Val) -> Self
+pub impl ToJson for BoxShadow
+pub impl @json.FromJson for BoxShadow
 
 pub struct Button {
 }
 pub fn Button::default() -> Self
+pub impl ToJson for Button
+pub impl @json.FromJson for Button
 
 pub struct ButtonColors {
   normal : @render2d.Color
@@ -235,6 +312,8 @@ pub struct ButtonColors {
   pressed : @render2d.Color
 }
 pub fn ButtonColors::new(@render2d.Color, @render2d.Color, @render2d.Color) -> Self
+pub impl ToJson for ButtonColors
+pub impl @json.FromJson for ButtonColors
 
 pub struct CalculatedClip {
   clip : @math.Rect
@@ -254,6 +333,8 @@ pub(all) enum Display {
 }
 pub impl Eq for Display
 pub impl Show for Display
+pub impl ToJson for Display
+pub impl @json.FromJson for Display
 
 pub(all) enum FlexDirection {
   Column
@@ -263,6 +344,8 @@ pub(all) enum FlexDirection {
 }
 pub impl Eq for FlexDirection
 pub impl Show for FlexDirection
+pub impl ToJson for FlexDirection
+pub impl @json.FromJson for FlexDirection
 
 pub(all) enum FlexWrap {
   NoWrap
@@ -271,6 +354,8 @@ pub(all) enum FlexWrap {
 }
 pub impl Eq for FlexWrap
 pub impl Show for FlexWrap
+pub impl ToJson for FlexWrap
+pub impl @json.FromJson for FlexWrap
 
 pub(all) enum FocusPolicy {
   Block
@@ -279,6 +364,8 @@ pub(all) enum FocusPolicy {
 pub fn FocusPolicy::default() -> Self
 pub impl Eq for FocusPolicy
 pub impl Show for FocusPolicy
+pub impl ToJson for FocusPolicy
+pub impl @json.FromJson for FocusPolicy
 
 pub struct GlobalZIndex {
   value : Int
@@ -293,6 +380,8 @@ pub(all) enum GridAutoFlow {
 }
 pub impl Eq for GridAutoFlow
 pub impl Show for GridAutoFlow
+pub impl ToJson for GridAutoFlow
+pub impl @json.FromJson for GridAutoFlow
 
 pub struct GridPlacement {
   start : Int?
@@ -307,6 +396,8 @@ pub fn GridPlacement::span(Int) -> Self
 pub fn GridPlacement::start(Int) -> Self
 pub fn GridPlacement::start_end(Int, Int) -> Self
 pub fn GridPlacement::start_span(Int, Int) -> Self
+pub impl ToJson for GridPlacement
+pub impl @json.FromJson for GridPlacement
 
 pub(all) enum GridTrack {
   Auto
@@ -318,6 +409,8 @@ pub(all) enum GridTrack {
 }
 pub impl Eq for GridTrack
 pub impl Show for GridTrack
+pub impl ToJson for GridTrack
+pub impl @json.FromJson for GridTrack
 
 pub(all) enum GridTrackRepetition {
   Count(Int)
@@ -326,6 +419,8 @@ pub(all) enum GridTrackRepetition {
 }
 pub impl Eq for GridTrackRepetition
 pub impl Show for GridTrackRepetition
+pub impl ToJson for GridTrackRepetition
+pub impl @json.FromJson for GridTrackRepetition
 
 pub struct ImageNode {
   color : @render2d.Color
@@ -358,6 +453,8 @@ pub(all) enum Interaction {
 }
 pub impl Eq for Interaction
 pub impl Show for Interaction
+pub impl ToJson for Interaction
+pub impl @json.FromJson for Interaction
 
 pub(all) enum JustifyContent {
   Center
@@ -373,6 +470,8 @@ pub(all) enum JustifyContent {
 }
 pub impl Eq for JustifyContent
 pub impl Show for JustifyContent
+pub impl ToJson for JustifyContent
+pub impl @json.FromJson for JustifyContent
 
 pub(all) enum JustifyItems {
   Baseline
@@ -384,6 +483,8 @@ pub(all) enum JustifyItems {
 }
 pub impl Eq for JustifyItems
 pub impl Show for JustifyItems
+pub impl ToJson for JustifyItems
+pub impl @json.FromJson for JustifyItems
 
 pub(all) enum JustifySelf {
   Auto
@@ -395,10 +496,14 @@ pub(all) enum JustifySelf {
 }
 pub impl Eq for JustifySelf
 pub impl Show for JustifySelf
+pub impl ToJson for JustifySelf
+pub impl @json.FromJson for JustifySelf
 
 pub struct Label {
 }
 pub fn Label::default() -> Self
+pub impl ToJson for Label
+pub impl @json.FromJson for Label
 
 pub struct Node {
   display : Display
@@ -459,6 +564,8 @@ pub fn Node::with_right(Self, Val) -> Self
 pub fn Node::with_row_gap(Self, Val) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
+pub impl ToJson for Node
+pub impl @json.FromJson for Node
 
 pub(all) enum NodeImageMode {
   Auto
@@ -476,6 +583,8 @@ pub struct Outline {
 }
 pub fn Outline::default() -> Self
 pub fn Outline::new(Val, Val, @render2d.Color) -> Self
+pub impl ToJson for Outline
+pub impl @json.FromJson for Outline
 
 pub struct Overflow {
   x : OverflowAxis
@@ -483,6 +592,8 @@ pub struct Overflow {
 }
 pub fn Overflow::default() -> Self
 pub fn Overflow::new(OverflowAxis, OverflowAxis) -> Self
+pub impl ToJson for Overflow
+pub impl @json.FromJson for Overflow
 
 pub(all) enum OverflowAxis {
   Clip
@@ -492,6 +603,8 @@ pub(all) enum OverflowAxis {
 }
 pub impl Eq for OverflowAxis
 pub impl Show for OverflowAxis
+pub impl ToJson for OverflowAxis
+pub impl @json.FromJson for OverflowAxis
 
 pub(all) enum OverflowClipBox {
   BorderBox
@@ -500,6 +613,8 @@ pub(all) enum OverflowClipBox {
 }
 pub impl Eq for OverflowClipBox
 pub impl Show for OverflowClipBox
+pub impl ToJson for OverflowClipBox
+pub impl @json.FromJson for OverflowClipBox
 
 pub struct OverflowClipMargin {
   visual_box : OverflowClipBox
@@ -511,6 +626,8 @@ pub fn OverflowClipMargin::default() -> Self
 pub fn OverflowClipMargin::new(OverflowClipBox, Float) -> Self
 pub fn OverflowClipMargin::padding_box() -> Self
 pub fn OverflowClipMargin::with_margin(Self, Float) -> Self
+pub impl ToJson for OverflowClipMargin
+pub impl @json.FromJson for OverflowClipMargin
 
 pub(all) enum PositionType {
   Relative
@@ -518,6 +635,8 @@ pub(all) enum PositionType {
 }
 pub impl Eq for PositionType
 pub impl Show for PositionType
+pub impl ToJson for PositionType
+pub impl @json.FromJson for PositionType
 
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
@@ -530,6 +649,8 @@ pub struct RepeatedGridTrack {
 }
 pub fn RepeatedGridTrack::default() -> Self
 pub fn RepeatedGridTrack::new(GridTrackRepetition, Array[GridTrack]) -> Self
+pub impl ToJson for RepeatedGridTrack
+pub impl @json.FromJson for RepeatedGridTrack
 
 pub struct ScrollPosition {
   offset_x : Float
@@ -562,12 +683,16 @@ pub(all) enum UiAntiAlias {
 }
 pub impl Eq for UiAntiAlias
 pub impl Show for UiAntiAlias
+pub impl ToJson for UiAntiAlias
+pub impl @json.FromJson for UiAntiAlias
 
 pub struct UiBoxShadowSamples {
   samples : Int
 }
 pub fn UiBoxShadowSamples::default() -> Self
 pub fn UiBoxShadowSamples::new(Int) -> Self
+pub impl ToJson for UiBoxShadowSamples
+pub impl @json.FromJson for UiBoxShadowSamples
 
 pub struct UiContext {
   mut white_texture : @asset.Handle[@asset.Image]
@@ -614,10 +739,14 @@ pub struct UiRect {
 pub fn UiRect::all(Val) -> Self
 pub fn UiRect::default() -> Self
 pub fn UiRect::new(Val, Val, Val, Val) -> Self
+pub impl ToJson for UiRect
+pub impl @json.FromJson for UiRect
 
 pub struct UiRoot {
 }
 pub fn UiRoot::default() -> Self
+pub impl ToJson for UiRoot
+pub impl @json.FromJson for UiRoot
 
 pub struct UiScale {
   value : Float
@@ -635,6 +764,8 @@ pub struct UiText {
   handle : @text.TextHandle
 }
 pub fn UiText::new(@text.TextHandle) -> Self
+pub impl ToJson for UiText
+pub impl @json.FromJson for UiText
 
 pub(all) enum Val {
   Auto
@@ -645,6 +776,10 @@ pub(all) enum Val {
   VMin(Float)
   VMax(Float)
 }
+pub impl Eq for Val
+pub impl Show for Val
+pub impl ToJson for Val
+pub impl @json.FromJson for Val
 
 pub struct ZIndex {
   value : Int

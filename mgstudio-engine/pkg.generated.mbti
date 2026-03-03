@@ -2,31 +2,14 @@
 package "Milky2018/mgstudio"
 
 import {
-  "Milky2018/mgstudio/a11y",
-  "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/hierarchy",
-  "Milky2018/mgstudio/internal",
-  "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/physics2d",
-  "Milky2018/mgstudio/physics3d",
-  "Milky2018/mgstudio/picking",
-  "Milky2018/mgstudio/render2d",
-  "Milky2018/mgstudio/render3d",
-  "Milky2018/mgstudio/scene",
-  "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/ui",
-  "Milky2018/mgstudio/visibility",
 }
 
 // Values
-pub fn[W : @internal.DefaultPluginsWorld] default_plugins() -> Array[(@app.App[W]) -> @app.App[W]]
+pub fn default_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
 
-pub fn default_plugins_ecs() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
-
-pub fn[W : @internal.DefaultPluginsWorld] default_plugins_nearest() -> Array[(@app.App[W]) -> @app.App[W]]
+pub fn default_plugins_nearest() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
 
 // Errors
 

@@ -151,9 +151,11 @@ fn apply_light_state(world : @ecs.World) -> Unit {
   let state = shadow_biases_state.val
 
   if state.point_light is Some(point_entity) {
-    @math.query_get_transform_store(world).set(point_entity, transform, tick)
+    world.component(@math.ecs_key_transform).set(point_entity, transform, tick)
     |> ignore
-    @render3d.query_get_point_light_store(world).set(
+    world
+    .component(@render3d.ecs_key_point_light)
+    .set(
       point_entity,
       @render3d.PointLight::new(
         @render2d.Color::white(),
@@ -173,11 +175,13 @@ fn apply_light_state(world : @ecs.World) -> Unit {
   }
 
   if state.directional_light is Some(directional_entity) {
-    @math.query_get_transform_store(world).set(
-      directional_entity, transform, tick,
-    )
+    world
+    .component(@math.ecs_key_transform)
+    .set(directional_entity, transform, tick)
     |> ignore
-    @render3d.query_get_directional_light_store(world).set(
+    world
+    .component(@render3d.ecs_key_directional_light)
+    .set(
       directional_entity,
       @render3d.DirectionalLight::new(
         @render2d.Color::white(),
@@ -200,7 +204,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
 fn apply_shadow_filtering_method(world : @ecs.World) -> Unit {
   guard shadow_biases_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let store = @render3d.query_get_shadow_filtering_method_store(world)
+  let store = world.component(@render3d.ecs_key_shadow_filtering_method)
   if store.contains(camera) {
     store.set(camera, shadow_biases_state.val.filter_method, tick) |> ignore
   } else {
@@ -259,19 +263,17 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_biases_state.val.camera = Some(camera)
 
   let tick = world.read_change_tick()
-  @render3d.query_get_free_camera_store(world).insert(
-    camera,
-    @render3d.FreeCamera::default(),
-    tick,
-  )
-  @render3d.query_get_shadow_filtering_method_store(world).insert(
-    camera,
-    shadow_biases_state.val.filter_method,
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_free_camera)
+  .insert(camera, @render3d.FreeCamera::default(), tick)
+  world
+  .component(@render3d.ecs_key_shadow_filtering_method)
+  .insert(camera, shadow_biases_state.val.filter_method, tick)
 
   let point = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -283,11 +285,15 @@ fn setup(world : @ecs.World) -> Unit {
     .with_shadow_normal_bias(shadow_biases_state.val.point_normal_bias),
     tick,
   )
-  @math.query_get_transform_store(world).insert(point, light_transform(), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point, light_transform(), tick)
   shadow_biases_state.val.point_light = Some(point)
 
   let directional = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(
       @render2d.Color::white(),
@@ -298,11 +304,9 @@ fn setup(world : @ecs.World) -> Unit {
     .with_shadow_normal_bias(shadow_biases_state.val.directional_normal_bias),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    directional,
-    light_transform(),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(directional, light_transform(), tick)
   shadow_biases_state.val.directional_light = Some(directional)
 
   let asset_server = @asset.AssetServer::new()
@@ -452,7 +456,7 @@ fn update(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render3d.free_camera_plugin])

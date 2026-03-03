@@ -24,7 +24,7 @@ let rotate_to_cursor_state : Ref[RotateToCursorState] = Ref::new(RotateToCursorS
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(rotate_to_cursor_setup)
@@ -40,11 +40,11 @@ fn rotate_to_cursor_setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("textures/simplespace/ship_C.png")
   let sprite = @render2d.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  let player = @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(world)
+  let player = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
   rotate_to_cursor_state.val.player = player
 
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
@@ -60,8 +60,9 @@ fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
   if @input.mouse_position() is Some(screen_pos) {
     if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
       is Some(world_pos) {
-      let transform_store = @math.query_get_transform_store(world)
-      guard transform_store.get(player) is Some(transform) else { return }
+      guard (try! world.get(player, @math.ecs_key_transform)) is Some(transform) else {
+        return
+      }
 
       let delta = @math.Vec2::new(
         world_pos.x - transform.translation.x,
@@ -75,8 +76,7 @@ fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
         z=transform.translation.z,
       )
 
-      let tick = world.read_change_tick()
-      transform_store.set(player, next_transform, tick) |> ignore
+      try! world.set(player, @math.ecs_key_transform, next_transform)
     }
   }
 }

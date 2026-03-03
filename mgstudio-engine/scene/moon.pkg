@@ -16,6 +16,5 @@ import {
 }
 
 import {
-  "Milky2018/mgstudio/ecs_world",
   "Milky2018/mgstudio/render2d",
 } for "test"

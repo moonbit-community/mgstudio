@@ -26,7 +26,7 @@ pub(open) trait Has_TextureAtlas {
 }
 
 ///|
-pub fn[W : Has_TextureAtlas] query_get_texture_atlas_store(
+pub fn[W : Has_TextureAtlas] get_texture_atlas_store(
   world : W,
 ) -> @core.ComponentStore[TextureAtlas] {
   world.get_texture_atlas_store()

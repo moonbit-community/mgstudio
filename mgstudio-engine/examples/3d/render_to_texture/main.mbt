@@ -50,27 +50,21 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
-  @render2d.query_get_render_layers_store(world).insert(
-    first_pass_cube, first_pass_layer, tick,
-  )
+  world
+  .component(@render2d.ecs_key_render_layers)
+  .insert(first_pass_cube, first_pass_layer, tick)
   render_to_texture_state.val.first_pass_cube = first_pass_cube
 
   let light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
-    light,
-    @render3d.PointLight::default(),
-    tick,
-  )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
-    tick,
-  )
-  @render2d.query_get_render_layers_store(world).insert(
-    light,
-    @render2d.RenderLayers::layer(0).with_layer(1),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(light, @render3d.PointLight::default(), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::from_xyz(0.0F, 0.0F, 10.0F), tick)
+  world
+  .component(@render2d.ecs_key_render_layers)
+  .insert(light, @render2d.RenderLayers::layer(0).with_layer(1), tick)
 
   let first_pass_camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::new(@render2d.Color::white()).with_order(-1),
@@ -79,14 +73,12 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render2d.query_get_render_target_store(world).insert(
-    first_pass_camera,
-    @render2d.RenderTarget::Image(image),
-    tick,
-  )
-  @render2d.query_get_render_layers_store(world).insert(
-    first_pass_camera, first_pass_layer, tick,
-  )
+  world
+  .component(@render2d.ecs_key_render_target)
+  .insert(first_pass_camera, @render2d.RenderTarget::Image(image), tick)
+  world
+  .component(@render2d.ecs_key_render_layers)
+  .insert(first_pass_camera, first_pass_layer, tick)
 
   let main_pass_cube = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
@@ -119,7 +111,7 @@ fn rotator_system(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.first_pass_cube)
     is Some(transform) {
     let delta = @time.time_delta_seconds()
@@ -142,7 +134,7 @@ fn cube_rotator_system(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.main_pass_cube)
     is Some(transform) {
     let delta = @time.time_delta_seconds()
@@ -161,7 +153,7 @@ fn cube_rotator_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

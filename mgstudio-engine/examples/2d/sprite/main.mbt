@@ -14,7 +14,7 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_setup)
@@ -24,7 +24,7 @@ pub fn game_app() -> Unit {
 ///|
 fn sprite_setup(world : @ecs.World) -> Unit {
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
@@ -33,5 +33,5 @@ fn sprite_setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @render2d.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(world) |> ignore
+  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }

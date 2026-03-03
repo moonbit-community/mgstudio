@@ -18,11 +18,11 @@ pub let ecs_key_transform : @ecs.ComponentKey[Transform]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_Transform] get_transform_store(W) -> @core.ComponentStore[Transform]
+
 pub fn pi_half() -> Float
 
 pub fn pow(Float, Float) -> Float
-
-pub fn[W : Has_Transform] query_get_transform_store(W) -> @core.ComponentStore[Transform]
 
 pub fn sin(Float) -> Float
 
@@ -41,12 +41,14 @@ pub fn IVec2::min(Self, Self) -> Self
 pub fn IVec2::new(Int, Int) -> Self
 pub fn IVec2::saturating_sub(Self, Self) -> Self
 pub fn IVec2::to_vec2(Self) -> Vec2
+pub impl ToJson for IVec2
+pub impl @json.FromJson for IVec2
 
-pub struct Quat {
-  x : Float
-  y : Float
-  z : Float
-  w : Float
+pub(all) struct Quat {
+  mut x : Float
+  mut y : Float
+  mut z : Float
+  mut w : Float
 }
 pub fn Quat::from_axis_angle(Vec3, Float) -> Self
 pub fn Quat::from_rotation_x(Float) -> Self
@@ -57,6 +59,8 @@ pub fn Quat::mul(Self, Self) -> Self
 pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::normalize(Self) -> Self
 pub fn Quat::to_rotation_z_angle(Self) -> Float
+pub impl ToJson for Quat
+pub impl @json.FromJson for Quat
 
 pub struct Rect {
   min : Vec2
@@ -66,11 +70,13 @@ pub fn Rect::center(Self) -> Vec2
 pub fn Rect::contains(Self, Vec2) -> Bool
 pub fn Rect::new(Vec2, Vec2) -> Self
 pub fn Rect::size(Self) -> Vec2
+pub impl ToJson for Rect
+pub impl @json.FromJson for Rect
 
-pub struct Transform {
-  translation : Vec3
-  rotation : Quat
-  scale : Vec3
+pub(all) struct Transform {
+  mut translation : Vec3
+  mut rotation : Quat
+  mut scale : Vec3
 }
 pub fn Transform::from_xy(Float, Float) -> Self
 pub fn Transform::from_xy_rotation_scale(Vec2, Float, Vec2, z? : Float) -> Self
@@ -92,6 +98,8 @@ pub struct URect {
 pub fn URect::as_rect(Self) -> Rect
 pub fn URect::new(UVec2, UVec2) -> Self
 pub fn URect::size(Self) -> UVec2
+pub impl ToJson for URect
+pub impl @json.FromJson for URect
 
 pub struct UVec2 {
   x : Int
@@ -103,19 +111,23 @@ pub fn UVec2::saturating_sub(Self, Self) -> Self
 pub fn UVec2::splat(Int) -> Self
 pub fn UVec2::to_vec2(Self) -> Vec2
 pub fn UVec2::zero() -> Self
+pub impl ToJson for UVec2
+pub impl @json.FromJson for UVec2
 
-pub struct Vec2 {
-  x : Float
-  y : Float
+pub(all) struct Vec2 {
+  mut x : Float
+  mut y : Float
 }
 pub fn Vec2::new(Float, Float) -> Self
 pub fn Vec2::sub(Self, Self) -> Self
 pub fn Vec2::to_angle(Self) -> Float
+pub impl ToJson for Vec2
+pub impl @json.FromJson for Vec2
 
-pub struct Vec3 {
-  x : Float
-  y : Float
-  z : Float
+pub(all) struct Vec3 {
+  mut x : Float
+  mut y : Float
+  mut z : Float
 }
 pub fn Vec3::add(Self, Self) -> Self
 pub fn Vec3::cross(Self, Self) -> Self
@@ -130,15 +142,19 @@ pub fn Vec3::normalize_or_zero(Self) -> Self
 pub fn Vec3::splat(Float) -> Self
 pub fn Vec3::sub(Self, Self) -> Self
 pub fn Vec3::zero() -> Self
+pub impl ToJson for Vec3
+pub impl @json.FromJson for Vec3
 
-pub struct Vec4 {
-  x : Float
-  y : Float
-  z : Float
-  w : Float
+pub(all) struct Vec4 {
+  mut x : Float
+  mut y : Float
+  mut z : Float
+  mut w : Float
 }
 pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
+pub impl ToJson for Vec4
+pub impl @json.FromJson for Vec4
 
 // Type aliases
 

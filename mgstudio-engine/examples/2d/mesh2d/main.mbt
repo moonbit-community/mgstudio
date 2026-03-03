@@ -14,7 +14,7 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_setup)
@@ -32,10 +32,9 @@ fn mesh2d_setup(world : @ecs.World) -> Unit {
     0.0F,
     @math.Vec2::new(128.0F, 128.0F),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn_ecs(world)
-  |> ignore
+  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore

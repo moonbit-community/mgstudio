@@ -208,17 +208,11 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(
     @render2d.Color::white(),
     brightness,
   )
-  let resource = @render3d.query_get_global_ambient_light_resource(world)
-  if resource.get_ref_mut(tick) is Some(current) {
-    current.val = ambient
-  } else {
-    resource.insert(ambient, tick)
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -290,7 +284,7 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  @visibility.query_get_visibility_store(world).insert(target, value, tick)
+  world.component(@visibility.ecs_key_visibility).insert(target, value, tick)
 }
 
 ///|
@@ -306,11 +300,9 @@ fn spawn_main_scene(
     ),
   )
   let entity = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
-    entity,
-    @scene.SceneRoot::new(scene),
-    tick,
-  )
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(entity, @scene.SceneRoot::new(scene), tick)
 }
 
 ///|
@@ -324,7 +316,9 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   ).spawn(world)
   irradiance_volumes_state.val.camera = Some(camera)
-  @render3d.query_get_skybox_store(world).insert(
+  world
+  .component(@render3d.ecs_key_skybox)
+  .insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -342,12 +336,12 @@ fn spawn_irradiance_volume(
   let tick = world.read_change_tick()
   let entity = world.spawn_empty()
   irradiance_volumes_state.val.light_probe = Some(entity)
-  @render3d.query_get_light_probe_store(world).insert(
-    entity,
-    @render3d.LightProbe::default(),
-    tick,
-  )
-  @render3d.query_get_irradiance_volume_store(world).insert(
+  world
+  .component(@render3d.ecs_key_light_probe)
+  .insert(entity, @render3d.LightProbe::default(), tick)
+  world
+  .component(@render3d.ecs_key_irradiance_volume)
+  .insert(
     entity,
     @render3d.IrradianceVolume::new(
       Some(irradiance_texture),
@@ -355,7 +349,9 @@ fn spawn_irradiance_volume(
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     entity,
     @math.Transform::from_xyz(
       VOXEL_VOLUME_CENTER_X,
@@ -376,7 +372,9 @@ fn spawn_irradiance_volume(
 fn spawn_light(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -386,11 +384,9 @@ fn spawn_light(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::from_xyz(4.0762F, 5.9039F, 1.0055F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::from_xyz(4.0762F, 5.9039F, 1.0055F), tick)
 }
 
 ///|
@@ -415,7 +411,9 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let fox = world.spawn_empty()
   irradiance_volumes_state.val.fox = Some(fox)
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     fox,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -425,7 +423,9 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     fox,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
       @math.Vec3::splat(FOX_SCALE),
@@ -467,11 +467,9 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
             @math.Vec3::splat(VOXEL_CUBE_SCALE),
           ),
         ).spawn(world)
-        @render3d.query_get_not_shadow_caster_store(world).insert(
-          entity,
-          @render3d.NotShadowCaster::default(),
-          tick,
-        )
+        world
+        .component(@render3d.ecs_key_not_shadow_caster)
+        .insert(entity, @render3d.NotShadowCaster::default(), tick)
         irradiance_volumes_state.val.voxel_cubes.push(entity)
       }
     }
@@ -534,7 +532,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     return
   }
   guard irradiance_volumes_state.val.camera is Some(camera) else { return }
-  guard @math.query_get_transform_store(world).get(camera) is Some(transform) else {
+  guard world.component(@math.ecs_key_transform).get(camera) is Some(transform) else {
     return
   }
   let angle = ROTATION_SPEED * @time.time_delta_seconds()
@@ -546,11 +544,9 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  @math.query_get_transform_store(world).set(
-    camera,
-    next,
-    world.read_change_tick(),
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .set(camera, next, world.read_change_tick())
   |> ignore
 }
 
@@ -581,7 +577,7 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
   }
   let tick = world.read_change_tick()
   if irradiance_volumes_state.val.irradiance_volume_present {
-    @render3d.query_get_irradiance_volume_store(world).remove(light_probe)
+    world.component(@render3d.ecs_key_irradiance_volume).remove(light_probe)
     |> ignore
     set_global_ambient_light(
       world,
@@ -592,7 +588,9 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
     guard irradiance_volumes_state.val.irradiance_texture is Some(texture) else {
       return
     }
-    @render3d.query_get_irradiance_volume_store(world).insert(
+    world
+    .component(@render3d.ecs_key_irradiance_volume)
+    .insert(
       light_probe,
       @render3d.IrradianceVolume::new(
         Some(texture),
@@ -653,10 +651,12 @@ fn move_entity_on_ground(
   point : @math.Vec3,
 ) -> Unit {
   guard entity is Some(target) else { return }
-  guard @math.query_get_transform_store(world).get(target) is Some(current) else {
+  guard world.component(@math.ecs_key_transform).get(target) is Some(current) else {
     return
   }
-  @math.query_get_transform_store(world).set(
+  world
+  .component(@math.ecs_key_transform)
+  .set(
     target,
     current.with_translation(
       @math.Vec3::new(point.x, current.translation.y, point.z),
@@ -676,15 +676,17 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  guard @render2d.query_get_camera_store(world).get(camera_entity)
+  guard world.component(@render2d.ecs_key_camera).get(camera_entity)
     is Some(camera) else {
     return
   }
-  guard @render3d.query_get_camera_projection3d_store(world).get(camera_entity)
+  guard world
+    .component(@render3d.ecs_key_camera_projection3d)
+    .get(camera_entity)
     is Some(projection) else {
     return
   }
-  guard @math.query_get_transform_store(world).get(camera_entity)
+  guard world.component(@math.ecs_key_transform).get(camera_entity)
     is Some(camera_transform) else {
     return
   }
@@ -717,7 +719,7 @@ fn update_text(_world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

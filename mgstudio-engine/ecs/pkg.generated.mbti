@@ -11,17 +11,23 @@ pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
 pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
 
-pub fn[A : @json.FromJson] query1(World, ComponentKey[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson] query1(World, ComponentKey[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 
-pub fn[A : ToJson + @json.FromJson] query1_update(World, ComponentKey[A], (@core.Entity, A) -> A) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson] query1_for_each(World, ComponentKey[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 
-pub fn[A : @json.FromJson, B : @json.FromJson] query2(World, ComponentKey[A], ComponentKey[B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson] query1_view(World, ComponentKey[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_update(World, ComponentKey[A], ComponentKey[B], (@core.Entity, A, B) -> (A, B)) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2(World, ComponentKey[A], ComponentKey[B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
 
-pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3(World, ComponentKey[A], ComponentKey[B], ComponentKey[C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_for_each(World, ComponentKey[A], ComponentKey[B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
 
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] query3_update(World, ComponentKey[A], ComponentKey[B], ComponentKey[C], (@core.Entity, A, B, C) -> (A, B, C)) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson] query2_view(World, ComponentKey[A], ComponentKey[B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] query3(World, ComponentKey[A], ComponentKey[B], ComponentKey[C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] query3_for_each(World, ComponentKey[A], ComponentKey[B], ComponentKey[C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_view(World, ComponentKey[A], ComponentKey[B], ComponentKey[C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
 
 pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
@@ -41,6 +47,23 @@ pub(all) suberror EcsError {
 }
 
 // Types and methods
+pub struct ComponentAccess[T] {
+  world : World
+  key : ComponentKey[T]
+}
+pub fn[T] ComponentAccess::contains(Self[T], @core.Entity) -> Bool
+pub fn[T : @json.FromJson] ComponentAccess::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
+pub fn[T : @json.FromJson] ComponentAccess::for_each_added(Self[T], @core.SystemTicks, (@core.Entity, T) -> Unit) -> Unit
+pub fn[T : @json.FromJson] ComponentAccess::for_each_changed(Self[T], @core.SystemTicks, (@core.Entity, T) -> Unit) -> Unit
+pub fn[T : @json.FromJson] ComponentAccess::get(Self[T], @core.Entity) -> T?
+pub fn[T] ComponentAccess::get_ticks(Self[T], @core.Entity) -> @core.ComponentTicks?
+pub fn[T : ToJson] ComponentAccess::insert(Self[T], @core.Entity, T, Int) -> Unit
+pub fn[T] ComponentAccess::len(Self[T]) -> Int
+pub fn[T : @json.FromJson] ComponentAccess::remove(Self[T], @core.Entity) -> T?
+pub fn[T : ToJson] ComponentAccess::set(Self[T], @core.Entity, T, Int) -> Bool
+pub fn[T : ToJson + @json.FromJson] ComponentAccess::update(Self[T], @core.Entity, Int, (T) -> T) -> Bool
+pub fn[T : ToJson] ComponentAccess::upsert(Self[T], @core.Entity, T, Int) -> Unit
+
 pub struct ComponentKey[T] {
   id : Int
   debug_name : String
@@ -63,16 +86,16 @@ pub struct Query1[A] {
   world : World
   key_a : ComponentKey[A]
 }
-pub fn[A : @json.FromJson] Query1::for_each(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
-pub fn[A : ToJson + @json.FromJson] Query1::update(Self[A], (@core.Entity, A) -> A) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson] Query1::for_each(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson] Query1::view(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 
 pub struct Query2[A, B] {
   world : World
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
 }
-pub fn[A : @json.FromJson, B : @json.FromJson] Query2::for_each(Self[A, B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::update(Self[A, B], (@core.Entity, A, B) -> (A, B)) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::for_each(Self[A, B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson] Query2::view(Self[A, B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
 
 pub struct Query3[A, B, C] {
   world : World
@@ -80,8 +103,8 @@ pub struct Query3[A, B, C] {
   key_b : ComponentKey[B]
   key_c : ComponentKey[C]
 }
-pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::for_each(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] Query3::update(Self[A, B, C], (@core.Entity, A, B, C) -> (A, B, C)) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] Query3::for_each(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::view(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
 
 pub struct ResourceKey[T] {
   id : Int
@@ -104,6 +127,7 @@ pub struct World {
 }
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
+pub fn[T] World::component(Self, ComponentKey[T]) -> ComponentAccess[T]
 pub fn World::despawn(Self, @core.Entity) -> Unit raise EcsError
 pub fn[T : @json.FromJson] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : @json.FromJson] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError

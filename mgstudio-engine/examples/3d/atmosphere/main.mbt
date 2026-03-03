@@ -107,7 +107,7 @@ fn float_from_int(value : Int) -> Float {
 ///|
 fn read_camera_exposure_ev100(world : @ecs.World) -> Float {
   if atmosphere_state.val.camera is Some(camera_entity) {
-    if @render3d.query_get_exposure_store(world).get(camera_entity)
+    if world.component(@render3d.ecs_key_exposure).get(camera_entity)
       is Some(exposure) {
       return exposure.ev100
     }
@@ -210,9 +210,9 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   let mut sun_mix = 0.0F
   if state.camera is Some(camera_entity) {
     if state.sun is Some(sun_entity) {
-      if @math.query_get_transform_store(world).get(camera_entity)
+      if world.component(@math.ecs_key_transform).get(camera_entity)
         is Some(camera_transform) {
-        if @math.query_get_transform_store(world).get(sun_entity)
+        if world.component(@math.ecs_key_transform).get(sun_entity)
           is Some(sun_transform) {
           let light_dir = transform_forward(sun_transform).neg()
           let view_dir = scene_focus()
@@ -281,14 +281,13 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
     ),
   )
 
-  let tick = world.read_change_tick()
-  let ambient = @render3d.query_get_global_ambient_light_resource(world)
-  if ambient.get_ref_mut(tick) is Some(value) {
-    value.val = @render3d.GlobalAmbientLight::new(
+  world.insert_resource(
+    @render3d.ecs_key_global_ambient_light,
+    @render3d.GlobalAmbientLight::new(
       @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       clampf(0.03F * exposure_scale, 0.01F, 0.06F),
-    )
-  }
+    ),
+  )
 }
 
 ///|
@@ -322,31 +321,21 @@ fn setup_camera(world : @ecs.World) -> Unit {
     .spawn(world)
 
   let tick = world.read_change_tick()
-  @render3d.query_get_deferred_prepass_store(world).insert(
-    camera,
-    @render3d.DeferredPrepass::default(),
-    tick,
-  )
-  @render3d.query_get_tonemapping_store(world).insert(
-    camera,
-    @render3d.Tonemapping::AcesFitted,
-    tick,
-  )
-  @render3d.query_get_bloom_store(world).insert(
-    camera,
-    @render3d.Bloom::default(),
-    tick,
-  )
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
-    camera,
-    @render3d.TemporalAntiAliasing::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_deferred_prepass)
+  .insert(camera, @render3d.DeferredPrepass::default(), tick)
+  world
+  .component(@render3d.ecs_key_tonemapping)
+  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  world
+  .component(@render3d.ecs_key_bloom)
+  .insert(camera, @render3d.Bloom::default(), tick)
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .component(@render3d.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
 
   atmosphere_state.val.camera = Some(camera)
 }
@@ -360,7 +349,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .build()
 
   let sun = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     sun,
     @math.Transform::from_xyz(1.0F, 0.4F, 0.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -368,7 +359,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     sun,
     @render3d.DirectionalLight::new(
       @render2d.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
@@ -508,11 +501,13 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
   }
   if exposure_delta != 0.0F {
     if atmosphere_state.val.camera is Some(camera_entity) {
-      if @render3d.query_get_exposure_store(world).get(camera_entity)
+      if world.component(@render3d.ecs_key_exposure).get(camera_entity)
         is Some(exposure) {
         let next = clampf(exposure.ev100 + exposure_delta, 6.0F, 20.0F)
         if next != exposure.ev100 {
-          @render3d.query_get_exposure_store(world).set(
+          world
+          .component(@render3d.ecs_key_exposure)
+          .set(
             camera_entity,
             exposure.with_ev100(next),
             world.read_change_tick(),
@@ -556,7 +551,9 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
       0.4F * @math.cos(atmosphere_state.val.sun_pitch),
       0.4F * @math.sin(atmosphere_state.val.sun_pitch),
     )
-    @math.query_get_transform_store(world).set(
+    world
+    .component(@math.ecs_key_transform)
+    .set(
       sun_entity,
       @math.Transform::from_xyz(sun_pos.x, sun_pos.y, sun_pos.z).looking_at(
         @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -586,18 +583,10 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let renderer_method_resource = @render3d.query_get_default_opaque_renderer_method_resource(
-    world,
+  world.insert_resource(
+    @render3d.ecs_key_default_opaque_renderer_method,
+    @render3d.DefaultOpaqueRendererMethod::deferred(),
   )
-  if renderer_method_resource.get_ref_mut(tick) is Some(current) {
-    current.val = @render3d.DefaultOpaqueRendererMethod::deferred()
-  } else {
-    renderer_method_resource.insert(
-      @render3d.DefaultOpaqueRendererMethod::deferred(),
-      tick,
-    )
-  }
 
   atmosphere_state.val = {
     paused: false,
@@ -632,7 +621,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

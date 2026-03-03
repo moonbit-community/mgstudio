@@ -43,28 +43,28 @@ pub(open) trait HasRes_PointerInputs {
 }
 
 ///|
-pub fn[W : HasRes_PickingHits] query_get_picking_hits_resource(
+pub fn[W : HasRes_PickingHits] get_picking_hits_resource(
   world : W,
 ) -> @core.Resource[PickingHits] {
   world.get_picking_hits_resource()
 }
 
 ///|
-pub fn[W : HasRes_PickingState] query_get_picking_state_resource(
+pub fn[W : HasRes_PickingState] get_picking_state_resource(
   world : W,
 ) -> @core.Resource[PickingState] {
   world.get_picking_state_resource()
 }
 
 ///|
-pub fn[W : HasRes_PickingEvents] query_get_picking_events_resource(
+pub fn[W : HasRes_PickingEvents] get_picking_events_resource(
   world : W,
 ) -> @core.Resource[PickingEvents] {
   world.get_picking_events_resource()
 }
 
 ///|
-pub fn[W : HasRes_PointerInputs] query_get_pointer_inputs_resource(
+pub fn[W : HasRes_PointerInputs] get_pointer_inputs_resource(
   world : W,
 ) -> @core.Resource[PointerInputs] {
   world.get_pointer_inputs_resource()

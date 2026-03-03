@@ -250,7 +250,9 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
     lighting_mode_eq(mode, LightingMode::RealTime)
 
   if app_status.val.directional_light is Some(light_entity) {
-    @render3d.query_get_directional_light_store(world).set(
+    world
+    .component(@render3d.ecs_key_directional_light)
+    .set(
       light_entity,
       @render3d.DirectionalLight::new(
         @render2d.Color::white(),
@@ -266,14 +268,7 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
     @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     mode_ambient_brightness(mode),
   )
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient_light
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient_light, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient_light)
 
   if app_status.val.sphere_material is Some(handle) {
     if @render3d.standard_material_get(handle) is Some(material) {
@@ -289,9 +284,11 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
 ///|
 fn reset_sphere_position(world : @ecs.World) -> Unit {
   if app_status.val.sphere is Some(sphere_entity) {
-    if @math.query_get_transform_store(world).get(sphere_entity)
+    if world.component(@math.ecs_key_transform).get(sphere_entity)
       is Some(transform) {
-      @math.query_get_transform_store(world).set(
+      world
+      .component(@math.ecs_key_transform)
+      .set(
         sphere_entity,
         transform.with_translation(initial_sphere_position()),
         world.read_change_tick(),
@@ -329,11 +326,11 @@ fn move_sphere(world : @ecs.World) -> Unit {
   guard app_status.val.sphere is Some(sphere_entity) else { return }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  let camera_store = @render2d.query_get_camera_store(world)
+  let camera_store = world.component(@render2d.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = @render3d.query_get_camera_projection3d_store(world)
+  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
@@ -426,7 +423,9 @@ fn setup(world : @ecs.World) -> Unit {
   app_status.val.camera = Some(camera)
 
   let scene_root = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     scene_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -459,12 +458,16 @@ fn setup(world : @ecs.World) -> Unit {
   app_status.val.sphere_material = Some(sphere_material)
 
   let directional_light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional_light,
     @math.Transform::from_xyz(1.0F, 1.8F, 0.6F).looking_at(
       @math.Vec3::new(0.0F, 0.2F, 0.0F),
@@ -507,7 +510,7 @@ fn update(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

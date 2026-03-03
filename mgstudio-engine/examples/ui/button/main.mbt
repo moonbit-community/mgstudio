@@ -30,8 +30,8 @@ fn pressed_button_color() -> @render2d.Color {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system_config(@app.system(button_system).after(@ui.ui_set_focus))
@@ -39,17 +39,17 @@ pub fn game_app() -> Unit {
 }
 
 ///|
-fn button_system(world : @ecs_world.World) -> Unit {
+fn button_system(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   let system_ticks = world.get_system_context().ticks()
-  let a11y_state_resource = world.get_a11y_state_resource()
+  let a11y_state_resource = @a11y.get_a11y_state_resource(world)
   let a11y_state_ref = a11y_state_resource.get_ref_mut(tick)
-  let button_store = world.get_button_store()
-  let interaction_store = world.get_interaction_store()
-  let background_store = world.get_background_color_store()
-  let border_store = world.get_border_color_store()
-  let children_store = world.get_children_store()
-  let ui_text_store = world.get_ui_text_store()
+  let button_store = world.component(@ui.ecs_key_button)
+  let interaction_store = world.component(@ui.ecs_key_interaction)
+  let background_store = world.component(@ui.ecs_key_background_color)
+  let border_store = world.component(@ui.ecs_key_border_color)
+  let children_store = world.component(@hierarchy.ecs_key_children)
+  let ui_text_store = world.component(@ui.ecs_key_ui_text)
   interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
     if !button_store.contains(entity) {
       return
@@ -112,7 +112,7 @@ fn button_system(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
 
   // UI camera.
@@ -127,9 +127,9 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   // Root node.
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
-  .get_node_store()
+  .component(@ui.ecs_key_node)
   .insert(
     root,
     @ui.Node::default()
@@ -142,10 +142,14 @@ fn setup(world : @ecs_world.World) -> Unit {
 
   // Button node.
   let button = world.spawn_empty()
-  world.get_parent_store().insert(button, @hierarchy.Parent::new(root), tick)
-  world.get_button_store().insert(button, @ui.Button::default(), tick)
   world
-  .get_node_store()
+  .component(@hierarchy.ecs_key_parent)
+  .insert(button, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_button)
+  .insert(button, @ui.Button::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
   .insert(
     button,
     @ui.Node::default()
@@ -157,13 +161,13 @@ fn setup(world : @ecs_world.World) -> Unit {
     tick,
   )
   world
-  .get_border_radius_store()
+  .component(@ui.ecs_key_border_radius)
   .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)), tick)
   world
-  .get_border_color_store()
+  .component(@ui.ecs_key_border_color)
   .insert(button, @ui.BorderColor::new(@render2d.Color::white()), tick)
   world
-  .get_background_color_store()
+  .component(@ui.ecs_key_background_color)
   .insert(button, @ui.BackgroundColor::new(@render2d.Color::black()), tick)
 
   // Button label.
@@ -178,13 +182,17 @@ fn setup(world : @ecs_world.World) -> Unit {
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
     .spawn()
   let label = world.spawn_empty()
-  world.get_parent_store().insert(label, @hierarchy.Parent::new(button), tick)
   world
-  .get_node_store()
+  .component(@hierarchy.ecs_key_parent)
+  .insert(label, @hierarchy.Parent::new(button), tick)
+  world
+  .component(@ui.ecs_key_node)
   .insert(
     label,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
     tick,
   )
-  world.get_ui_text_store().insert(label, @ui.UiText::new(label_handle), tick)
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(label, @ui.UiText::new(label_handle), tick)
 }

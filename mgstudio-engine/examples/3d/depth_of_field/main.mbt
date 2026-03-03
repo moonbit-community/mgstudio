@@ -101,7 +101,9 @@ fn compute_focal_length_meters(fov : Float) -> Float {
 fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
   guard dof_state.val.camera is Some(camera) else { return }
   let perspective = @render3d.PerspectiveProjection3d::default().with_fov(fov)
-  @render3d.query_get_camera_projection3d_store(world).set(
+  world
+  .component(@render3d.ecs_key_camera_projection3d)
+  .set(
     camera,
     @render3d.CameraProjection3d::new(
       @render3d.Projection3d::Perspective(perspective),
@@ -117,16 +119,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -229,25 +223,21 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_tonemapping_store(world).insert(
-    camera,
-    @render3d.Tonemapping::TonyMcMapface,
-    tick,
-  )
-  @render3d.query_get_bloom_store(world).insert(
-    camera,
-    @render3d.Bloom::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_tonemapping)
+  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
+  world
+  .component(@render3d.ecs_key_bloom)
+  .insert(camera, @render3d.Bloom::default(), tick)
   dof_state.val.camera = Some(camera)
 
   let scene_entity = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     scene_entity,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -298,12 +288,16 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let directional = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 25_000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional,
     @math.Transform::from_xyz(0.0F, 8.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -1.5F, -8.0F),
@@ -313,7 +307,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let point = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -323,11 +319,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point,
-    @math.Transform::from_xyz(0.0F, 4.5F, 6.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point, @math.Transform::from_xyz(0.0F, 4.5F, 6.0F), tick)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -405,7 +399,7 @@ fn adjust_focus_and_mode(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

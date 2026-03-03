@@ -100,16 +100,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -130,17 +122,10 @@ fn color_for_row(index : Int) -> @render2d.Color {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let shadow_map_resource = @render3d.query_get_directional_light_shadow_map_resource(
-    world,
+  world.insert_resource(
+    @render3d.ecs_key_directional_light_shadow_map,
+    @render3d.DirectionalLightShadowMap::new(4096),
   )
-  if shadow_map_resource.get_ref_mut(tick) is Some(current) {
-    current.val = @render3d.DirectionalLightShadowMap::new(4096)
-  } else {
-    shadow_map_resource.insert(
-      @render3d.DirectionalLightShadowMap::new(4096),
-      tick,
-    )
-  }
 
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
   let camera = @render3d.Camera3dBundle::new(
@@ -150,30 +135,30 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::default().with_intensity(
       ENVIRONMENT_LIGHT_INTENSITY,
     ),
     tick,
   )
-  @render3d.query_get_free_camera_store(world).insert(
-    camera,
-    @render3d.FreeCamera::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_free_camera)
+  .insert(camera, @render3d.FreeCamera::default(), tick)
 
   let directional = world.spawn_empty()
   let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
     .with_num_cascades(1)
     .with_maximum_distance(15.0F)
     .build()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(
       @render2d.Color::white(),
@@ -185,7 +170,9 @@ fn setup(world : @ecs.World) -> Unit {
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional,
     @math.Transform::identity().with_rotation(light_rot),
     tick,
@@ -249,7 +236,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

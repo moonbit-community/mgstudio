@@ -34,7 +34,7 @@ let sprite_tile_animation_state : Ref[SpriteTileAnimationState] = Ref::new(Sprit
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_tile_setup)
@@ -55,11 +55,11 @@ fn sprite_tile_setup(world : @ecs.World) -> Unit {
       ),
     )
     .with_custom_size(Some(@math.Vec2::new(128.0F, 128.0F)))
-  let entity = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn_ecs(
+  let entity = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
     world,
   )
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
@@ -105,7 +105,7 @@ fn sprite_tile_animate(world : @ecs.World) -> Unit {
     let new_entity = @render2d.SpriteBundle::new(
       sprite,
       @math.Transform::identity(),
-    ).spawn_ecs(world)
+    ).spawn(world)
     sprite_tile_animation_state.val.sprite = Some(new_entity)
   }
 }

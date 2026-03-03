@@ -153,14 +153,12 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light_entity = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
-    light_entity,
-    @render3d.PointLight::default(),
-    tick,
-  )
-  @math.query_get_transform_store(world).insert(
-    light_entity, camera_and_light_transform, tick,
-  )
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(light_entity, @render3d.PointLight::default(), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light_entity, camera_and_light_transform, tick)
 
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
@@ -191,20 +189,18 @@ fn input_handler(world : @ecs.World) -> Unit {
   guard custom_mesh_state.val.mesh_entity is Some(mesh_entity) else { return }
 
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
 
   if @input.key_just_pressed(@window.KeyCode::Space) {
     let next_upper_uv = !custom_mesh_state.val.upper_uv
     custom_mesh_state.val.upper_uv = next_upper_uv
     let next_mesh = create_cube_mesh(next_upper_uv)
     let next_mesh_id = @render2d.render2d_upload_mesh_handle(next_mesh.mesh)
-    @render3d.query_get_mesh3d_store(world).set(mesh_entity, next_mesh, tick)
+    world.component(@render3d.ecs_key_mesh3d).set(mesh_entity, next_mesh, tick)
     |> ignore
-    @render2d.query_get_gpu_mesh2d_store(world).set(
-      mesh_entity,
-      @render2d.GpuMesh2d::new(next_mesh_id),
-      tick,
-    )
+    world
+    .component(@render2d.ecs_key_gpu_mesh2d)
+    .set(mesh_entity, @render2d.GpuMesh2d::new(next_mesh_id), tick)
     |> ignore
   }
 
@@ -245,7 +241,7 @@ fn input_handler(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

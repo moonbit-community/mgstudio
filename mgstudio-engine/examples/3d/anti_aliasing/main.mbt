@@ -212,9 +212,9 @@ fn set_camera_projection(world : @ecs.World) -> Unit {
       @render3d.Projection3d::perspective_default(),
     )
   }
-  @render3d.query_get_camera_projection3d_store(world).set(
-    camera_entity, projection, tick,
-  )
+  world
+  .component(@render3d.ecs_key_camera_projection3d)
+  .set(camera_entity, projection, tick)
   |> ignore
 }
 
@@ -251,12 +251,15 @@ fn clear_temporal_aa_components(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  @render3d.query_get_temporal_anti_aliasing_store(world).remove(camera_entity)
+  world
+  .component(@render3d.ecs_key_temporal_anti_aliasing)
+  .remove(camera_entity)
   |> ignore
-  @render3d.query_get_temporal_jitter_store(world).remove(camera_entity)
+  world.component(@render3d.ecs_key_temporal_jitter).remove(camera_entity)
   |> ignore
-  @render3d.query_get_depth_prepass_store(world).remove(camera_entity) |> ignore
-  @render3d.query_get_motion_vector_prepass_store(world).remove(camera_entity)
+  world.component(@render3d.ecs_key_depth_prepass).remove(camera_entity)
+  |> ignore
+  world.component(@render3d.ecs_key_motion_vector_prepass).remove(camera_entity)
   |> ignore
 }
 
@@ -266,33 +269,33 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let aa_method = anti_aliasing_state.val.aa_method
   if aa_method_eq(aa_method, AAMethod::NoAA) {
-    @render3d.query_get_msaa_store(world).insert(
-      camera_entity,
-      @render3d.Msaa::Off,
-      tick,
-    )
-    @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
+    world
+    .component(@render3d.ecs_key_msaa)
+    .insert(camera_entity, @render3d.Msaa::Off, tick)
+    world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::MSAA) {
-    @render3d.query_get_msaa_store(world).insert(
+    world
+    .component(@render3d.ecs_key_msaa)
+    .insert(
       camera_entity,
       msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
       tick,
     )
-    @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
+    world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::FXAA) {
-    @render3d.query_get_msaa_store(world).insert(
-      camera_entity,
-      @render3d.Msaa::Off,
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_msaa)
+    .insert(camera_entity, @render3d.Msaa::Off, tick)
     clear_temporal_aa_components(world, camera_entity)
-    @render3d.query_get_fxaa_store(world).insert(
+    world
+    .component(@render3d.ecs_key_fxaa)
+    .insert(
       camera_entity,
       @render3d.Fxaa::default().with_sensitivity(
         fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
@@ -302,40 +305,28 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     return
   }
   if aa_method_eq(aa_method, AAMethod::TAA) {
-    @render3d.query_get_msaa_store(world).insert(
-      camera_entity,
-      @render3d.Msaa::Off,
-      tick,
-    )
-    @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
-    @render3d.query_get_temporal_anti_aliasing_store(world).insert(
-      camera_entity,
-      @render3d.TemporalAntiAliasing::default(),
-      tick,
-    )
-    @render3d.query_get_temporal_jitter_store(world).insert(
-      camera_entity,
-      @render3d.TemporalJitter::default(),
-      tick,
-    )
-    @render3d.query_get_depth_prepass_store(world).insert(
-      camera_entity,
-      @render3d.DepthPrepass::default(),
-      tick,
-    )
-    @render3d.query_get_motion_vector_prepass_store(world).insert(
-      camera_entity,
-      @render3d.MotionVectorPrepass::default(),
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_msaa)
+    .insert(camera_entity, @render3d.Msaa::Off, tick)
+    world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
+    world
+    .component(@render3d.ecs_key_temporal_anti_aliasing)
+    .insert(camera_entity, @render3d.TemporalAntiAliasing::default(), tick)
+    world
+    .component(@render3d.ecs_key_temporal_jitter)
+    .insert(camera_entity, @render3d.TemporalJitter::default(), tick)
+    world
+    .component(@render3d.ecs_key_depth_prepass)
+    .insert(camera_entity, @render3d.DepthPrepass::default(), tick)
+    world
+    .component(@render3d.ecs_key_motion_vector_prepass)
+    .insert(camera_entity, @render3d.MotionVectorPrepass::default(), tick)
     return
   }
-  @render3d.query_get_msaa_store(world).insert(
-    camera_entity,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_fxaa_store(world).remove(camera_entity) |> ignore
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera_entity, @render3d.Msaa::Off, tick)
+  world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
   clear_temporal_aa_components(world, camera_entity)
 }
 
@@ -785,7 +776,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let helmet = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     helmet,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -799,12 +792,16 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
@@ -821,7 +818,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   anti_aliasing_state.val.camera = Some(camera_entity)
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera_entity,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -1062,7 +1061,7 @@ fn update(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

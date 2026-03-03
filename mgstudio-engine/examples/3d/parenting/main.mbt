@@ -46,23 +46,17 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(0.0F, 0.0F, 3.0F),
   ).spawn(world)
-  @hierarchy.query_get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(parent),
-    tick,
-  )
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(child, @hierarchy.Parent::new(parent), tick)
 
   let light_entity = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
-    light_entity,
-    @render3d.PointLight::default(),
-    tick,
-  )
-  @math.query_get_transform_store(world).insert(
-    light_entity,
-    @math.Transform::from_xyz(4.0F, 5.0F, -4.0F),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(light_entity, @render3d.PointLight::default(), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light_entity, @math.Transform::from_xyz(4.0F, 5.0F, -4.0F), tick)
 
   @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -79,7 +73,7 @@ fn rotator_system(world : @ecs.World) -> Unit {
   let delta = 3.0F * @time.time_delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   for entity in rotator_state.val.rotators {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_rotation(
@@ -92,7 +86,7 @@ fn rotator_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

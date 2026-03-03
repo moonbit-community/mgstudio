@@ -131,8 +131,7 @@ async fn new_game_project(name : String, use_local_engine : Bool) -> Unit {
     "import {\n" +
     "  \"Milky2018/mgstudio/app\",\n" +
     "  \"Milky2018/mgstudio/asset\",\n" +
-    "  \"Milky2018/mgstudio/core\",\n" +
-    "  \"Milky2018/mgstudio/ecs_world\",\n" +
+    "  \"Milky2018/mgstudio/ecs\",\n" +
     "  \"Milky2018/mgstudio/math\",\n" +
     "  \"Milky2018/mgstudio\",\n" +
     "  \"Milky2018/mgstudio/render2d\",\n" +
@@ -203,15 +202,19 @@ fn render_rotation_demo() -> String {
   // (latest registry).
   "///|\n" +
   "pub fn game_app() -> Unit {\n" +
-  "  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()\n" +
-  "  @app.App::new(@ecs_world.World::new())\n" +
+  "  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()\n" +
+  "  @app.App::new(@ecs.World::new())\n" +
   "  .add_plugins(plugins)\n" +
   "  .add_startup_system(rotation_setup)\n" +
-  "  .add_system(rotation_update)\n" +
+  "  .add_system_query2_ecs(\n" +
+  "    @math.ecs_key_transform,\n" +
+  "    @render2d.ecs_key_sprite,\n" +
+  "    rotation_update,\n" +
+  "  )\n" +
   "  .run()\n" +
   "}\n\n" +
   "///|\n" +
-  "fn rotation_setup(world : @ecs_world.World) -> Unit {\n" +
+  "fn rotation_setup(world : @ecs.World) -> Unit {\n" +
   "  let asset_server = @asset.AssetServer::new()\n" +
   "  let texture = asset_server.load(\"branding/icon.png\")\n" +
   "  let sprite = @render2d.Sprite::from_image(texture)\n" +
@@ -221,26 +224,23 @@ fn render_rotation_demo() -> String {
   "  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world) |> ignore\n" +
   "}\n\n" +
   "///|\n" +
-  "fn rotation_update(world : @ecs_world.World) -> Unit {\n" +
+  "fn rotation_update(\n" +
+  "  query : @ecs.Query2[@math.Transform, @render2d.Sprite],\n" +
+  "  _world : @ecs.World,\n" +
+  ") -> Unit {\n" +
   "  let delta_secs = @time.time_delta_seconds()\n" +
   "  let speed = 1.0F\n" +
-  "  let tick = world.read_change_tick()\n" +
-  "  let sprite_store = world.get_sprite_store()\n" +
-  "  let transform_store = world.get_transform_store()\n" +
-  "  let entities : Array[(@core.Entity, @math.Transform)] = []\n" +
-  "  @core.query2(transform_store, sprite_store, fn(entity, transform, _sprite) {\n" +
-  "    entities.push((entity, transform))\n" +
-  "  })\n" +
-  "  for entry in entities {\n" +
-  "    let transform = entry.1\n" +
+  "  try! query.update(fn(_entity, transform, sprite) {\n" +
   "    let next_rotation_z = transform.rotation_z() + speed * delta_secs\n" +
-  "    let next_transform = @math.Transform::from_xy_rotation_scale(\n" +
+  "    (\n" +
+  "      @math.Transform::from_xy_rotation_scale(\n" +
   "      @math.Vec2::new(transform.translation.x, transform.translation.y),\n" +
   "      next_rotation_z,\n" +
   "      @math.Vec2::new(transform.scale.x, transform.scale.y),\n" +
   "      z=transform.translation.z,\n" +
+  "      ),\n" +
+  "      sprite,\n" +
   "    )\n" +
-  "    transform_store.set(entry.0, next_transform, tick) |> ignore\n" +
-  "  }\n" +
+  "  })\n" +
   "}\n"
 }

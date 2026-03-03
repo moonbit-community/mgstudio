@@ -52,7 +52,7 @@ let tilemap_chunk_state : Ref[TilemapChunkState] = Ref::new(TilemapChunkState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(tilemap_chunk_setup)
@@ -123,7 +123,7 @@ fn update_fake_player(
   let t = (1.0F + @math.sin(@time.time_elapsed_seconds())) * 0.5F
   let next_x = start + (end - start) * t
 
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(tilemap_chunk_state.val.player) is Some(transform) else {
     return
   }

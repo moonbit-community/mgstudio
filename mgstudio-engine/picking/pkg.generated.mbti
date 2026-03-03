@@ -25,6 +25,14 @@ pub fn[W : HasRes_PickingState + @core.ChangeTickWorld] ensure_picking_state_sys
 
 pub fn[W : HasRes_PointerInputs + @core.ChangeTickWorld] ensure_pointer_inputs_system(W) -> Unit
 
+pub fn[W : HasRes_PickingEvents] get_picking_events_resource(W) -> @core.Resource[PickingEvents]
+
+pub fn[W : HasRes_PickingHits] get_picking_hits_resource(W) -> @core.Resource[PickingHits]
+
+pub fn[W : HasRes_PickingState] get_picking_state_resource(W) -> @core.Resource[PickingState]
+
+pub fn[W : HasRes_PointerInputs] get_pointer_inputs_resource(W) -> @core.Resource[PointerInputs]
+
 pub fn[W : PickingApplyA11yActionsWorld] picking_apply_a11y_actions_system(W) -> Unit
 
 pub fn[W : HasRes_PickingEvents + @core.ChangeTickWorld] picking_clear_system(W) -> Unit
@@ -46,14 +54,6 @@ pub let picking_set_input : String
 pub fn[W : PickingSpriteHitTestWorld] picking_sprite2d_hit_test_system(W) -> Unit
 
 pub fn[W : PickingUiHitTestWorld] picking_ui_hit_test_system(W) -> Unit
-
-pub fn[W : HasRes_PickingEvents] query_get_picking_events_resource(W) -> @core.Resource[PickingEvents]
-
-pub fn[W : HasRes_PickingHits] query_get_picking_hits_resource(W) -> @core.Resource[PickingHits]
-
-pub fn[W : HasRes_PickingState] query_get_picking_state_resource(W) -> @core.Resource[PickingState]
-
-pub fn[W : HasRes_PointerInputs] query_get_pointer_inputs_resource(W) -> @core.Resource[PointerInputs]
 
 // Errors
 

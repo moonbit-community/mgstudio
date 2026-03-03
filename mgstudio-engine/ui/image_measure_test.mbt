@@ -14,7 +14,7 @@
 
 ///|
 test "ui: measure uses intrinsic aspect ratio when only width is specified" {
-  let world = @ecs_world.World::new()
+  let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -26,12 +26,10 @@ test "ui: measure uses intrinsic aspect ratio when only width is specified" {
     None,
     false,
   )
-  world.get_ui_context_resource().insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx, tick)
   let root = world.spawn_empty()
-  world.get_ui_root_store().insert(root, UiRoot::default(), tick)
-  world
-  .get_node_store()
-  .insert(
+  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_node_store(world).insert(
     root,
     Node::default()
     .with_width(Val::Percent(100.0F))
@@ -40,16 +38,24 @@ test "ui: measure uses intrinsic aspect ratio when only width is specified" {
     tick,
   )
   let child = world.spawn_empty()
-  world.get_parent_store().insert(child, @hierarchy.Parent::new(root), tick)
-  world
-  .get_node_store()
-  .insert(child, Node::default().with_width(Val::Px(200.0F)), tick)
+  @hierarchy.get_parent_store(world).insert(
+    child,
+    @hierarchy.Parent::new(root),
+    tick,
+  )
+  get_node_store(world).insert(
+    child,
+    Node::default().with_width(Val::Px(200.0F)),
+    tick,
+  )
   // Intrinsic content size: 100x50 -> aspect ratio 2.0.
-  world
-  .get_content_size_store()
-  .insert(child, ContentSize::new(@math.Vec2::new(100.0F, 50.0F)), tick)
+  get_content_size_store(world).insert(
+    child,
+    ContentSize::new(@math.Vec2::new(100.0F, 50.0F)),
+    tick,
+  )
   @transform.update_children_system(world)
   ui_layout_system(world)
-  let rect = world.get_ui_layout_store().get(child).unwrap().rect
+  let rect = get_ui_layout_store(world).get(child).unwrap().rect
   inspect(rect.size().x == 200.0F && rect.size().y == 100.0F, content="true")
 }

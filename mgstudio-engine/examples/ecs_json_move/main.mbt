@@ -17,8 +17,8 @@
 
 ///|
 pub struct Position {
-  x : Float
-  y : Float
+  mut x : Float
+  mut y : Float
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
@@ -53,10 +53,8 @@ fn move_system(
   query : @ecs.Query2[Position, Velocity],
   _world : @ecs.World,
 ) -> Unit {
-  try! query.update(fn(_entity, position, velocity) {
-    (
-      Position::{ x: position.x + velocity.x, y: position.y + velocity.y },
-      velocity,
-    )
+  try! query.for_each(fn(_entity, position, velocity) {
+    position.x = position.x + velocity.x
+    position.y = position.y + velocity.y
   })
 }

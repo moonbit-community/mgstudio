@@ -15,7 +15,7 @@
 ///|
 /// Port of `bevy/examples/2d/rotation.rs`.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(rotation_setup)
@@ -141,8 +141,10 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
-  @ui.query_get_node_store(world).insert(
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -150,12 +152,12 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    text_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -163,11 +165,9 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    text_entity,
-    @ui.UiText::new(text_handle),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
 }
 
 ///|
@@ -249,7 +249,7 @@ fn player_movement_system(world : @ecs.World) -> Unit {
   }
   let dt = @time.time_fixed_delta_seconds()
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(rotation_state.val.player) is Some(transform) else {
     return
   }
@@ -292,7 +292,7 @@ fn snap_to_player_system(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(player_entity) is Some(player_transform) else {
     return
   }
@@ -338,7 +338,7 @@ fn rotate_to_player_system(world : @ecs.World) -> Unit {
   }
   let dt = @time.time_fixed_delta_seconds()
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(player_entity) is Some(player_transform) else {
     return
   }

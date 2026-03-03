@@ -57,17 +57,17 @@ pub let ecs_resources : Array[String]
 
 pub fn[W : ExpireTransitionsWorld] expire_transitions(W) -> Unit
 
-pub fn[W : Has_AnimatedBy] query_get_animated_by_store(W) -> @core.ComponentStore[AnimatedBy]
+pub fn[W : Has_AnimatedBy] get_animated_by_store(W) -> @core.ComponentStore[AnimatedBy]
 
-pub fn[W : Has_AnimationGraphHandle] query_get_animation_graph_handle_store(W) -> @core.ComponentStore[AnimationGraphHandle]
+pub fn[W : Has_AnimationGraphHandle] get_animation_graph_handle_store(W) -> @core.ComponentStore[AnimationGraphHandle]
 
-pub fn[W : Has_AnimationPlayer] query_get_animation_player_store(W) -> @core.ComponentStore[AnimationPlayer]
+pub fn[W : Has_AnimationPlayer] get_animation_player_store(W) -> @core.ComponentStore[AnimationPlayer]
 
-pub fn[W : Has_AnimationTargetId] query_get_animation_target_id_store(W) -> @core.ComponentStore[AnimationTargetId]
+pub fn[W : Has_AnimationTargetId] get_animation_target_id_store(W) -> @core.ComponentStore[AnimationTargetId]
 
-pub fn[W : Has_AnimationTransitions] query_get_animation_transitions_store(W) -> @core.ComponentStore[AnimationTransitions]
+pub fn[W : Has_AnimationTransitions] get_animation_transitions_store(W) -> @core.ComponentStore[AnimationTransitions]
 
-pub fn[W : Has_AnimationWeights] query_get_animation_weights_store(W) -> @core.ComponentStore[AnimationWeights]
+pub fn[W : Has_AnimationWeights] get_animation_weights_store(W) -> @core.ComponentStore[AnimationWeights]
 
 pub fn[W] thread_animation_graphs(W) -> Unit
 

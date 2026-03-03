@@ -17,13 +17,237 @@ import {
 // Values
 pub let ecs_components : Array[String]
 
+pub let ecs_key_bloom : @ecs.ComponentKey[Bloom]
+
+pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
+
+pub let ecs_key_camera_projection3d : @ecs.ComponentKey[CameraProjection3d]
+
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration]
+
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
+
+pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading]
+
+pub let ecs_key_contact_shadows : @ecs.ComponentKey[ContactShadows]
+
+pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither]
+
+pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
+
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass]
+
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass]
+
+pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight]
+
+pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[DirectionalLightShadowMap]
+
+pub let ecs_key_directional_light_texture : @ecs.ComponentKey[DirectionalLightTexture]
+
+pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight]
+
+pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
+
+pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
+
+pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
+
+pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
+
+pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
+
+pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa]
+
+pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[GeneratedEnvironmentMapLight]
+
+pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight]
+
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr]
+
+pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume]
+
+pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe]
+
 pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
 
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d]
 
+pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur]
+
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass]
+
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
+
+pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe]
+
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass]
+
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster]
+
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver]
+
+pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling]
+
+pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[OrderIndependentTransparencySettings]
+
+pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection]
+
+pub let ecs_key_point_light : @ecs.ComponentKey[PointLight]
+
+pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[PointLightShadowMap]
+
+pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture]
+
+pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[ScreenSpaceAmbientOcclusion]
+
+pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[ScreenSpaceReflections]
+
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[ScreenSpaceTransmission]
+
+pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMethod]
+
+pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
+
+pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight]
+
+pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture]
+
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
+
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
+
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter]
+
+pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping]
+
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+
+pub let ecs_key_vignette : @ecs.ComponentKey[Vignette]
+
+pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe]
+
+pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor]
+
+pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
+
 pub let ecs_resources : Array[String]
 
 pub fn[W : FreeCameraControllerWorld] free_camera_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn[W : Has_Bloom] get_bloom_store(W) -> @core.ComponentStore[Bloom]
+
+pub fn[W : Has_Camera3d] get_camera3d_store(W) -> @core.ComponentStore[Camera3d]
+
+pub fn[W : Has_CameraProjection3d] get_camera_projection3d_store(W) -> @core.ComponentStore[CameraProjection3d]
+
+pub fn[W : Has_ChromaticAberration] get_chromatic_aberration_store(W) -> @core.ComponentStore[ChromaticAberration]
+
+pub fn[W : Has_ClusteredDecal] get_clustered_decal_store(W) -> @core.ComponentStore[ClusteredDecal]
+
+pub fn[W : Has_ColorGrading] get_color_grading_store(W) -> @core.ComponentStore[ColorGrading]
+
+pub fn[W : Has_ContactShadows] get_contact_shadows_store(W) -> @core.ComponentStore[ContactShadows]
+
+pub fn[W : Has_DebandDither] get_deband_dither_store(W) -> @core.ComponentStore[DebandDither]
+
+pub fn[W : HasRes_DefaultOpaqueRendererMethod] get_default_opaque_renderer_method_resource(W) -> @core.Resource[DefaultOpaqueRendererMethod]
+
+pub fn[W : Has_DeferredPrepass] get_deferred_prepass_store(W) -> @core.ComponentStore[DeferredPrepass]
+
+pub fn[W : Has_DepthPrepass] get_depth_prepass_store(W) -> @core.ComponentStore[DepthPrepass]
+
+pub fn[W : HasRes_DirectionalLightShadowMap] get_directional_light_shadow_map_resource(W) -> @core.Resource[DirectionalLightShadowMap]
+
+pub fn[W : Has_DirectionalLight] get_directional_light_store(W) -> @core.ComponentStore[DirectionalLight]
+
+pub fn[W : Has_DirectionalLightTexture] get_directional_light_texture_store(W) -> @core.ComponentStore[DirectionalLightTexture]
+
+pub fn[W : Has_EnvironmentMapLight] get_environment_map_light_store(W) -> @core.ComponentStore[EnvironmentMapLight]
+
+pub fn[W : Has_Exposure] get_exposure_store(W) -> @core.ComponentStore[Exposure]
+
+pub fn[W : Has_ForwardDecalMaterialExt] get_forward_decal_material_ext_store(W) -> @core.ComponentStore[ForwardDecalMaterialExt]
+
+pub fn[W : Has_ForwardDecal] get_forward_decal_store(W) -> @core.ComponentStore[ForwardDecal]
+
+pub fn[W : Has_FreeCameraState] get_free_camera_state_store(W) -> @core.ComponentStore[FreeCameraState]
+
+pub fn[W : Has_FreeCamera] get_free_camera_store(W) -> @core.ComponentStore[FreeCamera]
+
+pub fn[W : Has_Fxaa] get_fxaa_store(W) -> @core.ComponentStore[Fxaa]
+
+pub fn[W : Has_GeneratedEnvironmentMapLight] get_generated_environment_map_light_store(W) -> @core.ComponentStore[GeneratedEnvironmentMapLight]
+
+pub fn[W : HasRes_GlobalAmbientLight] get_global_ambient_light_resource(W) -> @core.Resource[GlobalAmbientLight]
+
+pub fn[W : Has_Hdr] get_hdr_store(W) -> @core.ComponentStore[Hdr]
+
+pub fn[W : Has_IrradianceVolume] get_irradiance_volume_store(W) -> @core.ComponentStore[IrradianceVolume]
+
+pub fn[W : Has_LightProbe] get_light_probe_store(W) -> @core.ComponentStore[LightProbe]
+
+pub fn[W : Has_Mesh3d] get_mesh3d_store(W) -> @core.ComponentStore[Mesh3d]
+
+pub fn[W : Has_MeshMaterial3d] get_mesh_material3d_store(W) -> @core.ComponentStore[MeshMaterial3d]
+
+pub fn[W : Has_MotionBlur] get_motion_blur_store(W) -> @core.ComponentStore[MotionBlur]
+
+pub fn[W : Has_MotionVectorPrepass] get_motion_vector_prepass_store(W) -> @core.ComponentStore[MotionVectorPrepass]
+
+pub fn[W : Has_Msaa] get_msaa_store(W) -> @core.ComponentStore[Msaa]
+
+pub fn[W : Has_NoWireframe] get_no_wireframe_store(W) -> @core.ComponentStore[NoWireframe]
+
+pub fn[W : Has_NormalPrepass] get_normal_prepass_store(W) -> @core.ComponentStore[NormalPrepass]
+
+pub fn[W : Has_NotShadowCaster] get_not_shadow_caster_store(W) -> @core.ComponentStore[NotShadowCaster]
+
+pub fn[W : Has_NotShadowReceiver] get_not_shadow_receiver_store(W) -> @core.ComponentStore[NotShadowReceiver]
+
+pub fn[W : Has_OcclusionCulling] get_occlusion_culling_store(W) -> @core.ComponentStore[OcclusionCulling]
+
+pub fn[W : Has_OrderIndependentTransparencySettings] get_order_independent_transparency_settings_store(W) -> @core.ComponentStore[OrderIndependentTransparencySettings]
+
+pub fn[W : Has_ParallaxCorrection] get_parallax_correction_store(W) -> @core.ComponentStore[ParallaxCorrection]
+
+pub fn[W : HasRes_PointLightShadowMap] get_point_light_shadow_map_resource(W) -> @core.Resource[PointLightShadowMap]
+
+pub fn[W : Has_PointLight] get_point_light_store(W) -> @core.ComponentStore[PointLight]
+
+pub fn[W : Has_PointLightTexture] get_point_light_texture_store(W) -> @core.ComponentStore[PointLightTexture]
+
+pub fn[W : Has_ScreenSpaceAmbientOcclusion] get_screen_space_ambient_occlusion_store(W) -> @core.ComponentStore[ScreenSpaceAmbientOcclusion]
+
+pub fn[W : Has_ScreenSpaceReflections] get_screen_space_reflections_store(W) -> @core.ComponentStore[ScreenSpaceReflections]
+
+pub fn[W : Has_ScreenSpaceTransmission] get_screen_space_transmission_store(W) -> @core.ComponentStore[ScreenSpaceTransmission]
+
+pub fn[W : Has_ShadowFilteringMethod] get_shadow_filtering_method_store(W) -> @core.ComponentStore[ShadowFilteringMethod]
+
+pub fn[W : Has_Skybox] get_skybox_store(W) -> @core.ComponentStore[Skybox]
+
+pub fn[W : Has_SpotLight] get_spot_light_store(W) -> @core.ComponentStore[SpotLight]
+
+pub fn[W : Has_SpotLightTexture] get_spot_light_texture_store(W) -> @core.ComponentStore[SpotLightTexture]
+
+pub fn[W : Has_SubCameraView3d] get_sub_camera_view3d_store(W) -> @core.ComponentStore[SubCameraView3d]
+
+pub fn[W : Has_TemporalAntiAliasing] get_temporal_anti_aliasing_store(W) -> @core.ComponentStore[TemporalAntiAliasing]
+
+pub fn[W : Has_TemporalJitter] get_temporal_jitter_store(W) -> @core.ComponentStore[TemporalJitter]
+
+pub fn[W : Has_Tonemapping] get_tonemapping_store(W) -> @core.ComponentStore[Tonemapping]
+
+pub fn[W : Has_TransmittedShadowReceiver] get_transmitted_shadow_receiver_store(W) -> @core.ComponentStore[TransmittedShadowReceiver]
+
+pub fn[W : Has_Vignette] get_vignette_store(W) -> @core.ComponentStore[Vignette]
+
+pub fn[W : Has_WireframeColor] get_wireframe_color_store(W) -> @core.ComponentStore[WireframeColor]
+
+pub fn[W : HasRes_WireframeConfig] get_wireframe_config_resource(W) -> @core.Resource[WireframeConfig]
+
+pub fn[W : Has_Wireframe] get_wireframe_store(W) -> @core.ComponentStore[Wireframe]
 
 pub fn[W : MeshRayCastWorld] mesh_ray_cast(W, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
@@ -32,120 +256,6 @@ pub fn[W : MeshRayCastWorld] mesh_ray_cast_first(W, @math.Vec3, @math.Vec3, Mesh
 pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera(W, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
 pub fn[W : MeshRayCastWorld] mesh_ray_cast_from_camera_first(W, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
-
-pub fn[W : Has_Bloom] query_get_bloom_store(W) -> @core.ComponentStore[Bloom]
-
-pub fn[W : Has_Camera3d] query_get_camera3d_store(W) -> @core.ComponentStore[Camera3d]
-
-pub fn[W : Has_CameraProjection3d] query_get_camera_projection3d_store(W) -> @core.ComponentStore[CameraProjection3d]
-
-pub fn[W : Has_ChromaticAberration] query_get_chromatic_aberration_store(W) -> @core.ComponentStore[ChromaticAberration]
-
-pub fn[W : Has_ClusteredDecal] query_get_clustered_decal_store(W) -> @core.ComponentStore[ClusteredDecal]
-
-pub fn[W : Has_ColorGrading] query_get_color_grading_store(W) -> @core.ComponentStore[ColorGrading]
-
-pub fn[W : Has_ContactShadows] query_get_contact_shadows_store(W) -> @core.ComponentStore[ContactShadows]
-
-pub fn[W : Has_DebandDither] query_get_deband_dither_store(W) -> @core.ComponentStore[DebandDither]
-
-pub fn[W : HasRes_DefaultOpaqueRendererMethod] query_get_default_opaque_renderer_method_resource(W) -> @core.Resource[DefaultOpaqueRendererMethod]
-
-pub fn[W : Has_DeferredPrepass] query_get_deferred_prepass_store(W) -> @core.ComponentStore[DeferredPrepass]
-
-pub fn[W : Has_DepthPrepass] query_get_depth_prepass_store(W) -> @core.ComponentStore[DepthPrepass]
-
-pub fn[W : HasRes_DirectionalLightShadowMap] query_get_directional_light_shadow_map_resource(W) -> @core.Resource[DirectionalLightShadowMap]
-
-pub fn[W : Has_DirectionalLight] query_get_directional_light_store(W) -> @core.ComponentStore[DirectionalLight]
-
-pub fn[W : Has_DirectionalLightTexture] query_get_directional_light_texture_store(W) -> @core.ComponentStore[DirectionalLightTexture]
-
-pub fn[W : Has_EnvironmentMapLight] query_get_environment_map_light_store(W) -> @core.ComponentStore[EnvironmentMapLight]
-
-pub fn[W : Has_Exposure] query_get_exposure_store(W) -> @core.ComponentStore[Exposure]
-
-pub fn[W : Has_ForwardDecalMaterialExt] query_get_forward_decal_material_ext_store(W) -> @core.ComponentStore[ForwardDecalMaterialExt]
-
-pub fn[W : Has_ForwardDecal] query_get_forward_decal_store(W) -> @core.ComponentStore[ForwardDecal]
-
-pub fn[W : Has_FreeCameraState] query_get_free_camera_state_store(W) -> @core.ComponentStore[FreeCameraState]
-
-pub fn[W : Has_FreeCamera] query_get_free_camera_store(W) -> @core.ComponentStore[FreeCamera]
-
-pub fn[W : Has_Fxaa] query_get_fxaa_store(W) -> @core.ComponentStore[Fxaa]
-
-pub fn[W : Has_GeneratedEnvironmentMapLight] query_get_generated_environment_map_light_store(W) -> @core.ComponentStore[GeneratedEnvironmentMapLight]
-
-pub fn[W : HasRes_GlobalAmbientLight] query_get_global_ambient_light_resource(W) -> @core.Resource[GlobalAmbientLight]
-
-pub fn[W : Has_Hdr] query_get_hdr_store(W) -> @core.ComponentStore[Hdr]
-
-pub fn[W : Has_IrradianceVolume] query_get_irradiance_volume_store(W) -> @core.ComponentStore[IrradianceVolume]
-
-pub fn[W : Has_LightProbe] query_get_light_probe_store(W) -> @core.ComponentStore[LightProbe]
-
-pub fn[W : Has_Mesh3d] query_get_mesh3d_store(W) -> @core.ComponentStore[Mesh3d]
-
-pub fn[W : Has_MeshMaterial3d] query_get_mesh_material3d_store(W) -> @core.ComponentStore[MeshMaterial3d]
-
-pub fn[W : Has_MotionBlur] query_get_motion_blur_store(W) -> @core.ComponentStore[MotionBlur]
-
-pub fn[W : Has_MotionVectorPrepass] query_get_motion_vector_prepass_store(W) -> @core.ComponentStore[MotionVectorPrepass]
-
-pub fn[W : Has_Msaa] query_get_msaa_store(W) -> @core.ComponentStore[Msaa]
-
-pub fn[W : Has_NoWireframe] query_get_no_wireframe_store(W) -> @core.ComponentStore[NoWireframe]
-
-pub fn[W : Has_NormalPrepass] query_get_normal_prepass_store(W) -> @core.ComponentStore[NormalPrepass]
-
-pub fn[W : Has_NotShadowCaster] query_get_not_shadow_caster_store(W) -> @core.ComponentStore[NotShadowCaster]
-
-pub fn[W : Has_NotShadowReceiver] query_get_not_shadow_receiver_store(W) -> @core.ComponentStore[NotShadowReceiver]
-
-pub fn[W : Has_OcclusionCulling] query_get_occlusion_culling_store(W) -> @core.ComponentStore[OcclusionCulling]
-
-pub fn[W : Has_OrderIndependentTransparencySettings] query_get_order_independent_transparency_settings_store(W) -> @core.ComponentStore[OrderIndependentTransparencySettings]
-
-pub fn[W : Has_ParallaxCorrection] query_get_parallax_correction_store(W) -> @core.ComponentStore[ParallaxCorrection]
-
-pub fn[W : HasRes_PointLightShadowMap] query_get_point_light_shadow_map_resource(W) -> @core.Resource[PointLightShadowMap]
-
-pub fn[W : Has_PointLight] query_get_point_light_store(W) -> @core.ComponentStore[PointLight]
-
-pub fn[W : Has_PointLightTexture] query_get_point_light_texture_store(W) -> @core.ComponentStore[PointLightTexture]
-
-pub fn[W : Has_ScreenSpaceAmbientOcclusion] query_get_screen_space_ambient_occlusion_store(W) -> @core.ComponentStore[ScreenSpaceAmbientOcclusion]
-
-pub fn[W : Has_ScreenSpaceReflections] query_get_screen_space_reflections_store(W) -> @core.ComponentStore[ScreenSpaceReflections]
-
-pub fn[W : Has_ScreenSpaceTransmission] query_get_screen_space_transmission_store(W) -> @core.ComponentStore[ScreenSpaceTransmission]
-
-pub fn[W : Has_ShadowFilteringMethod] query_get_shadow_filtering_method_store(W) -> @core.ComponentStore[ShadowFilteringMethod]
-
-pub fn[W : Has_Skybox] query_get_skybox_store(W) -> @core.ComponentStore[Skybox]
-
-pub fn[W : Has_SpotLight] query_get_spot_light_store(W) -> @core.ComponentStore[SpotLight]
-
-pub fn[W : Has_SpotLightTexture] query_get_spot_light_texture_store(W) -> @core.ComponentStore[SpotLightTexture]
-
-pub fn[W : Has_SubCameraView3d] query_get_sub_camera_view3d_store(W) -> @core.ComponentStore[SubCameraView3d]
-
-pub fn[W : Has_TemporalAntiAliasing] query_get_temporal_anti_aliasing_store(W) -> @core.ComponentStore[TemporalAntiAliasing]
-
-pub fn[W : Has_TemporalJitter] query_get_temporal_jitter_store(W) -> @core.ComponentStore[TemporalJitter]
-
-pub fn[W : Has_Tonemapping] query_get_tonemapping_store(W) -> @core.ComponentStore[Tonemapping]
-
-pub fn[W : Has_TransmittedShadowReceiver] query_get_transmitted_shadow_receiver_store(W) -> @core.ComponentStore[TransmittedShadowReceiver]
-
-pub fn[W : Has_Vignette] query_get_vignette_store(W) -> @core.ComponentStore[Vignette]
-
-pub fn[W : Has_WireframeColor] query_get_wireframe_color_store(W) -> @core.ComponentStore[WireframeColor]
-
-pub fn[W : HasRes_WireframeConfig] query_get_wireframe_config_resource(W) -> @core.Resource[WireframeConfig]
-
-pub fn[W : Has_Wireframe] query_get_wireframe_store(W) -> @core.ComponentStore[Wireframe]
 
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
@@ -195,6 +305,8 @@ pub fn Atmosphere::earthlike(ScatteringMedium) -> Self
 pub fn Atmosphere::with_ground_albedo(Self, @math.Vec3) -> Self
 pub fn Atmosphere::with_medium(Self, ScatteringMedium) -> Self
 pub fn Atmosphere::with_radii(Self, Float, Float) -> Self
+pub impl ToJson for Atmosphere
+pub impl @json.FromJson for Atmosphere
 
 pub struct AtmosphereEnvironmentMapLight {
 }
@@ -205,6 +317,8 @@ pub(all) enum AtmosphereMode {
   Raymarched
 }
 pub fn AtmosphereMode::default() -> Self
+pub impl ToJson for AtmosphereMode
+pub impl @json.FromJson for AtmosphereMode
 
 pub struct AtmosphereSettings {
   scene_units_to_m : Float
@@ -215,6 +329,8 @@ pub fn AtmosphereSettings::default() -> Self
 pub fn AtmosphereSettings::with_rendering_method(Self, AtmosphereMode) -> Self
 pub fn AtmosphereSettings::with_scene_units_to_m(Self, Float) -> Self
 pub fn AtmosphereSettings::with_sky_max_samples(Self, Int) -> Self
+pub impl ToJson for AtmosphereSettings
+pub impl @json.FromJson for AtmosphereSettings
 
 pub struct AutoExposure {
   min_ev100 : Float
@@ -236,6 +352,8 @@ pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@asset.Image]?) -> S
 pub fn AutoExposure::with_range(Self, Float, Float) -> Self
 pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
 pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
+pub impl ToJson for AutoExposure
+pub impl @json.FromJson for AutoExposure
 
 pub struct Bloom {
   intensity : Float
@@ -263,6 +381,8 @@ pub fn Bloom::with_prefilter_settings(Self, BloomPrefilter) -> Self
 pub fn Bloom::with_scale(Self, @math.Vec2) -> Self
 pub fn Bloom::with_scale_x(Self, Float) -> Self
 pub fn Bloom::with_scale_y(Self, Float) -> Self
+pub impl ToJson for Bloom
+pub impl @json.FromJson for Bloom
 
 pub(all) enum BloomCompositeMode {
   EnergyConserving
@@ -271,6 +391,8 @@ pub(all) enum BloomCompositeMode {
 pub fn BloomCompositeMode::default() -> Self
 pub impl Eq for BloomCompositeMode
 pub impl Show for BloomCompositeMode
+pub impl ToJson for BloomCompositeMode
+pub impl @json.FromJson for BloomCompositeMode
 
 pub struct BloomPrefilter {
   threshold : Float
@@ -280,6 +402,8 @@ pub fn BloomPrefilter::default() -> Self
 pub fn BloomPrefilter::new(Float, Float) -> Self
 pub fn BloomPrefilter::with_threshold(Self, Float) -> Self
 pub fn BloomPrefilter::with_threshold_softness(Self, Float) -> Self
+pub impl ToJson for BloomPrefilter
+pub impl @json.FromJson for BloomPrefilter
 
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
@@ -300,6 +424,8 @@ pub fn Camera3d::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
 pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3d::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3d::with_volumetric_fog(Self, VolumetricFog?) -> Self
+pub impl ToJson for Camera3d
+pub impl @json.FromJson for Camera3d
 
 pub struct Camera3dBundle {
   camera : @render2d.Camera
@@ -353,6 +479,8 @@ pub fn CameraDecalConfig3d::default() -> Self
 pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(Self, Bool) -> Self
 pub fn CameraDecalConfig3d::with_mode(Self, DecalRenderMode3d) -> Self
 pub fn CameraDecalConfig3d::with_requires_depth_prepass(Self, Bool) -> Self
+pub impl ToJson for CameraDecalConfig3d
+pub impl @json.FromJson for CameraDecalConfig3d
 
 pub struct CameraDeferredConfig3d {
   mode : CameraDeferredMode3d
@@ -361,6 +489,8 @@ pub struct CameraDeferredConfig3d {
 pub fn CameraDeferredConfig3d::default() -> Self
 pub fn CameraDeferredConfig3d::with_mode(Self, CameraDeferredMode3d) -> Self
 pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(Self, Bool) -> Self
+pub impl ToJson for CameraDeferredConfig3d
+pub impl @json.FromJson for CameraDeferredConfig3d
 
 pub(all) enum CameraDeferredMode3d {
   Auto
@@ -370,6 +500,8 @@ pub(all) enum CameraDeferredMode3d {
 pub fn CameraDeferredMode3d::default() -> Self
 pub impl Eq for CameraDeferredMode3d
 pub impl Show for CameraDeferredMode3d
+pub impl ToJson for CameraDeferredMode3d
+pub impl @json.FromJson for CameraDeferredMode3d
 
 pub struct CameraProjection3d {
   projection : Projection3d
@@ -377,6 +509,8 @@ pub struct CameraProjection3d {
 pub fn CameraProjection3d::default() -> Self
 pub fn CameraProjection3d::new(Projection3d) -> Self
 pub fn CameraProjection3d::with_projection(Self, Projection3d) -> Self
+pub impl ToJson for CameraProjection3d
+pub impl @json.FromJson for CameraProjection3d
 
 pub struct CascadeShadowConfig {
   bounds : Array[Float]
@@ -384,6 +518,8 @@ pub struct CascadeShadowConfig {
   minimum_distance : Float
 }
 pub fn CascadeShadowConfig::default() -> Self
+pub impl ToJson for CascadeShadowConfig
+pub impl @json.FromJson for CascadeShadowConfig
 
 pub struct CascadeShadowConfigBuilder {
   num_cascades : Int
@@ -409,6 +545,8 @@ pub fn ChromaticAberration::default() -> Self
 pub fn ChromaticAberration::new(Float, Int) -> Self
 pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
 pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
+pub impl ToJson for ChromaticAberration
+pub impl @json.FromJson for ChromaticAberration
 
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@asset.Image]?
@@ -424,6 +562,8 @@ pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@asset.Image]?)
 pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
+pub impl ToJson for ClusteredDecal
+pub impl @json.FromJson for ClusteredDecal
 
 pub struct ColorGrading {
   global : ColorGradingGlobal
@@ -440,6 +580,8 @@ pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSec
 pub fn ColorGrading::with_midtones(Self, ColorGradingSection) -> Self
 pub fn ColorGrading::with_settings(Self, ColorGradingSettings) -> Self
 pub fn ColorGrading::with_shadows(Self, ColorGradingSection) -> Self
+pub impl ToJson for ColorGrading
+pub impl @json.FromJson for ColorGrading
 
 pub struct ColorGradingGlobal {
   exposure : Float
@@ -459,6 +601,8 @@ pub fn ColorGradingGlobal::with_midtones_range(Self, Float, Float) -> Self
 pub fn ColorGradingGlobal::with_post_saturation(Self, Float) -> Self
 pub fn ColorGradingGlobal::with_temperature(Self, Float) -> Self
 pub fn ColorGradingGlobal::with_tint(Self, Float) -> Self
+pub impl ToJson for ColorGradingGlobal
+pub impl @json.FromJson for ColorGradingGlobal
 
 pub struct ColorGradingSection {
   saturation : Float
@@ -474,6 +618,8 @@ pub fn ColorGradingSection::with_gain(Self, Float) -> Self
 pub fn ColorGradingSection::with_gamma(Self, Float) -> Self
 pub fn ColorGradingSection::with_lift(Self, Float) -> Self
 pub fn ColorGradingSection::with_saturation(Self, Float) -> Self
+pub impl ToJson for ColorGradingSection
+pub impl @json.FromJson for ColorGradingSection
 
 pub struct ColorGradingSettings {
   shadows : ColorGradingSection
@@ -485,6 +631,8 @@ pub fn ColorGradingSettings::with_highlights(Self, ColorGradingSection) -> Self
 pub fn ColorGradingSettings::with_identical_sections(ColorGradingSection) -> Self
 pub fn ColorGradingSettings::with_midtones(Self, ColorGradingSection) -> Self
 pub fn ColorGradingSettings::with_shadows(Self, ColorGradingSection) -> Self
+pub impl ToJson for ColorGradingSettings
+pub impl @json.FromJson for ColorGradingSettings
 
 pub struct ContactShadows {
   linear_steps : Int
@@ -496,6 +644,8 @@ pub fn ContactShadows::new(Int, Float, Float) -> Self
 pub fn ContactShadows::with_length(Self, Float) -> Self
 pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
 pub fn ContactShadows::with_thickness(Self, Float) -> Self
+pub impl ToJson for ContactShadows
+pub impl @json.FromJson for ContactShadows
 
 pub(all) enum CubemapLayout3d {
   CrossVertical
@@ -508,6 +658,8 @@ pub(all) enum CubemapLayout3d {
 pub fn CubemapLayout3d::default() -> Self
 pub impl Eq for CubemapLayout3d
 pub impl Show for CubemapLayout3d
+pub impl ToJson for CubemapLayout3d
+pub impl @json.FromJson for CubemapLayout3d
 
 pub(all) enum DebandDither {
   Disabled
@@ -516,6 +668,8 @@ pub(all) enum DebandDither {
 pub fn DebandDither::default() -> Self
 pub impl Eq for DebandDither
 pub impl Show for DebandDither
+pub impl ToJson for DebandDither
+pub impl @json.FromJson for DebandDither
 
 pub(all) enum DecalRenderMode3d {
   Disabled
@@ -526,6 +680,8 @@ pub(all) enum DecalRenderMode3d {
 pub fn DecalRenderMode3d::default() -> Self
 pub impl Eq for DecalRenderMode3d
 pub impl Show for DecalRenderMode3d
+pub impl ToJson for DecalRenderMode3d
+pub impl @json.FromJson for DecalRenderMode3d
 
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
@@ -538,10 +694,14 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMetho
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
 pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
+pub impl ToJson for DefaultOpaqueRendererMethod
+pub impl @json.FromJson for DefaultOpaqueRendererMethod
 
 pub struct DeferredPrepass {
 }
 pub fn DeferredPrepass::default() -> Self
+pub impl ToJson for DeferredPrepass
+pub impl @json.FromJson for DeferredPrepass
 
 pub struct DepthOfField {
   mode : DepthOfFieldMode
@@ -559,6 +719,8 @@ pub fn DepthOfField::with_max_circle_of_confusion_diameter(Self, Float) -> Self
 pub fn DepthOfField::with_max_depth(Self, Float) -> Self
 pub fn DepthOfField::with_mode(Self, DepthOfFieldMode) -> Self
 pub fn DepthOfField::with_sensor_height(Self, Float) -> Self
+pub impl ToJson for DepthOfField
+pub impl @json.FromJson for DepthOfField
 
 pub(all) enum DepthOfFieldMode {
   Bokeh
@@ -567,10 +729,14 @@ pub(all) enum DepthOfFieldMode {
 pub fn DepthOfFieldMode::default() -> Self
 pub impl Eq for DepthOfFieldMode
 pub impl Show for DepthOfFieldMode
+pub impl ToJson for DepthOfFieldMode
+pub impl @json.FromJson for DepthOfFieldMode
 
 pub struct DepthPrepass {
 }
 pub fn DepthPrepass::default() -> Self
+pub impl ToJson for DepthPrepass
+pub impl @json.FromJson for DepthPrepass
 
 pub struct DirectionalLight {
   color : @render2d.Color
@@ -591,6 +757,8 @@ pub fn DirectionalLight::with_illuminance(Self, Float) -> Self
 pub fn DirectionalLight::with_shadow_depth_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_soft_shadow_size(Self, Float?) -> Self
+pub impl ToJson for DirectionalLight
+pub impl @json.FromJson for DirectionalLight
 
 pub struct DirectionalLightShadowMap {
   size : Int
@@ -598,6 +766,8 @@ pub struct DirectionalLightShadowMap {
 pub fn DirectionalLightShadowMap::default() -> Self
 pub fn DirectionalLightShadowMap::new(Int) -> Self
 pub fn DirectionalLightShadowMap::with_size(Self, Int) -> Self
+pub impl ToJson for DirectionalLightShadowMap
+pub impl @json.FromJson for DirectionalLightShadowMap
 
 pub struct DirectionalLightTexture {
   image : @asset.Handle[@asset.Image]?
@@ -607,6 +777,8 @@ pub fn DirectionalLightTexture::default() -> Self
 pub fn DirectionalLightTexture::new(@asset.Handle[@asset.Image]?, Bool) -> Self
 pub fn DirectionalLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn DirectionalLightTexture::with_tiled(Self, Bool) -> Self
+pub impl ToJson for DirectionalLightTexture
+pub impl @json.FromJson for DirectionalLightTexture
 
 pub struct DistanceFog {
   color : @render2d.Color
@@ -620,6 +792,8 @@ pub fn DistanceFog::with_color(Self, @render2d.Color) -> Self
 pub fn DistanceFog::with_directional_light_color(Self, @render2d.Color) -> Self
 pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
+pub impl ToJson for DistanceFog
+pub impl @json.FromJson for DistanceFog
 
 pub struct EnvironmentMapLight {
   diffuse_map : @asset.Handle[@asset.Image]?
@@ -635,6 +809,8 @@ pub fn EnvironmentMapLight::with_diffuse_map(Self, @asset.Handle[@asset.Image]?)
 pub fn EnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn EnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl ToJson for EnvironmentMapLight
+pub impl @json.FromJson for EnvironmentMapLight
 
 pub struct Exposure {
   ev100 : Float
@@ -647,6 +823,8 @@ pub fn Exposure::new(Float) -> Self
 pub fn Exposure::overcast() -> Self
 pub fn Exposure::sunlight() -> Self
 pub fn Exposure::with_ev100(Self, Float) -> Self
+pub impl ToJson for Exposure
+pub impl @json.FromJson for Exposure
 
 pub struct ExtendedMaterialMetadata3d {
   extension_tag : Int
@@ -689,6 +867,8 @@ pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
 pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
 pub fn FogFalloff3d::linear(Float, Float) -> Self
 pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
+pub impl ToJson for FogFalloff3d
+pub impl @json.FromJson for FogFalloff3d
 
 pub struct FogVolume {
   fog_color : @render2d.Color
@@ -711,10 +891,14 @@ pub fn FogVolume::with_light_intensity(Self, Float) -> Self
 pub fn FogVolume::with_light_tint(Self, @render2d.Color) -> Self
 pub fn FogVolume::with_scattering(Self, Float) -> Self
 pub fn FogVolume::with_scattering_asymmetry(Self, Float) -> Self
+pub impl ToJson for FogVolume
+pub impl @json.FromJson for FogVolume
 
 pub struct ForwardDecal {
 }
 pub fn ForwardDecal::default() -> Self
+pub impl ToJson for ForwardDecal
+pub impl @json.FromJson for ForwardDecal
 
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
@@ -722,6 +906,8 @@ pub struct ForwardDecalMaterialExt {
 pub fn ForwardDecalMaterialExt::default() -> Self
 pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
+pub impl ToJson for ForwardDecalMaterialExt
+pub impl @json.FromJson for ForwardDecalMaterialExt
 
 pub struct FreeCamera {
   sensitivity : Float
@@ -740,6 +926,8 @@ pub struct FreeCamera {
   friction : Float
 }
 pub fn FreeCamera::default() -> Self
+pub impl ToJson for FreeCamera
+pub impl @json.FromJson for FreeCamera
 
 pub struct FreeCameraState {
   enabled : Bool
@@ -763,6 +951,8 @@ pub fn Fxaa::with_edge_threshold(Self, FxaaSensitivity) -> Self
 pub fn Fxaa::with_edge_threshold_min(Self, FxaaSensitivity) -> Self
 pub fn Fxaa::with_enabled(Self, Bool) -> Self
 pub fn Fxaa::with_sensitivity(Self, FxaaSensitivity) -> Self
+pub impl ToJson for Fxaa
+pub impl @json.FromJson for Fxaa
 
 pub(all) enum FxaaSensitivity {
   Low
@@ -774,6 +964,8 @@ pub(all) enum FxaaSensitivity {
 pub fn FxaaSensitivity::default() -> Self
 pub impl Eq for FxaaSensitivity
 pub impl Show for FxaaSensitivity
+pub impl ToJson for FxaaSensitivity
+pub impl @json.FromJson for FxaaSensitivity
 
 pub struct GeneratedEnvironmentMapLight {
   environment_map : @asset.Handle[@asset.Image]?
@@ -787,6 +979,8 @@ pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self,
 pub fn GeneratedEnvironmentMapLight::with_environment_map(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn GeneratedEnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn GeneratedEnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
+pub impl ToJson for GeneratedEnvironmentMapLight
+pub impl @json.FromJson for GeneratedEnvironmentMapLight
 
 pub struct GlobalAmbientLight {
   color : @render2d.Color
@@ -794,10 +988,14 @@ pub struct GlobalAmbientLight {
 }
 pub fn GlobalAmbientLight::default() -> Self
 pub fn GlobalAmbientLight::new(@render2d.Color, Float) -> Self
+pub impl ToJson for GlobalAmbientLight
+pub impl @json.FromJson for GlobalAmbientLight
 
 pub struct Hdr {
 }
 pub fn Hdr::default() -> Self
+pub impl ToJson for Hdr
+pub impl @json.FromJson for Hdr
 
 pub struct IrradianceVolume {
   voxels : @asset.Handle[@asset.Image]?
@@ -807,6 +1005,8 @@ pub fn IrradianceVolume::default() -> Self
 pub fn IrradianceVolume::new(@asset.Handle[@asset.Image]?, Float) -> Self
 pub fn IrradianceVolume::with_intensity(Self, Float) -> Self
 pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl ToJson for IrradianceVolume
+pub impl @json.FromJson for IrradianceVolume
 
 pub struct LightProbe {
   falloff : @math.Vec3
@@ -814,6 +1014,8 @@ pub struct LightProbe {
 pub fn LightProbe::default() -> Self
 pub fn LightProbe::new() -> Self
 pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
+pub impl ToJson for LightProbe
+pub impl @json.FromJson for LightProbe
 
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
@@ -881,10 +1083,14 @@ pub fn MotionBlur::default() -> Self
 pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
+pub impl ToJson for MotionBlur
+pub impl @json.FromJson for MotionBlur
 
 pub struct MotionVectorPrepass {
 }
 pub fn MotionVectorPrepass::default() -> Self
+pub impl ToJson for MotionVectorPrepass
+pub impl @json.FromJson for MotionVectorPrepass
 
 pub(all) enum Msaa {
   Off
@@ -897,26 +1103,38 @@ pub fn Msaa::from_samples(Int) -> Self
 pub fn Msaa::samples(Self) -> Int
 pub impl Eq for Msaa
 pub impl Show for Msaa
+pub impl ToJson for Msaa
+pub impl @json.FromJson for Msaa
 
 pub struct NoWireframe {
 }
 pub fn NoWireframe::default() -> Self
+pub impl ToJson for NoWireframe
+pub impl @json.FromJson for NoWireframe
 
 pub struct NormalPrepass {
 }
 pub fn NormalPrepass::default() -> Self
+pub impl ToJson for NormalPrepass
+pub impl @json.FromJson for NormalPrepass
 
 pub struct NotShadowCaster {
 }
 pub fn NotShadowCaster::default() -> Self
+pub impl ToJson for NotShadowCaster
+pub impl @json.FromJson for NotShadowCaster
 
 pub struct NotShadowReceiver {
 }
 pub fn NotShadowReceiver::default() -> Self
+pub impl ToJson for NotShadowReceiver
+pub impl @json.FromJson for NotShadowReceiver
 
 pub struct OcclusionCulling {
 }
 pub fn OcclusionCulling::default() -> Self
+pub impl ToJson for OcclusionCulling
+pub impl @json.FromJson for OcclusionCulling
 
 pub(all) enum OpaqueRendererMethod {
   Auto
@@ -926,6 +1144,8 @@ pub(all) enum OpaqueRendererMethod {
 pub fn OpaqueRendererMethod::default() -> Self
 pub impl Eq for OpaqueRendererMethod
 pub impl Show for OpaqueRendererMethod
+pub impl ToJson for OpaqueRendererMethod
+pub impl @json.FromJson for OpaqueRendererMethod
 
 pub struct OrderIndependentTransparencySettings {
   sorted_fragment_max_count : Int
@@ -937,6 +1157,8 @@ pub fn OrderIndependentTransparencySettings::new(Int, Float, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_alpha_threshold(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(Self, Int) -> Self
+pub impl ToJson for OrderIndependentTransparencySettings
+pub impl @json.FromJson for OrderIndependentTransparencySettings
 
 pub struct OrthographicProjection3d {
   scale : Float
@@ -948,12 +1170,18 @@ pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
 pub fn OrthographicProjection3d::with_window_size_scaling(Self) -> Self
+pub impl ToJson for OrthographicProjection3d
+pub impl @json.FromJson for OrthographicProjection3d
 
 pub(all) enum OrthographicScalingMode3d {
   WindowSize
   Scale
   FixedVertical(Float)
 }
+pub impl Eq for OrthographicScalingMode3d
+pub impl Show for OrthographicScalingMode3d
+pub impl ToJson for OrthographicScalingMode3d
+pub impl @json.FromJson for OrthographicScalingMode3d
 
 pub(all) enum ParallaxCorrection {
   None
@@ -961,6 +1189,8 @@ pub(all) enum ParallaxCorrection {
   Custom(@math.Vec3)
 }
 pub fn ParallaxCorrection::default() -> Self
+pub impl ToJson for ParallaxCorrection
+pub impl @json.FromJson for ParallaxCorrection
 
 pub(all) enum ParallaxMappingMethod {
   Occlusion
@@ -983,6 +1213,8 @@ pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
+pub impl ToJson for PerspectiveProjection3d
+pub impl @json.FromJson for PerspectiveProjection3d
 
 pub struct PointLight {
   color : @render2d.Color
@@ -1010,6 +1242,8 @@ pub fn PointLight::with_shadow_map_near_z(Self, Float) -> Self
 pub fn PointLight::with_shadow_maps_enabled(Self, Bool) -> Self
 pub fn PointLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn PointLight::with_soft_shadows_enabled(Self, Bool) -> Self
+pub impl ToJson for PointLight
+pub impl @json.FromJson for PointLight
 
 pub struct PointLightShadowMap {
   size : Int
@@ -1017,6 +1251,8 @@ pub struct PointLightShadowMap {
 pub fn PointLightShadowMap::default() -> Self
 pub fn PointLightShadowMap::new(Int) -> Self
 pub fn PointLightShadowMap::with_size(Self, Int) -> Self
+pub impl ToJson for PointLightShadowMap
+pub impl @json.FromJson for PointLightShadowMap
 
 pub struct PointLightTexture {
   image : @asset.Handle[@asset.Image]?
@@ -1026,6 +1262,8 @@ pub fn PointLightTexture::default() -> Self
 pub fn PointLightTexture::new(@asset.Handle[@asset.Image]?, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_cubemap_layout(Self, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl ToJson for PointLightTexture
+pub impl @json.FromJson for PointLightTexture
 
 pub(all) enum Projection3d {
   Perspective(PerspectiveProjection3d)
@@ -1033,6 +1271,8 @@ pub(all) enum Projection3d {
 }
 pub fn Projection3d::orthographic_default() -> Self
 pub fn Projection3d::perspective_default() -> Self
+pub impl ToJson for Projection3d
+pub impl @json.FromJson for Projection3d
 
 pub struct ScatteringMedium {
   density_multiplier : Float
@@ -1040,6 +1280,8 @@ pub struct ScatteringMedium {
 pub fn ScatteringMedium::default() -> Self
 pub fn ScatteringMedium::earthlike() -> Self
 pub fn ScatteringMedium::with_density_multiplier(Self, Float) -> Self
+pub impl ToJson for ScatteringMedium
+pub impl @json.FromJson for ScatteringMedium
 
 pub struct ScreenSpaceAmbientOcclusion {
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel
@@ -1048,6 +1290,8 @@ pub struct ScreenSpaceAmbientOcclusion {
 pub fn ScreenSpaceAmbientOcclusion::default() -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(Self, Float) -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_quality_level(Self, ScreenSpaceAmbientOcclusionQualityLevel) -> Self
+pub impl ToJson for ScreenSpaceAmbientOcclusion
+pub impl @json.FromJson for ScreenSpaceAmbientOcclusion
 
 pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Low
@@ -1058,6 +1302,8 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> Self
 pub impl Eq for ScreenSpaceAmbientOcclusionQualityLevel
 pub impl Show for ScreenSpaceAmbientOcclusionQualityLevel
+pub impl ToJson for ScreenSpaceAmbientOcclusionQualityLevel
+pub impl @json.FromJson for ScreenSpaceAmbientOcclusionQualityLevel
 
 pub struct ScreenSpaceReflections {
   min_perceptual_roughness_start : Float
@@ -1081,6 +1327,8 @@ pub fn ScreenSpaceReflections::with_max_perceptual_roughness(Self, Float, Float)
 pub fn ScreenSpaceReflections::with_min_perceptual_roughness(Self, Float, Float) -> Self
 pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
 pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
+pub impl ToJson for ScreenSpaceReflections
+pub impl @json.FromJson for ScreenSpaceReflections
 
 pub struct ScreenSpaceTransmission {
   quality : ScreenSpaceTransmissionQuality
@@ -1090,6 +1338,8 @@ pub fn ScreenSpaceTransmission::default() -> Self
 pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
 pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
 pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
+pub impl ToJson for ScreenSpaceTransmission
+pub impl @json.FromJson for ScreenSpaceTransmission
 
 pub(all) enum ScreenSpaceTransmissionQuality {
   Low
@@ -1100,6 +1350,8 @@ pub(all) enum ScreenSpaceTransmissionQuality {
 pub fn ScreenSpaceTransmissionQuality::default() -> Self
 pub impl Eq for ScreenSpaceTransmissionQuality
 pub impl Show for ScreenSpaceTransmissionQuality
+pub impl ToJson for ScreenSpaceTransmissionQuality
+pub impl @json.FromJson for ScreenSpaceTransmissionQuality
 
 pub(all) enum ShadowFilteringMethod {
   Hardware2x2
@@ -1109,6 +1361,8 @@ pub(all) enum ShadowFilteringMethod {
 pub fn ShadowFilteringMethod::default() -> Self
 pub impl Eq for ShadowFilteringMethod
 pub impl Show for ShadowFilteringMethod
+pub impl ToJson for ShadowFilteringMethod
+pub impl @json.FromJson for ShadowFilteringMethod
 
 pub struct Skybox {
   image : @asset.Handle[@asset.Image]?
@@ -1120,6 +1374,8 @@ pub fn Skybox::new(@asset.Handle[@asset.Image], Float) -> Self
 pub fn Skybox::with_brightness(Self, Float) -> Self
 pub fn Skybox::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
+pub impl ToJson for Skybox
+pub impl @json.FromJson for Skybox
 
 pub struct SpotLight {
   color : @render2d.Color
@@ -1146,6 +1402,8 @@ pub fn SpotLight::with_shadow_depth_bias(Self, Float) -> Self
 pub fn SpotLight::with_shadow_map_near_z(Self, Float) -> Self
 pub fn SpotLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn SpotLight::with_soft_shadows_enabled(Self, Bool) -> Self
+pub impl ToJson for SpotLight
+pub impl @json.FromJson for SpotLight
 
 pub struct SpotLightTexture {
   image : @asset.Handle[@asset.Image]?
@@ -1153,6 +1411,8 @@ pub struct SpotLightTexture {
 pub fn SpotLightTexture::default() -> Self
 pub fn SpotLightTexture::new(@asset.Handle[@asset.Image]?) -> Self
 pub fn SpotLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl ToJson for SpotLightTexture
+pub impl @json.FromJson for SpotLightTexture
 
 pub struct StandardMaterial {
   base_color : @render2d.Color
@@ -1235,6 +1495,8 @@ pub struct SubCameraView3d {
 }
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
+pub impl ToJson for SubCameraView3d
+pub impl @json.FromJson for SubCameraView3d
 
 pub struct TemporalAntiAliasing {
   reset : Bool
@@ -1242,6 +1504,8 @@ pub struct TemporalAntiAliasing {
 pub fn TemporalAntiAliasing::default() -> Self
 pub fn TemporalAntiAliasing::new(Bool) -> Self
 pub fn TemporalAntiAliasing::with_reset(Self, Bool) -> Self
+pub impl ToJson for TemporalAntiAliasing
+pub impl @json.FromJson for TemporalAntiAliasing
 
 pub struct TemporalJitter {
   offset : @math.Vec2
@@ -1249,6 +1513,8 @@ pub struct TemporalJitter {
 pub fn TemporalJitter::default() -> Self
 pub fn TemporalJitter::new(@math.Vec2) -> Self
 pub fn TemporalJitter::with_offset(Self, @math.Vec2) -> Self
+pub impl ToJson for TemporalJitter
+pub impl @json.FromJson for TemporalJitter
 
 pub(all) enum Tonemapping {
   None
@@ -1263,10 +1529,14 @@ pub(all) enum Tonemapping {
 pub fn Tonemapping::default() -> Self
 pub impl Eq for Tonemapping
 pub impl Show for Tonemapping
+pub impl ToJson for Tonemapping
+pub impl @json.FromJson for Tonemapping
 
 pub struct TransmittedShadowReceiver {
 }
 pub fn TransmittedShadowReceiver::default() -> Self
+pub impl ToJson for TransmittedShadowReceiver
+pub impl @json.FromJson for TransmittedShadowReceiver
 
 pub struct Vignette {
   intensity : Float
@@ -1286,6 +1556,8 @@ pub fn Vignette::with_intensity(Self, Float) -> Self
 pub fn Vignette::with_radius(Self, Float) -> Self
 pub fn Vignette::with_roundness(Self, Float) -> Self
 pub fn Vignette::with_smoothness(Self, Float) -> Self
+pub impl ToJson for Vignette
+pub impl @json.FromJson for Vignette
 
 pub struct VolumetricFog {
   ambient_color : @render2d.Color
@@ -1298,6 +1570,8 @@ pub fn VolumetricFog::with_ambient_color(Self, @render2d.Color) -> Self
 pub fn VolumetricFog::with_ambient_intensity(Self, Float) -> Self
 pub fn VolumetricFog::with_jitter(Self, Float) -> Self
 pub fn VolumetricFog::with_step_count(Self, Int) -> Self
+pub impl ToJson for VolumetricFog
+pub impl @json.FromJson for VolumetricFog
 
 pub struct VolumetricLight {
 }
@@ -1306,6 +1580,8 @@ pub fn VolumetricLight::default() -> Self
 pub struct Wireframe {
 }
 pub fn Wireframe::default() -> Self
+pub impl ToJson for Wireframe
+pub impl @json.FromJson for Wireframe
 
 pub struct WireframeColor {
   color : @render2d.Color
@@ -1313,6 +1589,8 @@ pub struct WireframeColor {
 pub fn WireframeColor::default() -> Self
 pub fn WireframeColor::new(@render2d.Color) -> Self
 pub fn WireframeColor::with_color(Self, @render2d.Color) -> Self
+pub impl ToJson for WireframeColor
+pub impl @json.FromJson for WireframeColor
 
 pub struct WireframeConfig {
   global : Bool
@@ -1322,6 +1600,8 @@ pub fn WireframeConfig::default() -> Self
 pub fn WireframeConfig::new(Bool, @render2d.Color) -> Self
 pub fn WireframeConfig::with_default_color(Self, @render2d.Color) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
+pub impl ToJson for WireframeConfig
+pub impl @json.FromJson for WireframeConfig
 
 // Type aliases
 

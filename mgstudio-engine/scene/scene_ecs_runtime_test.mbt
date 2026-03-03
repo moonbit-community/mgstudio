@@ -49,7 +49,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   let children : Array[@core.Entity] = []
   try! world
   .query1(@hierarchy.ecs_key_parent)
-  .for_each(fn(entity, parent) {
+  .view(fn(entity, parent) {
     if parent.entity().id == root.id {
       children.push(entity)
     }
@@ -91,7 +91,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   let ready_entities : Array[@core.Entity] = []
   try! world
   .query1(@scene.ecs_key_scene_instance_ready)
-  .for_each(fn(entity, _ready) { ready_entities.push(entity) })
+  .view(fn(entity, _ready) { ready_entities.push(entity) })
   inspect(ready_entities.length(), content="1")
   inspect(ready_entities[0].id == root.id, content="true")
 }

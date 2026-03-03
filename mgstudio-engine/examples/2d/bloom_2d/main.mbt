@@ -32,7 +32,7 @@ let bloom_example_state : Ref[BloomExampleState] = Ref::new(BloomExampleState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(bloom_setup)
@@ -181,8 +181,10 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
-  @ui.query_get_node_store(world).insert(
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -190,12 +192,12 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    text_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -203,11 +205,9 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    text_entity,
-    @ui.UiText::new(text_handle),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
   bloom_example_state.val.help_text = Some(text_handle)
   update_help_text()
 }
@@ -230,16 +230,12 @@ fn bloom_setup(world : @ecs.World) -> Unit {
     .spawn(world)
   bloom_example_state.val.camera = camera
   let tick = world.read_change_tick()
-  @render3d.query_get_tonemapping_store(world).insert(
-    camera,
-    bloom_example_state.val.tonemapping,
-    tick,
-  )
-  @render3d.query_get_deband_dither_store(world).insert(
-    camera,
-    @render3d.DebandDither::Enabled,
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_tonemapping)
+  .insert(camera, bloom_example_state.val.tonemapping, tick)
+  world
+  .component(@render3d.ecs_key_deband_dither)
+  .insert(camera, @render3d.DebandDither::Enabled, tick)
 
   let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
@@ -389,11 +385,9 @@ fn bloom_update(world : @ecs.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
     tonemapping = next_tonemap(tonemapping)
-    @render3d.query_get_tonemapping_store(world).set(
-      bloom_example_state.val.camera,
-      tonemapping,
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_tonemapping)
+    .set(bloom_example_state.val.camera, tonemapping, tick)
     |> ignore
   }
 
@@ -401,7 +395,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
   bloom_example_state.val.bloom_enabled = bloom_enabled
   bloom_example_state.val.tonemapping = tonemapping
 
-  let bloom_store = @render2d.query_get_bloom2d_store(world)
+  let bloom_store = world.component(@render2d.ecs_key_bloom2d)
   let camera = bloom_example_state.val.camera
   if bloom_enabled {
     if bloom_store.get(camera) is Some(current) {

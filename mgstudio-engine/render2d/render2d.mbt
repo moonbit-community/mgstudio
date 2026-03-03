@@ -333,15 +333,15 @@ pub fn Viewport::default() -> Viewport {
 ///|
 
 ///|
-pub struct Sprite {
-  image : @asset.Handle[@asset.Image]
-  texture_atlas : @asset.TextureAtlas?
-  color : Color
-  flip_x : Bool
-  flip_y : Bool
-  custom_size : @math.Vec2?
-  rect : @math.Rect?
-  image_mode : SpriteImageMode
+pub(all) struct Sprite {
+  mut image : @asset.Handle[@asset.Image]
+  mut texture_atlas : @asset.TextureAtlas?
+  mut color : Color
+  mut flip_x : Bool
+  mut flip_y : Bool
+  mut custom_size : @math.Vec2?
+  mut rect : @math.Rect?
+  mut image_mode : SpriteImageMode
 }
 
 ///|
@@ -397,7 +397,7 @@ pub fn Wireframe2dColor::with_color(
 pub struct Wireframe2dConfig {
   global : Bool
   default_color : Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Wireframe2dConfig::default() -> Wireframe2dConfig {
@@ -4773,80 +4773,76 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_create_render_ta
 }
 
 ///|
-pub(open) trait SpriteBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
-}
-
-///|
-pub(open) trait Camera2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + @math.Has_Transform {
-}
-
-///|
-pub(open) trait Mesh2dBundleSpawnWorld: @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
-}
-
-///|
 pub(open) trait RenderExtractWorld: HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
 
 ///|
-pub fn[W : SpriteBundleSpawnWorld] SpriteBundle::spawn(
+pub fn SpriteBundle::spawn(
   self : SpriteBundle,
-  world : W,
+  world : @ecs.World,
 ) -> @core.Entity {
-  let tick = world.read_change_tick()
   let e = world.spawn_empty()
-  world.get_sprite_store().insert(e, self.sprite, tick)
-  world.get_anchor_store().insert(e, self.anchor, tick)
-  world.get_render_layers_store().insert(e, self.layers, tick)
-  world.get_visibility_store().insert(e, self.visibility, tick)
-  world
-  .get_inherited_visibility_store()
-  .insert(e, self.inherited_visibility, tick)
-  world.get_view_visibility_store().insert(e, self.view_visibility, tick)
-  world.get_transform_store().insert(e, self.transform, tick)
+  try! (world.set(e, ecs_key_sprite, self.sprite) |> ignore)
+  try! (world.set(e, ecs_key_anchor, self.anchor) |> ignore)
+  try! (world.set(e, ecs_key_render_layers, self.layers) |> ignore)
+  try! (world.set(e, @visibility.ecs_key_visibility, self.visibility) |> ignore)
+  try! (world.set(
+    e,
+    @visibility.ecs_key_inherited_visibility,
+    self.inherited_visibility,
+  )
+  |> ignore)
+  try! (world.set(e, @visibility.ecs_key_view_visibility, self.view_visibility)
+  |> ignore)
+  try! (world.set(e, @math.ecs_key_transform, self.transform) |> ignore)
   e
 }
 
 ///|
-pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(
+pub fn Camera2dBundle::spawn(
   self : Camera2dBundle,
-  world : W,
+  world : @ecs.World,
 ) -> @core.Entity {
-  let tick = world.read_change_tick()
   let e = world.spawn_empty()
-  world.get_camera2d_store().insert(e, self.camera2d, tick)
-  world.get_camera_store().insert(e, self.camera, tick)
-  world.get_projection_store().insert(e, self.projection, tick)
-  world.get_render_target_store().insert(e, self.target, tick)
-  world.get_render_layers_store().insert(e, self.layers, tick)
+  try! (world.set(e, ecs_key_camera2d, self.camera2d) |> ignore)
+  try! (world.set(e, ecs_key_camera, self.camera) |> ignore)
+  try! (world.set(e, ecs_key_projection, self.projection) |> ignore)
+  try! (world.set(e, ecs_key_render_target, self.target) |> ignore)
+  try! (world.set(e, ecs_key_render_layers, self.layers) |> ignore)
   if self.bloom2d is Some(bloom2d) {
-    world.get_bloom2d_store().insert(e, bloom2d, tick)
+    try! (world.set(e, ecs_key_bloom2d, bloom2d) |> ignore)
   }
-  world.get_transform_store().insert(e, self.transform, tick)
+  try! (world.set(e, @math.ecs_key_transform, self.transform) |> ignore)
   e
 }
 
 ///|
-pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(
+pub fn Mesh2dBundle::spawn(
   self : Mesh2dBundle,
-  world : W,
+  world : @ecs.World,
 ) -> @core.Entity {
-  let tick = world.read_change_tick()
   let e = world.spawn_empty()
-  world.get_mesh2d_store().insert(e, self.mesh, tick)
-  world.get_color_material_store().insert(e, self.material, tick)
-  world
-  .get_mesh_material2d_store()
-  .insert(e, MeshMaterial2d::from_color_material(self.material), tick)
-  world.get_render_layers_store().insert(e, self.layers, tick)
-  world.get_visibility_store().insert(e, self.visibility, tick)
-  world
-  .get_inherited_visibility_store()
-  .insert(e, self.inherited_visibility, tick)
-  world.get_view_visibility_store().insert(e, self.view_visibility, tick)
-  world.get_transform_store().insert(e, self.transform, tick)
+  try! (world.set(e, ecs_key_mesh2d, self.mesh) |> ignore)
+  try! (world.set(e, ecs_key_color_material, self.material) |> ignore)
+  try! (world.set(
+    e,
+    ecs_key_mesh_material2d,
+    MeshMaterial2d::from_color_material(self.material),
+  )
+  |> ignore)
+  try! (world.set(e, ecs_key_render_layers, self.layers) |> ignore)
+  try! (world.set(e, @visibility.ecs_key_visibility, self.visibility) |> ignore)
+  try! (world.set(
+    e,
+    @visibility.ecs_key_inherited_visibility,
+    self.inherited_visibility,
+  )
+  |> ignore)
+  try! (world.set(e, @visibility.ecs_key_view_visibility, self.view_visibility)
+  |> ignore)
+  try! (world.set(e, @math.ecs_key_transform, self.transform) |> ignore)
   let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
-  world.get_gpu_mesh2d_store().insert(e, GpuMesh2d::new(mesh_id), tick)
+  try! (world.set(e, ecs_key_gpu_mesh2d, GpuMesh2d::new(mesh_id)) |> ignore)
   e
 }
 
@@ -5491,6 +5487,111 @@ pub fn[W : CameraSystemWorld] render2d_camera_system(world : W) -> Unit {
 }
 
 ///|
+fn render2d_transform_from_parent_chain_ecs(
+  world : @ecs.World,
+  entity : @core.Entity,
+  max_depth : Int,
+) -> @math.Transform {
+  max_depth |> ignore
+  (try! world.get(entity, @math.ecs_key_transform)).unwrap_or(
+    @math.Transform::identity(),
+  )
+}
+
+///|
+fn render2d_resolve_transform_ecs(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @math.Transform {
+  match (try! world.get(entity, @transform.ecs_key_global_transform)) {
+    Some(global) => global.to_transform_approx()
+    None => render2d_transform_from_parent_chain_ecs(world, entity, 64)
+  }
+}
+
+///|
+fn render2d_visibility_from_parent_chain_ecs(
+  world : @ecs.World,
+  entity : @core.Entity,
+  max_depth : Int,
+) -> Bool {
+  max_depth |> ignore
+  let key : @ecs.ComponentKey[Json] = @visibility.ecs_key_view_visibility.cast()
+  match (try! world.get(entity, key)) {
+    Some(payload) => {
+      let visible : Bool = try! @json.from_json(payload)
+      visible
+    }
+    None => true
+  }
+}
+
+///|
+fn render2d_entity_visible_ecs(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Bool {
+  render2d_visibility_from_parent_chain_ecs(world, entity, 64)
+}
+
+///|
+pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
+  guard render_state_ref(world) is Some(render_state_ref_value) else { return }
+  let render_state = render_state_ref_value.val
+  let cameras : Array[@core.Entity] = []
+  try! world
+  .query1(ecs_key_camera2d)
+  .view(fn(entity, _camera2d) { cameras.push(entity) })
+  for entity in cameras {
+    let target = (try! world.get(entity, ecs_key_render_target)).unwrap_or(
+      RenderTarget::Screen,
+    )
+    let camera = (try! world.get(entity, ecs_key_camera)).unwrap_or(
+      Camera::default(),
+    )
+    (try! world.get(entity, ecs_key_projection)).unwrap_or(
+      Projection::orthographic_2d(),
+    )
+    |> ignore
+    let target_info = render2d_target_info(render_state, target)
+    let next_target_info = render2d_camera_target_info_from_render_target(
+      target_info,
+    )
+    let mut camera_value = camera
+    let mut scale_factor_changed = false
+    if target is RenderTarget::Screen &&
+      camera.computed.target_info is Some(old_target_info) &&
+      next_target_info is Some(new_target_info) &&
+      old_target_info.scale_factor > 0.0F &&
+      new_target_info.scale_factor != old_target_info.scale_factor {
+      scale_factor_changed = true
+    }
+    if scale_factor_changed &&
+      camera.computed.target_info is Some(old_target_info) &&
+      old_target_info.scale_factor > 0.0F &&
+      camera_value.viewport is Some(viewport) &&
+      next_target_info is Some(new_target_info) {
+      let resize_factor = new_target_info.scale_factor /
+        old_target_info.scale_factor
+      let resized = render2d_scale_viewport(viewport, resize_factor)
+      camera_value = camera_value.with_viewport(resized)
+    }
+    if target_info is Some(info) && camera_value.viewport is Some(viewport) {
+      let clamped = render2d_clamp_viewport(viewport, info.size)
+      camera_value = camera_value.with_viewport(clamped)
+    }
+    camera_value = Camera::{
+      ..camera_value,
+      computed: CameraComputedValues::{
+        target_info: next_target_info,
+        old_viewport_size: render2d_camera_viewport_size(camera_value),
+      },
+    }
+    try! world.set(entity, ecs_key_camera, camera_value)
+  }
+}
+
+///|
 pub let camera_update_systems : @app.SystemSet = @app.system_set(
   "bevy.camera.update_systems",
 )
@@ -5775,6 +5876,239 @@ pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
     guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else { return }
     let wireframe_color = render2d_mesh_wireframe_color(
       wireframe_color_store.get(entity),
+      wireframe_config,
+    )
+    match mesh_asset.geometry {
+      @mesh.MeshGeometry::Geometry2d(geometry) =>
+        Gizmos::new()
+        .with_layers(layers)
+        .mesh_wireframe_2d(geometry, transform, wireframe_color)
+      _ => ()
+    }
+  })
+}
+
+///|
+pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
+  guard render_state_ref_mut(world) is Some(rs) else { return }
+  rs.val.draw_enabled = true
+  rs.val.primary_camera = @core.Entity::placeholder()
+  rs.val.sprites.clear()
+  rs.val.cameras.clear()
+  rs.val.meshes.clear()
+  // ECS camera components.
+  try! world
+  .query1(ecs_key_camera2d)
+  .view(fn(entity, _camera2d) {
+    let target = (try! world.get(entity, ecs_key_render_target)).unwrap_or(
+      RenderTarget::Screen,
+    )
+    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+      RenderLayers::default(),
+    )
+    let bloom2d = try! world.get(entity, ecs_key_bloom2d)
+    let camera = (try! world.get(entity, ecs_key_camera)).unwrap_or(
+      Camera::default(),
+    )
+    let projection = match (try! world.get(entity, ecs_key_projection)) {
+      Some(Orthographic(p)) => p
+      None => OrthographicProjection::default_2d()
+    }
+    let transform = render2d_resolve_transform_ecs(world, entity)
+    let mut computed = CameraComputed::{
+      target_size: @math.IVec2::new(0, 0),
+      scale_factor: 1.0F,
+    }
+    if camera.computed.target_info is Some(target_info) {
+      let scale_factor = if target_info.scale_factor <= 0.0F {
+        1.0F
+      } else {
+        target_info.scale_factor
+      }
+      computed = CameraComputed::{
+        target_size: target_info.physical_size,
+        scale_factor,
+      }
+    } else if render2d_target_info(rs.val, target) is Some(info) {
+      let scale_factor = if info.scale_factor <= 0.0F {
+        1.0F
+      } else {
+        info.scale_factor
+      }
+      computed = CameraComputed::{ target_size: info.size, scale_factor }
+    }
+    rs.val.cameras.push(CameraInstance::{
+      entity,
+      camera,
+      projection,
+      transform,
+      target,
+      layers,
+      bloom2d,
+      computed,
+    })
+  })
+  if rs.val.cameras.length() > 0 {
+    let order = render2d_sorted_camera_indices(rs.val.cameras)
+    if order.length() > 0 {
+      rs.val.primary_camera = rs.val.cameras[order[0]].entity
+    }
+  }
+  render2d_prune_bloom2d_auto_targets(rs.val)
+
+  // ECS sprite components.
+  try! world
+  .query1(ecs_key_sprite)
+  .view(fn(entity, sprite) {
+    if !render2d_entity_visible_ecs(world, entity) {
+      return
+    }
+    let anchor = (try! world.get(entity, ecs_key_anchor)).unwrap_or(
+      Anchor::default(),
+    )
+    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+      RenderLayers::default(),
+    )
+    let transform = render2d_resolve_transform_ecs(world, entity)
+    let mut uv_min = default_uv_min()
+    let mut uv_max = default_uv_max()
+    let mut region_size = @math.Vec2::new(1.0F, 1.0F)
+    if sprite_uv_from_sprite(sprite) is Some(info) {
+      uv_min = info.uv_min
+      uv_max = info.uv_max
+      region_size = info.region_size
+    }
+    let draw_scale = sprite_draw_scale(
+      sprite,
+      @math.Vec2::new(transform.scale.x, transform.scale.y),
+      region_size,
+    )
+    let scissor = match (try! world.get(entity, ecs_key_scissor_rect)) {
+      Some(v) => Some(v.rect)
+      None => None
+    }
+    let has_custom_size = match sprite.custom_size {
+      Some(_) => true
+      None => false
+    }
+    let (
+      uv_draw_min,
+      uv_draw_max,
+      draw_scale_for_host,
+      local_offset,
+      needs_repeat_sampler,
+    ) = apply_sprite_image_mode(
+      uv_min,
+      uv_max,
+      draw_scale,
+      region_size,
+      sprite.image_mode,
+      has_custom_size,
+    )
+    let anchor_offset = sprite_anchor_offset(
+      anchor,
+      transform.rotation_z(),
+      draw_scale_for_host,
+      local_offset,
+    )
+    if needs_repeat_sampler {
+      @asset.asset_set_texture_sampler(
+        sprite.image,
+        @asset.ImageSampler::LinearRepeat,
+      )
+    }
+    if sprite_image_mode_uses_slices(sprite.image_mode) {
+      let target_size = @math.Vec2::new(
+        sprite_abs_float(draw_scale.x),
+        sprite_abs_float(draw_scale.y),
+      )
+      let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+        region_size,
+        target_size,
+        sprite.image_mode,
+      )
+      rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
+        entity,
+        transform,
+        anchor_offset,
+        draw_scale,
+        color: sprite.color,
+        texture: sprite.image,
+        layers,
+        scissor,
+        texture_slices,
+        target_slices,
+        repeat,
+        atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+      })
+    } else {
+      rs.val.sprites.push(SpriteInstance::{
+        entity,
+        transform,
+        anchor_offset,
+        draw_scale: draw_scale_for_host,
+        color: sprite.color,
+        texture: sprite.image,
+        layers,
+        uv_min: uv_draw_min,
+        uv_max: uv_draw_max,
+        scissor,
+      })
+    }
+  })
+
+  let wireframe_config = if (try? world.get_resource(ecs_key_wireframe2d_config))
+    is Ok(Some(config)) {
+    Some(config)
+  } else {
+    None
+  }
+
+  // ECS mesh components.
+  try! world
+  .query1(ecs_key_mesh2d)
+  .view(fn(entity, mesh2d) {
+    if !render2d_entity_visible_ecs(world, entity) {
+      return
+    }
+    guard (try! world.get(entity, ecs_key_gpu_mesh2d)) is Some(gpu) else {
+      return
+    }
+    let mat = if (try! world.get(entity, ecs_key_mesh_material2d))
+      is Some(material) {
+      material.to_color_material()
+    } else {
+      match (try! world.get(entity, ecs_key_color_material)) {
+        Some(color_material) => color_material
+        None => return
+      }
+    }
+    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+      RenderLayers::default(),
+    )
+    let transform = render2d_resolve_transform_ecs(world, entity)
+    rs.val.meshes.push(MeshInstance::{
+      entity,
+      mesh_id: gpu.mesh_id,
+      transform,
+      color: mat.color(),
+      alpha_mode: mat.alpha_mode(),
+      texture: mat.texture(),
+      uv_offset: mat.uv_offset(),
+      uv_scale: mat.uv_scale(),
+      layers,
+    })
+
+    if !render2d_mesh_should_draw_wireframe(
+        (try! world.get(entity, ecs_key_wireframe2d)) is Some(_),
+        (try! world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
+        wireframe_config,
+      ) {
+      return
+    }
+    guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else { return }
+    let wireframe_color = render2d_mesh_wireframe_color(
+      try! world.get(entity, ecs_key_wireframe2d_color),
       wireframe_config,
     )
     match mesh_asset.geometry {
@@ -7137,6 +7471,40 @@ pub fn[W : RenderExtractWorld + CameraPostProcessWorld] render2d_plugin(
   )
   .add_post_update_system_config(
     @app.system(render_extract_system).in_set(render2d_set_extract),
+  )
+  .add_post_update_system_config(
+    @app.system(render_prepare_system).in_set(render2d_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(render_queue_system).in_set(render2d_set_queue),
+  )
+  .add_post_update_system_config(
+    @app.system(render_execute_system).in_set(render2d_set_render),
+  )
+  .configure_set(@app.PostUpdate, camera_update_systems, before=[
+    render2d_set_extract,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+    render2d_set_prepare,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
+    render2d_set_queue,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
+    render2d_set_render,
+  ])
+}
+
+///|
+pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
+  .init_resource(fn() { ClearColor::default() })
+  .add_startup_system(init_render_state_system)
+  .add_post_update_system_config(
+    @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
+  )
+  .add_post_update_system_config(
+    @app.system(render_extract_system_ecs).in_set(render2d_set_extract),
   )
   .add_post_update_system_config(
     @app.system(render_prepare_system).in_set(render2d_set_prepare),

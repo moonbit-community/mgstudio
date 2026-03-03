@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -57,51 +58,53 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_Anchor] get_anchor_store(W) -> @core.ComponentStore[Anchor]
+
+pub fn[W : Has_Bloom2d] get_bloom2d_store(W) -> @core.ComponentStore[Bloom2d]
+
+pub fn[W : Has_Camera2d] get_camera2d_store(W) -> @core.ComponentStore[Camera2d]
+
+pub fn[W : Has_Camera] get_camera_store(W) -> @core.ComponentStore[Camera]
+
+pub fn[W : Has_ClearColorConfig] get_clear_color_config_store(W) -> @core.ComponentStore[ClearColorConfig]
+
+pub fn[W : Has_ColorMaterial] get_color_material_store(W) -> @core.ComponentStore[ColorMaterial]
+
+pub fn[W : Has_GpuMesh2d] get_gpu_mesh2d_store(W) -> @core.ComponentStore[GpuMesh2d]
+
+pub fn[W : Has_Mesh2d] get_mesh2d_store(W) -> @core.ComponentStore[Mesh2d]
+
+pub fn[W : Has_MeshMaterial2d] get_mesh_material2d_store(W) -> @core.ComponentStore[MeshMaterial2d]
+
+pub fn[W : Has_NoWireframe2d] get_no_wireframe2d_store(W) -> @core.ComponentStore[NoWireframe2d]
+
+pub fn[W : Has_Projection] get_projection_store(W) -> @core.ComponentStore[Projection]
+
+pub fn[W : Has_RenderLayers] get_render_layers_store(W) -> @core.ComponentStore[RenderLayers]
+
+pub fn[W : HasRes_RenderState] get_render_state_resource(W) -> @core.Resource[RenderState]
+
+pub fn[W : Has_RenderTarget] get_render_target_store(W) -> @core.ComponentStore[RenderTarget]
+
+pub fn[W : Has_ScissorRect] get_scissor_rect_store(W) -> @core.ComponentStore[ScissorRect]
+
+pub fn[W : Has_Sprite] get_sprite_store(W) -> @core.ComponentStore[Sprite]
+
+pub fn[W : Has_Wireframe2dColor] get_wireframe2d_color_store(W) -> @core.ComponentStore[Wireframe2dColor]
+
+pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(W) -> @core.Resource[Wireframe2dConfig]
+
+pub fn[W : Has_Wireframe2d] get_wireframe2d_store(W) -> @core.ComponentStore[Wireframe2d]
+
 pub fn gizmo_config() -> GizmoConfig
 
 pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
 
-pub fn[W : Has_Anchor] query_get_anchor_store(W) -> @core.ComponentStore[Anchor]
-
-pub fn[W : Has_Bloom2d] query_get_bloom2d_store(W) -> @core.ComponentStore[Bloom2d]
-
-pub fn[W : Has_Camera2d] query_get_camera2d_store(W) -> @core.ComponentStore[Camera2d]
-
-pub fn[W : Has_Camera] query_get_camera_store(W) -> @core.ComponentStore[Camera]
-
-pub fn[W : Has_ClearColorConfig] query_get_clear_color_config_store(W) -> @core.ComponentStore[ClearColorConfig]
-
-pub fn[W : Has_ColorMaterial] query_get_color_material_store(W) -> @core.ComponentStore[ColorMaterial]
-
-pub fn[W : Has_GpuMesh2d] query_get_gpu_mesh2d_store(W) -> @core.ComponentStore[GpuMesh2d]
-
-pub fn[W : Has_Mesh2d] query_get_mesh2d_store(W) -> @core.ComponentStore[Mesh2d]
-
-pub fn[W : Has_MeshMaterial2d] query_get_mesh_material2d_store(W) -> @core.ComponentStore[MeshMaterial2d]
-
-pub fn[W : Has_NoWireframe2d] query_get_no_wireframe2d_store(W) -> @core.ComponentStore[NoWireframe2d]
-
-pub fn[W : Has_Projection] query_get_projection_store(W) -> @core.ComponentStore[Projection]
-
-pub fn[W : Has_RenderLayers] query_get_render_layers_store(W) -> @core.ComponentStore[RenderLayers]
-
-pub fn[W : HasRes_RenderState] query_get_render_state_resource(W) -> @core.Resource[RenderState]
-
-pub fn[W : Has_RenderTarget] query_get_render_target_store(W) -> @core.ComponentStore[RenderTarget]
-
-pub fn[W : Has_ScissorRect] query_get_scissor_rect_store(W) -> @core.ComponentStore[ScissorRect]
-
-pub fn[W : Has_Sprite] query_get_sprite_store(W) -> @core.ComponentStore[Sprite]
-
-pub fn[W : Has_Wireframe2dColor] query_get_wireframe2d_color_store(W) -> @core.ComponentStore[Wireframe2dColor]
-
-pub fn[W : HasRes_Wireframe2dConfig] query_get_wireframe2d_config_resource(W) -> @core.Resource[Wireframe2dConfig]
-
-pub fn[W : Has_Wireframe2d] query_get_wireframe2d_store(W) -> @core.ComponentStore[Wireframe2d]
-
 pub fn[W : CameraSystemWorld] render2d_camera_system(W) -> Unit
+
+pub fn render2d_camera_system_ecs(@ecs.World) -> Unit
 
 pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
@@ -128,6 +131,8 @@ pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_bloom_overl
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_draw_tilemap_chunk(W, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
 
 pub fn[W : RenderExtractWorld + CameraPostProcessWorld] render2d_plugin(@app.App[W]) -> @app.App[W]
+
+pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[W : HasRes_RenderState + @core.ChangeTickWorld] render2d_push_sprite_uv(W, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -160,6 +165,8 @@ pub fn[W : HasRes_RenderState] render2d_world_to_viewport(W, @math.Vec2) -> @mat
 pub fn[W : HasRes_RenderState + CameraPostProcessWorld + @core.ChangeTickWorld] render_execute_system(W) -> Unit
 
 pub fn[W : RenderExtractWorld] render_extract_system(W) -> Unit
+
+pub fn render_extract_system_ecs(@ecs.World) -> Unit
 
 pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
@@ -197,6 +204,8 @@ pub fn Anchor::new(@math.Vec2) -> Self
 pub fn Anchor::top_center() -> Self
 pub fn Anchor::top_left() -> Self
 pub fn Anchor::top_right() -> Self
+pub impl ToJson for Anchor
+pub impl @json.FromJson for Anchor
 
 pub struct Annulus {
   inner_radius : Float
@@ -227,6 +236,8 @@ pub fn Bloom2d::new() -> Self
 pub fn Bloom2d::with_enabled(Self, Bool) -> Self
 pub fn Bloom2d::with_settings(Self, Bloom2dSettings) -> Self
 pub fn Bloom2d::with_source(Self, @asset.Handle[@asset.Image]) -> Self
+pub impl ToJson for Bloom2d
+pub impl @json.FromJson for Bloom2d
 
 pub(all) struct Bloom2dSettings {
   intensity : Float
@@ -283,10 +294,14 @@ pub fn Camera::with_clear_color_none(Self) -> Self
 pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, Viewport) -> Self
+pub impl ToJson for Camera
+pub impl @json.FromJson for Camera
 
 pub struct Camera2d {
 }
 pub fn Camera2d::default() -> Self
+pub impl ToJson for Camera2d
+pub impl @json.FromJson for Camera2d
 
 pub struct Camera2dBundle {
   camera : Camera
@@ -301,8 +316,7 @@ pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
 pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
-pub fn[W : Camera2dBundleSpawnWorld] Camera2dBundle::spawn(Self, W) -> @core.Entity
-pub fn Camera2dBundle::spawn_ecs(Self, @ecs.World) -> @core.Entity
+pub fn Camera2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
 
 pub struct CameraComputedValues {
@@ -417,6 +431,8 @@ pub fn Color::new(Float, Float, Float, Float) -> Self
 pub fn Color::srgb(Float, Float, Float) -> Self
 pub fn Color::srgba(Float, Float, Float, Float) -> Self
 pub fn Color::white() -> Self
+pub impl ToJson for Color
+pub impl @json.FromJson for Color
 
 pub struct ColorMaterial {
   handle : @asset.Handle[ColorMaterialAsset]
@@ -434,6 +450,8 @@ pub fn ColorMaterial::with_texture(Self, @asset.Handle[@asset.Image]) -> Self
 pub fn ColorMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn ColorMaterial::with_uv_scale(Self, @math.Vec2) -> Self
 pub impl Material2d for ColorMaterial
+pub impl ToJson for ColorMaterial
+pub impl @json.FromJson for ColorMaterial
 
 pub struct ColorMaterialAsset {
   color : Color
@@ -524,6 +542,8 @@ pub struct GpuMesh2d {
   mesh_id : Int
 }
 pub fn GpuMesh2d::new(Int) -> Self
+pub impl ToJson for GpuMesh2d
+pub impl @json.FromJson for GpuMesh2d
 
 pub struct Grid2dBuilder {
   id : Int
@@ -574,6 +594,8 @@ pub fn Mesh2d::from_segment(Segment2d) -> Self
 pub fn Mesh2d::from_triangle(Triangle2d) -> Self
 pub fn Mesh2d::from_triangle_ring(Triangle2dRing) -> Self
 pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
+pub impl ToJson for Mesh2d
+pub impl @json.FromJson for Mesh2d
 
 pub struct Mesh2dBundle {
   mesh : Mesh2d
@@ -588,8 +610,7 @@ pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
 pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d, @math.Transform, RenderLayers) -> Self
-pub fn[W : Mesh2dBundleSpawnWorld] Mesh2dBundle::spawn(Self, W) -> @core.Entity
-pub fn Mesh2dBundle::spawn_ecs(Self, @ecs.World) -> @core.Entity
+pub fn Mesh2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 
 pub struct MeshMaterial2d {
   handle : @asset.Handle[ColorMaterialAsset]
@@ -602,10 +623,14 @@ pub fn MeshMaterial2d::with_texture(Self, @asset.Handle[@asset.Image]) -> Self
 pub fn MeshMaterial2d::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn MeshMaterial2d::with_uv_scale(Self, @math.Vec2) -> Self
 pub impl Material2d for MeshMaterial2d
+pub impl ToJson for MeshMaterial2d
+pub impl @json.FromJson for MeshMaterial2d
 
 pub struct NoWireframe2d {
 }
 pub fn NoWireframe2d::default() -> Self
+pub impl ToJson for NoWireframe2d
+pub impl @json.FromJson for NoWireframe2d
 
 pub struct OrthographicProjection {
   scale : Float
@@ -635,6 +660,8 @@ pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
 pub fn Projection::orthographic_2d() -> Self
+pub impl ToJson for Projection
+pub impl @json.FromJson for Projection
 
 pub struct Rectangle {
   half_size : @math.Vec2
@@ -681,6 +708,8 @@ pub fn RenderLayers::remove(Self, Int) -> Self
 pub fn RenderLayers::union(Self, Self) -> Self
 pub fn RenderLayers::with_layer(Self, Int) -> Self
 pub fn RenderLayers::without_layer(Self, Int) -> Self
+pub impl ToJson for RenderLayers
+pub impl @json.FromJson for RenderLayers
 
 type RenderState
 
@@ -688,6 +717,8 @@ pub(all) enum RenderTarget {
   Screen
   Image(@asset.Handle[@asset.Image])
 }
+pub impl ToJson for RenderTarget
+pub impl @json.FromJson for RenderTarget
 
 pub struct Rhombus {
   half_diagonal : @math.Vec2
@@ -721,6 +752,8 @@ pub struct ScissorRect {
   rect : @math.Rect
 }
 pub fn ScissorRect::new(@math.Rect) -> Self
+pub impl ToJson for ScissorRect
+pub impl @json.FromJson for ScissorRect
 
 pub struct Segment2d {
   start : @math.Vec2
@@ -736,15 +769,15 @@ pub(all) enum SliceScaleMode {
 }
 pub fn SliceScaleMode::default() -> Self
 
-pub struct Sprite {
-  image : @asset.Handle[@asset.Image]
-  texture_atlas : @asset.TextureAtlas?
-  color : Color
-  flip_x : Bool
-  flip_y : Bool
-  custom_size : @math.Vec2?
-  rect : @math.Rect?
-  image_mode : SpriteImageMode
+pub(all) struct Sprite {
+  mut image : @asset.Handle[@asset.Image]
+  mut texture_atlas : @asset.TextureAtlas?
+  mut color : Color
+  mut flip_x : Bool
+  mut flip_y : Bool
+  mut custom_size : @math.Vec2?
+  mut rect : @math.Rect?
+  mut image_mode : SpriteImageMode
 }
 pub fn Sprite::from_atlas_image(@asset.Handle[@asset.Image], @asset.TextureAtlas) -> Self
 pub fn Sprite::from_image(@asset.Handle[@asset.Image]) -> Self
@@ -755,6 +788,8 @@ pub fn Sprite::with_flip_y(Self, Bool) -> Self
 pub fn Sprite::with_image_mode(Self, SpriteImageMode) -> Self
 pub fn Sprite::with_rect(Self, @math.Rect?) -> Self
 pub fn Sprite::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
+pub impl ToJson for Sprite
+pub impl @json.FromJson for Sprite
 
 pub struct SpriteBundle {
   sprite : Sprite
@@ -767,8 +802,7 @@ pub struct SpriteBundle {
 }
 pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
-pub fn[W : SpriteBundleSpawnWorld] SpriteBundle::spawn(Self, W) -> @core.Entity
-pub fn SpriteBundle::spawn_ecs(Self, @ecs.World) -> @core.Entity
+pub fn SpriteBundle::spawn(Self, @ecs.World) -> @core.Entity
 
 pub(all) enum SpriteImageMode {
   Auto
@@ -882,6 +916,8 @@ pub fn Viewport::with_depth(Self, Float, Float) -> Self
 pub struct Wireframe2d {
 }
 pub fn Wireframe2d::default() -> Self
+pub impl ToJson for Wireframe2d
+pub impl @json.FromJson for Wireframe2d
 
 pub struct Wireframe2dColor {
   color : Color
@@ -889,6 +925,8 @@ pub struct Wireframe2dColor {
 pub fn Wireframe2dColor::default() -> Self
 pub fn Wireframe2dColor::new(Color) -> Self
 pub fn Wireframe2dColor::with_color(Self, Color) -> Self
+pub impl ToJson for Wireframe2dColor
+pub impl @json.FromJson for Wireframe2dColor
 
 pub struct Wireframe2dConfig {
   global : Bool
@@ -898,17 +936,17 @@ pub fn Wireframe2dConfig::default() -> Self
 pub fn Wireframe2dConfig::new(Bool, Color) -> Self
 pub fn Wireframe2dConfig::with_default_color(Self, Color) -> Self
 pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self
+pub impl ToJson for Wireframe2dConfig
+pub impl @json.FromJson for Wireframe2dConfig
 
 // Type aliases
 
 // Traits
-pub(open) trait Camera2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + @math.Has_Transform {
-}
-
 pub(open) trait CameraPostProcessWorld {
   camera_tonemapping_mode(Self, @core.Entity) -> Int
   camera_deband_dither_enabled(Self, @core.Entity) -> Bool
 }
+pub impl CameraPostProcessWorld for @ecs.World
 
 pub(open) trait CameraSystemWorld : HasRes_RenderState + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + @core.ChangeTickWorld + @core.SystemContextWorld {
 }
@@ -1016,13 +1054,7 @@ pub(open) trait Material2d {
   uv_scale(Self) -> @math.Vec2
 }
 
-pub(open) trait Mesh2dBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
-}
-
 pub(open) trait RenderExtractWorld : HasRes_RenderState + HasRes_Wireframe2dConfig + Has_Camera2d + Has_Camera + Has_Projection + Has_RenderTarget + Has_RenderLayers + Has_Bloom2d + Has_Sprite + Has_ScissorRect + Has_Anchor + Has_Mesh2d + Has_ColorMaterial + Has_MeshMaterial2d + Has_GpuMesh2d + Has_Wireframe2d + Has_NoWireframe2d + Has_Wireframe2dColor + @math.Has_Transform + @transform.Has_GlobalTransform + @visibility.Has_ViewVisibility + @core.ChangeTickWorld + @core.SystemContextWorld {
-}
-
-pub(open) trait SpriteBundleSpawnWorld : @core.SpawnWorld + @core.ChangeTickWorld + Has_Sprite + Has_Anchor + Has_RenderLayers + @math.Has_Transform + @visibility.Has_Visibility + @visibility.Has_InheritedVisibility + @visibility.Has_ViewVisibility {
 }
 
 pub(open) trait Wireframe2dPluginWorld : HasRes_Wireframe2dConfig + @core.ChangeTickWorld {

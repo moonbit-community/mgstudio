@@ -291,7 +291,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
 
   let light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -301,11 +303,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::from_xyz(2.0F, 1.0F, -1.1F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::from_xyz(2.0F, 1.0F, -1.1F), tick)
 
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(0.08F, 0.08F, 0.08F),
@@ -426,7 +426,7 @@ fn spin(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   for spin_target in parallax_state.val.spin_targets {
     guard transform_store.get(spin_target.entity) is Some(transform) else {
       continue
@@ -453,7 +453,7 @@ fn move_camera(world : @ecs.World) -> Unit {
       view_count()
   }
   guard parallax_state.val.camera is Some(camera_entity) else { return }
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(current_transform) else {
     return
   }
@@ -529,7 +529,7 @@ fn update_parallax_controls(_world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

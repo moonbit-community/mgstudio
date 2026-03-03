@@ -20,6 +20,86 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_ActiveCollisionTypes2d] get_active_collision_types2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveCollisionTypes2d]
+
+pub fn[W : Has_ActiveEvents2d] get_active_events2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveEvents2d]
+
+pub fn[W : Has_ActiveHooks2d] get_active_hooks2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveHooks2d]
+
+pub fn[W : Has_AdditionalMassProperties2d] get_additional_mass_properties2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[AdditionalMassProperties2d]
+
+pub fn[W : Has_AdditionalSolverIterations2d] get_additional_solver_iterations2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[AdditionalSolverIterations2d]
+
+pub fn[W : Has_Ccd2d] get_ccd2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Ccd2d]
+
+pub fn[W : Has_Collider2d] get_collider2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Collider2d]
+
+pub fn[W : Has_ColliderDensity2d] get_collider_density2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderDensity2d]
+
+pub fn[W : Has_ColliderEnabled2d] get_collider_enabled2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderEnabled2d]
+
+pub fn[W : Has_ColliderMassProperties2d] get_collider_mass_properties2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderMassProperties2d]
+
+pub fn[W : Has_ColliderParent2d] get_collider_parent2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderParent2d]
+
+pub fn[W : Has_CollisionGroups2d] get_collision_groups2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[CollisionGroups2d]
+
+pub fn[W : Has_ContactForceEventThreshold2d] get_contact_force_event_threshold2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold2d]
+
+pub fn[W : Has_ContactSkin2d] get_contact_skin2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ContactSkin2d]
+
+pub fn[W : Has_Damping2d] get_damping2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Damping2d]
+
+pub fn[W : Has_Dominance2d] get_dominance2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Dominance2d]
+
+pub fn[W : Has_ExternalForce2d] get_external_force2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ExternalForce2d]
+
+pub fn[W : Has_ExternalImpulse2d] get_external_impulse2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ExternalImpulse2d]
+
+pub fn[W : Has_Friction2d] get_friction2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Friction2d]
+
+pub fn[W : Has_FrictionCombineRule2d] get_friction_combine_rule2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[FrictionCombineRule2d]
+
+pub fn[W : Has_GravityScale2d] get_gravity_scale2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[GravityScale2d]
+
+pub fn[W : Has_ImpulseJoint2d] get_impulse_joint2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ImpulseJoint2d]
+
+pub fn[W : Has_KinematicCharacterController2d] get_kinematic_character_controller2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[KinematicCharacterController2d]
+
+pub fn[W : Has_KinematicCharacterControllerOutput2d] get_kinematic_character_controller_output2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[KinematicCharacterControllerOutput2d]
+
+pub fn[W : Has_LockedAxes2d] get_locked_axes2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[LockedAxes2d]
+
+pub fn[W : Has_MultibodyJoint2d] get_multibody_joint2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[MultibodyJoint2d]
+
+pub fn[W : HasRes_Physics2dConfig] get_physics2d_config_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics2dConfig]
+
+pub fn[W : HasRes_Physics2dContext] get_physics2d_context_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics2dContext]
+
+pub fn[W : HasRes_Physics2dEvents] get_physics2d_events_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics2dEvents]
+
+pub fn[W : Has_RapierBodyHandle2d] get_rapier_body_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle2d]
+
+pub fn[W : Has_RapierColliderHandle2d] get_rapier_collider_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierColliderHandle2d]
+
+pub fn[W : Has_RapierImpulseJointHandle2d] get_rapier_impulse_joint_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierImpulseJointHandle2d]
+
+pub fn[W : Has_RapierMultibodyJointHandle2d] get_rapier_multibody_joint_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierMultibodyJointHandle2d]
+
+pub fn[W : Has_Restitution2d] get_restitution2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Restitution2d]
+
+pub fn[W : Has_RestitutionCombineRule2d] get_restitution_combine_rule2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RestitutionCombineRule2d]
+
+pub fn[W : Has_RigidBody2d] get_rigid_body2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RigidBody2d]
+
+pub fn[W : Has_RigidBodyEnabled2d] get_rigid_body_enabled2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RigidBodyEnabled2d]
+
+pub fn[W : Has_Sleeping2d] get_sleeping2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Sleeping2d]
+
+pub fn[W : Has_SolverGroups2d] get_solver_groups2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[SolverGroups2d]
+
+pub fn[W : Has_Velocity2d] get_velocity2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Velocity2d]
+
 pub fn iso2_to_mg_transform(@Milky2018/moon_rapier/core.Isometry2, Float) -> @math.Transform
 
 pub fn joint2d_fixed(@math.Vec2, @math.Vec2) -> @dynamics.GenericJoint
@@ -91,86 +171,6 @@ pub fn[W : Physics2dSyncJointsWorld] physics2d_sync_joints_system(W) -> Unit
 pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_system(W) -> Unit
 
 pub fn[W : Physics2dWritebackWorld] physics2d_writeback_system(W) -> Unit
-
-pub fn[W : Has_ActiveCollisionTypes2d] query_get_active_collision_types2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveCollisionTypes2d]
-
-pub fn[W : Has_ActiveEvents2d] query_get_active_events2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveEvents2d]
-
-pub fn[W : Has_ActiveHooks2d] query_get_active_hooks2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveHooks2d]
-
-pub fn[W : Has_AdditionalMassProperties2d] query_get_additional_mass_properties2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[AdditionalMassProperties2d]
-
-pub fn[W : Has_AdditionalSolverIterations2d] query_get_additional_solver_iterations2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[AdditionalSolverIterations2d]
-
-pub fn[W : Has_Ccd2d] query_get_ccd2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Ccd2d]
-
-pub fn[W : Has_Collider2d] query_get_collider2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Collider2d]
-
-pub fn[W : Has_ColliderDensity2d] query_get_collider_density2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderDensity2d]
-
-pub fn[W : Has_ColliderEnabled2d] query_get_collider_enabled2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderEnabled2d]
-
-pub fn[W : Has_ColliderMassProperties2d] query_get_collider_mass_properties2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderMassProperties2d]
-
-pub fn[W : Has_ColliderParent2d] query_get_collider_parent2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ColliderParent2d]
-
-pub fn[W : Has_CollisionGroups2d] query_get_collision_groups2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[CollisionGroups2d]
-
-pub fn[W : Has_ContactForceEventThreshold2d] query_get_contact_force_event_threshold2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold2d]
-
-pub fn[W : Has_ContactSkin2d] query_get_contact_skin2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ContactSkin2d]
-
-pub fn[W : Has_Damping2d] query_get_damping2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Damping2d]
-
-pub fn[W : Has_Dominance2d] query_get_dominance2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Dominance2d]
-
-pub fn[W : Has_ExternalForce2d] query_get_external_force2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ExternalForce2d]
-
-pub fn[W : Has_ExternalImpulse2d] query_get_external_impulse2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ExternalImpulse2d]
-
-pub fn[W : Has_Friction2d] query_get_friction2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Friction2d]
-
-pub fn[W : Has_FrictionCombineRule2d] query_get_friction_combine_rule2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[FrictionCombineRule2d]
-
-pub fn[W : Has_GravityScale2d] query_get_gravity_scale2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[GravityScale2d]
-
-pub fn[W : Has_ImpulseJoint2d] query_get_impulse_joint2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ImpulseJoint2d]
-
-pub fn[W : Has_KinematicCharacterController2d] query_get_kinematic_character_controller2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[KinematicCharacterController2d]
-
-pub fn[W : Has_KinematicCharacterControllerOutput2d] query_get_kinematic_character_controller_output2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[KinematicCharacterControllerOutput2d]
-
-pub fn[W : Has_LockedAxes2d] query_get_locked_axes2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[LockedAxes2d]
-
-pub fn[W : Has_MultibodyJoint2d] query_get_multibody_joint2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[MultibodyJoint2d]
-
-pub fn[W : HasRes_Physics2dConfig] query_get_physics2d_config_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics2dConfig]
-
-pub fn[W : HasRes_Physics2dContext] query_get_physics2d_context_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics2dContext]
-
-pub fn[W : HasRes_Physics2dEvents] query_get_physics2d_events_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics2dEvents]
-
-pub fn[W : Has_RapierBodyHandle2d] query_get_rapier_body_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle2d]
-
-pub fn[W : Has_RapierColliderHandle2d] query_get_rapier_collider_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierColliderHandle2d]
-
-pub fn[W : Has_RapierImpulseJointHandle2d] query_get_rapier_impulse_joint_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierImpulseJointHandle2d]
-
-pub fn[W : Has_RapierMultibodyJointHandle2d] query_get_rapier_multibody_joint_handle2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierMultibodyJointHandle2d]
-
-pub fn[W : Has_Restitution2d] query_get_restitution2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Restitution2d]
-
-pub fn[W : Has_RestitutionCombineRule2d] query_get_restitution_combine_rule2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RestitutionCombineRule2d]
-
-pub fn[W : Has_RigidBody2d] query_get_rigid_body2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RigidBody2d]
-
-pub fn[W : Has_RigidBodyEnabled2d] query_get_rigid_body_enabled2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RigidBodyEnabled2d]
-
-pub fn[W : Has_Sleeping2d] query_get_sleeping2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Sleeping2d]
-
-pub fn[W : Has_SolverGroups2d] query_get_solver_groups2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[SolverGroups2d]
-
-pub fn[W : Has_Velocity2d] query_get_velocity2d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Velocity2d]
 
 pub fn rapier_vec2_to_mg(@Milky2018/moon_rapier/core.Vec2) -> @math.Vec2
 

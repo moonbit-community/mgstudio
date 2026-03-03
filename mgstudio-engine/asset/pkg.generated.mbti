@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -105,6 +106,8 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_TextureAtlas] get_texture_atlas_store(W) -> @core.ComponentStore[TextureAtlas]
+
 pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int
 
 pub fn host_asset_bytes_len(Int) -> Int
@@ -158,8 +161,6 @@ pub fn host_asset_update_texture_region(texture_id~ : Int, x~ : Int, y~ : Int, w
 pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, bytes_id~ : Int) -> Unit
 
 pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes_id~ : Int) -> Unit
-
-pub fn[W : Has_TextureAtlas] query_get_texture_atlas_store(W) -> @core.ComponentStore[TextureAtlas]
 
 // Errors
 
@@ -236,6 +237,8 @@ pub fn[T] Handle::asset_id(Self[T]) -> AssetId[T]
 pub fn[T] Handle::from_asset_id(AssetId[T]) -> Self[T]
 pub fn[T] Handle::id(Self[T]) -> Int
 pub fn[T] Handle::new(Int) -> Self[T]
+pub impl[T] ToJson for Handle[T]
+pub impl[T] @json.FromJson for Handle[T]
 
 pub struct Image {
   width : Int

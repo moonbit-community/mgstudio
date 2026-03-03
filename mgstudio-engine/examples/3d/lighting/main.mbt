@@ -52,7 +52,7 @@ let lighting_state : Ref[LightingState] = Ref::new({
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
@@ -281,18 +281,20 @@ fn setup(world : @ecs.World) -> Unit {
   lighting_state.val.movables.push(sphere)
 
   // Ambient light.
-  let ambient = @render3d.query_get_global_ambient_light_resource(world)
-  if ambient.get_ref_mut(tick) is Some(v) {
-    v.val = @render3d.GlobalAmbientLight::new(
+  world.insert_resource(
+    @render3d.ecs_key_global_ambient_light,
+    @render3d.GlobalAmbientLight::new(
       @render2d.Color::new(1.0F, 0.27F, 0.0F, 1.0F),
       200.0F,
-    )
-  }
+    ),
+  )
   lighting_state.val.ambient_enabled = true
 
   // Red point light + emissive marker.
   let red_light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     red_light,
     @render3d.PointLight::new(
       @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
@@ -302,11 +304,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    red_light,
-    @math.Transform::from_xyz(1.0F, 2.0F, 0.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(red_light, @math.Transform::from_xyz(1.0F, 2.0F, 0.0F), tick)
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -321,7 +321,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Green spot light + emissive marker.
   let green_light = world.spawn_empty()
-  @render3d.query_get_spot_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_spot_light)
+  .insert(
     green_light,
     @render3d.SpotLight::new(
       @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
@@ -333,7 +335,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     green_light,
     @math.Transform::from_xyz(-1.0F, 2.0F, 0.0F).looking_at(
       @math.Vec3::new(-1.0F, 0.0F, 0.0F),
@@ -357,7 +361,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Blue point light + emissive marker.
   let blue_light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     blue_light,
     @render3d.PointLight::new(
       @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
@@ -367,11 +373,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    blue_light,
-    @math.Transform::from_xyz(0.0F, 4.0F, 0.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(blue_light, @math.Transform::from_xyz(0.0F, 4.0F, 0.0F), tick)
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -386,12 +390,16 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Directional light.
   let directional = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional,
     @math.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
@@ -476,14 +484,19 @@ fn toggle_ambient_light(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
-  let tick = world.read_change_tick()
-  let ambient = @render3d.query_get_global_ambient_light_resource(world)
-  if ambient.get_ref_mut(tick) is Some(v) {
-    if v.val.brightness > 1.0F {
-      v.val = @render3d.GlobalAmbientLight::new(v.val.color, 0.0F)
+  if (try? world.get_resource(@render3d.ecs_key_global_ambient_light))
+    is Ok(Some(ambient)) {
+    if ambient.brightness > 1.0F {
+      world.insert_resource(
+        @render3d.ecs_key_global_ambient_light,
+        @render3d.GlobalAmbientLight::new(ambient.color, 0.0F),
+      )
       lighting_state.val.ambient_enabled = false
     } else {
-      v.val = @render3d.GlobalAmbientLight::new(v.val.color, 200.0F)
+      world.insert_resource(
+        @render3d.ecs_key_global_ambient_light,
+        @render3d.GlobalAmbientLight::new(ambient.color, 200.0F),
+      )
       lighting_state.val.ambient_enabled = true
     }
     lighting_update_overlay_text()
@@ -496,7 +509,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(light_entity) is Some(transform) {
     let delta = @time.time_delta_seconds() * 0.5F
     let spin = @math.Quat::from_rotation_y(delta)
@@ -527,7 +540,7 @@ fn movement(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   let delta = @time.time_delta_seconds() * MOVE_SPEED
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   for entity in lighting_state.val.movables {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_translation(

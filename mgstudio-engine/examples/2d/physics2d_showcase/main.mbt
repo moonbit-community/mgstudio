@@ -26,7 +26,7 @@
 /// - G: toggle physics debug rendering.
 /// - H: toggle the "no-collision" hook for a specific ball pair.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_fixed_update_system(physics2d_showcase_player_controls_fixed)
   .add_plugins(plugins)
@@ -94,7 +94,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   // Make gravity visible in "pixel-ish" space.
-  let cfg_res = @physics2d.query_get_physics2d_config_resource(world)
+  let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get_ref_mut(tick) {
     Some(r) =>
       r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -800.0F))
@@ -113,21 +113,19 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   |> ignore
   physics2d_showcase_spawn_controls_overlay()
-  let transform_store = @math.query_get_transform_store(world)
-  let sprite_store = @render2d.query_get_sprite_store(world)
-  let rb_store = @physics2d.query_get_rigid_body2d_store(world)
-  let col_store = @physics2d.query_get_collider2d_store(world)
-  let vel_store = @physics2d.query_get_velocity2d_store(world)
-  let friction_store = @physics2d.query_get_friction2d_store(world)
-  let restitution_store = @physics2d.query_get_restitution2d_store(world)
-  let active_hooks_store = @physics2d.query_get_active_hooks2d_store(world)
-  let kcc_store = @physics2d.query_get_kinematic_character_controller2d_store(
+  let transform_store = world.component(@math.ecs_key_transform)
+  let sprite_store = world.component(@render2d.ecs_key_sprite)
+  let rb_store = @physics2d.get_rigid_body2d_store(world)
+  let col_store = @physics2d.get_collider2d_store(world)
+  let vel_store = @physics2d.get_velocity2d_store(world)
+  let friction_store = @physics2d.get_friction2d_store(world)
+  let restitution_store = @physics2d.get_restitution2d_store(world)
+  let active_hooks_store = @physics2d.get_active_hooks2d_store(world)
+  let kcc_store = @physics2d.get_kinematic_character_controller2d_store(world)
+  let kcc_out_store = @physics2d.get_kinematic_character_controller_output2d_store(
     world,
   )
-  let kcc_out_store = @physics2d.query_get_kinematic_character_controller_output2d_store(
-    world,
-  )
-  let impulse_joint_store = @physics2d.query_get_impulse_joint2d_store(world)
+  let impulse_joint_store = @physics2d.get_impulse_joint2d_store(world)
 
   // Static world bounds.
   let floor = world.spawn_empty()
@@ -506,9 +504,7 @@ fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
   }
   guard showcase_entities.val.player is Some(player) else { return }
   let tick = world.read_change_tick()
-  let kcc_store = @physics2d.query_get_kinematic_character_controller2d_store(
-    world,
-  )
+  let kcc_store = @physics2d.get_kinematic_character_controller2d_store(world)
   guard kcc_store.get(player) is Some(kcc) else { return }
   let mut axis = @math.Vec2::new(0.0F, 0.0F)
   if @input.key_pressed(@window.KeyCode::KeyA) ||
@@ -545,11 +541,11 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let transform_store = @math.query_get_transform_store(world)
-  let sprite_store = @render2d.query_get_sprite_store(world)
-  let rb_store = @physics2d.query_get_rigid_body2d_store(world)
-  let col_store = @physics2d.query_get_collider2d_store(world)
-  let vel_store = @physics2d.query_get_velocity2d_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let sprite_store = world.component(@render2d.ecs_key_sprite)
+  let rb_store = @physics2d.get_rigid_body2d_store(world)
+  let col_store = @physics2d.get_collider2d_store(world)
+  let vel_store = @physics2d.get_velocity2d_store(world)
   let ball = world.spawn_empty()
   transform_store.insert(
     ball,
@@ -584,7 +580,7 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
 
 ///|
 fn physics2d_showcase_print_events(world : @ecs.World) -> Unit {
-  let ev_res = @physics2d.query_get_physics2d_events_resource(world)
+  let ev_res = @physics2d.get_physics2d_events_resource(world)
   guard ev_res.get_ref() is Some(r) else { return }
   for ev in r.val.collisions {
     match ev {

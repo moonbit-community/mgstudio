@@ -200,29 +200,8 @@ test "app: MessageWriter system param writes messages for MessageReader" {
 }
 
 ///|
-test "app: add_system_query2 injects stores into update system" {
-  let entities = @core.Entities::new()
-  let e = entities.spawn()
-  let left : @core.ComponentStore[Int] = @core.ComponentStore::new()
-  let right : @core.ComponentStore[Int] = @core.ComponentStore::new()
-  left.insert(e, 10, 1)
-  right.insert(e, 32, 1)
-  let sum_ref : Ref[Int] = Ref::new(0)
-
-  let app = App::new(TestWorld::new()).add_system_query2(
-    fn(_world) { left },
-    fn(_world) { right },
-    fn(query, _world) {
-      query.for_each(fn(_entity, lv, rv) { sum_ref.val = sum_ref.val + lv + rv })
-    },
-  )
-  app.run_once() |> ignore
-  inspect(sum_ref.val, content="42")
-}
-
-///|
 struct EcsPosition {
-  x : Int
+  mut x : Int
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
@@ -250,8 +229,8 @@ test "app: add_system_query2_ecs injects key-based query into update system" {
       query,
       _update_world,
     ) {
-      try! query.update(fn(_entity, position, velocity) {
-        (EcsPosition::{ x: position.x + velocity.x }, velocity)
+      try! query.for_each(fn(_entity, position, velocity) {
+        position.x = position.x + velocity.x
       })
     })
     .run_startup()
@@ -261,6 +240,6 @@ test "app: add_system_query2_ecs injects key-based query into update system" {
   let value_ref : Ref[Int] = Ref::new(0)
   try! query_world
   .query1(comp_position)
-  .for_each(fn(_entity, position) { value_ref.val = position.x })
+  .view(fn(_entity, position) { value_ref.val = position.x })
   inspect(value_ref.val, content="42")
 }

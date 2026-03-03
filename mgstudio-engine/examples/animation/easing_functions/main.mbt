@@ -145,7 +145,7 @@ let easing_state : Ref[EasingFunctionsState] = Ref::new(EasingFunctionsState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
@@ -161,7 +161,7 @@ fn setup(world : @ecs.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn_ecs(world)
+  ).spawn(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -397,7 +397,7 @@ fn spawn_marker(
     @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(size, size)),
     @render2d.ColorMaterial::new(color),
     transform_from_position(position, MARKER_Z),
-  ).spawn_ecs(world)
+  ).spawn(world)
 }
 
 ///|

@@ -17,22 +17,12 @@
 ///
 /// Implementation lives in `Milky2018/mgstudio/internal` (similar to Bevy's
 /// `bevy_internal`) and is forwarded here for a stable user-facing API.
-pub fn[W : @internal.DefaultPluginsWorld] default_plugins() -> Array[
-  @app.Plugin[W],
-] {
+pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
   @internal.default_plugins()
 }
 
 ///|
 /// Default plugin bundle with "nearest" sampling for textures (useful for pixel art).
-pub fn[W : @internal.DefaultPluginsWorld] default_plugins_nearest() -> Array[
-  @app.Plugin[W],
-] {
+pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
   @internal.default_plugins_nearest()
-}
-
-///|
-/// Minimal plugin bundle for the JSON ECS world (`@ecs.World`).
-pub fn default_plugins_ecs() -> Array[@app.Plugin[@ecs.World]] {
-  @internal.default_plugins_ecs()
 }

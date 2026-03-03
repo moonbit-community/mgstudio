@@ -13,9 +13,9 @@
 // limitations under the License.
 
 ///|
-pub struct Vec2 {
-  x : Float
-  y : Float
+pub(all) struct Vec2 {
+  mut x : Float
+  mut y : Float
 }
 
 ///|
@@ -24,10 +24,10 @@ pub fn Vec2::new(x : Float, y : Float) -> Vec2 {
 }
 
 ///|
-pub struct Vec3 {
-  x : Float
-  y : Float
-  z : Float
+pub(all) struct Vec3 {
+  mut x : Float
+  mut y : Float
+  mut z : Float
 }
 
 ///|
@@ -105,11 +105,11 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
 }
 
 ///|
-pub struct Vec4 {
-  x : Float
-  y : Float
-  z : Float
-  w : Float
+pub(all) struct Vec4 {
+  mut x : Float
+  mut y : Float
+  mut z : Float
+  mut w : Float
 }
 
 ///|
@@ -300,11 +300,11 @@ pub fn pi_half() -> Float {
 
 ///|
 /// Quaternion (x, y, z, w).
-pub struct Quat {
-  x : Float
-  y : Float
-  z : Float
-  w : Float
+pub(all) struct Quat {
+  mut x : Float
+  mut y : Float
+  mut z : Float
+  mut w : Float
 }
 
 ///|
@@ -314,6 +314,94 @@ pub struct Quat {
 /// convert from external quaternion representations.
 pub fn Quat::new(x : Float, y : Float, z : Float, w : Float) -> Quat {
   Quat::{ x, y, z, w }
+}
+
+///|
+pub impl ToJson for Vec2 with to_json(self) {
+  (self.x, self.y).to_json()
+}
+
+///|
+pub impl @json.FromJson for Vec2 with from_json(json, path) {
+  let (x, y) : (Float, Float) = @json.from_json(json, path~)
+  Vec2::new(x, y)
+}
+
+///|
+pub impl ToJson for Vec3 with to_json(self) {
+  (self.x, self.y, self.z).to_json()
+}
+
+///|
+pub impl @json.FromJson for Vec3 with from_json(json, path) {
+  let (x, y, z) : (Float, Float, Float) = @json.from_json(json, path~)
+  Vec3::new(x, y, z)
+}
+
+///|
+pub impl ToJson for Vec4 with to_json(self) {
+  (self.x, self.y, self.z, self.w).to_json()
+}
+
+///|
+pub impl @json.FromJson for Vec4 with from_json(json, path) {
+  let (x, y, z, w) : (Float, Float, Float, Float) = @json.from_json(json, path~)
+  Vec4::new(x, y, z, w)
+}
+
+///|
+pub impl ToJson for IVec2 with to_json(self) {
+  (self.x, self.y).to_json()
+}
+
+///|
+pub impl @json.FromJson for IVec2 with from_json(json, path) {
+  let (x, y) : (Int, Int) = @json.from_json(json, path~)
+  IVec2::new(x, y)
+}
+
+///|
+pub impl ToJson for UVec2 with to_json(self) {
+  (self.x, self.y).to_json()
+}
+
+///|
+pub impl @json.FromJson for UVec2 with from_json(json, path) {
+  let (x, y) : (Int, Int) = @json.from_json(json, path~)
+  UVec2::new(x, y)
+}
+
+///|
+pub impl ToJson for URect with to_json(self) {
+  (self.min, self.max).to_json()
+}
+
+///|
+pub impl @json.FromJson for URect with from_json(json, path) {
+  let (min, max) : (UVec2, UVec2) = @json.from_json(json, path~)
+  URect::new(min, max)
+}
+
+///|
+pub impl ToJson for Rect with to_json(self) {
+  (self.min, self.max).to_json()
+}
+
+///|
+pub impl @json.FromJson for Rect with from_json(json, path) {
+  let (min, max) : (Vec2, Vec2) = @json.from_json(json, path~)
+  Rect::new(min, max)
+}
+
+///|
+pub impl ToJson for Quat with to_json(self) {
+  (self.x, self.y, self.z, self.w).to_json()
+}
+
+///|
+pub impl @json.FromJson for Quat with from_json(json, path) {
+  let (x, y, z, w) : (Float, Float, Float, Float) = @json.from_json(json, path~)
+  Quat::new(x, y, z, w)
 }
 
 ///|
@@ -455,10 +543,10 @@ fn quat_from_basis(x_axis : Vec3, y_axis : Vec3, z_axis : Vec3) -> Quat {
 }
 
 ///|
-pub struct Transform {
-  translation : Vec3
-  rotation : Quat
-  scale : Vec3
+pub(all) struct Transform {
+  mut translation : Vec3
+  mut rotation : Quat
+  mut scale : Vec3
 }
 
 ///|

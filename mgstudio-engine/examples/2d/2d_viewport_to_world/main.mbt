@@ -14,7 +14,7 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(viewport_to_world_setup)
@@ -89,8 +89,10 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
-  @ui.query_get_node_store(world).insert(
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -98,12 +100,12 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    text_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -111,11 +113,9 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    text_entity,
-    @ui.UiText::new(text_handle),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
 }
 
 ///|
@@ -163,9 +163,9 @@ fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
   }
 
   let camera_entity = viewport_state.val.camera
-  let camera_store = @render2d.query_get_camera_store(world)
-  let projection_store = @render2d.query_get_projection_store(world)
-  let transform_store = @math.query_get_transform_store(world)
+  let camera_store = world.component(@render2d.ecs_key_camera)
+  let projection_store = world.component(@render2d.ecs_key_projection)
+  let transform_store = world.component(@math.ecs_key_transform)
 
   guard camera_store.get(camera_entity) is Some(camera) else { return }
   guard projection_store.get(camera_entity) is Some(projection) else { return }
@@ -258,11 +258,9 @@ fn update_camera_transform(world : @ecs.World, fspeed : Float) -> Unit {
     )
     viewport_state.val.camera_transform = next_camera
     let tick = world.read_change_tick()
-    @math.query_get_transform_store(world).set(
-      viewport_state.val.camera,
-      next_camera,
-      tick,
-    )
+    world
+    .component(@math.ecs_key_transform)
+    .set(viewport_state.val.camera, next_camera, tick)
     |> ignore
   }
 }
@@ -279,7 +277,7 @@ fn update_camera_scale(world : @ecs.World, delta : Float) -> Unit {
   if scale != viewport_state.val.camera_scale {
     viewport_state.val.camera_scale = scale
     let tick = world.read_change_tick()
-    let projection_store = @render2d.query_get_projection_store(world)
+    let projection_store = world.component(@render2d.ecs_key_projection)
     projection_store.set(
       viewport_state.val.camera,
       @render2d.Projection::Orthographic(
@@ -350,7 +348,7 @@ fn update_camera_viewport(
   }
   viewport_state.val.viewport = viewport
   let tick = world.read_change_tick()
-  let camera_store = @render2d.query_get_camera_store(world)
+  let camera_store = world.component(@render2d.ecs_key_camera)
   if camera_store.get(viewport_state.val.camera) is Some(camera) {
     camera_store.set(
       viewport_state.val.camera,

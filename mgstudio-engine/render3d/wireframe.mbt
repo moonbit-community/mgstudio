@@ -17,7 +17,7 @@
 ///
 /// Meshes with this marker render in wireframe regardless of
 /// `WireframeConfig::global`.
-pub struct Wireframe {}
+pub struct Wireframe {} derive(ToJson, FromJson)
 
 ///|
 pub fn Wireframe::default() -> Wireframe {
@@ -29,7 +29,7 @@ pub fn Wireframe::default() -> Wireframe {
 ///
 /// Meshes with this marker never render in wireframe regardless of
 /// `WireframeConfig::global`.
-pub struct NoWireframe {}
+pub struct NoWireframe {} derive(ToJson, FromJson)
 
 ///|
 pub fn NoWireframe::default() -> NoWireframe {
@@ -40,7 +40,7 @@ pub fn NoWireframe::default() -> NoWireframe {
 /// Per-mesh wireframe color aligned with Bevy's `WireframeColor`.
 pub struct WireframeColor {
   color : @render2d.Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn WireframeColor::default() -> WireframeColor {
@@ -65,7 +65,7 @@ pub fn WireframeColor::with_color(
 pub struct WireframeConfig {
   global : Bool
   default_color : @render2d.Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn WireframeConfig::default() -> WireframeConfig {

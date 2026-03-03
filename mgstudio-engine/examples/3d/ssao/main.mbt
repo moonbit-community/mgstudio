@@ -181,16 +181,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -212,8 +204,8 @@ fn ssao_quality_from_index(
 fn apply_ssao_settings(world : @ecs.World) -> Unit {
   guard ssao_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  let ssao_store = @render3d.query_get_screen_space_ambient_occlusion_store(
-    world,
+  let ssao_store = world.component(
+    @render3d.ecs_key_screen_space_ambient_occlusion,
   )
 
   if ssao_state.val.quality == 0 {
@@ -253,26 +245,18 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   ssao_state.val.camera = Some(camera)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
-    camera,
-    @render3d.TemporalAntiAliasing::default(),
-    tick,
-  )
-  @render3d.query_get_temporal_jitter_store(world).insert(
-    camera,
-    @render3d.TemporalJitter::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .component(@render3d.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+  world
+  .component(@render3d.ecs_key_temporal_jitter)
+  .insert(camera, @render3d.TemporalJitter::default(), tick)
 
   let base_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -323,7 +307,9 @@ fn setup(world : @ecs.World) -> Unit {
   ssao_state.val.sphere = Some(sphere)
 
   let light = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(-PI * 0.15F).mul(
@@ -332,7 +318,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 9_000.0F, true),
     tick,
@@ -365,10 +353,12 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn update(world : @ecs.World) -> Unit {
   if ssao_state.val.sphere is Some(sphere_entity) {
-    if @math.query_get_transform_store(world).get(sphere_entity)
+    if world.component(@math.ecs_key_transform).get(sphere_entity)
       is Some(transform) {
       let next_y = @math.sin(@time.time_elapsed_seconds() / 1.7F) * 0.7F
-      @math.query_get_transform_store(world).set(
+      world
+      .component(@math.ecs_key_transform)
+      .set(
         sphere_entity,
         transform.with_translation(
           @math.Vec3::new(
@@ -424,8 +414,8 @@ fn update(world : @ecs.World) -> Unit {
     ssao_state.val.taa_enabled = !ssao_state.val.taa_enabled
     if ssao_state.val.camera is Some(camera_entity) {
       let tick = world.read_change_tick()
-      let temporal_jitter_store = @render3d.query_get_temporal_jitter_store(
-        world,
+      let temporal_jitter_store = world.component(
+        @render3d.ecs_key_temporal_jitter,
       )
       if ssao_state.val.taa_enabled {
         if !temporal_jitter_store.contains(camera_entity) {
@@ -451,7 +441,7 @@ fn update(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

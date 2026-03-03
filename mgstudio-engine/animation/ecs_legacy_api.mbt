@@ -64,42 +64,42 @@ pub(open) trait Has_AnimationTransitions {
 }
 
 ///|
-pub fn[W : Has_AnimatedBy] query_get_animated_by_store(
+pub fn[W : Has_AnimatedBy] get_animated_by_store(
   world : W,
 ) -> @core.ComponentStore[AnimatedBy] {
   world.get_animated_by_store()
 }
 
 ///|
-pub fn[W : Has_AnimationPlayer] query_get_animation_player_store(
+pub fn[W : Has_AnimationPlayer] get_animation_player_store(
   world : W,
 ) -> @core.ComponentStore[AnimationPlayer] {
   world.get_animation_player_store()
 }
 
 ///|
-pub fn[W : Has_AnimationWeights] query_get_animation_weights_store(
+pub fn[W : Has_AnimationWeights] get_animation_weights_store(
   world : W,
 ) -> @core.ComponentStore[AnimationWeights] {
   world.get_animation_weights_store()
 }
 
 ///|
-pub fn[W : Has_AnimationTargetId] query_get_animation_target_id_store(
+pub fn[W : Has_AnimationTargetId] get_animation_target_id_store(
   world : W,
 ) -> @core.ComponentStore[AnimationTargetId] {
   world.get_animation_target_id_store()
 }
 
 ///|
-pub fn[W : Has_AnimationGraphHandle] query_get_animation_graph_handle_store(
+pub fn[W : Has_AnimationGraphHandle] get_animation_graph_handle_store(
   world : W,
 ) -> @core.ComponentStore[AnimationGraphHandle] {
   world.get_animation_graph_handle_store()
 }
 
 ///|
-pub fn[W : Has_AnimationTransitions] query_get_animation_transitions_store(
+pub fn[W : Has_AnimationTransitions] get_animation_transitions_store(
   world : W,
 ) -> @core.ComponentStore[AnimationTransitions] {
   world.get_animation_transitions_store()

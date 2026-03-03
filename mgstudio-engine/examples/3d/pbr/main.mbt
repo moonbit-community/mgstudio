@@ -151,12 +151,16 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let directional = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 1_500.0F, false),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional,
     @math.Transform::from_xyz(50.0F, 50.0F, 50.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -236,7 +240,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(diffuse_env_map),
@@ -268,7 +274,7 @@ fn environment_map_load_finish(_world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

@@ -153,7 +153,7 @@ fn spawn_mesh_with_layer(
     @render3d.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  @render2d.query_get_render_layers_store(world).insert(entity, layers, tick)
+  world.component(@render2d.ecs_key_render_layers).insert(entity, layers, tick)
   entity
 }
 
@@ -415,7 +415,7 @@ fn spawn_scene_instancing(
 ///|
 fn apply_scene_visibility(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let visibility_store = @visibility.query_get_visibility_store(world)
+  let visibility_store = world.component(@visibility.ecs_key_visibility)
   for i, entities in oit_state.val.scene_entities {
     let visibility = if i == oit_state.val.scene_index {
       @visibility.Visibility::Inherited
@@ -432,21 +432,21 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 fn apply_oit_mode(world : @ecs.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
-    @render3d.query_get_msaa_store(world).insert(
-      camera,
-      @render3d.Msaa::Off,
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_msaa)
+    .insert(camera, @render3d.Msaa::Off, tick)
     if oit_state.val.oit_enabled {
-      @render3d.query_get_order_independent_transparency_settings_store(world).insert(
+      world
+      .component(@render3d.ecs_key_order_independent_transparency_settings)
+      .insert(
         camera,
         @render3d.OrderIndependentTransparencySettings::default(),
         tick,
       )
     } else {
-      @render3d.query_get_order_independent_transparency_settings_store(world).remove(
-        camera,
-      )
+      world
+      .component(@render3d.ecs_key_order_independent_transparency_settings)
+      .remove(camera)
       |> ignore
     }
   }
@@ -471,26 +471,24 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render2d.query_get_render_layers_store(world).insert(camera, layer, tick)
-  @render3d.query_get_depth_prepass_store(world).insert(
-    camera,
-    @render3d.DepthPrepass::default(),
-    tick,
-  )
+  world.component(@render2d.ecs_key_render_layers).insert(camera, layer, tick)
+  world
+  .component(@render3d.ecs_key_depth_prepass)
+  .insert(camera, @render3d.DepthPrepass::default(), tick)
   oit_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     light,
     @render3d.PointLight::default().with_shadow_maps_enabled(false),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-    tick,
-  )
-  @render2d.query_get_render_layers_store(world).insert(light, layer, tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  world.component(@render2d.ecs_key_render_layers).insert(light, layer, tick)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -553,7 +551,7 @@ fn controls(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

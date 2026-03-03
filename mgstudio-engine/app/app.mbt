@@ -174,38 +174,6 @@ pub fn[
 }
 
 ///|
-pub type QueryGetter[W, T] = (W) -> @core.ComponentStore[T]
-
-///|
-pub fn[W, A] system_query1(
-  get_a : QueryGetter[W, A],
-  system : (@core.Query1[A], W) -> Unit,
-) -> SystemFn[W] {
-  fn(world : W) { system(@core.Query1::new(get_a(world)), world) }
-}
-
-///|
-pub fn[W, A, B] system_query2(
-  get_a : QueryGetter[W, A],
-  get_b : QueryGetter[W, B],
-  system : (@core.Query2[A, B], W) -> Unit,
-) -> SystemFn[W] {
-  fn(world : W) { system(@core.Query2::new(get_a(world), get_b(world)), world) }
-}
-
-///|
-pub fn[W, A, B, C] system_query3(
-  get_a : QueryGetter[W, A],
-  get_b : QueryGetter[W, B],
-  get_c : QueryGetter[W, C],
-  system : (@core.Query3[A, B, C], W) -> Unit,
-) -> SystemFn[W] {
-  fn(world : W) {
-    system(@core.Query3::new(get_a(world), get_b(world), get_c(world)), world)
-  }
-}
-
-///|
 pub fn[A] system_query1_ecs(
   key_a : @ecs.ComponentKey[A],
   system : (@ecs.Query1[A], @ecs.World) -> Unit,
@@ -759,41 +727,6 @@ pub fn[W] App::add_system_config(
 ///|
 pub fn[W] App::add_system(self : App[W], system_fn : SystemFn[W]) -> App[W] {
   self.schedule.update.push(system(system_fn))
-  self
-}
-
-///|
-pub fn[W, A] App::add_system_query1(
-  self : App[W],
-  get_a : QueryGetter[W, A],
-  update_system : (@core.Query1[A], W) -> Unit,
-) -> App[W] {
-  self.schedule.update.push(system(system_query1(get_a, update_system)))
-  self
-}
-
-///|
-pub fn[W, A, B] App::add_system_query2(
-  self : App[W],
-  get_a : QueryGetter[W, A],
-  get_b : QueryGetter[W, B],
-  update_system : (@core.Query2[A, B], W) -> Unit,
-) -> App[W] {
-  self.schedule.update.push(system(system_query2(get_a, get_b, update_system)))
-  self
-}
-
-///|
-pub fn[W, A, B, C] App::add_system_query3(
-  self : App[W],
-  get_a : QueryGetter[W, A],
-  get_b : QueryGetter[W, B],
-  get_c : QueryGetter[W, C],
-  update_system : (@core.Query3[A, B, C], W) -> Unit,
-) -> App[W] {
-  self.schedule.update.push(
-    system(system_query3(get_a, get_b, get_c, update_system)),
-  )
   self
 }
 

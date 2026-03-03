@@ -103,8 +103,8 @@ fn uv_sphere_mesh(
 fn update_light_modes(world : @ecs.World) -> Unit {
   let state = shadow_caster_receiver_state.val
   let tick = world.read_change_tick()
-  let point_store = @render3d.query_get_point_light_store(world)
-  let directional_store = @render3d.query_get_directional_light_store(world)
+  let point_store = world.component(@render3d.ecs_key_point_light)
+  let directional_store = world.component(@render3d.ecs_key_directional_light)
 
   if state.point_light is Some(point_entity) {
     if point_store.get(point_entity) is Some(point_light) {
@@ -151,9 +151,9 @@ fn update_light_modes(world : @ecs.World) -> Unit {
 ///|
 fn toggle_shadow_casters(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let mesh_store = @render3d.query_get_mesh3d_store(world)
-  let not_shadow_caster_store = @render3d.query_get_not_shadow_caster_store(
-    world,
+  let mesh_store = world.component(@render3d.ecs_key_mesh3d)
+  let not_shadow_caster_store = world.component(
+    @render3d.ecs_key_not_shadow_caster,
   )
   let make_shadow_caster : Array[@core.Entity] = []
   let make_not_shadow_caster : Array[@core.Entity] = []
@@ -181,9 +181,9 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
 ///|
 fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let mesh_store = @render3d.query_get_mesh3d_store(world)
-  let not_shadow_receiver_store = @render3d.query_get_not_shadow_receiver_store(
-    world,
+  let mesh_store = world.component(@render3d.ecs_key_mesh3d)
+  let not_shadow_receiver_store = world.component(
+    @render3d.ecs_key_not_shadow_receiver,
   )
   let make_shadow_receiver : Array[@core.Entity] = []
   let make_not_shadow_receiver : Array[@core.Entity] = []
@@ -251,27 +251,21 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(blue_material),
     @math.Transform::from_xyz(1.0F, spawn_height, 0.0F),
   ).spawn(world)
-  @render3d.query_get_not_shadow_caster_store(world).insert(
-    blue_sphere,
-    @render3d.NotShadowCaster::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_not_shadow_caster)
+  .insert(blue_sphere, @render3d.NotShadowCaster::default(), tick)
 
   let floating_plane = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(20.0F, 20.0F),
     @render3d.MeshMaterial3d::new(lime_material),
     @math.Transform::from_xyz(0.0F, 1.0F, -10.0F),
   ).spawn(world)
-  @render3d.query_get_not_shadow_caster_store(world).insert(
-    floating_plane,
-    @render3d.NotShadowCaster::default(),
-    tick,
-  )
-  @render3d.query_get_not_shadow_receiver_store(world).insert(
-    floating_plane,
-    @render3d.NotShadowReceiver::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_not_shadow_caster)
+  .insert(floating_plane, @render3d.NotShadowCaster::default(), tick)
+  world
+  .component(@render3d.ecs_key_not_shadow_receiver)
+  .insert(floating_plane, @render3d.NotShadowReceiver::default(), tick)
 
   let ground_plane = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(20.0F, 20.0F),
@@ -281,16 +275,16 @@ fn setup(world : @ecs.World) -> Unit {
   ground_plane |> ignore
 
   let point_light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point_light,
     @render3d.PointLight::new(@render2d.Color::white(), 0.0F, 500.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point_light,
-    @math.Transform::from_xyz(5.0F, 5.0F, 0.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point_light, @math.Transform::from_xyz(5.0F, 5.0F, 0.0F), tick)
   shadow_caster_receiver_state.val.point_light = Some(point_light)
 
   let directional_light = world.spawn_empty()
@@ -298,7 +292,9 @@ fn setup(world : @ecs.World) -> Unit {
     .with_first_cascade_far_bound(7.0F)
     .with_maximum_distance(25.0F)
     .build()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional_light,
     @render3d.DirectionalLight::new(
       @render2d.Color::white(),
@@ -307,7 +303,9 @@ fn setup(world : @ecs.World) -> Unit {
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional_light,
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(PI / 2.0F).mul(
@@ -347,7 +345,7 @@ fn controls(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

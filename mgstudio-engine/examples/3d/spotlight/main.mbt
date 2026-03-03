@@ -129,16 +129,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -201,7 +193,9 @@ fn setup(world : @ecs.World) -> Unit {
       let fx = float_from_int(x) - 2.0F
       let fz = float_from_int(z) - 2.0F
       let spotlight = world.spawn_empty()
-      @render3d.query_get_spot_light_store(world).insert(
+      world
+      .component(@render3d.ecs_key_spot_light)
+      .insert(
         spotlight,
         @render3d.SpotLight::new(
           @render2d.Color::white(),
@@ -213,7 +207,9 @@ fn setup(world : @ecs.World) -> Unit {
         ),
         tick,
       )
-      @math.query_get_transform_store(world).insert(
+      world
+      .component(@math.ecs_key_transform)
+      .insert(
         spotlight,
         @math.Transform::from_xyz(1.0F + fx, 2.0F, fz).looking_at(
           @math.Vec3::new(1.0F + fx, 0.0F, fz),
@@ -228,27 +224,21 @@ fn setup(world : @ecs.World) -> Unit {
         @render3d.MeshMaterial3d::new(red_emissive),
         @math.Transform::identity(),
       ).spawn(world)
-      @hierarchy.query_get_parent_store(world).insert(
-        marker,
-        @hierarchy.Parent::new(spotlight),
-        tick,
-      )
+      world
+      .component(@hierarchy.ecs_key_parent)
+      .insert(marker, @hierarchy.Parent::new(spotlight), tick)
 
       let direction_marker = @render3d.MeshMaterial3dBundle::new(
         direction_marker_mesh,
         @render3d.MeshMaterial3d::new(maroon_emissive),
         @math.Transform::from_xyz(0.0F, 0.0F, -0.1F),
       ).spawn(world)
-      @hierarchy.query_get_parent_store(world).insert(
-        direction_marker,
-        @hierarchy.Parent::new(spotlight),
-        tick,
-      )
-      @render3d.query_get_not_shadow_caster_store(world).insert(
-        direction_marker,
-        @render3d.NotShadowCaster::default(),
-        tick,
-      )
+      world
+      .component(@hierarchy.ecs_key_parent)
+      .insert(direction_marker, @hierarchy.Parent::new(spotlight), tick)
+      world
+      .component(@render3d.ecs_key_not_shadow_caster)
+      .insert(direction_marker, @render3d.NotShadowCaster::default(), tick)
     }
   }
 
@@ -259,11 +249,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
   spotlight_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -293,8 +281,8 @@ fn setup(world : @ecs.World) -> Unit {
 fn light_sway(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let elapsed = @time.time_elapsed_seconds()
-  let transform_store = @math.query_get_transform_store(world)
-  let spot_light_store = @render3d.query_get_spot_light_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let spot_light_store = world.component(@render3d.ecs_key_spot_light)
 
   let rotation_x = -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F
   let rotation_y = @math.sin(elapsed * 3.0F) * 0.5F
@@ -356,7 +344,7 @@ fn movement(world : @ecs.World) -> Unit {
 
   let delta = translation.mul_scalar(MOVE_SPEED * @time.time_delta_seconds())
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   for entity in spotlight_state.val.movables {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_translation(transform.translation.add(delta))
@@ -382,7 +370,7 @@ fn rotation(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(
       @math.Quat::from_rotation_y(angle),
@@ -399,7 +387,7 @@ fn rotation(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

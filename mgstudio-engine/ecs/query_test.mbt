@@ -14,24 +14,24 @@
 
 ///|
 struct Position {
-  x : Int
-  y : Int
+  mut x : Int
+  mut y : Int
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
 struct Velocity {
-  dx : Int
-  dy : Int
+  mut dx : Int
+  mut dy : Int
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
 struct Acceleration {
-  ax : Int
-  ay : Int
+  mut ax : Int
+  mut ay : Int
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
-test "ecs query: query1 for_each and update" {
+test "ecs query: query1 view and for_each" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_q1",
@@ -45,15 +45,16 @@ test "ecs query: query1 for_each and update" {
   let sum_ref : Ref[Int] = Ref::new(0)
   try! world
   .query1(comp_position)
-  .for_each(fn(_entity, position) {
+  .view(fn(_entity, position) {
     sum_ref.val = sum_ref.val + position.x + position.y
   })
   inspect(sum_ref.val, content="13")
 
   try! world
   .query1(comp_position)
-  .update(fn(_entity, position) {
-    Position::{ x: position.x + 10, y: position.y + 20 }
+  .for_each(fn(_entity, position) {
+    position.x = position.x + 10
+    position.y = position.y + 20
   })
 
   inspect(try! world.get(e1, comp_position), content="Some({x: 11, y: 22})")
@@ -61,7 +62,7 @@ test "ecs query: query1 for_each and update" {
 }
 
 ///|
-test "ecs query: query2 intersection and update" {
+test "ecs query: query2 view intersection and for_each" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_q2",
@@ -84,7 +85,7 @@ test "ecs query: query2 intersection and update" {
   let sum_ref : Ref[Int] = Ref::new(0)
   try! world
   .query2(comp_position, comp_velocity)
-  .for_each(fn(_entity, p, v) {
+  .view(fn(_entity, p, v) {
     hits_ref.val = hits_ref.val + 1
     sum_ref.val = sum_ref.val + p.x + p.y + v.dx + v.dy
   })
@@ -93,11 +94,11 @@ test "ecs query: query2 intersection and update" {
 
   try! world
   .query2(comp_position, comp_velocity)
-  .update(fn(_entity, p, v) {
-    (
-      Position::{ x: p.x + v.dx, y: p.y + v.dy },
-      Velocity::{ dx: v.dx + 1, dy: v.dy + 1 },
-    )
+  .for_each(fn(_entity, p, v) {
+    p.x = p.x + v.dx
+    p.y = p.y + v.dy
+    v.dx = v.dx + 1
+    v.dy = v.dy + 1
   })
 
   inspect(
@@ -119,7 +120,7 @@ test "ecs query: query2 intersection and update" {
 }
 
 ///|
-test "ecs query: query3 smallest-store driven iteration and update" {
+test "ecs query: query3 smallest-store driven iteration and for_each" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_q3",
@@ -148,7 +149,7 @@ test "ecs query: query3 smallest-store driven iteration and update" {
   let score_ref : Ref[Int] = Ref::new(0)
   try! world
   .query3(comp_position, comp_velocity, comp_accel)
-  .for_each(fn(_entity, p, v, a) {
+  .view(fn(_entity, p, v, a) {
     hits_ref.val = hits_ref.val + 1
     score_ref.val = score_ref.val + p.x + p.y + v.dx + v.dy + a.ax + a.ay
   })
@@ -157,12 +158,13 @@ test "ecs query: query3 smallest-store driven iteration and update" {
 
   try! world
   .query3(comp_position, comp_velocity, comp_accel)
-  .update(fn(_entity, p, v, a) {
-    (
-      Position::{ x: p.x + 100, y: p.y + 100 },
-      Velocity::{ dx: v.dx + 10, dy: v.dy + 10 },
-      Acceleration::{ ax: a.ax + 1, ay: a.ay + 1 },
-    )
+  .for_each(fn(_entity, p, v, a) {
+    p.x = p.x + 100
+    p.y = p.y + 100
+    v.dx = v.dx + 10
+    v.dy = v.dy + 10
+    a.ax = a.ax + 1
+    a.ay = a.ay + 1
   })
   inspect(try! world.get(e2, comp_position), content="Some({x: 103, y: 103})")
   inspect(try! world.get(e2, comp_velocity), content="Some({dx: 16, dy: 17})")

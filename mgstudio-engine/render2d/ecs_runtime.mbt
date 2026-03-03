@@ -119,17 +119,6 @@ pub fn render2d_create_render_target_ecs(
 }
 
 ///|
-fn[T] ecs_set_component_json(
-  world : @ecs.World,
-  entity : @core.Entity,
-  key : @ecs.ComponentKey[T],
-  payload : Json,
-) -> Unit {
-  let json_key : @ecs.ComponentKey[Json] = key.cast()
-  try! (world.set(entity, json_key, payload) |> ignore)
-}
-
-///|
 fn encode_color(color : Color) -> Json {
   (color.r, color.g, color.b, color.a).to_json()
 }
@@ -370,175 +359,507 @@ fn encode_gpu_mesh2d(gpu_mesh2d : GpuMesh2d) -> Json {
 }
 
 ///|
-fn encode_visibility(visibility : @visibility.Visibility) -> Json {
-  match visibility {
-    @visibility.Visibility::Hidden => (0).to_json()
-    @visibility.Visibility::Inherited => (1).to_json()
-    @visibility.Visibility::Visible => (2).to_json()
+fn decode_color(json : Json) -> Color {
+  let (r, g, b, a) : (Float, Float, Float, Float) = try! @json.from_json(json)
+  Color::new(r, g, b, a)
+}
+
+///|
+fn decode_vec2(json : Json) -> @math.Vec2 {
+  let (x, y) : (Float, Float) = try! @json.from_json(json)
+  @math.Vec2::new(x, y)
+}
+
+///|
+fn decode_ivec2(json : Json) -> @math.IVec2 {
+  let (x, y) : (Int, Int) = try! @json.from_json(json)
+  @math.IVec2::new(x, y)
+}
+
+///|
+fn decode_rect(json : Json) -> @math.Rect {
+  let (min_json, max_json) : (Json, Json) = try! @json.from_json(json)
+  @math.Rect::new(decode_vec2(min_json), decode_vec2(max_json))
+}
+
+///|
+fn decode_image_handle(json : Json) -> @asset.Handle[@asset.Image] {
+  let id : Int = try! @json.from_json(json)
+  @asset.Handle::new(id)
+}
+
+///|
+fn decode_mesh_handle(json : Json) -> @asset.Handle[@mesh.Mesh] {
+  let id : Int = try! @json.from_json(json)
+  @asset.Handle::new(id)
+}
+
+///|
+fn decode_color_material_asset_handle(
+  json : Json,
+) -> @asset.Handle[ColorMaterialAsset] {
+  let id : Int = try! @json.from_json(json)
+  @asset.Handle::new(id)
+}
+
+///|
+fn decode_texture_atlas(json : Json) -> @asset.TextureAtlas {
+  let (layout_id, index) : (Int, Int) = try! @json.from_json(json)
+  @asset.TextureAtlas::new(@asset.Handle::new(layout_id), index)
+}
+
+///|
+fn decode_slice_scale_mode(json : Json) -> SliceScaleMode {
+  let (tag, payload) : (Int, Json) = try! @json.from_json(json)
+  match tag {
+    0 => Stretch
+    1 => Tile(try! @json.from_json(payload))
+    _ => Stretch
   }
 }
 
 ///|
-fn encode_inherited_visibility(
-  inherited_visibility : @visibility.InheritedVisibility,
-) -> Json {
-  inherited_visibility.is_visible().to_json()
-}
-
-///|
-fn encode_view_visibility(view_visibility : @visibility.ViewVisibility) -> Json {
-  view_visibility.is_visible().to_json()
-}
-
-///|
-pub fn SpriteBundle::spawn_ecs(
-  self : SpriteBundle,
-  world : @ecs.World,
-) -> @core.Entity {
-  let entity = world.spawn_empty()
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_sprite,
-    encode_sprite(self.sprite),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_anchor,
-    encode_anchor(self.anchor),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_render_layers,
-    encode_render_layers(self.layers),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    @visibility.ecs_key_visibility,
-    encode_visibility(self.visibility),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    @visibility.ecs_key_inherited_visibility,
-    encode_inherited_visibility(self.inherited_visibility),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    @visibility.ecs_key_view_visibility,
-    encode_view_visibility(self.view_visibility),
-  )
-  try! (world.set(entity, @math.ecs_key_transform, self.transform) |> ignore)
-  entity
-}
-
-///|
-pub fn Camera2dBundle::spawn_ecs(
-  self : Camera2dBundle,
-  world : @ecs.World,
-) -> @core.Entity {
-  let entity = world.spawn_empty()
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_camera2d,
-    encode_camera2d(self.camera2d),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_camera,
-    encode_camera(self.camera),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_projection,
-    encode_projection(self.projection),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_render_target,
-    encode_render_target(self.target),
-  )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_render_layers,
-    encode_render_layers(self.layers),
-  )
-  if self.bloom2d is Some(bloom2d) {
-    ecs_set_component_json(
-      world,
-      entity,
-      ecs_key_bloom2d,
-      encode_bloom2d(bloom2d),
-    )
+fn decode_sprite_scaling_mode(json : Json) -> SpriteScalingMode {
+  let tag : Int = try! @json.from_json(json)
+  match tag {
+    0 => FillCenter
+    1 => FillStart
+    2 => FillEnd
+    3 => FitCenter
+    4 => FitStart
+    5 => FitEnd
+    _ => FillCenter
   }
-  try! (world.set(entity, @math.ecs_key_transform, self.transform) |> ignore)
-  entity
 }
 
 ///|
-pub fn Mesh2dBundle::spawn_ecs(
-  self : Mesh2dBundle,
-  world : @ecs.World,
-) -> @core.Entity {
-  let entity = world.spawn_empty()
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_mesh2d,
-    encode_mesh2d(self.mesh),
+fn decode_sprite_tiling(json : Json) -> SpriteTiling {
+  let (tile_x, tile_y, stretch_value) : (Bool, Bool, Float) = try! @json.from_json(
+    json,
   )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_color_material,
-    encode_color_material(self.material),
+  SpriteTiling::new(tile_x, tile_y, stretch_value)
+}
+
+///|
+fn decode_border_rect(json : Json) -> BorderRect {
+  let (left, right, top, bottom) : (Float, Float, Float, Float) = try! @json.from_json(
+    json,
   )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_mesh_material2d,
-    encode_mesh_material2d(MeshMaterial2d::from_color_material(self.material)),
+  BorderRect::new(left, right, top, bottom)
+}
+
+///|
+fn decode_texture_slicer(json : Json) -> TextureSlicer {
+  let (border, center_mode, sides_mode, max_corner_scale) : (
+    Json,
+    Json,
+    Json,
+    Float,
+  ) = try! @json.from_json(json)
+  TextureSlicer::new(decode_border_rect(border))
+  .with_center_scale_mode(decode_slice_scale_mode(center_mode))
+  .with_sides_scale_mode(decode_slice_scale_mode(sides_mode))
+  .with_max_corner_scale(max_corner_scale)
+}
+
+///|
+fn decode_sprite_image_mode(json : Json) -> SpriteImageMode {
+  let (tag, payload) : (Int, Json) = try! @json.from_json(json)
+  match tag {
+    0 => Auto
+    1 => Scale(decode_sprite_scaling_mode(payload))
+    2 => Sliced(decode_texture_slicer(payload))
+    3 => Tiled(decode_sprite_tiling(payload))
+    _ => Auto
+  }
+}
+
+///|
+fn decode_sprite(json : Json) -> Sprite {
+  let (
+    image_json,
+    atlas_json,
+    color_json,
+    flip_x,
+    flip_y,
+    custom_size_json,
+    rect_json,
+    image_mode_json,
+  ) : (Json, Json?, Json, Bool, Bool, Json?, Json?, Json) = try! @json.from_json(
+    json,
   )
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_render_layers,
-    encode_render_layers(self.layers),
+  Sprite::{
+    image: decode_image_handle(image_json),
+    texture_atlas: atlas_json.map(fn(value) { decode_texture_atlas(value) }),
+    color: decode_color(color_json),
+    flip_x,
+    flip_y,
+    custom_size: custom_size_json.map(fn(value) { decode_vec2(value) }),
+    rect: rect_json.map(fn(value) { decode_rect(value) }),
+    image_mode: decode_sprite_image_mode(image_mode_json),
+  }
+}
+
+///|
+fn decode_anchor(json : Json) -> Anchor {
+  Anchor::new(decode_vec2(json))
+}
+
+///|
+fn decode_render_layers(json : Json) -> RenderLayers {
+  let mask : Int = try! @json.from_json(json)
+  RenderLayers::{ mask, }
+}
+
+///|
+fn decode_viewport(json : Json) -> Viewport {
+  let (position, size, depth_min, depth_max) : (Json, Json, Float, Float) = try! @json.from_json(
+    json,
   )
-  ecs_set_component_json(
-    world,
-    entity,
-    @visibility.ecs_key_visibility,
-    encode_visibility(self.visibility),
+  Viewport::new(decode_ivec2(position), decode_ivec2(size)).with_depth(
+    depth_min, depth_max,
   )
-  ecs_set_component_json(
-    world,
-    entity,
-    @visibility.ecs_key_inherited_visibility,
-    encode_inherited_visibility(self.inherited_visibility),
+}
+
+///|
+fn decode_camera_target_info(json : Json) -> CameraTargetInfo {
+  let (size, scale_factor) : (Json, Float) = try! @json.from_json(json)
+  CameraTargetInfo::new(decode_ivec2(size), scale_factor)
+}
+
+///|
+fn decode_camera_computed_values(json : Json) -> CameraComputedValues {
+  let (target_info_json, old_viewport_size_json) : (Json?, Json?) = try! @json.from_json(
+    json,
   )
-  ecs_set_component_json(
-    world,
-    entity,
-    @visibility.ecs_key_view_visibility,
-    encode_view_visibility(self.view_visibility),
+  CameraComputedValues::{
+    target_info: target_info_json.map(fn(value) {
+      decode_camera_target_info(value)
+    }),
+    old_viewport_size: old_viewport_size_json.map(fn(value) {
+      decode_ivec2(value)
+    }),
+  }
+}
+
+///|
+fn decode_clear_color_config(json : Json) -> ClearColorConfig {
+  let (tag, payload) : (Int, Json) = try! @json.from_json(json)
+  match tag {
+    0 => Default
+    1 => Custom(decode_color(payload))
+    2 => None
+    _ => Default
+  }
+}
+
+///|
+fn decode_camera(json : Json) -> Camera {
+  let (viewport_json, order, is_active, computed_json, clear_color_json) : (
+    Json?,
+    Int,
+    Bool,
+    Json,
+    Json,
+  ) = try! @json.from_json(json)
+  Camera::{
+    viewport: viewport_json.map(fn(value) { decode_viewport(value) }),
+    order,
+    is_active,
+    computed: decode_camera_computed_values(computed_json),
+    clear_color: decode_clear_color_config(clear_color_json),
+  }
+}
+
+///|
+fn decode_camera2d(_json : Json) -> Camera2d {
+  Camera2d::default()
+}
+
+///|
+fn decode_projection(json : Json) -> Projection {
+  let (tag, payload) : (Int, Float) = try! @json.from_json(json)
+  match tag {
+    0 => Orthographic(OrthographicProjection::new(payload))
+    _ => Projection::orthographic_2d()
+  }
+}
+
+///|
+fn decode_render_target(json : Json) -> RenderTarget {
+  let (tag, payload) : (Int, Json) = try! @json.from_json(json)
+  match tag {
+    0 => Screen
+    1 => Image(decode_image_handle(payload))
+    _ => Screen
+  }
+}
+
+///|
+fn decode_bloom_prefilter(json : Json) -> BloomPrefilter {
+  let (threshold, threshold_softness) : (Float, Float) = try! @json.from_json(
+    json,
   )
-  try! (world.set(entity, @math.ecs_key_transform, self.transform) |> ignore)
-  let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
-  ecs_set_component_json(
-    world,
-    entity,
-    ecs_key_gpu_mesh2d,
-    encode_gpu_mesh2d(GpuMesh2d::new(mesh_id)),
+  BloomPrefilter::{ threshold, threshold_softness }
+}
+
+///|
+fn decode_bloom_composite_mode(json : Json) -> BloomCompositeMode {
+  let tag : Int = try! @json.from_json(json)
+  match tag {
+    0 => EnergyConserving
+    1 => Additive
+    _ => EnergyConserving
+  }
+}
+
+///|
+fn decode_bloom_settings(json : Json) -> Bloom2dSettings {
+  let (
+    intensity,
+    low_frequency_boost,
+    low_frequency_boost_curvature,
+    high_pass_frequency,
+    prefilter_json,
+    composite_mode_json,
+    max_mip_dimension,
+    scale_json,
+  ) : (Float, Float, Float, Float, Json, Json, Int, Json) = try! @json.from_json(
+    json,
   )
-  entity
+  Bloom2dSettings::{
+    intensity,
+    low_frequency_boost,
+    low_frequency_boost_curvature,
+    high_pass_frequency,
+    prefilter: decode_bloom_prefilter(prefilter_json),
+    composite_mode: decode_bloom_composite_mode(composite_mode_json),
+    max_mip_dimension,
+    scale: decode_vec2(scale_json),
+  }
+}
+
+///|
+fn decode_bloom2d(json : Json) -> Bloom2d {
+  let (source_json, enabled, settings_json) : (Json?, Bool, Json) = try! @json.from_json(
+    json,
+  )
+  Bloom2d::{
+    source: source_json.map(fn(value) { decode_image_handle(value) }),
+    enabled,
+    settings: decode_bloom_settings(settings_json),
+  }
+}
+
+///|
+fn decode_mesh2d(json : Json) -> Mesh2d {
+  Mesh2d::new(decode_mesh_handle(json))
+}
+
+///|
+fn decode_color_material(json : Json) -> ColorMaterial {
+  ColorMaterial::{ handle: decode_color_material_asset_handle(json) }
+}
+
+///|
+fn decode_mesh_material2d(json : Json) -> MeshMaterial2d {
+  MeshMaterial2d::new(decode_color_material_asset_handle(json))
+}
+
+///|
+fn decode_gpu_mesh2d(json : Json) -> GpuMesh2d {
+  let mesh_id : Int = try! @json.from_json(json)
+  GpuMesh2d::new(mesh_id)
+}
+
+///|
+fn decode_scissor_rect(json : Json) -> ScissorRect {
+  ScissorRect::new(decode_rect(json))
+}
+
+///|
+fn decode_wireframe2d(_json : Json) -> Wireframe2d {
+  Wireframe2d::default()
+}
+
+///|
+fn decode_no_wireframe2d(_json : Json) -> NoWireframe2d {
+  NoWireframe2d::default()
+}
+
+///|
+fn decode_wireframe2d_color(json : Json) -> Wireframe2dColor {
+  Wireframe2dColor::new(decode_color(json))
+}
+
+///|
+pub impl ToJson for Color with to_json(self) {
+  encode_color(self)
+}
+
+///|
+pub impl @json.FromJson for Color with from_json(json, _path) {
+  decode_color(json)
+}
+
+///|
+pub impl ToJson for Sprite with to_json(self) {
+  encode_sprite(self)
+}
+
+///|
+pub impl @json.FromJson for Sprite with from_json(json, _path) {
+  decode_sprite(json)
+}
+
+///|
+pub impl ToJson for Anchor with to_json(self) {
+  encode_anchor(self)
+}
+
+///|
+pub impl @json.FromJson for Anchor with from_json(json, _path) {
+  decode_anchor(json)
+}
+
+///|
+pub impl ToJson for RenderLayers with to_json(self) {
+  encode_render_layers(self)
+}
+
+///|
+pub impl @json.FromJson for RenderLayers with from_json(json, _path) {
+  decode_render_layers(json)
+}
+
+///|
+pub impl ToJson for ScissorRect with to_json(self) {
+  encode_rect(self.rect)
+}
+
+///|
+pub impl @json.FromJson for ScissorRect with from_json(json, _path) {
+  decode_scissor_rect(json)
+}
+
+///|
+pub impl ToJson for Camera with to_json(self) {
+  encode_camera(self)
+}
+
+///|
+pub impl @json.FromJson for Camera with from_json(json, _path) {
+  decode_camera(json)
+}
+
+///|
+pub impl ToJson for Camera2d with to_json(self) {
+  encode_camera2d(self)
+}
+
+///|
+pub impl @json.FromJson for Camera2d with from_json(json, _path) {
+  decode_camera2d(json)
+}
+
+///|
+pub impl ToJson for Projection with to_json(self) {
+  encode_projection(self)
+}
+
+///|
+pub impl @json.FromJson for Projection with from_json(json, _path) {
+  decode_projection(json)
+}
+
+///|
+pub impl ToJson for RenderTarget with to_json(self) {
+  encode_render_target(self)
+}
+
+///|
+pub impl @json.FromJson for RenderTarget with from_json(json, _path) {
+  decode_render_target(json)
+}
+
+///|
+pub impl ToJson for Bloom2d with to_json(self) {
+  encode_bloom2d(self)
+}
+
+///|
+pub impl @json.FromJson for Bloom2d with from_json(json, _path) {
+  decode_bloom2d(json)
+}
+
+///|
+pub impl ToJson for Mesh2d with to_json(self) {
+  encode_mesh2d(self)
+}
+
+///|
+pub impl @json.FromJson for Mesh2d with from_json(json, _path) {
+  decode_mesh2d(json)
+}
+
+///|
+pub impl ToJson for ColorMaterial with to_json(self) {
+  encode_color_material(self)
+}
+
+///|
+pub impl @json.FromJson for ColorMaterial with from_json(json, _path) {
+  decode_color_material(json)
+}
+
+///|
+pub impl ToJson for MeshMaterial2d with to_json(self) {
+  encode_mesh_material2d(self)
+}
+
+///|
+pub impl @json.FromJson for MeshMaterial2d with from_json(json, _path) {
+  decode_mesh_material2d(json)
+}
+
+///|
+pub impl ToJson for GpuMesh2d with to_json(self) {
+  encode_gpu_mesh2d(self)
+}
+
+///|
+pub impl @json.FromJson for GpuMesh2d with from_json(json, _path) {
+  decode_gpu_mesh2d(json)
+}
+
+///|
+pub impl ToJson for Wireframe2d with to_json(self) {
+  self |> ignore
+  (0).to_json()
+}
+
+///|
+pub impl @json.FromJson for Wireframe2d with from_json(json, _path) {
+  decode_wireframe2d(json)
+}
+
+///|
+pub impl ToJson for NoWireframe2d with to_json(self) {
+  self |> ignore
+  (0).to_json()
+}
+
+///|
+pub impl @json.FromJson for NoWireframe2d with from_json(json, _path) {
+  decode_no_wireframe2d(json)
+}
+
+///|
+pub impl ToJson for Wireframe2dColor with to_json(self) {
+  encode_color(self.color)
+}
+
+///|
+pub impl @json.FromJson for Wireframe2dColor with from_json(json, _path) {
+  decode_wireframe2d_color(json)
 }

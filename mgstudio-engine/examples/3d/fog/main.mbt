@@ -144,13 +144,10 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 ///|
 fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ambient = @render3d.query_get_global_ambient_light_resource(world)
-  if ambient.get_ref_mut(tick) is Some(value) {
-    value.val = @render3d.GlobalAmbientLight::new(
-      @render2d.Color::white(),
-      0.0F,
-    )
-  }
+  world.insert_resource(
+    @render3d.ecs_key_global_ambient_light,
+    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+  )
 
   let stone_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -191,16 +188,12 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
       @math.Vec3::splat(1.75F),
     ),
   )
-  @render3d.query_get_not_shadow_caster_store(world).insert(
-    orb,
-    @render3d.NotShadowCaster::default(),
-    tick,
-  )
-  @render3d.query_get_not_shadow_receiver_store(world).insert(
-    orb,
-    @render3d.NotShadowReceiver::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_not_shadow_caster)
+  .insert(orb, @render3d.NotShadowCaster::default(), tick)
+  world
+  .component(@render3d.ecs_key_not_shadow_receiver)
+  .insert(orb, @render3d.NotShadowReceiver::default(), tick)
 
   for i in 0..<50 {
     let i_f = float_from_int(i)
@@ -235,16 +228,16 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   let point_light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point_light,
     @render3d.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point_light,
-    @math.Transform::from_xyz(0.0F, 1.0F, 0.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point_light, @math.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
 }
 
 ///|
@@ -306,8 +299,8 @@ fn update_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   guard fog_example_state.val.camera is Some(camera) else { return }
-  let camera3d_store = @render3d.query_get_camera3d_store(world)
-  let transform_store = @math.query_get_transform_store(world)
+  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
+  let transform_store = world.component(@math.ecs_key_transform)
   let mut fog = fog_example_state.val.fog
 
   let orbit_scale = 8.0F + @math.sin(now / 10.0F) * 7.0F
@@ -475,7 +468,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

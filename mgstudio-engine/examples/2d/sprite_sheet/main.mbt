@@ -53,7 +53,7 @@ let sprite_sheet_state : Ref[SpriteSheetState] = Ref::new(SpriteSheetState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_sheet_setup)
@@ -78,12 +78,12 @@ fn sprite_sheet_setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
 
-  let entity = @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(world)
+  let entity = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
   sprite_sheet_state.val.timer_seconds = 0.0F
   sprite_sheet_state.val.sprite = Some(entity)
   sprite_sheet_state.val.texture = Some(texture)
@@ -113,9 +113,7 @@ fn sprite_sheet_animate(world : @ecs.World) -> Unit {
       let transform = @math.Transform::identity().with_scale(
         @math.Vec3::splat(GABE_SCALE),
       )
-      let entity = @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(
-        world,
-      )
+      let entity = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
       sprite_sheet_state.val.sprite = Some(entity)
       sprite_sheet_state.val.frame = next_frame
     }

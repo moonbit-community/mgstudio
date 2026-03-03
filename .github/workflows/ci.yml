@@ -81,8 +81,8 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          # Build test artifacts in CI. Executing wasm tests here requires a
-          # host import harness (`mgstudio_host`) that is not wired in this job.
+          # Build test artifacts in CI. Host-backed runtime behavior is covered
+          # by the dedicated examples smoke job below.
           moon -C mgstudio-engine test --build-only
 
   engine-examples-smoke:
@@ -108,11 +108,20 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon update
 
+      - name: Install runtime smoke dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
       - name: Smoke gate for representative Bevy parity examples
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
+          export MGSTUDIO_SMOKE_RUNTIME=1
+          export MGSTUDIO_RUNNER="xvfb-run -a"
           ./scripts/smoke_bevy_examples.sh
 
   runtime-native-wasmtime:

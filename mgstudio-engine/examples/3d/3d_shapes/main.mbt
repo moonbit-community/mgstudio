@@ -1015,7 +1015,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   let point_light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point_light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -1025,11 +1027,9 @@ fn setup(world : @ecs.World) -> Unit {
     ).with_shadow_depth_bias(0.2F),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point_light,
-    @math.Transform::from_xyz(8.0F, 16.0F, 8.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point_light, @math.Transform::from_xyz(8.0F, 16.0F, 8.0F), tick)
 
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(50.0F, 50.0F),
@@ -1093,7 +1093,7 @@ fn rotate(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds() / 2.0F
   let spin = @math.Quat::from_rotation_y(delta)
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   for entry in shapes_state.val.entries {
     if transform_store.get(entry.entity) is Some(transform) {
       let next = transform.with_rotation(
@@ -1110,7 +1110,7 @@ fn advance_rows(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   let count = shapes_state.val.entries.length()
   for i in 0..<count {
     let entry = shapes_state.val.entries[i]
@@ -1134,21 +1134,20 @@ fn toggle_wireframe(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
-  let tick = world.read_change_tick()
-  let wireframe_config = @render3d.query_get_wireframe_config_resource(world)
-  if wireframe_config.get_ref_mut(tick) is Some(config_ref) {
-    config_ref.val = config_ref.val.with_global(!config_ref.val.global)
-  } else {
-    wireframe_config.insert(
-      @render3d.WireframeConfig::default().with_global(true),
-      tick,
-    )
+  let config = try
+    world.get_resource(@render3d.ecs_key_wireframe_config)
+  catch {
+    _ => @render3d.WireframeConfig::default().with_global(true)
+  } noraise {
+    Some(value) => value.with_global(!value.global)
+    None => @render3d.WireframeConfig::default().with_global(true)
   }
+  world.insert_resource(@render3d.ecs_key_wireframe_config, config)
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render3d.wireframe_plugin])

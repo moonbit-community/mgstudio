@@ -149,7 +149,7 @@ fn apply_distance_fog_from_stub(
     .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
   guard scrolling_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = @render3d.query_get_camera3d_store(world)
+  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @render3d.Camera3d::default()
@@ -228,21 +228,15 @@ fn setup_camera(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_temporal_anti_aliasing_store(world).insert(
-    camera,
-    @render3d.TemporalAntiAliasing::default(),
-    tick,
-  )
-  @render3d.query_get_bloom_store(world).insert(
-    camera,
-    @render3d.Bloom::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .component(@render3d.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+  world
+  .component(@render3d.ecs_key_bloom)
+  .insert(camera, @render3d.Bloom::default(), tick)
   scrolling_fog_state.val.camera = Some(camera)
 }
 
@@ -250,16 +244,15 @@ fn setup_camera(world : @ecs.World) -> Unit {
 fn setup_lighting(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  let ambient = @render3d.query_get_global_ambient_light_resource(world)
-  if ambient.get_ref_mut(tick) is Some(value) {
-    value.val = @render3d.GlobalAmbientLight::new(
-      @render2d.Color::white(),
-      0.0F,
-    )
-  }
+  world.insert_resource(
+    @render3d.ecs_key_global_ambient_light,
+    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+  )
 
   let light = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -267,7 +260,9 @@ fn setup_lighting(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
     tick,
@@ -276,18 +271,10 @@ fn setup_lighting(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let shadow_map_resource = @render3d.query_get_directional_light_shadow_map_resource(
-    world,
+  world.insert_resource(
+    @render3d.ecs_key_directional_light_shadow_map,
+    @render3d.DirectionalLightShadowMap::new(4096),
   )
-  if shadow_map_resource.get_ref_mut(tick) is Some(current) {
-    current.val = @render3d.DirectionalLightShadowMap::new(4096)
-  } else {
-    shadow_map_resource.insert(
-      @render3d.DirectionalLightShadowMap::new(4096),
-      tick,
-    )
-  }
 
   scrolling_fog_state.val.fog_volume_outer = None
   scrolling_fog_state.val.fog_volume_inner = None
@@ -316,16 +303,16 @@ fn scroll_fog(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   if scrolling_fog_state.val.fog_volume_outer is Some(fog_outer) {
-    @math.query_get_transform_store(world).set(
-      fog_outer,
-      @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F),
-      tick,
-    )
+    world
+    .component(@math.ecs_key_transform)
+    .set(fog_outer, @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F), tick)
     |> ignore
   }
 
   if scrolling_fog_state.val.fog_volume_inner is Some(fog_inner) {
-    @math.query_get_transform_store(world).set(
+    world
+    .component(@math.ecs_key_transform)
+    .set(
       fog_inner,
       @math.Transform::from_xyz(0.0F, FOG_CENTER_Y - 1.0F, 0.0F),
       tick,
@@ -356,7 +343,7 @@ fn scroll_fog(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

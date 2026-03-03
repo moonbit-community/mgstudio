@@ -17,11 +17,11 @@ pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_GlobalTransform] get_global_transform_store(W) -> @core.ComponentStore[GlobalTransform]
+
 pub fn[W : TransformPropagationWorld] propagate_transforms_system(W) -> Unit
 
 pub fn propagate_transforms_system_ecs(@ecs.World) -> Unit
-
-pub fn[W : Has_GlobalTransform] query_get_global_transform_store(W) -> @core.ComponentStore[GlobalTransform]
 
 pub fn[W : TransformPropagationWorld] transform_plugin(@app.App[W]) -> @app.App[W]
 

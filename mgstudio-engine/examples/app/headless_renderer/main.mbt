@@ -52,14 +52,14 @@ fn setup(world : @ecs.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default().with_order(-1),
     @math.Transform::identity(),
-  ).spawn_ecs(world)
+  ).spawn(world)
   |> ignore
 
   // Keep a visible camera on screen for web runtime.
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn_ecs(world)
+  ).spawn(world)
   |> ignore
 }
 
@@ -83,7 +83,7 @@ fn capture_system(
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .insert_resource(CaptureState::{ target: None, frame: 0, single_image: true })

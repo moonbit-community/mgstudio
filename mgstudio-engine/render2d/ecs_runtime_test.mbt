@@ -40,14 +40,14 @@ fn ecs_transform_matches(
 }
 
 ///|
-test "render2d: SpriteBundle::spawn_ecs inserts expected components" {
+test "render2d: SpriteBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(1)
   let bundle = SpriteBundle::new(
     Sprite::from_image(image),
     @math.Transform::identity(),
   )
-  let entity = bundle.spawn_ecs(world)
+  let entity = bundle.spawn(world)
 
   inspect(world.is_alive(entity), content="true")
   inspect(
@@ -83,13 +83,13 @@ test "render2d: SpriteBundle::spawn_ecs inserts expected components" {
 }
 
 ///|
-test "render2d: Camera2dBundle::spawn_ecs inserts expected components" {
+test "render2d: Camera2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let bundle = Camera2dBundle::new(
     Camera::default(),
     @math.Transform::identity(),
   ).with_bloom2d(Bloom2d::new())
-  let entity = bundle.spawn_ecs(world)
+  let entity = bundle.spawn(world)
 
   inspect(world.is_alive(entity), content="true")
   inspect(
@@ -123,12 +123,12 @@ test "render2d: Camera2dBundle::spawn_ecs inserts expected components" {
 }
 
 ///|
-test "render2d: Mesh2dBundle::spawn_ecs inserts expected components" {
+test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let mesh = Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F))
   let material = ColorMaterial::new(Color::white())
   let bundle = Mesh2dBundle::new(mesh, material, @math.Transform::identity())
-  let entity = bundle.spawn_ecs(world)
+  let entity = bundle.spawn(world)
 
   inspect(world.is_alive(entity), content="true")
   inspect(

@@ -30,7 +30,7 @@ fn system(_world : @ecs.World) -> Unit {
 ///|
 pub fn game_app() -> Unit {
   println("Running Bevy App")
-  let plugins = @mgstudio.default_plugins_ecs()
+  let plugins = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(set_title)

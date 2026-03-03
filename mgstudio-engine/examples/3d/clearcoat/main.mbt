@@ -139,21 +139,17 @@ fn update_help_text() -> Unit {
 fn apply_light_mode(world : @ecs.World) -> Unit {
   guard clearcoat_state.val.light is Some(light) else { return }
   let tick = world.read_change_tick()
-  @render3d.query_get_point_light_store(world).remove(light) |> ignore
-  @render3d.query_get_directional_light_store(world).remove(light) |> ignore
+  world.component(@render3d.ecs_key_point_light).remove(light) |> ignore
+  world.component(@render3d.ecs_key_directional_light).remove(light) |> ignore
 
   if clearcoat_state.val.light_mode == LIGHT_MODE_POINT {
-    @render3d.query_get_point_light_store(world).insert(
-      light,
-      create_point_light(),
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_point_light)
+    .insert(light, create_point_light(), tick)
   } else {
-    @render3d.query_get_directional_light_store(world).insert(
-      light,
-      create_directional_light(),
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_directional_light)
+    .insert(light, create_directional_light(), tick)
   }
 
   update_help_text()
@@ -234,7 +230,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let golf_ball_root = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     golf_ball_root,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -246,7 +244,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     golf_ball_root,
     @math.Transform::from_xyz(1.0F, 1.0F, 0.0F).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
@@ -257,7 +257,9 @@ fn setup(world : @ecs.World) -> Unit {
   clearcoat_state.val.sphere_positions.push(@math.Vec3::new(1.0F, 1.0F, 0.0F))
 
   let light = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(0.0F, 4.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
@@ -276,17 +278,15 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_tonemapping_store(world).insert(
-    camera,
-    @render3d.Tonemapping::AcesFitted,
-    tick,
-  )
-  @render3d.query_get_skybox_store(world).insert(
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_tonemapping)
+  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  world
+  .component(@render3d.ecs_key_skybox)
+  .insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -294,7 +294,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -341,7 +343,9 @@ fn animate_light(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   if clearcoat_state.val.light is Some(entity) {
-    @math.query_get_transform_store(world).set(
+    world
+    .component(@math.ecs_key_transform)
+    .set(
       entity,
       @math.Transform::from_xyz(light_pos.x, light_pos.y, light_pos.z).looking_at(
         target, up,
@@ -361,7 +365,9 @@ fn animate_spheres(world : @ecs.World) -> Unit {
   for i in 0..<count {
     let entity = clearcoat_state.val.sphere_entities[i]
     let position = clearcoat_state.val.sphere_positions[i]
-    @math.query_get_transform_store(world).set(
+    world
+    .component(@math.ecs_key_transform)
+    .set(
       entity,
       @math.Transform::from_xyz(position.x, position.y, position.z)
       .with_rotation(rotation)
@@ -387,7 +393,7 @@ fn handle_input(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

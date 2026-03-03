@@ -33,14 +33,14 @@ pub(open) trait Has_SceneInstanceReady {
 }
 
 ///|
-pub fn[W : Has_SceneRoot] query_get_scene_root_store(
+pub fn[W : Has_SceneRoot] get_scene_root_store(
   world : W,
 ) -> @core.ComponentStore[SceneRoot] {
   world.get_scene_root_store()
 }
 
 ///|
-pub fn[W : Has_SceneInstanceReady] query_get_scene_instance_ready_store(
+pub fn[W : Has_SceneInstanceReady] get_scene_instance_ready_store(
   world : W,
 ) -> @core.ComponentStore[SceneInstanceReady] {
   world.get_scene_instance_ready_store()

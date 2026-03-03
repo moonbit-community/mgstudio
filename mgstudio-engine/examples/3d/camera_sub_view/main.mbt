@@ -135,7 +135,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Light
   let light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     light,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -145,11 +147,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   let perspective_stretched_sub_view = @render3d.SubCameraView3d::new(
     @math.IVec2::new(10, 10),
@@ -236,7 +236,9 @@ fn move_camera_view(world : @ecs.World) -> Unit {
   let offset = wrapped - 50.0F
 
   let tick = world.read_change_tick()
-  let sub_camera_view_store = @render3d.query_get_sub_camera_view3d_store(world)
+  let sub_camera_view_store = world.component(
+    @render3d.ecs_key_sub_camera_view3d,
+  )
   for entity in camera_sub_view_state.val.moving_cameras {
     if sub_camera_view_store.get(entity) is Some(sub_camera_view) {
       let next = sub_camera_view.with_offset(@math.Vec2::new(offset, offset))
@@ -269,7 +271,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
   let small_wide_size = @math.IVec2::new(small_dim * 2, small_dim)
 
   let tick = world.read_change_tick()
-  let camera_store = @render2d.query_get_camera_store(world)
+  let camera_store = world.component(@render2d.ecs_key_camera)
 
   for pair in camera_sub_view_state.val.cameras {
     let entity = pair.0
@@ -312,7 +314,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

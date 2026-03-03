@@ -122,8 +122,8 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
     .with_roundness(settings.vignette_roundness)
     .with_edge_compensation(settings.vignette_edge_compensation)
 
-  let chromatic_aberration_store = @render3d.query_get_chromatic_aberration_store(
-    world,
+  let chromatic_aberration_store = world.component(
+    @render3d.ecs_key_chromatic_aberration,
   )
   if chromatic_aberration_store.contains(camera_entity) {
     chromatic_aberration_store.set(camera_entity, chromatic_aberration, tick)
@@ -131,7 +131,7 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
   } else {
     chromatic_aberration_store.insert(camera_entity, chromatic_aberration, tick)
   }
-  let vignette_store = @render3d.query_get_vignette_store(world)
+  let vignette_store = world.component(@render3d.ecs_key_vignette)
   if vignette_store.contains(camera_entity) {
     vignette_store.set(camera_entity, vignette, tick) |> ignore
   } else {
@@ -185,12 +185,12 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_vignette(Some(@render3d.Vignette::default()))
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
@@ -213,7 +213,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
 
   let tonemapping_test = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     tonemapping_test,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -227,7 +229,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
 
   let flight_helmet = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     flight_helmet,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -239,7 +243,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     flight_helmet,
     @math.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
@@ -248,12 +254,16 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
 
   let directional_light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional_light,
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI).mul(
@@ -381,7 +391,7 @@ fn handle_keyboard_input(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

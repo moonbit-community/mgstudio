@@ -136,7 +136,7 @@ let color_animation_state : Ref[ColorAnimationState] = Ref::new(ColorAnimationSt
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(color_animation_setup)
@@ -160,7 +160,7 @@ fn color_animation_setup(world : @ecs.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn_ecs(world)
+  ).spawn(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -203,7 +203,7 @@ fn spawn_mode_sprite(
   let entity = @render2d.SpriteBundle::new(
     sprite,
     @math.Transform::from_xyz(0.0F, y, 0.0F),
-  ).spawn_ecs(world)
+  ).spawn(world)
   color_animation_state.val.sprites.push(AnimatedSprite::{ entity, y, mode })
 }
 
@@ -226,7 +226,7 @@ fn color_animation_update(world : @ecs.World) -> Unit {
     let entity = @render2d.SpriteBundle::new(
       sprite,
       @math.Transform::from_xyz(x, animated.y, 0.0F),
-    ).spawn_ecs(world)
+    ).spawn(world)
     next_sprites.push(AnimatedSprite::{
       entity,
       y: animated.y,

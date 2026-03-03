@@ -48,18 +48,14 @@ let sprite_scale_state : Ref[SpriteScaleState] = Ref::new(SpriteScaleState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_scale_setup_sprites)
   .add_startup_system(sprite_scale_setup_texture_atlas)
   .add_startup_system(sprite_scale_setup_camera)
-  .add_system(
-    @app.system_query2(
-      fn(world) { @render2d.query_get_sprite_store(world) },
-      fn(world) { @math.query_get_transform_store(world) },
-      sprite_scale_update,
-    ),
+  .add_system_query2_ecs(
+    @render2d.ecs_key_sprite, @math.ecs_key_transform, sprite_scale_update,
   )
   .run()
 }
@@ -383,25 +379,22 @@ fn resolve_scale_mode(_intended_mode : String) -> @render2d.SpriteImageMode {
 
 ///|
 fn sprite_scale_update(
-  query : @core.Query2[@render2d.Sprite, @math.Transform],
-  world : @ecs.World,
+  query : @ecs.Query2[@render2d.Sprite, @math.Transform],
+  _world : @ecs.World,
 ) -> Unit {
   sprite_scale_state.val.timer_seconds = sprite_scale_state.val.timer_seconds +
     @time.time_delta_seconds()
 
   if sprite_scale_state.val.timer_seconds >= ANIMATION_STEP_SECONDS {
     sprite_scale_state.val.timer_seconds = 0.0F
-    let tick = world.read_change_tick()
-    query.update_a(tick, fn(_entity, sprite, _transform) {
+    try! query.for_each(fn(_entity, sprite, _transform) {
       if sprite.texture_atlas is Some(atlas) {
         let next_index = if atlas.index == ATLAS_LAST_FRAME {
           ATLAS_FIRST_FRAME
         } else {
           atlas.index + 1
         }
-        sprite.with_texture_atlas(Some(atlas.with_index(next_index)))
-      } else {
-        sprite
+        sprite.texture_atlas = Some(atlas.with_index(next_index))
       }
     })
   }

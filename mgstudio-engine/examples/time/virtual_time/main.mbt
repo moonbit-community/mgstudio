@@ -75,7 +75,7 @@ fn update_info_text() -> Unit {
 }
 
 ///|
-fn setup(world : @ecs_world.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   virtual_time_state.val = {
     real_sprite: None,
     virtual_sprite: None,
@@ -207,9 +207,9 @@ fn handle_time_controls() -> Unit {
 }
 
 ///|
-fn update_sprite_positions(world : @ecs_world.World) -> Unit {
+fn update_sprite_positions(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let transform_store = world.get_transform_store()
+  let transform_store = world.component(@math.ecs_key_transform)
 
   if virtual_time_state.val.real_sprite is Some(real_sprite) {
     if transform_store.get(real_sprite) is Some(transform) {
@@ -247,7 +247,7 @@ fn update_sprite_positions(world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update_text_with_real_timer(_world : @ecs_world.World) -> Unit {
+fn update_text_with_real_timer(_world : @ecs.World) -> Unit {
   virtual_time_state.val.info_timer = virtual_time_state.val.info_timer.tick(
     @time.time_real_delta_seconds(),
   )
@@ -257,7 +257,7 @@ fn update_text_with_real_timer(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn update(world : @ecs_world.World) -> Unit {
+fn update(world : @ecs.World) -> Unit {
   handle_time_controls()
   update_sprite_positions(world)
   update_text_with_real_timer(world)
@@ -265,8 +265,8 @@ fn update(world : @ecs_world.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = @mgstudio.default_plugins()
-  @app.App::new(@ecs_world.World::new())
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
   .add_system(update)

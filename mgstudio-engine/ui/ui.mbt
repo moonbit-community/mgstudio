@@ -26,7 +26,7 @@ pub(all) enum Val {
   Vh(Float)
   VMin(Float)
   VMax(Float)
-}
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub struct UiRect {
@@ -34,7 +34,7 @@ pub struct UiRect {
   top : Val
   right : Val
   bottom : Val
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiRect::new(left : Val, top : Val, right : Val, bottom : Val) -> UiRect {
@@ -58,14 +58,14 @@ pub(all) enum Display {
   Flex
   Grid
   None
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned position type (subset).
 pub(all) enum PositionType {
   Relative
   Absolute
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub(all) enum OverflowAxis {
@@ -73,13 +73,13 @@ pub(all) enum OverflowAxis {
   Hidden
   Scroll
   Visible
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub struct Overflow {
   x : OverflowAxis
   y : OverflowAxis
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Overflow::new(x : OverflowAxis, y : OverflowAxis) -> Overflow {
@@ -96,13 +96,13 @@ pub(all) enum OverflowClipBox {
   BorderBox
   PaddingBox
   ContentBox
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub struct OverflowClipMargin {
   visual_box : OverflowClipBox
   margin : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn OverflowClipMargin::default() -> OverflowClipMargin {
@@ -147,7 +147,7 @@ pub(all) enum FlexDirection {
   ColumnReverse
   Row
   RowReverse
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned flex wrap.
@@ -155,7 +155,7 @@ pub(all) enum FlexWrap {
   NoWrap
   Wrap
   WrapReverse
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify content.
@@ -170,7 +170,7 @@ pub(all) enum JustifyContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify items.
@@ -181,7 +181,7 @@ pub(all) enum JustifyItems {
   End
   Start
   Stretch
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned justify self.
@@ -192,7 +192,7 @@ pub(all) enum JustifySelf {
   End
   Start
   Stretch
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align items.
@@ -205,7 +205,7 @@ pub(all) enum AlignItems {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align self.
@@ -218,7 +218,7 @@ pub(all) enum AlignSelf {
   FlexStart
   Start
   Stretch
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned align content.
@@ -233,7 +233,7 @@ pub(all) enum AlignContent {
   SpaceEvenly
   Start
   Stretch
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub(all) enum GridAutoFlow {
@@ -241,7 +241,7 @@ pub(all) enum GridAutoFlow {
   ColumnDense
   Row
   RowDense
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub(all) enum GridTrack {
@@ -251,20 +251,20 @@ pub(all) enum GridTrack {
   Fr(Float)
   MinContent
   MaxContent
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub(all) enum GridTrackRepetition {
   Count(Int)
   AutoFill
   AutoFit
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub struct RepeatedGridTrack {
   repetition : GridTrackRepetition
   tracks : Array[GridTrack]
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn RepeatedGridTrack::new(
@@ -287,7 +287,7 @@ pub struct GridPlacement {
   start : Int?
   span : Int?
   end : Int?
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn GridPlacement::default() -> GridPlacement {
@@ -451,7 +451,7 @@ pub struct RelativeCursorPosition {
 pub(all) enum FocusPolicy {
   Block
   Pass
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn FocusPolicy::default() -> FocusPolicy {
@@ -466,7 +466,7 @@ pub fn FocusPolicy::default() -> FocusPolicy {
 pub(all) enum UiAntiAlias {
   Off
   On
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub struct BorderRadius {
@@ -474,7 +474,7 @@ pub struct BorderRadius {
   top_right : Val
   bottom_left : Val
   bottom_right : Val
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn BorderRadius::default() -> BorderRadius {
@@ -541,7 +541,7 @@ pub struct Outline {
   width : Val
   offset : Val
   color : @render2d.Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Outline::new(
@@ -568,7 +568,7 @@ pub struct BoxShadow {
   y_offset : Val
   spread_radius : Val
   blur_radius : Val
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn BoxShadow::new(
@@ -596,7 +596,7 @@ pub fn BoxShadow::default() -> BoxShadow {
 ///|
 pub struct UiBoxShadowSamples {
   samples : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiBoxShadowSamples::new(samples : Int) -> UiBoxShadowSamples {
@@ -612,7 +612,7 @@ pub fn UiBoxShadowSamples::default() -> UiBoxShadowSamples {
 ///|
 pub struct BorderColor {
   color : @render2d.Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn BorderColor::new(color : @render2d.Color) -> BorderColor {
@@ -660,7 +660,7 @@ pub struct Node {
   grid_auto_columns : Array[GridTrack]
   grid_row : GridPlacement
   grid_column : GridPlacement
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Node::default() -> Node {
@@ -815,7 +815,7 @@ pub fn Node::with_grid_template_columns(
 }
 
 ///|
-pub struct UiRoot {}
+pub struct UiRoot {} derive(ToJson, FromJson)
 
 ///|
 pub fn UiRoot::default() -> UiRoot {
@@ -865,7 +865,7 @@ pub fn ImageNodeSize::size(self : ImageNodeSize) -> @math.UVec2 {
 ///|
 pub struct BackgroundColor {
   color : @render2d.Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn BackgroundColor::new(color : @render2d.Color) -> BackgroundColor {
@@ -1256,11 +1256,11 @@ pub(all) enum Interaction {
   None
   Hovered
   Pressed
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 /// Bevy-aligned button marker component.
-pub struct Button {}
+pub struct Button {} derive(ToJson, FromJson)
 
 ///|
 pub fn Button::default() -> Button {
@@ -1269,7 +1269,7 @@ pub fn Button::default() -> Button {
 
 ///|
 /// Bevy-aligned label marker component (Bevy v0.15.3 `Label` widget marker).
-pub struct Label {}
+pub struct Label {} derive(ToJson, FromJson)
 
 ///|
 pub fn Label::default() -> Label {
@@ -1281,7 +1281,7 @@ pub struct ButtonColors {
   normal : @render2d.Color
   hovered : @render2d.Color
   pressed : @render2d.Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ButtonColors::new(
@@ -1303,10 +1303,21 @@ pub fn UiText::new(handle : @text.TextHandle) -> UiText {
 }
 
 ///|
+pub impl ToJson for UiText with to_json(self) {
+  self.handle.id().to_json()
+}
+
+///|
+pub impl @json.FromJson for UiText with from_json(json, _path) {
+  let id : Int = @json.from_json(json) catch { _ => -1 }
+  UiText::new(@text.TextHandle::new(id))
+}
+
+///|
 /// Optional accessibility label for UI nodes (used by the host a11y bridge).
 pub struct AccessibilityLabel {
   text : String
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn AccessibilityLabel::new(text : String) -> AccessibilityLabel {

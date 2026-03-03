@@ -23,9 +23,9 @@ pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_SceneInstanceReady] query_get_scene_instance_ready_store(W) -> @core.ComponentStore[SceneInstanceReady]
+pub fn[W : Has_SceneInstanceReady] get_scene_instance_ready_store(W) -> @core.ComponentStore[SceneInstanceReady]
 
-pub fn[W : Has_SceneRoot] query_get_scene_root_store(W) -> @core.ComponentStore[SceneRoot]
+pub fn[W : Has_SceneRoot] get_scene_root_store(W) -> @core.ComponentStore[SceneRoot]
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 

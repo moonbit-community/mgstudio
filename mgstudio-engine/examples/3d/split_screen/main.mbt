@@ -79,7 +79,9 @@ fn setup(world : @ecs.World) -> Unit {
   // Bevy parity: use Fox scene as split-screen content.
   let asset_server = @asset.AssetServer::new()
   let fox_scene = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     fox_scene,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -92,12 +94,16 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Light
   let light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(60.0F, 100.0F, 60.0F).looking_at(
       @math.Vec3::zero(),
@@ -174,7 +180,7 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let camera_store = @render2d.query_get_camera_store(world)
+  let camera_store = world.component(@render2d.ecs_key_camera)
   for pair in split_screen_state.val.cameras {
     let entity = pair.0
     let grid_pos = pair.1
@@ -253,7 +259,7 @@ fn button_system(world : @ecs.World) -> Unit {
   let camera_entity = split_screen_state.val.cameras[index].0
 
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(
       @math.Quat::from_rotation_y(angle),
@@ -270,7 +276,7 @@ fn button_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

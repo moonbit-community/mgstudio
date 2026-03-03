@@ -27,7 +27,7 @@ pub fn scene_spawn_roots_system_ecs(world : @ecs.World) -> Unit {
   let pending_roots : Array[(@core.Entity, SceneRoot)] = []
   try! world
   .query1(ecs_key_scene_root)
-  .for_each(fn(entity, root) {
+  .view(fn(entity, root) {
     if (try! world.get(entity, ecs_key_scene_instance_ready)) is None {
       pending_roots.push((entity, root))
     }

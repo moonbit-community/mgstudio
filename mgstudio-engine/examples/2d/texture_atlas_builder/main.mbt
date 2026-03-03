@@ -14,7 +14,7 @@
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(texture_atlas_builder_setup)
@@ -45,7 +45,7 @@ fn texture_atlas_builder_setup(world : @ecs.World) -> Unit {
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
@@ -88,7 +88,7 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
       ),
-    ).spawn_ecs(world)
+    ).spawn(world)
     entity_a |> ignore
     let entity_b = @render2d.SpriteBundle::new(
       @render2d.Sprite::from_atlas_image(
@@ -100,7 +100,7 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
       ),
-    ).spawn_ecs(world)
+    ).spawn(world)
     entity_b |> ignore
     builder_state.val.built = true
   }

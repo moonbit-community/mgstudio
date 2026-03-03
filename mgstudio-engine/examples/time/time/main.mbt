@@ -46,7 +46,7 @@ fn help() -> Unit {
 }
 
 ///|
-fn print_real_time(_world : @ecs_world.World) -> Unit {
+fn print_real_time(_world : @ecs.World) -> Unit {
   println(
     "PreUpdate: real time, delta=" +
     @my_time.time_real_delta_seconds().to_string() +
@@ -56,7 +56,7 @@ fn print_real_time(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn print_fixed_time(_world : @ecs_world.World) -> Unit {
+fn print_fixed_time(_world : @ecs.World) -> Unit {
   println(
     "FixedUpdate: generic time in fixed schedule, delta=" +
     @my_time.time_delta_seconds().to_string() +
@@ -66,7 +66,7 @@ fn print_fixed_time(_world : @ecs_world.World) -> Unit {
 }
 
 ///|
-fn print_time(_world : @ecs_world.World) -> Unit {
+fn print_time(_world : @ecs.World) -> Unit {
   println(
     "Update: generic time clock, delta=" +
     @my_time.time_delta_seconds().to_string() +
@@ -77,9 +77,9 @@ fn print_time(_world : @ecs_world.World) -> Unit {
 
 ///|
 fn apply_command(
-  app : @app.App[@ecs_world.World],
+  app : @app.App[@ecs.World],
   command : String,
-) -> (@app.App[@ecs_world.World], Bool) {
+) -> (@app.App[@ecs.World], Bool) {
   match command {
     "" => (app.run_once(), false)
     "f" => {
@@ -119,7 +119,7 @@ fn apply_command(
 }
 
 ///|
-fn time_runner_builder(app : @app.App[@ecs_world.World]) -> @app.RunnerFn {
+fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
     banner()
     help()
@@ -148,10 +148,10 @@ fn time_runner_builder(app : @app.App[@ecs_world.World]) -> @app.RunnerFn {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs_world.World]] = [
-    fn(app : @app.App[@ecs_world.World]) { @my_time.time_plugin(app) },
+  let plugins : Array[@app.Plugin[@ecs.World]] = [
+    fn(app : @app.App[@ecs.World]) { @my_time.time_plugin(app) },
   ]
-  @app.App::new(@ecs_world.World::new())
+  @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_pre_update_system(print_real_time)
   .add_fixed_update_system(print_fixed_time)

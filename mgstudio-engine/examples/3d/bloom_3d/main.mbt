@@ -99,7 +99,7 @@ fn mode_label(mode : @render3d.BloomCompositeMode) -> String {
 fn apply_camera_bloom(world : @ecs.World) -> Unit {
   guard bloom_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  let bloom_store = @render3d.query_get_bloom_store(world)
+  let bloom_store = world.component(@render3d.ecs_key_bloom)
   if bloom_state.val.bloom_enabled {
     let bloom = @render3d.Bloom::new(bloom_state.val.intensity)
       .with_low_frequency_boost(bloom_state.val.low_frequency_boost)
@@ -228,21 +228,15 @@ fn setup_scene(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_tonemapping_store(world).insert(
-    camera,
-    @render3d.Tonemapping::TonyMcMapface,
-    tick,
-  )
-  @render3d.query_get_bloom_store(world).insert(
-    camera,
-    @render3d.Bloom::new(bloom_state.val.intensity),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_tonemapping)
+  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
+  world
+  .component(@render3d.ecs_key_bloom)
+  .insert(camera, @render3d.Bloom::new(bloom_state.val.intensity), tick)
   bloom_state.val.camera = Some(camera)
 
   let material_emissive1 = @render3d.standard_material_add(
@@ -449,7 +443,9 @@ fn bounce_spheres(world : @ecs.World) -> Unit {
   let elapsed = @time.time_elapsed_seconds()
   let tick = world.read_change_tick()
   for sphere in bloom_state.val.spheres {
-    @math.query_get_transform_store(world).set(
+    world
+    .component(@math.ecs_key_transform)
+    .set(
       sphere.entity,
       @math.Transform::from_xyz(
         sphere.x,
@@ -464,7 +460,7 @@ fn bounce_spheres(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup_scene)

@@ -26,7 +26,7 @@ pub(open) trait Has_Transform {
 }
 
 ///|
-pub fn[W : Has_Transform] query_get_transform_store(
+pub fn[W : Has_Transform] get_transform_store(
   world : W,
 ) -> @core.ComponentStore[Transform] {
   world.get_transform_store()

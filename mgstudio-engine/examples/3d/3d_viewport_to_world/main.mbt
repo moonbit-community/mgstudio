@@ -188,12 +188,12 @@ fn setup(world : @ecs.World) -> Unit {
   viewport_to_world_3d_state.val.ground = Some(ground)
 
   let light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
-    light,
-    @render3d.DirectionalLight::default(),
-    tick,
-  )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(light, @render3d.DirectionalLight::default(), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::zero(),
@@ -225,11 +225,9 @@ fn setup(world : @ecs.World) -> Unit {
   viewport_to_world_3d_state.val.cursor_marker = Some(cursor_marker)
 
   let tick = world.read_change_tick()
-  @visibility.query_get_visibility_store(world).set(
-    cursor_marker,
-    @visibility.Visibility::Hidden,
-    tick,
-  )
+  world
+  .component(@visibility.ecs_key_visibility)
+  .set(cursor_marker, @visibility.Visibility::Hidden, tick)
   |> ignore
 }
 
@@ -245,9 +243,9 @@ fn draw_cursor(world : @ecs.World) -> Unit {
     return
   }
 
-  let transform_store = @math.query_get_transform_store(world)
-  let camera_store = @render2d.query_get_camera_store(world)
-  let projection_store = @render3d.query_get_camera_projection3d_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let camera_store = world.component(@render2d.ecs_key_camera)
+  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
   let mut cursor_hit : (@math.Vec3, @math.Vec3)? = None
   if @input.mouse_position() is Some(screen_pos) {
     if transform_store.get(camera_entity) is Some(camera_transform) {
@@ -292,25 +290,21 @@ fn draw_cursor(world : @ecs.World) -> Unit {
       tick,
     )
     |> ignore
-    @visibility.query_get_visibility_store(world).set(
-      cursor_entity,
-      @visibility.Visibility::Visible,
-      tick,
-    )
+    world
+    .component(@visibility.ecs_key_visibility)
+    .set(cursor_entity, @visibility.Visibility::Visible, tick)
     |> ignore
   } else {
-    @visibility.query_get_visibility_store(world).set(
-      cursor_entity,
-      @visibility.Visibility::Hidden,
-      tick,
-    )
+    world
+    .component(@visibility.ecs_key_visibility)
+    .set(cursor_entity, @visibility.Visibility::Hidden, tick)
     |> ignore
   }
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

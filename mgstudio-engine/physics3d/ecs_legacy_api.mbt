@@ -79,63 +79,63 @@ pub(open) trait Has_ContactForceEventThreshold3d {
 }
 
 ///|
-pub fn[W : Has_Collider3d] query_get_collider3d_store(
+pub fn[W : Has_Collider3d] get_collider3d_store(
   world : W,
 ) -> @core.ComponentStore[Collider3d] {
   world.get_collider3d_store()
 }
 
 ///|
-pub fn[W : Has_Velocity3d] query_get_velocity3d_store(
+pub fn[W : Has_Velocity3d] get_velocity3d_store(
   world : W,
 ) -> @core.ComponentStore[Velocity3d] {
   world.get_velocity3d_store()
 }
 
 ///|
-pub fn[W : Has_RigidBody3d] query_get_rigid_body3d_store(
+pub fn[W : Has_RigidBody3d] get_rigid_body3d_store(
   world : W,
 ) -> @core.ComponentStore[RigidBody3d] {
   world.get_rigid_body3d_store()
 }
 
 ///|
-pub fn[W : Has_ActiveHooks3d] query_get_active_hooks3d_store(
+pub fn[W : Has_ActiveHooks3d] get_active_hooks3d_store(
   world : W,
 ) -> @core.ComponentStore[ActiveHooks3d] {
   world.get_active_hooks3d_store()
 }
 
 ///|
-pub fn[W : Has_ActiveEvents3d] query_get_active_events3d_store(
+pub fn[W : Has_ActiveEvents3d] get_active_events3d_store(
   world : W,
 ) -> @core.ComponentStore[ActiveEvents3d] {
   world.get_active_events3d_store()
 }
 
 ///|
-pub fn[W : Has_RapierBodyHandle3d] query_get_rapier_body_handle3d_store(
+pub fn[W : Has_RapierBodyHandle3d] get_rapier_body_handle3d_store(
   world : W,
 ) -> @core.ComponentStore[RapierBodyHandle3d] {
   world.get_rapier_body_handle3d_store()
 }
 
 ///|
-pub fn[W : Has_ActiveCollisionTypes3d] query_get_active_collision_types3d_store(
+pub fn[W : Has_ActiveCollisionTypes3d] get_active_collision_types3d_store(
   world : W,
 ) -> @core.ComponentStore[ActiveCollisionTypes3d] {
   world.get_active_collision_types3d_store()
 }
 
 ///|
-pub fn[W : Has_RapierColliderHandle3d] query_get_rapier_collider_handle3d_store(
+pub fn[W : Has_RapierColliderHandle3d] get_rapier_collider_handle3d_store(
   world : W,
 ) -> @core.ComponentStore[RapierColliderHandle3d] {
   world.get_rapier_collider_handle3d_store()
 }
 
 ///|
-pub fn[W : Has_ContactForceEventThreshold3d] query_get_contact_force_event_threshold3d_store(
+pub fn[W : Has_ContactForceEventThreshold3d] get_contact_force_event_threshold3d_store(
   world : W,
 ) -> @core.ComponentStore[ContactForceEventThreshold3d] {
   world.get_contact_force_event_threshold3d_store()
@@ -159,21 +159,21 @@ pub(open) trait HasRes_Physics3dContext {
 }
 
 ///|
-pub fn[W : HasRes_Physics3dConfig] query_get_physics3d_config_resource(
+pub fn[W : HasRes_Physics3dConfig] get_physics3d_config_resource(
   world : W,
 ) -> @core.Resource[Physics3dConfig] {
   world.get_physics3d_config_resource()
 }
 
 ///|
-pub fn[W : HasRes_Physics3dEvents] query_get_physics3d_events_resource(
+pub fn[W : HasRes_Physics3dEvents] get_physics3d_events_resource(
   world : W,
 ) -> @core.Resource[Physics3dEvents] {
   world.get_physics3d_events_resource()
 }
 
 ///|
-pub fn[W : HasRes_Physics3dContext] query_get_physics3d_context_resource(
+pub fn[W : HasRes_Physics3dContext] get_physics3d_context_resource(
   world : W,
 ) -> @core.Resource[Physics3dContext] {
   world.get_physics3d_context_resource()

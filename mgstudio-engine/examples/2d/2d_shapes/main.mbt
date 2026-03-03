@@ -15,18 +15,14 @@
 ///|
 /// Port of `bevy/examples/2d/2d_shapes.rs`.
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render2d.wireframe2d_plugin])
   .add_startup_system(shapes_setup)
   .add_startup_system(setup_wireframe2d_config)
-  .add_system(
-    @app.system_query2(
-      fn(world) { @math.query_get_transform_store(world) },
-      fn(world) { @render2d.query_get_mesh2d_store(world) },
-      shapes_rotate,
-    ),
+  .add_system_query2_ecs(
+    @math.ecs_key_transform, @render2d.ecs_key_mesh2d, shapes_rotate,
   )
   .run()
 }
@@ -165,8 +161,10 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
-  @ui.query_get_node_store(world).insert(
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -174,12 +172,12 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     tick,
   )
   let text_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    text_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -187,11 +185,9 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    text_entity,
-    @ui.UiText::new(text_handle),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
 }
 
 ///|
@@ -303,26 +299,22 @@ fn shapes_setup(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
   let config = @render2d.Wireframe2dConfig::new(false, @render2d.Color::white())
-  if @render2d.query_get_wireframe2d_config_resource(world).get_ref_mut(tick)
-    is Some(config_ref) {
-    config_ref.val = config
-  } else {
-    @render2d.query_get_wireframe2d_config_resource(world).insert(config, tick)
-  }
+  world.insert_resource(@render2d.ecs_key_wireframe2d_config, config)
 }
 
 ///|
 fn shapes_rotate(
-  query : @core.Query2[@math.Transform, @render2d.Mesh2d],
+  query : @ecs.Query2[@math.Transform, @render2d.Mesh2d],
   world : @ecs.World,
 ) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
-    let tick = world.read_change_tick()
-    if @render2d.query_get_wireframe2d_config_resource(world).get_ref_mut(tick)
-      is Some(config_ref) {
-      config_ref.val = config_ref.val.with_global(!config_ref.val.global)
+    if (try? world.get_resource(@render2d.ecs_key_wireframe2d_config))
+      is Ok(Some(config)) {
+      world.insert_resource(
+        @render2d.ecs_key_wireframe2d_config,
+        config.with_global(!config.global),
+      )
     }
   }
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
@@ -335,14 +327,8 @@ fn shapes_rotate(
 
   let delta_secs = @time.time_delta_seconds()
   let speed = 0.5F
-  let tick = world.read_change_tick()
-  query.update_a(tick, fn(_entity, transform, _mesh) {
+  try! query.for_each(fn(_entity, transform, _mesh) {
     let next_rotation = transform.rotation_z() + speed * delta_secs
-    @math.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(transform.translation.x, transform.translation.y),
-      next_rotation,
-      @math.Vec2::new(transform.scale.x, transform.scale.y),
-      z=transform.translation.z,
-    )
+    transform.rotation = @math.Quat::from_rotation_z(next_rotation)
   })
 }

@@ -117,16 +117,10 @@ fn set_default_opaque_method(
   world : @ecs.World,
   renderer_method : @render3d.OpaqueRendererMethod,
 ) -> Unit {
-  let tick = world.read_change_tick()
-  let resource = @render3d.query_get_default_opaque_renderer_method_resource(
-    world,
+  world.insert_resource(
+    @render3d.ecs_key_default_opaque_renderer_method,
+    @render3d.DefaultOpaqueRendererMethod::new(renderer_method),
   )
-  let value = @render3d.DefaultOpaqueRendererMethod::new(renderer_method)
-  if resource.get_ref_mut(tick) is Some(current) {
-    current.val = value
-  } else {
-    resource.insert(value, tick)
-  }
 }
 
 ///|
@@ -136,49 +130,39 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
   match deferred_state.val.mode {
     Deferred => {
       set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Deferred)
-      @render3d.query_get_normal_prepass_store(world).remove(camera) |> ignore
-      @render3d.query_get_depth_prepass_store(world).insert(
-        camera,
-        @render3d.DepthPrepass::default(),
-        tick,
-      )
-      @render3d.query_get_motion_vector_prepass_store(world).insert(
-        camera,
-        @render3d.MotionVectorPrepass::default(),
-        tick,
-      )
-      @render3d.query_get_deferred_prepass_store(world).insert(
-        camera,
-        @render3d.DeferredPrepass::default(),
-        tick,
-      )
+      world.component(@render3d.ecs_key_normal_prepass).remove(camera) |> ignore
+      world
+      .component(@render3d.ecs_key_depth_prepass)
+      .insert(camera, @render3d.DepthPrepass::default(), tick)
+      world
+      .component(@render3d.ecs_key_motion_vector_prepass)
+      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+      world
+      .component(@render3d.ecs_key_deferred_prepass)
+      .insert(camera, @render3d.DeferredPrepass::default(), tick)
     }
     Forward => {
       set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
-      @render3d.query_get_normal_prepass_store(world).remove(camera) |> ignore
-      @render3d.query_get_depth_prepass_store(world).remove(camera) |> ignore
-      @render3d.query_get_motion_vector_prepass_store(world).remove(camera)
+      world.component(@render3d.ecs_key_normal_prepass).remove(camera) |> ignore
+      world.component(@render3d.ecs_key_depth_prepass).remove(camera) |> ignore
+      world.component(@render3d.ecs_key_motion_vector_prepass).remove(camera)
       |> ignore
-      @render3d.query_get_deferred_prepass_store(world).remove(camera) |> ignore
+      world.component(@render3d.ecs_key_deferred_prepass).remove(camera)
+      |> ignore
     }
     ForwardPrepass => {
       set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
-      @render3d.query_get_normal_prepass_store(world).insert(
-        camera,
-        @render3d.NormalPrepass::default(),
-        tick,
-      )
-      @render3d.query_get_depth_prepass_store(world).insert(
-        camera,
-        @render3d.DepthPrepass::default(),
-        tick,
-      )
-      @render3d.query_get_motion_vector_prepass_store(world).insert(
-        camera,
-        @render3d.MotionVectorPrepass::default(),
-        tick,
-      )
-      @render3d.query_get_deferred_prepass_store(world).remove(camera) |> ignore
+      world
+      .component(@render3d.ecs_key_normal_prepass)
+      .insert(camera, @render3d.NormalPrepass::default(), tick)
+      world
+      .component(@render3d.ecs_key_depth_prepass)
+      .insert(camera, @render3d.DepthPrepass::default(), tick)
+      world
+      .component(@render3d.ecs_key_motion_vector_prepass)
+      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+      world.component(@render3d.ecs_key_deferred_prepass).remove(camera)
+      |> ignore
     }
   }
 }
@@ -207,15 +191,10 @@ fn setup(world : @ecs.World) -> Unit {
   deferred_state.val = default_state()
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
-  let directional_shadow_map_resource = @render3d.query_get_directional_light_shadow_map_resource(
-    world,
+  world.insert_resource(
+    @render3d.ecs_key_directional_light_shadow_map,
+    @render3d.DirectionalLightShadowMap::new(4096),
   )
-  let directional_shadow_map = @render3d.DirectionalLightShadowMap::new(4096)
-  if directional_shadow_map_resource.get_ref_mut(tick) is Some(current) {
-    current.val = directional_shadow_map
-  } else {
-    directional_shadow_map_resource.insert(directional_shadow_map, tick)
-  }
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -225,17 +204,15 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   deferred_state.val.camera = Some(camera)
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_fxaa_store(world).insert(
-    camera,
-    @render3d.Fxaa::default(),
-    tick,
-  )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .component(@render3d.ecs_key_fxaa)
+  .insert(camera, @render3d.Fxaa::default(), tick)
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -247,7 +224,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   deferred_state.val.directional_light = Some(directional_light)
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
       @render3d.CascadeShadowConfigBuilder::default()
@@ -256,7 +235,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional_light,
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(-0.7853981634F),
@@ -278,23 +259,17 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   let helmet_a = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
-    helmet_a,
-    @scene.SceneRoot::new(helmet_scene),
-    tick,
-  )
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(helmet_a, @scene.SceneRoot::new(helmet_scene), tick)
 
   let helmet_b = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
-    helmet_b,
-    @scene.SceneRoot::new(helmet_scene),
-    tick,
-  )
-  @math.query_get_transform_store(world).insert(
-    helmet_b,
-    @math.Transform::from_xyz(-4.0F, 0.0F, -3.0F),
-    tick,
-  )
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(helmet_b, @scene.SceneRoot::new(helmet_scene), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(helmet_b, @math.Transform::from_xyz(-4.0F, 0.0F, -3.0F), tick)
 
   let forward_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -335,25 +310,23 @@ fn setup(world : @ecs.World) -> Unit {
     emissive_material,
     @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
   )
-  @render3d.query_get_not_shadow_caster_store(world).insert(
-    emissive_cube,
-    @render3d.NotShadowCaster::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_not_shadow_caster)
+  .insert(emissive_cube, @render3d.NotShadowCaster::default(), tick)
 
   let point_light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point_light,
     @render3d.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(
       0.125F,
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point_light,
-    @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point_light, @math.Transform::from_xyz(0.4F, 0.5F, -0.8F), tick)
 
   for i in 0..<6 {
     let j = i % 3
@@ -402,16 +375,12 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::splat(1_000_000.0F),
     ),
   )
-  @render3d.query_get_not_shadow_caster_store(world).insert(
-    sky,
-    @render3d.NotShadowCaster::default(),
-    tick,
-  )
-  @render3d.query_get_not_shadow_receiver_store(world).insert(
-    sky,
-    @render3d.NotShadowReceiver::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_not_shadow_caster)
+  .insert(sky, @render3d.NotShadowCaster::default(), tick)
+  world
+  .component(@render3d.ecs_key_not_shadow_receiver)
+  .insert(sky, @render3d.NotShadowReceiver::default(), tick)
 
   let parallax_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::default()
@@ -503,12 +472,14 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     return
   }
   guard deferred_state.val.directional_light is Some(light) else { return }
-  guard @math.query_get_transform_store(world).get(light) is Some(transform) else {
+  guard world.component(@math.ecs_key_transform).get(light) is Some(transform) else {
     return
   }
   let delta_angle = LIGHT_ROTATION_SPEED * @time.time_delta_seconds()
   let tick = world.read_change_tick()
-  @math.query_get_transform_store(world).set(
+  world
+  .component(@math.ecs_key_transform)
+  .set(
     light,
     transform.with_rotation(
       transform.rotation
@@ -529,7 +500,7 @@ fn spin(world : @ecs.World) -> Unit {
   let delta = @time.time_delta_seconds()
   for i in 0..<deferred_state.val.spin_targets.length() {
     let target = deferred_state.val.spin_targets[i]
-    guard @math.query_get_transform_store(world).get(target.entity)
+    guard world.component(@math.ecs_key_transform).get(target.entity)
       is Some(transform) else {
       continue
     }
@@ -539,18 +510,16 @@ fn spin(world : @ecs.World) -> Unit {
       .mul(@math.Quat::from_rotation_x(speed))
       .mul(@math.Quat::from_rotation_z(-speed))
       .normalize()
-    @math.query_get_transform_store(world).set(
-      target.entity,
-      transform.with_rotation(rotation),
-      tick,
-    )
+    world
+    .component(@math.ecs_key_transform)
+    .set(target.entity, transform.with_rotation(rotation), tick)
     |> ignore
   }
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

@@ -69,7 +69,7 @@ let cpu_draw_state : Ref[CpuDrawState] = Ref::new(CpuDrawState::{
 ///|
 pub fn game_app() -> Unit {
   @app.fixed_time_set_timestep_seconds(FIXED_TIMESTEP_SECONDS)
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(cpu_draw_setup)

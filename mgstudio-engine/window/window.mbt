@@ -92,14 +92,14 @@ pub(all) enum KeyCode {
   BracketLeft
   BracketRight
   Quote
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) enum MouseButton {
   Left
   Right
   Middle
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) enum CursorGrabMode {

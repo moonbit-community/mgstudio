@@ -20,7 +20,7 @@ const RES_HEIGHT : Int = 90
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(pixel_grid_snap_setup)
@@ -153,7 +153,7 @@ fn pixel_grid_snap_update(world : @ecs.World) -> Unit {
     @math.Vec2::new(32.0F, 32.0F),
   )
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   transform_store.set(pixel_state.val.pixel_sprite, pixel_transform, tick)
   |> ignore
   transform_store.set(pixel_state.val.high_sprite, high_transform, tick)
@@ -180,7 +180,7 @@ fn pixel_grid_snap_update(world : @ecs.World) -> Unit {
   let min_scale = if h_scale < v_scale { h_scale } else { v_scale }
   let rounded = pixel_grid_round_scale(min_scale)
   let scale = 1.0F / Float::from_double(rounded.to_double())
-  let projection_store = @render2d.query_get_projection_store(world)
+  let projection_store = world.component(@render2d.ecs_key_projection)
   projection_store.set(
     pixel_state.val.outer_camera,
     @render2d.Projection::Orthographic(

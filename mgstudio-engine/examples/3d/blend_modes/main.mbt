@@ -136,7 +136,7 @@ fn blend_modes_display_text(
   world : @ecs.World,
 ) -> String {
   let alpha_text = ((blend_modes_state.val.alpha * 100.0F).round() / 100.0F).to_string()
-  let hdr_on = @render3d.query_get_hdr_store(world).contains(camera_entity)
+  let hdr_on = world.component(@render3d.ecs_key_hdr).contains(camera_entity)
   "  HDR: " + (if hdr_on { "ON " } else { "OFF" }) + "\nAlpha: " + alpha_text
 }
 
@@ -158,8 +158,10 @@ fn setup_ui_overlay(
   |> ignore
 
   let root = world.spawn_empty()
-  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
-  @ui.query_get_node_store(world).insert(
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -174,12 +176,12 @@ fn setup_ui_overlay(
     @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let controls_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    controls_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(controls_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     controls_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -187,11 +189,9 @@ fn setup_ui_overlay(
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    controls_entity,
-    @ui.UiText::new(controls_text),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(controls_entity, @ui.UiText::new(controls_text), tick)
 
   guard blend_modes_state.val.camera is Some(camera_entity) else { return }
   let display_text = spawn_ui_text_handle(
@@ -201,12 +201,12 @@ fn setup_ui_overlay(
     @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let display_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    display_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(display_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     display_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -214,11 +214,9 @@ fn setup_ui_overlay(
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    display_entity,
-    @ui.UiText::new(display_text),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(display_entity, @ui.UiText::new(display_text), tick)
   blend_modes_state.val.display_text = Some(display_text)
 
   let label_color = @render2d.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
@@ -235,12 +233,12 @@ fn setup_ui_overlay(
     let text = pair.1
     let label_text = spawn_ui_text_handle(text, font, 16.0F, label_color)
     let label_node = world.spawn_empty()
-    @hierarchy.query_get_parent_store(world).insert(
-      label_node,
-      @hierarchy.Parent::new(root),
-      tick,
-    )
-    @ui.query_get_node_store(world).insert(
+    world
+    .component(@hierarchy.ecs_key_parent)
+    .insert(label_node, @hierarchy.Parent::new(root), tick)
+    world
+    .component(@ui.ecs_key_node)
+    .insert(
       label_node,
       @ui.Node::default()
       .with_position_type(@ui.PositionType::Absolute)
@@ -248,11 +246,9 @@ fn setup_ui_overlay(
       .with_top(@ui.Val::Px(0.0F)),
       tick,
     )
-    @ui.query_get_ui_text_store(world).insert(
-      label_node,
-      @ui.UiText::new(label_text),
-      tick,
-    )
+    world
+    .component(@ui.ecs_key_ui_text)
+    .insert(label_node, @ui.UiText::new(label_text), tick)
     blend_modes_state.val.labels.push({ node: label_node, target })
   }
 }
@@ -347,11 +343,11 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     blend_modes_display_text(camera_entity, world),
   )
 
-  let camera_store = @render2d.query_get_camera_store(world)
+  let camera_store = world.component(@render2d.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = @render3d.query_get_camera_projection3d_store(world)
+  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
@@ -362,7 +358,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
   )
   let scale_factor = @window.window_scale_factor()
   let tick = world.read_change_tick()
-  let node_store = @ui.query_get_node_store(world)
+  let node_store = world.component(@ui.ecs_key_node)
 
   for label in state.labels {
     guard transform_store.get(label.target) is Some(target_transform) else {
@@ -508,16 +504,12 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
-    light,
-    @render3d.PointLight::default(),
-    tick,
-  )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(light, @render3d.PointLight::default(), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -526,11 +518,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
   blend_modes_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -571,7 +561,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
   guard state.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   if @input.key_just_pressed(@window.KeyCode::KeyH) {
-    let hdr_store = @render3d.query_get_hdr_store(world)
+    let hdr_store = world.component(@render3d.ecs_key_hdr)
     if hdr_store.contains(camera_entity) {
       hdr_store.remove(camera_entity) |> ignore
     } else {
@@ -580,7 +570,9 @@ fn example_control_system(world : @ecs.World) -> Unit {
   }
   let camera_x = @math.sin(state.camera_angle) * CAMERA_RADIUS
   let camera_z = @math.cos(state.camera_angle) * CAMERA_RADIUS
-  @math.query_get_transform_store(world).set(
+  world
+  .component(@math.ecs_key_transform)
+  .set(
     camera_entity,
     @math.Transform::from_xyz(camera_x, 2.5F, camera_z).looking_at(
       @math.Vec3::zero(),
@@ -616,7 +608,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

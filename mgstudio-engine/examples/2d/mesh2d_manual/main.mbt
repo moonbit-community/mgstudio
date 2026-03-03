@@ -23,7 +23,7 @@ const STAR_INNER_RADIUS : Float = 100.0F
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_manual_setup)
@@ -40,11 +40,10 @@ fn mesh2d_manual_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(1.0F, 1.0F),
     z=0.0F,
   )
-  @render2d.Mesh2dBundle::new(star, material, transform).spawn_ecs(world)
-  |> ignore
+  @render2d.Mesh2dBundle::new(star, material, transform).spawn(world) |> ignore
 
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore

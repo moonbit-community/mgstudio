@@ -20,7 +20,7 @@ const PANEL_OFFSET : Float = 96.0F
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(mesh2d_vertex_color_texture_setup)
@@ -39,7 +39,7 @@ fn mesh2d_vertex_color_texture_setup(world : @ecs.World) -> Unit {
   @render2d.Camera2dBundle::new(
     @render2d.Camera::default(),
     @math.Transform::identity(),
-  ).spawn_ecs(world)
+  ).spawn(world)
   |> ignore
 }
 
@@ -85,6 +85,5 @@ fn spawn_colored_panel(
     0.0F,
     @math.Vec2::new(PANEL_SCALE, PANEL_SCALE),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn_ecs(world)
-  |> ignore
+  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
 }

@@ -19,6 +19,30 @@ pub let ecs_components : Array[String]
 
 pub let ecs_resources : Array[String]
 
+pub fn[W : Has_ActiveCollisionTypes3d] get_active_collision_types3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveCollisionTypes3d]
+
+pub fn[W : Has_ActiveEvents3d] get_active_events3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveEvents3d]
+
+pub fn[W : Has_ActiveHooks3d] get_active_hooks3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveHooks3d]
+
+pub fn[W : Has_Collider3d] get_collider3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Collider3d]
+
+pub fn[W : Has_ContactForceEventThreshold3d] get_contact_force_event_threshold3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold3d]
+
+pub fn[W : HasRes_Physics3dConfig] get_physics3d_config_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dConfig]
+
+pub fn[W : HasRes_Physics3dContext] get_physics3d_context_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dContext]
+
+pub fn[W : HasRes_Physics3dEvents] get_physics3d_events_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dEvents]
+
+pub fn[W : Has_RapierBodyHandle3d] get_rapier_body_handle3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle3d]
+
+pub fn[W : Has_RapierColliderHandle3d] get_rapier_collider_handle3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierColliderHandle3d]
+
+pub fn[W : Has_RigidBody3d] get_rigid_body3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RigidBody3d]
+
+pub fn[W : Has_Velocity3d] get_velocity3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Velocity3d]
+
 pub fn iso3_to_mg_transform(@Milky2018/moon_rapier/core.Isometry3) -> @math.Transform
 
 pub fn mg_quat_to_rapier(@math.Quat) -> @Milky2018/moon_rapier/core.Quat
@@ -64,30 +88,6 @@ pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(W) -> 
 pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_system(W) -> Unit
 
 pub fn[W : Physics3dWritebackWorld] physics3d_writeback_system(W) -> Unit
-
-pub fn[W : Has_ActiveCollisionTypes3d] query_get_active_collision_types3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveCollisionTypes3d]
-
-pub fn[W : Has_ActiveEvents3d] query_get_active_events3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveEvents3d]
-
-pub fn[W : Has_ActiveHooks3d] query_get_active_hooks3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ActiveHooks3d]
-
-pub fn[W : Has_Collider3d] query_get_collider3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Collider3d]
-
-pub fn[W : Has_ContactForceEventThreshold3d] query_get_contact_force_event_threshold3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[ContactForceEventThreshold3d]
-
-pub fn[W : HasRes_Physics3dConfig] query_get_physics3d_config_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dConfig]
-
-pub fn[W : HasRes_Physics3dContext] query_get_physics3d_context_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dContext]
-
-pub fn[W : HasRes_Physics3dEvents] query_get_physics3d_events_resource(W) -> @Milky2018/mgstudio/core.Resource[Physics3dEvents]
-
-pub fn[W : Has_RapierBodyHandle3d] query_get_rapier_body_handle3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierBodyHandle3d]
-
-pub fn[W : Has_RapierColliderHandle3d] query_get_rapier_collider_handle3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RapierColliderHandle3d]
-
-pub fn[W : Has_RigidBody3d] query_get_rigid_body3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[RigidBody3d]
-
-pub fn[W : Has_Velocity3d] query_get_velocity3d_store(W) -> @Milky2018/mgstudio/core.ComponentStore[Velocity3d]
 
 pub fn rapier_quat_to_mg(@Milky2018/moon_rapier/core.Quat) -> @math.Quat
 

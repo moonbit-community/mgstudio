@@ -31,14 +31,14 @@ pub(open) trait Has_Children {
 }
 
 ///|
-pub fn[W : Has_Parent] query_get_parent_store(
+pub fn[W : Has_Parent] get_parent_store(
   world : W,
 ) -> @core.ComponentStore[Parent] {
   world.get_parent_store()
 }
 
 ///|
-pub fn[W : Has_Children] query_get_children_store(
+pub fn[W : Has_Children] get_children_store(
   world : W,
 ) -> @core.ComponentStore[Children] {
   world.get_children_store()

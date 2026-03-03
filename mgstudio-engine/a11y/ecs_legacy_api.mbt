@@ -26,7 +26,7 @@ pub(open) trait HasRes_A11yState {
 }
 
 ///|
-pub fn[W : HasRes_A11yState] query_get_a11y_state_resource(
+pub fn[W : HasRes_A11yState] get_a11y_state_resource(
   world : W,
 ) -> @core.Resource[A11yState] {
   world.get_a11y_state_resource()

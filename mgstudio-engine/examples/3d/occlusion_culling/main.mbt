@@ -217,19 +217,15 @@ fn setup(world : @ecs.World) -> Unit {
   occlusion_state.val.large_cube = Some(large_cube)
 
   let light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
-    light,
-    @render3d.DirectionalLight::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(light, @render3d.DirectionalLight::default(), tick)
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
   )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::identity().with_rotation(light_rot),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::identity().with_rotation(light_rot), tick)
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -239,16 +235,12 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   occlusion_state.val.camera = Some(camera)
-  @render3d.query_get_depth_prepass_store(world).insert(
-    camera,
-    @render3d.DepthPrepass::default(),
-    tick,
-  )
-  @render3d.query_get_occlusion_culling_store(world).insert(
-    camera,
-    @render3d.OcclusionCulling::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_depth_prepass)
+  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  world
+  .component(@render3d.ecs_key_occlusion_culling)
+  .insert(camera, @render3d.OcclusionCulling::default(), tick)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -285,7 +277,9 @@ fn spin_small_cubes(world : @ecs.World) -> Unit {
       cube.local_position,
       occlusion_state.val.sphere_angle,
     )
-    @math.query_get_transform_store(world).set(
+    world
+    .component(@math.ecs_key_transform)
+    .set(
       cube.entity,
       @math.Transform::from_xyz(position.x, position.y, position.z),
       tick,
@@ -297,7 +291,7 @@ fn spin_small_cubes(world : @ecs.World) -> Unit {
 ///|
 fn spin_large_cube(world : @ecs.World) -> Unit {
   guard occlusion_state.val.large_cube is Some(large_cube) else { return }
-  guard @math.query_get_transform_store(world).get(large_cube)
+  guard world.component(@math.ecs_key_transform).get(large_cube)
     is Some(transform) else {
     return
   }
@@ -308,11 +302,9 @@ fn spin_large_cube(world : @ecs.World) -> Unit {
     .mul(@math.Quat::from_rotation_z(0.35F * speed))
     .normalize()
   let tick = world.read_change_tick()
-  @math.query_get_transform_store(world).set(
-    large_cube,
-    transform.with_rotation(rotation),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .set(large_cube, transform.with_rotation(rotation), tick)
   |> ignore
 }
 
@@ -325,13 +317,11 @@ fn toggle_occlusion_culling_on_request(world : @ecs.World) -> Unit {
   if occlusion_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
     if occlusion_state.val.occlusion_enabled {
-      @render3d.query_get_occlusion_culling_store(world).insert(
-        camera,
-        @render3d.OcclusionCulling::default(),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_occlusion_culling)
+      .insert(camera, @render3d.OcclusionCulling::default(), tick)
     } else {
-      @render3d.query_get_occlusion_culling_store(world).remove(camera)
+      world.component(@render3d.ecs_key_occlusion_culling).remove(camera)
       |> ignore
     }
   }
@@ -348,7 +338,7 @@ fn update_status_text(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

@@ -107,7 +107,7 @@ fn set_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let visibility_store = @visibility.query_get_visibility_store(world)
+  let visibility_store = world.component(@visibility.ecs_key_visibility)
   if visibility_store.contains(entity) {
     visibility_store.set(entity, value, tick) |> ignore
   } else {
@@ -136,7 +136,9 @@ fn set_primitive_transform(
   transform : @math.Transform,
 ) -> Unit {
   let tick = world.read_change_tick()
-  @math.query_get_transform_store(world).set(primitive.entity, transform, tick)
+  world
+  .component(@math.ecs_key_transform)
+  .set(primitive.entity, transform, tick)
   |> ignore
 }
 
@@ -325,12 +327,16 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   let tick = world.read_change_tick()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional_light,
     @math.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
@@ -544,7 +550,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

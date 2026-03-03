@@ -207,7 +207,7 @@ fn set_entity_visibility(
     @visibility.Visibility::Hidden
   }
   let tick = world.read_change_tick()
-  let store = @visibility.query_get_visibility_store(world)
+  let store = world.component(@visibility.ecs_key_visibility)
   if store.contains(actual) {
     store.set(actual, value, tick) |> ignore
   } else {
@@ -241,12 +241,12 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   let probe = world.spawn_empty()
   reflection_probes_state.val.reflection_probe = Some(probe)
 
-  @render3d.query_get_light_probe_store(world).insert(
-    probe,
-    @render3d.LightProbe::default(),
-    tick,
-  )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_light_probe)
+  .insert(probe, @render3d.LightProbe::default(), tick)
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     probe,
     @render3d.EnvironmentMapLight::new(
       reflection_probes_state.val.diffuse_environment_map,
@@ -255,12 +255,12 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_parallax_correction_store(world).insert(
-    probe,
-    @render3d.ParallaxCorrection::None,
-    tick,
-  )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@render3d.ecs_key_parallax_correction)
+  .insert(probe, @render3d.ParallaxCorrection::None, tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     probe,
     @math.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
     tick,
@@ -273,11 +273,11 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   remove_reflection_probe(world)
-  @render3d.query_get_environment_map_light_store(world).remove(camera)
+  world.component(@render3d.ecs_key_environment_map_light).remove(camera)
   |> ignore
-  @render3d.query_get_generated_environment_map_light_store(world).remove(
-    camera,
-  )
+  world
+  .component(@render3d.ecs_key_generated_environment_map_light)
+  .remove(camera)
   |> ignore
 
   match reflection_probes_state.val.reflection_mode {
@@ -287,11 +287,9 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         false,
       )
-      @render3d.query_get_environment_map_light_store(world).insert(
-        camera,
-        create_camera_environment_map_light(),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_environment_map_light)
+      .insert(camera, create_camera_environment_map_light(), tick)
     }
     ReflectionMode::ReflectionProbe => {
       set_entity_visibility(
@@ -299,11 +297,9 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         true,
       )
-      @render3d.query_get_environment_map_light_store(world).insert(
-        camera,
-        create_camera_environment_map_light(),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_environment_map_light)
+      .insert(camera, create_camera_environment_map_light(), tick)
       spawn_reflection_probe(world)
     }
     ReflectionMode::GeneratedEnvironmentMap => {
@@ -312,7 +308,9 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         reflection_probes_state.val.cubes_scene,
         false,
       )
-      @render3d.query_get_generated_environment_map_light_store(world).insert(
+      world
+      .component(@render3d.ecs_key_generated_environment_map_light)
+      .insert(
         camera,
         @render3d.GeneratedEnvironmentMapLight::new(
           reflection_probes_state.val.specular_environment_map,
@@ -357,24 +355,20 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   reflection_probes_state.val.camera = Some(camera)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_exposure_store(world).insert(
-    camera,
-    @render3d.Exposure::new(11.0F),
-    tick,
-  )
-  @render3d.query_get_tonemapping_store(world).insert(
-    camera,
-    @render3d.Tonemapping::AcesFitted,
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_exposure)
+  .insert(camera, @render3d.Exposure::new(11.0F), tick)
+  world
+  .component(@render3d.ecs_key_tonemapping)
+  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
   if reflection_probes_state.val.specular_environment_map
     is Some(specular_env_map) {
-    @render3d.query_get_skybox_store(world).insert(
+    world
+    .component(@render3d.ecs_key_skybox)
+    .insert(
       camera,
       @render3d.Skybox::new(specular_env_map, ENV_MAP_INTENSITY),
       tick,
@@ -395,7 +389,9 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let cubes_scene = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     cubes_scene,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -519,7 +515,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     return
   }
   guard reflection_probes_state.val.camera is Some(camera) else { return }
-  guard @math.query_get_transform_store(world).get(camera) is Some(transform) else {
+  guard world.component(@math.ecs_key_transform).get(camera) is Some(transform) else {
     return
   }
 
@@ -531,7 +527,9 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   let rotated_x = cos_v * x - sin_v * z
   let rotated_z = sin_v * x + cos_v * z
 
-  @math.query_get_transform_store(world).set(
+  world
+  .component(@math.ecs_key_transform)
+  .set(
     camera,
     @math.Transform::from_xyz(rotated_x, transform.translation.y, rotated_z).looking_at(
       @math.Vec3::zero(),
@@ -544,7 +542,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

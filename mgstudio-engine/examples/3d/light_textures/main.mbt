@@ -191,7 +191,7 @@ fn set_proxy_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  @visibility.query_get_visibility_store(world).insert(proxy, value, tick)
+  world.component(@visibility.ecs_key_visibility).insert(proxy, value, tick)
 }
 
 ///|
@@ -199,7 +199,7 @@ fn update_directional_light(world : @ecs.World) -> Unit {
   guard light_textures_state.val.directional_light is Some(entity) else {
     return
   }
-  guard @render3d.query_get_directional_light_store(world).get(entity)
+  guard world.component(@render3d.ecs_key_directional_light).get(entity)
     is Some(light) else {
     return
   }
@@ -213,23 +213,23 @@ fn update_directional_light(world : @ecs.World) -> Unit {
   } else {
     MAIN_LIGHT_INTENSITY
   }
-  @render3d.query_get_directional_light_store(world).set(
-    entity,
-    light.with_illuminance(next_illuminance),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .set(entity, light.with_illuminance(next_illuminance), tick)
   |> ignore
 
   if light_textures_state.val.directional_visible {
     if light_textures_state.val.directional_texture is Some(texture) {
-      @render3d.query_get_directional_light_texture_store(world).insert(
+      world
+      .component(@render3d.ecs_key_directional_light_texture)
+      .insert(
         entity,
         @render3d.DirectionalLightTexture::new(Some(texture), true),
         tick,
       )
     }
   } else {
-    @render3d.query_get_directional_light_texture_store(world).remove(entity)
+    world.component(@render3d.ecs_key_directional_light_texture).remove(entity)
     |> ignore
   }
 }
@@ -238,34 +238,30 @@ fn update_directional_light(world : @ecs.World) -> Unit {
 fn apply_light_visibility(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if light_textures_state.val.spot_light is Some(spot_entity) {
-    if @render3d.query_get_spot_light_store(world).get(spot_entity)
+    if world.component(@render3d.ecs_key_spot_light).get(spot_entity)
       is Some(spot) {
       let intensity = if light_textures_state.val.spot_visible {
         SPOT_LIGHT_INTENSITY
       } else {
         0.0F
       }
-      @render3d.query_get_spot_light_store(world).set(
-        spot_entity,
-        spot.with_intensity(intensity),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_spot_light)
+      .set(spot_entity, spot.with_intensity(intensity), tick)
       |> ignore
     }
   }
   if light_textures_state.val.point_light is Some(point_entity) {
-    if @render3d.query_get_point_light_store(world).get(point_entity)
+    if world.component(@render3d.ecs_key_point_light).get(point_entity)
       is Some(point) {
       let intensity = if light_textures_state.val.point_visible {
         POINT_LIGHT_INTENSITY
       } else {
         0.0F
       }
-      @render3d.query_get_point_light_store(world).set(
-        point_entity,
-        point.with_intensity(intensity),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_point_light)
+      .set(point_entity, point.with_intensity(intensity), tick)
       |> ignore
     }
   }
@@ -329,7 +325,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   light_textures_state.val.directional_light = Some(directional)
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(
       @render2d.Color::white(),
@@ -338,7 +336,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional,
     @math.Transform::from_xyz(8.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::zero(),
@@ -349,7 +349,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let spot = world.spawn_empty()
   light_textures_state.val.spot_light = Some(spot)
-  @render3d.query_get_spot_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_spot_light)
+  .insert(
     spot,
     @render3d.SpotLight::new(
       @render2d.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
@@ -361,14 +363,18 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_spot_light_texture_store(world).insert(
+  world
+  .component(@render3d.ecs_key_spot_light_texture)
+  .insert(
     spot,
     @render3d.SpotLightTexture::new(
       Some(asset_server.load("branding/icon.png")),
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     spot,
     @math.Transform::from_xyz(6.0F, 1.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
@@ -379,7 +385,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let point = world.spawn_empty()
   light_textures_state.val.point_light = Some(point)
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
@@ -389,7 +397,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_point_light_texture_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light_texture)
+  .insert(
     point,
     @render3d.PointLightTexture::new(
       Some(asset_server.load("branding/icon.png")),
@@ -397,11 +407,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point,
-    @math.Transform::from_xyz(0.0F, 1.8F, 0.01F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point, @math.Transform::from_xyz(0.0F, 1.8F, 0.01F), tick)
 
   let spot_proxy_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
@@ -473,14 +481,16 @@ fn apply_camera_drag(
   delta : @math.Vec2,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard @math.query_get_transform_store(world).get(camera_entity)
+  guard world.component(@math.ecs_key_transform).get(camera_entity)
     is Some(transform) else {
     return
   }
   let next_translation = transform.translation.add(
     @math.Vec3::new(-delta.x * MOVE_SPEED, delta.y * MOVE_SPEED, 0.0F),
   )
-  @math.query_get_transform_store(world).set(
+  world
+  .component(@math.ecs_key_transform)
+  .set(
     camera_entity,
     transform
     .with_translation(next_translation)
@@ -497,7 +507,7 @@ fn apply_selection_drag(
   delta : @math.Vec2,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard @math.query_get_transform_store(world).get(entity) is Some(transform) else {
+  guard world.component(@math.ecs_key_transform).get(entity) is Some(transform) else {
     return
   }
   match light_textures_state.val.drag_mode {
@@ -505,15 +515,15 @@ fn apply_selection_drag(
       let next_translation = transform.translation.add(
         @math.Vec3::new(delta.x * MOVE_SPEED, -delta.y * MOVE_SPEED, 0.0F),
       )
-      @math.query_get_transform_store(world).set(
-        entity,
-        transform.with_translation(next_translation),
-        tick,
-      )
+      world
+      .component(@math.ecs_key_transform)
+      .set(entity, transform.with_translation(next_translation), tick)
       |> ignore
       if light_textures_state.val.selection == Selection::SpotLight {
         if light_textures_state.val.spot_proxy is Some(proxy) {
-          @math.query_get_transform_store(world).set(
+          world
+          .component(@math.ecs_key_transform)
+          .set(
             proxy,
             @math.Transform::from_xyz(
               next_translation.x,
@@ -527,7 +537,9 @@ fn apply_selection_drag(
       }
       if light_textures_state.val.selection == Selection::PointLight {
         if light_textures_state.val.point_proxy is Some(proxy) {
-          @math.query_get_transform_store(world).set(
+          world
+          .component(@math.ecs_key_transform)
+          .set(
             proxy,
             @math.Transform::from_xyz(
               next_translation.x,
@@ -542,7 +554,7 @@ fn apply_selection_drag(
     }
     DragMode::Scale =>
       if light_textures_state.val.selection == Selection::SpotLight {
-        guard @render3d.query_get_spot_light_store(world).get(entity)
+        guard world.component(@render3d.ecs_key_spot_light).get(entity)
           is Some(spot) else {
           return
         }
@@ -551,7 +563,9 @@ fn apply_selection_drag(
           0.01F,
           0.78539816339F,
         )
-        @render3d.query_get_spot_light_store(world).set(
+        world
+        .component(@render3d.ecs_key_spot_light)
+        .set(
           entity,
           spot.with_outer_angle(next_angle).with_inner_angle(next_angle),
           tick,
@@ -559,7 +573,9 @@ fn apply_selection_drag(
         |> ignore
       } else {
         let next = maxf(0.20F, transform.scale.x + delta.y * SCALE_SPEED)
-        @math.query_get_transform_store(world).set(
+        world
+        .component(@math.ecs_key_transform)
+        .set(
           entity,
           transform.with_scale(@math.Vec3::new(next, next, transform.scale.z)),
           tick,
@@ -570,11 +586,9 @@ fn apply_selection_drag(
       let rotation = transform.rotation
         .mul(@math.Quat::from_rotation_z(delta.x * ROLL_SPEED))
         .normalize()
-      @math.query_get_transform_store(world).set(
-        entity,
-        transform.with_rotation(rotation),
-        tick,
-      )
+      world
+      .component(@math.ecs_key_transform)
+      .set(entity, transform.with_rotation(rotation), tick)
       |> ignore
     }
   }
@@ -667,7 +681,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
   guard light_textures_state.val.rotating_cube is Some(cube_entity) else {
     return
   }
-  guard @math.query_get_transform_store(world).get(cube_entity)
+  guard world.component(@math.ecs_key_transform).get(cube_entity)
     is Some(transform) else {
     return
   }
@@ -676,17 +690,15 @@ fn rotate_cube(world : @ecs.World) -> Unit {
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED * delta * 60.0F))
     .normalize()
-  @math.query_get_transform_store(world).set(
-    cube_entity,
-    transform.with_rotation(rotation),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .set(cube_entity, transform.with_rotation(rotation), tick)
   |> ignore
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

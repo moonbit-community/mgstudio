@@ -18,7 +18,7 @@ pub(all) enum DecalRenderMode3d {
   ForwardOnly
   ClusteredOnly
   ForwardAndClustered
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn DecalRenderMode3d::default() -> DecalRenderMode3d {
@@ -30,7 +30,7 @@ pub struct CameraDecalConfig3d {
   mode : DecalRenderMode3d
   requires_depth_prepass : Bool
   clustered_requires_deferred_prepass : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn CameraDecalConfig3d::default() -> CameraDecalConfig3d {
@@ -70,7 +70,7 @@ pub(all) enum CameraDeferredMode3d {
   Auto
   Forward
   Deferred
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn CameraDeferredMode3d::default() -> CameraDeferredMode3d {
@@ -81,7 +81,7 @@ pub fn CameraDeferredMode3d::default() -> CameraDeferredMode3d {
 pub struct CameraDeferredConfig3d {
   mode : CameraDeferredMode3d
   requires_deferred_prepass : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn CameraDeferredConfig3d::default() -> CameraDeferredConfig3d {
@@ -119,7 +119,7 @@ pub struct AutoExposure {
   exponential_transition_distance : Float
   compensation_ev : Float
   metering_mask : @asset.Handle[@asset.Image]?
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn AutoExposure::default() -> AutoExposure {
@@ -243,7 +243,7 @@ pub fn AutoExposure::with_metering_mask(
 pub(all) enum DepthOfFieldMode {
   Bokeh
   Gaussian
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn DepthOfFieldMode::default() -> DepthOfFieldMode {
@@ -259,7 +259,7 @@ pub struct DepthOfField {
   aperture_f_stops : Float
   max_circle_of_confusion_diameter : Float
   max_depth : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn DepthOfField::default() -> DepthOfField {
@@ -379,7 +379,7 @@ pub struct Camera3d {
   atmosphere_settings : AtmosphereSettings?
   auto_exposure : AutoExposure?
   depth_of_field : DepthOfField?
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Camera3d::default() -> Camera3d {
@@ -465,7 +465,7 @@ pub struct PerspectiveProjection3d {
   near : Float
   far : Float
   aspect_ratio : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn PerspectiveProjection3d::default() -> PerspectiveProjection3d {
@@ -544,7 +544,7 @@ pub struct OrthographicProjection3d {
   near : Float
   far : Float
   scaling_mode : OrthographicScalingMode3d
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) enum OrthographicScalingMode3d {
@@ -552,7 +552,7 @@ pub(all) enum OrthographicScalingMode3d {
   // Legacy alias kept for backward compatibility with earlier mgstudio APIs.
   Scale
   FixedVertical(Float)
-}
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 fn orthographic_scaling_mode_sanitize(
@@ -625,7 +625,7 @@ pub fn OrthographicProjection3d::with_scaling_mode(
 pub(all) enum Projection3d {
   Perspective(PerspectiveProjection3d)
   Orthographic(OrthographicProjection3d)
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Projection3d::perspective_default() -> Projection3d {
@@ -640,7 +640,7 @@ pub fn Projection3d::orthographic_default() -> Projection3d {
 ///|
 pub struct CameraProjection3d {
   projection : Projection3d
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn CameraProjection3d::default() -> CameraProjection3d {
@@ -666,7 +666,7 @@ pub struct SubCameraView3d {
   full_size : @math.IVec2
   offset : @math.Vec2
   size : @math.IVec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 fn sub_camera_view3d_sanitize(
@@ -722,7 +722,7 @@ pub struct FreeCamera {
   run_speed : Float
   scroll_factor : Float
   friction : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn FreeCamera::default() -> FreeCamera {
@@ -789,7 +789,7 @@ let free_camera_system_state : Ref[FreeCameraSystemState] = Ref::new(FreeCameraS
 pub struct ChromaticAberration {
   intensity : Float
   max_samples : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ChromaticAberration::default() -> ChromaticAberration {
@@ -837,7 +837,7 @@ pub struct Vignette {
   center : @math.Vec2
   edge_compensation : Float
   color : @render2d.Color
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Vignette::default() -> Vignette {
@@ -949,7 +949,7 @@ pub fn Vignette::with_color(
 pub struct MotionBlur {
   shutter_angle : Float
   samples : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn MotionBlur::default() -> MotionBlur {
@@ -990,7 +990,7 @@ pub(all) enum Msaa {
   Sample2
   Sample4
   Sample8
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn Msaa::default() -> Msaa {
@@ -1027,7 +1027,7 @@ pub(all) enum FxaaSensitivity {
   High
   Ultra
   Extreme
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn FxaaSensitivity::default() -> FxaaSensitivity {
@@ -1042,7 +1042,7 @@ pub struct Fxaa {
   enabled : Bool
   edge_threshold : FxaaSensitivity
   edge_threshold_min : FxaaSensitivity
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Fxaa::default() -> Fxaa {
@@ -1098,7 +1098,7 @@ pub fn Fxaa::with_sensitivity(
 
 ///|
 /// Marker component aligned with Bevy's `DepthPrepass`.
-pub struct DepthPrepass {}
+pub struct DepthPrepass {} derive(ToJson, FromJson)
 
 ///|
 pub fn DepthPrepass::default() -> DepthPrepass {
@@ -1107,7 +1107,7 @@ pub fn DepthPrepass::default() -> DepthPrepass {
 
 ///|
 /// Marker component aligned with Bevy's `NormalPrepass`.
-pub struct NormalPrepass {}
+pub struct NormalPrepass {} derive(ToJson, FromJson)
 
 ///|
 pub fn NormalPrepass::default() -> NormalPrepass {
@@ -1116,7 +1116,7 @@ pub fn NormalPrepass::default() -> NormalPrepass {
 
 ///|
 /// Marker component aligned with Bevy's `MotionVectorPrepass`.
-pub struct MotionVectorPrepass {}
+pub struct MotionVectorPrepass {} derive(ToJson, FromJson)
 
 ///|
 pub fn MotionVectorPrepass::default() -> MotionVectorPrepass {
@@ -1125,7 +1125,7 @@ pub fn MotionVectorPrepass::default() -> MotionVectorPrepass {
 
 ///|
 /// Marker component aligned with Bevy's `DeferredPrepass`.
-pub struct DeferredPrepass {}
+pub struct DeferredPrepass {} derive(ToJson, FromJson)
 
 ///|
 pub fn DeferredPrepass::default() -> DeferredPrepass {
@@ -1137,7 +1137,7 @@ pub fn DeferredPrepass::default() -> DeferredPrepass {
 ///
 /// Current runtime note: this records per-camera occlusion-culling intent as an
 /// ECS surface for parity and migration sequencing.
-pub struct OcclusionCulling {}
+pub struct OcclusionCulling {} derive(ToJson, FromJson)
 
 ///|
 pub fn OcclusionCulling::default() -> OcclusionCulling {
@@ -1146,7 +1146,7 @@ pub fn OcclusionCulling::default() -> OcclusionCulling {
 
 ///|
 /// Marker component aligned with Bevy's `NotShadowCaster`.
-pub struct NotShadowCaster {}
+pub struct NotShadowCaster {} derive(ToJson, FromJson)
 
 ///|
 pub fn NotShadowCaster::default() -> NotShadowCaster {
@@ -1155,7 +1155,7 @@ pub fn NotShadowCaster::default() -> NotShadowCaster {
 
 ///|
 /// Marker component aligned with Bevy's `NotShadowReceiver`.
-pub struct NotShadowReceiver {}
+pub struct NotShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
 pub fn NotShadowReceiver::default() -> NotShadowReceiver {
@@ -1167,7 +1167,7 @@ pub fn NotShadowReceiver::default() -> NotShadowReceiver {
 ///
 /// Current runtime note: this backend records transmitted-shadow intent as ECS
 /// API parity; transmitted shadowing itself remains backend-adapted.
-pub struct TransmittedShadowReceiver {}
+pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
 pub fn TransmittedShadowReceiver::default() -> TransmittedShadowReceiver {
@@ -1184,7 +1184,7 @@ pub struct OrderIndependentTransparencySettings {
   sorted_fragment_max_count : Int
   fragments_per_pixel_average : Float
   alpha_threshold : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 fn oit_safe_sorted_fragment_max_count(value : Int) -> Int {
@@ -1282,7 +1282,7 @@ pub fn OrderIndependentTransparencySettings::with_alpha_threshold(
 /// Camera temporal AA settings aligned with Bevy's `TemporalAntiAliasing`.
 pub struct TemporalAntiAliasing {
   reset : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn TemporalAntiAliasing::default() -> TemporalAntiAliasing {
@@ -1310,7 +1310,7 @@ pub fn TemporalAntiAliasing::with_reset(
 /// Camera jitter settings aligned with Bevy's `TemporalJitter`.
 pub struct TemporalJitter {
   offset : @math.Vec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn TemporalJitter::default() -> TemporalJitter {
@@ -1333,7 +1333,7 @@ pub fn TemporalJitter::with_offset(
 
 ///|
 /// Marker component aligned with Bevy's `Hdr`.
-pub struct Hdr {}
+pub struct Hdr {} derive(ToJson, FromJson)
 
 ///|
 pub fn Hdr::default() -> Hdr {
@@ -1356,7 +1356,7 @@ const EXPOSURE_EV100_BLENDER : Float = 9.7F
 /// Camera exposure settings aligned with Bevy's `Exposure`.
 pub struct Exposure {
   ev100 : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Exposure::default() -> Exposure {
@@ -1435,7 +1435,7 @@ pub struct ColorGradingGlobal {
   post_saturation : Float
   midtones_start : Float
   midtones_end : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ColorGradingGlobal::default() -> ColorGradingGlobal {
@@ -1533,7 +1533,7 @@ pub struct ColorGradingSection {
   gamma : Float
   gain : Float
   lift : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ColorGradingSection::default() -> ColorGradingSection {
@@ -1618,7 +1618,7 @@ pub struct ColorGradingSettings {
   shadows : ColorGradingSection
   midtones : ColorGradingSection
   highlights : ColorGradingSection
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ColorGradingSettings::default() -> ColorGradingSettings {
@@ -1671,7 +1671,7 @@ pub struct ColorGrading {
   shadows : ColorGradingSection
   midtones : ColorGradingSection
   highlights : ColorGradingSection
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ColorGrading::default() -> ColorGrading {
@@ -1772,7 +1772,7 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn Tonemapping::default() -> Tonemapping {
@@ -1784,7 +1784,7 @@ pub fn Tonemapping::default() -> Tonemapping {
 pub(all) enum DebandDither {
   Disabled
   Enabled
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn DebandDither::default() -> DebandDither {
@@ -1795,7 +1795,7 @@ pub fn DebandDither::default() -> DebandDither {
 pub struct BloomPrefilter {
   threshold : Float
   threshold_softness : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn BloomPrefilter::default() -> BloomPrefilter {
@@ -1843,7 +1843,7 @@ pub fn BloomPrefilter::with_threshold_softness(
 pub(all) enum BloomCompositeMode {
   EnergyConserving
   Additive
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn BloomCompositeMode::default() -> BloomCompositeMode {
@@ -1864,7 +1864,7 @@ pub struct Bloom {
   composite_mode : BloomCompositeMode
   max_mip_dimension : Int
   scale : @math.Vec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Bloom::default() -> Bloom {
@@ -2062,7 +2062,7 @@ pub struct Skybox {
   image : @asset.Handle[@asset.Image]?
   brightness : Float
   rotation : @math.Quat
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Skybox::default() -> Skybox {
@@ -2116,7 +2116,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
   Medium
   High
   Ultra
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> ScreenSpaceAmbientOcclusionQualityLevel {
@@ -2129,7 +2129,7 @@ pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> ScreenSpaceAmbientO
 pub struct ScreenSpaceAmbientOcclusion {
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel
   constant_object_thickness : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceAmbientOcclusion::default() -> ScreenSpaceAmbientOcclusion {
@@ -2168,7 +2168,7 @@ pub struct ContactShadows {
   linear_steps : Int
   thickness : Float
   length : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ContactShadows::default() -> ContactShadows {
@@ -2230,7 +2230,7 @@ pub(all) enum ShadowFilteringMethod {
   Hardware2x2
   Gaussian
   Temporal
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
@@ -2245,7 +2245,7 @@ pub(all) enum ScreenSpaceTransmissionQuality {
   Medium
   High
   Ultra
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {
@@ -2258,7 +2258,7 @@ pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuali
 pub struct ScreenSpaceTransmission {
   quality : ScreenSpaceTransmissionQuality
   steps : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceTransmission::default() -> ScreenSpaceTransmission {
@@ -2374,7 +2374,7 @@ pub struct ScreenSpaceReflections {
   edge_fadeout_end : Float
   bisection_steps : Int
   use_secant : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ScreenSpaceReflections::default() -> ScreenSpaceReflections {
@@ -2519,7 +2519,7 @@ pub(all) enum FogFalloff3d {
   Exponential(Float)
   ExponentialSquared(Float)
   Atmospheric(@math.Vec3, @math.Vec3)
-}
+} derive(ToJson, FromJson)
 
 ///|
 const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05F
@@ -2806,7 +2806,7 @@ pub struct DistanceFog {
   directional_light_color : @render2d.Color
   directional_light_exponent : Float
   falloff : FogFalloff3d
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn DistanceFog::default() -> DistanceFog {
@@ -2899,7 +2899,7 @@ pub struct VolumetricFog {
   ambient_intensity : Float
   jitter : Float
   step_count : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn VolumetricFog::default() -> VolumetricFog {
@@ -2969,7 +2969,7 @@ pub struct FogVolume {
   scattering_asymmetry : Float
   light_tint : @render2d.Color
   light_intensity : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn FogVolume::default() -> FogVolume {
@@ -3079,7 +3079,7 @@ pub fn FogVolume::with_light_intensity(
 pub(all) enum AtmosphereMode {
   LookupTexture
   Raymarched
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn AtmosphereMode::default() -> AtmosphereMode {
@@ -3092,7 +3092,7 @@ pub struct AtmosphereSettings {
   scene_units_to_m : Float
   sky_max_samples : Int
   rendering_method : AtmosphereMode
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn AtmosphereSettings::default() -> AtmosphereSettings {
@@ -3144,7 +3144,7 @@ pub fn AtmosphereSettings::with_rendering_method(
 ///|
 pub struct ScatteringMedium {
   density_multiplier : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ScatteringMedium::default() -> ScatteringMedium {
@@ -3178,7 +3178,7 @@ pub struct Atmosphere {
   top_radius : Float
   ground_albedo : @math.Vec3
   medium : ScatteringMedium
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn Atmosphere::default() -> Atmosphere {
@@ -3276,7 +3276,7 @@ pub(all) enum OpaqueRendererMethod {
   Auto
   Forward
   Deferred
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {
@@ -3286,7 +3286,7 @@ pub fn OpaqueRendererMethod::default() -> OpaqueRendererMethod {
 ///|
 pub struct DefaultOpaqueRendererMethod {
   renderer_method : OpaqueRendererMethod
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn DefaultOpaqueRendererMethod::default() -> DefaultOpaqueRendererMethod {
@@ -4245,7 +4245,7 @@ pub fn MeshMaterial3d::with_extension_disable_shadows(
 /// Current runtime note: projected forward-decal shading is not wired in this
 /// backend yet. This component preserves scene/API parity for example
 /// migration and future renderer integration.
-pub struct ForwardDecal {}
+pub struct ForwardDecal {} derive(ToJson, FromJson)
 
 ///|
 pub fn ForwardDecal::default() -> ForwardDecal {
@@ -4269,7 +4269,7 @@ fn forward_decal_depth_fade_factor_safe(depth_fade_factor : Float) -> Float {
 /// specialization is pending renderer support.
 pub struct ForwardDecalMaterialExt {
   depth_fade_factor : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ForwardDecalMaterialExt::default() -> ForwardDecalMaterialExt {
@@ -4319,7 +4319,7 @@ pub struct ClusteredDecal {
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
   emissive_texture : @asset.Handle[@asset.Image]?
   tag : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ClusteredDecal::default() -> ClusteredDecal {
@@ -4414,7 +4414,7 @@ pub struct PointLight {
   shadow_depth_bias : Float
   shadow_normal_bias : Float
   shadow_map_near_z : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn PointLight::default() -> PointLight {
@@ -4569,7 +4569,7 @@ pub fn PointLight::with_shadow_map_near_z(
 /// Point-light shadow map resource aligned with Bevy's `PointLightShadowMap`.
 pub struct PointLightShadowMap {
   size : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn PointLightShadowMap::default() -> PointLightShadowMap {
@@ -4607,7 +4607,7 @@ fn directional_shadow_map_size_safe(size : Int) -> Int {
 /// A single `size` value controls the width/height of each shadow map slice.
 pub struct DirectionalLightShadowMap {
   size : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn DirectionalLightShadowMap::default() -> DirectionalLightShadowMap {
@@ -4633,7 +4633,7 @@ pub struct CascadeShadowConfig {
   bounds : Array[Float]
   overlap_proportion : Float
   minimum_distance : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct CascadeShadowConfigBuilder {
@@ -4823,7 +4823,7 @@ pub struct DirectionalLight {
   cascade_shadow_config : CascadeShadowConfig?
   shadow_depth_bias : Float
   shadow_normal_bias : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn DirectionalLight::default() -> DirectionalLight {
@@ -4955,7 +4955,7 @@ pub struct SpotLight {
   shadow_depth_bias : Float
   shadow_normal_bias : Float
   shadow_map_near_z : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn SpotLight::default() -> SpotLight {
@@ -5127,7 +5127,7 @@ pub(all) enum CubemapLayout3d {
   LineHorizontal
   Equirectangular
   Faces
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn CubemapLayout3d::default() -> CubemapLayout3d {
@@ -5143,7 +5143,7 @@ pub fn CubemapLayout3d::default() -> CubemapLayout3d {
 pub struct DirectionalLightTexture {
   image : @asset.Handle[@asset.Image]?
   tiled : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn DirectionalLightTexture::default() -> DirectionalLightTexture {
@@ -5181,7 +5181,7 @@ pub fn DirectionalLightTexture::with_tiled(
 /// this component preserves API parity for example migration.
 pub struct SpotLightTexture {
   image : @asset.Handle[@asset.Image]?
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn SpotLightTexture::default() -> SpotLightTexture {
@@ -5212,7 +5212,7 @@ pub fn SpotLightTexture::with_image(
 pub struct PointLightTexture {
   image : @asset.Handle[@asset.Image]?
   cubemap_layout : CubemapLayout3d
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn PointLightTexture::default() -> PointLightTexture {
@@ -5253,7 +5253,7 @@ pub fn PointLightTexture::with_cubemap_layout(
 /// transform. `falloff` controls the attenuation region inside this cube.
 pub struct LightProbe {
   falloff : @math.Vec3
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn LightProbe::default() -> LightProbe {
@@ -5286,7 +5286,7 @@ pub struct EnvironmentMapLight {
   intensity : Float
   rotation : @math.Quat
   affects_lightmapped_mesh_diffuse : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn EnvironmentMapLight::default() -> EnvironmentMapLight {
@@ -5369,7 +5369,7 @@ pub struct GeneratedEnvironmentMapLight {
   intensity : Float
   rotation : @math.Quat
   affects_lightmapped_mesh_diffuse : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn GeneratedEnvironmentMapLight::default() -> GeneratedEnvironmentMapLight {
@@ -5439,7 +5439,7 @@ pub(all) enum ParallaxCorrection {
   None
   Auto
   Custom(@math.Vec3)
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ParallaxCorrection::default() -> ParallaxCorrection {
@@ -5454,7 +5454,7 @@ pub fn ParallaxCorrection::default() -> ParallaxCorrection {
 pub struct IrradianceVolume {
   voxels : @asset.Handle[@asset.Image]?
   intensity : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn IrradianceVolume::default() -> IrradianceVolume {
@@ -5496,7 +5496,7 @@ pub fn IrradianceVolume::with_intensity(
 pub struct GlobalAmbientLight {
   color : @render2d.Color
   brightness : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn GlobalAmbientLight::default() -> GlobalAmbientLight {

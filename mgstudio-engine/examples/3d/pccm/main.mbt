@@ -73,7 +73,7 @@ fn apply_pccm_status(world : @ecs.World) -> Unit {
     PccmEnableStatus::Disabled => @render3d.ParallaxCorrection::None
   }
   let tick = world.read_change_tick()
-  let store = @render3d.query_get_parallax_correction_store(world)
+  let store = world.component(@render3d.ecs_key_parallax_correction)
   if store.contains(light_probe_entity) {
     store.set(light_probe_entity, correction, tick) |> ignore
   } else {
@@ -126,12 +126,12 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light_probe = world.spawn_empty()
-  @render3d.query_get_light_probe_store(world).insert(
-    light_probe,
-    @render3d.LightProbe::default(),
-    tick,
-  )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_light_probe)
+  .insert(light_probe, @render3d.LightProbe::default(), tick)
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     light_probe,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
@@ -140,7 +140,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light_probe,
     @math.Transform::identity().with_scale(@math.Vec3::splat(10.01F)),
     tick,
@@ -194,7 +196,7 @@ fn handle_keyboard_input(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

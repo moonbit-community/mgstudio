@@ -18,7 +18,3 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
-
-import {
-  "Milky2018/mgstudio/ecs_world",
-} for "test"

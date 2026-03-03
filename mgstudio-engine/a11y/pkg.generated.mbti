@@ -31,6 +31,8 @@ pub let ecs_resources : Array[String]
 
 pub fn[W : HasRes_A11yState + @core.ChangeTickWorld] ensure_a11y_state(W) -> Unit
 
+pub fn[W : HasRes_A11yState] get_a11y_state_resource(W) -> @core.Resource[A11yState]
+
 pub let host_action_default_bit : Int
 
 pub let host_action_focus_bit : Int
@@ -50,8 +52,6 @@ pub let host_role_label : Int
 pub let host_role_window : Int
 
 pub fn node_id_for_entity(@core.Entity) -> @moon_accesskit.NodeId
-
-pub fn[W : HasRes_A11yState] query_get_a11y_state_resource(W) -> @core.Resource[A11yState]
 
 // Errors
 

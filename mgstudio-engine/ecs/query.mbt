@@ -58,43 +58,35 @@ pub fn[A, B, C] World::query3(
 }
 
 ///|
-pub fn[A : @json.FromJson] Query1::for_each(
+pub fn[A : ToJson + @json.FromJson] Query1::for_each(
   self : Query1[A],
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
-  query1(self.world, self.key_a, f)
+  query1_for_each(self.world, self.key_a, f)
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson] Query1::update(
+pub fn[A : @json.FromJson] Query1::view(
   self : Query1[A],
-  update : (@core.Entity, A) -> A,
+  f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
-  query1_update(self.world, self.key_a, update)
+  query1_view(self.world, self.key_a, f)
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson] Query2::for_each(
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::for_each(
   self : Query2[A, B],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
-  query2(self.world, self.key_a, self.key_b, f)
+  query2_for_each(self.world, self.key_a, self.key_b, f)
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::update(
+pub fn[A : @json.FromJson, B : @json.FromJson] Query2::view(
   self : Query2[A, B],
-  update : (@core.Entity, A, B) -> (A, B),
+  f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
-  query2_update(self.world, self.key_a, self.key_b, update)
-}
-
-///|
-pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::for_each(
-  self : Query3[A, B, C],
-  f : (@core.Entity, A, B, C) -> Unit,
-) -> Unit raise EcsError {
-  query3(self.world, self.key_a, self.key_b, self.key_c, f)
+  query2_view(self.world, self.key_a, self.key_b, f)
 }
 
 ///|
@@ -102,15 +94,32 @@ pub fn[
   A : ToJson + @json.FromJson,
   B : ToJson + @json.FromJson,
   C : ToJson + @json.FromJson,
-] Query3::update(
+] Query3::for_each(
   self : Query3[A, B, C],
-  update : (@core.Entity, A, B, C) -> (A, B, C),
+  f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
-  query3_update(self.world, self.key_a, self.key_b, self.key_c, update)
+  query3_for_each(self.world, self.key_a, self.key_b, self.key_c, f)
 }
 
 ///|
-pub fn[A : @json.FromJson] query1(
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::view(
+  self : Query3[A, B, C],
+  f : (@core.Entity, A, B, C) -> Unit,
+) -> Unit raise EcsError {
+  query3_view(self.world, self.key_a, self.key_b, self.key_c, f)
+}
+
+///|
+pub fn[A : ToJson + @json.FromJson] query1(
+  world : World,
+  key_a : ComponentKey[A],
+  f : (@core.Entity, A) -> Unit,
+) -> Unit raise EcsError {
+  query1_for_each(world, key_a, f)
+}
+
+///|
+pub fn[A : @json.FromJson] query1_view(
   world : World,
   key_a : ComponentKey[A],
   f : (@core.Entity, A) -> Unit,
@@ -125,10 +134,10 @@ pub fn[A : @json.FromJson] query1(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson] query1_update(
+pub fn[A : ToJson + @json.FromJson] query1_for_each(
   world : World,
   key_a : ComponentKey[A],
-  update : (@core.Entity, A) -> A,
+  f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
   guard world.component_store(key_a.id()) is Some(store_ref) else { return }
   let entries : Array[(@core.Entity, Json)] = []
@@ -136,16 +145,27 @@ pub fn[A : ToJson + @json.FromJson] query1_update(
   let writes : Array[(@core.Entity, Json)] = []
   for entry in entries {
     let value : A = world.decode_component_payload(key_a, entry.0, entry.1)
-    let next = update(entry.0, value)
-    writes.push((entry.0, next.to_json()))
+    f(entry.0, value)
+    writes.push((entry.0, value.to_json()))
   }
+  let tick = world.read_change_tick()
   for write in writes {
-    store_ref.val.set(write.0, write.1, world.read_change_tick()) |> ignore
+    store_ref.val.set(write.0, write.1, tick) |> ignore
   }
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson] query2(
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2(
+  world : World,
+  key_a : ComponentKey[A],
+  key_b : ComponentKey[B],
+  f : (@core.Entity, A, B) -> Unit,
+) -> Unit raise EcsError {
+  query2_for_each(world, key_a, key_b, f)
+}
+
+///|
+pub fn[A : @json.FromJson, B : @json.FromJson] query2_view(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -161,11 +181,11 @@ pub fn[A : @json.FromJson, B : @json.FromJson] query2(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_update(
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_for_each(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
-  update : (@core.Entity, A, B) -> (A, B),
+  f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
   let writes : Array[(@core.Entity, Json, Json)] = []
   query2_for_each_intersection(world, key_a, key_b, fn(
@@ -173,19 +193,35 @@ pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_update(
     value_a,
     value_b,
   ) {
-    let next = update(entity, value_a, value_b)
-    writes.push((entity, next.0.to_json(), next.1.to_json()))
+    f(entity, value_a, value_b)
+    writes.push((entity, value_a.to_json(), value_b.to_json()))
   })
   let store_a_ref = world.ensure_component_store(key_a.id())
   let store_b_ref = world.ensure_component_store(key_b.id())
+  let tick = world.read_change_tick()
   for write in writes {
-    store_a_ref.val.set(write.0, write.1, world.read_change_tick()) |> ignore
-    store_b_ref.val.set(write.0, write.2, world.read_change_tick()) |> ignore
+    store_a_ref.val.set(write.0, write.1, tick) |> ignore
+    store_b_ref.val.set(write.0, write.2, tick) |> ignore
   }
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3(
+pub fn[
+  A : ToJson + @json.FromJson,
+  B : ToJson + @json.FromJson,
+  C : ToJson + @json.FromJson,
+] query3(
+  world : World,
+  key_a : ComponentKey[A],
+  key_b : ComponentKey[B],
+  key_c : ComponentKey[C],
+  f : (@core.Entity, A, B, C) -> Unit,
+) -> Unit raise EcsError {
+  query3_for_each(world, key_a, key_b, key_c, f)
+}
+
+///|
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_view(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -207,12 +243,12 @@ pub fn[
   A : ToJson + @json.FromJson,
   B : ToJson + @json.FromJson,
   C : ToJson + @json.FromJson,
-] query3_update(
+] query3_for_each(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
   key_c : ComponentKey[C],
-  update : (@core.Entity, A, B, C) -> (A, B, C),
+  f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
   let writes : Array[(@core.Entity, Json, Json, Json)] = []
   query3_for_each_intersection(world, key_a, key_b, key_c, fn(
@@ -221,16 +257,19 @@ pub fn[
     value_b,
     value_c,
   ) {
-    let next = update(entity, value_a, value_b, value_c)
-    writes.push((entity, next.0.to_json(), next.1.to_json(), next.2.to_json()))
+    f(entity, value_a, value_b, value_c)
+    writes.push(
+      (entity, value_a.to_json(), value_b.to_json(), value_c.to_json()),
+    )
   })
   let store_a_ref = world.ensure_component_store(key_a.id())
   let store_b_ref = world.ensure_component_store(key_b.id())
   let store_c_ref = world.ensure_component_store(key_c.id())
+  let tick = world.read_change_tick()
   for write in writes {
-    store_a_ref.val.set(write.0, write.1, world.read_change_tick()) |> ignore
-    store_b_ref.val.set(write.0, write.2, world.read_change_tick()) |> ignore
-    store_c_ref.val.set(write.0, write.3, world.read_change_tick()) |> ignore
+    store_a_ref.val.set(write.0, write.1, tick) |> ignore
+    store_b_ref.val.set(write.0, write.2, tick) |> ignore
+    store_c_ref.val.set(write.0, write.3, tick) |> ignore
   }
 }
 

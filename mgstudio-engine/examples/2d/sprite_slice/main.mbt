@@ -23,7 +23,7 @@ const LABEL_VERTICAL_GAP : Float = 10.0F
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(sprite_slice_setup)
@@ -33,7 +33,7 @@ pub fn game_app() -> Unit {
 ///|
 fn sprite_slice_setup(world : @ecs.World) -> Unit {
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
@@ -132,7 +132,7 @@ fn spawn_sprite_row(
     let sprite = @render2d.Sprite::from_image(texture_handle)
       .with_custom_size(Some(size))
       .with_image_mode(image_mode)
-    @render2d.SpriteBundle::new(sprite, transform).spawn_ecs(world) |> ignore
+    @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
     spawn_slice_label(label, font, position, size)
     cursor_x = cursor_x + 0.5F * size.x + gap
   }

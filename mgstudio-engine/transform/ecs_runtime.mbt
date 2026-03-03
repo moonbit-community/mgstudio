@@ -22,7 +22,7 @@ pub fn update_children_system_ecs(world : @ecs.World) -> Unit {
   let existing_children : Array[@core.Entity] = []
   try! world
   .query1(@hierarchy.ecs_key_children)
-  .for_each(fn(entity, _children) { existing_children.push(entity) })
+  .view(fn(entity, _children) { existing_children.push(entity) })
   for entity in existing_children {
     try! (world.remove(entity, @hierarchy.ecs_key_children) |> ignore)
   }
@@ -30,7 +30,7 @@ pub fn update_children_system_ecs(world : @ecs.World) -> Unit {
   let pairs : Array[(@core.Entity, @core.Entity)] = []
   try! world
   .query1(@hierarchy.ecs_key_parent)
-  .for_each(fn(child, parent) { pairs.push((parent.entity(), child)) })
+  .view(fn(child, parent) { pairs.push((parent.entity(), child)) })
 
   if pairs.length() == 0 {
     return
@@ -58,7 +58,7 @@ pub fn propagate_transforms_system_ecs(world : @ecs.World) -> Unit {
   let roots : Array[@core.Entity] = []
   try! world
   .query1(@math.ecs_key_transform)
-  .for_each(fn(entity, _transform) {
+  .view(fn(entity, _transform) {
     if (try! world.get(entity, @hierarchy.ecs_key_parent)) is None {
       roots.push(entity)
     }

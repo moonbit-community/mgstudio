@@ -131,7 +131,7 @@ fn make_fog() -> @render3d.DistanceFog {
 fn apply_fog(world : @ecs.World) -> Unit {
   guard atmospheric_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = @render3d.query_get_camera3d_store(world)
+  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @render3d.Camera3d::default()
@@ -193,7 +193,9 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     .with_maximum_distance(3.0F)
     .build()
   let sun = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     sun,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
       @math.Vec3::new(-0.15F, -0.05F, 0.25F),
@@ -201,7 +203,9 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     sun,
     @render3d.DirectionalLight::new(
       @render2d.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
@@ -246,11 +250,9 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(sky_material),
     @math.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
   ).spawn(world)
-  @render3d.query_get_not_shadow_caster_store(world).insert(
-    sky,
-    @render3d.NotShadowCaster::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_not_shadow_caster)
+  .insert(sky, @render3d.NotShadowCaster::default(), tick)
 }
 
 ///|
@@ -315,7 +317,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

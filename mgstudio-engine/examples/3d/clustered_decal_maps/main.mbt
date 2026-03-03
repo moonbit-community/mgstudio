@@ -177,7 +177,9 @@ fn spawn_plane(
 fn spawn_light(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let point = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::white(),
@@ -187,11 +189,9 @@ fn spawn_light(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point,
-    @math.Transform::from_xyz(8.0F, 16.0F, -8.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point, @math.Transform::from_xyz(8.0F, 16.0F, -8.0F), tick)
 }
 
 ///|
@@ -204,11 +204,9 @@ fn spawn_camera(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
 }
 
 ///|
@@ -312,9 +310,9 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     .with_rotation(@math.Quat::from_rotation_z(theta))
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
-  @render3d.query_get_clustered_decal_store(world).insert(
-    entity, clustered_decal, tick,
-  )
+  world
+  .component(@render3d.ecs_key_clustered_decal)
+  .insert(entity, clustered_decal, tick)
   clustered_decal_maps_state.val.decals.push({
     entity,
     base_scale: size,
@@ -341,7 +339,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
       }
       continue
     }
-    if @math.query_get_transform_store(world).get(decal.entity)
+    if world.component(@math.ecs_key_transform).get(decal.entity)
       is Some(transform) {
       let scale_factor = if age < DECAL_ANIMATE_IN_DURATION {
         clamp01(age / DECAL_ANIMATE_IN_DURATION)
@@ -352,7 +350,9 @@ fn animate_decals(world : @ecs.World) -> Unit {
           DECAL_ANIMATE_OUT_DURATION
         1.0F - clamp01(t)
       }
-      @math.query_get_transform_store(world).set(
+      world
+      .component(@math.ecs_key_transform)
+      .set(
         decal.entity,
         transform.with_scale(
           @math.Vec3::new(
@@ -405,7 +405,7 @@ fn spawn_loop(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

@@ -19,6 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENGINE_DIR="${REPO_DIR}/mgstudio-engine"
 MGSTUDIO_CMD="${MGSTUDIO_CMD:-${REPO_DIR}/mgstudio-dev}"
+MGSTUDIO_RUNNER="${MGSTUDIO_RUNNER:-}"
 
 # Representative cross-domain smoke set for current port coverage.
 # - 2d: sprite
@@ -37,6 +38,12 @@ EXAMPLE_PACKAGES=(
 )
 
 run_runtime_smoke="${MGSTUDIO_SMOKE_RUNTIME:-0}"
+
+RUNNER_PREFIX=()
+if [[ -n "${MGSTUDIO_RUNNER}" ]]; then
+  # shellcheck disable=SC2206
+  RUNNER_PREFIX=( ${MGSTUDIO_RUNNER} )
+fi
 
 echo "[smoke] Building all mgstudio-engine packages in release mode"
 moon -C "${ENGINE_DIR}" build --release
@@ -72,6 +79,7 @@ fi
 
 RUNTIME_EXAMPLES=(
   "examples/2d/sprite"
+  "examples/2d/2d_shapes"
   "examples/3d/pbr"
   "examples/ui/button"
   "examples/input/gamepad_input_events"
@@ -85,14 +93,26 @@ for pkg in "${RUNTIME_EXAMPLES[@]}"; do
     continue
   fi
 
-  echo "[smoke] timeout 10s ${MGSTUDIO_CMD} run --game ${game_json}"
-  if ! timeout 10s "${MGSTUDIO_CMD}" run --game "${game_json}"; then
-    rc=$?
-    if [[ "${rc}" -eq 124 ]]; then
-      echo "[smoke] timeout reached (treated as pass): ${pkg}"
-      continue
+  echo "[smoke] timeout 10s ${MGSTUDIO_RUNNER:+${MGSTUDIO_RUNNER} }${MGSTUDIO_CMD} run --game ${game_json}"
+  if [[ ${#RUNNER_PREFIX[@]} -gt 0 ]]; then
+    if ! timeout 10s "${RUNNER_PREFIX[@]}" "${MGSTUDIO_CMD}" run --game "${game_json}"; then
+      rc=$?
+      if [[ "${rc}" -eq 124 ]]; then
+        echo "[smoke] timeout reached (treated as pass): ${pkg}"
+        continue
+      fi
+      echo "[smoke] runtime smoke failed: ${pkg}"
+      exit "${rc}"
     fi
-    echo "[smoke] runtime smoke failed: ${pkg}"
-    exit "${rc}"
+  else
+    if ! timeout 10s "${MGSTUDIO_CMD}" run --game "${game_json}"; then
+      rc=$?
+      if [[ "${rc}" -eq 124 ]]; then
+        echo "[smoke] timeout reached (treated as pass): ${pkg}"
+        continue
+      fi
+      echo "[smoke] runtime smoke failed: ${pkg}"
+      exit "${rc}"
+    fi
   fi
 done

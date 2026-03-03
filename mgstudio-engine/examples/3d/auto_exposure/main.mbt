@@ -80,16 +80,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -171,12 +163,16 @@ fn setup(world : @ecs.World) -> Unit {
     @render2d.Camera::default(),
     camera_transform_for_angle(auto_exposure_state.val.camera_angle),
   ).spawn(world)
-  @render3d.query_get_exposure_store(world).insert(
+  world
+  .component(@render3d.ecs_key_exposure)
+  .insert(
     camera,
     @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
     tick,
   )
-  @render3d.query_get_skybox_store(world).insert(
+  world
+  .component(@render3d.ecs_key_skybox)
+  .insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
@@ -204,16 +200,16 @@ fn setup(world : @ecs.World) -> Unit {
   set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
 
   let point_light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point_light,
     @render3d.PointLight::new(@render2d.Color::white(), 2_000.0F, 20.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    point_light,
-    @math.Transform::identity(),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point_light, @math.Transform::identity(), tick)
 
   // 2D overlay camera + mask image proxy for Bevy's `ImageNode` visualization.
   @render2d.Camera2dBundle::new(
@@ -232,11 +228,9 @@ fn setup(world : @ecs.World) -> Unit {
     .with_color(@render2d.Color::new(1.0F, 1.0F, 1.0F, MASK_OVERLAY_ALPHA)),
     @math.Transform::identity(),
   ).spawn(world)
-  @visibility.query_get_visibility_store(world).insert(
-    mask_overlay,
-    @visibility.Visibility::Hidden,
-    tick,
-  )
+  world
+  .component(@visibility.ecs_key_visibility)
+  .insert(mask_overlay, @visibility.Visibility::Hidden, tick)
   auto_exposure_state.val.mask_overlay = Some(mask_overlay)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -316,7 +310,9 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   if auto_exposure_state.val.camera is Some(camera_entity) {
-    @math.query_get_transform_store(world).set(
+    world
+    .component(@math.ecs_key_transform)
+    .set(
       camera_entity,
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
       tick,
@@ -326,7 +322,9 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   if auto_exposure_state.val.mask_overlay is Some(mask_entity) {
     let show_mask = @input.key_pressed(@window.KeyCode::KeyV)
-    @visibility.query_get_visibility_store(world).set(
+    world
+    .component(@visibility.ecs_key_visibility)
+    .set(
       mask_entity,
       if show_mask {
         @visibility.Visibility::Visible
@@ -340,7 +338,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   let camera_transform = if auto_exposure_state.val.camera
     is Some(camera_entity) {
-    @math.query_get_transform_store(world).get(camera_entity)
+    world.component(@math.ecs_key_transform).get(camera_entity)
   } else {
     None
   }
@@ -382,16 +380,20 @@ fn example_control_system(world : @ecs.World) -> Unit {
     20.0F,
   )
   if auto_exposure_state.val.camera is Some(camera_entity) {
-    if @render3d.query_get_exposure_store(world).get(camera_entity)
+    if world.component(@render3d.ecs_key_exposure).get(camera_entity)
       is Some(exposure) {
-      @render3d.query_get_exposure_store(world).set(
+      world
+      .component(@render3d.ecs_key_exposure)
+      .set(
         camera_entity,
         exposure.with_ev100(auto_exposure_state.val.exposure_ev100),
         tick,
       )
       |> ignore
     } else {
-      @render3d.query_get_exposure_store(world).insert(
+      world
+      .component(@render3d.ecs_key_exposure)
+      .insert(
         camera_entity,
         @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
         tick,
@@ -404,7 +406,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

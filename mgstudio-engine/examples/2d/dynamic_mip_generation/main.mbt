@@ -89,7 +89,7 @@ let dynamic_mip_state : Ref[DynamicMipState] = Ref::new(DynamicMipState::{
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(dynamic_mip_setup)
@@ -242,7 +242,7 @@ fn animate_image_scale(world : @ecs.World) -> Unit {
   let wave = triangle_wave(@time.time_elapsed_seconds(), ANIMATION_PERIOD)
   let next_scale = vec2_scale(animated_size, wave)
 
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   let tick = world.read_change_tick()
   if transform_store.get(animated_entity) is Some(transform) {
     let next_transform = @math.Transform::from_xy_rotation_scale(
@@ -494,8 +494,10 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
-  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
-  @ui.query_get_node_store(world).insert(
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -504,12 +506,12 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   )
 
   let text_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    text_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     text_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -517,11 +519,9 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    text_entity,
-    @ui.UiText::new(text_handle),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
 
   dynamic_mip_state.val.help_text = Some(text_handle)
 }

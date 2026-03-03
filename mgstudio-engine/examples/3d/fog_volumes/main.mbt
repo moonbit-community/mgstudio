@@ -115,7 +115,7 @@ fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
     .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
   guard fog_volumes_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = @render3d.query_get_camera3d_store(world)
+  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @render3d.Camera3d::default()
@@ -215,11 +215,9 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
       fog_center().z,
     ),
   ).spawn(world)
-  @hierarchy.query_get_parent_store(world).insert(
-    ear_left,
-    @hierarchy.Parent::new(head),
-    tick,
-  )
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(ear_left, @hierarchy.Parent::new(head), tick)
 
   let ear_right = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(0.16F, 0.8F, 0.16F),
@@ -230,11 +228,9 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
       fog_center().z,
     ),
   ).spawn(world)
-  @hierarchy.query_get_parent_store(world).insert(
-    ear_right,
-    @hierarchy.Parent::new(head),
-    tick,
-  )
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(ear_right, @hierarchy.Parent::new(head), tick)
 }
 
 ///|
@@ -252,18 +248,17 @@ fn setup(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
 
-  let ambient = @render3d.query_get_global_ambient_light_resource(world)
-  if ambient.get_ref_mut(tick) is Some(value) {
-    value.val = @render3d.GlobalAmbientLight::new(
-      @render2d.Color::white(),
-      0.0F,
-    )
-  }
+  world.insert_resource(
+    @render3d.ecs_key_global_ambient_light,
+    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+  )
 
   spawn_volume_proxy(world)
 
   let light = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(1.0F, 1.0F, -0.3F).looking_at(
       fog_center(),
@@ -271,7 +266,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 32_000.0F, true),
     tick,
@@ -285,11 +282,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
   fog_volumes_state.val.camera = Some(camera)
   apply_distance_fog_from_stub(world, 1.0F)
 }
@@ -307,7 +302,9 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   )
 
   let tick = world.read_change_tick()
-  @math.query_get_transform_store(world).set(
+  world
+  .component(@math.ecs_key_transform)
+  .set(
     camera_entity,
     @math.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
       fog_center(),
@@ -318,7 +315,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   |> ignore
 
   let light_dir = if fog_volumes_state.val.light is Some(light_entity) {
-    if @math.query_get_transform_store(world).get(light_entity)
+    if world.component(@math.ecs_key_transform).get(light_entity)
       is Some(light_transform) {
       transform_forward(light_transform)
     } else {
@@ -340,7 +337,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

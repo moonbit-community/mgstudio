@@ -346,362 +346,356 @@ pub(open) trait Has_OrderIndependentTransparencySettings {
 }
 
 ///|
-pub fn[W : Has_Hdr] query_get_hdr_store(world : W) -> @core.ComponentStore[Hdr] {
+pub fn[W : Has_Hdr] get_hdr_store(world : W) -> @core.ComponentStore[Hdr] {
   world.get_hdr_store()
 }
 
 ///|
-pub fn[W : Has_Fxaa] query_get_fxaa_store(
-  world : W,
-) -> @core.ComponentStore[Fxaa] {
+pub fn[W : Has_Fxaa] get_fxaa_store(world : W) -> @core.ComponentStore[Fxaa] {
   world.get_fxaa_store()
 }
 
 ///|
-pub fn[W : Has_Msaa] query_get_msaa_store(
-  world : W,
-) -> @core.ComponentStore[Msaa] {
+pub fn[W : Has_Msaa] get_msaa_store(world : W) -> @core.ComponentStore[Msaa] {
   world.get_msaa_store()
 }
 
 ///|
-pub fn[W : Has_Bloom] query_get_bloom_store(
-  world : W,
-) -> @core.ComponentStore[Bloom] {
+pub fn[W : Has_Bloom] get_bloom_store(world : W) -> @core.ComponentStore[Bloom] {
   world.get_bloom_store()
 }
 
 ///|
-pub fn[W : Has_Mesh3d] query_get_mesh3d_store(
+pub fn[W : Has_Mesh3d] get_mesh3d_store(
   world : W,
 ) -> @core.ComponentStore[Mesh3d] {
   world.get_mesh3d_store()
 }
 
 ///|
-pub fn[W : Has_Skybox] query_get_skybox_store(
+pub fn[W : Has_Skybox] get_skybox_store(
   world : W,
 ) -> @core.ComponentStore[Skybox] {
   world.get_skybox_store()
 }
 
 ///|
-pub fn[W : Has_Camera3d] query_get_camera3d_store(
+pub fn[W : Has_Camera3d] get_camera3d_store(
   world : W,
 ) -> @core.ComponentStore[Camera3d] {
   world.get_camera3d_store()
 }
 
 ///|
-pub fn[W : Has_Exposure] query_get_exposure_store(
+pub fn[W : Has_Exposure] get_exposure_store(
   world : W,
 ) -> @core.ComponentStore[Exposure] {
   world.get_exposure_store()
 }
 
 ///|
-pub fn[W : Has_Vignette] query_get_vignette_store(
+pub fn[W : Has_Vignette] get_vignette_store(
   world : W,
 ) -> @core.ComponentStore[Vignette] {
   world.get_vignette_store()
 }
 
 ///|
-pub fn[W : Has_SpotLight] query_get_spot_light_store(
+pub fn[W : Has_SpotLight] get_spot_light_store(
   world : W,
 ) -> @core.ComponentStore[SpotLight] {
   world.get_spot_light_store()
 }
 
 ///|
-pub fn[W : Has_Wireframe] query_get_wireframe_store(
+pub fn[W : Has_Wireframe] get_wireframe_store(
   world : W,
 ) -> @core.ComponentStore[Wireframe] {
   world.get_wireframe_store()
 }
 
 ///|
-pub fn[W : Has_FreeCamera] query_get_free_camera_store(
+pub fn[W : Has_FreeCamera] get_free_camera_store(
   world : W,
 ) -> @core.ComponentStore[FreeCamera] {
   world.get_free_camera_store()
 }
 
 ///|
-pub fn[W : Has_LightProbe] query_get_light_probe_store(
+pub fn[W : Has_LightProbe] get_light_probe_store(
   world : W,
 ) -> @core.ComponentStore[LightProbe] {
   world.get_light_probe_store()
 }
 
 ///|
-pub fn[W : Has_MotionBlur] query_get_motion_blur_store(
+pub fn[W : Has_MotionBlur] get_motion_blur_store(
   world : W,
 ) -> @core.ComponentStore[MotionBlur] {
   world.get_motion_blur_store()
 }
 
 ///|
-pub fn[W : Has_PointLight] query_get_point_light_store(
+pub fn[W : Has_PointLight] get_point_light_store(
   world : W,
 ) -> @core.ComponentStore[PointLight] {
   world.get_point_light_store()
 }
 
 ///|
-pub fn[W : Has_NoWireframe] query_get_no_wireframe_store(
+pub fn[W : Has_NoWireframe] get_no_wireframe_store(
   world : W,
 ) -> @core.ComponentStore[NoWireframe] {
   world.get_no_wireframe_store()
 }
 
 ///|
-pub fn[W : Has_Tonemapping] query_get_tonemapping_store(
+pub fn[W : Has_Tonemapping] get_tonemapping_store(
   world : W,
 ) -> @core.ComponentStore[Tonemapping] {
   world.get_tonemapping_store()
 }
 
 ///|
-pub fn[W : Has_ColorGrading] query_get_color_grading_store(
+pub fn[W : Has_ColorGrading] get_color_grading_store(
   world : W,
 ) -> @core.ComponentStore[ColorGrading] {
   world.get_color_grading_store()
 }
 
 ///|
-pub fn[W : Has_DebandDither] query_get_deband_dither_store(
+pub fn[W : Has_DebandDither] get_deband_dither_store(
   world : W,
 ) -> @core.ComponentStore[DebandDither] {
   world.get_deband_dither_store()
 }
 
 ///|
-pub fn[W : Has_DepthPrepass] query_get_depth_prepass_store(
+pub fn[W : Has_DepthPrepass] get_depth_prepass_store(
   world : W,
 ) -> @core.ComponentStore[DepthPrepass] {
   world.get_depth_prepass_store()
 }
 
 ///|
-pub fn[W : Has_ForwardDecal] query_get_forward_decal_store(
+pub fn[W : Has_ForwardDecal] get_forward_decal_store(
   world : W,
 ) -> @core.ComponentStore[ForwardDecal] {
   world.get_forward_decal_store()
 }
 
 ///|
-pub fn[W : Has_NormalPrepass] query_get_normal_prepass_store(
+pub fn[W : Has_NormalPrepass] get_normal_prepass_store(
   world : W,
 ) -> @core.ComponentStore[NormalPrepass] {
   world.get_normal_prepass_store()
 }
 
 ///|
-pub fn[W : Has_ClusteredDecal] query_get_clustered_decal_store(
+pub fn[W : Has_ClusteredDecal] get_clustered_decal_store(
   world : W,
 ) -> @core.ComponentStore[ClusteredDecal] {
   world.get_clustered_decal_store()
 }
 
 ///|
-pub fn[W : Has_ContactShadows] query_get_contact_shadows_store(
+pub fn[W : Has_ContactShadows] get_contact_shadows_store(
   world : W,
 ) -> @core.ComponentStore[ContactShadows] {
   world.get_contact_shadows_store()
 }
 
 ///|
-pub fn[W : Has_MeshMaterial3d] query_get_mesh_material3d_store(
+pub fn[W : Has_MeshMaterial3d] get_mesh_material3d_store(
   world : W,
 ) -> @core.ComponentStore[MeshMaterial3d] {
   world.get_mesh_material3d_store()
 }
 
 ///|
-pub fn[W : Has_TemporalJitter] query_get_temporal_jitter_store(
+pub fn[W : Has_TemporalJitter] get_temporal_jitter_store(
   world : W,
 ) -> @core.ComponentStore[TemporalJitter] {
   world.get_temporal_jitter_store()
 }
 
 ///|
-pub fn[W : Has_WireframeColor] query_get_wireframe_color_store(
+pub fn[W : Has_WireframeColor] get_wireframe_color_store(
   world : W,
 ) -> @core.ComponentStore[WireframeColor] {
   world.get_wireframe_color_store()
 }
 
 ///|
-pub fn[W : Has_DeferredPrepass] query_get_deferred_prepass_store(
+pub fn[W : Has_DeferredPrepass] get_deferred_prepass_store(
   world : W,
 ) -> @core.ComponentStore[DeferredPrepass] {
   world.get_deferred_prepass_store()
 }
 
 ///|
-pub fn[W : Has_FreeCameraState] query_get_free_camera_state_store(
+pub fn[W : Has_FreeCameraState] get_free_camera_state_store(
   world : W,
 ) -> @core.ComponentStore[FreeCameraState] {
   world.get_free_camera_state_store()
 }
 
 ///|
-pub fn[W : Has_NotShadowCaster] query_get_not_shadow_caster_store(
+pub fn[W : Has_NotShadowCaster] get_not_shadow_caster_store(
   world : W,
 ) -> @core.ComponentStore[NotShadowCaster] {
   world.get_not_shadow_caster_store()
 }
 
 ///|
-pub fn[W : Has_SubCameraView3d] query_get_sub_camera_view3d_store(
+pub fn[W : Has_SubCameraView3d] get_sub_camera_view3d_store(
   world : W,
 ) -> @core.ComponentStore[SubCameraView3d] {
   world.get_sub_camera_view3d_store()
 }
 
 ///|
-pub fn[W : Has_DirectionalLight] query_get_directional_light_store(
+pub fn[W : Has_DirectionalLight] get_directional_light_store(
   world : W,
 ) -> @core.ComponentStore[DirectionalLight] {
   world.get_directional_light_store()
 }
 
 ///|
-pub fn[W : Has_IrradianceVolume] query_get_irradiance_volume_store(
+pub fn[W : Has_IrradianceVolume] get_irradiance_volume_store(
   world : W,
 ) -> @core.ComponentStore[IrradianceVolume] {
   world.get_irradiance_volume_store()
 }
 
 ///|
-pub fn[W : Has_OcclusionCulling] query_get_occlusion_culling_store(
+pub fn[W : Has_OcclusionCulling] get_occlusion_culling_store(
   world : W,
 ) -> @core.ComponentStore[OcclusionCulling] {
   world.get_occlusion_culling_store()
 }
 
 ///|
-pub fn[W : Has_SpotLightTexture] query_get_spot_light_texture_store(
+pub fn[W : Has_SpotLightTexture] get_spot_light_texture_store(
   world : W,
 ) -> @core.ComponentStore[SpotLightTexture] {
   world.get_spot_light_texture_store()
 }
 
 ///|
-pub fn[W : Has_NotShadowReceiver] query_get_not_shadow_receiver_store(
+pub fn[W : Has_NotShadowReceiver] get_not_shadow_receiver_store(
   world : W,
 ) -> @core.ComponentStore[NotShadowReceiver] {
   world.get_not_shadow_receiver_store()
 }
 
 ///|
-pub fn[W : Has_PointLightTexture] query_get_point_light_texture_store(
+pub fn[W : Has_PointLightTexture] get_point_light_texture_store(
   world : W,
 ) -> @core.ComponentStore[PointLightTexture] {
   world.get_point_light_texture_store()
 }
 
 ///|
-pub fn[W : Has_CameraProjection3d] query_get_camera_projection3d_store(
+pub fn[W : Has_CameraProjection3d] get_camera_projection3d_store(
   world : W,
 ) -> @core.ComponentStore[CameraProjection3d] {
   world.get_camera_projection3d_store()
 }
 
 ///|
-pub fn[W : Has_ParallaxCorrection] query_get_parallax_correction_store(
+pub fn[W : Has_ParallaxCorrection] get_parallax_correction_store(
   world : W,
 ) -> @core.ComponentStore[ParallaxCorrection] {
   world.get_parallax_correction_store()
 }
 
 ///|
-pub fn[W : Has_ChromaticAberration] query_get_chromatic_aberration_store(
+pub fn[W : Has_ChromaticAberration] get_chromatic_aberration_store(
   world : W,
 ) -> @core.ComponentStore[ChromaticAberration] {
   world.get_chromatic_aberration_store()
 }
 
 ///|
-pub fn[W : Has_EnvironmentMapLight] query_get_environment_map_light_store(
+pub fn[W : Has_EnvironmentMapLight] get_environment_map_light_store(
   world : W,
 ) -> @core.ComponentStore[EnvironmentMapLight] {
   world.get_environment_map_light_store()
 }
 
 ///|
-pub fn[W : Has_MotionVectorPrepass] query_get_motion_vector_prepass_store(
+pub fn[W : Has_MotionVectorPrepass] get_motion_vector_prepass_store(
   world : W,
 ) -> @core.ComponentStore[MotionVectorPrepass] {
   world.get_motion_vector_prepass_store()
 }
 
 ///|
-pub fn[W : Has_TemporalAntiAliasing] query_get_temporal_anti_aliasing_store(
+pub fn[W : Has_TemporalAntiAliasing] get_temporal_anti_aliasing_store(
   world : W,
 ) -> @core.ComponentStore[TemporalAntiAliasing] {
   world.get_temporal_anti_aliasing_store()
 }
 
 ///|
-pub fn[W : Has_ShadowFilteringMethod] query_get_shadow_filtering_method_store(
+pub fn[W : Has_ShadowFilteringMethod] get_shadow_filtering_method_store(
   world : W,
 ) -> @core.ComponentStore[ShadowFilteringMethod] {
   world.get_shadow_filtering_method_store()
 }
 
 ///|
-pub fn[W : Has_ScreenSpaceReflections] query_get_screen_space_reflections_store(
+pub fn[W : Has_ScreenSpaceReflections] get_screen_space_reflections_store(
   world : W,
 ) -> @core.ComponentStore[ScreenSpaceReflections] {
   world.get_screen_space_reflections_store()
 }
 
 ///|
-pub fn[W : Has_DirectionalLightTexture] query_get_directional_light_texture_store(
+pub fn[W : Has_DirectionalLightTexture] get_directional_light_texture_store(
   world : W,
 ) -> @core.ComponentStore[DirectionalLightTexture] {
   world.get_directional_light_texture_store()
 }
 
 ///|
-pub fn[W : Has_ForwardDecalMaterialExt] query_get_forward_decal_material_ext_store(
+pub fn[W : Has_ForwardDecalMaterialExt] get_forward_decal_material_ext_store(
   world : W,
 ) -> @core.ComponentStore[ForwardDecalMaterialExt] {
   world.get_forward_decal_material_ext_store()
 }
 
 ///|
-pub fn[W : Has_ScreenSpaceTransmission] query_get_screen_space_transmission_store(
+pub fn[W : Has_ScreenSpaceTransmission] get_screen_space_transmission_store(
   world : W,
 ) -> @core.ComponentStore[ScreenSpaceTransmission] {
   world.get_screen_space_transmission_store()
 }
 
 ///|
-pub fn[W : Has_TransmittedShadowReceiver] query_get_transmitted_shadow_receiver_store(
+pub fn[W : Has_TransmittedShadowReceiver] get_transmitted_shadow_receiver_store(
   world : W,
 ) -> @core.ComponentStore[TransmittedShadowReceiver] {
   world.get_transmitted_shadow_receiver_store()
 }
 
 ///|
-pub fn[W : Has_ScreenSpaceAmbientOcclusion] query_get_screen_space_ambient_occlusion_store(
+pub fn[W : Has_ScreenSpaceAmbientOcclusion] get_screen_space_ambient_occlusion_store(
   world : W,
 ) -> @core.ComponentStore[ScreenSpaceAmbientOcclusion] {
   world.get_screen_space_ambient_occlusion_store()
 }
 
 ///|
-pub fn[W : Has_GeneratedEnvironmentMapLight] query_get_generated_environment_map_light_store(
+pub fn[W : Has_GeneratedEnvironmentMapLight] get_generated_environment_map_light_store(
   world : W,
 ) -> @core.ComponentStore[GeneratedEnvironmentMapLight] {
   world.get_generated_environment_map_light_store()
 }
 
 ///|
-pub fn[W : Has_OrderIndependentTransparencySettings] query_get_order_independent_transparency_settings_store(
+pub fn[W : Has_OrderIndependentTransparencySettings] get_order_independent_transparency_settings_store(
   world : W,
 ) -> @core.ComponentStore[OrderIndependentTransparencySettings] {
   world.get_order_independent_transparency_settings_store()
@@ -741,35 +735,35 @@ pub(open) trait HasRes_DefaultOpaqueRendererMethod {
 }
 
 ///|
-pub fn[W : HasRes_WireframeConfig] query_get_wireframe_config_resource(
+pub fn[W : HasRes_WireframeConfig] get_wireframe_config_resource(
   world : W,
 ) -> @core.Resource[WireframeConfig] {
   world.get_wireframe_config_resource()
 }
 
 ///|
-pub fn[W : HasRes_GlobalAmbientLight] query_get_global_ambient_light_resource(
+pub fn[W : HasRes_GlobalAmbientLight] get_global_ambient_light_resource(
   world : W,
 ) -> @core.Resource[GlobalAmbientLight] {
   world.get_global_ambient_light_resource()
 }
 
 ///|
-pub fn[W : HasRes_PointLightShadowMap] query_get_point_light_shadow_map_resource(
+pub fn[W : HasRes_PointLightShadowMap] get_point_light_shadow_map_resource(
   world : W,
 ) -> @core.Resource[PointLightShadowMap] {
   world.get_point_light_shadow_map_resource()
 }
 
 ///|
-pub fn[W : HasRes_DirectionalLightShadowMap] query_get_directional_light_shadow_map_resource(
+pub fn[W : HasRes_DirectionalLightShadowMap] get_directional_light_shadow_map_resource(
   world : W,
 ) -> @core.Resource[DirectionalLightShadowMap] {
   world.get_directional_light_shadow_map_resource()
 }
 
 ///|
-pub fn[W : HasRes_DefaultOpaqueRendererMethod] query_get_default_opaque_renderer_method_resource(
+pub fn[W : HasRes_DefaultOpaqueRendererMethod] get_default_opaque_renderer_method_resource(
   world : W,
 ) -> @core.Resource[DefaultOpaqueRendererMethod] {
   world.get_default_opaque_renderer_method_resource()

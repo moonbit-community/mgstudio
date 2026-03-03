@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/window"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -237,12 +238,16 @@ pub(all) enum KeyCode {
   BracketRight
   Quote
 }
+pub impl ToJson for KeyCode
+pub impl @json.FromJson for KeyCode
 
 pub(all) enum MouseButton {
   Left
   Right
   Middle
 }
+pub impl ToJson for MouseButton
+pub impl @json.FromJson for MouseButton
 
 pub(all) enum WindowMode {
   Windowed

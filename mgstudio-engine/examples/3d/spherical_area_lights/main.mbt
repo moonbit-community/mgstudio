@@ -131,16 +131,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -195,7 +187,9 @@ fn setup(world : @ecs.World) -> Unit {
     ).spawn(world)
 
     let point_light = world.spawn_empty()
-    @render3d.query_get_point_light_store(world).insert(
+    world
+    .component(@render3d.ecs_key_point_light)
+    .insert(
       point_light,
       @render3d.PointLight::default()
       .with_color(@render2d.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
@@ -205,22 +199,18 @@ fn setup(world : @ecs.World) -> Unit {
       .with_shadow_maps_enabled(false),
       tick,
     )
-    @hierarchy.query_get_parent_store(world).insert(
-      point_light,
-      @hierarchy.Parent::new(sphere),
-      tick,
-    )
-    @math.query_get_transform_store(world).insert(
-      point_light,
-      @math.Transform::identity(),
-      tick,
-    )
+    world
+    .component(@hierarchy.ecs_key_parent)
+    .insert(point_light, @hierarchy.Parent::new(sphere), tick)
+    world
+    .component(@math.ecs_key_transform)
+    .insert(point_light, @math.Transform::identity(), tick)
   }
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

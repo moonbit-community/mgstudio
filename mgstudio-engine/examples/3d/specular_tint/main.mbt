@@ -182,16 +182,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -246,17 +238,15 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_skybox_store(world).insert(
-    camera,
-    @render3d.Skybox::new(specular_env_map, 3000.0F),
-    tick,
-  )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_skybox)
+  .insert(camera, @render3d.Skybox::new(specular_env_map, 3000.0F), tick)
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(diffuse_env_map),
@@ -273,8 +263,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
   let root = world.spawn_empty()
-  @ui.query_get_ui_root_store(world).insert(root, @ui.UiRoot::default(), tick)
-  @ui.query_get_node_store(world).insert(
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     root,
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
@@ -288,12 +280,12 @@ fn setup(world : @ecs.World) -> Unit {
     @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let help_entity = world.spawn_empty()
-  @hierarchy.query_get_parent_store(world).insert(
-    help_entity,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  @ui.query_get_node_store(world).insert(
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(help_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
     help_entity,
     @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
@@ -301,11 +293,9 @@ fn setup(world : @ecs.World) -> Unit {
     .with_bottom(@ui.Val::Px(12.0F)),
     tick,
   )
-  @ui.query_get_ui_text_store(world).insert(
-    help_entity,
-    @ui.UiText::new(help_text_handle),
-    tick,
-  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(help_entity, @ui.UiText::new(help_text_handle), tick)
   state.help_text = Some(help_text_handle)
 }
 
@@ -313,7 +303,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn rotate_camera(world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   guard state.camera is Some(camera_entity) else { return }
-  guard @math.query_get_transform_store(world).get(camera_entity)
+  guard world.component(@math.ecs_key_transform).get(camera_entity)
     is Some(transform) else {
     return
   }
@@ -325,7 +315,9 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   let rotated_x = cos_v * x - sin_v * z
   let rotated_z = sin_v * x + cos_v * z
 
-  @math.query_get_transform_store(world).set(
+  world
+  .component(@math.ecs_key_transform)
+  .set(
     camera_entity,
     @math.Transform::from_xyz(rotated_x, transform.translation.y, rotated_z).looking_at(
       @math.Vec3::zero(),
@@ -393,7 +385,7 @@ fn update_help_text(_world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

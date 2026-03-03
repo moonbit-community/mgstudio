@@ -80,7 +80,7 @@ test "scene: gltf lod visibility policy set/get/reset" {
 
 ///|
 test "scene: SceneRoot spawns children and marks ready" {
-  let world = @ecs_world.World::new()
+  let world = @ecs.World::new()
   let tick = world.increment_change_tick()
 
   let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
@@ -102,19 +102,19 @@ test "scene: SceneRoot spawns children and marks ready" {
   )
 
   let root = world.spawn_empty()
-  world
-  .get_scene_root_store()
-  .insert(root, @scene.SceneRoot::new(scene_handle), tick)
+  get_scene_root_store(world).insert(
+    root,
+    @scene.SceneRoot::new(scene_handle),
+    tick,
+  )
 
   @scene.scene_spawn_roots_system(world)
 
-  let ready = world.get_scene_instance_ready_store().get(root).unwrap()
+  let ready = get_scene_instance_ready_store(world).get(root).unwrap()
   inspect(ready.spawned_entities, content="1")
 
   let children : Array[@core.Entity] = []
-  world
-  .get_parent_store()
-  .for_each(fn(entity, parent) {
+  @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
     if parent.entity().id == root.id {
       children.push(entity)
     }
@@ -122,11 +122,26 @@ test "scene: SceneRoot spawns children and marks ready" {
   inspect(children.length(), content="1")
 
   let child = children[0]
-  inspect(world.get_mesh3d_store().contains(child), content="true")
-  inspect(world.get_mesh_material3d_store().contains(child), content="true")
-  inspect(world.get_transform_store().contains(child), content="true")
-  inspect(world.get_visibility_range_store().contains(child), content="true")
-  inspect(world.get_animation_player_store().contains(root), content="true")
-  inspect(world.get_animation_target_id_store().contains(child), content="true")
-  inspect(world.get_animated_by_store().contains(child), content="true")
+  inspect(@render3d.get_mesh3d_store(world).contains(child), content="true")
+  inspect(
+    @render3d.get_mesh_material3d_store(world).contains(child),
+    content="true",
+  )
+  inspect(@math.get_transform_store(world).contains(child), content="true")
+  inspect(
+    @visibility.get_visibility_range_store(world).contains(child),
+    content="true",
+  )
+  inspect(
+    @animation.get_animation_player_store(world).contains(root),
+    content="true",
+  )
+  inspect(
+    @animation.get_animation_target_id_store(world).contains(child),
+    content="true",
+  )
+  inspect(
+    @animation.get_animated_by_store(world).contains(child),
+    content="true",
+  )
 }

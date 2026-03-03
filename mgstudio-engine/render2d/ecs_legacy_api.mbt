@@ -114,119 +114,119 @@ pub(open) trait Has_Wireframe2dColor {
 }
 
 ///|
-pub fn[W : Has_Anchor] query_get_anchor_store(
+pub fn[W : Has_Anchor] get_anchor_store(
   world : W,
 ) -> @core.ComponentStore[Anchor] {
   world.get_anchor_store()
 }
 
 ///|
-pub fn[W : Has_Camera] query_get_camera_store(
+pub fn[W : Has_Camera] get_camera_store(
   world : W,
 ) -> @core.ComponentStore[Camera] {
   world.get_camera_store()
 }
 
 ///|
-pub fn[W : Has_Mesh2d] query_get_mesh2d_store(
+pub fn[W : Has_Mesh2d] get_mesh2d_store(
   world : W,
 ) -> @core.ComponentStore[Mesh2d] {
   world.get_mesh2d_store()
 }
 
 ///|
-pub fn[W : Has_Sprite] query_get_sprite_store(
+pub fn[W : Has_Sprite] get_sprite_store(
   world : W,
 ) -> @core.ComponentStore[Sprite] {
   world.get_sprite_store()
 }
 
 ///|
-pub fn[W : Has_Bloom2d] query_get_bloom2d_store(
+pub fn[W : Has_Bloom2d] get_bloom2d_store(
   world : W,
 ) -> @core.ComponentStore[Bloom2d] {
   world.get_bloom2d_store()
 }
 
 ///|
-pub fn[W : Has_Camera2d] query_get_camera2d_store(
+pub fn[W : Has_Camera2d] get_camera2d_store(
   world : W,
 ) -> @core.ComponentStore[Camera2d] {
   world.get_camera2d_store()
 }
 
 ///|
-pub fn[W : Has_GpuMesh2d] query_get_gpu_mesh2d_store(
+pub fn[W : Has_GpuMesh2d] get_gpu_mesh2d_store(
   world : W,
 ) -> @core.ComponentStore[GpuMesh2d] {
   world.get_gpu_mesh2d_store()
 }
 
 ///|
-pub fn[W : Has_Projection] query_get_projection_store(
+pub fn[W : Has_Projection] get_projection_store(
   world : W,
 ) -> @core.ComponentStore[Projection] {
   world.get_projection_store()
 }
 
 ///|
-pub fn[W : Has_ScissorRect] query_get_scissor_rect_store(
+pub fn[W : Has_ScissorRect] get_scissor_rect_store(
   world : W,
 ) -> @core.ComponentStore[ScissorRect] {
   world.get_scissor_rect_store()
 }
 
 ///|
-pub fn[W : Has_Wireframe2d] query_get_wireframe2d_store(
+pub fn[W : Has_Wireframe2d] get_wireframe2d_store(
   world : W,
 ) -> @core.ComponentStore[Wireframe2d] {
   world.get_wireframe2d_store()
 }
 
 ///|
-pub fn[W : Has_RenderLayers] query_get_render_layers_store(
+pub fn[W : Has_RenderLayers] get_render_layers_store(
   world : W,
 ) -> @core.ComponentStore[RenderLayers] {
   world.get_render_layers_store()
 }
 
 ///|
-pub fn[W : Has_RenderTarget] query_get_render_target_store(
+pub fn[W : Has_RenderTarget] get_render_target_store(
   world : W,
 ) -> @core.ComponentStore[RenderTarget] {
   world.get_render_target_store()
 }
 
 ///|
-pub fn[W : Has_ColorMaterial] query_get_color_material_store(
+pub fn[W : Has_ColorMaterial] get_color_material_store(
   world : W,
 ) -> @core.ComponentStore[ColorMaterial] {
   world.get_color_material_store()
 }
 
 ///|
-pub fn[W : Has_NoWireframe2d] query_get_no_wireframe2d_store(
+pub fn[W : Has_NoWireframe2d] get_no_wireframe2d_store(
   world : W,
 ) -> @core.ComponentStore[NoWireframe2d] {
   world.get_no_wireframe2d_store()
 }
 
 ///|
-pub fn[W : Has_MeshMaterial2d] query_get_mesh_material2d_store(
+pub fn[W : Has_MeshMaterial2d] get_mesh_material2d_store(
   world : W,
 ) -> @core.ComponentStore[MeshMaterial2d] {
   world.get_mesh_material2d_store()
 }
 
 ///|
-pub fn[W : Has_ClearColorConfig] query_get_clear_color_config_store(
+pub fn[W : Has_ClearColorConfig] get_clear_color_config_store(
   world : W,
 ) -> @core.ComponentStore[ClearColorConfig] {
   world.get_clear_color_config_store()
 }
 
 ///|
-pub fn[W : Has_Wireframe2dColor] query_get_wireframe2d_color_store(
+pub fn[W : Has_Wireframe2dColor] get_wireframe2d_color_store(
   world : W,
 ) -> @core.ComponentStore[Wireframe2dColor] {
   world.get_wireframe2d_color_store()
@@ -245,14 +245,14 @@ pub(open) trait HasRes_Wireframe2dConfig {
 }
 
 ///|
-pub fn[W : HasRes_RenderState] query_get_render_state_resource(
+pub fn[W : HasRes_RenderState] get_render_state_resource(
   world : W,
 ) -> @core.Resource[RenderState] {
   world.get_render_state_resource()
 }
 
 ///|
-pub fn[W : HasRes_Wireframe2dConfig] query_get_wireframe2d_config_resource(
+pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(
   world : W,
 ) -> @core.Resource[Wireframe2dConfig] {
   world.get_wireframe2d_config_resource()

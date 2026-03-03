@@ -77,16 +77,8 @@ fn set_global_ambient_light(
   color : @render2d.Color,
   brightness : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  if @render3d.query_get_global_ambient_light_resource(world).get_ref_mut(tick)
-    is Some(current) {
-    current.val = ambient
-  } else {
-    @render3d.query_get_global_ambient_light_resource(world).insert(
-      ambient, tick,
-    )
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -188,17 +180,15 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
     ShadowFilter::NonTemporal => @render3d.ShadowFilteringMethod::Gaussian
     ShadowFilter::Temporal => @render3d.ShadowFilteringMethod::Temporal
   }
-  @render3d.query_get_shadow_filtering_method_store(world).insert(
-    camera, filter_mode, tick,
-  )
+  world
+  .component(@render3d.ecs_key_shadow_filtering_method)
+  .insert(camera, filter_mode, tick)
   if pcss_state.val.shadow_filter == ShadowFilter::Temporal {
-    @render3d.query_get_temporal_anti_aliasing_store(world).insert(
-      camera,
-      @render3d.TemporalAntiAliasing::default(),
-      tick,
-    )
+    world
+    .component(@render3d.ecs_key_temporal_anti_aliasing)
+    .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
   } else {
-    @render3d.query_get_temporal_anti_aliasing_store(world).remove(camera)
+    world.component(@render3d.ecs_key_temporal_anti_aliasing).remove(camera)
     |> ignore
   }
 }
@@ -207,29 +197,23 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
 fn apply_light_type(world : @ecs.World) -> Unit {
   guard pcss_state.val.light is Some(light) else { return }
   let tick = world.read_change_tick()
-  @render3d.query_get_directional_light_store(world).remove(light) |> ignore
-  @render3d.query_get_point_light_store(world).remove(light) |> ignore
-  @render3d.query_get_spot_light_store(world).remove(light) |> ignore
+  world.component(@render3d.ecs_key_directional_light).remove(light) |> ignore
+  world.component(@render3d.ecs_key_point_light).remove(light) |> ignore
+  world.component(@render3d.ecs_key_spot_light).remove(light) |> ignore
 
   match pcss_state.val.light_type {
     LightType::Directional =>
-      @render3d.query_get_directional_light_store(world).insert(
-        light,
-        create_directional_light(),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_directional_light)
+      .insert(light, create_directional_light(), tick)
     LightType::Point =>
-      @render3d.query_get_point_light_store(world).insert(
-        light,
-        create_point_light(),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_point_light)
+      .insert(light, create_point_light(), tick)
     LightType::Spot =>
-      @render3d.query_get_spot_light_store(world).insert(
-        light,
-        create_spot_light(),
-        tick,
-      )
+      world
+      .component(@render3d.ecs_key_spot_light)
+      .insert(light, create_spot_light(), tick)
   }
 }
 
@@ -256,32 +240,24 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   pcss_state.val.camera = Some(camera)
 
-  @render3d.query_get_shadow_filtering_method_store(world).insert(
-    camera,
-    @render3d.ShadowFilteringMethod::Gaussian,
-    tick,
-  )
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_temporal_jitter_store(world).insert(
-    camera,
-    @render3d.TemporalJitter::default(),
-    tick,
-  )
-  @render3d.query_get_depth_prepass_store(world).insert(
-    camera,
-    @render3d.DepthPrepass::default(),
-    tick,
-  )
-  @render3d.query_get_motion_vector_prepass_store(world).insert(
-    camera,
-    @render3d.MotionVectorPrepass::default(),
-    tick,
-  )
-  @render3d.query_get_skybox_store(world).insert(
+  world
+  .component(@render3d.ecs_key_shadow_filtering_method)
+  .insert(camera, @render3d.ShadowFilteringMethod::Gaussian, tick)
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .component(@render3d.ecs_key_temporal_jitter)
+  .insert(camera, @render3d.TemporalJitter::default(), tick)
+  world
+  .component(@render3d.ecs_key_depth_prepass)
+  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  world
+  .component(@render3d.ecs_key_motion_vector_prepass)
+  .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+  world
+  .component(@render3d.ecs_key_skybox)
+  .insert(
     camera,
     @render3d.Skybox::new(
       asset_server.load("environment_maps/sky_skybox.ktx2"),
@@ -292,7 +268,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   pcss_state.val.light = Some(light)
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(57.693F, 34.334F, -6.422F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -303,7 +281,9 @@ fn setup(world : @ecs.World) -> Unit {
   apply_light_type(world)
 
   let scene_entity = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     scene_entity,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -389,7 +369,7 @@ fn controls(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

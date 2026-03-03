@@ -12,8 +12,8 @@ pub fn game_app() -> Unit
 
 // Types and methods
 pub struct Position {
-  x : Float
-  y : Float
+  mut x : Float
+  mut y : Float
 }
 pub impl Eq for Position
 pub impl Show for Position

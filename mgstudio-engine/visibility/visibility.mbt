@@ -23,6 +23,26 @@ pub(all) enum Visibility {
 } derive(Eq, Show)
 
 ///|
+pub impl ToJson for Visibility with to_json(self) {
+  match self {
+    Hidden => (0).to_json()
+    Inherited => (1).to_json()
+    Visible => (2).to_json()
+  }
+}
+
+///|
+pub impl @json.FromJson for Visibility with from_json(json, _path) {
+  let tag : Int = try! @json.from_json(json)
+  match tag {
+    0 => Hidden
+    1 => Inherited
+    2 => Visible
+    _ => Inherited
+  }
+}
+
+///|
 pub fn Visibility::is_visible(self : Visibility) -> Bool {
   match self {
     Hidden => false
@@ -34,6 +54,17 @@ pub fn Visibility::is_visible(self : Visibility) -> Bool {
 pub struct InheritedVisibility {
   visible : Bool
 } derive(Eq, Show)
+
+///|
+pub impl ToJson for InheritedVisibility with to_json(self) {
+  self.visible.to_json()
+}
+
+///|
+pub impl @json.FromJson for InheritedVisibility with from_json(json, _path) {
+  let visible : Bool = try! @json.from_json(json)
+  InheritedVisibility::new(visible)
+}
 
 ///|
 pub fn InheritedVisibility::new(visible : Bool) -> InheritedVisibility {
@@ -49,6 +80,17 @@ pub fn InheritedVisibility::is_visible(self : InheritedVisibility) -> Bool {
 pub struct ViewVisibility {
   visible : Bool
 } derive(Eq, Show)
+
+///|
+pub impl ToJson for ViewVisibility with to_json(self) {
+  self.visible.to_json()
+}
+
+///|
+pub impl @json.FromJson for ViewVisibility with from_json(json, _path) {
+  let visible : Bool = try! @json.from_json(json)
+  ViewVisibility::new(visible)
+}
 
 ///|
 pub fn ViewVisibility::new(visible : Bool) -> ViewVisibility {

@@ -88,7 +88,7 @@ fn print_logs(reader : @core.MessageReader[LogMessage]) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   let log_plugin = @app.LogPlugin::default().with_custom_layer(custom_layer)
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

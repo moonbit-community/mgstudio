@@ -4115,7 +4115,7 @@ impl GpuBackend {
                 },
                 fragment: Some(wgpu::FragmentState {
                     module: &sm,
-                    entry_point: Some("final_fragment"),
+                    entry_point: Some("fragment"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: wgpu::TextureFormat::Rgba8Unorm,
@@ -4174,7 +4174,7 @@ impl GpuBackend {
                 },
                 fragment: Some(wgpu::FragmentState {
                     module: &sm,
-                    entry_point: Some("final_fragment"),
+                    entry_point: Some("fragment"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format,

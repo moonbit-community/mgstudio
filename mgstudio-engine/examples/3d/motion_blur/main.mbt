@@ -157,17 +157,11 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
-  let tick = world.read_change_tick()
   let value = @render3d.GlobalAmbientLight::new(
     @render2d.Color::white(),
     brightness,
   )
-  let resource = @render3d.query_get_global_ambient_light_resource(world)
-  if resource.get_ref_mut(tick) is Some(current) {
-    current.val = value
-  } else {
-    resource.insert(value, tick)
-  }
+  world.insert_resource(@render3d.ecs_key_global_ambient_light, value)
 }
 
 ///|
@@ -176,7 +170,7 @@ fn set_camera_fov(
   camera_entity : @core.Entity,
   fov : Float,
 ) -> Unit {
-  let projection_store = @render3d.query_get_camera_projection3d_store(world)
+  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
   guard projection_store.get(camera_entity) is Some(current) else { return }
   let next_projection = match current.projection {
     Perspective(p) => Some(@render3d.Projection3d::Perspective(p.with_fov(fov)))
@@ -199,7 +193,7 @@ fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
     motion_blur_state.val.shutter_angle,
     motion_blur_state.val.samples,
   )
-  let store = @render3d.query_get_motion_blur_store(world)
+  let store = world.component(@render3d.ecs_key_motion_blur)
   if store.contains(camera_entity) {
     store.set(camera_entity, motion_blur, tick) |> ignore
   } else {
@@ -225,11 +219,9 @@ fn spawn_camera(world : @ecs.World) -> Unit {
       ),
     )
     .spawn(world)
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    world.read_change_tick(),
-  )
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, world.read_change_tick())
   motion_blur_state.val.camera = Some(camera)
 }
 
@@ -284,11 +276,9 @@ fn spawn_car(
       @math.Vec3::new(1.0F, 1.0F, 0.5F),
     ),
   ).spawn(world)
-  @hierarchy.query_get_parent_store(world).insert(
-    cabin,
-    @hierarchy.Parent::new(body),
-    tick,
-  )
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(cabin, @hierarchy.Parent::new(body), tick)
 
   let wheel_start = motion_blur_state.val.wheels.length()
   let wheel_offsets = [
@@ -305,11 +295,9 @@ fn spawn_car(
       .with_scale(@math.Vec3::new(0.15F, 0.04F, 0.15F))
       .with_rotation(@math.Quat::from_rotation_z(@math.pi_half())),
     ).spawn(world)
-    @hierarchy.query_get_parent_store(world).insert(
-      wheel,
-      @hierarchy.Parent::new(body),
-      tick,
-    )
+    world
+    .component(@hierarchy.ecs_key_parent)
+    .insert(wheel, @hierarchy.Parent::new(body), tick)
     motion_blur_state.val.wheels.push({ entity: wheel, radius: 0.15F })
   }
 
@@ -390,12 +378,16 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
 
   let directional_light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional_light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 3000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional_light,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
       @math.Vec3::new(-1.0F, -0.7F, -1.0F),
@@ -563,7 +555,7 @@ fn move_cars(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   let now = @time.time_elapsed_seconds() * 0.25F
   for car in motion_blur_state.val.car_bodies {
     guard transform_store.get(car.entity) is Some(current_transform) else {
@@ -617,7 +609,7 @@ fn move_camera(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.tracked_car is Some(tracked_entity) else {
     return
   }
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(tracked_entity) is Some(tracked_transform) else {
     return
   }
@@ -651,7 +643,7 @@ fn move_camera(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

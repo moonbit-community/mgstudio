@@ -66,16 +66,12 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(decal_material),
     @math.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
   ).spawn(world)
-  @render3d.query_get_forward_decal_store(world).insert(
-    decal,
-    @render3d.ForwardDecal::default(),
-    tick,
-  )
-  @render3d.query_get_forward_decal_material_ext_store(world).insert(
-    decal,
-    @render3d.ForwardDecalMaterialExt::new(1.0F),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_forward_decal)
+  .insert(decal, @render3d.ForwardDecal::default(), tick)
+  world
+  .component(@render3d.ecs_key_forward_decal_material_ext)
+  .insert(decal, @render3d.ForwardDecalMaterialExt::new(1.0F), tick)
 
   let camera = @render3d.Camera3dBundle::new(
     @render2d.Camera::default(),
@@ -84,26 +80,18 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  @render3d.query_get_free_camera_store(world).insert(
-    camera,
-    @render3d.FreeCamera::default(),
-    tick,
-  )
-  @render3d.query_get_depth_prepass_store(world).insert(
-    camera,
-    @render3d.DepthPrepass::default(),
-    tick,
-  )
-  @render3d.query_get_msaa_store(world).insert(
-    camera,
-    @render3d.Msaa::Off,
-    tick,
-  )
-  @render3d.query_get_fxaa_store(world).insert(
-    camera,
-    @render3d.Fxaa::default(),
-    tick,
-  )
+  world
+  .component(@render3d.ecs_key_free_camera)
+  .insert(camera, @render3d.FreeCamera::default(), tick)
+  world
+  .component(@render3d.ecs_key_depth_prepass)
+  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  world
+  .component(@render3d.ecs_key_msaa)
+  .insert(camera, @render3d.Msaa::Off, tick)
+  world
+  .component(@render3d.ecs_key_fxaa)
+  .insert(camera, @render3d.Fxaa::default(), tick)
 
   let white_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white()),
@@ -134,21 +122,21 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let light = world.spawn_empty()
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     light,
     @render3d.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    light,
-    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 }
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

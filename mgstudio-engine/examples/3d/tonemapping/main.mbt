@@ -206,7 +206,9 @@ fn register_scene_entity(
   scene : Int,
 ) -> Unit {
   let tick = world.read_change_tick()
-  @visibility.query_get_visibility_store(world).insert(
+  world
+  .component(@visibility.ecs_key_visibility)
+  .insert(
     entity,
     if scene == tonemapping_state.val.current_scene {
       @visibility.Visibility::Inherited
@@ -421,7 +423,9 @@ fn setup_lights(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let directional = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     directional,
     @math.Transform::from_xyz(2.5F, 4.0F, 2.5F).looking_at(
       @math.Vec3::new(0.0F, 0.2F, 0.0F),
@@ -429,7 +433,9 @@ fn setup_lights(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     directional,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
     tick,
@@ -437,12 +443,12 @@ fn setup_lights(world : @ecs.World) -> Unit {
   tonemapping_state.val.directional_light = Some(directional)
 
   let point = world.spawn_empty()
-  @math.query_get_transform_store(world).insert(
-    point,
-    @math.Transform::from_xyz(-0.6F, 1.3F, 1.2F),
-    tick,
-  )
-  @render3d.query_get_point_light_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(point, @math.Transform::from_xyz(-0.6F, 1.3F, 1.2F), tick)
+  world
+  .component(@render3d.ecs_key_point_light)
+  .insert(
     point,
     @render3d.PointLight::new(
       @render2d.Color::new(1.0F, 0.9F, 0.8F, 1.0F),
@@ -467,12 +473,12 @@ fn setup_camera(world : @ecs.World) -> Unit {
   ).spawn(world)
 
   let tick = world.read_change_tick()
-  @render3d.query_get_hdr_store(world).insert(
-    camera,
-    @render3d.Hdr::default(),
-    tick,
-  )
-  @render3d.query_get_environment_map_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_hdr)
+  .insert(camera, @render3d.Hdr::default(), tick)
+  world
+  .component(@render3d.ecs_key_environment_map_light)
+  .insert(
     camera,
     @render3d.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
@@ -595,7 +601,9 @@ fn update_ui() -> Unit {
 fn apply_scene_visibility(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   for entry in tonemapping_state.val.scene_entities {
-    @visibility.query_get_visibility_store(world).set(
+    world
+    .component(@visibility.ecs_key_visibility)
+    .set(
       entry.entity,
       if entry.scene == tonemapping_state.val.current_scene {
         @visibility.Visibility::Inherited
@@ -621,7 +629,9 @@ fn apply_scene_lighting(world : @ecs.World) -> Unit {
     } else {
       0.0F
     }
-    @render3d.query_get_directional_light_store(world).set(
+    world
+    .component(@render3d.ecs_key_directional_light)
+    .set(
       light,
       @render3d.DirectionalLight::new(
         @render2d.Color::white(),
@@ -641,7 +651,9 @@ fn apply_scene_lighting(world : @ecs.World) -> Unit {
     } else {
       0.0F
     }
-    @render3d.query_get_point_light_store(world).set(
+    world
+    .component(@render3d.ecs_key_point_light)
+    .set(
       light,
       @render3d.PointLight::new(
         @render2d.Color::new(1.0F, 0.9F, 0.8F, 1.0F),
@@ -664,14 +676,14 @@ fn apply_color_grading(world : @ecs.World) -> Unit {
   let color_grading = color_grading_from_settings(settings)
   let tick = world.read_change_tick()
 
-  let tonemapping_store = @render3d.query_get_tonemapping_store(world)
+  let tonemapping_store = world.component(@render3d.ecs_key_tonemapping)
   if tonemapping_store.contains(camera_entity) {
     tonemapping_store.set(camera_entity, tonemapping, tick) |> ignore
   } else {
     tonemapping_store.insert(camera_entity, tonemapping, tick)
   }
 
-  let color_grading_store = @render3d.query_get_color_grading_store(world)
+  let color_grading_store = world.component(@render3d.ecs_key_color_grading)
   if color_grading_store.contains(camera_entity) {
     color_grading_store.set(camera_entity, color_grading, tick) |> ignore
   } else {
@@ -868,7 +880,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

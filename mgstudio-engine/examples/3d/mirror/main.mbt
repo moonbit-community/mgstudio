@@ -220,11 +220,9 @@ fn set_main_camera_transform_from_orbit(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
 
-  @math.query_get_transform_store(world).set(
-    mirror_state.val.main_camera,
-    transform,
-    world.read_change_tick(),
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .set(mirror_state.val.main_camera, transform, world.read_change_tick())
   |> ignore
 }
 
@@ -314,7 +312,9 @@ fn setup(world : @ecs.World) -> Unit {
   // Fox scene.
   let asset_server = @asset.AssetServer::new()
   let fox = world.spawn_empty()
-  @scene.query_get_scene_root_store(world).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     fox,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -324,11 +324,9 @@ fn setup(world : @ecs.World) -> Unit {
     ),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
-    fox,
-    @math.Transform::from_xyz(-50.0F, 0.0F, -100.0F),
-    tick,
-  )
+  world
+  .component(@math.ecs_key_transform)
+  .insert(fox, @math.Transform::from_xyz(-50.0F, 0.0F, -100.0F), tick)
   mirror_state.val.fox = fox
 
   // Mirror plane.
@@ -352,12 +350,16 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Lighting.
   let light = world.spawn_empty()
-  @render3d.query_get_directional_light_store(world).insert(
+  world
+  .component(@render3d.ecs_key_directional_light)
+  .insert(
     light,
     @render3d.DirectionalLight::new(@render2d.Color::white(), 5000.0F, true),
     tick,
   )
-  @math.query_get_transform_store(world).insert(
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
       @math.Vec3::new(-50.0F, 0.0F, 100.0F),
@@ -397,11 +399,9 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.Projection3d::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
-  @render2d.query_get_render_target_store(world).insert(
-    mirror_camera,
-    @render2d.RenderTarget::Image(mirror_target),
-    tick,
-  )
+  world
+  .component(@render2d.ecs_key_render_target)
+  .insert(mirror_camera, @render2d.RenderTarget::Image(mirror_target), tick)
   mirror_state.val.mirror_camera = mirror_camera
 
   // Help text.
@@ -487,9 +487,9 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
   }
 
   guard @input.mouse_position() is Some(screen_pos) else { return }
-  let transform_store = @math.query_get_transform_store(world)
-  let camera_store = @render2d.query_get_camera_store(world)
-  let projection_store = @render3d.query_get_camera_projection3d_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let camera_store = world.component(@render2d.ecs_key_camera)
+  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
 
   guard transform_store.get(mirror_state.val.main_camera)
     is Some(camera_transform) else {
@@ -561,7 +561,7 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
   mirror_state.val.mirror_target_size = size
 
   let tick = world.read_change_tick()
-  let target_store = @render2d.query_get_render_target_store(world)
+  let target_store = world.component(@render2d.ecs_key_render_target)
   if target_store.contains(mirror_state.val.mirror_camera) {
     target_store.set(
       mirror_state.val.mirror_camera,
@@ -598,7 +598,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let transform_store = @math.query_get_transform_store(world)
+  let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(mirror_state.val.main_camera)
     is Some(main_camera_transform) else {
     return
@@ -608,7 +608,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let projection_store = @render3d.query_get_camera_projection3d_store(world)
+  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
   guard projection_store.get(mirror_state.val.main_camera)
     is Some(main_camera_projection_component) else {
     return
@@ -641,7 +641,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)

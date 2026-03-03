@@ -25,7 +25,7 @@ let parent_entity_state : Ref[@core.Entity?] = Ref::new(None)
 
 ///|
 pub fn game_app() -> Unit {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins_ecs()
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(visibility_setup)
@@ -35,42 +35,33 @@ pub fn game_app() -> Unit {
 
 ///|
 fn visibility_setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
   let parent = world.spawn_empty()
   parent_entity_state.val = Some(parent)
-  @math.query_get_transform_store(world).insert(
+  try! world.set(parent, @math.ecs_key_transform, @math.Transform::identity())
+  try! world.set(parent, @vis.ecs_key_visibility, @vis.Visibility::Visible)
+  try! world.set(
     parent,
-    @math.Transform::identity(),
-    tick,
-  )
-  @vis.query_get_visibility_store(world).insert(
-    parent,
-    @vis.Visibility::Visible,
-    tick,
-  )
-  @vis.query_get_inherited_visibility_store(world).insert(
-    parent,
+    @vis.ecs_key_inherited_visibility,
     @vis.InheritedVisibility::new(true),
-    tick,
   )
-  @vis.query_get_view_visibility_store(world).insert(
+  try! world.set(
     parent,
+    @vis.ecs_key_view_visibility,
     @vis.ViewVisibility::new(true),
-    tick,
   )
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @render2d.Sprite::from_image(texture)
-  let child = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn_ecs(
+  let child = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
     world,
   )
-  @hierarchy.query_get_parent_store(world).insert(
+  try! world.set(
     child,
+    @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
-    tick,
   )
   let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn_ecs(
+  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
     world,
   )
   |> ignore
@@ -85,19 +76,13 @@ fn visibility_toggle_system(world : @ecs.World) -> Unit {
     return
   }
   guard parent_entity_state.val is Some(parent) else { return }
-  let store = @vis.query_get_visibility_store(world)
-  let tick = world.read_change_tick()
-  let next = match store.get(parent) {
+  let next = match (try! world.get(parent, @vis.ecs_key_visibility)) {
     Some(@vis.Visibility::Hidden) => @vis.Visibility::Visible
     Some(@vis.Visibility::Visible) => @vis.Visibility::Hidden
     Some(@vis.Visibility::Inherited) => @vis.Visibility::Hidden
     None => @vis.Visibility::Hidden
   }
-  if store.contains(parent) {
-    store.set(parent, next, tick) |> ignore
-  } else {
-    store.insert(parent, next, tick)
-  }
+  try! world.set(parent, @vis.ecs_key_visibility, next)
   let msg = match next {
     @vis.Visibility::Hidden => "Parent Visibility: Hidden"
     @vis.Visibility::Visible => "Parent Visibility: Visible"
