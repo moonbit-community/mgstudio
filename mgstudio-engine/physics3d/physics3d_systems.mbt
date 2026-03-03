@@ -43,36 +43,9 @@ fn make_collider_builder(
 }
 
 ///|
-pub(open) trait Physics3dEcsWorld: @core.ChangeTickWorld {
-  as_ecs_world(self : Self) -> @ecs.World
-}
-
-///|
-pub impl Physics3dEcsWorld for @ecs.World with as_ecs_world(self) {
-  self
-}
-
-///|
-pub(open) trait Physics3dResourcesWorld: Physics3dEcsWorld {}
-
-///|
-pub(open) trait Physics3dCleanupWorld: Physics3dEcsWorld {}
-
-///|
-pub(open) trait Physics3dSyncInsertionsWorld: Physics3dEcsWorld {}
-
-///|
-pub(open) trait Physics3dSyncWorldToRapierWorld: Physics3dEcsWorld {}
-
-///|
-pub(open) trait Physics3dWritebackWorld: Physics3dEcsWorld {}
-
-///|
-pub fn[W : Physics3dResourcesWorld] physics3d_init_resources_system(
-  world : W,
-) -> Unit {
+pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   if !cfg_res.is_present() {
     cfg_res.insert(Physics3dConfig::default(), tick)
@@ -88,11 +61,9 @@ pub fn[W : Physics3dResourcesWorld] physics3d_init_resources_system(
 }
 
 ///|
-pub fn[W : Physics3dResourcesWorld] physics3d_clear_events_system(
-  world : W,
-) -> Unit {
+pub fn physics3d_clear_events_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ev_res = get_physics3d_events_resource(ecs_world)
   match ev_res.get_ref_mut(tick) {
     Some(r) => r.val.clear()
@@ -101,11 +72,9 @@ pub fn[W : Physics3dResourcesWorld] physics3d_clear_events_system(
 }
 
 ///|
-pub fn[W : Physics3dCleanupWorld] physics3d_cleanup_despawned_system(
-  world : W,
-) -> Unit {
+pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
@@ -194,11 +163,9 @@ pub fn[W : Physics3dCleanupWorld] physics3d_cleanup_despawned_system(
 }
 
 ///|
-pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(
-  world : W,
-) -> Unit {
+pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
@@ -331,11 +298,9 @@ pub fn[W : Physics3dSyncInsertionsWorld] physics3d_sync_insertions_system(
 }
 
 ///|
-pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_system(
-  world : W,
-) -> Unit {
+pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
@@ -402,9 +367,9 @@ pub fn[W : Physics3dSyncWorldToRapierWorld] physics3d_sync_world_to_rapier_syste
 }
 
 ///|
-pub fn[W : Physics3dResourcesWorld] physics3d_step_system(world : W) -> Unit {
+pub fn physics3d_step_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   let ctx_res = get_physics3d_context_resource(ecs_world)
   let ev_res = get_physics3d_events_resource(ecs_world)
@@ -468,11 +433,9 @@ pub fn[W : Physics3dResourcesWorld] physics3d_step_system(world : W) -> Unit {
 }
 
 ///|
-pub fn[W : Physics3dWritebackWorld] physics3d_writeback_system(
-  world : W,
-) -> Unit {
+pub fn physics3d_writeback_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get_ref() is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val

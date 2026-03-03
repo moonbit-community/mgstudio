@@ -4159,42 +4159,20 @@ fn RenderState::new() -> RenderState {
 }
 
 ///|
-pub(open) trait Render2dEcsWorld {
-  as_ecs_world(self : Self) -> @ecs.World
+fn render_state_ref(world : @ecs.World) -> Ref[RenderState]? {
+  get_render_state_resource(world).get_ref()
 }
 
 ///|
-pub impl Render2dEcsWorld for @ecs.World with as_ecs_world(self) {
-  self
-}
-
-///|
-pub(open) trait RenderStateWorld: Render2dEcsWorld {}
-
-///|
-pub(open) trait RenderStateMutWorld: RenderStateWorld + @core.ChangeTickWorld {}
-
-///|
-pub(open) trait Wireframe2dConfigWorld: Render2dEcsWorld + @core.ChangeTickWorld {
-}
-
-///|
-fn[W : RenderStateWorld] render_state_ref(world : W) -> Ref[RenderState]? {
-  get_render_state_resource(world.as_ecs_world()).get_ref()
-}
-
-///|
-fn[W : RenderStateMutWorld] render_state_ref_mut(
-  world : W,
-) -> Ref[RenderState]? {
+fn render_state_ref_mut(world : @ecs.World) -> Ref[RenderState]? {
   let tick = world.read_change_tick()
-  get_render_state_resource(world.as_ecs_world()).get_ref_mut(tick)
+  get_render_state_resource(world).get_ref_mut(tick)
 }
 
 ///|
-fn[W : RenderStateMutWorld] ensure_render_state_resource(world : W) -> Unit {
+fn ensure_render_state_resource(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let res = get_render_state_resource(world.as_ecs_world())
+  let res = get_render_state_resource(world)
   if !res.is_present() {
     res.insert(RenderState::new(), tick)
     gizmos_reset()
@@ -4202,23 +4180,21 @@ fn[W : RenderStateMutWorld] ensure_render_state_resource(world : W) -> Unit {
 }
 
 ///|
-fn[W : RenderStateMutWorld] init_render_state_system(world : W) -> Unit {
+fn init_render_state_system(world : @ecs.World) -> Unit {
   ensure_render_state_resource(world)
 }
 
 ///|
-fn[W : Wireframe2dConfigWorld] init_wireframe2d_resources(world : W) -> Unit {
+fn init_wireframe2d_resources(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let wireframe_config = get_wireframe2d_config_resource(world.as_ecs_world())
+  let wireframe_config = get_wireframe2d_config_resource(world)
   if !wireframe_config.is_present() {
     wireframe_config.insert(Wireframe2dConfig::default(), tick)
   }
 }
 
 ///|
-pub fn[W : Wireframe2dConfigWorld] wireframe2d_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_startup_system(init_wireframe2d_resources)
 }
 
@@ -4786,16 +4762,6 @@ pub fn render2d_create_render_target(
 }
 
 ///|
-pub(open) trait CameraStoreWorld: Render2dEcsWorld {}
-
-///|
-pub(open) trait RenderExtractStoreWorld: CameraStoreWorld {}
-
-///|
-pub(open) trait RenderExtractWorld: RenderStateMutWorld + Wireframe2dConfigWorld + RenderExtractStoreWorld + @core.SystemContextWorld {
-}
-
-///|
 pub fn SpriteBundle::spawn(
   self : SpriteBundle,
   world : @ecs.World,
@@ -4866,17 +4832,13 @@ pub fn Mesh2dBundle::spawn(
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_clear_overlay_sprites(
-  world : W,
-) -> Unit {
+pub fn render2d_clear_overlay_sprites(world : @ecs.World) -> Unit {
   render_state_ref_mut(world).map(fn(rs) { rs.val.extra_sprites.clear() })
   |> ignore
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_clear_overlay_sprite_texture_slices(
-  world : W,
-) -> Unit {
+pub fn render2d_clear_overlay_sprite_texture_slices(world : @ecs.World) -> Unit {
   render_state_ref_mut(world).map(fn(rs) {
     rs.val.extra_sprite_texture_slices.clear()
   })
@@ -4884,8 +4846,8 @@ pub fn[W : RenderStateMutWorld] render2d_clear_overlay_sprite_texture_slices(
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv(
-  world : W,
+pub fn render2d_push_sprite_uv(
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
   uv_min : @math.Vec2,
@@ -4911,8 +4873,8 @@ pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv(
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv_scissor(
-  world : W,
+pub fn render2d_push_sprite_uv_scissor(
+  world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
   uv_min : @math.Vec2,
@@ -4950,8 +4912,8 @@ pub(all) struct OverlaySpriteUvScissor {
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv_scissor_batch(
-  world : W,
+pub fn render2d_push_sprite_uv_scissor_batch(
+  world : @ecs.World,
   sprites : Array[OverlaySpriteUvScissor],
 ) -> Unit {
   if sprites.length() == 0 {
@@ -4980,25 +4942,19 @@ pub fn[W : RenderStateMutWorld] render2d_push_sprite_uv_scissor_batch(
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_clear_overlay_ui_rects(
-  world : W,
-) -> Unit {
+pub fn render2d_clear_overlay_ui_rects(world : @ecs.World) -> Unit {
   render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_rects.clear() })
   |> ignore
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_clear_overlay_ui_box_shadows(
-  world : W,
-) -> Unit {
+pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
   render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_box_shadows.clear() })
   |> ignore
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_clear_overlay_ui_texture_slices(
-  world : W,
-) -> Unit {
+pub fn render2d_clear_overlay_ui_texture_slices(world : @ecs.World) -> Unit {
   render_state_ref_mut(world).map(fn(rs) {
     rs.val.extra_ui_texture_slices.clear()
   })
@@ -5006,8 +4962,8 @@ pub fn[W : RenderStateMutWorld] render2d_clear_overlay_ui_texture_slices(
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_push_ui_rect_uv_scissor(
-  world : W,
+pub fn render2d_push_ui_rect_uv_scissor(
+  world : @ecs.World,
   entity : @core.Entity,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
@@ -5042,8 +4998,8 @@ pub fn[W : RenderStateMutWorld] render2d_push_ui_rect_uv_scissor(
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_push_ui_box_shadow_scissor(
-  world : W,
+pub fn render2d_push_ui_box_shadow_scissor(
+  world : @ecs.World,
   entity : @core.Entity,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
@@ -5076,8 +5032,8 @@ pub fn[W : RenderStateMutWorld] render2d_push_ui_box_shadow_scissor(
 }
 
 ///|
-pub fn[W : RenderStateMutWorld] render2d_push_ui_texture_slice_scissor(
-  world : W,
+pub fn render2d_push_ui_texture_slice_scissor(
+  world : @ecs.World,
   entity : @core.Entity,
   texture : @asset.Handle[@asset.Image],
   transform : @math.Transform,
@@ -5414,21 +5370,17 @@ fn render2d_camera_changed(
 }
 
 ///|
-pub(open) trait CameraSystemWorld: RenderStateMutWorld + CameraStoreWorld + @core.SystemContextWorld {
-}
-
-///|
 pub(open) trait CameraPostProcessWorld {
   camera_tonemapping_mode(self : Self, camera : @core.Entity) -> Int
   camera_deband_dither_enabled(self : Self, camera : @core.Entity) -> Bool
 }
 
 ///|
-pub fn[W : CameraSystemWorld] render2d_camera_system(world : W) -> Unit {
+pub fn render2d_camera_system(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let tick = world.read_change_tick()
   let system_ticks = world.get_system_context().ticks()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let camera2d_store = get_camera2d_store(ecs_world)
   let camera_store = get_camera_store(ecs_world)
   let projection_store = get_projection_store(ecs_world)
@@ -5645,14 +5597,14 @@ fn render2d_sorted_camera_indices(
 }
 
 ///|
-pub fn[W : RenderExtractWorld] render_extract_system(world : W) -> Unit {
+pub fn render_extract_system(world : @ecs.World) -> Unit {
   guard render_state_ref_mut(world) is Some(rs) else { return }
   rs.val.draw_enabled = true
   rs.val.primary_camera = @core.Entity::placeholder()
   rs.val.sprites.clear()
   rs.val.cameras.clear()
   rs.val.meshes.clear()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let camera2d_store = get_camera2d_store(ecs_world)
   let camera_store = get_camera_store(ecs_world)
   let projection_store = get_projection_store(ecs_world)
@@ -6668,9 +6620,7 @@ test "render2d: camera viewport scales with dpi resize factor" {
 }
 
 ///|
-pub fn[W : RenderStateMutWorld + CameraPostProcessWorld] render_execute_system(
-  world : W,
-) -> Unit {
+pub fn render_execute_system(world : @ecs.World) -> Unit {
   guard render_state_ref_mut(world) is Some(rs) else { return }
   if !rs.val.draw_enabled {
     return
@@ -7106,8 +7056,12 @@ pub fn[W : RenderStateMutWorld + CameraPostProcessWorld] render_execute_system(
       }
     }
 
-    let tonemapping_mode = world.camera_tonemapping_mode(camera.entity)
-    let deband_dither_enabled = world.camera_deband_dither_enabled(
+    let tonemapping_mode = CameraPostProcessWorld::camera_tonemapping_mode(
+      world,
+      camera.entity,
+    )
+    let deband_dither_enabled = CameraPostProcessWorld::camera_deband_dither_enabled(
+      world,
       camera.entity,
     )
     let mut auto_bloom_source : @asset.Handle[@asset.Image]? = None
@@ -7126,7 +7080,7 @@ pub fn[W : RenderStateMutWorld + CameraPostProcessWorld] render_execute_system(
 
     if auto_bloom_source is Some(source) {
       @window.host_gpu_begin_pass(
-        target_id=source.id(),
+        target_id=@asset.Handle::id(source),
         width=view_width_logical,
         height=view_height_logical,
         clear_r=clear.r,
@@ -7218,8 +7172,8 @@ pub fn[W : RenderStateMutWorld + CameraPostProcessWorld] render_execute_system(
 }
 
 ///|
-pub fn[W : RenderStateWorld] render2d_viewport_to_world_2d(
-  world : W,
+pub fn render2d_viewport_to_world_2d(
+  world : @ecs.World,
   screen : @math.Vec2,
 ) -> @math.Vec2? {
   guard render_state_ref(world) is Some(rs) else { return None }
@@ -7246,8 +7200,8 @@ pub fn[W : RenderStateWorld] render2d_viewport_to_world_2d(
 }
 
 ///|
-pub fn[W : RenderStateWorld] render2d_world_to_viewport(
-  world_ : W,
+pub fn render2d_world_to_viewport(
+  world_ : @ecs.World,
   world : @math.Vec2,
 ) -> @math.Vec2? {
   guard render_state_ref(world_) is Some(rs) else { return None }
@@ -7413,9 +7367,7 @@ fn camera_viewport_rect_physical(
 }
 
 ///|
-pub fn[W : RenderStateWorld] render2d_debug_log_primary_camera(
-  world : W,
-) -> Unit {
+pub fn render2d_debug_log_primary_camera(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(rs) else { return }
   let id = rs.val.primary_camera
   if id.is_placeholder() {
@@ -7481,9 +7433,7 @@ pub let render2d_set_render : @app.SystemSet = @app.system_set(
 pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
-pub fn[W : RenderExtractWorld + CameraPostProcessWorld] render2d_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .init_resource(fn() { ClearColor::default() })
   .add_startup_system(init_render_state_system)

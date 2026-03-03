@@ -233,10 +233,6 @@ pub fn Physics3dContext::new() -> Physics3dContext {
 }
 
 ///|
-pub(open) trait Physics3dPluginWorld: Physics3dResourcesWorld + Physics3dCleanupWorld + Physics3dSyncInsertionsWorld + Physics3dSyncWorldToRapierWorld + Physics3dWritebackWorld {
-}
-
-///|
 pub let physics3d_set_clear_events : @app.SystemSet = @app.system_set(
   "mgstudio.physics3d.clear_events",
 )
@@ -267,9 +263,7 @@ pub let physics3d_set_writeback : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn[W : Physics3dPluginWorld] physics3d_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn physics3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_startup_system(physics3d_init_resources_system)
   .add_pre_update_system_config(

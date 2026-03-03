@@ -181,14 +181,12 @@ fn draw_shape_2d(
 }
 
 ///|
-pub fn[W : Physics2dResourcesWorld] physics2d_debug_render_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_debug_render_system(world : @ecs.World) -> Unit {
   let config = physics2d_debug_render_state.val
   if !config.enabled {
     return
   }
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref() is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val

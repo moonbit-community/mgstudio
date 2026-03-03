@@ -150,36 +150,9 @@ fn recompute_body_mass_properties(
 }
 
 ///|
-pub(open) trait Physics2dEcsWorld: @core.ChangeTickWorld {
-  as_ecs_world(self : Self) -> @ecs.World
-}
-
-///|
-pub impl Physics2dEcsWorld for @ecs.World with as_ecs_world(self) {
-  self
-}
-
-///|
-pub(open) trait Physics2dResourcesWorld: Physics2dEcsWorld {}
-
-///|
-pub(open) trait Physics2dCleanupWorld: Physics2dEcsWorld {}
-
-///|
-pub(open) trait Physics2dSyncInsertionsWorld: Physics2dEcsWorld {}
-
-///|
-pub(open) trait Physics2dSyncWorldToRapierWorld: Physics2dEcsWorld {}
-
-///|
-pub(open) trait Physics2dWritebackWorld: Physics2dEcsWorld {}
-
-///|
-pub fn[W : Physics2dResourcesWorld] physics2d_init_resources_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_init_resources_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   if !cfg_res.is_present() {
     cfg_res.insert(Physics2dConfig::default(), tick)
@@ -195,11 +168,9 @@ pub fn[W : Physics2dResourcesWorld] physics2d_init_resources_system(
 }
 
 ///|
-pub fn[W : Physics2dResourcesWorld] physics2d_clear_events_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ev_res = get_physics2d_events_resource(ecs_world)
   match ev_res.get_ref_mut(tick) {
     Some(r) => r.val.clear()
@@ -208,11 +179,9 @@ pub fn[W : Physics2dResourcesWorld] physics2d_clear_events_system(
 }
 
 ///|
-pub fn[W : Physics2dCleanupWorld] physics2d_cleanup_despawned_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
@@ -422,11 +391,9 @@ pub fn[W : Physics2dCleanupWorld] physics2d_cleanup_despawned_system(
 }
 
 ///|
-pub fn[W : Physics2dSyncInsertionsWorld] physics2d_sync_insertions_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val
@@ -683,11 +650,9 @@ pub fn[W : Physics2dSyncInsertionsWorld] physics2d_sync_insertions_system(
 }
 
 ///|
-pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard cfg_res.get_ref() is Some(cfg_ref) else { return }
@@ -934,9 +899,9 @@ pub fn[W : Physics2dSyncWorldToRapierWorld] physics2d_sync_world_to_rapier_syste
 }
 
 ///|
-pub fn[W : Physics2dResourcesWorld] physics2d_step_system(world : W) -> Unit {
+pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
   let ev_res = get_physics2d_events_resource(ecs_world)
@@ -1013,11 +978,9 @@ pub fn[W : Physics2dResourcesWorld] physics2d_step_system(world : W) -> Unit {
 }
 
 ///|
-pub fn[W : Physics2dWritebackWorld] physics2d_writeback_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref() is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val

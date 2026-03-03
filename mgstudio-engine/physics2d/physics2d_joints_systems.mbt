@@ -21,14 +21,9 @@ fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
-pub(open) trait Physics2dSyncJointsWorld: Physics2dEcsWorld {}
-
-///|
-pub fn[W : Physics2dSyncJointsWorld] physics2d_sync_joints_system(
-  world : W,
-) -> Unit {
+pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
   let ctx = ctx_ref.val

@@ -148,17 +148,8 @@ pub fn physics3d_debug_render_enabled() -> Bool {
 }
 
 ///|
-pub(open) trait Physics3dDebugRenderEcsWorld: @render3d.MeshMaterial3dBundleSpawnWorld {
-}
-
-///|
-pub(open) trait Physics3dDebugRenderPluginWorld: Physics3dDebugRenderEcsWorld {}
-
-///|
-fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_clear_lines(
-  world : W,
-) -> Unit {
-  let ecs_world = world.as_ecs_world()
+fn physics3d_debug_clear_lines(world : @ecs.World) -> Unit {
+  let ecs_world = world
   let state = physics3d_debug_render_state.val
   while state.line_entities.length() > 0 {
     let entity = state.line_entities.pop().unwrap()
@@ -336,11 +327,11 @@ fn physics3d_debug_emit_ball_lines(
 }
 
 ///|
-fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_ensure_line_pool(
-  world : W,
+fn physics3d_debug_ensure_line_pool(
+  world : @ecs.World,
   desired_count : Int,
 ) -> Unit {
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let state = physics3d_debug_render_state.val
   guard state.line_mesh is Some(mesh) else { return }
   guard state.dynamic_material is Some(default_material) else { return }
@@ -359,9 +350,7 @@ fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_ensure_line_pool(
 }
 
 ///|
-pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_sync_system(
-  world : W,
-) -> Unit {
+pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
   physics3d_debug_ensure_assets()
   let state = physics3d_debug_render_state.val
   if !physics3d_debug_render_context.val.enabled {
@@ -372,7 +361,7 @@ pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_sync_system(
   }
 
   let tick = world.read_change_tick()
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let transform_store = @math.get_transform_store(ecs_world)
   let collider_store = get_collider3d_store(ecs_world)
   let rigid_body_store = get_rigid_body3d_store(ecs_world)
@@ -422,9 +411,9 @@ pub let physics3d_set_debug_render_sync : @app.SystemSet = @app.system_set(
 )
 
 ///|
-pub fn[W : Physics3dDebugRenderPluginWorld] physics3d_debug_render_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn physics3d_debug_render_plugin(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
   app
   .add_fixed_update_system_config(
     @app.system(physics3d_debug_render_sync_system).in_set(

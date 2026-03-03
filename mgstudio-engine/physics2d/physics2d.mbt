@@ -665,13 +665,7 @@ pub fn Physics2dContext::query(
 }
 
 ///|
-pub(open) trait Physics2dPluginWorld: Physics2dResourcesWorld + Physics2dCleanupWorld + Physics2dSyncInsertionsWorld + Physics2dSyncJointsWorld + Physics2dSyncWorldToRapierWorld + Physics2dCharacterControllerWorld + Physics2dWritebackWorld {
-}
-
-///|
-pub fn[W : Physics2dPluginWorld] physics2d_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn physics2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_startup_system(physics2d_init_resources_system)
   .add_pre_update_system(physics2d_clear_events_system)

@@ -5798,27 +5798,11 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
-pub(open) trait Render3dEcsWorld: @core.ChangeTickWorld {
-  as_ecs_world(self : Self) -> @ecs.World
-}
-
-///|
-pub impl Render3dEcsWorld for @ecs.World with as_ecs_world(self) {
-  self
-}
-
-///|
-pub(open) trait Camera3dBundleSpawnWorld: Render3dEcsWorld {}
-
-///|
-pub(open) trait MeshMaterial3dBundleSpawnWorld: Render3dEcsWorld {}
-
-///|
-pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
+pub fn Camera3dBundle::spawn(
   self : Camera3dBundle,
-  world : W,
+  world : @ecs.World,
 ) -> @core.Entity {
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let tick = world.read_change_tick()
   let entity = ecs_world.spawn_empty()
   get_camera3d_store(ecs_world).insert(entity, self.camera3d, tick)
@@ -5870,11 +5854,11 @@ pub fn[W : Camera3dBundleSpawnWorld] Camera3dBundle::spawn(
 }
 
 ///|
-pub fn[W : MeshMaterial3dBundleSpawnWorld] MeshMaterial3dBundle::spawn(
+pub fn MeshMaterial3dBundle::spawn(
   self : MeshMaterial3dBundle,
-  world : W,
+  world : @ecs.World,
 ) -> @core.Entity {
-  let ecs_world = world.as_ecs_world()
+  let ecs_world = world
   let tick = world.read_change_tick()
   let entity = ecs_world.spawn_empty()
   get_mesh3d_store(ecs_world).insert(entity, self.mesh, tick)
@@ -10857,8 +10841,8 @@ pub fn render3d_camera_world_to_viewport(
 }
 
 ///|
-fn[W : Render3dPluginWorld] init_render3d_resources(world : W) -> Unit {
-  let ecs_world = world.as_ecs_world()
+fn init_render3d_resources(world : @ecs.World) -> Unit {
+  let ecs_world = world
   let tick = world.read_change_tick()
   let ambient = get_global_ambient_light_resource(ecs_world)
   if !ambient.is_present() {
@@ -10880,8 +10864,8 @@ fn[W : Render3dPluginWorld] init_render3d_resources(world : W) -> Unit {
 }
 
 ///|
-fn[W : WireframePluginWorld] init_wireframe_resources(world : W) -> Unit {
-  let ecs_world = world.as_ecs_world()
+fn init_wireframe_resources(world : @ecs.World) -> Unit {
+  let ecs_world = world
   let tick = world.read_change_tick()
   let wireframe_config = get_wireframe_config_resource(ecs_world)
   if !wireframe_config.is_present() {
@@ -10890,17 +10874,9 @@ fn[W : WireframePluginWorld] init_wireframe_resources(world : W) -> Unit {
 }
 
 ///|
-pub(open) trait WireframePluginWorld: Render3dEcsWorld {}
-
-///|
-pub fn[W : WireframePluginWorld] wireframe_plugin(
-  app : @app.App[W],
-) -> @app.App[W] {
+pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_startup_system(init_wireframe_resources)
 }
-
-///|
-pub(open) trait Render3dPluginWorld: Render3dEcsWorld {}
 
 ///|
 pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
