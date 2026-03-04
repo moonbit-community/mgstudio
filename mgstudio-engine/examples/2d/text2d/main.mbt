@@ -46,6 +46,8 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   let medium_font = @text.TextFont::default()
     .with_font(font)
     .with_font_size(35.0F)
+  let box_color = @render2d.Color::srgb(0.25F, 0.25F, 0.55F)
+  let text_shadow_color = color_darker(box_color, 0.05F)
 
   text2d_state.val.translation_text = Some(
     spawn_animated_text(
@@ -79,7 +81,9 @@ fn text2d_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(0.0F, -250.0F),
     @math.Vec2::new(300.0F, 200.0F),
     @text.LineBreak::WordBoundary,
-    "this text wraps in the box\n(WordBoundary linebreaks)",
+    "this text wraps in the box\n(Unicode linebreaks)",
+    box_color,
+    text_shadow_color,
     true,
   )
   spawn_wrapped_text_box(
@@ -89,6 +93,8 @@ fn text2d_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(300.0F, 200.0F),
     @text.LineBreak::AnyCharacter,
     "this text wraps in the box\n(AnyCharacter linebreaks)",
+    box_color,
+    text_shadow_color,
     false,
   )
 
@@ -177,11 +183,13 @@ fn spawn_wrapped_text_box(
   size : @math.Vec2,
   linebreak : @text.LineBreak,
   content : String,
+  box_color : @render2d.Color,
+  shadow_color : @render2d.Color,
   underline : Bool,
 ) -> Unit {
   @render2d.Mesh2dBundle::new(
     @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::from_size(size)),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.25F, 0.25F, 0.55F)),
+    @render2d.ColorMaterial::new(box_color),
     @math.Transform::from_xy_rotation_scale(
       center,
       0.0F,
@@ -202,7 +210,7 @@ fn spawn_wrapped_text_box(
   )
   .with_layout(@text.TextLayout::new(@text.Justify::Left, linebreak))
   .with_bounds(@text.TextBounds::new(size.x, size.y))
-  .with_shadow(Some(@text.Text2dShadow::default()))
+  .with_shadow(Some(@text.Text2dShadow::default().with_color(shadow_color)))
   .with_underline(
     if underline {
       Some(@text.Underline::default())
@@ -229,7 +237,7 @@ fn spawn_anchor_label(
         position,
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
-        z=1.0F,
+        z=-1.0F,
       ),
     )
     .with_anchor(anchor)
@@ -279,23 +287,23 @@ fn color_darker(color : @render2d.Color, factor : Float) -> @render2d.Color {
 fn anchor_name(anchor : @render2d.Anchor) -> String {
   let v = anchor.as_vec()
   if v.x == -0.5F && v.y == 0.5F {
-    "TopLeft"
+    "Anchor(Vec2(-0.5, 0.5))"
   } else if v.x == 0.5F && v.y == 0.5F {
-    "TopRight"
+    "Anchor(Vec2(0.5, 0.5))"
   } else if v.x == 0.5F && v.y == -0.5F {
-    "BottomRight"
+    "Anchor(Vec2(0.5, -0.5))"
   } else if v.x == -0.5F && v.y == -0.5F {
-    "BottomLeft"
+    "Anchor(Vec2(-0.5, -0.5))"
   } else if v.x == 0.0F && v.y == 0.5F {
-    "TopCenter"
+    "Anchor(Vec2(0.0, 0.5))"
   } else if v.x == 0.0F && v.y == -0.5F {
-    "BottomCenter"
+    "Anchor(Vec2(0.0, -0.5))"
   } else if v.x == -0.5F && v.y == 0.0F {
-    "CenterLeft"
+    "Anchor(Vec2(-0.5, 0.0))"
   } else if v.x == 0.5F && v.y == 0.0F {
-    "CenterRight"
+    "Anchor(Vec2(0.5, 0.0))"
   } else {
-    "Center"
+    "Anchor(Vec2(0.0, 0.0))"
   }
 }
 

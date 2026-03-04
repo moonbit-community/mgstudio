@@ -75,7 +75,7 @@ pub fn Text2dBundle::new(
     transform,
     layers: @render2d.RenderLayers::default(),
     anchor: @render2d.Anchor::default(),
-    y_axis: YAxisOrientation::BottomToTop,
+    y_axis: YAxisOrientation::TopToBottom,
   }
 }
 
@@ -100,7 +100,7 @@ pub fn Text2dBundle::new_with_layers(
     transform,
     layers,
     anchor: @render2d.Anchor::default(),
-    y_axis: YAxisOrientation::BottomToTop,
+    y_axis: YAxisOrientation::TopToBottom,
   }
 }
 
@@ -806,22 +806,33 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
       instance.transform.translation.y,
     )
     let layout_size = instance.layout_info.size
+    let anchor_size = @math.Vec2::new(
+      instance.bounds.width.unwrap_or(layout_size.x),
+      instance.bounds.height.unwrap_or(layout_size.y),
+    )
     let origin_offset_layout = match instance.ui_node_size {
       Some(node_size) =>
         @math.Vec2::new(0.0F - node_size.x / 2.0F, 0.0F - node_size.y / 2.0F)
       None => {
         let anchor = instance.anchor.as_vec()
-        let text_anchor = @math.Vec2::new(
-          0.0F - (anchor.x + 0.5F),
-          0.0F - (anchor.y + 0.5F),
-        )
-        @math.Vec2::new(
-          layout_size.x * text_anchor.x,
-          layout_size.y * text_anchor.y,
-        )
+        match instance.y_axis {
+          YAxisOrientation::TopToBottom =>
+            @math.Vec2::new(
+              (0.0F - 0.5F - anchor.x) * anchor_size.x,
+              (0.5F - anchor.y) * anchor_size.y,
+            )
+          YAxisOrientation::BottomToTop =>
+            @math.Vec2::new(
+              (0.0F - 0.5F - anchor.x) * anchor_size.x,
+              (0.0F - 0.5F - anchor.y) * anchor_size.y,
+            )
+        }
       }
     }
-    let origin_offset = to_y_up(instance.y_axis, origin_offset_layout)
+    let origin_offset = match (instance.y_axis, instance.ui_node_size) {
+      (YAxisOrientation::TopToBottom, None) => origin_offset_layout
+      _ => to_y_up(instance.y_axis, origin_offset_layout)
+    }
     fn extend_with_point(
       p : @math.Vec2,
       min_x : Ref[Float],

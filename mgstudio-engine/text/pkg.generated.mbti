@@ -263,6 +263,9 @@ pub struct Text2dShadow {
   color : @render2d.Color
 }
 pub fn Text2dShadow::default() -> Self
+pub fn Text2dShadow::new(@math.Vec2, @render2d.Color) -> Self
+pub fn Text2dShadow::with_color(Self, @render2d.Color) -> Self
+pub fn Text2dShadow::with_offset(Self, @math.Vec2) -> Self
 
 pub struct TextBackgroundColor {
   color : @render2d.Color

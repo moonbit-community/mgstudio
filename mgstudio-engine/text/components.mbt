@@ -249,9 +249,30 @@ pub struct Text2dShadow {
 }
 
 ///|
+pub fn Text2dShadow::new(
+  offset : @math.Vec2,
+  color : @render2d.Color,
+) -> Text2dShadow {
+  Text2dShadow::{ offset, color }
+}
+
+///|
 pub fn Text2dShadow::default() -> Text2dShadow {
-  Text2dShadow::{
-    offset: @math.Vec2::new(4.0F, -4.0F),
-    color: @render2d.Color::black(),
-  }
+  Text2dShadow::new(@math.Vec2::new(4.0F, -4.0F), @render2d.Color::black())
+}
+
+///|
+pub fn Text2dShadow::with_offset(
+  self : Text2dShadow,
+  offset : @math.Vec2,
+) -> Text2dShadow {
+  Text2dShadow::{ ..self, offset, }
+}
+
+///|
+pub fn Text2dShadow::with_color(
+  self : Text2dShadow,
+  color : @render2d.Color,
+) -> Text2dShadow {
+  Text2dShadow::{ ..self, color, }
 }

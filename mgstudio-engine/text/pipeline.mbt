@@ -400,6 +400,7 @@ fn justify_is_left(justify : Justify) -> Bool {
 fn cosmic_physical_xy(
   glyph : @cosmic.LayoutGlyph,
   font_smoothing : FontSmoothing,
+  line_y_offset : Float,
 ) -> (@cosmic.CacheKey, Int, Int, Int, Int) {
   fn bin_index(bin : @cosmic.SubpixelBin) -> Int {
     match bin {
@@ -424,7 +425,7 @@ fn cosmic_physical_xy(
       let x_off = glyph.font_size * rounded_x_offset
       let y_off = glyph.font_size * rounded_y_offset
       let pos_x = rounded_x + x_off
-      let pos_y = @cosmic.truncf(rounded_y - y_off)
+      let pos_y = @cosmic.truncf(rounded_y - y_off + line_y_offset)
       let (cache_key, phys_x, phys_y) = @cosmic.CacheKey::new(
         glyph.font_id,
         glyph.glyph_id,
@@ -442,7 +443,7 @@ fn cosmic_physical_xy(
       )
     }
     FontSmoothing::AntiAliased => {
-      let physical = glyph.physical((0.0F, 0.0F), 1.0F)
+      let physical = glyph.physical((0.0F, line_y_offset), 1.0F)
       let cache_key = physical.cache_key
       (
         cache_key,
@@ -560,8 +561,41 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   let glyphs : Array[PositionedGlyph] = []
   let run_geometry : Array[RunGeometry] = []
   for run in cosmic_buffer.layout_runs() {
-    let run_glyph_start = glyphs.length()
-    let mut run_top_correction = 0.0F
+    // Reconstruct run vertical bounds from font metrics.
+    // Baseline (`run.line_y`) comes from `moon_cosmic` layout.
+    let mut run_max_ascent = 0.0F
+    let mut run_max_descent = 0.0F
+    for g in run.glyphs {
+      let font_opt = font_system.get_font(g.font_id)
+      if font_opt is Some(font_ref) {
+        let m = font_ref.metrics([])
+        let upem = m.units_per_em.to_int()
+        if upem > 0 {
+          let scalar = g.font_size / Float::from_double(upem.to_double())
+          let ascent = Float::from_double(m.ascent * scalar.to_double())
+          let descent = Float::from_double(m.descent * scalar.to_double())
+          if ascent > run_max_ascent {
+            run_max_ascent = ascent
+          }
+          if descent > run_max_descent {
+            run_max_descent = descent
+          }
+        }
+      }
+    }
+    let run_glyph_height = run_max_ascent + run_max_descent
+    let run_line_y = run.line_y
+    let run_min_y = if run_glyph_height > 0.0F {
+      run_line_y - run_max_ascent
+    } else {
+      run.line_top
+    }
+    let run_max_y = if run_glyph_height > 0.0F {
+      run_min_y + run_glyph_height
+    } else {
+      run.line_top + run.line_height
+    }
+
     let mut maybe_run_geom : RunGeometry? = None
     let mut end_x = 0.0F
     for layout_glyph0 in run.glyphs {
@@ -596,16 +630,16 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         maybe_run_geom = Some(RunGeometry::{
           span_index,
           bounds: @math.Rect::new(
-            @math.Vec2::new(start, run.line_top),
-            @math.Vec2::new(start, run.line_top + run.line_height),
+            @math.Vec2::new(start, run_min_y),
+            @math.Vec2::new(start, run_max_y),
           ),
           strikethrough_y: @cosmic.roundf(
-            run.line_y -
+            run_line_y -
             Float::from_double(m.strikeout_offset * scalar.to_double()),
           ),
           strikethrough_thickness: stroke_size,
           underline_y: @cosmic.roundf(
-            run.line_y -
+            run_line_y -
             Float::from_double(m.underline_offset * scalar.to_double()),
           ),
           underline_thickness: stroke_size,
@@ -629,7 +663,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         continue
       }
       let (physical_key, phys_x_i, phys_y_i, subpixel_x, subpixel_y) = cosmic_physical_xy(
-        layout_glyph, font_smoothing,
+        layout_glyph, font_smoothing, run_line_y,
       )
       let font_handle_id_opt = cosmic_font_handle_id_for_font_id(
         layout_glyph.font_id,
@@ -713,15 +747,8 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let top = Float::from_double(atlas_info.location.offset.y.to_double())
       let phys_x = Float::from_double(phys_x_i.to_double())
       let phys_y = Float::from_double(phys_y_i.to_double())
-      let correction = if top > phys_y { top - phys_y } else { 0.0F }
-      if correction > run_top_correction {
-        run_top_correction = correction
-      }
       let x = glyph_size_x / 2.0F + left + phys_x
-      let y_raw = @cosmic.roundf(run.line_y) +
-        phys_y -
-        top +
-        glyph_size_y / 2.0F
+      let y_raw = glyph_size_y / 2.0F + phys_y - top
       // Bevy parity: `BottomToTop` flips Y using the computed box height.
       let y = match instance.y_axis {
         YAxisOrientation::TopToBottom => y_raw
@@ -738,38 +765,6 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         byte_index: glyph_byte_start,
         byte_length: glyph_byte_end - glyph_byte_start,
       })
-    }
-    if instance.y_axis == YAxisOrientation::TopToBottom &&
-      run_top_correction > 0.0F {
-      let run_glyph_end = glyphs.length()
-      for i in run_glyph_start..<run_glyph_end {
-        let g = glyphs[i]
-        glyphs[i] = PositionedGlyph::{
-          ..g,
-          position: @math.Vec2::new(
-            g.position.x,
-            g.position.y + run_top_correction,
-          ),
-        }
-      }
-      if maybe_run_geom is Some(rg0) {
-        let bounds = @math.Rect::new(
-          @math.Vec2::new(
-            rg0.bounds.min.x,
-            rg0.bounds.min.y + run_top_correction,
-          ),
-          @math.Vec2::new(
-            rg0.bounds.max.x,
-            rg0.bounds.max.y + run_top_correction,
-          ),
-        )
-        maybe_run_geom = Some(RunGeometry::{
-          ..rg0,
-          bounds,
-          strikethrough_y: rg0.strikethrough_y + run_top_correction,
-          underline_y: rg0.underline_y + run_top_correction,
-        })
-      }
     }
     if maybe_run_geom is Some(rg) {
       run_geometry.push(rg)
@@ -927,10 +922,14 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     )
 
     // Bevy parity:
-    // - Text2d: use `Anchor` + `TextLayoutInfo.size` to compute the local origin.
+    // - Text2d: use `Anchor` + (`TextBounds` if set, otherwise `TextLayoutInfo.size`)
+    //   to compute the local origin.
     // - UI text: treat `GlobalTransform`/`Transform` as the center of the UI node, then translate
     //   by (-0.5 * node_size) to convert to top-left origin.
-    let layout_size = layout_info.size
+    let anchor_size = @math.Vec2::new(
+      instance.bounds.width.unwrap_or(layout_info.size.x),
+      instance.bounds.height.unwrap_or(layout_info.size.y),
+    )
     let mut origin_offset_layout = @math.Vec2::new(0.0F, 0.0F)
     if instance.ui_node_size is Some(node_size) {
       origin_offset_layout = @math.Vec2::new(
@@ -939,19 +938,30 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       )
     } else {
       let a = instance.anchor.as_vec()
-      // text_anchor = -(anchor + 0.5)
-      let text_anchor = @math.Vec2::new(
-        0.0F - (a.x + 0.5F),
-        0.0F - (a.y + 0.5F),
-      )
-      origin_offset_layout = @math.Vec2::new(
-        layout_size.x * text_anchor.x,
-        layout_size.y * text_anchor.y,
-      )
+      // Bevy parity: top_left = (Anchor::TOP_LEFT - anchor) * size
+      // for the default TopToBottom layout orientation.
+      origin_offset_layout = match instance.y_axis {
+        YAxisOrientation::TopToBottom =>
+          @math.Vec2::new(
+            (0.0F - 0.5F - a.x) * anchor_size.x,
+            (0.5F - a.y) * anchor_size.y,
+          )
+        // Backward-compatible semantics for BottomToTop mode.
+        YAxisOrientation::BottomToTop =>
+          @math.Vec2::new(
+            (0.0F - 0.5F - a.x) * anchor_size.x,
+            (0.0F - 0.5F - a.y) * anchor_size.y,
+          )
+      }
     }
 
-    // Convert layout coordinates (+Y down for UI) into our world-style local (+Y up) coordinates.
-    let origin_offset = to_y_up(instance.y_axis, origin_offset_layout)
+    // Bevy parity for Text2d (`ui_node_size == None`):
+    // - `top_left` translation is applied before the Y-flip scale, so it should not be Y-flipped.
+    // For UI text we keep existing conversion semantics.
+    let origin_offset = match (instance.y_axis, instance.ui_node_size) {
+      (YAxisOrientation::TopToBottom, None) => origin_offset_layout
+      _ => to_y_up(instance.y_axis, origin_offset_layout)
+    }
     let origin_scaled = @math.Vec2::new(
       origin_offset.x * scale.x,
       origin_offset.y * scale.y,
