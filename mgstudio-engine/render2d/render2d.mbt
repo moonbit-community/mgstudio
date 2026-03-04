@@ -2172,10 +2172,12 @@ fn rectangle_to_mesh2d_geometry(rectangle : Rectangle) -> @mesh.Mesh2dGeometry {
   let hy = shape_safe_positive(shape_abs_float(rectangle.half_size.y), 0.5F)
   let positions = shape_perimeter_rectangle(@math.Vec2::new(hx, hy))
   let uvs = [
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
+    // Positions are ordered bottom-left -> bottom-right -> top-right -> top-left.
+    // Use top-origin V (same visual orientation as Bevy's Rectangle mesh UVs).
     @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
   ]
   let indices = [0, 1, 2, 0, 2, 3]
   @mesh.Mesh2dGeometry::new(positions, uvs, Some(indices))
