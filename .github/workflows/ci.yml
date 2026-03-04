@@ -92,6 +92,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install MoonBit
         shell: bash
         run: |
@@ -113,7 +116,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y xvfb libudev-dev pkg-config
 
       - name: Smoke gate for representative Bevy parity examples
         shell: bash

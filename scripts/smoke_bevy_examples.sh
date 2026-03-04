@@ -86,6 +86,7 @@ RUNTIME_EXAMPLES=(
 )
 
 echo "[smoke] Runtime smoke (time-boxed)"
+runtime_smoke_executed=0
 for pkg in "${RUNTIME_EXAMPLES[@]}"; do
   game_json="${ENGINE_DIR}/${pkg}/moon.game.json"
   if [[ ! -f "${game_json}" ]]; then
@@ -94,25 +95,31 @@ for pkg in "${RUNTIME_EXAMPLES[@]}"; do
   fi
 
   echo "[smoke] timeout 10s ${MGSTUDIO_RUNNER:+${MGSTUDIO_RUNNER} }${MGSTUDIO_CMD} run --game ${game_json}"
+  runtime_smoke_executed=$((runtime_smoke_executed + 1))
+  rc=0
   if [[ ${#RUNNER_PREFIX[@]} -gt 0 ]]; then
-    if ! timeout 10s "${RUNNER_PREFIX[@]}" "${MGSTUDIO_CMD}" run --game "${game_json}"; then
-      rc=$?
-      if [[ "${rc}" -eq 124 ]]; then
-        echo "[smoke] timeout reached (treated as pass): ${pkg}"
-        continue
-      fi
-      echo "[smoke] runtime smoke failed: ${pkg}"
-      exit "${rc}"
-    fi
+    set +e
+    timeout 10s "${RUNNER_PREFIX[@]}" "${MGSTUDIO_CMD}" run --game "${game_json}"
+    rc=$?
+    set -e
   else
-    if ! timeout 10s "${MGSTUDIO_CMD}" run --game "${game_json}"; then
-      rc=$?
-      if [[ "${rc}" -eq 124 ]]; then
-        echo "[smoke] timeout reached (treated as pass): ${pkg}"
-        continue
-      fi
-      echo "[smoke] runtime smoke failed: ${pkg}"
-      exit "${rc}"
-    fi
+    set +e
+    timeout 10s "${MGSTUDIO_CMD}" run --game "${game_json}"
+    rc=$?
+    set -e
+  fi
+
+  if [[ "${rc}" -eq 124 ]]; then
+    echo "[smoke] timeout reached (treated as pass): ${pkg}"
+    continue
+  fi
+  if [[ "${rc}" -ne 0 ]]; then
+    echo "[smoke] runtime smoke failed: ${pkg} (exit=${rc})"
+    exit "${rc}"
   fi
 done
+
+if [[ "${runtime_smoke_executed}" -eq 0 ]]; then
+  echo "[smoke] runtime smoke failed: no runnable runtime examples were found." >&2
+  exit 1
+fi
