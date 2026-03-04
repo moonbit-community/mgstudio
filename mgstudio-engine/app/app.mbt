@@ -332,7 +332,7 @@ pub struct Schedule[W] {
 pub struct App[W] {
   mut world : W
   schedule : Schedule[W]
-  runner : RunnerFn?
+  runner_builder : RunnerBuilder[W]?
   sub_apps : @hashmap.HashMap[String, Ref[App[W]]]
   sub_app_labels : @hashmap.HashMap[String, AppLabel]
   sub_app_extractors : @hashmap.HashMap[String, SubAppExtractFn[W]]
@@ -355,7 +355,7 @@ pub fn[W] App::new(world : W) -> App[W] {
       update_set_edges: [],
       post_update_set_edges: [],
     },
-    runner: None,
+    runner_builder: None,
     sub_apps: @hashmap.HashMap::new(),
     sub_app_labels: @hashmap.HashMap::new(),
     sub_app_extractors: @hashmap.HashMap::new(),
@@ -1237,7 +1237,8 @@ pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
 
 ///|
 pub fn App::run(self : App[@ecs.World]) -> Unit {
-  if self.runner is Some(runner) {
+  if self.runner_builder is Some(builder) {
+    let runner = builder(self)
     runner()
   } else {
     self.run_startup().run_once() |> ignore
@@ -1246,6 +1247,5 @@ pub fn App::run(self : App[@ecs.World]) -> Unit {
 
 ///|
 pub fn[W] App::set_runner(self : App[W], builder : RunnerBuilder[W]) -> App[W] {
-  let runner = builder(self)
-  App::{ ..self, runner: Some(runner) }
+  App::{ ..self, runner_builder: Some(builder) }
 }

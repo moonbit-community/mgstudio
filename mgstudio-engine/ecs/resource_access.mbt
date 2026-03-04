@@ -20,8 +20,10 @@ pub struct ResourceAccess[T] {
 
 ///|
 fn[T : @json.FromJson] resource_access_decode_payload(payload : Json) -> T? {
-  @json.from_json(payload) catch {
+  try @json.from_json(payload) catch {
     _ => None
+  } noraise {
+    value => Some(value)
   }
 }
 

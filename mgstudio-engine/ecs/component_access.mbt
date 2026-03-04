@@ -24,8 +24,10 @@ pub struct ComponentAccess[T] {
 
 ///|
 fn[T : @json.FromJson] component_access_decode_payload(payload : Json) -> T? {
-  @json.from_json(payload) catch {
+  try @json.from_json(payload) catch {
     _ => None
+  } noraise {
+    value => Some(value)
   }
 }
 
@@ -65,9 +67,7 @@ pub fn[T : @json.FromJson] ComponentAccess::get(
     return None
   }
   guard store_ref.val.get(entity) is Some(payload) else { return None }
-  @json.from_json(payload) catch {
-    _ => None
-  }
+  component_access_decode_payload(payload)
 }
 
 ///|
@@ -81,7 +81,6 @@ pub fn[T] ComponentAccess::get_ticks(
   }
 }
 
-///|
 pub fn[T : ToJson] ComponentAccess::set(
   self : ComponentAccess[T],
   entity : @core.Entity,
@@ -135,9 +134,7 @@ pub fn[T : @json.FromJson] ComponentAccess::remove(
     return None
   }
   guard store_ref.val.remove(entity) is Some(payload) else { return None }
-  @json.from_json(payload) catch {
-    _ => None
-  }
+  component_access_decode_payload(payload)
 }
 
 ///|
