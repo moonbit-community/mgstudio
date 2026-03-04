@@ -18,7 +18,7 @@ priv struct BloomExampleState {
   mut help_text : @text.TextHandle?
   mut bloom_enabled : Bool
   mut bloom : @render2d.Bloom2dSettings
-  mut tonemapping : @render3d.Tonemapping
+  mut tonemapping : @render2d.Tonemapping
 }
 
 ///|
@@ -27,7 +27,7 @@ let bloom_example_state : Ref[BloomExampleState] = Ref::new(BloomExampleState::{
   help_text: None,
   bloom_enabled: true,
   bloom: @render2d.Bloom2dSettings::default(),
-  tonemapping: @render3d.Tonemapping::TonyMcMapface,
+  tonemapping: @render2d.Tonemapping::TonyMcMapface,
 })
 
 ///|
@@ -75,7 +75,7 @@ fn bloom_mode_text(mode : @render2d.BloomCompositeMode) -> String {
 }
 
 ///|
-fn tonemapping_text(mode : @render3d.Tonemapping) -> String {
+fn tonemapping_text(mode : @render2d.Tonemapping) -> String {
   match mode {
     None => "None"
     AcesFitted => "AcesFitted"
@@ -89,7 +89,7 @@ fn tonemapping_text(mode : @render3d.Tonemapping) -> String {
 }
 
 ///|
-fn next_tonemap(mode : @render3d.Tonemapping) -> @render3d.Tonemapping {
+fn next_tonemap(mode : @render2d.Tonemapping) -> @render2d.Tonemapping {
   match mode {
     None => AcesFitted
     AcesFitted => AgX
@@ -218,7 +218,7 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   bloom_example_state.val.help_text = None
   bloom_example_state.val.bloom_enabled = true
   bloom_example_state.val.bloom = @render2d.Bloom2dSettings::default()
-  bloom_example_state.val.tonemapping = @render3d.Tonemapping::TonyMcMapface
+  bloom_example_state.val.tonemapping = @render2d.Tonemapping::TonyMcMapface
 
   let camera = @render2d.Camera2dBundle::new(
       @render2d.Camera::new(@render2d.Color::black()),
@@ -231,11 +231,11 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   bloom_example_state.val.camera = camera
   let tick = world.read_change_tick()
   world
-  .component(@render3d.ecs_key_tonemapping)
+  .component(@render2d.ecs_key_tonemapping)
   .insert(camera, bloom_example_state.val.tonemapping, tick)
   world
-  .component(@render3d.ecs_key_deband_dither)
-  .insert(camera, @render3d.DebandDither::Enabled, tick)
+  .component(@render2d.ecs_key_deband_dither)
+  .insert(camera, @render2d.DebandDither::Enabled, tick)
 
   let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
@@ -386,7 +386,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
     tonemapping = next_tonemap(tonemapping)
     world
-    .component(@render3d.ecs_key_tonemapping)
+    .component(@render2d.ecs_key_tonemapping)
     .set(bloom_example_state.val.camera, tonemapping, tick)
     |> ignore
   }

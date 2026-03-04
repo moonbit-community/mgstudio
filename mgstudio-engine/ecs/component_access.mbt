@@ -81,6 +81,7 @@ pub fn[T] ComponentAccess::get_ticks(
   }
 }
 
+///|
 pub fn[T : ToJson] ComponentAccess::set(
   self : ComponentAccess[T],
   entity : @core.Entity,

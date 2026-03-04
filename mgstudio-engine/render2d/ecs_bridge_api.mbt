@@ -17,7 +17,8 @@
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom2d", "Camera2d", "GpuMesh2d", "Projection",
   "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
-  "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig", "Wireframe2dColor",
+  "Tonemapping", "DebandDither", "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig",
+  "Wireframe2dColor",
 ]
 
 ///|
@@ -47,6 +48,20 @@ pub fn get_sprite_store(world : @ecs.World) -> @ecs.ComponentAccess[Sprite] {
 ///|
 pub fn get_bloom2d_store(world : @ecs.World) -> @ecs.ComponentAccess[Bloom2d] {
   world.component(ecs_key_bloom2d)
+}
+
+///|
+pub fn get_tonemapping_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[Tonemapping] {
+  world.component(ecs_key_tonemapping)
+}
+
+///|
+pub fn get_deband_dither_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[DebandDither] {
+  world.component(ecs_key_deband_dither)
 }
 
 ///|

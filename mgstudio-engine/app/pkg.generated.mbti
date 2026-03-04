@@ -114,7 +114,7 @@ pub fn[W] task_pool_plugin(TaskPoolPlugin) -> (App[W]) -> App[W]
 pub struct App[W] {
   mut world : W
   schedule : Schedule[W]
-  runner : (() -> Unit)?
+  runner_builder : ((App[W]) -> (() -> Unit))?
   sub_apps : @hashmap.HashMap[String, Ref[App[W]]]
   sub_app_labels : @hashmap.HashMap[String, AppLabel]
   sub_app_extractors : @hashmap.HashMap[String, (W, W) -> (W, W)]

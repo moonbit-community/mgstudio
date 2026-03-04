@@ -3648,6 +3648,36 @@ pub fn render2d_draw_tilemap_chunk(
 }
 
 ///|
+/// Camera tonemapping mode aligned with Bevy's `Tonemapping`.
+pub(all) enum Tonemapping {
+  None
+  Reinhard
+  ReinhardLuminance
+  AcesFitted
+  AgX
+  SomewhatBoringDisplayTransform
+  TonyMcMapface
+  BlenderFilmic
+}
+
+///|
+pub fn Tonemapping::default() -> Tonemapping {
+  Tonemapping::None
+}
+
+///|
+/// Enables / disables screen-space deband dithering in the tonemapping pass.
+pub(all) enum DebandDither {
+  Disabled
+  Enabled
+}
+
+///|
+pub fn DebandDither::default() -> DebandDither {
+  DebandDither::Disabled
+}
+
+///|
 pub(all) struct Bloom2dSettings {
   intensity : Float
   low_frequency_boost : Float
@@ -5424,16 +5454,39 @@ fn render2d_camera_changed(
 }
 
 ///|
-fn camera_tonemapping_mode(_world : @ecs.World, _camera : @core.Entity) -> Int {
-  0
+fn render2d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
+  match mode {
+    None => 0
+    Reinhard => 1
+    ReinhardLuminance => 2
+    AcesFitted => 3
+    AgX => 4
+    SomewhatBoringDisplayTransform => 5
+    TonyMcMapface => 6
+    BlenderFilmic => 7
+  }
+}
+
+///|
+fn camera_tonemapping_mode(world : @ecs.World, camera : @core.Entity) -> Int {
+  let store = world.component(ecs_key_tonemapping)
+  match store.get(camera) {
+    Some(mode) => render2d_tonemapping_mode_to_int(mode)
+    None => 0
+  }
 }
 
 ///|
 fn camera_deband_dither_enabled(
-  _world : @ecs.World,
-  _camera : @core.Entity,
+  world : @ecs.World,
+  camera : @core.Entity,
 ) -> Bool {
-  false
+  let store = world.component(ecs_key_deband_dither)
+  match store.get(camera) {
+    Some(Enabled) => true
+    Some(Disabled) => false
+    None => false
+  }
 }
 
 ///|
