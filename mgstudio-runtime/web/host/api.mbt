@@ -635,7 +635,7 @@ pub fn create_host(
     }
   })
   let debug_string = @js.from_fn1(fn(value) {
-    console_error(@js.any(string_from_id_optional(state, value)))
+    @js.log(@js.any(string_from_id_optional(state, value)))
     0
   })
   let a11y_begin_update = @js.from_fn1(fn(root_any : @js.Any) {

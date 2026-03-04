@@ -37,7 +37,6 @@ priv struct TilemapChunkState {
   mut update_accumulator : Float
   mut seed : Int
   mut player : @core.Entity
-  mut last_logged_tile_value : Int
 }
 
 ///|
@@ -47,7 +46,6 @@ let tilemap_chunk_state : Ref[TilemapChunkState] = Ref::new(TilemapChunkState::{
   update_accumulator: 0.0F,
   seed: 42,
   player: @core.Entity::placeholder(),
-  last_logged_tile_value: -1,
 })
 
 ///|
@@ -90,7 +88,6 @@ fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
   tilemap_chunk_state.val.tiles = tiles
   tilemap_chunk_state.val.update_accumulator = 0.0F
   tilemap_chunk_state.val.player = player
-  tilemap_chunk_state.val.last_logged_tile_value = -1
 }
 
 ///|
@@ -107,7 +104,6 @@ fn tilemap_chunk_update(world : @ecs.World) -> Unit {
 
   update_fake_player(world, chunk)
   update_tilemap_data(chunk)
-  log_probe_tile(chunk)
 }
 
 ///|
@@ -139,7 +135,7 @@ fn update_fake_player(
 }
 
 ///|
-fn update_tilemap_data(chunk : @render2d.TilemapChunk) -> Unit {
+fn update_tilemap_data(_chunk : @render2d.TilemapChunk) -> Unit {
   tilemap_chunk_state.val.update_accumulator = tilemap_chunk_state.val.update_accumulator +
     @time.time_delta_seconds()
   if tilemap_chunk_state.val.update_accumulator < UPDATE_INTERVAL_SECONDS {
@@ -157,33 +153,6 @@ fn update_tilemap_data(chunk : @render2d.TilemapChunk) -> Unit {
       @render2d.TileData::from_tileset_index(value),
     )
   }
-  if chunk.tile_capacity() != tile_count {
-    @window.host_debug_string(
-      value="tilemap_chunk: tile_data length mismatch, expected=" +
-        chunk.tile_capacity().to_string() +
-        ", actual=" +
-        tile_count.to_string(),
-    )
-  }
-}
-
-///|
-fn log_probe_tile(chunk : @render2d.TilemapChunk) -> Unit {
-  let data = @render2d.TilemapChunkTileData::new(tilemap_chunk_state.val.tiles)
-  let tile = data.tile_data_from_tile_pos(
-    chunk.chunk_size,
-    @math.UVec2::new(3, 4),
-  )
-  let current = match tile {
-    Some(v) => v.tileset_index
-    None => -1
-  }
-  if current == tilemap_chunk_state.val.last_logged_tile_value {
-    return
-  }
-  tilemap_chunk_state.val.last_logged_tile_value = current
-  let text = if current < 0 { "none" } else { current.to_string() }
-  @window.host_debug_string(value="tilemap_chunk tile(3,4)=" + text)
 }
 
 ///|

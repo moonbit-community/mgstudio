@@ -802,7 +802,6 @@ pub fn[W] text_update_system(_world : W) -> Unit {
 
 ///|
 pub fn text_render_system(world : @ecs.World) -> Unit {
-  @render2d.render2d_clear_overlay_sprites(world)
   text_debug_clear_frame()
   let debug_capture_enabled = text_debug_capture_enabled()
   let overlay_sprites : Array[@render2d.OverlaySpriteUvScissor] = []

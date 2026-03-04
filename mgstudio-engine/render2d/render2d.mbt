@@ -3575,9 +3575,35 @@ pub fn render2d_draw_tilemap_chunk(
     @math.UVec2::new(1, 1),
   )
   let resolved_tileset_grid = tilemap_chunk_resolve_tileset_grid(chunk)
+  let texture_width = @asset.asset_texture_width(chunk.tileset)
+  let texture_height = @asset.asset_texture_height(chunk.tileset)
+  let tileset_columns = Float::from_double(resolved_tileset_grid.x.to_double())
+  let tileset_rows = Float::from_double(resolved_tileset_grid.y.to_double())
+  let region_width = if texture_width > 0 {
+    Float::from_double(texture_width.to_double()) / tileset_columns
+  } else {
+    Float::from_double(safe_tile_size.x.to_double())
+  }
+  let region_height = if texture_height > 0 {
+    Float::from_double(texture_height.to_double()) / tileset_rows
+  } else {
+    Float::from_double(safe_tile_size.y.to_double())
+  }
+  let safe_region_width = if region_width == 0.0F { 1.0F } else { region_width }
+  let safe_region_height = if region_height == 0.0F {
+    1.0F
+  } else {
+    region_height
+  }
+  let target_tile_width = Float::from_double(safe_tile_size.x.to_double()) *
+    transform.scale.x
+  let target_tile_height = Float::from_double(safe_tile_size.y.to_double()) *
+    transform.scale.y
+  // `render2d_push_sprite_uv` consumes host scale factors. Convert from desired
+  // tile world size to host scale based on the UV region's pixel size.
   let tile_scale = @math.Vec2::new(
-    Float::from_double(safe_tile_size.x.to_double()) * transform.scale.x,
-    Float::from_double(safe_tile_size.y.to_double()) * transform.scale.y,
+    target_tile_width / safe_region_width,
+    target_tile_height / safe_region_height,
   )
   for y in 0..<safe_chunk_size.y {
     for x in 0..<safe_chunk_size.x {
