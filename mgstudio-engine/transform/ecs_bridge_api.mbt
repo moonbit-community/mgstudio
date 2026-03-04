@@ -21,28 +21,8 @@ pub let ecs_components : Array[String] = ["GlobalTransform"]
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_GlobalTransform {
-  get_global_transform_store(self : Self) -> @ecs.ComponentAccess[
-    GlobalTransform,
-  ]
-}
-
-///|
-pub fn[W : Has_GlobalTransform] get_global_transform_store(
-  world : W,
+pub fn get_global_transform_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.get_global_transform_store()
+  world.component(ecs_key_global_transform)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_GlobalTransform for @ecs.World with get_global_transform_store(
-  self,
-) {
-  self.component(ecs_key_global_transform)
-}
-
-///|
-/// End ECS bridge impls.

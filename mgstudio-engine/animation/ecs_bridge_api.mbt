@@ -24,129 +24,43 @@ pub let ecs_components : Array[String] = [
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_AnimatedBy {
-  get_animated_by_store(self : Self) -> @ecs.ComponentAccess[AnimatedBy]
-}
-
-///|
-pub(open) trait Has_AnimationPlayer {
-  get_animation_player_store(self : Self) -> @ecs.ComponentAccess[
-    AnimationPlayer,
-  ]
-}
-
-///|
-pub(open) trait Has_AnimationWeights {
-  get_animation_weights_store(self : Self) -> @ecs.ComponentAccess[
-    AnimationWeights,
-  ]
-}
-
-///|
-pub(open) trait Has_AnimationTargetId {
-  get_animation_target_id_store(self : Self) -> @ecs.ComponentAccess[
-    AnimationTargetId,
-  ]
-}
-
-///|
-pub(open) trait Has_AnimationGraphHandle {
-  get_animation_graph_handle_store(self : Self) -> @ecs.ComponentAccess[
-    AnimationGraphHandle,
-  ]
-}
-
-///|
-pub(open) trait Has_AnimationTransitions {
-  get_animation_transitions_store(self : Self) -> @ecs.ComponentAccess[
-    AnimationTransitions,
-  ]
-}
-
-///|
-pub fn[W : Has_AnimatedBy] get_animated_by_store(
-  world : W,
+pub fn get_animated_by_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[AnimatedBy] {
-  world.get_animated_by_store()
+  world.component(ecs_key_animated_by)
 }
 
 ///|
-pub fn[W : Has_AnimationPlayer] get_animation_player_store(
-  world : W,
+pub fn get_animation_player_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[AnimationPlayer] {
-  world.get_animation_player_store()
+  world.component(ecs_key_animation_player)
 }
 
 ///|
-pub fn[W : Has_AnimationWeights] get_animation_weights_store(
-  world : W,
+pub fn get_animation_weights_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[AnimationWeights] {
-  world.get_animation_weights_store()
+  world.component(ecs_key_animation_weights)
 }
 
 ///|
-pub fn[W : Has_AnimationTargetId] get_animation_target_id_store(
-  world : W,
+pub fn get_animation_target_id_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[AnimationTargetId] {
-  world.get_animation_target_id_store()
+  world.component(ecs_key_animation_target_id)
 }
 
 ///|
-pub fn[W : Has_AnimationGraphHandle] get_animation_graph_handle_store(
-  world : W,
+pub fn get_animation_graph_handle_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[AnimationGraphHandle] {
-  world.get_animation_graph_handle_store()
+  world.component(ecs_key_animation_graph_handle)
 }
 
 ///|
-pub fn[W : Has_AnimationTransitions] get_animation_transitions_store(
-  world : W,
+pub fn get_animation_transitions_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[AnimationTransitions] {
-  world.get_animation_transitions_store()
+  world.component(ecs_key_animation_transitions)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_AnimatedBy for @ecs.World with get_animated_by_store(self) {
-  self.component(ecs_key_animated_by)
-}
-
-///|
-pub impl Has_AnimationPlayer for @ecs.World with get_animation_player_store(
-  self,
-) {
-  self.component(ecs_key_animation_player)
-}
-
-///|
-pub impl Has_AnimationWeights for @ecs.World with get_animation_weights_store(
-  self,
-) {
-  self.component(ecs_key_animation_weights)
-}
-
-///|
-pub impl Has_AnimationTargetId for @ecs.World with get_animation_target_id_store(
-  self,
-) {
-  self.component(ecs_key_animation_target_id)
-}
-
-///|
-pub impl Has_AnimationGraphHandle for @ecs.World with get_animation_graph_handle_store(
-  self,
-) {
-  self.component(ecs_key_animation_graph_handle)
-}
-
-///|
-pub impl Has_AnimationTransitions for @ecs.World with get_animation_transitions_store(
-  self,
-) {
-  self.component(ecs_key_animation_transitions)
-}
-
-///|
-/// End ECS bridge impls.

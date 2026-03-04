@@ -169,7 +169,7 @@ pub struct KinematicCharacterControllerOutput2d {
   effective_translation : @math.Vec2
   grounded : Bool
   sliding_down_slope : Bool
-  mut collisions : Array[CharacterCollision2d]
+  collisions : Array[CharacterCollision2d]
 }
 
 ///|

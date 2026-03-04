@@ -28,24 +28,8 @@ pub let ecs_key_texture_atlas : @ecs.ComponentKey[TextureAtlas] = @ecs.register_
 )
 
 ///|
-pub(open) trait Has_TextureAtlas {
-  get_texture_atlas_store(self : Self) -> @ecs.ComponentAccess[TextureAtlas]
-}
-
-///|
-pub fn[W : Has_TextureAtlas] get_texture_atlas_store(
-  world : W,
+pub fn get_texture_atlas_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[TextureAtlas] {
-  world.get_texture_atlas_store()
+  world.component(ecs_key_texture_atlas)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_TextureAtlas for @ecs.World with get_texture_atlas_store(self) {
-  self.component(ecs_key_texture_atlas)
-}
-
-///|
-/// End ECS bridge impls.

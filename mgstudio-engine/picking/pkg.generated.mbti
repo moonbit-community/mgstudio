@@ -28,13 +28,13 @@ pub fn ensure_picking_state_system(@ecs.World) -> Unit
 
 pub fn ensure_pointer_inputs_system(@ecs.World) -> Unit
 
-pub fn[W : HasRes_PickingEvents] get_picking_events_resource(W) -> @ecs.ResourceAccess[PickingEvents]
+pub fn get_picking_events_resource(@ecs.World) -> @ecs.ResourceAccess[PickingEvents]
 
-pub fn[W : HasRes_PickingHits] get_picking_hits_resource(W) -> @ecs.ResourceAccess[PickingHits]
+pub fn get_picking_hits_resource(@ecs.World) -> @ecs.ResourceAccess[PickingHits]
 
-pub fn[W : HasRes_PickingState] get_picking_state_resource(W) -> @ecs.ResourceAccess[PickingState]
+pub fn get_picking_state_resource(@ecs.World) -> @ecs.ResourceAccess[PickingState]
 
-pub fn[W : HasRes_PointerInputs] get_pointer_inputs_resource(W) -> @ecs.ResourceAccess[PointerInputs]
+pub fn get_pointer_inputs_resource(@ecs.World) -> @ecs.ResourceAccess[PointerInputs]
 
 pub fn picking_apply_a11y_actions_system(@ecs.World) -> Unit
 
@@ -71,8 +71,8 @@ pub impl ToJson for PickingEvents
 pub impl @json.FromJson for PickingEvents
 
 pub struct PickingHits {
-  mut ui : Array[@core.Entity?]
-  mut sprite2d : Array[@core.Entity?]
+  ui : Array[@core.Entity?]
+  sprite2d : Array[@core.Entity?]
 }
 pub fn PickingHits::default() -> Self
 pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?]) -> Self
@@ -84,9 +84,9 @@ pub impl ToJson for PickingHits
 pub impl @json.FromJson for PickingHits
 
 pub struct PickingState {
-  mut hovered : Array[@core.Entity?]
-  mut pressed : Array[@core.Entity?]
-  mut last_position : Array[@math.Vec2?]
+  hovered : Array[@core.Entity?]
+  pressed : Array[@core.Entity?]
+  last_position : Array[@math.Vec2?]
 }
 pub fn PickingState::default() -> Self
 pub fn PickingState::hovered(Self, Int) -> @core.Entity?
@@ -154,23 +154,4 @@ pub impl @json.FromJson for PointerInputs
 pub type PointerId = Int
 
 // Traits
-pub(open) trait HasRes_PickingEvents {
-  get_picking_events_resource(Self) -> @ecs.ResourceAccess[PickingEvents]
-}
-pub impl HasRes_PickingEvents for @ecs.World
-
-pub(open) trait HasRes_PickingHits {
-  get_picking_hits_resource(Self) -> @ecs.ResourceAccess[PickingHits]
-}
-pub impl HasRes_PickingHits for @ecs.World
-
-pub(open) trait HasRes_PickingState {
-  get_picking_state_resource(Self) -> @ecs.ResourceAccess[PickingState]
-}
-pub impl HasRes_PickingState for @ecs.World
-
-pub(open) trait HasRes_PointerInputs {
-  get_pointer_inputs_resource(Self) -> @ecs.ResourceAccess[PointerInputs]
-}
-pub impl HasRes_PointerInputs for @ecs.World
 

@@ -33,8 +33,8 @@ pub struct ContactForceEvent2d {
 
 ///|
 pub struct Physics2dEvents {
-  mut collisions : Array[CollisionEvent2d]
-  mut contact_forces : Array[ContactForceEvent2d]
+  collisions : Array[CollisionEvent2d]
+  contact_forces : Array[ContactForceEvent2d]
 }
 
 ///|

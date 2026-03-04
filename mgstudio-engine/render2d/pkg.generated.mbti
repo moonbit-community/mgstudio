@@ -57,43 +57,43 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_Anchor] get_anchor_store(W) -> @ecs.ComponentAccess[Anchor]
+pub fn get_anchor_store(@ecs.World) -> @ecs.ComponentAccess[Anchor]
 
-pub fn[W : Has_Bloom2d] get_bloom2d_store(W) -> @ecs.ComponentAccess[Bloom2d]
+pub fn get_bloom2d_store(@ecs.World) -> @ecs.ComponentAccess[Bloom2d]
 
-pub fn[W : Has_Camera2d] get_camera2d_store(W) -> @ecs.ComponentAccess[Camera2d]
+pub fn get_camera2d_store(@ecs.World) -> @ecs.ComponentAccess[Camera2d]
 
-pub fn[W : Has_Camera] get_camera_store(W) -> @ecs.ComponentAccess[Camera]
+pub fn get_camera_store(@ecs.World) -> @ecs.ComponentAccess[Camera]
 
-pub fn[W : Has_ClearColorConfig] get_clear_color_config_store(W) -> @ecs.ComponentAccess[ClearColorConfig]
+pub fn get_clear_color_config_store(@ecs.World) -> @ecs.ComponentAccess[ClearColorConfig]
 
-pub fn[W : Has_ColorMaterial] get_color_material_store(W) -> @ecs.ComponentAccess[ColorMaterial]
+pub fn get_color_material_store(@ecs.World) -> @ecs.ComponentAccess[ColorMaterial]
 
-pub fn[W : Has_GpuMesh2d] get_gpu_mesh2d_store(W) -> @ecs.ComponentAccess[GpuMesh2d]
+pub fn get_gpu_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[GpuMesh2d]
 
-pub fn[W : Has_Mesh2d] get_mesh2d_store(W) -> @ecs.ComponentAccess[Mesh2d]
+pub fn get_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[Mesh2d]
 
-pub fn[W : Has_MeshMaterial2d] get_mesh_material2d_store(W) -> @ecs.ComponentAccess[MeshMaterial2d]
+pub fn get_mesh_material2d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial2d]
 
-pub fn[W : Has_NoWireframe2d] get_no_wireframe2d_store(W) -> @ecs.ComponentAccess[NoWireframe2d]
+pub fn get_no_wireframe2d_store(@ecs.World) -> @ecs.ComponentAccess[NoWireframe2d]
 
-pub fn[W : Has_Projection] get_projection_store(W) -> @ecs.ComponentAccess[Projection]
+pub fn get_projection_store(@ecs.World) -> @ecs.ComponentAccess[Projection]
 
-pub fn[W : Has_RenderLayers] get_render_layers_store(W) -> @ecs.ComponentAccess[RenderLayers]
+pub fn get_render_layers_store(@ecs.World) -> @ecs.ComponentAccess[RenderLayers]
 
-pub fn[W : HasRes_RenderState] get_render_state_resource(W) -> @ecs.ResourceAccess[RenderState]
+pub fn get_render_state_resource(@ecs.World) -> @ecs.ResourceAccess[RenderState]
 
-pub fn[W : Has_RenderTarget] get_render_target_store(W) -> @ecs.ComponentAccess[RenderTarget]
+pub fn get_render_target_store(@ecs.World) -> @ecs.ComponentAccess[RenderTarget]
 
-pub fn[W : Has_ScissorRect] get_scissor_rect_store(W) -> @ecs.ComponentAccess[ScissorRect]
+pub fn get_scissor_rect_store(@ecs.World) -> @ecs.ComponentAccess[ScissorRect]
 
-pub fn[W : Has_Sprite] get_sprite_store(W) -> @ecs.ComponentAccess[Sprite]
+pub fn get_sprite_store(@ecs.World) -> @ecs.ComponentAccess[Sprite]
 
-pub fn[W : Has_Wireframe2dColor] get_wireframe2d_color_store(W) -> @ecs.ComponentAccess[Wireframe2dColor]
+pub fn get_wireframe2d_color_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe2dColor]
 
-pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(W) -> @ecs.ResourceAccess[Wireframe2dConfig]
+pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wireframe2dConfig]
 
-pub fn[W : Has_Wireframe2d] get_wireframe2d_store(W) -> @ecs.ComponentAccess[Wireframe2d]
+pub fn get_wireframe2d_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe2d]
 
 pub fn gizmo_config() -> GizmoConfig
 
@@ -951,101 +951,6 @@ pub impl @json.FromJson for Wireframe2dConfig
 // Type aliases
 
 // Traits
-pub(open) trait HasRes_RenderState {
-  get_render_state_resource(Self) -> @ecs.ResourceAccess[RenderState]
-}
-pub impl HasRes_RenderState for @ecs.World
-
-pub(open) trait HasRes_Wireframe2dConfig {
-  get_wireframe2d_config_resource(Self) -> @ecs.ResourceAccess[Wireframe2dConfig]
-}
-pub impl HasRes_Wireframe2dConfig for @ecs.World
-
-pub(open) trait Has_Anchor {
-  get_anchor_store(Self) -> @ecs.ComponentAccess[Anchor]
-}
-pub impl Has_Anchor for @ecs.World
-
-pub(open) trait Has_Bloom2d {
-  get_bloom2d_store(Self) -> @ecs.ComponentAccess[Bloom2d]
-}
-pub impl Has_Bloom2d for @ecs.World
-
-pub(open) trait Has_Camera {
-  get_camera_store(Self) -> @ecs.ComponentAccess[Camera]
-}
-pub impl Has_Camera for @ecs.World
-
-pub(open) trait Has_Camera2d {
-  get_camera2d_store(Self) -> @ecs.ComponentAccess[Camera2d]
-}
-pub impl Has_Camera2d for @ecs.World
-
-pub(open) trait Has_ClearColorConfig {
-  get_clear_color_config_store(Self) -> @ecs.ComponentAccess[ClearColorConfig]
-}
-pub impl Has_ClearColorConfig for @ecs.World
-
-pub(open) trait Has_ColorMaterial {
-  get_color_material_store(Self) -> @ecs.ComponentAccess[ColorMaterial]
-}
-pub impl Has_ColorMaterial for @ecs.World
-
-pub(open) trait Has_GpuMesh2d {
-  get_gpu_mesh2d_store(Self) -> @ecs.ComponentAccess[GpuMesh2d]
-}
-pub impl Has_GpuMesh2d for @ecs.World
-
-pub(open) trait Has_Mesh2d {
-  get_mesh2d_store(Self) -> @ecs.ComponentAccess[Mesh2d]
-}
-pub impl Has_Mesh2d for @ecs.World
-
-pub(open) trait Has_MeshMaterial2d {
-  get_mesh_material2d_store(Self) -> @ecs.ComponentAccess[MeshMaterial2d]
-}
-pub impl Has_MeshMaterial2d for @ecs.World
-
-pub(open) trait Has_NoWireframe2d {
-  get_no_wireframe2d_store(Self) -> @ecs.ComponentAccess[NoWireframe2d]
-}
-pub impl Has_NoWireframe2d for @ecs.World
-
-pub(open) trait Has_Projection {
-  get_projection_store(Self) -> @ecs.ComponentAccess[Projection]
-}
-pub impl Has_Projection for @ecs.World
-
-pub(open) trait Has_RenderLayers {
-  get_render_layers_store(Self) -> @ecs.ComponentAccess[RenderLayers]
-}
-pub impl Has_RenderLayers for @ecs.World
-
-pub(open) trait Has_RenderTarget {
-  get_render_target_store(Self) -> @ecs.ComponentAccess[RenderTarget]
-}
-pub impl Has_RenderTarget for @ecs.World
-
-pub(open) trait Has_ScissorRect {
-  get_scissor_rect_store(Self) -> @ecs.ComponentAccess[ScissorRect]
-}
-pub impl Has_ScissorRect for @ecs.World
-
-pub(open) trait Has_Sprite {
-  get_sprite_store(Self) -> @ecs.ComponentAccess[Sprite]
-}
-pub impl Has_Sprite for @ecs.World
-
-pub(open) trait Has_Wireframe2d {
-  get_wireframe2d_store(Self) -> @ecs.ComponentAccess[Wireframe2d]
-}
-pub impl Has_Wireframe2d for @ecs.World
-
-pub(open) trait Has_Wireframe2dColor {
-  get_wireframe2d_color_store(Self) -> @ecs.ComponentAccess[Wireframe2dColor]
-}
-pub impl Has_Wireframe2dColor for @ecs.World
-
 pub(open) trait Material2d {
   color(Self) -> Color
   alpha_mode(Self) -> AlphaMode2d

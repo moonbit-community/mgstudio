@@ -41,29 +41,29 @@ pub let ecs_res_key_physics3d_events : @ecs.ResourceKey[Physics3dEvents]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_ActiveCollisionTypes3d] get_active_collision_types3d_store(W) -> @ecs.ComponentAccess[ActiveCollisionTypes3d]
+pub fn get_active_collision_types3d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveCollisionTypes3d]
 
-pub fn[W : Has_ActiveEvents3d] get_active_events3d_store(W) -> @ecs.ComponentAccess[ActiveEvents3d]
+pub fn get_active_events3d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveEvents3d]
 
-pub fn[W : Has_ActiveHooks3d] get_active_hooks3d_store(W) -> @ecs.ComponentAccess[ActiveHooks3d]
+pub fn get_active_hooks3d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveHooks3d]
 
-pub fn[W : Has_Collider3d] get_collider3d_store(W) -> @ecs.ComponentAccess[Collider3d]
+pub fn get_collider3d_store(@ecs.World) -> @ecs.ComponentAccess[Collider3d]
 
-pub fn[W : Has_ContactForceEventThreshold3d] get_contact_force_event_threshold3d_store(W) -> @ecs.ComponentAccess[ContactForceEventThreshold3d]
+pub fn get_contact_force_event_threshold3d_store(@ecs.World) -> @ecs.ComponentAccess[ContactForceEventThreshold3d]
 
-pub fn[W : HasRes_Physics3dConfig] get_physics3d_config_resource(W) -> @ecs.ResourceAccess[Physics3dConfig]
+pub fn get_physics3d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dConfig]
 
-pub fn[W : HasRes_Physics3dContext] get_physics3d_context_resource(W) -> @ecs.ResourceAccess[Physics3dContext]
+pub fn get_physics3d_context_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dContext]
 
-pub fn[W : HasRes_Physics3dEvents] get_physics3d_events_resource(W) -> @ecs.ResourceAccess[Physics3dEvents]
+pub fn get_physics3d_events_resource(@ecs.World) -> @ecs.ResourceAccess[Physics3dEvents]
 
-pub fn[W : Has_RapierBodyHandle3d] get_rapier_body_handle3d_store(W) -> @ecs.ComponentAccess[RapierBodyHandle3d]
+pub fn get_rapier_body_handle3d_store(@ecs.World) -> @ecs.ComponentAccess[RapierBodyHandle3d]
 
-pub fn[W : Has_RapierColliderHandle3d] get_rapier_collider_handle3d_store(W) -> @ecs.ComponentAccess[RapierColliderHandle3d]
+pub fn get_rapier_collider_handle3d_store(@ecs.World) -> @ecs.ComponentAccess[RapierColliderHandle3d]
 
-pub fn[W : Has_RigidBody3d] get_rigid_body3d_store(W) -> @ecs.ComponentAccess[RigidBody3d]
+pub fn get_rigid_body3d_store(@ecs.World) -> @ecs.ComponentAccess[RigidBody3d]
 
-pub fn[W : Has_Velocity3d] get_velocity3d_store(W) -> @ecs.ComponentAccess[Velocity3d]
+pub fn get_velocity3d_store(@ecs.World) -> @ecs.ComponentAccess[Velocity3d]
 
 pub fn iso3_to_mg_transform(@Milky2018/moon_rapier/core.Isometry3) -> @math.Transform
 
@@ -194,9 +194,9 @@ pub struct Physics3dContext {
   islands : @dynamics.IslandManager3D
   broad_phase : @collision.BroadPhase3D
   narrow_phase : @collision.NarrowPhase3D
-  mut pipeline : @pipeline.PhysicsPipeline3DReal
+  pipeline : @pipeline.PhysicsPipeline3DReal
   mut integration : @dynamics.IntegrationParameters
-  mut event_handler : @pipeline.EventHandler3D
+  event_handler : @pipeline.EventHandler3D
   entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]
   entity_to_collider : @hashmap.HashMap[(Int, Int), @collision.ColliderHandle3D]
   collider_to_entity : @hashmap.HashMap[(Int, Int), @Milky2018/mgstudio/core.Entity]
@@ -211,8 +211,8 @@ pub struct Physics3dDebugRenderContext {
 pub fn Physics3dDebugRenderContext::default() -> Self
 
 pub struct Physics3dEvents {
-  mut collisions : Array[CollisionEvent3d]
-  mut contact_forces : Array[ContactForceEvent3d]
+  collisions : Array[CollisionEvent3d]
+  contact_forces : Array[ContactForceEvent3d]
 }
 pub fn Physics3dEvents::clear(Self) -> Unit
 pub fn Physics3dEvents::new() -> Self
@@ -255,63 +255,4 @@ pub impl @json.FromJson for Velocity3d
 // Type aliases
 
 // Traits
-pub(open) trait HasRes_Physics3dConfig {
-  get_physics3d_config_resource(Self) -> @ecs.ResourceAccess[Physics3dConfig]
-}
-pub impl HasRes_Physics3dConfig for @ecs.World
-
-pub(open) trait HasRes_Physics3dContext {
-  get_physics3d_context_resource(Self) -> @ecs.ResourceAccess[Physics3dContext]
-}
-pub impl HasRes_Physics3dContext for @ecs.World
-
-pub(open) trait HasRes_Physics3dEvents {
-  get_physics3d_events_resource(Self) -> @ecs.ResourceAccess[Physics3dEvents]
-}
-pub impl HasRes_Physics3dEvents for @ecs.World
-
-pub(open) trait Has_ActiveCollisionTypes3d {
-  get_active_collision_types3d_store(Self) -> @ecs.ComponentAccess[ActiveCollisionTypes3d]
-}
-pub impl Has_ActiveCollisionTypes3d for @ecs.World
-
-pub(open) trait Has_ActiveEvents3d {
-  get_active_events3d_store(Self) -> @ecs.ComponentAccess[ActiveEvents3d]
-}
-pub impl Has_ActiveEvents3d for @ecs.World
-
-pub(open) trait Has_ActiveHooks3d {
-  get_active_hooks3d_store(Self) -> @ecs.ComponentAccess[ActiveHooks3d]
-}
-pub impl Has_ActiveHooks3d for @ecs.World
-
-pub(open) trait Has_Collider3d {
-  get_collider3d_store(Self) -> @ecs.ComponentAccess[Collider3d]
-}
-pub impl Has_Collider3d for @ecs.World
-
-pub(open) trait Has_ContactForceEventThreshold3d {
-  get_contact_force_event_threshold3d_store(Self) -> @ecs.ComponentAccess[ContactForceEventThreshold3d]
-}
-pub impl Has_ContactForceEventThreshold3d for @ecs.World
-
-pub(open) trait Has_RapierBodyHandle3d {
-  get_rapier_body_handle3d_store(Self) -> @ecs.ComponentAccess[RapierBodyHandle3d]
-}
-pub impl Has_RapierBodyHandle3d for @ecs.World
-
-pub(open) trait Has_RapierColliderHandle3d {
-  get_rapier_collider_handle3d_store(Self) -> @ecs.ComponentAccess[RapierColliderHandle3d]
-}
-pub impl Has_RapierColliderHandle3d for @ecs.World
-
-pub(open) trait Has_RigidBody3d {
-  get_rigid_body3d_store(Self) -> @ecs.ComponentAccess[RigidBody3d]
-}
-pub impl Has_RigidBody3d for @ecs.World
-
-pub(open) trait Has_Velocity3d {
-  get_velocity3d_store(Self) -> @ecs.ComponentAccess[Velocity3d]
-}
-pub impl Has_Velocity3d for @ecs.World
 

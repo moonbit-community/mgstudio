@@ -90,239 +90,85 @@ pub let ecs_key_contact_force_event_threshold3d : @ecs.ComponentKey[
 )
 
 ///|
-pub(open) trait Has_Collider3d {
-  get_collider3d_store(self : Self) -> @ecs.ComponentAccess[Collider3d]
-}
-
-///|
-pub(open) trait Has_Velocity3d {
-  get_velocity3d_store(self : Self) -> @ecs.ComponentAccess[Velocity3d]
-}
-
-///|
-pub(open) trait Has_RigidBody3d {
-  get_rigid_body3d_store(self : Self) -> @ecs.ComponentAccess[RigidBody3d]
-}
-
-///|
-pub(open) trait Has_ActiveHooks3d {
-  get_active_hooks3d_store(self : Self) -> @ecs.ComponentAccess[ActiveHooks3d]
-}
-
-///|
-pub(open) trait Has_ActiveEvents3d {
-  get_active_events3d_store(self : Self) -> @ecs.ComponentAccess[ActiveEvents3d]
-}
-
-///|
-pub(open) trait Has_RapierBodyHandle3d {
-  get_rapier_body_handle3d_store(self : Self) -> @ecs.ComponentAccess[
-    RapierBodyHandle3d,
-  ]
-}
-
-///|
-pub(open) trait Has_ActiveCollisionTypes3d {
-  get_active_collision_types3d_store(self : Self) -> @ecs.ComponentAccess[
-    ActiveCollisionTypes3d,
-  ]
-}
-
-///|
-pub(open) trait Has_RapierColliderHandle3d {
-  get_rapier_collider_handle3d_store(self : Self) -> @ecs.ComponentAccess[
-    RapierColliderHandle3d,
-  ]
-}
-
-///|
-pub(open) trait Has_ContactForceEventThreshold3d {
-  get_contact_force_event_threshold3d_store(self : Self) -> @ecs.ComponentAccess[
-    ContactForceEventThreshold3d,
-  ]
-}
-
-///|
-pub fn[W : Has_Collider3d] get_collider3d_store(
-  world : W,
+pub fn get_collider3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[Collider3d] {
-  world.get_collider3d_store()
+  world.component(ecs_key_collider3d)
 }
 
 ///|
-pub fn[W : Has_Velocity3d] get_velocity3d_store(
-  world : W,
+pub fn get_velocity3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[Velocity3d] {
-  world.get_velocity3d_store()
+  world.component(ecs_key_velocity3d)
 }
 
 ///|
-pub fn[W : Has_RigidBody3d] get_rigid_body3d_store(
-  world : W,
+pub fn get_rigid_body3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[RigidBody3d] {
-  world.get_rigid_body3d_store()
+  world.component(ecs_key_rigid_body3d)
 }
 
 ///|
-pub fn[W : Has_ActiveHooks3d] get_active_hooks3d_store(
-  world : W,
+pub fn get_active_hooks3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[ActiveHooks3d] {
-  world.get_active_hooks3d_store()
+  world.component(ecs_key_active_hooks3d)
 }
 
 ///|
-pub fn[W : Has_ActiveEvents3d] get_active_events3d_store(
-  world : W,
+pub fn get_active_events3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[ActiveEvents3d] {
-  world.get_active_events3d_store()
+  world.component(ecs_key_active_events3d)
 }
 
 ///|
-pub fn[W : Has_RapierBodyHandle3d] get_rapier_body_handle3d_store(
-  world : W,
+pub fn get_rapier_body_handle3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[RapierBodyHandle3d] {
-  world.get_rapier_body_handle3d_store()
+  world.component(ecs_key_rapier_body_handle3d)
 }
 
 ///|
-pub fn[W : Has_ActiveCollisionTypes3d] get_active_collision_types3d_store(
-  world : W,
+pub fn get_active_collision_types3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[ActiveCollisionTypes3d] {
-  world.get_active_collision_types3d_store()
+  world.component(ecs_key_active_collision_types3d)
 }
 
 ///|
-pub fn[W : Has_RapierColliderHandle3d] get_rapier_collider_handle3d_store(
-  world : W,
+pub fn get_rapier_collider_handle3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[RapierColliderHandle3d] {
-  world.get_rapier_collider_handle3d_store()
+  world.component(ecs_key_rapier_collider_handle3d)
 }
 
 ///|
-pub fn[W : Has_ContactForceEventThreshold3d] get_contact_force_event_threshold3d_store(
-  world : W,
+pub fn get_contact_force_event_threshold3d_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[ContactForceEventThreshold3d] {
-  world.get_contact_force_event_threshold3d_store()
+  world.component(ecs_key_contact_force_event_threshold3d)
 }
 
 ///|
-pub(open) trait HasRes_Physics3dConfig {
-  get_physics3d_config_resource(self : Self) -> @ecs.ResourceAccess[
-    Physics3dConfig,
-  ]
-}
-
-///|
-pub(open) trait HasRes_Physics3dEvents {
-  get_physics3d_events_resource(self : Self) -> @ecs.ResourceAccess[
-    Physics3dEvents,
-  ]
-}
-
-///|
-pub(open) trait HasRes_Physics3dContext {
-  get_physics3d_context_resource(self : Self) -> @ecs.ResourceAccess[
-    Physics3dContext,
-  ]
-}
-
-///|
-pub fn[W : HasRes_Physics3dConfig] get_physics3d_config_resource(
-  world : W,
+pub fn get_physics3d_config_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[Physics3dConfig] {
-  world.get_physics3d_config_resource()
+  world.resource(ecs_res_key_physics3d_config)
 }
 
 ///|
-pub fn[W : HasRes_Physics3dEvents] get_physics3d_events_resource(
-  world : W,
+pub fn get_physics3d_events_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[Physics3dEvents] {
-  world.get_physics3d_events_resource()
+  world.resource(ecs_res_key_physics3d_events)
 }
 
 ///|
-pub fn[W : HasRes_Physics3dContext] get_physics3d_context_resource(
-  world : W,
+pub fn get_physics3d_context_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[Physics3dContext] {
-  world.get_physics3d_context_resource()
+  world.resource(ecs_res_key_physics3d_context)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_Collider3d for @ecs.World with get_collider3d_store(self) {
-  self.component(ecs_key_collider3d)
-}
-
-///|
-pub impl Has_Velocity3d for @ecs.World with get_velocity3d_store(self) {
-  self.component(ecs_key_velocity3d)
-}
-
-///|
-pub impl Has_RigidBody3d for @ecs.World with get_rigid_body3d_store(self) {
-  self.component(ecs_key_rigid_body3d)
-}
-
-///|
-pub impl Has_ActiveHooks3d for @ecs.World with get_active_hooks3d_store(self) {
-  self.component(ecs_key_active_hooks3d)
-}
-
-///|
-pub impl Has_ActiveEvents3d for @ecs.World with get_active_events3d_store(self) {
-  self.component(ecs_key_active_events3d)
-}
-
-///|
-pub impl Has_RapierBodyHandle3d for @ecs.World with get_rapier_body_handle3d_store(
-  self,
-) {
-  self.component(ecs_key_rapier_body_handle3d)
-}
-
-///|
-pub impl Has_ActiveCollisionTypes3d for @ecs.World with get_active_collision_types3d_store(
-  self,
-) {
-  self.component(ecs_key_active_collision_types3d)
-}
-
-///|
-pub impl Has_RapierColliderHandle3d for @ecs.World with get_rapier_collider_handle3d_store(
-  self,
-) {
-  self.component(ecs_key_rapier_collider_handle3d)
-}
-
-///|
-pub impl Has_ContactForceEventThreshold3d for @ecs.World with get_contact_force_event_threshold3d_store(
-  self,
-) {
-  self.component(ecs_key_contact_force_event_threshold3d)
-}
-
-///|
-pub impl HasRes_Physics3dConfig for @ecs.World with get_physics3d_config_resource(
-  self,
-) {
-  self.resource(ecs_res_key_physics3d_config)
-}
-
-///|
-pub impl HasRes_Physics3dEvents for @ecs.World with get_physics3d_events_resource(
-  self,
-) {
-  self.resource(ecs_res_key_physics3d_events)
-}
-
-///|
-pub impl HasRes_Physics3dContext for @ecs.World with get_physics3d_context_resource(
-  self,
-) {
-  self.resource(ecs_res_key_physics3d_context)
-}
-
-///|
-/// End ECS bridge impls.

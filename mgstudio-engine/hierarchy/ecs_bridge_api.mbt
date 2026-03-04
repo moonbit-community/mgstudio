@@ -21,41 +21,11 @@ pub let ecs_components : Array[String] = ["Parent", "Children"]
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_Parent {
-  get_parent_store(self : Self) -> @ecs.ComponentAccess[Parent]
+pub fn get_parent_store(world : @ecs.World) -> @ecs.ComponentAccess[Parent] {
+  world.component(ecs_key_parent)
 }
 
 ///|
-pub(open) trait Has_Children {
-  get_children_store(self : Self) -> @ecs.ComponentAccess[Children]
+pub fn get_children_store(world : @ecs.World) -> @ecs.ComponentAccess[Children] {
+  world.component(ecs_key_children)
 }
-
-///|
-pub fn[W : Has_Parent] get_parent_store(
-  world : W,
-) -> @ecs.ComponentAccess[Parent] {
-  world.get_parent_store()
-}
-
-///|
-pub fn[W : Has_Children] get_children_store(
-  world : W,
-) -> @ecs.ComponentAccess[Children] {
-  world.get_children_store()
-}
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_Parent for @ecs.World with get_parent_store(self) {
-  self.component(ecs_key_parent)
-}
-
-///|
-pub impl Has_Children for @ecs.World with get_children_store(self) {
-  self.component(ecs_key_children)
-}
-
-///|
-/// End ECS bridge impls.

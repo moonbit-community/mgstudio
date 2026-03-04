@@ -17,7 +17,7 @@ pub let ecs_key_transform : @ecs.ComponentKey[Transform]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_Transform] get_transform_store(W) -> @ecs.ComponentAccess[Transform]
+pub fn get_transform_store(@ecs.World) -> @ecs.ComponentAccess[Transform]
 
 pub fn pi_half() -> Float
 
@@ -158,8 +158,4 @@ pub impl @json.FromJson for Vec4
 // Type aliases
 
 // Traits
-pub(open) trait Has_Transform {
-  get_transform_store(Self) -> @ecs.ComponentAccess[Transform]
-}
-pub impl Has_Transform for @ecs.World
 

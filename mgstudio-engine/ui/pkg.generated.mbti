@@ -76,63 +76,63 @@ pub let ecs_key_z_index : @ecs.ComponentKey[ZIndex]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_AccessibilityLabel] get_accessibility_label_store(W) -> @ecs.ComponentAccess[AccessibilityLabel]
+pub fn get_accessibility_label_store(@ecs.World) -> @ecs.ComponentAccess[AccessibilityLabel]
 
-pub fn[W : Has_BackgroundColor] get_background_color_store(W) -> @ecs.ComponentAccess[BackgroundColor]
+pub fn get_background_color_store(@ecs.World) -> @ecs.ComponentAccess[BackgroundColor]
 
-pub fn[W : Has_BorderColor] get_border_color_store(W) -> @ecs.ComponentAccess[BorderColor]
+pub fn get_border_color_store(@ecs.World) -> @ecs.ComponentAccess[BorderColor]
 
-pub fn[W : Has_BorderRadius] get_border_radius_store(W) -> @ecs.ComponentAccess[BorderRadius]
+pub fn get_border_radius_store(@ecs.World) -> @ecs.ComponentAccess[BorderRadius]
 
-pub fn[W : Has_BoxShadow] get_box_shadow_store(W) -> @ecs.ComponentAccess[BoxShadow]
+pub fn get_box_shadow_store(@ecs.World) -> @ecs.ComponentAccess[BoxShadow]
 
-pub fn[W : Has_ButtonColors] get_button_colors_store(W) -> @ecs.ComponentAccess[ButtonColors]
+pub fn get_button_colors_store(@ecs.World) -> @ecs.ComponentAccess[ButtonColors]
 
-pub fn[W : Has_Button] get_button_store(W) -> @ecs.ComponentAccess[Button]
+pub fn get_button_store(@ecs.World) -> @ecs.ComponentAccess[Button]
 
-pub fn[W : Has_CalculatedClip] get_calculated_clip_store(W) -> @ecs.ComponentAccess[CalculatedClip]
+pub fn get_calculated_clip_store(@ecs.World) -> @ecs.ComponentAccess[CalculatedClip]
 
-pub fn[W : Has_ContentSize] get_content_size_store(W) -> @ecs.ComponentAccess[ContentSize]
+pub fn get_content_size_store(@ecs.World) -> @ecs.ComponentAccess[ContentSize]
 
-pub fn[W : Has_FocusPolicy] get_focus_policy_store(W) -> @ecs.ComponentAccess[FocusPolicy]
+pub fn get_focus_policy_store(@ecs.World) -> @ecs.ComponentAccess[FocusPolicy]
 
-pub fn[W : Has_GlobalZIndex] get_global_z_index_store(W) -> @ecs.ComponentAccess[GlobalZIndex]
+pub fn get_global_z_index_store(@ecs.World) -> @ecs.ComponentAccess[GlobalZIndex]
 
-pub fn[W : Has_ImageNodeSize] get_image_node_size_store(W) -> @ecs.ComponentAccess[ImageNodeSize]
+pub fn get_image_node_size_store(@ecs.World) -> @ecs.ComponentAccess[ImageNodeSize]
 
-pub fn[W : Has_ImageNode] get_image_node_store(W) -> @ecs.ComponentAccess[ImageNode]
+pub fn get_image_node_store(@ecs.World) -> @ecs.ComponentAccess[ImageNode]
 
-pub fn[W : Has_Interaction] get_interaction_store(W) -> @ecs.ComponentAccess[Interaction]
+pub fn get_interaction_store(@ecs.World) -> @ecs.ComponentAccess[Interaction]
 
-pub fn[W : Has_Label] get_label_store(W) -> @ecs.ComponentAccess[Label]
+pub fn get_label_store(@ecs.World) -> @ecs.ComponentAccess[Label]
 
-pub fn[W : Has_Node] get_node_store(W) -> @ecs.ComponentAccess[Node]
+pub fn get_node_store(@ecs.World) -> @ecs.ComponentAccess[Node]
 
-pub fn[W : Has_Outline] get_outline_store(W) -> @ecs.ComponentAccess[Outline]
+pub fn get_outline_store(@ecs.World) -> @ecs.ComponentAccess[Outline]
 
-pub fn[W : Has_RelativeCursorPosition] get_relative_cursor_position_store(W) -> @ecs.ComponentAccess[RelativeCursorPosition]
+pub fn get_relative_cursor_position_store(@ecs.World) -> @ecs.ComponentAccess[RelativeCursorPosition]
 
-pub fn[W : Has_ScrollPosition] get_scroll_position_store(W) -> @ecs.ComponentAccess[ScrollPosition]
+pub fn get_scroll_position_store(@ecs.World) -> @ecs.ComponentAccess[ScrollPosition]
 
-pub fn[W : Has_UiAntiAlias] get_ui_anti_alias_store(W) -> @ecs.ComponentAccess[UiAntiAlias]
+pub fn get_ui_anti_alias_store(@ecs.World) -> @ecs.ComponentAccess[UiAntiAlias]
 
-pub fn[W : Has_UiBoxShadowSamples] get_ui_box_shadow_samples_store(W) -> @ecs.ComponentAccess[UiBoxShadowSamples]
+pub fn get_ui_box_shadow_samples_store(@ecs.World) -> @ecs.ComponentAccess[UiBoxShadowSamples]
 
-pub fn[W : HasRes_UiContext] get_ui_context_resource(W) -> @ecs.ResourceAccess[UiContext]
+pub fn get_ui_context_resource(@ecs.World) -> @ecs.ResourceAccess[UiContext]
 
-pub fn[W : Has_UiImage] get_ui_image_store(W) -> @ecs.ComponentAccess[UiImage]
+pub fn get_ui_image_store(@ecs.World) -> @ecs.ComponentAccess[UiImage]
 
-pub fn[W : Has_UiLayout] get_ui_layout_store(W) -> @ecs.ComponentAccess[UiLayout]
+pub fn get_ui_layout_store(@ecs.World) -> @ecs.ComponentAccess[UiLayout]
 
-pub fn[W : Has_UiRoot] get_ui_root_store(W) -> @ecs.ComponentAccess[UiRoot]
+pub fn get_ui_root_store(@ecs.World) -> @ecs.ComponentAccess[UiRoot]
 
-pub fn[W : HasRes_UiScale] get_ui_scale_resource(W) -> @ecs.ResourceAccess[UiScale]
+pub fn get_ui_scale_resource(@ecs.World) -> @ecs.ResourceAccess[UiScale]
 
-pub fn[W : HasRes_UiStack] get_ui_stack_resource(W) -> @ecs.ResourceAccess[UiStack]
+pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
 
-pub fn[W : Has_UiText] get_ui_text_store(W) -> @ecs.ComponentAccess[UiText]
+pub fn get_ui_text_store(@ecs.World) -> @ecs.ComponentAccess[UiText]
 
-pub fn[W : Has_ZIndex] get_z_index_store(W) -> @ecs.ComponentAccess[ZIndex]
+pub fn get_z_index_store(@ecs.World) -> @ecs.ComponentAccess[ZIndex]
 
 pub fn ui_a11y_update_system(@ecs.World) -> Unit
 
@@ -819,148 +819,4 @@ pub impl @json.FromJson for ZIndex
 // Type aliases
 
 // Traits
-pub(open) trait HasRes_UiContext {
-  get_ui_context_resource(Self) -> @ecs.ResourceAccess[UiContext]
-}
-pub impl HasRes_UiContext for @ecs.World
-
-pub(open) trait HasRes_UiScale {
-  get_ui_scale_resource(Self) -> @ecs.ResourceAccess[UiScale]
-}
-pub impl HasRes_UiScale for @ecs.World
-
-pub(open) trait HasRes_UiStack {
-  get_ui_stack_resource(Self) -> @ecs.ResourceAccess[UiStack]
-}
-pub impl HasRes_UiStack for @ecs.World
-
-pub(open) trait Has_AccessibilityLabel {
-  get_accessibility_label_store(Self) -> @ecs.ComponentAccess[AccessibilityLabel]
-}
-pub impl Has_AccessibilityLabel for @ecs.World
-
-pub(open) trait Has_BackgroundColor {
-  get_background_color_store(Self) -> @ecs.ComponentAccess[BackgroundColor]
-}
-pub impl Has_BackgroundColor for @ecs.World
-
-pub(open) trait Has_BorderColor {
-  get_border_color_store(Self) -> @ecs.ComponentAccess[BorderColor]
-}
-pub impl Has_BorderColor for @ecs.World
-
-pub(open) trait Has_BorderRadius {
-  get_border_radius_store(Self) -> @ecs.ComponentAccess[BorderRadius]
-}
-pub impl Has_BorderRadius for @ecs.World
-
-pub(open) trait Has_BoxShadow {
-  get_box_shadow_store(Self) -> @ecs.ComponentAccess[BoxShadow]
-}
-pub impl Has_BoxShadow for @ecs.World
-
-pub(open) trait Has_Button {
-  get_button_store(Self) -> @ecs.ComponentAccess[Button]
-}
-pub impl Has_Button for @ecs.World
-
-pub(open) trait Has_ButtonColors {
-  get_button_colors_store(Self) -> @ecs.ComponentAccess[ButtonColors]
-}
-pub impl Has_ButtonColors for @ecs.World
-
-pub(open) trait Has_CalculatedClip {
-  get_calculated_clip_store(Self) -> @ecs.ComponentAccess[CalculatedClip]
-}
-pub impl Has_CalculatedClip for @ecs.World
-
-pub(open) trait Has_ContentSize {
-  get_content_size_store(Self) -> @ecs.ComponentAccess[ContentSize]
-}
-pub impl Has_ContentSize for @ecs.World
-
-pub(open) trait Has_FocusPolicy {
-  get_focus_policy_store(Self) -> @ecs.ComponentAccess[FocusPolicy]
-}
-pub impl Has_FocusPolicy for @ecs.World
-
-pub(open) trait Has_GlobalZIndex {
-  get_global_z_index_store(Self) -> @ecs.ComponentAccess[GlobalZIndex]
-}
-pub impl Has_GlobalZIndex for @ecs.World
-
-pub(open) trait Has_ImageNode {
-  get_image_node_store(Self) -> @ecs.ComponentAccess[ImageNode]
-}
-pub impl Has_ImageNode for @ecs.World
-
-pub(open) trait Has_ImageNodeSize {
-  get_image_node_size_store(Self) -> @ecs.ComponentAccess[ImageNodeSize]
-}
-pub impl Has_ImageNodeSize for @ecs.World
-
-pub(open) trait Has_Interaction {
-  get_interaction_store(Self) -> @ecs.ComponentAccess[Interaction]
-}
-pub impl Has_Interaction for @ecs.World
-
-pub(open) trait Has_Label {
-  get_label_store(Self) -> @ecs.ComponentAccess[Label]
-}
-pub impl Has_Label for @ecs.World
-
-pub(open) trait Has_Node {
-  get_node_store(Self) -> @ecs.ComponentAccess[Node]
-}
-pub impl Has_Node for @ecs.World
-
-pub(open) trait Has_Outline {
-  get_outline_store(Self) -> @ecs.ComponentAccess[Outline]
-}
-pub impl Has_Outline for @ecs.World
-
-pub(open) trait Has_RelativeCursorPosition {
-  get_relative_cursor_position_store(Self) -> @ecs.ComponentAccess[RelativeCursorPosition]
-}
-pub impl Has_RelativeCursorPosition for @ecs.World
-
-pub(open) trait Has_ScrollPosition {
-  get_scroll_position_store(Self) -> @ecs.ComponentAccess[ScrollPosition]
-}
-pub impl Has_ScrollPosition for @ecs.World
-
-pub(open) trait Has_UiAntiAlias {
-  get_ui_anti_alias_store(Self) -> @ecs.ComponentAccess[UiAntiAlias]
-}
-pub impl Has_UiAntiAlias for @ecs.World
-
-pub(open) trait Has_UiBoxShadowSamples {
-  get_ui_box_shadow_samples_store(Self) -> @ecs.ComponentAccess[UiBoxShadowSamples]
-}
-pub impl Has_UiBoxShadowSamples for @ecs.World
-
-pub(open) trait Has_UiImage {
-  get_ui_image_store(Self) -> @ecs.ComponentAccess[UiImage]
-}
-pub impl Has_UiImage for @ecs.World
-
-pub(open) trait Has_UiLayout {
-  get_ui_layout_store(Self) -> @ecs.ComponentAccess[UiLayout]
-}
-pub impl Has_UiLayout for @ecs.World
-
-pub(open) trait Has_UiRoot {
-  get_ui_root_store(Self) -> @ecs.ComponentAccess[UiRoot]
-}
-pub impl Has_UiRoot for @ecs.World
-
-pub(open) trait Has_UiText {
-  get_ui_text_store(Self) -> @ecs.ComponentAccess[UiText]
-}
-pub impl Has_UiText for @ecs.World
-
-pub(open) trait Has_ZIndex {
-  get_z_index_store(Self) -> @ecs.ComponentAccess[ZIndex]
-}
-pub impl Has_ZIndex for @ecs.World
 

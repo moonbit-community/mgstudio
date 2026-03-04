@@ -43,81 +43,29 @@ pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[PointerInputs] = @ecs.regi
 )
 
 ///|
-pub(open) trait HasRes_PickingHits {
-  get_picking_hits_resource(self : Self) -> @ecs.ResourceAccess[PickingHits]
-}
-
-///|
-pub(open) trait HasRes_PickingState {
-  get_picking_state_resource(self : Self) -> @ecs.ResourceAccess[PickingState]
-}
-
-///|
-pub(open) trait HasRes_PickingEvents {
-  get_picking_events_resource(self : Self) -> @ecs.ResourceAccess[PickingEvents]
-}
-
-///|
-pub(open) trait HasRes_PointerInputs {
-  get_pointer_inputs_resource(self : Self) -> @ecs.ResourceAccess[PointerInputs]
-}
-
-///|
-pub fn[W : HasRes_PickingHits] get_picking_hits_resource(
-  world : W,
+pub fn get_picking_hits_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[PickingHits] {
-  world.get_picking_hits_resource()
+  world.resource(ecs_res_key_picking_hits)
 }
 
 ///|
-pub fn[W : HasRes_PickingState] get_picking_state_resource(
-  world : W,
+pub fn get_picking_state_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[PickingState] {
-  world.get_picking_state_resource()
+  world.resource(ecs_res_key_picking_state)
 }
 
 ///|
-pub fn[W : HasRes_PickingEvents] get_picking_events_resource(
-  world : W,
+pub fn get_picking_events_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[PickingEvents] {
-  world.get_picking_events_resource()
+  world.resource(ecs_res_key_picking_events)
 }
 
 ///|
-pub fn[W : HasRes_PointerInputs] get_pointer_inputs_resource(
-  world : W,
+pub fn get_pointer_inputs_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[PointerInputs] {
-  world.get_pointer_inputs_resource()
+  world.resource(ecs_res_key_pointer_inputs)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl HasRes_PickingHits for @ecs.World with get_picking_hits_resource(self) {
-  self.resource(ecs_res_key_picking_hits)
-}
-
-///|
-pub impl HasRes_PickingState for @ecs.World with get_picking_state_resource(
-  self,
-) {
-  self.resource(ecs_res_key_picking_state)
-}
-
-///|
-pub impl HasRes_PickingEvents for @ecs.World with get_picking_events_resource(
-  self,
-) {
-  self.resource(ecs_res_key_picking_events)
-}
-
-///|
-pub impl HasRes_PointerInputs for @ecs.World with get_pointer_inputs_resource(
-  self,
-) {
-  self.resource(ecs_res_key_pointer_inputs)
-}
-
-///|
-/// End ECS bridge impls.

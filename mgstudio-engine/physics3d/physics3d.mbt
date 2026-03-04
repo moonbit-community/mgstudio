@@ -204,9 +204,9 @@ pub struct Physics3dContext {
   islands : @dynamics.IslandManager3D
   broad_phase : @collision.BroadPhase3D
   narrow_phase : @collision.NarrowPhase3D
-  mut pipeline : @pipeline.PhysicsPipeline3DReal
+  pipeline : @pipeline.PhysicsPipeline3DReal
   mut integration : @dynamics.IntegrationParameters
-  mut event_handler : @pipeline.EventHandler3D
+  event_handler : @pipeline.EventHandler3D
 
   // (entity.id, entity.generation) -> handle
   entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]

@@ -21,24 +21,8 @@ pub let ecs_components : Array[String] = ["Transform"]
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_Transform {
-  get_transform_store(self : Self) -> @ecs.ComponentAccess[Transform]
-}
-
-///|
-pub fn[W : Has_Transform] get_transform_store(
-  world : W,
+pub fn get_transform_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[Transform] {
-  world.get_transform_store()
+  world.component(ecs_key_transform)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_Transform for @ecs.World with get_transform_store(self) {
-  self.component(ecs_key_transform)
-}
-
-///|
-/// End ECS bridge impls.

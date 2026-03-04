@@ -34,7 +34,7 @@ pub let ecs_resources : Array[String]
 
 pub fn ensure_a11y_state(@ecs.World) -> Unit
 
-pub fn[W : HasRes_A11yState] get_a11y_state_resource(W) -> @ecs.ResourceAccess[A11yState]
+pub fn get_a11y_state_resource(@ecs.World) -> @ecs.ResourceAccess[A11yState]
 
 pub let host_action_default_bit : Int
 
@@ -76,8 +76,4 @@ pub impl @json.FromJson for A11yState
 // Type aliases
 
 // Traits
-pub(open) trait HasRes_A11yState {
-  get_a11y_state_resource(Self) -> @ecs.ResourceAccess[A11yState]
-}
-pub impl HasRes_A11yState for @ecs.World
 

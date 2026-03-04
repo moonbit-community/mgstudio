@@ -107,7 +107,7 @@ pub let ecs_key_texture_atlas : @ecs.ComponentKey[TextureAtlas]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_TextureAtlas] get_texture_atlas_store(W) -> @ecs.ComponentAccess[TextureAtlas]
+pub fn get_texture_atlas_store(@ecs.World) -> @ecs.ComponentAccess[TextureAtlas]
 
 pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int
 
@@ -325,8 +325,4 @@ pub fn TextureAtlasSources::texture_index(Self, Handle[Image]) -> Int?
 // Type aliases
 
 // Traits
-pub(open) trait Has_TextureAtlas {
-  get_texture_atlas_store(Self) -> @ecs.ComponentAccess[TextureAtlas]
-}
-pub impl Has_TextureAtlas for @ecs.World
 

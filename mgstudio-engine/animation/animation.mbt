@@ -1484,15 +1484,15 @@ pub impl @json.FromJson for RepeatAnimation with from_json(json, path) {
 
 ///|
 pub struct ActiveAnimation {
-  mut weight : Float
-  mut repeat : RepeatAnimation
-  mut speed : Float
+  weight : Float
+  repeat : RepeatAnimation
+  speed : Float
   mut elapsed : Float
   mut seek_time : Float
-  mut last_seek_time : Float?
+  last_seek_time : Float?
   mut completions : Int
   mut just_completed : Bool
-  mut paused : Bool
+  paused : Bool
 }
 
 ///|

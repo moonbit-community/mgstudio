@@ -20,13 +20,13 @@ pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_InheritedVisibility] get_inherited_visibility_store(W) -> @ecs.ComponentAccess[InheritedVisibility]
+pub fn get_inherited_visibility_store(@ecs.World) -> @ecs.ComponentAccess[InheritedVisibility]
 
-pub fn[W : Has_ViewVisibility] get_view_visibility_store(W) -> @ecs.ComponentAccess[ViewVisibility]
+pub fn get_view_visibility_store(@ecs.World) -> @ecs.ComponentAccess[ViewVisibility]
 
-pub fn[W : Has_VisibilityRange] get_visibility_range_store(W) -> @ecs.ComponentAccess[VisibilityRange]
+pub fn get_visibility_range_store(@ecs.World) -> @ecs.ComponentAccess[VisibilityRange]
 
-pub fn[W : Has_Visibility] get_visibility_store(W) -> @ecs.ComponentAccess[Visibility]
+pub fn get_visibility_store(@ecs.World) -> @ecs.ComponentAccess[Visibility]
 
 pub fn visibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -82,23 +82,4 @@ pub impl @json.FromJson for VisibilityRange
 // Type aliases
 
 // Traits
-pub(open) trait Has_InheritedVisibility {
-  get_inherited_visibility_store(Self) -> @ecs.ComponentAccess[InheritedVisibility]
-}
-pub impl Has_InheritedVisibility for @ecs.World
-
-pub(open) trait Has_ViewVisibility {
-  get_view_visibility_store(Self) -> @ecs.ComponentAccess[ViewVisibility]
-}
-pub impl Has_ViewVisibility for @ecs.World
-
-pub(open) trait Has_Visibility {
-  get_visibility_store(Self) -> @ecs.ComponentAccess[Visibility]
-}
-pub impl Has_Visibility for @ecs.World
-
-pub(open) trait Has_VisibilityRange {
-  get_visibility_range_store(Self) -> @ecs.ComponentAccess[VisibilityRange]
-}
-pub impl Has_VisibilityRange for @ecs.World
 

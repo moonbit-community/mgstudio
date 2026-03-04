@@ -605,11 +605,11 @@ pub struct Physics2dContext {
   impulse_joints : @dynamics.ImpulseJointSet
   multibody_joints : @dynamics.MultibodyJointSet
   ccd : @dynamics.CCDSolver
-  mut pipeline : @pipeline.PhysicsPipeline
+  pipeline : @pipeline.PhysicsPipeline
   mut integration : @dynamics.IntegrationParameters
   mut hooks : @pipeline.PhysicsHooks
-  mut event_handler : @pipeline.EventHandler
-  mut query_pipeline : @collision.QueryPipelineMut
+  event_handler : @pipeline.EventHandler
+  query_pipeline : @collision.QueryPipelineMut
 
   // (entity.id, entity.generation) -> handle
   entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]

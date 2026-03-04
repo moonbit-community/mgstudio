@@ -15,7 +15,7 @@ pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_GlobalTransform] get_global_transform_store(W) -> @ecs.ComponentAccess[GlobalTransform]
+pub fn get_global_transform_store(@ecs.World) -> @ecs.ComponentAccess[GlobalTransform]
 
 pub fn propagate_transforms_system(@ecs.World) -> Unit
 
@@ -62,8 +62,4 @@ pub impl @json.FromJson for GlobalTransform
 // Type aliases
 
 // Traits
-pub(open) trait Has_GlobalTransform {
-  get_global_transform_store(Self) -> @ecs.ComponentAccess[GlobalTransform]
-}
-pub impl Has_GlobalTransform for @ecs.World
 

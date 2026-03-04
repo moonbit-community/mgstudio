@@ -26,24 +26,8 @@ pub let ecs_res_key_a11y_state : @ecs.ResourceKey[A11yState] = @ecs.register_res
 )
 
 ///|
-pub(open) trait HasRes_A11yState {
-  get_a11y_state_resource(self : Self) -> @ecs.ResourceAccess[A11yState]
-}
-
-///|
-pub fn[W : HasRes_A11yState] get_a11y_state_resource(
-  world : W,
+pub fn get_a11y_state_resource(
+  world : @ecs.World,
 ) -> @ecs.ResourceAccess[A11yState] {
-  world.get_a11y_state_resource()
+  world.resource(ecs_res_key_a11y_state)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl HasRes_A11yState for @ecs.World with get_a11y_state_resource(self) {
-  self.resource(ecs_res_key_a11y_state)
-}
-
-///|
-/// End ECS bridge impls.

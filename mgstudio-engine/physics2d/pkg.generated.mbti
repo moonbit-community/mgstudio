@@ -101,85 +101,85 @@ pub let ecs_res_key_physics2d_events : @ecs.ResourceKey[Physics2dEvents]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_ActiveCollisionTypes2d] get_active_collision_types2d_store(W) -> @ecs.ComponentAccess[ActiveCollisionTypes2d]
+pub fn get_active_collision_types2d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveCollisionTypes2d]
 
-pub fn[W : Has_ActiveEvents2d] get_active_events2d_store(W) -> @ecs.ComponentAccess[ActiveEvents2d]
+pub fn get_active_events2d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveEvents2d]
 
-pub fn[W : Has_ActiveHooks2d] get_active_hooks2d_store(W) -> @ecs.ComponentAccess[ActiveHooks2d]
+pub fn get_active_hooks2d_store(@ecs.World) -> @ecs.ComponentAccess[ActiveHooks2d]
 
-pub fn[W : Has_AdditionalMassProperties2d] get_additional_mass_properties2d_store(W) -> @ecs.ComponentAccess[AdditionalMassProperties2d]
+pub fn get_additional_mass_properties2d_store(@ecs.World) -> @ecs.ComponentAccess[AdditionalMassProperties2d]
 
-pub fn[W : Has_AdditionalSolverIterations2d] get_additional_solver_iterations2d_store(W) -> @ecs.ComponentAccess[AdditionalSolverIterations2d]
+pub fn get_additional_solver_iterations2d_store(@ecs.World) -> @ecs.ComponentAccess[AdditionalSolverIterations2d]
 
-pub fn[W : Has_Ccd2d] get_ccd2d_store(W) -> @ecs.ComponentAccess[Ccd2d]
+pub fn get_ccd2d_store(@ecs.World) -> @ecs.ComponentAccess[Ccd2d]
 
-pub fn[W : Has_Collider2d] get_collider2d_store(W) -> @ecs.ComponentAccess[Collider2d]
+pub fn get_collider2d_store(@ecs.World) -> @ecs.ComponentAccess[Collider2d]
 
-pub fn[W : Has_ColliderDensity2d] get_collider_density2d_store(W) -> @ecs.ComponentAccess[ColliderDensity2d]
+pub fn get_collider_density2d_store(@ecs.World) -> @ecs.ComponentAccess[ColliderDensity2d]
 
-pub fn[W : Has_ColliderEnabled2d] get_collider_enabled2d_store(W) -> @ecs.ComponentAccess[ColliderEnabled2d]
+pub fn get_collider_enabled2d_store(@ecs.World) -> @ecs.ComponentAccess[ColliderEnabled2d]
 
-pub fn[W : Has_ColliderMassProperties2d] get_collider_mass_properties2d_store(W) -> @ecs.ComponentAccess[ColliderMassProperties2d]
+pub fn get_collider_mass_properties2d_store(@ecs.World) -> @ecs.ComponentAccess[ColliderMassProperties2d]
 
-pub fn[W : Has_ColliderParent2d] get_collider_parent2d_store(W) -> @ecs.ComponentAccess[ColliderParent2d]
+pub fn get_collider_parent2d_store(@ecs.World) -> @ecs.ComponentAccess[ColliderParent2d]
 
-pub fn[W : Has_CollisionGroups2d] get_collision_groups2d_store(W) -> @ecs.ComponentAccess[CollisionGroups2d]
+pub fn get_collision_groups2d_store(@ecs.World) -> @ecs.ComponentAccess[CollisionGroups2d]
 
-pub fn[W : Has_ContactForceEventThreshold2d] get_contact_force_event_threshold2d_store(W) -> @ecs.ComponentAccess[ContactForceEventThreshold2d]
+pub fn get_contact_force_event_threshold2d_store(@ecs.World) -> @ecs.ComponentAccess[ContactForceEventThreshold2d]
 
-pub fn[W : Has_ContactSkin2d] get_contact_skin2d_store(W) -> @ecs.ComponentAccess[ContactSkin2d]
+pub fn get_contact_skin2d_store(@ecs.World) -> @ecs.ComponentAccess[ContactSkin2d]
 
-pub fn[W : Has_Damping2d] get_damping2d_store(W) -> @ecs.ComponentAccess[Damping2d]
+pub fn get_damping2d_store(@ecs.World) -> @ecs.ComponentAccess[Damping2d]
 
-pub fn[W : Has_Dominance2d] get_dominance2d_store(W) -> @ecs.ComponentAccess[Dominance2d]
+pub fn get_dominance2d_store(@ecs.World) -> @ecs.ComponentAccess[Dominance2d]
 
-pub fn[W : Has_ExternalForce2d] get_external_force2d_store(W) -> @ecs.ComponentAccess[ExternalForce2d]
+pub fn get_external_force2d_store(@ecs.World) -> @ecs.ComponentAccess[ExternalForce2d]
 
-pub fn[W : Has_ExternalImpulse2d] get_external_impulse2d_store(W) -> @ecs.ComponentAccess[ExternalImpulse2d]
+pub fn get_external_impulse2d_store(@ecs.World) -> @ecs.ComponentAccess[ExternalImpulse2d]
 
-pub fn[W : Has_Friction2d] get_friction2d_store(W) -> @ecs.ComponentAccess[Friction2d]
+pub fn get_friction2d_store(@ecs.World) -> @ecs.ComponentAccess[Friction2d]
 
-pub fn[W : Has_FrictionCombineRule2d] get_friction_combine_rule2d_store(W) -> @ecs.ComponentAccess[FrictionCombineRule2d]
+pub fn get_friction_combine_rule2d_store(@ecs.World) -> @ecs.ComponentAccess[FrictionCombineRule2d]
 
-pub fn[W : Has_GravityScale2d] get_gravity_scale2d_store(W) -> @ecs.ComponentAccess[GravityScale2d]
+pub fn get_gravity_scale2d_store(@ecs.World) -> @ecs.ComponentAccess[GravityScale2d]
 
-pub fn[W : Has_ImpulseJoint2d] get_impulse_joint2d_store(W) -> @ecs.ComponentAccess[ImpulseJoint2d]
+pub fn get_impulse_joint2d_store(@ecs.World) -> @ecs.ComponentAccess[ImpulseJoint2d]
 
-pub fn[W : Has_KinematicCharacterController2d] get_kinematic_character_controller2d_store(W) -> @ecs.ComponentAccess[KinematicCharacterController2d]
+pub fn get_kinematic_character_controller2d_store(@ecs.World) -> @ecs.ComponentAccess[KinematicCharacterController2d]
 
-pub fn[W : Has_KinematicCharacterControllerOutput2d] get_kinematic_character_controller_output2d_store(W) -> @ecs.ComponentAccess[KinematicCharacterControllerOutput2d]
+pub fn get_kinematic_character_controller_output2d_store(@ecs.World) -> @ecs.ComponentAccess[KinematicCharacterControllerOutput2d]
 
-pub fn[W : Has_LockedAxes2d] get_locked_axes2d_store(W) -> @ecs.ComponentAccess[LockedAxes2d]
+pub fn get_locked_axes2d_store(@ecs.World) -> @ecs.ComponentAccess[LockedAxes2d]
 
-pub fn[W : Has_MultibodyJoint2d] get_multibody_joint2d_store(W) -> @ecs.ComponentAccess[MultibodyJoint2d]
+pub fn get_multibody_joint2d_store(@ecs.World) -> @ecs.ComponentAccess[MultibodyJoint2d]
 
-pub fn[W : HasRes_Physics2dConfig] get_physics2d_config_resource(W) -> @ecs.ResourceAccess[Physics2dConfig]
+pub fn get_physics2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dConfig]
 
-pub fn[W : HasRes_Physics2dContext] get_physics2d_context_resource(W) -> @ecs.ResourceAccess[Physics2dContext]
+pub fn get_physics2d_context_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dContext]
 
-pub fn[W : HasRes_Physics2dEvents] get_physics2d_events_resource(W) -> @ecs.ResourceAccess[Physics2dEvents]
+pub fn get_physics2d_events_resource(@ecs.World) -> @ecs.ResourceAccess[Physics2dEvents]
 
-pub fn[W : Has_RapierBodyHandle2d] get_rapier_body_handle2d_store(W) -> @ecs.ComponentAccess[RapierBodyHandle2d]
+pub fn get_rapier_body_handle2d_store(@ecs.World) -> @ecs.ComponentAccess[RapierBodyHandle2d]
 
-pub fn[W : Has_RapierColliderHandle2d] get_rapier_collider_handle2d_store(W) -> @ecs.ComponentAccess[RapierColliderHandle2d]
+pub fn get_rapier_collider_handle2d_store(@ecs.World) -> @ecs.ComponentAccess[RapierColliderHandle2d]
 
-pub fn[W : Has_RapierImpulseJointHandle2d] get_rapier_impulse_joint_handle2d_store(W) -> @ecs.ComponentAccess[RapierImpulseJointHandle2d]
+pub fn get_rapier_impulse_joint_handle2d_store(@ecs.World) -> @ecs.ComponentAccess[RapierImpulseJointHandle2d]
 
-pub fn[W : Has_RapierMultibodyJointHandle2d] get_rapier_multibody_joint_handle2d_store(W) -> @ecs.ComponentAccess[RapierMultibodyJointHandle2d]
+pub fn get_rapier_multibody_joint_handle2d_store(@ecs.World) -> @ecs.ComponentAccess[RapierMultibodyJointHandle2d]
 
-pub fn[W : Has_Restitution2d] get_restitution2d_store(W) -> @ecs.ComponentAccess[Restitution2d]
+pub fn get_restitution2d_store(@ecs.World) -> @ecs.ComponentAccess[Restitution2d]
 
-pub fn[W : Has_RestitutionCombineRule2d] get_restitution_combine_rule2d_store(W) -> @ecs.ComponentAccess[RestitutionCombineRule2d]
+pub fn get_restitution_combine_rule2d_store(@ecs.World) -> @ecs.ComponentAccess[RestitutionCombineRule2d]
 
-pub fn[W : Has_RigidBody2d] get_rigid_body2d_store(W) -> @ecs.ComponentAccess[RigidBody2d]
+pub fn get_rigid_body2d_store(@ecs.World) -> @ecs.ComponentAccess[RigidBody2d]
 
-pub fn[W : Has_RigidBodyEnabled2d] get_rigid_body_enabled2d_store(W) -> @ecs.ComponentAccess[RigidBodyEnabled2d]
+pub fn get_rigid_body_enabled2d_store(@ecs.World) -> @ecs.ComponentAccess[RigidBodyEnabled2d]
 
-pub fn[W : Has_Sleeping2d] get_sleeping2d_store(W) -> @ecs.ComponentAccess[Sleeping2d]
+pub fn get_sleeping2d_store(@ecs.World) -> @ecs.ComponentAccess[Sleeping2d]
 
-pub fn[W : Has_SolverGroups2d] get_solver_groups2d_store(W) -> @ecs.ComponentAccess[SolverGroups2d]
+pub fn get_solver_groups2d_store(@ecs.World) -> @ecs.ComponentAccess[SolverGroups2d]
 
-pub fn[W : Has_Velocity2d] get_velocity2d_store(W) -> @ecs.ComponentAccess[Velocity2d]
+pub fn get_velocity2d_store(@ecs.World) -> @ecs.ComponentAccess[Velocity2d]
 
 pub fn iso2_to_mg_transform(@Milky2018/moon_rapier/core.Isometry2, Float) -> @math.Transform
 
@@ -502,7 +502,7 @@ pub struct KinematicCharacterControllerOutput2d {
   effective_translation : @math.Vec2
   grounded : Bool
   sliding_down_slope : Bool
-  mut collisions : Array[CharacterCollision2d]
+  collisions : Array[CharacterCollision2d]
 }
 pub fn KinematicCharacterControllerOutput2d::new() -> Self
 pub fn KinematicCharacterControllerOutput2d::without_collisions(Self) -> Self
@@ -552,11 +552,11 @@ pub struct Physics2dContext {
   impulse_joints : @dynamics.ImpulseJointSet
   multibody_joints : @dynamics.MultibodyJointSet
   ccd : @dynamics.CCDSolver
-  mut pipeline : @pipeline.PhysicsPipeline
+  pipeline : @pipeline.PhysicsPipeline
   mut integration : @dynamics.IntegrationParameters
   mut hooks : @pipeline.PhysicsHooks
-  mut event_handler : @pipeline.EventHandler
-  mut query_pipeline : @collision.QueryPipelineMut
+  event_handler : @pipeline.EventHandler
+  query_pipeline : @collision.QueryPipelineMut
   entity_to_body : @hashmap.HashMap[(Int, Int), @dynamics.RigidBodyHandle]
   entity_to_collider : @hashmap.HashMap[(Int, Int), @collision.ColliderHandle]
   entity_to_impulse_joint : @hashmap.HashMap[(Int, Int), @dynamics.ImpulseJointHandle]
@@ -602,8 +602,8 @@ pub struct Physics2dDebugRenderConfig {
 pub fn Physics2dDebugRenderConfig::default() -> Self
 
 pub struct Physics2dEvents {
-  mut collisions : Array[CollisionEvent2d]
-  mut contact_forces : Array[ContactForceEvent2d]
+  collisions : Array[CollisionEvent2d]
+  contact_forces : Array[ContactForceEvent2d]
 }
 pub fn Physics2dEvents::clear(Self) -> Unit
 pub fn Physics2dEvents::new() -> Self
@@ -739,203 +739,4 @@ pub impl @json.FromJson for Velocity2d
 // Type aliases
 
 // Traits
-pub(open) trait HasRes_Physics2dConfig {
-  get_physics2d_config_resource(Self) -> @ecs.ResourceAccess[Physics2dConfig]
-}
-pub impl HasRes_Physics2dConfig for @ecs.World
-
-pub(open) trait HasRes_Physics2dContext {
-  get_physics2d_context_resource(Self) -> @ecs.ResourceAccess[Physics2dContext]
-}
-pub impl HasRes_Physics2dContext for @ecs.World
-
-pub(open) trait HasRes_Physics2dEvents {
-  get_physics2d_events_resource(Self) -> @ecs.ResourceAccess[Physics2dEvents]
-}
-pub impl HasRes_Physics2dEvents for @ecs.World
-
-pub(open) trait Has_ActiveCollisionTypes2d {
-  get_active_collision_types2d_store(Self) -> @ecs.ComponentAccess[ActiveCollisionTypes2d]
-}
-pub impl Has_ActiveCollisionTypes2d for @ecs.World
-
-pub(open) trait Has_ActiveEvents2d {
-  get_active_events2d_store(Self) -> @ecs.ComponentAccess[ActiveEvents2d]
-}
-pub impl Has_ActiveEvents2d for @ecs.World
-
-pub(open) trait Has_ActiveHooks2d {
-  get_active_hooks2d_store(Self) -> @ecs.ComponentAccess[ActiveHooks2d]
-}
-pub impl Has_ActiveHooks2d for @ecs.World
-
-pub(open) trait Has_AdditionalMassProperties2d {
-  get_additional_mass_properties2d_store(Self) -> @ecs.ComponentAccess[AdditionalMassProperties2d]
-}
-pub impl Has_AdditionalMassProperties2d for @ecs.World
-
-pub(open) trait Has_AdditionalSolverIterations2d {
-  get_additional_solver_iterations2d_store(Self) -> @ecs.ComponentAccess[AdditionalSolverIterations2d]
-}
-pub impl Has_AdditionalSolverIterations2d for @ecs.World
-
-pub(open) trait Has_Ccd2d {
-  get_ccd2d_store(Self) -> @ecs.ComponentAccess[Ccd2d]
-}
-pub impl Has_Ccd2d for @ecs.World
-
-pub(open) trait Has_Collider2d {
-  get_collider2d_store(Self) -> @ecs.ComponentAccess[Collider2d]
-}
-pub impl Has_Collider2d for @ecs.World
-
-pub(open) trait Has_ColliderDensity2d {
-  get_collider_density2d_store(Self) -> @ecs.ComponentAccess[ColliderDensity2d]
-}
-pub impl Has_ColliderDensity2d for @ecs.World
-
-pub(open) trait Has_ColliderEnabled2d {
-  get_collider_enabled2d_store(Self) -> @ecs.ComponentAccess[ColliderEnabled2d]
-}
-pub impl Has_ColliderEnabled2d for @ecs.World
-
-pub(open) trait Has_ColliderMassProperties2d {
-  get_collider_mass_properties2d_store(Self) -> @ecs.ComponentAccess[ColliderMassProperties2d]
-}
-pub impl Has_ColliderMassProperties2d for @ecs.World
-
-pub(open) trait Has_ColliderParent2d {
-  get_collider_parent2d_store(Self) -> @ecs.ComponentAccess[ColliderParent2d]
-}
-pub impl Has_ColliderParent2d for @ecs.World
-
-pub(open) trait Has_CollisionGroups2d {
-  get_collision_groups2d_store(Self) -> @ecs.ComponentAccess[CollisionGroups2d]
-}
-pub impl Has_CollisionGroups2d for @ecs.World
-
-pub(open) trait Has_ContactForceEventThreshold2d {
-  get_contact_force_event_threshold2d_store(Self) -> @ecs.ComponentAccess[ContactForceEventThreshold2d]
-}
-pub impl Has_ContactForceEventThreshold2d for @ecs.World
-
-pub(open) trait Has_ContactSkin2d {
-  get_contact_skin2d_store(Self) -> @ecs.ComponentAccess[ContactSkin2d]
-}
-pub impl Has_ContactSkin2d for @ecs.World
-
-pub(open) trait Has_Damping2d {
-  get_damping2d_store(Self) -> @ecs.ComponentAccess[Damping2d]
-}
-pub impl Has_Damping2d for @ecs.World
-
-pub(open) trait Has_Dominance2d {
-  get_dominance2d_store(Self) -> @ecs.ComponentAccess[Dominance2d]
-}
-pub impl Has_Dominance2d for @ecs.World
-
-pub(open) trait Has_ExternalForce2d {
-  get_external_force2d_store(Self) -> @ecs.ComponentAccess[ExternalForce2d]
-}
-pub impl Has_ExternalForce2d for @ecs.World
-
-pub(open) trait Has_ExternalImpulse2d {
-  get_external_impulse2d_store(Self) -> @ecs.ComponentAccess[ExternalImpulse2d]
-}
-pub impl Has_ExternalImpulse2d for @ecs.World
-
-pub(open) trait Has_Friction2d {
-  get_friction2d_store(Self) -> @ecs.ComponentAccess[Friction2d]
-}
-pub impl Has_Friction2d for @ecs.World
-
-pub(open) trait Has_FrictionCombineRule2d {
-  get_friction_combine_rule2d_store(Self) -> @ecs.ComponentAccess[FrictionCombineRule2d]
-}
-pub impl Has_FrictionCombineRule2d for @ecs.World
-
-pub(open) trait Has_GravityScale2d {
-  get_gravity_scale2d_store(Self) -> @ecs.ComponentAccess[GravityScale2d]
-}
-pub impl Has_GravityScale2d for @ecs.World
-
-pub(open) trait Has_ImpulseJoint2d {
-  get_impulse_joint2d_store(Self) -> @ecs.ComponentAccess[ImpulseJoint2d]
-}
-pub impl Has_ImpulseJoint2d for @ecs.World
-
-pub(open) trait Has_KinematicCharacterController2d {
-  get_kinematic_character_controller2d_store(Self) -> @ecs.ComponentAccess[KinematicCharacterController2d]
-}
-pub impl Has_KinematicCharacterController2d for @ecs.World
-
-pub(open) trait Has_KinematicCharacterControllerOutput2d {
-  get_kinematic_character_controller_output2d_store(Self) -> @ecs.ComponentAccess[KinematicCharacterControllerOutput2d]
-}
-pub impl Has_KinematicCharacterControllerOutput2d for @ecs.World
-
-pub(open) trait Has_LockedAxes2d {
-  get_locked_axes2d_store(Self) -> @ecs.ComponentAccess[LockedAxes2d]
-}
-pub impl Has_LockedAxes2d for @ecs.World
-
-pub(open) trait Has_MultibodyJoint2d {
-  get_multibody_joint2d_store(Self) -> @ecs.ComponentAccess[MultibodyJoint2d]
-}
-pub impl Has_MultibodyJoint2d for @ecs.World
-
-pub(open) trait Has_RapierBodyHandle2d {
-  get_rapier_body_handle2d_store(Self) -> @ecs.ComponentAccess[RapierBodyHandle2d]
-}
-pub impl Has_RapierBodyHandle2d for @ecs.World
-
-pub(open) trait Has_RapierColliderHandle2d {
-  get_rapier_collider_handle2d_store(Self) -> @ecs.ComponentAccess[RapierColliderHandle2d]
-}
-pub impl Has_RapierColliderHandle2d for @ecs.World
-
-pub(open) trait Has_RapierImpulseJointHandle2d {
-  get_rapier_impulse_joint_handle2d_store(Self) -> @ecs.ComponentAccess[RapierImpulseJointHandle2d]
-}
-pub impl Has_RapierImpulseJointHandle2d for @ecs.World
-
-pub(open) trait Has_RapierMultibodyJointHandle2d {
-  get_rapier_multibody_joint_handle2d_store(Self) -> @ecs.ComponentAccess[RapierMultibodyJointHandle2d]
-}
-pub impl Has_RapierMultibodyJointHandle2d for @ecs.World
-
-pub(open) trait Has_Restitution2d {
-  get_restitution2d_store(Self) -> @ecs.ComponentAccess[Restitution2d]
-}
-pub impl Has_Restitution2d for @ecs.World
-
-pub(open) trait Has_RestitutionCombineRule2d {
-  get_restitution_combine_rule2d_store(Self) -> @ecs.ComponentAccess[RestitutionCombineRule2d]
-}
-pub impl Has_RestitutionCombineRule2d for @ecs.World
-
-pub(open) trait Has_RigidBody2d {
-  get_rigid_body2d_store(Self) -> @ecs.ComponentAccess[RigidBody2d]
-}
-pub impl Has_RigidBody2d for @ecs.World
-
-pub(open) trait Has_RigidBodyEnabled2d {
-  get_rigid_body_enabled2d_store(Self) -> @ecs.ComponentAccess[RigidBodyEnabled2d]
-}
-pub impl Has_RigidBodyEnabled2d for @ecs.World
-
-pub(open) trait Has_Sleeping2d {
-  get_sleeping2d_store(Self) -> @ecs.ComponentAccess[Sleeping2d]
-}
-pub impl Has_Sleeping2d for @ecs.World
-
-pub(open) trait Has_SolverGroups2d {
-  get_solver_groups2d_store(Self) -> @ecs.ComponentAccess[SolverGroups2d]
-}
-pub impl Has_SolverGroups2d for @ecs.World
-
-pub(open) trait Has_Velocity2d {
-  get_velocity2d_store(Self) -> @ecs.ComponentAccess[Velocity2d]
-}
-pub impl Has_Velocity2d for @ecs.World
 

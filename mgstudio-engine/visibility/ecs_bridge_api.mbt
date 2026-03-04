@@ -23,83 +23,29 @@ pub let ecs_components : Array[String] = [
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_Visibility {
-  get_visibility_store(self : Self) -> @ecs.ComponentAccess[Visibility]
-}
-
-///|
-pub(open) trait Has_ViewVisibility {
-  get_view_visibility_store(self : Self) -> @ecs.ComponentAccess[ViewVisibility]
-}
-
-///|
-pub(open) trait Has_VisibilityRange {
-  get_visibility_range_store(self : Self) -> @ecs.ComponentAccess[
-    VisibilityRange,
-  ]
-}
-
-///|
-pub(open) trait Has_InheritedVisibility {
-  get_inherited_visibility_store(self : Self) -> @ecs.ComponentAccess[
-    InheritedVisibility,
-  ]
-}
-
-///|
-pub fn[W : Has_Visibility] get_visibility_store(
-  world : W,
+pub fn get_visibility_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[Visibility] {
-  world.get_visibility_store()
+  world.component(ecs_key_visibility)
 }
 
 ///|
-pub fn[W : Has_ViewVisibility] get_view_visibility_store(
-  world : W,
+pub fn get_view_visibility_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[ViewVisibility] {
-  world.get_view_visibility_store()
+  world.component(ecs_key_view_visibility)
 }
 
 ///|
-pub fn[W : Has_VisibilityRange] get_visibility_range_store(
-  world : W,
+pub fn get_visibility_range_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[VisibilityRange] {
-  world.get_visibility_range_store()
+  world.component(ecs_key_visibility_range)
 }
 
 ///|
-pub fn[W : Has_InheritedVisibility] get_inherited_visibility_store(
-  world : W,
+pub fn get_inherited_visibility_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[InheritedVisibility] {
-  world.get_inherited_visibility_store()
+  world.component(ecs_key_inherited_visibility)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_Visibility for @ecs.World with get_visibility_store(self) {
-  self.component(ecs_key_visibility)
-}
-
-///|
-pub impl Has_ViewVisibility for @ecs.World with get_view_visibility_store(self) {
-  self.component(ecs_key_view_visibility)
-}
-
-///|
-pub impl Has_VisibilityRange for @ecs.World with get_visibility_range_store(
-  self,
-) {
-  self.component(ecs_key_visibility_range)
-}
-
-///|
-pub impl Has_InheritedVisibility for @ecs.World with get_inherited_visibility_store(
-  self,
-) {
-  self.component(ecs_key_inherited_visibility)
-}
-
-///|
-/// End ECS bridge impls.

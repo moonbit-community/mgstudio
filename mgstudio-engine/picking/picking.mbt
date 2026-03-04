@@ -74,8 +74,8 @@ pub fn PointerInputs::push(
 ///|
 /// Per-frame hit-test results produced by picking backends.
 pub struct PickingHits {
-  mut ui : Array[@core.Entity?]
-  mut sprite2d : Array[@core.Entity?]
+  ui : Array[@core.Entity?]
+  sprite2d : Array[@core.Entity?]
 } derive(ToJson, FromJson)
 
 ///|
@@ -216,9 +216,9 @@ pub fn PickingEvents::drain(self : Ref[PickingEvents]) -> Array[PointerEvent] {
 ///|
 /// Per-pointer picking state persisted across frames.
 pub struct PickingState {
-  mut hovered : Array[@core.Entity?]
-  mut pressed : Array[@core.Entity?]
-  mut last_position : Array[@math.Vec2?]
+  hovered : Array[@core.Entity?]
+  pressed : Array[@core.Entity?]
+  last_position : Array[@math.Vec2?]
 } derive(ToJson, FromJson)
 
 ///|

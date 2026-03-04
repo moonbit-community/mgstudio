@@ -21,45 +21,15 @@ pub let ecs_components : Array[String] = ["SceneRoot", "SceneInstanceReady"]
 pub let ecs_resources : Array[String] = []
 
 ///|
-pub(open) trait Has_SceneRoot {
-  get_scene_root_store(self : Self) -> @ecs.ComponentAccess[SceneRoot]
-}
-
-///|
-pub(open) trait Has_SceneInstanceReady {
-  get_scene_instance_ready_store(self : Self) -> @ecs.ComponentAccess[
-    SceneInstanceReady,
-  ]
-}
-
-///|
-pub fn[W : Has_SceneRoot] get_scene_root_store(
-  world : W,
+pub fn get_scene_root_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[SceneRoot] {
-  world.get_scene_root_store()
+  world.component(ecs_key_scene_root)
 }
 
 ///|
-pub fn[W : Has_SceneInstanceReady] get_scene_instance_ready_store(
-  world : W,
+pub fn get_scene_instance_ready_store(
+  world : @ecs.World,
 ) -> @ecs.ComponentAccess[SceneInstanceReady] {
-  world.get_scene_instance_ready_store()
+  world.component(ecs_key_scene_instance_ready)
 }
-
-///|
-/// ECS bridge impls for @ecs.World.
-
-///|
-pub impl Has_SceneRoot for @ecs.World with get_scene_root_store(self) {
-  self.component(ecs_key_scene_root)
-}
-
-///|
-pub impl Has_SceneInstanceReady for @ecs.World with get_scene_instance_ready_store(
-  self,
-) {
-  self.component(ecs_key_scene_instance_ready)
-}
-
-///|
-/// End ECS bridge impls.
