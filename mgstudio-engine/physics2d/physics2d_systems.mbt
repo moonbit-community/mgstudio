@@ -172,8 +172,12 @@ pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ev_res = get_physics2d_events_resource(ecs_world)
-  match ev_res.get_ref_mut(tick) {
-    Some(r) => r.val.clear()
+  match ev_res.get() {
+    Some(current_events) => {
+      let events = Ref::new(current_events)
+      events.val.clear()
+      ev_res.insert(events.val, tick)
+    }
     None => ()
   }
 }
@@ -183,7 +187,8 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
+  guard ctx_res.get() is Some(current_ctx) else { return }
+  let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
   let rb_store = get_rigid_body2d_store(ecs_world)
   let col_store = get_collider2d_store(ecs_world)
@@ -388,6 +393,7 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
 
   // Keep query pipeline in sync with removals.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
+  ctx_res.insert(ctx_ref.val, tick)
 }
 
 ///|
@@ -395,7 +401,8 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
+  guard ctx_res.get() is Some(current_ctx) else { return }
+  let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
   let transform_store = @math.get_transform_store(ecs_world)
   let vel_store = get_velocity2d_store(ecs_world)
@@ -647,6 +654,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
       @dynamics.RigidBodyHandle::from_raw_parts(id, gen),
     )
   }
+  ctx_res.insert(ctx_ref.val, tick)
 }
 
 ///|
@@ -655,9 +663,9 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
-  guard cfg_res.get_ref() is Some(cfg_ref) else { return }
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
-  let cfg = cfg_ref.val
+  guard cfg_res.get() is Some(cfg) else { return }
+  guard ctx_res.get() is Some(current_ctx) else { return }
+  let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
   let dt = @app.fixed_time_timestep_seconds()
   ctx.integration = cfg.integration.set_dt(dt)
@@ -896,6 +904,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   body_handle_store.for_each(fn(_entity, bh) {
     recompute_body_mass_properties(ctx, bh.handle)
   })
+  ctx_res.insert(ctx_ref.val, tick)
 }
 
 ///|
@@ -905,15 +914,18 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
   let ev_res = get_physics2d_events_resource(ecs_world)
-  guard cfg_res.get_ref() is Some(cfg_ref) else { return }
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
-  guard ev_res.get_ref_mut(tick) is Some(ev_ref) else { return }
-  let cfg = cfg_ref.val
+  guard cfg_res.get() is Some(cfg) else { return }
+  guard ctx_res.get() is Some(current_ctx) else { return }
+  guard ev_res.get() is Some(current_events) else { return }
+  let ctx_ref = Ref::new(current_ctx)
+  let ev_ref = Ref::new(current_events)
   let ctx = ctx_ref.val
   let events = ev_ref.val
   let gravity = mg_vec2_to_rapier(cfg.gravity)
   if !cfg.physics_pipeline_active {
     ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
+    ctx_res.insert(ctx_ref.val, tick)
+    ev_res.insert(ev_ref.val, tick)
     return
   }
   physics2d_hooks_set_current_collider_map(ctx.collider_to_entity)
@@ -975,6 +987,8 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   // Update query pipeline after stepping so queries see current positions.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
   physics2d_hooks_clear_current_collider_map()
+  ctx_res.insert(ctx_ref.val, tick)
+  ev_res.insert(ev_ref.val, tick)
 }
 
 ///|
@@ -982,8 +996,7 @@ pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
-  guard ctx_res.get_ref() is Some(ctx_ref) else { return }
-  let ctx = ctx_ref.val
+  guard ctx_res.get() is Some(ctx) else { return }
   let transform_store = @math.get_transform_store(ecs_world)
   let vel_store = get_velocity2d_store(ecs_world)
   let body_handle_store = get_rapier_body_handle2d_store(ecs_world)

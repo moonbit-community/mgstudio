@@ -753,7 +753,7 @@ pub struct FreeCameraState {
   yaw : Float
   speed_multiplier : Float
   velocity : @math.Vec3
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn FreeCameraState::default() -> FreeCameraState {

@@ -106,6 +106,18 @@ pub struct Query3[A, B, C] {
 pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] Query3::for_each(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
 pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::view(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
 
+pub struct ResourceAccess[T] {
+  world : World
+  key : ResourceKey[T]
+}
+pub fn[T : @json.FromJson] ResourceAccess::get(Self[T]) -> T?
+pub fn[T : ToJson] ResourceAccess::insert(Self[T], T, Int) -> Unit
+pub fn[T] ResourceAccess::is_present(Self[T]) -> Bool
+pub fn[T : @json.FromJson] ResourceAccess::remove(Self[T]) -> T?
+pub fn[T : ToJson] ResourceAccess::set(Self[T], T, Int) -> Bool
+pub fn[T : ToJson + @json.FromJson] ResourceAccess::update(Self[T], Int, (T) -> T) -> Bool
+pub fn[T : ToJson] ResourceAccess::upsert(Self[T], T, Int) -> Unit
+
 pub struct ResourceKey[T] {
   id : Int
   debug_name : String
@@ -142,6 +154,8 @@ pub fn[A, B, C] World::query3(Self, ComponentKey[A], ComponentKey[B], ComponentK
 pub fn World::read_change_tick(Self) -> Int
 pub fn[T : @json.FromJson] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
+pub fn[T : @json.FromJson] World::remove_resource(Self, ResourceKey[T]) -> T? raise EcsError
+pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T : ToJson] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T : ToJson] World::set(Self, @core.Entity, ComponentKey[T], T) -> Unit raise EcsError
 pub fn World::set_system_context(Self, @core.SystemContext) -> Unit

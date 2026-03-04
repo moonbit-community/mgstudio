@@ -33,6 +33,16 @@ pub fn[T : @json.FromJson] World::get_resource(
 }
 
 ///|
+pub fn[T : @json.FromJson] World::remove_resource(
+  self : World,
+  key : ResourceKey[T],
+) -> T? raise EcsError {
+  guard self.get_resource(key) is Some(value) else { return None }
+  self.resources.remove(key.id())
+  Some(value)
+}
+
+///|
 pub fn[T : ToJson + @json.FromJson] World::update_resource(
   self : World,
   key : ResourceKey[T],

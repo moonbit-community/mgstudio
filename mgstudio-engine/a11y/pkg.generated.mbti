@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/moon_accesskit",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -27,11 +28,13 @@ pub let a11y_set : String
 
 pub let ecs_components : Array[String]
 
+pub let ecs_res_key_a11y_state : @ecs.ResourceKey[A11yState]
+
 pub let ecs_resources : Array[String]
 
 pub fn ensure_a11y_state(@ecs.World) -> Unit
 
-pub fn[W : HasRes_A11yState] get_a11y_state_resource(W) -> @core.Resource[A11yState]
+pub fn[W : HasRes_A11yState] get_a11y_state_resource(W) -> @ecs.ResourceAccess[A11yState]
 
 pub let host_action_default_bit : Int
 
@@ -67,12 +70,14 @@ pub fn A11yState::focused_node(Self) -> @moon_accesskit.NodeId
 pub fn A11yState::push_action(Ref[Self], @moon_accesskit.ActionRequest) -> Unit
 pub fn A11yState::set_focused_node(Ref[Self], @moon_accesskit.NodeId) -> Unit
 pub fn A11yState::set_update(Ref[Self], @moon_accesskit.TreeUpdate) -> Unit
+pub impl ToJson for A11yState
+pub impl @json.FromJson for A11yState
 
 // Type aliases
 
 // Traits
 pub(open) trait HasRes_A11yState {
-  get_a11y_state_resource(Self) -> @core.Resource[A11yState]
+  get_a11y_state_resource(Self) -> @ecs.ResourceAccess[A11yState]
 }
 pub impl HasRes_A11yState for @ecs.World
 

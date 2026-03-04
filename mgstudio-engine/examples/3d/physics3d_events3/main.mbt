@@ -97,8 +97,7 @@ fn setup_physics(world : @ecs.World) -> Unit {
 ///|
 fn display_events(world : @ecs.World) -> Unit {
   let events_resource = @physics3d.get_physics3d_events_resource(world)
-  guard events_resource.get_ref() is Some(events_ref) else { return }
-  let events = events_ref.val
+  guard events_resource.get() is Some(events) else { return }
 
   for collision_event in events.collisions {
     match collision_event {

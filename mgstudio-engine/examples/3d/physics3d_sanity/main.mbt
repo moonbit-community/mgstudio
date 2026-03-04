@@ -34,11 +34,14 @@ let state : Ref[SanityState] = Ref::new({ ball: None })
 fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let cfg_res = @physics3d.get_physics3d_config_resource(world)
-  match cfg_res.get_ref_mut(tick) {
-    Some(r) =>
-      r.val = @physics3d.Physics3dConfig::new(
+  match cfg_res.get() {
+    Some(cfg) => {
+      let cfg_ref = Ref::new(cfg)
+      cfg_ref.val = @physics3d.Physics3dConfig::new(
         @math.Vec3::new(0.0F, -500.0F, 0.0F),
       )
+      cfg_res.insert(cfg_ref.val, tick)
+    }
     None => ()
   }
   let floor_material = @render3d.standard_material_add(
@@ -128,9 +131,9 @@ fn physics3d_sanity_print(world : @ecs.World) -> Unit {
         Some(t) => println("ball.y=\{t.translation.y}")
       }
       let ev_res = @physics3d.get_physics3d_events_resource(world)
-      match ev_res.get_ref() {
-        Some(r) =>
-          for ev in r.val.collisions {
+      match ev_res.get() {
+        Some(events) =>
+          for ev in events.collisions {
             match ev {
               @physics3d.CollisionEvent3d::Started(a, b, sensor) =>
                 println("Collision Started: \{a.id}, \{b.id}, sensor=\{sensor}")

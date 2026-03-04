@@ -23,7 +23,7 @@ pub struct A11yState {
   mut last_update : @moon_accesskit.TreeUpdate?
   mut pending_actions : Array[@moon_accesskit.ActionRequest]
   mut focused_node : @moon_accesskit.NodeId
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn A11yState::default() -> A11yState {
@@ -239,13 +239,13 @@ pub fn ensure_a11y_state(world : @ecs.World) -> Unit {
 /// Poll host-side accessibility actions into `A11yState.pending_actions`.
 pub fn a11y_poll_actions_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  guard get_a11y_state_resource(world).get_ref_mut(tick) is Some(state) else {
-    return
-  }
+  let res = get_a11y_state_resource(world)
+  guard res.get() is Some(state_value) else { return }
   let n = host_a11y_actions_len()
   if n <= 0 {
     return
   }
+  let state = Ref::new(state_value)
   for i in 0..<n {
     let target = host_a11y_action_target(i)
     let kind = host_a11y_action_kind(i)
@@ -276,6 +276,7 @@ pub fn a11y_poll_actions_system(world : @ecs.World) -> Unit {
     A11yState::push_action(state, req)
   }
   host_a11y_actions_clear()
+  res.insert(state.val, tick)
 }
 
 ///|

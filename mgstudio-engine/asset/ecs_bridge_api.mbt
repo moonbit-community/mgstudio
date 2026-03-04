@@ -21,14 +21,21 @@ pub let ecs_components : Array[String] = ["TextureAtlas"]
 pub let ecs_resources : Array[String] = []
 
 ///|
+
+///|
+pub let ecs_key_texture_atlas : @ecs.ComponentKey[TextureAtlas] = @ecs.register_component(
+  debug_name="asset.texture_atlas",
+)
+
+///|
 pub(open) trait Has_TextureAtlas {
-  get_texture_atlas_store(self : Self) -> @core.ComponentStore[TextureAtlas]
+  get_texture_atlas_store(self : Self) -> @ecs.ComponentAccess[TextureAtlas]
 }
 
 ///|
 pub fn[W : Has_TextureAtlas] get_texture_atlas_store(
   world : W,
-) -> @core.ComponentStore[TextureAtlas] {
+) -> @ecs.ComponentAccess[TextureAtlas] {
   world.get_texture_atlas_store()
 }
 
@@ -36,16 +43,8 @@ pub fn[W : Has_TextureAtlas] get_texture_atlas_store(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_texture_atlas_store_by_world : Map[
-  Int,
-  @core.ComponentStore[TextureAtlas],
-] = {}
-
-///|
 pub impl Has_TextureAtlas for @ecs.World with get_texture_atlas_store(self) {
-  bridge_get_texture_atlas_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_texture_atlas)
 }
 
 ///|

@@ -356,7 +356,7 @@ pub fn GridPlacement::end_span(end : Int, span : Int) -> GridPlacement {
 ///|
 pub struct ZIndex {
   value : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ZIndex::new(value : Int) -> ZIndex {
@@ -366,7 +366,7 @@ pub fn ZIndex::new(value : Int) -> ZIndex {
 ///|
 pub struct GlobalZIndex {
   value : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
@@ -376,7 +376,7 @@ pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
 ///|
 pub struct UiScale {
   value : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiScale::new(value : Float) -> UiScale {
@@ -386,7 +386,7 @@ pub fn UiScale::new(value : Float) -> UiScale {
 ///|
 pub struct UiStack {
   mut uinodes : Array[@core.Entity]
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiStack::default() -> UiStack {
@@ -407,7 +407,7 @@ pub fn UiStack::clear(self : Ref[UiStack]) -> Unit {
 pub struct ScrollPosition {
   offset_x : Float
   offset_y : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ScrollPosition::default() -> ScrollPosition {
@@ -434,7 +434,7 @@ pub fn ScrollPosition::with_delta(
 ///|
 pub struct CalculatedClip {
   clip : @math.Rect
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn CalculatedClip::new(clip : @math.Rect) -> CalculatedClip {
@@ -445,7 +445,7 @@ pub fn CalculatedClip::new(clip : @math.Rect) -> CalculatedClip {
 pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
   normalized : @math.Vec2?
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) enum FocusPolicy {
@@ -826,7 +826,7 @@ pub fn UiRoot::default() -> UiRoot {
 /// Computed layout rectangle in logical pixels, top-left origin (viewport space).
 pub struct UiLayout {
   rect : @math.Rect
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
@@ -837,7 +837,7 @@ pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
 /// Intrinsic content size used by the layout engine when width/height are `Auto`.
 pub struct ContentSize {
   size : @math.Vec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
@@ -850,7 +850,7 @@ pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
 /// Stores the size of the selected image region in pixels (rect/atlas/texture).
 pub struct ImageNodeSize {
   size : @math.UVec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ImageNodeSize::default() -> ImageNodeSize {
@@ -880,7 +880,7 @@ pub struct UiImage {
   flip_x : Bool
   flip_y : Bool
   rect : @math.Rect?
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
@@ -938,7 +938,7 @@ pub struct BorderRect {
   right : Float
   top : Float
   bottom : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn BorderRect::new(
@@ -978,7 +978,7 @@ pub fn BorderRect::default() -> BorderRect {
 pub(all) enum SliceScaleMode {
   Stretch
   Tile(Float)
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn SliceScaleMode::default() -> SliceScaleMode {
@@ -992,7 +992,7 @@ pub struct TextureSlicer {
   center_scale_mode : SliceScaleMode
   sides_scale_mode : SliceScaleMode
   max_corner_scale : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
@@ -1019,7 +1019,7 @@ pub(all) enum NodeImageMode {
   Sliced(TextureSlicer)
   /// Tiled scaling for the full texture region.
   Tiled(Bool, Bool, Float)
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn NodeImageMode::default() -> NodeImageMode {
@@ -1191,7 +1191,7 @@ pub struct ImageNode {
   flip_y : Bool
   rect : @math.Rect?
   image_mode : NodeImageMode
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ImageNode::default() -> ImageNode {
@@ -1387,6 +1387,26 @@ pub fn UiContext::new(
 }
 
 ///|
+let ui_context_serde_next_id : Ref[Int] = Ref::new(1)
+
+///|
+let ui_context_serde_values : Map[Int, UiContext] = {}
+
+///|
+pub impl ToJson for UiContext with to_json(self) {
+  let id = ui_context_serde_next_id.val
+  ui_context_serde_next_id.val = id + 1
+  ui_context_serde_values.set(id, self)
+  id.to_json()
+}
+
+///|
+pub impl @json.FromJson for UiContext with from_json(json, path) {
+  let id : Int = @json.from_json(json, path~)
+  ui_context_serde_values.get(id).unwrap_or(UiContext::default())
+}
+
+///|
 /// Bevy-aligned UI system sets (`UiSystems::{Focus, Prepare, Propagate, Content, Layout, PostLayout, Stack}`).
 pub let ui_set_focus : @app.SystemSet = @app.system_set("bevy.ui.focus")
 
@@ -1522,23 +1542,31 @@ pub fn ui_pointer_pos_in_viewport(
 }
 
 ///|
-fn ensure_ui_context_resource(world : @ecs.World) -> Ref[UiContext]? {
+fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
   let tick = world.read_change_tick()
   let res = get_ui_context_resource(world)
-  if !res.is_present() {
-    res.insert(UiContext::default(), tick)
+  match res.get() {
+    Some(value) => value
+    None => {
+      let value = UiContext::default()
+      res.insert(value, tick)
+      value
+    }
   }
-  res.get_ref_mut(tick)
 }
 
 ///|
-fn ensure_ui_scale_resource(world : @ecs.World) -> Ref[UiScale]? {
+fn ensure_ui_scale_resource(world : @ecs.World) -> UiScale {
   let tick = world.read_change_tick()
   let res = get_ui_scale_resource(world)
-  if !res.is_present() {
-    res.insert(UiScale::new(1.0F), tick)
+  match res.get() {
+    Some(value) => value
+    None => {
+      let value = UiScale::new(1.0F)
+      res.insert(value, tick)
+      value
+    }
   }
-  res.get_ref_mut(tick)
 }
 
 ///|
@@ -1593,7 +1621,8 @@ fn clamp_viewport_to_window(
 
 ///|
 pub fn ui_update_context_system(world : @ecs.World) -> Unit {
-  guard ensure_ui_context_resource(world) is Some(ctx) else { return }
+  let tick = world.read_change_tick()
+  let ctx = Ref::new(ensure_ui_context_resource(world))
   create_white_texture_if_needed(ctx)
   let win_w = @window.window_width()
   let win_h = @window.window_height()
@@ -1693,6 +1722,7 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
     Some(v) => v
     None => @math.Vec2::new(0.0F, 0.0F)
   }
+  get_ui_context_resource(world).insert(ctx.val, tick)
 }
 
 ///|
@@ -1809,7 +1839,7 @@ fn image_measure_size_px(
 pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   guard res.get() is Some(_) else { return }
-  guard ensure_ui_scale_resource(world) is Some(ui_scale) else { return }
+  let ui_scale = ensure_ui_scale_resource(world)
   let node_store = get_node_store(world)
   let ui_text_store = get_ui_text_store(world)
   let ui_image_store = get_ui_image_store(world)
@@ -1818,10 +1848,10 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   let content_size_store = get_content_size_store(world)
   let tick = world.read_change_tick()
   let sf = safe_scale_factor(@window.window_scale_factor())
-  let ui_scale_value = if ui_scale.val.value <= 0.0F {
+  let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
   } else {
-    ui_scale.val.value
+    ui_scale.value
   }
   let inv_px_scale = ui_scale_value / sf
   let transparent_id = @asset.asset_transparent_texture().id()
@@ -3068,10 +3098,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let res = get_ui_stack_resource(world)
-  if !res.is_present() {
-    res.insert(UiStack::default(), tick)
-  }
-  guard res.get_ref_mut(tick) is Some(stack) else { return }
+  let stack = Ref::new(res.get().unwrap_or(UiStack::default()))
   UiStack::clear(stack)
   let root_store = get_ui_root_store(world)
   let layout_store = get_ui_layout_store(world)
@@ -3096,7 +3123,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   }
 
   fn local_z(
-    z_store : @core.ComponentStore[ZIndex],
+    z_store : @ecs.ComponentAccess[ZIndex],
     entity : @core.Entity,
   ) -> Int {
     match z_store.get(entity) {
@@ -3106,7 +3133,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   }
 
   fn global_z(
-    gz_store : @core.ComponentStore[GlobalZIndex],
+    gz_store : @ecs.ComponentAccess[GlobalZIndex],
     entity : @core.Entity,
   ) -> Int {
     match gz_store.get(entity) {
@@ -3177,10 +3204,10 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   })
   fn visit(
     entity : @core.Entity,
-    layout_store : @core.ComponentStore[UiLayout],
-    z_store : @core.ComponentStore[ZIndex],
-    gz_store : @core.ComponentStore[GlobalZIndex],
-    children_store : @core.ComponentStore[@hierarchy.Children],
+    layout_store : @ecs.ComponentAccess[UiLayout],
+    z_store : @ecs.ComponentAccess[ZIndex],
+    gz_store : @ecs.ComponentAccess[GlobalZIndex],
+    children_store : @ecs.ComponentAccess[@hierarchy.Children],
     stack : Ref[UiStack],
   ) -> Unit {
     guard layout_store.contains(entity) else { return }
@@ -3257,6 +3284,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       }
     }
   }
+  res.insert(stack.val, tick)
 }
 
 ///|
@@ -3315,8 +3343,8 @@ pub fn ui_build_a11y_tree_update(
 
   fn mark_required(
     required : @hashmap.HashMap[(Int, Int), Bool],
-    parent_store : @core.ComponentStore[@hierarchy.Parent],
-    layout_store : @core.ComponentStore[UiLayout],
+    parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
+    layout_store : @ecs.ComponentAccess[UiLayout],
     entity : @core.Entity,
   ) -> Unit {
     let mut cur = Some(entity)
@@ -3356,8 +3384,8 @@ pub fn ui_build_a11y_tree_update(
 
   fn collect_subtree_text(
     entity : @core.Entity,
-    children_store : @core.ComponentStore[@hierarchy.Children],
-    ui_text_store : @core.ComponentStore[UiText],
+    children_store : @ecs.ComponentAccess[@hierarchy.Children],
+    ui_text_store : @ecs.ComponentAccess[UiText],
     out : Ref[Array[String]],
   ) -> Unit {
     if ui_text_store.get(entity) is Some(text_node) {
@@ -3393,8 +3421,8 @@ pub fn ui_build_a11y_tree_update(
 
   fn calc_label_from_children(
     entity : @core.Entity,
-    children_store : @core.ComponentStore[@hierarchy.Children],
-    ui_text_store : @core.ComponentStore[UiText],
+    children_store : @ecs.ComponentAccess[@hierarchy.Children],
+    ui_text_store : @ecs.ComponentAccess[UiText],
   ) -> String? {
     guard children_store.get(entity) is Some(children) else { return None }
     let mut name : String? = None
@@ -3412,8 +3440,8 @@ pub fn ui_build_a11y_tree_update(
 
   fn calc_value_from_self(
     entity : @core.Entity,
-    children_store : @core.ComponentStore[@hierarchy.Children],
-    ui_text_store : @core.ComponentStore[UiText],
+    children_store : @ecs.ComponentAccess[@hierarchy.Children],
+    ui_text_store : @ecs.ComponentAccess[UiText],
   ) -> String {
     let parts : Array[String] = []
     let out = Ref::new(parts)
@@ -4211,14 +4239,11 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
         let t_content = transform_with_z(t0, z_base + UI_STACK_Z_CONTENT)
         if color.a > 0.0F && NodeImageMode::uses_slices(mode) {
           let sf = safe_scale_factor(@window.window_scale_factor())
-          let ui_scale_value = match ensure_ui_scale_resource(world) {
-            Some(ui_scale) =>
-              if ui_scale.val.value <= 0.0F {
-                1.0F
-              } else {
-                ui_scale.val.value
-              }
-            None => 1.0F
+          let ui_scale = ensure_ui_scale_resource(world)
+          let ui_scale_value = if ui_scale.value <= 0.0F {
+            1.0F
+          } else {
+            ui_scale.value
           }
           // `size` is in logical UI units. Convert to physical pixels before
           // computing slice/tiling parameters to match Bevy.

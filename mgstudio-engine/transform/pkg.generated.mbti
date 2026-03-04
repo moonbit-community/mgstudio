@@ -3,7 +3,6 @@ package "Milky2018/mgstudio/transform"
 
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
@@ -16,7 +15,7 @@ pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_GlobalTransform] get_global_transform_store(W) -> @core.ComponentStore[GlobalTransform]
+pub fn[W : Has_GlobalTransform] get_global_transform_store(W) -> @ecs.ComponentAccess[GlobalTransform]
 
 pub fn propagate_transforms_system(@ecs.World) -> Unit
 
@@ -64,7 +63,7 @@ pub impl @json.FromJson for GlobalTransform
 
 // Traits
 pub(open) trait Has_GlobalTransform {
-  get_global_transform_store(Self) -> @core.ComponentStore[GlobalTransform]
+  get_global_transform_store(Self) -> @ecs.ComponentAccess[GlobalTransform]
 }
 pub impl Has_GlobalTransform for @ecs.World
 

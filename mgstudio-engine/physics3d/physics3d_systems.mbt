@@ -65,10 +65,10 @@ pub fn physics3d_clear_events_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ev_res = get_physics3d_events_resource(ecs_world)
-  match ev_res.get_ref_mut(tick) {
-    Some(r) => r.val.clear()
-    None => ()
-  }
+  guard ev_res.get() is Some(events) else { return }
+  let events_ref = Ref::new(events)
+  events_ref.val.clear()
+  ev_res.insert(events_ref.val, tick)
 }
 
 ///|
@@ -76,7 +76,8 @@ pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
+  guard ctx_res.get() is Some(ctx_value) else { return }
+  let ctx_ref = Ref::new(ctx_value)
   let ctx = ctx_ref.val
   let rb_store = get_rigid_body3d_store(ecs_world)
   let col_store = get_collider3d_store(ecs_world)
@@ -160,6 +161,7 @@ pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
       ctx.collider_to_entity.remove(handle.into_raw_parts())
     }
   }
+  ctx_res.insert(ctx_ref.val, tick)
 }
 
 ///|
@@ -167,7 +169,8 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
+  guard ctx_res.get() is Some(ctx_value) else { return }
+  let ctx_ref = Ref::new(ctx_value)
   let ctx = ctx_ref.val
   let transform_store = @math.get_transform_store(ecs_world)
   let vel_store = get_velocity3d_store(ecs_world)
@@ -295,6 +298,7 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
     ctx.entity_to_collider.set(entity_key(entity), handle)
     ctx.collider_to_entity.set(handle.into_raw_parts(), entity)
   })
+  ctx_res.insert(ctx_ref.val, tick)
 }
 
 ///|
@@ -302,7 +306,8 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
+  guard ctx_res.get() is Some(ctx_value) else { return }
+  let ctx_ref = Ref::new(ctx_value)
   let ctx = ctx_ref.val
   let dt = @app.fixed_time_timestep_seconds()
   ctx.integration = ctx.integration.set_dt(dt)
@@ -364,6 +369,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
       body.set_angvel(mg_vec3_to_rapier(v.angvel))
     }
   })
+  ctx_res.insert(ctx_ref.val, tick)
 }
 
 ///|
@@ -373,10 +379,11 @@ pub fn physics3d_step_system(world : @ecs.World) -> Unit {
   let cfg_res = get_physics3d_config_resource(ecs_world)
   let ctx_res = get_physics3d_context_resource(ecs_world)
   let ev_res = get_physics3d_events_resource(ecs_world)
-  guard cfg_res.get_ref() is Some(cfg_ref) else { return }
-  guard ctx_res.get_ref_mut(tick) is Some(ctx_ref) else { return }
-  guard ev_res.get_ref_mut(tick) is Some(ev_ref) else { return }
-  let cfg = cfg_ref.val
+  guard cfg_res.get() is Some(cfg) else { return }
+  guard ctx_res.get() is Some(ctx_value) else { return }
+  guard ev_res.get() is Some(events_value) else { return }
+  let ctx_ref = Ref::new(ctx_value)
+  let ev_ref = Ref::new(events_value)
   let ctx = ctx_ref.val
   let events = ev_ref.val
   let gravity = mg_vec3_to_rapier(cfg.gravity)
@@ -430,6 +437,8 @@ pub fn physics3d_step_system(world : @ecs.World) -> Unit {
       _ => ()
     }
   }
+  ctx_res.insert(ctx_ref.val, tick)
+  ev_res.insert(ev_ref.val, tick)
 }
 
 ///|
@@ -437,8 +446,7 @@ pub fn physics3d_writeback_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
-  guard ctx_res.get_ref() is Some(ctx_ref) else { return }
-  let ctx = ctx_ref.val
+  guard ctx_res.get() is Some(ctx) else { return }
   let transform_store = @math.get_transform_store(ecs_world)
   let vel_store = get_velocity3d_store(ecs_world)
   let body_handle_store = get_rapier_body_handle3d_store(ecs_world)

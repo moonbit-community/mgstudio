@@ -23,50 +23,70 @@ pub let ecs_resources : Array[String] = [
 ]
 
 ///|
+pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits] = @ecs.register_resource(
+  debug_name="picking.picking_hits",
+)
+
+///|
+pub let ecs_res_key_picking_state : @ecs.ResourceKey[PickingState] = @ecs.register_resource(
+  debug_name="picking.picking_state",
+)
+
+///|
+pub let ecs_res_key_picking_events : @ecs.ResourceKey[PickingEvents] = @ecs.register_resource(
+  debug_name="picking.picking_events",
+)
+
+///|
+pub let ecs_res_key_pointer_inputs : @ecs.ResourceKey[PointerInputs] = @ecs.register_resource(
+  debug_name="picking.pointer_inputs",
+)
+
+///|
 pub(open) trait HasRes_PickingHits {
-  get_picking_hits_resource(self : Self) -> @core.Resource[PickingHits]
+  get_picking_hits_resource(self : Self) -> @ecs.ResourceAccess[PickingHits]
 }
 
 ///|
 pub(open) trait HasRes_PickingState {
-  get_picking_state_resource(self : Self) -> @core.Resource[PickingState]
+  get_picking_state_resource(self : Self) -> @ecs.ResourceAccess[PickingState]
 }
 
 ///|
 pub(open) trait HasRes_PickingEvents {
-  get_picking_events_resource(self : Self) -> @core.Resource[PickingEvents]
+  get_picking_events_resource(self : Self) -> @ecs.ResourceAccess[PickingEvents]
 }
 
 ///|
 pub(open) trait HasRes_PointerInputs {
-  get_pointer_inputs_resource(self : Self) -> @core.Resource[PointerInputs]
+  get_pointer_inputs_resource(self : Self) -> @ecs.ResourceAccess[PointerInputs]
 }
 
 ///|
 pub fn[W : HasRes_PickingHits] get_picking_hits_resource(
   world : W,
-) -> @core.Resource[PickingHits] {
+) -> @ecs.ResourceAccess[PickingHits] {
   world.get_picking_hits_resource()
 }
 
 ///|
 pub fn[W : HasRes_PickingState] get_picking_state_resource(
   world : W,
-) -> @core.Resource[PickingState] {
+) -> @ecs.ResourceAccess[PickingState] {
   world.get_picking_state_resource()
 }
 
 ///|
 pub fn[W : HasRes_PickingEvents] get_picking_events_resource(
   world : W,
-) -> @core.Resource[PickingEvents] {
+) -> @ecs.ResourceAccess[PickingEvents] {
   world.get_picking_events_resource()
 }
 
 ///|
 pub fn[W : HasRes_PointerInputs] get_pointer_inputs_resource(
   world : W,
-) -> @core.Resource[PointerInputs] {
+) -> @ecs.ResourceAccess[PointerInputs] {
   world.get_pointer_inputs_resource()
 }
 
@@ -74,61 +94,29 @@ pub fn[W : HasRes_PointerInputs] get_pointer_inputs_resource(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_picking_hits_resource_by_world : Map[
-  Int,
-  @core.Resource[PickingHits],
-] = {}
-
-///|
 pub impl HasRes_PickingHits for @ecs.World with get_picking_hits_resource(self) {
-  bridge_get_picking_hits_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_picking_hits)
 }
-
-///|
-let bridge_get_picking_state_resource_by_world : Map[
-  Int,
-  @core.Resource[PickingState],
-] = {}
 
 ///|
 pub impl HasRes_PickingState for @ecs.World with get_picking_state_resource(
   self,
 ) {
-  bridge_get_picking_state_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_picking_state)
 }
-
-///|
-let bridge_get_picking_events_resource_by_world : Map[
-  Int,
-  @core.Resource[PickingEvents],
-] = {}
 
 ///|
 pub impl HasRes_PickingEvents for @ecs.World with get_picking_events_resource(
   self,
 ) {
-  bridge_get_picking_events_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_picking_events)
 }
-
-///|
-let bridge_get_pointer_inputs_resource_by_world : Map[
-  Int,
-  @core.Resource[PointerInputs],
-] = {}
 
 ///|
 pub impl HasRes_PointerInputs for @ecs.World with get_pointer_inputs_resource(
   self,
 ) {
-  bridge_get_pointer_inputs_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_pointer_inputs)
 }
 
 ///|

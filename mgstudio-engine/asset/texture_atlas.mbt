@@ -102,6 +102,20 @@ pub struct TextureAtlas {
 }
 
 ///|
+pub impl ToJson for TextureAtlas with to_json(self) {
+  (self.layout, self.index).to_json()
+}
+
+///|
+pub impl @json.FromJson for TextureAtlas with from_json(json, path) {
+  let (layout, index) : (Handle[TextureAtlasLayout], Int) = @json.from_json(
+    json,
+    path~,
+  )
+  TextureAtlas::{ layout, index }
+}
+
+///|
 pub fn TextureAtlas::new(
   layout : Handle[TextureAtlasLayout],
   index : Int,

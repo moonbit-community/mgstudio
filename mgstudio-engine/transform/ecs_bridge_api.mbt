@@ -22,7 +22,7 @@ pub let ecs_resources : Array[String] = []
 
 ///|
 pub(open) trait Has_GlobalTransform {
-  get_global_transform_store(self : Self) -> @core.ComponentStore[
+  get_global_transform_store(self : Self) -> @ecs.ComponentAccess[
     GlobalTransform,
   ]
 }
@@ -30,7 +30,7 @@ pub(open) trait Has_GlobalTransform {
 ///|
 pub fn[W : Has_GlobalTransform] get_global_transform_store(
   world : W,
-) -> @core.ComponentStore[GlobalTransform] {
+) -> @ecs.ComponentAccess[GlobalTransform] {
   world.get_global_transform_store()
 }
 
@@ -38,18 +38,10 @@ pub fn[W : Has_GlobalTransform] get_global_transform_store(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_global_transform_store_by_world : Map[
-  Int,
-  @core.ComponentStore[GlobalTransform],
-] = {}
-
-///|
 pub impl Has_GlobalTransform for @ecs.World with get_global_transform_store(
   self,
 ) {
-  bridge_get_global_transform_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_global_transform)
 }
 
 ///|

@@ -22,12 +22,12 @@ pub let ecs_resources : Array[String] = []
 
 ///|
 pub(open) trait Has_SceneRoot {
-  get_scene_root_store(self : Self) -> @core.ComponentStore[SceneRoot]
+  get_scene_root_store(self : Self) -> @ecs.ComponentAccess[SceneRoot]
 }
 
 ///|
 pub(open) trait Has_SceneInstanceReady {
-  get_scene_instance_ready_store(self : Self) -> @core.ComponentStore[
+  get_scene_instance_ready_store(self : Self) -> @ecs.ComponentAccess[
     SceneInstanceReady,
   ]
 }
@@ -35,14 +35,14 @@ pub(open) trait Has_SceneInstanceReady {
 ///|
 pub fn[W : Has_SceneRoot] get_scene_root_store(
   world : W,
-) -> @core.ComponentStore[SceneRoot] {
+) -> @ecs.ComponentAccess[SceneRoot] {
   world.get_scene_root_store()
 }
 
 ///|
 pub fn[W : Has_SceneInstanceReady] get_scene_instance_ready_store(
   world : W,
-) -> @core.ComponentStore[SceneInstanceReady] {
+) -> @ecs.ComponentAccess[SceneInstanceReady] {
   world.get_scene_instance_ready_store()
 }
 
@@ -50,31 +50,15 @@ pub fn[W : Has_SceneInstanceReady] get_scene_instance_ready_store(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_scene_root_store_by_world : Map[
-  Int,
-  @core.ComponentStore[SceneRoot],
-] = {}
-
-///|
 pub impl Has_SceneRoot for @ecs.World with get_scene_root_store(self) {
-  bridge_get_scene_root_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_scene_root)
 }
-
-///|
-let bridge_get_scene_instance_ready_store_by_world : Map[
-  Int,
-  @core.ComponentStore[SceneInstanceReady],
-] = {}
 
 ///|
 pub impl Has_SceneInstanceReady for @ecs.World with get_scene_instance_ready_store(
   self,
 ) {
-  bridge_get_scene_instance_ready_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_scene_instance_ready)
 }
 
 ///|

@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/core"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
 pub fn[T] with_host_bytes_id(Bytes, (Int) -> T) -> T
 
@@ -55,6 +59,8 @@ pub struct Entity {
 pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
+pub impl ToJson for Entity
+pub impl @json.FromJson for Entity
 
 pub struct MessageReader[T] {
   previous_tick : Int?

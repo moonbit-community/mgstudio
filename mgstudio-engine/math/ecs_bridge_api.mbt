@@ -22,13 +22,13 @@ pub let ecs_resources : Array[String] = []
 
 ///|
 pub(open) trait Has_Transform {
-  get_transform_store(self : Self) -> @core.ComponentStore[Transform]
+  get_transform_store(self : Self) -> @ecs.ComponentAccess[Transform]
 }
 
 ///|
 pub fn[W : Has_Transform] get_transform_store(
   world : W,
-) -> @core.ComponentStore[Transform] {
+) -> @ecs.ComponentAccess[Transform] {
   world.get_transform_store()
 }
 
@@ -36,16 +36,8 @@ pub fn[W : Has_Transform] get_transform_store(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_transform_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Transform],
-] = {}
-
-///|
 pub impl Has_Transform for @ecs.World with get_transform_store(self) {
-  bridge_get_transform_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_transform)
 }
 
 ///|

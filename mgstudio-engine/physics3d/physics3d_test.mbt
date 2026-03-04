@@ -20,9 +20,9 @@ test "physics3d: falling body collides and writes back transform" {
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics3d_config_resource(world)
-  cfg_res.get_ref_mut(tick).unwrap().val = Physics3dConfig::new(
-    @math.Vec3::new(0.0F, -200.0F, 0.0F),
-  )
+  let cfg_ref = Ref::new(cfg_res.get().unwrap())
+  cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
+  cfg_res.insert(cfg_ref.val, tick)
   let floor = @core.Entity::new(0, 1)
   let ball = @core.Entity::new(1, 1)
   @math.get_transform_store(world).insert(
@@ -71,9 +71,9 @@ test "physics3d: sensor collision events are emitted" {
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics3d_config_resource(world)
-  cfg_res.get_ref_mut(tick).unwrap().val = Physics3dConfig::new(
-    @math.Vec3::new(0.0F, -200.0F, 0.0F),
-  )
+  let cfg_ref = Ref::new(cfg_res.get().unwrap())
+  cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
+  cfg_res.insert(cfg_ref.val, tick)
   let floor = @core.Entity::new(0, 1)
   let ball = @core.Entity::new(1, 1)
   @math.get_transform_store(world).insert(
@@ -114,7 +114,7 @@ test "physics3d: sensor collision events are emitted" {
     world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let events = get_physics3d_events_resource(world).get_ref().unwrap().val
+  let events = get_physics3d_events_resource(world).get().unwrap()
   inspect(events.collisions.length() > 0, content="true")
 }
 
@@ -126,9 +126,9 @@ test "physics3d: contact force events are emitted" {
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics3d_config_resource(world)
-  cfg_res.get_ref_mut(tick).unwrap().val = Physics3dConfig::new(
-    @math.Vec3::new(0.0F, -200.0F, 0.0F),
-  )
+  let cfg_ref = Ref::new(cfg_res.get().unwrap())
+  cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
+  cfg_res.insert(cfg_ref.val, tick)
   let floor = @core.Entity::new(0, 1)
   let ball = @core.Entity::new(1, 1)
   @math.get_transform_store(world).insert(
@@ -168,7 +168,7 @@ test "physics3d: contact force events are emitted" {
     world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let events = get_physics3d_events_resource(world).get_ref().unwrap().val
+  let events = get_physics3d_events_resource(world).get().unwrap()
   inspect(events.contact_forces.length() > 0, content="true")
 }
 

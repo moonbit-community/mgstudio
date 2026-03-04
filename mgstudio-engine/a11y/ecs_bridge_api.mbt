@@ -21,14 +21,19 @@ pub let ecs_components : Array[String] = []
 pub let ecs_resources : Array[String] = ["A11yState"]
 
 ///|
+pub let ecs_res_key_a11y_state : @ecs.ResourceKey[A11yState] = @ecs.register_resource(
+  debug_name="a11y.a11y_state",
+)
+
+///|
 pub(open) trait HasRes_A11yState {
-  get_a11y_state_resource(self : Self) -> @core.Resource[A11yState]
+  get_a11y_state_resource(self : Self) -> @ecs.ResourceAccess[A11yState]
 }
 
 ///|
 pub fn[W : HasRes_A11yState] get_a11y_state_resource(
   world : W,
-) -> @core.Resource[A11yState] {
+) -> @ecs.ResourceAccess[A11yState] {
   world.get_a11y_state_resource()
 }
 
@@ -36,16 +41,8 @@ pub fn[W : HasRes_A11yState] get_a11y_state_resource(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_a11y_state_resource_by_world : Map[
-  Int,
-  @core.Resource[A11yState],
-] = {}
-
-///|
 pub impl HasRes_A11yState for @ecs.World with get_a11y_state_resource(self) {
-  bridge_get_a11y_state_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_a11y_state)
 }
 
 ///|

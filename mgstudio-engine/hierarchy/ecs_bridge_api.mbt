@@ -22,25 +22,25 @@ pub let ecs_resources : Array[String] = []
 
 ///|
 pub(open) trait Has_Parent {
-  get_parent_store(self : Self) -> @core.ComponentStore[Parent]
+  get_parent_store(self : Self) -> @ecs.ComponentAccess[Parent]
 }
 
 ///|
 pub(open) trait Has_Children {
-  get_children_store(self : Self) -> @core.ComponentStore[Children]
+  get_children_store(self : Self) -> @ecs.ComponentAccess[Children]
 }
 
 ///|
 pub fn[W : Has_Parent] get_parent_store(
   world : W,
-) -> @core.ComponentStore[Parent] {
+) -> @ecs.ComponentAccess[Parent] {
   world.get_parent_store()
 }
 
 ///|
 pub fn[W : Has_Children] get_children_store(
   world : W,
-) -> @core.ComponentStore[Children] {
+) -> @ecs.ComponentAccess[Children] {
   world.get_children_store()
 }
 
@@ -48,26 +48,13 @@ pub fn[W : Has_Children] get_children_store(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_parent_store_by_world : Map[Int, @core.ComponentStore[Parent]] = {}
-
-///|
 pub impl Has_Parent for @ecs.World with get_parent_store(self) {
-  bridge_get_parent_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_parent)
 }
 
 ///|
-let bridge_get_children_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Children],
-] = {}
-
-///|
 pub impl Has_Children for @ecs.World with get_children_store(self) {
-  bridge_get_children_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_children)
 }
 
 ///|

@@ -26,89 +26,89 @@ pub let ecs_resources : Array[String] = ["RenderState", "Wireframe2dConfig"]
 
 ///|
 pub(open) trait Has_Anchor {
-  get_anchor_store(self : Self) -> @core.ComponentStore[Anchor]
+  get_anchor_store(self : Self) -> @ecs.ComponentAccess[Anchor]
 }
 
 ///|
 pub(open) trait Has_Camera {
-  get_camera_store(self : Self) -> @core.ComponentStore[Camera]
+  get_camera_store(self : Self) -> @ecs.ComponentAccess[Camera]
 }
 
 ///|
 pub(open) trait Has_Mesh2d {
-  get_mesh2d_store(self : Self) -> @core.ComponentStore[Mesh2d]
+  get_mesh2d_store(self : Self) -> @ecs.ComponentAccess[Mesh2d]
 }
 
 ///|
 pub(open) trait Has_Sprite {
-  get_sprite_store(self : Self) -> @core.ComponentStore[Sprite]
+  get_sprite_store(self : Self) -> @ecs.ComponentAccess[Sprite]
 }
 
 ///|
 pub(open) trait Has_Bloom2d {
-  get_bloom2d_store(self : Self) -> @core.ComponentStore[Bloom2d]
+  get_bloom2d_store(self : Self) -> @ecs.ComponentAccess[Bloom2d]
 }
 
 ///|
 pub(open) trait Has_Camera2d {
-  get_camera2d_store(self : Self) -> @core.ComponentStore[Camera2d]
+  get_camera2d_store(self : Self) -> @ecs.ComponentAccess[Camera2d]
 }
 
 ///|
 pub(open) trait Has_GpuMesh2d {
-  get_gpu_mesh2d_store(self : Self) -> @core.ComponentStore[GpuMesh2d]
+  get_gpu_mesh2d_store(self : Self) -> @ecs.ComponentAccess[GpuMesh2d]
 }
 
 ///|
 pub(open) trait Has_Projection {
-  get_projection_store(self : Self) -> @core.ComponentStore[Projection]
+  get_projection_store(self : Self) -> @ecs.ComponentAccess[Projection]
 }
 
 ///|
 pub(open) trait Has_ScissorRect {
-  get_scissor_rect_store(self : Self) -> @core.ComponentStore[ScissorRect]
+  get_scissor_rect_store(self : Self) -> @ecs.ComponentAccess[ScissorRect]
 }
 
 ///|
 pub(open) trait Has_Wireframe2d {
-  get_wireframe2d_store(self : Self) -> @core.ComponentStore[Wireframe2d]
+  get_wireframe2d_store(self : Self) -> @ecs.ComponentAccess[Wireframe2d]
 }
 
 ///|
 pub(open) trait Has_RenderLayers {
-  get_render_layers_store(self : Self) -> @core.ComponentStore[RenderLayers]
+  get_render_layers_store(self : Self) -> @ecs.ComponentAccess[RenderLayers]
 }
 
 ///|
 pub(open) trait Has_RenderTarget {
-  get_render_target_store(self : Self) -> @core.ComponentStore[RenderTarget]
+  get_render_target_store(self : Self) -> @ecs.ComponentAccess[RenderTarget]
 }
 
 ///|
 pub(open) trait Has_ColorMaterial {
-  get_color_material_store(self : Self) -> @core.ComponentStore[ColorMaterial]
+  get_color_material_store(self : Self) -> @ecs.ComponentAccess[ColorMaterial]
 }
 
 ///|
 pub(open) trait Has_NoWireframe2d {
-  get_no_wireframe2d_store(self : Self) -> @core.ComponentStore[NoWireframe2d]
+  get_no_wireframe2d_store(self : Self) -> @ecs.ComponentAccess[NoWireframe2d]
 }
 
 ///|
 pub(open) trait Has_MeshMaterial2d {
-  get_mesh_material2d_store(self : Self) -> @core.ComponentStore[MeshMaterial2d]
+  get_mesh_material2d_store(self : Self) -> @ecs.ComponentAccess[MeshMaterial2d]
 }
 
 ///|
 pub(open) trait Has_ClearColorConfig {
-  get_clear_color_config_store(self : Self) -> @core.ComponentStore[
+  get_clear_color_config_store(self : Self) -> @ecs.ComponentAccess[
     ClearColorConfig,
   ]
 }
 
 ///|
 pub(open) trait Has_Wireframe2dColor {
-  get_wireframe2d_color_store(self : Self) -> @core.ComponentStore[
+  get_wireframe2d_color_store(self : Self) -> @ecs.ComponentAccess[
     Wireframe2dColor,
   ]
 }
@@ -116,130 +116,130 @@ pub(open) trait Has_Wireframe2dColor {
 ///|
 pub fn[W : Has_Anchor] get_anchor_store(
   world : W,
-) -> @core.ComponentStore[Anchor] {
+) -> @ecs.ComponentAccess[Anchor] {
   world.get_anchor_store()
 }
 
 ///|
 pub fn[W : Has_Camera] get_camera_store(
   world : W,
-) -> @core.ComponentStore[Camera] {
+) -> @ecs.ComponentAccess[Camera] {
   world.get_camera_store()
 }
 
 ///|
 pub fn[W : Has_Mesh2d] get_mesh2d_store(
   world : W,
-) -> @core.ComponentStore[Mesh2d] {
+) -> @ecs.ComponentAccess[Mesh2d] {
   world.get_mesh2d_store()
 }
 
 ///|
 pub fn[W : Has_Sprite] get_sprite_store(
   world : W,
-) -> @core.ComponentStore[Sprite] {
+) -> @ecs.ComponentAccess[Sprite] {
   world.get_sprite_store()
 }
 
 ///|
 pub fn[W : Has_Bloom2d] get_bloom2d_store(
   world : W,
-) -> @core.ComponentStore[Bloom2d] {
+) -> @ecs.ComponentAccess[Bloom2d] {
   world.get_bloom2d_store()
 }
 
 ///|
 pub fn[W : Has_Camera2d] get_camera2d_store(
   world : W,
-) -> @core.ComponentStore[Camera2d] {
+) -> @ecs.ComponentAccess[Camera2d] {
   world.get_camera2d_store()
 }
 
 ///|
 pub fn[W : Has_GpuMesh2d] get_gpu_mesh2d_store(
   world : W,
-) -> @core.ComponentStore[GpuMesh2d] {
+) -> @ecs.ComponentAccess[GpuMesh2d] {
   world.get_gpu_mesh2d_store()
 }
 
 ///|
 pub fn[W : Has_Projection] get_projection_store(
   world : W,
-) -> @core.ComponentStore[Projection] {
+) -> @ecs.ComponentAccess[Projection] {
   world.get_projection_store()
 }
 
 ///|
 pub fn[W : Has_ScissorRect] get_scissor_rect_store(
   world : W,
-) -> @core.ComponentStore[ScissorRect] {
+) -> @ecs.ComponentAccess[ScissorRect] {
   world.get_scissor_rect_store()
 }
 
 ///|
 pub fn[W : Has_Wireframe2d] get_wireframe2d_store(
   world : W,
-) -> @core.ComponentStore[Wireframe2d] {
+) -> @ecs.ComponentAccess[Wireframe2d] {
   world.get_wireframe2d_store()
 }
 
 ///|
 pub fn[W : Has_RenderLayers] get_render_layers_store(
   world : W,
-) -> @core.ComponentStore[RenderLayers] {
+) -> @ecs.ComponentAccess[RenderLayers] {
   world.get_render_layers_store()
 }
 
 ///|
 pub fn[W : Has_RenderTarget] get_render_target_store(
   world : W,
-) -> @core.ComponentStore[RenderTarget] {
+) -> @ecs.ComponentAccess[RenderTarget] {
   world.get_render_target_store()
 }
 
 ///|
 pub fn[W : Has_ColorMaterial] get_color_material_store(
   world : W,
-) -> @core.ComponentStore[ColorMaterial] {
+) -> @ecs.ComponentAccess[ColorMaterial] {
   world.get_color_material_store()
 }
 
 ///|
 pub fn[W : Has_NoWireframe2d] get_no_wireframe2d_store(
   world : W,
-) -> @core.ComponentStore[NoWireframe2d] {
+) -> @ecs.ComponentAccess[NoWireframe2d] {
   world.get_no_wireframe2d_store()
 }
 
 ///|
 pub fn[W : Has_MeshMaterial2d] get_mesh_material2d_store(
   world : W,
-) -> @core.ComponentStore[MeshMaterial2d] {
+) -> @ecs.ComponentAccess[MeshMaterial2d] {
   world.get_mesh_material2d_store()
 }
 
 ///|
 pub fn[W : Has_ClearColorConfig] get_clear_color_config_store(
   world : W,
-) -> @core.ComponentStore[ClearColorConfig] {
+) -> @ecs.ComponentAccess[ClearColorConfig] {
   world.get_clear_color_config_store()
 }
 
 ///|
 pub fn[W : Has_Wireframe2dColor] get_wireframe2d_color_store(
   world : W,
-) -> @core.ComponentStore[Wireframe2dColor] {
+) -> @ecs.ComponentAccess[Wireframe2dColor] {
   world.get_wireframe2d_color_store()
 }
 
 ///|
 pub(open) trait HasRes_RenderState {
-  get_render_state_resource(self : Self) -> @core.Resource[RenderState]
+  get_render_state_resource(self : Self) -> @ecs.ResourceAccess[RenderState]
 }
 
 ///|
 pub(open) trait HasRes_Wireframe2dConfig {
-  get_wireframe2d_config_resource(self : Self) -> @core.Resource[
+  get_wireframe2d_config_resource(self : Self) -> @ecs.ResourceAccess[
     Wireframe2dConfig,
   ]
 }
@@ -247,14 +247,14 @@ pub(open) trait HasRes_Wireframe2dConfig {
 ///|
 pub fn[W : HasRes_RenderState] get_render_state_resource(
   world : W,
-) -> @core.Resource[RenderState] {
+) -> @ecs.ResourceAccess[RenderState] {
   world.get_render_state_resource()
 }
 
 ///|
 pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(
   world : W,
-) -> @core.Resource[Wireframe2dConfig] {
+) -> @ecs.ResourceAccess[Wireframe2dConfig] {
   world.get_wireframe2d_config_resource()
 }
 
@@ -262,241 +262,104 @@ pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_anchor_store_by_world : Map[Int, @core.ComponentStore[Anchor]] = {}
-
-///|
 pub impl Has_Anchor for @ecs.World with get_anchor_store(self) {
-  bridge_get_anchor_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_anchor)
 }
-
-///|
-let bridge_get_camera_store_by_world : Map[Int, @core.ComponentStore[Camera]] = {}
 
 ///|
 pub impl Has_Camera for @ecs.World with get_camera_store(self) {
-  bridge_get_camera_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_camera)
 }
-
-///|
-let bridge_get_mesh2d_store_by_world : Map[Int, @core.ComponentStore[Mesh2d]] = {}
 
 ///|
 pub impl Has_Mesh2d for @ecs.World with get_mesh2d_store(self) {
-  bridge_get_mesh2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_mesh2d)
 }
-
-///|
-let bridge_get_sprite_store_by_world : Map[Int, @core.ComponentStore[Sprite]] = {}
 
 ///|
 pub impl Has_Sprite for @ecs.World with get_sprite_store(self) {
-  bridge_get_sprite_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_sprite)
 }
-
-///|
-let bridge_get_bloom2d_store_by_world : Map[Int, @core.ComponentStore[Bloom2d]] = {}
 
 ///|
 pub impl Has_Bloom2d for @ecs.World with get_bloom2d_store(self) {
-  bridge_get_bloom2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_bloom2d)
 }
-
-///|
-let bridge_get_camera2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Camera2d],
-] = {}
 
 ///|
 pub impl Has_Camera2d for @ecs.World with get_camera2d_store(self) {
-  bridge_get_camera2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_camera2d)
 }
-
-///|
-let bridge_get_gpu_mesh2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[GpuMesh2d],
-] = {}
 
 ///|
 pub impl Has_GpuMesh2d for @ecs.World with get_gpu_mesh2d_store(self) {
-  bridge_get_gpu_mesh2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_gpu_mesh2d)
 }
-
-///|
-let bridge_get_projection_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Projection],
-] = {}
 
 ///|
 pub impl Has_Projection for @ecs.World with get_projection_store(self) {
-  bridge_get_projection_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_projection)
 }
-
-///|
-let bridge_get_scissor_rect_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ScissorRect],
-] = {}
 
 ///|
 pub impl Has_ScissorRect for @ecs.World with get_scissor_rect_store(self) {
-  bridge_get_scissor_rect_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_scissor_rect)
 }
-
-///|
-let bridge_get_wireframe2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Wireframe2d],
-] = {}
 
 ///|
 pub impl Has_Wireframe2d for @ecs.World with get_wireframe2d_store(self) {
-  bridge_get_wireframe2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_wireframe2d)
 }
-
-///|
-let bridge_get_render_layers_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RenderLayers],
-] = {}
 
 ///|
 pub impl Has_RenderLayers for @ecs.World with get_render_layers_store(self) {
-  bridge_get_render_layers_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_render_layers)
 }
-
-///|
-let bridge_get_render_target_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RenderTarget],
-] = {}
 
 ///|
 pub impl Has_RenderTarget for @ecs.World with get_render_target_store(self) {
-  bridge_get_render_target_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_render_target)
 }
-
-///|
-let bridge_get_color_material_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ColorMaterial],
-] = {}
 
 ///|
 pub impl Has_ColorMaterial for @ecs.World with get_color_material_store(self) {
-  bridge_get_color_material_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_color_material)
 }
-
-///|
-let bridge_get_no_wireframe2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[NoWireframe2d],
-] = {}
 
 ///|
 pub impl Has_NoWireframe2d for @ecs.World with get_no_wireframe2d_store(self) {
-  bridge_get_no_wireframe2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_no_wireframe2d)
 }
-
-///|
-let bridge_get_mesh_material2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[MeshMaterial2d],
-] = {}
 
 ///|
 pub impl Has_MeshMaterial2d for @ecs.World with get_mesh_material2d_store(self) {
-  bridge_get_mesh_material2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_mesh_material2d)
 }
-
-///|
-let bridge_get_clear_color_config_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ClearColorConfig],
-] = {}
 
 ///|
 pub impl Has_ClearColorConfig for @ecs.World with get_clear_color_config_store(
   self,
 ) {
-  bridge_get_clear_color_config_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_clear_color_config)
 }
-
-///|
-let bridge_get_wireframe2d_color_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Wireframe2dColor],
-] = {}
 
 ///|
 pub impl Has_Wireframe2dColor for @ecs.World with get_wireframe2d_color_store(
   self,
 ) {
-  bridge_get_wireframe2d_color_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_wireframe2d_color)
 }
-
-///|
-let bridge_get_render_state_resource_by_world : Map[
-  Int,
-  @core.Resource[RenderState],
-] = {}
 
 ///|
 pub impl HasRes_RenderState for @ecs.World with get_render_state_resource(self) {
-  bridge_get_render_state_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_key_render_state)
 }
-
-///|
-let bridge_get_wireframe2d_config_resource_by_world : Map[
-  Int,
-  @core.Resource[Wireframe2dConfig],
-] = {}
 
 ///|
 pub impl HasRes_Wireframe2dConfig for @ecs.World with get_wireframe2d_config_resource(
   self,
 ) {
-  bridge_get_wireframe2d_config_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_key_wireframe2d_config)
 }
 
 ///|

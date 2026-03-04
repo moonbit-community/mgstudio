@@ -43,7 +43,10 @@ fn button_system(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   let system_ticks = world.get_system_context().ticks()
   let a11y_state_resource = @a11y.get_a11y_state_resource(world)
-  let a11y_state_ref = a11y_state_resource.get_ref_mut(tick)
+  let mut a11y_state_ref : Ref[@a11y.A11yState]? = None
+  if a11y_state_resource.get() is Some(a11y_state) {
+    a11y_state_ref = Some(Ref::new(a11y_state))
+  }
   let button_store = world.component(@ui.ecs_key_button)
   let interaction_store = world.component(@ui.ecs_key_interaction)
   let background_store = world.component(@ui.ecs_key_background_color)
@@ -109,6 +112,9 @@ fn button_system(world : @ecs.World) -> Unit {
       }
     }
   })
+  if a11y_state_ref is Some(state) {
+    a11y_state_resource.insert(state.val, tick)
+  }
 }
 
 ///|

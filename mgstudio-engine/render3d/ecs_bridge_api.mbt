@@ -37,699 +37,701 @@ pub let ecs_resources : Array[String] = [
 
 ///|
 pub(open) trait Has_Hdr {
-  get_hdr_store(self : Self) -> @core.ComponentStore[Hdr]
+  get_hdr_store(self : Self) -> @ecs.ComponentAccess[Hdr]
 }
 
 ///|
 pub(open) trait Has_Fxaa {
-  get_fxaa_store(self : Self) -> @core.ComponentStore[Fxaa]
+  get_fxaa_store(self : Self) -> @ecs.ComponentAccess[Fxaa]
 }
 
 ///|
 pub(open) trait Has_Msaa {
-  get_msaa_store(self : Self) -> @core.ComponentStore[Msaa]
+  get_msaa_store(self : Self) -> @ecs.ComponentAccess[Msaa]
 }
 
 ///|
 pub(open) trait Has_Bloom {
-  get_bloom_store(self : Self) -> @core.ComponentStore[Bloom]
+  get_bloom_store(self : Self) -> @ecs.ComponentAccess[Bloom]
 }
 
 ///|
 pub(open) trait Has_Mesh3d {
-  get_mesh3d_store(self : Self) -> @core.ComponentStore[Mesh3d]
+  get_mesh3d_store(self : Self) -> @ecs.ComponentAccess[Mesh3d]
 }
 
 ///|
 pub(open) trait Has_Skybox {
-  get_skybox_store(self : Self) -> @core.ComponentStore[Skybox]
+  get_skybox_store(self : Self) -> @ecs.ComponentAccess[Skybox]
 }
 
 ///|
 pub(open) trait Has_Camera3d {
-  get_camera3d_store(self : Self) -> @core.ComponentStore[Camera3d]
+  get_camera3d_store(self : Self) -> @ecs.ComponentAccess[Camera3d]
 }
 
 ///|
 pub(open) trait Has_Exposure {
-  get_exposure_store(self : Self) -> @core.ComponentStore[Exposure]
+  get_exposure_store(self : Self) -> @ecs.ComponentAccess[Exposure]
 }
 
 ///|
 pub(open) trait Has_Vignette {
-  get_vignette_store(self : Self) -> @core.ComponentStore[Vignette]
+  get_vignette_store(self : Self) -> @ecs.ComponentAccess[Vignette]
 }
 
 ///|
 pub(open) trait Has_SpotLight {
-  get_spot_light_store(self : Self) -> @core.ComponentStore[SpotLight]
+  get_spot_light_store(self : Self) -> @ecs.ComponentAccess[SpotLight]
 }
 
 ///|
 pub(open) trait Has_Wireframe {
-  get_wireframe_store(self : Self) -> @core.ComponentStore[Wireframe]
+  get_wireframe_store(self : Self) -> @ecs.ComponentAccess[Wireframe]
 }
 
 ///|
 pub(open) trait Has_FreeCamera {
-  get_free_camera_store(self : Self) -> @core.ComponentStore[FreeCamera]
+  get_free_camera_store(self : Self) -> @ecs.ComponentAccess[FreeCamera]
 }
 
 ///|
 pub(open) trait Has_LightProbe {
-  get_light_probe_store(self : Self) -> @core.ComponentStore[LightProbe]
+  get_light_probe_store(self : Self) -> @ecs.ComponentAccess[LightProbe]
 }
 
 ///|
 pub(open) trait Has_MotionBlur {
-  get_motion_blur_store(self : Self) -> @core.ComponentStore[MotionBlur]
+  get_motion_blur_store(self : Self) -> @ecs.ComponentAccess[MotionBlur]
 }
 
 ///|
 pub(open) trait Has_PointLight {
-  get_point_light_store(self : Self) -> @core.ComponentStore[PointLight]
+  get_point_light_store(self : Self) -> @ecs.ComponentAccess[PointLight]
 }
 
 ///|
 pub(open) trait Has_NoWireframe {
-  get_no_wireframe_store(self : Self) -> @core.ComponentStore[NoWireframe]
+  get_no_wireframe_store(self : Self) -> @ecs.ComponentAccess[NoWireframe]
 }
 
 ///|
 pub(open) trait Has_Tonemapping {
-  get_tonemapping_store(self : Self) -> @core.ComponentStore[Tonemapping]
+  get_tonemapping_store(self : Self) -> @ecs.ComponentAccess[Tonemapping]
 }
 
 ///|
 pub(open) trait Has_ColorGrading {
-  get_color_grading_store(self : Self) -> @core.ComponentStore[ColorGrading]
+  get_color_grading_store(self : Self) -> @ecs.ComponentAccess[ColorGrading]
 }
 
 ///|
 pub(open) trait Has_DebandDither {
-  get_deband_dither_store(self : Self) -> @core.ComponentStore[DebandDither]
+  get_deband_dither_store(self : Self) -> @ecs.ComponentAccess[DebandDither]
 }
 
 ///|
 pub(open) trait Has_DepthPrepass {
-  get_depth_prepass_store(self : Self) -> @core.ComponentStore[DepthPrepass]
+  get_depth_prepass_store(self : Self) -> @ecs.ComponentAccess[DepthPrepass]
 }
 
 ///|
 pub(open) trait Has_ForwardDecal {
-  get_forward_decal_store(self : Self) -> @core.ComponentStore[ForwardDecal]
+  get_forward_decal_store(self : Self) -> @ecs.ComponentAccess[ForwardDecal]
 }
 
 ///|
 pub(open) trait Has_NormalPrepass {
-  get_normal_prepass_store(self : Self) -> @core.ComponentStore[NormalPrepass]
+  get_normal_prepass_store(self : Self) -> @ecs.ComponentAccess[NormalPrepass]
 }
 
 ///|
 pub(open) trait Has_ClusteredDecal {
-  get_clustered_decal_store(self : Self) -> @core.ComponentStore[ClusteredDecal]
+  get_clustered_decal_store(self : Self) -> @ecs.ComponentAccess[ClusteredDecal]
 }
 
 ///|
 pub(open) trait Has_ContactShadows {
-  get_contact_shadows_store(self : Self) -> @core.ComponentStore[ContactShadows]
+  get_contact_shadows_store(self : Self) -> @ecs.ComponentAccess[ContactShadows]
 }
 
 ///|
 pub(open) trait Has_MeshMaterial3d {
-  get_mesh_material3d_store(self : Self) -> @core.ComponentStore[MeshMaterial3d]
+  get_mesh_material3d_store(self : Self) -> @ecs.ComponentAccess[MeshMaterial3d]
 }
 
 ///|
 pub(open) trait Has_TemporalJitter {
-  get_temporal_jitter_store(self : Self) -> @core.ComponentStore[TemporalJitter]
+  get_temporal_jitter_store(self : Self) -> @ecs.ComponentAccess[TemporalJitter]
 }
 
 ///|
 pub(open) trait Has_WireframeColor {
-  get_wireframe_color_store(self : Self) -> @core.ComponentStore[WireframeColor]
+  get_wireframe_color_store(self : Self) -> @ecs.ComponentAccess[WireframeColor]
 }
 
 ///|
 pub(open) trait Has_DeferredPrepass {
-  get_deferred_prepass_store(self : Self) -> @core.ComponentStore[
+  get_deferred_prepass_store(self : Self) -> @ecs.ComponentAccess[
     DeferredPrepass,
   ]
 }
 
 ///|
 pub(open) trait Has_FreeCameraState {
-  get_free_camera_state_store(self : Self) -> @core.ComponentStore[
+  get_free_camera_state_store(self : Self) -> @ecs.ComponentAccess[
     FreeCameraState,
   ]
 }
 
 ///|
 pub(open) trait Has_NotShadowCaster {
-  get_not_shadow_caster_store(self : Self) -> @core.ComponentStore[
+  get_not_shadow_caster_store(self : Self) -> @ecs.ComponentAccess[
     NotShadowCaster,
   ]
 }
 
 ///|
 pub(open) trait Has_SubCameraView3d {
-  get_sub_camera_view3d_store(self : Self) -> @core.ComponentStore[
+  get_sub_camera_view3d_store(self : Self) -> @ecs.ComponentAccess[
     SubCameraView3d,
   ]
 }
 
 ///|
 pub(open) trait Has_DirectionalLight {
-  get_directional_light_store(self : Self) -> @core.ComponentStore[
+  get_directional_light_store(self : Self) -> @ecs.ComponentAccess[
     DirectionalLight,
   ]
 }
 
 ///|
 pub(open) trait Has_IrradianceVolume {
-  get_irradiance_volume_store(self : Self) -> @core.ComponentStore[
+  get_irradiance_volume_store(self : Self) -> @ecs.ComponentAccess[
     IrradianceVolume,
   ]
 }
 
 ///|
 pub(open) trait Has_OcclusionCulling {
-  get_occlusion_culling_store(self : Self) -> @core.ComponentStore[
+  get_occlusion_culling_store(self : Self) -> @ecs.ComponentAccess[
     OcclusionCulling,
   ]
 }
 
 ///|
 pub(open) trait Has_SpotLightTexture {
-  get_spot_light_texture_store(self : Self) -> @core.ComponentStore[
+  get_spot_light_texture_store(self : Self) -> @ecs.ComponentAccess[
     SpotLightTexture,
   ]
 }
 
 ///|
 pub(open) trait Has_NotShadowReceiver {
-  get_not_shadow_receiver_store(self : Self) -> @core.ComponentStore[
+  get_not_shadow_receiver_store(self : Self) -> @ecs.ComponentAccess[
     NotShadowReceiver,
   ]
 }
 
 ///|
 pub(open) trait Has_PointLightTexture {
-  get_point_light_texture_store(self : Self) -> @core.ComponentStore[
+  get_point_light_texture_store(self : Self) -> @ecs.ComponentAccess[
     PointLightTexture,
   ]
 }
 
 ///|
 pub(open) trait Has_CameraProjection3d {
-  get_camera_projection3d_store(self : Self) -> @core.ComponentStore[
+  get_camera_projection3d_store(self : Self) -> @ecs.ComponentAccess[
     CameraProjection3d,
   ]
 }
 
 ///|
 pub(open) trait Has_ParallaxCorrection {
-  get_parallax_correction_store(self : Self) -> @core.ComponentStore[
+  get_parallax_correction_store(self : Self) -> @ecs.ComponentAccess[
     ParallaxCorrection,
   ]
 }
 
 ///|
 pub(open) trait Has_ChromaticAberration {
-  get_chromatic_aberration_store(self : Self) -> @core.ComponentStore[
+  get_chromatic_aberration_store(self : Self) -> @ecs.ComponentAccess[
     ChromaticAberration,
   ]
 }
 
 ///|
 pub(open) trait Has_EnvironmentMapLight {
-  get_environment_map_light_store(self : Self) -> @core.ComponentStore[
+  get_environment_map_light_store(self : Self) -> @ecs.ComponentAccess[
     EnvironmentMapLight,
   ]
 }
 
 ///|
 pub(open) trait Has_MotionVectorPrepass {
-  get_motion_vector_prepass_store(self : Self) -> @core.ComponentStore[
+  get_motion_vector_prepass_store(self : Self) -> @ecs.ComponentAccess[
     MotionVectorPrepass,
   ]
 }
 
 ///|
 pub(open) trait Has_TemporalAntiAliasing {
-  get_temporal_anti_aliasing_store(self : Self) -> @core.ComponentStore[
+  get_temporal_anti_aliasing_store(self : Self) -> @ecs.ComponentAccess[
     TemporalAntiAliasing,
   ]
 }
 
 ///|
 pub(open) trait Has_ShadowFilteringMethod {
-  get_shadow_filtering_method_store(self : Self) -> @core.ComponentStore[
+  get_shadow_filtering_method_store(self : Self) -> @ecs.ComponentAccess[
     ShadowFilteringMethod,
   ]
 }
 
 ///|
 pub(open) trait Has_ScreenSpaceReflections {
-  get_screen_space_reflections_store(self : Self) -> @core.ComponentStore[
+  get_screen_space_reflections_store(self : Self) -> @ecs.ComponentAccess[
     ScreenSpaceReflections,
   ]
 }
 
 ///|
 pub(open) trait Has_DirectionalLightTexture {
-  get_directional_light_texture_store(self : Self) -> @core.ComponentStore[
+  get_directional_light_texture_store(self : Self) -> @ecs.ComponentAccess[
     DirectionalLightTexture,
   ]
 }
 
 ///|
 pub(open) trait Has_ForwardDecalMaterialExt {
-  get_forward_decal_material_ext_store(self : Self) -> @core.ComponentStore[
+  get_forward_decal_material_ext_store(self : Self) -> @ecs.ComponentAccess[
     ForwardDecalMaterialExt,
   ]
 }
 
 ///|
 pub(open) trait Has_ScreenSpaceTransmission {
-  get_screen_space_transmission_store(self : Self) -> @core.ComponentStore[
+  get_screen_space_transmission_store(self : Self) -> @ecs.ComponentAccess[
     ScreenSpaceTransmission,
   ]
 }
 
 ///|
 pub(open) trait Has_TransmittedShadowReceiver {
-  get_transmitted_shadow_receiver_store(self : Self) -> @core.ComponentStore[
+  get_transmitted_shadow_receiver_store(self : Self) -> @ecs.ComponentAccess[
     TransmittedShadowReceiver,
   ]
 }
 
 ///|
 pub(open) trait Has_ScreenSpaceAmbientOcclusion {
-  get_screen_space_ambient_occlusion_store(self : Self) -> @core.ComponentStore[
+  get_screen_space_ambient_occlusion_store(self : Self) -> @ecs.ComponentAccess[
     ScreenSpaceAmbientOcclusion,
   ]
 }
 
 ///|
 pub(open) trait Has_GeneratedEnvironmentMapLight {
-  get_generated_environment_map_light_store(self : Self) -> @core.ComponentStore[
+  get_generated_environment_map_light_store(self : Self) -> @ecs.ComponentAccess[
     GeneratedEnvironmentMapLight,
   ]
 }
 
 ///|
 pub(open) trait Has_OrderIndependentTransparencySettings {
-  get_order_independent_transparency_settings_store(self : Self) -> @core.ComponentStore[
+  get_order_independent_transparency_settings_store(self : Self) -> @ecs.ComponentAccess[
     OrderIndependentTransparencySettings,
   ]
 }
 
 ///|
-pub fn[W : Has_Hdr] get_hdr_store(world : W) -> @core.ComponentStore[Hdr] {
+pub fn[W : Has_Hdr] get_hdr_store(world : W) -> @ecs.ComponentAccess[Hdr] {
   world.get_hdr_store()
 }
 
 ///|
-pub fn[W : Has_Fxaa] get_fxaa_store(world : W) -> @core.ComponentStore[Fxaa] {
+pub fn[W : Has_Fxaa] get_fxaa_store(world : W) -> @ecs.ComponentAccess[Fxaa] {
   world.get_fxaa_store()
 }
 
 ///|
-pub fn[W : Has_Msaa] get_msaa_store(world : W) -> @core.ComponentStore[Msaa] {
+pub fn[W : Has_Msaa] get_msaa_store(world : W) -> @ecs.ComponentAccess[Msaa] {
   world.get_msaa_store()
 }
 
 ///|
-pub fn[W : Has_Bloom] get_bloom_store(world : W) -> @core.ComponentStore[Bloom] {
+pub fn[W : Has_Bloom] get_bloom_store(world : W) -> @ecs.ComponentAccess[Bloom] {
   world.get_bloom_store()
 }
 
 ///|
 pub fn[W : Has_Mesh3d] get_mesh3d_store(
   world : W,
-) -> @core.ComponentStore[Mesh3d] {
+) -> @ecs.ComponentAccess[Mesh3d] {
   world.get_mesh3d_store()
 }
 
 ///|
 pub fn[W : Has_Skybox] get_skybox_store(
   world : W,
-) -> @core.ComponentStore[Skybox] {
+) -> @ecs.ComponentAccess[Skybox] {
   world.get_skybox_store()
 }
 
 ///|
 pub fn[W : Has_Camera3d] get_camera3d_store(
   world : W,
-) -> @core.ComponentStore[Camera3d] {
+) -> @ecs.ComponentAccess[Camera3d] {
   world.get_camera3d_store()
 }
 
 ///|
 pub fn[W : Has_Exposure] get_exposure_store(
   world : W,
-) -> @core.ComponentStore[Exposure] {
+) -> @ecs.ComponentAccess[Exposure] {
   world.get_exposure_store()
 }
 
 ///|
 pub fn[W : Has_Vignette] get_vignette_store(
   world : W,
-) -> @core.ComponentStore[Vignette] {
+) -> @ecs.ComponentAccess[Vignette] {
   world.get_vignette_store()
 }
 
 ///|
 pub fn[W : Has_SpotLight] get_spot_light_store(
   world : W,
-) -> @core.ComponentStore[SpotLight] {
+) -> @ecs.ComponentAccess[SpotLight] {
   world.get_spot_light_store()
 }
 
 ///|
 pub fn[W : Has_Wireframe] get_wireframe_store(
   world : W,
-) -> @core.ComponentStore[Wireframe] {
+) -> @ecs.ComponentAccess[Wireframe] {
   world.get_wireframe_store()
 }
 
 ///|
 pub fn[W : Has_FreeCamera] get_free_camera_store(
   world : W,
-) -> @core.ComponentStore[FreeCamera] {
+) -> @ecs.ComponentAccess[FreeCamera] {
   world.get_free_camera_store()
 }
 
 ///|
 pub fn[W : Has_LightProbe] get_light_probe_store(
   world : W,
-) -> @core.ComponentStore[LightProbe] {
+) -> @ecs.ComponentAccess[LightProbe] {
   world.get_light_probe_store()
 }
 
 ///|
 pub fn[W : Has_MotionBlur] get_motion_blur_store(
   world : W,
-) -> @core.ComponentStore[MotionBlur] {
+) -> @ecs.ComponentAccess[MotionBlur] {
   world.get_motion_blur_store()
 }
 
 ///|
 pub fn[W : Has_PointLight] get_point_light_store(
   world : W,
-) -> @core.ComponentStore[PointLight] {
+) -> @ecs.ComponentAccess[PointLight] {
   world.get_point_light_store()
 }
 
 ///|
 pub fn[W : Has_NoWireframe] get_no_wireframe_store(
   world : W,
-) -> @core.ComponentStore[NoWireframe] {
+) -> @ecs.ComponentAccess[NoWireframe] {
   world.get_no_wireframe_store()
 }
 
 ///|
 pub fn[W : Has_Tonemapping] get_tonemapping_store(
   world : W,
-) -> @core.ComponentStore[Tonemapping] {
+) -> @ecs.ComponentAccess[Tonemapping] {
   world.get_tonemapping_store()
 }
 
 ///|
 pub fn[W : Has_ColorGrading] get_color_grading_store(
   world : W,
-) -> @core.ComponentStore[ColorGrading] {
+) -> @ecs.ComponentAccess[ColorGrading] {
   world.get_color_grading_store()
 }
 
 ///|
 pub fn[W : Has_DebandDither] get_deband_dither_store(
   world : W,
-) -> @core.ComponentStore[DebandDither] {
+) -> @ecs.ComponentAccess[DebandDither] {
   world.get_deband_dither_store()
 }
 
 ///|
 pub fn[W : Has_DepthPrepass] get_depth_prepass_store(
   world : W,
-) -> @core.ComponentStore[DepthPrepass] {
+) -> @ecs.ComponentAccess[DepthPrepass] {
   world.get_depth_prepass_store()
 }
 
 ///|
 pub fn[W : Has_ForwardDecal] get_forward_decal_store(
   world : W,
-) -> @core.ComponentStore[ForwardDecal] {
+) -> @ecs.ComponentAccess[ForwardDecal] {
   world.get_forward_decal_store()
 }
 
 ///|
 pub fn[W : Has_NormalPrepass] get_normal_prepass_store(
   world : W,
-) -> @core.ComponentStore[NormalPrepass] {
+) -> @ecs.ComponentAccess[NormalPrepass] {
   world.get_normal_prepass_store()
 }
 
 ///|
 pub fn[W : Has_ClusteredDecal] get_clustered_decal_store(
   world : W,
-) -> @core.ComponentStore[ClusteredDecal] {
+) -> @ecs.ComponentAccess[ClusteredDecal] {
   world.get_clustered_decal_store()
 }
 
 ///|
 pub fn[W : Has_ContactShadows] get_contact_shadows_store(
   world : W,
-) -> @core.ComponentStore[ContactShadows] {
+) -> @ecs.ComponentAccess[ContactShadows] {
   world.get_contact_shadows_store()
 }
 
 ///|
 pub fn[W : Has_MeshMaterial3d] get_mesh_material3d_store(
   world : W,
-) -> @core.ComponentStore[MeshMaterial3d] {
+) -> @ecs.ComponentAccess[MeshMaterial3d] {
   world.get_mesh_material3d_store()
 }
 
 ///|
 pub fn[W : Has_TemporalJitter] get_temporal_jitter_store(
   world : W,
-) -> @core.ComponentStore[TemporalJitter] {
+) -> @ecs.ComponentAccess[TemporalJitter] {
   world.get_temporal_jitter_store()
 }
 
 ///|
 pub fn[W : Has_WireframeColor] get_wireframe_color_store(
   world : W,
-) -> @core.ComponentStore[WireframeColor] {
+) -> @ecs.ComponentAccess[WireframeColor] {
   world.get_wireframe_color_store()
 }
 
 ///|
 pub fn[W : Has_DeferredPrepass] get_deferred_prepass_store(
   world : W,
-) -> @core.ComponentStore[DeferredPrepass] {
+) -> @ecs.ComponentAccess[DeferredPrepass] {
   world.get_deferred_prepass_store()
 }
 
 ///|
 pub fn[W : Has_FreeCameraState] get_free_camera_state_store(
   world : W,
-) -> @core.ComponentStore[FreeCameraState] {
+) -> @ecs.ComponentAccess[FreeCameraState] {
   world.get_free_camera_state_store()
 }
 
 ///|
 pub fn[W : Has_NotShadowCaster] get_not_shadow_caster_store(
   world : W,
-) -> @core.ComponentStore[NotShadowCaster] {
+) -> @ecs.ComponentAccess[NotShadowCaster] {
   world.get_not_shadow_caster_store()
 }
 
 ///|
 pub fn[W : Has_SubCameraView3d] get_sub_camera_view3d_store(
   world : W,
-) -> @core.ComponentStore[SubCameraView3d] {
+) -> @ecs.ComponentAccess[SubCameraView3d] {
   world.get_sub_camera_view3d_store()
 }
 
 ///|
 pub fn[W : Has_DirectionalLight] get_directional_light_store(
   world : W,
-) -> @core.ComponentStore[DirectionalLight] {
+) -> @ecs.ComponentAccess[DirectionalLight] {
   world.get_directional_light_store()
 }
 
 ///|
 pub fn[W : Has_IrradianceVolume] get_irradiance_volume_store(
   world : W,
-) -> @core.ComponentStore[IrradianceVolume] {
+) -> @ecs.ComponentAccess[IrradianceVolume] {
   world.get_irradiance_volume_store()
 }
 
 ///|
 pub fn[W : Has_OcclusionCulling] get_occlusion_culling_store(
   world : W,
-) -> @core.ComponentStore[OcclusionCulling] {
+) -> @ecs.ComponentAccess[OcclusionCulling] {
   world.get_occlusion_culling_store()
 }
 
 ///|
 pub fn[W : Has_SpotLightTexture] get_spot_light_texture_store(
   world : W,
-) -> @core.ComponentStore[SpotLightTexture] {
+) -> @ecs.ComponentAccess[SpotLightTexture] {
   world.get_spot_light_texture_store()
 }
 
 ///|
 pub fn[W : Has_NotShadowReceiver] get_not_shadow_receiver_store(
   world : W,
-) -> @core.ComponentStore[NotShadowReceiver] {
+) -> @ecs.ComponentAccess[NotShadowReceiver] {
   world.get_not_shadow_receiver_store()
 }
 
 ///|
 pub fn[W : Has_PointLightTexture] get_point_light_texture_store(
   world : W,
-) -> @core.ComponentStore[PointLightTexture] {
+) -> @ecs.ComponentAccess[PointLightTexture] {
   world.get_point_light_texture_store()
 }
 
 ///|
 pub fn[W : Has_CameraProjection3d] get_camera_projection3d_store(
   world : W,
-) -> @core.ComponentStore[CameraProjection3d] {
+) -> @ecs.ComponentAccess[CameraProjection3d] {
   world.get_camera_projection3d_store()
 }
 
 ///|
 pub fn[W : Has_ParallaxCorrection] get_parallax_correction_store(
   world : W,
-) -> @core.ComponentStore[ParallaxCorrection] {
+) -> @ecs.ComponentAccess[ParallaxCorrection] {
   world.get_parallax_correction_store()
 }
 
 ///|
 pub fn[W : Has_ChromaticAberration] get_chromatic_aberration_store(
   world : W,
-) -> @core.ComponentStore[ChromaticAberration] {
+) -> @ecs.ComponentAccess[ChromaticAberration] {
   world.get_chromatic_aberration_store()
 }
 
 ///|
 pub fn[W : Has_EnvironmentMapLight] get_environment_map_light_store(
   world : W,
-) -> @core.ComponentStore[EnvironmentMapLight] {
+) -> @ecs.ComponentAccess[EnvironmentMapLight] {
   world.get_environment_map_light_store()
 }
 
 ///|
 pub fn[W : Has_MotionVectorPrepass] get_motion_vector_prepass_store(
   world : W,
-) -> @core.ComponentStore[MotionVectorPrepass] {
+) -> @ecs.ComponentAccess[MotionVectorPrepass] {
   world.get_motion_vector_prepass_store()
 }
 
 ///|
 pub fn[W : Has_TemporalAntiAliasing] get_temporal_anti_aliasing_store(
   world : W,
-) -> @core.ComponentStore[TemporalAntiAliasing] {
+) -> @ecs.ComponentAccess[TemporalAntiAliasing] {
   world.get_temporal_anti_aliasing_store()
 }
 
 ///|
 pub fn[W : Has_ShadowFilteringMethod] get_shadow_filtering_method_store(
   world : W,
-) -> @core.ComponentStore[ShadowFilteringMethod] {
+) -> @ecs.ComponentAccess[ShadowFilteringMethod] {
   world.get_shadow_filtering_method_store()
 }
 
 ///|
 pub fn[W : Has_ScreenSpaceReflections] get_screen_space_reflections_store(
   world : W,
-) -> @core.ComponentStore[ScreenSpaceReflections] {
+) -> @ecs.ComponentAccess[ScreenSpaceReflections] {
   world.get_screen_space_reflections_store()
 }
 
 ///|
 pub fn[W : Has_DirectionalLightTexture] get_directional_light_texture_store(
   world : W,
-) -> @core.ComponentStore[DirectionalLightTexture] {
+) -> @ecs.ComponentAccess[DirectionalLightTexture] {
   world.get_directional_light_texture_store()
 }
 
 ///|
 pub fn[W : Has_ForwardDecalMaterialExt] get_forward_decal_material_ext_store(
   world : W,
-) -> @core.ComponentStore[ForwardDecalMaterialExt] {
+) -> @ecs.ComponentAccess[ForwardDecalMaterialExt] {
   world.get_forward_decal_material_ext_store()
 }
 
 ///|
 pub fn[W : Has_ScreenSpaceTransmission] get_screen_space_transmission_store(
   world : W,
-) -> @core.ComponentStore[ScreenSpaceTransmission] {
+) -> @ecs.ComponentAccess[ScreenSpaceTransmission] {
   world.get_screen_space_transmission_store()
 }
 
 ///|
 pub fn[W : Has_TransmittedShadowReceiver] get_transmitted_shadow_receiver_store(
   world : W,
-) -> @core.ComponentStore[TransmittedShadowReceiver] {
+) -> @ecs.ComponentAccess[TransmittedShadowReceiver] {
   world.get_transmitted_shadow_receiver_store()
 }
 
 ///|
 pub fn[W : Has_ScreenSpaceAmbientOcclusion] get_screen_space_ambient_occlusion_store(
   world : W,
-) -> @core.ComponentStore[ScreenSpaceAmbientOcclusion] {
+) -> @ecs.ComponentAccess[ScreenSpaceAmbientOcclusion] {
   world.get_screen_space_ambient_occlusion_store()
 }
 
 ///|
 pub fn[W : Has_GeneratedEnvironmentMapLight] get_generated_environment_map_light_store(
   world : W,
-) -> @core.ComponentStore[GeneratedEnvironmentMapLight] {
+) -> @ecs.ComponentAccess[GeneratedEnvironmentMapLight] {
   world.get_generated_environment_map_light_store()
 }
 
 ///|
 pub fn[W : Has_OrderIndependentTransparencySettings] get_order_independent_transparency_settings_store(
   world : W,
-) -> @core.ComponentStore[OrderIndependentTransparencySettings] {
+) -> @ecs.ComponentAccess[OrderIndependentTransparencySettings] {
   world.get_order_independent_transparency_settings_store()
 }
 
 ///|
 pub(open) trait HasRes_WireframeConfig {
-  get_wireframe_config_resource(self : Self) -> @core.Resource[WireframeConfig]
+  get_wireframe_config_resource(self : Self) -> @ecs.ResourceAccess[
+    WireframeConfig,
+  ]
 }
 
 ///|
 pub(open) trait HasRes_GlobalAmbientLight {
-  get_global_ambient_light_resource(self : Self) -> @core.Resource[
+  get_global_ambient_light_resource(self : Self) -> @ecs.ResourceAccess[
     GlobalAmbientLight,
   ]
 }
 
 ///|
 pub(open) trait HasRes_PointLightShadowMap {
-  get_point_light_shadow_map_resource(self : Self) -> @core.Resource[
+  get_point_light_shadow_map_resource(self : Self) -> @ecs.ResourceAccess[
     PointLightShadowMap,
   ]
 }
 
 ///|
 pub(open) trait HasRes_DirectionalLightShadowMap {
-  get_directional_light_shadow_map_resource(self : Self) -> @core.Resource[
+  get_directional_light_shadow_map_resource(self : Self) -> @ecs.ResourceAccess[
     DirectionalLightShadowMap,
   ]
 }
 
 ///|
 pub(open) trait HasRes_DefaultOpaqueRendererMethod {
-  get_default_opaque_renderer_method_resource(self : Self) -> @core.Resource[
+  get_default_opaque_renderer_method_resource(self : Self) -> @ecs.ResourceAccess[
     DefaultOpaqueRendererMethod,
   ]
 }
@@ -737,35 +739,35 @@ pub(open) trait HasRes_DefaultOpaqueRendererMethod {
 ///|
 pub fn[W : HasRes_WireframeConfig] get_wireframe_config_resource(
   world : W,
-) -> @core.Resource[WireframeConfig] {
+) -> @ecs.ResourceAccess[WireframeConfig] {
   world.get_wireframe_config_resource()
 }
 
 ///|
 pub fn[W : HasRes_GlobalAmbientLight] get_global_ambient_light_resource(
   world : W,
-) -> @core.Resource[GlobalAmbientLight] {
+) -> @ecs.ResourceAccess[GlobalAmbientLight] {
   world.get_global_ambient_light_resource()
 }
 
 ///|
 pub fn[W : HasRes_PointLightShadowMap] get_point_light_shadow_map_resource(
   world : W,
-) -> @core.Resource[PointLightShadowMap] {
+) -> @ecs.ResourceAccess[PointLightShadowMap] {
   world.get_point_light_shadow_map_resource()
 }
 
 ///|
 pub fn[W : HasRes_DirectionalLightShadowMap] get_directional_light_shadow_map_resource(
   world : W,
-) -> @core.Resource[DirectionalLightShadowMap] {
+) -> @ecs.ResourceAccess[DirectionalLightShadowMap] {
   world.get_directional_light_shadow_map_resource()
 }
 
 ///|
 pub fn[W : HasRes_DefaultOpaqueRendererMethod] get_default_opaque_renderer_method_resource(
   world : W,
-) -> @core.Resource[DefaultOpaqueRendererMethod] {
+) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod] {
   world.get_default_opaque_renderer_method_resource()
 }
 
@@ -773,800 +775,348 @@ pub fn[W : HasRes_DefaultOpaqueRendererMethod] get_default_opaque_renderer_metho
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_hdr_store_by_world : Map[Int, @core.ComponentStore[Hdr]] = {}
-
-///|
 pub impl Has_Hdr for @ecs.World with get_hdr_store(self) {
-  bridge_get_hdr_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_hdr)
 }
-
-///|
-let bridge_get_fxaa_store_by_world : Map[Int, @core.ComponentStore[Fxaa]] = {}
 
 ///|
 pub impl Has_Fxaa for @ecs.World with get_fxaa_store(self) {
-  bridge_get_fxaa_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_fxaa)
 }
-
-///|
-let bridge_get_msaa_store_by_world : Map[Int, @core.ComponentStore[Msaa]] = {}
 
 ///|
 pub impl Has_Msaa for @ecs.World with get_msaa_store(self) {
-  bridge_get_msaa_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_msaa)
 }
-
-///|
-let bridge_get_bloom_store_by_world : Map[Int, @core.ComponentStore[Bloom]] = {}
 
 ///|
 pub impl Has_Bloom for @ecs.World with get_bloom_store(self) {
-  bridge_get_bloom_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_bloom)
 }
-
-///|
-let bridge_get_mesh3d_store_by_world : Map[Int, @core.ComponentStore[Mesh3d]] = {}
 
 ///|
 pub impl Has_Mesh3d for @ecs.World with get_mesh3d_store(self) {
-  bridge_get_mesh3d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_mesh3d)
 }
-
-///|
-let bridge_get_skybox_store_by_world : Map[Int, @core.ComponentStore[Skybox]] = {}
 
 ///|
 pub impl Has_Skybox for @ecs.World with get_skybox_store(self) {
-  bridge_get_skybox_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_skybox)
 }
-
-///|
-let bridge_get_camera3d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Camera3d],
-] = {}
 
 ///|
 pub impl Has_Camera3d for @ecs.World with get_camera3d_store(self) {
-  bridge_get_camera3d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_camera3d)
 }
-
-///|
-let bridge_get_exposure_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Exposure],
-] = {}
 
 ///|
 pub impl Has_Exposure for @ecs.World with get_exposure_store(self) {
-  bridge_get_exposure_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_exposure)
 }
-
-///|
-let bridge_get_vignette_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Vignette],
-] = {}
 
 ///|
 pub impl Has_Vignette for @ecs.World with get_vignette_store(self) {
-  bridge_get_vignette_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_vignette)
 }
-
-///|
-let bridge_get_spot_light_store_by_world : Map[
-  Int,
-  @core.ComponentStore[SpotLight],
-] = {}
 
 ///|
 pub impl Has_SpotLight for @ecs.World with get_spot_light_store(self) {
-  bridge_get_spot_light_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_spot_light)
 }
-
-///|
-let bridge_get_wireframe_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Wireframe],
-] = {}
 
 ///|
 pub impl Has_Wireframe for @ecs.World with get_wireframe_store(self) {
-  bridge_get_wireframe_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_wireframe)
 }
-
-///|
-let bridge_get_free_camera_store_by_world : Map[
-  Int,
-  @core.ComponentStore[FreeCamera],
-] = {}
 
 ///|
 pub impl Has_FreeCamera for @ecs.World with get_free_camera_store(self) {
-  bridge_get_free_camera_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_free_camera)
 }
-
-///|
-let bridge_get_light_probe_store_by_world : Map[
-  Int,
-  @core.ComponentStore[LightProbe],
-] = {}
 
 ///|
 pub impl Has_LightProbe for @ecs.World with get_light_probe_store(self) {
-  bridge_get_light_probe_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_light_probe)
 }
-
-///|
-let bridge_get_motion_blur_store_by_world : Map[
-  Int,
-  @core.ComponentStore[MotionBlur],
-] = {}
 
 ///|
 pub impl Has_MotionBlur for @ecs.World with get_motion_blur_store(self) {
-  bridge_get_motion_blur_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_motion_blur)
 }
-
-///|
-let bridge_get_point_light_store_by_world : Map[
-  Int,
-  @core.ComponentStore[PointLight],
-] = {}
 
 ///|
 pub impl Has_PointLight for @ecs.World with get_point_light_store(self) {
-  bridge_get_point_light_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_point_light)
 }
-
-///|
-let bridge_get_no_wireframe_store_by_world : Map[
-  Int,
-  @core.ComponentStore[NoWireframe],
-] = {}
 
 ///|
 pub impl Has_NoWireframe for @ecs.World with get_no_wireframe_store(self) {
-  bridge_get_no_wireframe_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_no_wireframe)
 }
-
-///|
-let bridge_get_tonemapping_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Tonemapping],
-] = {}
 
 ///|
 pub impl Has_Tonemapping for @ecs.World with get_tonemapping_store(self) {
-  bridge_get_tonemapping_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_tonemapping)
 }
-
-///|
-let bridge_get_color_grading_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ColorGrading],
-] = {}
 
 ///|
 pub impl Has_ColorGrading for @ecs.World with get_color_grading_store(self) {
-  bridge_get_color_grading_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_color_grading)
 }
-
-///|
-let bridge_get_deband_dither_store_by_world : Map[
-  Int,
-  @core.ComponentStore[DebandDither],
-] = {}
 
 ///|
 pub impl Has_DebandDither for @ecs.World with get_deband_dither_store(self) {
-  bridge_get_deband_dither_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_deband_dither)
 }
-
-///|
-let bridge_get_depth_prepass_store_by_world : Map[
-  Int,
-  @core.ComponentStore[DepthPrepass],
-] = {}
 
 ///|
 pub impl Has_DepthPrepass for @ecs.World with get_depth_prepass_store(self) {
-  bridge_get_depth_prepass_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_depth_prepass)
 }
-
-///|
-let bridge_get_forward_decal_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ForwardDecal],
-] = {}
 
 ///|
 pub impl Has_ForwardDecal for @ecs.World with get_forward_decal_store(self) {
-  bridge_get_forward_decal_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_forward_decal)
 }
-
-///|
-let bridge_get_normal_prepass_store_by_world : Map[
-  Int,
-  @core.ComponentStore[NormalPrepass],
-] = {}
 
 ///|
 pub impl Has_NormalPrepass for @ecs.World with get_normal_prepass_store(self) {
-  bridge_get_normal_prepass_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_normal_prepass)
 }
-
-///|
-let bridge_get_clustered_decal_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ClusteredDecal],
-] = {}
 
 ///|
 pub impl Has_ClusteredDecal for @ecs.World with get_clustered_decal_store(self) {
-  bridge_get_clustered_decal_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_clustered_decal)
 }
-
-///|
-let bridge_get_contact_shadows_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ContactShadows],
-] = {}
 
 ///|
 pub impl Has_ContactShadows for @ecs.World with get_contact_shadows_store(self) {
-  bridge_get_contact_shadows_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_contact_shadows)
 }
-
-///|
-let bridge_get_mesh_material3d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[MeshMaterial3d],
-] = {}
 
 ///|
 pub impl Has_MeshMaterial3d for @ecs.World with get_mesh_material3d_store(self) {
-  bridge_get_mesh_material3d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_mesh_material3d)
 }
-
-///|
-let bridge_get_temporal_jitter_store_by_world : Map[
-  Int,
-  @core.ComponentStore[TemporalJitter],
-] = {}
 
 ///|
 pub impl Has_TemporalJitter for @ecs.World with get_temporal_jitter_store(self) {
-  bridge_get_temporal_jitter_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_temporal_jitter)
 }
-
-///|
-let bridge_get_wireframe_color_store_by_world : Map[
-  Int,
-  @core.ComponentStore[WireframeColor],
-] = {}
 
 ///|
 pub impl Has_WireframeColor for @ecs.World with get_wireframe_color_store(self) {
-  bridge_get_wireframe_color_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_wireframe_color)
 }
-
-///|
-let bridge_get_deferred_prepass_store_by_world : Map[
-  Int,
-  @core.ComponentStore[DeferredPrepass],
-] = {}
 
 ///|
 pub impl Has_DeferredPrepass for @ecs.World with get_deferred_prepass_store(
   self,
 ) {
-  bridge_get_deferred_prepass_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_deferred_prepass)
 }
-
-///|
-let bridge_get_free_camera_state_store_by_world : Map[
-  Int,
-  @core.ComponentStore[FreeCameraState],
-] = {}
 
 ///|
 pub impl Has_FreeCameraState for @ecs.World with get_free_camera_state_store(
   self,
 ) {
-  bridge_get_free_camera_state_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_free_camera_state)
 }
-
-///|
-let bridge_get_not_shadow_caster_store_by_world : Map[
-  Int,
-  @core.ComponentStore[NotShadowCaster],
-] = {}
 
 ///|
 pub impl Has_NotShadowCaster for @ecs.World with get_not_shadow_caster_store(
   self,
 ) {
-  bridge_get_not_shadow_caster_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_not_shadow_caster)
 }
-
-///|
-let bridge_get_sub_camera_view3d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[SubCameraView3d],
-] = {}
 
 ///|
 pub impl Has_SubCameraView3d for @ecs.World with get_sub_camera_view3d_store(
   self,
 ) {
-  bridge_get_sub_camera_view3d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_sub_camera_view3d)
 }
-
-///|
-let bridge_get_directional_light_store_by_world : Map[
-  Int,
-  @core.ComponentStore[DirectionalLight],
-] = {}
 
 ///|
 pub impl Has_DirectionalLight for @ecs.World with get_directional_light_store(
   self,
 ) {
-  bridge_get_directional_light_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_directional_light)
 }
-
-///|
-let bridge_get_irradiance_volume_store_by_world : Map[
-  Int,
-  @core.ComponentStore[IrradianceVolume],
-] = {}
 
 ///|
 pub impl Has_IrradianceVolume for @ecs.World with get_irradiance_volume_store(
   self,
 ) {
-  bridge_get_irradiance_volume_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_irradiance_volume)
 }
-
-///|
-let bridge_get_occlusion_culling_store_by_world : Map[
-  Int,
-  @core.ComponentStore[OcclusionCulling],
-] = {}
 
 ///|
 pub impl Has_OcclusionCulling for @ecs.World with get_occlusion_culling_store(
   self,
 ) {
-  bridge_get_occlusion_culling_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_occlusion_culling)
 }
-
-///|
-let bridge_get_spot_light_texture_store_by_world : Map[
-  Int,
-  @core.ComponentStore[SpotLightTexture],
-] = {}
 
 ///|
 pub impl Has_SpotLightTexture for @ecs.World with get_spot_light_texture_store(
   self,
 ) {
-  bridge_get_spot_light_texture_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_spot_light_texture)
 }
-
-///|
-let bridge_get_not_shadow_receiver_store_by_world : Map[
-  Int,
-  @core.ComponentStore[NotShadowReceiver],
-] = {}
 
 ///|
 pub impl Has_NotShadowReceiver for @ecs.World with get_not_shadow_receiver_store(
   self,
 ) {
-  bridge_get_not_shadow_receiver_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_not_shadow_receiver)
 }
-
-///|
-let bridge_get_point_light_texture_store_by_world : Map[
-  Int,
-  @core.ComponentStore[PointLightTexture],
-] = {}
 
 ///|
 pub impl Has_PointLightTexture for @ecs.World with get_point_light_texture_store(
   self,
 ) {
-  bridge_get_point_light_texture_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_point_light_texture)
 }
-
-///|
-let bridge_get_camera_projection3d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[CameraProjection3d],
-] = {}
 
 ///|
 pub impl Has_CameraProjection3d for @ecs.World with get_camera_projection3d_store(
   self,
 ) {
-  bridge_get_camera_projection3d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_camera_projection3d)
 }
-
-///|
-let bridge_get_parallax_correction_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ParallaxCorrection],
-] = {}
 
 ///|
 pub impl Has_ParallaxCorrection for @ecs.World with get_parallax_correction_store(
   self,
 ) {
-  bridge_get_parallax_correction_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_parallax_correction)
 }
-
-///|
-let bridge_get_chromatic_aberration_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ChromaticAberration],
-] = {}
 
 ///|
 pub impl Has_ChromaticAberration for @ecs.World with get_chromatic_aberration_store(
   self,
 ) {
-  bridge_get_chromatic_aberration_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_chromatic_aberration)
 }
-
-///|
-let bridge_get_environment_map_light_store_by_world : Map[
-  Int,
-  @core.ComponentStore[EnvironmentMapLight],
-] = {}
 
 ///|
 pub impl Has_EnvironmentMapLight for @ecs.World with get_environment_map_light_store(
   self,
 ) {
-  bridge_get_environment_map_light_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_environment_map_light)
 }
-
-///|
-let bridge_get_motion_vector_prepass_store_by_world : Map[
-  Int,
-  @core.ComponentStore[MotionVectorPrepass],
-] = {}
 
 ///|
 pub impl Has_MotionVectorPrepass for @ecs.World with get_motion_vector_prepass_store(
   self,
 ) {
-  bridge_get_motion_vector_prepass_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_motion_vector_prepass)
 }
-
-///|
-let bridge_get_temporal_anti_aliasing_store_by_world : Map[
-  Int,
-  @core.ComponentStore[TemporalAntiAliasing],
-] = {}
 
 ///|
 pub impl Has_TemporalAntiAliasing for @ecs.World with get_temporal_anti_aliasing_store(
   self,
 ) {
-  bridge_get_temporal_anti_aliasing_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_temporal_anti_aliasing)
 }
-
-///|
-let bridge_get_shadow_filtering_method_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ShadowFilteringMethod],
-] = {}
 
 ///|
 pub impl Has_ShadowFilteringMethod for @ecs.World with get_shadow_filtering_method_store(
   self,
 ) {
-  bridge_get_shadow_filtering_method_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_shadow_filtering_method)
 }
-
-///|
-let bridge_get_screen_space_reflections_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ScreenSpaceReflections],
-] = {}
 
 ///|
 pub impl Has_ScreenSpaceReflections for @ecs.World with get_screen_space_reflections_store(
   self,
 ) {
-  bridge_get_screen_space_reflections_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_screen_space_reflections)
 }
-
-///|
-let bridge_get_directional_light_texture_store_by_world : Map[
-  Int,
-  @core.ComponentStore[DirectionalLightTexture],
-] = {}
 
 ///|
 pub impl Has_DirectionalLightTexture for @ecs.World with get_directional_light_texture_store(
   self,
 ) {
-  bridge_get_directional_light_texture_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_directional_light_texture)
 }
-
-///|
-let bridge_get_forward_decal_material_ext_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ForwardDecalMaterialExt],
-] = {}
 
 ///|
 pub impl Has_ForwardDecalMaterialExt for @ecs.World with get_forward_decal_material_ext_store(
   self,
 ) {
-  bridge_get_forward_decal_material_ext_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_forward_decal_material_ext)
 }
-
-///|
-let bridge_get_screen_space_transmission_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ScreenSpaceTransmission],
-] = {}
 
 ///|
 pub impl Has_ScreenSpaceTransmission for @ecs.World with get_screen_space_transmission_store(
   self,
 ) {
-  bridge_get_screen_space_transmission_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_screen_space_transmission)
 }
-
-///|
-let bridge_get_transmitted_shadow_receiver_store_by_world : Map[
-  Int,
-  @core.ComponentStore[TransmittedShadowReceiver],
-] = {}
 
 ///|
 pub impl Has_TransmittedShadowReceiver for @ecs.World with get_transmitted_shadow_receiver_store(
   self,
 ) {
-  bridge_get_transmitted_shadow_receiver_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_transmitted_shadow_receiver)
 }
-
-///|
-let bridge_get_screen_space_ambient_occlusion_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ScreenSpaceAmbientOcclusion],
-] = {}
 
 ///|
 pub impl Has_ScreenSpaceAmbientOcclusion for @ecs.World with get_screen_space_ambient_occlusion_store(
   self,
 ) {
-  bridge_get_screen_space_ambient_occlusion_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_screen_space_ambient_occlusion)
 }
-
-///|
-let bridge_get_generated_environment_map_light_store_by_world : Map[
-  Int,
-  @core.ComponentStore[GeneratedEnvironmentMapLight],
-] = {}
 
 ///|
 pub impl Has_GeneratedEnvironmentMapLight for @ecs.World with get_generated_environment_map_light_store(
   self,
 ) {
-  bridge_get_generated_environment_map_light_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_generated_environment_map_light)
 }
-
-///|
-let bridge_get_order_independent_transparency_settings_store_by_world : Map[
-  Int,
-  @core.ComponentStore[OrderIndependentTransparencySettings],
-] = {}
 
 ///|
 pub impl Has_OrderIndependentTransparencySettings for @ecs.World with get_order_independent_transparency_settings_store(
   self,
 ) {
-  bridge_get_order_independent_transparency_settings_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_order_independent_transparency_settings)
 }
-
-///|
-let bridge_get_wireframe_config_resource_by_world : Map[
-  Int,
-  @core.Resource[WireframeConfig],
-] = {}
 
 ///|
 pub impl HasRes_WireframeConfig for @ecs.World with get_wireframe_config_resource(
   self,
 ) {
-  bridge_get_wireframe_config_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_key_wireframe_config)
 }
-
-///|
-let bridge_get_global_ambient_light_resource_by_world : Map[
-  Int,
-  @core.Resource[GlobalAmbientLight],
-] = {}
 
 ///|
 pub impl HasRes_GlobalAmbientLight for @ecs.World with get_global_ambient_light_resource(
   self,
 ) {
-  bridge_get_global_ambient_light_resource_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.Resource::new() },
-  )
+  self.resource(ecs_key_global_ambient_light)
 }
-
-///|
-let bridge_get_point_light_shadow_map_resource_by_world : Map[
-  Int,
-  @core.Resource[PointLightShadowMap],
-] = {}
 
 ///|
 pub impl HasRes_PointLightShadowMap for @ecs.World with get_point_light_shadow_map_resource(
   self,
 ) {
-  bridge_get_point_light_shadow_map_resource_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.Resource::new() },
-  )
+  self.resource(ecs_key_point_light_shadow_map)
 }
-
-///|
-let bridge_get_directional_light_shadow_map_resource_by_world : Map[
-  Int,
-  @core.Resource[DirectionalLightShadowMap],
-] = {}
 
 ///|
 pub impl HasRes_DirectionalLightShadowMap for @ecs.World with get_directional_light_shadow_map_resource(
   self,
 ) {
-  bridge_get_directional_light_shadow_map_resource_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.Resource::new() },
-  )
+  self.resource(ecs_key_directional_light_shadow_map)
 }
-
-///|
-let bridge_get_default_opaque_renderer_method_resource_by_world : Map[
-  Int,
-  @core.Resource[DefaultOpaqueRendererMethod],
-] = {}
 
 ///|
 pub impl HasRes_DefaultOpaqueRendererMethod for @ecs.World with get_default_opaque_renderer_method_resource(
   self,
 ) {
-  bridge_get_default_opaque_renderer_method_resource_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.Resource::new() },
-  )
+  self.resource(ecs_key_default_opaque_renderer_method)
 }
 
 ///|

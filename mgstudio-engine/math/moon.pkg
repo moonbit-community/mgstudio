@@ -1,6 +1,5 @@
 import {
   "moonbitlang/core/math" @coremath,
   "moonbitlang/core/json",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
 }

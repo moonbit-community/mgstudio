@@ -308,10 +308,10 @@ test "ui: a11y focus follows A11yState instead of hover state" {
     @hierarchy.Parent::new(back),
     tick,
   )
-  let a11y_state = @a11y.get_a11y_state_resource(world)
-    .get_ref_mut(tick)
-    .unwrap()
+  let a11y_state_res = @a11y.get_a11y_state_resource(world)
+  let a11y_state = Ref::new(a11y_state_res.get().unwrap())
   @a11y.A11yState::set_focused_node(a11y_state, @a11y.node_id_for_entity(back))
+  a11y_state_res.insert(a11y_state.val, tick)
   ui_stack_system(world)
   let update = ui_build_a11y_tree_update(world)
   assert_eq(update.focus(), @a11y.node_id_for_entity(back))

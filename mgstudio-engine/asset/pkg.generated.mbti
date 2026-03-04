@@ -3,7 +3,6 @@ package "Milky2018/mgstudio/asset"
 
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
@@ -104,9 +103,11 @@ pub fn asset_white_texture() -> Handle[Image]
 
 pub let ecs_components : Array[String]
 
+pub let ecs_key_texture_atlas : @ecs.ComponentKey[TextureAtlas]
+
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_TextureAtlas] get_texture_atlas_store(W) -> @core.ComponentStore[TextureAtlas]
+pub fn[W : Has_TextureAtlas] get_texture_atlas_store(W) -> @ecs.ComponentAccess[TextureAtlas]
 
 pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int
 
@@ -286,6 +287,8 @@ pub fn TextureAtlas::new(Handle[TextureAtlasLayout], Int) -> Self
 pub fn TextureAtlas::texture_rect(Self, Assets[TextureAtlasLayout]) -> @math.URect?
 pub fn TextureAtlas::with_index(Self, Int) -> Self
 pub fn TextureAtlas::with_layout(Self, Handle[TextureAtlasLayout]) -> Self
+pub impl ToJson for TextureAtlas
+pub impl @json.FromJson for TextureAtlas
 
 pub struct TextureAtlasBuilder {
   padding : @math.UVec2
@@ -323,7 +326,7 @@ pub fn TextureAtlasSources::texture_index(Self, Handle[Image]) -> Int?
 
 // Traits
 pub(open) trait Has_TextureAtlas {
-  get_texture_atlas_store(Self) -> @core.ComponentStore[TextureAtlas]
+  get_texture_atlas_store(Self) -> @ecs.ComponentAccess[TextureAtlas]
 }
 pub impl Has_TextureAtlas for @ecs.World
 

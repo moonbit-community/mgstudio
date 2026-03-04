@@ -14,5 +14,6 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }

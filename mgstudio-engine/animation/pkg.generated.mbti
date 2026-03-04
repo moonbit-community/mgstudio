@@ -63,17 +63,17 @@ pub let ecs_resources : Array[String]
 
 pub fn expire_transitions(@ecs.World) -> Unit
 
-pub fn[W : Has_AnimatedBy] get_animated_by_store(W) -> @core.ComponentStore[AnimatedBy]
+pub fn[W : Has_AnimatedBy] get_animated_by_store(W) -> @ecs.ComponentAccess[AnimatedBy]
 
-pub fn[W : Has_AnimationGraphHandle] get_animation_graph_handle_store(W) -> @core.ComponentStore[AnimationGraphHandle]
+pub fn[W : Has_AnimationGraphHandle] get_animation_graph_handle_store(W) -> @ecs.ComponentAccess[AnimationGraphHandle]
 
-pub fn[W : Has_AnimationPlayer] get_animation_player_store(W) -> @core.ComponentStore[AnimationPlayer]
+pub fn[W : Has_AnimationPlayer] get_animation_player_store(W) -> @ecs.ComponentAccess[AnimationPlayer]
 
-pub fn[W : Has_AnimationTargetId] get_animation_target_id_store(W) -> @core.ComponentStore[AnimationTargetId]
+pub fn[W : Has_AnimationTargetId] get_animation_target_id_store(W) -> @ecs.ComponentAccess[AnimationTargetId]
 
-pub fn[W : Has_AnimationTransitions] get_animation_transitions_store(W) -> @core.ComponentStore[AnimationTransitions]
+pub fn[W : Has_AnimationTransitions] get_animation_transitions_store(W) -> @ecs.ComponentAccess[AnimationTransitions]
 
-pub fn[W : Has_AnimationWeights] get_animation_weights_store(W) -> @core.ComponentStore[AnimationWeights]
+pub fn[W : Has_AnimationWeights] get_animation_weights_store(W) -> @ecs.ComponentAccess[AnimationWeights]
 
 pub fn thread_animation_graphs(@ecs.World) -> Unit
 
@@ -372,32 +372,32 @@ pub type AnimationMask = UInt
 
 // Traits
 pub(open) trait Has_AnimatedBy {
-  get_animated_by_store(Self) -> @core.ComponentStore[AnimatedBy]
+  get_animated_by_store(Self) -> @ecs.ComponentAccess[AnimatedBy]
 }
 pub impl Has_AnimatedBy for @ecs.World
 
 pub(open) trait Has_AnimationGraphHandle {
-  get_animation_graph_handle_store(Self) -> @core.ComponentStore[AnimationGraphHandle]
+  get_animation_graph_handle_store(Self) -> @ecs.ComponentAccess[AnimationGraphHandle]
 }
 pub impl Has_AnimationGraphHandle for @ecs.World
 
 pub(open) trait Has_AnimationPlayer {
-  get_animation_player_store(Self) -> @core.ComponentStore[AnimationPlayer]
+  get_animation_player_store(Self) -> @ecs.ComponentAccess[AnimationPlayer]
 }
 pub impl Has_AnimationPlayer for @ecs.World
 
 pub(open) trait Has_AnimationTargetId {
-  get_animation_target_id_store(Self) -> @core.ComponentStore[AnimationTargetId]
+  get_animation_target_id_store(Self) -> @ecs.ComponentAccess[AnimationTargetId]
 }
 pub impl Has_AnimationTargetId for @ecs.World
 
 pub(open) trait Has_AnimationTransitions {
-  get_animation_transitions_store(Self) -> @core.ComponentStore[AnimationTransitions]
+  get_animation_transitions_store(Self) -> @ecs.ComponentAccess[AnimationTransitions]
 }
 pub impl Has_AnimationTransitions for @ecs.World
 
 pub(open) trait Has_AnimationWeights {
-  get_animation_weights_store(Self) -> @core.ComponentStore[AnimationWeights]
+  get_animation_weights_store(Self) -> @ecs.ComponentAccess[AnimationWeights]
 }
 pub impl Has_AnimationWeights for @ecs.World
 

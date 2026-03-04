@@ -15,8 +15,11 @@
 ///|
 fn drain_events(world : @ecs.World, tick : Int) -> Array[PointerEvent] {
   let events_res = get_picking_events_resource(world)
-  let events = events_res.get_ref_mut(tick).unwrap()
-  PickingEvents::drain(events)
+  guard events_res.get() is Some(events_value) else { return [] }
+  let events = Ref::new(events_value)
+  let out = PickingEvents::drain(events)
+  events_res.insert(events.val, tick)
+  out
 }
 
 ///|
@@ -162,8 +165,10 @@ test "picking: a11y focus action maps to hovered interaction" {
     @moon_accesskit.TreeId::root(),
     @moon_accesskit.NodeId::from_u64(packed.to_uint64()),
   )
-  let state = @a11y.get_a11y_state_resource(world).get_ref_mut(tick)
-  @a11y.A11yState::push_action(state.unwrap(), req)
+  let state_res = @a11y.get_a11y_state_resource(world)
+  let state = Ref::new(state_res.get().unwrap())
+  @a11y.A11yState::push_action(state, req)
+  state_res.insert(state.val, tick)
   picking_apply_a11y_actions_system(world)
   let interaction = @ui.get_interaction_store(world).get(entity)
   inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
@@ -226,9 +231,11 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     @moon_accesskit.TreeId::root(),
     node_id,
   )
-  let state = @a11y.get_a11y_state_resource(world).get_ref_mut(tick)
-  @a11y.A11yState::push_action(state.unwrap(), req_down)
-  @a11y.A11yState::push_action(state.unwrap(), req_right)
+  let state_res = @a11y.get_a11y_state_resource(world)
+  let state = Ref::new(state_res.get().unwrap())
+  @a11y.A11yState::push_action(state, req_down)
+  @a11y.A11yState::push_action(state, req_right)
+  state_res.insert(state.val, tick)
   picking_apply_a11y_actions_system(world)
   let scroll = @ui.get_scroll_position_store(world).get(entity)
   inspect(
@@ -266,8 +273,10 @@ test "picking: a11y set-value action updates UiText content" {
     node_id,
   )
   req.set_data(@moon_accesskit.ActionData::Value("Updated"))
-  let state = @a11y.get_a11y_state_resource(world).get_ref_mut(tick)
-  @a11y.A11yState::push_action(state.unwrap(), req)
+  let state_res = @a11y.get_a11y_state_resource(world)
+  let state = Ref::new(state_res.get().unwrap())
+  @a11y.A11yState::push_action(state, req)
+  state_res.insert(state.val, tick)
   picking_apply_a11y_actions_system(world)
   inspect(
     @text.text_get_content(text_handle).unwrap() == "Updated",

@@ -27,9 +27,12 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   // Make gravity visible in "pixel-ish" space.
   let tick = world.read_change_tick()
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
-  match cfg_res.get_ref_mut(tick) {
-    Some(r) =>
-      r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
+  match cfg_res.get() {
+    Some(current_cfg) => {
+      let cfg = Ref::new(current_cfg)
+      cfg.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
+      cfg_res.insert(cfg.val, tick)
+    }
     None => ()
   }
   let asset_server = @asset.AssetServer::new()
@@ -100,9 +103,9 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
 ///|
 fn physics2d_print_events(world : @ecs.World) -> Unit {
   let ev_res = @physics2d.get_physics2d_events_resource(world)
-  match ev_res.get_ref() {
-    Some(r) => {
-      for ev in r.val.collisions {
+  match ev_res.get() {
+    Some(events) => {
+      for ev in events.collisions {
         match ev {
           @physics2d.CollisionEvent2d::Started(a, b, sensor) =>
             println("Collision Started: \{a.id}, \{b.id}, sensor=\{sensor}")
@@ -110,7 +113,7 @@ fn physics2d_print_events(world : @ecs.World) -> Unit {
             println("Collision Stopped: \{a.id}, \{b.id}, sensor=\{sensor}")
         }
       }
-      for ev in r.val.contact_forces {
+      for ev in events.contact_forces {
         println(
           "Contact force: \{ev.entity1.id}, \{ev.entity2.id}, |F|=\{ev.total_force_magnitude}",
         )

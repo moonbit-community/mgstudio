@@ -24,24 +24,24 @@ pub let ecs_resources : Array[String] = []
 
 ///|
 pub(open) trait Has_Visibility {
-  get_visibility_store(self : Self) -> @core.ComponentStore[Visibility]
+  get_visibility_store(self : Self) -> @ecs.ComponentAccess[Visibility]
 }
 
 ///|
 pub(open) trait Has_ViewVisibility {
-  get_view_visibility_store(self : Self) -> @core.ComponentStore[ViewVisibility]
+  get_view_visibility_store(self : Self) -> @ecs.ComponentAccess[ViewVisibility]
 }
 
 ///|
 pub(open) trait Has_VisibilityRange {
-  get_visibility_range_store(self : Self) -> @core.ComponentStore[
+  get_visibility_range_store(self : Self) -> @ecs.ComponentAccess[
     VisibilityRange,
   ]
 }
 
 ///|
 pub(open) trait Has_InheritedVisibility {
-  get_inherited_visibility_store(self : Self) -> @core.ComponentStore[
+  get_inherited_visibility_store(self : Self) -> @ecs.ComponentAccess[
     InheritedVisibility,
   ]
 }
@@ -49,28 +49,28 @@ pub(open) trait Has_InheritedVisibility {
 ///|
 pub fn[W : Has_Visibility] get_visibility_store(
   world : W,
-) -> @core.ComponentStore[Visibility] {
+) -> @ecs.ComponentAccess[Visibility] {
   world.get_visibility_store()
 }
 
 ///|
 pub fn[W : Has_ViewVisibility] get_view_visibility_store(
   world : W,
-) -> @core.ComponentStore[ViewVisibility] {
+) -> @ecs.ComponentAccess[ViewVisibility] {
   world.get_view_visibility_store()
 }
 
 ///|
 pub fn[W : Has_VisibilityRange] get_visibility_range_store(
   world : W,
-) -> @core.ComponentStore[VisibilityRange] {
+) -> @ecs.ComponentAccess[VisibilityRange] {
   world.get_visibility_range_store()
 }
 
 ///|
 pub fn[W : Has_InheritedVisibility] get_inherited_visibility_store(
   world : W,
-) -> @core.ComponentStore[InheritedVisibility] {
+) -> @ecs.ComponentAccess[InheritedVisibility] {
   world.get_inherited_visibility_store()
 }
 
@@ -78,59 +78,27 @@ pub fn[W : Has_InheritedVisibility] get_inherited_visibility_store(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_visibility_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Visibility],
-] = {}
-
-///|
 pub impl Has_Visibility for @ecs.World with get_visibility_store(self) {
-  bridge_get_visibility_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_visibility)
 }
-
-///|
-let bridge_get_view_visibility_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ViewVisibility],
-] = {}
 
 ///|
 pub impl Has_ViewVisibility for @ecs.World with get_view_visibility_store(self) {
-  bridge_get_view_visibility_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_view_visibility)
 }
-
-///|
-let bridge_get_visibility_range_store_by_world : Map[
-  Int,
-  @core.ComponentStore[VisibilityRange],
-] = {}
 
 ///|
 pub impl Has_VisibilityRange for @ecs.World with get_visibility_range_store(
   self,
 ) {
-  bridge_get_visibility_range_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_visibility_range)
 }
-
-///|
-let bridge_get_inherited_visibility_store_by_world : Map[
-  Int,
-  @core.ComponentStore[InheritedVisibility],
-] = {}
 
 ///|
 pub impl Has_InheritedVisibility for @ecs.World with get_inherited_visibility_store(
   self,
 ) {
-  bridge_get_inherited_visibility_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_inherited_visibility)
 }
 
 ///|

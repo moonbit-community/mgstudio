@@ -60,9 +60,12 @@ const RAY_SWEEP_AMPLITUDE : Float = 220.0F
 fn physics2d_queries_setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
-  match cfg_res.get_ref_mut(tick) {
-    Some(r) =>
-      r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
+  match cfg_res.get() {
+    Some(current_cfg) => {
+      let cfg = Ref::new(current_cfg)
+      cfg.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
+      cfg_res.insert(cfg.val, tick)
+    }
     None => ()
   }
   let asset_server = @asset.AssetServer::new()
@@ -178,8 +181,7 @@ fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
   }
   query_state.val.accumulator = 0.0F
   let ctx_res = @physics2d.get_physics2d_context_resource(world)
-  guard ctx_res.get_ref() is Some(r) else { return }
-  let ctx = r.val
+  guard ctx_res.get() is Some(ctx) else { return }
   let hit = ctx.cast_ray_and_get_normal_entity(
     @math.Vec2::new(ray_x, RAY_ORIGIN_Y),
     @math.Vec2::new(0.0F, -1.0F),

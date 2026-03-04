@@ -702,7 +702,7 @@ pub struct UiCornerRadii {
   top_right : Float
   bottom_right : Float
   bottom_left : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiCornerRadii::new(
@@ -726,7 +726,7 @@ pub struct UiBorderRect {
   top : Float
   right : Float
   bottom : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn UiBorderRect::new(
@@ -1034,7 +1034,7 @@ pub fn Camera::target_scaling_factor(self : Camera) -> Float? {
 /// Stored inside `Projection` (mirrors Bevy's `Projection::Orthographic`).
 pub struct OrthographicProjection {
   scale : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn OrthographicProjection::new(scale : Float) -> OrthographicProjection {
@@ -1098,7 +1098,7 @@ pub(all) enum AlphaMode2d {
   Opaque
   Mask(Float)
   Blend
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ColorMaterialAsset::new(
@@ -4185,14 +4185,42 @@ fn RenderState::new() -> RenderState {
 }
 
 ///|
-fn render_state_ref(world : @ecs.World) -> Ref[RenderState]? {
-  get_render_state_resource(world).get_ref()
+let render_state_serde_next_id : Ref[Int] = Ref::new(1)
+
+///|
+let render_state_serde_values : Map[Int, RenderState] = {}
+
+///|
+pub impl ToJson for RenderState with to_json(self) {
+  let id = render_state_serde_next_id.val
+  render_state_serde_next_id.val = id + 1
+  render_state_serde_values.set(id, self)
+  id.to_json()
 }
 
 ///|
-fn render_state_ref_mut(world : @ecs.World) -> Ref[RenderState]? {
+pub impl @json.FromJson for RenderState with from_json(json, path) {
+  let id : Int = @json.from_json(json, path~)
+  render_state_serde_values.get(id).unwrap_or(RenderState::new())
+}
+
+///|
+fn render_state_ref(world : @ecs.World) -> RenderState? {
+  get_render_state_resource(world).get()
+}
+
+///|
+fn render_state_update(
+  world : @ecs.World,
+  update : (Ref[RenderState]) -> Unit,
+) -> Bool {
   let tick = world.read_change_tick()
-  get_render_state_resource(world).get_ref_mut(tick)
+  let res = get_render_state_resource(world)
+  guard res.get() is Some(state_value) else { return false }
+  let state = Ref::new(state_value)
+  update(state)
+  res.insert(state.val, tick)
+  true
 }
 
 ///|
@@ -4782,8 +4810,12 @@ pub fn render2d_create_render_target(
   let id = @window.host_gpu_create_render_target(width~, height~, nearest~)
   ensure_render_state_resource(world)
   let tick = world.read_change_tick()
-  let rs = get_render_state_resource(world).get_ref_mut(tick).unwrap()
-  rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
+  let res = get_render_state_resource(world)
+  if res.get() is Some(state_value) {
+    let rs = Ref::new(state_value)
+    rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
+    res.insert(rs.val, tick)
+  }
   @asset.Handle::new(id)
 }
 
@@ -4859,13 +4891,12 @@ pub fn Mesh2dBundle::spawn(
 
 ///|
 pub fn render2d_clear_overlay_sprites(world : @ecs.World) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_sprites.clear() })
-  |> ignore
+  render_state_update(world, fn(rs) { rs.val.extra_sprites.clear() }) |> ignore
 }
 
 ///|
 pub fn render2d_clear_overlay_sprite_texture_slices(world : @ecs.World) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) {
+  render_state_update(world, fn(rs) {
     rs.val.extra_sprite_texture_slices.clear()
   })
   |> ignore
@@ -4881,7 +4912,7 @@ pub fn render2d_push_sprite_uv(
   color : Color,
   layers : RenderLayers,
 ) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) {
+  render_state_update(world, fn(rs) {
     rs.val.extra_sprites.push(SpriteInstance::{
       entity: @core.Entity::placeholder(),
       transform,
@@ -4909,7 +4940,7 @@ pub fn render2d_push_sprite_uv_scissor(
   layers : RenderLayers,
   scissor : @math.Rect?,
 ) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) {
+  render_state_update(world, fn(rs) {
     rs.val.extra_sprites.push(SpriteInstance::{
       entity: @core.Entity::placeholder(),
       transform,
@@ -4945,7 +4976,7 @@ pub fn render2d_push_sprite_uv_scissor_batch(
   if sprites.length() == 0 {
     return
   }
-  render_state_ref_mut(world).map(fn(rs) {
+  render_state_update(world, fn(rs) {
     for sprite in sprites {
       rs.val.extra_sprites.push(SpriteInstance::{
         entity: @core.Entity::placeholder(),
@@ -4969,21 +5000,18 @@ pub fn render2d_push_sprite_uv_scissor_batch(
 
 ///|
 pub fn render2d_clear_overlay_ui_rects(world : @ecs.World) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_rects.clear() })
-  |> ignore
+  render_state_update(world, fn(rs) { rs.val.extra_ui_rects.clear() }) |> ignore
 }
 
 ///|
 pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) { rs.val.extra_ui_box_shadows.clear() })
+  render_state_update(world, fn(rs) { rs.val.extra_ui_box_shadows.clear() })
   |> ignore
 }
 
 ///|
 pub fn render2d_clear_overlay_ui_texture_slices(world : @ecs.World) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) {
-    rs.val.extra_ui_texture_slices.clear()
-  })
+  render_state_update(world, fn(rs) { rs.val.extra_ui_texture_slices.clear() })
   |> ignore
 }
 
@@ -5003,7 +5031,7 @@ pub fn render2d_push_ui_rect_uv_scissor(
   radius : UiCornerRadii,
   border : UiBorderRect,
 ) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) {
+  render_state_update(world, fn(rs) {
     rs.val.extra_ui_rects.push(UiRectInstance::{
       entity,
       transform,
@@ -5038,7 +5066,7 @@ pub fn render2d_push_ui_box_shadow_scissor(
   blur : Float,
   samples : Int,
 ) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) {
+  render_state_update(world, fn(rs) {
     rs.val.extra_ui_box_shadows.push(UiBoxShadowInstance::{
       entity,
       transform,
@@ -5072,7 +5100,7 @@ pub fn render2d_push_ui_texture_slice_scissor(
   repeat : @math.Vec4,
   atlas_rect : @math.Vec4,
 ) -> Unit {
-  render_state_ref_mut(world).map(fn(rs) {
+  render_state_update(world, fn(rs) {
     rs.val.extra_ui_texture_slices.push(UiTextureSliceInstance::{
       entity,
       transform,
@@ -5291,7 +5319,7 @@ fn render2d_camera_target_info_from_render_target(
 
 ///|
 fn render2d_target_component_changed(
-  target_store : @core.ComponentStore[RenderTarget],
+  target_store : @ecs.ComponentAccess[RenderTarget],
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
@@ -5365,7 +5393,7 @@ fn render2d_camera_viewport_size(camera : Camera) -> @math.IVec2? {
 
 ///|
 fn render2d_projection_changed(
-  projection_store : @core.ComponentStore[Projection],
+  projection_store : @ecs.ComponentAccess[Projection],
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
@@ -5381,7 +5409,7 @@ fn render2d_projection_changed(
 
 ///|
 fn render2d_camera_changed(
-  camera_store : @core.ComponentStore[Camera],
+  camera_store : @ecs.ComponentAccess[Camera],
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
@@ -5418,7 +5446,7 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
   let camera_store = get_camera_store(ecs_world)
   let projection_store = get_projection_store(ecs_world)
   let target_store = get_render_target_store(ecs_world)
-  let render_state = render_state_ref_value.val
+  let render_state = render_state_ref_value
   camera2d_store.for_each(fn(entity, _marker) {
     let target = match target_store.get(entity) {
       Some(value) => value
@@ -5542,7 +5570,7 @@ fn render2d_entity_visible_ecs(
 ///|
 pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
-  let render_state = render_state_ref_value.val
+  let render_state = render_state_ref_value
   let cameras : Array[@core.Entity] = []
   try! world
   .query1(ecs_key_camera2d)
@@ -5631,500 +5659,508 @@ fn render2d_sorted_camera_indices(
 
 ///|
 pub fn render_extract_system(world : @ecs.World) -> Unit {
-  guard render_state_ref_mut(world) is Some(rs) else { return }
-  rs.val.draw_enabled = true
-  rs.val.primary_camera = @core.Entity::placeholder()
-  rs.val.sprites.clear()
-  rs.val.cameras.clear()
-  rs.val.meshes.clear()
-  let ecs_world = world
-  let camera2d_store = get_camera2d_store(ecs_world)
-  let camera_store = get_camera_store(ecs_world)
-  let projection_store = get_projection_store(ecs_world)
-  let target_store = get_render_target_store(ecs_world)
-  let layers_store = get_render_layers_store(ecs_world)
-  let bloom2d_store = get_bloom2d_store(ecs_world)
-  let view_visibility_store = @visibility.get_view_visibility_store(ecs_world)
-  let transform_store = @math.get_transform_store(ecs_world)
-  let global_store = @transform.get_global_transform_store(ecs_world)
-  camera2d_store.for_each(fn(entity, _marker) {
-    let target = match target_store.get(entity) {
-      Some(t) => t
-      None => RenderTarget::Screen
-    }
-    let layers = match layers_store.get(entity) {
-      Some(v) => v
-      None => RenderLayers::default()
-    }
-    let bloom2d = bloom2d_store.get(entity)
-    let camera = match camera_store.get(entity) {
-      Some(v) => v
-      None => Camera::default()
-    }
-    let projection = match projection_store.get(entity) {
-      Some(Orthographic(p)) => p
-      None => OrthographicProjection::default_2d()
-    }
-    let transform = match global_store.get(entity) {
-      Some(gt) => gt.to_transform_approx()
-      None =>
-        match transform_store.get(entity) {
-          Some(t) => t
-          None => @math.Transform::identity()
+  render_state_update(world, fn(rs) {
+    rs.val.draw_enabled = true
+    rs.val.primary_camera = @core.Entity::placeholder()
+    rs.val.sprites.clear()
+    rs.val.cameras.clear()
+    rs.val.meshes.clear()
+    let ecs_world = world
+    let camera2d_store = get_camera2d_store(ecs_world)
+    let camera_store = get_camera_store(ecs_world)
+    let projection_store = get_projection_store(ecs_world)
+    let target_store = get_render_target_store(ecs_world)
+    let layers_store = get_render_layers_store(ecs_world)
+    let bloom2d_store = get_bloom2d_store(ecs_world)
+    let view_visibility_store = @visibility.get_view_visibility_store(ecs_world)
+    let transform_store = @math.get_transform_store(ecs_world)
+    let global_store = @transform.get_global_transform_store(ecs_world)
+    camera2d_store.for_each(fn(entity, _marker) {
+      let target = match target_store.get(entity) {
+        Some(t) => t
+        None => RenderTarget::Screen
+      }
+      let layers = match layers_store.get(entity) {
+        Some(v) => v
+        None => RenderLayers::default()
+      }
+      let bloom2d = bloom2d_store.get(entity)
+      let camera = match camera_store.get(entity) {
+        Some(v) => v
+        None => Camera::default()
+      }
+      let projection = match projection_store.get(entity) {
+        Some(Orthographic(p)) => p
+        None => OrthographicProjection::default_2d()
+      }
+      let transform = match global_store.get(entity) {
+        Some(gt) => gt.to_transform_approx()
+        None =>
+          match transform_store.get(entity) {
+            Some(t) => t
+            None => @math.Transform::identity()
+          }
+      }
+      let mut computed = CameraComputed::{
+        target_size: @math.IVec2::new(0, 0),
+        scale_factor: 1.0F,
+      }
+      if camera.computed.target_info is Some(target_info) {
+        let scale_factor = if target_info.scale_factor <= 0.0F {
+          1.0F
+        } else {
+          target_info.scale_factor
         }
-    }
-    let mut computed = CameraComputed::{
-      target_size: @math.IVec2::new(0, 0),
-      scale_factor: 1.0F,
-    }
-    if camera.computed.target_info is Some(target_info) {
-      let scale_factor = if target_info.scale_factor <= 0.0F {
-        1.0F
-      } else {
-        target_info.scale_factor
+        computed = CameraComputed::{
+          target_size: target_info.physical_size,
+          scale_factor,
+        }
+      } else if render2d_target_info(rs.val, target) is Some(info) {
+        let scale_factor = if info.scale_factor <= 0.0F {
+          1.0F
+        } else {
+          info.scale_factor
+        }
+        computed = CameraComputed::{ target_size: info.size, scale_factor }
       }
-      computed = CameraComputed::{
-        target_size: target_info.physical_size,
-        scale_factor,
-      }
-    } else if render2d_target_info(rs.val, target) is Some(info) {
-      let scale_factor = if info.scale_factor <= 0.0F {
-        1.0F
-      } else {
-        info.scale_factor
-      }
-      computed = CameraComputed::{ target_size: info.size, scale_factor }
-    }
-    rs.val.cameras.push(CameraInstance::{
-      entity,
-      camera,
-      projection,
-      transform,
-      target,
-      layers,
-      bloom2d,
-      computed,
+      rs.val.cameras.push(CameraInstance::{
+        entity,
+        camera,
+        projection,
+        transform,
+        target,
+        layers,
+        bloom2d,
+        computed,
+      })
     })
-  })
-  if rs.val.cameras.length() > 0 {
-    let order = render2d_sorted_camera_indices(rs.val.cameras)
-    if order.length() > 0 {
-      rs.val.primary_camera = rs.val.cameras[order[0]].entity
+    if rs.val.cameras.length() > 0 {
+      let order = render2d_sorted_camera_indices(rs.val.cameras)
+      if order.length() > 0 {
+        rs.val.primary_camera = rs.val.cameras[order[0]].entity
+      }
     }
-  }
-  render2d_prune_bloom2d_auto_targets(rs.val)
-  let sprite_store = get_sprite_store(ecs_world)
-  let anchor_store = get_anchor_store(ecs_world)
-  let scissor_store = get_scissor_rect_store(ecs_world)
-  sprite_store.for_each(fn(entity, sprite) {
-    if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
-      return
-    }
-    let anchor = match anchor_store.get(entity) {
-      Some(a) => a
-      None => Anchor::default()
-    }
-    let layers = match layers_store.get(entity) {
-      Some(v) => v
-      None => RenderLayers::default()
-    }
-    let transform = match global_store.get(entity) {
-      Some(gt) => gt.to_transform_approx()
-      None =>
-        match transform_store.get(entity) {
-          Some(t) => t
-          None => @math.Transform::identity()
-        }
-    }
-    let mut uv_min = default_uv_min()
-    let mut uv_max = default_uv_max()
-    let mut region_size = @math.Vec2::new(1.0F, 1.0F)
-    if sprite_uv_from_sprite(sprite) is Some(info) {
-      uv_min = info.uv_min
-      uv_max = info.uv_max
-      region_size = info.region_size
-    }
-    let draw_scale = sprite_draw_scale(
-      sprite,
-      @math.Vec2::new(transform.scale.x, transform.scale.y),
-      region_size,
-    )
-    let scissor = match scissor_store.get(entity) {
-      Some(v) => Some(v.rect)
-      None => None
-    }
-    let has_custom_size = match sprite.custom_size {
-      Some(_) => true
-      None => false
-    }
-    let (
-      uv_draw_min,
-      uv_draw_max,
-      draw_scale_for_host,
-      local_offset,
-      needs_repeat_sampler,
-    ) = apply_sprite_image_mode(
-      uv_min,
-      uv_max,
-      draw_scale,
-      region_size,
-      sprite.image_mode,
-      has_custom_size,
-    )
-    let anchor_offset = sprite_anchor_offset(
-      anchor,
-      transform.rotation_z(),
-      draw_scale_for_host,
-      local_offset,
-    )
-    if needs_repeat_sampler {
-      @asset.asset_set_texture_sampler(
-        sprite.image,
-        @asset.ImageSampler::LinearRepeat,
-      )
-    }
-    if sprite_image_mode_uses_slices(sprite.image_mode) {
-      let target_size = @math.Vec2::new(
-        sprite_abs_float(draw_scale.x),
-        sprite_abs_float(draw_scale.y),
-      )
-      let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+    render2d_prune_bloom2d_auto_targets(rs.val)
+    let sprite_store = get_sprite_store(ecs_world)
+    let anchor_store = get_anchor_store(ecs_world)
+    let scissor_store = get_scissor_rect_store(ecs_world)
+    sprite_store.for_each(fn(entity, sprite) {
+      if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
+        return
+      }
+      let anchor = match anchor_store.get(entity) {
+        Some(a) => a
+        None => Anchor::default()
+      }
+      let layers = match layers_store.get(entity) {
+        Some(v) => v
+        None => RenderLayers::default()
+      }
+      let transform = match global_store.get(entity) {
+        Some(gt) => gt.to_transform_approx()
+        None =>
+          match transform_store.get(entity) {
+            Some(t) => t
+            None => @math.Transform::identity()
+          }
+      }
+      let mut uv_min = default_uv_min()
+      let mut uv_max = default_uv_max()
+      let mut region_size = @math.Vec2::new(1.0F, 1.0F)
+      if sprite_uv_from_sprite(sprite) is Some(info) {
+        uv_min = info.uv_min
+        uv_max = info.uv_max
+        region_size = info.region_size
+      }
+      let draw_scale = sprite_draw_scale(
+        sprite,
+        @math.Vec2::new(transform.scale.x, transform.scale.y),
         region_size,
-        target_size,
-        sprite.image_mode,
       )
-      rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
-        entity,
-        transform,
-        anchor_offset,
-        draw_scale,
-        color: sprite.color,
-        texture: sprite.image,
-        layers,
-        scissor,
-        texture_slices,
-        target_slices,
-        repeat,
-        atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
-      })
-    } else {
-      rs.val.sprites.push(SpriteInstance::{
-        entity,
-        transform,
-        anchor_offset,
-        draw_scale: draw_scale_for_host,
-        color: sprite.color,
-        texture: sprite.image,
-        layers,
-        uv_min: uv_draw_min,
-        uv_max: uv_draw_max,
-        scissor,
-      })
-    }
-  })
-  let mesh_store = get_mesh2d_store(ecs_world)
-  let gpu_mesh_store = get_gpu_mesh2d_store(ecs_world)
-  let color_material_store = get_color_material_store(ecs_world)
-  let material_store = get_mesh_material2d_store(ecs_world)
-  let wireframe_store = get_wireframe2d_store(ecs_world)
-  let no_wireframe_store = get_no_wireframe2d_store(ecs_world)
-  let wireframe_color_store = get_wireframe2d_color_store(ecs_world)
-  let wireframe_config = if get_wireframe2d_config_resource(ecs_world).get_ref()
-    is Some(config_ref) {
-    Some(config_ref.val)
-  } else {
-    None
-  }
-  mesh_store.for_each(fn(entity, mesh2d) {
-    if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
-      return
-    }
-    guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
-    let mat = if material_store.get(entity) is Some(material) {
-      material.to_color_material()
-    } else {
-      match color_material_store.get(entity) {
-        Some(color_material) => color_material
-        None => return
+      let scissor = match scissor_store.get(entity) {
+        Some(v) => Some(v.rect)
+        None => None
       }
-    }
-    let layers = match layers_store.get(entity) {
-      Some(v) => v
-      None => RenderLayers::default()
-    }
-    let transform = match global_store.get(entity) {
-      Some(gt) => gt.to_transform_approx()
-      None =>
-        match transform_store.get(entity) {
-          Some(t) => t
-          None => @math.Transform::identity()
-        }
-    }
-    rs.val.meshes.push(MeshInstance::{
-      entity,
-      mesh_id: gpu.mesh_id,
-      transform,
-      color: mat.color(),
-      alpha_mode: mat.alpha_mode(),
-      texture: mat.texture(),
-      uv_offset: mat.uv_offset(),
-      uv_scale: mat.uv_scale(),
-      layers,
+      let has_custom_size = match sprite.custom_size {
+        Some(_) => true
+        None => false
+      }
+      let (
+        uv_draw_min,
+        uv_draw_max,
+        draw_scale_for_host,
+        local_offset,
+        needs_repeat_sampler,
+      ) = apply_sprite_image_mode(
+        uv_min,
+        uv_max,
+        draw_scale,
+        region_size,
+        sprite.image_mode,
+        has_custom_size,
+      )
+      let anchor_offset = sprite_anchor_offset(
+        anchor,
+        transform.rotation_z(),
+        draw_scale_for_host,
+        local_offset,
+      )
+      if needs_repeat_sampler {
+        @asset.asset_set_texture_sampler(
+          sprite.image,
+          @asset.ImageSampler::LinearRepeat,
+        )
+      }
+      if sprite_image_mode_uses_slices(sprite.image_mode) {
+        let target_size = @math.Vec2::new(
+          sprite_abs_float(draw_scale.x),
+          sprite_abs_float(draw_scale.y),
+        )
+        let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+          region_size,
+          target_size,
+          sprite.image_mode,
+        )
+        rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
+          entity,
+          transform,
+          anchor_offset,
+          draw_scale,
+          color: sprite.color,
+          texture: sprite.image,
+          layers,
+          scissor,
+          texture_slices,
+          target_slices,
+          repeat,
+          atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+        })
+      } else {
+        rs.val.sprites.push(SpriteInstance::{
+          entity,
+          transform,
+          anchor_offset,
+          draw_scale: draw_scale_for_host,
+          color: sprite.color,
+          texture: sprite.image,
+          layers,
+          uv_min: uv_draw_min,
+          uv_max: uv_draw_max,
+          scissor,
+        })
+      }
     })
+    let mesh_store = get_mesh2d_store(ecs_world)
+    let gpu_mesh_store = get_gpu_mesh2d_store(ecs_world)
+    let color_material_store = get_color_material_store(ecs_world)
+    let material_store = get_mesh_material2d_store(ecs_world)
+    let wireframe_store = get_wireframe2d_store(ecs_world)
+    let no_wireframe_store = get_no_wireframe2d_store(ecs_world)
+    let wireframe_color_store = get_wireframe2d_color_store(ecs_world)
+    let wireframe_config = if get_wireframe2d_config_resource(ecs_world).get()
+      is Some(config) {
+      Some(config)
+    } else {
+      None
+    }
+    mesh_store.for_each(fn(entity, mesh2d) {
+      if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
+        return
+      }
+      guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
+      let mat = if material_store.get(entity) is Some(material) {
+        material.to_color_material()
+      } else {
+        match color_material_store.get(entity) {
+          Some(color_material) => color_material
+          None => return
+        }
+      }
+      let layers = match layers_store.get(entity) {
+        Some(v) => v
+        None => RenderLayers::default()
+      }
+      let transform = match global_store.get(entity) {
+        Some(gt) => gt.to_transform_approx()
+        None =>
+          match transform_store.get(entity) {
+            Some(t) => t
+            None => @math.Transform::identity()
+          }
+      }
+      rs.val.meshes.push(MeshInstance::{
+        entity,
+        mesh_id: gpu.mesh_id,
+        transform,
+        color: mat.color(),
+        alpha_mode: mat.alpha_mode(),
+        texture: mat.texture(),
+        uv_offset: mat.uv_offset(),
+        uv_scale: mat.uv_scale(),
+        layers,
+      })
 
-    if !render2d_mesh_should_draw_wireframe(
-        wireframe_store.get(entity) is Some(_),
-        no_wireframe_store.get(entity) is Some(_),
+      if !render2d_mesh_should_draw_wireframe(
+          wireframe_store.get(entity) is Some(_),
+          no_wireframe_store.get(entity) is Some(_),
+          wireframe_config,
+        ) {
+        return
+      }
+      guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else {
+        return
+      }
+      let wireframe_color = render2d_mesh_wireframe_color(
+        wireframe_color_store.get(entity),
         wireframe_config,
-      ) {
-      return
-    }
-    guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else { return }
-    let wireframe_color = render2d_mesh_wireframe_color(
-      wireframe_color_store.get(entity),
-      wireframe_config,
-    )
-    match mesh_asset.geometry {
-      @mesh.MeshGeometry::Geometry2d(geometry) =>
-        Gizmos::new()
-        .with_layers(layers)
-        .mesh_wireframe_2d(geometry, transform, wireframe_color)
-      _ => ()
-    }
+      )
+      match mesh_asset.geometry {
+        @mesh.MeshGeometry::Geometry2d(geometry) =>
+          Gizmos::new()
+          .with_layers(layers)
+          .mesh_wireframe_2d(geometry, transform, wireframe_color)
+        _ => ()
+      }
+    })
   })
+  |> ignore
 }
 
 ///|
 pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
-  guard render_state_ref_mut(world) is Some(rs) else { return }
-  rs.val.draw_enabled = true
-  rs.val.primary_camera = @core.Entity::placeholder()
-  rs.val.sprites.clear()
-  rs.val.cameras.clear()
-  rs.val.meshes.clear()
-  // ECS camera components.
-  try! world
-  .query1(ecs_key_camera2d)
-  .view(fn(entity, _camera2d) {
-    let target = (try! world.get(entity, ecs_key_render_target)).unwrap_or(
-      RenderTarget::Screen,
-    )
-    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
-      RenderLayers::default(),
-    )
-    let bloom2d = try! world.get(entity, ecs_key_bloom2d)
-    let camera = (try! world.get(entity, ecs_key_camera)).unwrap_or(
-      Camera::default(),
-    )
-    let projection = match (try! world.get(entity, ecs_key_projection)) {
-      Some(Orthographic(p)) => p
-      None => OrthographicProjection::default_2d()
-    }
-    let transform = render2d_resolve_transform_ecs(world, entity)
-    let mut computed = CameraComputed::{
-      target_size: @math.IVec2::new(0, 0),
-      scale_factor: 1.0F,
-    }
-    if camera.computed.target_info is Some(target_info) {
-      let scale_factor = if target_info.scale_factor <= 0.0F {
-        1.0F
-      } else {
-        target_info.scale_factor
+  render_state_update(world, fn(rs) {
+    rs.val.draw_enabled = true
+    rs.val.primary_camera = @core.Entity::placeholder()
+    rs.val.sprites.clear()
+    rs.val.cameras.clear()
+    rs.val.meshes.clear()
+    // ECS camera components.
+    try! world
+    .query1(ecs_key_camera2d)
+    .view(fn(entity, _camera2d) {
+      let target = (try! world.get(entity, ecs_key_render_target)).unwrap_or(
+        RenderTarget::Screen,
+      )
+      let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+        RenderLayers::default(),
+      )
+      let bloom2d = try! world.get(entity, ecs_key_bloom2d)
+      let camera = (try! world.get(entity, ecs_key_camera)).unwrap_or(
+        Camera::default(),
+      )
+      let projection = match (try! world.get(entity, ecs_key_projection)) {
+        Some(Orthographic(p)) => p
+        None => OrthographicProjection::default_2d()
       }
-      computed = CameraComputed::{
-        target_size: target_info.physical_size,
-        scale_factor,
+      let transform = render2d_resolve_transform_ecs(world, entity)
+      let mut computed = CameraComputed::{
+        target_size: @math.IVec2::new(0, 0),
+        scale_factor: 1.0F,
       }
-    } else if render2d_target_info(rs.val, target) is Some(info) {
-      let scale_factor = if info.scale_factor <= 0.0F {
-        1.0F
-      } else {
-        info.scale_factor
+      if camera.computed.target_info is Some(target_info) {
+        let scale_factor = if target_info.scale_factor <= 0.0F {
+          1.0F
+        } else {
+          target_info.scale_factor
+        }
+        computed = CameraComputed::{
+          target_size: target_info.physical_size,
+          scale_factor,
+        }
+      } else if render2d_target_info(rs.val, target) is Some(info) {
+        let scale_factor = if info.scale_factor <= 0.0F {
+          1.0F
+        } else {
+          info.scale_factor
+        }
+        computed = CameraComputed::{ target_size: info.size, scale_factor }
       }
-      computed = CameraComputed::{ target_size: info.size, scale_factor }
-    }
-    rs.val.cameras.push(CameraInstance::{
-      entity,
-      camera,
-      projection,
-      transform,
-      target,
-      layers,
-      bloom2d,
-      computed,
+      rs.val.cameras.push(CameraInstance::{
+        entity,
+        camera,
+        projection,
+        transform,
+        target,
+        layers,
+        bloom2d,
+        computed,
+      })
     })
-  })
-  if rs.val.cameras.length() > 0 {
-    let order = render2d_sorted_camera_indices(rs.val.cameras)
-    if order.length() > 0 {
-      rs.val.primary_camera = rs.val.cameras[order[0]].entity
+    if rs.val.cameras.length() > 0 {
+      let order = render2d_sorted_camera_indices(rs.val.cameras)
+      if order.length() > 0 {
+        rs.val.primary_camera = rs.val.cameras[order[0]].entity
+      }
     }
-  }
-  render2d_prune_bloom2d_auto_targets(rs.val)
+    render2d_prune_bloom2d_auto_targets(rs.val)
 
-  // ECS sprite components.
-  try! world
-  .query1(ecs_key_sprite)
-  .view(fn(entity, sprite) {
-    if !render2d_entity_visible_ecs(world, entity) {
-      return
-    }
-    let anchor = (try! world.get(entity, ecs_key_anchor)).unwrap_or(
-      Anchor::default(),
-    )
-    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
-      RenderLayers::default(),
-    )
-    let transform = render2d_resolve_transform_ecs(world, entity)
-    let mut uv_min = default_uv_min()
-    let mut uv_max = default_uv_max()
-    let mut region_size = @math.Vec2::new(1.0F, 1.0F)
-    if sprite_uv_from_sprite(sprite) is Some(info) {
-      uv_min = info.uv_min
-      uv_max = info.uv_max
-      region_size = info.region_size
-    }
-    let draw_scale = sprite_draw_scale(
-      sprite,
-      @math.Vec2::new(transform.scale.x, transform.scale.y),
-      region_size,
-    )
-    let scissor = match (try! world.get(entity, ecs_key_scissor_rect)) {
-      Some(v) => Some(v.rect)
-      None => None
-    }
-    let has_custom_size = match sprite.custom_size {
-      Some(_) => true
-      None => false
-    }
-    let (
-      uv_draw_min,
-      uv_draw_max,
-      draw_scale_for_host,
-      local_offset,
-      needs_repeat_sampler,
-    ) = apply_sprite_image_mode(
-      uv_min,
-      uv_max,
-      draw_scale,
-      region_size,
-      sprite.image_mode,
-      has_custom_size,
-    )
-    let anchor_offset = sprite_anchor_offset(
-      anchor,
-      transform.rotation_z(),
-      draw_scale_for_host,
-      local_offset,
-    )
-    if needs_repeat_sampler {
-      @asset.asset_set_texture_sampler(
-        sprite.image,
-        @asset.ImageSampler::LinearRepeat,
+    // ECS sprite components.
+    try! world
+    .query1(ecs_key_sprite)
+    .view(fn(entity, sprite) {
+      if !render2d_entity_visible_ecs(world, entity) {
+        return
+      }
+      let anchor = (try! world.get(entity, ecs_key_anchor)).unwrap_or(
+        Anchor::default(),
       )
-    }
-    if sprite_image_mode_uses_slices(sprite.image_mode) {
-      let target_size = @math.Vec2::new(
-        sprite_abs_float(draw_scale.x),
-        sprite_abs_float(draw_scale.y),
+      let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+        RenderLayers::default(),
       )
-      let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+      let transform = render2d_resolve_transform_ecs(world, entity)
+      let mut uv_min = default_uv_min()
+      let mut uv_max = default_uv_max()
+      let mut region_size = @math.Vec2::new(1.0F, 1.0F)
+      if sprite_uv_from_sprite(sprite) is Some(info) {
+        uv_min = info.uv_min
+        uv_max = info.uv_max
+        region_size = info.region_size
+      }
+      let draw_scale = sprite_draw_scale(
+        sprite,
+        @math.Vec2::new(transform.scale.x, transform.scale.y),
         region_size,
-        target_size,
-        sprite.image_mode,
       )
-      rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
-        entity,
-        transform,
-        anchor_offset,
-        draw_scale,
-        color: sprite.color,
-        texture: sprite.image,
-        layers,
-        scissor,
-        texture_slices,
-        target_slices,
-        repeat,
-        atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
-      })
-    } else {
-      rs.val.sprites.push(SpriteInstance::{
-        entity,
-        transform,
-        anchor_offset,
-        draw_scale: draw_scale_for_host,
-        color: sprite.color,
-        texture: sprite.image,
-        layers,
-        uv_min: uv_draw_min,
-        uv_max: uv_draw_max,
-        scissor,
-      })
-    }
-  })
-
-  let wireframe_config = if get_wireframe2d_config_resource(world).get_ref()
-    is Some(config_ref) {
-    Some(config_ref.val)
-  } else {
-    None
-  }
-
-  // ECS mesh components.
-  try! world
-  .query1(ecs_key_mesh2d)
-  .view(fn(entity, mesh2d) {
-    if !render2d_entity_visible_ecs(world, entity) {
-      return
-    }
-    guard (try! world.get(entity, ecs_key_gpu_mesh2d)) is Some(gpu) else {
-      return
-    }
-    let mat = if (try! world.get(entity, ecs_key_mesh_material2d))
-      is Some(material) {
-      material.to_color_material()
-    } else {
-      match (try! world.get(entity, ecs_key_color_material)) {
-        Some(color_material) => color_material
-        None => return
+      let scissor = match (try! world.get(entity, ecs_key_scissor_rect)) {
+        Some(v) => Some(v.rect)
+        None => None
       }
-    }
-    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
-      RenderLayers::default(),
-    )
-    let transform = render2d_resolve_transform_ecs(world, entity)
-    rs.val.meshes.push(MeshInstance::{
-      entity,
-      mesh_id: gpu.mesh_id,
-      transform,
-      color: mat.color(),
-      alpha_mode: mat.alpha_mode(),
-      texture: mat.texture(),
-      uv_offset: mat.uv_offset(),
-      uv_scale: mat.uv_scale(),
-      layers,
+      let has_custom_size = match sprite.custom_size {
+        Some(_) => true
+        None => false
+      }
+      let (
+        uv_draw_min,
+        uv_draw_max,
+        draw_scale_for_host,
+        local_offset,
+        needs_repeat_sampler,
+      ) = apply_sprite_image_mode(
+        uv_min,
+        uv_max,
+        draw_scale,
+        region_size,
+        sprite.image_mode,
+        has_custom_size,
+      )
+      let anchor_offset = sprite_anchor_offset(
+        anchor,
+        transform.rotation_z(),
+        draw_scale_for_host,
+        local_offset,
+      )
+      if needs_repeat_sampler {
+        @asset.asset_set_texture_sampler(
+          sprite.image,
+          @asset.ImageSampler::LinearRepeat,
+        )
+      }
+      if sprite_image_mode_uses_slices(sprite.image_mode) {
+        let target_size = @math.Vec2::new(
+          sprite_abs_float(draw_scale.x),
+          sprite_abs_float(draw_scale.y),
+        )
+        let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+          region_size,
+          target_size,
+          sprite.image_mode,
+        )
+        rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
+          entity,
+          transform,
+          anchor_offset,
+          draw_scale,
+          color: sprite.color,
+          texture: sprite.image,
+          layers,
+          scissor,
+          texture_slices,
+          target_slices,
+          repeat,
+          atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+        })
+      } else {
+        rs.val.sprites.push(SpriteInstance::{
+          entity,
+          transform,
+          anchor_offset,
+          draw_scale: draw_scale_for_host,
+          color: sprite.color,
+          texture: sprite.image,
+          layers,
+          uv_min: uv_draw_min,
+          uv_max: uv_draw_max,
+          scissor,
+        })
+      }
     })
 
-    if !render2d_mesh_should_draw_wireframe(
-        (try! world.get(entity, ecs_key_wireframe2d)) is Some(_),
-        (try! world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
+    let wireframe_config = if get_wireframe2d_config_resource(world).get()
+      is Some(config) {
+      Some(config)
+    } else {
+      None
+    }
+
+    // ECS mesh components.
+    try! world
+    .query1(ecs_key_mesh2d)
+    .view(fn(entity, mesh2d) {
+      if !render2d_entity_visible_ecs(world, entity) {
+        return
+      }
+      guard (try! world.get(entity, ecs_key_gpu_mesh2d)) is Some(gpu) else {
+        return
+      }
+      let mat = if (try! world.get(entity, ecs_key_mesh_material2d))
+        is Some(material) {
+        material.to_color_material()
+      } else {
+        match (try! world.get(entity, ecs_key_color_material)) {
+          Some(color_material) => color_material
+          None => return
+        }
+      }
+      let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+        RenderLayers::default(),
+      )
+      let transform = render2d_resolve_transform_ecs(world, entity)
+      rs.val.meshes.push(MeshInstance::{
+        entity,
+        mesh_id: gpu.mesh_id,
+        transform,
+        color: mat.color(),
+        alpha_mode: mat.alpha_mode(),
+        texture: mat.texture(),
+        uv_offset: mat.uv_offset(),
+        uv_scale: mat.uv_scale(),
+        layers,
+      })
+
+      if !render2d_mesh_should_draw_wireframe(
+          (try! world.get(entity, ecs_key_wireframe2d)) is Some(_),
+          (try! world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
+          wireframe_config,
+        ) {
+        return
+      }
+      guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else {
+        return
+      }
+      let wireframe_color = render2d_mesh_wireframe_color(
+        try! world.get(entity, ecs_key_wireframe2d_color),
         wireframe_config,
-      ) {
-      return
-    }
-    guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else { return }
-    let wireframe_color = render2d_mesh_wireframe_color(
-      try! world.get(entity, ecs_key_wireframe2d_color),
-      wireframe_config,
-    )
-    match mesh_asset.geometry {
-      @mesh.MeshGeometry::Geometry2d(geometry) =>
-        Gizmos::new()
-        .with_layers(layers)
-        .mesh_wireframe_2d(geometry, transform, wireframe_color)
-      _ => ()
-    }
+      )
+      match mesh_asset.geometry {
+        @mesh.MeshGeometry::Geometry2d(geometry) =>
+          Gizmos::new()
+          .with_layers(layers)
+          .mesh_wireframe_2d(geometry, transform, wireframe_color)
+        _ => ()
+      }
+    })
   })
+  |> ignore
 }
 
 ///|
@@ -6654,483 +6690,513 @@ test "render2d: camera viewport scales with dpi resize factor" {
 
 ///|
 pub fn render_execute_system(world : @ecs.World) -> Unit {
-  guard render_state_ref_mut(world) is Some(rs) else { return }
-  if !rs.val.draw_enabled {
-    return
-  }
-  rs.val.draw_enabled = false
-  gizmos_prepare()
-  let cameras = rs.val.cameras
-  if cameras.length() == 0 {
-    gizmos_clear()
-    rs.val.extra_sprites.clear()
-    rs.val.extra_sprite_texture_slices.clear()
-    rs.val.extra_ui_rects.clear()
-    rs.val.extra_ui_box_shadows.clear()
-    rs.val.extra_ui_texture_slices.clear()
-    return
-  }
-  let sprites = rs.val.sprites
-  let extra_sprites = rs.val.extra_sprites
-  let extra_sprite_texture_slices = rs.val.extra_sprite_texture_slices
-  let extra_ui_rects = rs.val.extra_ui_rects
-  let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
-  let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
-  let meshes = rs.val.meshes
-  fn int_from_f32_floor_nonneg(x : Float) -> Int {
-    if x <= 0.0F {
-      0
-    } else {
-      x.to_int()
+  render_state_update(world, fn(rs) {
+    if !rs.val.draw_enabled {
+      return
     }
-  }
+    rs.val.draw_enabled = false
+    gizmos_prepare()
+    let cameras = rs.val.cameras
+    if cameras.length() == 0 {
+      gizmos_clear()
+      rs.val.extra_sprites.clear()
+      rs.val.extra_sprite_texture_slices.clear()
+      rs.val.extra_ui_rects.clear()
+      rs.val.extra_ui_box_shadows.clear()
+      rs.val.extra_ui_texture_slices.clear()
+      return
+    }
+    let sprites = rs.val.sprites
+    let extra_sprites = rs.val.extra_sprites
+    let extra_sprite_texture_slices = rs.val.extra_sprite_texture_slices
+    let extra_ui_rects = rs.val.extra_ui_rects
+    let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
+    let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
+    let meshes = rs.val.meshes
+    fn int_from_f32_floor_nonneg(x : Float) -> Int {
+      if x <= 0.0F {
+        0
+      } else {
+        x.to_int()
+      }
+    }
 
-  fn physical_scissor_for_camera(
-    rect : @math.Rect,
-    viewport_x : Int,
-    viewport_y : Int,
-    viewport_w : Int,
-    viewport_h : Int,
-    scale_factor : Float,
-  ) -> (Int, Int, Int, Int) {
-    let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
-    let min_x = int_from_f32_floor_nonneg(rect.min.x * sf)
-    let min_y = int_from_f32_floor_nonneg(rect.min.y * sf)
-    // Match Bevy-style clipping behavior more closely: clamp the max edge with
-    // floor semantics to avoid leaking a trailing row/column into adjacent UI.
-    let mut max_x = int_from_f32_floor_nonneg(rect.max.x * sf)
-    let mut max_y = int_from_f32_floor_nonneg(rect.max.y * sf)
-    if max_x < min_x {
-      max_x = min_x
+    fn physical_scissor_for_camera(
+      rect : @math.Rect,
+      viewport_x : Int,
+      viewport_y : Int,
+      viewport_w : Int,
+      viewport_h : Int,
+      scale_factor : Float,
+    ) -> (Int, Int, Int, Int) {
+      let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+      let min_x = int_from_f32_floor_nonneg(rect.min.x * sf)
+      let min_y = int_from_f32_floor_nonneg(rect.min.y * sf)
+      // Match Bevy-style clipping behavior more closely: clamp the max edge with
+      // floor semantics to avoid leaking a trailing row/column into adjacent UI.
+      let mut max_x = int_from_f32_floor_nonneg(rect.max.x * sf)
+      let mut max_y = int_from_f32_floor_nonneg(rect.max.y * sf)
+      if max_x < min_x {
+        max_x = min_x
+      }
+      if max_y < min_y {
+        max_y = min_y
+      }
+      let mut x = viewport_x + min_x
+      let mut y = viewport_y + min_y
+      let mut w = max_x - min_x
+      let mut h = max_y - min_y
+      // Clamp to the camera viewport in physical pixels.
+      if x < viewport_x {
+        let dx = viewport_x - x
+        x = viewport_x
+        w = w - dx
+      }
+      if y < viewport_y {
+        let dy = viewport_y - y
+        y = viewport_y
+        h = h - dy
+      }
+      let max_w = viewport_w - (x - viewport_x)
+      let max_h = viewport_h - (y - viewport_y)
+      if w > max_w {
+        w = max_w
+      }
+      if h > max_h {
+        h = max_h
+      }
+      if w < 0 {
+        w = 0
+      }
+      if h < 0 {
+        h = 0
+      }
+      (x, y, w, h)
     }
-    if max_y < min_y {
-      max_y = min_y
-    }
-    let mut x = viewport_x + min_x
-    let mut y = viewport_y + min_y
-    let mut w = max_x - min_x
-    let mut h = max_y - min_y
-    // Clamp to the camera viewport in physical pixels.
-    if x < viewport_x {
-      let dx = viewport_x - x
-      x = viewport_x
-      w = w - dx
-    }
-    if y < viewport_y {
-      let dy = viewport_y - y
-      y = viewport_y
-      h = h - dy
-    }
-    let max_w = viewport_w - (x - viewport_x)
-    let max_h = viewport_h - (y - viewport_y)
-    if w > max_w {
-      w = max_w
-    }
-    if h > max_h {
-      h = max_h
-    }
-    if w < 0 {
-      w = 0
-    }
-    if h < 0 {
-      h = 0
-    }
-    (x, y, w, h)
-  }
 
-  for index in render2d_sorted_camera_indices(cameras) {
-    let camera = cameras[index]
-    let mut target_id = -1
-    let target_size = camera.computed.target_size
-    let target_width = target_size.x
-    let target_height = target_size.y
-    if camera.target is Image(handle) {
-      target_id = handle.id()
-    }
-    if target_width <= 0 || target_height <= 0 {
-      continue
-    }
-    let mut scale_factor = camera.computed.scale_factor
-    if scale_factor <= 0.0F {
-      scale_factor = 1.0F
-    }
-    let mut viewport_x = 0
-    let mut viewport_y = 0
-    let mut viewport_width = target_width
-    let mut viewport_height = target_height
-    let mut viewport_depth_min = 0.0F
-    let mut viewport_depth_max = 1.0F
-    let mut view_width = target_width
-    let mut view_height = target_height
-    if camera.camera.viewport is Some(viewport) {
-      viewport_x = if viewport.physical_position.x < 0 {
-        0
-      } else {
-        viewport.physical_position.x
+    for index in render2d_sorted_camera_indices(cameras) {
+      let camera = cameras[index]
+      let mut target_id = -1
+      let target_size = camera.computed.target_size
+      let target_width = target_size.x
+      let target_height = target_size.y
+      if camera.target is Image(handle) {
+        target_id = handle.id()
       }
-      viewport_y = if viewport.physical_position.y < 0 {
-        0
-      } else {
-        viewport.physical_position.y
-      }
-      viewport_width = if viewport.physical_size.x < 0 {
-        0
-      } else {
-        viewport.physical_size.x
-      }
-      viewport_height = if viewport.physical_size.y < 0 {
-        0
-      } else {
-        viewport.physical_size.y
-      }
-      let max_width = if target_width - viewport_x < 0 {
-        0
-      } else {
-        target_width - viewport_x
-      }
-      let max_height = if target_height - viewport_y < 0 {
-        0
-      } else {
-        target_height - viewport_y
-      }
-      if viewport_width > max_width {
-        viewport_width = max_width
-      }
-      if viewport_height > max_height {
-        viewport_height = max_height
-      }
-      if viewport_width <= 0 || viewport_height <= 0 {
+      if target_width <= 0 || target_height <= 0 {
         continue
       }
-      viewport_depth_min = viewport.depth_min
-      viewport_depth_max = viewport.depth_max
-      view_width = viewport_width
-      view_height = viewport_height
-    }
-    let view_width_f = Float::from_double(view_width.to_double()) / scale_factor
-    let view_height_f = Float::from_double(view_height.to_double()) /
-      scale_factor
-    let view_width_logical = view_width_f.to_int()
-    let view_height_logical = view_height_f.to_int()
-    if view_width_logical <= 0 || view_height_logical <= 0 {
-      continue
-    }
-    let (clear_enabled, clear) = camera.camera.clear_color.resolve()
-    let draw_items = draw_items_for_layers(
-      sprites,
-      extra_sprites,
-      extra_sprite_texture_slices,
-      extra_ui_rects,
-      extra_ui_box_shadows,
-      extra_ui_texture_slices,
-      meshes,
-      camera.layers,
-    )
-    fn draw_camera_items(
-      draw_viewport_x : Int,
-      draw_viewport_y : Int,
-      draw_viewport_width : Int,
-      draw_viewport_height : Int,
-      draw_scale_factor : Float,
-    ) -> Unit {
-      let mut scissor_active = false
-      let mut scissor_x = 0
-      let mut scissor_y = 0
-      let mut scissor_w = 0
-      let mut scissor_h = 0
-      fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
-        match rect_opt {
-          None =>
-            if scissor_active {
-              @window.host_gpu_clear_scissor()
-              scissor_active = false
-            }
-          Some(rect) => {
-            let (sx, sy, sw, sh) = physical_scissor_for_camera(
-              rect, draw_viewport_x, draw_viewport_y, draw_viewport_width, draw_viewport_height,
-              draw_scale_factor,
-            )
-            if !scissor_active ||
-              sx != scissor_x ||
-              sy != scissor_y ||
-              sw != scissor_w ||
-              sh != scissor_h {
-              @window.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
-              scissor_active = true
-              scissor_x = sx
-              scissor_y = sy
-              scissor_w = sw
-              scissor_h = sh
-            }
-          }
+      let mut scale_factor = camera.computed.scale_factor
+      if scale_factor <= 0.0F {
+        scale_factor = 1.0F
+      }
+      let mut viewport_x = 0
+      let mut viewport_y = 0
+      let mut viewport_width = target_width
+      let mut viewport_height = target_height
+      let mut viewport_depth_min = 0.0F
+      let mut viewport_depth_max = 1.0F
+      let mut view_width = target_width
+      let mut view_height = target_height
+      if camera.camera.viewport is Some(viewport) {
+        viewport_x = if viewport.physical_position.x < 0 {
+          0
+        } else {
+          viewport.physical_position.x
         }
-      }
-
-      for item in draw_items {
-        match item.kind {
-          SpriteMain(i) => {
-            let sprite = sprites[i]
-            apply_scissor(sprite.scissor)
-            let transform = sprite.transform
-            let pos = @math.Vec2::new(
-              transform.translation.x + sprite.anchor_offset.x,
-              transform.translation.y + sprite.anchor_offset.y,
-            )
-            @window.host_gpu_draw_sprite_uv(
-              texture_id=sprite.texture.id(),
-              x=pos.x,
-              y=pos.y,
-              rotation=transform.rotation_z(),
-              scale_x=sprite.draw_scale.x,
-              scale_y=sprite.draw_scale.y,
-              color_r=sprite.color.r,
-              color_g=sprite.color.g,
-              color_b=sprite.color.b,
-              color_a=sprite.color.a,
-              uv_min_x=sprite.uv_min.x,
-              uv_min_y=sprite.uv_min.y,
-              uv_max_x=sprite.uv_max.x,
-              uv_max_y=sprite.uv_max.y,
-            )
-          }
-          SpriteExtra(i) => {
-            let sprite = extra_sprites[i]
-            apply_scissor(sprite.scissor)
-            let transform = sprite.transform
-            let pos = @math.Vec2::new(
-              transform.translation.x + sprite.anchor_offset.x,
-              transform.translation.y + sprite.anchor_offset.y,
-            )
-            @window.host_gpu_draw_sprite_uv(
-              texture_id=sprite.texture.id(),
-              x=pos.x,
-              y=pos.y,
-              rotation=transform.rotation_z(),
-              scale_x=sprite.draw_scale.x,
-              scale_y=sprite.draw_scale.y,
-              color_r=sprite.color.r,
-              color_g=sprite.color.g,
-              color_b=sprite.color.b,
-              color_a=sprite.color.a,
-              uv_min_x=sprite.uv_min.x,
-              uv_min_y=sprite.uv_min.y,
-              uv_max_x=sprite.uv_max.x,
-              uv_max_y=sprite.uv_max.y,
-            )
-          }
-          SpriteTextureSliceExtra(i) => {
-            let slice = extra_sprite_texture_slices[i]
-            apply_scissor(slice.scissor)
-            let transform = slice.transform
-            let pos = @math.Vec2::new(
-              transform.translation.x + slice.anchor_offset.x,
-              transform.translation.y + slice.anchor_offset.y,
-            )
-            @window.host_gpu_draw_ui_texture_slice(
-              texture_id=slice.texture.id(),
-              x=pos.x,
-              y=pos.y,
-              rotation=transform.rotation_z(),
-              scale_x=slice.draw_scale.x,
-              scale_y=slice.draw_scale.y,
-              color_r=slice.color.r,
-              color_g=slice.color.g,
-              color_b=slice.color.b,
-              color_a=slice.color.a,
-              texture_slice_l=slice.texture_slices.x,
-              texture_slice_t=slice.texture_slices.y,
-              texture_slice_r=slice.texture_slices.z,
-              texture_slice_b=slice.texture_slices.w,
-              target_slice_l=slice.target_slices.x,
-              target_slice_t=slice.target_slices.y,
-              target_slice_r=slice.target_slices.z,
-              target_slice_b=slice.target_slices.w,
-              repeat_side_x=slice.repeat.x,
-              repeat_side_y=slice.repeat.y,
-              repeat_center_x=slice.repeat.z,
-              repeat_center_y=slice.repeat.w,
-              atlas_l=slice.atlas_rect.x,
-              atlas_t=slice.atlas_rect.y,
-              atlas_r=slice.atlas_rect.z,
-              atlas_b=slice.atlas_rect.w,
-            )
-          }
-          Mesh(i) => {
-            apply_scissor(None)
-            let mesh = meshes[i]
-            guard mesh_draw_alpha(mesh.alpha_mode, mesh.color.a)
-              is Some(draw_alpha) else {
-              continue
-            }
-            let transform = mesh.transform
-            let texture_id = match mesh.texture {
-              Some(texture) => texture.id()
-              None => -1
-            }
-            @window.host_gpu_draw_mesh(
-              mesh_id=mesh.mesh_id,
-              x=transform.translation.x,
-              y=transform.translation.y,
-              rotation=transform.rotation_z(),
-              scale_x=transform.scale.x,
-              scale_y=transform.scale.y,
-              color_r=mesh.color.r,
-              color_g=mesh.color.g,
-              color_b=mesh.color.b,
-              color_a=draw_alpha,
-              texture_id~,
-              uv_offset_x=mesh.uv_offset.x,
-              uv_offset_y=mesh.uv_offset.y,
-              uv_scale_x=mesh.uv_scale.x,
-              uv_scale_y=mesh.uv_scale.y,
-            )
-          }
-          UiRectExtra(i) => {
-            let rect = extra_ui_rects[i]
-            apply_scissor(rect.scissor)
-            let transform = rect.transform
-            let pos = @math.Vec2::new(
-              transform.translation.x + rect.anchor_offset.x,
-              transform.translation.y + rect.anchor_offset.y,
-            )
-            @window.host_gpu_draw_ui_rect(
-              texture_id=rect.texture.id(),
-              x=pos.x,
-              y=pos.y,
-              rotation=transform.rotation_z(),
-              scale_x=rect.draw_scale.x,
-              scale_y=rect.draw_scale.y,
-              color_r=rect.color.r,
-              color_g=rect.color.g,
-              color_b=rect.color.b,
-              color_a=rect.color.a,
-              uv_min_x=rect.uv_min.x,
-              uv_min_y=rect.uv_min.y,
-              uv_max_x=rect.uv_max.x,
-              uv_max_y=rect.uv_max.y,
-              flags=rect.flags,
-              radius_tl=rect.radius.top_left,
-              radius_tr=rect.radius.top_right,
-              radius_br=rect.radius.bottom_right,
-              radius_bl=rect.radius.bottom_left,
-              border_left=rect.border.left,
-              border_top=rect.border.top,
-              border_right=rect.border.right,
-              border_bottom=rect.border.bottom,
-            )
-          }
-          UiBoxShadowExtra(i) => {
-            let shadow = extra_ui_box_shadows[i]
-            apply_scissor(shadow.scissor)
-            let transform = shadow.transform
-            let pos = @math.Vec2::new(
-              transform.translation.x + shadow.anchor_offset.x,
-              transform.translation.y + shadow.anchor_offset.y,
-            )
-            @window.host_gpu_draw_ui_box_shadow(
-              texture_id=shadow.texture.id(),
-              x=pos.x,
-              y=pos.y,
-              rotation=transform.rotation_z(),
-              scale_x=shadow.draw_scale.x,
-              scale_y=shadow.draw_scale.y,
-              color_r=shadow.color.r,
-              color_g=shadow.color.g,
-              color_b=shadow.color.b,
-              color_a=shadow.color.a,
-              size_x=shadow.size.x,
-              size_y=shadow.size.y,
-              radius_tl=shadow.radius.top_left,
-              radius_tr=shadow.radius.top_right,
-              radius_br=shadow.radius.bottom_right,
-              radius_bl=shadow.radius.bottom_left,
-              blur=shadow.blur,
-              samples=shadow.samples,
-            )
-          }
-          UiTextureSliceExtra(i) => {
-            let slice = extra_ui_texture_slices[i]
-            apply_scissor(slice.scissor)
-            let transform = slice.transform
-            let pos = @math.Vec2::new(
-              transform.translation.x + slice.anchor_offset.x,
-              transform.translation.y + slice.anchor_offset.y,
-            )
-            @window.host_gpu_draw_ui_texture_slice(
-              texture_id=slice.texture.id(),
-              x=pos.x,
-              y=pos.y,
-              rotation=transform.rotation_z(),
-              scale_x=slice.draw_scale.x,
-              scale_y=slice.draw_scale.y,
-              color_r=slice.color.r,
-              color_g=slice.color.g,
-              color_b=slice.color.b,
-              color_a=slice.color.a,
-              texture_slice_l=slice.texture_slices.x,
-              texture_slice_t=slice.texture_slices.y,
-              texture_slice_r=slice.texture_slices.z,
-              texture_slice_b=slice.texture_slices.w,
-              target_slice_l=slice.target_slices.x,
-              target_slice_t=slice.target_slices.y,
-              target_slice_r=slice.target_slices.z,
-              target_slice_b=slice.target_slices.w,
-              repeat_side_x=slice.repeat.x,
-              repeat_side_y=slice.repeat.y,
-              repeat_center_x=slice.repeat.z,
-              repeat_center_y=slice.repeat.w,
-              atlas_l=slice.atlas_rect.x,
-              atlas_t=slice.atlas_rect.y,
-              atlas_r=slice.atlas_rect.z,
-              atlas_b=slice.atlas_rect.w,
-            )
-          }
+        viewport_y = if viewport.physical_position.y < 0 {
+          0
+        } else {
+          viewport.physical_position.y
         }
+        viewport_width = if viewport.physical_size.x < 0 {
+          0
+        } else {
+          viewport.physical_size.x
+        }
+        viewport_height = if viewport.physical_size.y < 0 {
+          0
+        } else {
+          viewport.physical_size.y
+        }
+        let max_width = if target_width - viewport_x < 0 {
+          0
+        } else {
+          target_width - viewport_x
+        }
+        let max_height = if target_height - viewport_y < 0 {
+          0
+        } else {
+          target_height - viewport_y
+        }
+        if viewport_width > max_width {
+          viewport_width = max_width
+        }
+        if viewport_height > max_height {
+          viewport_height = max_height
+        }
+        if viewport_width <= 0 || viewport_height <= 0 {
+          continue
+        }
+        viewport_depth_min = viewport.depth_min
+        viewport_depth_max = viewport.depth_max
+        view_width = viewport_width
+        view_height = viewport_height
       }
-    }
-
-    let tonemapping_mode = camera_tonemapping_mode(world, camera.entity)
-    let deband_dither_enabled = camera_deband_dither_enabled(
-      world,
-      camera.entity,
-    )
-    let mut auto_bloom_source : @asset.Handle[@asset.Image]? = None
-    if camera.bloom2d is Some(bloom) {
-      if bloom.source is None && camera.target is Screen {
-        auto_bloom_source = Some(
-          render2d_get_or_create_bloom2d_auto_target(
-            rs.val,
-            camera.entity,
-            viewport_width,
-            viewport_height,
-          ),
-        )
+      let view_width_f = Float::from_double(view_width.to_double()) /
+        scale_factor
+      let view_height_f = Float::from_double(view_height.to_double()) /
+        scale_factor
+      let view_width_logical = view_width_f.to_int()
+      let view_height_logical = view_height_f.to_int()
+      if view_width_logical <= 0 || view_height_logical <= 0 {
+        continue
       }
-    }
-
-    if auto_bloom_source is Some(source) {
-      @window.host_gpu_begin_pass(
-        target_id=@asset.Handle::id(source),
-        width=view_width_logical,
-        height=view_height_logical,
-        clear_r=clear.r,
-        clear_g=clear.g,
-        clear_b=clear.b,
-        clear_a=clear.a,
-        camera_x=camera.transform.translation.x,
-        camera_y=camera.transform.translation.y,
-        camera_rotation=camera.transform.rotation_z(),
-        camera_scale=camera.projection.scale,
-        viewport_x=0,
-        viewport_y=0,
-        viewport_width~,
-        viewport_height~,
-        viewport_depth_min~,
-        viewport_depth_max~,
-        clear_enabled=if clear_enabled { 1 } else { 0 },
+      let (clear_enabled, clear) = camera.camera.clear_color.resolve()
+      let draw_items = draw_items_for_layers(
+        sprites,
+        extra_sprites,
+        extra_sprite_texture_slices,
+        extra_ui_rects,
+        extra_ui_box_shadows,
+        extra_ui_texture_slices,
+        meshes,
+        camera.layers,
       )
-      draw_camera_items(0, 0, viewport_width, viewport_height, scale_factor)
-      @window.host_gpu_end_pass()
+      fn draw_camera_items(
+        draw_viewport_x : Int,
+        draw_viewport_y : Int,
+        draw_viewport_width : Int,
+        draw_viewport_height : Int,
+        draw_scale_factor : Float,
+      ) -> Unit {
+        let mut scissor_active = false
+        let mut scissor_x = 0
+        let mut scissor_y = 0
+        let mut scissor_w = 0
+        let mut scissor_h = 0
+        fn apply_scissor(rect_opt : @math.Rect?) -> Unit {
+          match rect_opt {
+            None =>
+              if scissor_active {
+                @window.host_gpu_clear_scissor()
+                scissor_active = false
+              }
+            Some(rect) => {
+              let (sx, sy, sw, sh) = physical_scissor_for_camera(
+                rect, draw_viewport_x, draw_viewport_y, draw_viewport_width, draw_viewport_height,
+                draw_scale_factor,
+              )
+              if !scissor_active ||
+                sx != scissor_x ||
+                sy != scissor_y ||
+                sw != scissor_w ||
+                sh != scissor_h {
+                @window.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
+                scissor_active = true
+                scissor_x = sx
+                scissor_y = sy
+                scissor_w = sw
+                scissor_h = sh
+              }
+            }
+          }
+        }
+
+        for item in draw_items {
+          match item.kind {
+            SpriteMain(i) => {
+              let sprite = sprites[i]
+              apply_scissor(sprite.scissor)
+              let transform = sprite.transform
+              let pos = @math.Vec2::new(
+                transform.translation.x + sprite.anchor_offset.x,
+                transform.translation.y + sprite.anchor_offset.y,
+              )
+              @window.host_gpu_draw_sprite_uv(
+                texture_id=sprite.texture.id(),
+                x=pos.x,
+                y=pos.y,
+                rotation=transform.rotation_z(),
+                scale_x=sprite.draw_scale.x,
+                scale_y=sprite.draw_scale.y,
+                color_r=sprite.color.r,
+                color_g=sprite.color.g,
+                color_b=sprite.color.b,
+                color_a=sprite.color.a,
+                uv_min_x=sprite.uv_min.x,
+                uv_min_y=sprite.uv_min.y,
+                uv_max_x=sprite.uv_max.x,
+                uv_max_y=sprite.uv_max.y,
+              )
+            }
+            SpriteExtra(i) => {
+              let sprite = extra_sprites[i]
+              apply_scissor(sprite.scissor)
+              let transform = sprite.transform
+              let pos = @math.Vec2::new(
+                transform.translation.x + sprite.anchor_offset.x,
+                transform.translation.y + sprite.anchor_offset.y,
+              )
+              @window.host_gpu_draw_sprite_uv(
+                texture_id=sprite.texture.id(),
+                x=pos.x,
+                y=pos.y,
+                rotation=transform.rotation_z(),
+                scale_x=sprite.draw_scale.x,
+                scale_y=sprite.draw_scale.y,
+                color_r=sprite.color.r,
+                color_g=sprite.color.g,
+                color_b=sprite.color.b,
+                color_a=sprite.color.a,
+                uv_min_x=sprite.uv_min.x,
+                uv_min_y=sprite.uv_min.y,
+                uv_max_x=sprite.uv_max.x,
+                uv_max_y=sprite.uv_max.y,
+              )
+            }
+            SpriteTextureSliceExtra(i) => {
+              let slice = extra_sprite_texture_slices[i]
+              apply_scissor(slice.scissor)
+              let transform = slice.transform
+              let pos = @math.Vec2::new(
+                transform.translation.x + slice.anchor_offset.x,
+                transform.translation.y + slice.anchor_offset.y,
+              )
+              @window.host_gpu_draw_ui_texture_slice(
+                texture_id=slice.texture.id(),
+                x=pos.x,
+                y=pos.y,
+                rotation=transform.rotation_z(),
+                scale_x=slice.draw_scale.x,
+                scale_y=slice.draw_scale.y,
+                color_r=slice.color.r,
+                color_g=slice.color.g,
+                color_b=slice.color.b,
+                color_a=slice.color.a,
+                texture_slice_l=slice.texture_slices.x,
+                texture_slice_t=slice.texture_slices.y,
+                texture_slice_r=slice.texture_slices.z,
+                texture_slice_b=slice.texture_slices.w,
+                target_slice_l=slice.target_slices.x,
+                target_slice_t=slice.target_slices.y,
+                target_slice_r=slice.target_slices.z,
+                target_slice_b=slice.target_slices.w,
+                repeat_side_x=slice.repeat.x,
+                repeat_side_y=slice.repeat.y,
+                repeat_center_x=slice.repeat.z,
+                repeat_center_y=slice.repeat.w,
+                atlas_l=slice.atlas_rect.x,
+                atlas_t=slice.atlas_rect.y,
+                atlas_r=slice.atlas_rect.z,
+                atlas_b=slice.atlas_rect.w,
+              )
+            }
+            Mesh(i) => {
+              apply_scissor(None)
+              let mesh = meshes[i]
+              guard mesh_draw_alpha(mesh.alpha_mode, mesh.color.a)
+                is Some(draw_alpha) else {
+                continue
+              }
+              let transform = mesh.transform
+              let texture_id = match mesh.texture {
+                Some(texture) => texture.id()
+                None => -1
+              }
+              @window.host_gpu_draw_mesh(
+                mesh_id=mesh.mesh_id,
+                x=transform.translation.x,
+                y=transform.translation.y,
+                rotation=transform.rotation_z(),
+                scale_x=transform.scale.x,
+                scale_y=transform.scale.y,
+                color_r=mesh.color.r,
+                color_g=mesh.color.g,
+                color_b=mesh.color.b,
+                color_a=draw_alpha,
+                texture_id~,
+                uv_offset_x=mesh.uv_offset.x,
+                uv_offset_y=mesh.uv_offset.y,
+                uv_scale_x=mesh.uv_scale.x,
+                uv_scale_y=mesh.uv_scale.y,
+              )
+            }
+            UiRectExtra(i) => {
+              let rect = extra_ui_rects[i]
+              apply_scissor(rect.scissor)
+              let transform = rect.transform
+              let pos = @math.Vec2::new(
+                transform.translation.x + rect.anchor_offset.x,
+                transform.translation.y + rect.anchor_offset.y,
+              )
+              @window.host_gpu_draw_ui_rect(
+                texture_id=rect.texture.id(),
+                x=pos.x,
+                y=pos.y,
+                rotation=transform.rotation_z(),
+                scale_x=rect.draw_scale.x,
+                scale_y=rect.draw_scale.y,
+                color_r=rect.color.r,
+                color_g=rect.color.g,
+                color_b=rect.color.b,
+                color_a=rect.color.a,
+                uv_min_x=rect.uv_min.x,
+                uv_min_y=rect.uv_min.y,
+                uv_max_x=rect.uv_max.x,
+                uv_max_y=rect.uv_max.y,
+                flags=rect.flags,
+                radius_tl=rect.radius.top_left,
+                radius_tr=rect.radius.top_right,
+                radius_br=rect.radius.bottom_right,
+                radius_bl=rect.radius.bottom_left,
+                border_left=rect.border.left,
+                border_top=rect.border.top,
+                border_right=rect.border.right,
+                border_bottom=rect.border.bottom,
+              )
+            }
+            UiBoxShadowExtra(i) => {
+              let shadow = extra_ui_box_shadows[i]
+              apply_scissor(shadow.scissor)
+              let transform = shadow.transform
+              let pos = @math.Vec2::new(
+                transform.translation.x + shadow.anchor_offset.x,
+                transform.translation.y + shadow.anchor_offset.y,
+              )
+              @window.host_gpu_draw_ui_box_shadow(
+                texture_id=shadow.texture.id(),
+                x=pos.x,
+                y=pos.y,
+                rotation=transform.rotation_z(),
+                scale_x=shadow.draw_scale.x,
+                scale_y=shadow.draw_scale.y,
+                color_r=shadow.color.r,
+                color_g=shadow.color.g,
+                color_b=shadow.color.b,
+                color_a=shadow.color.a,
+                size_x=shadow.size.x,
+                size_y=shadow.size.y,
+                radius_tl=shadow.radius.top_left,
+                radius_tr=shadow.radius.top_right,
+                radius_br=shadow.radius.bottom_right,
+                radius_bl=shadow.radius.bottom_left,
+                blur=shadow.blur,
+                samples=shadow.samples,
+              )
+            }
+            UiTextureSliceExtra(i) => {
+              let slice = extra_ui_texture_slices[i]
+              apply_scissor(slice.scissor)
+              let transform = slice.transform
+              let pos = @math.Vec2::new(
+                transform.translation.x + slice.anchor_offset.x,
+                transform.translation.y + slice.anchor_offset.y,
+              )
+              @window.host_gpu_draw_ui_texture_slice(
+                texture_id=slice.texture.id(),
+                x=pos.x,
+                y=pos.y,
+                rotation=transform.rotation_z(),
+                scale_x=slice.draw_scale.x,
+                scale_y=slice.draw_scale.y,
+                color_r=slice.color.r,
+                color_g=slice.color.g,
+                color_b=slice.color.b,
+                color_a=slice.color.a,
+                texture_slice_l=slice.texture_slices.x,
+                texture_slice_t=slice.texture_slices.y,
+                texture_slice_r=slice.texture_slices.z,
+                texture_slice_b=slice.texture_slices.w,
+                target_slice_l=slice.target_slices.x,
+                target_slice_t=slice.target_slices.y,
+                target_slice_r=slice.target_slices.z,
+                target_slice_b=slice.target_slices.w,
+                repeat_side_x=slice.repeat.x,
+                repeat_side_y=slice.repeat.y,
+                repeat_center_x=slice.repeat.z,
+                repeat_center_y=slice.repeat.w,
+                atlas_l=slice.atlas_rect.x,
+                atlas_t=slice.atlas_rect.y,
+                atlas_r=slice.atlas_rect.z,
+                atlas_b=slice.atlas_rect.w,
+              )
+            }
+          }
+        }
+      }
+
+      let tonemapping_mode = camera_tonemapping_mode(world, camera.entity)
+      let deband_dither_enabled = camera_deband_dither_enabled(
+        world,
+        camera.entity,
+      )
+      let mut auto_bloom_source : @asset.Handle[@asset.Image]? = None
+      if camera.bloom2d is Some(bloom) {
+        if bloom.source is None && camera.target is Screen {
+          auto_bloom_source = Some(
+            render2d_get_or_create_bloom2d_auto_target(
+              rs.val,
+              camera.entity,
+              viewport_width,
+              viewport_height,
+            ),
+          )
+        }
+      }
+
+      if auto_bloom_source is Some(source) {
+        @window.host_gpu_begin_pass(
+          target_id=@asset.Handle::id(source),
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear.r,
+          clear_g=clear.g,
+          clear_b=clear.b,
+          clear_a=clear.a,
+          camera_x=camera.transform.translation.x,
+          camera_y=camera.transform.translation.y,
+          camera_rotation=camera.transform.rotation_z(),
+          camera_scale=camera.projection.scale,
+          viewport_x=0,
+          viewport_y=0,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        draw_camera_items(0, 0, viewport_width, viewport_height, scale_factor)
+        @window.host_gpu_end_pass()
+
+        @window.host_gpu_begin_pass(
+          target_id~,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear.r,
+          clear_g=clear.g,
+          clear_b=clear.b,
+          clear_a=clear.a,
+          camera_x=camera.transform.translation.x,
+          camera_y=camera.transform.translation.y,
+          camera_rotation=camera.transform.rotation_z(),
+          camera_scale=camera.projection.scale,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        render2d_draw_camera_bloom(
+          camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+          viewport_height,
+        )
+        gizmos_draw_lines(camera.layers)
+        @window.host_gpu_end_pass()
+        continue
+      }
 
       @window.host_gpu_begin_pass(
         target_id~,
@@ -7152,53 +7218,26 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         viewport_depth_max~,
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
-      render2d_draw_camera_bloom(
-        camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
-        viewport_height,
+      draw_camera_items(
+        viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
       )
+      if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
+        render2d_draw_camera_bloom(
+          camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+          viewport_height,
+        )
+      }
       gizmos_draw_lines(camera.layers)
       @window.host_gpu_end_pass()
-      continue
     }
-
-    @window.host_gpu_begin_pass(
-      target_id~,
-      width=view_width_logical,
-      height=view_height_logical,
-      clear_r=clear.r,
-      clear_g=clear.g,
-      clear_b=clear.b,
-      clear_a=clear.a,
-      camera_x=camera.transform.translation.x,
-      camera_y=camera.transform.translation.y,
-      camera_rotation=camera.transform.rotation_z(),
-      camera_scale=camera.projection.scale,
-      viewport_x~,
-      viewport_y~,
-      viewport_width~,
-      viewport_height~,
-      viewport_depth_min~,
-      viewport_depth_max~,
-      clear_enabled=if clear_enabled { 1 } else { 0 },
-    )
-    draw_camera_items(
-      viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
-    )
-    if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
-      render2d_draw_camera_bloom(
-        camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
-        viewport_height,
-      )
-    }
-    gizmos_draw_lines(camera.layers)
-    @window.host_gpu_end_pass()
-  }
-  gizmos_clear()
-  rs.val.extra_sprites.clear()
-  rs.val.extra_sprite_texture_slices.clear()
-  rs.val.extra_ui_rects.clear()
-  rs.val.extra_ui_box_shadows.clear()
-  rs.val.extra_ui_texture_slices.clear()
+    gizmos_clear()
+    rs.val.extra_sprites.clear()
+    rs.val.extra_sprite_texture_slices.clear()
+    rs.val.extra_ui_rects.clear()
+    rs.val.extra_ui_box_shadows.clear()
+    rs.val.extra_ui_texture_slices.clear()
+  })
+  |> ignore
 }
 
 ///|
@@ -7207,12 +7246,12 @@ pub fn render2d_viewport_to_world_2d(
   screen : @math.Vec2,
 ) -> @math.Vec2? {
   guard render_state_ref(world) is Some(rs) else { return None }
-  let id = rs.val.primary_camera
+  let id = rs.primary_camera
   if id.is_placeholder() {
     return None
   }
   let mut found : CameraInstance? = None
-  for camera in rs.val.cameras {
+  for camera in rs.cameras {
     if camera.entity.id == id.id && camera.entity.generation == id.generation {
       found = Some(camera)
       break
@@ -7235,12 +7274,12 @@ pub fn render2d_world_to_viewport(
   world : @math.Vec2,
 ) -> @math.Vec2? {
   guard render_state_ref(world_) is Some(rs) else { return None }
-  let id = rs.val.primary_camera
+  let id = rs.primary_camera
   if id.is_placeholder() {
     return None
   }
   let mut found : CameraInstance? = None
-  for camera in rs.val.cameras {
+  for camera in rs.cameras {
     if camera.entity.id == id.id && camera.entity.generation == id.generation {
       found = Some(camera)
       break
@@ -7399,11 +7438,11 @@ fn camera_viewport_rect_physical(
 ///|
 pub fn render2d_debug_log_primary_camera(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(rs) else { return }
-  let id = rs.val.primary_camera
+  let id = rs.primary_camera
   if id.is_placeholder() {
     return
   }
-  for camera in rs.val.cameras {
+  for camera in rs.cameras {
     if camera.entity.id == id.id && camera.entity.generation == id.generation {
       let target = camera.computed.target_size
       let scale = camera.computed.scale_factor

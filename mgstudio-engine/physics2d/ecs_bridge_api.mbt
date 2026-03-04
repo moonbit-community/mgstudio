@@ -33,502 +33,720 @@ pub let ecs_resources : Array[String] = [
 ]
 
 ///|
+pub let ecs_res_key_physics2d_config : @ecs.ResourceKey[Physics2dConfig] = @ecs.register_resource(
+  debug_name="physics2d.physics2d_config",
+)
+
+///|
+pub let ecs_res_key_physics2d_events : @ecs.ResourceKey[Physics2dEvents] = @ecs.register_resource(
+  debug_name="physics2d.physics2d_events",
+)
+
+///|
+pub let ecs_res_key_physics2d_context : @ecs.ResourceKey[Physics2dContext] = @ecs.register_resource(
+  debug_name="physics2d.physics2d_context",
+)
+
+///|
+
+///|
+pub let ecs_key_ccd2d : @ecs.ComponentKey[Ccd2d] = @ecs.register_component(
+  debug_name="physics2d.ccd2d",
+)
+
+///|
+pub let ecs_key_damping2d : @ecs.ComponentKey[Damping2d] = @ecs.register_component(
+  debug_name="physics2d.damping2d",
+)
+
+///|
+pub let ecs_key_collider2d : @ecs.ComponentKey[Collider2d] = @ecs.register_component(
+  debug_name="physics2d.collider2d",
+)
+
+///|
+pub let ecs_key_friction2d : @ecs.ComponentKey[Friction2d] = @ecs.register_component(
+  debug_name="physics2d.friction2d",
+)
+
+///|
+pub let ecs_key_sleeping2d : @ecs.ComponentKey[Sleeping2d] = @ecs.register_component(
+  debug_name="physics2d.sleeping2d",
+)
+
+///|
+pub let ecs_key_velocity2d : @ecs.ComponentKey[Velocity2d] = @ecs.register_component(
+  debug_name="physics2d.velocity2d",
+)
+
+///|
+pub let ecs_key_dominance2d : @ecs.ComponentKey[Dominance2d] = @ecs.register_component(
+  debug_name="physics2d.dominance2d",
+)
+
+///|
+pub let ecs_key_rigid_body2d : @ecs.ComponentKey[RigidBody2d] = @ecs.register_component(
+  debug_name="physics2d.rigid_body2d",
+)
+
+///|
+pub let ecs_key_locked_axes2d : @ecs.ComponentKey[LockedAxes2d] = @ecs.register_component(
+  debug_name="physics2d.locked_axes2d",
+)
+
+///|
+pub let ecs_key_active_hooks2d : @ecs.ComponentKey[ActiveHooks2d] = @ecs.register_component(
+  debug_name="physics2d.active_hooks2d",
+)
+
+///|
+pub let ecs_key_contact_skin2d : @ecs.ComponentKey[ContactSkin2d] = @ecs.register_component(
+  debug_name="physics2d.contact_skin2d",
+)
+
+///|
+pub let ecs_key_restitution2d : @ecs.ComponentKey[Restitution2d] = @ecs.register_component(
+  debug_name="physics2d.restitution2d",
+)
+
+///|
+pub let ecs_key_active_events2d : @ecs.ComponentKey[ActiveEvents2d] = @ecs.register_component(
+  debug_name="physics2d.active_events2d",
+)
+
+///|
+pub let ecs_key_gravity_scale2d : @ecs.ComponentKey[GravityScale2d] = @ecs.register_component(
+  debug_name="physics2d.gravity_scale2d",
+)
+
+///|
+pub let ecs_key_impulse_joint2d : @ecs.ComponentKey[ImpulseJoint2d] = @ecs.register_component(
+  debug_name="physics2d.impulse_joint2d",
+)
+
+///|
+pub let ecs_key_solver_groups2d : @ecs.ComponentKey[SolverGroups2d] = @ecs.register_component(
+  debug_name="physics2d.solver_groups2d",
+)
+
+///|
+pub let ecs_key_external_force2d : @ecs.ComponentKey[ExternalForce2d] = @ecs.register_component(
+  debug_name="physics2d.external_force2d",
+)
+
+///|
+pub let ecs_key_collider_parent2d : @ecs.ComponentKey[ColliderParent2d] = @ecs.register_component(
+  debug_name="physics2d.collider_parent2d",
+)
+
+///|
+pub let ecs_key_multibody_joint2d : @ecs.ComponentKey[MultibodyJoint2d] = @ecs.register_component(
+  debug_name="physics2d.multibody_joint2d",
+)
+
+///|
+pub let ecs_key_collider_density2d : @ecs.ComponentKey[ColliderDensity2d] = @ecs.register_component(
+  debug_name="physics2d.collider_density2d",
+)
+
+///|
+pub let ecs_key_collider_enabled2d : @ecs.ComponentKey[ColliderEnabled2d] = @ecs.register_component(
+  debug_name="physics2d.collider_enabled2d",
+)
+
+///|
+pub let ecs_key_collision_groups2d : @ecs.ComponentKey[CollisionGroups2d] = @ecs.register_component(
+  debug_name="physics2d.collision_groups2d",
+)
+
+///|
+pub let ecs_key_external_impulse2d : @ecs.ComponentKey[ExternalImpulse2d] = @ecs.register_component(
+  debug_name="physics2d.external_impulse2d",
+)
+
+///|
+pub let ecs_key_rapier_body_handle2d : @ecs.ComponentKey[RapierBodyHandle2d] = @ecs.register_component(
+  debug_name="physics2d.rapier_body_handle2d",
+)
+
+///|
+pub let ecs_key_rigid_body_enabled2d : @ecs.ComponentKey[RigidBodyEnabled2d] = @ecs.register_component(
+  debug_name="physics2d.rigid_body_enabled2d",
+)
+
+///|
+pub let ecs_key_friction_combine_rule2d : @ecs.ComponentKey[
+  FrictionCombineRule2d,
+] = @ecs.register_component(debug_name="physics2d.friction_combine_rule2d")
+
+///|
+pub let ecs_key_active_collision_types2d : @ecs.ComponentKey[
+  ActiveCollisionTypes2d,
+] = @ecs.register_component(debug_name="physics2d.active_collision_types2d")
+
+///|
+pub let ecs_key_rapier_collider_handle2d : @ecs.ComponentKey[
+  RapierColliderHandle2d,
+] = @ecs.register_component(debug_name="physics2d.rapier_collider_handle2d")
+
+///|
+pub let ecs_key_collider_mass_properties2d : @ecs.ComponentKey[
+  ColliderMassProperties2d,
+] = @ecs.register_component(debug_name="physics2d.collider_mass_properties2d")
+
+///|
+pub let ecs_key_restitution_combine_rule2d : @ecs.ComponentKey[
+  RestitutionCombineRule2d,
+] = @ecs.register_component(debug_name="physics2d.restitution_combine_rule2d")
+
+///|
+pub let ecs_key_additional_mass_properties2d : @ecs.ComponentKey[
+  AdditionalMassProperties2d,
+] = @ecs.register_component(debug_name="physics2d.additional_mass_properties2d")
+
+///|
+pub let ecs_key_rapier_impulse_joint_handle2d : @ecs.ComponentKey[
+  RapierImpulseJointHandle2d,
+] = @ecs.register_component(
+  debug_name="physics2d.rapier_impulse_joint_handle2d",
+)
+
+///|
+pub let ecs_key_additional_solver_iterations2d : @ecs.ComponentKey[
+  AdditionalSolverIterations2d,
+] = @ecs.register_component(
+  debug_name="physics2d.additional_solver_iterations2d",
+)
+
+///|
+pub let ecs_key_contact_force_event_threshold2d : @ecs.ComponentKey[
+  ContactForceEventThreshold2d,
+] = @ecs.register_component(
+  debug_name="physics2d.contact_force_event_threshold2d",
+)
+
+///|
+pub let ecs_key_rapier_multibody_joint_handle2d : @ecs.ComponentKey[
+  RapierMultibodyJointHandle2d,
+] = @ecs.register_component(
+  debug_name="physics2d.rapier_multibody_joint_handle2d",
+)
+
+///|
+pub let ecs_key_kinematic_character_controller2d : @ecs.ComponentKey[
+  KinematicCharacterController2d,
+] = @ecs.register_component(
+  debug_name="physics2d.kinematic_character_controller2d",
+)
+
+///|
+pub let ecs_key_kinematic_character_controller_output2d : @ecs.ComponentKey[
+  KinematicCharacterControllerOutput2d,
+] = @ecs.register_component(
+  debug_name="physics2d.kinematic_character_controller_output2d",
+)
+
+///|
 pub(open) trait Has_Ccd2d {
-  get_ccd2d_store(self : Self) -> @core.ComponentStore[Ccd2d]
+  get_ccd2d_store(self : Self) -> @ecs.ComponentAccess[Ccd2d]
 }
 
 ///|
 pub(open) trait Has_Damping2d {
-  get_damping2d_store(self : Self) -> @core.ComponentStore[Damping2d]
+  get_damping2d_store(self : Self) -> @ecs.ComponentAccess[Damping2d]
 }
 
 ///|
 pub(open) trait Has_Collider2d {
-  get_collider2d_store(self : Self) -> @core.ComponentStore[Collider2d]
+  get_collider2d_store(self : Self) -> @ecs.ComponentAccess[Collider2d]
 }
 
 ///|
 pub(open) trait Has_Friction2d {
-  get_friction2d_store(self : Self) -> @core.ComponentStore[Friction2d]
+  get_friction2d_store(self : Self) -> @ecs.ComponentAccess[Friction2d]
 }
 
 ///|
 pub(open) trait Has_Sleeping2d {
-  get_sleeping2d_store(self : Self) -> @core.ComponentStore[Sleeping2d]
+  get_sleeping2d_store(self : Self) -> @ecs.ComponentAccess[Sleeping2d]
 }
 
 ///|
 pub(open) trait Has_Velocity2d {
-  get_velocity2d_store(self : Self) -> @core.ComponentStore[Velocity2d]
+  get_velocity2d_store(self : Self) -> @ecs.ComponentAccess[Velocity2d]
 }
 
 ///|
 pub(open) trait Has_Dominance2d {
-  get_dominance2d_store(self : Self) -> @core.ComponentStore[Dominance2d]
+  get_dominance2d_store(self : Self) -> @ecs.ComponentAccess[Dominance2d]
 }
 
 ///|
 pub(open) trait Has_RigidBody2d {
-  get_rigid_body2d_store(self : Self) -> @core.ComponentStore[RigidBody2d]
+  get_rigid_body2d_store(self : Self) -> @ecs.ComponentAccess[RigidBody2d]
 }
 
 ///|
 pub(open) trait Has_LockedAxes2d {
-  get_locked_axes2d_store(self : Self) -> @core.ComponentStore[LockedAxes2d]
+  get_locked_axes2d_store(self : Self) -> @ecs.ComponentAccess[LockedAxes2d]
 }
 
 ///|
 pub(open) trait Has_ActiveHooks2d {
-  get_active_hooks2d_store(self : Self) -> @core.ComponentStore[ActiveHooks2d]
+  get_active_hooks2d_store(self : Self) -> @ecs.ComponentAccess[ActiveHooks2d]
 }
 
 ///|
 pub(open) trait Has_ContactSkin2d {
-  get_contact_skin2d_store(self : Self) -> @core.ComponentStore[ContactSkin2d]
+  get_contact_skin2d_store(self : Self) -> @ecs.ComponentAccess[ContactSkin2d]
 }
 
 ///|
 pub(open) trait Has_Restitution2d {
-  get_restitution2d_store(self : Self) -> @core.ComponentStore[Restitution2d]
+  get_restitution2d_store(self : Self) -> @ecs.ComponentAccess[Restitution2d]
 }
 
 ///|
 pub(open) trait Has_ActiveEvents2d {
-  get_active_events2d_store(self : Self) -> @core.ComponentStore[ActiveEvents2d]
+  get_active_events2d_store(self : Self) -> @ecs.ComponentAccess[ActiveEvents2d]
 }
 
 ///|
 pub(open) trait Has_GravityScale2d {
-  get_gravity_scale2d_store(self : Self) -> @core.ComponentStore[GravityScale2d]
+  get_gravity_scale2d_store(self : Self) -> @ecs.ComponentAccess[GravityScale2d]
 }
 
 ///|
 pub(open) trait Has_ImpulseJoint2d {
-  get_impulse_joint2d_store(self : Self) -> @core.ComponentStore[ImpulseJoint2d]
+  get_impulse_joint2d_store(self : Self) -> @ecs.ComponentAccess[ImpulseJoint2d]
 }
 
 ///|
 pub(open) trait Has_SolverGroups2d {
-  get_solver_groups2d_store(self : Self) -> @core.ComponentStore[SolverGroups2d]
+  get_solver_groups2d_store(self : Self) -> @ecs.ComponentAccess[SolverGroups2d]
 }
 
 ///|
 pub(open) trait Has_ExternalForce2d {
-  get_external_force2d_store(self : Self) -> @core.ComponentStore[
+  get_external_force2d_store(self : Self) -> @ecs.ComponentAccess[
     ExternalForce2d,
   ]
 }
 
 ///|
 pub(open) trait Has_ColliderParent2d {
-  get_collider_parent2d_store(self : Self) -> @core.ComponentStore[
+  get_collider_parent2d_store(self : Self) -> @ecs.ComponentAccess[
     ColliderParent2d,
   ]
 }
 
 ///|
 pub(open) trait Has_MultibodyJoint2d {
-  get_multibody_joint2d_store(self : Self) -> @core.ComponentStore[
+  get_multibody_joint2d_store(self : Self) -> @ecs.ComponentAccess[
     MultibodyJoint2d,
   ]
 }
 
 ///|
 pub(open) trait Has_ColliderDensity2d {
-  get_collider_density2d_store(self : Self) -> @core.ComponentStore[
+  get_collider_density2d_store(self : Self) -> @ecs.ComponentAccess[
     ColliderDensity2d,
   ]
 }
 
 ///|
 pub(open) trait Has_ColliderEnabled2d {
-  get_collider_enabled2d_store(self : Self) -> @core.ComponentStore[
+  get_collider_enabled2d_store(self : Self) -> @ecs.ComponentAccess[
     ColliderEnabled2d,
   ]
 }
 
 ///|
 pub(open) trait Has_CollisionGroups2d {
-  get_collision_groups2d_store(self : Self) -> @core.ComponentStore[
+  get_collision_groups2d_store(self : Self) -> @ecs.ComponentAccess[
     CollisionGroups2d,
   ]
 }
 
 ///|
 pub(open) trait Has_ExternalImpulse2d {
-  get_external_impulse2d_store(self : Self) -> @core.ComponentStore[
+  get_external_impulse2d_store(self : Self) -> @ecs.ComponentAccess[
     ExternalImpulse2d,
   ]
 }
 
 ///|
 pub(open) trait Has_RapierBodyHandle2d {
-  get_rapier_body_handle2d_store(self : Self) -> @core.ComponentStore[
+  get_rapier_body_handle2d_store(self : Self) -> @ecs.ComponentAccess[
     RapierBodyHandle2d,
   ]
 }
 
 ///|
 pub(open) trait Has_RigidBodyEnabled2d {
-  get_rigid_body_enabled2d_store(self : Self) -> @core.ComponentStore[
+  get_rigid_body_enabled2d_store(self : Self) -> @ecs.ComponentAccess[
     RigidBodyEnabled2d,
   ]
 }
 
 ///|
 pub(open) trait Has_FrictionCombineRule2d {
-  get_friction_combine_rule2d_store(self : Self) -> @core.ComponentStore[
+  get_friction_combine_rule2d_store(self : Self) -> @ecs.ComponentAccess[
     FrictionCombineRule2d,
   ]
 }
 
 ///|
 pub(open) trait Has_ActiveCollisionTypes2d {
-  get_active_collision_types2d_store(self : Self) -> @core.ComponentStore[
+  get_active_collision_types2d_store(self : Self) -> @ecs.ComponentAccess[
     ActiveCollisionTypes2d,
   ]
 }
 
 ///|
 pub(open) trait Has_RapierColliderHandle2d {
-  get_rapier_collider_handle2d_store(self : Self) -> @core.ComponentStore[
+  get_rapier_collider_handle2d_store(self : Self) -> @ecs.ComponentAccess[
     RapierColliderHandle2d,
   ]
 }
 
 ///|
 pub(open) trait Has_ColliderMassProperties2d {
-  get_collider_mass_properties2d_store(self : Self) -> @core.ComponentStore[
+  get_collider_mass_properties2d_store(self : Self) -> @ecs.ComponentAccess[
     ColliderMassProperties2d,
   ]
 }
 
 ///|
 pub(open) trait Has_RestitutionCombineRule2d {
-  get_restitution_combine_rule2d_store(self : Self) -> @core.ComponentStore[
+  get_restitution_combine_rule2d_store(self : Self) -> @ecs.ComponentAccess[
     RestitutionCombineRule2d,
   ]
 }
 
 ///|
 pub(open) trait Has_AdditionalMassProperties2d {
-  get_additional_mass_properties2d_store(self : Self) -> @core.ComponentStore[
+  get_additional_mass_properties2d_store(self : Self) -> @ecs.ComponentAccess[
     AdditionalMassProperties2d,
   ]
 }
 
 ///|
 pub(open) trait Has_RapierImpulseJointHandle2d {
-  get_rapier_impulse_joint_handle2d_store(self : Self) -> @core.ComponentStore[
+  get_rapier_impulse_joint_handle2d_store(self : Self) -> @ecs.ComponentAccess[
     RapierImpulseJointHandle2d,
   ]
 }
 
 ///|
 pub(open) trait Has_AdditionalSolverIterations2d {
-  get_additional_solver_iterations2d_store(self : Self) -> @core.ComponentStore[
+  get_additional_solver_iterations2d_store(self : Self) -> @ecs.ComponentAccess[
     AdditionalSolverIterations2d,
   ]
 }
 
 ///|
 pub(open) trait Has_ContactForceEventThreshold2d {
-  get_contact_force_event_threshold2d_store(self : Self) -> @core.ComponentStore[
+  get_contact_force_event_threshold2d_store(self : Self) -> @ecs.ComponentAccess[
     ContactForceEventThreshold2d,
   ]
 }
 
 ///|
 pub(open) trait Has_RapierMultibodyJointHandle2d {
-  get_rapier_multibody_joint_handle2d_store(self : Self) -> @core.ComponentStore[
+  get_rapier_multibody_joint_handle2d_store(self : Self) -> @ecs.ComponentAccess[
     RapierMultibodyJointHandle2d,
   ]
 }
 
 ///|
 pub(open) trait Has_KinematicCharacterController2d {
-  get_kinematic_character_controller2d_store(self : Self) -> @core.ComponentStore[
+  get_kinematic_character_controller2d_store(self : Self) -> @ecs.ComponentAccess[
     KinematicCharacterController2d,
   ]
 }
 
 ///|
 pub(open) trait Has_KinematicCharacterControllerOutput2d {
-  get_kinematic_character_controller_output2d_store(self : Self) -> @core.ComponentStore[
+  get_kinematic_character_controller_output2d_store(self : Self) -> @ecs.ComponentAccess[
     KinematicCharacterControllerOutput2d,
   ]
 }
 
 ///|
-pub fn[W : Has_Ccd2d] get_ccd2d_store(world : W) -> @core.ComponentStore[Ccd2d] {
+pub fn[W : Has_Ccd2d] get_ccd2d_store(world : W) -> @ecs.ComponentAccess[Ccd2d] {
   world.get_ccd2d_store()
 }
 
 ///|
 pub fn[W : Has_Damping2d] get_damping2d_store(
   world : W,
-) -> @core.ComponentStore[Damping2d] {
+) -> @ecs.ComponentAccess[Damping2d] {
   world.get_damping2d_store()
 }
 
 ///|
 pub fn[W : Has_Collider2d] get_collider2d_store(
   world : W,
-) -> @core.ComponentStore[Collider2d] {
+) -> @ecs.ComponentAccess[Collider2d] {
   world.get_collider2d_store()
 }
 
 ///|
 pub fn[W : Has_Friction2d] get_friction2d_store(
   world : W,
-) -> @core.ComponentStore[Friction2d] {
+) -> @ecs.ComponentAccess[Friction2d] {
   world.get_friction2d_store()
 }
 
 ///|
 pub fn[W : Has_Sleeping2d] get_sleeping2d_store(
   world : W,
-) -> @core.ComponentStore[Sleeping2d] {
+) -> @ecs.ComponentAccess[Sleeping2d] {
   world.get_sleeping2d_store()
 }
 
 ///|
 pub fn[W : Has_Velocity2d] get_velocity2d_store(
   world : W,
-) -> @core.ComponentStore[Velocity2d] {
+) -> @ecs.ComponentAccess[Velocity2d] {
   world.get_velocity2d_store()
 }
 
 ///|
 pub fn[W : Has_Dominance2d] get_dominance2d_store(
   world : W,
-) -> @core.ComponentStore[Dominance2d] {
+) -> @ecs.ComponentAccess[Dominance2d] {
   world.get_dominance2d_store()
 }
 
 ///|
 pub fn[W : Has_RigidBody2d] get_rigid_body2d_store(
   world : W,
-) -> @core.ComponentStore[RigidBody2d] {
+) -> @ecs.ComponentAccess[RigidBody2d] {
   world.get_rigid_body2d_store()
 }
 
 ///|
 pub fn[W : Has_LockedAxes2d] get_locked_axes2d_store(
   world : W,
-) -> @core.ComponentStore[LockedAxes2d] {
+) -> @ecs.ComponentAccess[LockedAxes2d] {
   world.get_locked_axes2d_store()
 }
 
 ///|
 pub fn[W : Has_ActiveHooks2d] get_active_hooks2d_store(
   world : W,
-) -> @core.ComponentStore[ActiveHooks2d] {
+) -> @ecs.ComponentAccess[ActiveHooks2d] {
   world.get_active_hooks2d_store()
 }
 
 ///|
 pub fn[W : Has_ContactSkin2d] get_contact_skin2d_store(
   world : W,
-) -> @core.ComponentStore[ContactSkin2d] {
+) -> @ecs.ComponentAccess[ContactSkin2d] {
   world.get_contact_skin2d_store()
 }
 
 ///|
 pub fn[W : Has_Restitution2d] get_restitution2d_store(
   world : W,
-) -> @core.ComponentStore[Restitution2d] {
+) -> @ecs.ComponentAccess[Restitution2d] {
   world.get_restitution2d_store()
 }
 
 ///|
 pub fn[W : Has_ActiveEvents2d] get_active_events2d_store(
   world : W,
-) -> @core.ComponentStore[ActiveEvents2d] {
+) -> @ecs.ComponentAccess[ActiveEvents2d] {
   world.get_active_events2d_store()
 }
 
 ///|
 pub fn[W : Has_GravityScale2d] get_gravity_scale2d_store(
   world : W,
-) -> @core.ComponentStore[GravityScale2d] {
+) -> @ecs.ComponentAccess[GravityScale2d] {
   world.get_gravity_scale2d_store()
 }
 
 ///|
 pub fn[W : Has_ImpulseJoint2d] get_impulse_joint2d_store(
   world : W,
-) -> @core.ComponentStore[ImpulseJoint2d] {
+) -> @ecs.ComponentAccess[ImpulseJoint2d] {
   world.get_impulse_joint2d_store()
 }
 
 ///|
 pub fn[W : Has_SolverGroups2d] get_solver_groups2d_store(
   world : W,
-) -> @core.ComponentStore[SolverGroups2d] {
+) -> @ecs.ComponentAccess[SolverGroups2d] {
   world.get_solver_groups2d_store()
 }
 
 ///|
 pub fn[W : Has_ExternalForce2d] get_external_force2d_store(
   world : W,
-) -> @core.ComponentStore[ExternalForce2d] {
+) -> @ecs.ComponentAccess[ExternalForce2d] {
   world.get_external_force2d_store()
 }
 
 ///|
 pub fn[W : Has_ColliderParent2d] get_collider_parent2d_store(
   world : W,
-) -> @core.ComponentStore[ColliderParent2d] {
+) -> @ecs.ComponentAccess[ColliderParent2d] {
   world.get_collider_parent2d_store()
 }
 
 ///|
 pub fn[W : Has_MultibodyJoint2d] get_multibody_joint2d_store(
   world : W,
-) -> @core.ComponentStore[MultibodyJoint2d] {
+) -> @ecs.ComponentAccess[MultibodyJoint2d] {
   world.get_multibody_joint2d_store()
 }
 
 ///|
 pub fn[W : Has_ColliderDensity2d] get_collider_density2d_store(
   world : W,
-) -> @core.ComponentStore[ColliderDensity2d] {
+) -> @ecs.ComponentAccess[ColliderDensity2d] {
   world.get_collider_density2d_store()
 }
 
 ///|
 pub fn[W : Has_ColliderEnabled2d] get_collider_enabled2d_store(
   world : W,
-) -> @core.ComponentStore[ColliderEnabled2d] {
+) -> @ecs.ComponentAccess[ColliderEnabled2d] {
   world.get_collider_enabled2d_store()
 }
 
 ///|
 pub fn[W : Has_CollisionGroups2d] get_collision_groups2d_store(
   world : W,
-) -> @core.ComponentStore[CollisionGroups2d] {
+) -> @ecs.ComponentAccess[CollisionGroups2d] {
   world.get_collision_groups2d_store()
 }
 
 ///|
 pub fn[W : Has_ExternalImpulse2d] get_external_impulse2d_store(
   world : W,
-) -> @core.ComponentStore[ExternalImpulse2d] {
+) -> @ecs.ComponentAccess[ExternalImpulse2d] {
   world.get_external_impulse2d_store()
 }
 
 ///|
 pub fn[W : Has_RapierBodyHandle2d] get_rapier_body_handle2d_store(
   world : W,
-) -> @core.ComponentStore[RapierBodyHandle2d] {
+) -> @ecs.ComponentAccess[RapierBodyHandle2d] {
   world.get_rapier_body_handle2d_store()
 }
 
 ///|
 pub fn[W : Has_RigidBodyEnabled2d] get_rigid_body_enabled2d_store(
   world : W,
-) -> @core.ComponentStore[RigidBodyEnabled2d] {
+) -> @ecs.ComponentAccess[RigidBodyEnabled2d] {
   world.get_rigid_body_enabled2d_store()
 }
 
 ///|
 pub fn[W : Has_FrictionCombineRule2d] get_friction_combine_rule2d_store(
   world : W,
-) -> @core.ComponentStore[FrictionCombineRule2d] {
+) -> @ecs.ComponentAccess[FrictionCombineRule2d] {
   world.get_friction_combine_rule2d_store()
 }
 
 ///|
 pub fn[W : Has_ActiveCollisionTypes2d] get_active_collision_types2d_store(
   world : W,
-) -> @core.ComponentStore[ActiveCollisionTypes2d] {
+) -> @ecs.ComponentAccess[ActiveCollisionTypes2d] {
   world.get_active_collision_types2d_store()
 }
 
 ///|
 pub fn[W : Has_RapierColliderHandle2d] get_rapier_collider_handle2d_store(
   world : W,
-) -> @core.ComponentStore[RapierColliderHandle2d] {
+) -> @ecs.ComponentAccess[RapierColliderHandle2d] {
   world.get_rapier_collider_handle2d_store()
 }
 
 ///|
 pub fn[W : Has_ColliderMassProperties2d] get_collider_mass_properties2d_store(
   world : W,
-) -> @core.ComponentStore[ColliderMassProperties2d] {
+) -> @ecs.ComponentAccess[ColliderMassProperties2d] {
   world.get_collider_mass_properties2d_store()
 }
 
 ///|
 pub fn[W : Has_RestitutionCombineRule2d] get_restitution_combine_rule2d_store(
   world : W,
-) -> @core.ComponentStore[RestitutionCombineRule2d] {
+) -> @ecs.ComponentAccess[RestitutionCombineRule2d] {
   world.get_restitution_combine_rule2d_store()
 }
 
 ///|
 pub fn[W : Has_AdditionalMassProperties2d] get_additional_mass_properties2d_store(
   world : W,
-) -> @core.ComponentStore[AdditionalMassProperties2d] {
+) -> @ecs.ComponentAccess[AdditionalMassProperties2d] {
   world.get_additional_mass_properties2d_store()
 }
 
 ///|
 pub fn[W : Has_RapierImpulseJointHandle2d] get_rapier_impulse_joint_handle2d_store(
   world : W,
-) -> @core.ComponentStore[RapierImpulseJointHandle2d] {
+) -> @ecs.ComponentAccess[RapierImpulseJointHandle2d] {
   world.get_rapier_impulse_joint_handle2d_store()
 }
 
 ///|
 pub fn[W : Has_AdditionalSolverIterations2d] get_additional_solver_iterations2d_store(
   world : W,
-) -> @core.ComponentStore[AdditionalSolverIterations2d] {
+) -> @ecs.ComponentAccess[AdditionalSolverIterations2d] {
   world.get_additional_solver_iterations2d_store()
 }
 
 ///|
 pub fn[W : Has_ContactForceEventThreshold2d] get_contact_force_event_threshold2d_store(
   world : W,
-) -> @core.ComponentStore[ContactForceEventThreshold2d] {
+) -> @ecs.ComponentAccess[ContactForceEventThreshold2d] {
   world.get_contact_force_event_threshold2d_store()
 }
 
 ///|
 pub fn[W : Has_RapierMultibodyJointHandle2d] get_rapier_multibody_joint_handle2d_store(
   world : W,
-) -> @core.ComponentStore[RapierMultibodyJointHandle2d] {
+) -> @ecs.ComponentAccess[RapierMultibodyJointHandle2d] {
   world.get_rapier_multibody_joint_handle2d_store()
 }
 
 ///|
 pub fn[W : Has_KinematicCharacterController2d] get_kinematic_character_controller2d_store(
   world : W,
-) -> @core.ComponentStore[KinematicCharacterController2d] {
+) -> @ecs.ComponentAccess[KinematicCharacterController2d] {
   world.get_kinematic_character_controller2d_store()
 }
 
 ///|
 pub fn[W : Has_KinematicCharacterControllerOutput2d] get_kinematic_character_controller_output2d_store(
   world : W,
-) -> @core.ComponentStore[KinematicCharacterControllerOutput2d] {
+) -> @ecs.ComponentAccess[KinematicCharacterControllerOutput2d] {
   world.get_kinematic_character_controller_output2d_store()
 }
 
 ///|
 pub(open) trait HasRes_Physics2dConfig {
-  get_physics2d_config_resource(self : Self) -> @core.Resource[Physics2dConfig]
+  get_physics2d_config_resource(self : Self) -> @ecs.ResourceAccess[
+    Physics2dConfig,
+  ]
 }
 
 ///|
 pub(open) trait HasRes_Physics2dEvents {
-  get_physics2d_events_resource(self : Self) -> @core.Resource[Physics2dEvents]
+  get_physics2d_events_resource(self : Self) -> @ecs.ResourceAccess[
+    Physics2dEvents,
+  ]
 }
 
 ///|
 pub(open) trait HasRes_Physics2dContext {
-  get_physics2d_context_resource(self : Self) -> @core.Resource[
+  get_physics2d_context_resource(self : Self) -> @ecs.ResourceAccess[
     Physics2dContext,
   ]
 }
@@ -536,21 +754,21 @@ pub(open) trait HasRes_Physics2dContext {
 ///|
 pub fn[W : HasRes_Physics2dConfig] get_physics2d_config_resource(
   world : W,
-) -> @core.Resource[Physics2dConfig] {
+) -> @ecs.ResourceAccess[Physics2dConfig] {
   world.get_physics2d_config_resource()
 }
 
 ///|
 pub fn[W : HasRes_Physics2dEvents] get_physics2d_events_resource(
   world : W,
-) -> @core.Resource[Physics2dEvents] {
+) -> @ecs.ResourceAccess[Physics2dEvents] {
   world.get_physics2d_events_resource()
 }
 
 ///|
 pub fn[W : HasRes_Physics2dContext] get_physics2d_context_resource(
   world : W,
-) -> @core.Resource[Physics2dContext] {
+) -> @ecs.ResourceAccess[Physics2dContext] {
   world.get_physics2d_context_resource()
 }
 
@@ -558,580 +776,251 @@ pub fn[W : HasRes_Physics2dContext] get_physics2d_context_resource(
 /// ECS bridge impls for @ecs.World.
 
 ///|
-let bridge_get_ccd2d_store_by_world : Map[Int, @core.ComponentStore[Ccd2d]] = {}
-
-///|
 pub impl Has_Ccd2d for @ecs.World with get_ccd2d_store(self) {
-  bridge_get_ccd2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_ccd2d)
 }
-
-///|
-let bridge_get_damping2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Damping2d],
-] = {}
 
 ///|
 pub impl Has_Damping2d for @ecs.World with get_damping2d_store(self) {
-  bridge_get_damping2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_damping2d)
 }
-
-///|
-let bridge_get_collider2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Collider2d],
-] = {}
 
 ///|
 pub impl Has_Collider2d for @ecs.World with get_collider2d_store(self) {
-  bridge_get_collider2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_collider2d)
 }
-
-///|
-let bridge_get_friction2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Friction2d],
-] = {}
 
 ///|
 pub impl Has_Friction2d for @ecs.World with get_friction2d_store(self) {
-  bridge_get_friction2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_friction2d)
 }
-
-///|
-let bridge_get_sleeping2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Sleeping2d],
-] = {}
 
 ///|
 pub impl Has_Sleeping2d for @ecs.World with get_sleeping2d_store(self) {
-  bridge_get_sleeping2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_sleeping2d)
 }
-
-///|
-let bridge_get_velocity2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Velocity2d],
-] = {}
 
 ///|
 pub impl Has_Velocity2d for @ecs.World with get_velocity2d_store(self) {
-  bridge_get_velocity2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_velocity2d)
 }
-
-///|
-let bridge_get_dominance2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Dominance2d],
-] = {}
 
 ///|
 pub impl Has_Dominance2d for @ecs.World with get_dominance2d_store(self) {
-  bridge_get_dominance2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_dominance2d)
 }
-
-///|
-let bridge_get_rigid_body2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RigidBody2d],
-] = {}
 
 ///|
 pub impl Has_RigidBody2d for @ecs.World with get_rigid_body2d_store(self) {
-  bridge_get_rigid_body2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_rigid_body2d)
 }
-
-///|
-let bridge_get_locked_axes2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[LockedAxes2d],
-] = {}
 
 ///|
 pub impl Has_LockedAxes2d for @ecs.World with get_locked_axes2d_store(self) {
-  bridge_get_locked_axes2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_locked_axes2d)
 }
-
-///|
-let bridge_get_active_hooks2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ActiveHooks2d],
-] = {}
 
 ///|
 pub impl Has_ActiveHooks2d for @ecs.World with get_active_hooks2d_store(self) {
-  bridge_get_active_hooks2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_active_hooks2d)
 }
-
-///|
-let bridge_get_contact_skin2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ContactSkin2d],
-] = {}
 
 ///|
 pub impl Has_ContactSkin2d for @ecs.World with get_contact_skin2d_store(self) {
-  bridge_get_contact_skin2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_contact_skin2d)
 }
-
-///|
-let bridge_get_restitution2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[Restitution2d],
-] = {}
 
 ///|
 pub impl Has_Restitution2d for @ecs.World with get_restitution2d_store(self) {
-  bridge_get_restitution2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_restitution2d)
 }
-
-///|
-let bridge_get_active_events2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ActiveEvents2d],
-] = {}
 
 ///|
 pub impl Has_ActiveEvents2d for @ecs.World with get_active_events2d_store(self) {
-  bridge_get_active_events2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_active_events2d)
 }
-
-///|
-let bridge_get_gravity_scale2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[GravityScale2d],
-] = {}
 
 ///|
 pub impl Has_GravityScale2d for @ecs.World with get_gravity_scale2d_store(self) {
-  bridge_get_gravity_scale2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_gravity_scale2d)
 }
-
-///|
-let bridge_get_impulse_joint2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ImpulseJoint2d],
-] = {}
 
 ///|
 pub impl Has_ImpulseJoint2d for @ecs.World with get_impulse_joint2d_store(self) {
-  bridge_get_impulse_joint2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_impulse_joint2d)
 }
-
-///|
-let bridge_get_solver_groups2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[SolverGroups2d],
-] = {}
 
 ///|
 pub impl Has_SolverGroups2d for @ecs.World with get_solver_groups2d_store(self) {
-  bridge_get_solver_groups2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_solver_groups2d)
 }
-
-///|
-let bridge_get_external_force2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ExternalForce2d],
-] = {}
 
 ///|
 pub impl Has_ExternalForce2d for @ecs.World with get_external_force2d_store(
   self,
 ) {
-  bridge_get_external_force2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_external_force2d)
 }
-
-///|
-let bridge_get_collider_parent2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ColliderParent2d],
-] = {}
 
 ///|
 pub impl Has_ColliderParent2d for @ecs.World with get_collider_parent2d_store(
   self,
 ) {
-  bridge_get_collider_parent2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_collider_parent2d)
 }
-
-///|
-let bridge_get_multibody_joint2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[MultibodyJoint2d],
-] = {}
 
 ///|
 pub impl Has_MultibodyJoint2d for @ecs.World with get_multibody_joint2d_store(
   self,
 ) {
-  bridge_get_multibody_joint2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_multibody_joint2d)
 }
-
-///|
-let bridge_get_collider_density2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ColliderDensity2d],
-] = {}
 
 ///|
 pub impl Has_ColliderDensity2d for @ecs.World with get_collider_density2d_store(
   self,
 ) {
-  bridge_get_collider_density2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_collider_density2d)
 }
-
-///|
-let bridge_get_collider_enabled2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ColliderEnabled2d],
-] = {}
 
 ///|
 pub impl Has_ColliderEnabled2d for @ecs.World with get_collider_enabled2d_store(
   self,
 ) {
-  bridge_get_collider_enabled2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_collider_enabled2d)
 }
-
-///|
-let bridge_get_collision_groups2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[CollisionGroups2d],
-] = {}
 
 ///|
 pub impl Has_CollisionGroups2d for @ecs.World with get_collision_groups2d_store(
   self,
 ) {
-  bridge_get_collision_groups2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_collision_groups2d)
 }
-
-///|
-let bridge_get_external_impulse2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ExternalImpulse2d],
-] = {}
 
 ///|
 pub impl Has_ExternalImpulse2d for @ecs.World with get_external_impulse2d_store(
   self,
 ) {
-  bridge_get_external_impulse2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_external_impulse2d)
 }
-
-///|
-let bridge_get_rapier_body_handle2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RapierBodyHandle2d],
-] = {}
 
 ///|
 pub impl Has_RapierBodyHandle2d for @ecs.World with get_rapier_body_handle2d_store(
   self,
 ) {
-  bridge_get_rapier_body_handle2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_rapier_body_handle2d)
 }
-
-///|
-let bridge_get_rigid_body_enabled2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RigidBodyEnabled2d],
-] = {}
 
 ///|
 pub impl Has_RigidBodyEnabled2d for @ecs.World with get_rigid_body_enabled2d_store(
   self,
 ) {
-  bridge_get_rigid_body_enabled2d_store_by_world.get_or_init(self.world_id(), fn() {
-    @core.ComponentStore::new()
-  })
+  self.component(ecs_key_rigid_body_enabled2d)
 }
-
-///|
-let bridge_get_friction_combine_rule2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[FrictionCombineRule2d],
-] = {}
 
 ///|
 pub impl Has_FrictionCombineRule2d for @ecs.World with get_friction_combine_rule2d_store(
   self,
 ) {
-  bridge_get_friction_combine_rule2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_friction_combine_rule2d)
 }
-
-///|
-let bridge_get_active_collision_types2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ActiveCollisionTypes2d],
-] = {}
 
 ///|
 pub impl Has_ActiveCollisionTypes2d for @ecs.World with get_active_collision_types2d_store(
   self,
 ) {
-  bridge_get_active_collision_types2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_active_collision_types2d)
 }
-
-///|
-let bridge_get_rapier_collider_handle2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RapierColliderHandle2d],
-] = {}
 
 ///|
 pub impl Has_RapierColliderHandle2d for @ecs.World with get_rapier_collider_handle2d_store(
   self,
 ) {
-  bridge_get_rapier_collider_handle2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_rapier_collider_handle2d)
 }
-
-///|
-let bridge_get_collider_mass_properties2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ColliderMassProperties2d],
-] = {}
 
 ///|
 pub impl Has_ColliderMassProperties2d for @ecs.World with get_collider_mass_properties2d_store(
   self,
 ) {
-  bridge_get_collider_mass_properties2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_collider_mass_properties2d)
 }
-
-///|
-let bridge_get_restitution_combine_rule2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RestitutionCombineRule2d],
-] = {}
 
 ///|
 pub impl Has_RestitutionCombineRule2d for @ecs.World with get_restitution_combine_rule2d_store(
   self,
 ) {
-  bridge_get_restitution_combine_rule2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_restitution_combine_rule2d)
 }
-
-///|
-let bridge_get_additional_mass_properties2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[AdditionalMassProperties2d],
-] = {}
 
 ///|
 pub impl Has_AdditionalMassProperties2d for @ecs.World with get_additional_mass_properties2d_store(
   self,
 ) {
-  bridge_get_additional_mass_properties2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_additional_mass_properties2d)
 }
-
-///|
-let bridge_get_rapier_impulse_joint_handle2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RapierImpulseJointHandle2d],
-] = {}
 
 ///|
 pub impl Has_RapierImpulseJointHandle2d for @ecs.World with get_rapier_impulse_joint_handle2d_store(
   self,
 ) {
-  bridge_get_rapier_impulse_joint_handle2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_rapier_impulse_joint_handle2d)
 }
-
-///|
-let bridge_get_additional_solver_iterations2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[AdditionalSolverIterations2d],
-] = {}
 
 ///|
 pub impl Has_AdditionalSolverIterations2d for @ecs.World with get_additional_solver_iterations2d_store(
   self,
 ) {
-  bridge_get_additional_solver_iterations2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_additional_solver_iterations2d)
 }
-
-///|
-let bridge_get_contact_force_event_threshold2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[ContactForceEventThreshold2d],
-] = {}
 
 ///|
 pub impl Has_ContactForceEventThreshold2d for @ecs.World with get_contact_force_event_threshold2d_store(
   self,
 ) {
-  bridge_get_contact_force_event_threshold2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_contact_force_event_threshold2d)
 }
-
-///|
-let bridge_get_rapier_multibody_joint_handle2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[RapierMultibodyJointHandle2d],
-] = {}
 
 ///|
 pub impl Has_RapierMultibodyJointHandle2d for @ecs.World with get_rapier_multibody_joint_handle2d_store(
   self,
 ) {
-  bridge_get_rapier_multibody_joint_handle2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_rapier_multibody_joint_handle2d)
 }
-
-///|
-let bridge_get_kinematic_character_controller2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[KinematicCharacterController2d],
-] = {}
 
 ///|
 pub impl Has_KinematicCharacterController2d for @ecs.World with get_kinematic_character_controller2d_store(
   self,
 ) {
-  bridge_get_kinematic_character_controller2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_kinematic_character_controller2d)
 }
-
-///|
-let bridge_get_kinematic_character_controller_output2d_store_by_world : Map[
-  Int,
-  @core.ComponentStore[KinematicCharacterControllerOutput2d],
-] = {}
 
 ///|
 pub impl Has_KinematicCharacterControllerOutput2d for @ecs.World with get_kinematic_character_controller_output2d_store(
   self,
 ) {
-  bridge_get_kinematic_character_controller_output2d_store_by_world.get_or_init(
-    self.world_id(),
-    fn() { @core.ComponentStore::new() },
-  )
+  self.component(ecs_key_kinematic_character_controller_output2d)
 }
-
-///|
-let bridge_get_physics2d_config_resource_by_world : Map[
-  Int,
-  @core.Resource[Physics2dConfig],
-] = {}
 
 ///|
 pub impl HasRes_Physics2dConfig for @ecs.World with get_physics2d_config_resource(
   self,
 ) {
-  bridge_get_physics2d_config_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_physics2d_config)
 }
-
-///|
-let bridge_get_physics2d_events_resource_by_world : Map[
-  Int,
-  @core.Resource[Physics2dEvents],
-] = {}
 
 ///|
 pub impl HasRes_Physics2dEvents for @ecs.World with get_physics2d_events_resource(
   self,
 ) {
-  bridge_get_physics2d_events_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_physics2d_events)
 }
-
-///|
-let bridge_get_physics2d_context_resource_by_world : Map[
-  Int,
-  @core.Resource[Physics2dContext],
-] = {}
 
 ///|
 pub impl HasRes_Physics2dContext for @ecs.World with get_physics2d_context_resource(
   self,
 ) {
-  bridge_get_physics2d_context_resource_by_world.get_or_init(self.world_id(), fn() {
-    @core.Resource::new()
-  })
+  self.resource(ecs_res_key_physics2d_context)
 }
 
 ///|

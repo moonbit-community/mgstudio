@@ -16,9 +16,9 @@ pub let ecs_key_parent : @ecs.ComponentKey[Parent]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_Children] get_children_store(W) -> @core.ComponentStore[Children]
+pub fn[W : Has_Children] get_children_store(W) -> @ecs.ComponentAccess[Children]
 
-pub fn[W : Has_Parent] get_parent_store(W) -> @core.ComponentStore[Parent]
+pub fn[W : Has_Parent] get_parent_store(W) -> @ecs.ComponentAccess[Parent]
 
 // Errors
 
@@ -43,12 +43,12 @@ pub impl @json.FromJson for Parent
 
 // Traits
 pub(open) trait Has_Children {
-  get_children_store(Self) -> @core.ComponentStore[Children]
+  get_children_store(Self) -> @ecs.ComponentAccess[Children]
 }
 pub impl Has_Children for @ecs.World
 
 pub(open) trait Has_Parent {
-  get_parent_store(Self) -> @core.ComponentStore[Parent]
+  get_parent_store(Self) -> @ecs.ComponentAccess[Parent]
 }
 pub impl Has_Parent for @ecs.World
 

@@ -95,9 +95,12 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
 
   // Make gravity visible in "pixel-ish" space.
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
-  match cfg_res.get_ref_mut(tick) {
-    Some(r) =>
-      r.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -800.0F))
+  match cfg_res.get() {
+    Some(current_cfg) => {
+      let cfg = Ref::new(current_cfg)
+      cfg.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -800.0F))
+      cfg_res.insert(cfg.val, tick)
+    }
     None => ()
   }
 
@@ -581,8 +584,8 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
 ///|
 fn physics2d_showcase_print_events(world : @ecs.World) -> Unit {
   let ev_res = @physics2d.get_physics2d_events_resource(world)
-  guard ev_res.get_ref() is Some(r) else { return }
-  for ev in r.val.collisions {
+  guard ev_res.get() is Some(events) else { return }
+  for ev in events.collisions {
     match ev {
       @physics2d.CollisionEvent2d::Started(a, b, sensor) =>
         if sensor {

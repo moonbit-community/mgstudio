@@ -57,43 +57,43 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig]
 
 pub let ecs_resources : Array[String]
 
-pub fn[W : Has_Anchor] get_anchor_store(W) -> @core.ComponentStore[Anchor]
+pub fn[W : Has_Anchor] get_anchor_store(W) -> @ecs.ComponentAccess[Anchor]
 
-pub fn[W : Has_Bloom2d] get_bloom2d_store(W) -> @core.ComponentStore[Bloom2d]
+pub fn[W : Has_Bloom2d] get_bloom2d_store(W) -> @ecs.ComponentAccess[Bloom2d]
 
-pub fn[W : Has_Camera2d] get_camera2d_store(W) -> @core.ComponentStore[Camera2d]
+pub fn[W : Has_Camera2d] get_camera2d_store(W) -> @ecs.ComponentAccess[Camera2d]
 
-pub fn[W : Has_Camera] get_camera_store(W) -> @core.ComponentStore[Camera]
+pub fn[W : Has_Camera] get_camera_store(W) -> @ecs.ComponentAccess[Camera]
 
-pub fn[W : Has_ClearColorConfig] get_clear_color_config_store(W) -> @core.ComponentStore[ClearColorConfig]
+pub fn[W : Has_ClearColorConfig] get_clear_color_config_store(W) -> @ecs.ComponentAccess[ClearColorConfig]
 
-pub fn[W : Has_ColorMaterial] get_color_material_store(W) -> @core.ComponentStore[ColorMaterial]
+pub fn[W : Has_ColorMaterial] get_color_material_store(W) -> @ecs.ComponentAccess[ColorMaterial]
 
-pub fn[W : Has_GpuMesh2d] get_gpu_mesh2d_store(W) -> @core.ComponentStore[GpuMesh2d]
+pub fn[W : Has_GpuMesh2d] get_gpu_mesh2d_store(W) -> @ecs.ComponentAccess[GpuMesh2d]
 
-pub fn[W : Has_Mesh2d] get_mesh2d_store(W) -> @core.ComponentStore[Mesh2d]
+pub fn[W : Has_Mesh2d] get_mesh2d_store(W) -> @ecs.ComponentAccess[Mesh2d]
 
-pub fn[W : Has_MeshMaterial2d] get_mesh_material2d_store(W) -> @core.ComponentStore[MeshMaterial2d]
+pub fn[W : Has_MeshMaterial2d] get_mesh_material2d_store(W) -> @ecs.ComponentAccess[MeshMaterial2d]
 
-pub fn[W : Has_NoWireframe2d] get_no_wireframe2d_store(W) -> @core.ComponentStore[NoWireframe2d]
+pub fn[W : Has_NoWireframe2d] get_no_wireframe2d_store(W) -> @ecs.ComponentAccess[NoWireframe2d]
 
-pub fn[W : Has_Projection] get_projection_store(W) -> @core.ComponentStore[Projection]
+pub fn[W : Has_Projection] get_projection_store(W) -> @ecs.ComponentAccess[Projection]
 
-pub fn[W : Has_RenderLayers] get_render_layers_store(W) -> @core.ComponentStore[RenderLayers]
+pub fn[W : Has_RenderLayers] get_render_layers_store(W) -> @ecs.ComponentAccess[RenderLayers]
 
-pub fn[W : HasRes_RenderState] get_render_state_resource(W) -> @core.Resource[RenderState]
+pub fn[W : HasRes_RenderState] get_render_state_resource(W) -> @ecs.ResourceAccess[RenderState]
 
-pub fn[W : Has_RenderTarget] get_render_target_store(W) -> @core.ComponentStore[RenderTarget]
+pub fn[W : Has_RenderTarget] get_render_target_store(W) -> @ecs.ComponentAccess[RenderTarget]
 
-pub fn[W : Has_ScissorRect] get_scissor_rect_store(W) -> @core.ComponentStore[ScissorRect]
+pub fn[W : Has_ScissorRect] get_scissor_rect_store(W) -> @ecs.ComponentAccess[ScissorRect]
 
-pub fn[W : Has_Sprite] get_sprite_store(W) -> @core.ComponentStore[Sprite]
+pub fn[W : Has_Sprite] get_sprite_store(W) -> @ecs.ComponentAccess[Sprite]
 
-pub fn[W : Has_Wireframe2dColor] get_wireframe2d_color_store(W) -> @core.ComponentStore[Wireframe2dColor]
+pub fn[W : Has_Wireframe2dColor] get_wireframe2d_color_store(W) -> @ecs.ComponentAccess[Wireframe2dColor]
 
-pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(W) -> @core.Resource[Wireframe2dConfig]
+pub fn[W : HasRes_Wireframe2dConfig] get_wireframe2d_config_resource(W) -> @ecs.ResourceAccess[Wireframe2dConfig]
 
-pub fn[W : Has_Wireframe2d] get_wireframe2d_store(W) -> @core.ComponentStore[Wireframe2d]
+pub fn[W : Has_Wireframe2d] get_wireframe2d_store(W) -> @ecs.ComponentAccess[Wireframe2d]
 
 pub fn gizmo_config() -> GizmoConfig
 
@@ -187,6 +187,8 @@ pub(all) enum AlphaMode2d {
   Mask(Float)
   Blend
 }
+pub impl ToJson for AlphaMode2d
+pub impl @json.FromJson for AlphaMode2d
 
 pub struct Anchor {
   value : @math.Vec2
@@ -637,6 +639,8 @@ pub struct OrthographicProjection {
 pub fn OrthographicProjection::default_2d() -> Self
 pub fn OrthographicProjection::new(Float) -> Self
 pub fn OrthographicProjection::with_scale(Self, Float) -> Self
+pub impl ToJson for OrthographicProjection
+pub impl @json.FromJson for OrthographicProjection
 
 pub(all) struct OverlaySpriteUvScissor {
   texture : @asset.Handle[@asset.Image]
@@ -711,6 +715,8 @@ pub impl ToJson for RenderLayers
 pub impl @json.FromJson for RenderLayers
 
 type RenderState
+pub impl ToJson for RenderState
+pub impl @json.FromJson for RenderState
 
 pub(all) enum RenderTarget {
   Screen
@@ -891,6 +897,8 @@ pub struct UiBorderRect {
 }
 pub fn UiBorderRect::new(Float, Float, Float, Float) -> Self
 pub fn UiBorderRect::zero() -> Self
+pub impl ToJson for UiBorderRect
+pub impl @json.FromJson for UiBorderRect
 
 pub struct UiCornerRadii {
   top_left : Float
@@ -900,6 +908,8 @@ pub struct UiCornerRadii {
 }
 pub fn UiCornerRadii::new(Float, Float, Float, Float) -> Self
 pub fn UiCornerRadii::zero() -> Self
+pub impl ToJson for UiCornerRadii
+pub impl @json.FromJson for UiCornerRadii
 
 pub struct Viewport {
   physical_position : @math.IVec2
@@ -942,97 +952,97 @@ pub impl @json.FromJson for Wireframe2dConfig
 
 // Traits
 pub(open) trait HasRes_RenderState {
-  get_render_state_resource(Self) -> @core.Resource[RenderState]
+  get_render_state_resource(Self) -> @ecs.ResourceAccess[RenderState]
 }
 pub impl HasRes_RenderState for @ecs.World
 
 pub(open) trait HasRes_Wireframe2dConfig {
-  get_wireframe2d_config_resource(Self) -> @core.Resource[Wireframe2dConfig]
+  get_wireframe2d_config_resource(Self) -> @ecs.ResourceAccess[Wireframe2dConfig]
 }
 pub impl HasRes_Wireframe2dConfig for @ecs.World
 
 pub(open) trait Has_Anchor {
-  get_anchor_store(Self) -> @core.ComponentStore[Anchor]
+  get_anchor_store(Self) -> @ecs.ComponentAccess[Anchor]
 }
 pub impl Has_Anchor for @ecs.World
 
 pub(open) trait Has_Bloom2d {
-  get_bloom2d_store(Self) -> @core.ComponentStore[Bloom2d]
+  get_bloom2d_store(Self) -> @ecs.ComponentAccess[Bloom2d]
 }
 pub impl Has_Bloom2d for @ecs.World
 
 pub(open) trait Has_Camera {
-  get_camera_store(Self) -> @core.ComponentStore[Camera]
+  get_camera_store(Self) -> @ecs.ComponentAccess[Camera]
 }
 pub impl Has_Camera for @ecs.World
 
 pub(open) trait Has_Camera2d {
-  get_camera2d_store(Self) -> @core.ComponentStore[Camera2d]
+  get_camera2d_store(Self) -> @ecs.ComponentAccess[Camera2d]
 }
 pub impl Has_Camera2d for @ecs.World
 
 pub(open) trait Has_ClearColorConfig {
-  get_clear_color_config_store(Self) -> @core.ComponentStore[ClearColorConfig]
+  get_clear_color_config_store(Self) -> @ecs.ComponentAccess[ClearColorConfig]
 }
 pub impl Has_ClearColorConfig for @ecs.World
 
 pub(open) trait Has_ColorMaterial {
-  get_color_material_store(Self) -> @core.ComponentStore[ColorMaterial]
+  get_color_material_store(Self) -> @ecs.ComponentAccess[ColorMaterial]
 }
 pub impl Has_ColorMaterial for @ecs.World
 
 pub(open) trait Has_GpuMesh2d {
-  get_gpu_mesh2d_store(Self) -> @core.ComponentStore[GpuMesh2d]
+  get_gpu_mesh2d_store(Self) -> @ecs.ComponentAccess[GpuMesh2d]
 }
 pub impl Has_GpuMesh2d for @ecs.World
 
 pub(open) trait Has_Mesh2d {
-  get_mesh2d_store(Self) -> @core.ComponentStore[Mesh2d]
+  get_mesh2d_store(Self) -> @ecs.ComponentAccess[Mesh2d]
 }
 pub impl Has_Mesh2d for @ecs.World
 
 pub(open) trait Has_MeshMaterial2d {
-  get_mesh_material2d_store(Self) -> @core.ComponentStore[MeshMaterial2d]
+  get_mesh_material2d_store(Self) -> @ecs.ComponentAccess[MeshMaterial2d]
 }
 pub impl Has_MeshMaterial2d for @ecs.World
 
 pub(open) trait Has_NoWireframe2d {
-  get_no_wireframe2d_store(Self) -> @core.ComponentStore[NoWireframe2d]
+  get_no_wireframe2d_store(Self) -> @ecs.ComponentAccess[NoWireframe2d]
 }
 pub impl Has_NoWireframe2d for @ecs.World
 
 pub(open) trait Has_Projection {
-  get_projection_store(Self) -> @core.ComponentStore[Projection]
+  get_projection_store(Self) -> @ecs.ComponentAccess[Projection]
 }
 pub impl Has_Projection for @ecs.World
 
 pub(open) trait Has_RenderLayers {
-  get_render_layers_store(Self) -> @core.ComponentStore[RenderLayers]
+  get_render_layers_store(Self) -> @ecs.ComponentAccess[RenderLayers]
 }
 pub impl Has_RenderLayers for @ecs.World
 
 pub(open) trait Has_RenderTarget {
-  get_render_target_store(Self) -> @core.ComponentStore[RenderTarget]
+  get_render_target_store(Self) -> @ecs.ComponentAccess[RenderTarget]
 }
 pub impl Has_RenderTarget for @ecs.World
 
 pub(open) trait Has_ScissorRect {
-  get_scissor_rect_store(Self) -> @core.ComponentStore[ScissorRect]
+  get_scissor_rect_store(Self) -> @ecs.ComponentAccess[ScissorRect]
 }
 pub impl Has_ScissorRect for @ecs.World
 
 pub(open) trait Has_Sprite {
-  get_sprite_store(Self) -> @core.ComponentStore[Sprite]
+  get_sprite_store(Self) -> @ecs.ComponentAccess[Sprite]
 }
 pub impl Has_Sprite for @ecs.World
 
 pub(open) trait Has_Wireframe2d {
-  get_wireframe2d_store(Self) -> @core.ComponentStore[Wireframe2d]
+  get_wireframe2d_store(Self) -> @ecs.ComponentAccess[Wireframe2d]
 }
 pub impl Has_Wireframe2d for @ecs.World
 
 pub(open) trait Has_Wireframe2dColor {
-  get_wireframe2d_color_store(Self) -> @core.ComponentStore[Wireframe2dColor]
+  get_wireframe2d_color_store(Self) -> @ecs.ComponentAccess[Wireframe2dColor]
 }
 pub impl Has_Wireframe2dColor for @ecs.World
 
