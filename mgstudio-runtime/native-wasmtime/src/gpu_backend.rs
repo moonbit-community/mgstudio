@@ -8762,9 +8762,9 @@ fn mesh3d_bevy_clustered_lights_uniform_bytes(pass: &GpuPassState, draw: &MeshDr
                 1.0 / (range * range),
             ],
             [
-                pass.point_pos_range[0],
+                -pass.point_pos_range[0],
                 pass.point_pos_range[1],
-                pass.point_pos_range[2],
+                -pass.point_pos_range[2],
                 0.0,
             ],
             flags,
@@ -8807,7 +8807,7 @@ fn mesh3d_bevy_clustered_lights_uniform_bytes(pass: &GpuPassState, draw: &MeshDr
         mesh3d_write_clustered_light(
             bytes.as_mut_slice(),
             next_light_index,
-            [dir_x, dir_z, spot_scale, spot_offset],
+            [-dir_x, -dir_z, spot_scale, spot_offset],
             [
                 pass.spot_color_intensity[0] * intensity_scale,
                 pass.spot_color_intensity[1] * intensity_scale,
@@ -8815,9 +8815,9 @@ fn mesh3d_bevy_clustered_lights_uniform_bytes(pass: &GpuPassState, draw: &MeshDr
                 1.0 / (range * range),
             ],
             [
-                pass.spot_pos_range[0],
+                -pass.spot_pos_range[0],
                 pass.spot_pos_range[1],
-                pass.spot_pos_range[2],
+                -pass.spot_pos_range[2],
                 0.0,
             ],
             flags,

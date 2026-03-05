@@ -3061,7 +3061,7 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|         n(pointColorB) * intensityScale,
   #|         1.0 / (range * range),
   #|       ],
-    #|       [n(pointPosX), n(pointPosY), n(pointPosZ), 0.0],
+  #|       [-n(pointPosX), n(pointPosY), -n(pointPosZ), 0.0],
   #|       flags,
   #|       pointShadowsEnabled ? n(pointShadowDepthBias) : 0.0,
   #|       POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
@@ -3093,14 +3093,14 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|     }
   #|     writeClusteredLight(
   #|       nextLightId,
-  #|       [dirX, dirZ, spotScale, spotOffset],
+  #|       [-dirX, -dirZ, spotScale, spotOffset],
   #|       [
   #|         n(spotColorR) * intensityScale,
   #|         n(spotColorG) * intensityScale,
   #|         n(spotColorB) * intensityScale,
   #|         1.0 / (range * range),
   #|       ],
-    #|       [n(spotPosX), n(spotPosY), n(spotPosZ), 0.0],
+  #|       [-n(spotPosX), n(spotPosY), -n(spotPosZ), 0.0],
   #|       flags,
   #|       0.0,
   #|       0.0,
