@@ -2996,6 +2996,19 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|     if (pointShadowsEnabled) {
   #|       flags = flags | POINT_LIGHT_FLAG_SHADOWS_ENABLED
   #|     }
+  #|     if (pointShadowsEnabled && !globalThis.__mgstudioPointShadowFlagsOnLogged) {
+  #|       globalThis.__mgstudioPointShadowFlagsOnLogged = true
+  #|       console.log(
+  #|         "clustered point light flags",
+  #|         flags,
+  #|         "pointShadowsEnabled",
+  #|         pointShadowsEnabled ? 1 : 0,
+  #|         "pointIntensity",
+  #|         n(pointIntensity),
+  #|         "pointRange",
+  #|         range,
+  #|       )
+  #|     }
   #|     writeClusteredLight(
   #|       nextLightId,
   #|       [0.0, -1.0, shadowMapNearZ, 0.0],
@@ -3005,7 +3018,7 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|         n(pointColorB) * intensityScale,
   #|         1.0 / (range * range),
   #|       ],
-  #|       [n(pointPosX), n(pointPosY), n(pointPosZ), 0.0],
+  #|       [n(pointPosX), n(pointPosY), -n(pointPosZ), 0.0],
   #|       flags,
   #|       pointShadowsEnabled ? n(pointShadowDepthBias) : 0.0,
   #|       POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
@@ -3044,7 +3057,7 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|         n(spotColorB) * intensityScale,
   #|         1.0 / (range * range),
   #|       ],
-  #|       [n(spotPosX), n(spotPosY), n(spotPosZ), 0.0],
+  #|       [n(spotPosX), n(spotPosY), -n(spotPosZ), 0.0],
   #|       flags,
   #|       0.0,
   #|       0.0,

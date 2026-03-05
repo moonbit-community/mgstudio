@@ -14,7 +14,7 @@
     maths::{orthonormalize, PI_2}
 }
 
-const flip_z: vec3<f32> = vec3<f32>(1.0, 1.0, -1.0);
+const flip_z: vec3<f32> = vec3<f32>(1.0, 1.0, 1.0);
 
 fn fetch_point_shadow(
     light_id: u32,

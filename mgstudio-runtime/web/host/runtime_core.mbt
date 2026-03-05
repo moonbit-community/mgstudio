@@ -5386,6 +5386,7 @@ fn draw_mesh3d(
       ._get("compareSampler")
       .cast()
     let mut point_shadow_depth_cube_view = dummy_depth_cube_view
+    let mut point_shadow_cube_view_bound = false
     if point_shadow_texture_id >= 0 {
       let point_shadow_entry = map_get(
         state.gpu.textures,
@@ -5397,9 +5398,20 @@ fn draw_mesh3d(
         )
         if !host_is_nullish(point_shadow_cube_any) {
           point_shadow_depth_cube_view = point_shadow_cube_any.cast()
+          point_shadow_cube_view_bound = true
         }
       }
     }
+    report_debug_once(
+      state,
+      "mesh3d_point_shadow_binding_probe",
+      "mesh3d point-shadow binding: tex=" +
+      point_shadow_texture_id.to_string() +
+      ", enabled=" +
+      point_shadow_enabled.to_string() +
+      ", cube_view=" +
+      (if point_shadow_cube_view_bound { "1" } else { "0" }),
+    )
 
     let view_bg = device.create_bind_group(
       @webgpu.bind_group_descriptor(mesh3d_pipeline.get_bind_group_layout(0), [
