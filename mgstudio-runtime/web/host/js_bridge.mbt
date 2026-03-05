@@ -794,192 +794,946 @@ extern "js" fn split_trimmed_lines(text : String) -> Array[String] =
   #|   .filter((line) => line.length > 0 && !line.startsWith("#"))
 
 ///|
-extern "js" fn wgsl_extract_import_specs(source : String) -> Array[String] =
-  #| (source) => {
-  #|   const specs = []
-  #|   const lines = String(source || "").split(/\r?\n/)
-  #|   for (const lineRaw of lines) {
-  #|     const line = String(lineRaw).trim()
-  #|     if (!line.startsWith("#import ")) {
-  #|       continue
+extern "js" fn wgsl_ensure_compose_helper() -> Unit =
+  #| () => {
+  #|   if (globalThis.__mgstudioWgslHelper) {
+  #|     return
+  #|   }
+  #|   const isIdent = (text) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(String(text || ""))
+  #|   const isUpperIdent = (text) => /^[A-Z][A-Za-z0-9_]*$/.test(String(text || ""))
+  #|   const normalizeShaderPath = (textRaw) => {
+  #|     let text = String(textRaw || "").trim().replace(/^["']|["']$/g, "")
+  #|     text = text.replace(/^\/+/, "")
+  #|     while (text.startsWith("./")) {
+  #|       text = text.slice(2)
   #|     }
-  #|     const spec = line.slice("#import ".length).trim()
-  #|     if (spec.length > 0) {
-  #|       specs.push(spec)
+  #|     if (text.startsWith("assets/")) {
+  #|       text = text.slice("assets/".length)
+  #|     }
+  #|     return text
+  #|   }
+  #|   const splitModulePath = (specRaw) => String(specRaw || "").split("::").map((s) => s.trim()).filter((s) => s.length > 0)
+  #|   const normalizeAlias = (aliasRaw) => {
+  #|     const alias = String(aliasRaw || "").trim()
+  #|     if (!isIdent(alias)) {
+  #|       return ""
+  #|     }
+  #|     return alias
+  #|   }
+  #|   const countBraceDelta = (textRaw) => {
+  #|     let delta = 0
+  #|     const text = String(textRaw || "")
+  #|     for (let i = 0; i < text.length; i += 1) {
+  #|       const ch = text[i]
+  #|       if (ch === "{") {
+  #|         delta += 1
+  #|       } else if (ch === "}") {
+  #|         delta -= 1
+  #|       }
+  #|     }
+  #|     return delta
+  #|   }
+  #|   const tokenizeImportSpec = (specRaw) => {
+  #|     const spec = String(specRaw || "")
+  #|     const tokens = []
+  #|     let idx = 0
+  #|     while (idx < spec.length) {
+  #|       const ch = spec[idx]
+  #|       if (/\s/.test(ch)) {
+  #|         idx += 1
+  #|         continue
+  #|       }
+  #|       if (ch === "/" && idx + 1 < spec.length && spec[idx + 1] === "/") {
+  #|         break
+  #|       }
+  #|       if (ch === ",") {
+  #|         tokens.push({ kind: "comma" })
+  #|         idx += 1
+  #|         continue
+  #|       }
+  #|       if (ch === ";") {
+  #|         tokens.push({ kind: "semicolon" })
+  #|         idx += 1
+  #|         continue
+  #|       }
+  #|       if (ch === "{") {
+  #|         tokens.push({ kind: "lbrace" })
+  #|         idx += 1
+  #|         continue
+  #|       }
+  #|       if (ch === "}") {
+  #|         tokens.push({ kind: "rbrace" })
+  #|         idx += 1
+  #|         continue
+  #|       }
+  #|       if (ch === ":") {
+  #|         if (idx + 1 < spec.length && spec[idx + 1] === ":") {
+  #|           tokens.push({ kind: "scope" })
+  #|           idx += 2
+  #|           continue
+  #|         }
+  #|         throw new Error("wgpu: malformed WGSL import: expected `::`")
+  #|       }
+  #|       if (ch === "\"") {
+  #|         const start = idx
+  #|         idx += 1
+  #|         while (idx < spec.length && spec[idx] !== "\"") {
+  #|           idx += 1
+  #|         }
+  #|         if (idx >= spec.length) {
+  #|           throw new Error("wgpu: malformed WGSL import: unterminated quote")
+  #|         }
+  #|         idx += 1
+  #|         tokens.push({ kind: "ident", text: spec.slice(start, idx) })
+  #|         continue
+  #|       }
+  #|       if (/[A-Za-z_]/.test(ch)) {
+  #|         const start = idx
+  #|         idx += 1
+  #|         while (idx < spec.length && /[A-Za-z0-9_]/.test(spec[idx])) {
+  #|           idx += 1
+  #|         }
+  #|         const ident = spec.slice(start, idx)
+  #|         if (ident === "as") {
+  #|           tokens.push({ kind: "as" })
+  #|         } else {
+  #|           tokens.push({ kind: "ident", text: ident })
+  #|         }
+  #|         continue
+  #|       }
+  #|       throw new Error("wgpu: malformed WGSL import: unexpected token `" + ch + "`")
+  #|     }
+  #|     return tokens
+  #|   }
+  #|   const parseImportSpec = (specRaw) => {
+  #|     const tokens = tokenizeImportSpec(specRaw)
+  #|     const out = []
+  #|     const cursor = { value: 0 }
+  #|     const parseSegment = () => {
+  #|       const tok = tokens[cursor.value]
+  #|       if (!tok || tok.kind !== "ident") {
+  #|         throw new Error("wgpu: malformed WGSL import segment")
+  #|       }
+  #|       cursor.value += 1
+  #|       return String(tok.text || "")
+  #|     }
+  #|     const parseItem = (prefixRaw) => {
+  #|       const segment = parseSegment()
+  #|       let path = ""
+  #|       const prefix = String(prefixRaw || "")
+  #|       if (prefix.length > 0) {
+  #|         path = prefix + "::" + segment
+  #|       } else {
+  #|         path = segment
+  #|       }
+  #|       while (cursor.value < tokens.length) {
+  #|         const tok = tokens[cursor.value]
+  #|         if (!tok || tok.kind !== "scope") {
+  #|           break
+  #|         }
+  #|         cursor.value += 1
+  #|         const afterScope = tokens[cursor.value]
+  #|         if (afterScope && afterScope.kind === "lbrace") {
+  #|           cursor.value += 1
+  #|           while (cursor.value < tokens.length) {
+  #|             const nextTok = tokens[cursor.value]
+  #|             if (nextTok && nextTok.kind === "rbrace") {
+  #|               cursor.value += 1
+  #|               break
+  #|             }
+  #|             parseItem(path)
+  #|             const sepTok = tokens[cursor.value]
+  #|             if (sepTok && sepTok.kind === "comma") {
+  #|               cursor.value += 1
+  #|               continue
+  #|             }
+  #|             if (sepTok && sepTok.kind === "rbrace") {
+  #|               cursor.value += 1
+  #|               break
+  #|             }
+  #|             throw new Error("wgpu: malformed WGSL import block")
+  #|           }
+  #|           return
+  #|         }
+  #|         const nextSegment = parseSegment()
+  #|         path = path + "::" + nextSegment
+  #|       }
+  #|       let usedName = ""
+  #|       if (cursor.value < tokens.length && tokens[cursor.value].kind === "as") {
+  #|         cursor.value += 1
+  #|         usedName = parseSegment()
+  #|       } else {
+  #|         const parts = path.split("::")
+  #|         if (parts.length > 0) {
+  #|           usedName = String(parts[parts.length - 1] || "").trim().replace(/^"|"$/g, "")
+  #|         }
+  #|       }
+  #|       out.push({
+  #|         module_spec: path,
+  #|         used_name: normalizeAlias(usedName),
+  #|       })
+  #|     }
+  #|     while (cursor.value < tokens.length) {
+  #|       const tok = tokens[cursor.value]
+  #|       if (tok.kind === "comma") {
+  #|         cursor.value += 1
+  #|         continue
+  #|       }
+  #|       if (tok.kind === "semicolon") {
+  #|         break
+  #|       }
+  #|       parseItem("")
+  #|       if (cursor.value < tokens.length && tokens[cursor.value].kind === "comma") {
+  #|         cursor.value += 1
+  #|       }
+  #|     }
+  #|     return out
+  #|   }
+  #|   const extractImportEntries = (sourceRaw) => {
+  #|     const source = String(sourceRaw || "")
+  #|     const lines = source.split(/\r?\n/)
+  #|     const out = []
+  #|     for (let i = 0; i < lines.length; i += 1) {
+  #|       const line = String(lines[i] || "")
+  #|       const trimmed = line.trim()
+  #|       if (!trimmed.startsWith("#import ")) {
+  #|         continue
+  #|       }
+  #|       let statement = trimmed.slice("#import ".length)
+  #|       let depth = countBraceDelta(statement)
+  #|       while (depth > 0 && i + 1 < lines.length) {
+  #|         i += 1
+  #|         const nextLine = String(lines[i] || "")
+  #|         statement += "\n" + nextLine.trim()
+  #|         depth += countBraceDelta(nextLine)
+  #|       }
+  #|       const entries = parseImportSpec(statement)
+  #|       for (const entry of entries) {
+  #|         out.push(entry)
+  #|       }
+  #|     }
+  #|     return out
+  #|   }
+  #|   const stripImportDefineLines = (sourceRaw) => {
+  #|     const source = String(sourceRaw || "")
+  #|     const lines = source.split(/\r?\n/)
+  #|     const out = []
+  #|     for (let i = 0; i < lines.length; i += 1) {
+  #|       const line = String(lines[i] || "")
+  #|       const trimmed = line.trim()
+  #|       if (trimmed.startsWith("#define_import_path")) {
+  #|         continue
+  #|       }
+  #|       if (trimmed.startsWith("#import ")) {
+  #|         let depth = countBraceDelta(trimmed.slice("#import ".length))
+  #|         while (depth > 0 && i + 1 < lines.length) {
+  #|           i += 1
+  #|           depth += countBraceDelta(lines[i])
+  #|         }
+  #|         continue
+  #|       }
+  #|       out.push(line)
+  #|     }
+  #|     return out.join("\n")
+  #|   }
+  #|   const stripModuleAliases = (sourceRaw, aliasesRaw) => {
+  #|     const source = String(sourceRaw || "")
+  #|     const aliases = Array.isArray(aliasesRaw) ? aliasesRaw : []
+  #|     const dedup = Array.from(new Set(aliases.map((a) => normalizeAlias(a)).filter((a) => a.length > 0)))
+  #|     if (dedup.length === 0) {
+  #|       return source
+  #|     }
+  #|     const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  #|     let out = source
+  #|     for (const alias of dedup) {
+  #|       const pattern = new RegExp("\\b" + escapeRegExp(alias) + "\\s*::\\s*", "g")
+  #|       out = out.replace(pattern, "")
+  #|     }
+  #|     return out
+  #|   }
+  #|   const parseDefLiteral = (valueRaw) => {
+  #|     const text = String(valueRaw || "").trim()
+  #|     if (text.length === 0) {
+  #|       return null
+  #|     }
+  #|     if (/^(true|false)$/i.test(text)) {
+  #|       return { kind: "bool", value: /^true$/i.test(text) }
+  #|     }
+  #|     const numMatch = /^([+-]?(?:0[xX][0-9A-Fa-f]+|\d+))([uU]?)$/.exec(text)
+  #|     if (!numMatch) {
+  #|       return null
+  #|     }
+  #|     const body = numMatch[1]
+  #|     const kind = numMatch[2] ? "uint" : "int"
+  #|     let value = 0
+  #|     if (/^[-+]?0[xX]/.test(body)) {
+  #|       value = Number.parseInt(body, 16)
+  #|     } else {
+  #|       value = Number.parseInt(body, 10)
+  #|     }
+  #|     if (!Number.isFinite(value)) {
+  #|       return null
+  #|     }
+  #|     if (kind === "uint") {
+  #|       value = Math.max(0, Math.trunc(value))
+  #|     } else {
+  #|       value = Math.trunc(value)
+  #|     }
+  #|     return { kind, value }
+  #|   }
+  #|   const coerceDefValue = (valueRaw) => {
+  #|     if (typeof valueRaw === "boolean") {
+  #|       return { kind: "bool", value: valueRaw }
+  #|     }
+  #|     if (typeof valueRaw === "number" && Number.isFinite(valueRaw)) {
+  #|       const value = Math.trunc(valueRaw)
+  #|       return value >= 0
+  #|         ? { kind: "uint", value }
+  #|         : { kind: "int", value }
+  #|     }
+  #|     if (typeof valueRaw === "string") {
+  #|       return parseDefLiteral(valueRaw)
+  #|     }
+  #|     if (valueRaw && typeof valueRaw === "object") {
+  #|       const kindRaw = String(valueRaw.kind || valueRaw.type || "").trim().toLowerCase()
+  #|       if (kindRaw === "bool" || kindRaw === "boolean") {
+  #|         return { kind: "bool", value: !!(valueRaw.value ?? valueRaw.bool ?? valueRaw.bool_value) }
+  #|       }
+  #|       if (kindRaw === "int" || kindRaw === "i32") {
+  #|         const num = Number(valueRaw.value ?? valueRaw.int ?? valueRaw.int_value)
+  #|         if (Number.isFinite(num)) {
+  #|           return { kind: "int", value: Math.trunc(num) }
+  #|         }
+  #|       }
+  #|       if (kindRaw === "uint" || kindRaw === "u32") {
+  #|         const num = Number(valueRaw.value ?? valueRaw.uint ?? valueRaw.uint_value)
+  #|         if (Number.isFinite(num)) {
+  #|           return { kind: "uint", value: Math.max(0, Math.trunc(num)) }
+  #|         }
+  #|       }
+  #|       if ("bool" in valueRaw) {
+  #|         return { kind: "bool", value: !!valueRaw.bool }
+  #|       }
+  #|       if ("int" in valueRaw) {
+  #|         const num = Number(valueRaw.int)
+  #|         if (Number.isFinite(num)) {
+  #|           return { kind: "int", value: Math.trunc(num) }
+  #|         }
+  #|       }
+  #|       if ("uint" in valueRaw) {
+  #|         const num = Number(valueRaw.uint)
+  #|         if (Number.isFinite(num)) {
+  #|           return { kind: "uint", value: Math.max(0, Math.trunc(num)) }
+  #|         }
+  #|       }
+  #|       if ("value" in valueRaw) {
+  #|         return coerceDefValue(valueRaw.value)
+  #|       }
+  #|     }
+  #|     return null
+  #|   }
+  #|   const normalizeShaderDefs = (defsRaw) => {
+  #|     const out = {}
+  #|     const setEntry = (keyRaw, valueRaw) => {
+  #|       const key = String(keyRaw || "").trim()
+  #|       if (!isIdent(key)) {
+  #|         return
+  #|       }
+  #|       const value = coerceDefValue(valueRaw)
+  #|       if (value) {
+  #|         out[key] = value
+  #|       }
+  #|     }
+  #|     const parseLegacy = (textRaw) => {
+  #|       const text = String(textRaw || "").trim()
+  #|       if (text.length === 0) {
+  #|         return
+  #|       }
+  #|       const eqIndex = text.indexOf("=")
+  #|       if (eqIndex < 0) {
+  #|         setEntry(text, true)
+  #|         return
+  #|       }
+  #|       const key = text.slice(0, eqIndex).trim()
+  #|       const value = text.slice(eqIndex + 1).trim()
+  #|       if (key.length === 0) {
+  #|         return
+  #|       }
+  #|       const parsed = parseDefLiteral(value)
+  #|       if (parsed) {
+  #|         out[key] = parsed
+  #|       } else {
+  #|         out[key] = { kind: "bool", value: true }
+  #|       }
+  #|     }
+  #|     if (Array.isArray(defsRaw)) {
+  #|       for (const item of defsRaw) {
+  #|         if (typeof item === "string") {
+  #|           parseLegacy(item)
+  #|           continue
+  #|         }
+  #|         if (item && typeof item === "object") {
+  #|           const key = item.key ?? item.name
+  #|           if (typeof key === "string") {
+  #|             setEntry(key, item.value ?? item)
+  #|           }
+  #|         }
+  #|       }
+  #|       return out
+  #|     }
+  #|     if (defsRaw instanceof Map) {
+  #|       for (const [key, value] of defsRaw.entries()) {
+  #|         setEntry(key, value)
+  #|       }
+  #|       return out
+  #|     }
+  #|     if (defsRaw && typeof defsRaw === "object") {
+  #|       for (const [key, value] of Object.entries(defsRaw)) {
+  #|         setEntry(key, value)
+  #|       }
+  #|       return out
+  #|     }
+  #|     return out
+  #|   }
+  #|   const shaderDefNumericValue = (entry) => {
+  #|     if (!entry) {
+  #|       return 0
+  #|     }
+  #|     if (entry.kind === "bool") {
+  #|       return entry.value ? 1 : 0
+  #|     }
+  #|     if (entry.kind === "uint") {
+  #|       return Math.max(0, Math.trunc(Number(entry.value || 0)))
+  #|     }
+  #|     if (entry.kind === "int") {
+  #|       return Math.trunc(Number(entry.value || 0))
+  #|     }
+  #|     return 0
+  #|   }
+  #|   const shaderDefStringValue = (entry) => {
+  #|     if (!entry) {
+  #|       return ""
+  #|     }
+  #|     if (entry.kind === "bool") {
+  #|       return entry.value ? "true" : "false"
+  #|     }
+  #|     if (entry.kind === "uint") {
+  #|       return Math.max(0, Math.trunc(Number(entry.value || 0))).toString()
+  #|     }
+  #|     if (entry.kind === "int") {
+  #|       return Math.trunc(Number(entry.value || 0)).toString()
+  #|     }
+  #|     return ""
+  #|   }
+  #|   const evaluateIfExpression = (exprRaw, defs) => {
+  #|     let expr = String(exprRaw || "").trim()
+  #|     if (expr.length === 0) {
+  #|       return false
+  #|     }
+  #|     expr = expr
+  #|       .replace(/\bdefined\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/g, (_m, name) => (Object.prototype.hasOwnProperty.call(defs, name) ? "1" : "0"))
+  #|       .replace(/\bdefined\s+([A-Za-z_][A-Za-z0-9_]*)/g, (_m, name) => (Object.prototype.hasOwnProperty.call(defs, name) ? "1" : "0"))
+  #|     const tokenRe = /\s+|0[xX][0-9A-Fa-f]+[uU]?|\d+[uU]?|&&|\|\||==|!=|<=|>=|<<|>>|[()!~%^*\/+\-&|<>]|[A-Za-z_][A-Za-z0-9_]*/gy
+  #|     const sanitized = []
+  #|     let index = 0
+  #|     while (index < expr.length) {
+  #|       tokenRe.lastIndex = index
+  #|       const match = tokenRe.exec(expr)
+  #|       if (!match) {
+  #|         return false
+  #|       }
+  #|       const token = match[0]
+  #|       index = tokenRe.lastIndex
+  #|       if (/^\s+$/.test(token)) {
+  #|         continue
+  #|       }
+  #|       if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
+  #|         sanitized.push(shaderDefNumericValue(defs[token]).toString())
+  #|         continue
+  #|       }
+  #|       if (/^(?:0[xX][0-9A-Fa-f]+|\d+)[uU]$/.test(token)) {
+  #|         sanitized.push(token.slice(0, token.length - 1))
+  #|         continue
+  #|       }
+  #|       sanitized.push(token)
+  #|     }
+  #|     if (sanitized.length === 0) {
+  #|       return false
+  #|     }
+  #|     const finalExpr = sanitized.join(" ")
+  #|     try {
+  #|       const value = Function("\"use strict\"; return (" + finalExpr + ");")()
+  #|       if (typeof value === "boolean") {
+  #|         return value
+  #|       }
+  #|       if (typeof value === "number") {
+  #|         return Number.isFinite(value) && value !== 0
+  #|       }
+  #|       return false
+  #|     } catch {
+  #|       return false
   #|     }
   #|   }
-  #|   return specs
+  #|   const applyPreprocessor = (sourceRaw, defsRaw) => {
+  #|     const source = String(sourceRaw || "")
+  #|     const defs = normalizeShaderDefs(defsRaw)
+  #|     const lines = source.split(/\r?\n/)
+  #|     const frames = []
+  #|     const out = []
+  #|     const currentActive = () => (frames.length > 0 ? frames[frames.length - 1].active : true)
+  #|     const directiveBody = (lineRaw) => {
+  #|       const line = String(lineRaw || "").trim()
+  #|       if (!line.startsWith("#")) {
+  #|         return ""
+  #|       }
+  #|       let body = line.slice(1)
+  #|       const commentIndex = body.indexOf("//")
+  #|       if (commentIndex >= 0) {
+  #|         body = body.slice(0, commentIndex)
+  #|       }
+  #|       return body.trim()
+  #|     }
+  #|     const directiveArg = (lineRaw, directive) => {
+  #|       const body = directiveBody(lineRaw)
+  #|       if (!body.startsWith(directive)) {
+  #|         return null
+  #|       }
+  #|       const rest = body.slice(directive.length)
+  #|       if (rest.length === 0) {
+  #|         return ""
+  #|       }
+  #|       if (!/^\s/.test(rest)) {
+  #|         return null
+  #|       }
+  #|       return rest.trim()
+  #|     }
+  #|     const isDirectiveKeyword = (lineRaw, keyword) => directiveBody(lineRaw) === keyword
+  #|     for (const lineRaw of lines) {
+  #|       const line = String(lineRaw || "")
+  #|       const trimmed = line.trim()
+  #|       const ifdefName = directiveArg(trimmed, "ifdef")
+  #|       if (ifdefName !== null) {
+  #|         const parent = currentActive()
+  #|         const cond = Object.prototype.hasOwnProperty.call(defs, ifdefName)
+  #|         frames.push({ parent, branch_taken: cond, active: parent && cond })
+  #|         continue
+  #|       }
+  #|       const ifndefName = directiveArg(trimmed, "ifndef")
+  #|       if (ifndefName !== null) {
+  #|         const parent = currentActive()
+  #|         const cond = !Object.prototype.hasOwnProperty.call(defs, ifndefName)
+  #|         frames.push({ parent, branch_taken: cond, active: parent && cond })
+  #|         continue
+  #|       }
+  #|       const ifExpr = directiveArg(trimmed, "if")
+  #|       if (ifExpr !== null) {
+  #|         const parent = currentActive()
+  #|         const cond = evaluateIfExpression(ifExpr, defs)
+  #|         frames.push({ parent, branch_taken: cond, active: parent && cond })
+  #|         continue
+  #|       }
+  #|       const elseIfdefName = directiveArg(trimmed, "else ifdef")
+  #|       if (elseIfdefName !== null) {
+  #|         if (frames.length > 0) {
+  #|           const frame = frames[frames.length - 1]
+  #|           const cond = !frame.branch_taken && Object.prototype.hasOwnProperty.call(defs, elseIfdefName)
+  #|           frame.active = frame.parent && cond
+  #|           frame.branch_taken = frame.branch_taken || cond
+  #|         }
+  #|         continue
+  #|       }
+  #|       const elseIfndefName = directiveArg(trimmed, "else ifndef")
+  #|       if (elseIfndefName !== null) {
+  #|         if (frames.length > 0) {
+  #|           const frame = frames[frames.length - 1]
+  #|           const cond = !frame.branch_taken && !Object.prototype.hasOwnProperty.call(defs, elseIfndefName)
+  #|           frame.active = frame.parent && cond
+  #|           frame.branch_taken = frame.branch_taken || cond
+  #|         }
+  #|         continue
+  #|       }
+  #|       const elseIfExpr = directiveArg(trimmed, "else if")
+  #|       if (elseIfExpr !== null) {
+  #|         if (frames.length > 0) {
+  #|           const frame = frames[frames.length - 1]
+  #|           const cond = !frame.branch_taken && evaluateIfExpression(elseIfExpr, defs)
+  #|           frame.active = frame.parent && cond
+  #|           frame.branch_taken = frame.branch_taken || cond
+  #|         }
+  #|         continue
+  #|       }
+  #|       if (isDirectiveKeyword(trimmed, "else")) {
+  #|         if (frames.length > 0) {
+  #|           const frame = frames[frames.length - 1]
+  #|           const cond = !frame.branch_taken
+  #|           frame.active = frame.parent && cond
+  #|           frame.branch_taken = frame.branch_taken || cond
+  #|         }
+  #|         continue
+  #|       }
+  #|       if (isDirectiveKeyword(trimmed, "endif")) {
+  #|         if (frames.length > 0) {
+  #|           frames.pop()
+  #|         }
+  #|         continue
+  #|       }
+  #|       if (currentActive()) {
+  #|         out.push(line)
+  #|       }
+  #|     }
+  #|     let merged = out.join("\n")
+  #|     merged = merged.replace(/#\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (all, key) => {
+  #|       if (!Object.prototype.hasOwnProperty.call(defs, key)) {
+  #|         return all
+  #|       }
+  #|       const text = shaderDefStringValue(defs[key])
+  #|       if (text.length === 0) {
+  #|         return all
+  #|       }
+  #|       return text
+  #|     })
+  #|     return merged
+  #|   }
+  #|   const coerceModuleIndexPath = (pathRaw) => {
+  #|     let text = String(pathRaw || "").trim().replace(/^["']|["']$/g, "")
+  #|     if (text.length === 0) {
+  #|       return ""
+  #|     }
+  #|     if (text.includes("::")) {
+  #|       text = "shaders/bevy/" + text.replace(/::/g, "/") + ".wgsl"
+  #|     } else {
+  #|       if (!text.endsWith(".wgsl")) {
+  #|         text = text + ".wgsl"
+  #|       }
+  #|       if (!text.startsWith("shaders/")) {
+  #|         if (text.startsWith("bevy/")) {
+  #|           text = "shaders/" + text
+  #|         } else {
+  #|           text = "shaders/bevy/" + text
+  #|         }
+  #|       }
+  #|     }
+  #|     return normalizeShaderPath(text)
+  #|   }
+  #|   const coerceModuleIndexKey = (keyRaw) => {
+  #|     let key = String(keyRaw || "").trim().replace(/^["']|["']$/g, "")
+  #|     if (key.length === 0) {
+  #|       return ""
+  #|     }
+  #|     key = normalizeShaderPath(key)
+  #|     if (!key.includes("::") && key.endsWith(".wgsl")) {
+  #|       if (key.startsWith("shaders/bevy/")) {
+  #|         key = key.slice("shaders/bevy/".length)
+  #|       }
+  #|       key = key.slice(0, key.length - ".wgsl".length).replace(/\//g, "::")
+  #|     }
+  #|     return key
+  #|   }
+  #|   const parseModuleIndexText = (textRaw) => {
+  #|     const map = new Map()
+  #|     const add = (keyRaw, valueRaw) => {
+  #|       const key = coerceModuleIndexKey(keyRaw)
+  #|       const value = coerceModuleIndexPath(valueRaw)
+  #|       if (key.length === 0 || value.length === 0) {
+  #|         return
+  #|       }
+  #|       map.set(key, value)
+  #|     }
+  #|     const ingest = (node) => {
+  #|       if (!node) {
+  #|         return
+  #|       }
+  #|       if (Array.isArray(node)) {
+  #|         for (const item of node) {
+  #|           if (Array.isArray(item) && item.length >= 2) {
+  #|             add(item[0], item[1])
+  #|             continue
+  #|           }
+  #|           ingest(item)
+  #|         }
+  #|         return
+  #|       }
+  #|       if (typeof node === "object") {
+  #|         const key = node.module ?? node.name ?? node.key
+  #|         const path = node.path ?? node.file ?? node.rel_path ?? node.value
+  #|         if (typeof key === "string" && typeof path === "string") {
+  #|           add(key, path)
+  #|         }
+  #|         for (const [k, v] of Object.entries(node)) {
+  #|           if (typeof v === "string") {
+  #|             add(k, v)
+  #|           } else {
+  #|             ingest(v)
+  #|           }
+  #|         }
+  #|       }
+  #|     }
+  #|     const text = String(textRaw || "").trim()
+  #|     if (text.length > 0) {
+  #|       try {
+  #|         ingest(JSON.parse(text))
+  #|       } catch {
+  #|       }
+  #|       if (map.size === 0) {
+  #|         const lines = text.split(/\r?\n/)
+  #|         for (const lineRaw of lines) {
+  #|           const line = String(lineRaw || "").trim()
+  #|           if (line.length === 0 || line.startsWith("#") || line.startsWith("//")) {
+  #|             continue
+  #|           }
+  #|           const m = /^(.+?)(?:=>|->|=|,|\s+)(.+)$/.exec(line)
+  #|           if (!m) {
+  #|             continue
+  #|           }
+  #|           add(m[1], m[2])
+  #|         }
+  #|       }
+  #|     }
+  #|     return map
+  #|   }
+  #|   const resolveImportCandidates = (moduleSpecRaw, _aliasHintRaw, moduleIndexRaw) => {
+  #|     const moduleSpec = String(moduleSpecRaw || "").trim().replace(/;+$/, "").trim()
+  #|     const out = []
+  #|     const seen = new Set()
+  #|     const pushCandidate = (pathRaw, moduleKeyRaw, exactRaw) => {
+  #|       const path = coerceModuleIndexPath(pathRaw)
+  #|       if (path.length === 0 || seen.has(path)) {
+  #|         return
+  #|       }
+  #|       seen.add(path)
+  #|       const moduleKey = String(moduleKeyRaw || "").trim()
+  #|       out.push({ path, exact: !!exactRaw, module_key: moduleKey })
+  #|     }
+  #|     const lookupModulePath = (index, keyRaw) => {
+  #|       const key = String(keyRaw || "").trim()
+  #|       if (key.length === 0) {
+  #|         return ""
+  #|       }
+  #|       if (index instanceof Map) {
+  #|         const value = index.get(key)
+  #|         if (typeof value === "string") {
+  #|           return value
+  #|         }
+  #|       } else if (index && typeof index === "object") {
+  #|         const value = index[key]
+  #|         if (typeof value === "string") {
+  #|           return value
+  #|         }
+  #|       }
+  #|       return ""
+  #|     }
+  #|     if (moduleSpec.length === 0) {
+  #|       return out
+  #|     }
+  #|     if (moduleSpec.startsWith("\"") || moduleSpec.startsWith("'")) {
+  #|       const quote = moduleSpec[0]
+  #|       const closeIndex = moduleSpec.indexOf(quote, 1)
+  #|       if (closeIndex > 0) {
+  #|         const rawPath = moduleSpec.slice(1, closeIndex)
+  #|         pushCandidate(rawPath, moduleSpec)
+  #|         return out
+  #|       }
+  #|     }
+  #|     const parts = splitModulePath(moduleSpec)
+  #|     if (parts.length === 0) {
+  #|       return out
+  #|     }
+  #|     const moduleIndex = moduleIndexRaw ?? null
+  #|     for (let i = parts.length; i >= 1; i -= 1) {
+  #|       const key = parts.slice(0, i).join("::")
+  #|       const indexedPath = lookupModulePath(moduleIndex, key)
+  #|       if (indexedPath.length > 0) {
+  #|         pushCandidate(indexedPath, key, i === parts.length)
+  #|       }
+  #|     }
+  #|     for (let i = parts.length; i >= 1; i -= 1) {
+  #|       const key = parts.slice(0, i).join("::")
+  #|       const fallbackPath = "shaders/bevy/" + parts.slice(0, i).join("/") + ".wgsl"
+  #|       pushCandidate(fallbackPath, key, i === parts.length)
+  #|     }
+  #|     return out
+  #|   }
+  #|   const importLeafSymbol = (moduleSpecRaw) => {
+  #|     const moduleSpec = String(moduleSpecRaw || "").trim().replace(/;+$/, "").trim()
+  #|     if (moduleSpec.length === 0) {
+  #|       return ""
+  #|     }
+  #|     if (moduleSpec.startsWith("\"") || moduleSpec.startsWith("'")) {
+  #|       return ""
+  #|     }
+  #|     const parts = splitModulePath(moduleSpec)
+  #|     if (parts.length === 0) {
+  #|       return ""
+  #|     }
+  #|     return String(parts[parts.length - 1] || "").trim()
+  #|   }
+  #|   const symbolLooksLikeType = (symbolRaw) => {
+  #|     const symbol = String(symbolRaw || "").trim()
+  #|     return /^[A-Z]/.test(symbol)
+  #|   }
+  #|   const stripTopLevelFunctions = (sourceRaw) => {
+  #|     const source = String(sourceRaw || "")
+  #|     const lines = source.split(/\r?\n/)
+  #|     const firstFnIndex = (() => {
+  #|       for (let i = 0; i < lines.length; i += 1) {
+  #|         const trimmed = String(lines[i] || "").trimStart()
+  #|         if (trimmed.startsWith("fn ")) {
+  #|           return i
+  #|         }
+  #|         if (trimmed.startsWith("@")) {
+  #|           let j = i + 1
+  #|           while (j < lines.length && String(lines[j] || "").trim().length === 0) {
+  #|             j += 1
+  #|           }
+  #|           if (j < lines.length && String(lines[j] || "").trimStart().startsWith("fn ")) {
+  #|             return i
+  #|           }
+  #|         }
+  #|       }
+  #|       return -1
+  #|     })()
+  #|     if (firstFnIndex <= 0) {
+  #|       return source
+  #|     }
+  #|     let out = lines.slice(0, firstFnIndex).join("\n")
+  #|     if (out.length > 0 && !out.endsWith("\n")) {
+  #|       out += "\n"
+  #|     }
+  #|     return out
+  #|   }
+  #|   const shaderDefEnabled = (defs, key) => {
+  #|     if (!Object.prototype.hasOwnProperty.call(defs, key)) {
+  #|       return false
+  #|     }
+  #|     const entry = defs[key]
+  #|     if (!entry || typeof entry !== "object") {
+  #|       return false
+  #|     }
+  #|     if (entry.kind === "bool") {
+  #|       return !!entry.value
+  #|     }
+  #|     if (entry.kind === "int" || entry.kind === "uint") {
+  #|       return Number(entry.value || 0) !== 0
+  #|     }
+  #|     return false
+  #|   }
+  #|   const shouldSkipImportForDefs = (moduleSpecRaw, defsRaw) => {
+  #|     const moduleSpec = String(moduleSpecRaw || "").trim().replace(/;+$/, "").trim()
+  #|     if (moduleSpec.length === 0) {
+  #|       return false
+  #|     }
+  #|     const defs = normalizeShaderDefs(defsRaw)
+  #|     const environmentMapEnabled = shaderDefEnabled(defs, "ENVIRONMENT_MAP")
+  #|     const irradianceVolumeEnabled = shaderDefEnabled(defs, "IRRADIANCE_VOLUME") || shaderDefEnabled(defs, "IRRADIANCE_VOLUMES_ARE_USABLE")
+  #|     const ssrEnabled = shaderDefEnabled(defs, "SCREEN_SPACE_REFLECTIONS")
+  #|     if (moduleSpec.includes("atmosphere::") && !shaderDefEnabled(defs, "ATMOSPHERE")) {
+  #|       return true
+  #|     }
+  #|     if (moduleSpec.includes("environment_map") && !environmentMapEnabled) {
+  #|       return true
+  #|     }
+  #|     if (moduleSpec.includes("irradiance_volume") && !irradianceVolumeEnabled) {
+  #|       return true
+  #|     }
+  #|     if (moduleSpec.includes("light_probe") && !(environmentMapEnabled || irradianceVolumeEnabled)) {
+  #|       return true
+  #|     }
+  #|     if (moduleSpec.includes("lightmap") && !shaderDefEnabled(defs, "LIGHTMAP")) {
+  #|       return true
+  #|     }
+  #|     if (moduleSpec.includes("ssr") && !ssrEnabled) {
+  #|       return true
+  #|     }
+  #|     if (moduleSpec.includes("raymarch") && !ssrEnabled) {
+  #|       return true
+  #|     }
+  #|     if (moduleSpec.includes("ssao::") && !shaderDefEnabled(defs, "SCREEN_SPACE_AMBIENT_OCCLUSION")) {
+  #|       return true
+  #|     }
+  #|     return false
+  #|   }
+  #|   const shaderDefsKey = (defsRaw) => {
+  #|     const defs = normalizeShaderDefs(defsRaw)
+  #|     const keys = Object.keys(defs).sort()
+  #|     const parts = []
+  #|     for (const key of keys) {
+  #|       const entry = defs[key]
+  #|       parts.push(key + ":" + entry.kind + ":" + shaderDefStringValue(entry))
+  #|     }
+  #|     return parts.join("|")
+  #|   }
+  #|   globalThis.__mgstudioWgslHelper = {
+  #|     extractImportEntries,
+  #|     resolveImportCandidates,
+  #|     importLeafSymbol,
+  #|     symbolLooksLikeType,
+  #|     stripTopLevelFunctions,
+  #|     shouldSkipImportForDefs,
+  #|     stripImportDefineLines,
+  #|     stripModuleAliases,
+  #|     normalizeShaderDefs,
+  #|     shaderDefsKey,
+  #|     applyPreprocessor,
+  #|     parseModuleIndexText,
+  #|   }
   #| }
 
 ///|
-extern "js" fn wgsl_import_spec_to_rel_path(spec : String) -> String =
-  #| (specRaw) => {
-  #|   let spec = String(specRaw || "").trim()
-  #|   if (spec.length === 0) {
-  #|     return ""
-  #|   }
-  #|   const asIndex = spec.indexOf(" as ")
-  #|   if (asIndex >= 0) {
-  #|     spec = spec.slice(0, asIndex).trim()
-  #|   }
-  #|   const braceIndex = spec.indexOf("::{")
-  #|   if (braceIndex >= 0) {
-  #|     spec = spec.slice(0, braceIndex).trim()
-  #|   }
-  #|   spec = spec.replace(/;+$/, "").trim()
-  #|   if (spec.length === 0) {
-  #|     return ""
-  #|   }
-  #|   const segs = spec.split("::")
-  #|   if (segs.length === 0) {
-  #|     return ""
-  #|   }
-  #|   const last = segs[segs.length - 1] || ""
-  #|   if (/^[A-Z]/.test(last)) {
-  #|     segs.pop()
-  #|   }
-  #|   if (segs.length === 0) {
-  #|     return ""
-  #|   }
-  #|   return "shaders/bevy/" + segs.join("/") + ".wgsl"
-  #| }
+extern "js" fn wgsl_extract_import_entries(source : String) -> @js.Any =
+  #| (source) => globalThis.__mgstudioWgslHelper.extractImportEntries(source)
 
 ///|
-extern "js" fn wgsl_import_spec_to_alias(specRaw : String) -> String =
-  #| (specRaw) => {
-  #|   let spec = String(specRaw || "").trim().replace(/;+$/, "")
-  #|   if (spec.length === 0) {
-  #|     return ""
-  #|   }
-  #|   const asMatch = /\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*$/.exec(spec)
-  #|   if (asMatch && asMatch[1]) {
-  #|     return asMatch[1]
-  #|   }
-  #|   const braceIndex = spec.indexOf("::{")
-  #|   if (braceIndex >= 0) {
-  #|     spec = spec.slice(0, braceIndex).trim()
-  #|   }
-  #|   const segs = spec.split("::").filter((s) => s.length > 0)
-  #|   if (segs.length === 0) {
-  #|     return ""
-  #|   }
-  #|   return segs[segs.length - 1]
-  #| }
+extern "js" fn wgsl_resolve_import_candidates(
+  module_spec : String,
+  alias_hint : String,
+  module_index : @js.Any,
+) -> @js.Any =
+  #| (moduleSpec, aliasHint, moduleIndex) => globalThis.__mgstudioWgslHelper.resolveImportCandidates(moduleSpec, aliasHint, moduleIndex)
+
+///|
+extern "js" fn wgsl_import_leaf_symbol(module_spec : String) -> String =
+  #| (moduleSpec) => globalThis.__mgstudioWgslHelper.importLeafSymbol(moduleSpec)
+
+///|
+extern "js" fn wgsl_symbol_looks_like_type(symbol : String) -> Bool =
+  #| (symbol) => globalThis.__mgstudioWgslHelper.symbolLooksLikeType(symbol)
+
+///|
+extern "js" fn wgsl_strip_top_level_functions(source : String) -> String =
+  #| (source) => globalThis.__mgstudioWgslHelper.stripTopLevelFunctions(source)
+
+///|
+extern "js" fn wgsl_should_skip_import_for_defs(
+  module_spec : String,
+  shader_defs : @js.Any,
+) -> Bool =
+  #| (moduleSpec, shaderDefs) => globalThis.__mgstudioWgslHelper.shouldSkipImportForDefs(moduleSpec, shaderDefs)
 
 ///|
 extern "js" fn wgsl_strip_module_aliases(
   source : String,
   aliases : Array[String],
 ) -> String =
-  #| (source, aliases) => {
-  #|   const text = String(source || "")
-  #|   const list = Array.isArray(aliases) ? aliases : []
-  #|   const dedup = Array.from(new Set(list.map((a) => String(a || "").trim()).filter((a) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(a))))
-  #|   if (dedup.length === 0) {
-  #|     return text
-  #|   }
-  #|   const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  #|   let out = text
-  #|   for (const alias of dedup) {
-  #|     const pattern = new RegExp("\\b" + escapeRegExp(alias) + "\\s*::\\s*", "g")
-  #|     out = out.replace(pattern, "")
-  #|   }
-  #|   return out
-  #| }
+  #| (source, aliases) => globalThis.__mgstudioWgslHelper.stripModuleAliases(source, aliases)
 
 ///|
 extern "js" fn wgsl_strip_import_define_lines(source : String) -> String =
-  #| (source) => {
-  #|   const out = []
-  #|   const lines = String(source || "").split(/\r?\n/)
-  #|   for (const lineRaw of lines) {
-  #|     const line = String(lineRaw)
-  #|     const trimmed = line.trim()
-  #|     if (trimmed.startsWith("#import ") || trimmed.startsWith("#define_import_path")) {
-  #|       continue
-  #|     }
-  #|     out.push(line)
-  #|   }
-  #|   return out.join("\n")
-  #| }
+  #| (source) => globalThis.__mgstudioWgslHelper.stripImportDefineLines(source)
 
 ///|
-extern "js" fn wgsl_apply_ifdefs(
+extern "js" fn wgsl_shader_defs_from_legacy(defines : Array[String]) -> @js.Any =
+  #| (defines) => globalThis.__mgstudioWgslHelper.normalizeShaderDefs(defines)
+
+///|
+extern "js" fn wgsl_apply_preprocessor(
   source : String,
-  defines : Array[String],
+  shader_defs : @js.Any,
 ) -> String =
-  #| (source, defines) => {
-  #|   const defineSet = new Set((defines || []).map((d) => String(d)))
-  #|   const activeStack = [true]
-  #|   const frameStack = []
-  #|   const out = []
-  #|   const lines = String(source || "").split(/\r?\n/)
-  #|   for (const lineRaw of lines) {
-  #|     const line = String(lineRaw)
-  #|     const trimmed = line.trim()
-  #|     if (trimmed.startsWith("#ifdef ")) {
-  #|       const name = trimmed.slice("#ifdef ".length).trim()
-  #|       const cond = defineSet.has(name)
-  #|       const parent = activeStack[activeStack.length - 1]
-  #|       activeStack.push(parent && cond)
-  #|       frameStack.push({ parent, branchTaken: cond })
-  #|       continue
-  #|     }
-  #|     if (trimmed.startsWith("#ifndef ")) {
-  #|       const name = trimmed.slice("#ifndef ".length).trim()
-  #|       const cond = !defineSet.has(name)
-  #|       const parent = activeStack[activeStack.length - 1]
-  #|       activeStack.push(parent && cond)
-  #|       frameStack.push({ parent, branchTaken: cond })
-  #|       continue
-  #|     }
-  #|     if (trimmed.startsWith("#else ifdef ")) {
-  #|       if (frameStack.length > 0) {
-  #|         const idx = frameStack.length - 1
-  #|         const frame = frameStack[idx]
-  #|         const name = trimmed.slice("#else ifdef ".length).trim()
-  #|         const cond = !frame.branchTaken && defineSet.has(name)
-  #|         activeStack[activeStack.length - 1] = frame.parent && cond
-  #|         frame.branchTaken = frame.branchTaken || cond
-  #|       }
-  #|       continue
-  #|     }
-  #|     if (trimmed.startsWith("#else ifndef ")) {
-  #|       if (frameStack.length > 0) {
-  #|         const idx = frameStack.length - 1
-  #|         const frame = frameStack[idx]
-  #|         const name = trimmed.slice("#else ifndef ".length).trim()
-  #|         const cond = !frame.branchTaken && !defineSet.has(name)
-  #|         activeStack[activeStack.length - 1] = frame.parent && cond
-  #|         frame.branchTaken = frame.branchTaken || cond
-  #|       }
-  #|       continue
-  #|     }
-  #|     if (trimmed === "#else") {
-  #|       if (frameStack.length > 0) {
-  #|         const idx = frameStack.length - 1
-  #|         const frame = frameStack[idx]
-  #|         const cond = !frame.branchTaken
-  #|         activeStack[activeStack.length - 1] = frame.parent && cond
-  #|         frame.branchTaken = frame.branchTaken || cond
-  #|       }
-  #|       continue
-  #|     }
-  #|     if (trimmed === "#endif") {
-  #|       if (activeStack.length > 1) {
-  #|         activeStack.pop()
-  #|       }
-  #|       if (frameStack.length > 0) {
-  #|         frameStack.pop()
-  #|       }
-  #|       continue
-  #|     }
-  #|     if (activeStack[activeStack.length - 1]) {
-  #|       out.push(line)
-  #|     }
-  #|   }
-  #|   return out.join("\n")
-  #| }
+  #| (source, shaderDefs) => globalThis.__mgstudioWgslHelper.applyPreprocessor(source, shaderDefs)
+
+///|
+extern "js" fn wgsl_parse_module_index_text(text : String) -> @js.Any =
+  #| (text) => globalThis.__mgstudioWgslHelper.parseModuleIndexText(text)
 
 ///|
 /// WebGPU backend lowering for Bevy motion-blur WGSL:
@@ -1105,15 +1859,107 @@ extern "js" fn array_get(arr : @js.Any, index : Int) -> @js.Any =
 
 ///|
 extern "js" fn map_set(map : @js.Any, key : @js.Any, value : @js.Any) -> Unit =
-  #| (map, key, value) => map.set(key, value)
+  #| (map, key, value) => {
+  #|   const normalizeKey = globalThis.__mgstudioNormalizeMapKey || (globalThis.__mgstudioNormalizeMapKey = ((input) => {
+  #|     if (input == null) {
+  #|       return input
+  #|     }
+  #|     const kind = typeof input
+  #|     if (kind === "string" || kind === "number" || kind === "boolean" || kind === "bigint" || kind === "symbol") {
+  #|       return input
+  #|     }
+  #|     const decodeWasmString = (value) => {
+  #|       try {
+  #|         let current = value
+  #|         for (let i = 0; i < 4; i += 1) {
+  #|           if (typeof current !== "object" || current == null) {
+  #|             break
+  #|           }
+  #|           if ("value" in current && current.value !== current) {
+  #|             current = current.value
+  #|             continue
+  #|           }
+  #|           if ("val" in current && current.val !== current) {
+  #|             current = current.val
+  #|             continue
+  #|           }
+  #|           if ("string" in current && current.string !== current) {
+  #|             current = current.string
+  #|             continue
+  #|           }
+  #|           if ("_0" in current && current._0 !== current) {
+  #|             current = current._0
+  #|             continue
+  #|           }
+  #|           break
+  #|         }
+  #|         if (typeof current !== "object" || current == null) {
+  #|           return null
+  #|         }
+  #|         let getFn = null
+  #|         if (typeof current.get === "function") {
+  #|           getFn = current.get
+  #|         } else {
+  #|           const proto = Object.getPrototypeOf(current)
+  #|           if (proto && typeof proto.get === "function") {
+  #|             getFn = proto.get
+  #|           } else if (
+  #|             typeof WebAssembly === "object" &&
+  #|             typeof WebAssembly.Array === "function" &&
+  #|             WebAssembly.Array.prototype &&
+  #|             typeof WebAssembly.Array.prototype.get === "function"
+  #|           ) {
+  #|             getFn = WebAssembly.Array.prototype.get
+  #|           }
+  #|         }
+  #|         if (!getFn) {
+  #|           return null
+  #|         }
+  #|         let len = current.length
+  #|         if (typeof len === "function") {
+  #|           len = len.call(current)
+  #|         }
+  #|         len = Number(len)
+  #|         if (!Number.isFinite(len) || len < 0) {
+  #|           return null
+  #|         }
+  #|         if (len === 0) {
+  #|           return ""
+  #|         }
+  #|         let out = ""
+  #|         const CHUNK = 1024
+  #|         for (let i = 0; i < len; i += CHUNK) {
+  #|           const end = Math.min(len, i + CHUNK)
+  #|           const codes = new Array(end - i)
+  #|           for (let j = i; j < end; j += 1) {
+  #|             codes[j - i] = getFn.call(current, j) & 0xffff
+  #|           }
+  #|           out += String.fromCharCode(...codes)
+  #|         }
+  #|         return out
+  #|       } catch {
+  #|         return null
+  #|       }
+  #|     }
+  #|     const decoded = decodeWasmString(input)
+  #|     return decoded == null ? input : decoded
+  #|   }))
+  #|   map.set(normalizeKey(key), value)
+  #| }
 
 ///|
 extern "js" fn map_get(map : @js.Any, key : @js.Any) -> @js.Any =
-  #| (map, key) => map.get(key)
+  #| (map, key) => {
+  #|   const normalizeKey = globalThis.__mgstudioNormalizeMapKey || ((value) => value)
+  #|   return map.get(normalizeKey(key))
+  #| }
 
 ///|
 extern "js" fn map_delete(map : @js.Any, key : @js.Any) -> Bool =
-  #| (map, key) => map.delete(key)
+  #| (map, key) => {
+  #|   const normalizeKey = globalThis.__mgstudioNormalizeMapKey || ((value) => value)
+  #|   return map.delete(normalizeKey(key))
+  #| }
 
 ///|
 extern "js" fn map_values(map : @js.Any) -> @js.Any =
@@ -1121,15 +1967,24 @@ extern "js" fn map_values(map : @js.Any) -> @js.Any =
 
 ///|
 extern "js" fn set_add(set : @js.Any, value : @js.Any) -> Unit =
-  #| (set, value) => set.add(value)
+  #| (set, value) => {
+  #|   const normalizeKey = globalThis.__mgstudioNormalizeMapKey || ((item) => item)
+  #|   set.add(normalizeKey(value))
+  #| }
 
 ///|
 extern "js" fn set_has(set : @js.Any, value : @js.Any) -> Bool =
-  #| (set, value) => set.has(value)
+  #| (set, value) => {
+  #|   const normalizeKey = globalThis.__mgstudioNormalizeMapKey || ((item) => item)
+  #|   return set.has(normalizeKey(value))
+  #| }
 
 ///|
 extern "js" fn set_delete(set : @js.Any, value : @js.Any) -> Bool =
-  #| (set, value) => set.delete(value)
+  #| (set, value) => {
+  #|   const normalizeKey = globalThis.__mgstudioNormalizeMapKey || ((item) => item)
+  #|   return set.delete(normalizeKey(value))
+  #| }
 
 ///|
 extern "js" fn set_clear(set : @js.Any) -> Unit =
@@ -1613,6 +2468,75 @@ extern "js" fn float32array_from_csv(text : String) -> @js.Any =
   #| }
 
 ///|
+extern "js" fn mesh3d_xyzuvrgba_to_xyznormal(
+  src : @js.Any,
+  primitive_topology_kind : Int,
+) -> @js.Any =
+  #| (src, primitiveTopologyKind) => {
+  #|   const input = src && typeof src.length === "number" ? src : new Float32Array(0)
+  #|   const vcount = Math.floor(input.length / 9)
+  #|   if (vcount <= 0) {
+  #|     return new Float32Array(0)
+  #|   }
+  #|   const topo = Number(primitiveTopologyKind) | 0
+  #|   let usable = vcount
+  #|   if (topo === 0) {
+  #|     usable = vcount - (vcount % 3)
+  #|   } else if (topo === 1) {
+  #|     usable = vcount - (vcount % 2)
+  #|   }
+  #|   if (usable <= 0) {
+  #|     return new Float32Array(0)
+  #|   }
+  #|   const out = new Float32Array(usable * 6)
+  #|   const setNormal = (vi, nx, ny, nz) => {
+  #|     const o = vi * 6
+  #|     out[o + 3] = nx
+  #|     out[o + 4] = ny
+  #|     out[o + 5] = nz
+  #|   }
+  #|   for (let i = 0; i < usable; i += 1) {
+  #|     const s = i * 9
+  #|     const d = i * 6
+  #|     out[d + 0] = Number(input[s + 0]) || 0
+  #|     out[d + 1] = Number(input[s + 1]) || 0
+  #|     out[d + 2] = Number(input[s + 2]) || 0
+  #|     out[d + 3] = 0
+  #|     out[d + 4] = 0
+  #|     out[d + 5] = 1
+  #|   }
+  #|   if (topo === 0) {
+  #|     for (let i = 0; i + 2 < usable; i += 3) {
+  #|       const a = i * 6
+  #|       const b = (i + 1) * 6
+  #|       const c = (i + 2) * 6
+  #|       const p0x = out[a + 0], p0y = out[a + 1], p0z = out[a + 2]
+  #|       const p1x = out[b + 0], p1y = out[b + 1], p1z = out[b + 2]
+  #|       const p2x = out[c + 0], p2y = out[c + 1], p2z = out[c + 2]
+  #|       const e1x = p1x - p0x, e1y = p1y - p0y, e1z = p1z - p0z
+  #|       const e2x = p2x - p0x, e2y = p2y - p0y, e2z = p2z - p0z
+  #|       let nx = e1y * e2z - e1z * e2y
+  #|       let ny = e1z * e2x - e1x * e2z
+  #|       let nz = e1x * e2y - e1y * e2x
+  #|       const len = Math.hypot(nx, ny, nz)
+  #|       if (!(len > 1e-8)) {
+  #|         nx = 0
+  #|         ny = 0
+  #|         nz = 1
+  #|       } else {
+  #|         nx /= len
+  #|         ny /= len
+  #|         nz /= len
+  #|       }
+  #|       setNormal(i, nx, ny, nz)
+  #|       setNormal(i + 1, nx, ny, nz)
+  #|       setNormal(i + 2, nx, ny, nz)
+  #|     }
+  #|   }
+  #|   return out
+  #| }
+
+///|
 extern "js" fn motion_blur_settings_uniform_bytes(
   shutter_angle : Double,
   samples : Int,
@@ -1639,6 +2563,792 @@ extern "js" fn motion_blur_globals_uniform_bytes(frame_count : Int) -> @js.Any =
   #|   view.setUint32(8, frame, true)
   #|   view.setUint32(12, 0, true)
   #|   return new Uint8Array(buf)
+  #| }
+
+///|
+extern "js" fn mesh3d_bevy_view_uniform_bytes(
+  camera_x : Double,
+  camera_y : Double,
+  camera_z : Double,
+  camera_rot_x : Double,
+  camera_rot_y : Double,
+  camera_rot_z : Double,
+  camera_rot_w : Double,
+  camera_fov_y : Double,
+  camera_near : Double,
+  camera_far : Double,
+  width_logical : Double,
+  height_logical : Double,
+  viewport_x : Double,
+  viewport_y : Double,
+  viewport_w : Double,
+  viewport_h : Double,
+  sub_view_scale_x : Double,
+  sub_view_scale_y : Double,
+  sub_view_bias_x : Double,
+  sub_view_bias_y : Double,
+) -> @js.Any =
+  #| (
+  #|   cameraX,
+  #|   cameraY,
+  #|   cameraZ,
+  #|   cameraRotX,
+  #|   cameraRotY,
+  #|   cameraRotZ,
+  #|   cameraRotW,
+  #|   cameraFovY,
+  #|   cameraNear,
+  #|   cameraFar,
+  #|   widthLogical,
+  #|   heightLogical,
+  #|   viewportX,
+  #|   viewportY,
+  #|   viewportW,
+  #|   viewportH,
+  #|   subViewScaleX,
+  #|   subViewScaleY,
+  #|   subViewBiasX,
+  #|   subViewBiasY,
+  #| ) => {
+  #|   const n = (value, fallback = 0.0) => {
+  #|     const v = Number(value)
+  #|     return Number.isFinite(v) ? v : fallback
+  #|   }
+  #|   const quatNormalize4 = (qx, qy, qz, qw) => {
+  #|     const x0 = n(qx)
+  #|     const y0 = n(qy)
+  #|     const z0 = n(qz)
+  #|     const w0 = n(qw)
+  #|     const norm2 = Math.max(x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0, 1.0e-8)
+  #|     const inv = 1.0 / Math.sqrt(norm2)
+  #|     return [x0 * inv, y0 * inv, z0 * inv, w0 * inv]
+  #|   }
+  #|   const quatToRowMat3 = (qx, qy, qz, qw) => {
+  #|     const [x, y, z, w] = quatNormalize4(qx, qy, qz, qw)
+  #|     return [
+  #|       1.0 - 2.0 * (y * y + z * z),
+  #|       2.0 * (x * y - w * z),
+  #|       2.0 * (x * z + w * y),
+  #|       2.0 * (x * y + w * z),
+  #|       1.0 - 2.0 * (x * x + z * z),
+  #|       2.0 * (y * z - w * x),
+  #|       2.0 * (x * z - w * y),
+  #|       2.0 * (y * z + w * x),
+  #|       1.0 - 2.0 * (x * x + y * y),
+  #|     ]
+  #|   }
+  #|   const mat4RowMul = (a, b) => {
+  #|     const out = new Float32Array(16)
+  #|     for (let r = 0; r < 4; r += 1) {
+  #|       for (let c = 0; c < 4; c += 1) {
+  #|         out[r * 4 + c] =
+  #|           a[r * 4 + 0] * b[c] +
+  #|           a[r * 4 + 1] * b[4 + c] +
+  #|           a[r * 4 + 2] * b[8 + c] +
+  #|           a[r * 4 + 3] * b[12 + c]
+  #|       }
+  #|     }
+  #|     return out
+  #|   }
+  #|   const mat4RowToCol = (m) => [
+  #|     m[0], m[4], m[8], m[12],
+  #|     m[1], m[5], m[9], m[13],
+  #|     m[2], m[6], m[10], m[14],
+  #|     m[3], m[7], m[11], m[15],
+  #|   ]
+  #|   const camX = n(cameraX)
+  #|   const camY = n(cameraY)
+  #|   const camZ = n(cameraZ)
+  #|   const [qx, qy, qz, qw] = quatNormalize4(
+  #|     cameraRotX,
+  #|     cameraRotY,
+  #|     cameraRotZ,
+  #|     cameraRotW,
+  #|   )
+  #|   const r = quatToRowMat3(qx, qy, qz, qw)
+  #|   const worldFromViewRow = new Float32Array([
+  #|     r[0], r[1], r[2], camX,
+  #|     r[3], r[4], r[5], camY,
+  #|     r[6], r[7], r[8], camZ,
+  #|     0.0, 0.0, 0.0, 1.0,
+  #|   ])
+  #|   const rt = [
+  #|     r[0], r[3], r[6],
+  #|     r[1], r[4], r[7],
+  #|     r[2], r[5], r[8],
+  #|   ]
+  #|   const tx = -(rt[0] * camX + rt[1] * camY + rt[2] * camZ)
+  #|   const ty = -(rt[3] * camX + rt[4] * camY + rt[5] * camZ)
+  #|   const tz = -(rt[6] * camX + rt[7] * camY + rt[8] * camZ)
+  #|   const viewFromWorldRow = new Float32Array([
+  #|     rt[0], rt[1], rt[2], tx,
+  #|     rt[3], rt[4], rt[5], ty,
+  #|     rt[6], rt[7], rt[8], tz,
+  #|     0.0, 0.0, 0.0, 1.0,
+  #|   ])
+  #|   const width = n(widthLogical, 1.0)
+  #|   const height = n(heightLogical, 1.0)
+  #|   const aspect = height > 0.0 ? width / height : 1.0
+  #|   const fovY = n(cameraFovY)
+  #|   const near = Math.max(n(cameraNear), 1.0e-4)
+  #|   const far = Math.max(n(cameraFar), near + 1.0e-4)
+  #|   let clipFromViewRow = null
+  #|   if (fovY > 0.0) {
+  #|     const f = 1.0 / Math.tan(0.5 * Math.max(fovY, 1.0e-3))
+  #|     clipFromViewRow = new Float32Array([
+  #|       f / Math.max(aspect, 1.0e-3), 0.0, 0.0, 0.0,
+  #|       0.0, f, 0.0, 0.0,
+  #|       0.0, 0.0, 0.0, near,
+  #|       0.0, 0.0, -1.0, 0.0,
+  #|     ])
+  #|   } else {
+  #|     const halfH = Math.max(-fovY, 1.0e-5)
+  #|     const halfW = Math.max(halfH * Math.max(aspect, 1.0e-3), 1.0e-5)
+  #|     const left = -halfW
+  #|     const right = halfW
+  #|     const bottom = -halfH
+  #|     const top = halfH
+  #|     const w = Math.max(right - left, 1.0e-5)
+  #|     const h = Math.max(top - bottom, 1.0e-5)
+  #|     const d = Math.max(far - near, 1.0e-5)
+  #|     const cw = -right - left
+  #|     const ch = -top - bottom
+  #|     clipFromViewRow = new Float32Array([
+  #|       2.0 / w, 0.0, 0.0, cw / w,
+  #|       0.0, 2.0 / h, 0.0, ch / h,
+  #|       0.0, 0.0, 1.0 / d, far / d,
+  #|       0.0, 0.0, 0.0, 1.0,
+  #|     ])
+  #|   }
+  #|   const subX = n(subViewScaleX, 1.0)
+  #|   const subY = n(subViewScaleY, 1.0)
+  #|   const subBiasX = n(subViewBiasX)
+  #|   const subBiasY = n(subViewBiasY)
+  #|   for (let c = 0; c < 4; c += 1) {
+  #|     clipFromViewRow[c] = subX * clipFromViewRow[c] + subBiasX * clipFromViewRow[12 + c]
+  #|     clipFromViewRow[4 + c] =
+  #|       subY * clipFromViewRow[4 + c] + subBiasY * clipFromViewRow[12 + c]
+  #|   }
+  #|   const clipFromWorldRow = mat4RowMul(clipFromViewRow, viewFromWorldRow)
+  #|   const clipFromWorldCol = mat4RowToCol(clipFromWorldRow)
+  #|   const worldFromViewCol = mat4RowToCol(worldFromViewRow)
+  #|   const viewFromWorldCol = mat4RowToCol(viewFromWorldRow)
+  #|   const clipFromViewCol = mat4RowToCol(clipFromViewRow)
+  #|   const identityCol = [
+  #|     1.0, 0.0, 0.0, 0.0,
+  #|     0.0, 1.0, 0.0, 0.0,
+  #|     0.0, 0.0, 1.0, 0.0,
+  #|     0.0, 0.0, 0.0, 1.0,
+  #|   ]
+  #|   const out = new Float32Array(192)
+  #|   for (let i = 0; i < 16; i += 1) {
+  #|     out[i] = clipFromWorldCol[i]
+  #|     out[16 + i] = clipFromWorldCol[i]
+  #|     out[32 + i] = identityCol[i]
+  #|     out[48 + i] = worldFromViewCol[i]
+  #|     out[64 + i] = viewFromWorldCol[i]
+  #|     out[80 + i] = clipFromViewCol[i]
+  #|     out[96 + i] = identityCol[i]
+  #|   }
+  #|   out[112] = camX
+  #|   out[113] = camY
+  #|   out[114] = camZ
+  #|   // Bevy camera default exposure (Exposure::BLENDER: ev100=9.7)
+  #|   out[115] = 0.0010019079
+  #|   out[116] = n(viewportX)
+  #|   out[117] = n(viewportY)
+  #|   out[118] = n(viewportW)
+  #|   out[119] = n(viewportH)
+  #|   out[120] = n(viewportX)
+  #|   out[121] = n(viewportY)
+  #|   out[122] = n(viewportW)
+  #|   out[123] = n(viewportH)
+  #|   return out
+  #| }
+
+///|
+extern "js" fn mesh3d_bevy_lights_uniform_bytes(
+  ambient_r : Double,
+  ambient_g : Double,
+  ambient_b : Double,
+  ambient_brightness : Double,
+  directional_dir_x : Double,
+  directional_dir_y : Double,
+  directional_dir_z : Double,
+  directional_color_r : Double,
+  directional_color_g : Double,
+  directional_color_b : Double,
+  directional_illuminance : Double,
+  point_intensity : Double,
+  point_range : Double,
+  spot_intensity : Double,
+  spot_range : Double,
+  camera_fov_y : Double,
+  camera_near : Double,
+  camera_far : Double,
+  viewport_w : Double,
+  viewport_h : Double,
+) -> @js.Any =
+  #| (
+  #|   ambientR,
+  #|   ambientG,
+  #|   ambientB,
+  #|   ambientBrightness,
+  #|   directionalDirX,
+  #|   directionalDirY,
+  #|   directionalDirZ,
+  #|   directionalColorR,
+  #|   directionalColorG,
+  #|   directionalColorB,
+  #|   directionalIlluminance,
+  #|   pointIntensity,
+  #|   pointRange,
+  #|   spotIntensity,
+  #|   spotRange,
+  #|   cameraFovY,
+  #|   cameraNear,
+  #|   cameraFar,
+  #|   viewportW,
+  #|   viewportH,
+  #| ) => {
+  #|   const n = (value, fallback = 0.0) => {
+  #|     const v = Number(value)
+  #|     return Number.isFinite(v) ? v : fallback
+  #|   }
+  #|   const pointEnabled = n(pointIntensity) > 0.0 && n(pointRange) > 0.0
+  #|   const spotEnabled = n(spotIntensity) > 0.0 && n(spotRange) > 0.0
+  #|   const out = new Uint8Array(256)
+  #|   const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
+  #|   const writeF32 = (offset, value) => dv.setFloat32(offset, n(value), true)
+  #|   const writeU32 = (offset, value) => dv.setUint32(offset, Number(value) >>> 0, true)
+  #|   const ambientScale = n(ambientBrightness)
+  #|   writeF32(160, n(ambientR) * ambientScale)
+  #|   writeF32(164, n(ambientG) * ambientScale)
+  #|   writeF32(168, n(ambientB) * ambientScale)
+  #|   writeF32(172, 1.0)
+  #|   // Single-cluster fallback path for runtime compatibility with Bevy's clustered lighting shader logic.
+  #|   writeU32(176, 1)
+  #|   writeU32(180, 1)
+  #|   writeU32(184, 1)
+  #|   writeU32(188, 1)
+  #|   const invViewportW = 1.0 / Math.max(n(viewportW, 1.0), 1.0)
+  #|   const invViewportH = 1.0 / Math.max(n(viewportH, 1.0), 1.0)
+  #|   writeF32(192, invViewportW)
+  #|   writeF32(196, invViewportH)
+  #|   const near = Math.max(n(cameraNear), 1.0e-4)
+  #|   const far = Math.max(n(cameraFar), near + 1.0e-4)
+  #|   if (n(cameraFovY) > 0.0) {
+  #|     const logRatio = Math.max(Math.log(far / near), 1.0e-5)
+  #|     writeF32(200, 1.0 / logRatio)
+  #|     writeF32(204, Math.log(near) / logRatio)
+  #|   } else {
+  #|     writeF32(200, -near)
+  #|     let denom = -far - -near
+  #|     if (Math.abs(denom) < 1.0e-5) {
+  #|       denom = denom < 0.0 ? -1.0e-5 : 1.0e-5
+  #|     }
+  #|     writeF32(204, 1.0 / denom)
+  #|   }
+  #|   const illum = n(directionalIlluminance)
+  #|   if (illum > 0.0) {
+  #|     writeF32(80, n(directionalColorR) * illum)
+  #|     writeF32(84, n(directionalColorG) * illum)
+  #|     writeF32(88, n(directionalColorB) * illum)
+  #|     writeF32(92, 1.0)
+  #|     writeF32(96, -n(directionalDirX))
+  #|     writeF32(100, -n(directionalDirY))
+  #|     writeF32(104, -n(directionalDirZ))
+  #|     writeU32(208, 1)
+  #|   } else {
+  #|     writeU32(208, 0)
+  #|   }
+  #|   const pointCount = pointEnabled ? 1 : 0
+  #|   writeU32(212, (0 - pointCount) >>> 0)
+  #|   writeU32(216, 1)
+  #|   return out
+  #| }
+
+///|
+extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
+  point_pos_x : Double,
+  point_pos_y : Double,
+  point_pos_z : Double,
+  point_color_r : Double,
+  point_color_g : Double,
+  point_color_b : Double,
+  point_intensity : Double,
+  point_range : Double,
+  spot_pos_x : Double,
+  spot_pos_y : Double,
+  spot_pos_z : Double,
+  spot_dir_x : Double,
+  spot_dir_y : Double,
+  spot_dir_z : Double,
+  spot_color_r : Double,
+  spot_color_g : Double,
+  spot_color_b : Double,
+  spot_intensity : Double,
+  spot_range : Double,
+  spot_inner_angle : Double,
+  spot_outer_angle : Double,
+  point_shadow_enabled : Double,
+  point_shadow_depth_bias : Double,
+) -> @js.Any =
+  #| (
+  #|   pointPosX,
+  #|   pointPosY,
+  #|   pointPosZ,
+  #|   pointColorR,
+  #|   pointColorG,
+  #|   pointColorB,
+  #|   pointIntensity,
+  #|   pointRange,
+  #|   spotPosX,
+  #|   spotPosY,
+  #|   spotPosZ,
+  #|   spotDirX,
+  #|   spotDirY,
+  #|   spotDirZ,
+  #|   spotColorR,
+  #|   spotColorG,
+  #|   spotColorB,
+  #|   spotIntensity,
+  #|   spotRange,
+  #|   spotInnerAngle,
+  #|   spotOuterAngle,
+  #|   pointShadowEnabled,
+  #|   pointShadowDepthBias,
+  #| ) => {
+  #|   const n = (value, fallback = 0.0) => {
+  #|     const v = Number(value)
+  #|     return Number.isFinite(v) ? v : fallback
+  #|   }
+  #|   const CLUSTERED_LIGHT_STRIDE = 80
+  #|   const CLUSTERED_LIGHT_CAPACITY = 204
+  #|   const CLUSTERED_LIGHT_BUFFER_BYTES = CLUSTERED_LIGHT_STRIDE * CLUSTERED_LIGHT_CAPACITY
+  #|   const CLUSTER_INDEX_LISTS_BYTES = 1024 * 16
+  #|   const CLUSTER_OFFSETS_BYTES = 1024 * 16
+  #|   const POINT_LIGHT_FLAG_SHADOWS_ENABLED = 1 << 0
+  #|   const POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE = 1 << 1
+  #|   const POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE = 1 << 3
+  #|   // Bevy scales user bias by texel size and sqrt(2) before uploading.
+  #|   // Use the default point-shadow map size (1024) for parity in examples:
+  #|   // 0.6 * (2.0 / 1024.0) * sqrt(2.0)
+  #|   const POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS = 0.0016568542494923806
+  #|   const MAX_U32 = 0xFFFFFFFF
+  #|   const FOUR_PI = 4.0 * Math.PI
+  #|   const clusteredLights = new Uint8Array(CLUSTERED_LIGHT_BUFFER_BYTES)
+  #|   const clusteredLightsView = new DataView(
+  #|     clusteredLights.buffer,
+  #|     clusteredLights.byteOffset,
+  #|     clusteredLights.byteLength,
+  #|   )
+  #|   const writeLightF32 = (offset, value) =>
+  #|     clusteredLightsView.setFloat32(offset, n(value), true)
+  #|   const writeLightU32 = (offset, value) =>
+  #|     clusteredLightsView.setUint32(offset, Number(value) >>> 0, true)
+  #|   const pointEnabled = n(pointIntensity) > 0.0 && n(pointRange) > 0.0
+  #|   const pointShadowsEnabled = n(pointShadowEnabled) > 0.5
+  #|   const spotEnabled = n(spotIntensity) > 0.0 && n(spotRange) > 0.0
+  #|   let nextLightId = 0
+  #|   const writeClusteredLight = (
+  #|     index,
+  #|     lightCustomData,
+  #|     colorInverseSquareRange,
+  #|     positionRadius,
+  #|     flags,
+  #|     shadowDepthBias,
+  #|     shadowNormalBias,
+  #|     spotLightTanAngle,
+  #|     softShadowSize,
+  #|     shadowMapNearZ,
+  #|   ) => {
+  #|     const base = index * CLUSTERED_LIGHT_STRIDE
+  #|     if (base < 0 || base + CLUSTERED_LIGHT_STRIDE > clusteredLights.length) {
+  #|       return
+  #|     }
+  #|     writeLightF32(base + 0, lightCustomData[0])
+  #|     writeLightF32(base + 4, lightCustomData[1])
+  #|     writeLightF32(base + 8, lightCustomData[2])
+  #|     writeLightF32(base + 12, lightCustomData[3])
+  #|     writeLightF32(base + 16, colorInverseSquareRange[0])
+  #|     writeLightF32(base + 20, colorInverseSquareRange[1])
+  #|     writeLightF32(base + 24, colorInverseSquareRange[2])
+  #|     writeLightF32(base + 28, colorInverseSquareRange[3])
+  #|     writeLightF32(base + 32, positionRadius[0])
+  #|     writeLightF32(base + 36, positionRadius[1])
+  #|     writeLightF32(base + 40, positionRadius[2])
+  #|     writeLightF32(base + 44, positionRadius[3])
+  #|     writeLightU32(base + 48, flags)
+  #|     writeLightF32(base + 52, shadowDepthBias)
+  #|     writeLightF32(base + 56, shadowNormalBias)
+  #|     writeLightF32(base + 60, spotLightTanAngle)
+  #|     writeLightF32(base + 64, softShadowSize)
+  #|     writeLightF32(base + 68, shadowMapNearZ)
+  #|     writeLightU32(base + 72, MAX_U32)
+  #|     writeLightF32(base + 76, 0.0)
+  #|   }
+  #|   if (pointEnabled) {
+  #|     const range = Math.max(n(pointRange), 1.0e-4)
+  #|     const shadowMapNearZ = 0.1
+  #|     const intensityScale = n(pointIntensity) / FOUR_PI
+  #|     let flags = POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE
+  #|     if (pointShadowsEnabled) {
+  #|       flags = flags | POINT_LIGHT_FLAG_SHADOWS_ENABLED
+  #|     }
+  #|     writeClusteredLight(
+  #|       nextLightId,
+  #|       [0.0, -1.0, shadowMapNearZ, 0.0],
+  #|       [
+  #|         n(pointColorR) * intensityScale,
+  #|         n(pointColorG) * intensityScale,
+  #|         n(pointColorB) * intensityScale,
+  #|         1.0 / (range * range),
+  #|       ],
+  #|       [n(pointPosX), n(pointPosY), n(pointPosZ), 0.0],
+  #|       flags,
+  #|       pointShadowsEnabled ? n(pointShadowDepthBias) : 0.0,
+  #|       POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+  #|       0.0,
+  #|       0.0,
+  #|       shadowMapNearZ,
+  #|     )
+  #|     nextLightId += 1
+  #|   }
+  #|   if (spotEnabled) {
+  #|     const range = Math.max(n(spotRange), 1.0e-4)
+  #|     const intensityScale = n(spotIntensity) / FOUR_PI
+  #|     const dirX0 = n(spotDirX)
+  #|     const dirY0 = n(spotDirY)
+  #|     const dirZ0 = n(spotDirZ)
+  #|     const dirLength = Math.hypot(dirX0, dirY0, dirZ0)
+  #|     const dirLengthSafe = dirLength > 1.0e-6 ? dirLength : 1.0
+  #|     const dirX = dirX0 / dirLengthSafe
+  #|     const dirY = dirY0 / dirLengthSafe
+  #|     const dirZ = dirZ0 / dirLengthSafe
+  #|     const inner = n(spotInnerAngle)
+  #|     const outer = Math.max(inner, n(spotOuterAngle))
+  #|     const cosOuter = Math.cos(outer)
+  #|     const spotScale = 1.0 / Math.max(Math.cos(inner) - cosOuter, 1.0e-4)
+  #|     const spotOffset = -cosOuter * spotScale
+  #|     let flags = POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE
+  #|     if (dirY < 0.0) {
+  #|       flags = flags | POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE
+  #|     }
+  #|     writeClusteredLight(
+  #|       nextLightId,
+  #|       [dirX, dirZ, spotScale, spotOffset],
+  #|       [
+  #|         n(spotColorR) * intensityScale,
+  #|         n(spotColorG) * intensityScale,
+  #|         n(spotColorB) * intensityScale,
+  #|         1.0 / (range * range),
+  #|       ],
+  #|       [n(spotPosX), n(spotPosY), n(spotPosZ), 0.0],
+  #|       flags,
+  #|       0.0,
+  #|       0.0,
+  #|       Math.tan(outer),
+  #|       0.0,
+  #|       0.1,
+  #|     )
+  #|   }
+  #|   const clusterIndexLists = new Uint8Array(CLUSTER_INDEX_LISTS_BYTES)
+  #|   const clusterIndexListsView = new DataView(
+  #|     clusterIndexLists.buffer,
+  #|     clusterIndexLists.byteOffset,
+  #|     clusterIndexLists.byteLength,
+  #|   )
+  #|   const pointCount = pointEnabled ? 1 : 0
+  #|   const spotCount = spotEnabled ? 1 : 0
+  #|   if (pointCount + spotCount > 0) {
+  #|     let packed = 0
+  #|     if (pointCount > 0) {
+  #|       packed = packed | 0
+  #|     }
+  #|     if (spotCount > 0) {
+  #|       const spotLightId = pointCount
+  #|       packed = packed | ((spotLightId & 0xFF) << 8)
+  #|     }
+  #|     clusterIndexListsView.setUint32(0, packed >>> 0, true)
+  #|   }
+  #|   const clusterOffsetsAndCounts = new Uint8Array(CLUSTER_OFFSETS_BYTES)
+  #|   const clusterOffsetsView = new DataView(
+  #|     clusterOffsetsAndCounts.buffer,
+  #|     clusterOffsetsAndCounts.byteOffset,
+  #|     clusterOffsetsAndCounts.byteLength,
+  #|   )
+  #|   // [offset:14 bits | point_count:9 bits | spot_count:9 bits], offset is 0 for single-cluster fallback.
+  #|   const rawOffsetsAndCounts = ((pointCount & 0x1FF) << 9) | (spotCount & 0x1FF)
+  #|   clusterOffsetsView.setUint32(0, rawOffsetsAndCounts >>> 0, true)
+  #|   return {
+  #|     clusteredLights,
+  #|     clusterIndexLists,
+  #|     clusterOffsetsAndCounts,
+  #|   }
+  #| }
+
+///|
+extern "js" fn mesh3d_bevy_mesh_uniform_bytes(
+  x : Double,
+  y : Double,
+  z : Double,
+  rotation_x : Double,
+  rotation_y : Double,
+  rotation_z : Double,
+  rotation_w : Double,
+  scale_x : Double,
+  scale_y : Double,
+  scale_z : Double,
+  previous_x : Double,
+  previous_y : Double,
+  previous_z : Double,
+  previous_rotation_x : Double,
+  previous_rotation_y : Double,
+  previous_rotation_z : Double,
+  previous_rotation_w : Double,
+  previous_scale_x : Double,
+  previous_scale_y : Double,
+  previous_scale_z : Double,
+) -> @js.Any =
+  #| (
+  #|   x,
+  #|   y,
+  #|   z,
+  #|   rotationX,
+  #|   rotationY,
+  #|   rotationZ,
+  #|   rotationW,
+  #|   scaleX,
+  #|   scaleY,
+  #|   scaleZ,
+  #|   previousX,
+  #|   previousY,
+  #|   previousZ,
+  #|   previousRotationX,
+  #|   previousRotationY,
+  #|   previousRotationZ,
+  #|   previousRotationW,
+  #|   previousScaleX,
+  #|   previousScaleY,
+  #|   previousScaleZ,
+  #| ) => {
+  #|   const n = (value, fallback = 0.0) => {
+  #|     const v = Number(value)
+  #|     return Number.isFinite(v) ? v : fallback
+  #|   }
+  #|   const quatNormalize4 = (qx, qy, qz, qw) => {
+  #|     const x0 = n(qx)
+  #|     const y0 = n(qy)
+  #|     const z0 = n(qz)
+  #|     const w0 = n(qw)
+  #|     const norm2 = Math.max(x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0, 1.0e-8)
+  #|     const inv = 1.0 / Math.sqrt(norm2)
+  #|     return [x0 * inv, y0 * inv, z0 * inv, w0 * inv]
+  #|   }
+  #|   const quatToRowMat3 = (qx, qy, qz, qw) => {
+  #|     const [x, y, z, w] = quatNormalize4(qx, qy, qz, qw)
+  #|     return [
+  #|       1.0 - 2.0 * (y * y + z * z),
+  #|       2.0 * (x * y - w * z),
+  #|       2.0 * (x * z + w * y),
+  #|       2.0 * (x * y + w * z),
+  #|       1.0 - 2.0 * (x * x + z * z),
+  #|       2.0 * (y * z - w * x),
+  #|       2.0 * (x * z - w * y),
+  #|       2.0 * (y * z + w * x),
+  #|       1.0 - 2.0 * (x * x + y * y),
+  #|     ]
+  #|   }
+  #|   const buildModelRows = (px, py, pz, qx, qy, qz, qw, sx, sy, sz) => {
+  #|     const r = quatToRowMat3(qx, qy, qz, qw)
+  #|     return [
+  #|       r[0] * n(sx, 1.0), r[1] * n(sy, 1.0), r[2] * n(sz, 1.0), n(px),
+  #|       r[3] * n(sx, 1.0), r[4] * n(sy, 1.0), r[5] * n(sz, 1.0), n(py),
+  #|       r[6] * n(sx, 1.0), r[7] * n(sy, 1.0), r[8] * n(sz, 1.0), n(pz),
+  #|     ]
+  #|   }
+  #|   const safeReciprocal = (value) => {
+  #|     const v = n(value, 1.0)
+  #|     return Math.abs(v) > 1.0e-8 ? 1.0 / v : 0.0
+  #|   }
+  #|   const buildLocalFromWorldTransposeCols = (qx, qy, qz, qw, sx, sy, sz) => {
+  #|     const r = quatToRowMat3(qx, qy, qz, qw)
+  #|     const invSx = safeReciprocal(sx)
+  #|     const invSy = safeReciprocal(sy)
+  #|     const invSz = safeReciprocal(sz)
+  #|     const m00 = r[0] * invSx
+  #|     const m01 = r[1] * invSy
+  #|     const m02 = r[2] * invSz
+  #|     const m10 = r[3] * invSx
+  #|     const m11 = r[4] * invSy
+  #|     const m12 = r[5] * invSz
+  #|     const m20 = r[6] * invSx
+  #|     const m21 = r[7] * invSy
+  #|     const m22 = r[8] * invSz
+  #|     return [
+  #|       m00, m10, m20,
+  #|       m01, m11, m21,
+  #|       m02, m12, m22,
+  #|     ]
+  #|   }
+  #|   const out = new Uint8Array(192)
+  #|   const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
+  #|   const writeF32 = (offset, value) => dv.setFloat32(offset, n(value), true)
+  #|   const writeU32 = (offset, value) => dv.setUint32(offset, Number(value) >>> 0, true)
+  #|   const writeF32s = (offset, values) => {
+  #|     for (let i = 0; i < values.length; i += 1) {
+  #|       writeF32(offset + i * 4, values[i])
+  #|     }
+  #|   }
+  #|   const worldRows = buildModelRows(
+  #|     x,
+  #|     y,
+  #|     z,
+  #|     rotationX,
+  #|     rotationY,
+  #|     rotationZ,
+  #|     rotationW,
+  #|     scaleX,
+  #|     scaleY,
+  #|     scaleZ,
+  #|   )
+  #|   const previousRows = buildModelRows(
+  #|     previousX,
+  #|     previousY,
+  #|     previousZ,
+  #|     previousRotationX,
+  #|     previousRotationY,
+  #|     previousRotationZ,
+  #|     previousRotationW,
+  #|     previousScaleX,
+  #|     previousScaleY,
+  #|     previousScaleZ,
+  #|   )
+  #|   writeF32s(0, worldRows)
+  #|   writeF32s(48, previousRows)
+  #|   const localFromWorldTransposeCols = buildLocalFromWorldTransposeCols(
+  #|     rotationX,
+  #|     rotationY,
+  #|     rotationZ,
+  #|     rotationW,
+  #|     scaleX,
+  #|     scaleY,
+  #|     scaleZ,
+  #|   )
+  #|   writeF32s(96, [
+  #|     localFromWorldTransposeCols[0],
+  #|     localFromWorldTransposeCols[1],
+  #|     localFromWorldTransposeCols[2],
+  #|     localFromWorldTransposeCols[3],
+  #|     localFromWorldTransposeCols[4],
+  #|     localFromWorldTransposeCols[5],
+  #|     localFromWorldTransposeCols[6],
+  #|     localFromWorldTransposeCols[7],
+  #|   ])
+  #|   writeF32(128, localFromWorldTransposeCols[8])
+  #|   // Match Bevy mesh flags defaults:
+  #|   // - LOD index = u16::MAX (no LOD)
+  #|   // - SHADOW_RECEIVER
+  #|   // - SIGN_DETERMINANT_MODEL_3X3 when determinant is positive.
+  #|   let flags = 0x0000FFFF | (1 << 29)
+  #|   const determinantSign = n(scaleX, 1.0) * n(scaleY, 1.0) * n(scaleZ, 1.0)
+  #|   if (determinantSign >= 0.0) {
+  #|     flags = flags | (1 << 31)
+  #|   }
+  #|   writeU32(132, flags >>> 0)
+  #|   writeU32(136, 0) // lightmap_uv_rect.x
+  #|   writeU32(140, 0) // lightmap_uv_rect.y
+  #|   writeU32(144, 0) // first_vertex_index
+  #|   writeU32(148, 0) // current_skin_index
+  #|   writeU32(152, 0) // material_and_lightmap_bind_group_slot
+  #|   writeU32(156, 0) // tag
+  #|   writeU32(160, 0) // pad
+  #|   return out
+  #| }
+
+///|
+extern "js" fn mesh3d_bevy_material_uniform_bytes(
+  color_r : Double,
+  color_g : Double,
+  color_b : Double,
+  color_a : Double,
+  emissive_r : Double,
+  emissive_g : Double,
+  emissive_b : Double,
+  reflectance : Double,
+  roughness : Double,
+  metallic : Double,
+  diffuse_transmission : Double,
+  specular_transmission : Double,
+  thickness : Double,
+  ior : Double,
+  anisotropy_strength : Double,
+  unlit : Double,
+  parallax_depth_scale : Double,
+  max_parallax_layer_count : Double,
+  max_relief_mapping_search_steps : Double,
+) -> @js.Any =
+  #| (
+  #|   colorR,
+  #|   colorG,
+  #|   colorB,
+  #|   colorA,
+  #|   emissiveR,
+  #|   emissiveG,
+  #|   emissiveB,
+  #|   reflectance,
+  #|   roughness,
+  #|   metallic,
+  #|   diffuseTransmission,
+  #|   specularTransmission,
+  #|   thickness,
+  #|   ior,
+  #|   anisotropyStrength,
+  #|   unlit,
+  #|   parallaxDepthScale,
+  #|   maxParallaxLayerCount,
+  #|   maxReliefMappingSearchSteps,
+  #| ) => {
+  #|   const n = (value, fallback = 0.0) => {
+  #|     const v = Number(value)
+  #|     return Number.isFinite(v) ? v : fallback
+  #|   }
+  #|   const out = new Uint8Array(256)
+  #|   const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
+  #|   const writeF32 = (offset, value) => dv.setFloat32(offset, n(value), true)
+  #|   const writeU32 = (offset, value) => dv.setUint32(offset, Number(value) >>> 0, true)
+  #|   const writeF32s = (offset, values) => {
+  #|     for (let i = 0; i < values.length; i += 1) {
+  #|       writeF32(offset + i * 4, values[i])
+  #|     }
+  #|   }
+  #|   writeF32s(0, [n(colorR), n(colorG), n(colorB), n(colorA, 1.0)])
+  #|   writeF32s(16, [n(emissiveR), n(emissiveG), n(emissiveB), 1.0])
+  #|   writeF32s(32, [1.0, 1.0, 1.0, 1.0])
+  #|   writeF32s(48, [
+  #|     1.0, 0.0, 0.0, 0.0,
+  #|     0.0, 1.0, 0.0, 0.0,
+  #|     0.0, 0.0, 1.0, 0.0,
+  #|   ])
+  #|   const r = n(reflectance, 0.5)
+  #|   writeF32s(96, [r, r, r, n(roughness, 1.0)])
+  #|   writeF32(112, n(metallic))
+  #|   writeF32(116, n(diffuseTransmission))
+  #|   writeF32(120, n(specularTransmission))
+  #|   writeF32(124, n(thickness))
+  #|   writeF32(128, n(ior, 1.5))
+  #|   writeF32(132, 1.0)
+  #|   writeF32(144, n(anisotropyStrength))
+  #|   const flags = n(unlit) > 0.5 ? (1 << 5) : 0
+  #|   writeU32(156, flags)
+  #|   writeF32(160, 0.5)
+  #|   writeF32(164, n(parallaxDepthScale))
+  #|   writeF32(168, n(maxParallaxLayerCount))
+  #|   writeF32(172, 1.0)
+  #|   writeU32(176, Math.max(0, Math.floor(n(maxReliefMappingSearchSteps))) >>> 0)
+  #|   writeU32(180, 1)
+  #|   return out
   #| }
 
 ///|
@@ -1895,24 +3605,6 @@ extern "js" fn copy_texture_to_texture_region(
   #|     [width, height, 1],
   #|   )
   #|   queue.submit([encoder.finish()])
-  #| }
-
-///|
-extern "js" fn copy_texture_to_texture_region_on_encoder(
-  encoder : @js.Any,
-  src_texture : @js.Any,
-  dst_texture : @js.Any,
-  width : Int,
-  height : Int,
-  x : Int,
-  y : Int,
-) -> Unit =
-  #| (encoder, srcTexture, dstTexture, width, height, x, y) => {
-  #|   encoder.copyTextureToTexture(
-  #|     { texture: srcTexture },
-  #|     { texture: dstTexture, origin: { x, y } },
-  #|     [width, height, 1],
-  #|   )
   #| }
 
 ///|

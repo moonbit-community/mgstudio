@@ -45,6 +45,7 @@ struct Mesh3dUniform {
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
   specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
   transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
+  point_shadow_params : vec4<f32>, // (enabled, depth_bias, _, _)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -58,6 +59,7 @@ struct Mesh3dUniform {
 @group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
 @group(1) @binding(8) var u_specular_tint_texture : texture_2d<f32>;
 @group(1) @binding(9) var u_transmission_source_texture : texture_2d<f32>;
+@group(1) @binding(10) var u_point_shadow_texture : texture_2d<f32>;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -523,7 +525,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
 
-  let ambient_term = u_mesh.ambient.xyz * max(u_mesh.ambient.w, 0.0);
+  // Match Bevy-style ambient brightness semantics: 80.0 means neutral ambient.
+  let ambient_term = u_mesh.ambient.xyz * (max(u_mesh.ambient.w, 0.0) / 80.0);
 
   let directional_dir = safe_normalize(u_mesh.directional_dir_illum.xyz);
   let directional_strength = max(u_mesh.directional_dir_illum.w, 0.0) / 10000.0;
@@ -563,19 +566,37 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let point_dir = safe_normalize(to_point);
   let point_range = max(u_mesh.point_pos_range.w, 1e-4);
   let point_atten = clamp(1.0 - point_distance / point_range, 0.0, 1.0);
-  let point_strength = max(u_mesh.point_color_intensity.w, 0.0) / 100000.0;
+  let point_strength = max(u_mesh.point_color_intensity.w, 0.0) / 1000000.0;
   let point_diff = lambert(normal, point_dir);
   let point_back_diff = lambert(-normal, point_dir);
+  let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
+  let point_shadow_uv = cubemap_stacked_vertical_uv(in.world_pos - u_mesh.point_pos_range.xyz);
+  let point_shadow_depth = textureSampleLevel(
+    u_point_shadow_texture,
+    u_material_sampler,
+    point_shadow_uv,
+    0.0,
+  ).r;
+  let point_depth_bias = max(u_mesh.point_shadow_params.y, 0.0);
+  let point_depth_normalized = point_distance / point_range;
+  var point_shadow_factor = 0.0;
+  if !point_shadow_enabled ||
+    point_shadow_depth >= 0.9999 ||
+    point_depth_normalized <= point_shadow_depth + point_depth_bias {
+    point_shadow_factor = 1.0;
+  }
   let point_term = u_mesh.point_color_intensity.xyz *
     point_strength *
     point_atten *
     point_atten *
-    point_diff;
+    point_diff *
+    point_shadow_factor;
   let point_transmitted_term = u_mesh.point_color_intensity.xyz *
     point_strength *
     point_atten *
     point_atten *
-    point_back_diff;
+    point_back_diff *
+    point_shadow_factor;
   var point_specular = vec3<f32>(0.0, 0.0, 0.0);
   if anisotropy_strength > 0.0 {
     point_specular = specular_anisotropic(
@@ -598,7 +619,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     point_atten *
     point_atten *
     point_diff *
-    point_specular;
+    point_specular *
+    point_shadow_factor;
 
   let to_spot = u_mesh.spot_pos_range.xyz - in.world_pos;
   let spot_distance = length(to_spot);
@@ -612,7 +634,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let outer_cos = cos(outer_angle);
   let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
   let spot_cone = smoothstep(outer_cos, inner_cos, spot_cos_theta);
-  let spot_strength = max(u_mesh.spot_color_intensity.w, 0.0) / 100000.0;
+  let spot_strength = max(u_mesh.spot_color_intensity.w, 0.0) / 1000000.0;
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
   let spot_back_diff = lambert(-normal, spot_light_to_fragment);
@@ -712,4 +734,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let unlit_rgb = base_color.xyz + emissive;
   let final_rgb = mix(lit_rgb, unlit_rgb, unlit_factor);
   return vec4<f32>(final_rgb, base_color.w);
+}
+
+@fragment
+fn fs_shadow(in : VertexOut) -> @location(0) vec4<f32> {
+  let point_range = max(u_mesh.point_pos_range.w, 1.0e-4);
+  let point_distance = length(in.world_pos - u_mesh.point_pos_range.xyz);
+  let depth01 = clamp(point_distance / point_range, 0.0, 1.0);
+  return vec4<f32>(depth01, depth01, depth01, 1.0);
 }

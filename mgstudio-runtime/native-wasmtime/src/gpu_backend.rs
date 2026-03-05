@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use anyhow::{anyhow, Context};
 use wgpu::util::DeviceExt as _;
@@ -10,10 +11,16 @@ use winit::window::Window;
 // host contract used by mgstudio-engine (begin_frame/begin_pass/draw/end_pass/end_frame)
 // with sprite batching (sprite.wgsl) and basic 2D mesh draws (mesh.wgsl).
 
-const MESH_UNIFORM_MAX_BYTES: u64 = 100 * 4;
+const MESH_UNIFORM_MAX_BYTES: u64 = 104 * 4;
 const COMPRESSED_IMAGE_FORMAT_ASTC_LDR: i32 = 1;
 const COMPRESSED_IMAGE_FORMAT_BC: i32 = 2;
 const COMPRESSED_IMAGE_FORMAT_ETC2: i32 = 4;
+const MESH3D_VERTEX_SHADER_PATH: &str = "shaders/bevy/bevy_pbr/render/mesh.wgsl";
+const MESH3D_FRAGMENT_SHADER_PATH: &str = "shaders/bevy/bevy_pbr/render/pbr.wgsl";
+const MESH3D_SHADOW_SHADER_PATH: &str = "shaders/bevy/bevy_pbr/render/mesh.wgsl";
+const MESH3D_VERTEX_ENTRY: &str = "vertex";
+const MESH3D_FRAGMENT_ENTRY: &str = "fragment";
+const MESH3D_SHADOW_FRAGMENT_ENTRY: &str = "fragment";
 
 pub struct GpuBackend {
     assets_base: String,
@@ -195,6 +202,9 @@ struct MeshDraw {
     transmission_source_texture_id: i32,
     transmission_blur_taps: f32,
     transmission_steps: f32,
+    point_shadow_texture_id: i32,
+    point_shadow_enabled: f32,
+    point_shadow_depth_bias: f32,
     ubo_offset: u32, // computed during encoding
     scissor: Option<ScissorRect>,
 }
@@ -242,6 +252,8 @@ struct GpuTexture {
     view: wgpu::TextureView,
     sampler: wgpu::Sampler,
     bind_group: wgpu::BindGroup,
+    point_shadow_depth_cube_array_view: Option<wgpu::TextureView>,
+    point_shadow_depth_face_views: Option<Vec<wgpu::TextureView>>,
     mip_level_count: u32,
     base_mip_level: u32,
     #[allow(dead_code)]
@@ -261,7 +273,7 @@ struct GpuMesh {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum MeshVertexLayout {
     XyUvRgba,
-    XyzUvRgba,
+    XyzNormal,
 }
 
 fn mesh3d_topology_from_kind(kind: i32) -> wgpu::PrimitiveTopology {
@@ -272,15 +284,67 @@ fn mesh3d_topology_from_kind(kind: i32) -> wgpu::PrimitiveTopology {
     }
 }
 
+fn mesh3d_bevy_shader_defs() -> HashMap<String, WgslShaderDefValue> {
+    let mut defs = HashMap::new();
+    defs.insert(
+        "VERTEX_POSITIONS".to_string(),
+        WgslShaderDefValue::Bool(true),
+    );
+    defs.insert("VERTEX_NORMALS".to_string(), WgslShaderDefValue::Bool(true));
+    defs.insert(
+        "VERTEX_OUTPUT_INSTANCE_INDEX".to_string(),
+        WgslShaderDefValue::Bool(true),
+    );
+    defs.insert(
+        "MATERIAL_BIND_GROUP".to_string(),
+        WgslShaderDefValue::UInt(3),
+    );
+    defs.insert(
+        "PER_OBJECT_BUFFER_BATCH_SIZE".to_string(),
+        WgslShaderDefValue::UInt(1),
+    );
+    defs.insert(
+        "MAX_CASCADES_PER_LIGHT".to_string(),
+        WgslShaderDefValue::UInt(1),
+    );
+    defs.insert(
+        "MAX_DIRECTIONAL_LIGHTS".to_string(),
+        WgslShaderDefValue::UInt(1),
+    );
+    defs.insert(
+        "AVAILABLE_STORAGE_BUFFER_BINDINGS".to_string(),
+        WgslShaderDefValue::UInt(0),
+    );
+    defs.insert(
+        "SHADOW_FILTER_METHOD_HARDWARE_2X2".to_string(),
+        WgslShaderDefValue::Bool(true),
+    );
+    defs
+}
+
 const PASS_KIND_BASE_MASK: i32 = 255;
 const PASS_KIND_DISABLE_POSTPROCESS_FLAG: i32 = 1 << 8;
 const PASS_KIND_DISABLE_FOG_FLAG: i32 = 1 << 9;
 const PASS_KIND_DISABLE_DECAL_FLAG: i32 = 1 << 10;
 const PASS_KIND_BASE_MOTION_VECTOR: i32 = 1;
+const PASS_KIND_BASE_POINT_SHADOW: i32 = 2;
 const MESH3D_CULL_MODE_MASK: i32 = 3;
 const MESH3D_DRAW_FLAG_DECAL: i32 = 1 << 8;
 const MESH3D_DRAW_FLAG_FOG: i32 = 1 << 9;
 const MESH3D_DRAW_FLAG_POSTPROCESS_PROXY: i32 = 1 << 10;
+const MESH3D_CLUSTERED_LIGHT_STRIDE_BYTES: usize = 80;
+const MESH3D_CLUSTERED_LIGHT_CAPACITY: usize = 204;
+const MESH3D_CLUSTERED_LIGHTS_UNIFORM_BYTES: u64 =
+    (MESH3D_CLUSTERED_LIGHT_STRIDE_BYTES * MESH3D_CLUSTERED_LIGHT_CAPACITY) as u64;
+const MESH3D_CLUSTER_INDEX_LISTS_UNIFORM_BYTES: u64 = 1024 * 16;
+const MESH3D_CLUSTER_OFFSETS_UNIFORM_BYTES: u64 = 1024 * 16;
+const POINT_LIGHT_FLAG_SHADOWS_ENABLED: u32 = 1 << 0;
+const POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE: u32 = 1 << 1;
+const POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE: u32 = 1 << 3;
+// Bevy scales user bias by texel size and sqrt(2) before uploading.
+// Use the default point-shadow map size (1024) for parity in examples:
+// 0.6 * (2.0 / 1024.0) * sqrt(2.0)
+const POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS: f32 = 0.001_656_854_3;
 
 fn pass_kind_base_kind(pass_kind: i32) -> i32 {
     pass_kind & PASS_KIND_BASE_MASK
@@ -356,13 +420,32 @@ struct SpriteRenderer {
 #[derive(Default)]
 struct MeshRenderer {
     bgl_uniform: Option<wgpu::BindGroupLayout>,
-    bgl_material_3d: Option<wgpu::BindGroupLayout>,
+    bg_view_3d: Option<wgpu::BindGroup>,
+    bg_view_env_3d: Option<wgpu::BindGroup>,
+    bg_mesh_3d: Option<wgpu::BindGroup>,
+    bg_material_3d: Option<wgpu::BindGroup>,
+    mesh3d_dummy_uniform_buf: Option<wgpu::Buffer>,
+    mesh3d_dummy_color_2d_view: Option<wgpu::TextureView>,
+    mesh3d_dummy_3d_view: Option<wgpu::TextureView>,
+    mesh3d_dummy_linear_sampler: Option<wgpu::Sampler>,
+    mesh3d_dummy_depth_cube_array_view: Option<wgpu::TextureView>,
+    mesh3d_dummy_depth_array_view: Option<wgpu::TextureView>,
+    mesh3d_dummy_compare_sampler: Option<wgpu::Sampler>,
+    mesh3d_view_uniform_buf: Option<wgpu::Buffer>,
+    mesh3d_lights_uniform_buf: Option<wgpu::Buffer>,
+    mesh3d_clustered_lights_uniform_buf: Option<wgpu::Buffer>,
+    mesh3d_cluster_index_lists_uniform_buf: Option<wgpu::Buffer>,
+    mesh3d_cluster_offsets_uniform_buf: Option<wgpu::Buffer>,
+    mesh3d_mesh_uniform_buf: Option<wgpu::Buffer>,
+    mesh3d_material_uniform_buf: Option<wgpu::Buffer>,
     pipeline_layout: Option<wgpu::PipelineLayout>,
     pipeline_layout_3d: Option<wgpu::PipelineLayout>,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
     pipelines_3d:
         HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology, i32), wgpu::RenderPipeline>,
     pipelines_3d_transparent:
+        HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology, i32), wgpu::RenderPipeline>,
+    pipelines_3d_shadow:
         HashMap<(wgpu::TextureFormat, wgpu::PrimitiveTopology, i32), wgpu::RenderPipeline>,
 
     uniform_buf: Option<wgpu::Buffer>,
@@ -906,6 +989,34 @@ impl GpuBackend {
         if has_mesh_3d {
             if pass_kind_base_kind(pass.st.pass_kind) == PASS_KIND_BASE_MOTION_VECTOR {
                 self.ensure_mesh3d_motion_vector_pipeline()?;
+            } else if pass_kind_base_kind(pass.st.pass_kind) == PASS_KIND_BASE_POINT_SHADOW {
+                if has_mesh_3d_triangles {
+                    for cull_mode in [0, 1, 2] {
+                        self.ensure_mesh3d_shadow_pipeline(
+                            pass.st.target_format,
+                            wgpu::PrimitiveTopology::TriangleList,
+                            cull_mode,
+                        )?;
+                    }
+                }
+                if has_mesh_3d_line_list {
+                    for cull_mode in [0, 1, 2] {
+                        self.ensure_mesh3d_shadow_pipeline(
+                            pass.st.target_format,
+                            wgpu::PrimitiveTopology::LineList,
+                            cull_mode,
+                        )?;
+                    }
+                }
+                if has_mesh_3d_line_strip {
+                    for cull_mode in [0, 1, 2] {
+                        self.ensure_mesh3d_shadow_pipeline(
+                            pass.st.target_format,
+                            wgpu::PrimitiveTopology::LineStrip,
+                            cull_mode,
+                        )?;
+                    }
+                }
             } else {
                 if has_mesh_3d_triangles {
                     for cull_mode in [0, 1, 2] {
@@ -967,8 +1078,24 @@ impl GpuBackend {
         let mesh_pipeline_2d = self.mesh.pipelines.get(&pass.st.target_format).cloned();
         let mesh_pipelines_3d = self.mesh.pipelines_3d.clone();
         let mesh_pipelines_3d_transparent = self.mesh.pipelines_3d_transparent.clone();
+        let mesh_pipelines_3d_shadow = self.mesh.pipelines_3d_shadow.clone();
         let mesh_pipeline_motion_vector = self.mesh.motion_vector_pipeline.as_ref().cloned();
-        let mesh_bg = self.mesh.uniform_bg.as_ref().cloned();
+        let mesh_bg_2d = self.mesh.uniform_bg.as_ref().cloned();
+        let mesh3d_view_env_bg = self.mesh.bg_view_env_3d.as_ref().cloned();
+        let mesh3d_mesh_bg = self.mesh.bg_mesh_3d.as_ref().cloned();
+        let mesh3d_material_bg = self.mesh.bg_material_3d.as_ref().cloned();
+        let mesh3d_dummy_uniform_buf = self.mesh.mesh3d_dummy_uniform_buf.as_ref().cloned();
+        let mesh3d_dummy_color_2d_view = self.mesh.mesh3d_dummy_color_2d_view.as_ref().cloned();
+        let mesh3d_dummy_3d_view = self.mesh.mesh3d_dummy_3d_view.as_ref().cloned();
+        let mesh3d_dummy_linear_sampler = self.mesh.mesh3d_dummy_linear_sampler.as_ref().cloned();
+        let mesh3d_dummy_depth_cube_array_view = self
+            .mesh
+            .mesh3d_dummy_depth_cube_array_view
+            .as_ref()
+            .cloned();
+        let mesh3d_dummy_depth_array_view =
+            self.mesh.mesh3d_dummy_depth_array_view.as_ref().cloned();
+        let mesh3d_dummy_compare_sampler = self.mesh.mesh3d_dummy_compare_sampler.as_ref().cloned();
         let mesh_motion_vector_bg = self.mesh.motion_vector_uniform_bg.as_ref().cloned();
         let motion_blur_pipeline = if pass.st.target_format == wgpu::TextureFormat::Rgba8Unorm {
             self.mesh.motion_blur_pipeline_rgba8.as_ref().cloned()
@@ -1022,33 +1149,49 @@ impl GpuBackend {
         };
         let mut depth_view: Option<wgpu::TextureView> = None;
         if pass.st.is_3d {
-            let target_size = (target_width.max(1), target_height.max(1));
-            if self.last_depth_view.is_none()
-                || self.last_depth_target_id != pass.st.target_id
-                || self.last_depth_size != target_size
-            {
-                let depth_tex = self.device.create_texture(&wgpu::TextureDescriptor {
-                    label: Some("mgstudio-pass-depth"),
-                    size: wgpu::Extent3d {
-                        width: target_size.0,
-                        height: target_size.1,
-                        depth_or_array_layers: 1,
-                    },
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: wgpu::TextureDimension::D2,
-                    format: wgpu::TextureFormat::Depth24Plus,
-                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                        | wgpu::TextureUsages::TEXTURE_BINDING,
-                    view_formats: &[],
-                });
-                let view = depth_tex.create_view(&wgpu::TextureViewDescriptor::default());
-                self.last_depth_texture = Some(depth_tex);
-                self.last_depth_view = Some(view);
-                self.last_depth_target_id = pass.st.target_id;
-                self.last_depth_size = target_size;
+            let mut used_point_shadow_target_depth = false;
+            if pass_kind_base_kind(pass.st.pass_kind) == PASS_KIND_BASE_POINT_SHADOW {
+                if let Some(target_tex) = self.textures.get(&pass.st.target_id) {
+                    if let Some(face_views) = target_tex.point_shadow_depth_face_views.as_ref() {
+                        let face_height = pass.st.viewport_h.max(1);
+                        let raw_face = (pass.st.viewport_y / face_height).min(5) as usize;
+                        if let Some(face_view) = face_views.get(raw_face) {
+                            depth_view = Some(face_view.clone());
+                            used_point_shadow_target_depth = true;
+                            pass.st.viewport_y = 0;
+                        }
+                    }
+                }
             }
-            depth_view = self.last_depth_view.as_ref().cloned();
+            if !used_point_shadow_target_depth {
+                let target_size = (target_width.max(1), target_height.max(1));
+                if self.last_depth_view.is_none()
+                    || self.last_depth_target_id != pass.st.target_id
+                    || self.last_depth_size != target_size
+                {
+                    let depth_tex = self.device.create_texture(&wgpu::TextureDescriptor {
+                        label: Some("mgstudio-pass-depth"),
+                        size: wgpu::Extent3d {
+                            width: target_size.0,
+                            height: target_size.1,
+                            depth_or_array_layers: 1,
+                        },
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgpu::TextureDimension::D2,
+                        format: wgpu::TextureFormat::Depth24Plus,
+                        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                            | wgpu::TextureUsages::TEXTURE_BINDING,
+                        view_formats: &[],
+                    });
+                    let view = depth_tex.create_view(&wgpu::TextureViewDescriptor::default());
+                    self.last_depth_texture = Some(depth_tex);
+                    self.last_depth_view = Some(view);
+                    self.last_depth_target_id = pass.st.target_id;
+                    self.last_depth_size = target_size;
+                }
+                depth_view = self.last_depth_view.as_ref().cloned();
+            }
         }
 
         {
@@ -1058,7 +1201,7 @@ impl GpuBackend {
                     .map(|view| wgpu::RenderPassDepthStencilAttachment {
                         view,
                         depth_ops: Some(wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(1.0),
+                            load: wgpu::LoadOp::Clear(0.0),
                             store: wgpu::StoreOp::Store,
                         }),
                         stencil_ops: None,
@@ -1141,7 +1284,7 @@ impl GpuBackend {
                         let Some(mesh) = self.meshes.get(&draw.mesh_id) else {
                             continue;
                         };
-                        if draw.is_3d && mesh.layout != MeshVertexLayout::XyzUvRgba {
+                        if draw.is_3d && mesh.layout != MeshVertexLayout::XyzNormal {
                             continue;
                         }
                         if !draw.is_3d && mesh.layout != MeshVertexLayout::XyUvRgba {
@@ -1192,12 +1335,19 @@ impl GpuBackend {
                         }
 
                         let pipeline = if draw.is_3d {
+                            let pass_base_kind = pass_kind_base_kind(pass.st.pass_kind);
                             let key = (
                                 pass.st.target_format,
                                 mesh.primitive_topology,
                                 mesh3d_cull_mode_sanitize(draw.cull_mode),
                             );
-                            if draw.color[3] < 0.999 {
+                            if pass_base_kind == PASS_KIND_BASE_POINT_SHADOW {
+                                if draw.color[3] < 0.999 {
+                                    None
+                                } else {
+                                    mesh_pipelines_3d_shadow.get(&key)
+                                }
+                            } else if draw.color[3] < 0.999 {
                                 mesh_pipelines_3d_transparent.get(&key)
                             } else {
                                 mesh_pipelines_3d.get(&key)
@@ -1205,133 +1355,219 @@ impl GpuBackend {
                         } else {
                             mesh_pipeline_2d.as_ref()
                         };
-                        let (Some(pipeline), Some(bg)) = (pipeline, mesh_bg.as_ref()) else {
-                            continue;
-                        };
-                        rp.set_pipeline(pipeline);
-                        rp.set_scissor_rect(sx, sy, sw, sh);
                         if draw.is_3d {
-                            if let Some(ubo) = self.mesh.uniform_buf.as_ref() {
-                                let bytes = mesh3d_uniform_bytes(&pass.st, &draw);
-                                self.queue.write_buffer(ubo, 0, bytes.as_slice());
+                            let (
+                                Some(pipeline),
+                                Some(view_env_bg),
+                                Some(mesh_bg),
+                                Some(material_bg),
+                            ) = (
+                                pipeline,
+                                mesh3d_view_env_bg.as_ref(),
+                                mesh3d_mesh_bg.as_ref(),
+                                mesh3d_material_bg.as_ref(),
+                            )
+                            else {
+                                continue;
+                            };
+                            let (
+                                Some(view_ubo),
+                                Some(lights_ubo),
+                                Some(clustered_lights_ubo),
+                                Some(cluster_index_lists_ubo),
+                                Some(cluster_offsets_ubo),
+                                Some(mesh_ubo),
+                                Some(material_ubo),
+                                Some(dummy_uniform_buf),
+                                Some(dummy_color_2d_view),
+                                Some(dummy_3d_view),
+                                Some(dummy_linear_sampler),
+                                Some(dummy_depth_cube_array_view),
+                                Some(dummy_depth_array_view),
+                                Some(dummy_compare_sampler),
+                            ) = (
+                                self.mesh.mesh3d_view_uniform_buf.as_ref(),
+                                self.mesh.mesh3d_lights_uniform_buf.as_ref(),
+                                self.mesh.mesh3d_clustered_lights_uniform_buf.as_ref(),
+                                self.mesh.mesh3d_cluster_index_lists_uniform_buf.as_ref(),
+                                self.mesh.mesh3d_cluster_offsets_uniform_buf.as_ref(),
+                                self.mesh.mesh3d_mesh_uniform_buf.as_ref(),
+                                self.mesh.mesh3d_material_uniform_buf.as_ref(),
+                                mesh3d_dummy_uniform_buf.as_ref(),
+                                mesh3d_dummy_color_2d_view.as_ref(),
+                                mesh3d_dummy_3d_view.as_ref(),
+                                mesh3d_dummy_linear_sampler.as_ref(),
+                                mesh3d_dummy_depth_cube_array_view.as_ref(),
+                                mesh3d_dummy_depth_array_view.as_ref(),
+                                mesh3d_dummy_compare_sampler.as_ref(),
+                            )
+                            else {
+                                continue;
+                            };
+                            let view_bytes = mesh3d_bevy_view_uniform_bytes(&pass.st);
+                            self.queue.write_buffer(view_ubo, 0, view_bytes.as_slice());
+                            let lights_bytes = mesh3d_bevy_lights_uniform_bytes(&pass.st);
+                            self.queue
+                                .write_buffer(lights_ubo, 0, lights_bytes.as_slice());
+                            let clustered_lights_bytes =
+                                mesh3d_bevy_clustered_lights_uniform_bytes(&pass.st, &draw);
+                            self.queue.write_buffer(
+                                clustered_lights_ubo,
+                                0,
+                                clustered_lights_bytes.as_slice(),
+                            );
+                            let cluster_index_lists_bytes =
+                                mesh3d_bevy_cluster_index_lists_uniform_bytes(&pass.st);
+                            self.queue.write_buffer(
+                                cluster_index_lists_ubo,
+                                0,
+                                cluster_index_lists_bytes.as_slice(),
+                            );
+                            let cluster_offsets_bytes =
+                                mesh3d_bevy_cluster_offsets_uniform_bytes(&pass.st);
+                            self.queue.write_buffer(
+                                cluster_offsets_ubo,
+                                0,
+                                cluster_offsets_bytes.as_slice(),
+                            );
+                            let mesh_bytes = mesh3d_bevy_mesh_uniform_bytes(&draw);
+                            self.queue.write_buffer(mesh_ubo, 0, mesh_bytes.as_slice());
+                            let material_bytes = mesh3d_bevy_material_uniform_bytes(&draw);
+                            self.queue
+                                .write_buffer(material_ubo, 0, material_bytes.as_slice());
+                            let point_shadow_cube_view = if draw.point_shadow_enabled > 0.0
+                                && draw.point_shadow_texture_id >= 0
+                            {
+                                self.textures
+                                    .get(&draw.point_shadow_texture_id)
+                                    .and_then(|tex| tex.point_shadow_depth_cube_array_view.as_ref())
+                                    .unwrap_or(dummy_depth_cube_array_view)
                             } else {
-                                continue;
-                            }
-                            rp.set_bind_group(0, bg, &[0]);
-                        } else {
-                            rp.set_bind_group(0, bg, &[draw.ubo_offset]);
-                        }
-                        if draw.is_3d {
-                            let Some(base_tex) = self.textures.get(&draw.texture_id) else {
-                                continue;
+                                dummy_depth_cube_array_view
                             };
-                            let Some(normal_tex) = self.textures.get(&draw.normal_texture_id)
-                            else {
-                                continue;
-                            };
-                            let Some(emissive_tex) = self.textures.get(&draw.emissive_texture_id)
-                            else {
-                                continue;
-                            };
-                            let Some(metallic_roughness_tex) =
-                                self.textures.get(&draw.metallic_roughness_texture_id)
-                            else {
-                                continue;
-                            };
-                            let Some(occlusion_tex) = self.textures.get(&draw.occlusion_texture_id)
-                            else {
-                                continue;
-                            };
-                            let Some(depth_tex) = self.textures.get(&draw.depth_texture_id) else {
-                                continue;
-                            };
-                            let Some(anisotropy_tex) =
-                                self.textures.get(&draw.anisotropy_texture_id)
-                            else {
-                                continue;
-                            };
-                            let Some(specular_tint_tex) =
-                                self.textures.get(&draw.specular_tint_texture_id)
-                            else {
-                                continue;
-                            };
-                            let Some(transmission_source_tex) =
-                                self.textures.get(&draw.transmission_source_texture_id)
-                            else {
-                                continue;
-                            };
-                            let Some(layout) = self.mesh.bgl_material_3d.as_ref() else {
-                                continue;
-                            };
-                            let material_bg =
+                            let view_layout = pipeline.get_bind_group_layout(0);
+                            let view_bg =
                                 self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                                    label: Some("mgstudio-mesh3d-material-bg"),
-                                    layout,
+                                    label: Some("mgstudio_mesh3d_view_bg_dynamic"),
+                                    layout: &view_layout,
                                     entries: &[
                                         wgpu::BindGroupEntry {
                                             binding: 0,
-                                            resource: wgpu::BindingResource::Sampler(
-                                                &base_tex.sampler,
-                                            ),
+                                            resource: view_ubo.as_entire_binding(),
                                         },
                                         wgpu::BindGroupEntry {
                                             binding: 1,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &base_tex.view,
-                                            ),
+                                            resource: lights_ubo.as_entire_binding(),
                                         },
                                         wgpu::BindGroupEntry {
                                             binding: 2,
                                             resource: wgpu::BindingResource::TextureView(
-                                                &normal_tex.view,
+                                                point_shadow_cube_view,
                                             ),
                                         },
                                         wgpu::BindGroupEntry {
                                             binding: 3,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &emissive_tex.view,
-                                            ),
-                                        },
-                                        wgpu::BindGroupEntry {
-                                            binding: 4,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &metallic_roughness_tex.view,
+                                            resource: wgpu::BindingResource::Sampler(
+                                                dummy_compare_sampler,
                                             ),
                                         },
                                         wgpu::BindGroupEntry {
                                             binding: 5,
                                             resource: wgpu::BindingResource::TextureView(
-                                                &occlusion_tex.view,
+                                                dummy_depth_array_view,
                                             ),
                                         },
                                         wgpu::BindGroupEntry {
                                             binding: 6,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &depth_tex.view,
-                                            ),
-                                        },
-                                        wgpu::BindGroupEntry {
-                                            binding: 7,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &anisotropy_tex.view,
+                                            resource: wgpu::BindingResource::Sampler(
+                                                dummy_compare_sampler,
                                             ),
                                         },
                                         wgpu::BindGroupEntry {
                                             binding: 8,
-                                            resource: wgpu::BindingResource::TextureView(
-                                                &specular_tint_tex.view,
-                                            ),
+                                            resource: clustered_lights_ubo.as_entire_binding(),
                                         },
                                         wgpu::BindGroupEntry {
                                             binding: 9,
+                                            resource: cluster_index_lists_ubo.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 10,
+                                            resource: cluster_offsets_ubo.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 11,
+                                            resource: dummy_uniform_buf.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 12,
+                                            resource: dummy_uniform_buf.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 13,
+                                            resource: dummy_uniform_buf.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 14,
+                                            resource: dummy_uniform_buf.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 15,
+                                            resource: dummy_uniform_buf.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 16,
+                                            resource: dummy_uniform_buf.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 17,
                                             resource: wgpu::BindingResource::TextureView(
-                                                &transmission_source_tex.view,
+                                                dummy_color_2d_view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 18,
+                                            resource: dummy_uniform_buf.as_entire_binding(),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 19,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                dummy_3d_view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 20,
+                                            resource: wgpu::BindingResource::Sampler(
+                                                dummy_linear_sampler,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 25,
+                                            resource: wgpu::BindingResource::TextureView(
+                                                dummy_color_2d_view,
+                                            ),
+                                        },
+                                        wgpu::BindGroupEntry {
+                                            binding: 26,
+                                            resource: wgpu::BindingResource::Sampler(
+                                                dummy_linear_sampler,
                                             ),
                                         },
                                     ],
                                 });
-                            rp.set_bind_group(1, &material_bg, &[]);
+                            rp.set_pipeline(pipeline);
+                            rp.set_scissor_rect(sx, sy, sw, sh);
+                            rp.set_bind_group(0, &view_bg, &[]);
+                            rp.set_bind_group(1, view_env_bg, &[]);
+                            rp.set_bind_group(2, mesh_bg, &[]);
+                            rp.set_bind_group(3, material_bg, &[]);
                         } else {
+                            let (Some(pipeline), Some(bg)) = (pipeline, mesh_bg_2d.as_ref()) else {
+                                continue;
+                            };
+                            rp.set_pipeline(pipeline);
+                            rp.set_scissor_rect(sx, sy, sw, sh);
+                            rp.set_bind_group(0, bg, &[draw.ubo_offset]);
                             let Some(tex) = self.textures.get(&draw.texture_id) else {
                                 continue;
                             };
@@ -1476,7 +1712,7 @@ impl GpuBackend {
                             wgpu::RenderPassDepthStencilAttachment {
                                 view,
                                 depth_ops: Some(wgpu::Operations {
-                                    load: wgpu::LoadOp::Clear(1.0),
+                                    load: wgpu::LoadOp::Clear(0.0),
                                     store: wgpu::StoreOp::Store,
                                 }),
                                 stencil_ops: None,
@@ -1716,6 +1952,9 @@ impl GpuBackend {
             transmission_source_texture_id: resolved_transmission_source_texture_id,
             transmission_blur_taps: 0.0,
             transmission_steps: 0.0,
+            point_shadow_texture_id: resolved_transmission_source_texture_id,
+            point_shadow_enabled: 0.0,
+            point_shadow_depth_bias: 0.0,
             ubo_offset: 0,
             scissor: pass.current_scissor,
         }));
@@ -1774,6 +2013,9 @@ impl GpuBackend {
         transmission_source_texture_id: i32,
         transmission_blur_taps: f32,
         transmission_steps: f32,
+        point_shadow_texture_id: i32,
+        point_shadow_enabled: f32,
+        point_shadow_depth_bias: f32,
         cull_mode: i32,
     ) -> anyhow::Result<()> {
         if self.frame.is_none() {
@@ -1826,6 +2068,12 @@ impl GpuBackend {
         let transmission_source_textured = transmission_source_texture_id >= 0;
         let Some(resolved_transmission_source_texture_id) =
             self.resolve_draw_texture_id(transmission_source_texture_id)?
+        else {
+            return Ok(());
+        };
+        let point_shadow_textured = point_shadow_texture_id >= 0;
+        let Some(resolved_point_shadow_texture_id) =
+            self.resolve_draw_texture_id(point_shadow_texture_id)?
         else {
             return Ok(());
         };
@@ -1927,6 +2175,17 @@ impl GpuBackend {
             },
             transmission_steps: if transmission_source_textured {
                 transmission_steps
+            } else {
+                0.0
+            },
+            point_shadow_texture_id: resolved_point_shadow_texture_id,
+            point_shadow_enabled: if point_shadow_textured {
+                point_shadow_enabled
+            } else {
+                0.0
+            },
+            point_shadow_depth_bias: if point_shadow_textured {
+                point_shadow_depth_bias
             } else {
                 0.0
             },
@@ -2198,6 +2457,50 @@ impl GpuBackend {
             return 0;
         }
         let trimmed = &vertices[..usable_vcount * 9];
+        let mut converted: Vec<f32> = vec![0.0; usable_vcount * 6];
+        for i in 0..usable_vcount {
+            let src = i * 9;
+            let dst = i * 6;
+            converted[dst] = trimmed[src];
+            converted[dst + 1] = trimmed[src + 1];
+            converted[dst + 2] = trimmed[src + 2];
+            converted[dst + 3] = 0.0;
+            converted[dst + 4] = 0.0;
+            converted[dst + 5] = 1.0;
+        }
+        if primitive_topology == wgpu::PrimitiveTopology::TriangleList {
+            let mut tri = 0usize;
+            while tri + 2 < usable_vcount {
+                let a = tri * 6;
+                let b = (tri + 1) * 6;
+                let c = (tri + 2) * 6;
+                let p0 = [converted[a], converted[a + 1], converted[a + 2]];
+                let p1 = [converted[b], converted[b + 1], converted[b + 2]];
+                let p2 = [converted[c], converted[c + 1], converted[c + 2]];
+                let e1 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]];
+                let e2 = [p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]];
+                let mut n = [
+                    e1[1] * e2[2] - e1[2] * e2[1],
+                    e1[2] * e2[0] - e1[0] * e2[2],
+                    e1[0] * e2[1] - e1[1] * e2[0],
+                ];
+                let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+                if len > 1.0e-8 {
+                    n[0] /= len;
+                    n[1] /= len;
+                    n[2] /= len;
+                } else {
+                    n = [0.0, 0.0, 1.0];
+                }
+                for vi in 0..3 {
+                    let d = (tri + vi) * 6 + 3;
+                    converted[d] = n[0];
+                    converted[d + 1] = n[1];
+                    converted[d + 2] = n[2];
+                }
+                tri += 3;
+            }
+        }
         let mut indices: Vec<u16> = Vec::with_capacity(usable_vcount);
         for i in 0..usable_vcount {
             indices.push(i as u16);
@@ -2208,7 +2511,7 @@ impl GpuBackend {
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("mgstudio-mesh3d-tris-vb"),
-                contents: bytemuck::cast_slice(trimmed),
+                contents: bytemuck::cast_slice(converted.as_slice()),
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             });
         let ib = self
@@ -2223,7 +2526,7 @@ impl GpuBackend {
             GpuMesh {
                 vertex_count: usable_vcount as u32,
                 index_count: usable_vcount as u32,
-                layout: MeshVertexLayout::XyzUvRgba,
+                layout: MeshVertexLayout::XyzNormal,
                 primitive_topology,
                 vertex_buf: vb,
                 index_buf: ib,
@@ -2395,6 +2698,8 @@ impl GpuBackend {
                 view,
                 sampler,
                 bind_group,
+                point_shadow_depth_cube_array_view: None,
+                point_shadow_depth_face_views: None,
                 mip_level_count: levels.len() as u32,
                 base_mip_level: 0,
                 is_render_target: false,
@@ -2429,6 +2734,112 @@ impl GpuBackend {
             nearest,
             wgpu::TextureFormat::Rgba16Float,
         )
+    }
+
+    pub fn create_point_light_shadow_target(&mut self, size: u32) -> anyhow::Result<i32> {
+        self.ensure_sprite_resources()?;
+        let id = self.next_texture_id;
+        self.next_texture_id += 1;
+        let size = size.max(1);
+        let color_format = wgpu::TextureFormat::Rgba8Unorm;
+        let color_usage = wgpu::TextureUsages::TEXTURE_BINDING
+            | wgpu::TextureUsages::COPY_DST
+            | wgpu::TextureUsages::RENDER_ATTACHMENT;
+        let color_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio-point-light-shadow-color"),
+            size: wgpu::Extent3d {
+                width: size,
+                height: size,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: color_format,
+            usage: color_usage,
+            view_formats: &[],
+        });
+        let color_view = color_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        let depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio-point-light-shadow-depth-cube"),
+            size: wgpu::Extent3d {
+                width: size,
+                height: size,
+                depth_or_array_layers: 6,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth32Float,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let depth_cube_array_view = depth_texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("mgstudio-point-light-shadow-depth-cube-array-view"),
+            dimension: Some(wgpu::TextureViewDimension::CubeArray),
+            base_array_layer: 0,
+            array_layer_count: Some(6),
+            ..Default::default()
+        });
+        let mut depth_face_views = Vec::with_capacity(6);
+        for face in 0..6 {
+            depth_face_views.push(depth_texture.create_view(&wgpu::TextureViewDescriptor {
+                label: Some("mgstudio-point-light-shadow-depth-face-view"),
+                dimension: Some(wgpu::TextureViewDimension::D2),
+                base_array_layer: face,
+                array_layer_count: Some(1),
+                ..Default::default()
+            }));
+        }
+
+        let sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("mgstudio-point-light-shadow-sampler-nearest"),
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            ..Default::default()
+        });
+        let bgl_tex = self
+            .sprite
+            .bgl_tex
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: sprite texture bind group layout not initialized"))?;
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio-point-light-shadow-bind-group"),
+            layout: bgl_tex,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&color_view),
+                },
+            ],
+        });
+        self.textures.insert(
+            id,
+            GpuTexture {
+                width: size,
+                height: size,
+                format: color_format,
+                texture: color_texture,
+                view: color_view,
+                sampler,
+                bind_group,
+                point_shadow_depth_cube_array_view: Some(depth_cube_array_view),
+                point_shadow_depth_face_views: Some(depth_face_views),
+                mip_level_count: 1,
+                base_mip_level: 0,
+                is_render_target: true,
+            },
+        );
+        Ok(id)
     }
 
     pub fn texture_width(&self, texture_id: i32) -> u32 {
@@ -2825,6 +3236,8 @@ impl GpuBackend {
                 view,
                 sampler,
                 bind_group,
+                point_shadow_depth_cube_array_view: None,
+                point_shadow_depth_face_views: None,
                 mip_level_count: 1,
                 base_mip_level: absolute_base_mip,
                 is_render_target,
@@ -2953,6 +3366,8 @@ impl GpuBackend {
                 view,
                 sampler,
                 bind_group,
+                point_shadow_depth_cube_array_view: None,
+                point_shadow_depth_face_views: None,
                 mip_level_count,
                 base_mip_level: 0,
                 is_render_target,
@@ -3044,6 +3459,8 @@ impl GpuBackend {
                 view,
                 sampler,
                 bind_group,
+                point_shadow_depth_cube_array_view: None,
+                point_shadow_depth_face_views: None,
                 mip_level_count: 1,
                 base_mip_level: 0,
                 is_render_target: true,
@@ -3457,7 +3874,7 @@ impl GpuBackend {
 
     fn ensure_mesh_resources(&mut self) -> anyhow::Result<()> {
         self.ensure_sprite_resources()?;
-        if self.mesh.pipeline_layout.is_some() {
+        if self.mesh.pipeline_layout.is_some() && self.mesh.pipeline_layout_3d.is_some() {
             return Ok(());
         }
         let bgl_tex = self
@@ -3480,6 +3897,255 @@ impl GpuBackend {
                     count: None,
                 }],
             });
+        let bgl_view_3d = self
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("mgstudio_mesh3d_view_bgl"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Depth,
+                            view_dimension: wgpu::TextureViewDimension::CubeArray,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 5,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Depth,
+                            view_dimension: wgpu::TextureViewDimension::D2Array,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 6,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 8,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 9,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 10,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 11,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 12,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 13,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 14,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 15,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 16,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 17,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 18,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 19,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D3,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 20,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 25,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 26,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+            });
+        let bgl_view_env_3d =
+            self.device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("mgstudio_mesh3d_view_env_bgl"),
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::Cube,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::Cube,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                    ],
+                });
+        let bgl_mesh_3d = self
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("mgstudio_mesh3d_mesh_bgl"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
         let bgl_material_3d =
             self.device
                 .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -3488,7 +4154,11 @@ impl GpuBackend {
                         wgpu::BindGroupLayoutEntry {
                             binding: 0,
                             visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
                             count: None,
                         },
                         wgpu::BindGroupLayoutEntry {
@@ -3504,11 +4174,7 @@ impl GpuBackend {
                         wgpu::BindGroupLayoutEntry {
                             binding: 2,
                             visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                multisampled: false,
-                            },
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                             count: None,
                         },
                         wgpu::BindGroupLayoutEntry {
@@ -3524,11 +4190,7 @@ impl GpuBackend {
                         wgpu::BindGroupLayoutEntry {
                             binding: 4,
                             visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                multisampled: false,
-                            },
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                             count: None,
                         },
                         wgpu::BindGroupLayoutEntry {
@@ -3544,11 +4206,7 @@ impl GpuBackend {
                         wgpu::BindGroupLayoutEntry {
                             binding: 6,
                             visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                multisampled: false,
-                            },
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                             count: None,
                         },
                         wgpu::BindGroupLayoutEntry {
@@ -3564,11 +4222,7 @@ impl GpuBackend {
                         wgpu::BindGroupLayoutEntry {
                             binding: 8,
                             visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                multisampled: false,
-                            },
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                             count: None,
                         },
                         wgpu::BindGroupLayoutEntry {
@@ -3579,6 +4233,28 @@ impl GpuBackend {
                                 view_dimension: wgpu::TextureViewDimension::D2,
                                 multisampled: false,
                             },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 10,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 11,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 12,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                             count: None,
                         },
                     ],
@@ -3594,7 +4270,12 @@ impl GpuBackend {
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("mgstudio_mesh3d_pl"),
-                bind_group_layouts: &[&bgl_uniform, &bgl_material_3d],
+                bind_group_layouts: &[
+                    &bgl_view_3d,
+                    &bgl_view_env_3d,
+                    &bgl_mesh_3d,
+                    &bgl_material_3d,
+                ],
                 immediate_size: 0,
             });
         let align = self
@@ -3625,8 +4306,413 @@ impl GpuBackend {
                 }),
             }],
         });
+        let dummy_view_uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_view_uniform_buf"),
+            size: 4096,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let dummy_lights_uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_lights_uniform_buf"),
+            size: 1024,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let clustered_lights_uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_clustered_lights_uniform_buf"),
+            size: MESH3D_CLUSTERED_LIGHTS_UNIFORM_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let cluster_index_lists_uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_cluster_index_lists_uniform_buf"),
+            size: MESH3D_CLUSTER_INDEX_LISTS_UNIFORM_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let cluster_offsets_uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_cluster_offsets_uniform_buf"),
+            size: MESH3D_CLUSTER_OFFSETS_UNIFORM_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let dummy_uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_zero_uniform_buf"),
+            size: 65536,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let dummy_mesh_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_mesh_buf"),
+            size: 512,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let dummy_material_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_material_buf"),
+            size: 1024,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let dummy_color_texture_2d = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_color_2d"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let dummy_color_view_2d =
+            dummy_color_texture_2d.create_view(&wgpu::TextureViewDescriptor::default());
+        let dummy_color_texture_cube = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_color_cube"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 6,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let dummy_color_view_cube =
+            dummy_color_texture_cube.create_view(&wgpu::TextureViewDescriptor {
+                dimension: Some(wgpu::TextureViewDimension::Cube),
+                ..Default::default()
+            });
+        let dummy_depth_cube_array_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_depth_cube_array"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 6,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth32Float,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+        let dummy_depth_view_cube_array =
+            dummy_depth_cube_array_texture.create_view(&wgpu::TextureViewDescriptor {
+                dimension: Some(wgpu::TextureViewDimension::CubeArray),
+                array_layer_count: Some(6),
+                ..Default::default()
+            });
+        let dummy_depth_array_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_depth_array"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth32Float,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+        let dummy_depth_view_array =
+            dummy_depth_array_texture.create_view(&wgpu::TextureViewDescriptor {
+                dimension: Some(wgpu::TextureViewDimension::D2Array),
+                ..Default::default()
+            });
+        let dummy_3d_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_3d"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D3,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let dummy_3d_view = dummy_3d_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let dummy_linear_sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_linear_sampler"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            ..Default::default()
+        });
+        let dummy_comparison_sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("mgstudio_mesh3d_dummy_comparison_sampler"),
+            compare: Some(wgpu::CompareFunction::GreaterEqual),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            ..Default::default()
+        });
+        let bg_view_3d = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio_mesh3d_view_bg"),
+            layout: &bgl_view_3d,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_view_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_lights_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&dummy_depth_view_cube_array),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Sampler(&dummy_comparison_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(&dummy_depth_view_array),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::Sampler(&dummy_comparison_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 8,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &clustered_lights_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &cluster_index_lists_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 10,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &cluster_offsets_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 11,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 12,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 13,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 14,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 15,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 16,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 17,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 18,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_uniform_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 19,
+                    resource: wgpu::BindingResource::TextureView(&dummy_3d_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 20,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 25,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 26,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+            ],
+        });
+        let bg_view_env_3d = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio_mesh3d_view_env_bg"),
+            layout: &bgl_view_env_3d,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_cube),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_cube),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+            ],
+        });
+        let bg_mesh_3d = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio_mesh3d_mesh_bg"),
+            layout: &bgl_mesh_3d,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: &dummy_mesh_buf,
+                    offset: 0,
+                    size: None,
+                }),
+            }],
+        });
+        let bg_material_3d = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("mgstudio_mesh3d_material_bg"),
+            layout: &bgl_material_3d,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &dummy_material_buf,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 8,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 10,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 11,
+                    resource: wgpu::BindingResource::TextureView(&dummy_color_view_2d),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 12,
+                    resource: wgpu::BindingResource::Sampler(&dummy_linear_sampler),
+                },
+            ],
+        });
         self.mesh.bgl_uniform = Some(bgl_uniform);
-        self.mesh.bgl_material_3d = Some(bgl_material_3d);
+        self.mesh.bg_view_3d = Some(bg_view_3d);
+        self.mesh.bg_view_env_3d = Some(bg_view_env_3d);
+        self.mesh.bg_mesh_3d = Some(bg_mesh_3d);
+        self.mesh.bg_material_3d = Some(bg_material_3d);
+        self.mesh.mesh3d_dummy_uniform_buf = Some(dummy_uniform_buf);
+        self.mesh.mesh3d_dummy_color_2d_view = Some(dummy_color_view_2d);
+        self.mesh.mesh3d_dummy_3d_view = Some(dummy_3d_view);
+        self.mesh.mesh3d_dummy_linear_sampler = Some(dummy_linear_sampler);
+        self.mesh.mesh3d_dummy_depth_cube_array_view = Some(dummy_depth_view_cube_array);
+        self.mesh.mesh3d_dummy_depth_array_view = Some(dummy_depth_view_array);
+        self.mesh.mesh3d_dummy_compare_sampler = Some(dummy_comparison_sampler);
+        self.mesh.mesh3d_view_uniform_buf = Some(dummy_view_uniform_buf);
+        self.mesh.mesh3d_lights_uniform_buf = Some(dummy_lights_uniform_buf);
+        self.mesh.mesh3d_clustered_lights_uniform_buf = Some(clustered_lights_uniform_buf);
+        self.mesh.mesh3d_cluster_index_lists_uniform_buf = Some(cluster_index_lists_uniform_buf);
+        self.mesh.mesh3d_cluster_offsets_uniform_buf = Some(cluster_offsets_uniform_buf);
+        self.mesh.mesh3d_mesh_uniform_buf = Some(dummy_mesh_buf);
+        self.mesh.mesh3d_material_uniform_buf = Some(dummy_material_buf);
         self.mesh.pipeline_layout = Some(pl);
         self.mesh.pipeline_layout_3d = Some(pl_3d);
         self.mesh.uniform_buf = Some(uniform_buf);
@@ -3727,12 +4813,28 @@ impl GpuBackend {
             .pipeline_layout_3d
             .as_ref()
             .ok_or_else(|| anyhow!("wgpu: mesh3d pipeline layout missing"))?;
-        let wgsl = load_wgsl_required(&self.assets_base, "shaders/mgstudio/3d/mesh3d.wgsl")?;
-        let sm = self
+        let shader_defs = mesh3d_bevy_shader_defs();
+        let vertex_wgsl = load_wgsl_with_shader_defs_required(
+            &self.assets_base,
+            MESH3D_VERTEX_SHADER_PATH,
+            &shader_defs,
+        )?;
+        let fragment_wgsl = load_wgsl_with_shader_defs_required(
+            &self.assets_base,
+            MESH3D_FRAGMENT_SHADER_PATH,
+            &shader_defs,
+        )?;
+        let sm_vertex = self
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("mgstudio_mesh3d_wgsl"),
-                source: wgpu::ShaderSource::Wgsl(wgsl.into()),
+                label: Some("mgstudio_mesh3d_vertex_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(vertex_wgsl.into()),
+            });
+        let sm_fragment = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_mesh3d_fragment_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(fragment_wgsl.into()),
             });
         let vb_layout = wgpu::VertexBufferLayout {
             array_stride: 36,
@@ -3746,12 +4848,7 @@ impl GpuBackend {
                 wgpu::VertexAttribute {
                     offset: 12,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-                wgpu::VertexAttribute {
-                    offset: 20,
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x4,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
             ],
         };
@@ -3761,14 +4858,14 @@ impl GpuBackend {
                 label: Some("mgstudio_mesh3d_pipeline_opaque"),
                 layout: Some(pl),
                 vertex: wgpu::VertexState {
-                    module: &sm,
-                    entry_point: Some("vs_main"),
+                    module: &sm_vertex,
+                    entry_point: Some(MESH3D_VERTEX_ENTRY),
                     compilation_options: Default::default(),
                     buffers: &[vb_layout],
                 },
                 fragment: Some(wgpu::FragmentState {
-                    module: &sm,
-                    entry_point: Some("fs_main"),
+                    module: &sm_fragment,
+                    entry_point: Some(MESH3D_FRAGMENT_ENTRY),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format,
@@ -3784,7 +4881,7 @@ impl GpuBackend {
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: wgpu::TextureFormat::Depth24Plus,
                     depth_write_enabled: true,
-                    depth_compare: wgpu::CompareFunction::LessEqual,
+                    depth_compare: wgpu::CompareFunction::GreaterEqual,
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
                 }),
@@ -3804,12 +4901,7 @@ impl GpuBackend {
                 wgpu::VertexAttribute {
                     offset: 12,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-                wgpu::VertexAttribute {
-                    offset: 20,
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x4,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
             ],
         };
@@ -3819,14 +4911,14 @@ impl GpuBackend {
                     label: Some("mgstudio_mesh3d_pipeline_transparent"),
                     layout: Some(pl),
                     vertex: wgpu::VertexState {
-                        module: &sm,
-                        entry_point: Some("vs_main"),
+                        module: &sm_vertex,
+                        entry_point: Some(MESH3D_VERTEX_ENTRY),
                         compilation_options: Default::default(),
                         buffers: &[vb_layout_transparent],
                     },
                     fragment: Some(wgpu::FragmentState {
-                        module: &sm,
-                        entry_point: Some("fs_main"),
+                        module: &sm_fragment,
+                        entry_point: Some(MESH3D_FRAGMENT_ENTRY),
                         compilation_options: Default::default(),
                         targets: &[Some(wgpu::ColorTargetState {
                             format,
@@ -3842,7 +4934,7 @@ impl GpuBackend {
                     depth_stencil: Some(wgpu::DepthStencilState {
                         format: wgpu::TextureFormat::Depth24Plus,
                         depth_write_enabled: false,
-                        depth_compare: wgpu::CompareFunction::LessEqual,
+                        depth_compare: wgpu::CompareFunction::GreaterEqual,
                         stencil: wgpu::StencilState::default(),
                         bias: wgpu::DepthBiasState::default(),
                     }),
@@ -3854,6 +4946,103 @@ impl GpuBackend {
         self.mesh
             .pipelines_3d_transparent
             .insert(key, pipeline_transparent);
+        Ok(())
+    }
+
+    fn ensure_mesh3d_shadow_pipeline(
+        &mut self,
+        format: wgpu::TextureFormat,
+        topology: wgpu::PrimitiveTopology,
+        cull_mode: i32,
+    ) -> anyhow::Result<()> {
+        self.ensure_mesh_resources()?;
+        let key = (format, topology, mesh3d_cull_mode_sanitize(cull_mode));
+        if self.mesh.pipelines_3d_shadow.contains_key(&key) {
+            return Ok(());
+        }
+        let cull_mode_wgpu = mesh3d_cull_mode_wgpu(cull_mode);
+        let pl = self
+            .mesh
+            .pipeline_layout_3d
+            .as_ref()
+            .ok_or_else(|| anyhow!("wgpu: mesh3d pipeline layout missing"))?;
+        let shader_defs = mesh3d_bevy_shader_defs();
+        let vertex_wgsl = load_wgsl_with_shader_defs_required(
+            &self.assets_base,
+            MESH3D_VERTEX_SHADER_PATH,
+            &shader_defs,
+        )?;
+        let shadow_wgsl = load_wgsl_with_shader_defs_required(
+            &self.assets_base,
+            MESH3D_SHADOW_SHADER_PATH,
+            &shader_defs,
+        )?;
+        let sm_vertex = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_mesh3d_shadow_vertex_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(vertex_wgsl.into()),
+            });
+        let sm_shadow = self
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("mgstudio_mesh3d_shadow_fragment_wgsl"),
+                source: wgpu::ShaderSource::Wgsl(shadow_wgsl.into()),
+            });
+        let vb_layout = wgpu::VertexBufferLayout {
+            array_stride: 36,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute {
+                    offset: 12,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+            ],
+        };
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("mgstudio_mesh3d_shadow_pipeline"),
+                layout: Some(pl),
+                vertex: wgpu::VertexState {
+                    module: &sm_vertex,
+                    entry_point: Some(MESH3D_VERTEX_ENTRY),
+                    compilation_options: Default::default(),
+                    buffers: &[vb_layout],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &sm_shadow,
+                    entry_point: Some(MESH3D_SHADOW_FRAGMENT_ENTRY),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology,
+                    cull_mode: cull_mode_wgpu,
+                    ..Default::default()
+                },
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: wgpu::TextureFormat::Depth24Plus,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::GreaterEqual,
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
+                }),
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            });
+        self.mesh.pipelines_3d_shadow.insert(key, pipeline);
         Ok(())
     }
 
@@ -3981,7 +5170,7 @@ impl GpuBackend {
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: wgpu::TextureFormat::Depth24Plus,
                     depth_write_enabled: true,
-                    depth_compare: wgpu::CompareFunction::LessEqual,
+                    depth_compare: wgpu::CompareFunction::GreaterEqual,
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
                 }),
@@ -4201,19 +5390,11 @@ impl GpuBackend {
         rel: &str,
         define_keys: &[&str],
     ) -> anyhow::Result<String> {
-        let base = self.assets_base.trim();
-        if base.is_empty() {
-            return Err(anyhow!(
-                "wgpu: assets_base is empty; cannot load shader: {rel}"
-            ));
-        }
-        let normalized_rel = normalize_shader_rel_path(rel);
-        let mut visited = HashSet::<String>::new();
-        let defines = define_keys
+        let shader_defs = define_keys
             .iter()
-            .map(|s| (*s).to_string())
-            .collect::<HashSet<_>>();
-        load_wgsl_preprocessed(base, &normalized_rel, &defines, &mut visited)
+            .map(|s| ((*s).to_string(), WgslShaderDefValue::Bool(true)))
+            .collect::<HashMap<_, _>>();
+        load_wgsl_with_shader_defs_required(&self.assets_base, rel, &shader_defs)
     }
 
     fn create_bloom2d_pipeline(
@@ -5359,7 +6540,350 @@ pub(crate) fn load_wgsl_from_assets_required(
     load_wgsl_required(assets_base, rel)
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[allow(dead_code)]
+enum WgslShaderDefValue {
+    Bool(bool),
+    Int(i32),
+    UInt(u32),
+}
+
+impl WgslShaderDefValue {
+    fn value_as_string(self) -> String {
+        match self {
+            Self::Bool(value) => value.to_string(),
+            Self::Int(value) => value.to_string(),
+            Self::UInt(value) => value.to_string(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct WgslComposeCacheKey {
+    root_path: String,
+    defines: Vec<(String, WgslShaderDefValue)>,
+}
+
+impl WgslComposeCacheKey {
+    fn new(root_path: &str, shader_defs: &HashMap<String, WgslShaderDefValue>) -> Self {
+        let mut defines = shader_defs
+            .iter()
+            .map(|(key, value)| (key.clone(), *value))
+            .collect::<Vec<_>>();
+        defines.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+        Self {
+            root_path: root_path.to_string(),
+            defines,
+        }
+    }
+}
+
+#[derive(Default, Clone)]
+struct WgslModuleIndex {
+    indexed_modules: HashMap<String, String>,
+    fallback_modules: HashMap<String, String>,
+}
+
+#[derive(Clone, Copy)]
+struct WgslConditionalFrame {
+    parent_active: bool,
+    branch_taken: bool,
+    current_active: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct WgslImportPath {
+    full_path: String,
+    used_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum WgslImportToken {
+    Ident(String),
+    Scope,
+    LBrace,
+    RBrace,
+    Comma,
+    Semicolon,
+    As,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum WgslIfExprToken {
+    Ident(String),
+    Bool(bool),
+    Number(i128),
+    LParen,
+    RParen,
+    Op(String),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum WgslIfExprValue {
+    Bool(bool),
+    Number(i128),
+}
+
+impl WgslIfExprValue {
+    fn truthy(self) -> bool {
+        match self {
+            Self::Bool(value) => value,
+            Self::Number(value) => value != 0,
+        }
+    }
+
+    fn as_number(self) -> i128 {
+        match self {
+            Self::Bool(value) => i128::from(value),
+            Self::Number(value) => value,
+        }
+    }
+}
+
+struct WgslIfExprParser<'a> {
+    tokens: &'a [WgslIfExprToken],
+    cursor: usize,
+    shader_defs: &'a HashMap<String, WgslShaderDefValue>,
+}
+
+impl<'a> WgslIfExprParser<'a> {
+    fn new(
+        tokens: &'a [WgslIfExprToken],
+        shader_defs: &'a HashMap<String, WgslShaderDefValue>,
+    ) -> Self {
+        Self {
+            tokens,
+            cursor: 0,
+            shader_defs,
+        }
+    }
+
+    fn parse_expression(&mut self) -> Option<WgslIfExprValue> {
+        self.parse_logical_or()
+    }
+
+    fn parse_logical_or(&mut self) -> Option<WgslIfExprValue> {
+        let mut value = self.parse_logical_and()?;
+        while self.consume_operator("||") {
+            let rhs = self.parse_logical_and()?;
+            value = WgslIfExprValue::Bool(value.truthy() || rhs.truthy());
+        }
+        Some(value)
+    }
+
+    fn parse_logical_and(&mut self) -> Option<WgslIfExprValue> {
+        let mut value = self.parse_equality()?;
+        while self.consume_operator("&&") {
+            let rhs = self.parse_equality()?;
+            value = WgslIfExprValue::Bool(value.truthy() && rhs.truthy());
+        }
+        Some(value)
+    }
+
+    fn parse_equality(&mut self) -> Option<WgslIfExprValue> {
+        let mut value = self.parse_relational()?;
+        loop {
+            if self.consume_operator("==") {
+                let rhs = self.parse_relational()?;
+                value = WgslIfExprValue::Bool(match (value, rhs) {
+                    (WgslIfExprValue::Bool(a), WgslIfExprValue::Bool(b)) => a == b,
+                    (a, b) => a.as_number() == b.as_number(),
+                });
+                continue;
+            }
+            if self.consume_operator("!=") {
+                let rhs = self.parse_relational()?;
+                value = WgslIfExprValue::Bool(match (value, rhs) {
+                    (WgslIfExprValue::Bool(a), WgslIfExprValue::Bool(b)) => a != b,
+                    (a, b) => a.as_number() != b.as_number(),
+                });
+                continue;
+            }
+            break;
+        }
+        Some(value)
+    }
+
+    fn parse_relational(&mut self) -> Option<WgslIfExprValue> {
+        let mut value = self.parse_additive()?;
+        loop {
+            if self.consume_operator(">=") {
+                let rhs = self.parse_additive()?;
+                value = WgslIfExprValue::Bool(value.as_number() >= rhs.as_number());
+                continue;
+            }
+            if self.consume_operator("<=") {
+                let rhs = self.parse_additive()?;
+                value = WgslIfExprValue::Bool(value.as_number() <= rhs.as_number());
+                continue;
+            }
+            if self.consume_operator(">") {
+                let rhs = self.parse_additive()?;
+                value = WgslIfExprValue::Bool(value.as_number() > rhs.as_number());
+                continue;
+            }
+            if self.consume_operator("<") {
+                let rhs = self.parse_additive()?;
+                value = WgslIfExprValue::Bool(value.as_number() < rhs.as_number());
+                continue;
+            }
+            break;
+        }
+        Some(value)
+    }
+
+    fn parse_additive(&mut self) -> Option<WgslIfExprValue> {
+        let mut value = self.parse_multiplicative()?;
+        loop {
+            if self.consume_operator("+") {
+                let rhs = self.parse_multiplicative()?;
+                value = WgslIfExprValue::Number(value.as_number().saturating_add(rhs.as_number()));
+                continue;
+            }
+            if self.consume_operator("-") {
+                let rhs = self.parse_multiplicative()?;
+                value = WgslIfExprValue::Number(value.as_number().saturating_sub(rhs.as_number()));
+                continue;
+            }
+            break;
+        }
+        Some(value)
+    }
+
+    fn parse_multiplicative(&mut self) -> Option<WgslIfExprValue> {
+        let mut value = self.parse_unary()?;
+        loop {
+            if self.consume_operator("*") {
+                let rhs = self.parse_unary()?;
+                value = WgslIfExprValue::Number(value.as_number().saturating_mul(rhs.as_number()));
+                continue;
+            }
+            if self.consume_operator("/") {
+                let rhs = self.parse_unary()?;
+                let divisor = rhs.as_number();
+                value = if divisor == 0 {
+                    WgslIfExprValue::Number(0)
+                } else {
+                    WgslIfExprValue::Number(value.as_number() / divisor)
+                };
+                continue;
+            }
+            if self.consume_operator("%") {
+                let rhs = self.parse_unary()?;
+                let divisor = rhs.as_number();
+                value = if divisor == 0 {
+                    WgslIfExprValue::Number(0)
+                } else {
+                    WgslIfExprValue::Number(value.as_number() % divisor)
+                };
+                continue;
+            }
+            break;
+        }
+        Some(value)
+    }
+
+    fn parse_unary(&mut self) -> Option<WgslIfExprValue> {
+        if self.consume_operator("!") {
+            let value = self.parse_unary()?;
+            return Some(WgslIfExprValue::Bool(!value.truthy()));
+        }
+        if self.consume_operator("+") {
+            let value = self.parse_unary()?;
+            return Some(WgslIfExprValue::Number(value.as_number()));
+        }
+        if self.consume_operator("-") {
+            let value = self.parse_unary()?;
+            return Some(WgslIfExprValue::Number(value.as_number().saturating_neg()));
+        }
+        self.parse_primary()
+    }
+
+    fn parse_primary(&mut self) -> Option<WgslIfExprValue> {
+        let token = self.tokens.get(self.cursor)?;
+        match token {
+            WgslIfExprToken::Bool(value) => {
+                self.cursor += 1;
+                Some(WgslIfExprValue::Bool(*value))
+            }
+            WgslIfExprToken::Number(value) => {
+                self.cursor += 1;
+                Some(WgslIfExprValue::Number(*value))
+            }
+            WgslIfExprToken::Ident(name) => {
+                self.cursor += 1;
+                Some(match self.shader_defs.get(name) {
+                    Some(WgslShaderDefValue::Bool(value)) => WgslIfExprValue::Bool(*value),
+                    Some(WgslShaderDefValue::Int(value)) => {
+                        WgslIfExprValue::Number(i128::from(*value))
+                    }
+                    Some(WgslShaderDefValue::UInt(value)) => {
+                        WgslIfExprValue::Number(i128::from(*value))
+                    }
+                    None => WgslIfExprValue::Number(0),
+                })
+            }
+            WgslIfExprToken::LParen => {
+                self.cursor += 1;
+                let value = self.parse_expression()?;
+                if self.consume_rparen() {
+                    Some(value)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    fn consume_operator(&mut self, op: &str) -> bool {
+        match self.tokens.get(self.cursor) {
+            Some(WgslIfExprToken::Op(token_op)) if token_op == op => {
+                self.cursor += 1;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    fn consume_rparen(&mut self) -> bool {
+        match self.tokens.get(self.cursor) {
+            Some(WgslIfExprToken::RParen) => {
+                self.cursor += 1;
+                true
+            }
+            _ => false,
+        }
+    }
+}
+
+static WGSL_COMPOSE_CACHE: OnceLock<Mutex<HashMap<WgslComposeCacheKey, String>>> = OnceLock::new();
+static WGSL_MODULE_INDEX_CACHE: OnceLock<Mutex<HashMap<String, Arc<WgslModuleIndex>>>> =
+    OnceLock::new();
+
+const WGSL_MODULE_INDEX_CANDIDATES: &[&str] = &[
+    "module_index.json",
+    "module-index.json",
+    "modules.json",
+    "index.json",
+    "module_index.txt",
+    "module-index.txt",
+    "modules.txt",
+    "index.txt",
+    "module_index",
+    "index",
+];
+
 fn load_wgsl_required(assets_base: &str, rel: &str) -> anyhow::Result<String> {
+    let shader_defs = HashMap::<String, WgslShaderDefValue>::new();
+    load_wgsl_with_shader_defs_required(assets_base, rel, &shader_defs)
+}
+
+fn load_wgsl_with_shader_defs_required(
+    assets_base: &str,
+    rel: &str,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
+) -> anyhow::Result<String> {
     let base = assets_base.trim();
     if base.is_empty() {
         return Err(anyhow!(
@@ -5367,20 +6891,363 @@ fn load_wgsl_required(assets_base: &str, rel: &str) -> anyhow::Result<String> {
         ));
     }
     let normalized_rel = normalize_shader_rel_path(rel);
-    let mut visited = HashSet::<String>::new();
-    let defines = HashSet::<String>::new();
-    let source = load_wgsl_preprocessed(base, &normalized_rel, &defines, &mut visited)?;
-    if is_motion_blur_shader_path(&normalized_rel) {
-        Ok(lower_motion_blur_texture_samples_for_runtime(source))
-    } else {
-        Ok(source)
+    let cache_key = WgslComposeCacheKey::new(&normalized_rel, shader_defs);
+    if let Some(cached) = wgsl_compose_cache_get(&cache_key) {
+        return Ok(cached);
     }
+
+    let module_index = load_wgsl_module_index_cached(base);
+    let mut visited = HashSet::<String>::new();
+    let mut source = load_wgsl_preprocessed(
+        base,
+        module_index.as_ref(),
+        &normalized_rel,
+        shader_defs,
+        &mut visited,
+    )?;
+    if is_motion_blur_shader_path(&normalized_rel) {
+        source = lower_motion_blur_texture_samples_for_runtime(source);
+    }
+    wgsl_compose_cache_insert(cache_key, source.clone());
+    Ok(source)
+}
+
+fn wgsl_compose_cache_get(key: &WgslComposeCacheKey) -> Option<String> {
+    WGSL_COMPOSE_CACHE
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+        .ok()
+        .and_then(|cache| cache.get(key).cloned())
+}
+
+fn wgsl_compose_cache_insert(key: WgslComposeCacheKey, value: String) {
+    if let Ok(mut cache) = WGSL_COMPOSE_CACHE
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+    {
+        cache.insert(key, value);
+    }
+}
+
+fn load_wgsl_module_index_cached(assets_base: &str) -> Arc<WgslModuleIndex> {
+    if let Ok(mut cache) = WGSL_MODULE_INDEX_CACHE
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+    {
+        if let Some(index) = cache.get(assets_base) {
+            return Arc::clone(index);
+        }
+        let index = Arc::new(build_wgsl_module_index(assets_base));
+        cache.insert(assets_base.to_string(), Arc::clone(&index));
+        return index;
+    }
+    Arc::new(build_wgsl_module_index(assets_base))
+}
+
+fn build_wgsl_module_index(assets_base: &str) -> WgslModuleIndex {
+    let bevy_root = Path::new(assets_base).join("shaders/bevy");
+    let mut indexed_modules = HashMap::<String, String>::new();
+    let mut fallback_modules = HashMap::<String, String>::new();
+
+    if !bevy_root.is_dir() {
+        return WgslModuleIndex {
+            indexed_modules,
+            fallback_modules,
+        };
+    }
+
+    for name in WGSL_MODULE_INDEX_CANDIDATES {
+        let path = bevy_root.join(name);
+        if !path.is_file() {
+            continue;
+        }
+        if let Ok(contents) = std::fs::read_to_string(&path) {
+            let parsed = parse_wgsl_module_index_text(&contents);
+            for (module_name, rel_path) in parsed {
+                indexed_modules
+                    .entry(module_name)
+                    .and_modify(|current| {
+                        if rel_path < *current {
+                            *current = rel_path.clone();
+                        }
+                    })
+                    .or_insert(rel_path);
+            }
+        }
+        break;
+    }
+
+    let mut files = collect_wgsl_files(&bevy_root);
+    files.sort();
+    for file in files {
+        let rel_inside_bevy = match file.strip_prefix(&bevy_root) {
+            Ok(path) => path.to_string_lossy().replace('\\', "/"),
+            Err(_) => continue,
+        };
+        let rel_path = format!("shaders/bevy/{rel_inside_bevy}");
+        let module_from_path = module_name_from_rel_wgsl_path(&rel_path);
+        if !module_from_path.is_empty() {
+            fallback_modules
+                .entry(module_from_path)
+                .and_modify(|current| {
+                    if rel_path < *current {
+                        *current = rel_path.clone();
+                    }
+                })
+                .or_insert_with(|| rel_path.clone());
+        }
+
+        if let Ok(source) = std::fs::read_to_string(&file) {
+            if let Some(module_name) = parse_define_import_path_from_source(&source) {
+                fallback_modules
+                    .entry(module_name)
+                    .and_modify(|current| {
+                        if rel_path < *current {
+                            *current = rel_path.clone();
+                        }
+                    })
+                    .or_insert(rel_path.clone());
+            }
+        }
+    }
+
+    WgslModuleIndex {
+        indexed_modules,
+        fallback_modules,
+    }
+}
+
+fn parse_wgsl_module_index_text(text: &str) -> HashMap<String, String> {
+    let mut entries = HashMap::<String, String>::new();
+
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(text) {
+        ingest_wgsl_module_index_json(&json, &mut entries);
+    }
+
+    if entries.is_empty() {
+        for line in text.lines() {
+            if let Some((module_name, rel_path)) = parse_wgsl_module_index_line(line) {
+                insert_wgsl_module_index_entry(&mut entries, module_name, rel_path);
+            }
+        }
+    }
+
+    entries
+}
+
+fn ingest_wgsl_module_index_json(node: &serde_json::Value, out: &mut HashMap<String, String>) {
+    match node {
+        serde_json::Value::Array(items) => {
+            for item in items {
+                if let serde_json::Value::Array(pair) = item {
+                    if pair.len() >= 2 {
+                        if let (Some(module_raw), Some(path_raw)) =
+                            (pair[0].as_str(), pair[1].as_str())
+                        {
+                            insert_wgsl_module_index_entry(
+                                out,
+                                normalize_wgsl_module_name_from_index(module_raw),
+                                normalize_wgsl_module_rel_path(path_raw, module_raw),
+                            );
+                        }
+                    }
+                }
+                ingest_wgsl_module_index_json(item, out);
+            }
+        }
+        serde_json::Value::Object(map) => {
+            let module_hint = map
+                .get("module")
+                .or_else(|| map.get("name"))
+                .or_else(|| map.get("key"))
+                .and_then(|value| value.as_str());
+            let path_hint = map
+                .get("path")
+                .or_else(|| map.get("file"))
+                .or_else(|| map.get("rel_path"))
+                .or_else(|| map.get("value"))
+                .and_then(|value| value.as_str());
+
+            if let (Some(module_raw), Some(path_raw)) = (module_hint, path_hint) {
+                insert_wgsl_module_index_entry(
+                    out,
+                    normalize_wgsl_module_name_from_index(module_raw),
+                    normalize_wgsl_module_rel_path(path_raw, module_raw),
+                );
+            }
+
+            for (key, value) in map {
+                if let Some(path_raw) = value.as_str() {
+                    insert_wgsl_module_index_entry(
+                        out,
+                        normalize_wgsl_module_name_from_index(key),
+                        normalize_wgsl_module_rel_path(path_raw, key),
+                    );
+                    continue;
+                }
+                ingest_wgsl_module_index_json(value, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn insert_wgsl_module_index_entry(
+    out: &mut HashMap<String, String>,
+    module_name: String,
+    rel_path: String,
+) {
+    if module_name.is_empty() || rel_path.is_empty() {
+        return;
+    }
+    out.entry(module_name)
+        .and_modify(|current| {
+            if rel_path < *current {
+                *current = rel_path.clone();
+            }
+        })
+        .or_insert(rel_path);
+}
+
+fn parse_wgsl_module_index_line(line: &str) -> Option<(String, String)> {
+    let line = line
+        .split('#')
+        .next()
+        .unwrap_or("")
+        .split("//")
+        .next()
+        .unwrap_or("")
+        .trim();
+    if line.is_empty() {
+        return None;
+    }
+
+    let (module_token, path_token) = if let Some(idx) = line.find('=') {
+        (line[..idx].trim(), line[idx + 1..].trim())
+    } else {
+        let mut parts = line.split_whitespace();
+        let module = parts.next()?;
+        let path = parts.next().unwrap_or("");
+        (module, path)
+    };
+
+    let module_name = normalize_wgsl_module_name_from_index(module_token);
+    if module_name.is_empty() {
+        return None;
+    }
+    let rel_path = normalize_wgsl_module_rel_path(path_token, &module_name);
+    Some((module_name, rel_path))
+}
+
+fn normalize_wgsl_module_name_from_index(token: &str) -> String {
+    let token = token.trim().trim_matches('"');
+    if token.is_empty() {
+        return String::new();
+    }
+    if token.contains("::") {
+        return normalize_wgsl_module_name(token);
+    }
+    if token.contains('/') || token.ends_with(".wgsl") || token.starts_with("shaders/") {
+        let mut rel = normalize_shader_rel_path(token);
+        if !rel.ends_with(".wgsl") {
+            rel.push_str(".wgsl");
+        }
+        if !rel.starts_with("shaders/") {
+            if rel.starts_with("bevy/") {
+                rel = format!("shaders/{rel}");
+            } else {
+                rel = format!("shaders/bevy/{rel}");
+            }
+        }
+        return module_name_from_rel_wgsl_path(&rel);
+    }
+    normalize_wgsl_module_name(token)
+}
+
+fn normalize_wgsl_module_rel_path(path_token: &str, module_name: &str) -> String {
+    let token = path_token.trim().trim_matches('"');
+    if token.is_empty() {
+        return format!("shaders/bevy/{}.wgsl", module_name.replace("::", "/"));
+    }
+    if token.contains("::") {
+        return format!(
+            "shaders/bevy/{}.wgsl",
+            normalize_wgsl_module_name(token).replace("::", "/")
+        );
+    }
+    let mut rel = normalize_shader_rel_path(token);
+    if !rel.ends_with(".wgsl") {
+        rel.push_str(".wgsl");
+    }
+    if rel.starts_with("shaders/") {
+        return rel;
+    }
+    if rel.starts_with("bevy/") {
+        return format!("shaders/{rel}");
+    }
+    format!("shaders/bevy/{rel}")
+}
+
+fn module_name_from_rel_wgsl_path(rel_path: &str) -> String {
+    let normalized = normalize_shader_rel_path(rel_path);
+    let Some(rest) = normalized.strip_prefix("shaders/bevy/") else {
+        return String::new();
+    };
+    let Some(stem) = rest.strip_suffix(".wgsl") else {
+        return String::new();
+    };
+    if stem.is_empty() {
+        return String::new();
+    }
+    stem.replace('/', "::")
+}
+
+fn parse_define_import_path_from_source(source: &str) -> Option<String> {
+    for line in source.lines() {
+        if let Some(value) = strip_wgsl_directive_arg(line.trim(), "define_import_path") {
+            let module_name = normalize_wgsl_module_name(value);
+            if !module_name.is_empty() {
+                return Some(module_name);
+            }
+        }
+    }
+    None
+}
+
+fn collect_wgsl_files(root: &Path) -> Vec<PathBuf> {
+    if !root.is_dir() {
+        return Vec::new();
+    }
+    let mut stack = vec![root.to_path_buf()];
+    let mut files = Vec::new();
+    while let Some(dir) = stack.pop() {
+        let entries = match std::fs::read_dir(&dir) {
+            Ok(entries) => entries,
+            Err(_) => continue,
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("wgsl"))
+            {
+                files.push(path);
+            }
+        }
+    }
+    files
 }
 
 fn load_wgsl_preprocessed(
     assets_base: &str,
+    module_index: &WgslModuleIndex,
     rel: &str,
-    defines: &HashSet<String>,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
     visited: &mut HashSet<String>,
 ) -> anyhow::Result<String> {
     let normalized_rel = normalize_shader_rel_path(rel);
@@ -5390,51 +7257,770 @@ fn load_wgsl_preprocessed(
     let full = std::path::Path::new(assets_base).join(&normalized_rel);
     let source = std::fs::read_to_string(&full)
         .with_context(|| format!("wgpu: failed to read shader: {}", full.display()))?;
-    preprocess_wgsl_source(assets_base, &source, defines, visited)
+    preprocess_wgsl_source(assets_base, module_index, &source, shader_defs, visited)
 }
 
 fn preprocess_wgsl_source(
     assets_base: &str,
+    module_index: &WgslModuleIndex,
     source: &str,
-    defines: &HashSet<String>,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
     visited: &mut HashSet<String>,
 ) -> anyhow::Result<String> {
-    let mut imported = String::new();
+    let conditioned_source = apply_wgsl_conditionals(source, shader_defs);
+    let mut imported_source = String::new();
     let mut aliases: Vec<String> = Vec::new();
-    for line in source.lines() {
+
+    let lines = conditioned_source.lines().collect::<Vec<_>>();
+    let mut line_idx = 0usize;
+    while line_idx < lines.len() {
+        let line = lines[line_idx];
         let trimmed = line.trim();
-        if trimmed.starts_with("#define_import_path") {
+
+        if strip_wgsl_directive_arg(trimmed, "define_import_path").is_some() {
+            line_idx += 1;
             continue;
         }
-        if let Some(spec) = trimmed.strip_prefix("#import ") {
-            let module_path = parse_wgsl_import_module_path(spec);
-            if module_path.is_empty() {
-                continue;
-            }
-            let alias = parse_wgsl_import_alias(spec, &module_path);
-            if !alias.is_empty() {
-                aliases.push(alias);
-            }
-            let module_rel = format!("shaders/bevy/{}.wgsl", module_path.replace("::", "/"));
-            let module_source = load_wgsl_preprocessed(assets_base, &module_rel, defines, visited)?;
-            if !module_source.is_empty() {
-                imported.push_str(&module_source);
-                if !module_source.ends_with('\n') {
-                    imported.push('\n');
+
+        if is_wgsl_import_directive(trimmed) {
+            let (import_block, consumed) = collect_wgsl_import_block(&lines, line_idx);
+            let import_paths = parse_wgsl_import_block(&import_block).with_context(|| {
+                format!(
+                    "wgpu: failed to parse WGSL import block: {}",
+                    import_block.trim()
+                )
+            })?;
+            for import_path in import_paths {
+                if should_skip_wgsl_import_for_shader_defs(&import_path.full_path, shader_defs) {
+                    continue;
+                }
+                let (module_rel_path, resolved_exact) = resolve_wgsl_import_module_path(
+                    assets_base,
+                    module_index,
+                    &import_path.full_path,
+                )
+                .ok_or_else(|| {
+                    anyhow!(
+                        "wgpu: failed to resolve WGSL import path: {}",
+                        import_path.full_path
+                    )
+                })?;
+                if resolved_exact && !import_path.used_name.is_empty() {
+                    aliases.push(import_path.used_name.clone());
+                }
+                let mut module_source = load_wgsl_preprocessed(
+                    assets_base,
+                    module_index,
+                    &module_rel_path,
+                    shader_defs,
+                    visited,
+                )?;
+                if !resolved_exact
+                    && module_rel_path.ends_with("bevy_render/view.wgsl")
+                    && import_leaf_symbol(&import_path.full_path)
+                        .as_deref()
+                        .is_some_and(wgsl_symbol_looks_like_type)
+                {
+                    module_source = strip_wgsl_top_level_functions(&module_source);
+                }
+                if !module_source.is_empty() {
+                    imported_source.push_str(&module_source);
+                    if !module_source.ends_with('\n') {
+                        imported_source.push('\n');
+                    }
                 }
             }
+            line_idx += consumed;
             continue;
         }
-        imported.push_str(line);
-        imported.push('\n');
+
+        imported_source.push_str(line);
+        imported_source.push('\n');
+        line_idx += 1;
     }
-    let mut out = apply_wgsl_ifdefs(&imported, defines);
-    for alias in aliases {
-        if !alias.is_empty() {
-            out = out.replace(&format!("{alias}::"), "");
+
+    let mut out = apply_wgsl_shader_def_substitutions(&imported_source, shader_defs);
+    for alias in aliases.into_iter().filter(|alias| !alias.is_empty()) {
+        out = out.replace(&format!("{alias}::"), "");
+    }
+    Ok(out)
+}
+
+fn is_wgsl_import_directive(trimmed: &str) -> bool {
+    strip_wgsl_directive_arg(trimmed, "import").is_some()
+}
+
+fn collect_wgsl_import_block(lines: &[&str], start: usize) -> (String, usize) {
+    let mut block = String::new();
+    let mut consumed = 0usize;
+    let mut brace_balance = 0i32;
+    let mut line_idx = start;
+    while line_idx < lines.len() {
+        let line = lines[line_idx];
+        if !block.is_empty() {
+            block.push('\n');
+        }
+        block.push_str(line);
+        consumed += 1;
+
+        brace_balance += count_char_occurrences(line, '{') as i32;
+        brace_balance -= count_char_occurrences(line, '}') as i32;
+
+        if brace_balance <= 0 {
+            break;
+        }
+        line_idx += 1;
+    }
+    (block, consumed.max(1))
+}
+
+fn count_char_occurrences(text: &str, needle: char) -> usize {
+    text.chars().filter(|ch| *ch == needle).count()
+}
+
+fn resolve_wgsl_import_module_path(
+    assets_base: &str,
+    module_index: &WgslModuleIndex,
+    import_path: &str,
+) -> Option<(String, bool)> {
+    let mut candidates = Vec::<String>::new();
+    let mut cur = import_path.trim().trim_end_matches(';').to_string();
+    while !cur.is_empty() {
+        if !candidates.contains(&cur) {
+            candidates.push(cur.clone());
+        }
+        let Some(split) = cur.rfind("::") else {
+            break;
+        };
+        cur = cur[..split].trim().to_string();
+    }
+
+    for (index, candidate) in candidates.into_iter().enumerate() {
+        if let Some(rel_path) = module_index.resolve_rel_path(assets_base, &candidate) {
+            return Some((rel_path, index == 0));
+        }
+    }
+    None
+}
+
+impl WgslModuleIndex {
+    fn resolve_rel_path(&self, assets_base: &str, module_path: &str) -> Option<String> {
+        if let Some(quoted_path) = extract_wgsl_quoted_import_path(module_path) {
+            let mut rel_path = normalize_shader_rel_path(&quoted_path);
+            if !rel_path.ends_with(".wgsl") {
+                rel_path.push_str(".wgsl");
+            }
+            if !rel_path.starts_with("shaders/") {
+                if rel_path.starts_with("bevy/") {
+                    rel_path = format!("shaders/{rel_path}");
+                } else {
+                    rel_path = format!("shaders/bevy/{rel_path}");
+                }
+            }
+            return Some(rel_path);
+        }
+
+        let module_path = normalize_wgsl_module_name(module_path);
+        if module_path.is_empty() {
+            return None;
+        }
+
+        if let Some(rel_path) = self.indexed_modules.get(&module_path) {
+            return Some(rel_path.clone());
+        }
+        if let Some(rel_path) = self.fallback_modules.get(&module_path) {
+            return Some(rel_path.clone());
+        }
+
+        let derived = format!("shaders/bevy/{}.wgsl", module_path.replace("::", "/"));
+        let full = Path::new(assets_base).join(&derived);
+        if full.is_file() {
+            return Some(derived);
+        }
+        None
+    }
+}
+
+fn extract_wgsl_quoted_import_path(module_path: &str) -> Option<String> {
+    let text = module_path.trim();
+    if !text.starts_with('"') {
+        return None;
+    }
+    let rest = &text[1..];
+    let end = rest.find('"')?;
+    Some(rest[..end].to_string())
+}
+
+fn normalize_wgsl_module_name(module: &str) -> String {
+    module
+        .trim()
+        .split("::")
+        .map(str::trim)
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("::")
+}
+
+fn wgsl_shader_def_enabled(shader_defs: &HashMap<String, WgslShaderDefValue>, name: &str) -> bool {
+    match shader_defs.get(name) {
+        Some(WgslShaderDefValue::Bool(v)) => *v,
+        Some(WgslShaderDefValue::Int(v)) => *v != 0,
+        Some(WgslShaderDefValue::UInt(v)) => *v != 0,
+        None => false,
+    }
+}
+
+fn should_skip_wgsl_import_for_shader_defs(
+    import_path: &str,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
+) -> bool {
+    let normalized = import_path.trim().trim_end_matches(';').trim();
+    let environment_map_enabled = wgsl_shader_def_enabled(shader_defs, "ENVIRONMENT_MAP");
+    let irradiance_volume_enabled = wgsl_shader_def_enabled(shader_defs, "IRRADIANCE_VOLUME")
+        || wgsl_shader_def_enabled(shader_defs, "IRRADIANCE_VOLUMES_ARE_USABLE");
+    let ssr_enabled = wgsl_shader_def_enabled(shader_defs, "SCREEN_SPACE_REFLECTIONS");
+    if normalized.contains("atmosphere::") && !wgsl_shader_def_enabled(shader_defs, "ATMOSPHERE") {
+        return true;
+    }
+    if normalized.contains("environment_map") && !environment_map_enabled {
+        return true;
+    }
+    if normalized.contains("irradiance_volume") && !irradiance_volume_enabled {
+        return true;
+    }
+    if normalized.contains("light_probe") && !(environment_map_enabled || irradiance_volume_enabled)
+    {
+        return true;
+    }
+    if normalized.contains("lightmap") && !wgsl_shader_def_enabled(shader_defs, "LIGHTMAP") {
+        return true;
+    }
+    if normalized.contains("ssr") && !ssr_enabled {
+        return true;
+    }
+    if normalized.contains("raymarch") && !ssr_enabled {
+        return true;
+    }
+    if normalized.contains("ssao::")
+        && !wgsl_shader_def_enabled(shader_defs, "SCREEN_SPACE_AMBIENT_OCCLUSION")
+    {
+        return true;
+    }
+    false
+}
+
+fn import_leaf_symbol(full_path: &str) -> Option<String> {
+    let trimmed = full_path.trim().trim_end_matches(';').trim();
+    if trimmed.is_empty() || trimmed.starts_with('"') {
+        return None;
+    }
+    trimmed
+        .rsplit("::")
+        .next()
+        .map(|segment| segment.trim().trim_matches('"').to_string())
+}
+
+fn wgsl_symbol_looks_like_type(symbol: &str) -> bool {
+    symbol
+        .chars()
+        .next()
+        .is_some_and(|ch| ch.is_ascii_uppercase())
+}
+
+fn strip_wgsl_top_level_functions(source: &str) -> String {
+    let lines = source.lines().collect::<Vec<_>>();
+    let first_fn_index = lines.iter().enumerate().find_map(|(index, line)| {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("fn ") {
+            return Some(index);
+        }
+        if trimmed.starts_with('@') {
+            let mut lookahead = index + 1;
+            while lookahead < lines.len() && lines[lookahead].trim().is_empty() {
+                lookahead += 1;
+            }
+            if lookahead < lines.len() && lines[lookahead].trim_start().starts_with("fn ") {
+                return Some(index);
+            }
+        }
+        None
+    });
+    let Some(first_fn_index) = first_fn_index else {
+        return source.to_string();
+    };
+    if first_fn_index == 0 {
+        return String::new();
+    }
+    let mut out = lines[..first_fn_index].join("\n");
+    if !out.is_empty() && !out.ends_with('\n') {
+        out.push('\n');
+    }
+    out
+}
+
+fn wgsl_directive_body_without_line_comment(trimmed: &str) -> Option<&str> {
+    let text = trimmed.strip_prefix('#')?.trim_start();
+    let text = if let Some(index) = text.find("//") {
+        &text[..index]
+    } else {
+        text
+    };
+    Some(text.trim_end())
+}
+
+fn strip_wgsl_directive_arg<'a>(trimmed: &'a str, directive: &str) -> Option<&'a str> {
+    let text = wgsl_directive_body_without_line_comment(trimmed)?;
+    let rest = text.strip_prefix(directive)?;
+    if rest.is_empty() {
+        return Some("");
+    }
+    let Some(first) = rest.chars().next() else {
+        return Some("");
+    };
+    if !first.is_whitespace() {
+        return None;
+    }
+    Some(rest.trim())
+}
+
+fn is_wgsl_directive_keyword(trimmed: &str, keyword: &str) -> bool {
+    wgsl_directive_body_without_line_comment(trimmed).is_some_and(|text| text.trim() == keyword)
+}
+
+fn wgsl_condition_is_active(frames: &[WgslConditionalFrame]) -> bool {
+    frames.last().map_or(true, |frame| frame.current_active)
+}
+
+fn apply_wgsl_conditional_directive(
+    trimmed: &str,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
+    frames: &mut Vec<WgslConditionalFrame>,
+) -> bool {
+    if let Some(name) = strip_wgsl_directive_arg(trimmed, "ifdef") {
+        let parent = wgsl_condition_is_active(frames);
+        let cond = shader_defs.contains_key(name);
+        let current = parent && cond;
+        frames.push(WgslConditionalFrame {
+            parent_active: parent,
+            branch_taken: current,
+            current_active: current,
+        });
+        return true;
+    }
+
+    if let Some(name) = strip_wgsl_directive_arg(trimmed, "ifndef") {
+        let parent = wgsl_condition_is_active(frames);
+        let cond = !shader_defs.contains_key(name);
+        let current = parent && cond;
+        frames.push(WgslConditionalFrame {
+            parent_active: parent,
+            branch_taken: current,
+            current_active: current,
+        });
+        return true;
+    }
+
+    if let Some(expr) = strip_wgsl_directive_arg(trimmed, "if") {
+        let parent = wgsl_condition_is_active(frames);
+        let cond = evaluate_wgsl_if_expression(expr, shader_defs);
+        let current = parent && cond;
+        frames.push(WgslConditionalFrame {
+            parent_active: parent,
+            branch_taken: current,
+            current_active: current,
+        });
+        return true;
+    }
+
+    if let Some(name) = strip_wgsl_directive_arg(trimmed, "else ifdef") {
+        if let Some(frame) = frames.last_mut() {
+            let cond = shader_defs.contains_key(name);
+            let current = frame.parent_active && !frame.branch_taken && cond;
+            frame.current_active = current;
+            if current {
+                frame.branch_taken = true;
+            }
+        }
+        return true;
+    }
+
+    if let Some(name) = strip_wgsl_directive_arg(trimmed, "else ifndef") {
+        if let Some(frame) = frames.last_mut() {
+            let cond = !shader_defs.contains_key(name);
+            let current = frame.parent_active && !frame.branch_taken && cond;
+            frame.current_active = current;
+            if current {
+                frame.branch_taken = true;
+            }
+        }
+        return true;
+    }
+
+    if is_wgsl_directive_keyword(trimmed, "else") {
+        if let Some(frame) = frames.last_mut() {
+            let current = frame.parent_active && !frame.branch_taken;
+            frame.current_active = current;
+            if current {
+                frame.branch_taken = true;
+            }
+        }
+        return true;
+    }
+
+    if is_wgsl_directive_keyword(trimmed, "endif") {
+        if !frames.is_empty() {
+            frames.pop();
+        }
+        return true;
+    }
+
+    false
+}
+
+fn apply_wgsl_conditionals(
+    source: &str,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
+) -> String {
+    let mut out = String::new();
+    let mut frames = Vec::<WgslConditionalFrame>::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if apply_wgsl_conditional_directive(trimmed, shader_defs, &mut frames) {
+            continue;
+        }
+        if wgsl_condition_is_active(&frames) {
+            out.push_str(line);
+            out.push('\n');
+        }
+    }
+    out
+}
+
+fn evaluate_wgsl_if_expression(
+    expr: &str,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
+) -> bool {
+    let tokens = tokenize_wgsl_if_expression(expr);
+    if tokens.is_empty() {
+        return false;
+    }
+    let mut parser = WgslIfExprParser::new(&tokens, shader_defs);
+    let Some(result) = parser.parse_expression() else {
+        return false;
+    };
+    if parser.cursor != tokens.len() {
+        return false;
+    }
+    result.truthy()
+}
+
+fn tokenize_wgsl_if_expression(expr: &str) -> Vec<WgslIfExprToken> {
+    let chars = expr.chars().collect::<Vec<_>>();
+    let mut tokens = Vec::<WgslIfExprToken>::new();
+    let mut idx = 0usize;
+
+    while idx < chars.len() {
+        let ch = chars[idx];
+        if ch.is_whitespace() {
+            idx += 1;
+            continue;
+        }
+        if ch == '(' {
+            tokens.push(WgslIfExprToken::LParen);
+            idx += 1;
+            continue;
+        }
+        if ch == ')' {
+            tokens.push(WgslIfExprToken::RParen);
+            idx += 1;
+            continue;
+        }
+
+        if idx + 1 < chars.len() {
+            let op = match (chars[idx], chars[idx + 1]) {
+                ('&', '&') => Some("&&"),
+                ('|', '|') => Some("||"),
+                ('=', '=') => Some("=="),
+                ('!', '=') => Some("!="),
+                ('<', '=') => Some("<="),
+                ('>', '=') => Some(">="),
+                _ => None,
+            };
+            if let Some(op) = op {
+                tokens.push(WgslIfExprToken::Op(op.to_string()));
+                idx += 2;
+                continue;
+            }
+        }
+
+        if matches!(ch, '!' | '<' | '>' | '+' | '-' | '*' | '/' | '%') {
+            tokens.push(WgslIfExprToken::Op(ch.to_string()));
+            idx += 1;
+            continue;
+        }
+
+        if ch.is_ascii_digit() {
+            let start = idx;
+            idx += 1;
+            while idx < chars.len() && chars[idx].is_ascii_digit() {
+                idx += 1;
+            }
+            let literal = chars[start..idx].iter().collect::<String>();
+            if idx < chars.len() && matches!(chars[idx], 'u' | 'U') {
+                idx += 1;
+            }
+            if let Ok(value) = literal.parse::<i128>() {
+                tokens.push(WgslIfExprToken::Number(value));
+                continue;
+            }
+            return Vec::new();
+        }
+
+        if ch.is_ascii_alphabetic() || ch == '_' {
+            let start = idx;
+            idx += 1;
+            while idx < chars.len() && (chars[idx].is_ascii_alphanumeric() || chars[idx] == '_') {
+                idx += 1;
+            }
+            let ident = chars[start..idx].iter().collect::<String>();
+            match ident.as_str() {
+                "true" => tokens.push(WgslIfExprToken::Bool(true)),
+                "false" => tokens.push(WgslIfExprToken::Bool(false)),
+                _ => tokens.push(WgslIfExprToken::Ident(ident)),
+            }
+            continue;
+        }
+
+        return Vec::new();
+    }
+    tokens
+}
+
+fn apply_wgsl_shader_def_substitutions(
+    source: &str,
+    shader_defs: &HashMap<String, WgslShaderDefValue>,
+) -> String {
+    let mut out = String::with_capacity(source.len());
+    let mut cursor = 0usize;
+    while let Some(start_rel) = source[cursor..].find("#{") {
+        let start = cursor + start_rel;
+        out.push_str(&source[cursor..start]);
+        let key_start = start + 2;
+        let Some(end_rel) = source[key_start..].find('}') else {
+            out.push_str(&source[start..]);
+            return out;
+        };
+        let key_end = key_start + end_rel;
+        let key = &source[key_start..key_end];
+        if is_valid_wgsl_shader_def_key(key) {
+            if let Some(value) = shader_defs.get(key) {
+                out.push_str(&value.value_as_string());
+                cursor = key_end + 1;
+                continue;
+            }
+        }
+        out.push_str(&source[start..=key_end]);
+        cursor = key_end + 1;
+    }
+    out.push_str(&source[cursor..]);
+    out
+}
+
+fn is_valid_wgsl_shader_def_key(key: &str) -> bool {
+    let mut chars = key.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    if !(first.is_ascii_alphabetic() || first == '_') {
+        return false;
+    }
+    chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+}
+
+fn parse_wgsl_import_block(import_block: &str) -> anyhow::Result<Vec<WgslImportPath>> {
+    let Some(spec) = strip_wgsl_directive_arg(import_block.trim_start(), "import") else {
+        return Ok(Vec::new());
+    };
+    let tokens = tokenize_wgsl_import_spec(spec)?;
+    let mut out = Vec::<WgslImportPath>::new();
+    let mut cursor = 0usize;
+    while cursor < tokens.len() {
+        match tokens.get(cursor) {
+            Some(WgslImportToken::Comma) => {
+                cursor += 1;
+            }
+            Some(WgslImportToken::Semicolon) => break,
+            Some(_) => {
+                parse_wgsl_import_item(&tokens, &mut cursor, None, &mut out)?;
+                if matches!(tokens.get(cursor), Some(WgslImportToken::Comma)) {
+                    cursor += 1;
+                }
+            }
+            None => break,
         }
     }
     Ok(out)
+}
+
+fn parse_wgsl_import_item(
+    tokens: &[WgslImportToken],
+    cursor: &mut usize,
+    prefix: Option<&str>,
+    out: &mut Vec<WgslImportPath>,
+) -> anyhow::Result<()> {
+    let segment = parse_wgsl_import_segment(tokens, cursor)?;
+    let mut path = String::new();
+    if let Some(prefix) = prefix {
+        path.push_str(prefix);
+        if !prefix.is_empty() && !segment.is_empty() {
+            path.push_str("::");
+        }
+    }
+    path.push_str(&segment);
+
+    loop {
+        match tokens.get(*cursor) {
+            Some(WgslImportToken::Scope) => {
+                *cursor += 1;
+                if matches!(tokens.get(*cursor), Some(WgslImportToken::LBrace)) {
+                    *cursor += 1;
+                    loop {
+                        if matches!(tokens.get(*cursor), Some(WgslImportToken::RBrace)) {
+                            *cursor += 1;
+                            break;
+                        }
+                        parse_wgsl_import_item(tokens, cursor, Some(&path), out)?;
+                        if matches!(tokens.get(*cursor), Some(WgslImportToken::Comma)) {
+                            *cursor += 1;
+                            continue;
+                        }
+                        if matches!(tokens.get(*cursor), Some(WgslImportToken::RBrace)) {
+                            *cursor += 1;
+                            break;
+                        }
+                        return Err(anyhow!("wgpu: malformed WGSL import block"));
+                    }
+                    return Ok(());
+                }
+                let next_segment = parse_wgsl_import_segment(tokens, cursor)?;
+                path.push_str("::");
+                path.push_str(&next_segment);
+            }
+            _ => break,
+        }
+    }
+
+    let used_name = if matches!(tokens.get(*cursor), Some(WgslImportToken::As)) {
+        *cursor += 1;
+        parse_wgsl_import_segment(tokens, cursor)?
+    } else {
+        path.rsplit("::")
+            .next()
+            .unwrap_or("")
+            .trim_matches('"')
+            .to_string()
+    };
+    out.push(WgslImportPath {
+        full_path: path,
+        used_name,
+    });
+    Ok(())
+}
+
+fn parse_wgsl_import_segment(
+    tokens: &[WgslImportToken],
+    cursor: &mut usize,
+) -> anyhow::Result<String> {
+    match tokens.get(*cursor) {
+        Some(WgslImportToken::Ident(segment)) => {
+            *cursor += 1;
+            Ok(segment.clone())
+        }
+        _ => Err(anyhow!("wgpu: malformed WGSL import segment")),
+    }
+}
+
+fn tokenize_wgsl_import_spec(spec: &str) -> anyhow::Result<Vec<WgslImportToken>> {
+    let chars = spec.chars().collect::<Vec<_>>();
+    let mut tokens = Vec::<WgslImportToken>::new();
+    let mut idx = 0usize;
+    while idx < chars.len() {
+        let ch = chars[idx];
+        if ch.is_whitespace() {
+            idx += 1;
+            continue;
+        }
+
+        if ch == '/' && idx + 1 < chars.len() && chars[idx + 1] == '/' {
+            break;
+        }
+
+        match ch {
+            ',' => {
+                tokens.push(WgslImportToken::Comma);
+                idx += 1;
+                continue;
+            }
+            ';' => {
+                tokens.push(WgslImportToken::Semicolon);
+                idx += 1;
+                continue;
+            }
+            '{' => {
+                tokens.push(WgslImportToken::LBrace);
+                idx += 1;
+                continue;
+            }
+            '}' => {
+                tokens.push(WgslImportToken::RBrace);
+                idx += 1;
+                continue;
+            }
+            ':' => {
+                if idx + 1 < chars.len() && chars[idx + 1] == ':' {
+                    tokens.push(WgslImportToken::Scope);
+                    idx += 2;
+                    continue;
+                }
+                return Err(anyhow!("wgpu: malformed WGSL import: expected `::`"));
+            }
+            '"' => {
+                let start = idx;
+                idx += 1;
+                while idx < chars.len() && chars[idx] != '"' {
+                    idx += 1;
+                }
+                if idx >= chars.len() {
+                    return Err(anyhow!("wgpu: malformed WGSL import: unterminated quote"));
+                }
+                idx += 1;
+                let ident = chars[start..idx].iter().collect::<String>();
+                tokens.push(WgslImportToken::Ident(ident));
+                continue;
+            }
+            _ => {}
+        }
+
+        if ch.is_ascii_alphabetic() || ch == '_' {
+            let start = idx;
+            idx += 1;
+            while idx < chars.len() && (chars[idx].is_ascii_alphanumeric() || chars[idx] == '_') {
+                idx += 1;
+            }
+            let ident = chars[start..idx].iter().collect::<String>();
+            if ident == "as" {
+                tokens.push(WgslImportToken::As);
+            } else {
+                tokens.push(WgslImportToken::Ident(ident));
+            }
+            continue;
+        }
+
+        return Err(anyhow!(
+            "wgpu: malformed WGSL import: unexpected token `{ch}`"
+        ));
+    }
+    Ok(tokens)
 }
 
 fn normalize_shader_rel_path(rel: &str) -> String {
@@ -5450,96 +8036,6 @@ fn normalize_shader_rel_path(rel: &str) -> String {
 
 fn is_motion_blur_shader_path(rel: &str) -> bool {
     normalize_shader_rel_path(rel) == "shaders/mgstudio/3d/motion_blur.wgsl"
-}
-
-fn parse_wgsl_import_module_path(spec: &str) -> String {
-    let mut path = spec.trim();
-    if let Some(idx) = path.find(" as ") {
-        path = &path[..idx];
-    }
-    if let Some(idx) = path.find("::{") {
-        path = &path[..idx];
-    }
-    let mut module = path.trim().trim_end_matches(';');
-    if let Some(last) = module.rsplit("::").next() {
-        let first = last.chars().next().unwrap_or('_');
-        if first.is_ascii_uppercase() {
-            if let Some(idx) = module.rfind("::") {
-                module = &module[..idx];
-            }
-        }
-    }
-    module.to_string()
-}
-
-fn parse_wgsl_import_alias(spec: &str, module_path: &str) -> String {
-    let text = spec.trim().trim_end_matches(';');
-    if text.is_empty() {
-        return String::new();
-    }
-    if let Some(idx) = text.rfind(" as ") {
-        let alias = text[idx + 4..].trim().trim_end_matches(';').trim();
-        if !alias.is_empty() {
-            return alias.to_string();
-        }
-    }
-    module_path
-        .rsplit("::")
-        .find(|seg| !seg.trim().is_empty())
-        .unwrap_or("")
-        .trim()
-        .to_string()
-}
-
-fn apply_wgsl_ifdefs(source: &str, defines: &HashSet<String>) -> String {
-    let mut out = String::new();
-    let mut active_stack = vec![true];
-    let mut cond_stack: Vec<bool> = Vec::new();
-    for line in source.lines() {
-        let trimmed = line.trim();
-        if let Some(name) = trimmed.strip_prefix("#ifdef ") {
-            let enabled = defines.contains(name.trim());
-            let parent = *active_stack.last().unwrap_or(&true);
-            active_stack.push(parent && enabled);
-            cond_stack.push(enabled);
-            continue;
-        }
-        if let Some(name) = trimmed.strip_prefix("#ifndef ") {
-            let enabled = !defines.contains(name.trim());
-            let parent = *active_stack.last().unwrap_or(&true);
-            active_stack.push(parent && enabled);
-            cond_stack.push(enabled);
-            continue;
-        }
-        if trimmed == "#else" {
-            if let Some(cur) = cond_stack.last_mut() {
-                *cur = !*cur;
-                let parent = if active_stack.len() >= 2 {
-                    active_stack[active_stack.len() - 2]
-                } else {
-                    true
-                };
-                if let Some(active) = active_stack.last_mut() {
-                    *active = parent && *cur;
-                }
-            }
-            continue;
-        }
-        if trimmed == "#endif" {
-            if active_stack.len() > 1 {
-                active_stack.pop();
-            }
-            if !cond_stack.is_empty() {
-                cond_stack.pop();
-            }
-            continue;
-        }
-        if *active_stack.last().unwrap_or(&true) {
-            out.push_str(line);
-            out.push('\n');
-        }
-    }
-    out
 }
 
 fn lower_motion_blur_texture_samples_for_runtime(source: String) -> String {
@@ -5715,7 +8211,7 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
     } else {
         1.0
     };
-    let floats: [f32; 100] = [
+    let floats: [f32; 104] = [
         draw.x,
         draw.y,
         draw.z,
@@ -5816,8 +8312,598 @@ fn mesh3d_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
         draw.specular_transmission,
         draw.thickness,
         draw.ior,
+        draw.point_shadow_enabled,
+        draw.point_shadow_depth_bias,
+        0.0,
+        0.0,
     ];
     bytemuck::cast_slice(&floats).to_vec()
+}
+
+fn write_f32_le(bytes: &mut [u8], offset: usize, value: f32) {
+    if offset + 4 <= bytes.len() {
+        bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+}
+
+fn write_u32_le(bytes: &mut [u8], offset: usize, value: u32) {
+    if offset + 4 <= bytes.len() {
+        bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+}
+
+fn write_f32s_le(bytes: &mut [u8], offset: usize, values: &[f32]) {
+    for (i, value) in values.iter().enumerate() {
+        write_f32_le(bytes, offset + i * 4, *value);
+    }
+}
+
+fn quat_normalize4(mut q: [f32; 4]) -> [f32; 4] {
+    let n2 = (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]).max(1.0e-8);
+    let inv = n2.sqrt().recip();
+    q[0] *= inv;
+    q[1] *= inv;
+    q[2] *= inv;
+    q[3] *= inv;
+    q
+}
+
+fn quat_to_row_mat3(q_raw: [f32; 4]) -> [f32; 9] {
+    let q = quat_normalize4(q_raw);
+    let x = q[0];
+    let y = q[1];
+    let z = q[2];
+    let w = q[3];
+    [
+        1.0 - 2.0 * (y * y + z * z),
+        2.0 * (x * y - w * z),
+        2.0 * (x * z + w * y),
+        2.0 * (x * y + w * z),
+        1.0 - 2.0 * (x * x + z * z),
+        2.0 * (y * z - w * x),
+        2.0 * (x * z - w * y),
+        2.0 * (y * z + w * x),
+        1.0 - 2.0 * (x * x + y * y),
+    ]
+}
+
+fn mat4_row_mul(a: &[f32; 16], b: &[f32; 16]) -> [f32; 16] {
+    let mut out = [0.0f32; 16];
+    for r in 0..4 {
+        for c in 0..4 {
+            out[r * 4 + c] = a[r * 4] * b[c]
+                + a[r * 4 + 1] * b[4 + c]
+                + a[r * 4 + 2] * b[8 + c]
+                + a[r * 4 + 3] * b[12 + c];
+        }
+    }
+    out
+}
+
+fn mat4_row_to_col(m: &[f32; 16]) -> [f32; 16] {
+    [
+        m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14], m[3], m[7],
+        m[11], m[15],
+    ]
+}
+
+fn mesh3d_build_model_rows(pos: [f32; 3], rot: [f32; 4], scale: [f32; 3]) -> [f32; 12] {
+    let r = quat_to_row_mat3(rot);
+    [
+        r[0] * scale[0],
+        r[1] * scale[1],
+        r[2] * scale[2],
+        pos[0],
+        r[3] * scale[0],
+        r[4] * scale[1],
+        r[5] * scale[2],
+        pos[1],
+        r[6] * scale[0],
+        r[7] * scale[1],
+        r[8] * scale[2],
+        pos[2],
+    ]
+}
+
+fn safe_reciprocal(value: f32) -> f32 {
+    if value.abs() > 1.0e-8 {
+        value.recip()
+    } else {
+        0.0
+    }
+}
+
+fn mesh3d_build_local_from_world_transpose_cols(rot: [f32; 4], scale: [f32; 3]) -> [f32; 9] {
+    let r = quat_to_row_mat3(rot);
+    let inv_sx = safe_reciprocal(scale[0]);
+    let inv_sy = safe_reciprocal(scale[1]);
+    let inv_sz = safe_reciprocal(scale[2]);
+    let m00 = r[0] * inv_sx;
+    let m01 = r[1] * inv_sy;
+    let m02 = r[2] * inv_sz;
+    let m10 = r[3] * inv_sx;
+    let m11 = r[4] * inv_sy;
+    let m12 = r[5] * inv_sz;
+    let m20 = r[6] * inv_sx;
+    let m21 = r[7] * inv_sy;
+    let m22 = r[8] * inv_sz;
+    [
+        m00, m10, m20, //
+        m01, m11, m21, //
+        m02, m12, m22, //
+    ]
+}
+
+fn mesh3d_build_world_from_view_row(pass: &GpuPassState) -> [f32; 16] {
+    let r = quat_to_row_mat3(pass.camera_rot_quat);
+    [
+        r[0],
+        r[1],
+        r[2],
+        pass.camera_x,
+        r[3],
+        r[4],
+        r[5],
+        pass.camera_y,
+        r[6],
+        r[7],
+        r[8],
+        pass.camera_z,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+    ]
+}
+
+fn mesh3d_build_view_from_world_row(pass: &GpuPassState) -> [f32; 16] {
+    let r = quat_to_row_mat3(pass.camera_rot_quat);
+    let rt = [r[0], r[3], r[6], r[1], r[4], r[7], r[2], r[5], r[8]];
+    let tx = -(rt[0] * pass.camera_x + rt[1] * pass.camera_y + rt[2] * pass.camera_z);
+    let ty = -(rt[3] * pass.camera_x + rt[4] * pass.camera_y + rt[5] * pass.camera_z);
+    let tz = -(rt[6] * pass.camera_x + rt[7] * pass.camera_y + rt[8] * pass.camera_z);
+    [
+        rt[0], rt[1], rt[2], tx, rt[3], rt[4], rt[5], ty, rt[6], rt[7], rt[8], tz, 0.0, 0.0, 0.0,
+        1.0,
+    ]
+}
+
+fn mesh3d_build_clip_from_view_row(pass: &GpuPassState, aspect: f32) -> [f32; 16] {
+    if pass.camera_fov_y > 0.0 {
+        let f = 1.0 / (0.5 * pass.camera_fov_y.max(1.0e-3)).tan();
+        let near = pass.camera_near.max(1.0e-4);
+        [
+            f / aspect.max(1.0e-3),
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            f,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            near,
+            0.0,
+            0.0,
+            -1.0,
+            0.0,
+        ]
+    } else {
+        let half_h = (-pass.camera_fov_y).max(1.0e-5);
+        let half_w = (half_h * aspect.max(1.0e-3)).max(1.0e-5);
+        let near = pass.camera_near.max(0.0);
+        let far = pass.camera_far.max(near + 1.0e-4);
+        let left = -half_w;
+        let right = half_w;
+        let bottom = -half_h;
+        let top = half_h;
+        let w = (right - left).max(1.0e-5);
+        let h = (top - bottom).max(1.0e-5);
+        let d = (far - near).max(1.0e-5);
+        let cw = -right - left;
+        let ch = -top - bottom;
+        [
+            2.0 / w,
+            0.0,
+            0.0,
+            cw / w,
+            0.0,
+            2.0 / h,
+            0.0,
+            ch / h,
+            0.0,
+            0.0,
+            1.0 / d,
+            far / d,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        ]
+    }
+}
+
+fn mesh3d_apply_subview_row(mut clip: [f32; 16], sub: [f32; 4]) -> [f32; 16] {
+    for c in 0..4 {
+        clip[c] = sub[0] * clip[c] + sub[2] * clip[12 + c];
+        clip[4 + c] = sub[1] * clip[4 + c] + sub[3] * clip[12 + c];
+    }
+    clip
+}
+
+fn mesh3d_bevy_view_uniform_bytes(pass: &GpuPassState) -> Vec<u8> {
+    let mut floats = vec![0.0f32; 192];
+    let aspect = if pass.height_logical > 0.0 {
+        pass.width_logical / pass.height_logical
+    } else {
+        1.0
+    };
+    let world_from_view_row = mesh3d_build_world_from_view_row(pass);
+    let view_from_world_row = mesh3d_build_view_from_world_row(pass);
+    let clip_from_view_row = mesh3d_apply_subview_row(
+        mesh3d_build_clip_from_view_row(pass, aspect),
+        pass.sub_camera_view,
+    );
+    let clip_from_world_row = mat4_row_mul(&clip_from_view_row, &view_from_world_row);
+    let identity_col = [
+        1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+    ];
+    let clip_from_world_col = mat4_row_to_col(&clip_from_world_row);
+    let world_from_view_col = mat4_row_to_col(&world_from_view_row);
+    let view_from_world_col = mat4_row_to_col(&view_from_world_row);
+    let clip_from_view_col = mat4_row_to_col(&clip_from_view_row);
+    for i in 0..16 {
+        floats[i] = clip_from_world_col[i];
+        floats[16 + i] = clip_from_world_col[i];
+        floats[32 + i] = identity_col[i];
+        floats[48 + i] = world_from_view_col[i];
+        floats[64 + i] = view_from_world_col[i];
+        floats[80 + i] = clip_from_view_col[i];
+        floats[96 + i] = identity_col[i];
+    }
+    floats[112] = pass.camera_x;
+    floats[113] = pass.camera_y;
+    floats[114] = pass.camera_z;
+    // Bevy camera default exposure (Exposure::BLENDER: ev100=9.7).
+    floats[115] = 0.0010019079;
+    floats[116] = pass.viewport_x as f32;
+    floats[117] = pass.viewport_y as f32;
+    floats[118] = pass.viewport_w as f32;
+    floats[119] = pass.viewport_h as f32;
+    floats[120] = pass.viewport_x as f32;
+    floats[121] = pass.viewport_y as f32;
+    floats[122] = pass.viewport_w as f32;
+    floats[123] = pass.viewport_h as f32;
+    bytemuck::cast_slice(floats.as_slice()).to_vec()
+}
+
+fn mesh3d_bevy_lights_uniform_bytes(pass: &GpuPassState) -> Vec<u8> {
+    let mut bytes = vec![0u8; 256];
+    let ambient_scale = pass.ambient[3];
+    write_f32_le(&mut bytes, 160, pass.ambient[0] * ambient_scale);
+    write_f32_le(&mut bytes, 164, pass.ambient[1] * ambient_scale);
+    write_f32_le(&mut bytes, 168, pass.ambient[2] * ambient_scale);
+    write_f32_le(&mut bytes, 172, 1.0);
+    write_u32_le(&mut bytes, 176, 1);
+    write_u32_le(&mut bytes, 180, 1);
+    write_u32_le(&mut bytes, 184, 1);
+    write_u32_le(&mut bytes, 188, 1);
+    let inv_viewport_w = 1.0 / (pass.viewport_w.max(1) as f32);
+    let inv_viewport_h = 1.0 / (pass.viewport_h.max(1) as f32);
+    write_f32_le(&mut bytes, 192, inv_viewport_w);
+    write_f32_le(&mut bytes, 196, inv_viewport_h);
+    let near = pass.camera_near.max(1.0e-4);
+    let far = pass.camera_far.max(near + 1.0e-4);
+    if pass.camera_fov_y > 0.0 {
+        let log_ratio = (far / near).ln().max(1.0e-5);
+        write_f32_le(&mut bytes, 200, 1.0 / log_ratio);
+        write_f32_le(&mut bytes, 204, near.ln() / log_ratio);
+    } else {
+        write_f32_le(&mut bytes, 200, -near);
+        let mut denom = -far - -near;
+        if denom.abs() < 1.0e-5 {
+            denom = if denom < 0.0 { -1.0e-5 } else { 1.0e-5 };
+        }
+        write_f32_le(&mut bytes, 204, 1.0 / denom);
+    }
+    if pass.directional_dir_illum[3] > 0.0 {
+        write_f32_le(
+            &mut bytes,
+            80,
+            pass.directional_color[0] * pass.directional_dir_illum[3],
+        );
+        write_f32_le(
+            &mut bytes,
+            84,
+            pass.directional_color[1] * pass.directional_dir_illum[3],
+        );
+        write_f32_le(
+            &mut bytes,
+            88,
+            pass.directional_color[2] * pass.directional_dir_illum[3],
+        );
+        write_f32_le(&mut bytes, 92, 1.0);
+        write_f32_le(&mut bytes, 96, -pass.directional_dir_illum[0]);
+        write_f32_le(&mut bytes, 100, -pass.directional_dir_illum[1]);
+        write_f32_le(&mut bytes, 104, -pass.directional_dir_illum[2]);
+        write_u32_le(&mut bytes, 208, 1);
+    } else {
+        write_u32_le(&mut bytes, 208, 0);
+    }
+    let point_count = if mesh3d_point_light_enabled(pass) {
+        1i32
+    } else {
+        0
+    };
+    write_u32_le(&mut bytes, 212, (-point_count) as u32);
+    write_u32_le(&mut bytes, 216, 1);
+    bytemuck::cast_slice(bytes.as_slice()).to_vec()
+}
+
+fn mesh3d_point_light_enabled(pass: &GpuPassState) -> bool {
+    pass.point_color_intensity[3] > 0.0 && pass.point_pos_range[3] > 0.0
+}
+
+fn mesh3d_spot_light_enabled(pass: &GpuPassState) -> bool {
+    pass.spot_color_intensity[3] > 0.0 && pass.spot_pos_range[3] > 0.0
+}
+
+fn mesh3d_write_clustered_light(
+    bytes: &mut [u8],
+    index: usize,
+    light_custom_data: [f32; 4],
+    color_inverse_square_range: [f32; 4],
+    position_radius: [f32; 4],
+    flags: u32,
+    shadow_depth_bias: f32,
+    shadow_normal_bias: f32,
+    spot_light_tan_angle: f32,
+    soft_shadow_size: f32,
+    shadow_map_near_z: f32,
+) {
+    let base = index * MESH3D_CLUSTERED_LIGHT_STRIDE_BYTES;
+    if base + MESH3D_CLUSTERED_LIGHT_STRIDE_BYTES > bytes.len() {
+        return;
+    }
+    write_f32s_le(bytes, base, &light_custom_data);
+    write_f32s_le(bytes, base + 16, &color_inverse_square_range);
+    write_f32s_le(bytes, base + 32, &position_radius);
+    write_u32_le(bytes, base + 48, flags);
+    write_f32_le(bytes, base + 52, shadow_depth_bias);
+    write_f32_le(bytes, base + 56, shadow_normal_bias);
+    write_f32_le(bytes, base + 60, spot_light_tan_angle);
+    write_f32_le(bytes, base + 64, soft_shadow_size);
+    write_f32_le(bytes, base + 68, shadow_map_near_z);
+    write_u32_le(bytes, base + 72, u32::MAX);
+    write_f32_le(bytes, base + 76, 0.0);
+}
+
+fn mesh3d_bevy_clustered_lights_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
+    let mut bytes = vec![0u8; MESH3D_CLUSTERED_LIGHTS_UNIFORM_BYTES as usize];
+    let mut next_light_index = 0usize;
+    if mesh3d_point_light_enabled(pass) {
+        let range = pass.point_pos_range[3].max(1.0e-4);
+        let shadow_map_near_z = 0.1f32;
+        let intensity_scale = pass.point_color_intensity[3] / (4.0 * std::f32::consts::PI);
+        let point_shadow_enabled =
+            draw.point_shadow_enabled > 0.0 && draw.point_shadow_texture_id >= 0;
+        let mut flags = POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE;
+        if point_shadow_enabled {
+            flags |= POINT_LIGHT_FLAG_SHADOWS_ENABLED;
+        }
+        mesh3d_write_clustered_light(
+            bytes.as_mut_slice(),
+            next_light_index,
+            [0.0, -1.0, shadow_map_near_z, 0.0],
+            [
+                pass.point_color_intensity[0] * intensity_scale,
+                pass.point_color_intensity[1] * intensity_scale,
+                pass.point_color_intensity[2] * intensity_scale,
+                1.0 / (range * range),
+            ],
+            [
+                pass.point_pos_range[0],
+                pass.point_pos_range[1],
+                pass.point_pos_range[2],
+                0.0,
+            ],
+            flags,
+            if point_shadow_enabled {
+                draw.point_shadow_depth_bias.max(0.0)
+            } else {
+                0.0
+            },
+            POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
+            0.0,
+            0.0,
+            shadow_map_near_z,
+        );
+        next_light_index += 1;
+    }
+    if mesh3d_spot_light_enabled(pass) {
+        let range = pass.spot_pos_range[3].max(1.0e-4);
+        let intensity_scale = pass.spot_color_intensity[3] / (4.0 * std::f32::consts::PI);
+        let (dir_x, dir_y, dir_z) = {
+            let x = pass.spot_dir_inner[0];
+            let y = pass.spot_dir_inner[1];
+            let z = pass.spot_dir_inner[2];
+            let len_sq = x * x + y * y + z * z;
+            if len_sq > 1.0e-8 {
+                let inv_len = len_sq.sqrt().recip();
+                (x * inv_len, y * inv_len, z * inv_len)
+            } else {
+                (0.0, -1.0, 0.0)
+            }
+        };
+        let inner = pass.spot_dir_inner[3];
+        let outer = pass.spot_outer_angle.max(inner);
+        let cos_outer = outer.cos();
+        let spot_scale = 1.0 / (inner.cos() - cos_outer).max(1.0e-4);
+        let spot_offset = -cos_outer * spot_scale;
+        let mut flags = POINT_LIGHT_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE;
+        if dir_y.is_sign_negative() {
+            flags |= POINT_LIGHT_FLAG_SPOT_LIGHT_Y_NEGATIVE;
+        }
+        mesh3d_write_clustered_light(
+            bytes.as_mut_slice(),
+            next_light_index,
+            [dir_x, dir_z, spot_scale, spot_offset],
+            [
+                pass.spot_color_intensity[0] * intensity_scale,
+                pass.spot_color_intensity[1] * intensity_scale,
+                pass.spot_color_intensity[2] * intensity_scale,
+                1.0 / (range * range),
+            ],
+            [
+                pass.spot_pos_range[0],
+                pass.spot_pos_range[1],
+                pass.spot_pos_range[2],
+                0.0,
+            ],
+            flags,
+            0.0,
+            0.0,
+            outer.tan(),
+            0.0,
+            0.1,
+        );
+    }
+    bytes
+}
+
+fn mesh3d_bevy_cluster_index_lists_uniform_bytes(pass: &GpuPassState) -> Vec<u8> {
+    let mut bytes = vec![0u8; MESH3D_CLUSTER_INDEX_LISTS_UNIFORM_BYTES as usize];
+    let point_count = if mesh3d_point_light_enabled(pass) {
+        1u32
+    } else {
+        0u32
+    };
+    let spot_count = if mesh3d_spot_light_enabled(pass) {
+        1u32
+    } else {
+        0u32
+    };
+    if point_count + spot_count > 0 {
+        let mut packed = 0u32;
+        if spot_count > 0 {
+            packed |= (point_count & 0xFF) << 8;
+        }
+        write_u32_le(&mut bytes, 0, packed);
+    }
+    bytes
+}
+
+fn mesh3d_bevy_cluster_offsets_uniform_bytes(pass: &GpuPassState) -> Vec<u8> {
+    let mut bytes = vec![0u8; MESH3D_CLUSTER_OFFSETS_UNIFORM_BYTES as usize];
+    let point_count = if mesh3d_point_light_enabled(pass) {
+        1u32
+    } else {
+        0u32
+    };
+    let spot_count = if mesh3d_spot_light_enabled(pass) {
+        1u32
+    } else {
+        0u32
+    };
+    let raw_offsets_and_counts = ((point_count & 0x1FF) << 9) | (spot_count & 0x1FF);
+    write_u32_le(&mut bytes, 0, raw_offsets_and_counts);
+    bytes
+}
+
+fn mesh3d_bevy_mesh_uniform_bytes(draw: &MeshDraw) -> Vec<u8> {
+    let mut bytes = vec![0u8; 192];
+    let world_rows = mesh3d_build_model_rows(
+        [draw.x, draw.y, draw.z],
+        draw.rotation_quat,
+        [draw.scale_x, draw.scale_y, draw.scale_z],
+    );
+    let prev_rows = mesh3d_build_model_rows(
+        [draw.previous_x, draw.previous_y, draw.previous_z],
+        draw.previous_rotation_quat,
+        [
+            draw.previous_scale_x,
+            draw.previous_scale_y,
+            draw.previous_scale_z,
+        ],
+    );
+    write_f32s_le(&mut bytes, 0, &world_rows);
+    write_f32s_le(&mut bytes, 48, &prev_rows);
+    let local_from_world_transpose_cols = mesh3d_build_local_from_world_transpose_cols(
+        draw.rotation_quat,
+        [draw.scale_x, draw.scale_y, draw.scale_z],
+    );
+    write_f32s_le(&mut bytes, 96, &local_from_world_transpose_cols[0..8]);
+    write_f32_le(&mut bytes, 128, local_from_world_transpose_cols[8]);
+    // Match Bevy mesh flags defaults:
+    // - LOD index = u16::MAX (no LOD)
+    // - SHADOW_RECEIVER
+    // - SIGN_DETERMINANT_MODEL_3X3 when determinant is positive.
+    let mut mesh_flags: u32 = 0x0000_FFFF | (1u32 << 29);
+    let determinant_sign = draw.scale_x * draw.scale_y * draw.scale_z;
+    if determinant_sign >= 0.0 {
+        mesh_flags |= 1u32 << 31;
+    }
+    write_u32_le(&mut bytes, 132, mesh_flags);
+    write_u32_le(&mut bytes, 136, 0); // lightmap_uv_rect.x
+    write_u32_le(&mut bytes, 140, 0); // lightmap_uv_rect.y
+    write_u32_le(&mut bytes, 144, 0); // first_vertex_index
+    write_u32_le(&mut bytes, 148, 0); // current_skin_index
+    write_u32_le(&mut bytes, 152, 0); // material_and_lightmap_bind_group_slot
+    write_u32_le(&mut bytes, 156, 0); // tag
+    write_u32_le(&mut bytes, 160, 0); // pad
+    bytemuck::cast_slice(bytes.as_slice()).to_vec()
+}
+
+fn mesh3d_bevy_material_uniform_bytes(draw: &MeshDraw) -> Vec<u8> {
+    let mut bytes = vec![0u8; 256];
+    write_f32s_le(&mut bytes, 0, &draw.color);
+    write_f32s_le(
+        &mut bytes,
+        16,
+        &[draw.emissive[0], draw.emissive[1], draw.emissive[2], 1.0],
+    );
+    write_f32s_le(&mut bytes, 32, &[1.0, 1.0, 1.0, 1.0]);
+    write_f32s_le(
+        &mut bytes,
+        48,
+        &[
+            1.0, 0.0, 0.0, 0.0, //
+            0.0, 1.0, 0.0, 0.0, //
+            0.0, 0.0, 1.0, 0.0, //
+        ],
+    );
+    write_f32s_le(
+        &mut bytes,
+        96,
+        &[
+            draw.reflectance,
+            draw.reflectance,
+            draw.reflectance,
+            draw.roughness,
+        ],
+    );
+    write_f32_le(&mut bytes, 112, draw.metallic);
+    write_f32_le(&mut bytes, 116, draw.diffuse_transmission);
+    write_f32_le(&mut bytes, 120, draw.specular_transmission);
+    write_f32_le(&mut bytes, 124, draw.thickness);
+    write_f32_le(&mut bytes, 128, draw.ior);
+    write_f32_le(&mut bytes, 132, 1.0);
+    write_f32_le(&mut bytes, 144, draw.anisotropy_strength);
+    let flags = if draw.unlit > 0.5 { 1u32 << 5 } else { 0 };
+    write_u32_le(&mut bytes, 156, flags);
+    write_f32_le(&mut bytes, 160, 0.5);
+    write_f32_le(&mut bytes, 164, draw.parallax_depth_scale);
+    write_f32_le(&mut bytes, 168, draw.max_parallax_layer_count);
+    write_f32_le(&mut bytes, 172, 1.0);
+    write_u32_le(
+        &mut bytes,
+        176,
+        draw.max_relief_mapping_search_steps.max(0.0) as u32,
+    );
+    write_u32_le(&mut bytes, 180, 1);
+    bytemuck::cast_slice(bytes.as_slice()).to_vec()
 }
 
 fn mesh3d_motion_vector_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> Vec<u8> {
@@ -5877,4 +8963,246 @@ fn mesh3d_motion_vector_uniform_bytes(pass: &GpuPassState, draw: &MeshDraw) -> V
         pass.sub_camera_view[3],
     ];
     bytemuck::cast_slice(&floats).to_vec()
+}
+
+#[cfg(test)]
+mod wgsl_composer_tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_assets_dir(test_name: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "mgstudio-wgsl-{test_name}-{}-{nanos}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).expect("create temp dir");
+        dir
+    }
+
+    fn write_shader_file(base: &Path, rel: &str, content: &str) {
+        let file = base.join(rel);
+        if let Some(parent) = file.parent() {
+            std::fs::create_dir_all(parent).expect("create parent dir");
+        }
+        std::fs::write(file, content).expect("write shader file");
+    }
+
+    #[test]
+    fn parse_multiline_import_block_and_brace_forms() {
+        let import_block = r#"
+            #import bevy_pbr::{
+                prepass_utils,
+                utils as Utils,
+                nested::{foo, bar as Baz},
+            }
+        "#;
+        let parsed = parse_wgsl_import_block(import_block).expect("parse import block");
+        let pairs = parsed
+            .iter()
+            .map(|item| (item.full_path.as_str(), item.used_name.as_str()))
+            .collect::<Vec<_>>();
+        assert!(pairs.contains(&("bevy_pbr::prepass_utils", "prepass_utils")));
+        assert!(pairs.contains(&("bevy_pbr::utils", "Utils")));
+        assert!(pairs.contains(&("bevy_pbr::nested::foo", "foo")));
+        assert!(pairs.contains(&("bevy_pbr::nested::bar", "Baz")));
+    }
+
+    #[test]
+    fn resolve_module_path_from_index_and_fallback() {
+        let assets = temp_assets_dir("module-index");
+        write_shader_file(
+            &assets,
+            "shaders/bevy/module_index.txt",
+            "bevy_render::globals = bevy_render/globals.wgsl\n",
+        );
+        write_shader_file(
+            &assets,
+            "shaders/bevy/bevy_render/globals.wgsl",
+            "#define_import_path bevy_render::globals\n",
+        );
+        write_shader_file(
+            &assets,
+            "shaders/bevy/bevy_pbr/utils.wgsl",
+            "#define_import_path bevy_pbr::utils\n",
+        );
+
+        let index = build_wgsl_module_index(&assets.to_string_lossy());
+        let from_index = resolve_wgsl_import_module_path(
+            &assets.to_string_lossy(),
+            &index,
+            "bevy_render::globals::Globals",
+        )
+        .expect("resolve index module");
+        assert_eq!(from_index.0, "shaders/bevy/bevy_render/globals.wgsl");
+        assert!(!from_index.1);
+
+        let from_fallback =
+            resolve_wgsl_import_module_path(&assets.to_string_lossy(), &index, "bevy_pbr::utils")
+                .expect("resolve fallback module");
+        assert_eq!(from_fallback.0, "shaders/bevy/bevy_pbr/utils.wgsl");
+        assert!(from_fallback.1);
+
+        let _ = std::fs::remove_dir_all(&assets);
+    }
+
+    #[test]
+    fn resolve_module_path_from_json_index() {
+        let assets = temp_assets_dir("module-index-json");
+        write_shader_file(
+            &assets,
+            "shaders/bevy/module_index.json",
+            r#"{
+  "bevy_render::globals": "bevy_render/globals.wgsl",
+  "nested": {
+    "module": "bevy_pbr::utils",
+    "path": "bevy_pbr/utils.wgsl"
+  },
+  "entries": [
+    ["bevy_pbr::mesh_view_bindings", "bevy_pbr/mesh_view_bindings.wgsl"]
+  ]
+}
+"#,
+        );
+        write_shader_file(
+            &assets,
+            "shaders/bevy/bevy_render/globals.wgsl",
+            "#define_import_path bevy_render::globals\n",
+        );
+        write_shader_file(
+            &assets,
+            "shaders/bevy/bevy_pbr/utils.wgsl",
+            "#define_import_path bevy_pbr::utils\n",
+        );
+        write_shader_file(
+            &assets,
+            "shaders/bevy/bevy_pbr/mesh_view_bindings.wgsl",
+            "#define_import_path bevy_pbr::mesh_view_bindings\n",
+        );
+
+        let index = build_wgsl_module_index(&assets.to_string_lossy());
+        let from_index = resolve_wgsl_import_module_path(
+            &assets.to_string_lossy(),
+            &index,
+            "bevy_render::globals::Globals",
+        )
+        .expect("resolve json indexed module");
+        assert_eq!(from_index.0, "shaders/bevy/bevy_render/globals.wgsl");
+        assert!(!from_index.1);
+
+        let from_nested =
+            resolve_wgsl_import_module_path(&assets.to_string_lossy(), &index, "bevy_pbr::utils")
+                .expect("resolve nested json module");
+        assert_eq!(from_nested.0, "shaders/bevy/bevy_pbr/utils.wgsl");
+        assert!(from_nested.1);
+
+        let from_array = resolve_wgsl_import_module_path(
+            &assets.to_string_lossy(),
+            &index,
+            "bevy_pbr::mesh_view_bindings::view",
+        )
+        .expect("resolve array json module");
+        assert_eq!(
+            from_array.0,
+            "shaders/bevy/bevy_pbr/mesh_view_bindings.wgsl"
+        );
+        assert!(!from_array.1);
+
+        let _ = std::fs::remove_dir_all(&assets);
+    }
+
+    #[test]
+    fn apply_conditionals_with_if_numeric_and_else_if_variants() {
+        let source = r#"
+#if COUNT + 1 >= 3
+NUMERIC_TRUE
+#else
+NUMERIC_FALSE
+#endif
+#ifdef ENABLED
+IFDEF_TRUE
+#else ifdef OTHER
+ELSE_IFDEF_TRUE
+#else ifndef ALSO_MISSING
+ELSE_IFNDEF_TRUE
+#else
+ELSE_FALLBACK
+#endif
+#ifdef MISSING
+UNUSED
+#else ifndef ALSO_MISSING
+ELSE_IFNDEF_SECOND
+#else
+UNUSED_2
+#endif
+#ifndef DISABLED
+IFNDEF_TRUE
+#endif
+"#;
+
+        let defs = HashMap::from([
+            ("COUNT".to_string(), WgslShaderDefValue::Int(2)),
+            ("OTHER".to_string(), WgslShaderDefValue::Bool(true)),
+        ]);
+        let out = apply_wgsl_conditionals(source, &defs);
+
+        assert!(out.contains("NUMERIC_TRUE"));
+        assert!(!out.contains("NUMERIC_FALSE"));
+        assert!(out.contains("ELSE_IFDEF_TRUE"));
+        assert!(!out.contains("ELSE_IFNDEF_TRUE"));
+        assert!(out.contains("ELSE_IFNDEF_SECOND"));
+        assert!(out.contains("IFNDEF_TRUE"));
+    }
+
+    #[test]
+    fn substitute_typed_shader_defs_with_hash_braces() {
+        let source = "A=#{A}, B=#{B}, C=#{C}";
+        let defs = HashMap::from([
+            ("A".to_string(), WgslShaderDefValue::Bool(true)),
+            ("B".to_string(), WgslShaderDefValue::Int(-3)),
+            ("C".to_string(), WgslShaderDefValue::UInt(7)),
+        ]);
+        let out = apply_wgsl_shader_def_substitutions(source, &defs);
+        assert_eq!(out, "A=true, B=-3, C=7");
+    }
+
+    #[test]
+    fn compose_cache_key_uses_root_path_and_typed_defines() {
+        let key_a = WgslComposeCacheKey::new(
+            "shaders/mgstudio/2d/bloom.wgsl",
+            &HashMap::from([
+                (
+                    "FIRST_DOWNSAMPLE".to_string(),
+                    WgslShaderDefValue::Bool(true),
+                ),
+                ("LEVEL".to_string(), WgslShaderDefValue::Int(1)),
+            ]),
+        );
+        let key_b = WgslComposeCacheKey::new(
+            "shaders/mgstudio/2d/bloom.wgsl",
+            &HashMap::from([
+                ("LEVEL".to_string(), WgslShaderDefValue::Int(1)),
+                (
+                    "FIRST_DOWNSAMPLE".to_string(),
+                    WgslShaderDefValue::Bool(true),
+                ),
+            ]),
+        );
+        let key_c = WgslComposeCacheKey::new(
+            "shaders/mgstudio/2d/bloom.wgsl",
+            &HashMap::from([
+                (
+                    "FIRST_DOWNSAMPLE".to_string(),
+                    WgslShaderDefValue::Bool(false),
+                ),
+                ("LEVEL".to_string(), WgslShaderDefValue::Int(1)),
+            ]),
+        );
+
+        assert_eq!(key_a, key_b);
+        assert_ne!(key_a, key_c);
+    }
 }

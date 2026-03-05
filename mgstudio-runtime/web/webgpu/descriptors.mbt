@@ -308,6 +308,20 @@ pub fn texture_size(width : Int, height : Int) -> TextureSize {
 }
 
 ///|
+pub fn texture_size_with_depth(
+  width : Int,
+  height : Int,
+  depth_or_array_layers : Int,
+) -> TextureSize {
+  let safe_depth = if depth_or_array_layers < 1 {
+    1
+  } else {
+    depth_or_array_layers
+  }
+  TextureSize::{ width, height, depth_or_array_layers: safe_depth }
+}
+
+///|
 pub fn TextureSize::to_js(self : TextureSize) -> @js.Any {
   @js.any([self.width, self.height, self.depth_or_array_layers])
 }

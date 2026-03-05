@@ -59,7 +59,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   @render3d.MeshMaterial3dBundle::new(
-    disk_mesh(4.0F, 64),
+    disk_mesh(4.0F, 32),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(@render2d.Color::white()),
@@ -76,7 +76,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
+          @render2d.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
         ),
       ),
     ),

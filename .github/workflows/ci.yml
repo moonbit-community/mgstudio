@@ -33,6 +33,25 @@ jobs:
           set -euo pipefail
           python3 scripts/generate_bevy_example_parity.py --check
 
+  bevy-wgsl-modules:
+    name: bevy WGSL modules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch pinned Bevy baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/fetch_bevy.sh
+
+      - name: Check synced Bevy WGSL modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/check_bevy_wgsl_modules.sh
+
   host-abi:
     name: host ABI consistency
     runs-on: ubuntu-latest

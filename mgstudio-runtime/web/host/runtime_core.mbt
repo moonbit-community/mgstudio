@@ -44,6 +44,21 @@ const PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
 const PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
 
 ///|
+const PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+
+///|
+const PASS_KIND_BASE_POINT_SHADOW : Int = 2
+
+///|
+const MESH3D_VERTEX_ENTRY : String = "vertex"
+
+///|
+const MESH3D_FRAGMENT_ENTRY : String = "fragment"
+
+///|
+const MESH3D_SHADOW_FRAGMENT_ENTRY : String = "fragment"
+
+///|
 const MESH3D_CULL_MODE_MASK : Int = 3
 
 ///|
@@ -54,6 +69,28 @@ const MESH3D_DRAW_FLAG_FOG : Int = 1 << 9
 
 ///|
 const MESH3D_DRAW_FLAG_POSTPROCESS_PROXY : Int = 1 << 10
+
+///|
+const MESH3D_DUMMY_UNIFORM_BUFFER_SIZE : Int = 65536
+
+///|
+const MESH3D_CLUSTERED_LIGHTS_UNIFORM_BUFFER_SIZE : Int = 16384
+
+///|
+const MESH3D_CLUSTER_INDEX_LISTS_UNIFORM_BUFFER_SIZE : Int = 16384
+
+///|
+const MESH3D_CLUSTER_OFFSETS_UNIFORM_BUFFER_SIZE : Int = 16384
+
+///|
+fn mesh3d_bevy_shader_defs() -> @js.Any {
+  wgsl_ensure_compose_helper()
+  wgsl_shader_defs_from_legacy([
+    "VERTEX_POSITIONS", "VERTEX_NORMALS", "VERTEX_OUTPUT_INSTANCE_INDEX", "MATERIAL_BIND_GROUP=3u",
+    "PER_OBJECT_BUFFER_BATCH_SIZE=1u", "MAX_CASCADES_PER_LIGHT=1u", "MAX_DIRECTIONAL_LIGHTS=1u",
+    "AVAILABLE_STORAGE_BUFFER_BINDINGS=0u", "SHADOW_FILTER_METHOD_HARDWARE_2X2",
+  ])
+}
 
 ///|
 fn pass_kind_base_kind(pass_kind : Int) -> Int {
@@ -364,6 +401,180 @@ fn ensure_mesh_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
 fn ensure_mesh3d_bind_group_for_texture(state : State, entry : @js.Any) -> Unit {
   state |> ignore
   entry |> ignore
+}
+
+///|
+fn ensure_mesh3d_dummy_resources(state : State) -> @js.Any? {
+  if state.gpu.mesh3d_dummy_resources is Some(resources) {
+    return Some(resources)
+  }
+  if state.gpu.device is None {
+    return None
+  }
+  if state.gpu.device is Some(device) {
+    let uniform_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_uniform(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    let view_uniform_desc = @webgpu.buffer_descriptor(4096, uniform_usage)
+    let view_uniform_buffer = device.create_buffer(view_uniform_desc.to_js())
+    let lights_uniform_desc = @webgpu.buffer_descriptor(1024, uniform_usage)
+    let lights_uniform_buffer = device.create_buffer(
+      lights_uniform_desc.to_js(),
+    )
+    let mesh_uniform_desc = @webgpu.buffer_descriptor(512, uniform_usage)
+    let mesh_uniform_buffer = device.create_buffer(mesh_uniform_desc.to_js())
+    let material_uniform_desc = @webgpu.buffer_descriptor(1024, uniform_usage)
+    let material_uniform_buffer = device.create_buffer(
+      material_uniform_desc.to_js(),
+    )
+    let clustered_lights_uniform_desc = @webgpu.buffer_descriptor(
+      MESH3D_CLUSTERED_LIGHTS_UNIFORM_BUFFER_SIZE,
+      uniform_usage,
+    )
+    let clustered_lights_uniform_buffer = device.create_buffer(
+      clustered_lights_uniform_desc.to_js(),
+    )
+    let cluster_index_lists_uniform_desc = @webgpu.buffer_descriptor(
+      MESH3D_CLUSTER_INDEX_LISTS_UNIFORM_BUFFER_SIZE,
+      uniform_usage,
+    )
+    let cluster_index_lists_uniform_buffer = device.create_buffer(
+      cluster_index_lists_uniform_desc.to_js(),
+    )
+    let cluster_offsets_uniform_desc = @webgpu.buffer_descriptor(
+      MESH3D_CLUSTER_OFFSETS_UNIFORM_BUFFER_SIZE,
+      uniform_usage,
+    )
+    let cluster_offsets_uniform_buffer = device.create_buffer(
+      cluster_offsets_uniform_desc.to_js(),
+    )
+    let uniform_desc = @webgpu.buffer_descriptor(
+      MESH3D_DUMMY_UNIFORM_BUFFER_SIZE,
+      uniform_usage,
+    )
+    let uniform_buffer = device.create_buffer(uniform_desc.to_js())
+
+    let color_usage = @webgpu.combine_flags(
+      @webgpu.texture_usage_texture_binding(),
+      @webgpu.texture_usage_copy_dst(),
+    )
+    let color2d_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size(1, 1),
+      @webgpu.TextureFormat::Rgba8Unorm,
+      color_usage,
+    )
+    let color2d_texture = device.create_texture(color2d_desc.to_js())
+    let color2d_view = color2d_texture.create_view()
+
+    let color_cube_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size_with_depth(1, 1, 6),
+      @webgpu.TextureFormat::Rgba8Unorm,
+      color_usage,
+    ).to_js()
+    let color_cube_texture = device.create_texture(color_cube_desc)
+    let color_cube_view_desc = @js.from_entries([
+      ("dimension", @js.any("cube")),
+      ("arrayLayerCount", @js.any(6)),
+    ])
+    let color_cube_view = color_cube_texture.create_view(
+      descriptor=color_cube_view_desc,
+    )
+
+    let color3d_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size(1, 1),
+      @webgpu.TextureFormat::Rgba8Unorm,
+      color_usage,
+    ).to_js()
+    color3d_desc._set("dimension", @js.any("3d")) |> ignore
+    let color3d_texture = device.create_texture(color3d_desc)
+    let color3d_view_desc = @js.from_entries([("dimension", @js.any("3d"))])
+    let color3d_view = color3d_texture.create_view(descriptor=color3d_view_desc)
+
+    let depth_usage = @webgpu.combine_flags(
+      @webgpu.texture_usage_texture_binding(),
+      @webgpu.texture_usage_render_attachment(),
+    )
+    let depth_cube_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size_with_depth(1, 1, 6),
+      @webgpu.TextureFormat::Other("depth32float"),
+      depth_usage,
+    ).to_js()
+    let depth_cube_texture = device.create_texture(depth_cube_desc)
+    let depth_cube_view_desc = @js.from_entries([
+      ("dimension", @js.any("cube-array")),
+      ("arrayLayerCount", @js.any(6)),
+    ])
+    let depth_cube_view = depth_cube_texture.create_view(
+      descriptor=depth_cube_view_desc,
+    )
+
+    let depth_array_desc = @webgpu.texture_descriptor(
+      @webgpu.texture_size_with_depth(1, 1, 1),
+      @webgpu.TextureFormat::Other("depth32float"),
+      depth_usage,
+    ).to_js()
+    let depth_array_texture = device.create_texture(depth_array_desc)
+    let depth_array_view_desc = @js.from_entries([
+      ("dimension", @js.any("2d-array")),
+      ("arrayLayerCount", @js.any(1)),
+    ])
+    let depth_array_view = depth_array_texture.create_view(
+      descriptor=depth_array_view_desc,
+    )
+
+    let linear_sampler = device.create_sampler(
+      @js.from_entries([
+        ("magFilter", @js.any("linear")),
+        ("minFilter", @js.any("linear")),
+        ("mipmapFilter", @js.any("linear")),
+        ("addressModeU", @js.any("clamp-to-edge")),
+        ("addressModeV", @js.any("clamp-to-edge")),
+        ("addressModeW", @js.any("clamp-to-edge")),
+      ]),
+    )
+    let compare_sampler = device.create_sampler(
+      @js.from_entries([
+        ("compare", @js.any("greater-equal")),
+        ("magFilter", @js.any("linear")),
+        ("minFilter", @js.any("linear")),
+        ("mipmapFilter", @js.any("linear")),
+        ("addressModeU", @js.any("clamp-to-edge")),
+        ("addressModeV", @js.any("clamp-to-edge")),
+        ("addressModeW", @js.any("clamp-to-edge")),
+      ]),
+    )
+
+    let resources = @js.from_entries([
+      ("viewUniformBuffer", view_uniform_buffer.as_any()),
+      ("lightsUniformBuffer", lights_uniform_buffer.as_any()),
+      ("meshUniformBuffer", mesh_uniform_buffer.as_any()),
+      ("materialUniformBuffer", material_uniform_buffer.as_any()),
+      ("clusteredLightsUniformBuffer", clustered_lights_uniform_buffer.as_any()),
+      (
+        "clusterIndexListsUniformBuffer",
+        cluster_index_lists_uniform_buffer.as_any(),
+      ),
+      ("clusterOffsetsUniformBuffer", cluster_offsets_uniform_buffer.as_any()),
+      ("uniformBuffer", uniform_buffer.as_any()),
+      ("color2dTexture", color2d_texture.as_any()),
+      ("color2dView", color2d_view.as_any()),
+      ("colorCubeTexture", color_cube_texture.as_any()),
+      ("colorCubeView", color_cube_view.as_any()),
+      ("color3dTexture", color3d_texture.as_any()),
+      ("color3dView", color3d_view.as_any()),
+      ("depthCubeTexture", depth_cube_texture.as_any()),
+      ("depthCubeView", depth_cube_view.as_any()),
+      ("depthArrayTexture", depth_array_texture.as_any()),
+      ("depthArrayView", depth_array_view.as_any()),
+      ("linearSampler", linear_sampler.as_any()),
+      ("compareSampler", compare_sampler.as_any()),
+    ])
+    state.gpu.mesh3d_dummy_resources = Some(resources)
+    Some(resources)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -1109,6 +1320,52 @@ fn mesh3d_pipeline_set(
 }
 
 ///|
+fn mesh3d_shadow_pipeline_get(
+  state : State,
+  topology_kind : Int,
+  cull_mode : Int,
+) -> @webgpu.GPURenderPipeline? {
+  let format_key = state.gpu.format
+    .unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    .to_js_string()
+  let cull_key = mesh3d_cull_mode_sanitize(cull_mode).to_string()
+  let key = format_key + "|" + topology_kind.to_string() + "|" + cull_key
+  let pipeline_any = map_get(
+    state.gpu.mesh3d_shadow_pipeline_cache,
+    @js.any(key),
+  )
+  if host_is_nullish(pipeline_any) {
+    None
+  } else {
+    Some(pipeline_any.cast())
+  }
+}
+
+///|
+fn mesh3d_shadow_pipeline_set(
+  state : State,
+  topology_kind : Int,
+  cull_mode : Int,
+  pipeline : @webgpu.GPURenderPipeline?,
+) -> Unit {
+  let format_key = state.gpu.format
+    .unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    .to_js_string()
+  let cull_key = mesh3d_cull_mode_sanitize(cull_mode).to_string()
+  let key = format_key + "|" + topology_kind.to_string() + "|" + cull_key
+  match pipeline {
+    Some(value) =>
+      map_set(
+        state.gpu.mesh3d_shadow_pipeline_cache,
+        @js.any(key),
+        value.as_any(),
+      )
+    None =>
+      map_set(state.gpu.mesh3d_shadow_pipeline_cache, @js.any(key), js_null())
+  }
+}
+
+///|
 fn mesh3d_topology_key_suffix(topology_kind : Int) -> String {
   match topology_kind {
     1 => "_line_list"
@@ -1162,36 +1419,71 @@ fn ensure_mesh3d_pipeline(
     return
   }
   if state.gpu.device is Some(device) {
-    if state.gpu.mesh3d_shader_id <= 0 {
+    if state.gpu.mesh3d_shader_id <= 0 ||
+      state.gpu.mesh3d_fragment_shader_id <= 0 {
       report_asset_error_once(
         state, "mesh3d_pipeline_missing_shader_id", "Mesh3d pipeline error: shader id not initialized",
       )
       return
     }
-    let shader_source = get_shader_source(state, state.gpu.mesh3d_shader_id)
-    if shader_source is None {
-      let path_hint_any = map_get(
+    let vertex_shader_source = get_shader_source(
+      state,
+      state.gpu.mesh3d_shader_id,
+    )
+    if vertex_shader_source is None {
+      let vertex_path_hint_any = map_get(
         state.assets.shader_paths,
         @js.any(state.gpu.mesh3d_shader_id),
       )
-      let suffix = if host_is_nullish(path_hint_any) {
+      let suffix = if host_is_nullish(vertex_path_hint_any) {
         ""
       } else {
-        " (path: " + any_to_string(path_hint_any) + ")"
+        " (path: " + any_to_string(vertex_path_hint_any) + ")"
       }
       report_asset_error_once(
         state,
-        "mesh3d_pipeline_missing_shader_source",
-        "Mesh3d pipeline error: shader source not loaded" + suffix,
+        "mesh3d_pipeline_missing_vertex_shader_source",
+        "Mesh3d pipeline error: vertex shader source not loaded" + suffix,
+      )
+      return
+    }
+    let fragment_shader_source = get_shader_source(
+      state,
+      state.gpu.mesh3d_fragment_shader_id,
+    )
+    if fragment_shader_source is None {
+      let fragment_path_hint_any = map_get(
+        state.assets.shader_paths,
+        @js.any(state.gpu.mesh3d_fragment_shader_id),
+      )
+      let suffix = if host_is_nullish(fragment_path_hint_any) {
+        ""
+      } else {
+        " (path: " + any_to_string(fragment_path_hint_any) + ")"
+      }
+      report_asset_error_once(
+        state,
+        "mesh3d_pipeline_missing_fragment_shader_source",
+        "Mesh3d pipeline error: fragment shader source not loaded" + suffix,
       )
       return
     }
     let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
-    let shader_desc = @webgpu.shader_module_descriptor(shader_source.unwrap())
-    let shader_module = device.create_shader_module(shader_desc.to_js())
+    let vertex_shader_desc = @webgpu.shader_module_descriptor(
+      vertex_shader_source.unwrap(),
+    )
+    let vertex_shader_module = device.create_shader_module(
+      vertex_shader_desc.to_js(),
+    )
+    let fragment_shader_desc = @webgpu.shader_module_descriptor(
+      fragment_shader_source.unwrap(),
+    )
+    let fragment_shader_module = device.create_shader_module(
+      fragment_shader_desc.to_js(),
+    )
     @js.run_async(async fn() noraise {
       let info_any : @js.Any = shader_module_get_compilation_info(
-        shader_module.as_any(),
+        fragment_shader_module.as_any(),
       ).wait() catch {
         _ => js_null()
       }
@@ -1204,163 +1496,24 @@ fn ensure_mesh3d_pipeline(
         )
       }
     })
-    if state.gpu.mesh3d_uniform_layout is None {
-      let fragment_stage = @webgpu.shader_stage_fragment()
-      let vertex_fragment_stage = @webgpu.combine_flags(
-        @webgpu.shader_stage_vertex(),
-        fragment_stage,
-      )
-      let uniform_layout_desc = @js.from_entries([
-        (
-          "entries",
-          @js.any([
-            @js.from_entries([
-              ("binding", @js.any(0)),
-              ("visibility", @js.any(vertex_fragment_stage)),
-              ("buffer", @js.from_entries([("type", @js.any("uniform"))])),
-            ]),
-          ]),
-        ),
-      ])
-      let uniform_layout = device.create_bind_group_layout(uniform_layout_desc)
-      state.gpu.mesh3d_uniform_layout = Some(uniform_layout)
-      let material_layout_desc = @js.from_entries([
-        (
-          "entries",
-          @js.any([
-            @js.from_entries([
-              ("binding", @js.any(0)),
-              ("visibility", @js.any(fragment_stage)),
-              ("sampler", @js.from_entries([("type", @js.any("filtering"))])),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(1)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(2)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(3)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(4)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(5)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(6)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(7)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(8)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-            @js.from_entries([
-              ("binding", @js.any(9)),
-              ("visibility", @js.any(fragment_stage)),
-              (
-                "texture",
-                @js.from_entries([
-                  ("sampleType", @js.any("float")),
-                  ("viewDimension", @js.any("2d")),
-                ]),
-              ),
-            ]),
-          ]),
-        ),
-      ])
-      let material_layout = device.create_bind_group_layout(
-        material_layout_desc,
-      )
-      state.gpu.mesh3d_material_layout = Some(material_layout)
-    }
     let position_attr = @webgpu.vertex_attribute(
       shader_location=0,
       offset=0,
       format=@webgpu.VertexFormat::Float32x3,
     )
-    let uv_attr = @webgpu.vertex_attribute(
+    let normal_attr = @webgpu.vertex_attribute(
       shader_location=1,
       offset=12,
-      format=@webgpu.VertexFormat::Float32x2,
+      format=@webgpu.VertexFormat::Float32x3,
     )
-    let color_attr = @webgpu.vertex_attribute(
-      shader_location=2,
-      offset=20,
-      format=@webgpu.VertexFormat::Float32x4,
+    let vertex_layout = @webgpu.vertex_buffer_layout(24, [
+      position_attr, normal_attr,
+    ])
+    let vertex_state = @webgpu.vertex_state(
+      vertex_shader_module,
+      MESH3D_VERTEX_ENTRY,
+      [vertex_layout],
     )
-    let vertex_layout = @webgpu.vertex_buffer_layout(36, [
-      position_attr, uv_attr, color_attr,
-    ])
-    let vertex_state = @webgpu.vertex_state(shader_module, "vs_main", [
-      vertex_layout,
-    ])
     let blend_component = @webgpu.blend_component(
       @webgpu.BlendFactor::SrcAlpha,
       @webgpu.BlendFactor::OneMinusSrcAlpha,
@@ -1368,9 +1521,11 @@ fn ensure_mesh3d_pipeline(
     )
     let blend_state = @webgpu.blend_state(blend_component, blend_component)
     let color_target = @webgpu.color_target_state(format, blend_state)
-    let fragment_state = @webgpu.fragment_state(shader_module, "fs_main", [
-      color_target,
-    ])
+    let fragment_state = @webgpu.fragment_state(
+      fragment_shader_module,
+      MESH3D_FRAGMENT_ENTRY,
+      [color_target],
+    )
     let primitive_state_js = @webgpu.primitive_state(
       mesh3d_webgpu_topology(topology_kind),
     ).to_js()
@@ -1378,26 +1533,13 @@ fn ensure_mesh3d_pipeline(
       "cullMode",
       @js.any(mesh3d_webgpu_cull_mode(cull_mode)),
     )
-    guard state.gpu.mesh3d_uniform_layout is Some(uniform_layout) else {
-      return
-    }
-    guard state.gpu.mesh3d_material_layout is Some(material_layout) else {
-      return
-    }
-    let pipeline_layout_desc = @js.from_entries([
-      (
-        "bindGroupLayouts",
-        @js.any([uniform_layout.as_any(), material_layout.as_any()]),
-      ),
-    ])
-    let pipeline_layout = device.create_pipeline_layout(pipeline_layout_desc)
     let depth_state_opaque = @js.from_entries([
       ("format", @js.any("depth24plus")),
       ("depthWriteEnabled", @js.any(true)),
-      ("depthCompare", @js.any("less-equal")),
+      ("depthCompare", @js.any("greater-equal")),
     ])
     let pipeline_desc_opaque = @js.from_entries([
-      ("layout", pipeline_layout.as_any()),
+      ("layout", @js.any("auto")),
       ("vertex", vertex_state.to_js()),
       ("fragment", fragment_state.to_js()),
       ("primitive", primitive_state_js),
@@ -1432,10 +1574,10 @@ fn ensure_mesh3d_pipeline(
     let depth_state_transparent = @js.from_entries([
       ("format", @js.any("depth24plus")),
       ("depthWriteEnabled", @js.any(false)),
-      ("depthCompare", @js.any("less-equal")),
+      ("depthCompare", @js.any("greater-equal")),
     ])
     let pipeline_desc_transparent = @js.from_entries([
-      ("layout", pipeline_layout.as_any()),
+      ("layout", @js.any("auto")),
       ("vertex", vertex_state.to_js()),
       ("fragment", fragment_state.to_js()),
       ("primitive", primitive_state_js),
@@ -1467,6 +1609,130 @@ fn ensure_mesh3d_pipeline(
       cull_mode,
       Some(pipeline_transparent),
     )
+  }
+}
+
+///|
+fn ensure_mesh3d_shadow_pipeline(
+  state : State,
+  topology_kind : Int,
+  cull_mode : Int,
+) -> Unit {
+  if mesh3d_shadow_pipeline_get(state, topology_kind, cull_mode) is Some(_) {
+    return
+  }
+  ensure_mesh3d_pipeline(state, topology_kind, cull_mode)
+  if state.gpu.device is None {
+    return
+  }
+  if state.gpu.device is Some(device) {
+    if state.gpu.mesh3d_shader_id <= 0 || state.gpu.mesh3d_shadow_shader_id <= 0 {
+      report_asset_error_once(
+        state, "mesh3d_shadow_pipeline_missing_shader_id", "Mesh3d shadow pipeline error: shader id not initialized",
+      )
+      return
+    }
+    let vertex_shader_source = get_shader_source(
+      state,
+      state.gpu.mesh3d_shader_id,
+    )
+    if vertex_shader_source is None {
+      report_asset_error_once(
+        state, "mesh3d_shadow_pipeline_missing_vertex_shader_source", "Mesh3d shadow pipeline error: vertex shader source not loaded",
+      )
+      return
+    }
+    let shadow_shader_source = get_shader_source(
+      state,
+      state.gpu.mesh3d_shadow_shader_id,
+    )
+    if shadow_shader_source is None {
+      report_asset_error_once(
+        state, "mesh3d_shadow_pipeline_missing_fragment_shader_source", "Mesh3d shadow pipeline error: shadow shader source not loaded",
+      )
+      return
+    }
+    let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+    let vertex_shader_desc = @webgpu.shader_module_descriptor(
+      vertex_shader_source.unwrap(),
+    )
+    let vertex_shader_module = device.create_shader_module(
+      vertex_shader_desc.to_js(),
+    )
+    let shadow_shader_desc = @webgpu.shader_module_descriptor(
+      shadow_shader_source.unwrap(),
+    )
+    let shadow_shader_module = device.create_shader_module(
+      shadow_shader_desc.to_js(),
+    )
+    let position_attr = @webgpu.vertex_attribute(
+      shader_location=0,
+      offset=0,
+      format=@webgpu.VertexFormat::Float32x3,
+    )
+    let normal_attr = @webgpu.vertex_attribute(
+      shader_location=1,
+      offset=12,
+      format=@webgpu.VertexFormat::Float32x3,
+    )
+    let vertex_layout = @webgpu.vertex_buffer_layout(24, [
+      position_attr, normal_attr,
+    ])
+    let vertex_state = @webgpu.vertex_state(
+      vertex_shader_module,
+      MESH3D_VERTEX_ENTRY,
+      [vertex_layout],
+    )
+    let blend_component = @webgpu.blend_component(
+      @webgpu.BlendFactor::SrcAlpha,
+      @webgpu.BlendFactor::OneMinusSrcAlpha,
+      @webgpu.BlendOperation::Add,
+    )
+    let blend_state = @webgpu.blend_state(blend_component, blend_component)
+    let color_target = @webgpu.color_target_state(format, blend_state)
+    let fragment_state = @webgpu.fragment_state(
+      shadow_shader_module,
+      MESH3D_SHADOW_FRAGMENT_ENTRY,
+      [color_target],
+    )
+    let primitive_state_js = @webgpu.primitive_state(
+      mesh3d_webgpu_topology(topology_kind),
+    ).to_js()
+    primitive_state_js._set(
+      "cullMode",
+      @js.any(mesh3d_webgpu_cull_mode(cull_mode)),
+    )
+    let depth_state = @js.from_entries([
+      ("format", @js.any("depth32float")),
+      ("depthWriteEnabled", @js.any(true)),
+      ("depthCompare", @js.any("greater-equal")),
+    ])
+    let pipeline_desc = @js.from_entries([
+      ("layout", @js.any("auto")),
+      ("vertex", vertex_state.to_js()),
+      ("fragment", fragment_state.to_js()),
+      ("primitive", primitive_state_js),
+      ("depthStencil", depth_state),
+    ])
+    device.push_error_scope("validation")
+    let pipeline = device.create_render_pipeline(pipeline_desc)
+    let pipeline_error_promise = device.pop_error_scope()
+    let topology_suffix = mesh3d_topology_key_suffix(topology_kind) +
+      mesh3d_cull_mode_key_suffix(cull_mode)
+    @js.run_async(async fn() noraise {
+      let err_any : @js.Any = pipeline_error_promise.wait() catch {
+        _ => js_null()
+      }
+      if !host_is_nullish(err_any) {
+        report_asset_error_once(
+          state,
+          "mesh3d_shadow_pipeline_validation_error" + topology_suffix,
+          "Mesh3d shadow pipeline validation error: " + any_to_string(err_any),
+        )
+        mesh3d_shadow_pipeline_set(state, topology_kind, cull_mode, None)
+      }
+    })
+    mesh3d_shadow_pipeline_set(state, topology_kind, cull_mode, Some(pipeline))
   }
 }
 
@@ -1552,7 +1818,7 @@ fn ensure_motion_vector_pipeline(state : State) -> Unit {
     let depth_state = @js.from_entries([
       ("format", @js.any("depth24plus")),
       ("depthWriteEnabled", @js.any(true)),
-      ("depthCompare", @js.any("less-equal")),
+      ("depthCompare", @js.any("greater-equal")),
     ])
     let pipeline_desc = @js.from_entries([
       ("layout", pipeline_layout.as_any()),
@@ -2012,49 +2278,6 @@ fn bloom2d_create_mip_view(
     ("mipLevelCount", @js.any(1)),
   ])
   texture.create_view(descriptor~)
-}
-
-///|
-fn bloom2d_ensure_compose_view(
-  state : State,
-  width : Int,
-  height : Int,
-) -> @webgpu.GPUTextureView? {
-  guard state.gpu.device is Some(device) else { return None }
-  let safe_width = if width < 1 { 1 } else { width }
-  let safe_height = if height < 1 { 1 } else { height }
-  let compose_format = @webgpu.TextureFormat::Other("rgba16float")
-  let compose_format_key = compose_format.to_js_string()
-  let rebuild = state.gpu.bloom2d_compose_texture is None ||
-    state.gpu.bloom2d_compose_view is None ||
-    state.gpu.bloom2d_compose_width != safe_width ||
-    state.gpu.bloom2d_compose_height != safe_height ||
-    state.gpu.bloom2d_compose_format != compose_format_key
-  if rebuild {
-    let usage = @webgpu.combine_flags(
-      @webgpu.combine_flags(
-        @webgpu.texture_usage_texture_binding(),
-        @webgpu.texture_usage_render_attachment(),
-      ),
-      @webgpu.texture_usage_copy_dst(),
-    )
-    let descriptor = @js.from_entries([
-      ("size", @webgpu.texture_size(safe_width, safe_height).to_js()),
-      ("mipLevelCount", @js.any(1)),
-      ("sampleCount", @js.any(1)),
-      ("dimension", @js.any("2d")),
-      ("format", @js.any(compose_format_key)),
-      ("usage", @js.any(usage)),
-    ])
-    let texture = device.create_texture(descriptor)
-    let view = texture.create_view()
-    state.gpu.bloom2d_compose_texture = Some(texture)
-    state.gpu.bloom2d_compose_view = Some(view)
-    state.gpu.bloom2d_compose_width = safe_width
-    state.gpu.bloom2d_compose_height = safe_height
-    state.gpu.bloom2d_compose_format = compose_format_key
-  }
-  state.gpu.bloom2d_compose_view
 }
 
 ///|
@@ -2945,46 +3168,192 @@ async fn load_texture_from_blob(
 }
 
 ///|
-async fn load_wgsl_preprocessed(
+async fn ensure_wgsl_module_index_loaded(state : State) -> Unit {
+  if state.assets.shader_module_index_loaded {
+    return
+  }
+  state.assets.shader_module_index_loaded = true
+  let module_index_candidates = [
+    "shaders/bevy/module_index.json", "shaders/bevy/module_index.txt", "shaders/bevy/module_index.map",
+    "shaders/bevy/module_index.csv", "shaders/bevy/module_index",
+  ]
+  for rel in module_index_candidates {
+    let text_opt : String? = Some(
+      fetch_text_from_url(resolve_asset_url(state, @js.any(rel))),
+    ) catch {
+      _ => None
+    }
+    if text_opt is Some(text) {
+      let parsed = wgsl_parse_module_index_text(text)
+      if array_len(map_values(parsed)) > 0 {
+        state.assets.shader_module_index = parsed
+        return
+      }
+    }
+  }
+}
+
+///|
+fn string_array_contains(values : Array[String], key : String) -> Bool {
+  for value in values {
+    if value == key {
+      return true
+    }
+  }
+  false
+}
+
+///|
+async fn load_wgsl_preprocessed_with_shader_defs(
   state : State,
   rel_path : String,
-  defines : Array[String],
-  visited : @js.Any,
+  shader_defs : @js.Any,
+  visited : Ref[Array[String]],
 ) -> String {
+  wgsl_ensure_compose_helper()
   let normalized = normalize_shader_rel_path_for_runtime(rel_path)
   if normalized == "" {
     return ""
   }
-  if set_has(visited, @js.any(normalized)) {
+  if string_array_contains(visited.val, normalized) {
     return ""
   }
-  set_add(visited, @js.any(normalized))
-  let source = fetch_text_from_url(
+  visited.val.push(normalized)
+  ensure_wgsl_module_index_loaded(state)
+  let source_raw = fetch_text_from_url(
     resolve_asset_url(state, @js.any(normalized)),
   )
-  let import_specs = wgsl_extract_import_specs(source)
+  let source = wgsl_apply_preprocessor(source_raw, shader_defs)
+  let import_entries = wgsl_extract_import_entries(source)
   let mut expanded = ""
   let aliases : Array[String] = []
-  for spec in import_specs {
-    let module_rel = wgsl_import_spec_to_rel_path(spec).trim().to_string()
-    let module_alias = wgsl_import_spec_to_alias(spec).trim().to_string()
-    if module_alias != "" {
-      aliases.push(module_alias)
-    }
-    if module_rel == "" {
+  let loaded_module_paths : Array[String] = []
+  for i in 0..<array_len(import_entries) {
+    let entry = array_get(import_entries, i)
+    let module_spec_any = entry._get("module_spec")
+    if host_is_nullish(module_spec_any) {
       continue
     }
-    let module_source = load_wgsl_preprocessed(
-      state, module_rel, defines, visited,
+    let module_spec : String = module_spec_any.cast()
+    if module_spec == "" {
+      continue
+    }
+    if wgsl_should_skip_import_for_defs(module_spec, shader_defs) {
+      continue
+    }
+    let used_name_any = entry._get("used_name")
+    let used_name = if host_is_nullish(used_name_any) {
+      ""
+    } else {
+      used_name_any.cast()
+    }
+    let candidates = wgsl_resolve_import_candidates(
+      module_spec,
+      "",
+      state.assets.shader_module_index,
     )
-    if module_source != "" {
-      expanded = expanded + module_source + "\n"
+    let candidate_count = array_len(candidates)
+    if candidate_count == 0 {
+      fail("Failed to resolve WGSL import: " + module_spec)
+    }
+    let mut resolved = false
+    let mut attempted = ""
+    let mut last_error = ""
+    for j in 0..<candidate_count {
+      let candidate = array_get(candidates, j)
+      let path_any = candidate._get("path")
+      if host_is_nullish(path_any) {
+        continue
+      }
+      let alias_any = candidate._get("alias")
+      if !host_is_nullish(alias_any) {
+        let alias_text : String = alias_any.cast()
+        if alias_text != "" {
+          aliases.push(alias_text)
+        }
+      }
+      let module_rel = normalize_shader_rel_path_for_runtime(path_any.cast())
+      if module_rel == "" {
+        continue
+      }
+      if attempted != "" {
+        attempted = attempted + ", "
+      }
+      attempted = attempted + module_rel
+      let module_source_opt : String? = Some(
+        load_wgsl_preprocessed_with_shader_defs(
+          state, module_rel, shader_defs, visited,
+        ),
+      ) catch {
+        err => {
+          last_error = err.to_string()
+          None
+        }
+      }
+      if module_source_opt is Some(module_source_raw) {
+        if string_array_contains(loaded_module_paths, module_rel) {
+          resolved = true
+          break
+        }
+        let exact_any = candidate._get("exact")
+        let resolved_exact = if host_is_nullish(exact_any) {
+          false
+        } else {
+          exact_any.cast()
+        }
+        if resolved_exact && used_name != "" {
+          aliases.push(used_name)
+        }
+        let mut module_source = module_source_raw
+        if !resolved_exact {
+          let symbol = wgsl_import_leaf_symbol(module_spec)
+          if symbol != "" &&
+            wgsl_symbol_looks_like_type(symbol) &&
+            module_rel.has_suffix("bevy_render/view.wgsl") {
+            module_source = wgsl_strip_top_level_functions(module_source)
+          }
+        }
+        if module_source != "" {
+          expanded = expanded + module_source + "\n"
+          loaded_module_paths.push(module_rel)
+        }
+        resolved = true
+        break
+      }
+    }
+    if !resolved {
+      let detail = if last_error == "" {
+        ""
+      } else {
+        " (last error: " + last_error + ")"
+      }
+      fail(
+        "Failed to resolve WGSL import: " +
+        module_spec +
+        " (candidates: " +
+        attempted +
+        ")" +
+        detail,
+      )
     }
   }
   let stripped = wgsl_strip_import_define_lines(source)
-  wgsl_strip_module_aliases(
-    wgsl_apply_ifdefs(expanded + stripped, defines),
-    aliases,
+  wgsl_strip_module_aliases(expanded + stripped, aliases)
+}
+
+///|
+async fn load_wgsl_preprocessed(
+  state : State,
+  rel_path : String,
+  defines : Array[String],
+  visited : Ref[Array[String]],
+) -> String {
+  wgsl_ensure_compose_helper()
+  load_wgsl_preprocessed_with_shader_defs(
+    state,
+    rel_path,
+    wgsl_shader_defs_from_legacy(defines),
+    visited,
   )
 }
 
@@ -3007,11 +3376,17 @@ fn is_motion_blur_shader_path(path : String) -> Bool {
 }
 
 ///|
-async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
-  let visited = new_set()
-  let defines : Array[String] = []
+async fn load_wgsl_from_path_with_shader_defs(
+  state : State,
+  id : Int,
+  path : String,
+  shader_defs : @js.Any,
+) -> String {
+  let visited = Ref::new([])
   let normalized = normalize_shader_rel_path_for_runtime(path)
-  let source_raw = load_wgsl_preprocessed(state, normalized, defines, visited)
+  let source_raw = load_wgsl_preprocessed_with_shader_defs(
+    state, normalized, shader_defs, visited,
+  )
   let source = if is_motion_blur_shader_path(normalized) {
     wgsl_lower_motion_blur_texture_samples_for_webgpu(source_raw)
   } else {
@@ -3019,6 +3394,17 @@ async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
   }
   map_set(state.assets.shader_sources, @js.any(id), @js.any(source))
   source
+}
+
+///|
+async fn load_wgsl_from_path(state : State, id : Int, path : String) -> String {
+  wgsl_ensure_compose_helper()
+  load_wgsl_from_path_with_shader_defs(
+    state,
+    id,
+    path,
+    wgsl_shader_defs_from_legacy([]),
+  )
 }
 
 ///|
@@ -3226,6 +3612,7 @@ fn begin_pass(
     let mut view : @webgpu.GPUTextureView? = None
     let mut target_width = if width > 0 { to_int(width) } else { 1 }
     let mut target_height = if height > 0 { to_int(height) } else { 1 }
+    let mut target_entry_any = js_null()
     if target_id < 0 {
       if state.gpu.current_texture is Some(current_texture) {
         view = Some(
@@ -3242,6 +3629,7 @@ fn begin_pass(
     } else {
       let target_entry = map_get(state.gpu.textures, @js.any(target_id))
       if !host_is_nullish(target_entry) {
+        target_entry_any = target_entry
         let view_any = target_entry._get("view")
         if !host_is_nullish(view_any) {
           view = Some(view_any.cast())
@@ -3264,14 +3652,60 @@ fn begin_pass(
       let vp_height = if viewport_height > 0 { viewport_height } else { height }
       let vp_x = if viewport_width > 0 { viewport_x } else { 0 }
       let vp_y = if viewport_height > 0 { viewport_y } else { 0 }
-      if is_3d {
-        ensure_depth_texture(state, target_width, target_height)
+      let depth_view_for_pass = if is_3d {
+        let pass_kind_value = pass_kind_base_kind(to_int(pass_kind))
+        if pass_kind_value == PASS_KIND_BASE_POINT_SHADOW &&
+          !host_is_nullish(target_entry_any) {
+          let face_views_any = target_entry_any._get(
+            "pointShadowDepthFaceViews",
+          )
+          if !host_is_nullish(face_views_any) {
+            let face_views : Array[@js.Any] = face_views_any.cast()
+            let face_height = if vp_height > 0 {
+              to_int(vp_height)
+            } else {
+              target_height
+            }
+            let raw_face = if face_height > 0 {
+              to_int(vp_y) / face_height
+            } else {
+              0
+            }
+            let face_index = if raw_face < 0 {
+              0
+            } else if raw_face > 5 {
+              5
+            } else {
+              raw_face
+            }
+            if face_index < face_views.length() {
+              Some(face_views[face_index].cast())
+            } else {
+              None
+            }
+          } else {
+            None
+          }
+        } else {
+          ensure_depth_texture(state, target_width, target_height)
+          if state.gpu.depth_view is Some(depth_view) {
+            Some(depth_view)
+          } else {
+            None
+          }
+        }
+      } else {
+        None
       }
+      let point_shadow_depth_pass = pass_kind_base_kind(to_int(pass_kind)) ==
+        PASS_KIND_BASE_POINT_SHADOW &&
+        depth_view_for_pass is Some(_)
+      let pass_vp_y = if point_shadow_depth_pass { 0.0 } else { vp_y }
       let descriptor_any = if is_3d {
-        if state.gpu.depth_view is Some(depth_view) {
+        if depth_view_for_pass is Some(depth_view) {
           let depth_attachment = @js.from_entries([
             ("view", depth_view.as_any()),
-            ("depthClearValue", @js.any(1.0)),
+            ("depthClearValue", @js.any(0.0)),
             ("depthLoadOp", @js.any("clear")),
             ("depthStoreOp", @js.any("store")),
           ])
@@ -3287,11 +3721,11 @@ fn begin_pass(
       }
       let pass = encoder.begin_render_pass(descriptor_any)
       pass.set_viewport(
-        vp_x, vp_y, vp_width, vp_height, viewport_depth_min, viewport_depth_max,
+        vp_x, pass_vp_y, vp_width, vp_height, viewport_depth_min, viewport_depth_max,
       )
       pass.set_scissor_rect(
         to_int(vp_x),
-        to_int(vp_y),
+        to_int(pass_vp_y),
         to_int(vp_width),
         to_int(vp_height),
       )
@@ -3333,7 +3767,7 @@ fn begin_pass(
         previous_camera_rot_w,
         pass_kind,
         viewport_x: vp_x,
-        viewport_y: vp_y,
+        viewport_y: pass_vp_y,
         viewport_width: vp_width,
         viewport_height: vp_height,
         viewport_depth_min,
@@ -4290,6 +4724,10 @@ fn draw_mesh(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
+  uv_offset_x |> ignore
+  uv_offset_y |> ignore
+  uv_scale_x |> ignore
+  uv_scale_y |> ignore
   flush_ui_shadow_batches(state)
   flush_ui_slice_batches(state)
   flush_ui_batches(state)
@@ -4470,6 +4908,9 @@ fn draw_mesh3d(
   transmission_source_texture_id : Int,
   transmission_blur_taps : Double,
   transmission_steps : Double,
+  point_shadow_texture_id : Int,
+  point_shadow_enabled : Double,
+  point_shadow_depth_bias : Double,
   cull_mode : Int,
 ) -> Unit {
   if state.gpu.profile_enabled {
@@ -4479,6 +4920,16 @@ fn draw_mesh3d(
   if state.gpu.current_pass is None || state.gpu.current_pass_info is None {
     return
   }
+  uv_offset_x |> ignore
+  uv_offset_y |> ignore
+  uv_scale_x |> ignore
+  uv_scale_y |> ignore
+  anisotropy_rotation |> ignore
+  specular_tint_r |> ignore
+  specular_tint_g |> ignore
+  specular_tint_b |> ignore
+  transmission_blur_taps |> ignore
+  transmission_steps |> ignore
   flush_ui_shadow_batches(state)
   flush_ui_slice_batches(state)
   flush_ui_batches(state)
@@ -4492,8 +4943,13 @@ fn draw_mesh3d(
   let pass_postprocess_enabled = pass_kind_postprocess_enabled(pass_kind_raw)
   let pass_fog_enabled = pass_kind_fog_enabled(pass_kind_raw)
   let pass_decal_enabled = pass_kind_decal_enabled(pass_kind_raw)
-  let use_motion_vector_pipeline = pass_kind_value == 1
+  let use_motion_vector_pipeline = pass_kind_value ==
+    PASS_KIND_BASE_MOTION_VECTOR
+  let use_point_shadow_pipeline = pass_kind_value == PASS_KIND_BASE_POINT_SHADOW
   if use_motion_vector_pipeline && !pass_postprocess_enabled {
+    return
+  }
+  if use_point_shadow_pipeline && a < 0.999 {
     return
   }
   if !pass_decal_enabled && mesh3d_draw_is_decal(cull_mode) {
@@ -4530,11 +4986,19 @@ fn draw_mesh3d(
   let use_transparent_pipeline = a < 0.999
   if use_motion_vector_pipeline {
     ensure_motion_vector_pipeline(state)
+  } else if use_point_shadow_pipeline {
+    ensure_mesh3d_shadow_pipeline(
+      state, primitive_topology_kind, resolved_cull_mode,
+    )
   } else {
     ensure_mesh3d_pipeline(state, primitive_topology_kind, resolved_cull_mode)
   }
   let mesh3d_pipeline_opt = if use_motion_vector_pipeline {
     None
+  } else if use_point_shadow_pipeline {
+    mesh3d_shadow_pipeline_get(
+      state, primitive_topology_kind, resolved_cull_mode,
+    )
   } else {
     mesh3d_pipeline_get(
       state, primitive_topology_kind, use_transparent_pipeline, resolved_cull_mode,
@@ -4719,6 +5183,14 @@ fn draw_mesh3d(
   let transmission_source_texture_entry = get_texture_entry_strict(
     state, resolved_transmission_source_texture_id,
   )
+  let resolved_point_shadow_texture_id = if point_shadow_texture_id >= 0 {
+    point_shadow_texture_id
+  } else {
+    state.gpu.default_texture_id
+  }
+  let point_shadow_texture_entry = get_texture_entry_strict(
+    state, resolved_point_shadow_texture_id,
+  )
   if base_texture_entry is None ||
     normal_texture_entry is None ||
     emissive_texture_entry is None ||
@@ -4727,65 +5199,66 @@ fn draw_mesh3d(
     depth_texture_entry is None ||
     anisotropy_texture_entry is None ||
     specular_tint_texture_entry is None ||
-    transmission_source_texture_entry is None {
-    return
+    transmission_source_texture_entry is None ||
+    point_shadow_texture_entry is None {
+    report_asset_error_once(
+      state, "mesh3d_draw_optional_textures_not_ready", "Mesh3d draw: optional texture bindings not ready; using uniform-only material fallback",
+    )
   }
   if state.gpu.current_pass is Some(pass) &&
     state.gpu.current_pass_info is Some(info) &&
-    mesh3d_pipeline_opt is Some(mesh3d_pipeline) &&
-    base_texture_entry is Some(base_texture_entry_value) &&
-    normal_texture_entry is Some(normal_texture_entry_value) &&
-    emissive_texture_entry is Some(emissive_texture_entry_value) &&
-    metallic_roughness_texture_entry
-    is Some(metallic_roughness_texture_entry_value) &&
-    occlusion_texture_entry is Some(occlusion_texture_entry_value) &&
-    depth_texture_entry is Some(depth_texture_entry_value) &&
-    anisotropy_texture_entry is Some(anisotropy_texture_entry_value) &&
-    specular_tint_texture_entry is Some(specular_tint_texture_entry_value) &&
-    transmission_source_texture_entry
-    is Some(transmission_source_texture_entry_value) {
-    let aspect = if info.height > 0 { info.width / info.height } else { 1.0 }
-    let uv0_x = if textured { uv_offset_x } else { 0.0 }
-    let uv0_y = if textured { uv_offset_y } else { 0.0 }
-    let uvs_x = if textured { uv_scale_x } else { -1.0 }
-    let uvs_y = if textured { uv_scale_y } else { -1.0 }
-    let uniform_values = [
-      x,
-      y,
-      z,
-      1.0,
-      rotation_x,
-      rotation_y,
-      rotation_z,
-      rotation_w,
-      scale_x,
-      scale_y,
-      scale_z,
-      1.0,
+    mesh3d_pipeline_opt is Some(mesh3d_pipeline) {
+    guard state.gpu.device is Some(device) else { return }
+    guard ensure_mesh3d_dummy_resources(state) is Some(dummy_resources) else {
+      return
+    }
+    let view_uniform_buffer : @webgpu.GPUBuffer = dummy_resources
+      ._get("viewUniformBuffer")
+      .cast()
+    let lights_uniform_buffer : @webgpu.GPUBuffer = dummy_resources
+      ._get("lightsUniformBuffer")
+      .cast()
+    let clustered_lights_uniform_buffer : @webgpu.GPUBuffer = dummy_resources
+      ._get("clusteredLightsUniformBuffer")
+      .cast()
+    let cluster_index_lists_uniform_buffer : @webgpu.GPUBuffer = dummy_resources
+      ._get("clusterIndexListsUniformBuffer")
+      .cast()
+    let cluster_offsets_uniform_buffer : @webgpu.GPUBuffer = dummy_resources
+      ._get("clusterOffsetsUniformBuffer")
+      .cast()
+    let dummy_uniform_buffer : @webgpu.GPUBuffer = dummy_resources
+      ._get("uniformBuffer")
+      .cast()
+    guard state.gpu.queue is Some(queue) else { return }
+    let uniform_usage = @webgpu.combine_flags(
+      @webgpu.buffer_usage_uniform(),
+      @webgpu.buffer_usage_copy_dst(),
+    )
+    let view_uniform_data = mesh3d_bevy_view_uniform_bytes(
       info.cam_x,
       info.cam_y,
       info.cam_z,
-      1.0,
       info.cam_rot_x,
       info.cam_rot_y,
       info.cam_rot_z,
       info.cam_rot_w,
       info.cam_fov_y,
-      aspect,
       info.cam_near,
       info.cam_far,
+      info.width,
+      info.height,
+      info.viewport_x,
+      info.viewport_y,
+      info.viewport_width,
+      info.viewport_height,
       info.sub_camera_view_scale_x,
       info.sub_camera_view_scale_y,
       info.sub_camera_view_bias_x,
       info.sub_camera_view_bias_y,
-      r,
-      g,
-      b,
-      a,
-      uv0_x,
-      uv0_y,
-      uvs_x,
-      uvs_y,
+    )
+    queue.write_buffer(view_uniform_buffer, 0, view_uniform_data)
+    let lights_uniform_data = mesh3d_bevy_lights_uniform_bytes(
       info.ambient_r,
       info.ambient_g,
       info.ambient_b,
@@ -4793,155 +5266,95 @@ fn draw_mesh3d(
       info.directional_dir_x,
       info.directional_dir_y,
       info.directional_dir_z,
-      info.directional_illuminance,
       info.directional_color_r,
       info.directional_color_g,
       info.directional_color_b,
-      1.0,
+      info.directional_illuminance,
+      info.point_intensity,
+      info.point_range,
+      info.spot_intensity,
+      info.spot_range,
+      info.cam_fov_y,
+      info.cam_near,
+      info.cam_far,
+      info.viewport_width,
+      info.viewport_height,
+    )
+    queue.write_buffer(lights_uniform_buffer, 0, lights_uniform_data)
+    let clustered_payload = mesh3d_bevy_clustered_uniform_payload_bytes(
       info.point_pos_x,
       info.point_pos_y,
       info.point_pos_z,
-      info.point_range,
       info.point_color_r,
       info.point_color_g,
       info.point_color_b,
       info.point_intensity,
+      info.point_range,
       info.spot_pos_x,
       info.spot_pos_y,
       info.spot_pos_z,
-      info.spot_range,
       info.spot_dir_x,
       info.spot_dir_y,
       info.spot_dir_z,
-      info.spot_inner_angle,
       info.spot_color_r,
       info.spot_color_g,
       info.spot_color_b,
       info.spot_intensity,
+      info.spot_range,
+      info.spot_inner_angle,
       info.spot_outer_angle,
-      transmission_blur_taps,
-      transmission_steps,
-      0.0,
-      emissive_r,
-      emissive_g,
-      emissive_b,
-      unlit,
-      metallic,
-      roughness,
-      reflectance,
-      if normal_textured {
-        1.0
-      } else {
-        0.0
-      },
-      if textured {
-        1.0
-      } else {
-        0.0
-      },
-      if emissive_textured {
-        1.0
-      } else {
-        0.0
-      },
-      if metallic_roughness_textured {
-        1.0
-      } else {
-        0.0
-      },
-      if occlusion_textured {
-        1.0
-      } else {
-        0.0
-      },
-      parallax_depth_scale,
-      max_parallax_layer_count,
-      max_relief_mapping_search_steps,
-      if depth_textured {
-        1.0
-      } else {
-        0.0
-      },
-      anisotropy_strength,
-      @coremath.cos(anisotropy_rotation),
-      @coremath.sin(anisotropy_rotation),
-      if anisotropy_textured {
-        1.0
-      } else {
-        0.0
-      },
-      specular_tint_r,
-      specular_tint_g,
-      specular_tint_b,
-      if specular_tint_textured {
-        1.0
-      } else {
-        0.0
-      },
-      diffuse_transmission,
-      specular_transmission,
-      thickness,
-      ior,
-    ]
-    guard create_transient_uniform_bind_group(
-        state, mesh3d_pipeline, uniform_values,
+      point_shadow_enabled,
+      point_shadow_depth_bias,
+    )
+    queue.write_buffer(
+      clustered_lights_uniform_buffer,
+      0,
+      clustered_payload._get("clusteredLights"),
+    )
+    queue.write_buffer(
+      cluster_index_lists_uniform_buffer,
+      0,
+      clustered_payload._get("clusterIndexLists"),
+    )
+    queue.write_buffer(
+      cluster_offsets_uniform_buffer,
+      0,
+      clustered_payload._get("clusterOffsetsAndCounts"),
+    )
+    let mesh_uniform_data = mesh3d_bevy_mesh_uniform_bytes(
+      x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
+      scale_z, previous_x, previous_y, previous_z, previous_rotation_x, previous_rotation_y,
+      previous_rotation_z, previous_rotation_w, previous_scale_x, previous_scale_y,
+      previous_scale_z,
+    )
+    let mesh_uniform_desc = @webgpu.buffer_descriptor(512, uniform_usage)
+    let draw_mesh_uniform_buffer = device.create_buffer(
+      mesh_uniform_desc.to_js(),
+    )
+    queue.write_buffer(draw_mesh_uniform_buffer, 0, mesh_uniform_data)
+    let material_uniform_data = mesh3d_bevy_material_uniform_bytes(
+      r, g, b, a, emissive_r, emissive_g, emissive_b, reflectance, roughness, metallic,
+      diffuse_transmission, specular_transmission, thickness, ior, anisotropy_strength,
+      unlit, parallax_depth_scale, max_parallax_layer_count, max_relief_mapping_search_steps,
+    )
+    let material_uniform_desc = @webgpu.buffer_descriptor(1024, uniform_usage)
+    let draw_material_uniform_buffer = device.create_buffer(
+      material_uniform_desc.to_js(),
+    )
+    queue.write_buffer(draw_material_uniform_buffer, 0, material_uniform_data)
+    if use_point_shadow_pipeline {
+      let shadow_view_bg = device.create_bind_group(
+        @webgpu.bind_group_descriptor(
+          mesh3d_pipeline.get_bind_group_layout(0),
+          [@webgpu.bind_group_entry_buffer(0, view_uniform_buffer)],
+        ).to_js(),
       )
-      is Some(mesh3d_bind_group) else {
-      return
-    }
-    if state.gpu.device is Some(device) {
-      let base_sampler : @webgpu.GPUSampler = base_texture_entry_value
-        ._get("sampler")
-        .cast()
-      let base_view : @webgpu.GPUTextureView = base_texture_entry_value
-        ._get("view")
-        .cast()
-      let normal_view : @webgpu.GPUTextureView = normal_texture_entry_value
-        ._get("view")
-        .cast()
-      let emissive_view : @webgpu.GPUTextureView = emissive_texture_entry_value
-        ._get("view")
-        .cast()
-      let metallic_roughness_view : @webgpu.GPUTextureView = metallic_roughness_texture_entry_value
-        ._get("view")
-        .cast()
-      let occlusion_view : @webgpu.GPUTextureView = occlusion_texture_entry_value
-        ._get("view")
-        .cast()
-      let depth_view : @webgpu.GPUTextureView = depth_texture_entry_value
-        ._get("view")
-        .cast()
-      let anisotropy_view : @webgpu.GPUTextureView = anisotropy_texture_entry_value
-        ._get("view")
-        .cast()
-      let specular_tint_view : @webgpu.GPUTextureView = specular_tint_texture_entry_value
-        ._get("view")
-        .cast()
-      let transmission_source_view : @webgpu.GPUTextureView = transmission_source_texture_entry_value
-        ._get("view")
-        .cast()
-      guard state.gpu.mesh3d_material_layout is Some(material_layout) else {
-        return
-      }
-      let material_entries = [
-        @webgpu.bind_group_entry_sampler(0, base_sampler),
-        @webgpu.bind_group_entry_texture(1, base_view),
-        @webgpu.bind_group_entry_texture(2, normal_view),
-        @webgpu.bind_group_entry_texture(3, emissive_view),
-        @webgpu.bind_group_entry_texture(4, metallic_roughness_view),
-        @webgpu.bind_group_entry_texture(5, occlusion_view),
-        @webgpu.bind_group_entry_texture(6, depth_view),
-        @webgpu.bind_group_entry_texture(7, anisotropy_view),
-        @webgpu.bind_group_entry_texture(8, specular_tint_view),
-        @webgpu.bind_group_entry_texture(9, transmission_source_view),
-      ]
-      let material_desc = @webgpu.bind_group_descriptor(
-        material_layout, material_entries,
+      let shadow_mesh_bg = device.create_bind_group(
+        @webgpu.bind_group_descriptor(
+          mesh3d_pipeline.get_bind_group_layout(2),
+          [@webgpu.bind_group_entry_buffer(0, draw_mesh_uniform_buffer)],
+        ).to_js(),
       )
-      let material_bg = device.create_bind_group(material_desc.to_js())
-      pass.set_pipeline(mesh3d_pipeline)
-      pass.set_bind_group(0, mesh3d_bind_group)
-      pass.set_bind_group(1, material_bg)
       let vertex_buffer : @webgpu.GPUBuffer = mesh_entry
         ._get("vertexBuffer")
         .cast()
@@ -4956,9 +5369,81 @@ fn draw_mesh3d(
         )
         return
       }
+      pass.set_pipeline(mesh3d_pipeline)
+      pass.set_bind_group(0, shadow_view_bg)
+      pass.set_bind_group(2, shadow_mesh_bg)
       pass.set_vertex_buffer(0, vertex_buffer)
       pass.draw(vertex_count, 1, 0, 0)
+      return
     }
+    let dummy_depth_cube_view : @webgpu.GPUTextureView = dummy_resources
+      ._get("depthCubeView")
+      .cast()
+    let dummy_depth_array_view : @webgpu.GPUTextureView = dummy_resources
+      ._get("depthArrayView")
+      .cast()
+    let dummy_compare_sampler : @webgpu.GPUSampler = dummy_resources
+      ._get("compareSampler")
+      .cast()
+    let mut point_shadow_depth_cube_view = dummy_depth_cube_view
+    if point_shadow_texture_id >= 0 {
+      let point_shadow_entry = map_get(
+        state.gpu.textures,
+        @js.any(point_shadow_texture_id),
+      )
+      if !host_is_nullish(point_shadow_entry) {
+        let point_shadow_cube_any = point_shadow_entry._get(
+          "pointShadowDepthCubeView",
+        )
+        if !host_is_nullish(point_shadow_cube_any) {
+          point_shadow_depth_cube_view = point_shadow_cube_any.cast()
+        }
+      }
+    }
+
+    let view_bg = device.create_bind_group(
+      @webgpu.bind_group_descriptor(mesh3d_pipeline.get_bind_group_layout(0), [
+        @webgpu.bind_group_entry_buffer(0, view_uniform_buffer),
+        @webgpu.bind_group_entry_buffer(1, lights_uniform_buffer),
+        @webgpu.bind_group_entry_texture(2, point_shadow_depth_cube_view),
+        @webgpu.bind_group_entry_sampler(3, dummy_compare_sampler),
+        @webgpu.bind_group_entry_texture(5, dummy_depth_array_view),
+        @webgpu.bind_group_entry_sampler(6, dummy_compare_sampler),
+        @webgpu.bind_group_entry_buffer(8, clustered_lights_uniform_buffer),
+        @webgpu.bind_group_entry_buffer(9, cluster_index_lists_uniform_buffer),
+        @webgpu.bind_group_entry_buffer(10, cluster_offsets_uniform_buffer),
+        @webgpu.bind_group_entry_buffer(11, dummy_uniform_buffer),
+        @webgpu.bind_group_entry_buffer(16, dummy_uniform_buffer),
+      ]).to_js(),
+    )
+    let mesh_bg = device.create_bind_group(
+      @webgpu.bind_group_descriptor(mesh3d_pipeline.get_bind_group_layout(2), [
+        @webgpu.bind_group_entry_buffer(0, draw_mesh_uniform_buffer),
+      ]).to_js(),
+    )
+    let material_bg = device.create_bind_group(
+      @webgpu.bind_group_descriptor(mesh3d_pipeline.get_bind_group_layout(3), [
+        @webgpu.bind_group_entry_buffer(0, draw_material_uniform_buffer),
+      ]).to_js(),
+    )
+    pass.set_pipeline(mesh3d_pipeline)
+    pass.set_bind_group(0, view_bg)
+    pass.set_bind_group(2, mesh_bg)
+    pass.set_bind_group(3, material_bg)
+    let vertex_buffer : @webgpu.GPUBuffer = mesh_entry
+      ._get("vertexBuffer")
+      .cast()
+    let vertex_count : Int = mesh_entry._get("vertexCount").cast()
+    if vertex_count <= 0 {
+      report_asset_error_once(
+        state,
+        "mesh3d_draw_empty_vertices_" + mesh_id.to_string(),
+        "Mesh3d draw skipped: empty vertex buffer (" + mesh_id.to_string() + ")",
+      )
+      return
+    }
+    pass.set_vertex_buffer(0, vertex_buffer)
+    pass.draw(vertex_count, 1, 0, 0)
   }
 }
 
@@ -5531,13 +6016,6 @@ fn draw_bloom2d(
   } else {
     scene_view
   }
-  let scene_texture_raw = scene_texture_entry._get("texture")
-  if host_is_nullish(scene_texture_raw) {
-    report_asset_error_once(
-      state, "bloom2d_draw_scene_texture_object_not_ready", "Bloom2d draw skipped: scene texture object is not ready",
-    )
-    return
-  }
   let material_entries = [
     @webgpu.bind_group_entry_texture(0, scene_view),
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
@@ -5677,33 +6155,16 @@ fn draw_bloom2d(
     intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
     high_pass_frequency_value, composite_mode, 0.0, max_mip_f,
   )
-  guard bloom2d_ensure_compose_view(state, safe_scene_width, safe_scene_height)
-    is Some(compose_view) else {
-    report_asset_error_once(
-      state, "bloom2d_draw_compose_texture_not_ready", "Bloom2d draw skipped: compose texture is not ready",
-    )
-    return
+  let final_bloom_weight = if bloom_enabled && intensity_value > 0.0 {
+    final_blend
+  } else {
+    0.0
   }
-  guard state.gpu.bloom2d_compose_texture is Some(compose_texture) else {
-    return
+  let hdr_view = if final_bloom_weight > 0.0 {
+    state.gpu.bloom2d_mip_views[0]
+  } else {
+    scene_view
   }
-  copy_texture_to_texture_region_on_encoder(
-    encoder.as_any(),
-    scene_texture_raw,
-    compose_texture.as_any(),
-    source_viewport_width,
-    source_viewport_height,
-    0,
-    0,
-  )
-
-  let compose_entries = [
-    @webgpu.bind_group_entry_texture(0, state.gpu.bloom2d_mip_views[0]),
-    @webgpu.bind_group_entry_sampler(1, bloom_sampler),
-    @webgpu.bind_group_entry_buffer(2, settings_buffer),
-    @webgpu.bind_group_entry_texture(3, scene_view),
-    @webgpu.bind_group_entry_texture(4, lut_view),
-  ]
   let compose_settings_data = bloom2d_make_uniform_data(
     safe_scene_width.to_double(),
     safe_scene_height.to_double(),
@@ -5715,68 +6176,21 @@ fn draw_bloom2d(
     threshold_softness_value,
     scale_x_value,
     scale_y_value,
-    bloom_weight_value,
+    final_bloom_weight,
     tonemapping_mode_value,
     deband_dither_enabled_value,
-    final_blend,
+    0.0,
     fxaa_enabled_value,
     fxaa_edge_threshold_value,
     chromatic_aberration_strength_value,
     vignette_strength_value,
   )
   queue.write_buffer(settings_buffer, 0, compose_settings_data)
-  let compose_bind_group = device.create_bind_group(
-    @webgpu.bind_group_descriptor(bind_layout, compose_entries).to_js(),
-  )
-  {
-    let pass = bloom2d_begin_pass_load(encoder, compose_view)
-    pass.set_viewport(
-      0.0,
-      0.0,
-      source_viewport_width.to_double(),
-      source_viewport_height.to_double(),
-      0.0,
-      1.0,
-    )
-    pass.set_scissor_rect(0, 0, source_viewport_width, source_viewport_height)
-    pass.set_pipeline(upsample_pipeline)
-    pass
-    .as_any()
-    ._call("setBlendConstant", [
-      @webgpu.color(final_blend, final_blend, final_blend, final_blend).to_js(),
-    ])
-    |> ignore
-    pass.set_bind_group(0, compose_bind_group)
-    pass.draw(3, 1, 0, 0)
-    pass.end()
-  }
-
-  let tonemap_settings_data = bloom2d_make_uniform_data(
-    safe_scene_width.to_double(),
-    safe_scene_height.to_double(),
-    0.0,
-    0.0,
-    source_viewport_width.to_double(),
-    source_viewport_height.to_double(),
-    0.0,
-    0.0,
-    1.0,
-    1.0,
-    0.0,
-    tonemapping_mode_value,
-    deband_dither_enabled_value,
-    0.0,
-    fxaa_enabled_value,
-    fxaa_edge_threshold_value,
-    chromatic_aberration_strength_value,
-    vignette_strength_value,
-  )
-  queue.write_buffer(settings_buffer, 0, tonemap_settings_data)
   let tonemap_entries = [
-    @webgpu.bind_group_entry_texture(0, compose_view),
+    @webgpu.bind_group_entry_texture(0, hdr_view),
     @webgpu.bind_group_entry_sampler(1, bloom_sampler),
     @webgpu.bind_group_entry_buffer(2, settings_buffer),
-    @webgpu.bind_group_entry_texture(3, compose_view),
+    @webgpu.bind_group_entry_texture(3, scene_view),
     @webgpu.bind_group_entry_texture(4, lut_view),
   ]
   let tonemap_bind_group = device.create_bind_group(

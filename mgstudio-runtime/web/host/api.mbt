@@ -1656,7 +1656,8 @@ pub fn create_host(
       if mip_level >= source_mip_level_count {
         report_asset_error_once(
           state,
-          "texture_update_mip_level_out_of_range_" + texture_id.to_string() +
+          "texture_update_mip_level_out_of_range_" +
+          texture_id.to_string() +
           "_" +
           mip_level.to_string(),
           "Texture mip update error: mip level out of range",
@@ -1668,7 +1669,8 @@ pub fn create_host(
       if x + width > mip_width || y + height > mip_height {
         report_asset_error_once(
           state,
-          "texture_update_mip_rect_out_of_range_" + texture_id.to_string() +
+          "texture_update_mip_rect_out_of_range_" +
+          texture_id.to_string() +
           "_" +
           mip_level.to_string(),
           "Texture mip update error: region exceeds mip dimensions",
@@ -1724,7 +1726,8 @@ pub fn create_host(
     if mip_level >= source_mip_level_count {
       report_asset_error_once(
         state,
-        "texture_mip_view_level_out_of_range_" + texture_id.to_string() +
+        "texture_mip_view_level_out_of_range_" +
+        texture_id.to_string() +
         "_" +
         mip_level.to_string(),
         "Texture mip view error: mip level out of range",
@@ -2071,6 +2074,91 @@ pub fn create_host(
     }
     id
   })
+  let gpu_create_point_light_shadow_target = @js.from_fn1(fn(size) {
+    if state.gpu.device is None {
+      throw_error("GPU device not ready")
+      return 0
+    }
+    ensure_pipeline_resources(state)
+    let id = state.gpu.next_texture_id
+    state.gpu.next_texture_id = id + 1
+    map_set(
+      state.assets.texture_paths,
+      @js.any(id),
+      @js.any("<point-light-shadow-target>"),
+    )
+    let size_value = number_or(size, 1)
+    let safe_size = if size_value > 0 { to_int(size_value) } else { 1 }
+    if state.gpu.device is Some(device) {
+      let format = state.gpu.format.unwrap_or(@webgpu.TextureFormat::Bgra8Unorm)
+      let color_usage = @webgpu.combine_flags(
+        @webgpu.combine_flags(
+          @webgpu.texture_usage_texture_binding(),
+          @webgpu.texture_usage_render_attachment(),
+        ),
+        @webgpu.texture_usage_copy_dst(),
+      )
+      let color_desc = @webgpu.texture_descriptor(
+        @webgpu.texture_size(safe_size, safe_size),
+        format,
+        color_usage,
+      )
+      let color_texture = device.create_texture(color_desc.to_js())
+      let color_view = color_texture.create_view()
+      let depth_usage = @webgpu.combine_flags(
+        @webgpu.texture_usage_texture_binding(),
+        @webgpu.texture_usage_render_attachment(),
+      )
+      let depth_desc = @webgpu.texture_descriptor(
+        @webgpu.texture_size_with_depth(safe_size, safe_size, 6),
+        @webgpu.TextureFormat::Other("depth32float"),
+        depth_usage,
+      ).to_js()
+      let depth_texture = device.create_texture(depth_desc)
+      let depth_cube_view_desc = @js.from_entries([
+        ("dimension", @js.any("cube-array")),
+        ("baseArrayLayer", @js.any(0)),
+        ("arrayLayerCount", @js.any(6)),
+      ])
+      let depth_cube_view = depth_texture.create_view(
+        descriptor=depth_cube_view_desc,
+      )
+      let depth_face_views : Array[@js.Any] = []
+      for face_index in 0..<6 {
+        let depth_face_view_desc = @js.from_entries([
+          ("dimension", @js.any("2d")),
+          ("baseArrayLayer", @js.any(face_index)),
+          ("arrayLayerCount", @js.any(1)),
+        ])
+        let face_view = depth_texture.create_view(
+          descriptor=depth_face_view_desc,
+        )
+        depth_face_views.push(face_view.as_any())
+      }
+      let sampler = create_sampler(state, sampler_kind_from_nearest(true))
+      if sampler is Some(sampler_value) {
+        let entry = @js.from_entries([
+          ("id", @js.any(id)),
+          ("texture", color_texture.as_any()),
+          ("view", color_view.as_any()),
+          ("sampler", sampler_value.as_any()),
+          ("bindGroup", js_null()),
+          ("meshBindGroup", js_null()),
+          ("mesh3dBindGroup", js_null()),
+          ("uiBindGroup", js_null()),
+          ("width", @js.any(safe_size)),
+          ("height", @js.any(safe_size)),
+          ("format", @js.any(format.to_js_string())),
+          ("pointShadowDepthTexture", depth_texture.as_any()),
+          ("pointShadowDepthCubeView", depth_cube_view.as_any()),
+          ("pointShadowDepthFaceViews", @js.any(depth_face_views)),
+        ])
+        map_set(state.gpu.textures, @js.any(id), entry)
+        ensure_bind_group_for_texture(state, entry)
+      }
+    }
+    id
+  })
   let gpu_create_render_target_rgba16f = @js.from_fn3(fn(
     width,
     height,
@@ -2252,8 +2340,11 @@ pub fn create_host(
     }
     let id = state.gpu.next_mesh_id
     state.gpu.next_mesh_id = id + 1
-    let vertices = float32array_from_csv(
+    let vertices_xyzuvrgba_f32 = float32array_from_csv(
       string_from_id_required(state, vertices_xyzuvrgba, "gpu_create_mesh3d"),
+    )
+    let vertices = mesh3d_xyzuvrgba_to_xyznormal(
+      vertices_xyzuvrgba_f32, primitive_topology,
     )
     if state.gpu.device is Some(device) {
       let vertex_size : Int = vertices._get("byteLength").cast()
@@ -2265,7 +2356,7 @@ pub fn create_host(
       let vertex_buffer = device.create_buffer(vertex_desc.to_js())
       device.queue().write_buffer(vertex_buffer, 0, vertices)
       let vertex_len : Double = vertices._get("length").cast()
-      let vertex_count = to_int(vertex_len / 9)
+      let vertex_count = to_int(vertex_len / 6)
       if vertex_count <= 0 {
         report_asset_error_once(
           state,
@@ -2698,14 +2789,20 @@ pub fn create_host(
   )
   let gpu_draw_mesh3d = wrap_variadic(
     @js.from_fn1(fn(args) {
-      let mut cull_mode = to_int(arg_number(args, 59, 2))
-      if to_int(arg_number(args, 60, 0)) != 0 {
+      let cull_mode_new = to_int(arg_number(args, 62, -2147483648.0))
+      let has_shadow_args = cull_mode_new != -2147483648
+      let cull_mode_index = if has_shadow_args { 62 } else { 59 }
+      let flag0_index = if has_shadow_args { 63 } else { 60 }
+      let flag1_index = if has_shadow_args { 64 } else { 61 }
+      let flag2_index = if has_shadow_args { 65 } else { 62 }
+      let mut cull_mode = to_int(arg_number(args, cull_mode_index, 2))
+      if to_int(arg_number(args, flag0_index, 0)) != 0 {
         cull_mode = cull_mode | (1 << 8)
       }
-      if to_int(arg_number(args, 61, 0)) != 0 {
+      if to_int(arg_number(args, flag1_index, 0)) != 0 {
         cull_mode = cull_mode | (1 << 9)
       }
-      if to_int(arg_number(args, 62, 0)) != 0 {
+      if to_int(arg_number(args, flag2_index, 0)) != 0 {
         cull_mode = cull_mode | (1 << 10)
       }
       draw_mesh3d(
@@ -2769,6 +2866,9 @@ pub fn create_host(
         to_int(arg_number(args, 56, -1)),
         arg_number(args, 57, 0),
         arg_number(args, 58, 0),
+        to_int(arg_number(args, 59, -1)),
+        arg_number(args, 60, 0),
+        arg_number(args, 61, 0),
         cull_mode,
       )
     }),
@@ -3100,6 +3200,9 @@ pub fn create_host(
     ("asset_loaded_folder_handles_len", asset_loaded_folder_handles_len),
     ("asset_loaded_folder_handles_get", asset_loaded_folder_handles_get),
     ("gpu_create_render_target", gpu_create_render_target),
+    (
+      "gpu_create_point_light_shadow_target", gpu_create_point_light_shadow_target,
+    ),
     ("gpu_create_render_target_rgba16f", gpu_create_render_target_rgba16f),
     ("gpu_create_mesh_capsule", gpu_create_mesh_capsule),
     ("gpu_create_mesh_rectangle", gpu_create_mesh_rectangle),

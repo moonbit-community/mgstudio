@@ -470,7 +470,8 @@ pub struct PerspectiveProjection3d {
 ///|
 pub fn PerspectiveProjection3d::default() -> PerspectiveProjection3d {
   PerspectiveProjection3d::{
-    fov: @math.pi_half(),
+    // Match Bevy's PerspectiveProjection::default() (PI / 4.0).
+    fov: @math.pi_half() * 0.5F,
     near: 0.1F,
     far: 1000.0F,
     aspect_ratio: 16.0F / 9.0F,
@@ -496,7 +497,7 @@ pub fn PerspectiveProjection3d::with_fov(
   self : PerspectiveProjection3d,
   fov : Float,
 ) -> PerspectiveProjection3d {
-  let safe_fov = if fov <= 0.0F { @math.pi_half() } else { fov }
+  let safe_fov = if fov <= 0.0F { @math.pi_half() * 0.5F } else { fov }
   PerspectiveProjection3d::{
     fov: safe_fov,
     near: self.near,
@@ -1776,7 +1777,7 @@ pub(all) enum Tonemapping {
 
 ///|
 pub fn Tonemapping::default() -> Tonemapping {
-  Tonemapping::None
+  Tonemapping::TonyMcMapface
 }
 
 ///|
@@ -1788,7 +1789,7 @@ pub(all) enum DebandDither {
 
 ///|
 pub fn DebandDither::default() -> DebandDither {
-  DebandDither::Disabled
+  DebandDither::Enabled
 }
 
 ///|
@@ -5500,7 +5501,7 @@ pub struct GlobalAmbientLight {
 
 ///|
 pub fn GlobalAmbientLight::default() -> GlobalAmbientLight {
-  GlobalAmbientLight::{ color: @render2d.Color::white(), brightness: 0.0F }
+  GlobalAmbientLight::{ color: @render2d.Color::white(), brightness: 80.0F }
 }
 
 ///|
@@ -5544,12 +5545,12 @@ pub fn Camera3dBundle::new(
     screen_space_transmission: None,
     screen_space_reflections: None,
     bloom: None,
-    tonemapping: None,
-    deband_dither: None,
+    tonemapping: Some(Tonemapping::default()),
+    deband_dither: Some(DebandDither::default()),
     chromatic_aberration: None,
     vignette: None,
     motion_blur: None,
-    exposure: None,
+    exposure: Some(Exposure::default()),
     color_grading: None,
     camera3d: Camera3d::default(),
     transform,
@@ -5571,12 +5572,12 @@ pub fn Camera3dBundle::new_with_projection(
     screen_space_transmission: None,
     screen_space_reflections: None,
     bloom: None,
-    tonemapping: None,
-    deband_dither: None,
+    tonemapping: Some(Tonemapping::default()),
+    deband_dither: Some(DebandDither::default()),
     chromatic_aberration: None,
     vignette: None,
     motion_blur: None,
-    exposure: None,
+    exposure: Some(Exposure::default()),
     color_grading: None,
     camera3d: Camera3d::default(),
     transform,
@@ -5999,10 +6000,14 @@ priv struct Render3dLightingState {
   directional_dir : @math.Vec3
   directional_color : @render2d.Color
   directional_illuminance : Float
+  point_entity : @core.Entity
   point_pos : @math.Vec3
   point_color : @render2d.Color
   point_intensity : Float
   point_range : Float
+  point_shadow_maps_enabled : Bool
+  point_shadow_depth_bias : Float
+  point_shadow_map_near_z : Float
   spot_pos : @math.Vec3
   spot_dir : @math.Vec3
   spot_color : @render2d.Color
@@ -6042,6 +6047,13 @@ priv struct TransmissionSourceTargetsEntry {
 }
 
 ///|
+priv struct PointLightShadowTargetsEntry {
+  entity : @core.Entity
+  size : Int
+  target_id : Int
+}
+
+///|
 priv struct AutoExposureHistoryEntry {
   entity : @core.Entity
   ev100 : Float
@@ -6059,6 +6071,10 @@ let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
 
 ///|
 let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = Ref::new([],
+)
+
+///|
+let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
 )
 
 ///|
@@ -6190,14 +6206,18 @@ fn render3d_transform_forward(transform : @math.Transform) -> @math.Vec3 {
 fn render3d_default_lighting_state() -> Render3dLightingState {
   Render3dLightingState::{
     ambient_color: @render2d.Color::white(),
-    ambient_brightness: 0.0F,
+    ambient_brightness: 80.0F,
     directional_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
     directional_color: @render2d.Color::white(),
     directional_illuminance: 0.0F,
+    point_entity: @core.Entity::placeholder(),
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     point_color: @render2d.Color::white(),
     point_intensity: 0.0F,
     point_range: 1.0F,
+    point_shadow_maps_enabled: false,
+    point_shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
+    point_shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
     spot_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     spot_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
     spot_color: @render2d.Color::white(),
@@ -6311,6 +6331,9 @@ const RENDER3D_PASS_KIND_BASE_SCENE : Int = 0
 
 ///|
 const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+
+///|
+const RENDER3D_PASS_KIND_BASE_POINT_SHADOW : Int = 2
 
 ///|
 const RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG : Int = 1 << 8
@@ -6785,6 +6808,65 @@ fn render3d_transmission_source_target_get_or_create(
 }
 
 ///|
+fn render3d_point_light_shadow_target_get_or_create(
+  entity : @core.Entity,
+  size : Int,
+) -> Int {
+  let safe_size = if size <= 0 { 1 } else { size }
+  for item in point_light_shadow_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.size == safe_size {
+      return item.target_id
+    }
+  }
+  let target_id = @window.host_gpu_create_point_light_shadow_target(
+    size=safe_size,
+  )
+  let next : Array[PointLightShadowTargetsEntry] = []
+  let mut replaced = false
+  for item in point_light_shadow_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, size: safe_size, target_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, size: safe_size, target_id })
+  }
+  point_light_shadow_targets.val = next
+  target_id
+}
+
+///|
+fn render3d_point_shadow_face_transform(
+  light_position : @math.Vec3,
+  face_index : Int,
+) -> @math.Transform {
+  let (forward, up) = match face_index {
+    // Match Bevy's `CUBE_MAP_FACES` exactly:
+    // [+X, -X, +Y, -Y, +Z, -Z] face order with left-handed cubemap conventions.
+    0 => (@math.Vec3::new(1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+    1 => (@math.Vec3::new(-1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+    2 => (@math.Vec3::new(0.0F, 1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, 1.0F))
+    3 =>
+      (@math.Vec3::new(0.0F, -1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, -1.0F))
+    4 => (@math.Vec3::new(0.0F, 0.0F, -1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+    _ => (@math.Vec3::new(0.0F, 0.0F, 1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+  }
+  @math.Transform::from_xyz(
+    light_position.x,
+    light_position.y,
+    light_position.z,
+  ).looking_at(light_position.add(forward), up)
+}
+
+///|
 fn render3d_blit_texture_to_target(
   source_texture_id : Int,
   target_id : Int,
@@ -6986,6 +7068,7 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     point_found = true
     lighting = Render3dLightingState::{
       ..lighting,
+      point_entity: entity,
       point_pos: transform.translation,
       point_color: light.color,
       point_intensity: light.intensity,
@@ -6993,6 +7076,13 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
         light.range
       } else {
         1.0F
+      },
+      point_shadow_maps_enabled: light.shadow_maps_enabled,
+      point_shadow_depth_bias: light.shadow_depth_bias,
+      point_shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
+        light.shadow_map_near_z
+      } else {
+        0.0001F
       },
     }
   })
@@ -7128,6 +7218,9 @@ fn render3d_draw_camera_skybox(
     transmission_source_texture_id=-1,
     transmission_blur_taps=0.0F,
     transmission_steps=0.0F,
+    point_shadow_texture_id=-1,
+    point_shadow_enabled=0.0F,
+    point_shadow_depth_bias=0.0F,
     cull_mode=1,
   )
 }
@@ -8946,6 +9039,9 @@ fn render3d_draw_mesh_instance(
   transmission_source_texture_id : Int,
   transmission_blur_taps : Float,
   transmission_steps : Float,
+  point_shadow_texture_id : Int,
+  point_shadow_enabled : Float,
+  point_shadow_depth_bias : Float,
   specular_tint : @render2d.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
@@ -9020,6 +9116,9 @@ fn render3d_draw_mesh_instance(
     transmission_source_texture_id~,
     transmission_blur_taps~,
     transmission_steps~,
+    point_shadow_texture_id~,
+    point_shadow_enabled~,
+    point_shadow_depth_bias~,
     cull_mode=draw_cull_mode,
   )
 }
@@ -9080,6 +9179,18 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     default_method.renderer_method()
   } else {
     OpaqueRendererMethod::Forward
+  }
+  let point_light_shadow_map_size = if (try! world.get_resource(
+      ecs_key_point_light_shadow_map,
+    ))
+    is Some(shadow_map) {
+    if shadow_map.size <= 0 {
+      1
+    } else {
+      shadow_map.size
+    }
+  } else {
+    PointLightShadowMap::default().size
   }
   camera3d_store.for_each(fn(entity, camera3d) {
     let camera = match camera_store.get(entity) {
@@ -9447,8 +9558,17 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       false,
       false,
     )
+    let point_shadow_pass_kind = render3d_pass_kind_encode(
+      RENDER3D_PASS_KIND_BASE_POINT_SHADOW,
+      false,
+      false,
+      false,
+    )
     let mut scene_target_id = camera.target_id
     let mut velocity_target_id = -1
+    let mut point_shadow_texture_id = -1
+    let mut point_shadow_enabled = 0.0F
+    let mut point_shadow_depth_bias = 0.0F
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera.entity,
@@ -9569,6 +9689,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           -1,
           0.0F,
           0.0F,
+          -1,
+          0.0F,
+          0.0F,
           @render2d.Color::white(),
           0.0F,
           0.0F,
@@ -9576,6 +9699,158 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         )
       }
       @window.host_gpu_end_pass()
+    }
+    let draw_order = render3d_sorted_mesh_indices(
+      meshes,
+      camera.layers,
+      camera.transform,
+    )
+    if pass_lighting.point_shadow_maps_enabled &&
+      !pass_lighting.point_entity.is_placeholder() &&
+      pass_lighting.point_range > 0.0F &&
+      point_light_shadow_map_size > 0 {
+      let shadow_target_id = render3d_point_light_shadow_target_get_or_create(
+        pass_lighting.point_entity,
+        point_light_shadow_map_size,
+      )
+      point_shadow_texture_id = shadow_target_id
+      point_shadow_enabled = 1.0F
+      point_shadow_depth_bias = maxf(
+        0.0F,
+        pass_lighting.point_shadow_depth_bias,
+      )
+      let shadow_camera_near = if pass_lighting.point_shadow_map_near_z >
+        0.0001F {
+        pass_lighting.point_shadow_map_near_z
+      } else {
+        0.0001F
+      }
+      let shadow_view_size = point_light_shadow_map_size
+      for face_index in 0..<6 {
+        let shadow_camera_transform = render3d_point_shadow_face_transform(
+          pass_lighting.point_pos,
+          face_index,
+        )
+        @window.host_gpu_begin_pass_3d(
+          target_id=shadow_target_id,
+          width=shadow_view_size,
+          height=shadow_view_size,
+          clear_r=1.0F,
+          clear_g=1.0F,
+          clear_b=1.0F,
+          clear_a=1.0F,
+          camera_x=shadow_camera_transform.translation.x,
+          camera_y=shadow_camera_transform.translation.y,
+          camera_z=shadow_camera_transform.translation.z,
+          camera_rot_x=shadow_camera_transform.rotation.x,
+          camera_rot_y=shadow_camera_transform.rotation.y,
+          camera_rot_z=shadow_camera_transform.rotation.z,
+          camera_rot_w=shadow_camera_transform.rotation.w,
+          camera_fov_y=@math.pi_half(),
+          camera_near=shadow_camera_near,
+          camera_far=pass_lighting.point_range,
+          viewport_x=0,
+          viewport_y=face_index * shadow_view_size,
+          viewport_width=shadow_view_size,
+          viewport_height=shadow_view_size,
+          ambient_r=pass_lighting.ambient_color.r,
+          ambient_g=pass_lighting.ambient_color.g,
+          ambient_b=pass_lighting.ambient_color.b,
+          ambient_brightness=pass_lighting.ambient_brightness,
+          directional_dir_x=pass_lighting.directional_dir.x,
+          directional_dir_y=pass_lighting.directional_dir.y,
+          directional_dir_z=pass_lighting.directional_dir.z,
+          directional_color_r=pass_lighting.directional_color.r,
+          directional_color_g=pass_lighting.directional_color.g,
+          directional_color_b=pass_lighting.directional_color.b,
+          directional_illuminance=pass_lighting.directional_illuminance,
+          point_pos_x=pass_lighting.point_pos.x,
+          point_pos_y=pass_lighting.point_pos.y,
+          point_pos_z=pass_lighting.point_pos.z,
+          point_color_r=pass_lighting.point_color.r,
+          point_color_g=pass_lighting.point_color.g,
+          point_color_b=pass_lighting.point_color.b,
+          point_intensity=pass_lighting.point_intensity,
+          point_range=pass_lighting.point_range,
+          spot_pos_x=pass_lighting.spot_pos.x,
+          spot_pos_y=pass_lighting.spot_pos.y,
+          spot_pos_z=pass_lighting.spot_pos.z,
+          spot_dir_x=pass_lighting.spot_dir.x,
+          spot_dir_y=pass_lighting.spot_dir.y,
+          spot_dir_z=pass_lighting.spot_dir.z,
+          spot_color_r=pass_lighting.spot_color.r,
+          spot_color_g=pass_lighting.spot_color.g,
+          spot_color_b=pass_lighting.spot_color.b,
+          spot_intensity=pass_lighting.spot_intensity,
+          spot_range=pass_lighting.spot_range,
+          spot_inner_angle=pass_lighting.spot_inner_angle,
+          spot_outer_angle=pass_lighting.spot_outer_angle,
+          sub_camera_view_scale_x=1.0F,
+          sub_camera_view_scale_y=1.0F,
+          sub_camera_view_bias_x=0.0F,
+          sub_camera_view_bias_y=0.0F,
+          previous_camera_x=shadow_camera_transform.translation.x,
+          previous_camera_y=shadow_camera_transform.translation.y,
+          previous_camera_z=shadow_camera_transform.translation.z,
+          previous_camera_rot_x=shadow_camera_transform.rotation.x,
+          previous_camera_rot_y=shadow_camera_transform.rotation.y,
+          previous_camera_rot_z=shadow_camera_transform.rotation.z,
+          previous_camera_rot_w=shadow_camera_transform.rotation.w,
+          pass_kind=point_shadow_pass_kind,
+          clear_enabled=if face_index == 0 { 1 } else { 0 },
+        )
+        for shadow_draw_index in draw_order {
+          let shadow_mesh = meshes[shadow_draw_index]
+          if shadow_mesh.is_forward_decal ||
+            shadow_mesh.clustered_decal is Some(_) {
+            continue
+          }
+          guard render3d_mesh_draw_alpha(
+              shadow_mesh.material.alpha_mode,
+              shadow_mesh.material.base_color.a,
+            )
+            is Some(shadow_alpha) else {
+            continue
+          }
+          if shadow_alpha < 0.999F {
+            continue
+          }
+          render3d_draw_mesh_instance(
+            shadow_mesh,
+            shadow_mesh.transform,
+            shadow_mesh.transform,
+            1.0F,
+            1.0F,
+            1.0F,
+            1.0F,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            0.5F,
+            0.5F,
+            0.0F,
+            0.0F,
+            0.0F,
+            1.5F,
+            -1,
+            0.0F,
+            0.0F,
+            -1,
+            0.0F,
+            0.0F,
+            @render2d.Color::white(),
+            0.0F,
+            0.0F,
+            0,
+          )
+        }
+        @window.host_gpu_end_pass()
+      }
     }
     if !motion_blur_active &&
       (transmission_enabled || bloom_enabled || tonemap_postprocess_enabled) &&
@@ -9657,11 +9932,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
     render3d_draw_camera_skybox(camera, camera_far)
-    let draw_order = render3d_sorted_mesh_indices(
-      meshes,
-      camera.layers,
-      camera.transform,
-    )
     let transmissive_draws : Array[TransmissionMeshDraw] = []
     for draw_index in draw_order {
       let mesh = meshes[draw_index]
@@ -9944,6 +10214,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         -1,
         0.0F,
         0.0F,
+        point_shadow_texture_id,
+        point_shadow_enabled,
+        point_shadow_depth_bias,
         mesh.material.specular_tint,
         anisotropy_strength,
         max_relief_mapping_search_steps,
@@ -10054,6 +10327,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           transmission_source_target_id,
           Float::from_double(transmission_blur_taps.to_double()),
           Float::from_double(transmission_steps.to_double()),
+          point_shadow_texture_id,
+          point_shadow_enabled,
+          point_shadow_depth_bias,
           transmissive_draw.specular_tint,
           transmissive_draw.anisotropy_strength,
           transmissive_draw.max_relief_mapping_search_steps,
@@ -10110,6 +10386,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         0.0F,
         0.0F,
         1.5F,
+        -1,
+        0.0F,
+        0.0F,
         -1,
         0.0F,
         0.0F,

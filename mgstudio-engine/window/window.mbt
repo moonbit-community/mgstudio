@@ -809,6 +809,9 @@ pub fn host_gpu_draw_mesh3d(
   transmission_source_texture_id~ : Int,
   transmission_blur_taps~ : Float,
   transmission_steps~ : Float,
+  point_shadow_texture_id~ : Int,
+  point_shadow_enabled~ : Float,
+  point_shadow_depth_bias~ : Float,
   cull_mode~ : Int,
 ) -> Unit = "mgstudio_host" "gpu_draw_mesh3d"
 
@@ -895,6 +898,9 @@ pub fn host_gpu_create_render_target_rgba16f(
   height~ : Int,
   nearest~ : Bool,
 ) -> Int = "mgstudio_host" "gpu_create_render_target_rgba16f"
+
+///|
+pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int = "mgstudio_host" "gpu_create_point_light_shadow_target"
 
 ///|
 pub fn host_gpu_create_mesh_capsule(

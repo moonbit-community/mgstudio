@@ -1,7 +1,8 @@
-bevy
+/bevy
 mygame
 .mgstudio/
 .DS_Store
+__pycache__/
 AGENTS.md
 .private/
 .codex

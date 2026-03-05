@@ -13,6 +13,15 @@
 // limitations under the License.
 
 ///|
+const MESH3D_VERTEX_SHADER_PATH : String = "shaders/bevy/bevy_pbr/render/mesh.wgsl"
+
+///|
+const MESH3D_FRAGMENT_SHADER_PATH : String = "shaders/bevy/bevy_pbr/render/pbr.wgsl"
+
+///|
+const MESH3D_SHADOW_SHADER_PATH : String = "shaders/bevy/bevy_pbr/render/mesh.wgsl"
+
+///|
 priv struct PendingTexture {
   id : Int
   path : @js.Any
@@ -126,6 +135,8 @@ priv struct AssetsState {
   shader_sources : @js.Any
   shader_paths : @js.Any
   loading_shaders : @js.Any
+  mut shader_module_index : @js.Any
+  mut shader_module_index_loaded : Bool
   mut next_shader_id : Int
   mut next_font_id : Int
   fonts : @js.Any
@@ -200,11 +211,11 @@ priv struct GpuState {
   mut vertex_count : Int
   mut mesh_pipeline : @webgpu.GPURenderPipeline?
   mut mesh3d_pipeline_cache : @js.Any
+  mut mesh3d_shadow_pipeline_cache : @js.Any
   mut motion_vector_pipeline : @webgpu.GPURenderPipeline?
   mut motion_blur_pipeline : @webgpu.GPURenderPipeline?
   mut bloom2d_pipeline : @webgpu.GPURenderPipeline?
-  mut mesh3d_uniform_layout : @webgpu.GPUBindGroupLayout?
-  mut mesh3d_material_layout : @webgpu.GPUBindGroupLayout?
+  mut mesh3d_dummy_resources : @js.Any?
   mut motion_blur_bind_layout : @webgpu.GPUBindGroupLayout?
   mut motion_blur_settings_buffer : @webgpu.GPUBuffer?
   mut motion_blur_globals_buffer : @webgpu.GPUBuffer?
@@ -228,11 +239,6 @@ priv struct GpuState {
   mut bloom2d_mip_height : Int
   mut bloom2d_mip_count : Int
   mut bloom2d_mip_format : String
-  mut bloom2d_compose_texture : @webgpu.GPUTexture?
-  mut bloom2d_compose_view : @webgpu.GPUTextureView?
-  mut bloom2d_compose_width : Int
-  mut bloom2d_compose_height : Int
-  mut bloom2d_compose_format : String
   mut depth_texture : @webgpu.GPUTexture?
   mut depth_view : @webgpu.GPUTextureView?
   mut depth_width : Int
@@ -287,6 +293,8 @@ priv struct GpuState {
   mut ui_slice_shader_id : Int
   mut mesh_shader_id : Int
   mut mesh3d_shader_id : Int
+  mut mesh3d_fragment_shader_id : Int
+  mut mesh3d_shadow_shader_id : Int
   mut motion_vector_shader_id : Int
   mut motion_blur_shader_id : Int
   mut bloom2d_downsample_first_shader_id : Int
@@ -365,6 +373,8 @@ fn new_state(
       shader_sources: new_map(),
       shader_paths: new_map(),
       loading_shaders: new_set(),
+      shader_module_index: new_map(),
+      shader_module_index_loaded: false,
       next_shader_id: 1,
       next_font_id: 1,
       fonts: new_map(),
@@ -410,11 +420,11 @@ fn new_state(
       vertex_count: 0,
       mesh_pipeline: None,
       mesh3d_pipeline_cache: new_map(),
+      mesh3d_shadow_pipeline_cache: new_map(),
       motion_vector_pipeline: None,
       motion_blur_pipeline: None,
       bloom2d_pipeline: None,
-      mesh3d_uniform_layout: None,
-      mesh3d_material_layout: None,
+      mesh3d_dummy_resources: None,
       motion_blur_bind_layout: None,
       motion_blur_settings_buffer: None,
       motion_blur_globals_buffer: None,
@@ -438,11 +448,6 @@ fn new_state(
       bloom2d_mip_height: 0,
       bloom2d_mip_count: 0,
       bloom2d_mip_format: "",
-      bloom2d_compose_texture: None,
-      bloom2d_compose_view: None,
-      bloom2d_compose_width: 0,
-      bloom2d_compose_height: 0,
-      bloom2d_compose_format: "",
       depth_texture: None,
       depth_view: None,
       depth_width: 0,
@@ -497,6 +502,8 @@ fn new_state(
       ui_slice_shader_id: 0,
       mesh_shader_id: 0,
       mesh3d_shader_id: 0,
+      mesh3d_fragment_shader_id: 0,
+      mesh3d_shadow_shader_id: 0,
       motion_vector_shader_id: 0,
       motion_blur_shader_id: 0,
       bloom2d_downsample_first_shader_id: 0,
@@ -1175,11 +1182,11 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.vertex_count = 0
   state.gpu.mesh_pipeline = None
   state.gpu.mesh3d_pipeline_cache = new_map()
+  state.gpu.mesh3d_shadow_pipeline_cache = new_map()
   state.gpu.motion_vector_pipeline = None
   state.gpu.motion_blur_pipeline = None
   state.gpu.bloom2d_pipeline = None
-  state.gpu.mesh3d_uniform_layout = None
-  state.gpu.mesh3d_material_layout = None
+  state.gpu.mesh3d_dummy_resources = None
   state.gpu.motion_blur_bind_layout = None
   state.gpu.motion_blur_settings_buffer = None
   state.gpu.motion_blur_globals_buffer = None
@@ -1203,11 +1210,6 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.bloom2d_mip_height = 0
   state.gpu.bloom2d_mip_count = 0
   state.gpu.bloom2d_mip_format = ""
-  state.gpu.bloom2d_compose_texture = None
-  state.gpu.bloom2d_compose_view = None
-  state.gpu.bloom2d_compose_width = 0
-  state.gpu.bloom2d_compose_height = 0
-  state.gpu.bloom2d_compose_format = ""
   state.gpu.depth_texture = None
   state.gpu.depth_view = None
   state.gpu.depth_width = 0
@@ -1263,6 +1265,8 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.ui_slice_shader_id = 0
   state.gpu.mesh_shader_id = 0
   state.gpu.mesh3d_shader_id = 0
+  state.gpu.mesh3d_fragment_shader_id = 0
+  state.gpu.mesh3d_shadow_shader_id = 0
   state.gpu.motion_vector_shader_id = 0
   state.gpu.motion_blur_shader_id = 0
   state.gpu.bloom2d_downsample_first_shader_id = 0
@@ -1280,6 +1284,8 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   let ui_slice_id = next_shader_id(state)
   let mesh_id = next_shader_id(state)
   let mesh3d_id = next_shader_id(state)
+  let mesh3d_fragment_id = next_shader_id(state)
+  let mesh3d_shadow_id = next_shader_id(state)
   let motion_vector_id = next_shader_id(state)
   let motion_blur_id = next_shader_id(state)
   let bloom2d_downsample_first_id = next_shader_id(state)
@@ -1297,6 +1303,8 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   state.gpu.ui_slice_shader_id = ui_slice_id
   state.gpu.mesh_shader_id = mesh_id
   state.gpu.mesh3d_shader_id = mesh3d_id
+  state.gpu.mesh3d_fragment_shader_id = mesh3d_fragment_id
+  state.gpu.mesh3d_shadow_shader_id = mesh3d_shadow_id
   state.gpu.motion_vector_shader_id = motion_vector_id
   state.gpu.motion_blur_shader_id = motion_blur_id
   state.gpu.bloom2d_downsample_first_shader_id = bloom2d_downsample_first_id
@@ -1314,6 +1322,8 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   set_add(state.assets.loading_shaders, @js.any(ui_slice_id))
   set_add(state.assets.loading_shaders, @js.any(mesh_id))
   set_add(state.assets.loading_shaders, @js.any(mesh3d_id))
+  set_add(state.assets.loading_shaders, @js.any(mesh3d_fragment_id))
+  set_add(state.assets.loading_shaders, @js.any(mesh3d_shadow_id))
   set_add(state.assets.loading_shaders, @js.any(motion_vector_id))
   set_add(state.assets.loading_shaders, @js.any(motion_blur_id))
   set_add(state.assets.loading_shaders, @js.any(bloom2d_downsample_first_id))
@@ -1362,7 +1372,17 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   map_set(
     state.assets.shader_paths,
     @js.any(mesh3d_id),
-    @js.any("shaders/mgstudio/3d/mesh3d.wgsl"),
+    @js.any(MESH3D_VERTEX_SHADER_PATH),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(mesh3d_fragment_id),
+    @js.any(MESH3D_FRAGMENT_SHADER_PATH),
+  )
+  map_set(
+    state.assets.shader_paths,
+    @js.any(mesh3d_shadow_id),
+    @js.any(MESH3D_SHADOW_SHADER_PATH),
   )
   map_set(
     state.assets.shader_paths,
@@ -1436,9 +1456,32 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
   set_delete(state.assets.loading_shaders, @js.any(ui_id)) |> ignore
   load_wgsl_from_path(state, mesh_id, "shaders/mgstudio/2d/mesh.wgsl") |> ignore
   set_delete(state.assets.loading_shaders, @js.any(mesh_id)) |> ignore
-  load_wgsl_from_path(state, mesh3d_id, "shaders/mgstudio/3d/mesh3d.wgsl")
+  let mesh3d_shader_defs = mesh3d_bevy_shader_defs()
+  load_wgsl_from_path_with_shader_defs(
+    state,
+    mesh3d_id,
+    MESH3D_VERTEX_SHADER_PATH,
+    mesh3d_shader_defs,
+  )
   |> ignore
   set_delete(state.assets.loading_shaders, @js.any(mesh3d_id)) |> ignore
+  load_wgsl_from_path_with_shader_defs(
+    state,
+    mesh3d_fragment_id,
+    MESH3D_FRAGMENT_SHADER_PATH,
+    mesh3d_shader_defs,
+  )
+  |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(mesh3d_fragment_id))
+  |> ignore
+  load_wgsl_from_path_with_shader_defs(
+    state,
+    mesh3d_shadow_id,
+    MESH3D_SHADOW_SHADER_PATH,
+    mesh3d_shader_defs,
+  )
+  |> ignore
+  set_delete(state.assets.loading_shaders, @js.any(mesh3d_shadow_id)) |> ignore
   load_wgsl_from_path(
     state, motion_vector_id, "shaders/mgstudio/3d/motion_vector.wgsl",
   )
@@ -1453,7 +1496,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state,
     "shaders/mgstudio/2d/bloom.wgsl",
     ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
-    new_set(),
+    Ref::new([]),
   )
   map_set(
     state.assets.shader_sources,
@@ -1466,7 +1509,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state,
     "shaders/mgstudio/2d/bloom.wgsl",
     ["FIRST_DOWNSAMPLE"],
-    new_set(),
+    Ref::new([]),
   )
   map_set(
     state.assets.shader_sources,
@@ -1482,7 +1525,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state,
     "shaders/mgstudio/2d/bloom.wgsl",
     ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
-    new_set(),
+    Ref::new([]),
   )
   map_set(
     state.assets.shader_sources,
@@ -1498,7 +1541,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state,
     "shaders/mgstudio/2d/bloom.wgsl",
     ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
-    new_set(),
+    Ref::new([]),
   )
   map_set(
     state.assets.shader_sources,
@@ -1514,7 +1557,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state,
     "shaders/mgstudio/2d/bloom.wgsl",
     [],
-    new_set(),
+    Ref::new([]),
   )
   map_set(
     state.assets.shader_sources,
@@ -1527,7 +1570,7 @@ async fn init_webgpu(state : State, target : @js.Any) -> Unit {
     state,
     "shaders/mgstudio/2d/bloom.wgsl",
     ["UNIFORM_SCALE"],
-    new_set(),
+    Ref::new([]),
   )
   map_set(
     state.assets.shader_sources,

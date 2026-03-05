@@ -4127,6 +4127,9 @@ fn define_mgstudio_host_imports(
             ValType::F32,
             ValType::F32,
             ValType::I32,
+            ValType::F32,
+            ValType::F32,
+            ValType::I32,
         ],
         &[ValType::I32],
         |mut caller, args, out| {
@@ -4186,7 +4189,19 @@ fn define_mgstudio_host_imports(
             let transmission_source_texture_id = args.get(56).and_then(|v| v.i32()).unwrap_or(-1);
             let transmission_blur_taps = if args.len() > 57 { f(57) } else { 0.0 };
             let transmission_steps = if args.len() > 58 { f(58) } else { 0.0 };
-            let cull_mode = args.get(59).and_then(|v| v.i32()).unwrap_or(2);
+            let has_shadow_args = args.len() > 62;
+            let point_shadow_texture_id = if has_shadow_args {
+                args.get(59).and_then(|v| v.i32()).unwrap_or(-1)
+            } else {
+                -1
+            };
+            let point_shadow_enabled = if has_shadow_args { f(60) } else { 0.0 };
+            let point_shadow_depth_bias = if has_shadow_args { f(61) } else { 0.0 };
+            let cull_mode = if has_shadow_args {
+                args.get(62).and_then(|v| v.i32()).unwrap_or(2)
+            } else {
+                args.get(59).and_then(|v| v.i32()).unwrap_or(2)
+            };
             if let Some(gpu) = caller.data_mut().gpu.as_mut() {
                 gpu.draw_mesh3d(
                     mesh_id,
@@ -4239,6 +4254,9 @@ fn define_mgstudio_host_imports(
                     transmission_source_texture_id,
                     transmission_blur_taps,
                     transmission_steps,
+                    point_shadow_texture_id,
+                    point_shadow_enabled,
+                    point_shadow_depth_bias,
                     cull_mode,
                 )?;
             }
@@ -4420,6 +4438,22 @@ fn define_mgstudio_host_imports(
             let nearest = args.get(2).and_then(|v| v.i32()).unwrap_or(0) != 0;
             let gpu = caller.data_mut().ensure_gpu()?;
             let id = gpu.create_render_target(w, h, nearest)?;
+            ok_i32(out, id);
+            Ok(())
+        },
+    )?;
+
+    define_func(
+        store,
+        linker,
+        "mgstudio_host",
+        "gpu_create_point_light_shadow_target",
+        &[ValType::I32],
+        &[ValType::I32],
+        |mut caller, args, out| {
+            let size = args.get(0).and_then(|v| v.i32()).unwrap_or(1).max(1) as u32;
+            let gpu = caller.data_mut().ensure_gpu()?;
+            let id = gpu.create_point_light_shadow_target(size)?;
             ok_i32(out, id);
             Ok(())
         },
