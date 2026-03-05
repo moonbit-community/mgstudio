@@ -2650,6 +2650,64 @@ extern "js" fn mesh3d_bevy_view_uniform_bytes(
   #|     }
   #|     return out
   #|   }
+  #|   const mat4RowInverse = (m) => {
+  #|     const aug = new Array(4)
+  #|     for (let r = 0; r < 4; r += 1) {
+  #|       const row = new Float32Array(8)
+  #|       for (let c = 0; c < 4; c += 1) {
+  #|         row[c] = m[r * 4 + c]
+  #|       }
+  #|       row[4 + r] = 1.0
+  #|       aug[r] = row
+  #|     }
+  #|     for (let col = 0; col < 4; col += 1) {
+  #|       let pivot = col
+  #|       let pivotAbs = Math.abs(aug[col][col])
+  #|       for (let r = col + 1; r < 4; r += 1) {
+  #|         const v = Math.abs(aug[r][col])
+  #|         if (v > pivotAbs) {
+  #|           pivotAbs = v
+  #|           pivot = r
+  #|         }
+  #|       }
+  #|       if (pivotAbs <= 1.0e-8) {
+  #|         return new Float32Array([
+  #|           1.0, 0.0, 0.0, 0.0,
+  #|           0.0, 1.0, 0.0, 0.0,
+  #|           0.0, 0.0, 1.0, 0.0,
+  #|           0.0, 0.0, 0.0, 1.0,
+  #|         ])
+  #|       }
+  #|       if (pivot !== col) {
+  #|         const tmp = aug[col]
+  #|         aug[col] = aug[pivot]
+  #|         aug[pivot] = tmp
+  #|       }
+  #|       const invPivot = 1.0 / aug[col][col]
+  #|       for (let c = 0; c < 8; c += 1) {
+  #|         aug[col][c] *= invPivot
+  #|       }
+  #|       for (let r = 0; r < 4; r += 1) {
+  #|         if (r === col) {
+  #|           continue
+  #|         }
+  #|         const factor = aug[r][col]
+  #|         if (Math.abs(factor) <= 1.0e-12) {
+  #|           continue
+  #|         }
+  #|         for (let c = 0; c < 8; c += 1) {
+  #|           aug[r][c] -= factor * aug[col][c]
+  #|         }
+  #|       }
+  #|     }
+  #|     const out = new Float32Array(16)
+  #|     for (let r = 0; r < 4; r += 1) {
+  #|       for (let c = 0; c < 4; c += 1) {
+  #|         out[r * 4 + c] = aug[r][4 + c]
+  #|       }
+  #|     }
+  #|     return out
+  #|   }
   #|   const mat4RowToCol = (m) => [
   #|     m[0], m[4], m[8], m[12],
   #|     m[1], m[5], m[9], m[13],
@@ -2730,25 +2788,23 @@ extern "js" fn mesh3d_bevy_view_uniform_bytes(
   #|       subY * clipFromViewRow[4 + c] + subBiasY * clipFromViewRow[12 + c]
   #|   }
   #|   const clipFromWorldRow = mat4RowMul(clipFromViewRow, viewFromWorldRow)
+  #|   const viewFromClipRow = mat4RowInverse(clipFromViewRow)
+  #|   const worldFromClipRow = mat4RowMul(worldFromViewRow, viewFromClipRow)
   #|   const clipFromWorldCol = mat4RowToCol(clipFromWorldRow)
+  #|   const worldFromClipCol = mat4RowToCol(worldFromClipRow)
   #|   const worldFromViewCol = mat4RowToCol(worldFromViewRow)
   #|   const viewFromWorldCol = mat4RowToCol(viewFromWorldRow)
   #|   const clipFromViewCol = mat4RowToCol(clipFromViewRow)
-  #|   const identityCol = [
-  #|     1.0, 0.0, 0.0, 0.0,
-  #|     0.0, 1.0, 0.0, 0.0,
-  #|     0.0, 0.0, 1.0, 0.0,
-  #|     0.0, 0.0, 0.0, 1.0,
-  #|   ]
+  #|   const viewFromClipCol = mat4RowToCol(viewFromClipRow)
   #|   const out = new Float32Array(192)
   #|   for (let i = 0; i < 16; i += 1) {
   #|     out[i] = clipFromWorldCol[i]
   #|     out[16 + i] = clipFromWorldCol[i]
-  #|     out[32 + i] = identityCol[i]
+  #|     out[32 + i] = worldFromClipCol[i]
   #|     out[48 + i] = worldFromViewCol[i]
   #|     out[64 + i] = viewFromWorldCol[i]
   #|     out[80 + i] = clipFromViewCol[i]
-  #|     out[96 + i] = identityCol[i]
+  #|     out[96 + i] = viewFromClipCol[i]
   #|   }
   #|   out[112] = camX
   #|   out[113] = camY
@@ -2996,19 +3052,6 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|     if (pointShadowsEnabled) {
   #|       flags = flags | POINT_LIGHT_FLAG_SHADOWS_ENABLED
   #|     }
-  #|     if (pointShadowsEnabled && !globalThis.__mgstudioPointShadowFlagsOnLogged) {
-  #|       globalThis.__mgstudioPointShadowFlagsOnLogged = true
-  #|       console.log(
-  #|         "clustered point light flags",
-  #|         flags,
-  #|         "pointShadowsEnabled",
-  #|         pointShadowsEnabled ? 1 : 0,
-  #|         "pointIntensity",
-  #|         n(pointIntensity),
-  #|         "pointRange",
-  #|         range,
-  #|       )
-  #|     }
   #|     writeClusteredLight(
   #|       nextLightId,
   #|       [0.0, -1.0, shadowMapNearZ, 0.0],
@@ -3018,7 +3061,7 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|         n(pointColorB) * intensityScale,
   #|         1.0 / (range * range),
   #|       ],
-  #|       [n(pointPosX), n(pointPosY), -n(pointPosZ), 0.0],
+    #|       [n(pointPosX), n(pointPosY), n(pointPosZ), 0.0],
   #|       flags,
   #|       pointShadowsEnabled ? n(pointShadowDepthBias) : 0.0,
   #|       POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
@@ -3057,7 +3100,7 @@ extern "js" fn mesh3d_bevy_clustered_uniform_payload_bytes(
   #|         n(spotColorB) * intensityScale,
   #|         1.0 / (range * range),
   #|       ],
-  #|       [n(spotPosX), n(spotPosY), -n(spotPosZ), 0.0],
+    #|       [n(spotPosX), n(spotPosY), n(spotPosZ), 0.0],
   #|       flags,
   #|       0.0,
   #|       0.0,

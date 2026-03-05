@@ -8380,6 +8380,63 @@ fn mat4_row_mul(a: &[f32; 16], b: &[f32; 16]) -> [f32; 16] {
     out
 }
 
+fn mat4_row_inverse(m: &[f32; 16]) -> [f32; 16] {
+    let mut aug = [[0.0f32; 8]; 4];
+    for r in 0..4 {
+        for c in 0..4 {
+            aug[r][c] = m[r * 4 + c];
+        }
+        aug[r][4 + r] = 1.0;
+    }
+
+    for col in 0..4 {
+        let mut pivot = col;
+        let mut pivot_abs = aug[col][col].abs();
+        for r in (col + 1)..4 {
+            let v = aug[r][col].abs();
+            if v > pivot_abs {
+                pivot_abs = v;
+                pivot = r;
+            }
+        }
+        if pivot_abs <= 1.0e-8 {
+            return [
+                1.0, 0.0, 0.0, 0.0, //
+                0.0, 1.0, 0.0, 0.0, //
+                0.0, 0.0, 1.0, 0.0, //
+                0.0, 0.0, 0.0, 1.0,
+            ];
+        }
+        if pivot != col {
+            aug.swap(col, pivot);
+        }
+        let inv_pivot = aug[col][col].recip();
+        for c in 0..8 {
+            aug[col][c] *= inv_pivot;
+        }
+        for r in 0..4 {
+            if r == col {
+                continue;
+            }
+            let factor = aug[r][col];
+            if factor.abs() <= 1.0e-12 {
+                continue;
+            }
+            for c in 0..8 {
+                aug[r][c] -= factor * aug[col][c];
+            }
+        }
+    }
+
+    let mut out = [0.0f32; 16];
+    for r in 0..4 {
+        for c in 0..4 {
+            out[r * 4 + c] = aug[r][4 + c];
+        }
+    }
+    out
+}
+
 fn mat4_row_to_col(m: &[f32; 16]) -> [f32; 16] {
     [
         m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14], m[3], m[7],
@@ -8547,21 +8604,22 @@ fn mesh3d_bevy_view_uniform_bytes(pass: &GpuPassState) -> Vec<u8> {
         pass.sub_camera_view,
     );
     let clip_from_world_row = mat4_row_mul(&clip_from_view_row, &view_from_world_row);
-    let identity_col = [
-        1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-    ];
+    let view_from_clip_row = mat4_row_inverse(&clip_from_view_row);
+    let world_from_clip_row = mat4_row_mul(&world_from_view_row, &view_from_clip_row);
     let clip_from_world_col = mat4_row_to_col(&clip_from_world_row);
+    let world_from_clip_col = mat4_row_to_col(&world_from_clip_row);
     let world_from_view_col = mat4_row_to_col(&world_from_view_row);
     let view_from_world_col = mat4_row_to_col(&view_from_world_row);
     let clip_from_view_col = mat4_row_to_col(&clip_from_view_row);
+    let view_from_clip_col = mat4_row_to_col(&view_from_clip_row);
     for i in 0..16 {
         floats[i] = clip_from_world_col[i];
         floats[16 + i] = clip_from_world_col[i];
-        floats[32 + i] = identity_col[i];
+        floats[32 + i] = world_from_clip_col[i];
         floats[48 + i] = world_from_view_col[i];
         floats[64 + i] = view_from_world_col[i];
         floats[80 + i] = clip_from_view_col[i];
-        floats[96 + i] = identity_col[i];
+        floats[96 + i] = view_from_clip_col[i];
     }
     floats[112] = pass.camera_x;
     floats[113] = pass.camera_y;
