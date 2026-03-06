@@ -454,6 +454,10 @@ pub fn GpuBackend::new(
   ) catch {
     err => fatal("wgpu: Adapter::request_device_sync failed: " + err.message())
   }
+  if @sys.get_env_var("MGSTUDIO_WGPU_UNCAPTURED_ERROR_STDERR") is Some(flag) &&
+    flag == "1" {
+    @wgpu.set_uncaptured_error_stderr_enabled(true)
+  }
   let queue = device.queue()
   GpuBackend::{
     instance,
@@ -1240,6 +1244,24 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
 }
 
 ///|
+fn create_uniform_bind_group_layout_vertex_fragment(
+  backend : GpuBackend,
+  label : String,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+  let ok = builder.add_buffer(
+    0U,
+    ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT),
+    @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+  )
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build uniform bind group layout")
+  }
+  builder.finish(backend.device, label=label)
+}
+
+///|
 fn ensure_sprite_pipeline_rgba8(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -1755,13 +1777,13 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     layout.raw_handle(),
     shader.raw_handle(),
   )
-  let set_format_ok = @wgpu_c.render_pipeline_desc_builder_set_color_target_format(
+  let set_format_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_format(
     builder, format,
   )
-  let set_blend_ok = if alpha_blend {
+  let set_blend_err = if alpha_blend {
     @wgpu_c.render_pipeline_desc_builder_enable_alpha_blend(builder)
   } else {
-    1U
+    0U
   }
   let vertex_stride = if position3d { 36UL } else { 32UL }
   let pos_format = if position3d {
@@ -1771,38 +1793,38 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   }
   let uv_offset = if position3d { 12UL } else { 8UL }
   let color_offset = if position3d { 20UL } else { 16UL }
-  let set_vertex_layout_ok = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
+  let set_vertex_layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
     builder,
     vertex_stride,
     @wgpu.VERTEX_STEP_MODE_VERTEX,
   )
-  let pos_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+  let pos_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder, pos_format, 0UL, 0U,
   )
-  let uv_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+  let uv_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X2,
     uv_offset,
     1U,
   )
-  let color_ok = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+  let color_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X4,
     color_offset,
     2U,
   )
-  if set_format_ok == 0U ||
-    set_blend_ok == 0U ||
-    set_vertex_layout_ok == 0U ||
-    pos_ok == 0U ||
-    uv_ok == 0U ||
-    color_ok == 0U {
+  if set_format_err != 0U ||
+    set_blend_err != 0U ||
+    set_vertex_layout_err != 0U ||
+    pos_err != 0U ||
+    uv_err != 0U ||
+    color_err != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal(
       "wgpu: failed to configure mesh vertex attributes for pos2+uv2+color4 pipeline",
     )
   }
-  let set_topology_ok = @wgpu_c.render_pipeline_desc_builder_set_topology(
+  let set_topology_err = @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder, topology,
   )
   // Our runtime clip-space winding is flipped relative to Bevy, so CW must be
@@ -1814,23 +1836,36 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_cull_mode_ok = wgpu_render_pipeline_desc_builder_set_cull_mode(
     builder, cull_mode,
   )
-  if set_topology_ok == 0U || set_front_face_ok == 0U || set_cull_mode_ok == 0U {
+  if set_topology_err != 0U ||
+    set_front_face_ok != 0U ||
+    set_cull_mode_ok != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal("wgpu: failed to configure mesh pipeline primitive state")
   }
   if with_depth {
-    let set_depth_ok = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
+    let set_depth_err = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
       builder,
       @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
       depth_write_enabled,
       @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
     )
-    if set_depth_ok == 0U {
+    if set_depth_err != 0U {
       @wgpu_c.render_pipeline_desc_builder_free(builder)
       fatal("wgpu: failed to configure mesh pipeline depth-stencil state")
     }
   }
-  @wgpu_c.render_pipeline_desc_builder_finish(builder)
+  let desc = @wgpu_c.render_pipeline_desc_builder_finish(builder)
+  let last_error = @wgpu_c.render_pipeline_desc_builder_last_error_u32(builder)
+  if last_error != 0U || @wgpu_c.render_pipeline_descriptor_ptr_is_null(desc) {
+    let last_error_args = @wgpu_c.render_pipeline_desc_builder_last_error_args_u64(
+      builder,
+    )
+    @wgpu_c.render_pipeline_desc_builder_free(builder)
+    fatal(
+      "wgpu: mesh pipeline descriptor builder finish failed (error=\{last_error.reinterpret_as_int()}, args=\{last_error_args.to_int()})",
+    )
+  }
+  desc
 }
 
 ///|
@@ -1839,14 +1874,27 @@ fn ensure_mesh_pipeline_rgba8(
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   if backend.mesh_pipeline_layout is None {
-    guard backend.sprite_bgl_tex is Some(bgl_tex) else { return }
-    let bgl = backend.device.create_bind_group_layout_uniform_buffer()
+    guard backend.sprite_bgl_tex is Some(bgl_tex) else {
+      @debug.debug(
+        "[native_gpu] ensure_mesh_pipeline_rgba8: sprite_bgl_tex is None",
+      )
+      return
+    }
+    let bgl = create_uniform_bind_group_layout_vertex_fragment(
+      backend,
+      "mgstudio_mesh_uniform_bgl",
+    )
     let pl = backend.device.create_pipeline_layout_2(bgl, bgl_tex)
     backend.mesh_bgl_uniform = Some(bgl)
     backend.mesh_pipeline_layout = Some(pl)
   }
   if backend.mesh_uniform_buf is None || backend.mesh_uniform_bg is None {
-    guard backend.mesh_bgl_uniform is Some(bgl) else { return }
+    guard backend.mesh_bgl_uniform is Some(bgl) else {
+      @debug.debug(
+        "[native_gpu] ensure_mesh_pipeline_rgba8: mesh_bgl_uniform is None",
+      )
+      return
+    }
     let ubo_usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
     let uniform_buf = backend.device.create_buffer(size=80UL, usage=ubo_usage)
     let uniform_bg = backend.device.create_bind_group_uniform_buffer(
@@ -1858,7 +1906,12 @@ fn ensure_mesh_pipeline_rgba8(
   if backend.mesh_pipeline is Some(_) {
     return
   }
-  guard backend.mesh_pipeline_layout is Some(pl) else { return }
+  guard backend.mesh_pipeline_layout is Some(pl) else {
+    @debug.debug(
+      "[native_gpu] ensure_mesh_pipeline_rgba8: mesh_pipeline_layout is None",
+    )
+    return
+  }
   let wgsl = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/2d/mesh.wgsl",
   )
@@ -1867,13 +1920,14 @@ fn ensure_mesh_pipeline_rgba8(
     pl,
     sm,
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
-    with_depth=true,
-    position3d=true,
+    with_depth=false,
+    position3d=false,
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_mesh_rgba8")
   backend.mesh_pipeline = Some(pipeline)
+  @debug.debug("[native_gpu] ensure_mesh_pipeline_rgba8: pipeline created")
   sm.release()
 }
 
@@ -1881,6 +1935,9 @@ fn ensure_mesh_pipeline_rgba8(
 fn ensure_mesh_pipeline_surface(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
+  // Ensure shared mesh pipeline resources/layout exist before creating
+  // surface-format specializations.
+  ensure_mesh_pipeline_rgba8(backend)
   ensure_sprite_resources(backend)
   guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
@@ -1903,8 +1960,8 @@ fn ensure_mesh_pipeline_surface(
     pl,
     sm,
     format.to_u32(),
-    with_depth=true,
-    position3d=true,
+    with_depth=false,
+    position3d=false,
   )
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
@@ -2108,7 +2165,10 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend.mesh3d_pipeline_rgba8_cull_mode = safe_cull_mode
   }
   if backend.mesh3d_pipeline_layout is None {
-    let bgl = backend.device.create_bind_group_layout_uniform_buffer()
+    let bgl = create_uniform_bind_group_layout_vertex_fragment(
+      backend,
+      "mgstudio_mesh3d_uniform_bgl",
+    )
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
     let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=12UL)
     let material_ok = material_builder.add_sampler(
@@ -2268,6 +2328,9 @@ fn ensure_mesh3d_pipeline_surface(
   topology : UInt,
   cull_mode : Int,
 ) -> Unit raise GpuBackendError {
+  // Ensure shared mesh3d pipeline resources/layout exist before creating
+  // surface-format specializations.
+  ensure_mesh3d_pipeline_rgba8(backend, topology, cull_mode)
   ensure_sprite_resources(backend)
   guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
@@ -2376,7 +2439,10 @@ fn ensure_mesh3d_motion_vector_pipeline(
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
   if backend.mesh3d_motion_vector_pipeline_layout is None {
-    let bgl = backend.device.create_bind_group_layout_uniform_buffer()
+    let bgl = create_uniform_bind_group_layout_vertex_fragment(
+      backend,
+      "mgstudio_motion_vector_uniform_bgl",
+    )
     let pl = backend.device.create_pipeline_layout_1(bgl)
     backend.mesh3d_motion_vector_bgl_uniform = Some(bgl)
     backend.mesh3d_motion_vector_pipeline_layout = Some(pl)
@@ -5596,22 +5662,50 @@ pub fn GpuBackend::draw_mesh(
   uv_scale_x : Float,
   uv_scale_y : Float,
 ) -> Unit raise GpuBackendError {
-  guard self.frame is Some(frame) else { return }
-  guard frame.pass is Some(pass) else { return }
-  guard self.pass_state is Some(ps) else { return }
+  guard self.frame is Some(frame) else {
+    debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
+    return
+  }
+  guard frame.pass is Some(pass) else {
+    debug_mesh2d_drop_no_pass_ref.val = debug_mesh2d_drop_no_pass_ref.val + 1
+    return
+  }
+  guard self.pass_state is Some(ps) else {
+    debug_mesh2d_drop_no_pass_state_ref.val = debug_mesh2d_drop_no_pass_state_ref.val +
+      1
+    return
+  }
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
-  guard find_mesh(self, mesh_id) is Some(mesh) else { return }
-  if mesh.vertex_stride_bytes != 32UL {
+  guard find_mesh(self, mesh_id) is Some(mesh) else {
+    debug_mesh2d_drop_missing_mesh_ref.val = debug_mesh2d_drop_missing_mesh_ref.val +
+      1
     return
   }
-  guard mesh_pipeline_for_current_pass(self) is Some(pipeline) else { return }
-  guard self.mesh_uniform_buf is Some(uniform_buf) else { return }
-  guard self.mesh_uniform_bg is Some(uniform_bg) else { return }
+  if mesh.vertex_stride_bytes != 32UL {
+    debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val + 1
+    return
+  }
+  guard mesh_pipeline_for_current_pass(self) is Some(pipeline) else {
+    debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
+      1
+    return
+  }
+  guard self.mesh_uniform_buf is Some(uniform_buf) else {
+    debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
+      1
+    return
+  }
+  guard self.mesh_uniform_bg is Some(uniform_bg) else {
+    debug_mesh2d_drop_no_uniform_bg_ref.val = debug_mesh2d_drop_no_uniform_bg_ref.val +
+      1
+    return
+  }
   let resolved_texture_id = if texture_id < 0 { -1 } else { texture_id }
   guard resolve_draw_texture(self, resolved_texture_id) is Some(texture) else {
+    debug_mesh2d_drop_no_texture_ref.val = debug_mesh2d_drop_no_texture_ref.val + 1
     return
   }
   let textured = texture_id >= 0
@@ -5665,6 +5759,8 @@ pub fn GpuBackend::draw_mesh(
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
   let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
   pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+  debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
+    1
   pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
 }
 
@@ -6725,9 +6821,15 @@ pub fn GpuBackend::draw_mesh3d(
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
-  let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
-  pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
-  pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
+  debug_mesh3d_executed_draw_calls_ref.val = debug_mesh3d_executed_draw_calls_ref.val +
+    1
+  if mesh.primitive_topology == MESH3D_TOPOLOGY_LINE_STRIP {
+    pass.draw(mesh.vertex_count, 1U, 0U, 0U)
+  } else {
+    let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
+    pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+    pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
+  }
 }
 
 ///|
@@ -6773,6 +6875,54 @@ let next_frame_id_ref : Ref[Int] = Ref::new(1)
 let gizmo_line_mesh_id_ref : Ref[Int] = Ref::new(0)
 
 ///|
+let debug_frame_counter_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh3d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_invalid_id_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh3d_invalid_id_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_frame_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_pass_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_pass_state_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_missing_mesh_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_bad_stride_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_pipeline_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_uniform_buf_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_uniform_bg_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_texture_ref : Ref[Int] = Ref::new(0)
+
+///|
 fn next_surface_id() -> NativeGpuSurface {
   let id = next_surface_id_ref.val
   next_surface_id_ref.val = next_surface_id_ref.val + 1
@@ -6792,6 +6942,11 @@ fn env_or_default(key : String, default_value : String) -> String {
     Some(value) if value != "" => value
     _ => default_value
   }
+}
+
+///|
+fn debug_runtime_error(context : String, err : GpuBackendError) -> Unit {
+  @debug.debug("[native_gpu] " + context + ": " + err.to_string())
 }
 
 ///|
@@ -6847,7 +7002,7 @@ pub fn create_surface(window : Int) -> NativeGpuSurface {
   surfaces_ref.val.push(SurfaceBinding::{ id: surface_id, window })
   if ensure_backend() is Some(backend) {
     backend.create_surface(window) catch {
-      _ => ()
+      err => debug_runtime_error("create_surface", err)
     }
   }
   surface_id
@@ -6866,7 +7021,7 @@ pub fn configure_surface(
   }
   if ensure_backend() is Some(backend) {
     backend.configure_surface(width, height) catch {
-      _ => ()
+      err => debug_runtime_error("configure_surface", err)
     }
   }
 }
@@ -6879,7 +7034,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
       backend.begin_frame()
       return next_frame_id()
     } catch {
-      _ => ()
+      err => debug_runtime_error("begin_frame", err)
     }
   }
   0
@@ -6890,8 +7045,58 @@ pub fn end_frame(frame : NativeGpuFrame) -> Unit {
   frame |> ignore
   if ensure_backend() is Some(backend) {
     backend.end_frame() catch {
-      _ => ()
+      err => debug_runtime_error("end_frame", err)
     }
+  }
+  debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
+  if debug_frame_counter_ref.val % 60 == 0 {
+    @debug.debug(
+      "[native_gpu] draw stats(60f): mesh2d=" +
+      debug_mesh2d_draw_calls_ref.val.to_string() +
+      ", mesh2d_invalid_id=" +
+      debug_mesh2d_invalid_id_calls_ref.val.to_string() +
+      ", mesh2d_executed=" +
+      debug_mesh2d_executed_draw_calls_ref.val.to_string() +
+      ", mesh2d_drop(no_frame/no_pass/no_state/missing/stride/pipeline/ubo/bg/tex)=" +
+      debug_mesh2d_drop_no_frame_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_pass_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_pass_state_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_missing_mesh_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_bad_stride_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_pipeline_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_uniform_buf_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_uniform_bg_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_texture_ref.val.to_string() +
+      ", mesh3d=" +
+      debug_mesh3d_draw_calls_ref.val.to_string() +
+      ", mesh3d_invalid_id=" +
+      debug_mesh3d_invalid_id_calls_ref.val.to_string() +
+      ", mesh3d_executed=" +
+      debug_mesh3d_executed_draw_calls_ref.val.to_string(),
+    )
+    debug_mesh2d_draw_calls_ref.val = 0
+    debug_mesh3d_draw_calls_ref.val = 0
+    debug_mesh2d_invalid_id_calls_ref.val = 0
+    debug_mesh3d_invalid_id_calls_ref.val = 0
+    debug_mesh2d_executed_draw_calls_ref.val = 0
+    debug_mesh3d_executed_draw_calls_ref.val = 0
+    debug_mesh2d_drop_no_frame_ref.val = 0
+    debug_mesh2d_drop_no_pass_ref.val = 0
+    debug_mesh2d_drop_no_pass_state_ref.val = 0
+    debug_mesh2d_drop_missing_mesh_ref.val = 0
+    debug_mesh2d_drop_bad_stride_ref.val = 0
+    debug_mesh2d_drop_no_pipeline_ref.val = 0
+    debug_mesh2d_drop_no_uniform_buf_ref.val = 0
+    debug_mesh2d_drop_no_uniform_bg_ref.val = 0
+    debug_mesh2d_drop_no_texture_ref.val = 0
   }
 }
 
@@ -6922,7 +7127,7 @@ pub fn begin_pass(
       camera_rotation, camera_scale, viewport_x, viewport_y, viewport_width, viewport_height,
       viewport_depth_min, viewport_depth_max, clear_enabled,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("begin_pass", err)
     }
   }
 }
@@ -7013,7 +7218,7 @@ pub fn begin_pass_3d(
       previous_camera_rot_y, previous_camera_rot_z, previous_camera_rot_w, pass_kind,
       clear_enabled,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("begin_pass_3d", err)
     }
   }
 }
@@ -7089,7 +7294,7 @@ pub fn draw_sprite_uv(
       texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
       uv_min_x, uv_min_y, uv_max_x, uv_max_y,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_sprite_uv", err)
     }
   }
 }
@@ -7126,7 +7331,7 @@ pub fn draw_ui_rect(
       uv_min_x, uv_min_y, uv_max_x, uv_max_y, flags, radius_tl, radius_tr, radius_br,
       radius_bl, border_left, border_top, border_right, border_bottom,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_ui_rect", err)
     }
   }
 }
@@ -7157,7 +7362,7 @@ pub fn draw_ui_box_shadow(
       texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
       size_x, size_y, radius_tl, radius_tr, radius_br, radius_bl, blur, samples,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_ui_box_shadow", err)
     }
   }
 }
@@ -7198,7 +7403,7 @@ pub fn draw_ui_texture_slice(
       target_slice_t, target_slice_r, target_slice_b, repeat_side_x, repeat_side_y,
       repeat_center_x, repeat_center_y, atlas_l, atlas_t, atlas_r, atlas_b,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_ui_texture_slice", err)
     }
   }
 }
@@ -7221,12 +7426,16 @@ pub fn draw_mesh(
   uv_scale_x~ : Float,
   uv_scale_y~ : Float,
 ) -> Unit {
+  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
+  if mesh_id <= 0 {
+    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val + 1
+  }
   if ensure_backend() is Some(backend) {
     backend.draw_mesh(
       mesh_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
       texture_id, uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_mesh", err)
     }
   }
 }
@@ -7297,6 +7506,10 @@ pub fn draw_mesh3d(
   point_shadow_depth_bias~ : Float,
   cull_mode~ : Int,
 ) -> Unit {
+  debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
+  if mesh_id <= 0 {
+    debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val + 1
+  }
   if ensure_backend() is Some(backend) {
     backend.draw_mesh3d(
       mesh_id, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
@@ -7312,7 +7525,7 @@ pub fn draw_mesh3d(
       thickness, ior, transmission_source_texture_id, transmission_blur_taps, transmission_steps,
       point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias, cull_mode,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_mesh3d", err)
     }
   }
 }
@@ -7328,7 +7541,7 @@ pub fn draw_motion_blur(
     backend.draw_motion_blur(
       scene_texture_id, velocity_texture_id, shutter_angle, samples,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_motion_blur", err)
     }
   }
 }
@@ -7398,7 +7611,7 @@ pub fn draw_bloom2d(
       agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id, fxaa_enabled,
       fxaa_edge_threshold_value, chromatic_aberration_value, vignette_value,
     ) catch {
-      _ => ()
+      err => debug_runtime_error("draw_bloom2d", err)
     }
   }
 }
@@ -7457,7 +7670,7 @@ pub fn draw_gizmo_line(
         )
       }
     } catch {
-      _ => ()
+      err => debug_runtime_error("draw_gizmo_line", err)
     }
   }
 }
@@ -7466,7 +7679,7 @@ pub fn draw_gizmo_line(
 pub fn end_pass() -> Unit {
   if ensure_backend() is Some(backend) {
     backend.end_pass() catch {
-      _ => ()
+      err => debug_runtime_error("end_pass", err)
     }
   }
 }
@@ -7708,11 +7921,23 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
   if parse_f32_csv(vertices_xy_csv) is Some(vertices) {
     if ensure_backend() is Some(backend) {
       try {
-        return backend.create_mesh_triangles_xy(vertices)
+        let mesh_id = backend.create_mesh_triangles_xy(vertices)
+        if mesh_id <= 0 {
+          @debug.debug(
+            "[native_gpu] create_mesh_triangles failed: parsed_values=" +
+            vertices.length().to_string(),
+          )
+        }
+        return mesh_id
       } catch {
-        _ => ()
+        err => debug_runtime_error("create_mesh_triangles", err)
       }
     }
+  } else {
+    @debug.debug(
+      "[native_gpu] create_mesh_triangles parse failed: csv_len=" +
+      vertices_xy_csv.length().to_string(),
+    )
   }
   0
 }
@@ -7725,11 +7950,30 @@ pub fn create_mesh3d(
   if parse_f32_csv(vertices_xyzuvrgba_csv) is Some(vertices) {
     if ensure_backend() is Some(backend) {
       try {
-        return backend.create_mesh3d_xyzuvrgba(vertices, primitive_topology)
+        let mesh_id = backend.create_mesh3d_xyzuvrgba(
+          vertices,
+          primitive_topology,
+        )
+        if mesh_id <= 0 {
+          @debug.debug(
+            "[native_gpu] create_mesh3d failed: parsed_values=" +
+            vertices.length().to_string() +
+            ", topology=" +
+            primitive_topology.to_string(),
+          )
+        }
+        return mesh_id
       } catch {
-        _ => ()
+        err => debug_runtime_error("create_mesh3d", err)
       }
     }
+  } else {
+    @debug.debug(
+      "[native_gpu] create_mesh3d parse failed: csv_len=" +
+      vertices_xyzuvrgba_csv.length().to_string() +
+      ", topology=" +
+      primitive_topology.to_string(),
+    )
   }
   0
 }

@@ -589,12 +589,13 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     );
     let point_near = max(u_mesh.projection.z, 1.0e-4);
     let point_far = max(point_range, point_near + 1.0e-4);
-    let point_linear_depth = if major_axis_magnitude <= point_near {
-      0.0
+    var point_linear_depth = 0.0;
+    if major_axis_magnitude <= point_near {
+      point_linear_depth = 0.0;
     } else {
-      point_far / (point_far - point_near) -
-      (point_far * point_near) / ((point_far - point_near) * major_axis_magnitude)
-    };
+      point_linear_depth = point_far / (point_far - point_near) -
+        (point_far * point_near) / ((point_far - point_near) * major_axis_magnitude);
+    }
     let point_depth_bias = max(u_mesh.point_shadow_params.y, 0.0);
     point_shadow_factor = textureSampleCompare(
       u_point_shadow_texture,
