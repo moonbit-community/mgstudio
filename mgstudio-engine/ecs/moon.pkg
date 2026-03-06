@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/core",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }

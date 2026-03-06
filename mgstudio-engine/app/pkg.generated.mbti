@@ -26,6 +26,8 @@ pub fn current_schedule_stage() -> ScheduleStage?
 
 pub fn current_system_ticks() -> @core.SystemTicks
 
+pub fn current_world() -> @ecs.World?
+
 pub fn fixed_time_did_run_this_frame() -> Bool
 
 pub fn fixed_time_elapsed_seconds() -> Float

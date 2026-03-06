@@ -103,6 +103,9 @@ let next_event_id_ref : Ref[Int] = Ref::new(1)
 let next_world_id_ref : Ref[Int] = Ref::new(1)
 
 ///|
+let resource_ids_by_debug_name : @hashmap.HashMap[String, Int] = @hashmap.HashMap::new()
+
+///|
 pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
   let id = next_component_id_ref.val
   next_component_id_ref.val = id + 1
@@ -119,8 +122,16 @@ pub fn[T] component_key_from_id(
 
 ///|
 pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
+  if debug_name != "" {
+    if resource_ids_by_debug_name.get(debug_name) is Some(id) {
+      return ResourceKey::{ id, debug_name, marker: None }
+    }
+  }
   let id = next_resource_id_ref.val
   next_resource_id_ref.val = id + 1
+  if debug_name != "" {
+    resource_ids_by_debug_name.set(debug_name, id)
+  }
   ResourceKey::{ id, debug_name, marker: None }
 }
 

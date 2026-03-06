@@ -50,6 +50,17 @@ test "ecs: register key ids are monotonic" {
 }
 
 ///|
+test "ecs: register_resource reuses stable id for repeated debug_name" {
+  let res_a : ResourceKey[GlobalConfig] = register_resource(
+    debug_name="stable_cfg",
+  )
+  let res_b : ResourceKey[GlobalConfig] = register_resource(
+    debug_name="stable_cfg",
+  )
+  inspect(res_a.id() == res_b.id(), content="true")
+}
+
+///|
 test "ecs: spawn set get update and despawn cleanup" {
   let world = World::new()
   let comp_counter : ComponentKey[Counter] = register_component(

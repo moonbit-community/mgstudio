@@ -221,6 +221,14 @@ pub fn current_schedule_stage() -> ScheduleStage? {
 }
 
 ///|
+let current_world_ref : Ref[@ecs.World?] = Ref::new(None)
+
+///|
+pub fn current_world() -> @ecs.World? {
+  current_world_ref.val
+}
+
+///|
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get() {
   @core.Message::reader(current_system_ticks())
 }
@@ -1085,6 +1093,7 @@ fn run_systems(
   set_edges : Array[(SystemSet, SystemSet)],
 ) -> Unit {
   current_system_ticks_ref.val = None
+  current_world_ref.val = None
   let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
   let set_order : Array[SystemSet] = []
   fn push_unique(
@@ -1219,9 +1228,12 @@ fn run_systems(
       let ctx = world.get_system_context()
       ctx.set(sys_ticks)
       world.set_system_context(ctx)
+      let prev_world = current_world_ref.val
+      current_world_ref.val = Some(world)
       current_system_ticks_ref.val = Some(sys_ticks)
       (cfg.system)(world)
       current_system_ticks_ref.val = None
+      current_world_ref.val = prev_world
       systems[system_i].last_run_tick = this_run
     }
   }
