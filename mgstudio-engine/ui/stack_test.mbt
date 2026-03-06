@@ -65,7 +65,6 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   get_ui_layout_store(world).insert(child_a0, layout_dummy(), tick)
 
   // Build Children from Parent.
-  @transform.update_children_system(world)
   ui_stack_system(world)
   let stack = get_ui_stack_resource(world).get().unwrap().uinodes()
   fn eq(a : @core.Entity, b : @core.Entity) -> Bool {

@@ -31,6 +31,8 @@ pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_view(W
 
 pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
+pub fn[T] register_component_hooks(ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
+
 pub fn[T] register_event(debug_name? : String) -> EventKey[T]
 
 pub fn[T] register_resource(debug_name? : String) -> ResourceKey[T]
@@ -38,6 +40,10 @@ pub fn[T] register_resource(debug_name? : String) -> ResourceKey[T]
 pub fn[T] resource_key_from_id(Int, debug_name? : String) -> ResourceKey[T]
 
 // Errors
+pub(all) suberror ComponentHooksError {
+  DuplicateRegistration(Int)
+}
+
 pub(all) suberror EcsError {
   EntityStateError(@core.EntityError)
   EntityNotAlive(@core.Entity)
@@ -86,6 +92,14 @@ pub fn[T : @json.FromJson] ComponentAccess::remove(Self[T], @core.Entity) -> T?
 pub fn[T : ToJson] ComponentAccess::set(Self[T], @core.Entity, T, Int) -> Bool
 pub fn[T : ToJson + @json.FromJson] ComponentAccess::update(Self[T], @core.Entity, Int, (T) -> T) -> Bool
 pub fn[T : ToJson] ComponentAccess::upsert(Self[T], @core.Entity, T, Int) -> Unit
+
+pub struct ComponentHooks {
+  on_insert : ((World, @core.Entity, Json) -> Unit)?
+  on_replace : ((World, @core.Entity, Json, Json) -> Unit)?
+  on_remove : ((World, @core.Entity, Json) -> Unit)?
+  on_despawn : ((World, @core.Entity, Json) -> Unit)?
+}
+pub fn ComponentHooks::new(on_insert? : ((World, @core.Entity, Json) -> Unit)?, on_replace? : ((World, @core.Entity, Json, Json) -> Unit)?, on_remove? : ((World, @core.Entity, Json) -> Unit)?, on_despawn? : ((World, @core.Entity, Json) -> Unit)?) -> Self
 
 pub struct ComponentKey[T] {
   id : Int

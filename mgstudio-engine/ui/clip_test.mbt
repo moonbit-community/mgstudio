@@ -65,7 +65,6 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
   get_node_store(world).insert(child, Node::default(), tick)
 
   // Build Children from Parent before clip.
-  @transform.update_children_system(world)
 
   // Seed UiLayout so the clip system doesn't depend on layout implementation.
   get_ui_layout_store(world).insert(
@@ -135,7 +134,6 @@ test "ui: overflow Visible disables clipping per-axis" {
     tick,
   )
   get_node_store(world).insert(child, Node::default(), tick)
-  @transform.update_children_system(world)
   get_ui_layout_store(world).insert(
     container,
     UiLayout::new(

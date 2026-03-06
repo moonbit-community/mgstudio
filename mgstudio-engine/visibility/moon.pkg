@@ -5,7 +5,3 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
 }
-
-import {
-  "Milky2018/mgstudio/transform",
-} for "test"

@@ -65,7 +65,6 @@ test "transform ecs: root global matches local" {
     ),
   )
 
-  update_children_system(world)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -113,7 +112,6 @@ test "transform ecs: parent translation affects child global translation" {
     @hierarchy.Parent::new(parent),
   )
 
-  update_children_system(world)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -142,7 +140,6 @@ test "transform ecs: propagate updates only when inputs change" {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  update_children_system(world)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -154,7 +151,6 @@ test "transform ecs: propagate updates only when inputs change" {
 
   // Second run: no changes, propagate should not touch GlobalTransform.
   let tick2 = next_system_ticks(world).this_run
-  update_children_system(world)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -178,7 +174,6 @@ test "transform ecs: propagate updates only when inputs change" {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  update_children_system(world)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -218,7 +213,6 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
     @hierarchy.Parent::new(parent),
   )
 
-  update_children_system(world)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -227,7 +221,6 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
 
   next_system_ticks(world) |> ignore
   try! (world.remove(child, @hierarchy.ecs_key_parent) |> ignore)
-  update_children_system(world)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -326,7 +319,6 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  update_children_system(world)
   mark_dirty_trees(world)
   try! propagate_parent_transforms(world)
   sync_simple_transforms_world(world)
@@ -341,7 +333,6 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
       @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  update_children_system(world)
   mark_dirty_trees(world)
 
   inspect(

@@ -54,7 +54,6 @@ test "ui: measure uses intrinsic aspect ratio when only width is specified" {
     ContentSize::new(@math.Vec2::new(100.0F, 50.0F)),
     tick,
   )
-  @transform.update_children_system(world)
   ui_layout_system(world)
   let rect = get_ui_layout_store(world).get(child).unwrap().rect
   inspect(rect.size().x == 200.0F && rect.size().y == 100.0F, content="true")

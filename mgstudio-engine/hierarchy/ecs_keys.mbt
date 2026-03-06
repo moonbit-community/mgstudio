@@ -23,6 +23,11 @@ pub let ecs_key_children : @ecs.ComponentKey[Children] = @ecs.register_component
 )
 
 ///|
+fn init {
+  hierarchy_register_component_hooks(ecs_key_parent, ecs_key_children) |> ignore
+}
+
+///|
 pub impl @ecs.Component for Parent with component() {
   ecs_key_parent
 }

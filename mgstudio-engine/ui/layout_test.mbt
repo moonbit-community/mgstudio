@@ -49,7 +49,6 @@ test "ui: layout computes rect and camera-compensated transform" {
   )
 
   // Build Children from Parent before layout.
-  @transform.update_children_system(world)
   ui_layout_system(world)
   let rect = get_ui_layout_store(world).get(node).unwrap().rect
   let ok_rect = rect.min.x == 40.0F &&
@@ -154,7 +153,6 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
     .with_height(Val::Px(20.0F)),
     tick,
   )
-  @transform.update_children_system(world)
   ui_layout_system(world)
   let panel_rect = get_ui_layout_store(world).get(panel).unwrap().rect
   let child_rect = get_ui_layout_store(world).get(child).unwrap().rect
@@ -202,7 +200,6 @@ test "ui: editable text transform stays in input content box and in front" {
     @math.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(editable, UiText::new(text_handle), tick)
-  @transform.update_children_system(world)
   ui_layout_system(world)
   let layout = get_ui_layout_store(world).get(editable).unwrap().rect
   let content_rect = @math.Rect::new(
@@ -272,7 +269,6 @@ test "ui: editable status text renders in front of editable background (z-order)
     @math.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(editable, UiText::new(text_handle), tick)
-  @transform.update_children_system(world)
   ui_layout_system(world)
   ui_stack_system(world)
   let background_transform = @math.get_transform_store(world)
@@ -349,7 +345,6 @@ test "ui: editable label node is laid out above input box node" {
     ContentSize::new(@math.Vec2::new(220.0F, 32.0F)),
     tick,
   )
-  @transform.update_children_system(world)
   ui_layout_system(world)
   let label_rect = get_ui_layout_store(world).get(label).unwrap().rect
   let editable_rect = get_ui_layout_store(world).get(editable).unwrap().rect
@@ -427,7 +422,6 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     tick,
   )
   get_ui_text_store(world).insert(panel_text, UiText::new(handle), tick)
-  @transform.update_children_system(world)
   ui_layout_system(world)
   ui_clip_system(world)
   let panel_rect = get_ui_layout_store(world).get(panel).unwrap().rect
@@ -550,7 +544,6 @@ test "ui: panel text scissor stays above editable title block" {
     UiText::new(title_handle),
     tick,
   )
-  @transform.update_children_system(world)
   ui_layout_system(world)
   ui_clip_system(world)
   let scissor = @text.text_get_ui_scissor(panel_handle).unwrap()

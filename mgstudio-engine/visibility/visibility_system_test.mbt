@@ -53,7 +53,6 @@ test "visibility: inherited child is hidden when parent is hidden" {
     @visibility.ViewVisibility::new(true),
     tick,
   )
-  @transform.update_children_system(world)
   @visibility.visibility_propagate_system(world)
   let iv = get_inherited_visibility_store(world).get(child)
   inspect(iv.unwrap().is_visible(), content="false")
@@ -100,7 +99,6 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
     @visibility.ViewVisibility::new(false),
     tick,
   )
-  @transform.update_children_system(world)
   @visibility.visibility_propagate_system(world)
   let iv = get_inherited_visibility_store(world).get(child)
   inspect(iv.unwrap().is_visible(), content="true")
@@ -134,7 +132,6 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
     @visibility.ViewVisibility::new(false),
     tick,
   )
-  @transform.update_children_system(world)
   @visibility.visibility_propagate_system(world)
   let iv = get_inherited_visibility_store(world).get(child)
   inspect(iv.unwrap().is_visible(), content="true")

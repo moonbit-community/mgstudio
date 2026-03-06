@@ -237,12 +237,26 @@ pub fn World::despawn(
   self : World,
   entity : @core.Entity,
 ) -> Unit raise EcsError {
+  self.ensure_entity_alive(entity)
+  let removed_components : Array[(Int, Json)] = []
+  for entry in self.component_columns.iter() {
+    let (key_id, store_ref) = entry
+    if store_ref.val.get(entity) is Some(payload) {
+      removed_components.push((key_id, payload))
+    }
+  }
+  for entry in removed_components {
+    self.run_component_despawn_hooks(entity, entry.0, entry.1)
+  }
   self.entities.despawn(entity) catch {
     err => raise EntityStateError(err)
   }
-  for entry in self.component_columns.iter() {
-    let (key_id, store_ref) = entry
-    if store_ref.val.remove(entity) is Some(_) {
+  for entry in removed_components {
+    let key_id = entry.0
+    let payload = entry.1
+    if self.component_columns.get(key_id) is Some(store_ref) &&
+      store_ref.val.remove(entity) is Some(_) {
+      self.run_component_remove_hooks(entity, key_id, payload)
       self.ensure_removed_component_messages(key_id).val.send(
         component_write_change_tick(self),
         entity,
@@ -315,7 +329,8 @@ pub fn[T] World::remove(
   match self.component_columns.get(key.id()) {
     Some(store_ref) =>
       match store_ref.val.remove(entity) {
-        Some(_) => {
+        Some(payload) => {
+          self.run_component_remove_hooks(entity, key.id(), payload)
           self.ensure_removed_component_messages(key.id()).val.send(
             component_write_change_tick(self),
             entity,

@@ -79,7 +79,6 @@ test "transform ecs world: child global uses parent and local transforms" {
     @hierarchy.Parent::new(parent),
   )
 
-  update_children_system_ecs(world)
   mark_dirty_trees_ecs(world)
   propagate_transforms_system_ecs(world)
   sync_simple_transforms_world(world)
@@ -101,7 +100,7 @@ test "transform ecs world: child global uses parent and local transforms" {
 }
 
 ///|
-test "transform ecs world: update_children clears stale Children components" {
+test "transform ecs world: hierarchy hooks clear stale Children components" {
   let world = @ecs.World::new()
   let parent = world.spawn()
   let child = world.spawn()
@@ -111,14 +110,12 @@ test "transform ecs world: update_children clears stale Children components" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  update_children_system_ecs(world)
   inspect(
     (try! world.get(parent, @hierarchy.ecs_key_children)) is Some(_),
     content="true",
   )
 
   try! world.despawn(child)
-  update_children_system_ecs(world)
   inspect(
     (try! world.get(parent, @hierarchy.ecs_key_children)) is None,
     content="true",

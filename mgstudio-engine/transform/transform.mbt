@@ -232,22 +232,6 @@ type SimpleTransformOrphanQuery = @ecs.Query2RefMutFiltered[
 ]
 
 ///|
-fn sort_by_parent_id(pairs : Array[(@core.Entity, @core.Entity)]) -> Unit {
-  let mut i = 1
-  while i < pairs.length() {
-    let cur = pairs[i]
-    let cur_key = cur.0.id
-    let mut j = i
-    while j > 0 && pairs[j - 1].0.id > cur_key {
-      pairs[j] = pairs[j - 1]
-      j = j - 1
-    }
-    pairs[j] = cur
-    i = i + 1
-  }
-}
-
-///|
 fn sort_entities_by_id(entities : Array[@core.Entity]) -> Unit {
   let mut i = 1
   while i < entities.length() {
@@ -391,41 +375,6 @@ pub fn sync_simple_transforms_world(world : @ecs.World) -> Unit {
     )
     .read(),
   )
-}
-
-///|
-pub fn update_children_system(world : @ecs.World) -> Unit {
-  // Rebuild from scratch (simple, correct); later we can make this incremental.
-  let existing : Array[@core.Entity] = []
-  try! world
-  .query1(@hierarchy.ecs_key_children)
-  .view(fn(entity, _children) { existing.push(entity) })
-  for entity in existing {
-    try! (world.remove(entity, @hierarchy.ecs_key_children) |> ignore)
-  }
-
-  let pairs : Array[(@core.Entity, @core.Entity)] = []
-  try! world
-  .query1(@hierarchy.ecs_key_parent)
-  .view(fn(child, parent) { pairs.push((parent.entity(), child)) })
-  if pairs.length() == 0 {
-    return
-  }
-  sort_by_parent_id(pairs)
-  let mut i = 0
-  while i < pairs.length() {
-    let parent = pairs[i].0
-    let children : Array[@core.Entity] = []
-    while i < pairs.length() && pairs[i].0.id == parent.id {
-      children.push(pairs[i].1)
-      i = i + 1
-    }
-    try! world.set(
-      parent,
-      @hierarchy.ecs_key_children,
-      @hierarchy.Children::new(children),
-    )
-  }
 }
 
 ///|
@@ -630,11 +579,6 @@ pub fn propagate_transforms_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub let transform_set_update_children : @app.SystemSet = @app.system_set(
-  "mgstudio.transform.update_children",
-)
-
-///|
 pub let transform_set_mark_dirty_trees : @app.SystemSet = @app.system_set(
   "mgstudio.transform.mark_dirty_trees",
 )
@@ -665,11 +609,7 @@ pub fn register_transform_required_components(
 pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_transform_required_components(app.world())
   ensure_transform_runtime_resources(app.world())
-  // Keep `Children` in sync with `Parent`, then compute `GlobalTransform`.
   app
-  .add_post_startup_system_config(
-    @app.system(update_children_system).in_set(transform_set_update_children),
-  )
   .add_post_startup_system_config(
     @app.system(fn(world : @ecs.World) { mark_dirty_trees(world) }).in_set(
       transform_set_mark_dirty_trees,
@@ -685,9 +625,6 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       transform_set_sync_simple_transforms,
     ),
   )
-  .configure_set(@app.PostStartup, transform_set_update_children, before=[
-    transform_set_mark_dirty_trees,
-  ])
   .configure_set(@app.PostStartup, transform_set_mark_dirty_trees, before=[
     transform_set_propagate,
   ])
@@ -695,9 +632,6 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     transform_set_sync_simple_transforms,
   ])
   .add_post_update_system_config(
-    @app.system(update_children_system).in_set(transform_set_update_children),
-  )
-  .add_post_update_system_config(
     @app.system(fn(world : @ecs.World) { mark_dirty_trees(world) }).in_set(
       transform_set_mark_dirty_trees,
     ),
@@ -712,9 +646,6 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       transform_set_sync_simple_transforms,
     ),
   )
-  .configure_set(@app.PostUpdate, transform_set_update_children, before=[
-    transform_set_mark_dirty_trees,
-  ])
   .configure_set(@app.PostUpdate, transform_set_mark_dirty_trees, before=[
     transform_set_propagate,
   ])

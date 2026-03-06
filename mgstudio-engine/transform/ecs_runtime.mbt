@@ -33,11 +33,6 @@ pub impl @ecs.Component for TransformTreeChanged with component() {
 }
 
 ///|
-pub fn update_children_system_ecs(world : @ecs.World) -> Unit {
-  update_children_system(world)
-}
-
-///|
 pub fn mark_dirty_trees_ecs(world : @ecs.World) -> Unit {
   mark_dirty_trees(world)
 }

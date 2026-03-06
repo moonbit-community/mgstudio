@@ -50,12 +50,6 @@ pub let transform_set_propagate : String
 
 pub let transform_set_sync_simple_transforms : String
 
-pub let transform_set_update_children : String
-
-pub fn update_children_system(@ecs.World) -> Unit
-
-pub fn update_children_system_ecs(@ecs.World) -> Unit
-
 // Errors
 
 // Types and methods

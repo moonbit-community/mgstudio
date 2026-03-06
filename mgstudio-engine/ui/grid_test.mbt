@@ -65,7 +65,6 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   get_node_store(world).insert(b, Node::default(), tick)
 
   // Build Children from Parent before layout.
-  @transform.update_children_system(world)
   ui_layout_system(world)
   let layout_store = get_ui_layout_store(world)
   let ra = layout_store.get(a).unwrap().rect

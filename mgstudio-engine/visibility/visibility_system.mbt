@@ -105,6 +105,6 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  // Must run after `transform.update_children_system` so `Children` is in sync.
+  // Hierarchy hooks keep `Children` synchronized with `Parent` before schedule execution.
   app.add_pre_update_system(visibility_propagate_system)
 }

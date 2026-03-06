@@ -49,7 +49,6 @@ test "ui: ContentSize drives auto measured size" {
     ContentSize::new(@math.Vec2::new(80.0F, 30.0F)),
     tick,
   )
-  @transform.update_children_system(world)
   ui_layout_system(world)
   let rect = get_ui_layout_store(world).get(child).unwrap().rect
   inspect(rect.size().x == 80.0F && rect.size().y == 30.0F, content="true")

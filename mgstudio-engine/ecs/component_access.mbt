@@ -89,7 +89,18 @@ pub fn[T : ToJson] ComponentAccess::set(
   change_tick : @core.Tick,
 ) -> Bool {
   let store_ref = self.world.ensure_component_store(self.key.id())
-  store_ref.val.set(entity, value.to_json(), change_tick)
+  let payload = value.to_json()
+  let old_payload = store_ref.val.get(entity)
+  let updated = store_ref.val.set(entity, payload, change_tick)
+  if updated && old_payload is Some(previous) {
+    self.world.run_component_replace_hooks(
+      entity,
+      self.key.id(),
+      previous,
+      payload,
+    )
+  }
+  updated
 }
 
 ///|
@@ -139,6 +150,11 @@ pub fn[T : @json.FromJson] ComponentAccess::remove(
     return None
   }
   guard store_ref.val.remove(entity) is Some(payload) else { return None }
+  self.world.run_component_remove_hooks(entity, self.key.id(), payload)
+  self.world.ensure_removed_component_messages(self.key.id()).val.send(
+    component_write_change_tick(self.world),
+    entity,
+  )
   component_access_decode_payload(payload)
 }
 
