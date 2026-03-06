@@ -1256,6 +1256,7 @@ fn run_schedule_stage(
 
 ///|
 pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
+  run_registered_state_transitions(self.world)
   run_schedule_stage(self.world, self.schedule, Startup)
   for entry in self.sub_apps.iter() {
     let (_key, sub_app_ref) = entry
@@ -1267,6 +1268,7 @@ pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
 ///|
 pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
   run_schedule_stage(self.world, self.schedule, PreUpdate)
+  run_registered_state_transitions(self.world)
   fixed_time_state.val.did_run_this_frame = false
   fixed_time_state.val.steps_ran_this_frame = 0
   let delta_raw = match delta_seconds_provider.val {

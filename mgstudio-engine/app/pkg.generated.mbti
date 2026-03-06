@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/hashmap",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -46,6 +47,10 @@ pub fn fixed_time_steps_ran_this_frame() -> Int
 
 pub fn fixed_time_timestep_seconds() -> Float
 
+pub fn[S : States] in_state(S) -> (@ecs.World) -> Bool
+
+pub fn[S : States] insert_state_app(App[@ecs.World], S) -> App[@ecs.World]
+
 pub fn log_debug(String) -> Unit
 
 pub fn log_debug_once(String, String) -> Unit
@@ -76,6 +81,10 @@ pub fn log_warn(String) -> Unit
 
 pub fn log_warn_once(String, String) -> Unit
 
+pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
+
+pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousState[S]]
+
 pub fn render_runtime_error() -> RenderRuntimeError?
 
 pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
@@ -87,6 +96,14 @@ pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[
 pub fn set_delta_seconds_provider(() -> Float) -> Unit
 
 pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
+
+pub fn[S : States] set_state(S) -> Unit
+
+pub fn[S : States] set_state_if_neq(S) -> Unit
+
+pub fn[S : States] state_exists(S) -> (@ecs.World) -> Bool
+
+pub fn[S : States] state_resource_key(S) -> @ecs.ResourceKey[State[S]]
 
 pub fn[W] system((W) -> Unit) -> SystemConfig[W]
 
@@ -109,6 +126,12 @@ pub fn system_set(String) -> String
 pub fn task_pool_num_threads() -> Int?
 
 pub fn[W] task_pool_plugin(TaskPoolPlugin) -> (App[W]) -> App[W]
+
+pub fn[S : States] world_next_state(@ecs.World, S) -> NextState[S]?
+
+pub fn[S : States] world_previous_state(@ecs.World, S) -> PreviousState[S]?
+
+pub fn[S : States] world_state(@ecs.World, S) -> State[S]?
 
 // Errors
 
@@ -168,6 +191,7 @@ pub fn[W] App::get_sub_app(Self[W], AppLabel) -> Self[W]?
 pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]?
 pub fn[W, T : Resource] App::init_resource(Self[W], () -> T) -> Self[W]
 pub fn[W, T : Resource] App::insert_resource(Self[W], T) -> Self[W]
+pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
 pub fn[W] App::insert_sub_app(Self[W], AppLabel, Self[W]) -> Self[W]
 pub fn[W] App::new(W) -> Self[W]
 pub fn[W, T] App::remove_resource(Self[W], @core.Resource[T]) -> T?
@@ -235,12 +259,34 @@ pub fn LogRecord::message(Self) -> String
 pub fn LogRecord::name(Self) -> String
 pub fn LogRecord::target(Self) -> String
 
+pub(all) enum NextState[S] {
+  Unchanged
+  Pending(S)
+  PendingIfNeq(S)
+}
+pub fn[S] NextState::reset(Self[S]) -> Self[S]
+pub fn[S] NextState::set(Self[S], S) -> Self[S]
+pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
+pub impl[S : Eq] Eq for NextState[S]
+pub impl[S : Show] Show for NextState[S]
+pub impl[S : ToJson] ToJson for NextState[S]
+pub impl[S : @json.FromJson] @json.FromJson for NextState[S]
+
 pub struct PluginGroupBuilder[W] {
   plugins : Array[(App[W]) -> App[W]]
 }
 pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
 pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
 pub fn[W] PluginGroupBuilder::start() -> Self[W]
+
+pub struct PreviousState[S] {
+  value : S
+}
+pub fn[S] PreviousState::get(Self[S]) -> S
+pub impl[S : Eq] Eq for PreviousState[S]
+pub impl[S : Show] Show for PreviousState[S]
+pub impl[S : ToJson] ToJson for PreviousState[S]
+pub impl[S : @json.FromJson] @json.FromJson for PreviousState[S]
 
 pub(all) enum RenderErrorPolicy {
   Ignore
@@ -311,6 +357,16 @@ pub(all) enum ScheduleStage {
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage
 
+pub struct State[S] {
+  value : S
+}
+pub fn[S] State::get(Self[S]) -> S
+pub fn[S] State::new(S) -> Self[S]
+pub impl[S : Eq] Eq for State[S]
+pub impl[S : Show] Show for State[S]
+pub impl[S : ToJson] ToJson for State[S]
+pub impl[S : @json.FromJson] @json.FromJson for State[S]
+
 pub struct SystemConfig[W] {
   system : (W) -> Unit
   run_if : ((W) -> Bool)?
@@ -360,8 +416,15 @@ pub type SystemFn[W] = (W) -> Unit
 pub type SystemSet = String
 
 // Traits
+pub(open) trait FreelyMutableState : States {
+}
+
 pub(open) trait Resource {
   resource() -> @core.Resource[Self]
+}
+
+pub(open) trait States : Eq + Show + ToJson + @json.FromJson {
+  debug_name(Self) -> String
 }
 
 pub(open) trait SystemParam {
