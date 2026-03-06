@@ -123,19 +123,21 @@ fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
     banner()
     help()
-    @app.fixed_time_reset()
-    @app.fixed_time_set_timestep_seconds(1.0F)
-    @my_time.time_virtual_set_max_delta_seconds(5.0F)
-    @my_time.time_virtual_set_relative_speed(1.0F)
-    @my_time.time_virtual_unpause()
 
-    // `time.rs` is stdin-driven in Bevy. For WASM-first runtimes we replay
-    // the same command model using a deterministic script.
+    // `time.rs` is stdin-driven in Bevy. For native smoke runs we replay the
+    // same command model using a deterministic script.
     let commands : Array[String] = [
       "", "", "f", "", "n", "", "s", "", "p", "", "u", "", "q",
     ]
 
-    let mut runtime_app = app.run_startup()
+    let mut runtime_app = app
+      .insert_resource(@my_time.Fixed::from_seconds(1.0F))
+      .insert_resource(
+        @my_time.Virtual::new()
+        .set_max_delta_seconds(5.0F)
+        .set_relative_speed(1.0F),
+      )
+      .run_startup()
     for command in commands {
       let (next_app, should_quit) = apply_command(runtime_app, command)
       runtime_app = next_app

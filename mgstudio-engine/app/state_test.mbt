@@ -35,9 +35,11 @@ fn read_test_state(world : @ecs.World) -> TestState? {
 ///|
 fn current_stage_label() -> String {
   match current_schedule_stage() {
+    Some(First) => "First"
     Some(StateTransition) => "StateTransition"
     Some(Startup) => "Startup"
     Some(PreUpdate) => "PreUpdate"
+    Some(RunFixedMainLoop) => "RunFixedMainLoop"
     Some(FixedUpdate) => "FixedUpdate"
     Some(Update) => "Update"
     Some(PostUpdate) => "PostUpdate"

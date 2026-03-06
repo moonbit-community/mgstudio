@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub fn app_delta_seconds() -> Float
-
 pub fn app_label(String) -> AppLabel
 
 pub fn app_rendering_enabled() -> Bool
@@ -23,37 +21,11 @@ pub fn app_runtime_reset() -> Unit
 
 pub fn app_stdin_read_line() -> String?
 
-pub fn clear_delta_seconds_provider() -> Unit
-
 pub fn current_schedule_stage() -> ScheduleStage?
 
 pub fn current_system_ticks() -> @core.SystemTicks
 
 pub fn current_world() -> @ecs.World?
-
-pub fn fixed_time_did_run_this_frame() -> Bool
-
-pub fn fixed_time_elapsed_seconds() -> Float
-
-pub fn fixed_time_expend_step() -> Bool
-
-pub fn fixed_time_overstep_fraction() -> Float
-
-pub fn fixed_time_overstep_seconds() -> Float
-
-pub fn fixed_time_prepare_frame(Float) -> Unit
-
-pub fn fixed_time_reset() -> Unit
-
-pub fn fixed_time_set_max_delta_seconds(Float) -> Unit
-
-pub fn fixed_time_set_runtime_state(Float, Float, Float) -> Unit
-
-pub fn fixed_time_set_timestep_seconds(Float) -> Unit
-
-pub fn fixed_time_steps_ran_this_frame() -> Int
-
-pub fn fixed_time_timestep_seconds() -> Float
 
 pub fn[S : States] in_state(S) -> (@ecs.World) -> Bool
 
@@ -105,11 +77,9 @@ pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
 
 pub fn reset_render_error_handler() -> Unit
 
+pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
+
 pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
-
-pub fn set_delta_seconds_provider(() -> Float) -> Unit
-
-pub fn set_fixed_main_loop_runner((@ecs.World, () -> Unit) -> Unit) -> Unit
 
 pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
 
@@ -169,6 +139,12 @@ pub struct App[W] {
   sub_app_extractors : @hashmap.HashMap[String, (W, W) -> (W, W)]
 }
 pub fn[Source : States, Derived : States] App::add_computed_state(Self[@ecs.World], Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
+pub fn[W] App::add_first_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_first_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_first_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_first_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_first_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_first_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_fixed_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -201,6 +177,8 @@ pub fn[W, P : SystemParam] App::add_pre_update_system_param(Self[W], (P) -> Unit
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pre_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_run_fixed_main_loop_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_run_fixed_main_loop_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W] App::add_startup_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -379,13 +357,17 @@ pub impl[T : Resource] SystemParam for ResMut[T]
 
 pub struct Schedule[W] {
   startup : Array[SystemConfig[W]]
+  first : Array[SystemConfig[W]]
   pre_update : Array[SystemConfig[W]]
+  run_fixed_main_loop : Array[SystemConfig[W]]
   fixed_update : Array[SystemConfig[W]]
   update : Array[SystemConfig[W]]
   post_update : Array[SystemConfig[W]]
   last : Array[SystemConfig[W]]
   startup_set_edges : Array[(String, String)]
+  first_set_edges : Array[(String, String)]
   pre_update_set_edges : Array[(String, String)]
+  run_fixed_main_loop_set_edges : Array[(String, String)]
   fixed_update_set_edges : Array[(String, String)]
   update_set_edges : Array[(String, String)]
   post_update_set_edges : Array[(String, String)]
@@ -405,8 +387,10 @@ pub fn ScheduleRunnerPlugin::run_once() -> Self
 
 pub(all) enum ScheduleStage {
   Startup
+  First
   PreUpdate
   StateTransition
+  RunFixedMainLoop
   FixedUpdate
   Update
   PostUpdate
@@ -475,10 +459,6 @@ pub fn TaskPoolPlugin::default() -> Self
 pub fn TaskPoolPlugin::new(TaskPoolOptions) -> Self
 
 // Type aliases
-pub type DeltaSecondsFn = () -> Float
-
-pub type FixedMainLoopRunner = (@ecs.World, () -> Unit) -> Unit
-
 pub type LogLayer = (LogRecord) -> Unit
 
 pub type Plugin[W] = (App[W]) -> App[W]

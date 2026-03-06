@@ -107,7 +107,7 @@ pub fn transform_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     @app.system(propagate_transforms_system_ecs).run_if(fn(
       _world : @ecs.World,
     ) {
-      @app.fixed_time_did_run_this_frame()
+      @time.time_fixed_did_run_this_frame()
     }),
   )
 }

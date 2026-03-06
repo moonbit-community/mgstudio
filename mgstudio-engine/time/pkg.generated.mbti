@@ -30,19 +30,29 @@ pub fn time_elapsed_seconds() -> Float
 
 pub fn time_fixed_delta_seconds() -> Float
 
+pub fn time_fixed_did_run_this_frame() -> Bool
+
 pub fn time_fixed_elapsed_seconds() -> Float
 
 pub fn time_fixed_overstep_fraction() -> Float
 
 pub fn time_fixed_overstep_seconds() -> Float
 
+pub fn time_fixed_reset() -> Unit
+
+pub fn time_fixed_set_timestep_seconds(Float) -> Unit
+
+pub fn time_fixed_steps_ran_this_frame() -> Int
+
 pub fn time_fixed_timestep_seconds() -> Float
 
-pub fn[W] time_plugin(@app.App[W]) -> @app.App[W]
+pub fn time_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn time_real_delta_seconds() -> Float
 
 pub fn time_real_elapsed_seconds() -> Float
+
+pub fn time_run_fixed_main_schedule(@ecs.World) -> Unit
 
 pub fn[W] time_system(W) -> Unit
 
@@ -86,6 +96,7 @@ pub fn Fixed::default() -> Self
 pub fn Fixed::delta_seconds(Self) -> Float
 pub fn Fixed::discard_overstep(Self, Float) -> Self
 pub fn Fixed::elapsed_seconds(Self) -> Float
+pub fn Fixed::expend(Self) -> Self?
 pub fn Fixed::from_duration_seconds(Float) -> Self
 pub fn Fixed::from_hz(Float) -> Self
 pub fn Fixed::from_seconds(Float) -> Self

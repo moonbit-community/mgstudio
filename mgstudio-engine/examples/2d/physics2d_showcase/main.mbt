@@ -493,7 +493,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
 
 ///|
 fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
-  let dt = @app.fixed_time_timestep_seconds()
+  let dt = @time.time_fixed_timestep_seconds()
   if @input.key_just_pressed(@window.KeyCode::KeyG) {
     let enabled = @physics2d.physics2d_debug_render_config().enabled
     @physics2d.physics2d_debug_render_set_enabled(!enabled)

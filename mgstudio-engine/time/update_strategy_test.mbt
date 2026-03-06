@@ -14,10 +14,12 @@
 
 ///|
 fn reset_time_test_state() -> Unit {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(0.015625F)
-  @app.fixed_time_set_max_delta_seconds(0.25F)
-  @app.clear_delta_seconds_provider()
+  let tick : @core.Tick = 1
+  Time::resource().insert(Time::new(), tick)
+  Real::resource().insert(Real::new(0.0F), tick)
+  Virtual::resource().insert(Virtual::new(), tick)
+  Fixed::resource().insert(Fixed::new(), tick)
+  TimeUpdateStrategy::resource().insert(TimeUpdateStrategy::default(), tick)
 }
 
 ///|
@@ -85,11 +87,11 @@ test "time: pause and relative speed follow bevy virtual semantics" {
 ///|
 test "time: fixed timesteps strategy drives fixed update loop" {
   reset_time_test_state()
-  @app.fixed_time_set_timestep_seconds(0.125F)
-  @app.fixed_time_set_max_delta_seconds(1.0F)
+  time_virtual_set_max_delta_seconds(1.0F)
   let counter : Ref[Int] = Ref::new(0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
+    .insert_resource(Fixed::from_seconds(0.125F))
     .add_fixed_update_system(fn(_world : @ecs.World) {
       counter.val = counter.val + 1
     })
@@ -99,7 +101,7 @@ test "time: fixed timesteps strategy drives fixed update loop" {
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
   inspect(counter.val, content="2")
-  inspect(@app.fixed_time_steps_ran_this_frame(), content="2")
+  inspect(time_fixed_steps_ran_this_frame(), content="2")
   inspect(Fixed::resource().get().unwrap().delta_seconds(), content="0.125")
   inspect(Fixed::resource().get().unwrap().elapsed_seconds(), content="0.25")
   inspect(Time::resource().get().unwrap().elapsed_seconds(), content="0.25")
@@ -108,11 +110,11 @@ test "time: fixed timesteps strategy drives fixed update loop" {
 ///|
 test "time: generic time switches to fixed during fixed update and restores after loop" {
   reset_time_test_state()
-  @app.fixed_time_set_timestep_seconds(0.125F)
-  @app.fixed_time_set_max_delta_seconds(1.0F)
+  time_virtual_set_max_delta_seconds(1.0F)
   let fixed_log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
+    .insert_resource(Fixed::from_seconds(0.125F))
     .add_fixed_update_system(fn(_world : @ecs.World) {
       let generic_time = Time::resource().get().unwrap()
       let fixed_time = Fixed::resource().get().unwrap()
@@ -142,11 +144,11 @@ test "time: generic time switches to fixed during fixed update and restores afte
 ///|
 test "time: fixed resource timestep changes affect later steps in the same frame" {
   reset_time_test_state()
-  @app.fixed_time_set_timestep_seconds(0.2F)
-  @app.fixed_time_set_max_delta_seconds(1.0F)
+  time_virtual_set_max_delta_seconds(1.0F)
   let steps : Ref[Int] = Ref::new(0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
+    .insert_resource(Fixed::from_seconds(0.2F))
     .add_fixed_update_system_param(fn(fixed_time : @app.ResMut[Fixed]) {
       steps.val = steps.val + 1
       if steps.val == 1 {
@@ -162,7 +164,7 @@ test "time: fixed resource timestep changes affect later steps in the same frame
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
   inspect(steps.val, content="3")
-  inspect(@app.fixed_time_steps_ran_this_frame(), content="3")
+  inspect(time_fixed_steps_ran_this_frame(), content="3")
   inspect(
     Fixed::resource().get().unwrap().timestep_seconds(),
     content="0.10000000149011612",

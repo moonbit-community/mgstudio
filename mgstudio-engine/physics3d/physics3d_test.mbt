@@ -14,8 +14,8 @@
 
 ///|
 test "physics3d: falling body collides and writes back transform" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -65,8 +65,8 @@ test "physics3d: falling body collides and writes back transform" {
 
 ///|
 test "physics3d: sensor collision events are emitted" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -120,8 +120,8 @@ test "physics3d: sensor collision events are emitted" {
 
 ///|
 test "physics3d: contact force events are emitted" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -174,8 +174,8 @@ test "physics3d: contact force events are emitted" {
 
 ///|
 test "physics3d: active collision type and hook components are accepted" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()

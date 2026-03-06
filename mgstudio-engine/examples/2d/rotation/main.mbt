@@ -18,6 +18,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
+  .insert_resource(@time.Fixed::from_seconds(1.0F / 60.0F))
   .add_startup_system(rotation_setup)
   .add_fixed_update_system(player_movement_system)
   .add_fixed_update_system(snap_to_player_system)
@@ -188,9 +189,6 @@ fn spawn_ship(
 
 ///|
 fn rotation_setup(world : @ecs.World) -> Unit {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
-
   rotation_state.val.player = @core.Entity::placeholder()
   rotation_state.val.snap_targets = []
   rotation_state.val.rotate_targets = []

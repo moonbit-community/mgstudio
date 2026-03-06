@@ -277,7 +277,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // GlobalTransform again before Update systems like render extraction.
   .add_system_config(
     @app.system(propagate_transforms_system).run_if(fn(_world : @ecs.World) {
-      @app.fixed_time_did_run_this_frame()
+      @time.time_fixed_did_run_this_frame()
     }),
   )
 }

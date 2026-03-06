@@ -20,8 +20,8 @@ fn approx_eq_f32(a : Float, b : Float) -> Bool {
 
 ///|
 test "physics2d: falling body collides and writes back transform" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -99,8 +99,8 @@ test "physics2d: falling body collides and writes back transform" {
 
 ///|
 test "physics2d: gravity scale 0 disables gravity" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -170,8 +170,8 @@ test "physics2d: gravity scale 0 disables gravity" {
 
 ///|
 test "physics2d: damping reduces velocity" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -221,8 +221,8 @@ test "physics2d: damping reduces velocity" {
 
 ///|
 test "physics2d: external impulse applies once and clears" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -265,8 +265,8 @@ test "physics2d: external impulse applies once and clears" {
 
 ///|
 test "physics2d: default collider density yields non-zero mass" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -312,8 +312,8 @@ test "physics2d: default collider density yields non-zero mass" {
 
 ///|
 test "physics2d: external force persists" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -361,8 +361,8 @@ test "physics2d: external force persists" {
 ///|
 test "physics2d: CCD prevents tunneling through thin floor" {
   fn run(ccd_enabled : Bool) -> Float {
-    @app.fixed_time_reset()
-    @app.fixed_time_set_timestep_seconds(1.0F / 10.0F)
+    @time.time_fixed_reset()
+    @time.time_fixed_set_timestep_seconds(1.0F / 10.0F)
     let world = @ecs.World::new()
     physics2d_init_resources_system(world)
     let tick = world.read_change_tick()
@@ -427,8 +427,8 @@ test "physics2d: CCD prevents tunneling through thin floor" {
 
 ///|
 test "physics2d: collision groups filter collision events" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -489,8 +489,8 @@ test "physics2d: collision groups filter collision events" {
 
 ///|
 test "physics2d: collider material and active event properties sync to rapier" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -603,8 +603,8 @@ test "physics2d: collider material and active event properties sync to rapier" {
 
 ///|
 test "physics2d: query pipeline sees inserted colliders" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -716,8 +716,8 @@ test "physics2d: query pipeline sees inserted colliders" {
 
 ///|
 test "physics2d: convex polygon and compound colliders can be inserted" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -821,8 +821,8 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     mapped.val = physics2d_hook_entity_from_collider_handle(h1) is Some(_)
     false
   })
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -897,8 +897,8 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
 
 ///|
 test "physics2d: impulse joint is inserted and cleaned up" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -966,8 +966,8 @@ test "physics2d: impulse joint is inserted and cleaned up" {
 
 ///|
 test "physics2d: child collider attaches to parent body" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -1023,8 +1023,8 @@ test "physics2d: child collider attaches to parent body" {
 
 ///|
 test "physics2d: multiple child colliders aggregate parent mass" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -1147,8 +1147,8 @@ test "physics2d: multiple child colliders aggregate parent mass" {
 
 ///|
 test "physics2d: collision events use child collider entity mapping" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
@@ -1237,8 +1237,8 @@ test "physics2d: collision events use child collider entity mapping" {
 
 ///|
 test "physics2d: kinematic character controller moves and outputs" {
-  @app.fixed_time_reset()
-  @app.fixed_time_set_timestep_seconds(1.0F / 60.0F)
+  @time.time_fixed_reset()
+  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()

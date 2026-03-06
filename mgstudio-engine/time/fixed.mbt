@@ -146,18 +146,103 @@ pub fn Fixed::as_generic(self : Fixed) -> Time {
 }
 
 ///|
-fn Fixed::sync_from_app_state(self : Fixed) -> Fixed {
-  let timestep_seconds = @app.fixed_time_timestep_seconds()
-  let overstep_seconds = @app.fixed_time_overstep_seconds()
-  let elapsed_seconds = @app.fixed_time_elapsed_seconds()
-  let time = if elapsed_seconds < time_elapsed_seconds_raw(self.time) {
-    Time::new()
-    .set_wrap_period_seconds(time_wrap_period_seconds_raw(self.time))
-    .advance_to(elapsed_seconds)
+pub fn Fixed::expend(self : Fixed) -> Fixed? {
+  let remaining_overstep = self.overstep_seconds - self.timestep_seconds
+  if remaining_overstep < 0.0F {
+    None
   } else {
-    self.time.advance_to(elapsed_seconds)
+    Some(Fixed::{
+      ..self,
+      time: self.time.advance_by(self.timestep_seconds),
+      overstep_seconds: remaining_overstep,
+    })
   }
-  Fixed::{ time, timestep_seconds, overstep_seconds }
+}
+
+///|
+priv struct FixedFrameState {
+  mut did_run_this_frame : Bool
+  mut steps_ran_this_frame : Int
+}
+
+///|
+let fixed_frame_state : Ref[FixedFrameState] = Ref::new(FixedFrameState::{
+  did_run_this_frame: false,
+  steps_ran_this_frame: 0,
+})
+
+///|
+fn time_fixed_begin_frame() -> Unit {
+  fixed_frame_state.val.did_run_this_frame = false
+  fixed_frame_state.val.steps_ran_this_frame = 0
+}
+
+///|
+fn time_fixed_mark_step() -> Unit {
+  fixed_frame_state.val.did_run_this_frame = true
+  fixed_frame_state.val.steps_ran_this_frame = fixed_frame_state.val.steps_ran_this_frame +
+    1
+}
+
+///|
+pub fn time_run_fixed_main_schedule(world : @ecs.World) -> Unit {
+  ensure_time_resources()
+  time_fixed_begin_frame()
+  let delta_seconds = time_virtual_delta_seconds()
+  let accumulated_fixed = time_fixed_or_default().accumulate_overstep(
+    delta_seconds,
+  )
+  sync_resource(
+    fixed_resource.val,
+    accumulated_fixed,
+    world.increment_change_tick(),
+  )
+  while true {
+    let current_fixed = time_fixed_or_default()
+    match current_fixed.expend() {
+      Some(next_fixed) => {
+        let change_tick = world.increment_change_tick()
+        sync_resource(fixed_resource.val, next_fixed, change_tick)
+        time_sync_generic_time(change_tick, next_fixed.as_generic())
+        time_fixed_mark_step()
+        @app.run_current_fixed_update_schedule(world)
+      }
+      None => break
+    }
+  }
+  time_restore_virtual_as_generic(world)
+}
+
+///|
+fn time_write_fixed(update : (Fixed) -> Fixed) -> Unit {
+  let change_tick = time_resource_change_tick()
+  let next_fixed = update(time_fixed_or_default())
+  sync_resource(fixed_resource.val, next_fixed, change_tick)
+}
+
+///|
+pub fn time_fixed_reset() -> Unit {
+  time_write_fixed(fn(fixed_time : Fixed) {
+    Fixed::new().set_timestep_seconds(fixed_time.timestep_seconds())
+  })
+  time_fixed_begin_frame()
+}
+
+///|
+pub fn time_fixed_set_timestep_seconds(seconds : Float) -> Unit {
+  time_write_fixed(fn(fixed_time : Fixed) {
+    fixed_time.set_timestep_seconds(seconds)
+  })
+}
+
+///|
+pub fn time_fixed_did_run_this_frame() -> Bool {
+  fixed_frame_state.val.did_run_this_frame
+}
+
+///|
+pub fn time_fixed_steps_ran_this_frame() -> Int {
+  fixed_frame_state.val.steps_ran_this_frame
 }
 
 ///|

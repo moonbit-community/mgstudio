@@ -309,7 +309,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(ctx_value) else { return }
   let ctx_ref = Ref::new(ctx_value)
   let ctx = ctx_ref.val
-  let dt = @app.fixed_time_timestep_seconds()
+  let dt = @time.time_fixed_timestep_seconds()
   ctx.integration = ctx.integration.set_dt(dt)
   let transform_store = @math.get_transform_store(ecs_world)
   let rb3d_store = get_rigid_body3d_store(ecs_world)

@@ -82,8 +82,10 @@ fn app_label_storage_key(label : AppLabel) -> String {
 ///|
 pub(all) enum ScheduleStage {
   Startup
+  First
   PreUpdate
   StateTransition
+  RunFixedMainLoop
   FixedUpdate
   Update
   PostUpdate
@@ -225,8 +227,17 @@ pub fn current_schedule_stage() -> ScheduleStage? {
 let current_world_ref : Ref[@ecs.World?] = Ref::new(None)
 
 ///|
+let current_app_schedule_ref : Ref[Schedule[@ecs.World]?] = Ref::new(None)
+
+///|
 pub fn current_world() -> @ecs.World? {
   current_world_ref.val
+}
+
+///|
+pub fn run_current_fixed_update_schedule(world : @ecs.World) -> Unit {
+  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  run_schedule_stage(world, schedule, FixedUpdate)
 }
 
 ///|
@@ -315,12 +326,6 @@ pub fn[W] SystemConfig::after(
 }
 
 ///|
-pub type DeltaSecondsFn = () -> Float
-
-///|
-pub type FixedMainLoopRunner = (@ecs.World, () -> Unit) -> Unit
-
-///|
 pub type RunnerFn = () -> Unit
 
 ///|
@@ -332,13 +337,17 @@ pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 ///|
 pub struct Schedule[W] {
   startup : Array[SystemConfig[W]]
+  first : Array[SystemConfig[W]]
   pre_update : Array[SystemConfig[W]]
+  run_fixed_main_loop : Array[SystemConfig[W]]
   fixed_update : Array[SystemConfig[W]]
   update : Array[SystemConfig[W]]
   post_update : Array[SystemConfig[W]]
   last : Array[SystemConfig[W]]
   startup_set_edges : Array[(SystemSet, SystemSet)]
+  first_set_edges : Array[(SystemSet, SystemSet)]
   pre_update_set_edges : Array[(SystemSet, SystemSet)]
+  run_fixed_main_loop_set_edges : Array[(SystemSet, SystemSet)]
   fixed_update_set_edges : Array[(SystemSet, SystemSet)]
   update_set_edges : Array[(SystemSet, SystemSet)]
   post_update_set_edges : Array[(SystemSet, SystemSet)]
@@ -362,13 +371,17 @@ pub fn[W] App::new(world : W) -> App[W] {
     world,
     schedule: Schedule::{
       startup: [],
+      first: [],
       pre_update: [],
+      run_fixed_main_loop: [],
       fixed_update: [],
       update: [],
       post_update: [],
       last: [],
       startup_set_edges: [],
+      first_set_edges: [],
       pre_update_set_edges: [],
+      run_fixed_main_loop_set_edges: [],
       fixed_update_set_edges: [],
       update_set_edges: [],
       post_update_set_edges: [],
@@ -615,6 +628,66 @@ pub fn[
 }
 
 ///|
+pub fn[W] App::add_first_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
+  self.schedule.first.push(config)
+  self
+}
+
+///|
+pub fn[W] App::add_first_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+) -> App[W] {
+  self.schedule.first.push(system(system_fn))
+  self
+}
+
+///|
+pub fn[W, P : SystemParam] App::add_first_system_param(
+  self : App[W],
+  first_system : (P) -> Unit,
+) -> App[W] {
+  self.schedule.first.push(system(system_param(first_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_first_system_param2(
+  self : App[W],
+  first_system : (P1, P2) -> Unit,
+) -> App[W] {
+  self.schedule.first.push(system(system_param2(first_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_first_system_param3(
+  self : App[W],
+  first_system : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.schedule.first.push(system(system_param3(first_system)))
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_first_system_param4(
+  self : App[W],
+  first_system : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.schedule.first.push(system(system_param4(first_system)))
+  self
+}
+
+///|
 pub fn[W] App::add_pre_update_system_config(
   self : App[W],
   config : SystemConfig[W],
@@ -671,6 +744,24 @@ pub fn[
   pre_update_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
   self.schedule.pre_update.push(system(system_param4(pre_update_system)))
+  self
+}
+
+///|
+pub fn[W] App::add_run_fixed_main_loop_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
+  self.schedule.run_fixed_main_loop.push(config)
+  self
+}
+
+///|
+pub fn[W] App::add_run_fixed_main_loop_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+) -> App[W] {
+  self.schedule.run_fixed_main_loop.push(system(system_fn))
   self
 }
 
@@ -955,8 +1046,10 @@ fn[W] schedule_systems(
 ) -> Array[SystemConfig[W]] {
   match stage {
     Startup => schedule.startup
+    First => schedule.first
     PreUpdate => schedule.pre_update
     StateTransition => []
+    RunFixedMainLoop => schedule.run_fixed_main_loop
     FixedUpdate => schedule.fixed_update
     Update => schedule.update
     PostUpdate => schedule.post_update
@@ -971,8 +1064,10 @@ fn[W] schedule_set_edges(
 ) -> Array[(SystemSet, SystemSet)] {
   match stage {
     Startup => schedule.startup_set_edges
+    First => schedule.first_set_edges
     PreUpdate => schedule.pre_update_set_edges
     StateTransition => []
+    RunFixedMainLoop => schedule.run_fixed_main_loop_set_edges
     FixedUpdate => schedule.fixed_update_set_edges
     Update => schedule.update_set_edges
     PostUpdate => schedule.post_update_set_edges
@@ -996,181 +1091,6 @@ pub fn[W] App::configure_set(
     edges.push((other, set))
   }
   self
-}
-
-///|
-priv struct FixedTimeState {
-  mut clock : @time_core.Fixed
-  mut max_delta_seconds : Float
-  mut did_run_this_frame : Bool
-  mut steps_ran_this_frame : Int
-}
-
-///|
-const DEFAULT_FIXED_TIMESTEP_SECONDS : Float = 0.015625F
-
-///|
-const DEFAULT_FIXED_MAX_DELTA_SECONDS : Float = 0.25F
-
-///|
-let fixed_time_state : Ref[FixedTimeState] = Ref::new(FixedTimeState::{
-  clock: @time_core.Fixed::from_seconds(DEFAULT_FIXED_TIMESTEP_SECONDS),
-  max_delta_seconds: DEFAULT_FIXED_MAX_DELTA_SECONDS,
-  did_run_this_frame: false,
-  steps_ran_this_frame: 0,
-})
-
-///|
-let delta_seconds_provider : Ref[DeltaSecondsFn?] = Ref::new(None)
-
-///|
-fn app_run_fixed_main_loop_default(
-  _world : @ecs.World,
-  run_fixed_update : () -> Unit,
-) -> Unit {
-  fixed_time_prepare_frame(fixed_time_clamp_delta_seconds(app_delta_seconds()))
-  while fixed_time_expend_step() {
-    run_fixed_update()
-  }
-}
-
-///|
-let fixed_main_loop_runner_ref : Ref[FixedMainLoopRunner] = Ref::new(
-  app_run_fixed_main_loop_default,
-)
-
-///|
-pub fn set_delta_seconds_provider(provider : DeltaSecondsFn) -> Unit {
-  delta_seconds_provider.val = Some(provider)
-}
-
-///|
-pub fn clear_delta_seconds_provider() -> Unit {
-  delta_seconds_provider.val = None
-}
-
-///|
-pub fn app_delta_seconds() -> Float {
-  match delta_seconds_provider.val {
-    Some(provider) => provider()
-    None => 0.0F
-  }
-}
-
-///|
-pub fn set_fixed_main_loop_runner(runner : FixedMainLoopRunner) -> Unit {
-  fixed_main_loop_runner_ref.val = runner
-}
-
-///|
-pub fn fixed_time_reset() -> Unit {
-  fixed_time_state.val.clock = fixed_time_state.val.clock.set_runtime_state(
-    fixed_time_state.val.clock.timestep_seconds(),
-    0.0F,
-    0.0F,
-  )
-  fixed_time_state.val.did_run_this_frame = false
-  fixed_time_state.val.steps_ran_this_frame = 0
-}
-
-///|
-pub fn fixed_time_prepare_frame(delta_raw_seconds : Float) -> Unit {
-  fixed_time_state.val.did_run_this_frame = false
-  fixed_time_state.val.steps_ran_this_frame = 0
-  fixed_time_state.val.clock = fixed_time_state.val.clock.accumulate_overstep(
-    fixed_time_non_negative_delta(delta_raw_seconds),
-  )
-}
-
-///|
-pub fn fixed_time_expend_step() -> Bool {
-  match fixed_time_state.val.clock.expend() {
-    Some(next_clock) => {
-      fixed_time_state.val.clock = next_clock
-      fixed_time_state.val.did_run_this_frame = true
-      fixed_time_state.val.steps_ran_this_frame = fixed_time_state.val.steps_ran_this_frame +
-        1
-      true
-    }
-    None => false
-  }
-}
-
-///|
-fn fixed_time_non_negative_delta(delta_raw_seconds : Float) -> Float {
-  if delta_raw_seconds < 0.0F {
-    0.0F
-  } else {
-    delta_raw_seconds
-  }
-}
-
-///|
-fn fixed_time_clamp_delta_seconds(delta_raw_seconds : Float) -> Float {
-  let delta = fixed_time_non_negative_delta(delta_raw_seconds)
-  let max_delta = fixed_time_state.val.max_delta_seconds
-  if delta > max_delta {
-    max_delta
-  } else {
-    delta
-  }
-}
-
-///|
-pub fn fixed_time_set_runtime_state(
-  timestep_seconds : Float,
-  overstep_seconds : Float,
-  elapsed_seconds : Float,
-) -> Unit {
-  fixed_time_state.val.clock = fixed_time_state.val.clock.set_runtime_state(
-    timestep_seconds, overstep_seconds, elapsed_seconds,
-  )
-}
-
-///|
-pub fn fixed_time_set_timestep_seconds(seconds : Float) -> Unit {
-  if seconds > 0.0F {
-    fixed_time_state.val.clock = fixed_time_state.val.clock.set_timestep_seconds(
-      seconds,
-    )
-  }
-}
-
-///|
-pub fn fixed_time_set_max_delta_seconds(seconds : Float) -> Unit {
-  if seconds > 0.0F {
-    fixed_time_state.val.max_delta_seconds = seconds
-  }
-}
-
-///|
-pub fn fixed_time_timestep_seconds() -> Float {
-  fixed_time_state.val.clock.timestep_seconds()
-}
-
-///|
-pub fn fixed_time_overstep_seconds() -> Float {
-  fixed_time_state.val.clock.overstep_seconds()
-}
-
-///|
-pub fn fixed_time_elapsed_seconds() -> Float {
-  fixed_time_state.val.clock.elapsed_seconds()
-}
-
-///|
-pub fn fixed_time_overstep_fraction() -> Float {
-  fixed_time_state.val.clock.overstep_fraction()
-}
-
-///|
-pub fn fixed_time_did_run_this_frame() -> Bool {
-  fixed_time_state.val.did_run_this_frame
-}
-
-///|
-pub fn fixed_time_steps_ran_this_frame() -> Int {
-  fixed_time_state.val.steps_ran_this_frame
 }
 
 ///|
@@ -1358,8 +1278,10 @@ fn run_schedule_stage(
 
 ///|
 pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
+  current_app_schedule_ref.val = Some(self.schedule)
   run_registered_state_transitions(self.world)
   run_schedule_stage(self.world, self.schedule, Startup)
+  current_app_schedule_ref.val = None
   for entry in self.sub_apps.iter() {
     let (_key, sub_app_ref) = entry
     sub_app_ref.val = sub_app_ref.val.run_startup()
@@ -1369,14 +1291,15 @@ pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
 
 ///|
 pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
+  current_app_schedule_ref.val = Some(self.schedule)
+  run_schedule_stage(self.world, self.schedule, First)
   run_schedule_stage(self.world, self.schedule, PreUpdate)
   run_registered_state_transitions(self.world)
-  (fixed_main_loop_runner_ref.val)(self.world, fn() {
-    run_schedule_stage(self.world, self.schedule, FixedUpdate)
-  })
+  run_schedule_stage(self.world, self.schedule, RunFixedMainLoop)
   run_schedule_stage(self.world, self.schedule, Update)
   run_schedule_stage(self.world, self.schedule, PostUpdate)
   run_schedule_stage(self.world, self.schedule, Last)
+  current_app_schedule_ref.val = None
   for entry in self.sub_apps.iter() {
     let (key, sub_app_ref) = entry
     if self.sub_app_extractors.get(key) is Some(extract) {

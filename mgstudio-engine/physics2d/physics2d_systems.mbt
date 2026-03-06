@@ -667,7 +667,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(current_ctx) else { return }
   let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
-  let dt = @app.fixed_time_timestep_seconds()
+  let dt = @time.time_fixed_timestep_seconds()
   ctx.integration = cfg.integration.set_dt(dt)
   physics2d_apply_global_hooks(ctx)
   let transform_store = @math.get_transform_store(ecs_world)
