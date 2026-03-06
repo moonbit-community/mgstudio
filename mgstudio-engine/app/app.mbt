@@ -51,6 +51,9 @@ pub type PluginGroup[W] = () -> PluginGroupBuilder[W]
 pub type RunConditionFn[W] = (W) -> Bool
 
 ///|
+pub type StatefulRunConditionFn[W] = (W, Ref[Json]) -> Bool
+
+///|
 pub type SystemSet = String
 
 ///|
@@ -426,7 +429,8 @@ pub impl[T : Resource] SystemParam for ResMut[T] with store(self, state) {
 ///|
 pub struct SystemConfig[W] {
   system : SystemFn[W]
-  run_if : RunConditionFn[W]?
+  run_if : StatefulRunConditionFn[W]?
+  run_if_state : Ref[Json]
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
@@ -439,6 +443,7 @@ pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
   SystemConfig::{
     system,
     run_if: None,
+    run_if_state: Ref::new(Json::null()),
     set: None,
     before: [],
     after: [],
@@ -452,7 +457,22 @@ pub fn[W] SystemConfig::run_if(
   self : SystemConfig[W],
   cond : RunConditionFn[W],
 ) -> SystemConfig[W] {
-  SystemConfig::{ ..self, run_if: Some(cond) }
+  self.run_if_stateful(Json::null(), fn(world : W, _state : Ref[Json]) {
+    cond(world)
+  })
+}
+
+///|
+pub fn[W] SystemConfig::run_if_stateful(
+  self : SystemConfig[W],
+  init_state : Json,
+  cond : StatefulRunConditionFn[W],
+) -> SystemConfig[W] {
+  SystemConfig::{
+    ..self,
+    run_if: Some(cond),
+    run_if_state: Ref::new(init_state),
+  }
 }
 
 ///|
@@ -498,7 +518,10 @@ pub struct App[W] {
 
 ///|
 pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
-  let main_sub_app = SubApp::new(world).set_update_schedule(Some(Main))
+  let app_exit_key : @ecs.MessageKey[AppExit] = @ecs.Message::message()
+  let main_sub_app = SubApp::new(world)
+    .add_message(app_exit_key)
+    .set_update_schedule(Some(Main))
   App::{ sub_apps: SubApps::new(main_sub_app), runner_builder: None }
 }
 
@@ -2028,7 +2051,7 @@ fn run_systems(
         let prev_world = current_world_ref.val
         current_world_ref.val = Some(world)
         current_system_ticks_ref.val = Some(cond_ticks)
-        let should_run = cond(world)
+        let should_run = cond(world, cfg.run_if_state)
         current_system_ticks_ref.val = None
         current_world_ref.val = prev_world
         systems[system_i].run_if_last_run_tick = cond_this_run

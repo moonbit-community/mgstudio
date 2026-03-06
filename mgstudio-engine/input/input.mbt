@@ -1693,7 +1693,7 @@ pub impl @app.Resource for Touches with resource() {
 
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  input_gamepad_plugin(app)
   .add_pre_update_system(input_poll_keyboard_system)
   .add_pre_update_system(input_poll_drag_and_drop_system)
   .add_pre_update_system(input_poll_mouse_system)

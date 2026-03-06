@@ -164,6 +164,7 @@ pub(all) suberror EcsError {
   ComponentDecodeFailed(Int, String, @core.Entity, @json.JsonDecodeError)
   ResourceDecodeFailed(Int, String, @json.JsonDecodeError)
   EventDecodeFailed(Int, String, Int, @json.JsonDecodeError)
+  MessageDecodeFailed(Int, String, Int, @json.JsonDecodeError)
 }
 
 ///|

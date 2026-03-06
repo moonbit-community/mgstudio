@@ -25,27 +25,27 @@ fn main {
 
 ///|
 fn gamepad_events(
-  connection_events : @core.MessageReader[@input.GamepadConnectionEvent],
-  axis_changed_events : @core.MessageReader[@input.GamepadAxisChangedEvent],
-  button_changed_events : @core.MessageReader[@input.GamepadButtonChangedEvent],
-  button_input_events : @core.MessageReader[
+  connection_events : @ecs.MessageReader[@input.GamepadConnectionEvent],
+  axis_changed_events : @ecs.MessageReader[@input.GamepadAxisChangedEvent],
+  button_changed_events : @ecs.MessageReader[@input.GamepadButtonChangedEvent],
+  button_input_events : @ecs.MessageReader[
     @input.GamepadButtonStateChangedEvent,
   ],
 ) -> Unit {
-  for connection_event in connection_events.read() {
+  for connection_event in (try! connection_events.read()) {
     log_line(format_connection_event(connection_event))
   }
-  for axis_changed_event in axis_changed_events.read() {
+  for axis_changed_event in (try! axis_changed_events.read()) {
     log_line(
       "\{format_axis(axis_changed_event.axis)} of \{axis_changed_event.gamepad_id} is changed to \{axis_changed_event.value}",
     )
   }
-  for button_changed_event in button_changed_events.read() {
+  for button_changed_event in (try! button_changed_events.read()) {
     log_line(
       "\{format_button(button_changed_event.button)} of \{button_changed_event.gamepad_id} is changed to \{button_changed_event.value}",
     )
   }
-  for button_input_event in button_input_events.read() {
+  for button_input_event in (try! button_input_events.read()) {
     log_line(format_button_state_changed_event(button_input_event))
   }
 }
@@ -54,9 +54,9 @@ fn gamepad_events(
 // If you require in-frame relative event ordering, you can also read the
 // `GamepadEvent` stream directly.
 fn gamepad_ordered_events(
-  gamepad_events : @core.MessageReader[@input.GamepadEvent],
+  gamepad_events : @ecs.MessageReader[@input.GamepadEvent],
 ) -> Unit {
-  for gamepad_event in gamepad_events.read() {
+  for gamepad_event in (try! gamepad_events.read()) {
     match gamepad_event {
       Connection(connection_event) =>
         log_line(format_connection_event(connection_event))

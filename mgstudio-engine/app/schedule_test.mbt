@@ -45,8 +45,8 @@ test "app: run_if evaluates with condition system ticks" {
 
   inspect(observed.length(), content="2")
   inspect(system_ran.val, content="false")
-  inspect(observed[0].0 == 0 && observed[0].1 == 3, content="true")
-  inspect(observed[1].0 == 3 && observed[1].1 == 5, content="true")
+  inspect(observed[0].0 == 0 && observed[0].1 == 4, content="true")
+  inspect(observed[1].0 == 4 && observed[1].1 == 7, content="true")
 }
 
 ///|
@@ -236,21 +236,16 @@ impl SystemParam for TickParam with store(self, _state) {
 ///|
 struct TestMessage {
   value : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
-let test_messages_ref : Ref[@core.Messages[TestMessage]] = Ref::new(
-  @core.Messages::new(),
+let test_message_key : @ecs.MessageKey[TestMessage] = @ecs.register_message(
+  debug_name="tests.app.TestMessage",
 )
 
 ///|
-impl @core.Message for TestMessage with reader(ticks) {
-  test_messages_ref.val.reader(ticks)
-}
-
-///|
-impl @core.Message for TestMessage with writer(tick) {
-  test_messages_ref.val.writer(tick)
+impl @ecs.Message for TestMessage with message() {
+  test_message_key
 }
 
 ///|
@@ -292,20 +287,20 @@ test "app: system param can read current system ticks" {
   .run_once()
   |> ignore
   inspect(log.length(), content="2")
-  inspect(log[0].0 == 0 && log[0].1 == 3, content="true")
-  inspect(log[1].0 == 0 && log[1].1 == 4, content="true")
+  inspect(log[0].0 == 0 && log[0].1 == 4, content="true")
+  inspect(log[1].0 == 0 && log[1].1 == 5, content="true")
 }
 
 ///|
 test "app: MessageWriter system param writes messages for MessageReader" {
-  test_messages_ref.val.clear()
   let observed : Ref[Int] = Ref::new(-1)
   let app = App::new(@ecs.World::new())
-    .add_system_param(fn(writer : @core.MessageWriter[TestMessage]) {
-      writer.write({ value: 42 })
+    .add_message(test_message_key)
+    .add_system_param(fn(writer : @ecs.MessageWriter[TestMessage]) {
+      ignore(writer.write({ value: 42 }))
     })
-    .add_system_param(fn(reader : @core.MessageReader[TestMessage]) {
-      let messages = reader.read()
+    .add_system_param(fn(reader : @ecs.MessageReader[TestMessage]) {
+      let messages = try! reader.read()
       if messages.length() > 0 {
         observed.val = messages[0].value
       }

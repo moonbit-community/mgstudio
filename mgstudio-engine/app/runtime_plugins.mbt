@@ -16,24 +16,45 @@
 /// App exit signal, aligned with Bevy's `AppExit`.
 pub(all) enum AppExit {
   Success
-  Error
-} derive(Eq, Show)
+  Error(Int)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn AppExit::error() -> AppExit {
-  Error
+  Error(1)
 }
 
 ///|
-let app_exit_messages_ref : Ref[@core.Messages[AppExit]] = Ref::new(
-  @core.Messages::new(),
-)
+pub fn AppExit::is_success(self : AppExit) -> Bool {
+  match self {
+    Success => true
+    Error(_) => false
+  }
+}
 
 ///|
-let app_exit_last_seen_tick_ref : Ref[@core.Tick] = Ref::new(0)
+pub fn AppExit::is_error(self : AppExit) -> Bool {
+  !self.is_success()
+}
 
 ///|
-let app_exit_latest_ref : Ref[AppExit?] = Ref::new(None)
+pub fn AppExit::from_code(code : Int) -> AppExit {
+  if code <= 0 {
+    Success
+  } else {
+    Error(code)
+  }
+}
+
+///|
+fn app_exit_message_key() -> @ecs.MessageKey[AppExit] {
+  @ecs.Message::message()
+}
+
+///|
+pub impl @ecs.Message for AppExit with message() {
+  @ecs.register_message(debug_name="bevy_app::AppExit")
+}
 
 ///|
 pub(all) enum RenderRuntimeError {
@@ -112,7 +133,13 @@ pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
     RenderErrorPolicy::Panic =>
       abort("render runtime error: " + error.to_string())
     RenderErrorPolicy::ExitApp => {
-      app_exit_messages_ref.val.send(0, AppExit::error())
+      if current_world() is Some(world) {
+        let key = app_exit_message_key()
+        if !world.contains_message(key) {
+          world.init_message(key)
+        }
+        ignore(world.send_message(key, AppExit::error()))
+      }
       render_runtime_stopped_ref.val = true
     }
     RenderErrorPolicy::StopRendering => render_runtime_stopped_ref.val = true
@@ -121,44 +148,7 @@ pub fn report_render_runtime_error(error : RenderRuntimeError) -> Unit {
 }
 
 ///|
-fn app_exit_messages_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[AppExit] {
-  app_exit_messages_ref.val.reader(ticks)
-}
-
-///|
-fn app_exit_messages_writer(tick : @core.Tick) -> @core.MessageWriter[AppExit] {
-  app_exit_messages_ref.val.writer(tick)
-}
-
-///|
-pub impl @core.Message for AppExit with reader(ticks) {
-  app_exit_messages_reader(ticks)
-}
-
-///|
-pub impl @core.Message for AppExit with writer(tick) {
-  app_exit_messages_writer(tick)
-}
-
-///|
-fn app_exit_poll_until(tick : @core.Tick) -> AppExit? {
-  let reader = app_exit_messages_ref.val.reader(
-    @core.SystemTicks::new(app_exit_last_seen_tick_ref.val, tick),
-  )
-  for app_exit in reader.read() {
-    app_exit_latest_ref.val = Some(app_exit)
-  }
-  app_exit_last_seen_tick_ref.val = tick
-  app_exit_latest_ref.val
-}
-
-///|
 pub fn app_runtime_reset() -> Unit {
-  app_exit_messages_ref.val.clear()
-  app_exit_last_seen_tick_ref.val = 0
-  app_exit_latest_ref.val = None
   render_runtime_error_ref.val = None
   render_runtime_stopped_ref.val = false
   render_error_handler_ref.val = default_render_error_handler
@@ -167,7 +157,27 @@ pub fn app_runtime_reset() -> Unit {
 
 ///|
 pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
-  app_exit_poll_until(self.world().read_change_tick())
+  let key = app_exit_message_key()
+  if !self.world().contains_message(key) {
+    return None
+  }
+  let reader = self.world().message_reader(key, Ref::new(0))
+  let exits_result : Result[Array[AppExit], @ecs.EcsError] = try? reader.read()
+  match exits_result {
+    Ok(exits) => {
+      if exits.length() == 0 {
+        None
+      } else {
+        for exit in exits {
+          if exit.is_error() {
+            return Some(exit)
+          }
+        }
+        Some(AppExit::Success)
+      }
+    }
+    Err(_) => None
+  }
 }
 
 ///|
@@ -361,7 +371,7 @@ pub(all) enum LogLevel {
   Info
   Debug
   Trace
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub struct LogRecord {
