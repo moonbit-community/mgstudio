@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn app_delta_seconds() -> Float
+
 pub fn app_label(String) -> AppLabel
 
 pub fn app_rendering_enabled() -> Bool
@@ -33,13 +35,19 @@ pub fn fixed_time_did_run_this_frame() -> Bool
 
 pub fn fixed_time_elapsed_seconds() -> Float
 
+pub fn fixed_time_expend_step() -> Bool
+
 pub fn fixed_time_overstep_fraction() -> Float
 
 pub fn fixed_time_overstep_seconds() -> Float
 
+pub fn fixed_time_prepare_frame(Float) -> Unit
+
 pub fn fixed_time_reset() -> Unit
 
 pub fn fixed_time_set_max_delta_seconds(Float) -> Unit
+
+pub fn fixed_time_set_runtime_state(Float, Float, Float) -> Unit
 
 pub fn fixed_time_set_timestep_seconds(Float) -> Unit
 
@@ -100,6 +108,8 @@ pub fn reset_render_error_handler() -> Unit
 pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
 
 pub fn set_delta_seconds_provider(() -> Float) -> Unit
+
+pub fn set_fixed_main_loop_runner((@ecs.World, () -> Unit) -> Unit) -> Unit
 
 pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
 
@@ -466,6 +476,8 @@ pub fn TaskPoolPlugin::new(TaskPoolOptions) -> Self
 
 // Type aliases
 pub type DeltaSecondsFn = () -> Float
+
+pub type FixedMainLoopRunner = (@ecs.World, () -> Unit) -> Unit
 
 pub type LogLayer = (LogRecord) -> Unit
 

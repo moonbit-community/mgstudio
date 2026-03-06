@@ -318,6 +318,9 @@ pub fn[W] SystemConfig::after(
 pub type DeltaSecondsFn = () -> Float
 
 ///|
+pub type FixedMainLoopRunner = (@ecs.World, () -> Unit) -> Unit
+
+///|
 pub type RunnerFn = () -> Unit
 
 ///|
@@ -1025,6 +1028,22 @@ let fixed_time_state : Ref[FixedTimeState] = Ref::new(FixedTimeState::{
 let delta_seconds_provider : Ref[DeltaSecondsFn?] = Ref::new(None)
 
 ///|
+fn app_run_fixed_main_loop_default(
+  _world : @ecs.World,
+  run_fixed_update : () -> Unit,
+) -> Unit {
+  fixed_time_prepare_frame(fixed_time_clamp_delta_seconds(app_delta_seconds()))
+  while fixed_time_expend_step() {
+    run_fixed_update()
+  }
+}
+
+///|
+let fixed_main_loop_runner_ref : Ref[FixedMainLoopRunner] = Ref::new(
+  app_run_fixed_main_loop_default,
+)
+
+///|
 pub fn set_delta_seconds_provider(provider : DeltaSecondsFn) -> Unit {
   delta_seconds_provider.val = Some(provider)
 }
@@ -1035,11 +1054,82 @@ pub fn clear_delta_seconds_provider() -> Unit {
 }
 
 ///|
+pub fn app_delta_seconds() -> Float {
+  match delta_seconds_provider.val {
+    Some(provider) => provider()
+    None => 0.0F
+  }
+}
+
+///|
+pub fn set_fixed_main_loop_runner(runner : FixedMainLoopRunner) -> Unit {
+  fixed_main_loop_runner_ref.val = runner
+}
+
+///|
 pub fn fixed_time_reset() -> Unit {
   fixed_time_state.val.overstep_seconds = 0.0F
   fixed_time_state.val.elapsed_seconds = 0.0F
   fixed_time_state.val.did_run_this_frame = false
   fixed_time_state.val.steps_ran_this_frame = 0
+}
+
+///|
+pub fn fixed_time_prepare_frame(delta_raw_seconds : Float) -> Unit {
+  fixed_time_state.val.did_run_this_frame = false
+  fixed_time_state.val.steps_ran_this_frame = 0
+  fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds +
+    fixed_time_non_negative_delta(delta_raw_seconds)
+}
+
+///|
+pub fn fixed_time_expend_step() -> Bool {
+  let timestep = fixed_time_state.val.timestep_seconds
+  if timestep <= 0.0F {
+    return false
+  }
+  if fixed_time_state.val.overstep_seconds < timestep {
+    return false
+  }
+  fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds -
+    timestep
+  fixed_time_state.val.elapsed_seconds = fixed_time_state.val.elapsed_seconds +
+    timestep
+  fixed_time_state.val.did_run_this_frame = true
+  fixed_time_state.val.steps_ran_this_frame = fixed_time_state.val.steps_ran_this_frame +
+    1
+  true
+}
+
+///|
+fn fixed_time_non_negative_delta(delta_raw_seconds : Float) -> Float {
+  if delta_raw_seconds < 0.0F {
+    0.0F
+  } else {
+    delta_raw_seconds
+  }
+}
+
+///|
+fn fixed_time_clamp_delta_seconds(delta_raw_seconds : Float) -> Float {
+  let delta = fixed_time_non_negative_delta(delta_raw_seconds)
+  let max_delta = fixed_time_state.val.max_delta_seconds
+  if delta > max_delta {
+    max_delta
+  } else {
+    delta
+  }
+}
+
+///|
+pub fn fixed_time_set_runtime_state(
+  timestep_seconds : Float,
+  overstep_seconds : Float,
+  elapsed_seconds : Float,
+) -> Unit {
+  fixed_time_state.val.timestep_seconds = timestep_seconds
+  fixed_time_state.val.overstep_seconds = overstep_seconds
+  fixed_time_state.val.elapsed_seconds = elapsed_seconds
 }
 
 ///|
@@ -1289,39 +1379,9 @@ pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
 pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
   run_schedule_stage(self.world, self.schedule, PreUpdate)
   run_registered_state_transitions(self.world)
-  fixed_time_state.val.did_run_this_frame = false
-  fixed_time_state.val.steps_ran_this_frame = 0
-  let delta_raw = match delta_seconds_provider.val {
-    Some(provider) => provider()
-    None => 0.0F
-  }
-  let delta_non_negative = if delta_raw < 0.0F { 0.0F } else { delta_raw }
-  let max_delta = fixed_time_state.val.max_delta_seconds
-  let delta = if delta_non_negative > max_delta {
-    max_delta
-  } else {
-    delta_non_negative
-  }
-  fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds +
-    delta
-  let timestep = fixed_time_state.val.timestep_seconds
-  if timestep > 0.0F {
-    let fixed_systems = schedule_systems(self.schedule, FixedUpdate)
-    let fixed_edges = schedule_set_edges(self.schedule, FixedUpdate)
-    let eps = 0.0000001F
-    current_schedule_stage_ref.val = Some(FixedUpdate)
-    while fixed_time_state.val.overstep_seconds + eps >= timestep {
-      fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds -
-        timestep
-      fixed_time_state.val.elapsed_seconds = fixed_time_state.val.elapsed_seconds +
-        timestep
-      fixed_time_state.val.did_run_this_frame = true
-      fixed_time_state.val.steps_ran_this_frame = fixed_time_state.val.steps_ran_this_frame +
-        1
-      run_systems(self.world, fixed_systems, fixed_edges)
-    }
-    current_schedule_stage_ref.val = None
-  }
+  (fixed_main_loop_runner_ref.val)(self.world, fn() {
+    run_schedule_stage(self.world, self.schedule, FixedUpdate)
+  })
   run_schedule_stage(self.world, self.schedule, Update)
   run_schedule_stage(self.world, self.schedule, PostUpdate)
   run_schedule_stage(self.world, self.schedule, Last)

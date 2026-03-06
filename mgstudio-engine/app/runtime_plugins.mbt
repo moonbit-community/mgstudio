@@ -162,6 +162,7 @@ pub fn app_runtime_reset() -> Unit {
   render_runtime_error_ref.val = None
   render_runtime_stopped_ref.val = false
   render_error_handler_ref.val = default_render_error_handler
+  fixed_main_loop_runner_ref.val = app_run_fixed_main_loop_default
   host_app_reset_close()
 }
 

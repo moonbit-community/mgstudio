@@ -87,14 +87,6 @@ fn time_time_or_default() -> Time {
 }
 
 ///|
-fn time_fixed_wrapped_elapsed_seconds(wrap_period_seconds : Float) -> Float {
-  time_elapsed_wrapped_seconds_for(
-    time_fixed_elapsed_seconds_raw(),
-    wrap_period_seconds,
-  )
-}
-
-///|
 fn time_delta_seconds_raw(time : Time) -> Float {
   time.delta_seconds
 }
@@ -161,10 +153,7 @@ pub fn Time::advance_to(self : Time, elapsed_seconds : Float) -> Time {
 
 ///|
 pub fn Time::delta_seconds(self : Time) -> Float {
-  match @app.current_schedule_stage() {
-    Some(@app.FixedUpdate) => time_fixed_delta_seconds_raw()
-    _ => self.delta_seconds
-  }
+  self.delta_seconds
 }
 
 ///|
@@ -179,10 +168,7 @@ pub fn Time::delta_secs_f64(self : Time) -> Float {
 
 ///|
 pub fn Time::elapsed_seconds(self : Time) -> Float {
-  match @app.current_schedule_stage() {
-    Some(@app.FixedUpdate) => time_fixed_elapsed_seconds_raw()
-    _ => self.elapsed_seconds
-  }
+  self.elapsed_seconds
 }
 
 ///|
@@ -197,11 +183,7 @@ pub fn Time::elapsed_secs_f64(self : Time) -> Float {
 
 ///|
 pub fn Time::elapsed_wrapped_seconds(self : Time) -> Float {
-  match @app.current_schedule_stage() {
-    Some(@app.FixedUpdate) =>
-      time_fixed_wrapped_elapsed_seconds(self.wrap_period_seconds)
-    _ => self.elapsed_wrapped_seconds
-  }
+  self.elapsed_wrapped_seconds
 }
 
 ///|

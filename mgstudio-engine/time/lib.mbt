@@ -111,6 +111,28 @@ fn[T] sync_resource(
 }
 
 ///|
+fn time_sync_fixed_from_app(change_tick : @core.Tick) -> Fixed {
+  let next_fixed = time_fixed_or_default().sync_from_app_state()
+  sync_resource(fixed_resource.val, next_fixed, change_tick)
+  next_fixed
+}
+
+///|
+fn time_sync_generic_time(change_tick : @core.Tick, value : Time) -> Unit {
+  sync_resource(time_resource.val, value, change_tick)
+}
+
+///|
+fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
+  let change_tick = world.increment_change_tick()
+  let virtual_time = match virtual_resource.val.get() {
+    Some(value) => value
+    None => Virtual::new()
+  }
+  time_sync_generic_time(change_tick, virtual_time.as_generic())
+}
+
+///|
 fn ensure_time_resources() -> Unit {
   let tick = time_resource_change_tick()
   if !time_resource.val.is_present() {
@@ -193,8 +215,33 @@ fn time_update_resource_system(
 }
 
 ///|
-fn time_sync_fixed_resource_system(fixed_time : @app.ResMut[Fixed]) -> Unit {
-  fixed_time.get_ref().val = fixed_time.get_ref().val.sync_from_app_state()
+fn time_run_fixed_main_loop(
+  world : @ecs.World,
+  run_fixed_update : () -> Unit,
+) -> Unit {
+  ensure_time_resources()
+  @app.fixed_time_prepare_frame(@app.app_delta_seconds())
+  ignore(time_sync_fixed_from_app(world.increment_change_tick()))
+  let mut ran_fixed_step = false
+  while @app.fixed_time_expend_step() {
+    let change_tick = world.increment_change_tick()
+    let fixed_time = time_sync_fixed_from_app(change_tick)
+    time_sync_generic_time(change_tick, fixed_time.as_generic())
+    run_fixed_update()
+    let current_fixed = match fixed_resource.val.get() {
+      Some(value) => value
+      None => fixed_time
+    }
+    @app.fixed_time_set_runtime_state(
+      current_fixed.timestep_seconds(),
+      current_fixed.overstep_seconds(),
+      current_fixed.elapsed_seconds(),
+    )
+    ran_fixed_step = true
+  }
+  if ran_fixed_step {
+    time_restore_virtual_as_generic(world)
+  }
 }
 
 ///|
@@ -202,12 +249,12 @@ pub fn[W] time_plugin(app : @app.App[W]) -> @app.App[W] {
   let startup_seconds = host_time_now()
   @app.fixed_time_reset()
   @app.set_delta_seconds_provider(fn() { time_virtual_delta_seconds() })
+  @app.set_fixed_main_loop_runner(time_run_fixed_main_loop)
   app
   .insert_resource(Time::new())
   .insert_resource(Real::new(startup_seconds))
   .insert_resource(Virtual::new())
   .insert_resource(Fixed::new().sync_from_app_state())
   .insert_resource(TimeUpdateStrategy::default())
-  .add_fixed_update_system_param(time_sync_fixed_resource_system)
   .add_pre_update_system_param4(time_update_resource_system)
 }

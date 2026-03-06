@@ -104,3 +104,75 @@ test "time: fixed timesteps strategy drives fixed update loop" {
   inspect(Fixed::resource().get().unwrap().elapsed_seconds(), content="0.25")
   inspect(Time::resource().get().unwrap().elapsed_seconds(), content="0.25")
 }
+
+///|
+test "time: generic time switches to fixed during fixed update and restores after loop" {
+  reset_time_test_state()
+  @app.fixed_time_set_timestep_seconds(0.125F)
+  @app.fixed_time_set_max_delta_seconds(1.0F)
+  let fixed_log : Array[String] = []
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([time_plugin])
+    .add_fixed_update_system(fn(_world : @ecs.World) {
+      let generic_time = Time::resource().get().unwrap()
+      let fixed_time = Fixed::resource().get().unwrap()
+      fixed_log.push(
+        generic_time.delta_seconds().to_string() +
+        "/" +
+        generic_time.elapsed_seconds().to_string() +
+        "|" +
+        fixed_time.delta_seconds().to_string() +
+        "/" +
+        fixed_time.elapsed_seconds().to_string(),
+      )
+    })
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
+  inspect(fixed_log.length(), content="0")
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
+  inspect(
+    fixed_log.join(","),
+    content="0.125/0.125|0.125/0.125,0.125/0.25|0.125/0.25",
+  )
+  inspect(Time::resource().get().unwrap().delta_seconds(), content="0.25")
+  inspect(Time::resource().get().unwrap().elapsed_seconds(), content="0.25")
+}
+
+///|
+test "time: fixed resource timestep changes affect later steps in the same frame" {
+  reset_time_test_state()
+  @app.fixed_time_set_timestep_seconds(0.2F)
+  @app.fixed_time_set_max_delta_seconds(1.0F)
+  let steps : Ref[Int] = Ref::new(0)
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([time_plugin])
+    .add_fixed_update_system_param(fn(fixed_time : @app.ResMut[Fixed]) {
+      steps.val = steps.val + 1
+      if steps.val == 1 {
+        fixed_time.get_ref().val = fixed_time.get_ref().val.set_timestep_seconds(
+          0.1F,
+        )
+      }
+    })
+  time_virtual_set_max_delta_seconds(1.0F)
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
+  inspect(steps.val, content="0")
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
+  inspect(steps.val, content="3")
+  inspect(@app.fixed_time_steps_ran_this_frame(), content="3")
+  inspect(
+    Fixed::resource().get().unwrap().timestep_seconds(),
+    content="0.10000000149011612",
+  )
+  inspect(
+    Fixed::resource().get().unwrap().elapsed_seconds(),
+    content="0.4000000059604645",
+  )
+  inspect(
+    Time::resource().get().unwrap().elapsed_seconds(),
+    content="0.4000000059604645",
+  )
+}
