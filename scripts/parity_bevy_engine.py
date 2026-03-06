@@ -97,7 +97,16 @@ def rust_module_key(relative_path: Path) -> str:
 
 
 def moon_module_key(relative_path: Path) -> str:
-    return relative_path.as_posix()[:-4]
+    parts = list(relative_path.parts)
+    filename = parts[-1]
+    stem = filename[:-4]
+    if stem in {"lib", "main"}:
+        parts = parts[:-1]
+    else:
+        parts = parts[:-1] + [stem]
+    if not parts:
+        return "__root__"
+    return "/".join(parts)
 
 
 def should_skip_dirname(name: str) -> bool:

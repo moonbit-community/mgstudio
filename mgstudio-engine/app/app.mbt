@@ -86,6 +86,7 @@ pub(all) enum ScheduleStage {
   FixedUpdate
   Update
   PostUpdate
+  Last
 } derive(Eq, Show)
 
 ///|
@@ -321,11 +322,13 @@ pub struct Schedule[W] {
   fixed_update : Array[SystemConfig[W]]
   update : Array[SystemConfig[W]]
   post_update : Array[SystemConfig[W]]
+  last : Array[SystemConfig[W]]
   startup_set_edges : Array[(SystemSet, SystemSet)]
   pre_update_set_edges : Array[(SystemSet, SystemSet)]
   fixed_update_set_edges : Array[(SystemSet, SystemSet)]
   update_set_edges : Array[(SystemSet, SystemSet)]
   post_update_set_edges : Array[(SystemSet, SystemSet)]
+  last_set_edges : Array[(SystemSet, SystemSet)]
 }
 
 ///|
@@ -349,11 +352,13 @@ pub fn[W] App::new(world : W) -> App[W] {
       fixed_update: [],
       update: [],
       post_update: [],
+      last: [],
       startup_set_edges: [],
       pre_update_set_edges: [],
       fixed_update_set_edges: [],
       update_set_edges: [],
       post_update_set_edges: [],
+      last_set_edges: [],
     },
     runner_builder: None,
     sub_apps: @hashmap.HashMap::new(),
@@ -870,6 +875,66 @@ pub fn[
 }
 
 ///|
+pub fn[W] App::add_last_system_config(
+  self : App[W],
+  config : SystemConfig[W],
+) -> App[W] {
+  self.schedule.last.push(config)
+  self
+}
+
+///|
+pub fn[W] App::add_last_system(
+  self : App[W],
+  system_fn : SystemFn[W],
+) -> App[W] {
+  self.schedule.last.push(system(system_fn))
+  self
+}
+
+///|
+pub fn[W, P : SystemParam] App::add_last_system_param(
+  self : App[W],
+  last_system : (P) -> Unit,
+) -> App[W] {
+  self.schedule.last.push(system(system_param(last_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(
+  self : App[W],
+  last_system : (P1, P2) -> Unit,
+) -> App[W] {
+  self.schedule.last.push(system(system_param2(last_system)))
+  self
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_system_param3(
+  self : App[W],
+  last_system : (P1, P2, P3) -> Unit,
+) -> App[W] {
+  self.schedule.last.push(system(system_param3(last_system)))
+  self
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_last_system_param4(
+  self : App[W],
+  last_system : (P1, P2, P3, P4) -> Unit,
+) -> App[W] {
+  self.schedule.last.push(system(system_param4(last_system)))
+  self
+}
+
+///|
 fn[W] schedule_systems(
   schedule : Schedule[W],
   stage : ScheduleStage,
@@ -880,6 +945,7 @@ fn[W] schedule_systems(
     FixedUpdate => schedule.fixed_update
     Update => schedule.update
     PostUpdate => schedule.post_update
+    Last => schedule.last
   }
 }
 
@@ -894,6 +960,7 @@ fn[W] schedule_set_edges(
     FixedUpdate => schedule.fixed_update_set_edges
     Update => schedule.update_set_edges
     PostUpdate => schedule.post_update_set_edges
+    Last => schedule.last_set_edges
   }
 }
 
@@ -1223,6 +1290,7 @@ pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
   }
   run_schedule_stage(self.world, self.schedule, Update)
   run_schedule_stage(self.world, self.schedule, PostUpdate)
+  run_schedule_stage(self.world, self.schedule, Last)
   for entry in self.sub_apps.iter() {
     let (key, sub_app_ref) = entry
     if self.sub_app_extractors.get(key) is Some(extract) {

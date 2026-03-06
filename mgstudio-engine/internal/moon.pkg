@@ -3,6 +3,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/audio",
+  "Milky2018/mgstudio/diagnostics",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/picking",

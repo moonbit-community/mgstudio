@@ -69,6 +69,18 @@ test "app: schedule sets order and preserve insertion within a set" {
 }
 
 ///|
+test "app: Last stage runs after PostUpdate" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .add_pre_update_system(fn(_world : @ecs.World) { log.push("pre") })
+    .add_system(fn(_world : @ecs.World) { log.push("update") })
+    .add_post_update_system(fn(_world : @ecs.World) { log.push("post") })
+    .add_last_system(fn(_world : @ecs.World) { log.push("last") })
+  app.run_once() |> ignore
+  inspect(log.join(","), content="pre,update,post,last")
+}
+
+///|
 struct Param1 {
   value : Int
 }

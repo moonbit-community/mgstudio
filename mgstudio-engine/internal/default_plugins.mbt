@@ -23,6 +23,9 @@ pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
       @window.window_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.frame_count_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @time.time_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -39,6 +42,9 @@ pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @transform.transform_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.diagnostics_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @visibility.visibility_plugin(app)
@@ -84,6 +90,9 @@ pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
       @window.window_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.frame_count_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @time.time_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -100,6 +109,9 @@ pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @transform.transform_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.diagnostics_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @visibility.visibility_plugin(app)

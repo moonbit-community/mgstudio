@@ -125,6 +125,12 @@ pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Un
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_last_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_last_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_last_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_last_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
 pub fn[W] App::add_post_update_system(Self[W], (W) -> Unit) -> Self[W]
@@ -272,11 +278,13 @@ pub struct Schedule[W] {
   fixed_update : Array[SystemConfig[W]]
   update : Array[SystemConfig[W]]
   post_update : Array[SystemConfig[W]]
+  last : Array[SystemConfig[W]]
   startup_set_edges : Array[(String, String)]
   pre_update_set_edges : Array[(String, String)]
   fixed_update_set_edges : Array[(String, String)]
   update_set_edges : Array[(String, String)]
   post_update_set_edges : Array[(String, String)]
+  last_set_edges : Array[(String, String)]
 }
 
 pub(all) enum ScheduleRunnerMode {
@@ -296,6 +304,7 @@ pub(all) enum ScheduleStage {
   FixedUpdate
   Update
   PostUpdate
+  Last
 }
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage

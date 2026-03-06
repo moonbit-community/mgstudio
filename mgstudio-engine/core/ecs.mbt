@@ -66,6 +66,11 @@ pub fn Entities::len(self : Entities) -> Int {
 }
 
 ///|
+pub fn Entities::count_spawned(self : Entities) -> Int {
+  self.len()
+}
+
+///|
 pub fn Entities::spawn(self : Entities) -> Entity {
   match self.free.pop() {
     Some(id) => {

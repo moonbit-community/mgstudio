@@ -43,6 +43,7 @@ pub fn ComponentTicks::new(Int) -> Self
 pub fn ComponentTicks::set_changed(Self, Int) -> Unit
 
 type Entities
+pub fn Entities::count_spawned(Self) -> Int
 pub fn Entities::despawn(Self, Entity) -> Unit raise EntityError
 pub fn Entities::is_alive(Self, Entity) -> Bool
 pub fn Entities::len(Self) -> Int

@@ -141,6 +141,7 @@ pub fn World::advance_event_frame(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::component(Self, ComponentKey[T]) -> ComponentAccess[T]
 pub fn World::despawn(Self, @core.Entity) -> Unit raise EcsError
+pub fn World::entity_count(Self) -> Int
 pub fn[T : @json.FromJson] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : @json.FromJson] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn World::get_system_context(Self) -> @core.SystemContext
