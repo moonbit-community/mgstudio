@@ -254,6 +254,7 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_format : @wgpu.TextureFormat?
   mut mesh3d_pipeline_rgba8_cull_mode : Int
   mut mesh3d_pipeline_surface_cull_mode : Int
+  mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_uniform_buf : @wgpu.Buffer?
   mut mesh3d_uniform_bg : @wgpu.BindGroup?
   mut mesh3d_motion_vector_bgl_uniform : @wgpu.BindGroupLayout?
@@ -289,6 +290,10 @@ pub struct GpuBackend {
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
   mut point_shadow_fallback_texture_id : Int
+  mut shadow_color_texture : @wgpu.Texture?
+  mut shadow_color_view : @wgpu.TextureView?
+  mut shadow_color_width : Int
+  mut shadow_color_height : Int
   textures : Ref[Array[GpuTextureInfo]]
   meshes : Ref[Array[GpuMeshInfo]]
 }
@@ -345,6 +350,9 @@ const PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
 
 ///|
 const PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+
+///|
+const PASS_KIND_BASE_POINT_SHADOW : Int = 2
 
 ///|
 const MESH3D_CULL_MODE_MASK : Int = 3
@@ -530,6 +538,7 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_surface_format: None,
     mesh3d_pipeline_rgba8_cull_mode: -1,
     mesh3d_pipeline_surface_cull_mode: -1,
+    mesh3d_point_shadow_compare_sampler: None,
     mesh3d_uniform_buf: None,
     mesh3d_uniform_bg: None,
     mesh3d_motion_vector_bgl_uniform: None,
@@ -565,6 +574,10 @@ pub fn GpuBackend::new(
     mesh3d_material_bg_cache: Ref::new([]),
     next_id: Ref::new(1),
     point_shadow_fallback_texture_id: -1,
+    shadow_color_texture: None,
+    shadow_color_view: None,
+    shadow_color_width: 0,
+    shadow_color_height: 0,
     textures: Ref::new([]),
     meshes: Ref::new([]),
   }
@@ -1111,9 +1124,7 @@ fn load_wgsl_from_assets_base_required(
   let normalized_rel = normalize_shader_rel_path(rel)
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let source = load_wgsl_preprocessed(
-    base, normalized_rel, defines, visited,
-  )
+  let source = load_wgsl_preprocessed(base, normalized_rel, defines, visited)
   if is_motion_blur_shader_path(normalized_rel) {
     lower_motion_blur_texture_samples_for_runtime(source)
   } else {
@@ -1810,7 +1821,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   if with_depth {
     let set_depth_ok = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
       builder,
-      @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
+      @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
       depth_write_enabled,
       @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
     )
@@ -2099,7 +2110,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   if backend.mesh3d_pipeline_layout is None {
     let bgl = backend.device.create_bind_group_layout_uniform_buffer()
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=11UL)
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=12UL)
     let material_ok = material_builder.add_sampler(
         0U,
         frag,
@@ -2162,8 +2173,13 @@ fn ensure_mesh3d_pipeline_rgba8(
       material_builder.add_texture(
         10U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
+        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
+      ) &&
+      material_builder.add_sampler(
+        11U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
       )
     if !material_ok {
       material_builder.free()
@@ -3165,6 +3181,28 @@ fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
 }
 
 ///|
+fn ensure_mesh3d_point_shadow_compare_sampler(
+  backend : GpuBackend,
+) -> @wgpu.Sampler {
+  match backend.mesh3d_point_shadow_compare_sampler {
+    Some(sampler) => sampler
+    None => {
+      let sampler = backend.device.create_sampler_u32(
+        @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+        @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+        @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+        @wgpu.FILTER_MODE_LINEAR,
+        @wgpu.FILTER_MODE_LINEAR,
+        @wgpu.MIPMAP_FILTER_MODE_NEAREST,
+        compare_u32=@wgpu.COMPARE_FUNCTION_LESS_EQUAL,
+      )
+      backend.mesh3d_point_shadow_compare_sampler = Some(sampler)
+      sampler
+    }
+  }
+}
+
+///|
 fn mesh3d_material_cache_get_or_create(
   backend : GpuBackend,
   base_texture : GpuTextureInfo,
@@ -3200,7 +3238,10 @@ fn mesh3d_material_cache_get_or_create(
     Some(view) => view
     None => point_shadow_texture.view
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
+  let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
+    backend,
+  )
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
   let ok = builder.add_sampler(0U, base_texture.sampler) &&
     builder.add_texture_view(1U, base_texture.view) &&
     builder.add_texture_view(2U, normal_texture.view) &&
@@ -3211,7 +3252,8 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_texture_view(7U, anisotropy_texture.view) &&
     builder.add_texture_view(8U, specular_tint_texture.view) &&
     builder.add_texture_view(9U, transmission_source_texture.view) &&
-    builder.add_texture_view(10U, point_shadow_sample_view)
+    builder.add_texture_view(10U, point_shadow_sample_view) &&
+    builder.add_sampler(11U, point_shadow_compare_sampler)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d material bind group")
@@ -3307,7 +3349,8 @@ fn ensure_point_shadow_fallback_texture(
   backend : GpuBackend,
 ) -> GpuTextureInfo raise GpuBackendError {
   if backend.point_shadow_fallback_texture_id >= 0 {
-    if find_texture(backend, backend.point_shadow_fallback_texture_id) is Some(texture) {
+    if find_texture(backend, backend.point_shadow_fallback_texture_id)
+      is Some(texture) {
       return texture
     }
   }
@@ -3646,7 +3689,8 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(
       }
       let origin_x_i = if x < 0 { 0 } else { x }
       let origin_y_i = if y < 0 { 0 } else { y }
-      if origin_x_i + width > target_width || origin_y_i + height > target_height {
+      if origin_x_i + width > target_width ||
+        origin_y_i + height > target_height {
         return
       }
       let w = width.reinterpret_as_uint()
@@ -3910,6 +3954,7 @@ pub fn GpuBackend::create_point_light_shadow_target(
   size : Int,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
+  let default_texture = ensure_default_texture(self)
   let id = alloc_id(self)
   let safe_size = if size <= 0 { 1U } else { size.reinterpret_as_uint() }
   let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
@@ -3921,13 +3966,13 @@ pub fn GpuBackend::create_point_light_shadow_target(
     6U,
     usage,
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
   )
-  // Render passes attach one face at a time as 2D targets.
+  // Render passes attach one depth face at a time as 2D targets.
   let face0_view = tex.create_view_u32(
-    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-    @wgpu.TEXTURE_ASPECT_ALL,
+    @wgpu.TEXTURE_ASPECT_DEPTH_ONLY,
     0U,
     1U,
     0U,
@@ -3937,9 +3982,9 @@ pub fn GpuBackend::create_point_light_shadow_target(
   for face in 0..<6 {
     layer_views.push(
       tex.create_view_u32(
-        tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+        tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-        @wgpu.TEXTURE_ASPECT_ALL,
+        @wgpu.TEXTURE_ASPECT_DEPTH_ONLY,
         face.reinterpret_as_uint(),
         1U,
         0U,
@@ -3949,19 +3994,13 @@ pub fn GpuBackend::create_point_light_shadow_target(
   }
   // Sampling uses cubemap semantics aligned with Bevy face selection order.
   let cube_view = tex.create_view_u32(
-    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
     @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-    @wgpu.TEXTURE_ASPECT_ALL,
+    @wgpu.TEXTURE_ASPECT_DEPTH_ONLY,
     0U,
     6U,
     0U,
     1U,
-  )
-  let sampler = self.device.create_sampler_nearest_clamp()
-  let bg = self.device.create_bind_group_sampler_texture_2d(
-    self.sprite_bgl_tex.unwrap(),
-    sampler,
-    face0_view,
   )
   let info = GpuTextureInfo::{
     id,
@@ -3973,8 +4012,8 @@ pub fn GpuBackend::create_point_light_shadow_target(
     view: face0_view,
     sample_view: Some(cube_view),
     layer_views,
-    sampler,
-    bind_group: bg,
+    sampler: default_texture.sampler,
+    bind_group: default_texture.bind_group,
   }
   self.textures.val.push(info)
   mesh3d_material_cache_clear(self)
@@ -4048,13 +4087,12 @@ fn target_view(
     }
   } else {
     match find_texture(backend, target_id) {
-      Some(texture) => {
+      Some(texture) =>
         if target_layer >= 0 && target_layer < texture.layer_views.length() {
           Some(texture.layer_views[target_layer])
         } else {
           Some(texture.view)
         }
-      }
       None => None
     }
   }
@@ -4143,7 +4181,7 @@ fn ensure_depth_view_for_target(
       @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
     ),
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(@wgpu.TEXTURE_FORMAT_DEPTH24_PLUS),
+    tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
   )
   let depth_view = depth_tex.create_view()
   backend.depth_texture = Some(depth_tex)
@@ -4152,6 +4190,42 @@ fn ensure_depth_view_for_target(
   backend.depth_width = width
   backend.depth_height = height
   Some(depth_view)
+}
+
+///|
+fn ensure_shadow_color_view(
+  backend : GpuBackend,
+  width : Int,
+  height : Int,
+) -> @wgpu.TextureView {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  if backend.shadow_color_width == safe_width &&
+    backend.shadow_color_height == safe_height {
+    if backend.shadow_color_view is Some(view) {
+      return view
+    }
+  }
+  if backend.shadow_color_view is Some(old_view) {
+    old_view.release()
+  }
+  if backend.shadow_color_texture is Some(old_tex) {
+    old_tex.release()
+  }
+  let tex = backend.device.create_texture_u32(
+    safe_width.reinterpret_as_uint(),
+    safe_height.reinterpret_as_uint(),
+    1U,
+    @wgpu.TextureUsage::from_u64(@wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT),
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+  )
+  let view = tex.create_view()
+  backend.shadow_color_texture = Some(tex)
+  backend.shadow_color_view = Some(view)
+  backend.shadow_color_width = safe_width
+  backend.shadow_color_height = safe_height
+  view
 }
 
 ///|
@@ -4391,11 +4465,28 @@ pub fn GpuBackend::begin_pass_3d(
     pass.release()
     frame.pass = None
   }
-  guard target_view(self, target_id, target_layer) is Some(view) else {
-    return
-  }
-  guard ensure_depth_view_for_target(self, target_id) is Some(depth_view) else {
-    return
+  let base_kind = pass_kind_base_kind(pass_kind)
+  let (color_view, depth_view) = if base_kind == PASS_KIND_BASE_POINT_SHADOW {
+    guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
+      return
+    }
+    guard target_size_for_pass(self, target_id)
+      is Some((target_width, target_height)) else {
+      return
+    }
+    (
+      ensure_shadow_color_view(self, target_width, target_height),
+      shadow_depth_view,
+    )
+  } else {
+    guard target_view(self, target_id, target_layer) is Some(view) else {
+      return
+    }
+    guard ensure_depth_view_for_target(self, target_id)
+      is Some(scene_depth_view) else {
+      return
+    }
+    (view, scene_depth_view)
   }
   let color_load_op_u32 = if clear_enabled == 0 {
     @wgpu.LOAD_OP_LOAD
@@ -4413,7 +4504,7 @@ pub fn GpuBackend::begin_pass_3d(
     @wgpu.LOAD_OP_CLEAR
   }
   let pass = frame.encoder.begin_render_pass_color_depth_u32(
-    view,
+    color_view,
     depth_view,
     color_load_op_u32~,
     color_store_op_u32=@wgpu.STORE_OP_STORE,
@@ -6839,7 +6930,7 @@ pub fn begin_pass(
 ///|
 pub fn begin_pass_3d(
   target_id~ : Int,
-  target_layer~ : Int = -1,
+  target_layer? : Int = -1,
   width~ : Int,
   height~ : Int,
   clear_r~ : Float,
@@ -6908,15 +6999,15 @@ pub fn begin_pass_3d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.begin_pass_3d(
-      target_id, target_layer, width, height, clear_r, clear_g, clear_b, clear_a, camera_x, camera_y,
-      camera_z, camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w, camera_fov_y,
-      camera_near, camera_far, viewport_x, viewport_y, viewport_width, viewport_height,
-      ambient_r, ambient_g, ambient_b, ambient_brightness, directional_dir_x, directional_dir_y,
-      directional_dir_z, directional_color_r, directional_color_g, directional_color_b,
-      directional_illuminance, point_pos_x, point_pos_y, point_pos_z, point_color_r,
-      point_color_g, point_color_b, point_intensity, point_range, spot_pos_x, spot_pos_y,
-      spot_pos_z, spot_dir_x, spot_dir_y, spot_dir_z, spot_color_r, spot_color_g,
-      spot_color_b, spot_intensity, spot_range, spot_inner_angle, spot_outer_angle,
+      target_id, target_layer, width, height, clear_r, clear_g, clear_b, clear_a,
+      camera_x, camera_y, camera_z, camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
+      camera_fov_y, camera_near, camera_far, viewport_x, viewport_y, viewport_width,
+      viewport_height, ambient_r, ambient_g, ambient_b, ambient_brightness, directional_dir_x,
+      directional_dir_y, directional_dir_z, directional_color_r, directional_color_g,
+      directional_color_b, directional_illuminance, point_pos_x, point_pos_y, point_pos_z,
+      point_color_r, point_color_g, point_color_b, point_intensity, point_range,
+      spot_pos_x, spot_pos_y, spot_pos_z, spot_dir_x, spot_dir_y, spot_dir_z, spot_color_r,
+      spot_color_g, spot_color_b, spot_intensity, spot_range, spot_inner_angle, spot_outer_angle,
       sub_camera_view_scale_x, sub_camera_view_scale_y, sub_camera_view_bias_x, sub_camera_view_bias_y,
       previous_camera_x, previous_camera_y, previous_camera_z, previous_camera_rot_x,
       previous_camera_rot_y, previous_camera_rot_z, previous_camera_rot_w, pass_kind,
@@ -7447,12 +7538,11 @@ pub fn asset_create_texture_empty(
   if ensure_backend() is Some(backend) {
     try {
       if safe_mips == 1 {
-        let bytes = Bytes::makei(safe_width * safe_height * 4, _ => (0).to_byte())
+        let bytes = Bytes::makei(safe_width * safe_height * 4, _ => {
+          (0).to_byte()
+        })
         return backend.create_texture_rgba8(
-          safe_width,
-          safe_height,
-          bytes,
-          nearest,
+          safe_width, safe_height, bytes, nearest,
         )
       }
       let levels : Array[Bytes] = []
@@ -7489,12 +7579,7 @@ pub fn asset_write_texture_region_rgba8(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.write_texture_region_rgba8(
-      texture_id,
-      x,
-      y,
-      width,
-      height,
-      pixels_rgba8,
+      texture_id, x, y, width, height, pixels_rgba8,
     )
   }
 }
@@ -7511,19 +7596,16 @@ pub fn asset_write_texture_region_rgba8_mip(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.write_texture_region_rgba8_mip(
-      texture_id,
-      x,
-      y,
-      width,
-      height,
-      mip_level,
-      pixels_rgba8,
+      texture_id, x, y, width, height, mip_level, pixels_rgba8,
     )
   }
 }
 
 ///|
-pub fn asset_create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
+pub fn asset_create_texture_mip_view(
+  texture_id~ : Int,
+  mip_level~ : Int,
+) -> Int {
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_texture_mip_view(texture_id, mip_level)
@@ -7578,16 +7660,16 @@ pub fn asset_copy_texture_to_texture(
   src_texture_id~ : Int,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.copy_texture_to_texture(dst_texture_id, dst_x, dst_y, src_texture_id)
+    backend.copy_texture_to_texture(
+      dst_texture_id, dst_x, dst_y, src_texture_id,
+    )
   }
 }
 
 ///|
 pub fn asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit {
   if ensure_backend() is Some(backend) {
-    try {
-      backend.set_texture_sampler(texture_id, sampler)
-    } catch {
+    backend.set_texture_sampler(texture_id, sampler) catch {
       _ => ()
     }
   }

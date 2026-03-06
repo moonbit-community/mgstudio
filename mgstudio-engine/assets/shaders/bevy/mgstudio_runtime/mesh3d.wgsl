@@ -59,7 +59,8 @@ struct Mesh3dUniform {
 @group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
 @group(1) @binding(8) var u_specular_tint_texture : texture_2d<f32>;
 @group(1) @binding(9) var u_transmission_source_texture : texture_2d<f32>;
-@group(1) @binding(10) var u_point_shadow_texture : texture_cube<f32>;
+@group(1) @binding(10) var u_point_shadow_texture : texture_depth_cube;
+@group(1) @binding(11) var u_point_shadow_sampler : sampler_comparison;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -570,26 +571,37 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let point_diff = lambert(normal, point_dir);
   let point_back_diff = lambert(-normal, point_dir);
   let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
-  // Match Bevy's cubemap shadow sampling convention:
-  // sample direction is transformed to cubemap LH space by flipping Z.
-  let point_shadow_dir = safe_normalize(vec3<f32>(
-    in.world_pos.x - u_mesh.point_pos_range.x,
-    in.world_pos.y - u_mesh.point_pos_range.y,
-    -(in.world_pos.z - u_mesh.point_pos_range.z),
-  ));
-  let point_shadow_depth = textureSampleLevel(
-    u_point_shadow_texture,
-    u_material_sampler,
-    point_shadow_dir,
-    0.0,
-  ).r;
-  let point_depth_bias = max(u_mesh.point_shadow_params.y, 0.0);
-  let point_depth_normalized = point_distance / point_range;
-  var point_shadow_factor = 0.0;
-  if !point_shadow_enabled ||
-    point_shadow_depth >= 0.9999 ||
-    point_depth_normalized <= point_shadow_depth + point_depth_bias {
-    point_shadow_factor = 1.0;
+  var point_shadow_factor = 1.0;
+  if point_shadow_enabled {
+    // Match Bevy's cubemap shadow sampling convention:
+    // sample direction is transformed to cubemap LH space by flipping Z.
+    let point_shadow_dir = safe_normalize(vec3<f32>(
+      in.world_pos.x - u_mesh.point_pos_range.x,
+      in.world_pos.y - u_mesh.point_pos_range.y,
+      -(in.world_pos.z - u_mesh.point_pos_range.z),
+    ));
+    // Cubemap shadow projections are axis-aligned 90-degree frusta.
+    // The projected depth can be reconstructed from the largest axis magnitude.
+    let to_light = in.world_pos - u_mesh.point_pos_range.xyz;
+    let major_axis_magnitude = max(
+      abs(to_light.x),
+      max(abs(to_light.y), abs(to_light.z)),
+    );
+    let point_near = max(u_mesh.projection.z, 1.0e-4);
+    let point_far = max(point_range, point_near + 1.0e-4);
+    let point_linear_depth = if major_axis_magnitude <= point_near {
+      0.0
+    } else {
+      point_far / (point_far - point_near) -
+      (point_far * point_near) / ((point_far - point_near) * major_axis_magnitude)
+    };
+    let point_depth_bias = max(u_mesh.point_shadow_params.y, 0.0);
+    point_shadow_factor = textureSampleCompare(
+      u_point_shadow_texture,
+      u_point_shadow_sampler,
+      point_shadow_dir,
+      clamp(point_linear_depth - point_depth_bias, 0.0, 1.0),
+    );
   }
   let point_term = u_mesh.point_color_intensity.xyz *
     point_strength *
