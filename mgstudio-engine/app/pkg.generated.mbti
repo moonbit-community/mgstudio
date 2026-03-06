@@ -51,6 +51,8 @@ pub fn[S : States] in_state(S) -> (@ecs.World) -> Bool
 
 pub fn[S : States] insert_state_app(App[@ecs.World], S) -> App[@ecs.World]
 
+pub fn[S : States] last_transition(@ecs.World, S) -> StateTransitionEvent[S]?
+
 pub fn log_debug(String) -> Unit
 
 pub fn log_debug_once(String, String) -> Unit
@@ -85,6 +87,8 @@ pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
 
 pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousState[S]]
 
+pub fn[Source : States, Derived : States] register_computed_state(Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
+
 pub fn render_runtime_error() -> RenderRuntimeError?
 
 pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
@@ -104,6 +108,12 @@ pub fn[S : States] set_state_if_neq(S) -> Unit
 pub fn[S : States] state_exists(S) -> (@ecs.World) -> Bool
 
 pub fn[S : States] state_resource_key(S) -> @ecs.ResourceKey[State[S]]
+
+pub fn[S : States] state_set_dependency_depth(S) -> Int
+
+pub fn[S : States] state_transition_event_resource_key(S) -> @ecs.ResourceKey[StateTransitionEvent[S]]
+
+pub fn states_plugin(StatesPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
 
 pub fn[W] system((W) -> Unit) -> SystemConfig[W]
 
@@ -144,6 +154,7 @@ pub struct App[W] {
   sub_app_labels : @hashmap.HashMap[String, AppLabel]
   sub_app_extractors : @hashmap.HashMap[String, (W, W) -> (W, W)]
 }
+pub fn[Source : States, Derived : States] App::add_computed_state(Self[@ecs.World], Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
 pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_fixed_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -156,6 +167,12 @@ pub fn[W, P : SystemParam] App::add_last_system_param(Self[W], (P) -> Unit) -> S
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_last_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[S : States] App::add_on_enter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_enter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_exit_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_transition_system(Self[@ecs.World], S, S, (@ecs.World) -> Unit) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
 pub fn[W] App::add_post_update_system(Self[W], (W) -> Unit) -> Self[W]
@@ -272,6 +289,31 @@ pub impl[S : Show] Show for NextState[S]
 pub impl[S : ToJson] ToJson for NextState[S]
 pub impl[S : @json.FromJson] @json.FromJson for NextState[S]
 
+pub struct OnEnter[S] {
+  state : S
+}
+pub impl[S : Eq] Eq for OnEnter[S]
+pub impl[S : Show] Show for OnEnter[S]
+pub impl[S : ToJson] ToJson for OnEnter[S]
+pub impl[S : @json.FromJson] @json.FromJson for OnEnter[S]
+
+pub struct OnExit[S] {
+  state : S
+}
+pub impl[S : Eq] Eq for OnExit[S]
+pub impl[S : Show] Show for OnExit[S]
+pub impl[S : ToJson] ToJson for OnExit[S]
+pub impl[S : @json.FromJson] @json.FromJson for OnExit[S]
+
+pub struct OnTransition[S] {
+  exited : S
+  entered : S
+}
+pub impl[S : Eq] Eq for OnTransition[S]
+pub impl[S : Show] Show for OnTransition[S]
+pub impl[S : ToJson] ToJson for OnTransition[S]
+pub impl[S : @json.FromJson] @json.FromJson for OnTransition[S]
+
 pub struct PluginGroupBuilder[W] {
   plugins : Array[(App[W]) -> App[W]]
 }
@@ -349,6 +391,7 @@ pub fn ScheduleRunnerPlugin::run_once() -> Self
 pub(all) enum ScheduleStage {
   Startup
   PreUpdate
+  StateTransition
   FixedUpdate
   Update
   PostUpdate
@@ -366,6 +409,29 @@ pub impl[S : Eq] Eq for State[S]
 pub impl[S : Show] Show for State[S]
 pub impl[S : ToJson] ToJson for State[S]
 pub impl[S : @json.FromJson] @json.FromJson for State[S]
+
+pub struct StateTransitionEvent[S] {
+  exited : S?
+  entered : S?
+  allow_same_state_transitions : Bool
+}
+pub impl[S : Eq] Eq for StateTransitionEvent[S]
+pub impl[S : Show] Show for StateTransitionEvent[S]
+pub impl[S : ToJson] ToJson for StateTransitionEvent[S]
+pub impl[S : @json.FromJson] @json.FromJson for StateTransitionEvent[S]
+
+pub(all) enum StateTransitionSystems {
+  DependentTransitions
+  ExitSchedules
+  TransitionSchedules
+  EnterSchedules
+}
+pub impl Eq for StateTransitionSystems
+pub impl Show for StateTransitionSystems
+
+pub struct StatesPlugin {
+}
+pub fn StatesPlugin::default() -> Self
 
 pub struct SystemConfig[W] {
   system : (W) -> Unit
@@ -425,6 +491,7 @@ pub(open) trait Resource {
 
 pub(open) trait States : Eq + Show + ToJson + @json.FromJson {
   debug_name(Self) -> String
+  dependency_depth(Self) -> Int = _
 }
 
 pub(open) trait SystemParam {

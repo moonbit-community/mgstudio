@@ -1,6 +1,16 @@
 {
   "bevy_commit": "48ec375a3a3cdc904476ef1d13f9d71c9f2820d3",
   "description": "Explicit Bevy crate to mgstudio package mapping for structure-parity auditing. Empty target arrays mean the crate is currently unmapped in mgstudio-engine.",
+  "module_aliases": {
+    "bevy_state": {
+      "state/computed_states": "computed_states",
+      "state/freely_mutable_state": "freely_mutable_state",
+      "state/resources": "resources",
+      "state/state_set": "state_set",
+      "state/states": "states",
+      "state/transitions": "transitions"
+    }
+  },
   "crate_mappings": {
     "bevy_a11y": ["a11y", "runtime_native/native_a11y"],
     "bevy_android": [],

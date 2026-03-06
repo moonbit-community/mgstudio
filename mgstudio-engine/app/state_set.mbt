@@ -13,13 +13,11 @@
 // limitations under the License.
 
 ///|
-pub(open) trait States: Eq + Show + ToJson + @json.FromJson {
-  debug_name(Self) -> String
-  dependency_depth(Self) -> Int = _
+pub fn[S : States] state_set_dependency_depth(state : S) -> Int {
+  state.dependency_depth()
 }
 
 ///|
-impl States with dependency_depth(self) {
-  ignore(self)
-  0
+fn[S : States] dependent_state_dependency_depth(state : S) -> Int {
+  state_set_dependency_depth(state) + 1
 }

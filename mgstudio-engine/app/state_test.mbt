@@ -33,9 +33,25 @@ fn read_test_state(world : @ecs.World) -> TestState? {
 }
 
 ///|
+fn current_stage_label() -> String {
+  match current_schedule_stage() {
+    Some(StateTransition) => "StateTransition"
+    Some(Startup) => "Startup"
+    Some(PreUpdate) => "PreUpdate"
+    Some(FixedUpdate) => "FixedUpdate"
+    Some(Update) => "Update"
+    Some(PostUpdate) => "PostUpdate"
+    Some(Last) => "Last"
+    None => "None"
+  }
+}
+
+///|
 test "app state: queued next state applies on next frame after PreUpdate" {
   let log : Array[String] = []
-  let app = insert_state_app(App::new(@ecs.World::new()), TestState::A)
+  let app = App::new(@ecs.World::new())
+    .add_plugins([states_plugin(StatesPlugin::default())])
+    .insert_state(TestState::A)
     .add_system_config(
       system(fn(_world : @ecs.World) {
         log.push("A")
@@ -59,5 +75,60 @@ test "app state: queued next state applies on next frame after PreUpdate" {
   inspect(
     world_previous_state(app.world, TestState::A),
     content="Some({value: A})",
+  )
+}
+
+///|
+test "app state: exit transition enter hooks run in bevy order" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .add_plugins([states_plugin(StatesPlugin::default())])
+    .insert_state(TestState::A)
+    .add_system_config(
+      system(fn(_world : @ecs.World) { set_state(TestState::B) }).run_if(
+        in_state(TestState::A),
+      ),
+    )
+    .add_on_exit_system(TestState::A, fn(_world : @ecs.World) {
+      log.push("exit@" + current_stage_label())
+    })
+    .add_on_transition_system(TestState::A, TestState::B, fn(
+      _world : @ecs.World,
+    ) {
+      log.push("transition@" + current_stage_label())
+    })
+    .add_on_enter_system(TestState::B, fn(_world : @ecs.World) {
+      log.push("enter@" + current_stage_label())
+    })
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="0")
+
+  app.run_once() |> ignore
+  inspect(
+    log.join(","),
+    content="exit@StateTransition,transition@StateTransition,enter@StateTransition",
+  )
+  inspect(
+    last_transition(app.world, TestState::A),
+    content="Some({exited: Some(A), entered: Some(B), allow_same_state_transitions: true})",
+  )
+}
+
+///|
+test "app state: startup enter hook runs in state transition stage" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .add_plugins([states_plugin(StatesPlugin::default())])
+    .insert_state(TestState::A)
+    .add_on_enter_system(TestState::A, fn(_world : @ecs.World) {
+      log.push("enter@" + current_stage_label())
+    })
+
+  app.run_startup() |> ignore
+  inspect(log.join(","), content="enter@StateTransition")
+  inspect(
+    last_transition(app.world, TestState::A),
+    content="Some({exited: None, entered: Some(A), allow_same_state_transitions: true})",
   )
 }

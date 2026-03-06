@@ -13,16 +13,67 @@
 // limitations under the License.
 
 ///|
+pub struct StatesPlugin {}
+
+///|
+pub fn StatesPlugin::default() -> StatesPlugin {
+  StatesPlugin::{  }
+}
+
+///|
+priv struct StatesPluginMarker {} derive(Eq, Show, ToJson, FromJson)
+
+///|
+fn states_plugin_marker_key() -> @ecs.ResourceKey[StatesPluginMarker] {
+  @ecs.register_resource(debug_name="bevy_state::StatesPlugin")
+}
+
+///|
+fn states_plugin_installed(world : @ecs.World) -> Bool {
+  try world.get_resource(states_plugin_marker_key()) catch {
+    _ => false
+  } noraise {
+    value => value is Some(_)
+  }
+}
+
+///|
+fn require_states_plugin_installed(world : @ecs.World) -> Unit {
+  if !states_plugin_installed(world) {
+    abort(
+      "StatesPlugin is not installed. Add @app.states_plugin(@app.StatesPlugin::default()) before installing states.",
+    )
+  }
+}
+
+///|
+pub fn states_plugin(plugin : StatesPlugin) -> Plugin[@ecs.World] {
+  ignore(plugin)
+  fn(app : App[@ecs.World]) {
+    app.world.insert_resource(states_plugin_marker_key(), StatesPluginMarker::{
+
+    })
+    app
+  }
+}
+
+///|
 pub fn[S : States] insert_state_app(
   app : App[@ecs.World],
   state : S,
 ) -> App[@ecs.World] {
+  require_states_plugin_installed(app.world)
   register_state_transition(state)
   app.world.insert_resource(state_resource_key(state), State::new(state))
   app.world.insert_resource(
     next_state_resource_key(state),
     NextState::Unchanged,
   )
+  enqueue_transition_event(app.world, state, StateTransitionEvent::{
+    exited: None,
+    entered: Some(state),
+    allow_same_state_transitions: true,
+  })
   let _ : Result[PreviousState[S]?, @ecs.EcsError] = try? app.world.remove_resource(
     previous_state_resource_key(state),
   )
@@ -35,4 +86,69 @@ pub fn[S : States] App::insert_state(
   state : S,
 ) -> App[@ecs.World] {
   insert_state_app(self, state)
+}
+
+///|
+pub fn[S : States] App::add_on_enter_system_config(
+  self : App[@ecs.World],
+  state : S,
+  config : SystemConfig[@ecs.World],
+) -> App[@ecs.World] {
+  require_states_plugin_installed(self.world)
+  register_state_transition(state)
+  register_on_enter_system(state, config)
+  self
+}
+
+///|
+pub fn[S : States] App::add_on_enter_system(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : SystemFn[@ecs.World],
+) -> App[@ecs.World] {
+  self.add_on_enter_system_config(state, system(system_fn))
+}
+
+///|
+pub fn[S : States] App::add_on_exit_system_config(
+  self : App[@ecs.World],
+  state : S,
+  config : SystemConfig[@ecs.World],
+) -> App[@ecs.World] {
+  require_states_plugin_installed(self.world)
+  register_state_transition(state)
+  register_on_exit_system(state, config)
+  self
+}
+
+///|
+pub fn[S : States] App::add_on_exit_system(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : SystemFn[@ecs.World],
+) -> App[@ecs.World] {
+  self.add_on_exit_system_config(state, system(system_fn))
+}
+
+///|
+pub fn[S : States] App::add_on_transition_system_config(
+  self : App[@ecs.World],
+  exited : S,
+  entered : S,
+  config : SystemConfig[@ecs.World],
+) -> App[@ecs.World] {
+  require_states_plugin_installed(self.world)
+  register_state_transition(exited)
+  register_on_transition_system(exited, entered, config)
+  self
+}
+
+///|
+pub fn[S : States] App::add_on_transition_system(
+  self : App[@ecs.World],
+  exited : S,
+  entered : S,
+  system_fn : SystemFn[@ecs.World],
+) -> App[@ecs.World] {
+  self.add_on_transition_system_config(exited, entered, system(system_fn))
 }

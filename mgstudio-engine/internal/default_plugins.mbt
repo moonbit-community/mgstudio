@@ -45,6 +45,9 @@ pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
       @diagnostics.frame_count_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.states_plugin(@app.StatesPlugin::default())(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @time.time_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -115,6 +118,9 @@ pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
       @diagnostics.frame_count_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.states_plugin(@app.StatesPlugin::default())(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @time.time_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -177,6 +183,9 @@ pub fn minimal_plugins() -> Array[@app.Plugin[@ecs.World]] {
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @diagnostics.frame_count_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.states_plugin(@app.StatesPlugin::default())(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @time.time_plugin(app)

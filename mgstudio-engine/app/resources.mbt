@@ -45,6 +45,13 @@ pub(all) enum NextState[S] {
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
+pub struct StateTransitionEvent[S] {
+  exited : S?
+  entered : S?
+  allow_same_state_transitions : Bool
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
 fn[S : States] state_type_debug_name(_state : S) -> String {
   States::debug_name(_state)
 }
@@ -65,6 +72,20 @@ fn[S : States] next_state_resource_debug_name(state : S) -> String {
 }
 
 ///|
+fn[S : States] state_transition_event_resource_debug_name(state : S) -> String {
+  "bevy_state::StateTransitionEvent<" + state_type_debug_name(state) + ">"
+}
+
+///|
+fn[S : States] pending_state_transition_event_resource_debug_name(
+  state : S,
+) -> String {
+  "bevy_state::PendingStateTransitionEvent<" +
+  state_type_debug_name(state) +
+  ">"
+}
+
+///|
 pub fn[S : States] state_resource_key(state : S) -> @ecs.ResourceKey[State[S]] {
   @ecs.register_resource(debug_name=state_resource_debug_name(state))
 }
@@ -81,6 +102,24 @@ pub fn[S : States] next_state_resource_key(
   state : S,
 ) -> @ecs.ResourceKey[NextState[S]] {
   @ecs.register_resource(debug_name=next_state_resource_debug_name(state))
+}
+
+///|
+pub fn[S : States] state_transition_event_resource_key(
+  state : S,
+) -> @ecs.ResourceKey[StateTransitionEvent[S]] {
+  @ecs.register_resource(
+    debug_name=state_transition_event_resource_debug_name(state),
+  )
+}
+
+///|
+fn[S : States] pending_state_transition_event_resource_key(
+  state : S,
+) -> @ecs.ResourceKey[StateTransitionEvent[S]] {
+  @ecs.register_resource(
+    debug_name=pending_state_transition_event_resource_debug_name(state),
+  )
 }
 
 ///|
@@ -114,4 +153,20 @@ pub fn[S : States] world_next_state(
   state : S,
 ) -> NextState[S]? {
   read_world_resource(world, next_state_resource_key(state))
+}
+
+///|
+pub fn[S : States] last_transition(
+  world : @ecs.World,
+  state : S,
+) -> StateTransitionEvent[S]? {
+  read_world_resource(world, state_transition_event_resource_key(state))
+}
+
+///|
+fn[S : States] pending_transition(
+  world : @ecs.World,
+  state : S,
+) -> StateTransitionEvent[S]? {
+  read_world_resource(world, pending_state_transition_event_resource_key(state))
 }

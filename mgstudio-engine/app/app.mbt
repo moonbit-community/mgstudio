@@ -83,6 +83,7 @@ fn app_label_storage_key(label : AppLabel) -> String {
 pub(all) enum ScheduleStage {
   Startup
   PreUpdate
+  StateTransition
   FixedUpdate
   Update
   PostUpdate
@@ -950,6 +951,7 @@ fn[W] schedule_systems(
   match stage {
     Startup => schedule.startup
     PreUpdate => schedule.pre_update
+    StateTransition => []
     FixedUpdate => schedule.fixed_update
     Update => schedule.update
     PostUpdate => schedule.post_update
@@ -965,6 +967,7 @@ fn[W] schedule_set_edges(
   match stage {
     Startup => schedule.startup_set_edges
     PreUpdate => schedule.pre_update_set_edges
+    StateTransition => []
     FixedUpdate => schedule.fixed_update_set_edges
     Update => schedule.update_set_edges
     PostUpdate => schedule.post_update_set_edges

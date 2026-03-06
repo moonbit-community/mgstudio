@@ -228,10 +228,34 @@ def load_crate_mappings(mapping_file: Path) -> dict[str, list[str]]:
     return mappings
 
 
+def load_module_aliases(mapping_file: Path) -> dict[str, dict[str, str]]:
+    payload = json.loads(mapping_file.read_text(encoding="utf-8"))
+    raw_aliases = payload.get("module_aliases", {})
+    if not isinstance(raw_aliases, dict):
+        raise ValueError("mapping file field `module_aliases` must be an object when present")
+
+    aliases: dict[str, dict[str, str]] = {}
+    for crate_name, crate_aliases in raw_aliases.items():
+        if not isinstance(crate_name, str):
+            raise ValueError("module alias crate names must be strings")
+        if not isinstance(crate_aliases, dict):
+            raise ValueError(f"module aliases for `{crate_name}` must be an object")
+        alias_map: dict[str, str] = {}
+        for bevy_module, engine_module in crate_aliases.items():
+            if not isinstance(bevy_module, str) or not isinstance(engine_module, str):
+                raise ValueError(
+                    f"module aliases for `{crate_name}` must map string module keys to strings"
+                )
+            alias_map[bevy_module] = engine_module
+        aliases[crate_name] = alias_map
+    return aliases
+
+
 def compute_coverage(
     crates: list[BevyCrate],
     packages: list[EnginePackage],
     crate_mappings: dict[str, list[str]],
+    module_aliases: dict[str, dict[str, str]],
     only_crates: set[str],
 ) -> list[CrateCoverage]:
     package_index = {package.display_name: package for package in packages}
@@ -239,6 +263,7 @@ def compute_coverage(
     for crate in crates:
         if only_crates and crate.name not in only_crates:
             continue
+        crate_aliases = module_aliases.get(crate.name, {})
         declared_target_packages = crate_mappings.get(crate.name, [])
         mapped_packages = [
             package_index[target]
@@ -255,8 +280,14 @@ def compute_coverage(
         for package in mapped_packages:
             mapped_modules.update(package.modules)
             mapped_leaf_modules.update(package.leaf_modules)
-        strict_overlap = crate.modules & mapped_modules
-        leaf_overlap = crate.leaf_modules & mapped_leaf_modules
+        normalized_bevy_modules = {
+            crate_aliases.get(module, module) for module in crate.modules
+        }
+        normalized_bevy_leaf_modules = {
+            module_leaf(crate_aliases.get(module, module)) for module in crate.modules
+        }
+        strict_overlap = normalized_bevy_modules & mapped_modules
+        leaf_overlap = normalized_bevy_leaf_modules & mapped_leaf_modules
         bevy_count = len(crate.modules)
         strict_coverage = (len(strict_overlap) / bevy_count) if bevy_count > 0 else 0.0
         rows.append(
@@ -270,8 +301,12 @@ def compute_coverage(
                 strict_overlap_count=len(strict_overlap),
                 leaf_overlap_count=len(leaf_overlap),
                 strict_coverage=strict_coverage,
-                missing_modules=sorted(crate.modules - mapped_modules),
-                extra_modules=sorted(mapped_modules - crate.modules),
+                missing_modules=sorted(
+                    module
+                    for module in crate.modules
+                    if crate_aliases.get(module, module) not in mapped_modules
+                ),
+                extra_modules=sorted(mapped_modules - normalized_bevy_modules),
             )
         )
     return rows
@@ -576,11 +611,12 @@ def main() -> int:
     )
     try:
         crate_mappings = load_crate_mappings(mapping_file)
+        module_aliases = load_module_aliases(mapping_file)
     except ValueError as error:
         print(f"error: invalid mapping file: {error}", file=sys.stderr)
         return 2
     only_crates = set(args.only_crate)
-    rows = compute_coverage(crates, packages, crate_mappings, only_crates)
+    rows = compute_coverage(crates, packages, crate_mappings, module_aliases, only_crates)
 
     report = render_report(
         repo_root=repo_root,
