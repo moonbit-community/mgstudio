@@ -194,6 +194,9 @@ pub struct RemovedComponents[T] {
   reader : @core.MessageReader[@core.Entity]
   marker : T?
 }
+pub fn[T] RemovedComponents::clear(Self[T]) -> Unit
+pub fn[T] RemovedComponents::is_empty(Self[T]) -> Bool
+pub fn[T] RemovedComponents::len(Self[T]) -> Int
 pub fn[T] RemovedComponents::read(Self[T]) -> Array[@core.Entity]
 
 pub struct ResourceAccess[T] {

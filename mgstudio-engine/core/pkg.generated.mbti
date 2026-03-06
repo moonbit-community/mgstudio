@@ -70,6 +70,9 @@ pub struct MessageReader[T] {
   system : SystemTicks
   mut has_read : Bool
 }
+pub fn[T] MessageReader::clear(Self[T]) -> Unit
+pub fn[T] MessageReader::is_empty(Self[T]) -> Bool
+pub fn[T] MessageReader::len(Self[T]) -> Int
 pub fn[T] MessageReader::read(Self[T]) -> Array[T]
 
 pub struct MessageWriter[T] {

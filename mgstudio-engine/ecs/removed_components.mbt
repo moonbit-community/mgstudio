@@ -26,6 +26,21 @@ pub fn[T] RemovedComponents::read(
 }
 
 ///|
+pub fn[T] RemovedComponents::len(self : RemovedComponents[T]) -> Int {
+  self.reader.len()
+}
+
+///|
+pub fn[T] RemovedComponents::is_empty(self : RemovedComponents[T]) -> Bool {
+  self.reader.is_empty()
+}
+
+///|
+pub fn[T] RemovedComponents::clear(self : RemovedComponents[T]) -> Unit {
+  self.reader.clear()
+}
+
+///|
 pub fn[T] World::removed_components(
   self : World,
   key : ComponentKey[T],

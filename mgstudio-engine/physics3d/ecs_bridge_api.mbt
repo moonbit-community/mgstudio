@@ -90,6 +90,51 @@ pub let ecs_key_contact_force_event_threshold3d : @ecs.ComponentKey[
 )
 
 ///|
+pub impl @ecs.Component for Collider3d with component() {
+  ecs_key_collider3d
+}
+
+///|
+pub impl @ecs.Component for Velocity3d with component() {
+  ecs_key_velocity3d
+}
+
+///|
+pub impl @ecs.Component for RigidBody3d with component() {
+  ecs_key_rigid_body3d
+}
+
+///|
+pub impl @ecs.Component for ActiveHooks3d with component() {
+  ecs_key_active_hooks3d
+}
+
+///|
+pub impl @ecs.Component for ActiveEvents3d with component() {
+  ecs_key_active_events3d
+}
+
+///|
+pub impl @ecs.Component for RapierBodyHandle3d with component() {
+  ecs_key_rapier_body_handle3d
+}
+
+///|
+pub impl @ecs.Component for ActiveCollisionTypes3d with component() {
+  ecs_key_active_collision_types3d
+}
+
+///|
+pub impl @ecs.Component for RapierColliderHandle3d with component() {
+  ecs_key_rapier_collider_handle3d
+}
+
+///|
+pub impl @ecs.Component for ContactForceEventThreshold3d with component() {
+  ecs_key_contact_force_event_threshold3d
+}
+
+///|
 pub fn get_collider3d_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[Collider3d] {

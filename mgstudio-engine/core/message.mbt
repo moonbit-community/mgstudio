@@ -139,6 +139,32 @@ pub fn[T] MessageReader::read(self : MessageReader[T]) -> Array[T] {
 }
 
 ///|
+pub fn[T] MessageReader::len(self : MessageReader[T]) -> Int {
+  if self.has_read {
+    return 0
+  }
+  let mut total = 0
+  if self.previous_tick is Some(tick) &&
+    message_tick_in_range(tick, self.system) {
+    total = total + self.previous_messages.length()
+  }
+  if self.current_tick is Some(tick) && message_tick_in_range(tick, self.system) {
+    total = total + self.current_messages.length()
+  }
+  total
+}
+
+///|
+pub fn[T] MessageReader::is_empty(self : MessageReader[T]) -> Bool {
+  self.len() == 0
+}
+
+///|
+pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
+  self.has_read = true
+}
+
+///|
 pub fn[T] MessageWriter::write(self : MessageWriter[T], message : T) -> Unit {
   self.messages.send(self.tick, message)
 }

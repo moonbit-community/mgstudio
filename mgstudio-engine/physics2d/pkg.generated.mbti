@@ -262,6 +262,7 @@ pub struct ActiveCollisionTypes2d {
   types : @collision.ActiveCollisionTypes
 }
 pub fn ActiveCollisionTypes2d::new(@collision.ActiveCollisionTypes) -> Self
+pub impl @ecs.Component for ActiveCollisionTypes2d
 pub impl ToJson for ActiveCollisionTypes2d
 pub impl @json.FromJson for ActiveCollisionTypes2d
 
@@ -269,6 +270,7 @@ pub struct ActiveEvents2d {
   events : @collision.ActiveEvents
 }
 pub fn ActiveEvents2d::new(@collision.ActiveEvents) -> Self
+pub impl @ecs.Component for ActiveEvents2d
 pub impl ToJson for ActiveEvents2d
 pub impl @json.FromJson for ActiveEvents2d
 
@@ -276,6 +278,7 @@ pub struct ActiveHooks2d {
   hooks : @collision.ActiveHooks
 }
 pub fn ActiveHooks2d::new(@collision.ActiveHooks) -> Self
+pub impl @ecs.Component for ActiveHooks2d
 pub impl ToJson for ActiveHooks2d
 pub impl @json.FromJson for ActiveHooks2d
 
@@ -284,6 +287,7 @@ pub struct AdditionalMassProperties2d {
 }
 pub fn AdditionalMassProperties2d::mass(Float) -> Self
 pub fn AdditionalMassProperties2d::mass_properties(@Milky2018/moon_rapier/core.MassProperties) -> Self
+pub impl @ecs.Component for AdditionalMassProperties2d
 pub impl ToJson for AdditionalMassProperties2d
 pub impl @json.FromJson for AdditionalMassProperties2d
 
@@ -291,6 +295,7 @@ pub struct AdditionalSolverIterations2d {
   iterations : Int
 }
 pub fn AdditionalSolverIterations2d::new(Int) -> Self
+pub impl @ecs.Component for AdditionalSolverIterations2d
 pub impl ToJson for AdditionalSolverIterations2d
 pub impl @json.FromJson for AdditionalSolverIterations2d
 
@@ -300,6 +305,7 @@ pub struct Ccd2d {
 }
 pub fn Ccd2d::enabled() -> Self
 pub fn Ccd2d::new(Bool, Float) -> Self
+pub impl @ecs.Component for Ccd2d
 pub impl ToJson for Ccd2d
 pub impl @json.FromJson for Ccd2d
 
@@ -321,6 +327,7 @@ pub struct Collider2d {
 }
 pub fn Collider2d::new(ColliderShape2d) -> Self
 pub fn Collider2d::sensor(Self, Bool) -> Self
+pub impl @ecs.Component for Collider2d
 pub impl ToJson for Collider2d
 pub impl @json.FromJson for Collider2d
 
@@ -328,6 +335,7 @@ pub struct ColliderDensity2d {
   density : Float
 }
 pub fn ColliderDensity2d::new(Float) -> Self
+pub impl @ecs.Component for ColliderDensity2d
 pub impl ToJson for ColliderDensity2d
 pub impl @json.FromJson for ColliderDensity2d
 
@@ -336,6 +344,7 @@ pub struct ColliderEnabled2d {
 }
 pub fn ColliderEnabled2d::disabled() -> Self
 pub fn ColliderEnabled2d::new(Bool) -> Self
+pub impl @ecs.Component for ColliderEnabled2d
 pub impl ToJson for ColliderEnabled2d
 pub impl @json.FromJson for ColliderEnabled2d
 
@@ -343,6 +352,7 @@ pub struct ColliderMassProperties2d {
   mass_properties : @Milky2018/moon_rapier/core.MassProperties
 }
 pub fn ColliderMassProperties2d::new(@Milky2018/moon_rapier/core.MassProperties) -> Self
+pub impl @ecs.Component for ColliderMassProperties2d
 pub impl ToJson for ColliderMassProperties2d
 pub impl @json.FromJson for ColliderMassProperties2d
 
@@ -350,6 +360,7 @@ pub struct ColliderParent2d {
   parent : @Milky2018/mgstudio/core.Entity
 }
 pub fn ColliderParent2d::new(@Milky2018/mgstudio/core.Entity) -> Self
+pub impl @ecs.Component for ColliderParent2d
 pub impl ToJson for ColliderParent2d
 pub impl @json.FromJson for ColliderParent2d
 
@@ -389,6 +400,7 @@ pub struct CollisionGroups2d {
   test_mode : @dynamics.InteractionTestMode
 }
 pub fn CollisionGroups2d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
+pub impl @ecs.Component for CollisionGroups2d
 pub impl ToJson for CollisionGroups2d
 pub impl @json.FromJson for CollisionGroups2d
 
@@ -405,6 +417,7 @@ pub struct ContactForceEventThreshold2d {
   threshold : Float
 }
 pub fn ContactForceEventThreshold2d::new(Float) -> Self
+pub impl @ecs.Component for ContactForceEventThreshold2d
 pub impl ToJson for ContactForceEventThreshold2d
 pub impl @json.FromJson for ContactForceEventThreshold2d
 
@@ -412,6 +425,7 @@ pub struct ContactSkin2d {
   skin : Float
 }
 pub fn ContactSkin2d::new(Float) -> Self
+pub impl @ecs.Component for ContactSkin2d
 pub impl ToJson for ContactSkin2d
 pub impl @json.FromJson for ContactSkin2d
 
@@ -420,6 +434,7 @@ pub struct Damping2d {
   angular : Float
 }
 pub fn Damping2d::new(Float, Float) -> Self
+pub impl @ecs.Component for Damping2d
 pub impl ToJson for Damping2d
 pub impl @json.FromJson for Damping2d
 
@@ -427,6 +442,7 @@ pub struct Dominance2d {
   group : Int
 }
 pub fn Dominance2d::new(Int) -> Self
+pub impl @ecs.Component for Dominance2d
 pub impl ToJson for Dominance2d
 pub impl @json.FromJson for Dominance2d
 
@@ -436,6 +452,7 @@ pub struct ExternalForce2d {
 }
 pub fn ExternalForce2d::new(@math.Vec2, Float) -> Self
 pub fn ExternalForce2d::zero() -> Self
+pub impl @ecs.Component for ExternalForce2d
 pub impl ToJson for ExternalForce2d
 pub impl @json.FromJson for ExternalForce2d
 
@@ -445,6 +462,7 @@ pub struct ExternalImpulse2d {
 }
 pub fn ExternalImpulse2d::new(@math.Vec2, Float) -> Self
 pub fn ExternalImpulse2d::zero() -> Self
+pub impl @ecs.Component for ExternalImpulse2d
 pub impl ToJson for ExternalImpulse2d
 pub impl @json.FromJson for ExternalImpulse2d
 
@@ -452,6 +470,7 @@ pub struct Friction2d {
   coefficient : Float
 }
 pub fn Friction2d::new(Float) -> Self
+pub impl @ecs.Component for Friction2d
 pub impl ToJson for Friction2d
 pub impl @json.FromJson for Friction2d
 
@@ -459,6 +478,7 @@ pub struct FrictionCombineRule2d {
   rule : @dynamics.CoefficientCombineRule
 }
 pub fn FrictionCombineRule2d::new(@dynamics.CoefficientCombineRule) -> Self
+pub impl @ecs.Component for FrictionCombineRule2d
 pub impl ToJson for FrictionCombineRule2d
 pub impl @json.FromJson for FrictionCombineRule2d
 
@@ -466,6 +486,7 @@ pub struct GravityScale2d {
   scale : Float
 }
 pub fn GravityScale2d::new(Float) -> Self
+pub impl @ecs.Component for GravityScale2d
 pub impl ToJson for GravityScale2d
 pub impl @json.FromJson for GravityScale2d
 
@@ -476,6 +497,7 @@ pub struct ImpulseJoint2d {
 }
 pub fn ImpulseJoint2d::new(@Milky2018/mgstudio/core.Entity, @dynamics.GenericJoint) -> Self
 pub fn ImpulseJoint2d::with_wake_up(Self, Bool) -> Self
+pub impl @ecs.Component for ImpulseJoint2d
 pub impl ToJson for ImpulseJoint2d
 pub impl @json.FromJson for ImpulseJoint2d
 
@@ -495,6 +517,7 @@ pub fn KinematicCharacterController2d::with_slide(Self, Bool) -> Self
 pub fn KinematicCharacterController2d::with_snap_to_ground(Self, @control.CharacterLength?) -> Self
 pub fn KinematicCharacterController2d::with_translation(Self, @math.Vec2) -> Self
 pub fn KinematicCharacterController2d::with_up(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for KinematicCharacterController2d
 pub impl ToJson for KinematicCharacterController2d
 pub impl @json.FromJson for KinematicCharacterController2d
 
@@ -506,6 +529,7 @@ pub struct KinematicCharacterControllerOutput2d {
 }
 pub fn KinematicCharacterControllerOutput2d::new() -> Self
 pub fn KinematicCharacterControllerOutput2d::without_collisions(Self) -> Self
+pub impl @ecs.Component for KinematicCharacterControllerOutput2d
 pub impl ToJson for KinematicCharacterControllerOutput2d
 pub impl @json.FromJson for KinematicCharacterControllerOutput2d
 
@@ -515,6 +539,7 @@ pub struct LockedAxes2d {
 }
 pub fn LockedAxes2d::locked() -> Self
 pub fn LockedAxes2d::new(Bool, Bool) -> Self
+pub impl @ecs.Component for LockedAxes2d
 pub impl ToJson for LockedAxes2d
 pub impl @json.FromJson for LockedAxes2d
 
@@ -527,6 +552,7 @@ pub struct MultibodyJoint2d {
 pub fn MultibodyJoint2d::new(@Milky2018/mgstudio/core.Entity, @dynamics.RevoluteJoint) -> Self
 pub fn MultibodyJoint2d::with_kinematic(Self, Bool) -> Self
 pub fn MultibodyJoint2d::with_wake_up(Self, Bool) -> Self
+pub impl @ecs.Component for MultibodyJoint2d
 pub impl ToJson for MultibodyJoint2d
 pub impl @json.FromJson for MultibodyJoint2d
 
@@ -635,6 +661,7 @@ pub struct RapierBodyHandle2d {
   handle : @dynamics.RigidBodyHandle
 }
 pub fn RapierBodyHandle2d::new(@dynamics.RigidBodyHandle) -> Self
+pub impl @ecs.Component for RapierBodyHandle2d
 pub impl ToJson for RapierBodyHandle2d
 pub impl @json.FromJson for RapierBodyHandle2d
 
@@ -642,6 +669,7 @@ pub struct RapierColliderHandle2d {
   handle : @collision.ColliderHandle
 }
 pub fn RapierColliderHandle2d::new(@collision.ColliderHandle) -> Self
+pub impl @ecs.Component for RapierColliderHandle2d
 pub impl ToJson for RapierColliderHandle2d
 pub impl @json.FromJson for RapierColliderHandle2d
 
@@ -650,6 +678,7 @@ pub struct RapierImpulseJointHandle2d {
   other : @Milky2018/mgstudio/core.Entity
 }
 pub fn RapierImpulseJointHandle2d::new(@dynamics.ImpulseJointHandle, @Milky2018/mgstudio/core.Entity) -> Self
+pub impl @ecs.Component for RapierImpulseJointHandle2d
 pub impl ToJson for RapierImpulseJointHandle2d
 pub impl @json.FromJson for RapierImpulseJointHandle2d
 
@@ -658,6 +687,7 @@ pub struct RapierMultibodyJointHandle2d {
   other : @Milky2018/mgstudio/core.Entity
 }
 pub fn RapierMultibodyJointHandle2d::new(@dynamics.MultibodyJointHandle, @Milky2018/mgstudio/core.Entity) -> Self
+pub impl @ecs.Component for RapierMultibodyJointHandle2d
 pub impl ToJson for RapierMultibodyJointHandle2d
 pub impl @json.FromJson for RapierMultibodyJointHandle2d
 
@@ -676,6 +706,7 @@ pub struct Restitution2d {
   coefficient : Float
 }
 pub fn Restitution2d::new(Float) -> Self
+pub impl @ecs.Component for Restitution2d
 pub impl ToJson for Restitution2d
 pub impl @json.FromJson for Restitution2d
 
@@ -683,6 +714,7 @@ pub struct RestitutionCombineRule2d {
   rule : @dynamics.CoefficientCombineRule
 }
 pub fn RestitutionCombineRule2d::new(@dynamics.CoefficientCombineRule) -> Self
+pub impl @ecs.Component for RestitutionCombineRule2d
 pub impl ToJson for RestitutionCombineRule2d
 pub impl @json.FromJson for RestitutionCombineRule2d
 
@@ -693,6 +725,7 @@ pub fn RigidBody2d::dynamic() -> Self
 pub fn RigidBody2d::fixed() -> Self
 pub fn RigidBody2d::kinematic_position_based() -> Self
 pub fn RigidBody2d::kinematic_velocity_based() -> Self
+pub impl @ecs.Component for RigidBody2d
 pub impl ToJson for RigidBody2d
 pub impl @json.FromJson for RigidBody2d
 
@@ -701,6 +734,7 @@ pub struct RigidBodyEnabled2d {
 }
 pub fn RigidBodyEnabled2d::disabled() -> Self
 pub fn RigidBodyEnabled2d::new(Bool) -> Self
+pub impl @ecs.Component for RigidBodyEnabled2d
 pub impl ToJson for RigidBodyEnabled2d
 pub impl @json.FromJson for RigidBodyEnabled2d
 
@@ -715,6 +749,7 @@ pub struct Sleeping2d {
   sleeping : Bool
 }
 pub fn Sleeping2d::new(Bool) -> Self
+pub impl @ecs.Component for Sleeping2d
 pub impl ToJson for Sleeping2d
 pub impl @json.FromJson for Sleeping2d
 
@@ -724,6 +759,7 @@ pub struct SolverGroups2d {
   test_mode : @dynamics.InteractionTestMode
 }
 pub fn SolverGroups2d::new(Int, Int, @dynamics.InteractionTestMode) -> Self
+pub impl @ecs.Component for SolverGroups2d
 pub impl ToJson for SolverGroups2d
 pub impl @json.FromJson for SolverGroups2d
 
@@ -733,6 +769,7 @@ pub struct Velocity2d {
 }
 pub fn Velocity2d::new(@math.Vec2, Float) -> Self
 pub fn Velocity2d::zero() -> Self
+pub impl @ecs.Component for Velocity2d
 pub impl ToJson for Velocity2d
 pub impl @json.FromJson for Velocity2d
 

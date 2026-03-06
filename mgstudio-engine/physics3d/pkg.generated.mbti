@@ -122,6 +122,7 @@ pub struct ActiveCollisionTypes3d {
   types : @collision.ActiveCollisionTypes
 }
 pub fn ActiveCollisionTypes3d::new(@collision.ActiveCollisionTypes) -> Self
+pub impl @ecs.Component for ActiveCollisionTypes3d
 pub impl ToJson for ActiveCollisionTypes3d
 pub impl @json.FromJson for ActiveCollisionTypes3d
 
@@ -131,6 +132,7 @@ pub struct ActiveEvents3d {
 pub fn ActiveEvents3d::collision_events() -> Self
 pub fn ActiveEvents3d::empty() -> Self
 pub fn ActiveEvents3d::new(@collision.ActiveEvents) -> Self
+pub impl @ecs.Component for ActiveEvents3d
 pub impl ToJson for ActiveEvents3d
 pub impl @json.FromJson for ActiveEvents3d
 
@@ -138,6 +140,7 @@ pub struct ActiveHooks3d {
   hooks : @collision.ActiveHooks
 }
 pub fn ActiveHooks3d::new(@collision.ActiveHooks) -> Self
+pub impl @ecs.Component for ActiveHooks3d
 pub impl ToJson for ActiveHooks3d
 pub impl @json.FromJson for ActiveHooks3d
 
@@ -147,6 +150,7 @@ pub struct Collider3d {
 }
 pub fn Collider3d::new(ColliderShape3d) -> Self
 pub fn Collider3d::sensor(Self, Bool) -> Self
+pub impl @ecs.Component for Collider3d
 pub impl ToJson for Collider3d
 pub impl @json.FromJson for Collider3d
 
@@ -177,6 +181,7 @@ pub struct ContactForceEventThreshold3d {
   threshold : Float
 }
 pub fn ContactForceEventThreshold3d::new(Float) -> Self
+pub impl @ecs.Component for ContactForceEventThreshold3d
 pub impl ToJson for ContactForceEventThreshold3d
 pub impl @json.FromJson for ContactForceEventThreshold3d
 
@@ -223,6 +228,7 @@ pub struct RapierBodyHandle3d {
   handle : @dynamics.RigidBodyHandle
 }
 pub fn RapierBodyHandle3d::new(@dynamics.RigidBodyHandle) -> Self
+pub impl @ecs.Component for RapierBodyHandle3d
 pub impl ToJson for RapierBodyHandle3d
 pub impl @json.FromJson for RapierBodyHandle3d
 
@@ -230,6 +236,7 @@ pub struct RapierColliderHandle3d {
   handle : @collision.ColliderHandle3D
 }
 pub fn RapierColliderHandle3d::new(@collision.ColliderHandle3D) -> Self
+pub impl @ecs.Component for RapierColliderHandle3d
 pub impl ToJson for RapierColliderHandle3d
 pub impl @json.FromJson for RapierColliderHandle3d
 
@@ -240,6 +247,7 @@ pub fn RigidBody3d::dynamic() -> Self
 pub fn RigidBody3d::fixed() -> Self
 pub fn RigidBody3d::kinematic_position_based() -> Self
 pub fn RigidBody3d::kinematic_velocity_based() -> Self
+pub impl @ecs.Component for RigidBody3d
 pub impl ToJson for RigidBody3d
 pub impl @json.FromJson for RigidBody3d
 
@@ -249,6 +257,7 @@ pub struct Velocity3d {
 }
 pub fn Velocity3d::new(@math.Vec3, @math.Vec3) -> Self
 pub fn Velocity3d::zero() -> Self
+pub impl @ecs.Component for Velocity3d
 pub impl ToJson for Velocity3d
 pub impl @json.FromJson for Velocity3d
 

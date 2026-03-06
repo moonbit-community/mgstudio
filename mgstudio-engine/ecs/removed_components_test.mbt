@@ -54,3 +54,27 @@ test "ecs removed components: despawn emits removed entity for attached componen
   inspect(removed.length(), content="1")
   inspect(removed[0] == entity, content="true")
 }
+
+///|
+test "ecs removed components: len, is_empty and clear match unread messages" {
+  let world = World::new()
+  let key : ComponentKey[TestMarker] = register_component(
+    debug_name="removed_components_len_clear",
+  )
+  let entity0 = world.spawn()
+  let entity1 = world.spawn()
+
+  try! world.set(entity0, key, TestMarker::{ value: 1 })
+  try! world.set(entity1, key, TestMarker::{ value: 2 })
+  world.increment_change_tick() |> ignore
+  inspect(try! world.remove(entity0, key), content="true")
+  inspect(try! world.remove(entity1, key), content="true")
+
+  let removed = world.removed_components(key, @core.SystemTicks::new(0, 1))
+  inspect(removed.len(), content="2")
+  inspect(removed.is_empty(), content="false")
+  removed.clear()
+  inspect(removed.len(), content="0")
+  inspect(removed.is_empty(), content="true")
+  inspect(removed.read().length(), content="0")
+}
