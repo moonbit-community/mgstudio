@@ -56,6 +56,7 @@ pub fn GlobalTransform::from_transform(@math.Transform) -> Self
 pub fn GlobalTransform::identity() -> Self
 pub fn GlobalTransform::mul(Self, Self) -> Self
 pub fn GlobalTransform::to_transform_approx(Self) -> @math.Transform
+pub impl @ecs.Component for GlobalTransform
 pub impl ToJson for GlobalTransform
 pub impl @json.FromJson for GlobalTransform
 

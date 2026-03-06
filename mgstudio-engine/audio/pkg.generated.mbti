@@ -81,6 +81,7 @@ pub struct AudioSink {
 pub fn AudioSink::toggle_mute(Self) -> Self
 pub fn AudioSink::toggle_playback(Self) -> Unit
 pub impl AudioSinkPlayback for AudioSink
+pub impl @ecs.Component for AudioSink
 pub impl ToJson for AudioSink
 pub impl @json.FromJson for AudioSink
 
@@ -138,6 +139,7 @@ pub impl @app.Resource for PitchAssets
 
 pub struct PlaybackDespawnMarker {
 }
+pub impl @ecs.Component for PlaybackDespawnMarker
 pub impl ToJson for PlaybackDespawnMarker
 pub impl @json.FromJson for PlaybackDespawnMarker
 
@@ -154,6 +156,7 @@ pub impl @json.FromJson for PlaybackMode
 
 pub struct PlaybackRemoveMarker {
 }
+pub impl @ecs.Component for PlaybackRemoveMarker
 pub impl ToJson for PlaybackRemoveMarker
 pub impl @json.FromJson for PlaybackRemoveMarker
 
@@ -181,6 +184,7 @@ pub fn PlaybackSettings::with_spatial_scale(Self, SpatialScale) -> Self
 pub fn PlaybackSettings::with_speed(Self, Float) -> Self
 pub fn PlaybackSettings::with_start_position_seconds(Self, Float) -> Self
 pub fn PlaybackSettings::with_volume(Self, Volume) -> Self
+pub impl @ecs.Component for PlaybackSettings
 pub impl ToJson for PlaybackSettings
 pub impl @json.FromJson for PlaybackSettings
 
@@ -191,6 +195,7 @@ pub struct SpatialAudioSink {
 pub fn SpatialAudioSink::toggle_mute(Self) -> Self
 pub fn SpatialAudioSink::toggle_playback(Self) -> Unit
 pub impl AudioSinkPlayback for SpatialAudioSink
+pub impl @ecs.Component for SpatialAudioSink
 pub impl ToJson for SpatialAudioSink
 pub impl @json.FromJson for SpatialAudioSink
 
@@ -200,6 +205,7 @@ pub struct SpatialListener {
 }
 pub fn SpatialListener::default() -> Self
 pub fn SpatialListener::new(Float) -> Self
+pub impl @ecs.Component for SpatialListener
 pub impl ToJson for SpatialListener
 pub impl @json.FromJson for SpatialListener
 

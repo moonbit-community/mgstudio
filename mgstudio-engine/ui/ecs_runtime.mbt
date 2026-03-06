@@ -143,6 +143,136 @@ pub let ecs_key_relative_cursor_position : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="ui.relative_cursor_position")
 
 ///|
+pub impl @ecs.Component for Node with component() {
+  ecs_key_node
+}
+
+///|
+pub impl @ecs.Component for Label with component() {
+  ecs_key_label
+}
+
+///|
+pub impl @ecs.Component for Button with component() {
+  ecs_key_button
+}
+
+///|
+pub impl @ecs.Component for UiRoot with component() {
+  ecs_key_ui_root
+}
+
+///|
+pub impl @ecs.Component for UiText with component() {
+  ecs_key_ui_text
+}
+
+///|
+pub impl @ecs.Component for ZIndex with component() {
+  ecs_key_z_index
+}
+
+///|
+pub impl @ecs.Component for Outline with component() {
+  ecs_key_outline
+}
+
+///|
+pub impl @ecs.Component for UiImage with component() {
+  ecs_key_ui_image
+}
+
+///|
+pub impl @ecs.Component for UiLayout with component() {
+  ecs_key_ui_layout
+}
+
+///|
+pub impl @ecs.Component for BoxShadow with component() {
+  ecs_key_box_shadow
+}
+
+///|
+pub impl @ecs.Component for ImageNode with component() {
+  ecs_key_image_node
+}
+
+///|
+pub impl @ecs.Component for BorderColor with component() {
+  ecs_key_border_color
+}
+
+///|
+pub impl @ecs.Component for ContentSize with component() {
+  ecs_key_content_size
+}
+
+///|
+pub impl @ecs.Component for FocusPolicy with component() {
+  ecs_key_focus_policy
+}
+
+///|
+pub impl @ecs.Component for Interaction with component() {
+  ecs_key_interaction
+}
+
+///|
+pub impl @ecs.Component for UiAntiAlias with component() {
+  ecs_key_ui_anti_alias
+}
+
+///|
+pub impl @ecs.Component for BorderRadius with component() {
+  ecs_key_border_radius
+}
+
+///|
+pub impl @ecs.Component for ButtonColors with component() {
+  ecs_key_button_colors
+}
+
+///|
+pub impl @ecs.Component for GlobalZIndex with component() {
+  ecs_key_global_z_index
+}
+
+///|
+pub impl @ecs.Component for ImageNodeSize with component() {
+  ecs_key_image_node_size
+}
+
+///|
+pub impl @ecs.Component for CalculatedClip with component() {
+  ecs_key_calculated_clip
+}
+
+///|
+pub impl @ecs.Component for ScrollPosition with component() {
+  ecs_key_scroll_position
+}
+
+///|
+pub impl @ecs.Component for BackgroundColor with component() {
+  ecs_key_background_color
+}
+
+///|
+pub impl @ecs.Component for AccessibilityLabel with component() {
+  ecs_key_accessibility_label
+}
+
+///|
+pub impl @ecs.Component for UiBoxShadowSamples with component() {
+  ecs_key_ui_box_shadow_samples
+}
+
+///|
+pub impl @ecs.Component for RelativeCursorPosition with component() {
+  ecs_key_relative_cursor_position
+}
+
+///|
 pub let ecs_key_ui_scale : @ecs.ResourceKey[UiScale] = @ecs.register_resource(
   debug_name="ui.ui_scale",
 )

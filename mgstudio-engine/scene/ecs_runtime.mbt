@@ -23,6 +23,16 @@ pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady] = @
 )
 
 ///|
+pub impl @ecs.Component for SceneRoot with component() {
+  ecs_key_scene_root
+}
+
+///|
+pub impl @ecs.Component for SceneInstanceReady with component() {
+  ecs_key_scene_instance_ready
+}
+
+///|
 pub fn scene_spawn_roots_system_ecs(world : @ecs.World) -> Unit {
   let pending_roots : Array[(@core.Entity, SceneRoot)] = []
   try! world

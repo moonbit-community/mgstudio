@@ -82,6 +82,36 @@ pub let ecs_key_playback_remove_marker : @ecs.ComponentKey[PlaybackRemoveMarker]
 )
 
 ///|
+pub impl @ecs.Component for PlaybackSettings with component() {
+  ecs_key_playback_settings
+}
+
+///|
+pub impl @ecs.Component for SpatialListener with component() {
+  ecs_key_spatial_listener
+}
+
+///|
+pub impl @ecs.Component for AudioSink with component() {
+  ecs_key_audio_sink
+}
+
+///|
+pub impl @ecs.Component for SpatialAudioSink with component() {
+  ecs_key_spatial_audio_sink
+}
+
+///|
+pub impl @ecs.Component for PlaybackDespawnMarker with component() {
+  ecs_key_playback_despawn_marker
+}
+
+///|
+pub impl @ecs.Component for PlaybackRemoveMarker with component() {
+  ecs_key_playback_remove_marker
+}
+
+///|
 fn audio_output_stream() -> @native_audio.NativeAudioStream? {
   match audio_output_resource.val.get() {
     Some(output) => output.stream

@@ -329,6 +329,7 @@ pub fn TextureAtlas::new(Handle[TextureAtlasLayout], Int) -> Self
 pub fn TextureAtlas::texture_rect(Self, Assets[TextureAtlasLayout]) -> @math.URect?
 pub fn TextureAtlas::with_index(Self, Int) -> Self
 pub fn TextureAtlas::with_layout(Self, Handle[TextureAtlasLayout]) -> Self
+pub impl @ecs.Component for TextureAtlas
 pub impl ToJson for TextureAtlas
 pub impl @json.FromJson for TextureAtlas
 

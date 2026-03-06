@@ -108,6 +108,101 @@ pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig] = @ecs.
 )
 
 ///|
+pub impl @ecs.Component for Sprite with component() {
+  ecs_key_sprite
+}
+
+///|
+pub impl @ecs.Component for Anchor with component() {
+  ecs_key_anchor
+}
+
+///|
+pub impl @ecs.Component for RenderLayers with component() {
+  ecs_key_render_layers
+}
+
+///|
+pub impl @ecs.Component for Camera2d with component() {
+  ecs_key_camera2d
+}
+
+///|
+pub impl @ecs.Component for Camera with component() {
+  ecs_key_camera
+}
+
+///|
+pub impl @ecs.Component for Projection with component() {
+  ecs_key_projection
+}
+
+///|
+pub impl @ecs.Component for RenderTarget with component() {
+  ecs_key_render_target
+}
+
+///|
+pub impl @ecs.Component for Bloom2d with component() {
+  ecs_key_bloom2d
+}
+
+///|
+pub impl @ecs.Component for Tonemapping with component() {
+  ecs_key_tonemapping
+}
+
+///|
+pub impl @ecs.Component for DebandDither with component() {
+  ecs_key_deband_dither
+}
+
+///|
+pub impl @ecs.Component for Mesh2d with component() {
+  ecs_key_mesh2d
+}
+
+///|
+pub impl @ecs.Component for ColorMaterial with component() {
+  ecs_key_color_material
+}
+
+///|
+pub impl @ecs.Component for MeshMaterial2d with component() {
+  ecs_key_mesh_material2d
+}
+
+///|
+pub impl @ecs.Component for GpuMesh2d with component() {
+  ecs_key_gpu_mesh2d
+}
+
+///|
+pub impl @ecs.Component for ScissorRect with component() {
+  ecs_key_scissor_rect
+}
+
+///|
+pub impl @ecs.Component for Wireframe2d with component() {
+  ecs_key_wireframe2d
+}
+
+///|
+pub impl @ecs.Component for NoWireframe2d with component() {
+  ecs_key_no_wireframe2d
+}
+
+///|
+pub impl @ecs.Component for Wireframe2dColor with component() {
+  ecs_key_wireframe2d_color
+}
+
+///|
+pub impl @ecs.Component for ClearColorConfig with component() {
+  ecs_key_clear_color_config
+}
+
+///|
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
   debug_name="render2d.render_state",
 )
@@ -800,6 +895,16 @@ pub impl ToJson for ScissorRect with to_json(self) {
 ///|
 pub impl @json.FromJson for ScissorRect with from_json(json, _path) {
   decode_scissor_rect(json)
+}
+
+///|
+pub impl ToJson for ClearColorConfig with to_json(self) {
+  encode_clear_color_config(self)
+}
+
+///|
+pub impl @json.FromJson for ClearColorConfig with from_json(json, _path) {
+  decode_clear_color_config(json)
 }
 
 ///|

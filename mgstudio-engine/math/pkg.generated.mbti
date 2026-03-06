@@ -87,6 +87,7 @@ pub fn Transform::rotation_z(Self) -> Float
 pub fn Transform::with_rotation(Self, Quat) -> Self
 pub fn Transform::with_scale(Self, Vec3) -> Self
 pub fn Transform::with_translation(Self, Vec3) -> Self
+pub impl @ecs.Component for Transform
 pub impl ToJson for Transform
 pub impl @json.FromJson for Transform
 

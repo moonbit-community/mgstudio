@@ -40,6 +40,7 @@ pub struct InheritedVisibility {
 }
 pub fn InheritedVisibility::is_visible(Self) -> Bool
 pub fn InheritedVisibility::new(Bool) -> Self
+pub impl @ecs.Component for InheritedVisibility
 pub impl Eq for InheritedVisibility
 pub impl Show for InheritedVisibility
 pub impl ToJson for InheritedVisibility
@@ -50,6 +51,7 @@ pub struct ViewVisibility {
 }
 pub fn ViewVisibility::is_visible(Self) -> Bool
 pub fn ViewVisibility::new(Bool) -> Self
+pub impl @ecs.Component for ViewVisibility
 pub impl Eq for ViewVisibility
 pub impl Show for ViewVisibility
 pub impl ToJson for ViewVisibility
@@ -61,6 +63,7 @@ pub(all) enum Visibility {
   Visible
 }
 pub fn Visibility::is_visible(Self) -> Bool
+pub impl @ecs.Component for Visibility
 pub impl Eq for Visibility
 pub impl Show for Visibility
 pub impl ToJson for Visibility
@@ -76,6 +79,7 @@ pub struct VisibilityRange {
 pub fn VisibilityRange::always_visible() -> Self
 pub fn VisibilityRange::invisible() -> Self
 pub fn VisibilityRange::new(Float, Float, Float, Float, Bool) -> Self
+pub impl @ecs.Component for VisibilityRange
 pub impl ToJson for VisibilityRange
 pub impl @json.FromJson for VisibilityRange
 

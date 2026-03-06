@@ -18,6 +18,11 @@ pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform] = @ecs.reg
 )
 
 ///|
+pub impl @ecs.Component for GlobalTransform with component() {
+  ecs_key_global_transform
+}
+
+///|
 pub fn update_children_system_ecs(world : @ecs.World) -> Unit {
   let existing_children : Array[@core.Entity] = []
   try! world

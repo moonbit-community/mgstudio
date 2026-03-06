@@ -26,3 +26,18 @@ pub let ecs_key_animated_by : @ecs.ComponentKey[AnimatedBy] = @ecs.register_comp
 pub let ecs_key_animation_player : @ecs.ComponentKey[AnimationPlayer] = @ecs.register_component(
   debug_name="animation.animation_player",
 )
+
+///|
+pub impl @ecs.Component for AnimationTargetId with component() {
+  ecs_key_animation_target_id
+}
+
+///|
+pub impl @ecs.Component for AnimatedBy with component() {
+  ecs_key_animated_by
+}
+
+///|
+pub impl @ecs.Component for AnimationPlayer with component() {
+  ecs_key_animation_player
+}

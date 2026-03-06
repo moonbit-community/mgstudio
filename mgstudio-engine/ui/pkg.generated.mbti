@@ -195,6 +195,7 @@ pub struct AccessibilityLabel {
   text : String
 }
 pub fn AccessibilityLabel::new(String) -> Self
+pub impl @ecs.Component for AccessibilityLabel
 pub impl ToJson for AccessibilityLabel
 pub impl @json.FromJson for AccessibilityLabel
 
@@ -249,6 +250,7 @@ pub struct BackgroundColor {
   color : @render2d.Color
 }
 pub fn BackgroundColor::new(@render2d.Color) -> Self
+pub impl @ecs.Component for BackgroundColor
 pub impl ToJson for BackgroundColor
 pub impl @json.FromJson for BackgroundColor
 
@@ -256,6 +258,7 @@ pub struct BorderColor {
   color : @render2d.Color
 }
 pub fn BorderColor::new(@render2d.Color) -> Self
+pub impl @ecs.Component for BorderColor
 pub impl ToJson for BorderColor
 pub impl @json.FromJson for BorderColor
 
@@ -270,6 +273,7 @@ pub fn BorderRadius::default() -> Self
 pub fn BorderRadius::new(Val, Val, Val, Val) -> Self
 pub fn BorderRadius::percent(Float, Float, Float, Float) -> Self
 pub fn BorderRadius::px(Float, Float, Float, Float) -> Self
+pub impl @ecs.Component for BorderRadius
 pub impl ToJson for BorderRadius
 pub impl @json.FromJson for BorderRadius
 
@@ -295,12 +299,14 @@ pub struct BoxShadow {
 }
 pub fn BoxShadow::default() -> Self
 pub fn BoxShadow::new(@render2d.Color, Val, Val, Val, Val) -> Self
+pub impl @ecs.Component for BoxShadow
 pub impl ToJson for BoxShadow
 pub impl @json.FromJson for BoxShadow
 
 pub struct Button {
 }
 pub fn Button::default() -> Self
+pub impl @ecs.Component for Button
 pub impl ToJson for Button
 pub impl @json.FromJson for Button
 
@@ -310,6 +316,7 @@ pub struct ButtonColors {
   pressed : @render2d.Color
 }
 pub fn ButtonColors::new(@render2d.Color, @render2d.Color, @render2d.Color) -> Self
+pub impl @ecs.Component for ButtonColors
 pub impl ToJson for ButtonColors
 pub impl @json.FromJson for ButtonColors
 
@@ -317,6 +324,7 @@ pub struct CalculatedClip {
   clip : @math.Rect
 }
 pub fn CalculatedClip::new(@math.Rect) -> Self
+pub impl @ecs.Component for CalculatedClip
 pub impl ToJson for CalculatedClip
 pub impl @json.FromJson for CalculatedClip
 
@@ -324,6 +332,7 @@ pub struct ContentSize {
   size : @math.Vec2
 }
 pub fn ContentSize::new(@math.Vec2) -> Self
+pub impl @ecs.Component for ContentSize
 pub impl ToJson for ContentSize
 pub impl @json.FromJson for ContentSize
 
@@ -364,6 +373,7 @@ pub(all) enum FocusPolicy {
   Pass
 }
 pub fn FocusPolicy::default() -> Self
+pub impl @ecs.Component for FocusPolicy
 pub impl Eq for FocusPolicy
 pub impl Show for FocusPolicy
 pub impl ToJson for FocusPolicy
@@ -373,6 +383,7 @@ pub struct GlobalZIndex {
   value : Int
 }
 pub fn GlobalZIndex::new(Int) -> Self
+pub impl @ecs.Component for GlobalZIndex
 pub impl ToJson for GlobalZIndex
 pub impl @json.FromJson for GlobalZIndex
 
@@ -443,6 +454,7 @@ pub fn ImageNode::with_flip_y(Self) -> Self
 pub fn ImageNode::with_mode(Self, NodeImageMode) -> Self
 pub fn ImageNode::with_rect(Self, @math.Rect?) -> Self
 pub fn ImageNode::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
+pub impl @ecs.Component for ImageNode
 pub impl ToJson for ImageNode
 pub impl @json.FromJson for ImageNode
 
@@ -451,6 +463,7 @@ pub struct ImageNodeSize {
 }
 pub fn ImageNodeSize::default() -> Self
 pub fn ImageNodeSize::size(Self) -> @math.UVec2
+pub impl @ecs.Component for ImageNodeSize
 pub impl ToJson for ImageNodeSize
 pub impl @json.FromJson for ImageNodeSize
 
@@ -459,6 +472,7 @@ pub(all) enum Interaction {
   Hovered
   Pressed
 }
+pub impl @ecs.Component for Interaction
 pub impl Eq for Interaction
 pub impl Show for Interaction
 pub impl ToJson for Interaction
@@ -510,6 +524,7 @@ pub impl @json.FromJson for JustifySelf
 pub struct Label {
 }
 pub fn Label::default() -> Self
+pub impl @ecs.Component for Label
 pub impl ToJson for Label
 pub impl @json.FromJson for Label
 
@@ -572,6 +587,7 @@ pub fn Node::with_right(Self, Val) -> Self
 pub fn Node::with_row_gap(Self, Val) -> Self
 pub fn Node::with_top(Self, Val) -> Self
 pub fn Node::with_width(Self, Val) -> Self
+pub impl @ecs.Component for Node
 pub impl ToJson for Node
 pub impl @json.FromJson for Node
 
@@ -593,6 +609,7 @@ pub struct Outline {
 }
 pub fn Outline::default() -> Self
 pub fn Outline::new(Val, Val, @render2d.Color) -> Self
+pub impl @ecs.Component for Outline
 pub impl ToJson for Outline
 pub impl @json.FromJson for Outline
 
@@ -652,6 +669,7 @@ pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
   normalized : @math.Vec2?
 }
+pub impl @ecs.Component for RelativeCursorPosition
 pub impl ToJson for RelativeCursorPosition
 pub impl @json.FromJson for RelativeCursorPosition
 
@@ -671,6 +689,7 @@ pub struct ScrollPosition {
 pub fn ScrollPosition::default() -> Self
 pub fn ScrollPosition::new(Float, Float) -> Self
 pub fn ScrollPosition::with_delta(Self, Float, Float) -> Self
+pub impl @ecs.Component for ScrollPosition
 pub impl ToJson for ScrollPosition
 pub impl @json.FromJson for ScrollPosition
 
@@ -699,6 +718,7 @@ pub(all) enum UiAntiAlias {
   Off
   On
 }
+pub impl @ecs.Component for UiAntiAlias
 pub impl Eq for UiAntiAlias
 pub impl Show for UiAntiAlias
 pub impl ToJson for UiAntiAlias
@@ -709,6 +729,7 @@ pub struct UiBoxShadowSamples {
 }
 pub fn UiBoxShadowSamples::default() -> Self
 pub fn UiBoxShadowSamples::new(Int) -> Self
+pub impl @ecs.Component for UiBoxShadowSamples
 pub impl ToJson for UiBoxShadowSamples
 pub impl @json.FromJson for UiBoxShadowSamples
 
@@ -744,6 +765,7 @@ pub fn UiImage::with_flip_x(Self) -> Self
 pub fn UiImage::with_flip_y(Self) -> Self
 pub fn UiImage::with_rect(Self, @math.Rect?) -> Self
 pub fn UiImage::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
+pub impl @ecs.Component for UiImage
 pub impl ToJson for UiImage
 pub impl @json.FromJson for UiImage
 
@@ -751,6 +773,7 @@ pub struct UiLayout {
   rect : @math.Rect
 }
 pub fn UiLayout::new(@math.Rect) -> Self
+pub impl @ecs.Component for UiLayout
 pub impl ToJson for UiLayout
 pub impl @json.FromJson for UiLayout
 
@@ -769,6 +792,7 @@ pub impl @json.FromJson for UiRect
 pub struct UiRoot {
 }
 pub fn UiRoot::default() -> Self
+pub impl @ecs.Component for UiRoot
 pub impl ToJson for UiRoot
 pub impl @json.FromJson for UiRoot
 
@@ -792,6 +816,7 @@ pub struct UiText {
   handle : @text.TextHandle
 }
 pub fn UiText::new(@text.TextHandle) -> Self
+pub impl @ecs.Component for UiText
 pub impl ToJson for UiText
 pub impl @json.FromJson for UiText
 
@@ -813,6 +838,7 @@ pub struct ZIndex {
   value : Int
 }
 pub fn ZIndex::new(Int) -> Self
+pub impl @ecs.Component for ZIndex
 pub impl ToJson for ZIndex
 pub impl @json.FromJson for ZIndex
 

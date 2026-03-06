@@ -31,3 +31,23 @@ pub let ecs_key_view_visibility : @ecs.ComponentKey[ViewVisibility] = @ecs.regis
 pub let ecs_key_visibility_range : @ecs.ComponentKey[VisibilityRange] = @ecs.register_component(
   debug_name="visibility.visibility_range",
 )
+
+///|
+pub impl @ecs.Component for Visibility with component() {
+  ecs_key_visibility
+}
+
+///|
+pub impl @ecs.Component for InheritedVisibility with component() {
+  ecs_key_inherited_visibility
+}
+
+///|
+pub impl @ecs.Component for ViewVisibility with component() {
+  ecs_key_view_visibility
+}
+
+///|
+pub impl @ecs.Component for VisibilityRange with component() {
+  ecs_key_visibility_range
+}

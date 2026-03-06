@@ -213,6 +213,7 @@ pub fn Anchor::new(@math.Vec2) -> Self
 pub fn Anchor::top_center() -> Self
 pub fn Anchor::top_left() -> Self
 pub fn Anchor::top_right() -> Self
+pub impl @ecs.Component for Anchor
 pub impl ToJson for Anchor
 pub impl @json.FromJson for Anchor
 
@@ -245,6 +246,7 @@ pub fn Bloom2d::new() -> Self
 pub fn Bloom2d::with_enabled(Self, Bool) -> Self
 pub fn Bloom2d::with_settings(Self, Bloom2dSettings) -> Self
 pub fn Bloom2d::with_source(Self, @asset.Handle[@asset.Image]) -> Self
+pub impl @ecs.Component for Bloom2d
 pub impl ToJson for Bloom2d
 pub impl @json.FromJson for Bloom2d
 
@@ -303,12 +305,14 @@ pub fn Camera::with_clear_color_none(Self) -> Self
 pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
 pub fn Camera::with_viewport(Self, Viewport) -> Self
+pub impl @ecs.Component for Camera
 pub impl ToJson for Camera
 pub impl @json.FromJson for Camera
 
 pub struct Camera2d {
 }
 pub fn Camera2d::default() -> Self
+pub impl @ecs.Component for Camera2d
 pub impl ToJson for Camera2d
 pub impl @json.FromJson for Camera2d
 
@@ -426,6 +430,9 @@ pub(all) enum ClearColorConfig {
 }
 pub fn ClearColorConfig::default() -> Self
 pub fn ClearColorConfig::resolve(Self) -> (Bool, Color)
+pub impl @ecs.Component for ClearColorConfig
+pub impl ToJson for ClearColorConfig
+pub impl @json.FromJson for ClearColorConfig
 
 pub struct Color {
   r : Float
@@ -458,6 +465,7 @@ pub fn ColorMaterial::with_alpha_mode(Self, AlphaMode2d) -> Self
 pub fn ColorMaterial::with_texture(Self, @asset.Handle[@asset.Image]) -> Self
 pub fn ColorMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn ColorMaterial::with_uv_scale(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for ColorMaterial
 pub impl Material2d for ColorMaterial
 pub impl ToJson for ColorMaterial
 pub impl @json.FromJson for ColorMaterial
@@ -476,6 +484,7 @@ pub(all) enum DebandDither {
   Enabled
 }
 pub fn DebandDither::default() -> Self
+pub impl @ecs.Component for DebandDither
 pub impl ToJson for DebandDither
 pub impl @json.FromJson for DebandDither
 
@@ -559,6 +568,7 @@ pub struct GpuMesh2d {
   mesh_id : Int
 }
 pub fn GpuMesh2d::new(Int) -> Self
+pub impl @ecs.Component for GpuMesh2d
 pub impl ToJson for GpuMesh2d
 pub impl @json.FromJson for GpuMesh2d
 
@@ -611,6 +621,7 @@ pub fn Mesh2d::from_segment(Segment2d) -> Self
 pub fn Mesh2d::from_triangle(Triangle2d) -> Self
 pub fn Mesh2d::from_triangle_ring(Triangle2dRing) -> Self
 pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
+pub impl @ecs.Component for Mesh2d
 pub impl ToJson for Mesh2d
 pub impl @json.FromJson for Mesh2d
 
@@ -639,6 +650,7 @@ pub fn MeshMaterial2d::with_alpha_mode(Self, AlphaMode2d) -> Self
 pub fn MeshMaterial2d::with_texture(Self, @asset.Handle[@asset.Image]) -> Self
 pub fn MeshMaterial2d::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn MeshMaterial2d::with_uv_scale(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for MeshMaterial2d
 pub impl Material2d for MeshMaterial2d
 pub impl ToJson for MeshMaterial2d
 pub impl @json.FromJson for MeshMaterial2d
@@ -646,6 +658,7 @@ pub impl @json.FromJson for MeshMaterial2d
 pub struct NoWireframe2d {
 }
 pub fn NoWireframe2d::default() -> Self
+pub impl @ecs.Component for NoWireframe2d
 pub impl ToJson for NoWireframe2d
 pub impl @json.FromJson for NoWireframe2d
 
@@ -679,6 +692,7 @@ pub(all) enum Projection {
   Orthographic(OrthographicProjection)
 }
 pub fn Projection::orthographic_2d() -> Self
+pub impl @ecs.Component for Projection
 pub impl ToJson for Projection
 pub impl @json.FromJson for Projection
 
@@ -727,6 +741,7 @@ pub fn RenderLayers::remove(Self, Int) -> Self
 pub fn RenderLayers::union(Self, Self) -> Self
 pub fn RenderLayers::with_layer(Self, Int) -> Self
 pub fn RenderLayers::without_layer(Self, Int) -> Self
+pub impl @ecs.Component for RenderLayers
 pub impl ToJson for RenderLayers
 pub impl @json.FromJson for RenderLayers
 
@@ -738,6 +753,7 @@ pub(all) enum RenderTarget {
   Screen
   Image(@asset.Handle[@asset.Image])
 }
+pub impl @ecs.Component for RenderTarget
 pub impl ToJson for RenderTarget
 pub impl @json.FromJson for RenderTarget
 
@@ -773,6 +789,7 @@ pub struct ScissorRect {
   rect : @math.Rect
 }
 pub fn ScissorRect::new(@math.Rect) -> Self
+pub impl @ecs.Component for ScissorRect
 pub impl ToJson for ScissorRect
 pub impl @json.FromJson for ScissorRect
 
@@ -809,6 +826,7 @@ pub fn Sprite::with_flip_y(Self, Bool) -> Self
 pub fn Sprite::with_image_mode(Self, SpriteImageMode) -> Self
 pub fn Sprite::with_rect(Self, @math.Rect?) -> Self
 pub fn Sprite::with_texture_atlas(Self, @asset.TextureAtlas?) -> Self
+pub impl @ecs.Component for Sprite
 pub impl ToJson for Sprite
 pub impl @json.FromJson for Sprite
 
@@ -901,6 +919,7 @@ pub(all) enum Tonemapping {
   BlenderFilmic
 }
 pub fn Tonemapping::default() -> Self
+pub impl @ecs.Component for Tonemapping
 pub impl ToJson for Tonemapping
 pub impl @json.FromJson for Tonemapping
 
@@ -955,6 +974,7 @@ pub fn Viewport::with_depth(Self, Float, Float) -> Self
 pub struct Wireframe2d {
 }
 pub fn Wireframe2d::default() -> Self
+pub impl @ecs.Component for Wireframe2d
 pub impl ToJson for Wireframe2d
 pub impl @json.FromJson for Wireframe2d
 
@@ -964,6 +984,7 @@ pub struct Wireframe2dColor {
 pub fn Wireframe2dColor::default() -> Self
 pub fn Wireframe2dColor::new(Color) -> Self
 pub fn Wireframe2dColor::with_color(Self, Color) -> Self
+pub impl @ecs.Component for Wireframe2dColor
 pub impl ToJson for Wireframe2dColor
 pub impl @json.FromJson for Wireframe2dColor
 

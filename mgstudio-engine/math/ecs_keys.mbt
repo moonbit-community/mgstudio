@@ -16,3 +16,8 @@
 pub let ecs_key_transform : @ecs.ComponentKey[Transform] = @ecs.register_component(
   debug_name="math.transform",
 )
+
+///|
+pub impl @ecs.Component for Transform with component() {
+  ecs_key_transform
+}

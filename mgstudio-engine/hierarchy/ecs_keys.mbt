@@ -21,3 +21,13 @@ pub let ecs_key_parent : @ecs.ComponentKey[Parent] = @ecs.register_component(
 pub let ecs_key_children : @ecs.ComponentKey[Children] = @ecs.register_component(
   debug_name="hierarchy.children",
 )
+
+///|
+pub impl @ecs.Component for Parent with component() {
+  ecs_key_parent
+}
+
+///|
+pub impl @ecs.Component for Children with component() {
+  ecs_key_children
+}

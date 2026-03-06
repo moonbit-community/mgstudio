@@ -246,9 +246,12 @@ pub struct World {
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::component(Self, ComponentKey[T]) -> ComponentAccess[T]
+pub fn[T : Component] World::component_typed(Self) -> ComponentAccess[T]
 pub fn World::despawn(Self, @core.Entity) -> Unit raise EcsError
 pub fn World::entity_count(Self) -> Int
 pub fn[T : @json.FromJson] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[T : Component] World::get_component(Self, @core.Entity) -> T? raise EcsError
+pub fn[T : Component] World::get_component_ref(Self, @core.Entity) -> ComponentRef[T]? raise EcsError
 pub fn[A : @json.FromJson] World::get_ref(Self, @core.Entity, ComponentKey[A]) -> ComponentRef[A]? raise EcsError
 pub fn[T : @json.FromJson] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::get_resource_ticks(Self, ResourceKey[T]) -> @core.ComponentTicks?
@@ -260,6 +263,8 @@ pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn World::new() -> Self
 pub fn[A] World::query1(Self, ComponentKey[A]) -> Query1[A]
 pub fn[A, F] World::query1_filtered(Self, ComponentKey[A], F) -> Query1Filtered[A, F]
+pub fn[T : Component] World::query1_typed(Self) -> Query1[T]
+pub fn[T : Component, F] World::query1_typed_filtered(Self, F) -> Query1Filtered[T, F]
 pub fn[A, B] World::query2(Self, ComponentKey[A], ComponentKey[B]) -> Query2[A, B]
 pub fn[A, B, F] World::query2_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2Filtered[A, B, F]
 pub fn[A, B, C] World::query3(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C]) -> Query3[A, B, C]
@@ -273,10 +278,12 @@ pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) ->
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T : ToJson] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T : ToJson] World::set(Self, @core.Entity, ComponentKey[T], T) -> Unit raise EcsError
+pub fn[T : Component + ToJson] World::set_component(Self, @core.Entity, T) -> Unit raise EcsError
 pub fn World::set_system_context(Self, @core.SystemContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub fn[T : ToJson + @json.FromJson] World::update(Self, @core.Entity, ComponentKey[T], (T) -> T) -> Bool raise EcsError
+pub fn[T : Component + ToJson + @json.FromJson] World::update_component(Self, @core.Entity, (T) -> T) -> Bool raise EcsError
 pub fn[T : ToJson + @json.FromJson] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool raise EcsError
 pub fn World::world_id(Self) -> Int
 
@@ -284,6 +291,7 @@ pub fn World::world_id(Self) -> Int
 
 // Traits
 pub(open) trait Component : ToJson + @json.FromJson {
+  component() -> ComponentKey[Self]
 }
 
 pub(open) trait EventData : ToJson + @json.FromJson {

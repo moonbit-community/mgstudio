@@ -94,6 +94,7 @@ pub struct SceneInstanceReady {
   spawned_entities : Int
 }
 pub fn SceneInstanceReady::new(Int) -> Self
+pub impl @ecs.Component for SceneInstanceReady
 pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
 
@@ -110,6 +111,7 @@ pub struct SceneRoot {
   scene : @asset.Handle[Scene]
 }
 pub fn SceneRoot::new(@asset.Handle[Scene]) -> Self
+pub impl @ecs.Component for SceneRoot
 pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
 

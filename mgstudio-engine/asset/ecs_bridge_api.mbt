@@ -28,6 +28,11 @@ pub let ecs_key_texture_atlas : @ecs.ComponentKey[TextureAtlas] = @ecs.register_
 )
 
 ///|
+pub impl @ecs.Component for TextureAtlas with component() {
+  ecs_key_texture_atlas
+}
+
+///|
 pub fn get_texture_atlas_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[TextureAtlas] {

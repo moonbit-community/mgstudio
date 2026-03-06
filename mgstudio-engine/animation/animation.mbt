@@ -2518,6 +2518,21 @@ pub let ecs_key_animation_weights : @ecs.ComponentKey[AnimationWeights] = @ecs.r
 )
 
 ///|
+pub impl @ecs.Component for AnimationGraphHandle with component() {
+  ecs_key_animation_graph_handle
+}
+
+///|
+pub impl @ecs.Component for AnimationTransitions with component() {
+  ecs_key_animation_transitions
+}
+
+///|
+pub impl @ecs.Component for AnimationWeights with component() {
+  ecs_key_animation_weights
+}
+
+///|
 pub fn thread_animation_graphs(_world : @ecs.World) -> Unit {
   // Stub for future threaded graph acceleration structures.
 }

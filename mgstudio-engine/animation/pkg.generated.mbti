@@ -125,6 +125,7 @@ pub struct AnimatedBy {
 }
 pub fn AnimatedBy::new(@core.Entity) -> Self
 pub fn AnimatedBy::player(Self) -> @core.Entity
+pub impl @ecs.Component for AnimatedBy
 pub impl ToJson for AnimatedBy
 pub impl @json.FromJson for AnimatedBy
 
@@ -204,6 +205,7 @@ pub struct AnimationGraphHandle {
 }
 pub fn AnimationGraphHandle::graph(Self) -> @asset.Handle[AnimationGraph]
 pub fn AnimationGraphHandle::new(@asset.Handle[AnimationGraph]) -> Self
+pub impl @ecs.Component for AnimationGraphHandle
 pub impl ToJson for AnimationGraphHandle
 pub impl @json.FromJson for AnimationGraphHandle
 
@@ -255,6 +257,7 @@ pub fn AnimationPlayer::set_weight(Self, AnimationNodeIndex, Float) -> Self
 pub fn AnimationPlayer::start(Self, AnimationNodeIndex) -> Self
 pub fn AnimationPlayer::stop(Self, AnimationNodeIndex) -> Self
 pub fn AnimationPlayer::stop_all(Self) -> Self
+pub impl @ecs.Component for AnimationPlayer
 pub impl ToJson for AnimationPlayer
 pub impl @json.FromJson for AnimationPlayer
 
@@ -283,6 +286,7 @@ pub struct AnimationTargetId {
 pub fn AnimationTargetId::from_name(String) -> Self
 pub fn AnimationTargetId::from_names(Array[String]) -> Self
 pub fn AnimationTargetId::new(Int, Int) -> Self
+pub impl @ecs.Component for AnimationTargetId
 pub impl Eq for AnimationTargetId
 pub impl Show for AnimationTargetId
 pub impl ToJson for AnimationTargetId
@@ -303,6 +307,7 @@ pub struct AnimationTransitions {
 pub fn AnimationTransitions::main_animation(Self) -> AnimationNodeIndex?
 pub fn AnimationTransitions::new() -> Self
 pub fn AnimationTransitions::play(Self, AnimationPlayer, AnimationNodeIndex, Float) -> (Self, AnimationPlayer)
+pub impl @ecs.Component for AnimationTransitions
 pub impl ToJson for AnimationTransitions
 pub impl @json.FromJson for AnimationTransitions
 
@@ -336,6 +341,7 @@ pub struct AnimationWeights {
 }
 pub fn AnimationWeights::new(Array[Float]) -> Self
 pub fn AnimationWeights::values(Self) -> Array[Float]
+pub impl @ecs.Component for AnimationWeights
 pub impl ToJson for AnimationWeights
 pub impl @json.FromJson for AnimationWeights
 

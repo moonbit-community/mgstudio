@@ -33,6 +33,36 @@ struct TickEvent {
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
+let typed_counter_key : ComponentKey[TypedCounter] = register_component(
+  debug_name="typed_counter",
+)
+
+///|
+let typed_marker_key : ComponentKey[TypedMarker] = register_component(
+  debug_name="typed_marker",
+)
+
+///|
+struct TypedCounter {
+  value : Int
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+struct TypedMarker {
+  enabled : Bool
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+pub impl Component for TypedCounter with component() {
+  typed_counter_key
+}
+
+///|
+pub impl Component for TypedMarker with component() {
+  typed_marker_key
+}
+
+///|
 test "ecs: register key ids are monotonic" {
   let comp_a : ComponentKey[Counter] = register_component(debug_name="counter")
   let comp_b : ComponentKey[Counter] = register_component(
@@ -120,4 +150,47 @@ test "ecs: dead entity fails fast" {
   guard set_result is Err(EntityNotAlive(_)) else {
     fail("expected EntityNotAlive for set")
   }
+}
+
+///|
+test "ecs: typed component api uses component ownership" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let counter_key : ComponentKey[TypedCounter] = Component::component()
+  let marker_key : ComponentKey[TypedMarker] = Component::component()
+
+  inspect(counter_key.id() == typed_counter_key.id(), content="true")
+  inspect(marker_key.id() == typed_marker_key.id(), content="true")
+
+  try! world.set_component(e0, TypedCounter::{ value: 10 })
+  try! world.set_component(e1, TypedCounter::{ value: 20 })
+  try! world.set_component(e1, TypedMarker::{ enabled: true })
+
+  let initial_counter : TypedCounter? = try! World::get_component(world, e0)
+  inspect(initial_counter, content="Some({value: 10})")
+  inspect(
+    try! World::update_component(world, e0, fn(counter : TypedCounter) {
+      TypedCounter::{ value: counter.value + 5 }
+    }),
+    content="true",
+  )
+  let updated_counter : TypedCounter? = try! World::get_component(world, e0)
+  inspect(updated_counter, content="Some({value: 15})")
+
+  let without_marker : Without[TypedMarker] = Without::new(marker_key)
+  let filtered : Query1Filtered[TypedCounter, Without[TypedMarker]] = World::query1_typed_filtered(
+    world, without_marker,
+  )
+  inspect(filtered.count(), content="1")
+  inspect(try! filtered.get(e0), content="Some({value: 15})")
+  inspect(try! filtered.get(e1), content="None")
+
+  let tick = world.increment_change_tick()
+  inspect(tick == 1, content="true")
+  inspect(try! world.remove(e0, counter_key), content="true")
+  let removed : Array[@core.Entity] = world
+    .removed_components(counter_key, @core.SystemTicks::new(0, 1))
+    .read()
+  json_inspect(removed, content=[{ "id": 0, "generation": 1 }])
 }

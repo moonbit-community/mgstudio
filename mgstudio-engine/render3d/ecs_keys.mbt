@@ -279,6 +279,266 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 )
 
 ///|
+pub impl @ecs.Component for Mesh3d with component() {
+  ecs_key_mesh3d
+}
+
+///|
+pub impl @ecs.Component for MeshMaterial3d with component() {
+  ecs_key_mesh_material3d
+}
+
+///|
+pub impl @ecs.Component for Hdr with component() {
+  ecs_key_hdr
+}
+
+///|
+pub impl @ecs.Component for Fxaa with component() {
+  ecs_key_fxaa
+}
+
+///|
+pub impl @ecs.Component for Msaa with component() {
+  ecs_key_msaa
+}
+
+///|
+pub impl @ecs.Component for Bloom with component() {
+  ecs_key_bloom
+}
+
+///|
+pub impl @ecs.Component for Skybox with component() {
+  ecs_key_skybox
+}
+
+///|
+pub impl @ecs.Component for Camera3d with component() {
+  ecs_key_camera3d
+}
+
+///|
+pub impl @ecs.Component for Exposure with component() {
+  ecs_key_exposure
+}
+
+///|
+pub impl @ecs.Component for Vignette with component() {
+  ecs_key_vignette
+}
+
+///|
+pub impl @ecs.Component for SpotLight with component() {
+  ecs_key_spot_light
+}
+
+///|
+pub impl @ecs.Component for Wireframe with component() {
+  ecs_key_wireframe
+}
+
+///|
+pub impl @ecs.Component for FreeCamera with component() {
+  ecs_key_free_camera
+}
+
+///|
+pub impl @ecs.Component for LightProbe with component() {
+  ecs_key_light_probe
+}
+
+///|
+pub impl @ecs.Component for MotionBlur with component() {
+  ecs_key_motion_blur
+}
+
+///|
+pub impl @ecs.Component for PointLight with component() {
+  ecs_key_point_light
+}
+
+///|
+pub impl @ecs.Component for NoWireframe with component() {
+  ecs_key_no_wireframe
+}
+
+///|
+pub impl @ecs.Component for Tonemapping with component() {
+  ecs_key_tonemapping
+}
+
+///|
+pub impl @ecs.Component for ColorGrading with component() {
+  ecs_key_color_grading
+}
+
+///|
+pub impl @ecs.Component for DebandDither with component() {
+  ecs_key_deband_dither
+}
+
+///|
+pub impl @ecs.Component for DepthPrepass with component() {
+  ecs_key_depth_prepass
+}
+
+///|
+pub impl @ecs.Component for ForwardDecal with component() {
+  ecs_key_forward_decal
+}
+
+///|
+pub impl @ecs.Component for NormalPrepass with component() {
+  ecs_key_normal_prepass
+}
+
+///|
+pub impl @ecs.Component for ClusteredDecal with component() {
+  ecs_key_clustered_decal
+}
+
+///|
+pub impl @ecs.Component for ContactShadows with component() {
+  ecs_key_contact_shadows
+}
+
+///|
+pub impl @ecs.Component for TemporalJitter with component() {
+  ecs_key_temporal_jitter
+}
+
+///|
+pub impl @ecs.Component for WireframeColor with component() {
+  ecs_key_wireframe_color
+}
+
+///|
+pub impl @ecs.Component for DeferredPrepass with component() {
+  ecs_key_deferred_prepass
+}
+
+///|
+pub impl @ecs.Component for FreeCameraState with component() {
+  ecs_key_free_camera_state
+}
+
+///|
+pub impl @ecs.Component for NotShadowCaster with component() {
+  ecs_key_not_shadow_caster
+}
+
+///|
+pub impl @ecs.Component for SubCameraView3d with component() {
+  ecs_key_sub_camera_view3d
+}
+
+///|
+pub impl @ecs.Component for DirectionalLight with component() {
+  ecs_key_directional_light
+}
+
+///|
+pub impl @ecs.Component for IrradianceVolume with component() {
+  ecs_key_irradiance_volume
+}
+
+///|
+pub impl @ecs.Component for OcclusionCulling with component() {
+  ecs_key_occlusion_culling
+}
+
+///|
+pub impl @ecs.Component for SpotLightTexture with component() {
+  ecs_key_spot_light_texture
+}
+
+///|
+pub impl @ecs.Component for NotShadowReceiver with component() {
+  ecs_key_not_shadow_receiver
+}
+
+///|
+pub impl @ecs.Component for PointLightTexture with component() {
+  ecs_key_point_light_texture
+}
+
+///|
+pub impl @ecs.Component for CameraProjection3d with component() {
+  ecs_key_camera_projection3d
+}
+
+///|
+pub impl @ecs.Component for ParallaxCorrection with component() {
+  ecs_key_parallax_correction
+}
+
+///|
+pub impl @ecs.Component for ChromaticAberration with component() {
+  ecs_key_chromatic_aberration
+}
+
+///|
+pub impl @ecs.Component for EnvironmentMapLight with component() {
+  ecs_key_environment_map_light
+}
+
+///|
+pub impl @ecs.Component for MotionVectorPrepass with component() {
+  ecs_key_motion_vector_prepass
+}
+
+///|
+pub impl @ecs.Component for TemporalAntiAliasing with component() {
+  ecs_key_temporal_anti_aliasing
+}
+
+///|
+pub impl @ecs.Component for ShadowFilteringMethod with component() {
+  ecs_key_shadow_filtering_method
+}
+
+///|
+pub impl @ecs.Component for ScreenSpaceReflections with component() {
+  ecs_key_screen_space_reflections
+}
+
+///|
+pub impl @ecs.Component for DirectionalLightTexture with component() {
+  ecs_key_directional_light_texture
+}
+
+///|
+pub impl @ecs.Component for ForwardDecalMaterialExt with component() {
+  ecs_key_forward_decal_material_ext
+}
+
+///|
+pub impl @ecs.Component for ScreenSpaceTransmission with component() {
+  ecs_key_screen_space_transmission
+}
+
+///|
+pub impl @ecs.Component for TransmittedShadowReceiver with component() {
+  ecs_key_transmitted_shadow_receiver
+}
+
+///|
+pub impl @ecs.Component for ScreenSpaceAmbientOcclusion with component() {
+  ecs_key_screen_space_ambient_occlusion
+}
+
+///|
+pub impl @ecs.Component for GeneratedEnvironmentMapLight with component() {
+  ecs_key_generated_environment_map_light
+}
+
+///|
+pub impl @ecs.Component for OrderIndependentTransparencySettings with component() {
+  ecs_key_order_independent_transparency_settings
+}
+
+///|
 pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig] = @ecs.register_resource(
   debug_name="render3d.wireframe_config",
 )

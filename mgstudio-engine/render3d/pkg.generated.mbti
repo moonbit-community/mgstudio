@@ -395,6 +395,7 @@ pub fn Bloom::with_prefilter_settings(Self, BloomPrefilter) -> Self
 pub fn Bloom::with_scale(Self, @math.Vec2) -> Self
 pub fn Bloom::with_scale_x(Self, Float) -> Self
 pub fn Bloom::with_scale_y(Self, Float) -> Self
+pub impl @ecs.Component for Bloom
 pub impl ToJson for Bloom
 pub impl @json.FromJson for Bloom
 
@@ -438,6 +439,7 @@ pub fn Camera3d::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
 pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
 pub fn Camera3d::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3d::with_volumetric_fog(Self, VolumetricFog?) -> Self
+pub impl @ecs.Component for Camera3d
 pub impl ToJson for Camera3d
 pub impl @json.FromJson for Camera3d
 
@@ -523,6 +525,7 @@ pub struct CameraProjection3d {
 pub fn CameraProjection3d::default() -> Self
 pub fn CameraProjection3d::new(Projection3d) -> Self
 pub fn CameraProjection3d::with_projection(Self, Projection3d) -> Self
+pub impl @ecs.Component for CameraProjection3d
 pub impl ToJson for CameraProjection3d
 pub impl @json.FromJson for CameraProjection3d
 
@@ -559,6 +562,7 @@ pub fn ChromaticAberration::default() -> Self
 pub fn ChromaticAberration::new(Float, Int) -> Self
 pub fn ChromaticAberration::with_intensity(Self, Float) -> Self
 pub fn ChromaticAberration::with_max_samples(Self, Int) -> Self
+pub impl @ecs.Component for ChromaticAberration
 pub impl ToJson for ChromaticAberration
 pub impl @json.FromJson for ChromaticAberration
 
@@ -576,6 +580,7 @@ pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@asset.Image]?)
 pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
+pub impl @ecs.Component for ClusteredDecal
 pub impl ToJson for ClusteredDecal
 pub impl @json.FromJson for ClusteredDecal
 
@@ -594,6 +599,7 @@ pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSec
 pub fn ColorGrading::with_midtones(Self, ColorGradingSection) -> Self
 pub fn ColorGrading::with_settings(Self, ColorGradingSettings) -> Self
 pub fn ColorGrading::with_shadows(Self, ColorGradingSection) -> Self
+pub impl @ecs.Component for ColorGrading
 pub impl ToJson for ColorGrading
 pub impl @json.FromJson for ColorGrading
 
@@ -658,6 +664,7 @@ pub fn ContactShadows::new(Int, Float, Float) -> Self
 pub fn ContactShadows::with_length(Self, Float) -> Self
 pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
 pub fn ContactShadows::with_thickness(Self, Float) -> Self
+pub impl @ecs.Component for ContactShadows
 pub impl ToJson for ContactShadows
 pub impl @json.FromJson for ContactShadows
 
@@ -680,6 +687,7 @@ pub(all) enum DebandDither {
   Enabled
 }
 pub fn DebandDither::default() -> Self
+pub impl @ecs.Component for DebandDither
 pub impl Eq for DebandDither
 pub impl Show for DebandDither
 pub impl ToJson for DebandDither
@@ -714,6 +722,7 @@ pub impl @json.FromJson for DefaultOpaqueRendererMethod
 pub struct DeferredPrepass {
 }
 pub fn DeferredPrepass::default() -> Self
+pub impl @ecs.Component for DeferredPrepass
 pub impl ToJson for DeferredPrepass
 pub impl @json.FromJson for DeferredPrepass
 
@@ -749,6 +758,7 @@ pub impl @json.FromJson for DepthOfFieldMode
 pub struct DepthPrepass {
 }
 pub fn DepthPrepass::default() -> Self
+pub impl @ecs.Component for DepthPrepass
 pub impl ToJson for DepthPrepass
 pub impl @json.FromJson for DepthPrepass
 
@@ -771,6 +781,7 @@ pub fn DirectionalLight::with_illuminance(Self, Float) -> Self
 pub fn DirectionalLight::with_shadow_depth_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn DirectionalLight::with_soft_shadow_size(Self, Float?) -> Self
+pub impl @ecs.Component for DirectionalLight
 pub impl ToJson for DirectionalLight
 pub impl @json.FromJson for DirectionalLight
 
@@ -791,6 +802,7 @@ pub fn DirectionalLightTexture::default() -> Self
 pub fn DirectionalLightTexture::new(@asset.Handle[@asset.Image]?, Bool) -> Self
 pub fn DirectionalLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn DirectionalLightTexture::with_tiled(Self, Bool) -> Self
+pub impl @ecs.Component for DirectionalLightTexture
 pub impl ToJson for DirectionalLightTexture
 pub impl @json.FromJson for DirectionalLightTexture
 
@@ -823,6 +835,7 @@ pub fn EnvironmentMapLight::with_diffuse_map(Self, @asset.Handle[@asset.Image]?)
 pub fn EnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn EnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl @ecs.Component for EnvironmentMapLight
 pub impl ToJson for EnvironmentMapLight
 pub impl @json.FromJson for EnvironmentMapLight
 
@@ -837,6 +850,7 @@ pub fn Exposure::new(Float) -> Self
 pub fn Exposure::overcast() -> Self
 pub fn Exposure::sunlight() -> Self
 pub fn Exposure::with_ev100(Self, Float) -> Self
+pub impl @ecs.Component for Exposure
 pub impl ToJson for Exposure
 pub impl @json.FromJson for Exposure
 
@@ -911,6 +925,7 @@ pub impl @json.FromJson for FogVolume
 pub struct ForwardDecal {
 }
 pub fn ForwardDecal::default() -> Self
+pub impl @ecs.Component for ForwardDecal
 pub impl ToJson for ForwardDecal
 pub impl @json.FromJson for ForwardDecal
 
@@ -920,6 +935,7 @@ pub struct ForwardDecalMaterialExt {
 pub fn ForwardDecalMaterialExt::default() -> Self
 pub fn ForwardDecalMaterialExt::new(Float) -> Self
 pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
+pub impl @ecs.Component for ForwardDecalMaterialExt
 pub impl ToJson for ForwardDecalMaterialExt
 pub impl @json.FromJson for ForwardDecalMaterialExt
 
@@ -940,6 +956,7 @@ pub struct FreeCamera {
   friction : Float
 }
 pub fn FreeCamera::default() -> Self
+pub impl @ecs.Component for FreeCamera
 pub impl ToJson for FreeCamera
 pub impl @json.FromJson for FreeCamera
 
@@ -952,6 +969,7 @@ pub struct FreeCameraState {
   velocity : @math.Vec3
 }
 pub fn FreeCameraState::default() -> Self
+pub impl @ecs.Component for FreeCameraState
 pub impl ToJson for FreeCameraState
 pub impl @json.FromJson for FreeCameraState
 
@@ -967,6 +985,7 @@ pub fn Fxaa::with_edge_threshold(Self, FxaaSensitivity) -> Self
 pub fn Fxaa::with_edge_threshold_min(Self, FxaaSensitivity) -> Self
 pub fn Fxaa::with_enabled(Self, Bool) -> Self
 pub fn Fxaa::with_sensitivity(Self, FxaaSensitivity) -> Self
+pub impl @ecs.Component for Fxaa
 pub impl ToJson for Fxaa
 pub impl @json.FromJson for Fxaa
 
@@ -995,6 +1014,7 @@ pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self,
 pub fn GeneratedEnvironmentMapLight::with_environment_map(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn GeneratedEnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn GeneratedEnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
+pub impl @ecs.Component for GeneratedEnvironmentMapLight
 pub impl ToJson for GeneratedEnvironmentMapLight
 pub impl @json.FromJson for GeneratedEnvironmentMapLight
 
@@ -1010,6 +1030,7 @@ pub impl @json.FromJson for GlobalAmbientLight
 pub struct Hdr {
 }
 pub fn Hdr::default() -> Self
+pub impl @ecs.Component for Hdr
 pub impl ToJson for Hdr
 pub impl @json.FromJson for Hdr
 
@@ -1021,6 +1042,7 @@ pub fn IrradianceVolume::default() -> Self
 pub fn IrradianceVolume::new(@asset.Handle[@asset.Image]?, Float) -> Self
 pub fn IrradianceVolume::with_intensity(Self, Float) -> Self
 pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl @ecs.Component for IrradianceVolume
 pub impl ToJson for IrradianceVolume
 pub impl @json.FromJson for IrradianceVolume
 
@@ -1030,6 +1052,7 @@ pub struct LightProbe {
 pub fn LightProbe::default() -> Self
 pub fn LightProbe::new() -> Self
 pub fn LightProbe::with_falloff(Self, @math.Vec3) -> Self
+pub impl @ecs.Component for LightProbe
 pub impl ToJson for LightProbe
 pub impl @json.FromJson for LightProbe
 
@@ -1041,6 +1064,7 @@ pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
 pub fn Mesh3d::from_plane(Float, Float) -> Self
 pub fn Mesh3d::from_tetrahedron(Float) -> Self
 pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
+pub impl @ecs.Component for Mesh3d
 pub impl ToJson for Mesh3d
 pub impl @json.FromJson for Mesh3d
 
@@ -1056,6 +1080,7 @@ pub fn MeshMaterial3d::with_extension_opaque_renderer_method(Self, OpaqueRendere
 pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self
 pub fn MeshMaterial3d::with_extension_tag(Self, Int) -> Self
+pub impl @ecs.Component for MeshMaterial3d
 pub impl ToJson for MeshMaterial3d
 pub impl @json.FromJson for MeshMaterial3d
 
@@ -1099,12 +1124,14 @@ pub fn MotionBlur::default() -> Self
 pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
+pub impl @ecs.Component for MotionBlur
 pub impl ToJson for MotionBlur
 pub impl @json.FromJson for MotionBlur
 
 pub struct MotionVectorPrepass {
 }
 pub fn MotionVectorPrepass::default() -> Self
+pub impl @ecs.Component for MotionVectorPrepass
 pub impl ToJson for MotionVectorPrepass
 pub impl @json.FromJson for MotionVectorPrepass
 
@@ -1117,6 +1144,7 @@ pub(all) enum Msaa {
 pub fn Msaa::default() -> Self
 pub fn Msaa::from_samples(Int) -> Self
 pub fn Msaa::samples(Self) -> Int
+pub impl @ecs.Component for Msaa
 pub impl Eq for Msaa
 pub impl Show for Msaa
 pub impl ToJson for Msaa
@@ -1125,30 +1153,35 @@ pub impl @json.FromJson for Msaa
 pub struct NoWireframe {
 }
 pub fn NoWireframe::default() -> Self
+pub impl @ecs.Component for NoWireframe
 pub impl ToJson for NoWireframe
 pub impl @json.FromJson for NoWireframe
 
 pub struct NormalPrepass {
 }
 pub fn NormalPrepass::default() -> Self
+pub impl @ecs.Component for NormalPrepass
 pub impl ToJson for NormalPrepass
 pub impl @json.FromJson for NormalPrepass
 
 pub struct NotShadowCaster {
 }
 pub fn NotShadowCaster::default() -> Self
+pub impl @ecs.Component for NotShadowCaster
 pub impl ToJson for NotShadowCaster
 pub impl @json.FromJson for NotShadowCaster
 
 pub struct NotShadowReceiver {
 }
 pub fn NotShadowReceiver::default() -> Self
+pub impl @ecs.Component for NotShadowReceiver
 pub impl ToJson for NotShadowReceiver
 pub impl @json.FromJson for NotShadowReceiver
 
 pub struct OcclusionCulling {
 }
 pub fn OcclusionCulling::default() -> Self
+pub impl @ecs.Component for OcclusionCulling
 pub impl ToJson for OcclusionCulling
 pub impl @json.FromJson for OcclusionCulling
 
@@ -1173,6 +1206,7 @@ pub fn OrderIndependentTransparencySettings::new(Int, Float, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_alpha_threshold(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Self, Float) -> Self
 pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(Self, Int) -> Self
+pub impl @ecs.Component for OrderIndependentTransparencySettings
 pub impl ToJson for OrderIndependentTransparencySettings
 pub impl @json.FromJson for OrderIndependentTransparencySettings
 
@@ -1205,6 +1239,7 @@ pub(all) enum ParallaxCorrection {
   Custom(@math.Vec3)
 }
 pub fn ParallaxCorrection::default() -> Self
+pub impl @ecs.Component for ParallaxCorrection
 pub impl ToJson for ParallaxCorrection
 pub impl @json.FromJson for ParallaxCorrection
 
@@ -1258,6 +1293,7 @@ pub fn PointLight::with_shadow_map_near_z(Self, Float) -> Self
 pub fn PointLight::with_shadow_maps_enabled(Self, Bool) -> Self
 pub fn PointLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn PointLight::with_soft_shadows_enabled(Self, Bool) -> Self
+pub impl @ecs.Component for PointLight
 pub impl ToJson for PointLight
 pub impl @json.FromJson for PointLight
 
@@ -1278,6 +1314,7 @@ pub fn PointLightTexture::default() -> Self
 pub fn PointLightTexture::new(@asset.Handle[@asset.Image]?, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_cubemap_layout(Self, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl @ecs.Component for PointLightTexture
 pub impl ToJson for PointLightTexture
 pub impl @json.FromJson for PointLightTexture
 
@@ -1306,6 +1343,7 @@ pub struct ScreenSpaceAmbientOcclusion {
 pub fn ScreenSpaceAmbientOcclusion::default() -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(Self, Float) -> Self
 pub fn ScreenSpaceAmbientOcclusion::with_quality_level(Self, ScreenSpaceAmbientOcclusionQualityLevel) -> Self
+pub impl @ecs.Component for ScreenSpaceAmbientOcclusion
 pub impl ToJson for ScreenSpaceAmbientOcclusion
 pub impl @json.FromJson for ScreenSpaceAmbientOcclusion
 
@@ -1343,6 +1381,7 @@ pub fn ScreenSpaceReflections::with_max_perceptual_roughness(Self, Float, Float)
 pub fn ScreenSpaceReflections::with_min_perceptual_roughness(Self, Float, Float) -> Self
 pub fn ScreenSpaceReflections::with_thickness(Self, Float) -> Self
 pub fn ScreenSpaceReflections::with_use_secant(Self, Bool) -> Self
+pub impl @ecs.Component for ScreenSpaceReflections
 pub impl ToJson for ScreenSpaceReflections
 pub impl @json.FromJson for ScreenSpaceReflections
 
@@ -1354,6 +1393,7 @@ pub fn ScreenSpaceTransmission::default() -> Self
 pub fn ScreenSpaceTransmission::new(ScreenSpaceTransmissionQuality, Int) -> Self
 pub fn ScreenSpaceTransmission::with_quality(Self, ScreenSpaceTransmissionQuality) -> Self
 pub fn ScreenSpaceTransmission::with_steps(Self, Int) -> Self
+pub impl @ecs.Component for ScreenSpaceTransmission
 pub impl ToJson for ScreenSpaceTransmission
 pub impl @json.FromJson for ScreenSpaceTransmission
 
@@ -1375,6 +1415,7 @@ pub(all) enum ShadowFilteringMethod {
   Temporal
 }
 pub fn ShadowFilteringMethod::default() -> Self
+pub impl @ecs.Component for ShadowFilteringMethod
 pub impl Eq for ShadowFilteringMethod
 pub impl Show for ShadowFilteringMethod
 pub impl ToJson for ShadowFilteringMethod
@@ -1390,6 +1431,7 @@ pub fn Skybox::new(@asset.Handle[@asset.Image], Float) -> Self
 pub fn Skybox::with_brightness(Self, Float) -> Self
 pub fn Skybox::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
 pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
+pub impl @ecs.Component for Skybox
 pub impl ToJson for Skybox
 pub impl @json.FromJson for Skybox
 
@@ -1418,6 +1460,7 @@ pub fn SpotLight::with_shadow_depth_bias(Self, Float) -> Self
 pub fn SpotLight::with_shadow_map_near_z(Self, Float) -> Self
 pub fn SpotLight::with_shadow_normal_bias(Self, Float) -> Self
 pub fn SpotLight::with_soft_shadows_enabled(Self, Bool) -> Self
+pub impl @ecs.Component for SpotLight
 pub impl ToJson for SpotLight
 pub impl @json.FromJson for SpotLight
 
@@ -1427,6 +1470,7 @@ pub struct SpotLightTexture {
 pub fn SpotLightTexture::default() -> Self
 pub fn SpotLightTexture::new(@asset.Handle[@asset.Image]?) -> Self
 pub fn SpotLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub impl @ecs.Component for SpotLightTexture
 pub impl ToJson for SpotLightTexture
 pub impl @json.FromJson for SpotLightTexture
 
@@ -1511,6 +1555,7 @@ pub struct SubCameraView3d {
 }
 pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
 pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for SubCameraView3d
 pub impl ToJson for SubCameraView3d
 pub impl @json.FromJson for SubCameraView3d
 
@@ -1520,6 +1565,7 @@ pub struct TemporalAntiAliasing {
 pub fn TemporalAntiAliasing::default() -> Self
 pub fn TemporalAntiAliasing::new(Bool) -> Self
 pub fn TemporalAntiAliasing::with_reset(Self, Bool) -> Self
+pub impl @ecs.Component for TemporalAntiAliasing
 pub impl ToJson for TemporalAntiAliasing
 pub impl @json.FromJson for TemporalAntiAliasing
 
@@ -1529,6 +1575,7 @@ pub struct TemporalJitter {
 pub fn TemporalJitter::default() -> Self
 pub fn TemporalJitter::new(@math.Vec2) -> Self
 pub fn TemporalJitter::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for TemporalJitter
 pub impl ToJson for TemporalJitter
 pub impl @json.FromJson for TemporalJitter
 
@@ -1543,6 +1590,7 @@ pub(all) enum Tonemapping {
   BlenderFilmic
 }
 pub fn Tonemapping::default() -> Self
+pub impl @ecs.Component for Tonemapping
 pub impl Eq for Tonemapping
 pub impl Show for Tonemapping
 pub impl ToJson for Tonemapping
@@ -1551,6 +1599,7 @@ pub impl @json.FromJson for Tonemapping
 pub struct TransmittedShadowReceiver {
 }
 pub fn TransmittedShadowReceiver::default() -> Self
+pub impl @ecs.Component for TransmittedShadowReceiver
 pub impl ToJson for TransmittedShadowReceiver
 pub impl @json.FromJson for TransmittedShadowReceiver
 
@@ -1572,6 +1621,7 @@ pub fn Vignette::with_intensity(Self, Float) -> Self
 pub fn Vignette::with_radius(Self, Float) -> Self
 pub fn Vignette::with_roundness(Self, Float) -> Self
 pub fn Vignette::with_smoothness(Self, Float) -> Self
+pub impl @ecs.Component for Vignette
 pub impl ToJson for Vignette
 pub impl @json.FromJson for Vignette
 
@@ -1596,6 +1646,7 @@ pub fn VolumetricLight::default() -> Self
 pub struct Wireframe {
 }
 pub fn Wireframe::default() -> Self
+pub impl @ecs.Component for Wireframe
 pub impl ToJson for Wireframe
 pub impl @json.FromJson for Wireframe
 
@@ -1605,6 +1656,7 @@ pub struct WireframeColor {
 pub fn WireframeColor::default() -> Self
 pub fn WireframeColor::new(@render2d.Color) -> Self
 pub fn WireframeColor::with_color(Self, @render2d.Color) -> Self
+pub impl @ecs.Component for WireframeColor
 pub impl ToJson for WireframeColor
 pub impl @json.FromJson for WireframeColor
 

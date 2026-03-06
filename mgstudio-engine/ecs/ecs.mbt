@@ -14,7 +14,9 @@
 
 ///|
 /// ECS component value constraint.
-pub(open) trait Component: ToJson + @json.FromJson {}
+pub(open) trait Component: ToJson + @json.FromJson {
+  component() -> ComponentKey[Self]
+}
 
 ///|
 /// ECS resource value constraint.
