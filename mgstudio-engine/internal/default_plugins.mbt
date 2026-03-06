@@ -13,6 +13,22 @@
 // limitations under the License.
 
 ///|
+pub struct DefaultPlugins {}
+
+///|
+pub fn DefaultPlugins::build() -> Array[@app.Plugin[@ecs.World]] {
+  default_plugins()
+}
+
+///|
+pub struct MinimalPlugins {}
+
+///|
+pub fn MinimalPlugins::build() -> Array[@app.Plugin[@ecs.World]] {
+  minimal_plugins()
+}
+
+///|
 /// Default plugin bundle, aligned with Bevy's `DefaultPlugins` concept.
 pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
   [

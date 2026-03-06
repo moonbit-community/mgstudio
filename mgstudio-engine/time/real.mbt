@@ -17,39 +17,45 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
-pub struct Time {
+pub struct Real {
+  startup_seconds : Float
+  first_update_seconds : Float?
+  last_update_seconds : Float?
   delta_seconds : Float
   elapsed_seconds : Float
 }
 
 ///|
-pub fn Time::delta_seconds(self : Time) -> Float {
-  match @app.current_schedule_stage() {
-    Some(@app.FixedUpdate) => time_fixed_delta_seconds()
-    _ => self.delta_seconds
-  }
+pub fn Real::startup_seconds(self : Real) -> Float {
+  self.startup_seconds
 }
 
 ///|
-pub fn Time::elapsed_seconds(self : Time) -> Float {
-  match @app.current_schedule_stage() {
-    Some(@app.FixedUpdate) => time_fixed_elapsed_seconds()
-    _ => self.elapsed_seconds
-  }
+pub fn Real::first_update_seconds(self : Real) -> Float? {
+  self.first_update_seconds
 }
 
 ///|
-pub fn time_delta_seconds() -> Float {
-  match @app.current_schedule_stage() {
-    Some(@app.FixedUpdate) => time_fixed_delta_seconds()
-    _ => time_state_ref.val.virtual_delta_seconds
-  }
+pub fn Real::last_update_seconds(self : Real) -> Float? {
+  self.last_update_seconds
 }
 
 ///|
-pub fn time_elapsed_seconds() -> Float {
-  match @app.current_schedule_stage() {
-    Some(@app.FixedUpdate) => time_fixed_elapsed_seconds()
-    _ => time_state_ref.val.virtual_elapsed_seconds
-  }
+pub fn Real::delta_seconds(self : Real) -> Float {
+  self.delta_seconds
+}
+
+///|
+pub fn Real::elapsed_seconds(self : Real) -> Float {
+  self.elapsed_seconds
+}
+
+///|
+pub fn time_real_delta_seconds() -> Float {
+  time_state_ref.val.real_delta_seconds
+}
+
+///|
+pub fn time_real_elapsed_seconds() -> Float {
+  time_state_ref.val.real_elapsed_seconds
 }

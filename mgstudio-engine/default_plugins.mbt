@@ -26,3 +26,9 @@ pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
 pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
   @internal.default_plugins_nearest()
 }
+
+///|
+/// Minimal plugin bundle, aligned with Bevy's `MinimalPlugins` concept.
+pub fn minimal_plugins() -> Array[@app.Plugin[@ecs.World]] {
+  @internal.minimal_plugins()
+}

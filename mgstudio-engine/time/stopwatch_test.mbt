@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,10 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Adapted from Bevy's `bevy_internal` crate.
-// Copyright (c) Bevy Contributors.
-// Licensed under Apache-2.0 or MIT.
 
 ///|
-/// Package root for Bevy-aligned internal engine aggregation.
+test "stopwatch pause and reset semantics" {
+  let sw0 = Stopwatch::new().tick(1.5F)
+  inspect(sw0.elapsed_seconds(), content="1.5")
+
+  let sw1 = sw0.pause().tick(2.0F)
+  inspect(sw1.elapsed_seconds(), content="1.5")
+  inspect(sw1.is_paused(), content="true")
+
+  let sw2 = sw1.unpause().tick(0.5F)
+  inspect(sw2.elapsed_seconds(), content="2")
+  inspect(sw2.is_paused(), content="false")
+
+  let sw3 = sw2.reset()
+  inspect(sw3.elapsed_seconds(), content="0")
+}
