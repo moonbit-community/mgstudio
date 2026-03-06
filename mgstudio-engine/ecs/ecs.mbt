@@ -165,13 +165,20 @@ pub(all) suberror EcsError {
 }
 
 ///|
+struct ResourceSlot {
+  payload : Json
+  added_tick : @core.Tick
+  changed_tick : @core.Tick
+}
+
+///|
 pub struct World {
   world_id : Int
   entities : @core.Entities
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
   component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
-  resources : Map[Int, Json]
+  resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[Json]]
   current_events : Map[Int, Array[Json]]
 }

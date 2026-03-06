@@ -47,6 +47,11 @@ fn require_states_plugin_installed(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn state_insert_change_tick(world : @ecs.World) -> @core.Tick {
+  world.read_change_tick() + 1
+}
+
+///|
 pub fn states_plugin(plugin : StatesPlugin) -> Plugin[@ecs.World] {
   ignore(plugin)
   fn(app : App[@ecs.World]) {
@@ -64,10 +69,16 @@ pub fn[S : States] insert_state_app(
 ) -> App[@ecs.World] {
   require_states_plugin_installed(app.world)
   register_state_transition(state)
-  app.world.insert_resource(state_resource_key(state), State::new(state))
-  app.world.insert_resource(
+  let change_tick = state_insert_change_tick(app.world)
+  app.world.insert_resource_with_change_tick(
+    state_resource_key(state),
+    State::new(state),
+    change_tick,
+  )
+  app.world.insert_resource_with_change_tick(
     next_state_resource_key(state),
     NextState::Unchanged,
+    change_tick,
   )
   enqueue_transition_event(app.world, state, StateTransitionEvent::{
     exited: None,

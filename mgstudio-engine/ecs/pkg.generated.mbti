@@ -115,6 +115,7 @@ pub fn[T : ToJson] ResourceAccess::insert(Self[T], T, Int) -> Unit
 pub fn[T] ResourceAccess::is_present(Self[T]) -> Bool
 pub fn[T : @json.FromJson] ResourceAccess::remove(Self[T]) -> T?
 pub fn[T : ToJson] ResourceAccess::set(Self[T], T, Int) -> Bool
+pub fn[T] ResourceAccess::ticks(Self[T]) -> @core.ComponentTicks?
 pub fn[T : ToJson + @json.FromJson] ResourceAccess::update(Self[T], Int, (T) -> T) -> Bool
 pub fn[T : ToJson] ResourceAccess::upsert(Self[T], T, Int) -> Unit
 
@@ -127,13 +128,15 @@ pub fn[U, T] ResourceKey::cast(Self[T]) -> Self[U]
 pub fn[T] ResourceKey::debug_name(Self[T]) -> String
 pub fn[T] ResourceKey::id(Self[T]) -> Int
 
+type ResourceSlot
+
 pub struct World {
   world_id : Int
   entities : @core.Entities
   mut change_tick : Int
   mut system_context : @core.SystemContext
   component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
-  resources : Map[Int, Json]
+  resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[Json]]
   current_events : Map[Int, Array[Json]]
 }
@@ -144,9 +147,11 @@ pub fn World::despawn(Self, @core.Entity) -> Unit raise EcsError
 pub fn World::entity_count(Self) -> Int
 pub fn[T : @json.FromJson] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : @json.FromJson] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
+pub fn[T] World::get_resource_ticks(Self, ResourceKey[T]) -> @core.ComponentTicks?
 pub fn World::get_system_context(Self) -> @core.SystemContext
 pub fn World::increment_change_tick(Self) -> Int
 pub fn[T : ToJson] World::insert_resource(Self, ResourceKey[T], T) -> Unit
+pub fn[T : ToJson] World::insert_resource_with_change_tick(Self, ResourceKey[T], T, Int) -> Unit
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn World::new() -> Self
 pub fn[A] World::query1(Self, ComponentKey[A]) -> Query1[A]

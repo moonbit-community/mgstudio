@@ -42,19 +42,26 @@ pub fn[T] ResourceAccess::is_present(self : ResourceAccess[T]) -> Bool {
 
 ///|
 pub fn[T : @json.FromJson] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
-  guard self.world.resources.get(self.key.id()) is Some(payload) else {
+  guard self.world.resources.get(self.key.id()) is Some(slot) else {
     return None
   }
-  resource_access_decode_payload(payload)
+  resource_access_decode_payload(slot.payload)
+}
+
+///|
+pub fn[T] ResourceAccess::ticks(
+  self : ResourceAccess[T],
+) -> @core.ComponentTicks? {
+  self.world.get_resource_ticks(self.key)
 }
 
 ///|
 pub fn[T : ToJson] ResourceAccess::insert(
   self : ResourceAccess[T],
   value : T,
-  _change_tick : @core.Tick,
+  change_tick : @core.Tick,
 ) -> Unit {
-  self.world.insert_resource(self.key, value)
+  self.world.insert_resource_with_change_tick(self.key, value, change_tick)
 }
 
 ///|

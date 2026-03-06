@@ -8,65 +8,172 @@
       "state/resources": "resources",
       "state/state_set": "state_set",
       "state/states": "states",
-      "state/transitions": "transitions"
+      "state/transitions": "transitions",
+      "state/sub_states": "sub_states"
     }
   },
   "crate_mappings": {
-    "bevy_a11y": ["a11y", "runtime_native/native_a11y"],
+    "bevy_a11y": [
+      "a11y",
+      "runtime_native/native_a11y"
+    ],
     "bevy_android": [],
-    "bevy_animation": ["animation"],
-    "bevy_anti_alias": ["render3d"],
-    "bevy_app": ["app"],
-    "bevy_asset": ["asset", "runtime_native/native_asset"],
-    "bevy_audio": ["audio", "runtime_native/audio"],
-    "bevy_camera": ["render2d", "render3d"],
-    "bevy_camera_controller": ["render3d"],
-    "bevy_color": ["render2d", "render3d"],
-    "bevy_core_pipeline": ["render2d", "render3d"],
+    "bevy_animation": [
+      "animation"
+    ],
+    "bevy_anti_alias": [
+      "render3d"
+    ],
+    "bevy_app": [
+      "app"
+    ],
+    "bevy_asset": [
+      "asset",
+      "runtime_native/native_asset"
+    ],
+    "bevy_audio": [
+      "audio",
+      "runtime_native/audio"
+    ],
+    "bevy_camera": [
+      "render2d",
+      "render3d"
+    ],
+    "bevy_camera_controller": [
+      "render3d"
+    ],
+    "bevy_color": [
+      "render2d",
+      "render3d"
+    ],
+    "bevy_core_pipeline": [
+      "render2d",
+      "render3d"
+    ],
     "bevy_derive": [],
     "bevy_dev_tools": [],
-    "bevy_diagnostic": ["diagnostics"],
+    "bevy_diagnostic": [
+      "diagnostics"
+    ],
     "bevy_dylib": [],
-    "bevy_ecs": ["ecs"],
+    "bevy_ecs": [
+      "ecs"
+    ],
     "bevy_encase_derive": [],
     "bevy_feathers": [],
-    "bevy_gilrs": ["input"],
+    "bevy_gilrs": [
+      "input"
+    ],
     "bevy_gizmos": [],
     "bevy_gizmos_render": [],
-    "bevy_gltf": ["asset", "scene"],
-    "bevy_image": ["asset", "runtime_native/native_gpu"],
-    "bevy_input": ["input", "runtime_native/native_input"],
-    "bevy_input_focus": ["input"],
-    "bevy_internal": ["internal"],
-    "bevy_light": ["render3d"],
+    "bevy_gltf": [
+      "asset",
+      "scene"
+    ],
+    "bevy_image": [
+      "asset",
+      "runtime_native/native_gpu"
+    ],
+    "bevy_input": [
+      "input",
+      "runtime_native/native_input"
+    ],
+    "bevy_input_focus": [
+      "input"
+    ],
+    "bevy_internal": [
+      "internal"
+    ],
+    "bevy_light": [
+      "render3d"
+    ],
     "bevy_log": [],
     "bevy_macro_utils": [],
-    "bevy_material": ["render3d"],
-    "bevy_math": ["math"],
-    "bevy_mesh": ["mesh"],
-    "bevy_pbr": ["render3d", "mesh"],
-    "bevy_picking": ["picking"],
-    "bevy_platform": ["window", "runtime_native/windowing", "runtime_native/windowing_native"],
-    "bevy_post_process": ["render2d", "render3d"],
+    "bevy_material": [
+      "render3d"
+    ],
+    "bevy_math": [
+      "math"
+    ],
+    "bevy_mesh": [
+      "mesh"
+    ],
+    "bevy_pbr": [
+      "render3d",
+      "mesh"
+    ],
+    "bevy_picking": [
+      "picking"
+    ],
+    "bevy_platform": [
+      "window",
+      "runtime_native/windowing",
+      "runtime_native/windowing_native"
+    ],
+    "bevy_post_process": [
+      "render2d",
+      "render3d"
+    ],
     "bevy_ptr": [],
     "bevy_reflect": [],
     "bevy_remote": [],
-    "bevy_render": ["render2d", "render3d", "runtime_native/native_gpu"],
-    "bevy_scene": ["scene"],
-    "bevy_shader": ["asset", "runtime_native/native_gpu"],
-    "bevy_solari": ["render3d"],
-    "bevy_sprite": ["render2d"],
-    "bevy_sprite_render": ["render2d", "runtime_native/native_gpu"],
-    "bevy_state": ["app"],
+    "bevy_render": [
+      "render2d",
+      "render3d",
+      "runtime_native/native_gpu"
+    ],
+    "bevy_scene": [
+      "scene"
+    ],
+    "bevy_shader": [
+      "asset",
+      "runtime_native/native_gpu"
+    ],
+    "bevy_solari": [
+      "render3d"
+    ],
+    "bevy_sprite": [
+      "render2d"
+    ],
+    "bevy_sprite_render": [
+      "render2d",
+      "runtime_native/native_gpu"
+    ],
+    "bevy_state": [
+      "app"
+    ],
     "bevy_tasks": [],
-    "bevy_text": ["text"],
-    "bevy_time": ["time", "runtime_native/native_time"],
-    "bevy_transform": ["transform", "hierarchy"],
-    "bevy_ui": ["ui"],
-    "bevy_ui_render": ["ui", "render2d", "runtime_native/native_gpu"],
-    "bevy_ui_widgets": ["ui"],
+    "bevy_text": [
+      "text"
+    ],
+    "bevy_time": [
+      "time",
+      "runtime_native/native_time"
+    ],
+    "bevy_transform": [
+      "transform",
+      "hierarchy"
+    ],
+    "bevy_ui": [
+      "ui"
+    ],
+    "bevy_ui_render": [
+      "ui",
+      "render2d",
+      "runtime_native/native_gpu"
+    ],
+    "bevy_ui_widgets": [
+      "ui"
+    ],
     "bevy_utils": [],
-    "bevy_window": ["window", "runtime_native/native_window"],
-    "bevy_winit": ["window", "runtime_native/windowing", "runtime_native/windowing_native"]
+    "bevy_window": [
+      "window",
+      "runtime_native/native_window"
+    ],
+    "bevy_winit": [
+      "window",
+      "runtime_native/windowing",
+      "runtime_native/windowing_native"
+    ]
   }
 }

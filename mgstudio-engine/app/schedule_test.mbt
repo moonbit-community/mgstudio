@@ -27,6 +27,29 @@ test "app: run_if skips system execution" {
 }
 
 ///|
+test "app: run_if evaluates with condition system ticks" {
+  let observed : Array[(Int, Int)] = []
+  let system_ran = Ref::new(false)
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { system_ran.val = true }).run_if(fn(
+      _world : @ecs.World,
+    ) {
+      let ticks = current_system_ticks()
+      observed.push((ticks.last_run, ticks.this_run))
+      false
+    }),
+  )
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  inspect(observed.length(), content="2")
+  inspect(system_ran.val, content="false")
+  inspect(observed[0].0 == 0 && observed[0].1 == 1, content="true")
+  inspect(observed[1].0 == 1 && observed[1].1 == 2, content="true")
+}
+
+///|
 test "app: add_plugin_group registers grouped plugins" {
   let log : Array[Int] = []
   fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {

@@ -76,3 +76,39 @@ test "ecs resource: decode diagnostics fail fast" {
   }
   inspect(key_id == res_config.id(), content="true")
 }
+
+///|
+test "ecs resource: change ticks track add and overwrite" {
+  let world = World::new()
+  let res_config : ResourceKey[RuntimeConfig] = register_resource(
+    debug_name="tick_runtime_config",
+  )
+
+  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  let initial_ticks = world.get_resource_ticks(res_config).unwrap()
+  inspect(initial_ticks.is_added(@core.SystemTicks::new(0, 1)), content="true")
+  inspect(
+    initial_ticks.is_changed(@core.SystemTicks::new(0, 1)),
+    content="true",
+  )
+  inspect(
+    initial_ticks.is_changed(@core.SystemTicks::new(1, 2)),
+    content="false",
+  )
+
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  inspect(
+    try! world.update_resource(res_config, fn(config) {
+      RuntimeConfig::{ fps: config.fps + 15 }
+    }),
+    content="true",
+  )
+
+  let updated_ticks = world.get_resource_ticks(res_config).unwrap()
+  inspect(updated_ticks.is_added(@core.SystemTicks::new(1, 2)), content="false")
+  inspect(
+    updated_ticks.is_changed(@core.SystemTicks::new(1, 2)),
+    content="true",
+  )
+}

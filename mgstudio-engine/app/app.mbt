@@ -263,6 +263,7 @@ pub struct SystemConfig[W] {
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
+  mut run_if_last_run_tick : @core.Tick
   mut last_run_tick : @core.Tick
 }
 
@@ -274,6 +275,7 @@ pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
     set: None,
     before: [],
     after: [],
+    run_if_last_run_tick: 0,
     last_run_tick: 0,
   }
 }
@@ -1219,7 +1221,22 @@ fn run_systems(
     for system_i in systems_by_set[set_i] {
       let cfg = systems[system_i]
       if cfg.run_if is Some(cond) {
-        if !cond(world) {
+        let cond_this_run = world.increment_change_tick()
+        let cond_ticks = @core.SystemTicks::new(
+          cfg.run_if_last_run_tick,
+          cond_this_run,
+        )
+        let cond_ctx = world.get_system_context()
+        cond_ctx.set(cond_ticks)
+        world.set_system_context(cond_ctx)
+        let prev_world = current_world_ref.val
+        current_world_ref.val = Some(world)
+        current_system_ticks_ref.val = Some(cond_ticks)
+        let should_run = cond(world)
+        current_system_ticks_ref.val = None
+        current_world_ref.val = prev_world
+        systems[system_i].run_if_last_run_tick = cond_this_run
+        if !should_run {
           continue
         }
       }

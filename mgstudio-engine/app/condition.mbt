@@ -26,3 +26,14 @@ pub fn[S : States] in_state(state : S) -> RunConditionFn[@ecs.World] {
     }
   }
 }
+
+///|
+pub fn[S : States] state_changed(state : S) -> RunConditionFn[@ecs.World] {
+  let key = state_resource_key(state)
+  fn(world : @ecs.World) {
+    match world.get_resource_ticks(key) {
+      Some(ticks) => ticks.is_changed(current_system_ticks())
+      None => false
+    }
+  }
+}

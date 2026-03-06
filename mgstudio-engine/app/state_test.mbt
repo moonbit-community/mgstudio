@@ -132,3 +132,33 @@ test "app state: startup enter hook runs in state transition stage" {
     content="Some({exited: None, entered: Some(A), allow_same_state_transitions: true})",
   )
 }
+
+///|
+test "app state: state_changed matches bevy resource change detection" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .add_plugins([states_plugin(StatesPlugin::default())])
+    .insert_state(TestState::A)
+    .add_system_config(
+      system(fn(world : @ecs.World) {
+        match read_test_state(world) {
+          Some(A) => log.push("A")
+          Some(B) => log.push("B")
+          None => log.push("None")
+        }
+      }).run_if(state_changed(TestState::A)),
+    )
+
+  app.run_once() |> ignore
+  inspect(log.join(","), content="A")
+
+  app.run_once() |> ignore
+  inspect(log.join(","), content="A")
+
+  app.insert_state(TestState::B) |> ignore
+  app.run_once() |> ignore
+  inspect(log.join(","), content="A,B")
+
+  app.run_once() |> ignore
+  inspect(log.join(","), content="A,B")
+}

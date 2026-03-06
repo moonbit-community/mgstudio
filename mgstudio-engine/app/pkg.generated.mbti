@@ -89,6 +89,8 @@ pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousSt
 
 pub fn[Source : States, Derived : States] register_computed_state(Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
 
+pub fn[Source : States, Derived : SubStates] register_sub_state(Source, Derived, (Source) -> Derived?) -> Unit
+
 pub fn render_runtime_error() -> RenderRuntimeError?
 
 pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
@@ -104,6 +106,8 @@ pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Un
 pub fn[S : States] set_state(S) -> Unit
 
 pub fn[S : States] set_state_if_neq(S) -> Unit
+
+pub fn[S : States] state_changed(S) -> (@ecs.World) -> Bool
 
 pub fn[S : States] state_exists(S) -> (@ecs.World) -> Bool
 
@@ -193,6 +197,7 @@ pub fn[W, P : SystemParam] App::add_startup_system_param(Self[W], (P) -> Unit) -
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_startup_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_startup_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_startup_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[Source : States, Derived : SubStates] App::add_sub_state(Self[@ecs.World], Source, Derived, (Source) -> Derived?) -> Self[@ecs.World]
 pub fn[W] App::add_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -439,6 +444,7 @@ pub struct SystemConfig[W] {
   set : String?
   before : Array[String]
   after : Array[String]
+  mut run_if_last_run_tick : Int
   mut last_run_tick : Int
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
@@ -492,6 +498,9 @@ pub(open) trait Resource {
 pub(open) trait States : Eq + Show + ToJson + @json.FromJson {
   debug_name(Self) -> String
   dependency_depth(Self) -> Int = _
+}
+
+pub(open) trait SubStates : States + FreelyMutableState {
 }
 
 pub(open) trait SystemParam {
