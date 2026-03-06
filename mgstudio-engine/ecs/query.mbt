@@ -66,6 +66,14 @@ pub fn[A : ToJson + @json.FromJson] Query1::for_each(
 }
 
 ///|
+pub fn[A : @json.FromJson] Query1::get(
+  self : Query1[A],
+  entity : @core.Entity,
+) -> A? raise EcsError {
+  self.world.get(entity, self.key_a)
+}
+
+///|
 pub fn[A : @json.FromJson] Query1::view(
   self : Query1[A],
   f : (@core.Entity, A) -> Unit,
@@ -79,6 +87,16 @@ pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::for_eac
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
   query2_for_each(self.world, self.key_a, self.key_b, f)
+}
+
+///|
+pub fn[A : @json.FromJson, B : @json.FromJson] Query2::get(
+  self : Query2[A, B],
+  entity : @core.Entity,
+) -> (A, B)? raise EcsError {
+  guard self.world.get(entity, self.key_a) is Some(value_a) else { return None }
+  guard self.world.get(entity, self.key_b) is Some(value_b) else { return None }
+  Some((value_a, value_b))
 }
 
 ///|
@@ -99,6 +117,17 @@ pub fn[
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
   query3_for_each(self.world, self.key_a, self.key_b, self.key_c, f)
+}
+
+///|
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::get(
+  self : Query3[A, B, C],
+  entity : @core.Entity,
+) -> (A, B, C)? raise EcsError {
+  guard self.world.get(entity, self.key_a) is Some(value_a) else { return None }
+  guard self.world.get(entity, self.key_b) is Some(value_b) else { return None }
+  guard self.world.get(entity, self.key_c) is Some(value_c) else { return None }
+  Some((value_a, value_b, value_c))
 }
 
 ///|

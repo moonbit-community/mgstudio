@@ -55,22 +55,22 @@ fn state_insert_change_tick(world : @ecs.World) -> @core.Tick {
 pub fn states_plugin(plugin : StatesPlugin) -> Plugin[@ecs.World] {
   ignore(plugin)
   fn(app : App[@ecs.World]) {
-    let change_tick = state_insert_change_tick(app.world)
+    let change_tick = state_insert_change_tick(app.world())
     main_schedule_insert_after_unique(
-      app.world,
+      app.world(),
       PreUpdate,
       StateTransition,
       change_tick,
     )
     main_schedule_insert_startup_before_unique(
-      app.world,
+      app.world(),
       PreStartup,
       StateTransition,
       change_tick,
     )
-    app.world.insert_resource(states_plugin_marker_key(), StatesPluginMarker::{
-
-    })
+    app
+    .world()
+    .insert_resource(states_plugin_marker_key(), StatesPluginMarker::{  })
     app
   }
 }
@@ -80,27 +80,31 @@ pub fn[S : States] insert_state_app(
   app : App[@ecs.World],
   state : S,
 ) -> App[@ecs.World] {
-  require_states_plugin_installed(app.world)
+  require_states_plugin_installed(app.world())
   register_state_transition(state)
-  let change_tick = state_insert_change_tick(app.world)
-  app.world.insert_resource_with_change_tick(
+  let change_tick = state_insert_change_tick(app.world())
+  app
+  .world()
+  .insert_resource_with_change_tick(
     state_resource_key(state),
     State::new(state),
     change_tick,
   )
-  app.world.insert_resource_with_change_tick(
+  app
+  .world()
+  .insert_resource_with_change_tick(
     next_state_resource_key(state),
     NextState::Unchanged,
     change_tick,
   )
-  enqueue_transition_event(app.world, state, StateTransitionEvent::{
+  enqueue_transition_event(app.world(), state, StateTransitionEvent::{
     exited: None,
     entered: Some(state),
     allow_same_state_transitions: true,
   })
-  let _ : Result[PreviousState[S]?, @ecs.EcsError] = try? app.world.remove_resource(
-    previous_state_resource_key(state),
-  )
+  let _ : Result[PreviousState[S]?, @ecs.EcsError] = try? app
+    .world()
+    .remove_resource(previous_state_resource_key(state))
   app
 }
 
@@ -118,7 +122,7 @@ pub fn[S : States] App::add_on_enter_system_config(
   state : S,
   config : SystemConfig[@ecs.World],
 ) -> App[@ecs.World] {
-  require_states_plugin_installed(self.world)
+  require_states_plugin_installed(self.world())
   register_state_transition(state)
   register_on_enter_system(state, config)
   self
@@ -139,7 +143,7 @@ pub fn[S : States] App::add_on_exit_system_config(
   state : S,
   config : SystemConfig[@ecs.World],
 ) -> App[@ecs.World] {
-  require_states_plugin_installed(self.world)
+  require_states_plugin_installed(self.world())
   register_state_transition(state)
   register_on_exit_system(state, config)
   self
@@ -161,7 +165,7 @@ pub fn[S : States] App::add_on_transition_system_config(
   entered : S,
   config : SystemConfig[@ecs.World],
 ) -> App[@ecs.World] {
-  require_states_plugin_installed(self.world)
+  require_states_plugin_installed(self.world())
   register_state_transition(exited)
   register_on_transition_system(exited, entered, config)
   self

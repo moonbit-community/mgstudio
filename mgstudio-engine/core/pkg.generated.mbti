@@ -57,6 +57,7 @@ pub struct Entity {
 pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
+pub impl Eq for Entity
 pub impl ToJson for Entity
 pub impl @json.FromJson for Entity
 

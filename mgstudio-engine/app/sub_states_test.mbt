@@ -56,24 +56,24 @@ test "app sub state: source transition creates and removes sub state" {
 
   app.run_startup() |> ignore
   inspect(
-    world_state(app.world, TestSubState::Setup),
+    world_state(app.world(), TestSubState::Setup),
     content="Some({value: Setup})",
   )
   inspect(
-    last_transition(app.world, TestSubState::Setup),
+    last_transition(app.world(), TestSubState::Setup),
     content="Some({exited: None, entered: Some(Setup), allow_same_state_transitions: false})",
   )
 
   app.run_once() |> ignore
   inspect(
-    world_state(app.world, TestSubState::Setup),
+    world_state(app.world(), TestSubState::Setup),
     content="Some({value: Setup})",
   )
 
   app.run_once() |> ignore
-  inspect(world_state(app.world, TestSubState::Setup), content="None")
+  inspect(world_state(app.world(), TestSubState::Setup), content="None")
   inspect(
-    last_transition(app.world, TestSubState::Setup),
+    last_transition(app.world(), TestSubState::Setup),
     content="Some({exited: Some(Setup), entered: None, allow_same_state_transitions: false})",
   )
 }
@@ -100,27 +100,27 @@ test "app sub state: queued next state mutates while parent still exists" {
 
   app.run_startup() |> ignore
   inspect(
-    world_state(app.world, TestSubState::Setup),
+    world_state(app.world(), TestSubState::Setup),
     content="Some({value: Setup})",
   )
 
   app.run_once() |> ignore
   inspect(
-    world_next_state(app.world, TestSubState::Setup),
+    world_next_state(app.world(), TestSubState::Setup),
     content="Some(Pending(Battle))",
   )
   inspect(
-    world_state(app.world, TestSubState::Setup),
+    world_state(app.world(), TestSubState::Setup),
     content="Some({value: Setup})",
   )
 
   app.run_once() |> ignore
   inspect(
-    world_state(app.world, TestSubState::Setup),
+    world_state(app.world(), TestSubState::Setup),
     content="Some({value: Battle})",
   )
   inspect(
-    last_transition(app.world, TestSubState::Setup),
+    last_transition(app.world(), TestSubState::Setup),
     content="Some({exited: Some(Setup), entered: Some(Battle), allow_same_state_transitions: true})",
   )
 }

@@ -63,7 +63,7 @@ pub fn[Source : States, Derived : States] App::add_computed_state(
   compute : (Source) -> Derived?,
   allow_same_state_transitions? : Bool = true,
 ) -> App[@ecs.World] {
-  require_states_plugin_installed(self.world)
+  require_states_plugin_installed(self.world())
   register_computed_state(
     source_state,
     state,

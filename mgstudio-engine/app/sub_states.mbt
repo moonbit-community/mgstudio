@@ -102,16 +102,15 @@ pub fn[Source : States, Derived : SubStates] App::add_sub_state(
   state : Derived,
   should_exist : (Source) -> Derived?,
 ) -> App[@ecs.World] {
-  require_states_plugin_installed(self.world)
+  require_states_plugin_installed(self.world())
   register_sub_state(source_state, state, should_exist)
-  if world_next_state(self.world, state) is None {
-    self.world.insert_resource(
-      next_state_resource_key(state),
-      NextState::Unchanged,
-    )
+  if world_next_state(self.world(), state) is None {
+    self
+    .world()
+    .insert_resource(next_state_resource_key(state), NextState::Unchanged)
   }
-  if world_state(self.world, state) is Some(current_state) {
-    enqueue_transition_event(self.world, state, StateTransitionEvent::{
+  if world_state(self.world(), state) is Some(current_state) {
+    enqueue_transition_event(self.world(), state, StateTransitionEvent::{
       exited: None,
       entered: Some(current_state.get()),
       allow_same_state_transitions: true,

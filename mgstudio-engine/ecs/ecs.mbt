@@ -178,6 +178,7 @@ pub struct World {
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
   component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
+  removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[Json]]
   current_events : Map[Int, Array[Json]]
@@ -193,6 +194,7 @@ pub fn World::new() -> World {
     change_tick: 0,
     system_context: @core.SystemContext::new(),
     component_columns: {},
+    removed_components: {},
     resources: {},
     previous_events: {},
     current_events: {},
@@ -233,8 +235,13 @@ pub fn World::despawn(
     err => raise EntityStateError(err)
   }
   for entry in self.component_columns.iter() {
-    let (_key_id, store_ref) = entry
-    store_ref.val.remove(entity) |> ignore
+    let (key_id, store_ref) = entry
+    if store_ref.val.remove(entity) is Some(_) {
+      self.ensure_removed_component_messages(key_id).val.send(
+        self.change_tick,
+        entity,
+      )
+    }
   }
 }
 
@@ -292,7 +299,17 @@ pub fn[T] World::remove(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   match self.component_columns.get(key.id()) {
-    Some(store_ref) => store_ref.val.remove(entity) is Some(_)
+    Some(store_ref) =>
+      match store_ref.val.remove(entity) {
+        Some(_) => {
+          self.ensure_removed_component_messages(key.id()).val.send(
+            self.change_tick,
+            entity,
+          )
+          true
+        }
+        None => false
+      }
     None => false
   }
 }
@@ -323,6 +340,29 @@ fn World::component_store(
   key_id : Int,
 ) -> Ref[@core.ComponentStore[Json]]? {
   self.component_columns.get(key_id)
+}
+
+///|
+fn World::ensure_removed_component_messages(
+  self : World,
+  key_id : Int,
+) -> Ref[@core.Messages[@core.Entity]] {
+  match self.removed_components.get(key_id) {
+    Some(messages_ref) => messages_ref
+    None => {
+      let messages_ref = Ref::new(@core.Messages::new())
+      self.removed_components.set(key_id, messages_ref)
+      messages_ref
+    }
+  }
+}
+
+///|
+fn World::removed_component_messages(
+  self : World,
+  key_id : Int,
+) -> Ref[@core.Messages[@core.Entity]]? {
+  self.removed_components.get(key_id)
 }
 
 ///|

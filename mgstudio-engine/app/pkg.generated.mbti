@@ -151,13 +151,8 @@ pub fn[S : States] world_state(@ecs.World, S) -> State[S]?
 
 // Types and methods
 pub struct App[W] {
-  mut world : W
-  update_schedule : ScheduleStage?
-  schedule : Schedule[W]
+  mut sub_apps : SubApps[W]
   runner_builder : ((App[W]) -> (() -> Unit))?
-  sub_apps : @hashmap.HashMap[String, Ref[App[W]]]
-  sub_app_labels : @hashmap.HashMap[String, AppLabel]
-  sub_app_extractors : @hashmap.HashMap[String, (W, W) -> (W, W)]
 }
 pub fn[Source : States, Derived : States] App::add_computed_state(Self[@ecs.World], Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
 pub fn[W] App::add_first_system(Self[W], (W) -> Unit) -> Self[W]
@@ -267,29 +262,30 @@ pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W, T] App::contains_resource(Self[W], @core.Resource[T]) -> Bool
-pub fn[W] App::get_sub_app(Self[W], AppLabel) -> Self[W]?
-pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]?
+pub fn[W] App::get_sub_app(Self[W], AppLabel) -> SubApp[W]?
+pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> Ref[SubApp[W]]?
 pub fn[W, T : Resource] App::init_resource(Self[W], () -> T) -> Self[W]
 pub fn[W, T : Resource] App::insert_resource(Self[W], T) -> Self[W]
 pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
-pub fn[W] App::insert_sub_app(Self[W], AppLabel, Self[W]) -> Self[W]
+pub fn[W] App::insert_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[T : ToJson] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[W, T] App::remove_resource(Self[W], @core.Resource[T]) -> T?
-pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> Self[W]?
+pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
 pub fn App::run(Self[@ecs.World]) -> Unit
 pub fn App::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 pub fn[W] App::set_sub_app_extract(Self[W], AppLabel, (W, W) -> (W, W)) -> Self[W]
 pub fn App::should_exit(Self[@ecs.World]) -> AppExit?
-pub fn[W] App::sub_app(Self[W], AppLabel) -> Self[W]
-pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]
-pub fn[W] App::sub_apps(Self[W]) -> Array[(AppLabel, Self[W])]
-pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, Ref[Self[W]])]
+pub fn[W] App::sub_app(Self[W], AppLabel) -> SubApp[W]
+pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> Ref[SubApp[W]]
+pub fn[W] App::sub_apps(Self[W]) -> Array[(AppLabel, SubApp[W])]
+pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, Ref[SubApp[W]])]
 pub fn[W] App::take_sub_app_extract(Self[W], AppLabel) -> ((W, W) -> (W, W))?
 pub fn App::update(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
+pub fn App::world(Self[@ecs.World]) -> @ecs.World
 
 pub(all) enum AppExit {
   Success
@@ -541,6 +537,41 @@ pub impl Show for StateTransitionSystems
 pub struct StatesPlugin {
 }
 pub fn StatesPlugin::default() -> Self
+
+pub struct SubApp[W] {
+  mut world : W
+  update_schedule : ScheduleStage?
+  schedule : Schedule[W]
+  extract : ((W, W) -> (W, W))?
+}
+pub fn[W] SubApp::add_schedule(Self[W], ScheduleStage) -> Self[W]
+pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
+pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn SubApp::new(@ecs.World) -> Self[@ecs.World]
+pub fn SubApp::run_once(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn SubApp::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn[W] SubApp::set_extract(Self[W], (W, W) -> (W, W)) -> Self[W]
+pub fn[W] SubApp::set_update_schedule(Self[W], ScheduleStage?) -> Self[W]
+pub fn[W] SubApp::take_extract(Self[W]) -> (Self[W], ((W, W) -> (W, W))?)
+pub fn SubApp::update(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn[W] SubApp::world(Self[W]) -> W
+
+pub struct SubApps[W] {
+  mut main : SubApp[W]
+  sub_apps : @hashmap.HashMap[String, Ref[SubApp[W]]]
+  sub_app_labels : @hashmap.HashMap[String, AppLabel]
+}
+pub fn[W] SubApps::get(Self[W], AppLabel) -> SubApp[W]?
+pub fn[W] SubApps::get_mut(Self[W], AppLabel) -> Ref[SubApp[W]]?
+pub fn[W] SubApps::insert(Self[W], AppLabel, SubApp[W]) -> Self[W]
+pub fn[W] SubApps::list(Self[W]) -> Array[(AppLabel, SubApp[W])]
+pub fn[W] SubApps::list_mut(Self[W]) -> Array[(AppLabel, Ref[SubApp[W]])]
+pub fn[W] SubApps::new(SubApp[W]) -> Self[W]
+pub fn[W] SubApps::remove(Self[W], AppLabel) -> SubApp[W]?
+pub fn SubApps::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn SubApps::update(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
 
 pub struct SystemConfig[W] {
   system : (W) -> Unit

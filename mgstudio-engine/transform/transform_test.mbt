@@ -191,7 +191,7 @@ test "transform plugin: post startup populates hierarchy globals" {
   let app = @app.App::new(world).add_plugins([transform_plugin])
   app.run_startup() |> ignore
 
-  let gt = (try! app.world.get(child, ecs_key_global_transform)).unwrap()
+  let gt = (try! app.world().get(child, ecs_key_global_transform)).unwrap()
   inspect(
     approx_eq(gt.affine.tx, 5.0F) && approx_eq(gt.affine.ty, 5.0F),
     content="true",
@@ -231,7 +231,7 @@ test "transform plugin: post update reflects update stage transform writes" {
   app.run_startup() |> ignore
   app.run_once() |> ignore
 
-  let gt = (try! app.world.get(entity, ecs_key_global_transform)).unwrap()
+  let gt = (try! app.world().get(entity, ecs_key_global_transform)).unwrap()
   inspect(
     approx_eq(gt.affine.tx, 7.0F) && approx_eq(gt.affine.ty, 8.0F),
     content="true",

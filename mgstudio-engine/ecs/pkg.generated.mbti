@@ -87,6 +87,7 @@ pub struct Query1[A] {
   key_a : ComponentKey[A]
 }
 pub fn[A : ToJson + @json.FromJson] Query1::for_each(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson] Query1::get(Self[A], @core.Entity) -> A? raise EcsError
 pub fn[A : @json.FromJson] Query1::view(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 
 pub struct Query2[A, B] {
@@ -95,6 +96,7 @@ pub struct Query2[A, B] {
   key_b : ComponentKey[B]
 }
 pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::for_each(Self[A, B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson] Query2::get(Self[A, B], @core.Entity) -> (A, B)? raise EcsError
 pub fn[A : @json.FromJson, B : @json.FromJson] Query2::view(Self[A, B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
 
 pub struct Query3[A, B, C] {
@@ -104,7 +106,14 @@ pub struct Query3[A, B, C] {
   key_c : ComponentKey[C]
 }
 pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] Query3::for_each(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::get(Self[A, B, C], @core.Entity) -> (A, B, C)? raise EcsError
 pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::view(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+
+pub struct RemovedComponents[T] {
+  reader : @core.MessageReader[@core.Entity]
+  marker : T?
+}
+pub fn[T] RemovedComponents::read(Self[T]) -> Array[@core.Entity]
 
 pub struct ResourceAccess[T] {
   world : World
@@ -136,6 +145,7 @@ pub struct World {
   mut change_tick : Int
   mut system_context : @core.SystemContext
   component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
+  removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[Json]]
   current_events : Map[Int, Array[Json]]
@@ -161,6 +171,7 @@ pub fn World::read_change_tick(Self) -> Int
 pub fn[T : @json.FromJson] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
 pub fn[T : @json.FromJson] World::remove_resource(Self, ResourceKey[T]) -> T? raise EcsError
+pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) -> RemovedComponents[T]
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T : ToJson] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T : ToJson] World::set(Self, @core.Entity, ComponentKey[T], T) -> Unit raise EcsError

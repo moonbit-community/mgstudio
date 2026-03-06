@@ -15,14 +15,12 @@
 ///|
 test "app: render sub app runs with main app update" {
   let log : Array[String] = []
+  let render_sub_app = SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(Main))
+    .add_systems(Update, system(fn(_world : @ecs.World) { log.push("render") }))
   let app = App::new(@ecs.World::new())
     .add_system(fn(_world : @ecs.World) { log.push("main") })
-    .insert_sub_app(
-      RenderApp,
-      App::new(@ecs.World::new()).add_system(fn(_world : @ecs.World) {
-        log.push("render")
-      }),
-    )
+    .insert_sub_app(RenderApp, render_sub_app)
   app.run_once() |> ignore
   inspect(
     log.length() == 2 && log[0] == "main" && log[1] == "render",
@@ -35,12 +33,13 @@ test "app: sub app mut accessor writes back to app" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).insert_sub_app(
     RenderApp,
-    App::new(@ecs.World::new()),
+    SubApp::new(@ecs.World::new()).set_update_schedule(Some(Main)),
   )
   if app.get_sub_app_mut(RenderApp) is Some(sub_app_ref) {
-    sub_app_ref.val = sub_app_ref.val.add_system(fn(_world : @ecs.World) {
-      log.push(1)
-    })
+    sub_app_ref.val = sub_app_ref.val.add_systems(
+      Update,
+      system(fn(_world : @ecs.World) { log.push(1) }),
+    )
   }
   app.run_once() |> ignore
   inspect(log.length(), content="1")
@@ -50,7 +49,7 @@ test "app: sub app mut accessor writes back to app" {
 test "app: sub app extractor updates both main and render worlds" {
   let app = App::new(@ecs.World::new()).insert_sub_app(
     RenderApp,
-    App::new(@ecs.World::new()),
+    SubApp::new(@ecs.World::new()).set_update_schedule(Some(Main)),
   )
   let app = app.set_sub_app_extract(RenderApp, fn(
     main_world : @ecs.World,
@@ -68,6 +67,6 @@ test "app: sub app extractor updates both main and render worlds" {
   })
   let app = app.run_once()
   let sub_app = app.get_sub_app(RenderApp).unwrap()
-  inspect(app.world.read_change_tick(), content="9")
-  inspect(sub_app.world.read_change_tick(), content="13")
+  inspect(app.world().read_change_tick(), content="9")
+  inspect(sub_app.world().read_change_tick(), content="13")
 }

@@ -49,24 +49,24 @@ test "app computed state: follows source transitions" {
 
   app.run_startup() |> ignore
   inspect(
-    world_state(app.world, DerivedState::Active),
+    world_state(app.world(), DerivedState::Active),
     content="Some({value: Active})",
   )
   inspect(
-    last_transition(app.world, DerivedState::Active),
+    last_transition(app.world(), DerivedState::Active),
     content="Some({exited: None, entered: Some(Active), allow_same_state_transitions: true})",
   )
 
   app.run_once() |> ignore
   inspect(
-    world_state(app.world, DerivedState::Active),
+    world_state(app.world(), DerivedState::Active),
     content="Some({value: Active})",
   )
 
   app.run_once() |> ignore
-  inspect(world_state(app.world, DerivedState::Active), content="None")
+  inspect(world_state(app.world(), DerivedState::Active), content="None")
   inspect(
-    last_transition(app.world, DerivedState::Active),
+    last_transition(app.world(), DerivedState::Active),
     content="Some({exited: Some(Active), entered: None, allow_same_state_transitions: true})",
   )
 }

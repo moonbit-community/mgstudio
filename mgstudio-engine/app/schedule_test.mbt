@@ -301,7 +301,7 @@ test "app: add_system_query2_ecs injects key-based query into update system" {
     .run_startup()
     .run_once()
 
-  let query_world = app.world
+  let query_world = app.world()
   let value_ref : Ref[Int] = Ref::new(0)
   try! query_world
   .query1(comp_position)

@@ -139,8 +139,56 @@ pub fn[W] schedule_set_edges(
 }
 
 ///|
-pub fn[W] App::add_schedule(self : App[W], stage : ScheduleStage) -> App[W] {
+pub fn[W] SubApp::add_schedule(
+  self : SubApp[W],
+  stage : ScheduleStage,
+) -> SubApp[W] {
   ignore(schedule_entry_ref(self.schedule, stage))
+  self
+}
+
+///|
+pub fn[W] SubApp::add_systems(
+  self : SubApp[W],
+  schedule : ScheduleStage,
+  config : SystemConfig[W],
+) -> SubApp[W] {
+  schedule_push_config(self.schedule, schedule, config)
+  self
+}
+
+///|
+pub fn[W] SubApp::configure_set(
+  self : SubApp[W],
+  stage : ScheduleStage,
+  set : SystemSet,
+  before? : Array[SystemSet] = [],
+  after? : Array[SystemSet] = [],
+) -> SubApp[W] {
+  let edges = schedule_set_edges(self.schedule, stage)
+  for other in before {
+    edges.push((set, other))
+  }
+  for other in after {
+    edges.push((other, set))
+  }
+  self
+}
+
+///|
+pub fn[W] SubApp::configure_sets(
+  self : SubApp[W],
+  stage : ScheduleStage,
+  set : SystemSet,
+  before? : Array[SystemSet] = [],
+  after? : Array[SystemSet] = [],
+) -> SubApp[W] {
+  self.configure_set(stage, set, before~, after~)
+}
+
+///|
+pub fn[W] App::add_schedule(self : App[W], stage : ScheduleStage) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_schedule(stage)
   self
 }
 
@@ -150,7 +198,7 @@ pub fn[W] App::add_systems(
   schedule : ScheduleStage,
   config : SystemConfig[W],
 ) -> App[W] {
-  schedule_push_config(self.schedule, schedule, config)
+  self.sub_apps.main = self.sub_apps.main.add_systems(schedule, config)
   self
 }
 
@@ -162,13 +210,12 @@ pub fn[W] App::configure_set(
   before? : Array[SystemSet] = [],
   after? : Array[SystemSet] = [],
 ) -> App[W] {
-  let edges = schedule_set_edges(self.schedule, stage)
-  for other in before {
-    edges.push((set, other))
-  }
-  for other in after {
-    edges.push((other, set))
-  }
+  self.sub_apps.main = self.sub_apps.main.configure_set(
+    stage,
+    set,
+    before~,
+    after~,
+  )
   self
 }
 

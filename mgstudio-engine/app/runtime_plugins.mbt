@@ -167,7 +167,7 @@ pub fn app_runtime_reset() -> Unit {
 
 ///|
 pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
-  app_exit_poll_until(self.world.read_change_tick())
+  app_exit_poll_until(self.world().read_change_tick())
 }
 
 ///|

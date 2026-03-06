@@ -77,14 +77,17 @@ test "app state: queued next state applies on next frame after PreUpdate" {
 
   app.run_once() |> ignore
   inspect(log.join(","), content="A")
-  inspect(read_test_state(app.world), content="Some(A)")
-  inspect(world_next_state(app.world, TestState::A), content="Some(Pending(B))")
+  inspect(read_test_state(app.world()), content="Some(A)")
+  inspect(
+    world_next_state(app.world(), TestState::A),
+    content="Some(Pending(B))",
+  )
 
   app.run_once() |> ignore
   inspect(log.join(","), content="A,B")
-  inspect(read_test_state(app.world), content="Some(B)")
+  inspect(read_test_state(app.world()), content="Some(B)")
   inspect(
-    world_previous_state(app.world, TestState::A),
+    world_previous_state(app.world(), TestState::A),
     content="Some({value: A})",
   )
 }
@@ -121,7 +124,7 @@ test "app state: exit transition enter hooks run in bevy order" {
     content="exit@StateTransition,transition@StateTransition,enter@StateTransition",
   )
   inspect(
-    last_transition(app.world, TestState::A),
+    last_transition(app.world(), TestState::A),
     content="Some({exited: Some(A), entered: Some(B), allow_same_state_transitions: true})",
   )
 }
@@ -139,7 +142,7 @@ test "app state: startup enter hook runs in state transition stage" {
   app.run_startup() |> ignore
   inspect(log.join(","), content="enter@StateTransition")
   inspect(
-    last_transition(app.world, TestState::A),
+    last_transition(app.world(), TestState::A),
     content="Some({exited: None, entered: Some(A), allow_same_state_transitions: true})",
   )
 }
@@ -184,7 +187,7 @@ test "states plugin: inserts state transition into schedule order resources" {
     states_plugin(StatesPlugin::default()),
   ])
   ignore(app)
-  let order = world_main_schedule_order(app.world)
+  let order = world_main_schedule_order(app.world())
   let startup_labels = order.startup_labels.map(fn(stage : ScheduleStage) {
     stage.to_string()
   })
@@ -203,7 +206,9 @@ test "states plugin: inserts state transition into schedule order resources" {
 test "main schedule order resource drives startup and main stage execution order" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())
-  app.world.insert_resource(
+  app
+  .world()
+  .insert_resource(
     main_schedule_order_resource_key(),
     MainScheduleOrder::new([SpawnScene, Update, PostUpdate], [
       PostStartup,
