@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/2d/dynamic_mip_generation"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

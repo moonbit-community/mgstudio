@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/spherical_area_lights"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

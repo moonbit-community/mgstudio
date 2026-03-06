@@ -6232,7 +6232,9 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
       rs.val.queued_draw_item_counts.clear()
       return
     }
-    rs.val.prepared_camera_indices = render2d_sorted_camera_indices(rs.val.cameras)
+    rs.val.prepared_camera_indices = render2d_sorted_camera_indices(
+      rs.val.cameras,
+    )
     rs.val.queued_draw_item_counts.clear()
   })
   |> ignore
@@ -6246,7 +6248,8 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       return
     }
     let cameras = rs.val.cameras
-    let camera_indices = if rs.val.prepared_camera_indices.length() == cameras.length() {
+    let camera_indices = if rs.val.prepared_camera_indices.length() ==
+      cameras.length() {
       rs.val.prepared_camera_indices
     } else {
       render2d_sorted_camera_indices(cameras)
@@ -6877,7 +6880,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       (x, y, w, h)
     }
 
-    let camera_indices = if rs.val.prepared_camera_indices.length() == cameras.length() {
+    let camera_indices = if rs.val.prepared_camera_indices.length() ==
+      cameras.length() {
       rs.val.prepared_camera_indices
     } else {
       render2d_sorted_camera_indices(cameras)

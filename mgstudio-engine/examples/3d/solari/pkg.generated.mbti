@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/solari"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

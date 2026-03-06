@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/2d/cpu_draw"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

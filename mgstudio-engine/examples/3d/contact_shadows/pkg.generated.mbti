@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/contact_shadows"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

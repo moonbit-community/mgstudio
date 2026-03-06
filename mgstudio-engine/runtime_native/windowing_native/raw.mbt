@@ -159,4 +159,7 @@ pub extern "C" fn input_drag_and_drop_event_kind(index : Int) -> Int = "mgw_inpu
 pub extern "C" fn input_drag_and_drop_event_len(index : Int) -> Int = "mgw_input_drag_and_drop_event_len"
 
 ///|
-pub extern "C" fn input_drag_and_drop_event_code_unit(index : Int, offset : Int) -> Int = "mgw_input_drag_and_drop_event_code_unit"
+pub extern "C" fn input_drag_and_drop_event_code_unit(
+  index : Int,
+  offset : Int,
+) -> Int = "mgw_input_drag_and_drop_event_code_unit"

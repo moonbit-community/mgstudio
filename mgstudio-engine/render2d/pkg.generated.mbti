@@ -181,9 +181,9 @@ pub fn render_mesh_asset_get(@asset.Handle[@mesh.Mesh]) -> @mesh.Mesh?
 
 pub fn render_mesh_asset_set(@asset.Handle[@mesh.Mesh], @mesh.Mesh) -> Bool
 
-pub fn[W] render_prepare_system(W) -> Unit
+pub fn render_prepare_system(@ecs.World) -> Unit
 
-pub fn[W] render_queue_system(W) -> Unit
+pub fn render_queue_system(@ecs.World) -> Unit
 
 pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

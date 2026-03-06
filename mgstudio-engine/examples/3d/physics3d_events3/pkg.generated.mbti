@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/physics3d_events3"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

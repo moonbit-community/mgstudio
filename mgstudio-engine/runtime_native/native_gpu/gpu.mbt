@@ -1258,7 +1258,7 @@ fn create_uniform_bind_group_layout_vertex_fragment(
     builder.free()
     fatal("wgpu: failed to build uniform bind group layout")
   }
-  builder.finish(backend.device, label=label)
+  builder.finish(backend.device, label~)
 }
 
 ///|
@@ -1836,9 +1836,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_cull_mode_ok = wgpu_render_pipeline_desc_builder_set_cull_mode(
     builder, cull_mode,
   )
-  if set_topology_err != 0U ||
-    set_front_face_ok != 0U ||
-    set_cull_mode_ok != 0U {
+  if set_topology_err != 0U || set_front_face_ok != 0U || set_cull_mode_ok != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal("wgpu: failed to configure mesh pipeline primitive state")
   }
@@ -1881,8 +1879,7 @@ fn ensure_mesh_pipeline_rgba8(
       return
     }
     let bgl = create_uniform_bind_group_layout_vertex_fragment(
-      backend,
-      "mgstudio_mesh_uniform_bgl",
+      backend, "mgstudio_mesh_uniform_bgl",
     )
     let pl = backend.device.create_pipeline_layout_2(bgl, bgl_tex)
     backend.mesh_bgl_uniform = Some(bgl)
@@ -2166,8 +2163,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   }
   if backend.mesh3d_pipeline_layout is None {
     let bgl = create_uniform_bind_group_layout_vertex_fragment(
-      backend,
-      "mgstudio_mesh3d_uniform_bgl",
+      backend, "mgstudio_mesh3d_uniform_bgl",
     )
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
     let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=12UL)
@@ -2440,8 +2436,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
   ensure_sprite_resources(backend)
   if backend.mesh3d_motion_vector_pipeline_layout is None {
     let bgl = create_uniform_bind_group_layout_vertex_fragment(
-      backend,
-      "mgstudio_motion_vector_uniform_bgl",
+      backend, "mgstudio_motion_vector_uniform_bgl",
     )
     let pl = backend.device.create_pipeline_layout_1(bgl)
     backend.mesh3d_motion_vector_bgl_uniform = Some(bgl)
@@ -5685,7 +5680,8 @@ pub fn GpuBackend::draw_mesh(
     return
   }
   if mesh.vertex_stride_bytes != 32UL {
-    debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val + 1
+    debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val +
+      1
     return
   }
   guard mesh_pipeline_for_current_pass(self) is Some(pipeline) else {
@@ -5705,7 +5701,8 @@ pub fn GpuBackend::draw_mesh(
   }
   let resolved_texture_id = if texture_id < 0 { -1 } else { texture_id }
   guard resolve_draw_texture(self, resolved_texture_id) is Some(texture) else {
-    debug_mesh2d_drop_no_texture_ref.val = debug_mesh2d_drop_no_texture_ref.val + 1
+    debug_mesh2d_drop_no_texture_ref.val = debug_mesh2d_drop_no_texture_ref.val +
+      1
     return
   }
   let textured = texture_id >= 0
@@ -7428,7 +7425,8 @@ pub fn draw_mesh(
 ) -> Unit {
   debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
   if mesh_id <= 0 {
-    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val + 1
+    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
+      1
   }
   if ensure_backend() is Some(backend) {
     backend.draw_mesh(
@@ -7508,7 +7506,8 @@ pub fn draw_mesh3d(
 ) -> Unit {
   debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
   if mesh_id <= 0 {
-    debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val + 1
+    debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val +
+      1
   }
   if ensure_backend() is Some(backend) {
     backend.draw_mesh3d(
@@ -7951,8 +7950,7 @@ pub fn create_mesh3d(
     if ensure_backend() is Some(backend) {
       try {
         let mesh_id = backend.create_mesh3d_xyzuvrgba(
-          vertices,
-          primitive_topology,
+          vertices, primitive_topology,
         )
         if mesh_id <= 0 {
           @debug.debug(

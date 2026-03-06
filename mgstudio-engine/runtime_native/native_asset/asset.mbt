@@ -223,7 +223,11 @@ fn parse_virtual_asset_path(path : String) -> ParsedVirtualAssetPath {
     } else {
       ""
     }
-    ParsedVirtualAssetPath::{ source_name: Some(source_name), relative_path, label, }
+    ParsedVirtualAssetPath::{
+      source_name: Some(source_name),
+      relative_path,
+      label,
+    }
   } else {
     ParsedVirtualAssetPath::{
       source_name: None,
@@ -270,9 +274,7 @@ fn source_env_suffix(source_name : String) -> String {
 fn source_root_dir(source_name : String?) -> String {
   match source_name {
     Some(name) if name.length() > 0 => {
-      let env_key = "MGSTUDIO_ASSET_SOURCE_" +
-        source_env_suffix(name) +
-        "_DIR"
+      let env_key = "MGSTUDIO_ASSET_SOURCE_" + source_env_suffix(name) + "_DIR"
       let default_root = path_join(runtime_assets_dir(), name)
       env_or_default(env_key, default_root)
     }
@@ -485,7 +487,10 @@ fn patch_texture_pixels(
   let safe_src_height = clamp_dim(src_height)
   let expected_base_len = rgba8_len(safe_base_width, safe_base_height)
   let base = normalize_rgba8(base_rgba8, expected_base_len)
-  let src = normalize_rgba8(source_bytes_to_rgba8(src_rgba8, safe_src_width, safe_src_height), rgba8_len(safe_src_width, safe_src_height))
+  let src = normalize_rgba8(
+    source_bytes_to_rgba8(src_rgba8, safe_src_width, safe_src_height),
+    rgba8_len(safe_src_width, safe_src_height),
+  )
 
   let src_offset_x = if dst_x < 0 { 0 - dst_x } else { 0 }
   let src_offset_y = if dst_y < 0 { 0 - dst_y } else { 0 }
@@ -494,12 +499,20 @@ fn patch_texture_pixels(
   let write_width = {
     let a = safe_src_width - src_offset_x
     let b = safe_base_width - write_x
-    if a < b { a } else { b }
+    if a < b {
+      a
+    } else {
+      b
+    }
   }
   let write_height = {
     let a = safe_src_height - src_offset_y
     let b = safe_base_height - write_y
-    if a < b { a } else { b }
+    if a < b {
+      a
+    } else {
+      b
+    }
   }
   if write_width <= 0 || write_height <= 0 {
     return base
@@ -770,9 +783,7 @@ fn folder_entry_find_by_relative(
 }
 
 ///|
-fn folder_collect_entries(
-  folder : FolderRecord,
-) -> (Array[FolderEntry], Bool) {
+fn folder_collect_entries(folder : FolderRecord) -> (Array[FolderEntry], Bool) {
   let next_entries : Array[FolderEntry] = []
   let mut changed = false
   if path_is_dir(folder.absolute_path) {
@@ -782,10 +793,7 @@ fn folder_collect_entries(
       if !path_is_file(absolute_entry_path) {
         continue
       }
-      let child_relative = @path.Path::join(
-        folder.relative_path,
-        entry_name,
-      ).to_string()
+      let child_relative = @path.Path::join(folder.relative_path, entry_name).to_string()
       let child_virtual = compose_virtual_asset_path(
         folder.source_name,
         child_relative,
@@ -860,7 +868,11 @@ fn sync_texture_record(
 }
 
 ///|
-fn texture_cached_or_empty(texture_id : Int, width : Int, height : Int) -> Bytes {
+fn texture_cached_or_empty(
+  texture_id : Int,
+  width : Int,
+  height : Int,
+) -> Bytes {
   if texture_pixels(texture_id) is Some(cached) {
     normalize_rgba8(cached, rgba8_len(width, height))
   } else {
@@ -974,7 +986,9 @@ pub fn create_dynamic_texture(
   if texture_id <= 0 {
     return 0
   }
-  let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => (0).to_byte())
+  let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => {
+    (0).to_byte()
+  })
   @native_gpu.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
@@ -1011,7 +1025,9 @@ pub fn create_dynamic_texture_mipped(
   if texture_id <= 0 {
     return 0
   }
-  let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => (0).to_byte())
+  let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => {
+    (0).to_byte()
+  })
   @native_gpu.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
@@ -1076,14 +1092,7 @@ pub fn update_texture_region_bytes(
   if tex_width > 0 && tex_height > 0 {
     let base = texture_cached_or_empty(texture_id, tex_width, tex_height)
     let patched = patch_texture_pixels(
-      base,
-      tex_width,
-      tex_height,
-      x,
-      y,
-      safe_width,
-      safe_height,
-      upload_pixels,
+      base, tex_width, tex_height, x, y, safe_width, safe_height, upload_pixels,
     )
     set_texture_pixels(texture_id, patched)
   }
@@ -1117,14 +1126,7 @@ pub fn update_texture_region_mip_bytes(
     if tex_width > 0 && tex_height > 0 {
       let base = texture_cached_or_empty(texture_id, tex_width, tex_height)
       let patched = patch_texture_pixels(
-        base,
-        tex_width,
-        tex_height,
-        x,
-        y,
-        safe_width,
-        safe_height,
-        upload_pixels,
+        base, tex_width, tex_height, x, y, safe_width, safe_height, upload_pixels,
       )
       set_texture_pixels(texture_id, patched)
     }
@@ -1133,7 +1135,10 @@ pub fn update_texture_region_mip_bytes(
 
 ///|
 pub fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
-  let view_id = @native_gpu.asset_create_texture_mip_view(texture_id~, mip_level~)
+  let view_id = @native_gpu.asset_create_texture_mip_view(
+    texture_id~,
+    mip_level~,
+  )
   if view_id <= 0 {
     return 0
   }
@@ -1142,17 +1147,20 @@ pub fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
   let loaded = @native_gpu.asset_is_texture_loaded(texture_id=view_id)
   sync_texture_record(view_id, width, height, loaded)
   if texture_pixels(texture_id) is Some(cached) {
-    set_texture_pixels(view_id, normalize_rgba8(cached, rgba8_len(width, height)))
+    set_texture_pixels(
+      view_id,
+      normalize_rgba8(cached, rgba8_len(width, height)),
+    )
   }
   view_id
 }
 
 ///|
 pub fn texture_width(texture_id : Int) -> Int {
-  let width = @native_gpu.asset_texture_width(texture_id=texture_id)
+  let width = @native_gpu.asset_texture_width(texture_id~)
   if width > 0 {
-    let height = @native_gpu.asset_texture_height(texture_id=texture_id)
-    let loaded = @native_gpu.asset_is_texture_loaded(texture_id=texture_id)
+    let height = @native_gpu.asset_texture_height(texture_id~)
+    let loaded = @native_gpu.asset_is_texture_loaded(texture_id~)
     sync_texture_record(texture_id, width, height, loaded)
   }
   width
@@ -1160,10 +1168,10 @@ pub fn texture_width(texture_id : Int) -> Int {
 
 ///|
 pub fn texture_height(texture_id : Int) -> Int {
-  let height = @native_gpu.asset_texture_height(texture_id=texture_id)
+  let height = @native_gpu.asset_texture_height(texture_id~)
   if height > 0 {
-    let width = @native_gpu.asset_texture_width(texture_id=texture_id)
-    let loaded = @native_gpu.asset_is_texture_loaded(texture_id=texture_id)
+    let width = @native_gpu.asset_texture_width(texture_id~)
+    let loaded = @native_gpu.asset_is_texture_loaded(texture_id~)
     sync_texture_record(texture_id, width, height, loaded)
   }
   height
@@ -1171,9 +1179,9 @@ pub fn texture_height(texture_id : Int) -> Int {
 
 ///|
 pub fn is_texture_loaded(texture_id : Int) -> Bool {
-  let loaded = @native_gpu.asset_is_texture_loaded(texture_id=texture_id)
-  let width = @native_gpu.asset_texture_width(texture_id=texture_id)
-  let height = @native_gpu.asset_texture_height(texture_id=texture_id)
+  let loaded = @native_gpu.asset_is_texture_loaded(texture_id~)
+  let width = @native_gpu.asset_texture_width(texture_id~)
+  let height = @native_gpu.asset_texture_height(texture_id~)
   if width > 0 && height > 0 {
     sync_texture_record(texture_id, width, height, loaded)
   }
@@ -1206,14 +1214,7 @@ pub fn copy_texture_to_texture(
     if texture_pixels(src_texture_id) is Some(src_pixels) {
       let base = texture_cached_or_empty(dst_texture_id, dst_width, dst_height)
       let patched = patch_texture_pixels(
-        base,
-        dst_width,
-        dst_height,
-        dst_x,
-        dst_y,
-        src_width,
-        src_height,
-        src_pixels,
+        base, dst_width, dst_height, dst_x, dst_y, src_width, src_height, src_pixels,
       )
       set_texture_pixels(dst_texture_id, patched)
     }

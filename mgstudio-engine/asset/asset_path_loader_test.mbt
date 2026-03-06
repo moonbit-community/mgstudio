@@ -24,7 +24,10 @@ test "asset path parse supports source and label" {
   inspect(parsed_named.label is Some("Scene0"), content="true")
   inspect(parsed_named.source is AssetSourceId::Named("remote"), content="true")
 
-  inspect(asset_strip_label("remote://models/scene.gltf#Scene0"), content="remote://models/scene.gltf")
+  inspect(
+    asset_strip_label("remote://models/scene.gltf#Scene0"),
+    content="remote://models/scene.gltf",
+  )
 }
 
 ///|

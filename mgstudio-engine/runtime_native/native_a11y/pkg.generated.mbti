@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/runtime_native/native_a11y"
+
+// Values
+pub fn action_kind(Int) -> Int
+
+pub fn action_target(Int) -> Int
+
+pub fn action_value_code_unit(index~ : Int, offset~ : Int) -> Int
+
+pub fn action_value_len(Int) -> Int
+
+pub fn actions_clear() -> Unit
+
+pub fn actions_len() -> Int
+
+pub fn apply_update(update_json~ : String) -> Unit
+
+pub fn begin_update(Int) -> Unit
+
+pub fn end_update() -> Unit
+
+pub fn push_node(node_id~ : Int, parent_id~ : Int, role_id~ : Int, x~ : Float, y~ : Float, width~ : Float, height~ : Float, name~ : String, actions_mask~ : Int) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

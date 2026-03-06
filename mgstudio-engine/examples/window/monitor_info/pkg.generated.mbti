@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/window/monitor_info"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

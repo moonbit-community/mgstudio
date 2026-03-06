@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/vertex_colors"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

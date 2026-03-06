@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/clustered_decal_maps"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

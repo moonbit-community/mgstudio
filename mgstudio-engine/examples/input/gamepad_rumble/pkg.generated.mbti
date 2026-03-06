@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/input/gamepad_rumble"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

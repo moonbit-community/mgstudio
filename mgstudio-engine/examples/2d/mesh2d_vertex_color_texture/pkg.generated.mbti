@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/2d/mesh2d_vertex_color_texture"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

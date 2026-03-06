@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/app/render_recovery"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

@@ -58,6 +58,8 @@ def is_example_package(rel_path: str) -> bool:
 @dataclass
 class CrateCoverage:
     crate: BevyCrate
+    declared_target_packages: list[str]
+    missing_target_packages: list[str]
     packages: list[EnginePackage]
     bevy_module_count: int
     engine_module_count: int
@@ -199,93 +201,46 @@ def discover_engine_packages(engine_root: Path, include_examples: bool) -> list[
     return packages
 
 
-def is_name_related(crate: BevyCrate, package: EnginePackage) -> bool:
-    crate_name = crate.base_name
-    package_name = package.normalized_name
-    if not crate_name or not package_name:
-        return False
-    if crate_name == package_name:
-        return True
-    if package_name.startswith(crate_name) or crate_name.startswith(package_name):
-        return True
-    if len(crate_name) >= 4 and crate_name in package_name:
-        return True
-    if len(package_name) >= 4 and package_name in crate_name:
-        return True
-    return False
+def load_crate_mappings(mapping_file: Path) -> dict[str, list[str]]:
+    payload = json.loads(mapping_file.read_text(encoding="utf-8"))
+    raw_mappings = payload.get("crate_mappings")
+    if not isinstance(raw_mappings, dict):
+        raise ValueError("mapping file must contain object field `crate_mappings`")
 
-
-def package_score(crate: BevyCrate, package: EnginePackage) -> tuple[float, int]:
-    score = 0.0
-    if crate.base_name == package.normalized_name:
-        score += 100.0
-    elif is_name_related(crate, package):
-        score += 60.0
-    leaf_overlap = len(crate.leaf_modules & package.leaf_modules)
-    if leaf_overlap > 0:
-        score += float(leaf_overlap) * 2.0
-        union_size = len(crate.leaf_modules | package.leaf_modules)
-        if union_size > 0:
-            score += (leaf_overlap / union_size) * 30.0
-    return score, leaf_overlap
-
-
-def package_priority(package: EnginePackage) -> int:
-    """Lower value means better default candidate for crate mapping."""
-    rel = package.rel_path
-    if rel == ".":
-        return 0
-    if rel.startswith("examples/"):
-        return 4
-    if rel.startswith("runtime_native/"):
-        return 3
-    depth = rel.count("/")
-    if depth == 0:
-        return 0
-    if depth == 1:
-        return 1
-    return 2
-
-
-def select_packages_for_crate(
-    crate: BevyCrate,
-    packages: list[EnginePackage],
-) -> list[EnginePackage]:
-    exact = [package for package in packages if crate.base_name == package.normalized_name]
-    if exact:
-        return sorted(exact, key=lambda package: package.display_name)
-
-    name_related = [package for package in packages if is_name_related(crate, package)]
-    if name_related:
-        best_priority = min(package_priority(package) for package in name_related)
-        filtered = [package for package in name_related if package_priority(package) == best_priority]
-        return sorted(filtered, key=lambda package: package.display_name)
-
-    scored: list[tuple[int, float, int, EnginePackage]] = []
-    for package in packages:
-        score, leaf_overlap = package_score(crate, package)
-        scored.append((package_priority(package), score, leaf_overlap, package))
-    scored.sort(key=lambda item: (item[0], -item[1], -item[2], item[3].display_name))
-    if not scored:
-        return []
-    _best_priority, best_score, best_leaf_overlap, best_package = scored[0]
-    if best_leaf_overlap <= 0:
-        return []
-    if best_score < 10.0:
-        return []
-    return [best_package]
+    mappings: dict[str, list[str]] = {}
+    for crate_name, targets in raw_mappings.items():
+        if not isinstance(crate_name, str):
+            raise ValueError("crate mapping keys must be strings")
+        if not isinstance(targets, list) or not all(isinstance(item, str) for item in targets):
+            raise ValueError(
+                f"crate mapping for `{crate_name}` must be an array of package path strings"
+            )
+        mappings[crate_name] = targets
+    return mappings
 
 
 def compute_coverage(
     crates: list[BevyCrate],
     packages: list[EnginePackage],
+    crate_mappings: dict[str, list[str]],
     only_crates: set[str],
 ) -> list[CrateCoverage]:
+    package_index = {package.display_name: package for package in packages}
     rows: list[CrateCoverage] = []
     for crate in crates:
         if only_crates and crate.name not in only_crates:
             continue
-        mapped_packages = select_packages_for_crate(crate, packages)
+        declared_target_packages = crate_mappings.get(crate.name, [])
+        mapped_packages = [
+            package_index[target]
+            for target in declared_target_packages
+            if target in package_index
+        ]
+        missing_target_packages = [
+            target
+            for target in declared_target_packages
+            if target not in package_index
+        ]
         mapped_modules: set[str] = set()
         mapped_leaf_modules: set[str] = set()
         for package in mapped_packages:
@@ -298,6 +253,8 @@ def compute_coverage(
         rows.append(
             CrateCoverage(
                 crate=crate,
+                declared_target_packages=declared_target_packages,
+                missing_target_packages=missing_target_packages,
                 packages=mapped_packages,
                 bevy_module_count=bevy_count,
                 engine_module_count=len(mapped_modules),
@@ -319,6 +276,7 @@ def render_report(
     repo_root: Path,
     bevy_crates_root: Path,
     engine_root: Path,
+    mapping_file: Path,
     rows: list[CrateCoverage],
     packages: list[EnginePackage],
     max_module_report: int,
@@ -337,7 +295,11 @@ def render_report(
     total_engine_modules_mapped = sum(row.engine_module_count for row in rows)
     total_missing = sum(len(row.missing_modules) for row in rows)
     total_extra = sum(len(row.extra_modules) for row in rows)
-    unmatched_crates = sorted([row.crate.name for row in rows if not row.packages])
+    crates_with_declared_mapping = sum(1 for row in rows if row.declared_target_packages)
+    crates_with_missing_targets = sum(1 for row in rows if row.missing_target_packages)
+    unmatched_crates = sorted(
+        [row.crate.name for row in rows if not row.declared_target_packages]
+    )
     unmatched_packages = sorted(
         [package_name for package_name, crate_names in package_to_crates.items() if not crate_names]
     )
@@ -348,11 +310,14 @@ def render_report(
     lines.append(f"Repository root: {repo_root.as_posix()}")
     lines.append(f"Bevy crates root: {bevy_crates_root.as_posix()}")
     lines.append(f"Engine root: {engine_root.as_posix()}")
+    lines.append(f"Mapping file: {mapping_file.as_posix()}")
     lines.append("")
     lines.append("Summary")
     lines.append(f"- Bevy crates scanned: {len(rows)}")
     lines.append(f"- Engine packages scanned: {len(packages)}")
     lines.append(f"- Mapped crates: {mapped_crates}")
+    lines.append(f"- Crates with declared mappings: {crates_with_declared_mapping}")
+    lines.append(f"- Crates with missing declared targets: {crates_with_missing_targets}")
     lines.append(f"- Unmatched crates: {len(unmatched_crates)}")
     lines.append(f"- Unmatched packages: {len(unmatched_packages)}")
     lines.append(f"- Total bevy modules: {total_bevy_modules}")
@@ -361,12 +326,15 @@ def render_report(
     lines.append(f"- Total extra modules (crate perspective): {total_extra}")
     lines.append("")
     lines.append("Crate Coverage")
-    lines.append("crate | mapped_packages | bevy_modules | engine_modules | strict_overlap | leaf_overlap | strict_coverage")
-    lines.append("--- | --- | ---: | ---: | ---: | ---: | ---:")
+    lines.append(
+        "crate | declared_targets | resolved_packages | bevy_modules | engine_modules | strict_overlap | leaf_overlap | strict_coverage"
+    )
+    lines.append("--- | --- | --- | ---: | ---: | ---: | ---: | ---:")
     for row in sorted(rows, key=lambda item: item.crate.name):
+        declared_names = ",".join(row.declared_target_packages) if row.declared_target_packages else "-"
         mapped_names = ",".join(package.display_name for package in row.packages) if row.packages else "-"
         lines.append(
-            f"{row.crate.name} | {mapped_names} | {row.bevy_module_count} | "
+            f"{row.crate.name} | {declared_names} | {mapped_names} | {row.bevy_module_count} | "
             f"{row.engine_module_count} | {row.strict_overlap_count} | "
             f"{row.leaf_overlap_count} | {format_percent(row.strict_coverage)}"
         )
@@ -391,9 +359,19 @@ def render_report(
 
     if unmatched_crates:
         lines.append("")
-        lines.append("Unmatched Bevy Crates")
+        lines.append("Unmapped Bevy Crates")
         for crate_name in unmatched_crates:
             lines.append(f"- {crate_name}")
+
+    crates_with_missing_declared_targets = [
+        row for row in sorted(rows, key=lambda item: item.crate.name) if row.missing_target_packages
+    ]
+    if crates_with_missing_declared_targets:
+        lines.append("")
+        lines.append("Manifest Target Gaps")
+        for row in crates_with_missing_declared_targets:
+            missing_targets = ", ".join(row.missing_target_packages)
+            lines.append(f"- {row.crate.name}: {missing_targets}")
 
     if show_unmatched_packages and unmatched_packages:
         lines.append("")
@@ -442,6 +420,7 @@ def build_json_payload(
     repo_root: Path,
     bevy_crates_root: Path,
     engine_root: Path,
+    mapping_file: Path,
     rows: list[CrateCoverage],
     packages: list[EnginePackage],
 ) -> dict:
@@ -453,11 +432,16 @@ def build_json_payload(
         "repo_root": repo_root.as_posix(),
         "bevy_crates_root": bevy_crates_root.as_posix(),
         "engine_root": engine_root.as_posix(),
+        "mapping_file": mapping_file.as_posix(),
         "summary": {
             "bevy_crates_scanned": len(rows),
             "engine_packages_scanned": len(packages),
             "mapped_crates": sum(1 for row in rows if row.packages),
-            "unmatched_crates": sum(1 for row in rows if not row.packages),
+            "crates_with_declared_mappings": sum(1 for row in rows if row.declared_target_packages),
+            "crates_with_missing_declared_targets": sum(
+                1 for row in rows if row.missing_target_packages
+            ),
+            "unmatched_crates": sum(1 for row in rows if not row.declared_target_packages),
             "unmatched_packages": sum(
                 1 for package_name, crate_names in package_to_crates.items() if not crate_names
             ),
@@ -469,6 +453,8 @@ def build_json_payload(
         "crate_coverage": [
             {
                 "crate": row.crate.name,
+                "declared_target_packages": row.declared_target_packages,
+                "missing_target_packages": row.missing_target_packages,
                 "mapped_packages": [package.display_name for package in row.packages],
                 "bevy_modules": row.bevy_module_count,
                 "engine_modules": row.engine_module_count,
@@ -518,6 +504,11 @@ def parse_args() -> argparse.Namespace:
         help="Path to engine root, relative to --repo-root.",
     )
     parser.add_argument(
+        "--mapping-file",
+        default="scripts/bevy_engine_structure_map.json",
+        help="Explicit Bevy crate to mgstudio package mapping file, relative to --repo-root.",
+    )
+    parser.add_argument(
         "--only-crate",
         action="append",
         default=[],
@@ -557,6 +548,7 @@ def main() -> int:
     repo_root = Path(args.repo_root).resolve()
     bevy_crates_root = (repo_root / args.bevy_crates).resolve()
     engine_root = (repo_root / args.engine_root).resolve()
+    mapping_file = (repo_root / args.mapping_file).resolve()
 
     if not bevy_crates_root.exists():
         print(f"error: bevy crates root not found: {bevy_crates_root}", file=sys.stderr)
@@ -564,19 +556,28 @@ def main() -> int:
     if not engine_root.exists():
         print(f"error: engine root not found: {engine_root}", file=sys.stderr)
         return 2
+    if not mapping_file.exists():
+        print(f"error: mapping file not found: {mapping_file}", file=sys.stderr)
+        return 2
 
     crates = discover_bevy_crates(bevy_crates_root)
     packages = discover_engine_packages(
         engine_root,
         include_examples=args.include_examples,
     )
+    try:
+        crate_mappings = load_crate_mappings(mapping_file)
+    except ValueError as error:
+        print(f"error: invalid mapping file: {error}", file=sys.stderr)
+        return 2
     only_crates = set(args.only_crate)
-    rows = compute_coverage(crates, packages, only_crates)
+    rows = compute_coverage(crates, packages, crate_mappings, only_crates)
 
     report = render_report(
         repo_root=repo_root,
         bevy_crates_root=bevy_crates_root,
         engine_root=engine_root,
+        mapping_file=mapping_file,
         rows=rows,
         packages=packages,
         max_module_report=max(0, args.max_module_report),
@@ -590,6 +591,7 @@ def main() -> int:
             repo_root=repo_root,
             bevy_crates_root=bevy_crates_root,
             engine_root=engine_root,
+            mapping_file=mapping_file,
             rows=rows,
             packages=packages,
         )

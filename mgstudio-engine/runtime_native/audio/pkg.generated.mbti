@@ -1,0 +1,54 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/runtime_native/audio"
+
+import {
+  "Milky2018/moon_cpal/core",
+  "Milky2018/moon_rodio",
+}
+
+// Values
+pub fn available_host_ids() -> Array[@core.HostId]
+
+pub fn available_input_devices() -> Array[NativeAudioInputDevice] raise @moon_rodio.MicrophoneListError
+
+pub fn available_output_devices() -> Array[NativeAudioOutputDevice] raise @moon_rodio.SpeakersListError
+
+pub fn open_default_output_stream() -> NativeAudioStream raise @moon_rodio.StreamError
+
+// Errors
+
+// Types and methods
+pub struct NativeAudioInputDevice {
+  name : String
+}
+
+pub struct NativeAudioOutputDevice {
+  name : String
+  is_default : Bool
+}
+
+pub struct NativeAudioPlayer {
+  player : @moon_rodio.Player
+}
+pub fn NativeAudioPlayer::clear(Self) -> Unit
+pub fn NativeAudioPlayer::empty(Self) -> Bool
+pub fn NativeAudioPlayer::is_paused(Self) -> Bool
+pub fn NativeAudioPlayer::pause(Self) -> Unit
+pub fn NativeAudioPlayer::play(Self) -> Unit
+pub fn NativeAudioPlayer::set_speed(Self, Double) -> Unit
+pub fn NativeAudioPlayer::set_volume(Self, Double) -> Unit
+pub fn NativeAudioPlayer::speed(Self) -> Double
+pub fn NativeAudioPlayer::stop(Self) -> Unit
+pub fn NativeAudioPlayer::volume(Self) -> Double
+
+pub struct NativeAudioStream {
+  stream : @moon_rodio.OutputStream
+}
+pub fn NativeAudioStream::mixer(Self) -> @moon_rodio.Mixer
+pub fn NativeAudioStream::new_player(Self) -> NativeAudioPlayer
+pub fn NativeAudioStream::play_file(Self, String) -> NativeAudioPlayer raise @moon_rodio.PlayError
+
+// Type aliases
+
+// Traits
+

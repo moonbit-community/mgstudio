@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/window/scale_factor_override"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

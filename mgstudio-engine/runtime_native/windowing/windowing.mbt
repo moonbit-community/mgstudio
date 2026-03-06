@@ -53,7 +53,11 @@ fn encode_utf8_bytes(value : String) -> Bytes {
 }
 
 ///|
-pub fn create(width~ : Int, height~ : Int, title~ : String) -> NativeWindowHandle {
+pub fn create(
+  width~ : Int,
+  height~ : Int,
+  title~ : String,
+) -> NativeWindowHandle {
   let title_bytes = encode_utf8_bytes(title)
   @windowing_native.create_utf8(
     width,
@@ -123,7 +127,11 @@ pub fn set_title(window : NativeWindowHandle, title~ : String) -> Unit {
 }
 
 ///|
-pub fn set_size(window : NativeWindowHandle, width~ : Int, height~ : Int) -> Unit {
+pub fn set_size(
+  window : NativeWindowHandle,
+  width~ : Int,
+  height~ : Int,
+) -> Unit {
   @windowing_native.set_size(window, width, height)
 }
 

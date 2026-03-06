@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/2d/pixel_grid_snap"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

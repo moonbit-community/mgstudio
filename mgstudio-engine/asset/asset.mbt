@@ -246,7 +246,11 @@ pub fn asset_parse_path(path : String) -> ParsedAssetPath {
       label,
     }
   } else {
-    ParsedAssetPath::{ source: AssetSourceId::Default, path: without_label, label, }
+    ParsedAssetPath::{
+      source: AssetSourceId::Default,
+      path: without_label,
+      label,
+    }
   }
 }
 
@@ -877,10 +881,7 @@ pub fn AssetServer::load_with_registered_loader(
   nearest : Bool,
 ) -> Int {
   let canonical_path = asset_canonical_path(path)
-  let id = host_asset_load_with_registered_loader(
-    path=canonical_path,
-    nearest~,
-  )
+  let id = host_asset_load_with_registered_loader(path=canonical_path, nearest~)
   self.paths.push(canonical_path)
   id
 }

@@ -6,9 +6,6 @@ import {
 }
 
 // Values
-pub fn[T] with_host_bytes_id(Bytes, (Int) -> T) -> T
-
-pub fn[T] with_host_string_id(String, (Int) -> T) -> T
 
 // Errors
 pub(all) suberror EntityError {

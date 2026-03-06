@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/animation/easing_functions"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

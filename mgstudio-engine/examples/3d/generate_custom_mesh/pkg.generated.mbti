@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/generate_custom_mesh"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

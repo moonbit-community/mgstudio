@@ -2,7 +2,6 @@
 package "Milky2018/mgstudio/examples/3d/fog"
 
 // Values
-pub fn main() -> Unit
 
 // Errors
 

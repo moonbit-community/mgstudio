@@ -31,6 +31,8 @@ pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
 
 pub fn asset_blob_read_text(Handle[Blob]) -> String?
 
+pub fn asset_canonical_path(String) -> String
+
 pub fn asset_compressed_image_formats_contains(Int, Int) -> Bool
 
 pub fn asset_copy_texture_to_texture(Handle[Image], @math.UVec2, Handle[Image]) -> Unit
@@ -44,6 +46,8 @@ pub fn asset_create_dynamic_texture_with_mips(@math.UVec2, Int, Bool) -> Handle[
 pub fn asset_create_texture_mip_view(Handle[Image], Int) -> Handle[Image]
 
 pub fn asset_font_read_bytes(Handle[Font]) -> Bytes?
+
+pub fn asset_format_path(ParsedAssetPath) -> String
 
 pub fn asset_generate_mip_chain_rgba8(Int, Int, Bytes) -> Array[(Int, Int, Bytes)]
 
@@ -69,9 +73,17 @@ pub fn asset_is_texture_loaded(Handle[Image]) -> Bool
 
 pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]]
 
+pub fn asset_loader_kind_for_path(String) -> AssetLoaderKind
+
+pub fn asset_parse_path(String) -> ParsedAssetPath
+
 pub fn[W] asset_plugin(@app.App[W]) -> @app.App[W]
 
 pub fn[W] asset_plugin_nearest(@app.App[W]) -> @app.App[W]
+
+pub fn asset_register_loader_extension(String, AssetLoaderKind) -> Unit
+
+pub fn asset_remove_loader_extension(String) -> Unit
 
 pub fn asset_save_texture_png(Handle[Image], String) -> Unit
 
@@ -80,6 +92,8 @@ pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 pub fn asset_set_texture_atlas_layout(Handle[TextureAtlasLayout], TextureAtlasLayout) -> Bool
 
 pub fn asset_set_texture_sampler(Handle[Image], ImageSampler) -> Unit
+
+pub fn asset_strip_label(String) -> String
 
 pub fn asset_supported_compressed_image_formats() -> Int
 
@@ -137,17 +151,25 @@ pub fn host_asset_load_font(path~ : String) -> Int
 
 pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int
 
-pub fn host_asset_load_texture_bytes(bytes_id~ : Int, nearest~ : Bool) -> Int
+pub fn host_asset_load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int
 
 pub fn host_asset_load_wgsl(path~ : String) -> Int
+
+pub fn host_asset_load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int
 
 pub fn host_asset_loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int
 
 pub fn host_asset_loaded_folder_handles_len(Int) -> Int
 
+pub fn host_asset_loader_kind_for_path(path~ : String) -> Int
+
 pub fn host_asset_poll_loaded_folder_event_id() -> Int
 
 pub fn host_asset_poll_loaded_folder_event_kind() -> Int
+
+pub fn host_asset_register_loader_extension(extension~ : String, kind~ : Int) -> Unit
+
+pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit
 
 pub fn host_asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit
 
@@ -159,9 +181,9 @@ pub fn host_asset_texture_width(Int) -> Int
 
 pub fn host_asset_update_texture_region(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, glyph_id~ : Int) -> Unit
 
-pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, bytes_id~ : Int) -> Unit
+pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, bytes~ : Bytes) -> Unit
 
-pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes_id~ : Int) -> Unit
+pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes~ : Bytes) -> Unit
 
 // Errors
 
@@ -182,6 +204,14 @@ pub fn[T] AssetId::new(Int) -> Self[T]
 pub impl[T : Eq] Eq for AssetId[T]
 pub impl[T : Show] Show for AssetId[T]
 
+pub(all) enum AssetLoaderKind {
+  Texture
+  Wgsl
+  Bytes
+  Font
+  Folder
+}
+
 pub struct AssetServer {
   paths : Array[String]
 }
@@ -193,8 +223,14 @@ pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[Image]
 pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
+pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
 pub fn AssetServer::load_with_settings(Self, String, ImageLoaderSettings) -> Handle[Image]
 pub fn AssetServer::new() -> Self
+
+pub(all) enum AssetSourceId {
+  Default
+  Named(String)
+}
 
 pub struct Assets[T] {
   items : Array[T?]
@@ -272,6 +308,12 @@ pub(all) enum ImageSampler {
 
 pub struct LoadedFolder {
   handles : Array[Handle[Image]]
+}
+
+pub struct ParsedAssetPath {
+  source : AssetSourceId
+  path : String
+  label : String?
 }
 
 pub struct Shader {
