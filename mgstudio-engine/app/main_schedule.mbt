@@ -37,7 +37,7 @@ pub fn run_fixed_main_loop_system_set_name(
 pub struct MainScheduleOrder {
   labels : Array[ScheduleStage]
   startup_labels : Array[ScheduleStage]
-}
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn MainScheduleOrder::new(
@@ -58,7 +58,7 @@ pub fn MainScheduleOrder::default() -> MainScheduleOrder {
 ///|
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
-}
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn FixedMainScheduleOrder::new(
@@ -79,35 +79,27 @@ pub fn FixedMainScheduleOrder::default() -> FixedMainScheduleOrder {
 }
 
 ///|
-let main_schedule_order_resource : Ref[@core.Resource[MainScheduleOrder]] = Ref::new(
-  @core.Resource::new(),
-)
+pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder] {
+  @ecs.register_resource(debug_name="bevy_app::MainScheduleOrder")
+}
 
 ///|
-let fixed_main_schedule_order_resource : Ref[
-  @core.Resource[FixedMainScheduleOrder],
-] = Ref::new(@core.Resource::new())
+pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[
+  FixedMainScheduleOrder,
+] {
+  @ecs.register_resource(debug_name="bevy_app::FixedMainScheduleOrder")
+}
 
 ///|
-fn[T] schedule_resource_sync(
-  resource : @core.Resource[T],
-  value : T,
-  change_tick : @core.Tick,
-) -> Unit {
-  match resource.get_ref_mut(change_tick) {
-    Some(cell) => cell.val = value
-    None => resource.insert(value, change_tick)
+fn[T : @json.FromJson] world_schedule_resource(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+) -> T? {
+  try world.get_resource(key) catch {
+    _ => None
+  } noraise {
+    value => value
   }
-}
-
-///|
-pub impl Resource for MainScheduleOrder with resource() {
-  main_schedule_order_resource.val
-}
-
-///|
-pub impl Resource for FixedMainScheduleOrder with resource() {
-  fixed_main_schedule_order_resource.val
 }
 
 ///|
@@ -216,16 +208,19 @@ pub fn FixedMainScheduleOrder::insert_before(
 }
 
 ///|
-fn main_schedule_order_or_default() -> MainScheduleOrder {
-  match MainScheduleOrder::resource().get() {
+pub fn world_main_schedule_order(world : @ecs.World) -> MainScheduleOrder {
+  match world_schedule_resource(world, main_schedule_order_resource_key()) {
     Some(order) => order
     None => MainScheduleOrder::default()
   }
 }
 
 ///|
-fn fixed_main_schedule_order_or_default() -> FixedMainScheduleOrder {
-  match FixedMainScheduleOrder::resource().get() {
+pub fn world_fixed_main_schedule_order(
+  world : @ecs.World,
+) -> FixedMainScheduleOrder {
+  match
+    world_schedule_resource(world, fixed_main_schedule_order_resource_key()) {
     Some(order) => order
     None => FixedMainScheduleOrder::default()
   }
@@ -233,20 +228,27 @@ fn fixed_main_schedule_order_or_default() -> FixedMainScheduleOrder {
 
 ///|
 fn main_schedule_write_order(
+  world : @ecs.World,
   update : (MainScheduleOrder) -> MainScheduleOrder,
   change_tick : @core.Tick,
 ) -> Unit {
-  let next_order = update(main_schedule_order_or_default())
-  schedule_resource_sync(MainScheduleOrder::resource(), next_order, change_tick)
+  let next_order = update(world_main_schedule_order(world))
+  world.insert_resource_with_change_tick(
+    main_schedule_order_resource_key(),
+    next_order,
+    change_tick,
+  )
 }
 
 ///|
 fn main_schedule_insert_after_unique(
+  world : @ecs.World,
   after : ScheduleStage,
   stage : ScheduleStage,
   change_tick : @core.Tick,
 ) -> Unit {
   main_schedule_write_order(
+    world,
     fn(order : MainScheduleOrder) {
       if schedule_stage_contains(order.labels, stage) {
         order
@@ -260,11 +262,13 @@ fn main_schedule_insert_after_unique(
 
 ///|
 fn main_schedule_insert_startup_before_unique(
+  world : @ecs.World,
   before : ScheduleStage,
   stage : ScheduleStage,
   change_tick : @core.Tick,
 ) -> Unit {
   main_schedule_write_order(
+    world,
     fn(order : MainScheduleOrder) {
       if schedule_stage_contains(order.startup_labels, stage) {
         order
@@ -277,9 +281,14 @@ fn main_schedule_insert_startup_before_unique(
 }
 
 ///|
-fn reset_main_schedule_resources() -> Unit {
-  MainScheduleOrder::resource().insert(MainScheduleOrder::default(), 1)
-  FixedMainScheduleOrder::resource().insert(
+fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
+  world.insert_resource_with_change_tick(
+    main_schedule_order_resource_key(),
+    MainScheduleOrder::default(),
+    1,
+  )
+  world.insert_resource_with_change_tick(
+    fixed_main_schedule_order_resource_key(),
     FixedMainScheduleOrder::default(),
     1,
   )
@@ -303,7 +312,7 @@ fn run_main_schedule_startup(
   world : @ecs.World,
   schedule : Schedule[@ecs.World],
 ) -> Unit {
-  for stage in main_schedule_order_or_default().startup_labels {
+  for stage in world_main_schedule_order(world).startup_labels {
     run_main_schedule_stage(world, schedule, stage)
   }
 }
@@ -313,7 +322,7 @@ fn run_main_schedule_update(
   world : @ecs.World,
   schedule : Schedule[@ecs.World],
 ) -> Unit {
-  for stage in main_schedule_order_or_default().labels {
+  for stage in world_main_schedule_order(world).labels {
     run_main_schedule_stage(world, schedule, stage)
   }
 }
@@ -323,7 +332,7 @@ fn run_fixed_main_schedule(
   world : @ecs.World,
   schedule : Schedule[@ecs.World],
 ) -> Unit {
-  for stage in fixed_main_schedule_order_or_default().labels {
+  for stage in world_fixed_main_schedule_order(world).labels {
     run_schedule_stage(world, schedule, stage)
   }
 }

@@ -278,7 +278,8 @@ test "time: fixed main schedule order resource drives fixed substage order" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
     .insert_resource(Fixed::from_seconds(0.25F))
-    .insert_resource(
+    .insert_world_resource(
+      @app.fixed_main_schedule_order_resource_key(),
       @app.FixedMainScheduleOrder::new([@app.FixedLast, @app.FixedUpdate]),
     )
     .add_fixed_last_system(fn(_world : @ecs.World) {

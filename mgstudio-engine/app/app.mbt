@@ -98,7 +98,7 @@ pub(all) enum ScheduleStage {
   SpawnScene
   PostUpdate
   Last
-} derive(Eq, Show)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub(open) trait SystemParam {
@@ -387,9 +387,9 @@ pub struct App[W] {
 }
 
 ///|
-pub fn[W] App::new(world : W) -> App[W] {
+pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
   app_runtime_reset()
-  reset_main_schedule_resources()
+  reset_main_schedule_resources(world)
   App::{
     world,
     schedule: Schedule::{
@@ -582,6 +582,16 @@ pub fn[W, T : Resource] App::insert_resource(
   value : T,
 ) -> App[W] {
   Resource::resource().insert(value, current_system_ticks().this_run)
+  self
+}
+
+///|
+pub fn[T : ToJson] App::insert_world_resource(
+  self : App[@ecs.World],
+  key : @ecs.ResourceKey[T],
+  value : T,
+) -> App[@ecs.World] {
+  self.world.insert_resource(key, value)
   self
 }
 

@@ -183,7 +183,7 @@ test "states plugin: inserts state transition into schedule order resources" {
     states_plugin(StatesPlugin::default()),
   ])
   ignore(app)
-  let order = MainScheduleOrder::resource().get().unwrap()
+  let order = world_main_schedule_order(app.world)
   let startup_labels = order.startup_labels.map(fn(stage : ScheduleStage) {
     stage.to_string()
   })
@@ -202,13 +202,16 @@ test "states plugin: inserts state transition into schedule order resources" {
 test "main schedule order resource drives startup and main stage execution order" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())
-    .insert_resource(
-      MainScheduleOrder::new([SpawnScene, Update, PostUpdate], [
-        PostStartup,
-        Startup,
-        PreStartup,
-      ]),
-    )
+  app.world.insert_resource(
+    main_schedule_order_resource_key(),
+    MainScheduleOrder::new([SpawnScene, Update, PostUpdate], [
+      PostStartup,
+      Startup,
+      PreStartup,
+    ]),
+  )
+  ignore(
+    app
     .add_pre_startup_system(fn(_world : @ecs.World) {
       log.push(current_stage_label())
     })
@@ -224,7 +227,8 @@ test "main schedule order resource drives startup and main stage execution order
     .add_system(fn(_world : @ecs.World) { log.push(current_stage_label()) })
     .add_post_update_system(fn(_world : @ecs.World) {
       log.push(current_stage_label())
-    })
+    }),
+  )
 
   app.run_startup() |> ignore
   app.run_once() |> ignore
