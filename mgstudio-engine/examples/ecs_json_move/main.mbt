@@ -43,8 +43,7 @@ fn main {
     try! world.set(entity, comp_velocity, Velocity::{ x: 1.0, y: 0.5 })
   })
   .add_system_query2_ecs(comp_position, comp_velocity, move_system)
-  .run_startup()
-  .run_once()
+  .update()
   |> ignore
 }
 

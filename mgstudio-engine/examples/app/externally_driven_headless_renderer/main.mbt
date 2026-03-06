@@ -99,11 +99,11 @@ fn externally_driven_runner_builder(
     let height = @window.host_window_get_height(window)
     @window.host_gpu_configure_surface(device~, surface~, width~, height~)
 
-    let mut runtime_app = app.run_startup()
+    let mut runtime_app = app
     for _ in 0..<120 {
       @window.host_window_poll_events(window)
       let frame = @window.host_gpu_begin_frame(surface)
-      runtime_app = runtime_app.run_once()
+      runtime_app = runtime_app.update()
       @window.host_gpu_end_frame(frame)
       if runtime_app.should_exit() is Some(_) {
         break

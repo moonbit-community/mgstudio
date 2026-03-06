@@ -81,6 +81,7 @@ fn app_label_storage_key(label : AppLabel) -> String {
 
 ///|
 pub(all) enum ScheduleStage {
+  Main
   PreStartup
   Startup
   PostStartup
@@ -379,6 +380,8 @@ pub struct Schedule[W] {
 ///|
 pub struct App[W] {
   mut world : W
+  mut startup_ran : Bool
+  update_schedule : ScheduleStage?
   schedule : Schedule[W]
   runner_builder : RunnerBuilder[W]?
   sub_apps : @hashmap.HashMap[String, Ref[App[W]]]
@@ -392,6 +395,8 @@ pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
   reset_main_schedule_resources(world)
   App::{
     world,
+    startup_ran: false,
+    update_schedule: Some(Main),
     schedule: Schedule::{
       pre_startup: [],
       startup: [],
@@ -1587,6 +1592,7 @@ fn[W] schedule_systems(
   stage : ScheduleStage,
 ) -> Array[SystemConfig[W]] {
   match stage {
+    Main => []
     PreStartup => schedule.pre_startup
     Startup => schedule.startup
     PostStartup => schedule.post_startup
@@ -1613,6 +1619,7 @@ fn[W] schedule_set_edges(
   stage : ScheduleStage,
 ) -> Array[(SystemSet, SystemSet)] {
   match stage {
+    Main => []
     PreStartup => schedule.pre_startup_set_edges
     Startup => schedule.startup_set_edges
     PostStartup => schedule.post_startup_set_edges
@@ -1836,9 +1843,13 @@ fn run_schedule_stage(
 
 ///|
 pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
+  if self.startup_ran {
+    return self
+  }
   current_app_schedule_ref.val = Some(self.schedule)
   run_main_schedule_startup(self.world, self.schedule)
   current_app_schedule_ref.val = None
+  self.startup_ran = true
   for entry in self.sub_apps.iter() {
     let (_key, sub_app_ref) = entry
     sub_app_ref.val = sub_app_ref.val.run_startup()
@@ -1847,9 +1858,16 @@ pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
-pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
+pub fn App::update(self : App[@ecs.World]) -> App[@ecs.World] {
+  if !self.startup_ran {
+    self.run_startup() |> ignore
+  }
   current_app_schedule_ref.val = Some(self.schedule)
-  run_main_schedule_update(self.world, self.schedule)
+  match self.update_schedule {
+    Some(Main) => run_main_schedule_update(self.world, self.schedule)
+    Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
+    None => ()
+  }
   current_app_schedule_ref.val = None
   for entry in self.sub_apps.iter() {
     let (key, sub_app_ref) = entry
@@ -1858,9 +1876,14 @@ pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
       self.world = worlds.0
       sub_app_ref.val = App::{ ..sub_app_ref.val, world: worlds.1 }
     }
-    sub_app_ref.val = sub_app_ref.val.run_once()
+    sub_app_ref.val = sub_app_ref.val.update()
   }
   self
+}
+
+///|
+pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
+  self.update()
 }
 
 ///|
@@ -1869,7 +1892,7 @@ pub fn App::run(self : App[@ecs.World]) -> Unit {
     let runner = builder(self)
     runner()
   } else {
-    self.run_startup().run_once() |> ignore
+    self.update() |> ignore
   }
 }
 

@@ -25,6 +25,7 @@ fn reset_time_test_state() -> Unit {
 ///|
 fn current_stage_label() -> String {
   match @app.current_schedule_stage() {
+    Some(@app.Main) => "Main"
     Some(@app.PreStartup) => "PreStartup"
     Some(@app.Startup) => "Startup"
     Some(@app.PostStartup) => "PostStartup"

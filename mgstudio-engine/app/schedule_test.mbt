@@ -104,6 +104,26 @@ test "app: Last stage runs after PostUpdate" {
 }
 
 ///|
+test "app: update runs startup once and update every frame" {
+  let log : Array[String] = []
+  let mut app = App::new(@ecs.World::new())
+    .add_pre_startup_system(fn(_world : @ecs.World) { log.push("pre_startup") })
+    .add_startup_system(fn(_world : @ecs.World) { log.push("startup") })
+    .add_post_startup_system(fn(_world : @ecs.World) {
+      log.push("post_startup")
+    })
+    .add_system(fn(_world : @ecs.World) { log.push("update") })
+
+  app = app.update()
+  app = app.update()
+
+  inspect(
+    log.join(","),
+    content="pre_startup,startup,post_startup,update,update",
+  )
+}
+
+///|
 struct Param1 {
   value : Int
 }

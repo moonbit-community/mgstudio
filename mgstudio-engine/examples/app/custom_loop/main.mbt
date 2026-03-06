@@ -48,13 +48,13 @@ fn exit_system(
 ///|
 fn my_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
-    let mut runtime_app = app.run_startup()
+    let mut runtime_app = app
     println("Type stuff into the console")
     while true {
       if @app.app_stdin_read_line() is Some(line) {
         runtime_app = runtime_app
           .insert_resource(Input::{ value: line })
-          .run_once()
+          .update()
         if runtime_app.should_exit() is Some(_) {
           break
         }

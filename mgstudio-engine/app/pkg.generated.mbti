@@ -144,6 +144,8 @@ pub fn[S : States] world_state(@ecs.World, S) -> State[S]?
 // Types and methods
 pub struct App[W] {
   mut world : W
+  mut startup_ran : Bool
+  update_schedule : ScheduleStage?
   schedule : Schedule[W]
   runner_builder : ((App[W]) -> (() -> Unit))?
   sub_apps : @hashmap.HashMap[String, Ref[App[W]]]
@@ -276,6 +278,7 @@ pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]
 pub fn[W] App::sub_apps(Self[W]) -> Array[(AppLabel, Self[W])]
 pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, Ref[Self[W]])]
 pub fn[W] App::take_sub_app_extract(Self[W], AppLabel) -> ((W, W) -> (W, W))?
+pub fn App::update(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
 
 pub(all) enum AppExit {
@@ -494,6 +497,7 @@ pub fn ScheduleRunnerPlugin::run_loop(Float) -> Self
 pub fn ScheduleRunnerPlugin::run_once() -> Self
 
 pub(all) enum ScheduleStage {
+  Main
   PreStartup
   Startup
   PostStartup

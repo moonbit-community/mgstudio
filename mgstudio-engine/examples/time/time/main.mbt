@@ -81,7 +81,7 @@ fn apply_command(
   command : String,
 ) -> (@app.App[@ecs.World], Bool) {
   match command {
-    "" => (app.run_once(), false)
+    "" => (app.update(), false)
     "f" => {
       println("FAST: setting relative speed to 2x")
       @my_time.time_virtual_set_relative_speed(2.0F)
@@ -137,7 +137,6 @@ fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         .set_max_delta_seconds(5.0F)
         .set_relative_speed(1.0F),
       )
-      .run_startup()
     for command in commands {
       let (next_app, should_quit) = apply_command(runtime_app, command)
       runtime_app = next_app
