@@ -18,6 +18,7 @@ pub struct ComponentMut[T] {
   ticks : @core.ComponentTicks
   system : @core.SystemTicks
   original_payload : Json
+  mut force_changed : Bool
 }
 
 ///|
@@ -43,4 +44,9 @@ pub fn[T] ComponentMut::is_added(self : ComponentMut[T]) -> Bool {
 ///|
 pub fn[T] ComponentMut::is_changed(self : ComponentMut[T]) -> Bool {
   self.ticks.is_changed(self.system)
+}
+
+///|
+pub fn[T] ComponentMut::set_changed(self : ComponentMut[T]) -> Unit {
+  self.force_changed = true
 }

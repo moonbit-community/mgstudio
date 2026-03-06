@@ -140,3 +140,185 @@ test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 33})")
   inspect(try! world.get(e2, comp_velocity), content="Some({dx: 40, dy: 50})")
 }
+
+///|
+test "ecs query mut: plain query1 supports count and set_changed writeback" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query1_plain_mut",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 2 })
+  try! world.set(e1, comp_position, Position::{ x: 3, y: 4 })
+  inspect(world.query1(comp_position).count(), content="2")
+
+  let ctx1 = @core.SystemContext::new()
+  ctx1.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx1)
+  try! world
+  .query1(comp_position)
+  .view_mut(fn(_entity, position_mut) { position_mut.set_changed() })
+  inspect(
+    world.query1_filtered(comp_position, Changed::new(comp_position)).count(),
+    content="2",
+  )
+
+  world.increment_change_tick() |> ignore
+  let ctx2 = @core.SystemContext::new()
+  ctx2.set(@core.SystemTicks::new(1, 2))
+  world.set_system_context(ctx2)
+  inspect(
+    world.query1_filtered(comp_position, Changed::new(comp_position)).count(),
+    content="0",
+  )
+}
+
+///|
+test "ecs query mut: query2 value mut filtered matches required pair only" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query2_value_mut",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query2_value_mut",
+  )
+  let comp_accel : ComponentKey[Acceleration] = register_component(
+    debug_name="accel_query2_value_mut",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 20 })
+  try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 30, dy: 40 })
+  try! world.set(e1, comp_accel, Acceleration::{ ax: 1, ay: 1 })
+  try! world.set(e2, comp_position, Position::{ x: 3, y: 3 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let query = world.query2_value_mut_filtered(
+    comp_position,
+    comp_velocity,
+    Without::new(comp_accel),
+  )
+  inspect(query.count(), content="1")
+  if (try! query.get(e0)) is Some((position, velocity_mut)) {
+    inspect(position, content="{x: 1, y: 1}")
+    inspect(velocity_mut.is_added(), content="true")
+    inspect(velocity_mut.get(), content="{dx: 10, dy: 20}")
+  } else {
+    inspect(false, content="true")
+  }
+  try! query
+  .par_iter_mut()
+  .for_each(fn(_entity, position, velocity_mut) {
+    velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx + position.x
+  })
+
+  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 20})")
+  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 30, dy: 40})")
+}
+
+///|
+test "ecs query mut: query3 value ref mut filtered supports mixed data shape" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query3_value_ref_mut",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query3_value_ref_mut",
+  )
+  let comp_accel : ComponentKey[Acceleration] = register_component(
+    debug_name="accel_query3_value_ref_mut",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 2 })
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 3, dy: 4 })
+  try! world.set(e0, comp_accel, Acceleration::{ ax: 5, ay: 6 })
+  try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 9, dy: 10 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let query = world.query3_value_ref_mut_filtered(
+    comp_position,
+    comp_velocity,
+    comp_accel,
+    All::new(),
+  )
+  inspect(query.count(), content="1")
+  try! query
+  .par_iter_mut()
+  .for_each(fn(_entity, position, velocity_ref, accel_mut) {
+    accel_mut.get_ref().val.ax = accel_mut.get_ref().val.ax +
+      position.x +
+      velocity_ref.value().dx
+  })
+
+  inspect(try! world.get(e0, comp_accel), content="Some({ax: 9, ay: 6})")
+  inspect(try! world.get(e1, comp_accel), content="None")
+}
+
+///|
+test "ecs query mut: query3 ref mut optional preserves optional ref semantics" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query3_ref_mut_optional",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query3_ref_mut_optional",
+  )
+  let comp_accel : ComponentKey[Acceleration] = register_component(
+    debug_name="accel_query3_ref_mut_optional",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 2 })
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 3, dy: 4 })
+  try! world.set(e0, comp_accel, Acceleration::{ ax: 5, ay: 6 })
+  try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 9, dy: 10 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let query = world.query3_ref_mut_optional_filtered(
+    comp_position,
+    comp_velocity,
+    comp_accel,
+    All::new(),
+  )
+  inspect(query.count(), content="2")
+
+  let seen : Array[(Int, Bool, Bool)] = []
+  try! query.view_mut(fn(entity, position_ref, velocity_mut, accel_ref) {
+    seen.push(
+      (
+        entity.id,
+        position_ref.is_added(),
+        match accel_ref {
+          Some(value) => value.is_added()
+          None => false
+        },
+      ),
+    )
+    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
+      position_ref.value().y
+  })
+
+  inspect(seen, content="[(0, true, true), (1, true, false)]")
+  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 3, dy: 6})")
+  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 9, dy: 18})")
+}

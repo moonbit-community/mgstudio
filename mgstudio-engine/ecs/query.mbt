@@ -49,6 +49,20 @@ pub struct Query1Filtered[A, F] {
 }
 
 ///|
+pub struct Query1FilteredMany[A, F] {
+  query : Query1Filtered[A, F]
+  entities : Array[@core.Entity]
+  mut index : Int
+}
+
+///|
+pub struct Query1FilteredManyRef[A, F] {
+  query : Query1Filtered[A, F]
+  entities : Array[@core.Entity]
+  mut index : Int
+}
+
+///|
 pub struct Query2Filtered[A, B, F] {
   world : World
   key_a : ComponentKey[A]
@@ -168,6 +182,14 @@ pub fn[A : @json.FromJson] Query1::get(
 }
 
 ///|
+pub fn[A] Query1::count(self : Query1[A]) -> Int {
+  match self.world.component_store(self.key_a.id()) {
+    Some(store_ref) => store_ref.val.len()
+    None => 0
+  }
+}
+
+///|
 pub fn[F : QueryFilter] EntityQuery::count(self : EntityQuery[F]) -> Int {
   let counter = Ref::new(0)
   self.view(fn(_entity) { counter.val = counter.val + 1 })
@@ -255,29 +277,19 @@ pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::view_ref(
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::iter_many(
+pub fn[A, F] Query1Filtered::iter_many(
   self : Query1Filtered[A, F],
   entities : Array[@core.Entity],
-  f : (@core.Entity, A) -> Unit,
-) -> Unit raise EcsError {
-  for entity in entities {
-    if self.get(entity) is Some(value) {
-      f(entity, value)
-    }
-  }
+) -> Query1FilteredMany[A, F] {
+  { query: self, entities, index: 0 }
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::iter_many_ref(
+pub fn[A, F] Query1Filtered::iter_many_ref(
   self : Query1Filtered[A, F],
   entities : Array[@core.Entity],
-  f : (@core.Entity, ComponentRef[A]) -> Unit,
-) -> Unit raise EcsError {
-  for entity in entities {
-    if self.get_ref(entity) is Some(component_ref) {
-      f(entity, component_ref)
-    }
-  }
+) -> Query1FilteredManyRef[A, F] {
+  { query: self, entities, index: 0 }
 }
 
 ///|
@@ -356,6 +368,17 @@ pub fn[A : @json.FromJson, B : @json.FromJson] Query2::view(
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
   query2_view(self.world, self.key_a, self.key_b, f)
+}
+
+///|
+pub fn[A, B] Query2::count(self : Query2[A, B]) -> Int {
+  query2_count_filtered(
+    self.world,
+    self.key_a,
+    self.key_b,
+    All::new(),
+    self.world.get_system_context().ticks(),
+  )
 }
 
 ///|
@@ -461,6 +484,18 @@ pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::view(
 }
 
 ///|
+pub fn[A, B, C] Query3::count(self : Query3[A, B, C]) -> Int {
+  query3_count_filtered(
+    self.world,
+    self.key_a,
+    self.key_b,
+    self.key_c,
+    All::new(),
+    self.world.get_system_context().ticks(),
+  )
+}
+
+///|
 pub fn[
   A : @json.FromJson,
   B : @json.FromJson,
@@ -548,6 +583,34 @@ pub fn[A, B, C, F : QueryFilter] Query3Filtered::count(
     self.filter,
     self.system,
   )
+}
+
+///|
+pub fn[A : @json.FromJson, F : QueryFilter] Query1FilteredMany::fetch_next(
+  self : Query1FilteredMany[A, F],
+) -> (@core.Entity, A)? raise EcsError {
+  while self.index < self.entities.length() {
+    let entity = self.entities[self.index]
+    self.index = self.index + 1
+    if self.query.get(entity) is Some(value) {
+      return Some((entity, value))
+    }
+  }
+  None
+}
+
+///|
+pub fn[A : @json.FromJson, F : QueryFilter] Query1FilteredManyRef::fetch_next(
+  self : Query1FilteredManyRef[A, F],
+) -> (@core.Entity, ComponentRef[A])? raise EcsError {
+  while self.index < self.entities.length() {
+    let entity = self.entities[self.index]
+    self.index = self.index + 1
+    if self.query.get_ref(entity) is Some(component_ref) {
+      return Some((entity, component_ref))
+    }
+  }
+  None
 }
 
 ///|

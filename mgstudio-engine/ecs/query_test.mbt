@@ -334,10 +334,17 @@ test "ecs query: iter_many_ref preserves filter and change state" {
   world.set_system_context(ctx)
 
   let seen : Array[(Int, Bool, Bool)] = []
-  try! world
-  .query1_filtered(comp_position, With::new(comp_velocity))
-  .iter_many_ref([e0, e1, e2], fn(entity, component_ref) {
-    seen.push((entity.id, component_ref.is_added(), component_ref.is_changed()))
-  })
+  let iter = world
+    .query1_filtered(comp_position, With::new(comp_velocity))
+    .iter_many_ref([e0, e1, e2])
+  while true {
+    if (try! iter.fetch_next()) is Some((entity, component_ref)) {
+      seen.push(
+        (entity.id, component_ref.is_added(), component_ref.is_changed()),
+      )
+    } else {
+      break
+    }
+  }
   inspect(seen, content="[(1, true, true), (2, true, true)]")
 }
