@@ -8,7 +8,7 @@
     "bevy_anti_alias": ["render3d"],
     "bevy_app": ["app"],
     "bevy_asset": ["asset", "runtime_native/native_asset"],
-    "bevy_audio": ["runtime_native/audio"],
+    "bevy_audio": ["audio", "runtime_native/audio"],
     "bevy_camera": ["render2d", "render3d"],
     "bevy_camera_controller": ["render3d"],
     "bevy_color": ["render2d", "render3d"],

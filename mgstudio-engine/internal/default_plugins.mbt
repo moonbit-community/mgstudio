@@ -29,6 +29,9 @@ pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
       @asset.asset_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @audio.audio_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @scene.scene_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -85,6 +88,9 @@ pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @asset.asset_plugin_nearest(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @audio.audio_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @scene.scene_plugin(app)

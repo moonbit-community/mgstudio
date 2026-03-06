@@ -1,0 +1,249 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/audio"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn audio_output_available() -> Bool
+
+pub fn audio_playback_system(@ecs.World) -> Unit
+
+pub fn audio_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn audio_plugin_with(@app.App[@ecs.World], AudioPlugin) -> @app.App[@ecs.World]
+
+pub fn audio_source_add(AudioSource) -> @asset.Handle[AudioSource]
+
+pub fn audio_source_from_blob(@asset.Handle[@asset.Blob]) -> AudioSource?
+
+pub fn audio_source_get(@asset.Handle[AudioSource]) -> AudioSource?
+
+pub fn audio_source_load(@asset.AssetServer, String) -> @asset.Handle[AudioSource]?
+
+pub fn audio_source_set(@asset.Handle[AudioSource], AudioSource) -> Bool
+
+pub let ecs_key_audio_sink : @ecs.ComponentKey[AudioSink]
+
+pub let ecs_key_audio_source_player : @ecs.ComponentKey[AudioPlayer[AudioSource]]
+
+pub let ecs_key_pitch_player : @ecs.ComponentKey[AudioPlayer[Pitch]]
+
+pub let ecs_key_playback_despawn_marker : @ecs.ComponentKey[PlaybackDespawnMarker]
+
+pub let ecs_key_playback_remove_marker : @ecs.ComponentKey[PlaybackRemoveMarker]
+
+pub let ecs_key_playback_settings : @ecs.ComponentKey[PlaybackSettings]
+
+pub let ecs_key_spatial_audio_sink : @ecs.ComponentKey[SpatialAudioSink]
+
+pub let ecs_key_spatial_listener : @ecs.ComponentKey[SpatialListener]
+
+pub fn pitch_add(Pitch) -> @asset.Handle[Pitch]
+
+pub fn pitch_get(@asset.Handle[Pitch]) -> Pitch?
+
+pub fn pitch_set(@asset.Handle[Pitch], Pitch) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct AudioOutput {
+  stream : @Milky2018/mgstudio/runtime_native/audio.NativeAudioStream?
+}
+pub fn AudioOutput::default() -> Self
+pub impl @app.Resource for AudioOutput
+
+pub struct AudioPlayer[Source] {
+  source : @asset.Handle[Source]
+}
+pub fn[Source] AudioPlayer::handle(Self[Source]) -> @asset.Handle[Source]
+pub fn[Source] AudioPlayer::new(@asset.Handle[Source]) -> Self[Source]
+pub impl[Source] ToJson for AudioPlayer[Source]
+pub impl[Source] @json.FromJson for AudioPlayer[Source]
+
+pub struct AudioPlugin {
+  global_volume : GlobalVolume
+  default_spatial_scale : SpatialScale
+}
+pub fn AudioPlugin::default() -> Self
+
+pub struct AudioSink {
+  sink_id : Int
+  managed_volume : Volume?
+}
+pub fn AudioSink::toggle_mute(Self) -> Self
+pub fn AudioSink::toggle_playback(Self) -> Unit
+pub impl AudioSinkPlayback for AudioSink
+pub impl ToJson for AudioSink
+pub impl @json.FromJson for AudioSink
+
+pub struct AudioSource {
+  bytes : Bytes
+}
+pub fn AudioSource::bytes(Self) -> Bytes
+pub fn AudioSource::new(Bytes) -> Self
+pub impl ToJson for AudioSource
+pub impl @json.FromJson for AudioSource
+
+pub struct AudioSourceAssets {
+  assets : @asset.Assets[AudioSource]
+}
+pub fn AudioSourceAssets::add(Self, AudioSource) -> @asset.Handle[AudioSource]
+pub fn AudioSourceAssets::get(Self, @asset.Handle[AudioSource]) -> AudioSource?
+pub fn AudioSourceAssets::new() -> Self
+pub fn AudioSourceAssets::set(Self, @asset.Handle[AudioSource], AudioSource) -> Bool
+pub impl @app.Resource for AudioSourceAssets
+
+pub struct DefaultSpatialScale {
+  scale : SpatialScale
+}
+pub fn DefaultSpatialScale::default() -> Self
+pub fn DefaultSpatialScale::new(SpatialScale) -> Self
+pub impl @app.Resource for DefaultSpatialScale
+pub impl ToJson for DefaultSpatialScale
+pub impl @json.FromJson for DefaultSpatialScale
+
+pub struct GlobalVolume {
+  volume : Volume
+}
+pub fn GlobalVolume::default() -> Self
+pub fn GlobalVolume::new(Volume) -> Self
+pub impl @app.Resource for GlobalVolume
+pub impl ToJson for GlobalVolume
+pub impl @json.FromJson for GlobalVolume
+
+pub struct Pitch {
+  frequency : Float
+  duration_seconds : Float
+}
+pub fn Pitch::new(Float, Float) -> Self
+pub impl ToJson for Pitch
+pub impl @json.FromJson for Pitch
+
+pub struct PitchAssets {
+  assets : @asset.Assets[Pitch]
+}
+pub fn PitchAssets::add(Self, Pitch) -> @asset.Handle[Pitch]
+pub fn PitchAssets::get(Self, @asset.Handle[Pitch]) -> Pitch?
+pub fn PitchAssets::new() -> Self
+pub fn PitchAssets::set(Self, @asset.Handle[Pitch], Pitch) -> Bool
+pub impl @app.Resource for PitchAssets
+
+pub struct PlaybackDespawnMarker {
+}
+pub impl ToJson for PlaybackDespawnMarker
+pub impl @json.FromJson for PlaybackDespawnMarker
+
+pub(all) enum PlaybackMode {
+  Once
+  Loop
+  Despawn
+  Remove
+}
+pub impl Eq for PlaybackMode
+pub impl Show for PlaybackMode
+pub impl ToJson for PlaybackMode
+pub impl @json.FromJson for PlaybackMode
+
+pub struct PlaybackRemoveMarker {
+}
+pub impl ToJson for PlaybackRemoveMarker
+pub impl @json.FromJson for PlaybackRemoveMarker
+
+pub struct PlaybackSettings {
+  mode : PlaybackMode
+  volume : Volume
+  speed : Float
+  paused : Bool
+  muted : Bool
+  spatial : Bool
+  spatial_scale : SpatialScale?
+  start_position_seconds : Float?
+  duration_seconds : Float?
+}
+pub fn PlaybackSettings::default() -> Self
+pub fn PlaybackSettings::despawn() -> Self
+pub fn PlaybackSettings::looped() -> Self
+pub fn PlaybackSettings::muted(Self) -> Self
+pub fn PlaybackSettings::once() -> Self
+pub fn PlaybackSettings::paused(Self) -> Self
+pub fn PlaybackSettings::remove() -> Self
+pub fn PlaybackSettings::with_duration_seconds(Self, Float) -> Self
+pub fn PlaybackSettings::with_spatial(Self, Bool) -> Self
+pub fn PlaybackSettings::with_spatial_scale(Self, SpatialScale) -> Self
+pub fn PlaybackSettings::with_speed(Self, Float) -> Self
+pub fn PlaybackSettings::with_start_position_seconds(Self, Float) -> Self
+pub fn PlaybackSettings::with_volume(Self, Volume) -> Self
+pub impl ToJson for PlaybackSettings
+pub impl @json.FromJson for PlaybackSettings
+
+pub struct SpatialAudioSink {
+  sink_id : Int
+  managed_volume : Volume?
+}
+pub fn SpatialAudioSink::toggle_mute(Self) -> Self
+pub fn SpatialAudioSink::toggle_playback(Self) -> Unit
+pub impl AudioSinkPlayback for SpatialAudioSink
+pub impl ToJson for SpatialAudioSink
+pub impl @json.FromJson for SpatialAudioSink
+
+pub struct SpatialListener {
+  left_ear_offset : @math.Vec3
+  right_ear_offset : @math.Vec3
+}
+pub fn SpatialListener::default() -> Self
+pub fn SpatialListener::new(Float) -> Self
+pub impl ToJson for SpatialListener
+pub impl @json.FromJson for SpatialListener
+
+pub struct SpatialScale {
+  scale : @math.Vec3
+}
+pub fn SpatialScale::default() -> Self
+pub fn SpatialScale::new(Float) -> Self
+pub fn SpatialScale::new_2d(Float) -> Self
+pub impl ToJson for SpatialScale
+pub impl @json.FromJson for SpatialScale
+
+pub(all) enum Volume {
+  Linear(Float)
+  Decibels(Float)
+}
+pub fn Volume::decrease_by_percentage(Self, Float) -> Self
+pub fn Volume::default() -> Self
+pub fn Volume::increase_by_percentage(Self, Float) -> Self
+pub fn Volume::mul(Self, Self) -> Self
+pub fn Volume::scale_to_factor(Self, Float) -> Self
+pub fn Volume::silent() -> Self
+pub fn Volume::to_decibels(Self) -> Float
+pub fn Volume::to_linear(Self) -> Float
+pub impl ToJson for Volume
+pub impl @json.FromJson for Volume
+
+// Type aliases
+
+// Traits
+pub(open) trait AudioSinkPlayback {
+  volume(Self) -> Volume
+  set_volume(Self, Volume) -> Self
+  speed(Self) -> Float
+  set_speed(Self, Float) -> Self
+  play(Self) -> Unit
+  position_seconds(Self) -> Float
+  try_seek_seconds(Self, Float) -> Bool
+  pause(Self) -> Unit
+  is_paused(Self) -> Bool
+  stop(Self) -> Unit
+  empty(Self) -> Bool
+  is_muted(Self) -> Bool
+  mute(Self) -> Self
+  unmute(Self) -> Self
+}
+

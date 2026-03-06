@@ -13,6 +13,14 @@ pub fn available_input_devices() -> Array[NativeAudioInputDevice] raise @moon_ro
 
 pub fn available_output_devices() -> Array[NativeAudioOutputDevice] raise @moon_rodio.SpeakersListError
 
+pub fn db_to_linear(Double) -> Double
+
+pub fn duration_from_seconds(Float) -> @core.Duration
+
+pub fn duration_to_seconds(@core.Duration) -> Float
+
+pub fn linear_to_db(Double) -> Double
+
 pub fn open_default_output_stream() -> NativeAudioStream raise @moon_rodio.StreamError
 
 // Errors
@@ -27,18 +35,32 @@ pub struct NativeAudioOutputDevice {
   is_default : Bool
 }
 
+pub struct NativeAudioPlaybackConfig {
+  looped : Bool
+  start_position_seconds : Float?
+  duration_seconds : Float?
+}
+pub fn NativeAudioPlaybackConfig::default() -> Self
+pub fn NativeAudioPlaybackConfig::looped(Self, Bool) -> Self
+pub fn NativeAudioPlaybackConfig::with_duration_seconds(Self, Float) -> Self
+pub fn NativeAudioPlaybackConfig::with_start_position_seconds(Self, Float) -> Self
+
 pub struct NativeAudioPlayer {
   player : @moon_rodio.Player
 }
+pub fn NativeAudioPlayer::append_bytes(Self, Bytes, config? : NativeAudioPlaybackConfig) -> Unit raise @moon_rodio.DecoderError
+pub fn NativeAudioPlayer::append_sine(Self, Float, Float, looped? : Bool) -> Unit
 pub fn NativeAudioPlayer::clear(Self) -> Unit
 pub fn NativeAudioPlayer::empty(Self) -> Bool
 pub fn NativeAudioPlayer::is_paused(Self) -> Bool
 pub fn NativeAudioPlayer::pause(Self) -> Unit
 pub fn NativeAudioPlayer::play(Self) -> Unit
+pub fn NativeAudioPlayer::position_seconds(Self) -> Float
 pub fn NativeAudioPlayer::set_speed(Self, Double) -> Unit
 pub fn NativeAudioPlayer::set_volume(Self, Double) -> Unit
 pub fn NativeAudioPlayer::speed(Self) -> Double
 pub fn NativeAudioPlayer::stop(Self) -> Unit
+pub fn NativeAudioPlayer::try_seek_seconds(Self, Float) -> Unit raise @moon_rodio.SeekError
 pub fn NativeAudioPlayer::volume(Self) -> Double
 
 pub struct NativeAudioStream {
@@ -46,7 +68,31 @@ pub struct NativeAudioStream {
 }
 pub fn NativeAudioStream::mixer(Self) -> @moon_rodio.Mixer
 pub fn NativeAudioStream::new_player(Self) -> NativeAudioPlayer
+pub fn NativeAudioStream::new_spatial_player(Self, (Double, Double, Double), (Double, Double, Double), (Double, Double, Double)) -> NativeSpatialAudioPlayer
+pub fn NativeAudioStream::play_bytes(Self, Bytes, config? : NativeAudioPlaybackConfig) -> NativeAudioPlayer raise @moon_rodio.DecoderError
 pub fn NativeAudioStream::play_file(Self, String) -> NativeAudioPlayer raise @moon_rodio.PlayError
+pub fn NativeAudioStream::play_sine(Self, Float, Float, looped? : Bool) -> NativeAudioPlayer
+
+pub struct NativeSpatialAudioPlayer {
+  player : @moon_rodio.SpatialPlayer
+}
+pub fn NativeSpatialAudioPlayer::append_bytes(Self, Bytes, config? : NativeAudioPlaybackConfig) -> Unit raise @moon_rodio.DecoderError
+pub fn NativeSpatialAudioPlayer::append_sine(Self, Float, Float, looped? : Bool) -> Unit
+pub fn NativeSpatialAudioPlayer::clear(Self) -> Unit
+pub fn NativeSpatialAudioPlayer::empty(Self) -> Bool
+pub fn NativeSpatialAudioPlayer::is_paused(Self) -> Bool
+pub fn NativeSpatialAudioPlayer::pause(Self) -> Unit
+pub fn NativeSpatialAudioPlayer::play(Self) -> Unit
+pub fn NativeSpatialAudioPlayer::position_seconds(Self) -> Float
+pub fn NativeSpatialAudioPlayer::set_emitter_position(Self, (Double, Double, Double)) -> Unit
+pub fn NativeSpatialAudioPlayer::set_left_ear_position(Self, (Double, Double, Double)) -> Unit
+pub fn NativeSpatialAudioPlayer::set_right_ear_position(Self, (Double, Double, Double)) -> Unit
+pub fn NativeSpatialAudioPlayer::set_speed(Self, Double) -> Unit
+pub fn NativeSpatialAudioPlayer::set_volume(Self, Double) -> Unit
+pub fn NativeSpatialAudioPlayer::speed(Self) -> Double
+pub fn NativeSpatialAudioPlayer::stop(Self) -> Unit
+pub fn NativeSpatialAudioPlayer::try_seek_seconds(Self, Float) -> Unit raise @moon_rodio.SeekError
+pub fn NativeSpatialAudioPlayer::volume(Self) -> Double
 
 // Type aliases
 
