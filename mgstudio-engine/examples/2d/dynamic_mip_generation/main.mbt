@@ -178,7 +178,7 @@ fn handle_app_setting_input() -> Unit {
 
 ///|
 fn dynamic_mip_window_resized_system(
-  resized_events : @core.MessageReader[@window.WindowResized],
+  resized_events : @ecs.MessageReader[@window.WindowResized],
 ) -> Unit {
   for _event in resized_events.read() {
     dynamic_mip_state.val.regenerate_requested = true

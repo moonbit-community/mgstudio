@@ -136,12 +136,17 @@ pub(all) enum HostEvent {
 pub struct WindowResized {
   width : Int
   height : Int
-}
+} derive(ToJson, FromJson)
 
 ///|
-let window_resized_events_ref : Ref[@core.Messages[WindowResized]] = Ref::new(
-  @core.Messages::new(),
+pub let ecs_key_window_resized : @ecs.MessageKey[WindowResized] = @ecs.register_message(
+  debug_name="bevy_window::WindowResized",
 )
+
+///|
+pub impl @ecs.Message for WindowResized with message() {
+  ecs_key_window_resized
+}
 
 ///|
 pub fn host_window_create(
@@ -394,42 +399,6 @@ pub fn window_set_position(x~ : Int, y~ : Int) -> Unit {
 }
 
 ///|
-fn window_world_system_ticks(world : @ecs.World) -> @core.SystemTicks {
-  world.get_system_context().ticks()
-}
-
-///|
-fn window_resized_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[WindowResized] {
-  window_resized_events_ref.val.reader(ticks)
-}
-
-///|
-fn window_resized_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[WindowResized] {
-  window_resized_events_ref.val.writer(tick)
-}
-
-///|
-pub fn window_resized_events(
-  world : @ecs.World,
-) -> @core.MessageReader[WindowResized] {
-  window_resized_events_reader(window_world_system_ticks(world))
-}
-
-///|
-pub impl @core.Message for WindowResized with reader(ticks) {
-  window_resized_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for WindowResized with writer(tick) {
-  window_resized_events_writer(tick)
-}
-
-///|
 pub fn window_poll_resize_system(world : @ecs.World) -> Unit {
   guard window_state.val.window is Some(window) else { return }
   let width = host_window_get_width(window)
@@ -444,8 +413,9 @@ pub fn window_poll_resize_system(world : @ecs.World) -> Unit {
     height == window_state.val.last_height {
     return
   }
-  let tick = world.read_change_tick()
-  window_resized_events_ref.val.send(tick, WindowResized::{ width, height })
+  ignore(
+    world.send_message(ecs_key_window_resized, WindowResized::{ width, height }),
+  )
   window_state.val.last_width = width
   window_state.val.last_height = height
 }
@@ -1383,6 +1353,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
 ///|
 pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
+  .add_message(ecs_key_window_resized)
   .set_runner(window_runner_builder)
   .add_pre_update_system(window_poll_resize_system)
 }
