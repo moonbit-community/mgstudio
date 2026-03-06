@@ -20,6 +20,9 @@ pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
       @app.log_plugin_default(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @window.window_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -87,6 +90,9 @@ pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
       @app.log_plugin_default(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @window.window_plugin(app)
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
@@ -142,6 +148,27 @@ pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
     },
     fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @physics3d.physics3d_plugin(app)
+    },
+  ]
+}
+
+///|
+/// Minimal plugin bundle, aligned with Bevy's `MinimalPlugins` concept.
+pub fn minimal_plugins() -> Array[@app.Plugin[@ecs.World]] {
+  [
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.frame_count_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @time.time_plugin(app)
+    },
+    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_loop(0.0F))(
+        app,
+      )
     },
   ]
 }
